@@ -38,16 +38,17 @@ if(ret)
   '${CMAKE_C_COMPILER} --version'"
   )
 else()
-  set(ARCMWDT_MIN_REQUIRED_VERS "2022.06")
+  set(ARCMWDT_MIN_REQUIRED_VERS "2022.09")
 #
-# Regular version have format: "T-2022.06"
+# Regular version has format: "T-2022.06"
 # Engineering builds: "ENG-2022.06-001"
+# Check-in build: ENG-2022.12-D1039-C39098348
 #
-  string(REGEX MATCH "\ (ENG|[A-Z])-[0-9][0-9][0-9][0-9]\.[0-9][0-9]+((\ |\n|\r|\t)|(-[0-9][0-9][0-9]))"
-   vers_string "${full_version_output}")
+  string(REGEX MATCH "\ (ENG|[A-Z])-[0-9][0-9][0-9][0-9]\.[0-9][0-9]+.*"
+    vers_string "${full_version_output}")
 
   string(REGEX MATCH "[0-9][0-9][0-9][0-9]\.[0-9][0-9]"
-     reduced_version "${vers_string}")
+    reduced_version "${vers_string}")
 
   if("${reduced_version}" VERSION_LESS ${ARCMWDT_MIN_REQUIRED_VERS})
     message(FATAL_ERROR "Could NOT find ccac: Found unsuitable version \"${reduced_version}\", but required is at least \"${ARCMWDT_MIN_REQUIRED_VERS}\" (found ${CROSS_COMPILE}ccac)")

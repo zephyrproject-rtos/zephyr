@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Nordic Semicoductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Usage:
+# This template allow module to use the parent module log level by default.
+#
+# The following arguments are mandatory:
+# 	- module:
+#		Name of the new log module.
+#		Example: "BT_HCI_CORE"
+#	- parent-module:
+#		Name of the module that will be inherited by the new module.
+#		Example: "BT"
+
+choice "$(module)_LOG_LEVEL_CHOICE"
+	default $(module)_LOG_LEVEL_INHERIT if y
+
+config $(module)_LOG_LEVEL_INHERIT
+	bool "Inherit $(parent-module)_LOG_LEVEL"
+
+endchoice
+
+config $(module)_LOG_LEVEL
+	default $(parent-module)_LOG_LEVEL if $(module)_LOG_LEVEL_INHERIT
+
+module := $(module)
+source "subsys/logging/Kconfig.template.log_config"

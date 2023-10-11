@@ -7,6 +7,15 @@
 #ifndef ZEPHYR_STM32_AFIO_H_
 #define ZEPHYR_STM32_AFIO_H_
 
+#define STM32_REMAP_REG_MASK    0x1U
+#define STM32_REMAP_REG_SHIFT   0U
+#define STM32_REMAP_SHIFT_MASK  0x1FU
+#define STM32_REMAP_SHIFT_SHIFT 1U
+#define STM32_REMAP_MASK_MASK   0x3U
+#define STM32_REMAP_MASK_SHIFT  6U
+#define STM32_REMAP_VAL_MASK    0x3U
+#define STM32_REMAP_VAL_SHIFT   8U
+
 /**
  * @brief STM32F1 Remap configuration bit field.
  *
@@ -20,16 +29,6 @@
  * @param mask Mask for the AFIO_MAPRx field.
  * @param val Remap value (0, 1, 2 or 3).
  */
-
-#define STM32_REMAP_REG_MASK    0x1U
-#define STM32_REMAP_REG_SHIFT   0U
-#define STM32_REMAP_SHIFT_MASK  0x1FU
-#define STM32_REMAP_SHIFT_SHIFT 1U
-#define STM32_REMAP_MASK_MASK   0x3U
-#define STM32_REMAP_MASK_SHIFT  6U
-#define STM32_REMAP_VAL_MASK    0x3U
-#define STM32_REMAP_VAL_SHIFT   8U
-
 #define STM32_REMAP(val, mask, shift, reg)				       \
 	((((reg) & STM32_REMAP_REG_MASK) << STM32_REMAP_REG_SHIFT) |	       \
 	 (((shift) & STM32_REMAP_SHIFT_MASK) << STM32_REMAP_SHIFT_SHIFT) |     \

@@ -206,15 +206,15 @@ void radio_reset(void)
 {
 	irq_disable(RADIO_IRQn);
 
-	nrf_radio_power_set(
-		NRF_RADIO,
-		(RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos) &
-			RADIO_POWER_POWER_Msk);
-	nrf_radio_power_set(
-		NRF_RADIO,
-		(RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos) &
-			RADIO_POWER_POWER_Msk);
+	/* nRF SoC generic radio reset/initializations
+	 * Note: Only registers whose bits are partially modified across
+	 *       functions are assigned back the power-on reset values.
+	 *       Ignore other registers for reset which will have all bits
+	 *       explicitly assigned by functions in this file.
+	 */
+	NRF_RADIO->PCNF1 = HAL_RADIO_RESET_VALUE_PCNF1;
 
+	/* nRF SoC specific reset/initializations, if any */
 	hal_radio_reset();
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
@@ -231,7 +231,50 @@ void radio_reset(void)
 
 void radio_stop(void)
 {
+	/* nRF SoC specific radio stop/cleanup, if any */
 	hal_radio_stop();
+
+	/* nRF SoC generic radio stop/cleanup
+	 * TODO: Initialize NRF_RADIO registers used by Controller to power-on
+	 *       reset values.
+	 *       This is required in case NRF_RADIO is share/used between
+	 *       Bluetooth radio events by application defined radio protocols.
+	 *       The application too shall restore the registers it uses to the
+	 *       power-on reset values once it has stopped using the radio.
+	 *
+	 *       Registers used for Bluetooth Low Energy Controller:
+	 *       - MODE
+	 *       - MODECNF0
+	 *       - TXPOWER
+	 *       - FREQUENCY
+	 *       - DATAWHITEIV
+	 *       - PCNF0
+	 *       - PCNF1
+	 *       - TXADDRESS
+	 *       - RXADDRESSES
+	 *       - PREFIX0
+	 *       - BASE0
+	 *       - PACKETPTR
+	 *       - CRCCNF
+	 *       - CRCPOLY
+	 *       - CRCINIT
+	 *       - DAB
+	 *       - DAP
+	 *       - DACNF
+	 *       - BCC
+	 *       - TIFS
+	 *       - SHORTS
+	 *
+	 *       Additional registers used for Direction Finding feature:
+	 *       - SWITCHPATTERN
+	 *       - DFEMODE
+	 *       - CTEINLINECONF
+	 *       - DFECTRL1
+	 *       - DEFCTRL2
+	 *       - CLEARPATTERN
+	 *       - PSEL.DFEGPIO[n]
+	 *       - DFEPACKET.PTR
+	 */
 }
 
 void radio_phy_set(uint8_t phy, uint8_t flags)
@@ -243,10 +286,19 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
-	NRF_RADIO->MODECNF0 |= (RADIO_MODECNF0_RU_Fast <<
+	NRF_RADIO->MODECNF0 = ((RADIO_MODECNF0_DTX_Center <<
+				RADIO_MODECNF0_DTX_Pos) &
+			       RADIO_MODECNF0_DTX_Msk) |
+			      ((RADIO_MODECNF0_RU_Fast <<
 				RADIO_MODECNF0_RU_Pos) &
-			       RADIO_MODECNF0_RU_Msk;
-#endif /* CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
+			       RADIO_MODECNF0_RU_Msk);
+#else /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
+#if !defined(CONFIG_SOC_SERIES_NRF51X)
+	NRF_RADIO->MODECNF0 = (RADIO_MODECNF0_DTX_Center <<
+			       RADIO_MODECNF0_DTX_Pos) &
+			      RADIO_MODECNF0_DTX_Msk;
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
+#endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
 }
 
 void radio_tx_power_set(int8_t power)
@@ -992,7 +1044,7 @@ uint32_t radio_filter_match_get(void)
 
 void radio_bc_configure(uint32_t n)
 {
-	nrf_radio_bcc_set(NRF_RADIO, n);
+	NRF_RADIO->BCC = n;
 	NRF_RADIO->SHORTS |= RADIO_SHORTS_ADDRESS_BCSTART_Msk;
 }
 
@@ -1190,24 +1242,7 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 {
 	uint32_t start_us;
 
-	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
-
-#if !defined(CONFIG_BT_CTLR_TIFS_HW)
-#if defined(CONFIG_SOC_SERIES_NRF53X)
-	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
-	 *       because of calls to radio_disable() and
-	 *       radio_switch_complete_and_disable() inside a radio event call
-	 *       hal_radio_sw_switch_disable(), which in the case of nRF53
-	 *       cancels the task subscription.
-	 */
-	/* FIXME: hal_sw_switch_timer_clear_ppi_config() sets both task and
-	 *        event. Consider a new interface to only set the task, or
-	 *        change the design to not clear task subscription inside a
-	 *        radio event but when the radio event is done.
-	 */
-	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_SERIES_NRF53X */
-#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+	/* PPI/DPPI configuration will be done in radio_tmr_start_us() */
 
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CAPTURE1);
@@ -1549,16 +1584,18 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 #endif /* CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
-	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
 	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
 			RADIO_PCNF1_MAXLEN_Pos;
 
-	NRF_CCM->MAXPACKETSIZE = max_len;
+	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
+	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
 #endif
-#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (uint32_t)ccm;
@@ -1594,6 +1631,18 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	mode |= (CCM_MODE_DATARATE_2Mbit << CCM_MODE_DATARATE_Pos) &
 		CCM_MODE_DATARATE_Msk;
 #endif
+
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
+	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
+			RADIO_PCNF1_MAXLEN_Pos;
+
+	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
+	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
+#endif
+
 	NRF_CCM->MODE = mode;
 	NRF_CCM->CNFPTR = (uint32_t)ccm;
 	NRF_CCM->INPTR = (uint32_t)pkt;

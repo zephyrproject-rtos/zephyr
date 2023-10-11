@@ -21,28 +21,32 @@ config IPC_SERVICE_BACKEND_ICMSG
 	default y
 	depends on MBOX
 	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ENABLED
-	select SPSC_PBUF
-	select SPSC_PBUF_USE_CACHE
+	select IPC_SERVICE_ICMSG
 	help
 	  Chosing this backend results in single endpoint implementation based
 	  on circular packet buffer.
 
-config IPC_SERVICE_RPMSG
-	bool "RPMsg support library"
+config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
+	bool "ICMSG backend with multi-endpoint support in initiator role"
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_INITIATOR_ENABLED
+	select IPC_SERVICE_ICMSG
+	select EVENTS
 	help
-	  "RPMsg library"
+	  Chosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables enpoint discovery initiator
+	  role.
 
-config IPC_SERVICE_STATIC_VRINGS
-	bool "Static VRINGs support library"
+config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
+	bool "ICMSG backend with multi-endpoint support in follower role"
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_FOLLOWER_ENABLED
+	select IPC_SERVICE_ICMSG
+	select EVENTS
 	help
-	  "Static VRINGs library"
+	  Chosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables enpoint discovery follower
+	  role.
 
-config IPC_SERVICE_STATIC_VRINGS_ALIGNMENT
-	int "VRINGs alignment"
-	depends on IPC_SERVICE_STATIC_VRINGS
-	default 4
-	help
-	  Static VRINGs alignment
-
-rsource "Kconfig.icmsg"
+rsource "Kconfig.icmsg_me"
 rsource "Kconfig.rpmsg"

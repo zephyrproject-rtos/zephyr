@@ -10,7 +10,7 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2
 
 if BOARD_EHL_CRB_SBL

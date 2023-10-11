@@ -32,6 +32,8 @@ source "subsys/logging/Kconfig"
 
 source "subsys/lorawan/Kconfig"
 
+source "subsys/dsp/Kconfig"
+
 source "subsys/mgmt/Kconfig"
 
 source "subsys/modbus/Kconfig"
@@ -48,7 +50,13 @@ source "subsys/stats/Kconfig"
 
 source "subsys/usb/device/Kconfig"
 
+source "subsys/usb/usb_c/Kconfig"
+
 source "subsys/sd/Kconfig"
+
+source "subsys/usb/device_next/Kconfig"
+
+source "subsys/usb/host/Kconfig"
 
 source "subsys/dfu/Kconfig"
 
@@ -69,5 +77,7 @@ source "subsys/tracing/Kconfig"
 source "subsys/demand_paging/Kconfig"
 
 source "subsys/rtio/Kconfig"
+
+source "subsys/zbus/Kconfig"
 
 endmenu

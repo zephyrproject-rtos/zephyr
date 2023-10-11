@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include "ms5607.h"
 
@@ -139,7 +140,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 
 static int ms5607_spi_check(const struct ms5607_config *config)
 {
-	if (!spi_is_ready(&config->bus_cfg.spi)) {
+	if (!spi_is_ready_dt(&config->bus_cfg.spi)) {
 		LOG_DBG("SPI bus not ready");
 		return -ENODEV;
 	}

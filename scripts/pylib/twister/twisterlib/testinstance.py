@@ -1,6 +1,7 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 2018-2022 Intel Corporation
+# Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -13,8 +14,7 @@ import glob
 from twisterlib.testsuite import TestCase
 from twisterlib.error import BuildError
 from twisterlib.size_calc import SizeCalculator
-from twisterlib.handlers import BinaryHandler, QEMUHandler, DeviceHandler
-
+from twisterlib.handlers import Handler, SimulationHandler, BinaryHandler, QEMUHandler, DeviceHandler, SUPPORTED_SIMS
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -39,6 +39,7 @@ class TestInstance:
         self.handler = None
         self.outdir = outdir
         self.execution_time = 0
+        self.retries = 0
 
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
@@ -137,43 +138,30 @@ class TestInstance:
             return
 
         options = env.options
-        args = []
-        handler = None
-        if self.platform.simulation == "qemu":
-            handler = QEMUHandler(self, "qemu")
-            args.append(f"QEMU_PIPE={handler.get_fifo()}")
+        handler = Handler(self, "")
+        if self.platform.simulation != "na":
+            if self.platform.simulation == "qemu":
+                handler = QEMUHandler(self, "qemu")
+                handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
+                handler.ready = True
+            else:
+                handler = SimulationHandler(self, self.platform.simulation)
+
+            if self.platform.simulation_exec and shutil.which(self.platform.simulation_exec):
+                handler.ready = True
         elif self.testsuite.type == "unit":
             handler = BinaryHandler(self, "unit")
             handler.binary = os.path.join(self.build_dir, "testbinary")
             if options.enable_coverage:
-                args.append("COVERAGE=1")
+                handler.args.append("COVERAGE=1")
             handler.call_make_run = False
-        elif self.platform.type == "native":
-            handler = BinaryHandler(self, "native")
-            handler.call_make_run = False
-            handler.binary = os.path.join(self.build_dir, "zephyr", "zephyr.exe")
-        elif self.platform.simulation == "renode":
-            if shutil.which("renode"):
-                handler = BinaryHandler(self, "renode")
-                handler.pid_fn = os.path.join(self.build_dir, "renode.pid")
-        elif self.platform.simulation == "tsim":
-            handler = BinaryHandler(self, "tsim")
+            handler.ready = True
         elif options.device_testing:
             handler = DeviceHandler(self, "device")
             handler.call_make_run = False
-        elif self.platform.simulation == "nsim":
-            if shutil.which("nsimdrv"):
-                handler = BinaryHandler(self, "nsim")
-        elif self.platform.simulation == "mdb-nsim":
-            if shutil.which("mdb"):
-                handler = BinaryHandler(self, "nsim")
-        elif self.platform.simulation == "armfvp":
-            handler = BinaryHandler(self, "armfvp")
-        elif self.platform.simulation == "xt-sim":
-            handler = BinaryHandler(self,  "xt-sim")
+            handler.ready = True
 
         if handler:
-            handler.args = args
             handler.options = options
             handler.generator_cmd = env.generator_cmd
             handler.generator = env.generator
@@ -183,9 +171,8 @@ class TestInstance:
     # Global testsuite parameters
     def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[]):
 
-        # right now we only support building on windows. running is still work
-        # in progress.
-        if os.name == 'nt':
+        # running on simulators is currently not supported on Windows
+        if os.name == 'nt' and self.platform.simulation != 'na':
             return False
 
         # we asked for build-only on the command line
@@ -199,24 +186,17 @@ class TestInstance:
 
         target_ready = bool(self.testsuite.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim"] or \
+                        self.platform.simulation in SUPPORTED_SIMS or \
                         filter == 'runnable')
 
-        if self.platform.simulation == "nsim":
-            if not shutil.which("nsimdrv"):
-                target_ready = False
+        for sim in ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']:
+            if self.platform.simulation == sim and self.platform.simulation_exec:
+                if not shutil.which(self.platform.simulation_exec):
+                    target_ready = False
+                break
+            else:
+                target_ready = True
 
-        if self.platform.simulation == "mdb-nsim":
-            if not shutil.which("mdb"):
-                target_ready = False
-
-        if self.platform.simulation == "renode":
-            if not shutil.which("renode"):
-                target_ready = False
-
-        if self.platform.simulation == "tsim":
-            if not shutil.which("tsim-leon3"):
-                target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
 
@@ -255,7 +235,7 @@ class TestInstance:
 
         return content
 
-    def calculate_sizes(self):
+    def calculate_sizes(self, from_buildlog: bool = False, generate_warning: bool = True) -> SizeCalculator:
         """Get the RAM/ROM sizes of a test case.
 
         This can only be run after the instance has been executed by
@@ -263,13 +243,33 @@ class TestInstance:
 
         @return A SizeCalculator object
         """
+        elf_filepath = self.get_elf_file()
+        buildlog_filepath = self.get_buildlog_file() if from_buildlog else ''
+        return SizeCalculator(elf_filename=elf_filepath,
+                            extra_sections=self.testsuite.extra_sections,
+                            buildlog_filepath=buildlog_filepath,
+                            generate_warning=generate_warning)
+
+    def get_elf_file(self) -> str:
         fns = glob.glob(os.path.join(self.build_dir, "zephyr", "*.elf"))
         fns.extend(glob.glob(os.path.join(self.build_dir, "zephyr", "*.exe")))
         fns = [x for x in fns if '_pre' not in x]
+        # EFI elf files
+        fns = [x for x in fns if 'zefi' not in x]
         if len(fns) != 1:
             raise BuildError("Missing/multiple output ELF binary")
+        return fns[0]
 
-        return SizeCalculator(fns[0], self.testsuite.extra_sections)
+    def get_buildlog_file(self) -> str:
+        """Get path to build.log file.
+
+        @raises BuildError: Incorrect amount (!=1) of build logs.
+        @return: Path to build.log (str).
+        """
+        buildlog_paths = glob.glob(os.path.join(self.build_dir, "build.log"))
+        if len(buildlog_paths) != 1:
+            raise BuildError("Missing/multiple build.log file.")
+        return buildlog_paths[0]
 
     def __repr__(self):
         return "<TestSuite %s on %s>" % (self.testsuite.name, self.platform.name)

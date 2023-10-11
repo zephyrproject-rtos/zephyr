@@ -21,7 +21,6 @@ properties:
 
     prescaler:
       type: int
-      required: false
       default: 15
       description: |
         Peripheral Clock to DAC Clock Ratio. Prescaler value is calcuated as

@@ -10,6 +10,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 #include <fsl_elcdif.h>
 
 #ifdef CONFIG_HAS_MCUX_CACHE
@@ -17,6 +18,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(display_mcux_elcdif, CONFIG_DISPLAY_LOG_LEVEL);
 

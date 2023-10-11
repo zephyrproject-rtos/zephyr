@@ -557,8 +557,8 @@ static inline void mcr20a_rx(const struct device *dev, uint8_t len)
 
 	pkt_len = len - MCR20A_FCS_LENGTH;
 
-	pkt = net_pkt_alloc_with_buffer(mcr20a->iface, pkt_len,
-					AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(mcr20a->iface, pkt_len,
+					   AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;
@@ -1381,7 +1381,7 @@ static int mcr20a_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("Configuring SPI failed");
 		return -EIO;
 	}

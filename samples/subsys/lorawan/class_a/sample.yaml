@@ -40,3 +40,7 @@ tests:
   sample.lorawan.class_a.ru864:
     extra_configs:
       - CONFIG_LORAMAC_REGION_RU864=y
+  sample.lorawan.class_a.multiregion:
+    extra_configs:
+      - CONFIG_LORAMAC_REGION_EU868=y
+      - CONFIG_LORAMAC_REGION_US915=y

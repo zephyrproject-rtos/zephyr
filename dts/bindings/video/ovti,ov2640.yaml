@@ -8,7 +8,6 @@ compatible: "ovti,ov2640"
 properties:
     reset-gpios:
       type: phandle-array
-      required: false
       description: |
         The RESETn pin is asserted to disable the sensor causing a hard
         reset.  The sensor receives this as an active-low signal.

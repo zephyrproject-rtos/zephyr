@@ -9,19 +9,13 @@ common:
     - nrf52840dk_nrf52840
 
 tests:
-  drivers.regulator.fixed.onoff:
+  drivers.regulator.fixed:
     depends_on: gpio
-  drivers.regulator.fixed.onoff.on_delay:
+  drivers.regulator.fixed.on_delay:
     extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_ON_DELAYED"
-  drivers.regulator.fixed.onoff.off_delay:
+  drivers.regulator.fixed.off_delay:
     extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_OFF_DELAYED"
-  drivers.regulator.fixed.onoff.boot_on:
+  drivers.regulator.fixed.boot_on:
     extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_BOOT_ON"
-  drivers.regulator.fixed.onoff.always_on:
+  drivers.regulator.fixed.always_on:
     extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_ALWAYS_ON"
-  drivers.regulator.fixed.sync:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_SYNC"
-  drivers.regulator.fixed.sync.boot_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_SYNC;-DAPP_DTS_REGULATOR_BOOT_ON"
-  drivers.regulator.fixed.sync.always_on:
-    extra_args: "DTS_EXTRA_CPPFLAGS=-DAPP_DTS_REGULATOR_SYNC;-DAPP_DTS_REGULATOR_ALWAYS_ON"

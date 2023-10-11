@@ -29,7 +29,7 @@
 
 #if DT_ON_BUS(DT_CHOSEN(zephyr_console), pcie)
 #include <zephyr/drivers/pcie/pcie.h>
-#define X86_SOC_EARLY_SERIAL_PCIDEV DT_REG_ADDR(DT_CHOSEN(zephyr_console))
+#define X86_SOC_EARLY_SERIAL_PCIDEV PCIE_BDF(0, 0x19, 2) /* uart2 */
 #else
 #define X86_SOC_EARLY_SERIAL_MMIO8_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_console))
 #endif

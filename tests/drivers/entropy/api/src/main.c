@@ -25,6 +25,13 @@
 #define BUFFER_LENGTH           10
 #define RECHECK_RANDOM_ENTROPY  0x10
 
+#ifdef CONFIG_RANDOM_BUFFER_NOCACHED
+__attribute__((__section__(".nocache")))
+static uint8_t buffer[BUFFER_LENGTH] = {0};
+#else
+static uint8_t buffer[BUFFER_LENGTH] = {0};
+#endif
+
 static int random_entropy(const struct device *dev, char *buffer, char num)
 {
 	int ret, i;
@@ -69,7 +76,6 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
 static int get_entropy(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
-	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
 	if (!device_is_ready(dev)) {

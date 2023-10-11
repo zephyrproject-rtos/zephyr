@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define TEST_STR_SMALL "test"
 
+#define MY_IPV6_ADDR "::1"
+
 #define ANY_PORT 0
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
@@ -76,10 +78,8 @@ ZTEST_USER(net_socket_select, test_select)
 	char buf[10];
 	struct timeval tval;
 
-	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, CLIENT_PORT,
-			    &c_sock, &c_addr);
-	prepare_sock_udp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
-			    &s_sock, &s_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &c_sock, &c_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_addr);
 
 	res = bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
 	zassert_equal(res, 0, "bind failed");

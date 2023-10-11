@@ -460,6 +460,11 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 	}
 
 	if (will_block) {
+		if (k_is_in_isr()) {
+			errno = EAGAIN;
+			res = -1;
+			goto out;
+		}
 
 		for (int signaled = false, result = -1; !signaled;
 			result = -1) {
@@ -646,6 +651,11 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 	}
 
 	if (will_block) {
+		if (k_is_in_isr()) {
+			errno = EAGAIN;
+			res = -1;
+			goto out;
+		}
 
 		for (int signaled = false, result = -1; !signaled;
 			result = -1) {

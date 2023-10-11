@@ -9,6 +9,7 @@
 #include <nxp/nxp_k66.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "rddrone_fmuk66-pinctrl.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP RDDRONE FMUK66 board";
@@ -20,6 +21,10 @@
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
+		magn0 = &bmm150;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 	};
 
 	chosen {
@@ -76,6 +81,34 @@
 		max-bitrate = <5000000>;
 		standby-gpios = <&gpioc 18 GPIO_ACTIVE_HIGH>;
 		#phy-cells = <0>;
+	};
+
+	/* This regulator enables the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-s {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-s";
+		enable-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the onboard Ethernet PHY */
+	reg-3v3-neth {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-neth";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator enables the onboard SD card support */
+	reg-3v3-sd {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sd";
+		enable-gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
 	};
 };
 
@@ -266,6 +299,23 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
+	/*
+	 * This board does not have a BME280, it has a BMP280.
+	 * The two parts are incredibly similar, so the BME280 driver works for
+	 * BMP280 as well.
+	 */
+	bme280@76 {
+		compatible = "bosch,bme280";
+		status = "okay";
+		reg = <0x76>;
+	};
+
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "okay";
+		reg = <0x10>;
+	};
 };
 
 /* f-ram spi port */
@@ -280,6 +330,36 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	/*
+	 * cs-gpios needs to be populated as per the schematics
+	 * fxos8700  - CS#0
+	 * fxas21002 - CS#1
+	 */
+	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>,
+		   <&gpiob 9 GPIO_ACTIVE_LOW>;
+	clock-frequency = <DT_FREQ_M(1)>;
+
+
+	fxos8700@0 {
+		compatible = "nxp,fxos8700";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	fxas21002@1 {
+		compatible = "nxp,fxas21002";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
+		int1-gpios = <&gpioe 7 GPIO_ACTIVE_LOW>;
+		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
 };
 
 /* external spi */

@@ -28,6 +28,7 @@ source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
+source "modules/Kconfig.s32"
 source "modules/Kconfig.silabs"
 source "modules/Kconfig.simplelink"
 source "modules/Kconfig.sof"
@@ -88,9 +89,6 @@ comment "loramac-node module not available."
 
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE
-
-comment "FFF module not available."
-	depends on !ZEPHYR_FFF_MODULE
 
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE

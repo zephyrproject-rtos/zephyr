@@ -1074,7 +1074,7 @@ static inline int bt_ots_obj_id_to_str(uint64_t obj_id, char *str, size_t len)
 			id[5], id[4], id[3], id[2], id[1], id[0]);
 }
 
-/** @brief Displays one or more object metadata as text with BT_INFO.
+/** @brief Displays one or more object metadata as text with LOG_INF.
  *
  * @param metadata Pointer to the first (or only) metadata in an array.
  * @param count    Number of metadata objects to display information of.

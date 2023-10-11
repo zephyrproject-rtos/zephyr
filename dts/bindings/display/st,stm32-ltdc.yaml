@@ -10,21 +10,18 @@ include: [display-controller.yaml,  pinctrl-device.yaml]
 properties:
     disp-on-gpios:
       type: phandle-array
-      required: false
       description: |
         Display on/off GPIO pin.
         Configure the GPIO polarity (active high/active low) according to LCD datasheet.
 
     bl-ctrl-gpios:
       type: phandle-array
-      required: false
       description: |
         Backlight on/off GPIO pin.
         Configure the GPIO polarity (active high/active low) according to LCD datasheet.
 
     ext-sdram:
       type: phandle
-      required: false
       description: |
         External SDRAM in which frame buffer will be stored.
         If not defined, internal RAM will be used.
@@ -102,15 +99,12 @@ properties:
 
     def-back-color-red:
       type: int
-      required: false
       description: Default display background color - red
 
     def-back-color-green:
       type: int
-      required: false
       description: Default display background color - green
 
     def-back-color-blue:
       type: int
-      required: false
       description: Default display background color - blue

@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#define ARC_MP_PRIMARY_CPU_ID 0
+
 #ifndef _ASMLANGUAGE
 
 extern void z_arc_firq_stack_set(void);

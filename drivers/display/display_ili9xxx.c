@@ -351,7 +351,7 @@ static int ili9xxx_init(const struct device *dev)
 
 	int r;
 
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI device is not ready");
 		return -ENODEV;
 	}

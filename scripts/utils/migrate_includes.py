@@ -23,7 +23,7 @@ import sys
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 
-EXTENSIONS = ("c", "cpp", "h", "dts", "dtsi", "rst", "S", "overlay", "ld")
+EXTENSIONS = ("c", "cpp", "h", "hpp", "dts", "dtsi", "rst", "S", "overlay", "ld")
 
 
 def update_includes(project, dry_run):

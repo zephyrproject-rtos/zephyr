@@ -37,9 +37,8 @@
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_conn
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -657,6 +656,11 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
 
+	if ((PDU_DC_CTRL_RX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
+	    (max_rx_octets < PDU_DC_CTRL_RX_SIZE_MAX)) {
+		max_rx_octets = PDU_DC_CTRL_RX_SIZE_MAX;
+	}
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_rx;
 #else /* !CONFIG_BT_CTLR_PHY */
@@ -708,6 +712,11 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
 	max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
+	if ((PDU_DC_CTRL_TX_SIZE_MAX > PDU_DC_PAYLOAD_SIZE_MIN) &&
+	    (max_tx_octets < PDU_DC_CTRL_TX_SIZE_MAX)) {
+		max_tx_octets = PDU_DC_CTRL_TX_SIZE_MAX;
+	}
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_tx;
@@ -788,7 +797,9 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 
 		max_tx_octets = ull_conn_lll_max_tx_octets_get(lll);
 
-		if (p->len > max_tx_octets) {
+		if (((PDU_DC_CTRL_TX_SIZE_MAX <= PDU_DC_PAYLOAD_SIZE_MIN) ||
+		     (p->ll_id != PDU_DATA_LLID_CTRL)) &&
+		    (p->len > max_tx_octets)) {
 			p->len = max_tx_octets;
 			p->md = 1U;
 		} else if ((link->next != lll->memq_tx.tail) ||

@@ -2,10 +2,6 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-FILE(GLOB SOURCES
-  src/*.c
-)
-
 # Propagate NO_ENC to compile
 if(NO_ENC)
   add_compile_definitions(NO_ENC)
@@ -40,4 +36,10 @@ if(NO_PHY)
   list(REMOVE_ITEM ll_sw_sources ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c)
 endif()
 
-target_sources(testbinary PRIVATE ${ll_sw_sources} ${mock_sources} ${common_sources})
+target_sources(testbinary
+  PRIVATE
+    src/main.c
+    ${ll_sw_sources}
+    ${mock_sources}
+    ${common_sources}
+)

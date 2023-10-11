@@ -27,6 +27,8 @@ class TwisterConfigParser:
                        "arch_exclude": {"type": "set"},
                        "extra_sections": {"type": "list", "default": []},
                        "integration_platforms": {"type": "list", "default": []},
+                       "ignore_faults": {"type": "bool", "default": False },
+                       "ignore_qemu_crash": {"type": "bool", "default": False },
                        "testcases": {"type": "list", "default": []},
                        "platform_type": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
@@ -36,7 +38,8 @@ class TwisterConfigParser:
                        "filter": {"type": "str"},
                        "harness": {"type": "str", "default": "test"},
                        "harness_config": {"type": "map", "default": {}},
-                       "seed": {"type": "int", "default": 0}
+                       "seed": {"type": "int", "default": 0},
+                       "sysbuild": {"type": "bool", "default": False}
                        }
 
     def __init__(self, filename, schema):

@@ -353,7 +353,7 @@ static bool eeprom_at25_bus_is_ready(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 
-	return spi_is_ready(&config->bus.spi);
+	return spi_is_ready_dt(&config->bus.spi);
 }
 
 static int eeprom_at25_rdsr(const struct device *dev, uint8_t *status)

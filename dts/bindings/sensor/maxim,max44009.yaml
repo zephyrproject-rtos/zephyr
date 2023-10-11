@@ -7,9 +7,8 @@ description: |
 
 compatible: "maxim,max44009"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
       type: phandle-array
-      required: false

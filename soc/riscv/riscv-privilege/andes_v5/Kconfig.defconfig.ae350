@@ -18,7 +18,7 @@ config IDLE_STACK_SIZE
 config TEST_EXTRA_STACK_SIZE
 	default 1024
 
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 1
 	range 1 8
 

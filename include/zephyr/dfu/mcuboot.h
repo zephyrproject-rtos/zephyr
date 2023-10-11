@@ -5,6 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief MCUboot public API for MCUboot control of image boot process
+ *
+ * The header declares API functions that can be used to get information
+ * on and select application images for boot.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DFU_MCUBOOT_H_
 #define ZEPHYR_INCLUDE_DFU_MCUBOOT_H_
 
@@ -12,6 +20,13 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
+
+/**
+ * @brief MCUboot public API for MCUboot control of image boot process
+ *
+ * @defgroup mcuboot_api MCUboot image control API
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -251,5 +266,9 @@ int boot_erase_img_bank(uint8_t area_id);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif  /* ZEPHYR_INCLUDE_DFU_MCUBOOT_H_ */

@@ -18,9 +18,17 @@
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
+/* z_phys_map() doesn't have alignment requirements, any oddly-sized buffer
+ * can get mapped. BUF_SIZE has a odd size to make sure the mapped buffer
+ * spans multiple pages.
+ */
+#define BUF_SIZE	(CONFIG_MMU_PAGE_SIZE + 907)
+#define BUF_OFFSET	1238
+
+#define TEST_PAGE_SZ	ROUND_UP(BUF_OFFSET + BUF_SIZE, CONFIG_MMU_PAGE_SIZE)
+
 __pinned_noinit
-static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE)
-			test_page[2 * CONFIG_MMU_PAGE_SIZE];
+static uint8_t __aligned(CONFIG_MMU_PAGE_SIZE) test_page[TEST_PAGE_SZ];
 
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
@@ -34,13 +42,6 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		k_fatal_halt(reason);
 	}
 }
-
-
-/* z_phys_map() doesn't have alignment requirements, any oddly-sized buffer
- * can get mapped. This will span two pages.
- */
-#define BUF_SIZE	5003
-#define BUF_OFFSET	1238
 
 /**
  * Show that mapping an irregular size buffer works and RW flag is respected
@@ -58,19 +59,39 @@ ZTEST(mem_map, test_z_phys_map_rw)
 	z_phys_map(&mapped_rw, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS | K_MEM_PERM_RW);
 
-	/* Initialize buf with some bytes */
-	for (int i = 0; i < BUF_SIZE; i++) {
-		mapped_rw[i] = (uint8_t)(i % 256);
-	}
-
 	/* Map again this time only allowing reads */
 	z_phys_map(&mapped_ro, z_mem_phys_addr(buf),
 		   BUF_SIZE, BASE_FLAGS);
 
-	/* Check that the mapped area contains the expected data. */
+	/* Initialize read-write buf with some bytes */
 	for (int i = 0; i < BUF_SIZE; i++) {
+		mapped_rw[i] = (uint8_t)(i % 256);
+	}
+
+	/* Check that the backing buffer contains the expected data. */
+	for (int i = 0; i < BUF_SIZE; i++) {
+		uint8_t expected_val = (uint8_t)(i % 256);
+
+		zassert_equal(expected_val, buf[i],
+			      "unexpected byte at buffer index %d (%u != %u)",
+			      i, expected_val, buf[i]);
+
+		zassert_equal(buf[i], mapped_rw[i],
+			      "unequal byte at RW index %d (%u != %u)",
+			      i, buf[i], mapped_rw[i]);
+	}
+
+	/* Check that the read-only mapped area contains the expected data. */
+	for (int i = 0; i < BUF_SIZE; i++) {
+		uint8_t expected_val = (uint8_t)(i % 256);
+
+		zassert_equal(expected_val, mapped_ro[i],
+			      "unexpected byte at RO index %d (%u != %u)",
+			      i, expected_val, mapped_ro[i]);
+
 		zassert_equal(buf[i], mapped_ro[i],
-			      "unequal byte at index %d", i);
+			      "unequal byte at RO index %d (%u != %u)",
+			      i, buf[i], mapped_ro[i]);
 	}
 
 	/* This should explode since writes are forbidden */
@@ -191,6 +212,46 @@ ZTEST(mem_map, test_z_phys_unmap)
 	mapped[0] = 42;
 	printk("shouldn't get here\n");
 	ztest_test_fail();
+}
+
+/**
+ * Show that z_phys_unmap() can reclaim the virtual region correctly.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST(mem_map, test_z_phys_map_unmap_reclaim_addr)
+{
+	uint8_t *mapped, *mapped_old;
+	uint8_t *buf = test_page + BUF_OFFSET;
+
+	/* Map the buffer the first time. */
+	z_phys_map(&mapped, z_mem_phys_addr(buf),
+		   BUF_SIZE, BASE_FLAGS);
+
+	printk("Mapped (1st time): %p\n", mapped);
+
+	/* Store the pointer for later comparison. */
+	mapped_old = mapped;
+
+	/*
+	 * Unmap the buffer.
+	 * This should reclaim the bits in virtual region tracking,
+	 * so that the next time z_phys_map() is called with
+	 * the same arguments, it will return the same address.
+	 */
+	z_phys_unmap(mapped, BUF_SIZE);
+
+	/*
+	 * Map again the same buffer using same parameters.
+	 * It should give us back the same virtual address
+	 * as above when it is mapped the first time.
+	 */
+	z_phys_map(&mapped, z_mem_phys_addr(buf),
+		   BUF_SIZE, BASE_FLAGS);
+
+	printk("Mapped (2nd time): %p\n", mapped);
+
+	zassert_equal(mapped, mapped_old, "Virtual memory region not reclaimed!");
 }
 
 /**

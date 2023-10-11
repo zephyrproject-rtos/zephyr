@@ -67,7 +67,7 @@ description: |
 
 compatible: "espressif,esp32-pcnt"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [sensor-device.yaml, pinctrl-device.yaml]
 
 child-binding:
   description: PCNT Unit configuration.
@@ -92,7 +92,6 @@ child-binding:
 
     filter:
       type: int
-      required: false
       description: Pulse length (ns) to be ignored
 
   child-binding:
@@ -110,7 +109,6 @@ child-binding:
 
       sig-pos-mode:
         type: int
-        required: false
         enum:
         - 0
         - 1
@@ -124,7 +122,6 @@ child-binding:
 
       sig-neg-mode:
         type: int
-        required: false
         enum:
         - 0
         - 1
@@ -138,7 +135,6 @@ child-binding:
 
       ctrl-h-mode:
         type: int
-        required: false
         enum:
         - 0
         - 1
@@ -152,7 +148,6 @@ child-binding:
 
       ctrl-l-mode:
         type: int
-        required: false
         enum:
         - 0
         - 1

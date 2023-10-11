@@ -37,12 +37,12 @@ const struct isotp_fc_opts fc_opts_single = {
 };
 const struct isotp_msg_id rx_addr = {
 	.std_id = 0x10,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 0
 };
 const struct isotp_msg_id tx_addr = {
 	.std_id = 0x11,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.ide = 0,
 	.use_ext_addr = 0
 };
 
@@ -50,7 +50,7 @@ struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 uint8_t data_buf[128];
 
-void send_complette_cb(int error_nr, void *arg)
+void send_complete_cb(int error_nr, void *arg)
 {
 	zassert_equal(error_nr, ISOTP_N_OK, "Sending failed (%d)", error_nr);
 }
@@ -60,7 +60,7 @@ static void send_sf(const struct device *can_dev)
 	int ret;
 
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SIZE_SF,
-			 &rx_addr, &tx_addr, send_complette_cb, NULL);
+			 &rx_addr, &tx_addr, send_complete_cb, NULL);
 	zassert_equal(ret, 0, "Send returned %d", ret);
 }
 
@@ -110,7 +110,7 @@ static void send_test_data(const struct device *can_dev, const uint8_t *data,
 	int ret;
 
 	ret = isotp_send(&send_ctx, can_dev, data, len, &rx_addr, &tx_addr,
-			  send_complette_cb, NULL);
+			  send_complete_cb, NULL);
 	zassert_equal(ret, 0, "Send returned %d", ret);
 }
 
@@ -168,7 +168,7 @@ static void check_data(const uint8_t *recv_data, const uint8_t *send_data, size_
 	if (ret) {
 		printk("expected bytes:\n");
 		print_hex(send_data, len);
-		printk("\nreceived (%d bytes):\n", len);
+		printk("\nreceived (%zu bytes):\n", len);
 		print_hex(recv_data, len);
 		printk("\n");
 	}

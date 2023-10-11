@@ -224,19 +224,27 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->slave_cfg) {
 		data->slave_cfg = config;
+		if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
+			LOG_DBG("i2c: target #1 registered with 10-bit address");
+		} else {
+			LL_I2C_SetOwnAddress1(i2c, config->address << 1U, LL_I2C_OWNADDRESS1_7BIT);
+			LOG_DBG("i2c: target #1 registered with 7-bit address");
+		}
 
-		LL_I2C_SetOwnAddress1(i2c, config->address << 1U,
-				      LL_I2C_OWNADDRESS1_7BIT);
 		LL_I2C_EnableOwnAddress1(i2c);
 
-		LOG_DBG("i2c: slave #1 registered");
+		LOG_DBG("i2c: target #1 registered");
 	} else {
 		data->slave2_cfg = config;
 
+		if (data->slave2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+			return -EINVAL;
+		}
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
 				      LL_I2C_OWNADDRESS2_NOMASK);
 		LL_I2C_EnableOwnAddress2(i2c);
-		LOG_DBG("i2c: slave #2 registered");
+		LOG_DBG("i2c: target #2 registered");
 	}
 
 	data->slave_attached = true;

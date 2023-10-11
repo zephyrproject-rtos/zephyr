@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2022 Kamil Serwus
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <atmel/samc2x.dtsi>
+
+/ {
+	aliases {
+		sercom-4 = &sercom4;
+		sercom-5 = &sercom5;
+	};
+
+	soc {
+		adc1: adc@42004800 {
+			compatible = "atmel,sam0-adc";
+			status = "disabled";
+			reg = <0x42004800 0x30>;
+			interrupts = <26 0>;
+			interrupt-names = "resrdy";
+			clocks = <&gclk 34>, <&mclk 0x1c 18>;
+			clock-names = "GCLK", "MCLK";
+			gclk = <0>;
+			prescaler = <4>;
+			#io-channel-cells = <1>;
+		};
+
+		sercom4: sercom@42001400 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42001400 0x40>;
+			interrupts = <13 0>;
+			clocks = <&gclk 23>, <&mclk 0x1c 5>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+
+		sercom5: sercom@42001800 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x42001800 0x40>;
+			interrupts = <14 0>;
+			clocks = <&gclk 25>, <&mclk 0x1c 6>;
+			clock-names = "GCLK", "MCLK";
+			status = "disabled";
+		};
+	};
+};

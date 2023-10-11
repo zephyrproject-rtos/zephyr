@@ -25,12 +25,10 @@ properties:
 
     dig2-gpios:
       type: phandle-array
-      required: false
       description: RX and TX Frame Time Stamping(TX_ARET)
 
     clkm-gpios:
       type: phandle-array
-      required: false
       description: Master clock signal output
 
     local-mac-address:

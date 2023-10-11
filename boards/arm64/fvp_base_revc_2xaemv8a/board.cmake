@@ -6,7 +6,7 @@ set(ARMFVP_BIN_NAME FVP_Base_RevC-2xAEMvA)
 
 set(ARMFVP_FLAGS
   -C bp.secure_memory=0
-  -C cluster0.NUM_CORES=${CONFIG_MP_NUM_CPUS}
+  -C cluster0.NUM_CORES=${CONFIG_MP_MAX_NUM_CPUS}
   -C bp.refcounter.non_arch_start_at_default=1
   # UART0 config
   -C bp.pl011_uart0.out_file=-

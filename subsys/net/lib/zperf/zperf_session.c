@@ -129,7 +129,7 @@ void zperf_reset_session_stats(struct session *session)
 
 	session->counter = 0U;
 	session->start_time = 0U;
-	session->next_id = 0U;
+	session->next_id = 1U;
 	session->length = 0U;
 	session->outorder = 0U;
 	session->error = 0U;

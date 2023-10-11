@@ -36,11 +36,14 @@ extern "C" {
 static inline void socketcan_to_can_frame(const struct socketcan_frame *sframe,
 					  struct can_frame *zframe)
 {
-	zframe->id_type = (sframe->can_id & BIT(31)) >> 31;
-	zframe->rtr = (sframe->can_id & BIT(30)) >> 30;
+	memset(zframe, 0, sizeof(*zframe));
+
+	zframe->flags |= (sframe->can_id & BIT(31)) != 0 ? CAN_FRAME_IDE : 0;
+	zframe->flags |= (sframe->can_id & BIT(30)) != 0 ? CAN_FRAME_RTR : 0;
+	zframe->flags |= (sframe->flags & CANFD_FDF) != 0 ? CAN_FRAME_FDF : 0;
+	zframe->flags |= (sframe->flags & CANFD_BRS) != 0 ? CAN_FRAME_BRS : 0;
 	zframe->id = sframe->can_id & BIT_MASK(29);
 	zframe->dlc = can_bytes_to_dlc(sframe->len);
-	zframe->fd = !!(sframe->flags & CANFD_FDF);
 	memcpy(zframe->data, sframe->data, MIN(sizeof(sframe->data), sizeof(zframe->data)));
 }
 
@@ -53,11 +56,21 @@ static inline void socketcan_to_can_frame(const struct socketcan_frame *sframe,
 static inline void socketcan_from_can_frame(const struct can_frame *zframe,
 					    struct socketcan_frame *sframe)
 {
-	sframe->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) | zframe->id;
+	memset(sframe, 0, sizeof(*sframe));
+
+	sframe->can_id = zframe->id;
+	sframe->can_id |= (zframe->flags & CAN_FRAME_IDE) != 0 ? BIT(31) : 0;
+	sframe->can_id |= (zframe->flags & CAN_FRAME_RTR) != 0 ? BIT(30) : 0;
 	sframe->len = can_dlc_to_bytes(zframe->dlc);
-	if (zframe->fd) {
-		sframe->flags = CANFD_FDF;
+
+	if ((zframe->flags & CAN_FRAME_FDF) != 0) {
+		sframe->flags |= CANFD_FDF;
 	}
+
+	if ((zframe->flags & CAN_FRAME_BRS) != 0) {
+		sframe->flags |= CANFD_BRS;
+	}
+
 	memcpy(sframe->data, zframe->data, MIN(sizeof(zframe->data), sizeof(sframe->data)));
 }
 
@@ -70,11 +83,19 @@ static inline void socketcan_from_can_frame(const struct can_frame *zframe,
 static inline void socketcan_to_can_filter(const struct socketcan_filter *sfilter,
 					   struct can_filter *zfilter)
 {
-	zfilter->id_type = (sfilter->can_id & BIT(31)) >> 31;
-	zfilter->rtr = (sfilter->can_id & BIT(30)) >> 30;
+	memset(zfilter, 0, sizeof(*zfilter));
+
+	zfilter->flags |= (sfilter->can_id & BIT(31)) != 0 ? CAN_FILTER_IDE : 0;
 	zfilter->id = sfilter->can_id & BIT_MASK(29);
-	zfilter->rtr_mask = (sfilter->can_mask & BIT(30)) >> 30;
-	zfilter->id_mask = sfilter->can_mask & BIT_MASK(29);
+	zfilter->mask = sfilter->can_mask & BIT_MASK(29);
+
+	if ((sfilter->can_mask & BIT(30)) == 0) {
+		zfilter->flags |= CAN_FILTER_DATA | CAN_FILTER_RTR;
+	} else if ((sfilter->can_id & BIT(30)) == 0) {
+		zfilter->flags |= CAN_FILTER_DATA;
+	} else {
+		zfilter->flags |= CAN_FILTER_RTR;
+	}
 }
 
 /**
@@ -86,10 +107,19 @@ static inline void socketcan_to_can_filter(const struct socketcan_filter *sfilte
 static inline void socketcan_from_can_filter(const struct can_filter *zfilter,
 					     struct socketcan_filter *sfilter)
 {
-	sfilter->can_id = (zfilter->id_type << 31) |
-		(zfilter->rtr << 30) | zfilter->id;
-	sfilter->can_mask = (zfilter->rtr_mask << 30) |
-		(zfilter->id_type << 31) | zfilter->id_mask;
+	memset(sfilter, 0, sizeof(*sfilter));
+
+	sfilter->can_id = zfilter->id;
+	sfilter->can_id |= (zfilter->flags & CAN_FILTER_IDE) != 0 ? BIT(31) : 0;
+	sfilter->can_id |= (zfilter->flags & CAN_FILTER_RTR) != 0 ? BIT(30) : 0;
+
+	sfilter->can_mask = zfilter->mask;
+	sfilter->can_mask |= (zfilter->flags & CAN_FILTER_IDE) != 0 ? BIT(31) : 0;
+
+	if ((zfilter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
+		(CAN_FILTER_DATA | CAN_FILTER_RTR)) {
+		sfilter->can_mask |= BIT(30);
+	}
 }
 
 /**

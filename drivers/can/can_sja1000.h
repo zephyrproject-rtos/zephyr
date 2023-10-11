@@ -83,8 +83,9 @@ struct can_sja1000_config {
 		.phase_seg1 = DT_PROP_OR(node_id, phase_seg1, 0),                                  \
 		.phase_seg2 = DT_PROP_OR(node_id, phase_seg2, 0),                                  \
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
-		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 1000000), .ocr = _ocr,      \
-		.cdr = _cdr, .custom = _custom,                                                    \
+		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 1000000),                   \
+		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
+		.ocr = _ocr, .cdr = _cdr, .custom = _custom,                                       \
 	}
 
 #define CAN_SJA1000_DT_CONFIG_INST_GET(inst, _custom, _read_reg, _write_reg, _ocr, _cdr)           \
@@ -145,7 +146,7 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 void can_sja1000_set_state_change_callback(const struct device *dev,
 					   can_state_change_callback_t callback, void *user_data);
 
-int can_sja1000_get_max_filters(const struct device *dev, enum can_ide id_type);
+int can_sja1000_get_max_filters(const struct device *dev, bool ide);
 
 int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 

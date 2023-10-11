@@ -218,7 +218,7 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 	DEVICE_DT_INST_DEFINE(n, &rv32m1_tpm_init, NULL, \
 			    &rv32m1_tpm_data_##n, \
 			    &rv32m1_tpm_config_##n, \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
 			    &rv32m1_tpm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TPM_DEVICE)

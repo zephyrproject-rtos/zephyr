@@ -5,6 +5,8 @@
 
 #include <intel_adsp_ipc.h>
 #include <adsp_ipc_regs.h>
+#include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 
 
 void intel_adsp_ipc_set_message_handler(const struct device *dev,
@@ -63,10 +65,20 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 		(regs->idd & INTEL_ADSP_IPC_DONE) : (regs->ida & INTEL_ADSP_IPC_DONE);
 
 	if (done) {
+		bool external_completion = false;
+
 		if (devdata->done_notify != NULL) {
-			devdata->done_notify(dev, devdata->done_arg);
+			external_completion = devdata->done_notify(dev, devdata->done_arg);
 		}
+		devdata->tx_ack_pending = false;
 		k_sem_give(&devdata->sem);
+
+		/* IPC completion registers will be set externally */
+		if (external_completion) {
+			k_spin_unlock(&devdata->lock, key);
+			return;
+		}
+
 		if (IS_ENABLED(CONFIG_SOC_INTEL_CAVS_V15)) {
 			regs->idd = INTEL_ADSP_IPC_DONE;
 		} else {
@@ -127,12 +139,13 @@ bool intel_adsp_ipc_send_message(const struct device *dev,
 	struct intel_adsp_ipc_data *devdata = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&devdata->lock);
 
-	if ((config->regs->idr & INTEL_ADSP_IPC_BUSY) != 0) {
+	if ((config->regs->idr & INTEL_ADSP_IPC_BUSY) != 0 || devdata->tx_ack_pending) {
 		k_spin_unlock(&devdata->lock, key);
 		return false;
 	}
 
 	k_sem_init(&devdata->sem, 0, 1);
+	devdata->tx_ack_pending = true;
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
 	k_spin_unlock(&devdata->lock, key);
@@ -156,13 +169,9 @@ bool intel_adsp_ipc_send_message_sync(const struct device *dev,
 #if DT_NODE_EXISTS(INTEL_ADSP_IPC_HOST_DTNODE)
 
 #if defined(CONFIG_SOC_SERIES_INTEL_ACE)
-#include <ace_v1x-regs.h>
-
 static inline void ace_ipc_intc_unmask(void)
 {
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		MTL_DINT[i].ie[MTL_INTL_HIPC] = BIT(0);
-	}
+	ACE_DINT[0].ie[ACE_INTL_HIPC] = BIT(0);
 }
 #else
 static inline void ace_ipc_intc_unmask(void) {}

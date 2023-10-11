@@ -9,4 +9,5 @@ tests:
       nucleo_f767zi nucleo_g071rb nucleo_g474re nucleo_h743zi nucleo_l073rz
       nucleo_l152re disco_l475_iot1 nucleo_l552ze_q stm32l562e_dk
       b_u585i_iot02a nucleo_wl55jc
+      esp32 esp32s2_saola
     depends_on: dac

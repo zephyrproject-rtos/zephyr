@@ -5,9 +5,7 @@ tests:
     tags: kernel
     min_ram: 20
   kernel.lifo.usage.linker_generator:
-    platform_exclude: m2gl025_miv
     platform_allow: qemu_cortex_m3
-    tags: kernel linker_generator
-    min_ram: 20
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

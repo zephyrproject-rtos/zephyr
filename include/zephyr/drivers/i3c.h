@@ -265,7 +265,7 @@ enum i3c_sdr_target_error_codes {
 /** Write message to I3C bus. */
 #define I3C_MSG_WRITE			(0U << 0U)
 
-/** Read message from I2C bus. */
+/** Read message from I3C bus. */
 #define I3C_MSG_READ			BIT(0)
 
 /** @cond INTERNAL_HIDDEN */
@@ -288,6 +288,9 @@ enum i3c_sdr_target_error_codes {
 
 /** Transfer use HDR mode */
 #define I3C_MSG_HDR			BIT(3)
+
+/** Skip I3C broadcast header. Private Transfers only. */
+#define I3C_MSG_NBCH			BIT(4)
 
 /** I3C HDR Mode 0 */
 #define I3C_MSG_HDR_MODE0		BIT(0)
@@ -372,10 +375,10 @@ enum i3c_config_type {
  */
 struct i3c_config_controller {
 	/**
-	 * True if the controller is to be the primary controller
-	 * of the bus. False to be the secondary controller.
+	 * True if the controller is to be the secondary controller
+	 * of the bus. False to be the primary controller.
 	 */
-	bool is_primary;
+	bool is_secondary;
 
 	struct {
 		/** SCL frequency (in Hz) for I3C transfers. */
@@ -625,6 +628,24 @@ __subsystem struct i3c_driver_api {
 	 */
 	int (*target_unregister)(const struct device *dev,
 				 struct i3c_target_config *cfg);
+
+	/**
+	 * Write to the TX FIFO
+	 *
+	 * This writes to the target tx fifo
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_tx_write
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param buf Pointer to the buffer
+	 * @param len Length of the buffer
+	 *
+	 * @return @see i3c_target_tx_write
+	 */
+	int (*target_tx_write)(const struct device *dev,
+				 uint8_t *buf, uint16_t len);
 };
 
 /**

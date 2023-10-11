@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(gpio_lmp90xxx);
 
 #include <zephyr/drivers/adc/lmp90xxx.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 struct gpio_lmp90xxx_config {
 	/* gpio_driver_config needs to be first */

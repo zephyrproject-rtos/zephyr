@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(intc_gicv3_its, LOG_LEVEL_ERR);
 #define GITS_BASER_NR_REGS              8
 
 /* convenient access to all redistributors base address */
-extern mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
+extern mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 
 #define SIZE_256                        256
 #define SIZE_4K                         KB(4)
@@ -198,7 +198,8 @@ static int its_alloc_tables(struct gicv3_its_data *data)
 			page_cnt = ROUND_UP(entry_size << device_ids, page_size) / page_size;
 			break;
 		case GITS_BASER_TYPE_COLLECTION:
-			page_cnt = ROUND_UP(entry_size * CONFIG_MP_NUM_CPUS, page_size) / page_size;
+			page_cnt =
+				ROUND_UP(entry_size * CONFIG_MP_MAX_NUM_CPUS, page_size)/page_size;
 			break;
 		default:
 			continue;

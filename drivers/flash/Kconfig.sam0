@@ -16,6 +16,8 @@ menuconfig SOC_FLASH_SAM0
 config SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 	bool "Emulate byte-sized pages"
 	depends on SOC_FLASH_SAM0
+	default y if SOC_SERIES_SAMC20 || \
+		     SOC_SERIES_SAMC21
 	help
 	  Emulate a device with byte-sized pages by doing a
 	  read/modify/erase/write.

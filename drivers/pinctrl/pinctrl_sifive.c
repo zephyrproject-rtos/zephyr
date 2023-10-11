@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT sifive_pinctrl
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/sifive-pinctrl.h>

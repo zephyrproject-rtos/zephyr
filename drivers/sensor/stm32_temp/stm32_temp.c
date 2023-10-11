@@ -162,7 +162,7 @@ static int stm32_temp_init(const struct device *dev)
 			     .is_ntc = DT_INST_PROP(inst, ntc)))				\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, stm32_temp_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, stm32_temp_init, NULL,				\
 			      &stm32_temp_dev_data_##inst, &stm32_temp_dev_config_##inst,	\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
 			      &stm32_temp_driver_api);						\

@@ -3,6 +3,8 @@
 
 config IPM_STM32_IPCC
 	bool "STM32 IPCC controller"
+	default y
+	depends on DT_HAS_ST_STM32_IPCC_MAILBOX_ENABLED
 	select USE_STM32_LL_IPCC
 	help
 	  Driver for stm32 IPCC mailboxes
@@ -17,7 +19,8 @@ config IPM_STM32_IPCC_PROCID
 
 config IPM_STM32_HSEM
 	bool "STM32 HSEM controller"
-	depends on STM32H7_DUAL_CORE
+	default y
+	depends on DT_HAS_ST_STM32_HSEM_MAILBOX_ENABLED
 	help
 	  Driver for stm32 HSEM mailbox
 

@@ -216,7 +216,7 @@ static const struct sensor_driver_api sht4x_api = {
 		.repeatability = DT_INST_PROP(n, repeatability)	\
 	};							\
 								\
-	DEVICE_DT_INST_DEFINE(n,				\
+	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
 			      sht4x_init,			\
 			      NULL,				\
 			      &sht4x_data_##n,			\

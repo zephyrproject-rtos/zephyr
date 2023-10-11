@@ -34,7 +34,6 @@ include: ["st,stm32-fmc.yaml"]
 properties:
     st,mem-swap:
       type: string
-      required: false
       default: "disable" # reset state
       enum:
         - "disable"

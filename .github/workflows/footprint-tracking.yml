@@ -13,27 +13,21 @@ on:
       # same commit
       - 'v*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  footprint-tracking-cancel:
-    runs-on: ubuntu-20.04
-    if: github.repository == 'zephyrproject-rtos/zephyr'
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.6.0
-        with:
-          access_token: ${{ github.token }}
   footprint-tracking:
     runs-on: ubuntu-20.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
-    needs: footprint-tracking-cancel
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
-      CLANG_ROOT_DIR: /usr/lib/llvm-12
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
       - name: Apply container owner mismatch workaround
@@ -52,7 +46,7 @@ jobs:
           sudo pip3 install -U setuptools wheel pip gitpython
 
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0

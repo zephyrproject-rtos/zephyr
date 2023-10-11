@@ -23,19 +23,16 @@ properties:
 
     disconnect-gpios:
       type: phandle-array
-      required: false
       description: |
         Some boards use a USB DISCONNECT pin to enable
         the pull-up resistor on USB Data Positive signal.
 
     phys:
       type: phandle
-      required: false
       description: PHY provider specifier
 
     enable-pin-remap:
       type: boolean
-      required: false
       description: |
         For STM32F0 series SoCs on QFN28 and TSSOP20 packages
         enable PIN pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6).

@@ -36,6 +36,9 @@ config SENSOR_SHELL_BATTERY
 	  in a convenient format. It makes use of a fuel gauge to read its
 	  information.
 
+config SENSOR_INFO
+	bool "Sensor Info iterable section"
+
 comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
@@ -91,6 +94,8 @@ source "drivers/sensor/fxas21002/Kconfig"
 source "drivers/sensor/fxos8700/Kconfig"
 
 source "drivers/sensor/grove/Kconfig"
+
+source "drivers/sensor/grow_r502a/Kconfig"
 
 source "drivers/sensor/ti_hdc/Kconfig"
 
@@ -196,6 +201,8 @@ source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/qdec_sam/Kconfig"
 
+source "drivers/sensor/qdec_stm32/Kconfig"
+
 source "drivers/sensor/sbs_gauge/Kconfig"
 
 source "drivers/sensor/sgp40/Kconfig"
@@ -255,5 +262,7 @@ source "drivers/sensor/ite_tach_it8xxx2/Kconfig"
 source "drivers/sensor/ite_vcmp_it8xxx2/Kconfig"
 
 source "drivers/sensor/pcnt_esp32/Kconfig"
+
+source "drivers/sensor/esp32_temp/Kconfig"
 
 endif # SENSOR

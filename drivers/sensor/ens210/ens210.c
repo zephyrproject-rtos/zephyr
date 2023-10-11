@@ -344,7 +344,7 @@ static int ens210_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, ens210_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ens210_init, NULL,				\
 			      &ens210_data_##inst, &ens210_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &en210_driver_api);		\
 

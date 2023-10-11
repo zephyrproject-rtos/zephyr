@@ -7,6 +7,4 @@
 #include <zephyr/kernel.h>
 #include "mocks/id.h"
 
-DEFINE_FFF_GLOBALS;
-
 DEFINE_FAKE_VOID_FUNC(bt_id_del, struct bt_keys *);

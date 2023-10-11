@@ -8,8 +8,10 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <hw_counter.h>
+#include <limits.h>
 
 #define DRIVER_CONFIG_INFO_FLAGS (COUNTER_CONFIG_INFO_COUNT_UP)
 #define DRIVER_CONFIG_INFO_CHANNELS 1

@@ -6,14 +6,14 @@
 
 / {
 	chosen {
-		zephyr,display = &sh1106;
+		zephyr,display = &sh1106_sh1106_128x64;
 	};
 };
 
 &arduino_i2c {
 	status = "okay";
 
-	sh1106: ssd1306@3c {
+	sh1106_sh1106_128x64: ssd1306@3c {
 		compatible = "solomon,ssd1306fb";
 		reg = <0x3c>;
 		width = <128>;

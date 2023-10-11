@@ -212,11 +212,45 @@ The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 | GPIO_AD_20_SAI1_RX_DATA00 | SAI1_RX_DATA00 | SAI              |
 +---------------------------+----------------+------------------+
 
+Dual Core samples
+*****************
+
++-----------+------------------+----------------------------+
+| Core      | Boot Address     | Comment                    |
++===========+==================+============================+
+| Cortex M7 | 0x30000000[630K] | primary core               |
++-----------+------------------+----------------------------+
+| Cortex M4 | 0x20020000[96k]  | boots from OCRAM           |
++-----------+------------------+----------------------------+
+
++----------+------------------+-----------------------+
+| Memory   | Address[Size]    | Comment               |
++==========+==================+=======================+
+| flexspi1 | 0x30000000[16M]  | Cortex M7 flash       |
++----------+------------------+-----------------------+
+| sdram0   | 0x80030000[64M]  | Cortex M7 ram         |
++----------+------------------+-----------------------+
+| ocram    | 0x20020000[512K] | Cortex M4 "flash"     |
++----------+------------------+-----------------------+
+| sram1    | 0x20000000[128K] | Cortex M4 ram         |
++----------+------------------+-----------------------+
+| ocram2   | 0x200C0000[512K] | Mailbox/shared memory |
++----------+------------------+-----------------------+
+
+Only the first 16K of ocram2 has the correct MPU region attributes set to be
+used as shared memory
+
 System Clock
 ============
 
-The MIMXRT1170 SoC is configured to use the 32 KHz low frequency oscillator on
-the board as a source for the GPT timer to generate a system clock.
+The MIMXRT1170 SoC is configured to use SysTick as the system clock source,
+running at 996MHz. When targeting the M4 core, SysTick will also be used,
+running at 400MHz
+
+When power management is enabled, the 32 KHz low frequency
+oscillator on the board will be used as a source for the GPT timer to
+generate a system clock. This clock enables lower power states, at the
+cost of reduced resolution
 
 Serial Port
 ===========
@@ -229,6 +263,20 @@ Programming and Debugging
 
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
+
+Building a Dual-Core Image
+==========================
+Dual core samples load the M4 core image from flash into the shared ``ocram``
+region. The M7 core then sets the M4 boot address to this region. The only
+sample currently enabled for dual core builds is the ``openamp`` sample.
+To flash a dual core sample, the M4 image must be flashed first, so that it is
+written to flash. Then, the M7 image must be flashed. The openamp sysbuild
+sample will do this automatically by setting the image order.
+
+The secondary core can be debugged normally in single core builds
+(where the target is ``mimxrt1170_evk_cm4``). For dual core builds, the
+secondary core should be placed into a loop, then a debugger can be attached
+(see `AN13264`_, section 4.2.3 for more information)
 
 Configuring a Debug Probe
 =========================
@@ -325,3 +373,6 @@ should see the following message in the terminal:
 
 .. _Using J-Link with MIMXRT1160-EVK or MIMXRT1170-EVK:
    https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Using-J-Link-with-MIMXRT1160-EVK-or-MIMXRT1170-EVK/ta-p/1529760
+
+.. _AN13264:
+   https://www.nxp.com/docs/en/application-note/AN13264.pdf

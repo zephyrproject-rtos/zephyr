@@ -23,17 +23,14 @@ properties:
 
     clkout-source:
       type: int
-      required: false
       description: clkout clock source
 
     clkout-divider:
       type: int
-      required: false
       description: clkout divider
 
     "#clock-cells":
       type: int
-      required: false
       const: 3
 
 clock-cells:

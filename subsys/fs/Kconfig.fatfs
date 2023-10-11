@@ -17,21 +17,18 @@ menu "ELM FAT file system settings"
 config FS_FATFS_READ_ONLY
 	bool "Read-only support for all volumes"
 	help
-	  The option excludes write code from ELM FAT file system driver;
-	  when selected, it no longer will be possible to write data on
-	  the FAT FS.
-	  If write support is not needed, enabling this flag will slightly
-	  reduce application size.
-	  This option translates to _FS_READONLY within ELM FAT file system
-	  driver; it enables exclusion, from compilation, of write supporting
-	  code.
+	  Excludes write code from ELM FAT file system driver.
+	  Select this when using FAT for read-only access to slightly
+	  reduce code size.
+	  This option affects FF_FS_READONLY defined in ffconf.h, inside
+	  ELM FAT module.
 
 config FS_FATFS_MKFS
 	bool
 	help
-	  This option translates to _USE_MKFS within ELM FAT file system
-	  driver; it enables additional code that is required for formatting
-	  volumes to ELM FAT.
+	  Adds code for creating disks with FAT file system.
+	  This option affects FF_USE_MKFS defined in ffconf.h, inside
+	  ELM FAT module.
 
 config FS_FATFS_MOUNT_MKFS
 	bool "Allow formatting volume when mounting fails"
@@ -42,6 +39,13 @@ config FS_FATFS_MOUNT_MKFS
 	  a volume if no file system is found.
 	  If formatting is not needed, disabling this flag will slightly
 	  reduce application size.
+	  Note: This option is destructive to data and will automatically
+	  destroy your disk, if mount attempt fails. In case when your
+	  disk can be detached from a device and recovered using other
+	  system, it may be worth disabling this option.
+	  When this option is disabled, disk needs to be FAT formatted
+	  prior to connecting to a device, otherwise it will not be
+	  mountable.
 
 if FS_FATFS_MOUNT_MKFS
 
@@ -65,10 +69,22 @@ config FS_FATFS_EXFAT
 config FS_FATFS_NUM_FILES
 	int "Maximum number of opened files"
 	default 4
+	help
+	  Affects how many file objects area available for parallel
+	  use by FAT driver. Each object is of size sizeof(FIL), where
+	  FIL is defined in ff.h of ELM FAT driver, and is pre-allocated
+	  at compile-time.
+	  This affects use of fs_open on FAT type mounted file systems.
 
 config FS_FATFS_NUM_DIRS
 	int "Maximum number of opened directories"
 	default 4
+	help
+	  Affects how many directory objects area available for parallel
+	  use by FAT driver. Each object is of size sizeof(DIR), where
+	  DIR is defined in ff.h of ELM FAT driver, and is pre-allocated
+	  at compile-time.
+	  This affects use of fs_opendir on FAT type mounted file systems.
 
 config FS_FATFS_LFN
 	bool "Long filenames (LFN)"
@@ -86,16 +102,23 @@ config FS_FATFS_LFN_MODE_BSS
 	bool "Static buffer"
 	help
 	  Enable LFN with static working buffer on the BSS. Always NOT thread-safe.
+	  This option affects FF_USE_LFN defined in ffconf.h, inside
+	  ELM FAT module, by setting its value to 1.
 
 config FS_FATFS_LFN_MODE_STACK
 	bool "Stack buffer"
 	help
 	  Enable LFN with dynamic working buffer on the STACK.
+	  This option affects FF_USE_LFN defined in ffconf.h, inside
+	  ELM FAT module, by setting its value to 2.
 
 config FS_FATFS_LFN_MODE_HEAP
 	bool "Heap buffer"
+	depends on HEAP_MEM_POOL_SIZE > 0
 	help
 	  Enable LFN with dynamic working buffer on the HEAP.
+	  This option affects FF_USE_LFN defined in ffconf.h, inside
+	  ELM FAT module, by setting its value to 3.
 
 endchoice
 
@@ -115,32 +138,65 @@ config FS_FATFS_CODEPAGE
 	default 437
 	help
 	  Valid code page values:
-	  437 - U.S.
-	  720 - Arabic
-	  737 - Greek
-	  771 - KBL
-	  775 - Baltic
-	  850 - Latin 1
-	  852 - Latin 2
-	  855 - Cyrillic
-	  857 - Turkish
-	  860 - Portuguese
-	  861 - Icelandic
-	  862 - Hebrew
-	  863 - Canadian French
-	  864 - Arabic
-	  865 - Nordic
-	  866 - Russian
-	  869 - Greek 2
-	  932 - Japanese (DBCS)
-	  936 - Simplified Chinese (DBCS)
-	  949 - Korean (DBCS)
-	  950 - Traditional Chinese (DBCS)
+	   437 - U.S.
+	   720 - Arabic
+	   737 - Greek
+	   771 - KBL
+	   775 - Baltic
+	   850 - Latin 1
+	   852 - Latin 2
+	   855 - Cyrillic
+	   857 - Turkish
+	   860 - Portuguese
+	   861 - Icelandic
+	   862 - Hebrew
+	   863 - Canadian French
+	   864 - Arabic
+	   865 - Nordic
+	   866 - Russian
+	   869 - Greek 2
+	   932 - Japanese (DBCS)
+	   936 - Simplified Chinese (DBCS)
+	   949 - Korean (DBCS)
+	   950 - Traditional Chinese (DBCS)
+	   0 - Include all supported code pages
+	  This option affects FF_CODE_PAGE defined in ffconf.h, inside
+	  ELM FAT module.
 
 config FS_FATFS_MAX_SS
 	int "Maximum supported sector size"
 	range 512 4096
 	default 512
+	help
+	  Value set here will be used as maximum supported read/write
+	  sector size, with 512 being minimum value.
+	  Option affects write/read granularity and will increase
+	  size of buffers used by FAT driver, which in practice affects
+	  how much RAM each FATFS object, used with FAT mount point,
+	  requires, which is this value plus some constant amount,
+	  independent from this setting.
+	  This will affect your compile time RAM allocation, when
+	  mount point is defined as static/global life time variable,
+	  or stack.
+	  When this value is set to 512, all mount points will use
+	  512 as sector size, all other values will cause FAT driver
+	  to query device for sector size on mount.
+	  This option affects FF_MAX_SS defined in ffconf.h, inside
+	  ELM FAT module.
+
+config FS_FATFS_MIN_SS
+	int "Minimum expected sector size"
+	range 512 FS_FATFS_MAX_SS
+	default 512
+	help
+	  Specifies minimum sector size the FAT FS driver is expected to
+	  support. Set this to FS_FATFS_MAX_FS when you have single
+	  device with FAT FS or all connected devices use the same
+	  sector size, to have slight reduction in code in FAT FS driver.
+	  The reduction comes from the fact that FAT FS does not have to
+	  query every connected device for sector size.
+	  This option affects FF_MIN_SS defined in ffconf.h, inside
+	  ELM FAT module.
 
 config FS_FATFS_WINDOW_ALIGNMENT
 	int "Memory alignment for the member \"win\" in FATFS"
@@ -153,7 +209,7 @@ config FS_FATFS_WINDOW_ALIGNMENT
 	  provided here is used as such alignment. Note that the window
 	  buffer is internal element of FATFS structure, which means
 	  that, in worst scenario, value provided here may cause FATFS
-	  structure to have size of twice the value
+	  structure to have size of twice the value.
 
 endmenu
 

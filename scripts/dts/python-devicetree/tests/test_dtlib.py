@@ -5,6 +5,7 @@ import contextlib
 import os
 import re
 import tempfile
+from copy import deepcopy
 
 import pytest
 
@@ -2304,3 +2305,114 @@ def test_duplicate_nodes():
 	};
 };
 """)
+
+def test_deepcopy():
+    dt = parse('''
+/dts-v1/;
+
+memreservelabel: /memreserve/ 0xdeadbeef 0x4000;
+
+/ {
+	aliases {
+		foo = &nodelabel;
+	};
+	rootprop_label: rootprop = prop_offset0: <0x12345678 prop_offset4: 0x0>;
+	nodelabel: node@1234 {
+		nodeprop = <3>;
+		subnode {
+			ref-to-node = <&nodelabel>;
+		};
+	};
+};
+''')
+    dt_copy = deepcopy(dt)
+    assert dt_copy.filename == dt.filename
+
+    # dt_copy.root checks:
+    root_copy = dt_copy.root
+    assert root_copy is not dt.root
+    assert root_copy.parent is None
+    assert root_copy.dt is dt_copy
+    assert root_copy.labels == []
+    assert root_copy.labels is not dt.root.labels
+
+    # dt_copy.memreserves checks:
+    assert dt_copy.memreserves == [
+        (set(['memreservelabel']), 0xdeadbeef, 0x4000)
+    ]
+    assert dt_copy.memreserves is not dt.memreserves
+
+    # Miscellaneous dt_copy node and property checks:
+    assert 'rootprop' in root_copy.props
+    rootprop_copy = root_copy.props['rootprop']
+    assert rootprop_copy is not dt.root.props['rootprop']
+    assert rootprop_copy.name == 'rootprop'
+    assert rootprop_copy.value == b'\x12\x34\x56\x78\0\0\0\0'
+    assert rootprop_copy.type == dtlib.Type.NUMS
+    assert rootprop_copy.labels == ['rootprop_label']
+    assert rootprop_copy.labels is not dt.root.props['rootprop'].labels
+    assert rootprop_copy.offset_labels == {
+        'prop_offset0': 0,
+        'prop_offset4': 4,
+    }
+    assert rootprop_copy.offset_labels is not \
+        dt.root.props['rootprop'].offset_labels
+    assert rootprop_copy.node is root_copy
+
+    assert dt_copy.has_node('/node@1234')
+    node_copy = dt_copy.get_node('/node@1234')
+    assert node_copy is not dt.get_node('/node@1234')
+    assert node_copy.labels == ['nodelabel']
+    assert node_copy.labels is not dt.get_node('/node@1234').labels
+    assert node_copy.name == 'node@1234'
+    assert node_copy.unit_addr == '1234'
+    assert node_copy.path == '/node@1234'
+    assert set(node_copy.props.keys()) == set(['nodeprop', 'phandle'])
+    assert node_copy.props is not dt.get_node('/node@1234').props
+    assert node_copy.props['nodeprop'].name == 'nodeprop'
+    assert node_copy.props['nodeprop'].labels == []
+    assert node_copy.props['nodeprop'].offset_labels == {}
+    assert node_copy.props['nodeprop'].node is node_copy
+    assert node_copy.dt is dt_copy
+
+    assert 'subnode' in node_copy.nodes
+    subnode_copy = node_copy.nodes['subnode']
+    assert subnode_copy is not dt.get_node('/node@1234/subnode')
+    assert subnode_copy.parent is node_copy
+
+    # dt_copy.label2prop and .label2prop_offset checks:
+    assert 'rootprop_label' in dt_copy.label2prop
+    assert dt_copy.label2prop['rootprop_label'] is rootprop_copy
+    assert list(dt_copy.label2prop_offset.keys()) == ['prop_offset0',
+                                                      'prop_offset4']
+    assert dt_copy.label2prop_offset['prop_offset4'][0] is rootprop_copy
+    assert dt_copy.label2prop_offset['prop_offset4'][1] == 4
+
+    # dt_copy.foo2node checks:
+    def check_node_lookup_table(attr_name):
+        original = getattr(dt, attr_name)
+        copy = getattr(dt_copy, attr_name)
+        assert original is not copy
+        assert list(original.keys()) == list(copy.keys())
+        assert all([original_node.path == copy_node.path and
+                    original_node is not copy_node
+                    for original_node, copy_node in
+                    zip(original.values(), copy.values())])
+
+    check_node_lookup_table('alias2node')
+    check_node_lookup_table('label2node')
+    check_node_lookup_table('phandle2node')
+
+    assert list(dt_copy.alias2node.keys()) == ['foo']
+    assert dt_copy.alias2node['foo'] is node_copy
+
+    assert list(dt_copy.label2node.keys()) == ['nodelabel']
+    assert dt_copy.label2node['nodelabel'] is node_copy
+
+    assert dt_copy.phandle2node
+    # This is a little awkward because of the way dtlib allocates
+    # phandles.
+    phandle2node_copy_values = set(dt_copy.phandle2node.values())
+    assert node_copy in phandle2node_copy_values
+    for node in dt.node_iter():
+        assert node not in phandle2node_copy_values

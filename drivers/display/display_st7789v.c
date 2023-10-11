@@ -347,7 +347,7 @@ static int st7789v_init(const struct device *dev)
 {
 	const struct st7789v_config *config = dev->config;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}

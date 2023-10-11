@@ -30,6 +30,7 @@
 #endif
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#define STM32_QSPI_RESET_CMD DT_INST_NODE_HAS_PROP(0, reset_cmd)
 
 #include <stm32_ll_dma.h>
 
@@ -37,6 +38,7 @@
 #include "jesd216.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_QSPI_FIFO_THRESHOLD         8
@@ -48,25 +50,27 @@ LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 
-uint32_t table_m_size[] = {
+#if STM32_QSPI_USE_DMA
+static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
 	LL_DMA_MDATAALIGN_HALFWORD,
 	LL_DMA_MDATAALIGN_WORD,
 };
 
-uint32_t table_p_size[] = {
+static const uint32_t table_p_size[] = {
 	LL_DMA_PDATAALIGN_BYTE,
 	LL_DMA_PDATAALIGN_HALFWORD,
 	LL_DMA_PDATAALIGN_WORD,
 };
 
 /* Lookup table to set dma priority from the DTS */
-uint32_t table_priority[] = {
+static const uint32_t table_priority[] = {
 	DMA_PRIORITY_LOW,
 	DMA_PRIORITY_MEDIUM,
 	DMA_PRIORITY_HIGH,
 	DMA_PRIORITY_VERY_HIGH,
 };
+#endif /* STM32_QSPI_USE_DMA */
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
@@ -1054,6 +1058,31 @@ static void flash_stm32_qspi_gpio_reset(const struct device *dev)
 }
 #endif
 
+#if STM32_QSPI_RESET_CMD
+static int flash_stm32_qspi_send_reset(const struct device *dev)
+{
+	QSPI_CommandTypeDef cmd = {
+		.Instruction = SPI_NOR_CMD_RESET_EN,
+		.InstructionMode = QSPI_INSTRUCTION_1_LINE,
+	};
+	int ret;
+
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		return ret;
+	}
+
+	cmd.Instruction = SPI_NOR_CMD_RESET_MEM;
+	ret = qspi_send_cmd(dev, &cmd);
+	if (ret != 0) {
+		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		return ret;
+	}
+	return 0;
+}
+#endif
+
 static int flash_stm32_qspi_init(const struct device *dev)
 {
 	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
@@ -1176,6 +1205,11 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Run IRQ init */
 	dev_cfg->irq_config(dev);
+
+#if STM32_QSPI_RESET_CMD
+	flash_stm32_qspi_send_reset(dev);
+	k_busy_wait(DT_INST_PROP(0, reset_cmd_wait));
+#endif
 
 	/* Run NOR init */
 	const uint8_t decl_nph = 2;

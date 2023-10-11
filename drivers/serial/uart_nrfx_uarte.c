@@ -17,6 +17,7 @@
 #include <soc.h>
 #include <helpers/nrfx_gppi.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/irq.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
@@ -661,9 +662,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 			nrfx_timer_enable(&cfg->timer);
 			nrfx_timer_clear(&cfg->timer);
 		}
-	}
 
-	if (HW_RX_COUNTING_ENABLED(data)) {
 		ret = gppi_channel_alloc(&data->async->rx_cnt.ppi);
 		if (ret != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate PPI Channel, "
@@ -671,9 +670,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 			data->async->hw_rx_counting = false;
 			nrfx_timer_uninit(&cfg->timer);
 		}
-	}
 
-	if (HW_RX_COUNTING_ENABLED(data)) {
 #if CONFIG_HAS_HW_NRF_PPI
 		ret = nrfx_ppi_channel_assign(
 			data->async->rx_cnt.ppi,
@@ -1955,10 +1952,11 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		nrf_uarte_enable(uarte);
 
 #ifdef UARTE_ANY_ASYNC
-		if (HW_RX_COUNTING_ENABLED(data)) {
-			nrfx_timer_enable(&cfg->timer);
-		}
 		if (data->async) {
+			if (HW_RX_COUNTING_ENABLED(data)) {
+				nrfx_timer_enable(&cfg->timer);
+			}
+
 			return 0;
 		}
 #endif

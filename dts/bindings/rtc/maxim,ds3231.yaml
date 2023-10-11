@@ -16,7 +16,6 @@ properties:
 
   32k-gpios:
     type: phandle-array
-    required: false
     description: |
 
       32 KiHz open drain output
@@ -27,7 +26,6 @@ properties:
 
   isw-gpios:
     type: phandle-array
-    required: false
     description: |
 
       interrupt/square wave open drain output

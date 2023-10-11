@@ -46,7 +46,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		pwm_led0: pwm_led_0 {
-			pwms = <&pwm0 0 PWM_MSEC(20)>;
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -196,6 +196,9 @@
 
 	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
 		   <&piod 27 GPIO_ACTIVE_LOW>;
+
+	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
 };
 
 &usart1 {

@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_lpspi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 #include <zephyr/drivers/dma.h>
 #endif
@@ -223,6 +224,15 @@ static int spi_mcux_configure(const struct device *dev,
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
+	}
+
+	/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled */
+	LPSPI_Enable(base, false);
+	while ((base->CR & LPSPI_CR_MEN_MASK) != 0U) {
+		/* Wait until LPSPI is disabled. Datasheet:
+		 * After writing 0, MEN (Module Enable) remains set until the LPSPI has completed
+		 * the current transfer and is idle.
+		 */
 	}
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);

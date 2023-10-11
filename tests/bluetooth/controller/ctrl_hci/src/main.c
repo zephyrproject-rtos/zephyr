@@ -368,7 +368,7 @@ void test_hci_conn_update(void)
 	uint8_t err;
 
 	uint8_t cmd, status;
-	uint16_t interval_min, interval_max, latency, timeout;
+	uint16_t interval_min, interval_max, latency, timeout, *offsets;
 
 	uint8_t unknown_cmds[3U] = { 1U, 3U, 255U };
 
@@ -378,6 +378,7 @@ void test_hci_conn_update(void)
 	interval_max = 100U;
 	latency = 5U;
 	timeout = 1000U;
+	offsets = NULL;
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
@@ -387,38 +388,38 @@ void test_hci_conn_update(void)
 
 	/* Unknown Connection ID */
 	err = ll_conn_update(conn_handle + 1, cmd, status, interval_min, interval_max, latency,
-			     timeout);
+			     timeout, offsets);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	/* Unknown commands */
 	for (uint8_t i = 0U; i < sizeof(unknown_cmds); i++) {
 		err = ll_conn_update(conn_handle, unknown_cmds[i], status, interval_min,
-				     interval_max, latency, timeout);
+				     interval_max, latency, timeout, offsets);
 		zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
 	}
 
 	/* Connection Update or Connection Parameter Req. */
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
-			     timeout);
+			     timeout, offsets);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	conn_from_pool->llcp.fex.features_used &= ~BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
-			     timeout);
+			     timeout, offsets);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	/* Connection Parameter Req. Reply */
 	cmd = 2U;
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
 	err = ll_conn_update(conn_handle, cmd, status, interval_min, interval_max, latency,
-			     timeout);
+			     timeout, offsets);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 
 	/* Connection Parameter Req. Neg. Reply */
 	status = 0x01;
 	conn_from_pool->llcp.fex.features_used |= BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
-	err = ll_conn_update(conn_handle, cmd, status, 0U, 0U, 0U, 0U);
+	err = ll_conn_update(conn_handle, cmd, status, 0U, 0U, 0U, 0U, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 }
 

@@ -27,8 +27,7 @@ ZTEST(socket_can, test_socketcan_frame_to_can_frame)
 	sframe.len = sizeof(data);
 	memcpy(sframe.data, data, sizeof(sframe.data));
 
-	expected.rtr = CAN_REMOTEREQUEST;
-	expected.id_type = CAN_EXTENDED_IDENTIFIER;
+	expected.flags = CAN_FRAME_IDE | CAN_FRAME_RTR;
 	expected.id = 1234U;
 	expected.dlc = sizeof(data);
 
@@ -38,8 +37,7 @@ ZTEST(socket_can, test_socketcan_frame_to_can_frame)
 	LOG_HEXDUMP_DBG((const uint8_t *)&zframe, sizeof(zframe), "zframe");
 	LOG_HEXDUMP_DBG((const uint8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_equal(zframe.rtr, expected.rtr, "RTR bit not set");
-	zassert_equal(zframe.id_type, expected.id_type, "Id-type bit not set");
+	zassert_equal(zframe.flags, expected.flags, "Flags not equal");
 	zassert_equal(zframe.id, expected.id, "CAN id invalid");
 	zassert_equal(zframe.dlc, expected.dlc, "Msg length invalid");
 }
@@ -59,8 +57,7 @@ ZTEST(socket_can, test_can_frame_to_socketcan_frame)
 	expected.len = sizeof(data);
 	memcpy(expected.data, data, sizeof(expected.data));
 
-	zframe.rtr = CAN_REMOTEREQUEST;
-	zframe.id_type = CAN_EXTENDED_IDENTIFIER;
+	zframe.flags = CAN_FRAME_IDE | CAN_FRAME_RTR;
 	zframe.id = 1234U;
 	zframe.dlc = sizeof(data);
 	memcpy(zframe.data, data, sizeof(data));
@@ -90,11 +87,9 @@ ZTEST(socket_can, test_socketcan_filter_to_can_filter)
 	sfilter.can_id = BIT(31) | BIT(30) | 1234;
 	sfilter.can_mask = BIT(31) | BIT(30) | 1234;
 
-	expected.rtr = CAN_REMOTEREQUEST;
-	expected.id_type = CAN_EXTENDED_IDENTIFIER;
+	expected.flags = CAN_FILTER_IDE | CAN_FILTER_RTR;
 	expected.id = 1234U;
-	expected.rtr_mask = 1U;
-	expected.id_mask = 1234U;
+	expected.mask = 1234U;
 
 	socketcan_to_can_filter(&sfilter, &zfilter);
 
@@ -102,11 +97,9 @@ ZTEST(socket_can, test_socketcan_filter_to_can_filter)
 	LOG_HEXDUMP_DBG((const uint8_t *)&sfilter, sizeof(sfilter), "sfilter");
 	LOG_HEXDUMP_DBG((const uint8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_equal(zfilter.rtr, expected.rtr, "RTR bit not set");
-	zassert_equal(zfilter.id_type, expected.id_type, "Id-type bit not set");
+	zassert_equal(zfilter.flags, expected.flags, "Flags not equal");
 	zassert_equal(zfilter.id, expected.id, "CAN id invalid");
-	zassert_equal(zfilter.rtr_mask, expected.rtr_mask, "RTR mask bit not set");
-	zassert_equal(zfilter.id_mask, expected.id_mask, "id mask not set");
+	zassert_equal(zfilter.mask, expected.mask, "id mask not set");
 }
 
 /**
@@ -121,11 +114,9 @@ ZTEST(socket_can, test_can_filter_to_socketcan_filter)
 	expected.can_id = BIT(31) | BIT(30) | 1234;
 	expected.can_mask = BIT(31) | BIT(30) | 1234;
 
-	zfilter.rtr = CAN_REMOTEREQUEST;
-	zfilter.id_type = CAN_EXTENDED_IDENTIFIER;
+	zfilter.flags = CAN_FILTER_IDE | CAN_FILTER_RTR;
 	zfilter.id = 1234U;
-	zfilter.rtr_mask = 1U;
-	zfilter.id_mask = 1234U;
+	zfilter.mask = 1234U;
 
 	socketcan_from_can_filter(&zfilter, &sfilter);
 

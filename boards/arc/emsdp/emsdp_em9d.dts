@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <synopsys/emsdp.dtsi>
+#include <mem.h>
 #include "board.dtsi"
 
 / {
@@ -21,6 +22,16 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+	};
+
+	xccm@c0000000 {
+		compatible = "arc,xccm";
+		reg = <0xc0000000 DT_SIZE_K(16)>;
+	};
+
+	yccm@e0000000 {
+		compatible = "arc,yccm";
+		reg = <0xe0000000 DT_SIZE_K(16)>;
 	};
 };
 

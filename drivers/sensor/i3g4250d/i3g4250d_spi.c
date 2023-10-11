@@ -92,7 +92,7 @@ int i3g4250d_spi_init(const struct device *dev)
 	struct i3g4250d_data *i3g4250d = dev->data;
 	const struct i3g4250d_device_config *cfg = dev->config;
 
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		LOG_ERR("spi not ready");
 		return -ENODEV;
 	}

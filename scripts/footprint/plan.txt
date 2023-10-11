@@ -18,10 +18,11 @@ bt_beacon,default,nrf52840dk_nrf52840,samples/bluetooth/beacon,
 bt_peripheral,default,nrf52840dk_nrf52840,samples/bluetooth/peripheral,
 bt_central_hr,default,nrf52840dk_nrf52840,samples/bluetooth/central_hr,
 bt_mesh_demo,default,bbc_microbit,samples/bluetooth/mesh_demo,
-bt_hap_ha,default,nrf52840dk_nrf52840,samples/bluetooth/hap_ha,
 bt_hap_ha,default,nrf5340dk_nrf5340_cpuapp,samples/bluetooth/hap_ha,
+bt_unicast_audio_client,default,nrf5340dk_nrf5340_cpuapp,samples/bluetooth/unicast_audio_client,
+bt_unicast_audio_server,default,nrf5340dk_nrf5340_cpuapp,samples/bluetooth/unicast_audio_server,
 bt_hci_rpmsg,default,nrf5340dk_nrf5340_cpunet,samples/bluetooth/hci_rpmsg,
-bt_hci_rpmsg,iso-broadcast,nrf5340dk_nrf5340_cpunet,samples/bluetooth/hci_rpmsg,-DCONF_FILE=nrf5340_cpunet_iso_broadcast.conf
-bt_hci_rpmsg,iso-receive,nrf5340dk_nrf5340_cpunet,samples/bluetooth/hci_rpmsg,-DCONF_FILE=nrf5340_cpunet_iso_receive.conf
+bt_hci_rpmsg,iso-broadcast,nrf5340dk_nrf5340_cpunet,samples/bluetooth/hci_rpmsg,-DCONF_FILE=nrf5340_cpunet_iso_broadcast-bt_ll_sw_split.conf
+bt_hci_rpmsg,iso-receive,nrf5340dk_nrf5340_cpunet,samples/bluetooth/hci_rpmsg,-DCONF_FILE=nrf5340_cpunet_iso_receive-bt_ll_sw_split.conf
 sof,default,intel_adsp_cavs25,samples/subsys/audio/sof,
 sof,default,nxp_adsp_imx8,samples/subsys/audio/sof,

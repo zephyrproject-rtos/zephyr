@@ -53,7 +53,6 @@ properties:
 
     div-q:
       type: int
-      required: false
       description: |
           PLL division factor for PLL48CK
           Valid range: 2 - 15

@@ -8,6 +8,7 @@
 #include <zephyr/tc_util.h>
 #include <stdbool.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -111,7 +112,10 @@ LOG_BACKEND_DEFINE(backend2, backend_api, true, &context2);
  */
 ZTEST(log_backend_init, test_log_backends_initialization)
 {
-	if (log_backend_count_get() != 2) {
+	int cnt;
+
+	STRUCT_SECTION_COUNT(log_backend, &cnt);
+	if (cnt != 2) {
 		/* Other backends should not be enabled. */
 		ztest_test_skip();
 	}

@@ -14,9 +14,9 @@
 #include "heartbeat.h"
 #include "foundation.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_TRANS)
-#define LOG_MODULE_NAME bt_mesh_hb
-#include "common/log.h"
+#define LOG_LEVEL CONFIG_BT_MESH_TRANS_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_mesh_hb);
 
 /* Heartbeat Publication information for persistent storage. */
 struct hb_pub_val {
@@ -143,7 +143,7 @@ static int heartbeat_send(const struct bt_mesh_send_cb *cb, void *cb_data)
 
 	hb.feat = sys_cpu_to_be16(feat);
 
-	BT_DBG("InitTTL %u feat 0x%04x", pub.ttl, feat);
+	LOG_DBG("InitTTL %u feat 0x%04x", pub.ttl, feat);
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
 				cb, cb_data);
@@ -165,7 +165,7 @@ static void hb_publish(struct k_work *work)
 	struct bt_mesh_subnet *sub;
 	int err;
 
-	BT_DBG("hb_pub.count: %u", pub.count);
+	LOG_DBG("hb_pub.count: %u", pub.count);
 
 	/* Fast exit if disabled or expired */
 	if (pub.period == 0U || pub.count == 0U) {
@@ -174,7 +174,7 @@ static void hb_publish(struct k_work *work)
 
 	sub = bt_mesh_subnet_get(pub.net_idx);
 	if (!sub) {
-		BT_ERR("No matching subnet for idx 0x%02x", pub.net_idx);
+		LOG_ERR("No matching subnet for idx 0x%02x", pub.net_idx);
 		pub.dst = BT_MESH_ADDR_UNASSIGNED;
 		return;
 	}
@@ -191,7 +191,7 @@ int bt_mesh_hb_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	uint16_t feat;
 
 	if (buf->len < 3) {
-		BT_ERR("Too short heartbeat message");
+		LOG_ERR("Too short heartbeat message");
 		return -EINVAL;
 	}
 
@@ -201,12 +201,12 @@ int bt_mesh_hb_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	hops = (init_ttl - rx->ctx.recv_ttl + 1);
 
 	if (rx->ctx.addr != sub.src || rx->ctx.recv_dst != sub.dst) {
-		BT_DBG("No subscription for received heartbeat");
+		LOG_DBG("No subscription for received heartbeat");
 		return 0;
 	}
 
 	if (!k_work_delayable_is_pending(&sub_timer)) {
-		BT_DBG("Heartbeat subscription inactive");
+		LOG_DBG("Heartbeat subscription inactive");
 		return 0;
 	}
 
@@ -217,9 +217,8 @@ int bt_mesh_hb_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		sub.count++;
 	}
 
-	BT_DBG("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x",
-	       rx->ctx.addr, rx->ctx.recv_ttl, init_ttl, hops,
-	       (hops == 1U) ? "" : "s", feat);
+	LOG_DBG("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x", rx->ctx.addr,
+		rx->ctx.recv_ttl, init_ttl, hops, (hops == 1U) ? "" : "s", feat);
 
 	notify_recv(hops, feat);
 
@@ -228,7 +227,7 @@ int bt_mesh_hb_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 static void pub_disable(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 
 	pub.dst = BT_MESH_ADDR_UNASSIGNED;
 	pub.count = 0U;
@@ -257,7 +256,7 @@ uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *new_pub)
 	}
 
 	if (!bt_mesh_subnet_get(new_pub->net_idx)) {
-		BT_ERR("Unknown NetKey 0x%04x", new_pub->net_idx);
+		LOG_ERR("Unknown NetKey 0x%04x", new_pub->net_idx);
 		return STATUS_INVALID_NETKEY;
 	}
 
@@ -293,18 +292,18 @@ void bt_mesh_hb_pub_get(struct bt_mesh_hb_pub *get)
 uint8_t bt_mesh_hb_sub_set(uint16_t src, uint16_t dst, uint32_t period)
 {
 	if (src != BT_MESH_ADDR_UNASSIGNED && !BT_MESH_ADDR_IS_UNICAST(src)) {
-		BT_WARN("Prohibited source address");
+		LOG_WRN("Prohibited source address");
 		return STATUS_INVALID_ADDRESS;
 	}
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(dst) || BT_MESH_ADDR_IS_RFU(dst) ||
 	    (BT_MESH_ADDR_IS_UNICAST(dst) && dst != bt_mesh_primary_addr())) {
-		BT_WARN("Prohibited destination address");
+		LOG_WRN("Prohibited destination address");
 		return STATUS_INVALID_ADDRESS;
 	}
 
 	if (period > (1U << 16)) {
-		BT_WARN("Prohibited subscription period %u s", period);
+		LOG_WRN("Prohibited subscription period %u s", period);
 		return STATUS_CANNOT_SET;
 	}
 
@@ -385,7 +384,7 @@ void bt_mesh_hb_init(void)
 void bt_mesh_hb_start(void)
 {
 	if (pub.count && pub.period) {
-		BT_DBG("Starting heartbeat publication");
+		LOG_DBG("Starting heartbeat publication");
 		k_work_reschedule(&pub_timer, K_NO_WAIT);
 	}
 }
@@ -401,7 +400,7 @@ void bt_mesh_hb_suspend(void)
 void bt_mesh_hb_resume(void)
 {
 	if (pub.period && pub.count) {
-		BT_DBG("Starting heartbeat publication");
+		LOG_DBG("Starting heartbeat publication");
 		k_work_reschedule(&pub_timer, K_NO_WAIT);
 	}
 }
@@ -415,7 +414,7 @@ static int hb_pub_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &hb_val, sizeof(hb_val));
 	if (err) {
-		BT_ERR("Failed to set \'hb_val\'");
+		LOG_ERR("Failed to set \'hb_val\'");
 		return err;
 	}
 
@@ -433,7 +432,7 @@ static int hb_pub_set(const char *name, size_t len_rd,
 
 	(void)bt_mesh_hb_pub_set(&pub);
 
-	BT_DBG("Restored heartbeat publication");
+	LOG_DBG("Restored heartbeat publication");
 
 	return 0;
 }
@@ -461,8 +460,8 @@ void bt_mesh_hb_pub_pending_store(void)
 	}
 
 	if (err) {
-		BT_ERR("Failed to store Heartbeat Publication");
+		LOG_ERR("Failed to store Heartbeat Publication");
 	} else {
-		BT_DBG("Stored Heartbeat Publication");
+		LOG_DBG("Stored Heartbeat Publication");
 	}
 }

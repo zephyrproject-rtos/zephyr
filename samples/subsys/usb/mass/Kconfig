@@ -1,9 +1,6 @@
 # Copyright (c) 2019-2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config USB_DEVICE_PID
-	default USB_PID_MASS_SAMPLE
-
 config APP_WIPE_STORAGE
 	bool "Option to clear the flash area before mounting"
 	help
@@ -61,9 +58,6 @@ config FLASH_MAP
 config FLASH_PAGE_LAYOUT
 	default y
 
-config DISK_FLASH_START
-	default 0x0
-
 config FLASH_LOG_LEVEL
 	default 3
 
@@ -71,22 +65,6 @@ if NORDIC_QSPI_NOR
 
 config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	default 4096
-
-config DISK_FLASH_DEV_NAME
-	default "MX25R64" if "$(dt_nodelabel_enabled,mx25r64)"
-	default "GD25Q16" if "$(dt_nodelabel_enabled,gd25q16)"
-
-config DISK_VOLUME_SIZE
-	default 0x20000
-
-config DISK_FLASH_MAX_RW_SIZE
-	default 4096
-
-config DISK_FLASH_ERASE_ALIGNMENT
-	default 0x1000
-
-config DISK_ERASE_BLOCK_SIZE
-	default 0x1000
 
 endif # NORDIC_QSPI_NOR
 

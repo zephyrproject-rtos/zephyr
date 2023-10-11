@@ -33,6 +33,12 @@
 	KEEP(*(gdt))
 #else /* LINKER_ZEPHYR_FINAL */
 
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_X86_64)
+#define GDT_NUM_TLS_ENTRIES 1
+#else
+#define GDT_NUM_TLS_ENTRIES 0
+#endif
+
 #ifdef CONFIG_USERSPACE
     #define GDT_NUM_ENTRIES 7
 #elif defined(CONFIG_HW_STACK_PROTECTION)
@@ -40,7 +46,7 @@
 #else
     #define GDT_NUM_ENTRIES 3
 #endif /* CONFIG_X86_USERSPACE */
-	. += GDT_NUM_ENTRIES * 8;
+	. += (GDT_NUM_ENTRIES + GDT_NUM_TLS_ENTRIES) * 8;
 #endif /* LINKER_ZEPHYR_FINAL */
 #endif /* CONFIG_GDT_DYNAMIC */
 

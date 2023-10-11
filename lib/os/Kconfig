@@ -16,10 +16,30 @@ config RING_BUFFER
 	  buffers manage their own buffer memory and can store arbitrary data.
 	  For optimal performance, use buffer sizes that are a power of 2.
 
+config NOTIFY
+	bool "Asynchronous Notifications"
+	help
+	  Use this API to support async transactions.
+
 config BASE64
 	bool "Base64 encoding and decoding"
 	help
 	  Enable base64 encoding and decoding functionality
+
+config CRC
+	bool "Cyclic redundancy check (CRC) Support"
+	default y
+	help
+	  Enable use of CRC.
+
+if CRC
+config CRC_SHELL
+	bool "CRC Shell"
+	depends on SHELL
+	select GETOPT
+	help
+	  Enable CRC checking for memory regions from the shell.
+endif # CRC
 
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
@@ -37,6 +57,14 @@ config MPSC_PBUF
 	  Enable usage of mpsc packet buffer. Packet buffer is capable of
 	  storing variable length packets in a circular way and operate directly
 	  on the buffer memory.
+
+config ONOFF
+	bool "On-Off Manager"
+	select NOTIFY
+	help
+	  An on-off manager supports an arbitrary number of clients of a
+	  service which has a binary state.  Example applications are power
+	  rails, clocks, and binary device power management.
 
 config SPSC_PBUF
 	bool "Single producer, single consumer packet buffer"

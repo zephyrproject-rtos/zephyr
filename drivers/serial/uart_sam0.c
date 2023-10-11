@@ -15,6 +15,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <string.h>
+#include <zephyr/irq.h>
 
 #ifndef SERCOM_USART_CTRLA_MODE_USART_INT_CLK
 #define SERCOM_USART_CTRLA_MODE_USART_INT_CLK SERCOM_USART_CTRLA_MODE(0x1)

@@ -11,6 +11,7 @@
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
+#include <ksched.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
@@ -27,6 +28,7 @@
 #define DPORT_APPCPU_CTRL_B    Z_REG(DPORT_BASE, 0x030)
 #define DPORT_APPCPU_CTRL_C    Z_REG(DPORT_BASE, 0x034)
 
+#ifdef CONFIG_SMP
 struct cpustart_rec {
 	int cpu;
 	arch_cpustart_t fn;
@@ -38,10 +40,10 @@ struct cpustart_rec {
 
 volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
-static bool cpus_active[CONFIG_MP_NUM_CPUS];
+static bool cpus_active[CONFIG_MP_MAX_NUM_CPUS];
+#endif
 static struct k_spinlock loglock;
 
-extern void z_sched_ipi(void);
 
 /* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
  * OPERATION!  At least one particular board will experience spurious
@@ -73,6 +75,7 @@ void smp_log(const char *msg)
 #endif
 }
 
+#ifdef CONFIG_SMP
 static void appcpu_entry2(void)
 {
 	volatile int ps, ie;
@@ -165,6 +168,7 @@ static void appcpu_entry1(void)
 {
 	z_appcpu_stack_switch(appcpu_top, appcpu_entry2);
 }
+#endif
 
 /* The calls and sequencing here were extracted from the ESP-32
  * FreeRTOS integration with just a tiny bit of cleanup.  None of the
@@ -194,6 +198,26 @@ void esp_appcpu_start(void *entry_point)
 	DPORT_APPCPU_CTRL_A |= DPORT_APPCPU_RESETTING;
 	DPORT_APPCPU_CTRL_A &= ~DPORT_APPCPU_RESETTING;
 
+
+	/* extracted from SMP LOG above, THIS IS REQUIRED FOR AMP RELIABLE
+	 * OPERATION AS WELL, PLEASE DON'T touch on the dummy write below!
+	 *
+	 * Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
+	 * OPERATION!  At least one particular board will experience spurious
+	 * hangs during initialization (usually the APPCPU fails to start at
+	 * all) without these calls present.  It's not just time -- careful
+	 * use of k_busy_wait() (and even hand-crafted timer loops using the
+	 * Xtensa timer SRs directly) that duplicates the timing exactly still
+	 * sees hangs.  Something is happening inside the ROM UART code that
+	 * magically makes the startup sequence reliable.
+	 *
+	 * Leave this in place until the sequence is understood better.
+	 *
+	 */
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\r');
+	esp_rom_uart_tx_one_char('\n');
+
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
@@ -202,14 +226,13 @@ void esp_appcpu_start(void *entry_point)
 	smp_log("ESP32: APPCPU start sequence complete");
 }
 
+#ifdef CONFIG_SMP
 IRAM_ATTR static void esp_crosscore_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
-#ifdef CONFIG_SMP
 	/* Right now this interrupt is only used for IPIs */
 	z_sched_ipi();
-#endif
 
 	const int core_id = esp_core_id();
 
@@ -250,7 +273,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	}
 
 	cpus_active[0] = true;
-	cpus_active[CONFIG_MP_NUM_CPUS - 1] = true;
+	cpus_active[cpu_num] = true;
 
 	esp_intr_alloc(DT_IRQN(DT_NODELABEL(ipi0)),
 		ESP_INTR_FLAG_IRAM,
@@ -282,3 +305,4 @@ IRAM_ATTR bool arch_cpu_active(int cpu_num)
 {
 	return cpus_active[cpu_num];
 }
+#endif /* CONFIG_SMP */

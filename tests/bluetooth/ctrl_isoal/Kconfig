@@ -18,4 +18,26 @@ config BT_CTLR_ISOAL_SINKS
 config BT_CTLR_ISOAL_SOURCES
 	int "Number of Isochronous Adaptation Layer sinks (for unit tests)"
 
+config BT_CTLR_ISO_RX_SDU_BUFFERS
+	int "Number of SDU fragments that the ISO-AL can buffer"
+	depends on BT_CTLR_ISO_RX_BUFFER_SDUS
+	default 0
+	range 0 64
+	help
+	  Set the number of Isochronous Rx SDU fragments to be buffered in the
+	  ISO-AL per channel. Buffering is required to compute the size of the
+	  received SDU across all the fragments before each is released. The
+	  number of buffers and maximum SDU fragment size will limit the maximum
+	  size of an SDU that can be accurately declared in the HCI ISO Data
+	  header.
+
+config BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN
+	int "Minimum number of playload data bytes in a new segment"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default 1
+	range 1 64
+	help
+	  Minimum number of payload bytes that would make inserting a new
+	  segment into a PDU worthwhile.
+
 source "Kconfig.zephyr"

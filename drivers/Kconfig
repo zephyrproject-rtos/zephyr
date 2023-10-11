@@ -139,7 +139,7 @@ source "drivers/mm/Kconfig"
 
 source "drivers/power_domain/Kconfig"
 
-source "drivers/usbc/Kconfig"
+source "drivers/usb_c/Kconfig"
 
 source "drivers/reset/Kconfig"
 
@@ -148,5 +148,7 @@ source "drivers/mipi_dsi/Kconfig"
 source "drivers/coredump/Kconfig"
 
 source "drivers/xen/Kconfig"
+
+source "drivers/fuel_gauge/Kconfig"
 
 endmenu

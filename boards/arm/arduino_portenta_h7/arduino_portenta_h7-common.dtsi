@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpiok 5 GPIO_ACTIVE_LOW>;
+		};
+		green_led: led_1 {
+			gpios = <&gpiok 6 GPIO_ACTIVE_LOW>;
+		};
+		blue_led: led_2 {
+			gpios = <&gpiok 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <1>;
+	d2ppre1 = <1>;
+	d2ppre2 = <2>;
+	d3ppre = <1>;
+};
+
+/* UART0 in datasheet */
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pi9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+/* UART1 in datasheet */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+/* UART2 in datasheet */
+&usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+/* UART3 in datasheet */
+&uart8 {
+	pinctrl-0 = <&uart8_tx_pj8 &uart8_rx_pj9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+/* I2C0 in datasheet */
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/* I2C1 in datasheet */
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/* I2C2 in datasheet */
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_ph11 &i2c4_sda_ph12>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/* I2C3 in datasheet */
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/* SPI1 in datasheet */
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pi0 &spi2_sck_pi1
+		     &spi2_miso_pc2 &spi2_mosi_pc3>;
+	pinctrl-names = "default";
+};
+
+&can1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_ph13>;
+	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "disabled";
+};

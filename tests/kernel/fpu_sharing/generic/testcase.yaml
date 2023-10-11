@@ -45,6 +45,8 @@ tests:
     extra_configs:
       - CONFIG_X86_SSE_FP_MATH=n
     platform_allow: qemu_x86 qemu_x86_lakemont
+    integration_platforms:
+      - qemu_x86
     slow: true
     tags: fpu kernel
     timeout: 600

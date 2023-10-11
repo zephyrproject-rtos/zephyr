@@ -6,14 +6,14 @@
 
 / {
 	chosen {
-		zephyr,display = &ssd1306;
+		zephyr,display = &ssd1306_ssd1306_128x64_spi;
 	};
 };
 
 &arduino_spi {
 	status = "okay";
 
-	ssd1306: ssd1306@0 {
+	ssd1306_ssd1306_128x64_spi: ssd1306@0 {
 		compatible = "solomon,ssd1306fb";
 		reg = <0x0>;
 		spi-max-frequency = <10000000>;

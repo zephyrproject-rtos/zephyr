@@ -7,17 +7,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/arch_interface.h>
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+#if defined(CONFIG_SMP) && CONFIG_MP_MAX_NUM_CPUS > 1
 #define SMP_TEST
 #endif
 
 #ifdef SMP_TEST
-#define THREADS_NUM CONFIG_MP_NUM_CPUS
+#define MAX_NUM_THREADS CONFIG_MP_MAX_NUM_CPUS
 #define STACK_SIZE  1024
 #define PRIORITY    7
 
-static struct k_thread threads[THREADS_NUM];
-static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
+static struct k_thread threads[MAX_NUM_THREADS];
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, MAX_NUM_THREADS, STACK_SIZE);
 #endif
 
 #define WAIT_US 1000
@@ -102,8 +102,9 @@ static void thread_entry(void *p1, void *p2, void *p3)
 ZTEST(arch_timing, test_arch_timing_smp)
 {
 	int i;
+	unsigned int num_threads = arch_num_cpus();
 
-	for (i = 0; i < THREADS_NUM; i++) {
+	for (i = 0; i < num_threads; i++) {
 		k_thread_create(&threads[i], tstack[i], STACK_SIZE,
 				thread_entry, NULL, NULL, NULL,
 				PRIORITY, 0, K_FOREVER);
@@ -111,7 +112,7 @@ ZTEST(arch_timing, test_arch_timing_smp)
 		k_thread_start(&threads[i]);
 	}
 
-	for (i = 0; i < THREADS_NUM; i++)
+	for (i = 0; i < num_threads; i++)
 		k_thread_join(&threads[i], K_FOREVER);
 }
 #else

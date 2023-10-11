@@ -8,7 +8,6 @@ include: [spi-device.yaml, "jedec,jesd216.yaml"]
 properties:
     cs-interval-unit:
       type: int
-      required: false
       default: 1
       enum:
         - 1
@@ -20,7 +19,6 @@ properties:
 
     cs-interval:
       type: int
-      required: false
       default: 0
       description: |
         Minimum interval between chip select deassertion and assertion. See the
@@ -29,7 +27,6 @@ properties:
 
     cs-setup-time:
       type: int
-      required: false
       default: 3
       description: |
         Chip select setup time, in serial clock cycles. See the TCSS field in
@@ -38,7 +35,6 @@ properties:
 
     cs-hold-time:
       type: int
-      required: false
       default: 3
       description: |
         Chip select hold time, in serial clock cycles. See the TCSH field in
@@ -47,7 +43,6 @@ properties:
 
     data-valid-time:
       type: int
-      required: false
       default: 0
       description: |
         Data valid time, in nanoseconds. See the registers DLLACR through
@@ -55,7 +50,6 @@ properties:
 
     column-space:
       type: int
-      required: false
       default: 0
       description: |
         Column address bit width. Set to zero if the flash does not support
@@ -65,7 +59,6 @@ properties:
 
     word-addressable:
       type: boolean
-      required: false
       description: |
         Don't transmit the least significant address bit when the flash is word
         addressable. See the WA field in registers FLASHA1CR0 through
@@ -73,7 +66,6 @@ properties:
 
     ahb-write-wait-unit:
       type: int
-      required: false
       default: 2
       enum:
         - 2
@@ -91,7 +83,6 @@ properties:
 
     ahb-write-wait-interval:
       type: int
-      required: false
       default: 0
       description: |
         Time to wait between AHB triggered command sequences. See the AWRWAIT

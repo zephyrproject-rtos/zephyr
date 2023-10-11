@@ -11,7 +11,7 @@
 	cs-gpios = <&arduino_header 16
 		    (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 
-	ft800@0 {
+	ft800_ftdi_vm800c: ft800@0 {
 		compatible = "ftdi,ft800";
 		reg = <0x0>;
 		spi-max-frequency = <8000000>;

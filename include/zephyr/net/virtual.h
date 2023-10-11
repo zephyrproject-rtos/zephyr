@@ -237,8 +237,8 @@ static inline void net_virtual_init(struct net_if *iface)
 #endif
 
 /**
- * @brief Take virtual network interface down. This is called
- *        if the underlying interface is going down.
+ * @brief Update the carrier state of the virtual network interface.
+ *        This is called if the underlying interface is going down.
  *
  * @param iface Network interface
  */
@@ -246,6 +246,21 @@ static inline void net_virtual_init(struct net_if *iface)
 void net_virtual_disable(struct net_if *iface);
 #else
 static inline void net_virtual_disable(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Update the carrier state of the virtual network interface.
+ *        This is called if the underlying interface is going up.
+ *
+ * @param iface Network interface
+ */
+#if defined(CONFIG_NET_L2_VIRTUAL)
+void net_virtual_enable(struct net_if *iface);
+#else
+static inline void net_virtual_enable(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 }
@@ -273,13 +288,11 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
 	return virt->get_capabilities(iface);
 }
 
-#define Z_NET_VIRTUAL_INTERFACE_INIT(node_id, dev_name, drv_name,	\
-				     init_fn, pm_action_cb, data, cfg, \
-				     prio, api, mtu)			\
-	Z_NET_DEVICE_INIT(node_id, dev_name, drv_name, init_fn,		\
-			  pm_action_cb, data, cfg, prio, api,		\
-			  VIRTUAL_L2, NET_L2_GET_CTX_TYPE(VIRTUAL_L2),	\
-			  mtu)
+#define Z_NET_VIRTUAL_INTERFACE_INIT(node_id, dev_id, name, init_fn,	\
+				     pm, data, config, prio, api, mtu)	\
+	Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
+			  config, prio, api, VIRTUAL_L2,		\
+			  NET_L2_GET_CTX_TYPE(VIRTUAL_L2), mtu)
 /** @endcond */
 
 /**
@@ -288,14 +301,14 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
  *        The attaching is done automatically when setting up tunneling
  *        when peer IP address is set in IP tunneling driver.
  *
- * @param dev_name Network device name.
- * @param drv_name The name this instance of the driver exposes to
+ * @param dev_id Network device id.
+ * @param name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_action_cb Pointer to PM action callback.
- * Can be NULL if not implemented.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
  * @param data Pointer to the device's private data.
- * @param cfg The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  * @param prio The initialization level at which configuration occurs.
  * @param api Provides an initial pointer to the API function struct
@@ -303,12 +316,11 @@ net_virtual_get_iface_capabilities(struct net_if *iface)
  * @param mtu Maximum transfer unit in bytes for this network interface.
  * This is the default value and its value can be tweaked at runtime.
  */
-#define NET_VIRTUAL_INTERFACE_INIT(dev_name, drv_name, init_fn,		\
-				   pm_action_cb,			\
-				   data, cfg, prio, api, mtu)		\
-	Z_NET_VIRTUAL_INTERFACE_INIT(DT_INVALID_NODE, dev_name,		\
-				     drv_name, init_fn, pm_action_cb,	\
-				     data, cfg, prio, api, mtu)
+#define NET_VIRTUAL_INTERFACE_INIT(dev_id, name, init_fn, pm, data,	\
+				   config, prio, api, mtu)		\
+	Z_NET_VIRTUAL_INTERFACE_INIT(DT_INVALID_NODE, dev_id, name,	\
+				     init_fn, pm, data, config, prio,	\
+				     api, mtu)
 
 /**
  * @}

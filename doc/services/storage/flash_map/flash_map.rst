@@ -6,30 +6,44 @@ Flash map
 The ``<storage/flash_map.h>`` API allows accessing information about device
 flash partitions via :c:struct:`flash_area` structures.
 
-Each ``struct flash_area`` describes a flash partition. The API provides access
+Each :c:struct:`flash_area` describes a flash partition. The API provides access
 to a "flash map", which contains predefined flash areas accessible via globally
-unique ID numbers. You can also create ``flash_area`` structures at runtime for
-application-specific purposes.
+unique ID numbers. The map is created from "fixed-partition" compatible entries
+in DTS file. Users may also create :c:struct:`flash_area` objects at runtime
+for application-specific purposes.
 
-The ``flash_area`` structure contains the name of the flash device the
-partition is part of; this name can be passed to :c:func:`device_get_binding`
-to get the corresponding :c:struct:`device` structure which can be read and
-written to using the :ref:`flash API <flash_api>`. The ``flash_area`` also
-contains the start offset and size of the partition within the flash memory the
-device represents.
+This documentation uses "flash area" when referencing single "fixed-partition"
+entities.
 
-The flash_map.h API provides functions for operating on a ``flash_area``. The
-main examples are :c:func:`flash_area_read` and :c:func:`flash_area_write`.
-These functions are basically wrappers around the flash API with input
-parameter range checks. Not all flash APIs have flash_map.h wrappers, but
-:c:func:`flash_area_get_device` allows easily retrieving the ``struct device``
-from a ``struct flash_area``.
+The :c:struct:`flash_area` contains a pointer to a :c:struct:`device`,
+which can be used to access the flash device an area is placed on directly
+with the :ref:`flash API <flash_api>`.
+Each flash area is characterized by a device it is placed on, offset
+from the beginning of the device and size on the device.
+An additional identifier parameter is used by the :c:func:`flash_area_open`
+function to find flash area in flash map.
 
-Use :c:func:`flash_area_open()` to access a ``struct flash_area``. This
-function takes a flash area ID number and returns a pointer to the flash area
-structure. The ID number for a flash area can be obtained from a human-readable
-"label" using :c:macro:`FLASH_AREA_ID`; these labels are obtained from the
-devicetree as described below.
+The flash_map.h API provides functions for operating on a :c:struct:`flash_area`.
+The main examples are :c:func:`flash_area_read` and :c:func:`flash_area_write`.
+These functions are basically wrappers around the flash API with additional
+offset and size checks, to limit flash operations to a predefined area.
+
+Most ``<storage/flash_map.h>`` API functions require a :c:struct:`flash_area` object pointer
+characterizing the flash area they will be working on. There are two possible
+methods to obtain such a pointer:
+
+ * obtain it using `flash_area_open`;
+
+ * defining a :c:struct:`flash_area` type object, which requires providing
+   a valid :c:struct:`device` object pointer with offset and size of the area
+   within the flash device.
+
+:c:func:`flash_area_open` uses numeric identifiers to search flash map for
+:c:struct:`flash_area` objects and returns, if found, a pointer to an object
+representing area with given ID.
+The ID number for a flash area can be obtained from a fixed-partition
+DTS node label using :c:macro:`FIXED_PARTITION_ID()`; these labels are obtained
+from the devicetree as described below.
 
 Relationship with Devicetree
 ****************************
@@ -47,11 +61,11 @@ both MCUboot and a storage partition. Some details were left out for clarity.
    :language: DTS
    :start-after: start-after-here
 
-Rule for offsets is that each partition offset shall be expressed in relation to
-the flash memory beginning address to which the partition belong.
+Partition offset shall be expressed in relation to the flash memory beginning
+address, to which the partition belongs to.
 
 The ``boot_partition``, ``slot0_partition``, ``slot1_partition``, and
-``scratch_partition`` nodes are defined for MCUboot, though not all MCUboot
+``scratch_partition`` node labels are defined for MCUboot, though not all MCUboot
 configurations require all of them to be defined. See the `MCUboot
 documentation`_ for more details.
 
@@ -60,30 +74,29 @@ nonvolatile storage API.
 
 .. _MCUboot documentation: https://mcuboot.com/
 
-To get a numeric flash area ID from one of the child nodes of the
-``partitions`` node:
+Numeric flash area ID is obtained by passing DTS node label to
+:c:macro:`FIXED_PARTITION_ID()`; for example to obtain ID number
+for ``slot0_partition``, user would invoke ``FIXED_PARITION_ID(slot0_partition)``.
 
-#. take the node's ``label`` property value
-#. lowercase it
-#. convert all special characters to underscores (``_``)
-#. pass the result **without quotes** to ``FLASH_AREA_ID()``
+All :c:macro:`FIXED_PARTITION_` macros take DTS node labels as partition
+identifiers.
 
-For example, the ``flash_area`` ID number for ``slot0_partition`` is
-``FLASH_AREA_ID(image_0)``.
+Users do not have to obtain a :c:struct:`flash_area` object pointer
+using :c:func:`flash_map_open` to get information on flash area size, offset
+or device, if such area is defined in DTS file. Knowing the DTS node label
+of an area, users may use :c:macro:`FIXED_PARTITION_OFFSET()`,
+:c:macro:`FIXED_PARTITION_SIZE()` or :c:macro:`FIXED_PARTITION_DEVICE()`
+respectively to obtain such information directly from DTS node definition.
+For example to obtain offset of ``storage_partition`` it is enough to
+invoke ``FIXED_PARTITION_OFFSET(storage_partition)``.
 
-The same rules apply for other macros which take a "label", such as
-:c:macro:`FLASH_AREA_OFFSET` and :c:macro:`FLASH_AREA_SIZE`. For example,
-``FLASH_AREA_OFFSET(image_0)`` would return the start offset for
-``slot0_partition`` within its flash device. This is determined by the node's
-:ref:`devicetree-reg-property`, and in this case is 0x20000.
-
-To get a pointer to the flash area structure and do something with it starting
-with a devicetree label like ``"image-0"``, use something like this:
+Below example shows how to obtain a :c:struct:`flash_area` object pointer
+using :c:func:`flash_area_open` and DTS node label:
 
 .. code-block:: c
 
    struct flash_area *my_area;
-   int err = flash_area_open(FLASH_AREA_ID(image_0), &my_area);
+   int err = flash_area_open(FIXED_PARITION_ID(slot0_partition), &my_area);
 
    if (err != 0) {
    	handle_the_error(err);

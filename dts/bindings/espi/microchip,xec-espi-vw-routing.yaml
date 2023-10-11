@@ -17,7 +17,6 @@ child-binding:
 
        vw-girq:
         type: array
-        required: false
         description: |
             Routing of MSVW source to aggregated GIRQs
 

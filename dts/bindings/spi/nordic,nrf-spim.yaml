@@ -10,17 +10,14 @@ include: ["nordic,nrf-spi-common.yaml", "memory-region.yaml"]
 properties:
     miso-pull-up:
       type: boolean
-      required: false
       description: Enable pull-up on MISO line
 
     miso-pull-down:
       type: boolean
-      required: false
       description: Enable pull-down on MISO line
 
     anomaly-58-workaround:
       type: boolean
-      required: false
       description: |
         Enables the workaround for the nRF52832 SoC SPIM PAN 58 anomaly.
         Must be used in conjunction with
@@ -28,14 +25,12 @@ properties:
 
     rx-delay-supported:
       type: boolean
-      required: false
       description: |
         Indicates if the SPIM instance has the capability of delaying MISO
         sampling. This property needs to be defined at SoC level DTS files.
 
     rx-delay:
       type: int
-      required: false
       enum:
         - 0
         - 1

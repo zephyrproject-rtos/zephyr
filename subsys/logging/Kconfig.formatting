@@ -104,6 +104,13 @@ config LOG_DICTIONARY_SUPPORT
 
 	  This should be selected by the backend automatically.
 
+config LOG_CUSTOM_FORMAT_SUPPORT
+	bool "Custom format support"
+	default n
+	help
+	  Enable support for custom formatter.
+	  Allows custom format callbacks registering for logging backend.
+
 config LOG_IMMEDIATE_CLEAN_OUTPUT
 	bool "Clean log output"
 	depends on LOG_MODE_IMMEDIATE

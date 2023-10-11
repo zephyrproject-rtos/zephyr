@@ -64,6 +64,7 @@ static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 	uint8_t val;
 
 	/* check if power off */
@@ -76,7 +77,7 @@ static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 		LOG_ERR("ODR too high");
 		return -ENOTSUP;
 	}
-
+	lis2dw12->odr = odr;
 	return lis2dw12_data_rate_set(ctx, val);
 }
 
@@ -238,6 +239,41 @@ static int lis2dw12_attr_set_thresh(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_LIS2DW12_FREEFALL
+static int lis2dw12_attr_set_ff_dur(const struct device *dev,
+					enum sensor_channel chan,
+					enum sensor_attribute attr,
+					const struct sensor_value *val)
+{
+	int rc;
+	uint16_t duration;
+	const struct lis2dw12_device_config *cfg = dev->config;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+
+	LOG_DBG("%s on channel %d", __func__, chan);
+
+	/* can only be set for all directions at once */
+	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
+		return -EINVAL;
+	}
+
+	/**
+	 * The given duration in milliseconds with the val
+	 * parameter is converted into register specific value.
+	 */
+	duration = (lis2dw12->odr * (uint16_t)sensor_value_to_double(val)) / 1000;
+
+	LOG_DBG("Freefall: duration is %d ms", (uint16_t)sensor_value_to_double(val));
+	rc = lis2dw12_ff_dur_set(ctx, duration);
+	if (rc != 0) {
+		LOG_ERR("Failed to set freefall duration");
+		return -EIO;
+	}
+	return rc;
+}
+#endif
+
 static int lis2dw12_attr_set(const struct device *dev,
 			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
@@ -251,6 +287,12 @@ static int lis2dw12_attr_set(const struct device *dev,
 	default:
 		/* Do nothing */
 		break;
+	}
+#endif
+
+#ifdef CONFIG_LIS2DW12_FREEFALL
+	if (attr == SENSOR_ATTR_FF_DUR) {
+		return lis2dw12_attr_set_ff_dur(dev, chan, attr, val);
 	}
 #endif
 
@@ -347,6 +389,7 @@ static int lis2dw12_set_low_noise(const struct device *dev,
 static int lis2dw12_init(const struct device *dev)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
+	struct lis2dw12_data *lis2dw12 = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t wai;
 	int ret;
@@ -390,13 +433,14 @@ static int lis2dw12_init(const struct device *dev)
 		LOG_ERR("Failed to configure low_noise");
 		return ret;
 	}
-
-	/* set default odr to 12.5Hz acc */
-	ret = lis2dw12_set_odr(dev, 12);
+	/* set the output data rate */
+	ret = lis2dw12_set_odr(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("odr init error (12.5 Hz)");
+		LOG_ERR("odr init error %d", cfg->odr);
 		return ret;
 	}
+
+	lis2dw12->odr = cfg->odr;
 
 	LOG_DBG("range is %d", cfg->range);
 	ret = lis2dw12_set_range(dev, LIS2DW12_FS_TO_REG(cfg->range));
@@ -445,7 +489,7 @@ static int lis2dw12_init(const struct device *dev)
  */
 
 #define LIS2DW12_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lis2dw12_init,				\
 			    NULL,					\
 			    &lis2dw12_data_##inst,			\
@@ -468,6 +512,14 @@ static int lis2dw12_init(const struct device *dev)
 #else
 #define LIS2DW12_CONFIG_TAP(inst)
 #endif /* CONFIG_LIS2DW12_TAP */
+
+#ifdef CONFIG_LIS2DW12_FREEFALL
+#define LIS2DW12_CONFIG_FREEFALL(inst)					\
+	.freefall_duration = DT_INST_PROP(inst, ff_duration),	\
+	.freefall_threshold = DT_INST_PROP(inst, ff_threshold),
+#else
+#define LIS2DW12_CONFIG_FREEFALL(inst)
+#endif /* CONFIG_LIS2DW12_FREEFALL */
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
 #define LIS2DW12_CFG_IRQ(inst) \
@@ -498,6 +550,7 @@ static int lis2dw12_init(const struct device *dev)
 					   0),				\
 		},							\
 		.pm = DT_INST_PROP(inst, power_mode),			\
+		.odr = DT_INST_PROP_OR(inst, odr, 12),			\
 		.range = DT_INST_PROP(inst, range),			\
 		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
 		.low_noise = DT_INST_PROP(inst, low_noise),      \
@@ -505,6 +558,7 @@ static int lis2dw12_init(const struct device *dev)
 		.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode), \
 		.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
+		LIS2DW12_CONFIG_FREEFALL(inst)		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
 	}
@@ -527,6 +581,7 @@ static int lis2dw12_init(const struct device *dev)
 			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 		},							\
 		.pm = DT_INST_PROP(inst, power_mode),			\
+		.odr = DT_INST_PROP_OR(inst, odr, 12),			\
 		.range = DT_INST_PROP(inst, range),			\
 		.bw_filt = DT_INST_PROP(inst, bw_filt),      \
 		.low_noise = DT_INST_PROP(inst, low_noise),      \
@@ -534,6 +589,7 @@ static int lis2dw12_init(const struct device *dev)
 		.hp_ref_mode = DT_INST_PROP(inst, hp_ref_mode), \
 		.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),      \
 		LIS2DW12_CONFIG_TAP(inst)				\
+		LIS2DW12_CONFIG_FREEFALL(inst)		\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
 			(LIS2DW12_CFG_IRQ(inst)), ())			\
 	}

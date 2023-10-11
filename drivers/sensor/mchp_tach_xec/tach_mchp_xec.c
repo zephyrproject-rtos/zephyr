@@ -8,7 +8,9 @@
 #define DT_DRV_COMPAT microchip_xec_tach
 
 #include <errno.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/arch/cpu.h>
 #ifdef CONFIG_SOC_SERIES_MEC172X
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
@@ -178,7 +180,7 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 									\
 	XEC_TACH_CONFIG(id);						\
 									\
-	DEVICE_DT_INST_DEFINE(id,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(id,				\
 			    tach_xec_init,				\
 			    NULL,					\
 			    &tach_xec_data_##id,			\

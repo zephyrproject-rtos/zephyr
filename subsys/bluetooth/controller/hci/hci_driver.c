@@ -28,9 +28,6 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_hci_driver
-#include "common/log.h"
 #include "hal/debug.h"
 
 #include "util/util.h"
@@ -62,6 +59,10 @@
 #include "ll.h"
 
 #include "hci_internal.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_ctlr_hci_driver);
 
 static struct k_sem sem_prio_recv;
 static struct k_fifo recv_fifo;
@@ -105,8 +106,9 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 }
 
 
-isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
-				 const struct isoal_sdu_produced *valid_sdu)
+isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
+				 const struct isoal_emitted_sdu_frag *sdu_frag,
+				 const struct isoal_emitted_sdu      *sdu)
 {
 	struct bt_hci_iso_ts_data_hdr *data_hdr;
 	uint16_t packet_status_flag;
@@ -114,16 +116,17 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 	uint16_t handle_packed;
 	uint16_t slen_packed;
 	struct net_buf *buf;
+	uint16_t total_len;
 	uint16_t handle;
 	uint8_t  ts, pb;
 	uint16_t len;
 
-	buf = (struct net_buf *) valid_sdu->contents.dbuf;
+	buf = (struct net_buf *) sdu_frag->sdu.contents.dbuf;
 
 
 	if (buf) {
 #if defined(CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA)
-		if (valid_sdu->status != ISOAL_SDU_STATUS_VALID) {
+		if (sdu_frag->sdu.status != ISOAL_SDU_STATUS_VALID) {
 			/* unref buffer if invalid fragment */
 			net_buf_unref(buf);
 
@@ -131,9 +134,10 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 		}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA */
 
-		pb  = sink_ctx->sdu_production.sdu_state;
-		len = sink_ctx->sdu_production.sdu_written;
-		packet_status_flag = valid_sdu->status;
+		pb  = sdu_frag->sdu_state;
+		len = sdu_frag->sdu_frag_size;
+		total_len = sdu->total_sdu_size;
+		packet_status_flag = sdu->collated_status;
 
 		/* BT Core V5.3 : Vol 4 HCI I/F : Part G HCI Func. Spec.:
 		 * 5.4.5 HCI ISO Data packets
@@ -147,6 +151,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 				net_buf_pull_mem(buf, len);
 			}
 			len = 0;
+			total_len = 0;
 		}
 
 		/*
@@ -169,10 +174,10 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 
 		if (ts) {
 			data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
-			slen_packed = bt_iso_pkt_len_pack(len, packet_status_flag);
+			slen_packed = bt_iso_pkt_len_pack(total_len, packet_status_flag);
 
-			data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
-			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
+			data_hdr->ts = sys_cpu_to_le32((uint32_t) sdu_frag->sdu.timestamp);
+			data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) sdu_frag->sdu.seqn);
 			data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
 
 			len += BT_HCI_ISO_TS_DATA_HDR_SIZE;
@@ -277,7 +282,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			/* Send the rx node up to Host thread,
 			 * recv_thread()
 			 */
-			BT_DBG("ISO RX node enqueue");
+			LOG_DBG("ISO RX node enqueue");
 			k_fifo_put(&recv_fifo, node_rx);
 
 			iso_received = true;
@@ -292,7 +297,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS,
 					     false, K_FOREVER);
 			hci_num_cmplt_encode(buf, handle, num_cmplt);
-			BT_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
+			LOG_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 			bt_recv_prio(buf);
 			k_yield();
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
@@ -311,7 +316,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			buf = process_prio_evt(node_rx, &evt_flags);
 			if (buf) {
-				BT_DBG("Priority event");
+				LOG_DBG("Priority event");
 				if (!(evt_flags & BT_HCI_EVT_FLAG_RECV)) {
 					node_rx->hdr.next = NULL;
 					ll_rx_mem_release((void **)&node_rx);
@@ -330,7 +335,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 				/* Send the rx node up to Host thread,
 				 * recv_thread()
 				 */
-				BT_DBG("RX node enqueue");
+				LOG_DBG("RX node enqueue");
 				k_fifo_put(&recv_fifo, node_rx);
 			}
 		}
@@ -343,14 +348,14 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-		BT_DBG("sem take...");
+		LOG_DBG("sem take...");
 		/* Wait until ULL mayfly has something to give us.
 		 * Blocking-take of the semaphore; we take it once ULL mayfly
 		 * has let it go in ll_rx_sched().
 		 */
 		k_sem_take(&sem_prio_recv, K_FOREVER);
 		/* Now, ULL mayfly has something to give to us */
-		BT_DBG("sem taken");
+		LOG_DBG("sem taken");
 	}
 }
 
@@ -387,14 +392,17 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		uint8_t handle = node_rx->hdr.handle;
 		struct ll_iso_stream_hdr *hdr = NULL;
+		struct ll_conn_iso_stream *cis = NULL;
+		struct ll_iso_datapath *dp = NULL;
 
 		if (IS_CIS_HANDLE(handle)) {
-			struct ll_conn_iso_stream *cis =
-				ll_conn_iso_stream_get(handle);
+			cis = ll_conn_iso_stream_get(handle);
 			hdr = &cis->hdr;
 		}
 
-		struct ll_iso_datapath *dp = hdr->datapath_out;
+		if (cis && !cis->teardown) {
+			dp = hdr->datapath_out;
+		}
 
 		if (dp && dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
 			/* If HCI datapath pass to ISO AL here */
@@ -472,7 +480,7 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 		case HCI_CLASS_ACL_DATA:
 			if (pend || !hbuf_count) {
 				sys_slist_append(&hbuf_pend, (void *)node_rx);
-				BT_DBG("FC: Queuing item: %d", class);
+				LOG_DBG("FC: Queuing item: %d", class);
 				return NULL;
 			}
 			break;
@@ -526,7 +534,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 		    class == HCI_CLASS_EVT_LLCP ||
 		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 			/* node to process later, schedule an iteration */
-			BT_DBG("FC: signalling");
+			LOG_DBG("FC: signalling");
 			k_poll_signal_raise(&hbuf_signal, 0x0);
 		}
 		return NULL;
@@ -535,12 +543,12 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 	switch (class) {
 	case HCI_CLASS_EVT_CONNECTION:
 	case HCI_CLASS_EVT_LLCP:
-		BT_DBG("FC: dequeueing event");
+		LOG_DBG("FC: dequeueing event");
 		(void) sys_slist_get(&hbuf_pend);
 		break;
 	case HCI_CLASS_ACL_DATA:
 		if (hbuf_count) {
-			BT_DBG("FC: dequeueing ACL data");
+			LOG_DBG("FC: dequeueing ACL data");
 			(void) sys_slist_get(&hbuf_pend);
 		} else {
 			/* no buffers, HCI will signal */
@@ -569,7 +577,7 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 				/* more to process, schedule an
 				 * iteration
 				 */
-				BT_DBG("FC: signalling");
+				LOG_DBG("FC: signalling");
 				k_poll_signal_raise(&hbuf_signal, 0x0);
 			}
 		}
@@ -601,7 +609,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		struct node_rx_pdu *node_rx = NULL;
 		struct net_buf *buf = NULL;
 
-		BT_DBG("blocking");
+		LOG_DBG("blocking");
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		int err;
 
@@ -623,7 +631,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 #else
 		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
 #endif
-		BT_DBG("unblocked");
+		LOG_DBG("unblocked");
 
 		if (node_rx && !buf) {
 			/* process regular node from radio */
@@ -640,8 +648,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			buf = net_buf_frag_del(NULL, buf);
 
 			if (frag->len) {
-				BT_DBG("Packet in: type:%u len:%u",
-					bt_buf_get_type(frag),
+				LOG_DBG("Packet in: type:%u len:%u", bt_buf_get_type(frag),
 					frag->len);
 
 				bt_recv(frag);
@@ -661,11 +668,11 @@ static int cmd_handle(struct net_buf *buf)
 
 	evt = hci_cmd_handle(buf, (void **) &node_rx);
 	if (evt) {
-		BT_DBG("Replying with event of %u bytes", evt->len);
+		LOG_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 
 		if (node_rx) {
-			BT_DBG("RX node enqueue");
+			LOG_DBG("RX node enqueue");
 			node_rx->hdr.user_meta = hci_get_class(node_rx);
 			k_fifo_put(&recv_fifo, node_rx);
 		}
@@ -682,7 +689,7 @@ static int acl_handle(struct net_buf *buf)
 
 	err = hci_acl_handle(buf, &evt);
 	if (evt) {
-		BT_DBG("Replying with event of %u bytes", evt->len);
+		LOG_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 	}
 
@@ -698,7 +705,7 @@ static int iso_handle(struct net_buf *buf)
 
 	err = hci_iso_handle(buf, &evt);
 	if (evt) {
-		BT_DBG("Replying with event of %u bytes", evt->len);
+		LOG_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 	}
 
@@ -711,10 +718,10 @@ static int hci_driver_send(struct net_buf *buf)
 	uint8_t type;
 	int err;
 
-	BT_DBG("enter");
+	LOG_DBG("enter");
 
 	if (!buf->len) {
-		BT_ERR("Empty HCI packet");
+		LOG_ERR("Empty HCI packet");
 		return -EINVAL;
 	}
 
@@ -734,7 +741,7 @@ static int hci_driver_send(struct net_buf *buf)
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 	default:
-		BT_ERR("Unknown HCI type %u", type);
+		LOG_ERR("Unknown HCI type %u", type);
 		return -EINVAL;
 	}
 
@@ -742,7 +749,7 @@ static int hci_driver_send(struct net_buf *buf)
 		net_buf_unref(buf);
 	}
 
-	BT_DBG("exit: %d", err);
+	LOG_DBG("exit: %d", err);
 
 	return err;
 }
@@ -758,7 +765,7 @@ static int hci_driver_open(void)
 
 	err = ll_init(&sem_prio_recv);
 	if (err) {
-		BT_ERR("LL initialization failed: %d", err);
+		LOG_ERR("LL initialization failed: %d", err);
 		return err;
 	}
 
@@ -781,7 +788,7 @@ static int hci_driver_open(void)
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&recv_thread_data, "BT RX");
 
-	BT_DBG("Success.");
+	LOG_DBG("Success.");
 
 	return 0;
 }

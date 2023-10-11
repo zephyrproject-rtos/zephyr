@@ -8,6 +8,8 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/reset.h>
+#include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
 
 #include <stm32_ll_tim.h>
@@ -85,6 +87,8 @@ struct counter_stm32_data {
 	uint32_t guard_period;
 	atomic_t cc_int_pending;
 	uint32_t freq;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 };
 
 struct counter_stm32_ch_data {
@@ -338,10 +342,13 @@ static uint32_t counter_stm32_get_pending_int(const struct device *dev)
 	switch (counter_get_num_of_channels(dev)) {
 	case 4U:
 		pending |= LL_TIM_IsActiveFlag_CC4(cfg->timer);
+		__fallthrough;
 	case 3U:
 		pending |= LL_TIM_IsActiveFlag_CC3(cfg->timer);
+		__fallthrough;
 	case 2U:
 		pending |= LL_TIM_IsActiveFlag_CC2(cfg->timer);
+		__fallthrough;
 	case 1U:
 		pending |= LL_TIM_IsActiveFlag_CC1(cfg->timer);
 	}
@@ -469,6 +476,14 @@ static int counter_stm32_init_timer(const struct device *dev)
 	}
 	data->freq = tim_clk / (cfg->prescaler + 1U);
 
+	if (!device_is_ready(data->reset.dev)) {
+		LOG_ERR("reset controller not ready");
+		return -ENODEV;
+	}
+
+	/* Reset timer to default state using RCC */
+	reset_line_toggle_dt(&data->reset);
+
 	/* config/enable IRQ */
 	cfg->irq_config_func(dev);
 
@@ -584,10 +599,13 @@ void counter_stm32_irq_handler(const struct device *dev)
 	switch (counter_get_num_of_channels(dev)) {
 	case 4U:
 		TIM_IRQ_HANDLE_CC(timer, 4);
+		__fallthrough;
 	case 3U:
 		TIM_IRQ_HANDLE_CC(timer, 3);
+		__fallthrough;
 	case 2U:
 		TIM_IRQ_HANDLE_CC(timer, 2);
+		__fallthrough;
 	case 1U:
 		TIM_IRQ_HANDLE_CC(timer, 1);
 	}
@@ -610,7 +628,9 @@ void counter_stm32_irq_handler(const struct device *dev)
 	BUILD_ASSERT(NUM_CH(TIM(idx)) <= TIMER_MAX_CH,				  \
 		     "TIMER too many channels");				  \
 										  \
-	static struct counter_stm32_data counter##idx##_data;			  \
+	static struct counter_stm32_data counter##idx##_data = {		  \
+		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \
+	};									  \
 	static struct counter_stm32_ch_data counter##idx##_ch_data[TIMER_MAX_CH]; \
 										  \
 	static void counter_##idx##_stm32_irq_config(const struct device *dev)	  \

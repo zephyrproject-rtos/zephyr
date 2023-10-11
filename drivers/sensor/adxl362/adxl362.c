@@ -324,7 +324,7 @@ static int adxl362_attr_set(const struct device *dev,
 	{
 		uint16_t timeout = val->val1;
 
-		return adxl362_set_reg(dev, (timeout & 0x7FF), ADXL362_REG_TIME_INACT_L, 2);
+		return adxl362_set_reg(dev, timeout, ADXL362_REG_TIME_INACT_L, 2);
 	}
 	default:
 		/* Do nothing */
@@ -708,7 +708,7 @@ static int adxl362_init(const struct device *dev)
 	uint8_t value;
 	int err;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_DBG("spi device not ready: %s", config->bus.bus->name);
 		return -EINVAL;
 	}
@@ -763,7 +763,7 @@ static int adxl362_init(const struct device *dev)
 			   (.interrupt = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),))	\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, adxl362_init, NULL, &adxl362_data_##inst,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl362_init, NULL, &adxl362_data_##inst,		\
 			&adxl362_config_##inst, POST_KERNEL,					\
 			CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);			\
 

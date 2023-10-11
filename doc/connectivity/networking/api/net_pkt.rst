@@ -318,7 +318,7 @@ chosen).
     NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
     struct net_ipv4_hdr *ipv4_hdr;
 
-    ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_acess);
+    ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
 
 It would be the same for struct net_ipv4_hdr. For a UDP header it
 is likely not to be in a contiguous area in IPv6

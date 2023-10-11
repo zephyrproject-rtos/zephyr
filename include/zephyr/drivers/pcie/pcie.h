@@ -8,8 +8,10 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
 #include <stddef.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +38,106 @@ typedef uint32_t pcie_bdf_t;
  */
 typedef uint32_t pcie_id_t;
 
-struct pcie_mbar {
+/* Helper macro to exclude invalid PCIe identifiers. We should really only
+ * need to look for PCIE_ID_NONE, but because of some broken PCI host controllers
+ * we have try cases where both VID & DID are zero or just one of them is
+ * zero (0x0000) and the other is all ones (0xFFFF).
+ */
+#define PCIE_ID_IS_VALID(id) ((id != PCIE_ID_NONE) && \
+			      (id != PCIE_ID(0x0000, 0x0000)) && \
+			      (id != PCIE_ID(0xFFFF, 0x0000)) && \
+			      (id != PCIE_ID(0x0000, 0xFFFF)))
+
+struct pcie_dev {
+	pcie_bdf_t bdf;
+	pcie_id_t  id;
+};
+
+#define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
+
+/**
+ * @brief Get the PCIe Vendor and Device ID for a node
+ *
+ * @param node_id DTS node identifier
+ * @return The VID/DID combination as pcie_id_t
+ */
+#define PCIE_DT_ID(node_id) PCIE_ID(DT_PROP_OR(node_id, vendor_id, 0xffff), \
+				    DT_PROP_OR(node_id, device_id, 0xffff))
+
+/**
+ * @brief Get the PCIe Vendor and Device ID for a node
+ *
+ * This is equivalent to
+ * <tt>PCIE_DT_ID(DT_DRV_INST(inst))</tt>
+ *
+ * @param inst Devicetree instance number
+ * @return The VID/DID combination as pcie_id_t
+ */
+#define PCIE_DT_INST_ID(inst) PCIE_DT_ID(DT_DRV_INST(inst))
+
+/**
+ * @brief Declare a PCIe context variable for a DTS node
+ *
+ * Declares a PCIe context for a DTS node. This must be done before
+ * using the DEVICE_PCIE_INIT() macro for the same node.
+ *
+ * @param node_id DTS node identifier
+ */
+#define DEVICE_PCIE_DECLARE(node_id)                                        \
+	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {  \
+		.bdf = PCIE_BDF_NONE,                                       \
+		.id = PCIE_DT_ID(node_id),                                  \
+	}
+
+/**
+ * @brief Declare a PCIe context variable for a DTS node
+ *
+ * This is equivalent to
+ * <tt>DEVICE_PCIE_DECLARE(DT_DRV_INST(inst))</tt>
+ *
+ * @param inst Devicetree instance number
+ */
+#define DEVICE_PCIE_INST_DECLARE(inst) DEVICE_PCIE_DECLARE(DT_DRV_INST(inst))
+
+/**
+ * @brief Initialize a named struct member to point at a PCIe context
+ *
+ * Initialize PCIe-related information within a specific instance of
+ * a device config struct, using information from DTS. Using the macro
+ * requires having first created PCIe context struct using the
+ * DEVICE_PCIE_DECLARE() macro.
+ *
+ * Example for an instance of a driver belonging to the "foo" subsystem
+ *
+ * struct foo_config {
+ *	struct pcie_dev *pcie;
+ *	...
+ *};
+ *
+ * DEVICE_PCIE_ID_DECLARE(DT_DRV_INST(...));
+ * struct foo_config my_config = {
+	DEVICE_PCIE_INIT(pcie, DT_DRV_INST(...)),
+ *	...
+ * };
+ *
+ * @param node_id DTS node identifier
+ * @param name Member name within config for the MMIO region
+ */
+#define DEVICE_PCIE_INIT(node_id, name) .name = &Z_DEVICE_PCIE_NAME(node_id)
+
+/**
+ * @brief Initialize a named struct member to point at a PCIe context
+ *
+ * This is equivalent to
+ * <tt>DEVICE_PCIE_INIT(DT_DRV_INST(inst), name)</tt>
+ *
+ * @param inst Devicetree instance number
+ * @param name Name of the struct member (of type struct pcie_dev *)
+ */
+#define DEVICE_PCIE_INST_INIT(inst, name) \
+	DEVICE_PCIE_INIT(DT_DRV_INST(inst), name)
+
+struct pcie_bar {
 	uintptr_t phys_addr;
 	size_t size;
 };
@@ -51,10 +152,13 @@ struct pcie_mbar {
  * This function is used to look up the BDF for a device given its
  * vendor and device ID.
  *
+ * @deprecated
+ * @see DEVICE_PCIE_DECLARE
+ *
  * @param id PCI(e) vendor & device ID encoded using PCIE_ID()
  * @return The BDF for the device, or PCIE_BDF_NONE if it was not found
  */
-extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
+__deprecated extern pcie_bdf_t pcie_bdf_lookup(pcie_id_t id);
 
 /**
  * @brief Read a 32-bit word from an endpoint's configuration space.
@@ -78,31 +182,75 @@ extern uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg);
  */
 extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
 
+/** Callback type used for scanning for PCI endpoints
+ *
+ * @param bdf      BDF value for a found endpoint.
+ * @param id       Vendor & Device ID for the found endpoint.
+ * @param cb_data  Custom, use case specific data.
+ *
+ * @return true to continue scanning, false to stop scanning.
+ */
+typedef bool (*pcie_scan_cb_t)(pcie_bdf_t bdf, pcie_id_t id, void *cb_data);
+
+enum {
+	/** Scan all available PCI host controllers and sub-busses */
+	PCIE_SCAN_RECURSIVE = BIT(0),
+	/** Do the callback for all endpoint types, including bridges */
+	PCIE_SCAN_CB_ALL = BIT(1),
+};
+
+/** Options for performing a scan for PCI devices */
+struct pcie_scan_opt {
+	/** Initial bus number to scan */
+	uint8_t bus;
+
+	/** Function to call for each found endpoint */
+	pcie_scan_cb_t cb;
+
+	/** Custom data to pass to the scan callback */
+	void *cb_data;
+
+	/** Scan flags */
+	uint32_t flags;
+};
+
+/** Scan for PCIe devices.
+ *
+ * Scan the PCI bus (or busses) for available endpoints.
+ *
+ * @param opt Options determining how to perform the scan.
+ * @return 0 on success, negative POSIX error number on failure.
+ */
+int pcie_scan(const struct pcie_scan_opt *opt);
+
 /**
  * @brief Probe for the presence of a PCI(e) endpoint.
+ *
+ * @deprecated
+ * @see DEVICE_PCIE_DECLARE
  *
  * @param bdf the endpoint to probe
  * @param id the endpoint ID to expect, or PCIE_ID_NONE for "any device"
  * @return true if the device is present, false otherwise
  */
-extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
+__deprecated extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
 
 /**
  * @brief Get the MBAR at a specific BAR index
  * @param bdf the PCI(e) endpoint
  * @param bar_index 0-based BAR index
- * @param mbar Pointer to struct pcie_mbar
+ * @param mbar Pointer to struct pcie_bar
  * @return true if the mbar was found and is valid, false otherwise
  */
 extern bool pcie_get_mbar(pcie_bdf_t bdf,
 			  unsigned int bar_index,
-			  struct pcie_mbar *mbar);
+			  struct pcie_bar *mbar);
 
 /**
  * @brief Probe the nth MMIO address assigned to an endpoint.
  * @param bdf the PCI(e) endpoint
  * @param index (0-based) index
- * @param mbar Pointer to struct pcie_mbar
+ * @param mbar Pointer to struct pcie_bar
  * @return true if the mbar was found and is valid, false otherwise
  *
  * A PCI(e) endpoint has 0 or more memory-mapped regions. This function
@@ -113,7 +261,35 @@ extern bool pcie_get_mbar(pcie_bdf_t bdf,
  */
 extern bool pcie_probe_mbar(pcie_bdf_t bdf,
 			    unsigned int index,
-			    struct pcie_mbar *mbar);
+			    struct pcie_bar *mbar);
+
+/**
+ * @brief Get the I/O BAR at a specific BAR index
+ * @param bdf the PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param iobar Pointer to struct pcie_bar
+ * @return true if the I/O BAR was found and is valid, false otherwise
+ */
+extern bool pcie_get_iobar(pcie_bdf_t bdf,
+			   unsigned int bar_index,
+			   struct pcie_bar *iobar);
+
+/**
+ * @brief Probe the nth I/O BAR address assigned to an endpoint.
+ * @param bdf the PCI(e) endpoint
+ * @param index (0-based) index
+ * @param iobar Pointer to struct pcie_bar
+ * @return true if the I/O BAR was found and is valid, false otherwise
+ *
+ * A PCI(e) endpoint has 0 or more I/O regions. This function
+ * allows the caller to enumerate them by calling with index=0..n.
+ * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
+ * are order-preserving with respect to the endpoint BARs: e.g., index 0
+ * will return the lowest-numbered I/O BAR on the endpoint.
+ */
+extern bool pcie_probe_iobar(pcie_bdf_t bdf,
+			     unsigned int index,
+			     struct pcie_bar *iobar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
@@ -199,6 +375,18 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 				     const void *parameter,
 				     uint32_t flags);
 
+/**
+ * @brief Get the BDF for a given PCI host controller
+ *
+ * This macro is useful when the PCI host controller behind PCIE_BDF(0, 0, 0)
+ * indicates a multifunction device. In such a case each function of this
+ * endpoint is a potential host controller itself.
+ *
+ * @param n Bus number
+ * @return BDF value of the given host controller
+ */
+#define PCIE_HOST_CONTROLLER(n) PCIE_BDF(0, 0, n)
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
@@ -269,6 +457,11 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 
 #define PCIE_CONF_MULTIFUNCTION(w)	(((w) & 0x00800000U) != 0U)
 #define PCIE_CONF_TYPE_BRIDGE(w)	(((w) & 0x007F0000U) != 0U)
+#define PCIE_CONF_TYPE_GET(w)		(((w) >> 16) & 0x7F)
+
+#define PCIE_CONF_TYPE_STANDARD         0x0U
+#define PCIE_CONF_TYPE_PCI_BRIDGE       0x1U
+#define PCIE_CONF_TYPE_CARDBUS_BRIDGE   0x2U
 
 /*
  * Words 4-9 are BARs are I/O or memory decoders. Memory decoders may

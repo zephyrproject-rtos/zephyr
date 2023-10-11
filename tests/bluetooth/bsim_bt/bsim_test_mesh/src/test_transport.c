@@ -29,7 +29,7 @@ void assert_post_action(const char *file, unsigned int line)
 }
 
 #define GROUP_ADDR 0xc000
-#define WAIT_TIME 60 /*seconds*/
+#define WAIT_TIME 70 /*seconds*/
 
 extern enum bst_result_t bst_result;
 

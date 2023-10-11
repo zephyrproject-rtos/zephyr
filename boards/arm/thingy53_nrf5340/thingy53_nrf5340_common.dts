@@ -13,6 +13,8 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	buttons {
@@ -62,7 +64,7 @@
 	};
 
 	npm1100_force_pwm_mode: npm1100_force_pwm_mode {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "npm1100_force_pwm_mode";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
@@ -78,14 +80,14 @@
 	};
 
 	regulator_3v3: regulator-3v3-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "ncp114";
 		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		regulator-boot-on;
 	};
 
 	sensor_pwr_ctrl: sensor-pwr-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "tck106ag";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
@@ -198,7 +200,6 @@
 		status = "disabled";
 		spi-max-frequency = <8000000>;
 		reg = <1>;
-		int1-gpios = <&gpio0 23 0>;
 	};
 
 	nrf_radio_fem_spi: fem_spi@2 {
@@ -290,6 +291,10 @@
 			reg = <0x000fa000 0x00006000>;
 		};
 	};
+};
+
+&ieee802154 {
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {

@@ -12,10 +12,16 @@ See build.py for the build command itself.
 
 import zcmake
 import os
+import sys
 from pathlib import Path
 from west import log
 from west.configuration import config
 from west.util import escapes_directory
+
+# Domains.py must be imported from the pylib directory, since
+# twister also uses the implementation
+script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, os.path.join(script_dir, "pylib/build_helpers/"))
 from domains import Domains
 
 DEFAULT_BUILD_DIR = 'build'

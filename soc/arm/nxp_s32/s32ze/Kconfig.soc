@@ -1,0 +1,43 @@
+# NXP S32Z/E MCUs family
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NXP S32Z/E MCUs family SoC selection"
+	depends on SOC_SERIES_S32ZE_R52
+
+config SOC_S32Z27_R52
+	bool "SOC_S32Z27_R52"
+	select HAS_S32_HAL
+
+endchoice
+
+if SOC_SERIES_S32ZE_R52
+
+config SOC_PART_NUMBER_S32Z27
+	bool
+
+config SOC_PART_NUMBER_S32ZE_R52
+	string
+	default "S32Z27" if SOC_PART_NUMBER_S32Z27
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config INIT_CLOCK_AT_BOOT_TIME
+	bool "Initialize clocks at boot time"
+	default y
+	help
+	  Initialize clocks at boot time with the configuration generated through the
+	  driver's configurator, instead of using the default SoC clock configuration
+	  at reset.
+
+config NXP_S32_RTU_INDEX
+	int
+	range 0 1
+	help
+	  This option indicates the index of the target RTU (Real-Time Unit) subsystem.
+
+endif # SOC_SERIES_S32ZE_R52

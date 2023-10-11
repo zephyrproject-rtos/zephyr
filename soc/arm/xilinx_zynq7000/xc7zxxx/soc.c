@@ -3,13 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/arch/arm/aarch32/cortex_a_r/cmsis.h>
 #include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
 #include "soc.h"
 
 /* System Level Control Registers (SLCR) */

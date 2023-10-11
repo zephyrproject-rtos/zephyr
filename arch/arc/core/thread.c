@@ -20,6 +20,10 @@
 #include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
+#if defined(CONFIG_ARC_DSP) && defined(CONFIG_ARC_DSP_SHARING)
+#include <zephyr/arch/arc/v2/dsp/arc_dsp.h>
+static struct k_spinlock lock;
+#endif
 /*  initial stack frame */
 struct init_stack_frame {
 	uintptr_t pc;
@@ -121,10 +125,15 @@ static inline void arch_setup_callee_saved_regs(struct k_thread *thread,
 
 	ARG_UNUSED(regs);
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/* GCC uses tls pointer cached in register, MWDT just call for _mwget_tls */
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(__CCAC__)
 #ifdef CONFIG_ISA_ARCV2
-	/* R26 is used for thread pointer for ARCv2 */
-	regs->r26 = thread->tls;
+#if __ARC_TLS_REGNO__ <= 0
+#error Compiler not configured for thread local storage
+#endif
+#define TLSREG _CONCAT(r, __ARC_TLS_REGNO__)
+	/* __ARC_TLS_REGNO__ is used for thread pointer for ARCv2 */
+	regs->TLSREG = thread->tls;
 #else
 	/* R30 is used for thread pointer for ARCv3 */
 	regs->r30 = thread->tls;
@@ -265,7 +274,7 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 
 #if !defined(CONFIG_MULTITHREADING)
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS, CONFIG_ISR_STACK_SIZE);
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
 extern void z_main_no_multithreading_entry_wrapper(void *p1, void *p2, void *p3,
@@ -288,3 +297,27 @@ FUNC_NORETURN void z_arc_switch_to_main_no_multithreading(k_thread_entry_t main_
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 #endif /* !CONFIG_MULTITHREADING */
+
+#if defined(CONFIG_ARC_DSP) && defined(CONFIG_ARC_DSP_SHARING)
+void arc_dsp_disable(struct k_thread *thread, unsigned int options)
+{
+	/* Ensure a preemptive context switch does not occur */
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Disable DSP or AGU capabilities for the thread */
+	thread->base.user_options &= ~(uint8_t)options;
+
+	k_spin_unlock(&lock, key);
+}
+
+void arc_dsp_enable(struct k_thread *thread, unsigned int options)
+{
+	/* Ensure a preemptive context switch does not occur */
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Enable dsp or agu capabilities for the thread */
+	thread->base.user_options |= (uint8_t)options;
+
+	k_spin_unlock(&lock, key);
+}
+#endif /* CONFIG_ARC_DSP && CONFIG_ARC_DSP_SHARING */

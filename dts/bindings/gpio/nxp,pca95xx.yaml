@@ -10,17 +10,14 @@ include: [gpio-controller.yaml, i2c-device.yaml]
 properties:
     has-pud:
       type: boolean
-      required: false
       description: Supports pull-up/pull-down
 
     has-interrupt-mask-reg:
       type: boolean
-      required: false
       description: Has Interrupt mask register (PCAL95xx)
 
     interrupt-gpios:
       type: phandle-array
-      required: false
       description: Interrupt GPIO pin (active-low open-drain)
 
     "#gpio-cells":

@@ -6,9 +6,21 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/fff.h>
 #include "mocks/net_buf.h"
 #include "mocks/net_buf_expects.h"
 #include "mocks/buf_help_utils.h"
+
+DEFINE_FFF_GLOBALS;
+
+static void tc_setup(void *f)
+{
+	/* Register resets */
+	NET_BUF_FFF_FAKES_LIST(RESET_FAKE);
+}
+
+ZTEST_SUITE(test_bt_buf_get_rx_returns_null, NULL, NULL, tc_setup, NULL, NULL);
+ZTEST_SUITE(test_bt_buf_get_rx_returns_not_null, NULL, NULL, tc_setup, NULL, NULL);
 
 /*
  *  Return value from bt_buf_get_rx() should be NULL
@@ -25,7 +37,7 @@
  *     and the same timeout value passed to bt_buf_get_rx()
  *   - bt_buf_get_rx() returns NULL
  */
-void test_returns_null_type_bt_buf_evt(void)
+ZTEST(test_bt_buf_get_rx_returns_null, test_returns_null_type_bt_buf_evt)
 {
 	struct net_buf *returned_buf;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
@@ -65,7 +77,7 @@ void test_returns_null_type_bt_buf_evt(void)
  *     and the same timeout value passed to bt_buf_get_rx()
  *   - bt_buf_get_rx() returns NULL
  */
-void test_returns_null_type_bt_buf_acl_in(void)
+ZTEST(test_bt_buf_get_rx_returns_null, test_returns_null_type_bt_buf_acl_in)
 {
 	struct net_buf *returned_buf;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
@@ -105,7 +117,7 @@ void test_returns_null_type_bt_buf_acl_in(void)
  *     and the same timeout value passed to bt_buf_get_rx()
  *   - bt_buf_get_rx() returns NULL
  */
-void test_returns_null_type_bt_buf_iso_in(void)
+ZTEST(test_bt_buf_get_rx_returns_null, test_returns_null_type_bt_buf_iso_in)
 {
 	struct net_buf *returned_buf;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
@@ -148,7 +160,7 @@ void test_returns_null_type_bt_buf_iso_in(void)
  *   - bt_buf_get_rx() returns the same value returned by net_buf_alloc_fixed()
  *   - Return buffer matches the buffer type requested
  */
-void test_returns_not_null_type_bt_buf_evt(void)
+ZTEST(test_bt_buf_get_rx_returns_not_null, test_returns_not_null_type_bt_buf_evt)
 {
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
@@ -194,7 +206,7 @@ void test_returns_not_null_type_bt_buf_evt(void)
  *   - bt_buf_get_rx() returns the same value returned by net_buf_alloc_fixed()
  *   - Return buffer matches the buffer type requested
  */
-void test_returns_not_null_type_bt_buf_acl_in(void)
+ZTEST(test_bt_buf_get_rx_returns_not_null, test_returns_not_null_type_bt_buf_acl_in)
 {
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
@@ -240,7 +252,7 @@ void test_returns_not_null_type_bt_buf_acl_in(void)
  *   - bt_buf_get_rx() returns the same value returned by net_buf_alloc_fixed()
  *   - Return buffer matches the buffer type requested
  */
-void test_returns_not_null_type_bt_buf_iso_in(void)
+ZTEST(test_bt_buf_get_rx_returns_not_null, test_returns_not_null_type_bt_buf_iso_in)
 {
 	static struct net_buf expected_buf;
 	struct net_buf *returned_buf;
@@ -274,36 +286,4 @@ void test_returns_not_null_type_bt_buf_iso_in(void)
 	zassert_equal(returned_buffer_type, BT_BUF_ISO_IN,
 		      "bt_buf_get_rx() returned incorrect buffer type %u, expected %u (%s)",
 		      returned_buffer_type, BT_BUF_ISO_IN, STRINGIFY(BT_BUF_ISO_IN));
-}
-
-/* Setup test variables */
-static void unit_test_setup(void)
-{
-	/* Register resets */
-	NET_BUF_FFF_FAKES_LIST(RESET_FAKE);
-}
-
-void test_main(void)
-{
-	ztest_test_suite(
-		test_bt_buf_get_rx_returns_null,
-		ztest_unit_test_setup(test_returns_null_type_bt_buf_evt, unit_test_setup),
-		ztest_unit_test_setup(test_returns_null_type_bt_buf_acl_in, unit_test_setup),
-		ztest_unit_test_setup(test_returns_null_type_bt_buf_iso_in, unit_test_setup)
-		);
-
-	ztest_run_test_suite(test_bt_buf_get_rx_returns_null);
-
-	ztest_test_suite(
-		test_bt_buf_get_rx_returns_not_null,
-		ztest_unit_test_setup(test_returns_not_null_type_bt_buf_evt, unit_test_setup),
-		ztest_unit_test_setup(test_returns_not_null_type_bt_buf_acl_in, unit_test_setup),
-		ztest_unit_test_setup(test_returns_not_null_type_bt_buf_iso_in, unit_test_setup)
-		);
-
-	ztest_run_test_suite(test_bt_buf_get_rx_returns_not_null);
-
-	uint32_t state;
-
-	ztest_run_registered_test_suites(&state);
 }

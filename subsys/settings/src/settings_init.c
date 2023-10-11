@@ -33,7 +33,7 @@ int settings_subsys_init(void)
 
 	settings_init();
 
-	err = settings_backend_init(); /* func rises kernel panic once error */
+	err = settings_backend_init();
 
 	if (!err) {
 		settings_subsys_initialized = true;

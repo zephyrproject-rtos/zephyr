@@ -2,13 +2,17 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-enable_language(C CXX ASM)
-
 include(root)
 include(boards)
 include(arch)
 include(configuration_files)
 include(kconfig)
+
+find_package(TargetTools)
+
+enable_language(C CXX ASM)
+
+include(${ZEPHYR_BASE}/cmake/target_toolchain_flags.cmake)
 
 # Parameters:
 #   SOURCES: list of source files, default main.c
@@ -33,7 +37,9 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
-if(NOT SOURCES)
+find_package(Deprecated COMPONENTS SOURCES)
+
+if(NOT SOURCES AND EXISTS main.c)
   set(SOURCES main.c)
 endif()
 
@@ -87,17 +93,10 @@ target_link_libraries(testbinary PRIVATE
   ${EXTRA_LDFLAGS_AS_LIST}
   )
 
-if(COVERAGE)
-  target_compile_options(test_interface INTERFACE
-    -fno-default-inline
-    -fno-inline
-    -fprofile-arcs
-    -ftest-coverage
-    )
+if(CONFIG_COVERAGE)
+  target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,coverage>)
 
-  target_link_libraries(testbinary PRIVATE
-    -lgcov
-    )
+  target_link_libraries(testbinary PRIVATE $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
 if(LIBS)

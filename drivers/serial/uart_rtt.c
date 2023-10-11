@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/kernel.h>
 #include <SEGGER_RTT.h>
 
 #define DT_DRV_COMPAT segger_rtt_uart

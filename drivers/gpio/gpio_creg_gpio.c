@@ -19,7 +19,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(creg_gpio, CONFIG_GPIO_LOG_LEVEL);
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /** Runtime driver data */
 struct creg_gpio_drv_data {

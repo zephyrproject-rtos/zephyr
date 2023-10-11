@@ -58,6 +58,15 @@
 				interrupt-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pcf8574: pcf8574@27 {
+				compatible = "nxp,pcf8574";
+				reg = <0x27>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pca953x: pca953x@70 {
 				compatible = "ti,tca9538";
 				reg = <0x70>;
@@ -142,6 +151,16 @@
 					pin_mask = <0xdc>;
 					pinmux_mask = <0xff>;
 				};
+			};
+
+			test_i2c_tca6424a: tca6424a@23 {
+				compatible = "ti,tca6424a";
+				reg = <0x23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
 

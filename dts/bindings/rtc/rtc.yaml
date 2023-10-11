@@ -8,12 +8,10 @@ include: base.yaml
 properties:
     clock-frequency:
       type: int
-      required: false
       description: Clock frequency information for RTC operation
     interrupts:
       required: true
 
     prescaler:
       type: int
-      required: false
       description: RTC frequency equals clock-frequency divided by the prescaler value

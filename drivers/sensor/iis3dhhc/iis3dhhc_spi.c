@@ -91,7 +91,7 @@ int iis3dhhc_spi_init(const struct device *dev)
 	struct iis3dhhc_data *data = dev->data;
 	const struct iis3dhhc_config *config = dev->config;
 
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	};

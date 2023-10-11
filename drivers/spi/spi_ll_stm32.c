@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #endif
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 
 #include "spi_ll_stm32.h"
 
@@ -805,6 +806,12 @@ static int transceive_dma(const struct device *dev,
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && !ret) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
 
 end:
 	spi_context_release(&data->ctx, ret);

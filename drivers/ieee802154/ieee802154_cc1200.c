@@ -466,8 +466,8 @@ static void cc1200_rx(void *arg)
 			goto flush;
 		}
 
-		pkt = net_pkt_alloc_with_buffer(cc1200->iface, pkt_len,
-						AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(cc1200->iface, pkt_len,
+						   AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No free pkt available");
 			goto flush;
@@ -744,7 +744,7 @@ static int cc1200_init(const struct device *dev)
 	}
 	gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI bus %s is not ready", config->bus.bus->name);
 		return -ENODEV;
 	}

@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT atmel_sam0_eic
 
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/drivers/interrupt_controller/sam0_eic.h>
 #include "intc_sam0_eic_priv.h"

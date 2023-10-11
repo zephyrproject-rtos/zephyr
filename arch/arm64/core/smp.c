@@ -22,6 +22,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/sys/arch_interface.h>
+#include <zephyr/irq.h>
 #include "boot.h"
 
 #define SGI_SCHED_IPI	0
@@ -63,8 +64,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	master_core_mpid = MPIDR_TO_CORE(GET_MPIDR());
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
-	__ASSERT(cpu_count == CONFIG_MP_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_NUM_CPUS\n");
+	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
 
 	for (i = 0, j = 0; i < cpu_count; i++) {
 		if (cpu_node_list[i] == master_core_mpid) {
@@ -91,9 +92,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	/* store mpid last as this is our synchronization point */
 	arm64_cpu_boot_params.mpid = cpu_mpid;
 
-	arch_dcache_range((void *)&arm64_cpu_boot_params,
-			  sizeof(arm64_cpu_boot_params),
-			  K_CACHE_WB_INVD);
+	sys_cache_data_invd_range((void *)&arm64_cpu_boot_params,
+				  sizeof(arm64_cpu_boot_params));
 
 	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
@@ -159,7 +159,9 @@ static void broadcast_ipi(unsigned int ipi)
 	/*
 	 * Send SGI to all cores except itself
 	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		uint64_t target_mpidr = cpu_node_list[i];
 		uint8_t aff0 = MPIDR_AFFLVL(target_mpidr, 0);
 

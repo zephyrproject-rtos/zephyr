@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Bosch Sensortec GmbH
+ * Copyright (c) 2022 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +12,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/devicetree.h>
 
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
@@ -67,6 +70,7 @@
 #define BMI270_REG_PWR_CONF        0x7C
 #define BMI270_REG_PWR_CTRL        0x7D
 #define BMI270_REG_CMD             0x7E
+#define BMI270_REG_MASK            GENMASK(6, 0)
 
 #define BMI270_CHIP_ID 0x24
 
@@ -206,8 +210,41 @@ struct bmi270_data {
 	uint16_t gyr_range;
 };
 
-struct bmi270_dev_config {
+union bmi270_bus {
+#if CONFIG_BMI270_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
+#if CONFIG_BMI270_BUS_I2C
 	struct i2c_dt_spec i2c;
+#endif
 };
+
+typedef int (*bmi270_bus_check_fn)(const union bmi270_bus *bus);
+typedef int (*bmi270_bus_init_fn)(const union bmi270_bus *bus);
+typedef int (*bmi270_reg_read_fn)(const union bmi270_bus *bus,
+				  uint8_t start,
+				  uint8_t *data,
+				  uint16_t len);
+typedef int (*bmi270_reg_write_fn)(const union bmi270_bus *bus,
+				   uint8_t start,
+				   const uint8_t *data,
+				   uint16_t len);
+
+struct bmi270_bus_io {
+	bmi270_bus_check_fn check;
+	bmi270_reg_read_fn read;
+	bmi270_reg_write_fn write;
+	bmi270_bus_init_fn init;
+};
+
+#if CONFIG_BMI270_BUS_SPI
+#define BMI270_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
+#define BMI270_SPI_ACC_DELAY_US 2
+extern const struct bmi270_bus_io bmi270_bus_io_spi;
+#endif
+
+#if CONFIG_BMI270_BUS_I2C
+extern const struct bmi270_bus_io bmi270_bus_io_i2c;
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */

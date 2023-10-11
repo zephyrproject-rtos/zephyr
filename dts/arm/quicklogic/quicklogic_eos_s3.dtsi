@@ -48,6 +48,12 @@
 			interrupt-names = "rx";
 		};
 
+		uart1: uart@40020000 {
+			compatible = "quicklogic,usbserialport-s3b";
+			reg = <0x40020000 DT_SIZE_K(4)>;
+			status = "disabled";
+		};
+
 		gpio: gpio@40005000 {
 			compatible = "quicklogic,eos-s3-gpio";
 			reg = <0x40005000 DT_SIZE_K(4)>;

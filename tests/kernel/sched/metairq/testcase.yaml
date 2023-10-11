@@ -4,7 +4,6 @@ tests:
     platform_exclude: nrf52dk_nrf52810
   kernel.scheduler.metairq.linker_generator:
     platform_allow: qemu_cortex_m3
-    tags: kernel linker_generator
-    platform_exclude: nrf52dk_nrf52810
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

@@ -58,6 +58,7 @@ struct lsm6dso_config {
 	uint8_t gyro_pm;
 	uint8_t gyro_odr;
 	uint8_t gyro_range;
+	uint8_t drdy_pulsed;
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 	uint8_t int_pin;

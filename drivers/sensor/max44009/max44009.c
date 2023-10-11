@@ -190,7 +190,7 @@ int max44009_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, max44009_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max44009_init, NULL,					\
 			      &max44009_data_##inst, &max44009_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);		\
 

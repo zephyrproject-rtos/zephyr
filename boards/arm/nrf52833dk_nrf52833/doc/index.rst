@@ -157,25 +157,25 @@ You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
 :zephyr_file:`boards/arm/nrf52833dk_nrf52833/nrf52833dk_nrf52833.dts`.
 
-Using UART1
-***********
+Changing UART1 pins
+*******************
 
-The following approach can be used when an application needs to use
-more than one UART for connecting peripheral devices:
+The following approach can be used when an application needs to use another set
+of pins for UART1:
 
 1. Add devicetree overlay file to the main directory of your application:
 
    .. code-block:: devicetree
 
       &pinctrl {
-         uart1_default: uart1_default {
+         uart1_default_alt: uart1_default_alt {
             group1 {
                psels = <NRF_PSEL(UART_TX, 0, 14)>,
                        <NRF_PSEL(UART_RX, 0, 16)>;
             };
          };
          /* required if CONFIG_PM_DEVICE=y */
-         uart1_sleep: uart1_sleep {
+         uart1_sleep_alt: uart1_sleep_alt {
             group1 {
                psels = <NRF_PSEL(UART_TX, 0, 14)>,
                        <NRF_PSEL(UART_RX, 0, 16)>;
@@ -185,17 +185,15 @@ more than one UART for connecting peripheral devices:
       };
 
       &uart1 {
-        compatible = "nordic,nrf-uarte";
-        current-speed = <115200>;
-        status = "okay";
-        pinctrl-0 = <&uart1_default>;
-        pinctrl-1 = <&uart1_sleep>;
+        pinctrl-0 = <&uart1_default_alt>;
+        /* if sleep state is not used, use /delete-property/ pinctrl-1; and
+         * skip the "sleep" entry.
+         */
+        pinctrl-1 = <&uart1_sleep_alt>;
         pinctrl-names = "default", "sleep";
       };
 
    In the overlay file above, pin P0.16 is used for RX and P0.14 is used for TX
-
-2. Use the UART1 as ``DEVICE_DT_GET(DT_NODELABEL(uart1))``
 
 See :ref:`set-devicetree-overlays` for further details.
 

@@ -9,6 +9,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
 #include <errno.h>
 #include <soc.h>
@@ -874,6 +876,8 @@ static int i2c_enhance_transfer(const struct device *dev,
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
+				/* Unlock mutex of i2c controller */
+				k_mutex_unlock(&data->mutex);
 				return -EIO;
 			}
 		}

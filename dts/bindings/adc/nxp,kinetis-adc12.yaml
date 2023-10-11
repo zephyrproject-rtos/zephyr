@@ -26,7 +26,6 @@ properties:
 
     alternate-voltage-reference:
       type: boolean
-      required: false
       description: use alternate voltage reference source
 
     sample-time:

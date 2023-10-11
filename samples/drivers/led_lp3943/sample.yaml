@@ -4,4 +4,6 @@ sample:
 tests:
   sample.drivers.led.lp3943:
     platform_allow: 96b_neonkey 96b_argonkey
+    integration_platforms:
+      - 96b_argonkey
     tags: LED

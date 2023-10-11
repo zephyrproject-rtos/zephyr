@@ -372,12 +372,14 @@ static void *fail_assume_in_setup_setup(void)
 
 ZTEST_SUITE(fail_assume_in_setup, NULL, fail_assume_in_setup_setup, NULL, NULL, NULL);
 
+ZTEST_EXPECT_SKIP(fail_assume_in_setup, test_to_skip0);
 ZTEST(fail_assume_in_setup, test_to_skip0)
 {
 	/* This test should never be run */
 	ztest_test_fail();
 }
 
+ZTEST_EXPECT_SKIP(fail_assume_in_setup, test_to_skip1);
 ZTEST(fail_assume_in_setup, test_to_skip1)
 {
 	/* This test should never be run */
@@ -392,12 +394,14 @@ static void fail_assume_in_before_before(void *unused)
 
 ZTEST_SUITE(fail_assume_in_before, NULL, NULL, fail_assume_in_before_before, NULL, NULL);
 
+ZTEST_EXPECT_SKIP(fail_assume_in_before, test_to_skip0);
 ZTEST(fail_assume_in_before, test_to_skip0)
 {
 	/* This test should never be run */
 	ztest_test_fail();
 }
 
+ZTEST_EXPECT_SKIP(fail_assume_in_before, test_to_skip1);
 ZTEST(fail_assume_in_before, test_to_skip1)
 {
 	/* This test should never be run */
@@ -406,6 +410,7 @@ ZTEST(fail_assume_in_before, test_to_skip1)
 
 ZTEST_SUITE(fail_assume_in_test, NULL, NULL, NULL, NULL, NULL);
 
+ZTEST_EXPECT_SKIP(fail_assume_in_test, test_to_skip);
 ZTEST(fail_assume_in_test, test_to_skip)
 {
 	zassume_true(false);

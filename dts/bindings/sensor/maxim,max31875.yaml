@@ -11,7 +11,7 @@ description: |
 
 compatible: "maxim,max31875"
 
-include: "i2c-device.yaml"
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   conversions-per-second:

@@ -13,8 +13,17 @@
  * region, we describe them in one 768Kb unique node.
  */
 &ocram {
-	compatible = "mmio-sram";
 	reg = <0x20200000 DT_SIZE_K(768)>;
+};
+
+&ccm {
+	arm-podf {
+		clock-div = <2>;
+	};
+
+	ipg-podf {
+		clock-div = <4>;
+	};
 };
 
 /* i.MX rt1060 has a second Ethernet controller. */

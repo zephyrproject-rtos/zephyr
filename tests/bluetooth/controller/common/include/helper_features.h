@@ -165,7 +165,7 @@
 #define FEAT_PER_ADV_SYNC_RX 0x00
 #endif
 
-#if defined(CONFIG_MISSING)
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 #define FEAT_SLEEP_UPD 0x4000000
 #else
 #define FEAT_SLEEP_UPD 0x00

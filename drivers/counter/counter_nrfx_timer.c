@@ -10,6 +10,7 @@
 #define LOG_LEVEL CONFIG_COUNTER_LOG_LEVEL
 #define LOG_MODULE_NAME counter_timer
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define TIMER_CLOCK 16000000

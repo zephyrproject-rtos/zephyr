@@ -67,6 +67,17 @@ config SOC_FLASH_NRF_PARTIAL_ERASE_MS
 	  Minimal timeout is 2ms maximum should not exceed half of
 	  FLASH_PAGE_ERASE_MAX_TIME_US im ms.
 
+config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
+	int "Multiplier for flash operation timeouts [x0.1]"
+	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 15 if SOC_FLASH_NRF_PARTIAL_ERASE && SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	default 10
+	help
+	  This is a multiplier that will be divided by 10 that is applied
+	  to the flash erase and write operations timeout. The base for
+	  the multiplication would allow erasing all nRF flash pages in
+	  blocking mode.
+
 config SOC_FLASH_NRF_UICR
 	bool "Access to UICR"
 	depends on !TRUSTED_EXECUTION_NONSECURE

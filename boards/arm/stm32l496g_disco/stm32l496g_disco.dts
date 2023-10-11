@@ -63,6 +63,14 @@
 
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_hsi {
 	status = "okay";
 };
@@ -131,6 +139,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -144,6 +154,13 @@
 
 &adc1 {
 	pinctrl-0 = < &adc1_in2_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
+		     &usb_otg_fs_id_pa10>;
 	pinctrl-names = "default";
 	status = "okay";
 };

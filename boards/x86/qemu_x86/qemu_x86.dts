@@ -13,6 +13,7 @@
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
 #include <intel/ia32.dtsi>
+#include <zephyr/dt-bindings/pcie/pcie.h>
 
 / {
 	model = "QEMU X86 emulator";
@@ -41,12 +42,37 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,flash-controller = &sim_flash;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,canbus = &can0;
 	};
 
-	soc {
-		eth0: eth@febc0000 {
+	pcie0: pcie0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "intel,pcie";
+		ranges;
+
+		can0: can0 {
+			compatible = "kvaser,pcican";
+			status = "okay";
+			vendor-id = <0x10e8>;
+			device-id = <0x8406>;
+			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			sjw = <1>;
+			bus-speed = <125000>;
+			sample-point = <875>;
+
+			can-transceiver {
+				max-bitrate = <1000000>;
+			};
+		};
+
+		eth0: eth0 {
 			compatible = "intel,e1000";
-			reg = <0xfebc0000 0x100>;
+
+			vendor-id = <0x8086>;
+			device-id = <0x100e>;
+
 			interrupts = <11 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 

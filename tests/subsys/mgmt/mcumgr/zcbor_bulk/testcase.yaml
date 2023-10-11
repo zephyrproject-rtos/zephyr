@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 tests:
-  zcbor.bulk:
-    platform_allow: native_posix
-    tags: zcbor_bulk
+  mgmt.mcumgr.zcbor.bulk:
+    platform_allow: native_posix qemu_cortex_m0 qemu_cortex_m3
+    tags: zcbor_bulk mgmt mcumgr

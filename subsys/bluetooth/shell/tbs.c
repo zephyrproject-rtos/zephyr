@@ -508,7 +508,7 @@ static int cmd_tbs_set_uri_scheme_list(const struct shell *sh, size_t argc,
 static int cmd_tbs_print_calls(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	if (IS_ENABLED(CONFIG_BT_DEBUG_TBS)) {
+	if (IS_ENABLED(CONFIG_BT_TBS_LOG_LEVEL_DBG)) {
 		bt_tbs_dbg_print_calls();
 		return 0;
 	}

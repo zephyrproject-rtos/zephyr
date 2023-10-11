@@ -80,7 +80,7 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
 	}
 
@@ -148,6 +148,9 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	 */
 	net_pkt_lladdr_dst(reply)->addr = NULL;
 	net_pkt_lladdr_src(reply)->addr = NULL;
+
+	net_pkt_set_ip_dscp(reply, net_pkt_ip_dscp(pkt));
+	net_pkt_set_ip_ecn(reply, net_pkt_ip_ecn(pkt));
 
 	if (net_ipv6_create(reply, src, (struct in6_addr *)ip_hdr->src)) {
 		NET_DBG("DROP: wrong buffer");
@@ -337,6 +340,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 				 struct in6_addr *dst,
 				 uint16_t identifier,
 				 uint16_t sequence,
+				 uint8_t tc,
 				 const void *data,
 				 size_t data_size)
 {
@@ -358,6 +362,9 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
+	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(tc));
+	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(tc));
+
 	if (net_ipv6_create(pkt, src, dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0)) {
 		goto drop;
@@ -373,7 +380,24 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	echo_req->sequence   = htons(sequence);
 
 	net_pkt_set_data(pkt, &icmpv6_access);
-	net_pkt_write(pkt, data, data_size);
+
+	if (data != NULL && data_size > 0) {
+		net_pkt_write(pkt, data, data_size);
+	} else if (data == NULL && data_size > 0) {
+		/* Generate payload. */
+		if (data_size >= sizeof(uint32_t)) {
+			uint32_t time_stamp = htonl(k_cycle_get_32());
+
+			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			data_size -= sizeof(time_stamp);
+		}
+
+		for (size_t i = 0; i < data_size; i++) {
+			net_pkt_write_u8(pkt, (uint8_t)i);
+		}
+	} else {
+		/* No payload. */
+	}
 
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);

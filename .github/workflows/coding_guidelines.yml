@@ -8,13 +8,13 @@ jobs:
     name: Run coding guidelines checks on patch series (PR)
     steps:
     - name: Checkout the code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
     - name: cache-pip
-      uses: actions/cache@v1
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-doc-pip

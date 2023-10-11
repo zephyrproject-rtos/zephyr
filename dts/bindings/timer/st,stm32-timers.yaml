@@ -5,7 +5,7 @@ description: STM32 timers
 
 compatible: "st,stm32-timers"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
     reg:
@@ -14,8 +14,8 @@ properties:
     clocks:
       required: true
 
-    interrupts:
-      required: false
+    resets:
+      required: true
 
     st,prescaler:
       type: int
@@ -26,7 +26,6 @@ properties:
 
     st,countermode:
         type: int
-        required: false
         default: 0 # STM32_TIM_COUNTERMODE_UP - reset state
         description: |
           Sets timer counter mode.

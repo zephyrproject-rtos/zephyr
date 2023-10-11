@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -1,10 +1,11 @@
 # Copyright (c) 2022 Analog Devices Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+include: sensor-device.yaml
+
 properties:
     odr:
       type: int
-      required: false
       default: 0
       description: |
             Accelerometer sampling frequency (ODR). Default is power on reset value.
@@ -22,7 +23,6 @@ properties:
 
     bw:
       type: int
-      required: false
       default: 12
       description: |
             Low-Pass (Antialiasing) Filter corner frequency. Default is power on reset value.
@@ -42,7 +42,6 @@ properties:
 
     hpf:
       type: int
-      required: false
       default: 4
       description: |
             High-Pass Filter corner frequency. Default is power on reset value.

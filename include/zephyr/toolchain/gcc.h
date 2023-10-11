@@ -14,19 +14,19 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
-#define GCC_VERSION \
+#define TOOLCHAIN_GCC_VERSION \
 	((__GNUC__ * 10000) + (__GNUC_MINOR__ * 100) + __GNUC_PATCHLEVEL__)
 
 /* GCC supports #pragma diagnostics since 4.6.0 */
-#if !defined(TOOLCHAIN_HAS_PRAGMA_DIAG) && (GCC_VERSION >= 40600)
+#if !defined(TOOLCHAIN_HAS_PRAGMA_DIAG) && (TOOLCHAIN_GCC_VERSION >= 40600)
 #define TOOLCHAIN_HAS_PRAGMA_DIAG 1
 #endif
 
-#if !defined(TOOLCHAIN_HAS_C_GENERIC) && (GCC_VERSION >= 40900)
+#if !defined(TOOLCHAIN_HAS_C_GENERIC) && (TOOLCHAIN_GCC_VERSION >= 40900)
 #define TOOLCHAIN_HAS_C_GENERIC 1
 #endif
 
-#if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (GCC_VERSION >= 40900)
+#if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (TOOLCHAIN_GCC_VERSION >= 40900)
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
 
@@ -64,6 +64,7 @@
 #endif
 
 
+#undef BUILD_ASSERT /* clear out common version */
 /* C++11 has static_assert built in */
 #if defined(__cplusplus) && (__cplusplus >= 201103L)
 #define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)

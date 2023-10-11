@@ -18,12 +18,10 @@ properties:
 
     low-power-mode:
       type: boolean
-      required: false
       description: Enable low-power mode
 
     buffered:
       type: boolean
-      required: false
       description: Enable output buffer
 
     "#io-channel-cells":

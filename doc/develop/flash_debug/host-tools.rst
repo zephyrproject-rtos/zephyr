@@ -255,6 +255,58 @@ These debug host tools are compatible with the following debug probes:
 
 Check if your SoC is listed in `pyOCD Supported Devices`_.
 
+.. _lauterbach-trace32-debug-host-tools:
+
+Lauterbach TRACE32 Debug Host Tools
+***********************************
+
+`Lauterbach TRACE32`_ is a product line of microprocessor development tools,
+debuggers and real-time tracer with support for JTAG, SWD, NEXUS or ETM over
+multiple core architectures, including Arm Cortex-A/-R/-M, RISC-V, Xtensa, etc.
+Zephyr allows users to develop and program boards with Lauterbach TRACE32
+support using :ref:`west <west-flashing>`.
+
+The runner consists of a wrapper around TRACE32 software, and allows a Zephyr
+board to execute a custom start-up script (Practice Script) for the different
+commands supported, including the ability to pass extra arguments from CMake.
+Is up to the board using this runner to define the actions performed on each
+command.
+
+Install Lauterbach TRACE32 Software
+-----------------------------------
+
+Download Lauterbach TRACE32 software from the `Lauterbach TRACE32 download website`_
+(registration required) and follow the installation steps described in
+`Lauterbach TRACE32 Installation Guide`_.
+
+Flashing and Debugging
+----------------------
+
+Set the :ref:`environment variable <env_vars>` :envvar:`T32_DIR` to the TRACE32
+system directory. Then execute ``west flash`` or ``west debug`` commands to
+flash or debug the Zephyr application as detailed in :ref:`west-build-flash-debug`.
+The ``debug`` command launches TRACE32 GUI to allow debug the Zephyr
+application, while the ``flash`` command hides the GUI and perform all
+operations in the background.
+
+By default, the ``t32`` runner will launch TRACE32 using the default
+configuration file named ``config.t32`` located in the TRACE32 system
+directory. To use a different configuration file, supply the argument
+``--config CONFIG`` to the runner, for example:
+
+.. code-block:: console
+
+	west flash --config myconfig.t32
+
+For more options, run ``west flash --context -r t32`` to print the usage.
+
+Zephyr RTOS Awareness
+---------------------
+
+To enable Zephyr RTOS awareness follow the steps described in
+`Lauterbach TRACE32 Zephyr OS Awareness Manual`_.
+
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -272,3 +324,15 @@ Check if your SoC is listed in `pyOCD Supported Devices`_.
 
 .. _OpenOCD Windows:
     http://gnutoolchains.com/arm-eabi/openocd/
+
+.. _Lauterbach TRACE32:
+    https://www.lauterbach.com/
+
+.. _Lauterbach TRACE32 download website:
+   http://www.lauterbach.com/download_trace32.html
+
+.. _Lauterbach TRACE32 Installation Guide:
+   https://www2.lauterbach.com/pdf/installation.pdf
+
+.. _Lauterbach TRACE32 Zephyr OS Awareness Manual:
+	https://www2.lauterbach.com/pdf/rtos_zephyr.pdf

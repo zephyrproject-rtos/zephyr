@@ -68,7 +68,7 @@ extern "C" {
 		       | DT_PROP_BY_IDX(node_id, reg, 2),		\
 		.init_dynamic_addr =					\
 			DT_PROP_OR(node_id, assigned_address, 0),	\
-	}
+	},
 
 /**
  * @brief Structure initializer for i3c_device_desc from devicetree instance
@@ -126,12 +126,12 @@ extern "C" {
  *
  * @param init_fn Name of the init function of the driver.
  *
- * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param pm PM device resources reference (NULL if device does not use PM).
  *
- * @param data_ptr Pointer to the device's private data.
+ * @param data Pointer to the device's private data.
  *
- * @param cfg_ptr The address to the structure containing the
- *                configuration information for this instance of the driver.
+ * @param config The address to the structure containing the
+ *               configuration information for this instance of the driver.
  *
  * @param level The initialization level. See SYS_INIT() for
  *              details.
@@ -139,15 +139,13 @@ extern "C" {
  * @param prio Priority within the selected initialization level. See
  *             SYS_INIT() for details.
  *
- * @param api_ptr Provides an initial pointer to the API function struct
- *                used by the driver. Can be NULL.
+ * @param api Provides an initial pointer to the API function struct
+ *            used by the driver. Can be NULL.
  */
-#define I3C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
-			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, __VA_ARGS__)
+#define I3C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			 prio, api, __VA_ARGS__)
 
 /**
  * @brief Like I3C_TARGET_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
@@ -175,7 +173,7 @@ extern "C" {
 		.bus = DEVICE_DT_GET(DT_BUS(node_id)),			\
 		.addr = DT_PROP_BY_IDX(node_id, reg, 0),		\
 		.lvr = DT_PROP_BY_IDX(node_id, reg, 2),			\
-	}
+	},
 
 /**
  * @brief Structure initializer for i3c_i2c_device_desc from devicetree instance

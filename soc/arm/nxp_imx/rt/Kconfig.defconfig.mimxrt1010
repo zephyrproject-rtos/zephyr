@@ -9,20 +9,8 @@ config SOC
 	string
 	default "mimxrt1011"
 
-config HAS_ARM_DIV
-	default n
-
 config NUM_IRQS
 	default 80
-
-config ARM_DIV
-	default 0
-
-config AHB_DIV
-	default 0
-
-config IPG_DIV
-	default 3
 
 config DCDC_VALUE
 	default 0x12

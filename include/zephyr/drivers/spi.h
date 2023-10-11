@@ -24,6 +24,7 @@
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/spi/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -391,6 +392,7 @@ struct spi_dt_spec {
  * Important: multiple fields are automatically constructed by this macro
  * which must be checked before use. @ref spi_is_ready performs the required
  * @ref device_is_ready checks.
+ * @deprecated Use @ref spi_is_ready_dt instead.
  *
  * This macro is not available in C++.
  *
@@ -507,6 +509,7 @@ __subsystem struct spi_driver_api {
  * @retval true if the SPI bus is ready for use.
  * @retval false if the SPI bus is not ready for use.
  */
+__deprecated
 static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 {
 	/* Validate bus is ready */
@@ -521,6 +524,27 @@ static inline bool spi_is_ready(const struct spi_dt_spec *spec)
 	return true;
 }
 
+/**
+ * @brief Validate that SPI bus (and CS gpio if defined) is ready.
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @retval true if the SPI bus is ready for use.
+ * @retval false if the SPI bus (or the CS gpio defined) is not ready for use.
+ */
+static inline bool spi_is_ready_dt(const struct spi_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	if (!device_is_ready(spec->bus)) {
+		return false;
+	}
+	/* Validate CS gpio port is ready, if it is used */
+	if (spec->config.cs &&
+	    !device_is_ready(spec->config.cs->gpio.port)) {
+		return false;
+	}
+	return true;
+}
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *

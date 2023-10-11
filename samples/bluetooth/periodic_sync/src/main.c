@@ -229,7 +229,7 @@ void main(void)
 		sync_create_param.options = 0;
 		sync_create_param.sid = per_sid;
 		sync_create_param.skip = 0;
-		sync_create_param.timeout = 0xa;
+		sync_create_param.timeout = 0xaa;
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err) {
 			printk("failed (err %d)\n", err);

@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <fsl_lpsci.h>
 #include <soc.h>
+#include <zephyr/irq.h>
 
 struct mcux_lpsci_config {
 	UART0_Type *base;

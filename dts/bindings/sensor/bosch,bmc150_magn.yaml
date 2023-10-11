@@ -7,9 +7,8 @@ description: |
 
 compatible: "bosch,bmc150_magn"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     drdy-gpios:
       type: phandle-array
-      required: false

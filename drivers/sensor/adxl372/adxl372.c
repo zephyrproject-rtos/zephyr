@@ -801,7 +801,7 @@ static int adxl372_init(const struct device *dev)
  */
 
 #define ADXL372_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      adxl372_init,				\
 			      NULL,					\
 			      &adxl372_data_##inst,			\

@@ -24,7 +24,6 @@ properties:
 
   prescaler:
     type: int
-    required: false
     description: Timer prescaler
     enum:
       - 1

@@ -7,7 +7,6 @@ bus: lmp90xxx
 properties:
     drdyb-gpios:
       type: phandle-array
-      required: false
       description: Data Ready Bar
 
     "#io-channel-cells":

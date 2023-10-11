@@ -63,19 +63,7 @@ description: |
 
 compatible: "microchip,xec-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
-        property-allowlist:
-          - bias-disable
-          - bias-pull-down
-          - bias-pull-up
-          - drive-push-pull
-          - drive-open-drain
-          - low-power-enable
-          - output-high
-          - output-low
+include: base.yaml
 
 properties:
     reg:
@@ -86,6 +74,18 @@ child-binding:
       This binding gives a base representation of the Microchip XEC pins
       configuration
 
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - low-power-enable
+          - output-high
+          - output-low
+
     properties:
         pinmux:
             type: int
@@ -93,7 +93,6 @@ child-binding:
             description: Pinmux selection
 
         slew-rate:
-          required: false
           type: string
           default: "low-speed"
           enum:
@@ -106,7 +105,6 @@ child-binding:
             slew rate adjustment.
 
         drive-strength:
-          required: false
           type: string
           default: "1x"
           enum:
@@ -119,3 +117,10 @@ child-binding:
             is "1x" for most pins. PIO pins are 2, 4, 8, or 12 mA. PIO-24 pins
             are 4, 8, 16, or 24 mA. Please refer to the data sheet for each
             pin's PIO type and default drive strength.
+
+        microchip,output-func-invert:
+          required: false
+          type: boolean
+          description:
+            Invert polarity of an output alternate function. Input functions
+            are not affected.

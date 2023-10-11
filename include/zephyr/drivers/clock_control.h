@@ -21,8 +21,10 @@
  * @{
  */
 
-#include <zephyr/types.h>
+#include <errno.h>
 #include <stddef.h>
+
+#include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>

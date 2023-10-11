@@ -76,4 +76,12 @@
 	pwm2_3_default: pwm2_3_default {
 		pinmux = <13 SIFIVE_PINMUX_IOF1>;
 	};
+
+	/* I2C0 */
+	i2c0_0_default: i2c0_0_default {
+		pinmux = <12 SIFIVE_PINMUX_IOF0>;
+	};
+	i2c0_1_default: i2c0_1_default {
+		pinmux = <13 SIFIVE_PINMUX_IOF0>;
+	};
 };

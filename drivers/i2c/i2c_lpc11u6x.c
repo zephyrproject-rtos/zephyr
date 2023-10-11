@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include "i2c_lpc11u6x.h"
 
 #define DEV_BASE(dev) (((struct lpc11u6x_i2c_config *)(dev->config))->base)

@@ -47,4 +47,4 @@ Sample Output
 
 .. code-block:: console
 
-Current Vbat voltage: 3.04 V
+   Current Vbat voltage: 3.04 V

@@ -5,6 +5,7 @@
  */
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 
 /* Mock of internal temperature sensor. */
 #ifdef CONFIG_TEMP_NRF5

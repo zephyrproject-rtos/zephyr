@@ -152,10 +152,10 @@ static int send_igmp_report(struct net_if *iface,
 			return -ENOMEM;
 		}
 
-		/* TODO: send to arbitrary group address instead of
-		 * all_routers
+		/* Send the IGMP V2 membership report to the group multicast
+		 * address, as per RFC 2236 Section 9.
 		 */
-		ret = igmp_v2_create_packet(pkt, &all_routers,
+		ret = igmp_v2_create_packet(pkt, &ipv4->mcast[i].address.in_addr,
 					    &ipv4->mcast[i].address.in_addr,
 					    NET_IPV4_IGMP_REPORT_V2);
 		if (ret < 0) {
@@ -242,8 +242,13 @@ static int igmp_send_generic(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	ret = igmp_v2_create_packet(pkt, &all_routers, addr,
-			join ? NET_IPV4_IGMP_REPORT_V2 : NET_IPV4_IGMP_LEAVE);
+	/* Send the IGMP V2 membership report to the group multicast
+	 * address, as per RFC 2236 Section 9. The leave report
+	 * should be sent to the ALL ROUTERS multicast address (224.0.0.2)
+	 */
+	ret = igmp_v2_create_packet(pkt,
+				join ? addr : &all_routers, addr,
+				join ? NET_IPV4_IGMP_REPORT_V2 : NET_IPV4_IGMP_LEAVE);
 	if (ret < 0) {
 		goto drop;
 	}

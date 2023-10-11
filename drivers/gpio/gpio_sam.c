@@ -13,8 +13,9 @@
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/atmel-sam-gpio.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 typedef void (*config_func_t)(const struct device *dev);
 
@@ -40,9 +41,17 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 	const struct gpio_sam_config * const cfg = dev->config;
 	Pio * const pio = cfg->regs;
 
-	if (flags & GPIO_SINGLE_ENDED) {
-		/* TODO: Add support for Open Source, Open Drain mode */
-		return -ENOTSUP;
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
+			/* Enable open-drain drive mode */
+			pio->PIO_MDER = mask;
+		} else {
+			/* Open-drain is the only supported single-ended mode */
+			return -ENOTSUP;
+		}
+	} else {
+		/* Disable open-drain drive mode */
+		pio->PIO_MDDR = mask;
 	}
 
 	if (!(flags & (GPIO_OUTPUT | GPIO_INPUT))) {

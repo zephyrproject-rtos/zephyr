@@ -20,5 +20,8 @@ config FLASH_STM32_OSPI
 	select DMA if $(DT_STM32_OCTOSPI_1_HAS_DMA) || $(DT_STM32_OCTOSPI_2_HAS_DMA)
 	select USE_STM32_HAL_DMA if $(DT_STM32_OCTOSPI_1_HAS_DMA) || \
 					$(DT_STM32_OCTOSPI_2_HAS_DMA)
+	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32U5X && \
+					($(DT_STM32_OCTOSPI_1_HAS_DMA) || \
+					 $(DT_STM32_OCTOSPI_2_HAS_DMA))
 	help
 	  Enable OSPI-NOR support on the STM32 family of processors.

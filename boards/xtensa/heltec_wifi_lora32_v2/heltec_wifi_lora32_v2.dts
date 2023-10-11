@@ -18,6 +18,7 @@
 		led0 = &led0;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		lora0 = &lora0;
 	};
 
 	leds {
@@ -36,14 +37,12 @@
 			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			label = "OLED Reset";
 		};
-
 	};
 
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = < &gpio0 0 (GPIO_PULL_UP | \
-			   GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "PRG Button";
 		};
 	};
@@ -55,7 +54,6 @@
 		zephyr,flash = &flash0;
 	};
 };
-
 
 &cpu0 {
 	clock-frequency = <ESP32_CLK_CPU_240M>;
@@ -87,6 +85,29 @@
 	scl-gpios = <&gpio0 15 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+	lora0: lora@0 {
+		compatible = "semtech,sx1276";
+		reg = <0>;
+		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		dio-gpios =
+			/* SX1276 D0 -> GPIO26 */
+			<&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			/* SX1276 D1 -> GPIO35 */
+			<&gpio1 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			/* SX1276 D1 -> GPIO34 */
+			<&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		spi-max-frequency = <1000000>;
+		power-amplifier-output = "pa-boost";
+	};
 };
 
 &flash0 {

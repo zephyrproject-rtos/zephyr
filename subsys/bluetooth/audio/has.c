@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/has.h>
 #include <zephyr/sys/check.h>
 
@@ -21,9 +21,9 @@
 #include "audio_internal.h"
 #include "has_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HAS)
-#define LOG_MODULE_NAME bt_has
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);
 
 /* The service allows operations with paired devices only.
  * For now, the context is kept for connected devices only, thus the number of contexts is
@@ -40,7 +40,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 static ssize_t read_active_preset_index(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					void *buf, uint16_t len, uint16_t offset)
 {
-	BT_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
+	LOG_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
 
 	if (offset > sizeof(has.active_index)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -52,14 +52,14 @@ static ssize_t read_active_preset_index(struct bt_conn *conn, const struct bt_ga
 
 static void ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
-	BT_DBG("attr %p value 0x%04x", attr, value);
+	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	BT_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
+	LOG_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
 
 	if (offset > sizeof(has.features)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -198,15 +198,16 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 {
 	struct has_client *client;
 
-	BT_DBG("conn %p level %d err %d", (void *)conn, level, err);
+	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
-	if (err != BT_SECURITY_ERR_SUCCESS) {
+	if (err != BT_SECURITY_ERR_SUCCESS ||
+	    !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
 	}
 
 	client = client_get_or_new(conn);
 	if (unlikely(!client)) {
-		BT_ERR("Failed to allocate client");
+		LOG_ERR("Failed to allocate client");
 		return;
 	}
 
@@ -224,7 +225,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	struct has_client *client;
 
-	BT_DBG("conn %p err %d", conn, err);
+	LOG_DBG("conn %p err %d", conn, err);
 
 	if (err != 0 || !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;
@@ -232,7 +233,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	client = client_get_or_new(conn);
 	if (unlikely(!client)) {
-		BT_ERR("Failed to allocate client");
+		LOG_ERR("Failed to allocate client");
 		return;
 	}
 
@@ -245,7 +246,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct has_client *client;
 
-	BT_DBG("conn %p reason %d", (void *)conn, reason);
+	LOG_DBG("conn %p reason %d", (void *)conn, reason);
 
 	client = client_get(conn);
 	if (client) {
@@ -347,7 +348,7 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 {
 	struct has_client *client = client_get(conn);
 
-	BT_DBG("conn %p\n", (void *)conn);
+	LOG_DBG("conn %p", (void *)conn);
 
 	/* Resubmit if needed */
 	if (client != NULL &&
@@ -362,7 +363,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 {
 	if (err) {
 		/* TODO: Handle error somehow */
-		BT_ERR("conn %p err 0x%02x\n", (void *)conn, err);
+		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
 	}
 
 	control_point_ntf_complete(conn, NULL);
@@ -430,7 +431,7 @@ static int bt_has_cp_read_preset_rsp(struct has_client *client, const struct has
 
 	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr) + sizeof(*rsp) + BT_HAS_PRESET_NAME_MAX);
 
-	BT_DBG("conn %p preset %p is_last 0x%02x", (void *)client->conn, preset, is_last);
+	LOG_DBG("conn %p preset %p is_last 0x%02x", (void *)client->conn, preset, is_last);
 
 	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
 	hdr->opcode = BT_HAS_OP_READ_PRESET_RSP;
@@ -530,7 +531,7 @@ static void process_control_point_work(struct k_work *work)
 
 		err = bt_has_cp_read_preset_rsp(client, preset, is_last);
 		if (err) {
-			BT_ERR("bt_has_cp_read_preset_rsp failed (err %d)", err);
+			LOG_ERR("bt_has_cp_read_preset_rsp failed (err %d)", err);
 		}
 
 		if (err || is_last) {
@@ -558,7 +559,7 @@ static void process_control_point_work(struct k_work *work)
 
 		err = bt_has_cp_generic_update(client, preset, is_last);
 		if (err) {
-			BT_ERR("bt_has_cp_read_preset_rsp failed (err %d)", err);
+			LOG_ERR("bt_has_cp_read_preset_rsp failed (err %d)", err);
 		}
 
 		if (err || is_last) {
@@ -594,7 +595,7 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 
 	req = net_buf_simple_pull_mem(buf, sizeof(*req));
 
-	BT_DBG("start_index %d num_presets %d", req->start_index, req->num_presets);
+	LOG_DBG("start_index %d num_presets %d", req->start_index, req->num_presets);
 
 	/* Abort if there is no preset in requested index range */
 	preset_foreach(req->start_index, BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
@@ -621,7 +622,7 @@ static int set_preset_name(uint8_t index, const char *name, size_t len)
 {
 	struct has_preset *preset = NULL;
 
-	BT_DBG("index %d name_len %zu", index, len);
+	LOG_DBG("index %d name_len %zu", index, len);
 
 	if (len < BT_HAS_PRESET_NAME_MIN || len > BT_HAS_PRESET_NAME_MAX) {
 		return -EINVAL;
@@ -846,8 +847,8 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 
 	hdr = net_buf_simple_pull_mem(buf, sizeof(*hdr));
 
-	BT_DBG("conn %p opcode %s (0x%02x)", (void *)conn, bt_has_op_str(hdr->opcode),
-	       hdr->opcode);
+	LOG_DBG("conn %p opcode %s (0x%02x)", (void *)conn, bt_has_op_str(hdr->opcode),
+		hdr->opcode);
 
 	switch (hdr->opcode) {
 	case BT_HAS_OP_READ_PRESET_REQ:
@@ -892,8 +893,8 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 	struct net_buf_simple buf;
 	uint8_t err;
 
-	BT_DBG("conn %p attr %p data %p len %d offset %d flags 0x%02x", (void *)conn, attr, data,
-	       len, offset, flags);
+	LOG_DBG("conn %p attr %p data %p len %d offset %d flags 0x%02x", (void *)conn, attr, data,
+		len, offset, flags);
 
 	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -907,7 +908,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 
 	err = handle_control_point_op(conn, &buf);
 	if (err) {
-		BT_WARN("err 0x%02x", err);
+		LOG_WRN("err 0x%02x", err);
 		return BT_GATT_ERR(err);
 	}
 
@@ -920,38 +921,38 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 	size_t name_len;
 
 	CHECKIF(param == NULL) {
-		BT_ERR("param is NULL");
+		LOG_ERR("param is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(param->index == BT_HAS_PRESET_INDEX_NONE) {
-		BT_ERR("param->index is invalid");
+		LOG_ERR("param->index is invalid");
 		return -EINVAL;
 	}
 
 	CHECKIF(param->name == NULL) {
-		BT_ERR("param->name is NULL");
+		LOG_ERR("param->name is NULL");
 		return -EINVAL;
 	}
 
 	name_len = strlen(param->name);
 
 	CHECKIF(name_len < BT_HAS_PRESET_NAME_MIN) {
-		BT_ERR("param->name is too short (%zu < %u)", name_len, BT_HAS_PRESET_NAME_MIN);
+		LOG_ERR("param->name is too short (%zu < %u)", name_len, BT_HAS_PRESET_NAME_MIN);
 		return -EINVAL;
 	}
 
 	CHECKIF(name_len > BT_HAS_PRESET_NAME_MAX) {
-		BT_WARN("param->name is too long (%zu > %u)", name_len, BT_HAS_PRESET_NAME_MAX);
+		LOG_WRN("param->name is too long (%zu > %u)", name_len, BT_HAS_PRESET_NAME_MAX);
 	}
 
 	CHECKIF(param->ops == NULL) {
-		BT_ERR("param->ops is NULL");
+		LOG_ERR("param->ops is NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(param->ops->select == NULL) {
-		BT_ERR("param->ops->select is NULL");
+		LOG_ERR("param->ops->select is NULL");
 		return -EINVAL;
 	}
 
@@ -976,7 +977,7 @@ int bt_has_preset_unregister(uint8_t index)
 			      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
 
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
-		BT_ERR("index is invalid");
+		LOG_ERR("index is invalid");
 		return -EINVAL;
 	}
 
@@ -998,7 +999,7 @@ int bt_has_preset_available(uint8_t index)
 	struct has_preset *preset = NULL;
 
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
-		BT_ERR("index is invalid");
+		LOG_ERR("index is invalid");
 		return -EINVAL;
 	}
 
@@ -1028,7 +1029,7 @@ int bt_has_preset_unavailable(uint8_t index)
 	struct has_preset *preset = NULL;
 
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
-		BT_ERR("index is invalid");
+		LOG_ERR("index is invalid");
 		return -EINVAL;
 	}
 
@@ -1128,7 +1129,10 @@ static int has_init(const struct device *dev)
 
 	/* Initialize the supported features characteristic value */
 	has.features = CONFIG_BT_HAS_HEARING_AID_TYPE & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
-	has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
+
+	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)) {
+		has.features |= BT_HAS_FEAT_DYNAMIC_PRESETS;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_BINAURAL)) {
 		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SYNC_SUPPORT)) {
@@ -1151,15 +1155,15 @@ static int has_init(const struct device *dev)
 			 * Front Left and the Front Right bits to a value of 0b1
 			 * in the Sink Audio Locations characteristic value.
 			 */
-			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-							 (BT_AUDIO_LOCATION_FRONT_LEFT |
-								BT_AUDIO_LOCATION_FRONT_RIGHT));
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     (BT_AUDIO_LOCATION_FRONT_LEFT |
+					      BT_AUDIO_LOCATION_FRONT_RIGHT));
 		} else if (IS_ENABLED(CONFIG_BT_HAS_HEARING_AID_LEFT)) {
-			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-							 BT_AUDIO_LOCATION_FRONT_LEFT);
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
-			bt_audio_capability_set_location(BT_AUDIO_DIR_SINK,
-							 BT_AUDIO_LOCATION_FRONT_RIGHT);
+			bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+					     BT_AUDIO_LOCATION_FRONT_RIGHT);
 		}
 	}
 

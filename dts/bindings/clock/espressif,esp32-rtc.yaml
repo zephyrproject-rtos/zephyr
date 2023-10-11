@@ -18,7 +18,6 @@ properties:
 
     xtal-div:
       type: int
-      required: false
       description: Divisor value for XTAL Clock, CPU_CLK = XTAL_FREQ / xtal-div
 
     "#clock-cells":

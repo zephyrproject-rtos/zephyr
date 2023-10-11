@@ -17,13 +17,33 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (ZTEST && PM)
 
-#
-# The base address of the external flash comes from the FLEXSPI base
-# address. The size of the flash is defined by what is populated and
-# described in the board devicetree file.
-#
+
+# The base address is determined from the zephyr,flash node with the following
+# precedence:
+# FlexSPI base address (if flash node is on a FlexSPI bus)
+# node reg property (used for memory regions such as SRAM)
+
+# Workaround for not being able to have commas in macro arguments
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_FLEXSPI := nxp,imx-flexspi
+
+# Macros to shorten Kconfig definitions
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@134000,1)
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+		if $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+# The RT6xx has no internal flash. If the flash node has a size property,
+# use that over the reg property. This is used for the external flash
+# present on the board. Otherwise, fallback to the reg property
+config FLASH_SIZE
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
+		if $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
 if FLASH_MCUX_FLEXSPI_XIP
 

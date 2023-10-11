@@ -18,7 +18,6 @@ properties:
 
     low-power-mode:
       type: boolean
-      required: false
       description: Enable low-power mode
 
     "#io-channel-cells":

@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(ivshmem);
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 
-#include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
@@ -45,7 +44,7 @@ static bool ivshmem_configure_interrupts(const struct device *dev)
 
 	key = irq_lock();
 
-	n_vectors = pcie_msi_vectors_allocate(data->bdf,
+	n_vectors = pcie_msi_vectors_allocate(data->pcie->bdf,
 					      CONFIG_IVSHMEM_INT_PRIORITY,
 					      data->vectors,
 					      CONFIG_IVSHMEM_MSI_X_VECTORS);
@@ -61,7 +60,7 @@ static bool ivshmem_configure_interrupts(const struct device *dev)
 		data->params[i].dev = dev;
 		data->params[i].vector = i;
 
-		if (!pcie_msi_vector_connect(data->bdf,
+		if (!pcie_msi_vector_connect(data->pcie->bdf,
 					     &data->vectors[i],
 					     ivshmem_doorbell,
 					     &data->params[i], 0)) {
@@ -72,7 +71,7 @@ static bool ivshmem_configure_interrupts(const struct device *dev)
 
 	LOG_DBG("%u MSI-X Vectors connected", n_vectors);
 
-	if (!pcie_msi_enable(data->bdf, data->vectors, n_vectors, 0)) {
+	if (!pcie_msi_enable(data->pcie->bdf, data->vectors, n_vectors, 0)) {
 		LOG_ERR("Could not enable MSI-X");
 		goto out;
 	}
@@ -108,9 +107,9 @@ static const struct ivshmem_reg no_reg;
 static bool ivshmem_configure(const struct device *dev)
 {
 	struct ivshmem *data = dev->data;
-	struct pcie_mbar mbar_regs, mbar_mem;
+	struct pcie_bar mbar_regs, mbar_mem;
 
-	if (!pcie_get_mbar(data->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
+	if (!pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
 #ifdef CONFIG_IVSHMEM_DOORBELL
 		LOG_ERR("ivshmem regs bar not found");
 		return false;
@@ -120,13 +119,13 @@ static bool ivshmem_configure(const struct device *dev)
 			   sizeof(struct ivshmem_reg), K_MEM_CACHE_NONE);
 #endif /* CONFIG_IVSHMEM_DOORBELL */
 	} else {
-		pcie_set_cmd(data->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_set_cmd(data->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
 			   mbar_regs.size, K_MEM_CACHE_NONE);
 	}
 
-	if (!pcie_get_mbar(data->bdf, IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_mem)) {
+	if (!pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_mem)) {
 		LOG_ERR("ivshmem mem bar not found");
 		return false;
 	}
@@ -225,27 +224,13 @@ static const struct ivshmem_driver_api ivshmem_api = {
 static int ivshmem_init(const struct device *dev)
 {
 	struct ivshmem *data = dev->data;
-	static bool bdf_lookup_done;
 
-	if ((data->bdf == PCIE_BDF_NONE) && bdf_lookup_done) {
-		LOG_ERR("One instance of ivshmem with pcie_bdf_lookup() already initialized.\n"
-			"Using more than one with PCIE_BDF_NONE parameter might conflict\n"
-			"with already initialized instances.");
+	if (data->pcie->bdf == PCIE_BDF_NONE) {
+		LOG_WRN("ivshmem device not found");
 		return -ENOTSUP;
 	}
-	if ((data->bdf == PCIE_BDF_NONE) && !bdf_lookup_done) {
-		if (data->dev_ven_id) {
-			data->bdf = pcie_bdf_lookup(data->dev_ven_id);
-		} else {
-			data->bdf = pcie_bdf_lookup(PCIE_ID(IVSHMEM_VENDOR_ID, IVSHMEM_DEVICE_ID));
-		}
-		if (data->bdf == PCIE_BDF_NONE) {
-			LOG_WRN("ivshmem device not found");
-			return -ENOTSUP;
-		}
-	}
-	LOG_DBG("ivshmem found at bdf 0x%x", data->bdf);
-	bdf_lookup_done = true;
+
+	LOG_DBG("ivshmem found at bdf 0x%x", data->pcie->bdf);
 
 	if (!ivshmem_configure(dev)) {
 		return -EIO;
@@ -254,9 +239,9 @@ static int ivshmem_init(const struct device *dev)
 }
 
 #define IVSHMEM_DEVICE_INIT(n) \
+	DEVICE_PCIE_INST_DECLARE(n); \
 	static struct ivshmem ivshmem_data_##n = { \
-		.bdf = DT_INST_REG_ADDR_BY_IDX(n, 0), \
-		.dev_ven_id = DT_INST_REG_SIZE_BY_IDX(n, 0) \
+		DEVICE_PCIE_INST_INIT(n, pcie), \
 	}; \
 	DEVICE_DT_INST_DEFINE(n, &ivshmem_init, NULL, \
 			      &ivshmem_data_##n, NULL, \

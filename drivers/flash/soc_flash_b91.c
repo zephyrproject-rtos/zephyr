@@ -12,7 +12,7 @@
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
-
+#include <zephyr/kernel.h>
 
 /* driver definitions */
 #define BLOCK_64K_SIZE         (0x10000u)

@@ -5,9 +5,8 @@ description: STMicroelectronics LSM9DS0 3-axis accelerometer + magnetometer
 
 compatible: "st,lsm9ds0-mfd"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     irq-gpios:
       type: phandle-array
-      required: false

@@ -33,8 +33,15 @@
 		compatible = "mmio-sram";
 	};
 
-	flash0: serial-flash@c000000 {
-		compatible = "serial-flash";
+	flash_controller: flash_controller@58001000 {
+		compatible = "infineon,xmc4xxx-flash-controller";
+		reg = <0x58001000 0x1400>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		flash0: flash@c000000 {
+			compatible = "infineon,xmc4xxx-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+		};
 	};
 
 	sysclk: system-clock {
@@ -44,6 +51,16 @@
 	};
 
 	soc {
+		intc: eru@40044000 {
+			compatible = "infineon,xmc4xxx-intc";
+			reg = <0x40044000 0xff>, <0x50004800 0xff>;
+			/* naming order is intentional. eru1 maps to a lower address than eru0 */
+			reg-names = "eru1", "eru0";
+			interrupts = <1 1>, <2 1>, <3 1>, <4 1>, <5 1>, <6 1>, <7 1>, <8 1>;
+			interrupt-names = "eru0sr0", "eru0sr1", "eru0sr2", "eru0sr3",
+					"eru1sr0", "eru1sr1", "eru1sr2", "eru1sr3";
+		};
+
 		pinctrl: pinctrl@48028000 {
 			compatible = "infineon,xmc4xxx-pinctrl";
 			#address-cells = <1>;

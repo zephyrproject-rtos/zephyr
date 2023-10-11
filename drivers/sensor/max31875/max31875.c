@@ -268,7 +268,7 @@ static int max31875_init(const struct device *dev)
 		.resolution = DT_INST_ENUM_IDX(inst, resolution),			  \
 		.data_format = DT_INST_PROP(inst, extended_mode),			  \
 	};										  \
-	DEVICE_DT_INST_DEFINE(inst, max31875_init, NULL, &max31875_data_##inst,		  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31875_init, NULL, &max31875_data_##inst,	  \
 			      &max31875_config_##inst, POST_KERNEL,			  \
 			      CONFIG_SENSOR_INIT_PRIORITY, &max31875_driver_api);
 

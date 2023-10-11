@@ -41,7 +41,6 @@ child-binding:
           type: phandle-array
           required: true
        label:
-          required: false
           type: string
           description: |
             Human readable string describing the LED. It can be used by an

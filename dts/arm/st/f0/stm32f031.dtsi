@@ -17,6 +17,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			resets = <&rctl STM32_RESET(APB1, 0U)>;
 			interrupts = <15 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -26,6 +27,13 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+		};
+		rtc@40002800 {
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <5>;
+				status = "disabled";
 			};
 		};
 	};

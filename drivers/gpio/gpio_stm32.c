@@ -25,7 +25,7 @@
 
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 /**
  * @brief Common GPIO driver for STM32 MCUs.
@@ -550,8 +550,8 @@ static int gpio_stm32_config(const struct device *dev,
 
 	gpio_stm32_configure_raw(dev, pin, pincfg, 0);
 
-	/* Release clock only if configuration doesn't require bank writes */
-	if ((flags & GPIO_OUTPUT) == 0) {
+	/* Release clock only if pin is disconnected */
+	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0)) {
 		err = pm_device_runtime_put(dev);
 		if (err < 0) {
 			return err;

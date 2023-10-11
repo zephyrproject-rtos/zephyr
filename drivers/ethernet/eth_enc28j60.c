@@ -296,6 +296,35 @@ static void eth_enc28j60_write_phy(const struct device *dev,
 	} while ((data_mistat & ENC28J60_BIT_MISTAT_BUSY));
 }
 
+static void eth_enc28j60_read_phy(const struct device *dev,
+				   uint16_t reg_addr,
+				   int16_t *data)
+{
+	uint8_t data_mistat;
+	uint8_t lsb;
+	uint8_t msb;
+
+	eth_enc28j60_set_bank(dev, ENC28J60_REG_MIREGADR);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MIREGADR, reg_addr);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MICMD,
+					ENC28J60_BIT_MICMD_MIIRD);
+	eth_enc28j60_set_bank(dev, ENC28J60_REG_MISTAT);
+
+	do {
+		/* wait 10.24 useconds */
+		k_busy_wait(D10D24S);
+		eth_enc28j60_read_reg(dev, ENC28J60_REG_MISTAT,
+				      &data_mistat);
+	} while ((data_mistat & ENC28J60_BIT_MISTAT_BUSY));
+
+	eth_enc28j60_set_bank(dev, ENC28J60_REG_MIREGADR);
+	eth_enc28j60_write_reg(dev, ENC28J60_REG_MICMD, 0x0);
+	eth_enc28j60_read_reg(dev, ENC28J60_REG_MIRDL, &lsb);
+	eth_enc28j60_read_reg(dev, ENC28J60_REG_MIRDH, &msb);
+
+	*data = (msb << 8) | lsb;
+}
+
 static void eth_enc28j60_gpio_callback(const struct device *dev,
 				       struct gpio_callback *cb,
 				       uint32_t pins)
@@ -686,6 +715,22 @@ static void eth_enc28j60_rx_thread(const struct device *dev)
 			eth_enc28j60_clear_eth_reg(dev, ENC28J60_REG_EIR,
 						   ENC28J60_BIT_EIR_PKTIF
 						   | ENC28J60_BIT_EIR_RXERIF);
+		} else if (int_stat & ENC28J60_BIT_EIR_LINKIF) {
+			uint16_t phir;
+			uint16_t phstat2;
+			/* Clear link change interrupt flag by PHIR reg read */
+			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHIR, &phir);
+			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
+			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
+				LOG_INF("Link up");
+				net_eth_carrier_on(context->iface);
+			} else {
+				LOG_INF("Link down");
+
+				if (context->iface_initialized) {
+					net_eth_carrier_off(context->iface);
+				}
+			}
 		}
 	}
 }
@@ -719,6 +764,9 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 	}
 
 	ethernet_init(iface);
+
+	net_if_carrier_off(iface);
+	context->iface_initialized = true;
 }
 
 static const struct ethernet_api api_funcs = {
@@ -734,7 +782,7 @@ static int eth_enc28j60_init(const struct device *dev)
 	struct eth_enc28j60_runtime *context = dev->data;
 
 	/* SPI config */
-	if (!spi_is_ready(&config->spi)) {
+	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
@@ -781,6 +829,9 @@ static int eth_enc28j60_init(const struct device *dev)
 	/* Enable interruptions */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_INTIE);
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_PKTIE);
+	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_EIE, ENC28J60_BIT_EIE_LINKIE);
+	eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHIE, ENC28J60_BIT_PHIE_PGEIE |
+				ENC28J60_BIT_PHIE_PLNKIE);
 
 	/* Enable Reception */
 	eth_enc28j60_set_eth_reg(dev, ENC28J60_REG_ECON1,

@@ -22,15 +22,19 @@ config ZTEST_FAIL_TEST_PASS_AFTER
 config ZTEST_FAIL_TEST_PASS_TEARDOWN
 	bool "Add a call to ztest_test_pass() in the teardown phase"
 
+config ZTEST_FAIL_TEST_UNEXPECTED_ASSUME
+	bool "Add a test which fails a zassume() call"
+
 endchoice
 
 config TEST_ERROR_STRING
 	string
-	default "ERROR: cannot fail in test 'after()', bailing" if ZTEST_FAIL_TEST_ASSERT_AFTER
-	default "ERROR: cannot fail in test 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSERT_TEARDOWN
-	default "ERROR: cannot skip in test 'after()', bailing" if ZTEST_FAIL_TEST_ASSUME_AFTER
-	default "ERROR: cannot skip in test 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSUME_TEARDOWN
-	default "ERROR: cannot pass in test 'after()', bailing" if ZTEST_FAIL_TEST_PASS_AFTER
-	default "ERROR: cannot pass in test 'teardown()', bailing" if ZTEST_FAIL_TEST_PASS_TEARDOWN
+	default "ERROR: cannot fail in test phase 'after()', bailing" if ZTEST_FAIL_TEST_ASSERT_AFTER
+	default "ERROR: cannot fail in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSERT_TEARDOWN
+	default "ERROR: cannot skip in test phase 'after()', bailing" if ZTEST_FAIL_TEST_ASSUME_AFTER
+	default "ERROR: cannot skip in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_ASSUME_TEARDOWN
+	default "ERROR: cannot pass in test phase 'after()', bailing" if ZTEST_FAIL_TEST_PASS_AFTER
+	default "ERROR: cannot pass in test phase 'teardown()', bailing" if ZTEST_FAIL_TEST_PASS_TEARDOWN
+	default "Assumption failed at " if ZTEST_FAIL_TEST_UNEXPECTED_ASSUME
 
 source "Kconfig.zephyr"

@@ -199,7 +199,7 @@ typedef int (*peci_transfer_t)(const struct device *dev, struct peci_msg *msg);
 typedef int (*peci_disable_t)(const struct device *dev);
 typedef int (*peci_enable_t)(const struct device *dev);
 
-struct peci_driver_api {
+__subsystem struct peci_driver_api {
 	peci_config_t config;
 	peci_disable_t disable;
 	peci_enable_t enable;

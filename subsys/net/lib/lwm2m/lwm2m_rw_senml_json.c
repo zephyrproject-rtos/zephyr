@@ -55,15 +55,34 @@ struct senml_boolean_payload {
 	bool val_bool;
 };
 
+struct senml_boolean_t_payload {
+	const char *name;
+	bool val_bool;
+	struct json_obj_token time;
+};
+
 struct senml_boolean_bn_payload {
 	const char *base_name;
 	const char *name;
 	bool val_bool;
 };
 
+struct senml_boolean_bn_t_payload {
+	const char *base_name;
+	const char *name;
+	bool val_bool;
+	struct json_obj_token base_time;
+};
+
 struct senml_float_payload {
 	const char *name;
 	struct json_obj_token val_float;
+};
+
+struct senml_float_t_payload {
+	const char *name;
+	struct json_obj_token val_float;
+	struct json_obj_token time;
 };
 
 struct senml_float_bn_payload {
@@ -72,12 +91,23 @@ struct senml_float_bn_payload {
 	struct json_obj_token val_float;
 };
 
+struct senml_float_bn_t_payload {
+	const char *base_name;
+	const char *name;
+	struct json_obj_token val_float;
+	struct json_obj_token base_time;
+};
+
 struct senml_json_object {
 	union {
 		struct senml_float_payload  float_obj;
+		struct senml_float_t_payload float_t_obj;
 		struct senml_float_bn_payload float_bn_obj;
+		struct senml_float_bn_t_payload float_bn_t_obj;
 		struct senml_boolean_payload boolean_obj;
+		struct senml_boolean_t_payload boolean_t_obj;
 		struct senml_boolean_bn_payload boolean_bn_obj;
+		struct senml_boolean_bn_t_payload boolean_bn_t_obj;
 		struct senml_opaque_payload  opaque_obj;
 		struct senml_opaque_bn_payload  opaque_bn_obj;
 		struct senml_string_payload string_obj;
@@ -89,8 +119,12 @@ struct json_out_formatter_data {
 	uint8_t writer_flags;
 	struct lwm2m_obj_path base_name;
 	bool add_base_name_to_start;
+	bool historical_data;
 	char bn_string[sizeof("/65535/65535/") + 1];
 	char name_string[sizeof("/65535/65535/") + 1];
+	char timestamp_buffer[42];
+	int timestamp_length;
+	time_t base_time;
 	struct senml_json_object json;
 	struct lwm2m_output_context *out;
 };
@@ -146,11 +180,31 @@ static const struct json_obj_descr senml_float_bn_descr[] = {
 				  val_float, JSON_TOK_FLOAT),
 };
 
+static const struct json_obj_descr senml_float_bn_t_descr[] = {
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_bn_t_payload, "bn",
+				  base_name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_bn_t_payload, "bt",
+				  base_time, JSON_TOK_FLOAT),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_bn_t_payload, "n",
+				  name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_bn_t_payload, "v",
+				  val_float, JSON_TOK_FLOAT),
+};
+
 static const struct json_obj_descr senml_float_descr[] = {
 	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_payload, "n",
 				  name, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_payload, "v",
 				  val_float, JSON_TOK_FLOAT),
+};
+
+static const struct json_obj_descr senml_float_t_descr[] = {
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_t_payload, "n",
+				  name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_t_payload, "v",
+				  val_float, JSON_TOK_FLOAT),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_float_t_payload, "t",
+				  time, JSON_TOK_FLOAT),
 };
 
 static const struct json_obj_descr senml_boolean_bn_descr[] = {
@@ -162,11 +216,31 @@ static const struct json_obj_descr senml_boolean_bn_descr[] = {
 				  val_bool, JSON_TOK_TRUE),
 };
 
+static const struct json_obj_descr senml_boolean_bn_t_descr[] = {
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_bn_t_payload, "bn",
+				  base_name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_bn_t_payload, "bt",
+				  base_time, JSON_TOK_FLOAT),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_bn_t_payload, "n",
+				  name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_bn_t_payload, "vb",
+				  val_bool, JSON_TOK_TRUE),
+};
+
 static const struct json_obj_descr senml_boolean_descr[] = {
 	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_payload, "n",
 				  name, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_payload, "vb",
 				  val_bool, JSON_TOK_TRUE),
+};
+
+static const struct json_obj_descr senml_boolean_t_descr[] = {
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_t_payload, "n",
+				  name, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_t_payload, "vb",
+				  val_bool, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct senml_boolean_t_payload, "t",
+				  time, JSON_TOK_FLOAT),
 };
 
 static const struct json_obj_descr senml_obj_lnk_bn_descr[] = {
@@ -347,20 +421,36 @@ static int put_end_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	return 0;
 }
 
-static int number_to_string(const char *format, ...)
+static int put_end_r(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
+{
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return -EINVAL;
+	}
+
+	/* Clear Historical Data */
+	fd->historical_data = false;
+	fd->base_time = 0;
+	return 0;
+}
+
+static int number_to_string(char *buf, size_t buf_len, const char *format, ...)
 {
 	va_list vargs;
 	int n;
 
 	va_start(vargs, format);
-	n = vsnprintk(pt_buffer, sizeof(pt_buffer), format, vargs);
+	n = vsnprintk(buf, buf_len, format, vargs);
 	va_end(vargs);
-	if (n < 0 || n >= sizeof(pt_buffer)) {
+	if (n < 0 || n >= buf_len) {
 		return -EINVAL;
 	}
 
 	return n;
 }
+
 
 static int float_to_string(double *value)
 {
@@ -418,21 +508,44 @@ static int json_float_object_write(struct lwm2m_output_context *out,
 	}
 
 	if (fd->add_base_name_to_start) {
-		descr = senml_float_bn_descr;
-		descr_len = ARRAY_SIZE(senml_float_bn_descr);
-		obj_payload = &fd->json.obj.float_bn_obj;
-		fd->json.obj.float_bn_obj.base_name = fd->bn_string;
-		fd->json.obj.float_bn_obj.name = fd->name_string;
-		fd->json.obj.float_bn_obj.val_float.start = pt_buffer;
-		fd->json.obj.float_bn_obj.val_float.length = float_string_length;
+		if (fd->historical_data) {
+			descr = senml_float_bn_t_descr;
+			descr_len = ARRAY_SIZE(senml_float_bn_t_descr);
+			obj_payload = &fd->json.obj.float_bn_t_obj;
+			fd->json.obj.float_bn_t_obj.base_name = fd->bn_string;
+			fd->json.obj.float_bn_t_obj.name = fd->name_string;
+			fd->json.obj.float_bn_t_obj.val_float.start = pt_buffer;
+			fd->json.obj.float_bn_t_obj.val_float.length = float_string_length;
+			fd->json.obj.float_bn_t_obj.base_time.start = fd->timestamp_buffer;
+			fd->json.obj.float_bn_t_obj.base_time.length = fd->timestamp_length;
+		} else {
+			descr = senml_float_bn_descr;
+			descr_len = ARRAY_SIZE(senml_float_bn_descr);
+			obj_payload = &fd->json.obj.float_bn_obj;
+			fd->json.obj.float_bn_obj.base_name = fd->bn_string;
+			fd->json.obj.float_bn_obj.name = fd->name_string;
+			fd->json.obj.float_bn_obj.val_float.start = pt_buffer;
+			fd->json.obj.float_bn_obj.val_float.length = float_string_length;
+		}
 
 	} else {
-		descr = senml_float_descr;
-		descr_len = ARRAY_SIZE(senml_float_descr);
-		obj_payload = &fd->json.obj.float_obj;
-		fd->json.obj.float_obj.name = fd->name_string;
-		fd->json.obj.float_obj.val_float.start = pt_buffer;
-		fd->json.obj.float_obj.val_float.length = float_string_length;
+		if (fd->historical_data) {
+			descr = senml_float_t_descr;
+			descr_len = ARRAY_SIZE(senml_float_t_descr);
+			obj_payload = &fd->json.obj.float_t_obj;
+			fd->json.obj.float_t_obj.name = fd->name_string;
+			fd->json.obj.float_t_obj.val_float.start = pt_buffer;
+			fd->json.obj.float_t_obj.val_float.length = float_string_length;
+			fd->json.obj.float_t_obj.time.start = fd->timestamp_buffer;
+			fd->json.obj.float_t_obj.time.length = fd->timestamp_length;
+		} else {
+			descr = senml_float_descr;
+			descr_len = ARRAY_SIZE(senml_float_descr);
+			obj_payload = &fd->json.obj.float_obj;
+			fd->json.obj.float_obj.name = fd->name_string;
+			fd->json.obj.float_obj.val_float.start = pt_buffer;
+			fd->json.obj.float_obj.val_float.length = float_string_length;
+		}
 	}
 
 	/* Calculate length */
@@ -518,19 +631,40 @@ static int json_boolean_object_write(struct lwm2m_output_context *out,
 	}
 
 	if (fd->add_base_name_to_start) {
-		descr = senml_boolean_bn_descr;
-		descr_len = ARRAY_SIZE(senml_boolean_bn_descr);
-		obj_payload = &fd->json.obj.boolean_bn_obj;
-		fd->json.obj.boolean_bn_obj.base_name = fd->bn_string;
-		fd->json.obj.boolean_bn_obj.name = fd->name_string;
-		fd->json.obj.boolean_bn_obj.val_bool = value;
+		if (fd->historical_data) {
+			descr = senml_boolean_bn_t_descr;
+			descr_len = ARRAY_SIZE(senml_boolean_bn_t_descr);
+			obj_payload = &fd->json.obj.boolean_bn_t_obj;
+			fd->json.obj.boolean_bn_t_obj.base_name = fd->bn_string;
+			fd->json.obj.boolean_bn_t_obj.name = fd->name_string;
+			fd->json.obj.boolean_bn_t_obj.base_time.start = fd->timestamp_buffer;
+			fd->json.obj.boolean_bn_t_obj.base_time.length = fd->timestamp_length;
+			fd->json.obj.boolean_bn_t_obj.val_bool = value;
+		} else {
+			descr = senml_boolean_bn_descr;
+			descr_len = ARRAY_SIZE(senml_boolean_bn_descr);
+			obj_payload = &fd->json.obj.boolean_bn_obj;
+			fd->json.obj.boolean_bn_obj.base_name = fd->bn_string;
+			fd->json.obj.boolean_bn_obj.name = fd->name_string;
+			fd->json.obj.boolean_bn_obj.val_bool = value;
+		}
 
 	} else {
-		descr = senml_boolean_descr;
-		descr_len = ARRAY_SIZE(senml_boolean_descr);
-		obj_payload = &fd->json.obj.boolean_obj;
-		fd->json.obj.boolean_obj.name = fd->name_string;
-		fd->json.obj.boolean_obj.val_bool = value;
+		if (fd->historical_data) {
+			descr = senml_boolean_t_descr;
+			descr_len = ARRAY_SIZE(senml_boolean_t_descr);
+			obj_payload = &fd->json.obj.boolean_t_obj;
+			fd->json.obj.boolean_t_obj.name = fd->name_string;
+			fd->json.obj.boolean_t_obj.time.start = fd->timestamp_buffer;
+			fd->json.obj.boolean_t_obj.time.length = fd->timestamp_length;
+			fd->json.obj.boolean_t_obj.val_bool = value;
+		} else {
+			descr = senml_boolean_descr;
+			descr_len = ARRAY_SIZE(senml_boolean_descr);
+			obj_payload = &fd->json.obj.boolean_obj;
+			fd->json.obj.boolean_obj.name = fd->name_string;
+			fd->json.obj.boolean_obj.val_bool = value;
+		}
 	}
 
 	/* Calculate length */
@@ -616,7 +750,7 @@ static int put_s32(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 		return -EINVAL;
 	}
 
-	len = number_to_string("%d", value);
+	len = number_to_string(pt_buffer, sizeof(pt_buffer), "%d", value);
 	if (len < 0) {
 		return len;
 	}
@@ -649,12 +783,17 @@ static int put_s64(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 		return -EINVAL;
 	}
 
-	len = number_to_string("%lld", value);
+	len = number_to_string(pt_buffer, sizeof(pt_buffer), "%lld", value);
 	if (len < 0) {
 		return len;
 	}
 
 	return json_float_object_write(out, fd, len);
+}
+
+static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, time_t value)
+{
+	return put_s64(out, path, (int64_t)value);
 }
 
 static int put_string(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, char *buf,
@@ -921,6 +1060,17 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 	return read_int(in, value, true);
 }
 
+static int get_time(struct lwm2m_input_context *in, time_t *value)
+{
+	int64_t temp64;
+	int ret;
+
+	ret = read_int(in, &temp64, true);
+	*value = (time_t)temp64;
+
+	return ret;
+}
+
 static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
 	int64_t tmp = 0;
@@ -1181,29 +1331,61 @@ static int get_objlnk(struct lwm2m_input_context *in, struct lwm2m_objlnk *value
 	return total_len;
 }
 
+static int put_data_timestamp(struct lwm2m_output_context *out, time_t value)
+{
+	struct json_out_formatter_data *fd;
+	int len;
+
+	fd = engine_get_out_user_data(out);
+
+	if (!out->out_cpkt || !fd) {
+		LOG_ERR("Timestamp fail");
+		return -EINVAL;
+	}
+
+	len = number_to_string(fd->timestamp_buffer, sizeof(fd->timestamp_buffer), "%lld",
+			       value - fd->base_time);
+
+	if (len < 0) {
+		return len;
+	}
+
+	if (fd->base_time == 0) {
+		/* Store  base time */
+		fd->base_time = value;
+	}
+
+	fd->timestamp_length = len;
+	fd->historical_data = true;
+
+	return 0;
+}
+
 const struct lwm2m_writer senml_json_writer = {
 	.put_begin = put_begin,
 	.put_end = put_end,
 	.put_begin_oi = put_begin_oi,
 	.put_begin_ri = put_begin_ri,
 	.put_end_ri = put_end_ri,
+	.put_end_r = put_end_r,
 	.put_s8 = put_s8,
 	.put_s16 = put_s16,
 	.put_s32 = put_s32,
 	.put_s64 = put_s64,
 	.put_string = put_string,
-	.put_time = put_s64,
+	.put_time = put_time,
 	.put_float = put_float,
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
+	.put_data_timestamp = put_data_timestamp,
 };
 
 const struct lwm2m_reader senml_json_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
 	.get_string = get_string,
-	.get_time = get_s64,
+	.get_time = get_time,
 	.get_float = get_float,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,

@@ -99,9 +99,6 @@ static int pwm_it8xxx2_set_cycles(const struct device *dev,
 	uint32_t actual_freq = 0xffffffff, target_freq, deviation, cxcprs, ctr;
 	uint64_t pwm_clk_src;
 
-	/* PWM channel clock source gating before configuring */
-	pwm_enable(dev, 0);
-
 	/* Select PWM inverted polarity (ex. active-low pulse) */
 	if (flags & PWM_POLARITY_INVERTED) {
 		*reg_pwmpol |= BIT(ch);
@@ -281,7 +278,7 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 			      NULL,							\
 			      &pwm_it8xxx2_cfg_##inst,					\
 			      PRE_KERNEL_1,						\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			      CONFIG_PWM_INIT_PRIORITY,					\
 			      &pwm_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_IT8XXX2_INIT)

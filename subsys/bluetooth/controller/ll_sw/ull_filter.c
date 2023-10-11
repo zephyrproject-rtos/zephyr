@@ -47,10 +47,11 @@
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_filter
-#include "common/log.h"
 #include "hal/debug.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_ctlr_ull_filter);
 
 #define ADDR_TYPE_ANON 0xFF
 
@@ -729,7 +730,7 @@ void ull_filter_rpa_update(bool timeout)
 	int64_t now = k_uptime_get();
 	bool all = timeout || (rpa_last_ms == -1) ||
 		   (now - rpa_last_ms >= rpa_timeout_ms);
-	BT_DBG("");
+	LOG_DBG("");
 
 	for (i = 0U; i < CONFIG_BT_CTLR_RL_SIZE; i++) {
 		if ((rl[i].taken) && (all || !rl[i].rpas_ready)) {
@@ -1264,7 +1265,7 @@ static void rpa_timeout(struct k_work *work)
 
 static void rpa_refresh_start(void)
 {
-	BT_DBG("");
+	LOG_DBG("");
 	k_work_schedule(&rpa_work, K_MSEC(rpa_timeout_ms));
 }
 

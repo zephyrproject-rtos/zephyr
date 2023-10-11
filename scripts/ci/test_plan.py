@@ -256,7 +256,7 @@ class Filters:
             self.tag_options.extend(["-e", tag ])
 
         if exclude_tags:
-            logging.info(f'Potential tag based filters...')
+            logging.info(f'Potential tag based filters: {exclude_tags}')
 
     def find_excludes(self, skip=[]):
         with open("scripts/ci/twister_ignore.txt", "r") as twister_ignore:
@@ -316,6 +316,7 @@ if __name__ == "__main__":
 
     args = parse_args()
     files = []
+    errors = 0
     if args.commits:
         repo = Repo(repository_path)
         commit = repo.git.diff("--name-only", args.commits)
@@ -342,11 +343,12 @@ if __name__ == "__main__":
         n = ts.get("name")
         a = ts.get("arch")
         p = ts.get("platform")
+        if ts.get('status') == 'error':
+            logging.info(f"Error found: {n} on {p} ({ts.get('reason')})")
+            errors += 1
         if (n, a, p,) not in dup_free_set:
             dup_free.append(ts)
             dup_free_set.add((n, a, p,))
-        else:
-            logging.info(f"skipped {n} on {p}")
 
     logging.info(f'Total tests to be run: {len(dup_free)}')
     with open(".testplan", "w") as tp:
@@ -368,7 +370,7 @@ if __name__ == "__main__":
         logging.info(f'Total nodes to launch: {nodes}')
 
     header = ['test', 'arch', 'platform', 'status', 'extra_args', 'handler',
-            'handler_time', 'ram_size', 'rom_size']
+            'handler_time', 'used_ram', 'used_rom']
 
     # write plan
     if dup_free:
@@ -376,3 +378,5 @@ if __name__ == "__main__":
         data['testsuites'] = dup_free
         with open(args.output_file, 'w', newline='') as json_file:
             json.dump(data, json_file, indent=4, separators=(',',':'))
+
+    sys.exit(errors)

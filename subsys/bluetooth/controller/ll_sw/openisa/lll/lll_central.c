@@ -29,8 +29,6 @@
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_openisa_lll_central
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 

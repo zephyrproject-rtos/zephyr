@@ -221,6 +221,8 @@
 			interrupts = <SPI2_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_FSPI_MODULE>;
+			dma-clk = <ESP32_SPI2_DMA_MODULE>;
+			dma-host = <0>;
 			status = "disabled";
 		};
 
@@ -230,6 +232,8 @@
 			interrupts = <SPI3_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_HSPI_MODULE>;
+			dma-clk = <ESP32_SPI3_DMA_MODULE>;
+			dma-host = <1>;
 			status = "disabled";
 		};
 
@@ -248,6 +252,22 @@
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TIMG1_MODULE>;
+			status = "disabled";
+		};
+
+		dac: dac@3f408800 {
+			compatible = "espressif,esp32-dac";
+			reg = <0x3f408800 0x100>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_PERIPH_SARADC_MODULE>;
+			#io-channel-cells = <1>;
+		};
+
+		coretemp: coretemp@3f408800 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x3f408800 0x4>;
 			status = "disabled";
 		};
 	};

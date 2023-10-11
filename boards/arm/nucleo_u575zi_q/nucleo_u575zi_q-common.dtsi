@@ -34,6 +34,10 @@
 	};
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };

@@ -20,9 +20,12 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
+#include <zephyr/sys_clock.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

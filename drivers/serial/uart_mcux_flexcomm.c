@@ -18,6 +18,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 #include <fsl_usart.h>
 #include <soc.h>
 #include <fsl_device_registers.h>

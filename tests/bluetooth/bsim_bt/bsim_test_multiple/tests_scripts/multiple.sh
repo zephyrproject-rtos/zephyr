@@ -13,7 +13,7 @@ function Execute(){
  compile it?)\e[39m"
     exit 1
   fi
-  timeout 900 $@ & process_ids="$process_ids $!"
+  timeout 1800 $@ & process_ids="$process_ids $!"
 }
 
 : "${BSIM_OUT_PATH:?BSIM_OUT_PATH must be defined}"

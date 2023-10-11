@@ -187,7 +187,7 @@ static int lis2dh_start_trigger_int2(const struct device *dev)
 	return lis2dh->hw_tf->write_reg(
 		dev,
 		cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_CFG : LIS2DH_REG_INT2_CFG,
-		LIS2DH_ANYM_CFG);
+		(cfg->hw.anym_mode << LIS2DH_INT_CFG_MODE_SHIFT) | LIS2DH_ANYM_CFG);
 }
 
 int lis2dh_trigger_set(const struct device *dev,
@@ -265,6 +265,22 @@ int lis2dh_acc_slope_config(const struct device *dev,
 	return status;
 }
 
+#ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
+int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
+{
+	struct lis2dh_data *lis2dh = dev->data;
+	int status;
+
+	status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL2,
+					   LIS2DH_HPIS_EN_MASK, val);
+	if (status < 0) {
+		LOG_ERR("Failed to set high pass filters");
+	}
+
+	return status;
+}
+#endif
+
 static void lis2dh_gpio_int1_callback(const struct device *dev,
 				      struct gpio_callback *cb, uint32_t pins)
 {
@@ -275,7 +291,7 @@ static void lis2dh_gpio_int1_callback(const struct device *dev,
 
 	atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT1);
 
-	/* int is level triggered so disable until we clear it */
+	/* int is level triggered so disable until processed */
 	setup_int1(lis2dh->dev, false);
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
@@ -295,7 +311,7 @@ static void lis2dh_gpio_int2_callback(const struct device *dev,
 
 	atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT2);
 
-	/* int is level triggered so disable until we clear it */
+	/* int is level triggered so disable until processed */
 	setup_int2(lis2dh->dev, false);
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
@@ -365,15 +381,17 @@ static void lis2dh_thread_cb(const struct device *dev)
 		};
 		uint8_t reg_val;
 
-		/* clear interrupt to de-assert int line */
-		status = lis2dh->hw_tf->read_reg(dev,
-						 cfg->hw.anym_on_int1 ?
-							       LIS2DH_REG_INT1_SRC :
-							       LIS2DH_REG_INT2_SRC,
-						 &reg_val);
-		if (status < 0) {
-			LOG_ERR("clearing interrupt 2 failed: %d", status);
-			return;
+		if (cfg->hw.anym_latch) {
+			/* clear interrupt to de-assert int line */
+			status = lis2dh->hw_tf->read_reg(dev,
+							 cfg->hw.anym_on_int1 ?
+								LIS2DH_REG_INT1_SRC :
+								LIS2DH_REG_INT2_SRC,
+							 &reg_val);
+			if (status < 0) {
+				LOG_ERR("clearing interrupt 2 failed: %d", status);
+				return;
+			}
 		}
 
 		if (likely(lis2dh->handler_anymotion != NULL)) {
@@ -538,23 +556,25 @@ check_gpio_int:
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL3,
 						   LIS2DH_EN_INT1_INT1,
 						   LIS2DH_EN_INT1_INT1);
-
-		/* latch int1 line interrupt */
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
-						  LIS2DH_EN_LIR_INT1);
+		if (cfg->hw.anym_latch) {
+			/* latch int1 line interrupt */
+			status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
+							  LIS2DH_EN_LIR_INT1);
+		}
 	} else {
 		/* enable interrupt 2 on int2 line */
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL6,
 						   LIS2DH_EN_INT2_INT2,
 						   LIS2DH_EN_INT2_INT2);
-
-		/* latch int2 line interrupt */
-		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
-						  LIS2DH_EN_LIR_INT2);
+		if (cfg->hw.anym_latch) {
+			/* latch int2 line interrupt */
+			status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
+							  LIS2DH_EN_LIR_INT2);
+		}
 	}
 
 	if (status < 0) {
-		LOG_ERR("latch enable reg write failed (%d)", status);
+		LOG_ERR("enable reg write failed (%d)", status);
 		return status;
 	}
 

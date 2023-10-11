@@ -20,6 +20,10 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 
+#if !defined(CONFIG_CPU_CORTEX_M)
+#include <zephyr/arch/arm/aarch32/cortex_a_r/lib_helpers.h>
+#endif
+
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <aarch32/cortex_a_r/stack.h>
 #endif
@@ -59,6 +63,7 @@ static inline void relocate_vector_table(void)
 
 static inline void relocate_vector_table(void)
 {
+	write_sctlr(read_sctlr() & ~HIVECS);
 	write_vbar(VECTOR_ADDRESS & VBAR_MASK);
 	__ISB();
 }
@@ -70,6 +75,9 @@ void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
     !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+#if !defined(CONFIG_CPU_CORTEX_M)
+	write_sctlr(read_sctlr() & ~HIVECS);
+#endif
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	(void)memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
 #elif defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)

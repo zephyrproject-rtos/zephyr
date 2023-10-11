@@ -6,12 +6,14 @@
 
 #include <string.h>
 #include <zephyr/drivers/i2s.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include "i2s_litex.h"
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 LOG_MODULE_REGISTER(i2s_litex);
 

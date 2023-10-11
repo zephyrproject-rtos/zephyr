@@ -5,13 +5,16 @@
  */
 
 #include <zephyr/kernel.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/addr.h>
 #include <host/keys.h>
+#include <zephyr/fff.h>
 #include "mocks/conn.h"
 #include "mocks/hci_core.h"
 #include "mocks/keys_help_utils.h"
-#include "host_mocks/print_utils.h"
 #include "testing_common_defs.h"
+#include "common/bt_str.h"
+
+DEFINE_FFF_GLOBALS;
 
 /* This LUT contains different combinations of ID and Address pairs */
 const struct id_addr_pair testing_id_addr_pair_lut[] = {
@@ -163,7 +166,9 @@ static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixt
 
 	/* Skip tests if not all startup suite hasn't been executed */
 	if (strcmp(test->test_suite_name, "bt_keys_get_addr_startup")) {
-		zassume_true(all_startup_checks_executed == true, NULL);
+		if (all_startup_checks_executed != true) {
+			ztest_test_skip();
+		}
 	}
 
 	CONN_FFF_FAKES_LIST(RESET_FAKE);

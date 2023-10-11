@@ -10,18 +10,7 @@
 #include <errno.h>
 #include "coverage.h"
 
-
-#if defined(CONFIG_X86) || defined(CONFIG_SOC_SERIES_MPS2)
-#define MALLOC_MAX_HEAP_SIZE 32768
-#define MALLOC_MIN_BLOCK_SIZE 128
-#else
-#define MALLOC_MAX_HEAP_SIZE 16384
-#define MALLOC_MIN_BLOCK_SIZE 64
-#endif
-
-
-K_HEAP_DEFINE(gcov_heap, MALLOC_MAX_HEAP_SIZE);
-
+K_HEAP_DEFINE(gcov_heap, CONFIG_COVERAGE_GCOV_HEAP_SIZE);
 
 static struct gcov_info *gcov_info_head;
 

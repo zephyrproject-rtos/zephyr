@@ -171,7 +171,6 @@ child-binding:
 
     st,timing-ext:
       type: array
-      required: false # required when 'EXTMOD' is enabled
       default: [0xF, 0xF, 0xFF, 0xF, 0x0] # reset state
       description: |
         SRAM/NOR-Flash (write) timing register (FMC_BWTRx).

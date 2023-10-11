@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/printk.h>
 
 #include "hawkbit_firmware.h"
 

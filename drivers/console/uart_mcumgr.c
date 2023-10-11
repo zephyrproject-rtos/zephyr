@@ -12,7 +12,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/mgmt/mcumgr/serial.h>
+#include <zephyr/mgmt/mcumgr/transport/serial.h>
 #include <zephyr/drivers/console/uart_mcumgr.h>
 
 static const struct device *const uart_mcumgr_dev =

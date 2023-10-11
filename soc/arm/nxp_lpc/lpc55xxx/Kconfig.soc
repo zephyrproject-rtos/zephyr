@@ -120,14 +120,8 @@ config SECOND_CORE_MCUX
 	bool "LPC55xxx's second core"
 	depends on HAS_MCUX
 	help
-	  Driver for second core startup
-
-config SECOND_IMAGE_MCUX
-	depends on SECOND_CORE_MCUX
-	string "Binary image of second core's code"
-	help
-	  This points to the image file for the the binary code that will be
-	  used by the second core.
+	  Indicates the second core will be enabled, and the part will run
+	  in dual core mode.
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition
@@ -138,5 +132,11 @@ config SECOND_CORE_BOOT_ADDRESS_MCUX
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_CPU1_PARTITION))
 	help
 	  This is the address the second core will boot from.
+
+# Move the LMA for the second core image to be in the flash region of primary
+# core, so that JLink flash will load it correctly.
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on SECOND_CORE_MCUX && SOC_LPC55S69_CPU1
+	default "0x10000000"
 
 endif # SOC_SERIES_LPC55XXX

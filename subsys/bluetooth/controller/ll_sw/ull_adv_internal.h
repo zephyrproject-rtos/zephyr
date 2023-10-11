@@ -111,18 +111,19 @@ uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
 void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 
 /* Below are BT Spec v5.2, Vol 6, Part B Section 2.3.4 Table 2.12 defined */
-#define ULL_ADV_PDU_HDR_FIELD_NONE      0
-#define ULL_ADV_PDU_HDR_FIELD_ADVA      BIT(0)
-#define ULL_ADV_PDU_HDR_FIELD_TARGETA   BIT(1)
-#define ULL_ADV_PDU_HDR_FIELD_CTE_INFO  BIT(2)
-#define ULL_ADV_PDU_HDR_FIELD_ADI       BIT(3)
-#define ULL_ADV_PDU_HDR_FIELD_AUX_PTR   BIT(4)
-#define ULL_ADV_PDU_HDR_FIELD_SYNC_INFO BIT(5)
-#define ULL_ADV_PDU_HDR_FIELD_TX_POWER  BIT(6)
-#define ULL_ADV_PDU_HDR_FIELD_RFU       BIT(7)
+#define ULL_ADV_PDU_HDR_FIELD_NONE           0
+#define ULL_ADV_PDU_HDR_FIELD_ADVA           BIT(0)
+#define ULL_ADV_PDU_HDR_FIELD_TARGETA        BIT(1)
+#define ULL_ADV_PDU_HDR_FIELD_CTE_INFO       BIT(2)
+#define ULL_ADV_PDU_HDR_FIELD_ADI            BIT(3)
+#define ULL_ADV_PDU_HDR_FIELD_AUX_PTR        BIT(4)
+#define ULL_ADV_PDU_HDR_FIELD_SYNC_INFO      BIT(5)
+#define ULL_ADV_PDU_HDR_FIELD_TX_POWER       BIT(6)
+#define ULL_ADV_PDU_HDR_FIELD_RFU            BIT(7)
 /* Below are implementation defined bit fields */
-#define ULL_ADV_PDU_HDR_FIELD_ACAD      BIT(8)
-#define ULL_ADV_PDU_HDR_FIELD_AD_DATA   BIT(9)
+#define ULL_ADV_PDU_HDR_FIELD_ACAD           BIT(8)
+#define ULL_ADV_PDU_HDR_FIELD_AD_DATA        BIT(9)
+#define ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND BIT(10)
 
 /* helper defined for field offsets in the hdr_set_clear interfaces */
 #define ULL_ADV_HDR_DATA_LEN_OFFSET          0

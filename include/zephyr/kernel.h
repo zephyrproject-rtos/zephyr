@@ -181,7 +181,8 @@ extern void k_thread_foreach_unlocked(
  * and restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
-#define K_FP_REGS (BIT(1))
+#define K_FP_IDX 1
+#define K_FP_REGS (BIT(K_FP_IDX))
 #endif
 
 /**
@@ -212,6 +213,37 @@ extern void k_thread_foreach_unlocked(
  * Effectively it serves as a tiny bit of zero-overhead TLS data.
  */
 #define K_CALLBACK_STATE (BIT(4))
+
+#ifdef CONFIG_ARC
+/* ARC processor Bitmask definitions for threads user options */
+
+#if defined(CONFIG_ARC_DSP_SHARING)
+/**
+ * @brief DSP registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the CPU's DSP registers.
+ * This instructs the kernel to take additional steps to save and
+ * restore the contents of these registers when scheduling the thread.
+ * No effect if @kconfig{CONFIG_ARC_DSP_SHARING} is not enabled.
+ */
+#define K_DSP_IDX 6
+#define K_ARC_DSP_REGS (BIT(K_DSP_IDX))
+#endif
+
+#if defined(CONFIG_ARC_AGU_SHARING)
+/**
+ * @brief AGU registers are managed by context switch
+ *
+ * @details
+ * This option indicates that the thread uses the ARC processor's XY
+ * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
+ * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
+ */
+#define K_AGU_IDX 7
+#define K_ARC_AGU_REGS (BIT(K_AGU_IDX))
+#endif
+#endif
 
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
@@ -634,7 +666,7 @@ struct _static_thread_data {
 
 #define Z_THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
-			    prio, options, delay, abort, tname)  \
+			    prio, options, delay, tname)         \
 	{                                                        \
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
@@ -646,7 +678,6 @@ struct _static_thread_data {
 	.init_prio = (prio),                                     \
 	.init_options = (options),                               \
 	.init_delay = (delay),                                   \
-	.init_abort = (abort),                                   \
 	.init_name = STRINGIFY(tname),                           \
 	}
 
@@ -692,7 +723,7 @@ struct _static_thread_data {
 		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, name);				 	 \
+				name);					 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
@@ -2124,7 +2155,7 @@ __syscall void k_event_post(struct k_event *event, uint32_t events);
  * events tracked by the event object.
  *
  * @param event Address of the event object
- * @param events Set of events to post to @a event
+ * @param events Set of events to set in @a event
  */
 __syscall void k_event_set(struct k_event *event, uint32_t events);
 
@@ -2137,11 +2168,21 @@ __syscall void k_event_set(struct k_event *event, uint32_t events);
  * allows specific event bits to be set and cleared as determined by the mask.
  *
  * @param event Address of the event object
- * @param events Set of events to post to @a event
+ * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
  */
 __syscall void k_event_set_masked(struct k_event *event, uint32_t events,
 				  uint32_t events_mask);
+
+/**
+ * @brief Clear the events in an event object
+ *
+ * This routine clears (resets) the specified events stored in an event object.
+ *
+ * @param event Address of the event object
+ * @param events Set of events to clear in @a event
+ */
+__syscall void k_event_clear(struct k_event *event, uint32_t events);
 
 /**
  * @brief Wait for any of the specified events
@@ -2168,7 +2209,7 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
 				bool reset, k_timeout_t timeout);
 
 /**
- * @brief Wait for any of the specified events
+ * @brief Wait for all of the specified events
  *
  * This routine waits on event object @a event until all of the specified
  * events have been delivered to the event object, or the maximum wait time
@@ -5123,6 +5164,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
  * freed.  If the allocation cannot be performed by the expiration of
  * the timeout, NULL will be returned.
+ * Allocated memory is aligned on a multiple of pointer sizes.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
@@ -5251,6 +5293,7 @@ extern void *k_aligned_alloc(size_t align, size_t size);
  *
  * This routine provides traditional malloc() semantics. Memory is
  * allocated from the heap memory pool.
+ * Allocated memory is aligned on a multiple of pointer sizes.
  *
  * @param size Amount of memory requested (in bytes).
  *

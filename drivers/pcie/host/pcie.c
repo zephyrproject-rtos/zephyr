@@ -9,6 +9,8 @@
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
 #include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/check.h>
 #include <stdbool.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
@@ -28,7 +30,7 @@ bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id)
 
 	data = pcie_conf_read(bdf, PCIE_CONF_ID);
 
-	if (data == PCIE_ID_NONE) {
+	if (!PCIE_ID_IS_VALID(data)) {
 		return false;
 	}
 
@@ -103,9 +105,19 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
-bool pcie_get_mbar(pcie_bdf_t bdf,
-		   unsigned int bar_index,
-		   struct pcie_mbar *mbar)
+/**
+ * @brief Get the BAR at a specific BAR index
+ *
+ * @param bdf the PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param bar Pointer to struct pcie_bar
+ * @param io true for I/O BARs, false otherwise
+ * @return true if the BAR was found and is valid, false otherwise
+ */
+static bool pcie_get_bar(pcie_bdf_t bdf,
+			 unsigned int bar_index,
+			 struct pcie_bar *bar,
+			 bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
 #ifdef CONFIG_PCIE_CONTROLLER
@@ -128,8 +140,7 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 
 	phys_addr = pcie_conf_read(bdf, reg);
 #ifndef CONFIG_PCIE_CONTROLLER
-	if (PCIE_CONF_BAR_IO(phys_addr)) {
-		/* Discard I/O bars */
+	if ((PCIE_CONF_BAR_MEM(phys_addr) && io) || (PCIE_CONF_BAR_IO(phys_addr) && !io)) {
 		return false;
 	}
 #endif
@@ -183,20 +194,36 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 					PCIE_CONF_BAR_MEM(phys_addr) ?
 						PCIE_CONF_BAR_ADDR(phys_addr)
 						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
-					&mbar->phys_addr)) {
+					&bar->phys_addr)) {
 		return false;
 	}
 #else
-	mbar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
+	bar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
 #endif /* CONFIG_PCIE_CONTROLLER */
-	mbar->size = size & ~(size-1);
+	bar->size = size & ~(size-1);
 
 	return true;
 }
 
-bool pcie_probe_mbar(pcie_bdf_t bdf,
-		     unsigned int index,
-		     struct pcie_mbar *mbar)
+/**
+ * @brief Probe the nth BAR assigned to an endpoint.
+ *
+ * A PCI(e) endpoint has 0 or more BARs. This function
+ * allows the caller to enumerate them by calling with index=0..n.
+ * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
+ * are order-preserving with respect to the endpoint BARs: e.g., index 0
+ * will return the lowest-numbered BAR on the endpoint.
+ *
+ * @param bdf the PCI(e) endpoint
+ * @param index (0-based) index
+ * @param bar Pointer to struct pcie_bar
+ * @param io true for I/O BARs, false otherwise
+ * @return true if the BAR was found and is valid, false otherwise
+ */
+static bool pcie_probe_bar(pcie_bdf_t bdf,
+			   unsigned int index,
+			   struct pcie_bar *bar,
+			   bool io)
 {
 	uint32_t reg;
 
@@ -213,7 +240,35 @@ bool pcie_probe_mbar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	return pcie_get_mbar(bdf, reg - PCIE_CONF_BAR0, mbar);
+	return pcie_get_bar(bdf, reg - PCIE_CONF_BAR0, bar, io);
+}
+
+bool pcie_get_mbar(pcie_bdf_t bdf,
+		   unsigned int bar_index,
+		   struct pcie_bar *mbar)
+{
+	return pcie_get_bar(bdf, bar_index, mbar, false);
+}
+
+bool pcie_probe_mbar(pcie_bdf_t bdf,
+		     unsigned int index,
+		     struct pcie_bar *mbar)
+{
+	return pcie_probe_bar(bdf, index, mbar, false);
+}
+
+bool pcie_get_iobar(pcie_bdf_t bdf,
+		    unsigned int bar_index,
+		    struct pcie_bar *iobar)
+{
+	return pcie_get_bar(bdf, bar_index, iobar, true);
+}
+
+bool pcie_probe_iobar(pcie_bdf_t bdf,
+		      unsigned int index,
+		      struct pcie_bar *iobar)
+{
+	return pcie_probe_bar(bdf, index, iobar, true);
 }
 
 #ifndef CONFIG_PCIE_CONTROLLER
@@ -291,27 +346,198 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 	irq_enable(irq);
 }
 
+struct lookup_data {
+	pcie_bdf_t bdf;
+	pcie_id_t id;
+};
+
+static bool lookup_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+{
+	struct lookup_data *data = cb_data;
+
+	if (id == data->id) {
+		data->bdf = bdf;
+		return false;
+	}
+
+	return true;
+}
+
 pcie_bdf_t pcie_bdf_lookup(pcie_id_t id)
 {
-	int bus, dev, func;
+	struct lookup_data data = {
+		.bdf = PCIE_BDF_NONE,
+		.id = id,
+	};
+	struct pcie_scan_opt opt = {
+		.cb = lookup_cb,
+		.cb_data = &data,
+		.flags = (PCIE_SCAN_RECURSIVE | PCIE_SCAN_CB_ALL),
+	};
 
-	for (bus = 0; bus <= PCIE_MAX_BUS; bus++) {
-		for (dev = 0; dev <= PCIE_MAX_DEV; dev++) {
-			for (func = 0; func <= PCIE_MAX_FUNC; func++) {
-				pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
-				uint32_t data;
+	pcie_scan(&opt);
 
-				data = pcie_conf_read(bdf, PCIE_CONF_ID);
-				if (data == PCIE_ID_NONE) {
-					continue;
-				}
+	return data.bdf;
+}
 
-				if (data == id) {
-					return bdf;
-				}
+static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
+{
+	return ((opt->flags & flag) != 0U);
+}
+
+/* Forward declaration needed since scanning a device may reveal a bridge */
+static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt);
+
+static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
+{
+	for (uint8_t func = 0; func <= PCIE_MAX_FUNC; func++) {
+		pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
+		uint32_t secondary = 0;
+		uint32_t id, type;
+		bool do_cb;
+
+		id = pcie_conf_read(bdf, PCIE_CONF_ID);
+		if (!PCIE_ID_IS_VALID(id)) {
+			continue;
+		}
+
+		type = pcie_conf_read(bdf, PCIE_CONF_TYPE);
+		switch (PCIE_CONF_TYPE_GET(type)) {
+		case PCIE_CONF_TYPE_STANDARD:
+			do_cb = true;
+			break;
+		case PCIE_CONF_TYPE_PCI_BRIDGE:
+			if (scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
+				uint32_t num = pcie_conf_read(bdf,
+							      PCIE_BUS_NUMBER);
+				secondary = PCIE_BUS_SECONDARY_NUMBER(num);
 			}
+			__fallthrough;
+		default:
+			do_cb = scan_flag(opt, PCIE_SCAN_CB_ALL);
+			break;
+		}
+
+		if (do_cb && !opt->cb(bdf, id, opt->cb_data)) {
+			return false;
+		}
+
+		if (scan_flag(opt, PCIE_SCAN_RECURSIVE) && secondary != 0) {
+			if (!scan_bus(secondary, opt)) {
+				return false;
+			}
+		}
+
+		/* Only function 0 is valid for non-multifunction devices */
+		if (func == 0 && !PCIE_CONF_MULTIFUNCTION(type)) {
+			break;
 		}
 	}
 
-	return PCIE_BDF_NONE;
+	return true;
 }
+
+static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt)
+{
+	for (uint8_t dev = 0; dev <= PCIE_MAX_DEV; dev++) {
+		if (!scan_dev(bus, dev, opt)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+int pcie_scan(const struct pcie_scan_opt *opt)
+{
+	uint32_t type;
+	bool multi;
+
+	CHECKIF(opt->cb == NULL) {
+		return -EINVAL;
+	}
+
+	type = pcie_conf_read(PCIE_HOST_CONTROLLER(0), PCIE_CONF_TYPE);
+	multi = PCIE_CONF_MULTIFUNCTION(type);
+	if (opt->bus == 0 && scan_flag(opt, PCIE_SCAN_RECURSIVE) && multi) {
+		/* Each function on the host controller represents a portential bus */
+		for (uint8_t bus = 0; bus <= PCIE_MAX_FUNC; bus++) {
+			pcie_bdf_t bdf = PCIE_HOST_CONTROLLER(bus);
+
+			if (pcie_conf_read(bdf, PCIE_CONF_ID) == PCIE_ID_NONE) {
+				continue;
+			}
+
+			if (!scan_bus(bus, opt)) {
+				break;
+			}
+		}
+	} else {
+		/* Single PCI host controller */
+		scan_bus(opt->bus, opt);
+	}
+
+	return 0;
+}
+
+struct scan_data {
+	size_t found;
+	size_t max_dev;
+};
+
+static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+{
+	struct scan_data *data = cb_data;
+
+	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+		if (dev->bdf != PCIE_BDF_NONE) {
+			continue;
+		}
+
+		if (dev->id == id) {
+			dev->bdf = bdf;
+			data->found++;
+			break;
+		}
+	}
+
+	/* Continue if we've not yet found all devices */
+	return (data->found != data->max_dev);
+}
+
+static int pcie_init(const struct device *dev)
+{
+	struct scan_data data;
+	struct pcie_scan_opt opt = {
+		.cb = pcie_dev_cb,
+		.cb_data = &data,
+		.flags = PCIE_SCAN_RECURSIVE,
+	};
+
+	ARG_UNUSED(dev);
+
+	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
+	/* Don't bother calling pcie_scan() if there are no devices to look for */
+	if (data.max_dev == 0) {
+		return 0;
+	}
+
+	data.found = 0;
+
+	pcie_scan(&opt);
+
+	return 0;
+}
+
+
+/*
+ * If a pcie controller is employed, pcie_scan() depends on it for working.
+ * Thus, pcie must be bumped to the next level
+ */
+#ifdef CONFIG_PCIE_CONTROLLER
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
+#else
+#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
+#endif
+
+SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

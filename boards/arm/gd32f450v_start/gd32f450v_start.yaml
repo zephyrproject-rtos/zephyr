@@ -14,3 +14,4 @@ toolchain:
 supported:
   - pwm
   - gpio
+  - counter

@@ -39,7 +39,7 @@ static int adxl345_reg_access_i2c(const struct device *dev, uint8_t cmd, uint8_t
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 static bool adxl345_bus_is_ready_spi(const union adxl345_bus *bus)
 {
-	return spi_is_ready(&bus->spi);
+	return spi_is_ready_dt(&bus->spi);
 }
 
 static int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t reg_addr,
@@ -281,7 +281,7 @@ static int adxl345_init(const struct device *dev)
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ADXL345_CONFIG_SPI(inst)),      \
 			    (ADXL345_CONFIG_I2C(inst)));                                \
                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adxl345_init, NULL,				\
 			      &adxl345_data_##inst, &adxl345_config_##inst, POST_KERNEL,\
 			      CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);		\
 

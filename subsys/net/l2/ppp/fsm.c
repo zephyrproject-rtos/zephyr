@@ -460,7 +460,8 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	} else {
 		struct net_buf *buf;
 
-		buf = net_pkt_get_reserve_tx_data(PPP_BUF_ALLOC_TIMEOUT);
+		buf = net_pkt_get_reserve_tx_data(sizeof(uint16_t) + len,
+						  PPP_BUF_ALLOC_TIMEOUT);
 		if (!buf) {
 			LOG_ERR("failed to allocate buffer");
 			goto out_of_mem;

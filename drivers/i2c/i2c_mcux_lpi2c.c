@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/irq.h>
 #include <fsl_lpi2c.h>
 
 #ifdef CONFIG_PINCTRL

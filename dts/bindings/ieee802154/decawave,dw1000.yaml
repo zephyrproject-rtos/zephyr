@@ -28,10 +28,8 @@ properties:
 
     tx-ant-delay:
       type: int
-      required: false
       description: Transmitter antenna delay.
 
     rx-ant-delay:
       type: int
-      required: false
       description: Receiver antenna delay.

@@ -87,6 +87,8 @@ helper_pdu_encode_func_t *const helper_pdu_encode[] = {
 	[LL_LENGTH_RSP] = helper_pdu_encode_length_rsp,
 	[LL_CTE_REQ] = helper_pdu_encode_cte_req,
 	[LL_CTE_RSP] = helper_pdu_encode_cte_rsp,
+	[LL_CLOCK_ACCURACY_REQ] = helper_pdu_encode_sca_req,
+	[LL_CLOCK_ACCURACY_RSP] = helper_pdu_encode_sca_rsp,
 	[LL_CIS_REQ] = helper_pdu_encode_cis_req,
 	[LL_CIS_RSP] = helper_pdu_encode_cis_rsp,
 	[LL_CIS_IND] = helper_pdu_encode_cis_ind,
@@ -123,6 +125,8 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	[LL_LENGTH_RSP] = helper_pdu_verify_length_rsp,
 	[LL_CTE_REQ] = helper_pdu_verify_cte_req,
 	[LL_CTE_RSP] = helper_pdu_verify_cte_rsp,
+	[LL_CLOCK_ACCURACY_REQ] = helper_pdu_verify_sca_req,
+	[LL_CLOCK_ACCURACY_RSP] = helper_pdu_verify_sca_rsp,
 	[LL_CIS_REQ] = helper_pdu_verify_cis_req,
 	[LL_CIS_RSP] = helper_pdu_verify_cis_rsp,
 	[LL_CIS_IND] = helper_pdu_verify_cis_ind,
@@ -157,6 +161,8 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 	[LL_CTE_REQ] = NULL,
 	[LL_CTE_RSP] = helper_pdu_ntf_verify_cte_rsp,
 	[LL_CTE_RSP] = NULL,
+	[LL_CLOCK_ACCURACY_REQ] = NULL,
+	[LL_CLOCK_ACCURACY_RSP] = NULL,
 	[LL_CIS_REQ] = NULL,
 	[LL_CIS_RSP] = NULL,
 	[LL_CIS_IND] = NULL,
@@ -188,6 +194,8 @@ helper_node_encode_func_t *const helper_node_encode[] = {
 	[LL_CHAN_MAP_UPDATE_IND] = NULL,
 	[LL_CTE_REQ] = NULL,
 	[LL_CTE_RSP] = helper_node_encode_cte_rsp,
+	[LL_CLOCK_ACCURACY_REQ] = NULL,
+	[LL_CLOCK_ACCURACY_RSP] = NULL,
 	[LL_CIS_REQ] = NULL,
 	[LL_CIS_RSP] = NULL,
 	[LL_CIS_IND] = NULL,
@@ -201,6 +209,7 @@ helper_node_verify_func_t *const helper_node_verify[] = {
 	[NODE_CTE_RSP] = helper_node_verify_cte_rsp,
 	[NODE_CIS_REQUEST] = helper_node_verify_cis_request,
 	[NODE_CIS_ESTABLISHED] = helper_node_verify_cis_established,
+	[NODE_PEER_SCA_UPDATE] = helper_node_verify_peer_sca_update,
 };
 
 /*
@@ -260,6 +269,8 @@ void test_setup(struct ll_conn *conn)
 
 	ll_reset();
 	conn->lll.event_counter = 0;
+	conn->lll.interval = 6;
+	conn->supervision_timeout = 600;
 	event_active[0] = 0;
 
 	memset(emul_conn_pool, 0x00, sizeof(emul_conn_pool));

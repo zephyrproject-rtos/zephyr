@@ -9,9 +9,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
     clocks:
       required: true
 

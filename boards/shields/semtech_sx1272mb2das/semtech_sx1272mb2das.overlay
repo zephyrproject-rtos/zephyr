@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		lora0 = &lora;
+		lora0 = &lora_semtech_sx1272mb2das;
 	};
 };
 
@@ -15,7 +15,7 @@
 
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
 
-	lora: lora@0 {
+	lora_semtech_sx1272mb2das: lora@0 {
 		compatible = "semtech,sx1272";
 		reg = <0x0>;
 		spi-max-frequency = <3000000>;

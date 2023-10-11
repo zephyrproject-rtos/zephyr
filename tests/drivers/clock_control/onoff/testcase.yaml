@@ -1,5 +1,7 @@
 tests:
   drivers.clock.clock_control_onoff:
-    tags: drivers
+    tags: drivers clock
     platform_allow: nrf51dk_nrf51422 nrf52dk_nrf52832 nrf52840dk_nrf52840
                         nrf9160dk_nrf9160
+    integration_platforms:
+      - nrf51dk_nrf51422

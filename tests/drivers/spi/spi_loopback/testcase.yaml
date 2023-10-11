@@ -1,27 +1,26 @@
 common:
   depends_on: spi
-  tags: drivers spi
+  tags: drivers spi dma
   filter: dt_compat_enabled("test-spi-loopback-slow") and dt_compat_enabled("test-spi-loopback-fast")
+  harness: ztest
+  harness_config:
+    fixture: spi_loopback
 tests:
-  drivers.spi.loopback:
-    harness: ztest
-    harness_config:
-      fixture: spi_loopback
+  drivers.spi.loopback: {}
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
   drivers.mcux_dspi_dma.loopback:
-    tags: dma
-    harness: ztest
     extra_args: OVERLAY_CONFIG="overlay-mcux-dspi-dma.conf" DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
-    harness_config:
-      fixture: spi_loopback
     platform_allow: frdm_k64f
+  drivers.sam_spi_dma.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-sam-spi-dma.conf" DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
+    platform_allow: sam_e70_xplained sam_v71_xult tdk_robokit1
+    integration_platforms:
+      - sam_e70_xplained
   drivers.stm32_spi_dma.loopback:
-    tags: dma
-    harness: ztest
-    harness_config:
-      fixture: spi_loopback
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
     platform_allow: nucleo_g474re nucleo_f207zg nucleo_f429zi nucleo_f746zg nucleo_wb55rg
-        nucleo_wl55jc nucleo_h743zi
+        nucleo_l152re nucleo_wl55jc nucleo_h743zi
+    integration_platforms:
+      - nucleo_g474re

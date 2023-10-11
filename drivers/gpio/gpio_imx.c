@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <zephyr/sys/util.h>
 #include <gpio_imx.h>
@@ -17,7 +18,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 struct imx_gpio_config {
 	/* gpio_driver_config needs to be first */

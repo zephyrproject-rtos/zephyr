@@ -20,7 +20,6 @@ properties:
 
     dma-generators:
       type: int
-      required: false
       description: Number of DMAMUX Request generator supported by the controller
 
     dma-requests:

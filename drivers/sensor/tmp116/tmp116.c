@@ -291,7 +291,7 @@ static int tmp116_init(const struct device *dev)
 	static const struct tmp116_dev_config tmp116_config_##_num = { \
 		.bus = I2C_DT_SPEC_INST_GET(_num) \
 	}; \
-	DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL, \
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
 		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
 

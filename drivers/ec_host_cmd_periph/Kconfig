@@ -5,6 +5,7 @@
 
 menuconfig EC_HOST_CMD_PERIPH
 	bool "Embedded Controller Host Command peripheral support"
+	depends on EC_HOST_CMD
 	help
 	  Enable the embedded controller host command peripheral driver. This
 	  is needed by the EC host command framework to send and receive data
@@ -12,11 +13,24 @@ menuconfig EC_HOST_CMD_PERIPH
 
 if EC_HOST_CMD_PERIPH
 
+choice
+	prompt "Host commands peripheral"
+
 config EC_HOST_CMD_SIMULATOR
 	bool "Embedded Controller Host Command Peripheral Simulator"
-	default y
 	depends on DT_HAS_ZEPHYR_SIM_EC_HOST_CMD_PERIPH_ENABLED
 	help
 	  Enable the EC host command simulator.
+
+config EC_HOST_CMD_PERIPH_ESPI
+	bool "Host commands support using eSPI bus"
+	depends on ESPI_PERIPHERAL_EC_HOST_CMD
+	depends on ESPI_PERIPHERAL_CUSTOM_OPCODE
+	depends on DT_HAS_ZEPHYR_EC_HOST_CMD_PERIPH_ESPI_ENABLED
+	help
+	  Enable support for Embedded Controller host commands using
+	  the eSPI bus.
+
+endchoice
 
 endif # EC_HOST_CMD_PERIPH

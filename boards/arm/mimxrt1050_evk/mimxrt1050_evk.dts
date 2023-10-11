@@ -268,7 +268,7 @@ zephyr_udc0: &usb1 {
 	pinctrl-2 = <&pinmux_usdhc1_med>;
 	pinctrl-3 = <&pinmux_usdhc1_fast>;
 	pinctrl-names = "default", "slow", "med", "fast";
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};
@@ -282,9 +282,14 @@ zephyr_udc0: &usb1 {
 	status = "okay";
 };
 
-/* Enable GPT for use as a hardware timer. This disables Cortex Systick.
- * to use systick, change this node from "gpt_hw_timer" to "systick"
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
  */
 &gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
 	status = "okay";
 };

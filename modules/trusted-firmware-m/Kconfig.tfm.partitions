@@ -7,6 +7,9 @@ if BUILD_WITH_TFM
 
 config TFM_PARTITION_PROTECTED_STORAGE
 	bool "Secure partition 'Protected Storage'"
+	depends on TFM_PARTITION_PLATFORM # Specfically TFM_SP_PLATFORM_NV_COUNTER service
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	depends on TFM_PARTITION_CRYPTO
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_PROTECTED_STORAGE'
@@ -40,6 +43,7 @@ config TFM_PARTITION_CRYPTO
 
 config TFM_PARTITION_INITIAL_ATTESTATION
 	bool "Secure partition 'Initial Attestation'"
+	depends on TFM_PARTITION_CRYPTO
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_INITIAL_ATTESTATION'
@@ -52,6 +56,7 @@ config TFM_PARTITION_INITIAL_ATTESTATION
 config TFM_PARTITION_PLATFORM
 	bool "Secure partition 'Platform'"
 	default y
+	depends on !TFM_SFN # Currently using PSA Framework version 1.0
 	help
 	  Setting this option will cause '-DTFM_PARTITION_PLATFORM'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'
@@ -61,8 +66,8 @@ config TFM_PARTITION_PLATFORM
 	  repository.
 
 config TFM_PARTITION_AUDIT_LOG
-	bool "Secure partition 'Audit Log'" if !TFM_IPC
-	depends on !TFM_IPC
+	bool "Secure partition 'Audit Log'"
+	depends on TFM_LIBRARY
 	default y
 	help
 	  Setting this option will cause '-DTFM_PARTITION_AUDIT_LOG'

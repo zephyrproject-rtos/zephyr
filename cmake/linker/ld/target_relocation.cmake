@@ -9,14 +9,7 @@ macro(toolchain_ld_relocation)
   set(MEM_RELOCATION_SRAM_BSS_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
-  if(CONFIG_ARM)
-    set(MEM_REGION_DEFAULT_RAM SRAM)
-  elseif(CONFIG_RISCV)
-    set(MEM_REGION_DEFAULT_RAM RAM)
-  else()
-    # Name must be configured for newly-supported architectures
-    message(SEND_ERROR "Default RAM region name is unknown for target architecture")
-  endif()
+  set(MEM_REGION_DEFAULT_RAM RAM)
 
   add_custom_command(
     OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}

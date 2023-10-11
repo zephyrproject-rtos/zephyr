@@ -14,7 +14,7 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_ZIFENCEI
 	# Workaround mul instruction bug, see:
 	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
-	#select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_M if !(SOC_IT81302_BX || SOC_IT81202_BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
 
@@ -31,6 +31,12 @@ config SOC_IT81302_BX
 
 config SOC_IT81202_BX
 	bool "IT81202 BX version"
+
+config SOC_IT81302_CX
+	bool "IT81302 CX version"
+
+config SOC_IT81202_CX
+	bool "IT81202 CX version"
 
 endchoice
 
@@ -78,5 +84,33 @@ config SOC_IT8XXX2_EXT_32K
 	bool "Use external 32.768 kHz clock source"
 
 endchoice
+
+config SOC_IT8XXX2_USE_ILM
+	bool
+	default y
+	help
+	  If enabled, Instruction Local Memory (ILM) will be configured to execute
+	  code placed in the .__ram_code section out of RAM. This consumes RAM in
+	  blocks of 4 kilobytes, but performance of code in ILM is much more
+	  predictable than executing from Flash directly, and some code (such as code
+	  that writes to the internal Flash) must execute out of RAM.
+
+config SOC_IT8XXX2_EXCEPTIONS_IN_RAM
+	bool "Place exception handling code in RAM"
+	default y
+	select SOC_IT8XXX2_USE_ILM
+	help
+	  Place exception handling (ISR entry/exit and related) code in ILM, which
+	  has more reliable performance characteristics than executing directly from
+	  Flash. This can significantly improve performance when under I-cache
+	  pressure.
+
+config SOC_IT8XXX2_SHA256_HW_ACCELERATE
+	bool "HW SHA256 calculation"
+	help
+	  IT8XXX2 HW support sha256 calculation, and its calculation is faster than FW.
+	  We place SHA256 message, hash and key data (total 512bytes) in RAM.
+	  If we enable this config, because HW limits, the sha256 data must place in
+	  first 4KB of RAM.
 
 endif # SOC_IT8XXX2

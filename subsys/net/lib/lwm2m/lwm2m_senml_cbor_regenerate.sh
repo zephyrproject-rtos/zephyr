@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-zcbor --default-max-qty 99 -c lwm2m_senml_cbor.cddl code -e -d -t lwm2m_senml \
+zcbor code --default-max-qty 99 -c lwm2m_senml_cbor.cddl -e -d -t lwm2m_senml \
 	--oc lwm2m_senml_cbor.c --oh lwm2m_senml_cbor.h
 
 clang-format -i \
@@ -10,4 +10,7 @@ clang-format -i \
 	lwm2m_senml_cbor_encode.c lwm2m_senml_cbor_encode.h \
 	lwm2m_senml_cbor_types.h
 
-git apply lwm2m_senml_cbor.patch
+git add -A
+git commit -s -m"pre-patch"
+
+git am -3 lwm2m_senml_cbor.patch

@@ -380,7 +380,7 @@ static const struct sensor_driver_api tach_npcx_driver_api = {
 									       \
 	static struct tach_npcx_data tach_data_##inst;                         \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,                                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                     \
 			      tach_npcx_init,                                  \
 			      NULL,                                            \
 			      &tach_data_##inst,                               \

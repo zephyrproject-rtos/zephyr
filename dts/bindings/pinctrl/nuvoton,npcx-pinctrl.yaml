@@ -40,26 +40,25 @@ description: |
 
 compatible: "nuvoton,npcx-pinctrl"
 
-include:
-    - name: base.yaml
-    - name: pincfg-node.yaml
-      child-binding:
+include: base.yaml
+
+child-binding:
+    description: |
+      NPCX pin controller pin configuration nodes
+
+    include:
+      - name: pincfg-node.yaml
         property-allowlist:
           - bias-pull-down
           - bias-pull-up
           - drive-open-drain
 
-child-binding:
-    description: |
-      NPCX pin controller pin configuration nodes
     properties:
       pinmux:
         type: phandle
-        required: false
         description: Configurations of pinmux selection
       periph-pupd:
         type: array
-        required: false
         description: |
           A map to PUPD_ENn register/bit that enable pull-up/down of NPCX peripheral devices.
           Please don't overwrite this property in the board-level DT driver.
@@ -70,21 +69,17 @@ child-binding:
           Please don't overwrite this property in the board-level DT driver.
       psl-polarity:
         type: phandle
-        required: false
         description: |
           A map to DEVALTn that configures detection polarity of PSL input pads.
           Please don't overwrite this property in the board-level DT driver.
       pinmux-locked:
-        required: false
         type: boolean
         description: Lock pinmux selection
       pinmux-gpio:
-        required: false
         type: boolean
         description: Inverse pinmux selection to GPIO
       psl-in-mode:
         type: string
-        required: false
         description: |
           The assertion detection mode of PSL input selection
           - "level": Select the detection mode to level detection
@@ -94,7 +89,6 @@ child-binding:
           - "edge"
       psl-in-pol:
         type: string
-        required: false
         description: |
           The assertion detection polarity of PSL input selection
           - "low-falling": Select the detection polarity to low/falling

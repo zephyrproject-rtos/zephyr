@@ -11,9 +11,6 @@
 
 #include "hal/cntr.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_hal_cntr
-#include "common/log.h"
 #include "hal/debug.h"
 
 #ifndef NRF_RTC

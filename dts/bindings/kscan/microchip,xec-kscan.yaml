@@ -18,12 +18,6 @@ properties:
     reg:
       required: true
 
-    pinctrl-0:
-      required: false
-
-    pinctrl-names:
-      required: false
-
     interrupts:
       required: true
 

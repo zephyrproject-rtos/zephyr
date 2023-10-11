@@ -147,12 +147,11 @@ void zperf_udp_upload(const struct shell *sh,
 	uint32_t packet_duration = ((uint64_t)packet_size * 8U * USEC_PER_SEC) /
 				   (rate_in_kbps * 1024U);
 	uint64_t duration = sys_clock_timeout_end_calc(K_MSEC(duration_in_ms));
-	int64_t print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
 	uint64_t delay = packet_duration;
 	uint32_t nb_packets = 0U;
 	int64_t start_time, end_time;
 	int64_t last_print_time, last_loop_time;
-	int64_t remaining, print_info;
+	int64_t remaining;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		shell_fprintf(sh, SHELL_WARNING,
@@ -246,14 +245,18 @@ void zperf_udp_upload(const struct shell *sh,
 			nb_packets++;
 		}
 
-		/* Print log every seconds */
-		print_info = print_interval - k_uptime_ticks();
-		if (print_info <= 0) {
-			shell_fprintf(sh, SHELL_WARNING,
-				    "nb_packets=%u\tdelay=%u\tadjust=%d\n",
-				      nb_packets, (unsigned int)delay,
-				      (int)adjust);
-			print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
+		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
+			int64_t print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
+			/* Print log every seconds */
+			int64_t print_info = print_interval - k_uptime_ticks();
+
+			if (print_info <= 0) {
+				shell_fprintf(sh, SHELL_WARNING,
+					    "nb_packets=%u\tdelay=%u\tadjust=%d\n",
+					      nb_packets, (unsigned int)delay,
+					      (int)adjust);
+				print_interval = sys_clock_timeout_end_calc(K_SECONDS(1));
+			}
 		}
 
 		remaining = duration - k_uptime_ticks();

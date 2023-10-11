@@ -50,12 +50,12 @@ void __app_cpu_start(void)
 		: "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	(void)memset(&_bss_start, 0,
-		     (&_bss_end - &_bss_start) * sizeof(_bss_start));
+	z_bss_zero();
+
 	__asm__ __volatile__ (
 		""
 		:
-		: "g"(&_bss_start)
+		: "g"(&__bss_start)
 		: "memory");
 
 	/* Disable normal interrupts. */
@@ -80,10 +80,7 @@ void __app_cpu_start(void)
 /* Boot-time static default printk handler, possibly to be overridden later. */
 int IRAM_ATTR arch_printk_char_out(int c)
 {
-	if (c == '\n') {
-		esp_rom_uart_tx_one_char('\r');
-	}
-	esp_rom_uart_tx_one_char(c);
+	ARG_UNUSED(c);
 	return 0;
 }
 

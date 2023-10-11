@@ -27,6 +27,7 @@ extern "C" {
 const char *ztest_relative_filename(const char *file);
 void ztest_test_fail(void);
 void ztest_test_skip(void);
+void ztest_skip_failed_assumption(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
 static inline bool z_zassert_(bool cond, const char *file, int line)
@@ -46,7 +47,7 @@ static inline bool z_zassume_(bool cond, const char *file, int line)
 {
 	if (cond == false) {
 		PRINT("\n    Assumption failed at %s:%d\n", ztest_relative_filename(file), line);
-		ztest_test_skip();
+		ztest_skip_failed_assumption();
 		return false;
 	}
 
@@ -93,7 +94,7 @@ static inline bool z_zassume(bool cond, const char *default_msg, const char *fil
 		vprintk(msg, vargs);
 		printk("\n");
 		va_end(vargs);
-		ztest_test_skip();
+		ztest_skip_failed_assumption();
 		return false;
 	}
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2

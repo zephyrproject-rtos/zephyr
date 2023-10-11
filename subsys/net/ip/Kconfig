@@ -122,6 +122,14 @@ config NET_INIT_PRIO
 	  Network initialization priority level. This number tells how
 	  early in the boot the network stack is initialized.
 
+config NET_IP_DSCP_ECN
+	bool "DSCP/ECN processing at IP layer"
+	depends on NET_IP
+	default y
+	help
+	  Specify whether DSCP/ECN values are processed at IP layer. The values
+	  are encoded within ToS field in IPv4 and TC field in IPv6.
+
 source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
@@ -628,6 +636,15 @@ config NET_CONTEXT_SNDBUF
 	  For TCP sockets, the sndbuf will determine the total size of queued
 	  data in the TCP layer.
 
+config NET_CONTEXT_DSCP_ECN
+	bool "Add support for setting DSCP/ECN IP properties on net_context"
+	depends on NET_IP_DSCP_ECN
+	default y
+	help
+	  Allow to set Differentiated Services and Explicit Congestion
+	  Notification values on net_context. Those values are then used in
+	  IPv4/IPv6 header when sending packets over net_context.
+
 config NET_TEST
 	bool "Network Testing"
 	help
@@ -734,6 +751,13 @@ config NET_BUF_DATA_POOL_SIZE
 	help
 	  This value tell what is the size of the memory pool where each
 	  network buffer is allocated from.
+
+config NET_PKT_BUF_USER_DATA_SIZE
+	int "Size of user_data available in rx and tx network buffers"
+	default 4
+	range 4 16
+	help
+	  User data size used in rx and tx network buffers.
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool

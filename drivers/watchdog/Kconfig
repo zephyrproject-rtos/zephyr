@@ -86,4 +86,8 @@ source "drivers/watchdog/Kconfig.it8xxx2"
 
 source "drivers/watchdog/Kconfig.rpi_pico"
 
+source "drivers/watchdog/Kconfig.gd32"
+
+source "drivers/watchdog/Kconfig.npm6001"
+
 endif

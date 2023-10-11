@@ -11,6 +11,7 @@
 #include <zephyr/drivers/dma.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dma_sam0, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_REGS	((Dmac *)DT_INST_REG_ADDR(0))

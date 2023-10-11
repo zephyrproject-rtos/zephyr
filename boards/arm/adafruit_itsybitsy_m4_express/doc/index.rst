@@ -161,7 +161,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! adafruit_itsybitsy_m4_express" in your terminal.
 
 Debugging
 =========

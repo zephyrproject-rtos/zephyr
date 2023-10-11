@@ -28,6 +28,38 @@ config INTEL_ADSP_IPC
 	  Driver for the host IPC interrupt delivery mechanism.
 	  Currently SOF has its own driver for this hardware.
 
+config MEMORY_WIN_0_SIZE
+	int "Size of memory window 0"
+	default 8192
+	help
+	  Size of memory window 0.
+
+	  This window is used for firmware status & outbox/uplink mbox.
+
+config MEMORY_WIN_1_SIZE
+	int "Size of memory window 1"
+	default 8192
+	help
+	  Size of memory window 1.
+
+	  This window is used for inbox/downlink mbox.
+
+config MEMORY_WIN_2_SIZE
+	int "Size of memory window 2"
+	default 8192
+	help
+	  Size of memory window 2.
+
+	  This window is used for debug.
+
+config MEMORY_WIN_3_SIZE
+	int "Size of memory window 3"
+	default 8192
+	help
+	  Size of memory window 3.
+
+	  This window is used for trace.
+
 config ADSP_CLOCK
 	bool
 	help
@@ -42,34 +74,6 @@ config HP_SRAM_RESERVE
 	  place any symbols here, though the host windows have
 	  addresses here.  The SOF application also makes direct use
 	  of this region, so be very careful changing this value.
-
-config ADSP_WIN0_OFFSET
-	int "Byte offset of host window zero"
-	default 16384
-	help
-	  Offset of the first host shared memory window (used for the
-	  "firmware status register" at boot) within the reserved
-	  region at the start of HP-SRAM.
-
-config ADSP_WIN2_OFFSET
-	int "Byte offset of host window two"
-	default 32768
-	help
-	  Offset of the second host shared memory window within
-	  the reserved region at the start of HP-SRAM.
-	  Typically used for debug output, but semantics can vary
-	  depending on the host-firmware communication scheme that
-	  is used.
-
-config ADSP_WIN3_OFFSET
-	int "Byte offset of host window three"
-	default 40960
-	help
-	  Offset of the second host shared memory window within
-	  the reserved region at the start of HP-SRAM.
-	  Typically used for debug output, but semantics can vary
-	  depending on the host-firmware communication scheme that
-	  is used.
 
 config ADSP_TRACE_SIMCALL
 	bool "Emit SIMCALL output in addition to window tracing"
@@ -92,5 +96,13 @@ config ADSP_INIT_HPSRAM
 
 config ADSP_DISABLE_L2CACHE_AT_BOOT
 	bool
+
+config ADSP_IMR_CONTEXT_SAVE
+	bool "Saves FW context into IMR before core is shut down"
+	default n
+	help
+	  When true, FW will store its entire context into IMR before
+	  entering D3 state. Later this context can be used to FW restore
+	  when Host power up DSP again.
 
 endif # SOC_FAMILY_INTEL_ADSP

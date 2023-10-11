@@ -5,4 +5,4 @@ description: Si7210 hall effect magnetic position and temperature sensor
 
 compatible: "silabs,si7210"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

@@ -5,4 +5,4 @@ description: STMicroelectronics LSM303DLHC magnetometer sensor
 
 compatible: "st,lsm303dlhc-magn"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

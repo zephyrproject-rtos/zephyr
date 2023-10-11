@@ -784,7 +784,7 @@ static int ism330dhcx_init(const struct device *dev)
 			    .int_pin = DT_INST_PROP_OR(inst, int_pin, 0),))			\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, ism330dhcx_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, ism330dhcx_init, NULL,				\
 			      &ism330dhcx_data_##inst, &ism330dhcx_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &ism330dhcx_api_funcs);		\
 

@@ -124,6 +124,7 @@ config XTENSA
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	imply ATOMIC_OPERATIONS_ARCH
 	help
@@ -165,6 +166,14 @@ config BIG_ENDIAN
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
 	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
 	  and command line option for gen_isr_tables.py.
+
+config LITTLE_ENDIAN
+	# Hidden Kconfig option representing the default little-endian architecture
+	# This is just the opposite of BIG_ENDIAN and is used for non-negative
+	# conditional compilation
+	bool
+	depends on !BIG_ENDIAN
+	default y
 
 config 64BIT
 	bool
@@ -832,8 +841,8 @@ config CACHE_MANAGEMENT
 	bool "Cache management features"
 	depends on DCACHE || ICACHE
 	help
-	  This links in the cache management functions (for d-cache and i-cache
-	  where possible).
+	  This option enables the cache management functions backed by arch or
+	  driver code.
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
@@ -883,17 +892,17 @@ config ICACHE_LINE_SIZE
 choice CACHE_TYPE
 	prompt "Cache type"
 	depends on CACHE_MANAGEMENT
-	default HAS_ARCH_CACHE
+	default ARCH_CACHE
 
-config HAS_ARCH_CACHE
+config ARCH_CACHE
 	bool "Integrated cache controller"
 	help
-	  "Integrated on-core cache controller"
+	  Integrated on-core cache controller
 
-config HAS_EXTERNAL_CACHE
+config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
-	  "External cache controller or cache management system"
+	  External cache controller
 
 endchoice
 

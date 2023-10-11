@@ -13,10 +13,8 @@ properties:
 
     clkout-source:
       type: int
-      required: false
       description: clkout clock source
 
     clkout-divider:
       type: int
-      required: false
       description: clkout divider

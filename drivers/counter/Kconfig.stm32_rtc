@@ -13,7 +13,7 @@ menuconfig COUNTER_RTC_STM32
 	select USE_STM32_LL_EXTI
 	help
 	  Build RTC driver for STM32 SoCs.
-	  Tested on STM32 F0, F2, F3, F4, L1, L4, F7, G0, G4, H7 series
+	  Tested on STM32 F0, F2, F3, F4, F7, G0, G4, H7, L1, L4, L5, U5 series
 
 if COUNTER_RTC_STM32
 
@@ -33,59 +33,9 @@ config COUNTER_RTC_STM32_CLOCK_LSE
 
 endchoice #COUNTER_RTC_STM32_CLOCK_SRC
 
-if !SOC_SERIES_STM32F4X
-
-choice COUNTER_RTC_STM32_LSE_DRIVE
-	prompt "LSE oscillator drive capability"
-	depends on COUNTER_RTC_STM32_CLOCK_LSE
-
-config COUNTER_RTC_STM32_LSE_DRIVE_LOW
-	bool "Low"
-	help
-	  Xtal mode lower driving capability
-
-config COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMLOW
-	bool "Medium Low"
-	help
-	  Xtal mode medium low driving capability
-
-config COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMHIGH
-	bool "Medium High"
-	help
-	  Xtal mode medium high driving capability
-
-config COUNTER_RTC_STM32_LSE_DRIVE_HIGH
-	bool "High"
-	help
-	  Xtal mode higher driving capability
-
-endchoice
-
-config COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH
-	hex
-	default 0x00000000 if COUNTER_RTC_STM32_LSE_DRIVE_LOW
-	default 0x00000008 if COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMLOW
-	default 0x00000010 if COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMHIGH
-	default 0x00000018 if COUNTER_RTC_STM32_LSE_DRIVE_HIGH
-
-endif # !SOC_SERIES_STM32F4X
-
-config COUNTER_RTC_STM32_LSE_BYPASS
-	bool "LSE oscillator bypass"
-	depends on COUNTER_RTC_STM32_CLOCK_LSE
-	help
-	  Enable LSE bypass
-
-config COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET
-	bool "Do backup domain reset"
-	default y
-	help
-	  Force a backup domain reset on startup
-
 config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 	bool "Save rtc time value between resets"
 	default y
-	depends on !COUNTER_RTC_STM32_BACKUP_DOMAIN_RESET
 	help
 	  Do not reset the rtc time and date after each reset.
 

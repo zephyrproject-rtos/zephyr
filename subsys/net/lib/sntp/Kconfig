@@ -4,7 +4,6 @@
 menuconfig SNTP
 	bool "SNTP (Simple Network Time Protocol)"
 	depends on NET_SOCKETS
-	depends on NET_SOCKETS_POSIX_NAMES || POSIX_API
 	help
 	  Enable SNTP client library
 

@@ -1,11 +1,17 @@
+#
+# Copyright (c) 2018-2021 mcumgr authors
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
-zephyr_library()
-zephyr_library_sources(buf.c)
-zephyr_library_sources(smp.c)
+# The mgmt_mcumgr is interface library for MCUmgr services.
+zephyr_interface_library_named(mgmt_mcumgr)
 
+add_subdirectory(mgmt)
+add_subdirectory(smp)
+add_subdirectory(util)
+add_subdirectory(grp)
 add_subdirectory(transport)
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_REASSEMBLY smp_reassembly.c)
 
-add_subdirectory(lib)
-zephyr_library_link_libraries(MCUMGR)
+zephyr_library_link_libraries(mgmt_mcumgr)

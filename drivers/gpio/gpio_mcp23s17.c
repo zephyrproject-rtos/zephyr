@@ -19,7 +19,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_mcp23s17.h"
 
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
@@ -359,7 +359,7 @@ static int mcp23s17_init(const struct device *dev)
 	const struct mcp23s17_config *config = dev->config;
 	struct mcp23s17_drv_data *drv_data = dev->data;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}

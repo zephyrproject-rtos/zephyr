@@ -38,9 +38,8 @@
 
 #include "ll_feat.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_lll_sync
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
+
 #include <soc.h>
 #include "hal/debug.h"
 
@@ -982,8 +981,7 @@ static void isr_rx_adv_sync_estab(void *param)
 			ftr->param = lll;
 			ftr->sync_status = SYNC_STAT_TERM;
 
-			ull_rx_put(node_rx->hdr.link, node_rx);
-			ull_rx_sched();
+			ull_rx_put_sched(node_rx->hdr.link, node_rx);
 		}
 	}
 
@@ -1232,8 +1230,7 @@ static void isr_done(void *param)
 		node_rx->hdr.rx_ftr.param = lll;
 		node_rx->hdr.rx_ftr.aux_failed = 1U;
 
-		ull_rx_put(node_rx->hdr.link, node_rx);
-		ull_rx_sched();
+		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 	}
 
 	isr_rx_done_cleanup(param, ((trx_cnt) ? 1U : 0U), false);

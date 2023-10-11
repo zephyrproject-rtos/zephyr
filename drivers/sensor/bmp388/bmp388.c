@@ -605,7 +605,7 @@ static int bmp388_init(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	/* Verify the SPI bus */
 	if (is_spi) {
-		if (!spi_is_ready(&cfg->spi)) {
+		if (!spi_is_ready_dt(&cfg->spi)) {
 			LOG_ERR("SPI bus is not ready");
 			return -ENODEV;
 		}
@@ -721,7 +721,7 @@ static int bmp388_init(const struct device *dev)
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
 	};								   \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
-	DEVICE_DT_INST_DEFINE(						   \
+	SENSOR_DEVICE_DT_INST_DEFINE(					   \
 		inst,							   \
 		bmp388_init,						   \
 		PM_DEVICE_DT_INST_GET(inst),				   \

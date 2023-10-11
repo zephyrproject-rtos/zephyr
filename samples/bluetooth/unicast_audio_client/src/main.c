@@ -23,7 +23,7 @@ static struct bt_audio_unicast_group *unicast_group;
 static struct bt_codec *remote_codec_capabilities[CONFIG_BT_AUDIO_UNICAST_CLIENT_PAC_COUNT];
 static struct bt_audio_sink {
 	struct bt_audio_ep *ep;
-	uint32_t seq_num;
+	uint16_t seq_num;
 } sinks[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_audio_ep *sources[CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SRC_COUNT];
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_AUDIO_UNICAST_CLIENT_ASE_SNK_COUNT,
@@ -55,7 +55,7 @@ static K_SEM_DEFINE(sem_stream_qos, 0, 1);
 static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
 static K_SEM_DEFINE(sem_stream_started, 0, 1);
 
-static uint32_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
+static uint16_t get_and_incr_seq_num(const struct bt_audio_stream *stream)
 {
 	for (size_t i = 0U; i < configured_sink_stream_count; i++) {
 		if (stream->ep == sinks[i].ep) {

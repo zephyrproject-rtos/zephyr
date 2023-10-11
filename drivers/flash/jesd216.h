@@ -12,6 +12,11 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
+/* JEDEC Read identification */
+#define JESD216_CMD_READ_ID   SPI_NOR_CMD_RDID
+#define JESD216_OCMD_READ_ID  0x9F60
+#define JESD216_READ_ID_LEN   3
+
 /* Following are structures and constants supporting the JEDEC Serial
  * Flash Discoverable Parameters standard, JESD216 and its successors,
  * available at

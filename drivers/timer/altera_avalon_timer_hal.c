@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <altera_common.h>
+#include <zephyr/irq.h>
 
 #include "altera_avalon_timer_regs.h"
 #include "altera_avalon_timer.h"

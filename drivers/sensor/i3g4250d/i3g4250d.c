@@ -216,7 +216,7 @@ static int i3g4250d_init(const struct device *dev)
 					SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,      \
 					0),                                                      \
 	};                                                                       \
-	DEVICE_DT_INST_DEFINE(inst,                                              \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                                   \
 				i3g4250d_init,                                               \
 				NULL,                                                        \
 				&i3g4250d_data_##inst,                                       \

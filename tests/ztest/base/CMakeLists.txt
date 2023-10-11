@@ -2,14 +2,12 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 if(BOARD STREQUAL unit_testing)
-  # Add the sources
-  list(APPEND SOURCES src/main.c)
+  find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+  project(base)
 
   # This test suite depends on having this CONFIG_ value, so define it
   add_definitions( -DCONFIG_BUGxxxxx )
-
-  find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
-  project(base)
+  target_sources(testbinary PRIVATE src/main.c)
 else()
   find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
   project(base)

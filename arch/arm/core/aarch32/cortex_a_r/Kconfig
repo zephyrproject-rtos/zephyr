@@ -97,6 +97,8 @@ config CPU_CORTEX_R52
 	bool
 	select CPU_AARCH32_CORTEX_R
 	select AARCH32_ARMV8_R
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
 	help
 	  This option signifies the use of a Cortex-R52 CPU
 

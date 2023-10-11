@@ -9,7 +9,6 @@ include: ite,common-i2c.yaml
 
 properties:
     fifo-enable:
-      required: false
       type: boolean
       description: |
         FIFO1 supports channel A.

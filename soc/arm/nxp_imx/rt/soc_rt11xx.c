@@ -16,11 +16,34 @@
 #include <fsl_dcdc.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
+#endif
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
+#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
+#include <zephyr_image_info.h>
+/* Memcpy macro to copy segments from secondary core image stored in flash
+ * to RAM section that secondary core boots from.
+ * n is the segment number, as defined in zephyr_image_info.h
+ */
+#define MEMCPY_SEGMENT(n, _)							\
+	memcpy((uint32_t *)((SEGMENT_LMA_ADDRESS_ ## n) - ADJUSTED_LMA),	\
+		(uint32_t *)(SEGMENT_LMA_ADDRESS_ ## n),			\
+		(SEGMENT_SIZE_ ## n))
+#endif
 #if CONFIG_USB_DC_NXP_EHCI
 #include "usb_phy.h"
 #include "usb.h"
+#endif
+
+#define DUAL_CORE_MU_ENABLED \
+	(CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX_REV2)
+
+#if DUAL_CORE_MU_ENABLED
+/* Dual core mode is enabled, and messaging unit is present */
+#include <fsl_mu.h>
+#define BOOT_FLAG 0x1U
+#define MU_BASE (MU_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_mu_rev2))
 #endif
 
 #if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
@@ -594,6 +617,7 @@ void imxrt_post_init_display_interface(void)
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
+ * If dual core operation is enabled, the second core image will be loaded to RAM
  *
  * @return 0
  */
@@ -611,6 +635,29 @@ static int imxrt_init(const struct device *arg)
 	if ((SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) != 0) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 	}
+
+#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
+	/**
+	 * Copy CM4 core from flash to memory. Note that depending on where the
+	 * user decided to store CM4 code, this is likely going to read from the
+	 * flexspi while using XIP. Provided we DO NOT WRITE TO THE FLEXSPI,
+	 * this operation is safe.
+	 *
+	 * Note that this copy MUST occur before enabling the M7 caching to
+	 * ensure the data is written directly to RAM (since the M4 core will use it)
+	 */
+	LISTIFY(SEGMENT_NUM, MEMCPY_SEGMENT, (;));
+	/* Set the boot address for the second core */
+	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_CHOSEN(zephyr_cpu1_region)));
+	/* Set VTOR for the CM4 core */
+	IOMUXC_LPSR_GPR->GPR0 = IOMUXC_LPSR_GPR_GPR0_CM4_INIT_VTOR_LOW(boot_address >> 3u);
+	IOMUXC_LPSR_GPR->GPR1 = IOMUXC_LPSR_GPR_GPR1_CM4_INIT_VTOR_HIGH(boot_address >> 16u);
+#endif
+
+#if DUAL_CORE_MU_ENABLED && CONFIG_CPU_CORTEX_M4
+	/* Set boot flag in messaging unit to indicate boot to primary core */
+	MU_SetFlags(MU_BASE, BOOT_FLAG);
+#endif
 
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	if (SCB_CCR_IC_Msk != (SCB_CCR_IC_Msk & SCB->CCR)) {
@@ -685,3 +732,32 @@ void z_arm_platform_init(void)
 #endif
 
 SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);
+
+#if  defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
+/**
+ * @brief Kickoff secondary core.
+ *
+ * Kick the secondary core out of reset and wait for it to indicate boot. The
+ * core image was already copied to RAM (and the boot address was set) in
+ * imxrt_init()
+ *
+ * @return 0
+ */
+static int second_core_boot(const struct device *arg)
+{
+	/* Kick CM4 core out of reset */
+	SRC->CTRL_M4CORE = SRC_CTRL_M4CORE_SW_RESET_MASK;
+	SRC->SCR |= SRC_SCR_BT_RELEASE_M4_MASK;
+#if DUAL_CORE_MU_ENABLED
+	/* Wait for the secondary core to start up and set boot flag in
+	 * imxrt_init
+	 */
+	while (MU_GetFlags(MU_BASE) != BOOT_FLAG) {
+		/* Wait for secondary core to set flag */
+	}
+#endif
+	return 0;
+}
+
+SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif

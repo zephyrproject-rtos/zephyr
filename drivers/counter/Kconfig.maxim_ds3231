@@ -9,5 +9,6 @@ config COUNTER_MAXIM_DS3231
 	depends on DT_HAS_MAXIM_DS3231_ENABLED
 	depends on I2C
 	select POLL
+	select NOTIFY
 	help
 	  Enable counter driver based on Maxim DS3231 I2C device.

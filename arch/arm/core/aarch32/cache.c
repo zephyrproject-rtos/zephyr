@@ -25,6 +25,48 @@ void arch_dcache_disable(void)
 	SCB_DisableDCache();
 }
 
+int arch_dcache_flush_all(void)
+{
+	SCB_CleanDCache();
+
+	return 0;
+}
+
+int arch_dcache_invd_all(void)
+{
+	SCB_InvalidateDCache();
+
+	return 0;
+}
+
+int arch_dcache_flush_and_invd_all(void)
+{
+	SCB_CleanInvalidateDCache();
+
+	return 0;
+}
+
+int arch_dcache_flush_range(void *start_addr, size_t size)
+{
+	SCB_CleanDCache_by_Addr(start_addr, size);
+
+	return 0;
+}
+
+int arch_dcache_invd_range(void *start_addr, size_t size)
+{
+	SCB_InvalidateDCache_by_Addr(start_addr, size);
+
+	return 0;
+}
+
+int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
+{
+	SCB_CleanInvalidateDCache_by_Addr(start_addr, size);
+
+	return 0;
+}
+
 void arch_icache_enable(void)
 {
 	SCB_EnableICache();
@@ -35,74 +77,36 @@ void arch_icache_disable(void)
 	SCB_DisableICache();
 }
 
-static void arch_dcache_flush(void *start_addr, size_t size)
+int arch_icache_flush_all(void)
 {
-	SCB_CleanDCache_by_Addr(start_addr, size);
+	return -ENOTSUP;
 }
 
-static void arch_dcache_invd(void *start_addr, size_t size)
+int arch_icache_invd_all(void)
 {
-	SCB_InvalidateDCache_by_Addr(start_addr, size);
+	SCB_InvalidateICache();
+
+	return 0;
 }
 
-static void arch_dcache_flush_and_invd(void *start_addr, size_t size)
+int arch_icache_flush_and_invd_all(void)
 {
-	SCB_CleanInvalidateDCache_by_Addr(start_addr, size);
+	return -ENOTSUP;
 }
 
-static void arch_icache_invd(void *start_addr, size_t size)
+int arch_icache_flush_range(void *start_addr, size_t size)
+{
+	return -ENOTSUP;
+}
+
+int arch_icache_invd_range(void *start_addr, size_t size)
 {
 	SCB_InvalidateICache_by_Addr(start_addr, size);
-}
-
-int arch_dcache_range(void *addr, size_t size, int op)
-{
-	if (op == K_CACHE_INVD) {
-		arch_dcache_invd(addr, size);
-	} else if (op == K_CACHE_WB) {
-		arch_dcache_flush(addr, size);
-	} else if (op == K_CACHE_WB_INVD) {
-		arch_dcache_flush_and_invd(addr, size);
-	} else {
-		return -ENOTSUP;
-	}
 
 	return 0;
 }
 
-int arch_dcache_all(int op)
+int arch_icache_flush_and_invd_range(void *start_addr, size_t size)
 {
-	if (op == K_CACHE_INVD) {
-		SCB_InvalidateDCache();
-	} else if (op == K_CACHE_WB) {
-		SCB_CleanDCache();
-	} else if (op == K_CACHE_WB_INVD) {
-		SCB_CleanInvalidateDCache();
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-int arch_icache_all(int op)
-{
-	if (op == K_CACHE_INVD) {
-		SCB_InvalidateICache();
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-int arch_icache_range(void *addr, size_t size, int op)
-{
-	if (op == K_CACHE_INVD) {
-		arch_icache_invd(addr, size);
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
+	return -ENOTSUP;
 }

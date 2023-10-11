@@ -43,6 +43,12 @@ static inline int gethostname(char *buf, size_t len)
 
 #endif /* CONFIG_POSIX_API */
 
+#ifdef CONFIG_GETOPT
+int getopt(int argc, char *const argv[], const char *optstring);
+extern char *optarg;
+extern int opterr, optind, optopt;
+#endif
+
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
 

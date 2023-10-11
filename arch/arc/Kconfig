@@ -171,6 +171,7 @@ config ARC_FIRQ
 	bool "FIRQ enable"
 	depends on ISA_ARCV2
 	depends on NUM_IRQ_PRIO_LEVELS > 1
+	depends on !ARC_HAS_SECURE
 	default y
 	help
 	  Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
@@ -336,6 +337,8 @@ config ARC_NORMAL_FIRMWARE
 	  Code executing in normal mode has no access to secure
 	  resources of the ARC processors, and, therefore, it shall avoid
 	  accessing them.
+
+source "arch/arc/core/dsp/Kconfig"
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU

@@ -10,10 +10,10 @@ project(zcbor_bulk)
 
 FILE(GLOB app_sources
 	src/*.c
-	${ZEPHYR_BASE}/subsys/mgmt/mcumgr/lib/util/src/zcbor_bulk.c
+	${ZEPHYR_BASE}/subsys/mgmt/mcumgr/util/src/zcbor_bulk.c
 )
 zephyr_include_directories(
-	${ZEPHYR_BASE}/subsys/mgmt/mcumgr/lib/util/include/
+	${ZEPHYR_BASE}/subsys/mgmt/mcumgr/util/include/
 )
 
 target_sources(app PRIVATE ${app_sources})

@@ -16,7 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_sn74hc595, CONFIG_GPIO_LOG_LEVEL);
@@ -165,7 +165,7 @@ static int gpio_sn74hc595_init(const struct device *dev)
 	const struct gpio_sn74hc595_config *config = dev->config;
 	struct gpio_sn74hc595_drv_data *drv_data = dev->data;
 
-	if (!spi_is_ready(&config->bus)) {
+	if (!spi_is_ready_dt(&config->bus)) {
 		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}

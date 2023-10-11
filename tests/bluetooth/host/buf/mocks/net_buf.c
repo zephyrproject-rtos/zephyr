@@ -9,8 +9,6 @@
 #include <zephyr/bluetooth/buf.h>
 #include <mocks/net_buf.h>
 
-DEFINE_FFF_GLOBALS;
-
 static uint8_t *fixed_data_alloc(struct net_buf *buf, size_t *size,
 			      k_timeout_t timeout)
 {

@@ -12,20 +12,20 @@
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>
-#include "fs_mgmt/fs_mgmt.h"
 #include <zephyr/fs/littlefs.h>
+#include <zephyr/mgmt/mcumgr/grp/fs_mgmt/fs_mgmt.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_OS_MGMT
-#include "os_mgmt/os_mgmt.h"
+#include <zephyr/mgmt/mcumgr/grp/os_mgmt/os_mgmt.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_IMG_MGMT
-#include "img_mgmt/img_mgmt.h"
+#include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
-#include "stat_mgmt/stat_mgmt.h"
+#include <zephyr/mgmt/mcumgr/grp/stat_mgmt/stat_mgmt.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_SHELL_MGMT
-#include "shell_mgmt/shell_mgmt.h"
+#include <zephyr/mgmt/mcumgr/grp/shell_mgmt/shell_mgmt.h>
 #endif
 
 #define LOG_LEVEL LOG_LEVEL_DBG

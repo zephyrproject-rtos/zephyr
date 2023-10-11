@@ -114,31 +114,27 @@ _PD_SEND_IPC:
 	 * effecfively executes:
 	 * if (b_ipc_response)
 	 * {
-	 *     temp_reg2 = *p_ipc_regs;
-	 *     *(p_ipc_regs) = 0x80000000;
-	 *     *(p_ipc_regs + 1) = 0x40000000;
-	 *     temp_reg1 = temp_reg2 | u32_ipc_response_mask;
-	 *     *(p_ipc_regs + 4) = temp_reg1;
+	 *     temp_reg0 = *p_ipc_regs;
+	 *     temp_reg0 = temp_reg0 | 0x80000000;
+	 *     temp_reg0 = temp_reg0 | u32_ipc_response_mask;
+	 *     *(p_ipc_regs + 0x180) = 0x0;
+	 *     *(p_ipc_regs + 0x10) = temp_reg0;
 	 * }
 	 */
 	beqz b_ipc_response, _PD_SLEEP
-	movi temp_reg0, 1
-	slli temp_reg1, temp_reg0, 31
-	l32i temp_reg2, p_ipc_regs, 0
-	/* clear busy bit by storing whole message in ADDRESS(HfIPCx) */
-	s32i temp_reg1, p_ipc_regs, 0
-	/* store msg received from host in DIPCTDA register */
-	/* to enlighten done bit and trigger interrupt on host side */
-	/* ace busy is cleared by writing 0 */
+	/* copy value from IPCxTDR */
+	l32i temp_reg0, p_ipc_regs, 0
+	/* set IPC Busy bit to 1 */
+	movi temp_reg1, 1
+	slli temp_reg1, temp_reg1, 31
+	or temp_reg0, temp_reg0, temp_reg1
+	/* mark the message as a reply */
+	or temp_reg0, temp_reg0, u32_ipc_response_mask
+	/* clear IPCxIDD i.e. message extension */
 	movi temp_reg1, 0
-	s32i temp_reg1, p_ipc_regs, 0x4
-	/* Copy to a13 with IPC_RESPONSE_MASK set which is in a14 */
-	or temp_reg1, temp_reg2, u32_ipc_response_mask
-	/* Send reply IPC writing to DIPCIDR register */
-	movi temp_reg0, 0
-	s32i temp_reg0, p_ipc_regs, 0x18
-	s32i temp_reg1, p_ipc_regs, 0x10
-	l32i temp_reg1, p_ipc_regs, 0x10
+	s32i temp_reg1, p_ipc_regs, 0x180
+	/* write response to IPCxIDR */
+	s32i temp_reg0, p_ipc_regs, 0x10
 
 _PD_SLEEP:
 /* effecfively executes:

@@ -26,7 +26,6 @@ properties:
       type: int
       default: 0
       description: Reset value of DAC output. Defaults to 0, the SoC default.
-      required: false
 
     "#io-channel-cells":
       const: 1

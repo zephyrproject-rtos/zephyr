@@ -457,6 +457,9 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		src = (struct in_addr *)ip_hdr->dst;
 	}
 
+	net_pkt_set_ip_dscp(reply, net_pkt_ip_dscp(pkt));
+	net_pkt_set_ip_ecn(reply, net_pkt_ip_ecn(pkt));
+
 	if (net_ipv4_create(reply, src, (struct in_addr *)ip_hdr->src)) {
 		goto drop;
 	}
@@ -503,6 +506,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 uint16_t identifier,
 				 uint16_t sequence,
+				 uint8_t tos,
 				 const void *data,
 				 size_t data_size)
 {
@@ -533,6 +537,9 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
+	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(tos));
+	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(tos));
+
 	if (net_ipv4_create(pkt, src, dst) ||
 	    icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
 		goto drop;
@@ -548,7 +555,24 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	echo_req->sequence   = htons(sequence);
 
 	net_pkt_set_data(pkt, &icmpv4_access);
-	net_pkt_write(pkt, data, data_size);
+
+	if (data != NULL && data_size > 0) {
+		net_pkt_write(pkt, data, data_size);
+	} else if (data == NULL && data_size > 0) {
+		/* Generate payload. */
+		if (data_size >= sizeof(uint32_t)) {
+			uint32_t time_stamp = htonl(k_cycle_get_32());
+
+			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			data_size -= sizeof(time_stamp);
+		}
+
+		for (size_t i = 0; i < data_size; i++) {
+			net_pkt_write_u8(pkt, (uint8_t)i);
+		}
+	} else {
+		/* No payload. */
+	}
 
 	net_pkt_cursor_init(pkt);
 

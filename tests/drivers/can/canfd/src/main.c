@@ -51,8 +51,7 @@ CAN_MSGQ_DEFINE(can_msgq, 5);
  * @brief Standard (11-bit) CAN ID frame 1.
  */
 const struct can_frame test_std_frame_1 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr     = CAN_DATAFRAME,
+	.flags   = 0,
 	.id      = TEST_CAN_STD_ID_1,
 	.dlc     = 8,
 	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
@@ -62,8 +61,7 @@ const struct can_frame test_std_frame_1 = {
  * @brief Standard (11-bit) CAN ID frame 2.
  */
 const struct can_frame test_std_frame_2 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr     = CAN_DATAFRAME,
+	.flags   = 0,
 	.id      = TEST_CAN_STD_ID_2,
 	.dlc     = 8,
 	.data    = { 1, 2, 3, 4, 5, 6, 7, 8 }
@@ -73,12 +71,9 @@ const struct can_frame test_std_frame_2 = {
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
  */
 const struct can_frame test_std_frame_fd_1 = {
-	.id  = TEST_CAN_STD_ID_1,
-	.fd      = 1,
-	.rtr     = CAN_DATAFRAME,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
+	.id      = TEST_CAN_STD_ID_1,
 	.dlc     = 0xf,
-	.brs     = 1,
 	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
 		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
 		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
@@ -90,12 +85,9 @@ const struct can_frame test_std_frame_fd_1 = {
  * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
  */
 const struct can_frame test_std_frame_fd_2 = {
-	.id  = TEST_CAN_STD_ID_2,
-	.fd      = 1,
-	.rtr     = CAN_DATAFRAME,
-	.id_type = CAN_STANDARD_IDENTIFIER,
+	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
+	.id      = TEST_CAN_STD_ID_2,
 	.dlc     = 0xf,
-	.brs     = 1,
 	.data    = { 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
 		    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
 		    31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
@@ -107,22 +99,18 @@ const struct can_frame test_std_frame_fd_2 = {
  * @brief Standard (11-bit) CAN ID filter 1.
  */
 const struct can_filter test_std_filter_1 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
+	.flags = CAN_FILTER_DATA,
 	.id = TEST_CAN_STD_ID_1,
-	.rtr_mask = 1,
-	.id_mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK
 };
 
 /**
  * @brief Standard (11-bit) CAN ID filter 2.
  */
 const struct can_filter test_std_filter_2 = {
-	.id_type = CAN_STANDARD_IDENTIFIER,
-	.rtr = CAN_DATAFRAME,
+	.flags = CAN_FILTER_DATA,
 	.id = TEST_CAN_STD_ID_2,
-	.rtr_mask = 1,
-	.id_mask = CAN_STD_ID_MASK
+	.mask = CAN_STD_ID_MASK
 };
 
 /**
@@ -134,9 +122,7 @@ const struct can_filter test_std_filter_2 = {
 static inline void assert_frame_equal(const struct can_frame *frame1,
 				      const struct can_frame *frame2)
 {
-	zassert_equal(frame1->id_type, frame2->id_type, "ID type does not match");
-	zassert_equal(frame1->fd, frame2->fd, "FD bit does not match");
-	zassert_equal(frame1->rtr, frame2->rtr, "RTR bit does not match");
+	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
 	zassert_equal(frame1->id, frame2->id, "ID does not match");
 	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
 	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
@@ -318,13 +304,13 @@ static void send_receive(const struct can_filter *filter1,
 
 	k_sem_reset(&tx_callback_sem);
 
-	if (frame1->fd) {
+	if ((frame1->flags & CAN_FRAME_FDF) != 0) {
 		filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_fd_1);
 	} else {
 		filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_1);
 	}
 
-	if (frame2->fd) {
+	if ((frame2->flags & CAN_FRAME_FDF) != 0) {
 		filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_fd_2);
 	} else {
 		filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_2);

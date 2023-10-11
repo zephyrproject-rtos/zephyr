@@ -29,6 +29,17 @@ config ZTEST_TEST_DELAY_MS
 	  Add a delay between between tests to manage output on the console on
 	  systems that can't handle the rapid output rate.
 
+config ZTEST_CPU_HOLD_TIME_MS
+	int "Time in milliseconds to hold other CPUs for 1cpu type tests"
+	default 3000
+	help
+	  This option is used to specify the maximum time in milliseconds for
+	  which a 1cpu type test may execute on a multicpu system. The default
+	  value ought to suffice for most such tests; however slower platforms
+	  (which may include simulators) may need to set this to a larger
+	  value. Please be aware that increasing it for long-running test cases
+	  may overload the CI system. Modify with caution.
+
 config ZTEST_FAIL_FAST
 	bool "Abort on first failing test"
 	help
@@ -135,6 +146,12 @@ config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 
 endif #ZTEST_SHUFFLE
 
+config ZTEST_SUMMARY
+	bool "Display test summary"
+	default y
+	help
+	  This option controls output of a test summary.
+
 config ZTEST_VERBOSE_OUTPUT
 	bool "Verbose test output"
 	default y
@@ -148,6 +165,15 @@ config ZTEST_VERBOSE_SUMMARY
 	help
 	  This option controls whether suite summary is shown verbosely or
 	  just in one line.
+
+config ZTEST_FAIL_ON_ASSUME
+	bool "Fail the test run when an assumption fails"
+	default y
+	help
+	  When enabled, the test binary will fail at the end if an assumption failed. This means
+	  that while tests will still be marked as skipped on failed zassume calls, the final test
+	  result will be shown as a failure in order to increase visibility. This precludes tests
+	  that skipped with the ZTEST_EXPECT_SKIP annotation.
 
 endif # ZTEST_NEW_API
 

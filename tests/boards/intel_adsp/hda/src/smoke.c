@@ -20,7 +20,7 @@
 #define HDA_BUF_SIZE 256
 #define TRANSFER_COUNT 8
 
-#define ALIGNMENT DT_PROP(DT_NODELABEL(hda_host_in), dma_buf_alignment)
+#define ALIGNMENT DT_PROP(DT_NODELABEL(hda_host_in), dma_buf_addr_alignment)
 static __aligned(ALIGNMENT) uint8_t hda_buf[HDA_BUF_SIZE];
 
 static volatile int msg_cnt;

@@ -5,11 +5,17 @@
 
 config ESPI_XEC
 	bool "XEC Microchip ESPI driver"
-	depends on SOC_SERIES_MEC1501X
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
 	help
 	  Enable the Microchip XEC ESPI driver for MEC15xx family.
 
-if ESPI_XEC
+config ESPI_XEC_V2
+	bool "XEC Microchip ESPI V2 driver"
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
+	help
+	  Enable the Microchip XEC ESPI driver for MEC172x series.
+
+if ESPI_XEC || ESPI_XEC_V2
 
 config ESPI_OOB_CHANNEL
 	default y
@@ -55,6 +61,97 @@ config ESPI_FLASH_BUFFER_SIZE
 	  Use maximum RAM buffer size defined by spec but allow applications
 	  to override if eSPI host doesn't support it.
 
+config ESPI_SAF_XEC
+	bool "XEC Microchip ESPI SAF driver"
+	default y
+	depends on SOC_SERIES_MEC1501X
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_ENABLED
+	help
+	  Enable the Microchip XEC SAF ESPI driver for MEC15xx family.
+
+config ESPI_SAF_XEC_V2
+	bool "XEC Microchip ESPI SAF V2 driver"
+	default y
+	depends on SOC_SERIES_MEC172X
+	depends on DT_HAS_MICROCHIP_XEC_ESPI_SAF_V2_ENABLED
+	help
+	  Enable the Microchip XEC SAF ESPI driver for MEC172x series.
+
+endif #ESPI_XEC
+
+if ESPI_XEC_V2
+
+config ESPI_XEC_PERIPHERAL_ACPI_SHD_MEM_SIZE
+	int "Host I/O peripheral port size for shared memory in MEC172X series"
+	depends on ESPI_XEC_V2 || ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the ACPI response data.
+
+config ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE
+	int "Host I/O peripheral port size for ec host command in MEC172X series"
+	depends on ESPI_XEC_V2 || ESPI_PERIPHERAL_EC_HOST_CMD
+	default 256
+	help
+	  This is the port size used by the Host and EC to communicate over
+	  the shared memory region to return the host command parameter data.
+
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+
+if ESPI_PERIPHERAL_CHANNEL
+
+config ESPI_PERIPHERAL_XEC_MAILBOX
+	bool "SoC Mailbox over eSPI"
+	help
+	  Enable a 32 byte mailbox interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_ACPI_EC2
+	bool "SoC ACPI EC 2 over eSPI"
+	help
+	  Enable ACPI EC2 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_ACPI_EC3
+	bool "SoC ACPI EC 3 over eSPI"
+	help
+	  Enable ACPI EC3 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_ACPI_EC4
+	bool "SoC ACPI EC 4 over eSPI"
+	help
+	  Enable ACPI EC4 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_ACPI_PM1
+	bool "SoC ACPI PM1 over eSPI"
+	help
+	  Enable ACPI PM1 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_EMI0
+	bool "SoC EMI 0 over eSPI"
+	help
+	  Enable EMI 0 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_EMI1
+	bool "SoC EMI 1 over eSPI"
+	help
+	  Enable EMI 1 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+config ESPI_PERIPHERAL_XEC_EMI2
+	bool "SoC EMI 2 over eSPI"
+	help
+	  Enable EMI 2 interface accessible via Host I/O over the
+	  ESPI Peripheral Channel.
+
+endif #ESPI_PERIPHERAL_CHANNEL
+
 config ESPI_SAF
 	bool "XEC Microchip ESPI SAF driver"
 	depends on ESPI_FLASH_CHANNEL
@@ -69,4 +166,26 @@ config ESPI_SAF_INIT_PRIORITY
 	help
 	  Driver initialization priority for eSPI SAF driver.
 
-endif #ESPI_XEC
+config ESPI_PERIPHERAL_ACPI_EC_IBF_EVT_DATA
+	bool "Read ACPI EC Event Data in IBF ISR"
+	depends on ESPI_PERIPHERAL_CHANNEL
+	help
+	  Enable reading event data in ACPI EC IBF ISR. This is used in OS
+	  environment where application expects IBF ISR to read data and pass
+	  to callback.
+
+endif #ESPI_XEC_V2
+
+if ESPI_XEC_V2 && ESPI_PERIPHERAL_8042_KBC
+
+config ESPI_PERIPHERAL_KBC_IBF_EVT_DATA
+	bool "KBC event data format in IBF"
+	help
+	  Enable espi_evt_data_kbc format for encoding event in KBC IBF ISR
+
+config ESPI_PERIPHERAL_KBC_OBE_CBK
+	bool "KBC OBE Callback"
+	help
+	  Enable KBC OBE callback from OBE ISR
+
+endif #ESPI_XEC_V2 && ESPI_PERIPHERAL_8042_KBC

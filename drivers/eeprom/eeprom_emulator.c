@@ -550,7 +550,7 @@ static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
 	}
 
 	/* Handle normal case */
-	LOG_DBG("EEPROM read at [0x%tx] length[%d]", (ptrdiff_t)address, len);
+	LOG_DBG("EEPROM read at [0x%tx] length[%zu]", (ptrdiff_t)address, len);
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 
 	/* read from rambuffer if possible */
@@ -606,7 +606,7 @@ static int eeprom_emu_write(const struct device *dev, off_t address,
 	}
 
 	/* Handle normal case */
-	LOG_DBG("EEPROM write at [0x%tx] length[%d]", (ptrdiff_t)address, len);
+	LOG_DBG("EEPROM write at [0x%tx] length[%zu]", (ptrdiff_t)address, len);
 
 	k_mutex_lock(&dev_data->lock, K_FOREVER);
 

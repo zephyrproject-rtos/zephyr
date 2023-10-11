@@ -131,9 +131,15 @@ config BT_TBS_AUTHORIZATION
 
 config BT_DEBUG_TBS
 	bool "Telephone Bearer Service debug"
+	select DEPRECATED
 	help
 	  Use this option to enable Telephone Bearer Service debug logs for the
 	  Bluetooth Audio functionality.
+
+module = BT_TBS
+legacy-debug-sym = BT_DEBUG_TBS
+module-str = "Telephone Bearer Service"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_TBS
 
@@ -165,6 +171,7 @@ config BT_TBS_CLIENT_MAX_CALLS
 config BT_TBS_CLIENT_MAX_TBS_INSTANCES
 	int "Maximum number of TBS instances to setup"
 	default 1
+	range 0 3 if BT_TBS_CLIENT_GTBS
 	range 1 3
 	help
 	  Sets the maximum number of Telephone Bearer Service (TBS)
@@ -319,9 +326,15 @@ config BT_TBS_CLIENT_CALL_FRIENDLY_NAME
 
 config BT_DEBUG_TBS_CLIENT
 	bool "Telephone Bearer Service client debug"
+	select DEPRECATED
 	help
 	  Use this option to enable Telephone Bearer Service client debug logs
 	  for the Bluetooth Audio functionality.
+
+module = BT_TBS_CLIENT
+legacy-debug-sym = BT_DEBUG_TBS_CLIENT
+module-str = "Telephone Bearer Service client"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_TBS_CLIENT
 

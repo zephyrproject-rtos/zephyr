@@ -3,9 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
-	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
+#if defined(__ZEPHYR__) && !defined(CONFIG_ARCH_POSIX)
 
 #include <zephyr/net/socket.h>
 #include <zephyr/posix/pthread.h>
@@ -44,9 +42,7 @@ static const char *const names[] = {
 	"Charlie",
 };
 
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
-	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
+#if defined(__ZEPHYR__) && !defined(CONFIG_ARCH_POSIX)
 
 #define STACK_SIZE (1024)
 static pthread_attr_t attr[NUM_SOCKETPAIRS];
@@ -126,9 +122,7 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-#if defined(__ZEPHYR__) && !(defined(CONFIG_BOARD_NATIVE_POSIX_32BIT) \
-	|| defined(CONFIG_BOARD_NATIVE_POSIX_64BIT) \
-	|| defined(CONFIG_SOC_SERIES_BSIM_NRFXX))
+#if defined(__ZEPHYR__) && !defined(CONFIG_ARCH_POSIX)
 		/* Zephyr requires a non-NULL attribute for pthread_create */
 		attrp = &attr[i];
 		r = pthread_attr_init(attrp);

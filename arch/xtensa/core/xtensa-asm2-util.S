@@ -5,7 +5,6 @@
  */
 #include <xtensa-asm2-s.h>
 #include <offsets.h>
-#include <zephyr/toolchain.h>
 #include <zsr.h>
 
 /*

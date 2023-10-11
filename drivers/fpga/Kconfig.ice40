@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config ICE40_FPGA
+	bool "Lattice iCE40 fpga driver [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on SPI
+	help
+	  Enable support for the Lattice iCE40 fpga driver.

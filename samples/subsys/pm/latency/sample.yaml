@@ -3,6 +3,8 @@ sample:
 tests:
   sample.pm.latency:
     platform_allow: native_posix
+    integration_platforms:
+      - native_posix
     tags: pm
     harness: console
     harness_config:

@@ -50,6 +50,12 @@ extern int net_bt_shell_init(void);
 #define net_bt_shell_init(...)
 #endif
 
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#define IPSP_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
+#else
+#define IPSP_FRAG_LEN L2CAP_IPSP_MTU
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+
 struct bt_if_conn {
 	struct net_if *iface;
 	struct bt_l2cap_le_chan ipsp_chan;
@@ -130,13 +136,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 
 static int net_bt_enable(struct net_if *iface, bool state)
 {
-	struct bt_if_conn *conn = net_bt_get_conn(iface);
-
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
-
-	if (state && conn->ipsp_chan.state != BT_L2CAP_CONNECTED) {
-		return -ENETDOWN;
-	}
 
 	return 0;
 }
@@ -195,8 +195,8 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	net_ipv6_nbr_add(conn->iface, &in6, &ll, false,
 			 NET_IPV6_NBR_STATE_STATIC);
 
-	/* Set iface up */
-	net_if_up(conn->iface);
+	/* Leave dormant state (iface goes up if set to admin up) */
+	net_if_dormant_off(conn->iface);
 }
 
 static void ipsp_disconnected(struct bt_l2cap_chan *chan)
@@ -205,8 +205,8 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 
 	NET_DBG("Channel %p disconnected", chan);
 
-	/* Set iface down */
-	net_if_carrier_down(conn->iface);
+	/* Enter dormant state (iface goes down) */
+	net_if_dormant_on(conn->iface);
 
 #if defined(CONFIG_NET_L2_BT_MGMT)
 	if (chan->conn != default_conn) {
@@ -259,7 +259,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(BUF_TIMEOUT);
+	return net_pkt_get_reserve_rx_data(IPSP_FRAG_LEN, BUF_TIMEOUT);
 }
 
 static const struct bt_l2cap_chan_ops ipsp_ops = {
@@ -301,7 +301,7 @@ static void bt_iface_init(struct net_if *iface)
 
 	conn->iface = iface;
 
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_dormant_on(iface);
 
 #if defined(CONFIG_NET_L2_BT_ZEP1656)
 	/* Workaround Linux bug, see:

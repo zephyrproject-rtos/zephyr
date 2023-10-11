@@ -34,8 +34,8 @@ static uint64_t mock_sys_read64(uint64_t addr)
 {
 #if defined(IBECC_ENABLED)
 	if (addr == IBECC_ECC_ERROR_LOG) {
-		TC_PRINT("Simulate sys_read64(IBECC_ECC_ERROR_LOG)=>1\n");
-		return 1;
+		TC_PRINT("Simulate sys_read64(IBECC_ECC_ERROR_LOG)=>CERRSTS\n");
+		return ECC_ERROR_CERRSTS;
 	}
 
 	if (addr == IBECC_PARITY_ERROR_LOG) {

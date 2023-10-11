@@ -27,9 +27,9 @@
 #include "ots_oacp_internal.h"
 #include "ots_olcp_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_OTS_CLIENT)
-#define LOG_MODULE_NAME bt_otc
-#include "common/log.h"
+#define LOG_LEVEL CONFIG_BT_OTS_CLIENT_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_otc);
 
 /* TODO: KConfig options */
 #define OTS_CLIENT_INST_COUNT     1
@@ -136,7 +136,7 @@ static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		    struct bt_conn *conn)
 {
 	/* Not doing any writes yet */
-	BT_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+	LOG_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
 }
 
 static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -146,17 +146,16 @@ static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	size_t written;
 
 	if (cur_inst == NULL) {
-		BT_ERR("OTS instance invalid\n");
+		LOG_ERR("OTS instance invalid\n");
 		return;
 	}
 
 	written = cur_inst->sent_size;
-	BT_DBG("ctx: %p, conn: %p, written: %d",
-	       l2cap_ctx, (void *)conn, written);
+	LOG_DBG("ctx: %p, conn: %p, written: %d", l2cap_ctx, (void *)conn, written);
 
 	err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
 	if (err < 0) {
-		BT_WARN("Disconnecting L2CAP returned error %d", err);
+		LOG_WRN("Disconnecting L2CAP returned error %d", err);
 	}
 
 	if ((cur_inst->otc_inst != NULL) && (cur_inst->otc_inst->cb != NULL)) {
@@ -177,8 +176,8 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		&cur_inst->otc_inst->cur_object;
 	int cb_ret;
 
-	BT_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u",
-	       l2cap_ctx, (void *)conn, buf->len, offset);
+	LOG_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u", l2cap_ctx,
+		(void *)conn, buf->len, offset);
 
 	cur_inst->rcvd_size += buf->len;
 
@@ -187,8 +186,8 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	}
 
 	if (cur_inst->rcvd_size > cur_object->size.cur) {
-		BT_WARN("Received %u but expected maximum %u",
-			cur_inst->rcvd_size, cur_object->size.cur);
+		LOG_WRN("Received %u but expected maximum %u", cur_inst->rcvd_size,
+			cur_object->size.cur);
 	}
 
 	cb_ret = cur_inst->otc_inst->cb->obj_data_read(0, conn, offset,
@@ -199,11 +198,11 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		const uint32_t rcv_size = cur_object->size.cur;
 		int err;
 
-		BT_DBG("Received the whole object (%u bytes). "
+		LOG_DBG("Received the whole object (%u bytes). "
 		       "Disconnecting L2CAP CoC", rcv_size);
 		err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
 		if (err < 0) {
-			BT_WARN("Disconnecting L2CAP returned error %d", err);
+			LOG_WRN("Disconnecting L2CAP returned error %d", err);
 		}
 
 		cur_inst = NULL;
@@ -211,12 +210,12 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		const uint32_t rcv_size = cur_object->size.cur;
 		int err;
 
-		BT_DBG("Stopped receiving after%u bytes. "
+		LOG_DBG("Stopped receiving after%u bytes. "
 		       "Disconnecting L2CAP CoC", rcv_size);
 		err = bt_gatt_ots_l2cap_disconnect(l2cap_ctx);
 
 		if (err < 0) {
-			BT_WARN("Disconnecting L2CAP returned error %d", err);
+			LOG_WRN("Disconnecting L2CAP returned error %d", err);
 		}
 
 		cur_inst = NULL;
@@ -228,24 +227,22 @@ static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static void chan_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn)
 {
-	BT_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+	LOG_DBG("L2CAP closed, context: %p, conn: %p", l2cap_ctx, (void *)conn);
 }
 /* End L2CAP callbacks */
 
 static void print_oacp_response(enum bt_gatt_ots_oacp_proc_type req_opcode,
 				enum bt_gatt_ots_oacp_res_code result_code)
 {
-	BT_DBG("Request OP Code: %s", lit_request[req_opcode]);
-	BT_DBG("Result Code    : %s", lit_result[result_code]);
+	LOG_DBG("Request OP Code: %s", lit_request[req_opcode]);
+	LOG_DBG("Result Code    : %s", lit_result[result_code]);
 }
 
 static void print_olcp_response(enum bt_gatt_ots_olcp_proc_type req_opcode,
 				enum bt_gatt_ots_olcp_res_code result_code)
 {
-	BT_DBG("Request OP Code: %s",
-	       lit_olcp_request[req_opcode]);
-	BT_DBG("Result Code    : %s",
-	       lit_olcp_result[result_code]);
+	LOG_DBG("Request OP Code: %s", lit_olcp_request[req_opcode]);
+	LOG_DBG("Result Code    : %s", lit_olcp_result[result_code]);
 }
 
 static void date_time_decode(struct net_buf_simple *buf,
@@ -269,7 +266,7 @@ static struct bt_otc_internal_instance_t *lookup_inst_by_handle(uint16_t handle)
 		}
 	}
 
-	BT_DBG("Could not find OTS instance with handle 0x%04x", handle);
+	LOG_DBG("Could not find OTS instance with handle 0x%04x", handle);
 
 	return NULL;
 }
@@ -285,7 +282,7 @@ static void on_object_selected(struct bt_conn *conn,
 		otc_inst->cb->obj_selected(otc_inst, conn, res);
 	}
 
-	BT_DBG("Object selected");
+	LOG_DBG("Object selected");
 }
 
 static void olcp_ind_handler(struct bt_conn *conn,
@@ -299,7 +296,7 @@ static void olcp_ind_handler(struct bt_conn *conn,
 
 	op_code = net_buf_simple_pull_u8(&net_buf);
 
-	BT_DBG("OLCP indication");
+	LOG_DBG("OLCP indication");
 
 	if (op_code == BT_GATT_OTS_OLCP_PROC_RESP) {
 		enum bt_gatt_ots_olcp_proc_type req_opcode =
@@ -311,46 +308,46 @@ static void olcp_ind_handler(struct bt_conn *conn,
 
 		switch (req_opcode) {
 		case BT_GATT_OTS_OLCP_PROC_FIRST:
-			BT_DBG("First");
+			LOG_DBG("First");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
 		case BT_GATT_OTS_OLCP_PROC_LAST:
-			BT_DBG("Last");
+			LOG_DBG("Last");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
 		case BT_GATT_OTS_OLCP_PROC_PREV:
-			BT_DBG("Previous");
+			LOG_DBG("Previous");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
 		case BT_GATT_OTS_OLCP_PROC_NEXT:
-			BT_DBG("Next");
+			LOG_DBG("Next");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
 		case BT_GATT_OTS_OLCP_PROC_GOTO:
-			BT_DBG("Goto");
+			LOG_DBG("Goto");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
 		case BT_GATT_OTS_OLCP_PROC_ORDER:
-			BT_DBG("Order");
+			LOG_DBG("Order");
 			on_object_selected(conn, result_code, otc_inst);
 			break;
 		case BT_GATT_OTS_OLCP_PROC_REQ_NUM_OBJS:
-			BT_DBG("Request number of objects");
+			LOG_DBG("Request number of objects");
 			if (net_buf.len == sizeof(uint32_t)) {
 				uint32_t obj_cnt =
 					net_buf_simple_pull_le32(&net_buf);
-				BT_DBG("Number of objects %u", obj_cnt);
+				LOG_DBG("Number of objects %u", obj_cnt);
 			}
 			break;
 		case BT_GATT_OTS_OLCP_PROC_CLEAR_MARKING:
-			BT_DBG("Clear marking");
+			LOG_DBG("Clear marking");
 			break;
 		default:
-			BT_DBG("Invalid indication req opcode %u", req_opcode);
+			LOG_DBG("Invalid indication req opcode %u", req_opcode);
 			break;
 		}
 	} else {
-		BT_DBG("Invalid indication opcode %u", op_code);
+		LOG_DBG("Invalid indication opcode %u", op_code);
 	}
 }
 
@@ -365,7 +362,7 @@ static void oacp_ind_handler(struct bt_conn *conn,
 
 	op_code = net_buf_simple_pull_u8(&net_buf);
 
-	BT_DBG("OACP indication");
+	LOG_DBG("OACP indication");
 
 	if (op_code == BT_GATT_OTS_OACP_PROC_RESP) {
 		enum bt_gatt_ots_oacp_proc_type req_opcode  =
@@ -374,7 +371,7 @@ static void oacp_ind_handler(struct bt_conn *conn,
 			net_buf_simple_pull_u8(&net_buf);
 		print_oacp_response(req_opcode, result_code);
 	} else {
-		BT_DBG("Invalid indication opcode %u", op_code);
+		LOG_DBG("Invalid indication opcode %u", op_code);
 	}
 }
 
@@ -396,7 +393,7 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
 	 */
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -424,14 +421,14 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
 	inst->busy = false;
 
 	if (err) {
-		BT_DBG("err: 0x%02X", err);
+		LOG_DBG("err: 0x%02X", err);
 	} else if (data) {
 		if (length == OTS_FEATURE_LEN) {
 			inst->otc_inst->features.oacp =
@@ -440,12 +437,10 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
 			inst->otc_inst->features.olcp =
 				net_buf_simple_pull_le32(&net_buf);
 
-			BT_DBG("features : oacp 0x%x, olcp 0x%x",
-			       inst->otc_inst->features.oacp,
-			       inst->otc_inst->features.olcp);
+			LOG_DBG("features : oacp 0x%x, olcp 0x%x", inst->otc_inst->features.oacp,
+				inst->otc_inst->features.olcp);
 		} else {
-			BT_DBG("Invalid length %u (expected %u)",
-			       length, OTS_FEATURE_LEN);
+			LOG_DBG("Invalid length %u (expected %u)", length, OTS_FEATURE_LEN);
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
@@ -462,10 +457,10 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
 			continue;
 		}
 
-		BT_DBG("%u", i);
+		LOG_DBG("%u", i);
 		err = bt_gatt_ots_l2cap_register(&otc_insts[i].l2cap_ctx);
 		if (err) {
-			BT_WARN("Could not register L2CAP context %d", err);
+			LOG_WRN("Could not register L2CAP context %d", err);
 			return err;
 		}
 
@@ -495,20 +490,20 @@ int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
 		int err;
 
 		if (!conn) {
-			BT_WARN("Invalid Connection");
+			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->feature_handle) {
-			BT_DBG("Handle not set");
+			LOG_DBG("Handle not set");
 			return -EINVAL;
 		}
 
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -526,7 +521,7 @@ int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
 		return err;
 	}
 
-	BT_DBG("Not supported");
+	LOG_DBG("Not supported");
 	return -EOPNOTSUPP;
 }
 
@@ -536,10 +531,10 @@ static void write_olcp_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_otc_internal_instance_t *inst =
 		lookup_inst_by_handle(params->handle);
 
-	BT_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
+	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return;
 	}
 
@@ -583,20 +578,20 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 		uint8_t param[BT_OTS_OBJ_ID_SIZE];
 
 		if (!conn) {
-			BT_WARN("Invalid Connection");
+			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
-			BT_DBG("Handle not set");
+			LOG_DBG("Handle not set");
 			return -EINVAL;
 		}
 
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -610,7 +605,7 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 				  param, BT_OTS_OBJ_ID_SIZE);
 	}
 
-	BT_DBG("Not supported");
+	LOG_DBG("Not supported");
 	return -EOPNOTSUPP;
 }
 
@@ -621,20 +616,20 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
 		struct bt_otc_internal_instance_t *inst;
 
 		if (!conn) {
-			BT_WARN("Invalid Connection");
+			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
-			BT_DBG("Handle not set");
+			LOG_DBG("Handle not set");
 			return -EINVAL;
 		}
 
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -644,7 +639,7 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
 				  NULL, 0);
 	}
 
-	BT_DBG("Not supported");
+	LOG_DBG("Not supported");
 	return -EOPNOTSUPP;
 }
 
@@ -655,20 +650,20 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
 		struct bt_otc_internal_instance_t *inst;
 
 		if (!conn) {
-			BT_WARN("Invalid Connection");
+			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
-			BT_DBG("Handle not set");
+			LOG_DBG("Handle not set");
 			return -EINVAL;
 		}
 
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -679,7 +674,7 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
 
 	}
 
-	BT_DBG("Not supported");
+	LOG_DBG("Not supported");
 	return -EOPNOTSUPP;
 }
 
@@ -690,20 +685,20 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
 		struct bt_otc_internal_instance_t *inst;
 
 		if (!conn) {
-			BT_WARN("Invalid Connection");
+			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
-			BT_DBG("Handle not set");
+			LOG_DBG("Handle not set");
 			return -EINVAL;
 		}
 
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -713,7 +708,7 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
 				  NULL, 0);
 	}
 
-	BT_DBG("Not supported");
+	LOG_DBG("Not supported");
 	return -EOPNOTSUPP;
 }
 
@@ -724,20 +719,20 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
 		struct bt_otc_internal_instance_t *inst;
 
 		if (!conn) {
-			BT_WARN("Invalid Connection");
+			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
-			BT_DBG("Handle not set");
+			LOG_DBG("Handle not set");
 			return -EINVAL;
 		}
 
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			BT_ERR("Invalid OTC instance");
+			LOG_ERR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -747,7 +742,7 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
 				  NULL, 0);
 	}
 
-	BT_DBG("Not supported");
+	LOG_DBG("Not supported");
 	return -EOPNOTSUPP;
 }
 
@@ -761,19 +756,18 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-	BT_DBG("handle %d, length %u", params->single.handle, length);
+	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (err) {
-		BT_DBG("err: 0x%02X", err);
+		LOG_DBG("err: 0x%02X", err);
 	} else if (data) {
 		if (length != OTS_SIZE_LEN) {
-			BT_DBG("Invalid length %u (expected %u)",
-			       length, OTS_SIZE_LEN);
+			LOG_DBG("Invalid length %u (expected %u)", length, OTS_SIZE_LEN);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		} else {
 			struct bt_ots_obj_metadata *cur_object =
@@ -783,18 +777,18 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 			cur_object->size.alloc =
 				net_buf_simple_pull_le32(&net_buf);
 
-			BT_DBG("Object Size : current size %u, "
+			LOG_DBG("Object Size : current size %u, "
 			       "allocated size %u",
 			       cur_object->size.cur,
 			       cur_object->size.alloc);
 
 			if (cur_object->size.cur == 0) {
-				BT_WARN("Obj size read returned a current "
+				LOG_WRN("Obj size read returned a current "
 					"size of 0");
 			} else if (cur_object->size.cur >
 					cur_object->size.alloc &&
 				   cur_object->size.alloc != 0) {
-				BT_WARN("Allocated size %u is smaller than "
+				LOG_WRN("Allocated size %u is smaller than "
 					"current size %u",
 					cur_object->size.alloc,
 					cur_object->size.cur);
@@ -805,7 +799,7 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -826,15 +820,15 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-	BT_DBG("handle %d, length %u", params->single.handle, length);
+	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (err) {
-		BT_DBG("err: 0x%02X", err);
+		LOG_DBG("err: 0x%02X", err);
 	} else if (data) {
 		if (length == BT_OTS_OBJ_ID_SIZE) {
 			uint64_t obj_id = net_buf_simple_pull_le48(&net_buf);
@@ -843,7 +837,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 				&inst->otc_inst->cur_object;
 
 			(void)bt_ots_obj_id_to_str(obj_id, t, sizeof(t));
-			BT_DBG("Object Id : %s", t);
+			LOG_DBG("Object Id : %s", t);
 
 			if (cur_object->id != OTS_CLIENT_UNKNOWN_ID &&
 			    cur_object->id != obj_id) {
@@ -851,23 +845,21 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 
 				(void)bt_ots_obj_id_to_str(cur_object->id, str,
 							   sizeof(str));
-				BT_INFO("Read Obj Id %s not selected obj Id %s",
-					t, str);
+				LOG_INF("Read Obj Id %s not selected obj Id %s", t, str);
 			} else {
-				BT_INFO("Read Obj Id confirmed correct Obj Id");
+				LOG_INF("Read Obj Id confirmed correct Obj Id");
 				cur_object->id = obj_id;
 
 				BT_OTS_SET_METADATA_REQ_ID(inst->metadata_read);
 			}
 		} else {
-			BT_DBG("Invalid length %u (expected %u)",
-			       length, BT_OTS_OBJ_ID_SIZE);
+			LOG_DBG("Invalid length %u (expected %u)", length, BT_OTS_OBJ_ID_SIZE);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -885,10 +877,10 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_otc_internal_instance_t *inst =
 		lookup_inst_by_handle(params->single.handle);
 
-	BT_DBG("handle %d, length %u", params->single.handle, length);
+	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -897,14 +889,14 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
 			memcpy(inst->otc_inst->cur_object.name_c, data, length);
 			inst->otc_inst->cur_object.name_c[length] = '\0';
 		} else {
-			BT_WARN("Invalid length %u (expected max %u)",
-				length, CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
+			LOG_WRN("Invalid length %u (expected max %u)", length,
+				CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -922,10 +914,10 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_otc_internal_instance_t *inst =
 		lookup_inst_by_handle(params->single.handle);
 
-	BT_DBG("handle %d, length %u", params->single.handle, length);
+	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -938,18 +930,17 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 			bt_uuid_create(uuid, data, length);
 
 			bt_uuid_to_str(uuid, uuid_str, sizeof(uuid_str));
-			BT_DBG("UUID type read: %s", uuid_str);
+			LOG_DBG("UUID type read: %s", uuid_str);
 
 			BT_OTS_SET_METADATA_REQ_TYPE(inst->metadata_read);
 		} else {
-			BT_WARN("Invalid length %u (expected max %u)",
-				length, OTS_TYPE_MAX_LEN);
+			LOG_WRN("Invalid length %u (expected max %u)", length, OTS_TYPE_MAX_LEN);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -971,10 +962,10 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-	BT_DBG("handle %d, length %u", params->single.handle, length);
+	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -984,14 +975,14 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
 				&net_buf,
 				&inst->otc_inst->cur_object.first_created);
 		} else {
-			BT_WARN("Invalid length %u (expected max %u)",
-				length, BT_OTS_DATE_TIME_FIELD_SIZE);
+			LOG_WRN("Invalid length %u (expected max %u)", length,
+				BT_OTS_DATE_TIME_FIELD_SIZE);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -1012,10 +1003,10 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-	BT_DBG("handle %d, length %u", params->single.handle, length);
+	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1024,14 +1015,14 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
 			date_time_decode(&net_buf,
 					 &inst->otc_inst->cur_object.modified);
 		} else {
-			BT_WARN("Invalid length %u (expected max %u)",
-				length, BT_OTS_DATE_TIME_FIELD_SIZE);
+			LOG_WRN("Invalid length %u (expected max %u)", length,
+				BT_OTS_DATE_TIME_FIELD_SIZE);
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -1047,10 +1038,10 @@ static int read_attr(struct bt_conn *conn,
 		     uint16_t handle, bt_gatt_read_func_t cb)
 {
 	if (!handle) {
-		BT_DBG("Handle not set");
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (cb == NULL) {
-		BT_ERR("No callback set");
+		LOG_ERR("No callback set");
 		return -EINVAL;
 	}
 
@@ -1074,37 +1065,35 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
-	BT_INFO("handle %d, length %u", params->single.handle, length);
+	LOG_INF("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 	} else if (data && length <= OTS_PROPERTIES_LEN) {
 		struct bt_ots_obj_metadata *cur_object =
 			&inst->otc_inst->cur_object;
 
 		cur_object->props = net_buf_simple_pull_le32(&net_buf);
 
-		BT_INFO("Object properties (raw) : 0x%x",
-			cur_object->props);
+		LOG_INF("Object properties (raw) : 0x%x", cur_object->props);
 
 		if (!BT_OTS_OBJ_GET_PROP_READ(cur_object->props)) {
-			BT_WARN("Obj properties: Obj read not supported");
+			LOG_WRN("Obj properties: Obj read not supported");
 		}
 
 		BT_OTS_SET_METADATA_REQ_PROPS(inst->metadata_read);
 	} else {
-		BT_WARN("Invalid length %u (expected %u)",
-			length, OTS_PROPERTIES_LEN);
+		LOG_WRN("Invalid length %u (expected %u)", length, OTS_PROPERTIES_LEN);
 		cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 	}
 
 	if (err) {
-		BT_WARN("err: 0x%02X", err);
+		LOG_WRN("err: 0x%02X", err);
 		if (!inst->metadata_err) {
 			inst->metadata_err = err;
 		}
@@ -1121,10 +1110,10 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_otc_internal_instance_t *inst =
 		lookup_inst_by_handle(params->handle);
 
-	BT_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
+	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
 
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return;
 	}
 
@@ -1138,9 +1127,9 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
 		lookup_inst_by_handle(params->handle);
 	uint32_t len;
 
-	BT_DBG("Write Object request %s (0x%02X)", err ? "failed" : "successful", err);
+	LOG_DBG("Write Object request %s (0x%02X)", err ? "failed" : "successful", err);
 	if (!inst) {
-		BT_ERR("Instance not found");
+		LOG_ERR("Instance not found");
 		return;
 	}
 
@@ -1148,7 +1137,7 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
 	inst->l2cap_ctx.tx.len = 0;
 	err = bt_gatt_ots_l2cap_send(&inst->l2cap_ctx, inst->l2cap_ctx.tx.data, len);
 	if (err) {
-		BT_WARN("L2CAP CoC error: %d while trying to execute OACP "
+		LOG_WRN("L2CAP CoC error: %d while trying to execute OACP "
 			"Read procedure", err);
 	}
 
@@ -1164,7 +1153,7 @@ static int oacp_read(struct bt_conn *conn,
 	struct bt_gatt_ots_l2cap *l2cap;
 
 	if (!inst->otc_inst->oacp_handle) {
-		BT_DBG("Handle not set");
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (inst->busy) {
 		return -EBUSY;
@@ -1178,7 +1167,7 @@ static int oacp_read(struct bt_conn *conn,
 
 	err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
 	if (err) {
-		BT_DBG("Could not connect l2cap: %d", err);
+		LOG_DBG("Could not connect l2cap: %d", err);
 		return err;
 	}
 
@@ -1224,7 +1213,7 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
 	struct bt_gatt_ots_l2cap *l2cap;
 
 	if (!inst->otc_inst->oacp_handle) {
-		BT_DBG("Handle not set");
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (inst->busy) {
 		return -EBUSY;
@@ -1234,7 +1223,7 @@ static int oacp_write(struct bt_conn *conn, struct bt_otc_internal_instance_t *i
 
 	err = bt_gatt_ots_l2cap_connect(conn, &l2cap);
 	if (err) {
-		BT_DBG("Could not connect l2cap: %d", err);
+		LOG_DBG("Could not connect l2cap: %d", err);
 		return err;
 	}
 
@@ -1280,22 +1269,22 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 	struct bt_otc_internal_instance_t *inst;
 
 	if (!conn) {
-		BT_WARN("Invalid Connection");
+		LOG_WRN("Invalid Connection");
 		return -ENOTCONN;
 	} else if (!otc_inst) {
-		BT_ERR("Invalid OTC instance");
+		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
-		BT_ERR("Invalid OTC instance");
+		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
 	if (otc_inst->cur_object.size.cur == 0) {
-		BT_WARN("Unknown object size");
+		LOG_WRN("Unknown object size");
 		return -EINVAL;
 	}
 
@@ -1309,18 +1298,18 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	struct bt_otc_internal_instance_t *inst;
 
 	CHECKIF(!conn) {
-		BT_WARN("Invalid Connection");
+		LOG_WRN("Invalid Connection");
 		return -ENOTCONN;
 	}
 
 	CHECKIF(!otc_inst) {
-		BT_ERR("Invalid OTC instance");
+		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
 	CHECKIF((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
 		(mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
-		BT_ERR("Invalid write object mode parameter %d", mode);
+		LOG_ERR("Invalid write object mode parameter %d", mode);
 		return -EINVAL;
 	}
 
@@ -1328,34 +1317,34 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	 *	Offset and Length field are UINT32 Length
 	 */
 	CHECKIF(len > UINT32_MAX) {
-		BT_ERR("length exceeds UINT32");
+		LOG_ERR("length exceeds UINT32");
 		return -EINVAL;
 	}
 
 	CHECKIF(len == 0) {
-		BT_ERR("length equals zero");
+		LOG_ERR("length equals zero");
 		return -EINVAL;
 	}
 
 	CHECKIF((offset > UINT32_MAX) || (offset < 0)) {
-		BT_ERR("offset exceeds UINT32");
+		LOG_ERR("offset exceeds UINT32");
 		return -EINVAL;
 	}
 
 	CHECKIF(offset > otc_inst->cur_object.size.cur) {
-		BT_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
+		LOG_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 
 	CHECKIF((offset < otc_inst->cur_object.size.cur) &&
 		!BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
-		BT_ERR("Patch is not supported");
+		LOG_ERR("Patch is not supported");
 		return -EACCES;
 	}
 
 	CHECKIF(((len + offset) > otc_inst->cur_object.size.alloc) &&
 		!BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
-		BT_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
+		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
 		, (len + offset), otc_inst->cur_object.size.alloc);
 		return -EINVAL;
 	}
@@ -1363,7 +1352,7 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
-		BT_ERR("Invalid OTC instance");
+		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
@@ -1377,7 +1366,7 @@ static void read_next_metadata(struct bt_conn *conn,
 		inst->metadata_to_read ^ inst->metadata_read_attempted;
 	int err = 0;
 
-	BT_DBG("Attempting to read metadata 0x%02X", metadata_remaining);
+	LOG_DBG("Attempting to read metadata 0x%02X", metadata_remaining);
 
 	if (BT_OTS_GET_METADATA_REQ_NAME(metadata_remaining)) {
 		BT_OTS_SET_METADATA_REQ_NAME(inst->metadata_read_attempted);
@@ -1419,7 +1408,7 @@ static void read_next_metadata(struct bt_conn *conn,
 	}
 
 	if (err) {
-		BT_DBG("Metadata read failed (%d), trying next", err);
+		LOG_DBG("Metadata read failed (%d), trying next", err);
 		read_next_metadata(conn, inst);
 	}
 }
@@ -1431,20 +1420,20 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
 	struct bt_otc_internal_instance_t *inst;
 
 	if (!conn) {
-		BT_WARN("Invalid Connection");
+		LOG_WRN("Invalid Connection");
 		return -ENOTCONN;
 	} else if (!otc_inst) {
-		BT_ERR("Invalid OTC instance");
+		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	} else if (!metadata) {
-		BT_WARN("No metadata to read");
+		LOG_WRN("No metadata to read");
 		return -ENOEXEC;
 	}
 
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
-		BT_ERR("Invalid OTC instance");
+		LOG_ERR("Invalid OTC instance");
 		return -EINVAL;
 	} else if (inst->busy) {
 		return -EBUSY;
@@ -1468,14 +1457,14 @@ static int decode_record(struct net_buf_simple *buf,
 	rec->len = net_buf_simple_pull_le16(buf);
 
 	if (rec->len > buf->len) {
-		BT_WARN("incorrect DirListing record length %u, "
+		LOG_WRN("incorrect DirListing record length %u, "
 			"longer than remaining size %u",
 			rec->len, buf->len);
 		return -EINVAL;
 	}
 
 	if ((start_len - buf->len) + BT_OTS_OBJ_ID_SIZE > rec->len) {
-		BT_WARN("incorrect DirListing record, reclen %u too short, "
+		LOG_WRN("incorrect DirListing record, reclen %u too short, "
 			"includes only record length",
 			rec->len);
 		return -EINVAL;
@@ -1483,15 +1472,15 @@ static int decode_record(struct net_buf_simple *buf,
 
 	rec->metadata.id = net_buf_simple_pull_le48(buf);
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG_OTS_CLIENT)) {
+	if (IS_ENABLED(CONFIG_BT_OTS_CLIENT_LOG_LEVEL_DBG)) {
 		char t[BT_OTS_OBJ_ID_STR_LEN];
 
 		(void)bt_ots_obj_id_to_str(rec->metadata.id, t, sizeof(t));
-		BT_DBG("Object ID 0x%s", t);
+		LOG_DBG("Object ID 0x%s", t);
 	}
 
 	if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
-		BT_WARN("incorrect DirListing record, reclen %u too short, "
+		LOG_WRN("incorrect DirListing record, reclen %u too short, "
 			"includes only record length + ObjId",
 			rec->len);
 		return -EINVAL;
@@ -1503,7 +1492,7 @@ static int decode_record(struct net_buf_simple *buf,
 		uint8_t *name;
 
 		if ((start_len - buf->len) + rec->name_len > rec->len) {
-			BT_WARN("incorrect DirListing record, remaining length "
+			LOG_WRN("incorrect DirListing record, remaining length "
 				"%u shorter than name length %u",
 				rec->len - (start_len - buf->len),
 				rec->name_len);
@@ -1511,8 +1500,7 @@ static int decode_record(struct net_buf_simple *buf,
 		}
 
 		if (rec->name_len >= sizeof(rec->metadata.name_c)) {
-			BT_WARN("Name length %u too long, invalid record",
-				rec->name_len);
+			LOG_WRN("Name length %u too long, invalid record", rec->name_len);
 			return -EINVAL;
 		}
 
@@ -1524,22 +1512,22 @@ static int decode_record(struct net_buf_simple *buf,
 	rec->flags = 0;
 
 	if ((start_len - buf->len) + sizeof(uint8_t) > rec->len) {
-		BT_WARN("incorrect DirListing record, reclen %u too short, "
+		LOG_WRN("incorrect DirListing record, reclen %u too short, "
 			"does not include flags", rec->len);
 		return -EINVAL;
 	}
 
 	rec->flags = net_buf_simple_pull_u8(buf);
-	BT_DBG("flags 0x%x", rec->flags);
+	LOG_DBG("flags 0x%x", rec->flags);
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_TYPE_128(rec->flags)) {
 		uint8_t *uuid;
 
 		if ((start_len - buf->len) + BT_UUID_SIZE_128 > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"flags indicates uuid128, too short",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1548,10 +1536,10 @@ static int decode_record(struct net_buf_simple *buf,
 			       uuid, BT_UUID_SIZE_128);
 	} else {
 		if ((start_len - buf->len) + BT_UUID_SIZE_16 > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"flags indicates uuid16, too short",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1561,10 +1549,10 @@ static int decode_record(struct net_buf_simple *buf,
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_CUR_SIZE(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"flags indicates cur_size, too short",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1573,10 +1561,10 @@ static int decode_record(struct net_buf_simple *buf,
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_ALLOC_SIZE(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"flags indicates allocated size, too short",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1585,10 +1573,10 @@ static int decode_record(struct net_buf_simple *buf,
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_FIRST_CREATED(rec->flags)) {
 		if ((start_len - buf->len) + BT_OTS_DATE_TIME_FIELD_SIZE > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"too short flags indicates first_created",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1597,10 +1585,10 @@ static int decode_record(struct net_buf_simple *buf,
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_LAST_MODIFIED(rec->flags)) {
 		if ((start_len - buf->len) + BT_OTS_DATE_TIME_FIELD_SIZE > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"flags indicates las_mod, too short",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1609,10 +1597,10 @@ static int decode_record(struct net_buf_simple *buf,
 
 	if (BT_OTS_DIR_LIST_GET_FLAG_PROPERTIES(rec->flags)) {
 		if ((start_len - buf->len) + sizeof(uint32_t) > rec->len) {
-			BT_WARN("incorrect DirListing record, reclen %u "
+			LOG_WRN("incorrect DirListing record, reclen %u "
 				"flags indicates properties, too short",
 				rec->len);
-			BT_INFO("flags 0x%x", rec->flags);
+			LOG_INF("flags 0x%x", rec->flags);
 			return -EINVAL;
 		}
 
@@ -1641,16 +1629,15 @@ int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
 		count++;
 
 		if (net_buf.len < sizeof(uint16_t)) {
-			BT_WARN("incorrect DirListing record, len %u too short",
-				net_buf.len);
+			LOG_WRN("incorrect DirListing record, len %u too short", net_buf.len);
 			return -EINVAL;
 		}
 
-		BT_DBG("Decoding record %u", count);
+		LOG_DBG("Decoding record %u", count);
 		ret = decode_record(&net_buf, &record);
 
 		if (ret < 0) {
-			BT_WARN("DirListing, record %u invalid", count);
+			LOG_WRN("DirListing, record %u invalid", count);
 			return ret;
 		}
 
@@ -1667,67 +1654,67 @@ int bt_ots_client_decode_dirlisting(uint8_t *data, uint16_t length,
 void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
 			     uint16_t count)
 {
-	BT_INFO("--- Displaying %u metadata records ---", count);
+	LOG_INF("--- Displaying %u metadata records ---", count);
 
 	for (int i = 0; i < count; i++) {
 		char t[BT_OTS_OBJ_ID_STR_LEN];
 
 		(void)bt_ots_obj_id_to_str(metadata->id, t, sizeof(t));
-		BT_INFO("Object ID: 0x%s", t);
-		BT_INFO("Object name: %s", metadata->name_c);
-		BT_INFO("Object Current Size: %u", metadata->size.cur);
-		BT_INFO("Object Allocate Size: %u", metadata->size.alloc);
+		LOG_INF("Object ID: 0x%s", t);
+		LOG_INF("Object name: %s", metadata->name_c);
+		LOG_INF("Object Current Size: %u", metadata->size.cur);
+		LOG_INF("Object Allocate Size: %u", metadata->size.alloc);
 
 		if (!bt_uuid_cmp(&metadata->type.uuid,
 				 BT_UUID_OTS_TYPE_MPL_ICON)) {
-			BT_INFO("Type: Icon Obj Type");
+			LOG_INF("Type: Icon Obj Type");
 		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_TYPE_TRACK_SEGMENT)) {
-			BT_INFO("Type: Track Segment Obj Type");
+			LOG_INF("Type: Track Segment Obj Type");
 		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_TYPE_TRACK)) {
-			BT_INFO("Type: Track Obj Type");
+			LOG_INF("Type: Track Obj Type");
 		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_TYPE_GROUP)) {
-			BT_INFO("Type: Group Obj Type");
+			LOG_INF("Type: Group Obj Type");
 		} else if (!bt_uuid_cmp(&metadata->type.uuid,
 					BT_UUID_OTS_DIRECTORY_LISTING)) {
-			BT_INFO("Type: Directory Listing");
+			LOG_INF("Type: Directory Listing");
 		}
 
 
-		BT_INFO("Properties:0x%x", metadata->props);
+		LOG_INF("Properties:0x%x", metadata->props);
 
 		if (BT_OTS_OBJ_GET_PROP_APPEND(metadata->props)) {
-			BT_INFO(" - append permitted");
+			LOG_INF(" - append permitted");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_DELETE(metadata->props)) {
-			BT_INFO(" - delete permitted");
+			LOG_INF(" - delete permitted");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_EXECUTE(metadata->props)) {
-			BT_INFO(" - execute permitted");
+			LOG_INF(" - execute permitted");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_MARKED(metadata->props)) {
-			BT_INFO(" - marked");
+			LOG_INF(" - marked");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_PATCH(metadata->props)) {
-			BT_INFO(" - patch permitted");
+			LOG_INF(" - patch permitted");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_READ(metadata->props)) {
-			BT_INFO(" - read permitted");
+			LOG_INF(" - read permitted");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_TRUNCATE(metadata->props)) {
-			BT_INFO(" - truncate permitted");
+			LOG_INF(" - truncate permitted");
 		}
 
 		if (BT_OTS_OBJ_GET_PROP_WRITE(metadata->props)) {
-			BT_INFO(" - write permitted");
+			LOG_INF(" - write permitted");
 		}
 	}
 }

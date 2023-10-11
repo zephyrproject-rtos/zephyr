@@ -208,7 +208,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! atsamr21_xpro" in your terminal.
 
 References
 **********

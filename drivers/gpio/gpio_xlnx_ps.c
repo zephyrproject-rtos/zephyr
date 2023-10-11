@@ -7,9 +7,9 @@
  */
 
 #include <zephyr/devicetree.h>
-
 #include <zephyr/drivers/gpio.h>
-#include "gpio_utils.h"
+#include <zephyr/irq.h>
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "gpio_xlnx_ps.h"
 #include "gpio_xlnx_ps_bank.h"
 

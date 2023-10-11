@@ -7,6 +7,7 @@ config DAI_INTEL_DMIC
 	bool "Intel digital PDM microphone driver support for DAI interface"
 	default y
 	depends on DT_HAS_INTEL_DAI_DMIC_ENABLED
+	depends on PM_DEVICE_RUNTIME
 	help
 	  Enable Intel digital PDM microphone driver for DAI interface
 

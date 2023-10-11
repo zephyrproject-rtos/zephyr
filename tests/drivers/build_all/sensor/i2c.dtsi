@@ -591,11 +591,11 @@ test_i2c_ina230: ina230@4f {
 	compatible = "ti,ina230";
 	reg = <0x4f>;
 	config = <0>;
-	current-lsb = <1>;
-	rshunt = <0>;
+	current-lsb-microamps = <1000>;
+	rshunt-milliohms = <0>;
 	mask = <0>;
 	alert-limit = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_lm77: lm77@50 {
@@ -608,22 +608,22 @@ test_i2c_ina231: ina231@51 {
 	compatible = "ti,ina230";
 	reg = <0x51>;
 	config = <0>;
-	current-lsb = <1>;
-	rshunt = <0>;
+	current-lsb-microamps = <1000>;
+	rshunt-milliohms = <0>;
 	mask = <0>;
 	alert-limit = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_ina237: ina237@52 {
 	compatible = "ti,ina237";
 	reg = <0x52>;
 	config = <0>;
-	current-lsb = <1>;
+	current-lsb-microamps = <1000>;
 	adc-config = <0>;
-	rshunt = <0>;
+	rshunt-milliohms = <0>;
 	alert-config = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_max31875: max31875@53 {

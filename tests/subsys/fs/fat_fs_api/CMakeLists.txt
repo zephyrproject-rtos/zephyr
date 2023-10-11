@@ -6,3 +6,4 @@ project(fat_fs_api)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources} ../common/test_fs_open_flags.c)
+target_sources_ifdef(CONFIG_FLASH app PRIVATE ../common/test_fs_mkfs.c)

@@ -12,10 +12,14 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <zephyr/drivers/dai.h>
+#include <zephyr/irq.h>
 
 #include "dmic.h"
 
@@ -30,6 +34,82 @@ struct dai_dmic_global_shared dai_dmic_global;
 			     sys_read32(addr))
 
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *spec_config);
+
+/* Exponent function for small values of x. This function calculates
+ * fairly accurately exponent for x in range -2.0 .. +2.0. The iteration
+ * uses first 11 terms of Taylor series approximation for exponent
+ * function. With the current scaling the numerator just remains under
+ * 64 bits with the 11 terms.
+ *
+ * See https://en.wikipedia.org/wiki/Exponential_function#Computation
+ *
+ * The input is Q3.29
+ * The output is Q9.23
+ */
+static int32_t exp_small_fixed(int32_t x)
+{
+	int64_t p;
+	int64_t num = Q_SHIFT_RND(x, 29, 23);
+	int32_t y = (int32_t)num;
+	int32_t den = 1;
+	int32_t inc;
+	int k;
+
+	/* Numerator is x^k, denominator is k! */
+	for (k = 2; k < 12; k++) {
+		p = num * x; /* Q9.23 x Q3.29 -> Q12.52 */
+		num = Q_SHIFT_RND(p, 52, 23);
+		den = den * k;
+		inc = (int32_t)(num / den);
+		y += inc;
+	}
+
+	return y + ONE_Q23;
+}
+
+static int32_t exp_fixed(int32_t x)
+{
+	int32_t xs;
+	int32_t y;
+	int32_t z;
+	int i;
+	int n = 0;
+
+	if (x < Q_CONVERT_FLOAT(-11.5, 27))
+		return 0;
+
+	if (x > Q_CONVERT_FLOAT(7.6245, 27))
+		return INT32_MAX;
+
+	/* x is Q5.27 */
+	xs = x;
+	while (xs >= TWO_Q27 || xs <= MINUS_TWO_Q27) {
+		xs >>= 1;
+		n++;
+	}
+
+	/* exp_small_fixed() input is Q3.29, while x1 is Q5.27
+	 * exp_small_fixed() output is Q9.23, while z is Q12.20
+	 */
+	z = Q_SHIFT_RND(exp_small_fixed(Q_SHIFT_LEFT(xs, 27, 29)), 23, 20);
+	y = ONE_Q20;
+	for (i = 0; i < (1 << n); i++)
+		y = (int32_t)Q_MULTSR_32X32((int64_t)y, z, 20, 20, 20);
+
+	return y;
+}
+
+static int32_t db2lin_fixed(int32_t db)
+{
+	int32_t arg;
+
+	if (db < Q_CONVERT_FLOAT(-100.0, 24))
+		return 0;
+
+	/* Q8.24 x Q5.27, result needs to be Q5.27 */
+	arg = (int32_t)Q_MULTSR_32X32((int64_t)db, LOG10_DIV20_Q27, 24, 27, 27);
+	return exp_fixed(arg);
+}
 
 static void dai_dmic_update_bits(const struct dai_intel_dmic *dmic,
 				 uint32_t reg, uint32_t mask, uint32_t val)
@@ -157,7 +237,7 @@ static void dai_dmic_irq_handler(const void *data)
 	/* Trace OUTSTAT0 register */
 	val0 = dai_dmic_read(dmic, OUTSTAT0);
 	val1 = dai_dmic_read(dmic, OUTSTAT1);
-	LOG_INF("dmic_irq_handler(), OUTSTAT0 = 0x%x, OUTSTAT1 = 0x%x", val0, val1);
+	LOG_DBG("dmic_irq_handler(), OUTSTAT0 = 0x%x, OUTSTAT1 = 0x%x", val0, val1);
 
 	if (val0 & OUTSTAT0_ROR_BIT) {
 		LOG_ERR("dmic_irq_handler(): full fifo A or PDM overrun");
@@ -174,30 +254,53 @@ static void dai_dmic_irq_handler(const void *data)
 
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	uint32_t shim_reg;
+
+	shim_reg = sys_read32(SHIM_CLKCTL) | SHIM_CLKCTL_DMICFDCGB;
+
+	sys_write32(shim_reg, SHIM_CLKCTL);
+
+	LOG_INF("dis-dmic-clk-gating CLKCTL %08x", shim_reg);
+#else
 	/* Disable DMIC clock gating */
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMIC_DCGD),
 			dmic->shim_base + DMICLCTL_OFFSET);
+#endif
 }
 
 static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
+#ifdef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	uint32_t shim_reg;
+
+	shim_reg = sys_read32(SHIM_CLKCTL) & ~SHIM_CLKCTL_DMICFDCGB;
+
+	sys_write32(shim_reg, SHIM_CLKCTL);
+
+	LOG_INF("en-dmic-clk-gating CLKCTL %08x", shim_reg);
+#else
 	/* Enable DMIC clock gating */
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & ~DMIC_DCGD),
 			dmic->shim_base + DMICLCTL_OFFSET);
+#endif
 }
 
 static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 {
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* Enable DMIC power */
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
 			dmic->shim_base + DMICLCTL_OFFSET);
-
+#endif
 }
 static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
 {
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
 	/* Disable DMIC power */
 	sys_write32((sys_read32(dmic->shim_base + DMICLCTL_OFFSET) & (~DMICLCTL_SPA)),
 			dmic->shim_base + DMICLCTL_OFFSET);
+#endif
 }
 
 static int dai_dmic_probe(struct dai_intel_dmic *dmic)
@@ -220,6 +323,7 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 	dai_dmic_claim_ownership(dmic);
 
 	irq_enable(dmic->irq);
+
 	return 0;
 }
 
@@ -291,7 +395,7 @@ static int dai_timestamp_dmic_stop(const struct device *dev, struct dai_ts_cfg *
 }
 
 static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *cfg,
-		       struct dai_ts_data *tsd)
+				  struct dai_ts_data *tsd)
 {
 	/* Read DMIC timestamp registers */
 	uint32_t tsctrl = TS_DMIC_LOCAL_TSCTRL;
@@ -371,9 +475,11 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 		if (!dmic->enable[i])
 			continue;
 
+#ifndef CONFIG_SOC_SERIES_INTEL_ACE
 		if (dmic->startcount == DMIC_UNMUTE_CIC)
 			dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
 					     CIC_CONTROL_MIC_MUTE_BIT, 0);
+#endif
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			switch (dmic->dai_config_params.dai_index) {
@@ -501,13 +607,18 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 		}
 	}
 
+#ifndef CONFIG_SOC_SERIES_INTEL_ACE
 	/* Clear soft reset for all/used PDM controllers. This should
 	 * start capture in sync.
 	 */
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		dai_dmic_update_bits(dmic, base[i] + CIC_CONTROL,
 				     CIC_CONTROL_SOFT_RESET_BIT, 0);
+
+		LOG_INF("dmic_start(), cic 0x%08x",
+			dai_dmic_read(dmic, base[i] + CIC_CONTROL));
 	}
+#endif
 
 	/* Set bit dai->index */
 	dai_dmic_global.active_fifos_mask |= BIT(dmic->dai_config_params.dai_index);
@@ -519,7 +630,7 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	dmic_sync_trigger(dmic);
 
 	LOG_INF("dmic_start(), dmic_active_fifos_mask = 0x%x",
-			dai_dmic_global.active_fifos_mask);
+		dai_dmic_global.active_fifos_mask);
 }
 
 static void dai_dmic_stop(struct dai_intel_dmic *dmic, bool stop_is_pause)
@@ -580,6 +691,7 @@ const struct dai_properties *dai_dmic_get_properties(const struct device *dev,
 	struct dai_properties *prop = (struct dai_properties *)dev->config;
 
 	prop->fifo_address = dmic->fifo.offset;
+	prop->fifo_depth = dmic->fifo.depth;
 	prop->dma_hs_id = dmic->fifo.handshake;
 	prop->reg_init_delay = 0;
 
@@ -587,7 +699,7 @@ const struct dai_properties *dai_dmic_get_properties(const struct device *dev,
 }
 
 static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
-		       enum dai_trigger_cmd cmd)
+			    enum dai_trigger_cmd cmd)
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
 
@@ -656,7 +768,6 @@ static int dai_dmic_set_config(const struct device *dev,
 		return -EINVAL;
 	}
 
-	__ASSERT_NO_MSG(dmic->created);
 	key = k_spin_lock(&dmic->lock);
 
 #if CONFIG_DAI_INTEL_DMIC_TPLG_PARAMS
@@ -682,7 +793,6 @@ out:
 	k_spin_unlock(&dmic->lock, key);
 	return ret;
 }
-
 
 static int dai_dmic_probe_wrapper(const struct device *dev)
 {
@@ -722,9 +832,29 @@ static int dai_dmic_remove_wrapper(const struct device *dev)
 	return ret;
 }
 
+static int dmic_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		dai_dmic_remove_wrapper(dev);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		dai_dmic_probe_wrapper(dev);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* All device pm is handled during resume and suspend */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 const struct dai_driver_api dai_dmic_ops = {
-	.probe			= dai_dmic_probe_wrapper,
-	.remove			= dai_dmic_remove_wrapper,
+	.probe			= pm_device_runtime_get,
+	.remove			= pm_device_runtime_put,
 	.config_set		= dai_dmic_set_config,
 	.config_get		= dai_dmic_get_config,
 	.get_properties		= dai_dmic_get_properties,
@@ -743,7 +873,9 @@ static int dai_dmic_initialize_device(const struct device *dev)
 		dai_dmic_irq_handler,
 		DEVICE_DT_INST_GET(0),
 		0);
-	return 0;
+
+	pm_device_init_suspended(dev);
+	return pm_device_runtime_enable(dev);
 };
 
 
@@ -757,23 +889,25 @@ static int dai_dmic_initialize_device(const struct device *dev)
 			.dai_index = n					\
 		},							\
 		.reg_base = DT_INST_REG_ADDR_BY_IDX(n, 0),		\
-		.shim_base = DT_INST_PROP_BY_IDX(n, shim, 0),		\
+		.shim_base = DT_INST_PROP(n, shim),			\
 		.irq = DT_INST_IRQN(n),					\
 		.fifo =							\
 		{							\
 			.offset = DT_INST_REG_ADDR_BY_IDX(n, 0)		\
-				+ OUTDATA##n,				\
+				+ DT_INST_PROP(n, fifo),		\
 			.handshake = DMA_HANDSHAKE_DMIC_CH##n		\
 		},							\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, dmic_pm_action);			\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 		dai_dmic_initialize_device,				\
-		NULL,							\
+		PM_DEVICE_DT_INST_GET(n),				\
 		&dai_intel_dmic_data_##n,				\
 		&dai_intel_dmic_properties_##n,				\
 		POST_KERNEL,						\
-		CONFIG_DAI_INIT_PRIORITY,					\
+		CONFIG_DAI_INIT_PRIORITY,				\
 		&dai_dmic_ops);
 
-DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_DMIC_DEVICE_INIT);
+DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_DMIC_DEVICE_INIT)

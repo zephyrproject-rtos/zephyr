@@ -17,6 +17,7 @@
 #include <soc.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);

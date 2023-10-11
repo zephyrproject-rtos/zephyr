@@ -225,7 +225,7 @@ static int ds18b20_init(const struct device *dev)
 	static struct ds18b20_data ds18b20_data_##inst;			\
 	static const struct ds18b20_config ds18b20_config_##inst =	\
 		DS18B20_CONFIG_INIT(inst);				\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      ds18b20_init,				\
 			      NULL,					\
 			      &ds18b20_data_##inst,			\

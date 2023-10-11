@@ -341,6 +341,53 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags);
 int sys_mm_drv_update_region_flags(void *virt, size_t size, uint32_t flags);
 
 /**
+ * @brief Represents an available memory region.
+ *
+ * A memory region that can be used by allocators. Driver defined
+ * attributes can be used to guide the proper usage of each region.
+ */
+struct sys_mm_drv_region {
+	void *addr; /**< @brief Address of the memory region */
+	size_t size; /**< @brief Size of the memory region */
+	uint32_t attr; /**< @brief Driver defined attributes of the memory region */
+};
+
+/* TODO is it safe to assume no valid region has size == 0? */
+/**
+ * @brief Iterates over an array of regions returned by #sys_mm_drv_query_memory_regions
+ *
+ * Note that a sentinel item marking the end of the array is expected for
+ * this macro to work.
+ */
+#define SYS_MM_DRV_MEMORY_REGION_FOREACH(regions, iter) \
+	for (iter = regions; iter->size; iter++)
+
+/**
+ * @brief Query available memory regions
+ *
+ * Returns an array of available memory regions. One can iterate over
+ * the array using #SYS_MM_DRV_MEMORY_REGION_FOREACH. Note that the last
+ * item of the array is a sentinel marking the end, and it's identified
+ * by it's size attribute, which is zero.
+ *
+ * @retval regions A possibly empty array - i.e. containing only the sentinel
+ *         marking at the end - of memory regions.
+ */
+const struct sys_mm_drv_region *sys_mm_drv_query_memory_regions(void);
+
+/**
+ * @brief Free the memory array returned by #sys_mm_drv_query_memory_regions
+ *
+ * The driver may have dynamically allocated the memory for the array of
+ * regions returned by #sys_mm_drv_query_memory_regions. This method provides
+ * it the opportunity to free any related resources.
+ *
+ * @param regions Array of regions previously returned by
+ *                #sys_mm_drv_query_memory_regions
+ */
+void sys_mm_drv_query_memory_regions_free(const struct sys_mm_drv_region *regions);
+
+/**
  * @}
  */
 

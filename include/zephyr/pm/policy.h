@@ -12,6 +12,7 @@
 
 #include <zephyr/pm/state.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {

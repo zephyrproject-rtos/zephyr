@@ -21,6 +21,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 
@@ -40,6 +41,7 @@
 #endif /* CONFIG_PM */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 
 /* This symbol takes the value 1 if one of the device instances */
@@ -1023,12 +1025,12 @@ static void uart_stm32_isr(const struct device *dev)
 
 		LOG_DBG("idle interrupt occurred");
 
-		/* Start the RX timer */
-		async_timer_start(&data->dma_rx.timeout_work,
-							data->dma_rx.timeout);
-
 		if (data->dma_rx.timeout == 0) {
 			uart_stm32_dma_rx_flush(dev);
+		} else {
+			/* Start the RX timer not null */
+			async_timer_start(&data->dma_rx.timeout_work,
+								data->dma_rx.timeout);
 		}
 	} else if (LL_USART_IsEnabledIT_TC(config->usart) &&
 			LL_USART_IsActiveFlag_TC(config->usart)) {
@@ -1127,6 +1129,14 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+
+	if (data->rx_next_buffer) {
+		struct uart_event rx_next_buf_release_evt = {
+			.type = UART_RX_BUF_RELEASED,
+			.data.rx_buf.buf = data->rx_next_buffer,
+		};
+		async_user_callback(data, &rx_next_buf_release_evt);
+	}
 
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
@@ -1368,6 +1378,9 @@ static int uart_stm32_async_tx_abort(const struct device *dev)
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+#endif /* st_stm32u5_dma */
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	async_evt_tx_abort(data);
 
@@ -1607,6 +1620,14 @@ static int uart_stm32_init(const struct device *dev)
 	}
 
 	LL_USART_Disable(config->usart);
+
+	if (!device_is_ready(data->reset.dev)) {
+		LOG_ERR("reset controller not ready");
+		return -ENODEV;
+	}
+
+	/* Reset UART to default state using RCC */
+	reset_line_toggle_dt(&data->reset);
 
 	/* TX/RX direction */
 	LL_USART_SetTransferDirection(config->usart,
@@ -1884,6 +1905,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
 	.baud_rate = DT_INST_PROP(index, current_speed),		\
+	.reset = RESET_DT_SPEC_GET(DT_DRV_INST(index)),			\
 	UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
 	UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
 };									\

@@ -24,6 +24,7 @@
 #include "ll_settings.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
@@ -34,6 +35,7 @@
 #include "ull_iso_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_central_iso_internal.h"
 
 #include "ull_internal.h"
 #include "ull_conn_types.h"
@@ -43,9 +45,6 @@
 #include "ull_llcp_internal.h"
 #include "ull_periph_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_llcp
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
@@ -294,6 +293,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc, struct llcp_mem_po
 	ctx->collision = 0U;
 	ctx->done = 0U;
 	ctx->rx_greedy = 0U;
+	ctx->tx_ack = NULL;
 
 	/* Clear procedure data */
 	memset((void *)&ctx->data, 0, sizeof(ctx->data));
@@ -370,6 +370,16 @@ struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	case PROC_CIS_CREATE:
+		llcp_lp_comm_init_proc(ctx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_lp_comm_init_proc(ctx);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -451,6 +461,11 @@ struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	case PROC_SCA_UPDATE:
+		llcp_rp_comm_init_proc(ctx);
+		break;
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
 	default:
 		/* Unknown procedure */
@@ -850,6 +865,54 @@ uint8_t ull_cp_cis_terminate(struct ll_conn *conn,
 }
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+uint8_t ull_cp_cis_create(struct ll_conn *conn, struct ll_conn_iso_stream *cis)
+{
+	struct ll_conn_iso_group *cig;
+	struct proc_ctx *ctx;
+
+	if (conn->lll.handle != cis->lll.acl_handle) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_CIS_CREATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	cig = cis->group;
+	ctx->data.cis_create.cis_handle = cis->lll.handle;
+
+	ctx->data.cis_create.cig_id = cis->group->cig_id;
+	ctx->data.cis_create.cis_id = cis->cis_id;
+	ctx->data.cis_create.c_phy = cis->lll.tx.phy;
+	ctx->data.cis_create.p_phy = cis->lll.rx.phy;
+	ctx->data.cis_create.c_sdu_interval = cig->c_sdu_interval;
+	ctx->data.cis_create.p_sdu_interval = cig->p_sdu_interval;
+	ctx->data.cis_create.c_max_pdu = cis->lll.tx.max_octets;
+	ctx->data.cis_create.p_max_pdu = cis->lll.rx.max_octets;
+	ctx->data.cis_create.c_max_sdu = cis->c_max_sdu;
+	ctx->data.cis_create.p_max_sdu = cis->p_max_sdu;
+	ctx->data.cis_create.iso_interval = cig->iso_interval;
+	ctx->data.cis_create.framed = cis->framed;
+	ctx->data.cis_create.nse = cis->lll.num_subevents;
+	ctx->data.cis_create.sub_interval = cis->lll.sub_interval;
+	ctx->data.cis_create.c_bn = cis->lll.tx.burst_number;
+	ctx->data.cis_create.p_bn = cis->lll.rx.burst_number;
+	ctx->data.cis_create.c_ft = cis->lll.tx.flush_timeout;
+	ctx->data.cis_create.p_ft = cis->lll.rx.flush_timeout;
+
+	ctx->data.cis_create.conn_event_count =
+		ull_central_iso_cis_offset_get(cis->lll.handle,
+					       &ctx->data.cis_create.cis_offset_min,
+					       &ctx->data.cis_create.cis_offset_max);
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+
 #if defined(CONFIG_BT_CENTRAL)
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 {
@@ -910,6 +973,27 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+uint8_t ull_cp_req_peer_sca(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (!feature_sca(conn)) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_SCA_UPDATE);
+
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 uint8_t ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
@@ -940,7 +1024,7 @@ uint8_t ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
-			   uint16_t latency, uint16_t timeout)
+			   uint16_t latency, uint16_t timeout, uint16_t *offsets)
 {
 	struct proc_ctx *ctx;
 
@@ -974,6 +1058,12 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 		ctx->data.cu.interval_max = interval_max;
 		ctx->data.cu.latency = latency;
 		ctx->data.cu.timeout = timeout;
+		ctx->data.cu.offsets[0] = offsets ? offsets[0] : 0x0000;
+		ctx->data.cu.offsets[1] = offsets ? offsets[1] : 0xffff;
+		ctx->data.cu.offsets[2] = offsets ? offsets[2] : 0xffff;
+		ctx->data.cu.offsets[3] = offsets ? offsets[3] : 0xffff;
+		ctx->data.cu.offsets[4] = offsets ? offsets[4] : 0xffff;
+		ctx->data.cu.offsets[5] = offsets ? offsets[5] : 0xffff;
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 		    (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
@@ -1032,6 +1122,51 @@ uint8_t ull_cp_remote_cpr_pending(struct ll_conn *conn)
 
 	return (ctx && ctx->proc == PROC_CONN_PARAM_REQ);
 }
+
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+bool ull_cp_remote_cpr_apm_awaiting_reply(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		return llcp_rp_conn_param_req_apm_awaiting_reply(ctx);
+	}
+
+	return false;
+}
+
+void ull_cp_remote_cpr_apm_reply(struct ll_conn *conn, uint16_t *offsets)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		ctx->data.cu.offsets[0] = offsets[0];
+		ctx->data.cu.offsets[1] = offsets[1];
+		ctx->data.cu.offsets[2] = offsets[2];
+		ctx->data.cu.offsets[3] = offsets[3];
+		ctx->data.cu.offsets[4] = offsets[4];
+		ctx->data.cu.offsets[5] = offsets[5];
+		ctx->data.cu.error = 0U;
+		llcp_rp_conn_param_req_apm_reply(conn, ctx);
+	}
+}
+
+void ull_cp_remote_cpr_apm_neg_reply(struct ll_conn *conn, uint8_t error_code)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		ctx->data.cu.error = error_code;
+		llcp_rp_conn_param_req_apm_reply(conn, ctx);
+	}
+}
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
@@ -1143,6 +1278,19 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code)
 }
 #endif /* defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
 
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+bool ull_lp_cc_is_active(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = llcp_lr_peek(conn);
+	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+		return llcp_lp_cc_is_active(ctx);
+	}
+	return false;
+}
+#endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
+
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
 	return (ctx->rx_opcode == pdu->llctrl.opcode || ctx->rx_greedy);
@@ -1178,289 +1326,191 @@ static bool pdu_is_terminate(struct pdu_data *pdu)
 	return pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
 }
 
+#define VALIDATE_PDU_LEN(pdu, type) (pdu->len == PDU_DATA_LLCTRL_LEN(type))
+
 #if defined(CONFIG_BT_PERIPHERAL)
 static bool pdu_validate_conn_update_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.conn_update_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, conn_update_ind);
 }
 
 static bool pdu_validate_chan_map_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.chan_map_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, chan_map_ind);
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
 static bool pdu_validate_terminate_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.terminate_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, terminate_ind);
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 static bool pdu_validate_enc_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.enc_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, enc_req);
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 static bool pdu_validate_enc_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.enc_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, enc_rsp);
 }
 
 static bool pdu_validate_start_enc_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.start_enc_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, start_enc_req);
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 static bool pdu_validate_start_enc_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.start_enc_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, start_enc_rsp);
 }
 #endif
 
 static bool pdu_validate_unknown_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.unknown_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, unknown_rsp);
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static bool pdu_validate_feature_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.feature_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, feature_req);
 }
 #endif
 
 #if defined(CONFIG_BT_CENTRAL)
 static bool pdu_validate_feature_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.feature_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, feature_rsp);
 }
 #endif
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
 static bool pdu_validate_pause_enc_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.pause_enc_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, pause_enc_req);
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 static bool pdu_validate_pause_enc_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.pause_enc_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, pause_enc_rsp);
 }
 #endif
 
 static bool pdu_validate_version_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.version_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, version_ind);
 }
 
 static bool pdu_validate_reject_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.reject_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, reject_ind);
 }
 
 #if defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG) && defined(CONFIG_BT_CENTRAL)
 static bool pdu_validate_per_init_feat_xchg(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.per_init_feat_xchg) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, per_init_feat_xchg);
 }
 #endif /* CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG && CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static bool pdu_validate_conn_param_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.conn_param_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, conn_param_req);
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 static bool pdu_validate_conn_param_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.conn_param_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, conn_param_rsp);
 }
 
 static bool pdu_validate_reject_ext_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.reject_ext_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, reject_ext_ind);
 }
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 static bool pdu_validate_ping_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.ping_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, ping_req);
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 static bool pdu_validate_ping_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.ping_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, ping_rsp);
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static bool pdu_validate_length_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.length_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, length_req);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static bool pdu_validate_length_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.length_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, length_rsp);
 }
 
 #if defined(CONFIG_BT_CTLR_PHY)
 static bool pdu_validate_phy_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.phy_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, phy_req);
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
 static bool pdu_validate_phy_rsp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.phy_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, phy_rsp);
 }
 
 static bool pdu_validate_phy_upd_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.phy_upd_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, phy_upd_ind);
 }
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 static bool pdu_validate_min_used_chan_ind(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.min_used_chans_ind) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, min_used_chans_ind);
 }
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 static bool pdu_validate_cte_req(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.cte_req) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, cte_req);
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 static bool pdu_validate_cte_resp(struct pdu_data *pdu)
 {
-	if (pdu->len != sizeof(pdu->llctrl.cte_rsp) + 1) {
-		return false;
-	}
-
-	return true;
+	return VALIDATE_PDU_LEN(pdu, cte_rsp);
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+static bool pdu_validate_clock_accuracy_req(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, clock_accuracy_req);
+}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+static bool pdu_validate_clock_accuracy_rsp(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, clock_accuracy_rsp);
+}
 
 typedef bool (*pdu_param_validate_t)(struct pdu_data *pdu);
 
@@ -1530,6 +1580,10 @@ static const struct pdu_validate pdu_validate[] = {
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	[PDU_DATA_LLCTRL_TYPE_CTE_RSP] = { pdu_validate_cte_resp },
 #endif /* PDU_DATA_LLCTRL_TYPE_CTE_RSP */
+#if defined(CONFIG_BT_CTLR_SCA_UPDATE)
+	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_REQ] = { pdu_validate_clock_accuracy_req },
+#endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+	[PDU_DATA_LLCTRL_TYPE_CLOCK_ACCURACY_RSP] = { pdu_validate_clock_accuracy_rsp },
 };
 
 static bool pdu_is_valid(struct pdu_data *pdu)

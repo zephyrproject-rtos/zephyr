@@ -60,7 +60,7 @@ bool bmi160_bus_ready_spi(const struct device *dev)
 {
 	const struct bmi160_cfg *cfg = dev->config;
 
-	return spi_is_ready(&cfg->bus.spi);
+	return spi_is_ready_dt(&cfg->bus.spi);
 }
 
 int bmi160_read_spi(const struct device *dev,
@@ -983,7 +983,7 @@ int bmi160_init(const struct device *dev)
 #endif
 
 #define BMI160_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst, bmi160_init, NULL,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi160_init, NULL,		\
 			      &bmi160_data_##inst, &bmi160_cfg_##inst,	\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
 			      &bmi160_api);

@@ -37,7 +37,6 @@ properties:
 
     calib-offset:
       type: int
-      required: false
       description: |
         bit position offset in NVM SW Calib for start of ADC0 BIASCOMP field.
         This property is expected to be set on SAM{D,E}5x family of SoCs.

@@ -37,6 +37,9 @@ properties:
     pinctrl-names:
       required: true
 
+    clock-names:
+      required: true
+
     dmas:
       description: |
         Optional DMA channel specifier, required for DMA transactions.

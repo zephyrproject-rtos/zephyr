@@ -4,22 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
 #include <zephyr/mgmt/ec_host_cmd.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 
-#if !DT_HAS_CHOSEN(zephyr_ec_host_interface)
-#error Must chose zephyr,ec-host-interface in device tree
-#endif
+BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_ec_host_interface),
+	"Must choose zephyr,ec-host-interface in device tree");
 
 #define DT_HOST_CMD_DEV DT_CHOSEN(zephyr_ec_host_interface)
 
 #define RX_HEADER_SIZE (sizeof(struct ec_host_cmd_request_header))
 #define TX_HEADER_SIZE (sizeof(struct ec_host_cmd_response_header))
 
-/** Used by host command handlers for their response before going over wire */
-uint8_t tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER];
+/**
+ * Used by host command handlers for their response before going over wire.
+ * Host commands handlers will cast this to respective response structures that may have fields of
+ * uint32_t or uint64_t, so this buffer must be aligned to protect against the unaligned access.
+ */
+static uint8_t tx_buffer[CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER] __aligned(8);
 
 static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
 {
@@ -77,9 +81,10 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			 */
 			send_error_response(ec_host_cmd_dev,
 					    EC_HOST_CMD_ERROR);
+			continue;
 		}
-		/* rx buf and len now have valid incoming data */
 
+		/* rx buf and len now have valid incoming data */
 		if (*rx.len < RX_HEADER_SIZE) {
 			send_error_response(ec_host_cmd_dev,
 					    EC_HOST_CMD_REQUEST_TRUNCATED);
@@ -133,21 +138,15 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
-		/*
-		 * Ensure that RX/TX buffers are cleared between each host
-		 * command to ensure subsequent host command handlers cannot
-		 * read data from previous host command runs.
-		 */
-		memset(&rx.buf[rx_valid_data_size], 0,
-		       *rx.len - rx_valid_data_size);
-		memset(tx_buffer, 0, sizeof(tx_buffer));
-
 		struct ec_host_cmd_handler_args args = {
+			.reserved = NULL,
+			.command = rx_header->cmd_id,
+			.version = rx_header->cmd_ver,
 			.input_buf = rx.buf + RX_HEADER_SIZE,
 			.input_buf_size = rx_header->data_len,
 			.output_buf = tx_buffer + TX_HEADER_SIZE,
-			.output_buf_size = sizeof(tx_buffer) - TX_HEADER_SIZE,
-			.version = rx_header->cmd_ver,
+			.output_buf_max = sizeof(tx_buffer) - TX_HEADER_SIZE,
+			.output_buf_size = 0,
 		};
 
 		if (found_handler->min_rqt_size > args.input_buf_size) {
@@ -156,7 +155,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
-		if (found_handler->min_rsp_size > args.output_buf_size) {
+		if (found_handler->min_rsp_size > args.output_buf_max) {
 			send_error_response(ec_host_cmd_dev,
 					    EC_HOST_CMD_INVALID_RESPONSE);
 			continue;
@@ -183,6 +182,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		tx_header->prtcl_ver = 3;
 		tx_header->result = EC_HOST_CMD_SUCCESS;
 		tx_header->data_len = args.output_buf_size;
+		tx_header->reserved = 0;
 
 		const uint16_t tx_valid_data_size =
 			tx_header->data_len + TX_HEADER_SIZE;
@@ -193,6 +193,7 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 		}
 
 		/* Calculate checksum */
+		tx_header->checksum = 0;
 		tx_header->checksum =
 			cal_checksum(tx_buffer, tx_valid_data_size);
 
@@ -200,10 +201,11 @@ static void handle_host_cmds_entry(void *arg1, void *arg2, void *arg3)
 			.buf = tx_buffer,
 			.len = tx_valid_data_size,
 		};
+
 		ec_host_cmd_periph_send(ec_host_cmd_dev, &tx);
 	}
 }
 
 K_THREAD_DEFINE(ec_host_cmd_handler_tid, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE,
 		handle_host_cmds_entry, NULL, NULL, NULL,
-		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+		CONFIG_EC_HOST_CMD_HANDLER_PRIO, 0, 0);

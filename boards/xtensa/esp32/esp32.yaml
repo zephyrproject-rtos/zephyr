@@ -11,6 +11,7 @@ supported:
   - uart
   - nvs
   - pwm
+  - dac
 testing:
   ignore_tags:
     - net

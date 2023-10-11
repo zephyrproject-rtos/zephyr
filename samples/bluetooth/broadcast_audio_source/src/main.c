@@ -27,13 +27,13 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  TOTAL_BUF_NEEDED,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 8, NULL);
 static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
-static uint32_t seq_num;
+static uint16_t seq_num;
 static bool stopping;
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
 
-#define BROADCAST_SOURCE_LIFETIME  30U /* seconds */
+#define BROADCAST_SOURCE_LIFETIME  120U /* seconds */
 
 static void stream_started_cb(struct bt_audio_stream *stream)
 {
@@ -85,9 +85,51 @@ static struct bt_audio_stream_ops stream_ops = {
 	.sent = stream_sent_cb
 };
 
+static int setup_broadcast_source(struct bt_audio_broadcast_source **source)
+{
+	struct bt_audio_broadcast_source_stream_param
+		stream_params[CONFIG_BT_AUDIO_BROADCAST_SRC_STREAM_COUNT];
+	struct bt_audio_broadcast_source_subgroup_param
+		subgroup_param[CONFIG_BT_AUDIO_BROADCAST_SRC_SUBGROUP_COUNT];
+	struct bt_audio_broadcast_source_create_param create_param;
+	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
+	int err;
+
+	(void)memset(streams, 0, sizeof(streams));
+
+	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_param); i++) {
+		subgroup_param[i].params_count = streams_per_subgroup;
+		subgroup_param[i].params = stream_params + i * streams_per_subgroup;
+		subgroup_param[i].codec = &preset_16_2_1.codec;
+	}
+
+	for (size_t j = 0U; j < ARRAY_SIZE(stream_params); j++) {
+		stream_params[j].stream = &streams[j];
+		stream_params[j].data = NULL;
+		stream_params[j].data_count = 0U;
+		bt_audio_stream_cb_register(stream_params[j].stream, &stream_ops);
+	}
+
+	create_param.params_count = ARRAY_SIZE(subgroup_param);
+	create_param.params = subgroup_param;
+	create_param.qos = &preset_16_2_1.qos;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       ARRAY_SIZE(subgroup_param),
+	       ARRAY_SIZE(subgroup_param) * streams_per_subgroup);
+
+	err = bt_audio_broadcast_source_create(&create_param, source);
+	if (err != 0) {
+		printk("Unable to create broadcast source: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
 void main(void)
 {
-	struct bt_audio_stream *streams_p[ARRAY_SIZE(streams)];
+	struct bt_le_ext_adv *adv;
 	int err;
 
 	err = bt_enable(NULL);
@@ -97,31 +139,100 @@ void main(void)
 	}
 	printk("Bluetooth initialized\n");
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i].ops = &stream_ops;
-		streams_p[i] = &streams[i];
-	}
-
 	for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
 		/* Initialize mock data */
 		mock_data[i] = i;
 	}
 
 	while (true) {
-		printk("Creating broadcast source\n");
-		err = bt_audio_broadcast_source_create(streams_p,
-						       ARRAY_SIZE(streams_p),
-						       &preset_16_2_1.codec,
-						       &preset_16_2_1.qos,
-						       &broadcast_source);
+		/* Broadcast Audio Streaming Endpoint advertising data */
+		NET_BUF_SIMPLE_DEFINE(ad_buf,
+				      BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
+		NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+		struct bt_data ext_ad;
+		struct bt_data per_ad;
+		uint32_t broadcast_id;
+
+		/* Create a non-connectable non-scannable advertising set */
+		err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
 		if (err != 0) {
-			printk("Unable to create broadcast source: %d\n", err);
+			printk("Unable to create extended advertising set: %d\n",
+			       err);
+			return;
+		}
+
+		/* Set periodic advertising parameters */
+		err = bt_le_per_adv_set_param(adv, BT_LE_PER_ADV_DEFAULT);
+		if (err) {
+			printk("Failed to set periodic advertising parameters"
+			" (err %d)\n", err);
+			return;
+		}
+
+		printk("Creating broadcast source\n");
+		err = setup_broadcast_source(&broadcast_source);
+		if (err != 0) {
+			printk("Unable to setup broadcast source: %d\n", err);
+			return;
+		}
+
+		err = bt_audio_broadcast_source_get_id(broadcast_source,
+						       &broadcast_id);
+		if (err != 0) {
+			printk("Unable to get broadcast ID: %d\n", err);
+			return;
+		}
+
+		/* Setup extended advertising data */
+		net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
+		net_buf_simple_add_le24(&ad_buf, broadcast_id);
+		ext_ad.type = BT_DATA_SVC_DATA16;
+		ext_ad.data_len = ad_buf.len;
+		ext_ad.data = ad_buf.data;
+		err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
+		if (err != 0) {
+			printk("Failed to set extended advertising data: %d\n",
+			       err);
+			return;
+		}
+
+		/* Setup periodic advertising data */
+		err = bt_audio_broadcast_source_get_base(broadcast_source,
+							 &base_buf);
+		if (err != 0) {
+			printk("Failed to get encoded BASE: %d\n", err);
+			return;
+		}
+
+		per_ad.type = BT_DATA_SVC_DATA16;
+		per_ad.data_len = base_buf.len;
+		per_ad.data = base_buf.data;
+		err = bt_le_per_adv_set_data(adv, &per_ad, 1);
+		if (err != 0) {
+			printk("Failed to set periodic advertising data: %d\n",
+			       err);
+			return;
+		}
+
+		/* Start extended advertising */
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err) {
+			printk("Failed to start extended advertising: %d\n",
+			       err);
+			return;
+		}
+
+		/* Enable Periodic Advertising */
+		err = bt_le_per_adv_start(adv);
+		if (err) {
+			printk("Failed to enable periodic advertising: %d\n",
+			       err);
 			return;
 		}
 
 		printk("Starting broadcast source\n");
 		stopping = false;
-		err = bt_audio_broadcast_source_start(broadcast_source);
+		err = bt_audio_broadcast_source_start(broadcast_source, adv);
 		if (err != 0) {
 			printk("Unable to start broadcast source: %d\n", err);
 			return;
@@ -167,5 +278,26 @@ void main(void)
 		printk("Broadcast source deleted\n");
 		broadcast_source = NULL;
 		seq_num = 0;
+
+		err = bt_le_per_adv_stop(adv);
+		if (err) {
+			printk("Failed to stop periodic advertising (err %d)\n",
+			       err);
+			return;
+		}
+
+		err = bt_le_ext_adv_stop(adv);
+		if (err) {
+			printk("Failed to stop extended advertising (err %d)\n",
+			       err);
+			return;
+		}
+
+		err = bt_le_ext_adv_delete(adv);
+		if (err) {
+			printk("Failed to delete extended advertising (err %d)\n",
+			       err);
+			return;
+		}
 	}
 }

@@ -19,8 +19,12 @@
  * @{
  */
 
+#include <errno.h>
+
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -392,6 +396,20 @@ struct i2c_target_config {
 	const struct i2c_target_callbacks *callbacks;
 };
 
+/**
+ * @brief Validate that I2C bus is ready.
+ *
+ * @param spec I2C specification from devicetree
+ *
+ * @retval true if the I2C bus is ready for use.
+ * @retval false if the I2C bus is not ready for use.
+ */
+static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	return device_is_ready(spec->bus);
+}
+
 #if defined(CONFIG_I2C_STATS) || defined(__DOXYGEN__)
 
 #include <zephyr/stats/stats.h>
@@ -457,9 +475,9 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 /**
  * @brief Define a statically allocated and section assigned i2c device state
  */
-#define Z_I2C_DEVICE_STATE_DEFINE(node_id, dev_name)	\
-	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_name)	\
-	__attribute__((__section__(".z_devstate")));
+#define Z_I2C_DEVICE_STATE_DEFINE(dev_id)				\
+	static struct i2c_device_state Z_DEVICE_STATE_NAME(dev_id)	\
+	__attribute__((__section__(".z_devstate")))
 
 /**
  * @brief Define an i2c device init wrapper function
@@ -467,8 +485,8 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * This does device instance specific initialization of common data (such as stats)
  * and calls the given init_fn
  */
-#define Z_I2C_INIT_FN(dev_name, init_fn)					\
-	static inline int UTIL_CAT(dev_name, _init)(const struct device *dev) \
+#define Z_I2C_INIT_FN(dev_id, init_fn)					\
+	static inline int UTIL_CAT(dev_id, _init)(const struct device *dev) \
 	{								\
 		struct i2c_device_state *state =			\
 			CONTAINER_OF(dev->state, struct i2c_device_state, devstate); \
@@ -491,11 +509,11 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  *
  * @param init_fn Name of the init function of the driver.
  *
- * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param pm PM device resources reference (NULL if device does not use PM).
  *
- * @param data_ptr Pointer to the device's private data.
+ * @param data Pointer to the device's private data.
  *
- * @param cfg_ptr The address to the structure containing the
+ * @param config The address to the structure containing the
  * configuration information for this instance of the driver.
  *
  * @param level The initialization level. See SYS_INIT() for
@@ -504,21 +522,18 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param prio Priority within the selected initialization level. See
  * SYS_INIT() for details.
  *
- * @param api_ptr Provides an initial pointer to the API function struct
+ * @param api Provides an initial pointer to the API function struct
  * used by the driver. Can be NULL.
  */
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	Z_I2C_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id)); \
-	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
-	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_NAME(node_id),		\
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	Z_I2C_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_I2C_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),		\
 			DEVICE_DT_NAME(node_id),			\
-			&UTIL_CAT(Z_DEVICE_DT_DEV_NAME(node_id), _init), \
-			pm_device,					\
-			data_ptr, cfg_ptr, level, prio,			\
-			api_ptr,					\
-			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_NAME(node_id)).devstate), \
+			&UTIL_CAT(Z_DEVICE_DT_DEV_ID(node_id), _init),	\
+			pm_device, data, config, level, prio, api,	\
+			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
 #else /* CONFIG_I2C_STATS */
@@ -531,12 +546,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	ARG_UNUSED(num_msgs);
 }
 
-#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, &init_fn, pm_device,			\
-			     data_ptr, cfg_ptr, level, prio,		\
-			     api_ptr, __VA_ARGS__)
+#define I2C_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
+			     prio, api, ...)				\
+	DEVICE_DT_DEFINE(node_id, &init_fn, pm, data, config, level,	\
+			 prio, api, __VA_ARGS__)
 
 #endif /* CONFIG_I2C_STATS */
 
@@ -689,6 +702,103 @@ static inline int i2c_transfer_cb(const struct device *dev,
 	}
 
 	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+}
+
+/**
+ * @brief Perform data transfer to another I2C device in master mode asynchronously.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_transfer_cb(spec->bus, msgs, num_msgs, spec->addr, cb, userdata);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @return a value from i2c_transfer_cb()
+ */
+static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
+				struct i2c_msg *msgs,
+				uint8_t num_msgs,
+				i2c_callback_t cb,
+				void *userdata)
+{
+	return i2c_transfer_cb(spec->bus, msgs, num_msgs, spec->addr, cb, userdata);
+}
+
+/**
+ * @brief Write then read data from an I2C device asynchronously.
+ *
+ * This supports the common operation "this is what I want", "now give
+ * it to me" transaction pair through a combined write-then-read bus
+ * transaction but using i2c_transfer_cb. This helper function expects
+ * caller to pass a message pointer with 2 and only 2 size.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in master mode.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param addr Address of the I2C device
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 if successful
+ * @retval negative on error.
+ */
+static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
+				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
+				 size_t num_write, void *read_buf, size_t num_read,
+				 i2c_callback_t cb, void *userdata)
+{
+	if ((msgs == NULL) || (num_msgs != 2)) {
+		return -EINVAL;
+	}
+
+	msgs[0].buf = (uint8_t *)write_buf;
+	msgs[0].len = num_write;
+	msgs[0].flags = I2C_MSG_WRITE;
+
+	msgs[1].buf = (uint8_t *)read_buf;
+	msgs[1].len = num_read;
+	msgs[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+
+	return i2c_transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+}
+
+/**
+ * @brief Write then read data from an I2C device asynchronously.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_write_read_cb(spec->bus, msgs, num_msgs,
+ *                    spec->addr, write_buf,
+ *                    num_write, read_buf, num_read);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @return a value from i2c_write_read_cb()
+ */
+static inline int i2c_write_read_cb_dt(const struct i2c_dt_spec *spec, struct i2c_msg *msgs,
+				       uint8_t num_msgs, const void *write_buf, size_t num_write,
+				       void *read_buf, size_t num_read, i2c_callback_t cb,
+				       void *userdata)
+{
+	return i2c_write_read_cb(spec->bus, msgs, num_msgs, spec->addr, write_buf, num_write,
+				 read_buf, num_read, cb, userdata);
 }
 
 #ifdef CONFIG_POLL

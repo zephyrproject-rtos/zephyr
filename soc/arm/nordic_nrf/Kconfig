@@ -17,7 +17,7 @@ source "soc/arm/nordic_nrf/Kconfig.peripherals"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
 config NRF_SOC_SECURE_SUPPORTED
-	def_bool !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
+	def_bool !TRUSTED_EXECUTION_NONSECURE || (BUILD_WITH_TFM && TFM_PARTITION_PLATFORM)
 	help
 	  Hidden function to indicate that that the soc_secure functions are
 	  available.

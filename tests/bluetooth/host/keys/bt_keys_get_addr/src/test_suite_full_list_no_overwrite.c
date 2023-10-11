@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/addr.h>
 #include <host/keys.h>
 #include "mocks/keys_help_utils.h"
 #include "mocks/hci_core_expects.h"

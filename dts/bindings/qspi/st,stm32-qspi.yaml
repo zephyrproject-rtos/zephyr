@@ -53,7 +53,6 @@ properties:
 
     flash-id:
       type: int
-      required: false
       description: |
         FLash ID number. This number, if defined, helps to select the right
         QSPI GPIO banks (defined as 'quadspi_bk[12]' in pinctrl property)

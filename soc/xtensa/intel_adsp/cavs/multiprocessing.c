@@ -5,6 +5,8 @@
 #include <cavs-idc.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
+#include <soc.h>
+#include <zephyr/irq.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
  * anywhere, it's basically just a magic number (except the high bit,
@@ -15,7 +17,7 @@
 	 (0x1 << 24) | /* "ROM control version" = 1 */	  \
 	 (0x2 << 0))   /* "Core wake version" = 2 */
 
-#define IDC_ALL_CORES (BIT(CONFIG_MP_NUM_CPUS) - 1)
+#define IDC_CORE_MASK(num_cpus) (BIT(num_cpus) - 1)
 
 #define CAVS15_ROM_IDC_DELAY 500
 
@@ -27,7 +29,9 @@ __imr void soc_mp_startup(uint32_t cpu)
 	 * spurious IPI when we enter user code).  Remember: this
 	 * could have come from any core, clear all of them.
 	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		IDC[cpu].core[i].tfc = BIT(31);
 	}
 
@@ -69,7 +73,7 @@ void soc_start_core(int cpu_num)
 	 * such that the standard system bootstrap out of IMR can
 	 * place it there.  But this is fine for now.
 	 */
-	void **lpsram = z_soc_uncached_ptr((void *)LP_SRAM_BASE);
+	void **lpsram = z_soc_uncached_ptr((__sparse_force void __sparse_cache *)LP_SRAM_BASE);
 	uint8_t tramp[] = {
 		0x06, 0x01, 0x00, /* J <PC+8>  (jump to L32R) */
 		0,                /* (padding to align entry_addr) */
@@ -106,8 +110,10 @@ void soc_start_core(int cpu_num)
 	 * some platforms will mess it up.
 	 */
 	CAVS_INTCTRL[cpu_num].l2.clear = CAVS_L2_IDC;
-	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
-		IDC[c].busy_int |= IDC_ALL_CORES;
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int c = 0; c < num_cpus; c++) {
+		IDC[c].busy_int |= IDC_CORE_MASK(num_cpus);
 	}
 
 	/* Send power-up message to the other core.  Start address
@@ -124,8 +130,9 @@ void soc_start_core(int cpu_num)
 void arch_sched_ipi(void)
 {
 	uint32_t curr = arch_proc_id();
+	unsigned int num_cpus = arch_num_cpus();
 
-	for (int c = 0; c < CONFIG_MP_NUM_CPUS; c++) {
+	for (int c = 0; c < num_cpus; c++) {
 		if (c != curr && soc_cpus_active[c]) {
 			IDC[curr].core[c].itc = BIT(31);
 		}
@@ -146,7 +153,10 @@ void idc_isr(const void *param)
 	 * of the ITC/TFC high bits, INCLUDING the one "from this
 	 * CPU".
 	 */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		IDC[arch_proc_id()].core[i].tfc = BIT(31);
 	}
 }
@@ -159,9 +169,11 @@ __imr void soc_mp_init(void)
 	 * every other CPU, but not to be back-interrupted when the
 	 * target core clears the busy bit.
 	 */
-	for (int core = 0; core < CONFIG_MP_NUM_CPUS; core++) {
-		IDC[core].busy_int |= IDC_ALL_CORES;
-		IDC[core].done_int &= ~IDC_ALL_CORES;
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int core = 0; core < num_cpus; core++) {
+		IDC[core].busy_int |= IDC_CORE_MASK(num_cpus);
+		IDC[core].done_int &= ~IDC_CORE_MASK(num_cpus);
 
 		/* Also unmask the IDC interrupt for every core in the
 		 * L2 mask register.
@@ -170,8 +182,8 @@ __imr void soc_mp_init(void)
 	}
 
 	/* Clear out any existing pending interrupts that might be present */
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		for (int j = 0; j < CONFIG_MP_NUM_CPUS; j++) {
+	for (int i = 0; i < num_cpus; i++) {
+		for (int j = 0; j < num_cpus; j++) {
 			IDC[i].core[j].tfc = BIT(31);
 		}
 	}

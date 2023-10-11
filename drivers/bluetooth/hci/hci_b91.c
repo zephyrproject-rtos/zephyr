@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_hci_driver_b91
-#include "common/log.h"
+#include <zephyr/bluetooth/hci.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
 #include <b91_bt.h>
+
+#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_hci_driver_b91);
 
 #define HCI_CMD                 0x01
 #define HCI_ACL                 0x02
@@ -54,7 +56,7 @@ static struct net_buf *bt_b91_evt_recv(uint8_t *data, size_t len)
 	size_t buf_tailroom;
 
 	if (len < sizeof(hdr)) {
-		BT_ERR("Not enough data for event header");
+		LOG_ERR("Not enough data for event header");
 		return NULL;
 	}
 
@@ -65,17 +67,17 @@ static struct net_buf *bt_b91_evt_recv(uint8_t *data, size_t len)
 	len -= sizeof(hdr);
 
 	if (len != hdr.len) {
-		BT_ERR("Event payload length is not correct");
+		LOG_ERR("Event payload length is not correct");
 		return NULL;
 	}
-	BT_DBG("len %u", hdr.len);
+	LOG_DBG("len %u", hdr.len);
 
 	buf = bt_buf_get_evt(hdr.evt, discardable, K_NO_WAIT);
 	if (!buf) {
 		if (discardable) {
-			BT_DBG("Discardable buffer pool full, ignoring event");
+			LOG_DBG("Discardable buffer pool full, ignoring event");
 		} else {
-			BT_ERR("No available event buffers!");
+			LOG_ERR("No available event buffers!");
 		}
 		return buf;
 	}
@@ -84,8 +86,7 @@ static struct net_buf *bt_b91_evt_recv(uint8_t *data, size_t len)
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < len) {
-		BT_ERR("Not enough space in buffer %zu/%zu",
-		       len, buf_tailroom);
+		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -102,7 +103,7 @@ static struct net_buf *bt_b91_acl_recv(uint8_t *data, size_t len)
 	size_t buf_tailroom;
 
 	if (len < sizeof(hdr)) {
-		BT_ERR("Not enough data for ACL header");
+		LOG_ERR("Not enough data for ACL header");
 		return NULL;
 	}
 
@@ -112,12 +113,12 @@ static struct net_buf *bt_b91_acl_recv(uint8_t *data, size_t len)
 		data += sizeof(hdr);
 		len -= sizeof(hdr);
 	} else {
-		BT_ERR("No available ACL buffers!");
+		LOG_ERR("No available ACL buffers!");
 		return NULL;
 	}
 
 	if (len != sys_le16_to_cpu(hdr.len)) {
-		BT_ERR("ACL payload length is not correct");
+		LOG_ERR("ACL payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -125,13 +126,12 @@ static struct net_buf *bt_b91_acl_recv(uint8_t *data, size_t len)
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < len) {
-		BT_ERR("Not enough space in buffer %zu/%zu",
-		       len, buf_tailroom);
+		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
 
-	BT_DBG("len %u", len);
+	LOG_DBG("len %u", len);
 	net_buf_add_mem(buf, data, len);
 
 	return buf;
@@ -142,7 +142,7 @@ static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
 	uint8_t pkt_indicator;
 	struct net_buf *buf;
 
-	BT_HEXDUMP_DBG(data, len, "host packet data:");
+	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
 	pkt_indicator = *data++;
 	len -= sizeof(pkt_indicator);
@@ -158,11 +158,11 @@ static void hci_b91_host_rcv_pkt(uint8_t *data, uint16_t len)
 
 	default:
 		buf = NULL;
-		BT_ERR("Unknown HCI type %u", pkt_indicator);
+		LOG_ERR("Unknown HCI type %u", pkt_indicator);
 	}
 
 	if (buf) {
-		BT_DBG("Calling bt_recv(%p)", buf);
+		LOG_DBG("Calling bt_recv(%p)", buf);
 		bt_recv(buf);
 	}
 }
@@ -182,7 +182,7 @@ static int bt_b91_send(struct net_buf *buf)
 	int err = 0;
 	uint8_t type;
 
-	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
+	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
@@ -194,16 +194,16 @@ static int bt_b91_send(struct net_buf *buf)
 		break;
 
 	default:
-		BT_ERR("Unknown type %u", bt_buf_get_type(buf));
+		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 		goto done;
 	}
 
-	BT_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
 	if (k_sem_take(&hci_send_sem, HCI_BT_B91_TIMEOUT) == 0) {
 		b91_bt_host_send_packet(type, buf->data, buf->len);
 	} else {
-		BT_ERR("Send packet timeout error");
+		LOG_ERR("Send packet timeout error");
 		err = -ETIMEDOUT;
 	}
 
@@ -220,13 +220,13 @@ static int hci_b91_open(void)
 
 	status = b91_bt_controller_init();
 	if (status) {
-		BT_ERR("Bluetooth controller init failed %d", status);
+		LOG_ERR("Bluetooth controller init failed %d", status);
 		return status;
 	}
 
 	b91_bt_host_callback_register(&vhci_host_cb);
 
-	BT_DBG("B91 BT started");
+	LOG_DBG("B91 BT started");
 
 	return 0;
 }

@@ -19,6 +19,7 @@
 #include <zephyr/drivers/dma/dma_stm32.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32u5_dma
@@ -28,19 +29,19 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DMA_STM32_0_STREAM_COUNT 16
 #endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-static uint32_t table_m_size[] = {
+static const uint32_t table_m_size[] = {
 	LL_DMA_SRC_DATAWIDTH_BYTE,
 	LL_DMA_SRC_DATAWIDTH_HALFWORD,
 	LL_DMA_SRC_DATAWIDTH_WORD,
 };
 
-static uint32_t table_p_size[] = {
+static const uint32_t table_p_size[] = {
 	LL_DMA_DEST_DATAWIDTH_BYTE,
 	LL_DMA_DEST_DATAWIDTH_HALFWORD,
 	LL_DMA_DEST_DATAWIDTH_WORD,
 };
 
-static uint32_t table_priority[4] = {
+static const uint32_t table_priority[4] = {
 	LL_DMA_LOW_PRIORITY_LOW_WEIGHT,
 	LL_DMA_LOW_PRIORITY_MID_WEIGHT,
 	LL_DMA_LOW_PRIORITY_HIGH_WEIGHT,
@@ -229,8 +230,12 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	__ASSERT_NO_MSG(id < config->max_streams);
 
 	stream = &config->streams[id];
-	/* Exit if stream is no more busy */
-	if (stream->busy == false) {
+	/* The busy channel is pertinent if not overridden by the HAL */
+	if ((stream->hal_override != true) && (stream->busy == false)) {
+		/*
+		 * When DMA channel is not overridden by HAL,
+		 * ignore irq if the channel is not busy anymore
+		 */
 		dma_stm32_clear_stream_irq(dev, id);
 		return;
 	}
@@ -245,9 +250,6 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, 0);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
-#ifdef CONFIG_DMAMUX_STM32
-		stream->busy = false;
-#endif
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
@@ -468,17 +470,6 @@ static int dma_stm32_configure(const struct device *dev,
 	index = find_lsb_set(config->dest_data_size) - 1;
 	DMA_InitStruct.DestDataWidth = table_m_size[index];
 
-	DMA_InitStruct.SrcBurstLength = 1;
-	DMA_InitStruct.DestBurstLength = 1;
-	DMA_InitStruct.TransferEventMode = LL_DMA_TCEM_BLK_TRANSFER;
-	DMA_InitStruct.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT0;
-	DMA_InitStruct.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
-	DMA_InitStruct.LinkAllocatedPort = LL_DMA_LINK_ALLOCATED_PORT1;
-	DMA_InitStruct.LinkStepMode = LL_DMA_LSM_FULL_EXECUTION;
-	DMA_InitStruct.TriggerMode = LL_DMA_TRIGM_BLK_TRANSFER;
-	DMA_InitStruct.TriggerPolarity = LL_DMA_TRIG_POLARITY_MASKED;
-	DMA_InitStruct.TriggerSelection = 0;
-
 	if (stream->source_periph) {
 		DMA_InitStruct.BlkDataLength = config->head_block->block_size /
 					config->source_data_size;
@@ -539,6 +530,9 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 				     size / stream->dst_size);
 	}
 
+	/* When reloading the dma, the stream is busy again before enabling */
+	stream->busy = true;
+
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
@@ -548,6 +542,7 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	struct dma_stm32_stream *stream;
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -557,9 +552,54 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	/* When starting the dma, the stream is busy before enabling */
+	stream = &config->streams[id];
+	stream->busy = true;
+
 	dma_stm32_clear_stream_irq(dev, id);
 
 	stm32_dma_enable_stream(dma, id);
+
+	return 0;
+}
+
+static int dma_stm32_suspend(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	/* Suspend the channel and wait for suspend Flag set */
+	LL_DMA_SuspendChannel(dma, dma_stm32_id_to_stream(id));
+	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
+	do {
+		k_msleep(1); /* A delay is needed (1ms is valid) */
+	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1);
+
+	/* Do not Reset the channel to allow resuming later */
+	return 0;
+}
+
+static int dma_stm32_resume(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	/* Resume the channel : it's enough after suspend */
+	LL_DMA_ResumeChannel(dma, dma_stm32_id_to_stream(id));
 
 	return 0;
 }
@@ -577,10 +617,10 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
+
 	dma_stm32_clear_stream_irq(dev, id);
 	dma_stm32_disable_stream(dma, id);
-
-	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 
 	/* Finally, flag stream as free */
 	stream->busy = false;
@@ -639,6 +679,8 @@ static const struct dma_driver_api dma_funcs = {
 	.start		 = dma_stm32_start,
 	.stop		 = dma_stm32_stop,
 	.get_status	 = dma_stm32_get_status,
+	.suspend	 = dma_stm32_suspend,
+	.resume		 = dma_stm32_resume,
 };
 
 #define DMA_STM32_OFFSET_INIT(index)
@@ -714,16 +756,9 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 	DMA_STM32_IRQ_CONNECT(0, 2);
 	DMA_STM32_IRQ_CONNECT(0, 3);
 	DMA_STM32_IRQ_CONNECT(0, 4);
-#if DT_INST_IRQ_HAS_IDX(0, 5)
 	DMA_STM32_IRQ_CONNECT(0, 5);
-#if DT_INST_IRQ_HAS_IDX(0, 6)
 	DMA_STM32_IRQ_CONNECT(0, 6);
-#if DT_INST_IRQ_HAS_IDX(0, 7)
 	DMA_STM32_IRQ_CONNECT(0, 7);
-#endif /* DT_INST_IRQ_HAS_IDX(0, 5) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 6) */
-#endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
-/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 	DMA_STM32_IRQ_CONNECT(0, 8);
 	DMA_STM32_IRQ_CONNECT(0, 9);
 	DMA_STM32_IRQ_CONNECT(0, 10);

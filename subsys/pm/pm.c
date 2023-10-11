@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(pm, CONFIG_PM_LOG_LEVEL);
 #define CURRENT_CPU \
 	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
 
-static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_NUM_CPUS);
+static ATOMIC_DEFINE(z_post_ops_required, CONFIG_MP_MAX_NUM_CPUS);
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 
 /*
@@ -34,17 +34,17 @@ static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 #define CPU_PM_STATE_INIT(_, __)		\
 	{ .state = PM_STATE_ACTIVE }
 static struct pm_state_info z_cpus_pm_state[] = {
-	LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT, (,))
+	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, CPU_PM_STATE_INIT, (,))
 };
 
 static struct pm_state_info z_cpus_pm_forced_state[] = {
-	LISTIFY(CONFIG_MP_NUM_CPUS, CPU_PM_STATE_INIT, (,))
+	LISTIFY(CONFIG_MP_MAX_NUM_CPUS, CPU_PM_STATE_INIT, (,))
 };
 
 static struct k_spinlock pm_forced_state_lock;
 
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
-static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_NUM_CPUS);
+static atomic_t z_cpus_active = ATOMIC_INIT(CONFIG_MP_MAX_NUM_CPUS);
 #endif
 static struct k_spinlock pm_notifier_lock;
 
@@ -69,12 +69,13 @@ static int pm_suspend_devices(void)
 		int ret;
 
 		/*
-		 * ignore busy devices, wake up source and devices with
-		 * runtime PM enabled.
+		 * Ignore uninitialized devices, busy devices, wake up sources, and
+		 * devices with runtime PM enabled.
 		 */
-		if (pm_device_is_busy(dev) || pm_device_state_is_locked(dev)
-		    || pm_device_wakeup_is_enabled(dev) ||
-		    ((dev->pm != NULL) && pm_device_runtime_is_enabled(dev))) {
+		if (!device_is_ready(dev) || pm_device_is_busy(dev) ||
+		    pm_device_state_is_locked(dev) ||
+		    pm_device_wakeup_is_enabled(dev) ||
+		    pm_device_runtime_is_enabled(dev)) {
 			continue;
 		}
 

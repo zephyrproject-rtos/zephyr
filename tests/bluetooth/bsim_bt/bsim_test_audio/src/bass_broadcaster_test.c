@@ -9,6 +9,8 @@
 
 extern enum bst_result_t bst_result;
 
+/* TODO: Deprecate in favor of broadcast_source_test */
+
 #define BROADCAST_ID_ENCODE(broadcast_id)  \
 	(((broadcast_id) >>  0) & 0xFF), \
 	(((broadcast_id) >>  8) & 0xFF), \

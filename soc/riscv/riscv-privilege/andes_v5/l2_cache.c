@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/syscon.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(andes_v5_l2_cache, CONFIG_SOC_LOG_LEVEL);
 
 #if DT_NODE_EXISTS(DT_INST(0, andestech_l2c))
 
@@ -88,6 +90,7 @@ static void andes_v5_l2c_enable(void)
 
 static int andes_v5_l2c_init(const struct device *dev)
 {
+#if DT_NODE_HAS_STATUS(DT_INST(0, syscon), okay)
 	uint32_t system_cfg;
 	const struct device *const syscon_dev = DEVICE_DT_GET(DT_NODELABEL(syscon));
 
@@ -100,12 +103,16 @@ static int andes_v5_l2c_init(const struct device *dev)
 			/* This SoC doesn't have L2 cache */
 			return -ENODEV;
 		}
+	} else {
+		LOG_DBG("Init might fail for some hardware combinations "
+					"if syscon driver isn't ready\n");
 	}
+#endif
 
 	andes_v5_l2c_enable();
 	return 0;
 }
 
-SYS_INIT(andes_v5_l2c_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(andes_v5_l2c_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* DT_NODE_EXISTS(DT_INST(0, andestech_l2c)) */

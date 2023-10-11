@@ -126,12 +126,14 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	cb(&info);
 }
 
-K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
 static void isr_stacks(void)
 {
-	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+	unsigned int num_cpus = arch_num_cpus();
+
+	for (int i = 0; i < num_cpus; i++) {
 		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
 		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
 		size_t unused;

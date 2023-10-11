@@ -11,7 +11,9 @@ config ARCH
 
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
+	default 44 if 64BIT && STACK_SENTINEL
 	default 40 if 64BIT
+	default 28 if STACK_SENTINEL
 	default 24
 	help
 	  In bytes, stack size for Zephyr threads meant only for the POSIX

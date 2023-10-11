@@ -6,7 +6,9 @@
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
 	default y
-	depends on DT_HAS_ATMEL_SAM_GMAC_ENABLED
+	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on DT_HAS_ATMEL_SAM_GMAC_ENABLED || \
+		   DT_HAS_ATMEL_SAM0_GMAC_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select MDIO
 	help

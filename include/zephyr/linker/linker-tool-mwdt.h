@@ -90,7 +90,7 @@
  */
 #ifdef CONFIG_XIP
 #define SECTION_DATA_PROLOGUE(name, options, align) \
-	name options ALIGN_WITH_INPUT align :
+	name options ALIGN(8) align :
 #else
 #define SECTION_DATA_PROLOGUE(name, options, align) name options align :
 #endif

@@ -21,9 +21,8 @@
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 #include <zephyr/sys/atomic.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_bluetooth);
+LOG_MODULE_REGISTER(usb_bluetooth, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #define USB_RF_SUBCLASS			0x01
 #define USB_BLUETOOTH_PROTOCOL		0x01

@@ -17,6 +17,7 @@ if DAI_INTEL_ALH
 
 config DAI_ALH_HAS_OWNERSHIP
 	bool "Intel ALH driver has ownership"
+	default y if SOC_SERIES_INTEL_ACE
 	help
 	  Select this to enable programming HW ownership
 

@@ -263,7 +263,7 @@ static void create_sync(void)
 	sync_create_param.options = BT_LE_PER_ADV_SYNC_OPT_SYNC_ONLY_CONST_TONE_EXT;
 	sync_create_param.sid = per_sid;
 	sync_create_param.skip = 0;
-	sync_create_param.timeout = 0xa;
+	sync_create_param.timeout = 0xaa;
 	err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 	if (err != 0) {
 		printk("failed (err %d)\n", err);

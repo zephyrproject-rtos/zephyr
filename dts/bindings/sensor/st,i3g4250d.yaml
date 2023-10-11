@@ -6,4 +6,4 @@ description: |
 
 compatible: "st,i3g4250d"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]

@@ -10,36 +10,32 @@ menuconfig SETTINGS
 	  and it can do so atomically for all involved modules.
 
 if SETTINGS
+
 module = SETTINGS
 module-str = settings
 source "subsys/logging/Kconfig.template.log_config"
-endif
 
 config SETTINGS_RUNTIME
 	bool "runtime storage back-end"
-	depends on SETTINGS
 	help
 	  Enables runtime storage back-end.
 
 config SETTINGS_DYNAMIC_HANDLERS
 	bool "dynamic settings handlers"
-	depends on SETTINGS
 	default y
 	help
 	  Enables the use of dynamic settings handlers
 
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
-	depends on SETTINGS
 	bool
 
 choice SETTINGS_BACKEND
 	prompt "Storage back-end"
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
-	default SETTINGS_FS if FILE_SYSTEM
+	default SETTINGS_FILE if FILE_SYSTEM
 	default SETTINGS_NONE
-	depends on SETTINGS
 	help
 	  Storage back-end to be used by the settings subsystem.
 
@@ -49,12 +45,20 @@ config SETTINGS_FCB
 	help
 	  Use FCB as a settings storage back-end.
 
-config SETTINGS_FS
-	bool "File System"
+config SETTINGS_FILE
+	bool "File"
 	depends on FILE_SYSTEM
 	select SETTINGS_ENCODE_LEN
 	help
-	  Use a file system as a settings storage back-end.
+	  Use a file (on mounted file system) as a settings storage back-end.
+
+config SETTINGS_FS
+	bool "FS (DEPRECATED)"
+	depends on FILE_SYSTEM
+	select SETTINGS_ENCODE_LEN
+	select DEPRECATED
+	help
+	  This is deprecated, please use SETTINGS_FILE instead.
 
 config SETTINGS_NVS
 	bool "NVS non-volatile storage support"
@@ -62,6 +66,24 @@ config SETTINGS_NVS
 	depends on FLASH_MAP
 	help
 	  Enables NVS storage support
+
+if SETTINGS_NVS
+
+config SETTINGS_NVS_NAME_CACHE
+	bool "NVS name lookup cache"
+	help
+	  Enable NVS name lookup cache, used to reduce the Settings name
+	  lookup time.
+
+config SETTINGS_NVS_NAME_CACHE_SIZE
+	int "NVS name lookup cache size"
+	default 128
+	range 1 65535
+	depends on SETTINGS_NVS_NAME_CACHE
+	help
+	  Number of entries in Settings NVS name cache.
+
+endif # SETTINGS_NVS
 
 config SETTINGS_CUSTOM
 	bool "CUSTOM"
@@ -77,7 +99,7 @@ endchoice
 config SETTINGS_FCB_NUM_AREAS
 	int "Number of flash areas used by the settings subsystem"
 	default 8
-	depends on SETTINGS && SETTINGS_FCB
+	depends on SETTINGS_FCB
 	help
 	  Number of areas to allocate in the settings FCB. A smaller number is
 	  used if the flash hardware cannot support this value.
@@ -85,35 +107,49 @@ config SETTINGS_FCB_NUM_AREAS
 config SETTINGS_FCB_MAGIC
 	hex "FCB magic for the settings subsystem"
 	default 0xc0ffeeee
-	depends on SETTINGS && SETTINGS_FCB
+	depends on SETTINGS_FCB
 	help
 	  Magic 32-bit word for to identify valid settings area
 
-config SETTINGS_FS_DIR
-	string "Serialization directory"
-	default "/settings"
-	depends on SETTINGS && SETTINGS_FS
-	help
-	  Directory where the settings data is stored
-
-config SETTINGS_FS_FILE
+config SETTINGS_FILE_PATH
 	string "Default settings file"
 	default "/settings/run"
-	depends on SETTINGS && SETTINGS_FS
+	depends on SETTINGS_FILE
 	help
 	  Full path to the default settings file.
 
-config SETTINGS_FS_MAX_LINES
+config SETTINGS_FILE_MAX_LINES
 	int "Compression threshold"
 	default 32
-	depends on SETTINGS && SETTINGS_FS
+	depends on SETTINGS_FILE
 	help
 	  Limit how many items stored in a file before compressing
+
+config SETTINGS_FS_DIR
+	string "Serialization directory (DEPRECATED)"
+	default "/settings"
+	depends on SETTINGS_FS
+	help
+	  This is deprecated. Use SETTINGS_FILE_PATH instead.
+
+config SETTINGS_FS_FILE
+	string "Default settings file (DEPRECATED)"
+	default "/settings/run"
+	depends on SETTINGS_FS
+	help
+	  This is deprecated. Use SETTINGS_FILE_PATH instead.
+
+config SETTINGS_FS_MAX_LINES
+	int "Compression threshold (DEPRECATED)"
+	default 32
+	depends on SETTINGS_FS
+	help
+	  This is deprecated. Use SETTINGS_FILE_MAX_LINES instead.
 
 config SETTINGS_NVS_SECTOR_SIZE_MULT
 	int "Sector size of the NVS settings area"
 	default 1
-	depends on SETTINGS && SETTINGS_NVS
+	depends on SETTINGS_NVS
 	help
 	  The sector size to use for the NVS settings area as a multiple of
 	  FLASH_ERASE_BLOCK_SIZE.
@@ -121,15 +157,17 @@ config SETTINGS_NVS_SECTOR_SIZE_MULT
 config SETTINGS_NVS_SECTOR_COUNT
 	int "Sector count of the NVS settings area"
 	default 8
-	depends on SETTINGS && SETTINGS_NVS
+	depends on SETTINGS_NVS
 	help
 	  Number of sectors used for the NVS settings area
 
 config SETTINGS_SHELL
 	bool "Settings shell"
-	depends on SETTINGS && SHELL
+	depends on SHELL
 	help
 	  Enable shell commands for listing and reading the settings. Note that
 	  reading the settings requires quite a big stack buffer, so the stack
 	  size of the shell thread may need to be increased to accommodate this
 	  feature.
+
+endif # SETTINGS

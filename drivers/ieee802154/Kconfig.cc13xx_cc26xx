@@ -5,6 +5,7 @@
 
 menuconfig IEEE802154_CC13XX_CC26XX
 	bool "TI CC13xx / CC26xx IEEE 802.15.4 driver support"
+	select CRC
 	default y
 	depends on DT_HAS_TI_CC13XX_CC26XX_IEEE802154_ENABLED
 

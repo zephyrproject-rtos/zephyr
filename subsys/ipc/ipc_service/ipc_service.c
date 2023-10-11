@@ -38,6 +38,30 @@ int ipc_service_open_instance(const struct device *instance)
 	return backend->open_instance(instance);
 }
 
+int ipc_service_close_instance(const struct device *instance)
+{
+	const struct ipc_service_backend *backend;
+
+	if (!instance) {
+		LOG_ERR("Invalid instance");
+		return -EINVAL;
+	}
+
+	backend = (const struct ipc_service_backend *) instance->api;
+
+	if (!backend) {
+		LOG_ERR("Invalid backend configuration");
+		return -EIO;
+	}
+
+	if (!backend->close_instance) {
+		/* maybe not needed on backend */
+		return 0;
+	}
+
+	return backend->close_instance(instance);
+}
+
 int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
 				  const struct ipc_ept_cfg *cfg)

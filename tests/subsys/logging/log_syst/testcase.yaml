@@ -1,8 +1,16 @@
+common:
+    filter: not CONFIG_64BIT
 tests:
   logging.log_syst.mipi_syst:
     tags: log_syst logging
     arch_exclude: mips nios2 posix sparc
-    filter: not CONFIG_64BIT
+    # "TOOLCHAIN_HAS_NEWLIB == 1" filter was applied
+    # because of following chain of dependencies:
+    # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
+    # --> REQUIRES_FULL_LIBC --> NEWLIB_LIBC.
+    #
+    # Not all compillers announced in Zephyr support NewLib.
+    filter: TOOLCHAIN_HAS_NEWLIB == 1 or CONFIG_PICOLIBC_SUPPORTED
     integration_platforms:
       - mps2_an385
       - qemu_x86
@@ -13,7 +21,7 @@ tests:
   logging.log_syst.text:
     tags: log_syst logging
     arch_exclude: mips nios2 posix sparc
-    filter: not CONFIG_64BIT
+    filter: TOOLCHAIN_HAS_NEWLIB == 1 or CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_LOG_MIPI_SYST_ENABLE=n
       - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=n

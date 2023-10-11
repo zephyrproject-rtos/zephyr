@@ -20,9 +20,11 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/micp.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICP_MIC_CTLR)
-#define LOG_MODULE_NAME bt_micp_mic_ctlr
-#include "common/log.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(bt_micp_mic_ctlr, CONFIG_BT_MICP_MIC_CTLR_LOG_LEVEL);
+
+#include "common/bt_str.h"
 
 /* Callback functions */
 static struct bt_micp_mic_ctlr_cb *micp_mic_ctlr_cb;
@@ -64,15 +66,13 @@ static uint8_t mute_notify_handler(struct bt_conn *conn,
 	if (data != NULL) {
 		if (length == sizeof(*mute_val)) {
 			mute_val = (uint8_t *)data;
-			BT_DBG("Mute %u", *mute_val);
+			LOG_DBG("Mute %u", *mute_val);
 			if (micp_mic_ctlr_cb != NULL &&
 			    micp_mic_ctlr_cb->mute != NULL) {
 				micp_mic_ctlr_cb->mute(mic_ctlr, 0, *mute_val);
 			}
 		} else {
-			BT_DBG("Invalid length %u (expected %zu)",
-			       length, sizeof(*mute_val));
-
+			LOG_DBG("Invalid length %u (expected %zu)", length, sizeof(*mute_val));
 		}
 	}
 
@@ -90,14 +90,13 @@ static uint8_t micp_mic_ctlr_read_mute_cb(struct bt_conn *conn, uint8_t err,
 	mic_ctlr->busy = false;
 
 	if (err > 0) {
-		BT_DBG("err: 0x%02X", err);
+		LOG_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
 		if (length == sizeof(mute_val)) {
 			mute_val = ((uint8_t *)data)[0];
-			BT_DBG("Mute %u", mute_val);
+			LOG_DBG("Mute %u", mute_val);
 		} else {
-			BT_DBG("Invalid length %u (expected %zu)",
-			       length, sizeof(mute_val));
+			LOG_DBG("Invalid length %u (expected %zu)", length, sizeof(mute_val));
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
@@ -115,7 +114,7 @@ static void micp_mic_ctlr_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
 	uint8_t mute_val = mic_ctlr->mute_val_buf[0];
 
-	BT_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
+	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
 
 	mic_ctlr->busy = false;
 
@@ -160,7 +159,7 @@ static void aics_discover_cb(struct bt_aics *inst, int err)
 	}
 
 	if (err != 0) {
-		BT_DBG("Discover failed (err %d)", err);
+		LOG_DBG("Discover failed (err %d)", err);
 		if (micp_mic_ctlr_cb != NULL &&
 		    micp_mic_ctlr_cb->discover != NULL) {
 			micp_mic_ctlr_cb->discover(mic_ctlr, err, 0);
@@ -176,8 +175,7 @@ static uint8_t micp_discover_include_func(
 	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
 
 	if (attr == NULL) {
-		BT_DBG("Discover include complete for MICS: %u AICS",
-		       mic_ctlr->aics_inst_cnt);
+		LOG_DBG("Discover include complete for MICS: %u AICS", mic_ctlr->aics_inst_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
 		if (micp_mic_ctlr_cb != NULL &&
@@ -189,12 +187,12 @@ static uint8_t micp_discover_include_func(
 		return BT_GATT_ITER_STOP;
 	}
 
-	BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
+	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
 		struct bt_gatt_include *include = (struct bt_gatt_include *)attr->user_data;
 
-		BT_DBG("Include UUID %s", bt_uuid_str(include->uuid));
+		LOG_DBG("Include UUID %s", bt_uuid_str(include->uuid));
 
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&
 		    mic_ctlr->aics_inst_cnt < CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST) {
@@ -214,7 +212,7 @@ static uint8_t micp_discover_include_func(
 			err = bt_aics_discover(conn, mic_ctlr->aics[inst_idx],
 					       &param);
 			if (err != 0) {
-				BT_DBG("AICS Discover failed (err %d)", err);
+				LOG_DBG("AICS Discover failed (err %d)", err);
 				if (micp_mic_ctlr_cb != NULL &&
 				    micp_mic_ctlr_cb->discover != NULL) {
 					micp_mic_ctlr_cb->discover(mic_ctlr, err,
@@ -242,7 +240,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 	if (attr == NULL) {
 		int err = 0;
 
-		BT_DBG("Discovery complete");
+		LOG_DBG("Discovery complete");
 		(void)memset(params, 0, sizeof(*params));
 		if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0) {
 			/* Discover included services */
@@ -254,7 +252,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 			err = bt_gatt_discover(conn,
 					       &mic_ctlr->discover_params);
 			if (err != 0) {
-				BT_DBG("Discover AICS failed (err %d)", err);
+				LOG_DBG("Discover AICS failed (err %d)", err);
 				if (micp_mic_ctlr_cb != NULL &&
 				    micp_mic_ctlr_cb->discover != NULL) {
 					micp_mic_ctlr_cb->discover(mic_ctlr, err, 0);
@@ -269,14 +267,14 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
+	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
 	if (params->type == BT_GATT_DISCOVER_CHARACTERISTIC) {
 		struct bt_gatt_chrc *chrc = (struct bt_gatt_chrc *)attr->user_data;
 		struct bt_gatt_subscribe_params *sub_params = NULL;
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_MICS_MUTE) == 0) {
-			BT_DBG("Mute");
+			LOG_DBG("Mute");
 			mic_ctlr->mute_handle = chrc->value_handle;
 			sub_params = &mic_ctlr->mute_sub_params;
 			sub_params->disc_params = &mic_ctlr->mute_sub_disc_params;
@@ -294,11 +292,10 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err == 0) {
-				BT_DBG("Subscribed to handle 0x%04X",
-				       attr->handle);
+				LOG_DBG("Subscribed to handle 0x%04X", attr->handle);
 			} else {
-				BT_DBG("Could not subscribe to handle 0x%04X: %d",
-				       attr->handle, err);
+				LOG_DBG("Could not subscribe to handle 0x%04X: %d", attr->handle,
+					err);
 			}
 		}
 	}
@@ -313,7 +310,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
 
 	if (attr == NULL) {
-		BT_DBG("Could not find a MICS instance on the server");
+		LOG_DBG("Could not find a MICS instance on the server");
 		if (micp_mic_ctlr_cb != NULL &&
 		    micp_mic_ctlr_cb->discover != NULL) {
 			micp_mic_ctlr_cb->discover(mic_ctlr, -ENODATA, 0);
@@ -321,14 +318,14 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	BT_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
+	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		struct bt_gatt_service_val *prim_service =
 			(struct bt_gatt_service_val *)attr->user_data;
 		int err;
 
-		BT_DBG("Primary discover complete");
+		LOG_DBG("Primary discover complete");
 		mic_ctlr->start_handle = attr->handle + 1;
 		mic_ctlr->end_handle = prim_service->end_handle;
 
@@ -341,7 +338,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 		err = bt_gatt_discover(conn, &mic_ctlr->discover_params);
 		if (err != 0) {
-			BT_DBG("Discover failed (err %d)", err);
+			LOG_DBG("Discover failed (err %d)", err);
 			if (micp_mic_ctlr_cb != NULL &&
 			    micp_mic_ctlr_cb->discover != NULL) {
 				micp_mic_ctlr_cb->discover(mic_ctlr, err, 0);
@@ -406,7 +403,7 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 	 */
 
 	CHECKIF(conn == NULL) {
-		BT_DBG("NULL conn");
+		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
 
@@ -459,7 +456,7 @@ int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb)
 		/* Ensure that the cb->aics_cb.discover is the aics_discover_cb */
 		CHECKIF(cb->aics_cb.discover != NULL &&
 			cb->aics_cb.discover != aics_discover_cb) {
-			BT_ERR("AICS discover callback shall not be set");
+			LOG_ERR("AICS discover callback shall not be set");
 			return -EINVAL;
 		}
 		cb->aics_cb.discover = aics_discover_cb;
@@ -487,7 +484,7 @@ int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
 				  struct bt_micp_included *included)
 {
 	CHECKIF(mic_ctlr == NULL) {
-		BT_DBG("NULL mic_ctlr");
+		LOG_DBG("NULL mic_ctlr");
 		return -EINVAL;
 	}
 
@@ -504,12 +501,12 @@ int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
 int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr, struct bt_conn **conn)
 {
 	CHECKIF(mic_ctlr == NULL) {
-		BT_DBG("NULL mic_ctlr pointer");
+		LOG_DBG("NULL mic_ctlr pointer");
 		return -EINVAL;
 	}
 
 	if (mic_ctlr->conn == NULL) {
-		BT_DBG("mic_ctlr pointer not associated with a connection. "
+		LOG_DBG("mic_ctlr pointer not associated with a connection. "
 		       "Do discovery first");
 		return -ENOTCONN;
 	}
@@ -523,12 +520,12 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr)
 	int err;
 
 	CHECKIF(mic_ctlr == NULL) {
-		BT_DBG("NULL mic_ctlr");
+		LOG_DBG("NULL mic_ctlr");
 		return -EINVAL;
 	}
 
 	if (mic_ctlr->mute_handle == 0) {
-		BT_DBG("Handle not set");
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (mic_ctlr->busy) {
 		return -EBUSY;
@@ -552,12 +549,12 @@ int bt_micp_mic_ctlr_write_mute(struct bt_micp_mic_ctlr *mic_ctlr, bool mute)
 	int err;
 
 	CHECKIF(mic_ctlr == NULL) {
-		BT_DBG("NULL mic_ctlr");
+		LOG_DBG("NULL mic_ctlr");
 		return -EINVAL;
 	}
 
 	if (mic_ctlr->mute_handle == 0) {
-		BT_DBG("Handle not set");
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (mic_ctlr->busy) {
 		return -EBUSY;

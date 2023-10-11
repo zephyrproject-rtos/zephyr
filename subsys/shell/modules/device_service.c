@@ -13,6 +13,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/arch_interface.h>
 
+extern const struct device __device_EARLY_start[];
 extern const struct device __device_PRE_KERNEL_1_start[];
 extern const struct device __device_PRE_KERNEL_2_start[];
 extern const struct device __device_POST_KERNEL_start[];
@@ -23,7 +24,20 @@ extern const struct device __device_end[];
 extern const struct device __device_SMP_start[];
 #endif
 
+/* init levels, used as indices for levels array */
+enum init_level {
+	INIT_LEVEL_EARLY = 0,
+	INIT_LEVEL_PRE_KERNEL_1,
+	INIT_LEVEL_PRE_KERNEL_2,
+	INIT_LEVEL_POST_KERNEL,
+	INIT_LEVEL_APPLICATION,
+#ifdef CONFIG_SMP
+	INIT_LEVEL_SMP,
+#endif
+};
+
 static const struct device *const levels[] = {
+	__device_EARLY_start,
 	__device_PRE_KERNEL_1_start,
 	__device_PRE_KERNEL_2_start,
 	__device_POST_KERNEL_start,
@@ -49,7 +63,8 @@ static const char *get_device_name(const struct device *dev,
 	return name;
 }
 
-static bool device_get_config_level(const struct shell *shell, int level)
+static bool device_get_config_level(const struct shell *sh,
+				    enum init_level level)
 {
 	const struct device *dev;
 	bool devices = false;
@@ -59,49 +74,55 @@ static bool device_get_config_level(const struct shell *shell, int level)
 		if (device_is_ready(dev)) {
 			devices = true;
 
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
+			shell_fprintf(sh, SHELL_NORMAL, "- %s\n",
 				      get_device_name(dev, buf, sizeof(buf)));
 		}
 	}
 	return devices;
 }
 
-static int cmd_device_levels(const struct shell *shell,
+static int cmd_device_levels(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	bool ret;
 
-	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 1:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_1);
+	shell_fprintf(sh, SHELL_NORMAL, "EARLY:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_EARLY);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 2:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_2);
+	shell_fprintf(sh, SHELL_NORMAL, "PRE KERNEL 1:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_PRE_KERNEL_1);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_POST_KERNEL);
+	shell_fprintf(sh, SHELL_NORMAL, "PRE KERNEL 2:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_PRE_KERNEL_2);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_APPLICATION);
+	shell_fprintf(sh, SHELL_NORMAL, "POST_KERNEL:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_POST_KERNEL);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "APPLICATION:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_APPLICATION);
+	if (ret == false) {
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
 	}
 
 #ifdef CONFIG_SMP
-	shell_fprintf(shell, SHELL_NORMAL, "SMP:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_SMP);
+	shell_fprintf(sh, SHELL_NORMAL, "SMP:\n");
+	ret = device_get_config_level(sh, INIT_LEVEL_SMP);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+		shell_fprintf(sh, SHELL_NORMAL, "- None\n");
 	}
 #endif /* CONFIG_SMP */
 
@@ -125,7 +146,7 @@ static int cmd_device_list_visitor(const struct device *dev,
 	return 0;
 }
 
-static int cmd_device_list(const struct shell *shell,
+static int cmd_device_list(const struct shell *sh,
 			   size_t argc, char **argv)
 {
 	const struct device *devlist;
@@ -135,14 +156,14 @@ static int cmd_device_list(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "devices:\n");
+	shell_fprintf(sh, SHELL_NORMAL, "devices:\n");
 
 	for (dev = devlist; dev < devlist_end; dev++) {
 		char buf[20];
 		const char *name = get_device_name(dev, buf, sizeof(buf));
 		const char *state = "READY";
 
-		shell_fprintf(shell, SHELL_NORMAL, "- %s", name);
+		shell_fprintf(sh, SHELL_NORMAL, "- %s", name);
 		if (!device_is_ready(dev)) {
 			state = "DISABLED";
 		} else {
@@ -156,10 +177,10 @@ static int cmd_device_list(const struct shell *shell,
 #endif /* CONFIG_PM_DEVICE */
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, " (%s)\n", state);
+		shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
 		if (!k_is_user_context()) {
 			struct cmd_device_list_visitor_context ctx = {
-				.shell = shell,
+				.shell = sh,
 				.buf = buf,
 				.buf_size = sizeof(buf),
 			};

@@ -9,9 +9,10 @@
 #include <zephyr/irq_nextlevel.h>
 #include <xtensa/hal.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 
 #include <adsp_shim.h>
-#include <adsp-clk.h>
+#include <adsp_clk.h>
 #include <cavs-idc.h>
 #include "soc.h"
 

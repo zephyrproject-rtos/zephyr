@@ -10,8 +10,14 @@
  * The workaround requires the nop instruction, please don't optimize it.
  */
 
+#ifdef CONFIG_SOC_IT8XXX2_USE_ILM
+#define SECTION .__ram_code.arithmetic.
+#else
+#define SECTION .text.it8xxx2.arithmetic.
+#endif
+
 .macro __int_arithmetic func opcode
-.section .text
+.section SECTION\func
 .align 2
 .globl \func
 .type \func, @function

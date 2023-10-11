@@ -25,13 +25,13 @@ LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 #ifdef CONFIG_LOG_USE_TAGGED_ARGUMENTS
 /* The extra sizeof(int) is the end of arguments tag. */
 #define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg_hdr) + \
+	ROUND_UP(sizeof(struct log_msg) + \
 		 sizeof(struct cbprintf_package_hdr_ext) + \
-		 sizeof(int), sizeof(long long))
+		 sizeof(int), CBPRINTF_PACKAGE_ALIGNMENT)
 #else
 #define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg_hdr) + \
-		 sizeof(struct cbprintf_package_hdr_ext), sizeof(long long))
+	ROUND_UP(sizeof(struct log_msg) + \
+		 sizeof(struct cbprintf_package_hdr_ext), CBPRINTF_PACKAGE_ALIGNMENT)
 #endif
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
@@ -127,7 +127,10 @@ static void process_and_validate(bool backend2_enable, bool panic)
 	mock_log_frontend_validate(panic);
 
 	if (NO_BACKENDS) {
-		zassert_equal(log_backend_count_get(), 0);
+		int cnt;
+
+		STRUCT_SECTION_COUNT(log_backend, &cnt);
+		zassert_equal(cnt, 0);
 		return;
 	}
 
@@ -174,7 +177,7 @@ ZTEST(test_log_api, test_log_various_messages)
 
 		mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_DBG, str);
 		mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 					exp_timestamp++, str);
 	}
 
@@ -187,7 +190,7 @@ ZTEST(test_log_api, test_log_various_messages)
 	snprintk(str, sizeof(str), TEST_MSG_1, f, 100,  d);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, str);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, str);
 
 	LOG_INF(TEST_MSG_1, f, 100, d);
@@ -196,12 +199,12 @@ ZTEST(test_log_api, test_log_various_messages)
 	snprintk(str, sizeof(str), "wrn %s", dstr);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, str);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_WRN,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
 				exp_timestamp++, str);
 
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_ERR, "err");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_ERR,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_ERR,
 				exp_timestamp++, "err");
 
 	LOG_WRN("wrn %s", dstr);
@@ -244,20 +247,20 @@ ZTEST(test_log_api, test_log_backend_runtime_filtering)
 
 		mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_DBG, str);
 		mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 				exp_timestamp, str);
 		mock_log_backend_record(&backend2, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 				exp_timestamp, str);
 		exp_timestamp++;
 	}
 
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp, "test");
 	mock_log_backend_record(&backend2, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp, "test");
 	exp_timestamp++;
 
@@ -268,7 +271,7 @@ ZTEST(test_log_api, test_log_backend_runtime_filtering)
 
 
 	log_filter_set(&backend2,
-			CONFIG_LOG_DOMAIN_ID,
+			Z_LOG_LOCAL_DOMAIN_ID,
 			LOG_CURRENT_MODULE_ID(),
 			LOG_LEVEL_WRN);
 
@@ -277,34 +280,34 @@ ZTEST(test_log_api, test_log_backend_runtime_filtering)
 	/* INF logs expected only on backend1 */
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, "test");
 
-	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), CONFIG_LOG_DOMAIN_ID,
+	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
 					 LOG_LEVEL_INF, "hexdump", data, sizeof(data));
 	mock_log_backend_generic_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID,
+					Z_LOG_LOCAL_DOMAIN_ID,
 					LOG_LEVEL_INF,
 					exp_timestamp++, "hexdump",
 					data, sizeof(data));
 
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, "test2");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_WRN,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
 				exp_timestamp, "test2");
 	mock_log_backend_record(&backend2, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_WRN,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
 				exp_timestamp++, "test2");
 
-	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), CONFIG_LOG_DOMAIN_ID,
+	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
 					 LOG_LEVEL_WRN, "hexdump", data, sizeof(data));
 	mock_log_backend_generic_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID,
+					Z_LOG_LOCAL_DOMAIN_ID,
 					LOG_LEVEL_WRN,
 					exp_timestamp, "hexdump",
 					data, sizeof(data));
 	mock_log_backend_generic_record(&backend2, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID,
+					Z_LOG_LOCAL_DOMAIN_ID,
 					LOG_LEVEL_WRN,
 					exp_timestamp++, "hexdump",
 					data, sizeof(data));
@@ -349,10 +352,10 @@ static size_t get_long_hexdump(void)
 		/* First message */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + STR_SIZE("test %d %d") +
 			 extra_msg_sz,
-			 sizeof(long long)) -
+			 CBPRINTF_PACKAGE_ALIGNMENT) -
 		/* Hexdump message excluding data */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-			 sizeof(long long)) - 2 * sizeof(int);
+			 CBPRINTF_PACKAGE_ALIGNMENT) - CBPRINTF_PACKAGE_ALIGNMENT;
 }
 
 /*
@@ -385,15 +388,15 @@ ZTEST(test_log_api, test_log_overflow)
 	/* expect first message to be dropped */
 	exp_timestamp++;
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test 100 100");
-	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), CONFIG_LOG_DOMAIN_ID,
+	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
 					 LOG_LEVEL_INF, "hexdump", data, hexdump_len);
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test2");
 	mock_log_backend_generic_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 					exp_timestamp++, "hexdump",
 					data, hexdump_len);
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, "test2");
 	mock_log_backend_drop_record(&backend1, 1);
 
@@ -412,13 +415,13 @@ ZTEST(test_log_api, test_log_overflow)
 	mock_log_frontend_reset();
 
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "test");
-	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), CONFIG_LOG_DOMAIN_ID,
+	mock_log_frontend_generic_record(LOG_CURRENT_MODULE_ID(), Z_LOG_LOCAL_DOMAIN_ID,
 					 LOG_LEVEL_INF, "test", data, hexdump_len + 1);
 	/* Log2 allocation is not destructive if request exceeds the
 	 * capacity.
 	 */
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp, "test");
 	mock_log_backend_drop_record(&backend1, 1);
 
@@ -437,7 +440,7 @@ ZTEST(test_log_api, test_log_overflow)
  */
 #define MOCK_LOG_FRONT_BACKEND_RECORD(str) do { \
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(), \
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF, \
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF, \
 				exp_timestamp++, str); \
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, str); \
 } while (0)
@@ -520,13 +523,13 @@ ZTEST(test_log_api, test_log_from_declared_module)
 
 		mock_log_frontend_record(test_source_id, LOG_LEVEL_DBG, str);
 		mock_log_backend_record(&backend1, test_source_id,
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 					exp_timestamp++, str);
 	}
 
 	mock_log_frontend_record(test_source_id, LOG_LEVEL_ERR, TEST_ERR_MSG);
 	mock_log_backend_record(&backend1, test_source_id,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_ERR,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_ERR,
 				exp_timestamp++, TEST_ERR_MSG);
 
 	test_func();
@@ -544,13 +547,13 @@ ZTEST(test_log_api, test_log_from_declared_module)
 
 		mock_log_frontend_record(test_source_id, LOG_LEVEL_DBG, str);
 		mock_log_backend_record(&backend1, test_source_id,
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 					exp_timestamp++, str);
 	}
 
 	mock_log_frontend_record(test_source_id, LOG_LEVEL_ERR, TEST_INLINE_ERR_MSG);
 	mock_log_backend_record(&backend1, test_source_id,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_ERR,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_ERR,
 				exp_timestamp, TEST_INLINE_ERR_MSG);
 
 	test_inline_func();
@@ -585,7 +588,7 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 		mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "dummy");
 		if (i >= exp_dropped) {
 			mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp, "dummy");
 		}
 		exp_timestamp++;
@@ -647,10 +650,10 @@ ZTEST(test_log_api, test_log_panic)
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, "test");
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, "test");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_WRN,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
 				exp_timestamp++, "test");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_WRN,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
 				exp_timestamp++, "test");
 	LOG_WRN("test");
 	LOG_WRN("test");
@@ -663,7 +666,7 @@ ZTEST(test_log_api, test_log_panic)
 	/* messages processed where called */
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_WRN, "test");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_WRN,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_WRN,
 				exp_timestamp++, "test");
 	LOG_WRN("test");
 
@@ -681,14 +684,14 @@ ZTEST(test_log_api, test_log_printk)
 	log_setup(false);
 
 	mock_log_backend_record(&backend1, 0,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
 				exp_timestamp++, "test 100");
 	printk("test %d", 100);
 
 	log_panic();
 
 	mock_log_backend_record(&backend1, 0,
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INTERNAL_RAW_STRING,
 				exp_timestamp++, "test 101");
 	printk("test %d", 101);
 
@@ -741,7 +744,7 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 
 	mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "0 0");
 	mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
+				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, "0 0");
 	if (dbg_enabled()) {
 		/* If prefix is enabled, add function name prefix */
@@ -753,7 +756,7 @@ ZTEST(test_log_api, test_log_arg_evaluation)
 		}
 		mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_DBG, str);
 		mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 					exp_timestamp++, str);
 	}
 	/* Arguments used for logging shall be evaluated only once. They should
@@ -789,12 +792,12 @@ ZTEST(test_log_api, test_log_override_level)
 
 		mock_log_frontend_record(test2_source_id, LOG_LEVEL_DBG, str);
 		mock_log_backend_record(&backend1, test2_source_id,
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_DBG,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_DBG,
 					exp_timestamp++, str);
 
 		mock_log_frontend_record(test2_source_id, LOG_LEVEL_ERR, TEST_ERR_MSG);
 		mock_log_backend_record(&backend1, test2_source_id,
-					CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_ERR,
+					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_ERR,
 					exp_timestamp++, TEST_ERR_MSG);
 	} else if (CONFIG_LOG_OVERRIDE_LEVEL != 0) {
 		zassert_true(false, "Unexpected configuration.");

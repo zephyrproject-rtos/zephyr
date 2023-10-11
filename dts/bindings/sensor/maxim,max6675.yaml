@@ -5,4 +5,4 @@ description: MAX6675 K-thermocouple to digital converter
 
 compatible: "maxim,max6675"
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]

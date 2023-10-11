@@ -1,6 +1,7 @@
 common:
   harness: net
   depends_on: netif
+  min_flash: 210
   tags: net socket mgmt
 sample:
   description: Test network management socket

@@ -7,12 +7,9 @@ pins be shorted so that changes made to the state of one can be verified
 by inspecting the other.
 
 Unlike the GPIO driver test the behavior of a fixed regulator depends
-heavily on the properties specified in its devicetree node.  The
-``compatible`` property causes the underlying driver implementation to
-select between one that supports asynchronous transitions and an
-optimized one synchronous transitions.  The initial state of the
-regulator, whether it can be changed, and enforced transition delays are
-all controlled by devicetree properties.
+heavily on the properties specified in its devicetree node. The initial
+state of the regulator, whether it can be changed, and enforced transition
+delays are all controlled by devicetree properties.
 
 Because the regulator can only be configured at system startup it is
 necessary to test varying configurations in separate test sessions.  The

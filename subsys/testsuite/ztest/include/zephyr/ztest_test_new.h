@@ -331,12 +331,15 @@ void ztest_test_pass(void);
  */
 void ztest_test_skip(void);
 
+
+void ztest_skip_failed_assumption(void);
+
 #define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
 	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
 	static void _##suite##_##fn##_wrapper(void *data);                                         \
 	static void suite##_##fn(                                                                  \
 		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
-	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test_##suite##_##fn) = {      \
+	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = {    \
 		.test_suite_name = STRINGIFY(suite),                                               \
 		.name = STRINGIFY(fn),                                                             \
 		.test = (_##suite##_##fn##_wrapper),                                               \

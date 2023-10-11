@@ -22,10 +22,19 @@ static void test_arm_correlate_q31(
 	size_t in1_length, size_t in2_length, const q31_t *ref,
 	size_t ref_length)
 {
-	q31_t *output;
+	/*
+	 * FIXME: The MVE `arm_correlate_q31` implementation may write to
+	 *        negative indices of the output buffer, so the beginning of
+	 *        the output buffer is offset by a few elements to prevent the
+	 *        memory block header from getting corrupted. For more details,
+	 *        refer to the CMSIS-DSP bug ARM-software/CMSIS-DSP#59.
+	 */
+
+	q31_t *output, *output_buf;
 
 	/* Allocate output buffer */
-	output = calloc(ref_length, sizeof(q31_t));
+	output_buf = calloc(ref_length + 16, sizeof(q31_t));
+	output = output_buf + 8;
 
 	/* Run test function */
 	arm_correlate_q31(in_com1, in1_length, in_com2, in2_length, output);
@@ -41,7 +50,7 @@ static void test_arm_correlate_q31(
 		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
 
 	/* Free output buffer */
-	free(output);
+	free(output_buf);
 }
 
 #define DEFINE_CORRELATE_TEST(a, b) \

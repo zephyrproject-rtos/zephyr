@@ -201,9 +201,10 @@ struct bt_mesh_cfg_cli {
  *
  *  @param cli_data Pointer to a @ref bt_mesh_cfg_cli instance.
  */
-#define BT_MESH_MODEL_CFG_CLI(cli_data)                                        \
-	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_CFG_CLI, bt_mesh_cfg_cli_op, NULL,   \
-			 cli_data, &bt_mesh_cfg_cli_cb)
+#define BT_MESH_MODEL_CFG_CLI(cli_data)			\
+	BT_MESH_MODEL_CNT_CB(BT_MESH_MODEL_ID_CFG_CLI,	\
+			     bt_mesh_cfg_cli_op, NULL,	\
+			     cli_data, 1, 0, &bt_mesh_cfg_cli_cb)
 
 /** @brief Reset the target node and remove it from the network.
  *

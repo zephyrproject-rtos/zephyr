@@ -14,7 +14,7 @@
  */
 
 /* For ec_host_cmd_periph_api_send function pointer type */
-#include <zephyr/drivers/ec_host_cmd_periph.h>
+#include <zephyr/drivers/ec_host_cmd_periph/ec_host_cmd_periph.h>
 
 /**
  * @brief Install callback for when this device would sends data to host

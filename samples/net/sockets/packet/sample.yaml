@@ -5,4 +5,6 @@ tests:
   sample.net.sockets.packet:
     harness: net
     platform_allow: native_posix native_posix_64
+    integration_platforms:
+      - native_posix
     tags: net sockets packet-socket

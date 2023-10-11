@@ -7,14 +7,14 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/drivers/interrupt_controller/dw_ace_v1x.h>
+#include <zephyr/drivers/interrupt_controller/dw_ace.h>
 
 #include <cavs-idc.h>
 #include <adsp_shim.h>
+#include <adsp_interrupt.h>
+#include <zephyr/irq.h>
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#include <ace_v1x-regs.h>
-#endif
+#define DT_DRV_COMPAT intel_adsp_timer
 
 /**
  * @file
@@ -28,7 +28,7 @@
 #define COMPARATOR_IDX  0 /* 0 or 1 */
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
-#define TIMER_IRQ MTL_IRQ_TO_ZEPHYR(MTL_INTL_TTS)
+#define TIMER_IRQ ACE_IRQ_TO_ZEPHYR(ACE_INTL_TTS)
 #else
 #define TIMER_IRQ DSP_WCT_IRQ(COMPARATOR_IDX)
 #endif
@@ -42,15 +42,19 @@
 BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
 BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
-#define WCTCS      (ADSP_SHIM_DSPWCTS)
-#define COUNTER_HI (ADSP_SHIM_DSPWCH)
-#define COUNTER_LO (ADSP_SHIM_DSPWCL)
-#define COMPARE_HI (ADSP_SHIM_COMPARE_HI(COMPARATOR_IDX))
-#define COMPARE_LO (ADSP_SHIM_COMPARE_LO(COMPARATOR_IDX))
-
+#define DSP_WCT_CS_TT(x)                     BIT(4 + x)
 
 static struct k_spinlock lock;
 static uint64_t last_count;
+
+/* Not using current syscon driver due to overhead due to MMU support */
+#define SYSCON_REG_ADDR	DT_REG_ADDR(DT_INST_PHANDLE(0, syscon))
+
+#define DSPWCTCS_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET)
+#define DSPWCT0C_LO_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCT0C_OFFSET)
+#define DSPWCT0C_HI_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCT0C_OFFSET + 4)
+#define DSPWC_LO_ADDR (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET)
+#define DSPWC_HI_ADDR (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET + 4)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ; /* See tests/kernel/context */
@@ -59,13 +63,15 @@ const int32_t z_sys_timer_irq_for_test = TIMER_IRQ; /* See tests/kernel/context 
 static void set_compare(uint64_t time)
 {
 	/* Disarm the comparator to prevent spurious triggers */
-	*WCTCS &= ~DSP_WCT_CS_TA(COMPARATOR_IDX);
+	sys_write32(sys_read32(DSPWCTCS_ADDR) & (~DSP_WCT_CS_TA(COMPARATOR_IDX)),
+			SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET);
 
-	*COMPARE_LO = (uint32_t)time;
-	*COMPARE_HI = (uint32_t)(time >> 32);
+	sys_write32((uint32_t)time, DSPWCT0C_LO_ADDR);
+	sys_write32((uint32_t)(time >> 32), DSPWCT0C_HI_ADDR);
 
 	/* Arm the timer */
-	*WCTCS |= DSP_WCT_CS_TA(COMPARATOR_IDX);
+	sys_write32(sys_read32(DSPWCTCS_ADDR) | (DSP_WCT_CS_TA(COMPARATOR_IDX)),
+			DSPWCTCS_ADDR);
 }
 
 static uint64_t count(void)
@@ -79,32 +85,35 @@ static uint64_t count(void)
 	uint32_t hi0, hi1, lo;
 
 	do {
-		hi0 = *COUNTER_HI;
-		lo = *COUNTER_LO;
-		hi1 = *COUNTER_HI;
+		hi0 = sys_read32(DSPWC_HI_ADDR);
+		lo = sys_read32(DSPWC_LO_ADDR);
+		hi1 = sys_read32(DSPWC_HI_ADDR);
 	} while (hi0 != hi1);
-
 	return (((uint64_t)hi0) << 32) | lo;
 }
 
 static uint32_t count32(void)
 {
-	return *COUNTER_LO;
+	uint32_t counter_lo;
+
+	counter_lo = sys_read32(DSPWC_LO_ADDR);
+	return counter_lo;
 }
 
 static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	uint64_t curr;
-	uint32_t dticks;
+	uint64_t dticks;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	curr = count();
-	dticks = (uint32_t)((curr - last_count) / CYC_PER_TICK);
+	dticks = (curr - last_count) / CYC_PER_TICK;
 
 	/* Clear the triggered bit */
-	*WCTCS |= DSP_WCT_CS_TT(COMPARATOR_IDX);
+	sys_write32(sys_read32(DSPWCTCS_ADDR) | DSP_WCT_CS_TT(COMPARATOR_IDX),
+			DSPWCTCS_ADDR);
 
 	last_count += dticks * CYC_PER_TICK;
 
@@ -119,7 +128,7 @@ static void compare_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 
-	sys_clock_announce(dticks);
+	sys_clock_announce((int32_t)dticks);
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -160,10 +169,10 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t ret = (count32() - (uint32_t)last_count) / CYC_PER_TICK;
+	uint64_t ret = (count() - last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
-	return ret;
+	return (uint32_t)ret;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -190,8 +199,9 @@ static void irq_init(void)
 	 * Drivers need to do that part.
 	 */
 #ifdef CONFIG_SOC_SERIES_INTEL_ACE
-	MTL_DINT[cpu].ie[MTL_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
-	*WCTCS |= ADSP_SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX);
+	ACE_DINT[cpu].ie[ACE_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
+	sys_write32(sys_read32(DSPWCTCS_ADDR) | ADSP_SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX),
+			DSPWCTCS_ADDR);
 #else
 	CAVS_INTCTRL[cpu].l2.clear = CAVS_L2_DWCT0;
 #endif

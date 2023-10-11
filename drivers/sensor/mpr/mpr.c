@@ -135,7 +135,7 @@ static const struct sensor_driver_api mpr_api_funcs = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, mpr_init, NULL,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mpr_init, NULL,				\
 			      &mpr_data_##inst, &mpr_config_##inst, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY, &mpr_api_funcs);		\
 

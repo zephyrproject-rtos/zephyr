@@ -18,6 +18,8 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25r6435f;
 	};
 
 	leds {
@@ -45,7 +47,16 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		accel0 = &lsm6dsl;
+		spi-flash0 = &mx25r6435f;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -206,6 +217,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -221,5 +234,48 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rng {
+	status = "okay";
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pe10 &octospim_p1_ncs_pe11
+		     &octospim_p1_io0_pe12 &octospim_p1_io1_pe13
+		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
+	pinctrl-names = "default";
+
+	dmas = <&dma1 0 40 0x480>; /* request 40 for OCTOSPI1 */
+	dma-names = "tx_rx";
+
+	status = "okay";
+
+	mx25r6435f: ospi-nor-flash@0 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0>;
+		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
+		size = <DT_SIZE_M(64)>; /* 64 Megabits */
+		spi-bus-width = <OSPI_QUAD_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
+		writeoc="PP_1_4_4";
+
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			store_partition: partition@000 {
+				label = "store";
+				reg = <0x00000000 DT_SIZE_M(8)>;
+			};
+		};
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
 	status = "okay";
 };

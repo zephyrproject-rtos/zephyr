@@ -57,6 +57,7 @@ struct modem_context {
 	int   data_operator;
 	int   data_lac;
 	int   data_cellid;
+	int   data_act;
 #endif
 	int   *data_rssi;
 	bool  is_automatic_oper;

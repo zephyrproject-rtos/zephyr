@@ -15,7 +15,6 @@ properties:
       const: 2
 
     sense-edge-mask:
-      required: false
       type: int
       description: |
         Mask of pins that use the GPIO sense mechanism for edge detection.

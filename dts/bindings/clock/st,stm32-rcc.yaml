@@ -124,7 +124,6 @@ properties:
 
     undershoot-prevention:
       type: boolean
-      required: false
       description: |
         On some parts, it could be required to set up highest core frequencies
         (>80MHz) in two steps in order to prevent undershoot.

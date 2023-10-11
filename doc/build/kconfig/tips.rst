@@ -593,6 +593,30 @@ invisible:
    [*] All my children are invisible  ----
 
 
+Commas in macro arguments
+*************************
+
+Kconfig uses commas to separate macro arguments.
+This means a construct like this will fail:
+
+.. code-block:: none
+
+    config FOO
+        bool
+        default y if $(dt_chosen_enabled,"zephyr,bar")
+
+To solve this problem, create a variable with the text and use this variable as
+argument, as follows:
+
+.. code-block:: none
+
+    DT_CHOSEN_ZEPHYR_BAR := zephyr,bar
+
+    config FOO
+        bool
+        default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_BAR))
+
+
 Checking changes in menuconfig/guiconfig
 ****************************************
 

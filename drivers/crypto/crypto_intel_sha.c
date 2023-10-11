@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(SHA);
 
-#define DT_DRV_COMPAT intel_sha
+#define DT_DRV_COMPAT intel_adsp_sha
 
 static struct sha_session sha_sessions[SHA_MAX_SESSIONS];
 
@@ -78,7 +78,7 @@ static int intel_sha_regs_cpy(void *dst, const void *src, size_t len)
 }
 
 /* ! Perform SHA computation over requested region. */
-static int intel_sha_device_run(struct device *dev, const void *buf_in, size_t buf_in_size,
+static int intel_sha_device_run(const struct device *dev, const void *buf_in, size_t buf_in_size,
 				size_t max_buff_len, uint32_t state)
 {
 	int err;
@@ -177,7 +177,7 @@ static int intel_sha_copy_hash(struct sha_container *const self, void *dst, size
 	return err;
 }
 
-static int intel_sha_device_get_hash(struct device *dev, void *buf_out, size_t buf_out_size)
+static int intel_sha_device_get_hash(const struct device *dev, void *buf_out, size_t buf_out_size)
 {
 	int err;
 	struct sha_container *const self = dev->data;
@@ -281,7 +281,7 @@ static int intel_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 	return ret;
 }
 
-static int intel_sha_device_set_hash_type(struct device *dev, struct hash_ctx *ctx,
+static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_ctx *ctx,
 					  enum hash_algo algo)
 {
 	int ret;
@@ -313,7 +313,7 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	struct sha_container *self = (struct sha_container *const)(dev)->data;
 	struct sha_session *session = (struct sha_session *)ctx->drv_sessn_state;
 
-	(void)memset(self->dfsha, 0, sizeof(struct sha_hw_regs));
+	(void)memset((void *)self->dfsha, 0, sizeof(struct sha_hw_regs));
 	(void)memset(&session->sha_ctx, 0, sizeof(struct sha_context));
 	(void)memset(&session->state, 0, sizeof(union sha_state));
 	session->in_use = 0;
@@ -321,7 +321,7 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	return 0;
 }
 
-static int intel_sha_device_init(struct device *dev)
+static int intel_sha_device_init(const struct device *dev)
 {
 	return 0;
 }
@@ -331,8 +331,6 @@ static int intel_sha_device_hw_caps(const struct device *dev)
 	return (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
-static struct sha_container sha_data = { .dfsha = DT_INST_REG_ADDR_BY_IDX(0, 0) };
-
 static struct crypto_driver_api hash_enc_funcs = {
 	.hash_begin_session = intel_sha_device_set_hash_type,
 	.hash_free_session = intel_sha_device_free,
@@ -340,5 +338,11 @@ static struct crypto_driver_api hash_enc_funcs = {
 	.query_hw_caps = intel_sha_device_hw_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, intel_sha_device_init, NULL, &sha_data, NULL, POST_KERNEL,
-		      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
+#define INTEL_SHA_DEVICE_INIT(inst)                                               \
+static struct sha_container sha_data_##inst  = {                                  \
+	.dfsha = (volatile struct sha_hw_regs *)DT_INST_REG_ADDR_BY_IDX(inst, 0)  \
+};                                                                                \
+DEVICE_DT_INST_DEFINE(inst, intel_sha_device_init, NULL, &sha_data_##inst, NULL,  \
+	POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, (void *)&hash_enc_funcs);
+
+DT_INST_FOREACH_STATUS_OKAY(INTEL_SHA_DEVICE_INIT)

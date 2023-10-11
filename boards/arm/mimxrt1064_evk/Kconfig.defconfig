@@ -12,9 +12,6 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI2
 endchoice
 
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
-
 config KSCAN
 	default y if LVGL
 

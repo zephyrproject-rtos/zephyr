@@ -165,7 +165,16 @@ struct pdu_data_llctrl_conn_update_ind *cu_ind_B = &conn_update_ind_B;
 
 static struct ll_conn conn;
 
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+bool ull_handle_cpr_anchor_point_move(struct ll_conn *conn, uint16_t *offsets, uint8_t *status)
+{
+	ztest_copy_return_data(status, 1);
+	return ztest_get_return_value();
+}
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
+
 static void test_unmask_feature_conn_param_req(struct ll_conn *conn)
 {
 	conn->llcp.fex.features_used &= ~BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ);
@@ -186,7 +195,8 @@ static void setup(void)
 
 	lll->interval = 0;
 	lll->latency = 0;
-	conn.supervision_reload = 1U;
+	conn.supervision_timeout = 1U;
+	lll->event_counter = 0;
 }
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
@@ -238,7 +248,7 @@ void test_conn_update_central_loc_accept(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -310,6 +320,7 @@ void test_conn_update_central_loc_accept(void)
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
+
 
 /*
  * Central-initiated Connection Parameters Request procedure.
@@ -390,7 +401,7 @@ void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
 	ull_cp_state_set(&conn_3rd, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -473,7 +484,7 @@ void test_conn_update_central_loc_accept_reject_2nd_cpr(void)
 	ull_cp_release_tx(&conn_3rd, tx);
 
 	/* Initiate a parallel Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn_3rd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn_3rd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -611,7 +622,7 @@ void test_conn_update_central_loc_invalid_param_rsp(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -680,7 +691,7 @@ void test_conn_update_central_loc_invalid_rsp(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -753,7 +764,7 @@ void test_conn_update_central_loc_reject(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -832,7 +843,7 @@ void test_conn_update_central_loc_remote_legacy(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -957,7 +968,7 @@ void test_conn_update_central_loc_unsupp_wo_feat_exch(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -1074,7 +1085,7 @@ void test_conn_update_central_loc_unsupp_w_feat_exch(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -1197,7 +1208,7 @@ void test_conn_update_central_loc_collision(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* (A) Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -1648,7 +1659,7 @@ void test_conn_update_central_rem_collision(void)
 
 	/* (B) Initiate a Connection Parameter Request Procedure */
 	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max, req_B->latency,
-				 req_B->timeout);
+				 req_B->timeout, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -1830,7 +1841,7 @@ void test_conn_update_periph_loc_accept(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -1935,7 +1946,7 @@ void test_conn_update_periph_loc_reject(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -2014,7 +2025,7 @@ void test_conn_update_periph_loc_unsupp_feat_wo_feat_exch(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -2081,7 +2092,7 @@ void test_conn_update_periph_loc_unsupp_feat_w_feat_exch(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE);
 
 	/* Prepare */
@@ -2175,7 +2186,7 @@ void test_conn_update_periph_loc_collision(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* (A) Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -2422,6 +2433,577 @@ void test_conn_update_periph_rem_accept(void)
 	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", ctx_buffers_free());
 }
+#define RADIO_CONN_EVENTS(x, y) ((uint16_t)(((x) + (y) - 1) / (y)))
+
+/*
+ * Central-initiated Connection Parameters Request procedure - only anchor point move.
+ * Central requests change in anchor point only on LE connection, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |    (only apm)             |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |    Defered APM disabled   |                           |
+ *    |    '<---------'           |                           |
+ *    |    So accepted right away |                           |
+ *    |    '--------->'           |                           |
+ *    |                           |                           |
+ *    |                           | LL_CONNECTION_PARAM_RSP   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_apm_accept_right_away(void)
+{
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t error = 0U;
+	/* Default conn_param_req PDU */
+	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
+								 .interval_max = INTVL_MAX,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x0008U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
+
+	/* Default conn_param_rsp PDU */
+	struct pdu_data_llctrl_conn_param_rsp conn_param_rsp_apm = { .interval_min = INTVL_MIN,
+								 .interval_max = INTVL_MAX,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x008U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
+
+	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
+	/* No APM deferance, accept with error == 0 */
+	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
+	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	conn.lll.interval = conn_param_req_apm.interval_max;
+	conn.lll.latency = conn_param_req_apm.latency;
+	conn.supervision_timeout = TIMEOUT;
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req_apm);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp_apm);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	instant = conn_update_ind.instant;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+#endif
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure - only anchor point move.
+ * Central requests change in anchor point only on LE connection, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |    (only apm)             |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |    Defered APM disabled   |                           |
+ *    |    '<---------'           |                           |
+ *    |    So accepted right away |                           |
+ *    |    but with error         |                           |
+ *    |    '--------->'           |                           |
+ *    |                           |                           |
+ *    |                           | LL_REJECT_EXT_IND         |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_apm_reject_right_away(void)
+{
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+	struct node_tx *tx;
+	/* Default conn_param_req PDU */
+	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
+								 .interval_max = INTVL_MAX,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x0008U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL + 1
+	};
+	uint8_t error = reject_ext_ind.error_code;
+
+	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
+	/* No APM deferance, reject with some error code */
+	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
+	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	conn.lll.interval = conn_param_req_apm.interval_max;
+	conn.lll.latency = conn_param_req_apm.latency;
+	conn.supervision_timeout = TIMEOUT;
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req_apm);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+#endif
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure - only anchor point move.
+ * Central requests change in anchor point only on LE connection, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |    (only apm)             |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |    Defered APM            |                           |
+ *    |    '<---------'           |                           |
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |    Defered accept         |                           |
+ *    |    '--------->'           |                           |
+ *    |                           |                           |
+ *    |                           | LL_CONNECTION_PARAM_RSP   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_apm_accept_defered(void)
+{
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+	uint16_t offsets[6] = {
+		0x0008U,
+		0xffffU,
+		0xffffU,
+		0xffffU,
+		0xffffU,
+		0xffffU
+	};
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t error = 0U;
+	/* Default conn_param_req PDU */
+	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
+								 .interval_max = INTVL_MAX,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x0004U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
+
+	/* Default conn_param_rsp PDU */
+	struct pdu_data_llctrl_conn_param_rsp conn_param_rsp_apm = { .interval_min = INTVL_MIN,
+								 .interval_max = INTVL_MAX,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x008U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
+
+	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
+	/* Defer APM */
+	ztest_returns_value(ull_handle_cpr_anchor_point_move, true);
+	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	conn.lll.interval = conn_param_req_apm.interval_max;
+	conn.lll.latency = conn_param_req_apm.latency;
+	conn.supervision_timeout = TIMEOUT;
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req_apm);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Run a few events */
+	for (int i = 0; i < 10; i++) {
+
+		/* Prepare */
+		event_prepare(&conn);
+
+		zassert_equal(true, ull_cp_remote_cpr_apm_awaiting_reply(&conn), NULL);
+
+		/* There should be no host notification */
+		ut_rx_q_is_empty();
+
+		/* Done */
+		event_done(&conn);
+	}
+
+	ull_cp_remote_cpr_apm_reply(&conn, offsets);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp_apm);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	instant = conn_update_ind.instant;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+#endif
+}
+
+/*
+ * Central-initiated Connection Parameters Request procedure - only anchor point move.
+ * Central requests change in anchor point only on LE connection, peripheral’s Host accepts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |    (only apm)             |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |    Defered APM            |                           |
+ *    |    '<---------'           |                           |
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |    Defered accept         |                           |
+ *    |    but with error         |                           |
+ *    |    '--------->'           |                           |
+ *    |                           |                           |
+ *    |                           | LL_REJECT_EXT_IND         |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |                           |                           |
+ */
+void test_conn_update_periph_rem_apm_reject_defered(void)
+{
+#if defined(CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE)
+	struct node_tx *tx;
+	uint8_t error = 0U;
+	/* Default conn_param_req PDU */
+	struct pdu_data_llctrl_conn_param_req conn_param_req_apm = { .interval_min = INTVL_MIN,
+								 .interval_max = INTVL_MAX,
+								 .latency = LATENCY,
+								 .timeout = TIMEOUT,
+								 .preferred_periodicity = 0U,
+								 .reference_conn_event_count = 0u,
+								 .offset0 = 0x0008U,
+								 .offset1 = 0xffffU,
+								 .offset2 = 0xffffU,
+								 .offset3 = 0xffffU,
+								 .offset4 = 0xffffU,
+								 .offset5 = 0xffffU };
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_UNSUPP_LL_PARAM_VAL
+	};
+
+	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
+	/* Defer APM */
+	ztest_returns_value(ull_handle_cpr_anchor_point_move, true);
+	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	conn.lll.interval = conn_param_req_apm.interval_max;
+	conn.lll.latency = conn_param_req_apm.latency;
+	conn.supervision_timeout = TIMEOUT;
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req_apm);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Run a few events */
+	for (int i = 0; i < 10; i++) {
+
+		/* Prepare */
+		event_prepare(&conn);
+
+		zassert_equal(true, ull_cp_remote_cpr_apm_awaiting_reply(&conn), NULL);
+
+		/* There should be no host notification */
+		ut_rx_q_is_empty();
+
+		/* Done */
+		event_done(&conn);
+	}
+
+	ull_cp_remote_cpr_apm_neg_reply(&conn, BT_HCI_ERR_UNSUPP_LL_PARAM_VAL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	zassert_equal(ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", ctx_buffers_free());
+#endif /* CONFIG_BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE */
+}
 
 /*
  * (A)
@@ -2527,7 +3109,7 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 	ull_cp_state_set(&conn_3rd, ULL_CP_CONNECTED);
 
 	/* (A) Initiate a Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/* Prepare */
@@ -2654,7 +3236,7 @@ void test_conn_update_periph_loc_collision_reject_2nd_cpr(void)
 
 	{
 		/* Initiate a parallel local Connection Parameter Request Procedure */
-		err = ull_cp_conn_update(&conn_2nd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+		err = ull_cp_conn_update(&conn_2nd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 		/* Prepare */
@@ -2904,7 +3486,7 @@ void test_conn_update_periph_rem_accept_reject_2nd_cpr(void)
 
 	{
 		/* Initiate a parallel local Connection Parameter Request Procedure */
-		err = ull_cp_conn_update(&conn_2nd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+		err = ull_cp_conn_update(&conn_2nd, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 		/* Prepare */
@@ -3470,7 +4052,7 @@ void test_conn_update_periph_rem_collision(void)
 
 	/* (B) Initiate a Connection Parameter Request Procedure */
 	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max, req_B->latency,
-				 req_B->timeout);
+				 req_B->timeout, NULL);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 	/*******************/
@@ -3514,6 +4096,7 @@ void test_conn_update_periph_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	instant = conn_update_ind.instant;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
@@ -3542,6 +4125,7 @@ void test_conn_update_periph_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (B) Tx Queue should have one LL Control PDU */
+	req_B->reference_conn_event_count = event_counter(&conn) - 1;
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, req_B);
 	lt_rx_q_is_empty(&conn);
 
@@ -3649,7 +4233,7 @@ void test_conn_update_central_loc_accept_no_param_req(void)
 
 	do {
 		/* Initiate a Connection Update Procedure */
-		err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+		err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS);
 
 		/* Prepare */
@@ -3980,7 +4564,7 @@ void test_conn_update_periph_loc_disallowed_no_param_req(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate a Connection Update Procedure */
-	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
 	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED);
 
 	/* Prepare */
@@ -4052,6 +4636,14 @@ void test_main(void)
 		periph_rem,
 		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_accept,
 					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_accept_right_away,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_reject_right_away,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_accept_defered,
+					setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_apm_reject_defered,
+					setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_invalid_req,
 					setup, unit_test_noop),
 		ztest_unit_test_setup_teardown(test_conn_update_periph_rem_invalid_ind,
@@ -4067,9 +4659,7 @@ void test_main(void)
 	ztest_run_test_suite(central_rem);
 	ztest_run_test_suite(periph_loc);
 	ztest_run_test_suite(periph_rem);
-
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-
 	ztest_test_suite(central_loc_no_param_req, ztest_unit_test_setup_teardown(
 				 test_conn_update_central_loc_accept_no_param_req,
 				 setup, unit_test_noop));
@@ -4095,6 +4685,5 @@ void test_main(void)
 	ztest_run_test_suite(central_rem_no_param_req);
 	ztest_run_test_suite(periph_loc_no_param_req);
 	ztest_run_test_suite(periph_rem_no_param_req);
-
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }

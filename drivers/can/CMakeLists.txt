@@ -4,6 +4,7 @@ zephyr_library()
 zephyr_sources_ifdef(CONFIG_CAN_MCUX_MCAN    can_mcux_mcan.c)
 
 zephyr_library_sources_ifdef(CONFIG_CAN              can_common.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_FAKE         can_fake.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_LOOPBACK     can_loopback.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MCAN         can_mcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_MCP2515      can_mcp2515.c)
@@ -31,6 +32,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_CAN_SJA1000      can_sja1000.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_ESP32_TWAI   can_esp32_twai.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_KVASER_PCI   can_kvaser_pci.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE        can_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SHELL        can_shell.c)

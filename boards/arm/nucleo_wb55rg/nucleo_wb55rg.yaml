@@ -7,7 +7,7 @@ toolchain:
   - gnuarmemb
   - xtools
 ram: 192
-flash: 1024
+flash: 808
 supported:
   - gpio
   - i2c

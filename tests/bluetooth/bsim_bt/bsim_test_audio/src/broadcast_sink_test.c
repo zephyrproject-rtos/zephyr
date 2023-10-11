@@ -8,13 +8,14 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/capabilities.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
 
 CREATE_FLAG(broadcaster_found);
 CREATE_FLAG(base_received);
+CREATE_FLAG(flag_base_metadata_updated);
 CREATE_FLAG(pa_synced);
 CREATE_FLAG(flag_syncable);
 CREATE_FLAG(pa_sync_lost);
@@ -29,6 +30,8 @@ static struct bt_audio_lc3_preset preset_16_2_1 =
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
+
+static struct bt_codec_data metadata[CONFIG_BT_CODEC_MAX_METADATA_COUNT];
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -76,6 +79,17 @@ static void base_recv_cb(struct bt_audio_broadcast_sink *sink,
 	uint32_t base_bis_index_bitfield = 0U;
 
 	if (TEST_FLAG(base_received)) {
+
+		if (base->subgroup_count > 0 &&
+		    memcmp(metadata, base->subgroups[0].codec.meta,
+			   sizeof(base->subgroups[0].codec.meta)) != 0) {
+
+			(void)memcpy(metadata, base->subgroups[0].codec.meta,
+				     sizeof(base->subgroups[0].codec.meta));
+
+			SET_FLAG(flag_base_metadata_updated);
+		}
+
 		return;
 	}
 
@@ -130,8 +144,7 @@ static struct bt_audio_broadcast_sink_cb broadcast_sink_cbs = {
 	.pa_sync_lost = pa_sync_lost_cb
 };
 
-static struct bt_audio_capability capabilities = {
-	.dir = BT_AUDIO_DIR_SINK,
+static struct bt_pacs_cap cap = {
 	.codec = &preset_16_2_1.codec,
 };
 
@@ -172,7 +185,7 @@ static int init(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_audio_capability_register(&capabilities);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err) {
 		FAIL("Capability register failed (err %d)\n", err);
 		return err;
@@ -192,7 +205,7 @@ static int init(void)
 	return 0;
 }
 
-static void test_main(void)
+static void test_common(void)
 {
 	int err;
 
@@ -236,6 +249,16 @@ static void test_main(void)
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
 
+	/* Ensure that we also see the metadata update */
+	printk("Waiting for metadata update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated)
+
+}
+
+static void test_main(void)
+{
+	test_common();
+
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
@@ -255,44 +278,7 @@ static void test_sink_disconnect(void)
 {
 	int err;
 
-	err = init();
-	if (err) {
-		FAIL("Init failed (err %d)\n", err);
-		return;
-	}
-
-	printk("Scanning for broadcast sources\n");
-	err = bt_audio_broadcast_sink_scan_start(BT_LE_SCAN_ACTIVE);
-	if (err != 0) {
-		FAIL("Unable to start scan for broadcast sources: %d", err);
-		return;
-	}
-	WAIT_FOR_FLAG(broadcaster_found);
-	printk("Broadcast source found, waiting for PA sync\n");
-	WAIT_FOR_FLAG(pa_synced);
-	printk("Broadcast source PA synced, waiting for BASE\n");
-	WAIT_FOR_FLAG(base_received);
-	printk("BASE received\n");
-
-	printk("Waiting for BIG syncable\n");
-	WAIT_FOR_FLAG(flag_syncable);
-
-	printk("Syncing the sink\n");
-	/* TODO: Sync to max streams instead of just BIT(1) */
-	err = bt_audio_broadcast_sink_sync(g_sink, BIT(1), streams, NULL);
-	if (err != 0) {
-		FAIL("Unable to sync the sink: %d\n", err);
-		return;
-	}
-
-	/* Wait for all to be started */
-	printk("Waiting for streams to be started\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
-	}
-
-	printk("Waiting for data\n");
-	WAIT_FOR_FLAG(flag_received);
+	test_common();
 
 	err = bt_audio_broadcast_sink_stop(g_sink);
 	if (err != 0) {
@@ -313,7 +299,7 @@ static void test_sink_disconnect(void)
 	/* No "sync lost" event is generated when we initialized the disconnect */
 	g_sink = NULL;
 
-	PASS("Broadcast sink passed\n");
+	PASS("Broadcast sink disconnect passed\n");
 }
 
 static const struct bst_test_instance test_broadcast_sink[] = {

@@ -26,6 +26,13 @@ properties:
       description: |
         Enable for PWM to keep running in debug mode.
 
+    nxp,prescaler:
+      type: int
+      enum: [1, 2, 4, 8, 16, 32, 64, 128]
+      required: true
+      description: |
+        Clock prescaler at the input of the PWM.
+
     "#pwm-cells":
       const: 2
 

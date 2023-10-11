@@ -50,7 +50,6 @@ properties:
 
     div-p:
       type: int
-      required: false
       description: |
           Main PLL division factor for PLLSAI3CLK
       enum:
@@ -59,7 +58,6 @@ properties:
 
     div-q:
       type: int
-      required: false
       description: |
           Main PLL division factor for PLL48M1CLK (48 MHz clock).
       enum:

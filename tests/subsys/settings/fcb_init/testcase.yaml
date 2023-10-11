@@ -1,4 +1,6 @@
 tests:
   system.settings.fcb:
     platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
+    integration_platforms:
+      - nrf52840dk_nrf52840
     tags: settings_intialization_fcb

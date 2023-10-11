@@ -29,6 +29,7 @@ config CMSIS_DSP_BASICMATH
 config CMSIS_DSP_COMPLEXMATH
 	bool "Complex Math Functions"
 	imply CMSIS_DSP_FASTMATH
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Complex Math Functions, which support the
 	  following operations:
@@ -42,6 +43,7 @@ config CMSIS_DSP_COMPLEXMATH
 
 config CMSIS_DSP_CONTROLLER
 	bool "Controller Functions"
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Controller Functions, which support the
 	  following operations:
@@ -61,6 +63,7 @@ config CMSIS_DSP_FASTMATH
 	bool "Fast Math Functions"
 	select CMSIS_DSP_TABLES
 	imply CMSIS_DSP_TABLES_ALL_FAST
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Fast Math Functions, which support the
 	  following operations:
@@ -74,6 +77,7 @@ config CMSIS_DSP_FILTERING
 	bool "Filtering Functions"
 	imply CMSIS_DSP_FASTMATH
 	imply CMSIS_DSP_SUPPORT
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Filtering Functions, which support the
 	  following operations:
@@ -99,6 +103,7 @@ config CMSIS_DSP_FILTERING
 
 config CMSIS_DSP_INTERPOLATION
 	bool "Interpolation Functions"
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Interpolation Functions, which support the
 	  following operations:
@@ -109,6 +114,7 @@ config CMSIS_DSP_INTERPOLATION
 
 config CMSIS_DSP_MATRIX
 	bool "Matrix Functions"
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Matrix Functions, which support the following
 	  operations:
@@ -127,6 +133,7 @@ config CMSIS_DSP_MATRIX
 
 config CMSIS_DSP_QUATERNIONMATH
 	bool "Quaternion Math Functions"
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Quaternion Math Functions, which support the
 	  following operations:
@@ -142,6 +149,7 @@ config CMSIS_DSP_STATISTICS
 	bool "Statistics Functions"
 	imply CMSIS_DSP_BASICMATH
 	imply CMSIS_DSP_FASTMATH
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Statistics Functions, which support the
 	  following operations:
@@ -161,6 +169,7 @@ config CMSIS_DSP_STATISTICS
 
 config CMSIS_DSP_SUPPORT
 	bool "Support Functions"
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Support Functions, which support the
 	  following operations:
@@ -180,6 +189,7 @@ config CMSIS_DSP_TRANSFORM
 	bool "Transform Functions"
 	select CMSIS_DSP_TABLES
 	imply CMSIS_DSP_TABLES_ALL_FFT
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Transform Functions, which support the
 	  following transformations:
@@ -191,6 +201,7 @@ config CMSIS_DSP_TRANSFORM
 config CMSIS_DSP_SVM
 	bool "Support Vector Machine Functions"
 	select CMSIS_DSP_TABLES
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Support Vector Machine Functions, which
 	  support the following algorithms:
@@ -203,6 +214,7 @@ config CMSIS_DSP_SVM
 config CMSIS_DSP_BAYES
 	bool "Bayesian Estimators"
 	imply CMSIS_DSP_STATISTICS
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Bayesian Estimator Functions, which
 	  implements the naive gaussian Bayes estimator.
@@ -210,6 +222,7 @@ config CMSIS_DSP_BAYES
 config CMSIS_DSP_DISTANCE
 	bool "Distance Functions"
 	imply CMSIS_DSP_STATISTICS
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the Distance Functions, which support the
 	  following distance computation algorithms:
@@ -238,6 +251,7 @@ config CMSIS_DSP_DISTANCE
 
 menuconfig CMSIS_DSP_TABLES
 	bool "Look-up Tables"
+	depends on CPU_CORTEX || ARCH_POSIX
 	help
 	  This option enables the static look-up tables used by the DSP
 	  functions to compute results.

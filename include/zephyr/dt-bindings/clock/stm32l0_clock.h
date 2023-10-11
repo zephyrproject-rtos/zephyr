@@ -23,10 +23,20 @@
 #define STM32_SRC_LSE		0x002
 #define STM32_SRC_LSI		0x003
 #define STM32_SRC_HSI		0x004
+#define STM32_SRC_HSI48		0x005
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+#define STM32_SRC_SYSCLK	0x006
 /** Bus clock */
-#define STM32_SRC_PCLK		0x006
+#define STM32_SRC_PCLK		0x007
+
+#define STM32_CLOCK_REG_MASK    0xFFU
+#define STM32_CLOCK_REG_SHIFT   0U
+#define STM32_CLOCK_SHIFT_MASK  0x1FU
+#define STM32_CLOCK_SHIFT_SHIFT 8U
+#define STM32_CLOCK_MASK_MASK   0x7U
+#define STM32_CLOCK_MASK_SHIFT  13U
+#define STM32_CLOCK_VAL_MASK    0x7U
+#define STM32_CLOCK_VAL_SHIFT   16U
 
 /**
  * @brief STM32 clock configuration bit field.
@@ -41,16 +51,6 @@
  * @param mask Mask for the RCC_CCIPRx field.
  * @param val Clock value (0, 1, ... 7).
  */
-
-#define STM32_CLOCK_REG_MASK    0xFFU
-#define STM32_CLOCK_REG_SHIFT   0U
-#define STM32_CLOCK_SHIFT_MASK  0x1FU
-#define STM32_CLOCK_SHIFT_SHIFT 8U
-#define STM32_CLOCK_MASK_MASK   0x7U
-#define STM32_CLOCK_MASK_SHIFT  13U
-#define STM32_CLOCK_VAL_MASK    0x7U
-#define STM32_CLOCK_VAL_SHIFT   16U
-
 #define STM32_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |		\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
@@ -59,6 +59,9 @@
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x4C
+
+/** @brief RCC_CSR register offset */
+#define CSR_REG		0x50
 
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
@@ -69,5 +72,7 @@
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 16, CCIPR_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 18, CCIPR_REG)
 #define HSI48_SEL(val)		STM32_CLOCK(val, 1, 26, CCIPR_REG)
+/** CSR devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 16, CSR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L0_CLOCK_H_ */

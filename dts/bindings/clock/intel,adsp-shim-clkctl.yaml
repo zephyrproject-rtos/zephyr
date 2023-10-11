@@ -8,17 +8,14 @@ compatible: "intel,adsp-shim-clkctl"
 properties:
     adsp-clkctl-clk-wovcro:
         type: int
-        required: false
         description: Index of WOVCRO clock encoding in the encoding array (if wovcro-supported is true).
 
     adsp-clkctl-clk-lpro:
         type: int
-        required: false
         description: Index of LPRO clock encoding in the encoding array.
 
     adsp-clkctl-clk-hpro:
         type: int
-        required: false
         description: Index of HPRO clock encoding in the encoding array.
 
     adsp-clkctl-freq-enc:
@@ -28,7 +25,6 @@ properties:
 
     adsp-clkctl-freq-mask:
         type: array
-        required: false
         description: Array that encodes needed masks to enable each clock.
 
     adsp-clkctl-freq-default:

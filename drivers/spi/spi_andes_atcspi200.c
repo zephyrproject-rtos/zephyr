@@ -6,6 +6,8 @@
 
 #include "spi_andes_atcspi200.h"
 
+#include <zephyr/irq.h>
+
 #define DT_DRV_COMPAT andestech_atcspi200
 
 typedef void (*atcspi200_cfg_func_t)(void);

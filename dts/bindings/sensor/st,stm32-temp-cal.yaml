@@ -41,7 +41,6 @@ properties:
 
     ts-cal-resolution:
       type: int
-      required: false
       description: |
         Temperature calibration resolution with which the ts-cal1-temp and
         ts-cal2-temp are measured.

@@ -11,8 +11,6 @@
 
 #include <zephyr/bluetooth/iso.h>
 
-#define BT_ISO_MAX_SEQ_NUM 0xFFFF
-
 struct iso_data {
 	/** BT_BUF_ISO_IN */
 	uint8_t  type;
@@ -152,7 +150,7 @@ struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout);
 	bt_iso_create_frag_timeout(_reserve, K_FOREVER)
 #endif
 
-#if defined(CONFIG_BT_DEBUG_ISO)
+#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
 void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
 				 enum bt_iso_state state,
 				 const char *func, int line);
@@ -160,7 +158,7 @@ void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan,
 	bt_iso_chan_set_state_debug(_chan, _state, __func__, __LINE__)
 #else
 void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state);
-#endif /* CONFIG_BT_DEBUG_ISO */
+#endif /* CONFIG_BT_ISO_LOG_LEVEL_DBG */
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags);

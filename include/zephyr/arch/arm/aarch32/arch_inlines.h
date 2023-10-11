@@ -26,4 +26,9 @@ static ALWAYS_INLINE uint32_t arch_proc_id(void)
 	return arch_curr_cpu()->id;
 }
 
+static ALWAYS_INLINE unsigned int arch_num_cpus(void)
+{
+	return CONFIG_MP_MAX_NUM_CPUS;
+}
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H */

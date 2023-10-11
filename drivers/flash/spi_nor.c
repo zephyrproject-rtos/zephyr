@@ -540,6 +540,125 @@ static int spi_nor_wrsr(const struct device *dev,
 	return ret;
 }
 
+#if DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode)
+
+/**
+ * @brief Read the configuration register.
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ *
+ * @return the non-negative value of the configuration register, or an error code.
+ */
+static int mxicy_rdcr(const struct device *dev)
+{
+	uint16_t cr;
+	enum { CMD_RDCR = 0x15 };
+	int ret = spi_nor_cmd_read(dev, CMD_RDCR, &cr, sizeof(cr));
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return cr;
+}
+
+/**
+ * @brief Write the configuration register.
+ *
+ * @note The device must be externally acquired before invoking this
+ * function.
+ *
+ * @param dev Device struct
+ * @param cr  The new value of the configuration register
+ *
+ * @return 0 on success or a negative error code.
+ */
+static int mxicy_wrcr(const struct device *dev,
+			uint16_t cr)
+{
+	/* The configuration register bytes on the Macronix MX25R devices are
+	 * written using the Write Status Register command where the configuration
+	 * register bytes are written as two extra bytes after the status register.
+	 * First read out the current status register to preserve the value.
+	 */
+	int sr = spi_nor_rdsr(dev);
+
+	if (sr < 0) {
+		LOG_ERR("Read status register failed: %d", sr);
+		return sr;
+	}
+
+	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+
+	if (ret == 0) {
+		uint8_t data[] = {
+			sr,
+			cr & 0xFF,	/* Configuration register 1 */
+			cr >> 8		/* Configuration register 2 */
+		};
+
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, data,
+			sizeof(data));
+		spi_nor_wait_until_ready(dev);
+	}
+
+	return ret;
+}
+
+static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
+{
+	/* Low-power/high perf mode is second bit in configuration register 2 */
+	enum { LH_SWITCH_BIT = 9 };
+	const uint8_t JEDEC_MACRONIX_ID = 0xc2;
+	const uint8_t JEDEC_MX25R_TYPE_ID = 0x28;
+	int current_cr, new_cr, ret;
+	/* lh_switch enum index:
+	 * 0: Ultra low power
+	 * 1: High performance mode
+	 */
+	const bool use_high_perf = DT_INST_ENUM_IDX(0, mxicy_mx25r_power_mode);
+
+	/* Only supported on Macronix MX25R Ultra Low Power series. */
+	if (jedec_id[0] != JEDEC_MACRONIX_ID || jedec_id[1] != JEDEC_MX25R_TYPE_ID) {
+		LOG_WRN("L/H switch not supported for device id: %02x %02x %02x", jedec_id[0],
+			jedec_id[1], jedec_id[2]);
+		/* Do not return an error here because the flash still functions */
+		return 0;
+	}
+
+	acquire_device(dev);
+
+	/* Read current configuration register */
+
+	ret = mxicy_rdcr(dev);
+	if (ret < 0) {
+		return ret;
+	}
+	current_cr = ret;
+
+	LOG_DBG("Use high performance mode? %d", use_high_perf);
+	new_cr = current_cr;
+	WRITE_BIT(new_cr, LH_SWITCH_BIT, use_high_perf);
+	if (new_cr != current_cr) {
+		ret = mxicy_wrcr(dev, new_cr);
+	} else {
+		ret = 0;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Enable high performace mode failed: %d", ret);
+	}
+
+	release_device(dev);
+
+	return ret;
+}
+
+#endif /* DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode) */
+
 static int spi_nor_read(const struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
@@ -1020,12 +1139,20 @@ static int spi_nor_configure(const struct device *dev)
 	int rc;
 
 	/* Validate bus and CS is ready */
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		return -ENODEV;
 	}
 
-	/* Might be in DPD if system restarted without power cycle. */
-	exit_dpd(dev);
+	/* After a soft-reset the flash might be in DPD or busy writing/erasing.
+	 * Exit DPD and wait until flash is ready.
+	 */
+	acquire_device(dev);
+	rc = spi_nor_rdsr(dev);
+	if (rc > 0 && (rc & SPI_NOR_WIP_BIT)) {
+		LOG_WRN("Waiting until flash is ready");
+		spi_nor_wait_until_ready(dev);
+	}
+	release_device(dev);
 
 	/* now the spi bus is configured, we can verify SPI
 	 * connectivity by reading the JEDEC ID.
@@ -1105,6 +1232,11 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 #endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
+
+#if DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode)
+	/* Do not fail init if setting configuration register fails */
+	(void) mxicy_configure(dev, jedec_id);
+#endif /* DT_INST_NODE_HAS_PROP(0, mxicy_mx25r_power_mode) */
 
 	if (IS_ENABLED(CONFIG_SPI_NOR_IDLE_IN_DPD)
 	    && (enter_dpd(dev) != 0)) {

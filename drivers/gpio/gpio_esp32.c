@@ -28,7 +28,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);

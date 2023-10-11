@@ -14,6 +14,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
 
 #include <gd32_adc.h>
 #include <gd32_rcu.h>

@@ -16,6 +16,8 @@
 			device_type = "cpu";
 			compatible = "cdns,tensilica-xtensa-lx6";
 			reg = <0>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 
 		cpu1: cpu@1 {
@@ -65,9 +67,36 @@
 			reg = <0x71f00 0x100>;
 		};
 
-		win: win@71a00 {
-			compatible = "intel,cavs-win";
-			reg = <0x71a00 0x20>;
+		mem_window0: mem_window@71a00 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a00 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+		mem_window1: mem_window@71a08 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a08 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@71a10 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a10 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@71a18 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a18 0x8>;
+			memory = <&sram0>;
+			read-only;
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
 		};
 
 		l2lm: l2lm@71d00 {

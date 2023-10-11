@@ -35,7 +35,6 @@ properties:
 
     cs1-pin:
       type: string
-      required: false
       enum:
         - "0"
         - "PSPI_CSN_PC4"
@@ -46,7 +45,6 @@ properties:
 
     cs2-pin:
       type: string
-      required: false
       enum:
         - "0"
         - "PSPI_CSN_PC4"

@@ -31,6 +31,7 @@
 LOG_MODULE_REGISTER(adc_stm32);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/irq.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X)
 #if defined(ADC1_V2_5)
@@ -735,13 +736,6 @@ static int start_read(const struct device *dev,
 	if (adc == ADC1) {
 		LL_ADC_SetChannelPreselection(adc, channel);
 	}
-#endif
-#if defined(CONFIG_SOC_SERIES_STM32U5X)
-	/*
-	 * Each channel in the sequence must be previously enabled in PCSEL.
-	 * This register controls the analog switch integrated in the IO level.
-	 */
-	LL_ADC_SetChannelPreselection(adc, channel);
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)

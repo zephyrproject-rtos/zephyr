@@ -15,7 +15,6 @@ properties:
 
     ref-internal-mv:
         type: int
-        required: false
         default: 0
         description:
           Internal reference voltage in mV. If not provided or set to zero,
@@ -23,7 +22,6 @@ properties:
 
     ref-vdd-mv:
         type: int
-        required: false
         default: 0
         description:
           VDD reference voltage in mV. If not provided or set to zero,
@@ -31,7 +29,6 @@ properties:
 
     ref-external0-mv:
         type: int
-        required: false
         default: 0
         description:
           External 0 reference voltage in mV. If not provided or set to zero,
@@ -39,7 +36,6 @@ properties:
 
     ref-external1-mv:
         type: int
-        required: false
         default: 0
         description:
           External 1 reference voltage in mV. If not provided or set to zero,

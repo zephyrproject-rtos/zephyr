@@ -114,16 +114,23 @@ void conn_register_debug(struct net_conn *conn,
 #define conn_register_debug(...)
 #endif /* (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
+static K_MUTEX_DEFINE(conn_lock);
+
 static struct net_conn *conn_get_unused(void)
 {
 	sys_snode_t *node;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
+
 	node = sys_slist_peek_head(&conn_unused);
 	if (!node) {
+		k_mutex_unlock(&conn_lock);
 		return NULL;
 	}
 
 	sys_slist_remove(&conn_unused, NULL, node);
+
+	k_mutex_unlock(&conn_lock);
 
 	return CONTAINER_OF(node, struct net_conn, node);
 }
@@ -132,14 +139,18 @@ static void conn_set_used(struct net_conn *conn)
 {
 	conn->flags |= NET_CONN_IN_USE;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_prepend(&conn_used, &conn->node);
+	k_mutex_unlock(&conn_lock);
 }
 
 static void conn_set_unused(struct net_conn *conn)
 {
 	(void)memset(conn, 0, sizeof(*conn));
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_prepend(&conn_unused, &conn->node);
+	k_mutex_unlock(&conn_lock);
 }
 
 /* Check if we already have identical connection handler installed. */
@@ -151,6 +162,8 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 {
 	struct net_conn *conn;
 	struct net_conn *tmp;
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn_used, conn, tmp, node) {
 		if (conn->proto != proto) {
@@ -235,9 +248,11 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 			continue;
 		}
 
+		k_mutex_unlock(&conn_lock);
 		return conn;
 	}
 
+	k_mutex_unlock(&conn_lock);
 	return NULL;
 }
 
@@ -380,7 +395,9 @@ int net_conn_unregister(struct net_conn_handle *handle)
 
 	NET_DBG("Connection handler %p removed", conn);
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_find_and_remove(&conn_used, &conn->node);
+	k_mutex_unlock(&conn_lock);
 
 	conn_set_unused(conn);
 
@@ -760,8 +777,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && conn_family == AF_CAN) {
 			best_match = conn;
 		}
-			/* loop end */
-	}
+	} /* loop end */
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
 		if (raw_pkt_continue) {
@@ -825,9 +841,13 @@ void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
 {
 	struct net_conn *conn;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
 		cb(conn, user_data);
 	}
+
+	k_mutex_unlock(&conn_lock);
 }
 
 void net_conn_init(void)

@@ -8,12 +8,12 @@
 
 / {
 	chosen {
-		zephyr,display = &ssd16xx;
+		zephyr,display = &ssd16xx_waveshare_epaper_gdeh0213b1;
 	};
 };
 
 &arduino_spi {
-	ssd16xx: ssd16xxfb@0 {
+	ssd16xx_waveshare_epaper_gdeh0213b1: ssd16xxfb@0 {
 		compatible = "gooddisplay,gdeh0213b1", "solomon,ssd1673", "solomon,ssd16xxfb";
 		spi-max-frequency = <4000000>;
 		reg = <0>;

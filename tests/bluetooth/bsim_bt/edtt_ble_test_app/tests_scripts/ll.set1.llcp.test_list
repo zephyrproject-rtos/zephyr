@@ -44,9 +44,9 @@ LL/CON/CEN/BV-35-C
 LL/CON/CEN/BV-41-C
 LL/CON/CEN/BV-43-C
 LL/CON/CEN/BV-73-C
-LL/CON/CEN/BV-74-C
+#LL/CON/CEN/BV-74-C # Needs testcase implementation update
 #LL/CON/CEN/BV-76-C # Needs testcase implementation update
-LL/CON/CEN/BV-77-C
+#LL/CON/CEN/BV-77-C # Needs testcase implementation update
 #LL/CON/PER/BI-08-C # This test implementation is not valid, and will fail with refactored LLCP
 LL/CON/PER/BV-04-C
 LL/CON/PER/BV-05-C

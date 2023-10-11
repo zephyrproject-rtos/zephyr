@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <errno.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <fsl_pwt.h>
 #include <fsl_clock.h>
@@ -343,7 +344,7 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 			NULL, &mcux_pwt_data_##n,			\
 			&mcux_pwt_config_##n,				\
 			POST_KERNEL,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			CONFIG_PWM_INIT_PRIORITY,			\
 			&mcux_pwt_driver_api);				\
 									\
 	static void mcux_pwt_config_func_##n(const struct device *dev)	\

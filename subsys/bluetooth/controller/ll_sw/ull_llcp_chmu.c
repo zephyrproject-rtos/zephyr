@@ -39,9 +39,6 @@
 #include "ull_llcp_internal.h"
 #include "ull_conn_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_llcp_chmu
-#include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
@@ -125,18 +122,6 @@ static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct pro
 	}
 }
 
-static void lp_chmu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	switch (evt) {
-	case LP_CHMU_EVT_RUN:
-		lp_chmu_send_channel_map_update_ind(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void lp_chmu_st_wait_tx_chan_map_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 					    void *param)
 {
@@ -179,8 +164,9 @@ static void lp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 {
 	switch (ctx->state) {
 	case LP_CHMU_STATE_IDLE:
-		lp_chmu_st_idle(conn, ctx, evt, param);
-		break;
+		/* Empty/fallthrough on purpose as idle state handling is equivalent to
+		 * 'wait for tx state' - simply to attempt TX'ing chan map ind
+		 */
 	case LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND:
 		lp_chmu_st_wait_tx_chan_map_ind(conn, ctx, evt, param);
 		break;

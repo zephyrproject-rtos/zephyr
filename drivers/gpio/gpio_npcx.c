@@ -9,9 +9,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/gpio/nuvoton-npcx-gpio.h>
 #include <soc.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include "soc_gpio.h"
 #include "soc_miwu.h"
 
@@ -127,11 +128,13 @@ static int gpio_npcx_config(const struct device *dev,
 
 	/* Does this IO pad support low-voltage input (1.8V) detection? */
 	if (lvol->ctrl != NPCX_DT_LVOL_CTRL_NONE) {
+		gpio_flags_t volt = flags & NPCX_GPIO_VOLTAGE_MASK;
+
 		/*
 		 * If this IO pad is configured for low-voltage input detection,
 		 * the related drive type must select to open-drain also.
 		 */
-		if ((flags & GPIO_VOLTAGE_1P8) != 0) {
+		if (volt == NPCX_GPIO_VOLTAGE_1P8) {
 			flags |= GPIO_OPEN_DRAIN;
 			npcx_lvol_set_detect_level(lvol->ctrl, lvol->bit, true);
 		} else {
@@ -215,7 +218,7 @@ static int gpio_npcx_pin_get_config(const struct device *port, gpio_pin_t pin,
 	/* Enable low-voltage detection? */
 	if (lvol->ctrl != NPCX_DT_LVOL_CTRL_NONE &&
 		npcx_lvol_get_detect_level(lvol->ctrl, lvol->bit)) {
-		flags |= GPIO_VOLTAGE_1P8;
+		flags |= NPCX_GPIO_VOLTAGE_1P8;
 	};
 
 	*out_flags = flags;

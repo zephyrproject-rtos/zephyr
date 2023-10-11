@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 
 #include <zephyr/init.h>
-#include <zephyr/net/http_parser_url.h>
+#include <zephyr/net/http/parser_url.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
@@ -100,7 +100,7 @@ static struct k_thread engine_thread_data;
 #define MAX_POLL_FD CONFIG_NET_SOCKETS_POLL_MAX
 
 /* Resources */
-static struct pollfd sock_fds[MAX_POLL_FD];
+static struct zsock_pollfd sock_fds[MAX_POLL_FD];
 
 static struct lwm2m_ctx *sock_ctx[MAX_POLL_FD];
 static int sock_nfds;
@@ -173,11 +173,12 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 		/* open socket */
 
 		if (IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) && client_ctx->use_dtls) {
-			client_ctx->sock_fd = socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM,
-						     IPPROTO_DTLS_1_2);
+			client_ctx->sock_fd = zsock_socket(client_ctx->remote_addr.sa_family,
+							   SOCK_DGRAM, IPPROTO_DTLS_1_2);
 		} else {
 			client_ctx->sock_fd =
-				socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM, IPPROTO_UDP);
+				zsock_socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM,
+					     IPPROTO_UDP);
 		}
 
 		if (client_ctx->sock_fd < 0) {
@@ -198,7 +199,7 @@ int lwm2m_close_socket(struct lwm2m_ctx *client_ctx)
 	int ret = 0;
 
 	if (client_ctx->sock_fd >= 0) {
-		ret = close(client_ctx->sock_fd);
+		ret = zsock_close(client_ctx->sock_fd);
 		if (ret) {
 			LOG_ERR("Failed to close socket: %d", errno);
 			ret = -errno;
@@ -248,10 +249,6 @@ int lwm2m_engine_connection_resume(struct lwm2m_ctx *client_ctx)
 		ret = lwm2m_open_socket(client_ctx);
 		if (ret) {
 			return ret;
-		}
-
-		if (!client_ctx->use_dtls) {
-			return 0;
 		}
 
 		LOG_DBG("Resume suspended connection");
@@ -527,7 +524,7 @@ int lwm2m_socket_add(struct lwm2m_ctx *ctx)
 
 	sock_ctx[sock_nfds] = ctx;
 	sock_fds[sock_nfds].fd = ctx->sock_fd;
-	sock_fds[sock_nfds].events = POLLIN;
+	sock_fds[sock_nfds].events = ZSOCK_POLLIN;
 	sock_nfds++;
 
 	return 0;
@@ -608,8 +605,8 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	static struct sockaddr from_addr;
 
 	from_addr_len = sizeof(from_addr);
-	len = recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, 0, &from_addr,
-		       &from_addr_len);
+	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, 0, &from_addr,
+			     &from_addr_len);
 
 	if (len < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -650,7 +647,8 @@ static void socket_reset_pollfd_events(void)
 {
 	for (int i = 0; i < sock_nfds; ++i) {
 		sock_fds[i].events =
-			POLLIN | (sys_slist_is_empty(&sock_ctx[i]->pending_sends) ? 0 : POLLOUT);
+			ZSOCK_POLLIN |
+			(sys_slist_is_empty(&sock_ctx[i]->pending_sends) ? 0 : ZSOCK_POLLOUT);
 		sock_fds[i].revents = 0;
 	}
 }
@@ -687,13 +685,15 @@ static void socket_loop(void)
 		}
 
 		for (i = 0; i < sock_nfds; ++i) {
-			if (sys_slist_is_empty(&sock_ctx[i]->pending_sends)) {
+			if (sock_ctx[i] != NULL &&
+			    sys_slist_is_empty(&sock_ctx[i]->pending_sends)) {
 				next_retransmit = retransmit_request(sock_ctx[i], timestamp);
 				if (next_retransmit < timeout) {
 					timeout = next_retransmit;
 				}
 			}
-			if (sys_slist_is_empty(&sock_ctx[i]->pending_sends) &&
+			if (sock_ctx[i] != NULL &&
+			    sys_slist_is_empty(&sock_ctx[i]->pending_sends) &&
 			    lwm2m_rd_client_is_registred(sock_ctx[i])) {
 				check_notifications(sock_ctx[i], timestamp);
 			}
@@ -705,7 +705,7 @@ static void socket_loop(void)
 		 * FIXME: Currently we timeout and restart poll in case fds
 		 *        were modified.
 		 */
-		rc = poll(sock_fds, sock_nfds, timeout);
+		rc = zsock_poll(sock_fds, sock_nfds, timeout);
 		if (rc < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			errno = 0;
@@ -715,12 +715,13 @@ static void socket_loop(void)
 
 		for (i = 0; i < sock_nfds; i++) {
 
-			if (sock_ctx[i]->sock_fd < 0) {
+			if (sock_ctx[i] != NULL && sock_ctx[i]->sock_fd < 0) {
 				continue;
 			}
 
-			if ((sock_fds[i].revents & POLLERR) || (sock_fds[i].revents & POLLNVAL) ||
-			    (sock_fds[i].revents & POLLHUP)) {
+			if ((sock_fds[i].revents & ZSOCK_POLLERR) ||
+			    (sock_fds[i].revents & ZSOCK_POLLNVAL) ||
+			    (sock_fds[i].revents & ZSOCK_POLLHUP)) {
 				LOG_ERR("Poll reported a socket error, %02x.", sock_fds[i].revents);
 				if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
 					sock_ctx[i]->fault_cb(EIO);
@@ -728,7 +729,7 @@ static void socket_loop(void)
 				continue;
 			}
 
-			if (sock_fds[i].revents & POLLIN) {
+			if (sock_fds[i].revents & ZSOCK_POLLIN) {
 				while (sock_ctx[i]) {
 					rc = socket_recv_message(sock_ctx[i]);
 					if (rc) {
@@ -737,7 +738,7 @@ static void socket_loop(void)
 				}
 			}
 
-			if (sock_fds[i].revents & POLLOUT) {
+			if (sock_fds[i].revents & ZSOCK_POLLOUT) {
 				socket_send_message(sock_ctx[i]);
 			}
 		}
@@ -823,8 +824,8 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			client_ctx->tls_tag,
 		};
 
-		ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, tls_tag_list,
-				 sizeof(tls_tag_list));
+		ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, tls_tag_list,
+				       sizeof(tls_tag_list));
 		if (ret < 0) {
 			ret = -errno;
 			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
@@ -834,8 +835,8 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
 			int session_cache = TLS_SESSION_CACHE_ENABLED;
 
-			ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SESSION_CACHE,
-					 &session_cache, sizeof(session_cache));
+			ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SESSION_CACHE,
+					       &session_cache, sizeof(session_cache));
 			if (ret < 0) {
 				ret = -errno;
 				LOG_ERR("Failed to set TLS_SESSION_CACHE option: %d", errno);
@@ -851,8 +852,9 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 			client_ctx->desthostname[client_ctx->desthostnamelen] = '\0';
 
 			/** mbedtls ignores length */
-			ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
-					 client_ctx->desthostname, client_ctx->desthostnamelen);
+			ret = zsock_setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
+					       client_ctx->desthostname,
+					       client_ctx->desthostnamelen);
 
 			/** restore character */
 			client_ctx->desthostname[client_ctx->desthostnamelen] = tmp;
@@ -873,7 +875,7 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		return -EPROTONOSUPPORT;
 	}
 
-	if (connect(client_ctx->sock_fd, &client_ctx->remote_addr, addr_len) < 0) {
+	if (zsock_connect(client_ctx->sock_fd, &client_ctx->remote_addr, addr_len) < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto error;
@@ -906,7 +908,7 @@ int lwm2m_socket_close(struct lwm2m_ctx *client_ctx)
 	lwm2m_socket_del(client_ctx);
 	client_ctx->sock_fd = -1;
 	if (sock_fd >= 0) {
-		return close(sock_fd);
+		return zsock_close(sock_fd);
 	}
 
 	return 0;
@@ -983,6 +985,11 @@ static int lwm2m_engine_init(const struct device *dev)
 	}
 
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
+
+	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)) {
+		/* Init data cache */
+		lwm2m_engine_data_cache_init();
+	}
 
 	/* start sock receive thread */
 	engine_thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],

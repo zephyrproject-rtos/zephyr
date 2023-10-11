@@ -30,8 +30,8 @@ static inline uint32_t esp_core_id(void)
 }
 extern void esp_rom_uart_attach(void);
 extern void esp_rom_uart_tx_wait_idle(uint8_t uart_no);
-extern STATUS esp_rom_uart_tx_one_char(uint8_t chr);
-extern STATUS esp_rom_uart_rx_one_char(uint8_t *chr);
+extern int esp_rom_uart_tx_one_char(uint8_t chr);
+extern int esp_rom_uart_rx_one_char(uint8_t *chr);
 
 extern int esp_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index, bool inverted);
 extern int esp_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,

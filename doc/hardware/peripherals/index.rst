@@ -20,6 +20,7 @@ Peripherals
    eeprom.rst
    entropy.rst
    flash.rst
+   fuel_gauge.rst
    gna.rst
    gpio.rst
    hwinfo.rst
@@ -42,6 +43,7 @@ Peripherals
    spi.rst
    tcpc.rst
    uart.rst
+   usbc_vbus.rst
    mdio.rst
    watchdog.rst
    video.rst

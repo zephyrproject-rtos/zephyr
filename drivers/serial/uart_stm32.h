@@ -76,6 +76,8 @@ struct uart_stm32_data {
 	uint32_t baud_rate;
 	/* clock device */
 	const struct device *clock;
+	/* Reset controller device configuration */
+	const struct reset_dt_spec reset;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;

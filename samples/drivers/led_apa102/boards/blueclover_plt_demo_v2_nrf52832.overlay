@@ -6,7 +6,7 @@
 
 / {
 	led_pwr: led-pwr-ctrl {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "led-pwr-ctrl";
 		enable-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;

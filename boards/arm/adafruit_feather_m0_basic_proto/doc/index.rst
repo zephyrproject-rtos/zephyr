@@ -150,7 +150,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! adafruit_feather_m0_basic_proto" in your terminal.
 
 References
 **********

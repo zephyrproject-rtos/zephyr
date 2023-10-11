@@ -7,7 +7,7 @@
 &mikrobus_spi {
 	status = "okay";
 
-	mcp3204: mcp3204@0 {
+	mcp3204_mikroe_adc_click: mcp3204@0 {
 		compatible = "microchip,mcp3204";
 		reg = <0x0>;
 		spi-max-frequency = <100000>;

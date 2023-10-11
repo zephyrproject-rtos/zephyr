@@ -50,6 +50,19 @@ static ALWAYS_INLINE uint32_t arch_proc_id(void)
 	return prid;
 }
 
+#ifdef CONFIG_SOC_HAS_RUNTIME_NUM_CPUS
+extern unsigned int soc_num_cpus;
+#endif
+
+static ALWAYS_INLINE unsigned int arch_num_cpus(void)
+{
+#ifdef CONFIG_SOC_HAS_RUNTIME_NUM_CPUS
+	return soc_num_cpus;
+#else
+	return CONFIG_MP_MAX_NUM_CPUS;
+#endif
+}
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_INLINES_H_ */

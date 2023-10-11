@@ -38,18 +38,26 @@ extern "C" {
 #define BT_DATA_TX_POWER                0x0a /* Tx Power */
 #define BT_DATA_SM_TK_VALUE             0x10 /* Security Manager TK Value */
 #define BT_DATA_SM_OOB_FLAGS            0x11 /* Security Manager OOB Flags */
+#define BT_DATA_PERIPHERAL_INT_RANGE    0x12 /* Peripheral Connection Interval Range */
 #define BT_DATA_SOLICIT16               0x14 /* Solicit UUIDs, 16-bit */
 #define BT_DATA_SOLICIT128              0x15 /* Solicit UUIDs, 128-bit */
 #define BT_DATA_SVC_DATA16              0x16 /* Service data, 16-bit UUID */
+#define BT_DATA_PUB_TARGET_ADDR         0x17 /* Public Target Address */
+#define BT_DATA_RAND_TARGET_ADDR        0x18 /* Random Target Address */
 #define BT_DATA_GAP_APPEARANCE          0x19 /* GAP appearance */
+#define BT_DATA_ADV_INT                 0x1a /* Advertising Interval */
 #define BT_DATA_LE_BT_DEVICE_ADDRESS    0x1b /* LE Bluetooth Device Address */
 #define BT_DATA_LE_ROLE                 0x1c /* LE Role */
+#define BT_DATA_SIMPLE_PAIRING_HASH     0x1d /* Simple Pairing Hash C256 */
+#define BT_DATA_SIMPLE_PAIRING_RAND     0x1e /* Simple Pairing Randomizer R256  */
 #define BT_DATA_SOLICIT32               0x1f /* Solicit UUIDs, 32-bit */
 #define BT_DATA_SVC_DATA32              0x20 /* Service data, 32-bit UUID */
 #define BT_DATA_SVC_DATA128             0x21 /* Service data, 128-bit UUID */
 #define BT_DATA_LE_SC_CONFIRM_VALUE     0x22 /* LE SC Confirmation Value */
 #define BT_DATA_LE_SC_RANDOM_VALUE      0x23 /* LE SC Random Value */
 #define BT_DATA_URI                     0x24 /* URI */
+#define BT_DATA_INDOOR_POS              0x25 /* Indoor Positioning */
+#define BT_DATA_TRANS_DISCOVER_DATA     0x26 /* Transport Discovery Data */
 #define BT_DATA_LE_SUPPORTED_FEATURES   0x27 /* LE Supported Features */
 #define BT_DATA_CHANNEL_MAP_UPDATE_IND  0x28 /* Channel Map Update Indication */
 #define BT_DATA_MESH_PROV               0x29 /* Mesh Provisioning PDU */
@@ -58,6 +66,9 @@ extern "C" {
 #define BT_DATA_BIG_INFO                0x2c /* BIGInfo */
 #define BT_DATA_BROADCAST_CODE          0x2d /* Broadcast Code */
 #define BT_DATA_CSIS_RSI                0x2e /* CSIS Random Set ID type */
+#define BT_DATA_ADV_INT_LONG            0x2f /* Advertising Interval long */
+#define BT_DATA_BROADCAST_NAME          0x30 /* Broadcast Name */
+#define BT_DATA_3D_INFO                 0x3D /* 3D Information Data */
 
 #define BT_DATA_MANUFACTURER_DATA       0xff /* Manufacturer Specific Data */
 

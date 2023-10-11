@@ -42,9 +42,6 @@
 
 #include "ll.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_adv_sync
-#include "common/log.h"
 #include "hal/debug.h"
 
 static int init_reset(void);
@@ -52,6 +49,8 @@ static uint8_t adv_type_check(struct ll_adv_set *adv);
 static inline struct ll_adv_sync_set *sync_acquire(void);
 static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
+static uint32_t ull_adv_sync_pdu_time_get(const struct ll_adv_sync_set *sync,
+					  const struct pdu_adv *pdu);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 static uint8_t sync_chm_update(uint8_t handle);
@@ -111,7 +110,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll_sync->adv = lll;
 
 		lll_adv_data_reset(&lll_sync->data);
-		err = lll_adv_data_init(&lll_sync->data);
+		err = lll_adv_sync_data_init(&lll_sync->data);
 		if (err) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
@@ -873,14 +872,18 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 *       when auxiliary and Periodic Advertising have
 			 *       similar event interval.
 			 */
-			ticks_anchor_sync = ticker_ticks_now_get();
+			ticks_anchor_sync =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 		} else {
 			/* Auxiliary set will be started due to inclusion of
 			 * sync info field.
 			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
-			ticks_anchor_aux = ticker_ticks_now_get();
+			ticks_anchor_aux =
+				ticker_ticks_now_get() +
+				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 			ticks_slot_overhead_aux =
 				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 			ticks_anchor_sync = ticks_anchor_aux +
@@ -888,6 +891,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 				HAL_TICKER_US_TO_TICKS(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 		}
 
@@ -1066,8 +1070,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	lll_sync = &sync->lll;
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
 
-	/* Calculate the PDU Tx Time and hence the radio event length */
-	time_us = ull_adv_sync_time_get(sync, ter_pdu->len);
+	time_us = ull_adv_sync_pdu_time_get(sync, ter_pdu);
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0U;
@@ -1113,7 +1116,7 @@ uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync,
 	uint32_t time_us;
 	uint32_t ret;
 
-	time_us = ull_adv_sync_time_get(sync, pdu->len);
+	time_us = ull_adv_sync_pdu_time_get(sync, pdu);
 	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
 	if (sync->ull.ticks_slot > time_ticks) {
 		ticks_minus = sync->ull.ticks_slot - time_ticks;
@@ -1881,6 +1884,23 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
 {
 	return mem_index_get(sync, ll_adv_sync_pool,
 			     sizeof(struct ll_adv_sync_set));
+}
+
+static uint32_t ull_adv_sync_pdu_time_get(const struct ll_adv_sync_set *sync,
+					  const struct pdu_adv *pdu)
+{
+	uint8_t len;
+
+	/* Calculate the PDU Tx Time and hence the radio event length,
+	 * Always use maximum length for common extended header format so that
+	 * ACAD could be update when periodic advertising is active and the
+	 * time reservation need not be updated everytime avoiding overlapping
+	 * with other active states/roles.
+	 */
+	len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
+	      PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+
+	return ull_adv_sync_time_get(sync, len);
 }
 
 static uint8_t sync_stop(struct ll_adv_sync_set *sync)

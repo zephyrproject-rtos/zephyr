@@ -251,7 +251,7 @@ void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 	 * preempted and we can return.
 	 */
 	struct k_p4wq_work *wi;
-	uint32_t n_beaten_by = 0, active_target = CONFIG_MP_NUM_CPUS;
+	uint32_t n_beaten_by = 0, active_target = arch_num_cpus();
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&queue->active, wi, dlnode) {
 		/*

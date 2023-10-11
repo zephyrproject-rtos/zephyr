@@ -8,9 +8,7 @@ include: base.yaml
 properties:
     size:
       type: int
-      required: false
       description: Total EEPROM size in bytes
     read-only:
       type: boolean
-      required: false
       description: Disable writes to the EEPROM

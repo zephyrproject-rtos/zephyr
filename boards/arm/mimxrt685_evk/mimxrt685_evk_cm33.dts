@@ -8,7 +8,6 @@
 
 #include <nxp/nxp_rt6xx.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/regulator/pca9420_i2c.h>
 
 #include "mimxrt685_evk_cm33-pinctrl.dtsi"
 
@@ -36,7 +35,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &flexspi;
+		zephyr,flash-controller = &mx25um51345g;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
@@ -229,74 +228,24 @@ i2s1: &flexcomm3 {
 	pinctrl-names = "default";
 
 	pca9420: pca9420@61 {
+		compatible = "nxp,pca9420";
 		reg = <0x61>;
+		nxp,enable-modesel-pins;
 
-		pca9420_sw1: sw1_buck {
-			compatible = "regulator-pmic";
-			voltage-range = <PCA9420_SW1_VOLTAGE_RANGE>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			num-voltages = <42>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_0>;
-			vsel-mask = <PCA9420_MODECFG_0_SW1_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_SW1_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_SW1_EN_VAL>;
-			min-uV = <500000>;
-			max-uV = <1800000>;
+		BUCK1 {
+			regulator-boot-on;
 		};
 
-		pca9420_sw2: sw2_buck {
-			compatible = "regulator-pmic";
-			voltage-range = <PCA9420_SW2_VOLTAGE_RANGE>;
-			num-voltages = <50>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_1>;
-			vsel-mask = <PCA9420_MODECFG_1_SW2_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_SW2_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_SW2_EN_VAL>;
-			min-uV = <1500000>;
-			max-uV = <3300000>;
+		BUCK2 {
+			regulator-boot-on;
 		};
 
-		pca9420_ldo1: ldo1_reg {
-			compatible = "regulator-pmic";
-			voltage-range = <PCA9420_LDO1_VOLTAGE_RANGE>;
-			num-voltages = <9>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_2>;
-			vsel-mask = <PCA9420_MODECFG_2_LDO1_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_LDO1_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_LDO1_EN_VAL>;
-			min-uV = <1700000>;
-			max-uV = <1900000>;
+		LDO1 {
+			regulator-boot-on;
 		};
 
-		pca9420_ldo2: ldo2_reg {
-			compatible = "regulator-pmic";
-			voltage-range = <PCA9420_LDO2_VOLTAGE_RANGE>;
-			num-voltages = <50>;
-			current-levels = <PCA9420_CURRENT_LIMIT_LEVELS>;
-			ilim-reg = <PCA9420_TOP_CNTL0>;
-			ilim-mask = <PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK>;
-			num-current-levels = <7>;
-			vsel-reg = <PCA9420_MODECFG_0_3>;
-			vsel-mask = <PCA9420_MODECFG_3_LDO2_OUT_MASK>;
-			enable-reg = <PCA9420_MODECFG_0_2>;
-			enable-mask = <PCA9420_MODECFG_2_LDO2_EN_MASK>;
-			enable-val = <PCA9420_MODECFG_2_LDO2_EN_VAL>;
-			min-uV = <1500000>;
-			max-uV = <3300000>;
+		LDO2 {
+			regulator-boot-on;
 		};
 
 
@@ -414,7 +363,7 @@ i2s1: &flexcomm3 {
 	no-1-8-v;
 	pwr-gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
-	mmc {
+	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		status = "okay";
 	};

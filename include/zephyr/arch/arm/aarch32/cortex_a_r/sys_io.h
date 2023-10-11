@@ -26,7 +26,9 @@ extern "C" {
 
 static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
 {
-	uint8_t val = *(volatile uint8_t *)addr;
+	uint8_t val;
+
+	__asm__ volatile("ldrb %0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;
@@ -35,12 +37,14 @@ static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
 static ALWAYS_INLINE void sys_write8(uint8_t data, mem_addr_t addr)
 {
 	__DMB();
-	*(volatile uint8_t *)addr = data;
+	__asm__ volatile("strb %0, [%1]" : : "r" (data), "r" (addr));
 }
 
 static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
 {
-	uint16_t val = *(volatile uint16_t *)addr;
+	uint16_t val;
+
+	__asm__ volatile("ldrh %0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;
@@ -49,12 +53,14 @@ static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
 static ALWAYS_INLINE void sys_write16(uint16_t data, mem_addr_t addr)
 {
 	__DMB();
-	*(volatile uint16_t *)addr = data;
+	__asm__ volatile("strh %0, [%1]" : : "r" (data), "r" (addr));
 }
 
 static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
 {
-	uint32_t val = *(volatile uint32_t *)addr;
+	uint32_t val;
+
+	__asm__ volatile("ldr %0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;
@@ -63,12 +69,14 @@ static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
 static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 {
 	__DMB();
-	*(volatile uint32_t *)addr = data;
+	__asm__ volatile("str %0, [%1]" : : "r" (data), "r" (addr));
 }
 
 static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
 {
-	uint64_t val = *(volatile uint64_t *)addr;
+	uint64_t val;
+
+	__asm__ volatile("ldrd %Q0, %R0, [%1]" : "=r" (val) : "r" (addr));
 
 	__DMB();
 	return val;

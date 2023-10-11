@@ -17,13 +17,7 @@ config SOC_SERIES_INTEL_CAVS_V15
 config HP_SRAM_RESERVE
 	default 32768
 
-config ADSP_WIN0_OFFSET
-	default 24576
-
-config ADSP_WIN3_OFFSET
-	default 0
-
-config MP_NUM_CPUS
+config MP_MAX_NUM_CPUS
 	default 2
 
 config SCHED_IPI_SUPPORTED

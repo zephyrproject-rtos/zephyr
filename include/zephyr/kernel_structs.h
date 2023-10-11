@@ -156,7 +156,7 @@ struct _cpu {
 typedef struct _cpu _cpu_t;
 
 struct z_kernel {
-	struct _cpu cpus[CONFIG_MP_NUM_CPUS];
+	struct _cpu cpus[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_PM
 	int32_t idle; /* Number of ticks for kernel idling */

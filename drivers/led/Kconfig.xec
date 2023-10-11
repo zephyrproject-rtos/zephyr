@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_XEC
+	bool "Microchip XEC BB-LED driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_BBLED_ENABLED
+	help
+	  Enable driver for the Microchip XEC Breathing-Blinking
+	  LED controller for MEC15xx and MEC172x

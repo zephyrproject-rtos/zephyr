@@ -392,7 +392,7 @@ static int icm42605_init(const struct device *dev)
 	struct icm42605_data *drv_data = dev->data;
 	const struct icm42605_config *cfg = dev->config;
 
-	if (!spi_is_ready(&cfg->spi)) {
+	if (!spi_is_ready_dt(&cfg->spi)) {
 		LOG_ERR("SPI bus is not ready");
 		return -ENODEV;
 	}
@@ -444,7 +444,7 @@ static const struct sensor_driver_api icm42605_driver_api = {
 #define ICM42605_INIT(index)						\
 	ICM42605_DEFINE_CONFIG(index);					\
 	static struct icm42605_data icm42605_driver_##index;		\
-	DEVICE_DT_INST_DEFINE(index, icm42605_init,			\
+	SENSOR_DEVICE_DT_INST_DEFINE(index, icm42605_init,		\
 			    NULL,					\
 			    &icm42605_driver_##index,			\
 			    &icm42605_cfg_##index, POST_KERNEL,		\

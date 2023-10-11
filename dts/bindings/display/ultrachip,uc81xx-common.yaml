@@ -36,7 +36,6 @@ properties:
 
     softstart:
       type: uint8-array
-      required: false
       description: Booster Soft Start (BTST) values
 
 child-binding:
@@ -63,57 +62,46 @@ child-binding:
   properties:
     pwr:
       type: uint8-array
-      required: false
       description: Power Setting (PWR) values
 
     cdi:
       type: int
-      required: false
       description: |
         VCOM and data interval value. This value is optional but must
         be provided to enable border refresh control.
 
     tcon:
       type: int
-      required: false
       description: TCON setting value
 
     pll:
       type: int
-      required: false
       description: PLL / frame rate control
 
     vdcs:
       type: int
-      required: false
       description: VCOM DC settings
 
     lutc:
       type: uint8-array
-      required: false
       description: VCOM LUT
 
     lutww:
       type: uint8-array
-      required: false
       description: White-to-white LUT
 
     lutkw:
       type: uint8-array
-      required: false
       description: Black-to-white LUT
 
     lutwk:
       type: uint8-array
-      required: false
       description: White-to-black LUT
 
     lutkk:
       type: uint8-array
-      required: false
       description: White-to-black LUT
 
     lutbd:
       type: uint8-array
-      required: false
       description: Border LUT

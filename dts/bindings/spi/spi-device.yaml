@@ -17,7 +17,6 @@ properties:
     duplex:
       type: int
       default: 0
-      required: false
       description: |
         Duplex mode, full or half. By default it's always full duplex thus 0
         as this is, by far, the most common mode.
@@ -31,7 +30,6 @@ properties:
     frame-format:
       type: int
       default: 0
-      required: false
       description: |
         Motorola or TI frame format. By default it's always Motorola's,
         thus 0 as this is, by far, the most common format.

@@ -18,6 +18,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(usb_dc_kinetis);
 
 #define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)

@@ -136,11 +136,13 @@ config BT_BUF_EVT_RX_COUNT
 
 config BT_BUF_EVT_DISCARDABLE_SIZE
 	int "Maximum supported discardable HCI Event buffer length"
-	range 43 255
+	range 43 255 if !BT_EXT_ADV
+	range 58 255 if BT_EXT_ADV
 	# LE Extended Advertising Report event
 	default 255 if BT_BREDR
 	# Le Advertising Report event
-	default 43
+	default 43 if !BT_EXT_ADV
+	default 58 if BT_EXT_ADV
 	help
 	  Maximum support discardable HCI event size of buffers in the separate
 	  discardable event buffer pool. This value does not include the
@@ -300,6 +302,9 @@ config BT_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BT_DEBUG
 	select LOG
+	imply LOG_FUNC_NAME_PREFIX_INF
+	imply LOG_FUNC_NAME_PREFIX_WRN
+	imply LOG_FUNC_NAME_PREFIX_ERR
 	help
 	  This option enables Bluetooth debug going to standard
 	  serial console.
@@ -368,16 +373,28 @@ if BT_DEBUG
 
 config BT_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"
+	select DEPRECATED
 	help
 	  This option enables debug support for the active
 	  Bluetooth HCI driver, including the Controller-side HCI layer
 	  when included in the build.
 
+module = BT_HCI_DRIVER
+legacy-debug-sym = BT_DEBUG_HCI_DRIVER
+module-str = "Bluetooth HCI driver"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 config BT_DEBUG_RPA
 	bool "Bluetooth Resolvable Private Address (RPA) debug"
+	select DEPRECATED
 	depends on BT_RPA
 	help
 	  This option enables debug support for the Bluetooth
 	  Resolvable Private Address (RPA) generation and resolution.
+
+module = BT_RPA
+legacy-debug-sym = BT_DEBUG_RPA
+module-str = "Bluetooth Resolvable Private Address (RPA)"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 endif # BT_DEBUG

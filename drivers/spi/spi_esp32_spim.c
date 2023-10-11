@@ -14,10 +14,13 @@
 LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <soc.h>
+#include <soc/soc_memory_types.h>
 #include <zephyr/drivers/spi.h>
 #ifndef CONFIG_SOC_ESP32C3
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #else
+#include <hal/gdma_hal.h>
+#include <hal/gdma_ll.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #endif
 #include <zephyr/drivers/clock_control.h>
@@ -29,6 +32,8 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #else
 #define ISR_HANDLER intr_handler_t
 #endif
+
+#define SPI_DMA_MAX_BUFFER_SIZE 4092
 
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 {
@@ -55,19 +60,50 @@ static inline void spi_esp32_complete(const struct device *dev,
 static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 {
 	struct spi_esp32_data *data = dev->data;
+	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_context *ctx = &data->ctx;
 	spi_hal_context_t *hal = &data->hal;
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_hal_trans_config_t *hal_trans = &data->trans_config;
 	size_t chunk_len = spi_context_max_continuous_chunk(&data->ctx);
-	chunk_len = MIN(chunk_len, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+	size_t max_buf_sz =
+		cfg->dma_enabled ? SPI_DMA_MAX_BUFFER_SIZE : SOC_SPI_MAXIMUM_BUFFER_SIZE;
+	chunk_len = MIN(chunk_len, max_buf_sz);
+	size_t bit_len = chunk_len << 3;
+	uint8_t *rx_temp = NULL;
+	uint8_t *tx_temp = NULL;
+
+	if (cfg->dma_enabled) {
+		/* bit_len needs to be at least one byte long when using DMA */
+		bit_len = !bit_len ? 8 : bit_len;
+		if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0])) {
+			tx_temp = k_malloc(ctx->tx_len);
+			if (!tx_temp) {
+				LOG_ERR("Error allocating temp buffer Tx");
+				return -ENOMEM;
+			}
+			memcpy(tx_temp, &ctx->tx_buf[0], ctx->tx_len);
+		}
+		if (ctx->rx_buf && (!esp_ptr_dma_capable((uint32_t *)&ctx->rx_buf[0]) ||
+				    ((int)&ctx->rx_buf[0] % 4 != 0))) {
+			/* The rx buffer need to be length of
+			 * multiples of 32 bits to avoid heap
+			 * corruption.
+			 */
+			rx_temp = k_calloc(((ctx->rx_len << 3) + 31) / 8, sizeof(uint8_t));
+			if (!rx_temp) {
+				LOG_ERR("Error allocating temp buffer Rx");
+				return -ENOMEM;
+			}
+		}
+	}
 
 	/* clean up and prepare SPI hal */
-	memset((uint32_t *) hal->hw->data_buf, 0, sizeof(hal->hw->data_buf));
-	hal_trans->send_buffer = (uint8_t *) ctx->tx_buf;
-	hal_trans->rcv_buffer = ctx->rx_buf;
-	hal_trans->tx_bitlen = chunk_len << 3;
-	hal_trans->rx_bitlen = chunk_len << 3;
+	memset((uint32_t *)hal->hw->data_buf, 0, sizeof(hal->hw->data_buf));
+	hal_trans->send_buffer = tx_temp ? tx_temp : (uint8_t *)ctx->tx_buf;
+	hal_trans->rcv_buffer = rx_temp ? rx_temp : ctx->rx_buf;
+	hal_trans->tx_bitlen = bit_len;
+	hal_trans->rx_bitlen = bit_len;
 
 	/* configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
@@ -83,7 +119,20 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* read data */
 	spi_hal_fetch_result(hal);
+
+	if (rx_temp) {
+		memcpy(&ctx->rx_buf[0], rx_temp, chunk_len);
+	}
+
 	spi_context_update_rx(&data->ctx, data->dfs, chunk_len);
+
+	if (tx_temp) {
+		k_free(tx_temp);
+	}
+
+	if (rx_temp) {
+		k_free(rx_temp);
+	}
 
 	return 0;
 }
@@ -103,6 +152,53 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 }
 #endif
 
+static int spi_esp32_init_dma(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+	uint8_t channel_offset;
+
+	if (clock_control_on(cfg->clock_dev, (clock_control_subsys_t)cfg->dma_clk_src)) {
+		LOG_ERR("Could not enable DMA clock");
+		return -EIO;
+	}
+
+#ifdef CONFIG_SOC_ESP32C3
+	gdma_hal_init(&data->hal_gdma, 0);
+	gdma_ll_enable_clock(data->hal_gdma.dev, true);
+	gdma_ll_tx_reset_channel(data->hal_gdma.dev, cfg->dma_host);
+	gdma_ll_rx_reset_channel(data->hal_gdma.dev, cfg->dma_host);
+	gdma_ll_tx_connect_to_periph(data->hal_gdma.dev, cfg->dma_host, 0);
+	gdma_ll_rx_connect_to_periph(data->hal_gdma.dev, cfg->dma_host, 0);
+	channel_offset = 0;
+#else
+	channel_offset = 1;
+#endif /* CONFIG_SOC_ESP32C3 */
+#ifdef CONFIG_SOC_ESP32
+	/*Connect SPI and DMA*/
+	DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, cfg->dma_host + 1,
+				((cfg->dma_host + 1) * 2));
+#endif /* CONFIG_SOC_ESP32 */
+
+	data->hal_config.dma_in = (spi_dma_dev_t *)cfg->spi;
+	data->hal_config.dma_out = (spi_dma_dev_t *)cfg->spi;
+	data->hal_config.dma_enabled = true;
+	data->hal_config.tx_dma_chan = cfg->dma_host + channel_offset;
+	data->hal_config.rx_dma_chan = cfg->dma_host + channel_offset;
+	data->hal_config.dmadesc_n = 1;
+	data->hal_config.dmadesc_rx = &data->dma_desc_rx;
+	data->hal_config.dmadesc_tx = &data->dma_desc_tx;
+
+	if (data->hal_config.dmadesc_tx == NULL || data->hal_config.dmadesc_rx == NULL) {
+		k_free(data->hal_config.dmadesc_tx);
+		k_free(data->hal_config.dmadesc_rx);
+		return -ENOMEM;
+	}
+
+	spi_hal_init(&data->hal, cfg->dma_host + 1, &data->hal_config);
+	return 0;
+}
+
 static int spi_esp32_init(const struct device *dev)
 {
 	int err;
@@ -111,6 +207,10 @@ static int spi_esp32_init(const struct device *dev)
 
 	if (!cfg->clock_dev) {
 		return -EINVAL;
+	}
+
+	if (cfg->dma_enabled) {
+		spi_esp32_init_dma(dev);
 	}
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -382,6 +482,9 @@ static const struct spi_driver_api spi_api = {
 		.clock_subsys =	\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
 		.use_iomux = DT_INST_PROP(idx, use_iomux),	\
+		.dma_enabled = DT_INST_PROP(idx, dma_enabled),	\
+		.dma_clk_src = DT_INST_PROP(idx, dma_clk),	\
+		.dma_host = DT_INST_PROP(idx, dma_host),	\
 	};	\
 		\
 	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\

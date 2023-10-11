@@ -82,7 +82,7 @@
 	};
 
 	nrf-ps-en {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "nrf_ps_en";
 		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;

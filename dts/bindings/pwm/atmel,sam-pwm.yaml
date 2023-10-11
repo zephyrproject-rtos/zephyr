@@ -33,9 +33,10 @@ properties:
       description: Clock divider at the input of the PWM (1 to 255)
 
     "#pwm-cells":
-      const: 2
+      const: 3
 
 pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period
+  - flags

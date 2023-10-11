@@ -7,16 +7,8 @@ config SOC_FLASH_ITE_IT8XXX2
 	bool "ITE IT8XXX2 flash driver"
 	default y
 	depends on DT_HAS_ITE_IT8XXX2_FLASH_CONTROLLER_ENABLED
-	select SOC_FLASH_RAMCODE_SECTION
+	select SOC_IT8XXX2_USE_ILM
 	help
 	  The flash driver includes support for read, write and
 	  erase flash operations. It also supports protection.
 	  The it8xxx2 flash size is 1M byte.
-
-config SOC_FLASH_RAMCODE_SECTION
-	bool
-	depends on SOC_FLASH_ITE_IT8XXX2
-	help
-	  Enable this config to map the __ram_code section
-	  operations of flash(flash_it8xxx2_erase,
-	  flash_it8xxx2_write, flash_it8xxx2_read) to RAM.

@@ -42,7 +42,7 @@ static double longitude;
 static double altitude;
 static double radius;
 static double speed;
-static int32_t timestamp;
+static time_t timestamp;
 
 static struct lwm2m_engine_obj location;
 static struct lwm2m_engine_obj_field fields[] = {

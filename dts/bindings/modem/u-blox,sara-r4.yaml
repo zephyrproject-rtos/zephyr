@@ -14,8 +14,6 @@ properties:
 
     mdm-reset-gpios:
       type: phandle-array
-      required: false
 
     mdm-vint-gpios:
       type: phandle-array
-      required: false

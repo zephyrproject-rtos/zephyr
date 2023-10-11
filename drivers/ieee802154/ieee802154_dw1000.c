@@ -420,8 +420,8 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 		pkt_len -= DWT_FCS_LENGTH;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(ctx->iface, pkt_len,
-					AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
+					   AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto rx_out_enable_rx;
@@ -1494,7 +1494,7 @@ static int dw1000_init(const struct device *dev)
 	memcpy(&ctx->spi_cfg_slow, &hi_cfg->bus.config, sizeof(ctx->spi_cfg_slow));
 	ctx->spi_cfg_slow.frequency = DWT_SPI_SLOW_FREQ;
 
-	if (!spi_is_ready(&hi_cfg->bus)) {
+	if (!spi_is_ready_dt(&hi_cfg->bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}

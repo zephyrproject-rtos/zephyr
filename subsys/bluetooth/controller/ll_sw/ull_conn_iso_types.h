@@ -24,8 +24,17 @@ struct ll_conn_iso_stream {
 				   * notified.
 				   */
 	uint16_t teardown:1;       /* 1 if CIS teardown has been initiated */
+	uint16_t trx_performed:1;  /* 1 if CIS had a transaction */
 	uint16_t p_max_sdu:12;     /* Maximum SDU size P_To_C */
 	uint16_t c_max_sdu:12;     /* Maximum SDU size C_To_P */
+	union {
+		struct {
+			uint8_t  c_rtn;
+			uint8_t  p_rtn;
+			uint16_t instant;
+		} central;
+	};
+	uint16_t event_expire;     /* Supervision & Connect Timeout event counter */
 };
 
 struct ll_conn_iso_group {
@@ -49,6 +58,16 @@ struct ll_conn_iso_group {
 	uint16_t iso_interval;
 	uint8_t  cig_id;
 	uint8_t  started:1;     /* 1 if CIG started and ticker is running */
+	uint8_t  sca_update:4;  /* (new SCA)+1 to trigger restart of ticker */
+	uint8_t  cis_count:5;   /* Number of configured CISes in this CIG */
+	union {
+		struct {
+			uint8_t sca;
+			uint8_t packing;
+			uint8_t framing;
+			uint8_t test:1; /* HCI_LE_Set_CIG_Parameters_Test */
+		} central;
+	};
 };
 
 struct node_rx_conn_iso_req {

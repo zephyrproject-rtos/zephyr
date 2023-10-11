@@ -12,6 +12,7 @@ config ADC_LMP90XXX
 		   DT_HAS_TI_LMP90099_ENABLED || DT_HAS_TI_LMP90100_ENABLED
 	select SPI
 	select ADC_CONFIGURABLE_INPUTS
+	select CRC
 	help
 	  Enable LMP90xxx ADC driver.
 

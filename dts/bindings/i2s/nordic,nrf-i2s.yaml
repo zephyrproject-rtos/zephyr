@@ -17,7 +17,6 @@ properties:
     sck-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -37,7 +36,6 @@ properties:
     lrck-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -48,7 +46,6 @@ properties:
     sdout-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -59,7 +56,6 @@ properties:
     sdin-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -70,7 +66,6 @@ properties:
     mck-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -80,7 +75,6 @@ properties:
 
     clock-source:
       type: string
-      required: false
       default: "PCLK32M_HFXO"
       description: |
         Clock source to be used by the I2S peripheral for the master clock

@@ -12,6 +12,7 @@
 #include <nrfx_i2s.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2s_nrfx, CONFIG_I2S_LOG_LEVEL);
 
 struct stream_cfg {

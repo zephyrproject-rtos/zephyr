@@ -207,7 +207,7 @@ int hts221_init(const struct device *dev)
  */
 
 #define HTS221_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      hts221_init,				\
 			      NULL,					\
 			      &hts221_data_##inst,			\

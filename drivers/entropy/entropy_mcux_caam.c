@@ -17,7 +17,7 @@ struct mcux_entropy_config {
 	CAAM_Type *base;
 };
 
-static caam_job_ring_interface_t jrif;
+static caam_job_ring_interface_t jrif __attribute__((__section__(".nocache")));
 
 static int entropy_mcux_caam_get_entropy(const struct device *dev,
 					 uint8_t *buffer,

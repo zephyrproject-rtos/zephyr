@@ -6,6 +6,7 @@ DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
+	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED
 	help
 	  SDMMC card driver.
 

@@ -5,12 +5,11 @@ description: WSEN-ITDS 3-axis accel sensor
 
 compatible: "we,wsen-itds"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         This property specifies the connection for INT0, the driver maps
         all interrupts to INT0 as default. The signal to output high when

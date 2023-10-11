@@ -116,7 +116,7 @@ static int gptp_set_md_sync_receive(int port,
 	sync_ts = &state->rcvd_sync_ptr->timestamp;
 
 	sync_rcv->follow_up_correction_field =
-		ntohll(fup_hdr->correction_field);
+		(ntohll(fup_hdr->correction_field) >> 16);
 	memcpy(&sync_rcv->src_port_id, &sync_hdr->port_id,
 	       sizeof(struct gptp_port_identity));
 	sync_rcv->log_msg_interval = fup_hdr->log_msg_interval;

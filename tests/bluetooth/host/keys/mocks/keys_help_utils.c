@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <bluetooth/addr.h>
+#include <zephyr/bluetooth/addr.h>
 #include <host/keys.h>
 #include "keys_help_utils.h"
 
@@ -33,6 +33,33 @@ int fill_key_pool_by_id_addr(const struct id_addr_pair src[], int size, struct b
 		id = params_vector->id;
 		addr = params_vector->addr;
 		refs[it] = bt_keys_get_addr(id, addr);
+		if (refs[it] == NULL) {
+			printk("'%s' Failed to add key %d to the keys pool\n", __func__, it);
+			return -ENOBUFS;
+		}
+	}
+
+	return 0;
+}
+
+int fill_key_pool_by_id_addr_type(const struct id_addr_type src[], int size, struct bt_keys *refs[])
+{
+	int type;
+	uint8_t id;
+	bt_addr_le_t *addr;
+	struct id_addr_type const *params_vector;
+
+	if (!check_key_pool_is_empty()) {
+		printk("'%s' Error ! Keys pool isn't empty\n", __func__);
+		return -ENOSR;
+	}
+
+	for (size_t it = 0; it < size; it++) {
+		params_vector = &src[it];
+		type = params_vector->type;
+		id = params_vector->id;
+		addr = params_vector->addr;
+		refs[it] = bt_keys_get_type(type, id, addr);
 		if (refs[it] == NULL) {
 			printk("'%s' Failed to add key %d to the keys pool\n", __func__, it);
 			return -ENOBUFS;

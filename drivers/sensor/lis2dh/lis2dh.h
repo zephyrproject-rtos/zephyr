@@ -87,8 +87,12 @@
 #define LIS2DH_ODR_MASK			(BIT_MASK(4) << LIS2DH_ODR_SHIFT)
 
 #define LIS2DH_REG_CTRL2		0x21
+#define LIS2DH_HPIS1_EN_BIT		BIT(0)
 #define LIS2DH_HPIS2_EN_BIT		BIT(1)
 #define LIS2DH_FDS_EN_BIT		BIT(3)
+
+#define LIS2DH_HPIS_EN_SHIFT		0
+#define LIS2DH_HPIS_EN_MASK		BIT_MASK(2) << LIS2DH_HPIS_EN_SHIFT
 
 #define LIS2DH_REG_CTRL3		0x22
 #define LIS2DH_EN_DRDY1_INT1_SHIFT	4
@@ -159,7 +163,9 @@
 #define LIS2DH_REG_INT2_THS		0x36
 #define LIS2DH_REG_INT2_DUR		0x37
 
-#define LIS2DH_AOI_CFG			BIT(7)
+#define LIS2DH_INT_CFG_MODE_SHIFT	6
+#define LIS2DH_INT_CFG_AOI_CFG		BIT(LIS2DH_INT_CFG_MODE_SHIFT + 1)
+#define LIS2DH_INT_CFG_6D_CFG		BIT(LIS2DH_INT_CFG_MODE_SHIFT)
 #define LIS2DH_INT_CFG_ZHIE_ZUPE	BIT(5)
 #define LIS2DH_INT_CFG_ZLIE_ZDOWNE	BIT(4)
 #define LIS2DH_INT_CFG_YHIE_YUPE	BIT(3)
@@ -208,6 +214,8 @@ struct lis2dh_config {
 		bool is_lsm303agr_dev : 1;
 		bool disc_pull_up : 1;
 		bool anym_on_int1 : 1;
+		bool anym_latch : 1;
+		uint8_t anym_mode : 2;
 	} hw;
 #ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
 	const struct temperature temperature;
@@ -279,6 +287,11 @@ int lis2dh_init_interrupt(const struct device *dev);
 int lis2dh_acc_slope_config(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
+#endif
+
+#ifdef CONFIG_LIS2DH_ACCEL_HP_FILTERS
+int lis2dh_acc_hp_filter_set(const struct device *dev,
+			     int32_t val);
 #endif
 
 int lis2dh_spi_init(const struct device *dev);

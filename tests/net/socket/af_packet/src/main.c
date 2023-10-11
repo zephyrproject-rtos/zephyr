@@ -21,16 +21,20 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
+#define IPV4_ADDR "127.0.0.1"
+
 static uint8_t lladdr1[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
 
 struct eth_fake_context {
 	struct net_if *iface;
 	uint8_t *mac_address;
+	char *ip_address;
 };
 
 static struct eth_fake_context eth_fake_data1 = {
-	.mac_address = lladdr1
+	.mac_address = lladdr1,
+	.ip_address = IPV4_ADDR,
 };
 static struct eth_fake_context eth_fake_data2 = {
 	.mac_address = lladdr2
@@ -74,6 +78,14 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 
 	net_if_set_link_addr(iface, ctx->mac_address, 6, NET_LINK_ETHERNET);
+
+	if (ctx->ip_address != NULL) {
+		struct in_addr addr;
+
+		if (net_addr_pton(AF_INET, ctx->ip_address, &addr) == 0) {
+			net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+		}
+	}
 
 	ethernet_init(iface);
 }
@@ -178,8 +190,7 @@ static int prepare_udp_socket(struct sockaddr_in *sockaddr, uint16_t local_port)
 
 	sockaddr->sin_family = AF_INET;
 	sockaddr->sin_port = htons(local_port);
-	ret = inet_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR,
-			&sockaddr->sin_addr);
+	ret = inet_pton(AF_INET, IPV4_ADDR, &sockaddr->sin_addr);
 	zassert_equal(ret, 1, "inet_pton failed");
 
 	/* Bind UDP socket to local port */

@@ -504,12 +504,13 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 
 	LL_I2C_Enable(i2c);
 
-	LL_I2C_SetOwnAddress1(i2c, config->address << 1,
-			      LL_I2C_OWNADDRESS1_7BIT);
-
+	if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		return -ENOTSUP;
+	}
+	LL_I2C_SetOwnAddress1(i2c, config->address << 1U, LL_I2C_OWNADDRESS1_7BIT);
 	data->slave_attached = true;
 
-	LOG_DBG("i2c: slave registered");
+	LOG_DBG("i2c: target registered");
 
 	stm32_i2c_enable_transfer_interrupts(dev);
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);

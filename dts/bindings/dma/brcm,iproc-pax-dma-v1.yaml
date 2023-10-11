@@ -29,7 +29,6 @@ properties:
     interrupts:
       type: array
       description: Ring manager line interrupt number
-      required: false
     pcie-ep:
       type: phandle
       description: Pcie endpoint handle

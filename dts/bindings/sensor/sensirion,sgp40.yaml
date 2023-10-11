@@ -7,7 +7,7 @@ description: Sensirion SGP40 Multipixel Gas Sensor
 
 compatible: "sensirion,sgp40"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     enable-selftest:

@@ -10,6 +10,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 #include <hal/nrf_uart.h>
 

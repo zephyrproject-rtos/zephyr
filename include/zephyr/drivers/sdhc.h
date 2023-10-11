@@ -11,6 +11,8 @@
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SDHC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SDHC_H_
+
+#include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/sd/sd_spec.h>
 

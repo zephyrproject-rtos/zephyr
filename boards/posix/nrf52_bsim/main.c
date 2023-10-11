@@ -95,6 +95,13 @@ int main(int argc, char *argv[])
 	/* We pass to a possible testcase its command line arguments */
 	bst_pass_args(args->test_case_argc, args->test_case_argv);
 
+	if ((args->nrf_hw.start_offset > 0) && (args->delay_init)) {
+		/* Delay the next steps until the simulation time has
+		 * reached start_offset
+		 */
+		hwll_wait_for_phy_simu_time(args->nrf_hw.start_offset);
+	}
+
 	nrf_hw_initialize(&args->nrf_hw);
 
 	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);

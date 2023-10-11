@@ -355,5 +355,5 @@ DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, NULL,
 			&pwm_ledc_esp32_data,
 			&pwm_ledc_esp32_config,
 			POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			CONFIG_PWM_INIT_PRIORITY,
 			&pwm_led_esp32_api);

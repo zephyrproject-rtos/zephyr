@@ -63,6 +63,12 @@ MEMORY {
 #ifdef DCCM_START
 	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE
 #endif
+#ifdef XCCM_START
+	XCCM  (rw)  : ORIGIN = XCCM_START,  LENGTH = XCCM_SIZE
+#endif
+#ifdef YCCM_START
+	YCCM  (rw)  : ORIGIN = YCCM_START,  LENGTH = YCCM_SIZE
+#endif
 	/* Used by and documented in include/linker/intlist.ld */
 	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -92,7 +98,26 @@ SECTIONS {
 	__rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+#ifdef __MWDT_LINKER_CMD__
+	SECTION_DATA_PROLOGUE(tdata,,)
+	{
+		*(.tls .tls.*);
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	#ifdef CONFIG_XIP
+		/* The "primary copy" of tls should be only in flash on XIP systems */
+		PROVIDE(_arcmwdt_tls_start = LOADADDR(tdata));
+	#else
+		PROVIDE(_arcmwdt_tls_start = ADDR(tdata));
+	#endif
+
+	PROVIDE(_arcmwdt_tls_size = SIZEOF(tdata));
+
+/* TODO: add mwdt specific ROM C++ sections */
+#else
 #include <zephyr/linker/thread-local-storage.ld>
+#include <zephyr/linker/cplusplus-rom.ld>
+#endif /* __MWDT_LINKER_CMD__ */
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,) {
 		*(".rodata")
@@ -103,7 +128,6 @@ SECTIONS {
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
-
 #include <zephyr/linker/kobject-rom.ld>
 
 #if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)
@@ -112,15 +136,12 @@ SECTIONS {
 		KEEP(*(.ctors*))
 		_ectors = .;
 #endif /* CONFIG_CPLUSPLUS && !CONFIG_CPP_STATIC_INIT_GNU && __MWDT_LINKER_CMD__ */
+
+		MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-#ifdef __MWDT_LINKER_CMD__
-/* TODO: add mwdt specific ROM C++ sections */
-#else
-#include <zephyr/linker/cplusplus-rom.ld>
-#endif /* __MWDT_LINKER_CMD__ */
-
 	__rodata_region_end = .;
+
 	MPU_ALIGN(__rodata_region_end - __rom_region_start);
 	__rom_region_end = .;
 	__rom_region_size = __rom_region_end - __rom_region_start;
@@ -128,6 +149,10 @@ SECTIONS {
 	GROUP_END(ROMABLE_REGION)
 
 	GROUP_START(RAMABLE_REGION)
+
+	MPU_MIN_SIZE_ALIGN
+
+	_image_ram_start = .;
 
 #include <app_data_alignment.ld>
 
@@ -141,8 +166,6 @@ SECTIONS {
 #define SMEM_PARTITION_ALIGN MPU_ALIGN
 
 #include <app_smem.ld>
-
-	_image_ram_start = _app_smem_start;
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
@@ -155,7 +178,6 @@ SECTIONS {
 		 */
 		. = ALIGN(4);
 		__bss_start = .;
-		_image_ram_start = .;
 		__kernel_ram_start = .;
 		*(".bss")
 		*(".bss.*")
@@ -230,6 +252,22 @@ SECTIONS {
 	_estack = .;
 #endif /* __MWDT_LINKER_CMD__ */
 
+#ifdef CONFIG_ARC_XY_ENABLE
+	SECTION_PROLOGUE(xdata,,)
+	{
+		__xdata_start = .;
+		*(.Xdata*)
+		__xdata_end = .;
+	} GROUP_DATA_LINK_IN(XCCM, RAMABLE_REGION)
+
+	SECTION_PROLOGUE(ydata,,)
+	{
+		__ydata_start = .;
+		*(.Ydata*)
+		__ydata_end = .;
+	} GROUP_DATA_LINK_IN(YCCM, RAMABLE_REGION)
+#endif
+
 	GROUP_END(RAMABLE_REGION)
 
 /* Located in generated directory. This file is populated by the
@@ -243,6 +281,16 @@ SECTIONS {
 		KEEP(*(.ARC.attributes))
 		KEEP(*(.gnu.attributes))
 	}
+
+#if !defined(CONFIG_XIP)
+	/*
+	 * Zephyr uses _estack as a start of heap allocation area.
+	 * Region [_estack .. sram_end] should be defined in MPU.
+	 * Including _image_ram region which is [_image_ram_start .. _image_ram_end]
+	 * we get [_image_ram_start .. sram_end] region to be defined in MPU.
+	 */
+	__arc_rw_sram_size = SRAM_START + SRAM_SIZE - _image_ram_start;
+#endif
 
 	/DISCARD/ : {
 #if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_CPP_STATIC_INIT_GNU) && defined(__MWDT_LINKER_CMD__)

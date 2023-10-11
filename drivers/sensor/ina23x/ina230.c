@@ -7,91 +7,67 @@
 
 #define DT_DRV_COMPAT ti_ina230
 
-#include <zephyr/logging/log.h>
-#include <zephyr/drivers/sensor.h>
 #include "ina230.h"
 #include "ina23x_common.h"
 
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
+
 LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
-/**
- * @brief Internal fixed value of INA230 that is used to ensure
- *	  scaling is properly maintained.
- *
- */
-#define INA230_INTERNAL_FIXED_SCALING_VALUE 5120
+/** @brief Calibration scaling value (value scaled by 100000) */
+#define INA230_CAL_SCALING 512U
 
-/**
- * @brief The LSB value for the bus voltage register.
- *
- */
-#define INA230_BUS_VOLTAGE_LSB 125
+/** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
+#define INA230_BUS_VOLTAGE_UV_LSB 1250U
 
-/**
- * @brief The LSB value for the power register.
- *
- */
-#define INA230_POWER_VALUE_LSB 25
+/** @brief The scaling for the power register. */
+#define INA230_POWER_SCALING 25
 
-/**
- * @brief sensor value get
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- */
 static int ina230_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct ina230_data *data = dev->data;
 	const struct ina230_config *const config = dev->config;
+	uint32_t bus_uv, current_ua, power_uw;
+	int32_t sign;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t bus_mv = ((data->bus_voltage *
-					 INA230_BUS_VOLTAGE_LSB) / 100);
+		bus_uv = data->bus_voltage * INA230_BUS_VOLTAGE_UV_LSB;
 
-			val->val1 = bus_mv / 1000U;
-			val->val2 = (bus_mv % 1000) * 1000;
-		} else {
-			val->val1 = data->bus_voltage;
-			val->val2 = 0;
-		}
+		/* convert to fractional volts (units for voltage channel) */
+		val->val1 = bus_uv / 1000000U;
+		val->val2 = bus_uv % 1000000U;
 		break;
 
 	case SENSOR_CHAN_CURRENT:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			/**
-			 * If current is negative, convert it to a
-			 * magnitude and return the negative of that
-			 * magnitude.
-			 */
-			if (data->current & INA23X_CURRENT_SIGN_BIT) {
-				uint16_t current_mag = (~data->current + 1);
-
-				val->val1 = -(current_mag / 1000U);
-				val->val2 = -(current_mag % 1000) * 1000;
-			} else {
-				val->val1 = data->current / 1000U;
-				val->val2 = (data->current % 1000) * 1000;
-			}
+		if (data->current & INA23X_CURRENT_SIGN_BIT) {
+			current_ua = ~data->current + 1U;
+			sign = -1;
 		} else {
-			val->val1 = data->current;
-			val->val2 = 0;
+			current_ua = data->current;
+			sign = 1;
 		}
+
+		/* see datasheet "Programming" section for reference */
+		current_ua = current_ua * config->current_lsb;
+
+		/* convert to fractional amperes */
+		val->val1 = sign * (int32_t)(current_ua / 1000000U);
+		val->val2 = sign * (int32_t)(current_ua % 1000000U);
+
 		break;
 
 	case SENSOR_CHAN_POWER:
-		if (config->current_lsb == INA23X_CURRENT_LSB_1MA) {
-			uint32_t power_mw = data->power * INA230_POWER_VALUE_LSB;
+		power_uw = data->power * INA230_POWER_SCALING
+			   * config->current_lsb;
 
-			val->val1 = power_mw / 1000U;
-			val->val2 = (power_mw % 1000) * 1000;
-		} else {
-			val->val1 = data->power;
-			val->val2 = 0;
-		}
+		/* convert to fractional watts */
+		val->val1 = (int32_t)(power_uw / 1000000U);
+		val->val2 = (int32_t)(power_uw % 1000000U);
+
 		break;
 
 	default:
@@ -101,12 +77,6 @@ static int ina230_channel_get(const struct device *dev,
 	return 0;
 }
 
-/**
- * @brief sensor sample fetch
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- */
 static int ina230_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
@@ -148,13 +118,6 @@ static int ina230_sample_fetch(const struct device *dev,
 	return 0;
 }
 
-/**
- * @brief sensor attribute set
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- * @retval -EIO for i2c write failure
- */
 static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -177,13 +140,6 @@ static int ina230_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
-/**
- * @brief sensor attribute get
- *
- * @retval 0 for success
- * @retval -ENOTSUP for unsupported channels
- * @retval -EIO for i2c read failure
- */
 static int ina230_attr_get(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   struct sensor_value *val)
@@ -228,19 +184,15 @@ static int ina230_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-/**
- * @brief sensor calibrate
- *
- * @retval 0 for success
- * @retval -EIO for i2c write failure
- */
 static int ina230_calibrate(const struct device *dev)
 {
 	const struct ina230_config *config = dev->config;
 	uint16_t val;
 	int ret;
 
-	val = (INA230_INTERNAL_FIXED_SCALING_VALUE / (config->current_lsb * config->rshunt));
+	/* See datasheet "Programming" section */
+	val = (INA230_CAL_SCALING * 10000U) /
+	      (config->current_lsb * config->rshunt);
 
 	ret = ina23x_reg_write(&config->bus, INA230_REG_CALIB, val);
 	if (ret < 0) {
@@ -250,12 +202,6 @@ static int ina230_calibrate(const struct device *dev)
 	return 0;
 }
 
-/**
- * @brief Initialize the INA230
- *
- * @retval 0 for success
- * @retval -EINVAL on error
- */
 static int ina230_init(const struct device *dev)
 {
 	const struct ina230_config *const config = dev->config;
@@ -314,15 +260,12 @@ static const struct sensor_driver_api ina230_driver_api = {
 	.channel_get = ina230_channel_get,
 };
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
-	     "No compatible ina230 instances found");
-
 #ifdef CONFIG_INA230_TRIGGER
 #define INA230_CFG_IRQ(inst)				\
 	.trig_enabled = true,				\
 	.mask = DT_INST_PROP(inst, mask),		\
 	.alert_limit = DT_INST_PROP(inst, alert_limit),	\
-	.gpio_alert = GPIO_DT_SPEC_INST_GET(inst, irq_gpios)
+	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
 #else
 #define INA230_CFG_IRQ(inst)
 #endif /* CONFIG_INA230_TRIGGER */
@@ -332,12 +275,12 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0,
 	static const struct ina230_config drv_config_##inst = {	    \
 		.bus = I2C_DT_SPEC_INST_GET(inst),		    \
 		.config = DT_INST_PROP(inst, config),		    \
-		.current_lsb = DT_INST_PROP(inst, current_lsb),	    \
-		.rshunt = DT_INST_PROP(inst, rshunt),		    \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios), \
+		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),\
+		.rshunt = DT_INST_PROP(inst, rshunt_milliohms),	    \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios),\
 			    (INA230_CFG_IRQ(inst)), ())		    \
 	};							    \
-	DEVICE_DT_INST_DEFINE(inst,				    \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,			    \
 			      &ina230_init,			    \
 			      NULL,				    \
 			      &drv_data_##inst,			    \

@@ -1,0 +1,12 @@
+identifier: arduino_portenta_h7_m7
+name: Arduino Portenta H7
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 1024
+supported:
+  - gpio

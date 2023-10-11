@@ -385,7 +385,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			 pwm_nrfx_init, PM_DEVICE_DT_GET(PWM(idx)),	      \
 			 &pwm_nrfx_##idx##_data,			      \
 			 &pwm_nrfx_##idx##_config,			      \
-			 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,     \
+			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
 			 &pwm_nrfx_drv_api_funcs)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)

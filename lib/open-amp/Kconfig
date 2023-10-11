@@ -18,3 +18,10 @@ config OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF
 	help
 	  This option specifies the number of buffer used in a Vring for
 	  interprocessor communication
+
+config OPENAMP_WITH_DCACHE
+	bool "Build OpenAMP with vrings cache operations enabled"
+	default y
+	depends on CACHE_MANAGEMENT
+	help
+	  Build OpenAMP with vrings cache operations enabled.

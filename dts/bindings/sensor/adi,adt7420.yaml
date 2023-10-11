@@ -5,12 +5,11 @@ description: ADT7420 16-Bit digital I2C temperature sensor
 
 compatible: "adi,adt7420"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
     int-gpios:
       type: phandle-array
-      required: false
       description: |
         The INT signal defaults to active low open drain, so requires a
         pull-up on the board or in the flags cell of this entry.

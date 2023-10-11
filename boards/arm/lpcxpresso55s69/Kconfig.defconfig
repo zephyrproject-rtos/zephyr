@@ -55,10 +55,6 @@ choice TFM_PROFILE_TYPE
 	default TFM_PROFILE_TYPE_MEDIUM
 endchoice
 
-# Enable SD subsystem driver if disk driver is required
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
-
 endif # BOARD_LPCXPRESSO55S69_CPU0 || BOARD_LPCXPRESSO55S69_CPU1
 
 if DMA_MCUX_LPC

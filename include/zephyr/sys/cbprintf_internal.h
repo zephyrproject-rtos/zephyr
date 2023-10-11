@@ -14,6 +14,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/arch/cpu.h>
 
 /*
  * Special alignment cases
@@ -29,6 +30,8 @@
 #define VA_STACK_MIN_ALIGN	8
 #elif defined(__aarch64__)
 #define VA_STACK_MIN_ALIGN	8
+#elif defined(CONFIG_ARC)
+#define VA_STACK_MIN_ALIGN	ARCH_STACK_PTR_ALIGN
 #elif defined(__riscv)
 #ifdef CONFIG_RISCV_ISA_RV32E
 #define VA_STACK_ALIGN(type)	4

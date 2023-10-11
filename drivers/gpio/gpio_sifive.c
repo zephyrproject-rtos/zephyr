@@ -16,8 +16,9 @@
 #include <soc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/irq.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 typedef void (*sifive_cfg_func_t)(void);
 

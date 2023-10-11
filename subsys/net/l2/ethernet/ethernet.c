@@ -508,8 +508,11 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 {
 	struct net_buf *hdr_frag;
 	struct net_eth_hdr *hdr;
+	size_t hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
+			 sizeof(struct net_eth_vlan_hdr) :
+			 sizeof(struct net_eth_hdr);
 
-	hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	hdr_frag = net_pkt_get_frag(pkt, hdr_len, NET_BUF_TIMEOUT);
 	if (!hdr_frag) {
 		return NULL;
 	}
@@ -664,6 +667,21 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_lladdr_src(pkt)->len =
 						sizeof(struct net_eth_addr);
 			ptype = dst_addr->sll_protocol;
+		} else if (context && net_context_get_type(context) == SOCK_RAW &&
+			   net_context_get_proto(context) == IPPROTO_RAW) {
+			char type = (NET_IPV6_HDR(pkt)->vtc & 0xf0);
+
+			switch (type) {
+			case 0x60:
+				ptype = htons(NET_ETH_PTYPE_IPV6);
+				break;
+			case 0x40:
+				ptype = htons(NET_ETH_PTYPE_IP);
+				break;
+			default:
+				ret = -ENOTSUP;
+				goto error;
+			}
 		} else {
 			goto send;
 		}
@@ -1065,10 +1083,10 @@ static void carrier_on_off(struct k_work *work)
 
 	if (eth_carrier_up) {
 		ethernet_mgmt_raise_carrier_on_event(ctx->iface);
-		net_if_up(ctx->iface);
+		net_if_carrier_on(ctx->iface);
 	} else {
 		ethernet_mgmt_raise_carrier_off_event(ctx->iface);
-		net_if_carrier_down(ctx->iface);
+		net_if_carrier_off(ctx->iface);
 	}
 }
 

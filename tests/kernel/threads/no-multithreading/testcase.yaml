@@ -6,3 +6,5 @@ tests:
       nrf52840dk_nrf52840 nrf9160dk_nrf9160 nrf51dk_nrf51422 nsim_em
       nsim_em7d_v22 nsim_hs nsim_hs_mpuv6 nsim_hs5x nsim_hs6x qemu_arc_em
       qemu_arc_hs qemu_arc_hs6x
+    integration_platforms:
+      - qemu_cortex_m0

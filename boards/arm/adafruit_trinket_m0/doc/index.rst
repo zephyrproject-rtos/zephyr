@@ -153,7 +153,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! adafruit_trinket_m0" in your terminal.
 
 References
 **********

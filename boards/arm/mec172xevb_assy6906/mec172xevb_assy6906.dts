@@ -205,10 +205,11 @@
 
 &spi0 {
 	status = "okay";
+	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <4000000>;
 	lines = <4>;
-	chip_select = <0>;
-	port_sel = <0>; /* Shared SPI */
+	chip-select = <0>;
+	port-sel = <0>; /* Shared SPI */
 
 	pinctrl-0 = < &shd_cs0_n_gpio055
 		      &shd_clk_gpio056

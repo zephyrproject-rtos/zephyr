@@ -23,6 +23,12 @@
 	reg = <0x20200000 DT_SIZE_K(128)>;
 };
 
+&ccm {
+	ipg-podf {
+		clock-div = <4>;
+	};
+};
+
 &gpt2 {
 	gptfreq = <12500000>;
 };

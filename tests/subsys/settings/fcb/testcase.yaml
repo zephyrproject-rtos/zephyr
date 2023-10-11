@@ -1,10 +1,7 @@
 tests:
   system.settings.fcb.raw:
-    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832
-    tags: settings_fcb
-    extra_configs:
-    - CONFIG_ARM_MPU=n
-    - CONFIG_STDOUT_CONSOLE=y
-  system.settings.fcb.raw_native_posix:
-    platform_allow: native_posix native_posix_64
+    platform_allow: nrf52840dk_nrf52840 nrf52dk_nrf52832 native_posix native_posix_64
+    integration_platforms:
+      - nrf52840dk_nrf52840
+      - native_posix
     tags: settings_fcb

@@ -41,13 +41,9 @@ void temperature_alert(const struct device *dev,
 			SENSOR_ATTR_CONFIGURATION,
 			&temp_flags);
 
-	if (OVER_TEMP_MASK & temp_flags.val1) {
-		printf("High temperature alert!\n");
-	} else if (UNDER_TEMP_MASK & temp_flags.val1) {
-		printf("Low temperature alert!\n");
-	} else {
-		printf("Temperature alert cleared!\n");
-	}
+	/* use a mask to pull your specific chip set bits out */
+
+	printf("Temperature alert config register = %x!\n", temp_flags.val1);
 }
 
 void enable_temp_alerts(const struct device *tmp108)
@@ -134,39 +130,45 @@ void get_temperature_continuous(const struct device *tmp108)
 
 void main(void)
 {
-	const struct device *tmp108;
+	const struct device *temp_sensor;
 	int result;
 
 	printf("TI TMP108 Example, %s\n", CONFIG_ARCH);
 
-	tmp108 = DEVICE_DT_GET_ANY(ti_tmp108);
+	temp_sensor = DEVICE_DT_GET_ANY(ti_tmp108);
 
-	if (!tmp108) {
-		printf("error: no tmp108 device found\n");
-		return;
+	if (!temp_sensor) {
+		printf("warning: tmp108 device not found checking for compatible ams device\n");
+
+		temp_sensor = DEVICE_DT_GET_ANY(ams_as6212);
+
+		if (!temp_sensor) {
+			printf("error: tmp108 compatible devices not found\n");
+			return;
+		}
 	}
 
-	if (!device_is_ready(tmp108)) {
+	if (!device_is_ready(temp_sensor)) {
 		printf("error: tmp108 device not ready\n");
 		return;
 	}
 
-	sensor_attr_set(tmp108,
+	sensor_attr_set(temp_sensor,
 			SENSOR_CHAN_AMBIENT_TEMP,
 			SENSOR_ATTR_TMP108_CONTINUOUS_CONVERSION_MODE,
 			NULL);
 
 #if CONFIG_APP_ENABLE_ONE_SHOT
-	enable_one_shot(tmp108);
+	enable_one_shot(temp_sensor);
 #endif
 
 #if CONFIG_APP_REPORT_TEMP_ALERTS
-	enable_temp_alerts(tmp108);
+	enable_temp_alerts(temp_sensor);
 #endif
 
 	while (1) {
 
-		result = sensor_sample_fetch(tmp108);
+		result = sensor_sample_fetch(temp_sensor);
 
 		if (result) {
 			printf("error: sensor_sample_fetch failed: %d\n", result);
@@ -174,7 +176,7 @@ void main(void)
 		}
 
 #if !CONFIG_APP_ENABLE_ONE_SHOT
-		get_temperature_continuous(tmp108);
+		get_temperature_continuous(temp_sensor);
 #endif
 		k_sleep(K_MSEC(3000));
 	}

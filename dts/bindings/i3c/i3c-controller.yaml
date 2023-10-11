@@ -19,14 +19,12 @@ properties:
 
     i3c-scl-hz:
       type: int
-      required: false
       description: |
         Frequency of the SCL signal used for I3C transfers. When undefined,
         use the controller default or as specified by the I3C specification.
 
     i2c-scl-hz:
       type: int
-      required: false
       description: |
         Frequency of the SCL signal used for I2C transfers. When undefined
         and there are I2C devices attached to the bus, look at the Legacy

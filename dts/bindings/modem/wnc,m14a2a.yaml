@@ -30,5 +30,4 @@ properties:
 
     mdm-send-ok-gpios:
       type: phandle-array
-      required: false
       description: UART RTS pin if no HW flow control (set to always enabled)

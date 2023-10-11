@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 #define I2C_FILTER_CYC_NUM_DEF 7	/* Number of apb cycles filtered by default */
-#define I2C_CLR_BUS_SCL_NUM 9	/* Number of SCL clocks to restore SDA signal */
+#define I2C_CLR_BUS_SCL_NUM 9		/* Number of SCL clocks to restore SDA signal */
 #define I2C_CLR_BUS_HALF_PERIOD_US 5	/* Period of SCL clock to restore SDA signal */
 #define I2C_TRANSFER_TIMEOUT_MSEC 500	/* Transfer timeout period */
 
@@ -91,6 +91,7 @@ struct i2c_esp32_config {
 
 	const uint32_t default_config;
 	const uint32_t bitrate;
+	const uint32_t scl_timeout;
 };
 
 /* I2C clock characteristic, The order is the same as i2c_sclk_t. */
@@ -238,6 +239,27 @@ static int i2c_esp32_recover(const struct device *dev)
 	return 0;
 }
 
+static void IRAM_ATTR i2c_esp32_configure_timeout(const struct device *dev)
+{
+	const struct i2c_esp32_config *config = dev->config;
+
+	if (config->scl_timeout > 0) {
+		i2c_sclk_t sclk = i2c_get_clk_src(config->bitrate);
+		uint32_t clk_freq_mhz = I2C_LL_CLK_SRC_FREQ(sclk);
+		uint32_t timeout_cycles = MIN(I2C_TIME_OUT_REG_V,
+					      clk_freq_mhz / MHZ(1) * config->scl_timeout);
+		sys_clear_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
+		sys_set_bits(I2C_TO_REG(config->index), timeout_cycles << I2C_TIME_OUT_REG_S);
+		LOG_DBG("SCL timeout: %d us, value: %d", config->scl_timeout, timeout_cycles);
+	} else {
+		/* Disabling the timeout by clearing the I2C_TIME_OUT_EN bit does not seem to work,
+		 * at least for ESP32-C3 (tested with communication to bq76952 chip). So we set the
+		 * timeout to maximum supported value instead.
+		 */
+		sys_set_bits(I2C_TO_REG(config->index), I2C_TIME_OUT_REG);
+	}
+}
+
 static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_esp32_config *config = dev->config;
@@ -272,6 +294,7 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	i2c_hal_set_bus_timing(&data->hal, config->bitrate, i2c_get_clk_src(config->bitrate));
+	i2c_esp32_configure_timeout(dev);
 	i2c_hal_update_config(&data->hal);
 
 	return 0;
@@ -314,7 +337,6 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 
 	return ret;
 }
-
 
 static void IRAM_ATTR i2c_esp32_master_start(const struct device *dev)
 {
@@ -435,7 +457,7 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 }
 
 static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
-	struct i2c_msg *msg, uint16_t addr)
+					struct i2c_msg *msg, uint16_t addr)
 {
 	int ret = 0;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
@@ -512,7 +534,7 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 }
 
 static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
-		struct i2c_msg *msg, uint16_t addr)
+					 struct i2c_msg *msg, uint16_t addr)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
@@ -545,7 +567,7 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 }
 
 static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr)
+					uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	struct i2c_msg *current, *next;
@@ -710,49 +732,48 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #define I2C_ESP32_GET_PIN_INFO(idx)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
-#define I2C_ESP32_FREQUENCY(bitrate)				       \
-	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)	       \
-	: bitrate == I2C_BITRATE_FAST     ? KHZ(400)	       \
+#define I2C_ESP32_TIMEOUT(inst)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, scl_timeout_us),	\
+		    (DT_INST_PROP(inst, scl_timeout_us)), (0))
+
+#define I2C_ESP32_FREQUENCY(bitrate)					\
+	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
+	: bitrate == I2C_BITRATE_FAST     ? KHZ(400)			\
 	: bitrate == I2C_BITRATE_FAST_PLUS  ? MHZ(1) : 0)
-#define I2C_FREQUENCY(idx)						       \
+
+#define I2C_FREQUENCY(idx)						\
 	I2C_ESP32_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#define ESP32_I2C_INIT(idx)		\
-					\
-	PINCTRL_DT_DEFINE(I2C(idx));	\
-					\
-	static struct i2c_esp32_data i2c_esp32_data_##idx = {		  \
-		.hal = {	\
-			.dev = (i2c_dev_t *) DT_REG_ADDR(I2C(idx)),	\
-		},	\
-		.cmd_sem = Z_SEM_INITIALIZER(                            \
-			i2c_esp32_data_##idx.cmd_sem, 0, 1),                 \
-		.transfer_sem = Z_SEM_INITIALIZER(                        \
-			i2c_esp32_data_##idx.transfer_sem, 1, 1)		      \
-	};							\
-								\
-	static const struct i2c_esp32_config i2c_esp32_config_##idx = {	       \
-	.index = idx, \
-	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))), \
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),	\
-	.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset), \
-	I2C_ESP32_GET_PIN_INFO(idx)	\
-	.mode = { \
-		.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb), \
-		.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb), \
-	}, \
-	.irq_source = ETS_I2C_EXT##idx##_INTR_SOURCE,	\
-	.bitrate = I2C_FREQUENCY(idx),	\
-	.default_config = I2C_MODE_CONTROLLER,				\
-	};								       \
-	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
-		      i2c_esp32_init,					       \
-		      NULL,				       \
-		      &i2c_esp32_data_##idx,				       \
-		      &i2c_esp32_config_##idx,				       \
-		      POST_KERNEL,					       \
-		      CONFIG_I2C_INIT_PRIORITY,	       \
-		      &i2c_esp32_driver_api);
+#define ESP32_I2C_INIT(idx)									   \
+												   \
+	PINCTRL_DT_DEFINE(I2C(idx));								   \
+												   \
+	static struct i2c_esp32_data i2c_esp32_data_##idx = {					   \
+		.hal = {									   \
+			.dev = (i2c_dev_t *) DT_REG_ADDR(I2C(idx)),				   \
+		},										   \
+		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),		   \
+		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),	   \
+	};											   \
+												   \
+	static const struct i2c_esp32_config i2c_esp32_config_##idx = {				   \
+		.index = idx,									   \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))),				   \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),					   \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset),	   \
+		I2C_ESP32_GET_PIN_INFO(idx)							   \
+		.mode = {									   \
+			.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),				   \
+			.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),				   \
+		},										   \
+		.irq_source = ETS_I2C_EXT##idx##_INTR_SOURCE,					   \
+		.bitrate = I2C_FREQUENCY(idx),							   \
+		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
+		.default_config = I2C_MODE_CONTROLLER,						   \
+	};											   \
+	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
+			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
+			     &i2c_esp32_driver_api);
 
 #if DT_NODE_HAS_STATUS(I2C(0), okay)
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
@@ -763,9 +784,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #if DT_NODE_HAS_PROP(I2C(0), sda_gpios) || DT_NODE_HAS_PROP(I2C(0), scl_gpios)
 #error "Properties <sda-gpios> and <scl-gpios> are not required for this target."
 #endif
-#endif
+#endif /* !SOC_I2C_SUPPORT_HW_CLR_BUS */
 ESP32_I2C_INIT(0);
-#endif
+#endif /* DT_NODE_HAS_STATUS(I2C(0), okay) */
 
 #if DT_NODE_HAS_STATUS(I2C(1), okay)
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
@@ -776,6 +797,6 @@ ESP32_I2C_INIT(0);
 #if DT_NODE_HAS_PROP(I2C(1), sda_gpios) || DT_NODE_HAS_PROP(I2C(1), scl_gpios)
 #error "Properties <sda-gpios> and <scl-gpios> are not required for this target."
 #endif
-#endif
+#endif /* !SOC_I2C_SUPPORT_HW_CLR_BUS */
 ESP32_I2C_INIT(1);
-#endif
+#endif /* DT_NODE_HAS_STATUS(I2C(1), okay) */

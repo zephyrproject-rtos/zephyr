@@ -1,0 +1,6 @@
+tests:
+  logging.log_link_order:
+    integration_platforms:
+      - native_posix
+    tags: log_links logging
+    filter: not CONFIG_LOG_MODE_IMMEDIATE

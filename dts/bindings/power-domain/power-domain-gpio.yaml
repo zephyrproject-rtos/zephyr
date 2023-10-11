@@ -21,12 +21,10 @@ properties:
 
   startup-delay-us:
     type: int
-    required: false
     default: 0
     description: Startup time, in microseconds
 
   off-on-delay-us:
     type: int
-    required: false
     default: 0
     description: Off delay time, in microseconds

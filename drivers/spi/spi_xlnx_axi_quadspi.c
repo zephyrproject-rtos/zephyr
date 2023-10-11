@@ -10,6 +10,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(xlnx_quadspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"

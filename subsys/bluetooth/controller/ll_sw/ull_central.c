@@ -65,9 +65,6 @@
 #include "ull_llcp.h"
 #endif /* !CONFIG_BT_LL_SW_LLCP_LEGACY */
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
-#define LOG_MODULE_NAME bt_ctlr_ull_central
-#include "common/log.h"
 #include "hal/debug.h"
 
 static void ticker_op_stop_scan_cb(uint32_t status, void *param);
@@ -287,8 +284,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->connect_expire = CONN_ESTAB_COUNTDOWN;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
-	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
-							 conn_interval_us);
+	conn->supervision_timeout = timeout;
 
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
 	conn->procedure_expire = 0U;
@@ -841,6 +837,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	struct pdu_adv *pdu_tx;
 	uint8_t peer_addr_type;
 	uint32_t ticker_status;
+	uint32_t ticks_at_stop;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
 	memq_link_t *link;
@@ -955,8 +952,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 		}
 	}
 
-	ll_rx_put(link, rx);
-	ll_rx_sched();
+	ll_rx_put_sched(link, rx);
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);
@@ -988,10 +984,13 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	/* Stop Scanner */
 	ticker_id_scan = TICKER_ID_SCAN_BASE + ull_scan_handle_get(scan);
-	ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    ticker_id_scan, ticker_op_stop_scan_cb,
-				    scan);
+	ticks_at_stop = ftr->ticks_anchor +
+			HAL_TICKER_US_TO_TICKS(conn_offset_us) -
+			ticks_slot_offset;
+	ticker_status = ticker_stop_abs(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id_scan, ticks_at_stop,
+					ticker_op_stop_scan_cb, scan);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 

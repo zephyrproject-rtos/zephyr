@@ -15,29 +15,6 @@
 #define BUTTON_NODE DT_ALIAS(sw0)
 #define BUTTON_NAME DT_PROP_OR(BUTTON_NODE, label, "sw0")
 
-/* CAN frame to be sent */
-static const struct can_frame frame = {
-#ifdef CONFIG_SAMPLE_CAN_BABBLING_EXT_ID
-	.id_type = CAN_EXTENDED_IDENTIFIER,
-#else /* CONFIG_SAMPLE_CAN_BABBLING_EXT_ID */
-	.id_type = CAN_STANDARD_IDENTIFIER,
-#endif /* ! CONFIG_SAMPLE_CAN_BABBLING_EXT_ID */
-	.id = CONFIG_SAMPLE_CAN_BABBLING_CAN_ID,
-#ifdef CONFIG_SAMPLE_CAN_BABBLING_RTR
-	.rtr = CAN_REMOTEREQUEST,
-#else /* CONFIG_SAMPLE_CAN_BABBLING_RTR */
-	.rtr = CAN_DATAFRAME,
-#endif /* !CONFIG_SAMPLE_CAN_BABBLING_RTR */
-#ifdef CONFIG_SAMPLE_CAN_BABBLING_FD_MODE
-	.fd = 1,
-#else /* CONFIG_SAMPLE_CAN_BABBLING_FD_MODE */
-	.fd = 0,
-#endif /* !CONFIG_SAMPLE_CAN_BABBLING_FD_MODE */
-	.brs = 0,
-	.dlc = 0,
-	.data = { },
-};
-
 #if DT_NODE_EXISTS(BUTTON_NODE)
 struct button_callback_context {
 	struct gpio_callback callback;
@@ -69,6 +46,7 @@ void main(void)
 #endif /* DT_NODE_EXISTS(BUTTON_NODE) */
 	const struct device *dev = DEVICE_DT_GET(CANBUS_NODE);
 	struct k_sem tx_queue_sem;
+	struct can_frame frame = {0};
 	int err;
 
 	k_sem_init(&tx_queue_sem, CONFIG_SAMPLE_CAN_BABBLING_TX_QUEUE_SIZE,
@@ -79,9 +57,17 @@ void main(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_FD_MODE)) {
+		err = can_set_mode(dev, CAN_MODE_FD);
+		if (err != 0) {
+			printk("Error setting CAN-FD mode (err %d)", err);
+			return;
+		}
+	}
+
 	err = can_start(dev);
 	if (err != 0) {
-		printk("Error starting CAN controller [%d]", err);
+		printk("Error starting CAN controller (err %d)", err);
 		return;
 	}
 
@@ -109,12 +95,27 @@ void main(void)
 	gpio_add_callback(btn.port, &btn_cb_ctx.callback);
 #endif /* DT_NODE_EXISTS(BUTTON_NODE) */
 
+	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_EXT_ID)) {
+		frame.flags |= CAN_FRAME_IDE;
+	}
+
+	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_RTR)) {
+		frame.flags |= CAN_FRAME_RTR;
+	}
+
+	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_FD_MODE)) {
+		frame.flags |= CAN_FRAME_FDF;
+	}
+
+	frame.id = CONFIG_SAMPLE_CAN_BABBLING_CAN_ID;
+
 	printk("babbling on %s with %s (%d-bit) CAN ID 0x%0*x, RTR %d, CAN-FD %d\n",
 	       dev->name,
-	       frame.id_type == CAN_STANDARD_IDENTIFIER ? "standard" : "extended",
-	       frame.id_type == CAN_STANDARD_IDENTIFIER ? 11 : 29,
-	       frame.id_type == CAN_STANDARD_IDENTIFIER ? 3 : 8, frame.id,
-	       frame.rtr, frame.fd);
+	       (frame.flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+	       (frame.flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
+	       (frame.flags & CAN_FRAME_IDE) != 0 ? 8 : 3, frame.id,
+	       (frame.flags & CAN_FRAME_RTR) != 0 ? 1 : 0,
+	       (frame.flags & CAN_FRAME_FDF) != 0 ? 1 : 0);
 
 #if DT_NODE_EXISTS(BUTTON_NODE)
 	printk("abort by pressing %s button\n", BUTTON_NAME);

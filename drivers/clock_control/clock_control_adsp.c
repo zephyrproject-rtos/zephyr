@@ -13,7 +13,7 @@ static int cavs_clock_ctrl_set_rate(const struct device *clk,
 {
 	uint32_t freq_idx = (uint32_t)rate;
 
-	return cavs_clock_set_freq(freq_idx);
+	return adsp_clock_set_freq(freq_idx);
 }
 
 static int cavs_clock_ctrl_init(const struct device *dev)

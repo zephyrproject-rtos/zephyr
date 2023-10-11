@@ -11,5 +11,6 @@ config SOC_SERIES_GD32F403
 	select CPU_CORTEX_M_HAS_VTOR
 	select SOC_FAMILY_GD32_ARM
 	select GD32_HAS_AFIO_PINMUX
+	select GD32_HAS_IRC_40K
 	help
 	  Enable support for GigaDevice GD32F403 MCU series

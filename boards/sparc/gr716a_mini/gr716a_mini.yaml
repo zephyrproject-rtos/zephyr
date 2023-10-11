@@ -2,6 +2,7 @@ identifier: gr716a_mini
 name: GR716-MINI Development Board
 type: mcu
 simulation: tsim
+simulation_exec: tsim
 arch: sparc
 toolchain:
   - zephyr

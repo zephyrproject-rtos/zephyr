@@ -53,7 +53,7 @@ void main(void)
 	err = modbus_write_holding_regs(client_iface, node, 0, holding_reg,
 					ARRAY_SIZE(holding_reg));
 	if (err != 0) {
-		LOG_ERR("FC16 failed");
+		LOG_ERR("FC16 failed with %d", err);
 		return;
 	}
 

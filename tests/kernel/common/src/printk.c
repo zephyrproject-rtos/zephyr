@@ -16,6 +16,15 @@ void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
 #if defined(CONFIG_PICOLIBC)
+
+/*
+ * Picolibc long long support is present if the picolibc _WANT_IO_LONG_LONG
+ * symbol is defined or if the Zephyr configuration has enabled floating
+ * point support. Note that CONFIG_PICOLIBC_IO_LONG_LONG is only useful
+ * when using the picolibc module as it cannot affect picolibc included
+ * with the toolchain
+ */
+
 char expected_32[] = "22 113 10000 32768 40000 22\n"
 	"p 112 -10000 -32768 -40000 -22\n"
 	"0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
@@ -25,7 +34,7 @@ char expected_32[] = "22 113 10000 32768 40000 22\n"
 	"42 42   42       42\n"
 	"42 42 0042 00000042\n"
 	"255     42    abcdef        42\n"
-#if defined(CONFIG_PICOLIBC_IO_LONG_LONG) || defined(CONFIG_PICOLIBC_IO_FLOAT)
+#if defined(_WANT_IO_LONG_LONG) || defined(CONFIG_PICOLIBC_IO_FLOAT)
 	"68719476735 -1 18446744073709551615 ffffffffffffffff\n"
 #else
 	"-1 -1 4294967295 ffffffff\n"

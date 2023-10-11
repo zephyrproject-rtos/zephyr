@@ -10,6 +10,7 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,display = &lcd0;
 		sdhc0 = &sdhc0;
 	};
 
@@ -59,6 +60,7 @@
 		pwm-led0 = &pwm_led_green;
 		pwm-led1 = &pwm_led_blue;
 		sw0 = &button_boot0;
+		watchdog0 = &fwdgt;
 	};
 };
 
@@ -98,6 +100,49 @@
 	pinctrl-names = "default";
 };
 
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+
+	/* longan nano has LCD with st7735s controller.
+	 * It can use with st7735r driver.
+	 */
+	lcd0: lcd@0 {
+		compatible = "sitronix,st7735r";
+		reg = <0>;
+		status = "okay";
+		reset-gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+		cmd-data-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		width = <160>;
+		height = <80>;
+		inversion-on;
+		rgb-is-inverted;
+		x-offset = <1>;
+		y-offset = <26>;
+		pwctr1 = [62 02 04];
+		pwctr2 = [C0];
+		pwctr3 = [0D 00];
+		pwctr4 = [8D 6A];
+		pwctr5 = [8D EE];
+		invctr = <3>;
+		frmctr1 = [05 3A 3A];
+		frmctr2 = [05 3A 3A];
+		frmctr3 = [05 3A 3A 05 3A 3A];
+		vmctr1 = <14>;
+		gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+		gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+		colmod = <5>;
+		madctl = <120>;
+		caset = [00 01 00 a0];
+		raset = [00 1a 00 69];
+
+		spi-max-frequency = <4000000>;
+	};
+};
+
 &spi1 {
 	status = "okay";
 	pinctrl-0 = <&spi1_default>;
@@ -115,4 +160,8 @@
 			status = "okay";
 		};
 	};
+};
+
+&fwdgt {
+	status = "okay";
 };

@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/eeprom.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 
 #ifdef CONFIG_PINCTRL

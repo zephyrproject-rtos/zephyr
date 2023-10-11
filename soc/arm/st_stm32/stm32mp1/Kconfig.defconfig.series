@@ -10,8 +10,4 @@ source "soc/arm/st_stm32/stm32mp1/Kconfig.defconfig.stm32mp15_m4"
 config SOC_SERIES
 	default "stm32mp1"
 
-config IPM_STM32_IPCC
-	default y
-	depends on IPM
-
 endif # SOC_SERIES_STM32MP1X

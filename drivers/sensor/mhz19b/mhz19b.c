@@ -341,7 +341,8 @@ static int mhz19b_init(const struct device *dev)
 		.cb = mhz19b_uart_isr,								\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, mhz19b_init, NULL, &mhz19b_data_##inst, &mhz19b_cfg_##inst, \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, mhz19b_init, NULL,					\
+			      &mhz19b_data_##inst, &mhz19b_cfg_##inst,				\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &mhz19b_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MHZ19B_INIT)

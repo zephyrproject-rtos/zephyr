@@ -21,6 +21,7 @@
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
 
 /* Device constant configuration parameters */
 struct usart_sam_dev_cfg {
@@ -43,64 +44,6 @@ struct usart_sam_dev_data {
 	void *cb_data;	/* Interrupt Callback Arg */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
-
-static int baudrate_set(Usart *const usart, uint32_t baudrate,
-			uint32_t mck_freq_hz);
-
-
-static int usart_sam_init(const struct device *dev)
-{
-	int retval;
-	const struct usart_sam_dev_cfg *const cfg = dev->config;
-	struct usart_sam_dev_data *const dev_data = dev->data;
-	Usart *const usart = cfg->regs;
-	uint32_t us_mr;
-
-	/* Enable USART clock in PMC */
-	soc_pmc_peripheral_enable(cfg->periph_id);
-
-	/* Connect pins to the peripheral */
-	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (retval < 0) {
-		return retval;
-	}
-
-	/* Reset and disable USART */
-	usart->US_CR =   US_CR_RSTRX | US_CR_RSTTX
-		       | US_CR_RXDIS | US_CR_TXDIS | US_CR_RSTSTA;
-
-	/* Disable Interrupts */
-	usart->US_IDR = 0xFFFFFFFF;
-
-	/* 8 bits of data, no parity, 1 stop bit in normal mode */
-	us_mr = US_MR_NBSTOP_1_BIT
-	      | US_MR_PAR_NO
-	      | US_MR_CHRL_8_BIT
-	      | US_MR_USCLKS_MCK
-	      | US_MR_CHMODE_NORMAL;
-
-	if (cfg->hw_flow_control) {
-		us_mr |= US_MR_USART_MODE_HW_HANDSHAKING;
-	}
-
-	usart->US_MR = us_mr;
-
-	/* Set baud rate */
-	retval = baudrate_set(usart, dev_data->baud_rate,
-			      SOC_ATMEL_SAM_MCK_FREQ_HZ);
-	if (retval != 0) {
-		return retval;
-	}
-
-	/* Enable receiver and transmitter */
-	usart->US_CR = US_CR_RXEN | US_CR_TXEN;
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	cfg->irq_config_func(dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-	return 0;
-}
 
 static int usart_sam_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -154,23 +97,214 @@ static int usart_sam_err_check(const struct device *dev)
 	return errors;
 }
 
-static int baudrate_set(Usart *const usart, uint32_t baudrate,
-			uint32_t mck_freq_hz)
+static int usart_sam_baudrate_set(const struct device *dev, uint32_t baudrate)
 {
+	struct usart_sam_dev_data *const dev_data = dev->data;
+
+	const struct usart_sam_dev_cfg *const config = dev->config;
+
+	volatile Usart * const usart = config->regs;
+
 	uint32_t divisor;
 
 	__ASSERT(baudrate,
 		 "baud rate has to be bigger than 0");
-	__ASSERT(mck_freq_hz/16U >= baudrate,
+	__ASSERT(SOC_ATMEL_SAM_MCK_FREQ_HZ/16U >= baudrate,
 		 "MCK frequency is too small to set required baud rate");
 
-	divisor = mck_freq_hz / 16U / baudrate;
+	divisor = SOC_ATMEL_SAM_MCK_FREQ_HZ / 16U / baudrate;
 
 	if (divisor > 0xFFFF) {
 		return -EINVAL;
 	}
 
 	usart->US_BRGR = US_BRGR_CD(divisor);
+	dev_data->baud_rate = baudrate;
+
+	return 0;
+}
+
+static uint32_t usart_sam_cfg2sam_parity(uint8_t parity)
+{
+	switch (parity) {
+	case UART_CFG_PARITY_EVEN:
+		return US_MR_PAR_EVEN;
+	case UART_CFG_PARITY_ODD:
+		return US_MR_PAR_ODD;
+	case UART_CFG_PARITY_SPACE:
+		return US_MR_PAR_SPACE;
+	case UART_CFG_PARITY_MARK:
+		return US_MR_PAR_MARK;
+	case UART_CFG_PARITY_NONE:
+	default:
+		return US_MR_PAR_NO;
+	}
+}
+
+static uint8_t usart_sam_get_parity(const struct device *dev)
+{
+	const struct usart_sam_dev_cfg *const config = dev->config;
+
+	volatile Usart * const usart = config->regs;
+
+	switch (usart->US_MR & US_MR_PAR_Msk) {
+	case US_MR_PAR_EVEN:
+		return UART_CFG_PARITY_EVEN;
+	case US_MR_PAR_ODD:
+		return UART_CFG_PARITY_ODD;
+	case US_MR_PAR_SPACE:
+		return UART_CFG_PARITY_SPACE;
+	case US_MR_PAR_MARK:
+		return UART_CFG_PARITY_MARK;
+	case US_MR_PAR_NO:
+	default:
+		return UART_CFG_PARITY_NONE;
+	}
+}
+
+static uint32_t usart_sam_cfg2sam_stop_bits(uint8_t stop_bits)
+{
+	switch (stop_bits) {
+	case UART_CFG_STOP_BITS_1_5:
+		return US_MR_NBSTOP_1_5_BIT;
+	case UART_CFG_STOP_BITS_2:
+		return US_MR_NBSTOP_2_BIT;
+	case UART_CFG_STOP_BITS_1:
+	default:
+		return US_MR_NBSTOP_1_BIT;
+	}
+}
+
+static uint8_t usart_sam_get_stop_bits(const struct device *dev)
+{
+	const struct usart_sam_dev_cfg *const config = dev->config;
+
+	volatile Usart * const usart = config->regs;
+
+	switch (usart->US_MR & US_MR_NBSTOP_Msk) {
+	case US_MR_NBSTOP_1_5_BIT:
+		return UART_CFG_STOP_BITS_1_5;
+	case US_MR_NBSTOP_2_BIT:
+		return UART_CFG_STOP_BITS_2;
+	case US_MR_NBSTOP_1_BIT:
+	default:
+		return UART_CFG_STOP_BITS_1;
+	}
+}
+
+static uint32_t usart_sam_cfg2sam_data_bits(uint8_t data_bits)
+{
+	switch (data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		return US_MR_CHRL_5_BIT;
+	case UART_CFG_DATA_BITS_6:
+		return US_MR_CHRL_6_BIT;
+	case UART_CFG_DATA_BITS_7:
+		return US_MR_CHRL_7_BIT;
+	case UART_CFG_DATA_BITS_8:
+	default:
+		return US_MR_CHRL_8_BIT;
+	}
+}
+
+static uint8_t usart_sam_get_data_bits(const struct device *dev)
+{
+	const struct usart_sam_dev_cfg *const config = dev->config;
+
+	volatile Usart * const usart = config->regs;
+
+	switch (usart->US_MR & US_MR_CHRL_Msk) {
+	case US_MR_CHRL_5_BIT:
+		return UART_CFG_DATA_BITS_5;
+	case US_MR_CHRL_6_BIT:
+		return UART_CFG_DATA_BITS_6;
+	case US_MR_CHRL_7_BIT:
+		return UART_CFG_DATA_BITS_7;
+	case US_MR_CHRL_8_BIT:
+	default:
+		return UART_CFG_DATA_BITS_8;
+	}
+}
+
+static uint32_t usart_sam_cfg2sam_flow_ctrl(uint8_t flow_ctrl)
+{
+	switch (flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		return US_MR_USART_MODE_HW_HANDSHAKING;
+	case UART_CFG_FLOW_CTRL_NONE:
+	default:
+		return US_MR_USART_MODE_NORMAL;
+	}
+}
+
+static uint8_t usart_sam_get_flow_ctrl(const struct device *dev)
+{
+	const struct usart_sam_dev_cfg *const config = dev->config;
+
+	volatile Usart * const usart = config->regs;
+
+	switch (usart->US_MR & US_MR_USART_MODE_Msk) {
+	case US_MR_USART_MODE_HW_HANDSHAKING:
+		return UART_CFG_FLOW_CTRL_RTS_CTS;
+	case US_MR_USART_MODE_NORMAL:
+	default:
+		return UART_CFG_FLOW_CTRL_NONE;
+	}
+}
+
+static int usart_sam_configure(const struct device *dev,
+				const struct uart_config *cfg)
+{
+	int retval;
+
+	const struct usart_sam_dev_cfg *const config = dev->config;
+
+	volatile Usart * const usart = config->regs;
+
+	/* Driver doesn't support 9 data bits, 0.5 stop bits, or DTR DSR flow control */
+	if (cfg->data_bits == UART_CFG_DATA_BITS_9 ||
+		cfg->stop_bits == UART_CFG_STOP_BITS_0_5 ||
+		cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR) {
+		return -ENOTSUP;
+	}
+
+	/* Reset and disable USART */
+	usart->US_CR = US_CR_RSTRX | US_CR_RSTTX
+		     | US_CR_RXDIS | US_CR_TXDIS
+		     | US_CR_RSTSTA;
+
+	/* normal UART mode, baud rate driven by peripheral clock, all
+	 * other values chosen by config
+	 */
+	usart->US_MR = US_MR_CHMODE_NORMAL
+		     | US_MR_USCLKS_MCK
+		     | usart_sam_cfg2sam_parity(cfg->parity)
+		     | usart_sam_cfg2sam_stop_bits(cfg->stop_bits)
+		     | usart_sam_cfg2sam_data_bits(cfg->data_bits)
+		     | usart_sam_cfg2sam_flow_ctrl(cfg->flow_ctrl);
+
+	/* Set baud rate */
+	retval = usart_sam_baudrate_set(dev, cfg->baudrate);
+	if (retval != 0) {
+		return retval;
+	}
+
+	/* Enable receiver and transmitter */
+	usart->US_CR = US_CR_RXEN | US_CR_TXEN;
+
+	return 0;
+}
+
+static int usart_sam_config_get(const struct device *dev,
+				 struct uart_config *cfg)
+{
+	struct usart_sam_dev_data *const dev_data = dev->data;
+
+	cfg->baudrate = dev_data->baud_rate;
+	cfg->parity = usart_sam_get_parity(dev);
+	cfg->stop_bits = usart_sam_get_stop_bits(dev);
+	cfg->data_bits = usart_sam_get_data_bits(dev);
+	cfg->flow_ctrl = usart_sam_get_flow_ctrl(dev);
 
 	return 0;
 }
@@ -340,10 +474,53 @@ static void usart_sam_isr(const struct device *dev)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+static int usart_sam_init(const struct device *dev)
+{
+	int retval;
+
+	const struct usart_sam_dev_cfg *const cfg = dev->config;
+
+	struct usart_sam_dev_data *const dev_data = dev->data;
+
+	Usart * const usart = cfg->regs;
+
+	/* Enable USART clock in PMC */
+	soc_pmc_peripheral_enable(cfg->periph_id);
+
+	/* Connect pins to the peripheral */
+	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (retval < 0) {
+		return retval;
+	}
+
+	/* Disable Interrupts */
+	usart->US_IDR = 0xFFFFFFFF;
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	cfg->irq_config_func(dev);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	struct uart_config uart_config = {
+		.baudrate = dev_data->baud_rate,
+		.parity = UART_CFG_PARITY_NONE,
+		.stop_bits = UART_CFG_STOP_BITS_1,
+		.data_bits = UART_CFG_DATA_BITS_8,
+		.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
+	};
+	if (cfg->hw_flow_control) {
+		uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS;
+	}
+	return usart_sam_configure(dev, &uart_config);
+}
+
 static const struct uart_driver_api usart_sam_driver_api = {
 	.poll_in = usart_sam_poll_in,
 	.poll_out = usart_sam_poll_out,
 	.err_check = usart_sam_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = usart_sam_configure,
+	.config_get = usart_sam_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = usart_sam_fifo_fill,
 	.fifo_read = usart_sam_fifo_read,

@@ -21,20 +21,21 @@ CREATE_FLAG(flag_l2cap_connected);
 #define INIT_CREDITS	10
 #define SDU_NUM		20
 #define SDU_LEN		1230
-#define NUM_SEGMENTS	30
+#define NUM_SEGMENTS	10
 
 /* Only one SDU per link will be transmitted at a time */
 NET_BUF_POOL_DEFINE(sdu_tx_pool,
-		    CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDU_LEN),
+		    CONFIG_BT_MAX_CONN, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
 		    8, NULL);
 
 NET_BUF_POOL_DEFINE(segment_pool,
+		    /* MTU + 4 l2cap hdr + 4 ACL hdr */
 		    NUM_SEGMENTS, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    8, NULL);
 
 /* Only one SDU per link will be received at a time */
 NET_BUF_POOL_DEFINE(sdu_rx_pool,
-		    CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDU_LEN),
+		    CONFIG_BT_MAX_CONN, BT_L2CAP_SDU_BUF_SIZE(SDU_LEN),
 		    8, NULL);
 
 static struct bt_l2cap_le_chan l2cap_channels[L2CAP_CHANS];
@@ -44,6 +45,7 @@ static uint8_t tx_data[SDU_LEN];
 static uint8_t tx_left[L2CAP_CHANS];
 static uint16_t rx_cnt;
 static uint8_t disconnect_counter;
+static uint32_t max_seg_allocated;
 
 int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 {
@@ -56,7 +58,7 @@ int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 		return -ENOMEM;
 	}
 
-	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, data, len);
 
 	int ret = bt_l2cap_chan_send(chan, buf);
@@ -73,6 +75,10 @@ int l2cap_chan_send(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 struct net_buf *alloc_seg_cb(struct bt_l2cap_chan *chan)
 {
 	struct net_buf *buf = net_buf_alloc(&segment_pool, K_NO_WAIT);
+
+	if ((NUM_SEGMENTS - segment_pool.avail_count) > max_seg_allocated) {
+		max_seg_allocated++;
+	}
 
 	ASSERT(buf, "Ran out of segment buffers");
 
@@ -120,6 +126,9 @@ int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	LOG_DBG("len %d", buf->len);
 	rx_cnt++;
+
+	/* Verify SDU data matches TX'd data. */
+	ASSERT(memcmp(buf->data, tx_data, buf->len) == 0, "RX data doesn't match TX");
 
 	return 0;
 }
@@ -267,6 +276,11 @@ static void test_peripheral_main(void)
 	LOG_DBG("*L2CAP STRESS Peripheral started*");
 	int err;
 
+	/* Prepare tx_data */
+	for (size_t i = 0; i < sizeof(tx_data); i++) {
+		tx_data[i] = (uint8_t)i;
+	}
+
 	err = bt_enable(NULL);
 	if (err) {
 		FAIL("Can't enable Bluetooth (err %d)", err);
@@ -372,6 +386,11 @@ static void test_central_main(void)
 	LOG_DBG("*L2CAP STRESS Central started*");
 	int err;
 
+	/* Prepare tx_data */
+	for (size_t i = 0; i < sizeof(tx_data); i++) {
+		tx_data[i] = (uint8_t)i;
+	}
+
 	err = bt_enable(NULL);
 	ASSERT(err == 0, "Can't enable Bluetooth (err %d)\n", err);
 	LOG_DBG("Central Bluetooth initialized.");
@@ -408,6 +427,8 @@ static void test_central_main(void)
 		k_msleep(100);
 	}
 	LOG_DBG("All peripherals disconnected.");
+
+	LOG_DBG("Max segment pool usage: %u bufs", max_seg_allocated);
 
 	PASS("L2CAP STRESS Central passed\n");
 }

@@ -12,9 +12,12 @@
 #ifndef ZEPHYR_INCLUDE_ESPI_H_
 #define ZEPHYR_INCLUDE_ESPI_H_
 
+#include <errno.h>
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +40,7 @@ enum espi_io_mode {
 };
 
 /**
+ * @code
  *+----------------------------------------------------------------------+
  *|                                                                      |
  *|  eSPI host                           +-------------+                 |
@@ -82,7 +86,7 @@ enum espi_io_mode {
  *|       CH0         |     CH1      |      CH2      |    CH3             |
  *|   eSPI endpoint   |    VWIRE     |      OOB      |   Flash            |
  *+-----------------------------------------------------------------------+
- *
+ * @endcode
  */
 
 /**
@@ -113,6 +117,7 @@ enum espi_bus_event {
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
+	ESPI_BUS_SAF_NOTIFICATION           = BIT(5),
 };
 
 /**
@@ -280,6 +285,7 @@ enum lpc_peripheral_opcode {
 	/* Other customized transactions */
 	ECUSTOM_HOST_SUBS_INTERRUPT_EN = ECUSTOM_START_OPCODE,
 	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY,
+	ECUSTOM_HOST_CMD_GET_PARAM_MEMORY_SIZE,
 	ECUSTOM_HOST_CMD_SEND_RESULT,
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 };
@@ -480,6 +486,7 @@ __subsystem struct espi_driver_api {
  * will be used by eSPI master to determine minimum common capabilities with
  * eSPI slave then send via SET_CONFIGURATION command.
  *
+ * @code
  * +--------+   +---------+     +------+          +---------+   +---------+
  * |  eSPI  |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
  * |  slave |   | driver  |     |  bus |          |  driver |   |  host   |
@@ -503,6 +510,7 @@ __subsystem struct espi_driver_api {
  *     |              |            |  accept           |             |
  *     |              |            +------------------>+             |
  *     +              +            +                   +             +
+ * @endcode
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg the device runtime configuration for the eSPI controller.
@@ -871,6 +879,7 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
 /**
  * Callback model
  *
+ * @code
  *+-------+                  +-------------+   +------+     +---------+
  *|  App  |                  | eSPI driver |   |  HW  |     |eSPI Host|
  *+---+---+                  +-------+-----+   +---+--+     +----+----+
@@ -926,6 +935,7 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  *    <------------------------------+             |             |
  *    | App executes                 |             |             |
  *    + power mgmt policy            |             |             |
+ * @endcode
  */
 
 /**

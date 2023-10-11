@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_imx);
 
 #include "i2c-priv.h"

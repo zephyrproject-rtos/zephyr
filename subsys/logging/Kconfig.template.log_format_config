@@ -22,6 +22,11 @@ config LOG_BACKEND_$(backend)_OUTPUT_DICTIONARY
 	help
 	  Backend is in dictionary-based logging output mode.
 
+config LOG_BACKEND_$(backend)_OUTPUT_CUSTOM
+	bool "Extern"
+	help
+	  Custom formatting function can be set externally.
+
 endchoice
 
 # The numbering of the format types should be consistent across
@@ -34,3 +39,4 @@ config LOG_BACKEND_$(backend)_OUTPUT_DEFAULT
 	default 0 if LOG_BACKEND_$(backend)_OUTPUT_TEXT
 	default 1 if LOG_BACKEND_$(backend)_OUTPUT_SYST
 	default 2 if LOG_BACKEND_$(backend)_OUTPUT_DICTIONARY
+	default 3 if LOG_BACKEND_$(backend)_OUTPUT_CUSTOM

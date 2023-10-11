@@ -14,9 +14,7 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HFP_HF)
-#define LOG_MODULE_NAME bt_hfp_hf
-#include "common/log.h"
+#include "common/assert.h"
 
 #include <zephyr/bluetooth/rfcomm.h>
 #include <zephyr/bluetooth/hfp_hf.h>
@@ -27,6 +25,10 @@
 #include "rfcomm_internal.h"
 #include "at.h"
 #include "hfp_internal.h"
+
+#define LOG_LEVEL CONFIG_BT_HFP_HF_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_hfp_hf);
 
 #define MAX_IND_STR_LEN 17
 
@@ -57,10 +59,10 @@ void hf_slc_error(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
 
-	BT_ERR("SLC error: disconnecting");
+	LOG_ERR("SLC error: disconnecting");
 	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
 	if (err) {
-		BT_ERR("Rfcomm: Unable to disconnect :%d", -err);
+		LOG_ERR("Rfcomm: Unable to disconnect :%d", -err);
 	}
 }
 
@@ -76,14 +78,14 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 
 	buf = bt_rfcomm_create_pdu(&hf_pool);
 	if (!buf) {
-		BT_ERR("No Buffers!");
+		LOG_ERR("No Buffers!");
 		return -ENOMEM;
 	}
 
 	va_start(vargs, format);
 	ret = vsnprintk(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
 	if (ret < 0) {
-		BT_ERR("Unable to format variable arguments");
+		LOG_ERR("Unable to format variable arguments");
 		return ret;
 	}
 	va_end(vargs);
@@ -93,7 +95,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 
 	ret = bt_rfcomm_dlc_send(&hf->rfcomm_dlc, buf);
 	if (ret < 0) {
-		BT_ERR("Rfcomm send error :(%d)", ret);
+		LOG_ERR("Rfcomm send error :(%d)", ret);
 		return ret;
 	}
 
@@ -108,7 +110,7 @@ int brsf_handle(struct at_client *hf_at)
 
 	ret = at_get_number(hf_at, &val);
 	if (ret < 0) {
-		BT_ERR("Error getting value");
+		LOG_ERR("Error getting value");
 		return ret;
 	}
 
@@ -121,7 +123,7 @@ int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
 {
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	err = at_parse_cmd_input(hf_at, buf, "BRSF", brsf_handle,
 				 AT_CMD_TYPE_NORMAL);
@@ -129,7 +131,7 @@ int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
 		/* Returning negative value is avoided before SLC connection
 		 * established.
 		 */
-		BT_ERR("Error parsing CMD input");
+		LOG_ERR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -142,14 +144,14 @@ static void cind_handle_values(struct at_client *hf_at, uint32_t index,
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int i;
 
-	BT_DBG("index: %u, name: %s, min: %u, max:%u", index, name, min, max);
+	LOG_DBG("index: %u, name: %s, min: %u, max:%u", index, name, min, max);
 
 	for (i = 0; i < ARRAY_SIZE(ag_ind); i++) {
 		if (strcmp(name, ag_ind[i].name) != 0) {
 			continue;
 		}
 		if (min != ag_ind[i].min || max != ag_ind[i].max) {
-			BT_ERR("%s indicator min/max value not matching", name);
+			LOG_ERR("%s indicator min/max value not matching", name);
 		}
 
 		hf->ind_table[index] = i;
@@ -167,32 +169,32 @@ int cind_handle(struct at_client *hf_at)
 		uint32_t min, max;
 
 		if (at_open_list(hf_at) < 0) {
-			BT_ERR("Could not get open list");
+			LOG_ERR("Could not get open list");
 			goto error;
 		}
 
 		if (at_list_get_string(hf_at, name, sizeof(name)) < 0) {
-			BT_ERR("Could not get string");
+			LOG_ERR("Could not get string");
 			goto error;
 		}
 
 		if (at_open_list(hf_at) < 0) {
-			BT_ERR("Could not get open list");
+			LOG_ERR("Could not get open list");
 			goto error;
 		}
 
 		if (at_list_get_range(hf_at, &min, &max) < 0) {
-			BT_ERR("Could not get range");
+			LOG_ERR("Could not get range");
 			goto error;
 		}
 
 		if (at_close_list(hf_at) < 0) {
-			BT_ERR("Could not get close list");
+			LOG_ERR("Could not get close list");
 			goto error;
 		}
 
 		if (at_close_list(hf_at) < 0) {
-			BT_ERR("Could not get close list");
+			LOG_ERR("Could not get close list");
 			goto error;
 		}
 
@@ -202,7 +204,7 @@ int cind_handle(struct at_client *hf_at)
 
 	return 0;
 error:
-	BT_ERR("Error on CIND response");
+	LOG_ERR("Error on CIND response");
 	hf_slc_error(hf_at);
 	return -EINVAL;
 }
@@ -214,7 +216,7 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		BT_ERR("Error parsing CMD input");
+		LOG_ERR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -227,17 +229,16 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
 
-	BT_DBG("Index :%u, Value :%u", index, value);
+	LOG_DBG("Index :%u, Value :%u", index, value);
 
 	if (index >= ARRAY_SIZE(ag_ind)) {
-		BT_ERR("Max only %zu indicators are supported",
-		       ARRAY_SIZE(ag_ind));
+		LOG_ERR("Max only %zu indicators are supported", ARRAY_SIZE(ag_ind));
 		return;
 	}
 
 	if (value > ag_ind[hf->ind_table[index]].max ||
 	    value < ag_ind[hf->ind_table[index]].min) {
-		BT_ERR("Indicators out of range - value: %u", value);
+		LOG_ERR("Indicators out of range - value: %u", value);
 		return;
 	}
 
@@ -278,7 +279,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 		}
 		break;
 	default:
-		BT_ERR("Unknown AG indicator");
+		LOG_ERR("Unknown AG indicator");
 		break;
 	}
 }
@@ -293,7 +294,7 @@ int cind_status_handle(struct at_client *hf_at)
 
 		ret = at_get_number(hf_at, &value);
 		if (ret < 0) {
-			BT_ERR("could not get the value");
+			LOG_ERR("could not get the value");
 			return ret;
 		}
 
@@ -312,7 +313,7 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_status_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		BT_ERR("Error parsing CMD input");
+		LOG_ERR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -326,18 +327,18 @@ int ciev_handle(struct at_client *hf_at)
 
 	ret = at_get_number(hf_at, &index);
 	if (ret < 0) {
-		BT_ERR("could not get the Index");
+		LOG_ERR("could not get the Index");
 		return ret;
 	}
 	/* The first element of the list shall have 1 */
 	if (!index) {
-		BT_ERR("Invalid index value '0'");
+		LOG_ERR("Invalid index value '0'");
 		return 0;
 	}
 
 	ret = at_get_number(hf_at, &value);
 	if (ret < 0) {
-		BT_ERR("could not get the value");
+		LOG_ERR("could not get the value");
 		return ret;
 	}
 
@@ -387,7 +388,7 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 
 	handler = hfp_hf_unsol_lookup(hf_at);
 	if (!handler) {
-		BT_ERR("Unhandled unsolicited response");
+		LOG_ERR("Unhandled unsolicited response");
 		return -ENOMSG;
 	}
 
@@ -406,7 +407,7 @@ int cmd_complete(struct at_client *hf_at, enum at_result result,
 	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
 	struct bt_hfp_hf_cmd_complete cmd = { 0 };
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	switch (result) {
 	case AT_RESULT_OK:
@@ -420,7 +421,7 @@ int cmd_complete(struct at_client *hf_at, enum at_result result,
 		cmd.cme = cme_err;
 		break;
 	default:
-		BT_ERR("Unknown error code");
+		LOG_ERR("Unknown error code");
 		cmd.type = HFP_HF_CMD_UNKNOWN_ERROR;
 		break;
 	}
@@ -436,7 +437,7 @@ int cmee_finish(struct at_client *hf_at, enum at_result result,
 		enum at_cme cme_err)
 {
 	if (result != AT_RESULT_OK) {
-		BT_ERR("SLC Connection ERROR in response");
+		LOG_ERR("SLC Connection ERROR in response");
 		return -EINVAL;
 	}
 
@@ -453,7 +454,7 @@ static void slc_completed(struct at_client *hf_at)
 	}
 
 	if (hfp_hf_send_cmd(hf, NULL, cmee_finish, "AT+CMEE=1") < 0) {
-		BT_ERR("Error Sending AT+CMEE");
+		LOG_ERR("Error Sending AT+CMEE");
 	}
 }
 
@@ -461,7 +462,7 @@ int cmer_finish(struct at_client *hf_at, enum at_result result,
 		enum at_cme cme_err)
 {
 	if (result != AT_RESULT_OK) {
-		BT_ERR("SLC Connection ERROR in response");
+		LOG_ERR("SLC Connection ERROR in response");
 		hf_slc_error(hf_at);
 		return -EINVAL;
 	}
@@ -478,7 +479,7 @@ int cind_status_finish(struct at_client *hf_at, enum at_result result,
 	int err;
 
 	if (result != AT_RESULT_OK) {
-		BT_ERR("SLC Connection ERROR in response");
+		LOG_ERR("SLC Connection ERROR in response");
 		hf_slc_error(hf_at);
 		return -EINVAL;
 	}
@@ -500,7 +501,7 @@ int cind_finish(struct at_client *hf_at, enum at_result result,
 	int err;
 
 	if (result != AT_RESULT_OK) {
-		BT_ERR("SLC Connection ERROR in response");
+		LOG_ERR("SLC Connection ERROR in response");
 		hf_slc_error(hf_at);
 		return -EINVAL;
 	}
@@ -522,7 +523,7 @@ int brsf_finish(struct at_client *hf_at, enum at_result result,
 	int err;
 
 	if (result != AT_RESULT_OK) {
-		BT_ERR("SLC Connection ERROR in response");
+		LOG_ERR("SLC Connection ERROR in response");
 		hf_slc_error(hf_at);
 		return -EINVAL;
 	}
@@ -540,7 +541,7 @@ int hf_slc_establish(struct bt_hfp_hf *hf)
 {
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	err = hfp_hf_send_cmd(hf, brsf_resp, brsf_finish, "AT+BRSF=%u",
 			      hf->hf_features);
@@ -572,16 +573,16 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd)
 	struct bt_hfp_hf *hf;
 	int err;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	if (!conn) {
-		BT_ERR("Invalid connection");
+		LOG_ERR("Invalid connection");
 		return -ENOTCONN;
 	}
 
 	hf = bt_hfp_hf_lookup_bt_conn(conn);
 	if (!hf) {
-		BT_ERR("No HF connection found");
+		LOG_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
 
@@ -589,19 +590,19 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd)
 	case BT_HFP_HF_ATA:
 		err = hfp_hf_send_cmd(hf, NULL, cmd_complete, "ATA");
 		if (err < 0) {
-			BT_ERR("Failed ATA");
+			LOG_ERR("Failed ATA");
 			return err;
 		}
 		break;
 	case BT_HFP_HF_AT_CHUP:
 		err = hfp_hf_send_cmd(hf, NULL, cmd_complete, "AT+CHUP");
 		if (err < 0) {
-			BT_ERR("Failed AT+CHUP");
+			LOG_ERR("Failed AT+CHUP");
 			return err;
 		}
 		break;
 	default:
-		BT_ERR("Invalid AT Command");
+		LOG_ERR("Invalid AT Command");
 		return -EINVAL;
 	}
 
@@ -612,7 +613,7 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 
-	BT_DBG("hf connected");
+	LOG_DBG("hf connected");
 
 	BT_ASSERT(hf);
 	hf_slc_establish(hf);
@@ -622,7 +623,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_conn *conn = dlc->session->br_chan.chan.conn;
 
-	BT_DBG("hf disconnected!");
+	LOG_DBG("hf disconnected!");
 	if (bt_hf->disconnected) {
 		bt_hf->disconnected(conn);
 	}
@@ -633,7 +634,7 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 
 	if (at_parse_input(&hf->at, buf) < 0) {
-		BT_ERR("Parsing failed");
+		LOG_ERR("Parsing failed");
 	}
 }
 
@@ -646,7 +647,7 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 		.recv = hfp_hf_recv,
 	};
 
-	BT_DBG("conn %p", conn);
+	LOG_DBG("conn %p", conn);
 
 	for (i = 0; i < ARRAY_SIZE(bt_hfp_hf_pool); i++) {
 		struct bt_hfp_hf *hf = &bt_hfp_hf_pool[i];
@@ -674,7 +675,7 @@ static int bt_hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 		return 0;
 	}
 
-	BT_ERR("Unable to establish HF connection (%p)", conn);
+	LOG_ERR("Unable to establish HF connection (%p)", conn);
 
 	return -ENOMEM;
 }

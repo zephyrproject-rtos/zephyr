@@ -13,7 +13,6 @@ properties:
 
     channel-mux-b:
       type: boolean
-      required: false
       description: |
         Use alternate set (b instead of a) of ADC channels
 
@@ -22,7 +21,6 @@ properties:
 
     periodic-trigger:
       type: boolean
-      required: false
       description: if periodic trigger enabled
 
     "#io-channel-cells":
@@ -30,12 +28,10 @@ properties:
 
     clk-source:
       type: int
-      required: false
       description: use alternate clock reference source
 
     long-sample:
       type: int
-      required: false
       enum:
         - 0
         - 1
@@ -46,17 +42,14 @@ properties:
 
     continuous-convert:
       type: boolean
-      required: false
       description: If use continuous convert
 
     high-speed:
       type: boolean
-      required: false
       description: If use high speed
 
     hw-trigger-src:
       type: int
-      required: false
       description: hardware trigger source (See ADCxTRGSEL field in user manual for more details)
 
 io-channel-cells:

@@ -1,14 +1,17 @@
 tests:
   kernel.memory_slabs.api:
-    tags: kernel
+    tags: kernel memory_slabs
   kernel.memory_slabs.api_no_multithreading:
-    tags: kernel
+    tags: kernel memory_slabs
     platform_allow: qemu_cortex_m3 qemu_cortex_m0 nsim_em nsim_em7d_v22 nsim_hs
       nsim_hs_mpuv6 nsim_hs5x nsim_hs6x qemu_arc_em qemu_arc_hs qemu_arc_hs6x
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_arc_hs
     extra_configs:
       - CONFIG_MULTITHREADING=n
   kernel.memory_slabs.api.linker_generator:
     platform_allow: qemu_cortex_m3
-    tags: kernel linker_generator
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

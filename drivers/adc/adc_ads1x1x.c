@@ -361,22 +361,22 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	if (ads_config->pga) {
 		/* programmable gain amplifier support */
 		switch (channel_cfg->gain) {
-		case ADC_GAIN_2_3:
+		case ADC_GAIN_1_3:
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_6144);
 			break;
-		case ADC_GAIN_1:
+		case ADC_GAIN_1_2:
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_4096);
 			break;
-		case ADC_GAIN_2:
+		case ADC_GAIN_1:
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_2048);
 			break;
-		case ADC_GAIN_4:
+		case ADC_GAIN_2:
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_1024);
 			break;
-		case ADC_GAIN_8:
+		case ADC_GAIN_4:
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_512);
 			break;
-		case ADC_GAIN_16:
+		case ADC_GAIN_8:
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_256);
 			break;
 		default:
@@ -572,7 +572,7 @@ static int ads1x1x_init(const struct device *dev)
 static const struct adc_driver_api ads1x1x_api = {
 	.channel_setup = ads1x1x_channel_setup,
 	.read = ads1x1x_read,
-	.ref_internal = 4096,
+	.ref_internal = 2048,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = ads1x1x_adc_read_async,
 #endif

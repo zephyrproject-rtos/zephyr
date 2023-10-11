@@ -14,6 +14,7 @@ menuconfig NET_PPP
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
 	select RING_BUFFER
+	select CRC
 	select UART_MUX if GSM_MUX
 
 if NET_PPP
@@ -184,6 +185,12 @@ config NET_LOOPBACK_SIMULATE_PACKET_DROP
 	help
 	  Enable interface to have a controlable packet drop rate, only for
 	  testing, should not be enabled for normal applications
+
+config NET_LOOPBACK_MTU
+	int "MTU for loopback interface"
+	default 576
+	help
+	  This option sets the MTU for loopback interface.
 
 module = NET_LOOPBACK
 module-dep = LOG

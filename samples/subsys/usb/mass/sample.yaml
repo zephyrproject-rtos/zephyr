@@ -10,8 +10,10 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "No file system selected"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_ram_fat:
     min_ram: 128
@@ -23,8 +25,10 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_fatfs:
     min_ram: 32
@@ -33,14 +37,18 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
         - CONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_sdhc_fatfs:
     min_ram: 32
@@ -53,9 +61,11 @@ tests:
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
       fixture: fixture_sdcard
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."
   sample.usb.mass_flash_littlefs:
     modules:
@@ -64,12 +74,16 @@ tests:
     depends_on: usb_device
     filter: dt_compat_enabled("nordic,qspi-nor")
     platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp adafruit_feather_nrf52840
+    integration_platforms:
+      - nrf52840dk_nrf52840
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
         - CONFIG_APP_MSC_STORAGE_FLASH_LITTLEFS=y
     tags: msd usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
+      ordered: True
       regex:
+        - "End of files"
         - "The device is put in USB mass storage mode."

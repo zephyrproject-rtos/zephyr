@@ -1,0 +1,10 @@
+# Copyright 2022 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config IPM_REMOTE_BOARD
+string
+	default "lpcxpresso54114_m0" if $(BOARD) = "lpcxpresso54114_m4"
+	default "lpcxpresso55s69_cpu1" if $(BOARD) = "lpcxpresso55s69_cpu0"

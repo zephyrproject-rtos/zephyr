@@ -113,7 +113,7 @@ static int pwm_rpi_set_cycles(const struct device *dev, uint32_t ch, uint32_t pe
 	pwm_rpi_set_channel_polarity(dev, slice, pico_channel,
 				     (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED);
 	pwm_set_wrap(slice, period_cycles);
-	pwm_set_chan_level(slice, ch, pulse_cycles);
+	pwm_set_chan_level(slice, pico_channel, pulse_cycles);
 
 	return 0;
 };
@@ -177,6 +177,6 @@ static int pwm_rpi_init(const struct device *dev)
 	};											   \
 												   \
 	DEVICE_DT_INST_DEFINE(idx, pwm_rpi_init, NULL, NULL, &pwm_rpi_config_##idx, POST_KERNEL,   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_rpi_driver_api);
+			      CONFIG_PWM_INIT_PRIORITY, &pwm_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_RPI_INIT);

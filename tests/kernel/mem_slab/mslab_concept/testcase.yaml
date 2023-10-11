@@ -4,6 +4,6 @@ tests:
     timeout: 80
   kernel.memory_slabs.concept.linker_generator:
     platform_allow: qemu_cortex_m3
-    tags: kernel linker_generator
+    tags: linker_generator
     extra_configs:
       - CONFIG_CMAKE_LINKER_GENERATOR=y

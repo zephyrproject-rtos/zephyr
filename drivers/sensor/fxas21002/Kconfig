@@ -7,7 +7,8 @@ menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
 	default y
 	depends on DT_HAS_NXP_FXAS21002_ENABLED
-	select I2C
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),spi)
 	help
 	  Enable driver for the FXAS21002 gyroscope
 

@@ -675,7 +675,7 @@ int dsa_hw_init(struct ksz8xxx_data *pdev)
 #endif
 
 #if defined(CONFIG_DSA_SPI)
-	if (!spi_is_ready(&pdev->spi)) {
+	if (!spi_is_ready_dt(&pdev->spi)) {
 		LOG_ERR("SPI bus %s is not ready",
 			pdev->spi.bus->name);
 		return -ENODEV;
@@ -998,7 +998,7 @@ static void dsa_iface_init(struct net_if *iface)
 	}
 
 	pdev->iface_init_count++;
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	net_if_carrier_off(iface);
 
 	/*
 	 * Start DSA work to monitor status of ports (read from switch IC)

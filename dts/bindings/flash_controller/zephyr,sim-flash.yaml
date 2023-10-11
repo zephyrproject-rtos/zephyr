@@ -10,4 +10,3 @@ properties:
     erase-value:
       type: int
       description: Value of erased flash cell
-      required: false

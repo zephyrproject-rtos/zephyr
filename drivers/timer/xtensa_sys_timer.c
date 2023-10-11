@@ -7,6 +7,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/irq.h>
 
 #define TIMER_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			   UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))

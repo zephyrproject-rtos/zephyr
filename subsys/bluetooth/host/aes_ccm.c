@@ -11,9 +11,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/crypto.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_aes_ccm
-#include "common/log.h"
+#include "common/bt_str.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_aes_ccm);
 
 static inline void xor16(uint8_t *dst, const uint8_t *a, const uint8_t *b)
 {
@@ -213,10 +215,10 @@ int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
 {
 	uint8_t *mic = enc_data + len;
 
-	BT_DBG("key %s", bt_hex(key, 16));
-	BT_DBG("nonce %s", bt_hex(nonce, 13));
-	BT_DBG("msg (len %zu) %s", len, bt_hex(plaintext, len));
-	BT_DBG("aad_len %zu mic_size %zu", aad_len, mic_size);
+	LOG_DBG("key %s", bt_hex(key, 16));
+	LOG_DBG("nonce %s", bt_hex(nonce, 13));
+	LOG_DBG("msg (len %zu) %s", len, bt_hex(plaintext, len));
+	LOG_DBG("aad_len %zu mic_size %zu", aad_len, mic_size);
 
 	/* Unsupported AAD size */
 	if (aad_len >= 0xff00 || mic_size > 16 || len > UINT16_MAX) {

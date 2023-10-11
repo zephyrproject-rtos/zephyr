@@ -68,6 +68,18 @@ struct slip_context {
 #endif
 };
 
+#if defined(CONFIG_SLIP_TAP)
+#define _SLIP_MTU 1500
+#else
+#define _SLIP_MTU 576
+#endif /* CONFIG_SLIP_TAP */
+
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+#define SLIP_FRAG_LEN CONFIG_NET_BUF_DATA_SIZE
+#else
+#define SLIP_FRAG_LEN _SLIP_MTU
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
+
 static inline void slip_writeb(unsigned char c)
 {
 	uint8_t buf[1] = { c };
@@ -260,7 +272,8 @@ static inline int slip_input_byte(struct slip_context *slip,
 				return 0;
 			}
 
-			slip->last = net_pkt_get_frag(slip->rx, K_NO_WAIT);
+			slip->last = net_pkt_get_frag(slip->rx, SLIP_FRAG_LEN,
+						      K_NO_WAIT);
 			if (!slip->last) {
 				LOG_ERR("[%p] cannot allocate 1st data buffer",
 					slip);
@@ -288,7 +301,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 		/* We need to allocate a new buffer */
 		struct net_buf *buf;
 
-		buf = net_pkt_get_reserve_rx_data(K_NO_WAIT);
+		buf = net_pkt_get_reserve_rx_data(SLIP_FRAG_LEN, K_NO_WAIT);
 		if (!buf) {
 			LOG_ERR("[%p] cannot allocate next data buf", slip);
 			net_pkt_unref(slip->rx);
@@ -337,7 +350,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 				int count = 0;
 
 				while (bytes && buf) {
-					char msg[8 + 1];
+					char msg[6 + 10 + 1];
 
 					snprintk(msg, sizeof(msg),
 						 ">slip %2d", count);
@@ -454,7 +467,6 @@ static const struct ethernet_api slip_if_api = {
 
 #define _SLIP_L2_LAYER ETHERNET_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#define _SLIP_MTU 1500
 
 ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME,
 		    slip_init, NULL,
@@ -471,7 +483,6 @@ static const struct dummy_api slip_if_api = {
 
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
-#define _SLIP_MTU 576
 
 NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, NULL,
 		&slip_context_data, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

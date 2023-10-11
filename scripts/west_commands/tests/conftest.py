@@ -6,7 +6,7 @@
 
 import pytest
 
-from runners.core import RunnerConfig
+from runners.core import RunnerConfig, FileType
 
 RC_BUILD_DIR = '/test/build-dir'
 RC_BOARD_DIR = '/test/zephyr/boards/test-arch/test-board'
@@ -22,5 +22,6 @@ RC_OPENOCD_SEARCH = ['/test/openocd/search']
 def runner_config():
     '''Fixture which provides a runners.core.RunnerConfig.'''
     return RunnerConfig(RC_BUILD_DIR, RC_BOARD_DIR, RC_KERNEL_ELF,
-                        RC_KERNEL_HEX, RC_KERNEL_BIN, gdb=RC_GDB,
-                        openocd=RC_OPENOCD, openocd_search=RC_OPENOCD_SEARCH)
+                        RC_KERNEL_HEX, RC_KERNEL_BIN, None, FileType.OTHER,
+                        gdb=RC_GDB, openocd=RC_OPENOCD,
+                        openocd_search=RC_OPENOCD_SEARCH)

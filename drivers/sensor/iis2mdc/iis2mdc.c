@@ -325,7 +325,7 @@ static int iis2mdc_init(const struct device *dev)
  */
 
 #define IIS2MDC_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    iis2mdc_init,				\
 			    NULL,					\
 			    &iis2mdc_data_##inst,			\

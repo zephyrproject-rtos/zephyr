@@ -26,7 +26,7 @@
 #include <zephyr/bluetooth/gatt.h>
 
 #ifdef CONFIG_TEMP_NRF5
-static const struct device *const temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);
+static const struct device *temp_dev = DEVICE_DT_GET_ANY(nordic_nrf_temp);
 #else
 static const struct device *temp_dev;
 #endif

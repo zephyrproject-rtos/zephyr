@@ -392,8 +392,9 @@ Adding Zephyr applications to sysbuild
 **************************************
 
 You can use the ``ExternalZephyrProject_Add()`` function to add Zephyr
-applications as sysbuild domains. Call this CMake function from your main
-:file:`CMakeLists.txt` file, or any other CMake file you know will run.
+applications as sysbuild domains. Call this CMake function from your
+application's :file:`sysbuild.cmake` file, or any other CMake file you know will
+run as part sysbuild CMake invocation.
 
 Targeting the same board
 ========================
@@ -483,6 +484,69 @@ disable it using the Kconfig option ``SECOND_SAMPLE``.
 
 For more information on setting sysbuild Kconfig options,
 see :ref:`sysbuild_kconfig_namespacing`.
+
+Zephyr application configuration
+================================
+
+When adding a Zephyr application to sysbuild, such as MCUboot, then the
+configuration files from the application (MCUboot) itself will be used.
+
+When integrating multiple applications with each other, then it is often
+necessary to make adjustments to the configuration of extra images.
+
+Sysbuild gives users the ability of creating Kconfig fragments or devicetree
+overlays that will be used together with the application's default configuration.
+Sysbuild also allows users to change :ref:`application-configuration-directory`
+in order to give users full control of an image's configuration.
+
+Zephyr application Kconfig fragment and devicetree overlay
+----------------------------------------------------------
+
+In the folder of the main application, create a Kconfig fragment or a devicetree
+overlay under a sysbuild folder, where the name of the file is
+:file:`<image>.conf` or :file:`<image>.overlay`, for example if your main
+application includes ``my_sample`` then create a :file:`sysbuild/my_sample.conf`
+file or a devicetree overlay :file:`sysbuild/my_sample.overlay`.
+
+A Kconfig fragment could look as:
+
+.. code-block:: none
+
+   # sysbuild/my_sample.conf
+   CONFIG_FOO=n
+
+Zephyr application configuration directory
+------------------------------------------
+
+In the folder of the main application, create a new folder under
+:file:`sysbuild/<image>/`.
+This folder will then be used as ``APPLICATION_CONFIG_DIR`` when building
+``<image>``.
+As an example, if your main application includes ``my_sample`` then create a
+:file:`sysbuild/my_sample/` folder and place any configuration files in
+there as you would normally do:
+
+.. code-block:: none
+
+   <home>/application
+   ├── CMakeLists.txt
+   ├── prj.conf
+   └── sysbuild
+       └── my_sample
+           ├── prj.conf
+           ├── app.overlay
+           └── boards
+               ├── <board_A>.conf
+               ├── <board_A>.overlay
+               ├── <board_B>.conf
+               └── <board_B>.overlay
+
+All configuration files under the :file:`sysbuild/my_sample/` folder will now
+be used when ``my_sample`` is included in the build, and the default
+configuration files for ``my_sample`` will be ignored.
+
+This give you full control on how images are configured when integrating those
+with ``application``.
 
 Adding non-Zephyr applications to sysbuild
 ******************************************

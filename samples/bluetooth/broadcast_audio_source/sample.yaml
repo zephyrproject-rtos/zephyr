@@ -5,4 +5,6 @@ tests:
   sample.bluetooth.broadcast_audio_source:
     harness: bluetooth
     platform_allow: qemu_cortex_m3 qemu_x86 nrf52_bsim
+    integration_platforms:
+      - qemu_x86
     tags: bluetooth

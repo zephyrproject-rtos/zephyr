@@ -14,7 +14,7 @@
 #define TRANSFER_SIZE 256
 #define TRANSFER_COUNT 8
 
-#define ALIGNMENT DMA_BUF_ALIGNMENT(DT_NODELABEL(hda_host_in))
+#define ALIGNMENT DMA_BUF_ADDR_ALIGNMENT(DT_NODELABEL(hda_host_in))
 static __aligned(ALIGNMENT) uint8_t dma_buf[DMA_BUF_SIZE];
 
 #define HDA_HOST_IN_BASE DT_PROP_BY_IDX(DT_NODELABEL(hda_host_in), reg, 0)

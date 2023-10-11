@@ -87,9 +87,4 @@
 			status = "disabled";
 		};
 	};
-
-	die_temp: dietemp {
-		ts-cal1-addr = <0x1FF0F44C>;
-		ts-cal2-addr = <0x1FF0F44E>;
-	};
 };

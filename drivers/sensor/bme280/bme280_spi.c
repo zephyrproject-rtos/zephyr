@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bme280_bus_check_spi(const union bme280_bus *bus)
 {
-	return spi_is_ready(&bus->spi) ? 0 : -ENODEV;
+	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
 static int bme280_reg_read_spi(const union bme280_bus *bus,

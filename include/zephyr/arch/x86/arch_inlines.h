@@ -37,6 +37,11 @@ static ALWAYS_INLINE uint32_t arch_proc_id(void)
 
 #endif /* CONFIG_X86_64 */
 
+static ALWAYS_INLINE unsigned int arch_num_cpus(void)
+{
+	return CONFIG_MP_MAX_NUM_CPUS;
+}
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_ARCH_INLINES_H_ */

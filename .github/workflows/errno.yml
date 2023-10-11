@@ -10,9 +10,9 @@ jobs:
   check-errno:
     runs-on: ubuntu-20.04
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.24.2
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.0
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
 
     steps:
       - name: Apply container owner mismatch workaround
@@ -24,7 +24,7 @@ jobs:
           git config --global --add safe.directory ${GITHUB_WORKSPACE}
 
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run errno.py
         run: |

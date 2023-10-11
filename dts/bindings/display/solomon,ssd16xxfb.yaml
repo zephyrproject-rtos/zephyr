@@ -20,32 +20,26 @@ properties:
 
     gdv:
       type: uint8-array
-      required: false
       description: Gate driving voltage values
 
     sdv:
       type: uint8-array
-      required: false
       description: Source driving voltage values
 
     vcom:
       type: int
-      required: false
       description: VCOM voltage
 
     border-waveform:
       type: int
-      required: false
       description: Border waveform
 
     softstart:
       type: uint8-array
-      required: false
       description: Booster soft start values
 
     orientation-flipped:
       type: boolean
-      required: false
       description: Last column address is mapped to first segment
 
     reset-gpios:
@@ -77,7 +71,6 @@ properties:
 
     lut-initial:
       type: uint8-array
-      required: false
       description: |
         Initial LUT used when initializing the device and performing
         clearing the screen using a full refresh operation. The
@@ -86,11 +79,9 @@ properties:
 
     lut-default:
       type: uint8-array
-      required: false
 
     tssv:
       type: int
-      required: false
       description: Temperature Sensor Selection Value
 
         Display controller can have integrated temperature sensor or
@@ -99,10 +90,8 @@ properties:
 
     dummy-line:
       type: int
-      required: false
       description: Dummy line period override.
 
     gate-line-width:
       type: int
-      required: false
       description: Gate line width override.

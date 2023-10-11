@@ -97,6 +97,9 @@
 
 	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
 		   <&piod 27 GPIO_ACTIVE_LOW>;
+
+	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
 };
 
 &usart1 {
@@ -189,6 +192,10 @@ zephyr_udc0: &usbhs {
 
 	dma-names = "rx", "tx";
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+};
+
+&xdmac {
+	status = "okay";
 };
 
 &can0 {

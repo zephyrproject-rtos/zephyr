@@ -19,7 +19,6 @@ properties:
 
     base:
       type: int
-      required: false
       default: 0
       description: index of the first GPIO for this port.
 

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/irq.h>
 
 #include <gd32vf103.h>
 

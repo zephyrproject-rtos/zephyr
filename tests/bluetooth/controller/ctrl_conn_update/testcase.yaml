@@ -4,6 +4,10 @@ tests:
   bluetooth.controller.ctrl_conn_update.test:
     type: unit
 
+  bluetooth.controller.ctrl_conn_update.apm_test:
+    type: unit
+    extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override_apm.h"
+
   bluetooth.controller.ctrl_conn_update.no_param_req_test:
     type: unit
     extra_args: KCONFIG_OVERRIDE_FILE="kconfig_override.h"

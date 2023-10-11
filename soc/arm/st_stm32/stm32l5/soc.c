@@ -15,6 +15,8 @@
 #include <stm32_ll_pwr.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/arm/aarch32/cortex_m/cmsis.h>
+#include <zephyr/arch/arm/aarch32/nmi.h>
+#include <zephyr/irq.h>
 #include <stm32l5xx_ll_icache.h>
 #include <zephyr/logging/log.h>
 

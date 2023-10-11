@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/usb/usb_device.h>
@@ -297,8 +298,8 @@ int usb_dc_ep_disable(const uint8_t ep)
 {
 	LOG_DBG("ep %x", ep);
 
-	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+	if (!usbip_ep_is_valid(ep)) {
+		LOG_ERR("Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 

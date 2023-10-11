@@ -30,5 +30,10 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 	return &_kernel.cpus[arch_proc_id()];
 }
 
+static ALWAYS_INLINE unsigned int arch_num_cpus(void)
+{
+	return CONFIG_MP_MAX_NUM_CPUS;
+}
+
 #endif /* !_ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_INLINES_H_ */

@@ -5,4 +5,4 @@ description: Si7060 temperature sensor
 
 compatible: "silabs,si7060"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

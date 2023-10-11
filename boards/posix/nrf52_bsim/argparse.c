@@ -58,6 +58,11 @@ static void cmd_nosim_found(char *argv, int offset)
 	hwll_set_nosim(true);
 }
 
+static void cmd_no_delay_init_found(char *argv, int offset)
+{
+	arg.delay_init = false;
+}
+
 static void save_test_arg(struct NRF_bsim_args_t *args, char *argv)
 {
 	if (args->test_case_argc >= MAXPARAMS_TESTCASES) {
@@ -110,6 +115,16 @@ void nrfbsim_register_args(void)
 		"nosim", "", 'b',
 		(void *)&nosim, cmd_nosim_found,
 		"(debug feature) Do not connect to the phy"},
+		{ false, false, true,
+		"delay_init", "", 'b',
+		(void *)&arg.delay_init, NULL,
+		"If start_offset is used, postpone initialization and startup "
+		"until start_offset is reached (by default not set)"
+		},
+		{ false, false, true,
+		"no_delay_init", "", 'b',
+		NULL, cmd_no_delay_init_found,
+		"Clear delay_init. Note that by default delay_init is not set"},
 		BS_DUMP_FILES_ARGS,
 		{false, false, false,
 		"testid", "testid", 's',

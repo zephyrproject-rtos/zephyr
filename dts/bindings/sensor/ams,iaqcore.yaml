@@ -5,4 +5,4 @@ description: iAQ-core indoor air quality sensor
 
 compatible: "ams,iaqcore"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

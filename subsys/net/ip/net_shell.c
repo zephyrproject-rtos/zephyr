@@ -3657,7 +3657,11 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 
 	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 	PR("Fragment length %d bytes\n", CONFIG_NET_BUF_DATA_SIZE);
+#else
+	PR("Fragment data pool size %d bytes\n", CONFIG_NET_BUF_DATA_POOL_SIZE);
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 	PR("Network buffer pools:\n");
 
@@ -3837,8 +3841,21 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_IP)
 
-K_SEM_DEFINE(ping_timeout, 0, 1);
-static const struct shell *shell_for_ping;
+static struct ping_context {
+	struct k_work_delayable work;
+	struct net_addr addr;
+	struct net_if *iface;
+	const struct shell *sh;
+
+	/* Ping parameters */
+	uint32_t count;
+	uint32_t interval;
+	uint32_t sequence;
+	uint16_t payload_size;
+	uint8_t tos;
+} ping_ctx;
+
+static void ping_done(struct ping_context *ctx);
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
@@ -3865,6 +3882,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 					      struct net_icmpv6_echo_req);
 	struct net_icmpv6_echo_req *icmp_echo;
 	uint32_t cycles;
+	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -3873,21 +3891,30 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
-	if (net_pkt_read_be32(pkt, &cycles)) {
-		return -NET_DROP;
+
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return -NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+			);
 	}
 
-	cycles = k_cycle_get_32() - cycles;
-
-	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
+	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
 #ifdef CONFIG_IEEE802154
 		 "rssi=%d "
 #endif
-#ifdef CONFIG_FPU
-		 "time=%.2f ms\n",
-#else
-		 "time=%d ms\n",
-#endif
+		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv6_addr(&ip_hdr->src),
@@ -3897,81 +3924,16 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 #ifdef CONFIG_IEEE802154
 		 net_pkt_ieee802154_rssi(pkt),
 #endif
-#ifdef CONFIG_FPU
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
-#else
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
-#endif
-	k_sem_give(&ping_timeout);
+		 time_buf);
+
+	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+		ping_done(&ping_ctx);
+	}
 
 	net_pkt_unref(pkt);
 	return NET_OK;
 }
-
-static int ping_ipv6(const struct shell *shell,
-		     char *host,
-		     unsigned int count,
-		     unsigned int interval,
-		     int iface_idx)
-{
-	struct net_if *iface = net_if_get_by_index(iface_idx);
-	int ret = 0;
-	struct in6_addr ipv6_target;
-	struct net_nbr *nbr;
-
-#if defined(CONFIG_NET_ROUTE)
-	struct net_route_entry *route;
-#endif
-
-	if (net_addr_pton(AF_INET6, host, &ipv6_target) < 0) {
-		return -EINVAL;
-	}
-
-	net_icmpv6_register_handler(&ping6_handler);
-
-	if (!iface) {
-		iface = net_if_ipv6_select_src_iface(&ipv6_target);
-		if (!iface) {
-			nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
-			if (nbr) {
-				iface = nbr->iface;
-			} else {
-				iface = net_if_get_default();
-			}
-		}
-	}
-
-#if defined(CONFIG_NET_ROUTE)
-	route = net_route_lookup(NULL, &ipv6_target);
-	if (route) {
-		iface = route->iface;
-	}
-#endif
-
-	PR("PING %s\n", host);
-
-	for (int i = 0; i < count; ++i) {
-		uint32_t time_stamp = htonl(k_cycle_get_32());
-
-		ret = net_icmpv6_send_echo_request(iface,
-						   &ipv6_target,
-						   sys_rand32_get(),
-						   i,
-						   &time_stamp,
-						   sizeof(time_stamp));
-		if (ret) {
-			break;
-		}
-
-		k_msleep(interval);
-	}
-
-	remove_ipv6_ping_handler();
-
-	return ret;
-}
 #else
-#define ping_ipv6(...) -ENOTSUP
 #define remove_ipv6_ping_handler()
 #endif /* CONFIG_NET_IPV6 */
 
@@ -4000,6 +3962,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 					      struct net_icmpv4_echo_req);
 	uint32_t cycles;
 	struct net_icmpv4_echo_req *icmp_echo;
+	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -4008,79 +3971,44 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
-	if (net_pkt_read_be32(pkt, &cycles)) {
-		return -NET_DROP;
+
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return -NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms",
+			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+			);
 	}
 
-	cycles = k_cycle_get_32() - cycles;
-
-	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
-#ifdef CONFIG_FPU
-		 "time=%.2f ms\n",
-#else
-		 "time=%d ms\n",
-#endif
+	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
+		 "%s\n",
 		 ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
 								NET_ICMPH_LEN,
 		 net_sprint_ipv4_addr(&ip_hdr->src),
 		 net_sprint_ipv4_addr(&ip_hdr->dst),
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
-#ifdef CONFIG_FPU
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
-#else
-		 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
-#endif
-	k_sem_give(&ping_timeout);
+		 time_buf);
+
+	if (ntohs(icmp_echo->sequence) == ping_ctx.count) {
+		ping_done(&ping_ctx);
+	}
 
 	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
-static int ping_ipv4(const struct shell *shell,
-		     char *host,
-		     unsigned int count,
-		     unsigned int interval,
-		     int iface_idx)
-{
-	struct in_addr ipv4_target;
-	struct net_if *iface = net_if_get_by_index(iface_idx);
-	int ret = 0;
-
-	if (net_addr_pton(AF_INET, host, &ipv4_target) < 0) {
-		return -EINVAL;
-	}
-
-	if (!iface) {
-		iface = net_if_ipv4_select_src_iface(&ipv4_target);
-	}
-
-	net_icmpv4_register_handler(&ping4_handler);
-
-	PR("PING %s\n", host);
-
-	for (int i = 0; i < count; ++i) {
-		uint32_t time_stamp = htonl(k_cycle_get_32());
-
-		ret = net_icmpv4_send_echo_request(iface,
-						   &ipv4_target,
-						   sys_rand32_get(),
-						   i,
-						   &time_stamp,
-						   sizeof(time_stamp));
-		if (ret) {
-			break;
-		}
-
-		k_msleep(interval);
-	}
-
-	remove_ipv4_ping_handler();
-
-	return ret;
-}
 #else
-#define ping_ipv4(...) -ENOTSUP
 #define remove_ipv4_ping_handler()
 #endif /* CONFIG_NET_IPV4 */
 
@@ -4100,7 +4028,11 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 	}
 
 	errno = 0;
-	res = strtol(str, &endptr, 10);
+	if (strncmp(str, "0x", 2) == 0) {
+		res = strtol(str, &endptr, 16);
+	} else {
+		res = strtol(str, &endptr, 10);
+	}
 
 	if (errno || (endptr == str)) {
 		return -1;
@@ -4108,6 +4040,133 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 
 	return res;
 }
+
+static void ping_cleanup(struct ping_context *ctx)
+{
+	remove_ipv6_ping_handler();
+	remove_ipv4_ping_handler();
+	shell_set_bypass(ctx->sh, NULL);
+}
+
+static void ping_done(struct ping_context *ctx)
+{
+	k_work_cancel_delayable(&ctx->work);
+	ping_cleanup(ctx);
+	/* Dummy write to refresh the prompt. */
+	shell_fprintf(ctx->sh, SHELL_NORMAL, "");
+}
+
+static void ping_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct ping_context *ctx =
+			CONTAINER_OF(dwork, struct ping_context, work);
+	const struct shell *shell = ctx->sh;
+	int ret;
+
+	ctx->sequence++;
+
+	if (ctx->sequence > ctx->count) {
+		PR_INFO("Ping timeout\n");
+		ping_done(ctx);
+		return;
+	}
+
+	if (ctx->addr.family == AF_INET6) {
+		ret = net_icmpv6_send_echo_request(ctx->iface,
+						   &ctx->addr.in6_addr,
+						   sys_rand32_get(),
+						   ctx->sequence,
+						   ctx->tos,
+						   NULL,
+						   ctx->payload_size);
+	} else {
+		ret = net_icmpv4_send_echo_request(ctx->iface,
+						   &ctx->addr.in_addr,
+						   sys_rand32_get(),
+						   ctx->sequence,
+						   ctx->tos,
+						   NULL,
+						   ctx->payload_size);
+	}
+
+	if (ret != 0) {
+		PR_WARNING("Failed to send ping, err: %d", ret);
+		return;
+	}
+
+	if (ctx->sequence < ctx->count) {
+		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
+	} else {
+		k_work_reschedule(&ctx->work, K_SECONDS(2));
+	}
+}
+
+#define ASCII_CTRL_C 0x03
+
+static void ping_bypass(const struct shell *sh, uint8_t *data, size_t len)
+{
+	ARG_UNUSED(sh);
+
+	for (size_t i = 0; i < len; i++) {
+		if (data[i] == ASCII_CTRL_C) {
+			k_work_cancel_delayable(&ping_ctx.work);
+			ping_cleanup(&ping_ctx);
+			break;
+		}
+	}
+}
+
+static struct net_if *ping_select_iface(int id, struct net_addr *target)
+{
+	struct net_if *iface = net_if_get_by_index(id);
+
+	if (iface != NULL) {
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && target->family == AF_INET) {
+		iface = net_if_ipv4_select_src_iface(&target->in_addr);
+		if (iface != NULL) {
+			goto out;
+		}
+
+		iface = net_if_get_default();
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && target->family == AF_INET6) {
+		struct net_nbr *nbr;
+#if defined(CONFIG_NET_ROUTE)
+		struct net_route_entry *route;
+#endif
+
+		iface = net_if_ipv6_select_src_iface(&target->in6_addr);
+		if (iface != NULL) {
+			goto out;
+		}
+
+		nbr = net_ipv6_nbr_lookup(NULL, &target->in6_addr);
+		if (nbr) {
+			iface = nbr->iface;
+			goto out;
+		}
+
+#if defined(CONFIG_NET_ROUTE)
+		route = net_route_lookup(NULL, &target->in6_addr);
+		if (route) {
+			iface = route->iface;
+			goto out;
+		}
+#endif
+
+		iface = net_if_get_default();
+	}
+
+out:
+	return iface;
+}
+
 #endif /* CONFIG_NET_IP */
 
 static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
@@ -4120,11 +4179,12 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	return -EOPNOTSUPP;
 #else
 	char *host = NULL;
-	int ret;
 
 	int count = 3;
 	int interval = 1000;
 	int iface_idx = -1;
+	int tos = 0;
+	int payload_size = 4;
 
 	for (size_t i = 1; i < argc; ++i) {
 
@@ -4159,6 +4219,25 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 			break;
+
+		case 'Q':
+			tos = parse_arg(&i, argc, argv);
+			if (tos < 0 || tos > UINT8_MAX) {
+				PR_WARNING("Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
+
+		case 's':
+			payload_size = parse_arg(&i, argc, argv);
+			if (payload_size < 0 || payload_size > UINT16_MAX) {
+				PR_WARNING("Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+
+			break;
+
 		default:
 			PR_WARNING("Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
@@ -4170,42 +4249,35 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_for_ping = shell;
+	memset(&ping_ctx, 0, sizeof(ping_ctx));
 
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = ping_ipv6(shell, host, count, interval, iface_idx);
-		if (!ret) {
-			goto wait_reply;
-		} else if (ret == -EIO) {
-			PR_WARNING("Cannot send IPv6 ping\n");
-			return -ENOEXEC;
-		}
+	k_work_init_delayable(&ping_ctx.work, ping_work);
+
+	ping_ctx.sh = shell;
+	ping_ctx.count = count;
+	ping_ctx.interval = interval;
+	ping_ctx.tos = tos;
+	ping_ctx.payload_size = payload_size;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_addr_pton(AF_INET6, host, &ping_ctx.addr.in6_addr) == 0) {
+		ping_ctx.addr.family = AF_INET6;
+		net_icmpv6_register_handler(&ping6_handler);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_addr_pton(AF_INET, host, &ping_ctx.addr.in_addr) == 0) {
+		ping_ctx.addr.family = AF_INET;
+		net_icmpv4_register_handler(&ping4_handler);
+	} else {
+		PR_WARNING("Invalid IP address\n");
+		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = ping_ipv4(shell, host, count, interval, iface_idx);
-		if (ret) {
-			if (ret == -EIO || ret == -ENETUNREACH) {
-				PR_WARNING("Cannot send IPv4 ping\n");
-			} else if (ret == -EINVAL) {
-				PR_WARNING("Invalid IP address\n");
-			} else if (ret == -ENOTSUP) {
-				PR_WARNING("Feature is not supported\n");
-			}
+	ping_ctx.iface = ping_select_iface(iface_idx, &ping_ctx.addr);
 
-			return -ENOEXEC;
-		}
-	}
+	PR("PING %s\n", host);
 
-wait_reply:
-	ret = k_sem_take(&ping_timeout, K_SECONDS(2));
-	if (ret == -EAGAIN) {
-		PR_INFO("Ping timeout\n");
-		remove_ipv6_ping_handler();
-		remove_ipv4_ping_handler();
-
-		return -ETIMEDOUT;
-	}
+	shell_set_bypass(shell, ping_bypass);
+	k_work_reschedule(&ping_ctx.work, K_NO_WAIT);
 
 	return 0;
 #endif
@@ -4959,6 +5031,8 @@ static void udp_rcvd(struct net_context *context, struct net_pkt *pkt,
 			PR_SHELL(udp_shell, "%02x ", byte);
 		}
 		PR_SHELL(udp_shell, "\n");
+
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -5971,7 +6045,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 	SHELL_CMD(--help, NULL,
-		  "'net ping [-c count] [-i interval ms] [-I <iface index>] <host>' "
+		  "'net ping [-c count] [-i interval ms] [-I <iface index>] "
+		  "[-Q tos] [-s payload size] <host>' "
 		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END

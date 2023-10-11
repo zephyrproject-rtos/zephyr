@@ -3,16 +3,9 @@
 # Copyright (c) 2018 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PWM_SIFIVE
+config PWM_SIFIVE
 	bool "SiFive Freedom PWM driver"
 	default y
 	depends on DT_HAS_SIFIVE_PWM0_ENABLED
 	help
 	  Enable the PWM driver for the SiFive Freedom platform
-
-config PWM_SIFIVE_INIT_PRIORITY
-	int "Init Priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
-	depends on PWM_SIFIVE
-	help
-	  SiFive PWM Driver Initialization Priority

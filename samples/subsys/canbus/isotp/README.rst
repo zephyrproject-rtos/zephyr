@@ -20,7 +20,7 @@ or Nucleo-F746ZG board.
 For the NXP TWR-KE18F board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/can
+   :zephyr-app: samples/subsys/canbus/isotp
    :board: twr_ke18f
    :goals: build flash
 

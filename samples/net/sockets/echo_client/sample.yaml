@@ -11,6 +11,8 @@ tests:
   sample.net.sockets.echo_client:
     platform_allow: qemu_x86 frdm_k64f sam_e70_xplained
       qemu_cortex_m3 frdm_kw41z
+    integration_platforms:
+      - qemu_x86
   sample.net.sockets.echo_client.802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_allow: qemu_x86
@@ -23,12 +25,18 @@ tests:
   sample.net.sockets.echo_client.802154.rf2xx.xpro:
     extra_args: SHIELD=atmel_rf2xx_xpro OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam4e_xpro sam_v71_xult
+    integration_platforms:
+      - sam_v71_xult
   sample.net.sockets.echo_client.802154.rf2xx.legacy:
     extra_args: SHIELD=atmel_rf2xx_legacy OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam4e_xpro sam_v71_xult
+    integration_platforms:
+      - sam_v71_xult
   sample.net.sockets.echo_client.802154.rf2xx.arduino:
     extra_args: SHIELD=atmel_rf2xx_arduino OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: sam_v71_xult frdm_k64f nucleo_f767zi
+    integration_platforms:
+      - sam_v71_xult
   sample.net.sockets.echo_client.802154.rf2xx.mikrobus:
     extra_args: SHIELD=atmel_rf2xx_mikrobus OVERLAY_CONFIG="overlay-802154.conf"
     platform_allow: lpcxpresso55s69_ns
@@ -65,4 +73,6 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
   sample.net.sockets.echo_client.userspace:
     extra_args: CONFIG_USERSPACE=y OVERLAY_CONFIG="overlay-e1000.conf"
-    platform_allow: qemu_x86
+    platform_allow: qemu_x86 qemu_x86_64
+    integration_platforms:
+      - qemu_x86

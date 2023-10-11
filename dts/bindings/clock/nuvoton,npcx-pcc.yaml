@@ -177,7 +177,6 @@ properties:
 
     apb4-prescaler:
         type: int
-        required: false
         description: |
           APB4 prescaler. It sets the APB4 bus frequency, APB4_CLK, by dividing
           OFMCLK(MCLK) and needs to meet the following requirements.
@@ -207,7 +206,6 @@ properties:
           - 10
 
     ram-pd-depth:
-        required: false
         type: int
         enum:
           - 12

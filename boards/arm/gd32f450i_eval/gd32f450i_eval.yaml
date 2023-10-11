@@ -13,3 +13,5 @@ toolchain:
   - xtools
 supported:
   - pwm
+  - watchdog
+  - counter

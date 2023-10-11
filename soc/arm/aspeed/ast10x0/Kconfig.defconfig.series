@@ -16,7 +16,7 @@ config DCACHE_LINE_SIZE
 	default 32
 
 choice CACHE_TYPE
-	default HAS_EXTERNAL_CACHE
+	default EXTERNAL_CACHE
 endchoice
 
 endif # SOC_SERIES_AST10X0

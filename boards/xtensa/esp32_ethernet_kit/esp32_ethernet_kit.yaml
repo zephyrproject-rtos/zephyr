@@ -1,0 +1,16 @@
+identifier: esp32_ethernet_kit
+name: ESP32 ETHERNET KIT
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

@@ -17,6 +17,7 @@
 #include <zephyr/irq_nextlevel.h>
 #include "intc_dw.h"
 #include <soc.h>
+#include <zephyr/irq.h>
 
 static ALWAYS_INLINE void dw_ictl_dispatch_child_isrs(uint32_t intr_status,
 						      uint32_t isr_base_offset)

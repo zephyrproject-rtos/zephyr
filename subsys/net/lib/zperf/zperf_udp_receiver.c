@@ -195,10 +195,10 @@ static void udp_received(const struct shell *sh, int sock,
 				      session->counter);
 			shell_fprintf(sh, SHELL_NORMAL,
 				      " nb packets lost:\t%u\n",
-				      session->outorder);
+				      session->error);
 			shell_fprintf(sh, SHELL_NORMAL,
 				      " nb packets outorder:\t%u\n",
-				      session->error);
+				      session->outorder);
 
 			shell_fprintf(sh, SHELL_NORMAL,
 				      " jitter:\t\t\t");

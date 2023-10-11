@@ -8,7 +8,7 @@
 	status = "okay";
 	cs-gpios = <&arduino_header 16 0>;			/* D10 */
 
-	winc1500@0 {
+	winc1500_adafruit_winc1500: winc1500@0 {
 		status = "ok";
 		compatible = "atmel,winc1500";
 		reg = <0x0>;

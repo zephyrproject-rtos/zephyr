@@ -33,6 +33,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>;
+			resets = <&rctl STM32_RESET(APB1, 30U)>;
 			interrupts = <82 0>;
 			status = "disabled";
 		};
@@ -41,6 +42,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
+			resets = <&rctl STM32_RESET(APB1, 31U)>;
 			interrupts = <83 0>;
 			status = "disabled";
 		};

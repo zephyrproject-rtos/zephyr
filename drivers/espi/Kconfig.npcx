@@ -41,6 +41,13 @@ config ESPI_NPCX_BYPASS_CH_ENABLE_FATAL_ERROR
 	  a wrong state and therefore response with FATAL_ERROR on an incoming
 	  transaction.
 
+config ESPI_NPCX_PERIPHERAL_DEBUG_PORT_80_MULTI_BYTE
+	bool "Host can write 1/2/4 bytes of Port80 data in a eSPI transaction"
+	depends on SOC_SERIES_NPCX9 && ESPI_PERIPHERAL_DEBUG_PORT_80
+	help
+	  EC can accept 1/2/4 bytes of Port 80 data written from the Host in an
+	  eSPI transaction.
+
 # The default value 'y' for the existing options if ESPI_NPCX is selected.
 if ESPI_NPCX
 

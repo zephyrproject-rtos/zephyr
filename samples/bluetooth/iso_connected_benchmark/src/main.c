@@ -52,7 +52,7 @@ struct iso_chan_work {
 	struct bt_iso_chan chan;
 	struct k_work_delayable send_work;
 	struct bt_iso_info info;
-	uint32_t seq_num;
+	uint16_t seq_num;
 } iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 
 static enum benchmark_role role;

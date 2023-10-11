@@ -308,6 +308,7 @@ enum node_rx_type {
 	NODE_RX_TYPE_SCAN_INDICATION,
 	NODE_RX_TYPE_CIS_REQUEST,
 	NODE_RX_TYPE_CIS_ESTABLISHED,
+	NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE,
 	NODE_RX_TYPE_MESH_ADV_CPLT,
 	NODE_RX_TYPE_MESH_REPORT,
 	NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT,
@@ -495,7 +496,10 @@ struct event_done_extra {
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	union {
 		struct {
-			uint16_t trx_cnt;
+			union {
+				uint32_t trx_performed_mask;
+				uint16_t trx_cnt;
+			};
 			uint8_t  crc_valid:1;
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC_CTE_TYPE_FILTERING) && \
 	defined(CONFIG_BT_CTLR_CTEINLINE_SUPPORT)
@@ -582,10 +586,12 @@ void ull_rx_put(memq_link_t *link, void *rx);
 void ull_rx_put_done(memq_link_t *link, void *done);
 void ull_rx_sched(void);
 void ull_rx_sched_done(void);
+void ull_rx_put_sched(memq_link_t *link, void *rx);
 void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);
 void *ull_iso_tx_ack_dequeue(void);
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *tx);
+void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count);
 struct event_done_extra *ull_event_done_extra_get(void);
 struct event_done_extra *ull_done_extra_type_set(uint8_t type);
 void *ull_event_done(void *param);

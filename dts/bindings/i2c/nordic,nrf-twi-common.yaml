@@ -16,7 +16,6 @@ properties:
     sda-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.
@@ -36,7 +35,6 @@ properties:
     scl-pin:
       type: int
       deprecated: true
-      required: false
       description: |
         IMPORTANT: This option will only be used if the new pin control driver
         is not enabled.

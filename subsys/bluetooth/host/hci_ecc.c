@@ -23,9 +23,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
-#define LOG_MODULE_NAME bt_hci_ecc
-#include "common/log.h"
+#include "common/bt_str.h"
 
 #include "hci_ecc.h"
 #include "ecc.h"
@@ -37,6 +35,10 @@
 #include "hci_core.h"
 #endif
 #include "long_wq.h"
+
+#define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_hci_ecc);
 
 static void ecc_process(struct k_work *work);
 K_WORK_DEFINE(ecc_work, ecc_process);
@@ -76,7 +78,7 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
 
-	BT_DBG("opcode %x status %x", opcode, status);
+	LOG_DBG("opcode %x status %x", opcode, status);
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
 	bt_buf_set_type(buf, BT_BUF_EVT);
@@ -105,7 +107,7 @@ static uint8_t generate_keys(void)
 		rc = uECC_make_key(ecc.public_key_be, ecc.private_key_be,
 				   &curve_secp256r1);
 		if (rc == TC_CRYPTO_FAIL) {
-			BT_ERR("Failed to create ECC public/private pair");
+			LOG_ERR("Failed to create ECC public/private pair");
 			return BT_HCI_ERR_UNSPECIFIED;
 		}
 
@@ -113,7 +115,7 @@ static uint8_t generate_keys(void)
 	} while (memcmp(ecc.private_key_be, debug_private_key_be, BT_PRIV_KEY_LEN) == 0);
 
 	if (IS_ENABLED(CONFIG_BT_LOG_SNIFFER_INFO)) {
-		BT_INFO("SC private key 0x%s", bt_hex(ecc.private_key_be, BT_PRIV_KEY_LEN));
+		LOG_INF("SC private key 0x%s", bt_hex(ecc.private_key_be, BT_PRIV_KEY_LEN));
 	}
 
 	return 0;
@@ -127,7 +129,7 @@ static void emulate_le_p256_public_key_cmd(void)
 	struct net_buf *buf;
 	uint8_t status;
 
-	BT_DBG("");
+	LOG_DBG("");
 
 	status = generate_keys();
 
@@ -169,7 +171,7 @@ static void emulate_le_generate_dhkey(void)
 
 	ret = uECC_valid_public_key(ecc.public_key_be, &curve_secp256r1);
 	if (ret < 0) {
-		BT_ERR("public key is not valid (ret %d)", ret);
+		LOG_ERR("public key is not valid (ret %d)", ret);
 		ret = TC_CRYPTO_FAIL;
 	} else {
 		bool use_debug = atomic_test_bit(flags, USE_DEBUG_KEY);

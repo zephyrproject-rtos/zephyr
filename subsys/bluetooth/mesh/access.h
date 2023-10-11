@@ -74,5 +74,5 @@ void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
  *
  * @return 0 on success or negative error code on failure.
  */
-int bt_mesh_msg_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
-		     const struct bt_mesh_send_cb *cb, void *cb_data);
+int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
+			const struct bt_mesh_send_cb *cb, void *cb_data);

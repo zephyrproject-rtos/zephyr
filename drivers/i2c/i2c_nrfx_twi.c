@@ -13,9 +13,14 @@
 #include <nrfx_twi.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/irq.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
-#define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(500)
+#if CONFIG_I2C_NRFX_TRANSFER_TIMEOUT
+#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_NRFX_TRANSFER_TIMEOUT)
+#else
+#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
+#endif
 
 struct i2c_nrfx_twi_data {
 	struct k_sem transfer_sync;

@@ -21,7 +21,7 @@ static K_SEM_DEFINE(sem_big_term, 0, BIS_ISO_CHAN_COUNT);
 
 #define INITIAL_TIMEOUT_COUNTER (BIG_TERMINATE_TIMEOUT_US / BIG_SDU_INTERVAL_US)
 
-static uint32_t seq_num;
+static uint16_t seq_num;
 
 static void iso_connected(struct bt_iso_chan *chan)
 {

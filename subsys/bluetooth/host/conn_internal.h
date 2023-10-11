@@ -26,54 +26,59 @@ typedef enum __packed {
 /* bt_conn flags: the flags defined here represent connection parameters */
 enum {
 	BT_CONN_AUTO_CONNECT,
-	BT_CONN_BR_LEGACY_SECURE,	/* 16 digits legacy PIN tracker */
-	BT_CONN_USER,			/* user I/O when pairing */
-	BT_CONN_BR_PAIRING,		/* BR connection in pairing context */
-	BT_CONN_BR_NOBOND,		/* SSP no bond pairing tracker */
-	BT_CONN_BR_PAIRING_INITIATOR,	/* local host starts authentication */
-	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
-	BT_CONN_PERIPHERAL_PARAM_UPDATE,/* If periph param update timer fired */
-	BT_CONN_PERIPHERAL_PARAM_SET,	/* If periph param were set from app */
-	BT_CONN_PERIPHERAL_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
-	BT_CONN_FORCE_PAIR,             /* Pairing even with existing keys. */
+	BT_CONN_BR_LEGACY_SECURE,             /* 16 digits legacy PIN tracker */
+	BT_CONN_USER,                         /* user I/O when pairing */
+	BT_CONN_BR_PAIRING,                   /* BR connection in pairing context */
+	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
+	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
+	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
+	BT_CONN_PERIPHERAL_PARAM_UPDATE,      /* If periph param update timer fired */
+	BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE, /* If periph param auto update on timer fired */
+	BT_CONN_PERIPHERAL_PARAM_SET,         /* If periph param were set from app */
+	BT_CONN_PERIPHERAL_PARAM_L2CAP,       /* If should force L2CAP for CPUP */
+	BT_CONN_FORCE_PAIR,                   /* Pairing even with existing keys. */
 #if defined(CONFIG_BT_GATT_CLIENT)
-	BT_CONN_ATT_MTU_EXCHANGED,	/* If ATT MTU has been exchanged. */
+	BT_CONN_ATT_MTU_EXCHANGED,            /* If ATT MTU has been exchanged. */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
-	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
+	BT_CONN_AUTO_FEATURE_EXCH,            /* Auto-initiated LE Feat done */
+	BT_CONN_AUTO_VERSION_INFO,            /* Auto-initiated LE version done */
 
-	BT_CONN_CTE_RX_ENABLED,          /* CTE receive and sampling is enabled */
-	BT_CONN_CTE_RX_PARAMS_SET,       /* CTE parameters are set */
-	BT_CONN_CTE_TX_PARAMS_SET,       /* CTE transmission parameters are set */
-	BT_CONN_CTE_REQ_ENABLED,         /* CTE request procedure is enabled */
-	BT_CONN_CTE_RSP_ENABLED,         /* CTE response procedure is enabled */
+	BT_CONN_CTE_RX_ENABLED,               /* CTE receive and sampling is enabled */
+	BT_CONN_CTE_RX_PARAMS_SET,            /* CTE parameters are set */
+	BT_CONN_CTE_TX_PARAMS_SET,            /* CTE transmission parameters are set */
+	BT_CONN_CTE_REQ_ENABLED,              /* CTE request procedure is enabled */
+	BT_CONN_CTE_RSP_ENABLED,              /* CTE response procedure is enabled */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
 };
 
 struct bt_conn_le {
-	bt_addr_le_t		dst;
+	bt_addr_le_t dst;
 
-	bt_addr_le_t		init_addr;
-	bt_addr_le_t		resp_addr;
+	bt_addr_le_t init_addr;
+	bt_addr_le_t resp_addr;
 
-	uint16_t			interval;
-	uint16_t			interval_min;
-	uint16_t			interval_max;
+	uint16_t interval;
+	uint16_t interval_min;
+	uint16_t interval_max;
 
-	uint16_t			latency;
-	uint16_t			timeout;
-	uint16_t			pending_latency;
-	uint16_t			pending_timeout;
+	uint16_t latency;
+	uint16_t timeout;
+	uint16_t pending_latency;
+	uint16_t pending_timeout;
 
-	uint8_t			features[8];
+#if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
+	uint8_t  conn_param_retry_countdown;
+#endif
 
-	struct bt_keys		*keys;
+	uint8_t features[8];
+
+	struct bt_keys *keys;
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-	struct bt_conn_le_phy_info      phy;
+	struct bt_conn_le_phy_info phy;
 #endif
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
@@ -124,16 +129,6 @@ struct bt_conn_iso {
 		/* BIS ID within the BIG*/
 		uint8_t			bis_id;
 	};
-
-#if defined(CONFIG_BT_ISO_UNICAST) || defined(CONFIG_BT_ISO_BROADCASTER)
-	/** @brief 16-bit sequence number that shall be incremented per SDU interval
-	 *
-	 *  Stored as 32-bit to handle wrapping: Only once the value has
-	 *  become greater than 0xFFFF will values less than the
-	 *  current are allowed again.
-	 */
-	uint32_t seq_num;
-#endif /* CONFIG_BT_ISO_UNICAST) || CONFIG_BT_ISO_BROADCASTER */
 
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
@@ -419,6 +414,9 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
 
 /* Initialize connection management */
 int bt_conn_init(void);
+
+/* Reset states of connections and set state to BT_CONN_DISCONNECTED. */
+void bt_conn_cleanup_all(void);
 
 /* Selects based on connection type right semaphore for ACL packets */
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);

@@ -7,7 +7,7 @@ Overview
 ********
 This module is an FPGA driver that can easily load a bitstream, reset it, check its status, enable or disable the FPGA.
 This sample demonstrates how to use the FPGA driver API and the the FPGA controller shell subsystem.
-Currently the sample works with [Quicklogic Quickfeather board](https://github.com/QuickLogic-Corp/quick-feather-dev-board).
+Currently the sample works with `Quicklogic Quickfeather board`_.
 
 Requirements
 ************
@@ -15,7 +15,7 @@ Requirements
 * Zephyr RTOS
   or
 * Zephyr RTOS with shell subsystem enabled (for shell application)
-* [Quicklogic Quickfeather board](https://github.com/QuickLogic-Corp/quick-feather-dev-board)
+* `Quicklogic Quickfeather board`_
 
 Building
 ********
@@ -44,7 +44,7 @@ configuration file prj_shell.conf:
 Running
 *******
 
-See [QuickFeather programming and debugging](https://docs.zephyrproject.org/latest/boards/arm/quick_feather/doc/index.html#programming-and-debugging) on how to load an image to the board.
+See :ref:`quickfeather` on how to load an image to the board.
 
 Sample output
 =============
@@ -113,3 +113,9 @@ Now the bitstream can be uploaded again.
 
     uart:~$ fpga load FPGA 0x10000 75960
     FPGA: loading bitstream
+
+References
+**********
+
+.. _Quicklogic Quickfeather board:
+   https://github.com/QuickLogic-Corp/quick-feather-dev-board

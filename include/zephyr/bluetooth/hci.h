@@ -508,6 +508,21 @@ struct bt_hci_write_local_name {
 	uint8_t local_name[248];
 } __packed;
 
+#define BT_HCI_OP_READ_CONN_ACCEPT_TIMEOUT      BT_OP(BT_OGF_BASEBAND, 0x0015)
+struct bt_hci_rp_read_conn_accept_timeout {
+	uint8_t  status;
+	uint16_t conn_accept_timeout;
+} __packed;
+
+#define BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT     BT_OP(BT_OGF_BASEBAND, 0x0016)
+struct bt_hci_cp_write_conn_accept_timeout {
+	uint16_t conn_accept_timeout;
+} __packed;
+
+struct bt_hci_rp_write_conn_accept_timeout {
+	uint8_t  status;
+} __packed;
+
 #define BT_HCI_OP_WRITE_PAGE_TIMEOUT            BT_OP(BT_OGF_BASEBAND, 0x0018)
 
 #define BT_HCI_OP_WRITE_SCAN_ENABLE             BT_OP(BT_OGF_BASEBAND, 0x001a)

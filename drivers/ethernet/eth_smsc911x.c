@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/irq.h>
 #include "ethernet/eth_stats.h"
 
 #ifdef CONFIG_SHARED_IRQ

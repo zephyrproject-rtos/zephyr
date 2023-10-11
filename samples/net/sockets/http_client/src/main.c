@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_http_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
-#include <zephyr/net/http_client.h>
+#include <zephyr/net/http/client.h>
 
 #include "ca_certificate.h"
 

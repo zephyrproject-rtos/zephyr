@@ -42,6 +42,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "ipv6.h"
 
 #include "icmpv4.h"
+#include "ipv4.h"
 
 #include "dhcpv4.h"
 
@@ -71,11 +72,11 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return ret;
 	}
 
-	/* If the packet is routed back to us when we have reassembled
-	 * an IPv6 packet, then do not pass it to L2 as the packet does
-	 * not have link layer headers in it.
+	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
+	 * then do not pass it to L2 as the packet does not have link layer headers in it.
 	 */
-	if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && net_pkt_ipv6_fragment_start(pkt)) {
+	if ((IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) && net_pkt_ipv4_fragment_more(pkt)) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && net_pkt_ipv6_fragment_start(pkt))) {
 		locally_routed = true;
 	}
 
@@ -446,6 +447,7 @@ static inline void l3_init(void)
 {
 	net_icmpv4_init();
 	net_icmpv6_init();
+	net_ipv4_init();
 	net_ipv6_init();
 
 	net_ipv4_autoconf_init();

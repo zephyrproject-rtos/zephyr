@@ -110,6 +110,8 @@ source "drivers/gpio/Kconfig.npcx"
 
 source "drivers/gpio/Kconfig.emul"
 
+source "drivers/gpio/Kconfig.emul_sdl"
+
 source "drivers/gpio/Kconfig.psoc6"
 
 source "drivers/gpio/Kconfig.pcal6408a"
@@ -125,6 +127,8 @@ source "drivers/gpio/Kconfig.creg_gpio"
 source "drivers/gpio/Kconfig.stmpe1600"
 
 source "drivers/gpio/Kconfig.pca953x"
+
+source "drivers/gpio/Kconfig.pcf8574"
 
 source "drivers/gpio/Kconfig.fxl6408"
 
@@ -147,5 +151,15 @@ source "drivers/gpio/Kconfig.mchp_mss"
 source "drivers/gpio/Kconfig.xmc4xxx"
 
 source "drivers/gpio/Kconfig.smartbond"
+
+source "drivers/gpio/Kconfig.s32"
+
+source "drivers/gpio/Kconfig.tca6424a"
+
+source "drivers/gpio/Kconfig.npm6001"
+
+source "drivers/gpio/Kconfig.rt1718s"
+
+source "drivers/gpio/Kconfig.numicro"
 
 endif # GPIO

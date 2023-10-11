@@ -63,17 +63,6 @@
 		};
 	};
 
-	discharge_vbus2_config {
-		compatible = "gpio-leds";
-
-		/*
-		 * Pin B14 is used to control VBUS Discharge for Port2
-		 */
-		discharge_vbus2 {
-			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	aliases {
 		led0 = &led_1;
 		led1 = &led_2;
@@ -85,13 +74,6 @@
 		sw3 = &joy_right;
 		sw4 = &joy_up;
 		watchdog0 = &iwdg;
-	};
-
-	vbus {
-		compatible = "voltage-divider";
-		io-channels = <&adc1 3>;
-		output-ohms = <49900>;
-		full-ohms = <(330000 + 49900)>;
 	};
 };
 
@@ -123,10 +105,77 @@
 	status = "okay";
 };
 
+&tim15_ch1_pc1 {
+	slew-rate = "very-high-speed";
+	bias-pull-up;
+	drive-open-drain;
+};
+
+&timers15 {
+	status = "okay";
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pc1>;
+		pinctrl-names = "default";
+	};
+};
+
 &adc1 {
-	pinctrl-0 = <&adc1_in3_pa3>;
+	pinctrl-0 = <&adc1_in3_pa3 &adc1_in9_pb1>;
 	pinctrl-names = "default";
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&ucpd1 {
+	status = "okay";
+
+	/*
+	 * UCPD is fed directly from HSI which is @ 16MHz. The ucpd_clk goes to
+	 * a prescaler who's output feeds the 'half-bit' divider which is used
+	 * to generate clock for delay counters and BMC Rx/Tx blocks. The rx is
+	 * designed to work in freq ranges of 6 <--> 18 MHz, however recommended
+	 * range is 9 <--> 18 MHz.
+	 *
+	 *          +-------+ @ 16 MHz +-------+   @ ~600 kHz   +-----------+
+	 * HSI ---->| /psc  |--------->| /hbit |--------------->| trans_cnt |
+	 *          +-------+          +-------+   |            +-----------+
+	 *                                         |            +-----------+
+	 *                                         +----------->| ifrgap_cnt|
+	 *                                                      +-----------+
+	 * Requirements:
+	 *   1. hbit_clk ~= 600 kHz: 16 MHz / 600 kHz = 26.67
+	 *   2. tTransitionWindow - 12 to 20 uSec
+	 *   3. tInterframGap - uSec
+	 *
+	 * hbit_clk = HSI_clk / 27 = 592.6 kHz = 1.687 uSec period
+	 * tTransitionWindow = 1.687 uS * 8 = 13.5 uS
+	 * tInterFrameGap = 1.687 uS * 17 = 28.68 uS
+	 */
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pa8 &ucpd1_cc2_pb15>;
+	pinctrl-names = "default";
 };
 
 &ucpd2 {
@@ -156,6 +205,8 @@
 	 */
 	psc-ucpdclk = <1>;
 	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd2_cc1_pd0 &ucpd2_cc2_pd2>;
+	pinctrl-names = "default";
 };
 
 &iwdg {

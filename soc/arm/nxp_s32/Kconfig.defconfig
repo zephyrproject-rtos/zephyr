@@ -1,0 +1,4 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/nxp_s32/*/Kconfig.defconfig.series"

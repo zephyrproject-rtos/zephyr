@@ -6,6 +6,7 @@ menuconfig MCUMGR
 	bool "mcumgr Support"
 	select NET_BUF
 	select ZCBOR
+	select CRC
 	help
 	  This option enables the mcumgr management library.
 
@@ -27,15 +28,7 @@ config MCUMGR_SMP_WORKQUEUE_THREAD_PRIO
 	help
 	  Scheduling priority of the MCUMGR SMP work queue.
 
-config APP_LINK_WITH_MCUMGR
-	bool "Link 'app' with MCUMGR"
-	default y
-	help
-	  Add MCUMGR header files to the 'app' include path. It may be
-	  disabled if the include paths for MCUMGR are causing aliasing
-	  issues for 'app'.
-
-rsource "lib/mgmt/Kconfig"
+rsource "mgmt/Kconfig"
 
 config MGMT_MAX_MAIN_MAP_ENTRIES
 	int "Number of predicted maximum entries to main response map"
@@ -101,9 +94,33 @@ config MGMT_MAX_DECODING_LEVELS
 	  size of cbor_nb_reader structure by zcbor_state_t size per
 	  one unit selected here.
 
+config MCUMGR_MGMT_NOTIFICATION_HOOKS
+	bool "MCUmgr notification hook support"
+	help
+	  With this enabled, applications and parts of code can register for MCUmgr event
+	  notifications which will result in callbacks when a registered event occurs. Note that
+	  this enables the base notification functionality but itself does not enable any
+	  notifications, which must be enabled by selecting other Kconfig options.
+
+	  To enable notifications in code, mgmt_callback_register() must be called with the
+	  callback function and events that want to be received. Multiple handlers can be
+	  registered and will all be called when registered events occur.
+
+	  Some callbacks support notifying the calling function of a status, in which to accept
+	  or decline the current operation, by returning false this will signal to the calling
+	  function that the request should be denied, for informal-only notifications or
+	  acceptable, true must be returned by all the registered notification handlers.
+
+config MCUMGR_SMP_COMMAND_STATUS_HOOKS
+	bool "SMP command status hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable SMP command status notification hooks for when an SMP message is
+	  received or processed.
+
 menu "Command Handlers"
 
-rsource "lib/cmd/Kconfig"
+rsource "grp/Kconfig"
 
 endmenu
 

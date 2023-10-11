@@ -11,3 +11,12 @@ config SPI_SAM
 	select GPIO
 	help
 	  Enable support for the SAM SPI driver.
+
+if SPI_SAM
+config SPI_SAM_DMA
+	bool "SPI SAM DMA Support"
+	select DMA
+	help
+	  Enable using DMA with SPI for SPI instances that enable dma channels in
+	  their device tree node.
+endif # SPI_SAM

@@ -2,7 +2,7 @@
  *  @brief Bluetooth Volume Control Profile (VCP) Volume Renderer role.
  *
  *  Copyright (c) 2020 Bose Corporation
- *  Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ *  Copyright (c) 2020-2022 Nordic Semiconductor ASA
  *  Copyright (c) 2022 Codecoup
  *
  *  SPDX-License-Identifier: Apache-2.0
@@ -14,12 +14,11 @@
 #include <stdio.h>
 
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/audio/vcs.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 
-static struct bt_vcs *vcs;
-static struct bt_vcs_included vcs_included;
+static struct bt_vcp_included vcp_included;
 
-static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		printk("VCS state get failed (%d)\n", err);
@@ -28,7 +27,7 @@ static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume, uint8_t mu
 	}
 }
 
-static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
+static void vcs_flags_cb(int err, uint8_t flags)
 {
 	if (err) {
 		printk("VCS flags get failed (%d)\n", err);
@@ -111,7 +110,7 @@ static void vocs_description_cb(struct bt_vocs *inst, int err, char *description
 	}
 }
 
-static struct bt_vcs_cb vcs_cbs = {
+static struct bt_vcp_vol_rend_cb vcp_cbs = {
 	.state = vcs_state_cb,
 	.flags = vcs_flags_cb,
 };
@@ -133,44 +132,44 @@ static struct bt_vocs_cb vocs_cbs = {
 int vcp_vol_renderer_init(void)
 {
 	int err;
-	struct bt_vcs_register_param vcs_param;
-	char input_desc[CONFIG_BT_VCS_AICS_INSTANCE_COUNT][16];
-	char output_desc[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT][16];
+	struct bt_vcp_vol_rend_register_param vcp_register_param;
+	char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT][16];
+	char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT][16];
 
-	memset(&vcs_param, 0, sizeof(vcs_param));
+	memset(&vcp_register_param, 0, sizeof(vcp_register_param));
 
-	for (int i = 0; i < ARRAY_SIZE(vcs_param.vocs_param); i++) {
-		vcs_param.vocs_param[i].location_writable = true;
-		vcs_param.vocs_param[i].desc_writable = true;
+	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
+		vcp_register_param.vocs_param[i].location_writable = true;
+		vcp_register_param.vocs_param[i].desc_writable = true;
 		snprintf(output_desc[i], sizeof(output_desc[i]), "Output %d", i + 1);
-		vcs_param.vocs_param[i].output_desc = output_desc[i];
-		vcs_param.vocs_param[i].cb = &vocs_cbs;
+		vcp_register_param.vocs_param[i].output_desc = output_desc[i];
+		vcp_register_param.vocs_param[i].cb = &vocs_cbs;
 	}
 
-	for (int i = 0; i < ARRAY_SIZE(vcs_param.aics_param); i++) {
-		vcs_param.aics_param[i].desc_writable = true;
+	for (int i = 0; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
+		vcp_register_param.aics_param[i].desc_writable = true;
 		snprintf(input_desc[i], sizeof(input_desc[i]), "Input %d", i + 1);
-		vcs_param.aics_param[i].description = input_desc[i];
-		vcs_param.aics_param[i].type = BT_AICS_INPUT_TYPE_UNSPECIFIED;
-		vcs_param.aics_param[i].status = true;
-		vcs_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
-		vcs_param.aics_param[i].units = 1;
-		vcs_param.aics_param[i].min_gain = -100;
-		vcs_param.aics_param[i].max_gain = 100;
-		vcs_param.aics_param[i].cb = &aics_cbs;
+		vcp_register_param.aics_param[i].description = input_desc[i];
+		vcp_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_UNSPECIFIED;
+		vcp_register_param.aics_param[i].status = true;
+		vcp_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+		vcp_register_param.aics_param[i].units = 1;
+		vcp_register_param.aics_param[i].min_gain = -100;
+		vcp_register_param.aics_param[i].max_gain = 100;
+		vcp_register_param.aics_param[i].cb = &aics_cbs;
 	}
 
-	vcs_param.step = 1;
-	vcs_param.mute = BT_VCS_STATE_UNMUTED;
-	vcs_param.volume = 100;
-	vcs_param.cb = &vcs_cbs;
+	vcp_register_param.step = 1;
+	vcp_register_param.mute = BT_VCP_STATE_UNMUTED;
+	vcp_register_param.volume = 100;
+	vcp_register_param.cb = &vcp_cbs;
 
-	err = bt_vcs_register(&vcs_param, &vcs);
+	err = bt_vcp_vol_rend_register(&vcp_register_param);
 	if (err) {
 		return err;
 	}
 
-	err = bt_vcs_included_get(vcs, &vcs_included);
+	err = bt_vcp_vol_rend_included_get(&vcp_included);
 	if (err != 0) {
 		return err;
 	}

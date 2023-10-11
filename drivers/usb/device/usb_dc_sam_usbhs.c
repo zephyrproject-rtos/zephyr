@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT atmel_sam_usbhs
 
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <soc.h>
 #include <string.h>
 

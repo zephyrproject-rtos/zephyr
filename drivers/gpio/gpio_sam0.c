@@ -14,7 +14,7 @@
 #include <soc.h>
 #include <zephyr/drivers/interrupt_controller/sam0_eic.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #ifndef PORT_PMUX_PMUXE_A_Val
 #define PORT_PMUX_PMUXE_A_Val (0)

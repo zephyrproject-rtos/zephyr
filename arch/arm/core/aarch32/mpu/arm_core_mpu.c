@@ -16,6 +16,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
+extern void arm_core_mpu_enable(void);
+extern void arm_core_mpu_disable(void);
+
 /*
  * Maximum number of dynamic memory partitions that may be supplied to the MPU
  * driver for programming during run-time. Note that the actual number of the
@@ -55,8 +58,8 @@ uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread);
 #endif
 
 #if defined(CONFIG_CODE_DATA_RELOCATION_SRAM)
-extern char __sram_text_start[];
-extern char __sram_text_size[];
+extern char __ram_text_start[];
+extern char __ram_text_size[];
 #endif
 
 static const struct z_arm_mpu_partition static_regions[] = {
@@ -89,8 +92,8 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_CODE_DATA_RELOCATION_SRAM)
 		{
 		/* RAM area for relocated text */
-		.start = (uint32_t)&__sram_text_start,
-		.size = (uint32_t)&__sram_text_size,
+		.start = (uint32_t)&__ram_text_start,
+		.size = (uint32_t)&__ram_text_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		},
 #endif /* CONFIG_CODE_DATA_RELOCATION_SRAM */
@@ -131,10 +134,16 @@ void z_arm_configure_static_mpu_regions(void)
 	 * of the firmware SRAM area is marked by __kernel_ram_end, taking
 	 * into account the unused SRAM area, as well.
 	 */
+#ifdef CONFIG_AARCH32_ARMV8_R
+	arm_core_mpu_disable();
+#endif
 	arm_core_mpu_configure_static_mpu_regions(static_regions,
 		ARRAY_SIZE(static_regions),
 		(uint32_t)&_image_ram_start,
 		(uint32_t)&__kernel_ram_end);
+#ifdef CONFIG_AARCH32_ARMV8_R
+	arm_core_mpu_enable();
+#endif
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
 	defined(CONFIG_MULTITHREADING)
@@ -155,8 +164,6 @@ void z_arm_configure_static_mpu_regions(void)
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
-extern void arm_core_mpu_enable(void);
-extern void arm_core_mpu_disable(void);
 /**
  * @brief Use the HW-specific MPU driver to program
  *        the dynamic MPU regions.

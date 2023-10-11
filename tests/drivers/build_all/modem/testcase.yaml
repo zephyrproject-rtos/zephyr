@@ -9,13 +9,13 @@ tests:
     min_flash: 115
   drivers.modem.ublox_sara.build:
     extra_args: CONF_FILE=modem_ublox_sara.conf
-    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f mg100
   drivers.modem.simcom_sim7080.build:
     extra_args: CONF_FILE=modem_simcom_sim7080.conf
-    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f mg100
   drivers.modem.quectel_bg9x.build:
     extra_args: CONF_FILE=modem_quectel_bg9x.conf
-    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f
+    platform_exclude: serpente pinnacle_100_dvk litex_vexriscv ip_k66f mg100
     min_ram: 36
   drivers.modem.gsm.build:
     extra_args: CONF_FILE=modem_gsm.conf

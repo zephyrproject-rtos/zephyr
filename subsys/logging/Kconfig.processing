@@ -7,6 +7,7 @@ if !LOG_MODE_MINIMAL
 
 config LOG_PRINTK
 	bool "Process printk messages"
+	default y if PRINTK && (!ZTEST || ZTEST_NEW_API)
 	help
 	  LOG_PRINTK messages are formatted in place and logged unconditionally.
 
@@ -90,6 +91,17 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	help
 	  Set the internal stack size for log processing thread.
 
+config LOG_PROCESSING_LATENCY_US
+	int "Maximum remote message latency (in microseconds)"
+	default 100000
+	depends on LOG_MULTIDOMAIN
+	help
+	  Arbitrary time between log message creation in the remote domain and
+	  processing in the local domain. Higher value increases message processing
+	  latency but increases chances of maintaining correct ordering of the
+	  messages. Option is used only if links are using dedicated buffers
+	  for remote messages.
+
 config LOG_PROCESS_THREAD_CUSTOM_PRIORITY
 	bool "Custom log thread priority"
 	help
@@ -113,6 +125,26 @@ config LOG_BUFFER_SIZE
 	  Number of bytes dedicated for the logger internal buffer.
 
 endif # LOG_MODE_DEFERRED && !LOG_FRONTEND_ONLY
+
+if LOG_MULTIDOMAIN
+
+config LOG_DOMAIN_NAME_CACHE_ENTRY_SIZE
+	int "Cache slot size of domain name"
+	default 8
+
+config LOG_DOMAIN_NAME_CACHE_ENTRY_COUNT
+	int "Number of entries in domain name cache"
+	default 2
+
+config LOG_SOURCE_NAME_CACHE_ENTRY_SIZE
+	int "Cache slot size of source name"
+	default 16
+
+config LOG_SOURCE_NAME_CACHE_ENTRY_COUNT
+	int "Number of entries in source name cache"
+	default 8
+
+endif # LOG_MULTIDOMAIN
 
 config LOG_TRACE_SHORT_TIMESTAMP
 	bool "Use 24 bit timestamp for tracing"

@@ -48,11 +48,15 @@
 
 	/* regulator controlling SX oscillator enable */
 	sx-osc-enable {
-		compatible = "regulator-fixed-sync", "regulator-fixed";
+		compatible = "regulator-fixed";
 		regulator-name = "sx-osc-enable";
 		enable-gpios = <&gpioh 1 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+};
+
+&clk_lsi {
+	status = "okay";
 };
 
 &clk_hsi {
@@ -120,6 +124,8 @@
 };
 
 &rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 

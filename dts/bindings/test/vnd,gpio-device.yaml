@@ -17,7 +17,6 @@ properties:
 
     label:
         type: string
-        required: false
 
     "#gpio-cells":
       const: 2

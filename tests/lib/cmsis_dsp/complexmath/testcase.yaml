@@ -8,7 +8,7 @@ tests:
       - native_posix
     tags: cmsis_dsp
     min_flash: 128
-    min_ram: 64
+    min_ram: 144
   libraries.cmsis_dsp.complexmath.fpu:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_CPU_HAS_FPU and TOOLCHAIN_HAS_NEWLIB == 1) or CONFIG_ARCH_POSIX
     integration_platforms:
@@ -18,4 +18,4 @@ tests:
     extra_configs:
       - CONFIG_FPU=y
     min_flash: 128
-    min_ram: 64
+    min_ram: 144

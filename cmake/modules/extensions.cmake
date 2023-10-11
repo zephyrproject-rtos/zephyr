@@ -1425,13 +1425,21 @@ endfunction()
 
 # 2.1 Misc
 #
-# import_kconfig(<prefix> <kconfig_fragment> [<keys>])
+# import_kconfig(<prefix> <kconfig_fragment> [<keys>] [TARGET <target>])
 #
 # Parse a KConfig fragment (typically with extension .config) and
 # introduce all the symbols that are prefixed with 'prefix' into the
 # CMake namespace. List all created variable names in the 'keys'
 # output variable if present.
+#
+# <prefix>          : symbol prefix of settings in the Kconfig fragment.
+# <kconfig_fragment>: absolute path to the config fragment file.
+# <keys>            : output variable which will be populated with variable
+#                     names loaded from the kconfig fragment.
+# TARGET <target>   : set all symbols on <target> instead of adding them to the
+#                     CMake namespace.
 function(import_kconfig prefix kconfig_fragment)
+  cmake_parse_arguments(IMPORT_KCONFIG "" "TARGET" "" ${ARGN})
   # Parse the lines prefixed with 'prefix' in ${kconfig_fragment}
   file(
     STRINGS
@@ -1457,13 +1465,24 @@ function(import_kconfig prefix kconfig_fragment)
       set(CONF_VARIABLE_VALUE ${CMAKE_MATCH_1})
     endif()
 
-    set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
+    if(DEFINED IMPORT_KCONFIG_TARGET)
+      set_property(TARGET ${IMPORT_KCONFIG_TARGET} APPEND PROPERTY "kconfigs" "${CONF_VARIABLE_NAME}")
+      set_property(TARGET ${IMPORT_KCONFIG_TARGET} PROPERTY "${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}")
+    else()
+      set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
+    endif()
     list(APPEND keys "${CONF_VARIABLE_NAME}")
   endforeach()
 
-  foreach(outvar ${ARGN})
-    set(${outvar} "${keys}" PARENT_SCOPE)
-  endforeach()
+  list(LENGTH IMPORT_KCONFIG_UNPARSED_ARGUMENTS unparsed_length)
+  if(unparsed_length GREATER 0)
+    if(unparsed_length GREATER 1)
+    # Two mandatory arguments and one optional, anything after that is an error.
+      list(GET IMPORT_KCONFIG_UNPARSED_ARGUMENTS 1 first_invalid)
+      message(FATAL_ERROR "Unexpected argument after '<keys>': import_kconfig(... ${first_invalid})")
+    endif()
+    set(${IMPORT_KCONFIG_UNPARSED_ARGUMENTS} "${keys}" PARENT_SCOPE)
+  endif()
 endfunction()
 
 ########################################################
@@ -2133,8 +2152,8 @@ endfunction()
 #                                               If no board is given the current BOARD and
 #                                               BOARD_REVISION will be used.
 #
-#                    DTS <list>:   List to populate with DTS overlay files
-#                    KCONF <list>: List to populate with Kconfig fragment files
+#                    DTS <list>:   List to append DTS overlay files in <path> to
+#                    KCONF <list>: List to append Kconfig fragment files in <path> to
 #                    BUILD <type>: Build type to include for search.
 #                                  For example:
 #                                  BUILD debug, will look for <board>_debug.conf
@@ -2578,6 +2597,36 @@ function(zephyr_get_targets directory types targets)
 endfunction()
 
 # Usage:
+#   test_sysbuild([REQUIRED])
+#
+# Test that current sample is invoked through sysbuild.
+#
+# This function tests that current CMake configure was invoked through sysbuild.
+# If CMake configure was not invoked through sysbuild, then a warning is printed
+# to the user. The warning can be upgraded to an error by setting `REQUIRED` as
+# argument the `test_sysbuild()`.
+#
+# This function allows samples that are multi-image samples by nature to ensure
+# all samples are correctly built together.
+function(test_sysbuild)
+  cmake_parse_arguments(TEST_SYSBUILD "REQUIRED" "" "" ${ARGN})
+
+  if(TEST_SYSBUILD_REQUIRED)
+    set(message_mode FATAL_ERROR)
+  else()
+    set(message_mode WARNING)
+  endif()
+
+  if(NOT SYSBUILD)
+    message(${message_mode}
+            "Project '${PROJECT_NAME}' is designed for sysbuild.\n"
+            "For correct user-experiences, please build '${PROJECT_NAME}' "
+            "using sysbuild."
+    )
+  endif()
+endfunction()
+
+# Usage:
 #   target_byproducts(TARGET <target> BYPRODUCTS <file> [<file>...])
 #
 # Specify additional BYPRODUCTS that this target produces.
@@ -2602,7 +2651,7 @@ function(target_byproducts)
 endfunction()
 
 ########################################################
-# 4. Zephyr devicetree function
+# 4. Devicetree extensions
 ########################################################
 # 4.1. dt_*
 #

@@ -26,7 +26,6 @@ properties:
     prescaler:
       type: int
       default: 1
-      required: false
       description: |
         The prescaler value defines the counter frequency
         (clock-frequency/prescaler) in atcpit100 counter driver, the prescaler

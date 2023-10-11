@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <time.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 
@@ -42,6 +43,9 @@ struct cbor_out_fmt_data {
 		size_t name_sz; /* Name buff size */
 		uint8_t name_cnt;
 	};
+
+	/* Basetime for Cached data timestamp */
+	time_t basetime;
 };
 
 struct cbor_in_fmt_data {
@@ -83,6 +87,7 @@ static void setup_out_fmt_data(struct lwm2m_message *msg)
 	(void)memset(fd, 0, sizeof(*fd));
 	engine_set_out_user_data(&msg->out, fd);
 	fd->name_sz = sizeof("/65535/999/");
+	fd->basetime = 0;
 }
 
 static void clear_out_fmt_data(struct lwm2m_message *msg)
@@ -253,6 +258,33 @@ static int put_begin_r(struct lwm2m_output_context *out, struct lwm2m_obj_path *
 	return 0;
 }
 
+static int put_data_timestamp(struct lwm2m_output_context *out, time_t value)
+{
+	struct record *out_record;
+	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
+	int ret;
+
+	ret = fmt_range_check(fd);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Tell CBOR encoder where to find the name */
+	out_record = GET_CBOR_FD_REC(fd);
+
+	if (fd->basetime) {
+		out_record->_record_t._record_t = value - fd->basetime;
+		out_record->_record_t_present = 1;
+	} else {
+		fd->basetime = value;
+		out_record->_record_bt._record_bt = value;
+		out_record->_record_bt_present = 1;
+	}
+
+	return 0;
+
+}
+
 static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
 	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
@@ -301,10 +333,15 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
 	int ret = 0;
+	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
+	struct record *record = GET_CBOR_FD_REC(fd);
 
-	/* With the first ri the resource name (and ri name) are already in place */
+	/* With the first ri the resource name (and ri name) are already in place*/
 	if (path->res_inst_id > 0) {
 		ret = put_begin_ri(out, path);
+	} else if (record && record->_record_t_present) {
+		/* Name need to be add for each time serialized record */
+		ret = put_begin_r(out, path);
 	}
 
 	return ret;
@@ -348,7 +385,7 @@ static int put_s64(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 	return put_value(out, path, value);
 }
 
-static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, int64_t value)
+static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, time_t value)
 {
 	int ret = put_name_nth_ri(out, path);
 
@@ -360,7 +397,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 
 	/* Write the value */
 	record->_record_union._record_union_choice = _union_vi;
-	record->_record_union._union_vi = value;
+	record->_record_union._union_vi = (int64_t)value;
 	record->_record_union_present = 1;
 
 	return 0;
@@ -511,6 +548,17 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 	fd->current = NULL;
 
 	return 0;
+}
+
+static int get_time(struct lwm2m_input_context *in, time_t *value)
+{
+	int64_t temp64;
+	int ret;
+
+	ret = get_s64(in, &temp64);
+	*value = (time_t)temp64;
+
+	return ret;
 }
 
 static int get_float(struct lwm2m_input_context *in, double *value)
@@ -696,12 +744,13 @@ const struct lwm2m_writer senml_cbor_writer = {
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
 	.put_objlnk = put_objlnk,
+	.put_data_timestamp = put_data_timestamp,
 };
 
 const struct lwm2m_reader senml_cbor_reader = {
 	.get_s32 = get_s32,
 	.get_s64 = get_s64,
-	.get_time = get_s64,
+	.get_time = get_time,
 	.get_string = get_string,
 	.get_float = get_float,
 	.get_bool = get_bool,

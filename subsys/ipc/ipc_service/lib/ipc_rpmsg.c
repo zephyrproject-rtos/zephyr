@@ -88,7 +88,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 	}
 
 	if (role == RPMSG_HOST) {
-		struct rpmsg_virtio_config config;
+		struct rpmsg_virtio_config config = { 0 };
 
 		config.h2r_buf_size = (uint32_t) buffer_size;
 		config.r2h_buf_size = (uint32_t) buffer_size;
@@ -101,4 +101,20 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 	} else {
 		return rpmsg_init_vdev(&instance->rvdev, vdev, bind_cb, shm_io, NULL);
 	}
+}
+
+int ipc_rpmsg_deinit(struct ipc_rpmsg_instance *instance,
+		   unsigned int role)
+{
+	if (!instance) {
+		return -EINVAL;
+	}
+
+	rpmsg_deinit_vdev(&instance->rvdev);
+
+	if (role == RPMSG_HOST) {
+		memset(&instance->shm_pool, 0, sizeof(struct rpmsg_virtio_shm_pool));
+	}
+
+	return 0;
 }

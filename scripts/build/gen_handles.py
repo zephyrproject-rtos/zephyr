@@ -105,7 +105,7 @@ def c_handle_array(dev, handles, extra_support_handles=0):
         'DEVICE_HANDLE_ENDS',
     ]
     return [
-        'const device_handle_t __aligned(2) __attribute__((__section__(".__device_handles_pass2")))',
+        'const Z_DECL_ALIGN(device_handle_t) __attribute__((__section__(".__device_handles_pass2")))',
         '{:s}[] = {{ {:s} }};'.format(dev.ordinals.sym.name, ', '.join(handles)),
     ]
 

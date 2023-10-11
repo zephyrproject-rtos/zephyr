@@ -14,7 +14,7 @@
 
 #include <gd32_gpio.h>
 
-#include "gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 
 #ifdef CONFIG_GD32_HAS_AF_PINMUX
 /** SYSCFG DT node */

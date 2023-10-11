@@ -6,7 +6,7 @@
 
 / {
 	chosen {
-		zephyr,ieee802154 = &ieee802154;
+		zephyr,ieee802154 = &ieee802154_atmel_rf2xx_mikrobus;
 	};
 };
 
@@ -16,7 +16,7 @@
 	/* CS */
 	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
 
-	ieee802154: rf2xx@0 {
+	ieee802154_atmel_rf2xx_mikrobus: rf2xx@0 {
 		compatible = "atmel,rf2xx";
 		reg = <0x0>;
 		spi-max-frequency = <6000000>;

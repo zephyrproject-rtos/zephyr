@@ -13,3 +13,6 @@ tests:
   drivers.bbram.npcx:
     extra_args: CONF_FILE="npcx.conf"
     filter: dt_compat_enabled("nuvoton,npcx-bbram")
+  drivers.bbram.stm32:
+    extra_args: CONF_FILE="stm32.conf"
+    filter: dt_compat_enabled("st,stm32-bbram")

@@ -677,7 +677,7 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf,
-		     uint32_t seq_num, uint32_t ts);
+		     uint16_t seq_num, uint32_t ts);
 
 struct bt_iso_unicast_tx_info {
 	/** The transport latency in us */

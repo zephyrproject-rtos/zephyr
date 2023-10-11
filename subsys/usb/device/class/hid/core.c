@@ -7,9 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_HID_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(usb_hid);
+LOG_MODULE_REGISTER(usb_hid, CONFIG_USB_HID_LOG_LEVEL);
 
 #include <zephyr/sys/byteorder.h>
 #include <usb_device.h>

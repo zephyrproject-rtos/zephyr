@@ -484,20 +484,6 @@ static void set_up_plls(void)
 
 #if defined(STM32_PLL_ENABLED)
 
-#ifdef CONFIG_SOC_SERIES_STM32F7X
-	/* Assuming we stay on Power Scale default value: Power Scale 1 */
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
-		LL_PWR_EnableOverDriveMode();
-		while (LL_PWR_IsActiveFlag_OD() != 1) {
-		/* Wait for OverDrive mode ready */
-		}
-		LL_PWR_EnableOverDriveSwitching();
-		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
-		/* Wait for OverDrive switch ready */
-		}
-	}
-#endif
-
 #if defined(STM32_SRC_PLL_P) & STM32_PLL_P_ENABLED
 	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
 	RCC_PLLP_ENABLE();
@@ -616,6 +602,11 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << RCC_BDCR_LSEDRV_Pos);
 #endif
 
+		if (IS_ENABLED(STM32_LSE_BYPASS)) {
+			/* Configure LSE bypass */
+			LL_RCC_LSE_EnableBypass();
+		}
+
 		/* Enable LSE Oscillator (32.768 kHz) */
 		LL_RCC_LSE_Enable();
 		while (!LL_RCC_LSE_IsReady()) {
@@ -633,6 +624,24 @@ static void set_up_fixed_clock_sources(void)
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
+
+#if defined(STM32_HSI48_ENABLED)
+	/* For all series with HSI 48 clock support */
+	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		/*
+		 * HSI48 requires VREFINT (see RM0376 section 7.2.4).
+		 * The SYSCFG is needed to control VREFINT, so clock it.
+		 */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
+		LL_SYSCFG_VREFINT_EnableHSI48();
+#endif /* CONFIG_SOC_SERIES_STM32L0X */
+
+		LL_RCC_HSI48_Enable();
+		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+	}
+#endif /* STM32_HSI48_ENABLED */
 }
 
 /**
@@ -653,6 +662,21 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
+
+#if defined(STM32_PLL_ENABLED) && defined(CONFIG_SOC_SERIES_STM32F7X)
+	/* Assuming we stay on Power Scale default value: Power Scale 1 */
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		/* Set Overdrive if needed before configuring the Flash Latency */
+		LL_PWR_EnableOverDriveMode();
+		while (LL_PWR_IsActiveFlag_OD() != 1) {
+		/* Wait for OverDrive mode ready */
+		}
+		LL_PWR_EnableOverDriveSwitching();
+		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+		/* Wait for OverDrive switch ready */
+		}
+	}
+#endif /* STM32_PLL_ENABLED && CONFIG_SOC_SERIES_STM32F7X */
 
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;

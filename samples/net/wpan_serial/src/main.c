@@ -58,7 +58,7 @@ static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
 static struct ieee802154_radio_api *radio_api;
 static const struct device *const ieee802154_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
-uint8_t mac_addr[8];
+uint8_t mac_addr[8]; /* in little endian */
 
 /* UART device */
 static const struct device *const uart_dev =

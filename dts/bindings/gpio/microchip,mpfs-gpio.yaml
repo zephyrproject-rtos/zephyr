@@ -11,9 +11,6 @@ properties:
     reg:
       required: true
 
-    interrupts:
-      required: false
-
     "#gpio-cells":
       const: 2
 

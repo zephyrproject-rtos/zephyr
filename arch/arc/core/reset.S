@@ -142,7 +142,7 @@ done_mpu_regions_reset:
 #endif
 #endif
 
-#if defined(CONFIG_SMP) || CONFIG_MP_NUM_CPUS  > 1
+#if defined(CONFIG_SMP) || CONFIG_MP_MAX_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
 
@@ -150,7 +150,7 @@ done_mpu_regions_reset:
  * Non-masters wait for master core (core 0) to boot enough
  */
 _slave_core_wait:
-#if CONFIG_MP_NUM_CPUS == 1
+#if CONFIG_MP_MAX_NUM_CPUS == 1
 	kflag	1
 #endif
 	ld r1, [arc_cpu_wake_flag]

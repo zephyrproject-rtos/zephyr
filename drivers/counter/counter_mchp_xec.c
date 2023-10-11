@@ -22,6 +22,7 @@
  *   when the counters reach zero.
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 

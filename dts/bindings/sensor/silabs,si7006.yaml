@@ -5,4 +5,4 @@ description: Si7006 temperature and humidity sensor
 
 compatible: "silabs,si7006"
 
-include: i2c-device.yaml
+include: [sensor-device.yaml, i2c-device.yaml]

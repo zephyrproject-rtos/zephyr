@@ -7,37 +7,37 @@
 
 / {
 	aliases {
-		magn0 = &lsm303agr_magn_1e;
-		accel0 = &lsm303agr_accel_19;
-		accel1 = &lsm6dsl_6b;
+		magn0 = &lsm303agr_magn_1e_x_nucleo_iks01a2;
+		accel0 = &lsm303agr_accel_19_x_nucleo_iks01a2;
+		accel1 = &lsm6dsl_6b_x_nucleo_iks01a2;
 	};
 };
 
 &arduino_i2c {
 
-	hts221@5f {
+	hts221_x_nucleo_iks01a2: hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
 	};
 
-	lps22hb-press@5d {
+	lps22hb_press_x_nucleo_iks01a2: lps22hb-press@5d {
 		compatible = "st,lps22hb-press";
 		reg = <0x5d>;
 	};
 
-	lsm6dsl_6b: lsm6dsl@6b {
+	lsm6dsl_6b_x_nucleo_iks01a2: lsm6dsl@6b {
 		compatible = "st,lsm6dsl";
 		reg = <0x6b>;
 		irq-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
 	};
 
-	lsm303agr_magn_1e: lsm303agr-magn@1e {
+	lsm303agr_magn_1e_x_nucleo_iks01a2: lsm303agr-magn@1e {
 		compatible = "st,lis2mdl","st,lsm303agr-magn";
 		reg = <0x1e>;
 		irq-gpios = <&arduino_header 3 GPIO_ACTIVE_HIGH>;	/* A3 */
 	};
 
-	lsm303agr_accel_19: lsm303agr-accel@19 {
+	lsm303agr_accel_19_x_nucleo_iks01a2: lsm303agr-accel@19 {
 		compatible = "st,lis2dh", "st,lsm303agr-accel";
 		reg = <0x19>;
 		irq-gpios = <&arduino_header 3 GPIO_ACTIVE_HIGH>;	/* A3 */

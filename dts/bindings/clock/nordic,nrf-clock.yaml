@@ -16,7 +16,6 @@ properties:
 
     hfclkaudio-frequency:
       type: int
-      required: false
       description: |
         Frequency of the HFCLKAUDIO clock in Hz. Adjustable with 3.3 ppm
         resolution in two frequency bands - 11.176 MHz to 11.402 MHz, and

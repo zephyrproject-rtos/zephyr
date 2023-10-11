@@ -8,11 +8,9 @@ include: base.yaml
 properties:
     local-mac-address:
       type: uint8-array
-      required: false
       description: Specifies the MAC address that was assigned to the network device
     zephyr,random-mac-address:
       type: boolean
-      required: false
       description: |
         Use a random MAC address generated when the driver is initialized.
         Note that using this choice and rebooting a board may leave stale

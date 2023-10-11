@@ -262,7 +262,7 @@ ZTEST(mslab_api, test_mslab_alloc_align)
  */
 ZTEST(mslab_api, test_mslab_alloc_timeout)
 {
-	if (CONFIG_MP_NUM_CPUS != 1) {
+	if (arch_num_cpus() != 1) {
 		ztest_test_skip();
 	}
 

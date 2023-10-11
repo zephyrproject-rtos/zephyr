@@ -7,4 +7,6 @@ sample:
 tests:
   sample.net.lldp:
     platform_allow: native_posix native_posix_64
+    integration_platforms:
+      - native_posix
     depends_on: netif

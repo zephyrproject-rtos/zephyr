@@ -33,4 +33,13 @@
 #define SRAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 #endif
 
+/* Flash memory base address and size */
+#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_flash), reg) && \
+    (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) > 0)
+#define FLASH_START		DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
+#define FLASH_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
+#endif
+
+
+#include <zephyr/arch/arc/v2/xy_mem.ld>
 #include <zephyr/arch/arc/v2/linker.ld>
