@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Istentek ist8310 Geomagnetic sensor.  See more info at:
+    iSentek ist8310 Geomagnetic sensor.  See more info at:
     https://isentek.com/products_view.php?PID=10&sn=13
 
 compatible: "isentek,ist8310"
