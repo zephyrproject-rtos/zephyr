@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(can_mcp251xfd, CONFIG_CAN_LOG_LEVEL);
 static void mcp251xfd_canframe_to_txobj(const struct can_frame *src, int mailbox_idx,
 					struct mcp251xfd_txobj *dst)
 {
-	dst->flags = 0;
+	memset(dst, 0, sizeof(*dst));
 
 	if ((src->flags & CAN_FRAME_IDE) != 0) {
 		dst->id = FIELD_PREP(MCP251XFD_OBJ_ID_SID_MASK, src->id >> 18);
@@ -45,10 +45,6 @@ static void mcp251xfd_canframe_to_txobj(const struct can_frame *src, int mailbox
 		dst->flags |= MCP251XFD_OBJ_FLAGS_BRS;
 	}
 
-	if ((src->flags & CAN_FRAME_RTR) != 0) {
-		dst->flags |= MCP251XFD_OBJ_FLAGS_RTR;
-	}
-
 	dst->flags |= FIELD_PREP(MCP251XFD_OBJ_FLAGS_DLC_MASK, src->dlc);
 #if defined(CONFIG_CAN_FD_MODE)
 	if ((src->flags & CAN_FRAME_FDF) != 0) {
@@ -60,7 +56,11 @@ static void mcp251xfd_canframe_to_txobj(const struct can_frame *src, int mailbox
 	dst->id = sys_cpu_to_le32(dst->id);
 	dst->flags = sys_cpu_to_le32(dst->flags);
 
-	memcpy(dst->data, src->data, MIN(can_dlc_to_bytes(src->dlc), CAN_MAX_DLEN));
+	if ((src->flags & CAN_FRAME_RTR) != 0) {
+		dst->flags |= MCP251XFD_OBJ_FLAGS_RTR;
+	} else {
+		memcpy(dst->data, src->data, MIN(can_dlc_to_bytes(src->dlc), CAN_MAX_DLEN));
+	}
 }
 
 static void *mcp251xfd_read_reg(const struct device *dev, uint16_t addr, int len)
@@ -208,7 +208,7 @@ static int mcp251xfd_fifo_write(const struct device *dev, int mailbox_idx,
 
 static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj *src, struct can_frame *dst)
 {
-	memset(dst, 0, offsetof(struct can_frame, data));
+	memset(dst, 0, sizeof(*dst));
 
 	src->id = sys_le32_to_cpu(src->id);
 	src->flags = sys_le32_to_cpu(src->flags);
@@ -225,10 +225,6 @@ static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj *src, struct can_
 		dst->flags |= CAN_FRAME_BRS;
 	}
 
-	if ((src->flags & MCP251XFD_OBJ_FLAGS_RTR) != 0) {
-		dst->flags |= CAN_FRAME_RTR;
-	}
-
 #if defined(CONFIG_CAN_FD_MODE)
 	if ((src->flags & MCP251XFD_OBJ_FLAGS_FDF) != 0) {
 		dst->flags |= CAN_FRAME_FDF;
@@ -241,7 +237,11 @@ static void mcp251xfd_rxobj_to_canframe(struct mcp251xfd_rxobj *src, struct can_
 	dst->timestamp = sys_le32_to_cpu(src->timestamp);
 #endif
 
-	memcpy(dst->data, src->data, MIN(can_dlc_to_bytes(dst->dlc), CAN_MAX_DLEN));
+	if ((src->flags & MCP251XFD_OBJ_FLAGS_RTR) != 0) {
+		dst->flags |= CAN_FRAME_RTR;
+	} else {
+		memcpy(dst->data, src->data, MIN(can_dlc_to_bytes(dst->dlc), CAN_MAX_DLEN));
+	}
 }
 
 static int mcp251xfd_get_mode_internal(const struct device *dev, uint8_t *mode)
