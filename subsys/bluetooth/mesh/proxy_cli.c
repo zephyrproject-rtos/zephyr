@@ -391,3 +391,12 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 BT_MESH_SUBNET_CB_DEFINE(proxy_cli) = {
 	.evt_handler = subnet_evt,
 };
+
+bool bt_mesh_proxy_cli_is_connected(uint16_t net_idx)
+{
+	if (find_proxy_srv(net_idx, true, false)) {
+		return true;
+	}
+
+	return false;
+}
