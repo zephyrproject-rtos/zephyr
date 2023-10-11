@@ -2061,6 +2061,10 @@ class EDT:
         # first time the scc_order property is read.
 
         for node in self.nodes:
+            # Always insert root node
+            if not node.parent:
+                self._graph.add_node(node)
+
             # A Node always depends on its parent.
             for child in node.children.values():
                 self._graph.add_edge(child, node)
