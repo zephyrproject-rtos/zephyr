@@ -35,6 +35,12 @@ target_sources(native_simulator INTERFACE
 	common/trace_hook.c
 )
 
+if (CONFIG_IPC_SERVICE)
+	target_sources(native_simulator INTERFACE
+		ipc_backend.c
+	)
+endif()
+
 zephyr_include_directories(
   soc
   common
