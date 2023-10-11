@@ -9,11 +9,11 @@
 #include <stdlib.h>
 
 #ifdef CONFIG_TELINK_B9X_MALLOC_FAILED_HOOK
-static void sys_heap_alloc_failed(const char *function, const struct sys_heap *heap, size_t bytes)
+static void sys_heap_alloc_failed(const char *function, struct sys_heap *heap, size_t bytes)
 {
-	(void)heap;
-
 	printk("!!! %s failed, with size %u\n", function, bytes);
+	sys_heap_print_info(heap, false);
+
 	abort();
 }
 #endif /* CONFIG_TELINK_B9X_MALLOC_FAILED_HOOK */
