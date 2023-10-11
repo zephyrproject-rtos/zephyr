@@ -11,8 +11,6 @@
 
 #include <soc.h>
 #include <esp_cpu.h>
-#include <hal/soc_hal.h>
-#include <hal/soc_ll.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 static struct k_spinlock loglock;
@@ -28,7 +26,7 @@ void smp_log(const char *msg)
 
 void esp_appcpu_start(void *entry_point)
 {
-	soc_ll_unstall_core(1);
+	esp_cpu_unstall(1);
 
 	if (!REG_GET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN)) {
 		REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_CLKGATE_EN);
