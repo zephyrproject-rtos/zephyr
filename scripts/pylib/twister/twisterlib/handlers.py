@@ -358,6 +358,13 @@ class DeviceHandler(Handler):
         """
         super().__init__(instance, type_str)
 
+    def get_test_timeout(self):
+        timeout = super().get_test_timeout()
+        if self.options.coverage:
+            # wait more for gcov data to be dumped on console
+            timeout += 120
+        return timeout
+
     def monitor_serial(self, ser, halt_event, harness):
         log_out_fp = open(self.log, "wb")
 
