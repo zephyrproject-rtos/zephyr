@@ -53,10 +53,8 @@ int intel_adsp_hda_dma_host_in_config(const struct device *dev,
 		*DGMBS(cfg->base, cfg->regblock_size, channel) =
 			blk_cfg->block_size & HDA_ALIGN_MASK;
 
-		if (dma_cfg->source_data_size <= 3) {
-			/* set the sample container set bit to 16bits */
-			*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
-		}
+		intel_adsp_hda_set_sample_container_size(cfg->base, cfg->regblock_size, channel,
+							 dma_cfg->source_data_size);
 	}
 
 	return res;
@@ -90,10 +88,8 @@ int intel_adsp_hda_dma_host_out_config(const struct device *dev,
 		*DGMBS(cfg->base, cfg->regblock_size, channel) =
 			blk_cfg->block_size & HDA_ALIGN_MASK;
 
-		if (dma_cfg->dest_data_size <= 3) {
-			/* set the sample container set bit to 16bits */
-			*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
-		}
+		intel_adsp_hda_set_sample_container_size(cfg->base, cfg->regblock_size, channel,
+							 dma_cfg->dest_data_size);
 	}
 
 	return res;
@@ -120,10 +116,9 @@ int intel_adsp_hda_dma_link_in_config(const struct device *dev,
 	buf = (uint8_t *)(uintptr_t)(blk_cfg->dest_address);
 	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
-
-	if (res == 0 && dma_cfg->dest_data_size <= 3) {
-		/* set the sample container set bit to 16bits */
-		*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
+	if (res == 0) {
+		intel_adsp_hda_set_sample_container_size(cfg->base, cfg->regblock_size, channel,
+							 dma_cfg->dest_data_size);
 	}
 
 	return res;
@@ -152,10 +147,9 @@ int intel_adsp_hda_dma_link_out_config(const struct device *dev,
 
 	res = intel_adsp_hda_set_buffer(cfg->base, cfg->regblock_size, channel, buf,
 				  blk_cfg->block_size);
-
-	if (res == 0 && dma_cfg->source_data_size <= 3) {
-		/* set the sample container set bit to 16bits */
-		*DGCS(cfg->base, cfg->regblock_size, channel) |= DGCS_SCS;
+	if (res == 0) {
+		intel_adsp_hda_set_sample_container_size(cfg->base, cfg->regblock_size, channel,
+							 dma_cfg->source_data_size);
 	}
 
 	return res;
