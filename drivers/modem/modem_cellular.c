@@ -1329,8 +1329,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(zephyr_gsm_ppp_init_chat_script_cmds,
 			       * too short, modems have been observed to simply deadlock,
 			       * refusing to respond to any CMUX command.
 			       */
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      300));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
 
 MODEM_CHAT_SCRIPT_DEFINE(zephyr_gsm_ppp_init_chat_script, zephyr_gsm_ppp_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
@@ -1365,8 +1364,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2",
-							      0));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
 
 MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_init_chat_script, simcom_sim7080_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
