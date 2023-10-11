@@ -406,11 +406,18 @@ static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *br
 
 static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source)
 {
-	const uint16_t mock_ccid = 0xAB;
+#if defined(CONFIG_BT_TBS)
+	/* TODO: We do not have a way to get the CCID value of GTBS, but for now set to 0x00 as we
+	 * know that it is the first content control service initialized
+	 */
+	const uint16_t gtbs_ccid = 0x00;
+#endif /* CONFIG_BT_TBS */
 	const uint8_t new_metadata[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_MEDIA)),
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, mock_ccid),
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL)),
+#if defined(CONFIG_BT_TBS)
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_CCID_LIST, gtbs_ccid),
+#endif /* CONFIG_BT_TBS */
 	};
 	int err;
 
