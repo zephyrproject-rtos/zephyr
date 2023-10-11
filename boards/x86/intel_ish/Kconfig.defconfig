@@ -16,9 +16,6 @@ config TEST_EXTRA_STACK_SIZE
 	default 1024
 endif # TEST
 
-config HPET_TIMER
-	default y
-
 config SYS_CLOCK_TICKS_PER_SEC
 	default 2048 if HPET_TIMER # HPET is 32768 HZ
 
