@@ -339,7 +339,7 @@ __deprecated int img_mgmt_state_confirm(void);
  * @param confirm	if flase then slot is set for test, unless application
  *			is already running from that slot in which case
  *			nothing changes; if true then slot is confirmed
- *			to be used for each next boot.
+ *			to be used for each boot hereafter.
  *
  * @return #img_mgmt_ret_code_t error code.
  */
