@@ -523,9 +523,12 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 
 static const struct modem_cmd read_cops_cmd =
 	MODEM_CMD_ARGS_MAX("+COPS:", on_cmd_atcmdinfo_cops, 1U, 4U, ",");
-
 static const struct modem_cmd check_net_reg_cmd =
+#if defined(CONFIG_MODEM_GSM_SELECT_CEREG)
+	MODEM_CMD("+CEREG: ", on_cmd_net_reg_sts, 2U, ",");
+#else
 	MODEM_CMD("+CREG: ", on_cmd_net_reg_sts, 2U, ",");
+#endif
 
 static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
@@ -764,12 +767,21 @@ static void gsm_finalize_connection(struct k_work *work)
 	gsm->state = GSM_PPP_REGISTERING;
 registering:
 	/* Wait for cell tower registration */
-	ret = modem_cmd_send_nolock(&gsm->context.iface,
-				    &gsm->context.cmd_handler,
-				    &check_net_reg_cmd, 1,
-				    "AT+CREG?",
-				    &gsm->sem_response,
-				    GSM_CMD_SETUP_TIMEOUT);
+	if (IS_ENABLED(CONFIG_MODEM_GSM_SELECT_CEREG)) {
+		ret = modem_cmd_send_nolock(&gsm->context.iface,
+					&gsm->context.cmd_handler,
+					&check_net_reg_cmd, 1,
+					"AT+CEREG?",
+					&gsm->sem_response,
+					GSM_CMD_SETUP_TIMEOUT);
+	} else {
+		ret = modem_cmd_send_nolock(&gsm->context.iface,
+					&gsm->context.cmd_handler,
+					&check_net_reg_cmd, 1,
+					"AT+CREG?",
+					&gsm->sem_response,
+					GSM_CMD_SETUP_TIMEOUT);
+	}
 	if ((ret < 0) || ((gsm->net_state != GSM_NET_ROAMING) &&
 			 (gsm->net_state != GSM_NET_HOME_NETWORK))) {
 		if (gsm->retries == 0) {

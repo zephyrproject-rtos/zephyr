@@ -36,6 +36,24 @@ config MODEM_GSM_QUECTEL
 
 endchoice
 
+choice MODEM_GSM_STATUS_COMMAND_TYPE
+	prompt "Select AT command Type"
+	default MODEM_GSM_SELECT_CREG
+	help
+	  Use particular type of AT command for registration status.
+
+config MODEM_GSM_SELECT_CREG
+	bool "CREG command"
+	help
+	  Use this if the modem works only with AT+CREG?.
+
+config MODEM_GSM_SELECT_CEREG
+	bool "CEREG command"
+	help
+	  Use this if the modem does not work with AT+CREG?.
+
+endchoice
+
 config MODEM_GSM_RX_STACK_SIZE
 	int "Size of the stack allocated for receiving data from modem"
 	default 512
