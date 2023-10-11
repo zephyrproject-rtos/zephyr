@@ -327,7 +327,7 @@ __deprecated int img_mgmt_state_confirm(void);
 /**
  * @brief Sets next boot slot
  *
- * Sets next boot slot and marks it for test for confirmed permanent,
+ * Sets next boot slot and marks it for test or confirmed (permanent),
  * depending on the value of @p confirm.
  * The slot is always selected in a context of an image it is part of,
  * where each image consists of two slots. This means that it is allowed
