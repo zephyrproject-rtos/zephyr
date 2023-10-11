@@ -126,11 +126,12 @@ static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct can_fram
 
 	if ((mbox->RIR & CAN_RI0R_RTR) != 0) {
 		frame->flags |= CAN_FRAME_RTR;
+	} else {
+		frame->data_32[0] = mbox->RDLR;
+		frame->data_32[1] = mbox->RDHR;
 	}
 
 	frame->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
-	frame->data_32[0] = mbox->RDLR;
-	frame->data_32[1] = mbox->RDHR;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	frame->timestamp = ((mbox->RDTR & CAN_RDT0R_TIME) >> CAN_RDT0R_TIME_Pos);
 #endif
@@ -857,13 +858,13 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		mailbox->TIR |= CAN_TI1R_RTR;
+	} else {
+		mailbox->TDLR = frame->data_32[0];
+		mailbox->TDHR = frame->data_32[1];
 	}
 
 	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC) |
 			((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
-
-	mailbox->TDLR = frame->data_32[0];
-	mailbox->TDHR = frame->data_32[1];
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);
