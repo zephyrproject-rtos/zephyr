@@ -1157,3 +1157,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = gatt_connected,
 	.disconnected = gatt_disconnected,
 };
+
+uint8_t bt_mesh_proxy_srv_connected_cnt(void)
+{
+	uint8_t cnt = 0;
+
+	for (int i = 0; i < ARRAY_SIZE(clients); i++) {
+		if (clients[i].cli) {
+			cnt++;
+		}
+	}
+
+	return cnt;
+}
