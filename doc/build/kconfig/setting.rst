@@ -149,8 +149,8 @@ used.
 
    3. From the CMake variable cache
 
-#. Otherwise if ``CONF_FILE`` is set, and a single configuration file of the
-   form :file:`prj_<build>.conf` is used, then if file
+   Furthermore if ``CONF_FILE`` is set as single configuration file of the
+   form :file:`prj_<build>.conf` and if file
    :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
    :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
    :file:`boards/<BOARD>_<build>.conf` is used.
