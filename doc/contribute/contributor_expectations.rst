@@ -261,6 +261,9 @@ the steps below:
 
 .. _Architecture Working Group: https://github.com/zephyrproject-rtos/zephyr/wiki/Architecture-Working-Group
 
+
+.. _reviewer-expectations:
+
 Reviewer Expectations
 #####################
 
@@ -270,7 +273,7 @@ Reviewer Expectations
 - The Zephyr Project recognizes that reviewers and maintainers have limited
   bandwidth. As a reviewer, prioritize review requests in the following order:
 
-    #. PRs related to items in the `Zephyr Release Plan`_ or those targetting
+    #. PRs related to items in the `Zephyr Release Plan`_ or those targeting
        the next release during the stabilization period (after RC1).
     #. PRs where the reviewer has requested blocking changes.
     #. PRs assigned to the reviewer as the area maintainer.
@@ -299,6 +302,11 @@ Reviewer Expectations
   only non-blocking changes remain. The PR author has discretion as to whether
   they address all non-blocking comments. PR authors should acknowledge every
   review comment in some way, even if it's just with an emoticon.
+
+- Reviewers shall be *clear* and *concise* what changes they are requesting when the
+  "Request Changes" option is used. Requested changes shall be in the scope of
+  the PR in question and following the contribution and style guidelines of the
+  project.
 
 .. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
 
