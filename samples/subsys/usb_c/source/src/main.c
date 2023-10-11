@@ -15,11 +15,11 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include "power_ctrl.h"
 
-#define PORT1_NODE		DT_NODELABEL(port1)
-#define PORT1_POWER_ROLE	DT_ENUM_IDX(DT_NODELABEL(port1), power_role)
+#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
+#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
 
 /* A Source power role evauates to 1. See usbc_tc.h: TC_ROLE_SOURCE */
-#if (PORT1_POWER_ROLE != 1)
+#if (USBC_PORT0_POWER_ROLE != 1)
 #error "Unsupported board: Only Source device supported"
 #endif
 
@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
  */
 static struct port1_data_t {
 	/** Source Capabilities */
-	uint32_t src_caps[DT_PROP_LEN(DT_NODELABEL(port1), source_pdos)];
+	uint32_t src_caps[DT_PROP_LEN(USBC_PORT0_NODE, source_pdos)];
 	/** Number of Source Capabilities */
 	int src_cap_cnt;
 	/** CC Rp value */
@@ -49,9 +49,9 @@ static struct port1_data_t {
 	/** Log Sink Requested RDO to console */
 	atomic_t show_sink_request;
 } port1_data = {
-	.rp = DT_ENUM_IDX(DT_NODELABEL(port1), typec_power_opmode),
-	.src_caps = {DT_FOREACH_PROP_ELEM(DT_NODELABEL(port1), source_pdos, SOURCE_PDO)},
-	.src_cap_cnt = DT_PROP_LEN(DT_NODELABEL(port1), source_pdos),
+	.rp = DT_ENUM_IDX(USBC_PORT0_NODE, typec_power_opmode),
+	.src_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, source_pdos, SOURCE_PDO)},
+	.src_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, source_pdos),
 };
 
 /* usbc.rst port data object end */
@@ -318,7 +318,7 @@ int main(void)
 	const struct device *usbc_port1;
 
 	/* Get the device for this port */
-	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
+	usbc_port1 = DEVICE_DT_GET(USBC_PORT0_NODE);
 	if (!device_is_ready(usbc_port1)) {
 		LOG_ERR("PORT1 device not ready");
 		return 0;

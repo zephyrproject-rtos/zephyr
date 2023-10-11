@@ -13,10 +13,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define PORT1_NODE DT_NODELABEL(port1)
-#define PORT1_POWER_ROLE		DT_ENUM_IDX(DT_NODELABEL(port1), power_role)
+#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
+#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
 
-#if (PORT1_POWER_ROLE != TC_ROLE_SINK)
+#if (USBC_PORT0_POWER_ROLE != TC_ROLE_SINK)
 #error "Unsupported board: Only Sink device supported"
 #endif
 
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
  */
 static struct port1_data_t {
 	/** Sink Capabilities */
-	uint32_t snk_caps[DT_PROP_LEN(DT_NODELABEL(port1), sink_pdos)];
+	uint32_t snk_caps[DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos)];
 	/** Number of Sink Capabilities */
 	int snk_cap_cnt;
 	/** Source Capabilities */
@@ -38,8 +38,8 @@ static struct port1_data_t {
 	/* Power Supply Ready flag */
 	atomic_t ps_ready;
 } port1_data = {
-	.snk_caps = {DT_FOREACH_PROP_ELEM(DT_NODELABEL(port1), sink_pdos, SINK_PDO)},
-	.snk_cap_cnt = DT_PROP_LEN(DT_NODELABEL(port1), sink_pdos),
+	.snk_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, sink_pdos, SINK_PDO)},
+	.snk_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos),
 	.src_caps = {0},
 	.src_cap_cnt = 0,
 	.ps_ready = 0
@@ -298,7 +298,7 @@ int main(void)
 	const struct device *usbc_port1;
 
 	/* Get the device for this port */
-	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
+	usbc_port1 = DEVICE_DT_GET(USBC_PORT0_NODE);
 	if (!device_is_ready(usbc_port1)) {
 		LOG_ERR("PORT1 device not ready");
 		return 0;
