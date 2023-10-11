@@ -53,6 +53,7 @@ int net_udp_finalize(struct net_pkt *pkt)
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		udp_hdr->chksum = net_calc_chksum_udp(pkt);
+		net_pkt_set_chksum_done(pkt, true);
 	}
 
 	return net_pkt_set_data(pkt, &udp_access);
