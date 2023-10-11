@@ -1076,8 +1076,6 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 {
-	int err;
-
 	CHECKIF(sink == NULL) {
 		LOG_DBG("sink is NULL");
 		return -EINVAL;
@@ -1097,17 +1095,6 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink)
 			LOG_DBG("Sink is not stopped");
 			return -EBADMSG;
 		}
-	}
-
-	if (sink->pa_sync == NULL) {
-		LOG_DBG("Broadcast sink is already deleted");
-		return -EALREADY;
-	}
-
-	err = bt_le_per_adv_sync_delete(sink->pa_sync);
-	if (err != 0) {
-		LOG_DBG("Failed to delete periodic advertising sync (err %d)", err);
-		return err;
 	}
 
 	/* Reset the broadcast sink */
