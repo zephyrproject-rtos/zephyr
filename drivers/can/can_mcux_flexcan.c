@@ -520,11 +520,11 @@ static void mcux_flexcan_from_can_frame(const struct can_frame *src,
 		dest->type = kFLEXCAN_FrameTypeRemote;
 	} else {
 		dest->type = kFLEXCAN_FrameTypeData;
+		dest->dataWord0 = sys_cpu_to_be32(src->data_32[0]);
+		dest->dataWord1 = sys_cpu_to_be32(src->data_32[1]);
 	}
 
 	dest->length = src->dlc;
-	dest->dataWord0 = sys_cpu_to_be32(src->data_32[0]);
-	dest->dataWord1 = sys_cpu_to_be32(src->data_32[1]);
 }
 
 static void mcux_flexcan_to_can_frame(const flexcan_frame_t *src,
@@ -541,11 +541,12 @@ static void mcux_flexcan_to_can_frame(const flexcan_frame_t *src,
 
 	if (src->type == kFLEXCAN_FrameTypeRemote) {
 		dest->flags |= CAN_FRAME_RTR;
+	} else {
+		dest->data_32[0] = sys_be32_to_cpu(src->dataWord0);
+		dest->data_32[1] = sys_be32_to_cpu(src->dataWord1);
 	}
 
 	dest->dlc = src->length;
-	dest->data_32[0] = sys_be32_to_cpu(src->dataWord0);
-	dest->data_32[1] = sys_be32_to_cpu(src->dataWord1);
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	dest->timestamp = src->timestamp;
 #endif /* CAN_RX_TIMESTAMP */
@@ -571,6 +572,10 @@ static void mcux_flexcan_fd_from_can_frame(const struct can_frame *src,
 		dest->type = kFLEXCAN_FrameTypeRemote;
 	} else {
 		dest->type = kFLEXCAN_FrameTypeData;
+
+		for (i = 0; i < ARRAY_SIZE(dest->dataWord); i++) {
+			dest->dataWord[i] = sys_cpu_to_be32(src->data_32[i]);
+		}
 	}
 
 	if ((src->flags & CAN_FRAME_FDF) != 0) {
@@ -582,9 +587,6 @@ static void mcux_flexcan_fd_from_can_frame(const struct can_frame *src,
 	}
 
 	dest->length = src->dlc;
-	for (i = 0; i < ARRAY_SIZE(dest->dataWord); i++) {
-		dest->dataWord[i] = sys_cpu_to_be32(src->data_32[i]);
-	}
 }
 
 static void mcux_flexcan_fd_to_can_frame(const flexcan_fd_frame_t *src,
@@ -603,6 +605,10 @@ static void mcux_flexcan_fd_to_can_frame(const flexcan_fd_frame_t *src,
 
 	if (src->type == kFLEXCAN_FrameTypeRemote) {
 		dest->flags |= CAN_FRAME_RTR;
+	} else {
+		for (i = 0; i < ARRAY_SIZE(dest->data_32); i++) {
+			dest->data_32[i] = sys_be32_to_cpu(src->dataWord[i]);
+		}
 	}
 
 	if (src->edl != 0) {
@@ -618,9 +624,7 @@ static void mcux_flexcan_fd_to_can_frame(const flexcan_fd_frame_t *src,
 	}
 
 	dest->dlc = src->length;
-	for (i = 0; i < ARRAY_SIZE(dest->data_32); i++) {
-		dest->data_32[i] = sys_be32_to_cpu(src->dataWord[i]);
-	}
+
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	dest->timestamp = src->timestamp;
 #endif /* CAN_RX_TIMESTAMP */
