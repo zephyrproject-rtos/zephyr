@@ -1692,20 +1692,25 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+
+		if (false) {
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
-		/* When direction finding CTE receive feature is enabled then on-the-fly PDU
-		 * parsing for CTEInfo is always done. In such situation, the CCM TASKS_CRYPT
-		 * must be started with short delay. That give the Radio time to store received bits
-		 * in shared memory.
-		 */
-		radio_bc_configure(CCM_TASKS_CRYPT_DELAY_BITS);
-		radio_bc_status_reset();
-		hal_trigger_crypt_by_bcmatch_ppi_config();
-		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_DELAY_PPI));
-#else
-		hal_trigger_crypt_ppi_config();
-		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+		} else if (pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) {
+			/* When direction finding CTE receive feature is enabled then on-the-fly
+			 * PDU parsing for CTEInfo is always done. In such situation, the CCM
+			 * TASKS_CRYPT must be started with short delay. That give the Radio time
+			 * to store received bits in shared memory.
+			 */
+			radio_bc_configure(CCM_TASKS_CRYPT_DELAY_BITS);
+			radio_bc_status_reset();
+			hal_trigger_crypt_by_bcmatch_ppi_config();
+			hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_DELAY_PPI));
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
+		} else {
+			hal_trigger_crypt_ppi_config();
+			hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
+		}
 		break;
 
 	case PHY_2M:
