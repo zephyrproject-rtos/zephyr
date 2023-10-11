@@ -1239,6 +1239,7 @@ void ticker_worker(void *param)
 
 	/* Defer worker if job running */
 	instance->worker_trigger = 1U;
+	cpu_dmb();
 	if (instance->job_guard) {
 		return;
 	}
@@ -3124,7 +3125,10 @@ void ticker_job(void *param)
 				   instance);
 		return;
 	}
+
+	/* Guard ticker_job against pre-emption by ticker worker */
 	instance->job_guard = 1U;
+	cpu_dmb();
 
 	/* Back up the previous known tick */
 	ticks_previous = instance->ticks_current;
