@@ -5,7 +5,7 @@ config SOC_SERIES
 	depends on SOC_RISCV64_SHAKTI
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 40000000
+	default 100000000
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool
@@ -26,5 +26,8 @@ config RISCV_RAM_BASE_ADDR
 config RISCV_RAM_SIZE
 	hex
 	default 0x10000000
+
+config RISCV_HAS_PLIC
+	default y
 
 endif

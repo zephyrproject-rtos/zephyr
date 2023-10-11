@@ -7,4 +7,4 @@ config SOC_SERIES_RISCV64_SHAKTI
 	bool "Shakti Vajra SOC implementation"
 	select RISCV
 	select 64BIT
-	select SOC_FAMILY_RISCV_PRIVILEGE
+	select SOC_FAMILY_RISCV_PRIVILEGED
