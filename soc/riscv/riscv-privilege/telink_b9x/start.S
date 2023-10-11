@@ -65,6 +65,20 @@ start:
 	li     t0, (1 << 8) | (1 << 6)
 	csrs   NDS_MMISC_CTL, t0
 
+#ifdef CONFIG_TELINK_B9x_MATTER_RETENTION_LAYOUT
+_RAM_DLM_INIT:
+	la     t1, _RAM_DLM_LMA_START
+	la     t2, _RAM_DLM_VMA_START
+	la     t3, _RAM_DLM_VMA_END
+_RAM_DLM_BEGIN:
+	bleu   t3, t2, _RETENTION_RESET_INIT
+	lw     t0, 0(t1)
+	sw     t0, 0(t2)
+	addi   t1, t1, 4
+	addi   t2, t2, 4
+	j      _RAM_DLM_BEGIN
+#endif /* CONFIG_TELINK_B9x_MATTER_RETENTION_LAYOUT */
+
 _RETENTION_RESET_INIT:
 	la     t1, _RETENTION_RESET_LMA_START
 	la     t2, _RETENTION_RESET_VMA_START
