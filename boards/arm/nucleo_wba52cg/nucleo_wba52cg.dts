@@ -89,6 +89,13 @@
 	status = "okay";
 };
 
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pb5 &lpuart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa12 &spi1_sck_pb4
 		     &spi1_miso_pb3 &spi1_mosi_pa15>;
