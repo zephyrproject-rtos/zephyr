@@ -63,6 +63,34 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL
 
 if WIFI_NM_WPA_SUPPLICANT
 
+# Memory optimizations
+config WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
+	bool "Advanced features"
+	default y
+
+if WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES
+
+config WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
+	bool "Robust Audio Video streaming support"
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_WMM_AC
+	bool "WMM admission control"
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_MBO
+	bool "Agile Multiband support"
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_WNM
+	bool "Wireless Network Management support"
+	default y
+
+config WIFI_NM_WPA_SUPPLICANT_RRM
+	bool "Radio Resource Management support"
+	default y
+endif
+
 config WIFI_NM_WPA_SUPPLICANT_WEP
 	bool "WEP (Legacy crypto) support"
 
