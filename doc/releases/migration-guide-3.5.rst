@@ -271,6 +271,17 @@ Required changes
 * The :kconfig:option:`CONFIG_RISCV_MTVEC_VECTORED_MODE` Kconfig option was renamed to
   :kconfig:option:`CONFIG_RISCV_VECTORED_MODE`.
 
+* ZBus runtime observers implementation now relies on the HEAP memory instead of a memory slab.
+  Thus, zbus' configuration (kconfig) related to runtime observers has changed. To keep your runtime
+  observers code working correctly, you need to:
+
+  - Replace the integer ``CONFIG_ZBUS_RUNTIME_OBSERVERS_POOL_SIZE`` with the boolean
+    :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS`;
+  - Set the HEAP size with the :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`.
+
+* The zbus VDED delivery sequence has changed. Check the :ref:`documentation<zbus delivery
+  sequence>` to verify if it will affect your code.
+
 Recommended Changes
 *******************
 
