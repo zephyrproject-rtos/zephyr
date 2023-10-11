@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* empty stub file provided for systems not using devicetree */
+
+/dts-v1/;
+
+#include <skeleton.dtsi>
+
+/ {
+
+};
