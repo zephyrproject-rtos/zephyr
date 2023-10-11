@@ -728,12 +728,10 @@ static void can_nxp_s32_err_callback(const struct device *dev,
 static void nxp_s32_msg_data_to_zcan_frame(Canexcel_RxFdMsg msg_data,
 							struct can_frame *frame)
 {
+	memset(frame, 0, sizeof(*frame));
+
 	if (!!(msg_data.Header.Id & CANXL_TX_HEADER_IDE_MASK)) {
 		frame->flags |= CAN_FRAME_IDE;
-	}
-
-	if (!!(msg_data.Header.Id & CANXL_TX_HEADER_RTR_MASK)) {
-		frame->flags |= CAN_FRAME_RTR;
 	}
 
 	if (!!(frame->flags & CAN_FRAME_IDE)) {
@@ -754,7 +752,11 @@ static void nxp_s32_msg_data_to_zcan_frame(Canexcel_RxFdMsg msg_data,
 		frame->flags |= CAN_FRAME_BRS;
 	}
 
-	memcpy(frame->data, msg_data.data, can_dlc_to_bytes(frame->dlc));
+	if (!!(msg_data.Header.Id & CANXL_TX_HEADER_RTR_MASK)) {
+		frame->flags |= CAN_FRAME_RTR;
+	} else {
+		memcpy(frame->data, msg_data.data, can_dlc_to_bytes(frame->dlc));
+	}
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	frame->timestamp = msg_data.timeStampL;
