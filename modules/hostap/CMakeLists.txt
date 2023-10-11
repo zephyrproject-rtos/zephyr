@@ -32,10 +32,37 @@ zephyr_library_compile_definitions(
 	CONFIG_NO_PBKDF2
 	CONFIG_SHA256
 	CONFIG_CTRL_IFACE_ZEPHYR
-#	CONFIG_MBO
-#	CONFIG_WNM
 	CONFIG_SUITEB192
-	)
+)
+
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	CONFIG_NO_PBKDF2
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NO_DEBUG
+	CONFIG_NO_STDOUT_DEBUG
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
+	CONFIG_ROBUST_AV
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WMM_AC
+	CONFIG_WMM_AC
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_RRM
+	CONFIG_RRM
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO
+	CONFIG_MBO
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	CONFIG_WNM
+)
 
 zephyr_library_include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -79,9 +106,6 @@ zephyr_library_sources(
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/config.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/notify.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/eap_register.c
-	${WIFI_NM_WPA_SUPPLICANT_BASE}/op_classes.c
-	${WIFI_NM_WPA_SUPPLICANT_BASE}/rrm.c
-	${WIFI_NM_WPA_SUPPLICANT_BASE}/wmm_ac.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/config_none.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/bssid_ignore.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/wpas_glue.c
@@ -92,9 +116,6 @@ zephyr_library_sources(
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/sme.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/wpa_supplicant.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/events.c
-	${WIFI_NM_WPA_SUPPLICANT_BASE}/robust_av.c
-#	${WIFI_NM_WPA_SUPPLICANT_BASE}/mbo.c
-#	${WIFI_NM_WPA_SUPPLICANT_BASE}/wnm_sta.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/wpa_cli_cmds.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/ctrl_iface_zephyr.c
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/wpa_cli_zephyr.c
@@ -103,6 +124,24 @@ zephyr_library_sources(
 	src/supp_main.c
 	src/supp_api.c
 	src/supp_events.c
+)
+
+# Advanced features
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_RRM
+	${WPA_SUPPLICANT_BASE}/op_classes.c
+	${WPA_SUPPLICANT_BASE}/rrm.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WMM_AC
+	${WPA_SUPPLICANT_BASE}/wmm_ac.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
+	${WPA_SUPPLICANT_BASE}/robust_av.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO
+	${WPA_SUPPLICANT_BASE}/mbo.c
+)
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	${WPA_SUPPLICANT_BASE}/wnm_sta.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_WPA_CLI
