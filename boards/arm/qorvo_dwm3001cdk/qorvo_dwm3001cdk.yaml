@@ -1,0 +1,14 @@
+identifier: qorvo_dwm3001cdk
+name: Qorvo-DWM3001CDK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 512
+supported:
+  - spi
+  - i2c
+vendor: qorvo

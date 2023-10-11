@@ -1,0 +1,10 @@
+# Qorvo DWM3001CDK board configuration
+
+# Copyright (c) 2023 Sahas Chitlange, Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ENABLE_DCDC
+	bool "DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+	depends on BOARD_QORVO_DWM3001CDK
