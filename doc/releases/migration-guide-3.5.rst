@@ -350,3 +350,7 @@ Recommended Changes
   ``<zephyr/arch/arm/aarch32/cortex_m/cmsis.h>`` are now deprecated in favor of
   including ``<cmsis_core.h>`` instead. The new header is part of the CMSIS glue
   code in the ``modules`` directory.
+
+* Random API header ``<zephyr/random/rand32.h>`` is deprecated in favor of
+  ``<zephyr/random/random.h>``. The old header will be removed in future releases
+  and its usage should be avoided.
