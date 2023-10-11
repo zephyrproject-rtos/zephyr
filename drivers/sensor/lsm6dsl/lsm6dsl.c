@@ -24,7 +24,7 @@
 LOG_MODULE_REGISTER(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
 static const uint16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
-					1666, 3332, 6664};
+					1666, 3332, 6664, 1};
 
 #if defined(LSM6DSL_ACCEL_ODR_RUNTIME) || defined(LSM6DSL_GYRO_ODR_RUNTIME)
 static int lsm6dsl_freq_to_odr_val(uint16_t freq)
@@ -48,8 +48,9 @@ static int lsm6dsl_odr_to_freq_val(uint16_t odr)
 		return lsm6dsl_odr_map[odr];
 	}
 
-	/* invalid index, return last entry */
-	return lsm6dsl_odr_map[ARRAY_SIZE(lsm6dsl_odr_map) - 1];
+	/* invalid index, return the fastest entry (6.66kHz) */
+	BUILD_ASSERT(ARRAY_SIZE(lsm6dsl_odr_map) > 10);
+	return lsm6dsl_odr_map[10];
 }
 
 #ifdef LSM6DSL_ACCEL_FS_RUNTIME
