@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include "cap_internal.h"
+#include "ccid_internal.h"
 #include "csip_internal.h"
 #include "bap_endpoint.h"
 
@@ -38,9 +39,14 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 	return 0;
 }
 
+struct valid_metadata_param {
+	bool stream_context_found;
+	bool valid;
+};
+
 static bool data_func_cb(struct bt_data *data, void *user_data)
 {
-	bool *stream_context_found = (bool *)user_data;
+	struct valid_metadata_param *metadata_param = (struct valid_metadata_param *)user_data;
 
 	LOG_DBG("type %u len %u data %s", data->type, data->data_len,
 		bt_hex(data->data, data->data_len));
@@ -50,8 +56,21 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 			return false;
 		}
 
-		*stream_context_found = true;
-		return false;
+		metadata_param->stream_context_found = true;
+	} else if (IS_ENABLED(CONFIG_BT_CCID) && data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+		/* If the application supplies a CCID list, we verify that the CCIDs exist on our
+		 * device
+		 */
+		for (uint8_t i = 0U; i < data->data_len; i++) {
+			const uint8_t ccid = data->data[i];
+
+			if (bt_ccid_find_attr(ccid) == NULL) {
+				LOG_DBG("Unknown characterstic for CCID 0x%02X", ccid);
+				metadata_param->valid = false;
+
+				return false;
+			}
+		}
 	}
 
 	return true;
@@ -59,21 +78,24 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 
 static bool cap_initiator_valid_metadata(const uint8_t meta[], size_t meta_len)
 {
-	bool stream_context_found = false;
+	struct valid_metadata_param metadata_param = {
+		.stream_context_found = false,
+		.valid = true,
+	};
 	int err;
 
 	LOG_DBG("meta %p len %zu", meta, meta_len);
 
-	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &stream_context_found);
+	err = bt_audio_data_parse(meta, meta_len, data_func_cb, &metadata_param);
 	if (err != 0 && err != -ECANCELED) {
 		return false;
 	}
 
-	if (!stream_context_found) {
+	if (!metadata_param.stream_context_found) {
 		LOG_DBG("No streaming context supplied");
 	}
 
-	return stream_context_found;
+	return metadata_param.stream_context_found && metadata_param.valid;
 }
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
