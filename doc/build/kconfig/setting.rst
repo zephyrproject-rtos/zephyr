@@ -139,7 +139,7 @@ known as a Kconfig fragment, which are then merged to get the final
 configuration used for a particular build). By default, :file:`prj.conf` is
 used.
 
-1. If ``CONF_FILE`` is set, the configuration file(s) specified in it are
+#. If ``CONF_FILE`` is set, the configuration file(s) specified in it are
    merged and used as the application configuration. ``CONF_FILE`` can be set
    in various ways:
 
@@ -149,25 +149,25 @@ used.
 
    3. From the CMake variable cache
 
-2. Otherwise if ``CONF_FILE`` is set, and a single configuration file of the
+#. Otherwise if ``CONF_FILE`` is set, and a single configuration file of the
    form :file:`prj_<build>.conf` is used, then if file
    :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
    :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
    :file:`boards/<BOARD>_<build>.conf` is used.
 
-3. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
+#. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
    configuration directory.
 
-4. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
+#. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` is
    used.
 
-5. Otherwise, if board revisions are used and
+#. Otherwise, if board revisions are used and
    :file:`boards/<BOARD>_<revision>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` and
    :file:`boards/<BOARD>.conf` is used.
 
-6. Otherwise, :file:`prj.conf` is used from the application configuration
+#. Otherwise, :file:`prj.conf` is used from the application configuration
    directory. If it does not exist then a fatal error will be emitted.
 
 All configuration files will be taken from the application's configuration
