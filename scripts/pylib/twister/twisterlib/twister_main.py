@@ -207,9 +207,10 @@ def main(options):
 
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
+    coverage_completed = True
     if options.coverage:
         if not options.build_only:
-            run_coverage(tplan, options)
+            coverage_completed = run_coverage(tplan, options)
         else:
             logger.info("Skipping coverage report generation due to --build-only.")
 
@@ -235,6 +236,7 @@ def main(options):
         runner.results.failed
         or runner.results.error
         or (tplan.warnings and options.warnings_as_errors)
+        or (options.coverage and not coverage_completed)
     ):
         return 1
 
