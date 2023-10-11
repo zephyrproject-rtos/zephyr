@@ -18,7 +18,10 @@ config NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
 
 config ETH_NATIVE_POSIX
-	default y if NET_L2_ETHERNET && ETH_DRIVER
+	default y if NET_L2_ETHERNET && ETH_DRIVER && !WIFI
+
+config WIFI_NM_WPA_SUPPLICANT
+	default y if WIFI
 
 endif # NETWORKING
 

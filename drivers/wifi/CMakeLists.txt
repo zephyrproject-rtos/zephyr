@@ -3,6 +3,7 @@
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
+add_subdirectory_ifdef(CONFIG_WIFI_NATIVE_SIM   native_sim)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP_AT       esp_at)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP32        esp32)
 add_subdirectory_ifdef(CONFIG_WIFI_ESWIFI       eswifi)
