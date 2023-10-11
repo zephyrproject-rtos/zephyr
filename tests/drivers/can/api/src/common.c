@@ -252,5 +252,9 @@ void assert_frame_equal(const struct can_frame *frame1,
 	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
 	zassert_equal(frame1->id | id_mask, frame2->id | id_mask, "ID does not match");
 	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
-	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
+
+	if ((frame1->flags & CAN_FRAME_RTR) == 0U) {
+		zassert_mem_equal(frame1->data, frame2->data, can_dlc_to_bytes(frame1->dlc),
+				  "Received data differ");
+	}
 }
