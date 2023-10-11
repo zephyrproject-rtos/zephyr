@@ -1,0 +1,18 @@
+common:
+  platform_allow:
+    - esp32_devkitc_wrover
+    - esp32c3_devkitm
+    - esp32s2_saola
+    - esp32s3_devkitm
+  depends_on: wifi
+tests:
+  esp.wifi.sec.none:
+    tags: wifi
+  esp.wifi.sec.wpa2:
+    tags: wifi
+    extra_configs:
+      - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
+  esp.wifi.sec.wpa3:
+    tags: wifi
+    extra_configs:
+      - CONFIG_WIFI_TEST_AUTH_MODE_WPA3=y
