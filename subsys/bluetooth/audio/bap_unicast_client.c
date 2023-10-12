@@ -2090,8 +2090,10 @@ static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
 {
 	cig_param->framing = qos->framing;
 	cig_param->packing = BT_ISO_PACKING_SEQUENTIAL; /*  TODO: Add to QoS struct */
-	cig_param->interval = qos->interval;
-	cig_param->latency = qos->latency;
+	cig_param->c_to_p_interval = qos->interval;
+	cig_param->p_to_c_interval = qos->interval;
+	cig_param->c_to_p_latency = qos->latency;
+	cig_param->p_to_c_latency = qos->latency;
 	cig_param->sca = BT_GAP_SCA_UNKNOWN;
 
 	if (group_param != NULL) {
