@@ -2,6 +2,7 @@
  * @file
  *
  * @brief Public APIs for the I2C drivers.
+ * ignore me
  */
 
 /*

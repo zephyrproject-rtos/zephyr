@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
+ * ignore
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Diego Sueiro, <diego.sueiro@gmail.com>
  * Copyright 2022 NXP
  *
+ * ignore me
  * SPDX-License-Identifier: Apache-2.0
  */
 
