@@ -23,6 +23,15 @@ static inline int select_nanosleep(int selection, clockid_t clock_id, int flags,
 	return clock_nanosleep(clock_id, flags, rqtp, rmtp);
 }
 
+static inline uint64_t cycle_get_64(void)
+{
+	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		return k_cycle_get_64();
+	} else {
+		return k_cycle_get_32();
+	}
+}
+
 static void common_errors(int selection, clockid_t clock_id, int flags)
 {
 	struct timespec rem = {};
@@ -142,15 +151,15 @@ static void common_lower_bound_check(int selection, clockid_t clock_id, int flag
 	int r;
 	uint64_t actual_ns;
 	uint64_t exp_ns;
-	uint32_t now;
-	uint32_t then;
+	uint64_t now;
+	uint64_t then;
 	struct timespec rem = {0, 0};
 	struct timespec req = {s, ns};
 
 	errno = 0;
-	then = k_cycle_get_32();
+	then = cycle_get_64();
 	r = select_nanosleep(selection, clock_id, flags, &req, &rem);
-	now = k_cycle_get_32();
+	now = cycle_get_64();
 
 	zassert_equal(r, 0, "actual: %d expected: %d", r, 0);
 	zassert_equal(errno, 0, "actual: %d expected: %d", errno, 0);
