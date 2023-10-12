@@ -12,4 +12,7 @@ if(CONFIG_HAS_MCUX OR CONFIG_HAS_IMX_HAL OR CONFIG_HAS_NXP_S32_HAL)
   zephyr_include_directories_ifdef(CONFIG_PWM_MCUX_CTIMER
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/drivers/ctimer/)
   zephyr_include_directories(.)
+
+  zephyr_compile_definitions_ifdef(CONFIG_CAN_MCUX_FLEXCAN
+    FLEXCAN_WAIT_TIMEOUT=${CONFIG_CAN_MCUX_FLEXCAN_WAIT_TIMEOUT})
 endif()
