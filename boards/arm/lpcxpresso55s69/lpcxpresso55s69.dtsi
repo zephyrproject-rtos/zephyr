@@ -117,28 +117,27 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		/* Please enable mcuboot's swap move, no scratch */
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x00008000>;
+			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
 		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x00008000 0x00028000>;
+			reg = <0x00008000 DT_SIZE_K(160)>;
 		};
-		slot1_partition: partition@30000 {
+		slot0_ns_partition: partition@30000 {
+			label = "image-0-nonsecure";
+			reg = <0x00030000 DT_SIZE_K(96)>;
+		};
+		slot1_partition: partition@48000 {
 			label = "image-1";
-			reg = <0x00030000 0x00018000>;
+			reg = <0x00048000 DT_SIZE_K(160)>;
 		};
-		slot2_partition: partition@48000 {
-			label = "image-2";
-			reg = <0x00048000 0x00028000>;
-		};
-		slot3_partition: partition@70000 {
-			label = "image-3";
-			reg = <0x00070000 0x00018000>;
+		slot1_ns_partition: partition@70000 {
+			label = "image-1-nonsecure";
+			reg = <0x00070000 DT_SIZE_K(96)>;
 		};
 		/*
 		 * The flash starting at 0x88000 and ending at
@@ -146,7 +145,7 @@
 		 */
 		storage_partition: partition@88000 {
 			label = "storage";
-			reg = <0x00088000 0x0000ca00>;
+			reg = <0x00088000 DT_SIZE_K(50)>;
 		};
 	};
 };
