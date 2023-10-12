@@ -1,7 +1,13 @@
 # Copyright (c) 2020, STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 lptim
+description: |
+  STM32 lptim : low power timer
+  The lptim node to be used for counting ticks during lowpower modes
+  must be named stm32_lp_tick_source in the DTS, as follows:
+  stm32_lp_tick_source: &lptim1 {
+   status = "okay";
+  }
 
 compatible: "st,stm32-lptim"
 

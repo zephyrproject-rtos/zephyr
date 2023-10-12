@@ -119,7 +119,7 @@
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 };
 
-&lptim1 {
+stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
