@@ -732,9 +732,12 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	}
 
 	if (file_len <= off) {
-		/* Requested offset is larger than target file size */
+		/* Requested offset is larger than target file size or file length is 0, which
+		 * means no hash/checksum can be performed
+		 */
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_FS,
-				     FS_MGMT_ERR_FILE_OFFSET_LARGER_THAN_FILE);
+				     (file_len == 0 ? FS_MGMT_ERR_FILE_EMPTY :
+						      FS_MGMT_ERR_FILE_OFFSET_LARGER_THAN_FILE));
 		goto end;
 	}
 
