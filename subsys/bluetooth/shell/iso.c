@@ -136,6 +136,56 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 #if defined(CONFIG_BT_ISO_CENTRAL)
 static struct bt_iso_cig *cig;
 
+static long parse_interval(const struct shell *sh, const char *interval_str)
+{
+	unsigned long interval;
+	int err;
+
+	err = 0;
+	interval = shell_strtoul(interval_str, 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse interval: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(interval,
+		      BT_ISO_SDU_INTERVAL_MIN,
+		      BT_ISO_SDU_INTERVAL_MAX)) {
+		shell_error(sh, "Invalid interval %lu", interval);
+
+		return -ENOEXEC;
+	}
+
+	return interval;
+}
+
+static long parse_latency(const struct shell *sh, const char *latency_str)
+{
+	unsigned long latency;
+	int err;
+
+	err = 0;
+	latency = shell_strtoul(latency_str, 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse latency: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(latency,
+		      BT_ISO_LATENCY_MIN,
+		      BT_ISO_LATENCY_MAX)) {
+		shell_error(sh, "Invalid latency %lu", latency);
+
+		return -ENOEXEC;
+	}
+
+	return latency;
+}
+
+
+
 static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -164,33 +214,44 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 	err = 0;
 	if (argc > 2) {
-		unsigned long interval;
+		long interval;
 
 		interval = shell_strtoul(argv[2], 0, &err);
-		if (err != 0) {
-			shell_error(sh, "Could not parse interval: %d", err);
-
-			return -ENOEXEC;
+		interval = parse_interval(sh, argv[2]);
+		if (interval < 0) {
+			return interval;
 		}
 
-		if (!IN_RANGE(interval,
-			      BT_ISO_SDU_INTERVAL_MIN,
-			      BT_ISO_SDU_INTERVAL_MAX)) {
-			shell_error(sh, "Invalid interval %lu", interval);
-
-			return -ENOEXEC;
-		}
-
-		param.interval = interval;
+		param.c_to_p_interval = interval;
 	} else {
-		param.interval = 10000;
+		param.c_to_p_interval = 10000;
 	}
-	cis_sdu_interval_us = param.interval;
 
 	if (argc > 3) {
+		long interval;
+
+		interval = parse_interval(sh, argv[3]);
+		if (interval < 0) {
+			return interval;
+		}
+
+		param.p_to_c_interval = interval;
+	} else {
+		param.p_to_c_interval = param.c_to_p_interval;
+	}
+
+	/* cis_sdu_interval_us is used to increase the sequence number.
+	 * cig_create can be called before an ACL is created, so the role
+	 * information may not be available.
+	 * Since we are central however we can safely set the cis_sdu_interval
+	 * to the Central to Peer interval
+	 */
+	cis_sdu_interval_us = param.c_to_p_interval;
+
+	if (argc > 4) {
 		unsigned long packing;
 
-		packing = shell_strtoul(argv[3], 0, &err);
+		packing = shell_strtoul(argv[4], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse packing: %d", err);
 
@@ -208,10 +269,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		param.packing = 0;
 	}
 
-	if (argc > 4) {
+	if (argc > 5) {
 		unsigned long framing;
 
-		framing = shell_strtoul(argv[4], 0, &err);
+		framing = shell_strtoul(argv[5], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse framing: %d", err);
 
@@ -229,33 +290,38 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		param.framing = 0;
 	}
 
-	if (argc > 5) {
-		unsigned long latency;
+	if (argc > 6) {
+		long latency;
 
-		latency = shell_strtoul(argv[5], 0, &err);
-		if (err != 0) {
-			shell_error(sh, "Could not parse latency: %d", err);
+		latency = parse_latency(sh, argv[6]);
 
-			return -ENOEXEC;
+		if (latency < 0) {
+			return latency;
 		}
 
-		if (!IN_RANGE(latency,
-			      BT_ISO_LATENCY_MIN,
-			      BT_ISO_LATENCY_MAX)) {
-			shell_error(sh, "Invalid latency %lu", latency);
-
-			return -ENOEXEC;
-		}
-
-		param.latency = latency;
+		param.c_to_p_latency = latency;
 	} else {
-		param.latency = 10;
+		param.c_to_p_latency = 10;
 	}
 
-	if (argc > 6) {
+	if (argc > 7) {
+		long latency;
+
+		latency = parse_latency(sh, argv[7]);
+
+		if (latency < 0) {
+			return latency;
+		}
+
+		param.p_to_c_latency = latency;
+	} else {
+		param.p_to_c_latency = param.c_to_p_latency;
+	}
+
+	if (argc > 7) {
 		unsigned long sdu;
 
-		sdu = shell_strtoul(argv[6], 0, &err);
+		sdu = shell_strtoul(argv[7], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse sdu: %d", err);
 
@@ -277,10 +343,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (argc > 7) {
+	if (argc > 8) {
 		unsigned long phy;
 
-		phy = shell_strtoul(argv[7], 0, &err);
+		phy = shell_strtoul(argv[8], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse phy: %d", err);
 
@@ -304,10 +370,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (argc > 8) {
+	if (argc > 9) {
 		unsigned long rtn;
 
-		rtn = shell_strtoul(argv[8], 0, &err);
+		rtn = shell_strtoul(argv[9], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse rtn: %d", err);
 
@@ -860,8 +926,9 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 #if defined(CONFIG_BT_ISO_UNICAST)
 #if defined(CONFIG_BT_ISO_CENTRAL)
-	SHELL_CMD_ARG(cig_create, NULL, "[dir=tx,rx,txrx] [interval] [packing] [framing] "
-		      "[latency] [sdu] [phy] [rtn]", cmd_cig_create, 1, 8),
+	SHELL_CMD_ARG(cig_create, NULL, "[dir=tx,rx,txrx] [C to P interval] [P to C interval] "
+		      "[packing] [framing] [C to P latency] [P to C latency] [sdu] [phy] [rtn]",
+		      cmd_cig_create, 1, 10),
 	SHELL_CMD_ARG(cig_term, NULL, "Terminate the CIG", cmd_cig_term, 1, 0),
 #if defined(CONFIG_BT_SMP)
 	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel [security level]", cmd_connect, 1, 1),
