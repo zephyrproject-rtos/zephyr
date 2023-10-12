@@ -20,7 +20,7 @@
 	chosen {
 		zephyr,sram = &sram3;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot1_partition;
+		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,entropy = &rng;
 	};
 };
