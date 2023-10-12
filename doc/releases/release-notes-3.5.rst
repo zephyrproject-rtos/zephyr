@@ -800,6 +800,11 @@ Libraries / Subsystems
 
   * Added STM32 SPI backend for EC Host command protocol.
 
+  * Fixed settings_mgmt returning unknown error instead of invalid key specified error.
+
+  * Fixed fs_mgmt returning parameter too large error instead of file is empty error when
+    attempting to hash/checksum a file which is empty.
+
 * File systems
 
   * Added support for ext2 file system.
