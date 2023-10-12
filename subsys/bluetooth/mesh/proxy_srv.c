@@ -698,9 +698,11 @@ static void gatt_proxy_solicited(struct bt_mesh_subnet *sub)
 
 	if (sub->priv_net_id_sent > 0) {
 		timeout = sub->priv_net_id_sent + MSEC_PER_SEC * bt_mesh_od_priv_proxy_get();
+		remaining = MIN(timeout - now, INT32_MAX);
+	} else {
+		remaining = MSEC_PER_SEC * bt_mesh_od_priv_proxy_get();
 	}
 
-	remaining = MIN(timeout - now, INT32_MAX);
 	if ((timeout > 0 && now > timeout) || (remaining / MSEC_PER_SEC < 1)) {
 		LOG_DBG("Advertising Private Network ID timed out "
 			"after solicitation");
