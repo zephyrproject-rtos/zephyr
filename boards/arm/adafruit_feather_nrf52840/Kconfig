@@ -1,4 +1,4 @@
-# Adafruit Feather nRF52840 Express board configuration
+# Adafruit Feather nRF52840 board configuration
 
 # Copyright (c) 2020 Tobias Svehagen
 # SPDX-License-Identifier: Apache-2.0
@@ -7,4 +7,5 @@ config BOARD_ENABLE_DCDC
 	bool "DCDC mode"
 	select SOC_DCDC_NRF52X
 	default y
-	depends on BOARD_ADAFRUIT_FEATHER_NRF52840
+	depends on BOARD_ADAFRUIT_FEATHER_NRF52840 \
+		|| BOARD_ADAFRUIT_FEATHER_NRF52840_SENSE
