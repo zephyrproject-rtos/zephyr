@@ -249,11 +249,12 @@ static inline int net_tcp_recv(struct net_context *context,
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_finalize(struct net_pkt *pkt);
+int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum);
 #else
-static inline int net_tcp_finalize(struct net_pkt *pkt)
+static inline int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(force_chksum);
 	return 0;
 }
 #endif
