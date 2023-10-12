@@ -18,6 +18,14 @@
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
+static const gpio_flags_t gpio_int_cfg[5] = {
+			GPIO_INT_EDGE,
+			GPIO_INT_EDGE_RISING,
+			GPIO_INT_EDGE_FALLING,
+			GPIO_INT_LEVEL_HIGH,
+			GPIO_INT_LEVEL_LOW,
+			};
+
 static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
@@ -25,7 +33,7 @@ static inline void setup_int1(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					enable
-					? GPIO_INT_LEVEL_ACTIVE
+					? gpio_int_cfg[cfg->int1_mode]
 					: GPIO_INT_DISABLE);
 }
 
@@ -123,7 +131,7 @@ static inline void setup_int2(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					enable
-					? GPIO_INT_LEVEL_ACTIVE
+					? gpio_int_cfg[cfg->int2_mode]
 					: GPIO_INT_DISABLE);
 }
 
