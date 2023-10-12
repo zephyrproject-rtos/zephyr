@@ -13,6 +13,7 @@
 #include "nrf_usbd_common.h"
 #include "nrf_usbd_common_errata.h"
 #include <string.h>
+#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
@@ -228,14 +229,11 @@ static uint32_t m_ep_ready;
  */
 static atomic_t m_ep_dma_waiting;
 
-/**
- * @brief Current EasyDMA state.
- *
- * Single flag, updated only inside interrupts, that marks current EasyDMA state.
+/* Semaphore to guard EasyDMA access.
  * In USBD there is only one DMA channel working in background, and new transfer
  * cannot be started when there is ongoing transfer on any other channel.
  */
-static bool m_dma_pending;
+static K_SEM_DEFINE(dma_available, 1, 1);
 
 /**
  * @brief Tracks whether total bytes transferred by DMA is even or odd.
@@ -315,6 +313,8 @@ static uint32_t m_tx_buffer[NRFX_CEIL_DIV(NRF_USBD_COMMON_FEEDER_BUFFER_SIZE, si
 
 /* Early declaration. Documentation above definition. */
 static void usbd_dmareq_process(void);
+static inline void usbd_int_rise(void);
+static void nrf_usbd_common_stop(void);
 
 /**
  * @brief Change endpoint number to endpoint event code.
@@ -643,7 +643,6 @@ static inline void usbd_dma_pending_set(void)
 	if (nrf_usbd_common_errata_199()) {
 		*((volatile uint32_t *)0x40027C1C) = 0x00000082;
 	}
-	m_dma_pending = true;
 }
 
 /**
@@ -657,7 +656,6 @@ static inline void usbd_dma_pending_clear(void)
 	if (nrf_usbd_common_errata_199()) {
 		*((volatile uint32_t *)0x40027C1C) = 0x00000000;
 	}
-	m_dma_pending = false;
 }
 
 /**
@@ -754,7 +752,16 @@ static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 
 void nrf_usbd_common_ep_abort(nrf_usbd_common_ep_t ep)
 {
+	/* Only abort if there is no active DMA */
+	k_sem_take(&dma_available, K_FOREVER);
 	usbd_ep_abort(ep);
+	k_sem_give(&dma_available);
+
+	/* This function was holding DMA semaphore and could potentially prevent
+	 * next DMA from executing. Fire IRQ handler to check if any DMA needs
+	 * to be started.
+	 */
+	usbd_int_rise();
 }
 
 /**
@@ -829,7 +836,12 @@ static inline void nrf_usbd_ep0in_dma_handler(void)
 	const nrf_usbd_common_ep_t ep = NRF_USBD_COMMON_EPIN0;
 
 	LOG_DBG("USB event: DMA ready IN0");
+	/* DMA finished, track if total bytes transferred is even or odd */
+	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
+
+	nrf_usbd_int_enable(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK);
 
 	usbd_ep_state_t *p_state = ep_state_access(ep);
 
@@ -858,7 +870,10 @@ static inline void nrf_usbd_epin_dma_handler(nrf_usbd_common_ep_t ep)
 	__ASSERT_NO_MSG(NRF_USBD_EPIN_CHECK(ep));
 	__ASSERT_NO_MSG(!NRF_USBD_EPISO_CHECK(ep));
 	__ASSERT_NO_MSG(NRF_USBD_EP_NR_GET(ep) > 0);
+	/* DMA finished, track if total bytes transferred is even or odd */
+	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
 
 	usbd_ep_state_t *p_state = ep_state_access(ep);
 
@@ -882,7 +897,10 @@ static inline void nrf_usbd_epiniso_dma_handler(nrf_usbd_common_ep_t ep)
 	}
 	__ASSERT_NO_MSG(NRF_USBD_EPIN_CHECK(ep));
 	__ASSERT_NO_MSG(NRF_USBD_EPISO_CHECK(ep));
+	/* DMA finished, track if total bytes transferred is even or odd */
+	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
 
 	usbd_ep_state_t *p_state = ep_state_access(ep);
 
@@ -913,7 +931,12 @@ static inline void nrf_usbd_ep0out_dma_handler(void)
 	const nrf_usbd_common_ep_t ep = NRF_USBD_COMMON_EPOUT0;
 
 	LOG_DBG("USB event: DMA ready OUT0");
+	/* DMA finished, track if total bytes transferred is even or odd */
+	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
+
+	nrf_usbd_int_enable(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK);
 
 	usbd_ep_state_t *p_state = ep_state_access(ep);
 
@@ -945,7 +968,10 @@ static inline void nrf_usbd_epout_dma_handler(nrf_usbd_common_ep_t ep)
 	__ASSERT_NO_MSG(NRF_USBD_EPOUT_CHECK(ep));
 	__ASSERT_NO_MSG(!NRF_USBD_EPISO_CHECK(ep));
 	__ASSERT_NO_MSG(NRF_USBD_EP_NR_GET(ep) > 0);
+	/* DMA finished, track if total bytes transferred is even or odd */
+	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
 
 	usbd_ep_state_t *p_state = ep_state_access(ep);
 
@@ -978,7 +1004,10 @@ static inline void nrf_usbd_epoutiso_dma_handler(nrf_usbd_common_ep_t ep)
 		LOG_DBG("DMA ready ISOOUT: %x", ep);
 	}
 	__ASSERT_NO_MSG(NRF_USBD_EPISO_CHECK(ep));
+	/* DMA finished, track if total bytes transferred is even or odd */
+	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
 
 	usbd_ep_state_t *p_state = ep_state_access(ep);
 
@@ -1148,12 +1177,6 @@ static void ev_setup_handler(void)
 		       nrf_usbd_setup_windex_get(NRF_USBD), nrf_usbd_setup_wlength_get(NRF_USBD));
 	uint8_t bmRequestType = nrf_usbd_setup_bmrequesttype_get(NRF_USBD);
 
-	if ((m_ep_dma_waiting | ((~m_ep_ready) & NRF_USBD_COMMON_EPIN_BIT_MASK)) &
-	    (1U << ep2bit(m_last_setup_dir))) {
-		LOG_DBG("USBD drv: Trying to abort last transfer on EP0");
-		usbd_ep_abort(m_last_setup_dir);
-	}
-
 	m_last_setup_dir =
 		((bmRequestType & USBD_BMREQUESTTYPE_DIRECTION_Msk) ==
 		 (USBD_BMREQUESTTYPE_DIRECTION_HostToDevice << USBD_BMREQUESTTYPE_DIRECTION_Pos))
@@ -1162,6 +1185,7 @@ static void ev_setup_handler(void)
 
 	(void)(atomic_and(&m_ep_dma_waiting, ~((1U << ep2bit(NRF_USBD_COMMON_EPOUT0)) |
 					       (1U << ep2bit(NRF_USBD_COMMON_EPIN0)))));
+	m_ep_ready &= ~(1U << ep2bit(NRF_USBD_COMMON_EPOUT0));
 	m_ep_ready |= 1U << ep2bit(NRF_USBD_COMMON_EPIN0);
 
 	const nrf_usbd_common_evt_t evt = {.type = NRF_USBD_COMMON_EVT_SETUP};
@@ -1279,7 +1303,8 @@ static inline size_t usbd_ep_iso_capacity(nrf_usbd_common_ep_t ep)
  */
 static void usbd_dmareq_process(void)
 {
-	if (!m_dma_pending) {
+	if ((m_ep_dma_waiting & m_ep_ready) &&
+	    (k_sem_take(&dma_available, K_NO_WAIT) == 0)) {
 		uint32_t req;
 
 		while (0 != (req = m_ep_dma_waiting & m_ep_ready)) {
@@ -1358,23 +1383,20 @@ static void usbd_dmareq_process(void)
 						(uint32_t)transfer.size);
 
 			usbd_dma_start(ep);
-			/* There is a lot of USBD registers that cannot be accessed during EasyDMA
-			 * transfer. This is quick fix to maintain stability of the stack. It cost
-			 * some performance but makes stack stable.
-			 */
-			while (!nrf_usbd_event_check(NRF_USBD,
-				nrf_usbd_common_ep_to_endevent(ep))) {
-				/* Empty */
-			}
-			/* DMA finished, track if total bytes transferred is even or odd */
-			m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 
-			if (NRF_USBD_COMMON_DMAREQ_PROCESS_DEBUG) {
-				LOG_DBG("USB DMA process - finishing");
+			/* Do not process SETUP packet until EP0 DMA completes.
+			 * DMA transfer itself will always complete regardless
+			 * of host actions and this action is solely to prevent
+			 * the need to abort active DMA.
+			 */
+			if ((ep == NRF_USBD_COMMON_EPOUT0) || (ep == NRF_USBD_COMMON_EPIN0)) {
+				nrf_usbd_int_disable(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK);
 			}
+
 			/* Transfer started - exit the loop */
-			break;
+			return;
 		}
+		k_sem_give(&dma_available);
 	} else {
 		if (NRF_USBD_COMMON_DMAREQ_PROCESS_DEBUG) {
 			LOG_DBG("USB DMA process - EasyDMA busy");
@@ -1532,7 +1554,7 @@ static const nrfx_irq_handler_t m_isr[] = {[USBD_INTEN_USBRESET_Pos] = ev_usbres
 void nrf_usbd_common_irq_handler(void)
 {
 	const uint32_t enabled = nrf_usbd_int_enable_get(NRF_USBD);
-	uint32_t to_process = enabled;
+	uint32_t to_process = enabled & ~NRF_USBD_INT_EP0SETUP_MASK;
 	uint32_t active = 0;
 
 	/* Check all enabled interrupts */
@@ -1547,10 +1569,6 @@ void nrf_usbd_common_irq_handler(void)
 	}
 
 	/* Process the active interrupts */
-	bool setup_active = 0 != (active & NRF_USBD_INT_EP0SETUP_MASK);
-
-	active &= ~NRF_USBD_INT_EP0SETUP_MASK;
-
 	while (active) {
 		uint8_t event_nr = NRF_CTZ(active);
 
@@ -1559,7 +1577,9 @@ void nrf_usbd_common_irq_handler(void)
 	}
 	usbd_dmareq_process();
 
-	if (setup_active) {
+	/* Handle SETUP only if there is no active DMA on EP0 */
+	if (nrf_usbd_int_enable_check(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK) &&
+	    nrf_usbd_event_get_and_clear(NRF_USBD, NRF_USBD_EVENT_EP0SETUP)) {
 		m_isr[USBD_INTEN_EP0SETUP_Pos]();
 	}
 }
@@ -1658,6 +1678,7 @@ void nrf_usbd_common_enable(void)
 	m_ep_ready = (((1U << NRF_USBD_EPIN_CNT) - 1U) << NRF_USBD_COMMON_EPIN_BITPOS_0);
 	m_ep_dma_waiting = 0;
 	m_dma_odd = 0;
+	__ASSERT_NO_MSG(k_sem_count_get(&dma_available) == 1);
 	usbd_dma_pending_clear();
 	m_last_setup_dir = NRF_USBD_COMMON_EPOUT0;
 
@@ -1677,6 +1698,9 @@ void nrf_usbd_common_disable(void)
 {
 	__ASSERT_NO_MSG(m_drv_state != NRFX_DRV_STATE_UNINITIALIZED);
 
+	/* Make sure DMA is not active */
+	k_sem_take(&dma_available, K_FOREVER);
+
 	/* Stop just in case */
 	nrf_usbd_common_stop();
 
@@ -1689,12 +1713,13 @@ void nrf_usbd_common_disable(void)
 		nrf_usbd_event_clear(NRF_USBD, NRF_USBD_EVENT_ENDEPIN0);
 		nrf_usbd_ep_easydma_set(NRF_USBD, NRF_USBD_COMMON_EPIN0, (uint32_t)&m_dma_odd, 1);
 		usbd_dma_start(NRF_USBD_COMMON_EPIN0);
-		while (!nrf_usbd_event_check(NRF_USBD, NRF_USBD_EVENT_ENDEPIN0)) {
+		while (!nrf_usbd_event_get_and_clear(NRF_USBD, NRF_USBD_EVENT_ENDEPIN0)) {
 		}
 		m_dma_odd = 0;
 	}
 	nrf_usbd_disable(NRF_USBD);
 	usbd_dma_pending_clear();
+	k_sem_give(&dma_available);
 	m_drv_state = NRFX_DRV_STATE_INITIALIZED;
 
 #if NRF_USBD_COMMON_USE_WORKAROUND_FOR_ANOMALY_211
@@ -1728,7 +1753,7 @@ void nrf_usbd_common_start(bool enable_sof)
 	nrf_usbd_pullup_enable(NRF_USBD);
 }
 
-void nrf_usbd_common_stop(void)
+static void nrf_usbd_common_stop(void)
 {
 	__ASSERT_NO_MSG(m_drv_state == NRFX_DRV_STATE_POWERED_ON);
 
@@ -1884,9 +1909,18 @@ void nrf_usbd_common_ep_enable(nrf_usbd_common_ep_t ep)
 
 void nrf_usbd_common_ep_disable(nrf_usbd_common_ep_t ep)
 {
+	/* Only disable endpoint if there is no active DMA */
+	k_sem_take(&dma_available, K_FOREVER);
 	usbd_ep_abort(ep);
 	nrf_usbd_ep_disable(NRF_USBD, ep_to_hal(ep));
 	nrf_usbd_int_disable(NRF_USBD, nrf_usbd_common_ep_to_int(ep));
+	k_sem_give(&dma_available);
+
+	/* This function was holding DMA semaphore and could potentially prevent
+	 * next DMA from executing. Fire IRQ handler to check if any DMA needs
+	 * to be started.
+	 */
+	usbd_int_rise();
 }
 
 void nrf_usbd_common_ep_default_config(void)
