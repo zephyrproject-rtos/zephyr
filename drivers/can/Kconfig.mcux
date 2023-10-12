@@ -21,6 +21,13 @@ config CAN_MCUX_FLEXCAN_FD
 	help
 	  Enable support for CAN-FD capable NXP FlexCAN devices.
 
+config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
+	int "Maximum number of wait loop iterations"
+	default 10000
+	help
+	  Maximum number of wait loop iterations for the MCUX FlexCAN HAL when entering/leaving
+	  freeze mode.
+
 config CAN_MAX_MB
 	int "Maximum number of message buffers for concurrent active instances"
 	default 16
