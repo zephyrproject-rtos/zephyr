@@ -16,8 +16,6 @@ SECTION_DATA_PROLOGUE(ram_dlm,,)
 	*(.data)
 	*(.sdata)
 	*(.bss)
-	*(.sbss)
-	*(.retention_data)
 
 	PROVIDE (_RAM_DLM_VMA_END = .);
 	PROVIDE (_RAM_DLM_VMA_START = ADDR(ram_dlm));

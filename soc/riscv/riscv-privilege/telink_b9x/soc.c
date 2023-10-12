@@ -79,7 +79,7 @@
 
 #if (defined(CONFIG_BT_B9X) || defined(CONFIG_IEEE802154))
 /* SOC Parameters structure */
-_attribute_data_retention_ struct {
+_attribute_data_retention_sec_ struct {
 	unsigned char	cap_freq_offset_en;
 	unsigned char	cap_freq_offset_value;
 } soc_nvParam;
