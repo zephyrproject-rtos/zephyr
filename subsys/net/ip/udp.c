@@ -35,7 +35,7 @@ int net_udp_create(struct net_pkt *pkt, uint16_t src_port, uint16_t dst_port)
 	return net_pkt_set_data(pkt, &udp_access);
 }
 
-int net_udp_finalize(struct net_pkt *pkt)
+int net_udp_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
@@ -51,7 +51,7 @@ int net_udp_finalize(struct net_pkt *pkt)
 
 	udp_hdr->len = htons(length);
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
 		udp_hdr->chksum = net_calc_chksum_udp(pkt);
 		net_pkt_set_chksum_done(pkt, true);
 	}

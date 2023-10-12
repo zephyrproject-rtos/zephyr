@@ -47,7 +47,7 @@ int net_icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
 	return net_pkt_set_data(pkt, &icmpv4_access);
 }
 
-int net_icmpv4_finalize(struct net_pkt *pkt)
+int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmp_hdr);
@@ -65,7 +65,7 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv4(pkt);
 		net_pkt_set_chksum_done(pkt, true);
 	}
