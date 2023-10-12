@@ -1495,3 +1495,24 @@ This has been fixed in main for v3.5.0
 
 - `PR 63069 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/63069>`_
+
+CVE-2023-5563
+-------------
+
+The SJA1000 CAN controller driver backend automatically attempts to recover
+from a bus-off event when built with CONFIG_CAN_AUTO_BUS_OFF_RECOVERY=y. This
+results in calling k_sleep() in IRQ context, causing a fatal exception.
+
+- `Zephyr project bug tracker GHSA-98mc-rj7w-7rpv
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-98mc-rj7w-7rpv>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 63713 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63713>`_
+
+- `PR 63718 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63718>`_
+
+- `PR 63717 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/63717>`_
