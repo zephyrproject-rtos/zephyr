@@ -120,6 +120,8 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 
 	if (rc < 0) {
 		if (rc == -EINVAL) {
+			rc = SETTINGS_MGMT_ERR_ROOT_KEY_NOT_FOUND;
+		} else if (rc == -ENOENT) {
 			rc = SETTINGS_MGMT_ERR_KEY_NOT_FOUND;
 		} else if (rc == -ENOTSUP) {
 			rc = SETTINGS_MGMT_ERR_READ_NOT_SUPPORTED;
@@ -231,7 +233,11 @@ static int settings_mgmt_write(struct smp_streamer *ctxt)
 
 	if (rc < 0) {
 		if (rc == -EINVAL) {
+			rc = SETTINGS_MGMT_ERR_ROOT_KEY_NOT_FOUND;
+		} else if (rc == -ENOENT) {
 			rc = SETTINGS_MGMT_ERR_KEY_NOT_FOUND;
+		} else if (rc == -ENOTSUP) {
+			rc = SETTINGS_MGMT_ERR_WRITE_NOT_SUPPORTED;
 		} else {
 			rc = SETTINGS_MGMT_ERR_UNKNOWN;
 		}
@@ -329,8 +335,12 @@ static int settings_mgmt_delete(struct smp_streamer *ctxt)
 #endif
 
 	if (rc < 0) {
-		if (rc == -ENOENT) {
+		if (rc == -EINVAL) {
+			rc = SETTINGS_MGMT_ERR_ROOT_KEY_NOT_FOUND;
+		} else if (rc == -ENOENT) {
 			rc = SETTINGS_MGMT_ERR_KEY_NOT_FOUND;
+		} else if (rc == -ENOTSUP) {
+			rc = SETTINGS_MGMT_ERR_DELETE_NOT_SUPPORTED;
 		} else {
 			rc = SETTINGS_MGMT_ERR_UNKNOWN;
 		}

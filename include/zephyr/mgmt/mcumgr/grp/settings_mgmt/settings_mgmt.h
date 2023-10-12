@@ -37,6 +37,15 @@ enum settings_mgmt_ret_code_t {
 
 	/** The provided key name does not support being read. */
 	SETTINGS_MGMT_ERR_READ_NOT_SUPPORTED,
+
+	/** The provided root key name does not exist. */
+	SETTINGS_MGMT_ERR_ROOT_KEY_NOT_FOUND,
+
+	/** The provided key name does not support being written. */
+	SETTINGS_MGMT_ERR_WRITE_NOT_SUPPORTED,
+
+	/** The provided key name does not support being deleted. */
+	SETTINGS_MGMT_ERR_DELETE_NOT_SUPPORTED,
 };
 
 #ifdef __cplusplus
