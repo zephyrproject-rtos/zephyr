@@ -25,10 +25,6 @@ static void tcp_connected(struct net_context *context,
 {
 	if (status < 0) {
 		PR_SHELL(tcp_shell, "TCP connection failed (%d)\n", status);
-
-		net_context_put(context);
-
-		tcp_ctx = NULL;
 	} else {
 		PR_SHELL(tcp_shell, "TCP connected\n");
 	}
@@ -207,8 +203,15 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 #define CONNECT_TIMEOUT K_SECONDS(3)
 #endif
 
-	net_context_connect(*ctx, &addr, addrlen, tcp_connected,
-			    CONNECT_TIMEOUT, NULL);
+	net_context_ref(*ctx);
+
+	ret = net_context_connect(*ctx, &addr, addrlen, tcp_connected,
+				  CONNECT_TIMEOUT, NULL);
+	if (ret < 0) {
+		PR_WARNING("Connect failed!\n");
+		net_context_put(*ctx);
+		tcp_ctx = NULL;
+	}
 }
 
 static void tcp_sent_cb(struct net_context *context,
