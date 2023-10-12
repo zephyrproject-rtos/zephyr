@@ -1524,18 +1524,22 @@ static struct net_buf *hci_le_set_cig_params(const struct bt_iso_cig *cig,
 	memset(req, 0, sizeof(*req));
 
 	req->cig_id = cig->id;
-	req->c_latency = sys_cpu_to_le16(param->latency);
-	req->p_latency = sys_cpu_to_le16(param->latency);
-	sys_put_le24(param->interval, req->c_interval);
-	sys_put_le24(param->interval, req->p_interval);
+	req->c_latency = sys_cpu_to_le16(param->c_to_p_latency);
+	req->p_latency = sys_cpu_to_le16(param->p_to_c_latency);
+	sys_put_le24(param->c_to_p_interval, req->c_interval);
+	sys_put_le24(param->p_to_c_interval, req->p_interval);
 
 	req->sca = param->sca;
 	req->packing = param->packing;
 	req->framing = param->framing;
 	req->num_cis = param->num_cis;
 
-	LOG_DBG("id %u, latency %u, interval %u, sca %u, packing %u, framing %u, num_cis %u",
-		cig->id, param->latency, param->interval, param->sca, param->packing,
+	LOG_DBG("id %u, latency C to P %u, latency P to C %u, "
+		"interval C to P %u, interval P to C %u, "
+		"sca %u, packing %u, framing %u, num_cis %u",
+		cig->id, param->c_to_p_latency, param->p_to_c_latency,
+		param->c_to_p_interval, param->p_to_c_interval,
+		param->sca, param->packing,
 		param->framing, param->num_cis);
 
 	/* Program the cis parameters */
@@ -1611,8 +1615,8 @@ static struct net_buf *hci_le_set_cig_test_params(const struct bt_iso_cig *cig,
 	memset(req, 0, sizeof(*req));
 
 	req->cig_id = cig->id;
-	sys_put_le24(param->interval, req->c_interval);
-	sys_put_le24(param->interval, req->p_interval);
+	sys_put_le24(param->c_to_p_interval, req->c_interval);
+	sys_put_le24(param->p_to_c_interval, req->p_interval);
 
 	req->c_ft = param->c_to_p_ft;
 	req->p_ft = param->p_to_c_ft;
@@ -1622,10 +1626,10 @@ static struct net_buf *hci_le_set_cig_test_params(const struct bt_iso_cig *cig,
 	req->framing = param->framing;
 	req->num_cis = param->num_cis;
 
-	LOG_DBG("id %u, SDU interval %u, c_ft %u, p_ft %u, iso_interval %u, "
-		"sca %u, packing %u, framing %u, num_cis %u",
-		cig->id, param->interval, param->c_to_p_ft, param->p_to_c_ft,
-		param->iso_interval, param->sca, param->packing,
+	LOG_DBG("id %u, SDU interval C to P %u, SDU interval P to C %u, c_ft %u, p_ft %u, "
+		"iso_interval %u, sca %u, packing %u, framing %u, num_cis %u",
+		cig->id, param->c_to_p_interval, param->p_to_c_interval, param->c_to_p_ft,
+		param->p_to_c_ft, param->iso_interval, param->sca, param->packing,
 		param->framing, param->num_cis);
 
 	/* Program the cis parameters */
@@ -1859,16 +1863,28 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 		return false;
 	}
 
-	if (param->interval < BT_ISO_SDU_INTERVAL_MIN ||
-	    param->interval > BT_ISO_SDU_INTERVAL_MAX) {
-		LOG_DBG("Invalid interval: %u", param->interval);
+	if (param->c_to_p_interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    param->c_to_p_interval > BT_ISO_SDU_INTERVAL_MAX) {
+		LOG_DBG("Invalid C to P interval: %u", param->c_to_p_interval);
+		return false;
+	}
+
+	if (param->p_to_c_interval < BT_ISO_SDU_INTERVAL_MIN ||
+	    param->p_to_c_interval > BT_ISO_SDU_INTERVAL_MAX) {
+		LOG_DBG("Invalid P to C interval: %u", param->p_to_c_interval);
 		return false;
 	}
 
 	if (!advanced &&
-	    (param->latency < BT_ISO_LATENCY_MIN ||
-	     param->latency > BT_ISO_LATENCY_MAX)) {
-		LOG_DBG("Invalid latency: %u", param->latency);
+	    (param->c_to_p_latency < BT_ISO_LATENCY_MIN ||
+	     param->c_to_p_latency > BT_ISO_LATENCY_MAX)) {
+		LOG_DBG("Invalid C to P latency: %u", param->c_to_p_latency);
+		return false;
+	}
+	if (!advanced &&
+	    (param->p_to_c_latency < BT_ISO_LATENCY_MIN ||
+	     param->p_to_c_latency > BT_ISO_LATENCY_MAX)) {
+		LOG_DBG("Invalid P to C latency: %u", param->p_to_c_latency);
 		return false;
 	}
 

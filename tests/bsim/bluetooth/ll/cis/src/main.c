@@ -413,11 +413,14 @@ static void test_cis_central(void)
 	cig_param.sca = BT_GAP_SCA_UNKNOWN;
 	cig_param.packing = 0U;
 	cig_param.framing = 0U;
-	cig_param.interval = ISO_INTERVAL_US;
+	cig_param.c_to_p_interval = ISO_INTERVAL_US;
+	cig_param.p_to_c_interval = ISO_INTERVAL_US;
 	if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
-		cig_param.latency = ISO_LATENCY_FT_MS;
+		cig_param.c_to_p_latency = ISO_LATENCY_FT_MS;
+		cig_param.p_to_c_latency = ISO_LATENCY_FT_MS;
 	} else {
-		cig_param.latency = ISO_LATENCY_MS;
+		cig_param.c_to_p_latency = ISO_LATENCY_MS;
+		cig_param.p_to_c_latency = ISO_LATENCY_MS;
 	}
 
 	printk("Create CIG...");
