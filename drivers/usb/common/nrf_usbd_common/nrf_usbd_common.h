@@ -422,19 +422,6 @@ void nrf_usbd_common_disable(void);
 void nrf_usbd_common_start(bool enable_sof);
 
 /**
- * @brief Stop USB functionality.
- *
- * This function disables USBD pull-up and interrupts.
- *
- * The HFXO request is released in this function.
- *
- * @note
- * This function can also be used to logically disconnect USB from the HOST that
- * would force it to enumerate device after calling @ref nrf_usbd_common_start.
- */
-void nrf_usbd_common_stop(void);
-
-/**
  * @brief Check if driver is initialized.
  *
  * @retval false Driver is not initialized.
