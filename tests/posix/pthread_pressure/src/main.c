@@ -122,6 +122,7 @@ static void test_create_join_common(const char *tag, create_fn create, join_fn j
 
 			print_stats(now_ms, end_ms);
 		}
+		Z_SPIN_DELAY(100);
 	} while (end_ms > now_ms);
 
 	print_stats(now_ms, end_ms);
