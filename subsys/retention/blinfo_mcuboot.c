@@ -78,10 +78,12 @@ int blinfo_lookup(uint16_t key, char *val, int val_len_max)
 
 #if defined(CONFIG_RETENTION_BOOTLOADER_INFO_OUTPUT_SETTINGS)
 static int blinfo_handle_get(const char *name, char *val, int val_len_max);
+static int blinfo_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg);
 
 static struct settings_handler blinfo_handler = {
 	.name = "blinfo",
 	.h_get = blinfo_handle_get,
+	.h_set = blinfo_handle_set,
 };
 
 static int blinfo_handle_get(const char *name, char *val, int val_len_max)
@@ -109,6 +111,11 @@ static int blinfo_handle_get(const char *name, char *val, int val_len_max)
 	}
 
 	return blinfo_lookup(index, val, val_len_max);
+}
+
+static int blinfo_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	return -ENOTSUP;
 }
 #endif
 
