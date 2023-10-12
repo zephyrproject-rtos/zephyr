@@ -740,7 +740,7 @@ class TestPlan:
                         instance.add_filter("Not part of requested test plan", Filters.TESTSUITE)
 
                 if runnable and not instance.run:
-                    instance.add_filter("Not runnable on device", Filters.PLATFORM)
+                    instance.add_filter("Not runnable on device", Filters.CMD_LINE)
 
                 if self.options.integration and ts.integration_platforms and plat.name not in ts.integration_platforms:
                     instance.add_filter("Not part of integration platforms", Filters.TESTSUITE)
