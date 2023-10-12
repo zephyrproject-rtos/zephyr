@@ -123,3 +123,10 @@ if(CONFIG_BT_CONN_DISABLE_SECURITY)
   Do not use in production."
     )
 endif()
+
+# Bluetooth Mesh has test dependencies in the host.
+# In order to compile Bsim tests with these test features
+# and PSA enabled, the libraries must be linked.
+if(CONFIG_BT_MESH AND CONFIG_BT_TESTING)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+endif()
