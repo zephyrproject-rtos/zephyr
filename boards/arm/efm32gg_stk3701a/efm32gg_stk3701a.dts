@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <silabs/efm32gg11b820f2048gl192.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "efm32gg_stk3701a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs EFM32GG STK3701A board";
@@ -60,15 +61,15 @@
 
 &usart0 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(11)>;
-	location-tx = <GECKO_LOCATION(0) GECKO_PORT_E GECKO_PIN(10)>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart4 {
 	current-speed = <115200>;
-	location-rx = <GECKO_LOCATION(4) GECKO_PORT_H GECKO_PIN(5)>;
-	location-tx = <GECKO_LOCATION(4) GECKO_PORT_H GECKO_PIN(4)>;
+	pinctrl-0 = <&usart4_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
