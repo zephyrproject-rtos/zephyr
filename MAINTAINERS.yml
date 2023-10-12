@@ -2673,7 +2673,7 @@ TI SimpleLink Platforms:
     - drivers/*/*cc32*
     - dts/arm/ti/
     - dts/bindings/*/ti,*
-    - soc/arm/ti*/
+    - soc/arm/ti_simplelink/
     - dts/bindings/*/ti,*
   labels:
     - "platform: TI SimpleLink"
