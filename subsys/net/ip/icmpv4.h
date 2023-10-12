@@ -48,7 +48,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 				  struct net_ipv4_hdr *ip_hdr);
 
 int net_icmpv4_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code);
-int net_icmpv4_finalize(struct net_pkt *pkt);
+int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum);
 
 void net_icmpv4_init(void);
 #else

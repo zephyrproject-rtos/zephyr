@@ -188,7 +188,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 				  struct net_ipv6_hdr *ip_hdr);
 
 int net_icmpv6_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code);
-int net_icmpv6_finalize(struct net_pkt *pkt);
+int net_icmpv6_finalize(struct net_pkt *pkt, bool force_chksum);
 
 void net_icmpv6_init(void);
 #else

@@ -113,7 +113,7 @@ void net_tcp_init(void);
 #endif
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta);
 int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
-int net_tcp_finalize(struct net_pkt *pkt);
+int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum);
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 /**
