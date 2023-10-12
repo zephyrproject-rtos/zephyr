@@ -54,6 +54,22 @@ static const struct bt_mesh_test_cfg rx_cfg = {
 	.dev_key = { 0x02 },
 };
 
+typedef void (*snb_cb)(const struct bt_mesh_snb *snb);
+
+static snb_cb snb_cb_ptr;
+static struct k_sem beacon_sem;
+
+static void snb_received(const struct bt_mesh_snb *snb)
+{
+	if (snb_cb_ptr) {
+		snb_cb_ptr(snb);
+	}
+}
+
+BT_MESH_BEACON_CB_DEFINE(snb) = {
+	.snb_received = snb_received,
+};
+
 /* Setting for scanner defining what beacon is expected next, SNB as default */
 static uint8_t expected_beacon = BEACON_TYPE_SECURE;
 #if CONFIG_BT_MESH_V1d1
@@ -992,6 +1008,62 @@ static void test_rx_secure_beacon_interval(void)
 	PASS();
 }
 
+static uint8_t snb_cnt;
+
+static void snb_recv(const struct bt_mesh_snb *snb)
+{
+	/* IV idx of 2 marks end of test */
+	if (snb->iv_idx == 2) {
+		k_sem_give(&beacon_sem);
+		return;
+	}
+
+	ASSERT_EQUAL(snb->flags, 0x02);
+	ASSERT_EQUAL(snb->iv_idx, 1);
+	snb_cnt++;
+}
+
+static void test_rx_beacon_cache(void)
+{
+	k_sem_init(&beacon_sem, 0, 1);
+	snb_cb_ptr = snb_recv;
+
+	bt_mesh_test_cfg_set(&rx_cfg, WAIT_TIME);
+	bt_mesh_test_setup();
+
+	/* Wait for secondary SNB to end test. */
+	ASSERT_OK_MSG(k_sem_take(&beacon_sem, K_SECONDS(40)),
+		      "Didn't receive SNB in time");
+
+	/* Verify that only one SNB for IV_idx=1 was handled. */
+	ASSERT_EQUAL(snb_cnt, 1);
+	PASS();
+}
+
+static void test_tx_beacon_cache(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_crypto_init();
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
+
+	NET_BUF_SIMPLE_DEFINE(iv1, 22);
+	NET_BUF_SIMPLE_DEFINE(iv2, 22);
+	beacon_create(&iv1, test_net_key, 0x02, 0x0001);
+	beacon_create(&iv2, test_net_key, 0x02, 0x0002);
+
+	/* Send two copies of the same SNB. */
+	for (size_t i = 0; i < 2; i++) {
+		k_sleep(K_SECONDS(5));
+		send_beacon(&iv1);
+	}
+
+	/* Send secondary SNB to mark end of test. */
+	k_sleep(K_SECONDS(5));
+	send_beacon(&iv2);
+
+	PASS();
+}
+
 #if CONFIG_BT_MESH_V1d1
 static bool private_beacon_check(const uint8_t *net_id, void *ctx)
 {
@@ -1780,6 +1852,7 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, kr_old_key, "Beacon: send old Net Key"),
 	TEST_CASE(tx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(tx, secure_beacon_interval, "Beacon: send secure beacons"),
+	TEST_CASE(tx, beacon_cache,   "Beacon: advertise duplicate SNBs"),
 #if CONFIG_BT_MESH_V1d1
 	TEST_CASE(tx, priv_on_iv_update,   "Private Beacon: send on IV update"),
 	TEST_CASE(tx, priv_on_key_refresh,   "Private Beacon: send on Key Refresh"),
@@ -1800,6 +1873,7 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, kr_old_key, "Beacon: receive old Net Key"),
 	TEST_CASE(rx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(rx, secure_beacon_interval, "Beacon: receive and send secure beacons"),
+	TEST_CASE(rx, beacon_cache,   "Beacon: receive duplicate SNBs"),
 #if CONFIG_BT_MESH_V1d1
 	TEST_CASE(rx, priv_adv,   "Private Beacon: verify random regeneration"),
 	TEST_CASE(rx, priv_invalid,   "Private Beacon: receive invalid beacons"),
