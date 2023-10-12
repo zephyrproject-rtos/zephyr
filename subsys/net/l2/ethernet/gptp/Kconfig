@@ -103,6 +103,13 @@ config NET_GPTP_CLOCK_ACCURACY
 	default 0x31 if NET_GPTP_CLOCK_ACCURACY_GT_10S
 	default 0xfe
 
+config NET_GPTP_STACK_SIZE
+	int "gPTP thread stack size"
+	default 2048
+	help
+	  Set the gPTP thread stack size in bytes. The gPTP thread handles the
+	  gPTP state machine. There is one gPTP thread in the system.
+
 config NET_GPTP_NUM_PORTS
 	int "Number of gPTP ports"
 	default 1
