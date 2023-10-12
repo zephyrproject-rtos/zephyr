@@ -1180,7 +1180,7 @@ static void private_beacon_create(struct net_buf_simple *buf, const uint8_t *net
 	}
 
 	bt_rand(random_val, sizeof(random_val));
-	bt_mesh_beacon_encrypt(&priv_beacon_key, flags, bt_mesh.iv_index + 1,
+	bt_mesh_beacon_encrypt(&priv_beacon_key, flags, iv_index,
 			       random_val, data, auth);
 
 	net_buf_simple_reset(buf);
