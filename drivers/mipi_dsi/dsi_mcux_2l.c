@@ -28,6 +28,7 @@ struct mcux_mipi_dsi_config {
 	MIPI_DSI_HOST_Type *base;
 	dsi_dpi_config_t dpi_config;
 	bool auto_insert_eotp;
+	bool noncontinuous_hs_clk;
 	const struct device *bit_clk_dev;
 	clock_control_subsys_t bit_clk_subsys;
 	const struct device *esc_clk_dev;
@@ -224,6 +225,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	DSI_GetDefaultConfig(&dsi_config);
 	dsi_config.numLanes = mdev->data_lanes;
 	dsi_config.autoInsertEoTp = config->auto_insert_eotp;
+	dsi_config.enableNonContinuousHsClk = config->noncontinuous_hs_clk;
 
 	/* Init the DSI module. */
 	DSI_Init(config->base, &dsi_config);
@@ -502,6 +504,7 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 		(.irq_config_func = mipi_dsi_##n##_irq_config_func,))				\
 		.base = (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),				\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
+		.noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),			\
 		.dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),			\
 		.bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),		\
 		.bit_clk_subsys =								\
