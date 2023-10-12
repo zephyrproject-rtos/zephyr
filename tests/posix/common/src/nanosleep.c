@@ -186,8 +186,16 @@ static void common_lower_bound_check(int selection, clockid_t clock_id, int flag
 	/* round up to the nearest microsecond for k_busy_wait() */
 	exp_ns = DIV_ROUND_UP(exp_ns, NSEC_PER_USEC) * NSEC_PER_USEC;
 
+	/* The comparison may be incorrect if counter wrap happened. In case of ARC HSDK platforms
+	 * we have high counter clock frequency (500MHz or 1GHz) so counter wrap quite likely to
+	 * happen if we wait long enough. As in some test cases we wait more than 1 second, there
+	 * are significant chances to get false-positive assertion.
+	 * TODO: switch test for k_cycle_get_64 usage where available.
+	 */
+#if !defined(CONFIG_SOC_ARC_HSDK) && !defined(CONFIG_SOC_ARC_HSDK4XD)
 	/* lower bounds check */
 	zassert_true(actual_ns >= exp_ns, "actual: %llu expected: %llu", actual_ns, exp_ns);
+#endif
 
 	/* TODO: Upper bounds check when hr timers are available */
 }
