@@ -1,4 +1,4 @@
-/* Bosch BMP388 pressure sensor
+/* Bosch BMP388 and BMP390 pressure sensors
  *
  * Copyright (c) 2020 Facebook, Inc. and its affiliates
  *
@@ -6,6 +6,7 @@
  *
  * Datasheet:
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp388-ds001.pdf
+ * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp390-ds002.pdf
  */
 
 #include <zephyr/logging/log.h>
@@ -490,7 +491,7 @@ static int bmp388_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (val != BMP388_CHIP_ID) {
+	if (val != BMP388_CHIP_ID && val != BMP388_CHIP_ID_BMP390) {
 		LOG_ERR("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
@@ -577,26 +578,32 @@ static int bmp388_init(const struct device *dev)
 #define BMP388_INT_CFG(inst)
 #endif
 
-#define BMP388_INST(inst)						   \
-	static struct bmp388_data bmp388_data_##inst = {		   \
-		.odr = DT_INST_ENUM_IDX(inst, odr),			   \
-		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),	   \
-		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),		   \
-	};								   \
-	static const struct bmp388_config bmp388_config_##inst = {	   \
-		BMP388_BUS_CFG(inst)					   \
-		BMP388_INT_CFG(inst)					   \
-		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
-	};								   \
-	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
-	SENSOR_DEVICE_DT_INST_DEFINE(					   \
-		inst,							   \
-		bmp388_init,						   \
-		PM_DEVICE_DT_INST_GET(inst),				   \
-		&bmp388_data_##inst,					   \
-		&bmp388_config_##inst,					   \
-		POST_KERNEL,						   \
-		CONFIG_SENSOR_INIT_PRIORITY,				   \
+#define BMP388_INST(inst, name)					    \
+	static struct bmp388_data bmp388_data_##name##_##inst = {	    \
+		.odr = DT_INST_ENUM_IDX(inst, odr),			    \
+		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),	    \
+		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),		    \
+	};								    \
+	static const struct bmp388_config bmp388_config_##name##_##inst = { \
+		BMP388_BUS_CFG(inst)					    \
+		BMP388_INT_CFG(inst)					    \
+		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	    \
+	};								    \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		    \
+	SENSOR_DEVICE_DT_INST_DEFINE(					    \
+		inst,							    \
+		bmp388_init,						    \
+		PM_DEVICE_DT_INST_GET(inst),				    \
+		&bmp388_data_##name##_##inst,				    \
+		&bmp388_config_##name##_##inst,				    \
+		POST_KERNEL,						    \
+		CONFIG_SENSOR_INIT_PRIORITY,				    \
 		&bmp388_api);
 
-DT_INST_FOREACH_STATUS_OKAY(BMP388_INST)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT bosch_bmp388
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP388_INST, DT_DRV_COMPAT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT bosch_bmp390
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP388_INST, DT_DRV_COMPAT)

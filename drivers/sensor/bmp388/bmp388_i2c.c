@@ -7,7 +7,7 @@
  */
 
 /*
- * Bus-specific functionality for BMP388s accessed via I2C.
+ * Bus-specific functionality for BMP388s and BMP390s accessed via I2C.
  */
 
 #include "bmp388.h"

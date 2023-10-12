@@ -1,4 +1,4 @@
-/* Bosch BMP388 pressure sensor
+/* Bosch BMP388 and BMP390 pressure sensors
  *
  * Copyright (c) 2020 Facebook, Inc. and its affiliates
  *
@@ -6,6 +6,7 @@
  *
  * Datasheet:
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp388-ds001.pdf
+ * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp390-ds002.pdf
  */
 
 #ifndef __BMP388_H
@@ -18,8 +19,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
-
-#define DT_DRV_COMPAT bosch_bmp388
 
 #define BMP388_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #define BMP388_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
@@ -89,6 +88,7 @@ extern const struct bmp388_bus_io bmp388_bus_io_i2c;
 
 /* BMP388_REG_CHIPID */
 #define BMP388_CHIP_ID 0x50
+#define BMP388_CHIP_ID_BMP390 0x60
 
 /* BMP388_REG_STATUS */
 #define BMP388_STATUS_FATAL_ERR  BIT(0)

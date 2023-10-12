@@ -7,7 +7,7 @@
  */
 
 /*
- * Bus-specific functionality for BMP388s accessed via SPI.
+ * Bus-specific functionality for BMP388s and BMP390s accessed via SPI.
  */
 
 #include <zephyr/logging/log.h>

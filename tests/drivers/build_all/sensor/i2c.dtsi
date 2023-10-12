@@ -771,3 +771,9 @@ test_i2c_hm330x@73 {
 	reg = <0x73>;
 	status = "okay";
 };
+
+test_i2c_bmp390: bmp390@74 {
+	compatible = "bosch,bmp390";
+	reg = <0x74>;
+	int-gpios = <&test_gpio 0 0>;
+};

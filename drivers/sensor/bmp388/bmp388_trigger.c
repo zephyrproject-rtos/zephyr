@@ -1,11 +1,12 @@
-/* Bosch BMP388 pressure sensor
+/* Bosch BMP388 and BMP390 pressure sensors
  *
  * Copyright (c) 2020 Facebook, Inc. and its affiliates
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Datasheet:
+ * Datasheets:
  * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp388-ds001.pdf
+ * https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp390-ds002.pdf
  */
 
 #include <zephyr/kernel.h>
