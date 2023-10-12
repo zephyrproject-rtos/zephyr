@@ -5081,7 +5081,7 @@ static const struct btp_handler handlers[] = {
 		.func = srpl_clear
 	},
 #endif
-#if defined(CONFIG_BT_MESH_SOLICITATION)
+#if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 	{
 		.opcode = BTP_MESH_PROXY_SOLICIT,
 		.expect_len = sizeof(struct btp_proxy_solicit_cmd),
