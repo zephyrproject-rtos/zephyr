@@ -1,5 +1,6 @@
 common:
-  platform_exclude: m2gl025_miv
+  # renode causes timeouts unfortunately
+  platform_exclude: m2gl025_miv m5stack_core2 hifive1
   platform_key:
     - arch
     - simulation
