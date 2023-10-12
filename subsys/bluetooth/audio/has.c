@@ -53,7 +53,9 @@ static void active_preset_index_cfg_changed(const struct bt_gatt_attr *attr, uin
 struct has_client;
 
 static int read_preset_response(struct has_client *client);
-static int list_current_presets(struct has_client *client);
+static int preset_list_changed(struct has_client *client);
+static int preset_list_changed_generic_update_tail(struct has_client *client);
+static int preset_list_changed_record_deleted_last(struct has_client *client);
 static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *data, uint16_t len, uint16_t offset, uint8_t flags);
 
@@ -165,6 +167,8 @@ enum flag_internal {
 	FLAG_ACTIVE_INDEX_CHANGED,
 	FLAG_PENDING_READ_PRESET_RESPONSE,
 	FLAG_NOTIFY_PRESET_LIST,
+	FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL,
+	FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST,
 	FLAG_FEATURES_CHANGED,
 	FLAG_NUM,
 };
@@ -175,6 +179,9 @@ static struct client_context {
 
 	/* Pending notification flags */
 	ATOMIC_DEFINE(flags, FLAG_NUM);
+
+	/* Last notified preset index */
+	uint8_t last_preset_index_known;
 } contexts[CONFIG_BT_MAX_PAIRED];
 
 /* Connected client clientance */
@@ -413,14 +420,35 @@ static void notify_work_handler(struct k_work *work)
 			LOG_ERR("Notify read preset response err %d", err);
 		}
 	} else if (atomic_test_and_clear_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST)) {
-		err = list_current_presets(client);
+		err = preset_list_changed(client);
 		if (err == -ENOMEM) {
 			atomic_set_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify generic update all presets err %d", err);
+			LOG_ERR("Notify preset list changed err %d", err);
+		}
+	} else if (atomic_test_and_clear_bit(client->context->flags,
+					     FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL)) {
+		err = preset_list_changed_generic_update_tail(client);
+		if (err == -ENOMEM) {
+			atomic_set_bit(client->context->flags,
+				       FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL);
+			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+		} else if (err < 0) {
+			LOG_ERR("Notify preset list changed generic update tail err %d", err);
+		}
+	} else if (atomic_test_and_clear_bit(client->context->flags,
+					     FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST)) {
+		err = preset_list_changed_record_deleted_last(client);
+		if (err == -ENOMEM) {
+			atomic_set_bit(client->context->flags,
+				       FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST);
+			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+		} else if (err < 0) {
+			LOG_ERR("Notify preset list changed recoed deleted last err %d", err);
 		}
 	}
+
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 	if (IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT) &&
@@ -794,8 +822,8 @@ static void preset_changed_prepare(struct net_buf_simple *buf, uint8_t change_id
 	preset_changed->is_last = is_last;
 }
 
-static int bt_has_cp_generic_update(struct has_client *client, const struct has_preset *preset,
-				    uint8_t is_last)
+static int bt_has_cp_generic_update(struct has_client *client, uint8_t prev_index, uint8_t index,
+				    uint8_t properties, const char *name, uint8_t is_last)
 {
 	struct bt_has_cp_generic_update *generic_update;
 
@@ -803,18 +831,38 @@ static int bt_has_cp_generic_update(struct has_client *client, const struct has_
 			      sizeof(struct bt_has_cp_preset_changed) +
 			      sizeof(struct bt_has_cp_generic_update) + BT_HAS_PRESET_NAME_MAX);
 
+	LOG_DBG("client %p prev_index 0x%02x index 0x%02x prop 0x%02x %s is_last %d",
+		client, prev_index, index, properties, name, is_last);
+
 	preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_GENERIC_UPDATE, is_last);
 
 	generic_update = net_buf_simple_add(&buf, sizeof(*generic_update));
-	generic_update->prev_index = preset_get_prev_index(preset);
-	generic_update->index = preset->index;
-	generic_update->properties = preset->properties;
-	net_buf_simple_add_mem(&buf, preset->name, strlen(preset->name));
+	generic_update->prev_index = prev_index;
+	generic_update->index = index;
+	generic_update->properties = properties;
+	net_buf_simple_add_mem(&buf, name, strlen(name));
 
 	if (client) {
 		return control_point_send(client, &buf);
 	} else {
 		return control_point_send_all(&buf);
+	}
+}
+
+static void update_last_preset_index_known(struct has_client *client, uint8_t index)
+{
+	if (client != NULL) {
+		client->context->last_preset_index_known = index;
+		return;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+		client = &has_client_list[i];
+
+		/* For each connected client */
+		if (client->conn != NULL && client->context != NULL) {
+			client->context->last_preset_index_known = index;
+		}
 	}
 }
 
@@ -842,25 +890,106 @@ static int read_preset_response(struct has_client *client)
 	}
 
 	err = bt_has_cp_read_preset_rsp(client, preset, is_last);
-	if (err != 0 || is_last) {
+	if (err != 0) {
 		return err;
 	}
 
-	client->read_presets_req.start_index = preset->index + 1;
-	client->read_presets_req.num_presets--;
+	if (preset->index > client->context->last_preset_index_known) {
+		update_last_preset_index_known(client, preset->index);
+	}
+
+	if (!is_last) {
+		client->read_presets_req.start_index = preset->index + 1;
+		client->read_presets_req.num_presets--;
 
 		atomic_set_bit(client->context->flags, FLAG_PENDING_READ_PRESET_RESPONSE);
-	notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+		notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+	}
 
 	return 0;
 }
 
-static int list_current_presets(struct has_client *client)
+static int bt_has_cp_preset_record_deleted(struct has_client *client, uint8_t index)
+{
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
+			      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
+
+	preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_DELETED, BT_HAS_IS_LAST);
+	net_buf_simple_add_u8(&buf, index);
+
+	if (client != NULL) {
+		return control_point_send(client, &buf);
+	} else {
+		return control_point_send_all(&buf);
+	}
+}
+
+/* Generic Update the last (already deleted) preset */
+static int preset_list_changed_generic_update_tail(struct has_client *client)
+{
+	const struct has_preset *prev;
+	struct has_preset last = {
+		/* The index value of the last preset the client knew about. */
+		.index = client->context->last_preset_index_known,
+
+		/* As the properties of deleted preset is not available anymore, we set this value
+		 * to 0x00 meaning the preset is unavailable and non-writable which is actually true
+		 */
+		.properties = BT_HAS_PROP_NONE,
+
+		/* As the name of deleted preset are not available anymore, we set this value
+		 * to the value what is compliant with specification.
+		 * As per HAS_v1.0 the Name is 1-40 octet value.
+		 */
+		.name = "N/A",
+	};
+	int err;
+
+	prev = preset_get_tail();
+
+	err = bt_has_cp_generic_update(client, prev ? prev->index : BT_HAS_PRESET_INDEX_NONE,
+				       last.index, last.properties, last.name, false);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int preset_list_changed_record_deleted_last(struct has_client *client)
+{
+	const struct has_preset *last;
+	int err;
+
+	err = bt_has_cp_preset_record_deleted(client, client->context->last_preset_index_known);
+	if (err != 0) {
+		return err;
+	}
+
+	last = preset_get_tail();
+
+	update_last_preset_index_known(client, last ? last->index : BT_HAS_PRESET_INDEX_NONE);
+
+	return 0;
+}
+
+static int preset_list_changed(struct has_client *client)
 {
 	const struct has_preset *preset = NULL;
 	const struct has_preset *next = NULL;
 	bool is_last = true;
 	int err;
+
+	if (sys_slist_is_empty(&preset_list)) {
+		/* The preset list is empty. We need to indicate deletion of all presets */
+		atomic_set_bit(client->context->flags,
+			       FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL);
+		atomic_set_bit(client->context->flags,
+			       FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST);
+		notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
+
+		return 0;
+	}
 
 	preset_foreach(client->preset_changed_index_next, BT_HAS_PRESET_INDEX_LAST,
 		       preset_found, &preset);
@@ -871,15 +1000,44 @@ static int list_current_presets(struct has_client *client)
 
 	preset_foreach(preset->index + 1, BT_HAS_PRESET_INDEX_LAST, preset_found, &next);
 
-	is_last = next == NULL;
+	/* It is last Preset Changed notification if there are no presets left to notify and the
+	 * currently notified preset have the highest index known to the client.
+	 */
+	is_last = next == NULL && preset->index >= client->context->last_preset_index_known;
 
-	err = bt_has_cp_generic_update(client, preset, is_last);
-	if (err != 0 || is_last) {
+	err = bt_has_cp_generic_update(client, preset_get_prev_index(preset), preset->index,
+				       preset->properties, preset->name, is_last);
+	if (err != 0) {
 		return err;
 	}
-	client->preset_changed_index_next = preset->index + 1;
 
-	atomic_set_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST);
+	if (is_last) {
+		client->preset_changed_index_next = 0;
+
+		/* It's the last preset notified, so update the highest index known to the client */
+		update_last_preset_index_known(client, preset->index);
+
+		return 0;
+	}
+
+	if (next == NULL) {
+		/* If we end up here, the last preset known to the client has been removed.
+		 * As we do not hold the information about the deleted presets, we need to use
+		 * Generic Update procedure to:
+		 *   1. Notify the presets that have been removed in range
+		 *      (PrevIndex = current_preset_last, Index=previous_preset_last)
+		 *   2. Notify deletion of preset Index=previous_preset_last.
+		 */
+		atomic_set_bit(client->context->flags,
+			       FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL);
+		atomic_set_bit(client->context->flags,
+			       FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST);
+	} else {
+		client->preset_changed_index_next = preset->index + 1;
+
+		atomic_set_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST);
+	}
+
 	notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 
 	return 0;
@@ -970,7 +1128,8 @@ static int set_preset_name(uint8_t index, const char *name, size_t len)
 		preset->ops->name_changed(index, preset->name);
 	}
 
-	return bt_has_cp_generic_update(NULL, preset, BT_HAS_IS_LAST);
+	return bt_has_cp_generic_update(NULL, preset_get_prev_index(preset), preset->index,
+					preset->properties, preset->name, BT_HAS_IS_LAST);
 }
 
 static uint8_t handle_write_preset_name(struct bt_conn *conn, struct net_buf_simple *buf)
@@ -1250,15 +1409,18 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 		return -ENOMEM;
 	}
 
-	return bt_has_cp_generic_update(NULL, preset, BT_HAS_IS_LAST);
+	if (preset == preset_get_tail()) {
+		update_last_preset_index_known(NULL, preset->index);
+	}
+
+	return bt_has_cp_generic_update(NULL, preset_get_prev_index(preset), preset->index,
+					preset->properties, preset->name, BT_HAS_IS_LAST);
 }
 
 int bt_has_preset_unregister(uint8_t index)
 {
 	struct has_preset *preset;
-
-	NET_BUF_SIMPLE_DEFINE(buf, sizeof(struct bt_has_cp_hdr) +
-			      sizeof(struct bt_has_cp_preset_changed) + sizeof(uint8_t));
+	int err;
 
 	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
 		LOG_ERR("index is invalid");
@@ -1274,12 +1436,18 @@ int bt_has_preset_unregister(uint8_t index)
 		return -EADDRINUSE;
 	}
 
-	preset_changed_prepare(&buf, BT_HAS_CHANGE_ID_PRESET_DELETED, BT_HAS_IS_LAST);
-	net_buf_simple_add_u8(&buf, preset->index);
+	err = bt_has_cp_preset_record_deleted(NULL, preset->index);
+	if (err != 0) {
+		return err;
+	}
+
+	if (preset == preset_get_tail()) {
+		update_last_preset_index_known(NULL, preset_get_prev_index(preset));
+	}
 
 	preset_free(preset);
 
-	return control_point_send_all(&buf);
+	return 0;
 }
 
 static int set_preset_availability(uint8_t index, bool available)
