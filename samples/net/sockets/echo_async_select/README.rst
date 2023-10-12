@@ -55,11 +55,11 @@ Linux. (Note: if you look at the source, you will see that the code is
 the same except the header files are different for Zephyr vs POSIX, and
 there's an additional option to set for Linux to make a socket IPv6-only).
 
-To build for a host POSIX OS:
+To build:
 
 .. code-block:: console
 
-    $ make -f Makefile.posix
+    $ make -f Makefile.host
 
 To run:
 
