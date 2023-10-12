@@ -43,5 +43,5 @@ function Execute() {
   EXECUTE_TIMEOUT="${EXECUTE_TIMEOUT:-30}"
 
   check_program_exists $1
-  run_in_background timeout -v ${EXECUTE_TIMEOUT} $@
+  run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} $@
 }
