@@ -4468,10 +4468,10 @@ static uint8_t blob_srv_recv(const void *cmd, uint16_t cmd_len,
 	struct model_data *model_bound;
 	int err;
 
-#if defined(CONFIG_BT_MESH_DFU_SRV)
-	struct bt_mesh_blob_srv *srv = &dfu_srv.blob;
-#elif defined(CONFIG_BT_MESH_DFD_SRV)
+#if defined(CONFIG_BT_MESH_DFD_SRV)
 	struct bt_mesh_blob_srv *srv = &dfd_srv.upload.blob;
+#elif defined(CONFIG_BT_MESH_DFU_SRV)
+	struct bt_mesh_blob_srv *srv = &dfu_srv.blob;
 #endif
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_SRV);
