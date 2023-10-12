@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_TYPES_H_
 #define ZEPHYR_INCLUDE_POSIX_TYPES_H_
 
-#ifndef CONFIG_ARCH_POSIX
+#if !(defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC))
 #include <sys/types.h>
 #endif
 
