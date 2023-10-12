@@ -2033,8 +2033,9 @@ static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	memcpy(rp->data, comp->data, comp->len);
-	*rsp_len = comp->len;
+	rp->data[0] = page;
+	memcpy(rp->data + 1, comp->data, comp->len);
+	*rsp_len = comp->len + 1;
 
 	return BTP_STATUS_SUCCESS;
 }
