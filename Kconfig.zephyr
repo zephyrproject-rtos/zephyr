@@ -316,10 +316,22 @@ config CODING_GUIDELINE_CHECK
 	  Use available compiler flags to check coding guideline rules during
 	  the build.
 
-config NATIVE_BUILD
+config NATIVE_LIBC
 	bool
 	select FULL_LIBC_SUPPORTED
-	select FULL_LIBCPP_SUPPORTED if CPP
+	help
+	  Zephyr will use the host system C library.
+
+config NATIVE_LIBCPP
+	bool
+	select FULL_LIBCPP_SUPPORTED
+	help
+	  Zephyr will use the host system C++ library
+
+config NATIVE_BUILD
+	bool
+	select NATIVE_LIBC if EXTERNAL_LIBC
+	select NATIVE_LIBCPP if EXTERNAL_LIBCPP
 	help
 	  Zephyr will be built targeting the host system for debug and
 	  development purposes.
