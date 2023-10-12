@@ -79,6 +79,9 @@ enum fs_mgmt_err_code_t {
 
 	/** The specified mount point is that of a read-only filesystem. */
 	FS_MGMT_ERR_READ_ONLY_FILESYSTEM,
+
+	/** The operation cannot be performed because the file is empty with no contents. */
+	FS_MGMT_ERR_FILE_EMPTY,
 };
 
 #ifdef __cplusplus
