@@ -174,13 +174,16 @@ class Console(Harness):
     def handle(self, line):
         if self.type == "one_line":
             if self.pattern.search(line):
-                logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED({self.next_pattern}):'{self.pattern.pattern}'")
+                logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED:"
+                             f"'{self.pattern.pattern}'")
                 self.next_pattern += 1
                 self.state = "passed"
         elif self.type == "multi_line" and self.ordered:
             if (self.next_pattern < len(self.patterns) and
                 self.patterns[self.next_pattern].search(line)):
-                logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED({self.next_pattern}):'{self.patterns[self.next_pattern].pattern}'")
+                logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
+                             f"{self.next_pattern + 1}/{self.patterns_expected}):"
+                             f"'{self.patterns[self.next_pattern].pattern}'")
                 self.next_pattern += 1
                 if self.next_pattern >= len(self.patterns):
                     self.state = "passed"
@@ -189,6 +192,9 @@ class Console(Harness):
                 r = self.regex[i]
                 if pattern.search(line) and not r in self.matches:
                     self.matches[r] = line
+                    logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
+                                 f"{len(self.matches)}/{self.patterns_expected}):"
+                                 f"'{pattern.pattern}'")
             if len(self.matches) == len(self.regex):
                 self.state = "passed"
         else:
@@ -218,16 +224,22 @@ class Console(Harness):
                 self.recording.append(csv)
 
         self.process_test(line)
-        # Reset the resulting test state to 'failed' for 'one_line' and
-        # ordered 'multi_line' patterns when not all of these patterns were
+        # Reset the resulting test state to 'failed' when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
         # It might happen because of the pattern sequence diverged from the
         # test code, the test platform has console issues, or even some other
         # test image was executed.
-        # TODO: Introduce explicit match policy type either to reject
-        # unexpected console output, or to allow missing patterns.
+        # TODO: Introduce explicit match policy type to reject
+        # unexpected console output, allow missing patterns, deny duplicates.
         if self.state == "passed" and self.ordered and self.next_pattern < self.patterns_expected:
-            logger.error(f"HARNESS:{self.__class__.__name__}: failed with only {self.next_pattern} matched patterns from expected {self.patterns_expected}")
+            logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
+                         f" {self.next_pattern} of {self.patterns_expected}"
+                         f" expected ordered patterns.")
+            self.state = "failed"
+        if self.state == "passed" and not self.ordered and len(self.matches) < self.patterns_expected:
+            logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
+                         f" {len(self.matches)} of {self.patterns_expected}"
+                         f" expected unordered patterns.")
             self.state = "failed"
 
         tc = self.instance.get_case_or_create(self.id)
