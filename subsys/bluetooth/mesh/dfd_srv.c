@@ -233,11 +233,10 @@ static int handle_capabilities_get(struct bt_mesh_model *mod, struct bt_mesh_msg
 		net_buf_simple_add_mem(&rsp, srv->oob_schemes.schemes,
 				       srv->oob_schemes.count);
 	} else
-#else
+#endif
 	{
 		net_buf_simple_add_u8(&rsp, 0);
 	}
-#endif
 
 	bt_mesh_model_send(mod, ctx, &rsp, NULL, NULL);
 
