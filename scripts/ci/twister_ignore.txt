@@ -51,3 +51,4 @@ scripts/checkpatch/*
 scripts/checkpatch.pl
 scripts/ci/pylintrc
 scripts/footprint/*
+scripts/set_assignees.py
