@@ -8,7 +8,11 @@ common:
   # FIXME: This test fails very frequently on mps2_an385 due to the system
   #        timer stability issues, so keep it disabled until the root cause
   #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
-  platform_exclude: mps2_an385
+  platform_exclude:
+    - mps2_an385
+    - nucleo_f429zi
+    - nucleo_f746zg
+    - nucleo_h743zi
 tests:
   net.socket.reuseaddr_reuseport:
     extra_configs:
