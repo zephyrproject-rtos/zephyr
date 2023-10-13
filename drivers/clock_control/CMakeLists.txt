@@ -76,3 +76,4 @@ if(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MAX32 clock_control_max32.c)
