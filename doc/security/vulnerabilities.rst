@@ -1370,7 +1370,19 @@ This has been fixed in main for v3.5.0
 CVE-2023-4257
 -------------
 
-Under embargo until 2023/10/12
+Unchecked user input length in the Zephyr WiFi shell module can cause
+buffer overflows.
+
+- `Zephyr project bug tracker GHSA-853q-q69w-gf5j
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-853q-q69w-gf5j>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 605377 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/605377>`_
+
+- `PR 61383 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61383>`_
 
 CVE-2023-4258
 -------------
