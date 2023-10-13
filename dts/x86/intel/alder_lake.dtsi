@@ -430,6 +430,14 @@
 			status = "okay";
 		};
 
+		tgpio: tgpio@fe001200 {
+			compatible = "intel,timeaware-gpio";
+			reg = <0xfe001200 0x100>;
+			timer-clock = <19200000>;
+			max-pins = <2>;
+			status = "okay";
+		};
+
 		hpet: hpet@fed00000 {
 			compatible = "intel,hpet";
 			reg = <0xfed00000 0x400>;
