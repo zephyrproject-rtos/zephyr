@@ -67,7 +67,7 @@ def vcs_link_get_url(app: Sphinx, pagename: str) -> Optional[str]:
 
 
 def add_jinja_filter(app: Sphinx):
-    if app.builder.name != "html":
+    if app.builder.format != "html":
         return
 
     app.builder.templates.environment.filters["vcs_link_get_url"] = partial(
