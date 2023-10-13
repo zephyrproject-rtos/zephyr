@@ -37,4 +37,11 @@
 				 <SPI1_MOSI_PB15_OUT>, <SPI1_NSS_PB12_OUT>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <ADC01_IN0_PA0>;
+		};
+	};
+
 };

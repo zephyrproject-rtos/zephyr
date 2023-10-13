@@ -26,6 +26,8 @@ tests:
       - gd32l233r_eval
       - lpcxpresso55s36
       - mr_canhubk3
+      - longan_nano
+      - longan_nano_lite
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk_nrf52840
