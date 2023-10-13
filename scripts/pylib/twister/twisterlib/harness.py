@@ -161,12 +161,25 @@ class Robot(Harness):
 
 class Console(Harness):
 
+    def get_testcase_name(self):
+        '''
+        Get current TestCase name.
+
+        Console Harness id has only TestSuite id without TestCase name suffix.
+        Only the first TestCase name might be taken if available when a Ztest with
+        a single test case is configured to use this harness type for simplified
+        output parsing instead of the Ztest harness as Ztest suite should do.
+        '''
+        if self.instance and len(self.instance.testcases) == 1:
+            return self.instance.testcases[0].name
+        return self.id
+
     def configure(self, instance):
         super(Console, self).configure(instance)
         if self.regex is None or len(self.regex) == 0:
             self.state = "failed"
             tc = self.instance.set_case_status_by_name(
-                self.id,
+                self.get_testcase_name(),
                 "failed",
                 f"HARNESS:{self.__class__.__name__}:no regex patterns configured."
             )
@@ -182,7 +195,7 @@ class Console(Harness):
         else:
             self.state = "failed"
             tc = self.instance.set_case_status_by_name(
-                self.id,
+                self.get_testcase_name(),
                 "failed",
                 f"HARNESS:{self.__class__.__name__}:incorrect type={self.type}"
             )
@@ -260,7 +273,7 @@ class Console(Harness):
                          f" expected unordered patterns.")
             self.state = "failed"
 
-        tc = self.instance.get_case_or_create(self.id)
+        tc = self.instance.get_case_or_create(self.get_testcase_name())
         if self.state == "passed":
             tc.status = "passed"
         else:
