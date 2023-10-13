@@ -80,6 +80,8 @@ Zephyr offers a large and ever growing number of features including:
      * Red/black tree ready queue
      * Traditional multi-queue ready queue
 
+.. _zephyr_intro_configurability:
+
 **Highly configurable / Modular for flexibility**
    Allows an application to incorporate *only* the capabilities it needs as it
    needs them, and to specify their quantity and size.
