@@ -1818,16 +1818,21 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   )
 endif()
 
-# Generate and use MCUboot related artifacts as needed.
-if(CONFIG_BOOTLOADER_MCUBOOT)
+# Generate signed (MCUboot or other) related artifacts as needed. Priority is:
+# * Sysbuild (if set)
+# * SIGNING_SCRIPT target property (if set)
+# * MCUboot signing script (if MCUboot is enabled)
+zephyr_get(signing_script VAR SIGNING_SCRIPT SYSBUILD)
+
+if(NOT signing_script)
   get_target_property(signing_script zephyr_property_target SIGNING_SCRIPT)
-  if(NOT signing_script)
-    set_target_properties(zephyr_property_target PROPERTIES SIGNING_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
+
+  if(NOT signing_script AND CONFIG_BOOTLOADER_MCUBOOT)
+    set(signing_script ${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
   endif()
 endif()
 
 # Include signing script, if set
-get_target_property(signing_script zephyr_property_target SIGNING_SCRIPT)
 if(signing_script)
   message(STATUS "Including signing script: ${signing_script}")
 
