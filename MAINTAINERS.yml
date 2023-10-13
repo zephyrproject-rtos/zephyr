@@ -2485,6 +2485,8 @@ NXP Platforms:
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
     - drivers/*/*mcux*.c
+    - drivers/*/*.mcux
+    - drivers/*/*.nxp
     - drivers/*/*nxp*
     - dts/arm/nxp/
     - dts/bindings/*/nxp*
@@ -2607,6 +2609,7 @@ STM32 Platforms:
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
     - drivers/*/*/*stm32*
+    - drivers/*/*stm32
     - dts/arm/st/
     - dts/bindings/*/*stm32*
     - soc/arm/st_stm32/
@@ -3644,6 +3647,7 @@ Continuous Integration:
     - scripts/ci/
     - .checkpatch.conf
     - scripts/gitlint/
+    - scripts/set_assignees.py
   labels:
     - "area: Continuous Integration"
 
