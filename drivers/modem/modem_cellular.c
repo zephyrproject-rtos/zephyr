@@ -647,6 +647,7 @@ static void modem_cellular_connect_cmux_event_handler(struct modem_cellular_data
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
 		modem_pipe_open_async(data->uart_pipe);
+		break;
 
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_cmux_attach(&data->cmux, data->uart_pipe);
