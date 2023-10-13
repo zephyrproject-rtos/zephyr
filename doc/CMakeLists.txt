@@ -141,7 +141,7 @@ add_doc_target(
   html
   COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
   ${SPHINXBUILD}
-    -b html
+    -b singlehtml
     -c ${DOCS_CFG_DIR}
     -d ${DOCS_DOCTREE_DIR}
     -w ${DOCS_BUILD_DIR}/html.log
