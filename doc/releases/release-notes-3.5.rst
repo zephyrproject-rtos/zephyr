@@ -487,6 +487,24 @@ Drivers and Sensors
 
   * Reworked the :dtcompatible:`ti,bq274xx` to add ``BQ27427`` support, fixed
     units for capacity and power channels.
+  * Added ADC current sense amplifier and voltage sensor drivers.
+  * Added ADI LTC2990 voltage, current, and temperature sensor driver.
+  * Added AMS TSL2540 ambient light sensor driver.
+  * Added Bosch BMI08x accelerometer/gyroscope driver.
+  * Added DFRobot A01NYUB distance sensor driver.
+  * Added Fintek F75303 temperature sensor driver.
+  * Added Isentek IST8310 magnetometer driver.
+  * Added Microchip TCN75A temperature sensor driver.
+  * Added NXP TEMPMON driver.
+  * Added Seeed HM330X dust sensor driver.
+  * Added TI TMAG5170 3D Hall sensor driver.
+  * Added power management support to BMM150, LM75, and Microchip tachometer
+    drivers.
+  * Added trigger support to the BMM150 magnetometer driver.
+  * Added tap trigger support to the LIS2DH accelerometer driver.
+  * Updated ST sensor drivers to use STMEMSC HAL i/f v2.3
+  * Updated the decoder APIs to vertically decode raw sensor data.
+  * Various fixes and enhancements in the NTC thermistor and INA23x drivers.
 
 * Serial
 
