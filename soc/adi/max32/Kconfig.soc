@@ -1,0 +1,21 @@
+# Analog Devices MAX32xxx MCU family
+
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MAX32
+	bool
+
+config SOC_FAMILY
+	default "max32" if SOC_FAMILY_MAX32
+
+config SOC_MAX32690
+	bool
+	select SOC_FAMILY_MAX32
+
+config SOC_MAX32690_M4
+	bool
+	select SOC_MAX32690
+
+config SOC
+	default "max32690" if SOC_MAX32690
