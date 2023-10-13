@@ -3681,8 +3681,8 @@ Emulation:
     - "area: HW Emulation"
 
 Random:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - ceolin
   files:
     - subsys/random/
