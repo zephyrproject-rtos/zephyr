@@ -54,6 +54,11 @@ properties:
     description: |
         VBUS measurement and control for this port.
 
+  ppc:
+    type: phandle
+    description: |
+        Power path controller for this port
+
   power-role:
     type: string
     required: true
