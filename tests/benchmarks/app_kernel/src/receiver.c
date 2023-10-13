@@ -25,27 +25,21 @@ void mailrecvtask(void);
 void piperecvtask(void);
 
 /**
- *
  * @brief Main function of the task that receives data in the test
- *
  */
 void recvtask(void *p1, void *p2, void *p3)
 {
 	/* order must be compatible with master.c ! */
-#ifdef FIFO_BENCH
+
 	k_sem_take(&STARTRCV, K_FOREVER);
 	dequtask();
-#endif
-#ifdef SEMA_BENCH
+
 	k_sem_take(&STARTRCV, K_FOREVER);
 	waittask();
-#endif
-#ifdef MAILBOX_BENCH
+
 	k_sem_take(&STARTRCV, K_FOREVER);
 	mailrecvtask();
-#endif
-#ifdef PIPE_BENCH
+
 	k_sem_take(&STARTRCV, K_FOREVER);
 	piperecvtask();
-#endif
 }

@@ -9,13 +9,8 @@
 #include "master.h"
 #include <zephyr/kernel.h>
 
-#ifdef MEMMAP_BENCH
-
-
 /**
- *
  * @brief Memory map get/free test
- *
  */
 void memorymap_test(void)
 {
@@ -41,5 +36,3 @@ void memorymap_test(void)
 	PRINT_F(FORMAT, "average alloc and dealloc memory page",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MAP_RUNS)));
 }
-
-#endif /* MEMMAP_BENCH */

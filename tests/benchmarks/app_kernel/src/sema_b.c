@@ -8,9 +8,6 @@
 
 #include "master.h"
 
-#ifdef SEMA_BENCH
-
-
 /**
  *
  * @brief Semaphore signal speed test
@@ -56,5 +53,3 @@ void sema_test(void)
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_SEMA_RUNS));
 
 }
-
-#endif /* SEMA_BENCH */

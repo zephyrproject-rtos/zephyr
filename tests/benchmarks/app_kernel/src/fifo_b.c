@@ -8,12 +8,8 @@
 
 #include "master.h"
 
-#ifdef FIFO_BENCH
-
 /**
- *
  * @brief Queue transfer speed test
- *
  */
 void queue_test(void)
 {
@@ -84,5 +80,3 @@ void queue_test(void)
 		"enqueue 4 bytes in FIFO to a waiting higher priority task",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_FIFO_RUNS));
 }
-
-#endif /* FIFO_BENCH */

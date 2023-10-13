@@ -9,8 +9,6 @@
 #include "receiver.h"
 #include "master.h"
 
-#ifdef SEMA_BENCH
-
 /* semaphore signal speed test */
 
 /**
@@ -30,5 +28,3 @@ void waittask(void)
 	}
 
 }
-
-#endif /* SEMA_BENCH */
