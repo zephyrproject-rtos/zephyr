@@ -27,22 +27,36 @@ struct dma_intel_lpss_cfg {
 	const struct device *parent;
 };
 
+int dma_intel_lpss_setup(const struct device *dev)
+{
+	struct dma_intel_lpss_cfg *dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
+
+	if (dev_cfg->dw_cfg.base != 0) {
+		return dw_dma_setup(dev);
+	}
+
+	return 0;
+}
+
+void dma_intel_lpss_set_base(const struct device *dev, uintptr_t base)
+{
+	struct dma_intel_lpss_cfg *dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
+
+	dev_cfg->dw_cfg.base = base;
+}
+
 static int dma_intel_lpss_init(const struct device *dev)
 {
 	struct dma_intel_lpss_cfg *dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
 	uint32_t base;
 	int ret;
 
-	if (!device_is_ready(dev_cfg->parent)) {
-		LOG_ERR("LPSS DMA parent not ready");
-		ret = -ENODEV;
-		goto out;
+	if (device_is_ready(dev_cfg->parent)) {
+		base = DEVICE_MMIO_GET(dev_cfg->parent) + DMA_INTEL_LPSS_OFFSET;
+		dev_cfg->dw_cfg.base = base;
 	}
 
-	base = DEVICE_MMIO_GET(dev_cfg->parent) + DMA_INTEL_LPSS_OFFSET;
-	dev_cfg->dw_cfg.base = base;
-
-	ret = dw_dma_setup(dev);
+	ret = dma_intel_lpss_setup(dev);
 
 	if (ret != 0) {
 		LOG_ERR("failed to initialize LPSS DMA %s", dev->name);
@@ -64,6 +78,12 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 	.stop = dw_dma_stop,
 };
 
+#define DMA_LPSS_INIT_VAL_0 49 /* When parent device depends on DMA */
+#define DMA_LPSS_INIT_VAL_1 80 /* When DMA device depends on parent */
+
+#define DMA_LPSS_INIT_VAL(n)\
+	_CONCAT(DMA_LPSS_INIT_VAL_, DT_INST_NODE_HAS_PROP(n, dma_parent))
+
 #define DMA_INTEL_LPSS_INIT(n)						\
 									\
 	static struct dw_drv_plat_data dma_intel_lpss##n = {		\
@@ -82,7 +102,8 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 		.dw_cfg = {						\
 			.base = 0,					\
 		},							\
-		.parent = DEVICE_DT_GET(DT_INST_PHANDLE(n, dma_parent)),\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dma_parent),	\
+		(.parent = DEVICE_DT_GET(DT_INST_PHANDLE(n, dma_parent)),))\
 	};								\
 									\
 	static struct dw_dma_dev_data dma_intel_lpss##n##_data = {	\
@@ -94,7 +115,7 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 			    NULL,					\
 			    &dma_intel_lpss##n##_data,			\
 			    &dma_intel_lpss##n##_config, POST_KERNEL,	\
-			    DMA_INTEL_LPSS_INIT_PRIORITY,		\
+			    DMA_LPSS_INIT_VAL(n),				\
 			    &dma_intel_lpss_driver_api);		\
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INTEL_LPSS_INIT)
