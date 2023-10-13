@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_tc_snk_states_internal.h"
 #include "usbc_tc_src_states_internal.h"
 #include "usbc_tc_common_internal.h"
+#include <zephyr/drivers/usb_c/usbc_ppc.h>
 
 static const struct smf_state tc_states[TC_STATE_COUNT];
 static void tc_init(const struct device *dev);
@@ -123,6 +124,11 @@ static void tc_init(const struct device *dev)
 #ifdef CONFIG_USBC_CSM_SOURCE_ONLY
 	/* Stop sourcing VBUS */
 	data->policy_cb_src_en(dev, false);
+
+	/* Disable VBUS sourcing by the PPC */
+	if (data->ppc != NULL) {
+		ppc_set_src_ctrl(data->ppc, false);
+	}
 
 	/* Stop sourcing VCONN */
 	tcpc_set_vconn(tcpc, false);

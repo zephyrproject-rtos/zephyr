@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 
 #include "usbc_stack.h"
 #include "usbc_tc_src_states_internal.h"
+#include <zephyr/drivers/usb_c/usbc_ppc.h>
 
 /**
  * @brief Spec. Release 1.3, section 4.5.2.2.7 Unattached.SRC State
@@ -247,6 +248,16 @@ void tc_attached_src_entry(void *obj)
 
 	/* Enable PD */
 	tc_pd_enable(dev, true);
+
+	/* Enable the VBUS sourcing by the PPC */
+	if (data->ppc != NULL) {
+		int ret;
+
+		ret = ppc_set_src_ctrl(data->ppc, true);
+		if (ret < 0 && ret != -ENOSYS) {
+			LOG_ERR("Couldn't disable PPC source");
+		}
+	}
 }
 
 void tc_attached_src_run(void *obj)
@@ -296,6 +307,16 @@ void tc_attached_src_exit(void *obj)
 
 	/* Stop sourcing VBUS */
 	data->policy_cb_src_en(dev, false);
+
+	/* Disable the VBUS sourcing by the PPC */
+	if (data->ppc != NULL) {
+		int ret;
+
+		ret = ppc_set_src_ctrl(data->ppc, false);
+		if (ret < 0 && ret != -ENOSYS) {
+			LOG_ERR("Couldn't disable PPC source");
+		}
+	}
 
 	/* Stop sourcing VCONN */
 	tcpc_set_vconn(tcpc, false);
