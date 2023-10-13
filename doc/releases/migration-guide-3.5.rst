@@ -282,6 +282,13 @@ Required changes
 * The zbus VDED delivery sequence has changed. Check the :ref:`documentation<zbus delivery
   sequence>` to verify if it will affect your code.
 
+* On NXP boards with LPC DMA, the DMA controller node used to have its ``dma-channels`` property
+  set in the board DTS as a way to configure the amount of structures the driver will allocate.
+  This did not match the zephyr dma-controller binding, so this property is now fixed and set
+  in the SOC devicetree definition. Downstream boards should not override this property and
+  instead use the new driver Kconfig
+  :kconfig:option:`CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED`.
+
 Recommended Changes
 *******************
 
