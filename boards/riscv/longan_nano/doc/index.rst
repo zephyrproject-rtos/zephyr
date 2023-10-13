@@ -71,6 +71,9 @@ The board configuration supports the following hardware features:
    * - DAC
      - :kconfig:option:`CONFIG_DAC`
      - :dtcompatible:`gd,gd32-dac`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`gd,gd32-adc`
 
 Serial Port
 ===========
