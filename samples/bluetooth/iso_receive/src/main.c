@@ -281,6 +281,16 @@ static struct bt_iso_big_sync_param big_sync_param = {
 	.sync_timeout = 100, /* in 10 ms units */
 };
 
+static void reset_semaphores(void)
+{
+	k_sem_reset(&sem_per_adv);
+	k_sem_reset(&sem_per_sync);
+	k_sem_reset(&sem_per_sync_lost);
+	k_sem_reset(&sem_per_big_info);
+	k_sem_reset(&sem_big_sync);
+	k_sem_reset(&sem_big_sync_lost);
+}
+
 int main(void)
 {
 	struct bt_le_per_adv_sync_param sync_create_param;
@@ -328,6 +338,7 @@ int main(void)
 	printk("Success.\n");
 
 	do {
+		reset_semaphores();
 		per_adv_lost = false;
 
 		printk("Start scanning...");
