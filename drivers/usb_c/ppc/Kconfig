@@ -21,6 +21,8 @@ config USBC_PPC_SHELL
 	help
 	  Add useful shell commands to manipulate and debug the PPCs
 
+source "drivers/usb_c/ppc/Kconfig.nxp"
+
 module = USBC_PPC
 module-str = usbc-ppc
 source "subsys/logging/Kconfig.template.log_config"
