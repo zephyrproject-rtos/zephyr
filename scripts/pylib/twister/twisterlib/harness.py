@@ -13,6 +13,7 @@ import logging
 import threading
 import time
 
+from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
 from twisterlib.handlers import Handler, terminate_process, SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.testinstance import TestInstance
@@ -162,6 +163,14 @@ class Console(Harness):
 
     def configure(self, instance):
         super(Console, self).configure(instance)
+        if self.regex is None or len(self.regex) == 0:
+            self.state = "failed"
+            tc = self.instance.set_case_status_by_name(
+                self.id,
+                "failed",
+                f"HARNESS:{self.__class__.__name__}:no regex patterns configured."
+            )
+            raise ConfigurationError(self.instance.name, tc.reason)
         if self.type == "one_line":
             self.pattern = re.compile(self.regex[0])
             self.patterns_expected = 1
@@ -170,6 +179,15 @@ class Console(Harness):
             for r in self.regex:
                 self.patterns.append(re.compile(r))
             self.patterns_expected = len(self.patterns)
+        else:
+            self.state = "failed"
+            tc = self.instance.set_case_status_by_name(
+                self.id,
+                "failed",
+                f"HARNESS:{self.__class__.__name__}:incorrect type={self.type}"
+            )
+            raise ConfigurationError(self.instance.name, tc.reason)
+        #
 
     def handle(self, line):
         if self.type == "one_line":
