@@ -9,8 +9,6 @@
 #include "receiver.h"
 #include "master.h"
 
-#ifdef MAILBOX_BENCH
-
 /*
  * Function prototypes.
  */
@@ -26,9 +24,7 @@ void mailbox_get(struct k_mbox *mailbox,
 /* mailbox transfer speed test */
 
 /**
- *
  * @brief Receive task
- *
  */
 void mailrecvtask(void)
 {
@@ -59,7 +55,6 @@ void mailrecvtask(void)
 
 
 /**
- *
  * @brief Receive data portions from the specified mailbox
  *
  * @return 0
@@ -101,5 +96,3 @@ void mailbox_get(struct k_mbox *mailbox,
 		k_panic();
 	}
 }
-
-#endif /* MAILBOX_BENCH */
