@@ -12,6 +12,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/net/mdio.h>
@@ -33,6 +34,9 @@ struct mdio_sam_dev_data {
 struct mdio_sam_dev_config {
 	Gmac * const regs;
 	const struct pinctrl_dev_config *pcfg;
+#ifdef CONFIG_SOC_FAMILY_SAM
+	const struct atmel_sam_pmc_config clock_cfg;
+#endif
 };
 
 static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
@@ -140,6 +144,15 @@ static int mdio_sam_initialize(const struct device *dev)
 
 	k_sem_init(&data->sem, 1, 1);
 
+#ifdef CONFIG_SOC_FAMILY_SAM
+	/* Enable GMAC module's clock */
+	(void) clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t) &cfg->clock_cfg);
+#else
+	/* Enable MCLK clock on GMAC */
+	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
+	*MCLK_GMAC |= MCLK_GMAC_MASK;
+#endif
+
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	return retval;
@@ -154,10 +167,16 @@ static const struct mdio_driver_api mdio_sam_driver_api = {
 	.bus_disable = mdio_sam_bus_disable,
 };
 
+#define MDIO_SAM_CLOCK(n)						\
+	COND_CODE_1(CONFIG_SOC_FAMILY_SAM,				\
+		(.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),), ()	\
+	)
+
 #define MDIO_SAM_CONFIG(n)						\
 static const struct mdio_sam_dev_config mdio_sam_dev_config_##n = {	\
 	.regs = (Gmac *)DT_INST_REG_ADDR(n),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+	MDIO_SAM_CLOCK(n)						\
 };
 
 #define MDIO_SAM_DEVICE(n)						\
