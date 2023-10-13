@@ -1517,11 +1517,57 @@ static void btp_send_bis_found_ev(const bt_addr_le_t *address, uint32_t broadcas
 	tester_rsp_buffer_unlock();
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
+struct base_parse_data {
+	uint32_t broadcast_id;
+	uint32_t pd;
+	struct bt_audio_codec_cfg codec_cfg;
+	uint8_t subgroup_cnt;
+	uint32_t bis_bitfield;
+	size_t stream_cnt;
+};
+
+static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, void *user_data)
 {
-	size_t stream_count = 0U;
-	uint32_t base_bis_index_bitfield = 0U;
-	const struct bt_audio_codec_cfg *codec_cfg;
+	struct base_parse_data *parse_data = user_data;
+	struct bt_audio_codec_cfg *codec_cfg = &parse_data->codec_cfg;
+
+	parse_data->bis_bitfield |= BIT(bis->index);
+
+	if (parse_data->stream_cnt < MAX_STREAMS_COUNT) {
+		broadcaster->streams[parse_data->stream_cnt++].bis_id = bis->index;
+	}
+
+	btp_send_bis_found_ev(&broadcaster_addr, parse_data->broadcast_id, parse_data->pd,
+			      parse_data->subgroup_cnt, bis->index, codec_cfg);
+
+	return true;
+}
+
+static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
+{
+	struct base_parse_data *parse_data = user_data;
+	int err;
+
+	err = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &parse_data->codec_cfg);
+	if (err != 0) {
+		LOG_DBG("Failed to retrieve codec config: %d", err);
+		return false;
+	}
+
+	err = bt_bap_base_subgroup_foreach_bis(subgroup, base_subgroup_bis_cb, user_data);
+	if (err != 0) {
+		LOG_DBG("Failed to parse all BIS: %d", err);
+		return false;
+	}
+
+	return true;
+}
+
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+			 size_t base_size)
+{
+	struct base_parse_data parse_data = {0};
+	int ret;
 
 	LOG_DBG("");
 
@@ -1529,25 +1575,25 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	LOG_DBG("Received BASE: broadcast sink %p subgroups %u", sink, base->subgroup_count);
+	LOG_DBG("Received BASE: broadcast sink %p subgroups %u",
+		sink, bt_bap_base_get_subgroup_count(base));
 
-	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		for (size_t j = 0U; j < base->subgroups[i].bis_count; j++) {
-			const uint8_t index = base->subgroups[i].bis_data[j].index;
-
-			codec_cfg = &base->subgroups[i].codec_cfg;
-			base_bis_index_bitfield |= BIT(index);
-
-			if (stream_count < MAX_STREAMS_COUNT) {
-				broadcaster->streams[stream_count++].bis_id = index;
-			}
-
-			btp_send_bis_found_ev(&broadcaster_addr, sink->broadcast_id,
-					      sink->base.pd, i, index, codec_cfg);
-		}
+	ret = bt_bap_base_get_pres_delay(base);
+	if (ret < 0) {
+		LOG_ERR("Failed to get presentation delay: %d", ret);
+		return;
 	}
 
-	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
+	parse_data.broadcast_id = sink->broadcast_id;
+	parse_data.pd = (uint32_t)ret;
+
+	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, &parse_data);
+	if (ret != 0) {
+		LOG_ERR("Failed to parse subgroups: %d", ret);
+		return;
+	}
+
+	bis_index_bitfield = parse_data.bis_bitfield & bis_index_mask;
 	LOG_DBG("bis_index_bitfield 0x%08x", bis_index_bitfield);
 }
 

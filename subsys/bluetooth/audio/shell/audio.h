@@ -99,7 +99,8 @@ struct broadcast_source {
 struct broadcast_sink {
 	struct bt_bap_broadcast_sink *bap_sink;
 	struct bt_le_per_adv_sync *pa_sync;
-	struct bt_bap_base received_base;
+	uint8_t received_base[UINT8_MAX];
+	uint8_t base_size;
 	uint32_t broadcast_id;
 	size_t stream_cnt;
 	bool syncable;
@@ -227,51 +228,84 @@ extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_
 extern struct broadcast_source default_source;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-#if BROADCAST_SNK_SUBGROUP_CNT > 0
-static inline void print_base(const struct shell *sh, const struct bt_bap_base *base)
+static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
+					      void *user_data)
 {
-	uint8_t bis_indexes[BT_ISO_MAX_GROUP_ISO_COUNT] = {0};
-	/* "0xXX " requires 5 characters */
-	char bis_indexes_str[5 * ARRAY_SIZE(bis_indexes) + 1];
-	size_t index_count = 0;
+	struct bt_bap_base_codec_id *codec_id = user_data;
 
-	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		const struct bt_bap_base_subgroup *subgroup;
-
-		subgroup = &base->subgroups[i];
-
-		shell_print(sh, "Subgroup[%d]:", i);
-		print_codec_cfg(sh, &subgroup->codec_cfg);
-
-		for (size_t j = 0U; j < subgroup->bis_count; j++) {
-			const struct bt_bap_base_bis_data *bis_data;
-
-			bis_data = &subgroup->bis_data[j];
-
-			shell_print(sh, "BIS[%d] index 0x%02x", j, bis_data->index);
-			bis_indexes[index_count++] = bis_data->index;
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-			shell_hexdump(sh, bis_data->data, bis_data->data_len);
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
-		}
+	shell_print(ctx_shell, "\t\tBIS index: 0x%02X", bis->index);
+	/* Print CC data */
+	if (codec_id->id == BT_HCI_CODING_FORMAT_LC3) {
+		print_ltv_array(ctx_shell, "\t\tdata", bis->data, bis->data_len);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		shell_hexdump(ctx_shell, bis->data, bis->data_len);
 	}
 
-	(void)memset(bis_indexes_str, 0, sizeof(bis_indexes_str));
-
-	/* Create space separated list of indexes as hex values */
-	for (size_t i = 0U; i < index_count; i++) {
-		char bis_index_str[6];
-
-		sprintf(bis_index_str, "0x%02x ", bis_indexes[i]);
-
-		strcat(bis_indexes_str, bis_index_str);
-		shell_print(sh, "[%d]: %s", i, bis_index_str);
-	}
-
-	shell_print(sh, "Possible indexes: %s", bis_indexes_str);
+	return true;
 }
-#endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
+
+static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
+					  void *user_data)
+{
+	struct bt_bap_base_codec_id codec_id;
+	uint8_t *data;
+	int ret;
+
+	shell_print(ctx_shell, "Subgroup %p:", subgroup);
+
+	ret = bt_bap_base_get_subgroup_codec_id(subgroup, &codec_id);
+	if (ret < 0) {
+		return false;
+	}
+
+	shell_print(ctx_shell, "\tCodec Format: 0x%02X", codec_id.id);
+	shell_print(ctx_shell, "\tCompany ID  : 0x%04X", codec_id.cid);
+	shell_print(ctx_shell, "\tVendor ID   : 0x%04X", codec_id.vid);
+
+	ret = bt_bap_base_get_subgroup_codec_data(subgroup, &data);
+	if (ret < 0) {
+		return false;
+	}
+
+	/* Print CC data */
+	if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
+		print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		shell_hexdump(ctx_shell, data, (uint8_t)ret);
+	}
+
+	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
+	if (ret < 0) {
+		return false;
+	}
+
+	/* Print metadata */
+	if (codec_id.id == BT_HCI_CODING_FORMAT_LC3) {
+		print_ltv_array(ctx_shell, "\tdata", data, (uint8_t)ret);
+	} else { /* If not LC3, we cannot assume it's LTV */
+		shell_hexdump(ctx_shell, data, (uint8_t)ret);
+	}
+
+	ret = bt_bap_base_subgroup_foreach_bis(subgroup, print_base_subgroup_bis_cb, &codec_id);
+	if (ret < 0) {
+		return false;
+	}
+
+	return true;
+}
+
+static inline void print_base(const struct bt_bap_base *base)
+{
+	int err;
+
+	shell_print(ctx_shell, "Presentation delay: %d", bt_bap_base_get_pres_delay(base));
+	shell_print(ctx_shell, "Subgroup count: %d", bt_bap_base_get_subgroup_count(base));
+
+	err = bt_bap_base_foreach_subgroup(base, print_base_subgroup_cb, NULL);
+	if (err < 0) {
+		shell_info(ctx_shell, "Invalid BASE: %d", err);
+	}
+}
 
 static inline void copy_unicast_stream_preset(struct shell_stream *stream,
 					      const struct named_lc3_preset *named_preset)

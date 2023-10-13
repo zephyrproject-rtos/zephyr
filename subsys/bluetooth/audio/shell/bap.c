@@ -57,7 +57,7 @@ struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_
 struct broadcast_source default_source;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
-static struct bt_bap_stream broadcast_sink_streams[BROADCAST_SNK_STREAM_CNT];
+static struct bt_bap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct broadcast_sink default_broadcast_sink;
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 static struct bt_bap_stream *default_stream;
@@ -1701,77 +1701,18 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 	}
 }
 
-static bool print_data_func_cb(struct bt_data *data, void *user_data)
+static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+		      size_t base_size)
 {
-	shell_print(ctx_shell, "type 0x%02x len %u", data->type, data->data_len);
-	shell_hexdump(ctx_shell, data->data, data->data_len);
+	/* Don't print duplicates */
+	if (base_size != default_broadcast_sink.base_size ||
+	    memcmp(base, &default_broadcast_sink.received_base, base_size) != 0) {
+		shell_print(ctx_shell, "Received BASE from sink %p:", sink);
+		(void)memcpy(&default_broadcast_sink.received_base, base, base_size);
+		default_broadcast_sink.base_size = base_size;
 
-	return true;
-}
-
-static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
-{
-	uint8_t bis_indexes[BROADCAST_SNK_STREAM_CNT] = { 0 };
-	/* "0xXX " requires 5 characters */
-	char bis_indexes_str[5 * ARRAY_SIZE(bis_indexes) + 1];
-	size_t index_count = 0;
-
-	if (memcmp(base, &default_broadcast_sink.received_base,
-		   sizeof(default_broadcast_sink.received_base)) == 0) {
-		/* Don't print duplicates */
-		return;
+		print_base(base);
 	}
-
-	shell_print(ctx_shell, "Received BASE from sink %p:", sink);
-	shell_print(ctx_shell, "Presentation delay: %u", base->pd);
-	shell_print(ctx_shell, "Subgroup count: %u", base->subgroup_count);
-
-	for (int i = 0; i < base->subgroup_count; i++) {
-		const struct bt_bap_base_subgroup *subgroup;
-
-		subgroup = &base->subgroups[i];
-
-		shell_print(ctx_shell, "%2sSubgroup[%d]:", "", i);
-		print_codec_cfg(ctx_shell, &subgroup->codec_cfg);
-
-		for (int j = 0; j < subgroup->bis_count; j++) {
-			const struct bt_bap_base_bis_data *bis_data;
-
-			bis_data = &subgroup->bis_data[j];
-
-			shell_print(ctx_shell, "%4sBIS[%d] index 0x%02x", "", i, bis_data->index);
-			bis_indexes[index_count++] = bis_data->index;
-
-			if (subgroup->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
-				const int err =
-					bt_audio_data_parse(bis_data->data, bis_data->data_len,
-							    print_data_func_cb, NULL);
-
-				if (err != 0) {
-					shell_error(ctx_shell,
-						    "Failed to parse BIS codec config: %d", err);
-				}
-			} else {
-				shell_hexdump(ctx_shell, bis_data->data, bis_data->data_len);
-			}
-		}
-	}
-
-	memset(bis_indexes_str, 0, sizeof(bis_indexes_str));
-	/* Create space separated list of indexes as hex values */
-	for (int i = 0; i < index_count; i++) {
-		char bis_index_str[6];
-
-		sprintf(bis_index_str, "0x%02x ", bis_indexes[i]);
-
-		strcat(bis_indexes_str, bis_index_str);
-		shell_print(ctx_shell, "[%d]: %s", i, bis_index_str);
-	}
-
-	shell_print(ctx_shell, "Possible indexes: %s", bis_indexes_str);
-
-	(void)memcpy(&default_broadcast_sink.received_base, base,
-		     sizeof(default_broadcast_sink.received_base));
 }
 
 static void syncable(struct bt_bap_broadcast_sink *sink, bool encrypted)
