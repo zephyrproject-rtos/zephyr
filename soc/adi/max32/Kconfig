@@ -11,6 +11,9 @@ config SOC_FAMILY_MAX32
 	select CLOCK_CONTROL
 	select BUILD_OUTPUT_HEX
 
+config SOC_MAX32655
+	select CPU_CORTEX_M4
+
 config SOC_MAX32690
 	select CPU_CORTEX_M4
 
