@@ -16,6 +16,11 @@ config USBC_PPC_INIT_PRIORITY
 	help
 	  Initialization priority of the USB-C PPC drivers in POST_KERNEL.
 
+config USBC_PPC_SHELL
+	bool "Shell commands for PPC"
+	help
+	  Add useful shell commands to manipulate and debug the PPCs
+
 module = USBC_PPC
 module-str = usbc-ppc
 source "subsys/logging/Kconfig.template.log_config"
