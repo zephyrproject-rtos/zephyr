@@ -8,12 +8,8 @@
 
 #include "master.h"
 
-#ifdef MUTEX_BENCH
-
 /**
- *
  * @brief Mutex lock/unlock test
- *
  */
 void mutex_test(void)
 {
@@ -32,5 +28,3 @@ void mutex_test(void)
 	PRINT_F(FORMAT, "average lock and unlock mutex",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, (2 * NR_OF_MUTEX_RUNS)));
 }
-
-#endif /* MUTEX_BENCH */

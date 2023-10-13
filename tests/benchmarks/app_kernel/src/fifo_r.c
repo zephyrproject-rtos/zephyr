@@ -9,13 +9,10 @@
 #include "receiver.h"
 #include "master.h"
 
-#ifdef FIFO_BENCH
-
 /* queue transfer speed test */
+
 /**
- *
  * @brief Data receive task
- *
  */
 void dequtask(void)
 {
@@ -29,6 +26,3 @@ void dequtask(void)
 		k_msgq_get(&DEMOQX4, &x, K_FOREVER);
 	}
 }
-
-
-#endif /* FIFO_BENCH */

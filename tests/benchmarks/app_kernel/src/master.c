@@ -7,8 +7,8 @@
  */
 
 /*
- *File Naming information.
- *	------------------------
+ * File Naming information.
+ * ------------------------
  *	Files that end with:
  *		_B : Is a file that contains a benchmark function
  *		_R : Is a file that contains the receiver task
@@ -20,11 +20,8 @@
 char msg[MAX_MSG];
 char data_bench[MESSAGE_SIZE];
 
-#ifdef PIPE_BENCH
 struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
-#endif
 char sline[SLINE_LEN + 1];
-const char newline[] = "\n";
 
 /*
  * Time in timer cycles necessary to read time.
@@ -60,7 +57,6 @@ K_PIPE_DEFINE(PIPE_SMALLBUFF, 256, 4);
 K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
 
 /**
- *
  * @brief Check for keypress
  *
  * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
@@ -71,7 +67,6 @@ int kbhit(void)
 }
 
 /**
- *
  * @brief Close output for the test
  *
  */
@@ -84,7 +79,6 @@ void output_close(void)
 
 
 /**
- *
  * @brief Perform all selected benchmarks
  * see config.h to select or to unselect
  *
@@ -95,7 +89,7 @@ int main(void)
 
 	bench_test_init();
 
-	PRINT_STRING(newline);
+	PRINT_STRING("\n");
 	do {
 		PRINT_STRING(dashline);
 		PRINT_STRING("|          S I M P L E   S E R V I C E    "
@@ -120,14 +114,4 @@ int main(void)
 
 	output_close();
 	return 0;
-}
-
-
-/**
- *
- * @brief Dummy test
- *
- */
-void dummy_test(void)
-{
 }

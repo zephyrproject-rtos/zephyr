@@ -9,9 +9,6 @@
 #include "receiver.h"
 #include "master.h"
 
-#ifdef PIPE_BENCH
-
-
 /*
  * Function prototypes.
  */
@@ -25,9 +22,7 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option,
 /* pipes transfer speed test */
 
 /**
- *
  * @brief Receive task
- *
  */
 void piperecvtask(void)
 {
@@ -74,7 +69,6 @@ void piperecvtask(void)
 
 
 /**
- *
  * @brief Read a data portion from the pipe and measure time
  *
  * @return 0 on success, 1 on error
@@ -136,5 +130,3 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 	}
 	return 0;
 }
-
-#endif /* PIPE_BENCH */
