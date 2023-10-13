@@ -1,0 +1,27 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Simulated ZSAI device
+
+compatible: "zephyr,zsai-simulator"
+
+include: base.yaml
+
+properties:
+  simulated-size:
+    type: int
+    description: |
+      Size of simulated device. This is mutually exclusive with reg property.
+
+  erase-value:
+    type: int
+    description: Set to value of erased cell in case erase is needed.
+
+  erase-block-size:
+    type: int
+    description: address alignment required by flash erase operations
+
+  write-block-size:
+    type: int
+    description: address alignment required by flash write operations
