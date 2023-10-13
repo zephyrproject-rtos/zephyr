@@ -24,6 +24,7 @@ __imr void hp_sram_init(uint32_t memory_size)
 
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
 		HPSRAM_REGS(idx)->HSxPGCTL = 0;
+		HPSRAM_REGS(idx)->HSxRMCTL = 1;
 	}
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
 		while (HPSRAM_REGS(idx)->HSxPGISTS != 0) {
