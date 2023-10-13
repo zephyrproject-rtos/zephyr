@@ -25,7 +25,7 @@ from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import BuildError
+from twisterlib.error import BuildError, ConfigurationError
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -1069,7 +1069,14 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler.extra_test_args = self.options.extra_test_args
 
             harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
-            harness.configure(instance)
+            try:
+                harness.configure(instance)
+            except ConfigurationError as error:
+                instance.status = "error"
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+            #
             if isinstance(harness, Pytest):
                 harness.pytest_run(instance.handler.get_test_timeout())
             else:
