@@ -23,7 +23,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -672,11 +671,6 @@ static void uart_stm32_poll_out_visitor(const struct device *dev, void *out, pol
 		 */
 		uart_stm32_pm_policy_state_lock_get(dev);
 
-		/* Resume device if needed before enabling IT */
-		if (pm_device_runtime_is_enabled(dev)) {
-			(void)pm_device_runtime_get(dev);
-		}
-
 		/* Enable TC interrupt so we can release suspend
 		 * constraint when done
 		 */
@@ -1269,11 +1263,6 @@ static void uart_stm32_isr(const struct device *dev)
 		async_evt_tx_done(data);
 
 #ifdef CONFIG_PM
-		/* Device can now be released */
-		if (pm_device_runtime_is_enabled(dev)) {
-			(void)pm_device_runtime_put(dev);
-		}
-
 		uart_stm32_pm_policy_state_lock_put(dev);
 #endif
 	} else if (LL_USART_IsEnabledIT_RXNE(config->usart) &&
