@@ -266,6 +266,8 @@ source "drivers/serial/Kconfig.efinix_sapphire"
 
 source "drivers/serial/Kconfig.sedi"
 
+source "drivers/serial/Kconfig.max32"
+
 source "drivers/serial/Kconfig.bcm2711"
 
 source "drivers/serial/Kconfig.intel_lw"
