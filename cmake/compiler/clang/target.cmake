@@ -20,6 +20,7 @@ find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
 
 if(NOT "${ARCH}" STREQUAL "posix")
   include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
+  include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 
   if("${ARCH}" STREQUAL "arm")
     list(APPEND TOOLCHAIN_C_FLAGS
