@@ -1430,6 +1430,25 @@ Potential buffer overflow vulnerabilities in the Zephyr Mgmt subsystem
 
 - This issue has not been fixed.
 
+CVE-2023-4263
+-------------
+
+Potential buffer overflow vulnerability in the Zephyr IEEE 802.15.4 nRF 15.4 driver.
+
+- `Zephyr project bug tracker GHSA-rf6q-rhhp-pqhf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rf6q-rhhp-pqhf>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 60528 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/60528>`_
+
+- `PR 61384 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61384>`_
+
+- `PR 61216 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61216>`_
+
 CVE-2023-4264
 -------------
 
