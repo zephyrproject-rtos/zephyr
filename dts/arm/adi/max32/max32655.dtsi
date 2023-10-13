@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+
+&pinctrl {
+	reg = <0x40008000 0x2400>;
+
+	gpio2: gpio@40080400 {
+		reg = <0x40080400 0x200>;
+		compatible = "adi,max32-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupts = <26 0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+		status = "disabled";
+	};
+
+	gpio3: gpio@40080600 {
+		reg = <0x40080600 0x200>;
+		compatible = "adi,max32-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupts = <54 0>;
+		status = "disabled";
+	};
+};
+
+/* MAX32655 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20008000 {
+			compatible = "mmio-sram";
+			reg = <0x20008000 DT_SIZE_K(32)>;
+		};
+
+		sram2: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(48)>;
+		};
+
+		sram3: memory@2001c000 {
+			compatible = "mmio-sram";
+			reg = <0x2001c000 DT_SIZE_K(16)>;
+		};
+
+		uart3: serial@40081400 {
+			compatible = "adi,max32-uart";
+			reg = <0x40081400 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			interrupts = <88 0>;
+			status = "disabled";
+		};
+	};
+};

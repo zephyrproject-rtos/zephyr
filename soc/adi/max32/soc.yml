@@ -4,6 +4,9 @@
 family:
 - name: max32
   socs:
+  - name: max32655
+    cpuclusters:
+    - name: m4
   - name: max32690
     cpuclusters:
     - name: m4
