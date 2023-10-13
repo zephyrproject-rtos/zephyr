@@ -8,6 +8,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/coredump.h>
 
+uint32_t *addr1 = (void *) 1;
+
 void func_3(uint32_t *addr)
 {
 #if defined(CONFIG_BOARD_M2GL025_MIV) || \
@@ -22,6 +24,9 @@ void func_3(uint32_t *addr)
 	 * a lot, so it's good to check that it causes a coredump.
 	 */
 	k_panic();
+#elif defined(CONFIG_RISCV)
+	ARG_UNUSED(addr);
+	*addr1 = 0;
 #elif !defined(CONFIG_CPU_CORTEX_M)
 	/* For null pointer reference */
 	*addr = 0;
