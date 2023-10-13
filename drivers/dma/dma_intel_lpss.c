@@ -67,6 +67,81 @@ out:
 	return ret;
 }
 
+int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
+			      uint64_t src, uint64_t dst, size_t size)
+{
+	struct dw_dma_dev_data *const dev_data = dev->data;
+	struct dma_intel_lpss_cfg *lpss_dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
+	struct dw_dma_dev_cfg *const dev_cfg = &lpss_dev_cfg->dw_cfg;
+	struct dw_dma_chan_data *chan_data;
+	uint32_t ctrl_hi = 0;
+
+	if (channel >= DW_MAX_CHAN) {
+		return -EINVAL;
+	}
+
+	chan_data = &dev_data->chan[channel];
+
+	chan_data->lli_current->sar = src;
+	chan_data->lli_current->dar = dst;
+	chan_data->ptr_data.current_ptr = dst;
+	chan_data->ptr_data.buffer_bytes = size;
+
+	ctrl_hi = dw_read(dev_cfg->base, DW_CTRL_HIGH(channel));
+	ctrl_hi &= ~(DW_CTLH_DONE(1) | DW_CTLH_BLOCK_TS_MASK);
+	ctrl_hi |= size & DW_CTLH_BLOCK_TS_MASK;
+
+	chan_data->lli_current->ctrl_hi = ctrl_hi;
+	chan_data->ptr_data.start_ptr = DW_DMA_LLI_ADDRESS(chan_data->lli_current,
+							 chan_data->direction);
+	chan_data->ptr_data.end_ptr = chan_data->ptr_data.start_ptr +
+				    chan_data->ptr_data.buffer_bytes;
+	chan_data->ptr_data.hw_ptr = chan_data->ptr_data.start_ptr;
+
+	chan_data->state = DW_DMA_PREPARED;
+
+	return 0;
+}
+
+int dma_intel_lpss_get_status(const struct device *dev, uint32_t channel,
+			      struct dma_status *stat)
+{
+	struct dma_intel_lpss_cfg *lpss_dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
+	struct dw_dma_dev_cfg *const dev_cfg = &lpss_dev_cfg->dw_cfg;
+	struct dw_dma_dev_data *const dev_data = dev->data;
+	struct dw_dma_chan_data *chan_data;
+	uint32_t ctrl_hi;
+	size_t current_length;
+	bool done;
+
+	if (channel >= DW_CHAN_COUNT) {
+		return -EINVAL;
+	}
+
+	chan_data = &dev_data->chan[channel];
+	ctrl_hi = dw_read(dev_cfg->base, DW_CTRL_HIGH(channel));
+	current_length = ctrl_hi & DW_CTLH_BLOCK_TS_MASK;
+	done = ctrl_hi & DW_CTLH_DONE(1);
+
+	if (!(dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN(channel))) {
+		stat->busy = false;
+		stat->pending_length = chan_data->ptr_data.buffer_bytes;
+		return 0;
+	}
+	stat->busy = true;
+
+	if (done) {
+		stat->pending_length = 0;
+	} else if (current_length == chan_data->ptr_data.buffer_bytes) {
+		stat->pending_length = chan_data->ptr_data.buffer_bytes;
+	} else {
+		stat->pending_length =
+			chan_data->ptr_data.buffer_bytes - current_length;
+	}
+
+	return 0;
+}
+
 void dma_intel_lpss_isr(const struct device *dev)
 {
 	dw_dma_isr(dev);
@@ -75,6 +150,8 @@ void dma_intel_lpss_isr(const struct device *dev)
 static const struct dma_driver_api dma_intel_lpss_driver_api = {
 	.config = dw_dma_config,
 	.start = dw_dma_start,
+	.reload = dma_intel_lpss_reload,
+	.get_status = dma_intel_lpss_get_status,
 	.stop = dw_dma_stop,
 };
 
