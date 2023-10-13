@@ -30,6 +30,13 @@ config UART_NS16550_DRV_CMD
 
 	  Says n if not sure.
 
+config UART_NS16550_INTEL_LPSS_DMA
+	bool "INTEL LPSS support for NS16550"
+	select SERIAL_SUPPORT_ASYNC
+	select DMA if UART_ASYNC_API
+	help
+	  This enables the usage of INTEL LPSS internal DMA for Async operations.
+
 choice UART_NS16550_VARIANT
 	prompt "UART variant"
 	default UART_NS16550_VARIANT_NS16550
