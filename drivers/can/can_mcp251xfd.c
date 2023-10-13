@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(can_mcp251xfd, CONFIG_CAN_LOG_LEVEL);
 static void mcp251xfd_canframe_to_txobj(const struct can_frame *src, int mailbox_idx,
 					struct mcp251xfd_txobj *dst)
 {
-	memset(dst, 0, sizeof(*dst));
+	memset(dst, 0, offsetof(struct can_frame, data));
 
 	if ((src->flags & CAN_FRAME_IDE) != 0) {
 		dst->id = FIELD_PREP(MCP251XFD_OBJ_ID_SID_MASK, src->id >> 18);
@@ -191,8 +191,10 @@ static int mcp251xfd_fifo_write(const struct device *dev, int mailbox_idx,
 	txobj = mcp251xfd_get_spi_buf_ptr(dev);
 	mcp251xfd_canframe_to_txobj(msg, mailbox_idx, txobj);
 
-	tx_len = MCP251XFD_OBJ_HEADER_SIZE +
-		 ROUND_UP(can_dlc_to_bytes(msg->dlc), MCP251XFD_RAM_ALIGNMENT);
+	tx_len = MCP251XFD_OBJ_HEADER_SIZE;
+	if ((msg->flags & CAN_FRAME_RTR) == 0) {
+		tx_len += ROUND_UP(can_dlc_to_bytes(msg->dlc), MCP251XFD_RAM_ALIGNMENT);
+	}
 
 	ret = mcp251xfd_write(dev, address, tx_len);
 	if (ret < 0) {
