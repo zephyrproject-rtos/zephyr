@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <zephyr/pm/device.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
@@ -1341,12 +1342,9 @@ static int adc_stm32_init(const struct device *dev)
 	 * mode, and restore its calibration parameters if there are some
 	 * previously stored calibration parameters.
 	 */
-
 	LL_ADC_DisableDeepPowerDown(adc);
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	/* The ADC clock must be disabled by clock gating during CPU1 sleep/stop */
-	LL_APB2_GRP1_DisableClockSleep(LL_APB2_GRP1_PERIPH_ADC);
 #endif
+
 	/*
 	 * Many ADC modules need some time to be stabilized before performing
 	 * any enable or calibration actions.
@@ -1368,6 +1366,85 @@ static int adc_stm32_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int adc_stm32_suspend_setup(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+	/* Disable ADC */
+	adc_stm32_disable(adc);
+
+#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	/* Disable ADC internal voltage regulator */
+	LL_ADC_DisableInternalRegulator(adc);
+	while (LL_ADC_IsInternalRegulatorEnabled(adc) == 1U) {
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into
+	 * deep sleep mode.
+	 */
+
+	LL_ADC_EnableDeepPowerDown(adc);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* Disable the independent analog supply */
+	LL_PWR_DisableVDDA();
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+
+	/* Stop device clock. Note: fixed clocks are not handled yet. */
+	err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+	if (err != 0) {
+		LOG_ERR("Could not disable ADC clock");
+		return err;
+	}
+
+	/* Move pins to sleep state */
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if ((err < 0) && (err != -ENOENT)) {
+		/*
+		 * If returning -ENOENT, no pins where defined for sleep mode :
+		 * Do not output on console (might sleep already) when going to sleep,
+		 * "ADC pinctrl sleep state not available"
+		 * and don't block PM suspend.
+		 * Else return the error.
+		 */
+		return err;
+	}
+
+	return 0;
+}
+
+static int adc_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		return adc_stm32_init(dev);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return adc_stm32_suspend_setup(dev);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct adc_driver_api api_stm32_driver_api = {
 	.channel_setup = adc_stm32_channel_setup,
@@ -1531,8 +1608,10 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_DMA_CHANNEL(index, dmamux, NULL, PERIPHERAL, MEMORY)	\
 };									\
 									\
+PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);			\
+									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, NULL,				\
+		    &adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);
