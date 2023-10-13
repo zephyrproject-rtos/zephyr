@@ -57,6 +57,7 @@ list(APPEND kernel_files
   init.c
   kheap.c
   mem_slab.c
+  mutex.c
   thread.c
   version.c
   sched.c
@@ -67,7 +68,6 @@ list(APPEND kernel_files
   idle.c
   mailbox.c
   msg_q.c
-  mutex.c
   queue.c
   sem.c
   stack.c

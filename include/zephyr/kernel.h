@@ -2898,6 +2898,7 @@ extern struct k_work_q k_sys_work_q;
  * @ingroup mutex_apis
  */
 struct k_mutex {
+#ifdef CONFIG_MULTITHREADING
 	/** Mutex wait queue */
 	_wait_q_t wait_q;
 	/** Mutex owner */
@@ -2908,6 +2909,7 @@ struct k_mutex {
 
 	/** Original thread priority */
 	int owner_orig_prio;
+#endif /* CONFIG_MULTITHREADING */
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
 
@@ -2920,12 +2922,12 @@ struct k_mutex {
  * @cond INTERNAL_HIDDEN
  */
 #define Z_MUTEX_INITIALIZER(obj) \
-	{ \
+	{IF_ENABLED(CONFIG_MULTITHREADING, ( \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
-	}
+	))}
 
 /**
  * INTERNAL_HIDDEN @endcond

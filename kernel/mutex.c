@@ -40,12 +40,14 @@
 #include <zephyr/llext/symbol.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_MULTITHREADING
 /* We use a global spinlock here because some of the synchronization
  * is protecting things like owner thread priorities which aren't
  * "part of" a single k_mutex.  Should move those bits of the API
  * under the scheduler lock so we can break this up.
  */
 static struct k_spinlock lock;
+#endif /* CONFIG_MULTITHREADING */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 static struct k_obj_type obj_type_mutex;
@@ -53,12 +55,14 @@ static struct k_obj_type obj_type_mutex;
 
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
+#ifdef CONFIG_MULTITHREADING
 	mutex->owner = NULL;
 	mutex->lock_count = 0U;
 
 	z_waitq_init(&mutex->wait_q);
 
 	k_object_init(mutex);
+#endif /* CONFIG_MULTITHREADING */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 	k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
@@ -78,6 +82,7 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 #include <syscalls/k_mutex_init_mrsh.c>
 #endif
 
+#ifdef CONFIG_MULTITHREADING
 static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 {
 	int new_prio = z_is_prio_higher(target, limit) ? target : limit;
@@ -100,16 +105,21 @@ static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 	}
 	return false;
 }
+#endif /* CONFIG_MULTITHREADING */
 
 int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 {
-	int new_prio;
-	k_spinlock_key_t key;
-	bool resched = false;
+	ARG_UNUSED(mutex);
+	ARG_UNUSED(timeout);
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
+
+#ifdef CONFIG_MULTITHREADING
+	int new_prio;
+	k_spinlock_key_t key;
+	bool resched = false;
 
 	key = k_spin_lock(&lock);
 
@@ -195,6 +205,11 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EAGAIN);
 
 	return -EAGAIN;
+#else
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
+
+	return 0;
+#endif /* CONFIG_MULTITHREADING */
 }
 EXPORT_SYSCALL(k_mutex_lock);
 
@@ -210,11 +225,14 @@ static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
-	struct k_thread *new_owner;
+	ARG_UNUSED(mutex);
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
+
+#ifdef CONFIG_MULTITHREADING
+	struct k_thread *new_owner;
 
 	CHECKIF(mutex->owner == NULL) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, -EINVAL);
@@ -278,6 +296,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 
 k_mutex_unlock_return:
+#endif /* CONFIG_MULTITHREADING */
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
 
 	return 0;
