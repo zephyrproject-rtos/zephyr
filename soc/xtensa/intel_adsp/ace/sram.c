@@ -20,15 +20,13 @@ __imr void hp_sram_init(uint32_t memory_size)
 	ARG_UNUSED(memory_size);
 
 	uint32_t hpsram_ebb_quantity = ace_hpsram_get_bank_count();
-	volatile uint32_t *l2hsbpmptr = (volatile uint32_t *)ACE_L2MM->l2hsbpmptr;
-	volatile uint8_t *status = (volatile uint8_t *)l2hsbpmptr + 4;
 	uint32_t idx;
 
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
-		*(l2hsbpmptr + idx * 2) = 0;
+		HPSRAM_REGS(idx)->HSxPGCTL = 0;
 	}
 	for (idx = 0; idx < hpsram_ebb_quantity; ++idx) {
-		while (*(status + idx * 8) != 0) {
+		while (HPSRAM_REGS(idx)->HSxPGISTS != 0) {
 		}
 	}
 
