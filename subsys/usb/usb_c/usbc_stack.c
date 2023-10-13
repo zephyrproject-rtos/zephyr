@@ -80,6 +80,8 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		.prl_hr = &prl_hr_##inst,                                                          \
 		.tcpc = DEVICE_DT_GET(DT_INST_PROP(inst, tcpc)),                                   \
 		.vbus = DEVICE_DT_GET(DT_INST_PROP(inst, vbus)),                                   \
+		.ppc = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, ppc),                               \
+				   (DEVICE_DT_GET(DT_INST_PROP(inst, ppc))), (NULL)),              \
 	};                                                                                         \
                                                                                                    \
 	static const struct usbc_port_config usbc_port_config_##inst = {                           \
