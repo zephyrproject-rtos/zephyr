@@ -574,11 +574,6 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 		goto done;
 	}
 
-	if ((filter->flags & CAN_FILTER_RTR) != 0) {
-		filter_idx = -ENOTSUP;
-		goto done;
-	}
-
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 
 	if ((filter->flags & CAN_FILTER_IDE) != 0) {
@@ -1255,19 +1250,43 @@ static int mcp251xfd_stop(const struct device *dev)
 	return 0;
 }
 
+static inline bool mcp251xfd_user_callback_on_filter_match(const struct device *dev,
+							  struct can_frame *frame, uint32_t filhit)
+{
+	struct mcp251xfd_data *dev_data = dev->data;
+
+	if ((dev_data->filter_usage & BIT(filhit)) != 0 &&
+	    can_frame_matches_filter(frame, &dev_data->filter[filhit])) {
+		LOG_DBG("Received msg CAN id: 0x%x", frame->id);
+		dev_data->rx_cb[filhit](dev, frame, dev_data->cb_arg[filhit]);
+		return true;
+	}
+
+	return false;
+}
+
 static void mcp251xfd_rx_fifo_handler(const struct device *dev, void *data)
 {
-	struct can_frame dst;
-	struct mcp251xfd_data *dev_data = dev->data;
+	struct can_frame frame;
 	struct mcp251xfd_rxobj *rxobj = data;
 	uint32_t filhit;
+	bool is_match;
 
-	mcp251xfd_rxobj_to_canframe(rxobj, &dst);
+	mcp251xfd_rxobj_to_canframe(rxobj, &frame);
 
 	filhit = FIELD_GET(MCP251XFD_OBJ_FILHIT_MASK, rxobj->flags);
-	if ((dev_data->filter_usage & BIT(filhit)) != 0) {
-		LOG_DBG("Received msg CAN id: 0x%x", dst.id);
-		dev_data->rx_cb[filhit](dev, &dst, dev_data->cb_arg[filhit]);
+	is_match = mcp251xfd_user_callback_on_filter_match(dev, &frame, filhit);
+	if (is_match) {
+		return;
+	}
+
+	/* mcp251xfd does not apply hardware filtering on RTR flag. If check above */
+	/* fails we need to check if any others filters match. */
+	for (filhit = 0; filhit < CONFIG_CAN_MAX_FILTER; filhit++) {
+		is_match = mcp251xfd_user_callback_on_filter_match(dev, &frame, filhit);
+		if (is_match) {
+			return;
+		}
 	}
 }
 
