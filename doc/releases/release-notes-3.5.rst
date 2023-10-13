@@ -106,13 +106,149 @@ Bluetooth
 
 * Audio
 
+  Improved memory usage of codec configurations and codec capabilities. Fixed several bugs in BAP
+  and the BAP-related services (ASCS, PACS, BASS), as well as missing features such as proper
+  notification handling.
+
+  * Added BAP ``bt_bap_stream_get_tx_sync``
+  * Added CAP stream send and tx sync
+  * Added ``bt_audio_codec_cap_get`` helper functions
+  * Added support for long read/write in CAP
+  * Fixed ASCS Source ASE link loss state transition
+  * Fixed ASCS possible ASE leak
+  * Fixed ASCS to drop ISO PDUs if ASE is not in streaming state
+  * Fixed BAP ``bt_bap_scan_delegator_find_state`` implementation
+  * Fixed BAP issue with PA sync and ID in ``broadcast_sink_create``
+  * Fixed TMAS characteristic permissions
+  * Fixed ``tbs_client`` missing discovery complete event
+  * Fixed audio stack to accept empty CCID list in audio metadata
+  * Fixed bad size of metadata_backup in ASCS
+  * Fixed possible ASCS ASE stuck in releasing state
+  * Refactored ``bt_audio_codec_cap`` to flat arrays
+  * Refactored ``bt_audio_codec_cfg`` to flat arrays
+  * Removed ``CONFIG_BT_PACS_{SNK,SRC}_CONTEXT``
+  * Removed scanning and PA sync from broadcast sink
+  * Renamed ``bt_codec`` to ``bt_audio_codec_{cap, conf, data}``
+  * Renamed codec qos framing
+  * Replaced ``BT_AUDIO_CODEC_LC3_ID`` -> ``BT_HCI_CODING_FORMAT_LC3``
+  * Replaced ``BT_AUDIO_CODEC_PARSE_ERR_`` values with errno values.
+  * Reworked PACS notify system
+  * Updated ASCS ISO QOS based on BAP QOS
+  * Updated BAP to filter PA data duplicates by default
+  * Updated CSIP to unlock Non-bonded devices immediately.
+  * Updated PACS to notify bonded clients on reconnect
+  * Updated ``bt_cap_stream_ops_register`` to always register BAP callbacks
+  * Updated the ASCS ACL disconnect behavior
+  * Updated to split ``bt_audio_codec_meta_get`` to ``cfg`` and ``cap``
+
 * Direction Finding
 
 * Host
 
+  * Added SMP bondable flag overlay per connection
+  * Added USE_NRPA advertising option
+  * Added ``BT_CONN_PARAM_ANY`` to allow setting any value to connection parameters
+  * Added advanced broadcast ISO parameters
+  * Added advanced unicast ISO parameters
+  * Added new API to manage Bluetooth settings storage
+  * Fixed HCI ISO Data packets fragmentation
+  * Fixed HCI ISO SDU length sent to controller
+  * Fixed OTS ``bt_ots_init`` parameter struct naming
+  * Fixed OTS memory leak while procedure is not finished
+  * Fixed a connection reference leak
+  * Fixed forced pairing request handling
+  * Fixed host to invalidate the Resolvable Private Address when starting legacy advertising
+  * Fixed issue with ``bt_iso_cig_reconfigure``
+  * Fixed possible buffer overflow in ``bt_conn_le_start_encryption``
+  * Fixed some SMP issues
+  * Fixed to abort pairing if connection disconnected
+  * Updated L2CAP accept callbacks
+  * Updated LE L2CAP connected callback to be after connection response
+  * Updated PAwR implementation to use RPA as responder address if BT_PRIVACY=y
+
 * Mesh
 
+  * Added TF-M support.
+  * Added support to use both tinycrypt and PSA based crypto
+  * Added full virtual addresses support with the collisions resolution. The
+    :kconfig:option:`CONFIG_BT_MESH_LABEL_NO_RECOVER` Kconfig option is introduced to restore the
+    addresses for the subscription list and model publication.
+  * Added statistic module.
+  * Fixed an issue where a node acting as a LPN was triggering Friend Poll messages when sending a
+    segmented message over the loopback interface.
+  * Fixed an issue where provisioning completes successfully on a node when the identical Public Key
+    is used by a  provisioner.
+  * Fixed an issue where the :c:func:`settings_load` function called from a cooperative thread other
+    than the system workqueue caused the GATT Mesh Proxy Service registration to fail.
+  * Fixed an issue where a node could enter IV Update in Progress state if an old SNB with the
+    current IV Index and IV Update flag set to 1 was resent.
+
+  * Mesh Protocol v1.1 changes
+
+    * Added storing Private GATT Proxy state persistently.
+    * Added support for Firmware Distribution Upload OOB Start message in the Firwmware Distribution
+      Server model. The message support can be enabled with the
+      :kconfig:option:`CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD` Kconfig option.
+    * Added extended provisioning protocol timeout when OOB methods are used in the provisioning.
+    * Added support for Composition Data Pages 2, 129 and 130.
+    * Added documentation for Composition Data Pages 0, 1, 2, 128, 129 and 130.
+    * Added documentation for the Segmentation and Reassembly in the Transport layer.
+    * Added documentation for the SAR Configuration models
+    * Fixed an issue where the Opcode Aggregator Server model did not compile without the Opcode
+      Aggregator Client model.
+    * Fixed an issue where the identity address was used in Private GATT Proxy advertisements
+      instead of Non-Resolvable Private Addresses.
+    * Fixed the Proxy Privacy parameter support.
+    * Fixed an issue where the Composition Data Page 128 was not present on a node that has
+      instantiated the Remote Provisioning Server model.
+    * Fixed an issue where the Large Composition Data Server model did not support Composition Data
+      Pages other then 0.
+    * Fixed an issue where the Remote Provisioning Client model instanted on a node together with
+      the Remote Provisioning Server model could not reprovision itself.
+    * Fixed an issue where the acknowledgment timer in the Segmentation and Reassembly was not
+      restarted when the incoming Segment Acknowledgment message did not contain at least one
+      segment newly marked as acknowledged.
+    * Fixed an issue where the On-Demand Private Proxy Server and Client models had interdependency
+      that did not allow to compile them separately.
+
 * Controller
+
+  Improved support for Broadcast and Connected Isochronous channels in the Controller, enabling
+  LE audio application development. The Controller is experimental, is missing implementations for
+  interleaved packing in Isochronous channels' lower link layer.
+
+  * Added Checks for minimum sizes of Adv PDUs
+  * Added Kconfig Option to ignore Tx HCI ISO Data Packet Seq Num
+  * Added Kconfig for avoiding ISO SDU fragmentation
+  * Added Kconfig to maximize BIG event length and preempt PTO & CTRL subevents
+  * Added ``BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX`` Kconfig
+  * Added memory barrier to ticker transactions
+  * Added missing nRF53x Tx Power Kconfig
+  * Added support for Flush Timeout in Connected ISO
+  * Fixed BIS payload sliding window overrun check
+  * Fixed CIS Central FT calculation
+  * Fixed CIS Central error handling
+  * Fixed CIS assymmetric PHY usage
+  * Fixed CIS encryption when DF support enabled
+  * Fixed ISO-AL for quality tests and time stamps
+  * Fixed PHY value in HCI LE CIS Established Event
+  * Fixed ULL stuck in semaphore under rare conditions
+  * Fixed assertion due to late PER CIS active set
+  * Fixed compiler instruction re-ordering that caused assertions
+  * Fixed connected ISO dynamic tx power
+  * Fixed failing advertising conformance tests
+  * Fixed handling received Auxiliary PDUs when Coded PHY not supported
+  * Fixed leak in scheduled ticker node when rescheduling ticker nodes
+  * Fixed missing host feature reset
+  * Fixed nRF53 SoC back-to-back PDU chaining
+  * Fixed nRF53 SoC back-to-back Tx Rx implementation
+  * Fixed regression in Adv PDU overflow calculation
+  * Fixed regression in observer that caused assertions and scheduling stall
+  * Fixed use of pre-programmed PPI on nRF SoCs
+  * Removed HCI ISO data with invalid status in preparation for FT support
+  * Updated Extended Advertising Report to not be generated when ``AUX_ADV_IND`` not received
+  * Updated to have ``EVENT_OVERHEAD_START_US`` verbose assertion in each state/role LLL
+  * Updated to stop following ``aux_ptr`` if ``DATA_LEN_MAX`` is reached during extended scanning
 
 * HCI Driver
 
