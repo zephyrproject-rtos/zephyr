@@ -1,130 +1,17 @@
-.. _posix_support:
+.. _posix_option_groups:
 
-POSIX Support
-#############
+Subprofiling Option Groups
+##########################
 
-The Portable Operating System Interface (POSIX) is a family of standards
-specified by the IEEE Computer Society for maintaining compatibility between
-operating systems. Zephyr implements a subset of the embedded profiles PSE51
-and PSE52, and BSD Sockets API.
-
-With the POSIX support available in Zephyr, an existing POSIX compliant
-application can be ported to run on the Zephyr kernel, and therefore leverage
-Zephyr features and functionality. Additionally, a library designed for use with
-POSIX threading compatible operating systems can be ported to Zephyr kernel
-based applications with minimal or no changes.
-
-..  figure:: posix.svg
-    :align: center
-    :alt: POSIX Support in Zephyr
-
-    POSIX support in Zephyr
-
-The POSIX API subset is an increasingly popular OSAL (operating system
-abstraction layer) for IoT and embedded applications, as can be seen in
-Zephyr, AWS:FreeRTOS, TI-RTOS, and NuttX.
-
-Benefits of POSIX support in Zephyr include:
-
-- Offering a familiar API to non-embedded programmers, especially from Linux
-- Enabling reuse (portability) of existing libraries based on POSIX APIs
-- Providing an efficient API subset appropriate for small (MCU) embedded systems
-
-
-System Overview
-===============
-
-Units of Functionality
-++++++++++++++++++++++
-
-The system profile is defined in terms of component profiles that specify Units
-of Functionality that can be combined to realize the application platform. A Unit
-of Functionality is a defined set of services which can be implemented. If
-implemented, the standard prescribes that all services in the Unit must
-be implemented.
-
-A Minimal Realtime System Profile implementation must support the
-following Units of Functionality as defined in IEEE Std. 1003.1 (also referred to
-as POSIX.1-2017).
-
-
-.. csv-table:: Units of Functionality
-   :header: Requirements, Supported, Remarks
-   :widths: 50,10,60
-
-
-    POSIX_C_LANG_JUMP,
-    POSIX_C_LANG_SUPPORT,yes
-    POSIX_DEVICE_IO,
-    POSIX_FILE_LOCKING,
-    POSIX_SIGNALS,
-    POSIX_SINGLE_PROCESS,
-    POSIX_SPIN_LOCKS,yes
-    POSIX_THREADS_BASE,yes
-    XSI_THREAD_MUTEX_EXT,yes
-    XSI_THREADS_EXT,yes
-
-
-Option Requirements
-++++++++++++++++++++
-
-An implementation supporting the Minimal Realtime System
-Profile must support the POSIX.1 Option Requirements which are defined in the
-standard. Options Requirements are used for further sub-profiling within the
-units of functionality: they further define the functional behavior of the
-system service (normally adding extra functionality). Depending on the profile
-to which the POSIX implementation complies,parameters and/or the precise
-functionality of certain services may differ.
-
-The following list shows the option requirements that are implemented in
-Zephyr.
-
-
-.. csv-table:: Option Requirements
-   :header: Requirements, Supported
-   :widths: 50,10
-
-    _POSIX_BARRIERS,yes
-    _POSIX_CLOCK_SELECTION,yes
-    _POSIX_FSYNC,
-    _POSIX_MEMLOCK,
-    _POSIX_MEMLOCK_RANGE,
-    _POSIX_MONOTONIC_CLOCK,yes
-    _POSIX_NO_TRUNC,
-    _POSIX_REALTIME_SIGNALS,
-    _POSIX_SEMAPHORES,yes
-    _POSIX_SHARED_MEMORY_OBJECTS,
-    _POSIX_SPIN_LOCKS,yes
-    _POSIX_SYNCHRONIZED_IO,
-    _POSIX_THREAD_ATTR_STACKADDR,yes
-    _POSIX_THREAD_ATTR_STACKSIZE,yes
-    _POSIX_THREAD_CPUTIME,
-    _POSIX_THREAD_PRIO_INHERIT,
-    _POSIX_THREAD_PRIO_PROTECT,
-    _POSIX_THREAD_PRIORITY_SCHEDULING,yes
-    _POSIX_THREAD_SPORADIC_SERVER,
-    _POSIX_TIMEOUTS,
-    _POSIX_TIMERS,yes
-    _POSIX2_C_DEV,
-    _POSIX2_SW_DEV,
-
-
-
-Units of Functionality
-======================
-
-This section describes the Units of Functionality (fixed sets of interfaces)
-which are implemented (partially or completely) in Zephyr. Please refer to the
-standard for a full description of each listed interface.
+.. _posix_option_group_threads_base:
 
 POSIX_THREADS_BASE
-+++++++++++++++++++
+==================
 
 The basic assumption in this profile is that the system
 consists of a single (implicit) process with multiple threads. Therefore, the
 standard requires all basic thread services, except those related to
 multiple processes.
-
 
 .. csv-table:: POSIX_THREADS_BASE
    :header: API, Supported
@@ -179,12 +66,12 @@ multiple processes.
     pthread_sigmask(),
     pthread_testcancel(),
 
-
+.. _posix_option_group_xsi_thread_ext:
 
 XSI_THREAD_EXT
-++++++++++++++
+==============
 
-The XSI_THREADS_EXT Unit of Functionality is required because it provides
+The XSI_THREADS_EXT option group is required because it provides
 functions to control a thread's stack. This is considered useful for any
 real-time application.
 
@@ -201,32 +88,13 @@ This table lists service support status in Zephyr:
     pthread_getconcurrency(),
     pthread_setconcurrency()
 
-
-XSI_THREAD_MUTEX_EXT
-++++++++++++++++++++
-
-The XSI_THREAD_MUTEX_EXT Unit of Functionality is required because it has
-options for controlling the behavior of mutexes under erroneous application use.
-
-
-This table lists service support status in Zephyr:
-
-.. csv-table:: XSI_THREAD_MUTEX_EXT
-   :header: API, Supported
-   :widths: 50,10
-
-    pthread_mutexattr_gettype(),yes
-    pthread_mutexattr_settype(),yes
-
+.. _posix_option_group_c_lang_support:
 
 POSIX_C_LANG_SUPPORT
-++++++++++++++++++++
+====================
 
-The POSIX_C_LANG_SUPPORT Unit of Functionality contains the general ISO C
+The POSIX_C_LANG_SUPPORT option group contains the general ISO C
 Library.
-
-This is implemented as part of the minimal C library available in Zephyr.
-
 
 .. csv-table:: POSIX_C_LANG_SUPPORT
    :header: API, Supported
@@ -338,11 +206,12 @@ This is implemented as part of the minimal C library available in Zephyr.
     vsprintf(),yes
     vsscanf(),
 
+.. _posix_option_group_single_process:
 
 POSIX_SINGLE_PROCESS
-+++++++++++++++++++++
+====================
 
-The POSIX_SINGLE_PROCESS Unit of Functionality contains services for single
+The POSIX_SINGLE_PROCESS option group contains services for single
 process applications.
 
 .. csv-table:: POSIX_SINGLE_PROCESS
@@ -358,9 +227,10 @@ process applications.
     uname(),yes
     unsetenv()
 
+.. _posix_option_group_signals:
 
 POSIX_SIGNALS
-+++++++++++++
+=============
 
 Signal services are a basic mechanism within POSIX-based systems and are
 required for error and event handling.
@@ -368,7 +238,6 @@ required for error and event handling.
 .. csv-table:: POSIX_SIGNALS
    :header: API, Supported
    :widths: 50,10
-
 
     abort(),yes
     alarm(),
@@ -388,32 +257,20 @@ required for error and event handling.
     sigwait(),
     strsignal(),yes
 
-.. csv-table:: POSIX_SPIN_LOCKS
-   :header: API, Supported
-   :widths: 50,10
-
-    pthread_spin_destroy(),yes
-    pthread_spin_init(),yes
-    pthread_spin_lock(),yes
-    pthread_spin_trylock(),yes
-    pthread_spin_unlock(),yes
-
+.. _posix_option_group_device_io:
 
 POSIX_DEVICE_IO
-+++++++++++++++
+===============
 
 .. csv-table:: POSIX_DEVICE_IO
    :header: API, Supported
    :widths: 50,10
 
-    flockfile(),
-    ftrylockfile(),
-    funlockfile(),
-    getc_unlocked(),
-    getchar_unlocked(),yes
-    putc_unlocked(),
-    putchar_unlocked()
-    clearerr(),
+    FD_CLR(),yes
+    FD_ISSET(),yes
+    FD_SET(),yes
+    FD_ZERO(),yes
+    clearerr(),yes
     close(),yes
     fclose(),
     fdopen(),
@@ -436,17 +293,22 @@ POSIX_DEVICE_IO
     gets(),
     open(),yes
     perror(),yes
+    poll(),yes
     printf(),yes
+    pread(),
+    pselect(),
     putc(),yes
     putchar(),yes
     puts(),yes
+    pwrite(),
     read(),yes
     scanf(),
+    select(),yes
     setbuf(),
     setvbuf(),
-    stderr,yes
-    stdin,yes
-    stdout,yes
+    stderr,
+    stdin,
+    stdout,
     ungetc(),
     vfprintf(),yes
     vfscanf(),
@@ -454,8 +316,72 @@ POSIX_DEVICE_IO
     vscanf(),
     write(),yes
 
+.. _posix_option_group_barriers:
+
+POSIX_BARRIERS
+==============
+
+.. csv-table:: POSIX_BARRIERS
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_barrier_destroy(),yes
+    pthread_barrier_init(),yes
+    pthread_barrier_wait(),yes
+    pthread_barrierattr_destroy(),yes
+    pthread_barrierattr_init(),yes
+
+.. _posix_option_group_clock_selection:
+
+POSIX_CLOCK_SELECTION
+=====================
+
+.. csv-table:: POSIX_CLOCK_SELECTION
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_condattr_getclock(),yes
+    pthread_condattr_setclock(),yes
+    clock_nanosleep(),yes
+
+.. _posix_option_group_semaphores:
+
+POSIX_SEMAPHORES
+================
+
+.. csv-table:: POSIX_SEMAPHORES
+   :header: API, Supported
+   :widths: 50,10
+
+    sem_close(),
+    sem_destroy(),yes
+    sem_getvalue(),yes
+    sem_init(),yes
+    sem_open(),
+    sem_post(),yes
+    sem_trywait(),yes
+    sem_unlink(),
+    sem_wait(),yes
+
+.. _posix_option_group_spin_locks:
+
+POSIX_SPIN_LOCKS
+================
+
+.. csv-table:: POSIX_SPIN_LOCKS
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_spin_destroy(),yes
+    pthread_spin_init(),yes
+    pthread_spin_lock(),yes
+    pthread_spin_trylock(),yes
+    pthread_spin_unlock(),yes
+
+.. _posix_option_group_timers:
+
 POSIX_TIMERS
-++++++++++++
+============
 
 .. csv-table:: POSIX_TIMERS
    :header: API, Supported
@@ -471,13 +397,143 @@ POSIX_TIMERS
     timer_getoverrun(),yes
     timer_settime(),yes
 
-POSIX_CLOCK_SELECTION
-+++++++++++++++++++++
 
-.. csv-table:: POSIX_CLOCK_SELECTION
+.. _posix_options:
+
+Additional POSIX Options
+========================
+
+.. _posix_option_message_passing:
+
+_POSIX_MESSAGE_PASSING
+++++++++++++++++++++++
+
+.. csv-table:: _POSIX_MESSAGE_PASSING
    :header: API, Supported
    :widths: 50,10
 
-    pthread_condattr_getclock(),yes
-    pthread_condattr_setclock(),yes
-    clock_nanosleep(),yes
+    mq_close(),yes
+    mq_getattr(),yes
+    mq_notify(),
+    mq_open(),yes
+    mq_receive(),yes
+    mq_send(),yes
+    mq_setattr(),yes
+    mq_unlink(),yes
+
+_POSIX_PRIORITY_SCHEDULING
+++++++++++++++++++++++++++
+
+.. _posix_option_priority_scheduling:
+
+.. csv-table:: _POSIX_PRIORITY_SCHEDULING
+   :header: API, Supported
+   :widths: 50,10
+
+    sched_get_priority_max(),yes
+    sched_get_priority_min(),yes
+    sched_getparam(),
+    sched_getscheduler(),
+    sched_rr_get_interval(),
+    sched_setparam(),
+    sched_setscheduler(),
+    sched_yield(),yes
+
+.. _posix_option_reader_writer_locks:
+
+_POSIX_READER_WRITER_LOCKS
+++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_READER_WRITER_LOCKS
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_rwlock_destroy(),yes
+    pthread_rwlock_init(),yes
+    pthread_rwlock_rdlock(),yes
+    pthread_rwlock_tryrdlock(),yes
+    pthread_rwlock_trywrlock(),yes
+    pthread_rwlock_unlock(),yes
+    pthread_rwlock_wrlock(),yes
+    pthread_rwlockattr_destroy(),yes
+    pthread_rwlockattr_getpshared(),
+    pthread_rwlockattr_init(),yes
+    pthread_rwlockattr_setpshared(),
+
+.. _posix_option_thread_attr_stackaddr:
+
+_POSIX_THREAD_ATTR_STACKADDR
+++++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_ATTR_STACKADDR
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_attr_getstackaddr(),yes
+    pthread_attr_setstackaddr(),yes
+
+.. _posix_option_thread_attr_stacksize:
+
+_POSIX_THREAD_ATTR_STACKSIZE
+++++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_ATTR_STACKSIZE
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_attr_getstacksize(),yes
+    pthread_attr_setstacksize(),yes
+
+.. _posix_option_thread_priority_scheduling:
+
+_POSIX_THREAD_PRIORITY_SCHEDULING
++++++++++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_PRIORITY_SCHEDULING
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_attr_getinheritsched(),
+    pthread_attr_getschedpolicy(),yes
+    pthread_attr_getscope(),
+    pthread_attr_setinheritsched(),
+    pthread_attr_setschedpolicy(),yes
+    pthread_attr_setscope(),
+    pthread_getschedparam(),yes
+    pthread_setschedparam(),yes
+    pthread_setschedprio(),yes
+
+.. _posix_option_timeouts:
+
+_POSIX_TIMEOUTS
++++++++++++++++
+
+.. csv-table:: _POSIX_TIMEOUTS
+   :header: API, Supported
+   :widths: 50,10
+
+    mq_timedreceive(),
+    mq_timedsend(),
+    pthread_mutex_timedlock(),yes
+    pthread_rwlock_timedrdlock(),yes
+    pthread_rwlock_timedwrlock(),yes
+    sem_timedwait(),yes
+    posix_trace_timedgetnext_event(),
+
+.. _posix_option_xopen_streams:
+
+_XOPEN_STREAMS
+++++++++++++++
+
+.. csv-table:: _XOPEN_STREAMS
+   :header: API, Supported
+   :widths: 50,10
+
+    fattach(),
+    fdetach(),
+    getmsg(),
+    getpmsg(),
+    ioctl(),yes
+    isastream(),
+    putmsg(),
+    putpmsg(),

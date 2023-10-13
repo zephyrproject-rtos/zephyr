@@ -71,7 +71,7 @@ REDIRECTS = [
     ('guides/pm/power_domain', 'services/pm/power_domain'),
     ('guides/pm/system', 'services/pm/system'),
     ('guides/portability/index', 'services/portability/index'),
-    ('guides/portability/posix', 'services/portability/posix'),
+    ('guides/portability/posix', 'services/portability/posix/index'),
     ('guides/porting/arch', 'hardware/porting/arch'),
     ('guides/porting/board_porting', 'hardware/porting/board_porting'),
     ('guides/porting/index', 'hardware/porting/index'),
