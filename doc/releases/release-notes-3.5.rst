@@ -23,7 +23,8 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2023-3725 `Zephyr project bug tracker GHSA-2g3m-p6c7-8rr3
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2g3m-p6c7-8rr3>`_
 
-* CVE-2023-4257: Under embargo until 2023-10-12
+* CVE-2023-4257 `Zephyr project bug tracker GHSA-853q-q69w-gf5j
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-853q-q69w-gf5j>`_
 
 * CVE-2023-4258 `Zephyr project bug tracker GHSA-m34c-cp63-rwh7
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m34c-cp63-rwh7>`_
