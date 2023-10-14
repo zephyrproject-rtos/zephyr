@@ -30,11 +30,18 @@
 #define BMP3XX_BUS_I2C_BMP390 DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #undef DT_DRV_COMPAT
 
-union bmp3xx_bus {
 #if BMP3XX_BUS_SPI_BMP388 || BMP3XX_BUS_SPI_BMP390
-	struct spi_dt_spec spi;
+#define BMP3XX_BUS_SPI 1
 #endif
 #if BMP3XX_BUS_I2C_BMP388 || BMP3XX_BUS_I2C_BMP390
+#define BMP3XX_BUS_I2C 1
+#endif
+
+union bmp3xx_bus {
+#if BMP3XX_BUS_SPI
+	struct spi_dt_spec spi;
+#endif
+#if BMP3XX_BUS_I2C
 	struct i2c_dt_spec i2c;
 #endif
 };
