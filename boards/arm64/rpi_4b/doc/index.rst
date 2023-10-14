@@ -16,13 +16,18 @@ Supported Features
 The Raspberry Pi 4 Model B board configuration supports the following
 hardware features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| GIC-400   | on-chip    | GICv2 interrupt controller           |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | Mini uart serial port                |
-+-----------+------------+--------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Peripheral
+     - Kconfig option
+     - Devicetree compatible
+   * - GIC-400
+     - N/A
+     - :dtcompatible:`arm,gic-v2`
+   * - UART (Mini UART)
+     - :kconfig:option:`CONFIG_SERIAL`
+     - :dtcompatible:`brcm,bcm2711-aux-uart`
 
 Other hardware features have not been enabled yet for this board.
 
