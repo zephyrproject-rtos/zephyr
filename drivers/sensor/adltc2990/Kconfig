@@ -11,3 +11,11 @@ config ADLTC2990
 	help
 	  Enable the driver for Analog Devices LTC2990
 	  Quad I2C Voltage, Current and Temperature Monitor.
+
+config EMUL_ADLTC2990
+	bool "Emulator for ADLTC2990"
+	default y
+	depends on ADLTC2990
+	depends on EMUL
+	help
+	  Enable ADLTC2990 emulator.
