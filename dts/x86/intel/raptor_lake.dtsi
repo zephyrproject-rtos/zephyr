@@ -79,7 +79,7 @@
 			compatible = "intel,lpss";
 			dma-parent = <&i2c0>;
 			#dma-cells = <1>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		i2c1: i2c1 {
@@ -272,6 +272,12 @@
 			status = "disabled";
 		};
 
+		uart0_dma: uart0_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		uart0: uart0 {
 			compatible = "ns16550";
 			vendor-id = <0x8086>;
@@ -281,7 +287,15 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			current-speed = <115200>;
-			status = "okay";
+			dmas = <&uart0_dma 0>, <&uart0_dma 1>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		uart1_dma: uart1_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
+			status = "disabled";
 		};
 
 		uart1: uart1 {
@@ -293,7 +307,9 @@
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			current-speed = <115200>;
-			status = "okay";
+			dmas = <&uart1_dma 0>, <&uart1_dma 1>;
+			dma-names = "tx", "rx";
+			status = "disabled";
 		};
 
 		uart2: uart2 {
