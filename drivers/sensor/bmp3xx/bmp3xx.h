@@ -20,14 +20,21 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
 
-#define BMP3XX_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#define BMP3XX_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT bosch_bmp388
+#define BMP3XX_BUS_SPI_BMP388 DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMP3XX_BUS_I2C_BMP388 DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT bosch_bmp390
+#define BMP3XX_BUS_SPI_BMP390 DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMP3XX_BUS_I2C_BMP390 DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#undef DT_DRV_COMPAT
 
 union bmp3xx_bus {
-#if BMP3XX_BUS_SPI
+#if BMP3XX_BUS_SPI_BMP388 || BMP3XX_BUS_SPI_BMP390
 	struct spi_dt_spec spi;
 #endif
-#if BMP3XX_BUS_I2C
+#if BMP3XX_BUS_I2C_BMP388 || BMP3XX_BUS_I2C_BMP390
 	struct i2c_dt_spec i2c;
 #endif
 };
