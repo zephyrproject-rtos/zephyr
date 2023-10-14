@@ -157,6 +157,20 @@ ZTEST(test_c_lib, test_stdint)
 #endif
 }
 
+/**
+ *
+ * @brief Test time_t to make sure it is at least 64 bits
+ *
+ */
+ZTEST(test_c_lib, test_time_t)
+{
+#ifdef CONFIG_EXTERNAL_LIBC
+	ztest_test_skip();
+#else
+	zassert_true(sizeof(time_t) >= sizeof(uint64_t));
+#endif
+}
+
 /*
  * variables used during string library testing
  */
