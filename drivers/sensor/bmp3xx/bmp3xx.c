@@ -13,15 +13,15 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/pm/device.h>
 
-#include "bmp388.h"
+#include "bmp3xx.h"
 
-LOG_MODULE_REGISTER(BMP388, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BMP3XX, CONFIG_SENSOR_LOG_LEVEL);
 
-#if defined(CONFIG_BMP388_ODR_RUNTIME)
+#if defined(CONFIG_BMP3XX_ODR_RUNTIME)
 static const struct {
 	uint16_t freq_int;
 	uint16_t freq_milli;
-} bmp388_odr_map[] = {
+} bmp3xx_odr_map[] = {
 	{ 0, 3 },       /* 25/8192 - 327.68s */
 	{ 0, 6 },       /* 25/4096 - 163.84s */
 	{ 0, 12 },      /* 25/2048 - 81.92s */
@@ -42,37 +42,37 @@ static const struct {
 };
 #endif
 
-static inline int bmp388_bus_check(const struct device *dev)
+static inline int bmp3xx_bus_check(const struct device *dev)
 {
-	const struct bmp388_config *cfg = dev->config;
+	const struct bmp3xx_config *cfg = dev->config;
 
 	return cfg->bus_io->check(&cfg->bus);
 }
 
-static inline int bmp388_reg_read(const struct device *dev,
+static inline int bmp3xx_reg_read(const struct device *dev,
 				  uint8_t start, uint8_t *buf, int size)
 {
-	const struct bmp388_config *cfg = dev->config;
+	const struct bmp3xx_config *cfg = dev->config;
 
 	return cfg->bus_io->read(&cfg->bus, start, buf, size);
 }
 
-static inline int bmp388_reg_write(const struct device *dev, uint8_t reg,
+static inline int bmp3xx_reg_write(const struct device *dev, uint8_t reg,
 				   uint8_t val)
 {
-	const struct bmp388_config *cfg = dev->config;
+	const struct bmp3xx_config *cfg = dev->config;
 
 	return cfg->bus_io->write(&cfg->bus, reg, val);
 }
 
-int bmp388_reg_field_update(const struct device *dev,
+int bmp3xx_reg_field_update(const struct device *dev,
 			    uint8_t reg,
 			    uint8_t mask,
 			    uint8_t val)
 {
 	int rc = 0;
 	uint8_t old_value, new_value;
-	const struct bmp388_config *cfg = dev->config;
+	const struct bmp3xx_config *cfg = dev->config;
 
 	rc = cfg->bus_io->read(&cfg->bus, reg, &old_value, 1);
 	if (rc != 0) {
@@ -87,8 +87,8 @@ int bmp388_reg_field_update(const struct device *dev,
 	return cfg->bus_io->write(&cfg->bus, reg, new_value);
 }
 
-#ifdef CONFIG_BMP388_ODR_RUNTIME
-static int bmp388_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
+#ifdef CONFIG_BMP3XX_ODR_RUNTIME
+static int bmp3xx_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 {
 	size_t i;
 
@@ -97,32 +97,32 @@ static int bmp388_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(bmp388_odr_map); i++) {
-		if (freq_int < bmp388_odr_map[i].freq_int ||
-		    (freq_int == bmp388_odr_map[i].freq_int &&
-		     freq_milli <= bmp388_odr_map[i].freq_milli)) {
-			return (ARRAY_SIZE(bmp388_odr_map) - 1) - i;
+	for (i = 0; i < ARRAY_SIZE(bmp3xx_odr_map); i++) {
+		if (freq_int < bmp3xx_odr_map[i].freq_int ||
+		    (freq_int == bmp3xx_odr_map[i].freq_int &&
+		     freq_milli <= bmp3xx_odr_map[i].freq_milli)) {
+			return (ARRAY_SIZE(bmp3xx_odr_map) - 1) - i;
 		}
 	}
 
 	return -EINVAL;
 }
 
-static int bmp388_attr_set_odr(const struct device *dev,
+static int bmp3xx_attr_set_odr(const struct device *dev,
 			       uint16_t freq_int,
 			       uint16_t freq_milli)
 {
 	int err;
-	struct bmp388_data *data = dev->data;
-	int odr = bmp388_freq_to_odr_val(freq_int, freq_milli);
+	struct bmp3xx_data *data = dev->data;
+	int odr = bmp3xx_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
 		return odr;
 	}
 
-	err = bmp388_reg_field_update(dev,
-				      BMP388_REG_ODR,
-				      BMP388_ODR_MASK,
+	err = bmp3xx_reg_field_update(dev,
+				      BMP3XX_REG_ODR,
+				      BMP3XX_ODR_MASK,
 				      (uint8_t)odr);
 	if (err == 0) {
 		data->odr = odr;
@@ -132,8 +132,8 @@ static int bmp388_attr_set_odr(const struct device *dev,
 }
 #endif
 
-#ifdef CONFIG_BMP388_OSR_RUNTIME
-static int bmp388_attr_set_oversampling(const struct device *dev,
+#ifdef CONFIG_BMP3XX_OSR_RUNTIME
+static int bmp3xx_attr_set_oversampling(const struct device *dev,
 					enum sensor_channel chan,
 					uint16_t val)
 {
@@ -141,7 +141,7 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 	uint32_t pos, mask;
 	int err;
 
-	struct bmp388_data *data = dev->data;
+	struct bmp3xx_data *data = dev->data;
 
 	/* Value must be a positive power of 2 <= 32. */
 	if ((val <= 0) || (val > 32) || ((val & (val - 1)) != 0)) {
@@ -149,12 +149,12 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 	}
 
 	if (chan == SENSOR_CHAN_PRESS) {
-		pos = BMP388_OSR_PRESSURE_POS;
-		mask = BMP388_OSR_PRESSURE_MASK;
+		pos = BMP3XX_OSR_PRESSURE_POS;
+		mask = BMP3XX_OSR_PRESSURE_MASK;
 	} else if ((chan == SENSOR_CHAN_AMBIENT_TEMP) ||
 		   (chan == SENSOR_CHAN_DIE_TEMP)) {
-		pos = BMP388_OSR_TEMP_POS;
-		mask = BMP388_OSR_TEMP_MASK;
+		pos = BMP3XX_OSR_TEMP_POS;
+		mask = BMP3XX_OSR_TEMP_MASK;
 	} else {
 		return -EINVAL;
 	}
@@ -165,8 +165,8 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 		++reg_val;
 	}
 
-	err = bmp388_reg_field_update(dev,
-				      BMP388_REG_OSR,
+	err = bmp3xx_reg_field_update(dev,
+				      BMP3XX_REG_OSR,
 				      mask,
 				      reg_val << pos);
 	if (err < 0) {
@@ -184,7 +184,7 @@ static int bmp388_attr_set_oversampling(const struct device *dev,
 }
 #endif
 
-static int bmp388_attr_set(const struct device *dev,
+static int bmp3xx_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -201,15 +201,15 @@ static int bmp388_attr_set(const struct device *dev,
 #endif
 
 	switch (attr) {
-#ifdef CONFIG_BMP388_ODR_RUNTIME
+#ifdef CONFIG_BMP3XX_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		ret = bmp388_attr_set_odr(dev, val->val1, val->val2 / 1000);
+		ret = bmp3xx_attr_set_odr(dev, val->val1, val->val2 / 1000);
 		break;
 #endif
 
-#ifdef CONFIG_BMP388_OSR_RUNTIME
+#ifdef CONFIG_BMP3XX_OSR_RUNTIME
 	case SENSOR_ATTR_OVERSAMPLING:
-		ret = bmp388_attr_set_oversampling(dev, chan, val->val1);
+		ret = bmp3xx_attr_set_oversampling(dev, chan, val->val1);
 		break;
 #endif
 
@@ -220,11 +220,11 @@ static int bmp388_attr_set(const struct device *dev,
 	return ret;
 }
 
-static int bmp388_sample_fetch(const struct device *dev,
+static int bmp3xx_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
-	struct bmp388_data *bmp388 = dev->data;
-	uint8_t raw[BMP388_SAMPLE_BUFFER_SIZE];
+	struct bmp3xx_data *bmp3xx = dev->data;
+	uint8_t raw[BMP3XX_SAMPLE_BUFFER_SIZE];
 	int ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -242,36 +242,36 @@ static int bmp388_sample_fetch(const struct device *dev,
 
 	/* Wait for status to indicate that data is ready. */
 	raw[0] = 0U;
-	while ((raw[0] & BMP388_STATUS_DRDY_PRESS) == 0U) {
-		ret = bmp388_reg_read(dev, BMP388_REG_STATUS, raw, 1);
+	while ((raw[0] & BMP3XX_STATUS_DRDY_PRESS) == 0U) {
+		ret = bmp3xx_reg_read(dev, BMP3XX_REG_STATUS, raw, 1);
 		if (ret < 0) {
 			goto error;
 		}
 	}
 
-	ret = bmp388_reg_read(dev,
-			  BMP388_REG_DATA0,
+	ret = bmp3xx_reg_read(dev,
+			  BMP3XX_REG_DATA0,
 			  raw,
-			  BMP388_SAMPLE_BUFFER_SIZE);
+			  BMP3XX_SAMPLE_BUFFER_SIZE);
 	if (ret < 0) {
 		goto error;
 	}
 
 	/* convert samples to 32bit values */
-	bmp388->sample.press = (uint32_t)raw[0] |
+	bmp3xx->sample.press = (uint32_t)raw[0] |
 			       ((uint32_t)raw[1] << 8) |
 			       ((uint32_t)raw[2] << 16);
-	bmp388->sample.raw_temp = (uint32_t)raw[3] |
+	bmp3xx->sample.raw_temp = (uint32_t)raw[3] |
 				  ((uint32_t)raw[4] << 8) |
 				  ((uint32_t)raw[5] << 16);
-	bmp388->sample.comp_temp = 0;
+	bmp3xx->sample.comp_temp = 0;
 
 error:
 	pm_device_busy_clear(dev);
 	return ret;
 }
 
-static void bmp388_compensate_temp(struct bmp388_data *data)
+static void bmp3xx_compensate_temp(struct bmp3xx_data *data)
 {
 	/* Adapted from:
 	 * https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3.c
@@ -283,7 +283,7 @@ static void bmp388_compensate_temp(struct bmp388_data *data)
 	int64_t partial_data4;
 	int64_t partial_data5;
 
-	struct bmp388_cal_data *cal = &data->cal;
+	struct bmp3xx_cal_data *cal = &data->cal;
 
 	partial_data1 = ((int64_t)data->sample.raw_temp - (256 * cal->t1));
 	partial_data2 = cal->t2 * partial_data1;
@@ -295,13 +295,13 @@ static void bmp388_compensate_temp(struct bmp388_data *data)
 	data->sample.comp_temp = partial_data5 / 4294967296;
 }
 
-static int bmp388_temp_channel_get(const struct device *dev,
+static int bmp3xx_temp_channel_get(const struct device *dev,
 				   struct sensor_value *val)
 {
-	struct bmp388_data *data = dev->data;
+	struct bmp3xx_data *data = dev->data;
 
 	if (data->sample.comp_temp == 0) {
-		bmp388_compensate_temp(data);
+		bmp3xx_compensate_temp(data);
 	}
 
 	int64_t tmp = (data->sample.comp_temp * 250000) / 16384;
@@ -312,7 +312,7 @@ static int bmp388_temp_channel_get(const struct device *dev,
 	return 0;
 }
 
-static uint64_t bmp388_compensate_press(struct bmp388_data *data)
+static uint64_t bmp3xx_compensate_press(struct bmp3xx_data *data)
 {
 	/* Adapted from:
 	 * https://github.com/BoschSensortec/BMP3-Sensor-API/blob/master/bmp3.c
@@ -328,7 +328,7 @@ static uint64_t bmp388_compensate_press(struct bmp388_data *data)
 	int64_t sensitivity;
 	uint64_t comp_press;
 
-	struct bmp388_cal_data *cal = &data->cal;
+	struct bmp3xx_cal_data *cal = &data->cal;
 
 	int64_t t_lin = data->sample.comp_temp;
 	uint32_t raw_pressure = data->sample.press;
@@ -367,16 +367,16 @@ static uint64_t bmp388_compensate_press(struct bmp388_data *data)
 	return comp_press;
 }
 
-static int bmp388_press_channel_get(const struct device *dev,
+static int bmp3xx_press_channel_get(const struct device *dev,
 				    struct sensor_value *val)
 {
-	struct bmp388_data *data = dev->data;
+	struct bmp3xx_data *data = dev->data;
 
 	if (data->sample.comp_temp == 0) {
-		bmp388_compensate_temp(data);
+		bmp3xx_compensate_temp(data);
 	}
 
-	uint64_t tmp = bmp388_compensate_press(data);
+	uint64_t tmp = bmp3xx_compensate_press(data);
 
 	/* tmp is in hundredths of Pa. Convert to kPa as specified in sensor
 	 * interface.
@@ -387,18 +387,18 @@ static int bmp388_press_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int bmp388_channel_get(const struct device *dev,
+static int bmp3xx_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_PRESS:
-		bmp388_press_channel_get(dev, val);
+		bmp3xx_press_channel_get(dev, val);
 		break;
 
 	case SENSOR_CHAN_DIE_TEMP:
 	case SENSOR_CHAN_AMBIENT_TEMP:
-		bmp388_temp_channel_get(dev, val);
+		bmp3xx_temp_channel_get(dev, val);
 		break;
 
 	default:
@@ -409,12 +409,12 @@ static int bmp388_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int bmp388_get_calibration_data(const struct device *dev)
+static int bmp3xx_get_calibration_data(const struct device *dev)
 {
-	struct bmp388_data *data = dev->data;
-	struct bmp388_cal_data *cal = &data->cal;
+	struct bmp3xx_data *data = dev->data;
+	struct bmp3xx_cal_data *cal = &data->cal;
 
-	if (bmp388_reg_read(dev, BMP388_REG_CALIB0, (uint8_t *)cal, sizeof(*cal)) < 0) {
+	if (bmp3xx_reg_read(dev, BMP3XX_REG_CALIB0, (uint8_t *)cal, sizeof(*cal)) < 0) {
 		return -EIO;
 	}
 
@@ -430,25 +430,25 @@ static int bmp388_get_calibration_data(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int bmp388_pm_action(const struct device *dev,
+static int bmp3xx_pm_action(const struct device *dev,
 			    enum pm_device_action action)
 {
 	uint8_t reg_val;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
+		reg_val = BMP3XX_PWR_CTRL_MODE_NORMAL;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
+		reg_val = BMP3XX_PWR_CTRL_MODE_SLEEP;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	if (bmp388_reg_field_update(dev,
-				    BMP388_REG_PWR_CTRL,
-				    BMP388_PWR_CTRL_MODE_MASK,
+	if (bmp3xx_reg_field_update(dev,
+				    BMP3XX_REG_PWR_CTRL,
+				    BMP3XX_PWR_CTRL_MODE_MASK,
 				    reg_val) < 0) {
 		LOG_DBG("Failed to set power mode.");
 		return -EIO;
@@ -458,96 +458,96 @@ static int bmp388_pm_action(const struct device *dev,
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct sensor_driver_api bmp388_api = {
-	.attr_set = bmp388_attr_set,
-#ifdef CONFIG_BMP388_TRIGGER
-	.trigger_set = bmp388_trigger_set,
+static const struct sensor_driver_api bmp3xx_api = {
+	.attr_set = bmp3xx_attr_set,
+#ifdef CONFIG_BMP3XX_TRIGGER
+	.trigger_set = bmp3xx_trigger_set,
 #endif
-	.sample_fetch = bmp388_sample_fetch,
-	.channel_get = bmp388_channel_get,
+	.sample_fetch = bmp3xx_sample_fetch,
+	.channel_get = bmp3xx_channel_get,
 };
 
-static int bmp388_init(const struct device *dev)
+static int bmp3xx_init(const struct device *dev)
 {
-	struct bmp388_data *bmp388 = dev->data;
-	const struct bmp388_config *cfg = dev->config;
+	struct bmp3xx_data *bmp3xx = dev->data;
+	const struct bmp3xx_config *cfg = dev->config;
 	uint8_t val = 0U;
 
-	if (bmp388_bus_check(dev) < 0) {
+	if (bmp3xx_bus_check(dev) < 0) {
 		LOG_DBG("bus check failed");
 		return -ENODEV;
 	}
 
 	/* reboot the chip */
-	if (bmp388_reg_write(dev, BMP388_REG_CMD, BMP388_CMD_SOFT_RESET) < 0) {
+	if (bmp3xx_reg_write(dev, BMP3XX_REG_CMD, BMP3XX_CMD_SOFT_RESET) < 0) {
 		LOG_ERR("Cannot reboot chip.");
 		return -EIO;
 	}
 
 	k_busy_wait(2000);
 
-	if (bmp388_reg_read(dev, BMP388_REG_CHIPID, &val, 1) < 0) {
+	if (bmp3xx_reg_read(dev, BMP3XX_REG_CHIPID, &val, 1) < 0) {
 		LOG_ERR("Failed to read chip id.");
 		return -EIO;
 	}
 
-	if (val != BMP388_CHIP_ID && val != BMP388_CHIP_ID_BMP390) {
+	if (val != BMP3XX_CHIP_ID_BMP388 && val != BMP3XX_CHIP_ID_BMP390) {
 		LOG_ERR("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
 
 	/* Read calibration data */
-	if (bmp388_get_calibration_data(dev) < 0) {
+	if (bmp3xx_get_calibration_data(dev) < 0) {
 		LOG_ERR("Failed to read calibration data.");
 		return -EIO;
 	}
 
 	/* Set ODR */
-	if (bmp388_reg_field_update(dev,
-				    BMP388_REG_ODR,
-				    BMP388_ODR_MASK,
-				    bmp388->odr) < 0) {
+	if (bmp3xx_reg_field_update(dev,
+				    BMP3XX_REG_ODR,
+				    BMP3XX_ODR_MASK,
+				    bmp3xx->odr) < 0) {
 		LOG_ERR("Failed to set ODR.");
 		return -EIO;
 	}
 
 	/* Set OSR */
-	val = (bmp388->osr_pressure << BMP388_OSR_PRESSURE_POS);
-	val |= (bmp388->osr_temp << BMP388_OSR_TEMP_POS);
-	if (bmp388_reg_write(dev, BMP388_REG_OSR, val) < 0) {
+	val = (bmp3xx->osr_pressure << BMP3XX_OSR_PRESSURE_POS);
+	val |= (bmp3xx->osr_temp << BMP3XX_OSR_TEMP_POS);
+	if (bmp3xx_reg_write(dev, BMP3XX_REG_OSR, val) < 0) {
 		LOG_ERR("Failed to set OSR.");
 		return -EIO;
 	}
 
 	/* Set IIR filter coefficient */
-	val = (cfg->iir_filter << BMP388_IIR_FILTER_POS) & BMP388_IIR_FILTER_MASK;
-	if (bmp388_reg_write(dev, BMP388_REG_CONFIG, val) < 0) {
+	val = (cfg->iir_filter << BMP3XX_IIR_FILTER_POS) & BMP3XX_IIR_FILTER_MASK;
+	if (bmp3xx_reg_write(dev, BMP3XX_REG_CONFIG, val) < 0) {
 		LOG_ERR("Failed to set IIR coefficient.");
 		return -EIO;
 	}
 
 	/* Enable sensors and normal mode*/
-	if (bmp388_reg_write(dev,
-			     BMP388_REG_PWR_CTRL,
-			     BMP388_PWR_CTRL_ON) < 0) {
+	if (bmp3xx_reg_write(dev,
+			     BMP3XX_REG_PWR_CTRL,
+			     BMP3XX_PWR_CTRL_ON) < 0) {
 		LOG_ERR("Failed to enable sensors.");
 		return -EIO;
 	}
 
 	/* Read error register */
-	if (bmp388_reg_read(dev, BMP388_REG_ERR_REG, &val, 1) < 0) {
+	if (bmp3xx_reg_read(dev, BMP3XX_REG_ERR_REG, &val, 1) < 0) {
 		LOG_ERR("Failed get sensors error register.");
 		return -EIO;
 	}
 
 	/* OSR and ODR config not proper */
-	if (val & BMP388_STATUS_CONF_ERR) {
+	if (val & BMP3XX_STATUS_CONF_ERR) {
 		LOG_ERR("OSR and ODR configuration is not proper");
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_BMP388_TRIGGER
-	if (cfg->gpio_int.port != NULL && bmp388_trigger_mode_init(dev) < 0) {
+#ifdef CONFIG_BMP3XX_TRIGGER
+	if (cfg->gpio_int.port != NULL && bmp3xx_trigger_mode_init(dev) < 0) {
 		LOG_ERR("Cannot set up trigger mode.");
 		return -EINVAL;
 	}
@@ -556,54 +556,54 @@ static int bmp388_init(const struct device *dev)
 	return 0;
 }
 
-/* Initializes a struct bmp388_config for an instance on a SPI bus. */
-#define BMP388_CONFIG_SPI(inst)				\
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION, 0),	\
-	.bus_io = &bmp388_bus_io_spi,
+/* Initializes a struct bmp3xx_config for an instance on a SPI bus. */
+#define BMP3XX_CONFIG_SPI(inst)				\
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP3XX_SPI_OPERATION, 0),	\
+	.bus_io = &bmp3xx_bus_io_spi,
 
-/* Initializes a struct bmp388_config for an instance on an I2C bus. */
-#define BMP388_CONFIG_I2C(inst)			       \
+/* Initializes a struct bmp3xx_config for an instance on an I2C bus. */
+#define BMP3XX_CONFIG_I2C(inst)			       \
 	.bus.i2c = I2C_DT_SPEC_INST_GET(inst),	       \
-	.bus_io = &bmp388_bus_io_i2c,
+	.bus_io = &bmp3xx_bus_io_i2c,
 
-#define BMP388_BUS_CFG(inst)			\
+#define BMP3XX_BUS_CFG(inst)			\
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
-		    (BMP388_CONFIG_I2C(inst)),	\
-		    (BMP388_CONFIG_SPI(inst)))
+		    (BMP3XX_CONFIG_I2C(inst)),	\
+		    (BMP3XX_CONFIG_SPI(inst)))
 
-#if defined(CONFIG_BMP388_TRIGGER)
-#define BMP388_INT_CFG(inst) \
+#if defined(CONFIG_BMP3XX_TRIGGER)
+#define BMP3XX_INT_CFG(inst) \
 	.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),
 #else
-#define BMP388_INT_CFG(inst)
+#define BMP3XX_INT_CFG(inst)
 #endif
 
-#define BMP388_INST(inst, name)					    \
-	static struct bmp388_data bmp388_data_##name##_##inst = {	    \
+#define BMP3XX_INST(inst, name)					    \
+	static struct bmp3xx_data bmp3xx_data_##name##_##inst = {	    \
 		.odr = DT_INST_ENUM_IDX(inst, odr),			    \
 		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),	    \
 		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),		    \
 	};								    \
-	static const struct bmp388_config bmp388_config_##name##_##inst = { \
-		BMP388_BUS_CFG(inst)					    \
-		BMP388_INT_CFG(inst)					    \
+	static const struct bmp3xx_config bmp3xx_config_##name##_##inst = { \
+		BMP3XX_BUS_CFG(inst)					    \
+		BMP3XX_INT_CFG(inst)					    \
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	    \
 	};								    \
-	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		    \
+	PM_DEVICE_DT_INST_DEFINE(inst, bmp3xx_pm_action);		    \
 	SENSOR_DEVICE_DT_INST_DEFINE(					    \
 		inst,							    \
-		bmp388_init,						    \
+		bmp3xx_init,						    \
 		PM_DEVICE_DT_INST_GET(inst),				    \
-		&bmp388_data_##name##_##inst,				    \
-		&bmp388_config_##name##_##inst,				    \
+		&bmp3xx_data_##name##_##inst,				    \
+		&bmp3xx_config_##name##_##inst,				    \
 		POST_KERNEL,						    \
 		CONFIG_SENSOR_INIT_PRIORITY,				    \
-		&bmp388_api);
+		&bmp3xx_api);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT bosch_bmp388
-DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP388_INST, DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, DT_DRV_COMPAT)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT bosch_bmp390
-DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP388_INST, DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, DT_DRV_COMPAT)

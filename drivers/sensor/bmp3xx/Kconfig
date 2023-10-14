@@ -1,7 +1,7 @@
 # Copyright (c) 2020 Facebook, Inc. and its affiliates
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig BMP388
+menuconfig BMP3XX
 	bool "Bosch BMP388 or BMP390 pressure sensor"
 	default y
 	depends on DT_HAS_BOSCH_BMP388_ENABLED || DT_HAS_BOSCH_BMP390_ENABLED
@@ -12,53 +12,53 @@ menuconfig BMP388
 	help
 	  Enable driver for the Bosch BMP388 or BMP390 pressure sensor
 
-if BMP388
+if BMP3XX
 
-choice BMP388_TRIGGER_MODE
+choice BMP3XX_TRIGGER_MODE
 	prompt "Trigger mode"
-	default BMP388_TRIGGER_GLOBAL_THREAD
+	default BMP3XX_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
-config BMP388_TRIGGER_NONE
+config BMP3XX_TRIGGER_NONE
 	bool "No trigger"
 
-config BMP388_TRIGGER_GLOBAL_THREAD
+config BMP3XX_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
-	select BMP388_TRIGGER
+	select BMP3XX_TRIGGER
 
-config BMP388_TRIGGER_OWN_THREAD
+config BMP3XX_TRIGGER_OWN_THREAD
 	bool "Use own thread"
-	select BMP388_TRIGGER
+	select BMP3XX_TRIGGER
 
-config BMP388_TRIGGER_DIRECT
+config BMP3XX_TRIGGER_DIRECT
 	bool "Use IRQ handler"
-	select BMP388_TRIGGER
+	select BMP3XX_TRIGGER
 endchoice
 
-config BMP388_TRIGGER
+config BMP3XX_TRIGGER
 	bool
 
-config BMP388_THREAD_PRIORITY
+config BMP3XX_THREAD_PRIORITY
 	int "Own thread priority"
-	depends on BMP388_TRIGGER_OWN_THREAD
+	depends on BMP3XX_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of the thread used by the driver to handle interrupts.
 
-config BMP388_THREAD_STACK_SIZE
+config BMP3XX_THREAD_STACK_SIZE
 	int "Own thread stack size"
-	depends on BMP388_TRIGGER_OWN_THREAD
+	depends on BMP3XX_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-config BMP388_ODR_RUNTIME
+config BMP3XX_ODR_RUNTIME
 	bool "Change ODR at runtime."
 	default y
 
-config BMP388_OSR_RUNTIME
+config BMP3XX_OSR_RUNTIME
 	bool "Change OSR at runtime."
 	default y
 
-endif # BMP388
+endif # BMP3XX

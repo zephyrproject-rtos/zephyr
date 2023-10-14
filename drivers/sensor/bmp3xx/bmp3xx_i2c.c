@@ -10,29 +10,29 @@
  * Bus-specific functionality for BMP388s and BMP390s accessed via I2C.
  */
 
-#include "bmp388.h"
+#include "bmp3xx.h"
 
-#if BMP388_BUS_I2C
-static int bmp388_bus_check_i2c(const union bmp388_bus *bus)
+#if BMP3XX_BUS_I2C
+static int bmp3xx_bus_check_i2c(const union bmp3xx_bus *bus)
 {
 	return i2c_is_ready_dt(&bus->i2c) ? 0 : -ENODEV;
 }
 
-static int bmp388_reg_read_i2c(const union bmp388_bus *bus,
+static int bmp3xx_reg_read_i2c(const union bmp3xx_bus *bus,
 			       uint8_t start, uint8_t *buf, int size)
 {
 	return i2c_burst_read_dt(&bus->i2c, start, buf, size);
 }
 
-static int bmp388_reg_write_i2c(const union bmp388_bus *bus,
+static int bmp3xx_reg_write_i2c(const union bmp3xx_bus *bus,
 				uint8_t reg, uint8_t val)
 {
 	return i2c_reg_write_byte_dt(&bus->i2c, reg, val);
 }
 
-const struct bmp388_bus_io bmp388_bus_io_i2c = {
-	.check = bmp388_bus_check_i2c,
-	.read = bmp388_reg_read_i2c,
-	.write = bmp388_reg_write_i2c,
+const struct bmp3xx_bus_io bmp3xx_bus_io_i2c = {
+	.check = bmp3xx_bus_check_i2c,
+	.read = bmp3xx_reg_read_i2c,
+	.write = bmp3xx_reg_write_i2c,
 };
-#endif /* BMP388_BUS_I2C */
+#endif /* BMP3XX_BUS_I2C */

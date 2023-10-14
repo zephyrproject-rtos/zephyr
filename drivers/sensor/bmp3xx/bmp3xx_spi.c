@@ -11,18 +11,18 @@
  */
 
 #include <zephyr/logging/log.h>
-#include "bmp388.h"
+#include "bmp3xx.h"
 
-#if BMP388_BUS_SPI
+#if BMP3XX_BUS_SPI
 
-LOG_MODULE_DECLARE(BMP388, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(BMP3XX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int bmp388_bus_check_spi(const union bmp388_bus *bus)
+static int bmp3xx_bus_check_spi(const union bmp3xx_bus *bus)
 {
 	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
-static int bmp388_reg_read_spi(const union bmp388_bus *bus,
+static int bmp3xx_reg_read_spi(const union bmp3xx_bus *bus,
 			       uint8_t start, uint8_t *buf, int size)
 {
 	uint8_t addr;
@@ -62,7 +62,7 @@ static int bmp388_reg_read_spi(const union bmp388_bus *bus,
 	return 0;
 }
 
-static int bmp388_reg_write_spi(const union bmp388_bus *bus,
+static int bmp3xx_reg_write_spi(const union bmp3xx_bus *bus,
 				uint8_t reg, uint8_t val)
 {
 	uint8_t cmd[] = { reg & 0x7F, val };
@@ -84,9 +84,9 @@ static int bmp388_reg_write_spi(const union bmp388_bus *bus,
 	return 0;
 }
 
-const struct bmp388_bus_io bmp388_bus_io_spi = {
-	.check = bmp388_bus_check_spi,
-	.read = bmp388_reg_read_spi,
-	.write = bmp388_reg_write_spi,
+const struct bmp3xx_bus_io bmp3xx_bus_io_spi = {
+	.check = bmp3xx_bus_check_spi,
+	.read = bmp3xx_reg_read_spi,
+	.write = bmp3xx_reg_write_spi,
 };
-#endif /* BMP388_BUS_SPI */
+#endif /* BMP3XX_BUS_SPI */
