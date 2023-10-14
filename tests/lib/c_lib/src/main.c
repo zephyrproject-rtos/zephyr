@@ -1206,11 +1206,15 @@ ZTEST(test_c_lib, test_rand_reproducibility)
  */
 ZTEST(test_c_lib, test_abort)
 {
+#ifdef CONFIG_EXTERNAL_LIBC
+	ztest_test_skip();
+#else
 	int a = 0;
 
 	ztest_set_fault_valid(true);
 	abort();
 	zassert_equal(a, 0, "abort failed");
+#endif
 }
 
 /**
