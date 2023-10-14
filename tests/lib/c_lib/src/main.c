@@ -1067,7 +1067,7 @@ ZTEST(test_c_lib, test_time)
 {
 	time_t tests1 = 0;
 	time_t tests2 = -5;
-	time_t tests3 = -214748364800;
+	time_t tests3 = (time_t) -214748364800;
 	time_t tests4 = 951868800;
 
 	struct tm tp;
