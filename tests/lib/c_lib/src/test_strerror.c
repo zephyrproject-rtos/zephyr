@@ -32,6 +32,7 @@ ZTEST(test_c_lib, test_strerror)
 	/* do not change errno on success */
 	zassert_equal(4242, errno, "");
 
+#ifndef CONFIG_EXTERNAL_LIBC
 	/* consistent behaviour w.r.t. errno with invalid input */
 	errno = 0;
 	expected = "";
@@ -43,6 +44,7 @@ ZTEST(test_c_lib, test_strerror)
 		      expected, actual);
 	/* do not change errno on failure (for consistence) */
 	zassert_equal(0, errno, "");
+#endif
 
 	/* consistent behaviour for "Success" */
 	if (!IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE)) {
