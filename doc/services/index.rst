@@ -22,6 +22,7 @@ OS Services
    resource_management/index.rst
    mem_mgmt/index.rst
    modbus/index.rst
+   modem/index.rst
    notify.rst
    pm/index.rst
    portability/index.rst
