@@ -53,4 +53,7 @@ config DMA_DW_CHANNEL_COUNT
 	default 2
 endif
 
+config UART_NS16550_INTEL_LPSS_DMA
+	default y
+
 endif # BOARD_INTEL_RPL_S_CRB
