@@ -14,7 +14,36 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Modem Pipe
+ * @defgroup modem_pipe Modem Pipe
+ * @ingroup modem
+ * @{
+ */
+
+/** Modem pipe event */
+enum modem_pipe_event {
+	MODEM_PIPE_EVENT_OPENED = 0,
+	MODEM_PIPE_EVENT_RECEIVE_READY,
+	MODEM_PIPE_EVENT_CLOSED,
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 struct modem_pipe;
+
+/**
+ * @endcond
+ */
+
+typedef void (*modem_pipe_api_callback)(struct modem_pipe *pipe, enum modem_pipe_event event,
+					void *user_data);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 typedef int (*modem_pipe_api_open)(void *data);
 
@@ -36,15 +65,6 @@ enum modem_pipe_state {
 	MODEM_PIPE_STATE_OPEN,
 };
 
-enum modem_pipe_event {
-	MODEM_PIPE_EVENT_OPENED = 0,
-	MODEM_PIPE_EVENT_RECEIVE_READY,
-	MODEM_PIPE_EVENT_CLOSED,
-};
-
-typedef void (*modem_pipe_api_callback)(struct modem_pipe *pipe, enum modem_pipe_event event,
-					void *user_data);
-
 struct modem_pipe {
 	void *data;
 	struct modem_pipe_api *api;
@@ -64,6 +84,10 @@ struct modem_pipe {
  * @param api Pipe API implementation to bind to pipe instance
  */
 void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api *api);
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Open pipe
@@ -159,6 +183,10 @@ int modem_pipe_close(struct modem_pipe *pipe);
 int modem_pipe_close_async(struct modem_pipe *pipe);
 
 /**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/**
  * @brief Notify user of pipe that it has opened
  *
  * @param pipe Pipe instance
@@ -184,6 +212,14 @@ void modem_pipe_notify_closed(struct modem_pipe *pipe);
  * @note Invoked from instance which initialized the pipe instance
  */
 void modem_pipe_notify_receive_ready(struct modem_pipe *pipe);
+
+/**
+ * @endcond
+ */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
