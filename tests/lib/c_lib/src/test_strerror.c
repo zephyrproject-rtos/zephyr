@@ -11,7 +11,78 @@
 #include <errno.h>
 #include <string.h>
 
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+
+static int _strrncmp(const char *a, const char *b, size_t n)
+{
+	size_t la = strlen(a);
+	size_t lb = strlen(b);
+
+	a += la - MIN(la, n);
+	b += lb - MIN(lb, n);
+
+	return strncmp(a, b, n);
+}
+
+ZTEST(test_c_lib, test_strerror_invalid)
+{
+/*
+ * For reference, with the "C" locale
+ * Linux: Unknown error -42
+ * macOS: Unknown error: -42
+ */
+#define UNKNOWN_ERROR_PREFIX    "Unknown error"
+#define UNKNOWN_ERROR_SUFFIX(e) " " STRINGIFY(e)
+
+	/* int values well outside of the usual errno range */
+	const int error[] = {
+		-2147483648,
+		-42,
+		4242,
+		2147483647,
+	};
+	const char *const shape[] = {
+		UNKNOWN_ERROR_PREFIX UNKNOWN_ERROR_SUFFIX(-2147483648),
+		UNKNOWN_ERROR_PREFIX UNKNOWN_ERROR_SUFFIX(-42),
+		UNKNOWN_ERROR_PREFIX UNKNOWN_ERROR_SUFFIX(4242),
+		UNKNOWN_ERROR_PREFIX UNKNOWN_ERROR_SUFFIX(2147483647),
+	};
+	const char *const suffix[] = {
+		UNKNOWN_ERROR_SUFFIX(-2147483648),
+		UNKNOWN_ERROR_SUFFIX(-42),
+		UNKNOWN_ERROR_SUFFIX(4242),
+		UNKNOWN_ERROR_SUFFIX(2147483647),
+	};
+
+	BUILD_ASSERT(ARRAY_SIZE(error) == ARRAY_SIZE(shape));
+	BUILD_ASSERT(ARRAY_SIZE(shape) == ARRAY_SIZE(suffix));
+
+	for (size_t i = 0; i < ARRAY_SIZE(shape); ++i) {
+
+		TC_PRINT("Checking strerror(%d)\n", error[i]);
+
+		/* consistent behaviour w.r.t. errno with invalid input */
+		errno = 0;
+
+		const char *exp = shape[i];
+		const char *act = strerror(error[i]);
+
+		/* do not change errno on failure (for consistence) */
+		zassert_equal(0, errno);
+
+		/* validate minimal length, e.g. "Unknown error -42", "Unknown error: -42", .. */
+		zassert_true(strlen(act) >= strlen(exp), "mismatch: exp: ~'%s' act: '%s'", exp,
+			     act);
+
+		/* validate prefix, e.g. "Unknown error" */
+		zassert_equal(0,
+			      strncmp(UNKNOWN_ERROR_PREFIX, act, sizeof(UNKNOWN_ERROR_PREFIX) - 1));
+
+		/* validate suffix, e.g. " -42" */
+		zassert_equal(0, _strrncmp(suffix[i], act, strlen(suffix[i])));
+	}
+}
 
 ZTEST(test_c_lib, test_strerror)
 {
@@ -19,30 +90,14 @@ ZTEST(test_c_lib, test_strerror)
 	const char *actual;
 
 	errno = 4242;
-	if (IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE)) {
-		expected = "";
-		actual = strerror(EINVAL);
-	} else {
-		expected = "Invalid argument";
-		actual = strerror(EINVAL);
-	}
+	expected = IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE) ? ""
+									      : "Invalid argument";
+	actual = strerror(EINVAL);
 	zassert_equal(0, strcmp(expected, actual),
 		      "mismatch: exp: %s act: %s", expected, actual);
 
 	/* do not change errno on success */
 	zassert_equal(4242, errno);
-
-	/* consistent behaviour w.r.t. errno with invalid input */
-	errno = 0;
-	expected = "";
-	actual = strerror(-42);
-	zassert_equal(0, strcmp(expected, actual), "mismatch: exp: %s act: %s",
-		      expected, actual);
-	actual = strerror(4242);
-	zassert_equal(0, strcmp(expected, actual), "mismatch: exp: %s act: %s",
-		      expected, actual);
-	/* do not change errno on failure (for consistence) */
-	zassert_equal(0, errno);
 
 	/* consistent behaviour for "Success" */
 	if (!IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE)) {

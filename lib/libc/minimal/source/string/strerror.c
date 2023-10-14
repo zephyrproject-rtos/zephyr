@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <string.h>
-
-#include <zephyr/sys/util.h>
-
 /*
  * See scripts/build/gen_strerror_table.py
  *
@@ -18,17 +13,85 @@
  */
 #include "libc/minimal/strerror_table.h"
 
+#include <errno.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/sys/util.h>
+
+#define UNKNOWN_ERROR_PREFIX "Unknown error"
+
+#define _swap(a, b, t)                                                                             \
+	do {                                                                                       \
+		t = *a;                                                                            \
+		*a = *b;                                                                           \
+		*b = t;                                                                            \
+	} while (false)
+
+static void _rev(char *s, size_t n)
+{
+	char *a;
+	char *b;
+	char t;
+
+	for (a = s, b = s + n - 1; b > a; ++a, --b) {
+		_swap(a, b, t);
+	}
+}
+
+static void _itoa(int i, char *a)
+{
+	if (i == 0) {
+		*a++ = '0';
+		*a = '\0';
+		return;
+	}
+
+	uint8_t n;
+	bool last_digit_is_8 = false;
+
+	if (i < 0) {
+		*a++ = '-';
+		if (i == INT32_MIN) {
+			last_digit_is_8 = true;
+			i++;
+		}
+		i = -i;
+	}
+
+	for (n = 0; i != 0; ++n, i /= 10) {
+		*a++ = '0' + (i % 10);
+	}
+	*a = '\0';
+
+	a -= n;
+	if (i == 0 && last_digit_is_8) {
+		*a = '8';
+	}
+
+	_rev(a, n);
+}
+
 /*
  * See https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html
  */
 char *strerror(int errnum)
 {
-	if (IS_ENABLED(CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE) &&
-	    errnum >= 0 && errnum < sys_nerr) {
-		return (char *)sys_errlist[errnum];
+	static char invalid[sizeof(UNKNOWN_ERROR_PREFIX " " STRINGIFY(INT32_MIN))];
+
+	if (errnum >= 0 && errnum < sys_nerr) {
+		return IS_ENABLED(CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE)
+			       ? (char *)sys_errlist[errnum]
+			       : "";
 	}
 
-	return "";
+	bytecpy(invalid, UNKNOWN_ERROR_PREFIX, sizeof(UNKNOWN_ERROR_PREFIX) - 1);
+	invalid[sizeof(UNKNOWN_ERROR_PREFIX) - 1] = ' ';
+	_itoa(errnum, &invalid[sizeof(UNKNOWN_ERROR_PREFIX)]);
+
+	return invalid;
 }
 
 /*
