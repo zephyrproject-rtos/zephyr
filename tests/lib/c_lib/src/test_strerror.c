@@ -30,7 +30,7 @@ ZTEST(test_c_lib, test_strerror)
 		      "mismatch: exp: %s act: %s", expected, actual);
 
 	/* do not change errno on success */
-	zassert_equal(4242, errno, "");
+	zassert_equal(4242, errno);
 
 	/* consistent behaviour w.r.t. errno with invalid input */
 	errno = 0;
@@ -42,7 +42,7 @@ ZTEST(test_c_lib, test_strerror)
 	zassert_equal(0, strcmp(expected, actual), "mismatch: exp: %s act: %s",
 		      expected, actual);
 	/* do not change errno on failure (for consistence) */
-	zassert_equal(0, errno, "");
+	zassert_equal(0, errno);
 
 	/* consistent behaviour for "Success" */
 	if (!IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE)) {
@@ -68,7 +68,7 @@ ZTEST(test_c_lib, test_strerror_r)
 	errno = 4242;
 	if (IS_ENABLED(CONFIG_MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE)) {
 		expected = "";
-		zassert_equal(0, strerror_r(EINVAL, actual, n), "");
+		zassert_equal(0, strerror_r(EINVAL, actual, n));
 		zassert_equal(0, strncmp(expected, actual, n),
 			      "mismatch: exp: %s act: %s", expected, actual);
 	} else {
@@ -82,15 +82,15 @@ ZTEST(test_c_lib, test_strerror_r)
 			      "exp: %02x act: %02x", 0x42,
 			      (uint8_t)actual[n - 1]);
 
-		zassert_equal(ERANGE, strerror_r(EINVAL, actual, 0), "");
+		zassert_equal(ERANGE, strerror_r(EINVAL, actual, 0));
 	}
 
 	/* do not change errno on success */
-	zassert_equal(4242, errno, "");
+	zassert_equal(4242, errno);
 
 	errno = 0;
-	zassert_equal(EINVAL, strerror_r(-42, actual, n), "");
-	zassert_equal(EINVAL, strerror_r(4242, actual, n), "");
+	zassert_equal(EINVAL, strerror_r(-42, actual, n));
+	zassert_equal(EINVAL, strerror_r(4242, actual, n));
 	/* do not change errno on failure */
-	zassert_equal(0, errno, "");
+	zassert_equal(0, errno);
 }
