@@ -1190,8 +1190,11 @@ void z_log_msg2_init(void)
 
 struct log_msg2 *z_log_msg2_alloc(uint32_t wlen)
 {
-	return (struct log_msg2 *)mpsc_pbuf_alloc(&log_buffer, wlen,
-				K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
+	return (struct log_msg2 *)mpsc_pbuf_alloc(
+		&log_buffer, wlen,
+		(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS == -1)
+			? K_FOREVER
+			: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
 }
 
 void z_log_msg2_commit(struct log_msg2 *msg)
