@@ -29,6 +29,7 @@ struct uart_emul_work {
 /* Device run time data */
 struct uart_emul_data {
 	struct uart_config cfg;
+	int errors;
 
 	struct ring_buf *rx_rb;
 	struct k_spinlock rx_lock;
@@ -93,7 +94,11 @@ static void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 
 static int uart_emul_err_check(const struct device *dev)
 {
-	return 0;
+	struct uart_emul_data *drv_data = dev->data;
+	int errors = drv_data->errors;
+
+	drv_data->errors = 0;
+	return errors;
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
@@ -350,6 +355,10 @@ uint32_t uart_emul_put_rx_data(const struct device *dev, uint8_t *data, size_t s
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (irq_en = drv_data->rx_irq_en;));
 	}
 
+	if (count < size) {
+		uart_emul_set_errors(dev, UART_ERROR_OVERRUN);
+	}
+
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		if (count > 0 && irq_en && !empty) {
 			(void)k_work_submit(&drv_data->irq_work.work);
@@ -395,6 +404,13 @@ uint32_t uart_emul_flush_tx_data(const struct device *dev)
 	ring_buf_reset(drv_data->tx_rb);
 	k_spin_unlock(&drv_data->tx_lock, key);
 	return count;
+}
+
+void uart_emul_set_errors(const struct device *dev, int errors)
+{
+	struct uart_emul_data *drv_data = dev->data;
+
+	drv_data->errors |= errors;
 }
 
 #define UART_EMUL_RX_FIFO_SIZE(inst) (DT_INST_PROP(inst, rx_fifo_size))
