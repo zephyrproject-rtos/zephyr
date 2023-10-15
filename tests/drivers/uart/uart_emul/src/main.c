@@ -40,6 +40,8 @@ static void uart_emul_before(void *f)
 
 	uart_emul_flush_rx_data(fixture->dev);
 	uart_emul_flush_tx_data(fixture->dev);
+
+	uart_err_check(fixture->dev);
 }
 
 ZTEST_F(uart_emul, test_polling_out)
@@ -76,6 +78,27 @@ ZTEST_F(uart_emul, test_polling_in)
 	/* No more data in RX buffer */
 	rc = uart_poll_in(fixture->dev, &rx_content[0]);
 	zassert_equal(rc, -1, "RX buffer should be empty");
+}
+
+ZTEST_F(uart_emul, test_errors)
+{
+	int errors;
+
+	uart_emul_set_errors(fixture->dev, (UART_ERROR_PARITY | UART_ERROR_FRAMING));
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, (UART_ERROR_PARITY | UART_ERROR_FRAMING), "UART errors do not match");
+
+	/* uart_err_check should also clear existing errors */
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+
+	/* overflowing rx buffer should produce an overrun error */
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, 0, "Should be no errors");
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
+	errors = uart_err_check(fixture->dev);
+	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
 }
 
 static void uart_emul_isr(const struct device *dev, void *user_data)
