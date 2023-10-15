@@ -83,6 +83,14 @@ uint32_t uart_emul_flush_rx_data(const struct device *dev);
  */
 uint32_t uart_emul_flush_tx_data(const struct device *dev);
 
+/**
+ * @brief Sets one or more driver errors
+ *
+ * @param dev The emulated UART device instance
+ * @param errors The @ref uart_rx_stop_reason errors to set
+ */
+void uart_emul_set_errors(const struct device *dev, int errors);
+
 #ifdef __cplusplus
 }
 #endif
