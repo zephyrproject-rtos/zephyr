@@ -597,8 +597,11 @@ static struct log_msg *msg_alloc(struct mpsc_pbuf_buffer *buffer, uint32_t wlen)
 		return NULL;
 	}
 
-	return (struct log_msg *)mpsc_pbuf_alloc(buffer, wlen,
-				K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
+	return (struct log_msg *)mpsc_pbuf_alloc(
+		buffer, wlen,
+		(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS == -1)
+			? K_FOREVER
+			: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
 }
 
 struct log_msg *z_log_msg_alloc(uint32_t wlen)
