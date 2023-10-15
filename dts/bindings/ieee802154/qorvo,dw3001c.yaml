@@ -1,0 +1,35 @@
+# Copyright (c) 2023, Sahas Chitlange, Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+description: Qorvo DW3001C 802.15.4 UWB transceiver
+
+compatible: "qorvo,dw3001c"
+
+include: spi-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
+
+      The interrupt pin IRQ of DW3001C is active high output.
+      If connected directly the MCU pin should be configured
+      as active high.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: RESET pin.
+
+      The RESET pin of DW3001C is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  tx-ant-delay:
+    type: int
+    description: Transmitter antenna delay.
+
+  rx-ant-delay:
+    type: int
+    description: Receiver antenna delay.
