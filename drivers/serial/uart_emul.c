@@ -41,6 +41,7 @@ struct uart_emul_data {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	bool rx_irq_en;
+	bool tx_irq_en;
 	struct uart_emul_work irq_work;
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_udata;
@@ -114,6 +115,26 @@ static int uart_emul_config_get(const struct device *dev, struct uart_config *cf
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int uart_emul_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
+{
+	int ret;
+	struct uart_emul_data *data = dev->data;
+	const struct uart_emul_config *config = dev->config;
+
+	K_SPINLOCK(&data->tx_lock) {
+		ret = ring_buf_put(data->tx_rb, tx_data, size);
+	}
+
+	if (config->loopback) {
+		uart_emul_put_rx_data(dev, (uint8_t *)tx_data, ret);
+	}
+	if (data->tx_data_ready_cb) {
+		data->tx_data_ready_cb(dev, ring_buf_size_get(data->tx_rb), data->user_data);
+	}
+
+	return ret;
+}
+
 static int uart_emul_fifo_read(const struct device *dev, uint8_t *rx_data, int size)
 {
 	int ret;
@@ -129,6 +150,22 @@ static int uart_emul_fifo_read(const struct device *dev, uint8_t *rx_data, int s
 	}
 
 	return ret;
+}
+
+static int uart_emul_irq_tx_ready(const struct device *dev)
+{
+	bool ready = false;
+	struct uart_emul_data *data = dev->data;
+
+	K_SPINLOCK(&data->tx_lock) {
+		if (!data->tx_irq_en) {
+			K_SPINLOCK_BREAK;
+		}
+
+		ready = ring_buf_space_get(data->tx_rb) > 0;
+	}
+
+	return ready;
 }
 
 static int uart_emul_irq_rx_ready(const struct device *dev)
@@ -163,6 +200,14 @@ static void uart_emul_irq_handler(struct k_work *work)
 	while (true) {
 		bool have_work = false;
 
+		K_SPINLOCK(&data->tx_lock) {
+			if (!data->tx_irq_en) {
+				K_SPINLOCK_BREAK;
+			}
+
+			have_work = have_work || ring_buf_space_get(data->tx_rb) > 0;
+		}
+
 		K_SPINLOCK(&data->rx_lock) {
 			if (!data->rx_irq_en) {
 				K_SPINLOCK_BREAK;
@@ -181,14 +226,22 @@ static void uart_emul_irq_handler(struct k_work *work)
 
 static int uart_emul_irq_is_pending(const struct device *dev)
 {
-	bool rx_pending;
+	return uart_emul_irq_tx_ready(dev) || uart_emul_irq_rx_ready(dev);
+}
+
+static void uart_emul_irq_tx_enable(const struct device *dev)
+{
+	bool submit_irq_work;
 	struct uart_emul_data *const data = dev->data;
 
-	K_SPINLOCK(&data->rx_lock) {
-		rx_pending = !ring_buf_is_empty(data->rx_rb);
+	K_SPINLOCK(&data->tx_lock) {
+		data->tx_irq_en = true;
+		submit_irq_work = ring_buf_space_get(data->tx_rb) > 0;
 	}
 
-	return rx_pending;
+	if (submit_irq_work) {
+		(void)k_work_submit(&data->irq_work.work);
+	}
 }
 
 static void uart_emul_irq_rx_enable(const struct device *dev)
@@ -206,6 +259,15 @@ static void uart_emul_irq_rx_enable(const struct device *dev)
 	}
 }
 
+static void uart_emul_irq_tx_disable(const struct device *dev)
+{
+	struct uart_emul_data *const data = dev->data;
+
+	K_SPINLOCK(&data->tx_lock) {
+		data->tx_irq_en = false;
+	}
+}
+
 static void uart_emul_irq_rx_disable(const struct device *dev)
 {
 	struct uart_emul_data *const data = dev->data;
@@ -213,6 +275,18 @@ static void uart_emul_irq_rx_disable(const struct device *dev)
 	K_SPINLOCK(&data->rx_lock) {
 		data->rx_irq_en = false;
 	}
+}
+
+static int uart_emul_irq_tx_complete(const struct device *dev)
+{
+	bool tx_complete = false;
+	struct uart_emul_data *const data = dev->data;
+
+	K_SPINLOCK(&data->tx_lock) {
+		tx_complete = ring_buf_is_empty(data->tx_rb);
+	}
+
+	return tx_complete;
 }
 
 static void uart_emul_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
@@ -239,10 +313,15 @@ static const struct uart_driver_api uart_emul_api = {
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 	.err_check = uart_emul_err_check,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = uart_emul_fifo_fill,
 	.fifo_read = uart_emul_fifo_read,
+	.irq_tx_enable = uart_emul_irq_tx_enable,
 	.irq_rx_enable = uart_emul_irq_rx_enable,
+	.irq_tx_disable = uart_emul_irq_tx_disable,
 	.irq_rx_disable = uart_emul_irq_rx_disable,
+	.irq_tx_ready = uart_emul_irq_tx_ready,
 	.irq_rx_ready = uart_emul_irq_rx_ready,
+	.irq_tx_complete = uart_emul_irq_tx_complete,
 	.irq_callback_set = uart_emul_irq_callback_set,
 	.irq_update = uart_emul_irq_update,
 	.irq_is_pending = uart_emul_irq_is_pending,
