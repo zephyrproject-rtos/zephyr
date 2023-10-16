@@ -7,6 +7,7 @@ project(interrupt)
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ZEPHYR_BASE}/arch/common/include
   )
 
 target_sources(app PRIVATE
