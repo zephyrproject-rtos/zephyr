@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/interrupt_util.h>
