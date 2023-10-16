@@ -257,7 +257,7 @@ System Clock
 ============
 
 The LPC55S69 SoC is configured to use PLL1 clocked from the external 24MHz
-crystal, running at 150MHz as a source for the system clock. When the flash
+crystal, running at 144MHz as a source for the system clock. When the flash
 controller is enabled, the core clock will be reduced to 96MHz. The application
 may reconfigure clocks after initialization, provided that the core clock is
 always set to 96MHz when flash programming operations are performed.
