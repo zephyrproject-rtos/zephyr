@@ -507,6 +507,7 @@ issues, you can add option --no-verify to the git push command.
 A more complete alternative to this is using check_compliance.py script from
 ci-tools repo.
 
+.. _static_analysis:
 
 Static Code Analysis
 ********************
