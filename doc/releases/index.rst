@@ -3,11 +3,17 @@
 Releases
 ########
 
-Zephyr project is provided as source code and build scripts for different
-target architectures and configurations, and not as a binary image. Updated
-versions of the Zephyr project are released approximately every four months.
+Zephyr project is provided as source code and build scripts for different target
+architectures and configurations, and not as a binary image. Updated versions of
+the Zephyr project are released approximately every four months.
 
-All Zephyr project source code is maintained in a `GitHub repository`_.
+All Zephyr project source code is maintained in a `GitHub repository`_. In order
+to use a released version of the Zephyr project, it is recommended that you use
+:ref:`west` to :ref:`get_the_code` of the release you are interested in.
+
+The technical documentation for current and past releases is available at
+https://docs.zephyrproject.org/ (use the version selector to select your release
+of interest).
 
 Release Life Cycle and Maintenance
 **********************************
@@ -61,18 +67,6 @@ As of 2022-01-01, LTS1 (1.14.x) is not supported and has reached end of life (EO
 
 Release Notes
 *************
-
-For Zephyr versions up to 1.13, you can either download source as a tar.gz file
-(see the bottom of the `GitHub tagged releases`_ page corresponding to each
-release), or clone the GitHub repository.
-
-With the introduction of the :ref:`west` tool after the release of Zephyr 1.13,
-it is no longer recommended to download or clone the source code manually.
-Instead we recommend you follow the instructions in :ref:`get_the_code` to do
-so with the help of west.
-
-The project's technical documentation is also tagged to correspond with a
-specific release and can be found at https://docs.zephyrproject.org/.
 
 .. toctree::
    :maxdepth: 1
