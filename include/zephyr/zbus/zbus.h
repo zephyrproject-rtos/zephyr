@@ -225,7 +225,6 @@ struct zbus_channel_observation {
 #define _ZBUS_RUNTIME_OBSERVERS_DECL(_name)
 #endif /* CONFIG_ZBUS_RUNTIME_OBSERVERS */
 
-k_timeout_t _zbus_timeout_remainder(uint64_t end_ticks);
 /** @endcond */
 
 /**
