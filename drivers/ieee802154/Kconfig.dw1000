@@ -35,4 +35,17 @@ config IEEE802154_DW1000_INIT_PRIO
 	  be ready first (and sometime gpio should be the very first as spi
 	  might need it too). And of course it has to start before the net stack.
 
+config IEEE802154_DW1000_ENABLE_MANUAL_TX_POWER_CONTROL
+	bool "Manual TX Power Control"
+	help
+	  Manual TX Power control disables Smart TX Power Control and makes
+	  TX power independent of data rate and frame length. Direct control
+	  of the power to the PHR part and the rest of the transmit frame
+	  separately.
+	  Smart TX power control applies at the 6.8 Mbps data rate. When sending
+	  short data frames at this rate (and providing that the frame
+	  transmission rate is < 1 frame per millisecond) it is possible to
+	  increase the transmit power and still remain within regulatory power limits
+	  which are typically specified as average power per millisecond.
+
 endif
