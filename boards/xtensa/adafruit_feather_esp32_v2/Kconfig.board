@@ -1,0 +1,12 @@
+# Adafruit Feather ESP32 V2 board configuration
+
+# Copyright (c) 2023 MIT Media Lab
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_ESP32_V2
+	bool "Adafruit Feather ESP32 V2"
+	depends on SOC_SERIES_ESP32
+
+choice SOC_PART_NUMBER
+	default SOC_ESP32_PICO_V3_02
+endchoice

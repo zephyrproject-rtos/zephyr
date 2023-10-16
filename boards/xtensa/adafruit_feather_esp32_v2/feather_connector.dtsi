@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 MIT Media Lab
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+feather_serial: &uart0 {};
+feather_i2c: &i2c0 {};
+/* feather_spi: &spim1 {}; */
