@@ -1070,6 +1070,10 @@ void bt_mesh_model_data_store_schedule(struct bt_mesh_model *mod);
  *  extension list and element, giving the models extended subscription list
  *  capacity.
  *
+ * If @kconfig{CONFIG_BT_MESH_COMP_PAGE_1} is enabled, it is not allowed to call
+ * this function before the @ref bt_mesh_model_cb.init callback is called
+ * for both models, except if it is called as part of the final callback.
+ *
  *  @param extending_mod      Mesh model that is extending the base model.
  *  @param base_mod           The model being extended.
  *
