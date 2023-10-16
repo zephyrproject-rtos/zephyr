@@ -446,6 +446,7 @@ endchoice
 
 config TFM_EXCEPTION_INFO_DUMP
 	bool "TF-M exception info dump"
+	default y
 	help
 	  On fatal errors in the secure firmware, capture info about the exception.
 	  Print the info if the SPM log level is sufficient.
