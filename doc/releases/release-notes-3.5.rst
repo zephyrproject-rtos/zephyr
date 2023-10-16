@@ -936,6 +936,10 @@ Libraries / Subsystems
   * Added the helper function, :c:func:`pm_device_driver_init`, for
     initializing devices into a specific power state.
 
+* Modem modules
+
+  * Added the :ref:`modem` subsystem.
+
 HALs
 ****
 
