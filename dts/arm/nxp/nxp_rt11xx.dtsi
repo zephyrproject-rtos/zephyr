@@ -749,24 +749,22 @@
 		};
 
 		usb1: usbd@40430000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x40430000 0x200>;
 			interrupts = <136 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
 		usb2: usbd@4042c000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x4042c000 0x200>;
 			interrupts = <135 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci1";
 			status = "disabled";
 		};
 
