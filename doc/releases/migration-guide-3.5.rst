@@ -292,6 +292,11 @@ Required changes
 * :c:func:`pm_state_set` and :c:func:`pm_exit_post_ops` are mandatory now
   for any platform supporting power management.
 
+* The LPC55XXX series SOC (except LPC55S06) default main clock has been
+  updated to PLL1 source from XTAL32K running at 144MHZ. If the new
+  kconfig option :kconfig:option:`CONFIG_INIT_PLL1`
+  is disabled then the main clock is muxed to FRO_HR as before.
+
 Recommended Changes
 *******************
 
