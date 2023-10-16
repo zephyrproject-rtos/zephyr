@@ -51,6 +51,7 @@ list(APPEND kernel_files
   init.c
   kheap.c
   mem_slab.c
+  sched.c
   thread.c
   version.c
   )
@@ -66,7 +67,6 @@ list(APPEND kernel_files
   stack.c
   system_work_q.c
   work.c
-  sched.c
   condvar.c
   )
 
