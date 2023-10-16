@@ -730,6 +730,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 #if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
 	if (bt_eatt_count(client->conn) > 0 &&
 	    bt_gatt_is_subscribed(client->conn, preset_control_point_attr, BT_GATT_CCC_NOTIFY)) {
+		memset(&client->params.ntf, 0, sizeof(client->params.ntf));
 		client->params.ntf.attr = preset_control_point_attr;
 		client->params.ntf.func = control_point_ntf_complete;
 		client->params.ntf.data = buf->data;
@@ -740,6 +741,7 @@ static int control_point_send(struct has_client *client, struct net_buf_simple *
 #endif /* CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE */
 
 	if (bt_gatt_is_subscribed(client->conn, preset_control_point_attr, BT_GATT_CCC_INDICATE)) {
+		memset(&client->params.ind, 0, sizeof(client->params.ind));
 		client->params.ind.attr = preset_control_point_attr;
 		client->params.ind.func = control_point_ind_complete;
 		client->params.ind.destroy = NULL;
