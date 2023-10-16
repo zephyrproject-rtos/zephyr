@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arunmani Alagarsamy
+# Author: Arunmani Alagarsamy <arunmani27100@gmail.com>
+
+description: Maxim DS1307 RTC
+
+compatible: "maxim,ds1307"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
