@@ -31,86 +31,7 @@ struct pwm_mcux_sctimer_data {
 	sctimer_pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
-static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
-				       uint32_t channel, uint32_t period_cycles,
-				       uint32_t pulse_cycles, pwm_flags_t flags)
-{
-	const struct pwm_mcux_sctimer_config *config = dev->config;
-	struct pwm_mcux_sctimer_data *data = dev->data;
-	uint8_t duty_cycle;
 
-	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel");
-		return -EINVAL;
-	}
-
-	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to inactive level");
-		return -ENOTSUP;
-	}
-
-	if ((flags & PWM_POLARITY_INVERTED) == 0) {
-		data->channel[channel].level = kSCTIMER_HighTrue;
-	} else {
-		data->channel[channel].level = kSCTIMER_LowTrue;
-	}
-
-	duty_cycle = 100 * pulse_cycles / period_cycles;
-
-	if (duty_cycle == 0) {
-		SCT_Type *base = config->base;
-
-		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
-
-		/* Set the output to inactive State */
-		if (data->channel[channel].level == kSCTIMER_HighTrue) {
-			base->OUTPUT &= ~(1UL << channel);
-		} else {
-			base->OUTPUT |= (1UL << channel);
-		}
-
-		return 0;
-	}
-
-	if (period_cycles != data->period_cycles[channel] &&
-	    duty_cycle != data->channel[channel].dutyCyclePercent) {
-		uint32_t clock_freq;
-		uint32_t pwm_freq;
-
-		data->period_cycles[channel] = period_cycles;
-
-		/*
-		 * Do not divide by the prescale factor as this is accounted for in
-		 * the SDK function
-		 */
-		clock_freq = CLOCK_GetFreq(kCLOCK_BusClk);
-		pwm_freq = (clock_freq / config->prescale) / period_cycles;
-
-		if (pwm_freq == 0) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
-			return -EINVAL;
-		}
-
-		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
-
-		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
-		data->channel[channel].dutyCyclePercent = duty_cycle;
-		if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
-				     kSCTIMER_EdgeAlignedPwm, pwm_freq,
-				     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
-			LOG_ERR("Could not set up pwm");
-			return -ENOTSUP;
-		}
-
-		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
-	} else {
-		data->period_cycles[channel] = period_cycles;
-		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
-					   data->event_number[channel]);
-	}
-
-	return 0;
-}
 
 static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
 					       uint32_t channel,
@@ -152,6 +73,80 @@ static int mcux_sctimer_pwm_init(const struct device *dev)
 		data->channel[i].level = kSCTIMER_HighTrue;
 		data->channel[i].dutyCyclePercent = 0;
 		data->period_cycles[i] = 0;
+	}
+
+	return 0;
+}
+
+static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
+				       uint32_t channel, uint32_t period_cycles,
+				       uint32_t pulse_cycles, pwm_flags_t flags)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	uint8_t duty_cycle;
+
+	if (channel >= CHANNEL_COUNT) {
+		LOG_ERR("Invalid channel");
+		return -EINVAL;
+	}
+
+	if (period_cycles == 0) {
+		LOG_ERR("Channel can not be set to inactive level");
+		return -ENOTSUP;
+	}
+
+	if ((flags & PWM_POLARITY_INVERTED) == 0) {
+		data->channel[channel].level = kSCTIMER_HighTrue;
+	} else {
+		data->channel[channel].level = kSCTIMER_LowTrue;
+	}
+
+	duty_cycle = 100 * pulse_cycles / period_cycles;
+
+	if (duty_cycle == 0) {
+		// Workaround fix to make it work for WMS V2
+		LOG_DBG("Stop SCTimer Workaround: Re-Init SCTimer to reset all events");
+		mcux_sctimer_pwm_init(dev);
+		return 0;
+	}
+
+	if (period_cycles != data->period_cycles[channel] &&
+	    duty_cycle != data->channel[channel].dutyCyclePercent) {
+		uint32_t clock_freq;
+		uint32_t pwm_freq;
+
+		data->period_cycles[channel] = period_cycles;
+
+		/*
+		 * Do not divide by the prescale factor as this is accounted for in
+		 * the SDK function
+		 */
+		clock_freq = CLOCK_GetFreq(kCLOCK_BusClk);
+		pwm_freq = (clock_freq / config->prescale) / period_cycles;
+
+		if (pwm_freq == 0) {
+			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
+			return -EINVAL;
+		}
+
+		SCTIMER_StopTimer(config->base, kSCTIMER_Counter_U);
+
+		LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
+		data->channel[channel].dutyCyclePercent = duty_cycle;
+		if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
+				     kSCTIMER_EdgeAlignedPwm, pwm_freq,
+				     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
+			LOG_ERR("Could not set up pwm");
+			return -ENOTSUP;
+		}
+
+		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+	} else {
+		LOG_DBG("UPDATE dutycycle to %u\n", duty_cycle);
+		data->period_cycles[channel] = period_cycles;
+		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
+					   data->event_number[channel]);
 	}
 
 	return 0;
