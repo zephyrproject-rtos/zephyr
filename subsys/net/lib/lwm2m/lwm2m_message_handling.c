@@ -3305,6 +3305,16 @@ cleanup:
 int do_composite_read_op_for_parsed_list(struct lwm2m_message *msg, uint16_t content_format,
 					 sys_slist_t *path_list)
 {
+	struct lwm2m_obj_path_list *entry;
+
+	/* Check access rights */
+	SYS_SLIST_FOR_EACH_CONTAINER(path_list, entry, node) {
+		if (entry->path.level > LWM2M_PATH_LEVEL_NONE &&
+		    entry->path.obj_id == LWM2M_OBJECT_SECURITY_ID && !msg->ctx->bootstrap_mode) {
+			return -EACCES;
+		}
+	}
+
 	switch (content_format) {
 
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
