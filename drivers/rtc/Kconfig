@@ -48,5 +48,6 @@ source "drivers/rtc/Kconfig.pcf8523"
 source "drivers/rtc/Kconfig.pcf8563"
 source "drivers/rtc/Kconfig.mc146818"
 source "drivers/rtc/Kconfig.stm32"
+source "drivers/rtc/Kconfig.smartbond"
 
 endif # RTC
