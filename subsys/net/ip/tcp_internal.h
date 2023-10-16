@@ -423,6 +423,20 @@ struct k_sem *net_tcp_tx_sem_get(struct net_context *context);
  */
 struct k_sem *net_tcp_conn_sem_get(struct net_context *context);
 
+/**
+ * @brief Send a TCP RST reply for the received packet w/o associated connection.
+ *
+ * @param pkt TCP packet to reply for.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_reply_rst(struct net_pkt *pkt);
+#else
+static inline void net_tcp_reply_rst(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif

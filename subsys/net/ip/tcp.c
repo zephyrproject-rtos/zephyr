@@ -1162,6 +1162,82 @@ static bool is_destination_local(struct net_pkt *pkt)
 	return false;
 }
 
+void net_tcp_reply_rst(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access_rst, struct tcphdr);
+	struct tcphdr *th_pkt = th_get(pkt);
+	struct tcphdr *th_rst;
+	struct net_pkt *rst;
+	int ret;
+
+	if (th_pkt == NULL || (th_flags(th_pkt) & RST)) {
+		/* Don't reply to a RST segment. */
+		return;
+	}
+
+	rst = tcp_pkt_alloc_no_conn(pkt->iface, pkt->family,
+				    sizeof(struct tcphdr));
+	if (rst == NULL) {
+		return;
+	}
+
+	/* IP header */
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		ret = net_ipv4_create(rst,
+				      (struct in_addr *)NET_IPV4_HDR(pkt)->dst,
+				      (struct in_addr *)NET_IPV4_HDR(pkt)->src);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		ret =  net_ipv6_create(rst,
+				      (struct in6_addr *)NET_IPV6_HDR(pkt)->dst,
+				      (struct in6_addr *)NET_IPV6_HDR(pkt)->src);
+	} else {
+		ret = -EINVAL;
+	}
+
+	if (ret < 0) {
+		goto err;
+	}
+
+	/* TCP header */
+	th_rst = (struct tcphdr *)net_pkt_get_data(rst, &tcp_access_rst);
+	if (th_rst == NULL) {
+		goto err;
+	}
+
+	memset(th_rst, 0, sizeof(struct tcphdr));
+
+	UNALIGNED_PUT(th_pkt->th_dport, &th_rst->th_sport);
+	UNALIGNED_PUT(th_pkt->th_sport, &th_rst->th_dport);
+	th_rst->th_off = 5;
+
+	if (th_flags(th_pkt) & ACK) {
+		UNALIGNED_PUT(RST, &th_rst->th_flags);
+		UNALIGNED_PUT(th_pkt->th_ack, &th_rst->th_seq);
+	} else {
+		uint32_t ack = ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
+
+		UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
+		UNALIGNED_PUT(htonl(ack), &th_rst->th_ack);
+	}
+
+	ret = net_pkt_set_data(rst, &tcp_access_rst);
+	if (ret < 0) {
+		goto err;
+	}
+
+	ret = tcp_finalize_pkt(rst);
+	if (ret < 0) {
+		goto err;
+	}
+
+	tcp_send(rst);
+
+	return;
+
+err:
+	tcp_pkt_unref(rst);
+}
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		       uint32_t seq)
 {
