@@ -2,6 +2,8 @@
 
 zephyr_library()
 
+zephyr_library_include_directories(include)
+
 # Library may be empty due to kconfigs
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
