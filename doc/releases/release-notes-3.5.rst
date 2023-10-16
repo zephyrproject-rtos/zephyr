@@ -926,6 +926,15 @@ Libraries / Subsystems
     statuses (enabled/disabled) programmatically. With the API, developers can create observers
     initially disabled and enable them in runtime.
 
+* Power management
+
+  * Added :kconfig:option:`CONFIG_PM_NEED_ALL_DEVICES_IDLE`. When this
+    option is set the power management will keep the system active
+    if there is any device busy.
+  * :c:func:`pm_device_runtime_get` can be called from ISR now.
+  * Power states can be disabled directly in devicetree doing ``status = "disabled";``
+  * Added the helper function, :c:func:`pm_device_driver_init`, for
+    initializing devices into a specific power state.
 
 HALs
 ****
