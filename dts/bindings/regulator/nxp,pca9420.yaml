@@ -63,6 +63,18 @@ properties:
       To disable current limit, set property to zero. Defaults to 425mA, the IC
       default value.
 
+  nxp,asys-uvlo-sel-millivolt:
+    type: int
+    default: 2700
+    enum:
+      - 2400
+      - 2500
+      - 2600
+      - 2700
+    description: |
+      ASYS UVLO (under voltage lock out) threshold, in millivolts. Defaults to
+      2700mV to match the IC default value.
+
 child-binding:
   include:
     - name: regulator.yaml

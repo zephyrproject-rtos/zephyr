@@ -18,6 +18,8 @@
 /** General purpose registers */
 /** @brief Top level system ctrl 0 */
 #define PCA9420_TOP_CNTL0     0x09U
+/** @brief Top level system ctrl 2 */
+#define PCA9420_TOP_CNTL2     0x0BU
 /** @brief Top level system ctrl 3 */
 #define PCA9420_TOP_CNTL3     0x0CU
 
@@ -35,6 +37,10 @@
 #define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_POS 5U
 #define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK 0xE0U
 #define PCA9420_TOP_CNTL0_VIN_ILIM_SEL_DISABLED 0x7U
+
+/** @brief ASYS UVLO threshold selection */
+#define PCA9420_TOP_CNTL2_ASYS_UVLO_SEL_POS  6U
+#define PCA9420_TOP_CNTL2_ASYS_UVLO_SEL_MASK 0xC0U
 
 /** @brief I2C Mode control mask */
 #define PCA9420_TOP_CNTL3_MODE_I2C_POS 3U
@@ -102,6 +108,7 @@ struct regulator_pca9420_common_config {
 	struct i2c_dt_spec i2c;
 	int32_t vin_ilim_ua;
 	bool enable_modesel_pins;
+	uint8_t asys_uvlo_sel_mv;
 };
 
 struct regulator_pca9420_common_data {
@@ -427,10 +434,20 @@ static int regulator_pca9420_common_init(const struct device *dev)
 			  PCA9420_VIN_ILIM_UA_LSB;
 	}
 
-	return i2c_reg_update_byte_dt(
+	ret = i2c_reg_update_byte_dt(
 		&config->i2c, PCA9420_TOP_CNTL0,
 		PCA9420_TOP_CNTL0_VIN_ILIM_SEL_MASK,
 		reg_val << PCA9420_TOP_CNTL0_VIN_ILIM_SEL_POS);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* configure ASYS UVLO threshold */
+	return i2c_reg_update_byte_dt(&config->i2c, PCA9420_TOP_CNTL2,
+		PCA9420_TOP_CNTL2_ASYS_UVLO_SEL_MASK,
+		config->asys_uvlo_sel_mv <<
+		PCA9420_TOP_CNTL2_ASYS_UVLO_SEL_POS);
 }
 
 #define REGULATOR_PCA9420_DEFINE(node_id, id, name, _parent)                   \
@@ -465,6 +482,8 @@ static int regulator_pca9420_common_init(const struct device *dev)
 		.vin_ilim_ua = DT_INST_PROP(inst, nxp_vin_ilim_microamp),      \
 		.enable_modesel_pins =                                         \
 			DT_INST_PROP(inst, nxp_enable_modesel_pins),           \
+		.asys_uvlo_sel_mv =                                            \
+			DT_INST_ENUM_IDX(inst, nxp_asys_uvlo_sel_millivolt),   \
 	};                                                                     \
                                                                                \
 	static struct regulator_pca9420_common_data data_##inst;               \
