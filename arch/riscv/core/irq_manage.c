@@ -8,6 +8,7 @@
 #include <kernel_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/irq_multilevel.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

@@ -10,6 +10,7 @@
 	  privileged architecture specification
  */
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
