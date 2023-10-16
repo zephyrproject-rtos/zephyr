@@ -406,7 +406,9 @@ struct bt_bap_scan_delegator_cb {
 	 *                           requested for the sync.
 	 * @param[in]  bis_sync_req  Array of bitfields of which BIS indexes
 	 *                           that is requested to sync for each subgroup
-	 *                           by the Broadcast Assistant.
+	 *                           by the Broadcast Assistant. A value of 0
+	 *                           indicates a request to terminate the BIG
+	 *                           sync.
 	 *
 	 * @return 0 in case of accept, or other value to reject.
 	 */
