@@ -41,14 +41,31 @@ The default configuration can be found in the defconfig file:
 Programming and Debugging
 *************************
 
-Flashing
-========
+TF Card
+=======
 
-1. Install Raspberry Pi OS using Raspberry Pi Imager. see <https://www.raspberrypi.com/software/>.
+Prepare a TF card with MBR and FAT32. In the root directory of the TF card:
 
-2. Add `kernel=zephyr.bin` and `arm_64bit=1` in `config.txt`. see <https://www.raspberrypi.com/documentation/computers/config_txt.html#kernel>
+1. Download and place these firmware files:
 
-.. code-block:: console
+   * `bcm2711-rpi-4-b.dtb <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bcm2711-rpi-4-b.dtb>`_
+   * `bootcode.bin <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin>`_
+   * `start4.elf <https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start4.elf>`_
 
-	*** Booting Zephyr OS build XXXXXXXXXXXX  ***
-	Hello World! Raspberry Pi 4 Model B!
+2. Copy ``build/zephyr/zephyr.bin``
+3. Create a ``config.txt``:
+
+   .. code-block:: text
+
+      kernel=zephyr.bin
+      arm_64bit=1
+      enable_uart=1
+      uart_2ndstage=1
+
+Insert the card and power on the board. You should see the following output on
+the serial console (GPIO 14/15):
+
+.. code-block:: text
+
+   *** Booting Zephyr OS build XXXXXXXXXXXX  ***
+   Hello World! Raspberry Pi 4 Model B!
