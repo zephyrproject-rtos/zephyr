@@ -332,7 +332,10 @@ struct spi_config {
 		.frequency = DT_PROP(node_id, spi_max_frequency),	\
 		.operation = (operation_) |				\
 			DT_PROP(node_id, duplex) |			\
-			DT_PROP(node_id, frame_format),			\
+			DT_PROP(node_id, frame_format) |			\
+			COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |	\
+			COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |	\
+			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = SPI_CS_CONTROL_INIT(node_id, delay_),		\
 	}
