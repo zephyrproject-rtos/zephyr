@@ -98,6 +98,23 @@
 	_pkt;								\
 })
 
+#define tcp_pkt_alloc_no_conn(_iface, _family, _len)			\
+({									\
+	struct net_pkt *_pkt;						\
+									\
+	if ((_len) > 0) {						\
+		_pkt = net_pkt_alloc_with_buffer(			\
+			(_iface), (_len), (_family),			\
+			IPPROTO_TCP,					\
+			TCP_PKT_ALLOC_TIMEOUT);				\
+	} else {							\
+		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
+	}								\
+									\
+	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
+									\
+	_pkt;								\
+})
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 #define conn_seq(_conn, _req) \
