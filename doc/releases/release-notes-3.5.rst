@@ -375,6 +375,15 @@ Drivers and Sensors
   * STM32 V1 driver now supports large transactions (more than 256 bytes chunks)
   * STM32 V2 driver now supports 10-bit addressing.
   * I2C devices can now be used as wakeup source from STOP modes on STM32.
+  * Fix long ISR execution in Silicon Labs I2C target callback
+  * Fail gracefully on DMA max size for nRF52 devices in the TWIM driver
+  * Added support for Intel LPSS DMA usage in the DesignWare driver
+  * Added filtering of dumped messages for debugging using DeviceTree
+  * Added target mode to Silicon Labs Gecko driver
+  * Added Intel SEDI driver
+  * Added Infineon XMC4 driver
+  * Added Microchip PolarFire SoC driver
+  * Added Ambiq driver for Apollo4 SoCs
 
 * I2S
 
