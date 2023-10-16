@@ -1949,7 +1949,7 @@ const uint32_t dwt_txpwr_stxp0_64[] = {
 	 0x07274767,
 	 0x2B4B6B8B,
 	 0x3A5A7A9A,
-	 0x25456585,
+	 0x25466788,
 	 0x5171B1D1
 };
 
