@@ -115,10 +115,21 @@ int lis2dw12_trigger_set(const struct device *dev,
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
+	int local_ret;
 
 	if (cfg->gpio_int.port == NULL) {
 		LOG_ERR("trigger_set is not supported");
 		return -ENOTSUP;
+	}
+
+	if ((state == PROPERTY_ENABLE) && (!lis2dw12->trigger_callback_enabled)) {
+		lis2dw12->trigger_callback_enabled = true;
+		lis2dw12_pm_device_handler_get(dev);
+	} else {
+		if ((state == PROPERTY_DISABLE) && (!lis2dw12->trigger_callback_enabled)) {
+			LOG_INF("Trigger callbacks already NULL");
+			return 0;
+		}
 	}
 
 	switch (trig->type) {
@@ -129,7 +140,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 			/* dummy read: re-trigger interrupt */
 			lis2dw12_acceleration_raw_get(ctx, raw);
 		}
-		return lis2dw12_enable_int(dev, SENSOR_TRIG_DATA_READY, state);
+		local_ret = lis2dw12_enable_int(dev, SENSOR_TRIG_DATA_READY, state);
 		break;
 #ifdef CONFIG_LIS2DW12_TAP
 	case SENSOR_TRIG_TAP:
@@ -139,20 +150,23 @@ int lis2dw12_trigger_set(const struct device *dev,
 		    (cfg->tap_threshold[1] == 0) &&
 		    (cfg->tap_threshold[2] == 0)) {
 			LOG_ERR("Unsupported sensor trigger");
-			return -ENOTSUP;
+			local_ret = -ENOTSUP;
+			break;
 		}
 
 		/* Set single TAP trigger  */
 		if (trig->type == SENSOR_TRIG_TAP) {
 			lis2dw12->tap_handler = handler;
 			lis2dw12->tap_trig = trig;
-			return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
+			local_ret = lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
+			break;
 		}
 
 		/* Set double TAP trigger  */
 		lis2dw12->double_tap_handler = handler;
 		lis2dw12->double_tap_trig = trig;
-		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
+		local_ret = lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
+		break;
 #endif /* CONFIG_LIS2DW12_TAP */
 #ifdef CONFIG_LIS2DW12_THRESHOLD
 	case SENSOR_TRIG_THRESHOLD:
@@ -160,7 +174,8 @@ int lis2dw12_trigger_set(const struct device *dev,
 		LOG_DBG("Set trigger %d (handler: %p)\n", trig->type, handler);
 		lis2dw12->threshold_handler = handler;
 		lis2dw12->threshold_trig = trig;
-		return lis2dw12_enable_int(dev, SENSOR_TRIG_THRESHOLD, state);
+		local_ret = lis2dw12_enable_int(dev, SENSOR_TRIG_THRESHOLD, state);
+		break;
 	}
 #endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
@@ -168,13 +183,37 @@ int lis2dw12_trigger_set(const struct device *dev,
 	LOG_DBG("Set freefall %d (handler: %p)\n", trig->type, handler);
 		lis2dw12->freefall_handler = handler;
 		lis2dw12->freefall_trig = trig;
-		return lis2dw12_enable_int(dev, SENSOR_TRIG_FREEFALL, state);
-	break;
+		local_ret = lis2dw12_enable_int(dev, SENSOR_TRIG_FREEFALL, state);
+		break;
 #endif /* CONFIG_LIS2DW12_FREEFALL */
 	default:
 		LOG_ERR("Unsupported sensor trigger");
-		return -ENOTSUP;
+		local_ret = -ENOTSUP;
 	}
+
+	if (lis2dw12->drdy_handler != NULL) {
+		return local_ret;
+	}
+#ifdef CONFIG_LIS2DW12_TAP
+	if ((lis2dw12->tap_handler != NULL) || (lis2dw12->double_tap_handler != NULL)) {
+		return local_ret;
+	}
+#endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+	if (lis2dw12->threshold_handler != NULL) {
+		return local_ret;
+	}
+#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#ifdef CONFIG_LIS2DW12_FREEFALL
+	if (lis2dw12->freefall_handler != NULL) {
+		return local_ret;
+	}
+#endif /* CONFIG_LIS2DW12_FREEFALL */
+
+	/* Only put back the domain if all callbacks are NULL */
+	lis2dw12->trigger_callback_enabled = false;
+	lis2dw12_pm_device_handler_put(dev);
+	return local_ret;
 }
 
 static int lis2dw12_handle_drdy_int(const struct device *dev)

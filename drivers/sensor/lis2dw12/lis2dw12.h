@@ -107,8 +107,11 @@ struct lis2dw12_data {
 	uint16_t gain;
 	 /* output data rate */
 	uint16_t odr;
+	bool continuous_mode_enabled;
+	bool power_domain_claimed;
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
+	bool trigger_callback_enabled;
 	const struct device *dev;
 
 	struct gpio_callback gpio_cb;
@@ -143,6 +146,27 @@ int lis2dw12_init_interrupt(const struct device *dev);
 int lis2dw12_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler);
-#endif /* CONFIG_LIS2DW12_TRIGGER */
 
+/**
+ * @brief	This function gets the power domain for the device
+ *			if CONFIG_PM_DEVICE is enabled, otherwise will set
+ *			the device to busy.
+ * @param	dev [in]. the pointer to the device for which
+ *			we wish to turn the power domain on.
+ * @note	This function should be called AFTER setting
+ *			the respective flags for requesting power
+ */
+void lis2dw12_pm_device_handler_get(const struct device *dev);
+
+/**
+ * @brief	This function puts the power domain for the device
+ *			if CONFIG_PM_DEVICE is enabled, otherwise will clear
+ *			the device's busy status.
+ * @param	dev [in]. the pointer to the device for which
+ *			we wish to turn the power domain off.
+ * @note	This function should be called AFTER clearing
+ *			the respective flags for requesting power
+ */
+void lis2dw12_pm_device_handler_put(const struct device *dev);
+#endif /* CONFIG_LIS2DW12_TRIGGER */
 #endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_ */
