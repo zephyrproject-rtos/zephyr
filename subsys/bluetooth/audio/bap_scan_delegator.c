@@ -830,6 +830,7 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 {
 	struct bass_recv_state_internal *internal_state;
 	struct bt_bap_scan_delegator_recv_state *state;
+	bool bis_sync_was_requested;
 	uint8_t src_id;
 
 	/* subtract 1 as the opcode has already been pulled */
@@ -862,6 +863,14 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 		}
 	}
 
+	bis_sync_was_requested = false;
+	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
+		if (internal_state->requested_bis_sync[i] != 0U) {
+			bis_sync_was_requested = true;
+			break;
+		}
+	}
+
 	LOG_DBG("Index %u: Removed source with ID 0x%02x",
 		internal_state->index, src_id);
 
@@ -873,6 +882,9 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 	(void)memset(internal_state->requested_bis_sync, 0,
 		     sizeof(internal_state->requested_bis_sync));
 
+	if (bis_sync_was_requested) {
+		bis_sync_request_updated(conn, internal_state);
+	}
 	receive_state_updated(conn, internal_state);
 
 	return 0;
