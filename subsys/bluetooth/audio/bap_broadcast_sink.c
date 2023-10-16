@@ -151,7 +151,8 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 
 	recv_state = bt_bap_scan_delegator_find_state(find_recv_state_by_sink_cb, (void *)sink);
 	if (recv_state == NULL) {
-		LOG_WRN("Failed to find receive state for sink %p", sink);
+		/* This is likely due to the receive state being removed while we are BIG synced */
+		LOG_DBG("Could not find receive state for sink %p", sink);
 
 		return;
 	}
@@ -802,8 +803,8 @@ static void broadcast_sink_cleanup(struct bt_bap_broadcast_sink *sink)
 
 		err = bt_bap_scan_delegator_rem_src(sink->bass_src_id);
 		if (err != 0) {
-			LOG_WRN("Failed to remove Receive State for sink %p: %d",
-				sink, err);
+			/* This is likely due to the receive state been removed */
+			LOG_DBG("Could not remove Receive State for sink %p: %d", sink, err);
 		}
 	}
 
@@ -892,6 +893,7 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
 		}
 
 		sink->bass_src_id = recv_state->src_id;
+		atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_SRC_ID_VALID);
 	}
 	atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_INITIALIZED);
 
