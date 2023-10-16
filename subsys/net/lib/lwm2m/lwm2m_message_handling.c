@@ -1089,7 +1089,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 				break;
 			}
 
-			len = strlen((char *)write_buf);
+			len = strlen((char *)write_buf) + 1;
 			break;
 
 		case LWM2M_RES_TYPE_TIME:
@@ -1251,8 +1251,10 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 		break;
 
 	case LWM2M_RES_TYPE_STRING:
-		ret = engine_put_string(&msg->out, &msg->path, (uint8_t *)data_ptr,
-					strlen((uint8_t *)data_ptr));
+		if (data_len) {
+			data_len -= 1; /* Remove the '\0' */
+		}
+		ret = engine_put_string(&msg->out, &msg->path, (uint8_t *)data_ptr, data_len);
 		break;
 
 	case LWM2M_RES_TYPE_U32:
