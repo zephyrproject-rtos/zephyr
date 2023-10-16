@@ -74,20 +74,14 @@ so with the help of west.
 The project's technical documentation is also tagged to correspond with a
 specific release and can be found at https://docs.zephyrproject.org/.
 
-.. comment We need to split the globbing of release notes to get the
-   single-digit and double-digit subversions sorted correctly.  Specify
-   names in normal order and use the :reversed: option to reverse it.
-   This will get us through 10 subversions (0-9) before we need to
-   update this list for two-digit subversions again.
-
 .. toctree::
    :maxdepth: 1
    :glob:
    :reversed:
 
-   release-notes-1.?
-   release-notes-1.*
-   release-notes-*
+   eol_releases
+   release-notes-2.7
+   release-notes-3.[3-5]
 
 Migration Guides
 ****************
