@@ -39,7 +39,15 @@
 /* Whether device is self power. 1U supported, 0U not supported */
 #define USB_DEVICE_CONFIG_SELF_POWER (1U)
 
-#define DT_DRV_COMPAT nxp_mcux_usbd
+#define NUM_INSTS DT_NUM_INST_STATUS_OKAY(nxp_ehci) + DT_NUM_INST_STATUS_OKAY(nxp_lpcip3511)
+BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_lpcip3511)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_lpcip3511
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_ehci)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_ehci
+#endif
 
 /* Number of endpoints supported */
 #define USB_DEVICE_CONFIG_ENDPOINTS (DT_INST_PROP(0, num_bidir_endpoints))
