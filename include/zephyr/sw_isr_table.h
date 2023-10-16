@@ -84,35 +84,6 @@ void z_shared_isr(const void *data);
 extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #endif /* CONFIG_SHARED_INTERRUPTS */
 
-/**
- * @brief Helper function used to compute the index in _sw_isr_table
- * based on passed IRQ.
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return corresponding index in _sw_isr_table
- */
-unsigned int z_get_sw_isr_table_idx(unsigned int irq);
-
-/**
- * @brief Helper function used to get the parent interrupt controller device based on passed IRQ.
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return corresponding interrupt controller device in _sw_isr_table
- */
-const struct device *z_get_sw_isr_device_from_irq(unsigned int irq);
-
-/**
- * @brief Helper function used to get the IRQN of the passed in parent interrupt
- * controller device.
- *
- * @param dev parent interrupt controller device
- *
- * @return IRQN of the interrupt controller
- */
-unsigned int z_get_sw_isr_irq_from_device(const struct device *dev);
-
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
 

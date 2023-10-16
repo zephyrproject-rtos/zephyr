@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sw_isr_common.h"
+
 #include <zephyr/ztest.h>
 
 extern const struct _irq_parent_entry _lvl2_irq_list[];
