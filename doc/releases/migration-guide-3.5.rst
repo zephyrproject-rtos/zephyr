@@ -289,6 +289,9 @@ Required changes
   instead use the new driver Kconfig
   :kconfig:option:`CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED`.
 
+* :c:func:`pm_state_set` and :c:func:`pm_exit_post_ops` are mandatory now
+  for any platform supporting power management.
+
 Recommended Changes
 *******************
 
