@@ -903,6 +903,30 @@ Libraries / Subsystems
     is needed
   * Removed unused Kconfig options for different executors
 
+* ZBus
+
+  * Changed channels' and observers' metadata to comply with the data/config approach. ZBus stores
+    immutable config in iterable sections in Flash and the mutable portion of data in the RAM.
+  * The relationship between channels and observers is mapped using a new entity called
+    observation. The observation enables us to increase the granularity of masking observation.
+    Developers can mask individual observations, disable the observer, or use runtime observers.
+  * Added API :c:macro:`ZBUS_CHAN_ADD_OBS` macro for adding post-definition static observers of a
+    channel. That can replace the runtime observer feature, enabling developers to add static
+    observers after the channel definition in different files. It increases the composability of
+    the system using ZBus, making post-definition channel observation rely on the stack instead of
+    the heap.
+  * Added a new type of observer called Message Subscriber. ZBus' VDED will send a copy of the
+    message during the publication/notification process.
+  * Changed the VDED delivery sequence. Check the ref:`documentation<zbus delivery sequence>`.
+  * ZBus runtime observers now rely on the heap instead of a memory pool.
+  * Added new iterable section iterators APIs (for channels and observers) can now receive a
+    ``user_data`` pointer to keep context between the function calls.
+  * Added APIs :c:macro:`ZBUS_LISTENER_DEFINE_WITH_ENABLE` and
+    :c:macro:`ZBUS_SUBSCRIBER_DEFINE_WITH_ENABLE` that allows developers to define observers'
+    statuses (enabled/disabled) programmatically. With the API, developers can create observers
+    initially disabled and enable them in runtime.
+
+
 HALs
 ****
 
@@ -1029,6 +1053,11 @@ Tests and Samples
 
 * Created common sample for file systems (`fs_sample`). It originates from sample for FAT
   (`fat_fs`) and supports both FAT and ext2 file systems.
+
+* Created the zbus confirmed channel sample to demonstrate how to implement a delivery-guaranteed
+  channel using subscribers.
+
+* Created the zbus message subscriber sample to demonstrate how to use message subscribers.
 
 Known Issues
 ************
