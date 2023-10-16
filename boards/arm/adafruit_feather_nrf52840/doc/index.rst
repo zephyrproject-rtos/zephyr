@@ -136,9 +136,6 @@ The Feather nRF52840 ships with the `Adafruit nRF52 Bootloader`_ which
 is compatible with BOSSA and supports flashing using `UF2`_. This allows
 easy flashing of new images, but does not support debugging the device.
 
-Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the BOSSA
-bootloader will be entered automatically when you run :code:`west flash`.
-
 Flashing
 ========
 
@@ -152,7 +149,6 @@ Flashing
          :zephyr-app: samples/basic/blinky
          :board: adafruit_feather_nrf52840
          :goals: build
-         :gen-args: -DCONFIG_USB_CDC_ACM=y
          :compact:
 
    .. group-tab:: Sense
@@ -161,7 +157,6 @@ Flashing
          :zephyr-app: samples/basic/blinky
          :board: adafruit_feather_nrf52840_sense
          :goals: build
-         :gen-args: -DCONFIG_USB_CDC_ACM=y
          :compact:
 
 #. Connect the board to your host computer using USB
