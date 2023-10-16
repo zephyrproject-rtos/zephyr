@@ -9,6 +9,6 @@ config SOC
 	default "stm32l010xb"
 
 config NUM_IRQS
-	default 32
+	default 30
 
 endif # SOC_STM32L010XB
