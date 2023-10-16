@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <silabs/gpio_gecko.h>
 
 / {
 	chosen {
