@@ -149,6 +149,14 @@
 			};
 		};
 
+		rtc: rtc@50000400 {
+			compatible = "renesas,smartbond-rtc";
+			reg = <0x50000400 0x98>;
+			interrupts = <18 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		wdog: watchdog@50000700 {
 			compatible = "renesas,smartbond-watchdog";
 			reg = <0x50000700 0x8>;
