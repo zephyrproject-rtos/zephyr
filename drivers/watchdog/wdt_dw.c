@@ -91,8 +91,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 	}
 
 	if (config->flags) {
-		LOG_ERR("Watchdog behavior is not configurable.");
-		return -ENOTSUP;
+		LOG_WRN("Watchdog behavior is not configurable.");
 	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
