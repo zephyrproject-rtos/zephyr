@@ -40,7 +40,7 @@ included in this model:
    a root of trust, this image must be immutable. This model assumes
    that the SoC provides a mechanism to protect a region of the flash
    from future writes, and that this will be done after this image is
-   programmed into the device, early in production [th-imboot]_.
+   programmed into the device, early in production [#th-imboot]_.
 
 2. **The application firmware image**. This asset consists of the
    remainder of the firmware run by the microcontroller. The distinction
@@ -49,15 +49,15 @@ included in this model:
    for updates to this image are:
 
    a. The image shall only be replaced with an authorized image
-      [th-authrepl]_.
+      [#th-authrepl]_.
 
    b. When an authorized replacement image is available, the update
-      shall be done in a timely manner [th-timely-update]_.
+      shall be done in a timely manner [#th-timely-update]_.
 
    c. The image update shall be seen as atomic, meaning that when the
       image is run, the flash shall contain either the update image in
       its entirety, or the old image in its entirety
-      [th-atomic-update]_.
+      [#th-atomic-update]_.
 
 3. **Root certificate list**. In order to authenticate the cloud service
    (server), the IoT device must have a list of root certificates that
@@ -65,7 +65,7 @@ included in this model:
    based services, this list will generally be provided by the service
    provider. Because the root certificates can expire, and possibly be
    revoked, this list will need to be periodically updated
-   [th-root-certs]_, [th-root-check]_.
+   [#th-root-certs]_ [#th-root-check]_.
 
 4. **Client secrets**. To authenticate the client to the service, the
    client must possess some kind of secret. This is generally a private
@@ -82,7 +82,7 @@ included in this model:
    this update to proceed while the old key is used.
 
    These secrets must be protected from read, and the smallest amount
-   of code necessary shall have access to them. [th-secret-storage]_
+   of code necessary shall have access to them. [#th-secret-storage]_
 
 5. **Current date/time**. TLS certificate verification requires
    knowledge of the current date and time in order to determine if the
@@ -100,7 +100,7 @@ included in this model:
    and the generation of tokens with invalid times.  It could be
    possible to trick the device into generating tokens that are valid in
    the future, but the attacker would also have to spoof the server's
-   certificate to be able to intercept this. [th-time]_
+   certificate to be able to intercept this. [#th-time]_
 
 6. **Sensor data**. The data received from the sensor itself, and
    delivered to the service shall be delivered without modification or
@@ -111,7 +111,7 @@ included in this model:
    frequency and parameters of when sensor data is sent to the service,
    and other need to be kept by the device. This configuration data will
    need to be updated periodically as the configuration changes. Updates
-   should be allowed only from authorized parties. [th-conf]_
+   should be allowed only from authorized parties. [#th-conf]_
 
 8. **Logs**. In order to assist with analysis of security issues, the
    device shall log information about security-pertinent events. IoT
@@ -129,7 +129,7 @@ included in this model:
 
    c. **Changes to the device configuration**.
 
-   [th-logs]_
+   [#th-logs]_
 
 Communication
 =============
@@ -211,16 +211,16 @@ where data or assets are communicated between entities of the system.
    against communication with cloud services.
 
    The device shall use TLS for all communication with the cloud
-   service [th-all-tls]_. The TLS stack shall be configured to use only cipher suites
+   service [#th-all-tls]_. The TLS stack shall be configured to use only cipher suites
    that are generally considered secure [2]_, including forward
    secrecy. The communication shall be secured by the following:
 
    a. **Cipher suite selection**. The device shall only allow
       communication with generally agreed secure cipher suites
-      [th-tls-ciphers]_.
+      [#th-tls-ciphers]_.
 
    b. **Server certificate verification**. The server presented by the
-      server shall be verified [th-root-check]_.
+      server shall be verified [#th-root-check]_.
 
       i.   **Naming**. The certificate shall name the host and service
            the cloud service server is providing.
@@ -247,7 +247,7 @@ where data or assets are communicated between entities of the system.
       the service using a secret known only to that particular device.
       There are several options, and the technique used is generally
       mandated by the particular service provider being used
-      [th-tls-client-auth]_.
+      [#th-tls-client-auth]_.
 
       i.  **TLS client certificates**. The TLS protocol allows the
           client to present a certificate, and assert its knowledge of
@@ -278,7 +278,7 @@ where data or assets are communicated between entities of the system.
       SoC, or a Deterministic Random Bit Generator (Pseudo RBG) seeded
       by an entropy source within the SoC.  Please see NIST SP 800-90A
       for information on approved RBGs and NIST SP 800-90B for
-      information on testing a device's entropy source [th-entropy]_.
+      information on testing a device's entropy source [#th-entropy]_.
 
 4. **Communication with the time service**. Ideally, the device shall
    contain hardware that maintains a secure time. However, most SoCs in
@@ -296,12 +296,12 @@ where data or assets are communicated between entities of the system.
    a. **Initial provisioning**. During the initial provisioning stage,
       it is necessary to program the bootloader, an initial application
       image, a device secret, and initial configuration data
-      [th-initial-provision]_. In
+      [#th-initial-provision]_. In
       addition, the bootloader flash protection shall be installed. Of
       this information, only the device secret needs to differ per
       device. This secret shall be securely maintained, and destroyed in
       all locations outside of the device once it has been programmed
-      [th-initial-secret]_.
+      [#th-initial-secret]_.
 
    b. **Normal operation**. Normal operation includes the behavior
       described by the rest of this document.
@@ -313,12 +313,12 @@ where data or assets are communicated between entities of the system.
       device. It is also possible to program a new device secret, but if
       this is done it shall be done securely, and the new secret
       destroyed externally once programmed into the device
-      [th-reprovision]_.
+      [#th-reprovision]_.
 
    d. **Destruction**. To prevent the device secret from being used to
       spoof the device, upon decommissioning, the secret for a
       particular device shall be rendered ineffective
-      [th-destruction]_. Possibilities include:
+      [#th-destruction]_. Possibilities include:
 
       i.    Hardware destruction of the device.
 
@@ -340,64 +340,64 @@ requirements described above.
 Threats
 =======
 
-.. [th-imboot] Must boot with an immutable bootloader.
+.. [#th-imboot] Must boot with an immutable bootloader.
 
-.. [th-authrepl] Application image shall only be replaced with an
+.. [#th-authrepl] Application image shall only be replaced with an
    authorized image.
 
-.. [th-timely-update]
+.. [#th-timely-update]
    Application updates shall be done in a timely manner.
 
-.. [th-atomic-update]
+.. [#th-atomic-update]
    Application updates shall be atomic.
 
-.. [th-root-certs]
+.. [#th-root-certs]
    TLS must have a list of trusted root certificates.
 
-.. [th-root-check]
+.. [#th-root-check]
    TLS must verify root certificate from server is valid.
 
-.. [th-secret-storage]
+.. [#th-secret-storage]
    There must be a mechanism to securely store client secrets.  The
    least amount of code necessary shall have access to these secrets.
 
-.. [th-time]
+.. [#th-time]
    System must have moderately accurate notion of the current
    date/time.
 
-.. [th-conf]
+.. [#th-conf]
    The system must receive, and keep configuration data.
 
-.. [th-logs]
+.. [#th-logs]
    The system must log security-related events, and either store them
    locally, or send to a service.
 
-.. [th-all-tls]
+.. [#th-all-tls]
    All communications with the cloud service shall use TLS.
 
-.. [th-tls-ciphers]
+.. [#th-tls-ciphers]
    TLS shall be configured to allow only generally agreed cipher
    suites (including forward secrecy).
 
-.. [th-tls-client-auth]
+.. [#th-tls-client-auth]
    The device shall authenticate itself with the cloud provider using
    one of the methods described.
 
-.. [th-entropy]
+.. [#th-entropy]
    The TLS layer shall use a modern, accepted cryptographic random-bit
    generator seeded by an entropy source within the SoC.
 
-.. [th-initial-provision]
+.. [#th-initial-provision]
    The device shall have a per-device secret loaded before deployment.
 
-.. [th-initial-secret]
+.. [#th-initial-secret]
    The initial secret shall be securely maintained, and destroyed in
    any external location as soon as the device is provisioned.
 
-.. [th-reprovision]
+.. [#th-reprovision]
    Reprovisioning a device shall be done securely.
 
-.. [th-destruction]
+.. [#th-destruction]
    Upon decommissioning, the device secret shall be rendered
    ineffective.
 

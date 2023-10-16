@@ -210,7 +210,7 @@ requires the following hardware peripherals.
        * A High Frequency Clock (HFCLOCK) or active clock, for high precision
          packet timing and software based transceiver state switching with
          inter-frame space (tIFS) timing inside Bluetooth radio events
-   * - RTC [a]_
+   * - RTC [#rtc]_
      - NRF_RTC0
      - 1
      - **No**
@@ -225,19 +225,19 @@ requires the following hardware peripherals.
          4 for single timer tIFS switching) on first instance
        * 4 capture/compare registers for second instance, if single tIFS timer
          is not used.
-   * - PPI [b]_
+   * - PPI [#ppi]_
      - NRF_PPI
      - 21 channels (20 [2]_), and 2 channel groups [3]_
      - Yes [4]_
      - * Used for radio mode switching to achieve tIFS timings, for PA/LNA
          control
-   * - DPPI [c]_
+   * - DPPI [#dppi]_
      - NRF_DPPI
      -  20 channels, and 2 channel groups [3]_
      - Yes [4]_
      - * Used for radio mode switching to achieve tIFS timings, for PA/LNA
          control
-   * - SWI [d]_
+   * - SWI [#swi]_
      - NRF_SWI4 and NRF_SWI5, or NRF_SWI2 and NRF_SWI3 [5]_
      - 2
      - **No**
@@ -249,67 +249,51 @@ requires the following hardware peripherals.
      - **No**
      - * 2.4 GHz radio transceiver with multiple radio standards such as 1 Mbps,
          2 Mbps and Coded PHY S2/S8 Long Range Bluetooth Low Energy technology
-   * - RNG [e]_
+   * - RNG [#rng]_
      - NRF_RNG
      - 1
      - Yes
      -
-   * - ECB [f]_
+   * - ECB [#ecb]_
      - NRF_ECB
      - 1
      - **No**
      -
-   * - CBC-CCM [g]_
+   * - CBC-CCM [#cbc]_
      - NRF_CCM
      - 1
      - **No**
      -
-   * - AAR [h]_
+   * - AAR [#aar]_
      - NRF_AAR
      - 1
      - **No**
      -
-   * - GPIO [i]_
+   * - GPIO [#gpio]_
      - NRF_GPIO
      - 2 GPIO pins for PA and LNA, 1 each
      - Yes
      - * Additionally, 10 Debug GPIO pins (optional)
-   * - GPIOTE [j]_
+   * - GPIOTE [#gpiote]_
      - NRF_GPIOTE
      - 1
      - Yes
      - * Used for PA/LNA
-   * - TEMP [k]_
+   * - TEMP [#temp]_
      - NRF_TEMP
      - 1
      - Yes
      - * For RC sourced LFCLOCK calibration
-   * - UART [l]_
+   * - UART [#uart]_
      - NRF_UART0
      - 1
      - Yes
      - * For HCI interface in Controller only builds
-   * - IPC [m]_
+   * - IPC [#ipc]_
      - NRF_IPC [5]_
      - 1
      - Yes
      - * For HCI interface in Controller only builds
-
-
-.. [a] Real Time Counter (RTC)
-.. [b] Programmable Peripheral Interconnect (PPI)
-.. [c] Distributed Programmable Peripheral Interconnect (DPPI)
-.. [d] Software Interrupt (SWI)
-.. [e] Random Number Generator (RNG)
-.. [f] AES Electronic Codebook Mode Encryption (ECB)
-.. [g] Cipher Block Chaining (CBC) - Message Authentication Code with Counter
-       Mode encryption (CCM)
-.. [h] Accelerated Address Resolver (AAR)
-.. [i] General Purpose Input Output (GPIO)
-.. [j] GPIO tasks and events (GPIOTE)
-.. [k] Temperature sensor (TEMP)
-.. [l] Universal Asynchronous Receiver Transmitter (UART)
-.. [m] Interprocess Communication peripheral (IPC)
 
 
 .. [0] :kconfig:option:`CONFIG_BT_CTLR_TIFS_HW` ``=n``
@@ -318,3 +302,19 @@ requires the following hardware peripherals.
 .. [3] For software-based tIFS switching
 .. [4] Drivers that use nRFx interfaces
 .. [5] For nRF53x Series
+
+
+.. [#rtc] Real Time Counter (RTC)
+.. [#ppi] Programmable Peripheral Interconnect (PPI)
+.. [#dppi] Distributed Programmable Peripheral Interconnect (DPPI)
+.. [#swi] Software Interrupt (SWI)
+.. [#rng] Random Number Generator (RNG)
+.. [#ecb] AES Electronic Codebook Mode Encryption (ECB)
+.. [#cbc] Cipher Block Chaining (CBC) - Message Authentication Code with Counter
+          Mode encryption (CCM)
+.. [#aar] Accelerated Address Resolver (AAR)
+.. [#gpio] General Purpose Input Output (GPIO)
+.. [#gpiote] GPIO tasks and events (GPIOTE)
+.. [#temp] Temperature sensor (TEMP)
+.. [#uart] Universal Asynchronous Receiver Transmitter (UART)
+.. [#ipc] Interprocess Communication peripheral (IPC)
