@@ -133,8 +133,8 @@ Programming and Debugging
 *************************
 
 The Feather nRF52840 ships with the `Adafruit nRF52 Bootloader`_ which
-is compatible with BOSSA and supports flashing using `UF2`_. This allows
-easy flashing of new images, but does not support debugging the device.
+supports flashing using `UF2`_. This allows easy flashing of new images,
+but does not support debugging the device.
 
 Flashing
 ========
@@ -159,9 +159,12 @@ Flashing
          :goals: build
          :compact:
 
-#. Connect the board to your host computer using USB
+#. Connect the board to your host computer using USB.
 
-#. Tap the reset button twice quickly to enter bootloader mode
+#. Tap the reset button twice quickly to enter bootloader mode.
+   A mass storage device named `FTHR840BOOT` for (Express) or
+   `FTHRSNSBOOT` (Sense) should appear on the host. Ensure this is
+   mounted.
 
 #. Flash the image.
 
@@ -184,15 +187,6 @@ Flashing
          :compact:
 
 #. You should see the the red LED blink.
-
-UF2 Flashing
-============
-
-To enter the bootloader, connect the USB port of the Adafruit Feather
-nRF52840 to your host, and double tap the reset botton. A mass storage
-device with name ending in `BOOT` should appear on the host. Copy the
-`zephyr/zephyr.uf2` file from your build to the mass storage device.
-The board will automatically reset and launch the newly flashed application.
 
 References
 **********
