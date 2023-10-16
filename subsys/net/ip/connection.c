@@ -828,10 +828,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_IP) && (pkt_family == AF_INET || pkt_family == AF_INET6) &&
 	    !(is_mcast_pkt || is_bcast_pkt)) {
-		conn_send_icmp_error(pkt);
-
 		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+			net_tcp_reply_rst(pkt);
 			net_stats_update_tcp_seg_connrst(pkt_iface);
+		} else {
+			conn_send_icmp_error(pkt);
 		}
 	}
 
