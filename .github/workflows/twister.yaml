@@ -244,7 +244,7 @@ jobs:
           fi
 
       - if: github.event_name == 'schedule'
-        name: Run Tests with Twister (Daily)
+        name: Run Tests with Twister (Schedule)
         run: |
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
