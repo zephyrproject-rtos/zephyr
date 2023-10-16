@@ -207,7 +207,7 @@ scripting, missing authentication, and missing authorization. See the
 `CWE/SANS top 25`_ or `OWASP Top 10`_ for commonly used lists.
 
 .. Turn this into something specific. Can we find examples of
-   mistakes.  Perhaps an example of things Coverity has sent us.
+   mistakes.  Perhaps an example of things static analysis tool has sent us.
 
 .. _CWE/SANS top 25: http://cwe.mitre.org/top25/
 

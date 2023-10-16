@@ -105,8 +105,8 @@ The three major security measures currently implemented are:
    requires all code to be reviewed before being committed to the
    common repository. Furthermore, the reuse of proven building
    blocks such as network stacks increases the overall quality level
-   and guarantees stable APIs. Static code analyses are provided by
-   Coverity Scan.
+   and guarantees stable APIs. Static code analyses provide additional
+   quality checks.
 
 -  **Execution Protection** including thread separation, stack and
    memory protection is currently available in the upstream
@@ -180,17 +180,15 @@ the experience of the reviewer. Especially for security relevant code,
 concrete and detailed guidelines need to be developed and aligned with
 the developers (see: :ref:`secure code`).
 
-Static code analyses are run on the Zephyr code tree on a regular basis
-using the open source Coverity Scan tool. Coverity Scan now includes
-complexity analysis.
+Static code analyses are run on the Zephyr code tree on a regular basis,
+see :ref:`static_analysis`.
 
-Bug and issue tracking and management is performed using Jira. The term
+Bug and issue tracking and management is performed using Github. The term
 "survivability" was coined to cover pro-active security tasks such as
-security issue categorization and management. Initial effort has been
-started on the definition of vulnerability categorization and mitigation
-processes within Jira.
+security issue categorization and management. A problem identified as
+vulnerability is managed within Github security advisories.
 
-Issues determined by Coverity should have more stringent reviews before
+Issues determined by static analyses should have more stringent reviews before
 they are closed as non-issues (at least another person educated in
 security processes need to agree on non-issue before closing).
 
