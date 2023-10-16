@@ -315,6 +315,8 @@ enum sensor_attribute {
 	SENSOR_ATTR_CALIBRATION,
 	/** Enable/disable sensor features */
 	SENSOR_ATTR_FEATURE_MASK,
+	/** Enable/disable continuous mode. */
+	SENSOR_ATTR_CONTINUOUS_MODE,
 	/** Alert threshold or alert enable/disable */
 	SENSOR_ATTR_ALERT,
 	/** Free-fall duration represented in milliseconds.
