@@ -896,6 +896,13 @@ Libraries / Subsystems
 
   * Added support for CAN FD.
 
+* RTIO
+
+  * Added atomic completion counter fixing a race caught by unit tests
+  * Added a :c:macro:`RTIO_SQE_NO_RESPONSE` flag for submissions when no completion notification
+    is needed
+  * Removed unused Kconfig options for different executors
+
 HALs
 ****
 
