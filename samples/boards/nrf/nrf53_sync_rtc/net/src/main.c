@@ -13,6 +13,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
+#if (CONFIG_SOC_SERIES_BSIM_NRFXX)
+extern uint32_t shared_cell_buffer;
+static uint32_t shared_cell = (uintptr_t)&shared_cell_buffer;
+#else
+static uint32_t shared_cell = 0x20070000;
+#endif
+
 static void sync_callback(void)
 {
 	int32_t offset = z_nrf_rtc_timer_nrf53net_offset_get();
@@ -20,7 +27,6 @@ static void sync_callback(void)
 	__ASSERT(offset >= 0, "Synchronization should be completed");
 
 	uint32_t timestamp = sys_clock_tick_get_32() + offset;
-	uint32_t shared_cell = 0x20070000;
 	uint32_t app_timestamp = *(volatile uint32_t *)shared_cell;
 
 	LOG_INF("Local timestamp: %u, application core timestamp: %u",
