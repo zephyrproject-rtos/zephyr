@@ -539,9 +539,6 @@ static inline void mcux_i3c_request_daa(I3C_Type *base)
 /**
  * @brief Tell controller to start auto IBI.
  *
- * This also waits for the controller to indicate auto IBI
- * has started before returning.
- *
  * @param base Pointer to controller registers.
  */
 static inline void mcux_i3c_request_auto_ibi(I3C_Type *base)
@@ -549,8 +546,6 @@ static inline void mcux_i3c_request_auto_ibi(I3C_Type *base)
 	reg32_update(&base->MCTRL,
 		     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_IBIRESP_MASK | I3C_MCTRL_RDTERM_MASK,
 		     I3C_MCTRL_REQUEST_AUTO_IBI | I3C_MCTRL_IBIRESP_ACK_AUTO);
-
-	mcux_i3c_status_wait_clear(base, I3C_MSTATUS_MCTRLDONE_MASK);
 }
 
 /**
