@@ -17,6 +17,7 @@ struct pg_bits {
 	uint32_t CPA_bit;
 };
 
+#ifdef CONFIG_PM_DEVICE
 static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enable)
 {
 	uint16_t SPA_bit_mask = BIT(bits->SPA_bit);
@@ -65,6 +66,8 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 
 	return ret;
 }
+#endif /* CONFIG_PM_DEVICE */
+
 static int pd_intel_adsp_init(const struct device *dev)
 {
 	pm_device_init_suspended(dev);

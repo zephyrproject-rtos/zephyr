@@ -320,6 +320,7 @@ static int intel_adsp_gpdma_enable(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
 static int intel_adsp_gpdma_disable(const struct device *dev)
 {
 	const struct intel_adsp_gpdma_cfg *const dev_cfg = dev->config;
@@ -328,7 +329,8 @@ static int intel_adsp_gpdma_disable(const struct device *dev)
 	sys_write32(sys_read32(reg) & ~SHIM_CLKCTL_LPGPDMA_SPA, reg);
 	return 0;
 }
-#endif
+#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_SOC_SERIES_INTEL_ACE */
 
 static int intel_adsp_gpdma_power_on(const struct device *dev)
 {
