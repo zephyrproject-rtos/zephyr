@@ -66,8 +66,6 @@ Here's a quick summary of resources to help you find your way around:
   respectively. You can join the developer's list and search its archives at
   `Zephyr Development mailing list`_. The other `Zephyr mailing list
   subgroups`_ have their own archives and sign-up pages.
-* **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
-  The builds@lists.zephyrproject.org mailing list archives the CI nightly build results.
 * **Chat**: Real-time chat happens in Zephyr's Discord Server. Use
   this `Discord Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_
