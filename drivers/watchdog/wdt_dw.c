@@ -196,6 +196,15 @@ static int dw_wdt_init(const struct device *dev)
 	}
 #endif
 
+	/*
+	 * Enable watchdog if it needs to be enabled at boot.
+	 * watchdog timer will be started with maximum timeout
+	 * that is the default value.
+	 */
+	if (!IS_ENABLED(CONFIG_WDT_DISABLE_AT_BOOT)) {
+		dw_wdt_enable((uint32_t)reg_base);
+	}
+
 	return 0;
 }
 
