@@ -147,10 +147,9 @@ Zephyr offers a large and ever growing number of features including:
    systems. A native POSIX port lets you build and run Zephyr as a native
    application on Linux and other OSes, aiding development and testing.
 
-**Virtual File System Interface with LittleFS and FATFS Support**
-   LittleFS and FATFS Support,
-   FCB (Flash Circular Buffer) for memory constrained applications, and
-   file system enhancements for logging and configuration.
+**Virtual File System Interface with ext2, FatFs, and LittleFS Support**
+   ext2, LittleFS and FatFS support; FCB (Flash Circular Buffer) for memory constrained
+   applications.
 
 **Powerful multi-backend logging Framework**
    Support for log filtering, object dumping, panic mode, multiple backends
