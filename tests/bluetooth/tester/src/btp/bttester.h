@@ -117,3 +117,6 @@ uint8_t tester_unregister_cas(void);
 
 uint8_t tester_init_mcp(void);
 uint8_t tester_unregister_mcp(void);
+
+uint8_t tester_init_mcs(void);
+uint8_t tester_unregister_mcs(void);
