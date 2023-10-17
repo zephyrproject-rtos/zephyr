@@ -32,7 +32,7 @@
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
-static struct mem_drv_bank hpsram_bank[L2_SRAM_BANK_NUM];
+static struct sys_mm_drv_bank hpsram_bank[L2_SRAM_BANK_NUM];
 
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 #include <adsp_comm_widget.h>
