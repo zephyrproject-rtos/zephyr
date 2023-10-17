@@ -21,8 +21,6 @@
 #include <zephyr/sys/mem_stats.h>
 #include <stdint.h>
 
-#define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
-
 struct mem_drv_bank {
 	uint32_t  unmapped_pages;
 	uint32_t  mapped_pages;
