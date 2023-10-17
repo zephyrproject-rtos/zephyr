@@ -171,10 +171,10 @@ static struct lwm2m_engine_obj_inst *light_control_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(POWER_FACTOR_RID, res[avail], i, res_inst[avail], j,
 			  &power_factor_value[avail],
 			  sizeof(*power_factor_value));
-	INIT_OBJ_RES_DATA(COLOUR_RID, res[avail], i, res_inst[avail], j,
-			  colour[avail], LIGHT_STRING_LONG);
-	INIT_OBJ_RES_DATA(SENSOR_UNITS_RID, res[avail], i, res_inst[avail], j,
-			  units[avail], LIGHT_STRING_SHORT);
+	INIT_OBJ_RES_DATA_LEN(COLOUR_RID, res[avail], i, res_inst[avail], j,
+			  colour[avail], LIGHT_STRING_LONG, 0);
+	INIT_OBJ_RES_DATA_LEN(SENSOR_UNITS_RID, res[avail], i, res_inst[avail], j,
+			  units[avail], LIGHT_STRING_SHORT, 0);
 	INIT_OBJ_RES_OPTDATA(APPLICATION_TYPE_RID, res[avail], i,
 			     res_inst[avail], j);
 

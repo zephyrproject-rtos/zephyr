@@ -301,11 +301,10 @@ static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 			  &server_flag_store_notify[index],
 			  sizeof(*server_flag_store_notify));
 	/* Mark Transport Binding RO as we only support UDP atm */
-	INIT_OBJ_RES_DATA(SERVER_TRANSPORT_BINDING_ID, res[index], i,
-			  res_inst[index], j,
-			  transport_binding[index], TRANSPORT_BINDING_LEN);
-	INIT_OBJ_RES_EXECUTE(SERVER_REG_UPDATE_TRIGGER_ID, res[index], i,
-			     update_trigger_cb);
+	INIT_OBJ_RES_DATA_LEN(SERVER_TRANSPORT_BINDING_ID, res[index], i, res_inst[index], j,
+			      transport_binding[index], TRANSPORT_BINDING_LEN,
+			      strlen(transport_binding[index]) + 1);
+	INIT_OBJ_RES_EXECUTE(SERVER_REG_UPDATE_TRIGGER_ID, res[index], i, update_trigger_cb);
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
 	INIT_OBJ_RES_EXECUTE(SERVER_BOOTSTRAP_UPDATE_TRIGGER_ID, res[index], i,
 			     bootstrap_trigger_cb);
