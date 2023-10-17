@@ -544,6 +544,17 @@ static void node_configure(void)
 	uint16_t va;
 	struct bt_mesh_cfg_cli_mod_pub pub_params;
 
+	/* Set Network Transmit Count state on the device greater than on provisioner to increase
+	 * probability of reception responses.
+	 */
+	uint8_t net_transmit;
+
+	net_transmit = BT_MESH_TRANSMIT(3, 20);
+	err = bt_mesh_cfg_cli_net_transmit_set(test_netkey_idx, TEST_ADDR, net_transmit, &status);
+	if (err || status != net_transmit) {
+		FAIL("Net transmit set failed (err %d, transmit %x)", err, status);
+	}
+
 	struct test_appkey_t test_appkeys[] = {
 		{ .idx = TEST_APPKEY_0_IDX, .key = TEST_APPKEY_0_KEY },
 		{ .idx = TEST_APPKEY_1_IDX, .key = TEST_APPKEY_1_KEY },
