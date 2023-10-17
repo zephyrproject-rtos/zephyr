@@ -233,7 +233,7 @@ become shared, meaning the two ISR/argument pairs (previous one and the one that
 has just been registered) will be invoked each time the interrupt is triggered.
 The entities that make use of an interrupt line in the shared interrupt context
 are known as clients. The maximum number of allowed clients for an interrupt is
-controlled by :kconfig:option:`SHARED_IRQ_MAX_NUM_CLIENTS`.
+controlled by :kconfig:option:`CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS`.
 
 Interrupt sharing is transparent to the user. As such, the user may register
 interrupts using :c:macro:`IRQ_CONNECT` and :c:func:`irq_connect_dynamic` as

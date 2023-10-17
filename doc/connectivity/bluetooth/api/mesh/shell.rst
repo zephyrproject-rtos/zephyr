@@ -344,7 +344,7 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 
 	Get or set the mesh node's UUID, used in the unprovisioned beacons.
 
-	* ``UUID``: If present, new 128-bit UUID value. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. If omitted, the current UUID will be printed. To enable this command, the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
+	* ``UUID``: If present, new 128-bit UUID value. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. If omitted, the current UUID will be printed. To enable this command, the :kconfig:option:`CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
 
 
 ``mesh prov input-num <Number>``
@@ -373,7 +373,7 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 	Set or clear the static OOB authentication value. The static OOB authentication value must
 	be set before provisioning starts to have any effect. The static OOB value must be same on
 	both participants in the provisioning. To enable this command, the
-	:kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
+	:kconfig:option:`CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
 
 	* ``Val``: If present, indicates the new hexadecimal value of the static OOB. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. If omitted, the static OOB value is cleared.
 
@@ -394,7 +394,7 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 
 	Enable or disable printing of incoming unprovisioned beacons. Allows a provisioner device to
 	detect nearby unprovisioned devices and provision them. To enable this command, the
-	:kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
+	:kconfig:option:`CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE` option must be enabled.
 
 	* ``Val``: Whether to enable the unprovisioned beacon printing.
 
@@ -499,16 +499,16 @@ enabled, and as long as the Configuration Client model is present in the model c
 application. This shell module can be used for configuring itself and other nodes in the mesh
 network.
 
-The Configuration Client uses general message parameters set by ``mesh target dst`` and
-``mesh target net`` to target specific nodes. When the Bluetooth mesh shell node is provisioned,
-given that the :kconfig:option:`BT_MESH_SHELL_PROV_CTX_INSTANCE` option is enabled with the shell
+The Configuration Client uses general message parameters set by ``mesh target dst`` and ``mesh
+target net`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, given that
+the :kconfig:option:`CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE` option is enabled with the shell
 provisioning context initialized, the Configuration Client model targets itself by default.
 Similarly, when another node has been provisioned by the Bluetooth mesh shell, the Configuration
 Client model targets the new node. In most common use-cases, the Configuration Client is depending
 on the provisioning features and the Configuration database to be fully functional. The
-Configuration Client always sends messages using the Device key bound to the destination address,
-so it will only be able to configure itself and the mesh nodes it provisioned. The following steps
-are an example of how you can set up a device to start using the Configuration Client commands:
+Configuration Client always sends messages using the Device key bound to the destination address, so
+it will only be able to configure itself and the mesh nodes it provisioned. The following steps are
+an example of how you can set up a device to start using the Configuration Client commands:
 
 * Initialize the client node (``mesh init``).
 * Create the CDB (``mesh cdb create``).
