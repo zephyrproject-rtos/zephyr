@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SDHC Controller node
+
+compatible: "cdns,sdhc"
+
+include: [sdhc.yaml, reset-device.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    description: clock-frequency for SDHC
+  reg:
+    required: true
+    description: register space
+  power_delay_ms:
+    type: int
+    required: true
+    description: delay required to switch on the SDHC
