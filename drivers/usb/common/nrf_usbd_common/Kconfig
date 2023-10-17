@@ -1,0 +1,20 @@
+# Copyright (c) 2016-2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+module = NRF_USBD_COMMON
+module-str = nRF USBD common
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRF_USBD_COMMON
+	bool "USBD driver"
+	depends on HAS_NRFX
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
+
+config NRF_USBD_ISO_IN_ZLP
+	bool "Send ZLP on ISO IN when not ready"
+	depends on NRF_USBD_COMMON
+	default y
+	help
+	  Controls the response of the ISO IN endpoint to an IN token when no
+	  data is ready to be sent. When enabled, ZLP is sent when no data is
+	  ready. When disabled, no response is sent (bus timeout occurs).

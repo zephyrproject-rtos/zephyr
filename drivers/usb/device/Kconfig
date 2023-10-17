@@ -104,7 +104,7 @@ config USB_NRFX
 	bool "Nordic Semiconductor USB Device Controller Driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_USBD_ENABLED
-	select NRFX_USBD
+	select NRF_USBD_COMMON
 	select NRFX_POWER
 	imply USB_DEVICE_REMOTE_WAKEUP
 	help
