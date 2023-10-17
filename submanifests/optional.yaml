@@ -4,7 +4,7 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
   projects:
     - name: chre
-      revision: b7955c27e50485b7dafdc3888d7d6afdc2ac6d96
+      revision: 3b32c76efee705af146124fb4190f71be5a4e36e
       path: modules/lib/chre
       remote: upstream
       groups:
