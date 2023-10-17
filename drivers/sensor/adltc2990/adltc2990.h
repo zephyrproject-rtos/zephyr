@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,14 +18,14 @@ enum adltc2990_monitor_pins {
 	V4,
 	INTERNAL_TEMPERATURE,
 	SUPPLY_VOLTAGE
-} adltc2990_monitor_pins;
+};
 
 enum adltc2990_monitoring_type {
 	NOTHING,
 	VOLTAGE_DIFFERENTIAL,
 	VOLTAGE_SINGLEENDED,
 	TEMPERATURE
-} adltc2990_monitoring_type;
+};
 
 union voltage_divider_resistors {
 	struct {

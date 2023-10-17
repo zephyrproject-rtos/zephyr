@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -135,9 +134,9 @@ static int adltc2990_trigger_measurement(const struct device *dev)
 	return i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_TRIGGER, 0x1);
 }
 
-static int32_t adltc2990_get_property_value(const struct device *dev,
-					    enum adltc2990_monitoring_type type,
-					    enum adltc2990_monitor_pins pin)
+static int32_t adltc2990_fetch_property_value(const struct device *dev,
+					      enum adltc2990_monitoring_type type,
+					      enum adltc2990_monitor_pins pin)
 {
 	const struct adltc2990_config *cfg = dev->config;
 
@@ -200,9 +199,9 @@ static int32_t adltc2990_get_property_value(const struct device *dev,
 		return -EINVAL;
 	}
 
-	int16_t value = (msb_value<<8)+lsb_value;
+	int16_t value = (msb_value << 8) + lsb_value;
 
-	int32_t voltage_value = (value << (31-negative_bit_index))>>(31-negative_bit_index);
+	int32_t voltage_value = (value << (31 - negative_bit_index)) >> (31 - negative_bit_index);
 
 	return (voltage_value * conversion_factor) / 100;
 }
@@ -244,7 +243,7 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 	switch (chan) {
 	case SENSOR_CHAN_DIE_TEMP: {
 		data->internal_temperature =
-			adltc2990_get_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE);
+			adltc2990_fetch_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE);
 		break;
 	}
 	case SENSOR_CHAN_CURRENT: {
@@ -254,13 +253,13 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		}
 		if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
 			data->pins_v1_v2_values[0] =
-				(adltc2990_get_property_value(dev, VOLTAGE_DIFFERENTIAL, V1) *
+				(adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V1) *
 				 ADLTC2990_MICROOHM_CONVERSION_FACTOR) /
 				cfg->pins_v1_v2.pins_current_resistor;
 		}
 		if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
 			data->pins_v3_v4_values[0] =
-				(adltc2990_get_property_value(dev, VOLTAGE_DIFFERENTIAL, V3) *
+				(adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3) *
 				 ADLTC2990_MICROOHM_CONVERSION_FACTOR) /
 				cfg->pins_v3_v4.pins_current_resistor;
 		}
@@ -268,52 +267,44 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 	}
 	case SENSOR_CHAN_VOLTAGE: {
 		data->supply_voltage =
-			adltc2990_get_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE) +
+			adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE) +
 			2500000;
 
 		if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
 			data->pins_v1_v2_values[0] =
-				adltc2990_get_property_value(dev, VOLTAGE_DIFFERENTIAL, V1);
+				adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V1);
 		} else if (mode_v1_v2 == VOLTAGE_SINGLEENDED) {
-			uint32_t v1_r1 =
-				cfg->pins_v1_v2.voltage_divider_resistors.v1_r1_r2[0];
-			uint32_t v1_r2 =
-				cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[1];
+			uint32_t v1_r1 = cfg->pins_v1_v2.voltage_divider_resistors.v1_r1_r2[0];
+			uint32_t v1_r2 = cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[1];
 			voltage_divider_ratio = DIV_ROUND_CLOSEST(v1_r1 + v1_r2, v1_r2);
 			data->pins_v1_v2_values[0] =
-				adltc2990_get_property_value(dev, VOLTAGE_SINGLEENDED, V1) *
+				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V1) *
 				voltage_divider_ratio;
 
-			uint32_t v2_r1 =
-				cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[0];
-			uint32_t v2_r2 =
-				cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[1];
+			uint32_t v2_r1 = cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[0];
+			uint32_t v2_r2 = cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[1];
 			voltage_divider_ratio = DIV_ROUND_CLOSEST(v2_r1 + v2_r2, v2_r2);
 			data->pins_v1_v2_values[1] =
-				adltc2990_get_property_value(dev, VOLTAGE_SINGLEENDED, V2) *
+				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V2) *
 				voltage_divider_ratio;
 		}
 
 		if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
 			data->pins_v3_v4_values[0] =
-				adltc2990_get_property_value(dev, VOLTAGE_DIFFERENTIAL, V3);
+				adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3);
 		} else if (mode_v3_v4 == VOLTAGE_SINGLEENDED) {
-			uint32_t v3_r1 =
-				cfg->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[0];
-			uint32_t v3_r2 =
-				cfg->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[1];
+			uint32_t v3_r1 = cfg->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[0];
+			uint32_t v3_r2 = cfg->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[1];
 			voltage_divider_ratio = DIV_ROUND_CLOSEST(v3_r1 + v3_r2, v3_r2);
 			data->pins_v3_v4_values[0] =
-				adltc2990_get_property_value(dev, VOLTAGE_SINGLEENDED, V3) *
+				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V3) *
 				voltage_divider_ratio;
 
-			uint32_t v4_r1 =
-				cfg->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[0];
-			uint32_t v4_r2 =
-				cfg->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[1];
+			uint32_t v4_r1 = cfg->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[0];
+			uint32_t v4_r2 = cfg->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[1];
 			voltage_divider_ratio = DIV_ROUND_CLOSEST((v4_r1 + v4_r2), v4_r2);
 			data->pins_v3_v4_values[1] =
-				adltc2990_get_property_value(dev, VOLTAGE_SINGLEENDED, V4) *
+				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V4) *
 				voltage_divider_ratio;
 		}
 		break;
@@ -325,11 +316,11 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		}
 		if (mode_v1_v2 == TEMPERATURE) {
 			data->pins_v1_v2_values[0] =
-				adltc2990_get_property_value(dev, TEMPERATURE, V1);
+				adltc2990_fetch_property_value(dev, TEMPERATURE, V1);
 		}
 		if (mode_v3_v4 == TEMPERATURE) {
 			data->pins_v3_v4_values[1] =
-				adltc2990_get_property_value(dev, TEMPERATURE, V3);
+				adltc2990_fetch_property_value(dev, TEMPERATURE, V3);
 		}
 		break;
 	}
@@ -450,17 +441,17 @@ static const struct sensor_driver_api adltc2990_driver_api = {
 		.temp_format = DT_INST_PROP(inst, temperature_format),                             \
 		.acq_format = DT_INST_PROP(inst, acquistion_format),                               \
 		.measurement_mode = DT_INST_PROP(inst, measurement_mode),                          \
-		.pins_v1_v2.pins_current_resistor =                                  \
+		.pins_v1_v2.pins_current_resistor =                                                \
 			DT_INST_PROP_OR(inst, pins_v1_v2_current_resistor, 1),                     \
-		.pins_v1_v2.voltage_divider_resistors.v1_r1_r2 =                     \
+		.pins_v1_v2.voltage_divider_resistors.v1_r1_r2 =                                   \
 			DT_INST_PROP_OR(inst, pin_v1_voltage_divider_resistors, NULL),             \
-		.pins_v1_v2.voltage_divider_resistors.v2_r1_r2 =                     \
+		.pins_v1_v2.voltage_divider_resistors.v2_r1_r2 =                                   \
 			DT_INST_PROP_OR(inst, pin_v2_voltage_divider_resistors, NULL),             \
-		.pins_v3_v4.pins_current_resistor =                                  \
+		.pins_v3_v4.pins_current_resistor =                                                \
 			DT_INST_PROP_OR(inst, pins_v3_v4_current_resistor, 1),                     \
-		.pins_v3_v4.voltage_divider_resistors.v3_r1_r2 =                     \
+		.pins_v3_v4.voltage_divider_resistors.v3_r1_r2 =                                   \
 			DT_INST_PROP_OR(inst, pin_v3_voltage_divider_resistors, NULL),             \
-		.pins_v3_v4.voltage_divider_resistors.v4_r1_r2 =                     \
+		.pins_v3_v4.voltage_divider_resistors.v4_r1_r2 =                                   \
 			DT_INST_PROP_OR(inst, pin_v4_voltage_divider_resistors, NULL)};            \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, adltc2990_init, NULL, &adltc2990_data_##inst,           \
