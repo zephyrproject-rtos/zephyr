@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static struct bt_micp_mic_ctlr *mic_ctlr;
 static struct bt_micp_mic_dev_register_param mic_dev_register_param;
+static uint8_t mute_state;
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 static struct bt_micp_included micp_included;
@@ -85,8 +86,10 @@ static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err, ui
 {
 	struct bt_conn *conn;
 
+	mute_state = mute;
+
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
-	btp_send_micp_mute_state_ev(conn, err, mute);
+	btp_send_micp_mute_state_ev(conn, err, mute_state);
 
 	LOG_DBG("MICP Mute cb (%d)", err);
 }
@@ -94,7 +97,6 @@ static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err, ui
 static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err)
 {
 	struct bt_conn *conn;
-	uint8_t mute_state = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
 	btp_send_micp_mute_state_ev(conn, err, mute_state);
@@ -105,7 +107,6 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, int
 static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err)
 {
 	struct bt_conn *conn;
-	uint8_t mute_state = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 
 	bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
 	btp_send_micp_mute_state_ev(conn, err, mute_state);
