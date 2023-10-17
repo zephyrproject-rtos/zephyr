@@ -1071,6 +1071,7 @@ static int mcux_i3c_transfer(const struct device *dev,
 	I3C_Type *base = config->base;
 	uint32_t intmask;
 	int ret;
+	bool send_broadcast = true;
 
 	if (target->dynamic_addr == 0U) {
 		ret = -EINVAL;
@@ -1121,11 +1122,31 @@ static int mcux_i3c_transfer(const struct device *dev,
 			}
 		}
 
+		/*
+		 * Send broadcast header on first transfer or after a STOP,
+		 * unless flag is set not to.
+		 */
+		if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
+			ret = mcux_i3c_request_emit_start(base, I3C_BROADCAST_ADDR,
+							  false, false, 0);
+			if (ret < 0) {
+				LOG_ERR("emit start of broadcast addr failed, error (%d)",
+					ret);
+				goto out_xfer_i3c_stop_unlock;
+			}
+			send_broadcast = false;
+		}
+
 		ret = mcux_i3c_do_one_xfer(base, dev_data, target->dynamic_addr, false,
 					   msgs[i].buf, msgs[i].len,
 					   is_read, emit_start, emit_stop, no_ending);
 		if (ret < 0) {
 			goto out_xfer_i3c_stop_unlock;
+		}
+
+		if (emit_stop) {
+			/* After a STOP, send broadcast header before next msg */
+			send_broadcast = true;
 		}
 	}
 
