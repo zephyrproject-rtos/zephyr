@@ -27,6 +27,8 @@
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
 
+#define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
+
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
