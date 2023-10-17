@@ -18,15 +18,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
 
-#ifndef NRF_USBD_COMMON_EARLY_DMA_PROCESS
-/* Try to process DMA request when endpoint transmission has been detected
- * and just after last EasyDMA has been processed.
- * It speeds up the transmission a little (about 10% measured)
- * with a cost of more CPU power used.
- */
-#define NRF_USBD_COMMON_EARLY_DMA_PROCESS 1
-#endif
-
 #ifndef NRF_USBD_COMMON_STARTED_EV_ENABLE
 #define NRF_USBD_COMMON_STARTED_EV_ENABLE 0
 #endif
@@ -988,11 +979,6 @@ static inline void nrf_usbd_epout_dma_handler(nrf_usbd_common_ep_t ep)
 	} else {
 		/* Nothing to do */
 	}
-
-#if NRF_USBD_COMMON_EARLY_DMA_PROCESS
-	/* Speed up */
-	usbd_dmareq_process();
-#endif
 }
 
 /**
@@ -1246,10 +1232,6 @@ static void ev_epdata_handler(void)
 		dataepstatus &= ~(1UL << bitpos);
 
 		(void)(usbd_ep_data_handler(ep, bitpos));
-	}
-	if (NRF_USBD_COMMON_EARLY_DMA_PROCESS) {
-		/* Speed up */
-		usbd_dmareq_process();
 	}
 }
 
