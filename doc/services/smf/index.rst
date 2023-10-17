@@ -3,6 +3,8 @@
 State Machine Framework
 #######################
 
+.. highlight:: c
+
 Overview
 ========
 
