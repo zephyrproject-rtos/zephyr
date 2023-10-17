@@ -251,8 +251,8 @@ static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 			 NULL, current_time_post_write_cb, NULL);
 	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_DATA(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
-			  res_inst, j, binding_mode, DEVICE_STRING_SHORT);
+	INIT_OBJ_RES_DATA_LEN(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
+			  res_inst, j, binding_mode, DEVICE_STRING_SHORT, strlen(binding_mode) + 1);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TYPE_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_HARDWARE_VERSION_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_SOFTWARE_VERSION_ID, res, i, res_inst, j);
