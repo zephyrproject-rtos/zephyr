@@ -83,60 +83,85 @@ SECTION_FUNC(TEXT, __sparc_trap_window_underflow)
  *   "By executing a type 3 trap, a process asks the system to flush all its
  *   register windows to the stack."
  *
- * This implementation uses the window overflow trap handler to perform the
- * actual window flush.
- *
  * On entry:
  * %l0: psr
  * %l1: pc
  * %l2: npc
  */
 SECTION_FUNC(TEXT, __sparc_trap_flush_windows)
-	/* push a few registers which are needed later to the stack */
-	sub	%sp, 0x10, %sp
-	std	%l0, [%sp + 0x40 + 0x00]
-	st	%l2, [%sp + 0x40 + 0x08]
-	st	%g2, [%sp + 0x40 + 0x0c]
+	/* Save global registers used by the routine */
+	mov	%g3, %l3
+	mov	%g4, %l4
+	mov	%g5, %l5
+	mov	%g1, %l6
+	mov	%g2, %l7
 
-	restore
-	/* In window where we trapped from. This window will not be flushed. */
+	/* Uses g3=psr, g4=1, g2=wim, g1,g5=scratch */
+	mov	%l0, %g3
+	set	1, %g4
+	rd	%wim, %g2
 
-	/* Set highest processor interrupt level and enable traps. */
-	rd	%psr, %g2
-	or	%g2, PSR_PIL, %g2
-	wr	%g2, PSR_ET, %psr
-	nop
-	nop
+	/*
+	 * We can always restore the previous window. Check if we can restore
+	 * the window after that.
+	 */
+	and	%l0, PSR_CWP, %g1
+	add	%g1, 2, %g1
+	ba	.LcheckNextWindow
+	 restore
 
-	/* Execute "save" NWINDOWS-1 times. */
-	set     CONFIG_SPARC_NWIN-2, %g2
-1:
-	save
-	cmp	%g2, %g0
-	bne	1b
-	 sub	%g2, 1, %g2
+	/* Flush window to stack */
+.LflushWindow:
+	std	%l0, [%sp + 0x00]
+	std	%l2, [%sp + 0x08]
+	std	%l4, [%sp + 0x10]
+	std	%l6, [%sp + 0x18]
+	std	%i0, [%sp + 0x20]
+	std	%i2, [%sp + 0x28]
+	std	%i4, [%sp + 0x30]
+	std	%i6, [%sp + 0x38]
 
-	/* Execute "restore" NWINDOWS-1 times. */
-	set     CONFIG_SPARC_NWIN-2, %g2
-2:
-	restore
-	cmp	%g2, %g0
-	bne	2b
-	 sub	%g2, 1, %g2
+	/*
+	 * Check if next window is invalid by comparing
+	 * (1 << ((cwp + 1) % NWIN)) with WIM
+	 */
+.LcheckNextWindow:
+	set	CONFIG_SPARC_NWIN, %g5
+	cmp	%g1, %g5
+	bge,a	.Lnowrap
+	 sub	%g1, %g5, %g1
+.Lnowrap:
+	sll	%g4, %g1, %g5
+	cmp	%g5, %g2
+	be	.LflushWindowDone
+	 inc	%g1
 
-	save
+	/* We need to flush the next window */
+	ba	.LflushWindow
+	 restore
 
-	/* pop registers from stack which are used for the trap return */
-	ldd	[%sp + 0x40 + 0x00], %l0
-	ld	[%sp + 0x40 + 0x08], %l2
-	ld	[%sp + 0x40 + 0x0c], %g2
-	add	%sp, 0x10, %sp
-
-	/* Restore %psr as it was on trap entry. */
-	wr	%l0, %psr
-	nop
-	nop
-	nop
-
+	/*
+	 * All used windows have been flushed. Set WIM to cause trap for CWP+2.
+	 * When we return from this trap it will be CWP+1 that will trap, that
+	 * is, the next restore or rett.
+	 */
+.LflushWindowDone:
+	/* We can not restore %psr from %l0 because we may be in any window. */
+	wr	%g3, %psr
+	and	%g3, PSR_CWP, %g1
+	add	%g1, 2, %g1
+	set	CONFIG_SPARC_NWIN, %g5
+	/* We are now back in the trap window. */
+	cmp	%g1, %g5
+	bge,a	.Lnowrap2
+	 sub	%g1, %g5, %g1
+.Lnowrap2:
+	sll	%g4, %g1, %g1
+	wr	%g1, %wim
+	mov	%l3, %g3
+	mov	%l4, %g4
+	mov	%l5, %g5
+	mov	%l6, %g1
+	mov	%l7, %g2
 	jmp	%l2
 	 rett	%l2 + 4
