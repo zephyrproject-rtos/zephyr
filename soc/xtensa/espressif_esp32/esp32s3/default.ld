@@ -167,6 +167,7 @@ SECTIONS
    */
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(0x10))
   {
+    _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
 
     *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
@@ -218,7 +219,6 @@ SECTIONS
     *(.rodata_wlog)
     *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
-    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
@@ -235,6 +235,7 @@ SECTIONS
    * This is used to calculate the size of the _image_drom_size variable */
   SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
   {
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(16);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -494,7 +495,6 @@ SECTIONS
   {
     . = SIZEOF(_RODATA_SECTION_NAME);
     . = ALIGN(IROM_SEG_ALIGN) + 0x20;
-    _rodata_reserved_start = .;
   } GROUP_LINK_IN(FLASH_CODE_REGION)
 
   .flash.text : ALIGN(IROM_SEG_ALIGN)
