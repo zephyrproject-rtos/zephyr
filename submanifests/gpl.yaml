@@ -1,0 +1,11 @@
+manifest:
+  remotes:
+    - name: soburi
+      url-base: https://github.com/soburi
+  projects:
+    - name: gsoc-2022-arduino-core
+      path: optiomal/modules/lib/arduino-api
+      revision: 7495893c47fbe6e1104597dce0dd969b733014a5
+      remote: soburi
+      groups:
+        - gpl
