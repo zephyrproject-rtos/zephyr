@@ -173,10 +173,15 @@ static void b91_update_rssi_and_lqi(struct net_pkt *pkt)
 }
 
 /* Prepare TX buffer */
-static void b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
+static int b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 {
 	unsigned char rf_data_len;
 	unsigned int rf_tx_dma_len;
+
+	/* See Telink SDK Dev Handbook, AN-21010600, section 21.5.2.2. */
+	if (payload_len > (B91_TRX_LENGTH - B91_PAYLOAD_OFFSET - IEEE802154_FCS_LENGTH)) {
+		return -EINVAL;
+	}
 
 	rf_data_len = payload_len + 1;
 	rf_tx_dma_len = rf_tx_packet_dma_len(rf_data_len);
@@ -184,8 +189,10 @@ static void b91_set_tx_payload(uint8_t *payload, uint8_t payload_len)
 	data.tx_buffer[1] = (rf_tx_dma_len >> 8) & 0xff;
 	data.tx_buffer[2] = (rf_tx_dma_len >> 16) & 0xff;
 	data.tx_buffer[3] = (rf_tx_dma_len >> 24) & 0xff;
-	data.tx_buffer[4] = payload_len + 2;
+	data.tx_buffer[4] = payload_len + IEEE802154_FCS_LENGTH;
 	memcpy(data.tx_buffer + B91_PAYLOAD_OFFSET, payload, payload_len);
+
+	return 0;
 }
 
 /* Enable ack handler */
@@ -243,7 +250,10 @@ static void b91_send_ack(uint8_t seq_num)
 {
 	uint8_t ack_buf[] = { B91_ACK_TYPE, 0, seq_num };
 
-	b91_set_tx_payload(ack_buf, sizeof(ack_buf));
+	if (b91_set_tx_payload(ack_buf, sizeof(ack_buf))) {
+		return;
+	}
+
 	rf_set_txmode();
 	delay_us(CONFIG_IEEE802154_B91_SET_TXRX_DELAY_US);
 	rf_tx_pkt(data.tx_buffer);
@@ -534,7 +544,10 @@ static int b91_tx(const struct device *dev,
 	}
 
 	/* prepare tx buffer */
-	b91_set_tx_payload(frag->data, frag->len);
+	status = b91_set_tx_payload(frag->data, frag->len);
+	if (status) {
+		return status;
+	}
 
 	/* reset semaphores */
 	k_sem_reset(&b91->tx_wait);
