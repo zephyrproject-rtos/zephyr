@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2023 Dhruva Gole <goledhruva@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+	zephyr,user {
+		digital-pin-gpios = <&boosterpack_header 4 0>,	/* GPIO_12 */
+				<&boosterpack_header 5 0>,	/* GPIO_06 */
+				<&boosterpack_header 7 0>,	/* GPIO_14 */
+				<&boosterpack_header 9 0>,	/* I2C_SCL | YELLOW_LED */
+				<&boosterpack_header 10 0>,	/* I2C_SDA | GREEN_LED  */
+				<&boosterpack_header 11 0>,	/* GPIO_22 */
+				<&boosterpack_header 12 0>,	/* GPIO_01 */
+				<&boosterpack_header 13 0>,	/* GPIO_25 */
+				<&boosterpack_header 14 0>,	/* GPIO_15 */
+				<&boosterpack_header 15 0>,	/* GPIO_16 */
+				<&boosterpack_header 17 0>,	/* GPIO_31 */
+				<&boosterpack_header 18 0>,	/* GPIO_17 */
+				<&boosterpack_header 19 0>,	/* GPIO_28 */
+				<&boosterpack_header 23 0>,	/* GPIO_02 | AIN0 */
+				<&boosterpack_header 24 0>,	/* GPIO_05 | AIN3 */
+				<&boosterpack_header 25 0>,	/* GPIO_03 | AIN1 */
+				<&boosterpack_header 26 0>,	/* GPIO_04 | AIN2 */
+				<&boosterpack_header 27 0>,	/* GPIO_08 */
+				<&boosterpack_header 28 0>,	/* GPIO_30 */
+				<&boosterpack_header 29 0>,	/* GPIO_09 | RED_LED | I2S_DOUT*/
+				<&boosterpack_header 30 0>,	/* GPIO_00 */
+				<&boosterpack_header 31 0>,	/* GPIO_24 */
+				<&boosterpack_header 32 0>;	/* GPIO_23 */
+		builtin-led-gpios = <&boosterpack_header 10 0>;	/*  GREEN_LED  */
+		serials = <&boosterpack_serial>;
+		i2cs = <&boosterpack_i2c>;
+	};
+ };
