@@ -21,7 +21,7 @@
 #include <zephyr/sys/mem_stats.h>
 #include <stdint.h>
 
-struct mem_drv_bank {
+struct sys_mm_drv_bank {
 	uint32_t  unmapped_pages;
 	uint32_t  mapped_pages;
 	uint32_t  max_mapped_pages;
@@ -39,7 +39,7 @@ struct mem_drv_bank {
  * @param bank Pointer to the memory bank structure used for tracking
  * @param bank_pages Number of pages in the memory bank
  */
-void sys_mm_drv_bank_init(struct mem_drv_bank *bank, uint32_t bank_pages);
+void sys_mm_drv_bank_init(struct sys_mm_drv_bank *bank, uint32_t bank_pages);
 
 /**
  * @brief Track the mapping of a page in the specified memory bank
@@ -51,7 +51,7 @@ void sys_mm_drv_bank_init(struct mem_drv_bank *bank, uint32_t bank_pages);
  *
  * @return The number of pages mapped within the memory bank
  */
-uint32_t sys_mm_drv_bank_page_mapped(struct mem_drv_bank *bank);
+uint32_t sys_mm_drv_bank_page_mapped(struct sys_mm_drv_bank *bank);
 
 /**
  * @brief Track the unmapping of a page in the specified memory bank
@@ -63,7 +63,7 @@ uint32_t sys_mm_drv_bank_page_mapped(struct mem_drv_bank *bank);
  *
  * @return The number of unmapped pages within the memory bank
  */
-uint32_t sys_mm_drv_bank_page_unmapped(struct mem_drv_bank *bank);
+uint32_t sys_mm_drv_bank_page_unmapped(struct sys_mm_drv_bank *bank);
 
 /**
  * @brief Reset the max number of pages mapped in the bank
@@ -74,7 +74,7 @@ uint32_t sys_mm_drv_bank_page_unmapped(struct mem_drv_bank *bank);
  *
  * @param bank Pointer to the memory bank's data structure
  */
-void sys_mm_drv_bank_stats_reset_max(struct mem_drv_bank *bank);
+void sys_mm_drv_bank_stats_reset_max(struct sys_mm_drv_bank *bank);
 
 /**
  * @brief Retrieve the memory usage stats for the specified memory bank
@@ -84,7 +84,7 @@ void sys_mm_drv_bank_stats_reset_max(struct mem_drv_bank *bank);
  * @param bank Pointer to the memory bank's data structure
  * @param stats Pointer to memory into which to copy the system memory stats
  */
-void sys_mm_drv_bank_stats_get(struct mem_drv_bank *bank,
+void sys_mm_drv_bank_stats_get(struct sys_mm_drv_bank *bank,
 			       struct sys_memory_stats *stats);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H */
