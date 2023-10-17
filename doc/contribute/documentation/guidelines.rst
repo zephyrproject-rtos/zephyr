@@ -3,6 +3,8 @@
 Documentation Guidelines
 ########################
 
+.. highlight:: rst
+
 .. note::
 
    For instructions on building the documentation, see :ref:`zephyr_doc`.
@@ -302,9 +304,7 @@ External Cross-Reference Linking
 With Sphinx's help, we can create
 link-references to any tagged text within the Zephyr Project documentation.
 
-Target locations in a document are defined with a label directive:
-
-   .. code-block:: rst
+Target locations in a document are defined with a label directive::
 
       .. _my label name:
 
@@ -325,10 +325,7 @@ To enable easy cross-page linking within the site, each file should have
 a reference label before its title so it can
 be referenced from another file. These reference labels must be unique
 across the whole site, so generic names such as "samples" should be
-avoided.  For example the top of this document's .rst file is:
-
-
-.. code-block:: rst
+avoided.  For example the top of this document's .rst file is::
 
    .. _doc_guidelines:
 
