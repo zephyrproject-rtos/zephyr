@@ -531,6 +531,10 @@ __syscall int32_t k_usleep(int32_t us);
  * k_sleep().  For example k_busy_wait(1000) may take slightly more or
  * less time than k_sleep(K_MSEC(1)), with the offset dependent on
  * clock tolerances.
+ *
+ * @note In case when @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} and
+ * @kconfig{CONFIG_PM} options are enabled, this function may not work.
+ * The timer/clock used for delay processing may be disabled/inactive.
  */
 __syscall void k_busy_wait(uint32_t usec_to_wait);
 
