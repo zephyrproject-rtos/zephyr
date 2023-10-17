@@ -274,6 +274,7 @@ Boards & SoC Support
   * i.MX RT SOCs no longer support CONFIG_OCRAM_NOCACHE, as this functionality
     can be achieved using devicetree memory regions
   * Refactored ESP32 SoC folders. So now these are a proper SoC series.
+  * RP2040: Changed to reset the I2C device on initializing
 
 * Added support for these ARC boards:
 
@@ -315,6 +316,10 @@ Boards & SoC Support
 * Made these changes for ARM boards:
 
   * ST morpho connector description was added on ST nucleo boards.
+
+  * rpi_pico:
+
+    * The default adapter when debugging with openocd has been changed to cmsis-dap.
 
 * Made these changes for ARM64 boards:
 
@@ -429,6 +434,8 @@ Drivers and Sensors
 
   * Added :kconfig:option:`CONFIG_COUNTER_RTC_STM32_SUBSECONDS` to enable subsecond as
     the basic time tick on STM32 RTC based counter driver.
+
+  * Added support for Raspberry Pi Pico Timer
 
 * Crypto
 
@@ -695,9 +702,12 @@ Drivers and Sensors
 
   * ``uart_emul``: added support for interrupt API.
 
+  * ``uart_rpi_pico``: fixed handling Modbus DE-RE signal
+
 * SPI
 
   * Remove npcx spi driver implemented by Flash Interface Unit (FIU) module.
+  * Added support for Raspberry Pi Pico PIO based SPI.
 
 * Timer
 
