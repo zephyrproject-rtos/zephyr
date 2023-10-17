@@ -17,6 +17,8 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/mcs.h>
+#include <../../subsys/bluetooth/audio/mpl_internal.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
 #include <zephyr/logging/log.h>
@@ -28,6 +30,13 @@
 
 #define LOG_MODULE_NAME bttester_mcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
+static struct media_player *mcs_media_player;
+static uint64_t current_track_obj_id;
+static uint64_t next_track_obj_id;
+static uint8_t media_player_state;
+static uint64_t current_id;
+static uint64_t parent_id;
 
 #define SEARCH_LEN_MAX 64
 
@@ -1314,6 +1323,245 @@ uint8_t tester_init_mcp(void)
 }
 
 uint8_t tester_unregister_mcp(void)
+{
+	return BTP_STATUS_SUCCESS;
+}
+
+/* Media Control Service */
+static uint8_t mcs_supported_commands(const void *cmd, uint16_t cmd_len, void *rsp,
+				      uint16_t *rsp_len)
+{
+	struct btp_mcs_read_supported_commands_rp *rp = rsp;
+
+	/* octet 0 */
+	tester_set_bit(rp->data, BTP_MCS_READ_SUPPORTED_COMMANDS);
+	tester_set_bit(rp->data, BTP_MCS_CMD_SEND);
+	tester_set_bit(rp->data, BTP_MCS_CURRENT_TRACK_OBJ_ID_GET);
+	tester_set_bit(rp->data, BTP_MCS_NEXT_TRACK_OBJ_ID_GET);
+	tester_set_bit(rp->data, BTP_MCS_INACTIVE_STATE_SET);
+	tester_set_bit(rp->data, BTP_MCS_PARENT_GROUP_SET);
+
+	*rsp_len = sizeof(*rp) + 1;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mcs_send_cmd *cp = cmd;
+	struct mpl_cmd mcp_cmd;
+	int err;
+
+	LOG_DBG("MCS Send Command");
+
+	mcp_cmd.opcode = cp->opcode;
+	mcp_cmd.use_param = cp->use_param;
+	mcp_cmd.param = (cp->use_param != 0) ? sys_le32_to_cpu(cp->param) : 0;
+
+	err = media_proxy_ctrl_send_command(mcs_media_player, &mcp_cmd);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_next_track_obj_id_get(const void *cmd, uint16_t cmd_len, void *rsp,
+					 uint16_t *rsp_len)
+{
+	struct btp_mcs_next_track_obj_id_rp *rp = rsp;
+	int err;
+
+	LOG_DBG("MCS Read Next Track Obj Id");
+
+	err = media_proxy_ctrl_get_next_track_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sys_put_le48(next_track_obj_id, rp->id);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_current_track_obj_id_get(const void *cmd, uint16_t cmd_len, void *rsp,
+					    uint16_t *rsp_len)
+{
+	struct btp_mcs_current_track_obj_id_rp *rp = rsp;
+	int err;
+
+	LOG_DBG("MCS Read Current Track Obj Id");
+
+	err = media_proxy_ctrl_get_current_track_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sys_put_le48(current_track_obj_id, rp->id);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp,
+				    uint16_t *rsp_len)
+{
+	int err;
+
+	LOG_DBG("MCS Set Current Group to be it's own parent");
+
+	err = media_proxy_ctrl_get_current_group_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Setting current group to be it's own parent */
+	mpl_test_unset_parent_group();
+
+	err = media_proxy_ctrl_get_parent_group_id(mcs_media_player);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (current_id != parent_id) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *rsp,
+				      uint16_t *rsp_len)
+{
+	struct btp_mcs_state_set_rp *rp = rsp;
+
+	LOG_DBG("MCS Set Media Player to inactive state");
+
+	mpl_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
+
+	rp->state = media_player_state;
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static void mcs_player_instance_cb(struct media_player *plr, int err)
+{
+	mcs_media_player = plr;
+
+	LOG_DBG("Media PLayer Instance cb");
+}
+
+static void mcs_command_send_cb(struct media_player *player, int err, const struct mpl_cmd *cmd)
+{
+	LOG_DBG("Media PLayer Send Command cb");
+}
+
+static void mcs_current_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media Player Current Track Object Id cb");
+
+	current_track_obj_id = id;
+}
+
+static void mcs_next_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media PLayer Next Track Object ID cb");
+
+	next_track_obj_id = id;
+}
+
+static void mcs_media_state_cb(struct media_player *player, int err, uint8_t state)
+{
+	LOG_DBG("Media Player State cb");
+
+	media_player_state = state;
+}
+
+static void mcs_current_group_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media Player Current Group ID cb");
+
+	current_id = id;
+}
+
+static void mcs_parent_group_id_cb(struct media_player *player, int err, uint64_t id)
+{
+	LOG_DBG("Media Player Parent Group ID cb");
+
+	parent_id = id;
+}
+
+static struct media_proxy_ctrl_cbs mcs_cbs = {
+	.local_player_instance = mcs_player_instance_cb,
+	.command_send = mcs_command_send_cb,
+	.current_track_id_recv = mcs_current_track_obj_id_cb,
+	.next_track_id_recv = mcs_next_track_obj_id_cb,
+	.media_state_recv = mcs_media_state_cb,
+	.current_group_id_recv = mcs_current_group_id_cb,
+	.parent_group_id_recv = mcs_parent_group_id_cb,
+};
+
+static const struct btp_handler mcs_handlers[] = {
+	{
+		.opcode = BTP_MCS_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = mcs_supported_commands,
+	},
+	{
+		.opcode = BTP_MCS_CMD_SEND,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = mcs_cmd_send,
+	},
+	{
+		.opcode = BTP_MCS_CURRENT_TRACK_OBJ_ID_GET,
+		.expect_len = 0,
+		.func = mcs_current_track_obj_id_get,
+	},
+	{
+		.opcode = BTP_MCS_NEXT_TRACK_OBJ_ID_GET,
+		.expect_len = 0,
+		.func = mcs_next_track_obj_id_get,
+	},
+	{
+		.opcode = BTP_MCS_INACTIVE_STATE_SET,
+		.expect_len = 0,
+		.func = mcs_inactive_state_set,
+	},
+	{
+		.opcode = BTP_MCS_PARENT_GROUP_SET,
+		.expect_len = 0,
+		.func = mcs_parent_group_set,
+	},
+};
+
+uint8_t tester_init_mcs(void)
+{
+	int err;
+
+	err = media_proxy_pl_init();
+	if (err) {
+		LOG_DBG("Failed to initialize Media Player: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = media_proxy_ctrl_register(&mcs_cbs);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	tester_register_command_handlers(BTP_SERVICE_ID_GMCS, mcs_handlers,
+					 ARRAY_SIZE(mcs_handlers));
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t tester_unregister_mcs(void)
 {
 	return BTP_STATUS_SUCCESS;
 }
