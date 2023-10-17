@@ -57,61 +57,30 @@ K_PIPE_DEFINE(PIPE_SMALLBUFF, 256, 4);
 K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
 
 /**
- * @brief Check for keypress
- *
- * @return 1 when a keyboard key is pressed, or 0 if no keyboard support
- */
-int kbhit(void)
-{
-	return 0;
-}
-
-/**
- * @brief Close output for the test
- *
- */
-void output_close(void)
-{
-}
-
-/* no need to wait for user key press when using console */
-#define WAIT_FOR_USER() {}
-
-
-/**
- * @brief Perform all selected benchmarks
- * see config.h to select or to unselect
- *
+ * @brief Perform all benchmarks
  */
 int main(void)
 {
-	int continuously = 0;
-
 	bench_test_init();
 
 	PRINT_STRING("\n");
-	do {
-		PRINT_STRING(dashline);
-		PRINT_STRING("|          S I M P L E   S E R V I C E    "
-			     "M E A S U R E M E N T S  |  nsec    |\n");
-		PRINT_STRING(dashline);
-		queue_test();
-		sema_test();
-		mutex_test();
-		memorymap_test();
-		mailbox_test();
-		pipe_test();
-		PRINT_STRING("|         END OF TESTS                     "
-			     "                                   |\n");
-		PRINT_STRING(dashline);
-		PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n");
-		TC_PRINT_RUNID;
-	} while (continuously && !kbhit());
-
-	WAIT_FOR_USER();
+	PRINT_STRING(dashline);
+	PRINT_STRING("|          S I M P L E   S E R V I C E    "
+		     "M E A S U R E M E N T S  |  nsec    |\n");
+	PRINT_STRING(dashline);
+	queue_test();
+	sema_test();
+	mutex_test();
+	memorymap_test();
+	mailbox_test();
+	pipe_test();
+	PRINT_STRING("|         END OF TESTS                     "
+		     "                                   |\n");
+	PRINT_STRING(dashline);
+	PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n");
+	TC_PRINT_RUNID;
 
 	k_thread_abort(RECVTASK);
 
-	output_close();
 	return 0;
 }
