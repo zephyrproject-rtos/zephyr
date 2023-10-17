@@ -87,9 +87,6 @@ struct mcux_i3c_data {
 	/** Common I3C Driver Data */
 	struct i3c_driver_data common;
 
-	/** Configuration parameter to be used with HAL. */
-	i3c_master_config_t ctrl_config_hal;
-
 	/** Semaphore to serialize access for applications. */
 	struct k_sem lock;
 
@@ -1806,7 +1803,7 @@ static int mcux_i3c_configure(const struct device *dev,
 	const struct mcux_i3c_config *dev_cfg = dev->config;
 	struct mcux_i3c_data *dev_data = dev->data;
 	I3C_Type *base = dev_cfg->base;
-	i3c_master_config_t *ctrl_config_hal = &dev_data->ctrl_config_hal;
+	i3c_master_config_t master_config;
 	struct i3c_config_controller *ctrl_cfg = config;
 	uint32_t clock_freq;
 	int ret = 0;
@@ -1835,11 +1832,23 @@ static int mcux_i3c_configure(const struct device *dev,
 		goto out_configure;
 	}
 
-	ctrl_config_hal->baudRate_Hz.i2cBaud = ctrl_cfg->scl.i2c;
-	ctrl_config_hal->baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
+	/*
+	 * Save requested config so next config_get() call returns the
+	 * correct values.
+	 */
+	(void)memcpy(&dev_data->common.ctrl_config, ctrl_cfg, sizeof(*ctrl_cfg));
+
+	I3C_MasterGetDefaultConfig(&master_config);
+
+	master_config.baudRate_Hz.i2cBaud = ctrl_cfg->scl.i2c;
+	master_config.baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
+
+	if (dev_data->clocks.i3c_od_scl_hz) {
+		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->clocks.i3c_od_scl_hz;
+	}
 
 	/* Initialize hardware */
-	I3C_MasterInit(base, ctrl_config_hal, clock_freq);
+	I3C_MasterInit(base, &master_config, clock_freq);
 
 out_configure:
 	return ret;
@@ -1912,30 +1921,11 @@ static int mcux_i3c_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->ibi_lock, 1, 1);
 
-	/*
-	 * Default controller configuration to act as the primary
-	 * and active controller.
-	 */
-	I3C_MasterGetDefaultConfig(&data->ctrl_config_hal);
-
-	/* Set default SCL clock rate (in Hz) */
-	if (ctrl_config->scl.i2c == 0U) {
-		ctrl_config->scl.i2c = data->ctrl_config_hal.baudRate_Hz.i2cBaud;
-	}
-
-	if (ctrl_config->scl.i3c == 0U) {
-		ctrl_config->scl.i3c = data->ctrl_config_hal.baudRate_Hz.i3cPushPullBaud;
-	}
-
-	if (data->clocks.i3c_od_scl_hz != 0U) {
-		data->ctrl_config_hal.baudRate_Hz.i3cOpenDrainBaud = data->clocks.i3c_od_scl_hz;
-	}
-
 	/* Currently can only act as primary controller. */
-	data->common.ctrl_config.is_secondary = false;
+	ctrl_config->is_secondary = false;
 
 	/* HDR mode not supported at the moment. */
-	data->common.ctrl_config.supported_hdr = 0U;
+	ctrl_config->supported_hdr = 0U;
 
 	ret = mcux_i3c_configure(dev, I3C_CONFIG_CONTROLLER, ctrl_config);
 	if (ret != 0) {
