@@ -673,6 +673,10 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	RF_EventMask events;
 	int ret = 0;
 
+	if (buf->len > (CC13XX_CC26XX_TX_BUF_SIZE - IEEE802154_PHY_SUN_FSK_PHR_LEN)) {
+		return -EINVAL;
+	}
+
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
 		/* For backwards compatibility we only log an error but do not bail. */
 		NET_ERR("TX mode %d not supported - sending directly instead.", mode);
@@ -698,9 +702,10 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 	/* Complete the SUN FSK PHY header, see IEEE 802.15.4, section 19.2.4. */
 	drv_data->tx_data[0] = buf->len + IEEE802154_FCS_LENGTH;
 
-	/* Set TX data */
-	__ASSERT_NO_MSG(buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN <= CC13XX_CC26XX_TX_BUF_SIZE);
-	/* TODO: Zero-copy TX, see discussion in #49775. */
+	/* Set TX data
+	 *
+	 * TODO: Zero-copy TX, see discussion in #49775.
+	 */
 	memcpy(&drv_data->tx_data[IEEE802154_PHY_SUN_FSK_PHR_LEN], buf->data, buf->len);
 	drv_data->cmd_prop_tx_adv.pktLen = buf->len + IEEE802154_PHY_SUN_FSK_PHR_LEN;
 
