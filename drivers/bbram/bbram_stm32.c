@@ -14,7 +14,14 @@
 LOG_MODULE_REGISTER(bbram, CONFIG_BBRAM_LOG_LEVEL);
 
 #define STM32_BKP_REG_BYTES		 4
-#define STM32_BKP_REG_OFFSET		 0x50
+#ifdef TAMP
+/* If a SoC has a TAMP peripherals, then the backup registers are defined there,
+ * not in the RTC.
+ */
+#define STM32_BKP_REG_OFFSET		 (TAMP_BASE + offsetof(TAMP_TypeDef, BKP0R) - RTC_BASE)
+#else
+#define STM32_BKP_REG_OFFSET		 offsetof(RTC_TypeDef, BKP0R)
+#endif
 #define STM32_BKP_REG_INDEX(offset)	 ((offset) >> 2)
 #define STM32_BKP_REG_BYTE_INDEX(offset) ((offset)&0x3UL)
 #define STM32_BKP_REG(i)		 (((volatile uint32_t *)config->base_addr)[(i)])
