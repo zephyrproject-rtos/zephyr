@@ -20,13 +20,11 @@ LOG_MODULE_REGISTER(wdt_dw_common, CONFIG_WDT_LOG_LEVEL);
 int dw_wdt_check_options(const uint8_t options)
 {
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pausing watchdog by debugger is not supported.");
-		return -ENOTSUP;
+		LOG_WRN("Pausing watchdog by debugger is not configurable");
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("Pausing watchdog in sleep is not supported.");
-		return -ENOTSUP;
+		LOG_WRN("Pausing watchdog in sleep is not configurable");
 	}
 
 	return 0;
