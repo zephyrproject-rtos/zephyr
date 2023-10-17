@@ -117,6 +117,19 @@
 		status = "okay";
 	};
 
+	sdmmc: sdmmc@10808000 {
+		compatible = "cdns,sdhc";
+		reg = <0x10808000 0x1000>,
+			<0x10B92000 0x1000>;
+		reg-names = "reg_base", "combo_phy";
+		clock-frequency = <200000000>;
+		power_delay_ms = <1000>;
+		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
+			<&reset RSTMGR_SDMMCECC_RSTLINE>,
+			<&reset RSTMGR_SOFTPHY_RSTLINE>;
+		status = "disabled";
+	};
+
 	timer0: timer@10C03000 {
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
