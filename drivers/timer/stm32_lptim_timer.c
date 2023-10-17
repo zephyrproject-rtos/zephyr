@@ -65,7 +65,7 @@ static uint32_t lptim_clock_freq = KHZ(32);
 static int32_t lptim_time_base;
 
 /* The prescaler given by the DTS and to apply to the lptim_clock_freq */
-#define LPTIM_CLOCK_RATIO DT_PROP(DT_DRV_INST(0), st_prescaler)
+#define LPTIM_PRESCALER DT_PROP(DT_DRV_INST(0), st_prescaler)
 
 /* Minimum nb of clock cycles to have to set autoreload register correctly */
 #define LPTIM_GUARD_VALUE 2
@@ -388,7 +388,7 @@ static int sys_clock_driver_init(void)
 	}
 
 	/* Actual lptim clock freq when the clock source is reduced by the prescaler */
-	lptim_clock_freq = lptim_clock_freq / LPTIM_CLOCK_RATIO;
+	lptim_clock_freq = lptim_clock_freq / LPTIM_PRESCALER;
 
 	/* Clear the event flag and possible pending interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -404,7 +404,7 @@ static int sys_clock_driver_init(void)
 	/* configure the LPTIM counter */
 	LL_LPTIM_SetClockSource(LPTIM, LL_LPTIM_CLK_SOURCE_INTERNAL);
 	/* the LPTIM clock freq is affected by the prescaler */
-	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(LPTIM_CLOCK_RATIO)) << LPTIM_CFGR_PRESC_Pos));
+	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(LPTIM_PRESCALER)) << LPTIM_CFGR_PRESC_Pos));
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
