@@ -646,8 +646,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
-	lll_aux->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
-				    ((EVENT_JITTER_US + window_widening_us) << 1));
+	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
+				     window_widening_us) << 1);
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy,
 						      PHY_FLAGS_S8);
