@@ -21,6 +21,15 @@
 	};
 };
 
+&sdmmc {
+	status = "okay";
+	mmc {
+		/*SD Disk Access */
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
