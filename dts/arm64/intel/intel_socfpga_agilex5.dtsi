@@ -219,4 +219,20 @@
 		status = "disabled";
 		zephyr,num-clients = <2>;
 	};
+
+	/* cadence Nand Flash controller*/
+	nand: nand@10B80000	{
+		compatible = "cdns,nand";
+		reg = <0x10B80000 0X10000>,
+			  <0x10840000 0x10000>;
+		reg-names = "nand_reg","sdma";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		resets = <&reset RSTMGR_NAND_RSTLINE>,
+				<&reset RSTMGR_SOFTPHY_RSTLINE>;
+		block-size = <0x20000>;
+		data-rate-mode = <0>;
+		status = "disabled";
+	};
+
 };
