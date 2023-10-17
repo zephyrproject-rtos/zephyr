@@ -9,6 +9,8 @@ set(NET_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/sync_rtc_net-prefix/src/sync_rtc_
 
 if("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpuapp")
   set(BOARD_REMOTE "nrf5340dk_nrf5340_cpunet")
+elseif("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpuapp")
+  set(BOARD_REMOTE "nrf5340bsim_nrf5340_cpunet")
 else()
   message(FATAL_ERROR "${BOARD} is not supported for this sample")
 endif()
@@ -22,6 +24,15 @@ enable_language(C ASM)
 
 target_sources(app PRIVATE src/main.c)
 
+set(EXTRA_CMAKE_ARGS "")
+
+if("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpuapp")
+  set(EXTRA_CMAKE_ARGS
+    "-DCONFIG_NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS=\"${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}\"")
+  message(NOTICE "\nFinal executable including both CPU's images will be:\n"
+          "${NET_ZEPHYR_DIR}/${KERNEL_EXE_NAME}\n")
+endif()
+
 include(ExternalProject)
 
 ExternalProject_Add(
@@ -31,7 +42,9 @@ ExternalProject_Add(
   CMAKE_CACHE_ARGS -DBOARD:STRING=${BOARD_REMOTE}
   CMAKE_CACHE_ARGS -DDTC_OVERLAY_FILE:STRING=${NET_DTC_OVERLAY_FILE}
   CMAKE_CACHE_ARGS -DEXTRA_CONF_FILE:STRING=${NET_OVERLAY_CONF}
+  CMAKE_ARGS       "${EXTRA_CMAKE_ARGS}"
   BUILD_BYPRODUCTS "${NET_ZEPHYR_DIR}/${KERNEL_BIN_NAME}"
   # NB: Do we need to pass on more CMake variables?
   BUILD_ALWAYS True
+  DEPENDS ${logical_target_for_zephyr_elf}
 )
