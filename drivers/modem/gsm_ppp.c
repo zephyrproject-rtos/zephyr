@@ -525,7 +525,7 @@ static const struct modem_cmd read_cops_cmd =
 	MODEM_CMD_ARGS_MAX("+COPS:", on_cmd_atcmdinfo_cops, 1U, 4U, ",");
 
 static const struct modem_cmd check_net_reg_cmd =
-	MODEM_CMD("+CREG: ", on_cmd_net_reg_sts, 2U, ",");
+	MODEM_CMD("+" CONFIG_MODEM_GSM_STATUS_COMMAND, on_cmd_net_reg_sts, 2U, ",");
 
 static const struct modem_cmd check_attached_cmd =
 	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
@@ -751,7 +751,7 @@ registering:
 	ret = modem_cmd_send_nolock(&gsm->context.iface,
 				    &gsm->context.cmd_handler,
 				    &check_net_reg_cmd, 1,
-				    "AT+CREG?",
+				    "AT+" CONFIG_MODEM_GSM_STATUS_COMMAND "?",
 				    &gsm->sem_response,
 				    GSM_CMD_SETUP_TIMEOUT);
 	if ((ret < 0) || ((gsm->net_state != GSM_NET_ROAMING) &&
