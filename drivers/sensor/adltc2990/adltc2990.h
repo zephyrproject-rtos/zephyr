@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 
 enum adltc2990_monitor_pins {
