@@ -180,6 +180,11 @@ config XTENSA_SYSCALL_USE_HELPER
 	  This is a workaround for toolchains where they have
 	  issue modeling register usage.
 
+config XTENSA_INSECURE_USERSPACE
+	bool
+	default y if USERSPACE
+	depends on XTENSA_MMU
+
 endif # CPU_HAS_MMU
 
 endmenu
