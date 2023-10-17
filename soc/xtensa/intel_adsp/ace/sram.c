@@ -41,6 +41,7 @@ __imr void lp_sram_init(void)
 
 	for (idx = 0; idx < lpsram_ebb_quantity; ++idx) {
 		LPSRAM_REGS(idx)->USxPGCTL = 0;
+		LPSRAM_REGS(idx)->USxRMCTL = 1;
 	}
 	for (idx = 0; idx < lpsram_ebb_quantity; ++idx) {
 		while (LPSRAM_REGS(idx)->USxPGISTS != 0) {
