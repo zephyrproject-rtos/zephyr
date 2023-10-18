@@ -2417,6 +2417,18 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 		do_close = true;
 		close_status = -ECONNRESET;
+
+		/* If we receive RST and ACK for the sent SYN, it means
+		 * that there is no socket listening the port we are trying
+		 * to connect to. Set the errno properly in this case.
+		 */
+		if (conn->in_connect) {
+			fl = th_flags(th);
+			if (FL(&fl, ==, RST | ACK)) {
+				close_status = -ECONNREFUSED;
+			}
+		}
+
 		goto out;
 	}
 
