@@ -28,7 +28,7 @@ between *visible* and *invisible* symbols.
 
   Here's an example of a visible symbol:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config FPU
      	bool "Support floating point operations"
@@ -47,7 +47,7 @@ between *visible* and *invisible* symbols.
 
   Here's an example of an invisible symbol:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config CPU_HAS_FPU
      	bool
@@ -68,7 +68,7 @@ board with application settings, usually from :file:`prj.conf`. See
 
 Assignments in configuration files use this syntax:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_<symbol name>=<value>
 
@@ -78,7 +78,7 @@ There should be no spaces around the equals sign.
 respectively. The ``FPU`` symbol from the example above could be enabled like
 this:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_FPU=y
 
@@ -87,7 +87,7 @@ this:
    A boolean symbol can also be set to ``n`` with a comment formatted like
    this:
 
-   .. code-block:: none
+   .. code-block:: cfg
 
       # CONFIG_SOME_OTHER_BOOL is not set
 
@@ -100,14 +100,14 @@ this:
 
 Other symbol types are assigned like this:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_SOME_STRING="cool value"
    CONFIG_SOME_INT=123
 
 Comments use a #:
 
-.. code-block:: none
+.. code-block:: cfg
 
    # This is a comment
 
@@ -212,7 +212,7 @@ Assigning values in :file:`Kconfig.defconfig` relies on defining a Kconfig
 symbol in multiple locations. As an example, say we want to set ``FOO_WIDTH``
 below to 32:
 
-.. code-block:: none
+.. code-block:: kconfig
 
     config FOO_WIDTH
     	int
@@ -220,7 +220,7 @@ below to 32:
 To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
 :file:`Kconfig.defconfig`:
 
-.. code-block:: none
+.. code-block:: kconfig
 
     if BOARD_MY_BOARD
 
@@ -255,7 +255,7 @@ symbol properties, so the above ``default`` is equivalent to
    For example, the direct dependencies of the symbol below becomes
    ``DEP1 || DEP2``:
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
       config FOO
       	...
@@ -312,7 +312,7 @@ There are two ways to configure a Kconfig ``choice``:
    As an example, assume that a choice has the following base definition (here,
    the name of the choice is ``FOO``):
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
        choice FOO
            bool "Foo choice"
@@ -329,7 +329,7 @@ There are two ways to configure a Kconfig ``choice``:
    To change the default symbol of ``FOO`` to ``A``, you would add the
    following definition to :file:`Kconfig.defconfig`:
 
-   .. code-block:: none
+   .. code-block:: kconfig
 
        choice FOO
            default A
