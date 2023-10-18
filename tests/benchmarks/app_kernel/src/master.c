@@ -17,6 +17,9 @@
 #include <zephyr/tc_util.h>
 #include "master.h"
 
+#define RECV_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define TEST_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
 char msg[MAX_MSG];
 char data_bench[MESSAGE_SIZE];
 
@@ -32,7 +35,11 @@ uint32_t tm_off;
 
 /********************************************************************/
 /* static allocation  */
-K_THREAD_DEFINE(RECVTASK, 1024, recvtask, NULL, NULL, NULL, 5, 0, 0);
+
+static struct k_thread test_thread;
+static struct k_thread recv_thread;
+K_THREAD_STACK_DEFINE(test_stack, TEST_STACK_SIZE);
+K_THREAD_STACK_DEFINE(recv_stack, RECV_STACK_SIZE);
 
 K_MSGQ_DEFINE(DEMOQX1, 1, 500, 4);
 K_MSGQ_DEFINE(DEMOQX4, 4, 500, 4);
@@ -57,10 +64,31 @@ K_PIPE_DEFINE(PIPE_SMALLBUFF, 256, 4);
 K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
 
 /**
+ * @brief Entry point for test thread
+ */
+static void test_thread_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	message_queue_test();
+	sema_test();
+	mutex_test();
+	memorymap_test();
+	mailbox_test();
+	pipe_test();
+}
+
+/**
  * @brief Perform all benchmarks
  */
 int main(void)
 {
+	int  priority;
+
+	priority = k_thread_priority_get(k_current_get());
+
 	bench_test_init();
 
 	PRINT_STRING("\n");
@@ -68,19 +96,28 @@ int main(void)
 	PRINT_STRING("|          S I M P L E   S E R V I C E    "
 		     "M E A S U R E M E N T S  |  nsec    |\n");
 	PRINT_STRING(dashline);
-	message_queue_test();
-	sema_test();
-	mutex_test();
-	memorymap_test();
-	mailbox_test();
-	pipe_test();
+
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
+			test_thread_entry, NULL, NULL, NULL,
+			priority, 0, K_FOREVER);
+
+	k_thread_create(&recv_thread, recv_stack,
+			K_THREAD_STACK_SIZEOF(recv_stack),
+			recvtask, NULL, NULL, NULL,
+			5, 0, K_FOREVER);
+
+	k_thread_start(&recv_thread);
+	k_thread_start(&test_thread);
+
+	k_thread_join(&test_thread, K_FOREVER);
+	k_thread_abort(&recv_thread);
+
 	PRINT_STRING("|         END OF TESTS                     "
 		     "                                   |\n");
 	PRINT_STRING(dashline);
 	PRINT_STRING("PROJECT EXECUTION SUCCESSFUL\n");
 	TC_PRINT_RUNID;
-
-	k_thread_abort(RECVTASK);
 
 	return 0;
 }
