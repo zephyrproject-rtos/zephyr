@@ -122,25 +122,6 @@ extern struct k_mem_slab MAP1;
 	PRINT_STRING(sline);					        \
 }
 
-#define PRINT_OVERFLOW_ERROR()						\
-	PRINT_F(__FILE__":%d Error: tick occurred\n", __LINE__)
-
-static inline uint32_t BENCH_START(void)
-{
-	uint32_t et;
-
-	bench_test_start();
-	et = TIME_STAMP_DELTA_GET(0);
-	return et;
-}
-
-static inline void check_result(void)
-{
-	if (bench_test_end() < 0) {
-		PRINT_OVERFLOW_ERROR();
-	}
-}
-
 __syscall void test_thread_priority_set(k_tid_t thread, int prio);
 __syscall timing_t timing_timestamp_get(void);
 

@@ -17,7 +17,7 @@
 
 #include "receiver.h"
 
-char data_recv[MESSAGE_SIZE] = { 0 };
+BENCH_DMEM char data_recv[MESSAGE_SIZE] = { 0 };
 
 void dequtask(void);
 void waittask(void);
@@ -29,6 +29,11 @@ void piperecvtask(void);
  */
 void recvtask(void *p1, void *p2, void *p3)
 {
+	bool skip_mbox = (bool)(uintptr_t)(p1);
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	/* order must be compatible with master.c ! */
 
 	k_sem_take(&STARTRCV, K_FOREVER);
@@ -37,8 +42,10 @@ void recvtask(void *p1, void *p2, void *p3)
 	k_sem_take(&STARTRCV, K_FOREVER);
 	waittask();
 
-	k_sem_take(&STARTRCV, K_FOREVER);
-	mailrecvtask();
+	if (!skip_mbox) {
+		k_sem_take(&STARTRCV, K_FOREVER);
+		mailrecvtask();
+	}
 
 	k_sem_take(&STARTRCV, K_FOREVER);
 	piperecvtask();

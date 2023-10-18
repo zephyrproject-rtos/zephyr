@@ -12,9 +12,7 @@
 /* semaphore signal speed test */
 
 /**
- *
  * @brief Receive task (Wait task)
- *
  */
 void waittask(void)
 {
@@ -23,6 +21,7 @@ void waittask(void)
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 		k_sem_take(&SEM1, K_FOREVER);
 	}
+
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
 		k_sem_take(&SEM1, K_MSEC(SEMA_WAIT_TIME));
 	}

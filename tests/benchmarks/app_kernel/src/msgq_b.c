@@ -15,66 +15,68 @@ void message_queue_test(void)
 {
 	uint32_t et; /* elapsed time */
 	int i;
+	timing_t  start;
+	timing_t  end;
 
 	PRINT_STRING(dashline);
-	et = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_put(&DEMOQX1, data_bench, K_FOREVER);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 	PRINT_F(FORMAT, "enqueue 1 byte msg in MSGQ",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_MSGQ_RUNS));
 
-	et = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_get(&DEMOQX1, data_bench, K_FOREVER);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-	check_result();
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "dequeue 1 byte msg from MSGQ",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_MSGQ_RUNS));
 
-	et = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_put(&DEMOQX4, data_bench, K_FOREVER);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-	check_result();
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "enqueue 4 bytes msg in MSGQ",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_MSGQ_RUNS));
 
-	et = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_get(&DEMOQX4, data_bench, K_FOREVER);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-	check_result();
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "dequeue 4 bytes msg in MSGQ",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_MSGQ_RUNS));
 
 	k_sem_give(&STARTRCV);
 
-	et = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_put(&DEMOQX1, data_bench, K_FOREVER);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-	check_result();
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT,
 		"enqueue 1 byte msg in MSGQ to a waiting higher priority task",
 		SYS_CLOCK_HW_CYCLES_TO_NS_AVG(et, NR_OF_MSGQ_RUNS));
 
-	et = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_put(&DEMOQX4, data_bench, K_FOREVER);
 	}
-	et = TIME_STAMP_DELTA_GET(et);
-	check_result();
+	end = timing_timestamp_get();
+	et = (uint32_t)timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT,
 		"enqueue 4 bytes in MSGQ to a waiting higher priority task",

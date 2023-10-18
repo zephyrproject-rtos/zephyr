@@ -115,7 +115,7 @@ void pipe_test(void)
 			PRINT_STRING("|                      "
 				 "non-matching sizes (1_TO_N) to lower priority"
 						 "          |\n");
-			k_thread_priority_set(k_current_get(), TaskPrio - 2);
+			test_thread_priority_set(k_current_get(), TaskPrio - 2);
 		}
 		PRINT_STRING(dashline);
 		PRINT_1_TO_N_HEADER();
@@ -136,7 +136,7 @@ void pipe_test(void)
 		PRINT_1_TO_N();
 	}
 		PRINT_STRING(dashline);
-		k_thread_priority_set(k_current_get(), TaskPrio);
+		test_thread_priority_set(k_current_get(), TaskPrio);
 	}
 }
 
@@ -160,12 +160,14 @@ int pipeput(struct k_pipe *pipe,
 {
 	int i;
 	unsigned int t;
+	timing_t  start;
+	timing_t  end;
 	size_t sizexferd_total = 0;
 	size_t size2xfer_total = size * count;
 
 	/* first sync with the receiver */
 	k_sem_give(&SEM0);
-	t = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
 		size_t size2xfer = MIN(size, size2xfer_total - sizexferd_total);
@@ -195,15 +197,10 @@ int pipeput(struct k_pipe *pipe,
 		}
 	}
 
-	t = TIME_STAMP_DELTA_GET(t);
+	end = timing_timestamp_get();
+	t = (unsigned int)timing_cycles_get(&start, &end);
+
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
-	if (bench_test_end() < 0) {
-		if (high_timer_overflow()) {
-			PRINT_STRING("| Timer overflow. Results are invalid            ");
-		} else {
-			PRINT_STRING("| Tick occurred. Results may be inaccurate       ");
-		}
-		PRINT_STRING("                             |\n");
-	}
+
 	return 0;
 }
