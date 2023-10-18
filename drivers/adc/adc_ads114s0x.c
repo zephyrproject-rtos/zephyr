@@ -1352,7 +1352,7 @@ static int ads114s0x_init(const struct device *dev)
 	}
 
 #if CONFIG_ADC_ASYNC
-	const k_tid_t tid = k_thread_create(
+	k_tid_t tid = k_thread_create(
 		&data->thread, config->stack, CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE,
 		(k_thread_entry_t)ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
 		CONFIG_ADC_ADS114S0X_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
