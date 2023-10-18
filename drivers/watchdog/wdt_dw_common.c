@@ -103,8 +103,3 @@ int dw_wdt_probe(const uint32_t base, const uint32_t reset_pulse_length)
 
 	return 0;
 }
-
-int dw_wdt_disable(const struct device *dev)
-{
-	return -ENOTSUP;
-}
