@@ -1,0 +1,11 @@
+#
+# Copyright 2023 Google, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: I2C device to test PEC functionality
+
+compatible: "zephyr,i2c-pec-test"
+
+include: [i2c-device.yaml]

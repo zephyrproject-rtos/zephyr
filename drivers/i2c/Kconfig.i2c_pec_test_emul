@@ -1,0 +1,21 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_PEC_TEST_EMUL
+	bool "I2C echo device with PEC emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_I2C_PEC_TEST_ENABLED
+	depends on EMUL
+	help
+	  Enable I2C echo device with PEC emulator. This is an emulated device which
+	  is intended to be used for testing I2C PEC code.
+
+if I2C_PEC_TEST_EMUL
+
+config I2C_PEC_TEST_EMUL_BUFFER_SIZE
+	int "Size of internal buffer in bytes"
+	default 16
+	help
+	  The size of the internal buffer used by I2C echo devices with PEC.
+
+endif # I2C_PEC_TEST_EMUL

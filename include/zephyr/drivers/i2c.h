@@ -24,6 +24,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/rtio/rtio.h>
 
@@ -1589,6 +1590,238 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
 {
 	return i2c_reg_update_byte(spec->bus, spec->addr,
 				   reg_addr, mask, value);
+}
+
+/**
+ * @brief Continue an already started transfer with PEC checking
+ *
+ * @param dev I2C specification from devicetree.
+ * @param msg Address of the internal register being updated.
+ * @param addr I2C address
+ * @param pec Calculated PEC value
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ * @retval -EAGAIN PEC check failed.
+ */
+static inline int i2c_pec_transfer_continue(const struct device *dev,
+					    struct i2c_msg *msg,
+					    uint16_t addr,
+					    uint8_t *pec)
+{
+	int ret;
+	uint8_t remote_pec;
+	bool stop = msg->flags & I2C_MSG_STOP;
+	bool read = msg->flags & I2C_MSG_READ;
+	struct i2c_msg msg_pec = {
+		.buf = &remote_pec,
+		.len = 1,
+		.flags = msg->flags,
+	};
+
+	/* PEC is only supported for 7-bit addresses currently. */
+	if (msg->flags & I2C_MSG_ADDR_10_BITS) {
+		return -EIO;
+	}
+
+	/* Strip stop bit so we can read/write the subsequent PEC byte. */
+	if (stop) {
+		msg->flags &= ~I2C_MSG_STOP;
+	}
+
+	if (read) {
+		ret = i2c_transfer(dev, msg, 1, addr);
+		if (ret) {
+			return ret;
+		}
+
+		*pec = crc8_ccitt(*pec, msg->buf, msg->len);
+
+		/* Read and check PEC if this is the end of the transaction. */
+		if (stop) {
+			ret = i2c_transfer(dev, &msg_pec, 1, addr);
+			if (ret) {
+				return ret;
+			}
+
+			if (*pec != remote_pec) {
+				return -EAGAIN;
+			}
+		}
+	} else {
+		*pec = crc8_ccitt(*pec, msg->buf, msg->len);
+		ret = i2c_transfer(dev, msg, 1, addr);
+		if (ret) {
+			return ret;
+		}
+
+		/* Write PEC if this is the end of the transaction, */
+		if (stop) {
+			remote_pec = *pec;
+			ret = i2c_transfer(dev, &msg_pec, 1, addr);
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Start a new transfer with PEC checking
+ *
+ * @param dev I2C specification from devicetree.
+ * @param msg Address of the internal register being updated.
+ * @param addr I2C device address
+ * @param pec Calculated PEC value
+ *
+ * @return a value from i2c_pec_transfer_continue
+ */
+static inline int i2c_pec_transfer_start(const struct device *dev,
+					 struct i2c_msg *msg, uint16_t addr,
+					 uint8_t *pec)
+{
+	uint8_t addr8 = addr << 1;
+
+	if (msg->flags & I2C_MSG_READ) {
+		addr8 |= 0x1;
+	}
+
+	*pec = crc8_ccitt(*pec, &addr8, 1);
+	return i2c_pec_transfer_continue(dev, msg, addr, pec);
+}
+
+/**
+ * @brief Read multiple bytes from an internal address of an I2C device with
+ * PEC checking.
+ *
+ * This routine reads multiple bytes from an internal address of an
+ * I2C device synchronously.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr 8-bit address I2C device address
+ * @param start_addr Internal address from which the data is being read.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes being read.
+ *
+ * @retval a value from i2c_pec_transfer_continue
+ */
+static inline int i2c_pec_burst_read(const struct device *dev,
+				     uint8_t dev_addr,
+				     uint8_t start_addr,
+				     uint8_t *buf,
+				     uint32_t num_bytes)
+{
+	uint8_t pec = 0;
+	int ret;
+	struct i2c_msg msgs[] = {
+		{
+			.buf = &start_addr,
+			.len = 1,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = buf,
+			.len = num_bytes,
+			.flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP,
+		},
+	};
+
+	ret = i2c_pec_transfer_start(dev, &msgs[0], dev_addr, &pec);
+	if (ret != 0)
+		return ret;
+
+	return i2c_pec_transfer_start(dev, &msgs[1], dev_addr, &pec);
+}
+
+/**
+ * @brief Write multiple bytes to an internal address of an I2C device with PEC
+ * checking.
+ *
+ * This routine writes multiple bytes to an internal address of an
+ * I2C device synchronously.
+ *
+ * @param dev Pointer to the device structure for an I2C controller
+ * driver configured in controller mode.
+ * @param dev_addr Address of the I2C device for writing.
+ * @param start_addr Internal address to which the data is being written.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @retval a value from i2c_pec_transfer_continue
+ */
+static inline int i2c_pec_burst_write(const struct device *dev,
+				      uint16_t dev_addr,
+				      uint8_t start_addr,
+				      const uint8_t *buf,
+				      uint32_t num_bytes)
+{
+	uint8_t pec = 0;
+	int ret;
+	struct i2c_msg msgs[] = {
+		{
+			.buf = &start_addr,
+			.len = 1,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = (uint8_t *) buf,
+			.len = num_bytes,
+			.flags = I2C_MSG_RESTART | I2C_MSG_WRITE | I2C_MSG_STOP,
+		},
+	};
+
+	ret = i2c_pec_transfer_start(dev, &msgs[0], dev_addr, &pec);
+	if (ret != 0)
+		return ret;
+
+	return i2c_pec_transfer_continue(dev, &msgs[1], dev_addr, &pec);
+}
+
+/**
+ * @brief Read multiple bytes from an internal address of an I2C device with PEC
+ * checking.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_pec_burst_read(spec->bus, spec->addr, addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param addr Internal address from which the data is being read.
+ * @param buf Buffer for read data
+ * @param num_bytes Number of bytes to read.
+ *
+ * @return a value from i2c_pec_burst_read()
+ */
+
+static inline int i2c_pec_burst_read_dt(const struct i2c_dt_spec *spec,
+					uint8_t addr,
+					uint8_t *buf,
+					uint32_t num_bytes)
+{
+	return i2c_pec_burst_read(spec->bus, spec->addr, addr, buf, num_bytes);
+}
+
+/**
+ * @brief Write multiple bytes to an internal address of an I2C device with PEC
+ * checking.
+ *
+ * This is equivalent to:
+ *
+ *     i2c_pec_burst_write(spec->bus, spec->addr, addr, buf, num_bytes);
+ *
+ * @param spec I2C specification from devicetree.
+ * @param addr Internal address to which the data is being written.
+ * @param buf Buffer for data to write.
+ * @param num_bytes Number of bytes being written.
+ *
+ * @return a value from i2c_pec_burst_write()
+ */
+static inline int i2c_pec_burst_write_dt(const struct i2c_dt_spec *spec,
+					 uint8_t addr,
+					 const uint8_t *buf,
+					 uint32_t num_bytes)
+{
+	return i2c_pec_burst_write(spec->bus, spec->addr, addr, buf, num_bytes);
 }
 
 #ifdef __cplusplus
