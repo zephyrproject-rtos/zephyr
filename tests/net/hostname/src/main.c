@@ -53,8 +53,19 @@ static struct net_if *iface1;
 
 static bool test_started;
 static struct k_sem wait_data;
+static struct k_sem wait_hostname;
+
+#if CONFIG_NET_MGMT_EVENT
+static struct net_mgmt_event_callback hostname_cb;
+#endif
 
 #define WAIT_TIME 250
+
+#define EVENT_HANDLER_INIT_PRIO 55
+
+#if EVENT_HANDLER_INIT_PRIO >= CONFIG_NET_INIT_PRIO
+#error "EVENT_HANDLER_INIT_PRIO must be lower than CONFIG_NET_INIT_PRIO"
+#endif
 
 struct net_if_test {
 	uint8_t idx;
@@ -89,6 +100,17 @@ static void net_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
 }
+
+#if CONFIG_NET_MGMT_EVENT
+static void hostname_changed(struct net_mgmt_event_callback *cb,
+			     uint32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_IF_HOSTNAME_CHANGED) {
+		DBG("Hostname changed, new value: %s", net_hostname_get());
+		k_sem_give(&wait_hostname);
+	}
+}
+#endif
 
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
@@ -310,6 +332,19 @@ static int bytes_from_hostname_unique(uint8_t *buf, int buf_len, const char *src
 	return 0;
 }
 
+static int init_event_handler(void)
+{
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT)) {
+		k_sem_init(&wait_hostname, 0, K_SEM_MAX_LIMIT);
+
+		net_mgmt_init_event_callback(&hostname_cb, hostname_changed,
+					NET_EVENT_IF_HOSTNAME_CHANGED);
+		net_mgmt_add_event_callback(&hostname_cb);
+	}
+
+	return 0;
+}
+
 ZTEST(net_hostname, test_hostname_get)
 {
 	const char *hostname;
@@ -327,7 +362,6 @@ ZTEST(net_hostname, test_hostname_get)
 		ret = bytes_from_hostname_unique(mac, sizeof(mac),
 				 hostname + sizeof(CONFIG_NET_HOSTNAME) - 1);
 		zassert_equal(ret, 0, "");
-
 		zassert_mem_equal(mac, net_if_get_link_addr(iface1)->addr,
 				  net_if_get_link_addr(iface1)->len, "");
 	}
@@ -343,5 +377,23 @@ ZTEST(net_hostname, test_hostname_set)
 			      "Could set hostname postfix (%d)", ret);
 	}
 }
+
+ZTEST(net_hostname, test_hostname_event)
+{
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT)) {
+		int ret;
+
+		ret = k_sem_take(&wait_hostname, K_NO_WAIT);
+		zassert_equal(ret, 0, "");
+
+		if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE)) {
+			ret = k_sem_take(&wait_hostname, K_NO_WAIT);
+			zassert_equal(ret, 0, "");
+		}
+	}
+}
+
+/** Make sure that hostname related events are caught from the beginning  **/
+SYS_INIT(init_event_handler, POST_KERNEL, EVENT_HANDLER_INIT_PRIO);
 
 ZTEST_SUITE(net_hostname, NULL, test_iface_setup, NULL, NULL, NULL);
