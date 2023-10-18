@@ -1506,8 +1506,10 @@ int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	if (IS_ENABLED(CONFIG_BT_MESH_OP_AGG) && bt_mesh_op_agg_accept(ctx)) {
-		return bt_mesh_op_agg_send(model, ctx, msg, cb);
+	if (IS_ENABLED(CONFIG_BT_MESH_OP_AGG_SRV) && bt_mesh_op_agg_srv_accept(ctx, msg)) {
+		return bt_mesh_op_agg_srv_send(model, msg);
+	} else if (IS_ENABLED(CONFIG_BT_MESH_OP_AGG_CLI) && bt_mesh_op_agg_cli_accept(ctx, msg)) {
+		return bt_mesh_op_agg_cli_send(model, msg);
 	}
 
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
