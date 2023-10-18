@@ -632,6 +632,7 @@ Documentation:
     - doc/templates/sample.tmpl
     - doc/templates/board.tmpl
   files-exclude:
+    - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
   labels:
     - "area: Documentation"
@@ -659,7 +660,10 @@ Release Notes:
     - jhedberg
     - fabiobaltieri
   files:
+    - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
+  collaborators:
+    - kartben
   labels:
     - "Release Notes"
 
