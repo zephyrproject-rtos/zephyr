@@ -26,7 +26,7 @@ which must be placed at the base directory of the application, where the CMakeLi
 located. This is a simple text file which contains the various version information fields, each on
 a newline. The basic ``VERSION`` file has the following structure:
 
-.. code-block:: none
+.. code-block:: cfg
 
    VERSION_MAJOR =
    VERSION_MINOR =
@@ -58,7 +58,7 @@ manually re-ran for changes to this file.
 
 For the sections below, examples are provided for the following :file:`VERSION` file:
 
-.. code-block:: none
+.. code-block:: cfg
 
    VERSION_MAJOR = 1
    VERSION_MINOR = 2
