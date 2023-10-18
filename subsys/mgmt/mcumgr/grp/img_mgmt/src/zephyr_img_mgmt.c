@@ -298,6 +298,11 @@ int img_mgmt_erase_slot(int slot)
 			LOG_ERR("Failed to erase flash area: %d", rc);
 			rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 		}
+	} else if (rc == 1) {
+		/* A return value of 1 indicates that the slot is already erased, thus
+		 * return a success code to the client
+		 */
+		rc = 0;
 	}
 
 	flash_area_close(fa);
