@@ -481,20 +481,21 @@ ll_big_create_rtn_retry:
 	 * advertising event.
 	 */
 
-	big_info->iso_interval =
-		sys_cpu_to_le16(iso_interval_us / PERIODIC_INT_UNIT_US);
-	big_info->num_bis = lll_adv_iso->num_bis;
-	big_info->nse = lll_adv_iso->nse;
-	big_info->bn = lll_adv_iso->bn;
-	big_info->sub_interval = sys_cpu_to_le24(lll_adv_iso->sub_interval);
-	big_info->pto = lll_adv_iso->pto;
-	big_info->spacing = sys_cpu_to_le24(lll_adv_iso->bis_spacing);
-	big_info->irc = lll_adv_iso->irc;
+	PDU_BIG_INFO_ISO_INTERVAL_SET(big_info, iso_interval_us / PERIODIC_INT_UNIT_US);
+	PDU_BIG_INFO_NUM_BIS_SET(big_info, lll_adv_iso->num_bis);
+	PDU_BIG_INFO_NSE_SET(big_info, lll_adv_iso->nse);
+	PDU_BIG_INFO_BN_SET(big_info, lll_adv_iso->bn);
+	PDU_BIG_INFO_SUB_INTERVAL_SET(big_info, lll_adv_iso->sub_interval);
+	PDU_BIG_INFO_PTO_SET(big_info, lll_adv_iso->pto);
+	PDU_BIG_INFO_SPACING_SET(big_info, lll_adv_iso->bis_spacing);
+	PDU_BIG_INFO_IRC_SET(big_info, lll_adv_iso->irc);
+
 	big_info->max_pdu = lll_adv_iso->max_pdu;
+
 	(void)memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
 		     sizeof(big_info->seed_access_addr));
-	big_info->sdu_interval = sys_cpu_to_le24(sdu_interval);
-	big_info->max_sdu = max_sdu;
+	PDU_BIG_INFO_SDU_INTERVAL_SET(big_info, sdu_interval);
+	PDU_BIG_INFO_MAX_SDU_SET(big_info, max_sdu);
 	(void)memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
 		     sizeof(big_info->base_crc_init));
 	pdu_big_info_chan_map_phy_set(big_info->chm_phy,
@@ -1377,12 +1378,12 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
-		bi->offs = sys_cpu_to_le16(offs / (OFFS_UNIT_300_US /
-						   OFFS_UNIT_30_US));
-		bi->offs_units = 1U;
+		PDU_BIG_INFO_OFFS_SET(bi, offs / (OFFS_UNIT_300_US /
+						  OFFS_UNIT_30_US));
+		PDU_BIG_INFO_OFFS_UNITS_SET(bi, 1U);
 	} else {
-		bi->offs = sys_cpu_to_le16(offs);
-		bi->offs_units = 0U;
+		PDU_BIG_INFO_OFFS_SET(bi, offs);
+		PDU_BIG_INFO_OFFS_UNITS_SET(bi, 0U);
 	}
 }
 

@@ -312,3 +312,57 @@ void util_bis_aa_le32(uint8_t bis, uint8_t *saa, uint8_t *dst)
 	dst[2] ^= dwh[0];
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO*/
+
+/** @brief Get a bit aligned value from a byte array
+ *  Converts bitsets to any size variable (<= 32 bit), which is returned
+ *  as a uint32_t value.
+ *
+ *  @param data     Pointer to bytes containing the requested value
+ *  @param bit_offs Bit offset into data[0] for value LSB
+ *  @param num_bits Number of bits to extract and convert to value
+ */
+uint32_t util_get_bits(uint8_t *data, uint8_t bit_offs, uint8_t num_bits)
+{
+	uint32_t value;
+	uint8_t  shift, byteIdx, bits;
+
+	value = 0;
+	shift = 0;
+	byteIdx = 0;
+
+	while (num_bits) {
+		bits = MIN(num_bits, 8 - bit_offs);
+		value |= ((data[byteIdx] >> bit_offs) & BIT_MASK(bits)) << shift;
+		shift += bits;
+		num_bits -= bits;
+		bit_offs = 0;
+		byteIdx++;
+	}
+
+	return value;
+}
+
+/** @brief Set a bit aligned value in a byte array
+ *  Converts a value up to 32 bits to a bitset in a byte array.
+ *
+ *  @param data     Pointer to bytes in which to place the value
+ *  @param bit_offs Bit offset into data[0] for value LSB
+ *  @param num_bits Number of bits to set in data
+ */
+void util_set_bits(uint8_t *data, uint8_t bit_offs, uint8_t num_bits,
+		   uint32_t value)
+{
+	uint8_t byteIdx, bits;
+
+	byteIdx = 0;
+
+	while (num_bits) {
+		bits = MIN(num_bits, 8 - bit_offs);
+		data[byteIdx] = (data[byteIdx] & ~(BIT_MASK(bits) << bit_offs)) |
+				((value & BIT_MASK(bits)) << bit_offs);
+		value >>= bits;
+		num_bits -= bits;
+		bit_offs = 0;
+		byteIdx++;
+	}
+}
