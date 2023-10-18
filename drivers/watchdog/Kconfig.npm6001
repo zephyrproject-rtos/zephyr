@@ -13,6 +13,6 @@ config WDT_NPM6001
 config WDT_NPM6001_INIT_PRIORITY
 	int "nPM6001 Watchdog driver initialization priority"
 	depends on WDT_NPM6001
-	default 65
+	default 85
 	help
 	  Initialization priority for the nPM6001 Watchdog driver.
