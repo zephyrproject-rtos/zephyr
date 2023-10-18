@@ -23,7 +23,9 @@ There are four types of devicetree input files:
 - overlays (``.overlay``)
 - bindings (``.yaml``)
 
-The devicetree files inside the :file:`zephyr` directory look like this::
+The devicetree files inside the :file:`zephyr` directory look like this:
+
+.. code-block:: none
 
   boards/<ARCH>/<BOARD>/<BOARD>.dts
   dts/common/skeleton.dtsi
