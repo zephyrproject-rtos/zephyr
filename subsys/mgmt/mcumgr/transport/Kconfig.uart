@@ -13,6 +13,7 @@ menuconfig MCUMGR_TRANSPORT_UART
 	bool "UART mcumgr SMP transport"
 	depends on CONSOLE
 	depends on BASE64
+	depends on CRC
 	select UART_MCUMGR
 	help
 	  Enables handling of SMP commands received over UART.  This is a
