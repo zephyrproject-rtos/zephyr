@@ -200,12 +200,6 @@ latex_documents = [
     ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
 ]
 
-# -- Options for linkcheck ------------------------------------------------
-
-linkcheck_ignore = [
-    r"https://github.com/zephyrproject-rtos/zephyr/issues/.*"
-]
-
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
 
 doxyrunner_doxygen = os.environ.get("DOXYGEN_EXECUTABLE", "doxygen")
@@ -319,6 +313,10 @@ copybutton_prompt_text = r"\$ |uart:~\$ "
 copybutton_prompt_is_regexp = True
 
 # -- Linkcheck options ----------------------------------------------------
+
+linkcheck_ignore = [
+    r"https://github.com/zephyrproject-rtos/zephyr/issues/.*"
+]
 
 extlinks = {
     "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", "GitHub #%s"),
