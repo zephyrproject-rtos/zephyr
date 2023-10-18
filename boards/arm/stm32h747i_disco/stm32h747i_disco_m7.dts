@@ -78,6 +78,16 @@
 	status = "okay";
 };
 
+&pll2 {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <10>;
+	clocks = <&clk_hse>;  /* Assuming 25MHz HSE */
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(400)>;
@@ -202,8 +212,12 @@ zephyr_udc0: &usbotg_hs {
 
 &sdmmc1 {
 	status = "okay";
+	clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00010000>,
+			<&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
 			&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+			&sdmmc1_d4_pb8 &sdmmc1_d5_pb9
+			&sdmmc1_d6_pc6 &sdmmc1_d7_pc7
 			&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
