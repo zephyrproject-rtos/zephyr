@@ -387,9 +387,11 @@ Additional notes on the above:
   that order.
 
 - Parentheses, arithmetic operators, and bitwise operators are allowed. The
-  ``bar`` property contains a single cell with value 64::
+  ``bar`` property contains a single cell with value 64:
 
-  	bar = <(2 * (1 << 5))>;
+  .. code-block:: devicetree
+
+     bar = <(2 * (1 << 5))>;
 
   Note that the entire expression must be parenthesized.
 
@@ -419,7 +421,7 @@ Additional notes on the above:
 - Array and similar type property values can be split into several ``<>``
   blocks, like this:
 
-  .. code-block:: none
+  .. code-block:: devicetree
 
      foo = <1 2>, <3 4>;                         // Okay for 'type: array'
      foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'

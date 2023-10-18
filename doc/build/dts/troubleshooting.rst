@@ -193,7 +193,7 @@ as you enable the devicetree node. Otherwise, it is sometimes as simple as
 adding a line like this to your application's :file:`prj.conf` file and then
 making sure to :ref:`dt-trouble-try-pristine`:
 
-.. code-block:: none
+.. code-block:: cfg
 
    CONFIG_FOO=y
 
