@@ -66,7 +66,7 @@ Architectures
 
 * ARC
 
- * Introduced the scalar ARC VPX CPUs port
+ * Introduced the scalar port for ARC VPX processors
  * Introduced support for ARCv3 HS (both 32 and 64 bit) SMP platforms with up to 12 CPU cores
  * Reworked GNU helper tools usage for ARC MWDT toolchain. Now helper tools can be used from
    Zephyr SDK (if SDK is installed)
