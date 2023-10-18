@@ -10,6 +10,9 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/pm/device.h>
+
+#include <string.h>
 
 #if CONFIG_SOC_RISCV_TELINK_B91
 #define GPIO_IRQ_REG reg_gpio_irq_risc_mask
@@ -115,10 +118,23 @@ struct gpio_b9x_config {
 	void (*pirq_connect)(void);
 };
 
+struct gpio_b9x_retention_data {
+	struct gpio_b9x_t gpio_b9x_periph_config;
+	uint8_t gpio_b9x_irq_conf;
+	uint8_t analog_in_conf;
+	uint8_t analog_pupd_conf[2];
+	uint8_t risc0_irq_conf;
+	uint8_t risc1_irq_conf;
+};
+
 /* GPIO driver data structure */
 struct gpio_b9x_data {
 	struct gpio_driver_data common; /* driver data */
 	sys_slist_t callbacks;          /* list of callbacks */
+#if (defined CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) \
+|| defined(CONFIG_BOARD_TLSR9528A_RETENTION)))
+	struct gpio_b9x_retention_data gpio_b9x_retention; /* list of necessary retained data */
+#endif
 };
 
 #ifdef CONFIG_PM_DEVICE
@@ -591,6 +607,100 @@ static int gpio_b9x_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
+#if (defined CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) \
+|| defined(CONFIG_BOARD_TLSR9528A_RETENTION)))
+
+static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct gpio_b9x_config *cfg	= dev->config;
+	struct gpio_b9x_data *data			= dev->data;
+	uint8_t irq_num						= GET_IRQ_NUM(dev);
+	uint8_t irq_priority				= GET_IRQ_PRIORITY(dev);
+	struct gpio_b9x_t *gpio				= (struct gpio_b9x_t *)cfg->gpio_base;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		{
+			extern volatile bool b9x_deep_sleep_retention;
+
+			if (b9x_deep_sleep_retention) {
+				memcpy(gpio, &data->gpio_b9x_retention.gpio_b9x_periph_config,
+				sizeof(data->gpio_b9x_retention.gpio_b9x_periph_config));
+				if (IS_PORT_C(gpio)) {
+					analog_write_reg8(areg_gpio_pc_ie,
+					data->gpio_b9x_retention.analog_in_conf);
+				} else if (IS_PORT_D(gpio)) {
+					analog_write_reg8(areg_gpio_pd_ie,
+					data->gpio_b9x_retention.analog_in_conf);
+				}
+				if (IS_PORT_F(gpio)) {
+					analog_write_reg8(0x23,
+					data->gpio_b9x_retention.analog_pupd_conf[0]);
+					analog_write_reg8(0x24,
+					data->gpio_b9x_retention.analog_pupd_conf[1]);
+				} else {
+					analog_write_reg8(0x0e + (GET_PORT_NUM(gpio) << 1),
+					data->gpio_b9x_retention.analog_pupd_conf[0]);
+					analog_write_reg8(0x0e + (GET_PORT_NUM(gpio) << 1) + 1,
+					data->gpio_b9x_retention.analog_pupd_conf[1]);
+				}
+
+				reg_gpio_irq_ctrl = data->gpio_b9x_retention.gpio_b9x_irq_conf;
+				reg_irq_risc0_en(GET_PORT_NUM(gpio))
+				= data->gpio_b9x_retention.risc0_irq_conf;
+				reg_irq_risc1_en(GET_PORT_NUM(gpio))
+				= data->gpio_b9x_retention.risc1_irq_conf;
+
+				riscv_plic_irq_enable(irq_num);
+				riscv_plic_set_priority(irq_num, irq_priority);
+
+				gpio_b9x_irq_handler(dev);
+			}
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		memcpy(&data->gpio_b9x_retention.gpio_b9x_periph_config, gpio,
+		sizeof(data->gpio_b9x_retention.gpio_b9x_periph_config));
+		data->gpio_b9x_retention.gpio_b9x_irq_conf
+		= reg_gpio_irq_ctrl;
+		data->gpio_b9x_retention.risc0_irq_conf
+		= reg_irq_risc0_en(GET_PORT_NUM(gpio));
+		data->gpio_b9x_retention.risc1_irq_conf
+		= reg_irq_risc1_en(GET_PORT_NUM(gpio));
+
+		if (IS_PORT_C(gpio)) {
+			data->gpio_b9x_retention.analog_in_conf
+			= analog_read_reg8(areg_gpio_pc_ie);
+		} else if (IS_PORT_D(gpio))	{
+			data->gpio_b9x_retention.analog_in_conf
+			= analog_read_reg8(areg_gpio_pd_ie);
+		}
+		if (IS_PORT_F(gpio)) {
+			data->gpio_b9x_retention.analog_pupd_conf[0]
+			= analog_read_reg8(0x23);
+			data->gpio_b9x_retention.analog_pupd_conf[1]
+			= analog_read_reg8(0x24);
+		} else {
+			data->gpio_b9x_retention.analog_pupd_conf[0]
+			= analog_read_reg8(0x0e + (GET_PORT_NUM(gpio) << 1));
+			data->gpio_b9x_retention.analog_pupd_conf[1]
+			= analog_read_reg8(0x0e + (GET_PORT_NUM(gpio) << 1) + 1);
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#endif
+/* (CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION)
+ * || defined(CONFIG_BOARD_TLSR9528A_RETENTION)))
+ */
+
 /* GPIO driver APIs structure */
 static const struct gpio_driver_api gpio_b9x_driver_api = {
 	.pin_configure = gpio_b9x_pin_configure,
@@ -663,8 +773,20 @@ static void gpio_b9x_irq_connect_4(void)
 }
 #endif
 
+#if (defined CONFIG_PM_DEVICE && (defined(CONFIG_BOARD_TLSR9518ADK80D_RETENTION) \
+|| defined(CONFIG_BOARD_TLSR9528A_RETENTION)))
+#define PM_DEVICE_INST_DEFINE(n, gpio_b9x_pm_action)  \
+PM_DEVICE_DT_INST_DEFINE(n, gpio_b9x_pm_action);
+#define PM_DEVICE_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
+#else
+#define PM_DEVICE_INST_DEFINE(n, gpio_b9x_pm_action)
+#define PM_DEVICE_INST_GET(n)  NULL
+#endif
+
+
 /* GPIO driver registration */
 #define GPIO_B9X_INIT(n)						    \
+	PM_DEVICE_INST_DEFINE(n, gpio_b9x_pm_action)	\
 	static struct gpio_b9x_pin_irq_config gpio_b9x_pin_irq_state_##n; \
 	static const struct gpio_b9x_config gpio_b9x_config_##n = {	    \
 		.common = {						    \
@@ -679,7 +801,7 @@ static void gpio_b9x_irq_connect_4(void)
 	static struct gpio_b9x_data gpio_b9x_data_##n;			    \
 									    \
 	DEVICE_DT_INST_DEFINE(n, gpio_b9x_init,				    \
-			      NULL,					    \
+			      PM_DEVICE_INST_GET(n),					    \
 			      &gpio_b9x_data_##n,			    \
 			      &gpio_b9x_config_##n,			    \
 			      PRE_KERNEL_1,				    \
