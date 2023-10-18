@@ -285,17 +285,72 @@ static int bt_spi_send_aci_config_data_controller_mode(void)
 }
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static void bt_spi_rx_thread(void)
+static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 {
 	bool discardable = false;
 	k_timeout_t timeout = K_FOREVER;
+	struct bt_hci_acl_hdr acl_hdr;
 	struct net_buf *buf;
+	int len;
+
+	switch (msg[PACKET_TYPE]) {
+	case HCI_EVT:
+		switch (msg[EVT_HEADER_EVENT]) {
+		case BT_HCI_EVT_VENDOR:
+			/* Run event through interface handler */
+			if (bt_spi_handle_vendor_evt(msg)) {
+				return NULL;
+			}
+			/* Event has not yet been handled */
+			__fallthrough;
+		default:
+			if (msg[1] == BT_HCI_EVT_LE_META_EVENT &&
+			    (msg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
+				discardable = true;
+				timeout = K_NO_WAIT;
+			}
+			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT],
+					     discardable, timeout);
+			if (!buf) {
+				LOG_DBG("Discard adv report due to insufficient buf");
+				return NULL;
+			}
+		}
+
+		len = sizeof(struct bt_hci_evt_hdr) + msg[EVT_HEADER_SIZE];
+		if (len > net_buf_tailroom(buf)) {
+			LOG_ERR("Event too long: %d", len);
+			net_buf_unref(buf);
+			return NULL;
+		}
+		net_buf_add_mem(buf, &msg[1], len);
+		break;
+	case HCI_ACL:
+		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
+		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
+		if (len > net_buf_tailroom(buf)) {
+			LOG_ERR("ACL too long: %d", len);
+			net_buf_unref(buf);
+			return NULL;
+		}
+		net_buf_add_mem(buf, &msg[1], len);
+		break;
+	default:
+		LOG_ERR("Unknown BT buf type %d", msg[0]);
+		return NULL;
+	}
+
+	return buf;
+}
+
+static void bt_spi_rx_thread(void)
+{
 	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	uint8_t header_slave[5];
-	struct bt_hci_acl_hdr acl_hdr;
+	struct net_buf *buf;
 	uint8_t size = 0U;
 	int ret;
-	int len;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 	while (true) {
@@ -347,57 +402,12 @@ static void bt_spi_rx_thread(void)
 
 			spi_dump_message("RX:ed", rxmsg, size);
 
-			switch (rxmsg[PACKET_TYPE]) {
-			case HCI_EVT:
-				switch (rxmsg[EVT_HEADER_EVENT]) {
-				case BT_HCI_EVT_VENDOR:
-					/* Run event through interface handler */
-					if (bt_spi_handle_vendor_evt(rxmsg)) {
-						continue;
-					};
-					/* Event has not yet been handled */
-					__fallthrough;
-				default:
-					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
-					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
-						discardable = true;
-						timeout = K_NO_WAIT;
-					}
-
-					buf = bt_buf_get_evt(rxmsg[EVT_HEADER_EVENT],
-							     discardable, timeout);
-					if (!buf) {
-						LOG_DBG("Discard adv report due to insufficient "
-							"buf");
-						continue;
-					}
-				}
-
-				len = sizeof(struct bt_hci_evt_hdr) + rxmsg[EVT_HEADER_SIZE];
-				if (len > net_buf_tailroom(buf)) {
-					LOG_ERR("Event too long: %d", len);
-					net_buf_unref(buf);
-					continue;
-				}
-				net_buf_add_mem(buf, &rxmsg[1], len);
-				break;
-			case HCI_ACL:
-				buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-				memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
-				len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
-				if (len > net_buf_tailroom(buf)) {
-					LOG_ERR("ACL too long: %d", len);
-					net_buf_unref(buf);
-					continue;
-				}
-				net_buf_add_mem(buf, &rxmsg[1], len);
-				break;
-			default:
-				LOG_ERR("Unknown BT buf type %d", rxmsg[0]);
-				continue;
+			/* Construct net_buf from SPI data */
+			buf = bt_spi_rx_buf_construct(rxmsg);
+			if (buf) {
+				/* Handle the received HCI data */
+				bt_recv(buf);
 			}
-
-			bt_recv(buf);
 
 		/* On BlueNRG-MS, host is expected to read */
 		/* as long as IRQ pin is high */
