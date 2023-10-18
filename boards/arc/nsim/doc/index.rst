@@ -34,7 +34,7 @@ available configurations are listed below:
 * ``nsim_hs5x`` - 32-bit ARCv3 HS core with rich set of options
 * ``nsim_hs6x`` - 64-bit ARCv3 HS core with rich set of options
 * ``nsim_hs5x_smp_12cores`` - SMP 12 cores 32-bit ARCv3 HS platform
-* ``nsim_hs5x_smp_12cores`` - SMP 12 cores 64-bit ARCv3 HS platform
+* ``nsim_hs6x_smp_12cores`` - SMP 12 cores 64-bit ARCv3 HS platform
 
 .. _board_arc_nsim_prop_args_files:
 
