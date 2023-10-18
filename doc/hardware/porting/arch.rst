@@ -59,7 +59,7 @@ Common steps for all architectures:
 
 * Setup an initial stack.
 * If running an :abbr:`XIP (eXecute-In-Place)` kernel, copy initialized data
-* from ROM to RAM.
+  from ROM to RAM.
 * If not using an ELF loader, zero the BSS section.
 * Jump to :code:`_Cstart()`, the early kernel initialization
 
