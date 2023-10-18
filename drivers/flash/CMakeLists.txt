@@ -53,6 +53,12 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_AMBIQ flash_ambiq.c)
 
+dt_comp_path(soc_nv_flash_node COMPATIBLE "soc-nv-flash")
+if(NOT ("${soc_nv_flash_node}" STREQUAL ""))
+  dt_node_has_status(status PATH ${soc_nv_flash_node} STATUS "okay")
+  zephyr_library_sources(soc_nv_generic.c)
+endif()
+
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   dt_chosen(chosen_flash PROPERTY "zephyr,flash")
   dt_prop(compat_flash PATH ${chosen_flash} PROPERTY compatible)
