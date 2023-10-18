@@ -366,7 +366,7 @@ static int max11102_17_init(const struct device *dev)
 	data->current_channel_id = 0;
 
 #if CONFIG_ADC_ASYNC
-	const k_tid_t tid = k_thread_create(
+	k_tid_t tid = k_thread_create(
 		&data->thread, data->stack, CONFIG_ADC_MAX11102_17_ACQUISITION_THREAD_STACK_SIZE,
 		(k_thread_entry_t)max11102_17_acquisition_thread, (void *)dev, NULL, NULL,
 		CONFIG_ADC_MAX11102_17_ACQUISITION_THREAD_INIT_PRIO, 0, K_NO_WAIT);
