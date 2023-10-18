@@ -1,0 +1,11 @@
+description: |
+  Special no-controller device used as parent for soc-nv-flash
+  devices that are only used to define flash region used during
+  compilation to define application placement in NV-memory.
+  soc-nv-flash nodes hanging from such controller may not be
+  accessed, using flash_api, at run-time but can still be evaluated
+  at compile time using DT macros.
+
+compatible: "zephyr,null-controller"
+
+include: base.yaml
