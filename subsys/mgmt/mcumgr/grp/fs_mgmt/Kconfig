@@ -118,6 +118,7 @@ config MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE
 
 config MCUMGR_GRP_FS_CHECKSUM_IEEE_CRC32
 	bool "IEEE CRC32 checksum support"
+	select CRC
 	default y
 	help
 	  Enable IEEE CRC32 checksum support for MCUmgr.
