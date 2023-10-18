@@ -13,6 +13,7 @@ menuconfig MCUMGR_TRANSPORT_SHELL
 	bool "Shell mcumgr SMP transport"
 	depends on SHELL
 	depends on BASE64
+	depends on CRC
 	help
 	  Enables handling of SMP commands received over shell.  This allows
 	  the shell to be use for both mcumgr commands and shell commands.
