@@ -498,7 +498,7 @@ first make sure you're booting the right core.
 
    The output should look like this:
 
-   .. code-block:: none
+   .. code-block:: console
 
       $ ~/rv32m1-openocd -f boards/riscv/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
       Open On-Chip Debugger 0.10.0+dev-00431-ge1ec3c7d (2018-10-31-07:29)

@@ -85,7 +85,7 @@ build command:
 
 Alternatively, set use of this shield in the project's ``CMakeLists.txt`` file:
 
-.. code-block:: none
+.. code-block:: cmake
 
 	set(SHIELD x_nucleo_idb05a1)
 

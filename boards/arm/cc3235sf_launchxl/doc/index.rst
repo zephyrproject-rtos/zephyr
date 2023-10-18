@@ -172,7 +172,7 @@ Prerequisites:
    to the paths of the OpenOCD binary and its scripts, before
    including the common openocd.board.cmake file:
 
-   .. code-block:: none
+   .. code-block:: cmake
 
       set(OPENOCD "/usr/local/bin/openocd" CACHE FILEPATH "" FORCE)
       set(OPENOCD_DEFAULT_PATH /usr/local/share/openocd/scripts)
