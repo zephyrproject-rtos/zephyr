@@ -47,7 +47,7 @@ static int mcux_iuart_poll_in(const struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void mcux_iuart_poll_out(const struct device *dev, unsigned char c)
+static int mcux_iuart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_iuart_config *config = dev->config;
 
@@ -55,6 +55,8 @@ static void mcux_iuart_poll_out(const struct device *dev, unsigned char c)
 	}
 
 	UART_WriteByte(config->base, c);
+
+	return 0;
 }
 
 static int mcux_iuart_err_check(const struct device *dev)

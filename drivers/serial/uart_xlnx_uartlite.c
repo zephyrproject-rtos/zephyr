@@ -119,7 +119,7 @@ static int xlnx_uartlite_poll_in(const struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void xlnx_uartlite_poll_out(const struct device *dev, unsigned char c)
+static int xlnx_uartlite_poll_out(const struct device *dev, unsigned char c)
 {
 	uint32_t status;
 	k_spinlock_key_t key;
@@ -135,6 +135,8 @@ static void xlnx_uartlite_poll_out(const struct device *dev, unsigned char c)
 		}
 		k_spin_unlock(&data->tx_lock, key);
 	}
+
+	return 0;
 }
 
 static int xlnx_uartlite_err_check(const struct device *dev)

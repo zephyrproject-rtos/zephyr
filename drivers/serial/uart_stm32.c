@@ -696,9 +696,11 @@ static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 	return uart_stm32_poll_in_visitor(dev, (void *)c, poll_in_u8);
 }
 
-static void uart_stm32_poll_out(const struct device *dev, unsigned char c)
+static int uart_stm32_poll_out(const struct device *dev, unsigned char c)
 {
 	uart_stm32_poll_out_visitor(dev, (void *)&c, poll_out_u8);
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_WIDE_DATA
@@ -718,9 +720,11 @@ static int uart_stm32_poll_in_u16(const struct device *dev, uint16_t *in_u16)
 	return uart_stm32_poll_in_visitor(dev, (void *)in_u16, poll_in_u9);
 }
 
-static void uart_stm32_poll_out_u16(const struct device *dev, uint16_t out_u16)
+static int uart_stm32_poll_out_u16(const struct device *dev, uint16_t out_u16)
 {
 	uart_stm32_poll_out_visitor(dev, (void *)&out_u16, poll_out_u9);
+
+	return 0;
 }
 
 #endif

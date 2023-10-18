@@ -132,12 +132,14 @@ static int pio_uart_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void pio_uart_poll_out(const struct device *dev, unsigned char c)
+static int pio_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct pio_uart_config *config = dev->config;
 	struct pio_uart_data *data = dev->data;
 
 	pio_sm_put_blocking(pio_rpi_pico_get_pio(config->piodev), data->tx_sm, (uint32_t)c);
+
+	return 0;
 }
 
 static int pio_uart_init(const struct device *dev)

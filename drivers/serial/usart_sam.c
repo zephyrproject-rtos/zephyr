@@ -59,7 +59,7 @@ static int usart_sam_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void usart_sam_poll_out(const struct device *dev, unsigned char c)
+static int usart_sam_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct usart_sam_dev_cfg *config = dev->config;
 
@@ -71,6 +71,8 @@ static void usart_sam_poll_out(const struct device *dev, unsigned char c)
 
 	/* send a character */
 	usart->US_THR = (uint32_t)c;
+
+	return 0;
 }
 
 static int usart_sam_err_check(const struct device *dev)

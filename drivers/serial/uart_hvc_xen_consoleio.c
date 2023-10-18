@@ -33,10 +33,12 @@ static int xen_consoleio_poll_in(const struct device *dev,
 	return 0;
 }
 
-static void xen_consoleio_poll_out(const struct device *dev,
+static int xen_consoleio_poll_out(const struct device *dev,
 			unsigned char c)
 {
 	(void) HYPERVISOR_console_io(CONSOLEIO_write, sizeof(c), &c);
+
+	return 0;
 }
 
 static const struct uart_driver_api xen_consoleio_hvc_api = {

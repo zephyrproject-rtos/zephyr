@@ -52,13 +52,15 @@ void uart_cdns_set_baudrate(struct uart_cdns_regs *uart_regs,
 				   ((dev_cfg->bdiv + 1) * baud_rate);
 }
 
-static void uart_cdns_poll_out(const struct device *dev, unsigned char out_char)
+static int uart_cdns_poll_out(const struct device *dev, unsigned char out_char)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 	/* Wait while TX FIFO is full */
 	while (uart_cdns_is_tx_fifo_full(uart_regs)) {
 	}
 	uart_regs->rx_tx_fifo = (uint32_t)out_char;
+
+	return 0;
 }
 
 /** @brief Poll the device for input. */

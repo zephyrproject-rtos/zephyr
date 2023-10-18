@@ -102,7 +102,7 @@ static int mcux_flexcomm_poll_in(const struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void mcux_flexcomm_poll_out(const struct device *dev,
+static int mcux_flexcomm_poll_out(const struct device *dev,
 					     unsigned char c)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
@@ -112,6 +112,8 @@ static void mcux_flexcomm_poll_out(const struct device *dev,
 	}
 
 	USART_WriteByte(config->base, c);
+
+	return 0;
 }
 
 static int mcux_flexcomm_err_check(const struct device *dev)

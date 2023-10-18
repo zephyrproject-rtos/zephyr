@@ -49,12 +49,14 @@ static bool usbserial_rx_fifo_empty(void)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_usbserial_poll_out(const struct device *dev, unsigned char c)
+static int uart_usbserial_poll_out(const struct device *dev, unsigned char c)
 {
 	 /* Wait for room in Tx FIFO */
 	while (usbserial_tx_fifo_full())
 		;
 	usbserial_regs->wdata = c;
+
+	return 0;
 }
 
 /**

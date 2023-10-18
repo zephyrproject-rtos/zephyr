@@ -38,7 +38,7 @@ static int np_uart_stdin_poll_in(const struct device *dev,
 				 unsigned char *p_char);
 static int np_uart_tty_poll_in(const struct device *dev,
 			       unsigned char *p_char);
-static void np_uart_poll_out(const struct device *dev,
+static int np_uart_poll_out(const struct device *dev,
 				      unsigned char out_char);
 
 static bool auto_attach;
@@ -126,8 +126,7 @@ static int np_uart_1_init(const struct device *dev)
  * @param dev UART device struct
  * @param out_char Character to send.
  */
-static void np_uart_poll_out(const struct device *dev,
-				      unsigned char out_char)
+static int np_uart_poll_out(const struct device *dev, unsigned char out_char)
 {
 	int ret;
 	struct native_uart_status *d = (struct native_uart_status *)dev->data;
@@ -144,11 +143,9 @@ static void np_uart_poll_out(const struct device *dev,
 		}
 	}
 
-	/* The return value of write() cannot be ignored (there is a warning)
-	 * but we do not need the return value for anything.
-	 */
 	ret = nsi_host_write(d->out_fd, &out_char, 1);
-	(void) ret;
+
+	return ret != -1 ? 0 : -EIO;
 }
 
 /**

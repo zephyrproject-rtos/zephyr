@@ -285,7 +285,7 @@ static int uart_stellaris_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_stellaris_poll_out(const struct device *dev,
+static int uart_stellaris_poll_out(const struct device *dev,
 					     unsigned char c)
 {
 	const struct uart_stellaris_config *config = dev->config;
@@ -295,6 +295,8 @@ static void uart_stellaris_poll_out(const struct device *dev,
 
 	/* send a character */
 	config->uart->dr = (uint32_t)c;
+
+	return 0;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN

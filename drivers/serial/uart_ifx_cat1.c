@@ -174,11 +174,13 @@ static int ifx_cat1_uart_poll_in(const struct device *dev, unsigned char *c)
 	return ((rec == CY_SCB_UART_RX_NO_DATA) ? -1 : 0);
 }
 
-static void ifx_cat1_uart_poll_out(const struct device *dev, unsigned char c)
+static int ifx_cat1_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	struct ifx_cat1_uart_data *data = dev->data;
 
 	(void) cyhal_uart_putc(&data->obj, (uint32_t)c);
+
+	return 0;
 }
 
 static int ifx_cat1_uart_err_check(const struct device *dev)

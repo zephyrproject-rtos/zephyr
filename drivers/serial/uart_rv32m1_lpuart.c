@@ -51,7 +51,7 @@ static int rv32m1_lpuart_poll_in(const struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void rv32m1_lpuart_poll_out(const struct device *dev, unsigned char c)
+static int rv32m1_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct rv32m1_lpuart_config *config = dev->config;
 
@@ -60,6 +60,8 @@ static void rv32m1_lpuart_poll_out(const struct device *dev, unsigned char c)
 	}
 
 	LPUART_WriteByte(config->base, c);
+
+	return 0;
 }
 
 static int rv32m1_lpuart_err_check(const struct device *dev)

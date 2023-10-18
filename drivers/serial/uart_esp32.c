@@ -130,7 +130,7 @@ static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 	return 0;
 }
 
-static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
+static int uart_esp32_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uart_esp32_data *data = dev->data;
 	uint32_t written;
@@ -142,6 +142,8 @@ static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 
 	/* Send a character */
 	uart_hal_write_txfifo(&data->hal, &c, 1, &written);
+
+	return 0;
 }
 
 static int uart_esp32_err_check(const struct device *dev)

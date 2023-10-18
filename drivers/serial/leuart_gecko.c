@@ -60,7 +60,7 @@ static int leuart_gecko_poll_in(const struct device *dev, unsigned char *c)
 	return -1;
 }
 
-static void leuart_gecko_poll_out(const struct device *dev, unsigned char c)
+static int leuart_gecko_poll_out(const struct device *dev, unsigned char c)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
 
@@ -68,6 +68,8 @@ static void leuart_gecko_poll_out(const struct device *dev, unsigned char c)
 	 * and and waits for the bus to be free to transmit.
 	 */
 	LEUART_Tx(base, c);
+
+	return 0;
 }
 
 static int leuart_gecko_err_check(const struct device *dev)

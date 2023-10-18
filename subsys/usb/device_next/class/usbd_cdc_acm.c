@@ -811,13 +811,13 @@ poll_in_exit:
 	return ret;
 }
 
-static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
+static int cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
 		LOG_ERR("IRQ callback is used");
-		return;
+		return -EIO;
 	}
 
 	if (ring_buf_put(data->tx_fifo.rb, &c, 1)) {
@@ -829,11 +829,14 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	    !ring_buf_put(data->tx_fifo.rb, &c, 1)) {
 		LOG_ERR("Failed to drain buffer");
 		__ASSERT_NO_MSG(false);
+		return -EIO;
 	}
 
 poll_out_exit:
 	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 	cdc_acm_work_submit(&data->tx_fifo_work);
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_LINE_CTRL

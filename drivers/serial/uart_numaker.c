@@ -54,11 +54,13 @@ static int uart_numaker_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_numaker_poll_out(const struct device *dev, unsigned char c)
+static int uart_numaker_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_numaker_config *config = dev->config;
 
 	UART_Write(config->uart, &c, 1);
+
+	return 0;
 }
 
 static int uart_numaker_err_check(const struct device *dev)

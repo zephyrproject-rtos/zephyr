@@ -116,7 +116,7 @@ static int native_tty_conv_to_bottom_cfg(struct native_tty_bottom_cfg *bottom_cf
  * @param dev		UART device structure.
  * @param out_char	Character to send.
  */
-static void native_tty_uart_poll_out(const struct device *dev, unsigned char out_char)
+static int native_tty_uart_poll_out(const struct device *dev, unsigned char out_char)
 {
 	struct native_tty_data *data = dev->data;
 
@@ -124,7 +124,10 @@ static void native_tty_uart_poll_out(const struct device *dev, unsigned char out
 
 	if (ret == -1) {
 		ERROR("Could not write to %s\n", data->serial_port);
+		return -EIO;
 	}
+
+	return 0;
 }
 
 /**

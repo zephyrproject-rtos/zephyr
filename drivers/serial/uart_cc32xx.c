@@ -104,11 +104,13 @@ static int uart_cc32xx_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_cc32xx_poll_out(const struct device *dev, unsigned char c)
+static int uart_cc32xx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_cc32xx_dev_config *config = dev->config;
 
 	MAP_UARTCharPut(config->base, c);
+
+	return 0;
 }
 
 static int uart_cc32xx_err_check(const struct device *dev)

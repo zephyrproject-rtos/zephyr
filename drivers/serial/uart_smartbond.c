@@ -107,7 +107,7 @@ static int uart_smartbond_poll_in(const struct device *dev, unsigned char *p_cha
 	return 0;
 }
 
-static void uart_smartbond_poll_out(const struct device *dev, unsigned char out_char)
+static int uart_smartbond_poll_out(const struct device *dev, unsigned char out_char)
 {
 	const struct uart_smartbond_cfg *config = dev->config;
 	struct uart_smartbond_data *data = dev->data;
@@ -120,6 +120,8 @@ static void uart_smartbond_poll_out(const struct device *dev, unsigned char out_
 	config->regs->UART2_RBR_THR_DLL_REG = out_char;
 
 	k_spin_unlock(&data->lock, key);
+
+	return 0;
 }
 
 static int uart_smartbond_configure(const struct device *dev,

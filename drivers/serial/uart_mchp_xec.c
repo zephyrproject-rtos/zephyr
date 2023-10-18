@@ -586,7 +586,7 @@ static int uart_xec_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_xec_poll_out(const struct device *dev, unsigned char c)
+static int uart_xec_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_xec_device_config * const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
@@ -600,6 +600,8 @@ static void uart_xec_poll_out(const struct device *dev, unsigned char c)
 	regs->RTXB = c;
 
 	k_spin_unlock(&dev_data->lock, key);
+
+	return 0;
 }
 
 /**

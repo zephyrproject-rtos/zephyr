@@ -997,13 +997,13 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
  * If the USB subsystem is ready and the buffer is full, the first character
  * from the tx_ringbuf is removed to make room for the new character.
  */
-static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
+static int cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
 	if (!dev_data->configured || dev_data->suspended) {
 		LOG_INF("USB device not ready, drop data");
-		return;
+		return -EIO;
 	}
 
 	dev_data->tx_ready = false;
@@ -1013,7 +1013,7 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 		if (!ring_buf_get(dev_data->tx_ringbuf, NULL, 1) ||
 		    !ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
 			LOG_ERR("Failed to drain buffer");
-			return;
+			return -EIO;
 		}
 	}
 
@@ -1022,6 +1022,8 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 	 * the increased throughput and reduced CPU usage is easily observable.
 	 */
 	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_MSEC(1));
+
+	return 0;
 }
 
 static const struct uart_driver_api cdc_acm_driver_api = {

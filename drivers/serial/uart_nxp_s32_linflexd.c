@@ -35,9 +35,10 @@ static int uart_nxp_s32_err_check(const struct device *dev)
 	return err;
 }
 
-static void uart_nxp_s32_poll_out(const struct device *dev, unsigned char c)
+static int uart_nxp_s32_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_nxp_s32_config *config = dev->config;
+	Linflexd_Uart_Ip_StatusType status;
 	uint32_t linflexd_ier;
 	uint8_t key;
 
@@ -46,13 +47,15 @@ static void uart_nxp_s32_poll_out(const struct device *dev, unsigned char c)
 	/* Save enabled Linflexd's interrupts */
 	linflexd_ier = sys_read32(POINTER_TO_UINT(&config->base->LINIER));
 
-	Linflexd_Uart_Ip_SyncSend(config->instance, &c, 1,
-				  CONFIG_UART_NXP_S32_POLL_OUT_TIMEOUT);
+	status = Linflexd_Uart_Ip_SyncSend(config->instance, &c, 1,
+					   CONFIG_UART_NXP_S32_POLL_OUT_TIMEOUT);
 
 	/* Restore Linflexd's interrupts */
 	sys_write32(linflexd_ier, POINTER_TO_UINT(&config->base->LINIER));
 
 	irq_unlock(key);
+
+	return status == LINFLEXD_UART_IP_STATUS_SUCCESS ? 0 : -EIO;
 }
 
 static int uart_nxp_s32_poll_in(const struct device *dev, unsigned char *c)

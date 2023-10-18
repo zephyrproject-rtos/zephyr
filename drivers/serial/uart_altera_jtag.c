@@ -115,7 +115,7 @@ static int uart_altera_jtag_poll_in(const struct device *dev,
  * @param dev UART device instance
  * @param c Character to send
  */
-static void uart_altera_jtag_poll_out(const struct device *dev,
+static int uart_altera_jtag_poll_out(const struct device *dev,
 					       unsigned char c)
 {
 #ifdef CONFIG_UART_ALTERA_JTAG_HAL
@@ -137,6 +137,8 @@ static void uart_altera_jtag_poll_out(const struct device *dev,
 
 	k_spin_unlock(&data->lock, key);
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */
+
+	return 0;
 }
 
 /**

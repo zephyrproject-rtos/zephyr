@@ -71,12 +71,13 @@ static int uart_rtt_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_rtt_poll_out(const struct device *dev, unsigned char c)
+static int uart_rtt_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_rtt_config *config = dev->config;
 	unsigned int ch = config ? config->channel : 0;
+	unsigned int ret = SEGGER_RTT_Write(ch, &c, 1);
 
-	SEGGER_RTT_Write(ch, &c, 1);
+	return ret > 0 ? 0 : -EIO;
 }
 
 #ifdef CONFIG_UART_ASYNC_API

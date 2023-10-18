@@ -231,9 +231,11 @@ static void uart_nrfx_isr(const struct device *dev);
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
+static int uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 {
 	atomic_t *lock;
+	bool success;
+
 #ifdef CONFIG_UART_0_ASYNC
 	while (uart0_cb.tx_buffer) {
 		/* If there is ongoing asynchronous transmission, and we are in
@@ -285,9 +287,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 	nrf_uart_txd_set(uart0_addr, (uint8_t)c);
 
 	/* Wait until the transmitter is ready, i.e. the character is sent. */
-	bool res;
-
-	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, res);
+	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, success);
 
 	/* Deactivate the transmitter so that it does not needlessly
 	 * consume power.
@@ -296,6 +296,8 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 
 	/* Release the lock. */
 	*lock = 0;
+
+	return success ? 0 : -EIO;
 }
 
 /** Console I/O function */

@@ -71,7 +71,7 @@ static int serial_esp32_usb_poll_in(const struct device *dev, unsigned char *p_c
 	return 0;
 }
 
-static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
+static int serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 {
 	struct serial_esp32_usb_data *data = dev->data;
 
@@ -84,9 +84,11 @@ static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 			usb_serial_jtag_ll_write_txfifo(&c, 1);
 			usb_serial_jtag_ll_txfifo_flush();
 			data->last_tx_time = k_uptime_get();
-			return;
+			return 0;
 		}
 	} while ((k_uptime_get() - data->last_tx_time) < USBSERIAL_POLL_OUT_TIMEOUT_MS);
+
+	return -EIO;
 }
 
 static int serial_esp32_usb_err_check(const struct device *dev)

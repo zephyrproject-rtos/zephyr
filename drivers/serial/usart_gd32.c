@@ -122,7 +122,7 @@ static int usart_gd32_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void usart_gd32_poll_out(const struct device *dev, unsigned char c)
+static int usart_gd32_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct gd32_usart_config *const cfg = dev->config;
 
@@ -131,6 +131,8 @@ static void usart_gd32_poll_out(const struct device *dev, unsigned char c)
 	while (usart_flag_get(cfg->reg, USART_FLAG_TBE) == RESET) {
 		;
 	}
+
+	return 0;
 }
 
 static int usart_gd32_err_check(const struct device *dev)

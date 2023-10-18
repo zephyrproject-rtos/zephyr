@@ -58,7 +58,7 @@ static int uart_sam_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_sam_poll_out(const struct device *dev, unsigned char c)
+static int uart_sam_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_sam_dev_cfg *const cfg = dev->config;
 
@@ -70,6 +70,8 @@ static void uart_sam_poll_out(const struct device *dev, unsigned char c)
 
 	/* send a character */
 	uart->UART_THR = (uint32_t)c;
+
+	return 0;
 }
 
 static int uart_sam_err_check(const struct device *dev)

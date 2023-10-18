@@ -361,11 +361,11 @@ __subsystem struct uart_driver_api {
 
 	/** Console I/O function */
 	int (*poll_in)(const struct device *dev, unsigned char *p_char);
-	void (*poll_out)(const struct device *dev, unsigned char out_char);
+	int (*poll_out)(const struct device *dev, unsigned char out_char);
 
 #ifdef CONFIG_UART_WIDE_DATA
 	int (*poll_in_u16)(const struct device *dev, uint16_t *p_u16);
-	void (*poll_out_u16)(const struct device *dev, uint16_t out_u16);
+	int (*poll_out_u16)(const struct device *dev, uint16_t out_u16);
 #endif
 
 	/** Console I/O function */
@@ -567,17 +567,19 @@ static inline int z_impl_uart_poll_in_u16(const struct device *dev,
  *
  * @param dev UART device instance.
  * @param out_char Character to send.
+ *
+ * @retval 0    If the character was sent out successfully.
+ * @retval -EIO If the character could not be sent out, e.g. because no host is connected in case
+ *              of a USB CDC-ACM port.
  */
-__syscall void uart_poll_out(const struct device *dev,
-			     unsigned char out_char);
+__syscall int uart_poll_out(const struct device *dev, unsigned char out_char);
 
-static inline void z_impl_uart_poll_out(const struct device *dev,
-					unsigned char out_char)
+static inline int z_impl_uart_poll_out(const struct device *dev, unsigned char out_char)
 {
 	const struct uart_driver_api *api =
 		(const struct uart_driver_api *)dev->api;
 
-	api->poll_out(dev, out_char);
+	return api->poll_out(dev, out_char);
 }
 
 /**
@@ -593,20 +595,26 @@ static inline void z_impl_uart_poll_out(const struct device *dev,
  *
  * @param dev UART device instance.
  * @param out_u16 Wide data to send.
+ *
+ * @retval 0        If the character was sent out successfully.
+ * @retval -EIO     If the character could not be sent out, e.g. because no host is connected in
+ *                  case of a USB CDC-ACM port.
+ * @retval -ENOTSUP If API is not enabled.
  */
-__syscall void uart_poll_out_u16(const struct device *dev, uint16_t out_u16);
+__syscall int uart_poll_out_u16(const struct device *dev, uint16_t out_u16);
 
-static inline void z_impl_uart_poll_out_u16(const struct device *dev,
-					    uint16_t out_u16)
+static inline int z_impl_uart_poll_out_u16(const struct device *dev, uint16_t out_u16)
 {
 #ifdef CONFIG_UART_WIDE_DATA
 	const struct uart_driver_api *api =
 		(const struct uart_driver_api *)dev->api;
 
-	api->poll_out_u16(dev, out_u16);
+	return api->poll_out_u16(dev, out_u16);
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(out_u16);
+
+	return -ENOTSUP;
 #endif
 }
 

@@ -60,7 +60,7 @@ static int uart_cc13xx_cc26xx_poll_in(const struct device *dev,
 	return 0;
 }
 
-static void uart_cc13xx_cc26xx_poll_out(const struct device *dev,
+static int uart_cc13xx_cc26xx_poll_out(const struct device *dev,
 					unsigned char c)
 {
 	const struct uart_cc13xx_cc26xx_config *config = dev->config;
@@ -72,6 +72,8 @@ static void uart_cc13xx_cc26xx_poll_out(const struct device *dev,
 	 */
 	while (UARTBusy(config->reg) == true) {
 	}
+
+	return 0;
 }
 
 static int uart_cc13xx_cc26xx_err_check(const struct device *dev)

@@ -169,11 +169,13 @@ static int uart_gecko_poll_in(const struct device *dev, unsigned char *c)
 	return -1;
 }
 
-static void uart_gecko_poll_out(const struct device *dev, unsigned char c)
+static int uart_gecko_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_gecko_config *config = dev->config;
 
 	USART_Tx(config->base, c);
+
+	return 0;
 }
 
 static int uart_gecko_err_check(const struct device *dev)

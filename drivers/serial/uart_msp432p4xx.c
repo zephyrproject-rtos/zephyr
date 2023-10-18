@@ -162,12 +162,14 @@ static int uart_msp432p4xx_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_msp432p4xx_poll_out(const struct device *dev,
+static int uart_msp432p4xx_poll_out(const struct device *dev,
 				     unsigned char c)
 {
 	const struct uart_msp432p4xx_config *config = dev->config;
 
 	MAP_UART_transmitData(config->base, c);
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

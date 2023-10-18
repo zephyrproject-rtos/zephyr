@@ -198,19 +198,21 @@ static int serial_vnd_poll_in(const struct device *dev, unsigned char *c)
 #endif
 }
 
-static void serial_vnd_poll_out(const struct device *dev, unsigned char c)
+static int serial_vnd_poll_out(const struct device *dev, unsigned char c)
 {
 	struct serial_vnd_data *data = dev->data;
 
 #ifdef CONFIG_RING_BUFFER
 	if (data == NULL || data->written == NULL) {
-		return;
+		return -EIO;
 	}
 	ring_buf_put(data->written, &c, 1);
 #endif
 	if (data->callback) {
 		data->callback(dev, data->callback_data);
 	}
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_ASYNC_API

@@ -239,12 +239,16 @@ static int uart_sedi_poll_in(const struct device *dev, unsigned char *data)
 	return ret;
 }
 
-static void uart_sedi_poll_out(const struct device *dev,
+static int uart_sedi_poll_out(const struct device *dev,
 			       unsigned char data)
 {
+	int ret;
+
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
-	sedi_uart_write(instance, data);
+	ret = sedi_uart_write(instance, data);
+
+	return ret == SEDI_DRIVER_OK ? 0 : -EIO;
 }
 
 #ifdef CONFIG_UART_LINE_CTRL

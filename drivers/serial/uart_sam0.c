@@ -650,7 +650,7 @@ static int uart_sam0_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
+static int uart_sam0_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
 
@@ -661,6 +661,8 @@ static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
 
 	/* send a character */
 	usart->DATA.reg = c;
+
+	return 0;
 }
 
 static int uart_sam0_err_check(const struct device *dev)

@@ -111,12 +111,14 @@ static int neorv32_uart_poll_in(const struct device *dev, unsigned char *c)
 	return -1;
 }
 
-static void neorv32_uart_poll_out(const struct device *dev, unsigned char c)
+static int neorv32_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	while ((neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_TX_BUSY) != 0) {
 	}
 
 	neorv32_uart_write_data(dev, c);
+
+	return 0;
 }
 
 static int neorv32_uart_configure(const struct device *dev, const struct uart_config *cfg)

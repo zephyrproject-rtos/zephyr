@@ -187,7 +187,7 @@ static int uart_cmsdk_apb_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_cmsdk_apb_poll_out(const struct device *dev,
+static int uart_cmsdk_apb_poll_out(const struct device *dev,
 					     unsigned char c)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
@@ -199,6 +199,8 @@ static void uart_cmsdk_apb_poll_out(const struct device *dev,
 
 	/* Send a character */
 	dev_cfg->uart->data = (uint32_t)c;
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

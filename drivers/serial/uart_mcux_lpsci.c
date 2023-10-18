@@ -47,7 +47,7 @@ static int mcux_lpsci_poll_in(const struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void mcux_lpsci_poll_out(const struct device *dev, unsigned char c)
+static int mcux_lpsci_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_lpsci_config *config = dev->config;
 
@@ -56,6 +56,8 @@ static void mcux_lpsci_poll_out(const struct device *dev, unsigned char c)
 	}
 
 	LPSCI_WriteByte(config->base, c);
+
+	return 0;
 }
 
 static int mcux_lpsci_err_check(const struct device *dev)

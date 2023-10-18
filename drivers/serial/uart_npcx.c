@@ -339,10 +339,12 @@ static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
  * Poll-out implementation for interrupt driven config, forward call to
  * uart_npcx_fifo_fill().
  */
-static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
+static int uart_npcx_poll_out(const struct device *dev, unsigned char c)
 {
 	while (!uart_npcx_fifo_fill(dev, &c, 1))
 		continue;
+
+	return 0;
 }
 
 #else /* !CONFIG_UART_INTERRUPT_DRIVEN */
@@ -367,7 +369,7 @@ static int uart_npcx_poll_in(const struct device *dev, unsigned char *c)
 /*
  * Poll-out implementation for byte mode config, write byte to UTBUF if empty.
  */
-static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
+static int uart_npcx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_npcx_config *const config = dev->config;
 	struct uart_reg *const inst = config->inst;
@@ -377,6 +379,8 @@ static void uart_npcx_poll_out(const struct device *dev, unsigned char c)
 		continue;
 
 	inst->UTBUF = c;
+
+	return 0;
 }
 #endif /* !CONFIG_UART_INTERRUPT_DRIVEN */
 

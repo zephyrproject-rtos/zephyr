@@ -387,11 +387,13 @@ static int uart_hostlink_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_hostlink_poll_out(const struct device *dev, unsigned char c)
+static int uart_hostlink_poll_out(const struct device *dev, unsigned char c)
 {
 	ARG_UNUSED(dev);
 
 	hl_write_char(1, c);
+
+	return 0;
 }
 
 static const struct uart_driver_api uart_hostlink_driver_api = {

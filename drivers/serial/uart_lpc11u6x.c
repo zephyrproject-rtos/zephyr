@@ -26,13 +26,15 @@ static int lpc11u6x_uart0_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void lpc11u6x_uart0_poll_out(const struct device *dev, unsigned char c)
+static int lpc11u6x_uart0_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct lpc11u6x_uart0_config *cfg = dev->config;
 
 	while (!(cfg->uart0->lsr & LPC11U6X_UART0_LSR_THRE)) {
 	}
 	cfg->uart0->thr = c;
+
+	return 0;
 }
 
 static int lpc11u6x_uart0_err_check(const struct device *dev)
@@ -456,13 +458,15 @@ static int lpc11u6x_uartx_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void lpc11u6x_uartx_poll_out(const struct device *dev, unsigned char c)
+static int lpc11u6x_uartx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct lpc11u6x_uartx_config *cfg = dev->config;
 
 	while (!(cfg->base->stat & LPC11U6X_UARTX_STAT_TXRDY)) {
 	}
 	cfg->base->tx_dat = c;
+
+	return 0;
 }
 
 static int lpc11u6x_uartx_err_check(const struct device *dev)

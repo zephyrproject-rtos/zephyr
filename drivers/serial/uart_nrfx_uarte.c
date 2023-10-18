@@ -1477,7 +1477,7 @@ static int uarte_nrfx_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UARTE device struct
  * @param c Character to send
  */
-static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
+static int uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
@@ -1508,6 +1508,8 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	tx_start(dev, data->char_out, 1);
 
 	irq_unlock(key);
+
+	return 0;
 }
 
 

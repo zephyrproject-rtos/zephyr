@@ -367,7 +367,7 @@ static int uart_xlnx_ps_poll_in(const struct device *dev, unsigned char *c)
  *
  * @return Sent character
  */
-static void uart_xlnx_ps_poll_out(const struct device *dev, unsigned char c)
+static int uart_xlnx_ps_poll_out(const struct device *dev, unsigned char c)
 {
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t reg_val;
@@ -382,6 +382,8 @@ static void uart_xlnx_ps_poll_out(const struct device *dev, unsigned char c)
 	do {
 		reg_val = sys_read32(reg_base + XUARTPS_SR_OFFSET);
 	} while ((reg_val & XUARTPS_SR_TXEMPTY) == 0);
+
+	return 0;
 }
 
 /**

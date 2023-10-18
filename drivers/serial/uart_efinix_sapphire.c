@@ -37,13 +37,15 @@ struct uart_efinix_sapphire_config {
 	uint32_t baudrate;
 };
 
-static void uart_efinix_sapphire_poll_out(const struct device *dev, unsigned char c)
+static int uart_efinix_sapphire_poll_out(const struct device *dev, unsigned char c)
 {
 	/* uart_writeAvailability */
 	while ((sys_read32(UART0_STATUS_REG_ADDR) & BSP_UART_WRITE_AVAILABILITY_MASK) == 0) {
 	}
 
 	sys_write8(c, UART0_DATA_REG_ADDR);
+
+	return 0;
 }
 
 static int uart_efinix_sapphire_poll_in(const struct device *dev, unsigned char *c)

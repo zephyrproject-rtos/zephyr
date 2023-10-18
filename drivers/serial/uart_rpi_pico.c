@@ -47,7 +47,7 @@ static int uart_rpi_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
+static int uart_rpi_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_rpi_config *config = dev->config;
 	uart_hw_t * const uart_hw = config->uart_regs;
@@ -57,6 +57,8 @@ static void uart_rpi_poll_out(const struct device *dev, unsigned char c)
 	}
 
 	uart_hw->dr = c;
+
+	return 0;
 }
 
 static int uart_rpi_set_format(const struct device *dev, const struct uart_config *cfg)

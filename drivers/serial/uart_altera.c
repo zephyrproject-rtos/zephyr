@@ -178,7 +178,7 @@ static int uart_altera_poll_in(const struct device *dev, unsigned char *p_char)
  * @param dev UART device instance
  * @param c Character to send
  */
-static void uart_altera_poll_out(const struct device *dev, unsigned char c)
+static int uart_altera_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_altera_device_config *config = dev->config;
 	struct uart_altera_device_data *data = dev->data;
@@ -194,6 +194,8 @@ static void uart_altera_poll_out(const struct device *dev, unsigned char c)
 	sys_write32(c, config->base + ALTERA_AVALON_UART_TXDATA_REG_OFFSET);
 
 	k_spin_unlock(&data->lock, key);
+
+	return 0;
 }
 
 /**

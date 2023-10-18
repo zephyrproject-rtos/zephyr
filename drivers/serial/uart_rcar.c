@@ -158,7 +158,7 @@ unlock:
 	return ret;
 }
 
-static void uart_rcar_poll_out(const struct device *dev, unsigned char out_char)
+static int uart_rcar_poll_out(const struct device *dev, unsigned char out_char)
 {
 	struct uart_rcar_data *data = dev->data;
 	uint16_t reg_val;
@@ -175,6 +175,8 @@ static void uart_rcar_poll_out(const struct device *dev, unsigned char out_char)
 	uart_rcar_write_16(dev, SCFSR, reg_val);
 
 	k_spin_unlock(&data->lock, key);
+
+	return 0;
 }
 
 static int uart_rcar_configure(const struct device *dev,

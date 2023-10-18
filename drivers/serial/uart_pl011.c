@@ -127,7 +127,7 @@ static int pl011_poll_in(const struct device *dev, unsigned char *c)
 	return get_uart(dev)->rsr & PL011_RSR_ERROR_MASK;
 }
 
-static void pl011_poll_out(const struct device *dev,
+static int pl011_poll_out(const struct device *dev,
 					     unsigned char c)
 {
 	/* Wait for space in FIFO */
@@ -137,6 +137,8 @@ static void pl011_poll_out(const struct device *dev,
 
 	/* Send a character */
 	get_uart(dev)->dr = (uint32_t)c;
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

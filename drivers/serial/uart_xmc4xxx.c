@@ -91,7 +91,7 @@ static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
+static int uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_xmc4xxx_config *config = dev->config;
 
@@ -100,6 +100,8 @@ static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 	while (config->fifo_tx_size > 0 && XMC_USIC_CH_TXFIFO_IsFull(config->uart)) {
 	}
 	XMC_UART_CH_Transmit(config->uart, c);
+
+	return 0;
 }
 
 #if defined(CONFIG_UART_ASYNC_API)

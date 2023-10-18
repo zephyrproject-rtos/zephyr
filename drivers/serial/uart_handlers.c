@@ -42,19 +42,19 @@ static inline int z_vrfy_uart_poll_in_u16(const struct device *dev,
 }
 #include <syscalls/uart_poll_in_u16_mrsh.c>
 
-static inline void z_vrfy_uart_poll_out(const struct device *dev,
+static inline int z_vrfy_uart_poll_out(const struct device *dev,
 					unsigned char out_char)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_out));
-	z_impl_uart_poll_out((const struct device *)dev, out_char);
+	return z_impl_uart_poll_out((const struct device *)dev, out_char);
 }
 #include <syscalls/uart_poll_out_mrsh.c>
 
-static inline void z_vrfy_uart_poll_out_u16(const struct device *dev,
+static inline int z_vrfy_uart_poll_out_u16(const struct device *dev,
 					    uint16_t out_u16)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_out));
-	z_impl_uart_poll_out_u16((const struct device *)dev, out_u16);
+	return z_impl_uart_poll_out_u16((const struct device *)dev, out_u16);
 }
 #include <syscalls/uart_poll_out_u16_mrsh.c>
 

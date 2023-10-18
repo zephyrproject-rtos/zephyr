@@ -55,13 +55,15 @@ struct uart_liteuart_data {
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_liteuart_poll_out(const struct device *dev, unsigned char c)
+static int uart_liteuart_poll_out(const struct device *dev, unsigned char c)
 {
 	/* wait for space */
 	while (litex_read8(UART_TXFULL_ADDR)) {
 	}
 
 	litex_write8(c, UART_RXTX_ADDR);
+
+	return 0;
 }
 
 /**

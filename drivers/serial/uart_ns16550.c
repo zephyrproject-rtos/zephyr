@@ -733,7 +733,7 @@ static int uart_ns16550_poll_in(const struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_ns16550_poll_out(const struct device *dev,
+static int uart_ns16550_poll_out(const struct device *dev,
 					   unsigned char c)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
@@ -746,6 +746,8 @@ static void uart_ns16550_poll_out(const struct device *dev,
 	ns16550_outbyte(dev_cfg, THR(dev), c);
 
 	k_spin_unlock(&data->lock, key);
+
+	return 0;
 }
 
 /**

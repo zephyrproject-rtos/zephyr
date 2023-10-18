@@ -137,11 +137,13 @@ static int uart_bcm2711_init(const struct device *dev)
 	return 0;
 }
 
-static void uart_bcm2711_poll_out(const struct device *dev, unsigned char c)
+static int uart_bcm2711_poll_out(const struct device *dev, unsigned char c)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
 
 	bcm2711_mu_lowlevel_putc(uart_data->uart_addr, c);
+
+	return 0;
 }
 
 static int uart_bcm2711_poll_in(const struct device *dev, unsigned char *c)

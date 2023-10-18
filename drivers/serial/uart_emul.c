@@ -65,7 +65,7 @@ static int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 	return 0;
 }
 
-static void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
+static int uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 {
 	struct uart_emul_data *drv_data = dev->data;
 	const struct uart_emul_config *drv_cfg = dev->config;
@@ -78,7 +78,7 @@ static void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 
 	if (!written) {
 		LOG_DBG("Tx buffer is full");
-		return;
+		return -EIO;
 	}
 
 	if (drv_cfg->loopback) {
@@ -88,6 +88,8 @@ static void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 		(drv_data->tx_data_ready_cb)(dev, ring_buf_size_get(drv_data->tx_rb),
 					     drv_data->user_data);
 	}
+
+	return 0;
 }
 
 static int uart_emul_err_check(const struct device *dev)

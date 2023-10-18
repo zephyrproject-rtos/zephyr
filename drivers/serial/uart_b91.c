@@ -334,7 +334,7 @@ static int uart_b91_driver_init(const struct device *dev)
 }
 
 /* API implementation: poll_out */
-static void uart_b91_poll_out(const struct device *dev, uint8_t c)
+static int uart_b91_poll_out(const struct device *dev, uint8_t c)
 {
 	volatile struct uart_b91_t *uart = GET_UART(dev);
 	struct uart_b91_data *data = dev->data;
@@ -344,6 +344,8 @@ static void uart_b91_poll_out(const struct device *dev, uint8_t c)
 
 	uart->data_buf[data->tx_byte_index] = c;
 	data->tx_byte_index = (data->tx_byte_index + 1) % ARRAY_SIZE(uart->data_buf);
+
+	return 0;
 }
 
 /* API implementation: poll_in */

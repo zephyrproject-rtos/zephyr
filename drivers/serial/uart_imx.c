@@ -102,13 +102,15 @@ static int uart_imx_init(const struct device *dev)
 	return 0;
 }
 
-static void uart_imx_poll_out(const struct device *dev, unsigned char c)
+static int uart_imx_poll_out(const struct device *dev, unsigned char c)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	while (!UART_GetStatusFlag(uart, uartStatusTxReady)) {
 	}
 	UART_Putchar(uart, c);
+
+	return 0;
 }
 
 static int uart_imx_poll_in(const struct device *dev, unsigned char *c)

@@ -149,7 +149,7 @@ struct uart_miv_data {
 	((struct uart_miv_regs_t *)				\
 	 ((const struct uart_miv_device_config * const)(dev)->config)->uart_addr)
 
-static void uart_miv_poll_out(const struct device *dev,
+static int uart_miv_poll_out(const struct device *dev,
 				       unsigned char c)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -158,6 +158,8 @@ static void uart_miv_poll_out(const struct device *dev,
 	}
 
 	uart->tx = c;
+
+	return 0;
 }
 
 static int uart_miv_poll_in(const struct device *dev, unsigned char *c)

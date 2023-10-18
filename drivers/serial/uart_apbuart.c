@@ -140,7 +140,7 @@ struct apbuart_dev_data {
  * This routine waits for the TX holding register or TX FIFO to be ready and
  * then it writes a character to the data register.
  */
-static void apbuart_poll_out(const struct device *dev, unsigned char x)
+static int apbuart_poll_out(const struct device *dev, unsigned char x)
 {
 	const struct apbuart_dev_cfg *config = dev->config;
 	struct apbuart_dev_data *data = dev->data;
@@ -162,6 +162,8 @@ static void apbuart_poll_out(const struct device *dev, unsigned char x)
 	}
 
 	regs->data = x & 0xff;
+
+	return 0;
 }
 
 static int apbuart_poll_in(const struct device *dev, unsigned char *c)
