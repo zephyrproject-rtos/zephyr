@@ -229,7 +229,7 @@ class ZephyrAppCommandsDirective(Directive):
         # Create the nodes.
         literal = nodes.literal_block(content, content)
         self.add_name(literal)
-        literal['language'] = 'console'
+        literal['language'] = 'shell'
         return literal
 
 
