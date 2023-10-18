@@ -183,7 +183,7 @@ static int fuse_fs_access_readdir(const char *path, void *buf,
 			return -ENOMEM;
 		}
 
-		memcpy(mount_path, path, len)
+		memcpy(mount_path, path, len);
 		mount_path[len] = '/';
 		err = fs_opendir(&dir, mount_path);
 	} else {
