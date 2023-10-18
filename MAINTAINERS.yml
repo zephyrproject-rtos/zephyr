@@ -1597,7 +1597,9 @@ IPC:
     - "area: IPC"
 
 JSON Web Token:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - d3zd3z
   collaborators:
     - mrfuchs
     - sir-branch
