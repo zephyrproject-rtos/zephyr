@@ -436,9 +436,9 @@ Board Revisions
 ***************
 
 The original MIMXRT1050-EVK (rev A0) board was updated with a newer
-MIMXRT1050-EVKB (rev A1) board, with these major hardware differences::
+MIMXRT1050-EVKB (rev A1) board, with these major hardware differences:
 
-- SoC changed from MIMXRT1052DVL6**A** to MIMXRT1052DVL6**B**
+- SoC changed from MIMXRT1052DVL6\ **A** to MIMXRT1052DVL6\ **B**
 - Hardware bug fixes for: power, interfaces, and memory
 - Arduino headers included
 
