@@ -327,7 +327,7 @@ named ``plank``:
   This should at least contain a definition for a ``BOARD_PLANK`` option,
   which looks something like this:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config BOARD_PLANK
      	bool "Plank board"
@@ -340,7 +340,7 @@ named ``plank``:
   The entire file should be inside an ``if BOARD_PLANK`` / ``endif`` pair of
   lines, like this:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      if BOARD_PLANK
 
@@ -369,10 +369,10 @@ named ``plank``:
   your system clock, console, etc. The results are architecture-specific, but
   typically look something like this:
 
-  .. code-block:: none
+  .. code-block:: cfg
 
-     CONFIG_SOC_${VENDOR_XYZ3000}=y                      /* select your SoC */
-     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000   /* set up your clock, etc */
+     CONFIG_SOC_${VENDOR_XYZ3000}=y                # select your SoC
+     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
      CONFIG_SERIAL=y
 
 :file:`plank_x_y_z.conf`
