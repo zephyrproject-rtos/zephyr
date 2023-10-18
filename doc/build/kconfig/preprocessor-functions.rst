@@ -75,7 +75,7 @@ Example Usage
 
 Assume that the devicetree for some board looks like this:
 
-.. code-block:: none
+.. code-block:: devicetree
 
    {
    	soc {
@@ -94,14 +94,14 @@ The second entry in ``reg`` in ``spi@1001400`` (``<0x20010000 0x3c0900>``)
 corresponds to ``mem``, and has the address ``0x20010000``. This address can be
 inserted into Kconfig as follows:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FLASH_BASE_ADDRESS
    	default $(dt_node_reg_addr_hex,/soc/spi@1001400,1)
 
 After preprocessor expansion, this turns into the definition below:
 
-.. code-block:: none
+.. code-block:: kconfig
 
    config FLASH_BASE_ADDRESS
    	default 0x20010000
