@@ -93,7 +93,9 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 
 	data->busy = DMA_ChannelIsBusy(data->dma_handle.base, channel);
 
-	data->dma_callback(data->dev, data->user_data, channel, ret);
+	if (data->dma_callback) {
+		data->dma_callback(data->dev, data->user_data, channel, ret);
+	}
 }
 
 /* Handles DMA interrupts and dispatches to the individual channel */
