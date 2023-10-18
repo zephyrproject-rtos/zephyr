@@ -108,7 +108,7 @@ ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size)
 		out_size = size;
 
 		while (size--) {
-			uart_poll_out(tty->uart_dev, *p++);
+			(void)uart_poll_out(tty->uart_dev, *p++);
 		}
 
 		return out_size;

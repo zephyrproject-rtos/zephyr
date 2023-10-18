@@ -59,7 +59,7 @@ int sc18im704_transfer(const struct device *dev,
 
 	if (tx_data != NULL) {
 		for (uint8_t i = 0; i < tx_len; ++i)  {
-			uart_poll_out(cfg->bus, tx_data[i]);
+			(void)uart_poll_out(cfg->bus, tx_data[i]);
 		}
 	}
 

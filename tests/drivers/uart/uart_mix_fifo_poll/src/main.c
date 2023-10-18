@@ -225,7 +225,7 @@ static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 	for (int i = 0; i < data->max; i++) {
 
 		data->cnt++;
-		uart_poll_out(uart_dev, data->buf[i % BUF_SIZE]);
+		(void)uart_poll_out(uart_dev, data->buf[i % BUF_SIZE]);
 		if (wait_base) {
 			int r = sys_rand32_get();
 
@@ -286,7 +286,7 @@ static void poll_out_timer_handler(struct k_timer *timer)
 {
 	struct test_data *data = k_timer_user_data_get(timer);
 
-	uart_poll_out(uart_dev, data->buf[data->cnt % BUF_SIZE]);
+	(void)uart_poll_out(uart_dev, data->buf[data->cnt % BUF_SIZE]);
 
 	data->cnt++;
 	if (data->cnt == data->max) {

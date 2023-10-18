@@ -35,7 +35,7 @@ int z_gdb_backend_init(void)
 
 void z_gdb_putchar(unsigned char ch)
 {
-	uart_poll_out(uart_dev, ch);
+	(void)uart_poll_out(uart_dev, ch);
 }
 
 unsigned char z_gdb_getchar(void)

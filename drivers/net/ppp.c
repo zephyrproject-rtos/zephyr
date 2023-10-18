@@ -380,7 +380,7 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 #endif
 	} else {
 		while (off--) {
-			uart_poll_out(ppp->dev, *buf++);
+			(void)uart_poll_out(ppp->dev, *buf++);
 		}
 	}
 

@@ -71,7 +71,7 @@ static void tracing_backend_uart_output(
 	uint8_t *data, uint32_t length)
 {
 	for (uint32_t i = 0; i < length; i++) {
-		uart_poll_out(tracing_uart_dev, data[i]);
+		(void)uart_poll_out(tracing_uart_dev, data[i]);
 	}
 }
 

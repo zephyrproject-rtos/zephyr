@@ -214,7 +214,7 @@ static void uart_send(const uint8_t *data, size_t len)
 	int i;
 
 	for (i = 0; i < len; i++) {
-		uart_poll_out(dev, data[i]);
+		(void)uart_poll_out(dev, data[i]);
 	}
 }
 #endif /* CONFIG_UART_PIPE */

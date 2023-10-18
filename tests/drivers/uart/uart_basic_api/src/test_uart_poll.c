@@ -47,9 +47,9 @@ static int test_poll_out(void)
 		return TC_FAIL;
 	}
 
-	/* Verify uart_poll_out() */
+	/* Verify (void)uart_poll_out() */
 	for (i = 0; i < strlen(poll_data); i++) {
-		uart_poll_out(uart_dev, poll_data[i]);
+		(void)uart_poll_out(uart_dev, poll_data[i]);
 	}
 
 	return TC_PASS;

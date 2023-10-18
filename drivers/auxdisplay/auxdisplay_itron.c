@@ -368,7 +368,7 @@ static int send_cmd(const struct device *dev, const uint8_t *command, uint8_t le
 		}
 #endif
 
-		uart_poll_out(uart, command[i]);
+		(void)uart_poll_out(uart, command[i]);
 		++i;
 	}
 

@@ -296,7 +296,7 @@ static int write(const struct shell_transport *transport,
 		irq_write(sh_uart, data, length, cnt);
 	} else {
 		for (size_t i = 0; i < length; i++) {
-			uart_poll_out(sh_uart->ctrl_blk->dev, data8[i]);
+			(void)uart_poll_out(sh_uart->ctrl_blk->dev, data8[i]);
 		}
 
 		*cnt = length;

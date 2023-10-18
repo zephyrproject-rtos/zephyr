@@ -265,15 +265,15 @@ static uint8_t h5_slip_byte(uint8_t byte)
 {
 	switch (byte) {
 	case SLIP_DELIMITER:
-		uart_poll_out(h5_dev, SLIP_ESC);
-		uart_poll_out(h5_dev, SLIP_ESC_DELIM);
+		(void)uart_poll_out(h5_dev, SLIP_ESC);
+		(void)uart_poll_out(h5_dev, SLIP_ESC_DELIM);
 		return 2;
 	case SLIP_ESC:
-		uart_poll_out(h5_dev, SLIP_ESC);
-		uart_poll_out(h5_dev, SLIP_ESC_ESC);
+		(void)uart_poll_out(h5_dev, SLIP_ESC);
+		(void)uart_poll_out(h5_dev, SLIP_ESC_ESC);
 		return 2;
 	default:
-		uart_poll_out(h5_dev, byte);
+		(void)uart_poll_out(h5_dev, byte);
 		return 1;
 	}
 }
@@ -306,7 +306,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 
 	h5_print_header(hdr, "TX: <");
 
-	uart_poll_out(h5_dev, SLIP_DELIMITER);
+	(void)uart_poll_out(h5_dev, SLIP_DELIMITER);
 
 	for (i = 0; i < 4; i++) {
 		h5_slip_byte(hdr[i]);
@@ -316,7 +316,7 @@ static void h5_send(const uint8_t *payload, uint8_t type, int len)
 		h5_slip_byte(payload[i]);
 	}
 
-	uart_poll_out(h5_dev, SLIP_DELIMITER);
+	(void)uart_poll_out(h5_dev, SLIP_DELIMITER);
 }
 
 /* Delayed work taking care about retransmitting packets */

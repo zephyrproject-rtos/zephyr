@@ -198,7 +198,7 @@ static int eswifi_uart_request(struct eswifi_dev *eswifi, char *cmd,
 
 	/* Send CMD */
 	for (count = 0; count < clen; count++) {
-		uart_poll_out(uart->dev, cmd[count]);
+		(void)uart_poll_out(uart->dev, cmd[count]);
 	}
 
 	uart->fsm = ESWIFI_UART_FSM_WAIT_CR;

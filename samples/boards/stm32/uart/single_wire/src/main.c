@@ -26,7 +26,7 @@ int main(void)
 
 	while (true) {
 
-		uart_poll_out(sl_uart1, 'c');
+		(void)uart_poll_out(sl_uart1, 'c');
 
 		/* give the uarts some time to get the data through */
 		k_sleep(K_MSEC(50));

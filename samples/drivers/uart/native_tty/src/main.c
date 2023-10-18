@@ -29,7 +29,7 @@ void send_str(const struct device *uart, char *str)
 	int msg_len = strlen(str);
 
 	for (int i = 0; i < msg_len; i++) {
-		uart_poll_out(uart, str[i]);
+		(void)uart_poll_out(uart, str[i]);
 	}
 
 	printk("Device %s sent: \"%s\"\n", uart->name, str);

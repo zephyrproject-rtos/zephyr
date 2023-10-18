@@ -810,7 +810,7 @@ int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size)
 	k_mutex_lock(&dev_data->real_uart->lock, K_FOREVER);
 
 	do {
-		uart_poll_out(dev_data->real_uart->uart, *buf++);
+		(void)uart_poll_out(dev_data->real_uart->uart, *buf++);
 	} while (--remaining);
 
 	k_mutex_unlock(&dev_data->real_uart->lock);

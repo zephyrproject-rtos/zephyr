@@ -67,15 +67,16 @@ static void proxy_callback(const struct zbus_channel *chan)
 
 		*generated_by_the_bridge = false;
 	} else {
-		uart_poll_out(uart_dev, '$');
+		(void)uart_poll_out(uart_dev, '$');
 
-		uart_poll_out(uart_dev, encoder(chan));
+		(void)uart_poll_out(uart_dev, encoder(chan));
 
 		for (int i = 0; i < zbus_chan_msg_size(chan); ++i) {
-			uart_poll_out(uart_dev, ((unsigned char *)zbus_chan_const_msg(chan))[i]);
+			(void)uart_poll_out(uart_dev,
+					    ((unsigned char *)zbus_chan_const_msg(chan))[i]);
 		}
 
-		uart_poll_out(uart_dev, '*');
+		(void)uart_poll_out(uart_dev, '*');
 
 		LOG_DBG("sending message to host (channel %s)", zbus_chan_name(chan));
 	}

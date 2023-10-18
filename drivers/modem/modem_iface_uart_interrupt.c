@@ -157,7 +157,7 @@ static int modem_iface_uart_write(struct modem_iface *iface,
 		uart_fifo_fill(iface->dev, buf, size);
 	} else {
 		do {
-			uart_poll_out(iface->dev, *buf++);
+			(void)uart_poll_out(iface->dev, *buf++);
 		} while (--size);
 	}
 

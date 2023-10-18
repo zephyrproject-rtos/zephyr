@@ -248,7 +248,7 @@ otError otPlatUartFlush(void)
 
 	if (write_length) {
 		for (size_t i = 0; i < write_length; i++) {
-			uart_poll_out(ot_uart.dev, *(write_buffer+i));
+			(void)uart_poll_out(ot_uart.dev, *(write_buffer+i));
 		}
 	}
 

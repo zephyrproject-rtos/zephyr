@@ -219,7 +219,7 @@ static int smp_shell_tx_raw(const void *data, int len)
 	const uint8_t *out = data;
 
 	while ((out != NULL) && (len != 0)) {
-		uart_poll_out(scb->dev, *out);
+		(void)uart_poll_out(scb->dev, *out);
 		++out;
 		--len;
 	}

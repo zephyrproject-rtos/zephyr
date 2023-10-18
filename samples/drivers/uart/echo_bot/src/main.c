@@ -66,7 +66,7 @@ void print_uart(char *buf)
 	int msg_len = strlen(buf);
 
 	for (int i = 0; i < msg_len; i++) {
-		uart_poll_out(uart_dev, buf[i]);
+		(void)uart_poll_out(uart_dev, buf[i]);
 	}
 }
 

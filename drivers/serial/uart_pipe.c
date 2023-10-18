@@ -70,7 +70,7 @@ int uart_pipe_send(const uint8_t *data, int len)
 	LOG_HEXDUMP_DBG(data, len, "TX");
 
 	while (len--)  {
-		uart_poll_out(uart_pipe_dev, *data++);
+		(void)uart_poll_out(uart_pipe_dev, *data++);
 	}
 
 	return 0;

@@ -301,25 +301,25 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 		len -= pos;
 	}
 
-	uart_poll_out(hci_uart_dev, H4_EVT);
+	(void)uart_poll_out(hci_uart_dev, H4_EVT);
 	/* Vendor-Specific debug event */
-	uart_poll_out(hci_uart_dev, 0xff);
+	(void)uart_poll_out(hci_uart_dev, 0xff);
 	/* 0xAA + strlen + \0 + 32-bit line number */
-	uart_poll_out(hci_uart_dev, 1 + len + 1 + 4);
-	uart_poll_out(hci_uart_dev, 0xAA);
+	(void)uart_poll_out(hci_uart_dev, 1 + len + 1 + 4);
+	(void)uart_poll_out(hci_uart_dev, 0xAA);
 
 	if (len) {
 		while (*file != '\0') {
-			uart_poll_out(hci_uart_dev, *file);
+			(void)uart_poll_out(hci_uart_dev, *file);
 			file++;
 		}
-		uart_poll_out(hci_uart_dev, 0x00);
+		(void)uart_poll_out(hci_uart_dev, 0x00);
 	}
 
-	uart_poll_out(hci_uart_dev, line >> 0 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 8 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
-	uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
+	(void)uart_poll_out(hci_uart_dev, line >> 0 & 0xff);
+	(void)uart_poll_out(hci_uart_dev, line >> 8 & 0xff);
+	(void)uart_poll_out(hci_uart_dev, line >> 16 & 0xff);
+	(void)uart_poll_out(hci_uart_dev, line >> 24 & 0xff);
 
 	while (1) {
 	}
@@ -387,8 +387,7 @@ int main(void)
 		};
 
 		for (i = 0; i < sizeof(cc_evt); i++) {
-			uart_poll_out(hci_uart_dev,
-				      *(((const uint8_t *)&cc_evt)+i));
+			(void)uart_poll_out(hci_uart_dev, *(((const uint8_t *)&cc_evt)+i));
 		}
 	}
 

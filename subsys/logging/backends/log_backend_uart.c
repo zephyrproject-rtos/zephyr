@@ -52,12 +52,12 @@ static void dict_char_out_hex(uint8_t *data, size_t length)
 		/* upper 8-bit */
 		x = data[i] >> 4;
 		(void)hex2char(x, &c);
-		uart_poll_out(uart_dev, c);
+		(void)uart_poll_out(uart_dev, c);
 
 		/* lower 8-bit */
 		x = data[i] & 0x0FU;
 		(void)hex2char(x, &c);
-		uart_poll_out(uart_dev, c);
+		(void)uart_poll_out(uart_dev, c);
 	}
 }
 
@@ -82,7 +82,7 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 
 	if (!IS_ENABLED(CONFIG_LOG_BACKEND_UART_ASYNC) || in_panic || !use_async) {
 		for (size_t i = 0; i < length; i++) {
-			uart_poll_out(uart_dev, data[i]);
+			(void)uart_poll_out(uart_dev, data[i]);
 		}
 		goto cleanup;
 	}
@@ -133,7 +133,7 @@ static void log_backend_uart_init(struct log_backend const *const backend)
 		 * (e.g. bootloader).
 		 */
 		for (int i = 0; i < sizeof(LOG_HEX_SEP); i++) {
-			uart_poll_out(uart_dev, LOG_HEX_SEP[i]);
+			(void)uart_poll_out(uart_dev, LOG_HEX_SEP[i]);
 		}
 
 		return;

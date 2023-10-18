@@ -146,7 +146,7 @@ static const struct device *const monitor_dev =
 
 static void poll_out(char c)
 {
-	uart_poll_out(monitor_dev, c);
+	(void)uart_poll_out(monitor_dev, c);
 }
 
 static void monitor_send(const void *data, size_t len)

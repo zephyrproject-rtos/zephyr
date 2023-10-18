@@ -75,7 +75,7 @@ static void uart_poll_timeout(struct k_timer *timer)
 
 	while (uart_poll_in(dev, &c) == 0) {
 		if (c != 'x') {
-			uart_poll_out(dev, c);
+			(void)uart_poll_out(dev, c);
 		} else {
 			k_timer_stop(timer);
 		}

@@ -97,9 +97,9 @@ static int console_out(int c)
 	}
 
 	if ('\n' == c) {
-		uart_poll_out(uart_console_dev, '\r');
+		(void)uart_poll_out(uart_console_dev, '\r');
 	}
-	uart_poll_out(uart_console_dev, c);
+	(void)uart_poll_out(uart_console_dev, c);
 
 	if (pm_device_runtime_is_enabled(uart_console_dev)) {
 		/* As errors cannot be returned, ignore the return value */
@@ -180,7 +180,7 @@ static void insert_char(char *pos, char c, uint8_t end)
 	char tmp;
 
 	/* Echo back to console */
-	uart_poll_out(uart_console_dev, c);
+	(void)uart_poll_out(uart_console_dev, c);
 
 	if (end == 0U) {
 		*pos = c;
@@ -193,7 +193,7 @@ static void insert_char(char *pos, char c, uint8_t end)
 	cursor_save();
 
 	while (end-- > 0) {
-		uart_poll_out(uart_console_dev, tmp);
+		(void)uart_poll_out(uart_console_dev, tmp);
 		c = *pos;
 		*(pos++) = tmp;
 		tmp = c;
@@ -205,11 +205,11 @@ static void insert_char(char *pos, char c, uint8_t end)
 
 static void del_char(char *pos, uint8_t end)
 {
-	uart_poll_out(uart_console_dev, '\b');
+	(void)uart_poll_out(uart_console_dev, '\b');
 
 	if (end == 0U) {
-		uart_poll_out(uart_console_dev, ' ');
-		uart_poll_out(uart_console_dev, '\b');
+		(void)uart_poll_out(uart_console_dev, ' ');
+		(void)uart_poll_out(uart_console_dev, '\b');
 		return;
 	}
 
@@ -217,10 +217,10 @@ static void del_char(char *pos, uint8_t end)
 
 	while (end-- > 0) {
 		*pos = *(pos + 1);
-		uart_poll_out(uart_console_dev, *(pos++));
+		(void)uart_poll_out(uart_console_dev, *(pos++));
 	}
 
-	uart_poll_out(uart_console_dev, ' ');
+	(void)uart_poll_out(uart_console_dev, ' ');
 
 	/* Move cursor back to right place */
 	cursor_restore();
@@ -529,8 +529,8 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 				}
 			case '\r':
 				cmd->line[cur + end] = '\0';
-				uart_poll_out(uart_console_dev, '\r');
-				uart_poll_out(uart_console_dev, '\n');
+				(void)uart_poll_out(uart_console_dev, '\r');
+				(void)uart_poll_out(uart_console_dev, '\n');
 				cur = 0U;
 				end = 0U;
 				k_fifo_put(lines_queue, cmd);

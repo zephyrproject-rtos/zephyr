@@ -45,7 +45,7 @@ ZTEST_F(uart_emul, test_polling_out)
 	size_t tx_len;
 
 	for (size_t i = 0; i < SAMPLE_DATA_SIZE; i++) {
-		uart_poll_out(fixture->dev, fixture->sample_data[i]);
+		(void)uart_poll_out(fixture->dev, fixture->sample_data[i]);
 	}
 
 	tx_len = uart_emul_get_tx_data(fixture->dev, tx_content, sizeof(tx_content));

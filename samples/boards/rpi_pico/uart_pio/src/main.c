@@ -24,11 +24,11 @@ int main(void)
 
 	while (1) {
 		if (!uart_poll_in(uart0, &data)) {
-			uart_poll_out(uart0, data);
+			(void)uart_poll_out(uart0, data);
 		}
 
 		if (!uart_poll_in(uart1, &data)) {
-			uart_poll_out(uart1, data);
+			(void)uart_poll_out(uart1, data);
 		}
 	}
 

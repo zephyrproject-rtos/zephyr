@@ -47,24 +47,25 @@ static void bridge_tx_thread(void)
 				if (!generated_by_the_bridge) {
 					LOG_DBG("Bridge send %s", zbus_chan_name(chan));
 
-					uart_poll_out(bridge_uart, '$');
+					(void)uart_poll_out(bridge_uart, '$');
 
 					for (int i = 0; i < strlen(zbus_chan_name(chan)); ++i) {
-						uart_poll_out(bridge_uart, zbus_chan_name(chan)[i]);
+						(void)uart_poll_out(bridge_uart,
+								    zbus_chan_name(chan)[i]);
 					}
 
-					uart_poll_out(bridge_uart, ',');
+					(void)uart_poll_out(bridge_uart, ',');
 
-					uart_poll_out(bridge_uart, zbus_chan_msg_size(chan));
+					(void)uart_poll_out(bridge_uart, zbus_chan_msg_size(chan));
 
 					for (int i = 0; i < zbus_chan_msg_size(chan); ++i) {
-						uart_poll_out(bridge_uart,
+						(void)uart_poll_out(bridge_uart,
 							      ((uint8_t *)zbus_chan_msg(chan))[i]);
 					}
 
-					uart_poll_out(bridge_uart, '\r');
+					(void)uart_poll_out(bridge_uart, '\r');
 
-					uart_poll_out(bridge_uart, '\n');
+					(void)uart_poll_out(bridge_uart, '\n');
 				}
 			}
 		}

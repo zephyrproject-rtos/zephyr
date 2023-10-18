@@ -23,7 +23,7 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 		 * not hang.
 		 */
 		for (int i = 0; i < ARRAY_SIZE(outs); i++) {
-			uart_poll_out(dev, outs[i]);
+			(void)uart_poll_out(dev, outs[i]);
 		}
 
 		return;
@@ -33,7 +33,7 @@ static void polling_verify(const struct device *dev, bool is_async, bool active)
 	zassert_equal(err, -1);
 
 	for (int i = 0; i < ARRAY_SIZE(outs); i++) {
-		uart_poll_out(dev, outs[i]);
+		(void)uart_poll_out(dev, outs[i]);
 		k_busy_wait(1000);
 
 		if (active) {
@@ -180,7 +180,7 @@ ZTEST(uart_pm, test_uart_pm_poll_tx)
 
 	communication_verify(dev, true);
 
-	uart_poll_out(dev, 'a');
+	(void)uart_poll_out(dev, 'a');
 	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 
 	communication_verify(dev, false);
@@ -190,7 +190,7 @@ ZTEST(uart_pm, test_uart_pm_poll_tx)
 	communication_verify(dev, true);
 
 	/* Now same thing but with callback */
-	uart_poll_out(dev, 'a');
+	(void)uart_poll_out(dev, 'a');
 	action_run(dev, PM_DEVICE_ACTION_SUSPEND, 0);
 
 	communication_verify(dev, false);
@@ -226,7 +226,7 @@ ZTEST(uart_pm, test_uart_pm_poll_tx_interrupted)
 		k_timer_start(&pm_timer, K_USEC(i * 10), K_NO_WAIT);
 
 		for (int j = 0; j < sizeof(str); j++) {
-			uart_poll_out(dev, str[j]);
+			(void)uart_poll_out(dev, str[j]);
 		}
 
 		k_timer_status_sync(&pm_timer);

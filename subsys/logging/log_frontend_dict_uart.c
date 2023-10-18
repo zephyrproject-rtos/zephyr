@@ -111,7 +111,7 @@ static void tx(void)
 
 	if (in_panic) {
 		for (int i = 0; i < len; i++) {
-			uart_poll_out(uart_dev, pkt->data[i]);
+			(void)uart_poll_out(uart_dev, pkt->data[i]);
 		}
 		atomic_dec(&active_cnt);
 	} else {
@@ -253,7 +253,7 @@ static void sync_msg(const void *source,
 
 	for (int i = 0; i < ARRAY_SIZE(datas); i++) {
 		for (int j = 0; j < len[i]; j++) {
-			uart_poll_out(uart_dev, datas[i][j]);
+			(void)uart_poll_out(uart_dev, datas[i][j]);
 		}
 	}
 }

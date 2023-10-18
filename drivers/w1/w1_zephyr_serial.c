@@ -82,7 +82,7 @@ static int serial_tx_rx(const struct device *dev, const uint8_t *tx_data,
 			/* poll in any buffered data */
 		}
 
-		uart_poll_out(cfg->uart_dev, tx_data[i]);
+		(void)uart_poll_out(cfg->uart_dev, tx_data[i]);
 		end = sys_timepoint_calc(K_USEC(timeout));
 
 		do {

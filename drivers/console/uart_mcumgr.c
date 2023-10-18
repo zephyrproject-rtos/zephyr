@@ -206,7 +206,7 @@ static int uart_mcumgr_send_raw(const void *data, int len)
 
 	u8p = data;
 	while (len--) {
-		uart_poll_out(uart_mcumgr_dev, *u8p++);
+		(void)uart_poll_out(uart_mcumgr_dev, *u8p++);
 	}
 
 	return 0;
