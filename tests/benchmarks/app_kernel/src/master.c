@@ -32,7 +32,6 @@ char sline[SLINE_LEN + 1];
  */
 uint32_t tm_off;
 
-
 /********************************************************************/
 /* static allocation  */
 
@@ -40,6 +39,10 @@ static struct k_thread test_thread;
 static struct k_thread recv_thread;
 K_THREAD_STACK_DEFINE(test_stack, TEST_STACK_SIZE);
 K_THREAD_STACK_DEFINE(recv_stack, RECV_STACK_SIZE);
+
+#ifdef CONFIG_USERSPACE
+K_APPMEM_PARTITION_DEFINE(bench_mem_partition);
+#endif
 
 K_MSGQ_DEFINE(DEMOQX1, 1, 500, 4);
 K_MSGQ_DEFINE(DEMOQX4, 4, 500, 4);
@@ -72,6 +75,15 @@ static void test_thread_entry(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
+	PRINT_STRING("\n");
+	PRINT_STRING(dashline);
+	PRINT_STRING("|          S I M P L E   S E R V I C E    "
+		     "M E A S U R E M E N T S  |  nsec    |\n");
+#ifdef CONFIG_USERSPACE
+	PRINT_STRING((const char *)arg1);
+#endif
+	PRINT_STRING(dashline);
+
 	message_queue_test();
 	sema_test();
 	mutex_test();
@@ -90,12 +102,6 @@ int main(void)
 	priority = k_thread_priority_get(k_current_get());
 
 	bench_test_init();
-
-	PRINT_STRING("\n");
-	PRINT_STRING(dashline);
-	PRINT_STRING("|          S I M P L E   S E R V I C E    "
-		     "M E A S U R E M E N T S  |  nsec    |\n");
-	PRINT_STRING(dashline);
 
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
