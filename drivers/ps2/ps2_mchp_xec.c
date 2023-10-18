@@ -16,10 +16,8 @@
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
-#ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
-#endif
 #include <zephyr/drivers/ps2.h>
 #include <soc.h>
 #include <zephyr/logging/log.h>
