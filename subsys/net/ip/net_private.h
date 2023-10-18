@@ -43,6 +43,9 @@ union net_mgmt_events {
 	struct net_event_ipv6_route ipv6_route;
 #endif /* CONFIG_NET_IPV6_MLD */
 #endif /* CONFIG_NET_IPV6 */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	struct net_event_l4_hostname hostname;
+#endif /* CONFIG_NET_HOSTNAME_ENABLE */
 	char default_event[DEFAULT_NET_EVENT_INFO_SIZE];
 };
 

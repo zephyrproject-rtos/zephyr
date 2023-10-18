@@ -15,8 +15,22 @@ LOG_MODULE_REGISTER(net_hostname, CONFIG_NET_HOSTNAME_LOG_LEVEL);
 
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_mgmt.h>
 
-static char hostname[NET_HOSTNAME_MAX_LEN + 1];
+static char hostname[NET_HOSTNAME_SIZE];
+
+static void trigger_net_event(void)
+{
+	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
+		struct net_event_l4_hostname info;
+
+		memcpy(info.hostname, hostname, sizeof(hostname));
+		net_mgmt_event_notify_with_info(NET_EVENT_HOSTNAME_CHANGED, NULL,
+						&info, sizeof(info));
+	} else {
+		net_mgmt_event_notify(NET_EVENT_HOSTNAME_CHANGED, NULL);
+	}
+}
 
 const char *net_hostname_get(void)
 {
@@ -57,6 +71,7 @@ int net_hostname_set_postfix(const uint8_t *hostname_postfix,
 #if !defined(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)
 	postfix_set = true;
 #endif
+	trigger_net_event();
 
 	return 0;
 }
@@ -67,4 +82,5 @@ void net_hostname_init(void)
 	memcpy(hostname, CONFIG_NET_HOSTNAME, sizeof(CONFIG_NET_HOSTNAME) - 1);
 
 	NET_DBG("Hostname set to %s", CONFIG_NET_HOSTNAME);
+	trigger_net_event();
 }
