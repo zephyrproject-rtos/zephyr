@@ -535,7 +535,7 @@ The region specified by	``thread.stack_info.start`` and
 the initial stack pointer from the very end of the stack object, taking into
 account storage for TLS and ASLR random offsets.
 
-::
+.. code-block:: none
 
 	+---------------------+ <- thread.stack_obj
 	| Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
@@ -624,7 +624,7 @@ simply leave an non-present virtual page below every stack when it is mapped
 into the address space. The stack object will still need to be properly aligned
 and sized to page granularity.
 
-::
+.. code-block:: none
 
    +-----------------------------+ <- thread.stack_obj
    | Guard reserved memory       | } K_KERNEL_STACK_RESERVED
@@ -683,7 +683,7 @@ On systems without power-of-two region requirements, the reserved memory area
 for threads stacks defined by :c:macro:`K_THREAD_STACK_RESERVED` may be used to
 contain the privilege mode stack. The layout could be something like:
 
-::
+.. code-block:: none
 
    +------------------------------+ <- thread.stack_obj
    | Other platform data          |
@@ -742,7 +742,7 @@ of the privilege stacks can be looked up quickly at runtime based on the
 thread stack address using :c:func:`z_priv_stack_find()`. These stacks are
 laid out the same way as other kernel-only stacks.
 
-::
+.. code-block:: none
 
    +-----------------------------+ <- z_priv_stack_find(thread.stack_obj)
    | Reserved memory             | } K_KERNEL_STACK_RESERVED
