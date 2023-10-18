@@ -150,7 +150,7 @@ html {
     --side-nav-arrow-opacity: 0;
     --side-nav-arrow-hover-opacity: 0.9;
 
-    /* height of an item in any tree / collapsable table */
+    /* height of an item in any tree / collapsible table */
     --tree-item-height: 30px;
 
     --darkmode-toggle-button-icon: '☀️'

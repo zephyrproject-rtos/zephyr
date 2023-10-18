@@ -51,7 +51,7 @@ The current stable stack implementation allows you to configure the following SA
 When sending a segmented message to a unicast address, the unacknowledged segments are repeated
 the :kconfig:option:`CONFIG_BT_MESH_TX_SEG_RETRANS_COUNT` number of times before the transmission
 is considered as failed. The same option configures a number of retransmissions to a group or
-virtual address, but the transmission always succeedes after retransmitting all segments the
+virtual address, but the transmission always succeeds after retransmitting all segments the
 configured number of times.
 
 The timeout between each retransmission to a unicast address is configured by the Kconfig option
