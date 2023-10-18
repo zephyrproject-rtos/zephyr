@@ -313,6 +313,11 @@ graphviz_dot_args = [
     "-Ecolor=gray60",
 ]
 
+# -- Options for sphinx_copybutton ----------------------------------------
+
+copybutton_prompt_text = r"\$ |uart:~\$ "
+copybutton_prompt_is_regexp = True
+
 # -- Linkcheck options ----------------------------------------------------
 
 extlinks = {
