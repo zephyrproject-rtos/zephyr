@@ -2,7 +2,7 @@ description: Synopsys Designware Watchdog
 
 compatible: "snps,designware-watchdog"
 
-include: base.yaml
+include: [base.yaml, reset-device.yaml]
 
 properties:
   # This properties is also supported:

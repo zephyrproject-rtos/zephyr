@@ -211,6 +211,11 @@ int intel_adsp_watchdog_resume(const struct device *dev, const int channel_id)
 	return 0;
 }
 
+int dw_wdt_disable(const struct device *dev)
+{
+	return -ENOTSUP;
+}
+
 static const struct wdt_driver_api intel_adsp_wdt_api = {
 	.setup = intel_adsp_wdt_setup,
 	.disable = dw_wdt_disable,

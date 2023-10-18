@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/math/ilog2.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/clock_control.h>
 
 #include "wdt_dw.h"
@@ -44,6 +45,10 @@ struct dw_wdt_dev_cfg {
 	void (*irq_config)(void);
 #endif
 	uint8_t reset_pulse_length;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+	/* Reset controller device configurations */
+	struct reset_dt_spec reset_spec;
+#endif
 };
 
 static int dw_wdt_setup(const struct device *dev, uint8_t options)
@@ -112,6 +117,37 @@ static int dw_wdt_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
+int dw_wdt_disable(const struct device *dev)
+{
+	int ret = -ENOTSUP;
+	/*
+	 * Once watchdog is enabled by setting WDT_EN bit watchdog cannot be disabled by clearing
+	 * WDT_EN bit and to disable/clear WDT_EN bit watchdog IP should undergo reset
+	 */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
+
+	/*
+	 * Assert and de-assert reset only if the reset prop is defined in the device
+	 * tree node for this dev instance
+	 */
+	if (dev_config->reset_spec.dev != NULL) {
+		if (!device_is_ready(dev_config->reset_spec.dev)) {
+			LOG_ERR("reset controller device not ready");
+			return -ENODEV;
+		}
+
+		/* Assert and de-assert reset watchdog */
+		ret = reset_line_toggle(dev_config->reset_spec.dev, dev_config->reset_spec.id);
+		if (ret != 0) {
+			LOG_ERR("watchdog disable/reset failed");
+			return ret;
+		}
+	}
+#endif
+	return ret;
+}
+
 static const struct wdt_driver_api dw_wdt_api = {
 	.setup = dw_wdt_setup,
 	.disable = dw_wdt_disable,
@@ -125,6 +161,14 @@ static int dw_wdt_init(const struct device *dev)
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	int ret;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+
+	/* Reset watchdog controller if reset controller is supported */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+	ret = dw_wdt_disable(dev);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
 
 	/* Get clock frequency from the clock manager if supported */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
@@ -185,6 +229,9 @@ static void dw_wdt_isr(const struct device *dev)
 #define DW_WDT_IRQ_FLAGS(inst) \
 	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense), (DT_INST_IRQ(inst, sense)), (0))
 
+#define DW_WDT_RESET_SPEC_INIT(inst) \
+	.reset_spec = RESET_DT_SPEC_INST_GET(inst),
+
 #define IRQ_CONFIG(inst)                                                                           \
 	static void dw_wdt##inst##_irq_config(void)                                                \
 	{                                                                                          \
@@ -199,6 +246,8 @@ static void dw_wdt_isr(const struct device *dev)
 	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                               \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.reset_pulse_length = ilog2(DT_INST_PROP_OR(inst, reset_pulse_length, 2)) - 1,     \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),                                    \
+			(DW_WDT_RESET_SPEC_INIT(inst)))                                            \
 		IF_ENABLED(DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid),                      \
 		(                                                                                  \
 			.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                       \
