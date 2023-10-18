@@ -570,7 +570,7 @@ static int ads1x1x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	const k_tid_t tid =
+	k_tid_t tid =
 		k_thread_create(&data->thread, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
 				(k_thread_entry_t)ads1x1x_acquisition_thread, (void *)dev, NULL,
 				NULL, CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);

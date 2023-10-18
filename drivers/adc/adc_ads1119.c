@@ -463,7 +463,7 @@ static int ads1119_init(const struct device *dev)
 	}
 
 #if CONFIG_ADC_ASYNC
-	const k_tid_t tid =
+	k_tid_t tid =
 		k_thread_create(&data->thread, config->stack,
 				CONFIG_ADC_ADS1119_ACQUISITION_THREAD_STACK_SIZE,
 				(k_thread_entry_t)ads1119_acquisition_thread,
