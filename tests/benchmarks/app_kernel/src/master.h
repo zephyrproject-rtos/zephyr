@@ -21,6 +21,8 @@
 
 #include <zephyr/sys/util.h>
 
+#include <zephyr/app_memory/app_memdomain.h>
+
 /* printf format defines. */
 #define FORMAT "| %-65s|%10u|\n"
 
@@ -34,6 +36,14 @@
 #define NR_OF_MBOX_RUNS 128
 #define NR_OF_PIPE_RUNS 256
 #define SEMA_WAIT_TIME (5000)
+
+#ifdef CONFIG_USERSPACE
+#define BENCH_BMEM  K_APP_BMEM(bench_mem_partition)
+#define BENCH_DMEM  K_APP_DMEM(bench_mem_partition)
+#else
+#define BENCH_BMEM
+#define BENCH_DMEM
+#endif
 
 /* global data */
 
