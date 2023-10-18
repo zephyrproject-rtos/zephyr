@@ -66,6 +66,15 @@ Architectures
 
 * ARC
 
+ * Introduced the scalar ARC VPX CPUs port
+ * Introduced support for ARCv3 HS (both 32 and 64 bit) SMP platforms with up to 12 CPU cores
+ * Reworked GNU helper tools usage for ARC MWDT toolchain. Now helper tools can be used from
+   Zephyr SDK (if SDK is installed)
+ * Fixed dynamic thread stack allocation
+ * Fixed STR assembly macro offset calculation issue which may cause build error for ARCv3 64bit
+ * Cleaned-up and made more user friendly handling of the ARC MWDT toolchain path
+   (ARCMWDT_TOOLCHAIN_PATH)
+
 * ARM
 
   * Architectural support for Arm Cortex-M has been separated from Arm
@@ -278,6 +287,13 @@ Boards & SoC Support
 
 * Added support for these ARC boards:
 
+  * Added support for nsim_vpx5 - simulation (nSIM) platform with ARCv2 VPX5 core, close to
+    vpx5_integer_full template
+  * Added support for nsim_hs5x_smp_12cores - simulation (nSIM) platform with 12 cores SMP 32-bit
+    ARCv3 HS
+  * Added support for nsim_hs6x_smp_12cores - simulation (nSIM) platform with 12 cores SMP 64-bit
+    ARCv3 HS
+
 * Added support for these ARM boards:
 
   * Nuvoton NuMaker Platform M467
@@ -312,6 +328,9 @@ Boards & SoC Support
     traffic.
 
 * Made these changes for ARC boards:
+
+  * Turned off unsupported stack checking option for hsdk4xd platform
+  * Changed vendor prefix for ARC QEMU platforms from "qemu" to "snps"
 
 * Made these changes for ARM boards:
 
