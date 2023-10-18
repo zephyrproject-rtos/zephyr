@@ -14,7 +14,7 @@ config GPIO_AXP192
 config GPIO_AXP192_INIT_PRIORITY
 	int "AXP192 GPIO driver initialization priority"
 	depends on GPIO_AXP192
-	default 80
+	default 81
 	help
 	  Initialization priority for the AXP192 GPIO driver. It must be
 	  greater than the I2C controller init priority and the mfd driver
