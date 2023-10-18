@@ -1128,49 +1128,35 @@ struct pdu_bis {
 } __packed;
 
 struct pdu_big_info {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint32_t offs:14;
-	uint32_t offs_units:1;
-	uint32_t iso_interval:12;
-	uint32_t num_bis:5;
+	/* offs:14          [0].0 - [1].5
+	 * offs_units:1     [1].6
+	 * iso_interval:12  [1].7 - [3].2
+	 * num_bis:5        [3].3 - [3].7
+	 */
+	uint8_t bi_packed_0_3[4];
 
-	uint32_t nse:5;
-	uint32_t bn:3;
-	uint32_t sub_interval:20;
-	uint32_t pto:4;
+	/* nse:5            [0].0 - [0].4
+	 * bn:3             [0].5 - [0].7
+	 * sub_interval:20  [1].0 - [3].3
+	 * pto:4            [3].4 - [3].7
+	 */
+	uint8_t bi_packed_4_7[4];
 
-	uint32_t spacing:20;
-	uint32_t irc:4;
-	uint32_t max_pdu:8;
+	/* spacing:20       [0].0 - [2].3
+	 * irc:4            [2].4 - [2].7
+	 */
+	uint8_t bi_packed_8_11[3];
 
-	uint8_t  rfu;
-
-	uint32_t seed_access_addr;
-
-	uint32_t sdu_interval:20;
-	uint32_t max_sdu:12;
-#else
-	uint32_t num_bis:5;
-	uint32_t iso_interval:12;
-	uint32_t offs_units:1;
-	uint32_t offs:14;
-
-	uint32_t pto:4;
-	uint32_t sub_interval:20;
-	uint32_t bn:3;
-	uint32_t nse:5;
-
-	uint32_t max_pdu:8;
-	uint32_t irc:4;
-	uint32_t spacing:20;
+	uint8_t max_pdu;
 
 	uint8_t  rfu;
 
 	uint32_t seed_access_addr;
 
-	uint32_t max_sdu:12;
-	uint32_t sdu_interval:20;
-#endif /* CONFIG_LITTLE_ENDIAN */
+	/* sdu_interval:20  [0].0 - [2].3
+	 * max_sdu:12;      [2].4 - [3].7
+	 */
+	uint8_t  sdu_packed[4];
 
 	uint16_t base_crc_init;
 
@@ -1184,6 +1170,56 @@ struct pdu_big_info {
 #define PDU_BIG_INFO_ENCRYPTED_SIZE sizeof(struct pdu_big_info)
 #define PDU_BIG_BN_MAX              0x07
 #define PDU_BIG_PAYLOAD_COUNT_MAX   28
+
+#define PDU_BIG_INFO_OFFS_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_0_3[0], 0, 14)
+#define PDU_BIG_INFO_OFFS_UNITS_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_0_3[1], 6, 1)
+#define PDU_BIG_INFO_ISO_INTERVAL_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_0_3[1], 7, 12)
+#define PDU_BIG_INFO_NUM_BIS_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_0_3[3], 3, 5)
+#define PDU_BIG_INFO_NSE_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_4_7[0], 0, 5)
+#define PDU_BIG_INFO_BN_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_4_7[0], 5, 3)
+#define PDU_BIG_INFO_SUB_INTERVAL_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_4_7[1], 0, 20)
+#define PDU_BIG_INFO_PTO_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_4_7[3], 4, 4)
+#define PDU_BIG_INFO_SPACING_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_8_11[0], 0, 20)
+#define PDU_BIG_INFO_IRC_GET(bi) \
+	util_get_bits(&(bi)->bi_packed_8_11[2], 4, 4)
+#define PDU_BIG_INFO_SDU_INTERVAL_GET(bi) \
+	util_get_bits(&(bi)->sdu_packed[0], 0, 20)
+#define PDU_BIG_INFO_MAX_SDU_GET(bi) \
+	util_get_bits(&(bi)->sdu_packed[2], 4, 12)
+
+#define PDU_BIG_INFO_OFFS_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_0_3[0], 0, 14, val)
+#define PDU_BIG_INFO_OFFS_UNITS_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_0_3[1], 6, 1, val)
+#define PDU_BIG_INFO_ISO_INTERVAL_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_0_3[1], 7, 12, val)
+#define PDU_BIG_INFO_NUM_BIS_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_0_3[3], 3, 5, val)
+#define PDU_BIG_INFO_NSE_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_4_7[0], 0, 5, val)
+#define PDU_BIG_INFO_BN_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_4_7[0], 5, 3, val)
+#define PDU_BIG_INFO_SUB_INTERVAL_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_4_7[1], 0, 20, val)
+#define PDU_BIG_INFO_PTO_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_4_7[3], 4, 4, val)
+#define PDU_BIG_INFO_SPACING_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_8_11[0], 0, 20, val)
+#define PDU_BIG_INFO_IRC_SET(bi, val) \
+	util_set_bits(&(bi)->bi_packed_8_11[2], 4, 4, val)
+#define PDU_BIG_INFO_SDU_INTERVAL_SET(bi, val) \
+	util_set_bits(&(bi)->sdu_packed[0], 0, 20, val)
+#define PDU_BIG_INFO_MAX_SDU_SET(bi, val) \
+	util_set_bits(&(bi)->sdu_packed[2], 4, 12, val)
 
 struct pdu_dtm {
 #ifdef CONFIG_LITTLE_ENDIAN
