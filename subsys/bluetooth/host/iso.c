@@ -1863,27 +1863,23 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 		return false;
 	}
 
-	if (param->c_to_p_interval < BT_ISO_SDU_INTERVAL_MIN ||
-	    param->c_to_p_interval > BT_ISO_SDU_INTERVAL_MAX) {
+	if (!IN_RANGE(param->c_to_p_interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
 		LOG_DBG("Invalid C to P interval: %u", param->c_to_p_interval);
 		return false;
 	}
 
-	if (param->p_to_c_interval < BT_ISO_SDU_INTERVAL_MIN ||
-	    param->p_to_c_interval > BT_ISO_SDU_INTERVAL_MAX) {
+	if (!IN_RANGE(param->p_to_c_interval, BT_ISO_SDU_INTERVAL_MIN, BT_ISO_SDU_INTERVAL_MAX)) {
 		LOG_DBG("Invalid P to C interval: %u", param->p_to_c_interval);
 		return false;
 	}
 
 	if (!advanced &&
-	    (param->c_to_p_latency < BT_ISO_LATENCY_MIN ||
-	     param->c_to_p_latency > BT_ISO_LATENCY_MAX)) {
+	    !IN_RANGE(param->c_to_p_latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
 		LOG_DBG("Invalid C to P latency: %u", param->c_to_p_latency);
 		return false;
 	}
 	if (!advanced &&
-	    (param->p_to_c_latency < BT_ISO_LATENCY_MIN ||
-	     param->p_to_c_latency > BT_ISO_LATENCY_MAX)) {
+	    !IN_RANGE(param->p_to_c_latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
 		LOG_DBG("Invalid P to C latency: %u", param->p_to_c_latency);
 		return false;
 	}
