@@ -20,17 +20,24 @@
 #define RECV_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define TEST_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-char msg[MAX_MSG];
-char data_bench[MESSAGE_SIZE];
+BENCH_BMEM char msg[MAX_MSG];
+BENCH_BMEM char data_bench[MESSAGE_SIZE];
 
-struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
-char sline[SLINE_LEN + 1];
+BENCH_DMEM struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
+BENCH_BMEM char sline[SLINE_LEN + 1];
 
 /*
  * Time in timer cycles necessary to read time.
  * Used for correction in time measurements.
  */
 uint32_t tm_off;
+
+static BENCH_DMEM char *test_type_str[] = {
+	"|                  K E R N E L - - > K E R N E L                   |          |\n",
+	"|                  K E R N E L - - >   U S E R                     |          |\n",
+	"|                    U S E R   - - > K E R N E L                   |          |\n",
+	"|                    U S E R   - - >   U S E R                     |          |\n"
+};
 
 /********************************************************************/
 /* static allocation  */
@@ -122,8 +129,8 @@ static timing_t z_vrfy_timing_timestamp_get(void)
  */
 static void test_thread_entry(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
+	bool skip_mem_and_mbox = (bool)(uintptr_t)(p2);
+
 	ARG_UNUSED(p3);
 
 	PRINT_STRING("\n");
@@ -131,15 +138,19 @@ static void test_thread_entry(void *p1, void *p2, void *p3)
 	PRINT_STRING("|          S I M P L E   S E R V I C E    "
 		     "M E A S U R E M E N T S  |  nsec    |\n");
 #ifdef CONFIG_USERSPACE
-	PRINT_STRING((const char *)arg1);
+	PRINT_STRING((const char *)p1);
 #endif
 	PRINT_STRING(dashline);
 
 	message_queue_test();
 	sema_test();
 	mutex_test();
-	memorymap_test();
-	mailbox_test();
+
+	if (!skip_mem_and_mbox) {
+		memorymap_test();
+		mailbox_test();
+	}
+
 	pipe_test();
 }
 
@@ -152,16 +163,28 @@ int main(void)
 
 	priority = k_thread_priority_get(k_current_get());
 
+#ifdef CONFIG_USERSPACE
+	k_mem_domain_add_partition(&k_mem_domain_default,
+				   &bench_mem_partition);
+#endif
+
 	bench_test_init();
+
+	timing_init();
+
+	timing_start();
+
+	/* ********* All threads are kernel threads ********** */
 
 	k_thread_create(&test_thread, test_stack,
 			K_THREAD_STACK_SIZEOF(test_stack),
-			test_thread_entry, NULL, NULL, NULL,
+			test_thread_entry,
+			test_type_str[0], (void *)(uintptr_t)false, NULL,
 			priority, 0, K_FOREVER);
 
 	k_thread_create(&recv_thread, recv_stack,
 			K_THREAD_STACK_SIZEOF(recv_stack),
-			recvtask, NULL, NULL, NULL,
+			recvtask, (void *)(uintptr_t)false, NULL, NULL,
 			5, 0, K_FOREVER);
 
 	k_thread_start(&recv_thread);
@@ -169,6 +192,86 @@ int main(void)
 
 	k_thread_join(&test_thread, K_FOREVER);
 	k_thread_abort(&recv_thread);
+
+#ifdef CONFIG_USERSPACE
+	/* ****** Main thread is kernel, receiver is user thread ******* */
+
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
+			test_thread_entry,
+			test_type_str[1], (void *)(uintptr_t)true, NULL,
+			priority, 0, K_FOREVER);
+
+	k_thread_create(&recv_thread, recv_stack,
+			K_THREAD_STACK_SIZEOF(recv_stack),
+			recvtask, (void *)(uintptr_t)true, NULL, NULL,
+			5, K_USER, K_FOREVER);
+
+	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
+			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
+			      &STARTRCV, &DEMO_MUTEX,
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+
+	k_thread_start(&recv_thread);
+	k_thread_start(&test_thread);
+
+	k_thread_join(&test_thread, K_FOREVER);
+	k_thread_abort(&recv_thread);
+
+	/* ****** Main thread is user, receiver is kernel thread ******* */
+
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
+			test_thread_entry,
+			test_type_str[2], (void *)(uintptr_t)true, NULL,
+			priority, K_USER, K_FOREVER);
+
+	k_thread_create(&recv_thread, recv_stack,
+			K_THREAD_STACK_SIZEOF(recv_stack),
+			recvtask, (void *)(uintptr_t)true, NULL, NULL,
+			5, 0, K_FOREVER);
+
+	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
+			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
+			      &STARTRCV, &DEMO_MUTEX,
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+
+	k_thread_start(&recv_thread);
+	k_thread_start(&test_thread);
+
+	k_thread_join(&test_thread, K_FOREVER);
+	k_thread_abort(&recv_thread);
+
+	/* ********* All threads are user threads ********** */
+
+	k_thread_create(&test_thread, test_stack,
+			K_THREAD_STACK_SIZEOF(test_stack),
+			test_thread_entry,
+			test_type_str[3], (void *)(uintptr_t)true, NULL,
+			priority, K_USER, K_FOREVER);
+
+	k_thread_create(&recv_thread, recv_stack,
+			K_THREAD_STACK_SIZEOF(recv_stack),
+			recvtask, (void *)(uintptr_t)true, NULL, NULL,
+			5, K_USER, K_FOREVER);
+
+	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
+			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
+			      &STARTRCV, &DEMO_MUTEX,
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
+			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
+			      &STARTRCV, &DEMO_MUTEX,
+			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
+
+	k_thread_start(&recv_thread);
+	k_thread_start(&test_thread);
+
+	k_thread_join(&test_thread, K_FOREVER);
+	k_thread_abort(&recv_thread);
+#endif /* CONFIG_USERSPACE */
+
+	timing_stop();
 
 	PRINT_STRING("|         END OF TESTS                     "
 		     "                                   |\n");

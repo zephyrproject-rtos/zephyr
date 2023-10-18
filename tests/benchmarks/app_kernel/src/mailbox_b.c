@@ -97,17 +97,19 @@ void mailbox_put(uint32_t size, int count, uint32_t *time)
 {
 	int i;
 	unsigned int t;
+	timing_t  start;
+	timing_t  end;
 
 	message.rx_source_thread = K_ANY;
 	message.tx_target_thread = K_ANY;
 
 	/* first sync with the receiver */
 	k_sem_give(&SEM0);
-	t = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < count; i++) {
 		k_mbox_put(&MAILB1, &message, K_FOREVER);
 	}
-	t = TIME_STAMP_DELTA_GET(t);
+	end = timing_timestamp_get();
+	t = (unsigned int)timing_cycles_get(&start, &end);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
-	check_result();
 }
