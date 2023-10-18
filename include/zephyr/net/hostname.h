@@ -27,6 +27,12 @@ extern "C" {
 	 (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE) ?	\
 	  sizeof("0011223344556677") - 1 : 0))
 
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+#define NET_HOSTNAME_SIZE NET_HOSTNAME_MAX_LEN + 1
+#else
+#define NET_HOSTNAME_SIZE 1
+#endif
+
 /**
  * @brief Get the device hostname
  *
