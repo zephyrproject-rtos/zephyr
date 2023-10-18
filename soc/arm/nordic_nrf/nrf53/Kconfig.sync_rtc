@@ -21,7 +21,7 @@ config NRF53_SYNC_RTC_INIT_PRIORITY
 	  nRF53 Synchronized RTC initialization priority.
 
 config NRF_RTC_TIMER_USER_CHAN_COUNT
-	default 2 if NRF_802154_RADIO_DRIVER && SOC_NRF5340_CPUNET
+	default 2 if NRF_802154_RADIO_DRIVER && SOC_COMPATIBLE_NRF5340_CPUNET
 	default 3 if NRF_802154_RADIO_DRIVER
 	default 1
 
@@ -32,13 +32,13 @@ config NRF53_SYNC_RTC_LOG_TIMESTAMP
 config NRF53_SYNC_RTC_IPM_OUT
 	int "IPM channel from APP to NET"
 	range 0 15
-	default 7 if SOC_NRF5340_CPUAPP
+	default 7 if SOC_COMPATIBLE_NRF5340_CPUAPP
 	default 8
 
 config NRF53_SYNC_RTC_IPM_IN
 	int "IPM channel from APP to NET"
 	range 0 15
-	default 8 if SOC_NRF5340_CPUAPP
+	default 8 if SOC_COMPATIBLE_NRF5340_CPUAPP
 	default 7
 
 ipm_num = 0
