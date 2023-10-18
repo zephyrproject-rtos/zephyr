@@ -196,6 +196,11 @@ int z_impl_zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 				ZSOCK_FD_SET(fd, exceptfds);
 				num_selects++;
 			}
+
+			if (writefds != NULL) {
+				ZSOCK_FD_SET(fd, writefds);
+				num_selects++;
+			}
 		}
 
 		res--;
