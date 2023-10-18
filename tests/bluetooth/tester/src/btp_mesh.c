@@ -1553,6 +1553,7 @@ static uint8_t ivu_toggle_state(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 static uint8_t lpn(const void *cmd, uint16_t cmd_len,
 		   void *rsp, uint16_t *rsp_len)
 {
@@ -1584,6 +1585,7 @@ static uint8_t lpn_poll(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 
 static uint8_t net_send(const void *cmd, uint16_t cmd_len,
 			void *rsp, uint16_t *rsp_len)
@@ -1765,6 +1767,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 }
 
 #if defined(CONFIG_BT_TESTING)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 static uint8_t lpn_subscribe(const void *cmd, uint16_t cmd_len,
 			     void *rsp, uint16_t *rsp_len)
 {
@@ -1800,6 +1803,7 @@ static uint8_t lpn_unsubscribe(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 
 static uint8_t rpl_clear(const void *cmd, uint16_t cmd_len,
 			 void *rsp, uint16_t *rsp_len)
@@ -4579,6 +4583,7 @@ static const struct btp_handler handlers[] = {
 		.expect_len = 0,
 		.func = ivu_toggle_state,
 	},
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	{
 		.opcode = BTP_MESH_LPN,
 		.expect_len = sizeof(struct btp_mesh_lpn_set_cmd),
@@ -4589,6 +4594,7 @@ static const struct btp_handler handlers[] = {
 		.expect_len = 0,
 		.func = lpn_poll,
 	},
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 	{
 		.opcode = BTP_MESH_NET_SEND,
 		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
@@ -4900,6 +4906,7 @@ static const struct btp_handler handlers[] = {
 		.func = va_del,
 	},
 #if defined(CONFIG_BT_TESTING)
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 	{
 		.opcode = BTP_MESH_LPN_SUBSCRIBE,
 		.expect_len = sizeof(struct btp_mesh_lpn_subscribe_cmd),
@@ -4910,6 +4917,7 @@ static const struct btp_handler handlers[] = {
 		.expect_len = sizeof(struct btp_mesh_lpn_unsubscribe_cmd),
 		.func = lpn_unsubscribe,
 	},
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 	{
 		.opcode = BTP_MESH_RPL_CLEAR,
 		.expect_len = 0,
