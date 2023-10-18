@@ -1938,6 +1938,17 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 	switch (level) {
 	case SOL_SOCKET:
 		switch (optname) {
+		case SO_ERROR: {
+			if (*optlen != sizeof(int)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			*(int *)optval = POINTER_TO_INT(ctx->user_data);
+
+			return 0;
+		}
+
 		case SO_TYPE: {
 			int type = (int)net_context_get_type(ctx);
 
