@@ -27,7 +27,7 @@
 /* length of the output line */
 #define SLINE_LEN 256
 
-#define NR_OF_FIFO_RUNS 500
+#define NR_OF_MSGQ_RUNS 500
 #define NR_OF_SEMA_RUNS 500
 #define NR_OF_MUTEX_RUNS 1000
 #define NR_OF_MAP_RUNS 1000
@@ -65,7 +65,7 @@ extern void recvtask(void *p1, void *p2, void *p3);
 
 extern void mailbox_test(void);
 extern void sema_test(void);
-extern void queue_test(void);
+extern void message_queue_test(void);
 extern void mutex_test(void);
 extern void memorymap_test(void);
 extern void pipe_test(void);

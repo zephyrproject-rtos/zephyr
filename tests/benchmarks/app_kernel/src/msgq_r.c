@@ -1,4 +1,4 @@
-/* fifo_r.c */
+/* msgq_r.c */
 
 /*
  * Copyright (c) 1997-2010, 2013-2014 Wind River Systems, Inc.
@@ -9,7 +9,7 @@
 #include "receiver.h"
 #include "master.h"
 
-/* queue transfer speed test */
+/* message queue transfer speed test */
 
 /**
  * @brief Data receive task
@@ -18,11 +18,11 @@ void dequtask(void)
 {
 	int x, i;
 
-	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
+	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_get(&DEMOQX1, &x, K_FOREVER);
 	}
 
-	for (i = 0; i < NR_OF_FIFO_RUNS; i++) {
+	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
 		k_msgq_get(&DEMOQX4, &x, K_FOREVER);
 	}
 }

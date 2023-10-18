@@ -68,7 +68,7 @@ int main(void)
 	PRINT_STRING("|          S I M P L E   S E R V I C E    "
 		     "M E A S U R E M E N T S  |  nsec    |\n");
 	PRINT_STRING(dashline);
-	queue_test();
+	message_queue_test();
 	sema_test();
 	mutex_test();
 	memorymap_test();
