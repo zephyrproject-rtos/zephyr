@@ -215,7 +215,7 @@ SECTIONS
     SECTION_PROLOGUE(padding_section,,)
 	{
 	__rodata_region_end = .;
-	MPU_ALIGN(__rodata_region_end - ADDR(rom_start));
+	. = ALIGN(8);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #else
 	__rodata_region_end = .;
