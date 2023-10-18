@@ -17,3 +17,6 @@ uint8_t util_ones_count_get(const uint8_t *octets, uint8_t octets_len);
 int util_aa_le32(uint8_t *dst);
 int util_saa_le32(uint8_t *dst, uint8_t handle);
 void util_bis_aa_le32(uint8_t bis, uint8_t *saa, uint8_t *dst);
+uint32_t util_get_bits(uint8_t *data, uint8_t bit_offs, uint8_t num_bits);
+void util_set_bits(uint8_t *data, uint8_t bit_offs, uint8_t num_bits,
+		   uint32_t value);

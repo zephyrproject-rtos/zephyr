@@ -424,20 +424,20 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	lll->phy = BIT(bi->chm_phy[4] >> 5);
 
-	lll->num_bis = bi->num_bis;
-	lll->bn = bi->bn;
-	lll->nse = bi->nse;
-	lll->sub_interval = sys_le24_to_cpu(bi->sub_interval);
+	lll->num_bis = PDU_BIG_INFO_NUM_BIS_GET(bi);
+	lll->bn = PDU_BIG_INFO_BN_GET(bi);
+	lll->nse = PDU_BIG_INFO_NSE_GET(bi);
+	lll->sub_interval = PDU_BIG_INFO_SUB_INTERVAL_GET(bi);
 	lll->max_pdu = bi->max_pdu;
-	lll->pto = bi->pto;
+	lll->pto = PDU_BIG_INFO_PTO_GET(bi);
 	if (lll->pto) {
 		lll->ptc = lll->bn;
 	} else {
 		lll->ptc = 0U;
 	}
-	lll->bis_spacing = sys_le24_to_cpu(bi->spacing);
-	lll->irc = bi->irc;
-	lll->sdu_interval = sys_le24_to_cpu(bi->sdu_interval);
+	lll->bis_spacing = PDU_BIG_INFO_SPACING_GET(bi);
+	lll->irc = PDU_BIG_INFO_IRC_GET(bi);
+	lll->sdu_interval = PDU_BIG_INFO_SDU_INTERVAL_GET(bi);
 
 	/* Pick the 39-bit payload count, 1 MSb is framing bit */
 	lll->payload_count = (uint64_t)bi->payload_count_framing[0];
@@ -479,7 +479,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		}
 	}
 
-	lll->iso_interval = sys_le16_to_cpu(bi->iso_interval);
+	lll->iso_interval = PDU_BIG_INFO_ISO_INTERVAL_GET(bi);
 	interval_us = lll->iso_interval * PERIODIC_INT_UNIT_US;
 
 	sync_iso->timeout_reload =
@@ -492,7 +492,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 				   lll_clock_ppm_get(sca)) *
 				 interval_us), USEC_PER_SEC);
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
-	if (bi->offs_units) {
+	if (PDU_BIG_INFO_OFFS_UNITS_GET(bi)) {
 		lll->window_size_event_us = OFFS_UNIT_300_US;
 	} else {
 		lll->window_size_event_us = OFFS_UNIT_30_US;
@@ -505,7 +505,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	/* Calculate the BIG Offset in microseconds */
 	sync_iso_offset_us = ftr->radio_end_us;
-	sync_iso_offset_us += (uint32_t)sys_le16_to_cpu(bi->offs) *
+	sync_iso_offset_us += PDU_BIG_INFO_OFFS_GET(bi) *
 			      lll->window_size_event_us;
 	/* Skip to first selected BIS subevent */
 	/* FIXME: add support for interleaved packing */
@@ -631,7 +631,6 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 {
 	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_sync_iso *se;
-	struct lll_sync_iso *lll;
 	struct node_rx_pdu *rx;
 
 	/* switch to normal prepare */
@@ -639,7 +638,6 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 
 	/* Get reference to ULL context */
 	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
-	lll = &sync_iso->lll;
 
 	/* Prepare BIG Sync Established */
 	rx = (void *)sync_iso->sync->iso.node_rx_estab;
