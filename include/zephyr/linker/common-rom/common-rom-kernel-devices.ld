@@ -40,6 +40,11 @@
 		/* TODO: does this section require alignment? */
 		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_PROLOGUE(.text.z_shared_isr,,)
+	{
+		KEEP(*(.text.z_shared_isr))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
 #endif
