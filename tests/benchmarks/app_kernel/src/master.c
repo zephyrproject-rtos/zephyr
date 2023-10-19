@@ -66,6 +66,57 @@ K_PIPE_DEFINE(PIPE_NOBUFF, 0, 4);
 K_PIPE_DEFINE(PIPE_SMALLBUFF, 256, 4);
 K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
 
+/*
+ * Custom syscalls
+ */
+
+/**
+ * @brief Change a thread's priority
+ *
+ * Unlike the normal k_thread_priority_set(), this custom syscall allows
+ * a user thread to raise its priority.
+ */
+void z_impl_test_thread_priority_set(k_tid_t thread, int prio)
+{
+	extern void z_thread_priority_set(struct k_thread *thread, int prio);
+
+	z_thread_priority_set((struct k_thread *)thread, prio);
+}
+
+
+#ifdef CONFIG_USERSPACE
+static void z_vrfy_test_thread_priority_set(k_tid_t thread, int prio)
+{
+	z_impl_test_thread_priority_set(thread, prio);
+}
+
+#include <syscalls/test_thread_priority_set_mrsh.c>
+#endif
+
+/**
+ * @brief Obtain a timestamp
+ *
+ * Architecture timestamp routines often require MMIO that is not mapped to
+ * the user threads. Use a custom system call to get the timestamp.
+ */
+timing_t z_impl_timing_timestamp_get(void)
+{
+	return timing_counter_get();
+}
+
+#ifdef CONFIG_USERSPACE
+static timing_t z_vrfy_timing_timestamp_get(void)
+{
+	return z_impl_timing_timestamp_get();
+}
+
+#include <syscalls/timing_timestamp_get_mrsh.c>
+#endif
+
+/*
+ * Main test
+ */
+
 /**
  * @brief Entry point for test thread
  */
