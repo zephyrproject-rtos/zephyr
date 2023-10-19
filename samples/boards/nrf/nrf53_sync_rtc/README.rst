@@ -29,7 +29,8 @@ Building the application for nrf5340dk_nrf5340_cpuapp
    :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
    :board: nrf5340dk_nrf5340_cpuapp
    :goals: flash
-   :flash-args: --hex-file build/sync_rtc_net-prefix/src/sync_rtc_net-build/zephyr/zephyr.hex
+   :flash-args: --hex-file build/nrf53_sync_rtc/zephyr/zephyr.hex
+   :west-args: --sysbuild
 
 Open a serial terminals (for example Minicom or PuTTY) and connect the board with the
 following settings:
@@ -74,3 +75,22 @@ When you reset the development kit, the following messages (one for master and o
 Observe that initially logging timestamps for the corresponding events on both cores
 do not match. Same with local and remote timestamps reported on network core. After
 RTC synchronization is completed they start to match.
+
+Building the application for the simulated nrf5340bsim
+******************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
+   :host-os: unix
+   :board: nrf5340bsim_nrf5340_cpuapp
+   :goals: build
+   :west-args: --sysbuild
+
+Then you can execute your application using:
+
+.. code-block:: console
+
+   $ ./build/zephyr/zephyr.exe -nosim
+   # Press Ctrl+C to exit
+
+You can expect a similar output as in the real HW in the invoking console.
