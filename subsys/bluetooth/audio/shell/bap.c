@@ -1157,7 +1157,7 @@ static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_codec_qos *qos;
 	unsigned long interval;
-	int err;
+	int err = 0;
 
 	if (default_stream == NULL) {
 		shell_print(sh, "No stream selected");
