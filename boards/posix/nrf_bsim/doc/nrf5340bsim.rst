@@ -107,10 +107,6 @@ in the tree. For example, for :ref:`the nrf53_sync_rtc sample <nrf53_sync_rtc_sa
    These libraries/images are **not** embedded images. You cannot use them for embedded devices,
    and cannot use an embedded image to assemble a native executable.
 
-.. note::
-
-   OpenAMP is not yet supported in these boards.
-
 TrustZone, TF-M and other security considerations
 *************************************************
 
