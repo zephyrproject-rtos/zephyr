@@ -31,49 +31,6 @@ Kernel
   error and have to be done correctly using
   :c:func:`k_work_delayable_from_work`.
 
-Bluetooth
-=========
-
-* The ``accept()`` callback's signature in :c:struct:`bt_l2cap_server` has
-  changed to ``int (*accept)(struct bt_conn *conn, struct bt_l2cap_server
-  *server, struct bt_l2cap_chan **chan)``,
-  adding a new ``server`` parameter pointing to the :c:struct:`bt_l2cap_server`
-  structure instance the callback relates to. :github:`60536`
-
-Networking
-==========
-
-* A new networking Kconfig option :kconfig:option:`CONFIG_NET_INTERFACE_NAME`
-  defaults to ``y``. The option allows user to set a name to a network interface.
-  During system startup a default name is assigned to the network interface like
-  ``eth0`` to the first Ethernet network interface. The option affects the behavior
-  of ``SO_BINDTODEVICE`` BSD socket option. If the Kconfig option is set to ``n``,
-  which is how the system worked earlier, then the name of the device assigned
-  to the network interface is used by the ``SO_BINDTODEVICE`` socket option.
-  If the Kconfig option is set to ``y`` (current default), then the network
-  interface name is used by the ``SO_BINDTODEVICE`` socket option.
-
-* Ethernet PHY devicetree bindings were updated to use the standard ``reg``
-  property for the PHY address instead of a custom ``address`` property. As a
-  result, MDIO controller nodes now require ``#address-cells`` and
-  ``#size-cells`` properties. Similarly, Ethernet PHY devicetree nodes and
-  corresponding driver were updated to consistently use the node name
-  ``ethernet-phy`` instead of ``phy``. Devicetrees and overlays must be updated
-  accordingly:
-
-  .. code-block:: devicetree
-
-     mdio {
-         compatible = "mdio-controller";
-         #address-cells = <1>;
-         #size-cells = <0>;
-
-         ethernet-phy@0 {
-             compatible = "ethernet-phy";
-             reg = <0>;
-         };
-     };
-
 C Library
 =========
 
@@ -121,29 +78,6 @@ C Library
     :kconfig:option:`CONFIG_PICOLIBC_IO_FLOAT_EXACT`, which switches Picolibc
     to a smaller, but inexact conversion algorithm. This requires building
     Picolibc as a module.
-
-CAN Controller
-==============
-
-* The CAN controller timing API functions :c:func:`can_set_timing` and :c:func:`can_set_timing_data`
-  no longer fallback to the (Re-)Synchronization Jump Width (SJW) value set in the devicetree
-  properties for the given CAN controller upon encountering an SJW value corresponding to
-  ``CAN_SJW_NO_CHANGE`` (which is no longer available). The caller will therefore need to fill in
-  the ``sjw`` field in :c:struct:`can_timing`. To aid in this, the :c:func:`can_calc_timing` and
-  :c:func:`can_calc_timing_data` functions now automatically calculate a suitable SJW. The
-  calculated SJW can be overwritten by the caller if needed. The CAN controller API functions
-  :c:func:`can_set_bitrate` and :c:func:`can_set_bitrate_data` now also automatically calculate a
-  suitable SJW, but their SJW cannot be overwritten by the caller.
-
-* The CAN ISO-TP message configuration in :c:struct:`isotp_msg_id` is changed to use the following
-  flags instead of bit fields:
-
-  * :c:macro:`ISOTP_MSG_EXT_ADDR` to enable ISO-TP extended addressing
-  * :c:macro:`ISOTP_MSG_FIXED_ADDR` to enable ISO-TP fixed addressing
-  * :c:macro:`ISOTP_MSG_IDE` to use extended (29-bit) CAN IDs
-
-  The two new flags :c:macro:`ISOTP_MSG_FDF` and :c:macro:`ISOTP_MSG_BRS` were added for CAN FD
-  mode.
 
 Device Drivers and Device Tree
 ==============================
@@ -262,6 +196,26 @@ Device Drivers and Device Tree
 * The Kconfig option ``CONFIG_GPIO_NCT38XX_INTERRUPT`` has been renamed to
   :kconfig:option:`CONFIG_GPIO_NCT38XX_ALERT`.
 
+* The CAN controller timing API functions :c:func:`can_set_timing` and :c:func:`can_set_timing_data`
+  no longer fallback to the (Re-)Synchronization Jump Width (SJW) value set in the devicetree
+  properties for the given CAN controller upon encountering an SJW value corresponding to
+  ``CAN_SJW_NO_CHANGE`` (which is no longer available). The caller will therefore need to fill in
+  the ``sjw`` field in :c:struct:`can_timing`. To aid in this, the :c:func:`can_calc_timing` and
+  :c:func:`can_calc_timing_data` functions now automatically calculate a suitable SJW. The
+  calculated SJW can be overwritten by the caller if needed. The CAN controller API functions
+  :c:func:`can_set_bitrate` and :c:func:`can_set_bitrate_data` now also automatically calculate a
+  suitable SJW, but their SJW cannot be overwritten by the caller.
+
+* The CAN ISO-TP message configuration in :c:struct:`isotp_msg_id` is changed to use the following
+  flags instead of bit fields:
+
+  * :c:macro:`ISOTP_MSG_EXT_ADDR` to enable ISO-TP extended addressing
+  * :c:macro:`ISOTP_MSG_FIXED_ADDR` to enable ISO-TP fixed addressing
+  * :c:macro:`ISOTP_MSG_IDE` to use extended (29-bit) CAN IDs
+
+  The two new flags :c:macro:`ISOTP_MSG_FDF` and :c:macro:`ISOTP_MSG_BRS` were added for CAN FD
+  mode.
+
 Power Management
 ================
 
@@ -287,20 +241,51 @@ Bootloader
   ``16``). Bootloaders that use a part of the SRAM should set this value to an
   appropriate size. :github:`60371`
 
-ARM
-====
+Bluetooth
+=========
 
-* ARM SoC initialization routines no longer need to call `NMI_INIT()`. The
-  macro call has been removed as it was not doing anything useful.
+* The ``accept()`` callback's signature in :c:struct:`bt_l2cap_server` has
+  changed to ``int (*accept)(struct bt_conn *conn, struct bt_l2cap_server
+  *server, struct bt_l2cap_chan **chan)``,
+  adding a new ``server`` parameter pointing to the :c:struct:`bt_l2cap_server`
+  structure instance the callback relates to. :github:`60536`
 
-RISC V
-======
-
-* The :kconfig:option:`CONFIG_RISCV_MTVEC_VECTORED_MODE` Kconfig option was renamed to
-  :kconfig:option:`CONFIG_RISCV_VECTORED_MODE`.
-
-Subsystems
+Networking
 ==========
+
+* A new networking Kconfig option :kconfig:option:`CONFIG_NET_INTERFACE_NAME`
+  defaults to ``y``. The option allows user to set a name to a network interface.
+  During system startup a default name is assigned to the network interface like
+  ``eth0`` to the first Ethernet network interface. The option affects the behavior
+  of ``SO_BINDTODEVICE`` BSD socket option. If the Kconfig option is set to ``n``,
+  which is how the system worked earlier, then the name of the device assigned
+  to the network interface is used by the ``SO_BINDTODEVICE`` socket option.
+  If the Kconfig option is set to ``y`` (current default), then the network
+  interface name is used by the ``SO_BINDTODEVICE`` socket option.
+
+* Ethernet PHY devicetree bindings were updated to use the standard ``reg``
+  property for the PHY address instead of a custom ``address`` property. As a
+  result, MDIO controller nodes now require ``#address-cells`` and
+  ``#size-cells`` properties. Similarly, Ethernet PHY devicetree nodes and
+  corresponding driver were updated to consistently use the node name
+  ``ethernet-phy`` instead of ``phy``. Devicetrees and overlays must be updated
+  accordingly:
+
+  .. code-block:: devicetree
+
+     mdio {
+         compatible = "mdio-controller";
+         #address-cells = <1>;
+         #size-cells = <0>;
+
+         ethernet-phy@0 {
+             compatible = "ethernet-phy";
+             reg = <0>;
+         };
+     };
+
+Other Subsystems
+================
 
 * ZBus runtime observers implementation now relies on the HEAP memory instead of a memory slab.
   Thus, zbus' configuration (kconfig) related to runtime observers has changed. To keep your runtime
@@ -327,6 +312,18 @@ Subsystems
   :c:type:`smp_translate_error_fn` for function details. Any SMP version 2
   handlers made for Zephyr 3.4 need to be updated to include these translation
   functions when the groups are registered.
+
+ARM
+===
+
+* ARM SoC initialization routines no longer need to call `NMI_INIT()`. The
+  macro call has been removed as it was not doing anything useful.
+
+RISC V
+======
+
+* The :kconfig:option:`CONFIG_RISCV_MTVEC_VECTORED_MODE` Kconfig option was renamed to
+  :kconfig:option:`CONFIG_RISCV_VECTORED_MODE`.
 
 Recommended Changes
 *******************
