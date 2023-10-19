@@ -25,6 +25,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	/**TESTPOINT: abort current thread*/
 	execute_flag = 1;
 	k_thread_abort(k_current_get());
+	CODE_UNREACHABLE;
 	/*unreachable*/
 	execute_flag = 2;
 	zassert_true(1 == 0);

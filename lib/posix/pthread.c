@@ -628,6 +628,8 @@ void pthread_exit(void *retval)
 		/* not a valid posix_thread */
 		LOG_DBG("Aborting non-pthread %p", k_current_get());
 		k_thread_abort(k_current_get());
+
+		CODE_UNREACHABLE;
 	}
 
 	/* Make a thread as cancelable before exiting */

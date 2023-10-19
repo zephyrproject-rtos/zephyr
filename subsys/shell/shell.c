@@ -1307,6 +1307,8 @@ static void kill_handler(const struct shell *sh)
 
 	sh->ctx->tid = NULL;
 	k_thread_abort(k_current_get());
+
+	CODE_UNREACHABLE;
 }
 
 void shell_thread(void *shell_handle, void *arg_log_backend,
