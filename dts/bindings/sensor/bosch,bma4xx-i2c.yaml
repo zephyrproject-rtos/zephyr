@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA4xx 3-axis acceleration sensors in I2C mode.  See more info at:
+  https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/
+
+compatible: "bosch,bma4xx"
+
+include: [sensor-device.yaml, i2c-device.yaml, "bosch,bma4xx-common.yaml"]

@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA4xx 3-axis acceleration sensors in SPI mode.  See more info at:
+  https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/
+
+  SPI mode is currently NOT supported in the driver but is specified in the
+  bindings for ease of future expansion.
+
+compatible: "bosch,bma4xx"
+
+include: [sensor-device.yaml, spi-device.yaml, "bosch,bma4xx-common.yaml"]
