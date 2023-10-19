@@ -5,6 +5,7 @@ import sys
 import os
 from pathlib import Path
 import re
+import textwrap
 
 from sphinx.cmd.build import get_parser
 import sphinx_rtd_theme
@@ -182,7 +183,11 @@ latex_elements = {
     "papersize": "a4paper",
     "maketitle": open(ZEPHYR_BASE / "doc" / "_static" / "latex" / "title.tex").read(),
     "preamble": open(ZEPHYR_BASE / "doc" / "_static" / "latex" / "preamble.tex").read(),
-    "fontpkg": r"\usepackage{charter}",
+    "fontpkg": textwrap.dedent(r"""
+                                    \usepackage{noto}
+                                    \usepackage{inconsolata-nerd-font}
+                                    \usepackage[T1]{fontenc}
+                                """),
     "sphinxsetup": ",".join(
         (
             # NOTE: colors match those found in light.css stylesheet
