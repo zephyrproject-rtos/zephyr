@@ -9,7 +9,19 @@ We are pleased to announce the release of Zephyr version 3.5.0.
 
 Major enhancements with this release include:
 
-* Added native_sim (successor to native_posix)
+* Added support for linkable loadable extensions (llext)
+* Added native_sim simulator target (successor to native_posix)
+* Added new battery charger driver API
+* Added new hardware spinlock driver API
+* Added new modem subsystem
+* Added support for 45+ new boards
+* Networking: improvements to CoAP, Connection Manager, DHCP, Ethernet, gPTP, ICMP,
+  IPv6 and LwM2M
+* Bluetooth: improvements to the Controller, Audio, Mesh, as well as the host stack in
+  general
+* Improved LVGL graphics library integration
+* Integrated support with the CodeChecker static analyzer
+* Picolibc is now the default C standard library
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.4.0 to Zephyr v3.5.0 can be found in the separate :ref:`migration guide<migration_3.5>`.
