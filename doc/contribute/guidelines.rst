@@ -1026,3 +1026,18 @@ Some example past treewide changes are:
 Note that adding a new version of a widely used API while maintaining
 support for the old one is not a treewide change. Deprecation and removal of
 such APIs, however, are treewide changes.
+
+Specialized driver requirements
+===============================
+
+Drivers for standalone devices should use the Zephyr bus APIs (SPI, I2C...)
+whenever possible so that the device can be used with any SoC from any vendor
+implementing a compatible bus.
+
+If it is not technically possible to achieve full performance using the Zephyr
+APIs due to specialized accelerators in a particular SoC family, one could
+extend the support for an external device by providing a specialized path for
+that SoC family. However, the driver must still provide a regular path (via
+Zephyr APIs) for all other SoCs. Every exception must be approved by the
+Architecture WG in order to be validated and potentially to be learned/improved
+from.
