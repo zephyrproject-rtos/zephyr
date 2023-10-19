@@ -76,8 +76,8 @@ struct pinctrl_dev_config {
 
 /** @cond INTERNAL_HIDDEN */
 
-#ifndef CONFIG_PM_DEVICE
-/** If device power management is not enabled, "sleep" state will be ignored. */
+#if !defined(CONFIG_PM) && !defined(CONFIG_PM_DEVICE)
+/** Out of power management configurations, ignore "sleep" state. */
 #define PINCTRL_SKIP_SLEEP 1
 #endif
 
