@@ -173,8 +173,6 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 {
-	/* Validate what props are supported by the driver */
-
 	fuel_gauge_prop_t prop_types[] = {
 		FUEL_GAUGE_SBS_MFR_ACCESS,
 		FUEL_GAUGE_SBS_MODE,
@@ -207,7 +205,6 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_buffer_props__returns_ok)
 
 ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 {
-	/* Validate what props are supported by the driver */
 	uint32_t expected_uV = 5000 * 1000;
 	uint32_t expected_uA = 3000 * 1000;
 
@@ -225,8 +222,6 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_get_single_prop)
 {
-	/* Validate what props are supported by the driver */
-
 	uint16_t test_value = 0x1001;
 
 	union fuel_gauge_prop_val mfr_acc_set = {
