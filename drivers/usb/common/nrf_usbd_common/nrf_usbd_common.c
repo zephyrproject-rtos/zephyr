@@ -208,19 +208,22 @@ static uint32_t m_ep_ready;
 /**
  * @brief Mark endpoint with prepared data to transfer by DMA.
  *
- * This variable can be from any place in the code (interrupt or main thread).
+ * This variable can be set in interrupt context or within critical section.
  * It would be cleared only from USBD interrupt.
  *
  * Mask prepared USBD data for transmission.
  * It is cleared when no more data to transmit left.
  */
-static atomic_t m_ep_dma_waiting;
+static uint32_t m_ep_dma_waiting;
 
 /* Semaphore to guard EasyDMA access.
  * In USBD there is only one DMA channel working in background, and new transfer
  * cannot be started when there is ongoing transfer on any other channel.
  */
 static K_SEM_DEFINE(dma_available, 1, 1);
+
+/* Endpoint on which DMA was started. */
+static nrf_usbd_common_ep_t dma_ep;
 
 /**
  * @brief Tracks whether total bytes transferred by DMA is even or odd.
@@ -800,58 +803,8 @@ static void ev_usbreset_handler(void)
 	m_event_handler(&evt);
 }
 
-static void ev_started_handler(void)
+static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 {
-}
-
-/**
- * @brief Handler for EasyDMA event without endpoint clearing.
- *
- * This handler would be called when EasyDMA transfer for endpoints that does not require clearing.
- * All in endpoints are cleared automatically when new EasyDMA transfer is initialized.
- * For endpoint 0 see @ref nrf_usbd_ep0out_dma_handler.
- *
- * @param[in] ep Endpoint number.
- */
-static inline void nrf_usbd_ep0in_dma_handler(void)
-{
-	const nrf_usbd_common_ep_t ep = NRF_USBD_COMMON_EPIN0;
-
-	LOG_DBG("USB event: DMA ready IN0");
-	/* DMA finished, track if total bytes transferred is even or odd */
-	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
-	usbd_dma_pending_clear();
-	k_sem_give(&dma_available);
-
-	nrf_usbd_int_enable(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK);
-
-	usbd_ep_state_t *p_state = ep_state_access(ep);
-
-	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
-		/* Clear transfer information just in case */
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else if (p_state->handler.feeder == NULL) {
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else {
-		/* Nothing to do */
-	}
-}
-
-/**
- * @brief Handler for EasyDMA event without endpoint clearing.
- *
- * This handler would be called when EasyDMA transfer for endpoints that does not require clearing.
- * All in endpoints are cleared automatically when new EasyDMA transfer is initialized.
- * For endpoint 0 see @ref nrf_usbd_ep0out_dma_handler.
- *
- * @param[in] ep Endpoint number.
- */
-static inline void nrf_usbd_epin_dma_handler(nrf_usbd_common_ep_t ep)
-{
-	LOG_DBG("USB event: DMA ready IN: %x", ep);
-	__ASSERT_NO_MSG(NRF_USBD_EPIN_CHECK(ep));
-	__ASSERT_NO_MSG(!NRF_USBD_EPISO_CHECK(ep));
-	__ASSERT_NO_MSG(NRF_USBD_EP_NR_GET(ep) > 0);
 	/* DMA finished, track if total bytes transferred is even or odd */
 	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
 	usbd_dma_pending_clear();
@@ -861,219 +814,20 @@ static inline void nrf_usbd_epin_dma_handler(nrf_usbd_common_ep_t ep)
 
 	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
 		/* Clear transfer information just in case */
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else if (p_state->handler.feeder == NULL) {
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else {
-		/* Nothing to do */
-	}
-}
+		m_ep_dma_waiting &= ~(1U << ep2bit(ep));
+	} else if (!p_state->handler.consumer || !p_state->handler.feeder) {
+		m_ep_dma_waiting &= ~(1U << ep2bit(ep));
 
-/**
- * @brief Handler for EasyDMA event from in isochronous endpoint.
- */
-static inline void nrf_usbd_epiniso_dma_handler(nrf_usbd_common_ep_t ep)
-{
-	if (NRF_USBD_COMMON_ISO_DEBUG) {
-		LOG_DBG("USB event: DMA ready ISOIN: %x", ep);
-	}
-	__ASSERT_NO_MSG(NRF_USBD_EPIN_CHECK(ep));
-	__ASSERT_NO_MSG(NRF_USBD_EPISO_CHECK(ep));
-	/* DMA finished, track if total bytes transferred is even or odd */
-	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
-	usbd_dma_pending_clear();
-	k_sem_give(&dma_available);
-
-	usbd_ep_state_t *p_state = ep_state_access(ep);
-
-	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
-		/* Clear transfer information just in case */
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else if (p_state->handler.feeder == NULL) {
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-		/* Send event to the user - for an ISO IN endpoint, the whole transfer is finished
-		 * in this moment
-		 */
-		NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-		m_event_handler(&evt);
-	} else {
-		/* Nothing to do */
-	}
-}
-
-/**
- * @brief Handler for EasyDMA event for OUT endpoint 0.
- *
- * EP0 OUT have to be cleared automatically in special way - only in the middle of the transfer.
- * It cannot be cleared when required transfer is finished because it means the same that accepting
- * the comment.
- */
-static inline void nrf_usbd_ep0out_dma_handler(void)
-{
-	const nrf_usbd_common_ep_t ep = NRF_USBD_COMMON_EPOUT0;
-
-	LOG_DBG("USB event: DMA ready OUT0");
-	/* DMA finished, track if total bytes transferred is even or odd */
-	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
-	usbd_dma_pending_clear();
-	k_sem_give(&dma_available);
-
-	nrf_usbd_int_enable(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK);
-
-	usbd_ep_state_t *p_state = ep_state_access(ep);
-
-	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
-		/* Clear transfer information just in case */
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else if (p_state->handler.consumer == NULL) {
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-		/* Send event to the user - for an OUT endpoint, the whole transfer is finished in
-		 * this moment
-		 */
-		NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-		m_event_handler(&evt);
-	} else {
+		if (NRF_USBD_EPOUT_CHECK(ep) || (ep == NRF_USBD_COMMON_EPIN8)) {
+			/* Send event to the user - for an ISO IN or any OUT endpoint,
+			 * the whole transfer is finished in this moment
+			 */
+			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
+			m_event_handler(&evt);
+		}
+	} else if (ep == NRF_USBD_COMMON_EPOUT0) {
 		nrf_usbd_common_setup_data_clear();
 	}
-}
-
-/**
- * @brief Handler for EasyDMA event from endpoinpoint that requires clearing.
- *
- * This handler would be called when EasyDMA transfer for OUT endpoint has been finished.
- *
- * @param[in] ep Endpoint number.
- */
-static inline void nrf_usbd_epout_dma_handler(nrf_usbd_common_ep_t ep)
-{
-	LOG_DBG("DMA ready OUT: %x", ep);
-	__ASSERT_NO_MSG(NRF_USBD_EPOUT_CHECK(ep));
-	__ASSERT_NO_MSG(!NRF_USBD_EPISO_CHECK(ep));
-	__ASSERT_NO_MSG(NRF_USBD_EP_NR_GET(ep) > 0);
-	/* DMA finished, track if total bytes transferred is even or odd */
-	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
-	usbd_dma_pending_clear();
-	k_sem_give(&dma_available);
-
-	usbd_ep_state_t *p_state = ep_state_access(ep);
-
-	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
-		/* Clear transfer information just in case */
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-	} else if (p_state->handler.consumer == NULL) {
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-		/* Send event to the user - for an OUT endpoint, the whole transfer is finished in
-		 * this moment
-		 */
-		NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-		m_event_handler(&evt);
-	} else {
-		/* Nothing to do */
-	}
-}
-
-/**
- * @brief Handler for EasyDMA event from out isochronous endpoint.
- */
-static inline void nrf_usbd_epoutiso_dma_handler(nrf_usbd_common_ep_t ep)
-{
-	if (NRF_USBD_COMMON_ISO_DEBUG) {
-		LOG_DBG("DMA ready ISOOUT: %x", ep);
-	}
-	__ASSERT_NO_MSG(NRF_USBD_EPISO_CHECK(ep));
-	/* DMA finished, track if total bytes transferred is even or odd */
-	m_dma_odd ^= nrf_usbd_ep_amount_get(NRF_USBD, ep) & 1;
-	usbd_dma_pending_clear();
-	k_sem_give(&dma_available);
-
-	usbd_ep_state_t *p_state = ep_state_access(ep);
-
-	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
-		/* Nothing to do - just ignore */
-	} else if (p_state->handler.consumer == NULL) {
-		(void)(atomic_and(&m_ep_dma_waiting, ~(1U << ep2bit(ep))));
-		/* Send event to the user - for an OUT endpoint, the whole transfer is finished in
-		 * this moment
-		 */
-		NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_OK);
-		m_event_handler(&evt);
-	} else {
-		/* Nothing to do */
-	}
-}
-
-static void ev_dma_epin0_handler(void)
-{
-	nrf_usbd_ep0in_dma_handler();
-}
-static void ev_dma_epin1_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN1);
-}
-static void ev_dma_epin2_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN2);
-}
-static void ev_dma_epin3_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN3);
-}
-static void ev_dma_epin4_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN4);
-}
-static void ev_dma_epin5_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN5);
-}
-static void ev_dma_epin6_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN6);
-}
-static void ev_dma_epin7_handler(void)
-{
-	nrf_usbd_epin_dma_handler(NRF_USBD_COMMON_EPIN7);
-}
-static void ev_dma_epin8_handler(void)
-{
-	nrf_usbd_epiniso_dma_handler(NRF_USBD_COMMON_EPIN8);
-}
-
-static void ev_dma_epout0_handler(void)
-{
-	nrf_usbd_ep0out_dma_handler();
-}
-static void ev_dma_epout1_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT1);
-}
-static void ev_dma_epout2_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT2);
-}
-static void ev_dma_epout3_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT3);
-}
-static void ev_dma_epout4_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT4);
-}
-static void ev_dma_epout5_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT5);
-}
-static void ev_dma_epout6_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT6);
-}
-static void ev_dma_epout7_handler(void)
-{
-	nrf_usbd_epout_dma_handler(NRF_USBD_COMMON_EPOUT7);
-}
-static void ev_dma_epout8_handler(void)
-{
-	nrf_usbd_epoutiso_dma_handler(NRF_USBD_COMMON_EPOUT8);
 }
 
 static void ev_sof_handler(void)
@@ -1109,21 +863,6 @@ static void usbd_ep_data_handler(nrf_usbd_common_ep_t ep, uint8_t bitpos)
 
 	if (NRF_USBD_EPIN_CHECK(ep)) {
 		/* IN endpoint (Device -> Host) */
-
-		/* Secure against the race condition that occurs when an IN transfer is interrupted
-		 * by an OUT transaction, which in turn is interrupted by a process with higher
-		 * priority. If the IN events ENDEPIN and EPDATA arrive during that high priority
-		 * process, the OUT handler might call usbd_ep_data_handler without calling
-		 * nrf_usbd_epin_dma_handler (or nrf_usbd_ep0in_dma_handler) for the IN transaction.
-		 */
-		if (nrf_usbd_event_get_and_clear(NRF_USBD, nrf_usbd_common_ep_to_endevent(ep))) {
-			if (ep != NRF_USBD_COMMON_EPIN0) {
-				nrf_usbd_epin_dma_handler(ep);
-			} else {
-				nrf_usbd_ep0in_dma_handler();
-			}
-		}
-
 		if (0 == (m_ep_dma_waiting & (1U << bitpos))) {
 			LOG_DBG("USBD event: EndpointData: In finished");
 			/* No more data to be send - transmission finished */
@@ -1141,11 +880,6 @@ static void usbd_ep_data_handler(nrf_usbd_common_ep_t ep, uint8_t bitpos)
 	}
 }
 
-static void ev_setup_data_handler(void)
-{
-	usbd_ep_data_handler(m_last_setup_dir, ep2bit(m_last_setup_dir));
-}
-
 static void ev_setup_handler(void)
 {
 	LOG_DBG("USBD event: Setup (rt:%.2x r:%.2x v:%.4x i:%.4x l:%u )",
@@ -1160,8 +894,8 @@ static void ev_setup_handler(void)
 			? NRF_USBD_COMMON_EPOUT0
 			: NRF_USBD_COMMON_EPIN0;
 
-	(void)(atomic_and(&m_ep_dma_waiting, ~((1U << ep2bit(NRF_USBD_COMMON_EPOUT0)) |
-					       (1U << ep2bit(NRF_USBD_COMMON_EPIN0)))));
+	m_ep_dma_waiting &= ~((1U << ep2bit(NRF_USBD_COMMON_EPOUT0)) |
+			      (1U << ep2bit(NRF_USBD_COMMON_EPIN0)));
 	m_ep_ready &= ~(1U << ep2bit(NRF_USBD_COMMON_EPOUT0));
 	m_ep_ready |= 1U << ep2bit(NRF_USBD_COMMON_EPIN0);
 
@@ -1208,11 +942,8 @@ static void ev_usbevent_handler(void)
 	}
 }
 
-static void ev_epdata_handler(void)
+static void ev_epdata_handler(uint32_t dataepstatus)
 {
-	/* Get all endpoints that have acknowledged transfer */
-	uint32_t dataepstatus = nrf_usbd_epdatastatus_get_and_clear(NRF_USBD);
-
 	LOG_DBG("USBD event: EndpointEPStatus: %x", dataepstatus);
 
 	/* All finished endpoint have to be marked as busy */
@@ -1323,7 +1054,7 @@ static void usbd_dmareq_process(void)
 					LOG_DBG("Endpoint %x overload (r: %u, e: %u)", ep,
 						       rx_size, transfer.size);
 					p_state->status = NRF_USBD_COMMON_EP_OVERLOAD;
-					(void)(atomic_and(&m_ep_dma_waiting, ~(1U << pos)));
+					m_ep_dma_waiting &= ~(1U << pos);
 					NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep,
 						NRF_USBD_COMMON_EP_OVERLOAD);
 					m_event_handler(&evt);
@@ -1355,16 +1086,8 @@ static void usbd_dmareq_process(void)
 			nrf_usbd_ep_easydma_set(NRF_USBD, ep, transfer.p_data.addr,
 						(uint32_t)transfer.size);
 
+			dma_ep = ep;
 			usbd_dma_start(ep);
-
-			/* Do not process SETUP packet until EP0 DMA completes.
-			 * DMA transfer itself will always complete regardless
-			 * of host actions and this action is solely to prevent
-			 * the need to abort active DMA.
-			 */
-			if ((ep == NRF_USBD_COMMON_EPOUT0) || (ep == NRF_USBD_COMMON_EPIN0)) {
-				nrf_usbd_int_disable(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK);
-			}
 
 			/* Transfer started - exit the loop */
 			return;
@@ -1490,71 +1213,73 @@ static void usbd_enable(void)
 /** @} */
 
 /**
- * @brief USBD interrupt service routines.
- *
- */
-static const nrfx_irq_handler_t m_isr[] = {[USBD_INTEN_USBRESET_Pos] = ev_usbreset_handler,
-					   [USBD_INTEN_STARTED_Pos] = ev_started_handler,
-					   [USBD_INTEN_ENDEPIN0_Pos] = ev_dma_epin0_handler,
-					   [USBD_INTEN_ENDEPIN1_Pos] = ev_dma_epin1_handler,
-					   [USBD_INTEN_ENDEPIN2_Pos] = ev_dma_epin2_handler,
-					   [USBD_INTEN_ENDEPIN3_Pos] = ev_dma_epin3_handler,
-					   [USBD_INTEN_ENDEPIN4_Pos] = ev_dma_epin4_handler,
-					   [USBD_INTEN_ENDEPIN5_Pos] = ev_dma_epin5_handler,
-					   [USBD_INTEN_ENDEPIN6_Pos] = ev_dma_epin6_handler,
-					   [USBD_INTEN_ENDEPIN7_Pos] = ev_dma_epin7_handler,
-					   [USBD_INTEN_EP0DATADONE_Pos] = ev_setup_data_handler,
-					   [USBD_INTEN_ENDISOIN_Pos] = ev_dma_epin8_handler,
-					   [USBD_INTEN_ENDEPOUT0_Pos] = ev_dma_epout0_handler,
-					   [USBD_INTEN_ENDEPOUT1_Pos] = ev_dma_epout1_handler,
-					   [USBD_INTEN_ENDEPOUT2_Pos] = ev_dma_epout2_handler,
-					   [USBD_INTEN_ENDEPOUT3_Pos] = ev_dma_epout3_handler,
-					   [USBD_INTEN_ENDEPOUT4_Pos] = ev_dma_epout4_handler,
-					   [USBD_INTEN_ENDEPOUT5_Pos] = ev_dma_epout5_handler,
-					   [USBD_INTEN_ENDEPOUT6_Pos] = ev_dma_epout6_handler,
-					   [USBD_INTEN_ENDEPOUT7_Pos] = ev_dma_epout7_handler,
-					   [USBD_INTEN_ENDISOOUT_Pos] = ev_dma_epout8_handler,
-					   [USBD_INTEN_SOF_Pos] = ev_sof_handler,
-					   [USBD_INTEN_USBEVENT_Pos] = ev_usbevent_handler,
-					   [USBD_INTEN_EP0SETUP_Pos] = ev_setup_handler,
-					   [USBD_INTEN_EPDATA_Pos] = ev_epdata_handler};
-
-/**
  * @name Interrupt handlers
  *
  * @{
  */
 void nrf_usbd_common_irq_handler(void)
 {
-	const uint32_t enabled = nrf_usbd_int_enable_get(NRF_USBD);
-	uint32_t to_process = enabled & ~NRF_USBD_INT_EP0SETUP_MASK;
-	uint32_t active = 0;
+	uint32_t epdatastatus = 0;
 
-	/* Check all enabled interrupts */
-	while (to_process) {
-		uint8_t event_nr = NRF_CTZ(to_process);
+	/* Clear EPDATA event and only then get and clear EPDATASTATUS to make
+	 * sure we don't miss any event.
+	 */
+	if (NRF_USBD->EVENTS_EPDATA) {
+		NRF_USBD->EVENTS_EPDATA = 0;
+		epdatastatus = NRF_USBD->EPDATASTATUS;
+		NRF_USBD->EPDATASTATUS = epdatastatus;
+	}
 
-		if (nrf_usbd_event_get_and_clear(
-			    NRF_USBD, (nrf_usbd_event_t)nrfx_bitpos_to_event(event_nr))) {
-			active |= 1UL << event_nr;
+	/* Use common variable to store EP0DATADONE processing needed flag */
+	if (NRF_USBD->EVENTS_EP0DATADONE) {
+		NRF_USBD->EVENTS_EP0DATADONE = 0;
+		epdatastatus |= BIT(ep2bit(m_last_setup_dir));
+	}
+
+	/* Check DMA end event only for last enabled DMA channel. Other channels
+	 * cannot be active and there's no harm in rechecking the event multiple
+	 * times (it is not a problem to check it even if DMA is not active).
+	 *
+	 * It is important to check DMA and handle DMA finished event before
+	 * handling acknowledged data transfer bits (epdatastatus) to avoid
+	 * a race condition between interrupt handler and host IN token.
+	 */
+	if (nrf_usbd_event_get_and_clear(NRF_USBD, nrf_usbd_common_ep_to_endevent(dma_ep))) {
+		nrf_usbd_dma_finished(dma_ep);
+	}
+
+	/* Process acknowledged transfers so we can prepare next DMA (if any) */
+	ev_epdata_handler(epdatastatus);
+
+	if (NRF_USBD->EVENTS_USBRESET) {
+		NRF_USBD->EVENTS_USBRESET = 0;
+		ev_usbreset_handler();
+	}
+
+	/* Always check and clear SOF but call handler only if SOF interrupt
+	 * is actually enabled.
+	 */
+	if (NRF_USBD->EVENTS_SOF) {
+		NRF_USBD->EVENTS_SOF = 0;
+		if (NRF_USBD->INTENSET & USBD_INTEN_SOF_Msk) {
+			ev_sof_handler();
 		}
-		to_process &= ~(1UL << event_nr);
 	}
 
-	/* Process the active interrupts */
-	while (active) {
-		uint8_t event_nr = NRF_CTZ(active);
-
-		m_isr[event_nr]();
-		active &= ~(1UL << event_nr);
+	if (NRF_USBD->EVENTS_USBEVENT) {
+		NRF_USBD->EVENTS_USBEVENT = 0;
+		ev_usbevent_handler();
 	}
-	usbd_dmareq_process();
 
 	/* Handle SETUP only if there is no active DMA on EP0 */
-	if (nrf_usbd_int_enable_check(NRF_USBD, NRF_USBD_INT_EP0SETUP_MASK) &&
-	    nrf_usbd_event_get_and_clear(NRF_USBD, NRF_USBD_EVENT_EP0SETUP)) {
-		m_isr[USBD_INTEN_EP0SETUP_Pos]();
+	if (unlikely(NRF_USBD->EVENTS_EP0SETUP) &&
+	    (k_sem_count_get(&dma_available) ||
+	     (dma_ep != NRF_USBD_COMMON_EPIN0 && dma_ep != NRF_USBD_COMMON_EPOUT0))) {
+		NRF_USBD->EVENTS_EP0SETUP = 0;
+		ev_setup_handler();
 	}
+
+	usbd_dmareq_process();
 }
 
 /** @} */
