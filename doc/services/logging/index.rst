@@ -142,9 +142,15 @@ packet buffer.
 
 :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.
 
+:kconfig:option:`CONFIG_LOG_FRONTEND_OPT_API`: Optional API optimized for the most common
+simple messages.
+
 :kconfig:option:`CONFIG_LOG_CUSTOM_HEADER`: Injects an application provided header into log.h
 
 :kconfig:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
+
+:kconfig:option:`CONFIG_LOG_SIMPLE_MSG_OPTIMIZE`: Optimizes simple log messages for size
+and performance. Option available only for 32 bit architectures.
 
 Formatting options:
 
