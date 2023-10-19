@@ -10,6 +10,7 @@ toolchain:
 supported:
   - arduino_gpio
   - gpio
+  - hwinfo
   - watchdog
   - i2c
   - spi

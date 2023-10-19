@@ -149,6 +149,13 @@ config HWINFO_SAM0
 	help
 	  Enable Atmel SAM0 hwinfo driver.
 
+config HWINFO_SMARTBOND
+	bool "Smartbond device reset cause"
+	default y
+	depends on SOC_FAMILY_SMARTBOND
+	help
+	  Enable Smartbond reset cause hwinfo driver.
+
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
