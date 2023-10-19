@@ -18,10 +18,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nrf_usbd_common, CONFIG_NRF_USBD_COMMON_LOG_LEVEL);
 
-#ifndef NRF_USBD_COMMON_STARTED_EV_ENABLE
-#define NRF_USBD_COMMON_STARTED_EV_ENABLE 0
-#endif
-
 #ifndef NRF_USBD_COMMON_ISO_DEBUG
 /* Also generate information about ISOCHRONOUS events and transfers.
  * Turn this off if no ISOCHRONOUS transfers are going to be debugged and this
@@ -806,11 +802,6 @@ static void ev_usbreset_handler(void)
 
 static void ev_started_handler(void)
 {
-#if NRF_USBD_COMMON_STARTED_EV_ENABLE
-	/* Handler not used by the stack.
-	 * May be used for debugging.
-	 */
-#endif
 }
 
 /**
@@ -1716,7 +1707,7 @@ void nrf_usbd_common_start(bool enable_sof)
 	__ASSERT_NO_MSG(m_drv_state == NRFX_DRV_STATE_POWERED_ON);
 	m_bus_suspend = false;
 
-	uint32_t ints_to_enable = NRF_USBD_INT_USBRESET_MASK | NRF_USBD_INT_STARTED_MASK |
+	uint32_t ints_to_enable = NRF_USBD_INT_USBRESET_MASK |
 				  NRF_USBD_INT_ENDEPIN0_MASK | NRF_USBD_INT_EP0DATADONE_MASK |
 				  NRF_USBD_INT_ENDEPOUT0_MASK | NRF_USBD_INT_USBEVENT_MASK |
 				  NRF_USBD_INT_EP0SETUP_MASK | NRF_USBD_INT_DATAEP_MASK;
