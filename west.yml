@@ -115,9 +115,6 @@ manifest:
       revision: eed6d7038e839153e340bd333bc43541cb90ba64
       groups:
         - babblesim
-    - name: canopennode
-      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
-      path: modules/lib/canopennode
     - name: cmsis
       revision: 5a00331455dd74e31e80efa383a489faea0590e3
       path: modules/hal/cmsis
