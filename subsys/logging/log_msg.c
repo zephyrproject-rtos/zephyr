@@ -20,6 +20,8 @@ BUILD_ASSERT(sizeof(struct log_msg_desc) == sizeof(uint32_t),
 	!(IS_ENABLED(CONFIG_LOG_FRONTEND) && \
 	 (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY) || log_backend_count_get() == 0))
 
+#define CBPRINTF_DESC_SIZE32 (sizeof(struct cbprintf_package_desc) / sizeof(uint32_t))
+
 void z_log_msg_finalize(struct log_msg *msg, const void *source,
 			 const struct log_msg_desc desc, const void *data)
 {
@@ -41,6 +43,153 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
 	msg->hdr.tid = k_is_in_isr() ? NULL : k_current_get();
 #endif
 	z_log_msg_commit(msg);
+}
+
+/** @brief Create a log message using simplified method.
+ *
+ * Simple log message has 0-2 32 bit word arguments so creating cbprintf package
+ * is straightforward as there is no padding or alignment to concern about.
+ * This function takes input data which is fmt pointer + 0-2 arguments, creates
+ * package header which is very simple as it only contain non-zero length field.
+ * Then space is allocated and message is committed. Such simple approach can
+ * be applied because it is known that input string does not have any arguments
+ * which complicate things (string pointers, floating numbers). Simple method is
+ * also limited to 32 bit arch.
+ *
+ * @param source Source.
+ * @param level  Severity level.
+ * @param data   Package content (without header).
+ * @param len    Package content length in words.
+ */
+static void z_log_msg_simple_create(const void *source, uint32_t level, uint32_t *data, size_t len)
+{
+	/* Package length (in words) is increased by the header. */
+	size_t plen32 = len + CBPRINTF_DESC_SIZE32;
+	/* Package length in bytes. */
+	size_t plen8 = sizeof(uint32_t) * plen32;
+	struct log_msg *msg = z_log_msg_alloc(Z_LOG_MSG_ALIGNED_WLEN(plen8, 0));
+	union cbprintf_package_hdr package_hdr = {
+		.desc = {
+			.len = plen32
+		}
+	};
+
+	if (msg) {
+		uint32_t *package = (uint32_t *)msg->data;
+
+		*package++ = (uint32_t)(uintptr_t)package_hdr.raw;
+		for (size_t i = 0; i < len; i++) {
+			*package++ = data[i];
+		}
+	}
+
+	struct log_msg_desc desc = {
+		.level = level,
+		.package_len = plen8,
+		.data_len = 0,
+	};
+
+	z_log_msg_finalize(msg, source, desc, NULL);
+
+}
+
+void z_impl_z_log_msg_simple_create_0(const void *source, uint32_t level, const char *fmt)
+{
+
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 1;
+		union cbprintf_package_hdr hdr = {
+			.desc = {
+				.len = plen32
+			}
+		};
+		uint32_t package[] = {
+			(uint32_t)(uintptr_t)hdr.raw,
+			(uint32_t)(uintptr_t)fmt,
+		};
+		struct log_msg_desc desc = {
+			.level = level,
+			.package_len = plen32 * sizeof(uint32_t),
+			.data_len = 0,
+		};
+
+		log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+	}
+
+	if (!BACKENDS_IN_USE()) {
+		return;
+	}
+
+	uint32_t data[] = {(uint32_t)(uintptr_t)fmt};
+
+	z_log_msg_simple_create(source, level, data, ARRAY_SIZE(data));
+}
+
+void z_impl_z_log_msg_simple_create_1(const void *source, uint32_t level,
+				      const char *fmt, uint32_t arg)
+{
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 2;
+		union cbprintf_package_hdr hdr = {
+			.desc = {
+				.len = plen32
+			}
+		};
+		uint32_t package[] = {
+			(uint32_t)(uintptr_t)hdr.raw,
+			(uint32_t)(uintptr_t)fmt,
+			arg
+		};
+		struct log_msg_desc desc = {
+			.level = level,
+			.package_len = plen32 * sizeof(uint32_t),
+			.data_len = 0,
+		};
+
+		log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+	}
+
+	if (!BACKENDS_IN_USE()) {
+		return;
+	}
+
+	uint32_t data[] = {(uint32_t)(uintptr_t)fmt, arg};
+
+	z_log_msg_simple_create(source, level, data, ARRAY_SIZE(data));
+}
+
+void z_impl_z_log_msg_simple_create_2(const void *source, uint32_t level,
+				      const char *fmt, uint32_t arg0, uint32_t arg1)
+{
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+		uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 3;
+		union cbprintf_package_hdr hdr = {
+			.desc = {
+				.len = plen32
+			}
+		};
+		uint32_t package[] = {
+			[0](uint32_t)(uintptr_t)hdr.raw,
+			(uint32_t)(uintptr_t)fmt,
+			arg0,
+			arg1
+		};
+		struct log_msg_desc desc = {
+			.level = level,
+			.package_len = plen32 * sizeof(uint32_t),
+			.data_len = 0,
+		};
+
+		log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+	}
+
+	if (!BACKENDS_IN_USE()) {
+		return;
+	}
+
+	uint32_t data[] = {(uint32_t)(uintptr_t)fmt, arg0, arg1};
+
+	z_log_msg_simple_create(source, level, data, ARRAY_SIZE(data));
 }
 
 void z_impl_z_log_msg_static_create(const void *source,
