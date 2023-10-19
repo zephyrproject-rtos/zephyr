@@ -386,7 +386,7 @@ static inline int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext
 			goto out;
 		}
 
-		llext_read(ldr, name, sizeof(name));
+		ret = llext_read(ldr, name, sizeof(name));
 		if (ret != 0) {
 			goto out;
 		}
