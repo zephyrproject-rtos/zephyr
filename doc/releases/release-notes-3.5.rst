@@ -441,6 +441,12 @@ Drivers and Sensors
     option.
   * Added support for the ADC sequencer for all STM32 series (except F1)
   * Fixed STM32F4 ADC temperature and Vbat measurement.
+  * Added driver for TI ADS1112.
+  * Added driver for TI TLA2021.
+  * Added driver for Gecko ADC.
+  * Added driver for NXP S32 ADC SAR.
+  * Added driver for MAX1125x family.
+  * Added driver for MAX11102-MAX1117.
 
 * Battery-backed RAM
 
@@ -557,6 +563,8 @@ Drivers and Sensors
 
 * I2S
 
+  * Fixed handling of the PCM data format in the NXP MCUX driver.
+
 * I3C
 
   * ``i3c_cdns``:
@@ -641,6 +649,16 @@ Drivers and Sensors
 * PWM
 
   * Added 4 channels capture on STM32 PWM driver.
+  * Added driver for Intel Blinky PWM.
+  * Added driver for MAX31790.
+  * Added driver for Infineon XMC4XXX CCU4.
+  * Added driver for Infineon XMC4XXX CCU8.
+  * Added MCUX CTimer based PWM driver.
+  * Added PWM driver based on TI CC13xx/CC26xx GPT timer.
+  * Reworked the pwm_nrf5_sw driver so that it can be used also on nRF53 and
+    nRF91 Series. Consequently, the driver was renamed to pwm_nrf_sw.
+  * Added driver for Nuvoton NuMaker family.
+  * Added PWM driver based on NXP S32 EMIOS peripheral.
 
 * Power domain
 
@@ -1119,6 +1137,10 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* Nordic
+
+  * Updated nrfx to version 3.1.0.
 
 * Nuvoton
 
