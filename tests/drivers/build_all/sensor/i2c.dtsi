@@ -793,6 +793,7 @@ test_i2c_adxl367: adxl367@77 {
 	compatible = "adi,adxl367";
 	reg = <0x77>;
 	odr = <4>;
+	int1-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_tsl2561: tsl2561@78 {
