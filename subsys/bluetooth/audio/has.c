@@ -815,7 +815,8 @@ static int bt_has_cp_read_preset_rsp(struct has_client *client, const struct has
 
 	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr) + sizeof(*rsp) + BT_HAS_PRESET_NAME_MAX);
 
-	LOG_DBG("conn %p preset %p is_last 0x%02x", (void *)client->conn, preset, is_last);
+	LOG_DBG("conn %p index 0x%02x prop 0x%02x %s is_last 0x%02x", (void *)client->conn,
+		preset->index, preset->properties, preset->name, is_last);
 
 	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
 	hdr->opcode = BT_HAS_OP_READ_PRESET_RSP;
@@ -1369,7 +1370,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 
 	err = handle_control_point_op(conn, &buf);
 	if (err) {
-		LOG_WRN("err 0x%02x", err);
+		LOG_WRN("handle_control_point_op err 0x%02x", err);
 		return BT_GATT_ERR(err);
 	}
 
