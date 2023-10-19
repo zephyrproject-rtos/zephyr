@@ -57,6 +57,13 @@
 			status = "okay";
 		};
 
+		supc: supc@400e1810 {
+			compatible = "atmel,sam-supc";
+			reg = <0x400e1810 0x20>;
+			#wakeup-source-id-cells = <1>;
+			status = "okay";
+		};
+
 		eefc: flash-controller@400e0c00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0c00 0x200>;
