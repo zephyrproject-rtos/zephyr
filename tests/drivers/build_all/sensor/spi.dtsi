@@ -302,4 +302,5 @@ test_spi_adxl367: adxl367@26 {
 	reg = <0x26>;
 	spi-max-frequency = <0>;
 	odr = <4>;
+	int1-gpios = <&test_gpio 0 0>;
 };
