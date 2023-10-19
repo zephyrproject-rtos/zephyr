@@ -177,6 +177,25 @@
 #define ADXL367_STATUS_FIFO_RDY				BIT(1)
 #define ADXL367_STATUS_DATA_RDY				BIT(0)
 
+/* ADXL367_INTMAP_LOWER */
+#define ADXL367_INT_LOW					BIT(7)
+#define ADXL367_AWAKE_INT				BIT(6)
+#define ADXL367_INACT_INT				BIT(5)
+#define ADXL367_ACT_INT					BIT(4)
+#define ADXL367_FIFO_OVERRUN				BIT(3)
+#define ADXL367_FIFO_WATERMARK				BIT(2)
+#define ADXL367_FIFO_RDY				BIT(1)
+#define ADXL367_DATA_RDY				BIT(0)
+
+/* ADXL367_INTMAP_UPPER */
+#define ADXL367_ERR_FUSE				BIT(7)
+#define ADXL367_ERR_USER_REGS				BIT(6)
+#define ADXL367_KPALV_TIMER				BIT(4)
+#define ADXL367_TEMP_ADC_HI				BIT(3)
+#define ADXL367_TEMP_ADC_LOW				BIT(2)
+#define ADXL367_TAP_TWO					BIT(1)
+#define ADXL367_TAP_ONE					BIT(0)
+
 /* Min change = 90mg. Sensitivity = 4LSB / mg */
 #define ADXL367_SELF_TEST_MIN	(90 * 100 / 25)
 /* Max change = 270mg. Sensitivity = 4LSB / mg */
@@ -280,6 +299,23 @@ struct adxl367_data {
 	struct adxl367_fifo_config fifo_config;
 	enum adxl367_act_proc_mode act_proc_mode;
 	enum adxl367_range range;
+#ifdef CONFIG_ADXL367_TRIGGER
+	struct gpio_callback gpio_cb;
+
+	sensor_trigger_handler_t th_handler;
+	const struct sensor_trigger *th_trigger;
+	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trigger;
+	const struct device *dev;
+
+#if defined(CONFIG_ADXL367_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL367_THREAD_STACK_SIZE);
+	struct k_sem gpio_sem;
+	struct k_thread thread;
+#elif defined(CONFIG_ADXL367_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+#endif /* CONFIG_ADXL367_TRIGGER */
 };
 
 struct adxl367_dev_config {
@@ -290,6 +326,10 @@ struct adxl367_dev_config {
 	struct spi_dt_spec spi;
 #endif
 	int (*bus_init)(const struct device *dev);
+
+#ifdef CONFIG_ADXL367_TRIGGER
+	struct gpio_dt_spec interrupt;
+#endif
 
 	enum adxl367_odr odr;
 
@@ -311,5 +351,10 @@ struct adxl367_dev_config {
 
 int adxl367_spi_init(const struct device *dev);
 int adxl367_i2c_init(const struct device *dev);
+int adxl367_trigger_set(const struct device *dev,
+			const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+
+int adxl367_init_interrupt(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL367_ADXL367_H_ */
