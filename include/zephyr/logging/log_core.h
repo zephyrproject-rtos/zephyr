@@ -413,7 +413,7 @@ TYPE_SECTION_END_EXTERN(struct log_source_const_data, log_const);
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
 	Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
-			  Z_LOG_LOCAL_DOMAIN_ID, (uintptr_t)_is_raw, \
+			  Z_LOG_LOCAL_DOMAIN_ID, (const void *)(uintptr_t)_is_raw, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
 

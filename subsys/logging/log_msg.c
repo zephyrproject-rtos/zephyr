@@ -22,6 +22,11 @@ BUILD_ASSERT(sizeof(struct log_msg_desc) == sizeof(uint32_t),
 
 #define CBPRINTF_DESC_SIZE32 (sizeof(struct cbprintf_package_desc) / sizeof(uint32_t))
 
+/* For simplified message handling cprintf package must have only 1 word. */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE) ||
+	     (IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE) && (CBPRINTF_DESC_SIZE32 == 1)));
+
+
 void z_log_msg_finalize(struct log_msg *msg, const void *source,
 			 const struct log_msg_desc desc, const void *data)
 {
