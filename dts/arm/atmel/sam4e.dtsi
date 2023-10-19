@@ -47,6 +47,13 @@
 			status = "okay";
 		};
 
+		supc: supc@400e1810 {
+			compatible = "atmel,sam-supc";
+			reg = <0x400e1810 0x20>;
+			#wakeup-source-id-cells = <1>;
+			status = "okay";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
