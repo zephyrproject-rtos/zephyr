@@ -125,6 +125,9 @@ static int pwm_sam0_init(const struct device *dev)
 	regs->CTRLA.bit.SWRST = 1;
 	wait_synchronization(regs);
 
+	// Keep PWM running in debug mode
+	regs->DBGCTRL.bit.DBGRUN = 1;
+
 	regs->CTRLA.reg = cfg->prescaler;
 	regs->WAVE.reg = TCC_WAVE_WAVEGEN_NPWM;
 	regs->PER.reg = TCC_PER_PER(1);
