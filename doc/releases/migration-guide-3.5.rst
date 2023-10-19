@@ -360,7 +360,7 @@ Recommended Changes
   Instead the new :kconfig:option:`CONFIG_MODEM_CELLULAR` driver should be used.
   As part of this :kconfig:option:`CONFIG_GSM_MUX` and :kconfig:option:`CONFIG_UART_MUX` are being
   marked as deprecated as well. The new modem subsystem :kconfig:option:`CONFIG_MODEM_CMUX`
-  and :kconfig:option:`CONFIG_MODEM_PPP`` should be used instead.
+  and :kconfig:option:`CONFIG_MODEM_PPP` should be used instead.
 
 * Device drivers should now be restricted to ``PRE_KERNEL_1``, ``PRE_KERNEL_2``
   and ``POST_KERNEL`` initialization levels. Other device initialization levels,
