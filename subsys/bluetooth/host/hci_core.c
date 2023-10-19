@@ -2337,6 +2337,14 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 */
 	status = buf->data[0];
 
+	/* HOST_NUM_COMPLETED_PACKETS should not generate a response under normal operation.
+	 * The generation of this command ignores `ncmd_sem`, so should not be given here.
+	 */
+	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
+		LOG_WRN("Unexpected HOST_NUM_COMPLETED_PACKETS (status 0x%02x)", status);
+		return;
+	}
+
 	hci_cmd_done(opcode, status, buf);
 
 	/* Allow next command to be sent */
