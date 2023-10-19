@@ -727,6 +727,15 @@ static void control_point_ind_complete(struct bt_conn *conn,
 
 static int control_point_send(struct has_client *client, struct net_buf_simple *buf)
 {
+	const uint16_t mtu_size = bt_gatt_get_mtu(client->conn);
+	/* PDU structure is [Opcode (1)] [Handle (2)] [...] */
+	const uint16_t pdu_size = 3 + buf->len;
+
+	if (mtu_size < pdu_size) {
+		LOG_WRN("Sending truncated control point PDU %d < %d", mtu_size, pdu_size);
+		buf->len -= (pdu_size - mtu_size);
+	}
+
 #if defined(CONFIG_BT_HAS_PRESET_CONTROL_POINT_NOTIFIABLE)
 	if (bt_eatt_count(client->conn) > 0 &&
 	    bt_gatt_is_subscribed(client->conn, preset_control_point_attr, BT_GATT_CCC_NOTIFY)) {
