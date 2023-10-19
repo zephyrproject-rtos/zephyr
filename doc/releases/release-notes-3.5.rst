@@ -11,6 +11,9 @@ Major enhancements with this release include:
 
 * Added native_sim (successor to native_posix)
 
+An overview of the changes required or recommended when migrating your application from Zephyr
+v3.4.0 to Zephyr v3.5.0 can be found in the separate :ref:`migration guide<migration_3.5>`.
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
