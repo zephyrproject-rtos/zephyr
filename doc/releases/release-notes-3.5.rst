@@ -625,6 +625,10 @@ Drivers and Sensors
 
   * Added support to get IRQ from ACPI PCI Routing Table (PRT).
 
+* ACPI
+
+  * Adopted the ACPICA library as a new module to further enhance ACPI support.
+
 * PECI
 
 * Pin control
