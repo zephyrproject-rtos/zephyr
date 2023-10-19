@@ -2276,7 +2276,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 	uint32_t bis_bitfield;
 	size_t stream_cnt;
-	int err;
+	int err = 0;
 
 	bis_bitfield = 0;
 	stream_cnt = 0U;
