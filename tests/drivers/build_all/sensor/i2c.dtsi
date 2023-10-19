@@ -879,3 +879,8 @@ test_i2c_lis2du12: lis2du12@7c {
 	accel-range = <LIS2DU12_DT_FS_16G>;
 	accel-odr = <LIS2DU12_DT_ODR_AT_800Hz>;
 };
+
+test_i2c_bma4xx: bma4xx@7d {
+	compatible = "bosch,bma4xx";
+	reg = <0x7d>;
+};
