@@ -503,7 +503,37 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen);
 void z_log_msg_finalize(struct log_msg *msg, const void *source,
 			 const struct log_msg_desc desc, const void *data);
 
-/** @brief Create simple message from message details and string package.
+/** @brief Create log message using simplified method for string with no arguments.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ */
+__syscall void z_log_msg_simple_create_0(const void *source, uint32_t level,
+					 const char *fmt);
+
+/** @brief Create log message using simplified method for string with a one argument.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ * @param arg    String argument.
+ */
+__syscall void z_log_msg_simple_create_1(const void *source, uint32_t level,
+					 const char *fmt, uint32_t arg);
+
+/** @brief Create log message using simplified method for string with two arguments.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ * @param arg0   String argument.
+ * @param arg1   String argument.
+ */
+__syscall void z_log_msg_simple_create_2(const void *source, uint32_t level,
+					 const char *fmt, uint32_t arg0, uint32_t arg1);
+
+/** @brief Create a logging message from message details and string package.
  *
  * @param source Source.
  *
