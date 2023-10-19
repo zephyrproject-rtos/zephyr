@@ -199,6 +199,7 @@ latex_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo-latex.pdf")
 latex_documents = [
     ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
 ]
+latex_engine = "xelatex"
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
 
