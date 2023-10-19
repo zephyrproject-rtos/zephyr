@@ -38,6 +38,7 @@
 
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
+#include "../common/soc_supc.h"
 #include "../common/atmel_sam_dt.h"
 
 /** Processor Clock (HCLK) Frequency */
