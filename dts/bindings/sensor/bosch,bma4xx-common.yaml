@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      Identifies pin for the INT1 signal on the sensor.  The sensor
+      INT2,3,4 signals are not supported by the driver.
