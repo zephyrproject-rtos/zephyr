@@ -22,6 +22,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/app_memory/app_memdomain.h>
+#include <zephyr/timing/timing.h>
 
 /* printf format defines. */
 #define FORMAT "| %-65s|%10u|\n"
@@ -139,5 +140,10 @@ static inline void check_result(void)
 		PRINT_OVERFLOW_ERROR();
 	}
 }
+
+__syscall void test_thread_priority_set(k_tid_t thread, int prio);
+__syscall timing_t timing_timestamp_get(void);
+
+#include <syscalls/master.h>
 
 #endif /* _MASTER_H */
