@@ -257,6 +257,23 @@ static void test_dut_model_coex(void)
 	PASS();
 }
 
+static void test_dut_model_coex_loopback(void)
+{
+	/* Start an aggregated sequence */
+	common_init(SRV_ADDR, SRV_ADDR, true);
+
+	/* Send aggregated sequence to server model over loopback */
+	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());
+
+	/* Confirm incoming sequence messages */
+	confirm_agg_seq();
+
+	/* Confirm status messages for sequence */
+	confirm_agg_status();
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)         \
 	{                                              \
 		.test_id = "op_agg_" #role "_" #name,      \
@@ -273,6 +290,7 @@ static const struct bst_test_instance test_op_agg[] = {
 	TEST_CASE(srv, max_len_status_msg_send,
 		  "OpAggSrv will respond with a 380 Byte status message. "),
 	TEST_CASE(dut, model_coex, "DUT: Coexistence of OpAggSrv and OpAggCli."),
+	TEST_CASE(dut, model_coex_loopback, "DUT: Coexistence for OpAggSrv and OpAggCli loopback."),
 
 	BSTEST_END_MARKER};
 
