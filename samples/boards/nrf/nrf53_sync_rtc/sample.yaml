@@ -4,8 +4,11 @@ sample:
   name: nRF53 Synchronized RTC sample
 common:
   harness: remote
+  sysbuild: true
 tests:
   sample.boards.nrf.nrf53_sync_rtc:
-    platform_allow: nrf5340dk_nrf5340_cpuapp
+    platform_allow:
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340bsim_nrf5340_cpuapp
     integration_platforms:
       - nrf5340dk_nrf5340_cpuapp
