@@ -481,6 +481,9 @@ Drivers and Sensors
 
 * Disk
 
+  * Ramdisk driver is now configured using devicetree, and supports multiple
+    instances
+
 * Display
 
   * Added support for ST7735S (in ST7735R driver)
@@ -695,6 +698,9 @@ Drivers and Sensors
     the use of RTC based implementation of COUNTER API.
 
 * SDHC
+
+  * Added driver for EMMC Host controller present on Alder lake platforms
+  * Added driver for Atmel HSMCI controller present on SAM4E MCU series
 
 * Sensor
 
