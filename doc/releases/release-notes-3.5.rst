@@ -279,8 +279,6 @@ Bluetooth
   * Updated to have ``EVENT_OVERHEAD_START_US`` verbose assertion in each state/role LLL
   * Updated to stop following ``aux_ptr`` if ``DATA_LEN_MAX`` is reached during extended scanning
 
-* HCI Driver
-
 Boards & SoC Support
 ********************
 
@@ -460,8 +458,6 @@ Drivers and Sensors
   * Added driver for MAX1125x family.
   * Added driver for MAX11102-MAX1117.
 
-* Battery-backed RAM
-
 * CAN
 
   * Added support for TI TCAN4x5x CAN-FD controller with integrated transceiver
@@ -482,14 +478,10 @@ Drivers and Sensors
 
   * Added support for Raspberry Pi Pico Timer
 
-* Crypto
-
 * DAC
 
   * Added support for Analog Devices AD56xx
   * Added support for NXP lpcxpresso55s36 (LPDAC)
-
-* DFU
 
 * Disk
 
@@ -518,8 +510,6 @@ Drivers and Sensors
 
   * Added a requirement for ``entropy_get_entropy()`` to be thread-safe because
     of random subsystem needs.
-
-* ESPI
 
 * Ethernet
 
@@ -551,15 +541,9 @@ Drivers and Sensors
   * STM32 QSPI driver now supports Jedec SFDP parameter reading.
   * STM32 OSPI driver now supports both Low and High ports of IO manager.
 
-* FPGA
-
-* Fuel Gauge
-
 * GPIO
 
   * Added support for Nuvoton NuMaker M46x
-
-* hwinfo
 
 * I2C
 
@@ -630,16 +614,6 @@ Drivers and Sensors
   * Renamed the callback definition macro from ``INPUT_LISTENER_CB_DEFINE`` to
     :c:macro:`INPUT_CALLBACK_DEFINE`.
 
-* IPM
-
-* KSCAN
-
-* LED
-
-* MBOX
-
-* MEMC
-
 * PCIE
 
   * Added support in shell to display PCIe capabilities.
@@ -654,8 +628,6 @@ Drivers and Sensors
 * ACPI
 
   * Adopted the ACPICA library as a new module to further enhance ACPI support.
-
-* PECI
 
 * Pin control
 
@@ -674,8 +646,6 @@ Drivers and Sensors
     nRF91 Series. Consequently, the driver was renamed to pwm_nrf_sw.
   * Added driver for Nuvoton NuMaker family.
   * Added PWM driver based on NXP S32 EMIOS peripheral.
-
-* Power domain
 
 * Regulators
 
@@ -789,10 +759,6 @@ Drivers and Sensors
   * Added UDC driver for STM32 based MCU, relying on HAL/PCD. This driver is compatible
     with UDC API (experimental).
   * Added support for STM32H5 series on USB driver.
-
-* W1
-
-* Watchdog
 
 * WiFi
 
@@ -2340,19 +2306,10 @@ LVGL
   * LVGL shell allows for monkey testing (requires :kconfig:option:`CONFIG_LV_USE_MONKEY`)
     and inspecting memory usage.
 
-Storage
-*******
-
-Trusted Firmware-M
-******************
-
 Trusted Firmware-A
 ******************
 
 * Updated to TF-A 2.9.0.
-
-zcbor
-*****
 
 Documentation
 *************
@@ -2369,6 +2326,3 @@ Tests and Samples
   channel using subscribers.
 
 * Created the zbus message subscriber sample to demonstrate how to use message subscribers.
-
-Known Issues
-************
