@@ -846,6 +846,9 @@ static const struct sensor_driver_api adxl367_api_funcs = {
 	.attr_set     = adxl367_attr_set,
 	.sample_fetch = adxl367_sample_fetch,
 	.channel_get  = adxl367_channel_get,
+#ifdef CONFIG_ADXL367_TRIGGER
+	.trigger_set = adxl367_trigger_set,
+#endif
 };
 
 static int adxl367_probe(const struct device *dev)
@@ -876,7 +879,11 @@ static int adxl367_probe(const struct device *dev)
 
 	data->range = cfg->range;
 
+#ifdef CONFIG_ADXL367_TRIGGER
+	data->act_proc_mode = ADXL367_LINKED;
+#else
 	data->act_proc_mode = ADXL367_LOOPED;
+#endif
 
 	ret = adxl367_self_test(dev);
 	if (ret) {
@@ -931,6 +938,14 @@ static int adxl367_probe(const struct device *dev)
 		return ret;
 	}
 
+if (IS_ENABLED(CONFIG_ADXL367_TRIGGER)) {
+	ret = adxl367_init_interrupt(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize interrupt!");
+		return -EIO;
+	}
+}
+
 	ret = adxl367_set_op_mode(dev, cfg->op_mode);
 	if (ret) {
 		return ret;
@@ -977,6 +992,13 @@ static int adxl367_init(const struct device *dev)
 			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &adxl367_api_funcs);
 
+#ifdef CONFIG_ADXL367_TRIGGER
+#define ADXL367_CFG_IRQ(inst) \
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
+#else
+#define ADXL367_CFG_IRQ(inst)
+#endif /* CONFIG_ADXL367_TRIGGER */
+
 #define ADXL367_CONFIG(inst)								\
 		.odr = DT_INST_PROP(inst, odr),						\
 		.autosleep = false,							\
@@ -1011,6 +1033,8 @@ static int adxl367_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
 					SPI_TRANSFER_MSB, 0),		\
 		ADXL367_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		(ADXL367_CFG_IRQ(inst)), ())				\
 	}
 
 #define ADXL367_DEFINE_SPI(inst)					\
@@ -1028,6 +1052,8 @@ static int adxl367_init(const struct device *dev)
 		.bus_init = adxl367_i2c_init,				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
 		ADXL367_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		(ADXL367_CFG_IRQ(inst)), ())				\
 	}
 
 #define ADXL367_DEFINE_I2C(inst)					\
