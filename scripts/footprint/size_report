@@ -28,6 +28,7 @@ from anytree.exporter import DictExporter
 
 import elftools
 from elftools.elf.elffile import ELFFile
+from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import SymbolTableSection
 from elftools.dwarf.descriptions import describe_form_class
 from elftools.dwarf.descriptions import (
@@ -531,12 +532,13 @@ class TreeNode(NodeMixin):
     A symbol node.
     """
 
-    def __init__(self, name, identifier, size=0, parent=None, children=None):
+    def __init__(self, name, identifier, size=0, parent=None, children=None, address=0):
         super().__init__()
         self._name = name
         self._size = size
         self.parent = parent
         self._identifier = identifier
+        self.address = address
         if children:
             self.children = children
 
@@ -582,7 +584,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
-    def _insert_one_elem(root, path, size):
+    def _insert_one_elem(root, path, size, addr):
         cur = None
         node = None
         parent = root
@@ -600,7 +602,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             else:
                 if node:
                     parent = node
-                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
+                node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent, address=addr)
 
     # Mapping paths to tree nodes
     path_node_map = [
@@ -616,6 +618,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     for name, sym in symbol_dict.items():
         for symbol in sym:
             size = get_symbol_size(symbol['symbol'])
+            addr = get_symbol_addr(symbol['symbol'])
             for file in symbol['mapped_files']:
                 path = Path(file, name)
                 if path.is_absolute():
@@ -633,7 +636,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
                 else:
                     dest_node = node_no_paths
 
-                _insert_one_elem(dest_node, path, size)
+                _insert_one_elem(dest_node, path, size, addr)
 
 
     if node_zephyr_base is not root:
@@ -680,25 +683,27 @@ def print_any_tree(root, total_size, depth):
     """
     Print the symbol tree.
     """
-    print('{:101s} {:7s} {:8s}'.format(
-        Fore.YELLOW + "Path", "Size", "%" + Fore.RESET))
-    print('=' * 110)
+    print('{:101s} {:7s} {:8s} {:10s}'.format(
+        Fore.YELLOW + "Path", "Size", "%", "Address" + Fore.RESET))
+    print('=' * 126)
     for row in RenderTree(root, childiter=node_sort, maxlevel=depth):
         f = len(row.pre) + len(row.node._name)
         s = str(row.node._size).rjust(100-f)
         percent = 100 * float(row.node._size) / float(total_size)
 
+        hex_addr = "-"
         cc = cr = ""
         if not row.node.children:
             if row.node._name != "(hidden)":
+                hex_addr = "0x{:08x}".format(row.node.address)
                 cc = Fore.CYAN
                 cr = Fore.RESET
         elif row.node._name.endswith(SRC_FILE_EXT):
             cc = Fore.GREEN
             cr = Fore.RESET
 
-        print(f"{row.pre}{cc}{row.node._name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}")
-    print('=' * 110)
+        print(f"{row.pre}{cc}{row.node._name} {s} {cr}{Fore.BLUE}{percent:6.2f}%{Fore.RESET}  {hex_addr}")
+    print('=' * 126)
     print(f'{total_size:>101}')
 
 
