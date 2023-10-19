@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -252,6 +252,8 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @brief Open or create file
  *
  * Opens or possibly creates a file and associates a stream with it.
+ * Successfully opened file, when no longer in use, should be closed
+ * with fs_close().
  *
  * @details
  * @p flags can be 0 or a binary combination of one or more of the following
@@ -262,8 +264,8 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  *   - @c FS_O_CREATE create file if it does not exist
  *   - @c FS_O_APPEND move to end of file before each write
  *
- * If @p flags are set to 0 the function will attempt to open an existing file
- * with no read/write access; this may be used to e.g. check if the file exists.
+ * @warning If @p flags are set to 0 the function will open file, if it exists
+ *          and is accessible, but you will have no read/write access to it.
  *
  * @param zfp Pointer to a file object
  * @param file_name The name of a file to open
@@ -275,7 +277,7 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @retval -EROFS when opening read-only file for write, or attempting to
  *	   create a file on a system that has been mounted with the
  *	   FS_MOUNT_FLAG_READ_ONLY flag;
- * @retval -ENOENT when the file path is not possible (bad mount point);
+ * @retval -ENOENT when the file does not exist at the path;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
