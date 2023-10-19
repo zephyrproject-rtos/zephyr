@@ -100,6 +100,11 @@ Architectures
 
   * Added basic MMU v2 Support.
 
+* x86
+
+  * Added support for Intel Alder Lake boards
+  * Added support for Intel Sensor Hub (ISH)
+
 * POSIX
 
   * Has been reworked to use the native simulator.
