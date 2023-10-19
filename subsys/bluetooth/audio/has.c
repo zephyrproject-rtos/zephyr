@@ -14,7 +14,6 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 
-#include "../bluetooth/host/conn_internal.h"
 #include "../bluetooth/host/hci_core.h"
 #include "audio_internal.h"
 #include "has_internal.h"
@@ -336,6 +335,8 @@ static void notify_work_reschedule(struct has_client *client, k_timeout_t delay)
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
 	struct has_client *client;
+	struct bt_conn_info info;
+	int ret;
 
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
@@ -349,7 +350,13 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
-	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+	ret = bt_conn_get_info(client->conn, &info);
+	if (ret < 0) {
+		LOG_ERR("bt_conn_get_info err %d", ret);
+		return;
+	}
+
+	if (!bt_addr_le_is_bonded(info.id, info.le.dst)) {
 		return;
 	}
 
