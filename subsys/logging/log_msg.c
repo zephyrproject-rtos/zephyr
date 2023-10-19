@@ -97,23 +97,30 @@ void z_impl_z_log_msg_simple_create_0(const void *source, uint32_t level, const 
 {
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 1;
-		union cbprintf_package_hdr hdr = {
-			.desc = {
-				.len = plen32
-			}
-		};
-		uint32_t package[] = {
-			(uint32_t)(uintptr_t)hdr.raw,
-			(uint32_t)(uintptr_t)fmt,
-		};
-		struct log_msg_desc desc = {
-			.level = level,
-			.package_len = plen32 * sizeof(uint32_t),
-			.data_len = 0,
-		};
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_OPT_API)) {
+			log_frontend_simple_0(source, level, fmt);
+		} else {
+			/* If frontend does not support optimized API prepare data for
+			 * the generic call.
+			 */
+			uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 1;
+			union cbprintf_package_hdr hdr = {
+				.desc = {
+					.len = plen32
+				}
+			};
+			uint32_t package[] = {
+				(uint32_t)(uintptr_t)hdr.raw,
+				(uint32_t)(uintptr_t)fmt,
+			};
+			struct log_msg_desc desc = {
+				.level = level,
+				.package_len = plen32 * sizeof(uint32_t),
+				.data_len = 0,
+			};
 
-		log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+			log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+		}
 	}
 
 	if (!BACKENDS_IN_USE()) {
@@ -129,24 +136,31 @@ void z_impl_z_log_msg_simple_create_1(const void *source, uint32_t level,
 				      const char *fmt, uint32_t arg)
 {
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 2;
-		union cbprintf_package_hdr hdr = {
-			.desc = {
-				.len = plen32
-			}
-		};
-		uint32_t package[] = {
-			(uint32_t)(uintptr_t)hdr.raw,
-			(uint32_t)(uintptr_t)fmt,
-			arg
-		};
-		struct log_msg_desc desc = {
-			.level = level,
-			.package_len = plen32 * sizeof(uint32_t),
-			.data_len = 0,
-		};
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_OPT_API)) {
+			log_frontend_simple_1(source, level, fmt, arg);
+		} else {
+			/* If frontend does not support optimized API prepare data for
+			 * the generic call.
+			 */
+			uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 2;
+			union cbprintf_package_hdr hdr = {
+				.desc = {
+					.len = plen32
+				}
+			};
+			uint32_t package[] = {
+				(uint32_t)(uintptr_t)hdr.raw,
+				(uint32_t)(uintptr_t)fmt,
+				arg
+			};
+			struct log_msg_desc desc = {
+				.level = level,
+				.package_len = plen32 * sizeof(uint32_t),
+				.data_len = 0,
+			};
 
-		log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+			log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+		}
 	}
 
 	if (!BACKENDS_IN_USE()) {
@@ -162,25 +176,32 @@ void z_impl_z_log_msg_simple_create_2(const void *source, uint32_t level,
 				      const char *fmt, uint32_t arg0, uint32_t arg1)
 {
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
-		uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 3;
-		union cbprintf_package_hdr hdr = {
-			.desc = {
-				.len = plen32
-			}
-		};
-		uint32_t package[] = {
-			[0](uint32_t)(uintptr_t)hdr.raw,
-			(uint32_t)(uintptr_t)fmt,
-			arg0,
-			arg1
-		};
-		struct log_msg_desc desc = {
-			.level = level,
-			.package_len = plen32 * sizeof(uint32_t),
-			.data_len = 0,
-		};
+		if (IS_ENABLED(CONFIG_LOG_FRONTEND_OPT_API)) {
+			log_frontend_simple_2(source, level, fmt, arg0, arg1);
+		} else {
+			/* If frontend does not support optimized API prepare data for
+			 * the generic call.
+			 */
+			uint32_t plen32 = CBPRINTF_DESC_SIZE32 + 3;
+			union cbprintf_package_hdr hdr = {
+				.desc = {
+					.len = plen32
+				}
+			};
+			uint32_t package[] = {
+				[0](uint32_t)(uintptr_t)hdr.raw,
+				(uint32_t)(uintptr_t)fmt,
+				arg0,
+				arg1
+			};
+			struct log_msg_desc desc = {
+				.level = level,
+				.package_len = plen32 * sizeof(uint32_t),
+				.data_len = 0,
+			};
 
-		log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+			log_frontend_msg(source, desc, (uint8_t *)package, NULL);
+		}
 	}
 
 	if (!BACKENDS_IN_USE()) {
