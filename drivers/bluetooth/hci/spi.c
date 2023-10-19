@@ -417,7 +417,9 @@ static void bt_spi_rx_thread(void)
 
 static int bt_spi_send(struct net_buf *buf)
 {
-	uint8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
+	uint8_t header_tx[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
+	uint8_t header_rx[5];
+	uint8_t rx_first[1];
 	int ret;
 
 	LOG_DBG("");
@@ -447,22 +449,22 @@ static int bt_spi_send(struct net_buf *buf)
 	/* Poll sanity values until device has woken-up */
 	do {
 		kick_cs();
-		ret = bt_spi_transceive(header, 5, rxmsg, 5);
+		ret = bt_spi_transceive(header_tx, 5, header_rx, 5);
 
 		/*
-		 * RX Header (rxmsg) must contain a sanity check Byte and size
+		 * RX Header must contain a sanity check Byte and size
 		 * information.  If it does not contain BOTH then it is
 		 * sleeping or still in the initialisation stage (waking-up).
 		 */
-	} while ((rxmsg[STATUS_HEADER_READY] != READY_NOW ||
-		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0U) && !ret);
+	} while ((header_rx[STATUS_HEADER_READY] != READY_NOW ||
+		  (header_rx[1] | header_rx[2] | header_rx[3] | header_rx[4]) == 0U) && !ret);
 
 	if (!ret) {
 		/* Transmit the message */
 		do {
 			ret = bt_spi_transceive(buf->data, buf->len,
-						rxmsg, buf->len);
-		} while (rxmsg[0] == 0U && !ret);
+						rx_first, 1);
+		} while (rx_first[0] == 0U && !ret);
 	}
 
 	release_cs();
