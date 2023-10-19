@@ -22,9 +22,10 @@ Hardware
 ********
 
 The TLSR9528A SoC integrates a powerful 32-bit RISC-V MCU, DSP, 2.4 GHz ISM Radio, 512
-KB SRAM (256 KB of Data Local Memory and 256 KB of Instruction Local Memory), external Flash memory,
-stereo audio codec, 14 bit AUX ADC, analog and digital Microphone input, PWM, flexible IO interfaces,
-and other peripheral blocks required for advanced IoT, hearable, and wearable devices.
+KB SRAM (256 KB of Data Local Memory and 256 KB of Instruction Local Memory first 96 KB of this memory
+supports retention feature), external Flash memory, stereo audio codec, 14 bit AUX ADC,
+analog and digital Microphone input, PWM, flexible IO interfaces, and other peripheral blocks required
+for advanced IoT, hearable, and wearable devices.
 
 .. figure:: img/tlsr9528_block_diagram.jpg
      :align: center
@@ -33,7 +34,7 @@ and other peripheral blocks required for advanced IoT, hearable, and wearable de
 The TLSR9528A default board configuration provides the following hardware components:
 
 - RF conducted antenna
-- 1 MB External Flash memory with reset button
+- 1 MB External SPI Flash memory with reset button. (Possible to mount 1/2/4 MB)
 - Chip reset button
 - Mini USB interface
 - 4-wire JTAG
@@ -76,21 +77,32 @@ The Zephyr TLSR9528A board configuration supports the following hardware feature
 +----------------+------------+------------------------------+
 | ADC            | on-chip    | adc                          |
 +----------------+------------+------------------------------+
+| USB (device)   | on-chip    | usb_dc                       |
++----------------+------------+------------------------------+
+| AES            | on-chip    | mbedtls                      |
++----------------+------------+------------------------------+
+| PKE            | on-chip    | mbedtls                      |
++----------------+------------+------------------------------+
+
+Board supports power-down modes: suspend and deep-sleep. For deep-sleep mode only 96KB of retention memory is available.
+Board supports HW cryptography acceleration (AES and ECC till 256 bits). MbedTLS interface is used as cryptography front-end.
 
 .. note::
    To support "button" example project PD6-KEY3 (J5-13, J5-14) jumper needs to be removed and KEY3 (J5-13) should be connected to GND (J3-30) externally.
 
    For the rest example projects use the default jumpers configuration.
 
-Other hardware features and example projects are not supported yet.
-
 Limitations
 -----------
 
-- Maximum 3 GPIO pins could be configured to generate interrupts simultaneously. All pins must be related to different ports and use different IRQ numbers.
+- Maximum 3 GPIO ports could be configured to generate external interrupts simultaneously. All ports should use different IRQ numbers.
 - DMA mode is not supported by I2C, SPI and Serial Port.
 - SPI Slave mode is not implemented.
 - I2C Slave mode is not implemented.
+- Bluetooth is not compatible with deep-sleep mode. Only suspend is allowed when Bluetooth is active.
+- USB working only in active mode (No power down supported).
+- During deep-sleep all GPIO's are in Hi-Z mode.
+- Shell is not compatible with sleep modes.
 
 Default configuration and IOs
 =============================
@@ -101,13 +113,13 @@ System Clock
 The TLSR9528A board is configured to use the 24 MHz external crystal oscillator
 with the on-chip PLL/DIV generating the 48 MHz system clock.
 The following values also could be assigned to the system clock in the board DTS file
-(``boards/riscv/tlsr9528a/tlsr9528a.dts``):
+(``boards/riscv/tlsr9528a/tlsr9528a-common.dtsi``):
 
 - 16000000
 - 24000000
 - 32000000
 - 48000000
-- 64000000
+- 60000000
 - 96000000
 
 .. code-block::
@@ -126,7 +138,7 @@ currently enabled:
 - Key Matrix SW2: PD2_PD6, SW3: PD2_PF6, SW4: PD7_PD6, SW5: PD7_PF6
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
-``boards/riscv/tlsr9528a/tlsr9528a.dts`` file:
+``boards/riscv/tlsr9528a/tlsr9528a-common.dtsi`` file:
 
 - UART0 TX: PB2, RX: PB3
 - UART1 TX: PC6, RX: PC7
@@ -206,7 +218,7 @@ References
 
 .. _Telink TLSR9 series chipset: [UNDER_DEVELOPMENT]
 .. _Telink B92 Generic Starter Kit Hardware Guide: [UNDER_DEVELOPMENT]
-.. _Burning and Debugging Tools for all Series: http://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
-.. _Burning and Debugging Tools for Linux: http://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_Libusb_BDT-Linux-X64-1.5.2.1.tar
-.. _Burning and Debugging Tools for Windows: http://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip
+.. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
+.. _Burning and Debugging Tools for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_Libusb_BDT-Linux-X64-1.5.2.1.tar
+.. _Burning and Debugging Tools for Windows: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip
 .. _Zephyr Getting Started Guide: https://docs.zephyrproject.org/latest/getting_started/index.html
