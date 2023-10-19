@@ -4535,6 +4535,12 @@ static void ping_work(struct k_work *work)
 		return;
 	}
 
+	if (ctx->sequence < ctx->count) {
+		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
+	} else {
+		k_work_reschedule(&ctx->work, K_SECONDS(2));
+	}
+
 	if (ctx->addr.family == AF_INET6) {
 		ret = net_icmpv6_send_echo_request(ctx->iface,
 						   &ctx->addr.in6_addr,
@@ -4559,12 +4565,6 @@ static void ping_work(struct k_work *work)
 		PR_WARNING("Failed to send ping, err: %d", ret);
 		ping_done(ctx);
 		return;
-	}
-
-	if (ctx->sequence < ctx->count) {
-		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
-	} else {
-		k_work_reschedule(&ctx->work, K_SECONDS(2));
 	}
 }
 
