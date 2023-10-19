@@ -259,6 +259,12 @@ static void ping_work(struct k_work *work)
 		return;
 	}
 
+	if (ctx->sequence < ctx->count) {
+		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
+	} else {
+		k_work_reschedule(&ctx->work, K_SECONDS(2));
+	}
+
 	params.identifier = sys_rand32_get();
 	params.sequence = ctx->sequence;
 	params.tc_tos = ctx->tos;
@@ -275,12 +281,6 @@ static void ping_work(struct k_work *work)
 		PR_WARNING("Failed to send ping, err: %d", ret);
 		ping_done(ctx);
 		return;
-	}
-
-	if (ctx->sequence < ctx->count) {
-		k_work_reschedule(&ctx->work, K_MSEC(ctx->interval));
-	} else {
-		k_work_reschedule(&ctx->work, K_SECONDS(2));
 	}
 }
 
