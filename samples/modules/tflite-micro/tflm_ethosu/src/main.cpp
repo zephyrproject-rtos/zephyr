@@ -149,6 +149,8 @@ void inferenceProcessTask(void *_name, void *heap, void *_params)
 	}
 
 	k_thread_abort(k_current_get());
+
+	CODE_UNREACHABLE;
 }
 
 /* inferenceSenderTask - Creates NUM_INFERENCE_JOBS jobs, queues them, and then
