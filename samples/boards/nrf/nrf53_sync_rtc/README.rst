@@ -76,6 +76,8 @@ Observe that initially logging timestamps for the corresponding events on both c
 do not match. Same with local and remote timestamps reported on network core. After
 RTC synchronization is completed they start to match.
 
+.. _nrf53_sync_rtc_sample_build_bsim:
+
 Building the application for the simulated nrf5340bsim
 ******************************************************
 
