@@ -227,6 +227,19 @@ Device Drivers and Device Tree
   suffix ``dig`` added. For example, ``iomuxc_snvs_wakeup_gpio13_io00`` has
   been renamed to ``iomuxc_snvs_wakeup_dig_gpio13_io00``
 
+* Ramdisk drivers are now instantiated using devicetree. Kconfig options
+  ``CONFIG_DISK_RAM_VOLUME_NAME`` and ``CONFIG_DISK_RAM_VOLUME_SIZE`` have
+  been removed. Instead, instantiate a ramdisk within devicetree like so:
+
+  .. code-block:: devicetree
+
+    ramdisk0 {
+        compatible = "zephyr,ram-disk";
+        disk-name = "RAM";
+        sector-size = <512>;
+        sector-count = <128>;
+    };
+
 Power Management
 ================
 
