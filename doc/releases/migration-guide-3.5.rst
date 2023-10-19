@@ -216,6 +216,17 @@ Device Drivers and Device Tree
   The two new flags :c:macro:`ISOTP_MSG_FDF` and :c:macro:`ISOTP_MSG_BRS` were added for CAN FD
   mode.
 
+* NXP i.MX RT based boards should now enable
+  :kconfig:option:`CONFIG_DEVICE_CONFIGURATION_DATA` at the board level when
+  using a DCD with the RT bootrom, and enable
+  :kconfig:option:`CONFIG_NXP_IMX_EXTERNAL_SDRAM` when using external SDRAM
+  via the SEMC
+
+* NXP i.MX RT11xx series SNVS pin control name identifiers have been updated to
+  match with the source data for these SOCs. The pin names have had the
+  suffix ``dig`` added. For example, ``iomuxc_snvs_wakeup_gpio13_io00`` has
+  been renamed to ``iomuxc_snvs_wakeup_dig_gpio13_io00``
+
 Power Management
 ================
 
