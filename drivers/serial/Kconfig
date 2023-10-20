@@ -272,4 +272,6 @@ source "drivers/serial/Kconfig.renesas_ra"
 
 source "drivers/serial/Kconfig.rzt2m"
 
+source "drivers/serial/Kconfig.hpmicro"
+
 endif # SERIAL
