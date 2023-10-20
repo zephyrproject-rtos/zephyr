@@ -1488,6 +1488,17 @@ void shell_process(const struct shell *sh)
 	z_flag_processing_set(sh, false);
 }
 
+const struct shell *shell_backend_get_by_name(const char *backend_name)
+{
+	STRUCT_SECTION_FOREACH(shell, backend) {
+		if (strcmp(backend_name, backend->name) == 0) {
+			return backend;
+		}
+	}
+
+	return NULL;
+}
+
 /* This function mustn't be used from shell context to avoid deadlock.
  * However it can be used in shell command handlers.
  */
