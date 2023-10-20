@@ -22,7 +22,7 @@
 	};
 
 	soc-id {
-		device-id = <0x2d>;
+		device-id = <0x25>;
 	};
 };
 
