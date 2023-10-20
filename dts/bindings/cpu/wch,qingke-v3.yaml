@@ -1,0 +1,8 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH QingKe V3 RISC-V CPU
+
+compatible: "wch,qingke-v3"
+
+include: cpu.yaml

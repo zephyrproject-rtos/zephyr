@@ -1,0 +1,4 @@
+family:
+- name: ch32v
+  series:
+  - name: qingke-v3

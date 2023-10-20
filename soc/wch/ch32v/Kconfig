@@ -1,0 +1,16 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_CH32V
+	select RISCV
+	select RISCV_PRIVILEGED
+	select INCLUDE_RESET_VECTOR
+	select ATOMIC_OPERATIONS_C
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+
+if SOC_FAMILY_CH32V
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_CH32V
