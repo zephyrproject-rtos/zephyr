@@ -11,7 +11,7 @@
  * @brief Define and initialize test_pipe at compile time
  */
 K_PIPE_DEFINE(test_pipe, 256, 4);
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define STACK_SIZE (520 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define PIPE_SIZE (256)
 
 K_PIPE_DEFINE(small_pipe, 10, 4);
@@ -753,6 +753,10 @@ ZTEST_USER(pipe, test_pipe_on_single_elements)
  */
 ZTEST_USER(pipe, test_pipe_on_multiple_elements)
 {
+	for (int i = 0; i < sizeof(tx_buffer); i++) {
+		tx_buffer[i] = i;
+	}
+
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
 			pipe_get_multiple, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(0), K_INHERIT_PERMS | K_USER,
