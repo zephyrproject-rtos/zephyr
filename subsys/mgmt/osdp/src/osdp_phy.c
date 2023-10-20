@@ -354,16 +354,13 @@ int osdp_phy_check_packet(struct osdp_pd *pd, uint8_t *buf, int len,
 			pd->seq_number = -1;
 			sc_deactivate(pd);
 		}
+#ifdef CONFIG_OSDP_MODE_PD
 		if (comp == pd->seq_number) {
-			/**
-			 * TODO: PD must resend the last response if CP send the
-			 * same sequence number again.
-			 */
-			LOG_ERR("seq-repeat/reply-resend not supported!");
-			pd->reply_id = REPLY_NAK;
-			pd->ephemeral_data[0] = OSDP_PD_NAK_SEQ_NUM;
-			return OSDP_ERR_PKT_NACK;
+			pd->resend = true;
+			pd->seq_number -= 1;
+			LOG_INF("CP requested reply-resend!");
 		}
+#endif
 	} else {
 		if (comp == 0) {
 			/**
