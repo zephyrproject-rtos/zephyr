@@ -5,6 +5,7 @@
 
 /dts-v1/;
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/hpm67xx_64xx-clocks.h>
 #include <mem.h>
 
 / {
@@ -49,6 +50,17 @@
 		#size-cells = <1>;
 		compatible = "hpmicro,hpm6750";
 		ranges;
+		clk: clock-controller@f4100000 {
+			compatible = "hpmicro,hpm-clock";
+			reg = <0xf4100000 0x100>;
+			clock-frequency = <1000000000>;
+			reg-names = "clk";
+			status = "okay";
+			clock-sys-core = <CLOCK_CPU0>;
+			ram-up-time = <(32*1000*9)>;
+			sysctl-present = <2>;
+			#clock-cells = <3>;
+		};
 
 		mtimer: timer@e6000000 {
 			compatible = "andestech,machine-timer";
