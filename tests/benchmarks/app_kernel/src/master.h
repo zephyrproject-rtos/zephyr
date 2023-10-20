@@ -93,6 +93,7 @@ extern struct k_sem STARTRCV;
 
 extern struct k_msgq DEMOQX1;
 extern struct k_msgq DEMOQX4;
+extern struct k_msgq DEMOQX192;
 extern struct k_msgq MB_COMM;
 extern struct k_msgq CH_COMM;
 
