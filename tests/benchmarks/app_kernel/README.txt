@@ -5,6 +5,11 @@ Description:
 The app_kernel test is used to measure the performance of the following
 kernel objects: message queues, semaphores, memory slabs, mailboxes and pipes.
 
+When the userspace version is selected (CONF_FILE=prj_user.conf), this
+benchmark will execute with four configurations (kernel/kernel, kernel/user,
+user/kernel and user/user). However, any configuration involving user threads
+will omit both the memory slabs and mailbox tests.
+
 --------------------------------------------------------------------------------
 
 Sample Output:
@@ -17,8 +22,11 @@ Sample Output:
 | dequeue 1 byte msg in FIFO                                       |    NNNNNN|
 | enqueue 4 bytes msg in FIFO                                      |    NNNNNN|
 | dequeue 4 bytes msg in FIFO                                      |    NNNNNN|
-| enqueue 1 byte msg in FIFO to a waiting higher priority task     |    NNNNNN|
-| enqueue 4 bytes in FIFO to a waiting higher priority task        |    NNNNNN|
+| enqueue 192 bytes msg in MSGQ                                    |    NNNNNN|
+| dequeue 192 bytes msg in MSGQ                                    |    NNNNNN|
+| enqueue 1 byte msg in MSGQ to a waiting higher priority task     |    NNNNNN|
+| enqueue 4 bytes in MSGQ to a waiting higher priority task        |    NNNNNN|
+| enqueue 192 bytes in MSGQ to a waiting higher priority task      |    NNNNNN|
 |-----------------------------------------------------------------------------|
 | signal semaphore                                                 |    NNNNNN|
 | signal to waiting high pri task                                  |    NNNNNN|
