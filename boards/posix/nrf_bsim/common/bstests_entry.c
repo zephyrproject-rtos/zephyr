@@ -10,6 +10,7 @@
 #include "bs_tracing.h"
 #include "bstests.h"
 #include "bs_oswrap.h"
+#include "nsi_host_trampolines.h"
 
 /*
  * Result of the testcase execution.
@@ -230,7 +231,7 @@ uint8_t bst_delete(void)
 	while (test_list_top) {
 		struct bst_test_list *tmp = test_list_top->next;
 
-		free(test_list_top);
+		nsi_host_free(test_list_top);
 		test_list_top = tmp;
 	}
 
