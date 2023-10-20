@@ -225,6 +225,79 @@ extern "C" {
 #define SYS_TIMEOUT_MS(ms) Z_TIMEOUT_TICKS((ms) == SYS_FOREVER_MS ? \
 					   K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
 
+/**
+ * @brief Tick precision used in timeout APIs
+ *
+ * This type defines the word size of the timeout values used in
+ * k_timeout_t objects, and thus defines an upper bound on maximum
+ * timeout length (or equivalently minimum tick duration).  Note that
+ * this does not affect the size of the system uptime counter, which
+ * is always a 64 bit count of ticks.
+ */
+#ifdef CONFIG_TIMEOUT_64BIT
+typedef int64_t k_ticks_t;
+#else
+typedef uint32_t k_ticks_t;
+#endif
+
+#define K_TICKS_FOREVER ((k_ticks_t) -1)
+
+/**
+ * @brief Kernel timeout type
+ *
+ * Timeout arguments presented to kernel APIs are stored in this
+ * opaque type, which is capable of representing times in various
+ * formats and units.  It should be constructed from application data
+ * using one of the macros defined for this purpose (e.g. `K_MSEC()`,
+ * `K_TIMEOUT_ABS_TICKS()`, etc...), or be one of the two constants
+ * K_NO_WAIT or K_FOREVER.  Applications should not inspect the
+ * internal data once constructed.  Timeout values may be compared for
+ * equality with the `K_TIMEOUT_EQ()` macro.
+ */
+typedef struct {
+	k_ticks_t ticks;
+} k_timeout_t;
+
+/**
+ * @brief Compare timeouts for equality
+ *
+ * The k_timeout_t object is an opaque struct that should not be
+ * inspected by application code.  This macro exists so that users can
+ * test timeout objects for equality with known constants
+ * (e.g. K_NO_WAIT and K_FOREVER) when implementing their own APIs in
+ * terms of Zephyr timeout constants.
+ *
+ * @return True if the timeout objects are identical
+ */
+#define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
+
+/** number of nanoseconds per microsecond */
+#define NSEC_PER_USEC 1000U
+
+/** number of nanoseconds per millisecond */
+#define NSEC_PER_MSEC 1000000U
+
+/** number of microseconds per millisecond */
+#define USEC_PER_MSEC 1000U
+
+/** number of milliseconds per second */
+#define MSEC_PER_SEC 1000U
+
+/** number of seconds per minute */
+#define SEC_PER_MIN 60U
+
+/** number of minutes per hour */
+#define MIN_PER_HOUR 60U
+
+/** number of hours per day */
+#define HOUR_PER_DAY 24U
+
+/** number of microseconds per second */
+#define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
+
+/** number of nanoseconds per second */
+#define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
+
 /** @} */
 
 #ifdef __cplusplus
