@@ -57,9 +57,8 @@ static void prov_send_fail_msg(uint8_t err)
 
 static void prov_fail(uint8_t reason)
 {
-	/* According to Bluetooth Mesh Specification v1.0.1, Section 5.4.4, the
-	 * provisioner just closes the link when something fails, while the
-	 * provisionee sends the fail message, and waits for the provisioner to
+	/* According to MshPRTv1.1: 5.4.4, the provisioner just closes the link when something
+	 * fails, while the provisionee sends the fail message, and waits for the provisioner to
 	 * close the link.
 	 */
 	prov_send_fail_msg(reason);

@@ -33,7 +33,7 @@
  *
  * The macros expand to a series of ternary expressions, effectively
  * searching through power of twos until a match is found.
- * According to the specification, the block size cannot be larger than 2^20,
+ * According to MshMBTv1.0, the block size cannot be larger than 2^20,
  * so we'll stop the search at 20.
  */
 #define _BLOB_LOG_2_CEIL(l, x) ((x) <= (1U << l)) ? l :

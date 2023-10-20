@@ -180,7 +180,7 @@ a set of vulnerabilities in the Bluetooth mesh provisioning protocol that showca
 how the low entropy provided by the Blink, Vibrate, Push, Twist and
 Input/Output numeric OOB methods could be exploited in impersonation and MITM
 attacks. In response, the Bluetooth SIG has reclassified these OOB methods as
-insecure in the Mesh Profile specification `erratum 16350 <https://www.bluetooth.org/docman/handlers/DownloadDoc.ashx?doc_id=516072>`_,
+insecure in the Bluetooth Mesh Profile Specification v1.0.1 `erratum 16350 <https://www.bluetooth.org/docman/handlers/DownloadDoc.ashx?doc_id=516072>`_,
 as AuthValue may be brute forced in real time. To ensure secure provisioning, applications
 should use a static OOB value and OOB public key transfer.
 
