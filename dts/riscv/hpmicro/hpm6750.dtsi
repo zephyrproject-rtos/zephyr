@@ -140,5 +140,17 @@
 			reg = <0xf5010000 0x40000>;
 			status = "okay";
 		};
+
+		gpio0: peripheral@f0000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0xf0000000 0x4000>;
+		};
+
+		gpio1: peripheral@f0004000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0xf0004000 0x4000>;
+		};
 	};
 };

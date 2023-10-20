@@ -240,4 +240,6 @@ source "drivers/gpio/Kconfig.rzt2m"
 
 source "drivers/gpio/Kconfig.ambiq"
 
+source "drivers/gpio/Kconfig.hpmicro"
+
 endif # GPIO
