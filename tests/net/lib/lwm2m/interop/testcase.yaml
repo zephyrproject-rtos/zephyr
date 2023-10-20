@@ -8,6 +8,7 @@ tests:
     platform_allow:
       - native_posix
       - qemu_cortex_m3
+      - qemu_x86
     tags:
       - testing
       - pytest
