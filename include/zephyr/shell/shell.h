@@ -863,7 +863,7 @@ struct shell {
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 
-	const char *thread_name;
+	const char *name;
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
 };
@@ -910,7 +910,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.stats = Z_SHELL_STATS_PTR(_name),			      \
 		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.thread_name = STRINGIFY(_name),			      \
+		.name = STRINGIFY(_name),				      \
 		.thread = &_name##_thread,				      \
 		.stack = _name##_stack					      \
 	}

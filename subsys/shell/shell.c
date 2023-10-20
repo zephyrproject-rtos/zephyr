@@ -1392,7 +1392,7 @@ int shell_init(const struct shell *sh, const void *transport_config,
 				  SHELL_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	sh->ctx->tid = tid;
-	k_thread_name_set(tid, sh->thread_name);
+	k_thread_name_set(tid, sh->name);
 
 	return 0;
 }
