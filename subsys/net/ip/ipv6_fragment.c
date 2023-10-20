@@ -635,6 +635,8 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	frag_hdr->id = net_pkt_ipv6_fragment_id(pkt);
 	frag_hdr->offset = htons(((frag_offset / 8U) << 3) | !final);
 
+	net_pkt_set_chksum_done(frag_pkt, true);
+
 	if (net_pkt_set_data(frag_pkt, &frag_access)) {
 		goto fail;
 	}
@@ -719,6 +721,31 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	frag_offset = 0U;
+
+	/* Calculate the L4 checksum (if not done already) before the fragmentation. */
+	if (!net_pkt_is_chksum_done(pkt)) {
+		net_pkt_cursor_init(pkt);
+		net_pkt_skip(pkt, last_hdr_off);
+
+		switch (next_hdr) {
+		case IPPROTO_ICMPV6:
+			ret = net_icmpv6_finalize(pkt, true);
+			break;
+		case IPPROTO_TCP:
+			ret = net_tcp_finalize(pkt, true);
+			break;
+		case IPPROTO_UDP:
+			ret = net_udp_finalize(pkt, true);
+			break;
+		default:
+			ret = 0;
+			break;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	length = net_pkt_get_len(pkt) -
 		(net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
