@@ -69,13 +69,13 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
   #define TIME_CONSTEXPR
 #endif
 
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
+#else
 /**
  * @brief Get the system timer frequency.
  * @return system timer frequency in Hz
  */
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-#define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
-#else
 #define sys_clock_hw_cycles_per_sec() CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #endif
 
