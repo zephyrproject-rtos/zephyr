@@ -56,9 +56,9 @@ extern "C" {
  * by a given network protocol. All counter peripherals involved in a timed
  * network protocol must comply with these tolerances.
  *
- * Please use specific cycle/tick counter values rather than net_time_t whenever
- * possible especially when referring to the kernel system clock or values of
- * any single counter peripheral.
+ * Please use specific @ref k_timepoint_t counter values rather than net_time_t
+ * whenever possible especially when referring to the kernel system clock or
+ * values of any single counter peripheral.
  *
  * net_time_t cannot represent general clocks referred to an arbitrary epoch as
  * it only covers roughly +/- ~290 years. It also cannot be used to represent
@@ -79,8 +79,8 @@ extern "C" {
  * applications, use @ref time_t (C99, POSIX.1-2001) which is specified to
  * represent seconds or @ref suseconds_t (POSIX.1-2001) for microsecond
  * resolution. Kernel @ref k_ticks_t and cycles (both specific to Zephyr) have
- * an unspecified resolution but are useful to represent kernel timer values and
- * implement high resolution spinning.
+ * an unspecified resolution but are useful to represent the kernel's notion of
+ * time and implement high resolution spinning.
  *
  * If you need even finer grained time resolution, you may want to look at
  * (g)PTP concepts, see @ref net_ptp_extended_time.
