@@ -5,7 +5,9 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(qorvo_common, LOG_LEVEL_INF);
+
+#include "ieee802154_qorvo_common.h"
 
 #include <errno.h>
 #include <zephyr/kernel.h>
@@ -26,101 +28,6 @@ LOG_MODULE_REGISTER(dw1000, LOG_LEVEL_INF);
 #include <zephyr/drivers/spi.h>
 
 #include <zephyr/net/ieee802154_radio.h>
-#include "ieee802154_dw1000_regs.h"
-
-#define DT_DRV_COMPAT decawave_dw1000
-
-#define DWT_FCS_LENGTH			2U
-#define DWT_SPI_CSWAKEUP_FREQ		500000U
-#define DWT_SPI_SLOW_FREQ		2000000U
-#define DWT_SPI_TRANS_MAX_HDR_LEN	3
-#define DWT_SPI_TRANS_REG_MAX_RANGE	0x3F
-#define DWT_SPI_TRANS_SHORT_MAX_OFFSET	0x7F
-#define DWT_SPI_TRANS_WRITE_OP		BIT(7)
-#define DWT_SPI_TRANS_SUB_ADDR		BIT(6)
-#define DWT_SPI_TRANS_EXTEND_ADDR	BIT(7)
-
-#define DWT_TS_TIME_UNITS_FS		15650U /* DWT_TIME_UNITS in fs */
-
-#define DW1000_TX_ANT_DLY		16450
-#define DW1000_RX_ANT_DLY		16450
-
-/* SHR Symbol Duration in ns */
-#define UWB_PHY_TPSYM_PRF64		IEEE802154_PHY_HRP_UWB_PRF64_TPSYM_SYMBOL_PERIOD_NS
-#define UWB_PHY_TPSYM_PRF16		IEEE802154_PHY_HRP_UWB_PRF16_TPSYM_SYMBOL_PERIOD_NS
-
-#define UWB_PHY_NUMOF_SYM_SHR_SFD	8
-
-/* PHR Symbol Duration Tdsym in ns */
-#define UWB_PHY_TDSYM_PHR_110K		8205.13
-#define UWB_PHY_TDSYM_PHR_850K		1025.64
-#define UWB_PHY_TDSYM_PHR_6M8		1025.64
-
-#define UWB_PHY_NUMOF_SYM_PHR		18
-
-/* Data Symbol Duration Tdsym in ns */
-#define UWB_PHY_TDSYM_DATA_110K		8205.13
-#define UWB_PHY_TDSYM_DATA_850K		1025.64
-#define UWB_PHY_TDSYM_DATA_6M8		128.21
-
-#define DWT_WORK_QUEUE_STACK_SIZE	512
-
-static struct k_work_q dwt_work_queue;
-static K_KERNEL_STACK_DEFINE(dwt_work_queue_stack,
-			     DWT_WORK_QUEUE_STACK_SIZE);
-
-struct dwt_phy_config {
-	uint8_t channel;	/* Channel 1, 2, 3, 4, 5, 7 */
-	uint8_t dr;	/* Data rate DWT_BR_110K, DWT_BR_850K, DWT_BR_6M8 */
-	uint8_t prf;	/* PRF DWT_PRF_16M or DWT_PRF_64M */
-
-	uint8_t rx_pac_l;		/* DWT_PAC8..DWT_PAC64 */
-	uint8_t rx_shr_code;	/* RX SHR preamble code */
-	uint8_t rx_ns_sfd;		/* non-standard SFD */
-	uint16_t rx_sfd_to;	/* SFD timeout value (in symbols)
-				 * (tx_shr_nsync + 1 + SFD_length - rx_pac_l)
-				 */
-
-	uint8_t tx_shr_code;	/* TX SHR preamble code */
-	uint32_t tx_shr_nsync;	/* PLEN index, e.g. DWT_PLEN_64 */
-
-	float t_shr;
-	float t_phr;
-	float t_dsym;
-};
-
-struct dwt_hi_cfg {
-	struct spi_dt_spec bus;
-	struct gpio_dt_spec irq_gpio;
-	struct gpio_dt_spec rst_gpio;
-};
-
-#define DWT_STATE_TX		0
-#define DWT_STATE_CCA		1
-#define DWT_STATE_RX_DEF_ON	2
-
-struct dwt_context {
-	const struct device *dev;
-	struct net_if *iface;
-	const struct spi_config *spi_cfg;
-	struct spi_config spi_cfg_slow;
-	struct gpio_callback gpio_cb;
-	struct k_sem dev_lock;
-	struct k_sem phy_sem;
-	struct k_work irq_cb_work;
-	struct k_thread thread;
-	struct dwt_phy_config rf_cfg;
-	atomic_t state;
-	bool cca_busy;
-	uint16_t sleep_mode;
-	uint8_t mac_addr[8];
-};
-
-static const struct dwt_hi_cfg dw1000_0_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
-	.irq_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-	.rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-};
 
 static struct dwt_context dwt_0_context = {
 	.dev_lock = Z_SEM_INITIALIZER(dwt_0_context.dev_lock, 1,  1),
@@ -140,14 +47,6 @@ static struct dwt_context dwt_0_context = {
 	},
 };
 
-/* This struct is used to read all additional RX frame info at one push */
-struct dwt_rx_info_regs {
-	uint8_t rx_fqual[DWT_RX_FQUAL_LEN];
-	uint8_t rx_ttcki[DWT_RX_TTCKI_LEN];
-	uint8_t rx_ttcko[DWT_RX_TTCKO_LEN];
-	/* RX_TIME without RX_RAWST */
-	uint8_t rx_time[DWT_RX_TIME_FP_RAWST_OFFSET];
-} _packed;
 
 static int dwt_configure_rf_phy(const struct device *dev);
 
@@ -608,15 +507,6 @@ static void dwt_irq_work_handler(struct k_work *item)
 	}
 
 	k_sem_give(&ctx->dev_lock);
-}
-
-static void dwt_gpio_callback(const struct device *dev,
-			      struct gpio_callback *cb, uint32_t pins)
-{
-	struct dwt_context *ctx = CONTAINER_OF(cb, struct dwt_context, gpio_cb);
-
-	LOG_DBG("IRQ callback triggered %p", ctx);
-	k_work_submit_to_queue(&dwt_work_queue, &ctx->irq_cb_work);
 }
 
 static enum ieee802154_hw_caps dwt_get_capabilities(const struct device *dev)
@@ -1155,114 +1045,6 @@ static uint32_t dwt_otpmem_read(const struct device *dev, uint16_t otp_addr)
 	return dwt_reg_read_u32(dev, DWT_OTP_IF_ID, DWT_OTP_RDAT);
 }
 
-static int dwt_initialise_dev(const struct device *dev)
-{
-	struct dwt_context *ctx = dev->data;
-	uint32_t otp_val = 0;
-	uint8_t xtal_trim;
-
-	dwt_set_sysclks_xti(dev, false);
-	ctx->sleep_mode = 0;
-
-	/* Disable PMSC control of analog RF subsystem */
-	dwt_reg_write_u16(dev, DWT_PMSC_ID, DWT_PMSC_CTRL1_OFFSET,
-			  DWT_PMSC_CTRL1_PKTSEQ_DISABLE);
-
-	/* Clear all status flags */
-	dwt_reg_write_u32(dev, DWT_SYS_STATUS_ID, 0, DWT_SYS_STATUS_MASK_32);
-
-	/*
-	 * Apply soft reset,
-	 * see SOFTRESET field description in DW1000 User Manual.
-	 */
-	dwt_reg_write_u8(dev, DWT_PMSC_ID, DWT_PMSC_CTRL0_SOFTRESET_OFFSET,
-			 DWT_PMSC_CTRL0_RESET_ALL);
-	k_sleep(K_MSEC(1));
-	dwt_reg_write_u8(dev, DWT_PMSC_ID, DWT_PMSC_CTRL0_SOFTRESET_OFFSET,
-			 DWT_PMSC_CTRL0_RESET_CLEAR);
-
-	dwt_set_sysclks_xti(dev, false);
-
-	/*
-	 * This bit (a.k.a PLLLDT) should be set to ensure reliable
-	 * operation of the CPLOCK bit.
-	 */
-	dwt_reg_write_u8(dev, DWT_EXT_SYNC_ID, DWT_EC_CTRL_OFFSET,
-			 DWT_EC_CTRL_PLLLCK);
-
-	/* Kick LDO if there is a value programmed. */
-	otp_val = dwt_otpmem_read(dev, DWT_OTP_LDOTUNE_ADDR);
-	if ((otp_val & 0xFF) != 0) {
-		dwt_reg_write_u8(dev, DWT_OTP_IF_ID, DWT_OTP_SF,
-				 DWT_OTP_SF_LDO_KICK);
-		ctx->sleep_mode |= DWT_AON_WCFG_ONW_LLDO;
-		LOG_INF("Load LDOTUNE_CAL parameter");
-	}
-
-	otp_val = dwt_otpmem_read(dev, DWT_OTP_XTRIM_ADDR);
-	xtal_trim = otp_val & DWT_FS_XTALT_MASK;
-	LOG_INF("OTP Revision 0x%02x, XTAL Trim 0x%02x",
-		(uint8_t)(otp_val >> 8), xtal_trim);
-
-	LOG_DBG("CHIP ID 0x%08x", dwt_otpmem_read(dev, DWT_OTP_PARTID_ADDR));
-	LOG_DBG("LOT ID 0x%08x", dwt_otpmem_read(dev, DWT_OTP_LOTID_ADDR));
-	LOG_DBG("Vbat 0x%02x", dwt_otpmem_read(dev, DWT_OTP_VBAT_ADDR));
-	LOG_DBG("Vtemp 0x%02x", dwt_otpmem_read(dev, DWT_OTP_VTEMP_ADDR));
-
-	if (xtal_trim == 0) {
-		/* Set to default */
-		xtal_trim = DWT_FS_XTALT_MIDRANGE;
-	}
-
-	/* For FS_XTALT bits 7:5 must always be set to binary “011” */
-	xtal_trim |= BIT(6) | BIT(5);
-	dwt_reg_write_u8(dev, DWT_FS_CTRL_ID, DWT_FS_XTALT_OFFSET, xtal_trim);
-
-	/* Load LDE microcode into RAM, see 2.5.5.10 LDELOAD */
-	dwt_set_sysclks_xti(dev, true);
-	dwt_reg_write_u16(dev, DWT_OTP_IF_ID, DWT_OTP_CTRL,
-			  DWT_OTP_CTRL_LDELOAD);
-	k_sleep(K_MSEC(1));
-	dwt_set_sysclks_xti(dev, false);
-	ctx->sleep_mode |= DWT_AON_WCFG_ONW_LLDE;
-
-	dwt_set_sysclks_auto(dev);
-
-	if (!(dwt_reg_read_u8(dev, DWT_SYS_STATUS_ID, 0) &
-	     DWT_SYS_STATUS_CPLOCK)) {
-		LOG_WRN("PLL has not locked");
-		return -EIO;
-	}
-
-	dwt_set_spi_fast(dev);
-
-	/* Setup antenna delay values */
-	dwt_reg_write_u16(dev, DWT_LDE_IF_ID, DWT_LDE_RXANTD_OFFSET,
-			  DW1000_RX_ANT_DLY);
-	dwt_reg_write_u16(dev, DWT_TX_ANTD_ID, DWT_TX_ANTD_OFFSET,
-			  DW1000_TX_ANT_DLY);
-
-	/* Clear AON_CFG1 register */
-	dwt_reg_write_u8(dev, DWT_AON_ID, DWT_AON_CFG1_OFFSET, 0);
-	/*
-	 * Configure sleep mode:
-	 *  - On wake-up load configurations from the AON memory
-	 *  - preserve sleep mode configuration
-	 *  - On Wake-up load the LDE microcode
-	 *  - When available, on wake-up load the LDO tune value
-	 */
-	ctx->sleep_mode |= DWT_AON_WCFG_ONW_LDC |
-			   DWT_AON_WCFG_PRES_SLEEP;
-	dwt_reg_write_u16(dev, DWT_AON_ID, DWT_AON_WCFG_OFFSET,
-			  ctx->sleep_mode);
-	LOG_DBG("sleep mode 0x%04x", ctx->sleep_mode);
-	/* Enable sleep and wake using SPI CSn */
-	dwt_reg_write_u8(dev, DWT_AON_ID, DWT_AON_CFG0_OFFSET,
-			 DWT_AON_CFG0_WAKE_SPI | DWT_AON_CFG0_SLEEP_EN);
-
-	return 0;
-}
-
 /*
  * RF PHY configuration. Must be carried out as part of initialization and
  * for every channel change. See also 2.5 Default Configuration on Power Up.
@@ -1521,115 +1303,6 @@ static int dwt_configure_rf_phy(const struct device *dev)
 	return 0;
 }
 
-static int dw1000_init(const struct device *dev)
-{
-	struct dwt_context *ctx = dev->data;
-	const struct dwt_hi_cfg *hi_cfg = dev->config;
-
-	LOG_INF("Initialize DW1000 Transceiver");
-	k_sem_init(&ctx->phy_sem, 0, 1);
-
-	/* slow SPI config */
-	memcpy(&ctx->spi_cfg_slow, &hi_cfg->bus.config, sizeof(ctx->spi_cfg_slow));
-	ctx->spi_cfg_slow.frequency = DWT_SPI_SLOW_FREQ;
-
-	if (!spi_is_ready_dt(&hi_cfg->bus)) {
-		LOG_ERR("SPI device not ready");
-		return -ENODEV;
-	}
-
-	dwt_set_spi_slow(dev, DWT_SPI_SLOW_FREQ);
-
-	/* Initialize IRQ GPIO */
-	if (!gpio_is_ready_dt(&hi_cfg->irq_gpio)) {
-		LOG_ERR("IRQ GPIO device not ready");
-		return -ENODEV;
-	}
-
-	if (gpio_pin_configure_dt(&hi_cfg->irq_gpio, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->irq_gpio.pin);
-		return -EINVAL;
-	}
-
-	gpio_init_callback(&(ctx->gpio_cb), dwt_gpio_callback,
-			   BIT(hi_cfg->irq_gpio.pin));
-
-	if (gpio_add_callback(hi_cfg->irq_gpio.port, &(ctx->gpio_cb))) {
-		LOG_ERR("Failed to add IRQ callback");
-		return -EINVAL;
-	}
-
-	/* Initialize RESET GPIO */
-	if (!gpio_is_ready_dt(&hi_cfg->rst_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
-		return -ENODEV;
-	}
-
-	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
-		return -EINVAL;
-	}
-
-	LOG_INF("GPIO and SPI configured");
-
-	dwt_hw_reset(dev);
-
-	if (dwt_reg_read_u32(dev, DWT_DEV_ID_ID, 0) != DWT_DEVICE_ID) {
-		LOG_ERR("Failed to read device ID %p", dev);
-		return -ENODEV;
-	}
-
-	if (dwt_initialise_dev(dev)) {
-		LOG_ERR("Failed to initialize DW1000");
-		return -EIO;
-	}
-
-	if (dwt_configure_rf_phy(dev)) {
-		LOG_ERR("Failed to configure RF PHY");
-		return -EIO;
-	}
-
-	/* Allow Beacon, Data, Acknowledgement, MAC command */
-	dwt_set_frame_filter(dev, true, DWT_SYS_CFG_FFAB | DWT_SYS_CFG_FFAD |
-			     DWT_SYS_CFG_FFAA | DWT_SYS_CFG_FFAM);
-
-	/*
-	 * Enable system events:
-	 *  - transmit frame sent,
-	 *  - receiver FCS good,
-	 *  - receiver PHY header error,
-	 *  - receiver FCS error,
-	 *  - receiver Reed Solomon Frame Sync Loss,
-	 *  - receive Frame Wait Timeout,
-	 *  - preamble detection timeout,
-	 *  - receive SFD timeout
-	 */
-	dwt_reg_write_u32(dev, DWT_SYS_MASK_ID, 0,
-			  DWT_SYS_MASK_MTXFRS |
-			  DWT_SYS_MASK_MRXFCG |
-			  DWT_SYS_MASK_MRXPHE |
-			  DWT_SYS_MASK_MRXFCE |
-			  DWT_SYS_MASK_MRXRFSL |
-			  DWT_SYS_MASK_MRXRFTO |
-			  DWT_SYS_MASK_MRXPTO |
-			  DWT_SYS_MASK_MRXSFDTO);
-
-	/* Initialize IRQ event work queue */
-	ctx->dev = dev;
-
-	k_work_queue_start(&dwt_work_queue, dwt_work_queue_stack,
-			   K_KERNEL_STACK_SIZEOF(dwt_work_queue_stack),
-			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
-
-	k_work_init(&ctx->irq_cb_work, dwt_irq_work_handler);
-
-	dwt_setup_int(dev, true);
-
-	LOG_INF("DW1000 device initialized and configured");
-
-	return 0;
-}
-
 static inline uint8_t *get_mac(const struct device *dev)
 {
 	struct dwt_context *dw1000 = dev->data;
@@ -1674,23 +1347,3 @@ static struct ieee802154_radio_api dwt_radio_api = {
 	.tx			= dwt_tx,
 	.attr_get		= dwt_attr_get,
 };
-
-#define DWT_PSDU_LENGTH		(127 - DWT_FCS_LENGTH)
-
-#if defined(CONFIG_IEEE802154_RAW_MODE)
-DEVICE_DT_INST_DEFINE(0, dw1000_init, NULL,
-		    &dwt_0_context, &dw1000_0_config,
-		    POST_KERNEL, CONFIG_IEEE802154_DW1000_INIT_PRIO,
-		    &dwt_radio_api);
-#else
-NET_DEVICE_DT_INST_DEFINE(0,
-		dw1000_init,
-		NULL,
-		&dwt_0_context,
-		&dw1000_0_config,
-		CONFIG_IEEE802154_DW1000_INIT_PRIO,
-		&dwt_radio_api,
-		IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2),
-		DWT_PSDU_LENGTH);
-#endif
