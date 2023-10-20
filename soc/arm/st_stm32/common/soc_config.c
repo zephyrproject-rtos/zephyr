@@ -81,7 +81,9 @@ static int st_stm32_common_config(void)
 	LL_DBGMCU_EnableDBGStopMode();
 	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 #else /* all other parts */
+#if !defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_DBGMCU_EnableDBGStopMode();
+#endif  /* !CONFIG_SOC_SERIES_STM32U5X */
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32MP1X */
 
@@ -104,7 +106,10 @@ static int st_stm32_common_config(void)
 	LL_DBGMCU_DisableDBGStopMode();
 	LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 #else /* all other parts */
+#if !defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_DBGMCU_DisableDBGStopMode();
+#endif /* !CONFIG_SOC_SERIES_STM32U5X */
+	
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32MP1X */
 
