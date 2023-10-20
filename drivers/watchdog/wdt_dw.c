@@ -17,16 +17,12 @@
 
 LOG_MODULE_REGISTER(wdt_dw, CONFIG_WDT_LOG_LEVEL);
 
-#define WDT_IS_INST_IRQ_EN(inst)	DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts)
-#define WDT_CHECK_INTERRUPT_USED(inst)	WDT_IS_INST_IRQ_EN(inst) ||
-#define WDT_DW_INTERRUPT_SUPPORT	DT_INST_FOREACH_STATUS_OKAY(WDT_CHECK_INTERRUPT_USED) 0
-
 /* Device run time data */
 struct dw_wdt_dev_data {
 	/* MMIO mapping information for watchdog register base address */
 	DEVICE_MMIO_RAM;
 	uint32_t config;
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	wdt_callback_t callback;
 #endif
 };
@@ -36,7 +32,7 @@ struct dw_wdt_dev_cfg {
 	DEVICE_MMIO_ROM;
 
 	uint32_t clk_freq;
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	void (*irq_config)(void);
 #endif
 	uint8_t reset_pulse_length;
@@ -46,10 +42,14 @@ static int dw_wdt_setup(const struct device *dev, uint8_t options)
 {
 	struct dw_wdt_dev_data *const dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+	int ret;
 
-	dw_wdt_check_options(options);
+	ret = dw_wdt_check_options(options);
+	if (ret != 0) {
+		return ret;
+	}
 
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	/* Configure response mode */
 	dw_wdt_response_mode_set((uint32_t)reg_base, !!dev_data->callback);
 #endif
@@ -59,7 +59,7 @@ static int dw_wdt_setup(const struct device *dev, uint8_t options)
 
 static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *config)
 {
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 #endif
 	struct dw_wdt_dev_data *const dev_data = dev->data;
@@ -70,7 +70,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 		return -ENODATA;
 	}
 
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	if (config->callback && !dev_config->irq_config) {
 #else
 	if (config->callback) {
@@ -84,7 +84,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 		return -ENOTSUP;
 	}
 
-#ifdef WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	dev_data->callback = config->callback;
 #endif
 
@@ -124,7 +124,7 @@ static int dw_wdt_init(const struct device *dev)
 	if (ret)
 		return ret;
 
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	if (dev_config->irq_config) {
 		dev_config->irq_config();
 	}
@@ -133,7 +133,7 @@ static int dw_wdt_init(const struct device *dev)
 	return 0;
 }
 
-#if WDT_DW_INTERRUPT_SUPPORT
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void dw_wdt_isr(const struct device *dev)
 {
 	struct dw_wdt_dev_data *const dev_data = dev->data;
@@ -141,8 +141,10 @@ static void dw_wdt_isr(const struct device *dev)
 
 	if (dw_wdt_interrupt_status_register_get((uint32_t)reg_base)) {
 
-		dw_wdt_clear_interrupt((uint32_t)reg_base);
-
+		/*
+		 * Clearing interrupt here will not assert system reset, so interrupt
+		 * will not be cleared here.
+		 */
 		if (dev_data->callback) {
 			dev_data->callback(dev, 0);
 		}
@@ -157,16 +159,20 @@ static void dw_wdt_isr(const struct device *dev)
 #error Clock frequency not configured!
 #endif
 
+/* Bindings to the platform */
+#define DW_WDT_IRQ_FLAGS(inst) \
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense), (DT_INST_IRQ(inst, sense)), (0))
+
 #define IRQ_CONFIG(inst)                                                                           \
 	static void dw_wdt##inst##_irq_config(void)                                                \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_wdt_isr,           \
-			DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                       \
+			DEVICE_DT_INST_GET(inst), DW_WDT_IRQ_FLAGS(inst));                         \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
 #define DW_WDT_INIT(inst)                                                                          \
-	IF_ENABLED(WDT_IS_INST_IRQ_EN(inst), (IRQ_CONFIG(inst)))                                   \
+	IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts), (IRQ_CONFIG(inst)))            \
                                                                                                    \
 	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                               \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
@@ -175,7 +181,7 @@ static void dw_wdt_isr(const struct device *dev)
 			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))       \
 		),                                                                                 \
 		.reset_pulse_length = ilog2(DT_INST_PROP_OR(inst, reset_pulse_length, 2)) - 1,     \
-		IF_ENABLED(WDT_IS_INST_IRQ_EN(inst),                                               \
+		IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts),                        \
 			(.irq_config = dw_wdt##inst##_irq_config,)                                 \
 		)                                                                                  \
 	};                                                                                         \
