@@ -687,7 +687,6 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	uint16_t frag_offset;
 	size_t length;
 	uint8_t next_hdr;
-	uint8_t last_hdr;
 	int fit_len;
 	int ret;
 
@@ -701,9 +700,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	net_pkt_cursor_init(pkt);
 
 	if (net_pkt_skip(pkt, next_hdr_off) ||
-	    net_pkt_read_u8(pkt, &next_hdr) ||
-	    net_pkt_skip(pkt, last_hdr_off) ||
-	    net_pkt_read_u8(pkt, &last_hdr)) {
+	    net_pkt_read_u8(pkt, &next_hdr)) {
 		return -ENOBUFS;
 	}
 
