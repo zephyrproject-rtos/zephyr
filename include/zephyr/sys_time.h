@@ -29,8 +29,7 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
-
-/** @internal
+/**
  * Macro determines if fast conversion algorithm can be used. It checks if
  * maximum timeout represented in source frequency domain and multiplied by
  * target frequency fits in 64 bits.
@@ -45,29 +44,6 @@ extern "C" {
 	((DIV_ROUND_UP(CONFIG_SYS_CLOCK_MAX_TIMEOUT_DAYS * 24ULL * 3600ULL * from_hz, \
 			   UINT32_MAX) * to_hz) <= UINT32_MAX)
 
-/* Time converter generator gadget.  Selects from one of three
- * conversion algorithms: ones that take advantage when the
- * frequencies are an integer ratio (in either direction), or a full
- * precision conversion.  Clever use of extra arguments causes all the
- * selection logic to be optimized out, and the generated code even
- * reduces to 32 bit only if a ratio conversion is available and the
- * result is 32 bits.
- *
- * This isn't intended to be used directly, instead being wrapped
- * appropriately in a user-facing API.  The boolean arguments are:
- *
- *    const_hz  - The hz arguments are known to be compile-time
- *                constants (because otherwise the modulus test would
- *                have to be done at runtime)
- *    result32  - The result will be truncated to 32 bits on use
- *    round_up  - Return the ceiling of the resulting fraction
- *    round_off - Return the nearest value to the resulting fraction
- *                (pass both round_up/off as false to get "round_down")
- *
- * All of this must be implemented as expressions so that, when constant,
- * the results may be used to initialize global variables.
- */
-
 /* true if the conversion is the identity */
 #define z_tmcvt_is_identity(__from_hz, __to_hz) \
 	((__to_hz) == (__from_hz))
@@ -80,8 +56,7 @@ extern "C" {
 #define z_tmcvt_is_int_div(__from_hz, __to_hz) \
 	((__from_hz) > (__to_hz) && (__from_hz) % (__to_hz) == 0U)
 
-/*
- * Compute the offset needed to round the result correctly when
+/* Compute the offset needed to round the result correctly when
  * the conversion requires a simple integer division
  */
 #define z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off)	\
@@ -99,8 +74,7 @@ extern "C" {
 #define z_tmcvt_divisor(a, b) ((a) / (b))
 #endif
 
-/*
- * Compute the offset needed to round the result correctly when
+/* Compute the offset needed to round the result correctly when
  * the conversion requires a full mul/div
  */
 #define z_tmcvt_off_gen(__from_hz, __to_hz, __round_up, __round_off)	\
@@ -197,6 +171,32 @@ extern "C" {
 	 z_tmcvt_gen_64_slow(__t, __from_hz, __to_hz, __round_up, __round_off) \
 		)
 
+/**
+ * Time converter generator gadget. Selects from a range of optimized conversion
+ * algorithms: ones that take advantage when the frequencies are an integer
+ * ratio (in either direction), or a full precision conversion. Clever use of
+ * extra arguments causes all the selection logic to be optimized out, and the
+ * generated code even reduces to 32 bit only if a ratio conversion is available
+ * and the result is 32 bits.
+ *
+ * This isn't intended to be used directly, instead being wrapped appropriately
+ * in a user-facing API.
+ *
+ * @param t source (uint64_t or uint32_t) time in milliseconds
+ * @param from_hz (uint32_t) frequency in Hz from which to convert the given
+ * source time
+ * @param to_hz (uint32_t) frequency in Hz to which to convert the given source
+ * time
+ * @param const_hz (bool) The hz arguments are known to be compile-time constants
+ * (because otherwise the modulus test would have to be done at runtime).
+ * @param result32 (bool) The result will be truncated to 32 bits on use.
+ * @param round_up (bool) Return the ceiling of the resulting fraction.
+ * @param round_off (bool) Return the nearest value to the resulting fraction (pass
+ * both round_up/off as false to get "round_down").
+ *
+ * All of this must be implemented as expressions so that, when constant, the
+ * results may be used to initialize global variables.
+ */
 #define z_tmcvt(__t, __from_hz, __to_hz, __const_hz, __result32, __round_up, __round_off) \
 	((__result32) ?							\
 	 z_tmcvt_32(__t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) : \
