@@ -87,6 +87,7 @@
 /soc/riscv/riscv-privileged/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
+/soc/riscv/riscv-privileged/wch_ch32v/     @xingrz
 /soc/x86/                                 @dcpleung @nashif
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
@@ -572,6 +573,7 @@
 /dts/riscv/starfive/                      @rajnesh-kanwal
 /dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/riscv/niosv/                         @sweeaun
+/dts/riscv/wch/                           @xingrz
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
@@ -610,6 +612,7 @@
 /dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
 /dts/bindings/*/*lan91c111*               @sgrrzhf
+/dts/bindings/*/wch*                      @xingrz
 /dts/bindings/i3c/                        @dcpleung
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
@@ -697,6 +700,7 @@
 /include/zephyr/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
+/include/zephyr/dt-bindings/interrupt-controller/ch32v* @xingrz
 /include/zephyr/dt-bindings/pcie/                @dcpleung
 /include/zephyr/dt-bindings/pinctrl/esp*         @sylvioalves
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang

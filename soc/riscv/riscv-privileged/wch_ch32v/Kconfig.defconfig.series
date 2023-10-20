@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CH32V
+
+config SOC_SERIES
+	default "wch_ch32v"
+
+config RISCV_GP
+	default y
+
+source "soc/riscv/riscv-privileged/wch_ch32v/Kconfig.defconfig.ch*"
+
+endif # SOC_SERIES_CH32V

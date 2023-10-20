@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CH32V
+	bool
+	select RISCV
+	select SOC_FAMILY_RISCV_PRIVILEGED
+	select INCLUDE_RESET_VECTOR
+	select ATOMIC_OPERATIONS_C
+
+source "soc/riscv/riscv-privileged/wch_ch32v/Kconfig.soc.*"
