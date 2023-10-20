@@ -165,9 +165,9 @@ Minimal response SMP data
 
 Minimal response is:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -178,7 +178,7 @@ Minimal response is:
               }
           }
 
-   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+   .. tab-item:: SMP version 1 (and non-group SMP version 2)
 
       .. code-block:: none
 

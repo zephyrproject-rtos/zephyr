@@ -90,9 +90,9 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -103,7 +103,7 @@ In case of error the CBOR data takes the form:
               }
           }
 
-   .. group-tab:: SMP version 1
+   .. tab-item:: SMP version 1
 
       .. code-block:: none
 
@@ -186,9 +186,9 @@ Write setting response header fields:
 The command sends an empty CBOR map as data if successful. In case of error the CBOR data takes
 the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -199,7 +199,7 @@ the form:
               }
           }
 
-   .. group-tab:: SMP version 1
+   .. tab-item:: SMP version 1
 
       .. code-block:: none
 
@@ -276,9 +276,9 @@ Delete setting response header fields:
 The command sends an empty CBOR map as data if successful. In case of error the CBOR data takes
 the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -289,7 +289,7 @@ the form:
               }
           }
 
-   .. group-tab:: SMP version 1
+   .. tab-item:: SMP version 1
 
       .. code-block:: none
 
@@ -352,9 +352,9 @@ Commit settings response header fields:
 The command sends an empty CBOR map as data if successful. In case of error the CBOR data takes
 the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -365,7 +365,7 @@ the form:
               }
           }
 
-   .. group-tab:: SMP version 1
+   .. tab-item:: SMP version 1
 
       .. code-block:: none
 
@@ -428,9 +428,9 @@ Load settings response header fields:
 The command sends an empty CBOR map as data if successful. In case of error the CBOR data takes
 the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -441,7 +441,7 @@ the form:
               }
           }
 
-   .. group-tab:: SMP version 1
+   .. tab-item:: SMP version 1
 
       .. code-block:: none
 
@@ -498,9 +498,9 @@ Save settings response header fields:
 The command sends an empty CBOR map as data if successful. In case of error the CBOR data takes
 the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -511,7 +511,7 @@ the form:
               }
           }
 
-   .. group-tab:: SMP version 1
+   .. tab-item:: SMP version 1
 
       .. code-block:: none
 

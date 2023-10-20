@@ -140,9 +140,9 @@ The available configurations are:
 
 Load and run Zephyr on M4 from A53 using u-boot.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: From an SD card
+   .. tab-item:: From an SD card
       Copy the compiled ``zephyr.bin`` to the first FAT partition of the
       SD card and plug the SD card into the board. Power it up and stop the u-boot
       execution at prompt.
@@ -155,7 +155,7 @@ Load and run Zephyr on M4 from A53 using u-boot.
          cp.b 0x40480000 0x7e0000 0x8000
          bootaux 0x7e0000
 
-   .. group-tab:: From serial
+   .. tab-item:: From serial
       This procedure requires ``screen`` and ``lrzsz`` to be installed.
 
       Start ``screen``, power up the board, and stop the u-boot execution at prompt:

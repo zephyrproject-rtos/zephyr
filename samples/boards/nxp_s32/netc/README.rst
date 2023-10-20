@@ -92,9 +92,9 @@ IPv6 addresses are `192.0.2.3` and `2001:db8::3`, respectively. For example,
 using a network interface named `enp1s0` in a GNU/Linux host or `Ethernet` in
 a Windows host, this can be done with the following commands:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: console
 
@@ -102,7 +102,7 @@ a Windows host, this can be done with the following commands:
          ip -6 addr add 2001:db8::3/128 dev enp1s0
          route -A inet6 add default dev enp1s0
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: console
 

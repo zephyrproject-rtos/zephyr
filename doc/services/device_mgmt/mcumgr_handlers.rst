@@ -113,14 +113,14 @@ The CMakeLists.txt file is used by the build system to setup files to compile, i
 directories to add and specify options that can be changed. A basic file only need to include the
 source files if the Kconfig options are enabled. An example file would look similar to:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Zephyr module
+   .. tab-item:: Zephyr module
 
       .. literalinclude:: ../../../tests/subsys/mgmt/mcumgr/handler_demo/example_as_module/CMakeLists.txt
          :language: cmake
 
-   .. group-tab:: Application
+   .. tab-item:: Application
 
       .. literalinclude:: ../../../tests/subsys/mgmt/mcumgr/handler_demo/CMakeLists.txt
          :language: cmake

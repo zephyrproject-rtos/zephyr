@@ -86,9 +86,9 @@ Building with sysbuild
 
 As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west build``
+   .. tab-item:: ``west build``
 
       Here is an example. For details, see :ref:`west-multi-domain-builds` in
       the ``west build documentation``.
@@ -126,7 +126,7 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
             west build --no-sysbuild ...
 
-   .. group-tab:: ``cmake``
+   .. tab-item:: ``cmake``
 
       Here is an example using CMake and Ninja.
 
@@ -160,9 +160,9 @@ application managed by sysbuild using the information in these sections.
 The following example shows how to build :ref:`hello_world` with MCUboot enabled,
 applying to both images debug optimizations:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west build``
+   .. tab-item:: ``west build``
 
       .. zephyr-app-commands::
          :tool: west
@@ -173,7 +173,7 @@ applying to both images debug optimizations:
          :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_DEBUG_OPTIMIZATIONS=y -Dmcuboot_DEBUG_OPTIMIZATIONS=y
          :compact:
 
-   .. group-tab:: ``cmake``
+   .. tab-item:: ``cmake``
 
       .. zephyr-app-commands::
          :tool: cmake
@@ -208,15 +208,15 @@ To set the variable ``<var>`` in the namespace ``<namespace>``, use this syntax:
 For example, to set the CMake variable ``FOO`` in the ``my_sample`` application
 build system to the value ``BAR``, run the following commands:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west build``
+   .. tab-item:: ``west build``
 
       .. code-block:: shell
 
          west build --sysbuild ... -- -Dmy_sample_FOO=BAR
 
-   .. group-tab:: ``cmake``
+   .. tab-item:: ``cmake``
 
       .. code-block:: shell
 
@@ -244,15 +244,15 @@ In the previous example, ``<namespace>`` is the application name discussed above
 For example, to set the Kconfig option ``FOO`` in the ``my_sample`` application
 build system to the value ``BAR``, run the following commands:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west build``
+   .. tab-item:: ``west build``
 
       .. code-block:: shell
 
          west build --sysbuild ... -- -Dmy_sample_CONFIG_FOO=BAR
 
-   .. group-tab:: ``cmake``
+   .. tab-item:: ``cmake``
 
       .. code-block:: shell
 
@@ -310,9 +310,9 @@ Sysbuild supports MCUboot natively.
 To build a sample like ``hello_world`` with MCUboot,
 enable MCUboot and build and flash the sample as follows:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west build``
+   .. tab-item:: ``west build``
 
       .. zephyr-app-commands::
          :tool: west
@@ -323,7 +323,7 @@ enable MCUboot and build and flash the sample as follows:
          :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
          :compact:
 
-   .. group-tab:: ``cmake``
+   .. tab-item:: ``cmake``
 
       .. zephyr-app-commands::
          :tool: cmake
@@ -375,9 +375,9 @@ You can set a configuration file to use with the
 For example, you can create ``sysbuild-mcuboot.conf`` and then
 specify this file when building with sysbuild, as follows:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west build``
+   .. tab-item:: ``west build``
 
       .. zephyr-app-commands::
          :tool: west
@@ -388,7 +388,7 @@ specify this file when building with sysbuild, as follows:
          :gen-args: -DSB_CONF_FILE=sysbuild-mcuboot.conf
          :compact:
 
-   .. group-tab:: ``cmake``
+   .. tab-item:: ``cmake``
 
       .. zephyr-app-commands::
          :tool: cmake
@@ -429,9 +429,9 @@ and ``bl2_ram_report``. To run these build targets, the build directory of the
 image can be provided to west/ninja/make along with the name of the build
 target to execute and it will run.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: ``west``
+   .. tab-item:: ``west``
 
       Assuming that a project has been configured and built using ``west``
       using sysbuild with mcuboot enabled in the default ``build`` folder
@@ -442,7 +442,7 @@ target to execute and it will run.
 
          west build -d build/mcuboot -t rom_report
 
-   .. group-tab:: ``ninja``
+   .. tab-item:: ``ninja``
 
       Assuming that a project has been configured using ``cmake`` and built
       using ``ninja`` using sysbuild with mcuboot enabled, the ``rom_report``
@@ -452,7 +452,7 @@ target to execute and it will run.
 
          ninja -C mcuboot rom_report
 
-   .. group-tab:: ``make``
+   .. tab-item:: ``make``
 
       Assuming that a project has been configured using ``cmake`` and built
       using ``make`` using sysbuild with mcuboot enabled, the ``rom_report``

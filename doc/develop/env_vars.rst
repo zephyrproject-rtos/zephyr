@@ -15,15 +15,15 @@ Option 1: Just Once
 To set the environment variable ``MY_VARIABLE`` to ``foo`` for the
 lifetime of your current terminal window:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux/macOS
+   .. tab-item:: Linux/macOS
 
       .. code-block:: console
 
          export MY_VARIABLE=foo
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: console
 
@@ -40,9 +40,9 @@ lifetime of your current terminal window:
 Option 2: In all Terminals
 --------------------------
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux/macOS
+   .. tab-item:: Linux/macOS
 
       Add the ``export MY_VARIABLE=foo`` line to your shell's startup script in
       your home directory. For Bash, this is usually :file:`~/.bashrc` on Linux
@@ -50,7 +50,7 @@ Option 2: In all Terminals
       don't affect shell instances already started; try opening a new terminal
       window to get the new settings.
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       You can use the ``setx`` program in ``cmd.exe`` or the third-party RapidEE
       program.
@@ -84,9 +84,9 @@ Choose this option if you don't want to make the variable's setting available
 to all of your terminals, but still want to save the value for loading into
 your environment when you are using Zephyr.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux/macOS
+   .. tab-item:: Linux/macOS
 
       Create a file named :file:`~/.zephyrrc` if it doesn't exist, then add this
       line to it:
@@ -102,7 +102,7 @@ your environment when you are using Zephyr.
       The value will be lost if you close the window, etc.; run ``source
       zephyr-env.sh`` again to get it back.
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       Add the line ``set MY_VARIABLE=foo`` to the file
       :file:`%userprofile%\\zephyrrc.cmd` using a text editor such as Notepad to
@@ -136,15 +136,15 @@ Linux) and ``zephyr-env.cmd`` (for Windows) to load Zephyr-specific settings
 into your current terminal's environment. To do so, run this command from the
 zephyr repository:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux/macOS
+   .. tab-item:: Linux/macOS
 
       .. code-block:: console
 
          source zephyr-env.sh
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: console
 

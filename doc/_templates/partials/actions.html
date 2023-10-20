@@ -1,0 +1,7 @@
+{% if config.theme.repo_url %}
+{% set gh_blob_url = pagename | gh_link_get_blob_url %}
+<a href="{{ gh_blob_url }}" title="{{ lang.t('edit.link.title') }}" class="md-content__button md-icon">
+        {% set icon = config.theme.icon.edit or "material/pencil" %}
+        {% include ".icons/" ~ icon ~ ".svg" %}
+</a>
+{% endif %}

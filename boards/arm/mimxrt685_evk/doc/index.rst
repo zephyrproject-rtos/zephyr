@@ -225,9 +225,9 @@ Configuring a Debug Probe
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the LPC-Link2.
 
-.. tabs::
+.. md-tab-set::
 
-    .. group-tab:: LPCLink2 JLink Onboard
+    .. tab-item:: LPCLink2 JLink Onboard
 
 
         1. Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.
@@ -236,7 +236,7 @@ configured by default to use the LPC-Link2.
         3. Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program the
            J-Link firmware. Please make sure you have the latest firmware for this board.
 
-    .. group-tab:: JLink External
+    .. tab-item:: JLink External
 
 
         1. Install the :ref:`jlink-debug-host-tools` and make sure they are in your search path.

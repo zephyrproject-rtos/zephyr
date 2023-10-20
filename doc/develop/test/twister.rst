@@ -33,16 +33,16 @@ only builds a test and doesn't run it:
 
 To run the script in the local tree, follow the steps below:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          $ source zephyr-env.sh
          $ ./scripts/twister
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 
@@ -53,15 +53,15 @@ To run the script in the local tree, follow the steps below:
 If you have a system with a large number of cores and plenty of free storage space,
 you can build and run all possible tests using the following options:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          $ ./scripts/twister --all --enable-slow
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 
@@ -78,15 +78,15 @@ you can use ``--platform board@revision`` to test on a specific revision.
 
 The list of command line options supported by twister can be viewed using:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          $ ./scripts/twister --help
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 
@@ -761,16 +761,16 @@ Executing tests on a single device
 To use this feature on a single connected device, run twister with
 the following new options:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
 	      scripts/twister --device-testing --device-serial /dev/ttyACM0 \
 	      --device-serial-baud 115200 -p frdm_k64f  -T tests/kernel
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 
@@ -788,16 +788,16 @@ To support devices without a physical serial port, use the ``--device-serial-pty
 option. In this cases, log messages are captured for example using a script.
 In this case you can run twister with the following options:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          scripts/twister --device-testing --device-serial-pty "script.py" \
          -p intel_adsp_cavs25 -T tests/kernel
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. note::
 
@@ -822,15 +822,15 @@ hardware map needs to be created with all connected devices and their
 details such as the serial device, baud and their IDs if available.
 Run the following command to produce the hardware map:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          ./scripts/twister --generate-hardware-map map.yml
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 
@@ -839,9 +839,9 @@ Run the following command to produce the hardware map:
 The generated hardware map file (map.yml) will have the list of connected
 devices, for example:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: yaml
 
@@ -858,7 +858,7 @@ devices, for example:
            runner: unknown
            serial: /dev/cu.usbmodem0006837593581
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: yaml
 
@@ -881,9 +881,9 @@ values, in the above example the platform names, the products and the runners ne
 to be replaced with the correct values corresponding to the connected hardware.
 In this example we are using a reel_board and an nrf52840dk_nrf52840:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: yaml
 
@@ -902,7 +902,7 @@ In this example we are using a reel_board and an nrf52840dk_nrf52840:
            serial: /dev/cu.usbmodem0006837593581
            baud: 9600
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: yaml
 
@@ -929,15 +929,15 @@ it for every run to get the correct serial devices and status of the devices.
 
 With the hardware map ready, you can run any tests by pointing to the map
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          ./scripts/twister --device-testing --hardware-map map.yml -T samples/hello_world/
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 
@@ -977,9 +977,9 @@ The runner_params field indicates the parameters you want to pass to the
 west runner. For some boards the west runner needs some extra parameters to
 work. It is equivalent to following west and twister commands.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
@@ -988,7 +988,7 @@ work. It is equivalent to following west and twister commands.
          twister -p intel_adsp_cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. note::
 
@@ -1257,9 +1257,9 @@ And example platforms plus level configuration:
 To run with above test_config.yaml file, only default_paltforms with given test level
 test cases will run.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
@@ -1286,15 +1286,15 @@ At this moment Zephyr integration supports running Robot tests in the `Renode <h
 
 To execute a Robot test suite with twister, run the following command:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       .. code-block:: bash
 
          $ ./scripts/twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. code-block:: bat
 

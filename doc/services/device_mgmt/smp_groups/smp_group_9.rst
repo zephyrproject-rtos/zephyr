@@ -88,9 +88,9 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: SMP version 2
+   .. tab-item:: SMP version 2
 
       .. code-block:: none
 
@@ -101,7 +101,7 @@ In case of error the CBOR data takes the form:
               }
           }
 
-   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+   .. tab-item:: SMP version 1 (and non-group SMP version 2)
 
       .. code-block:: none
 

@@ -22,21 +22,21 @@ This is means creating a reference to the current Zephyr installation inside the
 CMake user package registry.
 
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       In Linux, the CMake user package registry is found in:
 
       ``~/.cmake/packages/Zephyr``
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       In macOS, the CMake user package registry is found in:
 
       ``~/.cmake/packages/Zephyr``
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       In Windows, the CMake user package registry is found in:
 

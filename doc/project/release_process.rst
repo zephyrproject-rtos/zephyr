@@ -352,9 +352,9 @@ steps:
     below involve creating signed tags. However, if you do not have a gpg public
     key you can opt to remove the ``-s`` option from the commands below.
 
-.. tabs::
+.. md-tab-set::
 
-    .. tab:: Release Candidate
+    .. tab-item:: Release Candidate
 
         .. note::
 
@@ -380,7 +380,7 @@ steps:
         #. Send an email to the mailing lists (``announce`` and ``devel``)
            with a link to the release
 
-    .. tab:: Final Release
+    .. tab-item:: Final Release
 
         .. note::
 

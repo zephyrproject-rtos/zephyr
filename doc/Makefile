@@ -4,7 +4,7 @@
 
 BUILDDIR ?= _build
 DOC_TAG ?= development
-SPHINXOPTS ?= -j auto -W --keep-going -T
+SPHINXOPTS ?= -j auto --keep-going -T
 SPHINXOPTS_EXTRA ?=
 LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0

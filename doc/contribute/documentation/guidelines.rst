@@ -591,69 +591,69 @@ As introduced in the :ref:`getting_started`, you can provide alternative
 content to the reader via a tabbed interface. When the reader clicks on
 a tab, the content for that tab is displayed, for example::
 
-   .. tabs::
+   .. md-tab-set::
 
-      .. tab:: Apples
+      .. tab-item:: Apples
 
          Apples are green, or sometimes red.
 
-      .. tab:: Pears
+      .. tab-item:: Pears
 
          Pears are green.
 
-      .. tab:: Oranges
+      .. tab-item:: Oranges
 
          Oranges are orange.
 
 will display as:
 
-.. tabs::
+.. md-tab-set::
 
-   .. tab:: Apples
+   .. tab-item:: Apples
 
       Apples are green, or sometimes red.
 
-   .. tab:: Pears
+   .. tab-item:: Pears
 
       Pears are green.
 
-   .. tab:: Oranges
+   .. tab-item:: Oranges
 
       Oranges are orange.
 
 Tabs can also be grouped, so that changing the current tab in one area
 changes all tabs with the same name throughout the page.  For example:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       Linux Line 1
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       macOS Line 1
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       Windows Line 1
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       Linux Line 2
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       macOS Line 2
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       Windows Line 2
 
-In this latter case, we're using ``.. group-tab::`` instead of simply
-``.. tab::``.  Under the hood, we're using the `sphinx-tabs
+In this latter case, we're using ``.. tab-item::`` instead of simply
+``.. tab-item::``.  Under the hood, we're using the `sphinx-tabs
 <https://github.com/djungelorm/sphinx-tabs>`_ extension that's included
 in the Zephyr setup.  Within a tab, you can have most any content *other
 than a heading* (code-blocks, ordered and unordered lists, pictures,

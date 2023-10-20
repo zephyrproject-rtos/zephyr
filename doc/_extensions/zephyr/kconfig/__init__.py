@@ -34,7 +34,7 @@ import sys
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Iterator
 
 from docutils import nodes
 from sphinx.addnodes import pending_xref
@@ -152,9 +152,9 @@ class KconfigSearch(SphinxDirective):
         # register all options to the domain at this point, so that they all
         # resolve to the page where the kconfig:search directive is inserted
         domain = self.env.get_domain("kconfig")
-        unique = set({option["name"] for option in self.env.kconfig_db})
-        for option in unique:
-            domain.add_option(option)
+        unique = set({(option["name"], option["prompt"]) for option in self.env.kconfig_db})
+        for option, prompt in unique:
+            domain.add_option(option, prompt)
 
         return [KconfigSearchNode()]
 
@@ -183,14 +183,19 @@ class KconfigDomain(Domain):
     object_types = {"option": ObjType("option", "option")}
     roles = {"option": XRefRole()}
     directives = {"search": KconfigSearch}
-    initial_data: Dict[str, Any] = {"options": []}
+    initial_data: Dict[str, Any] = {"options": [], "synopsis": {}}
 
     def get_objects(self) -> Iterable[Tuple[str, str, str, str, str, int]]:
         for obj in self.data["options"]:
             yield obj
 
+    def get_object_synopses(self) -> Iterator[Tuple[Tuple[str, str], str]]:
+        for option, (docname, synopsis) in self.data["synopsis"].items():
+            yield ((docname, option), synopsis)
+
     def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
         self.data["options"] += otherdata["options"]
+        self.data["synopsis"].update(otherdata["synopsis"])
 
     def resolve_xref(
         self,
@@ -217,12 +222,14 @@ class KconfigDomain(Domain):
         else:
             return None
 
-    def add_option(self, option):
+    def add_option(self, option, synopsys):
         """Register a new Kconfig option to the domain."""
-
+        # TODO consider making options a dict so that it can also hold the
+        # prompt/synopsis
         self.data["options"].append(
             (option, option, "option", self.env.docname, option, 1)
         )
+        self.data["synopsis"][option] = (self.env.docname, synopsys)
 
 
 def sc_fmt(sc):

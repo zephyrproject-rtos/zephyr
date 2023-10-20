@@ -18,9 +18,9 @@ Select and Update OS
 
 Click the operating system you are using.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       This guide covers Ubuntu version 20.04 LTS and later.
 
@@ -29,7 +29,7 @@ Click the operating system you are using.
          sudo apt update
          sudo apt upgrade
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       On macOS Mojave or later, select *System Preferences* >
       *Software Update*. Click *Update Now* if necessary.
@@ -37,7 +37,7 @@ Click the operating system you are using.
       On other versions, see `this Apple support topic
       <https://support.apple.com/en-us/HT201541>`_.
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       Select *Start* > *Settings* > *Update & Security* > *Windows Update*.
       Click *Check for updates* and install any that are available.
@@ -66,9 +66,9 @@ The current minimum required version for the main dependencies are:
    * - `Devicetree compiler <https://www.devicetree.org/>`_
      - 1.4.6
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       .. _install_dependencies_ubuntu:
 
@@ -106,7 +106,7 @@ The current minimum required version for the main dependencies are:
          Refer to the :ref:`installation_linux` page for additional information on updating
          the dependencies manually.
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       .. _install_dependencies_macos:
 
@@ -142,7 +142,7 @@ The current minimum required version for the main dependencies are:
               (echo; echo 'export PATH="'$(brew --prefix)'/opt/python/libexec/bin:$PATH"') >> ~/.zprofile
               source ~/.zprofile
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. note::
 
@@ -221,13 +221,13 @@ additional Python dependencies.
 
 .. _Python virtual environments: https://docs.python.org/3/library/venv.html
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
-      .. tabs::
+      .. md-tab-set::
 
-         .. group-tab:: Install within virtual environment
+         .. tab-item:: Install within virtual environment
 
             #. Use ``apt`` to install Python ``venv`` package:
 
@@ -285,7 +285,7 @@ additional Python dependencies.
 
                   pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
-         .. group-tab:: Install globally
+         .. tab-item:: Install globally
 
             #. Install west, and make sure :file:`~/.local/bin` is on your
                :envvar:`PATH` :ref:`environment variable <env_vars>`:
@@ -319,11 +319,11 @@ additional Python dependencies.
 
                   pip3 install --user -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
-      .. tabs::
+      .. md-tab-set::
 
-         .. group-tab:: Install within virtual environment
+         .. tab-item:: Install within virtual environment
 
             #. Create a new virtual environment:
 
@@ -375,7 +375,7 @@ additional Python dependencies.
 
                   pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
-         .. group-tab:: Install globally
+         .. tab-item:: Install globally
 
             #. Install west:
 
@@ -406,11 +406,11 @@ additional Python dependencies.
 
                   pip3 install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
-      .. tabs::
+      .. md-tab-set::
 
-         .. group-tab:: Install within virtual environment
+         .. tab-item:: Install within virtual environment
 
             #. Open a ``cmd.exe`` terminal window **as a regular user**
 
@@ -465,7 +465,7 @@ additional Python dependencies.
 
                   pip install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
-         .. group-tab:: Install globally
+         .. tab-item:: Install globally
 
             #. Open a ``cmd.exe`` terminal window **as a regular user**
 
@@ -511,9 +511,9 @@ Zephyr applications.
 It also contains additional host tools, such as custom QEMU and OpenOCD builds
 that are used to emulate, flash and debug Zephyr applications.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       .. _ubuntu_zephyr_sdk:
 
@@ -570,7 +570,7 @@ that are used to emulate, flash and debug Zephyr applications.
             sudo cp ~/zephyr-sdk-0.16.3/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       .. _macos_zephyr_sdk:
 
@@ -619,7 +619,7 @@ that are used to emulate, flash and debug Zephyr applications.
             You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
             the initial setup.
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       .. _windows_zephyr_sdk:
 
@@ -679,23 +679,23 @@ Build the Blinky Sample
 Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`, changing
 ``<your-board-name>`` appropriately for your board:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
-
-      .. code-block:: bash
-
-         cd ~/zephyrproject/zephyr
-         west build -p always -b <your-board-name> samples/basic/blinky
-
-   .. group-tab:: macOS
+   .. tab-item:: Ubuntu
 
       .. code-block:: bash
 
          cd ~/zephyrproject/zephyr
          west build -p always -b <your-board-name> samples/basic/blinky
 
-   .. group-tab:: Windows
+   .. tab-item:: macOS
+
+      .. code-block:: bash
+
+         cd ~/zephyrproject/zephyr
+         west build -p always -b <your-board-name> samples/basic/blinky
+
+   .. tab-item:: Windows
 
       .. code-block:: bat
 

@@ -132,9 +132,9 @@ Then build and flash the application in the usual way. Just add
 ``CONFIG_BOOT_DELAY=5000`` to the configuration, so that USB CDC ACM is
 initialized before any text is printed, as below:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: XIAO BLE
+   .. tab-item:: XIAO BLE
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
@@ -142,7 +142,7 @@ initialized before any text is printed, as below:
          :goals: build flash
          :gen-args: -DCONFIG_BOOT_DELAY=5000
 
-   .. group-tab:: XIAO BLE Sense
+   .. tab-item:: XIAO BLE Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
@@ -164,16 +164,16 @@ Testing the LEDs in the XIAO BLE (Sense)
 There is a sample that allows to test that LEDs on the board are working
 properly with Zephyr:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: XIAO BLE
+   .. tab-item:: XIAO BLE
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
          :board: xiao_ble
          :goals: build flash
 
-   .. group-tab:: XIAO BLE Sense
+   .. tab-item:: XIAO BLE Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
@@ -190,16 +190,16 @@ Testing shell over USB in the XIAO BLE (Sense)
 There is a sample that allows to test shell interface over USB CDC ACM interface
 with Zephyr:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: XIAO BLE
+   .. tab-item:: XIAO BLE
 
       .. zephyr-app-commands::
          :zephyr-app: samples/subsys/shell/shell_module
          :board: xiao_ble
          :goals: build flash
 
-   .. group-tab:: XIAO BLE Sense
+   .. tab-item:: XIAO BLE Sense
 
       .. zephyr-app-commands::
          :zephyr-app: samples/subsys/shell/shell_module

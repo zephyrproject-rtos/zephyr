@@ -293,9 +293,9 @@ firmware please visit: `Segger over ST-Link`_
 Flash and debug with ST-Link
 ============================
 
-.. tabs::
+.. md-tab-set::
 
-    .. tab:: Using OpenOCD
+    .. tab-item:: Using OpenOCD
 
         OpenOCD is available by default on ST-Link and configured as the default flash
         and debug tool. Flash and debug can be done as follows:
@@ -308,7 +308,7 @@ Flash and debug with ST-Link
              :zephyr-app: samples/hello_world
              :goals: debug
 
-    .. tab:: _`Using Segger J-Link`
+    .. tab-item:: _`Using Segger J-Link`
 
         Once STLink is flashed with SEGGER FW and J-Link GDB server is installed on your
         host computer, you can flash and debug as follows:

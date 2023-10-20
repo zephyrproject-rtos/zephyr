@@ -203,7 +203,7 @@ function renderKconfigDefaults(parent, defaults, alt_defaults) {
  */
 function renderKconfigEntry(entry) {
     const container = document.createElement('dl');
-    container.className = 'kconfig';
+    container.className = 'kconfig objdesc';
 
     /* title (name and permalink) */
     const title = document.createElement('dt');

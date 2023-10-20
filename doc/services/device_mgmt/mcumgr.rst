@@ -52,15 +52,15 @@ The tool is written in the Go programming language.
 
 To install the tool:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: go version < 1.18
+   .. tab-item:: go version < 1.18
 
       .. code-block:: console
 
          go get github.com/apache/mynewt-mcumgr-cli/mcumgr
 
-   .. group-tab:: go version >= 1.18
+   .. tab-item:: go version >= 1.18
 
       .. code-block:: console
 
@@ -80,9 +80,9 @@ the transport layer to use when communicating with managed device:
 Valid transports for ``--conntype`` are ``serial``, ``ble`` and ``udp``. Each
 transport expects a different set of key/value options:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: serial
+   .. tab-item:: serial
 
       ``--connstring`` accepts the following ``key`` values:
 
@@ -97,7 +97,7 @@ transport expects a different set of key/value options:
          * - ``mtu``
            - aka Maximum Transmission Unit, the maximum protocol packet size.
 
-   .. group-tab:: ble
+   .. tab-item:: ble
 
       ``--connstring`` accepts the following ``key`` values:
 
@@ -116,7 +116,7 @@ transport expects a different set of key/value options:
          * - ``conn_timeout``
            - a float number representing the connection timeout in seconds.
 
-   .. group-tab:: udp
+   .. tab-item:: udp
 
       ``--connstring`` takes the form ``[addr]:port`` where:
 

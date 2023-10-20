@@ -89,9 +89,9 @@ as described below:
 
 .. doc_processors_installation_start
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Linux
+   .. tab-item:: Linux
 
       Common to all Linux installations, install the Python dependencies
       required to build the documentation:
@@ -127,7 +127,7 @@ as described below:
          sudo pacman -S graphviz doxygen librsvg texlive-core texlive-bin \
          texlive-latexextra texlive-fontsextra
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       Install the Python dependencies required to build the documentation:
 
@@ -143,7 +143,7 @@ as described below:
          tlmgr install latexmk
          tlmgr install collection-fontsrecommended
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       Install the Python dependencies required to build the documentation:
 

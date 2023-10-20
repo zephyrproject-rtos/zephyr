@@ -27,28 +27,28 @@ Update Your Operating System
 
 Ensure your host system is up to date.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       .. code-block:: console
 
          sudo apt-get update
          sudo apt-get upgrade
 
-   .. group-tab:: Fedora
+   .. tab-item:: Fedora
 
       .. code-block:: console
 
          sudo dnf upgrade
 
-   .. group-tab:: Clear Linux
+   .. tab-item:: Clear Linux
 
       .. code-block:: console
 
          sudo swupd update
 
-   .. group-tab:: Arch Linux
+   .. tab-item:: Arch Linux
 
       .. code-block:: console
 
@@ -70,9 +70,9 @@ Install Requirements and Dependencies
 Note that both Ninja and Make are installed with these instructions; you only
 need one.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       .. code-block:: console
 
@@ -81,7 +81,7 @@ need one.
            python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file libpython3.8-dev \
            make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
 
-   .. group-tab:: Fedora
+   .. tab-item:: Fedora
 
       .. code-block:: console
 
@@ -90,7 +90,7 @@ need one.
            python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686 python38 \
            SDL2-devel
 
-   .. group-tab:: Clear Linux
+   .. tab-item:: Clear Linux
 
       .. code-block:: console
 
@@ -115,7 +115,7 @@ need one.
       solution, start by looking at the logic in
       ``/usr/share/defaults/etc/profile``.
 
-   .. group-tab:: Arch Linux
+   .. tab-item:: Arch Linux
 
       .. code-block:: console
 

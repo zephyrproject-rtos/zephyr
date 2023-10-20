@@ -32,14 +32,14 @@ The typical command to flash the board is:
 
 Flash configuration for devices:
 
-.. tabs::
+.. md-tab-set::
 
-    .. tab:: With ROM bootloader
+    .. tab-item:: With ROM bootloader
 
         These devices don't need any special configuration.  After building your
         application, just run ``west flash`` to flash the board.
 
-    .. tab:: Without ROM bootloader
+    .. tab-item:: Without ROM bootloader
 
         For these devices, the user should:
 
@@ -51,7 +51,7 @@ Flash configuration for devices:
            This option can also be set in ``prj.conf`` or any other Kconfig fragment.
         3. Build and flash the SAM-BA bootloader on the device.
 
-    .. tab:: With compatible SAM-BA bootloader
+    .. tab-item:: With compatible SAM-BA bootloader
 
         For these devices, the user should:
 

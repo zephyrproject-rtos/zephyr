@@ -16,9 +16,9 @@ Requirements
 Nanopb uses the protocol buffer compiler to generate source and header files,
 make sure the ``protoc`` executable is installed and available.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Ubuntu
+   .. tab-item:: Ubuntu
 
       Use ``apt`` to install dependency:
 
@@ -26,7 +26,7 @@ make sure the ``protoc`` executable is installed and available.
 
             sudo apt install protobuf-compiler
 
-   .. group-tab:: macOS
+   .. tab-item:: macOS
 
       Use ``brew`` to install dependency:
 
@@ -34,7 +34,7 @@ make sure the ``protoc`` executable is installed and available.
 
             brew install protobuf
 
-   .. group-tab:: Windows
+   .. tab-item:: Windows
 
       Use ``choco`` to install dependency:
 

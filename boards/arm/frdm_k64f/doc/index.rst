@@ -242,9 +242,9 @@ Early versions of this board have an outdated version of the OpenSDA bootloader
 and require an update. Please see the `DAPLink Bootloader Update`_ page for
 instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: OpenSDA DAPLink Onboard (Recommended)
+   .. tab-item:: OpenSDA DAPLink Onboard (Recommended)
 
         Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
         path.
@@ -252,7 +252,7 @@ instructions to update from the CMSIS-DAP bootloader to the DAPLink bootloader.
         Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to program
         the `OpenSDA DAPLink FRDM-K64F Firmware`_.
 
-   .. group-tab:: OpenSDA JLink Onboard
+   .. tab-item:: OpenSDA JLink Onboard
 
         Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
         path.

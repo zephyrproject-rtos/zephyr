@@ -81,9 +81,9 @@ Building the sample application
 The below steps describe how to build and run the ``smp_svr`` sample in
 Zephyr. The ``smp_svr`` sample comes in different flavours.
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Bluetooth
+   .. tab-item:: Bluetooth
 
       To build the bluetooth sample:
 
@@ -95,7 +95,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -- \
             -DEXTRA_CONF_FILE=overlay-bt.conf
 
-   .. group-tab:: Serial
+   .. tab-item:: Serial
 
       To build the serial sample with file-system and shell management support:
 
@@ -107,7 +107,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -- \
             -DEXTRA_CONF_FILE='overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf'
 
-   .. group-tab:: USB CDC_ACM
+   .. tab-item:: USB CDC_ACM
 
       To build the serial sample with USB CDC_ACM backend:
 
@@ -120,7 +120,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -DEXTRA_CONF_FILE=overlay-cdc.conf \
             -DDTC_OVERLAY_FILE=usb.overlay
 
-   .. group-tab:: Shell
+   .. tab-item:: Shell
 
       To build the shell sample:
 
@@ -132,7 +132,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -- \
             -DEXTRA_CONF_FILE='overlay-shell.conf'
 
-   .. group-tab:: UDP
+   .. tab-item:: UDP
 
       The UDP transport for SMP supports both IPv4 and IPv6.
       In the sample, both IPv4 and IPv6 are enabled, but they can be
@@ -192,23 +192,23 @@ The ``smp_svr`` app is ready to run.  Just reset your board and test the app
 with the :file:`mcumgr` command-line tool's ``echo`` functionality, which will
 send a string to the remote target device and have it echo it back:
 
-.. tabs::
+.. md-tab-set::
 
-   .. group-tab:: Bluetooth
+   .. tab-item:: Bluetooth
 
       .. code-block:: console
 
          sudo mcumgr --conntype ble --connstring ctlr_name=hci0,peer_name='Zephyr' echo hello
          hello
 
-   .. group-tab:: Shell
+   .. tab-item:: Shell
 
       .. code-block:: console
 
          mcumgr --conntype serial --connstring "/dev/ttyACM0,baud=115200" echo hello
          hello
 
-   .. group-tab:: UDP
+   .. tab-item:: UDP
 
       Using IPv4:
 

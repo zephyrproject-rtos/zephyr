@@ -8,8 +8,6 @@ import re
 import textwrap
 
 from sphinx.cmd.build import get_parser
-import sphinx_rtd_theme
-
 
 args = get_parser().parse_args()
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
@@ -73,21 +71,19 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
-    "sphinxcontrib.jquery",
     "zephyr.application",
     "zephyr.html_redirects",
     "zephyr.kconfig",
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
-    "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
     "notfound.extension",
-    "sphinx_copybutton",
-    "sphinx_togglebutton",
     "zephyr.external_content",
+    "sphinx_immaterial",
+    "sphinx_immaterial.graphviz",
     "zephyr.domain",
 ]
 
@@ -135,12 +131,100 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'sphinx_immaterial'
+
 html_theme_options = {
-    "logo_only": True,
-    "prev_next_buttons_location": None
+    "site_url": "https://zephyrproject.org",
+    "repo_url": "https://github.com/zephyrproject-rtos/zephyr",
+    "repo_name": "Zephyr Project",
+    "edit_uri": "blob/main/doc/",   # FIXME
+
+    "font": {
+        "text": "Open Sans",  # used for all the pages' text
+        "code": "Source Code Pro"  # used for literal code blocks
+    },
+
+    "palette": [
+        {
+            "media": "(prefers-color-scheme: light)",
+            "scheme": "default",
+            "primary": "deep-purple",
+            "accent": "indigo",
+            "toggle": {
+                "icon": "material/lightbulb-outline",
+                "name": "Switch to dark mode",
+            },
+        },
+        {
+            "media": "(prefers-color-scheme: dark)",
+            "scheme": "slate",
+            "primary": "deep-purple",
+            "accent": "indigo",
+            "toggle": {
+                "icon": "material/lightbulb",
+                "name": "Switch to light mode",
+            },
+        },
+    ],
+
+    "features": [
+        # "navigation.expand",
+        # "navigation.tabs",
+        # "toc.integrate",
+        "navigation.sections",
+        "navigation.instant",
+        "navigation.path",
+        "header.autohide",
+        "navigation.top",
+        "navigation.tracking",
+        "search.highlight",
+        "search.share",
+        "toc.follow",
+        "toc.sticky",
+        "content.tabs.link",
+        #"announce.dismiss",
+    ],
+
+    "version_dropdown": True,
+
+    "version_info": [
+        {
+            "version": "latest",
+            "title": "Zephyr 3.5.99 (latest)",
+            "aliases": ["latest"],
+        },
+        {
+            "version": "3.5.0",
+            "title": "Zephyr 3.5.0",
+            "aliases": [],
+        },
+        {
+            "version": "3.4.0",
+            "title": "Zephyr 3.4.0",
+            "aliases": [],
+        },
+        {
+            "version": "2.7.5",
+            "title": "Zephyr 2.7.5 (LTS)",
+            "aliases": [],
+        },
+    ],
+
+    "social": [
+        {
+            "icon": "fontawesome/brands/github",
+            "link": "https://github.com/zephyrproject-rtos/zephyr",
+            "name": "Source on github.com"
+        },
+        {
+            "icon": "fontawesome/brands/twitter",
+            "link": "https://twitter.com/ZephyrIoT",
+            "name": "Follow us on Twitter"
+        }
+    ],
+
 }
+
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"
 html_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo.svg")
@@ -151,7 +235,7 @@ html_domain_indices = False
 html_split_index = True
 html_show_sourcelink = False
 html_show_sphinx = False
-html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
+#html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
 reference_prefix = ""
