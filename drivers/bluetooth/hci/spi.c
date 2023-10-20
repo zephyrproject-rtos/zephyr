@@ -426,10 +426,14 @@ static int bt_spi_send(struct net_buf *buf)
 
 	if (!ret) {
 		/* Transmit the message */
-		do {
+		while (true) {
 			ret = bt_spi_transceive(buf->data, buf->len,
 						rx_first, 1);
-		} while (rx_first[0] == 0U && !ret);
+			if (rx_first[0] != 0U || ret) {
+				break;
+			}
+			LOG_DBG("Controller not ready for SPI transaction of %d bytes", buf->len);
+		}
 	}
 
 	release_cs();
