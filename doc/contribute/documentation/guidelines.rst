@@ -417,10 +417,93 @@ This would be rendered as:
       } __packed;
 
 
-You can specify other languages for the ``code-block`` directive,
-including ``c``, ``python``, and ``rst``, and also ``console``,
-``bash``, or ``shell``. If you want no syntax highlighting, use the
-language ``none``,  for example::
+Other languages are of course supported (see `languages supported by Pygments`_), and in particular,
+you are encouraged to make use of the following when appropriate:
+
+.. _`languages supported by Pygments`: http://pygments.org/languages/
+
+* ``c`` for C code
+* ``cpp`` for C++ code
+* ``python`` for Python code
+* ``console`` for console output, i.e. interactive shell sessions where commands are prefixed by a
+  prompt (ex. ``$`` for Linux, or ``uart:~$`` for Zephyr's shell), and where the output is also
+  shown. The commands will be highlighted, and the output will not. What's more, copying code block
+  using the "copy" button will automatically copy just the commands, excluding the prompt and the
+  outputs of the commands.
+* ``shell`` or ``bash`` for shell commands. Both languages get highlighted the same but you may use
+  ``bash`` for conveying that the commands are bash-specific, and ``shell`` for generic shell
+  commands.
+
+  .. note::
+
+     Do not use ``bash`` or ``shell`` if your code block includes a prompt, use ``console`` instead.
+
+     Reciprocally, do not use ``console`` if your code block does not include a prompt and is not
+     showcasing an interactive session with command(s) and their output.
+
+     .. list-table:: When to use ``bash``/``shell`` vs. ``console``
+        :class: wrap-normal
+        :header-rows: 1
+        :widths: 20,40,40
+
+        * - Use case
+          - ``code-block`` snippet
+          - Expected output
+
+        * - One or several commands, no output
+
+          - .. code-block:: rst
+
+               .. code-block:: shell
+
+                  echo "Hello World!"
+
+          - .. code-block:: shell
+
+               echo "Hello World!"
+
+        * - An interactive shell session with command(s) and their output
+
+          - .. code-block:: rst
+
+               .. code-block:: console
+
+                  $ echo "Hello World!"
+                  Hello World!
+
+          - .. code-block:: console
+
+               $ echo "Hello World!"
+               Hello World!
+
+        * - An interactive Zephyr shell session, with commands and their outputs
+
+          - .. code-block:: rst
+
+               .. code-block:: console
+
+                  uart:~$ version
+                  Zephyr version 3.5.99
+                  uart:~$ kernel uptime
+                  Uptime: 20970 ms
+
+          - .. code-block:: console
+
+               uart:~$ version
+               Zephyr version 3.5.99
+               uart:~$ kernel uptime
+               Uptime: 20970 ms
+
+* ``bat`` for Windows batch files
+* ``cfg`` for config files with "KEY=value" entries (ex. Kconfig ``.conf`` files)
+* ``cmake`` for CMake
+* ``devicetree`` for Devicetree
+* ``kconfig`` for Kconfig
+* ``yaml`` for YAML
+* ``rst`` for reStructuredText
+
+When no language is specified, the language is set to ``none`` and the code block is not
+highlighted. You may also use ``none`` explicitly to achieve the same result; for example::
 
    .. code-block:: none
 
@@ -434,11 +517,11 @@ Would display as:
       This would be a block of text styled with a background
       and box, but with no syntax highlighting.
 
-There's a shorthand for writing code blocks too: end the introductory
-paragraph with a double colon (``::``) and indent the code block content
-by three spaces.  On output, only one colon will be shown.  The
-highlighting package makes a best guess at the type of content in the
-block and highlighting purposes.
+There's a shorthand for writing code blocks too: end the introductory paragraph with a double colon
+(``::``) and indent the code block content that follows it by three spaces.  On output, only one
+colon will be shown.  The code block will have no highlighting (i.e. ``none``). You may however use
+the ``.. highlight::`` directive to customize the default language used in your document (see for
+example how this is done at the beginning of this very document).
 
 Images
 ******
