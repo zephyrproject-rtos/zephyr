@@ -1,0 +1,86 @@
+# Copyright (c) 2022 HPMicro
+# SPDX-License-Identifier: Apache-2.0
+config ZEPHYR_HAL_HPMICRO_MODULE
+	bool
+
+config HAS_HPMICRO_HAL
+	bool "HPMSDK HAL drivers support"
+
+if HAS_HPMICRO_HAL
+
+config USE_HPMSDK_UART
+	bool "HPMSDK UART driver support"
+config USE_HPMSDK_DRAM
+	bool "HPMSDK DRAM driver support"
+config USE_HPMSDK_SDP
+	bool "HPMSDK SDP driver support"
+config USE_HPMSDK_LCDC
+	bool "HPMSDK LCDC driver support"
+config USE_HPMSDK_I2C
+	bool "HPMSDK I2C driver support"
+config USE_HPMSDK_PMP
+	bool "HPMSDK PMP driver support"
+config USE_HPMSDK_RNG
+	bool "HPMSDK RNG driver support"
+config USE_HPMSDK_GPIO
+	bool "HPMSDK GPIO driver support"
+config USE_HPMSDK_SPI
+	bool "HPMSDK SPI driver support"
+config USE_HPMSDK_PDMA
+	bool "HPMSDK PDMA driver support"
+config USE_HPMSDK_WDG
+	bool "HPMSDK WDG driver support"
+config USE_HPMSDK_DMA
+	bool "HPMSDK DMA driver support"
+config USE_HPMSDK_GPTMR
+	bool "HPMSDK GPTMR driver support"
+config USE_HPMSDK_PWM
+	bool "HPMSDK PWM driver support"
+config USE_HPMSDK_PLLCTL
+	bool "HPMSDK PLLCTL driver support"
+config USE_HPMSDK_PLLCTLV2
+	bool "HPMSDK PLLCTLV2 driver support"
+config USE_HPMSDK_USB
+	bool "HPMSDK USB driver support"
+config USE_HPMSDK_RTC
+	bool "HPMSDK RTC driver support"
+config USE_HPMSDK_ACMP
+	bool "HPMSDK ACMP driver support"
+config USE_HPMSDK_I2S
+	bool "HPMSDK I2S driver support"
+config USE_HPMSDK_DAO
+	bool "HPMSDK DAO driver support"
+config USE_HPMSDK_PDM
+	bool "HPMSDK PDM driver support"
+config USE_HPMSDK_VAD
+	bool "HPMSDK VAD driver support"
+config USE_HPMSDK_CAM
+	bool "HPMSDK CAM driver support"
+config USE_HPMSDK_CAN
+	bool "HPMSDK CAN driver support"
+config USE_HPMSDK_JPEG
+	bool "HPMSDK JPEG driver support"
+config USE_HPMSDK_ENET
+	bool "HPMSDK ENET driver support"
+config USE_HPMSDK_SDXC
+	bool "HPMSDK SDXC driver support"
+config USE_HPMSDK_ADC12
+	bool "HPMSDK ADC12 driver support"
+config USE_HPMSDK_ADC16
+	bool "HPMSDK ADC16 driver support"
+config USE_HPMSDK_PMU
+	bool "HPMSDK PMU driver support"
+config USE_HPMSDK_PTPC
+	bool "HPMSDK PTPC driver support"
+config USE_HPMSDK_MCHTMR
+	bool "HPMSDK MCHTMR driver support"
+config USE_HPMSDK_PINCTRL
+	bool "HPMSDK MCHTMR driver support"
+config USE_HPMSDK_FFA
+	bool "HPMSDK FFA driver support"
+config USE_HPMSDK_TSNS
+	bool "HPMSDK TSNS driver support"
+config USE_HPMSDK_DAC
+	bool "HPMSDK DAC driver support"
+
+endif # HAS_HPMICRO_HAL

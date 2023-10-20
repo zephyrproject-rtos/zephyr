@@ -4085,6 +4085,19 @@ West:
   labels:
     - "platform: GD32"
 
+"West project: hal_hpmicro":
+  status: maintained
+  maintainers:
+    - willChuai
+  collaborators:
+    - jhqian
+    - helloeagleyang
+    - Cherish-Gww
+  files:
+    - modules/hal_hpmicro/
+  labels:
+    - "platform: HPMicro"
+
 "West project: hal_infineon":
   status: maintained
   maintainers:
