@@ -180,7 +180,8 @@ debugged using an SWD probe such as the Segger J-Link.
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button
       :board: wio_terminal
-      :goals: flash -r openocd
+      :goals: flash
+      :flash-args: -r openocd
       :compact:
 
 #. Start debugging:
