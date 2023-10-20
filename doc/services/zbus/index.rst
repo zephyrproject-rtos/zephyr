@@ -235,17 +235,22 @@ priority.
        it cannot access the channel since it is still locked.
 
    * - i
-     - VDED finishes the publishing by unlocking channel A.
+     - VDED finishes the publishing by unlocking channel A. The MS1 leaves the pending state and
+       starts executing.
 
-   * - j, k, l
+   * - j
+     - MS1 finishes execution. The MS2 leaves the pending state and starts executing.
+
+   * - k
+     - MS2 finishes execution. The S1 leaves the pending state and starts executing.
+
+   * - l, m, n
      - The S1 leaves the pending state since channel A is not locked. It gets in the CPU again and
-       starts executing. As it did receive a notification from channel A, it performs a channel read
-       (as simple as lock, memory copy, unlock), continues its execution, and goes out the CPU.
-   * - m
-     - S1 goes out of the MCU.
+       starts executing. As it did receive a notification from channel A, it performed a channel read
+       (as simple as lock, memory copy, unlock), continues its execution and goes out of the CPU.
 
-   * - n, o
-     - MS2 and MS1 execute and finish their workload.
+   * - o
+     - S1 finishes its workload.
 
 
 The figure below illustrates the actions performed during the VDED execution when T1 publishes to
