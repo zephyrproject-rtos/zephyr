@@ -104,51 +104,6 @@ int64_t sys_clock_tick_get(void);
 
 #ifdef CONFIG_TIMEOUT_QUEUE
 
-/**
- * @brief Kernel timepoint type
- *
- * Absolute timepoints are stored in this opaque type.
- * It is best not to inspect its content directly.
- *
- * @see sys_timepoint_calc()
- * @see sys_timepoint_timeout()
- * @see sys_timepoint_expired()
- */
-typedef struct { uint64_t tick; } k_timepoint_t;
-
-/**
- * @brief Calculate a timepoint value
- *
- * Returns a timepoint corresponding to the expiration (relative to an
- * unlocked "now"!) of a timeout object.  When used correctly, this should
- * be called once, synchronously with the user passing a new timeout value.
- * It should not be used iteratively to adjust a timeout (see
- * `sys_timepoint_timeout()` for that purpose).
- *
- * @param timeout Timeout value relative to current time (may also be
- *                `K_FOREVER` or `K_NO_WAIT`).
- * @retval Timepoint value corresponding to given timeout
- *
- * @see sys_timepoint_timeout()
- * @see sys_timepoint_expired()
- */
-k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
-
-/**
- * @brief Remaining time to given timepoint
- *
- * Returns the timeout interval between current time and provided timepoint.
- * If the timepoint is now in the past or if it was created with `K_NO_WAIT`
- * then `K_NO_WAIT` is returned. If it was created with `K_FOREVER` then
- * `K_FOREVER` is returned.
- *
- * @param timepoint Timepoint for which a timeout value is wanted.
- * @retval Corresponding timeout value.
- *
- * @see sys_timepoint_calc()
- */
-k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
-
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /**
  * @brief Provided for backward compatibility.
@@ -166,68 +121,7 @@ static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
-/**
- * @brief Compare two timepoint values.
- *
- * This function is used to compare two timepoint values.
- *
- * @param a Timepoint to compare
- * @param b Timepoint to compare against.
- * @return zero if both timepoints are the same. Negative value if timepoint @a a is before
- * timepoint @a b, positive otherwise.
- */
-static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
-{
-	if (a.tick == b.tick) {
-		return 0;
-	}
-	return a.tick < b.tick ? -1 : 1;
-}
-
-#else /* CONFIG_TIMEOUT_QUEUE */
-
-/*
- * When timers are configured out, timepoints can't relate to anything.
- * The best we can do is to preserve whether or not they are derived from
- * K_NO_WAIT. Anything else will translate back to K_FOREVER.
- */
-typedef struct { bool wait; } k_timepoint_t;
-
-static inline k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
-{
-	k_timepoint_t timepoint;
-
-	timepoint.wait = !K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT);
-	return timepoint;
-}
-
-static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
-{
-	return timepoint.wait ? Z_FOREVER : Z_TIMEOUT_NO_WAIT;
-}
-
-static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
-{
-	if (a.wait == b.wait) {
-		return 0;
-	}
-	return b.wait ? -1 : 1;
-}
-
 #endif /* CONFIG_TIMEOUT_QUEUE */
-
-/**
- * @brief Indicates if timepoint is expired
- *
- * @param timepoint Timepoint to evaluate
- * @retval true if the timepoint is in the past, false otherwise
- *
- * @see sys_timepoint_calc()
- */
-static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
-{
-	return K_TIMEOUT_EQ(sys_timepoint_timeout(timepoint), Z_TIMEOUT_NO_WAIT);
-}
 
 /** @} */
 
