@@ -53,6 +53,7 @@ K_APPMEM_PARTITION_DEFINE(bench_mem_partition);
 
 K_MSGQ_DEFINE(DEMOQX1, 1, 500, 4);
 K_MSGQ_DEFINE(DEMOQX4, 4, 500, 4);
+K_MSGQ_DEFINE(DEMOQX192, 192, 500, 4);
 K_MSGQ_DEFINE(MB_COMM, 12, 1, 4);
 K_MSGQ_DEFINE(CH_COMM, 12, 1, 4);
 
@@ -207,9 +208,9 @@ int main(void)
 			recvtask, (void *)(uintptr_t)true, NULL, NULL,
 			5, K_USER, K_FOREVER);
 
-	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
-			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
-			      &STARTRCV, &DEMO_MUTEX,
+	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
+			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
+			      &SEM4, &STARTRCV, &DEMO_MUTEX,
 			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 
 	k_thread_start(&recv_thread);
@@ -231,9 +232,9 @@ int main(void)
 			recvtask, (void *)(uintptr_t)true, NULL, NULL,
 			5, 0, K_FOREVER);
 
-	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
-			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
-			      &STARTRCV, &DEMO_MUTEX,
+	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
+			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
+			      &SEM4, &STARTRCV, &DEMO_MUTEX,
 			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 
 	k_thread_start(&recv_thread);
@@ -255,13 +256,13 @@ int main(void)
 			recvtask, (void *)(uintptr_t)true, NULL, NULL,
 			5, K_USER, K_FOREVER);
 
-	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
-			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
-			      &STARTRCV, &DEMO_MUTEX,
+	k_thread_access_grant(&test_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
+			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
+			      &SEM4, &STARTRCV, &DEMO_MUTEX,
 			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
-	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &MB_COMM,
-			      &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3, &SEM4,
-			      &STARTRCV, &DEMO_MUTEX,
+	k_thread_access_grant(&recv_thread, &DEMOQX1, &DEMOQX4, &DEMOQX192,
+			      &MB_COMM, &CH_COMM, &SEM0, &SEM1, &SEM2, &SEM3,
+			      &SEM4, &STARTRCV, &DEMO_MUTEX,
 			      &PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF);
 
 	k_thread_start(&recv_thread);
