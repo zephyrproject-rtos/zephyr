@@ -27,7 +27,7 @@ read operation is very fast.  The expectation is that very sensitive
 application code might use this in a polling manner to achieve maximal
 precision.  The frequency of this counter is required to be steady
 over time, and is available from
-:c:func:`sys_clock_hw_cycles_per_sec` (which on almost all
+:c:macro:`sys_clock_hw_cycles_per_sec` (which on almost all
 platforms is a runtime constant that evaluates to
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
 
@@ -53,10 +53,10 @@ Control of rounding is provided, and each conversion is available in
 "near" (round to nearest).  Finally the output precision can be
 specified as either 32 or 64 bits.
 
-For example: :c:func:`k_ms_to_ticks_ceil32` will convert a
+For example: :c:macro:`k_ms_to_ticks_ceil32` will convert a
 millisecond input value to the next higher number of ticks, returning
 a result truncated to 32 bits of precision; and
-:c:func:`k_cyc_to_us_floor64` will convert a measured cycle count
+:c:macro:`k_cyc_to_us_floor64` will convert a measured cycle count
 to an elapsed number of microseconds in a full 64 bits of precision.
 See the reference documentation for the full enumeration of conversion
 routines.
