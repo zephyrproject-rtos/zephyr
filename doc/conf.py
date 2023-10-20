@@ -105,6 +105,7 @@ else:
     exclude_patterns.append("**/*west-not-found*")
 
 pygments_style = "sphinx"
+highlight_language = "none"
 
 todo_include_todos = False
 
