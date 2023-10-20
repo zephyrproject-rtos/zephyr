@@ -37,16 +37,6 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 }
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
-#if defined(__cplusplus) && __cplusplus >= 201402L
-  #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-    #define TIME_CONSTEXPR
-  #else
-    #define TIME_CONSTEXPR constexpr
-  #endif
-#else
-  #define TIME_CONSTEXPR
-#endif
-
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 #define sys_clock_hw_cycles_per_sec() sys_clock_hw_cycles_per_sec_runtime_get()
 #else
@@ -1400,8 +1390,6 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 #include <syscalls/time_units.h>
 #endif
-
-#undef TIME_CONSTEXPR
 
 /**
  * @}
