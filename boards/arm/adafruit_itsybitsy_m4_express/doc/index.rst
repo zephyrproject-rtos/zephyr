@@ -179,7 +179,8 @@ debugged using a SWD probe such as the Segger J-Link.
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
       :board: adafruit_itsybitsy_m4_express
-      :goals: flash -r openocd
+      :goals: flash
+      :flash-args: -r openocd
       :compact:
 
 #. Start debugging:
