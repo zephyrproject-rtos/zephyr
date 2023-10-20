@@ -11,18 +11,24 @@
 
 /* message queue transfer speed test */
 
+static BENCH_BMEM char buffer[192];
+
 /**
  * @brief Data receive task
  */
 void dequtask(void)
 {
-	int x, i;
+	int i;
 
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
-		k_msgq_get(&DEMOQX1, &x, K_FOREVER);
+		k_msgq_get(&DEMOQX1, buffer, K_FOREVER);
 	}
 
 	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
-		k_msgq_get(&DEMOQX4, &x, K_FOREVER);
+		k_msgq_get(&DEMOQX4, buffer, K_FOREVER);
+	}
+
+	for (i = 0; i < NR_OF_MSGQ_RUNS; i++) {
+		k_msgq_get(&DEMOQX192, buffer, K_FOREVER);
 	}
 }
