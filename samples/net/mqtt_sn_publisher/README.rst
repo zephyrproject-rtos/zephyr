@@ -68,7 +68,7 @@ Then, locate your zephyr directory and type:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/mqtt_sn_publisher
    :board: native_posix_64
-   :goals: build -t run
+   :goals: run
    :compact:
 
 Optionally, use any MQTT explorer to connect to your broker.
