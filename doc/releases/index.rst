@@ -77,7 +77,7 @@ Release Notes
 
    eol_releases
    release-notes-2.7
-   release-notes-3.[3-5]
+   release-notes-3.[3-6]
 
 Migration Guides
 ****************
