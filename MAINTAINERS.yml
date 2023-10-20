@@ -657,13 +657,13 @@ Documentation Infrastructure:
 Release Notes:
   status: maintained
   maintainers:
-    - jhedberg
-    - fabiobaltieri
+    - MaureenHelm
+    - henrikbrixandersen
+  collaborators:
+    - kartben
   files:
     - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
-  collaborators:
-    - kartben
   labels:
     - "Release Notes"
 
