@@ -41,6 +41,7 @@ struct k_timeout_api {
 		.list = SYS_DLIST_STATIC_INIT(Z_TIMEOUT_API_LIST_PTR(_name)),                      \
 	}
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 Z_DEFINE_TIMEOUT_API(sys_clock, sys_clock_elapsed, sys_clock_set_timeout);
 
 #define Z_SYS_CLOCK_TIMEOUT_API Z_TIMEOUT_API(sys_clock)
@@ -56,6 +57,7 @@ static inline int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #include <syscalls/sys_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 static struct _timeout *z_timeout_q_first(struct k_timeout_api *api)
 {
@@ -355,6 +357,19 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
 #include <syscalls/k_uptime_ticks_mrsh.c>
 #endif
 
+#ifdef CONFIG_ZTEST
+void z_impl_sys_clock_tick_set(uint64_t tick)
+{
+	Z_SYS_CLOCK_TIMEOUT_API.curr_tick = tick;
+}
+
+void z_vrfy_sys_clock_tick_set(uint64_t tick)
+{
+	z_impl_sys_clock_tick_set(tick);
+}
+#endif
+#endif
+
 k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
 {
 	k_timepoint_t timepoint;
@@ -391,16 +406,3 @@ k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
 	remaining = (timepoint.tick > now) ? (timepoint.tick - now) : 0;
 	return K_TICKS(remaining);
 }
-
-#ifdef CONFIG_ZTEST
-void z_impl_sys_clock_tick_set(uint64_t tick)
-{
-	Z_SYS_CLOCK_TIMEOUT_API.curr_tick = tick;
-}
-
-void z_vrfy_sys_clock_tick_set(uint64_t tick)
-{
-	z_impl_sys_clock_tick_set(tick);
-}
-#endif
-#endif

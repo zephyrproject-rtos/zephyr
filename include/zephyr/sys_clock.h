@@ -204,7 +204,7 @@ int64_t sys_clock_tick_get(void);
 #define sys_clock_tick_get_32() (0)
 #endif
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
+#ifdef CONFIG_TIMEOUT_QUEUE
 
 /**
  * @brief Kernel timepoint type
@@ -251,6 +251,7 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
  */
 k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 /**
  * @brief Provided for backward compatibility.
  *
@@ -265,6 +266,7 @@ static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 
 	return tp.tick;
 }
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 /**
  * @brief Compare two timepoint values.
@@ -284,7 +286,7 @@ static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
 	return a.tick < b.tick ? -1 : 1;
 }
 
-#else
+#else /* CONFIG_TIMEOUT_QUEUE */
 
 /*
  * When timers are configured out, timepoints can't relate to anything.
@@ -314,7 +316,7 @@ static inline int sys_timepoint_cmp(k_timepoint_t a, k_timepoint_t b)
 	return b.wait ? -1 : 1;
 }
 
-#endif
+#endif /* CONFIG_TIMEOUT_QUEUE */
 
 /**
  * @brief Indicates if timepoint is expired

@@ -20,22 +20,30 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_SYS_CLOCK_EXISTS
+#ifdef CONFIG_TIMEOUT_QUEUE
 
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
 }
 
-void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
-		   k_timeout_t timeout);
-
-int z_abort_timeout(struct _timeout *to);
-
 static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {
 	return !sys_dnode_is_linked(&to->node);
 }
+
+#else
+
+#define z_is_inactive_timeout(to) 1
+
+#endif /* CONFIG_TIMEOUT_QUEUE */
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
+		   k_timeout_t timeout);
+
+int z_abort_timeout(struct _timeout *to);
 
 static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 {
@@ -63,7 +71,6 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 /* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
 #define z_init_thread_timeout(thread_base) do {} while (false)
 #define z_abort_thread_timeout(to) (0)
-#define z_is_inactive_timeout(to) 1
 #define z_get_next_timeout_expiry() ((int32_t) K_TICKS_FOREVER)
 #define z_set_timeout_expiry(ticks, is_idle) do {} while (false)
 
