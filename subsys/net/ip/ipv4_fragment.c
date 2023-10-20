@@ -489,6 +489,10 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	net_pkt_set_overwrite(frag_pkt, false);
 	net_pkt_cursor_restore(frag_pkt, &cur);
 
+	if (final) {
+		net_pkt_set_context(frag_pkt, net_pkt_context(pkt));
+	}
+
 	/* If everything has been ok so far, we can send the packet. */
 	ret = net_send_data(frag_pkt);
 	if (ret < 0) {

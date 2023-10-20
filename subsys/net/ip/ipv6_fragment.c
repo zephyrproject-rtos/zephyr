@@ -660,6 +660,10 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 		goto fail;
 	}
 
+	if (final) {
+		net_pkt_set_context(frag_pkt, net_pkt_context(pkt));
+	}
+
 	/* If everything has been ok so far, we can send the packet. */
 	ret = net_send_data(frag_pkt);
 	if (ret < 0) {
