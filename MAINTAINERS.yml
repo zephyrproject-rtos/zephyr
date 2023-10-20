@@ -2145,6 +2145,17 @@ Retention:
   labels:
     - "area: Retention"
 
+Samples:
+  status: maintained
+  maintainers:
+    - kartben
+  collaborators:
+    - nashif
+  files:
+    - samples/
+  labels:
+    - "area: Samples"
+
 Sensor Subsystem:
   status: maintained
   maintainers:
