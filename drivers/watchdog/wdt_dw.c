@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/math/ilog2.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include "wdt_dw.h"
 #include "wdt_dw_common.h"
@@ -21,6 +22,8 @@ LOG_MODULE_REGISTER(wdt_dw, CONFIG_WDT_LOG_LEVEL);
 struct dw_wdt_dev_data {
 	/* MMIO mapping information for watchdog register base address */
 	DEVICE_MMIO_RAM;
+	/* Clock frequency */
+	uint32_t clk_freq;
 	uint32_t config;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	wdt_callback_t callback;
@@ -31,7 +34,12 @@ struct dw_wdt_dev_data {
 struct dw_wdt_dev_cfg {
 	DEVICE_MMIO_ROM;
 
-	uint32_t clk_freq;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	/* Clock controller dev instance */
+	const struct device *clk_dev;
+	/* Identifier for timer to get clock freq from clk manager */
+	clock_control_subsys_t clkid;
+#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	void (*irq_config)(void);
 #endif
@@ -59,9 +67,7 @@ static int dw_wdt_setup(const struct device *dev, uint8_t options)
 
 static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *config)
 {
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
-	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
-#endif
+	__maybe_unused const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	struct dw_wdt_dev_data *const dev_data = dev->data;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
@@ -88,7 +94,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 	dev_data->callback = config->callback;
 #endif
 
-	return dw_wdt_calc_period((uint32_t)reg_base, dev_config->clk_freq, config,
+	return dw_wdt_calc_period((uint32_t)reg_base, dev_data->clk_freq, config,
 				  &dev_data->config);
 }
 
@@ -120,6 +126,22 @@ static int dw_wdt_init(const struct device *dev)
 	int ret;
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
+	/* Get clock frequency from the clock manager if supported */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	struct dw_wdt_dev_data *const dev_data = dev->data;
+
+	if (!device_is_ready(dev_config->clk_dev)) {
+		LOG_ERR("Clock controller device not ready");
+		return -ENODEV;
+	}
+
+	ret = clock_control_get_rate(dev_config->clk_dev, dev_config->clkid,
+				&dev_data->clk_freq);
+	if (ret != 0) {
+		LOG_ERR("Failed to get watchdog clock rate");
+		return ret;
+	}
+#endif
 	ret = dw_wdt_probe((uint32_t)reg_base, dev_config->reset_pulse_length);
 	if (ret)
 		return ret;
@@ -176,17 +198,24 @@ static void dw_wdt_isr(const struct device *dev)
                                                                                                    \
 	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                               \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency),                          \
-			(.clk_freq = DT_INST_PROP(inst, clock_frequency)),                         \
-			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))       \
-		),                                                                                 \
 		.reset_pulse_length = ilog2(DT_INST_PROP_OR(inst, reset_pulse_length, 2)) - 1,     \
+		IF_ENABLED(DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid),                      \
+		(                                                                                  \
+			.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                       \
+			.clkid = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),         \
+		))                                                                                 \
 		IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(inst), interrupts),                        \
 			(.irq_config = dw_wdt##inst##_irq_config,)                                 \
 		)                                                                                  \
 	};                                                                                         \
                                                                                                    \
-	static struct dw_wdt_dev_data wdt_dw##inst##_data;                                         \
+	static struct dw_wdt_dev_data wdt_dw##inst##_data = {                                      \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency),                          \
+			(.clk_freq = DT_INST_PROP(inst, clock_frequency)),                         \
+			(COND_CODE_1(DT_PHA_HAS_CELL(DT_DRV_INST(inst), clocks, clkid),            \
+			(.clk_freq = 0),                                                           \
+			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))))),   \
+	};											   \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &dw_wdt_init, NULL, &wdt_dw##inst##_data,                      \
 			      &wdt_dw##inst##_config, POST_KERNEL,                                 \
