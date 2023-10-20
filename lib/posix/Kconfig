@@ -5,6 +5,7 @@
 
 config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors"
+	default 16 if WIFI_NM_WPA_SUPPLICANT
 	default 16 if POSIX_API
 	default 4
 	help

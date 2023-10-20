@@ -42,6 +42,7 @@ config NET_SOCKETS_POSIX_NAMES
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
+	default 6 if WIFI_NM_WPA_SUPPLICANT
 	default 3
 	help
 	  Maximum number of entries supported for poll() call.
@@ -261,6 +262,7 @@ if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
+	default 4096 if WIFI_NM_WPA_SUPPLICANT
 	default 64
 	range 1 4096
 	help
