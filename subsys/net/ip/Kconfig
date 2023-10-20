@@ -858,8 +858,12 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
+# If we are running network tests found in tests/net, then the NET_TEST is
+# set and in that case we default to Dummy L2 layer as typically the tests
+# use that by default.
 choice
 	prompt "Default Network Interface"
+	default NET_DEFAULT_IF_DUMMY if NET_TEST
 	default NET_DEFAULT_IF_FIRST
 	help
 	  If system has multiple interfaces enabled, then user shall be able
