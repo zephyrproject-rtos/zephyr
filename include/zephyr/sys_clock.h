@@ -29,14 +29,6 @@ extern "C" {
 #endif
 
 /** @cond INTERNAL_HIDDEN */
-#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {0})
-#if defined(__cplusplus) && ((__cplusplus - 0) < 202002L)
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { (t) })
-#else
-#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
-#endif
-#define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
-
 #ifdef CONFIG_TIMEOUT_64BIT
 # define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS((k_ticks_t)k_ms_to_ticks_ceil64(MAX(t, 0)))
 # define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS((k_ticks_t)k_us_to_ticks_ceil64(MAX(t, 0)))
@@ -50,20 +42,6 @@ extern "C" {
 # define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS((k_ticks_t)k_cyc_to_ticks_ceil32(MAX(t, 0)))
 # define Z_TIMEOUT_MS_TICKS(t) ((k_ticks_t)k_ms_to_ticks_ceil32(MAX(t, 0)))
 #endif
-
-/* Converts between absolute timeout expiration values (packed into
- * the negative space below K_TICKS_FOREVER) and (non-negative) delta
- * timeout values.  If the result of Z_TICK_ABS(t) is >= 0, then the
- * value was an absolute timeout with the returned expiration time.
- * Note that this macro is bidirectional: Z_TICK_ABS(Z_TICK_ABS(t)) ==
- * t for all inputs, and that the representation of K_TICKS_FOREVER is
- * the same value in both spaces!  Clever, huh?
- */
-#define Z_TICK_ABS(t) (K_TICKS_FOREVER - 1 - (t))
-
-/* added tick needed to account for tick in progress */
-#define _TICK_ALIGN 1
-
 /** @endcond */
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
