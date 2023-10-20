@@ -439,8 +439,11 @@ static void test_finalize(void)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_thread_abort(&ztest_thread);
-		k_thread_abort(k_current_get());
+		if (k_is_in_isr()) {
+			return;
+		}
 
+		k_thread_abort(k_current_get());
 		CODE_UNREACHABLE;
 	}
 }
