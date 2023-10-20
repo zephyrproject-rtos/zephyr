@@ -16,10 +16,13 @@ extern "C" {
 
 /**
  * @file
- * @defgroup timeutil_unit_apis Time Units Helpers
+ * @brief Types needed to represent and convert system clock time.
+ *
+ * @defgroup timeutil_sys_clock_apis System Clock Time Unit Helpers
  * @ingroup timeutil_apis
  *
- * @brief Various helper APIs for converting between time units.
+ * @brief Various helper APIs for representing and converting between system
+ * clock time units.
  * @{
  */
 

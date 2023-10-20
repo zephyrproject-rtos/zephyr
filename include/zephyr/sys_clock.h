@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 /**
- * @addtogroup clock_apis
+ * @addtogroup sys_clock_apis
  * @{
  */
 
@@ -160,7 +160,7 @@ typedef struct {
  * to be nicely related, then we can cheat with 32 bits instead.
  */
 /**
- * @addtogroup clock_apis
+ * @addtogroup sys_clock_apis
  * @{
  */
 

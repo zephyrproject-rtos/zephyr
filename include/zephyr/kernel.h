@@ -1247,7 +1247,7 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 
 /**
- * @addtogroup clock_apis
+ * @addtogroup sys_clock_apis
  * @{
  */
 
@@ -1725,8 +1725,7 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 /** @} */
 
 /**
- * @addtogroup clock_apis
- * @ingroup kernel_apis
+ * @addtogroup sys_clock_apis
  * @{
  */
 
