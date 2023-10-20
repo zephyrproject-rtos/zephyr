@@ -35,6 +35,7 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
+    if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
@@ -130,7 +131,9 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    if: github.event_name != 'pull_request'
+    if: |
+      github.event_name != 'pull_request' &&
+      github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container: texlive/texlive:latest
     timeout-minutes: 60
