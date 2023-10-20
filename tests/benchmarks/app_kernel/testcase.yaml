@@ -3,9 +3,16 @@ common:
     - benchmark
     - kernel
   timeout: 420
+  min_flash: 34
+  min_ram: 128
 tests:
   benchmark.kernel.application:
-    min_flash: 34
     integration_platforms:
       - mps2_an385
       - qemu_x86
+  benchmark.kernel.application.user:
+    extra_args: CONF_FILE=prj_user.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
