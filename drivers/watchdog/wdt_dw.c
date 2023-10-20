@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(wdt_dw, CONFIG_WDT_LOG_LEVEL);
 
 /* Device run time data */
 struct dw_wdt_dev_data {
+	/* MMIO mapping information for watchdog register base address */
+	DEVICE_MMIO_RAM;
 	uint32_t config;
 #if WDT_DW_INTERRUPT_SUPPORT
 	wdt_callback_t callback;
@@ -31,7 +33,8 @@ struct dw_wdt_dev_data {
 
 /* Device constant configuration parameters */
 struct dw_wdt_dev_cfg {
-	uint32_t base;
+	DEVICE_MMIO_ROM;
+
 	uint32_t clk_freq;
 #if WDT_DW_INTERRUPT_SUPPORT
 	void (*irq_config)(void);
@@ -41,23 +44,31 @@ struct dw_wdt_dev_cfg {
 
 static int dw_wdt_setup(const struct device *dev, uint8_t options)
 {
-	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	struct dw_wdt_dev_data *const dev_data = dev->data;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	dw_wdt_check_options(options);
 
 #if WDT_DW_INTERRUPT_SUPPORT
 	/* Configure response mode */
-	dw_wdt_response_mode_set(dev_config->base, !!dev_data->callback);
+	dw_wdt_response_mode_set((uint32_t)reg_base, !!dev_data->callback);
 #endif
 
-	return dw_wdt_configure(dev_config->base, dev_data->config);
+	return dw_wdt_configure((uint32_t)reg_base, dev_data->config);
 }
 
 static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *config)
 {
+#if WDT_DW_INTERRUPT_SUPPORT
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
+#endif
 	struct dw_wdt_dev_data *const dev_data = dev->data;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
+
+	if (config == NULL) {
+		LOG_ERR("watchdog timeout configuration missing");
+		return -ENODATA;
+	}
 
 #if WDT_DW_INTERRUPT_SUPPORT
 	if (config->callback && !dev_config->irq_config) {
@@ -77,20 +88,20 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 	dev_data->callback = config->callback;
 #endif
 
-	return dw_wdt_calc_period(dev_config->base, dev_config->clk_freq, config,
+	return dw_wdt_calc_period((uint32_t)reg_base, dev_config->clk_freq, config,
 				  &dev_data->config);
 }
 
 static int dw_wdt_feed(const struct device *dev, int channel_id)
 {
-	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	/* Only channel 0 is supported */
 	if (channel_id) {
 		return -EINVAL;
 	}
 
-	dw_wdt_counter_restart(dev_config->base);
+	dw_wdt_counter_restart((uint32_t)reg_base);
 
 	return 0;
 }
@@ -104,10 +115,12 @@ static const struct wdt_driver_api dw_wdt_api = {
 
 static int dw_wdt_init(const struct device *dev)
 {
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	int ret;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	ret = dw_wdt_probe(dev_config->base, dev_config->reset_pulse_length);
+	ret = dw_wdt_probe((uint32_t)reg_base, dev_config->reset_pulse_length);
 	if (ret)
 		return ret;
 
@@ -123,11 +136,12 @@ static int dw_wdt_init(const struct device *dev)
 #if WDT_DW_INTERRUPT_SUPPORT
 static void dw_wdt_isr(const struct device *dev)
 {
-	const struct dw_wdt_dev_cfg *const dev_config = dev->config;
 	struct dw_wdt_dev_data *const dev_data = dev->data;
+	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-	if (dw_wdt_interrupt_status_register_get(dev_config->base)) {
-		dw_wdt_clear_interrupt(dev_config->base);
+	if (dw_wdt_interrupt_status_register_get((uint32_t)reg_base)) {
+
+		dw_wdt_clear_interrupt((uint32_t)reg_base);
 
 		if (dev_data->callback) {
 			dev_data->callback(dev, 0);
@@ -155,7 +169,7 @@ static void dw_wdt_isr(const struct device *dev)
 	IF_ENABLED(WDT_IS_INST_IRQ_EN(inst), (IRQ_CONFIG(inst)))                                   \
                                                                                                    \
 	static const struct dw_wdt_dev_cfg wdt_dw##inst##_config = {                               \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency),                          \
 			(.clk_freq = DT_INST_PROP(inst, clock_frequency)),                         \
 			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))       \
