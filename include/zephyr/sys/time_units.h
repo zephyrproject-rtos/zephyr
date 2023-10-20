@@ -47,6 +47,16 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define sys_clock_hw_cycles_per_sec() CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #endif
 
+/* Some more concise declarations to simplify the generator script and
+ * save bytes below.
+ */
+#define Z_HZ_ms    MSEC_PER_SEC
+#define Z_HZ_us    USEC_PER_SEC
+#define Z_HZ_ns    NSEC_PER_SEC
+#define Z_HZ_cyc   sys_clock_hw_cycles_per_sec()
+#define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#define Z_CCYC     (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
+
 /* The following code is programmatically generated using this perl
  * code, which enumerates all possible combinations of units, rounding
  * modes and precision.  Do not edit directly.
@@ -118,15 +128,9 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * }
  */
 
-/* Some more concise declarations to simplify the generator script and
- * save bytes below
+/* Exhaustively enumerated, highly optimized time unit conversion API for the
+ * system clock.
  */
-#define Z_HZ_ms 1000
-#define Z_HZ_us 1000000
-#define Z_HZ_ns 1000000000
-#define Z_HZ_cyc sys_clock_hw_cycles_per_sec()
-#define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define Z_CCYC (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME))
 
 /** @brief Convert milliseconds to hardware cycles. 32 bits. Truncates.
  *
