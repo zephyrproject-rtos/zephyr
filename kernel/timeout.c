@@ -15,32 +15,6 @@
 #define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
 		  ? K_TICKS_FOREVER : INT_MAX)
 
-struct k_timeout_api {
-	uint32_t (*elapsed)(void);
-	void (*set_timeout)(int32_t ticks, bool idle);
-
-	uint64_t curr_tick;
-	sys_dlist_t list;
-
-	struct k_spinlock lock;
-
-	/* Ticks left to process in the currently-executing
-	 * z_timeout_q_timeout_announce()
-	 */
-	int announce_remaining;
-};
-
-#define Z_TIMEOUT_API(_name) _timeout_api_##_name
-
-#define Z_TIMEOUT_API_LIST_PTR(_name) &Z_TIMEOUT_API(_name).list
-
-#define Z_DEFINE_TIMEOUT_API(_name, _elapsed, _set_timeout)                                        \
-	static struct k_timeout_api Z_TIMEOUT_API(_name) = {                                       \
-		.elapsed = _elapsed,                                                               \
-		.set_timeout = _set_timeout,                                                       \
-		.list = SYS_DLIST_STATIC_INIT(Z_TIMEOUT_API_LIST_PTR(_name)),                      \
-	}
-
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 Z_DEFINE_TIMEOUT_API(sys_clock, sys_clock_elapsed, sys_clock_set_timeout);
 

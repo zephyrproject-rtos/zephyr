@@ -22,10 +22,45 @@ extern "C" {
 
 #ifdef CONFIG_TIMEOUT_QUEUE
 
+struct k_timeout_api {
+	uint32_t (*elapsed)(void);
+	void (*set_timeout)(int32_t ticks, bool idle);
+
+	uint64_t curr_tick;
+	sys_dlist_t list;
+
+	struct k_spinlock lock;
+
+	/* Ticks left to process in the currently-executing
+	 * z_timeout_q_timeout_announce()
+	 */
+	int announce_remaining;
+};
+
+#define Z_TIMEOUT_API(_name) _timeout_api_##_name
+
+#define Z_TIMEOUT_API_LIST_PTR(_name) &Z_TIMEOUT_API(_name).list
+
+#define Z_DEFINE_TIMEOUT_API(_name, _elapsed, _set_timeout)                                        \
+	static struct k_timeout_api Z_TIMEOUT_API(_name) = {                                       \
+		.elapsed = _elapsed,                                                               \
+		.set_timeout = _set_timeout,                                                       \
+		.list = SYS_DLIST_STATIC_INIT(Z_TIMEOUT_API_LIST_PTR(_name)),                      \
+	}
+
 static inline void z_init_timeout(struct _timeout *to)
 {
 	sys_dnode_init(&to->node);
 }
+
+void z_timeout_q_add_timeout(struct k_timeout_api *api, struct _timeout *to,
+			     _timeout_func_t fn, k_timeout_t timeout);
+
+int z_timeout_q_abort_timeout(struct k_timeout_api *api, struct _timeout *to);
+
+int64_t z_timeout_q_tick_get(struct k_timeout_api *api);
+
+void z_timeout_q_timeout_announce(struct k_timeout_api *api, int32_t ticks);
 
 static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {
