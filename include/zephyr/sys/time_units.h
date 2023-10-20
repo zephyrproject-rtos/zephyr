@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_TIME_UNITS_H_
 #define ZEPHYR_INCLUDE_TIME_UNITS_H_
 
+#include <zephyr/sys_time.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 
@@ -23,28 +24,9 @@ extern "C" {
  *
  * @brief Various helper APIs for representing and converting between system
  * clock time units.
+ *
  * @{
  */
-
-/** @brief System-wide macro to denote "forever" in milliseconds
- *
- *  Usage of this macro is limited to APIs that want to expose a timeout value
- *  that can optionally be unlimited, or "forever".
- *  This macro can not be fed into kernel functions or macros directly. Use
- *  @ref SYS_TIMEOUT_MS instead.
- */
-#define SYS_FOREVER_MS (-1)
-
-/** @brief System-wide macro to denote "forever" in microseconds
- *
- * See @ref SYS_FOREVER_MS.
- */
-#define SYS_FOREVER_US (-1)
-
-/** @brief System-wide macro to convert milliseconds to kernel timeouts
- */
-#define SYS_TIMEOUT_MS(ms) Z_TIMEOUT_TICKS((ms) == SYS_FOREVER_MS ? \
-					   K_TICKS_FOREVER : Z_TIMEOUT_MS_TICKS(ms))
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
