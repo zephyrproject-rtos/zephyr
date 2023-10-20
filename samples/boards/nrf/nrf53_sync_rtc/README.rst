@@ -28,7 +28,8 @@ Building the application for nrf5340dk_nrf5340_cpuapp
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
    :board: nrf5340dk_nrf5340_cpuapp
-   :goals: flash "flash --hex-file build/sync_rtc_net-prefix/src/sync_rtc_net-build/zephyr/zephyr.hex"
+   :goals: flash
+   :flash-args: --hex-file build/sync_rtc_net-prefix/src/sync_rtc_net-build/zephyr/zephyr.hex
 
 Open a serial terminals (for example Minicom or PuTTY) and connect the board with the
 following settings:
