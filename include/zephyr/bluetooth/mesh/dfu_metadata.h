@@ -87,7 +87,7 @@ int bt_mesh_dfu_metadata_encode(const struct bt_mesh_dfu_metadata *metadata,
 
 /** @brief Compute hash of the Composition Data state.
  *
- *  The format of the Composition Data is defined in MshPRFv1.0.1, section 4.2.1.1.
+ *  The format of the Composition Data is defined in MshPRTv1.1: 4.2.2.1.
  *
  *  @param buf Pointer to buffer holding Composition Data.
  *  @param key 128-bit key to be used in the hash computation.
