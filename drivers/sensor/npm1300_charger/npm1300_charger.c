@@ -159,13 +159,11 @@ static void calc_current(const struct npm1300_charger_config *const config,
 		full_scale_ma = config->dischg_limit_microamp / 1000;
 		break;
 	case IBAT_STAT_CHARGE_TRICKLE:
-		full_scale_ma = -config->current_microamp / 10000;
-		break;
+	/* Fallthrough */
 	case IBAT_STAT_CHARGE_COOL:
-		full_scale_ma = -config->current_microamp / 2000;
-		break;
+	/* Fallthrough */
 	case IBAT_STAT_CHARGE_NORMAL:
-		full_scale_ma = -config->current_microamp / 1000;
+		full_scale_ma = -config->current_microamp / 800;
 		break;
 	default:
 		full_scale_ma = 0;
