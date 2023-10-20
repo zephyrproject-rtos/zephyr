@@ -377,7 +377,7 @@ static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
 
 	if (net_buf_simple_tailroom(buf) < ((elem_size - *offset) + BT_MESH_MIC_SHORT)) {
 		if (IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)) {
-			/* Mesh Profile 1.1 Section 4.4.1.2.2:
+			/* MshPRTv1.1: 4.4.1.2.2:
 			 * If the complete list of models does not fit in the Data field,
 			 * the element shall not be reported.
 			 */
@@ -611,7 +611,7 @@ static int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf, size_t offse
 
 		if (net_buf_simple_tailroom(buf) < ((elem_size - offset) + BT_MESH_MIC_SHORT)) {
 			if (IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)) {
-				/* Mesh Profile 1.1 Section 4.4.1.2.2:
+				/* MshPRTv1.1: 4.4.1.2.2:
 				 * If the complete list of models does not fit in the Data field,
 				 * the element shall not be reported.
 				 */
@@ -669,7 +669,7 @@ static int bt_mesh_comp_data_get_page_2(struct net_buf_simple *buf, size_t offse
 
 		if (net_buf_simple_tailroom(buf) < ((elem_size - offset) + BT_MESH_MIC_SHORT)) {
 			if (IS_ENABLED(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV)) {
-				/* Mesh Profile 1.1 Section 4.4.1.2.2:
+				/* MshPRTv1.1: 4.4.1.2.2:
 				 * If the complete list of models does not fit in the Data field,
 				 * the element shall not be reported.
 				 */
