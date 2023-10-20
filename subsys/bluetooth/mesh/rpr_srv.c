@@ -423,7 +423,7 @@ static void subnet_evt_handler(struct bt_mesh_subnet *subnet,
 		link_close(BT_MESH_RPR_ERR_LINK_CLOSED_BY_SERVER,
 			   PROV_BEARER_LINK_STATUS_FAIL);
 		/* Skip the link closing stage, as specified in the Bluetooth
-		 * Mesh Profile specification, section 4.4.5.4.
+		 * MshPRTv1.1: 4.4.5.4.
 		 */
 		srv.link.state = BT_MESH_RPR_LINK_IDLE;
 	} else if (atomic_test_bit(srv.flags, SCANNING) &&
@@ -634,7 +634,7 @@ static int handle_extended_scan_start(struct bt_mesh_model *mod, struct bt_mesh_
 	uint8_t timeout;
 	int i;
 
-	/* According to the Bluetooth Mesh specification, section 4.4.5.5.1.7, scan reports shall be
+	/* According to MshPRTv1.1: 4.4.5.5.1.7, scan reports shall be
 	 * sent as segmented messages.
 	 */
 	ctx->send_rel = true;

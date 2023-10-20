@@ -1375,8 +1375,8 @@ static int handle_block_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 		LOG_DBG("Missing: %s", bt_hex(status.block.missing, len));
 		break;
 	case BT_MESH_BLOB_CHUNKS_MISSING_ENCODED:
-		/** An empty Missing Chunks field entails that there are no
-		 *  missing chunks for this block (Spec 5.3.8)
+		/** MshMBTv1.0: 5.3.8: An empty Missing Chunks field entails that there are no
+		 * missing chunks for this block.
 		 */
 		if (!buf->len) {
 			status.missing = BT_MESH_BLOB_CHUNKS_MISSING_NONE;
