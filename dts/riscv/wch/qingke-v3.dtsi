@@ -18,5 +18,13 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		interrupt-parent = <&pfic>;
+
+		pfic: pfic@e000e000 {
+			compatible = "wch,ch32v-pfic";
+			reg = <0xe000e000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 };

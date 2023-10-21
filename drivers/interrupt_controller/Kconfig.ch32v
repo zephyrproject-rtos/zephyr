@@ -1,0 +1,9 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config CH32V_PFIC
+	bool "WCH CH32V PFIC"
+	default y
+	depends on DT_HAS_WCH_CH32V_PFIC_ENABLED
+	help
+	  Enable WCH CH32V PFIC driver.
