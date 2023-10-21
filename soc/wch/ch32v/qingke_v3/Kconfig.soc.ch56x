@@ -1,0 +1,18 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH56X
+	bool
+	select SOC_SERIES_CH32V_QINGKE_V3A
+
+config SOC_CH565
+	bool "WCH CH565"
+	select SOC_CH56X
+
+config SOC_CH569
+	bool "WCH CH569"
+	select SOC_CH56X
+
+config SOC
+	default "ch565" if SOC_CH565
+	default "ch569" if SOC_CH569

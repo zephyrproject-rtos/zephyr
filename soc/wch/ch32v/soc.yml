@@ -2,3 +2,6 @@ family:
 - name: ch32v
   series:
   - name: qingke-v3
+    socs:
+    - name: ch565
+    - name: ch569
