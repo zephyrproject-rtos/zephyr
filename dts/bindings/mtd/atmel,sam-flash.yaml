@@ -1,0 +1,117 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding describes the Atmel SAM flash area layout.
+
+  The Atmel SAM flash area varies in write-block-size, memory area,
+  and the layout of erase-blocks.
+
+  E.g. the flash area layout of the ATSAM4E16C:
+
+    |--------------------|
+    | 8 Kbytes           |  erase block size = 2048
+    |--------------------|
+    | 8 Kbytes           |  erase block size = 2048
+    |--------------------|
+    | 48 Kbytes          |  erase block size = 4096
+    |--------------------|
+    | 64 Kbytes          |  erase block size = 4096
+    |--------------------|
+    | ...                |
+
+  The ATSAM4E16C has a flash area which is 1000Kbytes
+  (1024 * 1024 bytes) with a write-block-size of 8 bytes. The first
+  16 Kbytes can be erased in blocks of 2048 bytes
+  (8 blocks of 2048 bytes), the remaining flash area is erasable
+  in blocks of 4096 bytes (252 blocks of 4096 bytes).
+
+  This flash area layout would described as:
+
+    / {
+      soc {
+        eefc: flash-controller@400e0a00 {
+        compatible = "atmel,sam-flash-controller";
+        reg = <0x400e0a00 0x200>;
+        clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
+        status = "okay";
+
+        #address-cells = <1>;
+        #size-cells = <1>;
+        #erase-block-cells = <2>;
+
+        flash0: flash@400000 {
+          compatible = "atmel,sam-flash", "soc-nv-flash";
+          reg = <0x400000 0x100000>;
+          write-block-size = <8>;
+          erase-block-size = <4096>;
+          erase-blocks = <&eefc 8 2048>, <&eefc 252 4096>;
+        };
+      };
+    };
+
+  Notes:
+    The flash area layout node flash0 should have both this
+    compatible, "atmel,sam-flash", and the "soc-nv-flash"
+    compatible. The latter is used from mcuboot and other
+    modules to identify the flash area.
+
+    If partitions are used, remember that their addresses are
+    offsets relative to the flash area address.  E.g. using
+    mcuboot and a allocating a storage partition:
+
+      &flash0 {
+        partitions {
+          compatible = "fixed-partitions";
+          #address-cells = <1>;
+          #size-cells = <1>;
+
+          boot_partition: partition@0 {
+            label = "mcuboot";
+            reg = <0x0 0x10000>;
+          };
+
+          slot0_partition: partition@10000 {
+            label = "slot0";
+            reg = <0x10000 0x70000>;
+          };
+
+          slot1_partition: partition@80000 {
+            label = "slot1";
+            reg = <0x80000 0x70000>;
+          };
+
+          storage_partition: partition@f0000 {
+            label = "storage";
+            reg = <0xf0000 0x100000>;
+          };
+        };
+      };
+
+compatible: "atmel,sam-flash"
+
+include: base.yaml
+
+properties:
+  write-block-size:
+    type: int
+    description: |
+      The flash controller is limited by hardware to writing blocks of
+      this size, aligned to this size, in bytes, to previously erased
+      flash, within the flash memory area.
+
+  erase-block-size:
+    type: int
+    description: |
+      The flash controller is limited by hardware to erase whole
+      blocks of flash at a time. This property describes the largest
+      erase block size in erase-blocks.
+
+  erase-blocks:
+    type: phandle-array
+    required: true
+    description: |
+      The flash controller is limited by hardware to erase whole
+      blocks of flash at a time. This propery describes the layout of
+      the erase-blocks, which can vary in size within the flash memory
+      area.

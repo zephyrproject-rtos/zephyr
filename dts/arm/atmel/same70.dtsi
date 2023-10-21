@@ -71,14 +71,13 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			#erase-block-cells = <2>;
 
 			flash0: flash@400000 {
-				compatible = "soc-nv-flash";
-
+				compatible = "atmel,sam-flash", "soc-nv-flash";
 				write-block-size = <16>;
 				erase-block-size = <8192>;
 			};
-
 		};
 
 		wdt: watchdog@400e1850 {
