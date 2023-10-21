@@ -26,5 +26,11 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 		};
+
+		systick: systick@e000f000 {
+			compatible = "wch,ch32v-v3-systick";
+			reg = <0xe000f000 0x14>;
+			interrupts = <12 0>;
+		};
 	};
 };

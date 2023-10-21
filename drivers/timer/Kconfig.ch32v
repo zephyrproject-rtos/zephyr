@@ -1,0 +1,10 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config CH32V_V3_SYSTICK
+	bool "WCH CH32V V3 SysTick"
+	default y
+	depends on DT_HAS_WCH_CH32V_V3_SYSTICK_ENABLED
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  Enable WCH CH32V V3 SysTick driver.
