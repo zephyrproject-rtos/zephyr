@@ -496,6 +496,7 @@
 /drivers/timer/*rv32m1_lptmr*             @mbolivar
 /drivers/timer/*nrf_rtc*                  @anangl
 /drivers/timer/*hpet*                     @dcpleung
+/drivers/timer/*ch32v*                    @xingrz
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/usb_c/                           @sambhurst
