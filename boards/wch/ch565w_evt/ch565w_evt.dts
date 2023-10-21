@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <wch/ch56x/ch565w.dtsi>
+#include <wch/ch56x/ch565w-pinctrl.dtsi>
+
+/ {
+	model = "WCH CH565W-EVT";
+	compatible = "wch,ch565w-evt";
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		led2 = &led_2;
+	};
+
+	chosen {
+		zephyr,sram = &rams;
+		zephyr,flash = &flash;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led-0 {
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		led_1: led-1 {
+			gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led_2: led-2 {
+			gpios = <&gpiob 23 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};

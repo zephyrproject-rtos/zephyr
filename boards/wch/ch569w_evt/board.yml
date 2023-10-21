@@ -1,0 +1,5 @@
+board:
+  name: ch569w_evt
+  vendor: wch
+  socs:
+  - name: ch569

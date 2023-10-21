@@ -1,0 +1,13 @@
+identifier: ch565w_evt
+name: WCH CH565W-EVT
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+supported:
+  - clock-control
+  - gpio
+  - interrupt-controller
+  - pinctrl
+  - serial
+  - timer

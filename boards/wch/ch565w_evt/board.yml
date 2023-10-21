@@ -1,0 +1,5 @@
+board:
+  name: ch565w_evt
+  vendor: wch
+  socs:
+  - name: ch565

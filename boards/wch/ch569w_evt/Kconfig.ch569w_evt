@@ -1,0 +1,5 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH569W_EVT
+	select SOC_CH569
