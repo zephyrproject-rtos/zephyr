@@ -1,404 +1,456 @@
 /*
  * Copyright (c) 2018 Aurelien Jarno
+ * Copyright (c) 2023 Bjarki Arge Andreasen
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * This driver defines a page as the erase_block_size.
+ * This driver defines a write page as defined by the flash controller
+ * This driver defines a section as a contiguous array of bytes
+ * This driver defines an area as the entire flash area
+ * This driver defines the write block size as the minimum write block size
+ */
+
 #define DT_DRV_COMPAT atmel_sam_flash_controller
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
-#define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
-#define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
-
-#include <zephyr/device.h>
-#include <zephyr/drivers/flash.h>
-#include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/flash.h>
 #include <zephyr/sys/barrier.h>
-#include <soc.h>
 #include <string.h>
+#include <soc.h>
 
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(flash_sam0);
+LOG_MODULE_REGISTER(flash_sam, CONFIG_FLASH_LOG_LEVEL);
 
-/*
- * The SAM flash memories use very different granularity for writing,
- * erasing and locking. In addition the first sector is composed of two
- * 8-KiB small sectors with a minimum 512-byte erase size, while the
- * other sectors have a minimum 8-KiB erase size.
- *
- * For simplicity reasons this flash controller driver only addresses the
- * flash by 8-KiB blocks (called "pages" in the Zephyr terminology).
- */
+#define SAM_FLASH_WRITE_PAGE_SIZE (512)
 
-
-/*
- * We only use block mode erases. The datasheet gives a maximum erase time
- * of 200ms for a 8KiB block.
- */
-#define SAM_FLASH_TIMEOUT_MS 220
-#if defined(IFLASH0_PAGE_SIZE)
-#define IFLASH_PAGE_SIZE IFLASH0_PAGE_SIZE
-#endif
-
-struct flash_sam_dev_cfg {
+struct sam_flash_config {
 	Efc *regs;
+	off_t area_address;
+	off_t area_size;
+	struct flash_parameters parameters;
+	struct flash_pages_layout *pages_layouts;
+	size_t pages_layouts_size;
 };
 
-struct flash_sam_dev_data {
-	struct k_sem sem;
+struct sam_flash_erase_data {
+	off_t section_start;
+	size_t section_end;
+	bool succeeded;
 };
 
-static const struct flash_parameters flash_sam_parameters = {
-	.write_block_size = FLASH_WRITE_BLK_SZ,
-	.erase_value = 0xff,
+struct sam_flash_data {
+	const struct device *dev;
+	struct k_spinlock lock;
+	struct sam_flash_erase_data erase_data;
 };
 
-static int flash_sam_write_protection(const struct device *dev, bool enable);
-
-static inline void flash_sam_sem_take(const struct device *dev)
+static bool sam_flash_validate_offset_len(off_t offset, size_t len)
 {
-	struct flash_sam_dev_data *data = dev->data;
-
-	k_sem_take(&data->sem, K_FOREVER);
-}
-
-static inline void flash_sam_sem_give(const struct device *dev)
-{
-	struct flash_sam_dev_data *data = dev->data;
-
-	k_sem_give(&data->sem);
-}
-
-/* Check that the offset is within the flash */
-static bool flash_sam_valid_range(const struct device *dev, off_t offset,
-				  size_t len)
-{
-	if (offset > CONFIG_FLASH_SIZE * 1024) {
+	if (offset < 0) {
 		return false;
 	}
 
-	if (len && ((offset + len - 1) > (CONFIG_FLASH_SIZE * 1024))) {
+	if ((offset + len) < len) {
 		return false;
 	}
 
 	return true;
 }
 
-/* Convert an offset in the flash into a page number */
-static off_t flash_sam_get_page(off_t offset)
+static bool sam_flash_aligned(size_t value, size_t alignment)
 {
-	return offset / IFLASH_PAGE_SIZE;
+	return (value & (alignment - 1)) == 0;
 }
 
-/*
- * This function checks for errors and waits for the end of the
- * previous command.
- */
-static int flash_sam_wait_ready(const struct device *dev)
+static bool sam_flash_offset_is_on_write_page_boundary(off_t offset)
 {
-	const struct flash_sam_dev_cfg *config = dev->config;
+	return (sam_flash_aligned(offset, SAM_FLASH_WRITE_PAGE_SIZE));
+}
 
-	Efc * const efc = config->regs;
+static int sam_flash_section_wait_until_ready(const struct device *dev)
+{
+	const struct sam_flash_config *config = dev->config;
+	Efc *regs = config->regs;
 
-	uint64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
-	uint32_t fsr;
+	while (!(regs->EEFC_FSR & EEFC_FSR_FRDY)) {
+		k_msleep(20);
+	}
 
-	do {
-		fsr = efc->EEFC_FSR;
+	if (regs->EEFC_FSR & EEFC_FSR_FCMDE) {
+		LOG_ERR("Invalid command requested");
+		return -EPERM;
+	}
 
-		/* Flash Error Status */
-		if (fsr & EEFC_FSR_FLERR) {
-			return -EIO;
-		}
-		/* Flash Lock Error Status */
-		if (fsr & EEFC_FSR_FLOCKE) {
-			return -EACCES;
-		}
-		/* Flash Command Error */
-		if (fsr & EEFC_FSR_FCMDE) {
-			return -EINVAL;
-		}
+	if (regs->EEFC_FSR & EEFC_FSR_FLOCKE) {
+		LOG_ERR("Tried to modify locked region");
+		return -EPERM;
+	}
 
-		/*
-		 * ECC error bits are intentionally not checked as they
-		 * might be set outside of the programming code.
-		 */
-
-		/* Check for timeout */
-		if (k_uptime_get() > timeout_time) {
-			return -ETIMEDOUT;
-		}
-	} while (!(fsr & EEFC_FSR_FRDY));
+	if (regs->EEFC_FSR & EEFC_FSR_FLERR) {
+		LOG_ERR("Programming failed");
+		return -EPERM;
+	}
 
 	return 0;
 }
 
-/* This function writes a single page, either fully or partially. */
-static int flash_sam_write_page(const struct device *dev, off_t offset,
-				const void *data, size_t len)
+static bool sam_flash_section_is_within_area(const struct device *dev, off_t offset, size_t len)
 {
-	const struct flash_sam_dev_cfg *config = dev->config;
+	const struct sam_flash_config *config = dev->config;
 
-	Efc * const efc = config->regs;
-	const uint32_t *src = data;
-	uint32_t *dst = (uint32_t *)((uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
-
-	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
-
-	/* We need to copy the data using 32-bit accesses */
-	for (; len > 0; len -= sizeof(*src)) {
-		*dst++ = *src++;
-		/* Assure data are written to the latch buffer consecutively */
-		barrier_dsync_fence_full();
+	if ((offset + ((off_t)len)) < offset) {
+		return false;
 	}
 
-	/* Trigger the flash write */
-	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |
-			EEFC_FCR_FARG(flash_sam_get_page(offset)) |
-			EEFC_FCR_FCMD_WP;
-	barrier_dsync_fence_full();
+	if ((offset >= 0) && ((offset + len) <= config->area_size)) {
+		return true;
+	}
 
-	/* Wait for the flash write to finish */
-	return flash_sam_wait_ready(dev);
+	return false;
 }
 
-/* Write data to the flash, page by page */
-static int flash_sam_write(const struct device *dev, off_t offset,
-			    const void *data, size_t len)
+static bool sam_flash_section_is_aligned_with_write_block_size(const struct device *dev,
+							       off_t offset, size_t len)
 {
-	int rc;
-	const uint8_t *data8 = data;
+	const struct sam_flash_config *config = dev->config;
 
-	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
+	return sam_flash_aligned(offset, config->parameters.write_block_size) &&
+	       sam_flash_aligned(len, config->parameters.write_block_size);
+}
 
-	/* Check that the offset is within the flash */
-	if (!flash_sam_valid_range(dev, offset, len)) {
-		return -EINVAL;
+static bool sam_flash_section_is_aligned_with_pages(const struct device *dev, off_t offset,
+						    size_t len)
+{
+	const struct sam_flash_config *config = dev->config;
+	struct flash_pages_info pages_info;
+
+	/* Get the page offset points to */
+	if (flash_get_page_info_by_offs(dev, offset, &pages_info) < 0) {
+		return false;
 	}
 
-	if (!len) {
+	/* Validate offset points to start of page */
+	if (offset != pages_info.start_offset) {
+		return false;
+	}
+
+	/* Check if end of section is aligned with end of area */
+	if ((offset + len) == (config->area_size)) {
+		return true;
+	}
+
+	/* Get the page pointed to by end of section */
+	if (flash_get_page_info_by_offs(dev, offset + len, &pages_info) < 0) {
+		return false;
+	}
+
+	/* Validate offset points to start of page */
+	if ((offset + len) != pages_info.start_offset) {
+		return false;
+	}
+
+	return true;
+}
+
+static int sam_flash_read(const struct device *dev, off_t offset, void *data, size_t len)
+{
+	struct sam_flash_data *sam_data = dev->data;
+	const struct sam_flash_config *sam_config = dev->config;
+	k_spinlock_key_t key;
+
+	if (len == 0) {
 		return 0;
 	}
 
-	/*
-	 * Check that the offset and length are multiples of the write
-	 * block size.
-	 */
-	if ((offset % FLASH_WRITE_BLK_SZ) != 0) {
-		return -EINVAL;
-	}
-	if ((len % FLASH_WRITE_BLK_SZ) != 0) {
+	if (!sam_flash_validate_offset_len(offset, len)) {
 		return -EINVAL;
 	}
 
-	flash_sam_sem_take(dev);
-
-	rc = flash_sam_write_protection(dev, false);
-	if (rc >= 0) {
-		rc = flash_sam_wait_ready(dev);
+	if (!sam_flash_section_is_within_area(dev, offset, len)) {
+		return -EINVAL;
 	}
 
-	if (rc >= 0) {
-		while (len > 0) {
-			size_t eop_len, write_len;
+	key = k_spin_lock(&sam_data->lock);
+	memcpy(data, (uint8_t *)(sam_config->area_address + offset), len);
+	k_spin_unlock(&sam_data->lock, key);
+	return 0;
+}
 
-			/* Maximum size without crossing a page */
-			eop_len = -(offset | ~(IFLASH_PAGE_SIZE - 1));
-			write_len = MIN(len, eop_len);
+static int sam_flash_write_latch_buffer_to_page(const struct device *dev, off_t offset)
+{
+	const struct sam_flash_config *sam_config = dev->config;
+	Efc *regs = sam_config->regs;
+	uint32_t page = offset / SAM_FLASH_WRITE_PAGE_SIZE;
 
-			rc = flash_sam_write_page(dev, offset, data8, write_len);
-			if (rc < 0) {
-				break;
-			}
+	regs->EEFC_FCR = EEFC_FCR_FCMD_WP | EEFC_FCR_FARG(page) | EEFC_FCR_FKEY_PASSWD;
+	sam_flash_section_wait_until_ready(dev);
+	return 0;
+}
 
-			offset += write_len;
-			data8 += write_len;
-			len -= write_len;
+static int sam_flash_write_latch_buffer_to_previous_page(const struct device *dev, off_t offset)
+{
+	return sam_flash_write_latch_buffer_to_page(dev, offset - SAM_FLASH_WRITE_PAGE_SIZE);
+}
+
+static void sam_flash_write_dword_to_latch_buffer(off_t offset, uint32_t dword)
+{
+	*((uint32_t *)offset) = dword;
+	barrier_dsync_fence_full();
+}
+
+static int sam_flash_write_dwords_to_flash(const struct device *dev, off_t offset,
+					   const uint32_t *dwords, size_t size)
+{
+	for (size_t i = 0; i < size; i++) {
+		sam_flash_write_dword_to_latch_buffer(offset, dwords[i]);
+		offset += sizeof(uint32_t);
+		if (sam_flash_offset_is_on_write_page_boundary(offset)) {
+			sam_flash_write_latch_buffer_to_previous_page(dev, offset);
 		}
 	}
 
-	int rc2 = flash_sam_write_protection(dev, true);
-
-	if (!rc) {
-		rc = rc2;
+	if (!sam_flash_offset_is_on_write_page_boundary(offset)) {
+		sam_flash_write_latch_buffer_to_page(dev, offset);
 	}
-
-	flash_sam_sem_give(dev);
-
-	return rc;
-}
-
-/* Read data from flash */
-static int flash_sam_read(const struct device *dev, off_t offset, void *data,
-			  size_t len)
-{
-	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
-
-	if (!flash_sam_valid_range(dev, offset, len)) {
-		return -EINVAL;
-	}
-
-	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }
 
-/* Erase a single 8KiB block */
-static int flash_sam_erase_block(const struct device *dev, off_t offset)
+static int sam_flash_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
-	const struct flash_sam_dev_cfg *config = dev->config;
+	struct sam_flash_data *sam_data = dev->data;
+	k_spinlock_key_t key;
 
-	Efc * const efc = config->regs;
-
-	LOG_DBG("offset = 0x%lx", (long)offset);
-
-	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |
-			EEFC_FCR_FARG(flash_sam_get_page(offset) | 2) |
-			EEFC_FCR_FCMD_EPA;
-	barrier_dsync_fence_full();
-
-	return flash_sam_wait_ready(dev);
-}
-
-/* Erase multiple blocks */
-static int flash_sam_erase(const struct device *dev, off_t offset, size_t len)
-{
-	int rc = 0;
-	off_t i;
-
-	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
-
-	if (!flash_sam_valid_range(dev, offset, len)) {
-		return -EINVAL;
-	}
-
-	if (!len) {
+	if (len == 0) {
 		return 0;
 	}
 
-	/*
-	 * Check that the offset and length are multiples of the write
-	 * erase block size.
-	 */
-	if ((offset % FLASH_ERASE_BLK_SZ) != 0) {
-		return -EINVAL;
-	}
-	if ((len % FLASH_ERASE_BLK_SZ) != 0) {
+	if (!sam_flash_validate_offset_len(offset, len)) {
 		return -EINVAL;
 	}
 
-	flash_sam_sem_take(dev);
+	if (!sam_flash_section_is_aligned_with_write_block_size(dev, offset, len)) {
+		return -EINVAL;
+	}
 
-	rc = flash_sam_write_protection(dev, false);
-	if (rc >= 0) {
-		/* Loop through the pages to erase */
-		for (i = offset; i < offset + len; i += FLASH_ERASE_BLK_SZ) {
-			rc = flash_sam_erase_block(dev, i);
-			if (rc < 0) {
-				break;
-			}
+	key = k_spin_lock(&sam_data->lock);
+	if (sam_flash_write_dwords_to_flash(dev, offset, data, len / sizeof(uint32_t)) < 0) {
+		k_spin_unlock(&sam_data->lock, key);
+		return -EAGAIN;
+	}
+
+	k_spin_unlock(&sam_data->lock, key);
+	return 0;
+}
+
+static int sam_flash_unlock_write_page(const struct device *dev, uint16_t page_index)
+{
+	const struct sam_flash_config *sam_config = dev->config;
+	Efc *regs = sam_config->regs;
+
+	/* Perform unlock command of write page */
+	regs->EEFC_FCR = EEFC_FCR_FCMD_CLB
+		       | EEFC_FCR_FARG(page_index)
+		       | EEFC_FCR_FKEY_PASSWD;
+
+	return sam_flash_section_wait_until_ready(dev);
+}
+
+static int sam_flash_unlock_page(const struct device *dev, const struct flash_pages_info *info)
+{
+	uint16_t page_index_start;
+	uint16_t page_index_end;
+	int ret;
+
+	/* Convert from page offset and size to write page index and count */
+	page_index_start = info->start_offset / SAM_FLASH_WRITE_PAGE_SIZE;
+	page_index_end = page_index_start + (info->size / SAM_FLASH_WRITE_PAGE_SIZE);
+
+	for (uint16_t i = page_index_start; i < page_index_end; i++) {
+		ret = sam_flash_unlock_write_page(dev, i);
+		if (ret < 0) {
+			return ret;
 		}
 	}
-
-	int rc2 = flash_sam_write_protection(dev, true);
-
-	if (!rc) {
-		rc = rc2;
-	}
-
-	flash_sam_sem_give(dev);
-
-	/*
-	 * Invalidate the cache addresses corresponding to the erased blocks,
-	 * so that they really appear as erased.
-	 */
-#ifdef __DCACHE_PRESENT
-	SCB_InvalidateDCache_by_Addr((void *)(CONFIG_FLASH_BASE_ADDRESS + offset), len);
-#endif
-
-	return rc;
-}
-
-/* Enable or disable the write protection */
-static int flash_sam_write_protection(const struct device *dev, bool enable)
-{
-#if defined(EFC_6450)
-	const struct flash_sam_dev_cfg *config = dev->config;
-	Efc *const efc = config->regs;
-#endif
-	int rc = 0;
-
-	if (enable) {
-		rc = flash_sam_wait_ready(dev);
-		if (rc < 0) {
-			goto done;
-		}
-#if defined(EFC_6450)
-		efc->EEFC_WPMR = EEFC_WPMR_WPKEY_PASSWD | EEFC_WPMR_WPEN;
-	} else {
-		efc->EEFC_WPMR = EEFC_WPMR_WPKEY_PASSWD;
-#endif
-	}
-
-done:
-	return rc;
-}
-
-#if CONFIG_FLASH_PAGE_LAYOUT
-/*
- * The notion of pages is different in Zephyr and in the SAM documentation.
- * Here a page refers to the granularity at which the flash can be erased.
- */
-static const struct flash_pages_layout flash_sam_pages_layout = {
-	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) / FLASH_ERASE_BLK_SZ,
-	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
-};
-
-void flash_sam_page_layout(const struct device *dev,
-			   const struct flash_pages_layout **layout,
-			   size_t *layout_size)
-{
-	*layout = &flash_sam_pages_layout;
-	*layout_size = 1;
-}
-#endif
-
-static const struct flash_parameters *
-flash_sam_get_parameters(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return &flash_sam_parameters;
-}
-
-static int flash_sam_init(const struct device *dev)
-{
-	struct flash_sam_dev_data *const data = dev->data;
-
-	k_sem_init(&data->sem, 1, 1);
 
 	return 0;
 }
 
-static const struct flash_driver_api flash_sam_api = {
-	.erase = flash_sam_erase,
-	.write = flash_sam_write,
-	.read = flash_sam_read,
-	.get_parameters = flash_sam_get_parameters,
-#ifdef CONFIG_FLASH_PAGE_LAYOUT
-	.page_layout = flash_sam_page_layout,
-#endif
+static int sam_flash_erase_page(const struct device *dev, const struct flash_pages_info *info)
+{
+	const struct sam_flash_config *sam_config = dev->config;
+	Efc *regs = sam_config->regs;
+	uint32_t page_index;
+
+	/* Convert from page offset to write page index */
+	page_index = info->start_offset / SAM_FLASH_WRITE_PAGE_SIZE;
+
+	/* Perform erase command of page */
+	switch (info->size) {
+	case 0x800:
+		regs->EEFC_FCR = EEFC_FCR_FCMD_EPA
+			       | EEFC_FCR_FARG(page_index)
+			       | EEFC_FCR_FKEY_PASSWD;
+		break;
+
+	case 0x1000:
+		regs->EEFC_FCR = EEFC_FCR_FCMD_EPA
+			       | EEFC_FCR_FARG(page_index | 1)
+			       | EEFC_FCR_FKEY_PASSWD;
+		break;
+
+	case 0x2000:
+		regs->EEFC_FCR = EEFC_FCR_FCMD_EPA
+			       | EEFC_FCR_FARG(page_index | 2)
+			       | EEFC_FCR_FKEY_PASSWD;
+		break;
+
+	case 0x4000:
+		regs->EEFC_FCR = EEFC_FCR_FCMD_EPA
+			       | EEFC_FCR_FARG(page_index | 3)
+			       | EEFC_FCR_FKEY_PASSWD;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return sam_flash_section_wait_until_ready(dev);
+}
+
+static bool sam_flash_erase_foreach_page(const struct flash_pages_info *info, void *data)
+{
+	struct sam_flash_data *sam_data = data;
+	const struct device *dev = sam_data->dev;
+	struct sam_flash_erase_data *erase_data = &sam_data->erase_data;
+
+	/* Validate we reached first page to erase */
+	if (info->start_offset < erase_data->section_start) {
+		/* Next page */
+		return true;
+	}
+
+	/* Check if we've reached the end of pages to erase */
+	if (info->start_offset >= erase_data->section_end) {
+		/* Succeeded, stop iterating */
+		erase_data->succeeded = true;
+		return false;
+	}
+
+	if (sam_flash_unlock_page(dev, info) < 0) {
+		/* Failed to unlock page, stop iterating */
+		return false;
+	}
+
+	if (sam_flash_erase_page(dev, info) < 0) {
+		/* Failed to erase page, stop iterating */
+		return false;
+	}
+
+	/* Next page */
+	return true;
+}
+
+static int sam_flash_erase(const struct device *dev, off_t offset, size_t size)
+{
+	struct sam_flash_data *sam_data = dev->data;
+	k_spinlock_key_t key;
+
+	if (size == 0) {
+		return 0;
+	}
+
+	if (!sam_flash_validate_offset_len(offset, size)) {
+		return -EINVAL;
+	}
+
+	if (!sam_flash_section_is_aligned_with_pages(dev, offset, size)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&sam_data->lock);
+	sam_data->erase_data.section_start = offset;
+	sam_data->erase_data.section_end = offset + size;
+	sam_data->erase_data.succeeded = false;
+	flash_page_foreach(dev, sam_flash_erase_foreach_page, sam_data);
+	if (!sam_data->erase_data.succeeded) {
+		k_spin_unlock(&sam_data->lock, key);
+		return -EFAULT;
+	}
+
+	k_spin_unlock(&sam_data->lock, key);
+	return 0;
+}
+
+static const struct flash_parameters *sam_flash_get_parameters(const struct device *dev)
+{
+	const struct sam_flash_config *config = dev->config;
+
+	return &config->parameters;
+}
+
+static void sam_flash_api_pages_layout(const struct device *dev,
+				       const struct flash_pages_layout **layout,
+				       size_t *layout_size)
+{
+	const struct sam_flash_config *config = dev->config;
+
+	*layout = config->pages_layouts;
+	*layout_size = config->pages_layouts_size;
+}
+
+static struct flash_driver_api sam_flash_api = {
+	.read = sam_flash_read,
+	.write = sam_flash_write,
+	.erase = sam_flash_erase,
+	.get_parameters = sam_flash_get_parameters,
+	.page_layout = sam_flash_api_pages_layout,
 };
 
-static const struct flash_sam_dev_cfg flash_sam_cfg = {
-	.regs = (Efc *)DT_INST_REG_ADDR(0),
-};
+static int sam_flash_init(const struct device *dev)
+{
+	struct sam_flash_data *sam_data = dev->data;
 
-static struct flash_sam_dev_data flash_sam_data;
+	sam_data->dev = dev;
+	return 0;
+}
 
-DEVICE_DT_INST_DEFINE(0, flash_sam_init, NULL,
-		    &flash_sam_data, &flash_sam_cfg,
-		    POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		    &flash_sam_api);
+#define SAM_FLASH_DEVICE DT_INST(0, atmel_sam_flash)
+
+#define SAM_FLASH_PAGES_LAYOUT(node_id, prop, idx)						\
+	{											\
+		.pages_count = DT_PHA_BY_IDX(node_id, prop, idx, pages_count),			\
+		.pages_size = DT_PHA_BY_IDX(node_id, prop, idx, pages_size),			\
+	}
+
+#define SAM_FLASH_PAGES_LAYOUTS									\
+	DT_FOREACH_PROP_ELEM_SEP(SAM_FLASH_DEVICE, erase_blocks, SAM_FLASH_PAGES_LAYOUT, (,))
+
+#define SAM_FLASH_CONTROLLER(inst)								\
+	struct flash_pages_layout sam_flash_pages_layouts##inst[] = {				\
+		SAM_FLASH_PAGES_LAYOUTS								\
+	};											\
+												\
+	static const struct sam_flash_config sam_flash_config##inst = {				\
+		.regs = (Efc *)DT_INST_REG_ADDR(inst),						\
+		.area_address = DT_REG_ADDR(SAM_FLASH_DEVICE),					\
+		.area_size = DT_REG_SIZE(SAM_FLASH_DEVICE),					\
+		.parameters = {									\
+			.write_block_size = DT_PROP(SAM_FLASH_DEVICE, write_block_size),	\
+			.erase_value = 0xFF,							\
+		},										\
+		.pages_layouts = sam_flash_pages_layouts##inst,					\
+		.pages_layouts_size = ARRAY_SIZE(sam_flash_pages_layouts##inst),		\
+	};											\
+												\
+	static struct sam_flash_data sam_flash_data##inst;					\
+												\
+	DEVICE_DT_INST_DEFINE(inst, sam_flash_init, NULL, &sam_flash_data##inst,		\
+			      &sam_flash_config##inst, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,	\
+			      &sam_flash_api);
+
+SAM_FLASH_CONTROLLER(0)
