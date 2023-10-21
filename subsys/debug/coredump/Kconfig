@@ -9,7 +9,7 @@ menuconfig DEBUG_COREDUMP
 
 if DEBUG_COREDUMP
 
-choice
+choice DEBUG_COREDUMP_BACKEND
 	prompt "Coredump backend"
 	default DEBUG_COREDUMP_BACKEND_LOGGING if LOG
 
@@ -42,7 +42,7 @@ config DEBUG_COREDUMP_BACKEND_OTHER
 
 endchoice
 
-choice
+choice DEBUG_COREDUMP_MEMORY_DUMP
 	prompt "Memory dump"
 	default DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 
