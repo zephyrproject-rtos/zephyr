@@ -407,8 +407,17 @@ static int start_read(const struct device *dev,
 	const struct device* adc_dev = DEVICE_DT_GET(DT_NODELABEL(adc1));
 
 	if (dev == adc_dev) {
-		// ADC1 is setup using DMA instead of buffer
-		;
+		// ADC1 can be used both in manual read, as well as DMA mode
+		// 1. If sequence contains a buffer of size 1, it's a manual read
+		error = check_buffer_size(sequence, 1);
+		if (error == 0) {
+			data->buffer = sequence->buffer;
+			data->repeat_buffer = sequence->buffer;
+		}
+		// 2. If sequence contains a buffer of size > 1, it's a DMA read
+		else {
+			;
+		}
 	}
 	else {
 		error = check_buffer_size(sequence, 1);
