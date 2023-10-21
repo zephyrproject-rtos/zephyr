@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
 
-const char * const wifi_security_txt(enum wifi_security_type security)
+const char *wifi_security_txt(enum wifi_security_type security)
 {
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
@@ -42,7 +42,7 @@ const char * const wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
-const char * const wifi_mfp_txt(enum wifi_mfp_options mfp)
+const char *wifi_mfp_txt(enum wifi_mfp_options mfp)
 {
 	switch (mfp) {
 	case WIFI_MFP_DISABLE:
@@ -57,7 +57,7 @@ const char * const wifi_mfp_txt(enum wifi_mfp_options mfp)
 	}
 }
 
-const char * const wifi_band_txt(enum wifi_frequency_bands band)
+const char *wifi_band_txt(enum wifi_frequency_bands band)
 {
 	switch (band) {
 	case WIFI_FREQ_BAND_2_4_GHZ:
@@ -72,7 +72,7 @@ const char * const wifi_band_txt(enum wifi_frequency_bands band)
 	}
 }
 
-const char * const wifi_state_txt(enum wifi_iface_state state)
+const char *wifi_state_txt(enum wifi_iface_state state)
 {
 	switch (state) {
 	case WIFI_STATE_DISCONNECTED:
@@ -101,7 +101,7 @@ const char * const wifi_state_txt(enum wifi_iface_state state)
 	}
 }
 
-const char * const wifi_mode_txt(enum wifi_iface_mode mode)
+const char *wifi_mode_txt(enum wifi_iface_mode mode)
 {
 	switch (mode) {
 	case WIFI_MODE_INFRA:
@@ -122,7 +122,7 @@ const char * const wifi_mode_txt(enum wifi_iface_mode mode)
 	}
 }
 
-const char * const wifi_link_mode_txt(enum wifi_link_mode link_mode)
+const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 {
 	switch (link_mode) {
 	case WIFI_0:
@@ -149,7 +149,7 @@ const char * const wifi_link_mode_txt(enum wifi_link_mode link_mode)
 	}
 }
 
-const char * const wifi_ps_txt(enum wifi_ps ps_name)
+const char *wifi_ps_txt(enum wifi_ps ps_name)
 {
 	switch (ps_name) {
 	case WIFI_PS_DISABLED:
@@ -161,7 +161,7 @@ const char * const wifi_ps_txt(enum wifi_ps ps_name)
 	}
 }
 
-const char * const wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
+const char *wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
 {
 	switch (ps_mode) {
 	case WIFI_PS_MODE_LEGACY:
@@ -173,7 +173,7 @@ const char * const wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
 	}
 }
 
-const char * const wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
+const char *wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
 {
 	switch (twt_operation) {
 	case WIFI_TWT_SETUP:
@@ -185,7 +185,7 @@ const char * const wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
 	}
 }
 
-const char * const wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation)
+const char *wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation)
 {
 	switch (twt_negotiation) {
 	case WIFI_TWT_INDIVIDUAL:
@@ -199,7 +199,7 @@ const char * const wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type 
 	}
 }
 
-const char * const wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
+const char *wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
 {
 	switch (twt_setup) {
 	case WIFI_TWT_SETUP_CMD_REQUEST:
@@ -223,7 +223,7 @@ const char * const wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
 	}
 }
 
-const char * const wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
+const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
 {
 	switch (ps_wakeup_mode) {
 	case WIFI_PS_WAKEUP_MODE_DTIM:
