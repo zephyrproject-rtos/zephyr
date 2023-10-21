@@ -361,6 +361,7 @@
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
 /drivers/interrupt_controller/*esp32*     @sylvioalves
 /drivers/interrupt_controller/intc_nuclei_eclic.c  @soburi
+/drivers/interrupt_controller/*ch32v*     @xingrz
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic
@@ -652,6 +653,7 @@
 /include/zephyr/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/zephyr/drivers/interrupt_controller/    @dcpleung @nashif
 /include/zephyr/drivers/interrupt_controller/gic.h @stephanosio
+/include/zephyr/drivers/interrupt_controller/intc_ch32v_pfic.h @xingrz
 /include/zephyr/drivers/modem/hl7800.h           @rerickson1
 /include/zephyr/drivers/pcie/                    @dcpleung
 /include/zephyr/drivers/hwinfo.h                 @alexanderwachter
