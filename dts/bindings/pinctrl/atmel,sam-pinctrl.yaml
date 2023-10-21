@@ -1,6 +1,6 @@
 # Copyright (c) 2020, Linaro Limited
 # Copyright (c) 2021, Teslabs Engineering S.L.
-# Copyright (c) 2021-2022, Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2021-2023, Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -43,6 +43,26 @@ description: |
           bias-pull-up;
         };
       };
+      wakeup_source0_default: wakeup_source0_default {
+        /* group 1 */
+        group1 {
+          /* configure PA0 as WAKE-UP source for the the core power supply */
+          pinmux = <PA0X_SUPC_WKUP0>;
+          /* The pull-down instructs to SUPC to detect a wake-up event at PA0
+           * rising edge followed by a high level.
+           */
+          bias-pull-down;
+        };
+        /* group 2 */
+        group2 {
+          /* configure PA1 as WAKE-UP source for the the core power supply */
+          pinmux = <PA1X_SUPC_WKUP1>;
+          /* The pull-down instructs to SUPC to detect a wake-up event at PA1
+           * falling edge followed by a low level.
+           */
+          bias-pull-up;
+        };
+      };
     };
 
   The 'usart0_default' child node encodes the pin configurations for a
@@ -70,6 +90,10 @@ description: |
           pinctrl-0 = <&usart0_default>;
           pinctrl-names = "default";
     };
+
+  The 'wakeup_source0_default' child node shows how the bias-pull-up/down can
+  be used to select the wake-up type when selecting that specific pin function.
+  It is mandatory add the bias-pull-up/down to have correct behavior.
 
 compatible: "atmel,sam-pinctrl"
 
