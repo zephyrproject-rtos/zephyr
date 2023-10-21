@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2023 Bjarki Arge Andreasen
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -29,4 +31,23 @@ void soc_supc_enable_wakeup_source(uint32_t wakeup_source_id)
 		 "Wakeup source channel is invalid");
 
 	SUPC->SUPC_WUMR |= 1 << wakeup_source_id;
+}
+
+void soc_supc_enable_wakeup_pin_source(uint32_t wkup_src,
+				       enum soc_supc_pin_wkup_type wkup_type)
+{
+	uint32_t wuir_high = 1 << (wkup_src + 0x10U);
+
+	SUPC->SUPC_WUIR |= 1 << wkup_src;
+
+	if (wkup_type == SOC_SUPC_PIN_WKUP_TYPE_HIGH) {
+		SUPC->SUPC_WUIR |= wuir_high;
+	} else {
+		SUPC->SUPC_WUIR &= ~wuir_high;
+	}
+}
+
+void soc_supc_disable_wakeup_pin_source(uint32_t wkup_src)
+{
+	SUPC->SUPC_WUIR &= ~(1 << wkup_src);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,7 +87,9 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define SAM_PINCTRL_PULLDOWN            (1U << SAM_PINCTRL_PULLDOWN_POS)
 #define SAM_PINCTRL_OPENDRAIN_POS       (SAM_PINCTRL_PULLDOWN_POS + 1U)
 #define SAM_PINCTRL_OPENDRAIN           (1U << SAM_PINCTRL_OPENDRAIN_POS)
-#define SAM_PINCTRL_INPUTENABLE_POS     (SAM_PINCTRL_OPENDRAIN_POS + 1U)
+#define SAM_PINCTRL_WAKEUP_POS          (SAM_PINCTRL_OPENDRAIN_POS + 1U)
+#define SAM_PINCTRL_WAKEUP              (1U << SAM_PINCTRL_WAKEUP_POS)
+#define SAM_PINCTRL_INPUTENABLE_POS     (SAM_PINCTRL_WAKEUP_POS + 1U)
 #define SAM_PINCTRL_INPUTENABLE         (1U << SAM_PINCTRL_INPUTENABLE_POS)
 #define SAM_PINCTRL_OUTPUTENABLE_POS    (SAM_PINCTRL_INPUTENABLE_POS + 1U)
 #define SAM_PINCTRL_OUTPUTENABLE        (1U << SAM_PINCTRL_OUTPUTENABLE_POS)

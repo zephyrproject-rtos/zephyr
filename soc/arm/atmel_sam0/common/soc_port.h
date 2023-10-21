@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016-2017 Piotr Mienkowski
- * Copyright (c) 2020-2022 Gerson Fernando Budke
+ * Copyright (c) 2020-2023 Gerson Fernando Budke
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,15 +20,19 @@
 #define SOC_PORT_DEFAULT                (0)
 
 #define SOC_PORT_FLAGS_POS              (0)
-#define SOC_PORT_FLAGS_MASK             (0x7B << SOC_PORT_FLAGS_POS)
+#define SOC_PORT_FLAGS_MASK             (0xF3 << SOC_PORT_FLAGS_POS)
 #define SOC_PORT_PULLUP_POS             (SOC_PORT_FLAGS_POS)
 #define SOC_PORT_PULLUP                 (1 << SOC_PORT_PULLUP_POS)
 #define SOC_PORT_PULLDOWN_POS           (SOC_PORT_PULLUP_POS + 1U)
 #define SOC_PORT_PULLDOWN               (1 << SOC_PORT_PULLDOWN_POS)
 /* Open-Drain is a reserved entry at pinctrl driver */
 #define SOC_GPIO_OPENDRAIN_POS          (SOC_PORT_PULLDOWN_POS + 1U)
+#define SOC_GPIO_OPENDRAIN		(0)
+/* Wake-Up is a reserved entry at pinctrl driver */
+#define SOC_GPIO_WAKEUP_POS             (SOC_GPIO_OPENDRAIN_POS + 1U)
+#define SOC_GPIO_WAKEUP			(0)
 /* Input-Enable means Input-Buffer, see dts/pinctrl/pincfg-node.yaml */
-#define SOC_PORT_INPUT_ENABLE_POS       (SOC_GPIO_OPENDRAIN_POS + 1U)
+#define SOC_PORT_INPUT_ENABLE_POS       (SOC_GPIO_WAKEUP_POS + 1U)
 #define SOC_PORT_INPUT_ENABLE           (1 << SOC_PORT_INPUT_ENABLE_POS)
 /* Output-Enable, see dts/pinctrl/pincfg-node.yaml */
 #define SOC_PORT_OUTPUT_ENABLE_POS      (SOC_PORT_INPUT_ENABLE_POS + 1U)

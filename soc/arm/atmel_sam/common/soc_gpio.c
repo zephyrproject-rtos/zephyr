@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +12,7 @@
 
 #include <zephyr/sys/__assert.h>
 #include "soc_gpio.h"
+#include "soc_supc.h"
 
 /*
  * There exist minor differences between SAM MCU family members in naming
@@ -119,7 +122,17 @@ void soc_gpio_configure(const struct soc_gpio_pin *pin)
 	Pio *pio = pin->regs;
 	uint8_t periph_id = pin->periph_id;
 	uint32_t flags = pin->flags;
-	uint32_t type = pin->flags & SOC_GPIO_FUNC_MASK;
+	uint32_t type;
+	uint32_t wkup_src;
+	enum soc_supc_pin_wkup_type wkup_type;
+
+	/* SOC_GPIO_FUNC can transport 2 type of values:
+	 * 1) Wake-Up: it will be the GPIO Input Sources WKUPx
+	 * 2) GPIO: it will be the GPIO Function A-n or Input/Output selection
+	 */
+	type = (pin->flags & SOC_GPIO_WAKEUP)
+	     ? SOC_GPIO_FUNC_WAKEUP
+	     : pin->flags & SOC_GPIO_FUNC_MASK;
 
 	/* Configure pin attributes common to all functions */
 	configure_common_attr(pio, mask, flags);
@@ -163,6 +176,15 @@ void soc_gpio_configure(const struct soc_gpio_pin *pin)
 		break;
 #endif
 
+#ifndef CONFIG_SOC_SERIES_SAM4L
+	case SOC_GPIO_FUNC_WAKEUP:
+		wkup_src = (pin->flags & SOC_GPIO_FUNC_MASK)
+			>> SOC_GPIO_FUNC_POS;
+		wkup_type = (flags & SOC_GPIO_PULLDOWN)
+			  ? SOC_SUPC_PIN_WKUP_TYPE_HIGH
+			  : SOC_SUPC_PIN_WKUP_TYPE_LOW;
+		soc_supc_enable_wakeup_pin_source(wkup_src, wkup_type);
+#endif
 	case SOC_GPIO_FUNC_IN:
 		/* Enable module's clock */
 		soc_pmc_peripheral_enable(periph_id);

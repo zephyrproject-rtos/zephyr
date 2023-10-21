@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,10 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	if (port_func == SAM_PINMUX_FUNC_periph) {
 		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
 				  << SOC_GPIO_FUNC_POS);
+	} else if (port_func == SAM_PINMUX_FUNC_wakeup) {
+		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
+				  << SOC_GPIO_FUNC_POS)
+				 | SAM_PINCTRL_WAKEUP;
 	}
 
 	soc_gpio_configure(&soc_pin);
