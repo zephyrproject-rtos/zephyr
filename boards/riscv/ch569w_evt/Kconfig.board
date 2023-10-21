@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH569W_EVT
+	bool "WCH CH569W-EVT"
+	depends on SOC_CH569

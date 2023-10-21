@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CH569W_EVT
+
+config BOARD
+	default "ch569w_evt"
+
+endif # BOARD_CH569W_EVT
