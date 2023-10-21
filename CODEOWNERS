@@ -701,6 +701,7 @@
 /include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/zephyr/dt-bindings/interrupt-controller/ch32v* @xingrz
+/include/zephyr/dt-bindings/interrupt-controller/ch56x* @xingrz
 /include/zephyr/dt-bindings/pcie/                @dcpleung
 /include/zephyr/dt-bindings/pinctrl/esp*         @sylvioalves
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang

@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH56X
+
+config RISCV_WFI_ON_CPU_IDLE
+	default n
+
+config NUM_IRQS
+	int
+	default 256
+
+endif # SOC_CH56X
