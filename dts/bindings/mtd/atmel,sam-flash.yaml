@@ -112,6 +112,6 @@ properties:
     required: true
     description: |
       The flash controller is limited by hardware to erase whole
-      blocks of flash at a time. This propery describes the layout of
+      blocks of flash at a time. This property describes the layout of
       the erase-blocks, which can vary in size within the flash memory
       area.
