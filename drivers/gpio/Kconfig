@@ -20,6 +20,15 @@ config GPIO_SHELL
 	help
 	  Enable GPIO Shell for testing.
 
+config GPIO_SHELL_INFO_CMD
+	bool "GPIO Shell info command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell information command.
+	  This command provides a shell user extra information about gpio
+	  controller reserved pins and line names.
+
 config GPIO_INIT_PRIORITY
 	int "GPIO init priority"
 	default KERNEL_INIT_PRIORITY_DEFAULT

@@ -36,7 +36,6 @@ struct sh_gpio {
 	const struct device *dev;
 	gpio_pin_t pin;
 };
-
 /*
  * Find idx-th pin reference from the set of non reserved
  * pin numbers and provided line names.
@@ -417,6 +416,149 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(sub_gpio_dev, device_name_get);
 
+struct pin_info {
+	const struct device *dev;
+	bool reserved;
+	gpio_pin_t pin;
+	const char *line_name;
+};
+
+struct pin_order_user_data {
+	const struct shell *sh;
+	struct pin_info prev;
+	struct pin_info next;
+};
+
+typedef void (*pin_foreach_func_t)(const struct pin_info *info, void *user_data);
+
+static void print_gpio_ctrl_info(const struct shell *sh, const struct gpio_ctrl *ctrl)
+{
+	gpio_pin_t pin;
+	bool reserved;
+
+	shell_print(sh, " ngpios: %u", ctrl->ngpios);
+	shell_print(sh, " Reserved pin mask: 0x%08X", ctrl->reserved_mask);
+
+	shell_print(sh, "");
+
+	shell_print(sh, " Reserved  Pin  Line Name");
+	for (pin = 0; pin < GPIO_MAX_PINS_PER_PORT; pin++) {
+		if ((pin >= ctrl->ngpios) && (pin >= ctrl->line_names_len)) {
+			/* Out of info */
+			break;
+		}
+		reserved = (BIT64(pin) & ctrl->reserved_mask) != 0;
+		shell_print(sh, "     %c     %2u    %s", reserved ? '*' : ' ',
+			    pin, ctrl->line_names[pin]);
+	}
+}
+
+static void foreach_pin(pin_foreach_func_t func, void *user_data)
+{
+	gpio_port_pins_t reserved_mask;
+	struct pin_info info;
+	gpio_pin_t pin;
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(gpio_list); i++) {
+		for (pin = 0; pin < gpio_list[i].ngpios; pin++) {
+			info.dev = gpio_list[i].dev;
+			reserved_mask = gpio_list[i].reserved_mask;
+			info.reserved = (BIT64(pin) & reserved_mask) != 0;
+			info.pin = pin;
+			if (pin < gpio_list[i].line_names_len) {
+				info.line_name = gpio_list[i].line_names[pin];
+			} else {
+				info.line_name = "";
+			}
+			func(&info, user_data);
+		}
+	}
+}
+
+static int pin_cmp(const struct pin_info *a, const struct pin_info *b)
+{
+	int result = strcmp(a->line_name, b->line_name);
+
+	if (result != 0) {
+		return result;
+	}
+	result = strcmp(a->dev->name, b->dev->name);
+	if (result != 0) {
+		return result;
+	}
+	result = (int)a->pin - (int)b->pin;
+
+	return result;
+}
+
+static void pin_get_next(const struct pin_info *info, void *user_data)
+{
+	struct pin_order_user_data *data = user_data;
+	int result;
+
+	if (data->prev.line_name != NULL) {
+		result = pin_cmp(info, &data->prev);
+	} else {
+		result = 1;
+	}
+	if (result > 0) {
+		if (data->next.line_name == NULL) {
+			data->next = *info;
+			return;
+		}
+		result = pin_cmp(info, &data->next);
+		if (result < 0) {
+			data->next = *info;
+		}
+	}
+}
+
+static void pin_ordered(const struct pin_info *info, void *user_data)
+{
+	struct pin_order_user_data *data = user_data;
+
+	ARG_UNUSED(info);
+
+	foreach_pin(pin_get_next, data);
+
+	shell_print(data->sh, "   %-12s %-8c %-16s %2u",
+		    data->next.line_name,
+		    data->next.reserved ? '*' : ' ',
+		    data->next.dev->name,
+		    data->next.pin);
+
+	data->prev = data->next;
+	data->next.line_name = NULL;
+}
+
+static void print_ordered_info(const struct shell *sh)
+{
+	struct pin_order_user_data data = {0};
+
+	data.sh = sh;
+
+	shell_print(sh, "  %-12s %-8s %-16s %-3s",
+		"Line", "Reserved", "Device", "Pin");
+
+	foreach_pin(pin_ordered, &data);
+}
+
+static int cmd_gpio_info(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct gpio_ctrl *ctrl = get_gpio_ctrl(argv[ARGV_DEV]);
+
+	if (ctrl == NULL) {
+		/* No device specified */
+		print_ordered_info(sh);
+		return 0;
+	}
+
+	print_gpio_ctrl_info(sh, ctrl);
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD_ARG(conf, &sub_gpio_dev,
 		"Configure GPIO pin\n"
@@ -435,6 +577,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD_ARG(blink, &sub_gpio_dev,
 		"Blink GPIO pin\n"
 		"Usage: gpio blink <device> <pin>", cmd_gpio_blink, 3, 0),
+	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_INFO_CMD, info, &sub_gpio_dev,
+		"GPIO Information\n"
+		"Usage: gpio info [device]", cmd_gpio_info, 1, 1),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
