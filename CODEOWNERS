@@ -335,6 +335,8 @@
 /drivers/gpio/*ads114s0x*                 @benediktibk
 /drivers/gpio/*bd8lb600fs*                @benediktibk
 /drivers/gpio/*pcal64xxa*                 @benediktibk
+/drivers/gpio/*ch32v*                     @xingrz
+/drivers/gpio/*ch56x*                     @xingrz
 /drivers/gpio/gpio_altera_pio.c           @shilinte
 /drivers/gpio/gpio_ad5592.c               @bbilas
 /drivers/hwinfo/                          @alexanderwachter
@@ -705,6 +707,7 @@
 /include/zephyr/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
+/include/zephyr/dt-bindings/gpio/ch56x*          @xingrz
 /include/zephyr/dt-bindings/interrupt-controller/ch32v* @xingrz
 /include/zephyr/dt-bindings/interrupt-controller/ch56x* @xingrz
 /include/zephyr/dt-bindings/pcie/                @dcpleung
