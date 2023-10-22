@@ -28,6 +28,26 @@
 		syscon: system-control@40001000 {
 			reg = <0x40001000 0x20>;
 		};
+
+		gpioa: gpio@40001040 {
+			compatible = "wch,ch56x-gpio";
+			reg = <0x40001040 0x20>;
+			interrupts = <18 4>;
+			interruptible-pins = <2 0>, <3 1>, <4 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+		};
+
+		gpiob: gpio@40001060 {
+			compatible = "wch,ch56x-gpio";
+			reg = <0x40001060 0x20>;
+			interrupts = <18 4>;
+			interruptible-pins = <3 3>, <4 4>, <11 5>, <12 6>, <15 7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <25>;
+		};
 	};
 
 	clocks {

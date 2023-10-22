@@ -1,0 +1,28 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH56x GPIO
+
+compatible: "wch,ch56x-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interruptible-pins:
+    type: array
+    description: |
+      List of <pin offset> pairs for pins that can be used as interrupt. Refer
+      to the datasheet for offset values.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

@@ -10,3 +10,14 @@
 		compatible = "wch,ch565m", "simple-bus";
 	};
 };
+
+&gpioa {
+	gpio-reserved-ranges = <7 2>,   /* PA 7 - PA 8 */
+			       <10 3>,  /* PA 10 - PA 12 */
+			       <14 10>; /* PA 14 - PA 23 */
+};
+
+&gpiob {
+	gpio-reserved-ranges = <0 3>,   /* PB 0 - PB 2 */
+			       <5 6>;   /* PB 5 - PB 10 */
+};
