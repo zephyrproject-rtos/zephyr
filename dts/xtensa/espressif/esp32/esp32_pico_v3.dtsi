@@ -8,8 +8,8 @@
 
 /* Reserved GPIO pins */
 &gpio0 {
-	gpio-reserved-ranges = <16 18>,<23>,	// limitations
-				<24>,<28 31>;	// NC
+	gpio-reserved-ranges = <16 3>, <23 1>,	// limitations
+				<24 1>, <28 4>;	// NC
 };
 
 /* 4MB flash */
