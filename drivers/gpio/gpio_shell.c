@@ -368,9 +368,9 @@ static int cmd_gpio_set(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_gpio_blink(const struct shell *sh, size_t argc, char **argv)
 {
+	bool msg_one_shot = true;
 	struct sh_gpio gpio;
-	size_t count = 0;
-	int value = 0;
+	size_t count;
 	char data;
 	int ret;
 
@@ -380,9 +380,6 @@ static int cmd_gpio_blink(const struct shell *sh, size_t argc, char **argv)
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Blinking port %s pin %u.", argv[ARGV_DEV], gpio.pin);
-	shell_fprintf(sh, SHELL_NORMAL, " Hit any key to exit");
-
 	/* dummy read to clear any pending input */
 	(void)sh->iface->api->read(sh->iface, &data, sizeof(data), &count);
 
@@ -391,12 +388,16 @@ static int cmd_gpio_blink(const struct shell *sh, size_t argc, char **argv)
 		if (count != 0) {
 			break;
 		}
-		gpio_pin_set(gpio.dev, gpio.pin, value);
-		value = !value;
+		ret = gpio_pin_toggle(gpio.dev, gpio.pin);
+		if (ret != 0) {
+			shell_error(sh, "%d", ret);
+			break;
+		} else if (msg_one_shot) {
+			msg_one_shot = false;
+			shell_print(sh, "Hit any key to exit");
+		}
 		k_msleep(SLEEP_TIME_MS);
 	}
-
-	shell_fprintf(sh, SHELL_NORMAL, "\n");
 
 	return 0;
 }
