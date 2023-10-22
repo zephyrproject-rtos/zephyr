@@ -29,6 +29,15 @@ config GPIO_SHELL_INFO_CMD
 	  This command provides a shell user extra information about gpio
 	  controller reserved pins and line names.
 
+config GPIO_SHELL_BLINK_CMD
+	bool "GPIO Shell blink command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell blink command.
+	  This command provides a shell user the ability to 'blink' a pin
+	  at 1Hz.
+
 config GPIO_INIT_PRIORITY
 	int "GPIO init priority"
 	default KERNEL_INIT_PRIORITY_DEFAULT

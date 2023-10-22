@@ -574,7 +574,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD_ARG(set, &sub_gpio_dev,
 		"Set GPIO pin value\n"
 		"Usage: gpio set <device> <pin> <level 0|1>", cmd_gpio_set, 4, 0),
-	SHELL_CMD_ARG(blink, &sub_gpio_dev,
+	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_BLINK_CMD, blink, &sub_gpio_dev,
 		"Blink GPIO pin\n"
 		"Usage: gpio blink <device> <pin>", cmd_gpio_blink, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_GPIO_SHELL_INFO_CMD, info, &sub_gpio_dev,
