@@ -15,7 +15,7 @@ cd ${BSIM_OUT_PATH}/bin
 printf "\n\n======== Running media controller local_player test =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=media_controller_local_player -rs=23
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=media_controller_local_player -rs=23 -D=1
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
@@ -26,10 +26,10 @@ wait_for_background_jobs
 printf "\n\n======== Running media controller remote_player test =========\n\n"
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=media_controller_remote_player -rs=46
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=media_controller_remote_player -rs=46 -D=2
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=media_controller_server -rs=23
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=media_controller_server -rs=23 -D=2
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
