@@ -1,12 +1,12 @@
-Title: Test to verify code execution from SRAM for XIP images (ARM Only)
+Title: Test to verify code execution from SRAM for XIP images (only on supported architectures with CONFIG_ARCH_HAS_RAMFUNC_SUPPORT=y)
 
 Description:
 
 This test verifies that we can define functions in SRAM (and
-successfully execute them from SRAM) in ARM XIP images. It
+successfully execute them from SRAM) in XIP images. It
 also verifies that the .ramfunc section is accessible by
-nPRIV code when building with support for user mode
-(CONFIG_TEST_USERSPACE=y). Only for ARM Cortex-M targets.
+user space code when building with support for user mode
+(CONFIG_TEST_USERSPACE=y).
 
 ---------------------------------------------------------------------------
 
@@ -34,12 +34,20 @@ or
 
 Sample Output:
 
-***** Booting Zephyr OS build zephyr-v1.14.0-1726-gb95a71960622 *****
-Running test suite arm_ramfunc
+*** Booting Zephyr OS build zephyr-v3.4.0-4114-gadfd4017979f ***
+Running TESTSUITE ramfunc
 ===================================================================
-starting test - test_arm_ramfunc
-PASS - test_arm_ramfunc
+START - test_ramfunc
+ PASS - test_ramfunc in 0.229 seconds
 ===================================================================
-Test suite arm_ramfunc succeeded
+TESTSUITE ramfunc succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE PASS - 100.00% [ramfunc]: pass = 1, fail = 0, skip = 0, total = 1 duration = 0.229 seconds
+ - PASS - [ramfunc.test_ramfunc] duration = 0.229 seconds
+
+------ TESTSUITE SUMMARY END ------
+
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

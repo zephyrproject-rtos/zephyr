@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if !defined(CONFIG_CPU_CORTEX_M)
-  #error test can only run on Cortex-M MCUs
-#endif
-
 #include <zephyr/ztest.h>
 
-ZTEST_SUITE(arm_ramfunc, NULL, NULL, NULL, NULL, NULL);
+#if !defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+  #error test can only run on Cortex-M MCUs and RISC-V
+#endif
+
+ZTEST_SUITE(ramfunc, NULL, NULL, NULL, NULL, NULL);
