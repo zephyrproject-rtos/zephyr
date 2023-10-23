@@ -11,8 +11,11 @@
 
 #define PHY_3D_SENSOR_CHANNEL_NUM 3
 
-struct phy_3d_sensor_context {
-	const struct device *dev;
+struct phy_3d_sensor_data {
+	struct sensor_value sensitivities[PHY_3D_SENSOR_CHANNEL_NUM];
+};
+
+struct phy_3d_sensor_config {
 	const struct device *hw_dev;
 	const int32_t sensor_type;
 };
