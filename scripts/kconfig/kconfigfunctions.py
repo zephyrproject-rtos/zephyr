@@ -1,5 +1,5 @@
 # Copyright (c) 2018-2019 Linaro
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2019-2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -664,6 +664,54 @@ def dt_compat_enabled(kconf, _, compat):
     return "y" if compat in edt.compat2okay else "n"
 
 
+def dt_any_compat_enabled_with_prop(kconf, _, compat, prop, value=None):
+    """
+    This function takes a 'compat' and 'prop' and returns "y" if there is any
+    enabled compatible node with the property set; in case when 'value'
+    is provided it returns "y" only if value of property matches the provided.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    try:
+        for node in edt.compat2okay[compat]:
+            if prop in node.props:
+                if not value:
+                    return "y"
+
+                if node.props[prop].type == 'int':
+                    if int(value, base=0) == node.props[prop].val:
+                        return "y"
+
+                elif node.props[prop].type == 'str':
+                    if value == node.props[prop].val:
+                        return "y"
+
+    except KeyError:
+        pass
+
+    return "n"
+
+
+def dt_any_compat_enabled_without_prop(kconf, _, compat, prop):
+    """
+    This function takes a 'compat' and 'prop' and returns "y" if there is any
+    enabled compatible without that property set.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    try:
+        for node in edt.compat2okay[compat]:
+            if prop not in node.props:
+                return "y"
+
+    except KeyError:
+        pass
+
+    return "n"
+
+
 def dt_compat_on_bus(kconf, _, compat, bus):
     """
     This function takes a 'compat' and returns "y" if we find an "enabled"
@@ -824,6 +872,8 @@ def shields_list_contains(kconf, _, shield):
 functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
+        "dt_any_compat_enabled_with_prop": (dt_any_compat_enabled_with_prop, 2, 3),
+        "dt_any_compat_enabled_without_prop": (dt_any_compat_enabled_without_prop, 2, 3),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
