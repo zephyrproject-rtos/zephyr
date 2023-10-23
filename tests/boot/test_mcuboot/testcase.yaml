@@ -12,10 +12,17 @@ common:
 tests:
   bootloader.mcuboot:
     tags: mcuboot
-    skip: true # disabled due to issue #58080
     platform_allow:
       - frdm_k64f
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1050_evk
       - mimxrt1060_evk
+      - mimxrt1064_evk
+      - mimxrt1160_evk_cm7
+      - mimxrt1170_evk_cm7
+      - mimxrt595_evk_cm33
+      - mimxrt685_evk_cm33
       - nrf52840dk_nrf52840
     integration_platforms:
       - frdm_k64f
