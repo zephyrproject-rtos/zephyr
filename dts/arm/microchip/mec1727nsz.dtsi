@@ -12,7 +12,9 @@
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 
 #include "mec172x/mec172x-vw-routing.dtsi"
-#include "mec172x/mec172xnsz-pinctrl.dtsi"
+
+#include <mem.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -82,6 +84,16 @@
 		jedec-id = [62 06 13];
 	};
 };
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "disabled";
+};
+
+#include "mec172x/mec172xnsz-pinctrl.dtsi"
 
 &gpspi_wp_n_gpio076 {
 	output-high;
