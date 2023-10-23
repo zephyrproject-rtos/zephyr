@@ -43,6 +43,7 @@ interaction is required. This module is a Unix-like shell with these features:
 The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
+* MQTT
 * Segger RTT
 * SMP
 * Telnet
