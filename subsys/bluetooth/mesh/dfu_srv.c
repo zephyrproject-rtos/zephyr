@@ -304,8 +304,6 @@ static int handle_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			status = BT_MESH_DFU_SUCCESS;
 		}
 
-		srv->update.ttl = ttl;
-		srv->blob.state.xfer.id = blob_id;
 		LOG_WRN("Busy. Phase: %u", srv->update.phase);
 		goto rsp;
 	}
