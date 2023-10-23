@@ -49,6 +49,9 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+static void isr_early_abort(void *param);
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 static void isr_done(void *param);
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_BACK2BACK)
 static void isr_tx_chain(void *param);
@@ -188,7 +191,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Abort if no aux_ptr filled */
 	if (unlikely(!pri_hdr->aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr))) {
-		radio_isr_set(lll_isr_early_abort, lll);
+		radio_isr_set(isr_early_abort, lll);
 		radio_disable();
 
 		return 0;
@@ -325,7 +328,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (overhead) {
 		LL_ASSERT_OVERHEAD(overhead);
 
-		radio_isr_set(lll_isr_abort, lll);
+		radio_isr_set(isr_done, lll);
 		radio_disable();
 
 		return -ECANCELED;
@@ -346,6 +349,33 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	return 0;
 }
+
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+static void isr_race(void *param)
+{
+	radio_status_reset();
+}
+
+static void isr_early_abort(void *param)
+{
+	struct event_done_extra *extra;
+	int err;
+
+	/* Generate auxiliary radio event done */
+	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_AUX);
+	LL_ASSERT(extra);
+
+	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	lll_done(NULL);
+}
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 static void isr_done(void *param)
 {
