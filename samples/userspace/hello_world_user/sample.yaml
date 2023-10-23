@@ -14,4 +14,6 @@ common:
 tests:
   sample.helloworld:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
     tags: introduction
