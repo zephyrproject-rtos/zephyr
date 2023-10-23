@@ -1,0 +1,62 @@
+.. _pan1783_evb:
+
+PAN1783/PAN1783A Evaluation Board
+#################################
+
+Overview
+********
+
+The PAN1783/PAN1783A Evaluation Board (pan1783_evb/pan1783a_evb) is a
+development tool for the PAN1783/PAN1783A Module which is based on the
+nRF5340 chipset from Nordic Semiconductor.
+
+You can find more information about the PAN1783/PAN1783A Module and
+Evaluation Board on the `product website pan1783`_ / `product website pan1783a`_.
+
+.. figure:: img/pan1783_evb.jpg
+     :align: center
+     :alt: PAN1783 EVB
+
+     PAN1783 EVB (Credit: Panasonic)
+
+.. figure:: img/pan1783a_evb.jpg
+     :align: center
+     :alt: PAN1783A EVB
+
+     PAN1783A EVB (Credit: Panasonic)
+
+Usage
+*****
+
+For detailed information, you can find the
+`pan1783_evb user guide`_ / `pan1783a_evb user guide`_ for the
+Evaluation Boards in the
+`Panasonic Wireless Connectivity Development Hub`_.
+
+The User Guide contains (amongst other things) detailed information about
+
+* pin mapping
+* powering options
+* breakout pin header interface
+* current consumption measurement
+* software development
+
+The schematics for the PAN1783/PAN1783A Evaluation Boards are available in the
+`download section pan1783`_ / `download section pan1783a`_ of the
+`Panasonic Wireless Connectivity Development Hub`_.
+
+Programming and Debugging
+*************************
+
+Please use the ``pan1783_evb_cpuapp`` or ``pan1783a_evb_cpuapp`` for application
+core and ``pan1783_evb_cpunet`` or ``pan1783_evb_cpunet`` board configuration
+for network core when :ref:`build_an_application` and :ref:`application_run`.
+
+.. target-notes::
+.. _product website pan1783: https://industry.panasonic.eu/products/devices/wireless-connectivity/bluetooth-low-energy-modules/pan1783-nrf5340
+.. _product website pan1783a: https://industry.panasonic.eu/products/devices/wireless-connectivity/bluetooth-low-energy-modules/pan1783a-nrf5340
+.. _Panasonic Wireless Connectivity Development Hub: https://pideu.panasonic.de/development-hub/
+.. _pan1783_evb user guide: https://pideu.panasonic.de/development-hub/pan1783/evaluation_board/user_guide/
+.. _pan1783a_evb user guide: https://pideu.panasonic.de/development-hub/pan1783a/evaluation_board/user_guide/
+.. _download section pan1783: https://pideu.panasonic.de/development-hub/pan1783/downloads/
+.. _download section pan1783a: https://pideu.panasonic.de/development-hub/pan1783a/downloads/
