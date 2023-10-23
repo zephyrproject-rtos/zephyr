@@ -43,18 +43,6 @@ static const clock_ip_name_t uart_clocks[] = {
 	kCLOCK_Uart4,
 };
 #endif
-#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX93_A55)
-static const clock_root_t lpuart_clk_root[] = {
-	kCLOCK_Root_Lpuart1,
-	kCLOCK_Root_Lpuart2,
-	kCLOCK_Root_Lpuart3,
-	kCLOCK_Root_Lpuart4,
-	kCLOCK_Root_Lpuart5,
-	kCLOCK_Root_Lpuart6,
-	kCLOCK_Root_Lpuart7,
-	kCLOCK_Root_Lpuart8,
-};
-#endif
 
 #ifdef CONFIG_UART_MCUX_LPUART
 
@@ -202,28 +190,6 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		CLOCK_SetIpFreq(lpuart_clocks[instance], lpuart_rate);
 		*rate = CLOCK_GetIpFreq(lpuart_clocks[instance]);
 		break;
-
-#elif defined(CONFIG_SOC_MIMX93_A55)
-	case IMX_CCM_LPUART1_CLK:
-	case IMX_CCM_LPUART2_CLK:
-	case IMX_CCM_LPUART3_CLK:
-	case IMX_CCM_LPUART4_CLK:
-	case IMX_CCM_LPUART5_CLK:
-	case IMX_CCM_LPUART6_CLK:
-	case IMX_CCM_LPUART7_CLK:
-	case IMX_CCM_LPUART8_CLK:
-	{
-		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
-		clock_root_t clk_root = lpuart_clk_root[instance];
-		uint32_t uart_mux = CLOCK_GetRootClockMux(clk_root);
-		uint32_t divider = CLOCK_GetRootClockDiv(clk_root);
-
-		if (uart_mux == 0)
-			*rate = MHZ(24) / divider;
-		else
-			LOG_ERR("LPUART Clock is not supported\r\n");
-
-	} break;
 
 #else
 	case IMX_CCM_LPUART_CLK:
