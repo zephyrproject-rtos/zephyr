@@ -1085,41 +1085,32 @@ static void audio_send_timeout(struct k_work *work)
 		/* TODO: Synchronize the Host clock with the Controller clock */
 	}
 
-	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
-	if (!buf) {
-		LOG_ERR("Cannot allocate net_buf. Dropping data.");
-		k_work_schedule_for_queue(&iso_data_work_q, dwork,
-					  K_USEC(stream->stream.qos->interval));
-		return;
-	}
-
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
 	/* Get buffer within a ring buffer memory */
 	size = ring_buf_get_claim(&audio_ring_buf, &data, stream->stream.qos->sdu);
-	if (size != 0) {
-		net_buf_add_mem(buf, data, size);
-	} else {
-		k_work_schedule_for_queue(&iso_data_work_q, dwork,
-					  K_USEC(stream->stream.qos->interval));
-		return;
-	}
+	if (size > 0) {
+		buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+		if (!buf) {
+			LOG_ERR("Cannot allocate net_buf. Dropping data.");
+		} else {
+			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+			net_buf_add_mem(buf, data, size);
 
-	/* Because the seq_num field of the audio_stream struct is atomic_val_t (4 bytes),
-	 * let's allow an overflow and just cast it to uint16_t.
-	 */
-	stream->last_req_seq_num = (uint16_t)atomic_get(&stream->seq_num);
+			/* Because the seq_num field of the audio_stream struct is atomic_val_t
+			 * (4 bytes), let's allow an overflow and just cast it to uint16_t.
+			 */
+			stream->last_req_seq_num = (uint16_t)atomic_get(&stream->seq_num);
 
-	LOG_DBG("Sending data to stream %p len %d seq %d", &stream->stream, size,
-		stream->last_req_seq_num);
+			LOG_DBG("Sending data to stream %p len %d seq %d", &stream->stream, size,
+				stream->last_req_seq_num);
 
-	err = bt_bap_stream_send(&stream->stream, buf, 0, BT_ISO_TIMESTAMP_NONE);
-	if (err != 0) {
-		LOG_ERR("Failed to send audio data to stream %p, err %d", &stream->stream, err);
-		net_buf_unref(buf);
-	}
+			err = bt_bap_stream_send(&stream->stream, buf, 0, BT_ISO_TIMESTAMP_NONE);
+			if (err != 0) {
+				LOG_ERR("Failed to send audio data to stream %p, err %d",
+					&stream->stream, err);
+				net_buf_unref(buf);
+			}
+		}
 
-	if (size != 0) {
 		/* Free ring buffer memory */
 		err = ring_buf_get_finish(&audio_ring_buf, size);
 		if (err != 0) {
