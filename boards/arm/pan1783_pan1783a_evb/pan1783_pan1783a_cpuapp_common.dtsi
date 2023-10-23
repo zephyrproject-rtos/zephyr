@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "pan1783_evb_cpuapp_common-pinctrl.dtsi"
+#include "pan1783_pan1783a_cpuapp_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -297,4 +297,4 @@ zephyr_udc0: &usbd {
 };
 
 /* Include partition configuration file */
-#include "pan1783_evb_cpuapp_partition_conf.dtsi"
+#include "pan1783_pan1783a_cpuapp_partition_conf.dtsi"
