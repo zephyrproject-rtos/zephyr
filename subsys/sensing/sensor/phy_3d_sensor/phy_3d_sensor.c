@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sensing/sensing.h>
 #include <zephyr/sensing/sensing_sensor.h>
@@ -18,65 +19,32 @@
 
 LOG_MODULE_REGISTER(phy_3d_sensor, CONFIG_SENSING_LOG_LEVEL);
 
-static int phy_3d_sensor_init(const struct device *dev,
-		const struct sensing_sensor_info *info,
-		const sensing_sensor_handle_t *reporter_handles,
-		int reporters_count)
+static int phy_3d_sensor_init(const struct device *dev)
+{
+	const struct phy_3d_sensor_config *cfg = dev->config;
+
+	LOG_INF("%s: Underlying device: %s", dev->name, cfg->hw_dev->name);
+
+	return 0;
+}
+
+static int phy_3d_sensor_attr_set(const struct device *dev,
+		enum sensor_channel chan,
+		enum sensor_attribute attr,
+		const struct sensor_value *val)
 {
 	return 0;
 }
 
-static int phy_3d_sensor_deinit(const struct device *dev)
+static int phy_3d_sensor_submit(const struct device *dev,
+		struct rtio_iodev_sqe *sqe)
 {
 	return 0;
 }
 
-static int phy_3d_sensor_read_sample(const struct device *dev,
-		void *buf, int size)
-{
-	return 0;
-}
-
-static int phy_3d_sensor_sensitivity_test(const struct device *dev,
-		int index, uint32_t sensitivity,
-		void *last_sample_buf, int last_sample_size,
-		void *current_sample_buf, int current_sample_size)
-{
-	return 0;
-}
-
-static int phy_3d_sensor_set_interval(const struct device *dev, uint32_t value)
-{
-	return 0;
-}
-
-static int phy_3d_sensor_get_interval(const struct device *dev,
-		uint32_t *value)
-{
-	return 0;
-}
-
-static int phy_3d_sensor_set_sensitivity(const struct device *dev,
-		int index, uint32_t value)
-{
-	return 0;
-}
-
-static int phy_3d_sensor_get_sensitivity(const struct device *dev,
-		int index, uint32_t *value)
-{
-	return 0;
-}
-
-static const struct sensing_sensor_api phy_3d_sensor_api = {
-	.init = phy_3d_sensor_init,
-	.deinit = phy_3d_sensor_deinit,
-	.set_interval = phy_3d_sensor_set_interval,
-	.get_interval = phy_3d_sensor_get_interval,
-	.set_sensitivity = phy_3d_sensor_set_sensitivity,
-	.get_sensitivity = phy_3d_sensor_get_sensitivity,
-	.read_sample = phy_3d_sensor_read_sample,
-	.sensitivity_test = phy_3d_sensor_sensitivity_test,
+static const struct sensor_driver_api phy_3d_sensor_api = {
+	.attr_set = phy_3d_sensor_attr_set,
+	.submit = phy_3d_sensor_submit,
 };
 
 static const struct sensing_sensor_register_info phy_3d_sensor_reg = {
@@ -87,14 +55,17 @@ static const struct sensing_sensor_register_info phy_3d_sensor_reg = {
 };
 
 #define SENSING_PHY_3D_SENSOR_DT_DEFINE(_inst)				\
-	static struct phy_3d_sensor_context _CONCAT(ctx, _inst) = {	\
+	static struct phy_3d_sensor_data _CONCAT(data, _inst);		\
+	static const struct phy_3d_sensor_config _CONCAT(cfg, _inst) = {\
 		.hw_dev = DEVICE_DT_GET(				\
 				DT_PHANDLE(DT_DRV_INST(_inst),		\
 				underlying_device)),			\
 		.sensor_type = DT_PROP(DT_DRV_INST(_inst), sensor_type),\
 	};								\
-	SENSING_SENSOR_DT_DEFINE(DT_DRV_INST(_inst),			\
-		&phy_3d_sensor_reg, &_CONCAT(ctx, _inst),		\
+	SENSING_SENSOR_DT_INST_DEFINE(_inst, &phy_3d_sensor_reg, NULL,	\
+		&phy_3d_sensor_init, NULL,				\
+		&_CONCAT(data, _inst), &_CONCAT(cfg, _inst),		\
+		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
 		&phy_3d_sensor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SENSING_PHY_3D_SENSOR_DT_DEFINE);

@@ -5,6 +5,10 @@ config SENSING
 	bool "Sensing Subsystem"
 	default y
 	depends on DT_HAS_ZEPHYR_SENSING_ENABLED
+	select RTIO
+	select RTIO_CONSUME_SEM
+	select SENSOR
+	select SENSOR_ASYNC_API
 	help
 	  Enable Sensing Subsystem.
 
