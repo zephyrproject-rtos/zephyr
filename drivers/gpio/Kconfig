@@ -161,6 +161,8 @@ source "drivers/gpio/Kconfig.stmpe1600"
 
 source "drivers/gpio/Kconfig.pca953x"
 
+source "drivers/gpio/Kconfig.pca_series"
+
 source "drivers/gpio/Kconfig.pcf8574"
 
 source "drivers/gpio/Kconfig.fxl6408"
