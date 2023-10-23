@@ -67,6 +67,24 @@ config SENSING_RUNTIME_THREAD_PRIORITY
 	  data, then ring buf will always be put into data until overflow.
 	  Typical values are 9
 
+config SENSING_DISPATCH_THREAD_STACK_SIZE
+	int "stack size for sensor dispatch thread"
+	depends on SENSING
+	default 1024
+	help
+	  This is the stack size for sensor dispatch thread
+	  Typical values are 1024
+
+config SENSING_DISPATCH_THREAD_PRIORITY
+	  int "priority for sensor dispatch thread"
+	  depends on SENSING
+	  default 8
+	  help
+	    This is the thread priority for sensing subsystem dispatch thread
+	    Ring buffer data should be fetched ASAP, so Dispatch
+	    thread priority should be higher than runtime thread
+	    Typical values are 8
+
 source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
 
 endif # SENSING
