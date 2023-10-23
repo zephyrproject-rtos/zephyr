@@ -14,3 +14,6 @@ supported:
   - watchdog
   - netif:eth
   - can
+  - spi
+  - counter
+vendor: nxp
