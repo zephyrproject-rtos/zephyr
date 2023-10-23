@@ -59,7 +59,9 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	printk("Sent with seq_num %u\n", test_stream->seq_num);
+	if ((test_stream->tx_cnt % 100U) == 0U) {
+		printk("Sent with seq_num %u\n", test_stream->seq_num);
+	}
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
 	if (buf == NULL) {
@@ -468,14 +470,8 @@ static void test_main(void)
 		}
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		/* Keep sending until we reach 5 times the minimum expected to be pretty sure
-		 * that the receiver receives enough
-		 */
-		while (broadcast_source_streams[i].tx_cnt < MIN_SEND_COUNT) {
-			k_sleep(K_MSEC(100));
-		}
-	}
+	/* Wait for other devices to have received what they wanted */
+	backchannel_sync_wait_any();
 
 	/* Update metadata while streaming */
 	printk("Updating metadata\n");
@@ -486,8 +482,11 @@ static void test_main(void)
 		return;
 	}
 
-	/* Keeping running for a little while */
-	k_sleep(K_SECONDS(5));
+	/* Wait for other devices to have received what they wanted */
+	backchannel_sync_wait_any();
+
+	/* Wait for other devices to let us know when we can stop the source */
+	backchannel_sync_wait_any();
 
 	test_broadcast_source_stop(source);
 
