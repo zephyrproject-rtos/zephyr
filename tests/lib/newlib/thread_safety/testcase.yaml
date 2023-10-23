@@ -1,5 +1,6 @@
 common:
   filter: TOOLCHAIN_HAS_NEWLIB == 1
+  arch_exclude: posix
   tags:
     - clib
     - newlib
