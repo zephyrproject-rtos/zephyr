@@ -53,7 +53,7 @@ menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && (POSIX_API || GETOPT))
+	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && POSIX_API)
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
