@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSING_SENSOR_HINGE_ANGLE
+	bool "Sensing hinge angle sensor"
+	default y
+	depends on DT_HAS_ZEPHYR_SENSING_HINGE_ANGLE_ENABLED
+	help
+	  Enable sensing hinge angle sensor.
