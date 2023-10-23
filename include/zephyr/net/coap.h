@@ -274,7 +274,7 @@ struct coap_packet {
 	uint8_t hdr_len;  /**< CoAP header length */
 	uint16_t opt_len; /**< Total options length (delta + len + value) */
 	uint16_t delta;   /**< Used for delta calculation in CoAP packet */
-#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXGEN)
+#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXYGEN)
 	/**
 	 * Application specific user data.
 	 * Only available when @kconfig{CONFIG_COAP_KEEP_USER_DATA} is enabled.
