@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
-#include "pan1783_evb_cpuapp_common.dtsi"
+#include "pan1783_pan1783a_cpuapp_common.dtsi"
 
 / {
 	model = "Panasonic PAN1783 EVB (NRF5340) Application";

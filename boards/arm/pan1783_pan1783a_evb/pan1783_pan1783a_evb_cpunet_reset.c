@@ -11,7 +11,13 @@
 #include <soc.h>
 #include <hal/nrf_reset.h>
 
+#if defined(CONFIG_BOARD_PAN1783_EVB_CPUAPP)
 LOG_MODULE_REGISTER(pan1783_evb_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
+#elif defined(CONFIG_BOARD_PAN1783A_EVB_CPUAPP)
+LOG_MODULE_REGISTER(pan1783a_evb_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
+#else
+#error "No board selected!"
+#endif
 
 #if defined(CONFIG_BT_CTLR_DEBUG_PINS_CPUAPP)
 #include <../subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/debug.h>
