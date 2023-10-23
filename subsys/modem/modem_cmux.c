@@ -449,7 +449,7 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		LOG_WRN("Unknown control frame type");
+		LOG_WRN("Unknown %s frame type", "control");
 		break;
 	}
 }
@@ -533,7 +533,7 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		LOG_WRN("Unknown DLCI frame type");
+		LOG_WRN("Unknown %s frame type", "DLCI");
 		break;
 	}
 }
