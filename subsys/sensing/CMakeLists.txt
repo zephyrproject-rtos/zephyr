@@ -5,6 +5,7 @@ zephyr_library_include_directories(include)
 
 zephyr_library_sources(
 	sensor_mgmt.c
+	dispatch.c
 	sensing.c
 	sensing_sensor.c
 )
