@@ -502,7 +502,7 @@ class RimageSigner(Signer):
         elif cache.get('RIMAGE_CONFIG_PATH'):
             conf_dir = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
         else:
-            conf_dir = sof_src_dir / 'rimage' / 'config'
+            conf_dir = sof_src_dir / 'tools' / 'rimage' / 'config'
 
         conf_path_cmd = ['-c', str(conf_dir / cmake_toml)] if conf_dir else []
 
