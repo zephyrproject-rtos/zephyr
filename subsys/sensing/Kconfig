@@ -86,5 +86,6 @@ config SENSING_DISPATCH_THREAD_PRIORITY
 	    Typical values are 8
 
 source "subsys/sensing/sensor/phy_3d_sensor/Kconfig"
+source "subsys/sensing/sensor/hinge_angle/Kconfig"
 
 endif # SENSING
