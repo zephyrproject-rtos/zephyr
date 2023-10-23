@@ -3,15 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/dts-v1/;
-#include <nordic/nrf5340_cpunet_qkaa.dtsi>
-#include "pan1783_evb_cpunet-pinctrl.dtsi"
+#include "pan1783_pan1783a_cpunet-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Panasonic PAN1783 EVB (NRF5340) Network";
-	compatible = "panasonic,pan1783-evb-cpunet";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -21,9 +16,6 @@
 		zephyr,bt-c2h-uart = &uart0;
 		zephyr,bt-hci-ipc = &ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
-		zephyr,sram = &sram1;
-		zephyr,flash = &flash1;
-		zephyr,code-partition = &slot0_partition;
 		zephyr,ieee802154 = &ieee802154;
 	};
 
@@ -76,22 +68,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio0 4 0>,	/* AN  */
-				/* Not a GPIO*/		/* RST */
-				<2 0 &gpio1 12 0>,	/* CS   */
-				<3 0 &gpio1 15 0>,	/* SCK  */
-				<4 0 &gpio1 14 0>,	/* MISO */
-				<5 0 &gpio1 13 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 7 0>,	/* PWM  */
-				<7 0 &gpio1 4 0>,	/* INT  */
-				<8 0 &gpio1 0 0>,	/* RX   */
-				<9 0 &gpio1 1 0>,	/* TX   */
-				<10 0 &gpio1 3 0>,	/* SCL  */
-				<11 0 &gpio1 2 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map =        <0 0 &gpio0 4 0>,        /* AN  */
+		/* Not a GPIO*/                /* RST */
+		<2 0 &gpio1 12 0>,        /* CS   */
+		<3 0 &gpio1 15 0>,        /* SCK  */
+		<4 0 &gpio1 14 0>,        /* MISO */
+		<5 0 &gpio1 13 0>,        /* MOSI */
+		/* +3.3V */
+		/* GND */
+		<6 0 &gpio1 7 0>,        /* PWM  */
+		<7 0 &gpio1 4 0>,        /* INT  */
+		<8 0 &gpio1 0 0>,        /* RX   */
+		<9 0 &gpio1 1 0>,        /* TX   */
+		<10 0 &gpio1 3 0>,        /* SCL  */
+		<11 0 &gpio1 2 0>;        /* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	arduino_header: connector {
@@ -160,7 +152,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_serial: &uart0{};
+arduino_serial: &uart0 {};
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";
@@ -212,4 +204,4 @@ arduino_spi: &spi0 {
 };
 
 /* Include shared RAM configuration file */
-#include "pan1783_evb_shared_sram_planning_conf.dtsi"
+#include "pan1783_pan1783a_shared_sram_planning_conf.dtsi"
