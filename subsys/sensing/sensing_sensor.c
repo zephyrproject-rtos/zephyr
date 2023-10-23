@@ -8,21 +8,40 @@
 #include <zephyr/sensing/sensing.h>
 #include <zephyr/sensing/sensing_sensor.h>
 #include <zephyr/sys/__assert.h>
-
 #include <zephyr/logging/log.h>
+#include "sensor_mgmt.h"
+
 LOG_MODULE_DECLARE(sensing, CONFIG_SENSING_LOG_LEVEL);
 
-int sensing_sensor_notify_data_ready(const struct device *dev)
+int sensing_sensor_get_reporters(const struct device *dev, int type,
+		sensing_sensor_handle_t *reporter_handles,
+		int max_handles)
 {
-	return -ENOTSUP;
+	struct sensing_sensor *sensor = get_sensor_by_dev(dev);
+	int i, num = 0;
+
+	for (i = 0; i < sensor->reporter_num && num < max_handles; ++i) {
+		if (type == sensor->conns[i].source->info->type
+				|| type == SENSING_SENSOR_TYPE_ALL) {
+			reporter_handles[num] = &sensor->conns[i];
+			num++;
+		}
+	}
+
+	return num;
 }
 
-int sensing_sensor_set_data_ready(const struct device *dev, bool data_ready)
+int sensing_sensor_get_reporters_count(const struct device *dev, int type)
 {
-	return -ENOTSUP;
-}
+	struct sensing_sensor *sensor = get_sensor_by_dev(dev);
+	int i, num = 0;
 
-int sensing_sensor_post_data(const struct device *dev, void *buf, int size)
-{
-	return -ENOTSUP;
+	for (i = 0; i < sensor->reporter_num; ++i) {
+		if (type == sensor->conns[i].source->info->type
+				|| type == SENSING_SENSOR_TYPE_ALL) {
+			num++;
+		}
+	}
+
+	return num;
 }

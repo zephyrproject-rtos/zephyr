@@ -7,10 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_SENSING_SENSOR_H_
 #define ZEPHYR_INCLUDE_SENSING_SENSOR_H_
 
-#include <zephyr/sensing/sensing.h>
-#include <zephyr/device.h>
 #include <stdbool.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/sensing/sensing.h>
 
 /**
  * @defgroup sensing_sensor Sensing Sensor API
@@ -34,7 +34,6 @@ extern "C" {
  *
  */
 struct sensing_sensor_register_info {
-
 	/**
 	 * Sensor flags
 	 */
@@ -58,105 +57,188 @@ struct sensing_sensor_register_info {
 	struct sensing_sensor_version version;
 };
 
-/**
- * @brief Sensor context data structure
- *
- */
-struct sensing_sensor_ctx {
-
-	/**
-	 * For sensing runtime internal private data, sensor should not see and touch
-	 */
-	void *priv_ptr;
-
-	/**
-	 * Pointer to the sensor register information.
-	 */
-	const struct sensing_sensor_register_info *register_info;
-
-	/**
-	 * For sensor private context data, registered by sensor with \ref SENSING_SENSOR_DT_DEFINE.
-	 * Sensor could use \ref sensing_sensor_get_ctx_data to fetch out this filed with
-	 * struct device.
-	 */
-	void *const sensor_ctx_ptr;
+enum {
+	EVENT_CONFIG_READY,
 };
 
-static inline int sensing_sensor_dev_init(
-		const struct device *dev)
-{
-	/**
-	 * Nothing need to do in system auto initialization.
-	 * Sensor subsystem runtime will call each sensor instance's initialization
-	 * function via API callback according sensor reporting dependency sequences.
-	 * Sensor subsystem can make sure the depends sensor instances always initialized before
-	 * client sensors.
-	 */
-	return 0;
+enum {
+	SENSOR_LATER_CFG_BIT,
+};
+
+/**
+ * @struct sensing_connection information
+ * @brief sensing_connection indicates connection from reporter(source) to client(sink)
+ */
+struct sensing_connection {
+	sys_snode_t snode;
+	struct sensing_sensor *source;
+	struct sensing_sensor *sink;
+	/* interval and sensitivity set from client(sink) to reporter(source) */
+	uint32_t interval;
+	int sensitivity[CONFIG_SENSING_MAX_SENSITIVITY_COUNT];
+	/* copy sensor data to connection data buf from reporter */
+	void *data;
+	/* client(sink) next consume time */
+	uint64_t next_consume_time;
+	/* post data to application */
+	struct sensing_callback_list callback_list;
+};
+
+/**
+ * @struct sensing_sensor
+ * @brief Internal sensor instance data structure.
+ *
+ * Each sensor instance will have its unique data structure for storing all
+ * it's related information.
+ *
+ * Sensor management will enumerate all these instance data structures,
+ * build report relationship model base on them, etc.
+ */
+struct sensing_sensor {
+	const struct device *dev;
+	const struct sensing_sensor_info *info;
+	const struct sensing_sensor_register_info *register_info;
+	const uint16_t reporter_num;
+	sys_slist_t client_list;
+	uint32_t interval;
+	uint8_t sensitivity_count;
+	int sensitivity[CONFIG_SENSING_MAX_SENSITIVITY_COUNT];
+	enum sensing_sensor_state state;
+	/* runtime info */
+	struct rtio_iodev *iodev;
+	struct k_timer timer;
+	struct rtio_sqe *stream_sqe;
+	atomic_t flag;
+	struct sensing_connection *conns;
+};
+
+#define PHANDLE_DEVICE_BY_IDX(idx, node, prop)				\
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node, prop, idx))
+
+#define PHANDLE_DEVICE_LIST(node, prop)					\
+{									\
+	LISTIFY(DT_PROP_LEN_OR(node, prop, 0),				\
+			PHANDLE_DEVICE_BY_IDX,				\
+			(,),						\
+			node,						\
+			prop)						\
 }
 
-/**
- * @brief Macro for define a sensor instance from device tree node id
- *
- * This macro also defined a struct device for this sensor instance, and registered sensors'
- * private context data, configuration data structure and API.
- *
- * sensing_init will enumerate all sensor instances from device tree, and initialize each sensor
- * instance defined by this macro.
- *
- */
+#define SENSING_SENSOR_INFO_NAME(node)					\
+	_CONCAT(__sensing_sensor_info_, DEVICE_DT_NAME_GET(node))
 
-#define SENSING_SENSOR_DT_DEFINE(node_id, reg_ptr, ctx_ptr, api_ptr)			\
-	static struct sensing_sensor_ctx							\
-		_CONCAT(__sensing_sensor_ctx_, Z_DEVICE_DT_DEV_ID(node_id)) = {		\
-			.register_info = reg_ptr,					\
-			.sensor_ctx_ptr = ctx_ptr,					\
-		};									\
-	DEVICE_DT_DEFINE(node_id, sensing_sensor_dev_init, NULL,			\
-			&_CONCAT(__sensing_sensor_ctx_, Z_DEVICE_DT_DEV_ID(node_id)),	\
-			NULL, POST_KERNEL, 99, api_ptr)
+#define SENSING_SENSOR_INFO_DEFINE(node)				\
+	const static STRUCT_SECTION_ITERABLE(sensing_sensor_info,	\
+				SENSING_SENSOR_INFO_NAME(node)) = {	\
+		.type = DT_PROP(node, sensor_type),			\
+		.name = DT_NODE_FULL_NAME(node),			\
+		.friendly_name = DT_PROP(node, friendly_name),		\
+		.vendor = DT_NODE_VENDOR_OR(node, NULL),		\
+		.model = DT_NODE_MODEL_OR(node, NULL),			\
+		.minimal_interval = DT_PROP(node, minimal_interval),	\
+	};
 
-/**
- * @brief Get registered context data pointer for a sensor instance.
- *
- * Used by a sensor instance to get its registered context data pointer with its struct device.
- *
- * @param dev The sensor instance device structure.
- */
-static inline void *sensing_sensor_get_ctx_data(
-		const struct device *dev)
-{
-	struct sensing_sensor_ctx *data = dev->data;
+#define SENSING_CONNECTIONS_NAME(node)					\
+	_CONCAT(__sensing_connections, DEVICE_DT_NAME_GET(node))
 
-	return data->sensor_ctx_ptr;
+#define SENSING_SENSOR_SOURCE_EXTERN(idx, node)				\
+extern struct sensing_sensor SENSING_SENSOR_NAME(DT_PHANDLE_BY_IDX(node, reporters, idx));
+
+#define SENSING_CONNECTION_INITIALIZER(source_node, cb_list_ptr)	\
+{									\
+	.callback_list = *cb_list_ptr,					\
+	.source = &SENSING_SENSOR_NAME(source_node),			\
 }
 
+#define SENSING_CONNECTION_DEFINE(idx, node, cb_list_ptr)			\
+	SENSING_CONNECTION_INITIALIZER(DT_PHANDLE_BY_IDX(node, reporters, idx), cb_list_ptr)
+
+#define SENSING_CONNECTIONS_DEFINE(node, num, cb_list_ptr)		\
+	LISTIFY(num, SENSING_SENSOR_SOURCE_EXTERN,			\
+				(), node)				\
+	static struct sensing_connection				\
+			SENSING_CONNECTIONS_NAME(node)[(num)] = {	\
+		LISTIFY(num, SENSING_CONNECTION_DEFINE,			\
+				(,), node, cb_list_ptr)			\
+	};
+
+#define SENSING_SENSOR_IODEV_NAME(node)					\
+	_CONCAT(__sensing_iodev_, DEVICE_DT_NAME_GET(node))
+
+#define SENSING_SENSOR_IODEV_DEFINE(node)						\
+	COND_CODE_1(DT_PROP(node, stream_mode),						\
+		(SENSOR_DT_STREAM_IODEV(SENSING_SENSOR_IODEV_NAME(node), node)),	\
+		(SENSOR_DT_READ_IODEV(SENSING_SENSOR_IODEV_NAME(node), node)));
+
+#define SENSING_SENSOR_NAME(node)					\
+	_CONCAT(__sensing_sensor_, DEVICE_DT_NAME_GET(node))
+
+#define SENSING_SENSOR_DEFINE(node, reg_ptr, cb_list_ptr)		\
+	SENSING_SENSOR_INFO_DEFINE(node)				\
+	SENSING_CONNECTIONS_DEFINE(node,				\
+			DT_PROP_LEN_OR(node, reporters, 0), cb_list_ptr)\
+	SENSING_SENSOR_IODEV_DEFINE(node)				\
+	STRUCT_SECTION_ITERABLE(sensing_sensor,				\
+				       SENSING_SENSOR_NAME(node)) = {	\
+		.dev = DEVICE_DT_GET(node),				\
+		.info = &SENSING_SENSOR_INFO_NAME(node),		\
+		.register_info = reg_ptr,				\
+		.reporter_num = DT_PROP_LEN_OR(node, reporters, 0),	\
+		.conns = SENSING_CONNECTIONS_NAME(node),		\
+		.iodev = &SENSING_SENSOR_IODEV_NAME(node),		\
+	};
+
 /**
- * @brief Post sensor data, sensor subsystem runtime will deliver to it's
- * clients.
+ * @brief Like SENSOR_DEVICE_DT_DEFINE() with sensing specifics.
  *
- * Unblocked function, returned immediately.
+ * @details Defines a sensor which implements the sensor API. May define an
+ * element in the sensing sensor iterable section used to enumerate all sensing
+ * sensors.
  *
- * Used by a virtual sensor to post data to it's clients.
+ * @param node_id The devicetree node identifier.
  *
- * A reporter sensor can use this API to post data to it's clients.
- * For example, when a virtual sensor computed a data, then can use this API
- * to deliver the data to it's clients.
- * Please note, this API just for reporter post data to the sensor subsystem
- * runtime, the runtime will help delivered the data to it's all clients
- * according clients' configurations such as reporter interval, data change sensitivity.
+ * @param reg_ptr Pointer to the device's sensing_sensor_register_info.
  *
- * @param dev The sensor instance device structure.
+ * @param init_fn Name of the init function of the driver.
  *
- * @param buf The data buffer.
+ * @param pm_device PM device resources reference (NULL if device does not use
+ * PM).
  *
- * @param size The buffer size in bytes.
+ * @param data_ptr Pointer to the device's private data.
  *
- * @return 0 on success or negative error value on failure.
+ * @param cfg_ptr The address to the structure containing the configuration
+ * information for this instance of the driver.
+ *
+ * @param level The initialization level. See SYS_INIT() for details.
+ *
+ * @param prio Priority within the selected initialization level. See
+ * SYS_INIT() for details.
+ *
+ * @param api_ptr Provides an initial pointer to the API function struct used
+ * by the driver. Can be NULL.
  */
-int sensing_sensor_post_data(
-		const struct device *dev,
-		void *buf, int size);
+#define SENSING_SENSOR_DT_DEFINE(node_id, reg_ptr, cb_list_ptr,		\
+				init_fn, pm_device,			\
+				data_ptr, cfg_ptr, level, prio,		\
+				api_ptr, ...)				\
+	SENSOR_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
+			 data_ptr, cfg_ptr, level, prio,		\
+			 api_ptr, __VA_ARGS__);				\
+									\
+	SENSING_SENSOR_DEFINE(node_id, reg_ptr, cb_list_ptr);
+
+/**
+ * @brief Like SENSING_SENSOR_DT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSING_SENSOR_DT_DEFINE().
+ *
+ * @param ... other parameters as expected by SENSING_SENSOR_DT_DEFINE().
+ */
+#define SENSING_SENSOR_DT_INST_DEFINE(inst, reg_ptr, cb_list_ptr, ...)	\
+	SENSING_SENSOR_DT_DEFINE(DT_DRV_INST(inst), reg_ptr,		\
+			cb_list_ptr, __VA_ARGS__)
 
 /**
  * @brief Get reporter handles	of a given sensor instance by sensor type.
@@ -176,7 +258,7 @@ int sensing_sensor_post_data(
  */
 int sensing_sensor_get_reporters(
 		const struct device *dev, int type,
-		const int *reporter_handles, int max_handles);
+		sensing_sensor_handle_t *reporter_handles, int max_handles);
 
 /**
  * @brief Get reporters count of a given sensor instance by sensor type.
@@ -202,386 +284,6 @@ int sensing_sensor_get_reporters_count(
 int sensing_sensor_get_state(
 		const struct device *dev,
 		enum sensing_sensor_state *state);
-
-/**
- * @brief Trigger the data ready event to sensing
- *
- * @param dev Pointer to the sensor device
- *
- * @return 0 on success or negative error value on failure.
- */
-int sensing_sensor_notify_data_ready(
-		const struct device *dev);
-
-/**
- * @brief Set the data ready mode of the sensor
- *
- * @param dev Pointer to the sensor device
- *
- * @param data_ready Enable/disable the data ready mode. Default:disabled
- *
- * @return 0 on success or negative error value on failure.
- */
-int sensing_sensor_set_data_ready(
-		const struct device *dev, bool data_ready);
-
-/**
- * @}
- */
-
-/**
- * @brief Sensor Callbacks
- * @addtogroup sensing_sensor_callbacks
- * \{
- */
-
-/**
- * @brief Sensor initialize.
- *
- * Sensor can initialize it's runtime context in this callback.
- *
- * @param dev The sensor instance device structure.
- *
- * @param info The sensor instance's constant information.
- *
- * @param reporter_handles The reporters handles for this sensor, NULL for physical sensors.
- *
- * @param reporters_count The number of reporters, zero for physical sensors.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_init_t)(
-		const struct device *dev, const struct sensing_sensor_info *info,
-		const sensing_sensor_handle_t *reporter_handles, int reporters_count);
-
-/**
- * @brief Sensor's de-initialize.
- *
- * Sensor can release it's runtime context in this callback.
- *
- * @param dev The sensor instance device structure.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_deinit_t)(
-		const struct device *dev);
-
-/**
- * @brief Sensor reset.
- *
- * Sensor can reset its runtime context in this callback to default values without resources
- * release and re-allocation.
- *
- * Its very useful for a virtual sensor to quickly reset its runtime context to a default state.
- *
- * @param dev The sensor instance device structure.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_reset_t)(
-		const struct device *dev);
-
-/**
- * @brief Sensor read sample.
- *
- * Only physical sensor need implement this callback.
- * Physical sensor can fetch sample data from sensor device in this callback
- *
- * @param dev The sensor instance device structure.
- *
- * @param buf Sensor subsystem runtime allocated buffer, and passed its pointer
- * to this sensor for store fetched sample.
- *
- * @param size The size of the buffer in bytes.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_read_sample_t)(
-		const struct device *dev,
-		void *buf, int size);
-
-/**
- * @brief Sensor process data.
- *
- * Only virtual sensor need implement this callback.
- * Virtual sensor can receive reporter's data and do fusion computing
- * in this callback.
- *
- * @param dev The sensor instance device structure.
- *
- * @param reporter The reporter handle who delivered this sensor data
- *
- * @param buf The buffer stored the reporter's sensor data.
- *
- * @param size The size of the buffer in bytes.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_process_t)(
-		const struct device *dev,
-		int reporter,
-		void *buf, int size);
-
-/**
- * @brief Trigger a sensor to do self calibration
- *
- * If not support self calibration, can not implement this callback.
- *
- * @param dev The sensor instance device structure.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_self_calibration_t)(
-		const struct device *dev);
-
-/**
- * @brief Sensitivity arbitration.
- *
- * This callback API provides a chance for sensor to do customized arbitration on data change
- * sensitivity.
- * The sensor can check two sequential samples with client's sensitivity value (passed with
- * parameters in this callback) and decide if can pass the sensor sample to its client.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param sensitivity The sensitivity value.
- *
- * @param last_sample_buf The buffer stored last sample data.
- *
- * @param last_sample_size The size of last sample's data buffer in bytes
- *
- * @param current_sample_buf The buffer stored current sample data.
- *
- * @param current_sample_size The size of current sample's data buffer in bytes
- *
- * @return 0 on test passed or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_sensitivity_test_t)(
-		const struct device *dev,
-		int index, uint32_t sensitivity,
-		void *last_sample_buf, int last_sample_size,
-		void *current_sample_buf, int current_sample_size);
-
-/**
- * @brief Set current report interval.
- *
- * @param dev The sensor instance device structure.
- *
- * @param value The value to be set.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_set_interval_t)(
-		const struct device *dev,
-		uint32_t value);
-
-/**
- * @brief Get current report interval.
- *
- * @param dev The sensor instance device structure.
- *
- * @param value The data buffer to receive value.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_get_interval_t)(
-		const struct device *dev,
-		uint32_t *value);
-
-/**
- * @brief Set data change sensitivity.
- *
- * Since each sensor type may have multiple data fields for it's value, this
- * API support set separated sensitivity for each data field, or global
- * sensitivity for all data fields.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param value The value to be set.
- *
- * @return 0 on success or negative error value on failure.
- *
- */
-typedef int (*sensing_sensor_set_sensitivity_t)(
-		const struct device *dev,
-		int index, uint32_t value);
-
-/**
- * @brief Get current data change sensitivity.
- *
- * Since each sensor type may have multiple data fields for it's value, this
- * API support get separated sensitivity for each data field, or global
- * sensitivity for all data fields.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param value The data buffer to receive value.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_get_sensitivity_t)(
-		const struct device *dev,
-		int index, uint32_t *value);
-
-/**
- * @brief Set data range.
- *
- * Some sensors especially for physical sensors, support data range
- * configuration, this may change data resolution.
- *
- * Since each sensor type may have multiple data fields for it's value, this
- * API support set separated range for each data field, or global range for
- * all data fields.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param value The value to be set.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_set_range_t)(
-		const struct device *dev,
-		int index, uint32_t value);
-
-/**
- * @brief Get current data range.
- *
- * Some sensors especially for physical sensors, support data range
- * configuration, this may change data resolution.
- *
- * Since each sensor type may have multiple data fields for it's value, this
- * API support get separated range for each data field, or global range for
- * all data fields.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param value The data buffer to receive value.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_get_range_t)(
-		const struct device *dev,
-		int index, uint32_t *value);
-
-/**
- * @brief Set current sensor's hardware fifo size
- *
- * Some sensors especially for physical sensors, support hardware fifo, this API can
- * configure the current fifo size.
- *
- * @param dev The sensor instance device structure.
- *
- * @param samples The sample number to set for fifo.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_set_fifo_t)(
-		const struct device *dev,
-		uint32_t samples);
-
-/**
- * @brief Get current sensor's hardware fifo size
- *
- * Some sensors especially for physical sensors, support fifo, this API can
- * get the current fifo size.
- *
- * @param dev The sensor instance device structure.
- *
- * @param samples The data buffer to receive the fifo sample number.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_get_fifo_t)(
-		const struct device *dev,
-		uint32_t *samples);
-
-/**
- * @brief Set current sensor data offset
- *
- * Some sensors especially for physical sensors, such as accelerometer senors,
- * as data drift, need configure offset calibration.
- *
- * Since each sensor type may have multiple data fields for it's value, this
- * API support set separated offset for each data field, or global offset for
- * all data fields.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param value The offset value to be set.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_set_offset_t)(
-		const struct device *dev,
-		int index, int32_t value);
-
-/**
- * @brief Get current sensor data offset
- *
- * Some sensors especially for physical sensors, such as accelerometer senors,
- * as data drift, need configure offset calibration.
- *
- * Since each sensor type may have multiple data fields for it's value, this
- * API support get separated offset for each data field, or global offset for
- * all data fields.
- *
- * @param dev The sensor instance device structure.
- *
- * @param index The value fields index to be set, -1 for all fields (global).
- *
- * @param value The data buffer to receive the offset value.
- *
- * @return 0 on success or negative error value on failure, not support etc.
- */
-typedef int (*sensing_sensor_get_offset_t)(
-		const struct device *dev,
-		int index, int32_t *value);
-/**
- * @struct sensing_sensor_api
- * @brief Sensor callback api
- *
- * A sensor must register this callback API during sensor registration.
- */
-struct sensing_sensor_api {
-	sensing_sensor_init_t init;
-	sensing_sensor_reset_t reset;
-	sensing_sensor_deinit_t deinit;
-	sensing_sensor_set_interval_t set_interval;
-	sensing_sensor_get_interval_t get_interval;
-	sensing_sensor_set_range_t set_range;
-	sensing_sensor_get_range_t get_range;
-	sensing_sensor_set_offset_t set_offset;
-	sensing_sensor_get_offset_t get_offset;
-	sensing_sensor_get_fifo_t get_fifo;
-	sensing_sensor_set_fifo_t set_fifo;
-	sensing_sensor_set_sensitivity_t set_sensitivity;
-	sensing_sensor_get_sensitivity_t get_sensitivity;
-	sensing_sensor_read_sample_t read_sample;
-	sensing_sensor_process_t process;
-	sensing_sensor_sensitivity_test_t sensitivity_test;
-	sensing_sensor_self_calibration_t self_calibration;
-};
 
 /**
  * @}
