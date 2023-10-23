@@ -30,7 +30,7 @@ void test_timer(int sigev_notify)
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 	struct timespec ts, te;
-	int64_t nsecs_elapsed, secs_elapsed, total_secs_timer;
+	int64_t nsecs_elapsed, secs_elapsed;
 
 	exp_count = 0;
 	sig.sigev_notify = sigev_notify;
@@ -84,15 +84,15 @@ void test_timer(int sigev_notify)
 		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
 	}
 
-	total_secs_timer = (value.it_value.tv_sec * NSEC_PER_SEC +
-			    value.it_value.tv_nsec + (uint64_t) exp_count *
-			    (value.it_interval.tv_sec * NSEC_PER_SEC +
-			     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
-
+	uint64_t elapsed = secs_elapsed*NSEC_PER_SEC + nsecs_elapsed;
+	uint64_t first_sig = value.it_value.tv_sec * NSEC_PER_SEC + value.it_value.tv_nsec;
+	uint64_t sig_interval = value.it_interval.tv_sec * NSEC_PER_SEC + value.it_interval.tv_nsec;
+	int expected_signal_count = (elapsed - first_sig) / sig_interval + 1;
 
 	/*TESTPOINT: Check if POSIX timer test passed*/
-	zassert_equal(total_secs_timer, secs_elapsed,
-		      "POSIX timer test has failed");
+	zassert_within(exp_count, expected_signal_count, 1,
+		       "POSIX timer test has failed %i != %i",
+		       exp_count, expected_signal_count);
 }
 
 ZTEST(posix_apis, test_timer)
