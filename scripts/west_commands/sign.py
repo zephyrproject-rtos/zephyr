@@ -517,6 +517,13 @@ class RimageSigner(Signer):
         else:
             no_manifest = False
 
+        # Non-SOF build does not have extended manifest data for
+        # rimage to process, which might result in rimage error.
+        # So skip it when not doing SOF builds.
+        is_sof_build = build_conf.getboolean('CONFIG_SOF')
+        if not is_sof_build:
+            no_manifest = True
+
         if no_manifest:
             extra_ri_args = [ ]
         else:
