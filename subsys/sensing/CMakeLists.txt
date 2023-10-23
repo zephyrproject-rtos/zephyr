@@ -11,3 +11,4 @@ zephyr_library_sources(
 )
 
 add_subdirectory_ifdef(CONFIG_SENSING_SENSOR_PHY_3D_SENSOR sensor/phy_3d_sensor)
+add_subdirectory_ifdef(CONFIG_SENSING_SENSOR_HINGE_ANGLE sensor/hinge_angle)
