@@ -23,3 +23,7 @@ properties:
   reporters:
     type: phandles
     description: sensor reporters
+
+  stream-mode:
+    type: boolean
+    description: sensor works on stream mode or poll mode
