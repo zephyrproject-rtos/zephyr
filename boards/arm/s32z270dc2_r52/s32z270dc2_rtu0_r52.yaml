@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: s32z270dc2_rtu0_r52
@@ -14,4 +14,6 @@ supported:
   - watchdog
   - netif:eth
   - can
+  - spi
+  - counter
 vendor: nxp
