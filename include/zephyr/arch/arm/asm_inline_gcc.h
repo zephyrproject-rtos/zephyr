@@ -43,8 +43,8 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
-#if CONFIG_MP_MAX_NUM_CPUS == 1
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if CONFIG_MP_MAX_NUM_CPUS == 1 || defined(CONFIG_ARMV8_M_BASELINE)
 	__asm__ volatile("mrs %0, PRIMASK;"
 		"cpsid i"
 		: "=r" (key)
@@ -53,7 +53,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #else
 #error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
 #endif
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	unsigned int tmp;
 
 	__asm__ volatile(
@@ -61,15 +61,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		"mrs %0, BASEPRI;"
 		"msr BASEPRI_MAX, %1;"
 		"isb;"
-		: "=r"(key),
-#if defined(CONFIG_ARMV8_M_BASELINE)
-		/* armv8-m.baseline's mov is limited to registers r0-r7.
-		 * Let the compiler know we have this constraint on tmp.
-		 */
-		"=l"(tmp)
-#else
-		"=r"(tmp)
-#endif
+		: "=r"(key), "=r"(tmp)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
 		: "memory");
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
@@ -95,7 +87,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key != 0U) {
 		return;
 	}
@@ -103,7 +95,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		"cpsie i;"
 		"isb"
 		: : : "memory");
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile(
 		"msr BASEPRI, %0;"
 		"isb;"
