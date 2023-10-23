@@ -4,6 +4,8 @@ common:
     - kernel
     - security
     - userspace
+  arch_exclude:
+    - posix
 tests:
   kernel.memory_protection.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE

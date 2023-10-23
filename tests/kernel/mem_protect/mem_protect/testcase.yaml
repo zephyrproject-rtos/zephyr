@@ -7,6 +7,8 @@ common:
 tests:
   kernel.memory_protection:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
     platform_exclude: twr_ke18f
     extra_args:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
