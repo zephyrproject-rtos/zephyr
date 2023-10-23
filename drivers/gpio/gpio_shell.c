@@ -15,6 +15,7 @@
 #define ARGV_PIN 2
 #define ARGV_CONF 3
 #define ARGV_VALUE 3
+#define ARGV_VENDOR_SPECIFIC 4
 
 #define NGPIOS_UNKNOWN -1
 #define PIN_NOT_FOUND UINT8_MAX
@@ -221,6 +222,7 @@ static int get_sh_gpio(const struct shell *sh, char **argv, struct sh_gpio *gpio
 static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void *data)
 {
 	gpio_flags_t flags = 0;
+	gpio_flags_t vendor_specific;
 	struct sh_gpio gpio;
 	int ret = 0;
 
@@ -302,6 +304,22 @@ static int cmd_gpio_conf(const struct shell *sh, size_t argc, char **argv, void 
 		shell_error(sh, "cannot initialise to logic 0 and logic 1");
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	if (argc == 5) {
+		vendor_specific = shell_strtoul(argv[ARGV_VENDOR_SPECIFIC], 0, &ret);
+		if ((ret == 0) && ((vendor_specific & ~(0xFF00U)) == 0)) {
+			flags |= vendor_specific;
+		} else {
+			/*
+			 * See include/zephyr/dt-bindings/gpio/ for the
+			 * available flags for your vendor.
+			 */
+			shell_error(sh, "vendor specific flags must be within "
+					"the mask 0xFF00");
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
 	}
 
 	ret = gpio_pin_configure(gpio.dev, gpio.pin, flags);
@@ -563,12 +581,14 @@ static int cmd_gpio_info(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD_ARG(conf, &sub_gpio_dev,
 		"Configure GPIO pin\n"
-		"Usage: gpio conf <device> <pin> <configuration <i|o>[u|d][h|l][0|1]>\n"
+		"Usage: gpio conf <device> <pin> <configuration <i|o>[u|d][h|l][0|1]> [vendor specific]\n"
 		"<i|o> - input|output\n"
 		"[u|d] - pull up|pull down, otherwise open\n"
 		"[h|l] - active high|active low, otherwise defaults to active high\n"
-		"[0|1] - initialise to logic 0|logic 1, otherwise defaults to logic 0",
-		cmd_gpio_conf, 4, 0),
+		"[0|1] - initialise to logic 0|logic 1, otherwise defaults to logic 0\n"
+		"[vendor specific] - configuration flags within the mask 0xFF00\n"
+		"                    see include/zephyr/dt-bindings/gpio/",
+		cmd_gpio_conf, 4, 1),
 	SHELL_CMD_ARG(get, &sub_gpio_dev,
 		"Get GPIO pin value\n"
 		"Usage: gpio get <device> <pin>", cmd_gpio_get, 3, 0),
