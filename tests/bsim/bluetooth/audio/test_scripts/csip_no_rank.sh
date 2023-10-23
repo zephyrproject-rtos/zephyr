@@ -17,19 +17,19 @@ SIMULATION_ID="csip_no_rank"
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \
-  -RealEncryption=1 -rs=1 -argstest no-rank no-lock
+  -RealEncryption=1 -rs=1 -D=4 -argstest no-rank no-lock
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=csip_set_member \
-  -RealEncryption=1 -rs=2 -argstest rank 0 not-lockable
+  -RealEncryption=1 -rs=2 -D=4 -argstest rank 0 not-lockable
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=csip_set_member \
-  -RealEncryption=1 -rs=3 -argstest rank 0 not-lockable
+  -RealEncryption=1 -rs=3 -D=4 -argstest rank 0 not-lockable
 
 Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=3 -testid=csip_set_member \
-  -RealEncryption=1 -rs=4 -argstest rank 0 not-lockable
+  -RealEncryption=1 -rs=4 -D=4 -argstest rank 0 not-lockable
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
