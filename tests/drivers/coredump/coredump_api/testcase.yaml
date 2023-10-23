@@ -33,6 +33,8 @@ tests:
   debug.coredump.drivers.api:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: qemu_riscv32
+    arch_exclude:
+      - posix
     harness: console
     integration_platforms:
       - qemu_x86
