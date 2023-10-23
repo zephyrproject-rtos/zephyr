@@ -22,6 +22,26 @@
 
 	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SHARED_INTERRUPTS)
+	/* since z_shared_isr() is not referenced anywhere when
+	 * zephyr_pre0.elf is built, the linker will end up dropping it.
+	 * Later on, during the second linking stage (when zephyr.elf is
+	 * built), the symbol will be added to the text section since it's
+	 * now being referenced (thanks to isr_tables.c). This is very
+	 * problematic because adding the z_shared_isr symbol between
+	 * the linking stages will end up shifting the addresses of the
+	 * functions, which, in turn, will end up messing the ISR table
+	 * (as the entries from _sw_isr_table will end up pointing to
+	 * old addresses of the registered ISRs). To prevent this from
+	 * happening, instruct the linker to avoid dropping z_shared_isr
+	 * if it's not being referenced anywhere.
+	 */
+	SECTION_PROLOGUE(.text.z_shared_isr,,)
+	{
+		KEEP(*(.text.z_shared_isr))
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{
@@ -39,11 +59,6 @@
 	{
 		/* TODO: does this section require alignment? */
 		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_PROLOGUE(.text.z_shared_isr,,)
-	{
-		KEEP(*(.text.z_shared_isr))
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
