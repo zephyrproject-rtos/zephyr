@@ -22,7 +22,7 @@ make sure the ``protoc`` executable is installed and available.
 
       Use ``apt`` to install dependency:
 
-         .. code-block:: bash
+         .. code-block:: shell
 
             sudo apt install protobuf-compiler
 
@@ -30,7 +30,7 @@ make sure the ``protoc`` executable is installed and available.
 
       Use ``brew`` to install dependency:
 
-         .. code-block:: bash
+         .. code-block:: shell
 
             brew install protobuf
 
@@ -38,9 +38,18 @@ make sure the ``protoc`` executable is installed and available.
 
       Use ``choco`` to install dependency:
 
-         .. code-block:: console
+         .. code-block:: shell
 
             choco install protoc
+
+
+Additionally Nanopb is an optional module and needs to be added explicitly to the workspace:
+
+.. code-block:: shell
+
+   west config manifest.project-filter -- +nanopb
+   west update
+
 
 Building and Running
 ********************
