@@ -14,6 +14,8 @@ common:
 tests:
   sample.kernel.memory_protection.shared_mem:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
     platform_exclude:
       - twr_ke18f
       - cy8cproto_062_4343w
