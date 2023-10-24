@@ -1925,26 +1925,46 @@ const uint8_t dwt_pgdelay_defs[] = {
 	DWT_TC_PGDELAY_CH7
 };
 
+#ifdef CONFIG_ENABLE_MANUAL_TX_POWER_CONTROL
+
+
 /*
- * Defaults from Table 19: Reference values for Register file:
- *     0x1E – Transmit Power Control for Smart Transmit Power Control
- *     Transmit Power Control values for 16 MHz, with DIS_STXP = 0
+ * Default from Table 20: Reference values Register file:
+ *     0x1E – Transmit Power Control for Manual Transmit Power Control
+ *     Transmit Power Control values for 64 MHz, with DIS_STXP = 1
  */
-const uint32_t dwt_txpwr_stxp0_16[] = {
-	0x15355575,
-	0x15355575,
-	0x0F2F4F6F,
-	0x1F1F3F5F,
-	0x0E082848,
-	0x32527292
+const uint32_t dwt_txpwr_64[] = {
+	0x67676767,
+	0x67676767,
+	0x8B8B8B8B,
+	0x9A9A9A9A,
+	0x85858585,
+	0xD1D1D1D1
 };
+
+/*
+ * Default from Table 20: Reference values Register file:
+ *     0x1E – Transmit Power Control for Manual Transmit Power Control
+ *     Transmit Power Control values for 16 MHz, with DIS_STXP = 1
+ */
+const uint32_t dwt_txpwr_16[] = {
+	0x75757575,
+	0x75757575,
+	0x6F6F6F6F,
+	0x5F5F5F5F,
+	0x48484848,
+	0x92929292
+};
+
+#else
+
 
 /*
  * Defaults from Table 19: Reference values for Register file:
  *     0x1E – Transmit Power Control for Smart Transmit Power Control
  *     Transmit Power Control values for 64 MHz, with DIS_STXP = 0
  */
-const uint32_t dwt_txpwr_stxp0_64[] = {
+const uint32_t dwt_txpwr_64[] = {
 	 0x07274767,
 	 0x07274767,
 	 0x2B4B6B8B,
@@ -1954,32 +1974,20 @@ const uint32_t dwt_txpwr_stxp0_64[] = {
 };
 
 /*
- * Default from Table 20: Reference values Register file:
- *     0x1E – Transmit Power Control for Manual Transmit Power Control
- *     Transmit Power Control values for 16 MHz, with DIS_STXP = 1
+ * Defaults from Table 19: Reference values for Register file:
+ *     0x1E – Transmit Power Control for Smart Transmit Power Control
+ *     Transmit Power Control values for 16 MHz, with DIS_STXP = 0
  */
-const uint32_t dwt_txpwr_stxp1_16[] = {
-	0x75757575,
-	0x75757575,
-	0x6F6F6F6F,
-	0x5F5F5F5F,
-	0x48484848,
-	0x92929292
+const uint32_t dwt_txpwr_16[] = {
+	0x15355575,
+	0x15355575,
+	0x0F2F4F6F,
+	0x1F1F3F5F,
+	0x0E082848,
+	0x32527292
 };
 
-/*
- * Default from Table 20: Reference values Register file:
- *     0x1E – Transmit Power Control for Manual Transmit Power Control
- *     Transmit Power Control values for 64 MHz, with DIS_STXP = 1
- */
-const uint32_t dwt_txpwr_stxp1_64[] = {
-	0x67676767,
-	0x67676767,
-	0x8B8B8B8B,
-	0x9A9A9A9A,
-	0x85858585,
-	0xD1D1D1D1
-};
+#endif
 
 enum dwt_pulse_repetition_frequency {
 	DWT_PRF_16M = 0,

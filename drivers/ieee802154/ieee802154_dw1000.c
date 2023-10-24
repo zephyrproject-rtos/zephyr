@@ -1370,16 +1370,16 @@ static int dwt_configure_rf_phy(const struct device *dev)
 	if (IS_ENABLED(CONFIG_ENABLE_MANUAL_TX_POWER_CONTROL)) {
 		sys_cfg |= DWT_SYS_CFG_DIS_STXP;
 		if (rf_cfg->prf == DWT_PRF_64M) {
-			power = dwt_txpwr_stxp1_64[dwt_ch_to_cfg[chan]];
+			power = dwt_txpwr_64[dwt_ch_to_cfg[chan]];
 		} else {
-			power = dwt_txpwr_stxp1_16[dwt_ch_to_cfg[chan]];
+			power = dwt_txpwr_16[dwt_ch_to_cfg[chan]];
 		}
 	} else {
 		sys_cfg &= ~DWT_SYS_CFG_DIS_STXP;
 		if (rf_cfg->prf == DWT_PRF_64M) {
-			power = dwt_txpwr_stxp0_64[dwt_ch_to_cfg[chan]];
+			power = dwt_txpwr_64[dwt_ch_to_cfg[chan]];
 		} else {
-			power = dwt_txpwr_stxp0_16[dwt_ch_to_cfg[chan]];
+			power = dwt_txpwr_16[dwt_ch_to_cfg[chan]];
 		}
 	}
 
