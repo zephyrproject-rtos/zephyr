@@ -170,6 +170,17 @@ Tests are written from test spec;
 |LightweightM2M-1.1-int-261 - Write-Attribute Operation on a multiple resource|:large_orange_diamond:|Leshan don't allow writing attributes to resource instance|
 |LightweightM2M-1.1-int-280 - Successful Read-Composite Operation|:white_check_mark:| |
 |LightweightM2M-1.1-int-281 - Partially Successful Read-Composite Operation|:white_check_mark:| |
+|LightweightM2M-1.1-int-301 - Observation and Notification of parameter values|:white_check_mark:| |
+|LightweightM2M-1.1-int-302 - Cancel Observations using Reset Operation|:white_check_mark:| |
+|LightweightM2M-1.1-int-303 - Cancel observations using Observe with Cancel parameter|:large_orange_diamond:|Leshan only supports passive cancelling|
+|LightweightM2M-1.1-int-304 - Observe-Composite Operation|:white_check_mark:| |
+|LightweightM2M-1.1-int-305 - Cancel Observation-Composite Operation|:large_orange_diamond:|Leshan only supports passive cancelling|
+|LightweightM2M-1.1-int-306 – Send Operation|:white_check_mark:|[~~#64290~~](https://github.com/zephyrproject-rtos/zephyr/issues/64290)|
+|LightweightM2M-1.1-int-307 – Muting Send|:white_check_mark:| |
+|LightweightM2M-1.1-int-308 - Observe-Composite and Creating Object Instance|:white_check_mark:|[~~#64634~~](https://github.com/zephyrproject-rtos/zephyr/issues/64634)|
+|LightweightM2M-1.1-int-309 - Observe-Composite and Deleting Object Instance|:white_check_mark:|[~~#64634~~](https://github.com/zephyrproject-rtos/zephyr/issues/64634)|
+|LightweightM2M-1.1-int-310 - Observe-Composite and modification of parameter values|:white_check_mark:| |
+|LightweightM2M-1.1-int-311 - Send command|:white_check_mark:| |
 |LightweightM2M-1.1-int-401 - UDP Channel Security - PSK Mode           |:white_check_mark:| |
 
 * :white_check_mark: Working OK.

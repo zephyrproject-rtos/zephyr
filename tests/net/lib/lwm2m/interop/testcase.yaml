@@ -1,10 +1,11 @@
 tests:
   net.lwm2m.interop:
     harness: pytest
-    timeout: 300
+    timeout: 600
     slow: true
     harness_config:
       pytest_dut_scope: module
+      pytest_args: []
     integration_platforms:
       - native_posix
     platform_allow:
