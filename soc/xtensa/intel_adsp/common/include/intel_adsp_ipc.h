@@ -7,10 +7,7 @@
 #include <intel_adsp_ipc_devtree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#ifdef CONFIG_PM_DEVICE_RUNTIME
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
-#endif
 
 struct intel_adsp_ipc_config {
 	volatile struct intel_adsp_ipc *regs;
