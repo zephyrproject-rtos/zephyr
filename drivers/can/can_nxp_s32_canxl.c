@@ -396,7 +396,10 @@ static void can_nxp_s32_remove_rx_filter(const struct device *dev, int filter_id
 	struct can_nxp_s32_data *data = dev->data;
 	int mb_indx = ALLOC_IDX_TO_RXMB_IDX(filter_id);
 
-	__ASSERT_NO_MSG(filter_id >= 0 && filter_id < CONFIG_CAN_NXP_S32_MAX_RX);
+	if (filter_id < 0 || filter_id >= CONFIG_CAN_NXP_S32_MAX_RX) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
+		return;
+	}
 
 	k_mutex_lock(&data->rx_mutex, K_FOREVER);
 
