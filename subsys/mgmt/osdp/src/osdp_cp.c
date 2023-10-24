@@ -116,7 +116,7 @@ int osdp_extract_address(int *address)
 
 static inline bool check_buf_len(int need, int have)
 {
-	if (need >= have) {
+	if (need > have) {
 		LOG_ERR("OOM at build command: need:%d have:%d", need, have);
 		return false;
 	}
