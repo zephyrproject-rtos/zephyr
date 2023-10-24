@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch56x-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/ pwm2_default: pwm2_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('B', 1)>;  /* PWM2 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ pwm3_default: pwm3_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('B', 2)>;  /* PWM3 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ tmr1_capture_remap: tmr1_capture_remap {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 0, TMR1, REMAP)>; /* TMR1 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ tmr1_output_remap: tmr1_output_remap {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 0, TMR1, REMAP)>; /* TMR1 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ uart0_default: uart0_default {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 6, UART0, DEFAULT)>, /* TXD0 */
+				 <CH56X_PINMUX('B', 10)>, /* DTR */
+				 <CH56X_PINMUX('B', 12)>; /* RTS */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 5, UART0, DEFAULT)>, /* RXD0 */
+				 <CH56X_PINMUX('B', 7)>,  /* DSR */
+				 <CH56X_PINMUX('B', 8)>,  /* RI */
+				 <CH56X_PINMUX('B', 9)>,  /* DCD */
+				 <CH56X_PINMUX('B', 11)>; /* CTS */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ uart1_default: uart1_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('A', 8)>;  /* TXD1 */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX('A', 7)>;  /* RXD1 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi0_default: spi0_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('A', 13)>, /* SCK */
+				 <CH56X_PINMUX('A', 14)>; /* MOSI */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX('A', 15)>; /* MISO */
+			input-enable;
+		};
+	};
+};

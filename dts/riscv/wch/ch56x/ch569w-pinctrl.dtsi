@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch56x/ch56x-common-pinctrl.dtsi>
+#include <wch/ch56x/ch56xw-common-pinctrl.dtsi>

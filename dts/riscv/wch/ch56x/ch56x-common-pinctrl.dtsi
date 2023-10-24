@@ -1,0 +1,139 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch56x-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/ pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('B', 15)>; /* PWM0 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ pwm1_default: pwm1_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('A', 4)>;  /* PWM1 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ tmr0_capture_default: tmr0_capture_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('A', 9)>;  /* TMR0 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ tmr0_output_default: tmr0_output_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('A', 9)>;  /* TMR0 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ tmr1_capture_default: tmr1_capture_default {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 15, TMR1, DEFAULT)>; /* TMR1 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ tmr1_output_default: tmr1_output_default {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 15, TMR1, DEFAULT)>; /* TMR1 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ tmr2_capture_default: tmr2_capture_default {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('A', 4, TMR2, DEFAULT)>;  /* TMR2 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ tmr2_output_default: tmr2_output_default {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('A', 4, TMR2, DEFAULT)>;  /* TMR2 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ tmr2_capture_remap: tmr2_capture_remap {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 3, TMR2, REMAP)>; /* TMR2 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ tmr2_output_remap: tmr2_output_remap {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('B', 3, TMR2, REMAP)>; /* TMR2 */
+			output-enable;
+			drive-push-pull;
+		};
+	};
+
+	/omit-if-no-ref/ uart0_remap: uart0_remap {
+		group1 {
+			pinmux = <CH56X_PINMUX_REMAP('A', 6, UART0, REMAP)>, /* TXD0_ */
+				 <CH56X_PINMUX('B', 10)>, /* DTR */
+				 <CH56X_PINMUX('B', 12)>; /* RTS */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX_REMAP('A', 5, UART0, REMAP)>, /* RXD0_ */
+				 <CH56X_PINMUX('B', 7)>,  /* DSR */
+				 <CH56X_PINMUX('B', 8)>,  /* RI */
+				 <CH56X_PINMUX('B', 9)>,  /* DCD */
+				 <CH56X_PINMUX('B', 11)>; /* CTS */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ uart2_default: uart2_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('A', 3)>;  /* TXD2 */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX('A', 2)>;  /* RXD2 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ uart3_default: uart3_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('B', 4)>;  /* TXD3 */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX('B', 3)>;  /* RXD3 */
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi1_default: spi1_default {
+		group1 {
+			pinmux = <CH56X_PINMUX('B', 12)>, /* SCK1 */
+				 <CH56X_PINMUX('B', 13)>; /* MOSI1 */
+			output-enable;
+			drive-push-pull;
+		};
+		group2 {
+			pinmux = <CH56X_PINMUX('B', 14)>; /* MISO1 */
+			input-enable;
+		};
+	};
+};

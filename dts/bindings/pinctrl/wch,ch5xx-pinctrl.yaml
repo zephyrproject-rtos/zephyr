@@ -1,0 +1,49 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The CH5xx series introduces limited pin multiplexing capabilities, where the
+  functionality of each pin is prioritized and determined by the enabled
+  peripherals. When a peripheral is enabled, it connects and locks specific pins
+  (unlike most MCUs, which allow unconnected pins to remain as regular GPIOs).
+
+  Nevertheless, the pinctrl driver for CH5xx has been implemented to handle the
+  following tasks:
+
+  * Configuring pin directions, pull-ups/pull-downs, and other pin parameters
+    for peripherals.
+  * Enabling the remapping of a subset of supported peripherals from a fixed set
+    of pins to another.
+
+compatible: "wch,ch5xx-pinctrl"
+
+include: base.yaml
+
+properties:
+  gpio-controllers:
+    type: phandles
+    description: Phandle to GPIO controllers.
+    required: true
+
+child-binding:
+  description: CH5xx pinmux group
+
+  child-binding:
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-push-pull
+          - drive-open-drain
+          - input-enable
+          - output-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+
+      gpio-flags:
+        type: int
+        description: Additional flags for the pin.

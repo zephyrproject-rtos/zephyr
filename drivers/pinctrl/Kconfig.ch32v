@@ -1,0 +1,10 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_CH5XX
+	bool "WCH CH5xx pin controller"
+	default y
+	depends on DT_HAS_WCH_CH5XX_PINCTRL_ENABLED
+	depends on GPIO
+	help
+	  Enable WCH CH5xx pin controller.
