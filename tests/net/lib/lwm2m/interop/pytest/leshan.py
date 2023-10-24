@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import json
 import binascii
-import requests
-from datetime import datetime
 import time
+from datetime import datetime
 from contextlib import contextmanager
+import requests
 
 class Leshan:
     """This class represents a Leshan client that interacts with demo server's REAT API"""
@@ -86,10 +86,14 @@ class Leshan:
         resp = self._s.post(f'{self.api_url}{path}' + uri_options, data=data, headers=headers, timeout=self.timeout)
         return Leshan.handle_response(resp)
 
-    def delete(self, path: str):
+    def delete_raw(self, path: str):
         """Send HTTP DELETE query"""
         resp = self._s.delete(f'{self.api_url}{path}', timeout=self.timeout)
         return Leshan.handle_response(resp)
+
+    def delete(self, endpoint: str, path: str):
+        """Send LwM2M DELETE command"""
+        return self.delete_raw(f'/clients/{endpoint}/{path}')
 
     def execute(self, endpoint: str, path: str):
         """Send LwM2M EXECUTE command"""
@@ -247,6 +251,10 @@ class Leshan:
     def parse_composite(cls, payload: dict):
         """Decode the Leshan's response to composite query back to a Python dictionary"""
         data = {}
+        if 'status' in payload:
+            if payload['status'] != 'CONTENT(205)' or 'content' not in payload:
+                raise RuntimeError(f'No content received')
+            payload = payload['content']
         for path, content in payload.items():
             keys = [int(key) for key in path.lstrip("/").split('/')]
             if len(keys) == 1:
@@ -291,9 +299,7 @@ class Leshan:
         parameters = self._composite_params(paths)
         resp = self._s.get(f'{self.api_url}/clients/{endpoint}/composite', params=parameters, timeout=self.timeout)
         payload = Leshan.handle_response(resp)
-        if not payload['status'] == 'CONTENT(205)':
-            raise RuntimeError(f'No content received')
-        return self.parse_composite(payload['content'])
+        return self.parse_composite(payload)
 
     def composite_write(self, endpoint: str, resources: dict):
         """
@@ -314,11 +320,7 @@ class Leshan:
         Objects or object instances cannot be targeted.
         """
         data = { }
-        parameters = {
-            'pathformat': self.format,
-            'nodeformat': self.format,
-            'timeout': self.timeout
-        }
+        parameters = self._composite_params()
         for path, value in resources.items():
             path = path if path.startswith('/') else '/' + path
             level = len(path.split('/')) - 1
@@ -349,7 +351,7 @@ class Leshan:
         self.put('/security/clients/', f'{{"endpoint":"{endpoint}","tls":{{"mode":"psk","details":{{"identity":"{endpoint}","key":"{psk}"}} }} }}')
 
     def delete_device(self, endpoint: str):
-        self.delete(f'/security/clients/{endpoint}')
+        self.delete_raw(f'/security/clients/{endpoint}')
 
     def create_bs_device(self, endpoint: str, server_uri: str, bs_passwd: str, passwd: str):
         psk = binascii.b2a_hex(bs_passwd.encode()).decode()
@@ -361,11 +363,27 @@ class Leshan:
         self.post(f'/bootstrap/{endpoint}', content)
 
     def delete_bs_device(self, endpoint: str):
-        self.delete(f'/security/clients/{endpoint}')
-        self.delete(f'/bootstrap/{endpoint}')
+        self.delete_raw(f'/security/clients/{endpoint}')
+        self.delete_raw(f'/bootstrap/{endpoint}')
+
+    def observe(self, endpoint: str, path: str):
+        return self.post(f'/clients/{endpoint}/{path}/observe', data="")
+
+    def cancel_observe(self, endpoint: str, path: str):
+        return self.delete_raw(f'/clients/{endpoint}/{path}/observe')
+
+    def composite_observe(self, endpoint: str, paths: list[str]):
+        parameters = self._composite_params(paths)
+        resp = self._s.post(f'{self.api_url}/clients/{endpoint}/composite/observe', params=parameters, timeout=self.timeout)
+        payload = Leshan.handle_response(resp)
+        return self.parse_composite(payload)
+
+    def cancel_composite_observe(self, endpoint: str, paths: list[str]):
+        paths = [path if path.startswith('/') else '/' + path for path in paths]
+        return self.delete_raw(f'/clients/{endpoint}/composite/observe?paths=' + ','.join(paths))
 
     @contextmanager
-    def get_event_stream(self, endpoint: str):
+    def get_event_stream(self, endpoint: str, timeout: int = None):
         """
         Get stream of events regarding the given endpoint.
 
@@ -377,11 +395,13 @@ class Leshan:
 
         If timeout happens, the event streams returns None.
         """
-        r = self._s.get(f'{self.api_url}/event?{endpoint}', stream=True, headers={'Accept': 'text/event-stream'}, timeout=self.timeout)
+        if timeout is None:
+            timeout = self.timeout
+        r = requests.get(f'{self.api_url}/event?{endpoint}', stream=True, headers={'Accept': 'text/event-stream'}, timeout=timeout)
         if r.encoding is None:
             r.encoding = 'utf-8'
         try:
-            yield LeshanEventsIterator(r, self.timeout)
+            yield LeshanEventsIterator(r, timeout)
         finally:
             r.close()
 
@@ -406,8 +426,11 @@ class LeshanEventsIterator:
                         if not line.startswith('data: '):
                             continue
                         data = json.loads(line.lstrip('data: '))
-                        if event == 'SEND':
+                        if event == 'SEND' or (event == 'NOTIFICATION' and data['kind'] == 'composite'):
                             return Leshan.parse_composite(data['val'])
+                        if event == 'NOTIFICATION':
+                            d = {data['res']: data['val']}
+                            return Leshan.parse_composite(d)
                         return data
                 if time.time() > timeout:
                     return None
