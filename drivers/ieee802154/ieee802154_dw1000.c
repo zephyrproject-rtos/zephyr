@@ -128,7 +128,11 @@ static struct dwt_context dwt_0_context = {
 	.rf_cfg = {
 		.channel = 5,
 		.dr = DWT_BR_6M8,
+#if CONFIG_IEEE802154_DW1000_PRF_64MHZ
 		.prf = DWT_PRF_64M,
+#else
+		.prf = DWT_PRF_16M,
+#endif
 
 		.rx_pac_l = DWT_PAC8,
 		.rx_shr_code = 10,
@@ -466,6 +470,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	} else {
 		a_const = DWT_RX_SIG_PWR_A_CONST_PRF64;
 	}
+
 
 	if (rx_pacc != 0) {
 #if defined(CONFIG_NEWLIB_LIBC)

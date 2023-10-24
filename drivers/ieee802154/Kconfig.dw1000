@@ -48,4 +48,18 @@ config IEEE802154_DW1000_ENABLE_MANUAL_TX_POWER_CONTROL
 	  increase the transmit power and still remain within regulatory power limits
 	  which are typically specified as average power per millisecond.
 
+choice IEEE802154_DW1000_PRF
+	prompt "Pulse Repetion Frequency"
+	default IEEE802154_DW1000_PRF_64MHZ
+	help
+	  Specify the Pulse repetition frequency used by the driver.
+
+config IEEE802154_DW1000_PRF_16MHZ
+	bool "16 MHz"
+
+config IEEE802154_DW1000_PRF_64MHZ
+	bool "64 MHz"
+
+endchoice
+
 endif
