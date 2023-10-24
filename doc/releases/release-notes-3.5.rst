@@ -68,6 +68,9 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 * CVE-2023-5563 `Zephyr project bug tracker GHSA-98mc-rj7w-7rpv
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-98mc-rj7w-7rpv>`_
 
+* CVE-2023-5753 `Zephyr project bug tracker GHSA-hmpr-px56-rvww
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hmpr-px56-rvww>`_
+
 Kernel
 ******
 
