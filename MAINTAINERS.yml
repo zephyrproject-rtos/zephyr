@@ -5262,6 +5262,15 @@ West:
   labels:
     - "area: Storage"
 
+"West project: gsoc-2022-arduino-core":
+  status: maintained
+  maintainers:
+    - dhruvag2000
+  files:
+    - snippets/arduino-core/
+  labels:
+    - manifest-arduino-api
+
 "West project: hal_adi":
   status: maintained
   maintainers:
