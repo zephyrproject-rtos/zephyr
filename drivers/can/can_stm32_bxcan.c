@@ -1035,7 +1035,10 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	int bank_num;
 	bool bank_unused;
 
-	__ASSERT_NO_MSG(filter_id >= 0 && filter_id < CAN_STM32_MAX_FILTER_ID);
+	if (filter_id < 0 || filter_id >= CAN_STM32_MAX_FILTER_ID) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
+		return;
+	}
 
 	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);

@@ -663,6 +663,11 @@ static void mcp2515_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct mcp2515_data *dev_data = dev->data;
 
+	if (filter_id < 0 || filter_id >= CONFIG_CAN_MAX_FILTER) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
+		return;
+	}
+
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 	dev_data->filter_usage &= ~BIT(filter_id);
 	k_mutex_unlock(&dev_data->mutex);
