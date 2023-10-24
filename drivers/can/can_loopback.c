@@ -171,6 +171,11 @@ void can_loopback_detach(const struct device *dev, int filter_id)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
 
+	if (filter_id < 0 || filter_id >= ARRAY_SIZE(data->filters)) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
+		return;
+	}
+
 	LOG_DBG("Detach filter ID: %d", filter_id);
 	k_mutex_lock(&data->mtx, K_FOREVER);
 	data->filters[filter_id].rx_cb = NULL;

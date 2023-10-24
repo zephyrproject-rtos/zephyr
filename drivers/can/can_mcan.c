@@ -894,11 +894,16 @@ int can_mcan_attach_isr(struct can_mcan_data *data,
 void can_mcan_detach(struct can_mcan_data *data,
 		     struct can_mcan_msg_sram *msg_ram, int filter_nr)
 {
+	if (filter_nr < 0) {
+		LOG_ERR("filter ID %d out of bounds", filter_nr);
+		return;
+	}
+
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	if (filter_nr >= NUM_STD_FILTER_DATA) {
 		filter_nr -= NUM_STD_FILTER_DATA;
 		if (filter_nr >= NUM_STD_FILTER_DATA) {
-			LOG_ERR("Wrong filter id");
+			LOG_ERR("filter ID %d out of bounds", filter_nr);
 			return;
 		}
 

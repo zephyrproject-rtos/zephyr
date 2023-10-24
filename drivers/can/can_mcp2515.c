@@ -551,6 +551,11 @@ static void mcp2515_detach(const struct device *dev, int filter_nr)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
+	if (filter_nr < 0 || filter_nr >= CONFIG_CAN_MAX_FILTER) {
+		LOG_ERR("filter ID %d out of bounds", filter_nr);
+		return;
+	}
+
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 	dev_data->filter_usage &= ~BIT(filter_nr);
 	k_mutex_unlock(&dev_data->mutex);

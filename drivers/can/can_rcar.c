@@ -829,7 +829,8 @@ void can_rcar_detach(const struct device *dev, int filter_nr)
 {
 	struct can_rcar_data *data = DEV_CAN_DATA(dev);
 
-	if (filter_nr >= CONFIG_CAN_RCAR_MAX_FILTER) {
+	if (filter_nr < 0 || filter_nr >= CONFIG_CAN_RCAR_MAX_FILTER) {
+		LOG_ERR("filter ID %d out of bounds", filter_nr);
 		return;
 	}
 
