@@ -495,3 +495,210 @@ def test_LightweightM2M_1_1_int_281(shell: Shell, leshan: Leshan, endpoint: str)
     assert len(resp[1][0]) == 2 # /1/0/8 should not be there
     assert resp[1][0][1] == 86400
     assert resp[1][0][7] == 'U'
+
+#
+# Information Reporting Interface [300-399]
+#
+
+def test_LightweightM2M_1_1_int_301(shell: Shell, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-301 - Observation and Notification of parameter values"""
+    pwr_src = leshan.read(endpoint, '3/0/6')
+    logger.debug(pwr_src)
+    assert pwr_src[6][0] == 1
+    assert pwr_src[6][1] == 5
+    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?pmin=5')['status'] == 'CHANGED(204)'
+    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?pmax=10')['status'] == 'CHANGED(204)'
+    leshan.observe(endpoint, '3/0/7')
+    with leshan.get_event_stream(endpoint, timeout=30) as events:
+        shell.exec_command('lwm2m write /3/0/7/0 -u32 3000')
+        data =  events.next_event('NOTIFICATION')
+        assert data is not None
+        assert data[3][0][7][0] == 3000
+        # Ensure that we don't get new data before pMin
+        start = time.time()
+        shell.exec_command('lwm2m write /3/0/7/0 -u32 3500')
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][7][0] == 3500
+        assert (start + 5) < time.time() + 0.5 # Allow 0.5 second diff
+        assert (start + 5) > time.time() - 0.5
+        # Ensure that we get update when pMax expires
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][7][0] == 3500
+        assert (start + 15) <= time.time() + 1 # Allow 1 second slack. (pMinx + pMax=15)
+    leshan.cancel_observe(endpoint, '3/0/7')
+
+def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-302 - Cancel Observations using Reset Operation"""
+    leshan.observe(endpoint, '3/0/7')
+    leshan.observe(endpoint, '3/0/8')
+    with leshan.get_event_stream(endpoint) as events:
+        shell.exec_command('lwm2m write /3/0/7/0 -u32 4000')
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][7][0] == 4000
+    leshan.cancel_observe(endpoint, '3/0/7')
+    shell.exec_command('lwm2m write /3/0/7/0 -u32 3000')
+    dut.readlines_until(regex=r'.*Observer removed for 3/0/7')
+    with leshan.get_event_stream(endpoint) as events:
+        shell.exec_command('lwm2m write /3/0/8/0 -u32 100')
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][8][0] == 100
+    leshan.cancel_observe(endpoint, '3/0/8')
+    shell.exec_command('lwm2m write /3/0/8/0 -u32 50')
+    dut.readlines_until(regex=r'.*Observer removed for 3/0/8')
+
+def test_LightweightM2M_1_1_int_304(shell: Shell, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-304 - Observe-Composite Operation"""
+    assert leshan.put_raw(f'/clients/{endpoint}/1/0/1/attributes?pmin=30')['status'] == 'CHANGED(204)'
+    assert leshan.put_raw(f'/clients/{endpoint}/1/0/1/attributes?pmax=45')['status'] == 'CHANGED(204)'
+    data = leshan.composite_observe(endpoint, ['/1/0/1', '/3/0/11/0', '/3/0/16'])
+    assert data[1][0][1] is not None
+    assert data[3][0][11][0] is not None
+    assert data[3][0][16] == 'U'
+    assert len(data) == 2
+    assert len(data[1]) == 1
+    assert len(data[3][0]) == 2
+    start = time.time()
+    with leshan.get_event_stream(endpoint, timeout=50) as events:
+        data =  events.next_event('NOTIFICATION')
+        logger.debug(data)
+        assert data[1][0][1] is not None
+        assert data[3][0][11][0] is not None
+        assert data[3][0][16] == 'U'
+        assert len(data) == 2
+        assert len(data[1]) == 1
+        assert len(data[3][0]) == 2
+        assert (start + 30) < time.time()
+        assert (start + 45) > time.time() - 1
+    leshan.cancel_composite_observe(endpoint, ['/1/0/1', '/3/0/11/0', '/3/0/16'])
+
+def test_LightweightM2M_1_1_int_306(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-306 - Send Operation"""
+    with leshan.get_event_stream(endpoint) as events:
+        shell.exec_command('lwm2m send /1 /3')
+        dut.readlines_until(regex=r'.*SEND status: 0', timeout=5.0)
+        data = events.next_event('SEND')
+        assert data is not None
+        verify_server_object(data[1])
+        verify_device_object(data[3])
+
+def test_LightweightM2M_1_1_int_307(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-307 - Muting Send"""
+    leshan.write(endpoint, '1/0/23', True)
+    lines = shell.get_filtered_output(shell.exec_command('lwm2m send /3/0'))
+    assert any("can't do send operation" in line for line in lines)
+    leshan.write(endpoint, '1/0/23', False)
+    shell.exec_command('lwm2m send /3/0')
+    dut.readlines_until(regex=r'.*SEND status: 0', timeout=5.0)
+
+def test_LightweightM2M_1_1_int_308(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-308 - Observe-Composite and Creating Object Instance"""
+    shell.exec_command('lwm2m delete /16/0')
+    shell.exec_command('lwm2m delete /16/1')
+    # Need to use Configuration C.1
+    shell.exec_command('lwm2m write 1/0/2 -u32 0')
+    shell.exec_command('lwm2m write 1/0/3 -u32 0')
+    resources_a = {
+        0: {0: 'aa',
+            1: 'bb',
+            2: 'cc',
+            3: 'dd'}
+    }
+    content_one = {16: {0: resources_a}}
+    resources_b = {
+        0: {0: '11',
+            1: '22',
+            2: '33',
+            3: '44'}
+    }
+    content_both = {16: {0: resources_a, 1: resources_b}}
+    assert leshan.create_obj_instance(endpoint, '16/0', resources_a)['status'] == 'CREATED(201)'
+    dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
+    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmin=30')['status'] == 'CHANGED(204)'
+    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmax=45')['status'] == 'CHANGED(204)'
+    data = leshan.composite_observe(endpoint, ['/16/0', '/16/1'])
+    assert data == content_one
+    with leshan.get_event_stream(endpoint, timeout=50) as events:
+        data =  events.next_event('NOTIFICATION')
+        start = time.time()
+        assert data == content_one
+        assert leshan.create_obj_instance(endpoint, '16/1', resources_b)['status'] == 'CREATED(201)'
+        data =  events.next_event('NOTIFICATION')
+        assert (start + 30) < time.time() + 2
+        assert (start + 45) > time.time() - 2
+        assert data == content_both
+    leshan.cancel_composite_observe(endpoint, ['/16/0', '/16/1'])
+    # Restore configuration C.3
+    shell.exec_command('lwm2m write 1/0/2 -u32 1')
+    shell.exec_command('lwm2m write 1/0/3 -u32 10')
+
+def test_LightweightM2M_1_1_int_309(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-309 - Observe-Composite and Deleting Object Instance"""
+    shell.exec_command('lwm2m delete /16/0')
+    shell.exec_command('lwm2m delete /16/1')
+    # Need to use Configuration C.1
+    shell.exec_command('lwm2m write 1/0/2 -u32 0')
+    shell.exec_command('lwm2m write 1/0/3 -u32 0')
+    resources_a = {
+        0: {0: 'aa',
+            1: 'bb',
+            2: 'cc',
+            3: 'dd'}
+    }
+    content_one = {16: {0: resources_a}}
+    resources_b = {
+        0: {0: '11',
+            1: '22',
+            2: '33',
+            3: '44'}
+    }
+    content_both = {16: {0: resources_a, 1: resources_b}}
+    assert leshan.create_obj_instance(endpoint, '16/0', resources_a)['status'] == 'CREATED(201)'
+    assert leshan.create_obj_instance(endpoint, '16/1', resources_b)['status'] == 'CREATED(201)'
+    dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
+    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmin=30')['status'] == 'CHANGED(204)'
+    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmax=45')['status'] == 'CHANGED(204)'
+    data = leshan.composite_observe(endpoint, ['/16/0', '/16/1'])
+    assert data == content_both
+    with leshan.get_event_stream(endpoint, timeout=50) as events:
+        data =  events.next_event('NOTIFICATION')
+        start = time.time()
+        assert data == content_both
+        assert leshan.delete(endpoint, '16/1')['status'] == 'DELETED(202)'
+        data =  events.next_event('NOTIFICATION')
+        assert (start + 30) < time.time() + 2
+        assert (start + 45) > time.time() - 2
+        assert data == content_one
+    leshan.cancel_composite_observe(endpoint, ['/16/0', '/16/1'])
+    # Restore configuration C.3
+    shell.exec_command('lwm2m write 1/0/2 -u32 1')
+    shell.exec_command('lwm2m write 1/0/3 -u32 10')
+
+def test_LightweightM2M_1_1_int_310(shell: Shell, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-310 - Observe-Composite and modification of parameter values"""
+    # Need to use Configuration C.1
+    shell.exec_command('lwm2m write 1/0/2 -u32 0')
+    shell.exec_command('lwm2m write 1/0/3 -u32 0')
+    # Ensure that our previous attributes are not conflicting
+    assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmin=0')['status'] == 'CHANGED(204)'
+    leshan.composite_observe(endpoint, ['/1/0/1', '/3/0'])
+    with leshan.get_event_stream(endpoint, timeout=50) as events:
+        assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmax=5')['status'] == 'CHANGED(204)'
+        start = time.time()
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][0] == 'Zephyr'
+        assert data[1] == {0: {1: 86400}}
+        assert (start + 5) > time.time() - 1
+        start = time.time()
+        data =  events.next_event('NOTIFICATION')
+        assert (start + 5) > time.time() - 1
+    leshan.cancel_composite_observe(endpoint, ['/1/0/1', '/3/0'])
+    # Restore configuration C.3
+    shell.exec_command('lwm2m write 1/0/2 -u32 1')
+    shell.exec_command('lwm2m write 1/0/3 -u32 10')
+
+def test_LightweightM2M_1_1_int_311(shell: Shell, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-311 - Send command"""
+    with leshan.get_event_stream(endpoint, timeout=50) as events:
+        shell.exec_command('lwm2m send /1/0/1 /3/0/11')
+        data =  events.next_event('SEND')
+        assert data == {3: {0: {11: {0: 0}}}, 1: {0: {1: 86400}}}
