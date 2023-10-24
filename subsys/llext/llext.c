@@ -530,7 +530,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
 		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
 
-		if (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF) {
+		if (stt != STT_FUNC && (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)) {
 			continue;
 		}
 
@@ -547,6 +547,8 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		switch (stb) {
 		case STB_GLOBAL:
 			link_addr = llext_find_sym(NULL, name);
+			if (!link_addr)
+				link_addr = llext_find_sym(&ext->sym_tab, name);
 
 			if (!link_addr) {
 				LOG_WRN("PLT: cannot find idx %u name %s", j, name);
