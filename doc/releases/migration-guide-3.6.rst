@@ -45,5 +45,9 @@ Networking
 Other Subsystems
 ================
 
+* MCUmgr applications that make use of serial transports (shell or UART) must now select
+  :kconfig:option:`CONFIG_CRC`, this was previously erroneously selected if MCUmgr was enabled,
+  when for non-serial transports it was not needed.
+
 Recommended Changes
 *******************
