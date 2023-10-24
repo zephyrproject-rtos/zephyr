@@ -35,8 +35,8 @@ target_sources(native_simulator INTERFACE
 	common/trace_hook.c
 )
 
-if (CONFIG_IPC_SERVICE)
-	target_sources(native_simulator INTERFACE
+if (CONFIG_IPC_SERVICE AND CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP)
+	zephyr_library_sources(
 		ipc_backend.c
 	)
 endif()

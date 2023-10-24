@@ -6,7 +6,9 @@ config BUILD_OUTPUT_BIN
 	default n
 
 config BUILD_OUTPUT_EXE
-	default y
+	# When the IPC service is used, the net core image requires the application core image, as it needs
+	# access to its IPC buffer. Without it, the executable cannot be built.
+	default y if !(BOARD_NRF5340BSIM_NRF5340_CPUNET && IPC_SERVICE && (NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS = ""))
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	default n
