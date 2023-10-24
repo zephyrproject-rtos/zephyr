@@ -81,20 +81,7 @@ struct configs {
 #endif
 };
 
-static struct configs configs = {
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	.ipv4 = {
-		.proto = PROTOCOL_IPV4,
-		.sock  = -1,
-	},
-#endif
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	.ipv6 = {
-		.proto = PROTOCOL_IPV6,
-		.sock  = -1,
-	},
-#endif
-};
+static struct configs configs;
 
 static struct net_mgmt_event_callback smp_udp_mgmt_cb;
 
@@ -382,6 +369,9 @@ static void smp_udp_start(void)
 	int rc;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
+	configs.ipv4.proto = PROTOCOL_IPV4;
+	configs.ipv4.sock = -1;
+
 	k_sem_init(&configs.ipv4.network_ready_sem, 0, 1);
 	configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
 	configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
@@ -401,6 +391,9 @@ static void smp_udp_start(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
+	configs.ipv6.proto = PROTOCOL_IPV6;
+	configs.ipv6.sock = -1;
+
 	k_sem_init(&configs.ipv6.network_ready_sem, 0, 1);
 	configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
 	configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
