@@ -36,12 +36,3 @@ config IPC_SERVICE_ICMSG_ME
 	select EVENTS
 	help
 	  Multi-endpoint functionality for the icmsg library
-
-config IPC_SERVICE_ICMSG_ME_NOCOPY_RX
-	bool
-	depends on IPC_SERVICE_ICMSG_ME
-	select IPC_SERVICE_ICMSG_NOCOPY_RX
-	help
-	  Enable nocopy feature for receiving path of the multi-endpoint
-	  feature of the icmsg library. This features might be used by backends
-	  based on multi-endpoint icmsg.

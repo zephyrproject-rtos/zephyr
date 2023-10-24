@@ -18,7 +18,7 @@ K_THREAD_STACK_DEFINE(ipc1_stack, STACKSIZE);
 
 static volatile uint8_t ipc0A_received_data;
 static volatile uint8_t ipc0B_received_data;
-static const void *ipc1_received_data;
+static volatile uint8_t ipc1_received_data;
 
 static K_SEM_DEFINE(ipc0A_bound_sem, 0, 1);
 static K_SEM_DEFINE(ipc0B_bound_sem, 0, 1);
@@ -179,11 +179,7 @@ K_THREAD_DEFINE(ipc0B_thread_id, STACKSIZE, ipc0B_entry, NULL, NULL, NULL, PRIOR
 
 /*
  * ==> THREAD 1 (IPC instance 1) <==
- *
- * NOTE: This instance is using the NOCOPY copability of the backend.
  */
-
-static struct ipc_ept ipc1_ept;
 
 static void ipc1_ept_bound(void *priv)
 {
@@ -192,10 +188,9 @@ static void ipc1_ept_bound(void *priv)
 
 static void ipc1_ept_recv(const void *data, size_t len, void *priv)
 {
-	ipc_service_hold_rx_buffer(&ipc1_ept, (void *)data);
-	ipc1_received_data = data;
+	ipc1_received_data = *((uint8_t *) data);
 
-	k_sem_give(&ipc1_data_sem);
+	k_sem_give(&ipc0B_data_sem);
 }
 
 static struct ipc_ept_cfg ipc1_ept_cfg = {
@@ -214,6 +209,7 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	const struct device *ipc1_instance;
 	unsigned char message = 0;
+	struct ipc_ept ipc1_ept;
 	int ret;
 
 	printk("IPC-service HOST [INST 1] demo started\n");
@@ -242,36 +238,14 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 	k_sleep(K_MSEC(1000));
 
 	while (message < 100) {
-		void *tx_buffer;
-		uint32_t tx_buffer_size = sizeof(message);
-
-		ret = ipc_service_get_tx_buffer(&ipc1_ept, &tx_buffer, &tx_buffer_size, K_NO_WAIT);
+		ret = ipc_service_send(&ipc1_ept, &message, sizeof(message));
 		if (ret < 0) {
-			printk("get_tx_buffer(%u) failed with ret %d\n", sizeof(message), ret);
-			break;
-		}
-		if (tx_buffer_size != sizeof(message)) {
-			printk("get_tx_buffer modified buffer size to unexpected value %u\n",
-					tx_buffer_size);
-			break;
-		}
-
-		*((uint8_t *) tx_buffer) = message;
-
-		ret = ipc_service_send_nocopy(&ipc1_ept, tx_buffer, tx_buffer_size);
-		if (ret < 0) {
-			printk("send_message_nocopy(%u) failed with ret %d\n", message, ret);
+			printk("send_message(%d) failed with ret %d\n", message, ret);
 			break;
 		}
 
 		k_sem_take(&ipc1_data_sem, K_FOREVER);
-		message = *((uint8_t *) ipc1_received_data);
-
-		ret = ipc_service_release_rx_buffer(&ipc1_ept, (void *) ipc1_received_data);
-		if (ret < 0) {
-			printk("release_rx_buffer() failed with ret %d\n", ret);
-			break;
-		}
+		message = ipc1_received_data;
 
 		printk("HOST [1]: %d\n", message);
 		message++;
