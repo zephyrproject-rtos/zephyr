@@ -185,17 +185,15 @@ information about the device. In order to access this information, the user
 may use the :ref:`bluetooth_mesh_models_cfg_srv` model or, if supported,
 the :ref:`bluetooth_mesh_lcd_srv` model.
 
-Composition Data Page 0 and 128
--------------------------------
+Composition Data Page 0
+-----------------------
 
 Composition Data Page 0 provides the fundemental information about a device, and
 is mandatory for all mesh devices. It contains the element and model composition,
-the supported features, and manufacturer information. Composition Data Page 128
-mirrors Page 0 and is used to represent the new content of the Composition Data
-Page 0 after a device firmware update.
+the supported features, and manufacturer information.
 
-Composition Data Page 1 and 129
--------------------------------
+Composition Data Page 1
+-----------------------
 
 Composition Data Page 1 provides information about the relationships between models,
 and is mandatory for all mesh devices. A model may extend and/or correspond to one
@@ -204,11 +202,9 @@ or correspond to another model by calling :c:func:`bt_mesh_model_correspond`.
 :kconfig:option:`CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE` specifies how many model
 relations can be stored in the composition on a device, and this number should reflect the
 number of :c:func:`bt_mesh_model_extend` and :c:func:`bt_mesh_model_correspond` calls.
-Composition Data Page 129 mirrors Page 1 and is used to represent the new content of
-the Composition Data Page 1 after a device firmware update.
 
-Composition Data Page 2 and 130
--------------------------------
+Composition Data Page 2
+-----------------------
 
 Composition Data Page 2 provides information for supported mesh profiles. Mesh profile
 specifications define product requirements for devices that want to support a specific
@@ -216,8 +212,15 @@ Bluetooth SIG defined profile. Currently supported profiles can be found in sect
 3.12 in `Bluetooth SIG Assigned Numbers
 <https://www.bluetooth.com/specifications/assigned-numbers/uri-scheme-name-string-mapping/>`_.
 Composition Data Page 2 is only mandatory for devices that claim support for one or more
-mesh profile(s). Composition Data Page 130 mirrors Page 2 and is used to represent the
-new content of the Composition Data Page 2 after a device firmware update.
+mesh profile(s).
+
+Composition Data Pages 128, 129 and 130
+---------------------------------------
+
+Composition Data Pages 128, 129 and 130 mirror Composition Data Pages 0, 1 and 2 respectively.
+They are used to represent the new content of the mirrored pages when the Composition Data will
+change after a firmware update. See :ref:`bluetooth_mesh_dfu_srv_comp_data_and_models_metadata`
+for details.
 
 API reference
 *************
