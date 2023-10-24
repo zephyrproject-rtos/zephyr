@@ -60,6 +60,10 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 
 static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result)
 {
+	if (!chat || !chat->script) {
+		return;
+	}
+
 	/* Handle result */
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
 		LOG_DBG("%s: complete", chat->script->name);
