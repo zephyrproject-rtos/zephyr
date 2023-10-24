@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT nuvoton_npcx_kbd
 
 #include "soc_miwu.h"
+#include "input_kbd_matrix.h"
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -32,6 +33,7 @@ LOG_MODULE_REGISTER(input_npcx_kbd);
 
 /* Driver config */
 struct input_npcx_kbd_config {
+	struct input_kbd_matrix_common_config common;
 	/* Keyboard scan controller base address */
 	struct kbs_reg *base;
 	/* Clock configuration */
@@ -51,6 +53,7 @@ struct input_npcx_kbd_config {
 };
 
 struct input_npcx_kbd_data {
+	struct input_kbd_matrix_common_data common;
 	int64_t poll_timeout_us;
 	uint32_t poll_period_us;
 	uint8_t matrix_stable_state[KSCAN_COL_SIZE];
@@ -66,10 +69,9 @@ struct input_npcx_kbd_data {
 	uint8_t scan_clk_cycle[SCAN_OCURRENCES];
 	struct k_sem poll_lock;
 	uint8_t scan_cycles_idx;
-	struct k_thread thread;
-
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_INPUT_NPCX_KBD_THREAD_STACK_SIZE);
 };
+
+INPUT_KBD_STRUCT_CHECK(struct input_npcx_kbd_config, struct input_npcx_kbd_data);
 
 /* Keyboard scan local functions */
 static void input_npcx_kbd_ksi_isr(const struct device *dev, struct npcx_wui *wui)
@@ -474,19 +476,17 @@ static int input_npcx_kbd_init(const struct device *dev)
 	data->poll_period_us = (uint32_t)(CONFIG_INPUT_NPCX_KBD_POLL_PERIOD_MS * USEC_PER_MSEC);
 	data->poll_timeout_us = 100 * USEC_PER_MSEC;
 
-	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_INPUT_NPCX_KBD_THREAD_STACK_SIZE,
-			kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(4), 0, K_NO_WAIT);
-
-	k_thread_name_set(&data->thread, "npcx-kbd");
-
-	return 0;
+	return input_kbd_matrix_common_init(dev);
 }
 
 PINCTRL_DT_INST_DEFINE(0);
 
+static const struct input_kbd_matrix_api npcx_kbd_api = {
+	.polling_thread = kbd_matrix_polling_thread,
+};
+
 static const struct input_npcx_kbd_config npcx_kbd_cfg = {
+	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, npcx_kbd_api),
 	.base = (struct kbs_reg *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
