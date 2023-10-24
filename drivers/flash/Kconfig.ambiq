@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_AMBIQ
+	bool "Ambiq flash driver on MRAM"
+	default y
+	depends on DT_HAS_AMBIQ_FLASH_CONTROLLER_ENABLED
+	select AMBIQ_HAL
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables Ambiq flash driver on MRAM.
