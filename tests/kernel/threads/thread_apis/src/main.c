@@ -278,7 +278,7 @@ enum control_method {
 	ISR_RUNNING
 };
 
-void join_entry(void *p1, void *p2, void *p3)
+static void join_entry(void *p1, void *p2, void *p3)
 {
 	enum control_method m = (enum control_method)(intptr_t)p1;
 
@@ -299,13 +299,13 @@ void join_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-void control_entry(void *p1, void *p2, void *p3)
+static void control_entry(void *p1, void *p2, void *p3)
 {
 	printk("control_thread: killing join thread\n");
 	k_thread_abort(&join_thread);
 }
 
-void do_join_from_isr(const void *arg)
+static void do_join_from_isr(const void *arg)
 {
 	int *ret = (int *)arg;
 
@@ -317,7 +317,7 @@ void do_join_from_isr(const void *arg)
 
 #define JOIN_TIMEOUT_MS	100
 
-int join_scenario_interval(enum control_method m, int64_t *interval)
+static int join_scenario_interval(enum control_method m, int64_t *interval)
 {
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
@@ -421,7 +421,7 @@ K_THREAD_STACK_DEFINE(deadlock1_stack, STACK_SIZE);
 struct k_thread deadlock2_thread;
 K_THREAD_STACK_DEFINE(deadlock2_stack, STACK_SIZE);
 
-void deadlock1_entry(void *p1, void *p2, void *p3)
+static void deadlock1_entry(void *p1, void *p2, void *p3)
 {
 	int ret;
 
@@ -431,7 +431,7 @@ void deadlock1_entry(void *p1, void *p2, void *p3)
 	zassert_equal(ret, -EDEADLK, "failed mutual join case");
 }
 
-void deadlock2_entry(void *p1, void *p2, void *p3)
+static void deadlock2_entry(void *p1, void *p2, void *p3)
 {
 	int ret;
 
@@ -470,6 +470,7 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 {
 	/* do nothing */
 }
+
 ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
 {
 	k_ticks_t r, e, r1, ticks, expected_expires_ticks;
@@ -520,6 +521,7 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 	((k_thread_runtime_stats_t *)user_data)->execution_cycles +=
 		stats.execution_cycles;
 }
+
 /* This case accumulates every thread's execution_cycles first, then
  * get the total execution_cycles from a global
  * k_thread_runtime_stats_t to see that all time is reflected in the
@@ -594,7 +596,7 @@ ZTEST_USER(threads_lifecycle_1cpu, test_k_busy_wait_user)
 }
 
 #define INT_ARRAY_SIZE 128
-int large_stack(size_t *space)
+static int large_stack(size_t *space)
 {
 	/* use "volatile" to protect this variable from being optimized out */
 	volatile int a[INT_ARRAY_SIZE];
@@ -605,7 +607,7 @@ int large_stack(size_t *space)
 
 }
 
-int small_stack(size_t *space)
+static int small_stack(size_t *space)
 {
 	return k_thread_stack_space_get(k_current_get(), space);
 }
@@ -628,7 +630,7 @@ ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 	zassert_true(b <= a);
 }
 
-void *thread_test_setup(void)
+static void *thread_test_setup(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack,
 			      &tdata_custom, tstack_custom,
