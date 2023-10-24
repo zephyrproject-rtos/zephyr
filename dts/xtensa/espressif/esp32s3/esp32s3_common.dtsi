@@ -13,6 +13,11 @@
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
+
+	aliases {
+		die-temp0 = &coretemp;
+	};
+
 	chosen {
 		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
@@ -234,6 +239,13 @@
 			clocks = <&rtc ESP32_SPI3_MODULE>;
 			dma-clk = <ESP32_GDMA_MODULE>;
 			dma-host = <1>;
+			status = "disabled";
+		};
+
+		coretemp: coretemp@60008800 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x60008800 0x4>;
 			status = "disabled";
 		};
 
