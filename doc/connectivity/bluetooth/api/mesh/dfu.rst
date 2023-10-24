@@ -210,7 +210,12 @@ re-provisioned. The complete list of available options is defined in :c:enum:`bt
 
 When the Target node receives the Firmware Update Firmware Metadata Check message, the Firmware
 Update Server model calls the :c:member:`bt_mesh_dfu_srv_cb.check` callback, the application can
-then process the metadata and provide the effect value.
+then process the metadata and provide the effect value. If the effect is
+:c:enum:`BT_MESH_DFU_EFFECT_COMP_CHANGE`, the application must call functions
+:c:func:`bt_mesh_comp_change_prepare` and :c:func:`bt_mesh_models_metadata_change_prepare` to
+prepare the Composition Data Page and Models Metadata Page contents before applying the new
+firmware image. See :ref:`bluetooth_mesh_dfu_srv_comp_data_and_models_metadata` for more
+information.
 
 
 DFU procedures
