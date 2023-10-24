@@ -2975,6 +2975,15 @@ West:
   labels:
     - manifest-acpica
 
+"West project: gsoc-2022-arduino-core":
+  status: maintained
+  maintainers:
+    - dhruvag2000
+  files:
+    - boards/shields/arduino-core/
+  labels:
+    - manifest-arduino-api
+
 "West project: canopennode":
   status: maintained
   maintainers:
