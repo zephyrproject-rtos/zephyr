@@ -975,7 +975,8 @@ static void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_rcar_data *data = dev->data;
 
-	if (filter_id >= CONFIG_CAN_RCAR_MAX_FILTER) {
+	if (filter_id < 0 || filter_id >= CONFIG_CAN_RCAR_MAX_FILTER) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
