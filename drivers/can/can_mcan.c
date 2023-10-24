@@ -1109,12 +1109,17 @@ void can_mcan_remove_rx_filter(const struct device *dev, int filter_id)
 {
 	struct can_mcan_data *data = dev->data;
 	struct can_mcan_msg_sram *msg_ram = data->msg_ram;
+	if (filter_id < 0) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
+		return;
+	}
+
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	if (filter_id >= NUM_STD_FILTER_DATA) {
 		filter_id -= NUM_STD_FILTER_DATA;
 		if (filter_id >= NUM_EXT_FILTER_DATA) {
-			LOG_ERR("Wrong filter id");
+			LOG_ERR("filter ID %d out of bounds", filter_id);
 			return;
 		}
 
