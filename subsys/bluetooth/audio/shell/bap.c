@@ -2617,7 +2617,6 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 {
-	int stream_frame_duration_us;
 	struct bt_bap_ep_info info;
 	int err;
 
