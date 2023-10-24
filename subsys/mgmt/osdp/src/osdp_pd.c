@@ -558,7 +558,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 
 static inline bool check_buf_len(int need, int have)
 {
-	if (need >= have) {
+	if (need > have) {
 		LOG_ERR("OOM at build reply: need:%d have:%d", need, have);
 		return false;
 	}
