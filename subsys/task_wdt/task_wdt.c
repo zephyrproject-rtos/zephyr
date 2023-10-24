@@ -147,6 +147,7 @@ int task_wdt_init(const struct device *hw_wdt)
 	}
 
 	k_timer_init(&timer, task_wdt_trigger, NULL);
+	schedule_next_timeout(sys_clock_tick_get());
 
 	return 0;
 }
