@@ -687,6 +687,16 @@
 /* TX Power Control */
 #define DWT_TX_POWER_ID             0x1E
 #define DWT_TX_POWER_LEN            4
+
+/* Units of TX Power Control. From User Manual 7.2.31.1 */
+#define DWT_TX_POWER_CTRL_COARSE_MASK          6
+#define DWT_TX_POWER_CTRL_COARSE_STEPS_MDB_X2  50
+#define DWT_TX_POWER_CTRL_FINE_MASK            0x1F
+#define DWT_TX_POWER_CTRL_FINE_STEPS_MDB_X2    10
+#define DWT_TX_POWER_CTRL_MAX_MDB              305
+#define DWT_TX_POWER_CTRL_MAX                  0x1F
+#define DWT_TX_POWER_CTRL_MIN                  0xC0
+
 /*
  * Mask and shift definition for Smart Transmit Power Control:
  *
@@ -726,11 +736,13 @@
  * of the PHY header (PHR) portion of the frame.
  */
 #define DWT_TX_POWER_TXPOWPHR_MASK  0x0000FF00UL
+#define DWT_TX_POWER_TXPOWPHR_SHIFT 8
 /*
  * This power setting is applied during the transmission
  * of the synchronisation header (SHR) and data portions of the frame.
  */
 #define DWT_TX_POWER_TXPOWSD_MASK   0x00FF0000UL
+#define DWT_TX_POWER_TXPOWSD_SHIFT  16
 
 /* Channel Control */
 #define DWT_CHAN_CTRL_ID            0x1F
@@ -1925,8 +1937,7 @@ const uint8_t dwt_pgdelay_defs[] = {
 	DWT_TC_PGDELAY_CH7
 };
 
-#ifdef CONFIG_ENABLE_MANUAL_TX_POWER_CONTROL
-
+#ifdef CONFIG_IEEE802154_DW1000_ENABLE_MANUAL_TX_POWER_CONTROL
 
 /*
  * Default from Table 20: Reference values Register file:
@@ -1943,6 +1954,19 @@ const uint32_t dwt_txpwr_64[] = {
 };
 
 /*
+ * Defaults decoded from Table 20 at 64 MHz to mdB
+ * For each channel: TXPOWPHR=TXPOWSD
+ */
+const uint16_t dwt_txpwr_64_mdb[] = {
+	135,
+	135,
+	105,
+	180,
+	75,
+	85,
+};
+
+/*
  * Default from Table 20: Reference values Register file:
  *     0x1E – Transmit Power Control for Manual Transmit Power Control
  *     Transmit Power Control values for 16 MHz, with DIS_STXP = 1
@@ -1956,8 +1980,20 @@ const uint32_t dwt_txpwr_16[] = {
 	0x92929292
 };
 
-#else
+/*
+ * Defaults decoded from Table 20 at 16 MHz to mdB
+ * For each channel: TXPOWPHR=TXPOWSD
+ */
+const uint16_t dwt_txpwr_16_mdb[] = {
+	180,
+	180,
+	150,
+	255,
+	140,
+	140,
+};
 
+#else
 
 /*
  * Defaults from Table 19: Reference values for Register file:
@@ -1974,6 +2010,19 @@ const uint32_t dwt_txpwr_64[] = {
 };
 
 /*
+ * Defaults decoded from Table 19 to mdB
+ * For each channel: BOOSTNORM, BOOSTP500, BOOST250, BOOST125
+ */
+const uint16_t dwt_txpwr_64_mdb[][4] = {
+	{110, 135, 160, 185},
+	{110, 135, 160, 185},
+	{105, 130, 155, 180},
+	{180, 205, 230, 255},
+	{90, 110, 130, 150},
+	{85, 110, 160, 185}
+};
+
+/*
  * Defaults from Table 19: Reference values for Register file:
  *     0x1E – Transmit Power Control for Smart Transmit Power Control
  *     Transmit Power Control values for 16 MHz, with DIS_STXP = 0
@@ -1985,6 +2034,19 @@ const uint32_t dwt_txpwr_16[] = {
 	0x1F1F3F5F,
 	0x0E082848,
 	0x32527292
+};
+
+/*
+ * Defaults decoded from Table 19 at 16 MHz to mdB
+ * For each channel: BOOSTNORM, BOOSTP500, BOOST250, BOOST125
+ */
+const uint16_t dwt_txpwr_16_mdb[][4] = {
+	{180, 205, 230, 255},
+	{180, 205, 230, 255},
+	{150, 175, 200, 225},
+	{255, 280, 305, 305},
+	{140, 165, 190, 220},
+	{140, 165, 190, 215}
 };
 
 #endif

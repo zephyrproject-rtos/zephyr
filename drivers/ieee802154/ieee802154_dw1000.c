@@ -774,11 +774,95 @@ static int dwt_filter(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int dwt_set_power(const struct device *dev, int16_t dbm)
+uint8_t dwt_encode_power_tx(int16_t target_mdb)
+{
+	uint8_t target_int_x2;
+	uint8_t coarse_steps;
+	uint8_t coarse_x2;
+	uint8_t fine_steps;
+	uint8_t coarse_reg;
+	uint8_t fine_reg;
+	uint8_t reg;
+
+	if (target_mdb < 0) {
+		return DWT_TX_POWER_CTRL_MIN;
+	} else if (target_mdb > DWT_TX_POWER_CTRL_MAX_MDB) {
+		return DWT_TX_POWER_CTRL_MAX;
+	}
+
+	target_int_x2 = target_mdb << 1;
+	coarse_steps = target_int_x2 / DWT_TX_POWER_CTRL_COARSE_STEPS_MDB_X2;
+
+	if (coarse_steps > DWT_TX_POWER_CTRL_COARSE_MASK) {
+		coarse_steps = DWT_TX_POWER_CTRL_COARSE_MASK;
+	}
+
+	coarse_x2 = coarse_steps * DWT_TX_POWER_CTRL_COARSE_STEPS_MDB_X2;
+	fine_steps = (target_int_x2 - coarse_x2) / DWT_TX_POWER_CTRL_FINE_STEPS_MDB_X2;
+
+	if (fine_steps > DWT_TX_POWER_CTRL_FINE_MASK) {
+		fine_steps = DWT_TX_POWER_CTRL_FINE_MASK;
+	}
+
+	coarse_reg = DWT_TX_POWER_CTRL_COARSE_MASK - coarse_steps;
+	fine_reg = fine_steps;
+	reg = (coarse_reg << 5) | fine_reg;
+
+	return reg;
+}
+
+static int dwt_set_txpower(const struct device *dev, int16_t dbm)
 {
 	struct dwt_context *ctx = dev->data;
+	uint8_t chan = ctx->rf_cfg.channel;
+	int16_t mdbm = dbm * 10;
+	uint32_t tx_power = 0;
+	void *dwt_txpwr_mdb;
 
-	LOG_INF("set_txpower not supported %p", ctx);
+	if (ctx->rf_cfg.prf == DWT_PRF_16M) {
+		dwt_txpwr_mdb = (void *)dwt_txpwr_16_mdb;
+	} else {
+		dwt_txpwr_mdb = (void *)dwt_txpwr_64_mdb;
+	}
+
+#ifdef CONFIG_IEEE802154_DW1000_ENABLE_MANUAL_TX_POWER_CONTROL
+		/* Manual Transmit Power Control */
+		uint16_t phr_sd_mdb;
+		uint8_t phr_sd;
+
+		phr_sd_mdb = ((uint16_t *)dwt_txpwr_mdb)[dwt_ch_to_cfg[chan]];
+		phr_sd = dwt_encode_power_tx(phr_sd_mdb + mdbm);
+		tx_power |= ((uint32_t)phr_sd << DWT_TX_POWER_TXPOWSD_SHIFT);
+		tx_power |= ((uint32_t)phr_sd << DWT_TX_POWER_TXPOWPHR_SHIFT);
+#else
+		/* Smart Transmit Power Control */
+		uint16_t norm_mdb;
+		uint16_t p500_mdb;
+		uint16_t p250_mdb;
+		uint16_t p125_mdb;
+		uint8_t norm;
+		uint8_t p500;
+		uint8_t p250;
+		uint8_t p125;
+
+		norm_mdb = ((uint16_t (*)[4])dwt_txpwr_mdb)[dwt_ch_to_cfg[chan]][0];
+		p500_mdb = ((uint16_t (*)[4])dwt_txpwr_mdb)[dwt_ch_to_cfg[chan]][1];
+		p250_mdb = ((uint16_t (*)[4])dwt_txpwr_mdb)[dwt_ch_to_cfg[chan]][2];
+		p125_mdb = ((uint16_t (*)[4])dwt_txpwr_mdb)[dwt_ch_to_cfg[chan]][3];
+
+		norm = dwt_encode_power_tx(norm_mdb + mdbm);
+		p500 = dwt_encode_power_tx(p500_mdb + mdbm);
+		p250 = dwt_encode_power_tx(p250_mdb + mdbm);
+		p125 = dwt_encode_power_tx(p125_mdb + mdbm);
+
+		tx_power = norm;
+		tx_power |= ((uint32_t)p500 << DWT_TX_POWER_BOOSTP500_SHIFT);
+		tx_power |= ((uint32_t)p250 << DWT_TX_POWER_BOOSTP250_SHIFT);
+		tx_power |= ((uint32_t)p125 << DWT_TX_POWER_BOOSTP125_SHIFT);
+#endif
+
+	dwt_reg_write_u32(dev, DWT_TX_POWER_ID, 0, tx_power);
+	LOG_INF("Relative transmit power changed to %d dB", dbm);
 
 	return 0;
 }
@@ -1673,7 +1757,7 @@ static struct ieee802154_radio_api dwt_radio_api = {
 	.cca			= dwt_cca,
 	.set_channel		= dwt_set_channel,
 	.filter			= dwt_filter,
-	.set_txpower		= dwt_set_power,
+	.set_txpower		= dwt_set_txpower,
 	.start			= dwt_start,
 	.stop			= dwt_stop,
 	.configure		= dwt_configure,
