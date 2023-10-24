@@ -236,6 +236,15 @@ Libraries / Subsystems
 
 * Management
 
+  * Fixed an issue in MCUmgr image management whereby erasing an already erased slot would return
+    an unknown error, it now returns success.
+
+  * Fixed MCUmgr UDP transport structs being statically initialised, this results in about a
+    ~5KiB flash saving.
+
+  * Fixed an issue in MCUmgr which would cause a user data buffer overflow if the UDP transport was
+    enabled on IPv4 only but IPv6 support was enabled in the kernel.
+
 * File systems
 
 * Modem modules
@@ -278,3 +287,6 @@ Documentation
 
 Tests and Samples
 *****************
+
+* Fixed an issue in :zephyr:code-sample:`smp-svr` sample whereby if USB was already initialised,
+  application would fail to boot properly.
