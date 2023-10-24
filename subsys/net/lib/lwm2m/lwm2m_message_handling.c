@@ -325,6 +325,9 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 		}
 	}
 
+	/* Copy old msg reference to keep send_status_cb */
+	msg->reply->user_data = msg->out.user_data;
+
 	/* copy the options */
 	ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt),
 			 msg->body_encode_buffer.data + msg->body_encode_buffer.hdr_len,
@@ -409,6 +412,8 @@ STATIC int prepare_msg_for_send(struct lwm2m_message *msg)
 
 		NET_ASSERT(msg->out.block_ctx == NULL, "Expecting to have no context to release");
 	} else {
+		/* Copy msg userdata with send_status_cb as temporary buffer */
+		msg->out.user_data = msg->reply->user_data;
 		/* Before splitting the content, append Etag option to protect the integrity of
 		 * the payload.
 		 */
@@ -3336,6 +3341,9 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 		if (msg && msg->send_status_cb) {
 			msg->send_status_cb(LWM2M_SEND_STATUS_SUCCESS);
 		}
+		return 0;
+	} else if (code == COAP_RESPONSE_CODE_CONTINUE) {
+		LOG_INF("Continue");
 		return 0;
 	}
 
