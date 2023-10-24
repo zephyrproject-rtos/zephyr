@@ -548,14 +548,4 @@ static int pcie_init(void)
 }
 
 
-/*
- * If a pcie controller is employed, pcie_scan() depends on it for working.
- * Thus, pcie must be bumped to the next level
- */
-#ifdef CONFIG_PCIE_CONTROLLER
-#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
-#else
-#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
-#endif
-
-SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_PCIE_INIT_PRIORITY);
+SYS_INIT(pcie_init, EARLY, CONFIG_PCIE_INIT_PRIORITY);
