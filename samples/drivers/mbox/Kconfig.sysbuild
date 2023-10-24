@@ -1,0 +1,12 @@
+# Copyright 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config REMOTE_BOARD
+string
+	default "nrf5340dk_nrf5340_cpunet" if $(BOARD) = "nrf5340dk_nrf5340_cpuapp"
+	default "nrf5340bsim_nrf5340_cpunet" if $(BOARD) = "nrf5340bsim_nrf5340_cpuapp"
+	default "adp_xc7k_ae350" if $(BOARD) = "adp_xc7k_ae350"
+	default "nrf5340dk_nrf5340_cpunet" if $(BOARD) = "mimxrt595_evk_cm33"
