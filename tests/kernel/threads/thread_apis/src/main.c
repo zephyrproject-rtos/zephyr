@@ -20,6 +20,9 @@
 #include <string.h>
 #include <ksched.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(test);
+
 struct k_thread tdata;
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -183,7 +186,7 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 	ret = k_thread_name_copy(&z_main_thread, thread_name,
 				     sizeof(thread_name));
 	zassert_equal(ret, 0, "couldn't get main thread name");
-	printk("Main thread name is '%s'\n", thread_name);
+	LOG_DBG("Main thread name is '%s'", thread_name);
 
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
@@ -288,20 +291,20 @@ static void join_entry(void *p1, void *p2, void *p3)
 	case OTHER_ABORT:
 	case OTHER_ABORT_TIMEOUT:
 	case ISR_RUNNING:
-		printk("join_thread: sleeping forever\n");
+		LOG_DBG("join_thread: sleeping forever");
 		k_sleep(K_FOREVER);
 		break;
 	case SELF_ABORT:
 	case ALREADY_EXIT:
 	case ISR_ALREADY_EXIT:
-		printk("join_thread: self-exiting\n");
+		LOG_DBG("join_thread: self-exiting");
 		return;
 	}
 }
 
 static void control_entry(void *p1, void *p2, void *p3)
 {
-	printk("control_thread: killing join thread\n");
+	LOG_DBG("control_thread: killing join thread");
 	k_thread_abort(&join_thread);
 }
 
@@ -310,9 +313,9 @@ static void do_join_from_isr(const void *arg)
 	int *ret = (int *)arg;
 
 	zassert_true(k_is_in_isr());
-	printk("isr: joining join_thread\n");
+	LOG_DBG("isr: joining join_thread");
 	*ret = k_thread_join(&join_thread, K_NO_WAIT);
-	printk("isr: k_thread_join() returned with %d\n", *ret);
+	LOG_DBG("isr: k_thread_join() returned with %d", *ret);
 }
 
 #define JOIN_TIMEOUT_MS	100
@@ -322,7 +325,7 @@ static int join_scenario_interval(enum control_method m, int64_t *interval)
 	k_timeout_t timeout = K_FOREVER;
 	int ret;
 
-	printk("ztest_thread: method %d, create join_thread\n", m);
+	LOG_DBG("ztest_thread: method %d, create join_thread", m);
 	k_thread_create(&join_thread, join_stack, STACK_SIZE, join_entry,
 			(void *)m, NULL, NULL, K_PRIO_PREEMPT(1),
 			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
@@ -337,7 +340,7 @@ static int join_scenario_interval(enum control_method m, int64_t *interval)
 		timeout = K_MSEC(JOIN_TIMEOUT_MS);
 		__fallthrough;
 	case OTHER_ABORT:
-		printk("ztest_thread: create control_thread\n");
+		LOG_DBG("ztest_thread: create control_thread");
 		k_thread_create(&control_thread, control_stack, STACK_SIZE,
 				control_entry, NULL, NULL, NULL,
 				K_PRIO_PREEMPT(2),
@@ -356,7 +359,7 @@ static int join_scenario_interval(enum control_method m, int64_t *interval)
 	if (m == ISR_ALREADY_EXIT || m == ISR_RUNNING) {
 		irq_offload(do_join_from_isr, (const void *)&ret);
 	} else {
-		printk("ztest_thread: joining join_thread\n");
+		LOG_DBG("ztest_thread: joining join_thread");
 
 		if (interval != NULL) {
 			*interval = k_uptime_get();
@@ -368,7 +371,7 @@ static int join_scenario_interval(enum control_method m, int64_t *interval)
 			*interval = k_uptime_get() - *interval;
 		}
 
-		printk("ztest_thread: k_thread_join() returned with %d\n", ret);
+		LOG_DBG("ztest_thread: k_thread_join() returned with %d", ret);
 	}
 
 	if (ret != 0) {
@@ -485,7 +488,7 @@ ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
 
 	k_msleep(10);
 	e = k_thread_timeout_expires_ticks(tid);
-	TC_PRINT("thread_expires_ticks: %d, expect: %d\n", (int)e,
+	LOG_DBG("thread_expires_ticks: %d, expect: %d", (int)e,
 		(int)expected_expires_ticks);
 	zassert_true(e >= expected_expires_ticks);
 
