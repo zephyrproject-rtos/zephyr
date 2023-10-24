@@ -11,3 +11,6 @@ properties:
   mdm-power-gpios:
     type: phandle-array
     required: true
+
+  power_pulse_duration_ms:
+    type: int
