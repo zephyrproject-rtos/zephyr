@@ -55,12 +55,17 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 			 CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
 			 "message queue size exceeds dynamic maximum");
 
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 		msgq->pool = k_calloc(msg_count, msg_size);
 		if (msgq->pool == NULL) {
 			k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
 			return NULL;
 		}
 		msgq->is_dynamic_allocation = TRUE;
+#else
+		k_mem_slab_free(&cv2_msgq_slab, (void *)msgq);
+		return NULL;
+#endif
 	} else {
 		msgq->pool = attr->mq_mem;
 		msgq->is_dynamic_allocation = FALSE;
