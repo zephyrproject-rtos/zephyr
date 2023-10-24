@@ -47,8 +47,36 @@ firmware image metadata. The Firmware Update Server performs the transfer check 
 The result of the transfer check is a pass/fail status return and the expected
 :c:type:`bt_mesh_dfu_effect`. The DFU effect return parameter will be communicated back to the
 Distributor, and should indicate what effect the firmware update will have on the mesh state of the
-device. If the transfer will cause the device to change its Composition Data or become
+device.
+
+.. _bluetooth_mesh_dfu_srv_comp_data_and_models_metadata:
+
+Composition Data and Models Metadata
+------------------------------------
+
+If the transfer will cause the device to change its Composition Data or become
 unprovisioned, this should be communicated through the effect parameter of the metadata check.
+
+When the transfer will cause the Composition Data to change, and the
+:ref:`bluetooth_mesh_models_rpr_srv` is supported, the Composition Data of the new firmware image
+will be represented by Composition Data Pages 128, 129, and 130. The Models Metadata of the new
+firmware image will be represented by Models Metadata Page 128. Composition Data Pages 0, 1 and 2,
+and Models Metadata Page 0, will represent the Composition Data and the Models Metadata of the old
+firmware image until the device is reprovisioned with Node Provisioning Protocol Interface (NPPI)
+procedures using the :ref:`bluetooth_mesh_models_rpr_cli`.
+
+The application must call functions :c:func:`bt_mesh_comp_change_prepare` and
+:c:func:`bt_mesh_models_metadata_change_prepare` to store the existing Composition Data and Models
+Metadata pages before booting into the firmware with the updated Composition Data and Models
+Metadata. The old Composition Data will then be loaded into Composition Data Pages 0, 1 and 2,
+while the Composition Data in the new firmware will be loaded into Composition Data Pages 128, 129
+and 130. The Models Metadata for the old image will be loaded into Models Metadata Page 0, and the
+Models Metadata for the new image will be loaded into Models Metadata Page 128.
+
+Limitation:
+
+* It is not possible to change the Composition Data of the device and keep the device provisioned
+  and working with the old firmware after the new firmware image is applied.
 
 Start
 =====
