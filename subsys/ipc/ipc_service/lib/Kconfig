@@ -21,8 +21,7 @@ config IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
 menuconfig IPC_SERVICE_ICMSG
 	bool "icmsg IPC library"
-	select SPSC_PBUF
-	select SPSC_PBUF_USE_CACHE
+	select PBUF
 	help
 	  Icmsg library
 

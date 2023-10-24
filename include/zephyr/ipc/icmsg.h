@@ -12,8 +12,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/ipc/ipc_service.h>
+#include <zephyr/ipc/pbuf.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/spsc_pbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,19 +33,14 @@ enum icmsg_state {
 };
 
 struct icmsg_config_t {
-	uintptr_t tx_shm_addr;
-	uintptr_t rx_shm_addr;
-	size_t tx_shm_size;
-	size_t rx_shm_size;
 	struct mbox_channel mbox_tx;
 	struct mbox_channel mbox_rx;
 };
 
 struct icmsg_data_t {
 	/* Tx/Rx buffers. */
-	struct spsc_pbuf *tx_ib;
-	struct spsc_pbuf *rx_ib;
-	atomic_t tx_buffer_state;
+	struct pbuf *tx_pb;
+	struct pbuf *rx_pb;
 #ifdef CONFIG_IPC_SERVICE_ICMSG_SHMEM_ACCESS_SYNC
 	struct k_mutex tx_lock;
 #endif
@@ -59,12 +54,6 @@ struct icmsg_data_t {
 	struct k_work_delayable notify_work;
 	struct k_work mbox_work;
 	atomic_t state;
-	/* No-copy */
-#ifdef CONFIG_IPC_SERVICE_ICMSG_NOCOPY_RX
-	atomic_t rx_buffer_state;
-	const void *rx_buffer;
-	uint16_t rx_len;
-#endif
 };
 
 /** @brief Open an icmsg instance
