@@ -1,0 +1,17 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_KBD_MATRIX
+	bool
+	help
+	  Enable library used for keyboard matrix drivers.
+
+if INPUT_KBD_MATRIX
+
+config INPUT_KBD_MATRIX_THREAD_STACK_SIZE
+	int "Stack size for the keyboard matrix thread"
+	default 1024
+	help
+	  Size of the stack used for the keyboard matrix thread.
+
+endif # INPUT_KBD_MATRIX
