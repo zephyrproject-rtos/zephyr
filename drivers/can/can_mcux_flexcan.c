@@ -480,9 +480,8 @@ static void mcux_flexcan_detach(const struct device *dev, int filter_id)
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 
-	if (filter_id >= MCUX_FLEXCAN_MAX_RX) {
-		LOG_ERR("Detach: Filter id >= MAX_RX (%d >= %d)", filter_id,
-			MCUX_FLEXCAN_MAX_RX);
+	if (filter_id < 0 || filter_id >= MCUX_FLEXCAN_MAX_RX) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
