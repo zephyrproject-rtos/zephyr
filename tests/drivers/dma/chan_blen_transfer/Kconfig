@@ -21,3 +21,7 @@ config DMA_LOOP_TRANSFER_SRAM_SECTION
 config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 	int "Number of DMAs to test"
 	default 1
+
+config DMA_TRANSFER_BURST16
+	bool "Enable loop transfers of 16-beat bursts"
+	default y
