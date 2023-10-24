@@ -166,67 +166,10 @@ static int send(const struct device *instance, void *token,
 	return icmsg_me_send(conf, &dev_data->icmsg_me_data, *id, msg, len);
 }
 
-static int get_tx_buffer(const struct device *instance, void *token,
-			 void **data, uint32_t *user_len, k_timeout_t wait)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_get_tx_buffer(conf, &dev_data->icmsg_me_data, data,
-				      user_len, wait);
-}
-
-static int drop_tx_buffer(const struct device *instance, void *token,
-			  const void *data)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_drop_tx_buffer(conf, &dev_data->icmsg_me_data, data);
-}
-
-static int send_nocopy(const struct device *instance, void *token,
-			const void *data, size_t len)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-	icmsg_me_ept_id_t *id = token;
-
-	return icmsg_me_send_nocopy(conf, &dev_data->icmsg_me_data, *id,
-				    data, len);
-}
-
-#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
-int hold_rx_buffer(const struct device *instance, void *token, void *data)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_hold_rx_buffer(conf, &dev_data->icmsg_me_data, data);
-}
-
-int release_rx_buffer(const struct device *instance, void *token, void *data)
-{
-	const struct icmsg_config_t *conf = instance->config;
-	struct backend_data_t *dev_data = instance->data;
-
-	return icmsg_me_release_rx_buffer(conf, &dev_data->icmsg_me_data, data);
-}
-#endif /* CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX */
-
 const static struct ipc_service_backend backend_ops = {
 	.open_instance = open,
 	.register_endpoint = register_ept,
 	.send = send,
-
-	.get_tx_buffer = get_tx_buffer,
-	.drop_tx_buffer = drop_tx_buffer,
-	.send_nocopy = send_nocopy,
-
-#ifdef CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
-	.hold_rx_buffer = hold_rx_buffer,
-	.release_rx_buffer = release_rx_buffer,
-#endif
 };
 
 static int backend_init(const struct device *instance)

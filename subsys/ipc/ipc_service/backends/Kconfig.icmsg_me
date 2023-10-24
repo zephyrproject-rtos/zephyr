@@ -28,14 +28,4 @@ config IPC_SERVICE_BACKEND_ICMSG_ME_EP_NAME_LEN
 	  Maximal length of a string used to discover endpoints between the
 	  initiator and the follower.
 
-config IPC_SERVICE_BACKEND_ICMSG_ME_NOCOPY_RX
-	bool "Nocopy feature for receive path"
-	select IPC_SERVICE_ICMSG_ME_NOCOPY_RX
-	help
-	  Enable nocopy feature for receive path of multiendpoint icmsg
-	  ipc_service backend. This features enables functions to hold and
-	  release rx buffer by the ipc_service API user. It also creates
-	  performance and memory overhead so it is recommended to disable
-	  this feature if unused by the API user.
-
 endif # IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR || IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
