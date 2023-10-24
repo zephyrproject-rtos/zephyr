@@ -55,6 +55,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"PATH is LwM2M path\n" \
 	"NUM how many elements to cache\n" \
 
+static void send_cb(enum lwm2m_send_status status)
+{
+	LOG_INF("SEND status: %d\n", status);
+}
+
 static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 {
 	int ret = 0;
@@ -86,7 +91,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
-	ret = lwm2m_send_cb(ctx, lwm2m_path_list, path_cnt, NULL);
+	ret = lwm2m_send_cb(ctx, lwm2m_path_list, path_cnt, send_cb);
 
 	if (ret < 0) {
 		shell_error(sh, "can't do send operation, request failed (%d)\n", ret);
