@@ -233,6 +233,9 @@ static void before(void *ctx)
 	ARG_UNUSED(ctx);
 
 	bounce_done = 0;
+	bounce_owner = 0;
+	trylock_failures = 0;
+	trylock_successes = 0;
 }
 
 ZTEST_SUITE(spinlock, NULL, NULL, before, NULL, NULL);
