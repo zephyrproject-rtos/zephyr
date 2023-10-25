@@ -18,6 +18,7 @@ Building the application for nrf5340dk_nrf5340_cpuapp
    :zephyr-app: samples/subsys/ipc/ipc_service/icmsg
    :board: nrf5340dk_nrf5340_cpuapp
    :goals: debug
+   :west-args: --sysbuild
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
