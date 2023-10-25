@@ -277,8 +277,29 @@ int adxl367_self_test(const struct device *dev)
 {
 	int ret;
 	struct adxl367_data *data = dev->data;
+	const struct adxl367_dev_config *cfg = dev->config;
 	int16_t x_axis_1, x_axis_2, dif, min, max;
 	uint8_t read_val[2];
+
+	uint32_t st_delay_ms;
+
+	/* 4 / ODR value in ms */
+	switch (cfg->odr) {
+	case ADXL367_ODR_12P5HZ:
+		st_delay_ms = 320;
+	case ADXL367_ODR_25HZ:
+		st_delay_ms = 160;
+	case ADXL367_ODR_50HZ:
+		st_delay_ms = 80;
+	case ADXL367_ODR_100HZ:
+		st_delay_ms = 40;
+	case ADXL367_ODR_200HZ:
+		st_delay_ms = 20;
+	case ADXL367_ODR_400HZ:
+		st_delay_ms = 10;
+	default:
+		return -EINVAL;
+	}
 
 	ret = adxl367_set_op_mode(dev, ADXL367_MEASURE);
 	if (ret != 0) {
@@ -291,8 +312,8 @@ int adxl367_self_test(const struct device *dev)
 		return ret;
 	}
 
-	/* 4 / default ODR = 40ms */
-	k_sleep(K_MSEC(40));
+	/* 4 / ODR */
+	k_sleep(K_MSEC(st_delay_ms));
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL367_X_DATA_H, read_val, 2);
 	if (ret != 0) {
@@ -313,8 +334,8 @@ int adxl367_self_test(const struct device *dev)
 		return ret;
 	}
 
-	/* 4 / default ODR = 40ms */
-	k_sleep(K_MSEC(40));
+	/* 4 / ODR */
+	k_sleep(K_MSEC(st_delay_ms));
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL367_X_DATA_H, read_val, 2);
 	if (ret != 0) {
