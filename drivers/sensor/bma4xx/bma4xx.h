@@ -47,6 +47,7 @@
 #define BMA4XX_REG_HIGH_G_OUT      (0x1F)
 #define BMA4XX_REG_TEMPERATURE     (0x22)
 #define BMA4XX_REG_FIFO_LENGTH_0   (0x24)
+#define BMA4XX_REG_FIFO_LENGTH_1   (0x25)
 #define BMA4XX_REG_FIFO_DATA       (0x26)
 #define BMA4XX_REG_ACTIVITY_OUT    (0x27)
 #define BMA4XX_REG_ORIENTATION_OUT (0x28)
@@ -64,7 +65,7 @@
 #define BMA4XX_REG_AUX_WR_DATA     (0x4F)
 #define BMA4XX_REG_INT1_IO_CTRL    (0x53)
 #define BMA4XX_REG_INT2_IO_CTRL    (0x54)
-#define BMA4XX_REG_INTR_LATCH      (0x55)
+#define BMA4XX_REG_INT_LATCH       (0x55)
 #define BMA4XX_REG_INT_MAP_1       (0x56)
 #define BMA4XX_REG_INT_MAP_2       (0x57)
 #define BMA4XX_REG_INT_MAP_DATA    (0x58)
@@ -97,6 +98,15 @@
 #define BMA4XX_BIT_ACC_PERF_MODE BIT(7)
 
 #define BMA4XX_BIT_ACC_EN BIT(2)
+
+/* INT_STATUS_1 accelerometer data ready to interrupt */
+#define BMA4XX_ACC_DRDY_INT BIT(7)
+
+/* CMD: Clears all data in FIFO, does not change FIFO_CONFIG and FIFO_DOWNS register */
+#define BMA4XX_CMD_FIFO_FLUSH (0xB0)
+
+/* FIFO_CONFIG_1 enable: Store Accelerometer data in FIFO (all 3 axes) */
+#define BMA4XX_FIFO_ACC_EN BIT(6)
 
 /* Bandwidth parameters */
 #define BMA4XX_BWP_OSR4_AVG1  (0x0)
@@ -152,6 +162,9 @@
 
 /* Range is -104C to 150C. Use shift of 8 (+/-256) */
 #define BMA4XX_TEMP_SHIFT (8)
+
+/* The total number of used registers specified in bma422 datasheet is 7E */
+#define BMA4XX_NUM_REGS 0x7E
 
 /*
  * Types
