@@ -44,7 +44,7 @@ struct llext_const_symbol {
  */
 struct llext_symbol {
 	/** Name of symbol */
-	char *name;
+	const char *name;
 
 	/** Address of symbol */
 	void *addr;
