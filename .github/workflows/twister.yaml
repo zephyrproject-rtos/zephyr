@@ -273,6 +273,24 @@ jobs:
             module_tests/twister.xml
             testplan.json
 
+      - if: matrix.subset == 1 && github.event_name == 'push'
+        name: Save the list of Python packages
+        shell: bash
+        run: |
+          FREEZE_FILE="frozen-requirements.txt"
+          timestamp="$(date)"
+          version="$(git describe --abbrev=12 --always)"
+          echo -e "# Generated at $timestamp ($version)\n" > $FREEZE_FILE
+          pip3 freeze | tee -a $FREEZE_FILE
+
+      - if: matrix.subset == 1 && github.event_name == 'push'
+        name: Upload the list of Python packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: Frozen PIP package set
+          path: |
+            frozen-requirements.txt
+
   twister-test-results:
     name: "Publish Unit Tests Results"
     env:
