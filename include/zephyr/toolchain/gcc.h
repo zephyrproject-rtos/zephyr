@@ -274,6 +274,10 @@ do {                                                                    \
 #define __weak __attribute__((__weak__))
 #endif
 
+#ifndef __attribute_nonnull
+#define __attribute_nonnull(...) __attribute__((nonnull(__VA_ARGS__)))
+#endif
+
 /* Builtins with availability that depend on the compiler version. */
 #if __GNUC__ >= 5
 #define HAS_BUILTIN___builtin_add_overflow 1
