@@ -191,7 +191,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 		if (zperf_get_ipv6_addr(argv[start + 1], argv[start + 2],
 					&shell_ipv6) < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
-				      "Unable to set IP\n");
+				      "Unable to set %s address (%s disabled)\n", "IPv6", "IPv4");
 			return 0;
 		}
 
@@ -208,7 +208,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 
 		if (zperf_get_ipv4_addr(argv[start + 1], &shell_ipv4) < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
-				      "Unable to set IP\n");
+				      "Unable to set %s address (%s disabled)\n", "IPv4", "IPv6");
 			return -ENOEXEC;
 		}
 
@@ -227,7 +227,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 			if (zperf_get_ipv4_addr(argv[start + 1],
 						&shell_ipv4) < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
-					      "Unable to set IP\n");
+					      "Unable to set %s address\n", "IPv4");
 				return -ENOEXEC;
 			}
 
@@ -243,7 +243,7 @@ static int cmd_setip(const struct shell *sh, size_t argc, char *argv[])
 			if (zperf_get_ipv6_addr(argv[start + 1],
 						argv[start + 2], &shell_ipv6) < 0) {
 				shell_fprintf(sh, SHELL_WARNING,
-					      "Unable to set IP\n");
+					      "Unable to set %s address\n", "IPv6");
 				return -ENOEXEC;
 			}
 
@@ -1114,7 +1114,7 @@ void zperf_shell_init(void)
 		ret = net_addr_pton(AF_INET6, MY_IP6ADDR,
 				    &in6_addr_my.sin6_addr);
 		if (ret < 0) {
-			NET_WARN("Unable to set IP");
+			NET_WARN("Unable to set %s address\n", "IPv6");
 		} else {
 			NET_INFO("Setting IP address %s",
 				 net_sprint_ipv6_addr(&in6_addr_my.sin6_addr));
@@ -1123,9 +1123,10 @@ void zperf_shell_init(void)
 		ret = net_addr_pton(AF_INET6, DST_IP6ADDR,
 				    &in6_addr_dst.sin6_addr);
 		if (ret < 0) {
-			NET_WARN("Unable to set IP %s",
+			NET_WARN("Unable to set destination %s address %s",
+				 "IPv6",
 				 DST_IP6ADDR ? DST_IP6ADDR
-					     : "(Default IPv6 destination address not set)");
+					     : "(not set)");
 		} else {
 			NET_INFO("Setting destination IP address %s",
 				 net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
@@ -1136,7 +1137,7 @@ void zperf_shell_init(void)
 		ret = net_addr_pton(AF_INET, MY_IP4ADDR,
 				    &in4_addr_my.sin_addr);
 		if (ret < 0) {
-			NET_WARN("Unable to set IP");
+			NET_WARN("Unable to set %s address\n", "IPv4");
 		} else {
 			NET_INFO("Setting IP address %s",
 				 net_sprint_ipv4_addr(&in4_addr_my.sin_addr));
@@ -1145,9 +1146,10 @@ void zperf_shell_init(void)
 		ret = net_addr_pton(AF_INET, DST_IP4ADDR,
 				    &in4_addr_dst.sin_addr);
 		if (ret < 0) {
-			NET_WARN("Unable to set IP %s",
+			NET_WARN("Unable to set destination %s address %s",
+				 "IPv4",
 				  DST_IP4ADDR ? DST_IP4ADDR
-					      : "(Default IPv4 destination address not set)");
+					      : "(not set)");
 		} else {
 			NET_INFO("Setting destination IP address %s",
 				 net_sprint_ipv4_addr(&in4_addr_dst.sin_addr));
