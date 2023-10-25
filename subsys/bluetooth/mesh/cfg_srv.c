@@ -2274,7 +2274,7 @@ static int hb_pub_send_status(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(&msg, bt_mesh_hb_log(pub->period));
 		net_buf_simple_add_u8(&msg, pub->ttl);
 		net_buf_simple_add_le16(&msg, pub->feat);
-		net_buf_simple_add_le16(&msg, pub->net_idx);
+		net_buf_simple_add_le16(&msg, pub->net_idx & 0xfff);
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
