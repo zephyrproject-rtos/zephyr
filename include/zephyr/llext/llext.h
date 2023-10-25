@@ -12,6 +12,7 @@
 #include <zephyr/llext/symbol.h>
 #include <zephyr/llext/loader.h>
 #include <sys/types.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +52,9 @@ struct llext {
 
 	/** Lookup table of llext memory regions */
 	void *mem[LLEXT_MEM_COUNT];
+
+	/** Memory allocated on heap */
+	bool mem_on_heap[LLEXT_MEM_COUNT];
 
 	/** Total size of the llext memory usage */
 	size_t mem_size;
