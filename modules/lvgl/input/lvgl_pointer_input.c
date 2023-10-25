@@ -12,7 +12,7 @@
 #include <lvgl_display.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(lvgl);
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 struct lvgl_pointer_input_config {
 	struct lvgl_common_input_config common_config; /* Needs to be first member */
