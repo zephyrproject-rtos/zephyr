@@ -651,10 +651,26 @@ static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 				reg_irq_risc1_en(GET_PORT_NUM(gpio))
 				= data->gpio_b9x_retention.risc1_irq_conf;
 
+				irq_num -= CONFIG_2ND_LVL_ISR_TBL_OFFSET;
+
+				if (irq_num == IRQ_GPIO) {
+					BM_SET(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO);
+				} else if (irq_num == IRQ_GPIO2_RISC0) {
+					BM_SET(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC0);
+				} else if (irq_num == IRQ_GPIO2_RISC1) {
+					BM_SET(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC1);
+				}
+
 				riscv_plic_irq_enable(irq_num);
 				riscv_plic_set_priority(irq_num, irq_priority);
 
-				gpio_b9x_irq_handler(dev);
+				if (irq_num == IRQ_GPIO) {
+					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO);
+				} else if (irq_num == IRQ_GPIO2_RISC0) {
+					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC0);
+				} else if (irq_num == IRQ_GPIO2_RISC1) {
+					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO2RISC1);
+				}
 			}
 		}
 		break;
