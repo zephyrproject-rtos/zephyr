@@ -70,6 +70,7 @@ static void bounce_once(int id, bool trylock)
 			ret = k_spin_trylock(&bounce_lock, &key);
 			if (ret == -EBUSY) {
 				trylock_failures++;
+				k_busy_wait(10);
 				continue;
 			}
 			trylock_successes++;
@@ -82,6 +83,7 @@ static void bounce_once(int id, bool trylock)
 			break;
 		}
 
+		k_busy_wait(10);
 		k_spin_unlock(&bounce_lock, key);
 		k_busy_wait(100);
 	}
