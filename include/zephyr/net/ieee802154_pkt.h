@@ -59,12 +59,17 @@ struct net_pkt_cb_ieee802154 {
 			 */
 			uint8_t rssi;
 		};
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER) || defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
 		/* TX packets */
 		struct {
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
 			int8_t txpwr; /* TX power in dBm. */
-		};
 #endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+			uint8_t txchannel; /* TX channel. */
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
+		};
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER || CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
 	};
 
 	/* Flags */
@@ -200,6 +205,18 @@ static inline void net_pkt_set_ieee802154_txpwr(struct net_pkt *pkt, int8_t txpw
 	net_pkt_cb_ieee802154(pkt)->txpwr = txpwr;
 }
 #endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+static inline uint8_t net_pkt_ieee802154_txchannel(struct net_pkt *pkt)
+{
+	return net_pkt_cb_ieee802154(pkt)->txchannel;
+}
+
+static inline void net_pkt_set_ieee802154_txchannel(struct net_pkt *pkt, uint8_t txchannel)
+{
+	net_pkt_cb_ieee802154(pkt)->txchannel = txchannel;
+}
+#endif /* CONFIG_IEEE802154_SELECTIVE_TXCHANNEL */
 
 static inline bool net_pkt_ieee802154_arb(struct net_pkt *pkt)
 {
