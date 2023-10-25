@@ -501,6 +501,11 @@ harness_config: <harness configuration options>
     pytest_args: <list of arguments> (default empty)
         Specify a list of additional arguments to pass to ``pytest``.
 
+    pytest_dut_scope: <function|class|module|package|session> (default function)
+        The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
+        If the scope is set to ``function``, DUT is launched for every test case
+        in python script. For ``session`` scope, DUT is launched only once.
+
     robot_test_path: <robot file path> (default empty)
         Specify a path to a file containing a Robot Framework test suite to be run.
 

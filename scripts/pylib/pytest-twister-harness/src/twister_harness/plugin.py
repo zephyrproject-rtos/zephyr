@@ -100,6 +100,11 @@ def pytest_addoption(parser: pytest.Parser):
         metavar='PATH',
         help='Script executed after closing serial connection.'
     )
+    twister_harness_group.addoption(
+        '--dut-scope',
+        choices=('function', 'class', 'module', 'package', 'session'),
+        help='The scope for which `dut` and `shell` fixtures are shared.'
+    )
 
 
 def pytest_configure(config: pytest.Config):
