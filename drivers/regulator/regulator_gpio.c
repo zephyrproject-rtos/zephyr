@@ -74,7 +74,11 @@ static int regulator_gpio_enable(const struct device *dev)
 	}
 
 	if (cfg->startup_delay_us > 0U) {
+#ifdef CONFIG_MULTITHREADING
 		k_sleep(K_USEC(cfg->startup_delay_us));
+#else
+		k_busy_wait(cfg->startup_delay_us);
+#endif
 	}
 
 	return 0;

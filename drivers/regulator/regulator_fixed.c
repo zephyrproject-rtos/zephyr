@@ -42,7 +42,11 @@ static int regulator_fixed_enable(const struct device *dev)
 	}
 
 	if (cfg->off_on_delay_us > 0U) {
+#ifdef CONFIG_MULTITHREADING
 		k_sleep(K_USEC(cfg->off_on_delay_us));
+#else
+		k_busy_wait(cfg->off_on_delay_us);
+#endif
 	}
 
 	return 0;
