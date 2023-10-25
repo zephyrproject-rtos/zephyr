@@ -255,6 +255,14 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 		return 0;
 	}
 
+	if (ldr->sects[sect_idx].sh_type != SHT_NOBITS) {
+		ext->mem[mem_idx] = llext_peek(ldr, ldr->sects[sect_idx].sh_offset);
+		if (ext->mem[mem_idx]) {
+			ext->mem_on_heap[mem_idx] = false;
+			return 0;
+		}
+	}
+
 	ext->mem[mem_idx] = k_heap_aligned_alloc(&llext_heap, sizeof(uintptr_t),
 						 ldr->sects[sect_idx].sh_size,
 						 K_NO_WAIT);
@@ -263,15 +271,21 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	}
 	ext->mem_size += ldr->sects[sect_idx].sh_size;
 
-	ret = llext_seek(ldr, ldr->sects[sect_idx].sh_offset);
-	if (ret != 0) {
-		goto err;
+	if (ldr->sects[sect_idx].sh_type == SHT_NOBITS) {
+		memset(ext->mem[mem_idx], 0, ldr->sects[sect_idx].sh_size);
+	} else {
+		ret = llext_seek(ldr, ldr->sects[sect_idx].sh_offset);
+		if (ret != 0) {
+			goto err;
+		}
+
+		ret = llext_read(ldr, ext->mem[mem_idx], ldr->sects[sect_idx].sh_size);
+		if (ret != 0) {
+			goto err;
+		}
 	}
 
-	ret = llext_read(ldr, ext->mem[mem_idx], ldr->sects[sect_idx].sh_size);
-	if (ret != 0) {
-		goto err;
-	}
+	ext->mem_on_heap[mem_idx] = true;
 
 	return 0;
 
@@ -633,7 +647,7 @@ out:
 	if (ret != 0) {
 		LOG_DBG("Failed to load extension, freeing memory...");
 		for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
-			if (ext->mem[mem_idx] != NULL) {
+			if (ext->mem_on_heap[mem_idx]) {
 				k_heap_free(&llext_heap, ext->mem[mem_idx]);
 			}
 		}
@@ -714,7 +728,7 @@ void llext_unload(struct llext *ext)
 	sys_slist_find_and_remove(&_llext_list, &ext->_llext_list);
 
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
-		if (ext->mem[i] != NULL) {
+		if (ext->mem_on_heap[i]) {
 			LOG_DBG("freeing memory region %d", i);
 			k_heap_free(&llext_heap, ext->mem[i]);
 			ext->mem[i] = NULL;
