@@ -2267,11 +2267,15 @@ static int hb_pub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, status);
 
 	net_buf_simple_add_le16(&msg, pub->dst);
-	net_buf_simple_add_u8(&msg, hb_pub_count_log(pub->count));
-	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(pub->period));
-	net_buf_simple_add_u8(&msg, pub->ttl);
-	net_buf_simple_add_le16(&msg, pub->feat);
-	net_buf_simple_add_le16(&msg, pub->net_idx);
+	if (pub->dst == BT_MESH_ADDR_UNASSIGNED) {
+		(void)memset(net_buf_simple_add(&msg, 7), 0, 7);
+	} else {
+		net_buf_simple_add_u8(&msg, hb_pub_count_log(pub->count));
+		net_buf_simple_add_u8(&msg, bt_mesh_hb_log(pub->period));
+		net_buf_simple_add_u8(&msg, pub->ttl);
+		net_buf_simple_add_le16(&msg, pub->feat);
+		net_buf_simple_add_le16(&msg, pub->net_idx);
+	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Heartbeat Publication Status");
