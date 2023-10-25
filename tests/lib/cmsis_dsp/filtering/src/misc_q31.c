@@ -106,7 +106,8 @@ static void test_arm_conv_q31(
 	q31_t *output;
 
 	/* Allocate output buffer */
-	output = calloc(ref_length, sizeof(q31_t));
+	output = calloc(ref_length + 1, sizeof(q31_t));
+	output[ref_length] = 0x5aa5a55a;
 
 	/* Run test function */
 	arm_conv_q31(in_com1, in1_length, in_com2, in2_length, output);
@@ -120,6 +121,9 @@ static void test_arm_conv_q31(
 		test_near_equal_q31(ref_length, ref, output,
 			ABS_ERROR_THRESH_Q31),
 		ASSERT_MSG_ABS_ERROR_LIMIT_EXCEED);
+
+	zassert_true(output[ref_length] == 0x5aa5a55a,
+		     "output buffer overflow");
 
 	/* Free output buffer */
 	free(output);
