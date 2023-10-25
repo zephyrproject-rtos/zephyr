@@ -5365,7 +5365,7 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  * @return A pointer to valid heap memory, or NULL
  */
 void *k_heap_alloc(struct k_heap *h, size_t bytes,
-				 k_timeout_t timeout);
+		k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
  * @brief Free memory allocated by k_heap_alloc()
