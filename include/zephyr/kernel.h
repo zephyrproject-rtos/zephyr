@@ -5377,7 +5377,7 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
  * @param h Heap to which to return the memory
  * @param mem A valid memory block, or NULL
  */
-void k_heap_free(struct k_heap *h, void *mem);
+void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
 /* Hand-calculated minimum heap sizes needed to return a successful
  * 1-byte allocation.  See details in lib/os/heap.[ch]
