@@ -300,13 +300,10 @@ SECTIONS
      *       conflict with auto-refill TLB resulting in
      *       TLB multi-hit exception.
      */
+    *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
 
     *libarch__xtensa__core.a:xtensa-asm2-util.S.obj(.literal)
     *libarch__xtensa__core.a:xtensa-asm2-util.S.obj(.text)
-    *libarch__xtensa__core.a:xtensa-asm2-util.S.obj(.iram.text)
-    *libarch__xtensa__core.a:xtensa-asm2-util.S.obj(.iram0.text)
-
-    *libarch__xtensa__core.a:window_vectors.S.obj(.iram.text)
 
     *libarch__xtensa__core.a:xtensa-asm2.c.obj(.literal.*)
     *libarch__xtensa__core.a:xtensa-asm2.c.obj(.text.*)
