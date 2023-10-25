@@ -96,6 +96,14 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 #define EC_HOST_CMD_ST_STM32_FIFO
 #endif /* st_stm32_spi_fifo */
 
+/*
+ * Max data size for a version 3 request/response packet.  This is big enough
+ * to handle a request/response header, flash write offset/size, and 512 bytes
+ * of flash data.
+ */
+#define SPI_MAX_REQ_SIZE  0x220
+#define SPI_MAX_RESP_SIZE 0x220
+
 /* Enumeration to maintain different states of incoming request from
  * host
  */
@@ -666,6 +674,14 @@ static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
 	/* Buffer for response from HC handler. Make space for preamble */
 	hc_spi->tx->buf = (uint8_t *)hc_spi->tx->buf + sizeof(out_preamble);
 	hc_spi->tx->len_max = hc_spi->tx->len_max - sizeof(out_preamble) - EC_SPI_PAST_END_LENGTH;
+
+	/* Limit the requset/response max sizes */
+	if (hc_spi->rx_ctx->len_max > SPI_MAX_REQ_SIZE) {
+		hc_spi->rx_ctx->len_max = SPI_MAX_REQ_SIZE;
+	}
+	if (hc_spi->tx->len_max > SPI_MAX_RESP_SIZE) {
+		hc_spi->tx->len_max = SPI_MAX_RESP_SIZE;
+	}
 
 	ret = spi_init(hc_spi);
 	if (ret) {

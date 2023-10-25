@@ -455,8 +455,9 @@ static int shi_ite_backend_init(const struct ec_host_cmd_backend *backend,
 	data->tx = tx;
 
 	rx_ctx->buf = data->in_msg;
+	rx_ctx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST;
 	tx->buf = data->out_msg + sizeof(out_preamble);
-	data->tx->len_max = sizeof(data->out_msg) - EC_SHI_PREAMBLE_LENGTH - EC_SHI_PAST_END_LENGTH;
+	data->tx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE;
 
 	return 0;
 }
