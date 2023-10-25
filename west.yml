@@ -298,7 +298,7 @@ manifest:
       revision: 90f4484cbaec986ed253b4fe9649aa75e632de15
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 42b7c577714b8f22ce82a901e19c1814af4609a8
+      revision: 214f9fc1539f8e5937c0474cb6ee29b6dcb2d4b8
       path: modules/lib/open-amp
     - name: openthread
       revision: d62167ee34b091e7025c9ec2820aae71e17a3944
