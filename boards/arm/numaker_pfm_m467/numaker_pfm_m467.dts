@@ -117,3 +117,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&emac {
+	pinctrl-0 = <&emac_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
