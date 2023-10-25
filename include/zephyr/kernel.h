@@ -5341,7 +5341,7 @@ void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
  * @return Pointer to memory the caller can now use
  */
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
-			k_timeout_t timeout);
+			k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
  * @brief Allocate memory from a k_heap
