@@ -1,5 +1,7 @@
 sample:
   name: Logging in multi-domain environment
+common:
+  sysbuild: true
 tests:
   sample.logging.multidomain.ipc_static_vrings:
     platform_allow: nrf5340dk_nrf5340_cpuapp
