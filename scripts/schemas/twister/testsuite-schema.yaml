@@ -104,6 +104,10 @@ mapping:
             required: false
             sequence:
               - type: str
+          "pytest_dut_scope":
+            type: str
+            enum: ["function", "class", "module", "package", "session"]
+            required: false
           "regex":
             type: seq
             required: false
@@ -304,6 +308,10 @@ mapping:
                 required: false
                 sequence:
                   - type: str
+              "pytest_dut_scope":
+                type: str
+                enum: ["function", "class", "module", "package", "session"]
+                required: false
               "regex":
                 type: seq
                 required: false
