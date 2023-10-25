@@ -185,6 +185,43 @@ typedef int16_t device_handle_t;
 			__VA_ARGS__)
 
 /**
+ * @brief Create a sub-device object from a devicetree node identifier and set
+ * it up for boot time initialization.
+ *
+ * This macro defines a @ref device that is automatically configured by the
+ * kernel during system initialization. The global device object's name as a C
+ * identifier is derived from the node's dependency ordinal. @ref device.name is
+ * set to `DEVICE_DT_NAME(node_id)`.
+ *
+ * Sub-device takes state from parent device.
+ * Sub-device has capability to have own initialization, but in case when
+ * this initialization should follow initialization of parent it should be
+ * provided own pririty that is lower than of parent. If initialization
+ * does not require main device to be ready, then the priority can
+ * be kept the same.
+ * Sub-device has no power state as the power management is done by
+ * the main device.
+ *
+ * @param node_id Devicetree node id for the device (DT_INVALID_NODE if a
+ * software device).
+ * @param init_fn Device init function, optional and may be NULL.
+ * @param data Reference to device data.
+ * @param config Reference to device config.
+ * @param level Initialization level.
+ * @param prio Initialization priority.
+ * @param api Reference to device API.
+ */
+#define DEVICE_DT_DEFINE_SUB(node_id, init_fn, data, config, level, prio, api, \
+			     ...)                                              \
+	extern struct device_state Z_DEVICE_STATE_NAME(                        \
+				Z_DEVICE_DT_DEV_ID(DT_PARENT(node_id)));       \
+	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
+			DEVICE_DT_NAME(node_id), init_fn, NULL, data, config,  \
+			level, prio, api,                                      \
+			&Z_DEVICE_STATE_NAME(                                  \
+				Z_DEVICE_DT_DEV_ID(DT_PARENT(node_id))))
+
+/**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
  * compatible instead of a node identifier.
  *
@@ -764,7 +801,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param dev_id Device identifier.
  */
 #define Z_DEVICE_STATE_DEFINE(dev_id)                                          \
-	static Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)   \
+	Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)   \
 		__attribute__((__section__(".z_devstate")))
 
 #if defined(CONFIG_DEVICE_DEPS) || defined(__DOXYGEN__)
