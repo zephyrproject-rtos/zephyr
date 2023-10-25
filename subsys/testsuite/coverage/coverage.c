@@ -57,18 +57,12 @@ static inline void print_u32(uint32_t v)
 }
 
 /**
- * write_u64 - Store 64 bit data on a buffer and return the size
+ * print_u64 - Print 64 bit of gcov data
  */
-
-static inline void write_u64(void *buffer, size_t *off, uint64_t v)
+static inline void print_u64(uint64_t v)
 {
-	if (buffer != NULL) {
-		memcpy((uint8_t *)buffer + *off, (uint8_t *)&v, sizeof(v));
-	} else {
-		print_u32(*((uint32_t *)&v));
-		print_u32(*(((uint32_t *)&v) + 1));
-	}
-	*off = *off + sizeof(uint64_t);
+	print_u32(*((uint32_t *)&v));
+	print_u32(*(((uint32_t *)&v) + 1));
 }
 
 /**
@@ -220,10 +214,14 @@ size_t gcov_to_gcda(uint8_t *buffer, struct gcov_info *info)
 			for (iter_counter_values = 0U;
 			     iter_counter_values < counters_per_func->num;
 			     iter_counter_values++) {
-
-				write_u64(buffer,
-					      &buffer_write_position,
-					      counters_per_func->values[iter_counter_values]);
+				if (buffer) {
+					memcpy(&buffer[buffer_write_position],
+						&(counters_per_func->values[iter_counter_values]),
+						sizeof(uint64_t));
+				} else {
+					print_u64(counters_per_func->values[iter_counter_values]);
+				}
+				buffer_write_position += sizeof(uint64_t);
 			}
 
 			counters_per_func++;
