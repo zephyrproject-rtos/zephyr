@@ -6,6 +6,9 @@ include(root)
 include(boards)
 include(arch)
 include(configuration_files)
+
+include(west)
+include(zephyr_module)
 include(kconfig)
 
 find_package(TargetTools)
