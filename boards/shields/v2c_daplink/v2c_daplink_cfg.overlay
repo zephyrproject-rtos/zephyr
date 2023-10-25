@@ -12,9 +12,15 @@
 	};
 
 	soc {
-		daplink_flash0_v2c_daplink_cfg: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x00000000 DT_SIZE_M(1)>;
+		no_flash_controller {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "zephyr,null-controller";
+
+			daplink_flash0_v2c_daplink_cfg: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_SIZE_M(1)>;
+			};
 		};
 
 		itcm_v2c_daplink_cfg: memory@10000000 {

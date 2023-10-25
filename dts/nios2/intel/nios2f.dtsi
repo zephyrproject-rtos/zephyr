@@ -17,9 +17,15 @@
 		};
 	};
 
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		reg = <0x00 0xb8000>;
+	no_flash_controller {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,null-controller";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00 0xb8000>;
+		};
 	};
 
 	sram0: memory@400000 {

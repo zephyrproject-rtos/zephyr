@@ -68,9 +68,15 @@
 		reg = <0x20000000 0x400000>;
 	};
 
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		reg = <0 0x400000>;
+	no_flash_controller {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,null-controller";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0 0x400000>;
+		};
 	};
 
 	sysclk: system-clock {

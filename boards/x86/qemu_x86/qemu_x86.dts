@@ -19,9 +19,15 @@
 	model = "QEMU X86 emulator";
 	compatible = "qemu,x86_emulator";
 
-	flash0: flash@500000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00500000 DT_FLASH_SIZE>;
+	no_flash_controller {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,null-controller";
+
+		flash0: flash@500000 {
+			compatible = "soc-nv-flash";
+			reg = <0x00500000 DT_FLASH_SIZE>;
+		};
 	};
 
 	aliases {

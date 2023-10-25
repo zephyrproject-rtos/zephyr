@@ -157,9 +157,15 @@
 			};
 		};
 
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(64)>;
+		no_flash_controller {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "zephyr,null-controller";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(64)>;
+			};
 		};
 
 		dram0: memory@88000000 {

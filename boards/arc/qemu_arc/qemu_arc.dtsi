@@ -37,9 +37,15 @@
 	};
 
 	/* We are carving out of DRAM for a pseudo flash and sram region */
-	flash0: flash@80000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x80000000 DT_FLASH_SIZE>;
+	no_flash_controller {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,null-controller";
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_FLASH_SIZE>;
+		};
 	};
 
 	sram0: sram@80400000 {
