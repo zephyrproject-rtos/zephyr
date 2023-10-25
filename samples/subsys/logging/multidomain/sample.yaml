@@ -4,7 +4,9 @@ common:
   sysbuild: true
 tests:
   sample.logging.multidomain.ipc_static_vrings:
-    platform_allow: nrf5340dk_nrf5340_cpuapp
+    platform_allow:
+      - nrf5340dk_nrf5340_cpuapp
+      - nrf5340bsim_nrf5340_cpuapp
     integration_platforms:
       - nrf5340dk_nrf5340_cpuapp
     tags: ipc
