@@ -81,6 +81,9 @@ struct mcux_i3c_config {
 
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
+
+	/** Disable open drain high push pull */
+	bool disable_open_drain_high_pp;
 };
 
 struct mcux_i3c_data {
@@ -1847,6 +1850,7 @@ static int mcux_i3c_configure(const struct device *dev,
 
 	master_config.baudRate_Hz.i2cBaud = ctrl_cfg->scl.i2c;
 	master_config.baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
+	master_config.enableOpenDrainHigh = dev_cfg->disable_open_drain_high_pp ? false : true;
 
 	if (dev_data->clocks.i3c_od_scl_hz) {
 		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->clocks.i3c_od_scl_hz;
@@ -2090,6 +2094,8 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
 		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+		.disable_open_drain_high_pp =					\
+			DT_INST_PROP_OR(id, disable_open_drain_high_pp, false), \
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\
