@@ -19,4 +19,6 @@ config HAPTICS_INIT_PRIORITY
 	help
 	  Haptic driver initialization priority.
 
+source "drivers/haptics/Kconfig.cs40l50"
+
 endif # HAPTICS
