@@ -104,7 +104,7 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		coredump(reason, esf, IS_ENABLED(CONFIG_MULTITHREADING) ? k_current_get() : NULL);
 
 #if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
-#if XCHAL_HAVE_WINDOWED
+#if XCHAL_HAVE_WINDOWED && !defined(CONFIG_XTENSA_CALL0_ABI)
 		z_xtensa_backtrace_print(100, (int *)esf);
 #endif
 #endif
