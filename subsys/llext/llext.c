@@ -236,54 +236,51 @@ static inline enum llext_section llext_sect_from_mem(enum llext_mem m)
 	return s;
 }
 
-static int llext_allocate_mem(struct llext_loader *ldr, struct llext *ext)
+static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
+			      enum llext_mem mem_idx)
 {
-	int ret = 0;
-	enum llext_section sect_idx;
+	enum llext_section sect_idx = llext_sect_from_mem(mem_idx);
+	int ret;
 
-	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
-		sect_idx = llext_sect_from_mem(mem_idx);
-
-		if (ldr->sects[sect_idx].sh_size > 0) {
-			ext->mem[mem_idx] =
-				k_heap_aligned_alloc(&llext_heap, sizeof(uintptr_t),
-						     ldr->sects[sect_idx].sh_size,
-						     K_NO_WAIT);
-
-			if (ext->mem[mem_idx] == NULL) {
-				ret = -ENOMEM;
-				goto out;
-			}
-		}
+	if (!ldr->sects[sect_idx].sh_size) {
+		return 0;
 	}
 
-out:
+	ext->mem[mem_idx] = k_heap_aligned_alloc(&llext_heap, sizeof(uintptr_t),
+						 ldr->sects[sect_idx].sh_size,
+						 K_NO_WAIT);
+	if (!ext->mem[mem_idx]) {
+		return -ENOMEM;
+	}
+
+	ret = llext_seek(ldr, ldr->sects[sect_idx].sh_offset);
+	if (ret != 0) {
+		goto err;
+	}
+
+	ret = llext_read(ldr, ext->mem[mem_idx], ldr->sects[sect_idx].sh_size);
+	if (ret != 0) {
+		goto err;
+	}
+
+	return 0;
+
+err:
+	k_heap_free(&llext_heap, ext->mem[mem_idx]);
 	return ret;
 }
 
 static int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 {
-	int ret = 0;
-	enum llext_section sect_idx;
-
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
-		sect_idx = llext_sect_from_mem(mem_idx);
+		int ret = llext_copy_section(ldr, ext, mem_idx);
 
-		if (ldr->sects[sect_idx].sh_size > 0) {
-			ret = llext_seek(ldr, ldr->sects[sect_idx].sh_offset);
-			if (ret != 0) {
-				goto out;
-			}
-
-			ret = llext_read(ldr, ext->mem[mem_idx], ldr->sects[sect_idx].sh_size);
-			if (ret != 0) {
-				goto out;
-			}
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
-out:
-	return ret;
+	return 0;
 }
 
 static int llext_count_export_syms(struct llext_loader *ldr)
@@ -593,14 +590,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext)
 		goto out;
 	}
 
-	LOG_DBG("Allocation memory for ELF sections...");
-	ret = llext_allocate_mem(ldr, ext);
-	if (ret != 0) {
-		LOG_ERR("Failed to map memory for ELF sections, ret %d", ret);
-		goto out;
-	}
-
-	LOG_DBG("Copying sections...");
+	LOG_DBG("Allocate and copy sections...");
 	ret = llext_copy_sections(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF sections, ret %d", ret);
