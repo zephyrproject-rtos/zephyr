@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN8720A PHY
+
+compatible: "microchip,lan8720a"
+
+include: phy.yaml
+
+on-bus: mdio
+
+properties:
+  reg:
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    description: Reset pin.
+
+      The reset pin of LAN8720A is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
+
+      The interrupt pin of LAN8720A is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

@@ -39,6 +39,15 @@ config PHY_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
 
+config PHY_LAN8720A
+	bool "Microchip LAN8720A driver"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN8720A_ENABLED
+	depends on MDIO
+	select GPIO
+	help
+	  Enables Microchip LAN8720A RMII 10/100 Ethernet Transceiver driver.
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000
