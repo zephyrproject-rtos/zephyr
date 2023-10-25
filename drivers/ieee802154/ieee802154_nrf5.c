@@ -446,6 +446,12 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+		.tx_channel = {
+			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL),
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+			.channel = net_pkt_ieee802154_txchannel(pkt),
+#endif
+		},
 	};
 
 	return nrf_802154_transmit_raw(payload, &metadata);
@@ -465,6 +471,12 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 			.power = net_pkt_ieee802154_txpwr(pkt),
 #endif
 		},
+		.tx_channel = {
+			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL),
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+			.channel = net_pkt_ieee802154_txchannel(pkt),
+#endif
+		},
 	};
 
 	return nrf_802154_transmit_csma_ca_raw(payload, &metadata);
@@ -478,6 +490,11 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 	bool cca = false;
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
 	uint8_t max_extra_cca_attempts = 0;
+#endif
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+	uint8_t channel = net_pkt_ieee802154_txchannel(pkt);
+#else
+	uint8_t channel = nrf_802154_channel_get();
 #endif
 
 	switch (mode) {
@@ -504,7 +521,7 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.cca = cca,
-		.channel = nrf_802154_channel_get(),
+		.channel = channel,
 		.tx_power = {
 			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
