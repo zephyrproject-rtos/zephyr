@@ -1,6 +1,6 @@
 # i.MX RT series
 
-# Copyright (c) 2017-2021, NXP
+# Copyright 2017-2021,2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -339,7 +339,6 @@ config SOC_MIMXRT1176_CM7
 	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_FPU_DOUBLE_PRECISION
-	select ADJUST_DCDC
 	select BYPASS_LDO_LPSR
 	select ADJUST_LDO
 	select HAS_MCUX_PWM
@@ -408,7 +407,6 @@ config SOC_MIMXRT1166_CM7
 	select INIT_VIDEO_PLL
 	select HAS_MCUX_EDMA
 	select CPU_HAS_FPU_DOUBLE_PRECISION
-	select ADJUST_DCDC
 	select BYPASS_LDO_LPSR
 	select ADJUST_LDO
 	select HAS_MCUX_PWM
@@ -686,6 +684,7 @@ config DCDC_VALUE
 
 config ADJUST_DCDC
 	bool "Adjust internal DCDC output"
+	default y if SOC_SERIES_IMX_RT11XX
 
 config BYPASS_LDO_LPSR
 	bool "Bypass LDO lpsr"
