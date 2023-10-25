@@ -18,6 +18,7 @@ tests:
       - adc_ads114s08
       - adc_emul
       - adc_max1125x
+      - adc_ltc2451
     extra_args: "CONFIG_GPIO=y"
   drivers.adc.cc32xx.build:
     platform_allow: cc3220sf_launchxl
