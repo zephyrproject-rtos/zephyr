@@ -28,6 +28,7 @@
 
 	chosen {
 		zephyr,bt-hci-rpmsg-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
 		/delete-property/ zephyr,flash-controller;
 		zephyr,flash = &flash1;
