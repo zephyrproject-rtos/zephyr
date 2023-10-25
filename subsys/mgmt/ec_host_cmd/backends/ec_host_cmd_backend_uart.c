@@ -101,7 +101,15 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 	}
 
 /* Timeout after receiving first byte */
-#define UART_REQ_RX_TIMEOUT     K_MSEC(150)
+#define UART_REQ_RX_TIMEOUT K_MSEC(150)
+
+/*
+ * Max data size for a version 3 request/response packet. This is big enough
+ * to handle a request/response header, flash write offset/size and 512 bytes
+ * of request payload or 224 bytes of response payload.
+ */
+#define UART_MAX_REQ_SIZE  0x220
+#define UART_MAX_RESP_SIZE 0x100
 
 static void rx_timeout(struct k_work *work)
 {
@@ -241,6 +249,14 @@ static int ec_host_cmd_uart_init(const struct ec_host_cmd_backend *backend,
 
 	hc_uart->rx_ctx = rx_ctx;
 	hc_uart->tx_buf = tx;
+
+	/* Limit the requset/response max sizes */
+	if (hc_uart->rx_ctx->len_max > UART_MAX_REQ_SIZE) {
+		hc_uart->rx_ctx->len_max = UART_MAX_REQ_SIZE;
+	}
+	if (hc_uart->tx_buf->len_max > UART_MAX_RESP_SIZE) {
+		hc_uart->tx_buf->len_max = UART_MAX_RESP_SIZE;
+	}
 
 	k_work_init_delayable(&hc_uart->timeout_work, rx_timeout);
 	uart_callback_set(hc_uart->uart_dev, uart_callback, hc_uart);
