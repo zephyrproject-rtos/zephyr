@@ -27,8 +27,8 @@ LOG_MODULE_REGISTER(pca953x, CONFIG_GPIO_LOG_LEVEL);
 #define PCA953X_INPUT_PORT		0x00
 #define PCA953X_OUTPUT_PORT		0x01
 #define PCA953X_CONFIGURATION		0x03
-#define REG_INPUT_LATCH_PORT0 0x42
-#define REG_INT_MASK_PORT0    0x45
+#define REG_INPUT_LATCH_PORT0   0x42
+#define REG_INT_MASK_PORT0      0x45
 
 /* Number of pins supported by the device */
 #define NUM_PINS 8
@@ -444,10 +444,10 @@ static int gpio_pca953x_init(const struct device *dev)
 		rc = gpio_add_callback(cfg->gpio_int.port,
 					&drv_data->gpio_cb);
 
-		//Input latch config
+		/* Input latch config */
 		i2c_reg_write_byte_dt(&cfg->i2c, REG_INPUT_LATCH_PORT0, cfg->input_latch);
 
-		//Interrupt mask config
+		/* Interrupt mask config */
 		i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK_PORT0, cfg->interrupt_mask);
 	}
 out:
