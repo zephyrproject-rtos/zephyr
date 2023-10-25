@@ -109,27 +109,6 @@ int zperf_get_ipv4_addr(char *host, struct in_addr *addr)
 	return 0;
 }
 
-
-const struct in_addr *zperf_get_default_if_in4_addr(void)
-{
-#if CONFIG_NET_IPV4
-	return net_if_ipv4_select_src_addr(NULL,
-					   net_ipv4_unspecified_address());
-#else
-	return NULL;
-#endif
-}
-
-const struct in6_addr *zperf_get_default_if_in6_addr(void)
-{
-#if CONFIG_NET_IPV6
-	return net_if_ipv6_select_src_addr(NULL,
-					   net_ipv6_unspecified_address());
-#else
-	return NULL;
-#endif
-}
-
 int zperf_prepare_upload_sock(const struct sockaddr *peer_addr, int tos,
 			      int priority, int proto)
 {
