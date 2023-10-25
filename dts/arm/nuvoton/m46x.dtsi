@@ -492,6 +492,16 @@
 			sample-point = <875>;
 			sample-point-data = <875>;
 		};
+
+		emac: ethernet@40012000 {
+			compatible = "nuvoton,numaker-ethernet";
+			reg = <0x40012000 0x105C>;
+			interrupts = <66 0>;
+			resets = <&rst NUMAKER_EMAC0_RST>;
+			phy-addr = <1>;
+			clocks = <&pcc NUMAKER_EMAC0_MODULE 0 0>;
+			status = "disabled";
+		};
 	};
 };
 
