@@ -24,6 +24,18 @@ properties:
       Connection for the NINT signal. This signal is active-low when
       produced by tca9538 GPIO node.
 
+  input-latch:
+    type: int
+    default: 0
+    description: |
+      Setting for Input Latch.
+
+  interrupt-mask:
+    type: int
+    default: 0
+    description: |
+      Setting for Interrupt mask.
+
 gpio-cells:
   - pin
   - flags
