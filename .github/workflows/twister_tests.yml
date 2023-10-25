@@ -48,7 +48,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}
     - name: install-packages
       run: |
-        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt
+        pip3 install -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
     - name: Run pytest for twisterlib
       env:
         ZEPHYR_BASE: ./
