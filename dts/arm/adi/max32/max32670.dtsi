@@ -76,5 +76,14 @@
 			status = "disabled";
 			#dma-cells = <2>;
 		};
+
+		wdt1: watchdog@40003400  {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003400 0x400>;
+			interrupts = <57 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 5>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			status = "disabled";
+		};
 	};
 };
