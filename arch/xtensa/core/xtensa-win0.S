@@ -118,23 +118,26 @@ KernelExceptionVector:
 tlb_miss:
 #if XCHAL_HAVE_PTP_MMU
 	rsr a0, PTEVADDR
-	l32i a0, a0, 0
+	l32i a0, a0, 0 /* can double-fault, see below */
 #endif
 	rsr a0, ZSR_A0SAVE
 	rfe
 
-/* Currently Zephyr uses this only to handle TLB fills in special
- * circumstances.  Just do that unconditionally.
+/* A double fault happens in Zephyr when a TLB miss is trapped loading
+ * a PTE inside another TLB miss exception.  It simply means that the
+ * CPU tried to address memory not in the page table, and we need to
+ * treat it the same way we would if it trapped a "load/store or
+ * execute prohibited" exception trying to read through a
+ * mapped-but-invalid/unusable PTE.  The EPC register is already set
+ * for us by the original exception, EXCCAUSE shows the double fault
+ * (that can be interpreted in C code if needed, e.g. if we want to
+ * implement fault-based lazy VM mapping), and like level 1 exceptions
+ * there is no EPSx register (PS is unchanged from the intermediate
+ * exception, and can be reset identically).
  */
-#if XCHAL_HAVE_PTP_MMU
 .section .DoubleExceptionVector.text, "ax"
 _DoubleExceptionVector:
-	wsr a0, ZSR_A0SAVE
-	rsr a0, PTEVADDR
-	l32i a0, a0, 0
-	rsr a0, ZSR_A0SAVE
-	rfde
-#endif
+	j KernelExceptionVector
 
 /* Note: the specific level matching ZSR_RFI_LEVEL will end
  * up issuing four needless instructions to copy its EPS/EPC

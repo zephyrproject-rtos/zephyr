@@ -139,36 +139,34 @@ config XTENSA_MMU
 	bool "Xtensa MMU Support"
 	default n
 	select MMU
-	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	select KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK if XTENSA_RPO_CACHE
+	depends on XTENSA_CALL0_ABI
 	help
 	  Enable support for Xtensa Memory Management Unit.
 
 if XTENSA_MMU
 
-	choice
-		prompt "PageTable virtual adddress"
-		default XTENSA_MMU_PTEVADDR_20000000
+	config XTENSA_MMU_PTE_BASE
+		hex "Virtual region for page tables"
+		default 0x20000000
 		help
-		  The virtual address for Xtensa page table (PTEVADDR).
+		  The base address for virtual mappings of page table
+		  entries.  Must be aligned to a 4M boundary, and must
+		  not overlap with any hardware-mapped addresses.
+		  Each ASID value is assigned a sequential 4M region
+		  of this space, which can be very large (as much as
+		  1GB!) if large ASID values are used (see
+		  CONFIG_XTENSA_MMU_ASID_MAX).
 
-	config XTENSA_MMU_PTEVADDR_20000000
-		bool "0x20000000"
-
-	endchoice
-
-	config XTENSA_MMU_PTEVADDR
-		hex
-		default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+	config XTENSA_MMU_ASID_MAX
+		int "Maximum user ASID value"
+		default 63
 		help
-		  The virtual address for Xtensa page table (PTEVADDR).
-
-	config XTENSA_MMU_PTEVADDR_SHIFT
-		int
-		default 29 if XTENSA_MMU_PTEVADDR_20000000
-		help
-		  The bit shift number for the virtual address for Xtensa
-		  page table (PTEVADDR).
+		  Highest value allowed for the ring 3 (userspace)
+		  ASID value for a page table.  This impacts the
+		  amount of address space that must be reserved at
+		  CONFIG_XTENSA_MMU_PTE_BASE.  The default requires
+		  256M.
 
 	config XTENSA_MMU_NUM_L2_TABLES
 		int "Number of L2 page tables"

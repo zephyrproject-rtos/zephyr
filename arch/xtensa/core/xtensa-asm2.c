@@ -276,29 +276,6 @@ void *xtensa_excint1_c(int *interrupted_stack)
 
 	__asm__ volatile("rsr.exccause %0" : "=r"(cause));
 
-#ifdef CONFIG_XTENSA_MMU
-	/* TLB miss exception comes through level 1 interrupt also.
-	 * We need to preserve execution context after we have handled
-	 * the TLB miss, so we cannot unconditionally unmask interrupts.
-	 * For other cause, we can unmask interrupts so this would act
-	 * the same as if there is no MMU.
-	 */
-	switch (cause) {
-	case EXCCAUSE_ITLB_MISS:
-		/* Instruction TLB miss */
-		__fallthrough;
-	case EXCCAUSE_DTLB_MISS:
-		/* Data TLB miss */
-
-		/* Do not unmask interrupt while handling TLB misses. */
-		break;
-	default:
-		/* For others, we can unmask interrupts. */
-		bsa->ps &= ~PS_INTLEVEL_MASK;
-		break;
-	}
-#endif /* CONFIG_XTENSA_MMU */
-
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
 		return xtensa_int1_c(interrupted_stack);
@@ -314,38 +291,6 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 */
 		bsa->pc += 3;
 		break;
-#ifdef CONFIG_XTENSA_MMU
-	case EXCCAUSE_ITLB_MISS:
-		/* Instruction TLB miss */
-		__fallthrough;
-	case EXCCAUSE_DTLB_MISS:
-		/* Data TLB miss */
-
-		/**
-		 * The way it works is, when we try to access an address
-		 * that is not mapped, we will have a miss. The HW then
-		 * will try to get the correspondent memory in the page
-		 * table. As the page table is not mapped in memory we will
-		 * have a second miss, which will trigger an exception.
-		 * In the exception (here) what we do is to exploit this
-		 * hardware capability just trying to load the page table
-		 * (not mapped address), which will cause a miss, but then
-		 * the hardware will automatically map it again from
-		 * the page table. This time it will work since the page
-		 * necessary to map the page table itself are wired map.
-		 */
-		__asm__ volatile("wsr a0, " ZSR_EXTRA0_STR "\n\t"
-				 "rsr.ptevaddr a0\n\t"
-				 "l32i a0, a0, 0\n\t"
-				 "rsr a0, " ZSR_EXTRA0_STR "\n\t"
-				 "rsync"
-				 : : : "a0", "memory");
-
-		/* Since we are dealing with TLB misses, we will probably not
-		 * want to switch to another thread.
-		 */
-		return interrupted_stack;
-#endif /* CONFIG_XTENSA_MMU */
 	default:
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
