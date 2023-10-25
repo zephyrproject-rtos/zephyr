@@ -5319,7 +5319,8 @@ struct k_heap {
  * @param mem Pointer to memory.
  * @param bytes Size of memory region, in bytes
  */
-void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
+void k_heap_init(struct k_heap *h, void *mem,
+		size_t bytes) __attribute_nonnull(1);
 
 /** @brief Allocate aligned memory from a k_heap
  *
