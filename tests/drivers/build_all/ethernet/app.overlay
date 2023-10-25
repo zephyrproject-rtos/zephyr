@@ -121,5 +121,23 @@
 				};
 			};
 		};
+
+		test_mdio0: mdio@11112222 {
+			compatible = "zephyr,mdio-gpio";
+			reg = <0x11112222 1>;
+			mdc-gpios = <&test_gpio 0 0>;
+			mdio-gpios = <&test_gpio 0 0>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "microchip,lan8720a";
+				status = "okay";
+				irq-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+		};
 	};
 };
