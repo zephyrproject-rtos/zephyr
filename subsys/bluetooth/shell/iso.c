@@ -976,14 +976,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 
 static int cmd_iso(const struct shell *sh, size_t argc, char **argv)
 {
-	if (argc > 1) {
-		shell_error(sh, "%s unknown parameter: %s",
-			    argv[0], argv[1]);
-	} else {
-		shell_error(sh, "%s Missing subcommand", argv[0]);
+	if (argc == 1) {
+		shell_help(sh);
+
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	return -ENOEXEC;
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+
+	return -EINVAL;
 }
 
 SHELL_CMD_ARG_REGISTER(iso, &iso_cmds, "Bluetooth ISO shell commands",
