@@ -9,11 +9,17 @@
 #include <zephyr/device.h>
 
 /* configuration derived from DT */
-#ifdef CONFIG_ARCH_POSIX
-#define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_0)
+#if DT_NODE_EXISTS(DT_NODELABEL(flash_0))
+#define SOC_NV_FLASH_NODE DT_NODELABEL(flash_0)
+#elif DT_NODE_EXISTS(DT_NODELABEL(flash_sim0))
+#define SOC_NV_FLASH_NODE DT_NODELABEL(flash_sim0)
+#elif DT_NODE_EXISTS(DT_NODELABEL(flash0)) && \
+	DT_NODE_HAS_COMPAT(DT_PARENT(DT_NODELABEL(flash0)), zephyr_sim_flash)
+#define SOC_NV_FLASH_NODE DT_NODELABEL(flash0)
 #else
-#define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_sim_0)
-#endif /* CONFIG_ARCH_POSIX */
+#error No known sim flash node specified.
+#endif
+
 #define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
 #define FLASH_SIMULATOR_ERASE_UNIT DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define FLASH_SIMULATOR_PROG_UNIT DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
@@ -32,11 +38,7 @@
 		(((((((0xff & pat) << 8) | (0xff & pat)) << 8) | \
 		   (0xff & pat)) << 8) | (0xff & pat))
 
-#if (defined(CONFIG_ARCH_POSIX) || defined(CONFIG_BOARD_QEMU_X86))
-static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-#else
-static const struct device *const flash_dev = DEVICE_DT_GET(DT_NODELABEL(sim_flash_controller));
-#endif
+static const struct device *const flash_dev = DEVICE_DT_GET(SOC_NV_FLASH_NODE);
 static uint8_t test_read_buf[TEST_SIM_FLASH_SIZE];
 
 static uint32_t p32_inc;
