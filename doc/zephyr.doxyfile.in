@@ -2397,6 +2397,7 @@ PREDEFINED             = __DOXYGEN__ \
                          __deprecated= \
                          __packed= \
                          __aligned(x)= \
+                         __attribute_nonnull(...)= \
                          "__printf_like(x, y)=" \
                          __attribute__(x)= \
                          __syscall= \
