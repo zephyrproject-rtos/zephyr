@@ -696,19 +696,23 @@ static int adin2111_port_set_config(const struct device *dev,
 	const struct device *adin = cfg->adin;
 	int ret = -ENOTSUP;
 
+	(void)eth_adin2111_lock(dev, K_FOREVER);
+
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		ret = adin2111_filter_unicast(adin, data->mac_addr, cfg->port_idx);
+		ret = adin2111_filter_unicast(adin, (uint8_t *)&config->mac_address.addr[0],
+					      cfg->port_idx);
 		if (ret < 0) {
-			return ret;
+			goto end_unlock;
 		}
 
-		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
+		(void)memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
 
-		net_if_set_link_addr(data->iface, data->mac_addr,
-				     sizeof(data->mac_addr),
-				     NET_LINK_ETHERNET);
+		(void)net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
+					   NET_LINK_ETHERNET);
 	}
 
+end_unlock:
+	(void)eth_adin2111_unlock(dev);
 	return ret;
 }
 
