@@ -49,6 +49,11 @@ STATIC_STRING_SECTIONS = [
     'pinned.rodata',
 ]
 
+# Sections that contains static strings but are not part of the binary (allocable).
+REMOVED_STRING_SECTIONS = [
+    'log_strings'
+]
+
 
 # Regulation expression to match DWARF location
 DT_LOCATION_REGEX = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)")
@@ -94,7 +99,7 @@ def parse_args():
     return argparser.parse_args()
 
 
-def extract_elf_code_data_sections(elf):
+def extract_elf_code_data_sections(elf, wildcards = None):
     """Find all sections in ELF file"""
     sections = {}
 
@@ -103,9 +108,9 @@ def extract_elf_code_data_sections(elf):
         # since they actually have code/data.
         #
         # On contrary, BSS is allocated but NOBITS.
-        if (
-            (sect['sh_flags'] & SH_FLAGS.SHF_ALLOC) == SH_FLAGS.SHF_ALLOC
-            and sect['sh_type'] == 'SHT_PROGBITS'
+        if (((wildcards is not None) and (sect.name in wildcards)) or
+            ((sect['sh_flags'] & SH_FLAGS.SHF_ALLOC) == SH_FLAGS.SHF_ALLOC
+            and sect['sh_type'] == 'SHT_PROGBITS')
         ):
             sections[sect.name] = {
                     'name'    : sect.name,
@@ -453,7 +458,7 @@ def extract_static_strings(elf, database, section_extraction=False):
     """
     string_mappings = {}
 
-    elf_sections = extract_elf_code_data_sections(elf)
+    elf_sections = extract_elf_code_data_sections(elf, REMOVED_STRING_SECTIONS)
 
     # Extract strings using ELF DWARF information
     str_vars = extract_string_variables(elf)
