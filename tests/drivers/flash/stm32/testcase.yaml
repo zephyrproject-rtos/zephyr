@@ -20,3 +20,10 @@ tests:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
     filter: dt_compat_enabled("st,stm32l4-flash-controller") and
             dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+  drivers.flash.stm32.g4:
+    platform_allow:
+      - nucleo_g474re
+    extra_configs:
+      - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
+    filter: dt_compat_enabled("st,stm32g4-flash-controller") and
+      dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
