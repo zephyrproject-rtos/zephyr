@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config EMUL_BMA422
+	bool "BMA422 emulator"
+	default y
+	depends on DT_HAS_CROS_BMA422_EMUL_ENABLED
+	select EMUL_COMMON_I2C
+	help
+	  Enable the BMA422 emulator, used to test the bma422 driver on an
+	  emulated I2C bus; emulator API is in
+	  zephyr/drivers/sensor/bma422/bma422_emul.h.
