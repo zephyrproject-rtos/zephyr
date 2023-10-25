@@ -36,11 +36,16 @@ def device_object(twister_harness_config: TwisterHarnessConfig) -> Generator[Dev
         device_object.close()
 
 
-@pytest.fixture(scope='function')
+def determine_scope(fixture_name, config):
+    if dut_scope := config.getoption("--dut-scope", None):
+        return dut_scope
+    return 'function'
+
+
+@pytest.fixture(scope=determine_scope)
 def dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
     """Return launched device - with run application."""
-    test_name = request.node.name
-    device_object.initialize_log_files(test_name)
+    device_object.initialize_log_files(request.node.name)
     try:
         device_object.launch()
         yield device_object
@@ -48,7 +53,7 @@ def dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generat
         device_object.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope=determine_scope)
 def shell(dut: DeviceAdapter) -> Shell:
     """Return ready to use shell interface"""
     shell = Shell(dut, timeout=20.0)
