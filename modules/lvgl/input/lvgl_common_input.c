@@ -13,7 +13,7 @@
 #include "lvgl_button_input.h"
 #include "lvgl_encoder_input.h"
 
-LOG_MODULE_DECLARE(lvgl);
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 lv_indev_t *lvgl_input_get_indev(const struct device *dev)
 {
