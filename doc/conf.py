@@ -82,9 +82,8 @@ extensions = [
     "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
-    "zephyr.vcs_link",
+    "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
-    "zephyr.git_info",
     "notfound.extension",
     "sphinx_copybutton",
     "sphinx_togglebutton",
@@ -171,7 +170,7 @@ html_context = {
         ("3.3.0", "/3.3.0/"),
         ("2.7.5 (LTS)", "/2.7.5/"),
     ),
-    "display_vcs_link": True,
+    "display_gh_links": True,
     "reference_links": {
         "API": f"{reference_prefix}/doxygen/html/index.html",
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
@@ -262,17 +261,17 @@ link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 
 notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
 
-# -- Options for zephyr.vcs_link ------------------------------------------
+# -- Options for zephyr.gh_utils ------------------------------------------
 
-vcs_link_version = f"v{version}" if is_release else "main"
-vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr"
-vcs_link_prefixes = {
+gh_link_version = f"v{version}" if is_release else "main"
+gh_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr"
+gh_link_prefixes = {
     "samples/.*": "",
     "boards/.*": "",
     "snippets/.*": "",
     ".*": "doc",
 }
-vcs_link_exclude = [
+gh_link_exclude = [
     "reference/kconfig.*",
     "build/dts/api/bindings.*",
     "build/dts/api/compatibles.*",

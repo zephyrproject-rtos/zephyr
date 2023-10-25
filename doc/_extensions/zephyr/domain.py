@@ -59,7 +59,7 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.nodes import NodeMatcher, make_refnode
-from zephyr.vcs_link import vcs_link_get_url
+from zephyr.gh_utils import gh_link_get_url
 
 import json
 
@@ -128,7 +128,7 @@ class ConvertCodeSampleNode(SphinxTransform):
                     "name": node['name'],
                     "description": node.children[0].astext(),
                     "codeSampleType": "full",
-                    "codeRepository": vcs_link_get_url(self.app, self.env.docname)
+                    "codeRepository": gh_link_get_url(self.app, self.env.docname)
                 })}
                 </script>""",
                 format="html",
