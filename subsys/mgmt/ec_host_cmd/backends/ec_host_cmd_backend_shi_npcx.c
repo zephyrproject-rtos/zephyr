@@ -882,6 +882,7 @@ static int shi_npcx_backend_init(const struct ec_host_cmd_backend *backend,
 	data->tx = tx;
 
 	rx_ctx->buf = data->in_msg;
+	rx_ctx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST;
 	tx->buf = data->out_msg_padded + SHI_OUT_START_PAD;
 	tx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE;
 
