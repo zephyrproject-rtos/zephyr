@@ -950,8 +950,8 @@ static int hb_pub_status(struct bt_mesh_model *model,
 	pub.count = net_buf_simple_pull_u8(buf);
 	pub.period = net_buf_simple_pull_u8(buf);
 	pub.ttl = net_buf_simple_pull_u8(buf);
-	pub.feat = net_buf_simple_pull_u8(buf);
-	pub.net_idx = net_buf_simple_pull_u8(buf);
+	pub.feat = net_buf_simple_pull_le16(buf);
+	pub.net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_HEARTBEAT_PUB_STATUS,
 				      ctx->addr, (void **)&param)) {
