@@ -30,6 +30,7 @@ config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 
 config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
 	bool "Use memory window for coredump on Intel ADSP"
+	depends on DT_HAS_INTEL_ADSP_MEM_WINDOW_ENABLED
 	help
 	  Core dump is done via memory window slot[1].
 	  It is Intel ADSP memory region shared with xtensa DSP.
