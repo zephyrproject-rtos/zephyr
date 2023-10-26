@@ -8,6 +8,8 @@ config LOG_FRONTEND_DICT_UART
 	select LOG_DICTIONARY_DB
 	select MPSC_PBUF
 	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
+	imply LOG_FMT_SECTION
+	imply LOG_FMT_SECTION_STRIP
 	help
 	  Frontend sends data in binary dictionary mode.
 
