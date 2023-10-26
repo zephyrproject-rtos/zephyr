@@ -449,3 +449,22 @@ foreach(target ${qemu_targets})
     add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
   endif()
 endforeach()
+
+# Wrap the new `west flash --runner=qemu` target.
+if(WEST_DIR)
+  set(WEST "PYTHONPATH=${WEST_DIR}/src" "${PYTHON_EXECUTABLE};${WEST_DIR}/src/west/app/main.py;--zephyr-base=${ZEPHYR_BASE} ")
+endif()
+
+if(WEST)
+  add_custom_target(run_qemu_west COMMAND
+    COMMAND
+      ${CMAKE_COMMAND} -E env
+      ${WEST}
+      flash --runner=qemu
+    WORKING_DIRECTORY
+      ${APPLICATION_BINARY_DIR}
+    COMMENT
+      ${comment}
+    USES_TERMINAL
+  )
+endif()
