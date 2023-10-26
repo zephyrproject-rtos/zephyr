@@ -8,12 +8,12 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
-#include "scan.h"
+#include <testlib/scan.h>
 
-LOG_MODULE_REGISTER(testlib_scan, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(bt_testlib_scan, LOG_LEVEL_INF);
 
 struct bt_scan_find_name_closure {
-	char *wanted_name;
+	const char *wanted_name;
 	bt_addr_le_t *result;
 	struct k_condvar done;
 };
@@ -25,7 +25,7 @@ static struct bt_scan_find_name_closure *g_ctx;
 
 static bool bt_scan_find_name_cb_data_cb(struct bt_data *data, void *user_data)
 {
-	char **wanted = user_data;
+	const char **wanted = user_data;
 
 	if (data->type == BT_DATA_NAME_COMPLETE) {
 		if (data->data_len == strlen(*wanted) &&
@@ -43,7 +43,7 @@ static bool bt_scan_find_name_cb_data_cb(struct bt_data *data, void *user_data)
 static void bt_scan_find_name_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 				 struct net_buf_simple *buf)
 {
-	char *wanted;
+	const char *wanted;
 
 	k_mutex_lock(&g_ctx_lock, K_FOREVER);
 
@@ -63,7 +63,7 @@ static void bt_scan_find_name_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 	k_mutex_unlock(&g_ctx_lock);
 }
 
-int bt_testlib_scan_find_name(bt_addr_le_t *result, char name[])
+int bt_testlib_scan_find_name(bt_addr_le_t *result, const char *name)
 {
 	int api_err;
 	struct bt_scan_find_name_closure ctx = {
