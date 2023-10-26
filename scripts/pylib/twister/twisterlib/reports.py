@@ -246,6 +246,7 @@ class Reporting:
         for instance in self.instances.values():
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
+            pytest_log = os.path.join(instance.build_dir, "twister_harness.log")
             build_log = os.path.join(instance.build_dir, "build.log")
             device_log = os.path.join(instance.build_dir, "device.log")
 
@@ -284,7 +285,9 @@ class Reporting:
                 suite['status'] = instance.status
                 suite["reason"] = instance.reason
                 # FIXME
-                if os.path.exists(handler_log):
+                if os.path.exists(pytest_log):
+                    suite["log"] = self.process_log(pytest_log)
+                elif os.path.exists(handler_log):
                     suite["log"] = self.process_log(handler_log)
                 elif os.path.exists(device_log):
                     suite["log"] = self.process_log(device_log)
