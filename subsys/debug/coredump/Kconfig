@@ -11,11 +11,11 @@ if DEBUG_COREDUMP
 
 choice DEBUG_COREDUMP_BACKEND
 	prompt "Coredump backend"
-	default DEBUG_COREDUMP_BACKEND_LOGGING if LOG
+	default DEBUG_COREDUMP_BACKEND_LOGGING
 
 config DEBUG_COREDUMP_BACKEND_LOGGING
 	bool "Use Logging subsystem for coredump"
-	depends on LOG
+	select LOG
 	help
 	  Core dump is done via logging subsystem.
 
