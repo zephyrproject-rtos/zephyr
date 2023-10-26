@@ -479,6 +479,38 @@ struct bt_conn_le_tx_power {
 	int8_t max_level;
 };
 
+enum bt_conn_le_tx_power_report_reason {
+	/** Local Tx power changed. */
+	BT_CONN_LE_TX_POWER_REPORT_REASON_LOCAL_CHANGED = 0,
+
+	/** Remote Tx power changed. */
+	BT_CONN_LE_TX_POWER_REPORT_REASON_REMOTE_CHANGED = 1,
+
+	/** HCI_LE_Read_Remote_Transmit_Power_Level command completed. */
+	BT_CONN_LE_TX_POWER_REPORT_REASON_READ_REMOTE_COMPLETED = 2,
+};
+
+/** LE Transmit Power Reporting Structure */
+struct bt_conn_le_tx_power_report {
+
+	/** Reason for Tx power reporting. */
+	enum bt_conn_le_tx_power_report_reason reason;
+
+	/** 1M, 2M, Coded S2 or Coded S8 */
+	uint8_t phy;
+
+	/** Transmit power level */
+	int8_t tx_power_level;
+
+	/** 0: Transmit power level is at minimum level.
+	 *  1: Transmit power level is at maximum level.
+	 */
+	int8_t tx_power_level_flag;
+
+	/** Change in transmit power level */
+	int8_t delta;
+};
+
 /** @brief Passkey Keypress Notification type
  *
  *  The numeric values are the same as in the Core specification for Pairing
@@ -529,6 +561,41 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
  */
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level);
+
+/** @brief Get enhanced connection transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param tx_power       Transmit power level descriptor.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
+					   struct bt_conn_le_tx_power *tx_power);
+
+/** @brief Get remote (peer) transmit power level.
+ *
+ *  @param conn           Connection object.
+ *  @param phy            PHY information.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
+					 enum bt_conn_le_tx_power_phy phy);
+
+/** @brief Enable transmit power reporting.
+ *
+ *  @param conn           Connection object.
+ *  @param local_enable   Enable/disable reporting for local.
+ *  @param remote_enable  Enable/disable reporting for remote.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
+					  bool local_enable,
+					  bool remote_enable);
 
 /** @brief Update the connection parameters.
  *
@@ -1054,6 +1121,22 @@ struct bt_conn_cb {
 
 	struct bt_conn_cb *_next;
 };
+
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	/** @brief LE Read Remote Transmit Power Level procedure has completed or LE
+	 *  Transmit Power Reporting event.
+	 *
+	 *  This callback notifies the application that the remote transmit power level
+	 *  has been read from the peer or transmit power level has changed for local or
+	 *  remote controller if transmit power reporting is enabled for respective side
+	 *  with @ref bt_conn_le_set_tx_power_report_enable.
+	 *
+	 *  @param conn Connection object.
+	 *  @param report Transmit power report.
+	 */
+	void (*tx_power_report)(struct bt_conn *conn,
+				      struct bt_conn_le_tx_power_report *report);
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
 /** @brief Register connection callbacks.
  *
