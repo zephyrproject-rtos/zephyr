@@ -221,11 +221,11 @@ class Gcovr(CoverageTool):
         excludes = Gcovr._interleave_list("-e", self.ignores)
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        cmd = ["gcovr", "-r", self.base_dir, "--gcov-executable",
-               str(self.gcov_tool), "-e", "tests/*"] + excludes + ["--json",
-                                                                   "-o",
-                                                                   coveragefile,
-                                                                   outdir]
+        cmd = ["gcovr", "-r", self.base_dir,
+               "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
+               "--gcov-executable", str(self.gcov_tool),
+               "-e", "tests/*"]
+        cmd += excludes + ["--json", "-o", coveragefile, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
         subprocess.call(cmd, stdout=coveragelog)
