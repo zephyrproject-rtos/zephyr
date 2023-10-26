@@ -2029,6 +2029,7 @@ Networking:
     - pdgendt
     - canisLupus1313
     - mariuszpos
+    - edmont
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -3456,6 +3457,7 @@ West:
     - pdgendt
     - canisLupus1313
     - mariuszpos
+    - edmont
   files:
     - modules/openthread/
   labels:
