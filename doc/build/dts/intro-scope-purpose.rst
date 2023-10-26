@@ -41,5 +41,5 @@ general, if you see a macro that starts with ``DT_`` in a Zephyr source file,
 it's probably a ``devicetree.h`` macro. The generated C header contains macros
 that start with ``DT_`` as well; you might see those in compiler error
 messages. You always can tell a generated- from a non-generated macro:
-generated macros have some lowercase letters, while the ``devicetree.h`` macro
+generated macros have some lowercased letters, while the ``devicetree.h`` macro
 names have all capital letters.
