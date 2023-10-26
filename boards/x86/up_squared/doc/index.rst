@@ -80,7 +80,7 @@ Booting the UP Squared Board using UEFI
 =======================================
 
 .. include:: ../../common/efi_boot.rst
-
+   :start-after: start_include_here
 
 .. note::
    Refer to the `UP Squared Serial Console Wiki page
@@ -98,6 +98,7 @@ Booting the UP Squared Board over network
 =========================================
 
 .. include:: ../../common/net_boot.rst
+   :start-after: start_include_here
 
 .. note::
    Refer to the `UP Squared Serial Console Wiki page
