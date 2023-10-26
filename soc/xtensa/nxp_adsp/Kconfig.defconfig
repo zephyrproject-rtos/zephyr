@@ -3,6 +3,8 @@
 # Copyright (c) 2021 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_FAMILY_NXP_ADSP
+
 source "soc/xtensa/nxp_adsp/*/Kconfig.defconfig.series"
 
 config CACHE_MANAGEMENT
@@ -27,3 +29,5 @@ config 2ND_LEVEL_INTERRUPTS
 config TEST_LOGGING_DEFAULTS
 	default n
 	depends on TEST
+
+endif
