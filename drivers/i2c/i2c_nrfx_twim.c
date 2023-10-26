@@ -166,7 +166,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * to make sure everything has been done to restore the
 			 * bus from this error.
 			 */
-			LOG_ERR("Error on I2C line occurred for message %d", i);
 			(void)i2c_nrfx_twim_recover_bus(dev);
 			ret = -EIO;
 			break;
@@ -175,7 +174,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		res = dev_data->res;
 
 		if (res != NRFX_SUCCESS) {
-			LOG_ERR("Error 0x%08X occurred for message %d", res, i);
 			ret = -EIO;
 			break;
 		}
