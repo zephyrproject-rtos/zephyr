@@ -1139,6 +1139,19 @@ Release Notes:
   labels:
     - "area: LED"
 
+"Drivers: MFD":
+  status: odd fixes
+  collaborators:
+    - gmarull
+    - aasinclair
+  files:
+    - drivers/mfd/
+    - include/zephyr/drivers/mfd/
+    - dts/bindings/mfd/
+    - tests/drivers/build_all/mfd/
+  labels:
+    - "area: MFD"
+
 "Drivers: Modem":
   status: maintained
   maintainers:
