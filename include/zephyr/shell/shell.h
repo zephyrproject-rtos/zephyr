@@ -350,8 +350,8 @@ struct shell_static_entry {
 			SHELL_EXPR_CMD_ARG(1, _syntax, _subcmd, _help, \
 					   _handler, _mand, _opt)\
 		), \
-		(static shell_cmd_handler dummy_##syntax##_handler __unused = _handler;\
-		 static const union shell_cmd_entry dummy_subcmd_##syntax __unused = { \
+		(static shell_cmd_handler dummy_handler_##_syntax __unused = _handler;\
+		 static const union shell_cmd_entry dummy_subcmd_##_syntax __unused = { \
 			.entry = (const struct shell_static_entry *)_subcmd\
 		 } \
 		) \
