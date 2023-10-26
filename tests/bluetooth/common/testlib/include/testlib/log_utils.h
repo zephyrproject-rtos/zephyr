@@ -2,6 +2,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_LOG_UTILS_H_
+#define ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_LOG_UTILS_H_
+
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/__assert.h>
 
@@ -34,3 +37,5 @@ static inline void bt_testlib_log_level_set_all(uint32_t new_level)
 		__ASSERT(result_level == new_level, "%u %u", result_level, new_level);
 	}
 }
+
+#endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_LOG_UTILS_H_ */
