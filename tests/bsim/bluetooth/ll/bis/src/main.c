@@ -441,7 +441,7 @@ static void test_iso_main(void)
 	k_sleep(K_MSEC(2500));
 
 	printk("Periodic Advertising and ISO Channel Map Update...");
-	err = ll_chm_update(chan_map);
+	err = bt_le_set_chan_map(chan_map);
 	if (err) {
 		FAIL("Channel Map Update failed.\n");
 	}
