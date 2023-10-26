@@ -7,9 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "connect.h"
+#include <testlib/connect.h>
 
-LOG_MODULE_REGISTER(testlib_connect, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(bt_testlib_connect, LOG_LEVEL_INF);
 
 struct bt_testlib_connect_closure {
 	uint8_t conn_err;

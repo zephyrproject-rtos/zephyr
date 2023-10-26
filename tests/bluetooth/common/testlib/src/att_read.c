@@ -12,10 +12,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 
-#include "att_read.h"
+#include <testlib/att_read.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(att_read, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bt_testlib_att_read, LOG_LEVEL_DBG);
 
 struct bt_testlib_att_read_closure {
 	uint8_t att_err;
@@ -161,9 +161,9 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 	return bt_testlib_sync_bt_gatt_read(&ctx);
 }
 
-int btt_gatt_long_read(struct net_buf_simple *result_data, uint16_t *result_size,
-		       struct bt_conn *conn, enum bt_att_chan_opt bearer, uint16_t handle,
-		       uint16_t offset)
+int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *result_size,
+			      struct bt_conn *conn, enum bt_att_chan_opt bearer, uint16_t handle,
+			      uint16_t offset)
 {
 	int err;
 	uint16_t _result_data_size = 0;
