@@ -21,6 +21,15 @@ Note that after refreshing the device key, node address or Composition Data thro
 Provisioning Protocol Interface (NPPI) procedure, the :c:member:`bt_mesh_prov.reprovisioned`
 callback is triggered. See section :ref:`bluetooth_mesh_models_rpr_cli` for further details.
 
+Limitations
+-----------
+
+The following limitations apply to Remote Provisioning Server model:
+
+* Provisioning of unprovisioned device using PB-GATT is not supported.
+* All Node Provisioning Protocol Interface (NPPI) procedures are supported. However, if the composition data of a device gets changed after device firmware update (see :ref:`firmware effect <bluetooth_mesh_dfu_firmware_effect>`), it is not possible for the device to remain provisioned. The device should be unprovisioned if its composition data is expected to change.
+
+
 API reference
 *************
 

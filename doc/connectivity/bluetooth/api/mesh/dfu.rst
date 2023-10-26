@@ -184,6 +184,8 @@ Firmware URI
 
       The out-of-band distribution mechanism is not supported.
 
+.. _bluetooth_mesh_dfu_firmware_effect:
+
 Firmware effect
 ---------------
 
