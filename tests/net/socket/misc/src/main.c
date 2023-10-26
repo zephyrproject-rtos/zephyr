@@ -623,7 +623,8 @@ void test_ipv4_mapped_to_ipv6_disabled(void)
 
 void test_ipv4_mapped_to_ipv6_enabled(void)
 {
-	int off = 0, optlen = sizeof(int);
+	socklen_t optlen = sizeof(int);
+	int off = 0;
 	int ret;
 	int sock_s4, sock_s6;
 	struct sockaddr srv_addr4 = { 0 };
@@ -695,7 +696,8 @@ void test_ipv4_mapped_to_ipv6_enabled(void)
 
 void test_ipv4_mapped_to_ipv6_server(void)
 {
-	int off, optlen = sizeof(int);
+	socklen_t optlen = sizeof(int);
+	int off;
 	int ret, len;
 	int sock_c4, sock_c6, sock_s6, new_sock;
 	struct sockaddr srv_addr6 = { 0 };
