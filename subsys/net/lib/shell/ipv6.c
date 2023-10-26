@@ -9,6 +9,7 @@
 LOG_MODULE_DECLARE(net_shell);
 
 #include "common.h"
+#include "../ip/ipv6.h"
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 void ipv6_frag_cb(struct net_ipv6_reassembly *reass, void *user_data)
@@ -211,8 +212,19 @@ static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0)) {
-		PR_ERROR("Failed to add %s address to interface %p\n", argv[2], iface);
+	if (net_ipv6_is_addr_mcast(&addr)) {
+		int ret;
+
+		ret = net_ipv6_mld_join(iface, &addr);
+		if (ret < 0) {
+			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
+				 "join", net_sprint_ipv6_addr(&addr), idx, ret);
+			return ret;
+		}
+	} else {
+		if (!net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0)) {
+			PR_ERROR("Failed to add %s address to interface %p\n", argv[2], iface);
+		}
 	}
 
 #else /* CONFIG_NET_NATIVE_IPV6 */
@@ -250,9 +262,20 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!net_if_ipv6_addr_rm(iface, &addr)) {
-		PR_ERROR("Failed to delete %s\n", argv[2]);
-		return -1;
+	if (net_ipv6_is_addr_mcast(&addr)) {
+		int ret;
+
+		ret = net_ipv6_mld_leave(iface, &addr);
+		if (ret < 0) {
+			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
+				 "leave", net_sprint_ipv6_addr(&addr), idx, ret);
+			return ret;
+		}
+	} else {
+		if (!net_if_ipv6_addr_rm(iface, &addr)) {
+			PR_ERROR("Failed to delete %s\n", argv[2]);
+			return -1;
+		}
 	}
 
 #else /* CONFIG_NET_NATIVE_IPV6 */
