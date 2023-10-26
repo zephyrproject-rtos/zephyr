@@ -518,7 +518,7 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 		return err;
 	}
 
-	/* Section 7.2.2.2.4: The AdvA field shall be regenerated whenever the Random field is
+	/* MshPRTv1.1: 7.2.2.2.4: The AdvA field shall be regenerated whenever the Random field is
 	 * regenerated.
 	 */
 	err = randomize_bt_addr();
@@ -785,14 +785,14 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 			}
 		}
 
-		/* Mesh Profile Specification v1.0.1, section 7.2.2.2.1
-		 * A node that does not support the Proxy feature or
-		 * has the GATT Proxy state disabled shall not advertise with Network ID.
+		/* MshPRTv1.1: section 7.2.2.2.1:
+		 * "A node that does not support the Proxy feature or
+		 * has the GATT Proxy state disabled shall not advertise with Network ID."
 		 */
 		if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
 			if (IS_ENABLED(CONFIG_BT_MESH_PRIV_BEACONS) &&
 			    (bt_mesh_priv_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED)) {
-				/* Bluetooth mesh specification v1.1, section 7.2.2.2.4: The Random
+				/* MshPRTv1.1: 7.2.2.2.4: The Random
 				 * field should be updated every 10 minutes. Limit advertising to
 				 * 10 minutes to ensure regeneration of a new random value at least
 				 * that often.
@@ -1078,7 +1078,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 					       proxy_msg_recv);
 
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
-	/* Binding from section 7.2.2.2.6 of MshPRTv1.1. */
+	/* Binding from MshPRTv1.1: 7.2.2.2.6. */
 	enum bt_mesh_subnets_node_id_state cur_node_id = bt_mesh_subnets_node_id_state_get();
 
 	if (bt_mesh_gatt_proxy_get() == BT_MESH_FEATURE_ENABLED ||

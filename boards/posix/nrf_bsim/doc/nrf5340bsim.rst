@@ -96,15 +96,16 @@ built with either Zephyr's build system or another native simulator compatible b
 you can provide that image to the Zephyr build of the second image using
 :kconfig:option:`CONFIG_NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS`.
 
+You can also use :ref:`System build (sysbuild) <sysbuild>` to build your dual MCU executable.
+The best way to understand how, may be to look into how this is done in one of the examples
+in the tree. For example, for :ref:`the nrf53_sync_rtc sample <nrf53_sync_rtc_sample_build_bsim>`,
+:zephyr_file:`samples/boards/nrf/nrf53_sync_rtc/sysbuild.cmake`.
+
 
 .. note::
 
    These libraries/images are **not** embedded images. You cannot use them for embedded devices,
    and cannot use an embedded image to assemble a native executable.
-
-.. note::
-
-   OpenAMP is not yet supported in these boards.
 
 TrustZone, TF-M and other security considerations
 *************************************************

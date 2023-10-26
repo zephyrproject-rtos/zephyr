@@ -2267,11 +2267,15 @@ static int hb_pub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, status);
 
 	net_buf_simple_add_le16(&msg, pub->dst);
-	net_buf_simple_add_u8(&msg, hb_pub_count_log(pub->count));
-	net_buf_simple_add_u8(&msg, bt_mesh_hb_log(pub->period));
-	net_buf_simple_add_u8(&msg, pub->ttl);
-	net_buf_simple_add_le16(&msg, pub->feat);
-	net_buf_simple_add_le16(&msg, pub->net_idx);
+	if (pub->dst == BT_MESH_ADDR_UNASSIGNED) {
+		(void)memset(net_buf_simple_add(&msg, 7), 0, 7);
+	} else {
+		net_buf_simple_add_u8(&msg, hb_pub_count_log(pub->count));
+		net_buf_simple_add_u8(&msg, bt_mesh_hb_log(pub->period));
+		net_buf_simple_add_u8(&msg, pub->ttl);
+		net_buf_simple_add_le16(&msg, pub->feat);
+		net_buf_simple_add_le16(&msg, pub->net_idx & 0xfff);
+	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		LOG_ERR("Unable to send Heartbeat Publication Status");
@@ -2305,7 +2309,7 @@ static int heartbeat_pub_set(struct bt_mesh_model *model,
 
 	pub.dst = sys_le16_to_cpu(param->dst);
 	if (param->count_log == 0x11) {
-		/* Special case defined in Mesh Profile Errata 11737 */
+		/* Special case defined in MshPRFv1.1 Errata 11737 */
 		pub.count = 0xfffe;
 	} else {
 		pub.count = bt_mesh_hb_pwr2(param->count_log);

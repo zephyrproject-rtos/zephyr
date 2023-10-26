@@ -381,52 +381,32 @@ class testValidator(unittest.TestCase):
 
     @mock.patch("check_init_priorities.Validator._check_dep")
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
-    def test_check_edt_r(self, mock_vinit, mock_cd):
-        validator = check_init_priorities.Validator("", "", None)
-
+    def test_check_edt(self, mock_vinit, mock_cd):
         d0 = mock.Mock()
         d0.dep_ordinal = 1
         d1 = mock.Mock()
         d1.dep_ordinal = 2
+        d2 = mock.Mock()
+        d2.dep_ordinal = 3
 
-        c0 = mock.Mock()
-        c0.props = {"compatible": "c"}
-        c1 = mock.Mock()
-        c1.props = {}
-        c1._binding.path = "another-binding-path.yaml"
-        c2 = mock.Mock()
-        c2.props = {}
-        c2._binding.path = "binding-path.yaml"
-        c2._binding.child_binding = None
-        c2.depends_on = [d1]
+        dev0 = mock.Mock()
+        dev0.depends_on = [d0]
+        dev1 = mock.Mock()
+        dev1.depends_on = [d1]
+        dev2 = mock.Mock()
+        dev2.depends_on = [d2]
 
-        dev = mock.Mock()
-        dev.depends_on = [d0]
-        dev._binding.child_binding = "child-binding"
-        dev._binding.path = "binding-path.yaml"
-        dev.children.values.return_value = [c0, c1, c2]
-
-        validator._check_edt_r(0, dev)
-
-        self.assertListEqual(mock_cd.call_args_list, [
-            mock.call(0, 1),
-            mock.call(0, 2),
-            ])
-
-    @mock.patch("check_init_priorities.Validator._check_edt_r")
-    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
-    def test_check_edt(self, mock_vinit, mock_cer):
         validator = check_init_priorities.Validator("", "", None)
-        validator._ord2node = {1: mock.Mock(), 2: mock.Mock(), 3: mock.Mock()}
+        validator._ord2node = {1: dev0, 2: dev1, 3: dev2}
         validator._obj = mock.Mock()
         validator._obj.devices = {1: 10, 2: 10, 3: 20}
 
         validator.check_edt()
 
-        self.assertListEqual(mock_cer.call_args_list, [
-            mock.call(1, validator._ord2node[1]),
-            mock.call(2, validator._ord2node[2]),
-            mock.call(3, validator._ord2node[3]),
+        self.assertListEqual(mock_cd.call_args_list, [
+            mock.call(1, 1),
+            mock.call(2, 2),
+            mock.call(3, 3),
             ])
 
 if __name__ == "__main__":

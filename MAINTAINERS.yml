@@ -1139,6 +1139,19 @@ Release Notes:
   labels:
     - "area: LED"
 
+"Drivers: MFD":
+  status: odd fixes
+  collaborators:
+    - gmarull
+    - aasinclair
+  files:
+    - drivers/mfd/
+    - include/zephyr/drivers/mfd/
+    - dts/bindings/mfd/
+    - tests/drivers/build_all/mfd/
+  labels:
+    - "area: MFD"
+
 "Drivers: Modem":
   status: maintained
   maintainers:
@@ -2029,6 +2042,7 @@ Networking:
     - pdgendt
     - canisLupus1313
     - mariuszpos
+    - edmont
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -2127,6 +2141,7 @@ RISCV arch:
     - arch/riscv/
     - boards/riscv/
     - dts/bindings/riscv/
+    - dts/riscv/
     - include/zephyr/arch/riscv/
     - soc/riscv/
     - tests/arch/riscv/
@@ -3455,6 +3470,7 @@ West:
     - pdgendt
     - canisLupus1313
     - mariuszpos
+    - edmont
   files:
     - modules/openthread/
   labels:
@@ -3607,6 +3623,16 @@ West:
   files: []
   labels:
     - "area: Sensors"
+
+"West project: hostap":
+  status: maintained
+  maintainers:
+    - krish2718
+    - jukkar
+  files:
+    - modules/hostap/
+  labels:
+    - "area: Wi-Fi"
 
 Xtensa arch:
   status: maintained

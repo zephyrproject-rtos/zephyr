@@ -16,4 +16,5 @@ supported:
   - spi
   - usb_device
   - rtc
+  - crypto
 vendor: renesas

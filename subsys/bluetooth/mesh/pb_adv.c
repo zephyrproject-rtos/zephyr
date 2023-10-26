@@ -929,7 +929,7 @@ static void prov_link_close(enum prov_bearer_link_status status)
 	}
 
 	/*
-	 * According to mesh profile spec (5.3.1.4.3), the close message should
+	 * According to MshPRTv1.1: 5.3.1.4.3, the close message should
 	 * be restransmitted at least three times. Retransmit the LINK_CLOSE
 	 * message until CLOSING_TIMEOUT has elapsed.
 	 */

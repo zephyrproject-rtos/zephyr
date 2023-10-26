@@ -115,9 +115,6 @@ manifest:
       revision: eed6d7038e839153e340bd333bc43541cb90ba64
       groups:
         - babblesim
-    - name: canopennode
-      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
-      path: modules/lib/canopennode
     - name: cmsis
       revision: 5a00331455dd74e31e80efa383a489faea0590e3
       path: modules/hal/cmsis
@@ -213,7 +210,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: a6cf2af9140e014fbbc48d2b6deb802231dd369f
+      revision: 1471ed3cbf501434a5f3df2f9df520c3bd8e0258
       groups:
         - hal
     - name: hal_rpi_pico
@@ -256,6 +253,10 @@ manifest:
       path: modules/hal/xtensa
       groups:
         - hal
+    - name: hostap
+      repo-path: hostap
+      path: modules/lib/hostap
+      revision: 7adaff26baa48e26a32c576125e0a749a5239b12
     - name: libmetal
       revision: 03140d7f4bd9ba474ebfbb6256e84a9089248e67
       path: modules/hal/libmetal
@@ -276,7 +277,7 @@ manifest:
       revision: 8a6a2d1d29d17d1e4bdc94c243c146a39d635fdd
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: c38dc78d9a8dcbe43b898cc1171ab33ba3e6fc26
+      revision: 7053083b0cff8462464e3cbb826e87852fc03da6
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -294,7 +295,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: f7842d717c73aaeb0354f9e70e6d5ad275106f52
+      revision: 90f4484cbaec986ed253b4fe9649aa75e632de15
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: 42b7c577714b8f22ce82a901e19c1814af4609a8

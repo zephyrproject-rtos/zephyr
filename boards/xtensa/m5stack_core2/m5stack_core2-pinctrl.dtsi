@@ -24,6 +24,14 @@
 		pinmux = <UART1_RX_GPIO33>;
 	};
 
+	uart2_rx_gpio13: uart2_rx_gpio13 {
+		pinmux = <UART2_RX_GPIO13>;
+	};
+
+	uart2_tx_gpio14: uart2_rx_gpio14 {
+		pinmux = <UART2_TX_GPIO14>;
+	};
+
 	uart1_tx_gpio32: uart1_tx_gpio32 {
 		pinmux = <UART1_TX_GPIO32>;
 	};

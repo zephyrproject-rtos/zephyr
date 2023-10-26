@@ -3,6 +3,12 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
   projects:
+    - name: canopennode
+      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
+      path: modules/lib/canopennode
+      remote: upstream
+      groups:
+        - optional
     - name: chre
       revision: 3b32c76efee705af146124fb4190f71be5a4e36e
       path: modules/lib/chre
@@ -28,7 +34,7 @@ manifest:
       groups:
         - optional
     - name: sof
-      revision: c0f20b69daa44e3563f970b366e49ccfcfa1b71c
+      revision: e7cb489d430dc2181e4a5f7f953ed1eaeec6668d
       path: modules/audio/sof
       remote: upstream
       groups:

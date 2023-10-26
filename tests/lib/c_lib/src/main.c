@@ -46,9 +46,6 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
 
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
-
 /* Recent GCC's are issuing a warning for the truncated strncpy()
  * below (the static source string is longer than the locally-defined
  * destination array).  That's exactly the case we're testing, so turn
@@ -157,6 +154,20 @@ ZTEST(test_c_lib, test_stdint)
 	zassert_true(true);
 #else
 	zassert_true(false, "const int expr values ...");
+#endif
+}
+
+/**
+ *
+ * @brief Test time_t to make sure it is at least 64 bits
+ *
+ */
+ZTEST(test_c_lib, test_time_t)
+{
+#ifdef CONFIG_EXTERNAL_LIBC
+	ztest_test_skip();
+#else
+	zassert_true(sizeof(time_t) >= sizeof(uint64_t));
 #endif
 }
 
@@ -1070,7 +1081,7 @@ ZTEST(test_c_lib, test_time)
 {
 	time_t tests1 = 0;
 	time_t tests2 = -5;
-	time_t tests3 = -214748364800;
+	time_t tests3 = (time_t) -214748364800;
 	time_t tests4 = 951868800;
 
 	struct tm tp;
@@ -1209,11 +1220,15 @@ ZTEST(test_c_lib, test_rand_reproducibility)
  */
 ZTEST(test_c_lib, test_abort)
 {
+#ifdef CONFIG_EXTERNAL_LIBC
+	ztest_test_skip();
+#else
 	int a = 0;
 
 	ztest_set_fault_valid(true);
 	abort();
 	zassert_equal(a, 0, "abort failed");
+#endif
 }
 
 /**
@@ -1221,13 +1236,22 @@ ZTEST(test_c_lib, test_abort)
  * @brief test exit functions
  *
  */
+#ifndef CONFIG_EXTERNAL_LIBC
 static void exit_program(void *p1, void *p2, void *p3)
 {
 	exit(1);
 }
 
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+static struct k_thread tdata;
+
+#endif
+
 ZTEST(test_c_lib, test_exit)
 {
+#ifdef CONFIG_EXTERNAL_LIBC
+	ztest_test_skip();
+#else
 	int a = 0;
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE, exit_program,
@@ -1235,4 +1259,5 @@ ZTEST(test_c_lib, test_exit)
 	k_sleep(K_MSEC(10));
 	k_thread_abort(tid);
 	zassert_equal(a, 0, "exit failed");
+#endif
 }

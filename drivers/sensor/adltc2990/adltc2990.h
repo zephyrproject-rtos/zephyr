@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +9,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 
 enum adltc2990_monitor_pins {
@@ -19,14 +19,14 @@ enum adltc2990_monitor_pins {
 	V4,
 	INTERNAL_TEMPERATURE,
 	SUPPLY_VOLTAGE
-} adltc2990_monitor_pins;
+};
 
 enum adltc2990_monitoring_type {
 	NOTHING,
 	VOLTAGE_DIFFERENTIAL,
 	VOLTAGE_SINGLEENDED,
 	TEMPERATURE
-} adltc2990_monitoring_type;
+};
 
 union voltage_divider_resistors {
 	struct {

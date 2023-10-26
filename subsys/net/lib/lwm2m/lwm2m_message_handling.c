@@ -304,6 +304,9 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 		}
 		msg->cpkt.hdr_len = msg->body_encode_buffer.hdr_len;
 	} else {
+		/* Keep user data between blocks */
+		void *user_data = msg->reply ? msg->reply->user_data : NULL;
+
 		/* reuse message for next block. Copy token from the new query to allow
 		 * CoAP clients to use new token for every query of ongoing transaction
 		 */
@@ -322,6 +325,9 @@ STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_t block_nu
 			lwm2m_reset_message(msg, true);
 			LOG_ERR("Unable to init lwm2m message for next block!");
 			return ret;
+		}
+		if (msg->reply) {
+			msg->reply->user_data = user_data;
 		}
 	}
 
