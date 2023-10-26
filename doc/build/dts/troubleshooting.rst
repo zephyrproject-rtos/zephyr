@@ -142,7 +142,7 @@ out by reading the source code:
 
 Often, but not always, you can find the driver by looking for a file that sets
 the ``DT_DRV_COMPAT`` macro to match your node's ``compatible`` property,
-except lowercase and with special characters converted to underscores. For
+except lowercased and with special characters converted to underscores. For
 example, if your node's compatible is ``vnd,foo-device``, look for a file with this
 line:
 
@@ -213,7 +213,7 @@ Make sure you're using the right names
 
 Remember that:
 
-- In C/C++, devicetree names must be lowercase and special characters must be
+- In C/C++, devicetree names must be lowercased and special characters must be
   converted to underscores. Zephyr's generated devicetree header has DTS names
   converted in this way into the C tokens used by the preprocessor-based
   ``<devicetree.h>`` API.
