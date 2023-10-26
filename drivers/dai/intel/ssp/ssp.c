@@ -839,7 +839,6 @@ static void dai_ssp_empty_tx_fifo(struct dai_intel_ssp *dp)
 
 static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 {
-	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
 	uint32_t i, sssr;
 
 	sssr = sys_read32(dai_base(dp) + SSSR);
@@ -851,18 +850,6 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 
 		/* Clear the overflow status */
 		dai_ssp_update_bits(dp, SSSR, SSSR_ROR, SSSR_ROR);
-		/* Re-read the SSSR register */
-		sssr = sys_read32(dai_base(dp) + SSSR);
-	}
-
-	while ((sssr & SSSR_RNE) && retry--) {
-		uint32_t entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
-
-		/* Empty the RX FIFO (the DMA is not running at this point) */
-		for (i = 0; i < entries + 1; i++)
-			sys_read32(dai_base(dp) + SSDR);
-
-		sssr = sys_read32(dai_base(dp) + SSSR);
 	}
 }
 
