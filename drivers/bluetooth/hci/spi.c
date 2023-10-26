@@ -84,30 +84,6 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
-#if defined(CONFIG_BT_HCI_DRIVER_LOG_LEVEL_DBG)
-#include <zephyr/sys/printk.h>
-static inline void spi_dump_message(const uint8_t *pre, uint8_t *buf,
-				    uint8_t size)
-{
-	uint8_t i, c;
-
-	printk("%s (%d): ", pre, size);
-	for (i = 0U; i < size; i++) {
-		c = buf[i];
-		printk("%x ", c);
-		if (c >= 31U && c <= 126U) {
-			printk("[%c] ", c);
-		} else {
-			printk("[.] ");
-		}
-	}
-	printk("\n");
-}
-#else
-static inline
-void spi_dump_message(const uint8_t *pre, uint8_t *buf, uint8_t size) {}
-#endif
-
 #if defined(CONFIG_BT_SPI_BLUENRG)
 /* Define a limit when reading IRQ high */
 /* It can be required to be increased for */
@@ -404,7 +380,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 				continue;
 			}
 
-			spi_dump_message("RX:ed", rxmsg, size);
+			LOG_HEXDUMP_DBG(rxmsg, size, "SPI RX");
 
 			/* Construct net_buf from SPI data */
 			buf = bt_spi_rx_buf_construct(rxmsg);
@@ -480,7 +456,7 @@ static int bt_spi_send(struct net_buf *buf)
 		goto out;
 	}
 
-	spi_dump_message("TX:ed", buf->data, buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "SPI TX");
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
 	/*
