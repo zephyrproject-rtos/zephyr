@@ -188,6 +188,8 @@ def test_if_report_with_error(pytester, testinstance: TestInstance):
         assert tc.status == "failed"
         assert tc.output
         assert tc.reason
+    assert testinstance.reason
+    assert '2/2' in testinstance.reason
 
 
 def test_if_report_with_skip(pytester, testinstance: TestInstance):
