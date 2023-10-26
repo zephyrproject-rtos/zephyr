@@ -86,20 +86,29 @@ extern "C" {
  *     spi1: spi@... {
  *             compatible = "vnd,spi";
  *             cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>,
+ *                        <0>,
  *                        <&gpio2 20 GPIO_ACTIVE_LOW>;
  *
- *             a: spi-dev-a@0 {
+ *             a: spi-dev@0 {
  *                     reg = <0>;
  *             };
  *
- *             b: spi-dev-b@1 {
+ *             b: spi-dev@1 {
  *                     reg = <1>;
+ *             };
+ *
+ *             c: spi-dev@3 {
+ *                     reg = <3>;
+ *             };
+ *
+ *             d: spi-dev@4 {
+ *                     reg = <4>;
  *             };
  *     };
  *
  *     spi2: spi@... {
  *             compatible = "vnd,spi";
- *             c: spi-dev-c@0 {
+ *             e: spi-dev@0 {
  *                     reg = <0>;
  *             };
  *     };
@@ -107,14 +116,19 @@ extern "C" {
  * Example usage:
  *
  *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(a)) // 1
- *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(b)) // 1
- *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(c)) // 0
+ *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(b)) // 0
+ *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(c)) // 1
+ *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(d)) // 0
+ *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(e)) // 0
  *
  * @param spi_dev a SPI device node identifier
  * @return 1 if spi_dev's bus node DT_BUS(spi_dev) has a chip select
  *         pin at index DT_REG_ADDR(spi_dev), 0 otherwise
  */
-#define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev) DT_SPI_HAS_CS_GPIOS(DT_BUS(spi_dev))
+#define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev)                                                \
+	UTIL_AND(DT_SPI_HAS_CS_GPIOS(DT_BUS(spi_dev)),					\
+		 DT_PROP_HAS_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev)))
+
 
 /**
  * @brief Get a SPI device's chip select GPIO controller's node identifier
