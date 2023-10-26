@@ -140,6 +140,7 @@ depends on" relation:
 - a node directly depends on any nodes its properties refer to by phandle
 - a node directly depends on its ``interrupt-parent`` if it has an
   ``interrupts`` property
+- a parent node inherits all dependencies from its child nodes
 
 A *dependency ordering* of a devicetree is a list of its nodes, where each node
 ``n`` appears earlier in the list than any nodes that depend on ``n``. A node's
