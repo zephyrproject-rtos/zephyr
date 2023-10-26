@@ -9,8 +9,25 @@ config BM_ONE_TO
 	int "Number of consumers"
 	default 8
 
-config BM_ASYNC
-	bool "Consuming in asynchronous mode"
-	default false
+choice BM_OBSERVER_TYPE
+	bool "Observer type to be used in the benchmark"
+
+config BM_LISTENERS
+	bool "Synchronous using listeners"
+
+config BM_SUBSCRIBERS
+	bool "Asynchronous using subscribers"
+
+config BM_MSG_SUBSCRIBERS
+	bool "Asynchronous using message subscribers"
+	select ZBUS_MSG_SUBSCRIBER
+
+endchoice
+
+config BM_FAIRPLAY
+	bool "Force a comparison with same actions"
+	help
+	  Forces a message copy on the listeners and subscribers to behave equivalent to
+	  message subscribers.
 
 source "Kconfig.zephyr"
