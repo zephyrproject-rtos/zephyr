@@ -116,7 +116,6 @@ class HardwareAdapter(DeviceAdapter):
                 stdout_decoded = stdout.decode(errors='ignore')
                 with open(self.device_log_path, 'a+') as log_file:
                     log_file.write(stdout_decoded)
-                logger.debug(f'Flashing output:\n{stdout_decoded}')
             if self.device_config.post_flash_script:
                 self._run_custom_script(self.device_config.post_flash_script, self.base_timeout)
             if process is not None and process.returncode == 0:
