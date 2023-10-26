@@ -12,7 +12,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(testlib_security, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(bt_testlib_security, LOG_LEVEL_INF);
 
 struct testlib_security_ctx {
 	enum bt_security_err result;

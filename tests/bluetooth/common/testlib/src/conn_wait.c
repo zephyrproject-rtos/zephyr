@@ -14,12 +14,12 @@
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(conn_wait, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bt_testlib_conn_wait, LOG_LEVEL_DBG);
 
 static K_MUTEX_DEFINE(conn_wait_mutex);
 static K_CONDVAR_DEFINE(something_changed);
 
-void on_change(struct bt_conn *conn, uint8_t err)
+static void on_change(struct bt_conn *conn, uint8_t err)
 {
 	k_mutex_lock(&conn_wait_mutex, K_FOREVER);
 	k_condvar_broadcast(&something_changed);
@@ -31,7 +31,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = on_change,
 };
 
-enum bt_conn_state bt_conn_state(struct bt_conn *conn)
+static enum bt_conn_state bt_conn_state(struct bt_conn *conn)
 {
 	int err;
 	struct bt_conn_info info;

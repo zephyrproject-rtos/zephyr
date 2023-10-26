@@ -13,7 +13,7 @@
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(att_write, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bt_testlib_att_write, LOG_LEVEL_DBG);
 
 struct bt_testlib_att_write_closure {
 	uint8_t att_err;
