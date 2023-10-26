@@ -2361,18 +2361,24 @@ Nuvoton NPCX Platforms:
   labels:
     - "platform: Nuvoton NPCX"
 
-Nuvoton Numicro Platforms:
-  status: odd fixes
+Nuvoton Numicro Numaker Platforms:
+  status: maintained
+  maintainers:
+    - cyliangtw
   collaborators:
     - ssekar15
   files:
     - soc/arm/nuvoton_numicro/
+    - soc/arm/nuvoton_numaker/
     - boards/arm/nuvoton_pfm*/
+    - boards/arm/numaker_*/
     - dts/arm/nuvoton/
     - dts/bindings/*/*numicro*
+    - dts/bindings/*/*numaker*
     - drivers/*/*_numicro*
+    - drivers/*/*_numaker*
   labels:
-    - "platform: Nuvoton Numicro"
+    - "platform: Nuvoton Numicro Numaker"
 
 Raspberry Pi Pico Platforms:
   status: maintained
