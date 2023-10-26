@@ -298,14 +298,19 @@ void z_log_vprintk(const char *fmt, va_list ap);
 /* Return first argument */
 #define _LOG_ARG1(arg1, ...) arg1
 
-#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			       \
-	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				       \
-	const STRUCT_SECTION_ITERABLE_ALTERNATE(log_const,		       \
-		log_source_const_data,					       \
-		Z_LOG_ITEM_CONST_DATA(_name)) =				       \
-	{								       \
-		.name = STRINGIFY(_name),				       \
-		.level = _level						       \
+#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)						\
+	IF_ENABLED(CONFIG_LOG_FMT_SECTION, (							\
+		static const char UTIL_CAT(_name, _str)[]					\
+		     __in_section(_log_strings, static, _CONCAT(_name, _)) __used __noasan =	\
+		     STRINGIFY(_name);))							\
+	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))							\
+	const STRUCT_SECTION_ITERABLE_ALTERNATE(log_const,					\
+		log_source_const_data,								\
+		Z_LOG_ITEM_CONST_DATA(_name)) =							\
+	{											\
+		.name = COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
+				(UTIL_CAT(_name, _str)), (STRINGIFY(_name))),			\
+		.level = _level									\
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)					\
