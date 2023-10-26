@@ -29,11 +29,7 @@
 #define DAI_INTEL_SSP_DEFAULT_IDX		1
 
 /* the SSP port fifo depth */
-#if (CONFIG_BOARD_INTEL_ADSP_CAVS25 || CONFIG_BOARD_INTEL_ADSP_CAVS25_TGPH)
-#define DAI_INTEL_SSP_FIFO_DEPTH		32
-#else
 #define DAI_INTEL_SSP_FIFO_DEPTH		16
-#endif
 
 /* the watermark for the SSP fifo depth setting */
 #define DAI_INTEL_SSP_FIFO_WATERMARK		8
