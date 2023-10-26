@@ -8,6 +8,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <zephyr/net/igmp.h>
+
 #include "common.h"
 #include "../ip/ipv4.h"
 
@@ -92,8 +94,8 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 	int idx;
 	struct in_addr addr;
 
-	if (argc != 4) {
-		PR_ERROR("Correct usage: net ipv4 add <index> <address> <netmask>\n");
+	if (argc < 3) {
+		PR_ERROR("Correct usage: net ipv4 add <index> <address> [<netmask>]\n");
 		return -EINVAL;
 	}
 
@@ -113,14 +115,37 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+	if (net_ipv4_is_addr_mcast(&addr)) {
+		int ret;
 
-	if (net_addr_pton(AF_INET, argv[3], &addr)) {
-		PR_ERROR("Invalid netmask: %s", argv[3]);
-		return -EINVAL;
+		ret = net_ipv4_igmp_join(iface, &addr);
+		if (ret < 0) {
+			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
+				 "join", net_sprint_ipv4_addr(&addr), idx, ret);
+			return ret;
+		}
+	} else {
+		struct net_if_addr *ifaddr;
+
+		if (argc < 4) {
+			PR_ERROR("Netmask is missing.\n");
+			return -EINVAL;
+		}
+
+		ifaddr = net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+		if (ifaddr == NULL) {
+			PR_ERROR("Cannot add address %s to interface %d\n",
+				 net_sprint_ipv4_addr(&addr), idx);
+			return -ENOMEM;
+		}
+
+		if (net_addr_pton(AF_INET, argv[3], &addr)) {
+			PR_ERROR("Invalid netmask: %s", argv[3]);
+			return -EINVAL;
+		}
+
+		net_if_ipv4_set_netmask(iface, &addr);
 	}
-
-	net_if_ipv4_set_netmask(iface, &addr);
 
 #else /* CONFIG_NET_NATIVE_IPV4 */
 	PR_INFO("Set %s and %s to enable native %s support.\n",
@@ -157,9 +182,20 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!net_if_ipv4_addr_rm(iface, &addr)) {
-		PR_ERROR("Failed to delete %s\n", argv[2]);
-		return -ENOEXEC;
+	if (net_ipv4_is_addr_mcast(&addr)) {
+		int ret;
+
+		ret = net_ipv4_igmp_leave(iface, &addr);
+		if (ret < 0) {
+			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
+				 "leave", net_sprint_ipv4_addr(&addr), idx, ret);
+			return ret;
+		}
+	} else {
+		if (!net_if_ipv4_addr_rm(iface, &addr)) {
+			PR_ERROR("Failed to delete %s\n", argv[2]);
+			return -ENOEXEC;
+		}
 	}
 #else /* CONFIG_NET_NATIVE_IPV4 */
 	PR_INFO("Set %s and %s to enable native %s support.\n",
@@ -170,7 +206,7 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip,
 	SHELL_CMD(add, NULL,
-		  "'net ipv4 add <index> <address>' adds the address to the interface.",
+		  "'net ipv4 add <index> <address> [<netmask>]' adds the address to the interface.",
 		  cmd_net_ip_add),
 	SHELL_CMD(del, NULL,
 		  "'net ipv4 del <index> <address>' deletes the address from the interface.",
