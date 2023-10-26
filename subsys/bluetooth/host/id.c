@@ -2064,7 +2064,9 @@ int bt_id_init(void)
 	int err;
 
 #if defined(CONFIG_BT_PRIVACY)
-	bt_addr_copy(&bt_dev.rpa[BT_ID_DEFAULT], BT_ADDR_NONE);
+	for (uint8_t id = 0U; id < ARRAY_SIZE(bt_dev.rpa); id++) {
+		bt_addr_copy(&bt_dev.rpa[id], BT_ADDR_NONE);
+	}
 	k_work_init_delayable(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
