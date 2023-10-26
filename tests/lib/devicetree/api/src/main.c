@@ -72,6 +72,12 @@
 #define TEST_SPI_DEV_1 DT_PATH(test, spi_33334444, test_spi_dev_1)
 #define TEST_SPI_BUS_1 DT_BUS(TEST_SPI_DEV_1)
 
+#define TEST_SPI_DEV_2 DT_PATH(test, spi_33334444, gpio_2)
+
+#define TEST_SPI_DEV_3 DT_PATH(test, spi_33334444, invalid_cs_at_idx_3)
+
+#define TEST_SPI_DEV_4 DT_PATH(test, spi_33334444, no_cs_idx_4)
+
 #define TEST_SPI_NO_CS DT_NODELABEL(test_spi_no_cs)
 #define TEST_SPI_DEV_NO_CS DT_NODELABEL(test_spi_no_cs)
 
@@ -367,6 +373,11 @@ ZTEST(devicetree_api, test_bus)
 	zassert_true(DT_SAME_NODE(TEST_SPI_BUS_1, TEST_SPI), "");
 
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_1), 1, "");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_2), 1, "");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_3), 0, "");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_4), 0, "");
+
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "");
 
 	/* Test a nested I2C bus using vnd,i2c-mux. */
@@ -1790,7 +1801,7 @@ ZTEST(devicetree_api, test_cs_gpios)
 	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI_NO_CS), 0, "");
 
 	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI), 1, "");
-	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 3, "");
+	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 4, "");
 
 	zassert_equal(DT_DEP_ORD(DT_SPI_DEV_CS_GPIOS_CTLR(TEST_SPI_DEV_0)),
 		      DT_DEP_ORD(DT_NODELABEL(test_gpio_1)),

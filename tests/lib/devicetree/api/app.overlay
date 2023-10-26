@@ -305,9 +305,13 @@
 			status = "okay";
 			clock-frequency = < 2000000 >;
 
+                        /* The <0> value is valid: a zero phandle followed by no cells
+                         * is an empty element of a phandle-array in DTS.
+                         */
 			cs-gpios = <&test_gpio_1 0x10 0x20>,
 					<&test_gpio_2 0x30 0x40>,
-					<&test_gpio_2 0x50 0x60>;
+                                        <&test_gpio_2 0x50 0x60>,
+                                        <0>;
 
 			/* all vnd,spi-device instances should have CS */
 
@@ -331,6 +335,28 @@
 				reg = <2>;
 				spi-max-frequency = <(1 * 1000 * 1000)>;
 			};
+
+                        /* These nodes are for testing these edge cases:
+                         *
+                         * - an invalid cs-gpios index means no chip select
+                         * - a missing cs-gpios index means no chip select
+                         */
+
+                        invalid-cs-at-idx@3 {
+				compatible = "vnd,gpio-expander";
+                                reg = <3>;
+				spi-max-frequency = < 2000000 >;
+				gpio-controller;
+				#gpio-cells = <2>;
+                        };
+
+                        no-cs-idx@4 {
+				compatible = "vnd,gpio-expander";
+                                reg = <4>;
+				spi-max-frequency = < 2000000 >;
+				gpio-controller;
+				#gpio-cells = <2>;
+                        };
 		};
 
 		test_spi_no_cs: spi@55556666 {
