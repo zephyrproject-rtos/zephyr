@@ -1,0 +1,8 @@
+# Copyright (c) 2023, Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Gas Sensing Solutions CO2 sensor
+
+compatible: "gss,explorir-m"
+
+include: [sensor-device.yaml, uart-device.yaml]
