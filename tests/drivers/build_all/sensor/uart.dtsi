@@ -30,3 +30,7 @@ grow_r502a {
 test_uart_a01nyub: a01nyub {
 	compatible = "dfrobot,a01nyub";
 };
+
+test_uart_explorir_m: explorir-m {
+	compatible = "gss,explorir-m";
+};
