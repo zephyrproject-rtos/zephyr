@@ -1952,6 +1952,16 @@ Release Notes:
   labels:
     - "area: Memory Management"
 
+"Drivers: MIPI DBI":
+  status: maintained
+  maintainers:
+    - danieldegrasse
+  files:
+    - drivers/mipi_dbi/
+    - dts/bindings/mipi-dbi/
+  labels:
+    - "area: Display Controller"
+
 "Drivers: Virtualization":
   status: maintained
   maintainers:
