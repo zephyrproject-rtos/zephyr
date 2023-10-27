@@ -148,7 +148,7 @@
 &spi1 {
 	compatible = "nordic,nrf-spi";
 	status = "okay";
-	cs-gpios = <&gpio1 23 0>;
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
