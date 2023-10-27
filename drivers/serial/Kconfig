@@ -282,4 +282,6 @@ rsource "Kconfig.renesas_ra8"
 
 source "drivers/serial/Kconfig.si32"
 
+source "drivers/serial/Kconfig.ch32v"
+
 endif # SERIAL

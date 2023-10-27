@@ -1,0 +1,12 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_CH5XX
+	bool "WCH CH5xx UART driver"
+	default y
+	depends on DT_HAS_WCH_CH5XX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  Enable WCH CH5xx UART driver.

@@ -4,3 +4,15 @@
  */
 
 #include <wch/ch56x/ch56x-common.dtsi>
+
+/ {
+	soc {
+		uart1: uart@40003400 {
+			compatible = "wch,ch5xx-uart";
+			reg = <0x40003400 0x400>;
+			interrupts = <30 16>;
+			clocks = <&hclk>;
+			status = "disabled";
+		};
+	};
+};
