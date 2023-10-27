@@ -30,7 +30,7 @@ First, ensure the optional CANopenNode module is enabled and available:
 
    .. code-block:: console
 
-      west config manifest.group-filter +optional
+      west config manifest.project-filter +canopennode
       west update canopennode
 
 Building and Running for TWR-KE18F
