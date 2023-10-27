@@ -19,3 +19,5 @@ if(CONFIG_BUILD_OUTPUT_BIN)
     -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.c
     -a "esp32_net_fw_array")
 endif()
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
