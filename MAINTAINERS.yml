@@ -4349,6 +4349,22 @@ VFS:
   tests:
     - filesystem
 
+WCH Platforms:
+  status: maintained
+  maintainers:
+    - xingrz
+  files:
+    - boards/wch/
+    - drivers/*/*ch32*
+    - drivers/*/*ch5*
+    - dts/riscv/wch/
+    - dts/bindings/*/wch,*
+    - soc/wch/
+  labels:
+    - "platform: WCH"
+  description: >-
+    WCH SoCs, dts files and related drivers. WCH boards.
+
 West:
   status: odd fixes
   collaborators:
