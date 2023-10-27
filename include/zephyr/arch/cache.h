@@ -32,7 +32,7 @@
  *
  * Enable the data cache.
  */
-extern void arch_dcache_enable(void);
+void arch_dcache_enable(void);
 
 #define cache_data_enable arch_dcache_enable
 
@@ -41,7 +41,7 @@ extern void arch_dcache_enable(void);
  *
  * Disable the data cache.
  */
-extern void arch_dcache_disable(void);
+void arch_dcache_disable(void);
 
 #define cache_data_disable arch_dcache_disable
 
@@ -54,7 +54,7 @@ extern void arch_dcache_disable(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_dcache_flush_all(void);
+int arch_dcache_flush_all(void);
 
 #define cache_data_flush_all arch_dcache_flush_all
 
@@ -67,7 +67,7 @@ extern int arch_dcache_flush_all(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_dcache_invd_all(void);
+int arch_dcache_invd_all(void);
 
 #define cache_data_invd_all arch_dcache_invd_all
 
@@ -80,7 +80,7 @@ extern int arch_dcache_invd_all(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_dcache_flush_and_invd_all(void);
+int arch_dcache_flush_and_invd_all(void);
 
 #define cache_data_flush_and_invd_all arch_dcache_flush_and_invd_all
 
@@ -103,7 +103,7 @@ extern int arch_dcache_flush_and_invd_all(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_dcache_flush_range(void *addr, size_t size);
+int arch_dcache_flush_range(void *addr, size_t size);
 
 #define cache_data_flush_range(addr, size) arch_dcache_flush_range(addr, size)
 
@@ -127,7 +127,7 @@ extern int arch_dcache_flush_range(void *addr, size_t size);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_dcache_invd_range(void *addr, size_t size);
+int arch_dcache_invd_range(void *addr, size_t size);
 
 #define cache_data_invd_range(addr, size) arch_dcache_invd_range(addr, size)
 
@@ -152,7 +152,7 @@ extern int arch_dcache_invd_range(void *addr, size_t size);
  * @retval -errno Negative errno for other failures.
  */
 
-extern int arch_dcache_flush_and_invd_range(void *addr, size_t size);
+int arch_dcache_flush_and_invd_range(void *addr, size_t size);
 
 #define cache_data_flush_and_invd_range(addr, size) \
 	arch_dcache_flush_and_invd_range(addr, size)
@@ -172,7 +172,7 @@ extern int arch_dcache_flush_and_invd_range(void *addr, size_t size);
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
  */
-extern size_t arch_dcache_line_size_get(void);
+size_t arch_dcache_line_size_get(void);
 
 #define cache_data_line_size_get arch_dcache_line_size_get
 
@@ -187,7 +187,7 @@ extern size_t arch_dcache_line_size_get(void);
  *
  * Enable the instruction cache.
  */
-extern void arch_icache_enable(void);
+void arch_icache_enable(void);
 
 #define cache_instr_enable arch_icache_enable
 
@@ -196,7 +196,7 @@ extern void arch_icache_enable(void);
  *
  * Disable the instruction cache.
  */
-extern void arch_icache_disable(void);
+void arch_icache_disable(void);
 
 #define cache_instr_disable arch_icache_disable
 
@@ -209,7 +209,7 @@ extern void arch_icache_disable(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_icache_flush_all(void);
+int arch_icache_flush_all(void);
 
 #define cache_instr_flush_all arch_icache_flush_all
 
@@ -222,7 +222,7 @@ extern int arch_icache_flush_all(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_icache_invd_all(void);
+int arch_icache_invd_all(void);
 
 #define cache_instr_invd_all arch_icache_invd_all
 
@@ -235,7 +235,7 @@ extern int arch_icache_invd_all(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_icache_flush_and_invd_all(void);
+int arch_icache_flush_and_invd_all(void);
 
 #define cache_instr_flush_and_invd_all arch_icache_flush_and_invd_all
 
@@ -258,7 +258,7 @@ extern int arch_icache_flush_and_invd_all(void);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_icache_flush_range(void *addr, size_t size);
+int arch_icache_flush_range(void *addr, size_t size);
 
 #define cache_instr_flush_range(addr, size) arch_icache_flush_range(addr, size)
 
@@ -282,7 +282,7 @@ extern int arch_icache_flush_range(void *addr, size_t size);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_icache_invd_range(void *addr, size_t size);
+int arch_icache_invd_range(void *addr, size_t size);
 
 #define cache_instr_invd_range(addr, size) arch_icache_invd_range(addr, size)
 
@@ -306,7 +306,7 @@ extern int arch_icache_invd_range(void *addr, size_t size);
  * @retval -ENOTSUP If not supported.
  * @retval -errno Negative errno for other failures.
  */
-extern int arch_icache_flush_and_invd_range(void *addr, size_t size);
+int arch_icache_flush_and_invd_range(void *addr, size_t size);
 
 #define cache_instr_flush_and_invd_range(addr, size) \
 	arch_icache_flush_and_invd_range(addr, size)
@@ -327,7 +327,7 @@ extern int arch_icache_flush_and_invd_range(void *addr, size_t size);
  * @retval 0 If the d-cache is not enabled.
  */
 
-extern size_t arch_icache_line_size_get(void);
+size_t arch_icache_line_size_get(void);
 
 #define cache_instr_line_size_get arch_icache_line_size_get
 
