@@ -76,6 +76,9 @@ typedef int (*regulator_set_voltage_t)(const struct device *dev, int32_t min_uv,
 				       int32_t max_uv);
 typedef int (*regulator_get_voltage_t)(const struct device *dev,
 				       int32_t *volt_uv);
+typedef unsigned int (*regulator_count_current_limits_t)(const struct device *dev);
+typedef int (*regulator_list_current_limit_t)(const struct device *dev,
+					      unsigned int idx, int32_t *current_ua);
 typedef int (*regulator_set_current_limit_t)(const struct device *dev,
 					     int32_t min_ua, int32_t max_ua);
 typedef int (*regulator_get_current_limit_t)(const struct device *dev,
@@ -95,6 +98,8 @@ __subsystem struct regulator_driver_api {
 	regulator_list_voltage_t list_voltage;
 	regulator_set_voltage_t set_voltage;
 	regulator_get_voltage_t get_voltage;
+	regulator_count_current_limits_t count_current_limits;
+	regulator_list_current_limit_t list_current_limit;
 	regulator_set_current_limit_t set_current_limit;
 	regulator_get_current_limit_t get_current_limit;
 	regulator_set_mode_t set_mode;
@@ -483,6 +488,57 @@ static inline int regulator_get_voltage(const struct device *dev,
 	}
 
 	return api->get_voltage(dev, volt_uv);
+}
+
+/**
+ * @brief Obtain the number of supported current limit levels.
+ *
+ * Each current limit level supported by a regulator gets an index, starting from
+ * zero. The total number of supported current limit levels can be used together with
+ * regulator_list_current_limit() to list all supported current limit levels.
+ *
+ * @param dev Regulator device instance.
+ *
+ * @return Number of supported current limits.
+ */
+static inline unsigned int regulator_count_current_limits(const struct device *dev)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->count_current_limits == NULL) {
+		return 0U;
+	}
+
+	return api->count_current_limits(dev);
+}
+
+/**
+ * @brief Obtain the value of a current limit given an index.
+ *
+ * Each current limit level supported by a regulator gets an index, starting from
+ * zero. Together with regulator_count_current_limits(), this function can be used
+ * to iterate over all supported current limits.
+ *
+ * @param dev Regulator device instance.
+ * @param idx Current index.
+ * @param[out] current_ua Where current for the given @p index will be stored, in
+ * microamps.
+ *
+ * @retval 0 If @p index corresponds to a supported current limit.
+ * @retval -EINVAL If @p index does not correspond to a supported current limit.
+ */
+static inline int regulator_list_current_limit(const struct device *dev,
+					       unsigned int idx, int32_t *current_ua)
+{
+	const struct regulator_driver_api *api =
+		(const struct regulator_driver_api *)dev->api;
+
+	if (api->list_current_limit == NULL) {
+		return -EINVAL;
+	}
+
+	return api->list_current_limit(dev, idx, current_ua);
 }
 
 /**
