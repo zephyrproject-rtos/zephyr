@@ -6,6 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Controller Area Network (CAN) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CAN_H_
 
@@ -181,7 +186,9 @@ struct can_frame {
 #endif
 	/** The frame payload data. */
 	union {
+		/** Payload data accessed as unsigned 8 bit values. */
 		uint8_t data[CAN_MAX_DLEN];
+		/** Payload data accessed as unsigned 32 bit values. */
 		uint32_t data_32[DIV_ROUND_UP(CAN_MAX_DLEN, sizeof(uint32_t))];
 	};
 };
@@ -489,7 +496,9 @@ STATS_NAME_END(can);
  * additions
  */
 struct can_device_state {
+	/** Common device state. */
 	struct device_state devstate;
+	/** CAN device statistics */
 	struct stats_can stats;
 };
 
