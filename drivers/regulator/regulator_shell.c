@@ -221,6 +221,38 @@ static int cmd_vget(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	unsigned int current_cnt;
+	int32_t last_current_ua;
+
+	ARG_UNUSED(argc);
+
+	dev = device_get_binding(argv[1]);
+	if (dev == NULL) {
+		shell_error(sh, "Regulator device %s not available", argv[1]);
+		return -ENODEV;
+	}
+
+	current_cnt = regulator_count_current_limits(dev);
+
+	for (unsigned int i = 0U; i < current_cnt; i++) {
+		int32_t current_ua;
+
+		(void)regulator_list_current_limit(dev, i, &current_ua);
+
+		/* do not print repeated current limits */
+		if ((i == 0U) || (last_current_ua != current_ua)) {
+			microtoshell(sh, 'A', current_ua);
+		}
+
+		last_current_ua = current_ua;
+	}
+
+	return 0;
+}
+
 static int cmd_iset(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -449,6 +481,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get voltage\n"
 		      "Usage: vget <device>",
 		      cmd_vget, 2, 0),
+	SHELL_CMD_ARG(clist, &dsub_device_name,
+		      "List all supported current limits\n"
+		      "Usage: clist <device>",
+		      cmd_clist, 2, 0),
 	SHELL_CMD_ARG(iset, &dsub_device_name,
 		      "Set current limit\n"
 		      "Input requires units, e.g. 200ma, 20.5ma, 10ua, 1a...\n"
