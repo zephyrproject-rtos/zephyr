@@ -94,3 +94,9 @@ endif()
 board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
 
 board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+
+if(CONFIG_MCUBOOT)
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
+else()
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
+endif()
