@@ -719,7 +719,7 @@ static void it82xx2_ep_in_out_config(uint8_t idx)
 	}
 }
 
-static void it82xx2_usb_dc_trans_done(uint8_t ep_ctrl, uint8_t ep_trans_type)
+static void it82xx2_usb_dc_trans_done(void)
 {
 	struct usb_it82xx2_regs *const usb_regs =
 		(struct usb_it82xx2_regs *)it82xx2_get_usb_regs();
@@ -730,12 +730,12 @@ static void it82xx2_usb_dc_trans_done(uint8_t ep_ctrl, uint8_t ep_trans_type)
 	int ret;
 
 	for (uint8_t idx = 0 ; idx < EP4 ; idx++) {
-		ep_ctrl = ep_regs[idx].ep_ctrl;
+		uint8_t ep_ctrl = ep_regs[idx].ep_ctrl;
 
 		/* check ready bit ,will be 0 when trans done */
 		if ((ep_ctrl & ENDPOINT_EN) && !(ep_ctrl & ENDPOINT_RDY)) {
 			if (idx == EP0) {
-				ep_trans_type = ep_regs[idx].ep_transtype_sts &
+				uint8_t ep_trans_type = ep_regs[idx].ep_transtype_sts &
 					DC_ALL_TRANS;
 
 				/* set up*/
@@ -785,7 +785,6 @@ static void it82xx2_usb_dc_isr(void)
 
 	uint8_t status = usb_regs->dc_interrupt_status &
 		usb_regs->dc_interrupt_mask; /* mask non enable int */
-	uint8_t ep_ctrl, ep_trans_type;
 
 	/* reset */
 	if (status & DC_RESET_EVENT) {
@@ -813,7 +812,7 @@ static void it82xx2_usb_dc_isr(void)
 	if (status & DC_TRANS_DONE) {
 		/* clear interrupt before new transaction */
 		usb_regs->dc_interrupt_status = DC_TRANS_DONE;
-		it82xx2_usb_dc_trans_done(ep_ctrl, ep_trans_type);
+		it82xx2_usb_dc_trans_done();
 		return;
 	}
 
