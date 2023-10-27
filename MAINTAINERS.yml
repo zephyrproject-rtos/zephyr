@@ -203,6 +203,7 @@ Binary Descriptors:
     - include/zephyr/bindesc.h
     - samples/subsys/bindesc/
     - scripts/west_commands/bindesc.py
+    - tests/subsys/bindesc/
   labels:
     - "area: Binary Descriptors"
 
@@ -704,6 +705,7 @@ Release Notes:
     - tests/drivers/bbram/
     - drivers/bbram/
     - include/zephyr/drivers/bbram.h
+    - doc/hardware/peripherals/bbram.rst
   labels:
     - "area: Battery Backed RAM (bbram)"
 
