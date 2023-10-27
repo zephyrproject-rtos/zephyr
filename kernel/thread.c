@@ -278,7 +278,7 @@ static inline int z_vrfy_k_thread_name_set(struct k_thread *thread, const char *
 #include <syscalls/k_thread_name_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-const char *k_thread_name_get(struct k_thread *thread)
+const char *k_thread_name_get(k_tid_t thread)
 {
 #ifdef CONFIG_THREAD_NAME
 	return (const char *)thread->name;
