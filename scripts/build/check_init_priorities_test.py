@@ -49,7 +49,7 @@ class TestPriority(unittest.TestCase):
 
     def test_priority_strings(self):
         prio = check_init_priorities.Priority("POST_KERNEL", 12)
-        self.assertEqual(str(prio), "POST_KERNEL 12")
+        self.assertEqual(str(prio), "POST_KERNEL+12")
         self.assertEqual(repr(prio), "<Priority POST_KERNEL 12>")
 
 class testZephyrInitLevels(unittest.TestCase):
@@ -236,8 +236,8 @@ class testZephyrInitLevels(unittest.TestCase):
             "SMP": [],
             })
         self.assertDictEqual(obj.devices, {
-            11: check_init_priorities.Priority("PRE_KERNEL_2", 0),
-            22: check_init_priorities.Priority("PRE_KERNEL_2", 1),
+            11: (check_init_priorities.Priority("PRE_KERNEL_2", 0), "i0"),
+            22: (check_init_priorities.Priority("PRE_KERNEL_2", 1), "i1"),
             })
 
 class testValidator(unittest.TestCase):
@@ -280,10 +280,10 @@ class testValidator(unittest.TestCase):
         validator._ord2node[1]._binding = None
         validator._ord2node[2]._binding = None
 
-        validator._obj.devices = {1: 10}
+        validator._obj.devices = {1: (10, "i1")}
         validator._check_dep(1, 2)
 
-        validator._obj.devices = {2: 20}
+        validator._obj.devices = {2: (20, "i2")}
         validator._check_dep(1, 2)
 
         self.assertFalse(validator.log.info.called)
@@ -303,13 +303,15 @@ class testValidator(unittest.TestCase):
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
 
-        validator._obj.devices = {1: 10, 2: 20}
+        validator._obj.devices = {1: (10, "i1"), 2: (20, "i2")}
 
         validator._check_dep(2, 1)
         validator._check_dep(1, 2)
 
-        validator.log.info.assert_called_once_with("/2 20 > /1 10")
-        validator.log.error.assert_called_once_with("/1 10 < /2 20")
+        validator.log.info.assert_called_once_with("/2 <i2> 20 > /1 <i1> 10")
+        validator.log.error.assert_has_calls([
+            mock.call("/1 <i1> is initialized before its dependency /2 <i2> (10 < 20)")
+            ])
         self.assertEqual(validator.errors, 1)
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
@@ -325,7 +327,7 @@ class testValidator(unittest.TestCase):
         validator._ord2node[2]._binding = None
         validator._ord2node[2].path = "/2"
 
-        validator._obj.devices = {1: 10, 2: 10}
+        validator._obj.devices = {1: (10, "i1"), 2: (10, "i2")}
 
         with self.assertRaises(ValueError):
             validator._check_dep(1, 2)
@@ -347,13 +349,13 @@ class testValidator(unittest.TestCase):
         validator._ord2node[3]._binding.compatible = "compat-3"
         validator._ord2node[3].path = "/3"
 
-        validator._obj.devices = {1: 20, 3: 10}
+        validator._obj.devices = {1: (20, "i1"), 3: (10, "i3")}
 
         validator._check_dep(3, 1)
 
         self.assertListEqual(validator.log.info.call_args_list, [
             mock.call("Swapped priority: compat-3, compat-1"),
-            mock.call("/3 20 > /1 10"),
+            mock.call("/3 <i1> 20 > /1 <i3> 10"),
         ])
         self.assertEqual(validator.errors, 0)
 
