@@ -1385,6 +1385,27 @@ static inline void can_set_state_change_callback(const struct device *dev,
  */
 
 /**
+ * @brief Get the bit error counter for a CAN device
+ *
+ * The bit error counter is incremented when the CAN controller is unable to
+ * transmit either a dominant or a recessive bit.
+ *
+ * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
+ * available.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return bit error counter
+ */
+__syscall uint32_t can_stats_get_bit_errors(const struct device *dev);
+
+#ifdef CONFIG_CAN_STATS
+static inline uint32_t z_impl_can_stats_get_bit_errors(const struct device *dev)
+{
+	return Z_CAN_GET_STATS(dev).bit_error;
+}
+#endif /* CONFIG_CAN_STATS */
+
+/**
  * @brief Get the bit0 error counter for a CAN device
  *
  * The bit0 error counter is incremented when the CAN controller is unable to
@@ -1392,6 +1413,8 @@ static inline void can_set_state_change_callback(const struct device *dev,
  *
  * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
  * available.
+ *
+ * @see can_stats_get_bit_errors()
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @return bit0 error counter
@@ -1413,6 +1436,8 @@ static inline uint32_t z_impl_can_stats_get_bit0_errors(const struct device *dev
  *
  * @note @kconfig{CONFIG_CAN_STATS} must be selected for this function to be
  * available.
+ *
+ * @see can_stats_get_bit_errors()
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @return bit1 error counter
