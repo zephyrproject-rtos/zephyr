@@ -63,12 +63,9 @@ test_framework:
     - tests/subsys/testsuite/
     - tests/ztest/
 
-cmsis_dsp:
+cmsis-dsp:
   files:
     - modules/Kconfig.cmsis_dsp
-    # we have no means of telling file changes in a module, so for assume any
-    # change to west.yml is updating something we need to re-test for.
-    - west.yml
 
 mcumgr:
   files:
