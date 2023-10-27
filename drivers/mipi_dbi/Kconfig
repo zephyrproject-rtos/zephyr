@@ -1,0 +1,24 @@
+# MIPI DBI controller options
+
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MIPI_DBI
+	bool "MIPI-DBI Host Controller drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Add support for MIPI-DBI compliant host controllers
+
+if MIPI_DBI
+
+module = MIPI_DBI
+module-str = mipi_dbi
+source "subsys/logging/Kconfig.template.log_config"
+
+config MIPI_DBI_INIT_PRIORITY
+	int "Initialization priority"
+	default 80
+	help
+	  MIPI-DBI Host Controllers initialization priority.
+
+endif

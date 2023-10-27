@@ -1,0 +1,13 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+# Common fields for MIPI-DBI devices
+
+include: [base.yaml, power.yaml]
+
+on-bus: mipi-dbi
+
+properties:
+  mipi-max-frequency:
+    type: int
+    description: Maximum clock frequency of device's MIPI interface in Hz
