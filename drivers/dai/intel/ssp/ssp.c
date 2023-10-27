@@ -839,6 +839,7 @@ static void dai_ssp_empty_tx_fifo(struct dai_intel_ssp *dp)
 
 static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 {
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
 	uint32_t i, sssr;
 
@@ -856,11 +857,22 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 	}
 
 	while ((sssr & SSSR_RNE) && retry--) {
-		uint32_t entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
+		uint32_t entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3)) + 1;
+
+		/*
+		 * The entries must be read out in multiple of number of channels used to avoid
+		 * accidental channel shifts.
+		 */
+		entries -= entries % POPCOUNT(ssp->params.rx_slots);
+		if (!entries) {
+			/* No full sample available to drain */
+			break;
+		}
 
 		/* Empty the RX FIFO (the DMA is not running at this point) */
-		for (i = 0; i < entries + 1; i++)
+		for (i = 0; i < entries; i++) {
 			sys_read32(dai_base(dp) + SSDR);
+		}
 
 		sssr = sys_read32(dai_base(dp) + SSSR);
 	}
