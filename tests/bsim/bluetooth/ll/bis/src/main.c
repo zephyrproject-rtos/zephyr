@@ -183,7 +183,7 @@ static void iso_send(struct k_work *work)
 	iso_data_len = MAX(sizeof(seq_num), ((seq_num % CONFIG_BT_ISO_TX_MTU) + 1));
 	net_buf_add_mem(buf, iso_data, iso_data_len);
 
-	printk("ISO send: seq_num %u\n", seq_num);
+	bs_trace_info_time(4, "ISO send: seq_num %u\n", seq_num);
 	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++,
 			       BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
