@@ -214,6 +214,7 @@ _west_boards() {
   {-n,--name}'[name regex]:regex:'
   '*--arch-root[Add an arch root]:arch root:_directories'
   '*--board-root[Add a board root]:board root:_directories'
+  '*--soc-root[Add a soc root]:soc root:_directories'
   )
 
   _arguments -S $opts
