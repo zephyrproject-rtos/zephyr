@@ -490,42 +490,103 @@ static void add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	}
 }
 
-ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6)
+static struct net_context *test_udp_context_prepare(sa_family_t family,
+						    bool offloaded,
+						    struct sockaddr *dst_addr)
 {
 	struct net_context *net_ctx;
 	struct eth_context *ctx; /* This is interface context */
+	struct sockaddr src_addr;
+	socklen_t addrlen;
 	struct net_if *iface;
-	int ret, len;
-	struct sockaddr_in6 dst_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in6 src_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = 0,
-	};
+	int ret;
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
+	if (family == AF_INET6) {
+		struct sockaddr_in6 *dst_addr6 =
+					(struct sockaddr_in6 *)dst_addr;
+		struct sockaddr_in6 *src_addr6 =
+					(struct sockaddr_in6 *)&src_addr;
 
-	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
-	memcpy(&dst_addr6.sin6_addr, &dst_addr1, sizeof(struct in6_addr));
+		dst_addr6->sin6_family = AF_INET6;
+		dst_addr6->sin6_port = htons(TEST_PORT);
+		src_addr6->sin6_family = AF_INET6;
+		src_addr6->sin6_port = 0;
 
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr6,
-			       sizeof(struct sockaddr_in6));
+		if (offloaded) {
+			memcpy(&src_addr6->sin6_addr, &my_addr2,
+			       sizeof(struct in6_addr));
+			memcpy(&dst_addr6->sin6_addr, &dst_addr2,
+			       sizeof(struct in6_addr));
+		} else {
+			memcpy(&src_addr6->sin6_addr, &my_addr1,
+			       sizeof(struct in6_addr));
+			memcpy(&dst_addr6->sin6_addr, &dst_addr1,
+			       sizeof(struct in6_addr));
+		}
+
+		addrlen = sizeof(struct sockaddr_in6);
+	} else {
+		struct sockaddr_in *dst_addr4 =
+					(struct sockaddr_in *)dst_addr;
+		struct sockaddr_in *src_addr4 =
+					(struct sockaddr_in *)&src_addr;
+
+		dst_addr4->sin_family = AF_INET;
+		dst_addr4->sin_port = htons(TEST_PORT);
+		src_addr4->sin_family = AF_INET;
+		src_addr4->sin_port = 0;
+
+		if (offloaded) {
+			memcpy(&src_addr4->sin_addr, &in4addr_my2,
+			       sizeof(struct in_addr));
+			memcpy(&dst_addr4->sin_addr, &in4addr_dst2,
+			       sizeof(struct in_addr));
+		} else {
+			memcpy(&src_addr4->sin_addr, &in4addr_my,
+			       sizeof(struct in_addr));
+			memcpy(&dst_addr4->sin_addr, &in4addr_dst,
+			       sizeof(struct in_addr));
+		}
+
+		addrlen = sizeof(struct sockaddr_in6);
+	}
+
+	ret = net_context_get(family, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
+	zassert_equal(ret, 0, "Create %s UDP context failed",
+		      family == AF_INET6 ? "IPv6" : "IPv4");
+
+	ret = net_context_bind(net_ctx, &src_addr, addrlen);
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
-	iface = eth_interfaces[0];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch");
+	/* Verify iface data */
+	if (offloaded) {
+		iface = eth_interfaces[1];
+		ctx = net_if_get_device(iface)->data;
+		zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
+				  "eth context mismatch");
+	} else {
+		iface = eth_interfaces[0];
+		ctx = net_if_get_device(iface)->data;
+		zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
+				  "eth context mismatch");
+	}
+
+	return net_ctx;
+}
+
+ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6)
+{
+	struct net_context *net_ctx;
+	struct sockaddr dst_addr;
+	int ret, len;
+
+	net_ctx = test_udp_context_prepare(AF_INET6, false, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 
 	len = strlen(test_data);
-
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr6,
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -541,39 +602,16 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6)
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in dst_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in src_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = 0,
-	};
 
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
-
-	memcpy(&src_addr4.sin_addr, &in4addr_my, sizeof(struct in_addr));
-	memcpy(&dst_addr4.sin_addr, &in4addr_dst, sizeof(struct in_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr4,
-			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = eth_interfaces[0];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET, false, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr4,
+	len = strlen(test_data);
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -589,39 +627,16 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4)
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in6 dst_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in6 src_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = 0,
-	};
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
-
-	memcpy(&src_addr6.sin6_addr, &my_addr2, sizeof(struct in6_addr));
-	memcpy(&dst_addr6.sin6_addr, &dst_addr2, sizeof(struct in6_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr6,
-			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = eth_interfaces[1];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET6, true, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr6,
+	len = strlen(test_data);
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -637,39 +652,16 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6)
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in dst_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in src_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = 0,
-	};
 
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
-
-	memcpy(&src_addr4.sin_addr, &in4addr_my2, sizeof(struct in_addr));
-	memcpy(&dst_addr4.sin_addr, &in4addr_dst2, sizeof(struct in_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr4,
-			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = eth_interfaces[1];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET, true, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr4,
+	len = strlen(test_data);
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -728,34 +720,11 @@ static void recv_cb_offload_enabled(struct net_context *context,
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in6 dst_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in6 src_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = 0,
-	};
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
-
-	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
-	memcpy(&dst_addr6.sin6_addr, &dst_addr1, sizeof(struct in6_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr6,
-			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = eth_interfaces[0];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET6, false, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 	start_receiving = true;
@@ -764,8 +733,8 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
 			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr6,
+	len = strlen(test_data);
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -784,34 +753,11 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in dst_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in src_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = 0,
-	};
 
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
-
-	memcpy(&src_addr4.sin_addr, &in4addr_my, sizeof(struct in_addr));
-	memcpy(&dst_addr4.sin_addr, &in4addr_dst, sizeof(struct in_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr4,
-			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = eth_interfaces[0];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET, false, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 	start_receiving = true;
@@ -820,8 +766,9 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4)
 			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
+	len = strlen(test_data);
 	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr4,
+				 (struct sockaddr *)&dst_addr,
 				 sizeof(struct sockaddr_in),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -840,34 +787,11 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4)
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in6 dst_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in6 src_addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_port = 0,
-	};
 
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
-
-	memcpy(&src_addr6.sin6_addr, &my_addr2, sizeof(struct in6_addr));
-	memcpy(&dst_addr6.sin6_addr, &dst_addr2, sizeof(struct in6_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr6,
-			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = net_if_ipv6_select_src_iface(&dst_addr6.sin6_addr);
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET6, true, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 	start_receiving = true;
@@ -876,8 +800,8 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6)
 			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr6,
+	len = strlen(test_data);
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
@@ -896,34 +820,11 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6)
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4)
 {
 	struct net_context *net_ctx;
-	struct eth_context *ctx; /* This is interface context */
-	struct net_if *iface;
+	struct sockaddr dst_addr;
 	int ret, len;
-	struct sockaddr_in dst_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = htons(TEST_PORT),
-	};
-	struct sockaddr_in src_addr4 = {
-		.sin_family = AF_INET,
-		.sin_port = 0,
-	};
 
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &net_ctx);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
-
-	memcpy(&src_addr4.sin_addr, &in4addr_my2, sizeof(struct in_addr));
-	memcpy(&dst_addr4.sin_addr, &in4addr_dst2, sizeof(struct in_addr));
-
-	ret = net_context_bind(net_ctx, (struct sockaddr *)&src_addr4,
-			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed");
-
-	iface = eth_interfaces[1];
-	ctx = net_if_get_device(iface)->data;
-	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch");
-
-	len = strlen(test_data);
+	net_ctx = test_udp_context_prepare(AF_INET, true, &dst_addr);
+	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 	start_receiving = true;
@@ -932,8 +833,8 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4)
 			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr4,
+	len = strlen(test_data);
+	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
 				 sizeof(struct sockaddr_in),
 				 NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
