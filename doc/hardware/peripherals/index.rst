@@ -16,7 +16,7 @@ Peripherals
    bbram.rst
    bc12.rst
    clock_control.rst
-   canbus/index.rst
+   can/index.rst
    charger.rst
    coredump.rst
    counter.rst
