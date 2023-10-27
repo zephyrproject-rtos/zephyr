@@ -112,3 +112,11 @@ else()
   board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
 
 endif()
+
+if(CONFIG_MCUBOOT)
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
+elseif(CONFIG_SOC_ESP32S3_APPCPU)
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default_appcpu.ld CACHE INTERNAL "")
+else()
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/default.ld CACHE INTERNAL "")
+endif()
