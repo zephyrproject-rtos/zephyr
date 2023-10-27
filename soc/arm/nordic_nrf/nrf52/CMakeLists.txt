@@ -22,3 +22,5 @@ if(CONFIG_SOC_NRF52832)
     endif()
   endif()
 endif()
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
