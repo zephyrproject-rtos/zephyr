@@ -39,9 +39,9 @@ static inline atomic_val_t atomic_dec(atomic_t *target)
 
 }
 
-extern atomic_val_t atomic_get(const atomic_t *target);
+atomic_val_t atomic_get(const atomic_t *target);
 
-extern atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target);
+atomic_ptr_val_t atomic_ptr_get(const atomic_ptr_t *target);
 
 __syscall atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 
