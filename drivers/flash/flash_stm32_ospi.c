@@ -827,7 +827,7 @@ static int stm32_ospi_config_mem(const struct device *dev)
 	}
 
 	/* Wait that the configuration is effective and check that memory is ready */
-	k_msleep(STM32_OSPI_WRITE_REG_MAX_TIME);
+	k_busy_wait(STM32_OSPI_WRITE_REG_MAX_TIME * USEC_PER_MSEC);
 
 	/* Reconfigure the memory type of the peripheral */
 	dev_data->hospi.Init.MemoryType            = HAL_OSPI_MEMTYPE_MACRONIX;
@@ -949,8 +949,8 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 	}
 
 #endif
-	/* After SWreset CMD, wait in case SWReset occurred during erase operation */
-	k_msleep(STM32_OSPI_RESET_MAX_TIME);
+	/* Wait after SWreset CMD, in case SWReset occurred during erase operation */
+	k_busy_wait(STM32_OSPI_RESET_MAX_TIME * USEC_PER_MSEC);
 
 	return 0;
 }
