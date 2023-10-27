@@ -11,7 +11,8 @@ This sample demonstrates how to use the LoRa radio driver to configure
 the encoding settings and send data over the radio.
 
 Transmitted messages can be received by building and flashing the accompanying
-LoRa receive sample on another board.
+LoRa receive sample :zephyr:code-sample:`lora-receive` on another board within
+range.
 
 Building and Running
 ********************
