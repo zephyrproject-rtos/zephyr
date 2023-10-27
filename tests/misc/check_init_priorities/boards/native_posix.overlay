@@ -34,12 +34,5 @@
 			reg = <0x11>;
 			supply-gpios = <&test_gpio_0 2 0>;
 		};
-
-		test_dev_c: test-i2c-dev@12 {
-			compatible = "vnd,i2c-device";
-			status = "okay";
-			reg = <0x12>;
-			supply-gpios = <&test_gpio_0 3 0>;
-		};
 	};
 };

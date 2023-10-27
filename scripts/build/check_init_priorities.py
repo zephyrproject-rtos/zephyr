@@ -244,7 +244,6 @@ class Validator():
 
         self._obj = ZephyrInitLevels(elf_file_path)
 
-        self.warnings = 0
         self.errors = 0
 
     def _check_dep(self, dev_ord, dep_ord):
@@ -275,9 +274,8 @@ class Validator():
             return
 
         if dev_prio == dep_prio:
-            self.warnings += 1
-            self.log.warning(
-                    f"{dev_node.path} {dev_prio} == {dep_node.path} {dep_prio}")
+            raise ValueError(f"{dev_node.path} and {dep_node.path} have the "
+                             f"same priority: {dev_prio}")
         elif dev_prio < dep_prio:
             self.errors += 1
             self.log.error(
@@ -311,8 +309,6 @@ def _parse_args(argv):
     parser.add_argument("-v", "--verbose", action="count",
                         help=("enable verbose output, can be used multiple times "
                               "to increase verbosity level"))
-    parser.add_argument("-w", "--fail-on-warning", action="store_true",
-                        help="fail on both warnings and errors")
     parser.add_argument("--always-succeed", action="store_true",
                         help="always exit with a return code of 0, used for testing")
     parser.add_argument("-o", "--output",
@@ -362,9 +358,6 @@ def main(argv=None):
 
     if args.always_succeed:
         return 0
-
-    if args.fail_on_warning and validator.warnings:
-        return 1
 
     if validator.errors:
         return 1
