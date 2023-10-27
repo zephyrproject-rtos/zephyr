@@ -127,7 +127,8 @@ static uint32_t requested_bis_sync;
 static const struct bt_bap_scan_delegator_recv_state *sink_recv_state;
 static const struct bt_bap_scan_delegator_recv_state *broadcast_recv_state;
 static uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
-static struct bt_bap_scan_delegator_subgroup delegator_subgroups[BROADCAST_SNK_SUBGROUP_CNT];
+static struct bt_bap_scan_delegator_subgroup
+	delegator_subgroups[BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS];
 
 static bool print_cb(struct bt_data *data, void *user_data)
 {
@@ -2213,7 +2214,7 @@ static uint8_t broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len,
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.broadcast_id = sys_get_le24(cp->broadcast_id);
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
-	param.num_subgroups = MIN(cp->num_subgroups, BROADCAST_SNK_SUBGROUP_CNT);
+	param.num_subgroups = MIN(cp->num_subgroups, BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS);
 	param.subgroups = delegator_subgroups;
 
 	ptr = cp->subgroups;
@@ -2280,7 +2281,7 @@ static uint8_t broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len,
 	param.src_id = cp->src_id;
 	param.pa_sync = cp->padv_sync > 0 ? true : false;
 	param.pa_interval = sys_le16_to_cpu(cp->padv_interval);
-	param.num_subgroups = MIN(cp->num_subgroups, BROADCAST_SNK_SUBGROUP_CNT);
+	param.num_subgroups = MIN(cp->num_subgroups, BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS);
 	param.subgroups = delegator_subgroups;
 
 	ptr = cp->subgroups;
