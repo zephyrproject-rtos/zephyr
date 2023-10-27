@@ -215,24 +215,12 @@ static inline void xtensa_init_page_tables(void)
 			 PAGE_TABLE_ATTR | Z_XTENSA_MMU_W);
 }
 
-/* Called out of pre-z_cstart init code on CPU 0 */
+/* Called out of arch_kernel_init() just after entry to z_cstart() */
 void z_xtensa_mmu_init(void)
 {
-	/* This is normally done via arch_kernel_init() inside z_cstart().
-	 * However, before that is called, we go through the sys_init of
-	 * INIT_LEVEL_EARLY, which is going to result in TLB misses.
-	 * So setup whatever necessary so the exception handler can work
-	 * properly.
-	 */
-	z_xtensa_kernel_init();
-
-	xtensa_init_page_tables();
-	xtensa_init_paging(l1_page_table);
-}
-
-/* Called out of early init code on CPU 1+ */
-void z_xtensa_mmu_smp_init(void)
-{
+	if (_current_cpu->id == 0) {
+		xtensa_init_page_tables();
+	}
 	xtensa_init_paging(l1_page_table);
 }
 
