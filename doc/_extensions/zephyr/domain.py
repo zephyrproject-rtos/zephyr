@@ -154,9 +154,10 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
             if len(code_samples) > 0:
                 admonition = nodes.admonition()
                 admonition += nodes.title(text="Related code samples")
-                admonition["collapsible"] = "" # used by sphinx-immaterial theme
                 admonition["classes"].append("related-code-samples")
                 admonition["classes"].append("dropdown") # used by sphinx-togglebutton extension
+                admonition["classes"].append("toggle-shown") # show the content by default
+
                 sample_dl = nodes.definition_list()
 
                 for code_sample in sorted(code_samples, key=lambda x: x["name"]):
