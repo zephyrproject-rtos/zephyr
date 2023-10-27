@@ -59,6 +59,7 @@ _names = [
     'teensy',
     'trace32',
     'uf2',
+    'wchisp',
     'xtensa',
     # Keep this list sorted by runner name; don't add to the end.
 ]
