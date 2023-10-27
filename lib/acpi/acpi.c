@@ -791,10 +791,13 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 	return 0;
 }
 
-struct acpi_madt_local_apic *acpi_local_apic_get(uint32_t cpu_num)
+#define ACPI_CPU_FLAGS_ENABLED 0x01u
+
+struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num)
 {
 	struct acpi_madt_local_apic *lapic;
 	int cpu_cnt;
+	int idx;
 
 	if (acpi_madt_entry_get(ACPI_MADT_TYPE_LOCAL_APIC, (ACPI_SUBTABLE_HEADER **)&lapic,
 				&cpu_cnt)) {
@@ -802,10 +805,15 @@ struct acpi_madt_local_apic *acpi_local_apic_get(uint32_t cpu_num)
 		return NULL;
 	}
 
-	if ((cpu_num >= cpu_cnt) || !(lapic[cpu_num].LapicFlags & 1u)) {
-		/* Proccessor not enabled. */
-		return NULL;
+	for (idx = 0; cpu_num >= 0 && idx < cpu_cnt; idx++) {
+		if (lapic[idx].LapicFlags & ACPI_CPU_FLAGS_ENABLED) {
+			if (cpu_num == 0) {
+				return &lapic[idx];
+			}
+
+			cpu_num--;
+		}
 	}
 
-	return &lapic[cpu_num];
+	return NULL;
 }
