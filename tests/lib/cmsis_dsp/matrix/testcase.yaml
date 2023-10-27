@@ -2,7 +2,7 @@ tests:
   libraries.cmsis_dsp.matrix:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
       ) or CONFIG_ARCH_POSIX
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     skip: true
   libraries.cmsis_dsp.matrix.unary_q7:
     filter: ((CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_CORTEX_M) and CONFIG_FULL_LIBC_SUPPORTED
@@ -12,7 +12,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
@@ -25,7 +25,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 64
@@ -41,7 +41,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
@@ -54,7 +54,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 64
@@ -70,7 +70,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
@@ -83,7 +83,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 64
@@ -98,7 +98,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
@@ -111,7 +111,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 64
@@ -127,7 +127,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
@@ -140,7 +140,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 64
@@ -156,7 +156,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 72
     extra_args: CONF_FILE=prj_base.conf
@@ -169,7 +169,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 72
@@ -185,7 +185,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 128
@@ -199,7 +199,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -216,7 +216,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 144
@@ -230,7 +230,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -247,7 +247,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 128
@@ -261,7 +261,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -277,7 +277,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 144
     extra_args: CONF_FILE=prj_base.conf
@@ -290,7 +290,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 144
@@ -306,7 +306,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 128
@@ -320,7 +320,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
@@ -337,7 +337,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     platform_exclude: frdm_kw41z
     min_flash: 128
     min_ram: 128
@@ -351,7 +351,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     platform_exclude: frdm_kw41z
     min_flash: 128
