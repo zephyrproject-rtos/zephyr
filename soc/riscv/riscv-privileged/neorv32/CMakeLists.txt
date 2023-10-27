@@ -6,3 +6,5 @@ zephyr_sources(
   soc_irq.S
   soc.c
 )
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
