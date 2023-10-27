@@ -74,6 +74,9 @@ typedef void (*phy_callback_t)(const struct device *dev,
  * public documentation.
  */
 __subsystem struct ethphy_driver_api {
+	/** Perform a soft reset */
+	int (*soft_reset)(const struct device *dev);
+
 	/** Get link state */
 	int (*get_link)(const struct device *dev,
 			struct phy_link_state *state);
@@ -97,6 +100,26 @@ __subsystem struct ethphy_driver_api {
 /**
  * @endcond
  */
+
+/**
+ * @brief      Soft reset PHY device
+ *
+ * This route performs a PHY soft reset.
+ *
+ * @param[in]  dev     PHY device
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ */
+__syscall int phy_soft_reset(const struct device *dev);
+
+static inline int z_impl_phy_soft_reset(const struct device *dev)
+{
+	const struct ethphy_driver_api *api =
+		(const struct ethphy_driver_api *)dev->api;
+
+	return api->soft_reset(dev);
+}
 
 /**
  * @brief      Configure PHY link
