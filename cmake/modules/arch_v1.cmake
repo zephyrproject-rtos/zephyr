@@ -2,6 +2,10 @@
 #
 # Copyright (c) 2022, Nordic Semiconductor ASA
 
+#
+# This CMake module is only valid for hw model v1.
+# In hw model v1, then arch is determined by the board folder structure.
+#
 # Configure ARCH settings based on board directory and arch root.
 #
 # This CMake module will set the following variables in the build system based
@@ -25,24 +29,26 @@
 
 include_guard(GLOBAL)
 
-# 'ARCH_ROOT' is a prioritized list of directories where archs may be
-# found. It always includes ${ZEPHYR_BASE} at the lowest priority (except for unittesting).
-if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
-  list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
-endif()
-
-cmake_path(GET BOARD_DIR PARENT_PATH board_arch_dir)
-cmake_path(GET board_arch_dir FILENAME ARCH)
-
-foreach(root ${ARCH_ROOT})
-  if(EXISTS ${root}/arch/${ARCH}/CMakeLists.txt)
-    set(ARCH_DIR ${root}/arch)
-    break()
+if(HWMv1)
+  # 'ARCH_ROOT' is a prioritized list of directories where archs may be
+  # found. It always includes ${ZEPHYR_BASE} at the lowest priority (except for unittesting).
+  if(NOT unittest IN_LIST Zephyr_FIND_COMPONENTS)
+    list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
   endif()
-endforeach()
 
-if(NOT ARCH_DIR)
-  message(FATAL_ERROR "Could not find ARCH=${ARCH} for BOARD=${BOARD}, \
+  cmake_path(GET BOARD_DIR PARENT_PATH board_arch_dir)
+  cmake_path(GET board_arch_dir FILENAME ARCH)
+
+  foreach(root ${ARCH_ROOT})
+    if(EXISTS ${root}/arch/${ARCH}/CMakeLists.txt)
+      set(ARCH_DIR ${root}/arch)
+      break()
+    endif()
+  endforeach()
+
+  if(NOT ARCH_DIR)
+    message(FATAL_ERROR "Could not find ARCH=${ARCH} for BOARD=${BOARD}, \
 please check your installation. ARCH roots searched: \n\
 ${ARCH_ROOT}")
+  endif()
 endif()
