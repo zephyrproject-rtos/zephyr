@@ -89,8 +89,8 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
  * @param ko If retval=-EPERM, struct z_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-extern void z_dump_object_error(int retval, const void *obj,
-				struct z_object *ko, enum k_objects otype);
+void z_dump_object_error(int retval, const void *obj,
+			struct z_object *ko, enum k_objects otype);
 
 /**
  * Kernel object validation function
@@ -102,7 +102,7 @@ extern void z_dump_object_error(int retval, const void *obj,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-extern struct z_object *z_object_find(const void *obj);
+struct z_object *z_object_find(const void *obj);
 
 typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
 
@@ -112,7 +112,7 @@ typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
  * @param func function to run on each struct z_object
  * @param context Context pointer to pass to each invocation
  */
-extern void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
+void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
 
 /**
  * Copy all kernel object permissions from the parent to the child
@@ -120,7 +120,7 @@ extern void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context);
  * @param parent Parent thread, to get permissions from
  * @param child Child thread, to copy permissions to
  */
-extern void z_thread_perms_inherit(struct k_thread *parent,
+void z_thread_perms_inherit(struct k_thread *parent,
 				  struct k_thread *child);
 
 /**
@@ -129,7 +129,7 @@ extern void z_thread_perms_inherit(struct k_thread *parent,
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-extern void z_thread_perms_set(struct z_object *ko, struct k_thread *thread);
+void z_thread_perms_set(struct z_object *ko, struct k_thread *thread);
 
 /**
  * Revoke a thread's permission to a kernel object
@@ -137,7 +137,7 @@ extern void z_thread_perms_set(struct z_object *ko, struct k_thread *thread);
  * @param ko Kernel object metadata to update
  * @param thread The thread to grant permission
  */
-extern void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread);
+void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread);
 
 /*
  * Revoke access to all objects for the provided thread
@@ -147,7 +147,7 @@ extern void z_thread_perms_clear(struct z_object *ko, struct k_thread *thread);
  *
  * @param thread Thread object to revoke access
  */
-extern void z_thread_perms_all_clear(struct k_thread *thread);
+void z_thread_perms_all_clear(struct k_thread *thread);
 
 /**
  * Clear initialization state of a kernel object
@@ -222,7 +222,7 @@ static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
  * @return An allocated buffer with the data copied within it, or NULL
  *	if some error condition occurred
  */
-extern void *z_user_alloc_from_copy(const void *src, size_t size);
+void *z_user_alloc_from_copy(const void *src, size_t size);
 
 /**
  * @brief Copy data from user mode
@@ -237,7 +237,7 @@ extern void *z_user_alloc_from_copy(const void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-extern int z_user_from_copy(void *dst, const void *src, size_t size);
+int z_user_from_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy data to user mode
@@ -252,7 +252,7 @@ extern int z_user_from_copy(void *dst, const void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-extern int z_user_to_copy(void *dst, const void *src, size_t size);
+int z_user_to_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy a C string from userspace into a resource pool allocation
@@ -268,7 +268,7 @@ extern int z_user_to_copy(void *dst, const void *src, size_t size);
  * @param maxlen Maximum size of the string including trailing NULL
  * @return The duplicated string, or NULL if an error occurred.
  */
-extern char *z_user_string_alloc_copy(const char *src, size_t maxlen);
+char *z_user_string_alloc_copy(const char *src, size_t maxlen);
 
 /**
  * @brief Copy a C string from userspace into a provided buffer
@@ -286,7 +286,7 @@ extern char *z_user_string_alloc_copy(const char *src, size_t maxlen);
  *	to maxlen
  * @retval EFAULT On memory access error
  */
-extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
+int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 
 #define Z_OOPS(expr) \
 	do { \
