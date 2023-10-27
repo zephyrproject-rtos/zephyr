@@ -364,8 +364,9 @@ static int cmd_can_show(const struct shell *sh, size_t argc, char **argv)
 
 #ifdef CONFIG_CAN_STATS
 	shell_print(sh, "statistics:");
-	shell_print(sh, "  bit0 errors:   %u", can_stats_get_bit0_errors(dev));
-	shell_print(sh, "  bit1 errors:   %u", can_stats_get_bit1_errors(dev));
+	shell_print(sh, "  bit errors:    %u", can_stats_get_bit_errors(dev));
+	shell_print(sh, "    bit0 errors: %u", can_stats_get_bit0_errors(dev));
+	shell_print(sh, "    bit1 errors: %u", can_stats_get_bit1_errors(dev));
 	shell_print(sh, "  stuff errors:  %u", can_stats_get_stuff_errors(dev));
 	shell_print(sh, "  crc errors:    %u", can_stats_get_crc_errors(dev));
 	shell_print(sh, "  form errors:   %u", can_stats_get_form_errors(dev));
