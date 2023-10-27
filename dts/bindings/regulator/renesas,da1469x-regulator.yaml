@@ -1,0 +1,46 @@
+# Copyright (c), 2023 Renesas Electronics Corporation
+# SPDX -License-Identifier: Apache-2.0
+
+description: |
+  Renesas Smartbond(tm) LDO and DCDC regulators
+
+compatible: "renesas,smartbond-regulator"
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-init-microvolt
+        - regulator-initial-mode
+        - regulator-max-microamp
+  properties:
+    renesas,regulator-v30-ref-bandgap:
+      type: boolean
+      description: |
+        Selects reference source for V30 LDO to Bandgap output.
+    renesas,regulator-v30-clamp:
+      type: boolean
+      description: |
+        Enables clamp that can supply V30 from VBAT.
+    renesas,regulator-v30-vbus:
+      type: boolean
+      description: |
+        Allow V30 to be powered from VBUS.
+    renesas,regulator-v30-vbat:
+      type: boolean
+      description: |
+        Allow V30 to be powered from VBAT.
+    renesas,regulator-dcdc-vbat-high:
+      type: boolean
+      description: |
+        Enable DCDC in high battery voltage mode.
+    renesas,regulator-dcdc-vbat-low:
+      type: boolean
+      description: |
+        Enable DCDC in low battery voltage mode.
+    renesas,regulator-sleep-ldo:
+      type: boolean
+      description: |
+        Enable LDO in sleep mode.
