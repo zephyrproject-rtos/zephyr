@@ -15,3 +15,5 @@ zephyr_ld_options(
   -mips32
   ${TOOLCHAIN_LD_FLAGS}
 )
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/mips/linker.ld CACHE INTERNAL "")
