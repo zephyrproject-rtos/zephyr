@@ -165,12 +165,7 @@ void __weak z_early_memcpy(void *dst, const void *src, size_t n)
 __boot_func
 void z_bss_zero(void)
 {
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		/* native_posix gets its memory cleared on entry by
-		 * the host OS, and in any case the host clang/lld
-		 * doesn't emit the __bss_end symbol this code expects
-		 * to see
-		 */
+	if (IS_ENABLED(CONFIG_SKIP_BSS_CLEAR)) {
 		return;
 	}
 

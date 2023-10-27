@@ -382,6 +382,16 @@ config INIT_STACKS
 	  water mark can be easily determined. This applies to the stack areas
 	  for threads, as well as to the interrupt stack.
 
+config SKIP_BSS_CLEAR
+	bool
+	help
+	  This option disables software .bss section zeroing during Zephyr
+	  initialization. Such boot-time optimization could be used for
+	  platforms where .bss section is zeroed-out externally.
+	  Please pay attention that when this option is enabled
+	  the responsibility for .bss zeroing in all possible scenarios
+	  (mind e.g. SW reset) is delegated to the external SW or HW.
+
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
