@@ -1,0 +1,45 @@
+# Comparator configuration options
+
+# Copyright (c) 2023 Adam Mitchell, Brill Power Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Comparator options
+#
+menuconfig COMPARATOR
+	bool "Comparator drivers"
+	default n
+	help
+	  Enable comparator driver configuration
+
+if COMPARATOR
+
+module = COMPARATOR
+module-str = comparator
+source "subsys/logging/Kconfig.template.log_config"
+
+config COMP_INIT_PRIORITY
+	int "Comparator init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	depends on COMPARATOR
+	help
+	  Comparator driver device initialization priority.
+
+config COMP_ENABLE_AT_INIT
+	bool "Automatically enable comparator during initialisation function"
+	default y
+	depends on COMPARATOR
+	help
+	  Enable comparators at the end of the initialisation
+	  function rather than via explicit call in application code
+
+config COMP_LOCK
+	bool "Lock comparator during initialisation function"
+	default n
+	depends on COMPARATOR
+	help
+	  Prevent modification of comparator configuration after initialisation
+
+source "drivers/comparator/Kconfig.stm32"
+
+endif # COMPARATOR

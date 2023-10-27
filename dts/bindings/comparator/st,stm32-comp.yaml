@@ -1,0 +1,107 @@
+# Copyright (c) 2023 Adam Mitchell, Brill Power Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STM32 family comparator
+
+compatible: "st,stm32-comp"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  input-plus:
+    required: true
+    type: int
+    enum:
+      - 0   # LL_COMP_INPUT_PLUS_IO1
+      - 256 # LL_COMP_INPUT_PLUS_IO2
+    description: |
+      Specify non-inverting input source
+
+  input-minus:
+    required: true
+    type: int
+    enum:
+      # LL_COMP_INPUT_MINUS_DAC3_CH1 / LL_COMP_INPUT_MINUS_DAC3_CH2
+      # LL_COMP_INPUT_MINUS_DAC4_CH1 / LL_COMP_INPUT_MINUS_DAC4_CH2
+      - 64
+
+      # LL_COMP_INPUT_MINUS_DAC1_CH1 / LL_COMP_INPUT_MINUS_DAC1_CH2
+      # LL_COMP_INPUT_MINUS_DAC2_CH1
+      - 80
+
+      - 96 # LL_COMP_INPUT_MINUS_IO1
+      - 112 # LL_COMP_INPUT_MINUS_IO2
+      - 8388656  # LL_COMP_INPUT_MINUS_VREFINT
+      - 12582912 # LL_COMP_INPUT_MINUS_1_4VREFINT
+      - 12582928 # LL_COMP_INPUT_MINUS_1_2VREFINT
+      - 12582944 # LL_COMP_INPUT_MINUS_3_4VREFINT
+    description: |
+      Specify inverting input source
+
+  input-hysteresis:
+    required: true
+    type: int
+    enum:
+      - 0 # LL_COMP_HYSTERESIS_NONE
+      - 65536 # LL_COMP_HYSTERESIS_10MV / LL_COMP_HYSTERESIS_LOW
+      - 131072 # LL_COMP_HYSTERESIS_20MV
+      - 196608 # LL_COMP_HYSTERESIS_30MV
+      - 262144 # LL_COMP_HYSTERESIS_40MV / LL_COMP_HYSTERESIS_MEDIUM
+      - 327680 # LL_COMP_HYSTERESIS_50MV
+      - 393216 # LL_COMP_HYSTERESIS_60MV
+      - 458752 # LL_COMP_HYSTERESIS_70MV / LL_COMP_HYSTERESIS_HIGH
+    description: |
+      Specify hysteresis mode for inverting input
+
+  output-polarity:
+    required: true
+    type: int
+    enum:
+      - 0     # LL_COMP_OUTPUTPOL_NONINVERTED
+      - 32768 # LL_COMP_OUTPUTPOL_INVERTED
+    description: |
+      Specify output polarity
+
+  output-blanking-source:
+    required: true
+    type: int
+    enum:
+      - 0 # LL_COMP_BLANKINGSRC_NONE
+
+      # LL_COMP_BLANKINGSRC_TIM1_OC5_COMP1 / LL_COMP_BLANKINGSRC_TIM1_OC5_COMP2
+      # LL_COMP_BLANKINGSRC_TIM1_OC5_COMP3 / LL_COMP_BLANKINGSRC_TIM1_OC5_COMP7
+      # LL_COMP_BLANKINGSRC_TIM2_OC3_COMP5 / LL_COMP_BLANKINGSRC_TIM3_OC4_COMP4
+      # LL_COMP_BLANKINGSRC_TIM8_OC5_COMP6
+      - 524288
+
+      # LL_COMP_BLANKINGSRC_TIM2_OC3_COMP1 / LL_COMP_BLANKINGSRC_TIM2_OC3_COMP2
+      # LL_COMP_BLANKINGSRC_TIM2_OC4_COMP6 / LL_COMP_BLANKINGSRC_TIM3_OC3_COMP3
+      # LL_COMP_BLANKINGSRC_TIM8_OC5_COMP4 / LL_COMP_BLANKINGSRC_TIM8_OC5_COMP5
+      # LL_COMP_BLANKINGSRC_TIM8_OC5_COMP7
+      - 1048576
+      # LL_COMP_BLANKINGSRC_TIM2_OC4_COMP3 / LL_COMP_BLANKINGSRC_TIM3_OC3_COMP1
+      # LL_COMP_BLANKINGSRC_TIM3_OC3_COMP2 / LL_COMP_BLANKINGSRC_TIM3_OC3_COMP5
+      # LL_COMP_BLANKINGSRC_TIM3_OC3_COMP7 / LL_COMP_BLANKINGSRC_TIM15_OC1_COMP4
+      # LL_COMP_BLANKINGSRC_TIM15_OC2_COMP6
+      - 1572864
+
+      # LL_COMP_BLANKINGSRC_TIM1_OC5_COMP4 / LL_COMP_BLANKINGSRC_TIM1_OC5_COMP5
+      # LL_COMP_BLANKINGSRC_TIM1_OC5_COMP6 / LL_COMP_BLANKINGSRC_TIM8_OC5_COMP1
+      # LL_COMP_BLANKINGSRC_TIM8_OC5_COMP2 / LL_COMP_BLANKINGSRC_TIM8_OC5_COMP3
+      # LL_COMP_BLANKINGSRC_TIM15_OC2_COMP7
+      - 2097152
+
+      - 2621440 # LL_COMP_BLANKINGSRC_TIM20_OC5
+      - 3145728 # LL_COMP_BLANKINGSRC_TIM15_OC1
+      - 3670016 # LL_COMP_BLANKINGSRC_TIM4_OC3
+    description: |
+      Specify output blanking source

@@ -1,0 +1,12 @@
+# Comparator configuration options
+
+# Copyright (c) 2023 Adam Mitchell, Brill Power Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config COMP_STM32
+	bool "STM32 Comparator driver"
+	default y
+	depends on DT_HAS_ST_STM32_COMP_ENABLED
+	select USE_STM32_LL_COMP
+	help
+	  Enable the driver implementation for STM32 microcontrollers
