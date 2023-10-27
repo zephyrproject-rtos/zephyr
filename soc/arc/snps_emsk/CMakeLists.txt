@@ -8,3 +8,5 @@ zephyr_compile_options_ifdef(CONFIG_FPU -mfpu=fpuda_all)
 endif()
 
 zephyr_sources(soc_config.c)
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
