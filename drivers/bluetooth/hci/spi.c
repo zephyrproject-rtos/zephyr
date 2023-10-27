@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define EVT_HEADER_TYPE		0
 #define EVT_HEADER_EVENT	1
 #define EVT_HEADER_SIZE		2
+#define EVT_LE_META_SUBEVENT	3
 #define EVT_VENDOR_CODE_LSB	3
 #define EVT_VENDOR_CODE_MSB	4
 
@@ -264,8 +265,8 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 			/* Event has not yet been handled */
 			__fallthrough;
 		default:
-			if (msg[1] == BT_HCI_EVT_LE_META_EVENT &&
-			    (msg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
+			if (msg[EVT_HEADER_EVENT] == BT_HCI_EVT_LE_META_EVENT &&
+			    (msg[EVT_LE_META_SUBEVENT] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 				discardable = true;
 				timeout = K_NO_WAIT;
 			}
