@@ -23,7 +23,7 @@ config ACPI_MAX_PRT_ENTRY
 config ACPI_SHELL
 	bool "ACPI command Shell"
 	default y
-	depends on SHELL
+	depends on SHELL && ACPI_DSDT_SUPPORT
 	help
 	  Enable commands for debugging ACPI using the built-in shell.
 
