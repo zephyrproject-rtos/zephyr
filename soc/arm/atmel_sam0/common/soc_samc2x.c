@@ -78,7 +78,7 @@ static void osc_init(void)
 
 	OSCCTRL->DPLLCTRLA.bit.ONDEMAND = 0;
 	OSCCTRL->DPLLCTRLA.bit.RUNSTDBY = 0;
-	OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDR((5)) | OSCCTRL_DPLLRATIO_LDRFRAC(0U);
+	OSCCTRL->DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDR((11)) | OSCCTRL_DPLLRATIO_LDRFRAC(0U);
 	OSCCTRL->DPLLCTRLB.reg = OSCCTRL_DPLLCTRLB_REFCLK(0x1U) | OSCCTRL_DPLLCTRLB_FILTER(0x0U);
 	OSCCTRL->DPLLPRESC.reg = OSCCTRL_DPLLPRESC_PRESC(0x0U);
 	// The DPLLC is enabled by writing a 1 to DPLLCTRLA.ENABLE.
@@ -105,14 +105,11 @@ static void gclks_init(void)
 {
 	// Before a Generator is enabled, the corresponding clock source must be enabled
 	// (already done in osc_init()).
-	GCLK->GENCTRL[0].bit.SRC = 0x7; // DPLL96M output
 
 	// 1. The Generator must be enabled (GENCTRL.GENEN = 1) and the division factor must
 	// be set (GENCTRLn.DIVSEL and GENCTRLn.DIV) by performing a single 32-bit write to the
 	// Generator Control register (GENCTRLn).
-	GCLK->GENCTRL[0].bit.DIVSEL = 0;
-	GCLK->GENCTRL[0].bit.DIV = 1;
-	GCLK->GENCTRL[0].bit.GENEN = 1;
+	GCLK->GENCTRL[0].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DPLL96M) | GCLK_GENCTRL_DIV(2) | GCLK_GENCTRL_GENEN;
 
 	// 2. The Generic Clock for a peripheral must be configured by writing to the respective
 	// PCHCTRLm register. The Generator used as the source for the Peripheral Clock

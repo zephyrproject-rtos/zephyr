@@ -75,8 +75,10 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_sam0_config *sam_cfg = mcan_cfg->custom;
+	(void) mcan_cfg; // Otherwise compiler warning
+	(void) sam_cfg;  // and I would rather not to change the function signature
 
-	*rate = SOC_ATMEL_SAM0_OSC48M_FREQ_HZ / (sam_cfg->divider);
+	*rate = SOC_ATMEL_SAM0_OSC48M_FREQ_HZ;
 
 	return 0;
 }
@@ -84,8 +86,8 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 static void can_sam0_clock_enable(const struct can_sam0_config *cfg)
 {
 	/* Enable the GLCK7 with DIV*/
-	GCLK->GENCTRL[7].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M)
-			     | GCLK_GENCTRL_DIV(cfg->divider)
+	GCLK->GENCTRL[7].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DPLL96M)
+			     | GCLK_GENCTRL_DIV(cfg->divider) // 2 for 96MHz -> 48MHz
 			     | GCLK_GENCTRL_GENEN;
 
 	/* Route channel */

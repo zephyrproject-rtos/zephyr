@@ -62,7 +62,7 @@
 				interrupt-names = "LINE_0";
 				clocks = <&gclk 26>, <&mclk 0x10 8>;
 				clock-names = "GCLK", "MCLK";
-				divider = <12>;
+				divider = <2>;
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
@@ -77,7 +77,7 @@
 				interrupt-names = "LINE_0";
 				clocks = <&gclk 27>, <&mclk 0x10 9>;
 				clock-names = "GCLK", "MCLK";
-				divider = <12>;
+				divider = <2>;
 				sjw = <1>;
 				sample-point = <875>;
 				sjw-data = <1>;
