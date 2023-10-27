@@ -19,3 +19,5 @@ if (CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED AND
     At your own risk, you can suppress this warning by setting
     CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED=n.")
 endif()
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

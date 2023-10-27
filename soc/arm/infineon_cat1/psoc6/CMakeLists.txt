@@ -17,3 +17,5 @@ zephyr_linker_sources_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A RAM_SECTIONS SORT_K
 zephyr_linker_sources_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1A RAMFUNC_SECTION SORT_KEY 0 ram_func.ld)
 
 zephyr_linker_sources_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 RODATA SORT_KEY 0 rom.ld)
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
