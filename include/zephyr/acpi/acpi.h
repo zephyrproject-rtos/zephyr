@@ -175,10 +175,10 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
 
 /**
- * @brief Retrieve lapic info for a specific cpu.
+ * @brief Retrieve the 'n'th enabled local apic info.
  *
  * @param cpu_num the cpu number
- * @return lapic info on success or NULL
+ * @return local apic info on success or NULL otherwise
  */
-struct acpi_madt_local_apic *acpi_local_apic_get(uint32_t cpu_num);
+struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num);
 #endif
