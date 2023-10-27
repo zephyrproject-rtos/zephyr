@@ -19,3 +19,5 @@ zephyr_library_include_directories(
 if(NOT DEFINED CONFIG_LPC54XXX_SRAM2_CLOCK)
 zephyr_compile_definitions(DONT_ENABLE_DISABLED_RAMBANKS=1)
 endif()
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

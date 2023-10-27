@@ -2,3 +2,5 @@
 
 zephyr_compile_definitions(-D__MSP432P401R__)
 zephyr_sources(soc.c)
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

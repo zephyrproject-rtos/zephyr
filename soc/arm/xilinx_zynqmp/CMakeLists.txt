@@ -9,3 +9,7 @@ zephyr_sources_ifdef(
   CONFIG_ARM_MPU
   arm_mpu_regions.c
 )
+
+if(CONFIG_SOC_XILINX_ZYNQMP_RPU)
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_a_r/scripts/linker.ld CACHE INTERNAL "")
+endif()
