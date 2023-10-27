@@ -59,3 +59,5 @@ zephyr_linker_section_configure(
   KEEP
   PRIO 11
 )
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
