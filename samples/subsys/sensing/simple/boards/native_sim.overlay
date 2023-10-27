@@ -41,5 +41,15 @@
 			minimal-interval = <625>;
 			underlying-device = <&bmi160_spi>;
 		};
+
+		hinge_angle: hinge-angle {
+			compatible = "zephyr,sensing-hinge-angle";
+			status = "okay";
+			sensor-type = <0x20B>;
+			friendly-name = "Hinge Angle Sensor";
+			reporters = <&base_accel &lid_accel>;
+			minimal-interval = <100000>;
+			stream-mode;
+		};
 	};
 };
