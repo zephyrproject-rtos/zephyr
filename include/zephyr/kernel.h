@@ -118,7 +118,7 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * list which means creation of new threads and terminations of existing
  * threads are blocked until this API returns.
  */
-extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
+void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
 
 /**
  * @brief Iterate over all the threads in the system without locking.
@@ -147,7 +147,7 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * Do not reuse the memory that was occupied by k_thread structure of aborted
  * task if it was aborted after this function was called in any context.
  */
-extern void k_thread_foreach_unlocked(
+void k_thread_foreach_unlocked(
 	k_thread_user_cb_t user_cb, void *user_data);
 
 /** @} */
@@ -371,7 +371,7 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p2 2nd entry point parameter
  * @param p3 3rd entry point parameter
  */
-extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
+FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p1, void *p2,
 						   void *p3);
 
@@ -643,8 +643,8 @@ __syscall void k_thread_abort(k_tid_t thread);
  */
 __syscall void k_thread_start(k_tid_t thread);
 
-extern k_ticks_t z_timeout_expires(const struct _timeout *timeout);
-extern k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
+k_ticks_t z_timeout_expires(const struct _timeout *timeout);
+k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
@@ -1022,7 +1022,7 @@ __syscall void k_thread_resume(k_tid_t thread);
  * @param slice Maximum time slice length (in milliseconds).
  * @param prio Highest thread priority level eligible for time slicing.
  */
-extern void k_sched_time_slice_set(int32_t slice, int prio);
+void k_sched_time_slice_set(int32_t slice, int prio);
 
 /**
  * @brief Set thread time slice
@@ -1083,7 +1083,7 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
  * @return false if invoked by a thread.
  * @return true if invoked by an ISR.
  */
-extern bool k_is_in_isr(void);
+bool k_is_in_isr(void);
 
 /**
  * @brief Determine if code is running in a preemptible thread.
@@ -1155,7 +1155,7 @@ static inline bool k_is_pre_kernel(void)
  * In general this is a historical API not well-suited to modern
  * applications, use with care.
  */
-extern void k_sched_lock(void);
+void k_sched_lock(void);
 
 /**
  * @brief Unlock the scheduler.
@@ -1164,7 +1164,7 @@ extern void k_sched_lock(void);
  * A thread must call the routine once for each time it called k_sched_lock()
  * before the thread becomes preemptible.
  */
-extern void k_sched_unlock(void);
+void k_sched_unlock(void);
 
 /**
  * @brief Set current thread's custom data.
@@ -1561,7 +1561,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
  * @param expiry_fn Function to invoke each time the timer expires.
  * @param stop_fn   Function to invoke if the timer is stopped while running.
  */
-extern void k_timer_init(struct k_timer *timer,
+void k_timer_init(struct k_timer *timer,
 			 k_timer_expiry_t expiry_fn,
 			 k_timer_stop_t stop_fn);
 
@@ -1911,7 +1911,7 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
  * @param queue Address of the queue.
  * @param data Address of the data item.
  */
-extern void k_queue_append(struct k_queue *queue, void *data);
+void k_queue_append(struct k_queue *queue, void *data);
 
 /**
  * @brief Append an element to a queue.
@@ -1943,7 +1943,7 @@ __syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
  * @param queue Address of the queue.
  * @param data Address of the data item.
  */
-extern void k_queue_prepend(struct k_queue *queue, void *data);
+void k_queue_prepend(struct k_queue *queue, void *data);
 
 /**
  * @brief Prepend an element to a queue.
@@ -1976,7 +1976,7 @@ __syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
  * @param prev Address of the previous data item.
  * @param data Address of the data item.
  */
-extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
+void k_queue_insert(struct k_queue *queue, void *prev, void *data);
 
 /**
  * @brief Atomically append a list of elements to a queue.
@@ -1996,7 +1996,7 @@ extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @retval -EINVAL on invalid supplied data
  *
  */
-extern int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
+int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
 
 /**
  * @brief Atomically add a list of elements to a queue.
@@ -2013,7 +2013,7 @@ extern int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * @retval 0 on success
  * @retval -EINVAL on invalid data
  */
-extern int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
+int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 
 /**
  * @brief Get an element from a queue.
@@ -3350,7 +3350,7 @@ int k_work_submit_to_queue(struct k_work_q *queue,
  *
  * @return as with k_work_submit_to_queue().
  */
-extern int k_work_submit(struct k_work *work);
+int k_work_submit(struct k_work *work);
 
 /** @brief Wait for last-submitted instance to complete.
  *
@@ -3653,7 +3653,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_schedule_for_queue().
  */
-extern int k_work_schedule(struct k_work_delayable *dwork,
+int k_work_schedule(struct k_work_delayable *dwork,
 				   k_timeout_t delay);
 
 /** @brief Reschedule a work item to a queue after a delay.
@@ -3707,7 +3707,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_reschedule_for_queue().
  */
-extern int k_work_reschedule(struct k_work_delayable *dwork,
+int k_work_reschedule(struct k_work_delayable *dwork,
 				     k_timeout_t delay);
 
 /** @brief Flush delayable work.
@@ -4228,7 +4228,7 @@ static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
  * @param name optional thread name.  If not null a copy is made into the
  *		thread's name buffer.
  */
-extern void k_work_user_queue_start(struct k_work_user_q *work_q,
+void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    k_thread_stack_t *stack,
 				    size_t stack_size, int prio,
 				    const char *name);
@@ -4297,7 +4297,7 @@ struct k_work_poll {
  * @param work Address of triggered work item.
  * @param handler Function to invoke each time work item is processed.
  */
-extern void k_work_poll_init(struct k_work_poll *work,
+void k_work_poll_init(struct k_work_poll *work,
 			     k_work_handler_t handler);
 
 /**
@@ -4334,7 +4334,7 @@ extern void k_work_poll_init(struct k_work_poll *work,
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
-extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
+int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 				       struct k_work_poll *work,
 				       struct k_poll_event *events,
 				       int num_events,
@@ -4371,7 +4371,7 @@ extern int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
-extern int k_work_poll_submit(struct k_work_poll *work,
+int k_work_poll_submit(struct k_work_poll *work,
 				     struct k_poll_event *events,
 				     int num_events,
 				     k_timeout_t timeout);
@@ -4390,7 +4390,7 @@ extern int k_work_poll_submit(struct k_work_poll *work,
  * @retval 0 Work item canceled.
  * @retval -EINVAL Work item is being processed or has completed its work.
  */
-extern int k_work_poll_cancel(struct k_work_poll *work);
+int k_work_poll_cancel(struct k_work_poll *work);
 
 /** @} */
 
@@ -4766,7 +4766,7 @@ struct k_mbox {
  *
  * @param mbox Address of the mailbox.
  */
-extern void k_mbox_init(struct k_mbox *mbox);
+void k_mbox_init(struct k_mbox *mbox);
 
 /**
  * @brief Send a mailbox message in a synchronous manner.
@@ -4787,7 +4787,7 @@ extern void k_mbox_init(struct k_mbox *mbox);
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
+int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      k_timeout_t timeout);
 
 /**
@@ -4803,7 +4803,7 @@ extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @param tx_msg Address of the transmit message descriptor.
  * @param sem Address of a semaphore, or NULL if none is needed.
  */
-extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
+void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     struct k_sem *sem);
 
 /**
@@ -4823,7 +4823,7 @@ extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
+int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
 		      void *buffer, k_timeout_t timeout);
 
 /**
@@ -4839,7 +4839,7 @@ extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
  * @param buffer Address of the buffer to receive data, or NULL to discard
  *               the data.
  */
-extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
+void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
 
 /** @} */
 
@@ -5175,7 +5175,7 @@ struct k_mem_slab {
  * @retval -EINVAL invalid data supplied
  *
  */
-extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
+int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 			   size_t block_size, uint32_t num_blocks);
 
 /**
@@ -5200,7 +5200,7 @@ extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EINVAL Invalid data supplied
  */
-extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
+int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
 			    k_timeout_t timeout);
 
 /**
@@ -5212,7 +5212,7 @@ extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * @param slab Address of the memory slab.
  * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
  */
-extern void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
+void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
 
 /**
  * @brief Get the number of used blocks in a memory slab.
@@ -5474,7 +5474,7 @@ void k_heap_free(struct k_heap *h, void *mem);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
-extern void *k_aligned_alloc(size_t align, size_t size);
+void *k_aligned_alloc(size_t align, size_t size);
 
 /**
  * @brief Allocate memory from the heap.
@@ -5487,7 +5487,7 @@ extern void *k_aligned_alloc(size_t align, size_t size);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
-extern void *k_malloc(size_t size);
+void *k_malloc(size_t size);
 
 /**
  * @brief Free memory allocated from heap.
@@ -5499,7 +5499,7 @@ extern void *k_malloc(size_t size);
  *
  * @param ptr Pointer to previously allocated memory.
  */
-extern void k_free(void *ptr);
+void k_free(void *ptr);
 
 /**
  * @brief Allocate memory from heap, array style
@@ -5512,7 +5512,7 @@ extern void k_free(void *ptr);
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
-extern void *k_calloc(size_t nmemb, size_t size);
+void *k_calloc(size_t nmemb, size_t size);
 
 /** @} */
 
@@ -5724,7 +5724,7 @@ struct k_poll_event {
  * @param obj Kernel object or poll signal.
  */
 
-extern void k_poll_event_init(struct k_poll_event *event, uint32_t type,
+void k_poll_event_init(struct k_poll_event *event, uint32_t type,
 			      int mode, void *obj);
 
 /**
@@ -5947,7 +5947,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 /**
  * @internal
  */
-extern void z_init_static_threads(void);
+void z_init_static_threads(void);
 #else
 /**
  * @internal
@@ -5958,7 +5958,7 @@ extern void z_init_static_threads(void);
 /**
  * @internal
  */
-extern void z_timer_expiration_handler(struct _timeout *t);
+void z_timer_expiration_handler(struct _timeout *t);
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -6063,7 +6063,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  * @param thread ID of thread
  * @return -EINVAL if invalid thread ID, otherwise 0
  */
-extern int k_thread_runtime_stats_enable(k_tid_t thread);
+int k_thread_runtime_stats_enable(k_tid_t thread);
 
 /**
  * @brief Disable gathering of runtime statistics for specified thread
@@ -6074,7 +6074,7 @@ extern int k_thread_runtime_stats_enable(k_tid_t thread);
  * @param thread ID of thread
  * @return -EINVAL if invalid thread ID, otherwise 0
  */
-extern int k_thread_runtime_stats_disable(k_tid_t thread);
+int k_thread_runtime_stats_disable(k_tid_t thread);
 
 /**
  * @brief Enable gathering of system runtime statistics
@@ -6083,7 +6083,7 @@ extern int k_thread_runtime_stats_disable(k_tid_t thread);
  * it does not affect the gathering of similar statistics for individual
  * threads.
  */
-extern void k_sys_runtime_stats_enable(void);
+void k_sys_runtime_stats_enable(void);
 
 /**
  * @brief Disable gathering of system runtime statistics
@@ -6092,7 +6092,7 @@ extern void k_sys_runtime_stats_enable(void);
  * it does not affect the gathering of similar statistics for individual
  * threads.
  */
-extern void k_sys_runtime_stats_disable(void);
+void k_sys_runtime_stats_disable(void);
 
 #ifdef __cplusplus
 }
