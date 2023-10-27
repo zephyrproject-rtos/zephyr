@@ -273,6 +273,9 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 
 	pdu = (void *)((struct node_tx *)tx)->pdu;
 	tx_len += pdu->len;
+	if (delta == 0) { /* Let's avoid a division by 0 if we happen to have a really fast HCI IF*/
+		delta = 1;
+	}
 	tx_rate = ((uint64_t)tx_len << 3) * BT_CTLR_THROUGHPUT_PERIOD / delta;
 	tx_cnt++;
 #endif /* CONFIG_BT_CTLR_THROUGHPUT */
