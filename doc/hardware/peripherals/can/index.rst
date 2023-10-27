@@ -1,4 +1,4 @@
-.. _canbus:
+.. _can:
 
 Controller Area Network (CAN)
 #############################
@@ -7,4 +7,3 @@ Controller Area Network (CAN)
    :maxdepth: 2
 
    controller.rst
-   isotp.rst

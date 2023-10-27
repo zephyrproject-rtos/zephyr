@@ -732,7 +732,8 @@ Release Notes:
   files:
     - boards/shields/mcp2515/
     - boards/shields/tcan4550evm/
-    - doc/hardware/peripherals/canbus/
+    - doc/connectivity/canbus/
+    - doc/hardware/peripherals/can/
     - drivers/can/
     - drivers/net/canbus.c
     - dts/bindings/can/
