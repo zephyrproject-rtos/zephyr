@@ -394,6 +394,18 @@ In some cases you may just need to run a function at boot. For such cases, the
 data structures and there isn't a way to later get a device pointer by name. The
 same device policies for initialization level and priority apply.
 
+Inspecting the initialization sequence
+**************************************
+
+Device drivers declared with :c:macro:`DEVICE_DEFINE` (or any variations of it)
+and :c:macro:`SYS_INIT` are processed at boot time and the corresponding
+initialization functions are called sequentially according to their specified
+level and priority.
+
+Sometimes it's useful to inspect the final sequence of initialization function
+call as produced by the linker. To do that, use the ``initlevels`` CMake
+target, for example ``west build -t initlevels``.
+
 Error handling
 **************
 
