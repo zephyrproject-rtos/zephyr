@@ -2723,6 +2723,65 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE, buf, NULL);
 }
 
+/* Write Remote Transmit Power Level HCI command */
+int bt_conn_set_remote_tx_power_level(struct bt_conn *conn,
+						enum bt_conn_le_tx_power_phy phy, int8_t delta)
+{
+	struct bt_hci_set_remote_tx_power_level *cp;
+	struct net_buf *buf;
+
+	if (!phy) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_REMOTE_TX_POWER, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->phy = phy;
+	cp->delta = delta;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_REMOTE_TX_POWER, buf, NULL);
+}
+
+/* Set LE Power Control Feature Parameters */
+int bt_conn_set_power_control_request_params(struct bt_conn *conn,
+					 uint8_t auto_enable, uint8_t apr_enable,
+					 uint16_t beta, int8_t lower_limit,
+					 int8_t upper_limit, int8_t lower_target_rssi,
+					 int8_t upper_target_rssi, uint16_t wait_period_ms,
+					 uint8_t apr_margin)
+{
+	struct bt_hci_cp_set_power_control_request_param *cp;
+	struct net_buf *buf;
+
+	if (!wait_period_ms) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SET_POWER_CONTROL_REQUEST_PARAM, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->auto_enable = auto_enable;
+	cp->apr_enable = apr_enable;
+	cp->beta = beta;
+	cp->lower_limit = lower_limit;
+	cp->upper_limit = upper_limit;
+	cp->lower_target_rssi = lower_target_rssi;
+	cp->upper_target_rssi = upper_target_rssi;
+	cp->wait_period_ms = wait_period_ms;
+	cp->apr_margin = apr_margin;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_POWER_CONTROL_REQUEST_PARAM, buf, NULL);
+}
+
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
 {

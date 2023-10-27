@@ -597,6 +597,71 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 					  bool local_enable,
 					  bool remote_enable);
 
+/** @brief Set remote (peer) transmit power.
+ *
+ *  @param conn			Connection object.
+ *  @param phy			PHY bit number i.e. [1M, 2M, s8, s2] == [1, 2, 3, 4]
+ *  @param delta        Delta to be used by remote to apply to its transmit power.
+ *                      Delta is what we as local ask of the peer, it is not
+ *                      synonymous with the changes peer will (or won't) apply.
+ *                      Furthermore, it can be 0 to inquire tx power setting of remote.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_set_remote_tx_power_level(struct bt_conn *conn,
+					 enum bt_conn_le_tx_power_phy phy, int8_t delta);
+
+/** @brief Set remote (peer) transmit power.
+ *
+ *  @param conn              Connection object.
+ *  @param auto_enable       Enable or Disable controller initiated autonomous
+ *                           LE Power Control Request procedure.
+ *                           Disabled by default.
+ *  @param apr_enable        Enable or Disable APR handling in controller during
+ *                           LE Power Control Request procedure.
+ *                           Disabled by default.
+ *  @param beta              Beta value used for exponential weighted averaging of
+ *                           RSSI in 12-bit fixed point fraction.
+ *                           avg[n] = beta * avg[n - 1] + (1 - beta) * rssi[n]
+ *                           The valid range of beta is [0, 4095].
+ *                           The beta value used in computation is beta/4096.
+ *                           For example, for beta to be 0.25 in the above computation,
+ *                           set the beta parameter in the command to 1024.
+ *                           Default value is 2048.
+ *  @param lower_limit       The lower limit of RSSI golden range, it is explained in
+ *                           Core_v5.3, Vol 6, Part B, Section 5.1.17.1, in dBm units.
+ *                           Default value is -70 dBm.
+ *  @param upper_limit       The upper limit of RSSI golden range, it is explained in
+ *                           Core_v5.3, Vol 6, Part B, Section 5.1.17.1, in dBm units.
+ *                           Default value is -30 dBm.
+ *  @param lower_target_rssi Target RSSI level in dBm units when the average
+ *                           RSSI level is less than the lower limit of
+ *                           RSSI Golden range.
+ *                           Default value is -65 dBm.
+ *  @param upper_target_rssi Target RSSI level in dBm units when the average
+ *                           RSSI level is greater than the upper limit of
+ *                           RSSI Golden range.
+ *                           Default value is -35 dBm.
+ *  @param wait_period_ms    Duration in milliseconds to wait before initiating a
+ *                           new LE Power Control Request procedure by the controller.
+ *                           0 milliseconds value is an invalid value.
+ *                           Default value is 5000 milliseconds.
+ *  @param apr_margin        Margin between APR value received from peer in LL_POWER_CONTROL_RSP PDU
+ *                           and actual reduction in TX power that is applied locally.
+ *                           The applied decrease in local TX power will be (received_apr - margin)
+ *                           if received_apr > margin, otherwise no change.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ *  @return -ENOBUFS HCI command buffer is not available.
+ */
+int bt_conn_set_power_control_request_param(struct bt_conn *conn,
+					uint8_t auto_enable, uint8_t apr_enable,
+					uint16_t beta, int8_t lower_limit,
+					int8_t upper_limit, int8_t lower_target_rssi,
+					int8_t upper_target_rssi, uint16_t wait_period_ms,
+					uint8_t apr_margin);
+
 /** @brief Update the connection parameters.
  *
  *  If the local device is in the peripheral role then updating the connection
