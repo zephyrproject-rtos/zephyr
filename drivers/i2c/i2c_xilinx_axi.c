@@ -39,19 +39,36 @@ struct i2c_xilinx_axi_data {
 #endif
 };
 
+static void i2c_xilinx_axi_reinit(const struct i2c_xilinx_axi_config *config)
+{
+	LOG_DBG("Controller reinit");
+	sys_write32(SOFTR_KEY, config->base + REG_SOFTR);
+	sys_write32(CR_TX_FIFO_RST, config->base + REG_CR);
+	sys_write32(CR_EN, config->base + REG_CR);
+	sys_write32(GIE_ENABLE, config->base + REG_GIE);
+}
+
 #if defined(CONFIG_I2C_TARGET)
 
 #define I2C_XILINX_AXI_TARGET_INTERRUPTS                                                           \
 	(ISR_ADDR_TARGET | ISR_NOT_ADDR_TARGET | ISR_RX_FIFO_FULL | ISR_TX_FIFO_EMPTY |            \
 	 ISR_TX_ERR_TARGET_COMP)
 
+static void i2c_xilinx_axi_target_setup(const struct i2c_xilinx_axi_config *config,
+					struct i2c_target_config *cfg)
+{
+	i2c_xilinx_axi_reinit(config);
+
+	sys_write32(ISR_ADDR_TARGET, config->base + REG_IER);
+	sys_write32(cfg->address << 1, config->base + REG_ADR);
+	sys_write32(0, config->base + REG_RX_FIFO_PIRQ);
+}
+
 static int i2c_xilinx_axi_target_register(const struct device *dev, struct i2c_target_config *cfg)
 {
 	const struct i2c_xilinx_axi_config *config = dev->config;
 	struct i2c_xilinx_axi_data *data = dev->data;
 	k_spinlock_key_t key;
-	uint32_t int_enable;
-	uint32_t int_status;
 	int ret;
 
 	if (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
@@ -68,20 +85,7 @@ static int i2c_xilinx_axi_target_register(const struct device *dev, struct i2c_t
 	}
 
 	data->target_cfg = cfg;
-
-	int_status = sys_read32(config->base + REG_ISR);
-	if (int_status & I2C_XILINX_AXI_TARGET_INTERRUPTS) {
-		sys_write32(int_status & I2C_XILINX_AXI_TARGET_INTERRUPTS, config->base + REG_ISR);
-	}
-
-	sys_write32(CR_EN, config->base + REG_CR);
-	int_enable = sys_read32(config->base + REG_IER);
-	int_enable |= ISR_ADDR_TARGET;
-	sys_write32(int_enable, config->base + REG_IER);
-
-	sys_write32(cfg->address << 1, config->base + REG_ADR);
-	sys_write32(0, config->base + REG_RX_FIFO_PIRQ);
-
+	i2c_xilinx_axi_target_setup(config, cfg);
 	ret = 0;
 
 out_unlock:
@@ -119,7 +123,6 @@ static int i2c_xilinx_axi_target_unregister(const struct device *dev, struct i2c
 	int_enable = sys_read32(config->base + REG_IER);
 	int_enable &= ~I2C_XILINX_AXI_TARGET_INTERRUPTS;
 	sys_write32(int_enable, config->base + REG_IER);
-
 	ret = 0;
 
 out_unlock:
@@ -248,15 +251,6 @@ static void i2c_xilinx_axi_isr(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 	k_event_post(&data->irq_event, int_status);
-}
-
-static void i2c_xilinx_axi_reinit(const struct i2c_xilinx_axi_config *config)
-{
-	LOG_DBG("Controller reinit");
-	sys_write32(SOFTR_KEY, config->base + REG_SOFTR);
-	sys_write32(CR_TX_FIFO_RST, config->base + REG_CR);
-	sys_write32(CR_EN, config->base + REG_CR);
-	sys_write32(GIE_ENABLE, config->base + REG_GIE);
 }
 
 static int i2c_xilinx_axi_configure(const struct device *dev, uint32_t dev_config)
@@ -549,12 +543,6 @@ static int i2c_xilinx_axi_transfer(const struct device *dev, struct i2c_msg *msg
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
-	/**
-	 * Reinitializing before each transfer shouldn't technically be needed, but
-	 * seems to improve general reliability. The Linux driver also does this.
-	 */
-	i2c_xilinx_axi_reinit(config);
-
 	ret = i2c_xilinx_axi_wait_not_busy(config, data);
 	if (ret) {
 		goto out_unlock;
@@ -564,11 +552,17 @@ static int i2c_xilinx_axi_transfer(const struct device *dev, struct i2c_msg *msg
 		goto out_unlock;
 	}
 
+	/**
+	 * Reinitializing before each transfer shouldn't technically be needed, but
+	 * seems to improve general reliability. The Linux driver also does this.
+	 */
+	i2c_xilinx_axi_reinit(config);
+
 	do {
 		if (msgs->flags & I2C_MSG_ADDR_10_BITS) {
 			/* Optionally supported in core, but not implemented in driver yet */
 			ret = -EOPNOTSUPP;
-			goto out_unlock;
+			goto out_check_target;
 		}
 		if (msgs->flags & I2C_MSG_READ) {
 			if (config->dyn_read_working && msgs->len <= MAX_DYNAMIC_READ_LEN) {
@@ -583,11 +577,24 @@ static int i2c_xilinx_axi_transfer(const struct device *dev, struct i2c_msg *msg
 			ret = i2c_xilinx_axi_wait_not_busy(config, data);
 		}
 		if (ret) {
-			goto out_unlock;
+			goto out_check_target;
 		}
 		msgs++;
 		num_msgs--;
 	} while (num_msgs);
+
+out_check_target:
+#if defined(CONFIG_I2C_TARGET)
+	/* If a target is registered, then ensure the controller gets put back
+	 * into a suitable state to handle target transfers.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (data->target_cfg) {
+		i2c_xilinx_axi_target_setup(config, data->target_cfg);
+	}
+	k_spin_unlock(&data->lock, key);
+#endif
 
 out_unlock:
 	k_mutex_unlock(&data->mutex);
