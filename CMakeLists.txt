@@ -1797,14 +1797,10 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
 endif()
 
 if(CONFIG_CHECK_INIT_PRIORITIES)
-  if(CONFIG_CHECK_INIT_PRIORITIES_FAIL_ON_WARNING)
-    set(fail_on_warning "--fail-on-warning")
-  endif()
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
       --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
-      ${fail_on_warning}
     )
 endif()
 
