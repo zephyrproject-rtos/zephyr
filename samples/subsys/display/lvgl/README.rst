@@ -45,6 +45,13 @@ or
 Building and Running
 ********************
 
+First, ensure the optional LVGL module is enabled and available:
+
+   .. code-block:: shell
+
+      west config manifest.project-filter -- +lvgl
+      west update lvgl
+
 Example building for :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::

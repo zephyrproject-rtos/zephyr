@@ -26,6 +26,13 @@ Requirements
 Building and Running
 ********************
 
+First, ensure the optional LVGL module is enabled and available:
+
+   .. code-block:: shell
+
+      west config manifest.project-filter -- +lvgl
+      west update lvgl
+
 These demos can be built as follows:
 
 .. zephyr-app-commands::

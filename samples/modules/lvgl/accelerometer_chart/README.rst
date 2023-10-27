@@ -33,6 +33,13 @@ Requirements
 Building and Running
 ********************
 
+First, ensure the optional LVGL module is enabled and available:
+
+   .. code-block:: shell
+
+      west config manifest.project-filter -- +lvgl
+      west update lvgl
+
 The maximum number of points to display for each series and the sampling rate of the
 accelerometer can be configured using the :kconfig:option:`CONFIG_SAMPLE_CHART_POINTS_PER_SERIES`
 and :kconfig:option:`CONFIG_SAMPLE_ACCEL_SAMPLING_RATE` Kconfig options, respectively.

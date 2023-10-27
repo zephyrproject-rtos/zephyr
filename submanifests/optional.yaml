@@ -15,6 +15,12 @@ manifest:
       remote: upstream
       groups:
         - optional
+    - name: lvgl
+      revision: 8a6a2d1d29d17d1e4bdc94c243c146a39d635fdd
+      path: modules/lib/gui/lvgl
+      remote: upstream
+      groups:
+        - optional
     - name: lz4
       revision: 8e303c264fc21c2116dc612658003a22e933124d
       path: modules/lib/lz4
