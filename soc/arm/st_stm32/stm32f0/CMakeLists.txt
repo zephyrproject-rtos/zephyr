@@ -8,3 +8,5 @@ zephyr_linker_sources_ifdef(CONFIG_SRAM_VECTOR_TABLE
 )
 zephyr_include_directories(${ZEPHYR_BASE}/drivers)
 zephyr_sources(soc.c)
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
