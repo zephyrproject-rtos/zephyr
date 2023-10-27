@@ -671,9 +671,9 @@ void *radio_pkt_decrypt_get(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 /* Dedicated Rx PDU Buffer for Control PDU independent of node_rx with BIS Data
- * PDU buffer
+ * PDU buffer. Note this buffer will be used to store whole PDUs, not just the BIG control payload.
  */
-static uint8_t pkt_big_ctrl[sizeof(struct pdu_big_ctrl)];
+static uint8_t pkt_big_ctrl[offsetof(struct pdu_bis, payload) + sizeof(struct pdu_big_ctrl)];
 
 void *radio_pkt_big_ctrl_get(void)
 {
