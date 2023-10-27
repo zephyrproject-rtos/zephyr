@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <stdint.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/settings/settings.h>
 
 #define EXPECTED_NUM_ROTATIONS 5
 
@@ -126,6 +127,11 @@ void tester_procedure(void)
 
 	if (err) {
 		FAIL("Failed to enable bluetooth (err %d\n)", err);
+	}
+
+	err = settings_load();
+	if (err) {
+		FAIL("Failed to enable settings (err %d\n)", err);
 	}
 
 	start_scanning();
