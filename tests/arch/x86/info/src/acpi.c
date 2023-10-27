@@ -120,29 +120,21 @@ static void vtd_info(void)
 
 void acpi(void)
 {
-	int nr_cpus = 0, i, inst_cnt;
-	struct acpi_madt_local_apic *lapic;
+	int nr_cpus;
 
-	if (acpi_madt_entry_get(ACPI_MADT_TYPE_LOCAL_APIC, (ACPI_SUBTABLE_HEADER **)&lapic,
-				&inst_cnt)) {
-		printk("error on get MAD table\n");
-		return;
-	}
-
-	/* count number of CPUs present which are enabled*/
-	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
-		if (lapic[i].LapicFlags & 1u) {
-			nr_cpus++;
-		}
+	for (nr_cpus = 0; acpi_local_apic_get(nr_cpus); ++nr_cpus) {
+		/* count number of CPUs present */
 	}
 
 	if (nr_cpus == 0) {
 		printk("ACPI: no RSDT/MADT found\n\n");
 	} else {
-		printk("ACPI: %d CPUs found\n", nr_cpus);
+		printk("ACPI: %d CPU%s found\n", nr_cpus, nr_cpus == 1 ? "" : "s");
 
-		for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; ++i) {
-			printk("\tCPU #%d: APIC ID 0x%02x\n", i, lapic[i].Id);
+		for (int i = 0; i < nr_cpus; ++i) {
+			struct acpi_madt_local_apic *cpu = acpi_local_apic_get(i);
+
+			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu[i].Id);
 		}
 	}
 
