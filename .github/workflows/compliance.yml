@@ -15,7 +15,6 @@ jobs:
       uses: actions/checkout@v3
       with:
         ref: ${{ github.event.pull_request.head.sha }}
-        fetch-depth: 0
 
     - name: cache-pip
       uses: actions/cache@v3
@@ -37,12 +36,21 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         git remote -v
+
+        git log --oneline --decorate -100
+
+        git fetch --deepen=${{ github.event.pull_request.commits }} origin ${{ github.event.pull_request.head.sha }}
+        git log --oneline --decorate -100
+
+        git fetch origin ${BASE_REF}
+        git log --graph --oneline --decorate ${{ github.event.pull_request.head.sha }} origin/${BASE_REF}  -100
+
         # Ensure there's no merge commits in the PR
         [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
         (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
         # debug
-        git log  --pretty=oneline | head -n 10
+        git log --oneline --decorate -100
         west init -l . || true
         west config manifest.group-filter -- +ci,+optional
         west update 2>&1 1> west.update.log || west update 2>&1 1> west.update2.log
