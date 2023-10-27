@@ -660,6 +660,7 @@ __comp_west_boards()
 	local dir_opts="
 		--arch-root
 		--board-root
+		--soc-root
 	"
 
 	all_opts="$dir_opts $other_opts"
