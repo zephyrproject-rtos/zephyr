@@ -474,3 +474,47 @@ xtensa_switch:
 	s32i a4, a3, 0 /* store switch handle */
 	mov a3, a2
 	j restore
+
+/* This file also contains the system call stubs, though those are
+ * used only by ring 3 code and live in the regular .text section.
+ * The system calls work just like CALL0 ABI functions, with arguments
+ * marshalled for us by the compiler.  All we need to do is put the ID
+ * number in A11.
+ */
+.section .text.asm_syscall_stubs, "ax"
+
+.global xtensa_syscall6
+xtensa_syscall6:
+	mov a11, a8
+	syscall
+	ret
+
+.global xtensa_syscall5
+xtensa_syscall5:
+	mov a11, a7
+	syscall
+	ret
+
+.global xtensa_syscall4
+xtensa_syscall4:
+	mov a11, a6
+	syscall
+	ret
+
+.global xtensa_syscall3
+xtensa_syscall3:
+	mov a11, a5
+	syscall
+	ret
+
+.global xtensa_syscall2
+xtensa_syscall2:
+	mov a11, a4
+	syscall
+	ret
+
+.global xtensa_syscall1
+xtensa_syscall1:
+	mov a11, a3
+	syscall
+	ret
