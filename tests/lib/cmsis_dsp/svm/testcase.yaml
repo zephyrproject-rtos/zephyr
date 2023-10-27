@@ -7,7 +7,7 @@ tests:
       - sam_e70_xplained
       - mps2_an521
       - native_sim
-    tags: cmsis_dsp
+    tags: cmsis-dsp
     min_flash: 128
     min_ram: 64
   libraries.cmsis_dsp.svm.fpu:
@@ -17,7 +17,7 @@ tests:
       - mps2_an521_remote
       - mps3_an547
     tags:
-      - cmsis_dsp
+      - cmsis-dsp
       - fpu
     min_flash: 128
     min_ram: 64
