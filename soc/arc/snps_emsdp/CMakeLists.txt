@@ -18,3 +18,5 @@ elseif(CONFIG_SOC_EMSDP_EM11D)
   zephyr_compile_options(-mmpy-option=6)
   zephyr_compile_options_ifdef(CONFIG_FPU -mfpu=fpuda_all)
 endif()
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
