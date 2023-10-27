@@ -184,12 +184,6 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
  * know the amount of byte to read.
  * (See section 5.2 of BlueNRG-MS datasheet)
  */
-static int configure_cs(void)
-{
-	/* Configure pin as output and set to inactive */
-	return gpio_pin_configure_dt(&bus.config.cs.gpio, GPIO_OUTPUT_INACTIVE);
-}
-
 static void kick_cs(void)
 {
 	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
@@ -229,7 +223,6 @@ static bool exit_irq_high_loop(void)
 
 #else
 
-#define configure_cs(...) 0
 #define kick_cs(...)
 #define release_cs(...)
 #define irq_pin_high(...) 0
@@ -534,10 +527,6 @@ static int bt_spi_init(void)
 	if (!spi_is_ready_dt(&bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
-	}
-
-	if (configure_cs()) {
-		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&irq_gpio)) {
