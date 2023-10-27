@@ -45,6 +45,7 @@ bluetooth:
     - drivers/bluetooth/
     - subsys/bluetooth/
     - subsys/net/l2/bluetooth/
+    - include/zephyr/bluetooth/
 
 net:
   files:
