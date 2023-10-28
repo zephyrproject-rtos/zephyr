@@ -14,6 +14,12 @@ module = ACPI
 module-str = acpi
 source "subsys/logging/Kconfig.template.log_config"
 
+config ACPI_PRT_BUS_NAME
+	string "ACPI name of PCI bus"
+	default "_SB.PCI0"
+	help
+	  ACPI name of PCI bus.
+
 config ACPI_MAX_PRT_ENTRY
 	int "Size of PRT buffer"
 	default 4096
