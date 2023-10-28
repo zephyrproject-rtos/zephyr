@@ -5,4 +5,3 @@
 config SOC_EMSK
 	bool "Synopsys ARC EM Starter Kit SoC"
 	select ARC
-	select HAS_SPI_DW if SPI
