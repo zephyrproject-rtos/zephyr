@@ -137,7 +137,7 @@ extern "C" {
 /** @} */
 
 /**
- * @name Device Characteristic Register (DCR)
+ * @name Legacy Virtual Register (LVR)
  *
  * Legacy Virtual Register (LVR)
  * - LVR[7:5]: I2C device index:
@@ -156,26 +156,26 @@ extern "C" {
  */
 
 /** I2C FM+ Mode. */
-#define I3C_DCR_I2C_FM_PLUS_MODE			0
+#define I3C_LVR_I2C_FM_PLUS_MODE			0
 
 /** I2C FM Mode. */
-#define I3C_DCR_I2C_FM_MODE				1
+#define I3C_LVR_I2C_FM_MODE				1
 
 /** I2C Mode Indicator bit shift value. */
-#define I3C_DCR_I2C_MODE_SHIFT				4
+#define I3C_LVR_I2C_MODE_SHIFT				4
 
 /** I2C Mode Indicator bitmask. */
-#define I3C_DCR_I2C_MODE_MASK				BIT(4)
+#define I3C_LVR_I2C_MODE_MASK				BIT(4)
 
 /**
  * @brief I2C Mode
  *
- * Obtain I2C Mode value from the DCR value obtained via GETDCR.
+ * Obtain I2C Mode value from the LVR value.
  *
- * @param dcr DCR value
+ * @param lvr LVR value
  */
-#define I3C_DCR_I2C_MODE(dcr)				\
-	(((mode) & I3C_DCR_I2C_MODE_MASK) >> I3C_DCR_I2C_MODE_SHIFT)
+#define I3C_LVR_I2C_MODE(lvr)				\
+	(((lvr) & I3C_LVR_I2C_MODE_MASK) >> I3C_LVR_I2C_MODE_SHIFT)
 
 /**
  * @brief I2C Device Index 0.
@@ -183,7 +183,7 @@ extern "C" {
  * I2C device has a 50 ns spike filter where it is not affected by high
  * frequency on SCL.
  */
-#define I3C_DCR_I2C_DEV_IDX_0				0
+#define I3C_LVR_I2C_DEV_IDX_0				0
 
 /**
  * @brief I2C Device Index 1.
@@ -191,7 +191,7 @@ extern "C" {
  * I2C device does not have a 50 ns spike filter but can work with high
  * frequency on SCL.
  */
-#define I3C_DCR_I2C_DEV_IDX_1				1
+#define I3C_LVR_I2C_DEV_IDX_1				1
 
 /**
  * @brief I2C Device Index 2.
@@ -199,23 +199,23 @@ extern "C" {
  * I2C device does not have a 50 ns spike filter and cannot work with high
  * frequency on SCL.
  */
-#define I3C_DCR_I2C_DEV_IDX_2				2
+#define I3C_LVR_I2C_DEV_IDX_2				2
 
 /** I2C Device Index bit shift value. */
-#define I3C_DCR_I2C_DEV_IDX_SHIFT			5
+#define I3C_LVR_I2C_DEV_IDX_SHIFT			5
 
 /** I2C Device Index bitmask. */
-#define I3C_DCR_I2C_DEV_IDX_MASK			(0x07U << I3C_DCR_I2C_DEV_IDX_SHIFT)
+#define I3C_LVR_I2C_DEV_IDX_MASK			(0x07U << I3C_LVR_I2C_DEV_IDX_SHIFT)
 
 /**
  * @brief I2C Device Index
  *
- * Obtain I2C Device Index value from the DCR value obtained via GETDCR.
+ * Obtain I2C Device Index value from the LVR value.
  *
- * @param dcr DCR value
+ * @param lvr LVR value
  */
-#define I3C_DCR_I2C_DEV_IDX(dcr)			\
-	(((dcr) & I3C_DCR_I2C_DEV_IDX_MASK) >> I3C_DCR_I2C_DEV_IDX_SHIFT)
+#define I3C_LVR_I2C_DEV_IDX(lvr)			\
+	(((lvr) & I3C_LVR_I2C_DEV_IDX_MASK) >> I3C_LVR_I2C_DEV_IDX_SHIFT)
 
 /** @} */
 
