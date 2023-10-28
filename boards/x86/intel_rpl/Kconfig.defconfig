@@ -29,6 +29,10 @@ endif
 config ACPI
 	default y
 
+config ACPI_PRT_BUS_NAME
+	depends on ACPI
+	default "_SB.PC00"
+
 if DMA
 config DMA_64BIT
 	default y

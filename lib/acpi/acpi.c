@@ -239,7 +239,8 @@ static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
 static int acpi_retrieve_legacy_irq(struct acpi *bus)
 {
 	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
-	return acpi_get_irq_table(bus, "_SB.PC00", bus->pci_prt_table, sizeof(bus->pci_prt_table));
+	return acpi_get_irq_table(bus, CONFIG_ACPI_PRT_BUS_NAME,
+				  bus->pci_prt_table, sizeof(bus->pci_prt_table));
 }
 
 static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 level, void *ctx,
