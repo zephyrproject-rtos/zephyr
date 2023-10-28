@@ -14,11 +14,11 @@ properties:
   interrupts:
     required: true
 
-  aux_reg:
+  aux-reg:
+    type: boolean
     description: |
       This value is used for auxiliary register access. For
       other platform, this value should be default 0.
-    type: boolean
 
   fifo-depth:
     type: int

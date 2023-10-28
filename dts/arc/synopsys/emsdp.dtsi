@@ -135,7 +135,7 @@
 			interrupts = <63 2>, <64 2>, <65 2>;
 			interrupt-names = "err_int", "rx_avail", "tx_req";
 			interrupt-parent = <&intc>;
-			aux_reg;
+			aux-reg;
 			fifo-depth = <16>;
 		};
 
@@ -149,7 +149,7 @@
 			interrupts = <67 2>, <68 2>, <69 2>;
 			interrupt-names = "err_int", "rx_avail", "tx_req";
 			interrupt-parent = <&intc>;
-			aux_reg;
+			aux-reg;
 			fifo-depth = <16>;
 		};
 	};
