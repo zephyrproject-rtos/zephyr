@@ -215,7 +215,7 @@ static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
 	}
 
 	rt_buffer.Pointer = rt_table;
-	rt_buffer.Length = ACPI_DEBUG_BUFFER_SIZE;
+	rt_buffer.Length = rt_size;
 
 	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
 	if (ACPI_FAILURE(status)) {
