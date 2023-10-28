@@ -61,6 +61,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.14
 
+   * - :ref:`can_transceiver_api`
+     - Experimental
+     - 3.1
+
    * - :ref:`charger_api`
      - Experimental
      - 3.5
