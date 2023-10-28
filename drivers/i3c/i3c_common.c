@@ -216,6 +216,24 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 	return ret;
 }
 
+struct i3c_device_desc *i3c_dev_list_i3c_static_addr_find(const struct device *dev,
+						   uint8_t addr)
+{
+	struct i3c_device_desc *ret = NULL;
+	struct i3c_device_desc *desc;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		if (desc->static_addr == addr) {
+			ret = desc;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr)
 {
