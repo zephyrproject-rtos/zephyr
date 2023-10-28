@@ -703,7 +703,7 @@ static void cdns_i3c_program_controller_retaining_reg(const struct device *dev)
 
 	if (!i3c_addr_slots_is_free(&data->common.attached_dev.addr_slots, controller_da)) {
 		controller_da =
-			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots);
+			i3c_addr_slots_next_free_find(&data->common.attached_dev.addr_slots, 0);
 		LOG_DBG("%s: 0x%02x DA selected for controller", dev->name, controller_da);
 	}
 	sys_write32(prepare_rr0_dev_address(controller_da), config->base + DEV_ID_RR0(0));
