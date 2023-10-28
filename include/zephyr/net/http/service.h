@@ -10,7 +10,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/net/tls_credentials.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,10 +55,12 @@ struct http_service_desc {
 	size_t backlog;
 	struct http_resource_desc *res_begin;
 	struct http_resource_desc *res_end;
+	const sec_tag_t *sec_tag_list;
+	size_t sec_tag_list_size;
 };
 
-#define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin,   \
-				_res_end)                                                          \
+#define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin, \
+				_res_end, ...)                                                \
 	static const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                         \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
@@ -65,6 +69,10 @@ struct http_service_desc {
 		.backlog = (_backlog),                                                             \
 		.res_begin = (_res_begin),                                                         \
 		.res_end = (_res_end),                                                             \
+		.sec_tag_list = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (NULL),               \
+					    (GET_ARG_N(1, __VA_ARGS__))),                           \
+		.sec_tag_list_size = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (0),             \
+						 (GET_ARG_N(1, GET_ARGS_LESS_N(1, __VA_ARGS__)))), \
 	}
 
 /**
@@ -87,6 +95,33 @@ struct http_service_desc {
  */
 #define HTTP_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail)             \
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, NULL, NULL)
+
+/**
+ * @brief Define an HTTPS service without static resources.
+ *
+ * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ *
+ * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
+ * number to use for the service. If the specified port number is zero, then an ephemeral port
+ * number will be used and the actual port number assigned will be written back to memory. For
+ * ephemeral port numbers, the memory pointed to by @p _port must be writeable.
+ *
+ * @param _name Name of the service.
+ * @param _host IP address or hostname associated with the service.
+ * @param[inout] _port Pointer to port associated with the service.
+ * @param _concurrent Maximum number of concurrent clients.
+ * @param _backlog Maximum number queued connections.
+ * @param _detail Implementation-specific detail associated with the service.
+ * @param _sec_tag_list TLS security tag list used to setup a HTTPS socket.
+ * @param _sec_tag_list_size TLS security tag list size used to setup a HTTPS socket.
+ */
+#define HTTPS_SERVICE_DEFINE_EMPTY(_name, _host, _port, _concurrent, _backlog, _detail,          \
+				   _sec_tag_list, _sec_tag_list_size)                            \
+	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, NULL, NULL, \
+				_sec_tag_list, _sec_tag_list_size);				 \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),				 \
+		     "TLS is required for HTTP secure (CONFIG_NET_SOCKETS_SOCKOPT_TLS)")
 
 /**
  * @brief Define an HTTP service with static resources.
@@ -112,6 +147,37 @@ struct http_service_desc {
 	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,               \
 				&_CONCAT(_http_resource_desc_##_name, _list_start)[0],             \
 				&_CONCAT(_http_resource_desc_##_name, _list_end)[0])
+
+/**
+ * @brief Define an HTTPS service with static resources.
+ *
+ * @note The @p _host parameter must be non-`NULL`. It is used to specify an IP address either in
+ * IPv4 or IPv6 format a fully-qualified hostname or a virtual host.
+ *
+ * @note The @p _port parameter must be non-`NULL`. It points to a location that specifies the port
+ * number to use for the service. If the specified port number is zero, then an ephemeral port
+ * number will be used and the actual port number assigned will be written back to memory. For
+ * ephemeral port numbers, the memory pointed to by @p _port must be writeable.
+ *
+ * @param _name Name of the service.
+ * @param _host IP address or hostname associated with the service.
+ * @param[inout] _port Pointer to port associated with the service.
+ * @param _concurrent Maximum number of concurrent clients.
+ * @param _backlog Maximum number queued connections.
+ * @param _detail Implementation-specific detail associated with the service.
+ * @param _sec_tag_list TLS security tag list used to setup a HTTPS socket.
+ * @param _sec_tag_list_size TLS security tag list size used to setup a HTTPS socket.
+ */
+#define HTTPS_SERVICE_DEFINE(_name, _host, _port, _concurrent, _backlog, _detail,              \
+			     _sec_tag_list, _sec_tag_list_size)                                \
+	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_start)[];  \
+	extern struct http_resource_desc _CONCAT(_http_resource_desc_##_name, _list_end)[];    \
+	__z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail,           \
+				&_CONCAT(_http_resource_desc_##_name, _list_start)[0],         \
+				&_CONCAT(_http_resource_desc_##_name, _list_end)[0],           \
+				_sec_tag_list, _sec_tag_list_size);                            \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),                               \
+		     "TLS is required for HTTP secure (CONFIG_NET_SOCKETS_SOCKOPT_TLS)")
 
 /**
  * @brief Count the number of HTTP services.
