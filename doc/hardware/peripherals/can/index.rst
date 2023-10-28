@@ -7,3 +7,4 @@ Controller Area Network (CAN)
    :maxdepth: 2
 
    controller.rst
+   transceiver.rst
