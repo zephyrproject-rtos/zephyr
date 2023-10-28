@@ -52,24 +52,6 @@ static void notify_handler(ACPI_HANDLE device, UINT32 value, void *ctx)
 	ACPI_INFO(("Received a notify 0x%X", value));
 }
 
-static ACPI_STATUS region_handler(UINT32 Function, ACPI_PHYSICAL_ADDRESS address, UINT32 bit_width,
-				  UINT64 *value, void *handler_ctx, void *region_ctx)
-{
-	return AE_OK;
-}
-
-static ACPI_STATUS region_init(ACPI_HANDLE RegionHandle, UINT32 Function, void *handler_ctx,
-			       void **region_ctx)
-{
-	if (Function == ACPI_REGION_DEACTIVATE) {
-		*region_ctx = NULL;
-	} else {
-		*region_ctx = RegionHandle;
-	}
-
-	return AE_OK;
-}
-
 static ACPI_STATUS install_handlers(void)
 {
 	ACPI_STATUS status;
@@ -82,13 +64,7 @@ static ACPI_STATUS install_handlers(void)
 		goto exit;
 	}
 
-	status = AcpiInstallAddressSpaceHandler(ACPI_ROOT_OBJECT, ACPI_ADR_SPACE_SYSTEM_MEMORY,
-						region_handler, region_init, NULL);
-	if (ACPI_FAILURE(status)) {
-		ACPI_EXCEPTION((AE_INFO, status, "While installing an OpRegion handler"));
-	}
 exit:
-
 	return status;
 }
 
