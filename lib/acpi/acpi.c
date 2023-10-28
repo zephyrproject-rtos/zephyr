@@ -91,10 +91,10 @@ static ACPI_STATUS initialize_acpica(void)
 		goto exit;
 	}
 
-	/* Initialize the ACPI hardware */
-	status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
+	/* Create the ACPI namespace from ACPI tables */
+	status = AcpiLoadTables();
 	if (ACPI_FAILURE(status)) {
-		ACPI_EXCEPTION((AE_INFO, status, "While enabling ACPI"));
+		ACPI_EXCEPTION((AE_INFO, status, "While loading ACPI tables"));
 		goto exit;
 	}
 
@@ -105,10 +105,10 @@ static ACPI_STATUS initialize_acpica(void)
 		goto exit;
 	}
 
-	/* Create the ACPI namespace from ACPI tables */
-	status = AcpiLoadTables();
+	/* Initialize the ACPI hardware */
+	status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
 	if (ACPI_FAILURE(status)) {
-		ACPI_EXCEPTION((AE_INFO, status, "While loading ACPI tables"));
+		ACPI_EXCEPTION((AE_INFO, status, "While enabling ACPI"));
 		goto exit;
 	}
 
