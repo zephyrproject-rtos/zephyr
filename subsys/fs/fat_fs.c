@@ -183,6 +183,7 @@ static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
 	int res = -ENOTSUP;
+	FIL *fp = zfp->filep;
 
 #if !defined(CONFIG_FS_FATFS_READ_ONLY)
 	unsigned int bw;
@@ -199,7 +200,9 @@ static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	}
 
 	if (res == FR_OK) {
+		fp->flag |= FA_WRITE;
 		res = f_write(zfp->filep, ptr, size, &bw);
+		fp->flag &= ~FA_WRITE;
 	}
 
 	if (res != FR_OK) {
