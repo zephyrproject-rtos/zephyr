@@ -25,7 +25,7 @@ config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
 config HEAP_MEM_POOL_SIZE
-	default 32768 if ACPI
+	default 1048576 if ACPI
 	depends on KERNEL_MEM_POOL
 
 config MULTIBOOT
@@ -54,7 +54,7 @@ config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
 config HEAP_MEM_POOL_SIZE
-	default 32768 if ACPI
+	default 1048576 if ACPI
 	depends on KERNEL_MEM_POOL
 
 endif # BOARD_QEMU_X86_64
