@@ -20,5 +20,9 @@ properties:
     type: phandle-array
     description: input clock source
 
+  clock-names:
+    type: string-array
+    description: name of input clock
+
   "#clock-cells":
     const: 0
