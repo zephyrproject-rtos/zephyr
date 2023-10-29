@@ -641,6 +641,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 		goto fail;
 	}
 
+	net_pkt_set_ip_hdr_len(frag_pkt, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_ipv6_ext_len(frag_pkt,
 				 net_pkt_ipv6_ext_len(pkt) +
 				 sizeof(struct net_ipv6_frag_hdr));
