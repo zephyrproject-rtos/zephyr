@@ -25,7 +25,7 @@ description: |
 
 compatible: "gpio-keys"
 
-include: base.yaml
+include: pinctrl-device.yaml
 
 properties:
   debounce-interval-ms:
