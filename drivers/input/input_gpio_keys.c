@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Google LLC
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -31,6 +35,9 @@ struct gpio_keys_config {
 	uint32_t debounce_interval_ms;
 	const int num_keys;
 	const struct gpio_keys_pin_config *pin_cfg;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pinctrl_cfg;
+#endif
 };
 
 struct gpio_keys_pin_data {
@@ -123,6 +130,13 @@ static int gpio_keys_init(const struct device *dev)
 	const struct gpio_keys_config *cfg = dev->config;
 	int ret;
 
+#ifdef CONFIG_PINCTRL
+	ret = pinctrl_apply_state(cfg->pinctrl_cfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
 	for (int i = 0; i < cfg->num_keys; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
 
@@ -163,6 +177,7 @@ static int gpio_keys_init(const struct device *dev)
 	}
 
 #define GPIO_KEYS_INIT(i)                                                                          \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(i);))                                   \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(i, GPIO_KEYS_CFG_CHECK);                                 \
 	static const struct gpio_keys_pin_config gpio_keys_pin_config_##i[] = {                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(i, GPIO_KEYS_CFG_DEF, (,))};                 \
@@ -170,6 +185,7 @@ static int gpio_keys_init(const struct device *dev)
 		.debounce_interval_ms = DT_INST_PROP(i, debounce_interval_ms),                     \
 		.num_keys = ARRAY_SIZE(gpio_keys_pin_config_##i),                                  \
 		.pin_cfg = gpio_keys_pin_config_##i,                                               \
+		IF_ENABLED(CONFIG_PINCTRL, (.pinctrl_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),))    \
 	};                                                                                         \
 	static struct gpio_keys_pin_data                                                           \
 		gpio_keys_pin_data_##i[ARRAY_SIZE(gpio_keys_pin_config_##i)];                      \
