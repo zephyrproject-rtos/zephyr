@@ -574,104 +574,51 @@ static struct net_context *test_udp_context_prepare(sa_family_t family,
 	return net_ctx;
 }
 
-ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6)
+static void test_tx_chksum(sa_family_t family, bool offloaded)
 {
+	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
+	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
+						   sizeof(struct sockaddr_in);
 	struct net_context *net_ctx;
 	struct sockaddr dst_addr;
 	int ret, len;
 
-	net_ctx = test_udp_context_prepare(AF_INET6, false, &dst_addr);
+	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 
 	len = strlen(test_data);
 	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in6),
-				 NULL, K_FOREVER, NULL);
+				 addrlen, NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
 
-	if (k_sem_take(&wait_data_nonoff, WAIT_TIME)) {
+	if (k_sem_take(wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
 		zassert_false(true, "Timeout");
 	}
 
 	net_context_unref(net_ctx);
+}
+
+ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v6)
+{
+	test_tx_chksum(AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_disabled_test_v4)
 {
-	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
-	int ret, len;
-
-	net_ctx = test_udp_context_prepare(AF_INET, false, &dst_addr);
-	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
-
-	test_started = true;
-
-	len = strlen(test_data);
-	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in),
-				 NULL, K_FOREVER, NULL);
-	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
-
-	if (k_sem_take(&wait_data_nonoff, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout");
-	}
-
-	net_context_unref(net_ctx);
+	test_tx_chksum(AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v6)
 {
-	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
-	int ret, len;
-
-	net_ctx = test_udp_context_prepare(AF_INET6, true, &dst_addr);
-	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
-
-	test_started = true;
-
-	len = strlen(test_data);
-	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in6),
-				 NULL, K_FOREVER, NULL);
-	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
-
-	if (k_sem_take(&wait_data_off, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout");
-	}
-
-	net_context_unref(net_ctx);
+	test_tx_chksum(AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4)
 {
-	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
-	int ret, len;
-
-	net_ctx = test_udp_context_prepare(AF_INET, true, &dst_addr);
-	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
-
-	test_started = true;
-
-	len = strlen(test_data);
-	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in),
-				 NULL, K_FOREVER, NULL);
-	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
-
-	if (k_sem_take(&wait_data_off, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout");
-	}
-
-	net_context_unref(net_ctx);
+	test_tx_chksum(AF_INET, true);
 }
 
 static void recv_cb_offload_disabled(struct net_context *context,
@@ -717,29 +664,32 @@ static void recv_cb_offload_enabled(struct net_context *context,
 	net_pkt_unref(pkt);
 }
 
-ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
+static void test_rx_chksum(sa_family_t family, bool offloaded)
 {
+	struct k_sem *wait_data = offloaded ? &wait_data_off : &wait_data_nonoff;
+	net_context_recv_cb_t cb = offloaded ? recv_cb_offload_enabled :
+					       recv_cb_offload_disabled;
+	socklen_t addrlen = (family == AF_INET6) ? sizeof(struct sockaddr_in6) :
+						   sizeof(struct sockaddr_in);
 	struct net_context *net_ctx;
 	struct sockaddr dst_addr;
 	int ret, len;
 
-	net_ctx = test_udp_context_prepare(AF_INET6, false, &dst_addr);
+	net_ctx = test_udp_context_prepare(family, offloaded, &dst_addr);
 	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
 
 	test_started = true;
 	start_receiving = true;
 
-	ret = net_context_recv(net_ctx, recv_cb_offload_disabled,
-			       K_NO_WAIT, NULL);
+	ret = net_context_recv(net_ctx, cb, K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
 	len = strlen(test_data);
 	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in6),
-				 NULL, K_FOREVER, NULL);
+				 addrlen, NULL, K_FOREVER, NULL);
 	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
 
-	if (k_sem_take(&wait_data_nonoff, WAIT_TIME)) {
+	if (k_sem_take(wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
 		zassert_false(true, "Timeout");
 	}
@@ -748,106 +698,26 @@ ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
 	k_sleep(K_MSEC(10));
 
 	net_context_unref(net_ctx);
+}
+
+ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v6)
+{
+	test_rx_chksum(AF_INET6, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_disabled_test_v4)
 {
-	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
-	int ret, len;
-
-	net_ctx = test_udp_context_prepare(AF_INET, false, &dst_addr);
-	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
-
-	test_started = true;
-	start_receiving = true;
-
-	ret = net_context_recv(net_ctx, recv_cb_offload_disabled,
-			       K_NO_WAIT, NULL);
-	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
-
-	len = strlen(test_data);
-	ret = net_context_sendto(net_ctx, test_data, len,
-				 (struct sockaddr *)&dst_addr,
-				 sizeof(struct sockaddr_in),
-				 NULL, K_FOREVER, NULL);
-	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
-
-	if (k_sem_take(&wait_data_nonoff, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout");
-	}
-
-	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
-
-	net_context_unref(net_ctx);
+	test_rx_chksum(AF_INET, false);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v6)
 {
-	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
-	int ret, len;
-
-	net_ctx = test_udp_context_prepare(AF_INET6, true, &dst_addr);
-	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
-
-	test_started = true;
-	start_receiving = true;
-
-	ret = net_context_recv(net_ctx, recv_cb_offload_enabled,
-			       K_NO_WAIT, NULL);
-	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
-
-	len = strlen(test_data);
-	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in6),
-				 NULL, K_FOREVER, NULL);
-	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
-
-	if (k_sem_take(&wait_data_off, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout");
-	}
-
-	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
-
-	net_context_unref(net_ctx);
+	test_rx_chksum(AF_INET6, true);
 }
 
 ZTEST(net_chksum_offload, test_rx_chksum_offload_enabled_test_v4)
 {
-	struct net_context *net_ctx;
-	struct sockaddr dst_addr;
-	int ret, len;
-
-	net_ctx = test_udp_context_prepare(AF_INET, true, &dst_addr);
-	zassert_not_null(net_ctx, "Failed to obtain net_ctx");
-
-	test_started = true;
-	start_receiving = true;
-
-	ret = net_context_recv(net_ctx, recv_cb_offload_enabled,
-			       K_NO_WAIT, NULL);
-	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
-
-	len = strlen(test_data);
-	ret = net_context_sendto(net_ctx, test_data, len, &dst_addr,
-				 sizeof(struct sockaddr_in),
-				 NULL, K_FOREVER, NULL);
-	zassert_equal(ret, len, "Send UDP pkt failed (%d)\n", ret);
-
-	if (k_sem_take(&wait_data_off, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout");
-	}
-
-	/* Let the receiver to receive the packets */
-	k_sleep(K_MSEC(10));
-
-	net_context_unref(net_ctx);
+	test_rx_chksum(AF_INET, true);
 }
 
 static void *net_chksum_offload_tests_setup(void)
