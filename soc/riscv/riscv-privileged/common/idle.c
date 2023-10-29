@@ -17,8 +17,10 @@ static ALWAYS_INLINE void riscv_idle(unsigned int key)
 	/* unlock interrupts */
 	irq_unlock(key);
 
+#if defined(CONFIG_RISCV_WFI_ON_CPU_IDLE)
 	/* Wait for interrupt */
 	__asm__ volatile("wfi");
+#endif /* CONFIG_RISCV_WFI_ON_CPU_IDLE */
 }
 
 /**

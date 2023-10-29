@@ -29,6 +29,10 @@ config RISCV_HAS_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
+config RISCV_WFI_ON_CPU_IDLE
+	bool "Does the SOC enter WFI when CPU is idle"
+	default y
+
 config RISCV_VECTORED_MODE
 	bool "Should the SOC use vectored mode"
 	depends on SOC_FAMILY_RISCV_PRIVILEGED
