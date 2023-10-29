@@ -1,0 +1,14 @@
+sample:
+  name: samples_driver_input_gpio_keys
+tests:
+  sample.driver.input.gpio_keys.pinctrl:
+    tags:
+      - gpio
+      - pm
+      - pinctrl
+      - samples
+    platform_allow:
+      - sam4s_xplained
+      - sam4e_xpro
+      - sam_e70_xplained
+      - sam_v71_xult
