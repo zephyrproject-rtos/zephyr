@@ -2725,6 +2725,7 @@ TI K3 Platforms:
     - vaishnavachath
   collaborators:
     - gramsay0
+    - DhruvaG2000
   files:
     - boards/*/*phycore_am6*/
     - boards/*/am6*/
