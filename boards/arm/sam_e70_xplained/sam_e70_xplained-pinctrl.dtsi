@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +13,6 @@
 				 <PA17X_AFE0_AD6>;
 		};
 	};
-
 	afec1_default: afec1_default {	/* ADCH - J504 */
 		group1 {
 			pinmux = <PC31X_AFE1_AD6>;
@@ -37,6 +36,13 @@
 				 <PD5A_GMAC_GRX0>,
 				 <PD6A_GMAC_GRX1>,
 				 <PD7A_GMAC_GRXER>;
+		};
+	};
+
+	gpio_keys_default: gpio_keys_default {
+		group1 {
+			pinmux = <PA11X_SUPC_WKUP7>;
+			bias-pull-up;
 		};
 	};
 

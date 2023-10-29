@@ -39,10 +39,35 @@
 		};
 	};
 
+	gpio_keys_default: gpio_keys_default {
+		group1 {
+			pinmux = <PA2X_SUPC_WKUP2>;
+			bias-pull-up;
+		};
+	};
+
+	hsmci_default: hsmci_default {
+		group1 {
+			pinmux = <PA28C_HSMCI_MCCDA>,
+				 <PA29C_HSMCI_MCCK>,
+				 <PA30C_HSMCI_MCDA0>,
+				 <PA31C_HSMCI_MCDA1>,
+				 <PA26C_HSMCI_MCDA2>,
+				 <PA27C_HSMCI_MCDA3>;
+		};
+	};
+
 	mdio_default: mdio_default {
 		group1 {
 			pinmux = <PD8A_GMAC_GMDC>,
 				 <PD9A_GMAC_GMDIO>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PD20A_PWM_PWMH0>,
+				 <PD24A_PWM_PWML0>;
 		};
 	};
 
@@ -87,23 +112,4 @@
 				 <PA25A_USART1_CTS>;
 		};
 	};
-
-	pwm0_default: pwm0_default {
-		group1 {
-			pinmux = <PD20A_PWM_PWMH0>,
-				 <PD24A_PWM_PWML0>;
-		};
-	};
-
-	hsmci_default: hsmci_default {
-		group1 {
-			pinmux = <PA28C_HSMCI_MCCDA>,
-				 <PA29C_HSMCI_MCCK>,
-				 <PA30C_HSMCI_MCDA0>,
-				 <PA31C_HSMCI_MCDA1>,
-				 <PA26C_HSMCI_MCDA2>,
-				 <PA27C_HSMCI_MCDA3>;
-		};
-	};
-
 };

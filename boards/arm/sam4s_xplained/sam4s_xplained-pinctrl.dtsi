@@ -1,46 +1,25 @@
 /*
- * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <dt-bindings/pinctrl/sam4sXc-pinctrl.h>
 
 &pinctrl {
-	spi0_default: spi0_default {
+	adc0_default: adc0_default {
 		group1 {
-			pinmux = <PA12A_SPI_MISO>,
-				 <PA13A_SPI_MOSI>,
-				 <PA14A_SPI_SPCK>,
-				 <PA31A_SPI_NPCS1>,
-				 <PA30B_SPI_NPCS2>;
+			pinmux = <PB0X_ADC_AD4>,
+				 <PB1X_ADC_AD5>;
 		};
 	};
 
-	twi0_default: twi0_default {
+	gpio_keys_default: gpio_keys_default {
 		group1 {
-			pinmux = <PA4A_TWI0_TWCK>,
-				 <PA3A_TWI0_TWD>;
+			pinmux = <PA5X_SUPC_WKUP4>;
+			bias-pull-up;
 		};
 	};
 
-	uart0_default: uart0_default {
-		group1 {
-			pinmux = <PA9A_UART0_RXD>,
-				 <PA10A_UART0_TXD>;
-		};
-	};
-	uart1_default: uart1_default {
-		group1 {
-			pinmux = <PB2A_UART1_RXD>,
-				 <PB3A_UART1_TXD>;
-		};
-	};
-	usart1_default: usart1_default {
-		group1 {
-			pinmux = <PA21A_USART1_RXD>,
-				 <PA22A_USART1_TXD>;
-		};
-	};
 	pwm0_default: pwm0_default {
 		group1 {
 			pinmux = <PA12B_PWM_PWMH1>,
@@ -48,12 +27,7 @@
 				 <PA14B_PWM_PWMH3>;
 		};
 	};
-	adc0_default: adc0_default {
-		group1 {
-			pinmux = <PB0X_ADC_AD4>,
-				 <PB1X_ADC_AD5>;
-		};
-	};
+
 	smc_default: smc_default {
 		group1 {
 			pinmux = <PC18A_EBI_A0>,
@@ -87,6 +61,42 @@
 				 <PC15A_EBI_NCS1>,
 				 <PC11A_EBI_NRD>,
 				 <PC8A_EBI_NWE>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PA12A_SPI_MISO>,
+				 <PA13A_SPI_MOSI>,
+				 <PA14A_SPI_SPCK>,
+				 <PA31A_SPI_NPCS1>,
+				 <PA30B_SPI_NPCS2>;
+		};
+	};
+
+	twi0_default: twi0_default {
+		group1 {
+			pinmux = <PA4A_TWI0_TWCK>,
+				 <PA3A_TWI0_TWD>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PA9A_UART0_RXD>,
+				 <PA10A_UART0_TXD>;
+		};
+	};
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PB2A_UART1_RXD>,
+				 <PB3A_UART1_TXD>;
+		};
+	};
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA21A_USART1_RXD>,
+				 <PA22A_USART1_TXD>;
 		};
 	};
 };

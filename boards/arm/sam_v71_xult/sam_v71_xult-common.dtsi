@@ -2,7 +2,7 @@
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (c) 2019-2022 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2019-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,9 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
 
 		/* The switch is labeled SW300/301 in the schematic, and
 		 * labeled SW0 on the board, and labeled ERASE User Button

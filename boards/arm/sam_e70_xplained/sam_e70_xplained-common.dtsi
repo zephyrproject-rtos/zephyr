@@ -2,7 +2,7 @@
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
- * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2020-2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,9 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
 
 		/* The switch is labeled SW300 in the schematic, and labeled
 		 * SW0 on the board, and labeld SW1 User Button on docs

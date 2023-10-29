@@ -1,5 +1,7 @@
 /*
  * Copyright (c) Justin Watson 2017
+ * Copyright (c) 2020-2023 Gerson Fernando Budke
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -58,6 +60,10 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
+		pinctrl-0 = <&gpio_keys_default>;
+		pinctrl-names = "default";
+
 		user_button: button_1 {
 			label = "User Button";
 			gpios = <&pioa 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
