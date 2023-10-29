@@ -1,0 +1,8 @@
+identifier: am62x_m4_beagleplay
+name: BeagleBoard.org AM62x M4 beagleplay
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: BealgeBoard.org

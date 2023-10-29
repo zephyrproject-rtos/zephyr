@@ -18,3 +18,10 @@ config BOARD
 	default "am62x_m4_phyboard_lyra"
 
 endif # BOARD_AM62X_M4_PHYBOARD_LYRA
+
+if BOARD_AM62X_M4_BEAGLEPLAY
+
+config BOARD
+	default "am62x_m4_beagleplay"
+
+endif # BOARD_BEAGLEPLAY_M4
