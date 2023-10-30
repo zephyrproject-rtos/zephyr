@@ -22,6 +22,7 @@ tests:
       - nucleo_wl55jc
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_wb55rg
       - rpi_pico
       - efr32bg22_brd4184a
       - mr_canhubk3
