@@ -3,7 +3,8 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_include_directories(include)
+zephyr_include_directories(include)
+zephyr_include_directories(include/${SOC_NAME})
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 zephyr_library_sources(
