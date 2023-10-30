@@ -50,6 +50,7 @@ static void completed(const struct device *dev, int error)
 {
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
+	struct spi_context *ctx = &spi->ctx;
 
 	if (error) {
 		goto out;
@@ -70,7 +71,13 @@ out:
 	/* Disabling the controller */
 	clear_bit_ssienr(info);
 
-	spi_context_cs_control(&spi->ctx, false);
+	if (!spi_dw_is_slave(spi)) {
+		if (spi_cs_is_gpio(ctx->config)) {
+			spi_context_cs_control(ctx, false);
+		} else {
+			write_ser(info, 0);
+		}
+	}
 
 	LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
@@ -244,7 +251,6 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		/* Baud rate and Slave select, for master only */
 		write_baudr(info, SPI_DW_CLK_DIVIDER(info->clock_frequency,
 					       config->frequency));
-		write_ser(info, 1 << config->slave);
 	}
 
 	if (spi_dw_is_slave(spi)) {
@@ -415,12 +421,26 @@ static int transceive(const struct device *dev,
 		DW_SPI_IMR_UNMASK;
 	write_imr(info, reg_data);
 
-	spi_context_cs_control(&spi->ctx, true);
+	if (!spi_dw_is_slave(spi)) {
+		/* if cs is not defined as gpio, use hw cs */
+		if (spi_cs_is_gpio(config)) {
+			spi_context_cs_control(&spi->ctx, true);
+		} else {
+			write_ser(info, BIT(config->slave));
+		}
+	}
 
 	LOG_DBG("Enabling controller");
 	set_bit_ssienr(info);
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&spi->ctx) && !ret) {
+		ret = spi->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
 out:
 	spi_context_release(&spi->ctx, ret);
 
