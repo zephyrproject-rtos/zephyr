@@ -62,6 +62,43 @@
 		invert-x;
 		invert-y;
 	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-dev = <&spi5>;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <5625000>;
+			reg = <0>;
+			width = <240>;
+			height = <320>;
+			rotation = <180>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			pwctrla = [39 2c 00 34 02];
+			pwctrlb = [00 c1 30];
+			timctrla = [85 00 78];
+			timctrlb = [00 00];
+			pwseqctrl = [64 03 12 81];
+			pumpratioctrl = [20];
+			disctrl = [08 82 27 04];
+			vmctrl1 = [45 15];
+			vmctrl2 = [90];
+			enable3g = [00];
+			ifctl = [01 00 06];
+			ifmode = [c2];
+			gamset = [01];
+			frmctr1 = [00 1b];
+			pwctrl1 = [10];
+			pwctrl2 = [10];
+			pgamctrl = [0F 29 24 0c 0e 09 4e 78 3c 09 13 05 17 11 00];
+			ngamctrl = [00 16 1b 04 11 07 31 33 42 05 0c 0a 28 2f 0f];
+		};
+	};
 };
 
 &clk_lsi {
@@ -147,34 +184,6 @@
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
-	ili9341: ili9341@0 {
-		compatible = "ilitek,ili9341";
-		spi-max-frequency = <5625000>;
-		reg = <0>;
-		cmd-data-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
-		width = <240>;
-		height = <320>;
-		rotation = <180>;
-		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
-		pwctrla = [39 2c 00 34 02];
-		pwctrlb = [00 c1 30];
-		timctrla = [85 00 78];
-		timctrlb = [00 00];
-		pwseqctrl = [64 03 12 81];
-		pumpratioctrl = [20];
-		disctrl = [08 82 27 04];
-		vmctrl1 = [45 15];
-		vmctrl2 = [90];
-		enable3g = [00];
-		ifctl = [01 00 06];
-		ifmode = [c2];
-		gamset = [01];
-		frmctr1 = [00 1b];
-		pwctrl1 = [10];
-		pwctrl2 = [10];
-		pgamctrl = [0F 29 24 0c 0e 09 4e 78 3c 09 13 05 17 11 00];
-		ngamctrl = [00 16 1b 04 11 07 31 33 42 05 0c 0a 28 2f 0f];
-	};
 };
 
 &fmc {
