@@ -10,6 +10,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
 #include <dt-bindings/adc/adc.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -120,6 +121,30 @@
 			clock-frequency = <32768>;
 			prescaler = <1>;
 			status = "disabled";
+		};
+
+		timer0: timer@50048000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x50048000 0x310C>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer1: timer@5004C000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x5004C000 0x310C>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		trng: trng@4c021000 {

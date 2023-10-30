@@ -23,6 +23,21 @@ struct pwm_gecko_config {
 	uint8_t pin;
 };
 
+static inline bool pwm_gecko_is_initialized(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_gecko_config *cfg = dev->config;
+#if defined(_TIMER_ROUTE_MASK) || defined(_TIMER_ROUTELOC0_MASK)
+	return BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL,
+			  _TIMER_CC_CTRL_MODE_MASK) == timerCCModePWM;
+
+#elif defined(_GPIO_TIMER_ROUTEEN_MASK)
+	return BUS_RegMaskedRead(&cfg->timer->CC[channel].CFG,
+				 _TIMER_CFG_MODE_MASK) == timerCCModePWM;
+#else
+#error Unsupported device
+#endif
+}
+
 static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 				uint32_t period_cycles, uint32_t pulse_cycles,
 				pwm_flags_t flags)
@@ -30,8 +45,14 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 	TIMER_InitCC_TypeDef compare_config = TIMER_INITCC_DEFAULT;
 	const struct pwm_gecko_config *cfg = dev->config;
 
-	if (BUS_RegMaskedRead(&cfg->timer->CC[channel].CTRL,
-		_TIMER_CC_CTRL_MODE_MASK) != timerCCModePWM) {
+	if (!pwm_gecko_is_initialized(dev, channel)) {
+		CMU_ClockEnable(cmuClock_GPIO, true);
+
+		compare_config.mode = timerCCModePWM;
+		compare_config.cmoa = timerOutputActionToggle;
+		compare_config.edge = timerEdgeBoth;
+		compare_config.outInvert = (flags & PWM_POLARITY_INVERTED);
+		TIMER_InitCC(cfg->timer, channel, &compare_config);
 
 #ifdef _TIMER_ROUTE_MASK
 		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
@@ -44,12 +65,20 @@ static int pwm_gecko_set_cycles(const struct device *dev, uint32_t channel,
 			(channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
 			cfg->location << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
 		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << channel);
+#elif defined(_GPIO_TIMER_ROUTEEN_MASK)
+		volatile uint32_t *route_register =
+			&GPIO->TIMERROUTE[TIMER_NUM(cfg->timer)].CC0ROUTE;
+		route_register += cfg->channel;
+		*route_register = (cfg->port << _GPIO_TIMER_CC0ROUTE_PORT_SHIFT) |
+				  (cfg->pin << _GPIO_TIMER_CC0ROUTE_PIN_SHIFT);
+		GPIO->TIMERROUTE_SET[TIMER_NUM(cfg->timer)].ROUTEEN =
+			1 << (cfg->channel + _GPIO_TIMER_ROUTEEN_CC0PEN_SHIFT);
 #else
 #error Unsupported device
 #endif
+		TIMER_Init_TypeDef timer_init = TIMER_INIT_DEFAULT;
 
-		compare_config.mode = timerCCModePWM;
-		TIMER_InitCC(cfg->timer, channel, &compare_config);
+		TIMER_Init(cfg->timer, &timer_init);
 	}
 
 	cfg->timer->CC[channel].CTRL |= (flags & PWM_POLARITY_INVERTED) ?

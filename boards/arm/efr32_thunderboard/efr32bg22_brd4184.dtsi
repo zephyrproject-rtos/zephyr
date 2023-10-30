@@ -10,6 +10,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		spi-flash0 = &mx25r80;
 		spi0 = &usart0;
@@ -21,6 +22,14 @@
 
 	chosen {
 		zephyr,code-partition = &slot0_partition;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
 	};
 };
 
@@ -55,4 +64,13 @@
 
 &sw_imu_enable {
 	enable-gpios = <&gpiob GECKO_PIN(4) GPIO_ACTIVE_HIGH>;
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(4)>;
+	};
 };

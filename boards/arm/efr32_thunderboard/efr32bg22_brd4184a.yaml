@@ -14,6 +14,7 @@ supported:
   - uart
   - i2c
   - spi
+  - pwm
 testing:
   ignore_tags:
     - net
