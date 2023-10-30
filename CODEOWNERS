@@ -408,6 +408,7 @@
 /drivers/pwm/*rcar*                       @aaillet
 /drivers/pwm/*max31790*                   @benediktibk
 /drivers/regulator/*                      @gmarull
+/drivers/regulator/regulator_max20335.c   @bbilas
 /drivers/regulator/regulator_pca9420.c    @danieldegrasse
 /drivers/regulator/regulator_rpi_pico.c   @soburi
 /drivers/regulator/regulator_shell.c      @danieldegrasse

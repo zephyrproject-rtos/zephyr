@@ -75,3 +75,18 @@ axp192@4 {
 		LDO3 {};
 	};
 };
+
+max20335@5 {
+	compatible = "maxim,max20335";
+	reg = <0x5>;
+
+	regulators {
+		compatible = "maxim,max20335-regulator";
+
+		BUCK1 {};
+		BUCK2 {};
+		LDO1 {};
+		LDO2 {};
+		LDO3 {};
+	};
+};
