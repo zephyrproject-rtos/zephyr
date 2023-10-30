@@ -373,6 +373,7 @@
 /drivers/led_strip/                       @mbolivar-ampere
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/mbox/                            @carlocaione
+/drivers/mfd/mfd_ad5592.c                 @bbilas
 /drivers/mfd/mfd_max20335.c               @bbilas
 /drivers/misc/                            @tejlmand
 /drivers/misc/ft8xx/                      @hubertmis
