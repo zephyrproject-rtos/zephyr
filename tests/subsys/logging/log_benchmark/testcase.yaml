@@ -18,7 +18,7 @@ tests:
 
   logging.benchmark_user:
     integration_platforms:
-      - native_posix
+      - qemu_x86
     tags: logging
     platform_allow:
       - qemu_x86
