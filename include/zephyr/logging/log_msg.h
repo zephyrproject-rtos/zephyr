@@ -532,7 +532,7 @@ do { \
 				    UTIL_AND(UTIL_NOT(_domain_id), UTIL_NOT(_cstr_cnt))), \
 			( \
 			bool can_simple = LOG_MSG_SIMPLE_CHECK(__VA_ARGS__); \
-			if (can_simple && ((_dlen) == 0)) { \
+			if (can_simple && ((_dlen) == 0) && !k_is_user_context()) { \
 				LOG_MSG_DBG("create fast message\n");\
 				Z_LOG_MSG_SIMPLE_ARGS_CREATE(_domain_id, _source, _level, \
 						     Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
