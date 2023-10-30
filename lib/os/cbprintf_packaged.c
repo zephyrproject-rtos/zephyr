@@ -999,7 +999,8 @@ int cbprintf_package_convert(void *in_packaged,
 			bool is_ro = ptr_in_rodata(str);
 			int len;
 
-			if (fmt_present && is_ptr(fmt, arg_idx)) {
+			if (IS_ENABLED(CONFIG_CBPRINTF_CONVERT_CHECK_PTR) &&
+			    fmt_present && is_ptr(fmt, arg_idx)) {
 				LOG_WRN("(unsigned) char * used for %%p argument. "
 					"It's recommended to cast it to void * because "
 					"it may cause misbehavior in certain "
@@ -1077,7 +1078,8 @@ calculate_string_length:
 		const char *str = *(const char **)&buf32[arg_pos];
 		bool is_ro = ptr_in_rodata(str);
 
-		if (fmt_present && is_ptr(fmt, arg_idx)) {
+		if (IS_ENABLED(CONFIG_CBPRINTF_CONVERT_CHECK_PTR) &&
+		    fmt_present && is_ptr(fmt, arg_idx)) {
 			continue;
 		}
 

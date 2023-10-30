@@ -159,3 +159,11 @@ config CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS
 	  to determine the types of arguments, but instead, each argument is
 	  tagged with a type by preceding it with another argument as type
 	  (integer).
+
+config CBPRINTF_CONVERT_CHECK_PTR
+	bool
+	default y if !LOG_FMT_SECTION_STRIP
+	help
+	  If enabled, cbprintf_package_convert() supports checking if string
+	  candidate is used for %p format specifier. Check cannot be performed
+	  if string is not present in the memory.
