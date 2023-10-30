@@ -60,6 +60,10 @@ static void test_address(bt_addr_le_t *addr)
 {
 	int64_t diff_ms, rpa_timeout_ms;
 
+	if (!BT_ADDR_IS_RPA(&addr->a)) {
+		FAIL("Bluetooth address is not RPA\n");
+	}
+
 	/* Only save the address + time if this is the first scan */
 	if (bt_addr_le_eq(&adv_set_data[adv_index].old_addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&adv_set_data[adv_index].old_addr, addr);
