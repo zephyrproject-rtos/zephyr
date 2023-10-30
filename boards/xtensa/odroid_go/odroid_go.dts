@@ -77,6 +77,25 @@
 		sw0 = &menu_button;
 		watchdog0 = &wdt0;
 	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi3>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <25000000>;
+			pixel-format = <0>;
+			reg = <0>;
+			rotation = <270>;
+			width = <320>;
+			height = <240>;
+		};
+	};
 };
 
 &cpu0 {
@@ -123,17 +142,6 @@
 	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
-
-	ili9341: ili9341@0 {
-		compatible = "ilitek,ili9341";
-		spi-max-frequency = <25000000>;
-		reg = <0>;
-		cmd-data-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-		pixel-format = <0>;
-		rotation = <270>;
-		width = <320>;
-		height = <240>;
-	};
 
 	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";

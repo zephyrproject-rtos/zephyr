@@ -107,6 +107,25 @@
 		bbram0 = &extrtc0;
 		spi-flash0 = &mx25r64;
 	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi2>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9340: ili9340@0 {
+			compatible = "ilitek,ili9340";
+			reg = <0>;
+			mipi-max-frequency = <32000000>;
+			rotation = <270>;
+			width = <320>;
+			height = <240>;
+		};
+	};
 };
 
 &adc {
@@ -224,16 +243,6 @@
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
-	ili9340: ili9340@0 {
-		compatible = "ilitek,ili9340";
-		reg = <0>;
-		spi-max-frequency = <32000000>;
-		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
-		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-		rotation = <270>;
-		width = <320>;
-		height = <240>;
-	};
 };
 
 &uart0 {

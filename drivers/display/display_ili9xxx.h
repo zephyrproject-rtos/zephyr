@@ -9,8 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/util.h>
 
 /* Commands/registers. */
@@ -65,10 +64,8 @@ struct ili9xxx_quirks {
 
 struct ili9xxx_config {
 	const struct ili9xxx_quirks *quirks;
-
-	struct spi_dt_spec spi;
-	struct gpio_dt_spec cmd_data;
-	struct gpio_dt_spec reset;
+	const struct device *mipi_dev;
+	struct mipi_dbi_config dbi_config;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;

@@ -123,6 +123,27 @@
 		regulator-name = "usb_power_5v_en";
 		enable-gpios = <&porta 27 GPIO_ACTIVE_LOW>;
 	};
+
+	/* LCD */
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&portc 6 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&portc 7 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-dev = <&sercom7>;
+		write-only;
+
+		ili9341: ili9341@0 {
+			compatible = "ilitek,ili9341";
+			mipi-max-frequency = <24000000>;
+			reg = <0>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			rotation = <270>;
+			width = <320>;
+			height = <240>;
+		};
+	};
 };
 
 &cpu0 {
@@ -271,19 +292,6 @@
 	pinctrl-0 = <&sercom7_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portb 21 GPIO_ACTIVE_LOW>;
-
-	/* LCD */
-	ili9341: ili9341@0 {
-		compatible = "ilitek,ili9341";
-		spi-max-frequency = <24000000>;
-		reg = <0>;
-		cmd-data-gpios = <&portc 6 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&portc 7 GPIO_ACTIVE_LOW>;
-		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
-		rotation = <270>;
-		width = <320>;
-		height = <240>;
-	};
 };
 
 /* USB */
