@@ -10,6 +10,7 @@ common:
 tests:
   drivers.i2c.target_api.dual_role:
     platform_allow:
+      - b_u585i_iot02a
       - nucleo_f746zg
       - nucleo_g474re
       - nucleo_f091rc
