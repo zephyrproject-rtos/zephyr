@@ -164,7 +164,8 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
-	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) ||
+	     net_pkt_is_ip_reassembled(pkt))) {
 		if (!udp_hdr->chksum) {
 			if (IS_ENABLED(CONFIG_NET_UDP_MISSING_CHECKSUM) &&
 			    net_pkt_family(pkt) == AF_INET) {
