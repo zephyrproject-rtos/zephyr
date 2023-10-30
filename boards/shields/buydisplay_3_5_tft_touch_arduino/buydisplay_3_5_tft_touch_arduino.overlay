@@ -18,28 +18,36 @@
 		invert-x;
 		invert-y;
 	};
+
+	buydisplay_3_5_tft_touch_arduino_mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>; /* D7 */
+		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_HIGH>; /* D10 */
+		spi-dev = <&arduino_spi>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9488_buydisplay_3_5_tft_touch_arduino: ili9488@0 {
+			compatible = "ilitek,ili9488";
+			mipi-max-frequency = <25000000>;
+			reg = <0>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			width = <320>;
+			height = <480>;
+			rotation = <0>;
+			frmctr1 = [a0 11];
+			pwctrl1 = [17 15];
+			pwctrl2 = [41];
+			pgamctrl = [00 03 09 08 16 0a 3f 78 4c 09 0a 08 16 1a 0f];
+			ngamctrl = [00 16 19 03 0f 05 32 45 46 04 0e 0d 35 37 0f];
+		};
+	};
 };
 
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
-
-	ili9488_buydisplay_3_5_tft_touch_arduino: ili9488@0 {
-		compatible = "ilitek,ili9488";
-		spi-max-frequency = <25000000>;
-		reg = <0>;
-		cmd-data-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
-		reset-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
-		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
-		width = <320>;
-		height = <480>;
-		rotation = <0>;
-		frmctr1 = [a0 11];
-		pwctrl1 = [17 15];
-		pwctrl2 = [41];
-		pgamctrl = [00 03 09 08 16 0a 3f 78 4c 09 0a 08 16 1a 0f];
-		ngamctrl = [00 16 19 03 0f 05 32 45 46 04 0e 0d 35 37 0f];
-	};
 };
 
 &arduino_i2c {

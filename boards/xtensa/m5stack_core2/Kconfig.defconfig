@@ -41,4 +41,13 @@ config INPUT
 config LV_COLOR_16_SWAP
 	default y if LVGL
 
+# Increase initialization priority of MIPI DBI device, so that it initializes
+# after the GPIO controller
+if MIPI_DBI
+
+config MIPI_DBI_INIT_PRIORITY
+	default 82
+
+endif # MIPI_DBI
+
 endif # BOARD_M5STACK_CORE2

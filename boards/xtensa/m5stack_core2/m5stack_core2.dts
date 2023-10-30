@@ -48,6 +48,28 @@
 		input = <&ft5336_touch>;
 		swap-xy;
 	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&axp192_gpio 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_HIGH)>;
+		spi-dev = <&spi3>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ili9342c: ili9342c@0 {
+			compatible = "ilitek,ili9342c";
+			mipi-max-frequency = <30000000>;
+			reg = <0>;
+			vin-supply = <&lcd_bg>;
+			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
+			display-inversion;
+			width = <320>;
+			height = <240>;
+			rotation = <0>;
+		};
+	};
 };
 
 &cpu0 {
@@ -185,21 +207,6 @@
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
 			   <&gpio0 4 GPIO_ACTIVE_LOW>;
-
-	ili9342c: ili9342c@0 {
-		compatible = "ilitek,ili9342c";
-		status = "okay";
-		spi-max-frequency = <30000000>;
-		reg = <0>;
-		cmd-data-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-		vin-supply = <&lcd_bg>;
-		reset-gpios = <&axp192_gpio 4 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
-		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB565>;
-		display-inversion;
-		width = <320>;
-		height = <240>;
-		rotation = <0>;
-	};
 
 	sdhc0: sdhc@1 {
 		compatible = "zephyr,sdhc-spi-slot";

@@ -14,7 +14,7 @@ config ILI9340
 	bool "ILI9340 display driver"
 	default y
 	depends on DT_HAS_ILITEK_ILI9340_ENABLED
-	select SPI
+	select MIPI_DBI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9340 display driver.
@@ -23,7 +23,7 @@ config ILI9341
 	bool "ILI9341 display driver"
 	default y
 	depends on DT_HAS_ILITEK_ILI9341_ENABLED
-	select SPI
+	select MIPI_DBI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9341 display driver.
@@ -32,7 +32,7 @@ config ILI9342C
 	bool "ILI9342C display driver"
 	default y
 	depends on DT_HAS_ILITEK_ILI9342C_ENABLED
-	select SPI
+	select MIPI_DBI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9342C display driver.
@@ -41,7 +41,7 @@ config ILI9488
 	bool "ILI9488 display driver"
 	default y
 	depends on DT_HAS_ILITEK_ILI9488_ENABLED
-	select SPI
+	select MIPI_DBI
 	select ILI9XXX
 	help
 	  Enable driver for ILI9488 display driver.

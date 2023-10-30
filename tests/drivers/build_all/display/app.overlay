@@ -23,6 +23,26 @@
 			status = "okay";
 		};
 
+		test_mipi_dbi {
+			compatible = "zephyr,mipi-dbi-spi";
+			status = "okay";
+			dc-gpios = <&test_gpio 0 0>;
+			spi-dev = <&test_spi>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			test_mipi_dbi_ili9342c: ili9342c@0 {
+				compatible = "ilitek,ili9342c";
+				reg = <0>;
+				mipi-max-frequency = <25000000>;
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <320>;
+				height = <240>;
+			};
+		};
+
+
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -33,17 +53,6 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>;
-
-			test_spi_ili9342c: ili9342c@0 {
-				compatible = "ilitek,ili9342c";
-				reg = <0>;
-				spi-max-frequency = <25000000>;
-				cmd-data-gpios = <&test_gpio 0 0>;
-				pixel-format = <0>;
-				rotation = <270>;
-				width = <320>;
-				height = <240>;
-			};
 
 			test_spi_gc9x01x: gc9x01x@1 {
 				compatible = "galaxycore,gc9x01x";
