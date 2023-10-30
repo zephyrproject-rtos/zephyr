@@ -228,6 +228,46 @@ Device Drivers and Device Tree
   :dtcompatible:`microchip,mcp3208` devicetree bindings were renamed from ``channel`` to the common
   ``input``, making it possible to use the various ADC DT macros with Microchip MCP320x ADC devices.
 
+* ILI9XXX based displays now use the MIPI DBI driver class. These displays
+  must now be declared within a MIPI DBI driver wrapper device, which will
+  manage interfacing with the display. For an example, see below:
+
+  .. code-block:: devicetree
+
+    /* Legacy ILI9XXX display definition */
+    &spi2 {
+        ili9340: ili9340@0 {
+            compatible = "ilitek,ili9340";
+            reg = <0>;
+            spi-max-frequency = <32000000>;
+            reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+            cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+            rotation = <270>;
+            width = <320>;
+            height = <240>;
+        };
+    };
+
+    /* New display definition with MIPI DBI device */
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+        spi-dev = <&spi2>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        ili9340: ili9340@0 {
+            compatible = "ilitek,ili9340";
+            reg = <0>;
+            mipi-max-frequency = <32000000>;
+            rotation = <270>;
+            width = <320>;
+            height = <240>;
+        };
+    };
+
 * The :dtcompatible:`st,stm32h7-fdcan` CAN controller driver now supports configuring the
   domain/kernel clock via devicetree. Previously, the driver only supported using the PLL1_Q clock
   for kernel clock, but now it defaults to the HSE clock, which is the chip default. Boards that
