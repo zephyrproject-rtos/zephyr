@@ -871,7 +871,18 @@ struct net_wifi_mgmt_offload {
 #endif
 	/** Wi-Fi management API */
 	const struct wifi_mgmt_ops *const wifi_mgmt_api;
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) || defined(__DOXYGEN__)
+	/** Wi-Fi supplicant driver API */
+	void *wifi_drv_ops;
+#endif
 };
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
+/* Make sure wifi_drv_ops is after wifi_mgmt_api */
+BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_mgmt_api) <
+	     offsetof(struct net_wifi_mgmt_offload, wifi_drv_ops));
+#endif
 
 /* Make sure that the network interface API is properly setup inside
  * Wifi mgmt offload API struct (it is the first one).
