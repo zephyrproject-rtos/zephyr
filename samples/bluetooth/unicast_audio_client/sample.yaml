@@ -12,6 +12,7 @@ tests:
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
+    sysbuild: true
   sample.bluetooth.audio_unicast_client.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:
