@@ -496,18 +496,35 @@ struct bt_conn_le_tx_power_report {
 	/** Reason for Tx power reporting. */
 	enum bt_conn_le_tx_power_report_reason reason;
 
-	/** 1M, 2M, Coded S2 or Coded S8 */
+	/** @ref bt_conn_le_tx_power_phy */
 	uint8_t phy;
 
-	/** Transmit power level */
+	/** Transmit power level
+	 * 0xXX
+	 *   Transmit power level
+	 * Range: -127 to 20
+	 * Units: dBm
+	 *
+	 * 0x7E
+	 *   Remote device is not managing power levels on this PHY.
+	 * 0x7F
+	 *   Transmit power level is not available
+	*/
 	int8_t tx_power_level;
 
-	/** 0: Transmit power level is at minimum level.
-	 *  1: Transmit power level is at maximum level.
+	/** Bit 0: Transmit power level is at minimum level.
+	 *  Bit 1: Transmit power level is at maximum level.
 	 */
 	int8_t tx_power_level_flag;
 
-	/** Change in transmit power level */
+	/** Change in transmit power level
+	 * 0xXX
+	 *   Change in transmit power level (positive indicates increased power,
+	 *   negative indicates decreased power, zero indicates unchanged)
+	 * Units: dB
+	 * 0x7F
+	 *   Change is not available or is out of range.
+	*/
 	int8_t delta;
 };
 
@@ -557,18 +574,18 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
  *  @param tx_power_level Transmit power level descriptor.
  *
  *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level);
 
-/** @brief Get enhanced connection transmit power level.
+/** @brief Get local enhanced connection transmit power level.
  *
  *  @param conn           Connection object.
  *  @param tx_power       Transmit power level descriptor.
  *
  *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
 					   struct bt_conn_le_tx_power *tx_power);
@@ -579,7 +596,7 @@ int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
  *  @param phy            PHY information.
  *
  *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 					 enum bt_conn_le_tx_power_phy phy);
@@ -591,7 +608,7 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
  *  @param remote_enable  Enable/disable reporting for remote.
  *
  *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 					  bool local_enable,
@@ -602,38 +619,38 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
  *  @param conn			Connection object.
  *  @param phy			PHY bit number i.e. [1M, 2M, s8, s2] == [1, 2, 3, 4]
  *  @param delta        Delta to be used by remote to apply to its transmit power.
- *                      Delta is what we as local ask of the peer, it is not
- *                      synonymous with the changes peer will (or won't) apply.
- *                      Furthermore, it can be 0 to inquire tx power setting of remote.
+ *                      Note that Delta is only a reqest to the peer, who is in control
+ *                      how, or if at all, to apply changes to his transmit power.
+ *                      Furthermore, it can be 0 and thus utilize the response of the peer
+ *                      to update information of the tx power setting of remote.
  *
  *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_set_remote_tx_power_level(struct bt_conn *conn,
 					 enum bt_conn_le_tx_power_phy phy, int8_t delta);
 
-/** @brief Set remote (peer) transmit power.
+/** @brief Set Power Control request parameter
  *
  *  @param conn              Connection object.
  *  @param auto_enable       Enable or Disable controller initiated autonomous
  *                           LE Power Control Request procedure.
  *                           Disabled by default.
- *  @param apr_enable        Enable or Disable APR handling in controller during
- *                           LE Power Control Request procedure.
+ *  @param apr_enable        Enable or Disable APR, i.e. Acceptable Power Reduction, handling
+ *                           in controller during LE Power Control Request procedure.
  *                           Disabled by default.
- *  @param beta              Beta value used for exponential weighted averaging of
+ *  @param beta              The beta value used in computation is beta/4096.
+ *                           Beta value used for exponential weighted averaging of
  *                           RSSI in 12-bit fixed point fraction.
  *                           avg[n] = beta * avg[n - 1] + (1 - beta) * rssi[n]
  *                           The valid range of beta is [0, 4095].
- *                           The beta value used in computation is beta/4096.
  *                           For example, for beta to be 0.25 in the above computation,
  *                           set the beta parameter in the command to 1024.
  *                           Default value is 2048.
- *  @param lower_limit       The lower limit of RSSI golden range, it is explained in
- *                           Core_v5.3, Vol 6, Part B, Section 5.1.17.1, in dBm units.
+ *  @param lower_limit       The lower limit of RSSI golden range. The RSSI golden range is explained
+ *                           in Core_v5.4, Vol 6, Part B, Section 5.1.17.1, in dBm units.
  *                           Default value is -70 dBm.
- *  @param upper_limit       The upper limit of RSSI golden range, it is explained in
- *                           Core_v5.3, Vol 6, Part B, Section 5.1.17.1, in dBm units.
+ *  @param upper_limit       The upper limit of RSSI golden range.
  *                           Default value is -30 dBm.
  *  @param lower_target_rssi Target RSSI level in dBm units when the average
  *                           RSSI level is less than the lower limit of
@@ -653,7 +670,7 @@ int bt_conn_set_remote_tx_power_level(struct bt_conn *conn,
  *                           if received_apr > margin, otherwise no change.
  *
  *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_set_power_control_request_param(struct bt_conn *conn,
 					uint8_t auto_enable, uint8_t apr_enable,
