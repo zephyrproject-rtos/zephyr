@@ -77,9 +77,9 @@ flash_order: I don\'t think this is correct
 build_dir: build/dir
 domains:
 - name: a domain
-  build_dir: dir/1
+  build_dir: "build/dir/a domain"
 - name: default_domain
-  build_dir: dir/2
+  build_dir: build/dir/default_domain
 default: default_domain
 flash_order:
 - default_domain
@@ -87,10 +87,10 @@ flash_order:
 """,
         None,
         'build/dir',
-        [('default_domain', 'dir/2'), ('a domain', 'dir/1')],
-        ('default_domain', 'dir/2'),
-        {'a domain': ('a domain', 'dir/1'),
-         'default_domain': ('default_domain', 'dir/2')}
+        [('default_domain', 'build/dir/default_domain'), ('a domain', "build/dir/a domain")],
+        ('default_domain', 'build/dir/default_domain'),
+        {'a domain': ('a domain', "build/dir/a domain"),
+         'default_domain': ('default_domain', 'build/dir/default_domain')}
     ),
 ]
 

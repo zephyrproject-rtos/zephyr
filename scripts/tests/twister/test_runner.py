@@ -1650,8 +1650,25 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
 
     instance_mock = mock.Mock()
     build_dir = os.path.join('build', 'dir')
+    domain_file = os.path.join(build_dir, "domains.yaml")
     instance_mock.build_dir = build_dir
     env_mock = mock.Mock()
+
+    yaml_content = """
+build_dir: build/dir
+domains:
+- name: a domain
+  build_dir: dir/1
+- name: default_domain
+  build_dir: dir/2
+default: default_domain
+flash_order:
+- default_domain
+- a domain
+"""
+
+    with open(domain_file, 'a') as the_file:
+        the_file.write(yaml_content)
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb._get_binaries = mock.Mock(return_value=bins)
@@ -1664,9 +1681,11 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
 
     pb.cleanup_artifacts.assert_called_once_with(
         [os.path.join('zephyr', 'file.bin'),
-         os.path.join('zephyr', 'runners.yaml')]
+         os.path.join('zephyr', 'runners.yaml'),
+         'domains.yaml']
     )
     pb._sanitize_files.assert_called_once()
+    os.remove(domain_file)
 
 
 TESTDATA_9 = [
@@ -1701,6 +1720,7 @@ def test_projectbuilder_get_binaries(
     instance_mock = mock.Mock()
     instance_mock.platform = mock.Mock()
     instance_mock.platform.binaries = platform_binaries
+    instance_mock.build_dir = ""
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
