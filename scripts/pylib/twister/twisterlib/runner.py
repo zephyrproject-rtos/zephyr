@@ -529,6 +529,7 @@ class ProjectBuilder(FilterBuilder):
         self.options = env.options
         self.env = env
         self.duts = None
+        self.sub_folders = []
 
     def log_info(self, filename, inline_logs, log_testcases=False):
         filename = os.path.abspath(os.path.realpath(filename))
@@ -756,12 +757,15 @@ class ProjectBuilder(FilterBuilder):
         if self.options.runtime_artifact_cleanup == 'all':
             allow += [os.path.join('twister', 'testsuite_extra.conf')]
 
-        allow = [os.path.join(self.instance.build_dir, file) for file in allow]
-
+        allow_list = [os.path.join(self.instance.build_dir, file) for file in allow]
+        if self.testsuite.sysbuild:
+            for subfolder in self.sub_folders:
+                sub_build_dir = os.path.join(self.instance.build_dir, subfolder)
+                allow_list += [os.path.join(self.instance.build_dir, sub_build_dir, file) for file in allow]
         for dirpath, dirnames, filenames in os.walk(self.instance.build_dir, topdown=False):
             for name in filenames:
                 path = os.path.join(dirpath, name)
-                if path not in allow:
+                if path not in allow_list:
                     os.remove(path)
             # Remove empty directories and symbolic links to directories
             for dir in dirnames:
@@ -776,8 +780,18 @@ class ProjectBuilder(FilterBuilder):
 
         files_to_keep = self._get_binaries()
         files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
-
-        self.cleanup_artifacts(files_to_keep)
+        if self.testsuite.sysbuild:
+            files_to_keep.append('domains.yaml')
+            domains = Domains.from_file(os.path.join(self.instance.build_dir,
+                "domains.yaml")).get_domains(None, default_flash_order=True)
+            self.sub_folders = []
+            for domain in domains:
+                self.sub_folders.append(domain.name)
+                runner_parent_path = os.path.join(self.instance.build_dir, domain.name, 'zephyr')
+                files_to_keep += self._get_binaries_from_runners(runner_parent_path)
+            self.cleanup_artifacts(files_to_keep)
+        else:
+            self.cleanup_artifacts(files_to_keep)
 
         self._sanitize_files()
 
@@ -795,7 +809,7 @@ class ProjectBuilder(FilterBuilder):
             for binary in platform.binaries:
                 binaries.append(os.path.join('zephyr', binary))
 
-        binaries += self._get_binaries_from_runners()
+        binaries += self._get_binaries_from_runners(os.path.join(self.instance.build_dir, 'zephyr'))
 
         # if binaries was not found in platform.binaries and runners.yaml take default ones
         if len(binaries) == 0:
@@ -807,12 +821,14 @@ class ProjectBuilder(FilterBuilder):
             ]
         return binaries
 
-    def _get_binaries_from_runners(self) -> List[str]:
+    def _get_binaries_from_runners(self, runner_folder="") -> List[str]:
         """
         Get list of binaries paths (absolute or relative to the
         self.instance.build_dir) from runners.yaml file.
         """
-        runners_file_path: str = os.path.join(self.instance.build_dir, 'zephyr', 'runners.yaml')
+        if not runner_folder:
+            runner_folder = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_file_path: str = os.path.join(runner_folder, 'runners.yaml')
         if not os.path.exists(runners_file_path):
             return []
 
@@ -850,42 +866,69 @@ class ProjectBuilder(FilterBuilder):
         Replace absolute paths of binary files for relative ones. The base
         directory for those files is f"{self.instance.build_dir}/zephyr"
         """
-        runners_dir_path: str = os.path.join(self.instance.build_dir, 'zephyr')
-        runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
-        if not os.path.exists(runners_file_path):
-            return
+        runners_dir : str = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_files: List[str] = [os.path.join(runners_dir, 'runners.yaml')]
 
-        with open(runners_file_path, 'rt') as file:
-            runners_content_text = file.read()
-            runners_content_yaml: dict = yaml.safe_load(runners_content_text)
+        if self.testsuite.sysbuild:
+            for subfolder in self.sub_folders:
+                sub_dir: str = os.path.join(self.instance.build_dir, subfolder, 'zephyr')
+                sub_runners_file: str = os.path.join(sub_dir, 'runners.yaml')
+                runners_files.append(sub_runners_file)
 
-        if 'config' not in runners_content_yaml:
-            return
-
-        runners_config: dict = runners_content_yaml['config']
-        binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
-
-        for binary_key in binary_keys:
-            binary_path = runners_config.get(binary_key)
-            # sanitize only paths which exist and are absolute
-            if binary_path is None or not os.path.isabs(binary_path):
+        for _runner in runners_files:
+            if not os.path.exists(_runner):
                 continue
-            binary_path_relative = os.path.relpath(binary_path, start=runners_dir_path)
-            runners_content_text = runners_content_text.replace(binary_path, binary_path_relative)
 
-        with open(runners_file_path, 'wt') as file:
-            file.write(runners_content_text)
+            runners_content_yaml = {}
+            with open(_runner, 'rt') as file:
+                runners_content_text = file.read()
+                runners_content_yaml: dict = yaml.safe_load(runners_content_text)
+
+            if 'config' not in runners_content_yaml:
+                continue
+
+            runners_config: dict = runners_content_yaml['config']
+            binary_keys: List[str] = ['elf_file', 'hex_file', 'bin_file']
+
+            for binary_key in binary_keys:
+                binary_path = runners_config.get(binary_key)
+                # sanitize only paths which exist and are absolute
+                if binary_path is None or not os.path.isabs(binary_path):
+                    continue
+                if self.testsuite.sysbuild:
+                    start_path = os.path.dirname(os.path.abspath(_runner))
+                else:
+                    start_path = os.path.dirname(os.path.dirname(os.path.abspath(_runner)))
+                bin_path_relative = os.path.relpath(binary_path, start=start_path)
+                runners_content_text = runners_content_text.replace(binary_path, bin_path_relative)
+
+            with open(_runner, 'wt') as file:
+                file.write(runners_content_text)
 
     def _sanitize_zephyr_base_from_files(self):
         """
         Remove Zephyr base paths from selected files.
         """
         files_to_sanitize = [
+            'domains.yaml'
             'CMakeCache.txt',
             os.path.join('zephyr', 'runners.yaml'),
         ]
+
+        file_paths = []
+        if self.testsuite.sysbuild:
+            # for sysbuild root domain.yaml need sanitize as well
+            file_paths = [os.path.join(self.instance.build_dir, "domains.yaml")]
+            file_paths += [os.path.join(self.instance.build_dir, "CMakeCache.txt")]
+            file_paths += [os.path.join(self.instance.build_dir, 'zephyr', 'runners.yaml')]
         for file_path in files_to_sanitize:
-            file_path = os.path.join(self.instance.build_dir, file_path)
+            if self.testsuite.sysbuild:
+                for subfolder in self.sub_folders:
+                    file_paths.append(os.path.join(self.instance.build_dir, subfolder, file_path))
+            else:
+                file_paths = [os.path.join(self.instance.build_dir, file_path)]
+
+        for file_path in file_paths:
             if not os.path.exists(file_path):
                 continue
 

@@ -10,6 +10,7 @@ Domain class.
 
 from dataclasses import dataclass
 
+import os
 import yaml
 import pykwalify.core
 import logging
@@ -58,7 +59,7 @@ logger.addHandler(handler)
 
 class Domains:
 
-    def __init__(self, domains_yaml):
+    def __init__(self, domains_yaml, build_dir=""):
         try:
             data = yaml.safe_load(domains_yaml)
             pykwalify.core.Core(source_data=data,
@@ -66,8 +67,11 @@ class Domains:
         except (yaml.YAMLError, pykwalify.errors.SchemaError):
             logger.critical(f'malformed domains.yaml')
             exit(1)
-
-        self._build_dir = data['build_dir']
+        if build_dir == "":
+            self._build_dir = data['build_dir']
+        else:
+            self._build_dir = build_dir
+        data["build_dir"] = self._build_dir
         self._domains = {
             d['name']: Domain(d['name'], d['build_dir'])
             for d in data['domains']
@@ -90,8 +94,8 @@ class Domains:
         except FileNotFoundError:
             logger.critical(f'domains.yaml file not found: {domains_file}')
             exit(1)
-
-        return Domains(domains_yaml)
+        build_dir = os.path.dirname(domains_file)
+        return Domains(domains_yaml, build_dir)
 
     @staticmethod
     def from_yaml(domains_yaml):
