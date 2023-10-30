@@ -22,4 +22,5 @@ supported:
   - backup_sram
   - pwm
   - counter
+  - i2c
 vendor: st
