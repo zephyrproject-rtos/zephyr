@@ -104,6 +104,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(maxim_max11115, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11116, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11117, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(adi_ad5592_adc, ADC_HDL_LIST_ENTRY)
 };
 
 static struct adc_hdl *get_adc(const char *device_label)
