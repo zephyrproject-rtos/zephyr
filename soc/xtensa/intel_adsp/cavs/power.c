@@ -107,7 +107,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
 		} else {
-			z_xt_ints_on(core_desc[cpu].intenable);
 			k_cpu_idle();
 		}
 	} else {
