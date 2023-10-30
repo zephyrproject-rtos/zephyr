@@ -10,4 +10,10 @@ config NUM_IRQS
 	int
 	default 256
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,clkmux),clock-frequency)
+
+config CLOCK_CONTROL
+	default y
+
 endif # SOC_CH56X
