@@ -24,6 +24,13 @@ config I2C_IT8XXX2_FIFO_MODE
 	  I2C FIFO mode of it8xxx2 can support I2C APIs including:
 	  i2c_write(), i2c_read(), i2c_burst_read.
 
+config I2C_IT8XXX2_SWAP_CHA_CHC
+	bool "IT8XXX2 I2C channel swap"
+	help
+	  This is an option to swap channel as described below.
+	  Channel C is located at SMCLK0/SMDAT0.
+	  Channel A is located at SMCLK2/SMDAT2.
+
 endif # I2C_ITE_IT8XXX2
 
 config I2C_ITE_ENHANCE

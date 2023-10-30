@@ -1203,11 +1203,11 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_MSTFSTS1        ECREG(IT8XXX2_SMB_BASE + 0x0E)
 #define IT8XXX2_SMB_MSTFCTRL2       ECREG(IT8XXX2_SMB_BASE + 0x0F)
 #define IT8XXX2_SMB_MSTFSTS2        ECREG(IT8XXX2_SMB_BASE + 0x10)
-#define IT8XXX2_SMB_CHSEF           ECREG(IT8XXX2_SMB_BASE + 0x11)
+#define IT8XXX2_SMB_SMB45CHS        ECREG(IT8XXX2_SMB_BASE + 0x11)
 #define IT8XXX2_SMB_I2CW2RF         ECREG(IT8XXX2_SMB_BASE + 0x12)
 #define IT8XXX2_SMB_IWRFISTA        ECREG(IT8XXX2_SMB_BASE + 0x13)
-#define IT8XXX2_SMB_CHSAB           ECREG(IT8XXX2_SMB_BASE + 0x20)
-#define IT8XXX2_SMB_CHSCD           ECREG(IT8XXX2_SMB_BASE + 0x21)
+#define IT8XXX2_SMB_SMB01CHS        ECREG(IT8XXX2_SMB_BASE + 0x20)
+#define IT8XXX2_SMB_SMB23CHS        ECREG(IT8XXX2_SMB_BASE + 0x21)
 #define IT8XXX2_SMB_SFFCTL          ECREG(IT8XXX2_SMB_BASE + 0x55)
 #define IT8XXX2_SMB_HOSTA(base)     ECREG(base + 0x00)
 #define IT8XXX2_SMB_HOCTL(base)     ECREG(base + 0x01)
@@ -1301,6 +1301,12 @@ enum chip_pll_mode {
 /* 0x13: I2C Wr To Rd FIFO Interrupt Status */
 #define IT8XXX2_SMB_MCIFID            BIT(2)
 #define IT8XXX2_SMB_MAIFID            BIT(0)
+/* 0x20: SMB0/1 Channel Select */
+#define IT8XXX2_SMB_CHB_SMB1          BIT(4)
+#define IT8XXX2_SMB_CHC_SMB0          BIT(1)
+/* 0x21: SMB2/3 Channel Select */
+#define IT8XXX2_SMB_CHD_SMB3          GENMASK(5, 4)
+#define IT8XXX2_SMB_CHA_SMB2          GENMASK(2, 0)
 /* 0x41 0x81 0xC1: Host Control */
 #define IT8XXX2_SMB_SRT               BIT(6)
 #define IT8XXX2_SMB_LABY              BIT(5)

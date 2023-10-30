@@ -1133,7 +1133,12 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		*reg_mstfctrl = IT8XXX2_SMB_FFCHSEL2_C;
 	}
 #endif
-
+#ifdef CONFIG_I2C_IT8XXX2_SWAP_CHA_CHC
+	/* Channel C is located at SMCLK0/SMDAT0. */
+	IT8XXX2_SMB_SMB01CHS = IT8XXX2_SMB_CHB_SMB1 | IT8XXX2_SMB_CHC_SMB0;
+	/* Channel A is located at SMCLK2/SMDAT2. */
+	IT8XXX2_SMB_SMB23CHS = IT8XXX2_SMB_CHD_SMB3;
+#endif
 	/* Set clock frequency for I2C ports */
 	if (config->bitrate == I2C_BITRATE_STANDARD ||
 		config->bitrate == I2C_BITRATE_FAST ||
