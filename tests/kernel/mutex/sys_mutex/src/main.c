@@ -100,8 +100,12 @@ static ZTEST_BMEM SYS_MUTEX_DEFINE(bad_count_mutex);
  *
  */
 
-void thread_05(void)
+void thread_05(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(3500));
@@ -122,8 +126,12 @@ void thread_05(void)
  *
  */
 
-void thread_06(void)
+void thread_06(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(3750));
@@ -153,8 +161,12 @@ void thread_06(void)
  *
  */
 
-void thread_07(void)
+void thread_07(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(2500));
@@ -182,8 +194,12 @@ void thread_07(void)
  *
  */
 
-void thread_08(void)
+void thread_08(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(1500));
@@ -205,8 +221,12 @@ void thread_08(void)
  *
  */
 
-void thread_09(void)
+void thread_09(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(500));	/* Allow lower priority thread to run */
@@ -237,8 +257,12 @@ void thread_09(void)
  *
  */
 
-void thread_11(void)
+void thread_11(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int rv;
 
 	k_sleep(K_MSEC(3500));
@@ -253,7 +277,7 @@ void thread_11(void)
 
 K_THREAD_STACK_DEFINE(thread_12_stack_area, STACKSIZE);
 struct k_thread thread_12_thread_data;
-extern void thread_12(void);
+extern void thread_12(void *p1, void *p2, void *p3);
 
 
 

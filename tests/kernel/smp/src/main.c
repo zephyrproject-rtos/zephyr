@@ -1079,15 +1079,15 @@ static int run_concurrency(void *p1, void *p2, void *p3)
 ZTEST(smp, test_inc_concurrency)
 {
 	/* increasing global var with irq lock */
-	zassert_true(run_concurrency(LOCK_IRQ, inc_global_cnt),
+	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_IRQ), inc_global_cnt, NULL),
 			"total count %d is wrong(i)", global_cnt);
 
 	/* increasing global var with irq lock */
-	zassert_true(run_concurrency(LOCK_SEM, inc_global_cnt),
+	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_SEM), inc_global_cnt, NULL),
 			"total count %d is wrong(s)", global_cnt);
 
 	/* increasing global var with irq lock */
-	zassert_true(run_concurrency(LOCK_MUTEX, inc_global_cnt),
+	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_MUTEX), inc_global_cnt, NULL),
 			"total count %d is wrong(M)", global_cnt);
 }
 

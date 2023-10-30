@@ -78,8 +78,12 @@ void __attribute__((noinline)) check_input(const char *name, const char *input)
  * and will not set ret to TC_FAIL.
  *
  */
-void alternate_thread(void)
+void alternate_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	TC_PRINT("Starts %s\n", __func__);
 	check_input(__func__,
 		    "Input string is too long and stack overflowed!\n");

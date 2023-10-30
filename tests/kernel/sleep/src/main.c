@@ -102,10 +102,10 @@ static int sleep_time_valid(uint32_t start, uint32_t end, uint32_t dur)
 
 static void test_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	int arg1 = POINTER_TO_INT(p1);
-	int arg2 = POINTER_TO_INT(p2);
 	uint32_t start_tick;
 	uint32_t end_tick;
 
@@ -177,10 +177,9 @@ static void irq_offload_isr(const void *arg)
 
 static void helper_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
-
-	int arg1 = POINTER_TO_INT(p1);
-	int arg2 = POINTER_TO_INT(p2);
 
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 	/* Wake the test thread */
