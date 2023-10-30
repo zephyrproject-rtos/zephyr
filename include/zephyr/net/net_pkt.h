@@ -836,6 +836,20 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
+static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
+{
+	if ((IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) &&
+	     net_pkt_family(pkt) == AF_INET &&
+	     net_pkt_ipv4_fragment_more(pkt)) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) &&
+	     net_pkt_family(pkt) == AF_INET6 &&
+	     net_pkt_ipv6_fragment_start(pkt))) {
+		return true;
+	}
+
+	return false;
+}
+
 static inline uint8_t net_pkt_priority(struct net_pkt *pkt)
 {
 	return pkt->priority;
