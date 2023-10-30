@@ -879,7 +879,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * may result in scheduled threads running in an incorrect deadline
  * order.
  *
- * @note Despite the API naming, the scheduler makes no guarantees the
+ * @note Despite the API naming, the scheduler makes no guarantees
  * the thread WILL be scheduled within that deadline, nor does it take
  * extra metadata (like e.g. the "runtime" and "period" parameters in
  * Linux sched_setattr()) that allows the kernel to validate the
