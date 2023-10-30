@@ -462,10 +462,9 @@ out:
 
 static const struct wifi_mgmt_ops *const get_wifi_mgmt_api(const struct device *dev)
 {
-	struct net_wifi_mgmt_offload *off_api =
-			(struct net_wifi_mgmt_offload *) dev->api;
+	struct net_wifi_mgmt_offload *api = (struct net_wifi_mgmt_offload *)dev->api;
 
-	return off_api ? off_api->wifi_mgmt_api : NULL;
+	return api ? api->wifi_mgmt_api : NULL;
 }
 
 int z_wpa_supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
