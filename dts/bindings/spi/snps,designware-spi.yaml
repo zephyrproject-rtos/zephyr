@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# Copyright (c) 2023 Meta Platforms All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 description: Synopsys DesignWare SPI node
@@ -26,3 +27,10 @@ properties:
       RX/TX FIFO depth. Corresponds to the SSI_TX_FIFO_DEPTH
       and SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
       Serial Interface. Depth ranges from 2-256.
+
+  serial-target:
+    type: boolean
+    description: |
+      True if it is a Serial Target. False if it is a Serial
+      Master. Corresponds to SSI_IS_MASTER of the Designware
+      Synchronous Serial Interface.
