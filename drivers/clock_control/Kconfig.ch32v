@@ -1,0 +1,9 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_CH56X_CLKMUX
+	bool "WCH CH56x clock mux controller"
+	default y
+	depends on DT_HAS_WCH_CH56X_CLKMUX_ENABLED
+	help
+	  Enable WCH CH56x clock mux controller.

@@ -98,4 +98,6 @@ source "drivers/clock_control/Kconfig.nrf_auxpll"
 
 source "drivers/clock_control/Kconfig.arm_scmi"
 
+source "drivers/clock_control/Kconfig.ch32v"
+
 endif # CLOCK_CONTROL
