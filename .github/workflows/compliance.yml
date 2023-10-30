@@ -21,7 +21,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-doc-pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('.github/workflows/compliance.yml') }}
 
     - name: Install python dependencies
       run: |
