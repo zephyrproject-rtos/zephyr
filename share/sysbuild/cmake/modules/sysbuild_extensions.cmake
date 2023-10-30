@@ -511,34 +511,55 @@ function(ExternalZephyrProject_Cmake)
 endfunction()
 
 # Usage:
-#   sysbuild_module_call(<hook> MODULES <modules> [IMAGES <images>] [EXTRA_ARGS <arguments>])
+#   sysbuild_module_call(<hook> MODULES <modules> IMAGES <images> [IMAGE <image>] [EXTRA_ARGS <arguments>])
 #
 # This function invokes the sysbuild hook provided as <hook> for <modules>.
 #
-# If `IMAGES` is passed, then the provided list of of images will be passed to
-# the hook.
+# `IMAGES` contains the list of images to the hook, if `IMAGE` is passed, this will be provided
+# to the hook.
 #
 # `EXTRA_ARGS` can be used to pass extra arguments to the hook.
 #
 # Valid <hook> values:
-# PRE_CMAKE   : Invoke pre-CMake call for modules before CMake configure is invoked for images
-# POST_CMAKE  : Invoke post-CMake call for modules after CMake configure has been invoked for images
-# PRE_DOMAINS : Invoke pre-domains call for modules before creating domains yaml.
-# POST_DOMAINS: Invoke post-domains call for modules after creation of domains yaml.
+# PRE_CMAKE       : Invoke pre-CMake call for modules before CMake configure is invoked for images
+# POST_CMAKE      : Invoke post-CMake call for modules after CMake configure has been invoked for
+# PRE_IMAGE_CMAKE : Invoke pre-CMake call for modules before CMake configure is invoked for each
+#                   image
+# POST_IMAGE_CMAKE: Invoke post-CMake call for modules after CMake configure has been invoked for
+#                   each image
+# PRE_DOMAINS     : Invoke pre-domains call for modules before creating domains yaml
+# POST_DOMAINS    : Invoke post-domains call for modules after creation of domains yaml
+#
+# For the `PRE_IMAGE_CMAKE` and `POST_IMAGE_CMAKE` hooks, `IMAGE` is provided
 #
 function(sysbuild_module_call)
-  set(options "PRE_CMAKE;POST_CMAKE;PRE_DOMAINS;POST_DOMAINS")
-  set(multi_args "MODULES;IMAGES;EXTRA_ARGS")
+  set(options "PRE_CMAKE;POST_CMAKE;PRE_IMAGE_CMAKE;POST_IMAGE_CMAKE;PRE_DOMAINS;POST_DOMAINS")
+  set(multi_args "MODULES;IMAGES;IMAGE;EXTRA_ARGS")
   cmake_parse_arguments(SMC "${options}" "${test_args}" "${multi_args}" ${ARGN})
 
   zephyr_check_flags_required("sysbuild_module_call" SMC ${options})
   zephyr_check_flags_exclusive("sysbuild_module_call" SMC ${options})
 
+  if(NOT DEFINED SMC_IMAGES)
+    message(FATAL_ERROR
+            "sysbuild_module_call(...) missing required IMAGES option")
+  endif()
+
+  if(DEFINED SMC_IMAGE)
+    set(IMAGE_ARG IMAGE ${SMC_IMAGE})
+  elseif(SMC_PRE_IMAGE_CMAKE)
+    message(FATAL_ERROR
+            "sysbuild_module_call(PRE_IMAGE_CMAKE ...) missing required IMAGE option")
+  elseif(SMC_POST_IMAGE_CMAKE)
+    message(FATAL_ERROR
+            "sysbuild_module_call(POST_IMAGE_CMAKE ...) missing required IMAGE option")
+  endif()
+
   foreach(call ${options})
     if(SMC_${call})
       foreach(module ${SMC_MODULES})
         if(COMMAND ${module}_${call})
-          cmake_language(CALL ${module}_${call} IMAGES ${SMC_IMAGES} ${SMC_EXTRA_ARGS})
+          cmake_language(CALL ${module}_${call} IMAGES ${SMC_IMAGES} ${IMAGE_ARG} ${SMC_EXTRA_ARGS})
         endif()
       endforeach()
     endif()
