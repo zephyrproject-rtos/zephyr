@@ -1,6 +1,12 @@
-# Copyright (c) 2023 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: Apache-2.0
+"""
+REST client for Leshan demo server
+##################################
+
+Copyright (c) 2023 Nordic Semiconductor ASA
+
+SPDX-License-Identifier: Apache-2.0
+
+"""
 
 from __future__ import annotations
 
@@ -12,7 +18,9 @@ import time
 from contextlib import contextmanager
 
 class Leshan:
+    """This class represents a Leshan client that interacts with demo server's REAT API"""
     def __init__(self, url: str):
+        """Initialize Leshan client and check if server is available"""
         self.api_url = url
         self.timeout = 10
         #self.format = 'TLV'
@@ -22,8 +30,8 @@ class Leshan:
             resp = self.get('/security/clients')
             if not isinstance(resp, list):
                 raise RuntimeError('Did not receive list of endpoints')
-        except requests.exceptions.ConnectionError:
-            raise RuntimeError('Leshan not responding')
+        except requests.exceptions.ConnectionError as exc:
+            raise RuntimeError('Leshan not responding') from exc
 
     @staticmethod
     def handle_response(resp: requests.models.Response):
@@ -47,7 +55,7 @@ class Leshan:
         return None
 
     def get(self, path: str):
-        """Send HTTP GET query"""
+        """Send HTTP GET query with typical parameters"""
         params = {'timeout': self.timeout}
         if self.format is not None:
             params['format'] = self.format
@@ -55,15 +63,18 @@ class Leshan:
         return Leshan.handle_response(resp)
 
     def put_raw(self, path: str, data: str | dict | None = None, headers: dict | None = None):
+        """Send HTTP PUT query without any default parameters"""
         resp = self._s.put(f'{self.api_url}{path}', data=data, headers=headers, timeout=self.timeout)
         return Leshan.handle_response(resp)
 
     def put(self, path: str, data: str | dict, uri_options: str = ''):
+        """Send HTTP PUT query with typical parameters"""
         if isinstance(data, dict):
             data = json.dumps(data)
         return self.put_raw(f'{path}?timeout={self.timeout}&format={self.format}' + uri_options, data=data, headers={'content-type': 'application/json'})
 
     def post(self, path: str, data: str | dict | None = None):
+        """Send HTTP POST query"""
         if isinstance(data, dict):
             data = json.dumps(data)
         if data is not None:
@@ -76,13 +87,16 @@ class Leshan:
         return Leshan.handle_response(resp)
 
     def delete(self, path: str):
+        """Send HTTP DELETE query"""
         resp = self._s.delete(f'{self.api_url}{path}', timeout=self.timeout)
         return Leshan.handle_response(resp)
 
     def execute(self, endpoint: str, path: str):
+        """Send LwM2M EXECUTE command"""
         return self.post(f'/clients/{endpoint}/{path}')
 
     def write(self, endpoint: str, path: str, value: bool | int | str):
+        """Send LwM2M WRITE command to a single resource or resource instance"""
         if len(path.split('/')) == 3:
             kind = 'singleResource'
         else:
@@ -91,14 +105,17 @@ class Leshan:
         return self.put(f'/clients/{endpoint}/{path}', self._define_resource(rid, value, kind))
 
     def update_obj_instance(self, endpoint: str, path: str, resources: dict):
+        """Update object instance"""
         data = self._define_obj_inst(path, resources)
         return self.put(f'/clients/{endpoint}/{path}', data, uri_options='&replace=false')
 
     def replace_obj_instance(self, endpoint: str, path: str, resources: dict):
+        """Replace object instance"""
         data = self._define_obj_inst(path, resources)
         return self.put(f'/clients/{endpoint}/{path}', data, uri_options='&replace=true')
 
     def create_obj_instance(self, endpoint: str, path: str, resources: dict):
+        """Send LwM2M CREATE command"""
         data = self._define_obj_inst(path, resources)
         path = '/'.join(path.split('/')[:-1]) # Create call should not have instance ID in path
         return self.post(f'/clients/{endpoint}/{path}', data)
@@ -124,6 +141,7 @@ class Leshan:
 
     @classmethod
     def _convert_type(cls, value):
+        """Wrapper for special types that are not understood by Json"""
         if isinstance(value, datetime):
             return int(value.timestamp())
         else:
@@ -131,6 +149,7 @@ class Leshan:
 
     @classmethod
     def _define_obj_inst(cls, path: str, resources: dict):
+        """Define an object instance for Leshan"""
         data = {
             "kind": "instance",
             "id": int(path.split('/')[-1]),  # ID is last element of path
@@ -146,6 +165,7 @@ class Leshan:
 
     @classmethod
     def _define_resource(cls, rid, value, kind='singleResource'):
+        """Define a resource for Leshan"""
         if kind in ('singleResource', 'resourceInstance'):
             return {
                 "id": rid,
@@ -208,6 +228,7 @@ class Leshan:
         return {content['id']: instances}
 
     def read(self, endpoint: str, path: str):
+        """Send LwM2M READ command and decode the response to a Python dictionary"""
         resp = self.get(f'/clients/{endpoint}/{path}')
         if not resp['success']:
             return resp
@@ -223,9 +244,10 @@ class Leshan:
         raise RuntimeError(f'Unhandled type {content["kind"]}')
 
     @classmethod
-    def parse_composite(cls, content: dict):
+    def parse_composite(cls, payload: dict):
+        """Decode the Leshan's response to composite query back to a Python dictionary"""
         data = {}
-        for path, content in content.items():
+        for path, content in payload.items():
             keys = [int(key) for key in path.lstrip("/").split('/')]
             if len(keys) == 1:
                 data.update(cls._decode_obj(content))
@@ -251,14 +273,22 @@ class Leshan:
                 raise RuntimeError(f'Unhandled path {path}')
         return data
 
-    def composite_read(self, endpoint: str, paths: list[str]):
-        paths = [path if path.startswith('/') else '/' + path for path in paths]
+    def _composite_params(self, paths: list[str] | None = None):
+        """Common URI parameters for composite query"""
         parameters = {
             'pathformat': self.format,
             'nodeformat': self.format,
-            'timeout': self.timeout,
-            'paths': ','.join(paths)
+            'timeout': self.timeout
         }
+        if paths is not None:
+            paths = [path if path.startswith('/') else '/' + path for path in paths]
+            parameters['paths'] = ','.join(paths)
+
+        return parameters
+
+    def composite_read(self, endpoint: str, paths: list[str]):
+        """Send LwM2M Composite-Read command and decode the response to a Python dictionary"""
+        parameters = self._composite_params(paths)
         resp = self._s.get(f'{self.api_url}/clients/{endpoint}/composite', params=parameters, timeout=self.timeout)
         payload = Leshan.handle_response(resp)
         if not payload['status'] == 'CONTENT(205)':
@@ -267,7 +297,7 @@ class Leshan:
 
     def composite_write(self, endpoint: str, resources: dict):
         """
-        Do LwM2m composite write operation.
+        Send LwM2m Composite-Write operation.
 
         Targeted resources are defined as a dictionary with the following structure:
         {
@@ -356,11 +386,18 @@ class Leshan:
             r.close()
 
 class LeshanEventsIterator:
+    """Iterator for Leshan event stream"""
     def __init__(self, req: requests.Response, timeout: int):
+        """Initialize the iterator in line mode"""
         self._it = req.iter_lines(chunk_size=1, decode_unicode=True)
         self._timeout = timeout
 
     def next_event(self, event: str):
+        """
+        Finds the next occurrence of a specific event in the stream.
+
+        If timeout happens, the returns None.
+        """
         timeout = time.time() + self._timeout
         try:
             for line in self._it:

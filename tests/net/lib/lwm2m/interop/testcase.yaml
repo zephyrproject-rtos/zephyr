@@ -3,6 +3,8 @@ tests:
     harness: pytest
     timeout: 300
     slow: true
+    harness_config:
+      pytest_dut_scope: module
     integration_platforms:
       - native_posix
     platform_allow:
