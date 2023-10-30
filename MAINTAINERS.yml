@@ -1644,12 +1644,13 @@ Kernel:
   status: maintained
   maintainers:
     - andyross
+    - peter-mitsis
   collaborators:
     - nashif
     - ceolin
     - dcpleung
-    - peter-mitsis
     - cfriedt
+    - npitre
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
@@ -1668,9 +1669,10 @@ Base OS:
   status: maintained
   maintainers:
     - andyross
+    - nashif
   collaborators:
     - dcpleung
-    - nashif
+    - peter-mitsis
   files:
     - include/zephyr/sys/
     - lib/os/
