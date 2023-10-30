@@ -372,7 +372,7 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 			return ret;
 		}
 
-		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+		ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
 		if (ret > 0) {
 			frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
 		} else {
