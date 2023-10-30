@@ -20,6 +20,26 @@ LOG_MODULE_REGISTER(wifi_native_sim, CONFIG_WIFI_LOG_LEVEL);
 #include "internal.h"
 #include "iface_api.h"
 #include "mgmt_api.h"
+#include "wifi_drv_api.h"
+
+static struct zep_wpa_supp_dev_ops wifi_drv_ops = {
+	.init = wifi_drv_init,
+	.deinit = wifi_drv_deinit,
+	.scan2 = wifi_drv_scan2,
+	.scan_abort = wifi_drv_scan_abort,
+	.get_scan_results2 = wifi_drv_get_scan_results2,
+	.deauthenticate = wifi_drv_deauthenticate,
+	.authenticate = wifi_drv_authenticate,
+	.associate = wifi_drv_associate,
+	.set_key = wifi_drv_set_key,
+	.set_supp_port = wifi_drv_set_supp_port,
+	.signal_poll = wifi_drv_signal_poll,
+	.send_mlme = wifi_drv_send_mlme,
+	.get_wiphy = wifi_drv_get_wiphy,
+	.register_frame = wifi_drv_register_frame,
+	.get_capa = wifi_drv_get_capa,
+	.get_conn_info = wifi_drv_get_conn_info,
+};
 
 static struct wifi_mgmt_ops wifi_mgmt_ops = {
 	.scan = wifi_scan,
@@ -32,9 +52,6 @@ static struct wifi_mgmt_ops wifi_mgmt_ops = {
 	.get_power_save_config = wifi_get_power_save_config,
 };
 
-/* TODO: replace the net_wifi_mgmt_offload with something more appropriate
- *       as this is not an offloaded driver.
- */
 static const struct net_wifi_mgmt_offload wifi_if_api = {
 	.wifi_iface.iface_api.init = wifi_if_init,
 	.wifi_iface.start = wifi_if_start,
@@ -46,6 +63,7 @@ static const struct net_wifi_mgmt_offload wifi_if_api = {
 	.wifi_iface.get_stats = wifi_if_stats_get,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 	.wifi_mgmt_api = &wifi_mgmt_ops,
+	.wifi_drv_ops = &wifi_drv_ops,
 };
 
 #define DEFINE_RX_THREAD(x, _)						\
@@ -68,7 +86,7 @@ LISTIFY(CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT, DEFINE_WIFI_DEV_DATA, (;), _);
 #define DEFINE_WIFI_DEVICE(x, _)					\
 	ETH_NET_DEVICE_INIT(wifi_native_sim_##x,			\
 			    CONFIG_WIFI_NATIVE_SIM_DRV_NAME #x,		\
-			    NULL, NULL,	&wifi_context_data_##x, NULL,	\
+			    NULL, NULL, &wifi_context_data_##x, NULL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &wifi_if_api,				\
 			    NET_ETH_MTU)

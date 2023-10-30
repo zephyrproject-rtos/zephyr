@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_NATIVE_INTERNAL_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_NATIVE_INTERNAL_H_
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/logging/log.h>
@@ -13,6 +16,8 @@
 #else
 #define ETH_HDR_LEN sizeof(struct net_eth_hdr)
 #endif
+
+#include "drivers/driver_zephyr.h" /* from hostap */
 
 struct wifi_context {
 	uint8_t recv[NET_ETH_MTU + ETH_HDR_LEN];
@@ -38,4 +43,10 @@ struct wifi_context {
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	struct net_stats_wifi stats_wifi;
 #endif
+
+	/* Supplicant specific information */
+	void *supplicant_drv_ctx;
+	struct zep_wpa_supp_dev_callbk_fns supplicant_callbacks;
 };
+
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_NATIVE_INTERNAL_H_ */
