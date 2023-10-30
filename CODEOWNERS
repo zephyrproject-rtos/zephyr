@@ -275,6 +275,7 @@
 /drivers/display/display_ili9342c.*       @extremegtx
 /drivers/dac/                             @martinjaeger
 /drivers/dac/*ad56xx*                     @benediktibk
+/drivers/dac/dac_ad5592.c                 @bbilas
 /drivers/dai/                             @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/                       @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/ssp/                   @kv2019i @marcinszkudlinski @abonislawski
