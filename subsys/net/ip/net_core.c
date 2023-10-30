@@ -76,8 +76,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
 	 * then do not pass it to L2 as the packet does not have link layer headers in it.
 	 */
-	if ((IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) && net_pkt_ipv4_fragment_more(pkt)) ||
-	    (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) && net_pkt_ipv6_fragment_start(pkt))) {
+	if (net_pkt_is_ip_reassembled(pkt)) {
 		locally_routed = true;
 	}
 
