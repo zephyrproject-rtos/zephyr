@@ -31,7 +31,7 @@ struct spi_dw_config {
 	uint32_t regs;
 	uint32_t clock_frequency;
 	spi_dw_config_t config_func;
-	uint8_t op_modes;
+	bool serial_target;
 	uint8_t fifo_depth;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
@@ -47,7 +47,6 @@ struct spi_dw_data {
 	struct spi_context ctx;
 	uint8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	uint8_t fifo_diff;	/* cannot be bigger than FIFO depth */
-	uint16_t _unused;
 };
 
 /* Register operation functions */
