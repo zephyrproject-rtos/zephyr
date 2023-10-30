@@ -351,7 +351,7 @@ static int settings_file_save_and_compress(struct settings_file *cf,
 
 	rc = fs_close(&wf);
 	rc2 = fs_close(&rf);
-	if (rc == 0 && rc2 == 0 && fs_unlink(cf->cf_name) == 0) {
+	if (rc == 0 && rc2 == 0) {
 		if (fs_rename(tmp_file, cf->cf_name)) {
 			return -ENOENT;
 		}
