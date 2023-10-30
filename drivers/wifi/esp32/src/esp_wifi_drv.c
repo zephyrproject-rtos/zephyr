@@ -61,7 +61,7 @@ struct esp32_wifi_runtime {
 	uint8_t state;
 };
 
-static void esp_wifi_event_task(void);
+static void esp_wifi_event_task(void *, void *, void *);
 
 K_MSGQ_DEFINE(esp_wifi_msgq, sizeof(system_event_t), 10, 4);
 K_THREAD_STACK_DEFINE(esp_wifi_event_stack, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE);
