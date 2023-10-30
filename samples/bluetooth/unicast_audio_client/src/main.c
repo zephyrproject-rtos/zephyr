@@ -19,6 +19,8 @@
 
 static void start_scan(void);
 
+uint64_t unicast_audio_recv_ctr; /* This value is exposed to test code */
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
@@ -564,7 +566,9 @@ static void stream_recv(struct bt_bap_stream *stream,
 			struct net_buf *buf)
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+		unicast_audio_recv_ctr++;
+		printk("Incoming audio on stream %p len %u (%"PRIu64")\n", stream, buf->len,
+			unicast_audio_recv_ctr);
 	}
 }
 
