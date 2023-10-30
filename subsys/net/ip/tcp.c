@@ -3609,7 +3609,8 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 	struct net_tcp_hdr *tcp_hdr;
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
-	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) ||
+	     net_pkt_is_ip_reassembled(pkt)) &&
 	    net_calc_chksum_tcp(pkt) != 0U) {
 		NET_DBG("DROP: checksum mismatch");
 		goto drop;
