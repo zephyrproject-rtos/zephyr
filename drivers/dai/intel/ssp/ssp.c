@@ -1759,15 +1759,25 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 				   const struct dai_intel_ipc4_ssp_config *regs)
 {
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
-	uint32_t ssc0, sstsa, ssrsa;
+	uint32_t ssc0, sstsa, ssrsa, sscr1;
 
 	ssc0 = regs->ssc0;
-	sstsa = regs->sstsa;
-	ssrsa = regs->ssrsa;
+	sstsa = SSTSA_GET(regs->sstsa);
+	ssrsa = SSRSA_GET(regs->ssrsa);
+	sscr1 = regs->ssc1 & ~(SSCR1_RSRE | SSCR1_TSRE);
+
+	if (regs->sstsa & SSTSA_TXEN || regs->ssrsa & SSRSA_RXEN ||
+	    regs->ssc1 & (SSCR1_RSRE | SSCR1_TSRE)) {
+		LOG_INF("%s: Ignoring %s%s%s%sfrom blob", __func__,
+			regs->sstsa & SSTSA_TXEN ? "SSTSA:TXEN " : "",
+			regs->ssrsa & SSRSA_RXEN ? "SSRSA:RXEN " : "",
+			regs->ssc1 & SSCR1_TSRE ? "SSCR1:TSRE " : "",
+			regs->ssc1 & SSCR1_RSRE ? "SSCR1:RSRE " : "");
+	}
 
 	sys_write32(ssc0, dai_base(dp) + SSCR0);
 	sys_write32(regs->ssc2 & ~SSCR2_SFRMEN, dai_base(dp) + SSCR2); /* hardware specific flow */
-	sys_write32(regs->ssc1, dai_base(dp) + SSCR1);
+	sys_write32(sscr1, dai_base(dp) + SSCR1);
 	sys_write32(regs->ssc2 | SSCR2_SFRMEN, dai_base(dp) + SSCR2); /* hardware specific flow */
 	sys_write32(regs->ssc2, dai_base(dp) + SSCR2);
 	sys_write32(regs->ssc3, dai_base(dp) + SSCR3);
@@ -1779,7 +1789,7 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	sys_write32(ssrsa, dai_base(dp) + SSRSA);
 
 	LOG_INF("%s sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x", __func__,
-		ssc0, regs->ssc1, regs->sscto, regs->sspsp);
+		ssc0, sscr1, regs->sscto, regs->sspsp);
 	LOG_INF("%s sscr2 = 0x%08x, sspsp2 = 0x%08x, sscr3 = 0x%08x", __func__,
 		regs->ssc2, regs->sspsp2, regs->ssc3);
 	LOG_INF("%s ssioc = 0x%08x, ssrsa = 0x%08x, sstsa = 0x%08x", __func__,
