@@ -8,6 +8,7 @@ if(CONFIG_SOC_NXP_RT595)
 endif()
 
 add_subdirectory(common)
+zephyr_include_directories(${SOC_SERIES}/include)
 
 #  west sign
 
