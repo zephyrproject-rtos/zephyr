@@ -1053,8 +1053,7 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 		return -ENOSPC;
 	}
 
-	/* TODO proper fifo balancing */
-	filter_element.efce = filter_id & 0x01 ? CAN_MCAN_FCE_FIFO1 : CAN_MCAN_FCE_FIFO0;
+	filter_element.efce = CAN_MCAN_FCE_FIFO0;
 
 	memcpy32_volatile(&msg_ram->ext_filt[filter_id], &filter_element,
 			  sizeof(struct can_mcan_ext_filter));
