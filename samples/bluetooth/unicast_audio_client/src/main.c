@@ -245,17 +245,17 @@ static int init_lc3(void)
 
 	if (freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	if (frame_duration_us < 0) {
 		printk("Error: Frame duration not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	if (octets_per_frame < 0) {
 		printk("Error: Octets per frame not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	frame_duration_100us = frame_duration_us / 100;
@@ -277,7 +277,9 @@ static int init_lc3(void)
 
 	if (lc3_encoder == NULL) {
 		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		return -1;
 	}
+	return 0;
 }
 
 #else
