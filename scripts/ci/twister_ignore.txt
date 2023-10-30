@@ -24,6 +24,7 @@ doc/*
 *.md
 # if we change this file or associated script, it should not trigger a full
 # twister.
+scripts/ci/test_plan.py
 scripts/ci/twister_ignore.txt
 scripts/ci/what_changed.py
 scripts/ci/version_mgr.py
