@@ -48,6 +48,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "intel,pcie";
+		acpi-hid = "PNP0A08";
 		ranges;
 
 		uart0: uart0 {
