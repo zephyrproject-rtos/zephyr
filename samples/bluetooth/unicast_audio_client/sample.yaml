@@ -12,7 +12,7 @@ tests:
       - native_sim
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - nrf5340dk_nrf5340_cpuapp
     sysbuild: true
   sample.bluetooth.audio_unicast_client.bt_ll_sw_split:
     harness: bluetooth
