@@ -142,11 +142,21 @@ const char *iface2str(struct net_if *iface, const char **extra)
 
 #ifdef CONFIG_NET_L2_ETHERNET
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		if (extra) {
-			*extra = "========";
-		}
+		struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
-		return "Ethernet";
+		if (eth_ctx->eth_if_type == L2_ETH_IF_TYPE_WIFI) {
+			if (extra) {
+				*extra = "====";
+			}
+
+			return "WiFi";
+		} else {
+			if (extra) {
+				*extra = "========";
+			}
+
+			return "Ethernet";
+		}
 	}
 #endif
 
