@@ -29,6 +29,7 @@ Samples and Demos
    modules/*
    compression/*
    fuel_gauge/*
+   storage/*
 
 .. comment
    To add a new sample document, please use the template available under
