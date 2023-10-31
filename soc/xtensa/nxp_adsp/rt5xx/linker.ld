@@ -329,12 +329,6 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >sdram0 :sdram0_phdr
 
-  .noinit : ALIGN(4)
-  {
-    *(.noinit)
-    *(.noinit.*)
-  } >sdram0 :sdram0_phdr
-
   .data : ALIGN(4)
   {
     __data_start = ABSOLUTE(.);
@@ -389,6 +383,12 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
+  } >sdram0 :sdram0_phdr
+
+  .noinit (NOLOAD) : ALIGN(4)
+  {
+    *(.noinit)
+    *(.noinit.*)
   } >sdram0 :sdram0_phdr
 
   .heap_mem (NOLOAD) : ALIGN(8)
