@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ACPI, CONFIG_ACPI_LOG_LEVEL);
 
-struct acpi {
+static struct {
 	struct acpi_dev child_dev[CONFIG_ACPI_DEV_MAX];
 	int num_dev;
 #ifdef CONFIG_PCIE_PRT
@@ -22,9 +22,7 @@ struct acpi {
 #endif
 	bool early_init;
 	int status;
-};
-
-static struct acpi bus_ctx = {
+} acpi = {
 	.status = AE_NOT_CONFIGURED,
 };
 
@@ -34,11 +32,11 @@ static int check_init_status(void)
 {
 	int ret;
 
-	if (ACPI_SUCCESS(bus_ctx.status)) {
+	if (ACPI_SUCCESS(acpi.status)) {
 		return 0;
 	}
 
-	if (bus_ctx.status == AE_NOT_CONFIGURED) {
+	if (acpi.status == AE_NOT_CONFIGURED) {
 		ret = acpi_init();
 	} else {
 		LOG_ERR("ACPI init was not success\n");
@@ -80,7 +78,7 @@ static ACPI_STATUS initialize_acpica(void)
 	}
 
 	/* Initialize the ACPI Table Manager and get all ACPI tables */
-	if (!bus_ctx.early_init) {
+	if (!acpi.early_init) {
 		status = AcpiInitializeTables(NULL, 16, FALSE);
 		if (ACPI_FAILURE(status)) {
 			ACPI_EXCEPTION((AE_INFO, status, "While initializing Table Manager"));
@@ -201,7 +199,6 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 {
 	ACPI_NAMESPACE_NODE *node;
 	ACPI_BUFFER rt_buffer;
-	struct acpi *bus = (struct acpi *)ctx;
 	struct acpi_dev *child_dev;
 
 	node = ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, obj_handle);
@@ -218,11 +215,11 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 		goto exit;
 	}
 
-	if (bus->num_dev >= CONFIG_ACPI_DEV_MAX) {
+	if (acpi.num_dev >= CONFIG_ACPI_DEV_MAX) {
 		return AE_NO_MEMORY;
 	}
 
-	child_dev = (struct acpi_dev *)&bus->child_dev[bus->num_dev++];
+	child_dev = (struct acpi_dev *)&acpi.child_dev[acpi.num_dev++];
 	child_dev->handle = obj_handle;
 	child_dev->dev_info = dev_info;
 
@@ -250,12 +247,12 @@ exit:
 	return status;
 }
 
-static int acpi_enum_devices(struct acpi *bus)
+static int acpi_enum_devices(void)
 {
 	LOG_DBG("");
 
 	AcpiWalkNamespace(ACPI_TYPE_DEVICE, ACPI_ROOT_OBJECT, ACPI_UINT32_MAX,
-			  dev_resource_enum_callback, NULL, bus, NULL);
+			  dev_resource_enum_callback, NULL, NULL, NULL);
 
 	return 0;
 }
@@ -266,7 +263,7 @@ static int acpi_early_init(void)
 
 	LOG_DBG("");
 
-	if (bus_ctx.early_init) {
+	if (acpi.early_init) {
 		LOG_DBG("acpi early init already done");
 		return 0;
 	}
@@ -277,7 +274,7 @@ static int acpi_early_init(void)
 		return -EIO;
 	}
 
-	bus_ctx.early_init = true;
+	acpi.early_init = true;
 
 	return 0;
 }
@@ -357,8 +354,7 @@ int acpi_current_resource_free(ACPI_RESOURCE *res)
 }
 
 #ifdef CONFIG_PCIE_PRT
-static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
-				ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
+static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
 {
 	ACPI_BUFFER rt_buffer;
 	ACPI_NAMESPACE_NODE *node;
@@ -382,23 +378,23 @@ static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
 	}
 
 	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
-		if (!bus->pci_prt_table[i].SourceIndex) {
+		if (!acpi.pci_prt_table[i].SourceIndex) {
 			break;
 		}
 		if (IS_ENABLED(CONFIG_X86_64)) {
 			/* mark the PRT irq numbers as reserved. */
-			arch_irq_set_used(bus->pci_prt_table[i].SourceIndex);
+			arch_irq_set_used(acpi.pci_prt_table[i].SourceIndex);
 		}
 	}
 
 	return 0;
 }
 
-static int acpi_retrieve_legacy_irq(struct acpi *bus)
+static int acpi_retrieve_legacy_irq(void)
 {
 	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
-	return acpi_get_irq_table(bus, CONFIG_ACPI_PRT_BUS_NAME,
-				  bus->pci_prt_table, sizeof(bus->pci_prt_table));
+	return acpi_get_irq_table(CONFIG_ACPI_PRT_BUS_NAME,
+				  acpi.pci_prt_table, sizeof(acpi.pci_prt_table));
 }
 
 int acpi_get_irq_routing_table(char *bus_name,
@@ -411,7 +407,7 @@ int acpi_get_irq_routing_table(char *bus_name,
 		return ret;
 	}
 
-	return acpi_get_irq_table(&bus_ctx, bus_name, rt_table, rt_size);
+	return acpi_get_irq_table(bus_name, rt_table, rt_size);
 }
 
 uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
@@ -429,11 +425,11 @@ uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
 	LOG_DBG("Device irq info: slot:%d pin:%d", slot, pin);
 
 	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
-		if (((bus_ctx.pci_prt_table[i].Address >> 16) & 0xffff) == slot &&
-		    bus_ctx.pci_prt_table[i].Pin + 1 == pin) {
+		if (((acpi.pci_prt_table[i].Address >> 16) & 0xffff) == slot &&
+		    acpi.pci_prt_table[i].Pin + 1 == pin) {
 			LOG_DBG("[%d]Device irq info: slot:%d pin:%d irq:%d", i, slot, pin,
-				bus_ctx.pci_prt_table[i].SourceIndex);
-			return bus_ctx.pci_prt_table[i].SourceIndex;
+				acpi.pci_prt_table[i].SourceIndex);
+			return acpi.pci_prt_table[i].SourceIndex;
 		}
 	}
 
@@ -530,7 +526,7 @@ struct acpi_dev *acpi_device_get(char *hid, int inst)
 	}
 
 	do {
-		child_dev = &bus_ctx.child_dev[i];
+		child_dev = &acpi.child_dev[i];
 		if (!child_dev->path) {
 			LOG_DBG("NULL device path found\n");
 			continue;
@@ -551,14 +547,14 @@ struct acpi_dev *acpi_device_get(char *hid, int inst)
 				return child_dev;
 			}
 		}
-	} while (i++ < bus_ctx.num_dev);
+	} while (i++ < acpi.num_dev);
 
 	return NULL;
 }
 
 struct acpi_dev *acpi_device_by_index_get(int index)
 {
-	return index < bus_ctx.num_dev ? &bus_ctx.child_dev[index] : NULL;
+	return index < acpi.num_dev ? &acpi.child_dev[index] : NULL;
 }
 
 void *acpi_table_get(char *signature, int inst)
@@ -566,7 +562,7 @@ void *acpi_table_get(char *signature, int inst)
 	int status;
 	ACPI_TABLE_HEADER *table;
 
-	if (!bus_ctx.early_init) {
+	if (!acpi.early_init) {
 		status = acpi_early_init();
 		if (status) {
 			LOG_ERR("ACPI early init failed");
@@ -760,9 +756,9 @@ static int acpi_init(void)
 
 	LOG_DBG("");
 
-	if (bus_ctx.status != AE_NOT_CONFIGURED) {
+	if (acpi.status != AE_NOT_CONFIGURED) {
 		LOG_DBG("acpi init already done");
-		return bus_ctx.status;
+		return acpi.status;
 	}
 
 	/* For debug version only */
@@ -781,17 +777,17 @@ static int acpi_init(void)
 	}
 
 #ifdef CONFIG_PCIE_PRT
-	status = acpi_retrieve_legacy_irq(&bus_ctx);
+	status = acpi_retrieve_legacy_irq();
 	if (status) {
 		LOG_ERR("Error in retrieve legacy interrupt info:%d", status);
 		goto exit;
 	}
 #endif
 
-	acpi_enum_devices(&bus_ctx);
+	acpi_enum_devices();
 
 exit:
-	bus_ctx.status = status;
+	acpi.status = status;
 
 	return status;
 }
