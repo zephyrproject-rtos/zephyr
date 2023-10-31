@@ -39,12 +39,6 @@ config ACPI_DEV_MAX
 	help
 	  maximum acpi child devices.
 
-config ACPI_INIT_PRIORITY
-	int "acpi boot time init level"
-	default 42
-	help
-	  boot time init level for acpi driver.
-
 endif # ACPI
 
 config ACPI_HID_LEN_MAX
