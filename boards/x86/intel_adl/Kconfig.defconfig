@@ -37,8 +37,6 @@ config HEAP_MEM_POOL_ADD_SIZE_ACPI
 	default 64000000
 config MAIN_STACK_SIZE
 	default 320000
-config ACPI_PRT_BUS_NAME
-	default "_SB.PC00"
 
 if SHELL
 config SHELL_STACK_SIZE

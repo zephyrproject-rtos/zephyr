@@ -19,10 +19,6 @@ config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	default n
 endif
 
-config ACPI_PRT_BUS_NAME
-	depends on ACPI
-	default "_SB.PC00"
-
 config HEAP_MEM_POOL_ADD_SIZE_ACPI
 	default 2097152
 	depends on ACPI

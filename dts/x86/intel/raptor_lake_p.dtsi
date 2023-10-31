@@ -43,9 +43,10 @@
 	};
 
 	pcie0: pcie0 {
-		compatible = "intel,pcie";
+		compatible = "pcie-controller";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		acpi-hid = "PNP0A08";
 		ranges;
 
 		smbus0: smbus0 {
