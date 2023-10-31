@@ -636,6 +636,244 @@ struct bt_cap_broadcast_to_unicast_param {
 int bt_cap_initiator_broadcast_to_unicast(const struct bt_cap_broadcast_to_unicast_param *param,
 					  struct bt_bap_unicast_group **unicast_group);
 
+/**
+ * @brief Discovers audio support on a remote device.
+ *
+ * This will discover the Common Audio Service (CAS) on the remote device, to
+ * verify if the remote device supports the Common Audio Profile.
+ *
+ * @note @kconfig{CONFIG_BT_CAP_COMMANDER} must be enabled for this function. If
+ * @kconfig{CONFIG_BT_CAP_INITIATOR} is also enabled, it does not matter if
+ * bt_cap_commander_unicast_discover() or bt_cap_initiator_unicast_discover() is used.
+ *
+ * @param conn Connection to a remote server.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_unicast_discover(struct bt_conn *conn);
+
+struct bt_cap_commander_broadcast_reception_start_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** Address of the advertiser. */
+	bt_addr_le_t addr;
+
+	/** SID of the advertising set. */
+	uint8_t adv_sid;
+
+	/**
+	 * @brief Periodic advertising interval in milliseconds.
+	 *
+	 * BT_BAP_PA_INTERVAL_UNKNOWN if unknown.
+	 */
+	uint16_t pa_interval;
+
+	/** 24-bit broadcast ID */
+	uint32_t broadcast_id;
+
+	/**
+	 * @brief Pointer to array of subgroups
+	 *
+	 * At least one bit in one of the subgroups bis_sync parameters shall be set.
+	 */
+	struct bt_bap_scan_delegator_subgroup *subgroups;
+
+	/** Number of subgroups */
+	size_t num_subgroups;
+};
+
+/** Parameters for starting broadcast reception  */
+struct bt_cap_commander_broadcast_reception_start_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_broadcast_reception_start_member_param *param;
+
+	/** The number of parameters in @p param */
+	size_t count;
+};
+
+/**
+ * @brief Starts the reception of broadcast audio on one or more remote Common Audio Profile
+ * Acceptors
+ *
+ * @param param The parameters to start the broadcast audio
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_broadcast_reception_start(
+	const struct bt_cap_commander_broadcast_reception_start_param *param);
+
+/** Parameters for stopping broadcast reception  */
+struct bt_cap_commander_broadcast_reception_stop_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member *members;
+
+	/** The number of members in @p members */
+	size_t count;
+};
+
+/**
+ * @brief Stops the reception of broadcast audio on one or more remote Common Audio Profile
+ * Acceptors
+ *
+ * @param param The parameters to stop the broadcast audio
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_broadcast_reception_stop(
+	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+
+/** Parameters for changing absolute volume  */
+struct bt_cap_commander_change_volume_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member *members;
+
+	/** The number of members in @p members */
+	size_t count;
+
+	/** The absolute volume to set */
+	uint8_t volume;
+};
+
+/**
+ * @brief Change the volume on one or more Common Audio Profile Acceptors
+ *
+ * @param param The parameters for the volume change
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_param *param);
+
+struct bt_cap_commander_change_volume_offset_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/**
+	 * @brief  The offset to set
+	 *
+	 * Value shall be between @ref BT_VOCS_MIN_OFFSET and @ref BT_VOCS_MAX_OFFSET
+	 */
+	int16_t offset;
+};
+
+/** Parameters for changing volume offset */
+struct bt_cap_commander_change_volume_offset_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_change_volume_offset_member_param *param;
+
+	/** The number of parameters in @p param */
+	size_t count;
+};
+
+/**
+ * @brief Change the volume offset on one or more Common Audio Profile Acceptors
+ *
+ * @param param The parameters for the volume offset change
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_change_volume_offset(
+	const struct bt_cap_commander_change_volume_offset_param *param);
+
+/** Parameters for changing volume mute state */
+struct bt_cap_commander_change_volume_mute_state_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member *members;
+
+	/** The number of members in @p members */
+	size_t count;
+
+	/**
+	 * @brief The volume mute state to set
+	 *
+	 * true to mute, and false to unmute
+	 */
+	bool mute;
+};
+
+/**
+ * @brief Change the volume mute state on one or more Common Audio Profile Acceptors
+ *
+ * @param param The parameters for the volume mute state change
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_change_volume_mute_state(
+	const struct bt_cap_commander_change_volume_mute_state_param *param);
+
+/** Parameters for changing microphone mute state */
+struct bt_cap_commander_change_microphone_mute_state_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member *members;
+
+	/** The number of members in @p members */
+	size_t count;
+
+	/**
+	 * @brief The microphone mute state to set
+	 *
+	 * true to mute, and false to unmute
+	 */
+	bool mute;
+};
+
+/**
+ * @brief Change the microphone mute state on one or more Common Audio Profile Acceptors
+ *
+ * @param param The parameters for the microphone mute state change
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_change_microphone_mute_state(
+	const struct bt_cap_commander_change_microphone_mute_state_param *param);
+
+struct bt_cap_commander_change_microphone_gain_setting_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** @brief The microphone gain setting to set */
+	int8_t gain;
+};
+
+/** Parameters for changing microphone mute state */
+struct bt_cap_commander_change_microphone_gain_setting_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_change_microphone_gain_setting_member_param *param;
+
+	/** The number of parameters in @p param */
+	size_t count;
+};
+
+/**
+ * @brief Change the microphone gain setting on one or more Common Audio Profile Acceptors
+ *
+ * @param param The parameters for the microphone gain setting change
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_cap_commander_change_microphone_gain_setting(
+	const struct bt_cap_commander_change_microphone_gain_setting_param *param);
 #ifdef __cplusplus
 }
 #endif
