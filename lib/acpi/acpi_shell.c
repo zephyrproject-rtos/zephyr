@@ -14,7 +14,6 @@
 
 #define MAX_PR_BUFF (4096)
 
-static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
 static uint8_t prs_buffer[MAX_PR_BUFF];
 
 static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
@@ -190,29 +189,31 @@ static int dump_dev_prs(const struct shell *sh, size_t argc, char **argv)
 
 static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 {
-	int status, cnt;
-	ACPI_PCI_ROUTING_TABLE *prt;
+	IF_ENABLED(CONFIG_PCIE_PRT, ({
+		static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
+		int status, cnt;
+		ACPI_PCI_ROUTING_TABLE *prt;
 
-	if (argc < 2) {
-		shell_error(sh, "invalid arugment\n");
-		return -EINVAL;
-	}
+		if (argc < 2) {
+			shell_error(sh, "invalid arugment\n");
+			return -EINVAL;
+		}
 
-	status = acpi_get_irq_routing_table(argv[1],
-						irq_prt_table, sizeof(irq_prt_table));
-	if (status) {
-		return status;
-	}
+		status = acpi_get_irq_routing_table(argv[1], irq_prt_table, sizeof(irq_prt_table));
+		if (status) {
+			return status;
+		}
 
-	prt = irq_prt_table;
-	for (cnt = 0; prt->Length; cnt++) {
-		shell_print(sh, "[%02X] PCI IRQ Routing Table Package\n", cnt);
-		shell_print(sh,
-			"DevNum: %lld Pin:%d IRQ: %d\n", (prt->Address >> 16) & 0xFFFF, prt->Pin,
-		       prt->SourceIndex);
+		prt = irq_prt_table;
+		for (cnt = 0; prt->Length; cnt++) {
+			shell_print(sh, "[%02X] PCI IRQ Routing Table Package\n", cnt);
+			shell_print(sh, "DevNum: %lld Pin:%d IRQ: %d\n",
+				    (prt->Address >> 16) & 0xFFFF, prt->Pin,
+	       prt->SourceIndex);
 
-		prt = ACPI_ADD_PTR(ACPI_PCI_ROUTING_TABLE, prt, prt->Length);
-	}
+			prt = ACPI_ADD_PTR(ACPI_PCI_ROUTING_TABLE, prt, prt->Length);
+		}
+	})); /* IF_ENABLED(CONFIG_PCIE_PRT) */
 
 	return 0;
 }
@@ -267,8 +268,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(prs, NULL,
 		  "display device possible resource settings (eg:acpi crs _SB.PC00.LPCB.RTC)",
 		  dump_dev_prs),
-	SHELL_CMD(prt, NULL, "display PRT details for a given bus (eg:acpi prt _SB.PC00)",
-		  dump_prt),
+	SHELL_COND_CMD(CONFIG_PCIE_PRT, prt, NULL,
+		       "display PRT details for a given bus (eg:acpi prt _SB.PC00)",
+		       dump_prt),
 	SHELL_CMD(enum, NULL,
 		  "enumerate device using hid (for enum HPET timer device,eg:acpi enum PNP0103)",
 		  enum_dev),
