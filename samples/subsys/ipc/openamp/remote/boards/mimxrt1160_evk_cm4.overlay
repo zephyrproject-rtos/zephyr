@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
 / {
 	/* Switch to lpuart2, since primary core uses lpuart1 */
 	chosen {
