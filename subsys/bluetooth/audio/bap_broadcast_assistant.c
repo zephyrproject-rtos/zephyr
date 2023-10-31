@@ -768,7 +768,8 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 		subgroup = net_buf_simple_add(&cp_buf, subgroup_size);
 
-		subgroup->bis_sync = param->subgroups[i].bis_sync;
+		/* The BIS Index bitfield to be sent must use BIT(0) for BIS Index 1 */
+		subgroup->bis_sync = param->subgroups[i].bis_sync >> 1;
 
 		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
 			LOG_DBG("Only syncing to BIS is not allowed");
@@ -860,7 +861,8 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 		}
 		subgroup = net_buf_simple_add(&cp_buf, subgroup_size);
 
-		subgroup->bis_sync = param->subgroups[i].bis_sync;
+		/* The BIS Index bitfield to be sent must use BIT(0) for BIS Index 1 */
+		subgroup->bis_sync = param->subgroups[i].bis_sync >> 1;
 
 		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
 			LOG_DBG("Only syncing to BIS is not allowed");
