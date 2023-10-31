@@ -1824,8 +1824,15 @@ endif()
 # Generate and use MCUboot related artifacts as needed.
 if(CONFIG_BOOTLOADER_MCUBOOT)
   get_target_property(signing_script zephyr_property_target SIGNING_SCRIPT)
+
   if(NOT signing_script)
-    set_target_properties(zephyr_property_target PROPERTIES SIGNING_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
+    zephyr_get(signing_script VAR SIGNING_SCRIPT SYSBUILD)
+
+    if(signing_script)
+      set_target_properties(zephyr_property_target PROPERTIES SIGNING_SCRIPT ${signing_script})
+    else()
+      set_target_properties(zephyr_property_target PROPERTIES SIGNING_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/cmake/mcuboot.cmake)
+    endif()
   endif()
 endif()
 
