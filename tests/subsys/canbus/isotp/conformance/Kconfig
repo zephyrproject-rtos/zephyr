@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config TEST_USE_CAN_FD_MODE
-	bool "Use CAN-FD"
+	bool "Use CAN FD"
 	select CAN_FD_MODE
 
 config TEST_ISOTP_TX_DL

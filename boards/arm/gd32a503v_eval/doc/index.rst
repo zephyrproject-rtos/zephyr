@@ -34,7 +34,7 @@ Hardware
 
   - CMSIS-DAP swd debug interface over USB HID.
 
-- 2 CAN port(support CAN-FD)
+- 2 CAN FD ports
 
 For more information about the GD32A503 SoC and GD32A503V-EVAL board:
 

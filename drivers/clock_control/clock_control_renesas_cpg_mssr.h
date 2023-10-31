@@ -96,7 +96,7 @@ static const uint16_t srcr[] = {
 	0x920, 0x924, 0x928, 0x92C,
 };
 
-/* CAN-FD Clock Frequency Control Register */
+/* CAN FD Clock Frequency Control Register */
 #define CANFDCKCR                 0x244
 
 /* Clock stop bit */

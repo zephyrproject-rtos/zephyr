@@ -81,7 +81,7 @@ const struct can_frame test_ext_rtr_frame_1 = {
 };
 
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 const struct can_frame test_std_fdf_frame_1 = {
 	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
@@ -95,7 +95,7 @@ const struct can_frame test_std_fdf_frame_1 = {
 };
 
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 const struct can_frame test_std_fdf_frame_2 = {
 	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
@@ -219,7 +219,7 @@ const struct can_filter test_std_some_filter = {
 };
 
 /**
- * @brief Standard (11-bit) CAN-FD ID filter 1. This filter matches
+ * @brief Standard (11-bit) CAN FD ID filter 1. This filter matches
  * ``test_std_fdf_frame_1``.
  */
 const struct can_filter test_std_fdf_filter_1 = {
@@ -229,7 +229,7 @@ const struct can_filter test_std_fdf_filter_1 = {
 };
 
 /**
- * @brief Standard (11-bit) CAN-FD ID filter 2. This filter matches
+ * @brief Standard (11-bit) CAN FD ID filter 2. This filter matches
  * ``test_std_fdf_frame_2``.
  */
 const struct can_filter test_std_fdf_filter_2 = {
