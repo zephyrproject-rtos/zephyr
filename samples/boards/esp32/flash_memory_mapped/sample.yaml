@@ -5,6 +5,7 @@ tests:
   sample.board.esp32.flash_memory_mapped:
     platform_allow:
       - esp32_devkitc_wroom
+      - esp32_devkitc_wrover
       - esp32c3_devkitm
       - esp32s3_devkitm
     tags: esp32
