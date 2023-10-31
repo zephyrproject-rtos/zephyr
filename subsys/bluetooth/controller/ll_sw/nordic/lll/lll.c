@@ -832,7 +832,7 @@ static void ticker_stop_op_cb(uint32_t status, void *param)
 	ARG_UNUSED(status);
 
 	LL_ASSERT(preempt_stop_req != preempt_stop_ack);
-	preempt_stop_ack++;
+	preempt_stop_ack = preempt_stop_req;
 
 	preempt_req = preempt_ack;
 }
@@ -852,7 +852,7 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 	 * start operation has been handled.
 	 */
 	LL_ASSERT(preempt_start_req != preempt_start_ack);
-	preempt_start_ack++;
+	preempt_start_ack = preempt_start_req;
 }
 
 static uint32_t preempt_ticker_start(struct lll_event *first,
@@ -974,7 +974,7 @@ static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	uint32_t ret;
 
 	LL_ASSERT(preempt_ack != preempt_req);
-	preempt_ack++;
+	preempt_ack = preempt_req;
 
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
