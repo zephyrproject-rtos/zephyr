@@ -234,14 +234,14 @@ struct sdhc_host_props {
 __subsystem struct sdhc_driver_api {
 	int (*reset)(const struct device *dev);
 	int (*request)(const struct device *dev,
-			struct sdhc_command *cmd,
-			struct sdhc_data *data);
+		       struct sdhc_command *cmd,
+		       struct sdhc_data *data);
 	int (*set_io)(const struct device *dev, struct sdhc_io *ios);
 	int (*get_card_present)(const struct device *dev);
 	int (*execute_tuning)(const struct device *dev);
 	int (*card_busy)(const struct device *dev);
 	int (*get_host_props)(const struct device *dev,
-				struct sdhc_host_props *props);
+			      struct sdhc_host_props *props);
 };
 
 /**
@@ -260,8 +260,7 @@ __syscall int sdhc_hw_reset(const struct device *dev);
 
 static inline int z_impl_sdhc_hw_reset(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->reset) {
 		return -ENOSYS;
@@ -285,13 +284,13 @@ static inline int z_impl_sdhc_hw_reset(const struct device *dev)
  * @retval -EIO: I/O error
  */
 __syscall int sdhc_request(const struct device *dev, struct sdhc_command *cmd,
-		struct sdhc_data *data);
+			   struct sdhc_data *data);
 
 static inline int z_impl_sdhc_request(const struct device *dev,
-		struct sdhc_command *cmd, struct sdhc_data *data)
+				      struct sdhc_command *cmd,
+				      struct sdhc_data *data)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->request) {
 		return -ENOSYS;
@@ -315,10 +314,9 @@ static inline int z_impl_sdhc_request(const struct device *dev,
 __syscall int sdhc_set_io(const struct device *dev, struct sdhc_io *io);
 
 static inline int z_impl_sdhc_set_io(const struct device *dev,
-	struct sdhc_io *io)
+				     struct sdhc_io *io)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->set_io) {
 		return -ENOSYS;
@@ -342,8 +340,7 @@ __syscall int sdhc_card_present(const struct device *dev);
 
 static inline int z_impl_sdhc_card_present(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->get_card_present) {
 		return -ENOSYS;
@@ -368,8 +365,7 @@ __syscall int sdhc_execute_tuning(const struct device *dev);
 
 static inline int z_impl_sdhc_execute_tuning(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->execute_tuning) {
 		return -ENOSYS;
@@ -393,8 +389,7 @@ __syscall int sdhc_card_busy(const struct device *dev);
 
 static inline int z_impl_sdhc_card_busy(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->card_busy) {
 		return -ENOSYS;
@@ -415,13 +410,12 @@ static inline int z_impl_sdhc_card_busy(const struct device *dev)
  * @retval -ENOTSUP host controller does not support this call
  */
 __syscall int sdhc_get_host_props(const struct device *dev,
-	struct sdhc_host_props *props);
+				  struct sdhc_host_props *props);
 
 static inline int z_impl_sdhc_get_host_props(const struct device *dev,
-	struct sdhc_host_props *props)
+					     struct sdhc_host_props *props)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->get_host_props) {
 		return -ENOSYS;
