@@ -2235,6 +2235,7 @@ def test_projectbuilder_gather_metrics(
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb.options.enable_size_report = enable_size_report
+    pb.options.create_rom_ram_report = False
     pb.options.cmake_only = cmake_only
     pb.calc_size = mock.Mock()
 
