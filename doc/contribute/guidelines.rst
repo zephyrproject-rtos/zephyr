@@ -1028,7 +1028,7 @@ support for the old one is not a treewide change. Deprecation and removal of
 such APIs, however, are treewide changes.
 
 Specialized driver requirements
-===============================
+*******************************
 
 Drivers for standalone devices should use the Zephyr bus APIs (SPI, I2C...)
 whenever possible so that the device can be used with any SoC from any vendor
