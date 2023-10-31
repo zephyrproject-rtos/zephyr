@@ -39,4 +39,10 @@ config WARN_DEPRECATED
 	  Print a warning when the Kconfig tree is parsed if any deprecated
 	  features are enabled.
 
+config NATIVE_BUILD
+	bool
+	help
+	  Zephyr will be built targeting the host system for debug and
+	  development purposes.
+
 rsource "images/Kconfig"
