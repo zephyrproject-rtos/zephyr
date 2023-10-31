@@ -15,6 +15,7 @@ supported:
   - entropy
   - pwm
   - dma
+  - input
 testing:
   ignore_tags:
     - net
