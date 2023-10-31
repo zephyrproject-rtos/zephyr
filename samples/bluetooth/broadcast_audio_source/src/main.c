@@ -32,8 +32,18 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
 	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT");
 
-static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
+#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#elif defined(CONFIG_BAP_BROADCAST_24_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#endif
+
 static struct broadcast_source_stream {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
@@ -70,7 +80,7 @@ static int octets_per_frame;
 
 static void init_lc3(void)
 {
-	const struct bt_audio_codec_cfg *codec_cfg = &preset_16_2_1.codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg = &preset_active.codec_cfg;
 	int ret;
 
 	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
@@ -152,7 +162,7 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 #if defined(CONFIG_LIBLC3)
 	int lc3_ret;
-	uint8_t lc3_encoder_buffer[preset_16_2_1.qos.sdu];
+	uint8_t lc3_encoder_buffer[preset_active.qos.sdu];
 
 	if (lc3_encoder == NULL) {
 		printk("LC3 encoder not setup, cannot encode data.\n");
@@ -167,9 +177,9 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	net_buf_add_mem(buf, lc3_encoder_buffer, preset_16_2_1.qos.sdu);
+	net_buf_add_mem(buf, lc3_encoder_buffer, preset_active.qos.sdu);
 #else
-	net_buf_add_mem(buf, mock_data, preset_16_2_1.qos.sdu);
+	net_buf_add_mem(buf, mock_data, preset_active.qos.sdu);
 #endif /* defined(CONFIG_LIBLC3) */
 
 	ret = bt_bap_stream_send(stream, buf, source_stream->seq_num++, BT_ISO_TIMESTAMP_NONE);
@@ -207,7 +217,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_param); i++) {
 		subgroup_param[i].params_count = streams_per_subgroup;
 		subgroup_param[i].params = stream_params + i * streams_per_subgroup;
-		subgroup_param[i].codec_cfg = &preset_16_2_1.codec_cfg;
+		subgroup_param[i].codec_cfg = &preset_active.codec_cfg;
 	}
 
 	for (size_t j = 0U; j < ARRAY_SIZE(stream_params); j++) {
@@ -219,7 +229,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 
 	create_param.params_count = ARRAY_SIZE(subgroup_param);
 	create_param.params = subgroup_param;
-	create_param.qos = &preset_16_2_1.qos;
+	create_param.qos = &preset_active.qos;
 	create_param.encryption = false;
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
