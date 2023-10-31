@@ -961,6 +961,13 @@ config BT_CTLR_SCAN_UNRESERVED
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
 
+config BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE
+	bool "Early abort previous prepare"
+	default y
+	help
+	  Early abort previous prepare present before a short prepare is
+	  enqueued in the prepare pipeline.
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y
