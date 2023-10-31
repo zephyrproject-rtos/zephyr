@@ -20,4 +20,5 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+    - wifi
 vendor: espressif
