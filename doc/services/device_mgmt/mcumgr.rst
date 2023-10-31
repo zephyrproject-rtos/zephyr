@@ -12,9 +12,10 @@ The following management operations are available:
 * Image management
 * File System management
 * OS management
+* Settings (config) management
 * Shell management
 * Statistic management
-* Zephyr-basic management
+* Zephyr management
 
 over the following transports:
 
