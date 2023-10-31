@@ -92,6 +92,9 @@ struct nrf5_802154_data {
 	/* The maximum number of extra CCA attempts to be performed before transmission. */
 	uint8_t max_extra_cca_attempts;
 #endif
+
+	/* The TX power in dBm. */
+	int8_t txpwr;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */

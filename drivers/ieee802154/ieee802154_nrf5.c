@@ -362,7 +362,7 @@ static int nrf5_set_txpower(const struct device *dev, int16_t dbm)
 
 	LOG_DBG("%d", dbm);
 
-	nrf_802154_tx_power_set(dbm);
+	nrf5_data.txpwr = dbm;
 
 	return 0;
 }
@@ -441,10 +441,8 @@ static bool nrf5_tx_immediate(struct net_pkt *pkt, uint8_t *payload, bool cca)
 		},
 		.cca = cca,
 		.tx_power = {
-			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = net_pkt_ieee802154_txpwr(pkt),
-#endif
+			.use_metadata_value = true,
+			.power = nrf5_data.txpwr,
 		},
 	};
 
@@ -460,10 +458,8 @@ static bool nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
 			.dynamic_data_is_set = net_pkt_ieee802154_mac_hdr_rdy(pkt),
 		},
 		.tx_power = {
-			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = net_pkt_ieee802154_txpwr(pkt),
-#endif
+			.use_metadata_value = true,
+			.power = nrf5_data.txpwr,
 		},
 	};
 
@@ -506,10 +502,8 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 		.cca = cca,
 		.channel = nrf_802154_channel_get(),
 		.tx_power = {
-			.use_metadata_value = IS_ENABLED(CONFIG_IEEE802154_SELECTIVE_TXPOWER),
-#if defined(CONFIG_IEEE802154_SELECTIVE_TXPOWER)
-			.power = net_pkt_ieee802154_txpwr(pkt),
-#endif
+			.use_metadata_value = true,
+			.power = nrf5_data.txpwr,
 		},
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
 		.extra_cca_attempts = max_extra_cca_attempts,
@@ -647,6 +641,8 @@ static int nrf5_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	nrf_802154_tx_power_set(nrf5_data.txpwr);
+
 	if (!nrf_802154_receive()) {
 		LOG_ERR("Failed to enter receive state");
 		return -EIO;
@@ -687,6 +683,8 @@ static int nrf5_stop(const struct device *dev)
 static int nrf5_continuous_carrier(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	nrf_802154_tx_power_set(nrf5_data.txpwr);
 
 	if (!nrf_802154_continuous_carrier()) {
 		LOG_ERR("Failed to enter continuous carrier state");
