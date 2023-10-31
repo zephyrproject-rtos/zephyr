@@ -26,8 +26,6 @@ static struct acpi bus_ctx = {
 	.status = AE_NOT_CONFIGURED,
 };
 
-static ACPI_TABLE_DESC acpi_tables[CONFIG_ACPI_MAX_INIT_TABLES];
-
 static int acpi_init(void);
 
 static int check_init_status(void)
@@ -82,13 +80,10 @@ static ACPI_STATUS initialize_acpica(void)
 	/* Initialize the ACPI Table Manager and get all ACPI tables */
 	if (!bus_ctx.early_init) {
 		status = AcpiInitializeTables(NULL, 16, FALSE);
-	} else {
-		/* Copy the root table list to dynamic memory if already initialized */
-		status = AcpiReallocateRootTable();
-	}
-	if (ACPI_FAILURE(status)) {
-		ACPI_EXCEPTION((AE_INFO, status, "While initializing Table Manager"));
-		goto exit;
+		if (ACPI_FAILURE(status)) {
+			ACPI_EXCEPTION((AE_INFO, status, "While initializing Table Manager"));
+			goto exit;
+		}
 	}
 
 	/* Create the ACPI namespace from ACPI tables */
@@ -358,7 +353,7 @@ static int acpi_early_init(void)
 		return 0;
 	}
 
-	status = AcpiInitializeTables(acpi_tables, CONFIG_ACPI_MAX_INIT_TABLES, TRUE);
+	status = AcpiInitializeTables(NULL, 16, FALSE);
 	if (ACPI_FAILURE(status)) {
 		LOG_ERR("Error in acpi table init:%d", status);
 		return -EIO;
