@@ -240,11 +240,6 @@ config BT_CTLR_CONN_ISO_AVOID_SEGMENTATION
 	  interface, the config provides a way to force the Max_PDU to Max_SDU +
 	  5 (header + offset).
 
-config BT_CTLR_ADVANCED_FEATURES
-	bool "Show advanced features"
-	help
-	  Makes advanced features visible to controller developers.
-
 choice
 	prompt "CIS Creation Policy Selection"
 	default BT_CTLR_CONN_ISO_RELIABILITY_POLICY
@@ -271,6 +266,11 @@ config BT_CTLR_TEST
 	bool "Run in-system unit tests"
 	help
 	  Run in-system unit tests
+
+config BT_CTLR_ADVANCED_FEATURES
+	bool "Show advanced features"
+	help
+	  Makes advanced features visible to controller developers.
 
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
