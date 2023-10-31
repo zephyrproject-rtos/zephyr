@@ -7,7 +7,7 @@
 /* Base driver compatible */
 #define DT_DRV_COMPAT nxp_flexcan
 
-/* CAN-FD extension compatible */
+/* CAN FD extension compatible */
 #define FLEXCAN_FD_DRV_COMPAT nxp_flexcan_fd
 
 #include <zephyr/kernel.h>
@@ -443,7 +443,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & CAN_MODE_FD) != 0 && (mode & CAN_MODE_3_SAMPLES) != 0) {
-		LOG_ERR("triple samling is not supported in CAN-FD mode");
+		LOG_ERR("triple samling is not supported in CAN FD mode");
 		return -ENOTSUP;
 	}
 
@@ -479,7 +479,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
 		if ((mode & CAN_MODE_FD) != 0) {
-			/* Enable CAN-FD mode */
+			/* Enable CAN FD mode */
 			mcr |= CAN_MCR_FDEN_MASK;
 			data->fd_mode = true;
 
@@ -490,7 +490,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 				config->base->FDCTRL |= CAN_FDCTRL_TDCEN_MASK;
 			}
 		} else {
-			/* Disable CAN-FD mode */
+			/* Disable CAN FD mode */
 			mcr &= ~(CAN_MCR_FDEN_MASK);
 			data->fd_mode = false;
 		}
@@ -849,7 +849,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	}
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-	/* Defer starting FlexCAN-FD MBs unless started */
+	/* Defer starting FlexCAN FD MBs unless started */
 	if (!config->flexcan_fd || data->started) {
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 		status = mcux_flexcan_mb_start(dev, alloc);
@@ -933,7 +933,7 @@ static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_i
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 		const struct mcux_flexcan_config *config = dev->config;
 
-		/* Stop FlexCAN-FD MBs unless already in stopped mode */
+		/* Stop FlexCAN FD MBs unless already in stopped mode */
 		if (!config->flexcan_fd || data->started) {
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 			mcux_flexcan_mb_stop(dev, filter_id);

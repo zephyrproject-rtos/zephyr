@@ -70,7 +70,7 @@ static const struct can_timing_test can_timing_data_tests[] = {
 	{  500000, 800, false },
 	/** Valid bitrate, invalid sample point. */
 	{  500000, 1000, true },
-	/** Invalid CAN-FD bitrate, valid sample point. */
+	/** Invalid CAN FD bitrate, valid sample point. */
 	{ 8000000 + 1, 750, true },
 };
 #endif /* CONFIG_CAN_FD_MODE */
@@ -175,7 +175,7 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 			max = can_get_timing_data_max(dev);
 			sp_err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
 		} else {
-			zassert_unreachable("data phase timing test without CAN-FD support");
+			zassert_unreachable("data phase timing test without CAN FD support");
 		}
 	} else {
 		min = can_get_timing_min(dev);

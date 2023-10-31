@@ -56,7 +56,7 @@ Nucleo G0B1RE provides the following hardware components:
 - HDMI_CEC(1)
 - USB 2.0 FS device (crystal-less) and host controller(1)
 - USB Type-C Power Delivery controller
-- CAN-FD(2)
+- CAN FD(2)
 - GPIO (up to 94) with external interrupt capability
 - Tamper Pins(3)
 - 12-bit ADC with 16 channels

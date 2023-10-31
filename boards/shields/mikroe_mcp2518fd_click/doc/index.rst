@@ -1,12 +1,12 @@
 .. _mikroe_mcp2518fd_click_shield:
 
-MikroElektronika MCP2518FD Click shield (CAN-FD)
-################################################
+MikroElektronika MCP2518FD Click shield
+#######################################
 
 Overview
 --------
 
-MCP2518FD Click shield has a MCP2518FD CAN-FD controller via a SPI
+MCP2518FD Click shield has a MCP2518FD CAN FD controller via a SPI
 interface and a high-speed ATA6563 CAN transceiver.
 
 More information about the shield can be found at
