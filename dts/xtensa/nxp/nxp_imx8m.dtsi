@@ -69,7 +69,7 @@
 		};
 
 		mailbox0: mailbox@30e70000 {
-			compatible = "nxp,imx-mu-rev2";
+			compatible = "nxp,imx-mu";
 			reg = <0x30e70000 0x10000>;
 			interrupts = <7 0>;
 			rdc = <0>;
