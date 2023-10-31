@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Si3474 PoE Power Source Equipment
+
+# Si3474 is on I2C.
+compatible: "skyworks,si3474"
+
+include: [pse-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The INT signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+  rst-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The reset signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.
+  oss-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The Over Supply Signal default configuration is active-high. The
+      property value should ensure the flags properly describe the
+      signal that is presented to the driver.

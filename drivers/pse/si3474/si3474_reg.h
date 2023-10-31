@@ -1,0 +1,63 @@
+#define INTERRUPT_MASK      0x01
+#define PORT_MODE           0x12
+#define DETECT_CLASS_ENABLE 0x14
+#define PORT_REMAP          0x26
+#define POWER_ALLOCATION    0x29
+
+#define VENDOR_ID_REG 0x1B
+
+#define MODE_REG_OFFSET 0x02
+
+#define CURRENT_SIZE_BUFFER     0x02
+#define VOLTAGE_SIZE_BUFFER     0x02
+#define EVENT_TABLE_SIZE_BUFFER 0x02
+
+/* PORTn Current (in mA) = 1000 * ((PORTn_CURRENT_MSB
+<< 8) + PORTn_CURRENT_LSB) / 16384 */
+#define PORT1_CURRENT_LSB_REG 0x30
+#define PORT1_CURRENT_MSB_REG 0x31
+#define PORT2_CURRENT_LSB_REG 0x34
+#define PORT2_CURRENT_MSB_REG 0x35
+#define PORT3_CURRENT_LSB_REG 0x38
+#define PORT3_CURRENT_MSB_REG 0x39
+#define PORT4_CURRENT_LSB_REG 0x3C
+#define PORT4_CURRENT_MSB_REG 0x3D
+
+/* VPWR Voltage (in volts) = 60 * (( VPWR_MSB << 8) + VPWR_LSB) / 16384 */
+#define VPWR_LSB_REG 0x2E
+#define VPWR_MSB_REG 0x2F
+
+/* PORTn Voltage (in volts) = 60 * ((PORTn_VOLTAGE_MSB << 8) +
+PORTn_VOLTAGE_LSB) / 16384 */
+#define PORT1_VOLTAGE_LSB_REG 0x32
+#define PORT1_VOLTAGE_MSB_REG 0x33
+#define PORT2_VOLTAGE_LSB_REG 0x36
+#define PORT2_VOLTAGE_MSB_REG 0x37
+#define PORT3_VOLTAGE_LSB_REG 0x3A
+#define PORT3_VOLTAGE_MSB_REG 0x3B
+#define PORT4_VOLTAGE_LSB_REG 0x3E
+#define PORT4_VOLTAGE_MSB_REG 0x3F
+
+/* Approximate Chip Temperature in Centigrade is (TEMPERATURE * 0.652) – 20 */
+#define TEMPERATURE_REG 0x2C
+
+#define POWER_EVENT_REG           0x03
+#define CLASS_DETECT_EVENT_REG    0x05
+#define DISCONNECT_PCUT_FAULT_REG 0x07
+#define ILIM_START_FAULT_REG      0x09
+#define SUPPLY_EVENT_REG          0x0B
+#define POWER_ON_FAULT_REG        0x25
+#define PB_RESET                  0x1A
+
+#define PB_POWER_ENABLE_REG 0x19
+
+#define INTERRUPT_REGISTER 0x0
+
+#define POWER_ENABLE_CHANGE_IT 0x1
+#define POWER_GOOD_CHANGE_IT   0x2
+#define DISCONNECT_IT          0x4
+#define DETECT_CC_DONE_IT      0x8
+#define CLASS_DONE_IT          0x10
+#define P_I_FAULT_IT           0x20
+#define START_EVENT_IT         0x64
+#define SUPPLY_EVENT_IT        0x80

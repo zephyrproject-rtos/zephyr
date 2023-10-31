@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PSE
+	bool "PSE drivers"
+	help
+	  Include PSE drivers in system config
+
+if PSE
+
+module = PSE
+module-str = pse
+source "subsys/logging/Kconfig.template.log_config"
+
+config PSE_INIT_PRIORITY
+	int "PSE init priority"
+	default 95
+	help
+	  PSE initialization priority.
+
+comment "Device Drivers"
+
+source "drivers/pse/si3474/Kconfig"
+
+endif # PSE
