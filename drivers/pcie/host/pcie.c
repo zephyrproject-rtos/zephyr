@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT pcie_controller
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
@@ -26,6 +28,11 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 
 #ifdef CONFIG_PCIE_CONTROLLER
 #include <zephyr/drivers/pcie/controller.h>
+#endif
+
+#ifdef CONFIG_PCIE_PRT
+/* platform interrupt are hardwired or can be dynamically allocated. */
+static bool prt_en;
 #endif
 
 /* functions documented in drivers/pcie/pcie.h */
@@ -303,8 +310,16 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	    irq >= CONFIG_MAX_IRQ_LINES ||
 	    arch_irq_is_used(irq)) {
 
+		/* In some platforms, PCI interrupts are hardwired to specific interrupt inputs
+		 * on the interrupt controller and are not configurable. Hence we need to retrieve
+		 * IRQ from acpi. But if it is configurable then we allocate irq dynamically.
+		 */
 #ifdef CONFIG_PCIE_PRT
-		irq = acpi_legacy_irq_get(bdf);
+		if (prt_en) {
+			irq = acpi_legacy_irq_get(bdf);
+		} else {
+			irq = arch_irq_allocate();
+		}
 #else
 		irq = arch_irq_allocate();
 #endif
@@ -545,6 +560,21 @@ static int pcie_init(void)
 		.flags = PCIE_SCAN_RECURSIVE,
 	};
 
+#ifdef CONFIG_PCIE_PRT
+	const char *hid, *uid = ACPI_DT_UID(DT_DRV_INST(0));
+	int ret;
+
+	BUILD_ASSERT(ACPI_DT_HAS_HID(DT_DRV_INST(0)),
+		 "No HID property for PCIe devicetree node");
+	hid = ACPI_DT_HID(DT_DRV_INST(0));
+
+	ret = acpi_legacy_irq_init(hid, uid);
+	if (!ret) {
+		prt_en = true;
+	} else {
+		__ASSERT(ret == -ENOENT, "Error retrieve interrupt routing table!");
+	}
+#endif
 
 	STRUCT_SECTION_COUNT(pcie_dev, &data.max_dev);
 	/* Don't bother calling pcie_scan() if there are no devices to look for */
