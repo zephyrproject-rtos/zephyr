@@ -47,6 +47,13 @@
 		};
 	};
 
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 5>;
+		output-ohms = <100000>;
+		full-ohms = <(100000 + 100000)>;
+	};
+
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
