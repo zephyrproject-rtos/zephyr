@@ -17,7 +17,9 @@ LOG_MODULE_REGISTER(ACPI, CONFIG_ACPI_LOG_LEVEL);
 struct acpi {
 	struct acpi_dev child_dev[CONFIG_ACPI_DEV_MAX];
 	int num_dev;
+#ifdef CONFIG_PCIE_PRT
 	ACPI_PCI_ROUTING_TABLE pci_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
+#endif
 	bool early_init;
 	int status;
 };
@@ -194,50 +196,6 @@ static ACPI_STATUS acpi_enable_pic_mode(void)
 	return status;
 }
 
-static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
-				ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
-{
-	ACPI_BUFFER rt_buffer;
-	ACPI_NAMESPACE_NODE *node;
-	int status;
-
-	LOG_DBG("%s", bus_name);
-
-	node = acpi_evaluate_method(bus_name, METHOD_NAME__PRT);
-	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", bus_name);
-		return -ENODEV;
-	}
-
-	rt_buffer.Pointer = rt_table;
-	rt_buffer.Length = rt_size;
-
-	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
-	if (ACPI_FAILURE(status)) {
-		LOG_ERR("unable to retrieve IRQ Routing Table: %s", bus_name);
-		return -EIO;
-	}
-
-	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
-		if (!bus->pci_prt_table[i].SourceIndex) {
-			break;
-		}
-		if (IS_ENABLED(CONFIG_X86_64)) {
-			/* mark the PRT irq numbers as reserved. */
-			arch_irq_set_used(bus->pci_prt_table[i].SourceIndex);
-		}
-	}
-
-	return 0;
-}
-
-static int acpi_retrieve_legacy_irq(struct acpi *bus)
-{
-	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
-	return acpi_get_irq_table(bus, CONFIG_ACPI_PRT_BUS_NAME,
-				  bus->pci_prt_table, sizeof(bus->pci_prt_table));
-}
-
 static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 level, void *ctx,
 					      void **ret_value)
 {
@@ -302,46 +260,6 @@ static int acpi_enum_devices(struct acpi *bus)
 	return 0;
 }
 
-static int acpi_init(void)
-{
-	int status;
-
-	LOG_DBG("");
-
-	if (bus_ctx.status != AE_NOT_CONFIGURED) {
-		LOG_DBG("acpi init already done");
-		return bus_ctx.status;
-	}
-
-	/* For debug version only */
-	ACPI_DEBUG_INITIALIZE();
-
-	status = initialize_acpica();
-	if (ACPI_FAILURE(status)) {
-		LOG_ERR("Error in ACPI init:%d", status);
-		goto exit;
-	}
-
-	/* Enable IO APIC mode */
-	status = acpi_enable_pic_mode();
-	if (ACPI_FAILURE(status)) {
-		LOG_WRN("Error in enable pic mode acpi method:%d", status);
-	}
-
-	status = acpi_retrieve_legacy_irq(&bus_ctx);
-	if (status) {
-		LOG_ERR("Error in retrieve legacy interrupt info:%d", status);
-		goto exit;
-	}
-
-	acpi_enum_devices(&bus_ctx);
-
-exit:
-	bus_ctx.status = status;
-
-	return status;
-}
-
 static int acpi_early_init(void)
 {
 	ACPI_STATUS status;
@@ -362,32 +280,6 @@ static int acpi_early_init(void)
 	bus_ctx.early_init = true;
 
 	return 0;
-}
-
-uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
-{
-	uint32_t slot = PCIE_BDF_TO_DEV(bdf), pin;
-
-	LOG_DBG("");
-
-	if (check_init_status()) {
-		return UINT_MAX;
-	}
-
-	pin = (pcie_conf_read(bdf, PCIE_CONF_INTR) >> 8) & 0x3;
-
-	LOG_DBG("Device irq info: slot:%d pin:%d", slot, pin);
-
-	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
-		if (((bus_ctx.pci_prt_table[i].Address >> 16) & 0xffff) == slot &&
-		    bus_ctx.pci_prt_table[i].Pin + 1 == pin) {
-			LOG_DBG("[%d]Device irq info: slot:%d pin:%d irq:%d", i, slot, pin,
-				bus_ctx.pci_prt_table[i].SourceIndex);
-			return bus_ctx.pci_prt_table[i].SourceIndex;
-		}
-	}
-
-	return UINT_MAX;
 }
 
 int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
@@ -464,6 +356,51 @@ int acpi_current_resource_free(ACPI_RESOURCE *res)
 	return 0;
 }
 
+#ifdef CONFIG_PCIE_PRT
+static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
+				ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
+{
+	ACPI_BUFFER rt_buffer;
+	ACPI_NAMESPACE_NODE *node;
+	int status;
+
+	LOG_DBG("%s", bus_name);
+
+	node = acpi_evaluate_method(bus_name, METHOD_NAME__PRT);
+	if (!node) {
+		LOG_ERR("Evaluation failed for given device: %s", bus_name);
+		return -ENODEV;
+	}
+
+	rt_buffer.Pointer = rt_table;
+	rt_buffer.Length = rt_size;
+
+	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
+	if (ACPI_FAILURE(status)) {
+		LOG_ERR("unable to retrieve IRQ Routing Table: %s", bus_name);
+		return -EIO;
+	}
+
+	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
+		if (!bus->pci_prt_table[i].SourceIndex) {
+			break;
+		}
+		if (IS_ENABLED(CONFIG_X86_64)) {
+			/* mark the PRT irq numbers as reserved. */
+			arch_irq_set_used(bus->pci_prt_table[i].SourceIndex);
+		}
+	}
+
+	return 0;
+}
+
+static int acpi_retrieve_legacy_irq(struct acpi *bus)
+{
+	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
+	return acpi_get_irq_table(bus, CONFIG_ACPI_PRT_BUS_NAME,
+				  bus->pci_prt_table, sizeof(bus->pci_prt_table));
+}
+
 int acpi_get_irq_routing_table(char *bus_name,
 			       ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size)
 {
@@ -476,6 +413,33 @@ int acpi_get_irq_routing_table(char *bus_name,
 
 	return acpi_get_irq_table(&bus_ctx, bus_name, rt_table, rt_size);
 }
+
+uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
+{
+	uint32_t slot = PCIE_BDF_TO_DEV(bdf), pin;
+
+	LOG_DBG("");
+
+	if (check_init_status()) {
+		return UINT_MAX;
+	}
+
+	pin = (pcie_conf_read(bdf, PCIE_CONF_INTR) >> 8) & 0x3;
+
+	LOG_DBG("Device irq info: slot:%d pin:%d", slot, pin);
+
+	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
+		if (((bus_ctx.pci_prt_table[i].Address >> 16) & 0xffff) == slot &&
+		    bus_ctx.pci_prt_table[i].Pin + 1 == pin) {
+			LOG_DBG("[%d]Device irq info: slot:%d pin:%d irq:%d", i, slot, pin,
+				bus_ctx.pci_prt_table[i].SourceIndex);
+			return bus_ctx.pci_prt_table[i].SourceIndex;
+		}
+	}
+
+	return UINT_MAX;
+}
+#endif /* CONFIG_PCIE_PRT */
 
 ACPI_RESOURCE *acpi_resource_parse(ACPI_RESOURCE *res, int res_type)
 {
@@ -788,4 +752,46 @@ struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num)
 	}
 
 	return NULL;
+}
+
+static int acpi_init(void)
+{
+	int status;
+
+	LOG_DBG("");
+
+	if (bus_ctx.status != AE_NOT_CONFIGURED) {
+		LOG_DBG("acpi init already done");
+		return bus_ctx.status;
+	}
+
+	/* For debug version only */
+	ACPI_DEBUG_INITIALIZE();
+
+	status = initialize_acpica();
+	if (ACPI_FAILURE(status)) {
+		LOG_ERR("Error in ACPI init:%d", status);
+		goto exit;
+	}
+
+	/* Enable IO APIC mode */
+	status = acpi_enable_pic_mode();
+	if (ACPI_FAILURE(status)) {
+		LOG_WRN("Error in enable pic mode acpi method:%d", status);
+	}
+
+#ifdef CONFIG_PCIE_PRT
+	status = acpi_retrieve_legacy_irq(&bus_ctx);
+	if (status) {
+		LOG_ERR("Error in retrieve legacy interrupt info:%d", status);
+		goto exit;
+	}
+#endif
+
+	acpi_enum_devices(&bus_ctx);
+
+exit:
+	bus_ctx.status = status;
+
+	return status;
 }
