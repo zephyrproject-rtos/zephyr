@@ -177,7 +177,7 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 
-		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync);
+		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync >> 1);
 		(void)net_buf_simple_add_u8(&read_buf, subgroup->metadata_len);
 		(void)net_buf_simple_add_mem(&read_buf, subgroup->metadata,
 					     subgroup->metadata_len);
