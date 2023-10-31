@@ -717,6 +717,11 @@ module-str = "Common Audio Profile Initiator"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 parent-module = BT
+module = BT_CAP_COMMANDER
+module-str = "Common Audio Profile Commander"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+parent-module = BT
 module = BT_CAP_STREAM
 module-str = "Common Audio Profile Stream"
 source "subsys/logging/Kconfig.template.log_config_inherit"
