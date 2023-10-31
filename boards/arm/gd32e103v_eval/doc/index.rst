@@ -36,7 +36,7 @@ Hardware
 
   - CMSIS-DAP swd debug interface over USB HID.
 
-- 2 CAN port(support CAN-FD)
+- 2 CAN FD ports
 
   - This function is not available in this board due to hardware issues, please check ``GD32C103`` .
 

@@ -18,7 +18,7 @@ over Controller Area Networks. Nevertheless, it's not limited to applications in
 road vehicles or the automotive domain.
 
 This transport protocol extends the limited payload data size for classical
-CAN (8 bytes) and CAN-FD (64 bytes) to theoretically four gigabytes.
+CAN (8 bytes) and CAN FD (64 bytes) to theoretically four gigabytes.
 Additionally, it adds a flow control mechanism to influence the sender's
 behavior. ISO-TP segments packets into small fragments depending on the payload
 size of the CAN frame. The header of those segments is called Protocol Control
