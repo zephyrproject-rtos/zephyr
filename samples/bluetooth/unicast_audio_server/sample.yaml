@@ -9,6 +9,7 @@ tests:
       - qemu_x86
       - nrf5340bsim_nrf5340_cpuapp
       - nrf5340dk_nrf5340_cpuapp
+      - native_sim
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
