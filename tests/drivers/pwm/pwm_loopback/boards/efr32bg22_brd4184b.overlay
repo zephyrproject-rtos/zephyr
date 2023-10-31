@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2023 Centro de Inovação EDGE
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm0 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwm1 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&timer1 {
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(0) GECKO_PORT_B GECKO_PIN(3)>;
+	};
+};
