@@ -3,6 +3,7 @@
 
 menuconfig MODEM_MODULES
 	bool "Modem modules"
+	select EXPERIMENTAL
 
 if MODEM_MODULES
 
