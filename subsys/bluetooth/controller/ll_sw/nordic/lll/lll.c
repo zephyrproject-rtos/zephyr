@@ -906,6 +906,26 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 
+#if defined(CONFIG_BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE)
+		/* FIXME: Prepare pipeline is not a ordered list implementation,
+		 *        and for short prepare being enqueued, ideally the
+		 *        pipeline has to be implemented as ordered list.
+		 *        Until then a workaround to abort a prepare present
+		 *        before the short prepare being enqueued is implemented
+		 *        below.
+		 *        A proper solution will be to re-design the pipeline
+		 *        as a ordered list, instead of the current FIFO.
+		 */
+		/* Set early as we get called again through the call to
+		 * abort_cb().
+		 */
+		ticks_at_preempt = ticks_at_preempt_new;
+
+		/* Abort previous prepare that set the preempt timeout */
+		prev->is_aborted = 1U;
+		prev->abort_cb(&prev->prepare_param, prev->prepare_param.param);
+#endif /* CONFIG_BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE */
+
 		/* Schedule short preempt timeout */
 		first = next;
 	} else {
