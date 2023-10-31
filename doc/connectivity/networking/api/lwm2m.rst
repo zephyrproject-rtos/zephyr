@@ -717,7 +717,10 @@ required actions from the server side.
             -t   Write value as time_t
 
     create  :create PATH
-            Create object instance
+            Create object or resource instance
+
+    delete  :delete PATH
+            Delete object or resource instance
 
     cache   :cache PATH NUM
             Enable data cache for resource
