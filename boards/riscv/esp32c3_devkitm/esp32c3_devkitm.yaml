@@ -15,8 +15,10 @@ supported:
   - spi
   - counter
   - entropy
+  - wifi
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - wifi
 vendor: espressif

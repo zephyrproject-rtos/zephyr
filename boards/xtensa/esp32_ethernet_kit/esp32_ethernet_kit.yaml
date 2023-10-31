@@ -10,8 +10,10 @@ supported:
   - uart
   - nvs
   - pwm
+  - wifi
 testing:
   ignore_tags:
     - net
     - bluetooth
+    - wifi
 vendor: espressif
