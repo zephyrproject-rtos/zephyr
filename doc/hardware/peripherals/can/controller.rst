@@ -292,7 +292,7 @@ The following example sets the bitrate to 250k baud with the sampling point at
     LOG_ERR("Failed to start CAN controller");
   }
 
-A similar API exists for calculating and setting the timing for the data phase for CAN-FD capable
+A similar API exists for calculating and setting the timing for the data phase for CAN FD capable
 controllers. See :c:func:`can_set_timing_data` and :c:func:`can_calc_timing_data`.
 
 SocketCAN

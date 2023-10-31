@@ -514,13 +514,13 @@ static int can_nxp_s32_send(const struct device *dev,
 
 	if ((frame->flags & CAN_FRAME_FDF) != 0 &&
 			(config->base_sic->BCFG2 & CANXL_SIC_BCFG2_FDEN_MASK) == 0) {
-		LOG_ERR("CAN-FD format not supported in non-FD mode");
+		LOG_ERR("CAN FD format not supported in non-FD mode");
 		return -ENOTSUP;
 	}
 
 	if ((frame->flags & CAN_FRAME_BRS) != 0 &&
 			~(config->base_sic->BCFG1 & CANXL_SIC_BCFG1_FDRSDIS_MASK) == 0) {
-		LOG_ERR("CAN-FD BRS not supported in non-FD mode");
+		LOG_ERR("CAN FD BRS not supported in non-FD mode");
 		return -ENOTSUP;
 	}
 #else
@@ -544,7 +544,7 @@ static int can_nxp_s32_send(const struct device *dev,
 #ifdef CONFIG_CAN_FD_MODE
 	} else {
 		if (frame->dlc > CANFD_MAX_DLC) {
-			LOG_ERR("DLC of %d for CAN-FD format frame", frame->dlc);
+			LOG_ERR("DLC of %d for CAN FD format frame", frame->dlc);
 			return -EINVAL;
 		}
 #endif
@@ -904,7 +904,7 @@ static int can_nxp_s32_init(const struct device *dev)
 		}
 	}
 
-	LOG_DBG("Setting CAN-FD bitrate %d:", config->bitrate_data);
+	LOG_DBG("Setting CAN FD bitrate %d:", config->bitrate_data);
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing_data, &config->can_cfg->Fd_bitrate);
 #endif
 

@@ -785,7 +785,7 @@ ZTEST_USER(can_classic, test_send_invalid_dlc)
 }
 
 /**
- * @brief Test that CAN-FD format frames are rejected in non-FD mode.
+ * @brief Test that CAN FD format frames are rejected in non-FD mode.
  */
 ZTEST_USER(can_classic, test_send_fd_format)
 {
@@ -797,7 +797,7 @@ ZTEST_USER(can_classic, test_send_fd_format)
 	frame.flags = CAN_FRAME_FDF;
 
 	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
-	zassert_equal(err, -ENOTSUP, "sent a CAN-FD format frame in non-FD mode");
+	zassert_equal(err, -ENOTSUP, "sent a CAN FD format frame in non-FD mode");
 }
 
 /**

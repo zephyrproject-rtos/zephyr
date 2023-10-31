@@ -1,4 +1,4 @@
-# Common fields for CAN-FD controllers
+# Common fields for CAN FD controllers
 
 include: can-controller.yaml
 

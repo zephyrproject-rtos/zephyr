@@ -69,7 +69,7 @@ Nucleo H7A3ZI-Q provides the following hardware components:
 - USART(5)
 - UART(5)
 - USB OTG Full Speed and High Speed(1)
-- CAN-FD(2)
+- CAN FD(2)
 - SAI(2)
 - SPDIF_Rx(4)
 - HDMI_CEC(1)

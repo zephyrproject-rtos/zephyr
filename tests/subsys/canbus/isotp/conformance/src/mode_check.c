@@ -6,7 +6,7 @@
 
 /*
  * This test suite checks that correct errors are returned when trying to use the ISO-TP
- * protocol with CAN-FD mode even though the controller does not support CAN-FD.
+ * protocol with CAN FD mode even though the controller does not support CAN FD.
  */
 
 #include <zephyr/canbus/isotp.h>

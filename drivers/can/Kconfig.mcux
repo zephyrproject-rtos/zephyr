@@ -19,7 +19,7 @@ config CAN_MCUX_FLEXCAN_FD
 	default y
 	depends on DT_HAS_NXP_FLEXCAN_FD_ENABLED && CAN_FD_MODE
 	help
-	  Enable support for CAN-FD capable NXP FlexCAN devices.
+	  Enable support for CAN FD capable NXP FlexCAN devices.
 
 config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
 	int "Maximum number of wait loop iterations"

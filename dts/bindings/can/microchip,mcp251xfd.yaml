@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Microchip MCP251XFD SPI CAN-FD controller
+  Microchip MCP251XFD SPI CAN FD controller
 
   The MCP251XFD node is defined on an SPI bus. An example
   configuration is:

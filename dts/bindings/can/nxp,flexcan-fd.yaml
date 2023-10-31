@@ -4,7 +4,7 @@
 description: |
   NXP FlexCAN CANFD controller.
 
-  This is a specialization of the NXP FlexCAN CAN controller with support for CAN-FD.
+  This is a specialization of the NXP FlexCAN CAN controller with support for CAN FD.
 
   Example:
     flexcan3: can@401d8000 {

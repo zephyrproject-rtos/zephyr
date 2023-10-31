@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Texas Instruments TCAN4x5x SPI CAN-FD controller.
+  Texas Instruments TCAN4x5x SPI CAN FD controller.
 
   Example:
     &spi0 {

@@ -1019,7 +1019,7 @@ ZTEST(isotp_conformance, test_sender_fc_errors)
 
 ZTEST(isotp_conformance, test_canfd_mandatory_padding)
 {
-	/* Mandatory padding of CAN-FD frames (TX_DL > 8).
+	/* Mandatory padding of CAN FD frames (TX_DL > 8).
 	 * Must be padded with 0xCC up to the nearest DLC.
 	 */
 #if TX_DL < 12
