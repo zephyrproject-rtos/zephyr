@@ -28,4 +28,13 @@ config ENABLE_LC3
 	select LIBLC3
 	select FPU
 
+config USE_USB_AUDIO_INPUT
+	bool "Use USB Audio as input"
+	# By default, use the USB Audio path is disabled.
+	default n
+	depends on ENABLE_LC3
+	select USB_DEVICE_STACK
+	select USB_DEVICE_AUDIO
+	select RING_BUFFER
+
 source "Kconfig.zephyr"
