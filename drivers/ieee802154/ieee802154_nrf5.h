@@ -95,6 +95,9 @@ struct nrf5_802154_data {
 
 	/* The TX power in dBm. */
 	int8_t txpwr;
+
+	/* The radio channel. */
+	uint8_t channel;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */
