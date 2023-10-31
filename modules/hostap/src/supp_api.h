@@ -9,8 +9,12 @@
 
 #include <zephyr/net/wifi_mgmt.h>
 
+#ifndef MAX_SSID_LEN
 #define MAX_SSID_LEN 32
+#endif
+#ifndef MAC_ADDR_LEN
 #define MAC_ADDR_LEN 6
+#endif
 
 /**
  * @brief Request a connection
@@ -20,8 +24,8 @@
  *
  * @return: 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_connect(const struct device *dev,
-						struct wifi_connect_req_params *params);
+int supplicant_connect(const struct device *dev, struct wifi_connect_req_params *params);
+
 /**
  * @brief Forces station to disconnect and stops any subsequent scan
  *  or connection attempts
@@ -30,7 +34,7 @@ int z_wpa_supplicant_connect(const struct device *dev,
  *
  * @return: 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_disconnect(const struct device *dev);
+int supplicant_disconnect(const struct device *dev);
 
 /**
  * @brief
@@ -40,8 +44,7 @@ int z_wpa_supplicant_disconnect(const struct device *dev);
  *
  * @return: 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_status(const struct device *dev,
-	struct wifi_iface_status *status);
+int supplicant_status(const struct device *dev, struct wifi_iface_status *status);
 
 /**
  * @brief Request a scan
@@ -52,8 +55,8 @@ int z_wpa_supplicant_status(const struct device *dev,
  *
  * @return 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
-				scan_result_cb_t cb);
+int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
+		    scan_result_cb_t cb);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI) || defined(__DOXYGEN__)
 /**
@@ -64,8 +67,7 @@ int z_wpa_supplicant_scan(const struct device *dev, struct wifi_scan_params *par
  *
  * @return 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_get_stats(const struct device *dev,
-				struct net_stats_wifi *stats);
+int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
 /**
@@ -76,8 +78,7 @@ int z_wpa_supplicant_get_stats(const struct device *dev,
  *
  * @return 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_set_power_save(const struct device *dev,
-				struct wifi_ps_params *params);
+int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *params);
 
 /**
  * @brief Set Wi-Fi TWT parameters
@@ -86,8 +87,7 @@ int z_wpa_supplicant_set_power_save(const struct device *dev,
  * @param params TWT parameters to set
  * @return 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_set_twt(const struct device *dev,
-				struct wifi_twt_params *params);
+int supplicant_set_twt(const struct device *dev, struct wifi_twt_params *params);
 
 /**
  * @brief Get Wi-Fi power save configuration
@@ -96,8 +96,7 @@ int z_wpa_supplicant_set_twt(const struct device *dev,
  * @param config Address of power save configuration to fill
  * @return 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_get_power_save_config(const struct device *dev,
-				struct wifi_ps_config *config);
+int supplicant_get_power_save_config(const struct device *dev, struct wifi_ps_config *config);
 
 /**
  * @brief Set Wi-Fi Regulatory domain
@@ -106,6 +105,6 @@ int z_wpa_supplicant_get_power_save_config(const struct device *dev,
  * @param reg_domain Regulatory domain to set
  * @return 0 for OK; -1 for ERROR
  */
-int z_wpa_supplicant_reg_domain(const struct device *dev,
-				struct wifi_reg_domain *reg_domain);
+int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain);
+
 #endif /* ZEPHYR_SUPP_MGMT_H */
