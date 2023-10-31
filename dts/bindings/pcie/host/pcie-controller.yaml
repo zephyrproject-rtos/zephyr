@@ -3,7 +3,7 @@
 
 # Common fields for PCIe bus controllers
 
-include: base.yaml
+include: [base.yaml, acpi.yaml]
 
 bus: pcie
 
