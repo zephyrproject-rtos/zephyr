@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''Runner for flashing with the Intel ADSP CAVS boards.'''
+'''Runner for flashing with the Intel ADSP boards.'''
 
 import os
 import sys
@@ -113,7 +113,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
         if self.do_sign:
             self.sign(**kwargs)
 
-        if re.search("intel_adsp_cavs", self.platform):
+        if re.search("intel_adsp", self.platform):
             self.require(self.cavstool)
             self.flash(**kwargs)
         else:
