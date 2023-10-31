@@ -60,6 +60,7 @@ endif # ZSAI_DEVICE_REQUIRES_ERASE
 
 menuconfig ZSAI
 	bool "Zephyr Storage Access Interface"
+	default n if !DT_HAS_ZEPHYR_ZSAI_SIMULATOR_ENABLED
 	help
 	  Enable support for various devices that can be used for code and data storage
 
@@ -75,5 +76,63 @@ config ZSAI_INIT_PRIORITY
 	help
 	  Default priority for ZSAI device drivers initialization. Driver may provide own
 	  initialization priority konfiguration option.
+
+config ZSAI_INIT_PRIORITY
+	int "Zephyr Storage Access Interface init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Default priority for ZSAI device drivers initialization. Driver may provide own
+	  initialization priority konfiguration option.
+
+if DT_HAS_ZEPHYR_ZSAI_SIMULATOR_ENABLED
+
+config ZSAI_SIMULATED_DEVICE_WITH_ERASE
+	bool
+	def_bool $(dt_any_compat_enabled_with_prop,$(DT_COMPAT_ZEPHYR_ZSAI_SIMULATOR),erase-value)
+	help
+	  There is simulated device defined with erase required.
+
+config ZSAI_SIMULATED_DEVICE_WITHOUT_ERASE
+	bool
+	def_bool $(dt_any_compat_enabled_without_prop,$(DT_COMPAT_ZEPHYR_ZSAI_SIMULATOR),erase-value)
+	help
+	  There is simulated device without erase defined.
+
+if ZSAI_SIMULATED_DEVICE_WITH_ERASE
+
+config ZSAI_SIMULATED_DEVICE_WITH_ERASE_TO_1
+	bool
+	def_bool $(dt_any_compat_enabled_with_prop,$(DT_COMPAT_ZEPHYR_ZSAI_SIMULATOR),erase-value,0xff)
+	help
+	  There is simulated device that erases to 1 (0xff in byte).
+
+config ZSAI_SIMULATED_DEVICE_WITH_ERASE_TO_0
+	bool
+	def_bool $(dt_any_compat_enabled_with_prop,$(DT_COMPAT_ZEPHYR_ZSAI_SIMULATOR),erase-value,0x00)
+	help
+	  There is simulated device that erases to 0 (0x00 in byte).
+
+endif
+
+config ZSAI_SIMULATED_DEVICE_DRIVER
+	bool "Add simulated device driver"
+	select ZSAI_HAS_DRIVER_ENABLED
+	select ZSAI_DEVICE_REQUIRES_ERASE if ZSAI_SIMULATED_DEVICE_WITH_ERASE
+	select ZSAI_DEVICE_HAS_NO_ERASE if ZSAI_SIMULATED_DEVICE_WITHOUT_ERASE
+	select ZSAI_DEVICE_ERASES_TO_0 if ZSAI_SIMULATED_DEVICE_WITH_ERASE_TO_0
+	select ZSAI_DEVICE_ERASES_TO_1 if ZSAI_SIMULATED_DEVICE_WITH_ERASE_TO_1
+	help
+	  Enabled driver for ZSAI device simulator. The driver covers flash and non-flash
+	  device simulation.
+
+if ZSAI_SIMULATED_DEVICE_DRIVER
+
+module = ZSAI_SIM
+module-str = zsai_sim
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZSAI_SIMULATED_DEVICE_DRIVER
+
+endif # DT_HAS_ZEPHYR_ZSAI_SIMULATOR_ENABLED
 
 endif # ZSAI

@@ -6,3 +6,4 @@ zephyr_library()
 
 zephyr_library_sources(zsai_ioctl.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE zsai_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_ZSAI_SIMULATED_DEVICE_DRIVER zsai_simulator.c)
