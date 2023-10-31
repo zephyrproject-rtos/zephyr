@@ -58,12 +58,12 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
 #ifdef CONFIG_POLL
-#define _POLL_EVENT_OBJ_INIT(obj) \
+#define Z_POLL_EVENT_OBJ_INIT(obj) \
 	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events),
-#define _POLL_EVENT sys_dlist_t poll_events;
+#define Z_DECL_POLL_EVENT sys_dlist_t poll_events;
 #else
-#define _POLL_EVENT_OBJ_INIT(obj)
-#define _POLL_EVENT
+#define Z_POLL_EVENT_OBJ_INIT(obj)
+#define Z_DECL_POLL_EVENT
 #endif
 
 struct k_thread;
@@ -1849,7 +1849,7 @@ struct k_queue {
 	struct k_spinlock lock;
 	_wait_q_t wait_q;
 
-	_POLL_EVENT
+	Z_DECL_POLL_EVENT
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
 };
@@ -1863,7 +1863,7 @@ struct k_queue {
 	.data_q = SYS_SFLIST_STATIC_INIT(&obj.data_q), \
 	.lock = { }, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
-	_POLL_EVENT_OBJ_INIT(obj)		\
+	Z_POLL_EVENT_OBJ_INIT(obj)		\
 	}
 
 /**
@@ -3111,7 +3111,7 @@ struct k_sem {
 	unsigned int count;
 	unsigned int limit;
 
-	_POLL_EVENT
+	Z_DECL_POLL_EVENT
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_sem)
 
@@ -3125,7 +3125,7 @@ struct k_sem {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.count = initial_count, \
 	.limit = count_limit, \
-	_POLL_EVENT_OBJ_INIT(obj) \
+	Z_POLL_EVENT_OBJ_INIT(obj) \
 	}
 
 /**
@@ -4424,7 +4424,7 @@ struct k_msgq {
 	/** Number of used messages */
 	uint32_t used_msgs;
 
-	_POLL_EVENT
+	Z_DECL_POLL_EVENT
 
 	/** Message queue */
 	uint8_t flags;
@@ -4450,7 +4450,7 @@ struct k_msgq {
 	.read_ptr = q_buffer, \
 	.write_ptr = q_buffer, \
 	.used_msgs = 0, \
-	_POLL_EVENT_OBJ_INIT(obj) \
+	Z_POLL_EVENT_OBJ_INIT(obj) \
 	}
 
 /**
@@ -4864,7 +4864,7 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;			/** Wait queue */
 
-	_POLL_EVENT
+	Z_DECL_POLL_EVENT
 
 	uint8_t	       flags;		/**< Flags */
 
@@ -4892,7 +4892,7 @@ struct k_pipe {
 		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
 		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
 	},                                                          \
-	_POLL_EVENT_OBJ_INIT(obj)                                   \
+	Z_POLL_EVENT_OBJ_INIT(obj)                                   \
 	.flags = 0,                                                 \
 	}
 
