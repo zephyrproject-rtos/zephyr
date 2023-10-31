@@ -45,12 +45,6 @@ config ACPI_INIT_PRIORITY
 	help
 	  boot time init level for acpi driver.
 
-config ACPI_MAX_INIT_TABLES
-	int "maximum table entries"
-	default 128
-	help
-	  maximum number of table entries.
-
 endif # ACPI
 
 config ACPI_HID_LEN_MAX
