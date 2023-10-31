@@ -21,7 +21,7 @@ static struct {
 	ACPI_PCI_ROUTING_TABLE pci_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
 #endif
 	bool early_init;
-	int status;
+	ACPI_STATUS status;
 } acpi = {
 	.status = AE_NOT_CONFIGURED,
 };
@@ -203,7 +203,7 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 
 	node = ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, obj_handle);
 	char *path_name;
-	int status;
+	ACPI_STATUS status;
 	ACPI_DEVICE_INFO *dev_info;
 
 	LOG_DBG("%s %p\n", __func__, node);
@@ -283,7 +283,7 @@ int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
 {
 	ACPI_BUFFER rt_buffer;
 	ACPI_NAMESPACE_NODE *node;
-	int status;
+	ACPI_STATUS status;
 
 	LOG_DBG("%s", dev_name);
 
@@ -319,7 +319,7 @@ int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
 {
 	ACPI_BUFFER rt_buffer;
 	ACPI_NAMESPACE_NODE *node;
-	int status;
+	ACPI_STATUS status;
 
 	LOG_DBG("%s", dev_name);
 
@@ -358,7 +358,7 @@ static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, 
 {
 	ACPI_BUFFER rt_buffer;
 	ACPI_NAMESPACE_NODE *node;
-	int status;
+	ACPI_STATUS status;
 
 	LOG_DBG("%s", bus_name);
 
@@ -559,7 +559,7 @@ struct acpi_dev *acpi_device_by_index_get(int index)
 
 void *acpi_table_get(char *signature, int inst)
 {
-	int status;
+	ACPI_STATUS status;
 	ACPI_TABLE_HEADER *table;
 
 	if (!acpi.early_init) {
@@ -752,7 +752,7 @@ struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num)
 
 static int acpi_init(void)
 {
-	int status;
+	ACPI_STATUS status;
 
 	LOG_DBG("");
 
