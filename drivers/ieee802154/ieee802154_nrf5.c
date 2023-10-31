@@ -236,6 +236,7 @@ static void nrf5_get_capabilities_at_boot(void)
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
 		((caps & NRF_802154_CAPABILITY_DELAYED_RX) ? IEEE802154_HW_RXTIME : 0UL) |
 		IEEE802154_HW_SLEEP_TO_TX |
+		IEEE802154_RX_ON_WHEN_IDLE |
 		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL)
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
 		| IEEE802154_OPENTHREAD_HW_MULTIPLE_CCA
@@ -987,6 +988,10 @@ static int nrf5_configure(const struct device *dev,
 		break;
 #endif /* CONFIG_IEEE802154_NRF5_MULTIPLE_CCA */
 
+	case IEEE802154_CONFIG_RX_ON_WHEN_IDLE:
+		nrf_802154_rx_on_when_idle_set(config->rx_on_when_idle);
+		break;
+
 	default:
 		return -EINVAL;
 	}
@@ -1064,20 +1069,8 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 	const struct device *dev = nrf5_get_device();
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	if (id == DRX_SLOT_RX) {
-		__ASSERT_NO_MSG(nrf5_data.event_handler);
-#if !defined(CONFIG_IEEE802154_CSL_DEBUG)
-		/* When CSL debug option is used we intentionally avoid notifying the higher layer
-		 * about the finalization of a DRX slot, so that the radio stays in receive state
-		 * for receiving "out of slot" frames.
-		 * As a side effect, regular failure notifications would be reported with the
-		 * incorrect ID.
-		 */
-		nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
-#endif
-		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
-			return;
-		}
+	if (id == DRX_SLOT_RX && error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
+		return;
 	}
 #else
 	ARG_UNUSED(id);
