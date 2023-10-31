@@ -63,6 +63,7 @@ struct ina219_data {
 	uint16_t current;
 	uint16_t calib;
 	uint32_t msr_delay;
+   uint8_t failed_start_reported;
 };
 
 static int ina219_init(const struct device *dev);

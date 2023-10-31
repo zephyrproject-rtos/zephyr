@@ -101,29 +101,34 @@ static int ina219_set_calib(const struct device *dev)
 }
 
 static int ina219_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+                               enum sensor_channel chan)
 {
-	struct ina219_data *data = dev->data;
-	uint16_t status;
-	uint16_t tmp;
-	int rc;
-        int retries = 10;
+   struct ina219_data *data = dev->data;
+   uint16_t status;
+   uint16_t tmp;
+   int rc;
+   int retries = 10;
 
-        if (chan != SENSOR_CHAN_ALL &&
-		chan != SENSOR_CHAN_VOLTAGE &&
-		chan != SENSOR_CHAN_POWER &&
-		chan != SENSOR_CHAN_CURRENT) {
-		return -ENOTSUP;
-	}
+   if (chan != SENSOR_CHAN_ALL &&
+       chan != SENSOR_CHAN_VOLTAGE &&
+       chan != SENSOR_CHAN_POWER &&
+       chan != SENSOR_CHAN_CURRENT) {
+      return -ENOTSUP;
+   }
 
-	/* Trigger measurement and wait for completion */
-	rc = ina219_reg_field_update(dev,
-				    INA219_REG_CONF,
-				    INA219_MODE_MASK,
-				    INA219_MODE_NORMAL);
-	if (rc) {
-		LOG_ERR("Failed to start measurement.");
-		return rc;
+   /* Trigger measurement and wait for completion */
+   rc = ina219_reg_field_update(dev,
+                                INA219_REG_CONF,
+                                INA219_MODE_MASK,
+                                INA219_MODE_NORMAL);
+
+   if (rc) {
+      if (!data->failed_start_reported)
+      {
+         LOG_ERR("Failed to start measurement.");
+         data->failed_start_reported = 1;
+      }
+      return rc;
 	}
 
 	k_sleep(K_USEC(data->msr_delay));
@@ -186,6 +191,9 @@ static int ina219_sample_fetch(const struct device *dev,
 		data->current = tmp;
 	}
 
+   /* We made a successful read, clear the report flag. */
+   data->failed_start_reported = 0;
+   
 	return rc;
 }
 
@@ -249,8 +257,12 @@ static int ina219_pm_action(const struct device *dev,
 static int ina219_init(const struct device *dev)
 {
 	const struct ina219_config *cfg = dev->config;
+   struct ina219_data *data = dev->data;
 	int rc;
 
+   /* Clear failed start reported flag. */
+   data->failed_start_reported = 0;
+   
 	if (!device_is_ready(cfg->bus.bus)) {
 		LOG_ERR("Device not ready.");
 		return -ENODEV;
