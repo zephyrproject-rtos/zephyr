@@ -622,6 +622,9 @@ enum ieee802154_tx_mode {
 	 * Transmit packet in the future, perform CCA before transmission.
 	 *
 	 * @note requires IEEE802154_HW_TXTIME capability.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 
@@ -699,7 +702,8 @@ enum ieee802154_config_type {
 	 * larger than the current frame counter associated with the same key,
 	 * see sections 8.2.2, 9.2.4 g/h) and 9.4.3.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_MAC_KEYS,
 
@@ -715,7 +719,8 @@ enum ieee802154_config_type {
 	 * Drivers SHALL return -EINVAL in case the configured frame counter
 	 * does not conform to this requirement.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
@@ -723,7 +728,8 @@ enum ieee802154_config_type {
 	 * Sets the current MAC frame counter value if the provided value is greater than
 	 * the current one.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 *
 	 * @warning This configuration option does not conform to the
 	 * requirements specified in #61227 as it is redundant with @ref
@@ -777,6 +783,9 @@ enum ieee802154_config_type {
 	 *
 	 * @note requires @ref IEEE802154_HW_RXTIME capability and is available
 	 * in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
@@ -906,6 +915,9 @@ enum ieee802154_config_type {
 	 *                                         +--------------------- loop ---------+
 	 *
 	 * @note Available in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
@@ -957,6 +969,9 @@ enum ieee802154_config_type {
 	 * same clock (as in PTP).
 	 *
 	 * @note Available in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_EXPECTED_RX_TIME,
 
@@ -1033,6 +1048,12 @@ enum ieee802154_config_type {
 	 * @note requires @ref IEEE802154_HW_RX_TX_ACK capability and is
 	 * available in any interface operational state. Currently we only
 	 * support header IEs but that may change in the future.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
+	 *
+	 * @note Required for Thread 1.2 Link Metrics feature (see Thread
+	 * specification 1.2.0, ch. 4.11.3.3).
 	 */
 	IEEE802154_CONFIG_ENH_ACK_HEADER_IE,
 
