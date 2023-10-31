@@ -1027,6 +1027,24 @@ Note that adding a new version of a widely used API while maintaining
 support for the old one is not a treewide change. Deprecation and removal of
 such APIs, however, are treewide changes.
 
+Push CI testing
+===============
+
+Pull requests CI runs on a different testplan than what is used by the push CI
+run. For large changes, such as treewide ones, this means it's likely to
+introduce some regression that does not get caught by the PR run, but gets
+detected by the push run once merged.
+
+For this reason, it's often useful to do a separate CI run using the push
+configuration. This can be done by manually pushing the PR in the
+``zephyr-testing`` repository, for example by using:
+
+.. code-block:: console
+
+   PR=<pr-number>
+   git fetch origin refs/pull/${PR}/head
+   git push -n -f git@github.com:zephyrproject-rtos/zephyr-testing.git FETCH_HEAD:refs/heads/vpr${PR}-testing-branch
+
 Specialized driver requirements
 *******************************
 
