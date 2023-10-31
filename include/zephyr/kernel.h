@@ -60,7 +60,7 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
 #ifdef CONFIG_POLL
 #define _POLL_EVENT_OBJ_INIT(obj) \
 	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events),
-#define _POLL_EVENT sys_dlist_t poll_events
+#define _POLL_EVENT sys_dlist_t poll_events;
 #else
 #define _POLL_EVENT_OBJ_INIT(obj)
 #define _POLL_EVENT
@@ -1848,7 +1848,7 @@ struct k_queue {
 	struct k_spinlock lock;
 	_wait_q_t wait_q;
 
-	_POLL_EVENT;
+	_POLL_EVENT
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_queue)
 };
@@ -3110,7 +3110,7 @@ struct k_sem {
 	unsigned int count;
 	unsigned int limit;
 
-	_POLL_EVENT;
+	_POLL_EVENT
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_sem)
 
@@ -4423,7 +4423,7 @@ struct k_msgq {
 	/** Number of used messages */
 	uint32_t used_msgs;
 
-	_POLL_EVENT;
+	_POLL_EVENT
 
 	/** Message queue */
 	uint8_t flags;
@@ -4863,7 +4863,7 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;			/** Wait queue */
 
-	_POLL_EVENT;
+	_POLL_EVENT
 
 	uint8_t	       flags;		/**< Flags */
 
