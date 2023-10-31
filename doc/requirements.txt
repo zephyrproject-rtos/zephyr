@@ -16,3 +16,6 @@ pykwalify
 
 # Used by pytest-twister-harness plugin
 pytest
+
+# Doxygen doxmlparser
+doxmlparser
