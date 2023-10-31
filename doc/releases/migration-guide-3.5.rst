@@ -79,6 +79,25 @@ C Library
     to a smaller, but inexact conversion algorithm. This requires building
     Picolibc as a module.
 
+Optional Modules
+================
+
+The following modules have been made optional and are not downloaded with `west update` by default anymore:
+
+* ``chre``
+* ``lz4``
+* ``nanopb``
+* ``psa-arch-tests``
+* ``sof``
+* ``tf-m-tests``
+* ``tflite-micro``
+* ``thrift``
+* ``zscilib``
+
+To enable them again use the ``west config manifest.project-filter -- +<module
+name>`` command, or ``west config manifest.group-filter -- +optional`` to
+enable all optional modules, and then run ``west update`` again.
+
 Device Drivers and Device Tree
 ==============================
 
