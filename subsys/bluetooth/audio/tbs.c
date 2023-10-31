@@ -307,17 +307,20 @@ static void tbs_set_terminate_reason(struct tbs_service_inst *inst,
 static uint8_t next_free_call_index(void)
 {
 	for (int i = 0; i < CONFIG_BT_TBS_MAX_CALLS; i++) {
-		static uint8_t next_call_index = 1;
-		const struct bt_tbs_call *call = lookup_call(next_call_index);
+		static uint8_t next_call_index;
+		const struct bt_tbs_call *call;
 
-		if (call == NULL) {
-			return next_call_index++;
-		}
-
+		/* For each new call, the call index should be incremented */
 		next_call_index++;
-		if (next_call_index == UINT8_MAX) {
+
+		if (next_call_index == BT_TBS_FREE_CALL_INDEX) {
 			/* call_index = 0 reserved for outgoing calls */
 			next_call_index = 1;
+		}
+
+		call = lookup_call(next_call_index);
+		if (call == NULL) {
+			return next_call_index;
 		}
 	}
 
