@@ -233,6 +233,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.11
 
+   * - :ref:`modem`
+     - Experimental
+     - 3.5
+
    * - :ref:`mqtt_socket_interface`
      - Unstable
      - 1.14
