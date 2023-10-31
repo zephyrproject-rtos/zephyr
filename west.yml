@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: acpi
+      url-base: https://github.com/najumon1980
 
   group-filter: [-babblesim, -optional]
 
@@ -30,7 +32,8 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: acpica
-      revision: 0333c2af13179f9b33d495cf7cb9a509f751cbb1
+      remote: acpi
+      revision: acpi_timer
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
