@@ -78,6 +78,8 @@ The efr32bg22_brd4184a/b board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RADIO     | on-chip    | bluetooth                           |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig files:
 - ``boards/arm/efr32_thunderboard/efr32bg22_brd4184a_defconfig``
@@ -86,11 +88,10 @@ The default configuration can be found in the defconfig files:
 Connections and IOs
 ===================
 
-The EFR32BG SoC has six gpio controllers (PORTA, PORTB, PORTC, PORTD,
-PORTE and PORTF).
+The EFR32BG22 SoC has four gpio controllers (PORTA, PORTB, PORTC, and PORTD).
 
-In the following tables, the column Name contains Pin names. For example, PE2
-means Pin number 2 on PORTE and #27 represents the location bitfield, as used
+In the following tables, the column Name contains Pin names. For example, PA5
+means Pin number 5 on PORTA and #1 represents the location bitfield, as used
 in the board's and microcontroller's datasheets and manuals.
 
 There are two variants of this board, "A" and "B". Please take a look at your PCB,
