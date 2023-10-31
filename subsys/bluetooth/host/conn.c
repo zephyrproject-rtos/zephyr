@@ -2338,6 +2338,25 @@ void bt_conn_cb_register(struct bt_conn_cb *cb)
 	callback_list = cb;
 }
 
+void bt_conn_cb_unregister(struct bt_conn_cb *cb)
+{
+	struct bt_conn_cb *previous_callback = callback_list;
+
+	if (callback_list == cb) {
+		callback_list = callback_list->_next;
+		return;
+	}
+
+	while (previous_callback->_next)
+	{
+		if (previous_callback->_next == cb) {
+			previous_callback->_next = previous_callback->_next->_next;
+			return;
+		}
+		previous_callback = previous_callback->_next;
+	}
+}
+
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
