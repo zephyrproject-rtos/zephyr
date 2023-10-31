@@ -65,13 +65,9 @@
 #error "Cannot place devnull segment adjacent to ROM region."
 #endif
 
-#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
-#define DEVNULL_REGION DEVNULL_ROM
-#else
-#define DEVNULL_REGION ROMABLE_REGION
-#endif
-
 #endif /* CONFIG_XIP */
+
+#define DEVNULL_REGION DEVNULL_ROM
 
 #endif /* CONFIG_LINKER_DEVNULL_MEMORY */
 
