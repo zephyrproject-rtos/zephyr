@@ -184,6 +184,26 @@ ARM64 arch:
   labels:
     - "area: ARM64"
 
+ARM Platforms:
+  status: odd fixes
+  files:
+    - boards/arm/mps*/
+    - soc/arm/arm/
+    - boards/arm/v2m_*/
+  labels:
+    - "platform: ARM"
+
+ARM SiP SVC:
+  status: odd fixes
+  files:
+    - subsys/sip_svc/
+    - tests/subsys/sip_svc/
+    - include/zephyr/sip_svc/
+    - include/zephyr/drivers/sip_svc/
+    - drivers/sip_svc/
+  labels:
+    - "area: ARM SiP SVC"
+
 MIPS arch:
   status: odd fixes
   files:
@@ -231,6 +251,7 @@ Binary Descriptors:
     - include/zephyr/bindesc.h
     - samples/subsys/bindesc/
     - scripts/west_commands/bindesc.py
+    - tests/subsys/bindesc/
   labels:
     - "area: Binary Descriptors"
 
@@ -413,6 +434,20 @@ Board/SoC configuration:
   labels:
     - "area: C++"
 
+Cache:
+  status: maintained
+  maintainers:
+    - carlocaione
+  collaborators:
+    - nashif
+  files:
+    - include/zephyr/drivers/cache.h
+    - include/zephyr/cache.h
+    - doc/hardware/cache/index.rst
+    - drivers/cache/
+  labels:
+    - "area: Cache"
+
 C library:
   status: maintained
   maintainers:
@@ -433,7 +468,7 @@ CMSIS API layer:
   collaborators:
     - nashif
   files:
-    - subsys/portability/cmsis_rtos_v*/
+    - subsys/portability/
     - include/zephyr/portability/cmsis*
     - samples/subsys/portability/cmsis_rtos_v*/
     - tests/subsys/portability/cmsis_rtos_v*/
@@ -523,6 +558,7 @@ Common Architecture Interface:
     - arch/common/
     - include/zephyr/arch/common/
     - tests/arch/common/
+    - doc/hardware/porting/arch.rst
   labels:
     - "area: Architectures"
 
@@ -550,7 +586,6 @@ Debug:
     - doc/services/debugging/
   labels:
     - "area: Debugging"
-
 
 Demand Paging:
   status: maintained
@@ -614,6 +649,7 @@ Devicetree Bindings:
     - galak
   files:
     - dts/bindings/
+    - include/zephyr/dt-bindings/
   labels:
     - "area: Devicetree Binding"
 
@@ -1226,7 +1262,7 @@ Release Notes:
     - dts/bindings/modem/
     - include/zephyr/drivers/modem/
   labels:
-    - "area: Modem"
+    - "area: Modem Drivers"
 
 "Drivers: Regulators":
   status: maintained
@@ -1255,6 +1291,7 @@ Release Notes:
     - dts/bindings/retained_mem/
     - include/zephyr/drivers/retained_mem.h
     - tests/drivers/retained_mem/
+    - doc/hardware/peripherals/retained_mem.rst
   labels:
     - "area: Retained Memory"
 
@@ -1703,6 +1740,8 @@ Kconfig:
     - scripts/kconfig/
     - doc/build/kconfig/
     - Kconfig.zephyr
+    - tests/kconfig/configdefault/
+    - tests/misc/kconfigoptions/
   labels:
     - "area: Kconfig"
   description: >-
@@ -1752,6 +1791,9 @@ Base OS:
     - lib/os/cbprintf*
     - lib/os/Kconfig.cbprintf
     - include/zephyr/sys/mem_manage.h
+    - include/zephyr/sys/mpsc_pbuf.h
+    - include/zephyr/sys/mpsc_packet.h
+    - lib/os/mpsc_pbuf.c
   labels:
     - "area: Base OS"
 
@@ -1790,11 +1832,17 @@ Logging:
     - dcpleung
   files:
     - include/zephyr/logging/
+    - include/zephyr/sys/mpsc_pbuf.h
+    - include/zephyr/sys/mpsc_packet.h
+    - lib/os/mpsc_pbuf.c
+    - doc/kernel/data_structures/mpsc_pbuf.rst
+    - tests/lib/mpsc_pbuf/
     - samples/subsys/logging/
     - subsys/logging/
     - tests/subsys/logging/
     - scripts/logging/
     - doc/services/logging/
+    - tests/lib/spsc_pbuf/
   labels:
     - "area: Logging"
 
@@ -1883,6 +1931,8 @@ Modem Modules:
     - tests/subsys/modem/
     - doc/services/modem/
     - samples/net/cellular_modem/
+  labels:
+    - "area: Modem"
 
 OSDP:
   status: maintained
@@ -1927,6 +1977,7 @@ Native POSIX/Sim and POSIX arch:
     - aescolar
   files:
     - arch/posix/
+    - boards/posix/common/
     - boards/posix/native_*/
     - boards/posix/doc/
     - boards/posix/*.rst
@@ -2149,6 +2200,8 @@ NIOS-2 arch:
     - nashif
   files:
     - arch/nios2/
+    - boards/common/nios2.board.cmake
+    - boards/nios2/
     - soc/nios2/
     - include/zephyr/arch/nios2/
     - tests/boards/altera_max10/
@@ -2265,6 +2318,14 @@ Sensor Subsystem:
   labels:
     - "area: Sensor Subsystem"
 
+Stats:
+  status: odd fixes
+  files:
+    - subsys/stats/
+    - include/zephyr/stats/stats.h
+  labels:
+    - "area: Stats"
+
 Twister:
   status: maintained
   maintainers:
@@ -2285,6 +2346,7 @@ Twister:
     - doc/develop/test/twister.rst
     - scripts/pylib/pytest-twister-harness/
     - doc/develop/test/pytest.rst
+    - tests/test_config.yaml
   labels:
     - "area: Twister"
 
@@ -2530,6 +2592,7 @@ Intel Platforms (Xtensa):
     - tests/boards/intel_adsp/
     - samples/boards/intel_adsp/
     - dts/bindings/*/intel,adsp*
+    - scripts/west_commands/runners/intel_adsp.py
   labels:
     - "platform: Intel ADSP"
 
@@ -2600,6 +2663,7 @@ NXP Platforms:
     - dts/arm/nxp/
     - dts/bindings/*/nxp*
     - soc/xtensa/nxp_adsp/
+    - boards/xtensa/nxp_adsp_*/
     - samples/boards/nxp*/
     - include/zephyr/dt-bindings/*/nxp*
     - include/zephyr/drivers/*/*nxp*
@@ -2901,6 +2965,18 @@ Task Watchdog:
   labels:
     - "area: Task Watchdog"
 
+"Drivers: Time Aware GPIO":
+  status: maintained
+  maintainers:
+    - akanisetti
+  files:
+    - doc/hardware/peripherals/tgpio.rst
+    - drivers/misc/timeaware_gpio/
+    - include/zephyr/drivers/misc/timeaware_gpio/
+    - samples/drivers/misc/timeaware_gpio/
+  labels:
+    - "area: Time Aware GPIO"
+
 TF-M Integration:
   status: maintained
   maintainers:
@@ -2927,6 +3003,7 @@ TF-M Integration:
     - cmake/linker/
     - cmake/toolchain/
     - include/zephyr/toolchain/
+    - include/zephyr/toolchain.h
   labels:
     - "area: Toolchains"
 
@@ -3026,6 +3103,7 @@ Userspace:
   collaborators:
     - ceolin
   files:
+    - include/zephyr/internal/syscall_handler.h
     - doc/kernel/usermode/kernelobjects.rst
     - include/zephyr/app_memory/
     - include/zephyr/linker/app_smem*.ld
@@ -3076,6 +3154,8 @@ West:
   maintainers:
     - najumon1980
     - jhedberg
+  collaborators:
+    - tbursztyka
   files:
     - modules/acpica/
   labels:
@@ -3096,6 +3176,7 @@ West:
     - yperess
   files:
     - samples/modules/chre/
+    - modules/Kconfig.chre
   labels:
     - "area: CHRE"
 
@@ -3107,7 +3188,7 @@ West:
     - microbuilder
     - povergoing
   files:
-    - modules/cmsis/Kconfig
+    - modules/cmsis/
   labels:
     - "area: ARM"
 
@@ -3169,7 +3250,8 @@ West:
   collaborators:
     - tgorochowik
     - msobkowski
-  files: []
+  files:
+    - modules/hal_ambiq/
   labels:
     - "platform: Ambiq"
 
