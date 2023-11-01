@@ -153,8 +153,12 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 #if CONFIG_KERNEL_VM_BASE != 0
 		 (addr >= CONFIG_KERNEL_VM_BASE) &&
 #endif
+#if (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE) != 0
 		 (addr < (CONFIG_KERNEL_VM_BASE +
 			  (CONFIG_KERNEL_VM_SIZE))),
+#else
+		 false,
+#endif
 		 "address %p not in permanent mappings", virt);
 #else
 	/* Should be identity-mapped */
@@ -162,8 +166,12 @@ static inline uintptr_t z_mem_phys_addr(void *virt)
 #if CONFIG_SRAM_BASE_ADDRESS != 0
 		 (addr >= CONFIG_SRAM_BASE_ADDRESS) &&
 #endif
+#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
 		 (addr < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
+#else
+		 false,
+#endif
 		 "physical address 0x%lx not in RAM",
 		 (unsigned long)addr);
 #endif /* CONFIG_MMU */
@@ -182,8 +190,12 @@ static inline void *z_mem_virt_addr(uintptr_t phys)
 #if CONFIG_SRAM_BASE_ADDRESS != 0
 		 (phys >= CONFIG_SRAM_BASE_ADDRESS) &&
 #endif
+#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
 		 (phys < (CONFIG_SRAM_BASE_ADDRESS +
 			  (CONFIG_SRAM_SIZE * 1024UL))),
+#else
+		 false,
+#endif
 		 "physical address 0x%lx not in RAM", (unsigned long)phys);
 
 	/* TODO add assertion that this page frame is pinned to boot mapping,
