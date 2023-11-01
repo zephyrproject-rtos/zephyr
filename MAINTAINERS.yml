@@ -121,6 +121,7 @@ ACPI:
   files:
     - lib/acpi/
     - include/zephyr/acpi/
+    - tests/lib/acpi/
   labels:
     - "area: ACPI"
 
