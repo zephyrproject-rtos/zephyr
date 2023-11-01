@@ -56,7 +56,7 @@ config BOOT_SIGNATURE_TYPE_ED25519
 endchoice
 
 config BOOT_SIGNATURE_KEY_FILE
-	string "Signing PEM key file"
+	string "Signing PEM key file" if !BOOT_SIGNATURE_TYPE_NONE
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if BOOT_SIGNATURE_TYPE_ECDSA_P256
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ed25519.pem" if BOOT_SIGNATURE_TYPE_ED25519
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if BOOT_SIGNATURE_TYPE_RSA
