@@ -43,9 +43,9 @@ static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *arg
 	}
 
 	shell_print(sh, "Extension: %s symbols", m->name);
-	shell_print(sh, "| Symbol           | Address    |\n");
+	shell_print(sh, "| Symbol           | Address    |");
 	for (elf_word i = 0; i < m->sym_tab.sym_cnt; i++) {
-		shell_print(sh, "| %16s | %p |\n", m->sym_tab.syms[i].name,
+		shell_print(sh, "| %16s | %p |", m->sym_tab.syms[i].name,
 			    m->sym_tab.syms[i].addr);
 	}
 
@@ -84,10 +84,10 @@ static int cmd_llext_list(const struct shell *sh, size_t argc, char *argv[])
 	sys_snode_t *node;
 	struct llext *ext;
 
-	shell_print(sh, "| Name             | Size        |\n");
+	shell_print(sh, "| Name             | Size         |");
 	SYS_SLIST_FOR_EACH_NODE(llext_list(), node) {
 		ext = CONTAINER_OF(node, struct llext, _llext_list);
-		shell_print(sh, "| %16s | %12d |\n", ext->name, ext->mem_size);
+		shell_print(sh, "| %16s | %12d |", ext->name, ext->mem_size);
 	}
 
 	return 0;
