@@ -62,6 +62,7 @@
 		sw0 = &pb1;
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	 };
 };
 
@@ -75,6 +76,13 @@
 };
 
 &clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO requires for RTC
+ */
+&clk_ertco {
 	status = "okay";
 };
 
@@ -116,4 +124,9 @@
 	status = "okay";
 	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+	alarms-count = <1>;
 };
