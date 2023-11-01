@@ -16,8 +16,6 @@
 
 #include <sys/types.h>
 
-typedef void (*edac_notify_callback_f)(const struct device *dev, void *data);
-
 /**
  * @defgroup edac EDAC API
  * @ingroup io_interfaces
@@ -33,6 +31,14 @@ enum edac_error_type {
 	/** Uncorrectable error type */
 	EDAC_ERROR_TYPE_DRAM_UC = BIT(1)
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal use only, skip these in public documentation.
+ */
+
+typedef void (*edac_notify_callback_f)(const struct device *dev, void *data);
 
 /**
  * @brief EDAC driver API
@@ -63,6 +69,10 @@ __subsystem struct edac_driver_api {
 	int (*notify_cb_set)(const struct device *dev,
 			     edac_notify_callback_f cb);
 };
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /* Optional interfaces */
 
