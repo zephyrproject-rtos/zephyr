@@ -48,6 +48,7 @@ enum npm1300_gpio_type {
 #define BUCK_OFFSET_SW_CTRL   0x0FU
 #define BUCK_OFFSET_VOUT_STAT 0x10U
 #define BUCK_OFFSET_CTRL0     0x15U
+#define BUCK_OFFSET_STATUS    0x34U
 
 /* nPM1300 ldsw register offsets */
 #define LDSW_OFFSET_EN_SET  0x00U
@@ -60,6 +61,12 @@ enum npm1300_gpio_type {
 
 /* nPM1300 ship register offsets */
 #define SHIP_OFFSET_SHIP 0x02U
+
+#define BUCK1_ON_MASK 0x04U
+#define BUCK2_ON_MASK 0x40U
+
+#define LDSW1_ON_MASK 0x03U
+#define LDSW2_ON_MASK 0x0CU
 
 struct regulator_npm1300_pconfig {
 	const struct device *mfd;
@@ -512,16 +519,57 @@ int regulator_npm1300_common_init(const struct device *dev)
 	return 0;
 }
 
+static int get_enabled_reg(const struct device *dev, uint8_t base, uint8_t offset, uint8_t mask,
+			   bool *enabled)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t data;
+
+	int ret = mfd_npm1300_reg_read(config->mfd, base, offset, &data);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	*enabled = (data & mask) != 0U;
+
+	return 0;
+}
+
+static int get_enabled(const struct device *dev, bool *enabled)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_BUCK1:
+		return get_enabled_reg(dev, BUCK_BASE, BUCK_OFFSET_STATUS, BUCK1_ON_MASK, enabled);
+	case NPM1300_SOURCE_BUCK2:
+		return get_enabled_reg(dev, BUCK_BASE, BUCK_OFFSET_STATUS, BUCK2_ON_MASK, enabled);
+	case NPM1300_SOURCE_LDO1:
+		return get_enabled_reg(dev, LDSW_BASE, LDSW_OFFSET_STATUS, LDSW1_ON_MASK, enabled);
+	case NPM1300_SOURCE_LDO2:
+		return get_enabled_reg(dev, LDSW_BASE, LDSW_OFFSET_STATUS, LDSW2_ON_MASK, enabled);
+	default:
+		return -ENODEV;
+	}
+}
+
 int regulator_npm1300_init(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	bool enabled;
 	int ret = 0;
 
 	if (!device_is_ready(config->mfd)) {
 		return -ENODEV;
 	}
 
-	ret = regulator_common_init(dev, false);
+	ret = get_enabled(dev, &enabled);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = regulator_common_init(dev, enabled);
 	if (ret < 0) {
 		return ret;
 	}
