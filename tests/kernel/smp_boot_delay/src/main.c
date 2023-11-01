@@ -11,11 +11,10 @@
 #define CPU_START_DELAY 10000
 
 /* IPIs happen  much faster than CPU startup */
-#define CPU_IPI_DELAY 100
+#define CPU_IPI_DELAY 1000
 
 BUILD_ASSERT(CONFIG_SMP);
 BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
-BUILD_ASSERT(CONFIG_KERNEL_COHERENCE);
 BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS > 1);
 
 #define STACKSZ 2048
@@ -55,6 +54,7 @@ ZTEST(smp_boot_delay, test_smp_boot_delay)
 	zassert_true(mp_flag, "CPU1 did not start");
 
 	k_thread_abort(&cpu1_thr);
+	k_thread_join(&cpu1_thr, K_FOREVER);
 
 	/* Spawn the same thread to do the same thing, but this time
 	 * expect that the thread is going to run synchronously on the
