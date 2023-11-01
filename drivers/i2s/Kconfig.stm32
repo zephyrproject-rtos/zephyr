@@ -10,7 +10,7 @@ menuconfig I2S_STM32
 	select DMA
 	help
 	  Enable I2S support on the STM32 family of processors.
-	  (Tested on the STM32F4 series)
+	  (Tested on the STM32F4 & STM32H7 series)
 
 if I2S_STM32
 

@@ -79,6 +79,19 @@
 			status = "disabled";
 		};
 
+		i2s6: i2s@58001400 {
+			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x58001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000020>,
+				 <&rcc STM32_SRC_PLL1_Q SPI6_SEL(0)>;
+			dmas = <&dmamux2 0 12 0x20440 &dmamux2 1 11 0x20480>;
+			dma-names = "tx", "rx";
+			interrupts = <86 0>;
+			status = "disabled";
+		};
+
 		rng: rng@48021800 {
 			nist-config = <0xf00d00>;
 			health-test-magic = <0x17590abc>;
