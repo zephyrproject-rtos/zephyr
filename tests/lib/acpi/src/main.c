@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/acpi/acpi.h>
 
-ZTEST(acpi, mcfg_table)
+ZTEST(acpi, test_mcfg_table)
 {
 	struct acpi_mcfg *mcfg;
 
@@ -17,7 +17,7 @@ ZTEST(acpi, mcfg_table)
 	zassert_not_null(mcfg, "Failed to get MCFG table");
 }
 
-ZTEST(acpi, irq_routing_table)
+ZTEST(acpi, test_irq_routing_table)
 {
 	static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
 	int status;
