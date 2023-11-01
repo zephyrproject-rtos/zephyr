@@ -18,3 +18,11 @@ int wifi_reg_domain(const struct device *dev,
 		    struct wifi_reg_domain *reg_domain);
 int wifi_get_power_save_config(const struct device *dev,
 			       struct wifi_ps_config *ps_config);
+int wifi_connect(const struct device *dev, struct wifi_connect_req_params *params);
+int wifi_disconnect(const struct device *dev);
+int wifi_ap_enable(const struct device *dev, struct wifi_connect_req_params *params);
+int wifi_ap_disable(const struct device *dev);
+int wifi_iface_status(const struct device *dev, struct wifi_iface_status *status);
+int wifi_filter(const struct device *dev, struct wifi_filter_info *filter);
+int wifi_mode(const struct device *dev, struct wifi_mode_info *mode);
+int wifi_channel(const struct device *dev, struct wifi_channel_info *channel);

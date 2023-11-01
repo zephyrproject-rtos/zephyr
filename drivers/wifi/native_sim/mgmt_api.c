@@ -39,6 +39,122 @@ out:
 	return ret;
 }
 
+int wifi_connect(const struct device *dev, struct wifi_connect_req_params *params)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* Initiate the connect */
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_disconnect(const struct device *dev)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* Initiate the disconnect */
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_ap_enable(const struct device *dev, struct wifi_connect_req_params *params)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_ap_disable(const struct device *dev)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_iface_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_filter(const struct device *dev, struct wifi_filter_info *filter)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_mode(const struct device *dev, struct wifi_mode_info *mode)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
+int wifi_channel(const struct device *dev, struct wifi_channel_info *channel)
+{
+	struct wifi_context *ctx = dev->data;
+	int ret;
+
+	LOG_DBG("iface %s [%d] dev %s (%p)", ctx->name, ctx->if_index, dev->name, dev);
+
+	/* TODO: add code here */
+
+	ret = 0;
+
+	return ret;
+}
+
 #ifdef CONFIG_NET_STATISTICS_WIFI
 int wifi_get_stats(const struct device *dev, struct net_stats_wifi *stats)
 {

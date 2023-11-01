@@ -50,6 +50,14 @@ static struct wifi_mgmt_ops wifi_mgmt_ops = {
 	.set_twt = wifi_set_twt,
 	.reg_domain = wifi_reg_domain,
 	.get_power_save_config = wifi_get_power_save_config,
+	.connect = wifi_connect,
+	.disconnect = wifi_disconnect,
+	.ap_enable = wifi_ap_enable,
+	.ap_disable = wifi_ap_disable,
+	.iface_status = wifi_iface_status,
+	.filter = wifi_filter,
+	.mode = wifi_mode,
+	.channel = wifi_channel,
 };
 
 static const struct net_wifi_mgmt_offload wifi_if_api = {
