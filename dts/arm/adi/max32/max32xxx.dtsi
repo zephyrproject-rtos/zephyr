@@ -274,6 +274,13 @@
 				status = "disabled";
 			};
 		};
+
+		rtc: rtc@40006000 {
+			compatible = "adi,max32-rtc";
+			reg = <0x40006000 0x400>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
 	};
 };
 
