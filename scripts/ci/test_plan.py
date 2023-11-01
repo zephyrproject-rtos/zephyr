@@ -24,6 +24,9 @@ if "ZEPHYR_BASE" not in os.environ:
 # however, pylint complains that it doesn't recognized them when used (used-before-assignment).
 zephyr_base = Path(os.environ['ZEPHYR_BASE'])
 
+sys.path.insert(0, os.path.join(zephyr_base / "scripts"))
+from get_maintainer import Maintainers
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
@@ -94,8 +97,9 @@ class Filters:
                  platforms=[], detailed_test_id=True):
 
         self.modified_files = []
-        self.testsuite_root = testsuite_root
         self.resolved_files = []
+
+        self.testsuite_root = testsuite_root
         self.twister_options = []
         self.full_twister = False
         self.all_tests = []
@@ -118,20 +122,24 @@ class Filters:
 
         if self.modified_files:
             logging.info("Changed files:")
+            logging.info("///////////////////////////")
             for file in self.modified_files:
                 logging.info(file)
-            logging.info("--------------")
+            logging.info("///////////////////////////")
 
     def process(self):
+        self.find_excludes()
         if 'west.yml' in self.modified_files:
             self.find_modules()
 
-        self.find_tags()
+        #self.find_tags()
         self.find_tests()
         if not self.platforms:
             self.find_archs()
             self.find_boards()
-        self.find_excludes()
+        self.find_areas()
+
+        self.post_filter()
 
     def finalize(self, output_file, ntests_per_builder):
         # remove duplicates and filtered test cases
@@ -197,6 +205,7 @@ class Filters:
             os.remove(fname)
 
     def find_modules(self):
+        logging.info(f"-------------------  modules --------------")
         logging.info("Manifest file 'west.yml' changed")
         old_manifest_content = self.git_repo.git.show(f"{self.commits[:-2]}:west.yml")
         with open("west_old.yml", "w") as manifest:
@@ -220,10 +229,10 @@ class Filters:
         projs = rprojs | uprojs | aprojs
         projs_names = [name for name, rev in projs]
 
-        logging.info(f'rprojs: {rprojs}')
-        logging.info(f'uprojs: {uprojs}')
-        logging.info(f'aprojs: {aprojs}')
-        logging.info(f'project: {projs_names}')
+        logging.debug(f'rprojs: {rprojs}')
+        logging.debug(f'uprojs: {uprojs}')
+        logging.debug(f'aprojs: {aprojs}')
+        logging.debug(f'project: {projs_names}')
 
         _options = []
         if self.platforms:
@@ -233,18 +242,21 @@ class Filters:
         for prj in projs_names:
             _options.extend(["-t", prj ])
 
-        self.get_plan(_options, True)
-
+        self.get_plan(_options, integration=True)
+        self.resolved_files.append('west.yml')
 
     def find_archs(self):
+        logging.info(f"-------------------  archs --------------")
         # we match both arch/<arch>/* and include/zephyr/arch/<arch> and skip common.
         # Some architectures like riscv require special handling, i.e. riscv
         # directory covers 2 architectures known to twister: riscv32 and riscv64.
         archs = set()
+
         # if we have changes other than architecture related, consider this a
         # global change and not architecture specific
         _global_change = False
-        for f in self.modified_files:
+        remaining = self.get_remaining_files()
+        for f in remaining:
             _match = re.match(r"^arch\/([^/]+)\/", f)
             if not _match:
                 _match = re.match(r"^include\/zephyr\/arch\/([^/]+)\/", f)
@@ -255,12 +267,14 @@ class Filters:
                         archs.add('riscv64')
                     else:
                         archs.add(_match.group(1))
+
                     # Modified file is treated as resolved, since a matching scope was found
                     self.resolved_files.append(f)
             else:
                 _global_change = True
 
         if _global_change:
+            self.full_twister = True
             return
 
         _options = []
@@ -278,11 +292,13 @@ class Filters:
                 self.get_plan(_options, True)
 
     def find_boards(self):
+        logging.info(f"-------------------  boards --------------")
         boards = set()
         all_boards = set()
         resolved = []
 
-        for f in self.modified_files:
+        remaining = self.get_remaining_files()
+        for f in remaining:
             if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
                 continue
             p = re.match(r"^boards\/[^/]+\/([^/]+)\/", f)
@@ -311,7 +327,8 @@ class Filters:
 
         _options = []
         if len(all_boards) > 20:
-            logging.warning(f"{len(boards)} boards changed, this looks like a global change, skipping test handling, revert to default.")
+            logging.warning(f"{len(boards)} boards changed, this looks like a global change, "
+                            "skipping test handling, revert to default.")
             self.full_twister = True
             return
 
@@ -323,8 +340,10 @@ class Filters:
             self.get_plan(_options)
 
     def find_tests(self):
+        logging.info(f"-------------------  tests --------------")
         tests = set()
-        for f in self.modified_files:
+        remaining = self.get_remaining_files()
+        for f in remaining:
             if f.endswith(".rst"):
                 continue
             d = os.path.dirname(f)
@@ -357,7 +376,8 @@ class Filters:
             _options.extend(["-T", t ])
 
         if len(tests) > 20:
-            logging.warning(f"{len(tests)} tests changed, this looks like a global change, skipping test handling, revert to default")
+            logging.warning(f"{len(tests)} tests changed, this looks like a global change, "
+                            "skipping test handling, revert to default")
             self.full_twister = True
             return
 
@@ -368,8 +388,36 @@ class Filters:
                     _options.extend(["-p", platform])
             self.get_plan(_options, integration=True, use_testsuite_root=False)
 
-    def find_tags(self):
+    def get_remaining_files(self):
+        remaining = set(self.modified_files).difference(set(self.resolved_files))
+        logging.info(f"Remaining files: {remaining}")
+        return remaining
 
+    def find_areas(self):
+        logging.info(f"-------------------  areas --------------")
+        maintf = zephyr_base / "MAINTAINERS.yml"
+        maintainer_file = Maintainers(maintf)
+
+        num_files = 0
+        all_areas = set()
+        remaining = self.get_remaining_files()
+        for changed_file in remaining:
+            num_files += 1
+            logging.info(f"file: {changed_file}")
+            areas = maintainer_file.path2areas(changed_file)
+
+            if not areas:
+                continue
+            self.resolved_files.append(changed_file)
+            all_areas.update(areas)
+
+        for area in all_areas:
+            logging.info(f"area {area.name} changed..")
+            for tag in area.tags:
+                self.tag_options.extend(["-t", tag ])
+
+    def find_tags(self):
+        logging.info(f"-------------------  tags --------------")
         with open(self.tag_cfg_file, 'r') as ymlfile:
             tags_config = yaml.safe_load(ymlfile)
 
@@ -390,7 +438,8 @@ class Filters:
 
             tags[tag.name] = tag
 
-        for f in self.modified_files:
+        remaining = self.get_remaining_files()
+        for f in remaining:
             for t in tags.values():
                 if t._contains(f):
                     t.exclude = False
@@ -407,26 +456,30 @@ class Filters:
             logging.info(f'Potential tag based filters: {exclude_tags}')
 
     def find_excludes(self):
+        logging.info(f"-------------------  excludes --------------")
         with open(self.ignore_path, "r") as twister_ignore:
             ignores = twister_ignore.read().splitlines()
             ignores = filter(lambda x: not x.startswith("#"), ignores)
 
         found = set()
-        files_not_resolved = list(filter(lambda x: x not in self.resolved_files, self.modified_files))
 
         for pattern in ignores:
             if pattern:
-                found.update(fnmatch.filter(files_not_resolved, pattern))
+                found.update(fnmatch.filter(self.modified_files, pattern))
 
-        logging.info(f"found matches: {found}")
+        self.resolved_files.extend(found)
+
+
+        logging.info(f"files to be ignored: {found}")
+        files_not_resolved = list(filter(lambda x: x not in found, self.modified_files))
         logging.info(f"not resolved files: {files_not_resolved}")
+        return
 
-        # Full twister run can be requested by detecting great number of tests/boards changed
-        # or if not all modified files were resolved (corresponding scope found)
-        self.full_twister = self.full_twister or sorted(files_not_resolved) != sorted(found)
 
+    def post_filter(self):
+        logging.info(f"-------------------  post filters --------------")
+        _options = []
         if self.full_twister:
-            _options = []
             logging.info(f'Need to run full or partial twister...')
             if self.platforms:
                 for platform in self.platforms:
@@ -437,6 +490,12 @@ class Filters:
             else:
                 _options.extend(self.tag_options)
                 self.get_plan(_options, True)
+        elif self.tag_options:
+            for platform in self.platforms:
+                _options.extend(["-p", platform])
+
+            _options.extend(self.tag_options)
+            self.get_plan(_options, True)
         else:
             logging.info(f'No twister needed or partial twister run only...')
 
@@ -496,7 +555,7 @@ def _main():
             args.ignores_file,
             args.tags_file,
             args.testsuite_root,
-            args.platform,
+            args.platform or [],
             args.detailed_test_id)
 
     suite_filter.init()
