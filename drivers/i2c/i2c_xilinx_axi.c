@@ -133,11 +133,12 @@ out_unlock:
 }
 
 static void i2c_xilinx_axi_target_isr(const struct i2c_xilinx_axi_config *config,
-				      struct i2c_xilinx_axi_data *data, uint32_t int_status,
+				      struct i2c_xilinx_axi_data *data, uint32_t *int_status,
 				      uint32_t *ints_to_clear, uint32_t *int_enable)
 {
-	if (int_status & ISR_ADDR_TARGET) {
+	if (*int_status & ISR_ADDR_TARGET) {
 		LOG_DBG("Addressed as target");
+		*int_status &= ~ISR_ADDR_TARGET;
 		*int_enable &= ~ISR_ADDR_TARGET;
 		*int_enable |= ISR_NOT_ADDR_TARGET;
 		*ints_to_clear |= ISR_NOT_ADDR_TARGET;
@@ -166,7 +167,7 @@ static void i2c_xilinx_axi_target_isr(const struct i2c_xilinx_axi_config *config
 				sys_write32(cr, config->base + REG_CR);
 			}
 		}
-	} else if (int_status & ISR_NOT_ADDR_TARGET) {
+	} else if (*int_status & ISR_NOT_ADDR_TARGET) {
 		LOG_DBG("Not addressed as target");
 		(*data->target_cfg->callbacks->stop)(data->target_cfg);
 		data->target_reading = false;
@@ -174,10 +175,12 @@ static void i2c_xilinx_axi_target_isr(const struct i2c_xilinx_axi_config *config
 		data->target_writing = false;
 
 		sys_write32(CR_EN, config->base + REG_CR);
+		*int_status &= ~ISR_NOT_ADDR_TARGET;
 		*int_enable &= ~I2C_XILINX_AXI_TARGET_INTERRUPTS;
 		*int_enable |= ISR_ADDR_TARGET;
 		*ints_to_clear |= ISR_ADDR_TARGET;
-	} else if (int_status & ISR_RX_FIFO_FULL) {
+	} else if (data->target_writing && (*int_status & ISR_RX_FIFO_FULL)) {
+		*int_status &= ~ISR_RX_FIFO_FULL;
 		const uint8_t written_byte =
 			sys_read32(config->base + REG_RX_FIFO) & RX_FIFO_DATA_MASK;
 
@@ -189,31 +192,25 @@ static void i2c_xilinx_axi_target_isr(const struct i2c_xilinx_axi_config *config
 			cr |= CR_TXAK;
 			sys_write32(cr, config->base + REG_CR);
 		}
-	} else if (int_status & ISR_TX_ERR_TARGET_COMP) {
-		if (data->target_reading) {
-			/* Controller has NAKed the last byte read, so no more to send.
-			 * Ignore TX FIFO empty so we don't write an extra byte.
-			 */
-			LOG_DBG("target read completed");
-			*int_enable &= ~ISR_TX_FIFO_EMPTY;
-			*ints_to_clear |= ISR_TX_FIFO_EMPTY;
-		} else {
-			LOG_WRN("Unexpected TX complete");
-		}
-	} else if (int_status & ISR_TX_FIFO_EMPTY) {
-		if (data->target_reading) {
-			uint8_t read_byte = 0xFF;
+	} else if (data->target_reading && (*int_status & ISR_TX_ERR_TARGET_COMP)) {
+		/* Controller has NAKed the last byte read, so no more to send.
+		 * Ignore TX FIFO empty so we don't write an extra byte.
+		 */
+		LOG_DBG("target read completed");
+		*int_status &= ~ISR_TX_ERR_TARGET_COMP;
+		*int_enable &= ~ISR_TX_FIFO_EMPTY;
+		*ints_to_clear |= ISR_TX_FIFO_EMPTY;
+	} else if (data->target_reading && (*int_status & ISR_TX_FIFO_EMPTY)) {
+		*int_status &= ~ISR_TX_FIFO_EMPTY;
+		uint8_t read_byte = 0xFF;
 
-			if (!data->target_read_aborted &&
-			    (*data->target_cfg->callbacks->read_processed)(data->target_cfg,
-									   &read_byte)) {
-				LOG_DBG("target read_processed rejected");
-				data->target_read_aborted = true;
-			}
-			sys_write32(read_byte, config->base + REG_TX_FIFO);
-		} else {
-			LOG_WRN("Unexpected TX empty");
+		if (!data->target_read_aborted &&
+		   (*data->target_cfg->callbacks->read_processed)(data->target_cfg,
+								  &read_byte)) {
+			LOG_DBG("target read_processed rejected");
+			data->target_read_aborted = true;
 		}
+		sys_write32(read_byte, config->base + REG_TX_FIFO);
 	}
 }
 #endif
@@ -224,9 +221,8 @@ static void i2c_xilinx_axi_isr(const struct device *dev)
 	struct i2c_xilinx_axi_data *data = dev->data;
 	const k_spinlock_key_t key = k_spin_lock(&data->lock);
 	uint32_t int_enable = sys_read32(config->base + REG_IER);
-	const uint32_t int_status = sys_read32(config->base + REG_ISR) & int_enable;
+	uint32_t int_status = sys_read32(config->base + REG_ISR) & int_enable;
 	uint32_t ints_to_clear = int_status;
-	uint32_t ints_to_mask = int_status;
 
 	LOG_DBG("ISR called for 0x%08" PRIxPTR ", status 0x%02x", config->base, int_status);
 
@@ -240,17 +236,20 @@ static void i2c_xilinx_axi_isr(const struct device *dev)
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_cfg && (int_status & I2C_XILINX_AXI_TARGET_INTERRUPTS)) {
-		ints_to_mask &= ~(int_status & I2C_XILINX_AXI_TARGET_INTERRUPTS);
-		i2c_xilinx_axi_target_isr(config, data, int_status, &ints_to_clear, &int_enable);
+		/* This clears events from int_status which are already handled */
+		i2c_xilinx_axi_target_isr(config, data, &int_status, &ints_to_clear, &int_enable);
 	}
 #endif
 
-	sys_write32(int_enable & ~ints_to_mask, config->base + REG_IER);
+	/* Mask any interrupts which have not already been handled separately */
+	sys_write32(int_enable & ~int_status, config->base + REG_IER);
 	/* Be careful, writing 1 to a bit that is not currently set in ISR will SET it! */
 	sys_write32(ints_to_clear & sys_read32(config->base + REG_ISR), config->base + REG_ISR);
 
 	k_spin_unlock(&data->lock, key);
-	k_event_post(&data->irq_event, int_status);
+	if (int_status) {
+		k_event_post(&data->irq_event, int_status);
+	}
 }
 
 static int i2c_xilinx_axi_configure(const struct device *dev, uint32_t dev_config)
