@@ -163,7 +163,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 			}
 		}
 
-		if (per_adv_sync) {
+		if (per_adv_sync && IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
 			shell_print(ctx_shell, "Sending PAST");
 
 			err = bt_le_per_adv_sync_transfer(per_adv_sync,
@@ -202,7 +202,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 			}
 		}
 
-		if (ext_adv != NULL && IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		if (ext_adv != NULL && IS_ENABLED(CONFIG_BT_PER_ADV) &&
+		    IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
 			shell_print(ctx_shell, "Sending local PAST");
 
 			err = bt_le_per_adv_set_info_transfer(ext_adv, conn,
