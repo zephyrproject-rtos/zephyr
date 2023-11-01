@@ -59,7 +59,7 @@
 
 	sens_i2c: sensor-switch {
 		status = "okay";
-		compatible = "ti,ts5a2066";
+		compatible = "gpio-i2c-switch";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		controller = <&i2c0>;
