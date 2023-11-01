@@ -149,6 +149,8 @@ static void test_tx_immediate_replay_attack(void)
 		}
 
 		ASSERT_TRUE(is_tx_succeeded);
+		/* Let complete advertising of the previous transaction to prevent collisions. */
+		k_sleep(K_SECONDS(1));
 	}
 
 	bt_mesh.seq = seq;
@@ -165,6 +167,8 @@ static void test_tx_immediate_replay_attack(void)
 		}
 
 		ASSERT_TRUE(!is_tx_succeeded);
+		/* Let complete advertising of the previous transaction to prevent collisions. */
+		k_sleep(K_SECONDS(1));
 	}
 
 	PASS();
@@ -208,6 +212,8 @@ static void test_tx_power_replay_attack(void)
 		}
 
 		ASSERT_TRUE(!is_tx_succeeded);
+		/* Let complete advertising of the previous transaction to prevent collisions. */
+		k_sleep(K_SECONDS(1));
 	}
 
 	for (int i = 0; i < 3; i++) {
@@ -222,6 +228,8 @@ static void test_tx_power_replay_attack(void)
 		}
 
 		ASSERT_TRUE(is_tx_succeeded);
+		/* Let complete advertising of the previous transaction to prevent collisions. */
+		k_sleep(K_SECONDS(1));
 	}
 
 	PASS();
