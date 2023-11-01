@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
+#include <zephyr/net/socket.h>
 
 #define APP_BANNER "Run LWM2M client"
 
@@ -56,6 +57,24 @@ static int device_reboot_cb(uint16_t obj_inst_id,
 	LOG_INF("DEVICE: REBOOT");
 	k_work_submit(&reboot_work);
 	return 0;
+}
+
+int set_socketoptions(struct lwm2m_ctx *ctx)
+{
+	if (IS_ENABLED(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID) && ctx->use_dtls) {
+		int ret;
+
+		/* Enable CID */
+		int cid = TLS_DTLS_CID_ENABLED;
+
+		ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_CID, &cid,
+				       sizeof(cid));
+		if (ret) {
+			ret = -errno;
+			LOG_ERR("Failed to enable TLS_DTLS_CID: %d", ret);
+		}
+	}
+	return lwm2m_set_default_sockopt(ctx);
 }
 
 static int lwm2m_setup(void)
@@ -201,6 +220,7 @@ int main(void)
 	}
 
 	client.tls_tag = 1;
+	client.set_socketoptions = set_socketoptions;
 
 	lwm2m_rd_client_start(&client, CONFIG_BOARD, 0, rd_client_event, observe_cb);
 	lwm2m_rd_client_stop(&client, rd_client_event, false);
