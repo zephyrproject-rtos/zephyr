@@ -525,7 +525,7 @@ static void node_configure(void)
 	 */
 	uint8_t net_transmit;
 
-	net_transmit = BT_MESH_TRANSMIT(3, 20);
+	net_transmit = BT_MESH_TRANSMIT(3, 50);
 	err = bt_mesh_cfg_cli_net_transmit_set(test_netkey_idx, TEST_ADDR, net_transmit, &status);
 	if (err || status != net_transmit) {
 		FAIL("Net transmit set failed (err %d, transmit %x)", err, status);
