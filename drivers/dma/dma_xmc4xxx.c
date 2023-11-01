@@ -213,6 +213,8 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 	dma->CH[channel].CFGL = (config->channel_priority << GPDMA0_CH_CFGL_CH_PRIOR_Pos) |
 				GPDMA0_CH_CFGL_HS_SEL_SRC_Msk | GPDMA0_CH_CFGL_HS_SEL_DST_Msk;
 
+	dma->CH[channel].CFGH = 0;
+
 	dma->CH[channel].CTLL = config->dest_data_size / 2 << GPDMA0_CH_CTLL_DST_TR_WIDTH_Pos |
 				config->source_data_size / 2 << GPDMA0_CH_CTLL_SRC_TR_WIDTH_Pos |
 				block->dest_addr_adj << GPDMA0_CH_CTLL_DINC_Pos |
@@ -270,6 +272,10 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 			dma->CH[channel].CFGL &= ~BIT(GPDMA0_CH_CFGL_HS_SEL_SRC_Pos);
 			dma->CH[channel].CTLL |= 2 << GPDMA0_CH_CTLL_TT_FC_Pos;
 		}
+	}
+
+	if (block->fifo_mode_control > 0) {
+		dma->CH[channel].CFGH |= GPDMA0_CH_CFGH_FIFO_MODE_Msk;
 	}
 
 	if (block->source_gather_en) {
