@@ -33,5 +33,6 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_BT_HCI             entropy_bt_hci.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE           entropy_gecko_se.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG     entropy_psa_crypto.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NPCX_DRBG          entropy_npcx_drbg.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_MAX32_TRNG         entropy_max32.c)
 
 zephyr_library_link_libraries_ifdef(CONFIG_BUILD_WITH_TFM tfm_api)
