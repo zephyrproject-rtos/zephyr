@@ -112,6 +112,13 @@
 	status = "okay";
 };
 
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -150,4 +157,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi1_mosi_p0_21 &spi1_miso_p0_22 &spi1_sck_p0_23 &spi1_ss0_p0_20>;
 	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
 };

@@ -17,6 +17,7 @@ supported:
   - spi
   - adc
   - counter
+  - rtc_counter
   - pwm
   - w1
   - flash

@@ -102,6 +102,13 @@
 	status = "okay";
 };
 
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -117,6 +124,10 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&rtc_counter {
 	status = "okay";
 };
 
