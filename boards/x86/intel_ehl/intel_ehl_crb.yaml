@@ -7,6 +7,7 @@ toolchain:
   - llvm
 ram: 2048
 supported:
+  - acpi
   - gpio
   - smbus
   - smp
