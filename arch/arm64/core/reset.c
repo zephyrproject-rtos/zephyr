@@ -125,6 +125,12 @@ void z_arm64_el2_init(void)
 	write_sctlr_el2(reg);
 
 	reg = read_hcr_el2();
+	/* when EL2 is enable in current security status:
+	 * Clear TGE bit: All exceptions that would not be routed to EL2;
+	 * Clear AMO bit: Physical SError interrupts are not taken to EL2 and EL3.
+	 * Clear IMO bit: Physical IRQ interrupts are not taken to EL2 and EL3.
+	 */
+	reg &= ~(HCR_IMO_BIT | HCR_AMO_BIT | HCR_TGE_BIT);
 	reg |= HCR_RW_BIT;		/* EL1 Execution state is AArch64 */
 	write_hcr_el2(reg);
 
