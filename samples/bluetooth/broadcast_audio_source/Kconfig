@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Demant A/S
+# Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 mainmenu "Bluetooth: Broadcast Audio Source"
@@ -18,5 +19,13 @@ config BAP_BROADCAST_24_2_1
 	  Using the BAP_LC3_BROADCAST_PRESET_24_2_1 preset.
 
 endchoice
+
+config ENABLE_LC3
+	bool "Enable the LC3 codec"
+	# By default let's enable it in the platforms we know are capable of supporting it
+	default y
+	depends on (ARCH_POSIX || SOC_NRF5340_CPUAPP)
+	select LIBLC3
+	select FPU
 
 source "Kconfig.zephyr"
