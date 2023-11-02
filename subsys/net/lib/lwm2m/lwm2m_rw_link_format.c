@@ -20,22 +20,19 @@ LOG_MODULE_REGISTER(net_lwm2m_link_format, CONFIG_LWM2M_LOG_LEVEL);
 /*
  * TODO: to implement a way for clients to specify alternate path
  * via Kconfig (LwM2M specification 8.2.2 Alternate Path)
- *
- * For now, in order to inform server we support JSON format, we have to
- * report 'ct=11543' to the server. '</>' is required in order to append
- * content attribute. And resource type attribute is appended because of
- * Eclipse wakaama will reject the registration when 'rt="oma.lwm2m"' is
- * missing.
  */
 
-
+/*
+ * In order to inform the server about the configured LwM2M content format, we have
+ * to report 'ct=' with the content type value to the server. The root path '</>'
+ * is required in order to append the content type attribute.
+ */
 #if defined(CONFIG_LWM2M_RW_SENML_CBOR_SUPPORT)
 #define REG_PREFACE		"</>;ct=" STRINGIFY(LWM2M_FORMAT_APP_SENML_CBOR)
 #elif defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
 #define REG_PREFACE		"</>;ct=" STRINGIFY(LWM2M_FORMAT_APP_SEML_JSON)
 #elif defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
-#define REG_PREFACE		"</>;rt=\"oma.lwm2m\"" \
-				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
+#define REG_PREFACE		"</>;ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
 #else
 #define REG_PREFACE		""
 #endif
