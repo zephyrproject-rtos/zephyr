@@ -863,7 +863,7 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 # If we are running network tests found in tests/net, then the NET_TEST is
 # set and in that case we default to Dummy L2 layer as typically the tests
 # use that by default.
-choice
+choice NET_DEFAULT_IF
 	prompt "Default Network Interface"
 	default NET_DEFAULT_IF_DUMMY if NET_TEST
 	default NET_DEFAULT_IF_FIRST
