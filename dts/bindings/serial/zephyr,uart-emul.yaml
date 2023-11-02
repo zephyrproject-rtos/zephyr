@@ -25,3 +25,9 @@ properties:
     description: |
       Connects TX to RX internally creating a loop back connection. Useful
       for testing.
+
+  latch-buffer-size:
+    type: int
+    default: 1
+    description: |
+      Size of the virtual UART latch buffer.
