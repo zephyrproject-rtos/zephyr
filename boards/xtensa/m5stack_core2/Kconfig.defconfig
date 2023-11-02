@@ -24,6 +24,9 @@ choice BT_HCI_BUS_TYPE
 	default BT_ESP32 if BT
 endchoice
 
+config REGULATOR_AXP192_INIT_PRIORITY
+	default 81
+
 config GPIO_HOGS_INIT_PRIORITY
 	default 82
 
