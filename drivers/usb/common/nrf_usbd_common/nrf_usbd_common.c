@@ -179,16 +179,6 @@ static nrf_usbd_common_event_handler_t m_event_handler;
 static volatile bool m_bus_suspend;
 
 /**
- * @brief Internal constant that contains interrupts disabled in suspend state.
- *
- * Internal constant used in @ref nrf_usbd_common_suspend_irq_config and
- * @ref nrf_usbd_common_active_irq_config functions.
- */
-static const uint32_t m_irq_disabled_in_suspend =
-	NRF_USBD_INT_ENDEPIN0_MASK | NRF_USBD_INT_EP0DATADONE_MASK | NRF_USBD_INT_ENDEPOUT0_MASK |
-	NRF_USBD_INT_EP0SETUP_MASK | NRF_USBD_INT_DATAEP_MASK;
-
-/**
  * @brief Direction of last received Setup transfer.
  *
  * This variable is used to redirect internal setup data event
@@ -329,31 +319,6 @@ static inline nrf_usbd_event_t nrf_usbd_common_ep_to_endevent(nrf_usbd_common_ep
 		NRF_USBD_EVENT_ENDEPOUT6, NRF_USBD_EVENT_ENDEPOUT7, NRF_USBD_EVENT_ENDISOOUT0};
 
 	return (NRF_USBD_EPIN_CHECK(ep) ? epin_endev : epout_endev)[NRF_USBD_EP_NR_GET(ep)];
-}
-
-/**
- * @brief Get interrupt mask for selected endpoint.
- *
- * @param[in] ep Endpoint number.
- *
- * @return Interrupt mask related to the EasyDMA transfer end for the
- *         chosen endpoint.
- */
-static inline uint32_t nrf_usbd_common_ep_to_int(nrf_usbd_common_ep_t ep)
-{
-	NRF_USBD_COMMON_ASSERT_EP_VALID(ep);
-
-	static const uint8_t epin_bitpos[] = {
-		USBD_INTEN_ENDEPIN0_Pos, USBD_INTEN_ENDEPIN1_Pos, USBD_INTEN_ENDEPIN2_Pos,
-		USBD_INTEN_ENDEPIN3_Pos, USBD_INTEN_ENDEPIN4_Pos, USBD_INTEN_ENDEPIN5_Pos,
-		USBD_INTEN_ENDEPIN6_Pos, USBD_INTEN_ENDEPIN7_Pos, USBD_INTEN_ENDISOIN_Pos};
-	static const uint8_t epout_bitpos[] = {
-		USBD_INTEN_ENDEPOUT0_Pos, USBD_INTEN_ENDEPOUT1_Pos, USBD_INTEN_ENDEPOUT2_Pos,
-		USBD_INTEN_ENDEPOUT3_Pos, USBD_INTEN_ENDEPOUT4_Pos, USBD_INTEN_ENDEPOUT5_Pos,
-		USBD_INTEN_ENDEPOUT6_Pos, USBD_INTEN_ENDEPOUT7_Pos, USBD_INTEN_ENDISOOUT_Pos};
-
-	return 1UL << (NRF_USBD_EPIN_CHECK(ep) ? epin_bitpos
-					       : epout_bitpos)[NRF_USBD_EP_NR_GET(ep)];
 }
 
 /**
@@ -1403,7 +1368,6 @@ void nrf_usbd_common_disable(void)
 	nrf_usbd_common_stop();
 
 	/* Disable all parts */
-	nrf_usbd_int_disable(NRF_USBD, nrf_usbd_int_enable_get(NRF_USBD));
 	if (m_dma_odd) {
 		/* Prevent invalid bus request after next USBD enable by ensuring
 		 * that total number of bytes transferred by DMA is even.
@@ -1432,17 +1396,25 @@ void nrf_usbd_common_start(bool enable_sof)
 	__ASSERT_NO_MSG(m_drv_state == NRFX_DRV_STATE_POWERED_ON);
 	m_bus_suspend = false;
 
-	uint32_t ints_to_enable = NRF_USBD_INT_USBRESET_MASK |
-				  NRF_USBD_INT_ENDEPIN0_MASK | NRF_USBD_INT_EP0DATADONE_MASK |
-				  NRF_USBD_INT_ENDEPOUT0_MASK | NRF_USBD_INT_USBEVENT_MASK |
-				  NRF_USBD_INT_EP0SETUP_MASK | NRF_USBD_INT_DATAEP_MASK;
+	uint32_t int_mask = USBD_INTEN_USBRESET_Msk | USBD_INTEN_ENDEPIN0_Msk |
+		USBD_INTEN_ENDEPIN1_Msk | USBD_INTEN_ENDEPIN2_Msk |
+		USBD_INTEN_ENDEPIN3_Msk | USBD_INTEN_ENDEPIN4_Msk |
+		USBD_INTEN_ENDEPIN5_Msk | USBD_INTEN_ENDEPIN6_Msk |
+		USBD_INTEN_ENDEPIN7_Msk | USBD_INTEN_EP0DATADONE_Msk |
+		USBD_INTEN_ENDISOIN_Msk | USBD_INTEN_ENDEPOUT0_Msk |
+		USBD_INTEN_ENDEPOUT1_Msk | USBD_INTEN_ENDEPOUT2_Msk |
+		USBD_INTEN_ENDEPOUT3_Msk | USBD_INTEN_ENDEPOUT4_Msk |
+		USBD_INTEN_ENDEPOUT5_Msk | USBD_INTEN_ENDEPOUT6_Msk |
+		USBD_INTEN_ENDEPOUT7_Msk | USBD_INTEN_ENDISOOUT_Msk |
+		USBD_INTEN_USBEVENT_Msk | USBD_INTEN_EP0SETUP_Msk |
+		USBD_INTEN_EPDATA_Msk;
 
 	if (enable_sof) {
-		ints_to_enable |= NRF_USBD_INT_SOF_MASK;
+		int_mask |= USBD_INTEN_SOF_Msk;
 	}
 
 	/* Enable all required interrupts */
-	nrf_usbd_int_enable(NRF_USBD, ints_to_enable);
+	NRF_USBD->INTEN = int_mask;
 
 	/* Enable interrupt globally */
 	irq_enable(USBD_IRQn);
@@ -1469,7 +1441,7 @@ static void nrf_usbd_common_stop(void)
 		irq_disable(USBD_IRQn);
 
 		/* Disable all interrupts */
-		nrf_usbd_int_disable(NRF_USBD, ~0U);
+		NRF_USBD->INTEN = 0;
 	}
 }
 
@@ -1539,16 +1511,6 @@ bool nrf_usbd_common_suspend_check(void)
 	return nrf_usbd_lowpower_check(NRF_USBD);
 }
 
-void nrf_usbd_common_suspend_irq_config(void)
-{
-	nrf_usbd_int_disable(NRF_USBD, m_irq_disabled_in_suspend);
-}
-
-void nrf_usbd_common_active_irq_config(void)
-{
-	nrf_usbd_int_enable(NRF_USBD, m_irq_disabled_in_suspend);
-}
-
 bool nrf_usbd_common_bus_suspend_check(void)
 {
 	return m_bus_suspend;
@@ -1588,8 +1550,6 @@ bool nrf_usbd_common_ep_enable_check(nrf_usbd_common_ep_t ep)
 
 void nrf_usbd_common_ep_enable(nrf_usbd_common_ep_t ep)
 {
-	nrf_usbd_int_enable(NRF_USBD, nrf_usbd_common_ep_to_int(ep));
-
 	if (nrf_usbd_ep_enable_check(NRF_USBD, ep)) {
 		return;
 	}
@@ -1611,7 +1571,6 @@ void nrf_usbd_common_ep_disable(nrf_usbd_common_ep_t ep)
 	k_sem_take(&dma_available, K_FOREVER);
 	usbd_ep_abort(ep);
 	nrf_usbd_ep_disable(NRF_USBD, ep_to_hal(ep));
-	nrf_usbd_int_disable(NRF_USBD, nrf_usbd_common_ep_to_int(ep));
 	k_sem_give(&dma_available);
 
 	/* This function was holding DMA semaphore and could potentially prevent
@@ -1623,16 +1582,6 @@ void nrf_usbd_common_ep_disable(nrf_usbd_common_ep_t ep)
 
 void nrf_usbd_common_ep_default_config(void)
 {
-	nrf_usbd_int_disable(NRF_USBD,
-			     NRF_USBD_INT_ENDEPIN1_MASK | NRF_USBD_INT_ENDEPIN2_MASK |
-				     NRF_USBD_INT_ENDEPIN3_MASK | NRF_USBD_INT_ENDEPIN4_MASK |
-				     NRF_USBD_INT_ENDEPIN5_MASK | NRF_USBD_INT_ENDEPIN6_MASK |
-				     NRF_USBD_INT_ENDEPIN7_MASK | NRF_USBD_INT_ENDISOIN0_MASK |
-				     NRF_USBD_INT_ENDEPOUT1_MASK | NRF_USBD_INT_ENDEPOUT2_MASK |
-				     NRF_USBD_INT_ENDEPOUT3_MASK | NRF_USBD_INT_ENDEPOUT4_MASK |
-				     NRF_USBD_INT_ENDEPOUT5_MASK | NRF_USBD_INT_ENDEPOUT6_MASK |
-				     NRF_USBD_INT_ENDEPOUT7_MASK | NRF_USBD_INT_ENDISOOUT0_MASK);
-	nrf_usbd_int_enable(NRF_USBD, NRF_USBD_INT_ENDEPIN0_MASK | NRF_USBD_INT_ENDEPOUT0_MASK);
 	nrf_usbd_ep_default_config(NRF_USBD);
 }
 
