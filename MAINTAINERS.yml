@@ -118,6 +118,7 @@ ACPI:
     - najumon1980
   collaborators:
     - finikorg
+    - tbursztyka
   files:
     - lib/acpi/
     - include/zephyr/acpi/
