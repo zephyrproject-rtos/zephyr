@@ -4,3 +4,14 @@
  */
 
 #include "qemu_x86.dts"
+
+/ {
+	cpus {
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "intel,x86";
+			d-cache-line-size = <64>;
+			reg = <1>;
+		};
+	};
+};
