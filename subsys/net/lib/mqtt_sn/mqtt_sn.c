@@ -949,6 +949,8 @@ static void handle_register(struct mqtt_sn_client *client, struct mqtt_sn_param_
 	topic->topic_id = p->topic_id;
 	topic->type = MQTT_SN_TOPIC_TYPE_NORMAL;
 
+	sys_slist_append(&client->topic, &topic->next);
+
 	response.params.regack.ret_code = MQTT_SN_CODE_ACCEPTED;
 	response.params.regack.topic_id = p->topic_id;
 	response.params.regack.msg_id = p->msg_id;
