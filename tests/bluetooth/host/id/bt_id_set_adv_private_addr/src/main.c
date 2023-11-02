@@ -24,7 +24,7 @@ static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixt
 {
 	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
 	bt_addr_le_copy(&bt_dev.random_addr, &bt_addr_le_none);
-#if defined(CONFIG_BT_PRIVACY)
+#if defined(CONFIG_BT_RPA_SHARING)
 	bt_addr_copy(&bt_dev.rpa[BT_ID_DEFAULT], BT_ADDR_NONE);
 #endif
 
