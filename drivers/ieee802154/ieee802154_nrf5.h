@@ -19,6 +19,7 @@ struct nrf5_802154_rx_frame {
 	uint8_t lqi; /* Last received frame LQI value. */
 	int8_t rssi; /* Last received frame RSSI value. */
 	bool ack_fpb; /* FPB value in ACK sent for the received frame. */
+	bool ack_seb; /* SEB value in ACK sent for the received frame. */
 };
 
 struct nrf5_802154_data {
@@ -44,6 +45,9 @@ struct nrf5_802154_data {
 
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;
+
+	/* Security Enabled bit value in ACK sent for the last received frame. */
+	bool last_frame_ack_seb;
 
 	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
