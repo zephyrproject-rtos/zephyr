@@ -397,24 +397,6 @@ class TestPlan:
             for not_run in all_tests - to_be_run:
                 print("- {}".format(not_run))
 
-    def report_platform_tests(self, platforms=[]):
-        if len(platforms) > 1:
-            raise TwisterRuntimeError("When exporting tests, only one platform "
-                                      "should be specified.")
-
-        for p in platforms:
-            inst = self.get_platform_instances(p)
-            count = 0
-            for i in inst.values():
-                for c in i.testsuite.cases:
-                    print(f"- {c}")
-                    count += 1
-            print(f"Tests found: {count}")
-
-    def get_platform_instances(self, platform):
-        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + os.sep)}
-        return filtered_dict
-
     def config(self):
         logger.info("coverage platform: {}".format(self.coverage_platform))
 
