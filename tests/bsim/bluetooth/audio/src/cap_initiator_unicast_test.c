@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
@@ -1741,11 +1741,11 @@ struct bst_test_list *test_cap_initiator_unicast_install(struct bst_test_list *t
 	return bst_add_tests(tests, test_cap_initiator_unicast);
 }
 
-#else /* !(defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)) */
+#else /* !CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 struct bst_test_list *test_cap_initiator_unicast_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_UNICAST_CLIENT) */
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
