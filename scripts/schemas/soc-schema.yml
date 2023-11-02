@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, Nordic Semiconductor ASA
+
+## A pykwalify schema for basic validation of the structure of a SoC
+## metadata YAML file.
+##
+# The soc.yml file is a simple list of key value pairs containing SoCs
+# located and the current structure level.
+schema;cpucluster-schema:
+  required: false
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+        name:
+          required: true
+          type: str
+
+schema;soc-schema:
+  required: false
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+        name:
+          required: true
+          type: str
+        cpuclusters:
+          include: cpucluster-schema
+
+schema;series-schema:
+  required: false
+  type: seq
+  sequence:
+    - type: map
+      mapping:
+        name:
+          required: true
+          type: str
+        socs:
+          required: false
+          include: soc-schema
+
+type: map
+mapping:
+  family:
+    required: false
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          name:
+            required: true
+            type: str
+          series:
+            include: series-schema
+          socs:
+            include: soc-schema
+  series:
+    include: series-schema
+  socs:
+    include: soc-schema
+  vendor:
+    required: false
+    type: str
+    desc: SoC series of the SoC.
+          This field is of informational use and can be used for filtering of SoCs.
+  comment:
+    required: false
+    type: str
+    desc: Free form comment with extra information regarding the SoC.
