@@ -550,12 +550,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         default=True,
                         help="deprecated, left for compatibility")
 
-    parser.add_argument("--report-excluded",
-                        action="store_true",
-                        help="""List all tests that are never run based on current scope and
-            coverage. If you are looking for accurate results, run this with
-            --all, but this will take a while...""")
-
     parser.add_argument(
         "--report-name",
         help="""Create a report with a custom name.
