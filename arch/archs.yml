@@ -1,0 +1,4 @@
+archs:
+  - name: empty
+    folder: empty
+    comment: initial file, no arch v2 defined.
