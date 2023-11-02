@@ -228,6 +228,28 @@ static int wpa_supp_supported_channels(struct wpa_supplicant *wpa_s, uint8_t ban
 	return 0;
 }
 
+static int wpa_supp_band_chan_compat(struct wpa_supplicant *wpa_s, uint8_t band, uint8_t channel)
+{
+	struct hostapd_hw_modes *mode = NULL;
+	int i;
+
+	mode = get_mode_by_band(wpa_s, band);
+	if (!mode) {
+		wpa_printf(MSG_ERROR, "Unsupported or invalid band: %d", band);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < mode->num_channels; i++) {
+		if (mode->channels[i].freq == channel) {
+			return mode->channels[i].freq;
+		}
+	}
+
+	wpa_printf(MSG_ERROR, "Channel %d not supported for band %d", channel, band);
+
+	return -EINVAL;
+}
+
 static inline void wpa_supp_restart_status_work(void)
 {
 	/* Terminate synchronously */
@@ -343,9 +365,7 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 	if (params->band != WIFI_FREQ_BAND_UNKNOWN) {
 		ret = wpa_supp_supported_channels(wpa_s, params->band, &chan_list);
 		if (ret < 0) {
-			if (!wpa_cli_cmd_v("remove_network %d", resp.network_id)) {
-				goto out;
-			}
+			goto rem_net;
 		}
 
 		if (chan_list) {
@@ -400,7 +420,7 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 			ret = -1;
 			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
 				params->security);
-			goto out;
+			goto rem_net;
 		}
 
 		if (params->mfp) {
@@ -417,12 +437,21 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 	}
 
 	if (params->channel != WIFI_CHANNEL_ANY) {
-		int freq = chan_to_freq(params->channel);
+		int freq;
 
-		if (freq < 0) {
-			ret = -1;
-			wpa_printf(MSG_ERROR, "Invalid channel %d", params->channel);
-			goto out;
+		if (params->band != WIFI_FREQ_BAND_UNKNOWN) {
+			freq = wpa_supp_band_chan_compat(wpa_s, params->band, params->channel);
+			if (freq < 0) {
+				goto rem_net;
+			}
+		} else {
+			freq = chan_to_freq(params->channel);
+			if (freq < 0) {
+				ret = -1;
+				wpa_printf(MSG_ERROR, "Invalid channel %d",
+					params->channel);
+				goto rem_net;
+			}
 		}
 
 		zephyr_wpa_cli_cmd_v("set_network %d scan_freq %d",
@@ -438,6 +467,13 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 	wpas_api_ctrl.dev = dev;
 	wpas_api_ctrl.requested_op = CONNECT;
 	wpas_api_ctrl.connection_timeout = params->timeout;
+
+	goto out;
+
+rem_net:
+	if (!wpa_cli_cmd_v("remove_network %d", resp.network_id)) {
+		goto out;
+	}
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
