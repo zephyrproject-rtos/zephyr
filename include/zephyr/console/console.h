@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Console API
+ * @defgroup console_api Console API
+ * @ingroup os_services
+ * @{
+ */
+
 /** @brief Initialize console device.
  *
  *  This function should be called once to initialize pull-style
@@ -106,5 +113,9 @@ char *console_getline(void);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_CONSOLE_CONSOLE_H_ */
