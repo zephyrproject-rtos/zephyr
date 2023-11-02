@@ -47,6 +47,8 @@ child-binding:
         property-allowlist:
           - bias-pull-down
           - bias-pull-up
+          - drive-open-drain
+          - drive-open-source
 
     properties:
       pins:

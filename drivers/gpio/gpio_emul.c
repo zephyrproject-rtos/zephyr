@@ -416,14 +416,6 @@ static int gpio_emul_pin_configure(const struct device *port, gpio_pin_t pin,
 	k_spinlock_key_t key;
 	int rv;
 
-	if (flags & GPIO_OPEN_DRAIN) {
-		return -ENOTSUP;
-	}
-
-	if (flags & GPIO_OPEN_SOURCE) {
-		return -ENOTSUP;
-	}
-
 	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
 		return -EINVAL;
 	}
