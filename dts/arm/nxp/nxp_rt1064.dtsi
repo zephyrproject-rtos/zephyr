@@ -31,6 +31,7 @@
 &flexspi2 {
 	status = "okay";
 	reg = <0x402a4000 0x4000>, <0x70000000 DT_SIZE_M(4)>;
+	rx-clock-source = <1>;
 	/* WINBOND */
 	w25q32jvwj0: w25q32jvwj@0 {
 		compatible = "nxp,imx-flexspi-nor";
