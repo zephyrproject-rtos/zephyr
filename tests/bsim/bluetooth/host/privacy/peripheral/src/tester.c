@@ -41,9 +41,20 @@ static void validate_rpa_addr_generated_for_adv_sets(void)
 			return;
 		}
 	}
-	/* First two adv sets have same address as they use same ID and third adv set use diff ID */
-	if (!bt_addr_le_eq(&adv_set_data[0].old_addr, &adv_set_data[1].old_addr)) {
-		FAIL("RPA not same for adv sets with same id\n");
+	if (bt_addr_le_eq(&adv_set_data[0].old_addr, &adv_set_data[1].old_addr)) {
+		/* With RPA sharing mode disabled, the first two adv sets should have
+		 * a different address even though they use the same Bluetooth ID.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_RPA_SHARING)) {
+			FAIL("RPA same for adv sets with same id and RPA sharing disabled\n");
+		}
+	} else {
+		/* In the RPA sharing mode, the first two adv sets should have
+		 * the same address as they use the same Bluetooth ID.
+		 */
+		if (IS_ENABLED(CONFIG_BT_RPA_SHARING)) {
+			FAIL("RPA not same for adv sets with same id and RPA sharing enabled\n");
+		}
 	}
 	if (bt_addr_le_eq(&adv_set_data[0].old_addr, &adv_set_data[3].old_addr)) {
 		FAIL("RPA same for adv sets with different id's\n");
