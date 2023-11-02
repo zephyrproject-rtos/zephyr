@@ -1224,3 +1224,22 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 	/* Should be zero */
 	return -client->rx.len;
 }
+
+int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
+			   struct mqtt_sn_data *topic_name)
+{
+	struct mqtt_sn_topic *topic;
+
+	if (!client || !topic_name) {
+		return -EINVAL;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&client->topic, topic, next) {
+		if (topic->topic_id == id) {
+			topic_name->data = (const uint8_t *)topic->name;
+			topic_name->size = topic->namelen;
+			return 0;
+		}
+	}
+	return -ENOENT;
+}
