@@ -151,10 +151,6 @@ def main(options):
                     )
                 )
 
-    if options.report_excluded:
-        tplan.report_excluded_tests()
-        return 0
-
     report = Reporting(tplan, env)
     plan_file = os.path.join(options.outdir, "testplan.json")
     if not os.path.exists(plan_file):
