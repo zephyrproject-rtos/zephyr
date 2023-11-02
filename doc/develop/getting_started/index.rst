@@ -164,7 +164,12 @@ The current minimum required version for the main dependencies are:
          .. code-block:: bat
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-            choco install ninja gperf python git dtc-msys2 wget 7zip
+            choco install ninja gperf python311 git dtc-msys2 wget 7zip
+
+         .. warning::
+
+            As of November 2023, Python 3.12 is not recommended for Zephyr development on Windows,
+            as some required Python dependencies may be difficult to install.
 
       #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
 
