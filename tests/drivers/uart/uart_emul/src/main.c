@@ -19,6 +19,8 @@ struct uart_emul_fixture {
 	uint8_t sample_data[SAMPLE_DATA_SIZE];
 	uint8_t tx_content[SAMPLE_DATA_SIZE];
 	uint8_t rx_content[SAMPLE_DATA_SIZE];
+	struct k_sem tx_done_sem;
+	struct k_sem rx_done_sem;
 };
 
 static void *uart_emul_setup(void)
@@ -28,6 +30,9 @@ static void *uart_emul_setup(void)
 	for (size_t i = 0; i < SAMPLE_DATA_SIZE; i++) {
 		fixture.sample_data[i] = i;
 	}
+
+	k_sem_init(&fixture.tx_done_sem, 0, 1);
+	k_sem_init(&fixture.rx_done_sem, 0, 1);
 
 	zassert_not_null(fixture.dev);
 	return &fixture;
@@ -44,6 +49,12 @@ static void uart_emul_before(void *f)
 	uart_emul_flush_tx_data(fixture->dev);
 
 	uart_err_check(fixture->dev);
+
+	k_sem_reset(&fixture->tx_done_sem);
+	k_sem_reset(&fixture->rx_done_sem);
+
+	memset(fixture->tx_content, 0, sizeof(fixture->tx_content));
+	memset(fixture->rx_content, 0, sizeof(fixture->rx_content));
 }
 
 ZTEST_F(uart_emul, test_polling_out)
@@ -108,12 +119,14 @@ static void uart_emul_isr(const struct device *dev, void *user_data)
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (uart_irq_tx_ready(dev)) {
-			uart_fifo_fill(dev, fixture->tx_content, SAMPLE_DATA_SIZE);
+			uart_fifo_fill(dev, fixture->sample_data, SAMPLE_DATA_SIZE);
 			uart_irq_tx_disable(dev);
+			k_sem_give(&fixture->tx_done_sem);
 		}
 
 		if (uart_irq_rx_ready(dev)) {
 			uart_fifo_read(dev, fixture->rx_content, SAMPLE_DATA_SIZE);
+			k_sem_give(&fixture->rx_done_sem);
 		}
 	}
 }
@@ -125,8 +138,9 @@ ZTEST_F(uart_emul, test_irq_tx)
 	uart_irq_callback_user_data_set(fixture->dev, uart_emul_isr, fixture);
 	/* enabling the tx irq will call the callback, if set */
 	uart_irq_tx_enable(fixture->dev);
-	/* allow space for work queue to run */
-	k_yield();
+	/* Wait for all data to be received in full */
+	zassert_equal(k_sem_take(&fixture->tx_done_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART ISR");
 
 	tx_len = uart_emul_get_tx_data(fixture->dev, fixture->tx_content, SAMPLE_DATA_SIZE);
 	zassert_equal(tx_len, SAMPLE_DATA_SIZE, "TX buffer length does not match");
@@ -147,8 +161,10 @@ ZTEST_F(uart_emul, test_irq_rx)
 
 	/* putting rx data will call the irq callback, if enabled */
 	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
-	/* allow space for work queue to run */
-	k_yield();
+
+	/* Wait for all data to be received in full */
+	zassert_equal(k_sem_take(&fixture->rx_done_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART ISR");
 
 	zassert_mem_equal(fixture->rx_content, fixture->sample_data, SAMPLE_DATA_SIZE);
 
