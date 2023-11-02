@@ -26,6 +26,4 @@ extern int xtensa_soc_mmu_ranges_num;
 
 void z_xtensa_mmu_init(void);
 
-void z_xtensa_mmu_smp_init(void);
-
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_MMU_H */
