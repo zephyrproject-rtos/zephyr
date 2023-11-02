@@ -47,6 +47,12 @@ test_quectel_bg9x: quectel_bg9x {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
+test_quectel_eg25_g: quectel_eg25_g {
+	compatible = "quectel,eg25-g";
+
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
 test_gsm_ppp: gsm_ppp {
 	compatible = "zephyr,gsm-ppp";
 };
