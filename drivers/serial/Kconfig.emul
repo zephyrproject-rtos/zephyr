@@ -12,3 +12,15 @@ config UART_EMUL
 	select EXPERIMENTAL
 	help
 	  Enable the emulated UART driver.
+
+if UART_EMUL
+
+config UART_EMUL_WORK_Q_STACK_SIZE
+	int "UART emulator work queue stack size"
+	default 2048
+
+config UART_EMUL_WORK_Q_PRIORITY
+	int "UART emulator work queue tread priority"
+	default 1
+
+endif # UART_EMUL
