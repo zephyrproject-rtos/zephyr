@@ -68,7 +68,6 @@ struct net_pkt_cb_ieee802154 {
 	};
 
 	/* Flags */
-	uint8_t arb : 1;	   /* ACK Request Bit is set in the frame */
 	uint8_t ack_fpb : 1;	   /* Frame Pending Bit was set in the ACK */
 	uint8_t frame_secured : 1; /* Frame is authenticated and
 				    * encrypted according to its
@@ -80,9 +79,6 @@ struct net_pkt_cb_ieee802154 {
 				    * e.g. Frame Counter injection.
 				    */
 #if defined(CONFIG_NET_L2_OPENTHREAD)
-	uint8_t fv2015: 1;   /* Frame version is IEEE 802.15.4 (0b10),
-			      * see section 7.2.2.10, table 7-3.
-			      */
 	uint8_t ack_seb : 1; /* Security Enabled Bit was set in the ACK */
 #endif
 };
@@ -201,16 +197,6 @@ static inline void net_pkt_set_ieee802154_txpwr(struct net_pkt *pkt, int8_t txpw
 }
 #endif /* CONFIG_IEEE802154_SELECTIVE_TXPOWER */
 
-static inline bool net_pkt_ieee802154_arb(struct net_pkt *pkt)
-{
-	return net_pkt_cb_ieee802154(pkt)->arb;
-}
-
-static inline void net_pkt_set_ieee802154_arb(struct net_pkt *pkt, bool arb)
-{
-	net_pkt_cb_ieee802154(pkt)->arb = arb;
-}
-
 static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
 {
 	return net_pkt_cb_ieee802154(pkt)->ack_fpb;
@@ -260,16 +246,6 @@ static inline uint8_t net_pkt_ieee802154_ack_keyid(struct net_pkt *pkt)
 static inline void net_pkt_set_ieee802154_ack_keyid(struct net_pkt *pkt, uint8_t keyid)
 {
 	net_pkt_cb_ieee802154(pkt)->ack_keyid = keyid;
-}
-
-static inline bool net_pkt_ieee802154_fv2015(struct net_pkt *pkt)
-{
-	return net_pkt_cb_ieee802154(pkt)->fv2015;
-}
-
-static inline void net_pkt_set_ieee802154_fv2015(struct net_pkt *pkt, bool fv2015)
-{
-	net_pkt_cb_ieee802154(pkt)->fv2015 = fv2015;
 }
 
 static inline bool net_pkt_ieee802154_ack_seb(struct net_pkt *pkt)
