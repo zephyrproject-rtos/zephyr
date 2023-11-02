@@ -49,6 +49,28 @@ struct uart_emul_data {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
+/*
+ * Define local thread to emulate different thread priorities.
+ *
+ * A UART driver may call back from within a thread with higher or lower priority
+ * than the thread calling the UART API. This can hide potential concurrency issues,
+ * especially if the thread priorities are the same, or even using the same thread
+ * in case the system work queue.
+ */
+K_THREAD_STACK_DEFINE(uart_emul_stack_area, CONFIG_UART_EMUL_WORK_Q_STACK_SIZE);
+struct k_work_q uart_emul_work_q;
+
+int uart_emul_init_work_q(void)
+{
+	k_work_queue_init(&uart_emul_work_q);
+	k_work_queue_start(&uart_emul_work_q, uart_emul_stack_area,
+			   K_THREAD_STACK_SIZEOF(uart_emul_stack_area),
+			   CONFIG_UART_EMUL_WORK_Q_PRIORITY, NULL);
+	return 0;
+}
+
+SYS_INIT(uart_emul_init_work_q, POST_KERNEL, 0);
+
 static int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 {
 	struct uart_emul_data *drv_data = dev->data;
@@ -245,7 +267,7 @@ static void uart_emul_irq_tx_enable(const struct device *dev)
 	}
 
 	if (submit_irq_work) {
-		(void)k_work_submit(&data->irq_work.work);
+		(void)k_work_submit_to_queue(&uart_emul_work_q, &data->irq_work.work);
 	}
 }
 
@@ -260,7 +282,7 @@ static void uart_emul_irq_rx_enable(const struct device *dev)
 	}
 
 	if (submit_irq_work) {
-		(void)k_work_submit(&data->irq_work.work);
+		(void)k_work_submit_to_queue(&uart_emul_work_q, &data->irq_work.work);
 	}
 }
 
@@ -361,7 +383,7 @@ uint32_t uart_emul_put_rx_data(const struct device *dev, uint8_t *data, size_t s
 
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		if (count > 0 && irq_en && !empty) {
-			(void)k_work_submit(&drv_data->irq_work.work);
+			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work.work);
 		}
 	))
 
