@@ -397,6 +397,19 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
  */
 int mqtt_sn_input(struct mqtt_sn_client *client);
 
+/**
+ * @brief Get topic name by topic ID.
+ *
+ * @param[in] client The MQTT-SN client that uses this topic.
+ * @param[in] id Topic identifier.
+ * @param[out] topic_name Will be assigned to topic name.
+ *
+ * @return 0 on success, -ENOENT if topic ID doesn't exist,
+ * or -EINVAL on invalid arguments.
+ */
+int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
+			   struct mqtt_sn_data *topic_name);
+
 #ifdef __cplusplus
 }
 #endif
