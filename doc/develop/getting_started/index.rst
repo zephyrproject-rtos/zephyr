@@ -402,10 +402,7 @@ additional Python dependencies.
 
                .. code-block:: bat
 
-                  :: cmd.exe
                   zephyrproject\.venv\Scripts\activate.bat
-                  :: PowerShell
-                  zephyrproject\.venv\Scripts\Activate.ps1
 
                Once activated your shell will be prefixed with ``(.venv)``. The
                virtual environment can be deactivated at any time by running
