@@ -38,4 +38,8 @@ config SOC_STM32L073XX
 	bool "STM32L073XX"
 	select CPU_HAS_ARM_MPU
 
+config SOC_STM32L081XX
+	bool "STM32L081XX"
+	select CPU_HAS_ARM_MPU
+
 endchoice
