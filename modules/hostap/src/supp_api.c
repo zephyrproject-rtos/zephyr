@@ -111,6 +111,7 @@ static int wait_for_disconnect_complete(const struct device *dev)
 			wpa_printf(MSG_WARNING, "Failed to disconnect from network");
 			break;
 		}
+
 		k_sleep(K_MSEC(10));
 		timeout++;
 	}
@@ -180,10 +181,11 @@ static inline int chan_to_freq(int chan)
 	 * op_class for 5GHz channels as there is no user input
 	 * for these (yet).
 	 */
-	int freq  = ieee80211_chan_to_freq(NULL, 81, chan);
+	int freq;
 
+	freq = ieee80211_chan_to_freq(NULL, 81, chan);
 	if (freq <= 0) {
-		freq  = ieee80211_chan_to_freq(NULL, 128, chan);
+		freq = ieee80211_chan_to_freq(NULL, 128, chan);
 	}
 
 	if (freq <= 0) {
@@ -246,6 +248,7 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 	}
 
 	__wpa_cli_cmd_v("remove_network all");
+
 	ret = z_wpa_ctrl_add_network(&resp);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add network");
@@ -258,6 +261,7 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 	__wpa_cli_cmd_v("set_network %d scan_ssid 1", resp.network_id);
 	__wpa_cli_cmd_v("set_network %d key_mgmt NONE", resp.network_id);
 	__wpa_cli_cmd_v("set_network %d ieee80211w 0", resp.network_id);
+
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		if (params->security == WIFI_SECURITY_TYPE_SAE) {
 			if (params->sae_password) {
@@ -299,16 +303,17 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 
 		if (freq < 0) {
 			ret = -1;
-			wpa_printf(MSG_ERROR, "Invalid channel %d",
-				params->channel);
+			wpa_printf(MSG_ERROR, "Invalid channel %d", params->channel);
 			goto out;
 		}
+
 		zephyr_wpa_cli_cmd_v("set_network %d scan_freq %d",
 				     resp.network_id, freq);
 	}
 	__wpa_cli_cmd_v("select_network %d", resp.network_id);
 
 	zephyr_wpa_cli_cmd_v("select_network %d", resp.network_id);
+
 	wpa_supp_api_ctrl.dev = dev;
 	wpa_supp_api_ctrl.requested_op = CONNECT;
 	wpa_supp_api_ctrl.connection_timeout = params->timeout;
@@ -343,8 +348,10 @@ int supplicant_disconnect(const struct device *dev)
 		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
 		goto out;
 	}
+
 	wpa_supp_api_ctrl.dev = dev;
 	wpa_supp_api_ctrl.requested_op = DISCONNECT;
+
 	__wpa_cli_cmd_v("disconnect");
 
 out:
@@ -414,10 +421,12 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 			if (ssid_len == 0) {
 				int _res = z_wpa_ctrl_status(&cli_status);
 
-				if (_res < 0)
+				if (_res < 0) {
 					ssid_len = 0;
-				else
+				} else {
 					ssid_len = cli_status.ssid_len;
+				}
+
 				_ssid = cli_status.ssid;
 			}
 			os_memcpy(status->ssid, _ssid, ssid_len);
@@ -463,10 +472,11 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		} else {
 			wpa_printf(MSG_WARNING, "%s: Failed to get connection info\n",
 				__func__);
-				status->beacon_interval = 0;
-				status->dtim_period = 0;
-				status->twt_capable = false;
-				ret = 0;
+
+			status->beacon_interval = 0;
+			status->dtim_period = 0;
+			status->twt_capable = false;
+			ret = 0;
 		}
 
 		os_free(conn_info);
