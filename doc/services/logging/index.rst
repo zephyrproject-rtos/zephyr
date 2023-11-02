@@ -124,9 +124,9 @@ allocated.
 
 :kconfig:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
 
-:kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
-messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
-is waken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
+:kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When the number of buffered log
+messages reaches the threshold, the dedicated thread (see :c:func:`log_thread_set`)
+is woken up. If :kconfig:option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
 threshold is used by the internal thread.
 
 :kconfig:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logging thread is created
@@ -242,7 +242,7 @@ Logging in a module instance
 ============================
 
 In case of modules which are multi-instance and instances are widely used
-across the system enabling logs will lead to flooding. Logger provide the tools
+across the system enabling logs will lead to flooding. The logger provides the tools
 which can be used to provide filtering on instance level rather than module
 level. In that case logging can be enabled for particular instance.
 
@@ -305,16 +305,16 @@ By default, logging processing in deferred mode is handled internally by the
 dedicated task which starts automatically. However, it might not be available
 if multithreading is disabled. It can also be disabled by unsetting
 :kconfig:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`. In that case, logging can
-be controlled using API defined in :zephyr_file:`include/zephyr/logging/log_ctrl.h`.
-Logging must be initialized before it can be used. Optionally, user can provide
-function which returns timestamp value. If not provided, :c:macro:`k_cycle_get`
+be controlled using the API defined in :zephyr_file:`include/zephyr/logging/log_ctrl.h`.
+Logging must be initialized before it can be used. Optionally, the user can provide
+a function which returns the timestamp value. If not provided, :c:macro:`k_cycle_get`
 or :c:macro:`k_cycle_get_32` is used for timestamping.
-:c:func:`log_process` function is used to trigger processing of one log
-message (if pending). Function returns true if there is more messages pending.
+The :c:func:`log_process` function is used to trigger processing of one log
+message (if pending), and returns true if there are more messages pending.
 However, it is recommended to use macro wrappers (:c:macro:`LOG_INIT` and
-:c:macro:`LOG_PROCESS`) which handles case when logging is disabled.
+:c:macro:`LOG_PROCESS`) which handle the case where logging is disabled.
 
-Following snippet shows how logging can be processed in simple forever loop.
+The following snippet shows how logging can be processed in simple forever loop.
 
 .. code-block:: c
 
@@ -356,16 +356,17 @@ that moment all logs are processed in a blocking way.
 Printk
 ******
 
-Typically, logging and :c:func:`printk` is using the same output for which they
-compete. This can lead to issues if the output does not support preemption but
-also it may result in the corrupted output because logging data is interleaved
-with printk data. However, it is possible to redirect printk messages to the
+Typically, logging and :c:func:`printk` use the same output, which they compete
+for. This can lead to issues if the output does not support preemption but it may
+also result in corrupted output because logging data is interleaved with printk
+data. However, it is possible to redirect printk messages to the
 logging subsystem by enabling :kconfig:option:`CONFIG_LOG_PRINTK`. In that case,
 printk entries are treated as log messages with level 0 (they cannot be disabled).
 When enabled, logging manages the output so there is no interleaving. However,
-in the deferred mode it changes the behavior of the printk because output is delayed
-until logging thread processes the data. :kconfig:option:`CONFIG_LOG_PRINTK` is by
-default enabled.
+in deferred mode the printk behaviour is changed since the output is delayed
+until the logging thread processes the data. :kconfig:option:`CONFIG_LOG_PRINTK`
+is enabled by default.
+
 
 .. _log_architecture:
 
@@ -384,27 +385,27 @@ instance of a module.
 Default Frontend
 ================
 
-Default frontend is engaged when logging API is called in a source of logging (e.g.
+Default frontend is engaged when the logging API is called in a source of logging (e.g.
 :c:macro:`LOG_INF`) and is responsible for filtering a message (compile and run
-time), allocating buffer for the message, creating the message and committing that
-message. Since logging API can be called in an interrupt, frontend is optimized
+time), allocating a buffer for the message, creating the message and committing that
+message. Since the logging API can be called in an interrupt, the frontend is optimized
 to log the message as fast as possible.
 
 Log message
 -----------
 
-Log message contains message descriptor (source, domain and level), timestamp,
+A log message contains a message descriptor (source, domain and level), timestamp,
 formatted string details (see :ref:`cbprintf_packaging`) and optional data.
 Log messages are stored in a continuous block of memory.
-Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`). It has
-few consequences:
+Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`), which has
+a few consequences:
 
- * Each message is self-contained, continuous block of memory thus it is suited
+ * Each message is a self-contained, continuous block of memory thus it is suited
    for copying the message (e.g. for offline processing).
  * Messages must be sequentially freed. Backend processing is synchronous. Backend
    can make a copy for deferred processing.
 
-Log message has following format:
+A log message has following format:
 
 +------------------+----------------------------------------------------+
 | Message Header   | 2 bits: MPSC packet buffer header                  |
@@ -446,12 +447,12 @@ Log message has following format:
 Log message allocation
 ----------------------
 
-It may happen that frontend cannot allocate a message. It happens if system is
-generating more log messages than it can process in certain time frame. There
-are two strategies to handle that case:
+It may happen that the frontend cannot allocate a message. This happens if the
+system is generating more log messages than it can process in certain time
+frame. There are two strategies to handle that case:
 
-- No overflow - new log is dropped if space for a message cannot be allocated.
-- Overflow - oldest pending messages are freed, until new message can be
+- No overflow - the new log is dropped if space for a message cannot be allocated.
+- Overflow - the oldest pending messages are freed, until the new message can be
   allocated. Enabled by :kconfig:option:`CONFIG_LOG_MODE_OVERFLOW`. Note that it degrades
   performance thus it is recommended to adjust buffer size and amount of enabled
   logs to limit dropping.

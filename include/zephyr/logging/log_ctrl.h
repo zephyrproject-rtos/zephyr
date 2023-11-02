@@ -82,7 +82,7 @@ __syscall void log_panic(void);
 /**
  * @brief Process one pending log message.
  *
- * @retval true There is more messages pending to be processed.
+ * @retval true There are more messages pending to be processed.
  * @retval false No messages pending.
  */
 __syscall bool log_process(void);
