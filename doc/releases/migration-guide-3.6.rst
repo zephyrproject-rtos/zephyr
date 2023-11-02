@@ -20,6 +20,18 @@ Kernel
 C Library
 =========
 
+Optional Modules
+================
+
+The following modules have been made optional and are not downloaded with `west update` by default
+anymore:
+
+* ``canopennode``
+
+To enable them again use the ``west config manifest.project-filter -- +<module
+name>`` command, or ``west config manifest.group-filter -- +optional`` to
+enable all optional modules, and then run ``west update`` again.
+
 Device Drivers and Device Tree
 ==============================
 
