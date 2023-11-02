@@ -604,7 +604,6 @@ static bool test_packet_cloning_with_cb(void)
 
 	zassert_true(net_pkt_ieee802154_ack_fpb(cloned_pkt));
 	zassert_true(net_pkt_ieee802154_frame_secured(cloned_pkt));
-	zassert_false(net_pkt_ieee802154_arb(cloned_pkt));
 	zassert_false(net_pkt_ieee802154_mac_hdr_rdy(cloned_pkt));
 	zassert_equal(net_pkt_ieee802154_lqi(cloned_pkt), 50U);
 	zassert_equal(net_pkt_ieee802154_rssi(cloned_pkt), 0U);

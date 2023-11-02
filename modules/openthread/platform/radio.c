@@ -478,14 +478,9 @@ static void openthread_handle_received_frame(otInstance *instance,
 	recv_frame.mInfo.mRxInfo.mTimestamp = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
 #endif
 
-	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
-		recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck =
-			net_pkt_ieee802154_ack_seb(pkt);
-		recv_frame.mInfo.mRxInfo.mAckFrameCounter =
-			net_pkt_ieee802154_ack_fc(pkt);
-		recv_frame.mInfo.mRxInfo.mAckKeyId =
-			net_pkt_ieee802154_ack_keyid(pkt);
-	}
+	recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck = net_pkt_ieee802154_ack_seb(pkt);
+	recv_frame.mInfo.mRxInfo.mAckFrameCounter = net_pkt_ieee802154_ack_fc(pkt);
+	recv_frame.mInfo.mRxInfo.mAckKeyId = net_pkt_ieee802154_ack_keyid(pkt);
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance, &recv_frame, OT_ERROR_NONE);
