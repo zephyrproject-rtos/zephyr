@@ -385,18 +385,6 @@ class TestPlan:
 
         print("{} total.".format(cnt))
 
-
-    def report_excluded_tests(self):
-        all_tests = self.get_all_tests()
-        to_be_run = set()
-        for _, p in self.instances.items():
-            to_be_run.update(p.testsuite.testcases)
-
-        if all_tests - to_be_run:
-            print("Tests that never build or run:")
-            for not_run in all_tests - to_be_run:
-                print("- {}".format(not_run))
-
     def config(self):
         logger.info("coverage platform: {}".format(self.coverage_platform))
 
