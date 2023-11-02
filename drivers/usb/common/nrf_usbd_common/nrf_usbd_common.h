@@ -496,30 +496,6 @@ bool nrf_usbd_common_wakeup_req(void);
 bool nrf_usbd_common_suspend_check(void);
 
 /**
- * @brief Enable only interrupts that should be processed in SUSPEND mode.
- *
- * Auxiliary function to help with SUSPEND mode integration.
- * It enables only the interrupts that can be properly processed without stable HFCLK.
- *
- * Normally all the interrupts are enabled.
- * Use this function to suspend interrupt processing that may require stable HFCLK until the
- * clock is enabled.
- *
- * @sa nrf_usbd_common_active_irq_config
- */
-void nrf_usbd_common_suspend_irq_config(void);
-
-/**
- * @brief Default active interrupt configuration.
- *
- * Default interrupt configuration.
- * Use in a pair with @ref nrf_usbd_common_active_irq_config.
- *
- * @sa nrf_usbd_common_suspend_irq_config
- */
-void nrf_usbd_common_active_irq_config(void);
-
-/**
  * @brief Check the bus state.
  *
  * This function checks if the bus state is suspended.
