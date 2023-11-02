@@ -216,7 +216,9 @@ static void mbox_callback_process(struct k_work *item)
 	} else {
 		__ASSERT_NO_MSG(state == ICMSG_STATE_BUSY);
 
-		bool endpoint_invalid = (len != sizeof(magic) || memcmp(magic, rx_buffer, len));
+		/* Allow magic number longer than sizeof(magic) for future protocol version. */
+		bool endpoint_invalid = (len < sizeof(magic) ||
+					memcmp(magic, rx_buffer, sizeof(magic)));
 
 		spsc_pbuf_free(dev_data->rx_ib, len);
 
