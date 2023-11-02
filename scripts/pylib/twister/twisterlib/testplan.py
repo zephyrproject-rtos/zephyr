@@ -392,10 +392,11 @@ class TestPlan:
         for _, p in self.instances.items():
             to_be_run.update(p.testsuite.cases)
 
-        if all_tests - to_be_run:
+        unrun = set(all_tests) - to_be_run
+        if unrun:
             print("Tests that never build or run:")
-            for not_run in all_tests - to_be_run:
-                print("- {}".format(not_run))
+        for not_run in unrun:
+            print("- {}".format(not_run))
 
     def report_platform_tests(self, platforms=[]):
         if len(platforms) > 1:
