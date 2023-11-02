@@ -390,7 +390,7 @@ class TestPlan:
         all_tests = self.get_all_tests()
         to_be_run = set()
         for _, p in self.instances.items():
-            to_be_run.update(p.testsuite.cases)
+            to_be_run.update(p.testsuite.testcases)
 
         if all_tests - to_be_run:
             print("Tests that never build or run:")
