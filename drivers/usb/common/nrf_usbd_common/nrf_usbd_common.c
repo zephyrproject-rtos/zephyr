@@ -233,10 +233,8 @@ static bool m_first_enable = true;
  * buffer is ready.
  */
 typedef struct {
-	/** Handler for current transfer, function pointer. */
-	nrf_usbd_common_handler_t handler;
-	/** Context for transfer handler. */
-	void *p_context;
+	nrf_usbd_common_transfer_t transfer_state;
+	bool more_transactions;
 	/** Number of transferred bytes in the current transfer. */
 	size_t transfer_cnt;
 	/** Configured endpoint size. */
@@ -255,29 +253,7 @@ static struct {
 	usbd_ep_state_t ep_in[NRF_USBD_EPIN_CNT];   /*!< Status for IN endpoints. */
 } m_ep_state;
 
-/**
- * @brief Status variables for integrated feeders.
- *
- * Current status for integrated feeders (IN transfers).
- * Integrated feeders are used for default transfers:
- * 1. Simple RAM transfer.
- * 2. Simple flash transfer.
- * 3. RAM transfer with automatic ZLP.
- * 4. Flash transfer with automatic ZLP.
- */
-nrf_usbd_common_transfer_t m_ep_feeder_state[NRF_USBD_EPIN_CNT];
-
-/**
- * @brief Status variables for integrated consumers.
- *
- * Current status for integrated consumers.
- * Currently one type of transfer is supported:
- * 1. Transfer to RAM.
- *
- * Transfer is finished automatically when received data block is smaller
- * than the endpoint buffer or all the required data is received.
- */
-nrf_usbd_common_transfer_t m_ep_consumer_state[NRF_USBD_EPOUT_CNT];
+#define NRF_USBD_COMMON_FEEDER_BUFFER_SIZE NRF_USBD_COMMON_EPSIZE
 
 /**
  * @brief Buffer used to send data directly from FLASH.
@@ -321,29 +297,10 @@ static inline nrf_usbd_event_t nrf_usbd_common_ep_to_endevent(nrf_usbd_common_ep
 	return (NRF_USBD_EPIN_CHECK(ep) ? epin_endev : epout_endev)[NRF_USBD_EP_NR_GET(ep)];
 }
 
-/**
- * @name Integrated feeders and consumers
- *
- * Internal, default functions for transfer processing.
- * @{
- */
-
-/**
- * @brief Integrated consumer to RAM buffer.
- *
- * @param p_next    See @ref nrf_usbd_common_consumer_t documentation.
- * @param p_context See @ref nrf_usbd_common_consumer_t documentation.
- * @param ep_size   See @ref nrf_usbd_common_consumer_t documentation.
- * @param data_size See @ref nrf_usbd_common_consumer_t documentation.
- *
- * @retval true  Continue transfer.
- * @retval false This was the last transfer.
- */
-bool nrf_usbd_common_consumer(nrf_usbd_common_ep_transfer_t *p_next, void *p_context,
-			      size_t ep_size, size_t data_size)
+static bool nrf_usbd_common_consumer(nrf_usbd_common_ep_transfer_t *p_next,
+				     nrf_usbd_common_transfer_t *p_transfer,
+				     size_t ep_size, size_t data_size)
 {
-	nrf_usbd_common_transfer_t *p_transfer = (nrf_usbd_common_transfer_t *)p_context;
-
 	__ASSERT_NO_MSG(ep_size >= data_size);
 	__ASSERT_NO_MSG((p_transfer->p_data.rx == NULL) || nrfx_is_in_ram(p_transfer->p_data.rx));
 
@@ -364,21 +321,10 @@ bool nrf_usbd_common_consumer(nrf_usbd_common_ep_transfer_t *p_next, void *p_con
 	return (ep_size == data_size) && (size != 0);
 }
 
-/**
- * @brief Integrated feeder from RAM source.
- *
- * @param[out]    p_next    See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in,out] p_context See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in]     ep_size   See @ref nrf_usbd_common_feeder_t documentation.
- *
- * @retval true  Continue transfer.
- * @retval false This was the last transfer.
- */
-bool nrf_usbd_common_feeder_ram(nrf_usbd_common_ep_transfer_t *p_next,
-				void *p_context, size_t ep_size)
+static bool nrf_usbd_common_feeder(nrf_usbd_common_ep_transfer_t *p_next,
+				   nrf_usbd_common_transfer_t *p_transfer,
+				   size_t ep_size)
 {
-	nrf_usbd_common_transfer_t *p_transfer = (nrf_usbd_common_transfer_t *)p_context;
-
 	__ASSERT_NO_MSG(nrfx_is_in_ram(p_transfer->p_data.tx));
 
 	size_t tx_size = p_transfer->size;
@@ -387,124 +333,25 @@ bool nrf_usbd_common_feeder_ram(nrf_usbd_common_ep_transfer_t *p_next,
 		tx_size = ep_size;
 	}
 
-	p_next->p_data = p_transfer->p_data;
-	p_next->size = tx_size;
-
-	p_transfer->size -= tx_size;
-	p_transfer->p_data.addr += tx_size;
-
-	return (p_transfer->size != 0);
-}
-
-/**
- * @brief Integrated feeder from RAM source with ZLP.
- *
- * @param[out]    p_next    See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in,out] p_context See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in]     ep_size   See @ref nrf_usbd_common_feeder_t documentation.
- *
- * @retval true  Continue transfer.
- * @retval false This was the last transfer.
- */
-bool nrf_usbd_common_feeder_ram_zlp(nrf_usbd_common_ep_transfer_t *p_next,
-				    void *p_context, size_t ep_size)
-{
-	nrf_usbd_common_transfer_t *p_transfer = (nrf_usbd_common_transfer_t *)p_context;
-
-	__ASSERT_NO_MSG(nrfx_is_in_ram(p_transfer->p_data.tx));
-
-	size_t tx_size = p_transfer->size;
-
-	if (tx_size > ep_size) {
-		tx_size = ep_size;
-	}
-
-	p_next->p_data.tx = (tx_size == 0) ? NULL : p_transfer->p_data.tx;
-	p_next->size = tx_size;
-
-	p_transfer->size -= tx_size;
-	p_transfer->p_data.addr += tx_size;
-
-	return (tx_size != 0);
-}
-
-/**
- * @brief Integrated feeder from a flash source.
- *
- * @param[out]    p_next    See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in,out] p_context See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in]     ep_size   See @ref nrf_usbd_common_feeder_t documentation.
- *
- * @retval true  Continue transfer.
- * @retval false This was the last transfer.
- */
-bool nrf_usbd_common_feeder_flash(nrf_usbd_common_ep_transfer_t *p_next,
-				  void *p_context, size_t ep_size)
-{
-	nrf_usbd_common_transfer_t *p_transfer = (nrf_usbd_common_transfer_t *)p_context;
-
-	__ASSERT_NO_MSG(!nrfx_is_in_ram(p_transfer->p_data.tx));
-
-	size_t tx_size = p_transfer->size;
-	void *p_buffer = nrf_usbd_common_feeder_buffer_get();
-
-	if (tx_size > ep_size) {
-		tx_size = ep_size;
-	}
-
-	__ASSERT_NO_MSG(tx_size <= NRF_USBD_COMMON_FEEDER_BUFFER_SIZE);
-	memcpy(p_buffer, (p_transfer->p_data.tx), tx_size);
-
-	p_next->p_data.tx = p_buffer;
-	p_next->size = tx_size;
-
-	p_transfer->size -= tx_size;
-	p_transfer->p_data.addr += tx_size;
-
-	return (p_transfer->size != 0);
-}
-
-/**
- * @brief Integrated feeder from a flash source with ZLP.
- *
- * @param[out]    p_next    See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in,out] p_context See @ref nrf_usbd_common_feeder_t documentation.
- * @param[in]     ep_size   See @ref nrf_usbd_common_feeder_t documentation.
- *
- * @retval true  Continue transfer.
- * @retval false This was the last transfer.
- */
-bool nrf_usbd_common_feeder_flash_zlp(nrf_usbd_common_ep_transfer_t *p_next,
-				      void *p_context, size_t ep_size)
-{
-	nrf_usbd_common_transfer_t *p_transfer = (nrf_usbd_common_transfer_t *)p_context;
-
-	__ASSERT_NO_MSG(!nrfx_is_in_ram(p_transfer->p_data.tx));
-
-	size_t tx_size = p_transfer->size;
-	void *p_buffer = nrf_usbd_common_feeder_buffer_get();
-
-	if (tx_size > ep_size) {
-		tx_size = ep_size;
-	}
-
-	__ASSERT_NO_MSG(tx_size <= NRF_USBD_COMMON_FEEDER_BUFFER_SIZE);
-
-	if (tx_size != 0) {
-		memcpy(p_buffer, (p_transfer->p_data.tx), tx_size);
-		p_next->p_data.tx = p_buffer;
+	if (!nrfx_is_in_ram(p_transfer->p_data.tx)) {
+		__ASSERT_NO_MSG(tx_size <= NRF_USBD_COMMON_FEEDER_BUFFER_SIZE);
+		memcpy(m_tx_buffer, (p_transfer->p_data.tx), tx_size);
+		p_next->p_data.tx = m_tx_buffer;
 	} else {
-		p_next->p_data.tx = NULL;
+		p_next->p_data = p_transfer->p_data;
 	}
+
 	p_next->size = tx_size;
 
 	p_transfer->size -= tx_size;
 	p_transfer->p_data.addr += tx_size;
 
-	return (tx_size != 0);
+	if (p_transfer->flags & NRF_USBD_COMMON_TRANSFER_ZLP_FLAG) {
+		return (tx_size != 0);
+	} else {
+		return (p_transfer->size != 0);
+	}
 }
-
-/** @} */
 
 /**
  * @brief Change Driver endpoint number to HAL endpoint number.
@@ -664,7 +511,7 @@ static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 			 */
 			nrf_usbd_common_transfer_out_drop(ep);
 		} else {
-			p_state->handler.consumer = NULL;
+			p_state->more_transactions = false;
 			m_ep_dma_waiting &= ~(1U << ep2bit(ep));
 			m_ep_ready &= ~(1U << ep2bit(ep));
 		}
@@ -695,7 +542,7 @@ static inline void usbd_ep_abort(nrf_usbd_common_ep_t ep)
 			m_ep_dma_waiting &= ~(1U << ep2bit(ep));
 			m_ep_ready |= 1U << ep2bit(ep);
 
-			p_state->handler.feeder = NULL;
+			p_state->more_transactions = false;
 			p_state->status = NRF_USBD_COMMON_EP_ABORTED;
 			NRF_USBD_COMMON_EP_TRANSFER_EVENT(evt, ep, NRF_USBD_COMMON_EP_ABORTED);
 			m_event_handler(&evt);
@@ -780,7 +627,7 @@ static void nrf_usbd_dma_finished(nrf_usbd_common_ep_t ep)
 	if (p_state->status == NRF_USBD_COMMON_EP_ABORTED) {
 		/* Clear transfer information just in case */
 		m_ep_dma_waiting &= ~(1U << ep2bit(ep));
-	} else if (!p_state->handler.consumer || !p_state->handler.feeder) {
+	} else if (!p_state->more_transactions) {
 		m_ep_dma_waiting &= ~(1U << ep2bit(ep));
 
 		if (NRF_USBD_EPOUT_CHECK(ep) || (ep == NRF_USBD_COMMON_EPIN8)) {
@@ -991,26 +838,20 @@ static void usbd_dmareq_process(void)
 			nrf_usbd_common_ep_transfer_t transfer;
 			bool continue_transfer;
 
-			BUILD_ASSERT(offsetof(usbd_ep_state_t, handler.feeder) ==
-				     offsetof(usbd_ep_state_t, handler.consumer),
-				     "feeder and consumer must be in union");
-			__ASSERT_NO_MSG((p_state->handler.feeder) != NULL);
+			__ASSERT_NO_MSG(p_state->more_transactions);
 
 			if (NRF_USBD_EPIN_CHECK(ep)) {
 				/* Device -> Host */
-				continue_transfer = p_state->handler.feeder(
-					&transfer, p_state->p_context, p_state->max_packet_size);
-
-				if (!continue_transfer) {
-					p_state->handler.feeder = NULL;
-				}
+				continue_transfer = nrf_usbd_common_feeder(
+					&transfer, &p_state->transfer_state,
+					p_state->max_packet_size);
 			} else {
 				/* Host -> Device */
 				const size_t rx_size = nrf_usbd_common_epout_size_get(ep);
 
-				continue_transfer = p_state->handler.consumer(
-					&transfer, p_state->p_context, p_state->max_packet_size,
-					rx_size);
+				continue_transfer = nrf_usbd_common_consumer(
+					&transfer, &p_state->transfer_state,
+					p_state->max_packet_size, rx_size);
 
 				if (transfer.p_data.rx == NULL) {
 					/* Dropping transfer - allow processing */
@@ -1033,10 +874,10 @@ static void usbd_dmareq_process(void)
 					 */
 					__ASSERT_NO_MSG(transfer.size == rx_size);
 				}
+			}
 
-				if (!continue_transfer) {
-					p_state->handler.consumer = NULL;
-				}
+			if (!continue_transfer) {
+				p_state->more_transactions = false;
 			}
 
 			usbd_dma_pending_set();
@@ -1271,7 +1112,7 @@ nrfx_err_t nrf_usbd_common_init(nrf_usbd_common_event_handler_t event_handler)
 		usbd_ep_state_t *p_state = ep_state_access(ep);
 
 		p_state->status = NRF_USBD_COMMON_EP_OK;
-		p_state->handler.feeder = NULL;
+		p_state->more_transactions = false;
 		p_state->transfer_cnt = 0;
 	}
 	for (n = 0; n < NRF_USBD_EPOUT_CNT; ++n) {
@@ -1282,7 +1123,7 @@ nrfx_err_t nrf_usbd_common_init(nrf_usbd_common_event_handler_t event_handler)
 		usbd_ep_state_t *p_state = ep_state_access(ep);
 
 		p_state->status = NRF_USBD_COMMON_EP_OK;
-		p_state->handler.consumer = NULL;
+		p_state->more_transactions = false;
 		p_state->transfer_cnt = 0;
 	}
 
@@ -1611,62 +1452,12 @@ nrfx_err_t nrf_usbd_common_ep_transfer(nrf_usbd_common_ep_t ep,
 		}
 	} else {
 		usbd_ep_state_t *p_state = ep_state_access(ep);
-		/* Prepare transfer context and handler description */
-		nrf_usbd_common_transfer_t *p_context;
 
-		if (NRF_USBD_EPIN_CHECK(ep)) {
-			p_context = m_ep_feeder_state + NRF_USBD_EP_NR_GET(ep);
-			if (nrfx_is_in_ram(p_transfer->p_data.tx)) {
-				/* RAM */
-				if (0 == (p_transfer->flags & NRF_USBD_COMMON_TRANSFER_ZLP_FLAG)) {
-					p_state->handler.feeder = nrf_usbd_common_feeder_ram;
-					if (NRF_USBD_COMMON_ISO_DEBUG ||
-					    (!NRF_USBD_EPISO_CHECK(ep))) {
-						LOG_DBG("Transfer called on endpoint %x, "
-							"size: %u, mode: "
-							"RAM",
-							ep, p_transfer->size);
-					}
-				} else {
-					p_state->handler.feeder = nrf_usbd_common_feeder_ram_zlp;
-					if (NRF_USBD_COMMON_ISO_DEBUG ||
-					    (!NRF_USBD_EPISO_CHECK(ep))) {
-						LOG_DBG("Transfer called on endpoint %x, "
-							"size: %u, mode: "
-							"RAM_ZLP",
-							ep, p_transfer->size);
-					}
-				}
-			} else {
-				/* Flash */
-				if (0 == (p_transfer->flags & NRF_USBD_COMMON_TRANSFER_ZLP_FLAG)) {
-					p_state->handler.feeder = nrf_usbd_common_feeder_flash;
-					if (NRF_USBD_COMMON_ISO_DEBUG ||
-					    (!NRF_USBD_EPISO_CHECK(ep))) {
-						LOG_DBG("Transfer called on endpoint %x, "
-							"size: %u, mode: "
-							"FLASH",
-							ep, p_transfer->size);
-					}
-				} else {
-					p_state->handler.feeder = nrf_usbd_common_feeder_flash_zlp;
-					if (NRF_USBD_COMMON_ISO_DEBUG ||
-					    (!NRF_USBD_EPISO_CHECK(ep))) {
-						LOG_DBG("Transfer called on endpoint %x, "
-							"size: %u, mode: "
-							"FLASH_ZLP",
-							ep, p_transfer->size);
-					}
-				}
-			}
-		} else {
-			p_context = m_ep_consumer_state + NRF_USBD_EP_NR_GET(ep);
-			__ASSERT_NO_MSG((p_transfer->p_data.rx == NULL) ||
-				    (nrfx_is_in_ram(p_transfer->p_data.rx)));
-			p_state->handler.consumer = nrf_usbd_common_consumer;
-		}
-		*p_context = *p_transfer;
-		p_state->p_context = p_context;
+		__ASSERT_NO_MSG(NRF_USBD_EPIN_CHECK(ep) ||
+				(p_transfer->p_data.rx == NULL) ||
+				(nrfx_is_in_ram(p_transfer->p_data.rx)));
+		p_state->more_transactions = true;
+		p_state->transfer_state = *p_transfer;
 
 		p_state->transfer_cnt = 0;
 		p_state->status = NRF_USBD_COMMON_EP_OK;
@@ -1678,59 +1469,6 @@ nrfx_err_t nrf_usbd_common_ep_transfer(nrf_usbd_common_ep_t ep,
 	irq_unlock(irq_lock_key);
 
 	return ret;
-}
-
-nrfx_err_t nrf_usbd_common_ep_handled_transfer(nrf_usbd_common_ep_t ep,
-					 nrf_usbd_common_handler_desc_t const *p_handler)
-{
-	nrfx_err_t ret;
-	const uint8_t ep_bitpos = ep2bit(ep);
-	unsigned int irq_lock_key = irq_lock();
-
-	__ASSERT_NO_MSG(p_handler != NULL);
-
-	/* Setup data transaction can go only in one direction at a time */
-	if ((NRF_USBD_EP_NR_GET(ep) == 0) && (ep != m_last_setup_dir)) {
-		ret = NRFX_ERROR_INVALID_ADDR;
-		if (NRF_USBD_COMMON_FAILED_TRANSFERS_DEBUG &&
-		    (NRF_USBD_COMMON_ISO_DEBUG || (!NRF_USBD_EPISO_CHECK(ep)))) {
-			LOG_DBG("Transfer failed: Invalid EP");
-		}
-	} else if ((m_ep_dma_waiting | ((~m_ep_ready) & NRF_USBD_COMMON_EPIN_BIT_MASK)) &
-		   (1U << ep_bitpos)) {
-		/* IN (Device -> Host) transfer has to be transmitted out to allow a new
-		 * transmission
-		 */
-		ret = NRFX_ERROR_BUSY;
-		if (NRF_USBD_COMMON_FAILED_TRANSFERS_DEBUG &&
-		    (NRF_USBD_COMMON_ISO_DEBUG || (!NRF_USBD_EPISO_CHECK(ep)))) {
-			LOG_DBG("Transfer failed: EP is busy");
-		}
-	} else {
-		/* Transfer can be configured now */
-		usbd_ep_state_t *p_state = ep_state_access(ep);
-
-		p_state->transfer_cnt = 0;
-		p_state->handler = p_handler->handler;
-		p_state->p_context = p_handler->p_context;
-		p_state->status = NRF_USBD_COMMON_EP_OK;
-		m_ep_dma_waiting |= 1U << ep_bitpos;
-
-		ret = NRFX_SUCCESS;
-		if (NRF_USBD_COMMON_ISO_DEBUG || (!NRF_USBD_EPISO_CHECK(ep))) {
-			LOG_DBG("Transfer called on endpoint %x, mode: Handler", ep);
-		}
-		usbd_int_rise();
-	}
-
-	irq_unlock(irq_lock_key);
-
-	return ret;
-}
-
-void *nrf_usbd_common_feeder_buffer_get(void)
-{
-	return m_tx_buffer;
 }
 
 nrf_usbd_common_ep_status_t nrf_usbd_common_ep_status_get(nrf_usbd_common_ep_t ep, size_t *p_size)
@@ -1740,7 +1478,7 @@ nrf_usbd_common_ep_status_t nrf_usbd_common_ep_status_get(nrf_usbd_common_ep_t e
 	unsigned int irq_lock_key = irq_lock();
 
 	*p_size = p_state->transfer_cnt;
-	ret = (p_state->handler.consumer == NULL) ? p_state->status : NRF_USBD_COMMON_EP_BUSY;
+	ret = (!p_state->more_transactions) ? p_state->status : NRF_USBD_COMMON_EP_BUSY;
 
 	irq_unlock(irq_lock_key);
 
