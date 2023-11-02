@@ -42,13 +42,6 @@ extern "C" {
 #define NRF_USBD_COMMON_ISOSIZE 1023
 
 /**
- * @brief The size of internal feeder buffer.
- *
- * @sa nrf_usbd_common_feeder_buffer_get
- */
-#define NRF_USBD_COMMON_FEEDER_BUFFER_SIZE NRF_USBD_COMMON_EPSIZE
-
-/**
  * @name Macros for creating endpoint identifiers.
  *
  * Auxiliary macros for creating endpoint identifiers compatible with the USB specification.
@@ -265,82 +258,6 @@ typedef struct {
 #define NRF_USBD_COMMON_TRANSFER_OUT(name, rx_buff, rx_size)                          \
 	const nrf_usbd_common_transfer_t name = {                                     \
 		.p_data = {.rx = (rx_buff)}, .size = (rx_size), .flags = 0}
-
-/**
- * @brief USBD transfer feeder.
- *
- * Pointer for a transfer feeder.
- * Transfer feeder is a feedback function used to prepare a single
- * TX (Device->Host) endpoint transfer.
- *
- * The transfers provided by the feeder must be simple:
- * - The size of the transfer provided by this function is limited to a single endpoint buffer.
- *   Bigger transfers are not handled automatically in this case.
- * - Flash transfers are not automatically supported- you must copy them to the RAM buffer before.
- *
- * @note
- * This function may use @ref nrf_usbd_common_feeder_buffer_get to gain a temporary buffer
- * that can be used to prepare transfer.
- *
- * @param[out]    p_next    Structure with the data for the next transfer to be filled.
- *                          Required only if the function returns true.
- * @param[in,out] p_context Context variable configured with the transfer.
- * @param[in]     ep_size   The endpoint size.
- *
- * @retval false The current transfer is the last one - you do not need to call
- *               the function again.
- * @retval true  There is more data to be prepared and when the current transfer
- *               finishes, the feeder function is expected to be called again.
- */
-typedef bool (*nrf_usbd_common_feeder_t)(nrf_usbd_common_ep_transfer_t *p_next, void *p_context,
-				   size_t ep_size);
-
-/**
- * @brief USBD transfer consumer.
- *
- * Pointer for a transfer consumer.
- * Transfer consumer is a feedback function used to prepare a single
- * RX (Host->Device) endpoint transfer.
- *
- * The transfer must provide a buffer big enough to fit the whole data from the endpoint.
- * Otherwise, the NRF_USBD_COMMON_EP_OVERLOAD event is generated.
- *
- * @param[out]    p_next    Structure with the data for the next transfer to be filled.
- *                          Required only if the function returns true.
- * @param[in,out] p_context Context variable configured with the transfer.
- * @param[in]     ep_size   The endpoint size.
- * @param[in]     data_size Number of received bytes in the endpoint buffer.
- *
- * @retval false Current transfer is the last one - you do not need to call
- *               the function again.
- * @retval true  There is more data to be prepared and when current transfer
- *               finishes, the feeder function is expected to be called again.
- */
-typedef bool (*nrf_usbd_common_consumer_t)(nrf_usbd_common_ep_transfer_t *p_next, void *p_context,
-				     size_t ep_size, size_t data_size);
-
-/**
- * @brief Universal transfer handler.
- *
- * Union with feeder and consumer function pointer.
- */
-typedef union {
-	nrf_usbd_common_feeder_t feeder;     /*!< Feeder function pointer. */
-	nrf_usbd_common_consumer_t consumer; /*!< Consumer function pointer. */
-} nrf_usbd_common_handler_t;
-
-/**
- * @brief USBD transfer descriptor.
- *
- * Universal structure that may hold the setup for callback configuration for
- * IN or OUT type of the transfer.
- */
-typedef struct {
-	/** Handler for the current transfer, function pointer. */
-	nrf_usbd_common_handler_t handler;
-	/** Context for the transfer handler. */
-	void *p_context;
-} nrf_usbd_common_handler_desc_t;
 
 /**
  * @brief Setup packet structure.
@@ -600,41 +517,6 @@ void nrf_usbd_common_ep_default_config(void);
  */
 nrfx_err_t nrf_usbd_common_ep_transfer(nrf_usbd_common_ep_t ep,
 				       nrf_usbd_common_transfer_t const *p_transfer);
-
-/**
- * @brief Start sending data over the endpoint using the transfer handler function.
- *
- * This function initializes an endpoint transmission.
- * Just before data is transmitted, the transfer handler
- * is called and it prepares a data chunk.
- *
- * @param[in] ep        Endpoint number.
- *                      For an IN endpoint, sending is initiated.
- *                      For an OUT endpoint, receiving is initiated.
- * @param[in] p_handler Transfer handler - feeder for IN direction and consumer for
- *                      OUT direction.
- *
- * @retval NRFX_SUCCESS             Transfer queued or started.
- * @retval NRFX_ERROR_BUSY          Selected endpoint is pending.
- * @retval NRFX_ERROR_INVALID_ADDR  Unexpected transfer on EPIN0 or EPOUT0.
- */
-nrfx_err_t nrf_usbd_common_ep_handled_transfer(nrf_usbd_common_ep_t ep,
-					       nrf_usbd_common_handler_desc_t const *p_handler);
-
-/**
- * @brief Get the temporary buffer to be used by the feeder.
- *
- * This buffer is used for TX transfers and it can be reused automatically
- * when the transfer is finished.
- * Use it for transfer preparation.
- *
- * May be used inside the feeder configured in @ref nrf_usbd_common_ep_handled_transfer.
- *
- * @return Pointer to the buffer that can be used temporarily.
- *
- * @sa NRF_USBD_COMMON_FEEDER_BUFFER_SIZE
- */
-void *nrf_usbd_common_feeder_buffer_get(void);
 
 /**
  * @brief Get the information about last finished or current transfer.
