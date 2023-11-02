@@ -12,7 +12,12 @@
 #define EMUL_UART_NODE	       DT_NODELABEL(euart0)
 #define EMUL_UART_RX_FIFO_SIZE DT_PROP(EMUL_UART_NODE, rx_fifo_size)
 #define EMUL_UART_TX_FIFO_SIZE DT_PROP(EMUL_UART_NODE, tx_fifo_size)
-#define SAMPLE_DATA_SIZE       MIN(EMUL_UART_RX_FIFO_SIZE, EMUL_UART_TX_FIFO_SIZE)
+
+/*
+ * Leave one byte left in tx to avoid filling it completely which will block the UART
+ * tx ready IRQ event.
+ */
+#define SAMPLE_DATA_SIZE       MIN(EMUL_UART_RX_FIFO_SIZE, EMUL_UART_TX_FIFO_SIZE) - 1
 
 struct uart_emul_fixture {
 	const struct device *dev;
@@ -21,6 +26,8 @@ struct uart_emul_fixture {
 	uint8_t rx_content[SAMPLE_DATA_SIZE];
 	struct k_sem tx_done_sem;
 	struct k_sem rx_done_sem;
+	size_t tx_remaining;
+	size_t rx_remaining;
 };
 
 static void *uart_emul_setup(void)
@@ -55,6 +62,9 @@ static void uart_emul_before(void *f)
 
 	memset(fixture->tx_content, 0, sizeof(fixture->tx_content));
 	memset(fixture->rx_content, 0, sizeof(fixture->rx_content));
+
+	fixture->tx_remaining = SAMPLE_DATA_SIZE;
+	fixture->rx_remaining = SAMPLE_DATA_SIZE;
 }
 
 ZTEST_F(uart_emul, test_polling_out)
@@ -113,20 +123,51 @@ ZTEST_F(uart_emul, test_errors)
 	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
 }
 
+static void uart_emul_isr_handle_tx_ready(struct uart_emul_fixture *fixture)
+{
+	uint32_t sample_data_it;
+	int ret;
+
+	if (fixture->tx_remaining) {
+		sample_data_it = sizeof(fixture->sample_data) - fixture->tx_remaining;
+		ret = uart_fifo_fill(fixture->dev, &fixture->sample_data[sample_data_it],
+				     fixture->tx_remaining);
+		fixture->tx_remaining -= (size_t)ret;
+	}
+
+	if (fixture->tx_remaining == 0) {
+		uart_irq_tx_disable(fixture->dev);
+		k_sem_give(&fixture->tx_done_sem);
+	}
+}
+
+static void uart_emul_isr_handle_rx_ready(struct uart_emul_fixture *fixture)
+{
+	uint32_t rx_content_it;
+	int ret;
+
+	if (fixture->tx_remaining) {
+		rx_content_it = sizeof(fixture->rx_content) - fixture->rx_remaining;
+		ret = uart_fifo_read(fixture->dev, &fixture->rx_content[rx_content_it],
+				     fixture->rx_remaining);
+		fixture->rx_remaining -= (size_t)ret;
+	}
+
+	if (fixture->rx_remaining == 0) {
+		k_sem_give(&fixture->rx_done_sem);
+	}
+}
+
 static void uart_emul_isr(const struct device *dev, void *user_data)
 {
 	struct uart_emul_fixture *fixture = user_data;
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-		if (uart_irq_tx_ready(dev)) {
-			uart_fifo_fill(dev, fixture->sample_data, SAMPLE_DATA_SIZE);
-			uart_irq_tx_disable(dev);
-			k_sem_give(&fixture->tx_done_sem);
+		if (uart_irq_tx_ready(fixture->dev)) {
+			uart_emul_isr_handle_tx_ready(fixture);
 		}
-
-		if (uart_irq_rx_ready(dev)) {
-			uart_fifo_read(dev, fixture->rx_content, SAMPLE_DATA_SIZE);
-			k_sem_give(&fixture->rx_done_sem);
+		if (uart_irq_rx_ready(fixture->dev)) {
+			uart_emul_isr_handle_rx_ready(fixture);
 		}
 	}
 }
