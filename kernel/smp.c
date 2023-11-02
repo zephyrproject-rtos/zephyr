@@ -10,7 +10,23 @@
 #include <kernel_internal.h>
 
 static atomic_t global_lock;
+
+/**
+ * Flag to tell recently powered up CPU to start
+ * initialization routine.
+ *
+ * 0 to tell powered up CPU to wait.
+ * 1 to tell powered up CPU to continue initialization.
+ */
 static atomic_t cpu_start_flag;
+
+/**
+ * Flag to tell caller that the target CPU is now
+ * powered up and ready to be initialized.
+ *
+ * 0 if target CPU is not yet ready.
+ * 1 if target CPU has powered up and ready to be initialized.
+ */
 static atomic_t ready_flag;
 
 /**
@@ -100,10 +116,19 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 	struct k_thread dummy_thread;
 	struct cpu_start_cb *csc = arg;
 
+	/* Let start_cpu() know that this CPU has powered up. */
 	(void)atomic_set(&ready_flag, 1);
 
+	/* Wait for the CPU start caller to signal that
+	 * we can start initialization.
+	 */
 	wait_for_start_signal(&cpu_start_flag);
+
+	/* Initialize the dummy thread struct so that
+	 * the scheduler can schedule actual threads to run.
+	 */
 	z_dummy_thread_init(&dummy_thread);
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	smp_timer_init();
 #endif
@@ -113,6 +138,7 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 		csc->fn(csc->arg);
 	}
 
+	/* Let scheduler decide what thread to run next. */
 	z_swap_unlocked();
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
@@ -120,10 +146,21 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 
 static void start_cpu(int id, struct cpu_start_cb *csc)
 {
+	/* Initialize various CPU structs related to this CPU. */
 	z_init_cpu(id);
+
+	/* Clear the ready flag so the newly powered up CPU can
+	 * signal that it has powered up.
+	 */
 	(void)atomic_clear(&ready_flag);
+
+	/* Power up the CPU */
 	arch_start_cpu(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
 		       smp_init_top, csc);
+
+	/* Wait until the newly powered up CPU to signal that
+	 * it has powered up.
+	 */
 	while (!atomic_get(&ready_flag)) {
 		local_delay();
 	}
@@ -136,7 +173,12 @@ void k_smp_cpu_start(int id, smp_init_fn fn, void *arg)
 	cpu_start_fn.fn = fn;
 	cpu_start_fn.arg = arg;
 
-	(void)atomic_set(&cpu_start_flag, 1); /* async, don't care */
+	/* We are only starting one CPU so we do not need to synchronize
+	 * across all CPUs using the start_flag. So just set it to 1.
+	 */
+	(void)atomic_set(&cpu_start_flag, 1);
+
+	/* Start the CPU! */
 	start_cpu(id, &cpu_start_fn);
 
 	k_spin_unlock(&cpu_start_lock, key);
@@ -144,13 +186,21 @@ void k_smp_cpu_start(int id, smp_init_fn fn, void *arg)
 
 void z_smp_init(void)
 {
+	/* We are powering up all CPUs and we want to synchronize their
+	 * entry into scheduler. So set the start flag to 0 here.
+	 */
 	(void)atomic_clear(&cpu_start_flag);
 
+	/* Just start CPUs one by one. */
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 1; i < num_cpus; i++) {
 		start_cpu(i, NULL);
 	}
+
+	/* Let loose those CPUs so they can start scheduling
+	 * threads to run.
+	 */
 	(void)atomic_set(&cpu_start_flag, 1);
 }
 
