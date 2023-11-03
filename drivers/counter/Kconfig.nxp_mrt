@@ -1,0 +1,9 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NXP_MRT
+	bool "NXP MRT driver"
+	default y if DT_HAS_NXP_MRT_CHANNEL_ENABLED && \
+			DT_HAS_NXP_MRT_ENABLED
+	help
+	  Enable driver for the NXP Multirate Timer (MRT).
