@@ -21,7 +21,8 @@ static uint32_t isp_pin[3];
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
-__ramfunc void set_deepsleep_pin_config(void)
+/* Weak so board can override */
+__ramfunc void __weak rt5xx_set_deepsleep_pin_config(void)
 {
 	/* Backup Pin configuration. */
 	isp_pin[0] = IOPCTL->PIO[1][15];
@@ -34,7 +35,7 @@ __ramfunc void set_deepsleep_pin_config(void)
 	IOPCTL->PIO[3][29] = 0;
 }
 
-__ramfunc void restore_deepsleep_pin_config(void)
+__ramfunc void __weak rt5xx_restore_deepsleep_pin_config(void)
 {
 	/* Restore the Pin configuration. */
 	IOPCTL->PIO[1][15] = isp_pin[0];
@@ -65,9 +66,9 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		POWER_EnterSleep();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
-		set_deepsleep_pin_config();
+		rt5xx_set_deepsleep_pin_config();
 		POWER_EnterDeepSleep(EXCLUDE_FROM_DEEPSLEEP);
-		restore_deepsleep_pin_config();
+		rt5xx_restore_deepsleep_pin_config();
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
