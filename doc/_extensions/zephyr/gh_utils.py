@@ -40,12 +40,13 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional, Tuple
+from typing import Final, Optional, Tuple
 from urllib.parse import quote
 
 from sphinx.application import Sphinx
 from sphinx.util.i18n import format_date
 
+ZEPHYR_BASE : Final[str] = Path(__file__).parents[3]
 
 __version__ = "0.1.0"
 
@@ -162,7 +163,7 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
         return None
 
     orig_path = os.path.join(
-        app.config.ZEPHYR_BASE,
+        ZEPHYR_BASE,
         page_prefix,
         app.env.project.doc2path(pagename, basedir=False),
     )
@@ -214,7 +215,6 @@ def add_jinja_filter(app: Sphinx):
 
 
 def setup(app: Sphinx):
-    app.add_config_value("ZEPHYR_BASE", Path(__file__).resolve().parents[3], "html")
     app.add_config_value("gh_link_version", "", "")
     app.add_config_value("gh_link_base_url", "", "")
     app.add_config_value("gh_link_prefixes", {}, "")
