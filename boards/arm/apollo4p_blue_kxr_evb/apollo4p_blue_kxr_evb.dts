@@ -74,3 +74,15 @@
 		};
 	};
 };
+
+&xo32m {
+	pinctrl-0 = <&xo32m_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&xo32k {
+	pinctrl-0 = <&xo32k_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
