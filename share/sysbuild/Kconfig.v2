@@ -1,0 +1,32 @@
+# Copyright (c) 2023 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	string
+	default "$(BOARD)"
+	help
+	  This option holds the name of the board and is used to locate the files
+	  related to the board in the source tree (under boards/).
+	  The Board is the first location where we search for a linker.ld file,
+	  if not found we look for the linker file in
+	  soc/<arch>/<family>/<series>
+
+config BOARD_REVISION
+	def_string "$BOARD_REVISION"
+	help
+	  If the BOARD has a revision field set, this is the revision.
+	  Otherwise, it is the empty string. For example, if BOARD is
+	  "plank@foo", this option will be "foo". If BOARD is "plank",
+	  this option will be the empty string.
+
+config BOARD_DEPRECATED_RELEASE
+	string
+	help
+	  This hidden option is set in the board configuration and indicates
+	  the Zephyr release that the board configuration will be removed.
+	  When set, any build for that board will generate a clearly visible
+	  deprecation warning.
+
+source "boards/Kconfig.$(HWM_SCHEME)"
+source "soc/Kconfig.$(HWM_SCHEME)"
