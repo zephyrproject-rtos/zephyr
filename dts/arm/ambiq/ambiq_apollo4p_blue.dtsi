@@ -2,6 +2,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -10,6 +11,16 @@
 			compatible = "fixed-clock";
 			clock-frequency = <24000000>;
 			#clock-cells = <0>;
+		};
+		xo32m: xo32m {
+			compatible = "ambiq,clkctrl";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <1>;
+		};
+		xo32k: xo32k {
+			compatible = "ambiq,clkctrl";
+			clock-frequency = <DT_FREQ_K(32)>;
+			#clock-cells = <1>;
 		};
 	};
 
