@@ -978,3 +978,10 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	default y if !(64BIT && RISCV)
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
+
+config ARCH_CPU_IDLE_CUSTOM
+	bool "Custom arch_cpu_idle implementation"
+	default n
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.
