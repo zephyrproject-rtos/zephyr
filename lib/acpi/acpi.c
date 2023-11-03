@@ -30,19 +30,16 @@ static int acpi_init(void);
 
 static int check_init_status(void)
 {
-	int ret;
+	if (acpi.status == AE_NOT_CONFIGURED) {
+		acpi.status = acpi_init();
+	}
 
 	if (ACPI_SUCCESS(acpi.status)) {
 		return 0;
-	}
-
-	if (acpi.status == AE_NOT_CONFIGURED) {
-		ret = acpi_init();
 	} else {
 		LOG_ERR("ACPI init was not success\n");
-		ret = -EIO;
+		return -EIO;
 	}
-	return ret;
 }
 
 static void notify_handler(ACPI_HANDLE device, UINT32 value, void *ctx)
@@ -289,14 +286,13 @@ int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
 
 	status = check_init_status();
 	if (status) {
-		return status;
+		return -EAGAIN;
 	}
 
 	node = acpi_evaluate_method(dev_name, METHOD_NAME__CRS);
 	if (!node) {
 		LOG_ERR("Evaluation failed for given device: %s", dev_name);
-		status = -ENOTSUP;
-		goto exit;
+		return -ENOTSUP;
 	}
 
 	rt_buffer.Pointer = NULL;
@@ -305,14 +301,12 @@ int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
 	status = AcpiGetCurrentResources(node, &rt_buffer);
 	if (ACPI_FAILURE(status)) {
 		LOG_ERR("AcpiGetCurrentResources failed: %s", AcpiFormatException(status));
-		status = -ENOTSUP;
+		return -ENOTSUP;
 	} else {
 		*res = rt_buffer.Pointer;
 	}
 
-exit:
-
-	return status;
+	return 0;
 }
 
 int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
@@ -325,14 +319,13 @@ int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
 
 	status = check_init_status();
 	if (status) {
-		return status;
+		return -EAGAIN;
 	}
 
 	node = acpi_evaluate_method(dev_name, METHOD_NAME__PRS);
 	if (!node) {
 		LOG_ERR("Evaluation failed for given device: %s", dev_name);
-		status = -ENOTSUP;
-		goto exit;
+		return -ENOTSUP;
 	}
 
 	rt_buffer.Pointer = NULL;
@@ -341,9 +334,7 @@ int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
 	AcpiGetPossibleResources(node, &rt_buffer);
 	*res = rt_buffer.Pointer;
 
-exit:
-
-	return status;
+	return 0;
 }
 
 int acpi_current_resource_free(ACPI_RESOURCE *res)
@@ -764,11 +755,6 @@ static int acpi_init(void)
 
 	LOG_DBG("");
 
-	if (acpi.status != AE_NOT_CONFIGURED) {
-		LOG_DBG("acpi init already done");
-		return acpi.status;
-	}
-
 	/* For debug version only */
 	ACPI_DEBUG_INITIALIZE();
 
@@ -785,9 +771,11 @@ static int acpi_init(void)
 	}
 
 #ifdef CONFIG_PCIE_PRT
-	status = acpi_retrieve_legacy_irq();
-	if (status) {
-		LOG_ERR("Error in retrieve legacy interrupt info:%d", status);
+	int ret = acpi_retrieve_legacy_irq();
+
+	if (ret) {
+		LOG_ERR("Error in retrieve legacy interrupt info:%d", ret);
+		status = AE_ERROR;
 		goto exit;
 	}
 #endif
@@ -795,7 +783,5 @@ static int acpi_init(void)
 	acpi_enum_devices();
 
 exit:
-	acpi.status = status;
-
 	return status;
 }
