@@ -1080,7 +1080,7 @@ static int ads114s0x_gpio_write_config(const struct device *dev)
 {
 	struct ads114s0x_data *data = dev->data;
 	const struct ads114s0x_config *config = dev->config;
-	uint8_t register_addresses[2];
+	enum ads114s0x_register register_addresses[2];
 	uint8_t register_values[ARRAY_SIZE(register_addresses)];
 	uint8_t gpio_dat = 0;
 	uint8_t gpio_con = 0;
