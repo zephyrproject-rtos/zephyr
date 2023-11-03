@@ -45,3 +45,8 @@ tests:
   sample.filesystem.ext2:
     extra_args: CONF_FILE="prj_ext.conf"
     platform_allow: hifive_unmatched bl5340_dvk_cpuapp
+  sample.filesystem.fat_fs.stm32h747i_disco_m7_sdmmc:
+    build_only: true
+    platform_allow: stm32h747i_disco_m7
+    extra_args:
+      - OVERLAY_CONFIG=boards/stm32h747i_disco_m7.conf
