@@ -1,0 +1,15 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mrt_channel1 {
+	status = "okay";
+};
+
+/* channel 2 disabled to test disabled channel not breaking things */
+
+&mrt_channel3 {
+	status = "okay";
+};
