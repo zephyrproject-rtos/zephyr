@@ -1335,6 +1335,11 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 		state_changed = true;
 	}
 
+	if (state->encrypt_state != param->encrypt_state) {
+		state->encrypt_state = param->encrypt_state;
+		state_changed = true;
+	}
+
 	/* Verify that the BIS sync values is acceptable for the receive state */
 	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 		const uint32_t bis_sync = param->subgroups[i].bis_sync;
