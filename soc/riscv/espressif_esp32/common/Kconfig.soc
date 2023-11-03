@@ -3,6 +3,14 @@
 
 if SOC_FAMILY_ESP32
 
+config SIMPLE_BOOT
+	bool "Simple boot without the need of 2nd stage bootloader"
+	help
+	  This will enable the changes in build and linkage that will allow
+	  to run the applicatiopn directly without using the 2nd stage
+	  bootloader such as IDF-boot or MCU-boot.
+	  NOTE: that this will lack all the security features!
+
 config ESPTOOLPY_FLASHFREQ_80M
 	bool
 
