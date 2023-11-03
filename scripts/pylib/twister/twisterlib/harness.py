@@ -468,7 +468,7 @@ class Gtest(Harness):
                 self.detected_suite_names.append(suite_name)
 
             # Generate the internal name of the test
-            name = "{}.{}.{}".format(self.id, suite_name, test_start_match.group("test_name"))
+            name = "{}.{}".format(suite_name, test_start_match.group("test_name"))
 
             # Assert that we don't already have a running test
             assert (
@@ -508,7 +508,7 @@ class Gtest(Harness):
         tc = self.instance.get_case_by_name(name)
         assert (
             tc is not None and tc == self.tc
-        ), "gTest error, mismatched tests. Expected {} but got {}".format(self.tc, tc)
+        ), "gTest error, mismatched tests. Expected {} but got {} from '{}'".format(self.tc, tc, name)
 
         # Test finished, clear the context
         self.tc = None
@@ -524,10 +524,10 @@ class Gtest(Harness):
     def _check_result(self, line):
         test_pass_match = re.search(self.TEST_PASS_PATTERN, line)
         if test_pass_match:
-            return "passed", "{}.{}.{}".format(self.id, test_pass_match.group("suite_name"), test_pass_match.group("test_name"))
+            return "passed", "{}.{}".format(test_pass_match.group("suite_name"), test_pass_match.group("test_name"))
         test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
         if test_fail_match:
-            return "failed", "{}.{}.{}".format(self.id, test_fail_match.group("suite_name"), test_fail_match.group("test_name"))
+            return "failed", "{}.{}".format(test_fail_match.group("suite_name"), test_fail_match.group("test_name"))
         return None, None
 
 

@@ -69,9 +69,9 @@ def test_gtest_start_test(gtest):
     assert gtest.state is None
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("suite_name.test_name") is not None
     assert (
-        gtest.instance.get_case_by_name("id.suite_name.test_name").status == "started"
+        gtest.instance.get_case_by_name("suite_name.test_name").status == "started"
     )
 
 
@@ -91,8 +91,8 @@ def test_gtest_pass(gtest):
     assert gtest.state is None
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
+    assert gtest.instance.get_case_by_name("suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("suite_name.test_name").status == "passed"
 
 
 def test_gtest_failed(gtest):
@@ -111,8 +111,8 @@ def test_gtest_failed(gtest):
     assert gtest.state is None
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "failed"
+    assert gtest.instance.get_case_by_name("suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("suite_name.test_name").status == "failed"
 
 
 def test_gtest_all_pass(gtest):
@@ -132,8 +132,8 @@ def test_gtest_all_pass(gtest):
     assert gtest.state == "passed"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
+    assert gtest.instance.get_case_by_name("suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("suite_name.test_name").status == "passed"
 
 
 def test_gtest_one_fail(gtest):
@@ -159,16 +159,16 @@ def test_gtest_one_fail(gtest):
     assert gtest.state == "failed"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
-    assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test0").status == "passed"
-    assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
-    assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
+    assert gtest.instance.get_case_by_name("suite_name.test0") is not None
+    assert gtest.instance.get_case_by_name("suite_name.test0").status == "passed"
+    assert gtest.instance.get_case_by_name("suite_name.test1") is not None
+    assert gtest.instance.get_case_by_name("suite_name.test1").status == "failed"
 
 
 def test_gtest_missing_result(gtest):
     with pytest.raises(
         AssertionError,
-        match=r"gTest error, id.suite_name.test0 didn't finish",
+        match=r"gTest error, suite_name.test0 didn't finish",
     ):
         process_logs(
             gtest,
@@ -187,7 +187,7 @@ def test_gtest_missing_result(gtest):
 def test_gtest_mismatch_result(gtest):
     with pytest.raises(
         AssertionError,
-        match=r"gTest error, mismatched tests. Expected id.suite_name.test0 but got None",
+        match=r"gTest error, mismatched tests. Expected suite_name.test0 but got None",
     ):
         process_logs(
             gtest,
@@ -206,7 +206,7 @@ def test_gtest_mismatch_result(gtest):
 def test_gtest_repeated_result(gtest):
     with pytest.raises(
         AssertionError,
-        match=r"gTest error, mismatched tests. Expected id.suite_name.test1 but got id.suite_name.test0",
+        match=r"gTest error, mismatched tests. Expected suite_name.test1 but got suite_name.test0",
     ):
         process_logs(
             gtest,
@@ -231,7 +231,7 @@ def test_gtest_repeated_result(gtest):
 def test_gtest_repeated_run(gtest):
     with pytest.raises(
         AssertionError,
-        match=r"gTest error, id.suite_name.test0 running twice",
+        match=r"gTest error, suite_name.test0 running twice",
     ):
         process_logs(
             gtest,
