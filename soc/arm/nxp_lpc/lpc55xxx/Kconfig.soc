@@ -130,6 +130,10 @@ config INIT_PLL1
 	  Note that flash programming operations are limited to 100MHz, and
 	  this PLL should not be used as the core clock in those cases.
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 144000000 if INIT_PLL1
+	default 96000000
+
 config SECOND_CORE_MCUX
 	bool "LPC55xxx's second core"
 	depends on HAS_MCUX
