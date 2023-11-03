@@ -106,19 +106,6 @@ static void wait_for_start_signal(atomic_t *start_flag)
 	}
 }
 
-/* Legacy interfaces for early-version SOF CPU bringup.  To be removed */
-#ifdef CONFIG_SOF
-void z_smp_thread_init(void *arg, struct k_thread *thread)
-{
-	z_dummy_thread_init(thread);
-	wait_for_start_signal(arg);
-}
-void z_smp_thread_swap(void)
-{
-	z_swap_unlocked();
-}
-#endif
-
 static inline void smp_init_top(void *arg)
 {
 	struct k_thread dummy_thread;
