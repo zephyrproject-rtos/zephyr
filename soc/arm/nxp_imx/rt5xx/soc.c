@@ -419,6 +419,10 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
 #endif
 
+#if CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT0_RST_SHIFT_RSTn);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
