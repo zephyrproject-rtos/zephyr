@@ -478,3 +478,7 @@ zephyr_udc0: &usbhs {
 	dmas = <&smartdma>;
 	dma-names = "smartdma";
 };
+
+&mrt_channel0 {
+	status = "okay";
+};
