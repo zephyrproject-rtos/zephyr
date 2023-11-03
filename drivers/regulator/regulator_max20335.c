@@ -121,17 +121,29 @@ static int regulator_max20335_set_enable(const struct device *dev, bool enable)
 
 static int regulator_max20335_enable(const struct device *dev)
 {
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	return regulator_max20335_set_enable(dev, true);
 }
 
 static int regulator_max20335_disable(const struct device *dev)
 {
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	return regulator_max20335_set_enable(dev, false);
 }
 
 static int regulator_max20335_set_mode(const struct device *dev, regulator_mode_t mode)
 {
 	const struct regulator_max20335_config *config = dev->config;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
 
 	if (mode > MAX20335_LOAD_SWITCH_MODE) {
 		return -ENOTSUP;
@@ -156,6 +168,10 @@ static unsigned int regulator_max20335_count_voltages(const struct device *dev)
 {
 	const struct regulator_max20335_config *config = dev->config;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	return linear_range_values_count(config->desc->uv_range);
 }
 
@@ -163,6 +179,10 @@ static int regulator_max20335_list_voltage(const struct device *dev, unsigned in
 					   int32_t *volt_uv)
 {
 	const struct regulator_max20335_config *config = dev->config;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
 
 	return linear_range_get_value(config->desc->uv_range, idx, volt_uv);
 }
@@ -203,6 +223,10 @@ static int regulator_max20335_get_voltage(const struct device *dev, int32_t *vol
 {
 	const struct regulator_max20335_config *config = dev->config;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	return regulator_max20335_buck12_ldo123_get_voltage(dev,
 							    config->desc->uv_range,
 							    config->desc->vsel_reg,
@@ -212,6 +236,10 @@ static int regulator_max20335_get_voltage(const struct device *dev, int32_t *vol
 static int regulator_max20335_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_max20335_config *config = dev->config;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
 
 	return regulator_max20335_set_buck_ldo_voltage(dev,
 						       min_uv,
@@ -224,6 +252,10 @@ static unsigned int regulator_max20335_count_current_limits(const struct device 
 {
 	const struct regulator_max20335_config *config = dev->config;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	return linear_range_values_count(config->desc->ua_range);
 }
 
@@ -231,6 +263,10 @@ static int regulator_max20335_list_current_limit(const struct device *dev, unsig
 						 int32_t *current_ua)
 {
 	const struct regulator_max20335_config *config = dev->config;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
 
 	return linear_range_get_value(config->desc->ua_range, idx, current_ua);
 }
@@ -243,6 +279,10 @@ static int regulator_max20335_set_current_limit(const struct device *dev,
 	uint8_t val;
 	uint16_t idx;
 	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_BUCK12_CSET, &val);
 	if (ret < 0) {
