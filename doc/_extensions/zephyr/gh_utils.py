@@ -37,6 +37,7 @@ from functools import partial
 import os
 import re
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
@@ -47,6 +48,13 @@ from sphinx.application import Sphinx
 from sphinx.util.i18n import format_date
 
 ZEPHYR_BASE : Final[str] = Path(__file__).parents[3]
+SCRIPTS : Final[str] = ZEPHYR_BASE / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+from get_maintainer import Maintainers
+
+MAINTAINERS : Final[Maintainers] = Maintainers()
+
 
 __version__ = "0.1.0"
 
@@ -121,11 +129,21 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Optiona
         URL to open a new issue if applicable, None otherwise.
     """
 
-    if not os.path.isfile(app.env.doc2path(pagename)):
+    page_prefix = get_page_prefix(app, pagename)
+    if page_prefix is None:
         return None
+
+    rel_path = os.path.join(
+        os.path.relpath(ZEPHYR_BASE),
+        page_prefix,
+        app.env.doc2path(pagename, False),
+    )
 
     title = quote(f"doc: Documentation issue in '{pagename}'")
     labels = quote("area: Documentation")
+    areas = MAINTAINERS.path2areas(rel_path)
+    if areas:
+        labels += "," + ",".join([label for area in areas for label in area.labels])
     body = quote(
         dedent(
             f"""\
