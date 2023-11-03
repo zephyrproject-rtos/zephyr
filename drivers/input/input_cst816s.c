@@ -173,12 +173,11 @@ static void cst816s_chip_reset(const struct device *dev)
 	int ret;
 
 	if (gpio_is_ready_dt(&config->rst_gpio)) {
-		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure reset GPIO pin");
 			return;
 		}
-		gpio_pin_set_dt(&config->rst_gpio, 1);
 		k_msleep(CST816S_RESET_DELAY);
 		gpio_pin_set_dt(&config->rst_gpio, 0);
 		k_msleep(CST816S_WAIT_DELAY);
