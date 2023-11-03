@@ -61,5 +61,10 @@ Other Subsystems
   :kconfig:option:`CONFIG_CRC`, this was previously erroneously selected if MCUmgr was enabled,
   when for non-serial transports it was not needed.
 
+* Touchscreen drivers :dtcompatible:`focaltech,ft5336` and
+  :dtcompatible:`goodix,gt911` were using the incorrect polarity for the
+  respective ``reset-gpios``. This has been fixed so those signals now have to
+  be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree.`
+
 Recommended Changes
 *******************
