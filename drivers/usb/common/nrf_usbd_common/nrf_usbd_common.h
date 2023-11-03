@@ -12,7 +12,6 @@
 #define NRF_USBD_COMMON_H__
 
 #include <nrfx.h>
-#include <hal/nrf_usbd.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +56,7 @@ extern "C" {
  *
  * @return Endpoint identifier that connects endpoint number and endpoint direction.
  */
-#define NRF_USBD_COMMON_EPIN(n)  ((nrf_usbd_common_ep_t)NRF_USBD_EPIN(n))
+#define NRF_USBD_COMMON_EPIN(n)  ((nrf_usbd_common_ep_t)(0x80 | n))
 /**
  * @brief Create identifier for OUT endpoint.
  *
@@ -67,7 +66,7 @@ extern "C" {
  *
  * @return Endpoint identifier that connects endpoint number and endpoint direction.
  */
-#define NRF_USBD_COMMON_EPOUT(n) ((nrf_usbd_common_ep_t)NRF_USBD_EPOUT(n))
+#define NRF_USBD_COMMON_EPOUT(n) ((nrf_usbd_common_ep_t)(n))
 /** @} */
 
 /**
@@ -77,25 +76,25 @@ extern "C" {
  * This endpoint number is consistent with USB 2.0 specification.
  */
 typedef enum {
-	NRF_USBD_COMMON_EPOUT0 = NRF_USBD_EPOUT(0), /**< Endpoint OUT 0 */
-	NRF_USBD_COMMON_EPOUT1 = NRF_USBD_EPOUT(1), /**< Endpoint OUT 1 */
-	NRF_USBD_COMMON_EPOUT2 = NRF_USBD_EPOUT(2), /**< Endpoint OUT 2 */
-	NRF_USBD_COMMON_EPOUT3 = NRF_USBD_EPOUT(3), /**< Endpoint OUT 3 */
-	NRF_USBD_COMMON_EPOUT4 = NRF_USBD_EPOUT(4), /**< Endpoint OUT 4 */
-	NRF_USBD_COMMON_EPOUT5 = NRF_USBD_EPOUT(5), /**< Endpoint OUT 5 */
-	NRF_USBD_COMMON_EPOUT6 = NRF_USBD_EPOUT(6), /**< Endpoint OUT 6 */
-	NRF_USBD_COMMON_EPOUT7 = NRF_USBD_EPOUT(7), /**< Endpoint OUT 7 */
-	NRF_USBD_COMMON_EPOUT8 = NRF_USBD_EPOUT(8), /**< Endpoint OUT 8 */
+	NRF_USBD_COMMON_EPOUT0 = 0x00, /**< Endpoint OUT 0 */
+	NRF_USBD_COMMON_EPOUT1 = 0x01, /**< Endpoint OUT 1 */
+	NRF_USBD_COMMON_EPOUT2 = 0x02, /**< Endpoint OUT 2 */
+	NRF_USBD_COMMON_EPOUT3 = 0x03, /**< Endpoint OUT 3 */
+	NRF_USBD_COMMON_EPOUT4 = 0x04, /**< Endpoint OUT 4 */
+	NRF_USBD_COMMON_EPOUT5 = 0x05, /**< Endpoint OUT 5 */
+	NRF_USBD_COMMON_EPOUT6 = 0x06, /**< Endpoint OUT 6 */
+	NRF_USBD_COMMON_EPOUT7 = 0x07, /**< Endpoint OUT 7 */
+	NRF_USBD_COMMON_EPOUT8 = 0x08, /**< Endpoint OUT 8 */
 
-	NRF_USBD_COMMON_EPIN0 = NRF_USBD_EPIN(0), /**< Endpoint IN 0 */
-	NRF_USBD_COMMON_EPIN1 = NRF_USBD_EPIN(1), /**< Endpoint IN 1 */
-	NRF_USBD_COMMON_EPIN2 = NRF_USBD_EPIN(2), /**< Endpoint IN 2 */
-	NRF_USBD_COMMON_EPIN3 = NRF_USBD_EPIN(3), /**< Endpoint IN 3 */
-	NRF_USBD_COMMON_EPIN4 = NRF_USBD_EPIN(4), /**< Endpoint IN 4 */
-	NRF_USBD_COMMON_EPIN5 = NRF_USBD_EPIN(5), /**< Endpoint IN 5 */
-	NRF_USBD_COMMON_EPIN6 = NRF_USBD_EPIN(6), /**< Endpoint IN 6 */
-	NRF_USBD_COMMON_EPIN7 = NRF_USBD_EPIN(7), /**< Endpoint IN 7 */
-	NRF_USBD_COMMON_EPIN8 = NRF_USBD_EPIN(8), /**< Endpoint IN 8 */
+	NRF_USBD_COMMON_EPIN0 = 0x80, /**< Endpoint IN 0 */
+	NRF_USBD_COMMON_EPIN1 = 0x81, /**< Endpoint IN 1 */
+	NRF_USBD_COMMON_EPIN2 = 0x82, /**< Endpoint IN 2 */
+	NRF_USBD_COMMON_EPIN3 = 0x83, /**< Endpoint IN 3 */
+	NRF_USBD_COMMON_EPIN4 = 0x84, /**< Endpoint IN 4 */
+	NRF_USBD_COMMON_EPIN5 = 0x85, /**< Endpoint IN 5 */
+	NRF_USBD_COMMON_EPIN6 = 0x86, /**< Endpoint IN 6 */
+	NRF_USBD_COMMON_EPIN7 = 0x87, /**< Endpoint IN 7 */
+	NRF_USBD_COMMON_EPIN8 = 0x88, /**< Endpoint IN 8 */
 } nrf_usbd_common_ep_t;
 
 /**
@@ -488,13 +487,6 @@ void nrf_usbd_common_ep_enable(nrf_usbd_common_ep_t ep);
  * @param[in] ep Endpoint number to disable.
  */
 void nrf_usbd_common_ep_disable(nrf_usbd_common_ep_t ep);
-
-/**
- * @brief Disable all endpoints except for EP0.
- *
- * Disable all endpoints that can be disabled in USB device while it is still active.
- */
-void nrf_usbd_common_ep_default_config(void);
 
 /**
  * @brief Start sending data over endpoint.
