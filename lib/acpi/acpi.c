@@ -377,7 +377,21 @@ static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, 
 		return -EIO;
 	}
 
-	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
+	return 0;
+}
+
+static int acpi_retrieve_legacy_irq(void)
+{
+	int ret;
+
+	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
+	ret = acpi_get_irq_table(CONFIG_ACPI_PRT_BUS_NAME,
+				 acpi.pci_prt_table, ARRAY_SIZE(acpi.pci_prt_table));
+	if (ret) {
+		return ret;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(acpi.pci_prt_table); i++) {
 		if (!acpi.pci_prt_table[i].SourceIndex) {
 			break;
 		}
@@ -388,13 +402,7 @@ static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, 
 	}
 
 	return 0;
-}
 
-static int acpi_retrieve_legacy_irq(void)
-{
-	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
-	return acpi_get_irq_table(CONFIG_ACPI_PRT_BUS_NAME,
-				  acpi.pci_prt_table, ARRAY_SIZE(acpi.pci_prt_table));
 }
 
 int acpi_get_irq_routing_table(char *bus_name,
