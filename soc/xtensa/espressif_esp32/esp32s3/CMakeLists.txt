@@ -68,12 +68,24 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
 
 endif()
 
-if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF)
+
+if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF OR CONFIG_SIMPLE_BOOT)
 
   if(CONFIG_BUILD_OUTPUT_BIN)
+    # make ESP ROM loader compatible image
+    message("ESP-IDF path: ${ESP_IDF_PATH}")
+
+    set(ESPTOOL_PY ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py)
+
+    set(ELF2IMAGE_ARG "")
+    if(CONFIG_SIMPLE_BOOT)
+      set(ELF2IMAGE_ARG "--ram-only-header")
+    endif()
+
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
-      ARGS --chip esp32s3 elf2image --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
+      COMMAND ${PYTHON_EXECUTABLE} ${ESPTOOL_PY}
+      ARGS --chip esp32s3 elf2image ${ELF2IMAGE_ARG}
+      --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
   endif()
@@ -99,17 +111,22 @@ else()
 
   set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
-  # get code-partition slot0 address
-  dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
-  dt_reg_addr(img_0_off PATH ${dts_partition_path})
-
   # get code-partition boot address
   dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
   dt_reg_addr(boot_off PATH ${dts_partition_path})
 
-  board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
+  # get code-partition slot0 address
+  dt_nodelabel(dts_partition_path NODELABEL "slot0_partition")
+  dt_reg_addr(img_0_off PATH ${dts_partition_path})
 
-  board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+  if(CONFIG_SIMPLE_BOOT)
+    # Simple boot is producing single application image,
+    # which means we dont need to specify bootloader address.
+    board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
+  else()
+    board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
+    board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+  endif()
 
 endif()
 

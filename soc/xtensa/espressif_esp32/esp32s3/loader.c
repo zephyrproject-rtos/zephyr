@@ -17,7 +17,10 @@
 #include "soc/extmem_reg.h"
 #include <bootloader_flash_priv.h>
 
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_SIMPLE_BOOT)
+
+#include <esp_app_format.h>
+#include <bootloader_init.h>
 
 #define BOOT_LOG_INF(_fmt, ...) \
 	ets_printf("[" CONFIG_SOC_SERIES "] [INF] " _fmt "\n\r", ##__VA_ARGS__)
@@ -26,6 +29,8 @@
 
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
 extern uint32_t _image_drom_start, _image_drom_size, _image_drom_vaddr;
+
+extern esp_image_header_t WORD_ALIGNED_ATTR image_hdr;
 
 void __start(void);
 
@@ -42,6 +47,80 @@ static int map_rom_segments(void)
 	uint32_t _app_drom_start = _partition_offset + (uint32_t)&_image_drom_start;
 	uint32_t _app_drom_size = (uint32_t)&_image_drom_size;
 	uint32_t _app_drom_vaddr = (uint32_t)&_image_drom_vaddr;
+
+#ifdef CONFIG_SIMPLE_BOOT
+
+#define CHECKSUM_ALIGN 16
+#define IS_PADD(addr) (addr == 0)
+#define IS_DRAM(addr) (addr >= SOC_DRAM_LOW && addr < SOC_DRAM_HIGH)
+#define IS_IRAM(addr) (addr >= SOC_IRAM_LOW && addr < SOC_IRAM_HIGH)
+#define IS_IROM(addr) (addr >= SOC_IROM_LOW && addr < SOC_IROM_HIGH)
+#define IS_DROM(addr) (addr >= SOC_DROM_LOW && addr < SOC_DROM_HIGH)
+#define IS_SRAM(addr) (IS_IRAM(addr) || IS_DRAM(addr))
+#define IS_MMAP(addr) (IS_IROM(addr) || IS_DROM(addr))
+#define IS_NONE(addr) (!IS_IROM(addr) && !IS_DROM(addr) \
+			&& !IS_IRAM(addr) && !IS_DRAM(addr) && !IS_PADD(addr))
+
+	esp_image_segment_header_t WORD_ALIGNED_ATTR segment_hdr;
+	size_t offset = FIXED_PARTITION_OFFSET(boot_partition);
+	unsigned int segments = 0;
+	unsigned int ram_segments = 0;
+	bool padding_checksum = false;
+
+	if (spi_flash_read(offset, &image_hdr, sizeof(esp_image_header_t)) != ESP_OK) {
+		ESP_LOGE(TAG, "failed to load bootloader image header!");
+		abort();
+	}
+	offset += sizeof(esp_image_header_t);
+
+	while (segments++ < 16) {
+
+		if (spi_flash_read(offset, &segment_hdr,
+				sizeof(esp_image_segment_header_t)) != ESP_OK) {
+			ets_printf("failed to read segment header at %x\n", offset);
+			abort();
+		}
+
+		/* TODO: Find better end-of-segment detection */
+		if (IS_NONE(segment_hdr.load_addr)) {
+			/* Total segment count is (segments - 1) */
+			break;
+		}
+
+		BOOT_LOG_INF("%s: lma 0x%08x vma 0x%08x len 0x%-6x (%u)",
+			IS_NONE(segment_hdr.load_addr) ? "???" :
+			  IS_MMAP(segment_hdr.load_addr) ?
+			    IS_IROM(segment_hdr.load_addr) ? "imap" : "dmap" :
+			      IS_PADD(segment_hdr.load_addr) ? "padd" :
+			        IS_DRAM(segment_hdr.load_addr) ? "dram" : "iram",
+			offset + sizeof(esp_image_segment_header_t),
+			segment_hdr.load_addr, segment_hdr.data_len, segment_hdr.data_len);
+
+		/* Fix the drom and irom LMA from the linker,
+		 * which could be invalidated by elf2image */
+		if (IS_DROM(segment_hdr.load_addr)) {
+			_app_drom_start = offset + sizeof(esp_image_segment_header_t);
+		}
+		if (IS_IROM(segment_hdr.load_addr)) {
+			_app_irom_start = offset + sizeof(esp_image_segment_header_t);
+		}
+		if (IS_SRAM(segment_hdr.load_addr)) {
+			ram_segments ++;
+		}
+		offset += sizeof(esp_image_segment_header_t) + segment_hdr.data_len;
+
+		if (ram_segments == image_hdr.segment_count && !padding_checksum) {
+			offset += (CHECKSUM_ALIGN - 1) - (offset % CHECKSUM_ALIGN) + 1;
+			padding_checksum = true;
+		}
+	}
+	if (segments == 0 || segments == 16) {
+		ets_printf("Error parsing segments!\n");
+		abort();
+	}
+	ets_printf("Total image segments: %d\n", segments - 1);
+
+#endif /* CONFIG_SIMPLE_BOOT */
 
 	uint32_t autoload = Cache_Suspend_DCache();
 
@@ -73,26 +152,40 @@ static int map_rom_segments(void)
 
 	Cache_Resume_DCache(autoload);
 
+	/* We dont want to print duplicit info during the startup,
+	 * so we exclude this in case we are using Simple Boot
+	 */
 	/* Show map segments continue using same log format as during MCUboot phase */
-	BOOT_LOG_INF("DROM segment: paddr=%08Xh, vaddr=%08Xh, size=%05Xh (%6d) map",
-		_app_drom_start, _app_drom_vaddr, _app_drom_size, _app_drom_size);
-	BOOT_LOG_INF("IROM segment: paddr=%08Xh, vaddr=%08Xh, size=%05Xh (%6d) map\r\n",
-		_app_irom_start, _app_irom_vaddr, _app_irom_size, _app_irom_size);
+	BOOT_LOG_INF("mmap: paddr 0x%08x vaddr 0x%08x size 0x%05x (%d)",
+		_app_drom_start & MMU_FLASH_MASK, _app_drom_vaddr & MMU_FLASH_MASK,
+		_app_drom_size, _app_drom_size);
+	BOOT_LOG_INF("mmap: paddr 0x%08x vaddr 0x%08x size 0x%05x (%d)\r\n",
+		_app_irom_start & MMU_FLASH_MASK, _app_irom_vaddr & MMU_FLASH_MASK,
+		_app_irom_size, _app_irom_size);
 	esp_rom_uart_tx_wait_idle(0);
 
 	return rc;
 }
-#endif /* CONFIG_BOOTLOADER_MCUBOOT */
+#endif /* CONFIG_BOOTLOADER_MCUBOOT || CONFIG_SIMPLE_BOOT */
 
 void __start(void)
 {
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
+#ifdef CONFIG_SIMPLE_BOOT
+	/* Init fundamental components before mapping ram segments */
+	if (bootloader_init()) {
+		ets_printf("Hardware init failed. Aborting!\n");
+		abort();
+	}
+#endif /* CONFIG_SIMPLE_BOOT */
+
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_SIMPLE_BOOT)
 	int err = map_rom_segments();
 
 	if (err != 0) {
-		ets_printf("Failed to setup XIP, aborting\n");
+		ets_printf("Failed to map flash segments, aborting\n");
 		abort();
 	}
-#endif
+#endif /* CONFIG_BOOTLOADER_MCUBOOT || CONFIG_SIMPLE_BOOT */
+
 	__esp_platform_start();
 }
