@@ -1457,6 +1457,9 @@ void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 	nrf_qspi_xip_set(NRF_QSPI, enable);
 #endif
 	qspi_lock(dev);
+	if (enable) {
+		(void)nrfx_qspi_activate(false);
+	}
 	dev_data->xip_enabled = enable;
 	qspi_unlock(dev);
 
