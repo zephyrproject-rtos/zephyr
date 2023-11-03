@@ -57,7 +57,10 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
 
     zephyr_get_include_directories_for_lang(C current_includes)
     get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
-    cmake_path(GET SOC_LINKER_SCRIPT PARENT_PATH soc_linker_script_includes)
+    if(DEFINED SOC_LINKER_SCRIPT)
+      cmake_path(GET SOC_LINKER_SCRIPT PARENT_PATH soc_linker_script_includes)
+      set(soc_linker_script_includes -I${soc_linker_script_includes})
+    endif()
 
     add_custom_command(
       OUTPUT ${linker_script_gen}
@@ -75,7 +78,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       -D_ASMLANGUAGE
       -imacros ${AUTOCONF_H}
       ${current_includes}
-      -I${soc_linker_script_includes}
+      ${soc_linker_script_includes}
       ${current_defines}
       ${template_script_defines}
       -E ${LINKER_SCRIPT}
