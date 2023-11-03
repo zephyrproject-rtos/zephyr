@@ -153,8 +153,8 @@ static int ft5336_init(const struct device *dev)
 	k_work_init(&data->work, ft5336_work_handler);
 
 	if (config->reset_gpio.port != NULL) {
-		/* Enable reset GPIO, and pull down */
-		r = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+		/* Enable reset GPIO and assert reset */
+		r = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (r < 0) {
 			LOG_ERR("Could not enable reset GPIO");
 			return r;
@@ -166,7 +166,7 @@ static int ft5336_init(const struct device *dev)
 		 */
 		k_sleep(K_MSEC(5));
 		/* Pull reset pin high to complete reset sequence */
-		r = gpio_pin_set_dt(&config->reset_gpio, 1);
+		r = gpio_pin_set_dt(&config->reset_gpio, 0);
 		if (r < 0) {
 			return r;
 		}
