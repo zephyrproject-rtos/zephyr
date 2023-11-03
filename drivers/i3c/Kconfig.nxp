@@ -22,6 +22,7 @@ if I3C_MCUX
 
 config I3C_MCUX_DO_NOT_CHANGE_CLOCK_CONFIG
 	bool
+	default y if SOC_SERIES_S32ZE_R52
 	help
 	  Hidden option indicates that the driver will not touch to
 	  clock configuration for I3C functionality.
