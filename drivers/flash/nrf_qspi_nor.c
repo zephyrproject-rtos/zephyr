@@ -1339,15 +1339,34 @@ static int enter_dpd(const struct device *const dev)
 static int exit_dpd(const struct device *const dev)
 {
 	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
+		nrf_qspi_pins_t pins;
+		nrf_qspi_pins_t disconnected_pins = {
+			.sck_pin = NRF_QSPI_PIN_NOT_CONNECTED,
+			.csn_pin = NRF_QSPI_PIN_NOT_CONNECTED,
+			.io0_pin = NRF_QSPI_PIN_NOT_CONNECTED,
+			.io1_pin = NRF_QSPI_PIN_NOT_CONNECTED,
+			.io2_pin = NRF_QSPI_PIN_NOT_CONNECTED,
+			.io3_pin = NRF_QSPI_PIN_NOT_CONNECTED,
+		};
 		struct qspi_cmd cmd = {
 			.op_code = SPI_NOR_CMD_RDPD,
 		};
 		uint32_t t_exit_dpd = DT_INST_PROP_OR(0, t_exit_dpd, 0);
-		int ret;
+		nrfx_err_t res;
+		int rc;
 
-		ret = qspi_send_cmd(dev, &cmd, false);
-		if (ret < 0) {
-			return ret;
+		nrf_qspi_pins_get(NRF_QSPI, &pins);
+		nrf_qspi_pins_set(NRF_QSPI, &disconnected_pins);
+		res = nrfx_qspi_activate(true);
+		nrf_qspi_pins_set(NRF_QSPI, &pins);
+
+		if (res != NRFX_SUCCESS) {
+			return -EIO;
+		}
+
+		rc = qspi_send_cmd(dev, &cmd, false);
+		if (rc < 0) {
+			return rc;
 		}
 
 		if (t_exit_dpd) {
