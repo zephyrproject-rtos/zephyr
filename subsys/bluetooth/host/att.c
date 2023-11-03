@@ -2519,9 +2519,13 @@ static uint8_t att_error_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	err = rsp->error;
+
 #if defined(CONFIG_BT_ATT_RETRY_ON_SEC_ERR)
+	int ret;
+
 	/* Check if error can be handled by elevating security. */
-	if (!att_change_security(chan->chan.chan.conn, err)) {
+	ret = att_change_security(chan->chan.chan.conn, err);
+	if (ret == 0 || ret == -EBUSY) {
 		/* ATT timeout work is normally cancelled in att_handle_rsp.
 		 * However retrying is special case, so the timeout shall
 		 * be cancelled here.
