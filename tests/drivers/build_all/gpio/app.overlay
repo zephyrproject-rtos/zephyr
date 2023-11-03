@@ -51,7 +51,7 @@
 
 			test_i2c_pcal6416a: pcal6416a@2 {
 				compatible = "nxp,pcal6416a";
-				reg = <0x1>;
+				reg = <0x2>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
@@ -244,30 +244,10 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ads114s08: ads114s08@3 {
-				compatible = "ti,ads114s08";
-				status = "okay";
-				spi-max-frequency = <10000000>;
-				reg = <0x03>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				#io-channel-cells = <1>;
-				reset-gpios = <&test_gpio 0 0>;
-				drdy-gpios = <&test_gpio 0 0>;
-				start-sync-gpios = <&test_gpio 0 0>;
-
-				test_spi_ads114s08_gpio: ads114s0x_gpio {
-					compatible = "ti,ads114s0x-gpio";
-					gpio-controller;
-					ngpios = <4>;
-					#gpio-cells = <2>;
-				};
-			};
-
-			test_spi_ad5592: ad5592@4 {
+			test_spi_ad5592: ad5592@3 {
 				compatible = "adi,ad5592";
 				status = "okay";
-				reg = <0x04>;
+				reg = <0x03>;
 				spi-max-frequency = <0>;
 				reset-gpios = <&test_gpio 0 0>;
 
