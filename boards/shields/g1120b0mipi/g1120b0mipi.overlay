@@ -33,7 +33,7 @@
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
 	};
 };
 
