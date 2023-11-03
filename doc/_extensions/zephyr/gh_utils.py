@@ -66,7 +66,7 @@ def get_page_prefix(app: Sphinx, pagename: str) -> str:
         Prefix if applicable, None otherwise.
     """
 
-    if not os.path.isfile(app.env.project.doc2path(pagename)):
+    if not os.path.isfile(app.env.doc2path(pagename)):
         return None
 
     for exclude in app.config.gh_link_exclude:
@@ -104,7 +104,7 @@ def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> Optional[
             mode,
             app.config.gh_link_version,
             page_prefix,
-            app.env.project.doc2path(pagename, basedir=False),
+            app.env.doc2path(pagename, False),
         ]
     )
 
@@ -121,7 +121,7 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Optiona
         URL to open a new issue if applicable, None otherwise.
     """
 
-    if not os.path.isfile(app.env.project.doc2path(pagename)):
+    if not os.path.isfile(app.env.doc2path(pagename)):
         return None
 
     title = quote(f"[doc] Documentation issue in '{pagename}'")
@@ -165,7 +165,7 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
     orig_path = os.path.join(
         ZEPHYR_BASE,
         page_prefix,
-        app.env.project.doc2path(pagename, basedir=False),
+        app.env.doc2path(pagename, False),
     )
 
     try:
