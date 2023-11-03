@@ -88,6 +88,7 @@ void k_object_init(const void *obj);
 
 
 #else
+/* LCOV_EXCL_START */
 static inline void k_object_init(const void *obj)
 {
 	ARG_UNUSED(obj);
