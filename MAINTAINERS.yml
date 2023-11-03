@@ -139,6 +139,7 @@ ARC arch:
     - include/zephyr/arch/arc/
     - tests/arch/arc/
     - dts/arc/synopsys/
+    - doc/hardware/arch/arc-support-status.rst
   labels:
     - "area: ARC"
 
@@ -647,6 +648,7 @@ Display drivers:
     - include/zephyr/drivers/display.h
     - subsys/fb/
     - samples/subsys/display/
+    - doc/hardware/peripherals/display/
   labels:
     - "area: Display"
 
@@ -933,6 +935,7 @@ Release Notes:
     - include/zephyr/drivers/eeprom.h
     - samples/drivers/eeprom/
     - tests/drivers/eeprom/
+    - doc/hardware/peripherals/eeprom.rst
   labels:
     - "area: EEPROM"
 
@@ -944,6 +947,7 @@ Release Notes:
     - drivers/entropy/
     - include/zephyr/drivers/entropy.h
     - tests/drivers/entropy/
+    - doc/hardware/peripherals/entropy.rst
   labels:
     - "area: Crypto / RNG"
 
@@ -1278,6 +1282,7 @@ Release Notes:
   files:
     - drivers/pcie/
     - include/zephyr/drivers/pcie/
+    - doc/hardware/peripherals/pcie.rst
   labels:
     - "area: PCI"
 
@@ -1452,6 +1457,7 @@ Release Notes:
     - drivers/video/
     - include/zephyr/drivers/video.h
     - include/zephyr/drivers/video-controls.h
+    - doc/hardware/peripherals/video.rst
   labels:
     - "area: Video"
 
@@ -1875,6 +1881,8 @@ Modem Modules:
     - subsys/modem/
     - include/zephyr/modem/
     - tests/subsys/modem/
+    - doc/services/modem/
+    - samples/net/cellular_modem/
 
 OSDP:
   status: maintained
@@ -2224,6 +2232,7 @@ Retention:
     - dts/bindings/retention/
     - include/zephyr/retention/
     - subsys/retention/
+    - doc/services/retention/
   labels:
     - "area: Retention"
 
@@ -2701,6 +2710,7 @@ STM32 Platforms:
     - Desvauxm-st
     - GeorgeCGV
   files:
+    - boards/arm/b_*/
     - boards/arm/nucleo_*/
     - boards/arm/stm32*_disco/
     - boards/arm/stm32*_dk*/
@@ -3005,6 +3015,7 @@ USB-C:
     - samples/subsys/usb_c/
     - subsys/usb/usb_c/
     - doc/connectivity/usb/pd/
+    - doc/hardware/peripherals/usbc_vbus.rst
   labels:
     - "area: USB-C"
 
