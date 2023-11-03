@@ -120,6 +120,12 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 			*pinconfig |= IOCON_PIO_MODE_PULLDOWN;
 		}
 #endif
+	} else {
+#ifdef IOPCTL /* RT600 and RT500 series */
+		*pinconfig &= ~IOPCTL_PIO_PUPD_EN;
+#else /* LPC SOCs */
+		*pinconfig &= ~(IOCON_PIO_MODE_PULLUP|IOCON_PIO_MODE_PULLDOWN);
+#endif
 	}
 
 	/* supports access by pin now,you can add access by port when needed */
