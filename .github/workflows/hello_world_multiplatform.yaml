@@ -1,0 +1,78 @@
+name: Hello World (Multiplatform)
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+    paths:
+      - 'scripts/build/**'
+      - 'scripts/requirements*.txt'
+      - '.github/workflows/hello_world_multiplatform.yaml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-12, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: zephyr
+          fetch-depth: 0
+
+      - name: Rebase
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        working-directory: zephyr
+        shell: bash
+        run: |
+          git config --global user.email "actions@zephyrproject.org"
+          git config --global user.name "Github Actions"
+          git rebase origin/${BASE_REF}
+          git log --graph --oneline HEAD...${PR_HEAD}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: zephyr
+          toolchains: all
+
+      - name: Build firmware
+        working-directory: zephyr
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            EXTRA_TWISTER_FLAGS="-P native_sim --build-only"
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
+          fi
+          ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $EXTRA_TWISTER_FLAGS
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: ignore
+          path:
+            zephyr/twister-out/*/samples/hello_world/sample.basic.helloworld/build.log
