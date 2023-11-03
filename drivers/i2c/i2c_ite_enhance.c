@@ -735,9 +735,11 @@ static int enhanced_i2c_cq_isr(const struct device *dev)
 		uint8_t msgs_idx = data->num_msgs - 1;
 
 		/* Get data if this is a read transaction. */
-		for (int i = 0; i < data->cq_msgs[msgs_idx].len; i++) {
-			data->cq_msgs[msgs_idx].buf[i] =
-			host_buffer->i2c_cq_mode_rx_dlm[i];
+		if (data->cq_msgs[msgs_idx].flags & I2C_MSG_READ) {
+			for (int i = 0; i < data->cq_msgs[msgs_idx].len; i++) {
+				data->cq_msgs[msgs_idx].buf[i] =
+				host_buffer->i2c_cq_mode_rx_dlm[i];
+			}
 		}
 	} else {
 		/* Device 1 error have occurred. eg. nack, timeout... */
