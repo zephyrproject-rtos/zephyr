@@ -369,7 +369,7 @@ static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, 
 	}
 
 	rt_buffer.Pointer = rt_table;
-	rt_buffer.Length = rt_size;
+	rt_buffer.Length = rt_size * sizeof(ACPI_PCI_ROUTING_TABLE);
 
 	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
 	if (ACPI_FAILURE(status)) {
@@ -394,7 +394,7 @@ static int acpi_retrieve_legacy_irq(void)
 {
 	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
 	return acpi_get_irq_table(CONFIG_ACPI_PRT_BUS_NAME,
-				  acpi.pci_prt_table, sizeof(acpi.pci_prt_table));
+				  acpi.pci_prt_table, ARRAY_SIZE(acpi.pci_prt_table));
 }
 
 int acpi_get_irq_routing_table(char *bus_name,

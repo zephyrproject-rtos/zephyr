@@ -199,7 +199,8 @@ static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 			return -EINVAL;
 		}
 
-		status = acpi_get_irq_routing_table(argv[1], irq_prt_table, sizeof(irq_prt_table));
+		status = acpi_get_irq_routing_table(argv[1],
+						    irq_prt_table, ARRAY_SIZE(irq_prt_table));
 		if (status) {
 			return status;
 		}
