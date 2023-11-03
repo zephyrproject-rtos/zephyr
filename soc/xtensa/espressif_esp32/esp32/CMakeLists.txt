@@ -76,12 +76,25 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
 
 endif()
 
-if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF)
+if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF OR CONFIG_SIMPLE_BOOT)
 
   if(CONFIG_BUILD_OUTPUT_BIN)
+
+    set(ESPTOOL_PY /media/work/Projects/840-espressif/espressif/esptool/esptool.py)
+    #set(ESPTOOL_PY ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py)
+    set(ELF2IMAGE_ARG "")
+    if(CONFIG_SIMPLE_BOOT)
+      set(ELF2IMAGE_ARG "--simple-boot")
+    endif()
+
+    set(ESPTOOL_PY /media/work/Projects/840-espressif/espressif/esptool/esptool.py)
+    #set(ESPTOOL_PY ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py)
+
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
-      ARGS --chip esp32 elf2image --flash_mode dio --flash_freq 40m --flash_size ${esptoolpy_flashsize}MB
+      COMMAND ${PYTHON_EXECUTABLE} ${ESPTOOL_PY}
+      ARGS --chip esp32 elf2image ${ELF2IMAGE_ARG}
+      --flash_mode dio --flash_freq 40m
+      --flash_size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
   endif()
@@ -92,9 +105,14 @@ if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF)
 
 endif()
 
-board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
-
-board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+if(CONFIG_SIMPLE_BOOT)
+  # Simple boot is producing single application image,
+  # which means we dont need to specify bootloader address.
+  board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
+else()
+  board_finalize_runner_args(esp32 "--esp-boot-address=${boot_off}")
+  board_finalize_runner_args(esp32 "--esp-app-address=${img_0_off}")
+endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mcuboot.ld CACHE INTERNAL "")
