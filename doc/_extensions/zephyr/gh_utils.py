@@ -95,7 +95,7 @@ def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> Optional[
     """
 
     page_prefix = get_page_prefix(app, pagename)
-    if not page_prefix:
+    if page_prefix is None:
         return None
 
     return "/".join(
@@ -159,7 +159,7 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
     """
 
     page_prefix = get_page_prefix(app, pagename)
-    if not page_prefix:
+    if page_prefix is None:
         return None
 
     orig_path = os.path.join(
