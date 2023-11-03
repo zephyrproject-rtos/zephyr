@@ -347,6 +347,10 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 #endif /* SOC platform */
 #endif /* DAC */
 
+#ifdef CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
+#endif
+
 }
 
 /**
