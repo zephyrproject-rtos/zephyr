@@ -731,6 +731,14 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 
 static inline void inv_dcache_after_map_helper(void *virt, size_t size, uint32_t attrs)
 {
+	/*
+	 * DC IVAC instruction requires write access permission to the VA,
+	 * otherwise it can generate a permission fault
+	 */
+	if ((attrs & MT_RW) != MT_RW) {
+		return;
+	}
+
 	if (MT_TYPE(attrs) == MT_NORMAL || MT_TYPE(attrs) == MT_NORMAL_WT) {
 		sys_cache_data_invd_range(virt, size);
 	}
@@ -987,6 +995,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		case K_MEM_CACHE_WB:
 		case K_MEM_CACHE_WT:
 			mem_flags = (mem_flags == K_MEM_CACHE_WB) ? MT_NORMAL : MT_NORMAL_WT;
+			mem_flags |= (flags & K_MEM_PERM_RW) ? MT_RW : 0;
 			inv_dcache_after_map_helper(virt, size, mem_flags);
 		default:
 			break;
