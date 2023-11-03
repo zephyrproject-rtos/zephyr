@@ -124,7 +124,7 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Optiona
     if not os.path.isfile(app.env.doc2path(pagename)):
         return None
 
-    title = quote(f"[doc] Documentation issue in '{pagename}'")
+    title = quote(f"doc: Documentation issue in '{pagename}'")
     labels = quote("area: Documentation")
     body = quote(
         dedent(
