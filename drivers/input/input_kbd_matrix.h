@@ -6,13 +6,26 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
+
+/** Special drive_column argument for not driving any column */
+#define INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE -1
+
+/** Special drive_column argument for driving all the columns */
+#define INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL  -2
+
+/** Number of tracked scan cycles */
+#define INPUT_KBD_MATRIX_SCAN_OCURRENCES 30U
 
 /**
  * @brief Keyboard matrix internal APIs.
  */
 struct input_kbd_matrix_api {
-	k_thread_entry_t polling_thread;
+	void (*drive_column)(const struct device *dev, int col);
+	int (*read_row)(const struct device *dev);
+	void (*set_detect_mode)(const struct device *dev, bool enabled);
 };
 
 /**
@@ -22,7 +35,52 @@ struct input_kbd_matrix_api {
  */
 struct input_kbd_matrix_common_config {
 	struct input_kbd_matrix_api api;
+	uint8_t row_size;
+	uint8_t col_size;
+	uint32_t poll_period_us;
+	uint32_t poll_timeout_ms;
+	uint32_t debounce_down_ms;
+	uint32_t debounce_up_ms;
+	uint32_t settle_time_us;
+	bool ghostkey_check;
+
+	/* extra data pointers */
+	uint8_t *matrix_stable_state;
+	uint8_t *matrix_unstable_state;
+	uint8_t *matrix_previous_state;
+	uint8_t *matrix_new_state;
+	uint8_t *scan_cycle_idx;
 };
+
+#define INPUT_KBD_MATRIX_DATA_NAME(node_id, name) \
+	_CONCAT(__input_kbd_matrix_, \
+		_CONCAT(name, DEVICE_DT_NAME_GET(node_id)))
+
+/**
+ * @brief Defines the common keyboard matrix support data from devicetree.
+ */
+#define INPUT_KBD_MATRIX_DT_DEFINE(node_id) \
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, row_size), 1, 8), "invalid row-size"); \
+	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, col_size), 1, UINT8_MAX), "invalid col-size"); \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
+			node_id, stable_state)[DT_PROP(node_id, col_size)]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
+			node_id, unstable_state)[DT_PROP(node_id, col_size)]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
+			node_id, previous_state)[DT_PROP(node_id, col_size)]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
+			node_id, new_state)[DT_PROP(node_id, col_size)]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
+			node_id, scan_cycle_idx)[DT_PROP(node_id, row_size) * \
+						 DT_PROP(node_id, col_size)];
+
+/**
+ * @brief Defines the common keyboard matrix support data from devicetree instance.
+ *
+ * @param inst Instance.
+ */
+#define INPUT_KBD_MATRIX_DT_INST_DEFINE(inst) \
+	INPUT_KBD_MATRIX_DT_DEFINE(DT_DRV_INST(inst))
 
 /**
  * @brief Initialize common keyboard matrix config from devicetree.
@@ -32,6 +90,20 @@ struct input_kbd_matrix_common_config {
 #define INPUT_KBD_MATRIX_DT_COMMON_CONFIG_INIT(node_id, _api) \
 	{ \
 		.api = _api, \
+		.row_size = DT_PROP(node_id, row_size), \
+		.col_size = DT_PROP(node_id, col_size), \
+		.poll_period_us = DT_PROP(node_id, poll_period_ms) * USEC_PER_MSEC, \
+		.poll_timeout_ms = DT_PROP(node_id, poll_timeout_ms), \
+		.debounce_down_ms = DT_PROP(node_id, debounce_down_ms), \
+		.debounce_up_ms = DT_PROP(node_id, debounce_up_ms), \
+		.settle_time_us = DT_PROP(node_id, settle_time_us), \
+		.ghostkey_check = !DT_PROP(node_id, no_ghostkey_check), \
+		\
+		.matrix_stable_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state), \
+		.matrix_unstable_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state), \
+		.matrix_previous_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, previous_state), \
+		.matrix_new_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, new_state), \
+		.scan_cycle_idx = INPUT_KBD_MATRIX_DATA_NAME(node_id, scan_cycle_idx), \
 	}
 
 /**
@@ -49,6 +121,12 @@ struct input_kbd_matrix_common_config {
  * This structure **must** be placed first in the driver's data structure.
  */
 struct input_kbd_matrix_common_data {
+	/* Track previous cycles, used for debouncing. */
+	uint8_t scan_clk_cycle[INPUT_KBD_MATRIX_SCAN_OCURRENCES];
+	uint8_t scan_cycles_idx;
+
+	struct k_sem poll_lock;
+
 	struct k_thread thread;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
@@ -66,6 +144,16 @@ struct input_kbd_matrix_common_data {
 		     "struct input_kbd_matrix_common_config must be placed first"); \
 	BUILD_ASSERT(offsetof(data, common) == 0, \
 		     "struct input_kbd_matrix_common_data must be placed first")
+
+/**
+ * @brief Start scanning the keyboard matrix
+ *
+ * Starts the keyboard matrix scanning cycle, this should be called in reaction
+ * of a press event, after the device has been put in detect mode.
+ *
+ * @param dev Keyboard matrix device instance.
+ */
+void input_kbd_matrix_poll_start(const struct device *dev);
 
 /**
  * @brief Common function to initialize a keyboard matrix device at init time.
