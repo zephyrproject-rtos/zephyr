@@ -62,6 +62,9 @@ struct llext {
 
 	/** Exported symbols from the llext, may be linked against by other llext */
 	struct llext_symtable sym_tab;
+
+	/** Extension use counter, prevents unloading while in use */
+	unsigned int use_count;
 };
 
 /**
@@ -115,7 +118,7 @@ int llext_load(struct llext_loader *loader, const char *name, struct llext **ext
  *
  * @param[in] ext Extension to unload
  */
-void llext_unload(struct llext *ext);
+int llext_unload(struct llext **ext);
 
 /**
  * @brief Find the address for an arbitrary symbol name.

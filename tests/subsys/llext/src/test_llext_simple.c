@@ -29,7 +29,7 @@ ZTEST(llext, test_llext_simple)
 		LLEXT_BUF_LOADER(hello_world_elf, ARRAY_SIZE(hello_world_elf));
 	struct llext_loader *loader = &buf_loader.loader;
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
-	struct llext *ext;
+	struct llext *ext = NULL;
 	const void * const printk_fn = llext_find_sym(NULL, "printk");
 
 	zassert_equal(printk_fn, printk, "printk should be an exported symbol");
@@ -46,7 +46,7 @@ ZTEST(llext, test_llext_simple)
 
 	zassert_ok(res, "calling hello world should succeed");
 
-	llext_unload(ext);
+	llext_unload(&ext);
 }
 
 ZTEST_SUITE(llext, NULL, NULL, NULL, NULL, NULL);

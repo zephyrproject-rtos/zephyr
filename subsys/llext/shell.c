@@ -139,7 +139,7 @@ static int cmd_llext_unload(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	llext_unload(ext);
+	llext_unload(&ext);
 	shell_print(sh, "Unloaded extension %s\n", argv[1]);
 
 	return 0;
