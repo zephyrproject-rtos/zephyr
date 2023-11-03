@@ -349,6 +349,11 @@ Use the ``-r linkserver`` option with West to use the LinkServer runner.
 
    west flash -r linkserver
 
+Alternatively, pyOCD can be used to flash and debug the board by using the
+``-r pyocd`` option with West. pyOCD is installed when you complete the
+:ref:`gs_python_deps` step in the Getting Started Guide. The runners supported
+by NXP are LinkServer and JLink. pyOCD is another potential option, but NXP
+does not test or support the pyOCD runner.
 
 Configuring a Console
 =====================
