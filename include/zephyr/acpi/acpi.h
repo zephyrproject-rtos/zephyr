@@ -80,7 +80,7 @@ int acpi_current_resource_free(ACPI_RESOURCE *res);
  *
  * @param bus_name the name of the bus
  * @param rt_table the IRQ routing table
- * @param rt_size the the size of IRQ routing table
+ * @param rt_size number of elements in the IRQ routing table
  * @return return 0 on success or error code
  */
 int acpi_get_irq_routing_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size);
