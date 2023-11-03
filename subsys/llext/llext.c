@@ -807,11 +807,24 @@ out:
 	return ret;
 }
 
+static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
+
 int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 	       struct llext_load_param *ldr_parm)
 {
 	int ret;
 	elf_ehdr_t ehdr;
+
+	k_mutex_lock(&llext_lock, K_FOREVER);
+
+	if (*ext) {
+		/* The use count is at least 1 */
+		ret = (*ext)->use_count++;
+		k_mutex_unlock(&llext_lock);
+		return ret;
+	}
+
+	k_mutex_unlock(&llext_lock);
 
 	ret = llext_seek(ldr, 0);
 	if (ret != 0) {
@@ -848,40 +861,58 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 
 		ldr->hdr = ehdr;
 		ret = do_llext_load(ldr, *ext, ldr_parm);
+		if (ret < 0)
+			return ret;
+
+		strncpy((*ext)->name, name, sizeof((*ext)->name));
+		(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
+		(*ext)->use_count++;
+
+		sys_slist_append(&_llext_list, &(*ext)->_llext_list);
+		LOG_INF("Loaded extension %s", (*ext)->name);
+
 		break;
 	default:
 		LOG_ERR("Unsupported elf file type %x", ehdr.e_type);
-		*ext = NULL;
 		return -EINVAL;
 	}
 
-	if (ret == 0) {
-		strncpy((*ext)->name, name, sizeof((*ext)->name));
-		(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
-		sys_slist_append(&_llext_list, &(*ext)->_llext_list);
-		LOG_INF("Loaded extension %s", (*ext)->name);
-	}
-
-	return ret;
+	return 0;
 }
 
-void llext_unload(struct llext *ext)
+int llext_unload(struct llext **ext)
 {
-	__ASSERT(ext, "Expected non-null extension");
+	__ASSERT(*ext, "Expected non-null extension");
+	struct llext *tmp = *ext;
 
-	sys_slist_find_and_remove(&_llext_list, &ext->_llext_list);
+	k_mutex_lock(&llext_lock, K_FOREVER);
+	__ASSERT(tmp->use_count, "A valid LLEXT cannot have a zero use-count!");
+
+	if (tmp->use_count-- != 1) {
+		unsigned int ret = tmp->use_count;
+
+		k_mutex_unlock(&llext_lock);
+		return ret;
+	}
+
+	/* FIXME: protect the global list */
+	sys_slist_find_and_remove(&_llext_list, &tmp->_llext_list);
+
+	*ext = NULL;
+	k_mutex_unlock(&llext_lock);
 
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
-		if (ext->mem_on_heap[i]) {
+		if (tmp->mem_on_heap[i]) {
 			LOG_DBG("freeing memory region %d", i);
-			k_heap_free(&llext_heap, ext->mem[i]);
-			ext->mem[i] = NULL;
+			k_heap_free(&llext_heap, tmp->mem[i]);
+			tmp->mem[i] = NULL;
 		}
 	}
 
-	k_heap_free(&llext_heap, ext->sym_tab.syms);
+	k_heap_free(&llext_heap, tmp->sym_tab.syms);
+	k_heap_free(&llext_heap, tmp);
 
-	k_heap_free(&llext_heap, ext);
+	return 0;
 }
 
 int llext_call_fn(struct llext *ext, const char *sym_name)
