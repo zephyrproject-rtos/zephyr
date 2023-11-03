@@ -3,8 +3,7 @@
 Chargers
 ########
 
-The charger subsystem exposes an API to uniformly access battery charger devices. Currently,
-only reading data is supported.
+The charger subsystem exposes an API to uniformly access battery charger devices.
 
 Basic Operation
 ***************
