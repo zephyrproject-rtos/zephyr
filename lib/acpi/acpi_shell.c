@@ -12,10 +12,6 @@
 #include <zephyr/acpi/acpi.h>
 #include <zephyr/shell/shell.h>
 
-#define MAX_PR_BUFF (4096)
-
-static uint8_t prs_buffer[MAX_PR_BUFF];
-
 static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 {
 	ACPI_RESOURCE *res = res_lst;
@@ -169,7 +165,7 @@ static int dump_dev_crs(const struct shell *sh, size_t argc, char **argv)
 static int dump_dev_prs(const struct shell *sh, size_t argc, char **argv)
 {
 	int status;
-	ACPI_RESOURCE *res_lst = (ACPI_RESOURCE *)prs_buffer;
+	ACPI_RESOURCE *res_lst;
 
 	if (argc < 2) {
 		shell_error(sh, "invalid arugment\n");
