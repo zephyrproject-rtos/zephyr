@@ -37,7 +37,7 @@ static int check_init_status(void)
 	if (ACPI_SUCCESS(acpi.status)) {
 		return 0;
 	} else {
-		LOG_ERR("ACPI init was not success\n");
+		LOG_ERR("ACPI init was not success");
 		return -EIO;
 	}
 }
@@ -203,7 +203,7 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 	ACPI_STATUS status;
 	ACPI_DEVICE_INFO *dev_info;
 
-	LOG_DBG("%s %p\n", __func__, node);
+	LOG_DBG("%s %p", __func__, node);
 
 	/* get device info such as HID, Class ID etc. */
 	status = AcpiGetObjectInfo(obj_handle, &dev_info);
@@ -222,10 +222,10 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 
 	path_name = AcpiNsGetNormalizedPathname(node, TRUE);
 	if (!path_name) {
-		LOG_ERR("No memory for path_name\n");
+		LOG_ERR("No memory for path_name");
 		goto exit;
 	} else {
-		LOG_DBG("Device path: %s\n", path_name);
+		LOG_DBG("Device path: %s", path_name);
 		child_dev->path = path_name;
 	}
 
@@ -440,7 +440,7 @@ ACPI_RESOURCE *acpi_resource_parse(ACPI_RESOURCE *res, int res_type)
 {
 	do {
 		if (!res->Length) {
-			LOG_DBG("Error: zero length found!\n");
+			LOG_DBG("Error: zero length found!");
 			break;
 		} else if (res->Type == res_type) {
 			break;
@@ -500,7 +500,7 @@ int acpi_device_type_get(ACPI_RESOURCE *res)
 
 	do {
 		if (!res->Length) {
-			LOG_ERR("Error: zero length found!\n");
+			LOG_ERR("Error: zero length found!");
 			break;
 		}
 		type = acpi_res_type(res);
@@ -527,7 +527,7 @@ struct acpi_dev *acpi_device_get(char *hid, int inst)
 	do {
 		child_dev = &acpi.child_dev[i];
 		if (!child_dev->path) {
-			LOG_DBG("NULL device path found\n");
+			LOG_DBG("NULL device path found");
 			continue;
 		}
 
@@ -634,7 +634,7 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **ta
 	struct acpi_dmar_header *subtable;
 
 	if (!dmar) {
-		LOG_ERR("error on get DMAR table\n");
+		LOG_ERR("error on get DMAR table");
 		return -EIO;
 	}
 
@@ -666,7 +666,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 	ret = acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
 				  (struct acpi_subtable_header **)&drdh);
 	if (ret) {
-		LOG_ERR("Error on retrieve DMAR table\n");
+		LOG_ERR("Error on retrieve DMAR table");
 		return ret;
 	}
 
@@ -690,7 +690,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 
 			while (num_path--) {
 				if (i >= max_inst) {
-					LOG_ERR("DHRD not enough buffer size\n");
+					LOG_ERR("DHRD not enough buffer size");
 					return -ENOBUFS;
 				}
 				dmar_id[i].bits.bus = subtable->Bus;
@@ -711,7 +711,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 
 	*num_inst = i;
 	if (!i) {
-		LOG_ERR("Error on retrieve DRHD Info\n");
+		LOG_ERR("Error on retrieve DRHD Info");
 		return -ENODEV;
 	}
 
