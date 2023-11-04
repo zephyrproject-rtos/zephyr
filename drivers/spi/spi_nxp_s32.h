@@ -47,7 +47,6 @@ struct spi_nxp_s32_data {
 };
 
 struct spi_nxp_s32_config {
-	uint8_t instance;
 	uint8_t num_cs;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
