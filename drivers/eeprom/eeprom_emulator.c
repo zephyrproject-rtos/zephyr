@@ -642,7 +642,7 @@ static int eeprom_emu_init(const struct device *dev)
 	struct eeprom_emu_data *dev_data = dev->data;
 	off_t offset;
 	uint8_t buf[dev_config->flash_cbs];
-	int rc;
+	int rc = 0;
 
 	k_mutex_init(&dev_data->lock);
 	if (!device_is_ready(dev_config->flash_dev)) {
