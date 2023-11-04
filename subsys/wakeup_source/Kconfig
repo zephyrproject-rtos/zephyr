@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WAKEUP_SOURCE
+	bool "Wakeup source"
+	select EXPERIMENTAL
+
+if WAKEUP_SOURCE
+
+config WAKEUP_SOURCE_ID_SUPPORTED
+	bool
+
+config WAKEUP_SOURCE_IRQ_SUPPORTED
+	bool
+
+config WAKEUP_SOURCE_GPIO_SUPPORTED
+	bool
+
+module = WAKEUP_SOURCE
+module-str = wakeup_source
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
