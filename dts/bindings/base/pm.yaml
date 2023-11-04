@@ -16,6 +16,11 @@ properties:
       Wake up capable devices are disabled (interruptions will not wake up
       the system) by default but they can be enabled at runtime if necessary.
 
+  wakeup-source-ids:
+    type: array
+    description: |
+      Property to identify vendor specific wakeup sources.
+
   power-domain:
     type: phandle
     description: |
