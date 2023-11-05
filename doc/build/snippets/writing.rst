@@ -99,7 +99,8 @@ Processing order
 ****************
 
 Snippets are processed in the order they are listed in the :makevar:`SNIPPET`
-variable, or in the order of the ``-S`` arguments if using west.
+variable, or in the order of the ``-S`` arguments if using west. Snippets
+requested by :makevar:`SNIPPET_APP` are processed after :makevar:`SNIPPET`.
 
 To apply ``bar`` after ``foo``:
 

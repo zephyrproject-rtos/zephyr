@@ -37,3 +37,14 @@ snippet names you want to use. For example:
 
    cmake -Sapp -Bbuild -DSNIPPET="snippet1;snippet2" [...]
    cmake --build build
+
+From application
+****************
+
+An application can request snippets directly from ``CMakeLists.txt`` with
+the ``SNIPPET_APP`` variable. These snippets are merged with those provided
+from the command line (``west build`` or ``cmake -DSNIPPET=...``).
+
+.. code-block:: cmake
+
+   set(SNIPPET_APP "snippet3;snippet4")

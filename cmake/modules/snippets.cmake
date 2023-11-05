@@ -53,6 +53,12 @@ function(zephyr_process_snippets)
     string(REPLACE " " ";" SNIPPET_AS_LIST "${SNIPPET}")
   endif()
 
+  # Append application requested snippets
+  if (DEFINED SNIPPET_APP)
+    string(REPLACE " " ";" SNIPPET_APP_AS_LIST "${SNIPPET_APP}")
+    list(APPEND SNIPPET_AS_LIST ${SNIPPET_APP_AS_LIST})
+  endif()
+
   # Export SNIPPET_AS_LIST back to calling scope
   set(SNIPPET_AS_LIST "${SNIPPET_AS_LIST}" PARENT_SCOPE)
 
