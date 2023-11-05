@@ -40,4 +40,11 @@ config GPIO
 	default y
 	depends on SPI
 
+if WAKEUP_SOURCE
+
+config WAKEUP_SOURCE_GPIO_SUPPORTED
+	default y
+
+endif # WAKEUP_SOURCE
+
 endif # SOC_FAMILY_NRF
