@@ -46,14 +46,20 @@ function(zephyr_process_snippets)
   set(snippets_py ${ZEPHYR_BASE}/scripts/snippets.py)
   set(snippets_generated ${CMAKE_BINARY_DIR}/zephyr/snippets_generated.cmake)
 
-  # Set SNIPPET_AS_LIST, removing snippets_generated.cmake if we are
-  # running cmake again and snippets are no longer requested.
+  # SNIPPET_AS_LIST from command line
   if (NOT DEFINED SNIPPET)
-    set(SNIPPET_AS_LIST "" PARENT_SCOPE)
-    file(REMOVE ${snippets_generated})
+    set(SNIPPET_AS_LIST "")
   else()
     string(REPLACE " " ";" SNIPPET_AS_LIST "${SNIPPET}")
-    set(SNIPPET_AS_LIST "${SNIPPET_AS_LIST}" PARENT_SCOPE)
+  endif()
+
+  # Export SNIPPET_AS_LIST back to calling scope
+  set(SNIPPET_AS_LIST "${SNIPPET_AS_LIST}" PARENT_SCOPE)
+
+  # Remove snippets_generated.cmake if snippets are not requested.
+  list(LENGTH SNIPPET_AS_LIST NUM_SNIPPETS)
+  if(NUM_SNIPPETS EQUAL "0")
+    file(REMOVE ${snippets_generated})
   endif()
 
   # Set SNIPPET_ROOT.
