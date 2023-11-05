@@ -252,7 +252,7 @@ static int read_table(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "ACPI Table %s:", argv[1]);
-	shell_print(sh, "\tSignature: %4s", table->Signature);
+	shell_print(sh, "\tSignature: %.4s", table->Signature);
 	shell_print(sh, "\tTable Length: %d", table->Length);
 	shell_print(sh, "\tRevision: %d", table->Revision);
 	shell_print(sh, "\tOemId: %s", table->OemId);
