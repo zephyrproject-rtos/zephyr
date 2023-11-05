@@ -557,30 +557,12 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-#if CONFIG_I2C_STM32_BUS_RECOVERY
-#define I2C_STM32_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
-#define I2C_STM32_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
-#else
-#define I2C_STM32_SCL_INIT(n)
-#define I2C_STM32_SDA_INIT(n)
-#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
-#define DEFINE_TIMINGS(index)						\
-	static const uint32_t i2c_timings_##index[] =			\
-		DT_INST_PROP_OR(index, timings, {});
-#define USE_TIMINGS(index)						\
-	.timings = (const struct i2c_config_timing *) i2c_timings_##index, \
-	.n_timings = ARRAY_SIZE(i2c_timings_##index),
-#else /* V2 */
-#define DEFINE_TIMINGS(index)
-#define USE_TIMINGS(index)
-#endif /* V2 */
-
 #define STM32_I2C_INIT(index)						\
 STM32_I2C_IRQ_HANDLER_DECL(index);					\
 									\
-DEFINE_TIMINGS(index)							\
+IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),			\
+	(static const uint32_t i2c_timings_##index[] =			\
+		DT_INST_PROP_OR(index, timings, {});))			\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
 									\
@@ -594,9 +576,12 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##index = {		\
 	STM32_I2C_IRQ_HANDLER_FUNCTION(index)				\
 	.bitrate = DT_INST_PROP(index, clock_frequency),		\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-	I2C_STM32_SCL_INIT(index)					\
-	I2C_STM32_SDA_INIT(index)					\
-	USE_TIMINGS(index)						\
+	IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY,			\
+		(.scl =	GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),\
+		 .sda = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, {0}),))\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),		\
+		(.timings = (const struct i2c_config_timing *) i2c_timings_##index,\
+		 .n_timings = ARRAY_SIZE(i2c_timings_##index),))	\
 };									\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##index;		\
