@@ -578,7 +578,7 @@ void *acpi_table_get(char *signature, int inst)
 	return (void *)table;
 }
 
-static uint32_t acpi_get_subtable_entry_num(int type, struct acpi_subtable_header *subtable,
+static uint32_t acpi_get_subtable_entry_num(int type, ACPI_SUBTABLE_HEADER *subtable,
 					    uintptr_t offset, uintptr_t base, uint32_t madt_len)
 {
 	uint32_t subtable_cnt = 0;
@@ -598,12 +598,12 @@ static uint32_t acpi_get_subtable_entry_num(int type, struct acpi_subtable_heade
 	return subtable_cnt;
 }
 
-int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num_inst)
+int acpi_madt_entry_get(int type, ACPI_SUBTABLE_HEADER **tables, int *num_inst)
 {
-	struct acpi_table_header *madt = acpi_table_get("APIC", 0);
+	ACPI_TABLE_HEADER *madt = acpi_table_get("APIC", 0);
 	uintptr_t base = POINTER_TO_UINT(madt);
 	uintptr_t offset = sizeof(ACPI_TABLE_MADT);
-	struct acpi_subtable_header *subtable;
+	ACPI_SUBTABLE_HEADER *subtable;
 
 	if (!madt) {
 		return -EIO;
@@ -626,12 +626,12 @@ int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num
 	return -ENODEV;
 }
 
-int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **tables)
+int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables)
 {
 	struct acpi_table_dmar *dmar = acpi_table_get("DMAR", 0);
 	uintptr_t base = POINTER_TO_UINT(dmar);
 	uintptr_t offset = sizeof(ACPI_TABLE_DMAR);
-	struct acpi_dmar_header *subtable;
+	ACPI_DMAR_HEADER *subtable;
 
 	if (!dmar) {
 		LOG_ERR("error on get DMAR table");
@@ -651,20 +651,20 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **ta
 	return -ENODEV;
 }
 
-int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
-	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
+int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scope,
+		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
 {
 	uintptr_t offset = sizeof(ACPI_DMAR_HARDWARE_UNIT);
 	uint32_t i = 0;
-	struct acpi_dmar_header *drdh;
-	struct acpi_dmar_device_scope *subtable;
-	struct acpi_dmar_pci_path *dev_path;
+	ACPI_DMAR_HEADER *drdh;
+	ACPI_DMAR_DEVICE_SCOPE *subtable;
+	ACPI_DMAR_PCI_PATH *dev_path;
 	int ret;
 	uintptr_t base;
 	int scope_size;
 
 	ret = acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
-				  (struct acpi_subtable_header **)&drdh);
+				  (ACPI_SUBTABLE_HEADER **)&drdh);
 	if (ret) {
 		LOG_ERR("Error on retrieve DMAR table");
 		return ret;
@@ -724,9 +724,9 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 
 #define ACPI_CPU_FLAGS_ENABLED 0x01u
 
-struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num)
+ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num)
 {
-	struct acpi_madt_local_apic *lapic;
+	ACPI_MADT_LOCAL_APIC *lapic;
 	int cpu_cnt;
 	int idx;
 
