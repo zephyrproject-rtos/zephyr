@@ -688,20 +688,6 @@ static const struct dma_driver_api dma_funcs = {
 	.get_status	 = dma_stm32_get_status,
 };
 
-#ifdef CONFIG_DMAMUX_STM32
-#define DMA_STM32_OFFSET_INIT(index)			\
-	.offset = DT_INST_PROP(index, dma_offset),
-#else
-#define DMA_STM32_OFFSET_INIT(index)
-#endif /* CONFIG_DMAMUX_STM32 */
-
-#ifdef CONFIG_DMA_STM32_V1
-#define DMA_STM32_MEM2MEM_INIT(index)					\
-	.support_m2m = DT_INST_PROP(index, st_mem2mem),
-#else
-#define DMA_STM32_MEM2MEM_INIT(index)
-#endif /* CONFIG_DMA_STM32_V1 */					\
-
 #define DMA_STM32_INIT_DEV(index)					\
 static struct dma_stm32_stream						\
 	dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
@@ -711,10 +697,12 @@ const struct dma_stm32_config dma_stm32_config_##index = {		\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_REG_ADDR(index),				\
-	DMA_STM32_MEM2MEM_INIT(index)					\
+	IF_ENABLED(CONFIG_DMA_STM32_V1,					\
+		(.support_m2m = DT_INST_PROP(index, st_mem2mem),))	\
 	.max_streams = DMA_STM32_##index##_STREAM_COUNT,		\
 	.streams = dma_stm32_streams_##index,				\
-	DMA_STM32_OFFSET_INIT(index)					\
+	IF_ENABLED(CONFIG_DMAMUX_STM32,					\
+		(.offset = DT_INST_PROP(index, dma_offset),))		\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
