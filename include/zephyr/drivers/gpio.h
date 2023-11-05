@@ -144,6 +144,13 @@ extern "C" {
 #define GPIO_INT_ENABLE_DISABLE_ONLY   (1u << 27)
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
+/** @cond INTERNAL_HIDDEN */
+
+/** Enables pin as an wakeup-source. */
+#define GPIO_WAKEUP_SOURCE             (1U << 28)
+
+/** @endcond */
+
 #define GPIO_INT_MASK                  (GPIO_INT_DISABLE | \
 					GPIO_INT_ENABLE | \
 					GPIO_INT_LEVELS_LOGICAL | \
