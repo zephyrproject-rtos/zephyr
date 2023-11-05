@@ -146,11 +146,9 @@ ZTEST(spinlock, test_spinlock_fairness)
 
 	/* Verify spinlock acquisition fairness */
 	for (uint8_t core_id = 0; core_id < CORES_NUM; core_id++) {
-		if (spinlock_grabbed[core_id] < FAIRNESS_TEST_CYCLES_PER_CORE) {
-			zassert_false(spinlock_grabbed[core_id] < FAIRNESS_TEST_CYCLES_PER_CORE,
-				"CPU%d starved on a spinlock: acquired %u times, expected %u\n",
-				core_id, spinlock_grabbed[core_id], FAIRNESS_TEST_CYCLES_PER_CORE);
-		}
+		zassert_false(spinlock_grabbed[core_id] < FAIRNESS_TEST_CYCLES_PER_CORE,
+			"CPU%d starved on a spinlock: acquired %u times, expected %u\n",
+			core_id, spinlock_grabbed[core_id], FAIRNESS_TEST_CYCLES_PER_CORE);
 	}
 }
 
