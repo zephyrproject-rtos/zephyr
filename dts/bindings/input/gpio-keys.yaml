@@ -25,7 +25,11 @@ description: |
 
 compatible: "gpio-keys"
 
-include: pinctrl-device.yaml
+include:
+  - name: pinctrl-device.yaml
+  - name: pm.yaml
+    property-allowlist:
+      - wakeup-source
 
 properties:
   debounce-interval-ms:
@@ -47,3 +51,5 @@ child-binding:
     zephyr,code:
       type: int
       description: Key code to emit.
+    wakeup-source:
+      type: boolean

@@ -29,6 +29,7 @@ struct gpio_keys_pin_config {
 	struct gpio_dt_spec spec;
 	/** Zephyr code from devicetree */
 	uint32_t zephyr_code;
+	bool wakeup;
 };
 struct gpio_keys_config {
 	/** Debounce interval in milliseconds from devicetree */
@@ -128,6 +129,7 @@ static int gpio_keys_init(const struct device *dev)
 {
 	struct gpio_keys_pin_data *pin_data = dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
+	int flags;
 	int ret;
 
 	for (int i = 0; i < cfg->num_keys; i++) {
@@ -138,7 +140,11 @@ static int gpio_keys_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		flags = GPIO_INPUT;
+		if (cfg->pin_cfg[i].wakeup) {
+			flags |= GPIO_WAKEUP_SOURCE;
+		}
+		ret = gpio_pin_configure_dt(gpio, flags);
 		if (ret != 0) {
 			LOG_ERR("Pin %d configuration failed: %d", i, ret);
 			return ret;
@@ -174,6 +180,7 @@ static int gpio_keys_init(const struct device *dev)
 	{                                                                                          \
 		.spec = GPIO_DT_SPEC_GET(node_id, gpios),                                          \
 		.zephyr_code = DT_PROP(node_id, zephyr_code),                                      \
+		.wakeup = DT_PROP(node_id, wakeup_source),                                         \
 	}
 
 #define GPIO_KEYS_INIT(i)                                                                          \
