@@ -278,6 +278,25 @@ or invoke make with the following target::
    # To generate HTML output without detailed Kconfig
    make html-fast
 
+Viewing generated documentation locally
+***************************************
+
+The generated HTML documentation can be hosted locally with python for viewing
+with a web browser:
+
+.. code-block:: console
+
+   $ python3 -m http.server -d _build/html
+
+.. note::
+
+   WSL2 users may need to explicitly bind the address to ``127.0.0.1`` in order
+   to be accessible from the host machine:
+
+   .. code-block:: console
+
+      $ python3 -m http.server -d _build/html --bind 127.0.0.1
+
 Linking external Doxygen projects against Zephyr
 ************************************************
 
