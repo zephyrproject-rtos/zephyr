@@ -7,15 +7,7 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#define __MPU_PRESENT 1
-
-#if defined(CONFIG_SOC_MPS2_AN521)
-#define __SAUREGION_PRESENT       CONFIG_CPU_HAS_ARM_SAU
-#define __FPU_PRESENT             CONFIG_CPU_HAS_FPU
-#define __DSP_PRESENT             CONFIG_ARMV8_M_DSP
-
-#endif
-
+#include <cmsis_core_m_defaults.h>
 #include <soc_registers.h>
 
 extern void wakeup_cpu1(void);
