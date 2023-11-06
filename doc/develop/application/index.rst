@@ -521,6 +521,7 @@ Make sure to follow these steps in order.
    Structure your :file:`Kconfig` file like this:
 
    .. literalinclude:: application-kconfig.include
+      :language: kconfig
 
    .. note::
 
