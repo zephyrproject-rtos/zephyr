@@ -7,10 +7,15 @@ zephyr_library_include_directories(include)
 # Library may be empty due to kconfigs
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
-zephyr_library_sources_ifdef(
-  CONFIG_GEN_ISR_TABLES
-  sw_isr_common.c
+if(CONFIG_GEN_ISR_TABLES)
+  zephyr_library_sources(
+    sw_isr_common.c
   )
+  zephyr_library_sources_ifdef(
+    CONFIG_DYNAMIC_INTERRUPTS
+    dynamic_isr.c
+  )
+endif()
 
 zephyr_library_sources_ifdef(
   CONFIG_MULTI_LEVEL_INTERRUPTS
