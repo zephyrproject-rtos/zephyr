@@ -45,7 +45,6 @@ static inline unsigned int irq_get_level(unsigned int irq)
 	return 1;
 }
 
-#if defined(CONFIG_2ND_LEVEL_INTERRUPTS)
 /**
  * @brief Return the 2nd level interrupt number
  *
@@ -58,12 +57,12 @@ static inline unsigned int irq_get_level(unsigned int irq)
  */
 static inline unsigned int irq_from_level_2(unsigned int irq)
 {
-#if defined(CONFIG_3RD_LEVEL_INTERRUPTS)
-	return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
-#else
-	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) - 1;
-#endif
+	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
+		return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
+			BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
+	} else {
+		return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) - 1;
+	}
 }
 
 /**
@@ -106,9 +105,7 @@ static inline unsigned int irq_parent_level_2(unsigned int irq)
 {
 	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
 }
-#endif
 
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 /**
  * @brief Return the 3rd level interrupt number
  *
@@ -167,7 +164,6 @@ static inline unsigned int irq_parent_level_3(unsigned int irq)
 	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
 		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
 }
-#endif
 
 #ifdef __cplusplus
 }
