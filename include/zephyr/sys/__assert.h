@@ -141,6 +141,7 @@ void assert_post_action(const char *file, unsigned int line);
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #define __ASSERT_NO_MSG(test) { }
 #define __ASSERT_POST_ACTION() { }
+#define __ASSERT_UNREACHABLE
 #endif
 
 #endif /* ZEPHYR_INCLUDE_SYS___ASSERT_H_ */
