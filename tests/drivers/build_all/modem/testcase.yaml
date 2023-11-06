@@ -2,7 +2,6 @@ common:
   build_only: true
   tags:
     - drivers
-    - net
     - modem
 tests:
   drivers.modem.build:
