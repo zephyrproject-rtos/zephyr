@@ -1,4 +1,19 @@
 # This is the Jenkins ci variant of the .github/labler.yaml
+
+"CI-run-zephyr-twister":
+  - any:
+      - "!.github/**/*"
+      - "!doc/**/*"
+      - "!CODEOWNERS"
+      - "!LICENSE"
+      - "!**/*.rst"
+      - "!VERSION"
+      - "!submanifests/**/*"
+      - "!MAINTAINERS.yml"
+      - "!version.h.in"
+      - "!Jenkinsfile"
+      - "!**/*.md"
+
 "CI-iot-zephyr-lwm2m-test":
   - "drivers/console/**/*"
   - "drivers/flash/**/*"
