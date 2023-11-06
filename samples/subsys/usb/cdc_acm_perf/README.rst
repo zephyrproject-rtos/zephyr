@@ -11,29 +11,18 @@ Abstract Control Model (ACM) driver provided by the Zephyr project.
 This sample can be found under :zephyr_file:`samples/subsys/usb/cdc_acm_perf` in the
 Zephyr project tree.
 
+This sample firmware streams incrementing float32 data out the serial port as fast as possible.
+An included host application can be run on a PC to read this data, check for any errors,
+and measure the data rate.
+
 Requirements
 ************
 
 This project requires an USB device driver, which is available for multiple
 boards supported in Zephyr.
 
-Building and Running
-********************
-
-Reel Board
-===========
-
-To see the console output of the app, open a serial port emulator and
-attach it to the USB to TTL Serial cable. Build and flash the project:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/usb/cdc_acm_perf
-   :board: reel_board
-   :goals: flash
-   :compact:
-
 Running
-=======
+*******
 
 Plug the board into a host device, for example, a PC running Linux.
 The board will be detected as shown by the Linux dmesg command:
@@ -48,33 +37,19 @@ The board will be detected as shown by the Linux dmesg command:
    usb 9-1: SerialNumber: 00.01
    cdc_acm 9-1:1.0: ttyACM1: USB ACM device
 
-The app prints on serial output (UART1), used for the console:
+The included host application can be used to read the data. To build and start
+the host application, run the following:
 
 .. code-block:: console
 
-   Wait for DTR
+   cd samples/subsys/usb/cdc_acm_perf/host/c
+   cmake .
+   ./usb-cdc-perf <zephyr serial port>
 
-Start the host application:
+Once the device connects to the host, it will start streaming data and the host
+app will display stats on data received.
 
-.. code-block:: console
-
-   minicom --device /dev/ttyACM1
-
-The app should respond on serial output with:
-
-.. code-block:: console
-
-   DTR set, start test
-   Baudrate detected: 115200
-
-And on ttyACM device, provided by zephyr USB device stack:
-
-.. code-block:: console
-
-   Send characters to the UART device
-   Characters read:
-
-The characters entered in serial port emulator will be echoed back.
+A Go version of the app is also included.
 
 Troubleshooting
 ===============
