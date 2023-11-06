@@ -558,12 +558,12 @@ SECTIONS
   .flash.text : ALIGN(IROM_SEG_ALIGN)
   {
     . = ALIGN(4);
+    _stext = .;
+    _text_start = ABSOLUTE(.);
 #ifdef CONFIG_SIMPLE_BOOT
     FILL(0xff)
     . += 4K;
 #endif
-    _stext = .;
-    _text_start = ABSOLUTE(.);
 
 #ifndef CONFIG_ESP32_WIFI_IRAM_OPT
     *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.*)

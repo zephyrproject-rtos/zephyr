@@ -171,7 +171,7 @@ ets_printf("###### is extra map needed?   addr size check : %x > %x\n",
 void __start(void)
 {
 #ifdef CONFIG_SIMPLE_BOOT
-	/* Init fundamental components before mapping ram segments */
+	/* Init fundamental components */
 	if (bootloader_init()) {
 		ets_printf("\nABORT: hw init failed!\n");
 		abort();

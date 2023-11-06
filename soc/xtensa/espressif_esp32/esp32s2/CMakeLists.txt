@@ -80,8 +80,7 @@ if(CONFIG_MCUBOOT OR CONFIG_BOOTLOADER_ESP_IDF OR CONFIG_SIMPLE_BOOT)
 
     set(ELF2IMAGE_ARG "")
     if(CONFIG_SIMPLE_BOOT)
-	    #set(ELF2IMAGE_ARG "--ram-only-header")
-      set(ELF2IMAGE_ARG "--simple-boot")
+      set(ELF2IMAGE_ARG "--ram-only-header")
     endif()
 
     set(ESPTOOL_PY /media/work/Projects/840-espressif/espressif/esptool/esptool.py)
