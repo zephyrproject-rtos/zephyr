@@ -18,8 +18,7 @@
 #include <zephyr/toolchain.h>
 
 #include <soc.h>
-#define LOG_LEVEL CONFIG_INPUT_LOG_LEVEL
-LOG_MODULE_REGISTER(input_npcx_kbd);
+LOG_MODULE_REGISTER(input_npcx_kbd, CONFIG_INPUT_LOG_LEVEL);
 
 #define ROW_SIZE DT_INST_PROP(0, row_size)
 
