@@ -27,9 +27,9 @@ LOG_MODULE_REGISTER(wdt_nxp_fs26);
 #define FS26_INIT_FS_TIMEOUT_MS 1000U
 
 /* Helper macros to set register values from Kconfig options */
-#define WD_ERR_LIMIT(x)	CONCAT(WD_ERR_LIMIT_, x)
-#define WD_RFR_LIMIT(x)	CONCAT(WD_RFR_LIMIT_, x)
-#define WDW_PERIOD(x)	CONCAT(CONCAT(WDW_PERIOD_, x), MS)
+#define WD_ERR_LIMIT(x)	_CONCAT(WD_ERR_LIMIT_, x)
+#define WD_RFR_LIMIT(x)	_CONCAT(WD_RFR_LIMIT_, x)
+#define WDW_PERIOD(x)	_CONCAT(_CONCAT(WDW_PERIOD_, x), MS)
 
 #define BAD_WD_REFRESH_ERROR_STRING(x)					\
 	((((x) & BAD_WD_DATA) ? "error in the data" :			\
@@ -826,7 +826,7 @@ static const struct wdt_driver_api wdt_nxp_fs26_api = {
 	static const struct wdt_nxp_fs26_config wdt_nxp_fs26_config_##n = {		\
 		.spi = SPI_DT_SPEC_INST_GET(n,						\
 			SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(32), 0),	\
-		.wd_type = CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),	\
+		.wd_type = _CONCAT(FS26_WD_, DT_INST_STRING_UPPER_TOKEN(n, type)),	\
 		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),			\
 	};										\
 											\
