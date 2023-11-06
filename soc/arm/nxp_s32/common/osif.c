@@ -9,7 +9,7 @@
 
 #if defined(CONFIG_SOC_S32Z27_R52)
 #include <S32Z2_MSCM.h>
-#elif defined(CONFIG_SOC_S32K344_M7)
+#elif defined(CONFIG_SOC_S32K344)
 #include <S32K344_MSCM.h>
 #endif
 

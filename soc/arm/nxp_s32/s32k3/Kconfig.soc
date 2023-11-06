@@ -1,19 +1,18 @@
-# NXP S32K MCUs family
+# NXP S32K3XX MCU series
 
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 choice
-	prompt "NXP S32K MCUs family SoC Selection"
-	depends on SOC_SERIES_S32K3_M7
+	prompt "NXP S32K3XX MCU selection"
+	depends on SOC_SERIES_S32K3XX
 
-config SOC_S32K344_M7
-	bool "SOC_S32K_M7"
-	select HAS_NXP_S32_HAL
+config SOC_S32K344
+	bool "s32k344"
 
 endchoice
 
-if SOC_SERIES_S32K3_M7
+if SOC_SERIES_S32K3XX
 
 config SOC_PART_NUMBER_S32K344
 	bool

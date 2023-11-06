@@ -3,4 +3,4 @@
 
 zephyr_include_directories(.)
 zephyr_sources(osif.c)
-zephyr_sources_ifdef(CONFIG_SOC_SERIES_S32K3_M7 power_soc.c)
+zephyr_sources_ifdef(CONFIG_SOC_SERIES_S32K3XX power_soc.c)
