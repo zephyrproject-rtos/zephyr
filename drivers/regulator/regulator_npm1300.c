@@ -68,6 +68,11 @@ enum npm1300_gpio_type {
 #define LDSW1_ON_MASK 0x03U
 #define LDSW2_ON_MASK 0x0CU
 
+#define LDSW1_SOFTSTART_MASK  0x0CU
+#define LDSW1_SOFTSTART_SHIFT 2U
+#define LDSW2_SOFTSTART_MASK  0x30U
+#define LDSW2_SOFTSTART_SHIFT 4U
+
 struct regulator_npm1300_pconfig {
 	const struct device *mfd;
 	struct gpio_dt_spec dvs_state_pins[5];
@@ -81,6 +86,7 @@ struct regulator_npm1300_config {
 	struct gpio_dt_spec enable_gpios;
 	struct gpio_dt_spec retention_gpios;
 	struct gpio_dt_spec pwm_gpios;
+	uint8_t soft_start;
 };
 
 struct regulator_npm1300_data {
@@ -554,6 +560,24 @@ static int get_enabled(const struct device *dev, bool *enabled)
 	}
 }
 
+static int soft_start_set(const struct device *dev, uint8_t soft_start)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_LDO1:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      soft_start << LDSW1_SOFTSTART_SHIFT,
+					      LDSW1_SOFTSTART_MASK);
+	case NPM1300_SOURCE_LDO2:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      soft_start << LDSW2_SOFTSTART_SHIFT,
+					      LDSW2_SOFTSTART_MASK);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 int regulator_npm1300_init(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
@@ -577,6 +601,14 @@ int regulator_npm1300_init(const struct device *dev)
 	/* Configure retention voltage */
 	if (config->retention_uv != 0) {
 		ret = retention_set_voltage(dev, config->retention_uv);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	/* Configure soft start */
+	if (config->soft_start != UINT8_MAX) {
+		ret = soft_start_set(dev, config->soft_start);
 		if (ret != 0) {
 			return ret;
 		}
@@ -618,6 +650,7 @@ static const struct regulator_driver_api api = {.enable = regulator_npm1300_enab
 		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
 		.source = _source,                                                                 \
 		.retention_uv = DT_PROP_OR(node_id, retention_microvolt, 0),                       \
+		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),             \
 		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),                   \
 		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
 		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0})};                        \
