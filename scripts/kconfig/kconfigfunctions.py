@@ -601,12 +601,20 @@ def dt_has_compat(kconf, _, compat):
 def dt_compat_enabled(kconf, _, compat):
     """
     This function takes a 'compat' and returns "y" if we find a status "okay"
-    compatible node in the EDT otherwise we return "n"
+    compatible node, or a status "disabled" + "zephyr,deferred-init" compatible
+    node in the EDT otherwise we return "n"
     """
     if doc_mode or edt is None:
         return "n"
 
-    return "y" if compat in edt.compat2okay else "n"
+    for node in edt.compat2nodes[compat]:
+        defd_init = node.props.get("zephyr,deferred-init")
+
+        if (node.status == "okay" or
+            (node.status == "disabled" and defd_init and defd_init.val)):
+                return "y"
+
+    return "n"
 
 
 def dt_compat_on_bus(kconf, _, compat, bus):
