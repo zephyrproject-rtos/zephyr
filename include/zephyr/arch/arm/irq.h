@@ -241,7 +241,7 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
  */
 #define ARM_IRQ_DIRECT_DYNAMIC_CONNECT(irq_p, priority_p, flags_p, resch) \
 	IRQ_DIRECT_CONNECT(irq_p, priority_p, \
-		CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
+		_CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
 
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
