@@ -1250,6 +1250,13 @@ config DEVICE_DEPS_DYNAMIC
 	  Option that makes it possible to manipulate device dependencies at
 	  runtime.
 
+config DEVICE_ALLOW_DEFERRED
+	bool "Allow deferred device initialization"
+	default y
+	help
+	  When enabled, devices can be initialized at a later time by calling
+	  device_init().
+
 endmenu
 
 rsource "Kconfig.vm"

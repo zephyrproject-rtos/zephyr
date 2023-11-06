@@ -126,7 +126,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DEFINE(dev_id, name, init_fn, pm, data, config, level, prio,    \
 		      api)                                                     \
-	Z_DEVICE_STATE_DEFINE(dev_id);                                         \
+	Z_DEVICE_STATE_DEFINE(DT_INVALID_NODE, dev_id);                        \
 	Z_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, name, init_fn, pm, data,      \
 			config, level, prio, api,                              \
 			&Z_DEVICE_STATE_NAME(dev_id))
@@ -177,7 +177,7 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
 			 ...)                                                  \
-	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
+	Z_DEVICE_STATE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id));           \
 	Z_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),                  \
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
@@ -344,6 +344,29 @@ typedef int16_t device_handle_t;
 #define DEVICE_INIT_GET(dev_id) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))
 
 /**
+ * @brief Invoke @p fn if device is flagged with deferred initialization
+ *
+ * @param inst Device instance number
+ * @param fn Function to invoke
+ */
+#define Z_DEVICE_DT_INST_DEFERRED_CALL(inst, fn)                             \
+	IF_ENABLED(DT_INST_PROP(inst, zephyr_deferred_init), (fn(inst)))
+
+/**
+ * @brief Invoke @p fn for each enabled device instance in devicetree.
+ *
+ * Enabled devices include those with status `okay` or `disabled` with
+ * `zephyr,deferred-init` flag.
+ *
+ * @param fn Function to invoke
+ */
+#define DEVICE_DT_INST_FOREACH_ENABLED(fn)                                     \
+	DT_INST_FOREACH_STATUS_OKAY(fn)                                        \
+	IF_ENABLED(CONFIG_DEVICE_ALLOW_DEFERRED,                               \
+		   (DT_INST_FOREACH_STATUS_DISABLED_VARGS(                     \
+			Z_DEVICE_DT_INST_DEFERRED_CALL, fn)))
+
+/**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
  * Fields in this are expected to be default-initialized to zero. The
@@ -407,6 +430,10 @@ struct device {
 	 */
 	struct pm_device *pm;
 #endif
+#if defined(CONFIG_DEVICE_ALLOW_DEFERRED) || defined(__DOXYGEN__)
+	/** Device init function */
+	int (*init_fn)(const struct device *dev);
+#endif /* CONFIG_DEVICE_ALLOW_DEFERRED */
 };
 
 /**
@@ -747,6 +774,18 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 }
 
 /**
+ * @brief Initialize a device.
+ *
+ * @param dev Device instance.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If device deferred initialization is not supported.
+ * @retval -EALREADY If device has been already initialized.
+ * @retval -errno In case of any other initialization error.
+ */
+__syscall int device_init(const struct device *dev);
+
+/**
  * @}
  */
 
@@ -758,14 +797,23 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  */
 #define Z_DEVICE_STATE_NAME(dev_id) _CONCAT(__devstate_, dev_id)
 
+/** Flag to indicate device wants deferred initialization */
+#define Z_DEVICE_DEFERRED 255U
+
 /**
  * @brief Utility macro to define and initialize the device state.
  *
+ * @param node_id Devicetree node identifier.
  * @param dev_id Device identifier.
  */
-#define Z_DEVICE_STATE_DEFINE(dev_id)                                          \
+#define Z_DEVICE_STATE_DEFINE(node_id, dev_id)                                 \
 	static Z_DECL_ALIGN(struct device_state) Z_DEVICE_STATE_NAME(dev_id)   \
-		__attribute__((__section__(".z_devstate")))
+		__attribute__((__section__(".z_devstate")))                    \
+		IF_ENABLED(CONFIG_DEVICE_ALLOW_DEFERRED, (                     \
+			= { .init_res = COND_CODE_1(                           \
+				DT_PROP(node_id, zephyr_deferred_init),        \
+				(Z_DEVICE_DEFERRED), (0U))                     \
+			  }))
 
 #if defined(CONFIG_DEVICE_DEPS) || defined(__DOXYGEN__)
 
@@ -887,8 +935,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param api_ Reference to device API ops.
  * @param state_ Reference to device state.
  * @param deps_ Reference to device dependencies.
+ * @param init_ Reference to device init function.
  */
-#define Z_DEVICE_INIT(name_, pm_, data_, config_, api_, state_, deps_)         \
+#define Z_DEVICE_INIT(name_, init_fn_, pm_, data_, config_, api_, state_,      \
+		      deps_)                                                   \
 	{                                                                      \
 		.name = name_,                                                 \
 		.config = (config_),                                           \
@@ -897,6 +947,8 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		.data = (data_),                                               \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
 		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
+		IF_ENABLED(CONFIG_DEVICE_ALLOW_DEFERRED,                       \
+			   (.init_fn = (init_fn_),)) /**/                      \
 	}
 
 /**
@@ -924,13 +976,13 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param api Reference to device API.
  * @param ... Optional dependencies, manually specified.
  */
-#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, deps)                           \
+#define Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config, \
+			     level, prio, api, state, deps)                    \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))                     \
 	const STRUCT_SECTION_ITERABLE_NAMED(device,                            \
 		Z_DEVICE_SECTION_NAME(level, prio),                            \
 		DEVICE_NAME_GET(dev_id)) =                                     \
-		Z_DEVICE_INIT(name, pm, data, config, api, state, deps)
+		Z_DEVICE_INIT(name, init_fn, pm, data, config, api, state, deps)
 
 /* deprecated device initialization levels */
 #define Z_DEVICE_LEVEL_DEPRECATED_EARLY                                        \
@@ -1000,16 +1052,14 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	IF_ENABLED(CONFIG_DEVICE_DEPS,                                         \
 		   (Z_DEVICE_DEPS_DEFINE(node_id, dev_id, __VA_ARGS__);))      \
                                                                                \
-	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
-			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
+	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, init_fn, pm, data, config, \
+			     level, prio, api, state,                          \
+			     Z_DEVICE_DEPS_NAME(dev_id));                      \
                                                                                \
 	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
 
 /**
  * @brief Declare a device for each status "okay" devicetree node.
- *
- * @note Disabled nodes should not result in devices, so not predeclaring these
- * keeps drivers honest.
  *
  * This is only "maybe" a device because some nodes have status "okay", but
  * don't have a corresponding @ref device allocated. There's no way to figure
@@ -1018,7 +1068,21 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 #define Z_MAYBE_DEVICE_DECLARE_INTERNAL(node_id)                               \
 	extern const struct device DEVICE_DT_NAME_GET(node_id);
 
+/**
+ * @brief Declare a device for each status "disabled" + "zephyr,deferred-init"
+ * devicetree node.
+ *
+ * @see Z_MAYBE_DEVICE_DECLARE_INTERNAL
+ */
+#define Z_MAYBE_DEVICE_DECLARE_DEFERRED_INTERNAL(node_id)                      \
+	IF_ENABLED(DT_PROP(node_id, zephyr_deferred_init),                     \
+		   (Z_MAYBE_DEVICE_DECLARE_INTERNAL(node_id)))
+
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
+
+#ifdef CONFIG_DEVICE_ALLOW_DEFERRED
+DT_FOREACH_STATUS_DISABLED_NODE(Z_MAYBE_DEVICE_DECLARE_DEFERRED_INTERNAL)
+#endif /* CONFIG_DEVICE_ALLOW_DEFERRED */
 
 /** @endcond */
 
