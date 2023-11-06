@@ -871,10 +871,6 @@ static int lsm6dso_init(const struct device *dev)
 	return 0;
 }
 
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
-#warning "LSM6DSO driver enabled without any devices"
-#endif
-
 /*
  * Device creation macro, shared by LSM6DSO_DEFINE_SPI() and
  * LSM6DSO_DEFINE_I2C().
