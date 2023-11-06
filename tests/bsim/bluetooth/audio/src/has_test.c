@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_BT_HAS
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/has.h>
 
@@ -163,12 +162,9 @@ static const struct bst_test_instance test_has[] = {
 
 struct bst_test_list *test_has_install(struct bst_test_list *tests)
 {
-	return bst_add_tests(tests, test_has);
+	if (IS_ENABLED(CONFIG_BT_HAS)) {
+		return bst_add_tests(tests, test_has);
+	} else {
+		return tests;
+	}
 }
-#else
-struct bst_test_list *test_has_install(struct bst_test_list *tests)
-{
-	return tests;
-}
-
-#endif /* CONFIG_BT_HAS */
