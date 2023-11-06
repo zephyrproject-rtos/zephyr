@@ -49,6 +49,7 @@
 #define LWM2M_OBJECT_PORTFOLIO_ID               16 /**< Portfolio object */
 #define LWM2M_OBJECT_BINARYAPPDATACONTAINER_ID  19 /**< Binary App Data Container object */
 #define LWM2M_OBJECT_EVENT_LOG_ID               20 /**< Event Log object */
+#define LWM2M_OBJECT_OSCORE_ID                  21 /**< OSCORE object */
 #define LWM2M_OBJECT_GATEWAY_ID                 25 /**< Gateway object */
 /* clang-format on */
 

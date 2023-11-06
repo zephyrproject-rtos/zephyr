@@ -50,6 +50,41 @@ void lwm2m_registry_unlock(void)
 {
 	(void)k_mutex_unlock(&registry_lock);
 }
+
+/* Default core object version */
+struct default_obj_version {
+	uint16_t obj_id;
+	uint8_t version_major;
+	uint8_t version_minor;
+};
+
+/* Based on Appendix E of the respective LwM2M specification. */
+static const struct default_obj_version default_obj_versions[] = {
+#if defined(CONFIG_LWM2M_VERSION_1_0)
+	{ LWM2M_OBJECT_SECURITY_ID, 1, 0 },
+	{ LWM2M_OBJECT_SERVER_ID, 1, 0 },
+	{ LWM2M_OBJECT_ACCESS_CONTROL_ID, 1, 0 },
+	{ LWM2M_OBJECT_DEVICE_ID, 1, 0 },
+	{ LWM2M_OBJECT_CONNECTIVITY_MONITORING_ID, 1, 0 },
+	{ LWM2M_OBJECT_FIRMWARE_ID, 1, 0 },
+	{ LWM2M_OBJECT_LOCATION_ID, 1, 0 },
+	{ LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID, 1, 0 },
+#elif defined(CONFIG_LWM2M_VERSION_1_1)
+	{ LWM2M_OBJECT_SECURITY_ID, 1, 1 },
+	{ LWM2M_OBJECT_SERVER_ID, 1, 1 },
+	{ LWM2M_OBJECT_ACCESS_CONTROL_ID, 1, 0 },
+	{ LWM2M_OBJECT_DEVICE_ID, 1, 1 },
+	{ LWM2M_OBJECT_CONNECTIVITY_MONITORING_ID, 1, 2 },
+	{ LWM2M_OBJECT_FIRMWARE_ID, 1, 0 },
+	{ LWM2M_OBJECT_LOCATION_ID, 1, 0 },
+	{ LWM2M_OBJECT_CONNECTIVITY_STATISTICS_ID, 1, 0 },
+	/* OSCORE object not implemented yet, but include it for completeness */
+	{ LWM2M_OBJECT_OSCORE_ID, 1, 0 },
+#else
+#error "Default core object versions not defined for LwM2M version"
+#endif
+};
+
 /* Resources */
 static sys_slist_t engine_obj_list;
 static sys_slist_t engine_obj_inst_list;
@@ -1975,12 +2010,22 @@ struct lwm2m_engine_res_inst *lwm2m_engine_get_res_inst(const struct lwm2m_obj_p
 
 bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj)
 {
-	if (obj->is_core) {
-		return obj->version_major != LWM2M_PROTOCOL_VERSION_MAJOR ||
-		       obj->version_minor != LWM2M_PROTOCOL_VERSION_MINOR;
+	/* For non-core objects, report version other than 1.0 */
+	if (!obj->is_core) {
+		return obj->version_major != 1 || obj->version_minor != 0;
 	}
 
-	return obj->version_major != 1 || obj->version_minor != 0;
+	/* For core objects, report version based on default version array. */
+	for (size_t i = 0; i < ARRAY_SIZE(default_obj_versions); i++) {
+		if (obj->obj_id != default_obj_versions[i].obj_id) {
+			continue;
+		}
+
+		return obj->version_major != default_obj_versions[i].version_major ||
+		       obj->version_minor != default_obj_versions[i].version_minor;
+	}
+
+	return true;
 }
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
