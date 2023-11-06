@@ -1,9 +1,9 @@
-# S32 K M7 core series
+# NXP S32K3XX MCU series
 
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_S32K3_M7
+if SOC_SERIES_S32K3XX
 
 config SOC_SERIES
 	default "s32k3"
@@ -34,4 +34,4 @@ endif # NET_L2_ETHERNET
 
 source "soc/arm/nxp_s32/s32k3/Kconfig.defconfig.s32k*"
 
-endif # SOC_SERIES_S32K_M7
+endif # SOC_SERIES_S32K3XX
