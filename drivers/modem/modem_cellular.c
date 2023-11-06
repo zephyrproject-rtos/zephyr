@@ -1531,16 +1531,16 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
-MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_dial_chat_script, swir_hl7800_dial_chat_script_cmds,
-			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
-
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_periodic_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", allow_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_periodic_chat_script,
 			 swir_hl7800_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
+
+MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_dial_chat_script, swir_hl7800_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(telit_me910g1)
@@ -1579,10 +1579,19 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_init_chat_script, telit_me910g1_init_chat
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_me910g1_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
 
 MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_me910g1_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
+			 telit_me910g1_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
 #endif
 
 #define MODEM_CELLULAR_INST_NAME(name, inst) \
@@ -1607,7 +1616,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat
 		.shutdown_time_ms = 5000,                                                          \
 		.init_chat_script = &quectel_bg95_init_chat_script,                                \
 		.dial_chat_script = &quectel_bg95_dial_chat_script,                                \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
+		.periodic_chat_script = &quectel_bg95_periodic_chat_script,                        \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -1635,7 +1644,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat
 		.shutdown_time_ms = 5000,                                                          \
 		.init_chat_script = &zephyr_gsm_ppp_init_chat_script,                              \
 		.dial_chat_script = &zephyr_gsm_ppp_dial_chat_script,                              \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
+		.periodic_chat_script = &zephyr_gsm_ppp_periodic_chat_script,                      \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -1663,7 +1672,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat
 		.shutdown_time_ms = 5000,                                                          \
 		.init_chat_script = &simcom_sim7080_init_chat_script,                              \
 		.dial_chat_script = &simcom_sim7080_dial_chat_script,                              \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
+		.periodic_chat_script = &simcom_sim7080_periodic_chat_script,                      \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -1691,7 +1700,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat
 		.shutdown_time_ms = 5000,                                                          \
 		.init_chat_script = &u_blox_sara_r4_init_chat_script,                              \
 		.dial_chat_script = &u_blox_sara_r4_dial_chat_script,                              \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
+		.periodic_chat_script = &u_blox_sara_r4_periodic_chat_script,                      \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -1719,8 +1728,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat
 		.shutdown_time_ms = 5000,                                                          \
 		.init_chat_script = &swir_hl7800_init_chat_script,                                 \
 		.dial_chat_script = &swir_hl7800_dial_chat_script,                                 \
-		.dial_chat_script = &swir_hl7800_dial_chat_script,                                 \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
+		.periodic_chat_script = &swir_hl7800_periodic_chat_script,                         \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -1748,7 +1756,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_dial_chat_script, telit_me910g1_dial_chat
 		.shutdown_time_ms = 5000,                                                          \
 		.init_chat_script = &telit_me910g1_init_chat_script,                               \
 		.dial_chat_script = &telit_me910g1_dial_chat_script,                               \
-		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
+		.periodic_chat_script = &telit_me910g1_periodic_chat_script,                       \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
