@@ -157,7 +157,8 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 		return;
 	}
 
-	if (recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ &&
+	if ((recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ ||
+	     recv_state->encrypt_state == BT_BAP_BIG_ENC_STATE_DEC) &&
 	    reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) {
 		/* Sync failed due to bad broadcast code */
 		mod_src_param.encrypt_state = BT_BAP_BIG_ENC_STATE_BAD_CODE;
