@@ -914,15 +914,14 @@ def write_global_macros(edt):
                   " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in edt.nodes
                            if node.status == "okay"))
 
+    compat2buses = defaultdict(set)
+
     n_okay_macros = {}
     for_each_okay_macros = {}
-    compat2buses = defaultdict(list)  # just for "okay" nodes
     for compat, okay_nodes in edt.compat2okay.items():
         for node in okay_nodes:
-            buses = node.on_buses
-            for bus in buses:
-                if bus is not None and bus not in compat2buses[compat]:
-                    compat2buses[compat].append(bus)
+            for bus in filter(lambda bus: bus is not None, node.on_buses):
+                compat2buses[compat].add(bus)
 
         ident = str2ident(compat)
         n_okay_macros[f"DT_N_INST_{ident}_NUM_OKAY"] = len(okay_nodes)
@@ -962,6 +961,10 @@ def write_global_macros(edt):
 
     for_each_disabled_macros = {}
     for compat, disabled_nodes in edt.compat2disabled.items():
+        for node in disabled_nodes:
+            for bus in filter(lambda bus: bus is not None, node.on_buses):
+                compat2buses[compat].add(bus)
+
         ident = str2ident(compat)
 
         # Helpers for INST versions of for-each macros, which take
@@ -988,7 +991,7 @@ def write_global_macros(edt):
     for macro, value in for_each_disabled_macros.items():
         out_define(macro, value)
 
-    out_comment('Bus information for status "okay" nodes of each compatible\n')
+    out_comment('Bus information for nodes of each compatible\n')
     for compat, buses in compat2buses.items():
         for bus in buses:
             out_define(
