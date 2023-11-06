@@ -1,5 +1,6 @@
 # Copyright (c) 2017 Linaro Limited
 # Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2023 Telink Semiconductor
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -33,6 +34,13 @@ config WS2812_STRIP_I2S
 	  Uses the I2S peripheral, memory usage is 4 bytes per color,
 	  times the number of pixels. A few more for the start and end
 	  delay. The reset delay has a coarse resolution of ~20us.
+
+config WS2812_STRIP_GPIO_TELINK
+	bool "GPIO Telink driver"
+	depends on SOC_SERIES_RISCV_TELINK_B9X
+	help
+	  The GPIO driver does bit-banging with inline assembly,
+	  and only supports Telink B9X
 
 config WS2812_STRIP_GPIO
 	bool "GPIO driver"
