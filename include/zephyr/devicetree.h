@@ -2570,6 +2570,18 @@
 #define DT_FOREACH_STATUS_OKAY_NODE(fn) DT_FOREACH_OKAY_HELPER(fn)
 
 /**
+ * @brief Invokes @p fn for every status `disabled` node in the tree.
+ *
+ * The macro @p fn must take one parameter, which will be a node
+ * identifier. The macro is expanded once for each node in the tree
+ * with status `disabled`. The order that nodes are visited in is not
+ * specified.
+ *
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_STATUS_DISABLED_NODE(fn) DT_FOREACH_DISABLED_HELPER(fn)
+
+/**
  * @brief Invokes @p fn for every status `okay` node in the tree with multiple
  *        arguments.
  *
