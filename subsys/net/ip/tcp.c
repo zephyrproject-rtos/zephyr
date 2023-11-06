@@ -1350,9 +1350,10 @@ static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 static bool tcp_window_full(struct tcp *conn)
 {
 	bool window_full = (conn->send_data_total >= conn->send_win);
-	if (IS_ENABLED(CONFIG_NET_TCP_CONGESTION_AVOIDANCE)) {
-		window_full = window_full || (conn->send_data_total >= conn->ca.cwnd);
-	}
+
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	window_full = window_full || (conn->send_data_total >= conn->ca.cwnd);
+#endif
 
 	NET_DBG("conn: %p window_full=%hu", conn, window_full);
 
@@ -1375,13 +1376,14 @@ static int tcp_unsent_len(struct tcp *conn)
 		unsent_len = 0;
 	} else {
 		unsent_len = MIN(unsent_len, conn->send_win - conn->unacked_len);
-		if (IS_ENABLED(CONFIG_NET_TCP_CONGESTION_AVOIDANCE)) {
-			if (conn->unacked_len >= conn->ca.cwnd) {
-				unsent_len = 0;
-			} else {
-				unsent_len = MIN(unsent_len, conn->ca.cwnd - conn->unacked_len);
-			}
+
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+		if (conn->unacked_len >= conn->ca.cwnd) {
+			unsent_len = 0;
+		} else {
+			unsent_len = MIN(unsent_len, conn->ca.cwnd - conn->unacked_len);
 		}
+#endif
 	}
  out:
 	NET_DBG("unsent_len=%d", unsent_len);
