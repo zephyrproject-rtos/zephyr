@@ -41,14 +41,34 @@ extern "C" {
 /** Preset name maximum length */
 #define BT_HAS_PRESET_NAME_MAX 40
 
-/** @brief Opaque Hearing Access Service object. */
-struct bt_has;
-
 /** Hearing Aid device type */
 enum bt_has_hearing_aid_type {
 	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00,
 	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01,
 	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02,
+};
+
+/** Hearing Aid device features */
+enum bt_has_features {
+	/* Hearing Aid Type least significant bit. */
+	BT_HAS_FEAT_HEARING_AID_TYPE_LSB = BIT(0),
+
+	/* Hearing Aid Type most significant bit. */
+	BT_HAS_FEAT_HEARING_AID_TYPE_MSB = BIT(1),
+
+	/* Preset Synchronization support. */
+	BT_HAS_FEAT_PRESET_SYNC_SUPP = BIT(2),
+
+	/* Preset records independence. The list of presets may be different from the list exposed
+	 * by the other Coordinated Set Member.
+	 */
+	BT_HAS_FEAT_INDEPENDENT_PRESETS = BIT(3),
+
+	/* Dynamic presets support. The list of preset records may change. */
+	BT_HAS_FEAT_DYNAMIC_PRESETS = BIT(4),
+
+	/* Writable preset records support. The preset name can be changed by the client. */
+	BT_HAS_FEAT_WRITABLE_PRESETS_SUPP = BIT(5),
 };
 
 /** Preset Properties values */
@@ -68,28 +88,6 @@ enum bt_has_capabilities {
 	BT_HAS_PRESET_SUPPORT = BIT(0),
 };
 
-/** @brief Structure for registering features of a Hearing Access Service instance. */
-struct bt_has_features_param {
-	/** Hearing Aid Type value */
-	enum bt_has_hearing_aid_type type;
-
-	/**
-	 * @brief Preset Synchronization Support.
-	 *
-	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
-	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
-	 */
-	bool preset_sync_support;
-
-	/**
-	 * @brief Independent Presets.
-	 *
-	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
-	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
-	 */
-	bool independent_presets;
-};
-
 /** @brief Preset record definition */
 struct bt_has_preset_record {
 	/** Unique preset index. */
@@ -102,21 +100,41 @@ struct bt_has_preset_record {
 	const char *name;
 };
 
+/** @brief Opaque Hearing Access Service Client instance. */
+struct bt_has_client;
+
 /** @brief Hearing Access Service Client callback structure. */
 struct bt_has_client_cb {
 	/**
-	 * @brief Callback function for bt_has_discover.
+	 * @brief Service has been connected.
 	 *
-	 * This callback is called when discovery procedure is complete.
+	 * This callback notifies the application of a new service connection.
+	 * In case the err parameter is non-zero it means that the connection establishment failed.
 	 *
-	 * @param conn Bluetooth connection object.
-	 * @param err 0 on success, ATT error or negative errno otherwise.
-	 * @param has Pointer to the Hearing Access Service object or NULL on errors.
-	 * @param type Hearing Aid type.
-	 * @param caps Hearing Aid capabilities.
+	 * @param client Client instance.
+	 * @param err 0 in case of success or negative errno or ATT Error code in case of error.
 	 */
-	void (*discover)(struct bt_conn *conn, int err, struct bt_has *has,
-			 enum bt_has_hearing_aid_type type, enum bt_has_capabilities caps);
+	void (*connected)(struct bt_has_client *client, int err);
+
+	/**
+	 * @brief Service has been disconnected.
+	 *
+	 * This callback notifies the application that the service has been disconnected.
+	 *
+	 * @param client Client instance.
+	 * @param unbound True if service binding has been removed.
+	 */
+	void (*disconnected)(struct bt_has_client *client);
+
+	/**
+	 * @brief Client instance unbound.
+	 *
+	 * This callback notifies the application that the client instance has been free'd.
+	 *
+	 * @param client Client instance.
+	 * @param err 0 in case of success or negative errno or ATT Error code in case of error.
+	 */
+	void (*unbound)(struct bt_has_client *client, int err);
 
 	/**
 	 * @brief Callback function for Hearing Access Service active preset changes.
@@ -127,11 +145,10 @@ struct bt_has_client_cb {
 	 * Index and Control Point characteristics will not be discovered by
 	 * @ref bt_has_client_discover.
 	 *
-	 * @param has Pointer to the Hearing Access Service object.
-	 * @param err 0 on success, ATT error or negative errno otherwise.
+	 * @param client Client instance.
 	 * @param index Active preset index.
 	 */
-	void (*preset_switch)(struct bt_has *has, int err, uint8_t index);
+	void (*preset_switch)(struct bt_has_client *client, uint8_t index);
 
 	/**
 	 * @brief Callback function for presets read operation.
@@ -140,12 +157,11 @@ struct bt_has_client_cb {
 	 * The record object as well as its members are temporary and must be copied to in order
 	 * to cache its information.
 	 *
-	 * @param has Pointer to the Hearing Access Service object.
-	 * @param err 0 on success, ATT error or negative errno otherwise.
+	 * @param client Client instance.
 	 * @param record Preset record or NULL on errors.
 	 * @param is_last True if Read Presets operation can be considered concluded.
 	 */
-	void (*preset_read_rsp)(struct bt_has *has, int err,
+	void (*preset_read_rsp)(struct bt_has_client *client,
 				const struct bt_has_preset_record *record, bool is_last);
 
 	/**
@@ -155,12 +171,12 @@ struct bt_has_client_cb {
 	 * The record object as well as its objects are temporary and must be copied to in order
 	 * to cache its information.
 	 *
-	 * @param has Pointer to the Hearing Access Service object.
+	 * @param client Client instance.
 	 * @param index_prev Index of the previous preset in the list.
 	 * @param record Preset record.
 	 * @param is_last True if preset list update operation can be considered concluded.
 	 */
-	void (*preset_update)(struct bt_has *has, uint8_t index_prev,
+	void (*preset_update)(struct bt_has_client *client, uint8_t index_prev,
 			      const struct bt_has_preset_record *record, bool is_last);
 
 	/**
@@ -168,11 +184,11 @@ struct bt_has_client_cb {
 	 *
 	 * The callback is called when the preset has been deleted by the remote server.
 	 *
-	 * @param has Pointer to the Hearing Access Service object.
+	 * @param client Client instance.
 	 * @param index Preset index.
 	 * @param is_last True if preset list update operation can be considered concluded.
 	 */
-	void (*preset_deleted)(struct bt_has *has, uint8_t index, bool is_last);
+	void (*preset_deleted)(struct bt_has_client *client, uint8_t index, bool is_last);
 
 	/**
 	 * @brief Callback function for preset availability notifications.
@@ -180,103 +196,165 @@ struct bt_has_client_cb {
 	 * The callback is called when the preset availability change is notified by the remote
 	 * server.
 	 *
-	 * @param has Pointer to the Hearing Access Service object.
+	 * @param client Client instance.
 	 * @param index Preset index.
 	 * @param available True if available, false otherwise.
 	 * @param is_last True if preset list update operation can be considered concluded.
 	 */
-	void (*preset_availability)(struct bt_has *has, uint8_t index, bool available,
+	void (*preset_availability)(struct bt_has_client *client, uint8_t index, bool available,
 				    bool is_last);
+
+	/**
+	 * @brief Callback function for features notifications.
+	 *
+	 * The callback is called when the Hearing Aid Features change is notified by the remote
+	 * server.
+	 *
+	 * @param client Client instance.
+	 * @param features Updated features value.
+	 */
+	void (*features)(struct bt_has_client *client, enum bt_has_features features);
+
+	/**
+	 * @brief Callback function for command operations.
+	 *
+	 * The callback is called when command status is received from the remote server.
+	 *
+	 * @param client Client instance.
+	 * @param err 0 on success, ATT error otherwise.
+	 */
+	void (*cmd_status)(struct bt_has_client *client, uint8_t err);
 };
 
-/** @brief Registers the callbacks used by the Hearing Access Service client.
+/**
+ * @brief Initialize Hearing Access Service Client.
  *
- *  @param cb The callback structure.
+ * Register Hearing Access Service Client callbacks.
  *
- *  @return 0 in case of success or negative value in case of error.
+ * @return Zero on success or (negative) error code on failure.
  */
-int bt_has_client_cb_register(const struct bt_has_client_cb *cb);
+int bt_has_client_init(const struct bt_has_client_cb *cb);
 
 /**
- * @brief Discover Hearing Access Service on a remote device.
+ * @brief Bind service.
  *
- * Client method to find a Hearing Access Service on a server identified by @p conn.
- * The @ref bt_has_client_cb.discover callback will be called when the discovery procedure
- * is complete to provide user a @ref bt_has object.
+ * Initiate service binding to remote device implementing HAS Server role.
  *
  * @param conn Bluetooth connection object.
+ * @param[out] client Valid client instance on success.
  *
- * @return 0 if success, errno on failure.
+ * @return Zero on success or (negative) error code on failure.
  */
-int bt_has_client_discover(struct bt_conn *conn);
+int bt_has_client_bind(struct bt_conn *conn, struct bt_has_client **client);
 
 /**
- * @brief Get the Bluetooth connection object of the service object.
+ * @brief Unbind service.
  *
- * The caller gets a new reference to the connection object which must be
- * released with bt_conn_unref() once done using the object.
+ * Unbind an service service or cancel pending service binding.
+ * The
  *
- * @param[in] has Pointer to the Hearing Access Service object.
- * @param[out] conn Connection object.
+ * @param client Client instance.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return Zero on success or (negative) error code on failure.
  */
-int bt_has_client_conn_get(const struct bt_has *has, struct bt_conn **conn);
+int bt_has_client_unbind(struct bt_has_client *client);
 
 /**
- * @brief Read Preset Records.
+ * @brief Read Preset Records command.
  *
  * Client method to read up to @p max_count presets starting from given @p index.
+ * The status is returned in the @ref bt_has_client_cb.cmd_status callback.
  * The preset records are returned in the @ref bt_has_client_cb.preset_read_rsp callback
  * (called once for each preset).
  *
- * @param has Pointer to the Hearing Access Service object.
+ * @param client Client instance.
  * @param index The index to start with.
  * @param max_count Maximum number of presets to read.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_has_client_presets_read(struct bt_has *has, uint8_t index, uint8_t max_count);
+int bt_has_client_cmd_presets_read(struct bt_has_client *client, uint8_t index, uint8_t max_count);
 
 /**
- * @brief Set Active Preset.
+ * @brief Set Active Preset command.
  *
  * Client procedure to set preset identified by @p index as active.
- * The status is returned in the @ref bt_has_client_cb.preset_switch callback.
+ * The status is returned in the @ref bt_has_client_cb.cmd_status callback.
  *
- * @param has Pointer to the Hearing Access Service object.
+ * @param client Client instance.
  * @param index Preset index to activate.
  * @param sync Request active preset synchronization in set.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync);
+int bt_has_client_cmd_preset_set(struct bt_has_client *client, uint8_t index, bool sync);
 
 /**
- * @brief Activate Next Preset.
+ * @brief Activate Next Preset command.
  *
  * Client procedure to set next available preset as active.
- * The status is returned in the @ref bt_has_client_cb.preset_switch callback.
+ * The status is returned in the @ref bt_has_client_cb.cmd_status callback.
  *
- * @param has Pointer to the Hearing Access Service object.
+ * @param client Client instance.
  * @param sync Request active preset synchronization in set.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_has_client_preset_next(struct bt_has *has, bool sync);
+int bt_has_client_cmd_preset_next(struct bt_has_client *client, bool sync);
 
 /**
- * @brief Activate Previous Preset.
+ * @brief Activate Previous Preset command.
  *
  * Client procedure to set previous available preset as active.
- * The status is returned in the @ref bt_has_client_cb.preset_switch callback.
+ * The status is returned in the @ref bt_has_client_cb.cmd_status callback.
  *
- * @param has Pointer to the Hearing Access Service object.
+ * @param client Client instance.
  * @param sync Request active preset synchronization in set.
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_has_client_preset_prev(struct bt_has *has, bool sync);
+int bt_has_client_cmd_preset_prev(struct bt_has_client *client, bool sync);
+
+/** Hearing Aid device Info Structure */
+struct bt_has_client_info {
+	/** Local identity */
+	uint8_t id;
+	/** Peer device address */
+	const bt_addr_le_t *addr;
+	/** Hearing Aid Type. */
+	enum bt_has_hearing_aid_type type;
+	/** Hearing Aid Features. */
+	enum bt_has_features features;
+	/** Hearing Aid Capabilities. */
+	enum bt_has_capabilities caps;
+	/** Active Preset Index.
+	 *
+	 *  Only applicable if @ref BT_HAS_PRESET_SUPPORT is set in @ref caps.
+	 */
+	uint8_t active_index;
+};
+
+/**
+ * @brief Get information for the remote Hearing Aid device.
+ *
+ * @param client Client instance.
+ * @param[out] info Info object.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_has_client_info_get(const struct bt_has_client *client, struct bt_has_client_info *info);
+
+/**
+ * @brief Get the connection pointer of a HAS Client instance
+ *
+ * Get the Bluetooth connection pointer of a HAS Client instance.
+ *
+ * @param client Client instance.
+ * @param[out] conn Connection pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_has_client_conn_get(const struct bt_has_client *client, struct bt_conn **conn);
 
 /** @brief Preset operations structure. */
 struct bt_has_preset_ops {
@@ -336,6 +414,28 @@ struct bt_has_preset_register_param {
 
 	/** Preset operations structure. */
 	const struct bt_has_preset_ops *ops;
+};
+
+/** @brief Structure for registering features of a Hearing Access Service instance. */
+struct bt_has_features_param {
+	/** Hearing Aid Type value */
+	enum bt_has_hearing_aid_type type;
+
+	/**
+	 * @brief Preset Synchronization Support.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
+	bool preset_sync_support;
+
+	/**
+	 * @brief Independent Presets.
+	 *
+	 * Only applicable if @p type is @ref BT_HAS_HEARING_AID_TYPE_BINAURAL
+	 * and @kconfig{CONFIG_BT_HAS_PRESET_COUNT} is non-zero.
+	 */
+	bool independent_presets;
 };
 
 /**

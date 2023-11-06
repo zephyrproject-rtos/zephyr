@@ -32,11 +32,12 @@ LOG_MODULE_REGISTER(bt_has, CONFIG_BT_HAS_LOG_LEVEL);
 
 #define BITS_CHANGED(_new_value, _old_value) ((_new_value) ^ (_old_value))
 #define FEATURE_DEVICE_TYPE_UNCHANGED(_new_value) \
-	!BITS_CHANGED(_new_value, bt_has_feat_type_get(has.features))
+	!BITS_CHANGED(_new_value, bt_has_features_get_type(has.features))
 #define FEATURE_SYNC_SUPPORT_UNCHANGED(_new_value) \
-	!BITS_CHANGED(_new_value, (bt_has_feat_is_preset_oob_sync_supported(has.features) ? 1 : 0))
+	!BITS_CHANGED(_new_value, (bt_has_features_check_preset_sync_supp(has.features) ? 1 : 0))
 #define FEATURE_IND_PRESETS_UNCHANGED(_new_value) \
-	!BITS_CHANGED(_new_value, (bt_has_feat_is_preset_list_independent(has.features) ? 1 : 0))
+	!BITS_CHANGED(_new_value, \
+		     (bt_has_features_check_preset_list_independent(has.features) ? 1 : 0))
 #define BONDED_CLIENT_INIT_FLAGS \
 	(BIT(FLAG_ACTIVE_INDEX_CHANGED) | BIT(FLAG_NOTIFY_PRESET_LIST) | BIT(FLAG_FEATURES_CHANGED))
 
@@ -91,14 +92,15 @@ static void features_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value
 static ssize_t read_features(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
+	uint8_t features = (uint8_t)has.features;
+
 	LOG_DBG("conn %p attr %p offset %d", (void *)conn, attr, offset);
 
-	if (offset > sizeof(has.features)) {
+	if (offset > sizeof(features)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &has.features,
-				 sizeof(has.features));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &features, sizeof(features));
 }
 
 #if defined(CONFIG_BT_HAS_FEATURES_NOTIFIABLE)
@@ -416,8 +418,10 @@ static void notify_work_handler(struct k_work *work)
 	if (IS_ENABLED(CONFIG_BT_HAS_FEATURES_NOTIFIABLE) &&
 	    atomic_test_and_clear_bit(client->context->flags, FLAG_FEATURES_CHANGED) &&
 	    bt_gatt_is_subscribed(client->conn, hearing_aid_features_attr, BT_GATT_CCC_NOTIFY)) {
-		err = bt_gatt_notify(client->conn, hearing_aid_features_attr, &has.features,
-				     sizeof(has.features));
+		uint8_t features = (uint8_t)has.features;
+
+		err = bt_gatt_notify(client->conn, hearing_aid_features_attr, &features,
+				     sizeof(features));
 		if (err == -ENOMEM) {
 			atomic_set_bit(client->context->flags, FLAG_FEATURES_CHANGED);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
@@ -1407,19 +1411,19 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	case BT_HAS_OP_SET_PREV_PRESET:
 		return handle_set_prev_preset(false);
 	case BT_HAS_OP_SET_ACTIVE_PRESET_SYNC:
-		if (bt_has_feat_is_preset_oob_sync_supported(has.features)) {
+		if (bt_has_features_check_preset_sync_supp(has.features)) {
 			return handle_set_active_preset(buf, true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_NEXT_PRESET_SYNC:
-		if (bt_has_feat_is_preset_oob_sync_supported(has.features)) {
+		if (bt_has_features_check_preset_sync_supp(has.features)) {
 			return handle_set_next_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;
 		}
 	case BT_HAS_OP_SET_PREV_PRESET_SYNC:
-		if (bt_has_feat_is_preset_oob_sync_supported(has.features)) {
+		if (bt_has_features_check_preset_sync_supp(has.features)) {
 			return handle_set_prev_preset(true);
 		} else {
 			return BT_HAS_ERR_PRESET_SYNC_NOT_SUPP;

@@ -17,40 +17,36 @@
 
 #include "shell/bt.h"
 
-static struct bt_has *inst;
+static struct bt_has_client *default_client;
 
-static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
-				   enum bt_has_hearing_aid_type type,
-				   enum bt_has_capabilities caps)
+static void has_client_connected_cb(struct bt_has_client *client, int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "HAS discovery (err %d)", err);
+		shell_error(ctx_shell, "Client %p connect failed (err %d)", client, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "HAS discovered %p type 0x%02x caps 0x%02x for conn %p",
-		    has, type, caps, conn);
-
-	inst = has;
+	shell_print(ctx_shell, "Client %p connected", client);
 }
 
-static void has_client_preset_switch_cb(struct bt_has *has, int err, uint8_t index)
+static void has_client_disconnected_cb(struct bt_has_client *client)
 {
-	if (err != 0) {
-		shell_error(ctx_shell, "HAS %p preset switch error (err %d)", has, err);
-	} else {
-		shell_print(ctx_shell, "HAS %p preset switch index 0x%02x", has, index);
-	}
+	shell_print(ctx_shell, "Client %p disconnected", client);
 }
 
-static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
+static void has_client_unbound_cb(struct bt_has_client *client, int err)
+{
+	shell_print(ctx_shell, "Client %p unbound err %d", client, err);
+}
+
+static void has_client_preset_switch_cb(struct bt_has_client *client, uint8_t index)
+{
+	shell_print(ctx_shell, "Client %p preset switch index 0x%02x", client, index);
+}
+
+static void has_client_preset_read_rsp_cb(struct bt_has_client *client,
 					  const struct bt_has_preset_record *record, bool is_last)
 {
-	if (err) {
-		shell_error(ctx_shell, "Preset Read operation failed (err %d)", err);
-		return;
-	}
-
 	shell_print(ctx_shell, "Preset Index: 0x%02x\tProperties: 0x%02x\tName: %s",
 		    record->index, record->properties, record->name);
 
@@ -59,10 +55,23 @@ static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
 	}
 }
 
+static void has_cmd_status_cb(struct bt_has_client *client, uint8_t err)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Client %p command (err 0x%02x)", client, err);
+
+	} else {
+		shell_print(ctx_shell, "Client %p command complete", client);
+	}
+}
+
 static const struct bt_has_client_cb has_client_cb = {
-	.discover = has_client_discover_cb,
+	.connected = has_client_connected_cb,
+	.disconnected = has_client_disconnected_cb,
+	.unbound = has_client_unbound_cb,
 	.preset_switch = has_client_preset_switch_cb,
 	.preset_read_rsp = has_client_preset_read_rsp_cb,
+	.cmd_status = has_cmd_status_cb,
 };
 
 static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
@@ -73,30 +82,51 @@ static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
 		ctx_shell = sh;
 	}
 
-	err = bt_has_client_cb_register(&has_client_cb);
+	err = bt_has_client_init(&has_client_cb);
 	if (err != 0) {
-		shell_error(sh, "bt_has_client_cb_register (err %d)", err);
+		shell_error(sh, "bt_has_client_init (err %d)", err);
 	}
 
 	return err;
 }
 
-static int cmd_has_client_discover(const struct shell *sh, size_t argc, char **argv)
+static int cmd_has_client_bind(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
-
-	if (default_conn == NULL) {
-		shell_error(sh, "Not connected");
-		return -ENOEXEC;
-	}
 
 	if (!ctx_shell) {
 		ctx_shell = sh;
 	}
 
-	err = bt_has_client_discover(default_conn);
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
+		return -ENOEXEC;
+	}
+
+	err = bt_has_client_bind(default_conn, &default_client);
 	if (err != 0) {
-		shell_error(sh, "bt_has_client_discover (err %d)", err);
+		shell_error(sh, "bt_has_client_bind (err %d)", err);
+	}
+
+	return err;
+}
+
+static int cmd_has_client_unbind(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+
+	if (!ctx_shell) {
+		ctx_shell = sh;
+	}
+
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
+		return -ENOEXEC;
+	}
+
+	err = bt_has_client_unbind(default_client);
+	if (err != 0) {
+		shell_error(sh, "bt_has_client_unbind (err %d)", err);
 	}
 
 	return err;
@@ -113,17 +143,12 @@ static int cmd_has_client_read_presets(const struct shell *sh, size_t argc, char
 		return err;
 	}
 
-	if (default_conn == NULL) {
-		shell_error(sh, "Not connected");
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
 		return -ENOEXEC;
 	}
 
-	if (!inst) {
-		shell_error(sh, "No instance discovered");
-		return -ENOEXEC;
-	}
-
-	err = bt_has_client_presets_read(inst, index, count);
+	err = bt_has_client_cmd_presets_read(default_client, index, count);
 	if (err != 0) {
 		shell_error(sh, "bt_has_client_discover (err %d)", err);
 	}
@@ -154,17 +179,12 @@ static int cmd_has_client_preset_set(const struct shell *sh, size_t argc, char *
 		}
 	}
 
-	if (default_conn == NULL) {
-		shell_error(sh, "Not connected");
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
 		return -ENOEXEC;
 	}
 
-	if (!inst) {
-		shell_error(sh, "No instance discovered");
-		return -ENOEXEC;
-	}
-
-	err = bt_has_client_preset_set(inst, index, sync);
+	err = bt_has_client_cmd_preset_set(default_client, index, sync);
 	if (err != 0) {
 		shell_error(sh, "bt_has_client_preset_switch (err %d)", err);
 		return -ENOEXEC;
@@ -189,19 +209,14 @@ static int cmd_has_client_preset_next(const struct shell *sh, size_t argc, char 
 		}
 	}
 
-	if (default_conn == NULL) {
-		shell_error(sh, "Not connected");
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
 		return -ENOEXEC;
 	}
 
-	if (!inst) {
-		shell_error(sh, "No instance discovered");
-		return -ENOEXEC;
-	}
-
-	err = bt_has_client_preset_next(inst, sync);
+	err = bt_has_client_cmd_preset_next(default_client, sync);
 	if (err != 0) {
-		shell_error(sh, "bt_has_client_preset_next (err %d)", err);
+		shell_error(sh, "bt_has_client_cmd_preset_next (err %d)", err);
 		return -ENOEXEC;
 	}
 
@@ -224,19 +239,14 @@ static int cmd_has_client_preset_prev(const struct shell *sh, size_t argc, char 
 		}
 	}
 
-	if (default_conn == NULL) {
-		shell_error(sh, "Not connected");
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
 		return -ENOEXEC;
 	}
 
-	if (!inst) {
-		shell_error(sh, "No instance discovered");
-		return -ENOEXEC;
-	}
-
-	err = bt_has_client_preset_prev(inst, sync);
+	err = bt_has_client_cmd_preset_prev(default_client, sync);
 	if (err != 0) {
-		shell_error(sh, "bt_has_client_preset_prev (err %d)", err);
+		shell_error(sh, "bt_has_client_cmd_preset_prev (err %d)", err);
 		return -ENOEXEC;
 	}
 
@@ -258,7 +268,8 @@ static int cmd_has_client(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(has_client_cmds,
 	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_has_client_init, 1, 0),
-	SHELL_CMD_ARG(discover, NULL, HELP_NONE, cmd_has_client_discover, 1, 0),
+	SHELL_CMD_ARG(bind, NULL, HELP_NONE, cmd_has_client_bind, 1, 0),
+	SHELL_CMD_ARG(unbind, NULL, HELP_NONE, cmd_has_client_unbind, 1, 0),
 	SHELL_CMD_ARG(presets-read, NULL, "<start_index_hex> <max_count_dec>",
 		      cmd_has_client_read_presets, 3, 0),
 	SHELL_CMD_ARG(preset-set, NULL, "<index_hex> [sync]", cmd_has_client_preset_set, 2, 1),

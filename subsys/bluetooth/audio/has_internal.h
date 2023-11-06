@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/audio/has.h>
+
 /* Control Point opcodes */
 #define BT_HAS_OP_READ_PRESET_REQ        0x01
 #define BT_HAS_OP_READ_PRESET_RSP        0x02
@@ -27,14 +29,6 @@
 #define BT_HAS_ERR_OPERATION_NOT_POSSIBLE 0x83
 #define BT_HAS_ERR_INVALID_PARAM_LEN      0x84
 
-/* Hearing Aid Feature bits */
-#define BT_HAS_FEAT_HEARING_AID_TYPE_LSB  BIT(0)
-#define BT_HAS_FEAT_HEARING_AID_TYPE_MSB  BIT(1)
-#define BT_HAS_FEAT_PRESET_SYNC_SUPP      BIT(2)
-#define BT_HAS_FEAT_INDEPENDENT_PRESETS   BIT(3)
-#define BT_HAS_FEAT_DYNAMIC_PRESETS       BIT(4)
-#define BT_HAS_FEAT_WRITABLE_PRESETS_SUPP BIT(5)
-
 #define BT_HAS_FEAT_HEARING_AID_TYPE_MASK (BT_HAS_FEAT_HEARING_AID_TYPE_LSB | \
 					   BT_HAS_FEAT_HEARING_AID_TYPE_MSB)
 
@@ -48,7 +42,7 @@
 
 struct bt_has {
 	/** Hearing Aid Features value */
-	uint8_t features;
+	enum bt_has_features features;
 
 	/** Active preset index value */
 	uint8_t active_index;
@@ -140,27 +134,27 @@ static inline const char *bt_has_change_id_str(uint8_t change_id)
 	}
 }
 
-static inline enum bt_has_hearing_aid_type bt_has_feat_type_get(uint8_t features)
+static inline enum bt_has_hearing_aid_type bt_has_features_get_type(enum bt_has_features features)
 {
 	return features & BT_HAS_FEAT_HEARING_AID_TYPE_MASK;
 }
 
-static inline bool bt_has_feat_is_preset_oob_sync_supported(uint8_t features)
+static inline bool bt_has_features_check_preset_sync_supp(enum bt_has_features features)
 {
 	return (features & BT_HAS_FEAT_PRESET_SYNC_SUPP) > 0;
 }
 
-static inline bool bt_has_feat_is_preset_list_independent(uint8_t features)
+static inline bool bt_has_features_check_preset_list_independent(enum bt_has_features features)
 {
 	return (features & BT_HAS_FEAT_INDEPENDENT_PRESETS) > 0;
 }
 
-static inline bool bt_has_feat_is_preset_list_dynamic(uint8_t features)
+static inline bool bt_has_features_check_preset_list_dynamic(enum bt_has_features features)
 {
 	return (features & BT_HAS_FEAT_DYNAMIC_PRESETS) > 0;
 }
 
-static inline bool bt_has_feat_is_preset_write_supported(uint8_t features)
+static inline bool bt_has_features_check_preset_write_supported(enum bt_has_features features)
 {
-	return (features & BT_HAS_OP_WRITE_PRESET_NAME) > 0;
+	return (features & BT_HAS_FEAT_DYNAMIC_PRESETS) > 0;
 }
