@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lsm6dso {
+	status = "disabled";
+	zephyr,deferred-init;
+};

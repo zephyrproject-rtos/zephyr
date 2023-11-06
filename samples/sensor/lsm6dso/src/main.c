@@ -107,10 +107,12 @@ static void test_polling_mode(const struct device *dev)
 
 int main(void)
 {
-	const struct device *const dev = DEVICE_DT_GET_ONE(st_lsm6dso);
+	int ret;
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(lsm6dso));
 
-	if (!device_is_ready(dev)) {
-		printk("%s: device not ready.\n", dev->name);
+	ret = device_init(dev);
+	if (ret < 0) {
+		printk("Could not initialize device %s\n", dev->name);
 		return 0;
 	}
 
