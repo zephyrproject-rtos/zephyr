@@ -912,7 +912,7 @@ def write_global_macros(edt):
                            if node.status == "okay"))
 
     n_okay_macros = {}
-    for_each_macros = {}
+    for_each_okay_macros = {}
     compat2buses = defaultdict(list)  # just for "okay" nodes
     for compat, okay_nodes in edt.compat2okay.items():
         for node in okay_nodes:
@@ -926,10 +926,10 @@ def write_global_macros(edt):
 
         # Helpers for non-INST for-each macros that take node
         # identifiers as arguments.
-        for_each_macros[f"DT_FOREACH_OKAY_{ident}(fn)"] = \
+        for_each_okay_macros[f"DT_FOREACH_OKAY_{ident}(fn)"] = \
             " ".join(f"fn(DT_{node.z_path_id})"
                      for node in okay_nodes)
-        for_each_macros[f"DT_FOREACH_OKAY_VARGS_{ident}(fn, ...)"] = \
+        for_each_okay_macros[f"DT_FOREACH_OKAY_VARGS_{ident}(fn, ...)"] = \
             " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)"
                      for node in okay_nodes)
 
@@ -938,10 +938,10 @@ def write_global_macros(edt):
         # avoiding an intermediate node_id --> instance number
         # conversion in the preprocessor helps to keep the macro
         # expansions simpler. That hopefully eases debugging.
-        for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
+        for_each_okay_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
             " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
                      for node in okay_nodes)
-        for_each_macros[f"DT_FOREACH_OKAY_INST_VARGS_{ident}(fn, ...)"] = \
+        for_each_okay_macros[f"DT_FOREACH_OKAY_INST_VARGS_{ident}(fn, ...)"] = \
             " ".join(f"fn({edt.compat2nodes[compat].index(node)}, __VA_ARGS__)"
                      for node in okay_nodes)
 
@@ -957,6 +957,19 @@ def write_global_macros(edt):
                         out_dt_define(macro, val)
                         out_dt_define(macro + "_EXISTS", 1)
 
+    for_each_disabled_macros = {}
+    for compat, disabled_nodes in edt.compat2disabled.items():
+        ident = str2ident(compat)
+
+        # Helpers for INST versions of for-each macros, which take
+        # instance numbers (disabled status)
+        for_each_disabled_macros[f"DT_FOREACH_DISABLED_INST_{ident}(fn)"] = \
+            " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
+                    for node in disabled_nodes)
+        for_each_disabled_macros[f"DT_FOREACH_DISABLED_INST_VARGS_{ident}(fn, ...)"] = \
+            " ".join(f"fn({edt.compat2nodes[compat].index(node)}, __VA_ARGS__)"
+                    for node in disabled_nodes)
+
     out_comment('Macros for compatibles with status "okay" nodes\n')
     for compat, okay_nodes in edt.compat2okay.items():
         if okay_nodes:
@@ -965,7 +978,11 @@ def write_global_macros(edt):
     out_comment('Macros for status "okay" instances of each compatible\n')
     for macro, value in n_okay_macros.items():
         out_define(macro, value)
-    for macro, value in for_each_macros.items():
+    for macro, value in for_each_okay_macros.items():
+        out_define(macro, value)
+
+    out_comment('Macros for status "disabled" instances of each compatible\n')
+    for macro, value in for_each_disabled_macros.items():
         out_define(macro, value)
 
     out_comment('Bus information for status "okay" nodes of each compatible\n')

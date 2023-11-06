@@ -4171,6 +4171,84 @@
 		    ())
 
 /**
+ * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
+ *        and status `disabled`
+ *
+ * This macro calls `fn(inst)` on each `inst` number that refers to a
+ * node with status `disabled`. Whitespace is added between invocations.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     a {
+ *             compatible = "vnd,device";
+ *             status = "disabled";
+ *             foobar = "DEV_A";
+ *     };
+ *
+ *     b {
+ *             compatible = "vnd,device";
+ *             status = "disabled";
+ *             foobar = "DEV_B";
+ *     };
+ *
+ *     c {
+ *             compatible = "vnd,device";
+ *             status = "okay";
+ *             foobar = "DEV_C";
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DT_DRV_COMPAT vnd_device
+ *     #define MY_FN(inst) DT_INST_PROP(inst, foobar),
+ *
+ *     DT_INST_FOREACH_STATUS_DISABLED(MY_FN)
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     MY_FN(0) MY_FN(1)
+ * @endcode
+ *
+ * and from there, to either this:
+ *
+ *     "DEV_A", "DEV_B",
+ *
+ * or this:
+ *
+ *     "DEV_B", "DEV_A",
+ *
+ * No guarantees are made about the order that a and b appear in the
+ * expansion.
+ *
+ * Note that @p fn is responsible for adding commas, semicolons, or
+ * other separators or terminators.
+ *
+ * @param fn Macro to call for each disabled node. Must accept an
+ *           instance number as its only parameter.
+ */
+#define DT_INST_FOREACH_STATUS_DISABLED(fn) \
+	UTIL_CAT(DT_FOREACH_DISABLED_INST_, DT_DRV_COMPAT)(fn)
+
+/**
+ * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
+ *        and status `disabled` with multiple arguments
+ *
+ *
+ * @param fn Macro to call for each disabled node.
+ * @param ... variable number of arguments to pass to @p fn
+ *
+ * @see DT_INST_FOREACH_STATUS_DISABLED
+ */
+#define DT_INST_FOREACH_STATUS_DISABLED_VARGS(fn, ...) \
+	UTIL_CAT(DT_FOREACH_DISABLED_INST_VARGS_, DT_DRV_COMPAT) \
+		(fn, __VA_ARGS__)
+
+/**
  * @brief Invokes @p fn for each element of property @p prop for
  *        a `DT_DRV_COMPAT` instance.
  *

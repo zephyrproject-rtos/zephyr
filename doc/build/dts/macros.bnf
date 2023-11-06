@@ -323,10 +323,13 @@ other-macro =/ %s"DT_FOREACH_OKAY_HELPER"
 ; which iterates over each enabled node of a compatible.
 other-macro =/ %s"DT_FOREACH_OKAY_" dt-name
 other-macro =/ %s"DT_FOREACH_OKAY_VARGS_" dt-name
-; These are used internally by DT_INST_FOREACH_STATUS_OKAY,
-; which iterates over each enabled instance of a compatible.
+; These are used internally by DT_INST_FOREACH_STATUS_OKAY and
+; DT_INST_FOREACH_STATUS_DISABLED which iterates over each
+; enabled/disabled instance of a compatible.
 other-macro =/ %s"DT_FOREACH_OKAY_INST_" dt-name
 other-macro =/ %s"DT_FOREACH_OKAY_INST_VARGS_" dt-name
+other-macro =/ %s"DT_FOREACH_DISABLED_INST_" dt-name
+other-macro =/ %s"DT_FOREACH_DISABLED_INST_VARGS_" dt-name
 ; E.g.: #define DT_CHOSEN_zephyr_flash
 other-macro =/ %s"DT_CHOSEN_" dt-name
 ; Declares that a compatible has at least one node on a bus.

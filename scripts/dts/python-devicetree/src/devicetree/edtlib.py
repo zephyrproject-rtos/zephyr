@@ -1935,6 +1935,7 @@ class EDT:
         self.nodes: List[Node] = []
         self.compat2nodes: Dict[str, List[Node]] = defaultdict(list)
         self.compat2okay: Dict[str, List[Node]] = defaultdict(list)
+        self.compat2disabled: Dict[str, List[Node]] = defaultdict(list)
         self.compat2vendor: Dict[str, str] = defaultdict(str)
         self.compat2model: Dict[str, str]  = defaultdict(str)
         self.label2node: Dict[str, Node] = {}
@@ -2272,6 +2273,8 @@ class EDT:
 
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+                elif node.status == "disabled":
+                    self.compat2disabled[compat].append(node)
 
                 if compat in self.compat2vendor:
                     continue
