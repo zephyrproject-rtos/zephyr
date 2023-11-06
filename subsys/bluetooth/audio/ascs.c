@@ -339,6 +339,8 @@ static void ase_exit_state_streaming(struct bt_ascs_ase *ase)
 {
 	struct bt_bap_stream *stream = ase->ep.stream;
 	struct bt_bap_stream_ops *ops;
+	const enum bt_bap_ep_state next_state = ascs_ep_get_state(&ase->ep);
+
 	uint8_t reason = ase->ep.reason;
 
 	__ASSERT_NO_MSG(stream != NULL);
@@ -353,6 +355,42 @@ static void ase_exit_state_streaming(struct bt_ascs_ase *ase)
 		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
+	}
+
+	/*
+	 * On link-loss we go from streaming state to QOS configured state,
+	 * and it makes sense to do the disabled callback before entering the
+	 * QOS configured state
+	 */
+	if (next_state == BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		if (ops != NULL && ops->disabled != NULL) {
+			ops->disabled(stream);
+		} else {
+			LOG_WRN("No callback for disabled set");
+		}
+	}
+}
+
+static void ase_exit_state_enabling(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
+	const enum bt_bap_ep_state next_state = ascs_ep_get_state(&ase->ep);
+
+	ops = stream->ops;
+
+	/*
+	 * When the EP direction is BT_AUDIO_DIR_SOURCE the state machine goes from
+	 * enabled to disabled where the disabled calback will be called,
+	 * for BT_AUDIO_DIR_SINK we go from enabled to qos_configured,
+	 * and logically we have to do the disabled callback first
+	 */
+	if (next_state == BT_BAP_EP_STATE_QOS_CONFIGURED && ase->ep.dir == BT_AUDIO_DIR_SINK) {
+		if (ops != NULL && ops->disabled != NULL) {
+			ops->disabled(stream);
+		} else {
+			LOG_WRN("No callback for disabled set");
+		}
 	}
 }
 
@@ -451,6 +489,9 @@ static void state_transition_work_handler(struct k_work *work)
 	switch (old_state) {
 	case BT_BAP_EP_STATE_STREAMING:
 		ase_exit_state_streaming(ase);
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		ase_exit_state_enabling(ase);
 		break;
 	default:
 		break;
