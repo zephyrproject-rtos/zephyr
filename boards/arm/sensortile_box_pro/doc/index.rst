@@ -159,6 +159,8 @@ Motion and environmental sensors
     (`lsm6dsv16x datasheet`_)
   - **LIS2MDL** 3-axis magnetometer
     (`lis2mdl datasheet`_)
+  - **LPS22DF** Altimeter / pressure sensor
+    (`lps22df datasheet`_)
   - **LIS2DU12** 3-axis accelerometer
     (`lis2du12 datasheet`_)
   - **HTS221** Humidity sensor
@@ -361,6 +363,9 @@ References
 
 .. _lis2mdl datasheet:
    https://www.st.com/en/mems-and-sensors/lis2mdl.html
+
+.. _lps22df datasheet:
+   https://www.st.com/en/mems-and-sensors/lps22df.html
 
 .. _lis2du12 datasheet:
    https://www.st.com/en/mems-and-sensors/lis2du12.html
