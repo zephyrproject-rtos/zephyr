@@ -78,43 +78,24 @@ static void settings_nvs_cache_add(struct settings_nvs *cf, const char *name,
 				   uint16_t name_id)
 {
 	uint16_t name_hash = crc16_ccitt(0xffff, name, strlen(name));
+	uint16_t offset = name_hash % CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
 
-	cf->cache[cf->cache_next].name_hash = name_hash;
-	cf->cache[cf->cache_next++].name_id = name_id;
-
-	cf->cache_next %= CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
+	if (cf->name_id_cache[offset] < name_id) {
+		cf->name_id_cache[offset] = name_id;
+	}
 }
 
 static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *name,
 					 char *rdname, size_t len)
 {
 	uint16_t name_hash = crc16_ccitt(0xffff, name, strlen(name));
-	int rc;
+	uint16_t offset = name_hash % CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE;
 
-	for (int i = 0; i < CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE; i++) {
-		if (cf->cache[i].name_hash != name_hash) {
-			continue;
-		}
-
-		if (cf->cache[i].name_id <= NVS_NAMECNT_ID) {
-			continue;
-		}
-
-		rc = nvs_read(&cf->cf_nvs, cf->cache[i].name_id, rdname, len);
-		if (rc < 0) {
-			continue;
-		}
-
-		rdname[rc] = '\0';
-
-		if (strcmp(name, rdname)) {
-			continue;
-		}
-
-		return cf->cache[i].name_id;
+	if (cf->name_id_cache[offset] <= NVS_NAMECNT_ID) {
+		return cf->last_name_id + 1;
+	} else {
+		return cf->name_id_cache[offset] + 1;
 	}
-
-	return NVS_NAMECNT_ID;
 }
 #endif /* CONFIG_SETTINGS_NVS_NAME_CACHE */
 
@@ -183,6 +164,10 @@ static int settings_nvs_load(struct settings_store *cs,
 			break;
 		}
 	}
+
+#if CONFIG_SETTINGS_NVS_NAME_CACHE
+	cf->loaded = true;
+#endif
 	return ret;
 }
 
@@ -203,15 +188,15 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	delete = ((value == NULL) || (val_len == 0));
 
 #if CONFIG_SETTINGS_NVS_NAME_CACHE
-	name_id = settings_nvs_cache_match(cf, name, rdname, sizeof(rdname));
-	if (name_id != NVS_NAMECNT_ID) {
-		write_name_id = name_id;
-		write_name = false;
-		goto found;
+	if (cf->loaded) {
+		name_id = settings_nvs_cache_match(cf, name, rdname, sizeof(rdname));
+	} else {
+		name_id = cf->last_name_id + 1;
 	}
+#else
+	name_id = cf->last_name_id + 1;
 #endif
 
-	name_id = cf->last_name_id + 1;
 	write_name_id = cf->last_name_id + 1;
 	write_name = true;
 
@@ -245,10 +230,9 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 			write_name = false;
 		}
 
-		goto found;
+		break;
 	}
 
-found:
 	if (delete) {
 		if (name_id == NVS_NAMECNT_ID) {
 			return 0;
