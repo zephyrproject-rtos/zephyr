@@ -500,6 +500,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 
 	/* Expected to notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
+	expect_bt_bap_stream_ops_disabled_called_once(stream);
 	expect_bt_bap_stream_ops_released_not_called();
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
@@ -533,6 +534,9 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	}
 
 	test_ase_control_client_disable(conn, ase_id);
+
+	expect_bt_bap_stream_ops_disabled_called_once(stream);
+
 	test_mocks_reset();
 
 	/* Mock CIS disconnection */
@@ -540,6 +544,7 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 
 	/* Expected to notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
+	expect_bt_bap_stream_ops_disabled_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
@@ -594,6 +599,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		expect_bt_bap_stream_ops_qos_set_called_once(stream);
+		expect_bt_bap_stream_ops_disabled_called_once(stream);
 	} else {
 		/* Server-initiated disable operation that shall not cause transition to QoS */
 		expect_bt_bap_stream_ops_qos_set_not_called();
