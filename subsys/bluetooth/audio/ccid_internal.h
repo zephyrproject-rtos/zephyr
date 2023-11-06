@@ -10,7 +10,6 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_CCID_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_CCID_H_
 
-#include <zephyr/device.h>
 #include <zephyr/types.h>
 
 /**

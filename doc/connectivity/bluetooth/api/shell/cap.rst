@@ -137,3 +137,40 @@ used.
 
    uart:~$ cap_initiator unicast-stop
    Unicast stopped for group 0x81e41c0 completed
+
+CAP Commander
+*************
+
+The Commander will typically be a either co-located with a CAP Initiator or be on a separate
+resource-rich mobile device, such as a phone or smartwatch. The Commander can
+discover CAP Acceptors's CAS and optional CSIS services. The CSIS service can be read to provide
+information about other CAP Acceptors in the same Coordinated Set. The Commander can provide
+information about broadcast sources to CAP Acceptors or coordinate capture and rendering information
+such as mute or volume states.
+
+Using the CAP Commander
+=======================
+
+When the Bluetooth stack has been initialized (:code:`bt init`), the Commander can discover CAS and
+the optionally included CSIS instance by calling (:code:`cap_commander discover`).
+
+.. code-block:: console
+
+   cap_commander --help
+   cap_commander - Bluetooth CAP commander shell commands
+   Subcommands:
+     discover        :Discover CAS
+
+Before being able to perform any stream operation, the device must also perform the
+:code:`bap discover` operation to discover the ASEs and PAC records. The :code:`bap init`
+command also needs to be called.
+
+When connected
+--------------
+
+Discovering CAS and CSIS on a device:
+
+.. code-block:: console
+
+   uart:~$ cap_commander discover
+   discovery completed with CSIS

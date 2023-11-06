@@ -98,6 +98,7 @@ extern volatile bt_security_t security_level;
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
+uint16_t get_dev_cnt(void);
 void backchannel_sync_send(uint dev);
 void backchannel_sync_send_all(void);
 void backchannel_sync_wait(uint dev);

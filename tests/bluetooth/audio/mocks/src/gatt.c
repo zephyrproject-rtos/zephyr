@@ -7,9 +7,12 @@
 #include <stdlib.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include "gatt.h"
+#include "conn.h"
 
 #define LOG_LEVEL CONFIG_BT_GATT_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -281,6 +284,63 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	memcpy(buf, (uint8_t *)value + offset, len);
 
 	return len;
+}
+
+int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *params)
+{
+	zassert_not_null(conn, "'%s()' was called with incorrect '%s' value", __func__, "conn");
+	zassert_not_null(params, "'%s()' was called with incorrect '%s' value", __func__, "params");
+	zassert_not_null(params->func, "'%s()' was called with incorrect '%s' value", __func__,
+			 "params->func");
+	zassert_between_inclusive(
+		params->start_handle, BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+		"'%s()' was called with incorrect '%s' value", __func__, "params->start_handle");
+	zassert_between_inclusive(
+		params->end_handle, BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+		"'%s()' was called with incorrect '%s' value", __func__, "params->end_handle");
+	zassert_true(params->start_handle <= params->end_handle,
+		     "'%s()' was called with incorrect '%s' value", __func__, "params->end_handle");
+
+	struct bt_gatt_service_val value;
+	struct bt_uuid_16 uuid;
+	struct bt_gatt_attr attr;
+	uint16_t start_handle;
+	uint16_t end_handle;
+
+	if (conn->info.state != BT_CONN_STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	switch (params->type) {
+	case BT_GATT_DISCOVER_PRIMARY:
+	case BT_GATT_DISCOVER_SECONDARY:
+	case BT_GATT_DISCOVER_STD_CHAR_DESC:
+	case BT_GATT_DISCOVER_INCLUDE:
+	case BT_GATT_DISCOVER_CHARACTERISTIC:
+	case BT_GATT_DISCOVER_DESCRIPTOR:
+	case BT_GATT_DISCOVER_ATTRIBUTE:
+		break;
+	default:
+		LOG_ERR("Invalid discovery type: %u", params->type);
+		return -EINVAL;
+	}
+
+	uuid.uuid.type = BT_UUID_TYPE_16;
+	uuid.val = params->type;
+	start_handle = params->start_handle;
+	end_handle = params->end_handle;
+	value.end_handle = end_handle;
+	value.uuid = params->uuid;
+
+	attr = (struct bt_gatt_attr){
+		.uuid = &uuid.uuid,
+		.user_data = &value,
+		.handle = start_handle,
+	};
+
+	params->func(conn, &attr, params);
+
+	return 0;
 }
 
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
