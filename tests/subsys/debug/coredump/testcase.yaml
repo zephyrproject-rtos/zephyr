@@ -14,8 +14,11 @@ tests:
       type: multi_line
       regex:
         - "Coredump: (.*)"
+        - ">>> ZEPHYR FATAL ERROR "
         - "E: #CD:BEGIN#"
         - "E: #CD:5([aA])45([0-9a-fA-F]+)"
         - "E: #CD:41([0-9a-fA-F]+)"
         - "E: #CD:4([dD])([0-9a-fA-F]+)"
+        - "E: #CD:4([dD])([0-9a-fA-F]+)"
         - "E: #CD:END#"
+        - "k_sys_fatal_error_handler"
