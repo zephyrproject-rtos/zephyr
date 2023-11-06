@@ -240,7 +240,6 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 		client->csis_start_handle = included_service->start_handle;
 		client->csis_inst = bt_csip_set_coordinator_csis_inst_by_handle(
 			conn, client->csis_start_handle);
-
 		if (client->csis_inst == NULL) {
 			static struct bt_csip_set_coordinator_cb csis_client_cb = {
 				.discover = csis_client_discover_cb,
@@ -325,10 +324,20 @@ int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t f
 	param->start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	param->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
+	discover_cb_func = func;
+
 	err = bt_gatt_discover(conn, param);
-	if (err == 0) {
-		discover_cb_func = func;
+	if (err != 0) {
+		discover_cb_func = NULL;
+
+		/* Report expected possible errors */
+		if (err == -ENOTCONN || err == -ENOMEM) {
+			return err;
+		}
+
+		LOG_DBG("Unexpected err %d from bt_gatt_discover", err);
+		return -ENOEXEC;
 	}
 
-	return err;
+	return 0;
 }
