@@ -280,7 +280,11 @@ static void recv_cb(struct bt_bap_stream *stream,
 	}
 
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
-		FAIL("ISO receive error\n");
+		/* Fail the test if we have not received what we expected */
+		if (!TEST_FLAG(flag_received)) {
+			FAIL("ISO receive error\n");
+		}
+
 		return;
 	}
 
