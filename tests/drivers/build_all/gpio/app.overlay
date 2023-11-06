@@ -221,30 +221,30 @@
 				ngpios = <16>;
 			};
 
-			test_spi_mcp23sxx: mcp23sxx@0 {
+			test_spi_mcp23sxx: mcp23sxx@1 {
 				compatible = "microchip,mcp23sxx";
 				spi-max-frequency = <0>;
-				reg = <0x0>;
+				reg = <0x01>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
 			};
 
-			test_spi_bd8lb600fs: bd8lb600fs@0 {
+			test_spi_bd8lb600fs: bd8lb600fs@2 {
 				compatible = "rohm,bd8lb600fs";
 				spi-max-frequency = <0>;
-				reg = <0x0>;
+				reg = <0x02>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_spi_ads114s08: ads114s08@0 {
+			test_spi_ads114s08: ads114s08@3 {
 				compatible = "ti,ads114s08";
 				status = "okay";
 				spi-max-frequency = <10000000>;
-				reg = <0x0>;
+				reg = <0x03>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				#io-channel-cells = <1>;
