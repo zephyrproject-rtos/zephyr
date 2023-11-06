@@ -167,6 +167,11 @@ static void register_more_cmd_args(void)
 }
 NATIVE_TASK(register_more_cmd_args, PRE_BOOT_1, 100);
 
+uint16_t get_dev_cnt(void)
+{
+	return (uint16_t)dev_cnt;
+}
+
 /**
  * @brief Get the channel id based on remote device ID
  *

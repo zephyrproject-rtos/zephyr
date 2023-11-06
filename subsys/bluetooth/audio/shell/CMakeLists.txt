@@ -60,6 +60,10 @@ zephyr_library_sources_ifdef(
   cap_initiator.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CAP_COMMANDER
+  cap_commander.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_CLIENT
   has_client.c
   )

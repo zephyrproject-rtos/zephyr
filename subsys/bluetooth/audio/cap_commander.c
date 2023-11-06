@@ -20,9 +20,59 @@ LOG_MODULE_REGISTER(bt_cap_commander, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
 #include "common/bt_str.h"
 
-int bt_cap_commander_unicast_discover(struct bt_conn *conn)
+static const struct bt_cap_commander_cb *cap_cb;
+
+int bt_cap_commander_register_cb(const struct bt_cap_commander_cb *cb)
 {
-	return -ENOSYS;
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(cap_cb != NULL) {
+		LOG_DBG("callbacks already registered");
+		return -EALREADY;
+	}
+
+	cap_cb = cb;
+
+	return 0;
+}
+
+int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb)
+{
+	CHECKIF(cb == NULL) {
+		LOG_DBG("cb is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(cap_cb != cb) {
+		LOG_DBG("cb is not registered");
+		return -EINVAL;
+	}
+
+	cap_cb = NULL;
+
+	return 0;
+}
+
+static void
+cap_commander_discover_complete(struct bt_conn *conn, int err,
+				const struct bt_csip_set_coordinator_csis_inst *csis_inst)
+{
+	if (cap_cb && cap_cb->discovery_complete) {
+		cap_cb->discovery_complete(conn, err, csis_inst);
+	}
+}
+
+int bt_cap_commander_discover(struct bt_conn *conn)
+{
+	CHECKIF(conn == NULL) {
+		LOG_DBG("NULL conn");
+		return -EINVAL;
+	}
+
+	return bt_cap_common_discover(conn, cap_commander_discover_complete);
 }
 
 int bt_cap_commander_broadcast_reception_start(

@@ -758,6 +758,15 @@ static void test_cap_acceptor_broadcast(void)
 	PASS("CAP acceptor broadcast passed\n");
 }
 
+static void test_cap_acceptor_capture_and_render(void)
+{
+	init();
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	PASS("CAP acceptor unicast passed\n");
+}
+
 static const struct bst_test_instance test_cap_acceptor[] = {
 	{
 		.test_id = "cap_acceptor_unicast",
@@ -776,6 +785,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast,
+	},
+	{
+		.test_id = "cap_acceptor_capture_and_render",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_capture_and_render,
 	},
 	BSTEST_END_MARKER,
 };
