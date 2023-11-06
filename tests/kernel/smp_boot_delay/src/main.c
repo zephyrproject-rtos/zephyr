@@ -3,6 +3,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/smp.h>
 #include <zephyr/ztest.h>
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
@@ -25,8 +26,6 @@ volatile bool mp_flag;
 struct k_thread cpu1_thr;
 K_THREAD_STACK_DEFINE(thr_stack, STACKSZ);
 
-extern void z_smp_start_cpu(int id);
-
 static void thread_fn(void *a, void *b, void *c)
 {
 	mp_flag = true;
@@ -47,7 +46,7 @@ ZTEST(smp_boot_delay, test_smp_boot_delay)
 	zassert_false(mp_flag, "CPU1 must not be running yet");
 
 	/* Start the second CPU */
-	z_smp_start_cpu(1);
+	k_smp_cpu_start(1, NULL, NULL);
 
 	/* Verify the thread ran */
 	k_busy_wait(CPU_START_DELAY);

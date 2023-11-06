@@ -3,6 +3,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/smp.h>
 #include <zephyr/ztest.h>
 #include "tests.h"
 
@@ -24,8 +25,6 @@ volatile bool mp_flag;
 
 struct k_thread cpu_thr;
 K_THREAD_STACK_DEFINE(thr_stack, STACKSZ);
-
-extern void z_smp_start_cpu(int id);
 
 static void thread_fn(void *a, void *b, void *c)
 {
@@ -62,7 +61,7 @@ ZTEST(intel_adsp_boot, test_1st_smp_boot_delay)
 		zassert_false(mp_flag, "cpu %d must not be running yet", i);
 
 		/* Start the second CPU */
-		z_smp_start_cpu(i);
+		k_smp_cpu_start(i, NULL, NULL);
 
 		/* Verify the thread ran */
 		k_busy_wait(CPU_START_DELAY);
