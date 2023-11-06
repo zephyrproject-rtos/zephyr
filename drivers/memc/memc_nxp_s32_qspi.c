@@ -78,7 +78,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 
 #define QSPI_DATA_CFG(n)								\
 	IF_ENABLED(FEATURE_QSPI_DDR, (							\
-		.dataRate = CONCAT(QSPI_IP_DATA_RATE_,					\
+		.dataRate = _CONCAT(QSPI_IP_DATA_RATE_,					\
 			DT_INST_STRING_UPPER_TOKEN(n, data_rate)),			\
 		.dataAlign = COND_CODE_1(DT_INST_PROP(n, hold_time_2x),			\
 			(QSPI_IP_FLASH_DATA_ALIGN_2X_REFCLK),				\
@@ -115,7 +115,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 #define QSPI_DLL_CFG(n, side, side_upper)						\
 	IF_ENABLED(FEATURE_QSPI_HAS_DLL, (						\
 		.dllSettings##side_upper = {						\
-			.dllMode = CONCAT(QSPI_IP_DLL_,					\
+			.dllMode = _CONCAT(QSPI_IP_DLL_,				\
 				DT_INST_STRING_UPPER_TOKEN(n, side##_dll_mode)),	\
 			.freqEnable = DT_INST_PROP(n, side##_dll_freq_enable),		\
 			.coarseDelay = DT_INST_PROP(n, side##_dll_coarse_delay),	\
@@ -129,7 +129,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 	))
 
 #define QSPI_READ_MODE(n, side, side_upper)						\
-	CONCAT(QSPI_IP_READ_MODE_, DT_INST_STRING_UPPER_TOKEN(n, side##_rx_clock_source))
+	_CONCAT(QSPI_IP_READ_MODE_, DT_INST_STRING_UPPER_TOKEN(n, side##_rx_clock_source))
 
 #define QSPI_IDLE_SIGNAL_DRIVE(n, side, side_upper)					\
 	IF_ENABLED(FEATURE_QSPI_CONFIGURABLE_ISD, (					\
@@ -160,7 +160,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, ahb_buffers_sizes) == QSPI_IP_AHB_BUFFERS,	\
 		"ahb-buffers-sizes must be of size QSPI_IP_AHB_BUFFERS");		\
 	BUILD_ASSERT(									\
-		CONCAT(FEATURE_QSPI_, DT_INST_STRING_UPPER_TOKEN(n, a_rx_clock_source)) == 1,\
+		_CONCAT(FEATURE_QSPI_, DT_INST_STRING_UPPER_TOKEN(n, a_rx_clock_source)) == 1,\
 		"a-rx-clock-source source mode selected is not supported");		\
 											\
 	static const Qspi_Ip_ControllerConfigType					\
