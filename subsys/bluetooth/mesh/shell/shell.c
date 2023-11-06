@@ -387,6 +387,7 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_PROXY_CLIENT */
 
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 static int cmd_proxy_solicit(const struct shell *sh, size_t argc,
@@ -410,7 +411,6 @@ static int cmd_proxy_solicit(const struct shell *sh, size_t argc,
 	return err;
 }
 #endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
-#endif /* CONFIG_BT_MESH_PROXY_CLIENT */
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
 
 #if defined(CONFIG_BT_MESH_SHELL_PROV)
@@ -1739,11 +1739,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(proxy_cmds,
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
 	SHELL_CMD_ARG(connect, NULL, "<NetKeyIdx>", cmd_proxy_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "<NetKeyIdx>", cmd_proxy_disconnect, 2, 0),
+#endif
 
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 	SHELL_CMD_ARG(solicit, NULL, "<NetKeyIdx>",
 		      cmd_proxy_solicit, 2, 0),
-#endif
 #endif
 	SHELL_SUBCMD_SET_END);
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
