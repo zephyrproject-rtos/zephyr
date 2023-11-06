@@ -12,6 +12,11 @@ zephyr_library_sources_ifdef(
   sw_isr_common.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_MULTI_LEVEL_INTERRUPTS
+  multilevel_irq.c
+  )
+
 zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)
 
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
