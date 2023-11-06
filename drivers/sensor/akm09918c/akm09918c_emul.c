@@ -87,7 +87,7 @@ static int akm09918c_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		return -EIO;
 	}
 	if (msgs->len < 1) {
-		LOG_ERR("Unexpected msg0 length %s", msgs->len);
+		LOG_ERR("Unexpected msg0 length %d", msgs->len);
 		return -EIO;
 	}
 
