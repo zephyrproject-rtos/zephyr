@@ -18,6 +18,5 @@ void z_smp_thread_swap(void);
 
 void z_init_cpu(int id);
 void z_sched_ipi(void);
-void z_smp_start_cpu(int id);
 
 #endif
