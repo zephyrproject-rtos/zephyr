@@ -4,6 +4,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
+#include <zephyr/kernel/smp.h>
 #include <zephyr/spinlock.h>
 #include <kswap.h>
 #include <kernel_internal.h>
@@ -11,6 +12,23 @@
 static atomic_t global_lock;
 static atomic_t cpu_start_flag;
 static atomic_t ready_flag;
+
+/**
+ * Struct holding the function to be called before handing off
+ * to schedule and its argument.
+ */
+static struct cpu_start_cb {
+	/**
+	 * Function to be called before handing off to scheduler.
+	 * Can be NULL.
+	 */
+	smp_init_fn fn;
+
+	/** Argument to @ref cpu_start_fn.fn. */
+	void *arg;
+} cpu_start_fn;
+
+static struct k_spinlock cpu_start_lock;
 
 unsigned int z_smp_global_lock(void)
 {
@@ -80,35 +98,48 @@ void z_smp_thread_swap(void)
 static inline FUNC_NORETURN void smp_init_top(void *arg)
 {
 	struct k_thread dummy_thread;
+	struct cpu_start_cb *csc = arg;
 
 	(void)atomic_set(&ready_flag, 1);
 
-	wait_for_start_signal(arg);
+	wait_for_start_signal(&cpu_start_flag);
 	z_dummy_thread_init(&dummy_thread);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	smp_timer_init();
 #endif
+
+	/* Do additional initialization steps if needed. */
+	if ((csc != NULL) && (csc->fn != NULL)) {
+		csc->fn(csc->arg);
+	}
 
 	z_swap_unlocked();
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
 
-static void start_cpu(int id, atomic_t *start_flag)
+static void start_cpu(int id, struct cpu_start_cb *csc)
 {
 	z_init_cpu(id);
 	(void)atomic_clear(&ready_flag);
 	arch_start_cpu(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
-		       smp_init_top, start_flag);
+		       smp_init_top, csc);
 	while (!atomic_get(&ready_flag)) {
 		local_delay();
 	}
 }
 
-void z_smp_start_cpu(int id)
+void k_smp_cpu_start(int id, smp_init_fn fn, void *arg)
 {
+	k_spinlock_key_t key = k_spin_lock(&cpu_start_lock);
+
+	cpu_start_fn.fn = fn;
+	cpu_start_fn.arg = arg;
+
 	(void)atomic_set(&cpu_start_flag, 1); /* async, don't care */
-	start_cpu(id, &cpu_start_flag);
+	start_cpu(id, &cpu_start_fn);
+
+	k_spin_unlock(&cpu_start_lock, key);
 }
 
 void z_smp_init(void)
@@ -118,7 +149,7 @@ void z_smp_init(void)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 1; i < num_cpus; i++) {
-		start_cpu(i, &cpu_start_flag);
+		start_cpu(i, NULL);
 	}
 	(void)atomic_set(&cpu_start_flag, 1);
 }
