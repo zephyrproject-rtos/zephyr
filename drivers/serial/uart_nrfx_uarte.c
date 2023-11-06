@@ -205,7 +205,7 @@ static void endtx_isr(const struct device *dev)
  *
  * @param arg Argument to ISR.
  */
-static void uarte_nrfx_isr_int(void *arg)
+static void uarte_nrfx_isr_int(const void *arg)
 {
 	const struct device *dev = arg;
 	const struct uarte_nrfx_config *config = dev->config;
