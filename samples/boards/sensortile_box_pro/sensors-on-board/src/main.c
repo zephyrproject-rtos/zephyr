@@ -15,6 +15,17 @@
 
 #include <stdio.h>
 
+#ifdef CONFIG_LPS22DF_TRIGGER
+static int lps22df_trig_cnt;
+
+static void lps22df_trigger_handler(const struct device *dev,
+				    const struct sensor_trigger *trig)
+{
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_PRESS);
+	lps22df_trig_cnt++;
+}
+#endif
+
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 static int lsm6dsv16x_acc_trig_cnt;
 static int lsm6dsv16x_gyr_trig_cnt;
@@ -52,6 +63,29 @@ static void lis2mdl_trigger_handler(const struct device *dev,
 	lis2mdl_trig_cnt++;
 }
 #endif
+
+static void lps22df_config(const struct device *lps22df)
+{
+	struct sensor_value odr_attr;
+
+	/* set LPS22DF sampling frequency to 50 Hz */
+	odr_attr.val1 = 50;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(lps22df, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for LPS22DF\n");
+		return;
+	}
+
+#ifdef CONFIG_LPS22DF_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ALL;
+	sensor_trigger_set(lps22df, &trig, lps22df_trigger_handler);
+#endif
+}
 
 static void lsm6dsv16x_config(const struct device *lsm6dsv16x)
 {
@@ -199,11 +233,16 @@ int main(void)
 	printk("SensorTile.box Pro sensor test\n");
 
 	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
+	const struct device *const lps22df = DEVICE_DT_GET_ONE(st_lps22df);
 	const struct device *const lsm6dsv16x = DEVICE_DT_GET_ONE(st_lsm6dsv16x);
 	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
+		return 0;
+	}
+	if (!device_is_ready(lps22df)) {
+		printk("%s: device not ready.\n", lps22df->name);
 		return 0;
 	}
 	if (!device_is_ready(lsm6dsv16x)) {
@@ -216,10 +255,12 @@ int main(void)
 	}
 
 	lis2mdl_config(lis2mdl);
+	lps22df_config(lps22df);
 	lsm6dsv16x_config(lsm6dsv16x);
 
 	while (1) {
 		struct sensor_value hts221_hum, hts221_temp;
+		struct sensor_value lps22df_press, lps22df_temp;
 		struct sensor_value lsm6dsv16x_accel[3], lsm6dsv16x_gyro[3];
 		struct sensor_value lis2mdl_magn[3];
 		struct sensor_value lis2mdl_temp;
@@ -237,6 +278,13 @@ int main(void)
 		}
 #endif
 
+#ifndef CONFIG_LPS22DF_TRIGGER
+		if (sensor_sample_fetch(lps22df) < 0) {
+			printf("LPS22DF Sensor sample update error\n");
+			return 0;
+		}
+#endif
+
 #ifndef CONFIG_LIS2MDL_TRIGGER
 		if (sensor_sample_fetch(lis2mdl) < 0) {
 			printf("LIS2MDL Magn Sensor sample update error\n");
@@ -246,6 +294,8 @@ int main(void)
 
 		sensor_channel_get(hts221, SENSOR_CHAN_HUMIDITY, &hts221_hum);
 		sensor_channel_get(hts221, SENSOR_CHAN_AMBIENT_TEMP, &hts221_temp);
+		sensor_channel_get(lps22df, SENSOR_CHAN_AMBIENT_TEMP, &lps22df_temp);
+		sensor_channel_get(lps22df, SENSOR_CHAN_PRESS, &lps22df_press);
 		sensor_channel_get(lsm6dsv16x, SENSOR_CHAN_ACCEL_XYZ, lsm6dsv16x_accel);
 		sensor_channel_get(lsm6dsv16x, SENSOR_CHAN_GYRO_XYZ, lsm6dsv16x_gyro);
 		sensor_channel_get(lis2mdl, SENSOR_CHAN_MAGN_XYZ, lis2mdl_magn);
@@ -266,6 +316,14 @@ int main(void)
 		printf("HTS221: Relative Humidity: %.1f%%\n",
 		       sensor_value_to_double(&hts221_hum));
 
+		/* temperature */
+		printf("LPS22DF: Temperature: %.1f C\n",
+		       sensor_value_to_double(&lps22df_temp));
+
+		/* pressure */
+		printf("LPS22DF: Pressure: %.3f kpa\n",
+		       sensor_value_to_double(&lps22df_press));
+
 		printf("LSM6DSV16X: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lsm6dsv16x_accel[0]),
 			sensor_value_to_double(&lsm6dsv16x_accel[1]),
@@ -284,6 +342,10 @@ int main(void)
 
 		printf("LIS2MDL: Temperature: %.1f C\n",
 		       sensor_value_to_double(&lis2mdl_temp));
+
+#ifdef CONFIG_LPS22DF_TRIGGER
+		printk("%d:: lps22df trig %d\n", cnt, lps22df_trig_cnt);
+#endif
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 		printk("%d:: lsm6dsv16x acc trig %d\n", cnt, lsm6dsv16x_acc_trig_cnt);
