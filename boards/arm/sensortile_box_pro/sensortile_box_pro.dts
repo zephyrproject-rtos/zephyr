@@ -215,6 +215,13 @@
 		status = "okay";
 	};
 
+	lps22df@5d {
+		compatible = "st,lps22df";
+		reg = <0x5d>;
+		drdy-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
 	lis2mdl@1e {
 		compatible = "st,lis2mdl";
 		reg = <0x1e>;
