@@ -63,6 +63,7 @@ struct i2c_enhance_config {
 	uint8_t *base;
 	uint8_t i2c_irq_base;
 	uint8_t port;
+	uint8_t channel_switch_sel;
 	/* SCL GPIO cells */
 	struct gpio_dt_spec scl_gpios;
 	/* SDA GPIO cells */
@@ -1174,6 +1175,27 @@ static int i2c_enhance_init(const struct device *dev)
 		enhanced_i2c_set_cmd_addr_regs(dev);
 #endif
 
+		/* ChannelA-F switch selection of I2C pin */
+		if (config->port == SMB_CHANNEL_A) {
+			IT8XXX2_SMB_SMB01CHS = (IT8XXX2_SMB_SMB01CHS &= ~GENMASK(2, 0)) |
+				config->channel_switch_sel;
+		} else if (config->port == SMB_CHANNEL_B) {
+			IT8XXX2_SMB_SMB01CHS = (config->channel_switch_sel << 4) |
+				(IT8XXX2_SMB_SMB01CHS &= ~GENMASK(6, 4));
+		} else if (config->port == SMB_CHANNEL_C) {
+			IT8XXX2_SMB_SMB23CHS = (IT8XXX2_SMB_SMB23CHS &= ~GENMASK(2, 0)) |
+				config->channel_switch_sel;
+		} else if (config->port == I2C_CHANNEL_D) {
+			IT8XXX2_SMB_SMB23CHS = (config->channel_switch_sel << 4) |
+				(IT8XXX2_SMB_SMB23CHS &= ~GENMASK(6, 4));
+		} else if (config->port == I2C_CHANNEL_E) {
+			IT8XXX2_SMB_SMB45CHS = (IT8XXX2_SMB_SMB45CHS &= ~GENMASK(2, 0)) |
+				config->channel_switch_sel;
+		} else if (config->port == I2C_CHANNEL_F) {
+			IT8XXX2_SMB_SMB45CHS = (config->channel_switch_sel << 4) |
+				(IT8XXX2_SMB_SMB45CHS &= ~GENMASK(6, 4));
+		}
+
 		/* Set clock frequency for I2C ports */
 		if (config->bitrate == I2C_BITRATE_STANDARD ||
 			config->bitrate == I2C_BITRATE_FAST ||
@@ -1427,6 +1449,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(inst),                             \
 		.port = DT_INST_PROP(inst, port_num),                           \
+		.channel_switch_sel = DT_INST_PROP(inst, channel_switch_sel),   \
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0), \
