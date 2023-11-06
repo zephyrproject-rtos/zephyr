@@ -446,19 +446,18 @@ static bool test_packet_parsing(struct ieee802154_pkt_test *t)
 		NET_INFO("d: %p vs %p -- s: %p vs %p\n",
 			 mpdu.mhr.dst_addr, t->mhr_check.dst_addr,
 			 mpdu.mhr.src_addr, t->mhr_check.src_addr);
-		NET_ERR("*** Wrong MPDU information on frame %s\n",
-			t->name);
+		NET_ERR("*** Wrong MPDU information on frame %s\n", t->name);
 
 		return false;
 	}
 
 	if (mpdu.mhr.fs->sequence != t->sequence) {
-		NET_ERR("*** Invalid sequence number\n", t->name);
+		NET_ERR("*** Invalid sequence number for frame %s\n", t->name);
 		return false;
 	}
 
 	if (mpdu.payload_length != t->payload_length) {
-		NET_ERR("*** Invalid payload length\n", t->name);
+		NET_ERR("*** Invalid payload length for frame %s\n", t->name);
 		return false;
 	}
 
