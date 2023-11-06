@@ -52,6 +52,28 @@ struct cellular_network {
 	uint16_t size;
 };
 
+enum cellular_signal_type {
+	CELLULAR_SIGNAL_RSSI,
+	CELLULAR_SIGNAL_RSRP,
+	CELLULAR_SIGNAL_RSRQ,
+};
+
+/** Cellular modem info type */
+enum cellular_modem_info_type {
+	/** International Mobile Equipment Identity */
+	CELLULAR_MODEM_INFO_IMEI,
+	/** Modem model ID */
+	CELLULAR_MODEM_INFO_MODEL_ID,
+	/** Modem manufacturer */
+	CELLULAR_MODEM_INFO_MANUFACTURER,
+	/** Modem fw version */
+	CELLULAR_MODEM_INFO_FW_VERSION,
+	/** International Mobile Subscriber Identity */
+	CELLULAR_MODEM_INFO_SIM_IMSI,
+	/** Integrated Circuit Card Identification Number (SIM) */
+	CELLULAR_MODEM_INFO_SIM_ICCID,
+};
+
 /**
  * @brief Configure cellular networks for the device
  *
@@ -89,6 +111,37 @@ int cellular_configure_networks(const struct device *dev, const struct cellular_
  */
 int cellular_get_supported_networks(const struct device *dev,
 				    const struct cellular_network **networks, uint8_t *size);
+
+/**
+ * @brief Get signal for the device
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of the signal information requested
+ * @param value Signal strength destination (one of RSSI, RSRP, RSRQ)
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if API is not supported by cellular network device.
+ * @retval -ENODATA if device is not in a state where signal can be polled
+ * @retval Negative errno-code otherwise.
+ */
+int cellular_get_signal(const struct device *dev, const enum cellular_signal_type type,
+			int16_t *value);
+
+/**
+ * @brief Get modem info for the device
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of the modem info requested
+ * @param info Info string destination
+ * @param size Info string size
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if API is not supported by cellular network device.
+ * @retval -ENODATA if modem does not provide info requested
+ * @retval Negative errno-code from chat module otherwise.
+ */
+int cellular_get_modem_info(const struct device *dev, const enum cellular_modem_info_type type,
+			    char *info, size_t size);
 
 #ifdef __cplusplus
 }
