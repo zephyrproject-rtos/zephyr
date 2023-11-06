@@ -700,7 +700,7 @@ static int adin2111_port_set_config(const struct device *dev,
 	const struct device *adin = cfg->adin;
 	int ret = -ENOTSUP;
 
-	(void)eth_adin2111_lock(dev, K_FOREVER);
+	(void)eth_adin2111_lock(adin, K_FOREVER);
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
 		ret = adin2111_filter_unicast(adin, (uint8_t *)&config->mac_address.addr[0],
@@ -716,7 +716,7 @@ static int adin2111_port_set_config(const struct device *dev,
 	}
 
 end_unlock:
-	(void)eth_adin2111_unlock(dev);
+	(void)eth_adin2111_unlock(adin);
 	return ret;
 }
 
