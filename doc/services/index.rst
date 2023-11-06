@@ -8,6 +8,7 @@ OS Services
 
 
    binary_descriptors/index.rst
+   console.rst
    crypto/index
    debugging/index.rst
    device_mgmt/index
