@@ -19,7 +19,6 @@ extern const uint8_t test_preset_index_3;
 extern const uint8_t test_preset_index_5;
 extern const enum bt_has_properties test_preset_properties;
 
-#ifdef CONFIG_BT_HAS_CLIENT
 CREATE_FLAG(g_service_discovered);
 CREATE_FLAG(g_preset_switched);
 CREATE_FLAG(g_preset_1_found);
@@ -246,7 +245,6 @@ static void test_main(void)
 
 	PASS("HAS main PASS\n");
 }
-#endif /* CONFIG_BT_HAS_CLIENT */
 
 #define FEATURES_SUB_NTF        BIT(0)
 #define ACTIVE_INDEX_SUB_NTF    BIT(1)
@@ -670,14 +668,12 @@ static void test_gatt_client(void)
 }
 
 static const struct bst_test_instance test_has[] = {
-#ifdef CONFIG_BT_HAS_CLIENT
 	{
 		.test_id = "has_client",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
-#endif /* CONFIG_BT_HAS_CLIENT */
 	{
 		.test_id = "has_client_offline_behavior",
 		.test_descr = "Test receiving notifications after reconnection",
@@ -690,5 +686,9 @@ static const struct bst_test_instance test_has[] = {
 
 struct bst_test_list *test_has_client_install(struct bst_test_list *tests)
 {
-	return bst_add_tests(tests, test_has);
+	if (IS_ENABLED(CONFIG_BT_HAS_CLIENT)) {
+		return bst_add_tests(tests, test_has);
+	} else {
+		return tests;
+	}
 }
