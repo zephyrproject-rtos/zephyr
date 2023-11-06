@@ -450,16 +450,22 @@ class Pytest(Harness):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r"\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r"\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r"\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r"\[==========\] Done running all tests\.$"
-    has_failures = False
-    tc = None
+    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+
+    def __init__(self):
+        super().__init__()
+        self.tc = None
+        self.has_failures = False
 
     def handle(self, line):
         # Strip the ANSI characters, they mess up the patterns
         non_ansi_line = self.ANSI_ESCAPE.sub('', line)
+
+        if self.state:
+            return
 
         # Check if we started running a new test
         test_start_match = re.search(self.TEST_START_PATTERN, non_ansi_line)
