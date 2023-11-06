@@ -98,7 +98,7 @@
 		wovcro-supported;
 	};
 
-	IMR1: memory@0xb0000000 {
+	IMR1: memory@b0000000 {
 		compatible = "intel,adsp-imr";
 		reg = <0xB0000000 DT_SIZE_M(16)>;
 		block-size = <0x1000>;
