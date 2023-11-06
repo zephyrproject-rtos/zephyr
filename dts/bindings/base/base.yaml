@@ -92,3 +92,7 @@ properties:
   mbox-names:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
+
+  zephyr,deferred-init:
+    type: boolean
+    description: Indicate that the device should be initialized later
