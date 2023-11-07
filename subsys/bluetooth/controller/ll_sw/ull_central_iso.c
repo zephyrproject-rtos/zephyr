@@ -147,7 +147,6 @@ uint8_t ll_cis_parameters_set(uint8_t cis_id,
 }
 
 /* TODO:
- * - Drop retransmissions to stay within Max_Transmission_Latency instead of asserting
  * - Calculate ISO_Interval to allow SDU_Interval < ISO_Interval
  */
 uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
@@ -311,6 +310,8 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	}
 
 	num_cis = cig->lll.num_cis;
+
+ll_cig_parameters_commit_retry:
 	handle_iter = UINT16_MAX;
 
 	/* 1) Acquire CIS instances and initialize instance data.
@@ -520,8 +521,29 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 		if (!cig->central.test) {
 			/* Make sure specified Max_Transport_Latency is not exceeded */
-			LL_ASSERT(c_latency <= cig->c_latency);
-			LL_ASSERT(p_latency <= cig->p_latency);
+			if ((c_latency > cig->c_latency) || (p_latency > cig->p_latency)) {
+				/* Check if we can reduce RTN to meet requested latency */
+				if (!cis->central.c_rtn && !cis->central.p_rtn) {
+					/* Actual latency exceeds the Max. Transport Latency */
+					err = BT_HCI_ERR_INVALID_PARAM;
+
+					/* Release allocated resources  and exit */
+					goto ll_cig_parameters_commit_cleanup;
+				}
+
+				/* Reduce the RTN to meet host requested latency.
+				 * NOTE: Both central and peripheral retransmission is reduced for
+				 * simplicity.
+				 */
+				if (cis->central.c_rtn) {
+					cis->central.c_rtn--;
+				}
+				if (cis->central.p_rtn) {
+					cis->central.p_rtn--;
+				}
+
+				goto ll_cig_parameters_commit_retry;
+			}
 		}
 
 		c_max_latency = MAX(c_max_latency, c_latency);

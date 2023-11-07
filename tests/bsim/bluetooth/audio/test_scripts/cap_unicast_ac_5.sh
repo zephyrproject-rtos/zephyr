@@ -46,4 +46,4 @@ Execute_AC_5 48_2_1 48_2_1
 Execute_AC_5 48_3_1 48_3_1
 Execute_AC_5 48_4_1 48_4_1
 Execute_AC_5 48_5_1 48_5_1
-# Execute_AC_5 48_6_1 48_6_1 # ASSERTION FAIL [c_latency <= cig->c_latency]
+Execute_AC_5 48_6_1 48_6_1
