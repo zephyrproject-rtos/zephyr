@@ -15,9 +15,9 @@ properties:
     type: string
     required: true
     enum:
-      - "LDO_1P2_LDO_2P0"
-      - "DCDC_1P2_LDO_2P0"
-      - "DCDC_1P2_DCDC_2P0"
+      - "LDO_1P4_LDO_2P0"
+      - "DCDC_1P4_LDO_2P0"
+      - "DCDC_1P4_DCDC_2P0"
 
   vbat-type:
     type: string
