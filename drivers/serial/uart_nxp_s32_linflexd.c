@@ -347,6 +347,7 @@ static const struct uart_driver_api uart_nxp_s32_driver_api = {
 	{									\
 		.BaudRate = 115200,						\
 		.BaudRateMantissa = 26U,					\
+		.BaudRateDivisor = 16U,						\
 		.BaudRateFractionalDivisor = 1U,				\
 		.ParityCheck = false,						\
 		.ParityType = LINFLEXD_UART_IP_PARITY_EVEN,			\
