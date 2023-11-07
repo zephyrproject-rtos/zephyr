@@ -96,6 +96,11 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
   endif()
 
+  # Use overwrite-only instead of swap upgrades.
+  if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
+    set(imgtool_extra --overwrite-only ${imgtool_extra})
+  endif()
+
   set(imgtool_args -- ${imgtool_extra})
 
   # Extensionless prefix of any output file.
