@@ -399,6 +399,14 @@
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
 			status = "disabled";
 		};
+
+		rtc: rtc@4005c000 {
+			compatible = "raspberrypi,pico-rtc";
+			reg = <0x4005c000 DT_SIZE_K(4)>;
+			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			resets = <&reset RPI_PICO_RESETS_RESET_RTC>;
+			status = "disabled";
+		};
 	};
 
 	pinctrl: pin-controller {
