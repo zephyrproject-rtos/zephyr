@@ -102,6 +102,8 @@ This sample uses different drivers depending on the selected board:
 I2S driver:
 
 - thingy52_nrf52832
+- nrf5340dk_nrf5340 (3.3V logic level, a logic level shifter may be required)
+    - should work for other boards featuring an nRF5340 host processor
 
 SPI driver:
 
