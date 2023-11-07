@@ -459,7 +459,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bt_bap_bass_cp_add_src) - 1) {
 		LOG_DBG("Invalid length %u", buf->size);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	internal_state = get_free_recv_state();
@@ -510,7 +510,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 
 		if (buf->len < (sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len))) {
 			LOG_DBG("Invalid length %u", buf->size);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
 		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
@@ -545,7 +545,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		if (buf->len < subgroup->metadata_len) {
 			LOG_DBG("Invalid length %u", buf->size);
 
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
 
@@ -563,7 +563,7 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 
 	if (buf->len != 0) {
 		LOG_DBG("Invalid length %u", buf->size);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	if (pa_sync != BT_BAP_BASS_PA_REQ_NO_SYNC) {
@@ -625,7 +625,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	if (buf->len < sizeof(struct bt_bap_bass_cp_mod_src) - 1) {
 		LOG_DBG("Invalid length %u", buf->len);
 
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	src_id = net_buf_simple_pull_u8(buf);
@@ -664,7 +664,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 		if (buf->len < (sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len))) {
 			LOG_DBG("Invalid length %u", buf->len);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
 		old_bis_sync_req = internal_state->requested_bis_sync[i];
@@ -699,7 +699,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 		if (buf->len < subgroup->metadata_len) {
 			LOG_DBG("Invalid length %u", buf->len);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
 		if (subgroup->metadata_len > CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN) {
@@ -717,7 +717,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	if (buf->len != 0) {
 		LOG_DBG("Invalid length %u", buf->size);
 
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	/* All input has been validated; update receive state and check for changes */
@@ -797,7 +797,7 @@ static int scan_delegator_broadcast_code(struct bt_conn *conn,
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len != sizeof(struct bt_bap_bass_cp_broadcase_code) - 1) {
 		LOG_DBG("Invalid length %u", buf->size);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	src_id = net_buf_simple_pull_u8(buf);
@@ -836,7 +836,7 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len != sizeof(struct bt_bap_bass_cp_rem_src) - 1) {
 		LOG_DBG("Invalid length %u", buf->size);
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	src_id = net_buf_simple_pull_u8(buf);
@@ -903,7 +903,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	} else if (len == 0) {
-		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
 	net_buf_simple_init_with_data(&buf, (void *)data, len);
@@ -928,7 +928,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 
 		if (buf.len != 0) {
 			LOG_DBG("Invalid length %u", buf.size);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
 		bap_broadcast_assistant->scanning = false;
@@ -938,7 +938,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 
 		if (buf.len != 0) {
 			LOG_DBG("Invalid length %u", buf.size);
-			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 		bap_broadcast_assistant->scanning = true;
 		break;
