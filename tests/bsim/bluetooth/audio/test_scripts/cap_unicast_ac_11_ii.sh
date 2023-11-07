@@ -50,5 +50,5 @@ Execute_AC_11_II 48_1_1 48_1_1
 Execute_AC_11_II 48_2_1 48_2_1
 Execute_AC_11_II 48_3_1 48_3_1
 Execute_AC_11_II 48_4_1 48_4_1
-# Execute_AC_11_II 48_5_1 48_5_1 # Controller assert: ASSERTION FAIL [c_latency <= cig->c_latency]
+Execute_AC_11_II 48_5_1 48_5_1
 Execute_AC_11_II 48_6_1 48_6_1
