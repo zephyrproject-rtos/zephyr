@@ -11,7 +11,7 @@ Abstract Control Model (ACM) driver provided by the Zephyr project.
 This sample can be found under :zephyr_file:`samples/subsys/usb/cdc_acm_perf` in the
 Zephyr project tree.
 
-This sample firmware streams incrementing float32 data out the serial port as fast as possible.
+This sample firmware streams incrementing uint32 data out the serial port as fast as possible.
 An included host application can be run on a PC to read this data, check for any errors,
 and measure the data rate.
 
