@@ -9,6 +9,9 @@
 
 #include "common.h"
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(has_test, LOG_LEVEL_DBG);
+
 extern enum bst_result_t bst_result;
 
 const uint8_t test_preset_index_1 = 0x01;
@@ -41,7 +44,7 @@ static void test_common(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_DBG("Bluetooth initialized");
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
 	if (err) {
@@ -49,7 +52,7 @@ static void test_common(void)
 		return;
 	}
 
-	printk("Advertising successfully started\n");
+	LOG_DBG("Advertising successfully started");
 
 	has_param.type = BT_HAS_HEARING_AID_TYPE_BINAURAL;
 	has_param.preset_sync_support = true;
@@ -90,7 +93,7 @@ static void test_common(void)
 		return;
 	}
 
-	printk("Presets registered\n");
+	LOG_DBG("Presets registered");
 
 	PASS("HAS passed\n");
 }
