@@ -27,6 +27,16 @@ config RISCV_GP
 	  global pointer at program start or earlier than any instruction
 	  using GP relative addressing.
 
+config RISCV_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	help
+	  This option indicates that the RISC-V CPU is connected to a custom
+	  interrupt controller.
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the SoC interrupt control interface, which is
+	  implemented at the SoC level.
+
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
 	depends on MULTITHREADING

@@ -50,6 +50,8 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#if !defined(CONFIG_RISCV_CUSTOM_INTERRUPT_CONTROLLER)
+
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
@@ -61,6 +63,26 @@ extern void z_riscv_irq_priority_set(unsigned int irq,
 #else
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
+
+#else
+
+/*
+ * When a custom interrupt controller is specified, map the architecture
+ * interrupt control functions to the SoC layer interrupt control functions.
+ */
+
+void z_soc_irq_init(void);
+void z_soc_irq_enable(unsigned int irq);
+void z_soc_irq_disable(unsigned int irq);
+int z_soc_irq_is_enabled(unsigned int irq);
+void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags);
+
+#define arch_irq_enable(irq)                       z_soc_irq_enable(irq)
+#define arch_irq_disable(irq)                      z_soc_irq_disable(irq)
+#define arch_irq_is_enabled(irq)                   z_soc_irq_is_enabled(irq)
+#define z_riscv_irq_priority_set(irq, prio, flags) z_soc_irq_priority_set(irq, prio, flags)
+
+#endif /* !CONFIG_RISCV_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_RISCV_HAS_CLIC
 extern void z_riscv_irq_vector_set(unsigned int irq);
