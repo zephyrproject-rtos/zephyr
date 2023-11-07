@@ -9,5 +9,6 @@ config SOC_SERIES_IMX8MQ_M4
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_IMX
 	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for i.MX8MQ M4 MCU series
