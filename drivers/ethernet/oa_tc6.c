@@ -135,23 +135,30 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 	return ret;
 }
 
-int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
+int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg,
+		   uint32_t mask, uint32_t val)
 {
-	uint32_t val;
+	uint32_t tmp;
 	int ret;
 
-	ret = oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
+	ret = oa_tc6_reg_read(tc6, reg, &tmp);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (prote) {
-		val |= OA_CONFIG0_PROTE;
-	} else {
-		val &= ~OA_CONFIG0_PROTE;
+	tmp &= ~mask;
+
+	if (val) {
+		tmp |= val;
 	}
 
-	ret = oa_tc6_reg_write(tc6, OA_CONFIG0, val);
+	return oa_tc6_reg_write(tc6, reg, tmp);
+}
+
+int oa_tc6_set_protected_ctrl(struct oa_tc6 *tc6, bool prote)
+{
+	int ret = oa_tc6_reg_rmw(tc6, OA_CONFIG0, OA_CONFIG0_PROTE,
+				 prote ? OA_CONFIG0_PROTE : 0);
 	if (ret < 0) {
 		return ret;
 	}
