@@ -35,6 +35,7 @@ config SOC_LPC55S16
 config SOC_LPC55S28
 	bool "SOC_LPC55S28 M33"
 	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
