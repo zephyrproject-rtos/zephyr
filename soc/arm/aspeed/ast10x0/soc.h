@@ -25,4 +25,6 @@
 
 void aspeed_print_sysrst_info(void);
 
+#include <cmsis_core_m_defaults.h>
+
 #endif /* ZEPHYR_SOC_ARM_ASPEED_AST10X0_SOC_H_*/
