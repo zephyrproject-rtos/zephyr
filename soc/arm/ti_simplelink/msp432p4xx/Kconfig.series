@@ -11,5 +11,6 @@ config SOC_SERIES_MSP432P4XX
 	select DYNAMIC_INTERRUPTS
 	select SOC_FAMILY_TISIMPLELINK
 	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for TI SimpleLink MSP432P4XX.
