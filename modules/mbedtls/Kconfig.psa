@@ -301,8 +301,7 @@ config PSA_HAS_KEY_DERIVATION
 		   PSA_WANT_ALG_PBKDF2_HMAC	|| \
 		   PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128 || \
 		   PSA_WANT_ALG_TLS12_PRF	|| \
-		   PSA_WANT_ALG_TLS12_PSK_TO_MS || \
-		   PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
+		   PSA_WANT_ALG_TLS12_PSK_TO_MS
 	help
 	  Prompt-less configuration that states that key derivation is supported.
 
@@ -336,10 +335,6 @@ config PSA_WANT_ALG_TLS12_PRF
 config PSA_WANT_ALG_TLS12_PSK_TO_MS
 	bool
 	prompt "PSA TLS 1.2 PSK to MS support" if !PSA_PROMPTLESS
-
-config PSA_WANT_ALG_TLS12_ECJPAKE_TO_PMS
-	bool
-	prompt "PSA TLS 1.2 EC J-PAKE to PMS support" if !PSA_PROMPTLESS
 
 endmenu # PSA Key derivation support
 
@@ -487,19 +482,8 @@ config PSA_WANT_ALG_SPAKE2P
 	prompt "PSA SPAKE2+ support" if !PSA_PROMPTLESS
 	select EXPERIMENTAL
 
-config PSA_WANT_ALG_SRP_6
+config PSA_WANT_ALG_SRP
 	bool
-	prompt "PSA SRP-6 support" if !PSA_PROMPTLESS
+	prompt "PSA SRP support" if !PSA_PROMPTLESS
+	default n
 	select EXPERIMENTAL
-
-config PSA_WANT_ALG_PURE_EDDSA
-	bool
-	prompt "PSA PURE_EDDSA support" if !PSA_PROMPTLESS
-
-config PSA_WANT_ALG_ED25519PH
-	bool
-	prompt "PSA ED25519PH support" if !PSA_PROMPTLESS
-
-config PSA_WANT_ALG_ED448PH
-	bool
-	prompt "PSA ED448PH support" if !PSA_PROMPTLESS
