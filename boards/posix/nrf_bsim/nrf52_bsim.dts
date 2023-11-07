@@ -54,6 +54,7 @@
 		/delete-node/ spi@40004000;
 		/delete-node/ spi@40023000;
 		/delete-node/ spi@4002f000;
+		/delete-node/ nfct@40005000;
 		/delete-node/ watchdog@40010000;
 		/delete-node/ acl@4001e000;
 		/delete-node/ usbd@40027000;
