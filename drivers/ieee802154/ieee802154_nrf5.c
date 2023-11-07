@@ -668,6 +668,7 @@ static int nrf5_stop(const struct device *dev)
 		} else {
 			LOG_WRN("Transition to radio sleep cannot be handled.");
 		}
+		Z_SPIN_DELAY(1);
 		return 0;
 	}
 #else
