@@ -184,11 +184,22 @@ static void rtc_stm32_irq_config(const struct device *dev);
 
 static int rtc_stm32_start(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_STM32WBAX)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct rtc_stm32_config *cfg = dev->config;
+
+	/* Enable RTC bus clock */
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		LOG_ERR("clock op failed\n");
+		return -EIO;
+	}
+#else
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	LL_RCC_EnableRTC();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif
 
 	return 0;
 }
@@ -196,11 +207,22 @@ static int rtc_stm32_start(const struct device *dev)
 
 static int rtc_stm32_stop(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_STM32WBAX)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct rtc_stm32_config *cfg = dev->config;
+
+	/* Enable RTC bus clock */
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		LOG_ERR("clock op failed\n");
+		return -EIO;
+	}
+#else
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	LL_RCC_DisableRTC();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif
 
 	return 0;
 }
@@ -504,7 +526,7 @@ void rtc_stm32_isr(const struct device *dev)
 	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 family RTC is not connected to EXTI */
 #else
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -546,7 +568,9 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_RCC_EnableRTC();
+#endif
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
@@ -570,7 +594,7 @@ static int rtc_stm32_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 family RTC is not connected to EXTI */
 #else
 	LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
