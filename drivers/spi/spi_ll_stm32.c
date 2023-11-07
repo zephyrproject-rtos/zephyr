@@ -902,9 +902,15 @@ static int transceive_dma(const struct device *dev,
 		}
 #endif
 
+#ifdef CONFIG_SPI_STM32F7_ERRATA_BUSY
+		WAIT_FOR(ll_func_spi_dma_busy(spi) != 0,
+			 CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT,
+			 k_yield());
+#else
 		/* wait until spi is no more busy (spi TX fifo is really empty) */
 		while (ll_func_spi_dma_busy(spi) == 0) {
 		}
+#endif
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		/* toggle the DMA transfer request */
