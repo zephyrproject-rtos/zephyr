@@ -41,6 +41,11 @@ config PSA_HAS_KEY_SUPPORT
 		   PSA_WANT_KEY_TYPE_PASSWORD_HASH	|| \
 		   PSA_WANT_KEY_TYPE_PEPPER             || \
 		   PSA_WANT_KEY_TYPE_AES 		|| \
+		   PSA_WANT_KEY_TYPE_ARIA               || \
+		   PSA_WANT_KEY_TYPE_DES                || \
+		   PSA_WANT_KEY_TYPE_CAMELLIA           || \
+		   PSA_WANT_KEY_TYPE_SM4                || \
+		   PSA_WANT_KEY_TYPE_ARC4               || \
 		   PSA_WANT_KEY_TYPE_CHACHA20		|| \
 		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR	|| \
 		   PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY	|| \
@@ -85,6 +90,29 @@ config PSA_WANT_KEY_TYPE_AES
 	bool "PSA AES key type support"
 	help
 	  Key for cipher, AEAD or MAC algorithm based on the AES block cipher.
+
+config PSA_WANT_KEY_TYPE_ARIA
+	bool "PSA ARIA key type support"
+
+config PSA_WANT_KEY_TYPE_DES
+	bool "PSA DES key type support (weak)"
+	help
+	  Warning: Single DES and 2-key 3DES are weak and strongly deprecated
+	  and are only recommended for decrypting legacy data.
+	  3-key 3DES is weak and deprecated and is only recommended for use in
+	  legacy protocols.
+
+config PSA_WANT_KEY_TYPE_CAMELLIA
+	bool "PSA CAMELLIA key type support"
+
+config PSA_WANT_KEY_TYPE_SM4
+	bool "PSA SM4 key type support"
+
+config PSA_WANT_KEY_TYPE_ARC4
+	bool "PSA ARC4 key type support (weak)"
+	help
+	  Warning: The ARC4 cipher is weak and deprecated and is only
+	  recommended for use in legacy protocols.
 
 config PSA_WANT_KEY_TYPE_CHACHA20
 	bool "PSA ChaCha20 key type support"
@@ -135,7 +163,6 @@ config PSA_HAS_AEAD_SUPPORT
 	bool
 	default y
 	depends on PSA_WANT_ALG_CCM || \
-		   PSA_WANT_ALG_CCM_STAR_NO_TAG || \
 		   PSA_WANT_ALG_GCM || \
 		   PSA_WANT_ALG_CHACHA20_POLY1305
 	help
@@ -144,10 +171,6 @@ config PSA_HAS_AEAD_SUPPORT
 config PSA_WANT_ALG_CCM
 	bool
 	prompt "PSA CCM support" if !PSA_PROMPTLESS
-
-config PSA_WANT_ALG_CCM_STAR_NO_TAG
-	bool
-	prompt "PSA AES CCM star with no tag support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_GCM
 	bool
@@ -173,8 +196,7 @@ config PSA_HAS_MAC_SUPPORT
 
 config PSA_WANT_ALG_CBC_MAC
 	bool
-	help
-	  CBC-MAC is not yet supported via the PSA API in Mbed TLS.
+	prompt "PSA CBC-MAC support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_CMAC
 	bool
@@ -197,7 +219,17 @@ config PSA_HAS_HASH_SUPPORT
 		   PSA_WANT_ALG_SHA_256		|| \
 		   PSA_WANT_ALG_SHA_384		|| \
 		   PSA_WANT_ALG_SHA_512		|| \
+		   PSA_WANT_ALG_SHA_512_224     || \
+		   PSA_WANT_ALG_SHA_512_256     || \
+		   PSA_WANT_ALG_SHA3_224        || \
+		   PSA_WANT_ALG_SHA3_256        || \
+		   PSA_WANT_ALG_SHA3_384        || \
+		   PSA_WANT_ALG_SHA3_512        || \
+		   PSA_WANT_ALG_SM3             || \
+		   PSA_WANT_ALG_SHAKE256_512    || \
 		   PSA_WANT_ALG_RIPEMD160	|| \
+		   PSA_WANT_ALG_MD2             || \
+		   PSA_WANT_ALG_MD4             || \
 		   PSA_WANT_ALG_MD5
 	help
 	  Prompt-less configuration that states that hash is supported.
@@ -225,9 +257,55 @@ config PSA_WANT_ALG_SHA_512
 	bool
 	prompt "PSA SHA-512 support" if !PSA_PROMPTLESS
 
+config PSA_WANT_ALG_SHA_512_224
+	bool
+	prompt "PSA SHA-512/224 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA_512_256
+	bool
+	prompt "PSA SHA-512/256 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_224
+	bool
+	prompt "PSA SHA3-224 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_256
+	bool
+	prompt "PSA SHA3-256 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_384
+	bool
+	prompt "PSA SHA3-384 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHA3_512
+	bool
+	prompt "PSA SHA3-512 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SM3
+	bool
+	prompt "PSA SM3 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_SHAKE256_512
+	bool
+	prompt "PSA SHAKE256 512 bits support" if !PSA_PROMPTLESS
+
 config PSA_WANT_ALG_RIPEMD160
 	bool
 	prompt "PSA RIPEMD-160 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_MD2
+	bool
+	prompt "PSA MD2 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The MD2 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
+
+config PSA_WANT_ALG_MD4
+	bool
+	prompt "PSA MD4 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The MD4 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
 
 config PSA_WANT_ALG_MD5
 	bool
@@ -246,10 +324,10 @@ config PSA_HAS_CIPHER_SUPPORT
 	depends on PSA_WANT_ALG_ECB_NO_PADDING	|| \
 		   PSA_WANT_ALG_CBC_NO_PADDING	|| \
 		   PSA_WANT_ALG_CBC_PKCS7	|| \
+		   PSA_WANT_ALG_CCM_STAR_NO_TAG || \
 		   PSA_WANT_ALG_CFB 		|| \
 		   PSA_WANT_ALG_CTR		|| \
 		   PSA_WANT_ALG_OFB		|| \
-		   PSA_WANT_ALG_CTR		|| \
 		   PSA_WANT_ALG_XTS             || \
 		   PSA_WANT_ALG_STREAM_CIPHER
 	help
@@ -283,12 +361,38 @@ config PSA_WANT_ALG_XTS
 	bool
 	prompt "PSA XTS block cipher mode support" if !PSA_PROMPTLESS
 
+config PSA_WANT_ALG_CCM_STAR_NO_TAG
+	bool
+	prompt "PSA CCM* with no tag support" if !PSA_PROMPTLESS
+	help
+	  Unauthenticated version of CCM. Uses the cipher API instead of the AEAD API.
+
 config PSA_WANT_ALG_STREAM_CIPHER
 	bool
 	prompt "PSA stream cipher support" if !PSA_PROMPTLESS
 
 endmenu # PSA Cipher Support
 
+menu "PSA Key agreement support"
+
+config PSA_HAS_KEY_AGREEMENT
+	bool
+	default y
+	depends on PSA_WANT_ALG_ECDH
+	depends on PSA_WANT_ALG_FFDH
+	help
+	  Promt-less configuration that states that key agreement is supported.
+
+config PSA_WANT_ALG_ECDH
+	bool
+	prompt "PSA ECDH support" if !PSA_PROMPTLESS
+
+
+config PSA_WANT_ALG_FFDH
+	bool
+	prompt "PSA FFDH support" if !PSA_PROMPTLESS
+
+endmenu # PSA Key agreement support
 
 menu "PSA Key derivation support"
 
@@ -361,65 +465,86 @@ config PSA_HAS_ASYM_SIGN_SUPPORT
 	default y
 	depends on PSA_WANT_ALG_DETERMINISTIC_ECDSA	|| \
 		   PSA_WANT_ALG_ECDSA 			|| \
+		   PSA_WANT_ALG_ECDSA_ANY		|| \
+		   PSA_WANT_ALG_PURE_EDDSA              || \
+		   PSA_WANT_ALG_ED25519PH               || \
+		   PSA_WANT_ALG_ED448PH                 || \
 		   PSA_WANT_ALG_RSA_PKCS1V15_SIGN	|| \
-		   PSA_WANT_ALG_RSA_PSS
+		   PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW   || \
+		   PSA_WANT_ALG_RSA_PSS                 || \
+		   PSA_WANT_ALG_RSA_PSS_ANY_SALT
 	help
 	  Prompt-less configuration that states that asymmetric signing
 	  is supported.
 
-config PSA_HAS_ECC_SUPPORT
-	bool
-	depends on PSA_WANT_ALG_ECDH                    || \
-		   PSA_WANT_ALG_ECDSA                   || \
-		   PSA_WANT_ALG_DETERMINISTIC_ECDSA     || \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR       || \
-		   PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
-	default y
-	help
-	  Prompt-less configuration that states that ECC is supported.
-
-config PSA_WANT_ALG_ECDH
-	bool
-	prompt "PSA ECDH support" if !PSA_PROMPTLESS
-
 config PSA_WANT_ALG_ECDSA
 	bool
 	prompt "PSA ECDSA support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_ECDSA_ANY
+	bool
+	prompt "PSA ECDSA support, without hashing" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_DETERMINISTIC_ECDSA
 	bool
 	prompt "PSA ECDSA support (deterministic mode)" if !PSA_PROMPTLESS
 
 menu "Elliptic Curve type support"
-	depends on PSA_HAS_ECC_SUPPORT
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_160
+	bool
+	prompt "PSA ECC BrainpoolP160r1 support (weak)"  if !PSA_PROMPTLESS
+	help
+	  Warning: The 160-bit curve brainpoolP160r1 is weak and deprecated and
+	  is only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_192
+	bool
+	prompt "PSA ECC BrainpoolP192r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_224
+	bool
+	prompt "PSA ECC BrainpoolP224r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_BRAINPOOL_P_R1_256
 	bool
-	prompt "PSA ECC Brainpool256r1 support"
+	prompt "PSA ECC BrainpoolP256r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_BRAINPOOL_P_R1_320
+	bool
+	prompt "PSA ECC BrainpoolP320r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_BRAINPOOL_P_R1_384
-	bool "PSA ECC Brainpool384r1 support"
+	bool
+	prompt "PSA ECC BrainpoolP384r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_BRAINPOOL_P_R1_512
-	bool "PSA ECC Brainpool512r1 support"
+	bool
+	prompt "PSA ECC BrainpoolP512r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_MONTGOMERY_255
-	bool "PSA ECC Curve25519 (X25519) support"
+	bool
+	prompt "PSA ECC Curve25519 (X25519) support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_MONTGOMERY_448
-	bool "PSA ECC Curve448 (X448) support"
+	bool
+	prompt "PSA ECC Curve448 (X448) support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_TWISTED_EDWARDS_255
-	bool "PSA ECC Edwards25519 (Ed25519) support"
+	bool
+	prompt "PSA ECC Edwards25519 (Ed25519) support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_TWISTED_EDWARDS_448
+	bool
+	prompt "PSA ECC Edwards448 (Ed448) support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_K1_192
-	bool "PSA ECC secp192k1 support"
+	bool
+	prompt "PSA ECC secp192k1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_K1_224
 	bool
-	help
-	  SECP224K1 is buggy via the PSA API in Mbed TLS
-	  See https://github.com/ARMmbed/mbedtls/issues/3541
+	prompt "PSA ECC secp224k1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_K1_256
 	bool
@@ -427,53 +552,116 @@ config PSA_WANT_ECC_SECP_K1_256
 
 config PSA_WANT_ECC_SECP_R1_192
 	bool
-	prompt "PSA ECC secp192r1" if !PSA_PROMPTLESS
+	prompt "PSA ECC secp192r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_R1_224
 	bool
-	prompt "PSA ECC secp224r1" if !PSA_PROMPTLESS
+	prompt "PSA ECC secp224r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_R1_256
 	bool
-	prompt "PSA ECC secp256r1" if !PSA_PROMPTLESS
+	prompt "PSA ECC secp256r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_R1_384
 	bool
-	prompt "PSA ECC secp384r1" if !PSA_PROMPTLESS
+	prompt "PSA ECC secp384r1 support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ECC_SECP_R1_521
 	bool
-	prompt "PSA ECC secp521r1" if !PSA_PROMPTLESS
+	prompt "PSA ECC secp521r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECP_R2_160
+	bool
+	prompt "PSA ECC secp160r2 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: his family of curves is weak and deprecated.
+
+config PSA_WANT_ECC_SECT_K1_163
+	bool
+	prompt "PSA ECC sect163k1 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The 163-bit curve sect163k1 is weak and deprecated and is
+	  only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_SECT_K1_233
+	bool
+	prompt "PSA ECC sect233k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_239
+	bool
+	prompt "PSA ECC sect239k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_283
+	bool
+	prompt "PSA ECC sect283k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_409
+	bool
+	prompt "PSA ECC sect409k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_K1_571
+	bool
+	prompt "PSA ECC sect571k1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_163
+	bool
+	prompt "PSA ECC sect163r1 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The 163-bit curve sect163r1 is weak and deprecated and is
+	  only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_SECT_R1_233
+	bool
+	prompt "PSA ECC sect233r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_283
+	bool
+	prompt "PSA ECC sect283r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_409
+	bool
+	prompt "PSA ECC sect409r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R1_571
+	bool
+	prompt "PSA ECC sect571r1 support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ECC_SECT_R2_163
+	bool
+	prompt "PSA ECC sect163r2 support (weak)" if !PSA_PROMPTLESS
+	help
+	  Warning: The 163-bit curve sect163r2 is weak and deprecated and is
+	  only recommended for use in legacy protocols.
+
+config PSA_WANT_ECC_FRP_V1_256
+	bool
+	prompt "PSA ECC FRP256v1 support" if !PSA_PROMPTLESS
 
 endmenu # Elliptic Curve type support
 
-config PSA_HAS_RSA_SUPPORT
-	bool
-	depends on PSA_WANT_ALG_RSA_OAEP 		|| \
-		   PSA_WANT_ALG_RSA_PKCS1V15_CRYPT 	|| \
-		   PSA_WANT_ALG_RSA_PKCS1V15_SIGN 	|| \
-		   PSA_WANT_ALG_RSA_PSS                 || \
-		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR       || \
-		   PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
-	default y
-	help
-	  Prompt-less configuration that states that RSA is supported.
-
 config PSA_WANT_ALG_RSA_OAEP
 	bool
-	prompt "PSA RSA OAEP support" if !PSA_PROMPTLESS
+	prompt "PSA  RSA OAEP asymmetric encryption support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
 	bool
-	prompt "PSA RSA crypt support (PKCS#1 v1.5 mode)" if !PSA_PROMPTLESS
+	prompt "PSA RSA PKCS#1 v1.5 asymmetric encryption support" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_RSA_PKCS1V15_SIGN
 	bool
-	prompt "PSA RSA signature support (PKCS#1 v1.5 mode)" if !PSA_PROMPTLESS
+	prompt "PSA RSA PKCS#1 v1.5 message signature support, with hashing" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PKCS1V15_SIGN_RAW
+	bool
+	prompt "PSA RSA raw PKCS#1 v1.5 message signature support, without hashing)" if !PSA_PROMPTLESS
 
 config PSA_WANT_ALG_RSA_PSS
 	bool
-	prompt "PSA RSA (PSS mode)" if !PSA_PROMPTLESS
+	prompt "PSA RSA PSS message signature support" if !PSA_PROMPTLESS
+
+config PSA_WANT_ALG_RSA_PSS_ANY_SALT
+	bool
+	prompt "PSA RSA PSS message signature support, any salt length" if !PSA_PROMPTLESS
 
 endmenu # PSA Asymmetric support
 

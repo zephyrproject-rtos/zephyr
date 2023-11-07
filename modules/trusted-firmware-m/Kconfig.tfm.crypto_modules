@@ -80,11 +80,12 @@ config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
 config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
 	bool "KEY DERIVATION crypto module"
 	default y
-	depends on PSA_HAS_KEY_DERIVATION && NRF_SECURITY
+	depends on (PSA_HAS_KEY_DERIVATION || PSA_HAS_KEY_AGREEMENT) && NRF_SECURITY
 	help
 	  Enables the KEY_DERIVATION crypto module within the crypto partition.
 	  Unset this option if the functionality provided by 'crypto_key_derivation.c'
 	  is not used.
+	  Note that key agreement is under key derivation in the current implementation.
 
 endif # TFM_PARTITION_CRYPTO
 
