@@ -169,22 +169,13 @@ Minimal response is:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -210,6 +201,13 @@ errors, SMP version 2 clients must therefore be able to handle both types of err
 
 Specifications of management groups supported by Zephyr
 *******************************************************
+
+Note that in MCUmgr group documentation, strings that have quote marks are ``tstr`` (text string)
+entities. The rest of the format follows CDDL-style formatting, whereby a ``?`` indicates an
+optional field, a ``/`` indicates different possible variable types.
+
+Note that The text view is designed to make it easy to understand queries rather than being 100%
+valid CDDL code.
 
 .. toctree::
     :maxdepth: 1

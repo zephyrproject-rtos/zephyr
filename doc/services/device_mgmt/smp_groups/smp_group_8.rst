@@ -11,19 +11,21 @@ File management group defines following commands:
 .. table::
     :align: center
 
-    +-------------------+-----------------------------------------------+
-    | ``Command ID``    | Command description                           |
-    +===================+===============================================+
-    | ``0``             | File download/upload                          |
-    +-------------------+-----------------------------------------------+
-    | ``1``             | File status                                   |
-    +-------------------+-----------------------------------------------+
-    | ``2``             | File hash/checksum                            |
-    +-------------------+-----------------------------------------------+
-    | ``3``             | Supported file hash/checksum types            |
-    +-------------------+-----------------------------------------------+
-    | ``4``             | File close                                    |
-    +-------------------+-----------------------------------------------+
+    +----------------+---------------------------------------------------------------------+
+    | ``Command ID`` | Command description                                                 |
+    +================+=====================================================================+
+    | ``0``          | :ref:`File download/upload<mcumgr_smp_group_8_cmd_0>`               |
+    +----------------+---------------------------------------------------------------------+
+    | ``1``          | :ref:`File status<mcumgr_smp_group_8_cmd_1>`                        |
+    +----------------+---------------------------------------------------------------------+
+    | ``2``          | :ref:`File hash/checksum<mcumgr_smp_group_8_cmd_2>`                 |
+    +----------------+---------------------------------------------------------------------+
+    | ``3``          | :ref:`Supported file hash/checksum types<mcumgr_smp_group_8_cmd_3>` |
+    +----------------+---------------------------------------------------------------------+
+    | ``4``          | :ref:`File close<mcumgr_smp_group_8_cmd_4>`                         |
+    +----------------+---------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_8_cmd_0:
 
 File download
 *************
@@ -68,11 +70,11 @@ File download request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"off" :  (uint)
-        (str)"name" : (str)
+        "off"  : uint,
+        "name" : tstr
     }
 
 where:
@@ -102,12 +104,12 @@ File download response header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"off"      : (uint)
-        (str)"data"     : (byte str)
-        (str,opt)"len"  : (uint)
+        "off"    : uint,
+        "data"   : bstr,
+        ? "len"  : uint
     }
 
 In case of error the CBOR data takes the form:
@@ -116,22 +118,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -206,13 +199,13 @@ File upload request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"off"      : (uint)
-        (str)"data"     : (str)
-        (str)"name"     : (str)
-        (str,opt)"len"  : (uint)
+        "off"    : uint,
+        "data"   : bstr,
+        "name"   : tstr,
+        ? "len"  : uint
     }
 
 where:
@@ -248,10 +241,10 @@ File upload response header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"off"      : (uint)
+        "off"      : uint
     }
 
 In case of error the CBOR data takes the form:
@@ -260,22 +253,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -294,6 +278,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_8_cmd_1:
 
 File status
 ***********
@@ -317,10 +303,10 @@ File status request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name" : (str)
+        "name" : tstr
     }
 
 where:
@@ -348,10 +334,10 @@ File status response header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"len"      : (uint)
+        "len"      : uint
     }
 
 In case of error the CBOR data takes form:
@@ -360,22 +346,13 @@ In case of error the CBOR data takes form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -394,6 +371,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_8_cmd_2:
 
 File hash/checksum
 ******************
@@ -423,13 +402,13 @@ File hash/checksum request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name"     : (str)
-        (str,opt)"type" : (str)
-        (str,opt)"off"  : (uint)
-        (str,opt)"len"  : (uint)
+        "name"   : tstr,
+        ? "type" : tstr,
+        ? "off"  : uint,
+        ? "len"  : uint
     }
 
 where:
@@ -487,13 +466,13 @@ File hash/checksum response header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"type"     : (str)
-        (str,opt)"off"  : (uint)
-        (str)"len"      : (uint)
-        (str)"output"   : (uint or bstr)
+        "type"   : tstr,
+        ? "off"  : uint,
+        "len"    : uint,
+        "output" : uint / bstr
     }
 
 In case of error the CBOR data takes the form:
@@ -502,22 +481,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -544,6 +514,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_8_cmd_3:
 
 Supported file hash/checksum types
 **********************************
@@ -584,14 +556,14 @@ Supported file hash/checksum types response header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"types" : {
-            (str)<hash_checksum_name> : {
-                (str)"format"       : (uint)
-                (str)"size"         : (uint)
-            }
+        "types" : {
+            (tstr)<hash_checksum_name> : {
+                "format"       : uint,
+                "size"         : uint
+            },
             ...
         }
     }
@@ -602,22 +574,13 @@ In case of error the CBOR data takes form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -642,6 +605,8 @@ where:
     | "rc"                 | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                      | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +----------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_8_cmd_4:
 
 File close
 **********
@@ -686,22 +651,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 

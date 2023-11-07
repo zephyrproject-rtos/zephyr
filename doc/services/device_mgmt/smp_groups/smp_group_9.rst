@@ -11,11 +11,13 @@ Shell management group defines following commands:
 .. table::
     :align: center
 
-    +-------------------+-----------------------------------------------+
-    | ``Command ID``    | Command description                           |
-    +===================+===============================================+
-    | ``0``             | Shell command line execute                    |
-    +-------------------+-----------------------------------------------+
+    +----------------+-------------------------------------------------------------+
+    | ``Command ID`` | Command description                                         |
+    +================+=============================================================+
+    | ``0``          | :ref:`Shell command line execute<mcumgr_smp_group_9_cmd_0>` |
+    +----------------+-------------------------------------------------------------+
+
+.. _mcumgr_smp_group_9_cmd_0:
 
 Shell command line execute
 **************************
@@ -39,12 +41,12 @@ Execute command request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"argv"     : [
-            (str)<cmd>
-            (str,opt)<arg>
+        "argv"     : [
+            (tstr)<cmd>,
+            ? (tstr)<arg>
             ...
         ]
     }
@@ -79,11 +81,11 @@ Command line execute response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"o"            : (str)
-        (str)"ret"          : (int)
+        "o"            : tstr,
+        "ret"          : int
     }
 
 In case of error the CBOR data takes the form:
@@ -92,22 +94,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 

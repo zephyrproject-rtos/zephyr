@@ -11,13 +11,15 @@ Statistics management group defines commands:
 .. table::
     :align: center
 
-    +-------------------+-----------------------------------------------+
-    | ``Command ID``    | Command description                           |
-    +===================+===============================================+
-    | ``0``             | Group data                                    |
-    +-------------------+-----------------------------------------------+
-    | ``1``             | List groups                                   |
-    +-------------------+-----------------------------------------------+
+    +----------------+----------------------------------------------+
+    | ``Command ID`` | Command description                          |
+    +================+==============================================+
+    | ``0``          | :ref:`Group data<mcumgr_smp_group_2_cmd_0>`  |
+    +----------------+----------------------------------------------+
+    | ``1``          | :ref:`List groups<mcumgr_smp_group_2_cmd_1>` |
+    +----------------+----------------------------------------------+
+
+.. _mcumgr_smp_group_2_cmd_0:
 
 Statistics: group data
 **********************
@@ -43,10 +45,10 @@ Statistics group data request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name" :  (str)
+        "name" :  tstr
     }
 
 where:
@@ -74,12 +76,12 @@ Statistics group data response header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name"     : (str)
-        (str)"fields"   : {
-            (str)<entry_name> : (uint)
+        "name"     : tstr,
+        "fields"   : {
+            (tstr)<entry_name> : uint,
             ...
         }
     }
@@ -91,22 +93,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -131,6 +124,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_2_cmd_1:
 
 Statistics: list of groups
 **************************
@@ -174,11 +169,12 @@ Statistics group list request header:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"stat_list" :  [
-            (str)<stat_group_name>, ...
+        "stat_list" :  [
+            (tstr)<stat_group_name>,
+            ...
         ]
     }
 
@@ -189,22 +185,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 

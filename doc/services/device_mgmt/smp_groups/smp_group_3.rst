@@ -9,21 +9,23 @@ defines the following commands:
 .. table::
     :align: center
 
-    +----------------+------------------------------+
-    | ``Command ID`` | Command description          |
-    +================+==============================+
-    | ``0``          | Read/write setting           |
-    +----------------+------------------------------+
-    | ``1``          | Delete setting               |
-    +----------------+------------------------------+
-    | ``2``          | Commit settings              |
-    +----------------+------------------------------+
-    | ``3``          | Load/Save settings           |
-    +----------------+------------------------------+
+    +----------------+-----------------------------------------------------+
+    | ``Command ID`` | Command description                                 |
+    +================+=====================================================+
+    | ``0``          | :ref:`Read/write setting<mcumgr_smp_group_3_cmd_0>` |
+    +----------------+-----------------------------------------------------+
+    | ``1``          | :ref:`Delete setting<mcumgr_smp_group_3_cmd_1>`     |
+    +----------------+-----------------------------------------------------+
+    | ``2``          | :ref:`Commit settings<mcumgr_smp_group_3_cmd_2>`    |
+    +----------------+-----------------------------------------------------+
+    | ``3``          | :ref:`Load/Save settings<mcumgr_smp_group_3_cmd_3>` |
+    +----------------+-----------------------------------------------------+
 
 Note that the Zephyr version adds additional commands and features which are not supported by
 the original upstream version, however, the original client functionality should work for
 read/write functionality.
+
+.. _mcumgr_smp_group_3_cmd_0:
 
 Read/write setting command
 **************************
@@ -47,11 +49,11 @@ Read setting request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name"         : (str)
-        (str,opt)"max_size" : (uint)
+        "name"       : tstr,
+        ? "max_size" : uint
     }
 
 where:
@@ -81,11 +83,11 @@ Read setting response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"val"          : (bstr)
-        (str,opt)"max_size" : (uint)
+        "val"        : bstr,
+        ? "max_size" : uint
     }
 
 In case of error the CBOR data takes the form:
@@ -94,22 +96,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-   .. group-tab:: SMP version 1
-
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -151,11 +144,11 @@ Write setting request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name"    : (str)
-        (str)"val"     : (bstr)
+        "name"    : tstr,
+        "val"     : bstr
     }
 
 where:
@@ -190,22 +183,13 @@ the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-   .. group-tab:: SMP version 1
-
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -222,6 +206,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1.                                                    |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_3_cmd_1:
 
 Delete setting command
 **********************
@@ -244,10 +230,10 @@ Delete setting request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"name"   : (str)
+        "name"   : tstr
     }
 
 where:
@@ -280,22 +266,13 @@ the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-   .. group-tab:: SMP version 1
-
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -312,6 +289,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1.                                                    |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_3_cmd_2:
 
 Commit settings command
 ***********************
@@ -356,22 +335,13 @@ the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-   .. group-tab:: SMP version 1
-
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -388,6 +358,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1.                                                    |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_3_cmd_3:
 
 Load/Save settings command
 **************************
@@ -432,22 +404,13 @@ the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-   .. group-tab:: SMP version 1
-
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -502,22 +465,13 @@ the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-   .. group-tab:: SMP version 1
-
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 

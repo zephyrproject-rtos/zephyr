@@ -19,6 +19,13 @@ Device Management
 SMP Groups
 ==========
 
+Note that in MCUmgr group documentation, strings that have quote marks are ``tstr`` (text string)
+entities. The rest of the format follows CDDL-style formatting, whereby a ``?`` indicates an
+optional field, a ``/`` indicates different possible variable types.
+
+Note that The text view is designed to make it easy to understand queries rather than being 100%
+valid CDDL code.
+
 .. toctree::
     :maxdepth: 1
 

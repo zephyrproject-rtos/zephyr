@@ -1,0 +1,6 @@
+{
+    "err" : {
+        "group"    : uint,
+        "rc"       : uint
+    }
+}

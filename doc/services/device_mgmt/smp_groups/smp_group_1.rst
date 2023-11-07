@@ -8,24 +8,21 @@ Application/software image management management group defines following command
 .. table::
     :align: center
 
-    +-------------------+-----------------------------------------------+
-    | ``Command ID``    | Command description                           |
-    +===================+===============================================+
-    | ``0``             | State of images                               |
-    +-------------------+-----------------------------------------------+
-    | ``1``             | Image upload                                  |
-    +-------------------+-----------------------------------------------+
-    | ``2``             | File                                          |
-    |                   | (reserved but not supported by Zephyr)        |
-    +-------------------+-----------------------------------------------+
-    | ``3``             | Corelist                                      |
-    |                   | (reserved but not supported by Zephyr)        |
-    +-------------------+-----------------------------------------------+
-    | ``4``             | Coreload                                      |
-    |                   | (reserved but not supported by Zephyr)        |
-    +-------------------+-----------------------------------------------+
-    | ``5``             | Image erase                                   |
-    +-------------------+-----------------------------------------------+
+    +----------------+--------------------------------------------------+
+    | ``Command ID`` | Command description                              |
+    +================+==================================================+
+    | ``0``          | :ref:`State of images<mcumgr_smp_group_1_cmd_0>` |
+    +----------------+--------------------------------------------------+
+    | ``1``          | :ref:`Image upload<mcumgr_smp_group_1_cmd_1>`    |
+    +----------------+--------------------------------------------------+
+    | ``2``          | File; unimplemented by Zephyr                    |
+    +----------------+--------------------------------------------------+
+    | ``3``          | Corelist; unimplemented by Zephyr                |
+    +----------------+--------------------------------------------------+
+    | ``4``          | Coreload; unimplemented by Zephyr                |
+    +----------------+--------------------------------------------------+
+    | ``5``          | :ref:`Image erase<mcumgr_smp_group_1_cmd_5>`     |
+    +----------------+--------------------------------------------------+
 
 Notion of "slots" and "images" in Zephyr
 ****************************************
@@ -54,6 +51,8 @@ Currently Zephyr supports at most two images, in which case mapping is as follow
     | 2           | "slot2_partition" |   "image-2"   |
     |             | "slot3_partition" |   "image-3"   |
     +-------------+-------------------+---------------+
+
+.. _mcumgr_smp_group_1_cmd_0:
 
 State of images
 ***************
@@ -105,24 +104,24 @@ be identified as valid it is simply skipped.
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"images" : [
+        "images" : [
             {
-                (str,opt)"image"        : (uint)
-                (str)"slot"             : (uint)
-                (str)"version"          : (str)
-                (str,opt*)"hash"        : (byte str)
-                (str,opt)"bootable"     : (bool)
-                (str,opt)"pending"      : (bool)
-                (str,opt)"confirmed"    : (bool)
-                (str,opt)"active"       : (bool)
-                (str,opt)"permanent"    : (bool)
+                ? "image"       : uint,
+                "slot"          : uint,
+                "version"       : tstr,
+                ? * "hash"      : bstr,
+                ? "bootable"    : bool,
+                ? "pending"     : bool,
+                ? "confirmed"   : bool,
+                ? "active"      : bool,
+                ? "permanent"   : bool
             }
             ...
-        ]
-        (str,opt)"splitStatus" : (int)
+        ],
+        ? "splitStatus" : int
     }
 
 In case of error the CBOR data takes the form:
@@ -131,23 +130,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-              (str,opt)"rsn"  : (str)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -231,11 +220,11 @@ Set state of image request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)"hash"     : (str)
-        (str)"confirm"      : (bool)
+        ? "hash"     : bstr,
+        "confirm"    : bool
     }
 
 If "confirm" is false or not provided, an image with the "hash" will be set for
@@ -248,6 +237,8 @@ Set state of image response
 ============================
 
 The response takes the same format as :ref:`mcumgr_smp_protocol_op_1_grp_1_cmd_0`
+
+.. _mcumgr_smp_group_1_cmd_1:
 
 Image upload
 ************
@@ -273,15 +264,15 @@ Image upload request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)"image"    : (uint)
-        (str,opt)"len"      : (uint)
-        (str)"off"          : (uint)
-        (str,opt)"sha"      : (byte str)
-        (str)"data"         : (byte str)
-        (str,opt)"upgrade"  : (bool)
+        ? "image"    : uint,
+        ? "len"      : uint,
+        "off"        : uint,
+        ? "sha"      : bstr,
+        "data"       : bstr,
+        ? "upgrade"  : bool
     }
 
 where:
@@ -354,11 +345,11 @@ Image upload response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)"off"    : (uint)
-        (str,opt)"match"  : (bool)
+        ? "off"    : uint,
+        ? "match"  : bool
     }
 
 In case of error the CBOR data takes the form:
@@ -367,23 +358,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-              (str,opt)"rsn"  : (str)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -413,6 +394,8 @@ where:
 The "off" field is only included in responses to successfully processed requests;
 if "rc" is negative then "off" may not appear.
 
+.. _mcumgr_smp_group_1_cmd_5:
+
 Image erase
 ***********
 
@@ -438,10 +421,10 @@ Image erase request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)"slot"     : (uint)
+        ? "slot"     : uint
     }
 
 where:
@@ -475,23 +458,13 @@ CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-              (str,opt)"rsn"  : (str)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 

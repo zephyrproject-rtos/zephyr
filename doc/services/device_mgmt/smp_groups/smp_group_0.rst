@@ -8,28 +8,31 @@ OS management group defines following commands:
 .. table::
     :align: center
 
-    +-------------------+-----------------------------------------------+
-    | ``Command ID``    | Command description                           |
-    +===================+===============================================+
-    | ``0``             | Echo                                          |
-    +-------------------+-----------------------------------------------+
-    | ``1``             | Console/Terminal echo control;                |
-    |                   | unimplemented by Zephyr                       |
-    +-------------------+-----------------------------------------------+
-    | ``2``             | Task Statistics                               |
-    +-------------------+-----------------------------------------------+
-    | ``3``             | Memory pool statistics                        |
-    +-------------------+-----------------------------------------------+
-    | ``4``             | Date-time string; unimplemented by Zephyr     |
-    +-------------------+-----------------------------------------------+
-    | ``5``             | System reset                                  |
-    +-------------------+-----------------------------------------------+
-    | ``6``             | MCUMGR parameters                             |
-    +-------------------+-----------------------------------------------+
-    | ``7``             | OS/Application info                           |
-    +-------------------+-----------------------------------------------+
-    | ``8``             | Bootloader information                        |
-    +-------------------+-----------------------------------------------+
+    +----------------+---------------------------------------------------------+
+    | ``Command ID`` | Command description                                     |
+    +================+=========================================================+
+    | ``0``          | :ref:`Echo<mcumgr_smp_group_0_cmd_0>`                   |
+    +----------------+---------------------------------------------------------+
+    | ``1``          | Console/Terminal echo control;                          |
+    |                | unimplemented by Zephyr                                 |
+    +----------------+---------------------------------------------------------+
+    | ``2``          | :ref:`Task Statistics<mcumgr_smp_group_0_cmd_2>`        |
+    +----------------+---------------------------------------------------------+
+    | ``3``          | :ref:`Memory pool statistics<mcumgr_smp_group_0_cmd_3>` |
+    +----------------+---------------------------------------------------------+
+    | ``4``          | :ref:`Date-time string<mcumgr_smp_group_0_cmd_4>`;      |
+    |                | unimplemented by Zephyr                                 |
+    +----------------+---------------------------------------------------------+
+    | ``5``          | :ref:`System reset<mcumgr_smp_group_0_cmd_5>`           |
+    +----------------+---------------------------------------------------------+
+    | ``6``          | :ref:`MCUmgr parameters<mcumgr_smp_group_0_cmd_6>`      |
+    +----------------+---------------------------------------------------------+
+    | ``7``          | :ref:`OS/Application info<mcumgr_smp_group_0_cmd_7>`    |
+    +----------------+---------------------------------------------------------+
+    | ``8``          | :ref:`Bootloader information<mcumgr_smp_group_0_cmd_8>` |
+    +----------------+---------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_cmd_0:
 
 Echo command
 ************
@@ -52,10 +55,10 @@ Echo request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"d" : (str)
+        "d" : tstr
     }
 
 where:
@@ -85,10 +88,10 @@ Echo response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"r"        : (str)
+        "r"        : tstr
     }
 
 In case of error the CBOR data takes the form:
@@ -97,22 +100,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -131,6 +125,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_cmd_2:
 
 Task statistics command
 ***********************
@@ -170,20 +166,20 @@ Task statistics response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"tasks" : {
-            (str)<task_name> : {
-                (str)"prio"         : (uint)
-                (str)"tid"          : (uint)
-                (str)"state"        : (uint)
-                (str)"stkuse"       : (uint)
-                (str)"stksiz"       : (uint)
-                (str)"cswcnt"       : (uint)
-                (str)"runtime"      : (uint)
-                (str)"last_checkin" : (uint)
-                (str)"next_checkin" : (uint)
+        "tasks" : {
+            (tstr)<task_name> : {
+                "prio"         : uint,
+                "tid"          : uint,
+                "state"        : uint,
+                "stkuse"       : uint,
+                "stksiz"       : uint,
+                "cswcnt"       : uint,
+                "runtime"      : uint,
+                "last_checkin" : uint,
+                "next_checkin" : uint
             }
             ...
         }
@@ -195,22 +191,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -252,6 +239,8 @@ where:
     The unit for "stkuse" and "stksiz" is system dependent and in case of Zephyr
     this is number of 4 byte words.
 
+.. _mcumgr_smp_group_0_cmd_3:
+
 Memory pool statistics
 **********************
 
@@ -290,14 +279,14 @@ Memory pool statistics response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)<pool_name> {
-            (str)"blksiz"   : (int)
-            (str)"nblks"    : (int)
-            (str)"nfree"    : (int)
-            (str)"min'      : (int)
+        (tstr)<pool_name> {
+            "blksiz"   : int,
+            "nblks"    : int,
+            "nfree"    : int,
+            "min"      : int
         }
         ...
     }
@@ -308,22 +297,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -351,6 +331,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_cmd_4:
 
 Date-time command
 *****************
@@ -398,10 +380,10 @@ Date-time get response header fields:
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"datetime" : (str)
+        "datetime" : tstr
     }
 
 In case of error the CBOR data takes the form:
@@ -410,22 +392,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -467,10 +440,10 @@ Date-time set request header fields:
 
 CBOR data of response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"datetime" : (str)
+        "datetime" : tstr
     }
 
 where:
@@ -503,22 +476,13 @@ CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -535,6 +499,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_cmd_5:
 
 System reset
 ************
@@ -566,10 +532,10 @@ Normally the command sends an empty CBOR map as data, but if a previous reset
 attempt has responded with "rc" equal to :c:enum:`MGMT_ERR_EBUSY` then the
 following map may be sent to force a reset:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (opt)"force"       : (int)
+        ? "force"       : int
     }
 
 where:
@@ -603,22 +569,13 @@ CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -635,6 +592,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_cmd_6:
 
 MCUmgr Parameters
 *****************
@@ -673,11 +632,11 @@ MCUmgr parameters response header fields
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"buf_size"     : (uint)
-        (str)"buf_count"    : (uint)
+        "buf_size"     : uint,
+        "buf_count"    : uint
     }
 
 In case of error the CBOR data takes the form:
@@ -686,22 +645,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -724,6 +674,7 @@ where:
     +------------------+-------------------------------------------------------------------------+
 
 .. _mcumgr_os_application_info:
+.. _mcumgr_smp_group_0_cmd_7:
 
 OS/Application Info
 *******************
@@ -749,10 +700,10 @@ OS/Application info request header fields:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)"format"      : (str)
+        ? "format"      : tstr
     }
 
 where:
@@ -796,10 +747,10 @@ OS/Application info response header fields
 
 CBOR data of successful response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"output"       : (str)
+        "output"       : tstr
     }
 
 In case of error the CBOR data takes the form:
@@ -808,22 +759,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -842,6 +784,8 @@ where:
     | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
+
+.. _mcumgr_smp_group_0_cmd_8:
 
 Bootloader Information
 **********************
@@ -864,10 +808,10 @@ Bootloader information request header:
 
 CBOR data of request:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)"query"  : (str)
+        ? "query"  : tstr
     }
 
 where:
@@ -901,10 +845,10 @@ Bootloader information response header:
 In case when no "query" has been provided in request,
 CBOR data of response:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"bootloader"      : (str)
+        "bootloader"      : tstr
     }
 
 where:
@@ -918,10 +862,10 @@ where:
 
 In case when "query" is provided:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str,opt)<response>   : ()
+        ? (tstr)<response>   : ()
 	...
     }
 
@@ -949,22 +893,13 @@ In case of error the CBOR data takes the form:
 
    .. group-tab:: SMP version 2
 
-      .. code-block:: none
-
-          {
-              (str)"err" : {
-                  (str)"group"    : (uint)
-                  (str)"rc"       : (uint)
-              }
-          }
+      .. literalinclude:: ../smp_error_version_2.cddl
+         :language: cddl
 
    .. group-tab:: SMP version 1 (and non-group SMP version 2)
 
-      .. code-block:: none
-
-          {
-              (str)"rc"       : (int)
-          }
+      .. literalinclude:: ../smp_error_version_1.cddl
+         :language: cddl
 
 where:
 
@@ -988,27 +923,27 @@ Bootloader Information: MCUboot
 In case when MCUboot is application bootloader, empty request will
 be responded with:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"bootloader"      : (str)"MCUboot"
+        "bootloader"      : "MCUboot"
     }
 
 Currently "MCUboot" supports querying for mode of operation:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"query"           : (str)"mode"
+        "query"           : "mode"
     }
 
 Response to "mode" is:
 
-.. code-block:: none
+.. code-block:: cddl
 
     {
-        (str)"mode"                     : (int)
-        (str,opt)"no-downgrade"         : (bool)
+        "mode"              : int,
+        ? "no-downgrade"    : bool
     }
 
 where "mode" is one of:
