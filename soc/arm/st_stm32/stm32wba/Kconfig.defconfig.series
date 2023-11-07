@@ -39,4 +39,26 @@ config ENTROPY_STM32_CLK_CHECK
 
 endif
 
+if PM_S2RAM
+
+config COUNTER
+	default y
+
+config COUNTER_RTC_STM32_SUBSECONDS
+	default y
+
+config STM32_LPTIM_STDBY_TIMER
+	default y
+
+config TICKLESS_KERNEL
+	default y
+
+config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
+	default y
+
+config IDLE_STACK_SIZE
+	default 512
+
+endif
+
 endif # SOC_SERIES_STM32WBAX
