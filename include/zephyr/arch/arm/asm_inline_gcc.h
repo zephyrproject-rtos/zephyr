@@ -18,6 +18,7 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/arch/arm/exc.h>
 
@@ -68,7 +69,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	|| defined(CONFIG_ARMV7_A)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
-		"and %0, #" TOSTR(I_BIT) ";"
+		"and %0, #" STRINGIFY(I_BIT) ";"
 		"cpsid i;"
 		: "=r" (key)
 		:
