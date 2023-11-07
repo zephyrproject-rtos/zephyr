@@ -17,6 +17,9 @@
 
 #include <stm32wbaxx.h>
 
+/* function exported to the soc power.c */
+int stm32wba_init(void);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBA_SOC_H_ */
