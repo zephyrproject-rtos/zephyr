@@ -111,7 +111,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         if not hasattr(self, '_linkserver_version'):
             linkserver_version_cmd=[self.linkserver, "-v"]
             ls_output=self.check_output(linkserver_version_cmd)
-            self.linkserver_version = str(ls_output.split()[1].decode())
+            self.linkserver_version = str(ls_output.split()[1].decode()).lower()
 
         return self.linkserver_version
 
@@ -214,5 +214,9 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.logger.debug("flash command = " + str(linkserver_cmd))
         kwargs = {}
         if not self.logger.isEnabledFor(logging.DEBUG):
-            kwargs['stderr'] = subprocess.DEVNULL
+            if self.linkserver_version_str < "v1.3.15":
+                kwargs['stderr'] = subprocess.DEVNULL
+            else:
+                kwargs['stdout'] = subprocess.DEVNULL
+
         self.check_call(linkserver_cmd, **kwargs)
