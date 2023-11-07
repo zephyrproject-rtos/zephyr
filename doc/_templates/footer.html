@@ -13,7 +13,7 @@
 </p>
 {%- set git_last_updated, sha1 = pagename | git_info | default((None, None), true) %}
 {%- if git_last_updated %}
-<div class="admonition tip">
+<div class="admonition tip" data-nosnippet>
   <p class="admonition-title">
     Help us keep our technical documentation accurate and up-to-date!
   </p>
