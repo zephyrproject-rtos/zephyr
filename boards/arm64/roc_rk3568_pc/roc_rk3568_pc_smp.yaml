@@ -9,7 +9,6 @@ ram: 1024
 supported:
   - smp
 testing:
-  default: true
   ignore_tags:
     - net
     - bluetooth

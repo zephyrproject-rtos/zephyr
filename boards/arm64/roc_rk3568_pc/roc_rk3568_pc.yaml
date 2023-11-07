@@ -7,7 +7,6 @@ toolchain:
   - cross-compile
 ram: 1024
 testing:
-  default: true
   ignore_tags:
     - net
     - bluetooth
