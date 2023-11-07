@@ -147,6 +147,17 @@ static int settings_nvs_load(struct settings_store *cs,
 			       &buf, sizeof(buf));
 
 		if ((rc1 <= 0) && (rc2 <= 0)) {
+			/* Settings largest ID in use is invalid due to
+			 * reset, power failure or partition overflow.
+			 * Decrement it and check the next ID in subsequent
+			 * iteration.
+			 */
+			if (name_id == cf->last_name_id) {
+				cf->last_name_id--;
+				nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
+					  &cf->last_name_id, sizeof(uint16_t));
+			}
+
 			continue;
 		}
 
@@ -156,13 +167,15 @@ static int settings_nvs_load(struct settings_store *cs,
 			 * or deleted. Clean dirty entries to make space for
 			 * future settings item.
 			 */
+			nvs_delete(&cf->cf_nvs, name_id);
+			nvs_delete(&cf->cf_nvs, name_id + NVS_NAME_ID_OFFSET);
+
 			if (name_id == cf->last_name_id) {
 				cf->last_name_id--;
 				nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
 					  &cf->last_name_id, sizeof(uint16_t));
 			}
-			nvs_delete(&cf->cf_nvs, name_id);
-			nvs_delete(&cf->cf_nvs, name_id + NVS_NAME_ID_OFFSET);
+
 			continue;
 		}
 
@@ -254,6 +267,16 @@ found:
 			return 0;
 		}
 
+		rc = nvs_delete(&cf->cf_nvs, name_id);
+		if (rc >= 0) {
+			rc = nvs_delete(&cf->cf_nvs, name_id +
+					NVS_NAME_ID_OFFSET);
+		}
+
+		if (rc < 0) {
+			return rc;
+		}
+
 		if (name_id == cf->last_name_id) {
 			cf->last_name_id--;
 			rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
@@ -266,23 +289,22 @@ found:
 			}
 		}
 
-		rc = nvs_delete(&cf->cf_nvs, name_id);
-
-		if (rc >= 0) {
-			rc = nvs_delete(&cf->cf_nvs, name_id +
-					NVS_NAME_ID_OFFSET);
-		}
-
-		if (rc < 0) {
-			return rc;
-		}
-
 		return 0;
 	}
 
 	/* No free IDs left. */
 	if (write_name_id == NVS_NAMECNT_ID + NVS_NAME_ID_OFFSET) {
 		return -ENOMEM;
+	}
+
+	/* update the last_name_id and write to flash if required*/
+	if (write_name_id > cf->last_name_id) {
+		cf->last_name_id = write_name_id;
+		rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID, &cf->last_name_id,
+			       sizeof(uint16_t));
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	/* write the value */
@@ -298,17 +320,6 @@ found:
 		if (rc < 0) {
 			return rc;
 		}
-	}
-
-	/* update the last_name_id and write to flash if required*/
-	if (write_name_id > cf->last_name_id) {
-		cf->last_name_id = write_name_id;
-		rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID, &cf->last_name_id,
-			       sizeof(uint16_t));
-	}
-
-	if (rc < 0) {
-		return rc;
 	}
 
 	return 0;
