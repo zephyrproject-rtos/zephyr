@@ -149,7 +149,7 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 		.params = {
 			.handle_count = 1,
 			.single = {.handle = handle, .offset = offset},
-			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer)),
+			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer,))
 		}};
 
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
@@ -176,7 +176,7 @@ int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *resu
 		.params = {
 			.handle_count = 1,
 			.single = {.handle = handle, .offset = offset},
-			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer)),
+			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer,))
 		}};
 
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
