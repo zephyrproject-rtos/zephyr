@@ -950,6 +950,16 @@ static uint8_t __coap_header_get_code(const struct coap_packet *cpkt)
 	return cpkt->data[1];
 }
 
+int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code)
+{
+	if (!cpkt || !cpkt->data) {
+		return -EINVAL;
+	}
+
+	cpkt->data[1] = code;
+	return 0;
+}
+
 uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token)
 {
 	uint8_t tkl;

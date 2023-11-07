@@ -374,6 +374,15 @@ uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token);
 uint8_t coap_header_get_code(const struct coap_packet *cpkt);
 
 /**
+ * @brief Modifies the code of the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ * @param code CoAP code
+ * @return 0 on success, -EINVAL on failure
+ */
+int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code);
+
+/**
  * @brief Returns the message id associated with the CoAP packet.
  *
  * @param cpkt CoAP packet representation
