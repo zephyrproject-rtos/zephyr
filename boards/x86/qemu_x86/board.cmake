@@ -56,6 +56,9 @@ endif()
 if(CONFIG_X86_SSE4A)
   string(JOIN "," QEMU_CPU_FLAGS "${QEMU_CPU_FLAGS}" "sse4a")
 endif()
+if(CONFIG_APIC_TSC_DEADLINE_TIMER)
+  string(JOIN "," QEMU_CPU_FLAGS "${QEMU_CPU_FLAGS}" "+tsc-deadline")
+endif()
 
 set(QEMU_FLAGS_${ARCH}
   -m ${QEMU_MEMORY_SIZE_MB}
