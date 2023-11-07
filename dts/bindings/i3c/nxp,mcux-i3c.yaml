@@ -25,17 +25,14 @@ properties:
   clk-divider:
     type: int
     description: Main clock divider for I3C
-    required: true
 
   clk-divider-tc:
     type: int
     description: TC clock divider for I3C
-    required: true
 
   clk-divider-slow:
     type: int
     description: Slow clock divider for I3C
-    required: true
 
   disable-open-drain-high-pp:
     type: boolean

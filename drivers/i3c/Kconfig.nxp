@@ -17,3 +17,13 @@ config I3C_MCUX
 	default y
 	help
 	  Enable mcux I3C driver.
+
+if I3C_MCUX
+
+config I3C_MCUX_DO_NOT_CHANGE_CLOCK_CONFIG
+	bool
+	help
+	  Hidden option indicates that the driver will not touch to
+	  clock configuration for I3C functionality.
+
+endif

@@ -97,6 +97,7 @@ struct mcux_i3c_data {
 	struct k_sem ibi_lock;
 
 	struct {
+#if !defined(CONFIG_I3C_MCUX_DO_NOT_CHANGE_CLOCK_CONFIG)
 		/**
 		 * Clock divider for use when generating clock for
 		 * I3C Push-pull mode.
@@ -113,7 +114,7 @@ struct mcux_i3c_data {
 		 * Clock divider for the slow time control clock.
 		 */
 		uint8_t clk_div_tc;
-
+#endif
 		/** I3C open drain clock frequency in Hz. */
 		uint32_t i3c_od_scl_hz;
 	} clocks;
@@ -1927,9 +1928,11 @@ static int mcux_i3c_init(const struct device *dev)
 		goto err_out;
 	}
 
+#if !defined(CONFIG_I3C_MCUX_DO_NOT_CHANGE_CLOCK_CONFIG)
 	CLOCK_SetClkDiv(kCLOCK_DivI3cClk, data->clocks.clk_div_pp);
 	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk, data->clocks.clk_div_od);
 	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk, data->clocks.clk_div_tc);
+#endif
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -2110,9 +2113,12 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
-		.clocks.clk_div_pp = DT_INST_PROP(id, clk_divider),		\
-		.clocks.clk_div_od = DT_INST_PROP(id, clk_divider_slow),	\
-		.clocks.clk_div_tc = DT_INST_PROP(id, clk_divider_tc),		\
+		IF_ENABLED(UTIL_NOT(CONFIG_I3C_MCUX_DO_NOT_CHANGE_CLOCK_CONFIG),	\
+			(								\
+			 .clocks.clk_div_pp = DT_INST_PROP_OR(id, clk_divider, 0),	\
+			 .clocks.clk_div_od = DT_INST_PROP_OR(id, clk_divider_slow, 0),	\
+			 .clocks.clk_div_tc = DT_INST_PROP_OR(id, clk_divider_tc, 0),	\
+			))							\
 	};									\
 	DEVICE_DT_INST_DEFINE(id,						\
 			      mcux_i3c_init,					\
