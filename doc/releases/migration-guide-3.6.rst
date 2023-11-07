@@ -59,6 +59,10 @@ Power Management
 Bootloader
 ==========
 
+* MCUboot's deprecated ``CONFIG_ZEPHYR_TRY_MASS_ERASE`` Kconfig option has been removed. If an
+  erase is needed when flashing MCUboot, this should now be provided directly to the ``west``
+  command e.g. ``west flash --erase``.
+
 Bluetooth
 =========
 
