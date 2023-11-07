@@ -36,6 +36,7 @@
 		led0 = &led0;
 		watchdog0 = &wdt0;
 		accel0 = &lis3dh;
+		modem = &quectel_bg9x;
 	};
 };
 
