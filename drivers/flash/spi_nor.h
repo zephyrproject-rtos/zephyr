@@ -39,6 +39,7 @@
 #define SPI_NOR_CMD_SE_4B       0x21    /* Sector erase 4 byte address*/
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
+#define SPI_NOR_CMD_BE_4B       0xDC    /* Block erase 4 byte address */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
 #define SPI_NOR_CMD_RDID        0x9F    /* Read JEDEC ID */
 #define SPI_NOR_CMD_ULBPR       0x98    /* Global Block Protection Unlock */
@@ -62,6 +63,7 @@
 
 /* Flash octal opcodes */
 #define SPI_NOR_OCMD_SE         0x21DE  /* Octal Sector erase */
+#define SPI_NOR_OCMD_BE         0xDC23  /* Octal Block erase */
 #define SPI_NOR_OCMD_CE         0xC738  /* Octal Chip erase */
 #define SPI_NOR_OCMD_RDSR       0x05FA  /* Octal Read status register */
 #define SPI_NOR_OCMD_DTR_RD     0xEE11  /* Octal IO DTR read command */

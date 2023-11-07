@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_OSPI_USE_DMA DT_NODE_HAS_PROP(STM32_OSPI_NODE, dmas)
 
+#define STM32_OSPI_BLOCK_ERASE_SIZE DT_INST_PROP_OR(0, block_erase_size, 0)
+
 #if STM32_OSPI_USE_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
@@ -71,6 +73,11 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
+
+enum flash_erase_type {
+	SECTOR_ERASE,
+	BLOCK_ERASE
+};
 
 #if STM32_OSPI_USE_DMA
 #if CONFIG_DMA_STM32U5
@@ -955,6 +962,34 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 	return 0;
 }
 
+/* Set the erase command according to erase type, SPI mode and address size */
+static void ospi_set_erase_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd_erase,
+			  enum flash_erase_type erase_mode)
+{
+	const struct flash_stm32_ospi_config *dev_cfg = dev->config;
+
+	if (erase_mode == SECTOR_ERASE) {
+		if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+			cmd_erase->Instruction = SPI_NOR_OCMD_SE;
+		} else {
+			cmd_erase->Instruction =
+				(stm32_ospi_hal_address_size(dev) == HAL_OSPI_ADDRESS_32_BITS)
+				 ? SPI_NOR_CMD_SE_4B
+				 : SPI_NOR_CMD_SE;
+		}
+	}
+	if (erase_mode == BLOCK_ERASE) {
+		if (dev_cfg->data_mode == OSPI_OPI_MODE) {
+			cmd_erase->Instruction = SPI_NOR_OCMD_BE;
+		} else {
+			cmd_erase->Instruction =
+				(stm32_ospi_hal_address_size(dev) == HAL_OSPI_ADDRESS_32_BITS)
+				 ? SPI_NOR_CMD_BE_4B
+				 : SPI_NOR_CMD_BE;
+		}
+	}
+}
+
 /*
  * Function to erase the flash : chip or sector with possible OSPI/SPI and STR/DTR
  * to erase the complete chip (using dedicated command) :
@@ -1048,68 +1083,67 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				break;
 			}
 		} else {
-			/* Sector erase */
-			LOG_DBG("Sector Erase");
-
 			cmd_erase.Address = addr;
-			const struct jesd216_erase_type *erase_types =
-							dev_data->erase_types;
-			const struct jesd216_erase_type *bet = NULL;
+			cmd_erase.AddressMode    = (dev_cfg->data_mode == OSPI_OPI_MODE)
+						    ? HAL_OSPI_ADDRESS_8_LINES
+						    : HAL_OSPI_ADDRESS_1_LINE;
+			cmd_erase.AddressDtrMode = (dev_cfg->data_rate == OSPI_DTR_TRANSFER)
+						    ? HAL_OSPI_ADDRESS_DTR_ENABLE
+						    : HAL_OSPI_ADDRESS_DTR_DISABLE;
+			cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
 
-			for (uint8_t ei = 0;
-				ei < JESD216_NUM_ERASE_TYPES; ++ei) {
-				const struct jesd216_erase_type *etp =
-							&erase_types[ei];
+			if ((STM32_OSPI_BLOCK_ERASE_SIZE != 0) &&
+			    ((addr % STM32_OSPI_BLOCK_ERASE_SIZE) == 0) &&
+			    (size >= STM32_OSPI_BLOCK_ERASE_SIZE)) {
+				/* Block erase */
+				LOG_DBG("Block erase at address 0x%x", cmd_erase.Address);
+				ospi_set_erase_cmd(dev, &cmd_erase, BLOCK_ERASE);
+				ospi_send_cmd(dev, &cmd_erase);
 
-				if ((etp->exp != 0)
-				    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
-				    && SPI_NOR_IS_ALIGNED(size, etp->exp)
-				    && ((bet == NULL)
-					|| (etp->exp > bet->exp))) {
-					bet = etp;
-					cmd_erase.Instruction = bet->cmd;
-				} else {
-					/* Use the default sector erase cmd */
-					if (dev_cfg->data_mode == OSPI_OPI_MODE) {
-						cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+				addr += STM32_OSPI_BLOCK_ERASE_SIZE;
+				size -= STM32_OSPI_BLOCK_ERASE_SIZE;
+			} else {
+				/* Sector erase */
+				LOG_DBG("Sector Erase");
+
+				const struct jesd216_erase_type *erase_types =
+					dev_data->erase_types;
+				const struct jesd216_erase_type *bet = NULL;
+
+				for (uint8_t ei = 0;
+					ei < JESD216_NUM_ERASE_TYPES; ++ei) {
+					const struct jesd216_erase_type *etp =
+						&erase_types[ei];
+
+					if ((etp->exp != 0)
+					    && SPI_NOR_IS_ALIGNED(addr, etp->exp)
+					    && SPI_NOR_IS_ALIGNED(size, etp->exp)
+					    && ((bet == NULL)
+						|| (etp->exp > bet->exp))) {
+						bet = etp;
+						cmd_erase.Instruction = bet->cmd;
 					} else {
-						cmd_erase.Instruction =
-							(stm32_ospi_hal_address_size(dev) ==
-							HAL_OSPI_ADDRESS_32_BITS)
-							? SPI_NOR_CMD_SE_4B
-							: SPI_NOR_CMD_SE;
+						ospi_set_erase_cmd(dev, &cmd_erase, SECTOR_ERASE);
+						/* Avoid using wrong erase type,
+						 * if zero entries are found in erase_types
+						 */
+						bet = NULL;
 					}
-					cmd_erase.AddressMode =
-						(dev_cfg->data_mode == OSPI_OPI_MODE)
-						? HAL_OSPI_ADDRESS_8_LINES
-						: HAL_OSPI_ADDRESS_1_LINE;
-					cmd_erase.AddressDtrMode =
-						(dev_cfg->data_rate == OSPI_DTR_TRANSFER)
-						? HAL_OSPI_ADDRESS_DTR_ENABLE
-						: HAL_OSPI_ADDRESS_DTR_DISABLE;
-					cmd_erase.AddressSize = stm32_ospi_hal_address_size(dev);
-					cmd_erase.Address = addr;
-					/* Avoid using wrong erase type,
-					 * if zero entries are found in erase_types
-					 */
-					bet = NULL;
+				}
+
+				ospi_send_cmd(dev, &cmd_erase);
+
+				if (bet != NULL) {
+					addr += BIT(bet->exp);
+					size -= BIT(bet->exp);
+				} else {
+					addr += SPI_NOR_SECTOR_SIZE;
+					size -= SPI_NOR_SECTOR_SIZE;
 				}
 			}
-
-			ospi_send_cmd(dev, &cmd_erase);
-
-			if (bet != NULL) {
-				addr += BIT(bet->exp);
-				size -= BIT(bet->exp);
-			} else {
-				addr += SPI_NOR_SECTOR_SIZE;
-				size -= SPI_NOR_SECTOR_SIZE;
-			}
-
 			ret = stm32_ospi_mem_ready(&dev_data->hospi,
 						   dev_cfg->data_mode, dev_cfg->data_rate);
 		}
-
 	}
 
 	ospi_unlock_thread(dev);
