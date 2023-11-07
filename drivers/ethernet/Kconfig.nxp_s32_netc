@@ -1,11 +1,10 @@
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NXP_S32_NETC
 	bool "NXP S32 Ethernet Switch and Controller (NETC) driver"
 	default y
 	depends on (DT_HAS_NXP_S32_NETC_PSI_ENABLED || DT_HAS_NXP_S32_NETC_VSI_ENABLED)
-	depends on !NET_TEST
 	select MBOX
 	select MDIO if DT_HAS_NXP_S32_NETC_PSI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
