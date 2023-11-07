@@ -17,4 +17,8 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK
 	default 200
 
+config PM
+	select COUNTER
+	select COUNTER_RTC_STM32_SUBSECONDS
+
 endif # SOC_SERIES_STM32F4X
