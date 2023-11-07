@@ -153,6 +153,9 @@ html_split_index = True
 html_show_sourcelink = False
 html_show_sphinx = False
 html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
+html_additional_pages = {
+    "gsearch": "gsearch.html"
+}
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
 reference_prefix = ""
