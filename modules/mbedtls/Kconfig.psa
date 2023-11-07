@@ -299,7 +299,6 @@ config PSA_HAS_KEY_DERIVATION
 		   PSA_WANT_ALG_HKDF_EXPAND     || \
 		   PSA_WANT_ALG_HKDF_EXTRACT    || \
 		   PSA_WANT_ALG_PBKDF2_HMAC	|| \
-		   PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128 || \
 		   PSA_WANT_ALG_TLS12_PRF	|| \
 		   PSA_WANT_ALG_TLS12_PSK_TO_MS
 	help
@@ -323,11 +322,6 @@ config PSA_WANT_ALG_PBKDF2_HMAC
 	depends on PSA_WANT_ALG_HMAC
 	help
 	  PBKDF2-HMAC is not yet supported via the PSA APIs in Mbed TLS.
-
-config PSA_WANT_ALG_PBKDF2_AES_CMAC_PRF_128
-	bool
-	prompt "PSA PBKDF2-AES-CMAC-PRF-128 support" if !PSA_PROMPTLESS
-	depends on PSA_WANT_ALG_CMAC
 
 config PSA_WANT_ALG_TLS12_PRF
 	bool
