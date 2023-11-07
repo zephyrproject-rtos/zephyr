@@ -116,7 +116,7 @@ static uint32_t nxp_s32_sys_timer_get_pending_int(const struct device *dev)
 	uint8_t i;
 
 	for (i = 0; i < counter_get_num_of_channels(dev); i++) {
-		flags = Stm_Ip_GetInterruptFlag(config->instance, i);
+		flags = Stm_Ip_GetInterruptStatusFlag(config->instance, i);
 		if (flags) {
 			break;
 		}
