@@ -10,6 +10,8 @@ tests:
   debug.coredump.backends.logging:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     platform_exclude: acrn_ehl_crb
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=n
     harness: console
     harness_config:
       type: multi_line
@@ -20,6 +22,8 @@ tests:
   debug.coredump.backends.flash:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_flash_partition.conf
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=y
     platform_allow:
       - qemu_x86
       - esp32_devkitc_wroom
@@ -30,4 +34,6 @@ tests:
   debug.coredump.backends.other:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_backend_other.conf
+    extra_configs:
+      - CONFIG_TEST_STORED_COREDUMP=y
     platform_exclude: acrn_ehl_crb
