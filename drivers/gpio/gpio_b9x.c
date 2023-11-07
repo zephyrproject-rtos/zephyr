@@ -678,11 +678,6 @@ static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 				riscv_plic_irq_enable(irq_num);
 				riscv_plic_set_priority(irq_num, irq_priority);
 
-				/* Need some time to latch the IRQ */
-				for (unsigned int i = 0; i < 200; i++) {
-					__asm volatile ("nop");
-				}
-
 				if (irq_num == IRQ_GPIO) {
 					BM_CLR(GPIO_IRQ_REG, FLD_GPIO_IRQ_LVL_GPIO);
 				} else if (irq_num == IRQ_GPIO2_RISC0) {
