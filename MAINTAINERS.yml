@@ -125,6 +125,8 @@ ACPI:
     - tests/lib/acpi/
   labels:
     - "area: ACPI"
+  tests:
+    - acpi
 
 ARC arch:
   status: maintained
@@ -142,6 +144,8 @@ ARC arch:
     - doc/hardware/arch/arc-support-status.rst
   labels:
     - "area: ARC"
+  tests:
+    - arch.arc
 
 ARM arch:
   status: maintained
@@ -166,6 +170,8 @@ ARM arch:
     - boards/arm/qemu_cortex_m0/
   labels:
     - "area: ARM"
+  tests:
+    - arch.arm
 
 ARM64 arch:
   status: maintained
@@ -184,6 +190,8 @@ ARM64 arch:
     - dts/arm64/
   labels:
     - "area: ARM64"
+  tests:
+    - arch.arm64
 
 ARM Platforms:
   status: odd fixes
@@ -204,6 +212,8 @@ ARM SiP SVC:
     - drivers/sip_svc/
   labels:
     - "area: ARM SiP SVC"
+  tests:
+    - sip_svc
 
 MIPS arch:
   status: odd fixes
@@ -214,6 +224,8 @@ MIPS arch:
     - boards/mips/
   labels:
     - "area: MIPS"
+  tests:
+    - arch.mips
 
 Ambiq Platforms:
   status: maintained
@@ -257,6 +269,8 @@ Binary Descriptors:
     - tests/subsys/bindesc/
   labels:
     - "area: Binary Descriptors"
+  tests:
+    - bindesc
 
 Bluetooth:
   status: maintained
@@ -297,6 +311,8 @@ Bluetooth:
     - tests/bluetooth/shell/audio*
   labels:
     - "area: Bluetooth"
+  tests:
+    - bluetooth
 
 Bluetooth controller:
   status: maintained
@@ -317,6 +333,8 @@ Bluetooth controller:
   labels:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
+  tests:
+    - bluetooth.controller
 
 Bluetooth Host:
   status: maintained
@@ -362,6 +380,8 @@ Bluetooth Mesh:
   labels:
     - "area: Bluetooth Mesh"
     - "area: Bluetooth"
+  tests:
+    - bluetooth.mesh
 
 Bluetooth Audio:
   status: maintained
@@ -386,6 +406,8 @@ Bluetooth Audio:
   labels:
     - "area: Bluetooth Audio"
     - "area: Bluetooth"
+  tests:
+    - bluetooth.audio
 
 Build system:
   status: maintained
@@ -407,6 +429,8 @@ Build system:
     - tests/cmake/
   labels:
     - "area: Build System"
+  tests:
+    - buildsystem
 
 Board/SoC configuration:
   status: maintained
@@ -436,6 +460,8 @@ Board/SoC configuration:
     - samples/cpp/
   labels:
     - "area: C++"
+  tests:
+    - cpp
 
 Cache:
   status: maintained
@@ -448,8 +474,11 @@ Cache:
     - include/zephyr/cache.h
     - doc/hardware/cache/index.rst
     - drivers/cache/
+    - tests/kernel/cache/
   labels:
     - "area: Cache"
+  tests:
+    - kernel.cache
 
 C library:
   status: maintained
@@ -465,6 +494,8 @@ C library:
     - tests/lib/newlib/
   labels:
     - "area: C Library"
+  tests:
+    - libraries.libc
 
 CMSIS API layer:
   status: odd fixes
@@ -479,6 +510,9 @@ CMSIS API layer:
   labels:
     - "area: CMSIS API Layer"
     - "area: Portability"
+  tests:
+    - portability.cmsis_rtos_v1
+    - portability.cmsis_rtos_v2
 
 DSP subsystem:
   status: maintained
@@ -494,6 +528,8 @@ DSP subsystem:
     - doc/services/dsp/
   labels:
     - "area: DSP"
+  tests:
+    - zdsp
 
 CMSIS-DSP integration:
   status: maintained
@@ -508,6 +544,8 @@ CMSIS-DSP integration:
     - tests/lib/cmsis_dsp/
   labels:
     - "area: CMSIS-DSP"
+  tests:
+    - libraries.cmsis_dsp
 
 CMSIS-NN integration:
   status: maintained
@@ -521,6 +559,8 @@ CMSIS-NN integration:
     - tests/lib/cmsis_nn/
   labels:
     - "area: CMSIS-NN"
+  tests:
+    - libraries.cmsis_nn
 
 Coding Guidelines:
   status: maintained
@@ -564,6 +604,8 @@ Common Architecture Interface:
     - doc/hardware/porting/arch.rst
   labels:
     - "area: Architectures"
+  tests:
+    - arch
 
 Console:
   status: odd fixes
@@ -572,6 +614,8 @@ Console:
     - subsys/console/
   labels:
     - "area: Console"
+  tests:
+    - sample.console
 
 Debug:
   status: maintained
@@ -589,6 +633,8 @@ Debug:
     - doc/services/debugging/
   labels:
     - "area: Debugging"
+  tests:
+    - debug
 
 Demand Paging:
   status: maintained
@@ -600,6 +646,9 @@ Demand Paging:
     - nashif
   files:
     - subsys/demand_paging/
+    - tests/kernel/mem_protect/demand_paging/
+  tests:
+    - kernel.demand_paging
 
 Device Driver Model:
   status: maintained
@@ -617,6 +666,8 @@ Device Driver Model:
     - doc/kernel/drivers/
   labels:
     - "area: Device Model"
+  tests:
+    - kernel.device
 
 DFU:
   status: maintained
@@ -629,6 +680,8 @@ DFU:
     - tests/subsys/dfu/
   labels:
     - "area: DFU"
+  tests:
+    - dfu
 
 Devicetree:
   status: maintained
@@ -645,6 +698,8 @@ Devicetree:
     - include/zephyr/devicetree.h
   labels:
     - "area: Devicetree"
+  tests:
+    - libraries.devicetree
 
 Devicetree Bindings:
   status: maintained
@@ -674,6 +729,8 @@ Disk:
     - include/zephyr/sd/
   labels:
     - "area: Disk Access"
+  tests:
+    - drivers.disk
 
 Display drivers:
   status: odd fixes
@@ -765,6 +822,8 @@ Release Notes:
     - include/zephyr/dt-bindings/adc/
   labels:
     - "area: ADC"
+  tests:
+    - drivers.adc
 
 "Drivers: Audio":
   status: odd fixes
@@ -791,6 +850,8 @@ Release Notes:
     - doc/hardware/peripherals/bbram.rst
   labels:
     - "area: Battery Backed RAM (bbram)"
+  tests:
+    - drivers.bbram
 
 "Drivers: Aux display":
   status: maintained
@@ -805,6 +866,8 @@ Release Notes:
     - doc/hardware/peripherals/auxdisplay.rst
   labels:
     - "area: Aux display"
+  tests:
+    - sample.drivers.auxdisplay
 
 "Drivers: CAN":
   status: maintained
@@ -842,6 +905,9 @@ Release Notes:
     - tests/subsys/canbus/
   labels:
     - "area: CAN"
+  tests:
+    - drivers.can
+    - canbus
 
 "Drivers: Charger":
   status: maintained
@@ -856,6 +922,8 @@ Release Notes:
     - doc/hardware/peripherals/charger.rst
   labels:
     - "area: Charger"
+  tests:
+    - drivers.charger
 
 "Drivers: Clock control":
   status: maintained
@@ -871,6 +939,8 @@ Release Notes:
     - doc/hardware/peripherals/clock_control.rst
   labels:
     - "area: Clock control"
+  tests:
+    - drivers.clock
 
 "Drivers: Console":
   status: odd fixes
@@ -881,6 +951,8 @@ Release Notes:
     - samples/subsys/console/
   labels:
     - "area: Console"
+  tests:
+    - drivers.console
 
 "Drivers: Coredump":
   status: maintained
@@ -894,6 +966,8 @@ Release Notes:
     - doc/hardware/peripherals/coredump.rst
   labels:
     - "area: Coredump"
+  tests:
+    - debug.codedump
 
 "Drivers: Counter":
   status: maintained
@@ -908,6 +982,8 @@ Release Notes:
     - tests/drivers/build_all/counter/
   labels:
     - "area: Counter"
+  tests:
+    - drivers.counter
 
 "Drivers: Crypto":
   status: maintained
@@ -921,6 +997,8 @@ Release Notes:
     - tests/crypto/
   labels:
     - "area: Crypto / RNG"
+  tests:
+    - crypto
 
 "Drivers: DAC":
   status: maintained
@@ -935,6 +1013,8 @@ Release Notes:
     - tests/drivers/build_all/dac/
   labels:
     - "area: DAC"
+  tests:
+    - drivers.dac
 
 "Drivers: DAI":
   status: maintained
@@ -963,6 +1043,8 @@ Release Notes:
     - include/zephyr/dt-bindings/dma/
   labels:
     - "area: DMA"
+  tests:
+    - drivers.dma
 
 "Drivers: EDAC":
   status: maintained
@@ -977,6 +1059,8 @@ Release Notes:
     - doc/hardware/peripherals/edac/
   labels:
     - "area: EDAC"
+  tests:
+    - edac
 
 "Drivers: EEPROM":
   status: maintained
@@ -991,6 +1075,8 @@ Release Notes:
     - doc/hardware/peripherals/eeprom.rst
   labels:
     - "area: EEPROM"
+  tests:
+    - drivers.eeprom
 
 "Drivers: Entropy":
   status: maintained
@@ -1003,6 +1089,8 @@ Release Notes:
     - doc/hardware/peripherals/entropy.rst
   labels:
     - "area: Crypto / RNG"
+  tests:
+    - drivers.entropy
 
 "Drivers: ESPI":
   status: maintained
@@ -1019,8 +1107,12 @@ Release Notes:
     - dts/bindings/espi/
     - doc/hardware/peripherals/espi.rst
     - include/zephyr/drivers/espi_saf.h
+    - tests/drivers/espi/
   labels:
     - "area: eSPI"
+  tests:
+    - sample.drivers.espi
+    - drivers.espi
 
 "Drivers: Ethernet":
   status: odd fixes
@@ -1032,6 +1124,8 @@ Release Notes:
     - tests/drivers/ethernet/
   labels:
     - "area: Ethernet"
+  tests:
+    - net.ethernet
 
 "Drivers: Flash":
   status: maintained
@@ -1047,6 +1141,8 @@ Release Notes:
     - doc/hardware/peripherals/flash.rst
   labels:
     - "area: Flash"
+  tests:
+    - drivers.flash
 
 "Drivers: FPGA":
   status: maintained
@@ -1064,6 +1160,8 @@ Release Notes:
     - tests/drivers/build_all/fpga/
   labels:
     - "area: FPGA"
+  tests:
+    - drivers.fpga
 
 "Drivers: Fuel Gauge":
   status: maintained
@@ -1078,6 +1176,8 @@ Release Notes:
     - doc/hardware/peripherals/fuel_gauge.rst
   labels:
     - "area: Fuel Gauge"
+  tests:
+    - drivers.fuel_gauge
 
 "Drivers: GPIO":
   status: odd fixes
@@ -1094,6 +1194,8 @@ Release Notes:
     - tests/drivers/build_all/gpio/
   labels:
     - "area: GPIO"
+  tests:
+    - drivers.gpio
 
 "Drivers: GNSS":
   status: maintained
@@ -1108,6 +1210,8 @@ Release Notes:
     - tests/drivers/gnss/
   labels:
     - "area: GNSS"
+  tests:
+    - drivers.gnss
 
 "Drivers: HW Info":
   status: maintained
@@ -1121,6 +1225,8 @@ Release Notes:
     - doc/hardware/peripherals/hwinfo.rst
   labels:
     - "area: HWINFO"
+  tests:
+    - drivers.hwinfo
 
 "Drivers: I2C":
   status: maintained
@@ -1137,6 +1243,8 @@ Release Notes:
     - tests/boards/frdm_k64f/i2c/
   labels:
     - "area: I2C"
+  tests:
+    - drivers.i2c
 
 "Drivers: I2S":
   status: maintained
@@ -1151,6 +1259,8 @@ Release Notes:
     - samples/drivers/i2s/
   labels:
     - "area: I2S"
+  tests:
+    - drivers.i2s
 
 "Drivers: I3C":
   status: maintained
@@ -1167,6 +1277,8 @@ Release Notes:
     - tests/drivers/build_all/i3c/
   labels:
     - "area: I3C"
+  tests:
+    - drivers.i3c
 
 "Drivers: IEEE 802.15.4":
   status: maintained
@@ -1208,6 +1320,8 @@ Release Notes:
     Inter-processor mailboxes
   labels:
     - "area: IPM"
+  tests:
+    - drivers.ipm
 
 "Drivers: kscan":
   status: maintained
@@ -1218,14 +1332,14 @@ Release Notes:
   files:
     - drivers/kscan/
     - include/zephyr/drivers/kscan.h
-    - samples/drivers/espi/
     - samples/drivers/kscan/
     - tests/drivers/kscan/
-    - tests/drivers/espi/
     - dts/bindings/kscan/
     - doc/hardware/peripherals/kscan.rst
   labels:
     - "area: Kscan"
+  tests:
+    - drivers.kscan
 
 "Drivers: LED":
   status: maintained
@@ -1243,6 +1357,8 @@ Release Notes:
     - doc/hardware/peripherals/led.rst
   labels:
     - "area: LED"
+  tests:
+    - drivers.led
 
 "Drivers: LED Strip":
   status: maintained
@@ -1256,6 +1372,8 @@ Release Notes:
     - tests/drivers/build_all/led_strip/
   labels:
     - "area: LED"
+  tests:
+    - drivers.led_strip
 
 "Drivers: MFD":
   status: odd fixes
@@ -1269,6 +1387,8 @@ Release Notes:
     - tests/drivers/build_all/mfd/
   labels:
     - "area: MFD"
+  tests:
+    - drivers.mfd
 
 "Drivers: Modem":
   status: maintained
@@ -1281,6 +1401,8 @@ Release Notes:
     - include/zephyr/drivers/modem/
   labels:
     - "area: Modem Drivers"
+  tests:
+    - drivers.modem
 
 "Drivers: Regulators":
   status: maintained
@@ -1299,6 +1421,8 @@ Release Notes:
     - doc/hardware/peripherals/regulators.rst
   labels:
     - "area: Regulators"
+  tests:
+    - drivers.regulator
 
 "Drivers: Retained Memory":
   status: maintained
@@ -1312,6 +1436,8 @@ Release Notes:
     - doc/hardware/peripherals/retained_mem.rst
   labels:
     - "area: Retained Memory"
+  tests:
+    - drivers.retained_mem
 
 "Drivers: RTC":
   status: maintained
@@ -1325,6 +1451,8 @@ Release Notes:
     - include/zephyr/drivers/rtc.h
   labels:
     - "area: RTC"
+  tests:
+    - drivers.rtc
 
 "Drivers: PCI":
   status: maintained
@@ -1354,6 +1482,8 @@ Release Notes:
     - doc/hardware/peripherals/peci.rst
   labels:
     - "area: PECI"
+  tests:
+    - samples.drivers.peci
 
 "Drivers: Pin Control":
   status: maintained
@@ -1369,6 +1499,8 @@ Release Notes:
     - include/zephyr/dt-bindings/pinctrl/
   labels:
     - "area: Pinctrl"
+  tests:
+    - drivers.pinctrl
 
 "Drivers: PTP Clock":
   status: maintained
@@ -1411,6 +1543,8 @@ Release Notes:
     - include/zephyr/drivers/pwm.h
   labels:
     - "area: PWM"
+  tests:
+    - drivers.pwm
 
 "Drivers: SDHC":
   status: maintained
@@ -1424,6 +1558,8 @@ Release Notes:
     - doc/hardware/peripherals/sdhc.rst
   labels:
     - "area: Disk Access"
+  tests:
+    - drivers.sdhc
 
 "Drivers: Serial/UART":
   status: maintained
@@ -1440,6 +1576,8 @@ Release Notes:
     - doc/hardware/peripherals/uart.rst
   labels:
     - "area: UART"
+  tests:
+    - drivers.uart
 
 "Drivers: Sensors":
   status: maintained
@@ -1463,6 +1601,8 @@ Release Notes:
     - tests/drivers/build_all/sensor/
   labels:
     - "area: Sensors"
+  tests:
+    - drivers.sensors
 
 "Drivers: SMBus":
   status: maintained
@@ -1477,6 +1617,8 @@ Release Notes:
     - doc/hardware/peripherals/smbus.rst
   labels:
     - "area: SMBus"
+  tests:
+    - drivers.smbus
 
 "Drivers: SPI":
   status: maintained
@@ -1491,6 +1633,8 @@ Release Notes:
     - doc/hardware/peripherals/spi.rst
   labels:
     - "area: SPI"
+  tests:
+    - drivers.spi
 
 "Drivers: System timer":
   status: maintained
@@ -1532,6 +1676,8 @@ Release Notes:
     - samples/drivers/w1/
   labels:
     - "area: W1"
+  tests:
+    - drivers.w1
 
 "Drivers: Watchdog":
   status: odd fixes
@@ -1547,6 +1693,8 @@ Release Notes:
     - tests/drivers/watchdog/
   labels:
     - "area: Watchdog"
+  tests:
+    - drivers.watchdog
 
 "Drivers: Wi-Fi":
   status: maintained
@@ -1602,6 +1750,8 @@ Release Notes:
     - include/zephyr/drivers/virtualization/ivshmem.h
   labels:
     - "area: Virtualization"
+  tests:
+    - drivers.virtualization
 
 EC Host Commands:
   status: maintained
@@ -1613,6 +1763,8 @@ EC Host Commands:
     - tests/subsys/mgmt/ec_host_cmd/
   labels:
     - "area: ec_host_cmd"
+  tests:
+    - mgmt.ec_host_cmd
 
 Xen Platform:
   status: maintained
@@ -1646,6 +1798,8 @@ Filesystems:
     - tests/subsys/fs/
   labels:
     - "area: File System"
+  tests:
+    - filesystem
 
 "Filesystems: FatFs reentrant support":
   status: maintained
@@ -1656,6 +1810,8 @@ Filesystems:
     - tests/subsys/fs/fat_fs_api/src/test_fat_file_reentrant.c
   labels:
     - "area: File System"
+  tests:
+    - filesystem.fat
 
 Formatted Output:
   status: maintained
@@ -1672,6 +1828,9 @@ Formatted Output:
     - doc/services/formatted_output.rst
   labels:
     - "area: Formatting Output"
+  tests:
+    - utilities.prf
+    - libraries.cbprintf
 
 Google Platforms:
   status: maintained
@@ -1695,6 +1854,9 @@ Hash Utilities:
     Hash Functions and Hash Maps (Hash Tables)
   labels:
     - "area: hash utils"
+  tests:
+    - libraries.hash_function
+    - libraries.hash_map
 
 Input:
   status: maintained
@@ -1717,6 +1879,9 @@ Input:
     Input subsystem and drivers
   labels:
     - "area: Input"
+  tests:
+    - drivers.input
+    - input
 
 IPC:
   status: maintained
@@ -1732,6 +1897,8 @@ IPC:
     Inter-Processor Communication
   labels:
     - "area: IPC"
+  tests:
+    - ipc
 
 JSON Web Token:
   status: maintained
@@ -1748,6 +1915,9 @@ JSON Web Token:
     - tests/lib/json/
   labels:
     - "area: JSON"
+  tests:
+    - libraries.encoding.json
+    - libraries.encoding.jwt
 
 Kconfig:
   status: odd fixes
@@ -1765,6 +1935,8 @@ Kconfig:
   description: >-
     See https://docs.zephyrproject.org/latest/build/kconfig/index.html and
     https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#default-board-configuration
+  tests:
+    - kconfig
 
 Kernel:
   status: maintained
@@ -1790,6 +1962,8 @@ Kernel:
     - tests/kernel/mem_protect/
   labels:
     - "area: Kernel"
+  tests:
+    - kernel
 
 Base OS:
   status: maintained
@@ -1841,6 +2015,8 @@ Little FS:
     Little FS
   labels:
     - "area: File System"
+  tests:
+    - filesystem.littlefs
 
 Logging:
   status: maintained
@@ -1863,6 +2039,8 @@ Logging:
     - tests/lib/spsc_pbuf/
   labels:
     - "area: Logging"
+  tests:
+    - logging
 
 LoRa and LoRaWAN:
   status: maintained
@@ -1882,6 +2060,8 @@ LoRa and LoRaWAN:
     - doc/connectivity/lora_lorawan/index.rst
   labels:
     - "area: LoRa"
+  tests:
+    - sample.driver.lora
 
 MAINTAINERS file:
   status: maintained
@@ -1910,6 +2090,9 @@ Mbed TLS:
     - "area: Crypto / RNG"
   description: >-
     Mbed TLS module implementing the PSA Crypto API and TLS.
+  tests:
+    - benchmark.crypto.mbedtls
+    - crypto.mbedtls
 
 MCU Manager:
   status: maintained
@@ -1925,6 +2108,8 @@ MCU Manager:
     - doc/services/device_mgmt/
   labels:
     - "area: mcumgr"
+  tests:
+    - mgmt.mcumgr
 
 Modbus:
   status: maintained
@@ -1938,8 +2123,10 @@ Modbus:
     - doc/services/modbus/
   labels:
     - "area: modbus"
+  tests:
+    - modbus
 
-Modem Modules:
+Modem:
   status: maintained
   maintainers:
     - bjarki-trackunit
@@ -1951,6 +2138,8 @@ Modem Modules:
     - samples/net/cellular_modem/
   labels:
     - "area: Modem"
+  tests:
+    - modem
 
 OSDP:
   status: maintained
@@ -1965,6 +2154,8 @@ OSDP:
     - samples/subsys/mgmt/osdp/
   labels:
     - "area: OSDP"
+  tests:
+    - sample.mgmt.osdp
 
 hawkBit:
   status: odd fixes
@@ -1976,6 +2167,8 @@ hawkBit:
     - samples/subsys/mgmt/hawkbit/
   labels:
     - "area: hawkBit"
+  tests:
+    - sample.net.hawkbit
 
 "mgmt: updatehub":
   status: maintained
@@ -1988,6 +2181,8 @@ hawkBit:
     - "area: updatehub"
   description: >-
     UpdateHub embedded Firmware Over-The-Air (FOTA) upgrade agent
+  tests:
+    - sample.net.updatehub
 
 Native POSIX/Sim and POSIX arch:
   status: maintained
@@ -2013,6 +2208,8 @@ Native POSIX/Sim and POSIX arch:
     - "area: native port"
   description: >-
     POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
+  tests:
+    - boards.native_posix
 
 Networking:
   status: maintained
@@ -2053,6 +2250,8 @@ Networking:
     - tests/net/wifi/
   labels:
     - "area: Networking"
+  tests:
+    - net
 
 "Networking: BSD sockets":
   status: odd fixes
@@ -2065,6 +2264,8 @@ Networking:
     - tests/net/socket/
   labels:
     - "area: Sockets"
+  tests:
+    - net.socket
 
 "Networking: Buffers":
   status: maintained
@@ -2080,6 +2281,8 @@ Networking:
     - tests/net/buf/
   labels:
     - "area: Networking Buffers"
+  tests:
+    - net.buf
 
 "Networking: Connection Manager":
   status: maintained
@@ -2096,6 +2299,8 @@ Networking:
     - doc/connectivity/networking/conn_mgr/
   labels:
     - "area: Networking"
+  tests:
+    - net.conn_mgr
 
 "Networking: CoAP":
   status: maintained
@@ -2109,6 +2314,8 @@ Networking:
     - tests/net/lib/coap/
   labels:
     - "area: Networking"
+  tests:
+    - net.coap
 
 "Networking: gPTP":
   status: maintained
@@ -2123,6 +2330,8 @@ Networking:
     - subsys/net/l2/ethernet/gptp/
   labels:
     - "area: Networking"
+  tests:
+    - sample.net.gptp
 
 "Networking: LWM2M":
   status: maintained
@@ -2136,6 +2345,8 @@ Networking:
     - subsys/net/lib/lwm2m/
   labels:
     - "area: LWM2M"
+  tests:
+    - net.lwm2m
 
 "Networking: MQTT":
   status: maintained
@@ -2150,6 +2361,8 @@ Networking:
     - tests/net/lib/mqtt_sn*/
   labels:
     - "area: Networking"
+  tests:
+    - net.mqtt
 
 "Networking: MQTT-SN":
   status: maintained
@@ -2163,6 +2376,8 @@ Networking:
     - samples/net/mqtt_sn_publisher/
   labels:
     - "area: Networking"
+  tests:
+    - net.mqtt_sn
 
 "Networking: Native IEEE 802.15.4":
   status: maintained
@@ -2179,6 +2394,8 @@ Networking:
     - tests/net/ieee802154/
   labels:
     - "area: IEEE 802.15.4"
+  tests:
+    - net.ieee802154
 
 "Networking: OpenThread":
   status: maintained
@@ -2197,6 +2414,8 @@ Networking:
   labels:
     - "area: Networking"
     - "area: OpenThread"
+  tests:
+    - openthread
 
 "Networking: Wi-Fi":
   status: maintained
@@ -2214,6 +2433,8 @@ Networking:
   labels:
     - "area: Networking"
     - "area: Wi-Fi"
+  tests:
+    - net.wifi
 
 NIOS-2 arch:
   status: maintained
@@ -2229,6 +2450,8 @@ NIOS-2 arch:
     - boards/nios2/qemu_nios2/
   labels:
     - "area: NIOS2"
+  tests:
+    - boards.altera_max10
 
 nRF BSIM:
   status: maintained
@@ -2242,6 +2465,8 @@ nRF BSIM:
     - tests/bsim/*/
   labels:
     - "platform: nRF BSIM"
+  tests:
+    - boards.nrf52_bsim
 
 POSIX API layer:
   status: maintained
@@ -2256,6 +2481,9 @@ POSIX API layer:
     - doc/services/portability/posix/
   labels:
     - "area: POSIX"
+  tests:
+    - libraries.fdtable
+    - portability.posix
 
 Power management:
   status: maintained
@@ -2275,6 +2503,8 @@ Power management:
     - drivers/power_domain/
   labels:
     - "area: Power Management"
+  tests:
+    - pm
 
 RISCV arch:
   status: maintained
@@ -2300,6 +2530,8 @@ RISCV arch:
     - drivers/interrupt_controller/intc_plic.c
   labels:
     - "area: RISCV"
+  tests:
+    - arch.riscv
 
 Retention:
   status: maintained
@@ -2341,6 +2573,8 @@ Sensor Subsystem:
     - samples/subsys/sensing/
   labels:
     - "area: Sensor Subsystem"
+  tests:
+    - sample.sensing
 
 Stats:
   status: odd fixes
@@ -2384,6 +2618,8 @@ Settings:
     - doc/services/settings/
   labels:
     - "area: Settings"
+  tests:
+    - settings
 
 Shell:
   status: maintained
@@ -2399,6 +2635,8 @@ Shell:
     - doc/services/shell/
   labels:
     - "area: Shell"
+  tests:
+    - shell
 
 Shields:
   status: maintained
@@ -2414,6 +2652,8 @@ Shields:
     - samples/shields/
   labels:
     - "area: Shields"
+  tests:
+    - sample.shields
 
 SPARC arch:
   status: odd fixes
@@ -2441,6 +2681,8 @@ State machine framework:
     - tests/lib/smf/
   labels:
     - "area: State Machine Framework"
+  tests:
+    - libraries.smf
 
 ADI Platforms:
   status: maintained
@@ -2647,7 +2889,6 @@ Intel Platforms (Agilex):
     - boards/arm64/intel_*/
     - soc/arm64/intel_*/
     - dts/arm64/intel/
-    - samples/boards/intel_adsp/
     - dts/bindings/*/intel,agilex*
   labels:
     - "platform: Intel SoC FPGA Agilex"
@@ -2951,6 +3192,8 @@ RTIO:
     - doc/services/rtio/
   labels:
     - "area: RTIO"
+  tests:
+    - rtio
 
 Storage:
   status: odd fixes
@@ -2961,6 +3204,8 @@ Storage:
     - doc/services/storage/
   labels:
     - "area: Storage"
+  tests:
+    - storage
 
 Sysbuild:
   status: maintained
@@ -2975,6 +3220,8 @@ Sysbuild:
     - doc/build/sysbuild/
   labels:
     - "area: Sysbuild"
+  tests:
+    - sample.application_development.sysbuild
 
 Task Watchdog:
   status: maintained
@@ -2987,6 +3234,8 @@ Task Watchdog:
     - doc/services/task_wdt/index.rst
   labels:
     - "area: Task Watchdog"
+  tests:
+    - sample.task_wdt
 
 "Drivers: Time Aware GPIO":
   status: maintained
@@ -2999,6 +3248,8 @@ Task Watchdog:
     - samples/drivers/misc/timeaware_gpio/
   labels:
     - "area: Time Aware GPIO"
+  tests:
+    - sample.drivers.misc.timeaware_gpio
 
 TF-M Integration:
   status: maintained
@@ -3012,6 +3263,8 @@ TF-M Integration:
     - doc/services/tfm/
   labels:
     - "area: TF-M"
+  tests:
+    - tfm
 
 
 "Toolchain Integration":
@@ -3080,6 +3333,8 @@ Tracing:
     - tests/subsys/tracing/
   labels:
     - "area: tracing"
+  tests:
+    - tracing
 
 USB:
   status: maintained
@@ -3100,6 +3355,9 @@ USB:
     - scripts/generate_usb_vif/
   labels:
     - "area: USB"
+  tests:
+    - usb
+    - drivers.usb
 
 USB-C:
   status: maintained
@@ -3118,6 +3376,8 @@ USB-C:
     - doc/hardware/peripherals/usbc_vbus.rst
   labels:
     - "area: USB-C"
+  tests:
+    - sample.usbc
 
 Userspace:
   status: maintained
@@ -3146,6 +3406,8 @@ Userspace:
     - include/zephyr/kernel/mm/demand_paging.h
   labels:
     - "area: Userspace"
+  tests:
+    - kernel.memory_protection
 
 VFS:
   status: maintained
@@ -3159,6 +3421,8 @@ VFS:
 
   labels:
     - "area: File System"
+  tests:
+    - filesystem
 
 West:
   status: maintained
@@ -3965,6 +4229,8 @@ zbus:
     - doc/services/zbus/
   labels:
     - "area: zbus"
+  tests:
+    - message_bus.zbus
 
 "Linkable Loadable Extensions":
   status: maintained
@@ -3981,3 +4247,5 @@ zbus:
     - doc/services/llext/
   labels:
     - "area: Linkable Loadable Extensions"
+  tests:
+    - llext
