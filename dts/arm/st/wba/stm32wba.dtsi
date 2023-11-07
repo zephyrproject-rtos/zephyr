@@ -189,6 +189,14 @@
 			};
 		};
 
+		rtc: rtc@46007800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x46007800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>;
+			status = "disabled";
+		};
+
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
