@@ -1,0 +1,13 @@
+sample:
+  name: SoC Flash on STM32H747
+tests:
+  sample.drivers.flash.st.stm32-nv-flash:
+    platform_allow:
+      - stm32h747i_disco_m7
+      - stm32h747i_disco_m4
+    integration_platforms:
+      - stm32h747i_disco_m7
+      - stm32h747i_disco_m4
+    tags:
+      - flash
+      - stm32h747

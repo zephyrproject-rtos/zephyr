@@ -1,0 +1,28 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/delete-node/ &storage_partition;
+
+/ {
+	chosen {
+		/delete-property/ zephyr,flash-controller;
+		zephyr,flash-controller = &flash;
+	};
+};
+
+&flash0 {
+	compatible = "st,stm32-nv-flash", "soc-nv-flash";
+	partitions {
+		compatible = "fixed-partitions";
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
+			image1_partition: partition@0 {
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+		/* 256KiB scratch pad */
+		scratch_partition: partition@c0000 {
+			reg = <0xc0000 0x40000>;
+		};
+	};
+};
