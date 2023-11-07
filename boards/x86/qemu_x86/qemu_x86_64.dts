@@ -5,6 +5,10 @@
 
 #include "qemu_x86.dts"
 
+&hpet {
+	status = "disabled";
+};
+
 &pcie0 {
 	smbus0: smbus0 {
 		compatible = "intel,pch-smbus";
