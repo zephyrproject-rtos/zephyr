@@ -283,8 +283,8 @@ static const struct mbox_driver_api nxp_s32_mru_driver_api = {
 			.ChannelCfg = COND_CODE_0(MRU_RX_CHANNELS(n),			\
 						  (NULL), (nxp_s32_mru_##n##_ch_cfg)),	\
 			.NOTIFYAdd = {							\
-				&MRU_BASE(n)->NOTIFY0,					\
-				&MRU_BASE(n)->NOTIFY1					\
+				&MRU_BASE(n)->NOTIFY[0],				\
+				&MRU_BASE(n)->NOTIFY[1]					\
 			},								\
 		},									\
 		.irq_group = MRU_INT_GROUP(DT_INST_IRQN(n)),				\
