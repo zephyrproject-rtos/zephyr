@@ -11,7 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-#include "usb_dw_registers.h"
+#include <usb_dwc2_hw.h>
 
 struct usb_dw_stm32_clk {
 	const struct device *const dev;
@@ -52,9 +52,9 @@ static inline int clk_enable_st_stm32f4_fsotg(const struct usb_dw_stm32_clk *con
 	return clock_control_on(clk->dev, (void *)&clk->pclken[0]);
 }
 
-static inline int pwr_on_st_stm32f4_fsotg(struct usb_dw_reg *const base)
+static inline int pwr_on_st_stm32f4_fsotg(struct usb_dwc2_reg *const base)
 {
-	base->ggpio |= USB_DW_GGPIO_STM32_PWRDWN | USB_DW_GGPIO_STM32_VBDEN;
+	base->ggpio |= USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN;
 
 	return 0;
 }
