@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(soc);
  *
  * @return 0
  */
-static int stm32wba_init(void)
+int stm32wba_init(void)
 {
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
@@ -50,7 +50,6 @@ static int stm32wba_init(void)
 #elif defined(CONFIG_POWER_SUPPLY_LDO)
 	LL_PWR_SetRegulatorSupply(LL_PWR_LDO_SUPPLY);
 #endif
-
 
 	return 0;
 }
