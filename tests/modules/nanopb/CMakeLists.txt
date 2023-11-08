@@ -17,3 +17,8 @@ zephyr_nanopb_sources(app
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+# Process our own library
+add_subdirectory(lib)
+target_include_directories(app PRIVATE lib)
+target_link_libraries(app PRIVATE mylib)
