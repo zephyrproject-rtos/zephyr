@@ -424,6 +424,9 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,log-uart
+     - Sets the UART device(s) used by the logging subsystem's UART backend.
+       If defined, the UART log backend would output to the devices listed in this node.
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
    * - zephyr,osdp-uart
