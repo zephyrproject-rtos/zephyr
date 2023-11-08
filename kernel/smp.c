@@ -42,6 +42,14 @@ static struct cpu_start_cb {
 
 	/** Argument to @ref cpu_start_fn.fn. */
 	void *arg;
+
+	/** Invoke scheduler after CPU has started if true. */
+	bool invoke_sched;
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	/** True if smp_timer_init() needs to be called. */
+	bool reinit_timer;
+#endif
 } cpu_start_fn;
 
 static struct k_spinlock cpu_start_lock;
@@ -111,7 +119,7 @@ void z_smp_thread_swap(void)
 }
 #endif
 
-static inline FUNC_NORETURN void smp_init_top(void *arg)
+static inline void smp_init_top(void *arg)
 {
 	struct k_thread dummy_thread;
 	struct cpu_start_cb *csc = arg;
@@ -124,19 +132,26 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 	 */
 	wait_for_start_signal(&cpu_start_flag);
 
-	/* Initialize the dummy thread struct so that
-	 * the scheduler can schedule actual threads to run.
-	 */
-	z_dummy_thread_init(&dummy_thread);
-
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	smp_timer_init();
+	if ((csc == NULL) || csc->reinit_timer) {
+		smp_timer_init();
+	}
 #endif
 
 	/* Do additional initialization steps if needed. */
 	if ((csc != NULL) && (csc->fn != NULL)) {
 		csc->fn(csc->arg);
 	}
+
+	if ((csc != NULL) && !csc->invoke_sched) {
+		/* Don't invoke scheduler. */
+		return;
+	}
+
+	/* Initialize the dummy thread struct so that
+	 * the scheduler can schedule actual threads to run.
+	 */
+	z_dummy_thread_init(&dummy_thread);
 
 	/* Let scheduler decide what thread to run next. */
 	z_swap_unlocked();
@@ -146,9 +161,6 @@ static inline FUNC_NORETURN void smp_init_top(void *arg)
 
 static void start_cpu(int id, struct cpu_start_cb *csc)
 {
-	/* Initialize various CPU structs related to this CPU. */
-	z_init_cpu(id);
-
 	/* Clear the ready flag so the newly powered up CPU can
 	 * signal that it has powered up.
 	 */
@@ -172,6 +184,40 @@ void k_smp_cpu_start(int id, smp_init_fn fn, void *arg)
 
 	cpu_start_fn.fn = fn;
 	cpu_start_fn.arg = arg;
+	cpu_start_fn.invoke_sched = true;
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	cpu_start_fn.reinit_timer = true;
+#endif
+
+	/* We are only starting one CPU so we do not need to synchronize
+	 * across all CPUs using the start_flag. So just set it to 1.
+	 */
+	(void)atomic_set(&cpu_start_flag, 1); /* async, don't care */
+
+	/* Initialize various CPU structs related to this CPU. */
+	z_init_cpu(id);
+
+	/* Start the CPU! */
+	start_cpu(id, &cpu_start_fn);
+
+	k_spin_unlock(&cpu_start_lock, key);
+}
+
+void k_smp_cpu_resume(int id, smp_init_fn fn, void *arg,
+		      bool reinit_timer, bool invoke_sched)
+{
+	k_spinlock_key_t key = k_spin_lock(&cpu_start_lock);
+
+	cpu_start_fn.fn = fn;
+	cpu_start_fn.arg = arg;
+	cpu_start_fn.invoke_sched = invoke_sched;
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	cpu_start_fn.reinit_timer = reinit_timer;
+#else
+	ARG_UNUSED(reinit_timer);
+#endif
 
 	/* We are only starting one CPU so we do not need to synchronize
 	 * across all CPUs using the start_flag. So just set it to 1.
@@ -195,6 +241,7 @@ void z_smp_init(void)
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 1; i < num_cpus; i++) {
+		z_init_cpu(i);
 		start_cpu(i, NULL);
 	}
 
