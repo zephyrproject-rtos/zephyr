@@ -127,7 +127,7 @@ static void isr_handler(const void *data)
 
 	switch (isr_info.command) {
 	case THREAD_SELF_CMD:
-		isr_info.data = (void *)k_current_get();
+		isr_info.data = (void *)k_sched_current_thread_query();
 		break;
 
 	case EXEC_CTX_TYPE_CMD:
