@@ -439,7 +439,7 @@ static int regulator_npm1300_set_ldsw_pin_ctrl(const struct device *dev, uint8_t
 
 	ctrl = (pin + 1U) | (inv << 3U);
 
-	return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_GPISEL + chan, type);
+	return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_GPISEL + chan, ctrl);
 }
 
 int regulator_npm1300_set_pin_ctrl(const struct device *dev, const struct gpio_dt_spec *spec,
