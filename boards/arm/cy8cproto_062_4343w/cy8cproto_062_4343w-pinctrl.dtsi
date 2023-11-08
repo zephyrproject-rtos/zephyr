@@ -29,6 +29,17 @@
 	input-enable;
 };
 
+/* Configure pin control bias mode for i2c3 pins */
+&p6_0_scb3_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p6_1_scb3_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
 &pinctrl {
 	/* Configure pin control bias mode for SDIO */
 	p2_5_sdio_clk: p2_5_sdio_clk {
