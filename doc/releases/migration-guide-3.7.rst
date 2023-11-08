@@ -196,6 +196,8 @@ Userspace
 Architectures
 *************
 
+* Function :c:func:`arch_start_cpu` has been renamed to :c:func:`arch_cpu_start`.
+
 * x86
 
   * Kconfigs ``CONFIG_DISABLE_SSBD`` and ``CONFIG_ENABLE_EXTENDED_IBRS``

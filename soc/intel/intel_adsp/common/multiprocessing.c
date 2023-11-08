@@ -107,7 +107,7 @@ static __imr void __used z_mp_entry(void)
 	soc_mp_startup(start_rec.cpu);
 	soc_cpus_active[start_rec.cpu] = true;
 	start_rec.fn(start_rec.arg);
-	__ASSERT(false, "arch_start_cpu() handler should never return");
+	__ASSERT(false, "arch_cpu_start() handler should never return");
 }
 
 void mp_resume_entry(void)
@@ -120,7 +120,7 @@ bool arch_cpu_active(int cpu_num)
 	return soc_cpus_active[cpu_num];
 }
 
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	__ASSERT_NO_MSG(!soc_cpus_active[cpu_num]);
