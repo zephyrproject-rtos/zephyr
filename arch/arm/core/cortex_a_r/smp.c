@@ -90,7 +90,7 @@ extern int z_arm_mmu_init(void);
 #endif
 
 /* Called from Zephyr initialization */
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_t fn, void *arg)
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_t fn, void *arg)
 {
 	int cpu_count, i, j;
 	uint32_t cpu_mpid = 0;
