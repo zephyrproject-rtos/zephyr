@@ -4,6 +4,7 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import logging
 import multiprocessing
 import os
@@ -13,9 +14,12 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 import yaml
+from enum import Enum
+from filelock import BaseFileLock, FileLock
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
 from typing import List
@@ -520,7 +524,7 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
+    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, build_manager, **kwargs):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
@@ -529,6 +533,8 @@ class ProjectBuilder(FilterBuilder):
         self.options = env.options
         self.env = env
         self.duts = None
+        self.build_status_file = os.path.join(instance.build_dir, 'twister_builder.json')
+        self.build_manager: BuildManager = build_manager
 
     def log_info(self, filename, inline_logs, log_testcases=False):
         filename = os.path.abspath(os.path.realpath(filename))
@@ -641,12 +647,29 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug(f"Determine test cases for test instance: {self.instance.name}")
                     try:
                         self.determine_testcases(results)
+                        # TODO: add other statuses (SKIPPED, IN_PROGRESS, DONE, FAILED)
+                        instance_id = f'{self.instance.platform.name}/{self.instance.testsuite.id}'
+                        self.build_manager.update_status(instance_id, BuildStatus.DONE)
                         pipeline.put({"op": "gather_metrics", "test": self.instance})
                     except BuildError as e:
                         logger.error(str(e))
                         self.instance.status = "error"
                         self.instance.reason = str(e)
                         pipeline.put({"op": "report", "test": self.instance})
+
+        elif op == "wait_for_image":
+            required_images = self.instance.testsuite.required_images
+            for required_image in required_images:
+                self.build_manager.wait_for_build_to_finish(f'{self.instance.platform.name}/{required_image}')
+            os.makedirs(self.instance.build_dir, exist_ok=True)
+            # TODO: copy build output from required_image build_dir to current
+            # test's build_dir
+
+            # TODO: there should be handled all situation when some
+            # 'required_images' was skipped, failed, errored, blocked, etc.
+            # What with gathering metrics?
+
+            pipeline.put({"op": "run", "test": self.instance})
 
         elif op == "gather_metrics":
             self.gather_metrics(self.instance)
@@ -1120,6 +1143,7 @@ class TwisterRunner:
         self.jobs = 1
         self.results = None
         self.jobserver = None
+        self.build_manager = None
 
     def run(self):
 
@@ -1156,6 +1180,12 @@ class TwisterRunner:
             logger.info("JOBS: %d", self.jobs)
 
         self.update_counting_before_pipeline()
+
+        self.sort_instances()
+        build_status_file = os.path.join(self.env.outdir, 'twister_builder.json')
+        self.build_manager = BuildManager(build_status_file)
+        self.build_manager.initialize()
+        # TODO: what in case when retries are applied? build_status_file should be cleared?
 
         while True:
             self.results.iteration += 1
@@ -1241,6 +1271,11 @@ class TwisterRunner:
                     pipeline.put({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
                     pipeline.put({"op": "filter", "test": instance})
+                elif instance.testsuite.required_images:
+                    # TODO: this solution will not work when test scenario with
+                    # defined 'required_images' need to build something else for
+                    # itself
+                    pipeline.put({"op": "wait_for_image", "test": instance})
                 else:
                     pipeline.put({"op": "cmake", "test": instance})
 
@@ -1255,7 +1290,7 @@ class TwisterRunner:
                         break
                     else:
                         instance = task['test']
-                        pb = ProjectBuilder(instance, self.env, self.jobserver)
+                        pb = ProjectBuilder(instance, self.env, self.jobserver, self.build_manager)
                         pb.duts = self.duts
                         pb.process(pipeline, done_queue, task, lock, results)
 
@@ -1268,7 +1303,7 @@ class TwisterRunner:
                     break
                 else:
                     instance = task['test']
-                    pb = ProjectBuilder(instance, self.env, self.jobserver)
+                    pb = ProjectBuilder(instance, self.env, self.jobserver, self.build_manager)
                     pb.duts = self.duts
                     pb.process(pipeline, done_queue, task, lock, results)
             return True
@@ -1330,3 +1365,96 @@ class TwisterRunner:
             filter_stages.append("kconfig")
 
         return filter_stages
+
+    def sort_instances(self):
+        """
+        Sort instances by putting instances which require additional image
+        at the beginning of self.instances dict. Thanks to this during putting
+        tasks to the pieline queue, they will be executed at the end.
+        """
+        sorted_instances = {}
+        dependent_instances = {}
+        for instance_name, instance in self.instances.items():
+            if instance.testsuite.required_images:
+                dependent_instances[instance_name] = instance
+            else:
+                sorted_instances[instance_name] = instance
+        self.instances = {**dependent_instances, **sorted_instances}
+
+
+class BuildStatus(str, Enum):
+    NOT_DONE = 'NOT_DONE'
+    SKIPPED = 'SKIPPED'
+    IN_PROGRESS = 'IN_PROGRESS'
+    DONE = 'DONE'
+    FAILED = 'FAILED'
+
+
+class BuildManager:
+    """
+    Class handles information about already built sources.
+
+    It allows to skip building when it was already built for another test.
+    """
+    tmp_dir: str = tempfile.gettempdir()
+    build_lock_file_path: str = os.path.join(tmp_dir, 'twister_builder.lock')
+    _lock: BaseFileLock = FileLock(build_lock_file_path, timeout=1)
+    build_status_file_name: str = 'twister_builder.json'
+    wait_build_timeout: int = 1800
+
+    def __init__(self, status_file: str) -> None:
+        self._status_file: str = status_file
+
+    def _write_data(self, data) -> None:
+        with open(self._status_file, 'w', encoding='UTF-8') as file:
+            json.dump(data, file, indent=2)
+
+    def _read_data(self) -> dict:
+        with open(self._status_file, encoding='UTF-8') as file:
+            data: dict = json.load(file)
+        return data
+
+    def initialize(self):
+        with self._lock:
+            if os.path.exists(self._status_file):
+                return
+            logger.info('Create empty builder status file: %s', self._status_file)
+            self._write_data({})
+
+    def get_status(self, image_id: str) -> str:
+        """
+        Return status for build source.
+
+        :return: build status
+        """
+        with self._lock:
+            data = self._read_data()
+            return data.get(image_id, BuildStatus.NOT_DONE)
+
+    def update_status(self, image_id: str, status: str) -> bool:
+        """
+        Update status for build source.
+
+        If new status is equal to old one than return False,
+        otherwise return True
+
+        :param status: new status
+        :return: True if status was updated otherwise return False
+        """
+        with self._lock:
+            data = self._read_data()
+            if data.get(image_id) == status:
+                return False
+            data[image_id] = status
+            self._write_data(data)
+            return True
+
+    def wait_for_build_to_finish(self, image_id: str) -> None:
+        logger.debug('Waiting for finishing building: %s', image_id)
+        timeout = time.time() + self.wait_build_timeout
+        while self.get_status(image_id) in [BuildStatus.IN_PROGRESS, BuildStatus.NOT_DONE]:
+            time.sleep(1)
+            if time.time() > timeout:
+                msg = f'Timed out waiting for another thread to finish building: {image_id}'
+                logger.error(msg)
+                raise Exception(msg)

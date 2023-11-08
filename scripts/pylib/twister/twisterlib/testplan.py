@@ -467,6 +467,8 @@ class TestPlan:
         return testcases
 
     def add_testsuites(self, testsuite_filter=[]):
+        found_testsuites = {}  # key is TestSuite.id (not a TestSuite.name like in self.testsuites)
+        additional_testsuite_ids = set()
         for root in self.env.test_roots:
             root = os.path.abspath(root)
 
@@ -510,9 +512,41 @@ class TestPlan:
                         else:
                             self.testsuites[suite.name] = suite
 
+                        if suite.name in self.testsuites and suite.required_images:
+                            additional_testsuite_ids.update(suite.required_images)
+
+                        # collecting all found testsuites can be too memory consuming
+                        found_testsuites[suite.id] = suite
+
                 except Exception as e:
                     logger.error(f"{suite_path}: can't load (skipping): {e!r}")
                     self.load_errors += 1
+
+        # TODO: below code is so complicated because in self.testsuites key is
+        # a TestSuite.name not TestSuite.id. Maybe it would be a good idea to
+        # changed key in self.testsuites for TestSuite.id.
+        for additional_testsuite_id in additional_testsuite_ids:
+            additional_testsuite_should_be_added = True
+            for chosen_testsuite in self.testsuites.values():
+                if additional_testsuite_id == chosen_testsuite.id:
+                    # additional test scenario was already added to scope
+                    additional_testsuite_should_be_added = False
+                    break
+
+            if additional_testsuite_should_be_added:
+                if additional_testsuite_id in found_testsuites:
+                    additional_testsuite = found_testsuites[additional_testsuite_id]
+                    self.testsuites[additional_testsuite.name] = additional_testsuite
+                else:
+                    # TODO: It would be good to pass also information about yaml
+                    # file where incorrect additional_testsuite_id was found.
+                    # Moreover, it is really confusing that there is no
+                    # consistency in naming - test, testsuite, image,
+                    # test_scenario relate to the same thing (a part of
+                    # "configuration" in .yaml file).
+                    raise Exception(f"Additional image '{additional_testsuite_id}' was not found. Please verify if "
+                                    "provided image id is valid or if provided --testsuite-root include this image id.")
+
         return len(self.testsuites)
 
     def __str__(self):
@@ -598,7 +632,7 @@ class TestPlan:
         platform_filter = self.options.platform
         vendor_filter = self.options.vendor
         exclude_platform = self.options.exclude_platform
-        testsuite_filter = self.run_individual_testsuite
+        # testsuite_filter = self.run_individual_testsuite
         arch_filter = self.options.arch
         tag_filter = self.options.tag
         exclude_tag = self.options.exclude_tag
@@ -738,8 +772,12 @@ class TestPlan:
                 if exclude_tag and ts.tags.intersection(exclude_tag):
                     instance.add_filter("Command line testsuite exclude filter", Filters.CMD_LINE)
 
-                if testsuite_filter and ts_name not in testsuite_filter:
-                    instance.add_filter("TestSuite name filter", Filters.CMD_LINE)
+                # TODO: Do we need this filtering? Theoretically it should be
+                # applied during adding testsuites. But I guess that this
+                # filtering is used during loading tests from test plan or
+                # during --test-only.
+                # if testsuite_filter and ts_name not in testsuite_filter:
+                #     instance.add_filter("TestSuite name filter", Filters.CMD_LINE)
 
                 if arch_filter and plat.arch not in arch_filter:
                     instance.add_filter("Command line testsuite arch filter", Filters.CMD_LINE)

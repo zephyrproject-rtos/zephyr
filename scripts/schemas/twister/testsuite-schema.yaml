@@ -151,6 +151,11 @@ mapping:
         matching: "all"
         sequence:
           - type: str
+      "required_images":
+        type: seq
+        required: false
+        sequence:
+          - type: str
       "required_snippets":
         type: seq
         required: false
@@ -255,6 +260,11 @@ mapping:
             type: any
             required: false
           "required_snippets":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "required_images":
             type: seq
             required: false
             sequence:
