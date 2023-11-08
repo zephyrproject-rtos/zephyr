@@ -203,6 +203,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
 
 	net_pkt_set_data(pkt, &ipv4_access);
+	net_pkt_set_ip_reassembled(pkt, true);
 
 	LOG_DBG("New pkt %p IPv4 len is %d bytes", pkt, net_pkt_get_len(pkt));
 
