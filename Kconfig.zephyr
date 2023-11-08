@@ -921,14 +921,3 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 endchoice
 
 endmenu
-
-menu "Compatibility"
-
-config COMPAT_INCLUDES
-	bool "Suppress warnings when using header shims"
-	default y
-	help
-	  Suppress any warnings from the pre-processor when including
-	  deprecated header files.
-
-endmenu
