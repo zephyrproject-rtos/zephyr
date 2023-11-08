@@ -167,8 +167,9 @@ void z_arm64_secondary_start(void)
 	if(secondary_core_fn==NULL)
 	{
 	    secondary_core_fn = arm64_cpu_boot_params.fn;
-	    arg = arm64_cpu_boot_params.arg;
 	}
+	
+	arg = arm64_cpu_boot_params.arg;
 	barrier_dsync_fence_full();
 
 	/*
