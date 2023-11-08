@@ -257,7 +257,7 @@ enum bt_audio_codec_config_frame_dur {
 /**
  *  @brief Helper to declare LC3 codec capability
  *
- *  _max_frames_per_sdu value is optional and will be included only if != 1
+ *  ``_max_frames_per_sdu`` value is optional and will be included only if != 1
  */
 /* COND_CODE_1 is used to omit an LTV entry in case the _frames_per_sdu is 1.
  * COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
@@ -292,8 +292,8 @@ enum bt_audio_codec_config_frame_dur {
 /**
  * @brief Helper to declare LC3 codec
  *
- * @param _freq Supported Sampling Frequencies bitfield (see BT_AUDIO_CODEC_LC3_FREQ_*)
- * @param _duration Supported Frame Durations bitfield (see BT_AUDIO_CODEC_LC3_DURATION_*)
+ * @param _freq Supported Sampling Frequencies bitfield (see ``BT_AUDIO_CODEC_LC3_FREQ_*``)
+ * @param _duration Supported Frame Durations bitfield (see ``BT_AUDIO_CODEC_LC3_DURATION_*``)
  * @param _chan_count Supported channels (see @ref BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT)
  * @param _len_min Minimum number of octets supported per codec frame
  * @param _len_max Maximum number of octets supported per codec frame
@@ -311,8 +311,8 @@ enum bt_audio_codec_config_frame_dur {
 /**
  *  @brief Helper to declare LC3 codec data configuration
  *
- *  @param _freq            Sampling frequency (BT_AUDIO_CODEC_CONFIG_LC3_FREQ_*)
- *  @param _duration        Frame duration (BT_AUDIO_CODEC_CONFIG_LC3_DURATION_*)
+ *  @param _freq            Sampling frequency (``BT_AUDIO_CODEC_CONFIG_LC3_FREQ_*``)
+ *  @param _duration        Frame duration (``BT_AUDIO_CODEC_CONFIG_LC3_DURATION_*``)
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
  *  @param _len             Octets per frame (16-bit integer)
  *  @param _frames_per_sdu  Frames per SDU (8-bit integer). This value is optional and will be
@@ -343,12 +343,12 @@ enum bt_audio_codec_config_frame_dur {
 /**
  *  @brief Helper to declare LC3 codec configuration.
  *
- *  @param _freq            Sampling frequency (BT_AUDIO_CODEC_CONFIG_LC3_FREQ_*)
- *  @param _duration        Frame duration (BT_AUDIO_CODEC_CONFIG_LC3_DURATION_*)
+ *  @param _freq            Sampling frequency (``BT_AUDIO_CODEC_CONFIG_LC3_FREQ_*``)
+ *  @param _duration        Frame duration (``BT_AUDIO_CODEC_CONFIG_LC3_DURATION_*``)
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
  *  @param _len             Octets per frame (16-bit integer)
  *  @param _frames_per_sdu  Frames per SDU (8-bit integer)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG(_freq, _duration, _loc, _len, _frames_per_sdu, _stream_context)  \
 	BT_AUDIO_CODEC_CFG(                                                                        \
@@ -360,7 +360,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 8.1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_8_1(_loc, _stream_context)                                       \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ,                             \
@@ -370,7 +370,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 8.2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_8_2(_loc, _stream_context)                                       \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_8KHZ,                             \
@@ -380,7 +380,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 16.1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_16_1(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ,                            \
@@ -390,7 +390,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 16.2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_16_2(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ,                            \
@@ -401,7 +401,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 24.1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_24_1(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_24KHZ,                            \
@@ -411,7 +411,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 24.2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_24_2(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_24KHZ,                            \
@@ -421,7 +421,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 32.1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_32_1(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ,                            \
@@ -431,7 +431,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 32.2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_32_2(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_32KHZ,                            \
@@ -441,7 +441,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 441.1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context)                                     \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_44KHZ,                            \
@@ -451,7 +451,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 441.2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context)                                     \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_44KHZ,                            \
@@ -461,7 +461,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 48.1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_48_1(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ,                            \
@@ -471,7 +471,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 48.2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_48_2(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ,                            \
@@ -481,7 +481,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 48.3 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_48_3(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ,                            \
@@ -491,7 +491,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 48.4 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_48_4(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ,                            \
@@ -501,7 +501,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 48.5 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_48_5(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ,                            \
@@ -511,7 +511,7 @@ enum bt_audio_codec_config_frame_dur {
  *  @brief Helper to declare LC3 48.6 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG_48_6(_loc, _stream_context)                                      \
 	BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ,                            \
