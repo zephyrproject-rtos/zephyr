@@ -15,4 +15,7 @@ choice PM_POLICY
 endchoice
 endif # PM
 
+config INPUT
+	default y if KSCAN
+
 endif # BOARD_IT8XXX2_EVB
