@@ -156,7 +156,7 @@ static void start_cpu(int id, struct cpu_start_cb *csc)
 	(void)atomic_clear(&ready_flag);
 
 	/* Power up the CPU */
-	arch_start_cpu(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
+	arch_cpu_start(id, z_interrupt_stacks[id], CONFIG_ISR_STACK_SIZE,
 		       smp_init_top, csc);
 
 	/* Wait until the newly powered up CPU to signal that

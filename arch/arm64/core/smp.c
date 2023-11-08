@@ -62,7 +62,7 @@ static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 extern void z_arm64_mm_init(bool is_primary_core);
 
 /* Called from Zephyr initialization */
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
 	int cpu_count;

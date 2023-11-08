@@ -309,7 +309,7 @@
          id="tspan3682"
          x="33.970718"
          y="46.338062"
-         style="stroke-width:0.34572953">arch_start_cpu()</tspan></text>
+         style="stroke-width:0.34572953">arch_cpu_start()</tspan></text>
     <rect
        style="fill:#ffffaa;fill-opacity:1;stroke:#000000;stroke-width:0.32675847;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect3686-7"

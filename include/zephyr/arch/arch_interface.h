@@ -238,7 +238,7 @@ typedef void (*arch_cpustart_t)(void *data);
  * @param fn Function to begin running on the CPU.
  * @param arg Untyped argument to be passed to "fn"
  */
-void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg);
 
 /**

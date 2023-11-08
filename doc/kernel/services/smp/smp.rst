@@ -132,7 +132,7 @@ happens on a single CPU before other CPUs are brought online.
 Just before entering the application :c:func:`main` function, the kernel
 calls :c:func:`z_smp_init` to launch the SMP initialization process.  This
 enumerates over the configured CPUs, calling into the architecture
-layer using :c:func:`arch_start_cpu` for each one.  This function is
+layer using :c:func:`arch_cpu_start` for each one.  This function is
 passed a memory region to use as a stack on the foreign CPU (in
 practice it uses the area that will become that CPU's interrupt
 stack), the address of a local :c:func:`smp_init_top` callback function to
