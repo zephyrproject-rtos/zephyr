@@ -106,7 +106,7 @@ struct net_if_mcast_addr {
 /**
  * @brief Network Interface IPv6 prefixes
  *
- * Stores the multicast IP addresses assigned to this network interface.
+ * Stores the IPV6 prefixes assigned to this network interface.
  */
 struct net_if_ipv6_prefix {
 	/** Prefix lifetime */
