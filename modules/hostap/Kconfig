@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config WIFI_NM_WPA_SUPPLICANT
+menuconfig WIFI_NM_WPA_SUPPLICANT
 	bool "WPA Suplicant from hostap project [EXPERIMENTAL]"
 	select POSIX_CLOCK
 	select POSIX_SIGNAL
