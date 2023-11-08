@@ -386,6 +386,8 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  * Start is allowed on channels that have already been started and must report
  * success.
  *
+ * @funcprops \isr_ok
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer will
  *                be processed
@@ -412,6 +414,8 @@ static inline int z_impl_dma_start(const struct device *dev, uint32_t channel)
  * Stop is allowed on channels that have already been stopped and must report
  * success.
  *
+ * @funcprops \isr_ok
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
  *                being processed
@@ -435,6 +439,8 @@ static inline int z_impl_dma_stop(const struct device *dev, uint32_t channel)
  *
  * Implementations must check the validity of the channel state and ID passed
  * in and return -EINVAL if either are invalid.
+ *
+ * @funcprops \isr_ok
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel to suspend
@@ -462,6 +468,8 @@ static inline int z_impl_dma_suspend(const struct device *dev, uint32_t channel)
  * Implementations must check the validity of the channel state and ID passed
  * in and return -EINVAL if either are invalid.
  *
+ * @funcprops \isr_ok
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel to resume
  *
@@ -487,6 +495,8 @@ static inline int z_impl_dma_resume(const struct device *dev, uint32_t channel)
  *
  * request DMA channel resources
  * return -EINVAL if there is no valid channel available.
+ *
+ * @funcprops \isr_ok
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param filter_param filter function parameter
@@ -530,6 +540,8 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
  * @brief release DMA channel.
  *
  * release DMA channel resources
+ *
+ * @funcprops \isr_ok
  *
  * @param dev  Pointer to the device structure for the driver instance.
  * @param channel  channel number
@@ -587,6 +599,8 @@ static inline int z_impl_dma_chan_filter(const struct device *dev,
  * Implementations must check the validity of the channel ID passed in and
  * return -EINVAL if it is invalid or -ENOSYS if not supported.
  *
+ * @funcprops \isr_ok
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
  *                being processed
@@ -616,6 +630,8 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
  * Implementations must check the validity of the type passed in and
  * return -EINVAL if it is invalid or -ENOSYS if not supported.
  *
+ * @funcprops \isr_ok
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param type    Numeric identification of the attribute
  * @param value   A non-NULL pointer to the variable where the read value is to be placed
@@ -637,7 +653,7 @@ static inline int dma_get_attribute(const struct device *dev, uint32_t type, uin
 /**
  * @brief Look-up generic width index to be used in registers
  *
- * WARNING: This look-up works for most controllers, but *may* not work for
+ * @warning This look-up works for most controllers, but *may* not work for
  *          yours.  Ensure your controller expects the most common register
  *          bit values before using this convenience function.  If your
  *          controller does not support these values, you will have to write
@@ -666,7 +682,7 @@ static inline uint32_t dma_width_index(uint32_t size)
 /**
  * @brief Look-up generic burst index to be used in registers
  *
- * WARNING: This look-up works for most controllers, but *may* not work for
+ * @warning This look-up works for most controllers, but *may* not work for
  *          yours.  Ensure your controller expects the most common register
  *          bit values before using this convenience function.  If your
  *          controller does not support these values, you will have to write
@@ -693,7 +709,7 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 }
 
 /**
- * Get the device tree property describing the buffer address alignment
+ * @brief Get the device tree property describing the buffer address alignment
  *
  * Useful when statically defining or allocating buffers for DMA usage where
  * memory alignment often matters.
@@ -704,7 +720,7 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 #define DMA_BUF_ADDR_ALIGNMENT(node) DT_PROP(node, dma_buf_addr_alignment)
 
 /**
- * Get the device tree property describing the buffer size alignment
+ * @brief Get the device tree property describing the buffer size alignment
  *
  * Useful when statically defining or allocating buffers for DMA usage where
  * memory alignment often matters.
@@ -715,7 +731,7 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 #define DMA_BUF_SIZE_ALIGNMENT(node) DT_PROP(node, dma_buf_size_alignment)
 
 /**
- * Get the device tree property describing the minimal chunk of data possible to be copied
+ * @brief Get the device tree property describing the minimal chunk of data possible to be copied
  *
  * @param node Node identifier, e.g. DT_NODELABEL(dma_0)
  * @return minimal Minimal chunk of data possible to be copied
