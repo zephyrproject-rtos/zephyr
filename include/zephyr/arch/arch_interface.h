@@ -24,8 +24,8 @@
  * include/kernel.h and other public headers depend on definitions in this
  * header.
  */
-#ifndef ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
-#define ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
+#define ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/toolchain.h>
@@ -1248,4 +1248,4 @@ void arch_spin_relax(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_SYS_ARCH_INTERFACE_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARCH_INTERFACE_H_ */

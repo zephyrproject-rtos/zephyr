@@ -109,7 +109,7 @@ static inline void trigger_irq(int irq)
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #define VECTOR_MASK 0xFF
 #else
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 #define LOAPIC_ICR_IPI_TEST  0x00004000U
 #endif
 

@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #include <zephyr/arch/xtensa/exception.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 
 /**
  * @ingroup xtensa_internal_apis
