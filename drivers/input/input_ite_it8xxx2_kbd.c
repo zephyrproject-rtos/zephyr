@@ -3,23 +3,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ite_it8xxx2_kscan
+#define DT_DRV_COMPAT ite_it8xxx2_kbd
 
+#include <errno.h>
+#include <soc.h>
+#include <soc_dt.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
-#include <zephyr/drivers/kscan.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
-#include <errno.h>
+#include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
-#include <soc.h>
-#include <soc_dt.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>
-#define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
-LOG_MODULE_REGISTER(kscan_ite_it8xxx2);
+LOG_MODULE_REGISTER(input_ite_it8xxx2_kbd);
 
 #define KEYBOARD_KSI_PIN_COUNT		IT8XXX2_DT_INST_WUCCTRL_LEN(0)
 #define KEYBOARD_COLUMN_DRIVE_ALL	-2
@@ -35,26 +34,20 @@ LOG_MODULE_REGISTER(kscan_ite_it8xxx2);
 /* Thread stack size */
 #define TASK_STACK_SIZE			1024
 
-/* Device config */
-enum kscan_pin_func {
-	KSO16 = 0,
-	KSO17,
-};
-
-struct kscan_wuc_map_cfg {
+struct input_it8xxx2_kbd_wuc_map_cfg {
 	/* WUC control device structure */
 	const struct device *wucs;
 	/* WUC pin mask */
 	uint8_t mask;
 };
 
-struct kscan_it8xxx2_config {
+struct input_it8xxx2_kbd_config {
 	/* Keyboard scan controller base address */
 	struct kscan_it8xxx2_regs *base;
 	/* Keyboard scan input (KSI) wake-up irq */
 	int irq;
 	/* KSI[7:0] wake-up input source configuration list */
-	const struct kscan_wuc_map_cfg *wuc_map_list;
+	const struct input_it8xxx2_kbd_wuc_map_cfg *wuc_map_list;
 	/* KSI[7:0]/KSO[17:0] keyboard scan alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 	/* KSO16 GPIO cells */
@@ -64,18 +57,18 @@ struct kscan_it8xxx2_config {
 };
 
 /* Device data */
-struct kscan_it8xxx2_data {
+struct input_it8xxx2_kbd_data {
 	/* Variables in usec units */
 	uint32_t deb_time_press;
 	uint32_t deb_time_rel;
 	int32_t poll_timeout;
 	uint32_t poll_period;
-	uint8_t matrix_stable_state[CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE];
-	uint8_t matrix_unstable_state[CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE];
-	uint8_t matrix_previous_state[CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE];
+	uint8_t matrix_stable_state[CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE];
+	uint8_t matrix_unstable_state[CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE];
+	uint8_t matrix_previous_state[CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE];
 	/* Index in to the scan_clock_cycle to indicate start of debouncing */
-	uint8_t scan_cycle_idx[CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE]
-			      [CONFIG_KSCAN_ITE_IT8XXX2_ROW_SIZE];
+	uint8_t scan_cycle_idx[CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE]
+			      [CONFIG_INPUT_ITE_IT8XXX2_ROW_SIZE];
 	/*
 	 * Track previous "elapsed clock cycles" per matrix scan. This
 	 * is used to calculate the debouncing time for every key
@@ -83,9 +76,7 @@ struct kscan_it8xxx2_data {
 	uint8_t scan_clk_cycle[SCAN_OCURRENCES];
 	struct k_sem poll_lock;
 	uint8_t scan_cycles_idx;
-	kscan_callback_t callback;
 	struct k_thread thread;
-	atomic_t enable_scan;
 	/* KSI[7:0] wake-up interrupt status mask */
 	uint8_t ksi_pin_mask;
 
@@ -94,7 +85,7 @@ struct kscan_it8xxx2_data {
 
 static void drive_keyboard_column(const struct device *dev, int col)
 {
-	const struct kscan_it8xxx2_config *const config = dev->config;
+	const struct input_it8xxx2_kbd_config *const config = dev->config;
 	struct kscan_it8xxx2_regs *const inst = config->base;
 	int mask;
 
@@ -112,14 +103,14 @@ static void drive_keyboard_column(const struct device *dev, int col)
 	/* Set KSO[17:0] output data */
 	inst->KBS_KSOL = (uint8_t) (mask & 0xff);
 	inst->KBS_KSOH1 = (uint8_t) ((mask >> 8) & 0xff);
-#if (CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE > 16)
+#if (CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE > 16)
 	inst->KBS_KSOH2 = (uint8_t) ((mask >> 16) & 0xff);
 #endif
 }
 
 static uint8_t read_keyboard_row(const struct device *dev)
 {
-	const struct kscan_it8xxx2_config *const config = dev->config;
+	const struct input_it8xxx2_kbd_config *const config = dev->config;
 	struct kscan_it8xxx2_regs *const inst = config->base;
 
 	/* Bits are active-low, so toggle it (return 1 means key pressed) */
@@ -143,11 +134,11 @@ static bool is_matrix_ghosting(const uint8_t *state)
 	 * w, q and a simultaneously. A block can also be formed,
 	 * with not adjacent columns.
 	 */
-	for (int c = 0; c < CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE; c++) {
+	for (int c = 0; c < CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE; c++) {
 		if (!state[c])
 			continue;
 
-		for (int c_n = c + 1; c_n < CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE; c_n++) {
+		for (int c_n = c + 1; c_n < CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE; c_n++) {
 			/*
 			 * We AND the columns to detect a "block".
 			 * this is an indication of ghosting, due to current
@@ -172,7 +163,7 @@ static bool read_keyboard_matrix(const struct device *dev, uint8_t *new_state)
 	uint8_t row;
 	uint8_t key_event = 0U;
 
-	for (int col = 0; col < CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE; col++) {
+	for (int col = 0; col < CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE; col++) {
 		/* Drive specific column low and others high */
 		drive_keyboard_column(dev, col);
 		/* Allow the matrix to stabilize before reading it */
@@ -190,8 +181,8 @@ static bool read_keyboard_matrix(const struct device *dev, uint8_t *new_state)
 
 static void keyboard_raw_interrupt(const struct device *dev)
 {
-	const struct kscan_it8xxx2_config *const config = dev->config;
-	struct kscan_it8xxx2_data *data = dev->data;
+	const struct input_it8xxx2_kbd_config *const config = dev->config;
+	struct input_it8xxx2_kbd_data *data = dev->data;
 
 	/*
 	 * W/C wakeup interrupt status of KSI[7:0] pins
@@ -211,8 +202,8 @@ static void keyboard_raw_interrupt(const struct device *dev)
 
 void keyboard_raw_enable_interrupt(const struct device *dev, int enable)
 {
-	const struct kscan_it8xxx2_config *const config = dev->config;
-	struct kscan_it8xxx2_data *data = dev->data;
+	const struct input_it8xxx2_kbd_config *const config = dev->config;
+	struct input_it8xxx2_kbd_data *data = dev->data;
 
 	if (enable) {
 		/*
@@ -235,8 +226,8 @@ void keyboard_raw_enable_interrupt(const struct device *dev, int enable)
 
 static bool check_key_events(const struct device *dev)
 {
-	struct kscan_it8xxx2_data *data = dev->data;
-	uint8_t matrix_new_state[CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE] = {0U};
+	struct input_it8xxx2_kbd_data *data = dev->data;
+	uint8_t matrix_new_state[CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE] = {0U};
 	bool key_pressed = false;
 	uint32_t cycles_now  = k_cycle_get_32();
 	uint8_t row_changed = 0U;
@@ -260,7 +251,7 @@ static bool check_key_events(const struct device *dev)
 	 * The intent of this loop is to gather information related to key
 	 * changes
 	 */
-	for (int c = 0; c < CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE; c++) {
+	for (int c = 0; c < CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE; c++) {
 		/* Check if there was an update from the previous scan */
 		row_changed = matrix_new_state[c] ^
 			      data->matrix_previous_state[c];
@@ -268,7 +259,7 @@ static bool check_key_events(const struct device *dev)
 		if (!row_changed)
 			continue;
 
-		for (int r = 0; r < CONFIG_KSCAN_ITE_IT8XXX2_ROW_SIZE; r++) {
+		for (int r = 0; r < CONFIG_INPUT_ITE_IT8XXX2_ROW_SIZE; r++) {
 			/*
 			 * Index all they keys that changed for each row
 			 * in order to debounce each key in terms of it
@@ -282,14 +273,14 @@ static bool check_key_events(const struct device *dev)
 		data->matrix_previous_state[c] = matrix_new_state[c];
 	}
 
-	for (int c = 0; c < CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE; c++) {
+	for (int c = 0; c < CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE; c++) {
 		deb_col = data->matrix_unstable_state[c];
 
 		if (!deb_col)
 			continue;
 
 		/* Debouncing for each row key occurs here */
-		for (int r = 0; r < CONFIG_KSCAN_ITE_IT8XXX2_ROW_SIZE; r++) {
+		for (int r = 0; r < CONFIG_INPUT_ITE_IT8XXX2_ROW_SIZE; r++) {
 			uint8_t mask = BIT(r);
 			uint8_t row_bit = matrix_new_state[c] & mask;
 
@@ -322,11 +313,10 @@ static bool check_key_events(const struct device *dev)
 			 * application about the keys pressed.
 			 */
 			data->matrix_stable_state[c] ^= mask;
-			if ((atomic_get(&data->enable_scan) == 1U) &&
-			    (data->callback != NULL)) {
-				data->callback(dev, r, c,
-					       row_bit ? true : false);
-			}
+
+			input_report_abs(dev, INPUT_ABS_X, c, false, K_FOREVER);
+			input_report_abs(dev, INPUT_ABS_Y, r, false, K_FOREVER);
+			input_report_key(dev, INPUT_BTN_TOUCH, row_bit, true, K_FOREVER);
 		}
 	}
 
@@ -358,7 +348,7 @@ static bool poll_expired(uint32_t start_cycles, int32_t *timeout)
 
 void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 {
-	struct kscan_it8xxx2_data *data = dev->data;
+	struct input_it8xxx2_kbd_data *data = dev->data;
 	int32_t local_poll_timeout = data->poll_timeout;
 	uint32_t current_cycles;
 	uint32_t cycles_delta;
@@ -379,7 +369,7 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 
 		uint32_t start_poll_cycles = k_cycle_get_32();
 
-		while (atomic_get(&data->enable_scan) == 1U) {
+		while (true) {
 			uint32_t start_period_cycles = k_cycle_get_32();
 
 			if (check_key_events(dev)) {
@@ -420,17 +410,17 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 	}
 }
 
-static int kscan_it8xxx2_init(const struct device *dev)
+static int input_it8xxx2_kbd_init(const struct device *dev)
 {
-	const struct kscan_it8xxx2_config *const config = dev->config;
-	struct kscan_it8xxx2_data *data = dev->data;
+	const struct input_it8xxx2_kbd_config *const config = dev->config;
+	struct input_it8xxx2_kbd_data *data = dev->data;
 	struct kscan_it8xxx2_regs *const inst = config->base;
 	int status;
 
 	/* Disable wakeup and interrupt of KSI pins before configuring */
 	keyboard_raw_enable_interrupt(dev, 0);
 
-#if (CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE > 16)
+#if (CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE > 16)
 	/*
 	 * For KSO[16] and KSO[17]:
 	 * 1.GPOTRC:
@@ -459,7 +449,7 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	/* KSO[17:0] pins output low */
 	inst->KBS_KSOL = 0x00;
 	inst->KBS_KSOH1 = 0x00;
-#if (CONFIG_KSCAN_ITE_IT8XXX2_COLUMN_SIZE > 16)
+#if (CONFIG_INPUT_ITE_IT8XXX2_COLUMN_SIZE > 16)
 	inst->KBS_KSOH2 = 0x00;
 #endif
 
@@ -492,21 +482,15 @@ static int kscan_it8xxx2_init(const struct device *dev)
 
 	/* Kconfig.it8xxx2 time figures are transformed from msec to usec */
 	data->deb_time_press =
-		(uint32_t) (CONFIG_KSCAN_ITE_IT8XXX2_DEBOUNCE_DOWN * MS_TO_US);
+		(uint32_t) (CONFIG_INPUT_ITE_IT8XXX2_DEBOUNCE_DOWN * MS_TO_US);
 	data->deb_time_rel =
-		(uint32_t) (CONFIG_KSCAN_ITE_IT8XXX2_DEBOUNCE_UP * MS_TO_US);
+		(uint32_t) (CONFIG_INPUT_ITE_IT8XXX2_DEBOUNCE_UP * MS_TO_US);
 	data->poll_period =
-		(uint32_t) (CONFIG_KSCAN_ITE_IT8XXX2_POLL_PERIOD * MS_TO_US);
+		(uint32_t) (CONFIG_INPUT_ITE_IT8XXX2_POLL_PERIOD * MS_TO_US);
 	data->poll_timeout = 100 * MS_TO_US;
-
-	/* Init null for callback function */
-	data->callback = NULL;
 
 	/* Create poll lock semaphore */
 	k_sem_init(&data->poll_lock, 0, 1);
-
-	/* Enable keyboard scan loop */
-	atomic_set(&data->enable_scan, 1);
 
 	irq_connect_dynamic(DT_INST_IRQN(0), 0,
 			    (void (*)(const void *))keyboard_raw_interrupt,
@@ -522,68 +506,22 @@ static int kscan_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-static int kscan_it8xxx2_configure(const struct device *dev,
-					kscan_callback_t callback)
-{
-	struct kscan_it8xxx2_data *data = dev->data;
-
-	if (!callback) {
-		return -EINVAL;
-	}
-
-	/* Setup callback function */
-	data->callback = callback;
-
-	return 0;
-}
-
-static int kscan_it8xxx2_disable_callback(const struct device *dev)
-{
-	struct kscan_it8xxx2_data *data = dev->data;
-
-	/* Disable keyboard scan loop */
-	atomic_set(&data->enable_scan, 0);
-
-	return 0;
-}
-
-static int kscan_it8xxx2_enable_callback(const struct device *dev)
-{
-	struct kscan_it8xxx2_data *data = dev->data;
-
-	/* Enable keyboard scan loop */
-	atomic_set(&data->enable_scan, 1);
-
-	return 0;
-}
-
-static const struct kscan_driver_api kscan_it8xxx2_driver_api = {
-	.config = kscan_it8xxx2_configure,
-	.disable_callback = kscan_it8xxx2_disable_callback,
-	.enable_callback = kscan_it8xxx2_enable_callback,
-};
-
-static const struct kscan_wuc_map_cfg kscan_wuc_0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
-		IT8XXX2_DT_WUC_ITEMS_LIST(0);
+static const struct input_it8xxx2_kbd_wuc_map_cfg
+	input_it8xxx2_kbd_wuc[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] = IT8XXX2_DT_WUC_ITEMS_LIST(0);
 
 PINCTRL_DT_INST_DEFINE(0);
 
-static const struct kscan_it8xxx2_config kscan_it8xxx2_cfg_0 = {
+static const struct input_it8xxx2_kbd_config input_it8xxx2_kbd_cfg = {
 	.base = (struct kscan_it8xxx2_regs *)DT_INST_REG_ADDR_BY_IDX(0, 0),
 	.irq = DT_INST_IRQN(0),
-	.wuc_map_list = kscan_wuc_0,
+	.wuc_map_list = input_it8xxx2_kbd_wuc,
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.kso16_gpios = GPIO_DT_SPEC_INST_GET(0, kso16_gpios),
 	.kso17_gpios = GPIO_DT_SPEC_INST_GET(0, kso17_gpios),
 };
 
-static struct kscan_it8xxx2_data kscan_it8xxx2_kbd_data;
+static struct input_it8xxx2_kbd_data input_it8xxx2_kbd_kbd_data;
 
-DEVICE_DT_INST_DEFINE(0,
-			&kscan_it8xxx2_init,
-			NULL,
-			&kscan_it8xxx2_kbd_data,
-			&kscan_it8xxx2_cfg_0,
-			POST_KERNEL,
-			CONFIG_KSCAN_INIT_PRIORITY,
-			&kscan_it8xxx2_driver_api);
+DEVICE_DT_INST_DEFINE(0, &input_it8xxx2_kbd_init, NULL,
+		      &input_it8xxx2_kbd_kbd_data, &input_it8xxx2_kbd_cfg,
+		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
