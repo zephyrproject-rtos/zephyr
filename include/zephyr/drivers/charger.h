@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Charger APIs
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CHARGER_H_
 
@@ -106,7 +111,7 @@ enum charger_charge_type {
 	CHARGER_CHARGE_TYPE_UNKNOWN = 0,
 	/** Charging is not occurring */
 	CHARGER_CHARGE_TYPE_NONE,
-	/*
+	/**
 	 * Charging is occurring at the slowest desired charge rate,
 	 * typically for battery detection or preconditioning
 	 */
@@ -145,7 +150,7 @@ enum charger_health {
 	CHARGER_HEALTH_OVERHEAT,
 	/** The battery voltage has exceeded its overvoltage threshold */
 	CHARGER_HEALTH_OVERVOLTAGE,
-	/*
+	/**
 	 * The battery or charger device is experiencing an unspecified
 	 * failure.
 	 */
