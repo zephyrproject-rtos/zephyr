@@ -770,6 +770,20 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 			return err;
 		}
+	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
+		   (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
+		    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED)) {
+		/* Terminate PA sync */
+		const int err = pa_sync_term_request(conn, &internal_state->state);
+
+		if (err != 0) {
+			LOG_DBG("PA sync term from %p was reject with reason %d",
+				conn, err);
+
+			return err;
+		}
+
+		state_changed = true;
 	}
 
 	/* Notify if changed */
