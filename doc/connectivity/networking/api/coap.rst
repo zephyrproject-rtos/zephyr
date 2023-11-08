@@ -28,8 +28,6 @@ See :ref:`lwm2m_interface` for more information.
 
 Supported RFCs:
 
-Supported RFCs:
-
 - `RFC7252: The Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7252>`_
 - `RFC6690: Constrained RESTful Environments (CoRE) Link Format <https://tools.ietf.org/html/rfc6690>`_
 - `RFC7959: Block-Wise Transfers in the Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7959>`_
@@ -42,6 +40,11 @@ Sample Usage
 
 CoAP Server
 ===========
+
+.. note::
+
+   A :ref:`coap_server_interface` subsystem is available, the following is for creating a custom
+   server implementation.
 
 To create a CoAP server, resources for the server need to be defined.
 The ``.well-known/core`` resource should be added before all other
@@ -96,6 +99,11 @@ with resource path like '/some_resource/+/#'.
 
 CoAP Client
 ===========
+
+.. note::
+
+   A :ref:`coap_client_interface` subsystem is available, the following is for creating a custom
+   client implementation.
 
 If the CoAP client knows about resources in the CoAP server, the client can start
 prepare CoAP requests and wait for responses. If the client doesn't know
