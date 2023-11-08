@@ -16,6 +16,8 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
+#define COUNT_1US (EC_FREQ / USEC_PER_SEC - 1)
+
 BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 	     "ITE RTOS timer HW frequency is fixed at 32768Hz");
 
@@ -332,8 +334,8 @@ static int timer_init(enum ext_timer_idx ext_timer,
 			hw_cnt = MS_TO_COUNT(1024, ms);
 		else if (clock_source_sel == EXT_PSR_32)
 			hw_cnt = MS_TO_COUNT(32, ms);
-		else if (clock_source_sel == EXT_PSR_8M)
-			hw_cnt = 8000 * ms;
+		else if (clock_source_sel == EXT_PSR_EC_CLK)
+			hw_cnt = MS_TO_COUNT(EC_FREQ, ms);
 		else {
 			LOG_ERR("Timer %d clock source error !", ext_timer);
 			return -1;
@@ -424,7 +426,7 @@ static int sys_clock_driver_init(void)
 		IT8XXX2_EXT_CTRLX(BUSY_WAIT_L_TIMER) |= IT8XXX2_EXT_ETXCOMB;
 
 		/* Set 32-bit timer6 to count-- every 1us */
-		ret = timer_init(BUSY_WAIT_H_TIMER, EXT_PSR_8M, EXT_RAW_CNT,
+		ret = timer_init(BUSY_WAIT_H_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT,
 				 BUSY_WAIT_TIMER_H_MAX_CNT, EXT_FIRST_TIME_ENABLE,
 				 BUSY_WAIT_H_TIMER_IRQ, BUSY_WAIT_H_TIMER_FLAG,
 				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
@@ -438,11 +440,12 @@ static int sys_clock_driver_init(void)
 		 * NOTE: When the timer5 count down to overflow in combinational
 		 *       mode, timer6 counter will automatically decrease one count
 		 *       and timer5 will automatically re-start counting down
-		 *       from 0x7. Timer5 clock source is 8MHz (=0.125ns), so the
-		 *       time period from 0x7 to overflow is 0.125ns * 8 = 1us.
+		 *       from COUNT_1US. Timer5 clock source is EC_FREQ, so the
+		 *       time period from COUNT_1US to overflow is
+		 *       (1 / EC_FREQ) * (EC_FREQ / USEC_PER_SEC) = 1us.
 		 */
-		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_8M, EXT_RAW_CNT,
-				 0x7, EXT_FIRST_TIME_ENABLE,
+		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT,
+				 COUNT_1US, EXT_FIRST_TIME_ENABLE,
 				 BUSY_WAIT_L_TIMER_IRQ, BUSY_WAIT_L_TIMER_FLAG,
 				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
 		if (ret < 0) {
