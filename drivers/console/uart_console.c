@@ -474,7 +474,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 			 * The input hook indicates that no further processing
 			 * should be done by this handler.
 			 */
-			return;
+			continue;
 		}
 #endif
 
