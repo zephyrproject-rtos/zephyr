@@ -1029,11 +1029,6 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	if (!dev_data->configured || dev_data->suspended) {
-		LOG_INF("USB device not ready, drop data");
-		return;
-	}
-
 	dev_data->tx_ready = false;
 
 	while (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
