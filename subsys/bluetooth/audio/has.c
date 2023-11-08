@@ -1501,6 +1501,12 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 		return -EALREADY;
 	}
 
+	CHECKIF(!IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC) &&
+		(param->properties & BT_HAS_PROP_WRITABLE) > 0) {
+		LOG_ERR("Writable presets are not supported");
+		return -ENOTSUP;
+	}
+
 	preset = preset_alloc(param->index, param->properties, param->name, param->ops);
 	if (preset == NULL) {
 		return -ENOMEM;
