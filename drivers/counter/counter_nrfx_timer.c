@@ -253,6 +253,7 @@ static int set_top_value(const struct device *dev,
 
 	nrf_timer_int_disable(timer, COUNTER_TOP_INT_MASK);
 	nrf_timer_cc_set(timer, TOP_CH, cfg->ticks);
+	nrf_timer_event_clear(timer, COUNTER_TOP_EVT);
 	nrf_timer_shorts_enable(timer, COUNTER_OVERFLOW_SHORT);
 
 	data->top_cb = cfg->callback;
