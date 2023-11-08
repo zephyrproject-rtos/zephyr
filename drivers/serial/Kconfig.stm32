@@ -21,3 +21,15 @@ config UART_STM32
 	  This option enables the UART driver for STM32 family of
 	  processors.
 	  Say y if you wish to use serial port on STM32 MCU.
+
+if UART_STM32
+
+config UART_STM32_ASYNC_RESET_RX
+	bool "Reset RX state before enabling async transfer"
+	depends on UART_ASYNC_API
+	help
+	  Clear RXNE bit before enabling asynchronous transfer. It means that data
+	  stored in the RDR register. It prevents appending old data to new data
+	  when a new transfer occurs.
+
+endif # UART_STM32

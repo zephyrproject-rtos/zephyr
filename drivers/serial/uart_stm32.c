@@ -1579,6 +1579,18 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 		return -EFAULT;
 	}
 
+	/* Clear RXNE not to trigger DMA to copy data received before enabling the async
+	 * transfer. Otherwise, it would look like old and new data were received together,
+	 * because only the IDLE line (after new data) triggers IRQ to signal a new transfer.
+	 */
+#ifdef CONFIG_UART_STM32_ASYNC_RESET_RX
+#ifdef USART_SR_RXNE
+	LL_USART_ClearFlag_RXNE(config->usart);
+#else
+	LL_USART_RequestRxDataFlush(config->usart);
+#endif /* USART_SR_RXNE */
+#endif /* CONFIG_UART_STM32_ASYNC_RESET_RX */
+
 	/* Enable RX DMA requests */
 	uart_stm32_dma_rx_enable(dev);
 
