@@ -338,6 +338,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	ipv6.hdr->len = htons(len);
 
 	net_pkt_set_data(pkt, &ipv6_access);
+	net_pkt_set_ip_reassembled(pkt, true);
 
 	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt,
 		len + NET_IPV6H_LEN);
