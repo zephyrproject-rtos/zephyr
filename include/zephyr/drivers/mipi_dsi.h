@@ -18,6 +18,7 @@
  * @ingroup io_interfaces
  * @{
  */
+#include <errno.h>
 #include <sys/types.h>
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
@@ -247,6 +248,8 @@ __subsystem struct mipi_dsi_driver_api {
 		      const struct mipi_dsi_device *mdev);
 	ssize_t (*transfer)(const struct device *dev, uint8_t channel,
 			    struct mipi_dsi_msg *msg);
+	int (*detach)(const struct device *dev, uint8_t channel,
+		      const struct mipi_dsi_device *mdev);
 };
 
 /**
@@ -341,6 +344,29 @@ ssize_t mipi_dsi_dcs_read(const struct device *dev, uint8_t channel,
  */
 ssize_t mipi_dsi_dcs_write(const struct device *dev, uint8_t channel,
 			   uint8_t cmd, const void *buf, size_t len);
+
+
+/**
+ * @brief Detach a device from the MIPI-DSI bus
+ *
+ * @param dev MIPI-DSI host device.
+ * @param channel Device channel (VID).
+ * @param mdev MIPI-DSI device description.
+ *
+ * @return 0 on success, negative on error
+ */
+static inline int mipi_dsi_detach(const struct device *dev,
+				  uint8_t channel,
+				  const struct mipi_dsi_device *mdev)
+{
+	const struct mipi_dsi_driver_api *api = (const struct mipi_dsi_driver_api *)dev->api;
+
+	if (api->detach == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->detach(dev, channel, mdev);
+}
 
 #ifdef __cplusplus
 }
