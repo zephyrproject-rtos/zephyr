@@ -1255,7 +1255,7 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
  * that channel C may encounter wrong register being written due to FIFO2
  * byte counter wrong write after channel B's write operation.
  */
-BUILD_ASSERT((DT_INST_PROP(SMB_CHANNEL_C, fifo_enable) == false),
+BUILD_ASSERT((DT_PROP(DT_NODELABEL(i2c2), fifo_enable) == false),
 	     "Channel C cannot use FIFO mode.");
 #endif
 
