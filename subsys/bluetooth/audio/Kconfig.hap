@@ -1,0 +1,13 @@
+# Bluetooth Audio - Hearing Access Profile options
+#
+# Copyright (c) 2023 Codecoup
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_HAP_HARC
+	bool "HAP Hearing Access Remote Controller support [EXPERIMENTAL]"
+	depends on BT_HAS_CLIENT
+	depends on BT_CSIP_SET_COORDINATOR
+	depends on BT_VCP_VOL_CTLR
+	help
+	  This option enables support for HAP Hearing Access Remote Controller.

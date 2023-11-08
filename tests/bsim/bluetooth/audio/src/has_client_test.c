@@ -419,7 +419,7 @@ static void test_main(void)
 	expect_service_disconnected(client);
 	expect_service_unbound(client);
 
-	PASS("HAS main PASS\n");
+	PASS("%s\n", __func__);
 }
 
 static void test_client_offline_behavior(void)
@@ -496,7 +496,7 @@ static void test_client_offline_behavior(void)
 	__ASSERT_NO_MSG(record != NULL);
 	__ASSERT_NO_MSG(strcmp(record->name, test_preset_name_5) == 0);
 
-	PASS("HAS main PASS\n");
+	PASS("%s\n", __func__);
 }
 
 static void expect_client_connect_failed(void)

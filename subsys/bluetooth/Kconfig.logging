@@ -753,6 +753,13 @@ legacy-debug-sym = BT_DEBUG_CSIP_SET_MEMBER_CRYPTO
 module-str = "Coordinated Set Identification Profile crypto functions"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
+# HAP
+
+parent-module = BT
+module = BT_HAP
+module-str = "Hearing Access Profile"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 # HAS
 
 module = BT_HAS
