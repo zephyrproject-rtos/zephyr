@@ -21,6 +21,7 @@
 #define OA_RESET_SWRESET              BIT(0)
 #define OA_CONFIG0                    MMS_REG(0x0, 0x004)
 #define OA_CONFIG0_SYNC               BIT(15)
+#define OA_CONFIG0_RFA_ZARFE          BIT(12)
 #define OA_CONFIG0_PROTE              BIT(5)
 #define OA_STATUS0                    MMS_REG(0x0, 0x008)
 #define OA_STATUS0_RESETC             BIT(6)
