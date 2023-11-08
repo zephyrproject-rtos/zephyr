@@ -216,7 +216,7 @@ void arch_cpu_atomic_idle(unsigned int key);
  *
  * @param data context parameter, implementation specific
  */
-typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
+typedef void (*arch_cpustart_t)(void *data);
 
 /**
  * @brief Start a numbered CPU on a MP-capable system
