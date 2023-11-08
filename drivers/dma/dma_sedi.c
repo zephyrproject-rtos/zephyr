@@ -254,9 +254,8 @@ static int dma_sedi_chan_config(const struct device *dev, uint32_t channel,
 
 	const struct dma_sedi_config_info *const info = DEV_CFG(dev);
 	struct dma_sedi_driver_data *const data = DEV_DATA(dev);
-	struct dma_config *local_config = &(data->dma_configs[channel]);
 
-	local_config->head_block = config->head_block;
+	memcpy(&(data->dma_configs[channel]), config, sizeof(struct dma_config));
 
 	/* initialize the dma controller, following the sedi api*/
 	sedi_dma_event_cb_t cb = dma_handler;
