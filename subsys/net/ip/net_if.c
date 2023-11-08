@@ -448,8 +448,6 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	enum net_verdict verdict = NET_OK;
 	int status = -EIO;
 
-	net_if_lock(iface);
-
 	if (!net_if_flag_is_set(iface, NET_IF_LOWER_UP) ||
 	    net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
 		/* Drop packet if interface is not up */
@@ -531,8 +529,6 @@ done:
 		/* Packet is ready to be sent by L2, let's queue */
 		net_if_queue_tx(iface, pkt);
 	}
-
-	net_if_unlock(iface);
 
 	return verdict;
 }
