@@ -179,7 +179,6 @@ ZTEST(net_socket_tls, test_so_type)
 
 	test_close(sock1);
 	test_close(sock2);
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_so_protocol)
@@ -207,7 +206,6 @@ ZTEST(net_socket_tls, test_so_protocol)
 
 	test_close(sock1);
 	test_close(sock2);
-	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 struct test_msg_waitall_data {
