@@ -112,4 +112,6 @@ source "drivers/clock_control/Kconfig.wch_rcc"
 
 source "drivers/clock_control/Kconfig.it51xxx"
 
+source "drivers/clock_control/Kconfig.xlnx_ps7_clkc"
+
 endif # CLOCK_CONTROL
