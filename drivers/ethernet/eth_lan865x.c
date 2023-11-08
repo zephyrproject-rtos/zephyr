@@ -408,7 +408,8 @@ static void lan865x_int_thread(const struct device *dev)
 				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
 				lan865x_default_config(dev, ctx->silicon_rev);
 				oa_tc6_reg_read(tc6, OA_CONFIG0, &val);
-				oa_tc6_reg_write(tc6, OA_CONFIG0, OA_CONFIG0_SYNC | val);
+				val |= OA_CONFIG0_SYNC | OA_CONFIG0_RFA_ZARFE;
+				oa_tc6_reg_write(tc6, OA_CONFIG0, val);
 				lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
 
 				ctx->reset = true;
