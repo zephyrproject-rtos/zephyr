@@ -197,7 +197,7 @@ struct net_pkt {
 	uint8_t chksum_done : 1; /* Checksum has already been computed for
 				  * the packet.
 				  */
-#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+#if defined(CONFIG_NET_IP_FRAGMENT)
 	uint8_t ip_reassembled : 1; /* Packet is a reassembled IP packet. */
 #endif
 	/* bitfield byte alignment boundary */
@@ -224,7 +224,7 @@ struct net_pkt {
 #endif
 	};
 
-#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+#if defined(CONFIG_NET_IP_FRAGMENT)
 	union {
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 		struct {
@@ -240,7 +240,7 @@ struct net_pkt {
 		} ipv6_fragment;
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 	};
-#endif /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+#endif /* CONFIG_NET_IP_FRAGMENT */
 
 #if defined(CONFIG_NET_IPV6)
 	/* Where is the start of the last header before payload data
@@ -838,7 +838,7 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if defined(CONFIG_NET_IPV4_FRAGMENT) || defined(CONFIG_NET_IPV6_FRAGMENT)
+#if defined(CONFIG_NET_IP_FRAGMENT)
 static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
 {
 	return !!(pkt->ip_reassembled);
@@ -849,7 +849,7 @@ static inline void net_pkt_set_ip_reassembled(struct net_pkt *pkt,
 {
 	pkt->ip_reassembled = reassembled;
 }
-#else /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+#else /* CONFIG_NET_IP_FRAGMENT */
 static inline bool net_pkt_is_ip_reassembled(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
@@ -863,7 +863,7 @@ static inline void net_pkt_set_ip_reassembled(struct net_pkt *pkt,
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(reassembled);
 }
-#endif /* CONFIG_NET_IPV4_FRAGMENT || CONFIG_NET_IPV6_FRAGMENT */
+#endif /* CONFIG_NET_IP_FRAGMENT */
 
 static inline uint8_t net_pkt_priority(struct net_pkt *pkt)
 {

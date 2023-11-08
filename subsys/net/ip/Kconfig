@@ -12,6 +12,11 @@ config NET_IP
 	bool
 	default y if NET_IPV6 || NET_IPV4
 
+# Hidden option enabled whenever an IP fragmentation is enabled.
+config NET_IP_FRAGMENT
+	bool
+	default y if NET_IPV6_FRAGMENT || NET_IPV4_FRAGMENT
+
 # Hidden option selected by net connection based socket implementations
 # to draw in all code required for connection infrastructure.
 config NET_CONNECTION_SOCKETS
