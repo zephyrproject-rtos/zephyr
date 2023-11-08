@@ -76,6 +76,11 @@ Bluetooth
 Networking
 ==========
 
+* The CoAP public API has some minor changes to take into account. The
+  :c:func:`coap_remove_observer` now returns a result if the observer was removed. This
+  change is used by the newly introduced :ref:`coap_server_interface` subsystem. Also, the
+  ``request`` argument for :c:func:`coap_well_known_core_get` is made ``const``.
+
 Other Subsystems
 ================
 
