@@ -41,8 +41,8 @@ struct boot_params {
 	int cpu_num;
 };
 
-// smp_init fn pointer for turning core on/off using psci
-arch_cpustart_t fn;
+// smp_init_top fn pointer for turning core on/off using psci
+arch_cpustart_t secondary_core_fn;
 
 
 /* Offsets used in reset.S */
@@ -164,9 +164,9 @@ void z_arm64_secondary_start(void)
 	irq_enable(SGI_FPU_IPI);
 #endif
 #endif
-	if(fn=NULL)
+	if(secondary_core_fn==NULL)
 	{
-	    fn = arm64_cpu_boot_params.fn;
+	    secondary_core_fn = arm64_cpu_boot_params.fn;
 	    arg = arm64_cpu_boot_params.arg;
 	}
 	barrier_dsync_fence_full();
@@ -180,7 +180,7 @@ void z_arm64_secondary_start(void)
 	barrier_dsync_fence_full();
 	sev();
 
-	fn(arg);
+	secondary_core_fn(arg);
 }
 
 #ifdef CONFIG_SMP
