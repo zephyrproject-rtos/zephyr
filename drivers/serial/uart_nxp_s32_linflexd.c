@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_s32_linflexd
 
+#include <soc.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>

@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT nxp_s32_siul2_eirq
 
+#include <soc.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/pinctrl.h>
