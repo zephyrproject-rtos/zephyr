@@ -110,7 +110,11 @@ static const struct pll_config_t pll_configuration[] = {
 	 .div_uart  = 1,
 	 .div_smb   = 1,
 	 .div_sspi  = 1,
+#ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
+	 .div_ec    = 1,
+#else
 	 .div_ec    = 6,
+#endif
 	 .div_jtag  = 1,
 	 .div_pwm   = 0,
 	 .div_usbpd = 5}

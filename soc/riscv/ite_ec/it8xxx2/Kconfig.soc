@@ -61,14 +61,17 @@ config SOC_IT81202_CX
 config SOC_IT82202_AX
 	bool "IT82202 AX version"
 	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 
 config SOC_IT82302_AX
 	bool "IT82302 AX version"
 	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 
 config SOC_IT82002_AW
 	bool "IT82002 AW version"
 	select SOC_IT8XXX2_REG_SET_V2
+	select SOC_IT8XXX2_EC_BUS_24MHZ if !DT_HAS_ITE_IT82XX2_USB_ENABLED
 
 endchoice
 
@@ -105,6 +108,15 @@ config SOC_IT8XXX2_CPU_IDLE_GATING
 	  This option determines whether the entering CPU idle mode can be
 	  gated by individual drivers. When this option is disabled, CPU idle
 	  mode is always permitted.
+
+config SOC_IT8XXX2_EC_BUS_24MHZ
+	bool "EC bus is 24MHz"
+	help
+	  Raise EC bus to 24MHz (default is 8MHz).
+	  This reduces read/write EC registers latency by 50%.
+	  NOTE: There is limitation to enabling this config on it81xx2 series.
+	  The clock_frequency of ite,it8xxx2-i2c node (i2c0, i2c1, and i2c2) will
+	  be fixed at 400KHz.
 
 choice
 	prompt "Clock source for PLL reference clock"

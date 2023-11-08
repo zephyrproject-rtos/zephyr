@@ -38,8 +38,12 @@
  * EC clock frequency (PWM and tachometer driver need it to reply
  * to api or calculate RPM)
  */
+#ifdef CONFIG_SOC_IT8XXX2_EC_BUS_24MHZ
+#define EC_FREQ			MHZ(24)
+#else
 #define EC_FREQ			MHZ(8)
 
+#endif
 
 /* --- General Control (GCTRL) --- */
 #define IT8XXX2_GCTRL_BASE      0x00F02000
@@ -403,7 +407,7 @@ enum ext_clk_src_sel {
 	EXT_PSR_32P768K = 0,
 	EXT_PSR_1P024K,
 	EXT_PSR_32,
-	EXT_PSR_8M,
+	EXT_PSR_EC_CLK,
 };
 /*
  * 24-bit timers: external timer 3, 5, and 7
@@ -1181,6 +1185,10 @@ struct adc_it8xxx2_regs {
 	struct adc_vchs_ctrl_t adc_vchs_ctrl[4];
 	/* 0x6c: ADC Data Valid Status 2 */
 	volatile uint8_t ADCDVSTS2;
+	/* 0x6d-0xef: Reserved4 */
+	volatile uint8_t reserved4[131];
+	/* 0xf0: ADC Clock Control Register 1 */
+	volatile uint8_t ADCCTL1;
 };
 #endif /* !__ASSEMBLER__ */
 
