@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &scif1;
+		zephyr,log-uart = &scif1;
 		zephyr,shell-uart = &scif1;
 		zephyr,canbus = &can0;
 	};

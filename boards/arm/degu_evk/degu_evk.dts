@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &degu_cdc_acm_uart;
+		zephyr,log-uart = &degu_cdc_acm_uart;
 		zephyr,shell-uart = &degu_cdc_acm_uart;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,ieee802154 = &ieee802154;

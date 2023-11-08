@@ -27,6 +27,7 @@
 	chosen {
 		zephyr,sram = &dram0;
 		zephyr,console = &uart2_fixed;
+		zephyr,log-uart = &uart2_fixed;
 		zephyr,shell-uart = &uart2_fixed;
 	};
 };

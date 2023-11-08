@@ -31,6 +31,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,console = &flexcomm0;
+		zephyr,log-uart = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
 	};

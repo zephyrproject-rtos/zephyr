@@ -2,6 +2,7 @@
 	chosen {
 		/* Comment out these lines to use usart1 as console/shell */
 		zephyr,console = &lpuart1;
+		zephyr,log-uart = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 	};
 };

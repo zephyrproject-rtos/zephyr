@@ -14,6 +14,7 @@
 
 	chosen {
 		zephyr,console = &hostlink;
+		zephyr,log-uart = &hostlink;
 		zephyr,shell-uart = &hostlink;
 	};
 };

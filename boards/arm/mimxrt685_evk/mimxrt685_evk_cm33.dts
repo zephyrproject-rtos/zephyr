@@ -41,6 +41,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
+		zephyr,log-uart = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 	};
 

@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,sram = &ddr0;
 		zephyr,console = &uart_dbg;
+		zephyr,log-uart = &uart_dbg;
 		zephyr,shell-uart = &uart_dbg;
 	};
 

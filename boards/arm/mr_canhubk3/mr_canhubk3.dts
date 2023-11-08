@@ -23,6 +23,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &lpuart2;
+		zephyr,log-uart = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,flash-controller = &mx25l6433f;
 		zephyr,canbus = &flexcan0;

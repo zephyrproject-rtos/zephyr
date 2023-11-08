@@ -16,6 +16,7 @@
 
 	chosen {
 		zephyr,console = &uart2;
+		zephyr,log-uart = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;

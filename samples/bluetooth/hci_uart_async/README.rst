@@ -131,6 +131,7 @@ so:
    / {
       chosen {
          zephyr,console = &uart0;
+         zephyr,log-uart = &uart0;
          zephyr,shell-uart = &uart0;
          zephyr,bt-c2h-uart = &uart1;
       };
@@ -152,6 +153,7 @@ Similarly, the `zephyr,bt-uart` DTS property selects which uart to use:
    / {
       chosen {
          zephyr,console = &uart0;
+         zephyr,log-uart = &uart0;
          zephyr,shell-uart = &uart0;
          zephyr,bt-uart = &uart1;
       };

@@ -52,6 +52,7 @@
 		zephyr,sram = &dsram1;
 		zephyr,flash = &flash0;
 		zephyr,console = &usic1ch1;
+		zephyr,log-uart = &usic1ch1;
 		zephyr,shell-uart = &usic1ch1;
 		zephyr,flash-controller = &flash_controller;
 		zephyr,code-partition = &code_partition;

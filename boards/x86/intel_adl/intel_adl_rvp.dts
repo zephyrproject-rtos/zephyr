@@ -12,6 +12,7 @@
 
 	chosen {
 		zephyr,console = &uart0_legacy;
+		zephyr,log-uart = &uart0_legacy;
 		zephyr,shell-uart = &uart0_legacy;
 	};
 };

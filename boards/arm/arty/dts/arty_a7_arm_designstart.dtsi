@@ -11,6 +11,7 @@
 / {
 	chosen {
 		zephyr,console = &uartlite0;
+		zephyr,log-uart = &uartlite0;
 		zephyr,shell-uart = &uartlite0;
 		zephyr,flash = &itcm;
 		/* Use DTCM as SRAM by default */

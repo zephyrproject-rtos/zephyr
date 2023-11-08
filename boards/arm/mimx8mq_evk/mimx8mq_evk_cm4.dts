@@ -21,6 +21,7 @@
 		zephyr,flash = &tcml_code;
 		zephyr,sram = &tcmu_sys;
 		zephyr,console = &uart2;
+		zephyr,log-uart = &uart2;
 		zephyr,shell-uart = &uart2;
 	};
 };

@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart;
+		zephyr,log-uart = &uart;
 		zephyr,shell-uart = &uart;
 		zephyr,code-partition = &slot0_partition;
 	};

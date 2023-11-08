@@ -3,6 +3,7 @@
 / {
 	chosen {
 		zephyr,console = &rtt0;
+		zephyr,log-uart = &rtt0;
 	};
 
 	rtt0: rtt_chan0 {

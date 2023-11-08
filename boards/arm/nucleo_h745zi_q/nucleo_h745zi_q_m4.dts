@@ -15,6 +15,7 @@
 	/* HW resources belonging to CM4 */
 	chosen {
 		zephyr,console = &uart8;
+		zephyr,log-uart = &uart8;
 		zephyr,shell-uart = &uart8;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;

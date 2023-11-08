@@ -7,6 +7,7 @@
 / {
 	chosen {
 		zephyr,console = &sercom0;
+		zephyr,log-uart = &sercom0;
 		zephyr,shell-uart = &sercom0;
 	};
 };

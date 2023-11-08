@@ -24,6 +24,7 @@
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
+		zephyr,log-uart = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash = &at25sf128a;
 	};

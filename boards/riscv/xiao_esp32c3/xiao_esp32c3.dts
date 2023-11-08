@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &usb_serial;
+		zephyr,log-uart = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &twai;

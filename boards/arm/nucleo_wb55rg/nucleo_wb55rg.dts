@@ -16,6 +16,7 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,log-uart = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,bt-mon-uart = &lpuart1;
 		zephyr,bt-c2h-uart = &lpuart1;

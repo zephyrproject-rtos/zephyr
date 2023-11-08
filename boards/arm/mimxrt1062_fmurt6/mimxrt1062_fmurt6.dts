@@ -33,6 +33,7 @@
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart7;
+		zephyr,log-uart = &lpuart7;
 		zephyr,shell-uart = &lpuart7;
 		zephyr,canbus = &flexcan1;
 	};

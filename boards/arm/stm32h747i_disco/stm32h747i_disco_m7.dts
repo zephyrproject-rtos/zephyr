@@ -17,6 +17,7 @@
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,log-uart = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;

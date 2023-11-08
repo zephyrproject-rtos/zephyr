@@ -22,6 +22,7 @@
 		zephyr,flash = &imem;
 		zephyr,sram = &dmem;
 		zephyr,console = &uart0;
+		zephyr,log-uart = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};

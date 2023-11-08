@@ -27,6 +27,7 @@
 	chosen {
 		zephyr,sram = &ram;
 		zephyr,console = &xen_hvc;
+		zephyr,log-uart = &xen_hvc;
 	};
 
 	cpus {

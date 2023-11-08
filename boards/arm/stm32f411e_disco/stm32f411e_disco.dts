@@ -15,6 +15,7 @@
 
 	chosen {
 		zephyr,console = &usart2;
+		zephyr,log-uart = &usart2;
 		zephyr,shell-uart = &usart2;
 		zephyr,uart-mcumgr = &usart2;
 		zephyr,sram = &sram0;

@@ -18,6 +18,7 @@
 	chosen {
 		zephyr,sram = &dram0;
 		zephyr,console = &uart_ec_0;
+		zephyr,log-uart = &uart_ec_0;
 		zephyr,shell-uart = &uart_ec_0;
 	};
 

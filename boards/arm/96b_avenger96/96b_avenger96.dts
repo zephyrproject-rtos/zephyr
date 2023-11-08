@@ -20,6 +20,7 @@
 		 * 96b_avenger96_defconfig. Refer "Serial Port" section in
 		 * Zephyr board documentation.
 		 * zephyr,console = &uart7;
+		 * zephyr,log-uart = &uart7;
 		 * zephyr,shell-uart = &uart7;
 		 */
 		zephyr,flash = &retram;

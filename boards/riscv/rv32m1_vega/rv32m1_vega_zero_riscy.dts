@@ -16,6 +16,7 @@
 		zephyr,sram = &m0_tcm;
 		zephyr,flash = &m0_flash;
 		zephyr,console = &lpuart0;
+		zephyr,log-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,code-partition = &zero_riscy_code_partition;
 	};

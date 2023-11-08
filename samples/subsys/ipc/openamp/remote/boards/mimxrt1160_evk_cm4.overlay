@@ -11,6 +11,7 @@
 	chosen {
 		zephyr,flash = &ocram;
 		zephyr,console = &lpuart2;
+		zephyr,log-uart = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,ipc_shm = &ocram2_overlay;
 	};

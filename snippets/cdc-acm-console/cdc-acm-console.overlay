@@ -7,6 +7,7 @@
 / {
 	chosen {
 		zephyr,console = &snippet_cdc_acm_console_uart;
+		zephyr,log-uart = &snippet_cdc_acm_console_uart;
 	};
 };
 

@@ -15,5 +15,6 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &mem_window3;
+		zephyr,log-uart = &mem_window3;
 	};
 };

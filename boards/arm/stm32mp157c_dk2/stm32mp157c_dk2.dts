@@ -21,6 +21,7 @@
 		 * stm32mp157c_dk2_defconfig "Serial Port" section in Zephyr
 		 * board documentation.
 		 * zephyr,console = &usart3;
+		 * zephyr,log-uart = &usart3;
 		 * zephyr,shell-uart = &usart3;
 		 */
 		zephyr,flash = &retram;

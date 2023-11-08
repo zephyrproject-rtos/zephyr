@@ -17,6 +17,7 @@
 		zephyr,sram = &sram;
 		zephyr,flash = &flash0;
 		zephyr,console = &usart1;
+		zephyr,log-uart = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,flash-controller = &fmc;
 	};

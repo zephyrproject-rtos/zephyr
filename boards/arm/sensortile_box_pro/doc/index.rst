@@ -234,8 +234,10 @@ There are two possible options for Zephyr console output:
    / {
        chosen {
           zephyr,console = &uart4;
+          zephyr,log-uart = &uart4;
           zephyr,shell-uart = &uart4;
           //zephyr,console = &cdc_acm_uart0;
+          //zephyr,log-uart = &cdc_acm_uart0;
           //zephyr,shell-uart = &cdc_acm_uart0;
         };
      };
@@ -261,6 +263,7 @@ There are two possible options for Zephyr console output:
    / {
        chosen {
           zephyr,console = &cdc_acm_uart0;
+          zephyr,log-uart = &cdc_acm_uart0;
         };
      };
 

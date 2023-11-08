@@ -11,6 +11,7 @@
 
 	chosen {
 		zephyr,console = &uart5;
+		zephyr,log-uart = &uart5;
 		zephyr,shell-uart = &uart5;
 	};
 };

@@ -15,6 +15,7 @@
 
 	chosen {
 		zephyr,console = &uart1;
+		zephyr,log-uart = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,uart-mcumgr = &uart1;
 		zephyr,bt-mon-uart = &uart1;

@@ -20,6 +20,7 @@
 
 	chosen {
 		zephyr,console = &usart3;
+		zephyr,log-uart = &usart3;
 		zephyr,shell-uart = &usart3;
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
