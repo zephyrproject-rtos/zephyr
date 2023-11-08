@@ -26,7 +26,6 @@ properties:
 
   resn-gpios:
     type: phandle-array
-    required: true
     description: "GPIO for reset"
 
   in1-gpios:
