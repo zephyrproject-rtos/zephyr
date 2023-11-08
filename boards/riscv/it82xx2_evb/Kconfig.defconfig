@@ -5,4 +5,8 @@ if BOARD_IT82XX2_EVB
 
 config BOARD
 	default "it82xx2_evb"
+
+config INPUT
+	default y if KSCAN
+
 endif

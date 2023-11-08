@@ -3,7 +3,7 @@
 
 description: ITE it8xxx2 keyboard matrix controller
 
-compatible: "ite,it8xxx2-kscan"
+compatible: "ite,it8xxx2-kbd"
 
 include: [kscan.yaml, pinctrl-device.yaml]
 
