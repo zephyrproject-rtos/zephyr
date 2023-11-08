@@ -9,7 +9,7 @@
  * @brief Internal kernel APIs implemented at the architecture layer.
  *
  * Not all architecture-specific defines are here, APIs that are used
- * by public functions and macros are defined in include/sys/arch_interface.h.
+ * by public functions and macros are defined in include/zephyr/arch/arch_interface.h.
  *
  * For all inline functions prototyped here, the implementation is expected
  * to be provided by arch/ARCH/include/kernel_arch_func.h
@@ -18,7 +18,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_ARCH_INTERFACE_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 
 #ifndef _ASMLANGUAGE
 
