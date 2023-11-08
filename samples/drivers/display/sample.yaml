@@ -131,3 +131,14 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
+  sample.display.g1120b0mipi:
+    platform_allow: mimxrt595_evk_cm33
+    tags: display
+    harness: console
+    extra_args: SHIELD=g1120b0mipi
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_IDLE_STACK_SIZE=400
+    harness_config:
+      fixture: fixture_display
