@@ -18,16 +18,6 @@
 
 LOG_MODULE_REGISTER(SI3474, CONFIG_PSE_LOG_LEVEL);
 
-int si3474_i2c_write_reg(const struct device *i2c, uint16_t dev_addr, uint8_t reg_ddr, uint8_t val)
-{
-	int res = i2c_reg_write_byte(i2c, dev_addr, reg_ddr, val);
-	if (res != 0) {
-		LOG_WRN("Si3474 device 0x%x writing 0x%x failed! [%i]", dev_addr, reg_ddr, res);
-		return res;
-	}
-	return res;
-}
-
 int si3474_i2c_read_reg(const struct device *i2c, uint16_t dev_addr, uint8_t reg_ddr, uint8_t *buff)
 {
 	int res = 0;
@@ -51,87 +41,90 @@ static int si3474_get_events(const struct device *dev, uint8_t *events)
 				  &pse_interrupt_buffer);
 	if (res != 0) {
 		LOG_WRN("Si3474 reading interrupt status failed");
-	}
+	}else {
+		for (int cnt = 0; cnt <= 8; cnt++) {
+			switch (pse_interrupt_buffer & mask) {
+			case POWER_ENABLE_CHANGE_IT:
+				mask <<= 1;
+				cnt++;
+				__fallthrough;
+			case POWER_GOOD_CHANGE_IT:
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, POWER_EVENT_REG,
+							&events[POWER_EVENT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				break;
+			case DISCONNECT_IT:
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address,
+							DISCONNECT_PCUT_FAULT_REG,
+							&events[DISCONNECT_PCUT_FAULT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, SUPPLY_EVENT_REG,
+							&events[SUPPLY_EVENT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				break;
 
-	for (int cnt = 0; cnt <= 8; cnt++) {
-		switch (pse_interrupt_buffer & mask) {
-		case POWER_ENABLE_CHANGE_IT:
+			case DETECT_CC_DONE_IT:
+				mask <<= 1;
+				cnt++;
+				__fallthrough;
+			case CLASS_DONE_IT:
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, CLASS_DETECT_EVENT_REG,
+							&events[CLASS_DETECT_EVENT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				break;
+
+			case P_I_FAULT_IT:
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address,
+							DISCONNECT_PCUT_FAULT_REG,
+							&events[DISCONNECT_PCUT_FAULT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, ILIM_START_FAULT_REG,
+							&events[ILIM_START_FAULT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, SUPPLY_EVENT_REG,
+							&events[SUPPLY_EVENT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				break;
+
+			case START_EVENT_IT:
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, ILIM_START_FAULT_REG,
+							&events[ILIM_START_FAULT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, POWER_ON_FAULT_REG,
+							&events[POWER_ON_FAULT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				break;
+
+			case SUPPLY_EVENT_IT:
+				res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, SUPPLY_EVENT_REG,
+							&events[SUPPLY_EVENT]);
+				if (res != 0) {
+					LOG_WRN("Si3474 reading event status table failed");
+				}
+				break;
+			}
 			mask <<= 1;
-			cnt++;
-		case POWER_GOOD_CHANGE_IT:
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, POWER_EVENT_REG,
-						  &events[POWER_EVENT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			break;
-		case DISCONNECT_IT:
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address,
-						  DISCONNECT_PCUT_FAULT_REG,
-						  &events[DISCONNECT_PCUT_FAULT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, SUPPLY_EVENT_REG,
-						  &events[SUPPLY_EVENT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			break;
-
-		case DETECT_CC_DONE_IT:
-			mask <<= 1;
-			cnt++;
-		case CLASS_DONE_IT:
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, CLASS_DETECT_EVENT_REG,
-						  &events[CLASS_DETECT_EVENT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			break;
-
-		case P_I_FAULT_IT:
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address,
-						  DISCONNECT_PCUT_FAULT_REG,
-						  &events[DISCONNECT_PCUT_FAULT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, ILIM_START_FAULT_REG,
-						  &events[ILIM_START_FAULT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, SUPPLY_EVENT_REG,
-						  &events[SUPPLY_EVENT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			break;
-
-		case START_EVENT_IT:
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, ILIM_START_FAULT_REG,
-						  &events[ILIM_START_FAULT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, POWER_ON_FAULT_REG,
-						  &events[POWER_ON_FAULT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			break;
-
-		case SUPPLY_EVENT_IT:
-			res = si3474_i2c_read_reg(cfg->i2c.bus, dev_address, SUPPLY_EVENT_REG,
-						  &events[SUPPLY_EVENT]);
-			if (res != 0) {
-				LOG_WRN("Si3474 reading event status table failed");
-			}
-			break;
 		}
-		mask <<= 1;
 	}
+
 	return res;
 }
 
@@ -160,45 +153,27 @@ static int si3474_get_current(const struct device *dev, uint8_t channel, uint16_
 	case CHANNEL_0:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT1_CURRENT_LSB_REG, &buff[0],
 				     CURRENT_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading current on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
 	case CHANNEL_1:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT2_CURRENT_LSB_REG, &buff[0],
 				     CURRENT_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading current on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
 
 	case CHANNEL_2:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT3_CURRENT_LSB_REG, &buff[0],
 				     CURRENT_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading current on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
 
 	case CHANNEL_3:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT4_CURRENT_LSB_REG, &buff[0],
 				     CURRENT_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading current on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
+	}
+	if (res != 0) {
+		LOG_WRN("Si3474 reading current on channel %d failed!", channel);
+	} else {
+		*val = ((uint16_t)buff[1] << 8);
+		*val |= (uint16_t)buff[0];
 	}
 	return res;
 }
@@ -214,45 +189,27 @@ static int si3474_get_voltage(const struct device *dev, uint8_t channel, uint16_
 	case CHANNEL_0:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT1_VOLTAGE_LSB_REG, &buff[0],
 				     VOLTAGE_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading voltage on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
 	case CHANNEL_1:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT2_VOLTAGE_LSB_REG, &buff[0],
 				     VOLTAGE_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading voltage on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
 
 	case CHANNEL_2:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT3_VOLTAGE_LSB_REG, &buff[0],
 				     VOLTAGE_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading voltage on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
 
 	case CHANNEL_3:
 		res = i2c_burst_read(cfg->i2c.bus, dev_address, PORT4_VOLTAGE_LSB_REG, &buff[0],
 				     VOLTAGE_SIZE_BUFFER);
-		if (res != 0) {
-			LOG_WRN("Si3474 reading voltage on channel %d failed!", channel);
-		} else {
-			*val = ((uint16_t)buff[1] << 8);
-			*val |= (uint16_t)buff[0];
-		}
 		break;
+	}
+	if (res != 0) {
+		LOG_WRN("Si3474 reading voltage on channel %d failed!", channel);
+	} else {
+		*val = ((uint16_t)buff[1] << 8);
+		*val |= (uint16_t)buff[0];
 	}
 	return res;
 }
@@ -297,7 +254,7 @@ static int si3474_switch_on_channel(const struct device *dev, uint8_t channel)
 
 	res = i2c_reg_write_byte(cfg->i2c.bus, dev_address, PB_POWER_ENABLE_REG, (1 << channel));
 	if (res != 0) {
-		LOG_WRN("Si3474 switching channel failed");
+		LOG_WRN("Si3474 switching channel %d failed", channel);
 		return res;
 	}
 
@@ -344,7 +301,7 @@ static int si3474_init(const struct device *dev)
 
 	res = si3474_init_ports(dev);
 	if (res != 0) {
-		LOG_ERR("Configuring Si3474 interrupt and oss pins failed");
+		LOG_ERR("Configuring Si3474 interrupt and Over Suply Source pin failed");
 		return -ENODEV;
 	}
 

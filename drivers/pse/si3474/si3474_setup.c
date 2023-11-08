@@ -102,11 +102,9 @@ int si3474_init_interrupt(const struct device *dev)
 int si3474_init_ports(const struct device *dev)
 {
 	const struct si3474_config *cfg = dev->config;
-	uint16_t dev_address = cfg->i2c.addr;
-	uint8_t buff;
 	int res;
 
-	if (!device_is_ready(cfg->gpio_rst.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_rst)) {
 		LOG_ERR("gpio_rst pin not ready");
 		return -ENODEV;
 	}
@@ -115,7 +113,7 @@ int si3474_init_ports(const struct device *dev)
 		LOG_ERR("Failed to configure si3474 reset pin");
 		return res;
 	}
-	if (!device_is_ready(cfg->gpio_oss.port)) {
+	if (!gpio_is_ready_dt(&cfg->gpio_oss)) {
 		LOG_ERR("gpio_oss pin not ready");
 		return -ENODEV;
 	}
@@ -125,7 +123,7 @@ int si3474_init_ports(const struct device *dev)
 		return res;
 	}
 
-	k_msleep(1000);
+	k_msleep(10);
 	res = gpio_pin_set_dt(&cfg->gpio_rst, true);
 	if (res != 0) {
 		LOG_WRN("Failed to assert si3474_rst %i", res);
