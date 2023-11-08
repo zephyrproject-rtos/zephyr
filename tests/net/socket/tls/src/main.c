@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define MAX_CONNS 5
 
-#define TCP_TEARDOWN_TIMEOUT K_SECONDS(1)
+#define TCP_TEARDOWN_TIMEOUT K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY)
 
 static const unsigned char psk[] = {
 	0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -230,6 +230,46 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 	}
 }
 
+static void test_prepare_tls_connection(sa_family_t family, int *c_sock,
+					int *s_sock, int *new_sock)
+{
+	struct sockaddr c_saddr;
+	struct sockaddr s_saddr;
+	socklen_t exp_addrlen = family == AF_INET6 ?
+				sizeof(struct sockaddr_in6) :
+				sizeof(struct sockaddr_in);
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	if (family == AF_INET6) {
+		prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, c_sock,
+				    (struct sockaddr_in6 *)&c_saddr,
+				    IPPROTO_TLS_1_2);
+		prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, s_sock,
+				    (struct sockaddr_in6 *)&s_saddr,
+				    IPPROTO_TLS_1_2);
+	} else {
+		prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, c_sock,
+				    (struct sockaddr_in *)&c_saddr,
+				    IPPROTO_TLS_1_2);
+		prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, s_sock,
+				    (struct sockaddr_in *)&s_saddr,
+				    IPPROTO_TLS_1_2);
+	}
+
+	test_config_psk(*s_sock, *c_sock);
+
+	test_bind(*s_sock, &s_saddr, exp_addrlen);
+	test_listen(*s_sock);
+
+	spawn_client_connect_thread(*c_sock, &s_saddr);
+
+	test_accept(*s_sock, new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, exp_addrlen, "Wrong addrlen");
+
+	k_thread_join(&client_connect_thread, K_FOREVER);
+}
+
 ZTEST(net_socket_tls, test_v4_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
@@ -238,10 +278,6 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 	int c_sock;
 	int s_sock;
 	int new_sock;
-	struct sockaddr_in c_saddr;
-	struct sockaddr_in s_saddr;
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(addr);
 	int ret;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	struct timeval timeo_optval = {
@@ -249,20 +285,7 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 		.tv_usec = 500000,
 	};
 
-	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock, &s_saddr, IPPROTO_TLS_1_2);
-
-	test_config_psk(s_sock, c_sock);
-
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
-	test_listen(s_sock);
-
-	spawn_client_connect_thread(c_sock, (struct sockaddr *)&s_saddr);
-
-	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "Wrong addrlen");
-
-	k_thread_join(&client_connect_thread, K_FOREVER);
+	test_prepare_tls_connection(AF_INET, &c_sock, &s_sock, &new_sock);
 
 	/* Regular MSG_WAITALL - make sure recv returns only after
 	 * requested amount is received.
@@ -304,6 +327,8 @@ ZTEST(net_socket_tls, test_v4_msg_waitall)
 	test_close(new_sock);
 	test_close(s_sock);
 	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST(net_socket_tls, test_v6_msg_waitall)
@@ -314,10 +339,6 @@ ZTEST(net_socket_tls, test_v6_msg_waitall)
 	int c_sock;
 	int s_sock;
 	int new_sock;
-	struct sockaddr_in6 c_saddr;
-	struct sockaddr_in6 s_saddr;
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(addr);
 	int ret;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
 	struct timeval timeo_optval = {
@@ -325,20 +346,7 @@ ZTEST(net_socket_tls, test_v6_msg_waitall)
 		.tv_usec = 500000,
 	};
 
-	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr, IPPROTO_TLS_1_2);
-	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &s_saddr, IPPROTO_TLS_1_2);
-
-	test_config_psk(s_sock, c_sock);
-
-	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
-	test_listen(s_sock);
-
-	spawn_client_connect_thread(c_sock, (struct sockaddr *)&s_saddr);
-
-	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "Wrong addrlen");
-
-	k_thread_join(&client_connect_thread, K_FOREVER);
+	test_prepare_tls_connection(AF_INET6, &c_sock, &s_sock, &new_sock);
 
 	/* Regular MSG_WAITALL - make sure recv returns only after
 	 * requested amount is received.
@@ -380,6 +388,8 @@ ZTEST(net_socket_tls, test_v6_msg_waitall)
 	test_close(new_sock);
 	test_close(s_sock);
 	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 struct test_msg_trunc_data {
