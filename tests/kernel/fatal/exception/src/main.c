@@ -56,7 +56,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		k_fatal_halt(reason);
 	}
 
-	if (k_current_get() != &alt_thread) {
+	if (k_sched_current_thread_query() != &alt_thread) {
 		printk("Wrong thread crashed\n");
 		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
