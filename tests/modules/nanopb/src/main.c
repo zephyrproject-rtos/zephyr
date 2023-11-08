@@ -14,6 +14,8 @@
 #include <proto/simple.pb.h>
 #include <proto/complex.pb.h>
 
+#include "lib.h"
+
 ZTEST(nanopb_tests, test_nanopb_simple)
 {
 	uint8_t buffer[SimpleMessage_size];
@@ -66,6 +68,17 @@ ZTEST(nanopb_tests, test_nanopb_nested)
 	zassert_equal(42, msg.nested.id);
 	zassert_true(msg.has_nested);
 	zassert_equal(0, strcmp(msg.nested.name, "Test name"));
+}
+
+ZTEST(nanopb_tests, test_nanopb_lib)
+{
+	SimpleMessage msg = SimpleMessage_init_zero;
+
+	lib_fill_message(&msg);
+
+	for (size_t i = 0; i < sizeof(msg.buffer); ++i) {
+		zassert_equal(msg.buffer[i], sizeof(msg.buffer) - i);
+	}
 }
 
 ZTEST_SUITE(nanopb_tests, NULL, NULL, NULL, NULL, NULL);
