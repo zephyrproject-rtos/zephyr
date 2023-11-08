@@ -227,6 +227,8 @@ static int dsi_mcux_attach(const struct device *dev,
 	dsi_config.autoInsertEoTp = config->auto_insert_eotp;
 	dsi_config.enableNonContinuousHsClk = config->noncontinuous_hs_clk;
 
+	imxrt_pre_init_display_interface();
+
 	/* Init the DSI module. */
 	DSI_Init(config->base, &dsi_config);
 
@@ -344,6 +346,24 @@ static int dsi_mcux_attach(const struct device *dev,
 	return 0;
 }
 
+static int dsi_mcux_detach(const struct device *dev, uint8_t channel,
+			   const struct mipi_dsi_device *mdev)
+{
+	const struct mcux_mipi_dsi_config *config = dev->config;
+
+	/* Enable DPHY auto power down */
+	DSI_DeinitDphy(config->base);
+	/* Fully power off DPHY */
+	config->base->PD_DPHY = 0x1;
+	/* Deinit MIPI */
+	DSI_Deinit(config->base);
+	/* Call IMX RT clock function to gate clocks and power at SOC level */
+	imxrt_deinit_display_interface();
+	return 0;
+}
+
+
+
 static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
 {
@@ -434,6 +454,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 static struct mipi_dsi_driver_api dsi_mcux_api = {
 	.attach = dsi_mcux_attach,
+	.detach = dsi_mcux_detach,
 	.transfer = dsi_mcux_transfer,
 };
 
@@ -448,8 +469,6 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 #endif
 
 	k_sem_init(&data->transfer_sem, 0, 1);
-
-	imxrt_pre_init_display_interface();
 
 	if (!device_is_ready(config->bit_clk_dev) ||
 			!device_is_ready(config->esc_clk_dev) ||
