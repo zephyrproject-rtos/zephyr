@@ -1489,6 +1489,42 @@ int bt_has_client_cmd_preset_prev(struct bt_has_client *inst, bool sync)
 	return preset_set_next_or_prev(inst, opcode);
 }
 
+int bt_has_client_cmd_preset_write(struct bt_has_client *inst, uint8_t index, const char *name)
+{
+	struct bt_has_cp_write_preset_name *req;
+	struct bt_has_cp_hdr *hdr;
+	size_t len;
+
+	LOG_DBG("inst %p index 0x%02x name %s", inst, index, name);
+
+	CHECKIF(inst == NULL) {
+		return -ENOTCONN;
+	}
+
+	if (inst->state != STATE_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	CHECKIF(name == NULL) {
+		return -EINVAL;
+	}
+
+	len = strlen(name);
+	if (len < BT_HAS_PRESET_NAME_MIN || len > BT_HAS_PRESET_NAME_MAX) {
+		return -EINVAL;
+	}
+
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*hdr) + sizeof(*req) + len);
+
+	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
+	hdr->opcode = BT_HAS_OP_WRITE_PRESET_NAME;
+	req = net_buf_simple_add(&buf, sizeof(*req));
+	req->index = index;
+	net_buf_simple_add_mem(&buf, name, len);
+
+	return control_point_write(inst, &buf);
+}
+
 int bt_has_client_info_get(const struct bt_has_client *inst, struct bt_has_client_info *info)
 {
 	CHECKIF(inst == NULL) {

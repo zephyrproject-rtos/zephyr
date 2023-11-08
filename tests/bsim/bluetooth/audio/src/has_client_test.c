@@ -122,6 +122,17 @@ static void presets_list_delete(uint8_t start_index, uint8_t end_index)
 	}
 }
 
+static struct bt_has_preset_record *preset_record_lookup_index(uint8_t index)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(preset_list); i++) {
+		if (preset_list[i]->index == index) {
+			return preset_list[i];
+		}
+	}
+
+	return NULL;
+}
+
 static void preset_read_rsp_cb(struct bt_has_client *client,
 			       const struct bt_has_preset_record *record, bool is_last)
 {
@@ -249,6 +260,26 @@ static bool test_preset_prev(struct bt_has_client *client, uint8_t active_index_
 	return g_active_index == active_index_expected;
 }
 
+static bool test_preset_write(struct bt_has_client *client, uint8_t index, const char *name)
+{
+	struct bt_has_preset_record *record;
+	int err;
+
+	err = bt_has_client_cmd_preset_write(client, index, name);
+	if (err < 0) {
+		LOG_DBG("%s (err %d)", __func__, err);
+		return false;
+	}
+
+	expect_cmd_complete();
+	expect_preset_list_updated();
+
+	record = preset_record_lookup_index(index);
+	__ASSERT_NO_MSG(record != NULL);
+
+	return strcmp(record->name, name) == 0;
+}
+
 static void expect_service_connected(struct bt_has_client *client)
 {
 	WAIT_FOR_FLAG(g_has_connected);
@@ -265,17 +296,6 @@ static void expect_service_unbound(struct bt_has_client *client)
 {
 	WAIT_FOR_FLAG(g_has_unbound);
 	UNSET_FLAG(g_has_unbound);
-}
-
-static struct bt_has_preset_record *preset_record_lookup_index(uint8_t index)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(preset_list); i++) {
-		if (preset_list[i]->index == index) {
-			return preset_list[i];
-		}
-	}
-
-	return NULL;
 }
 
 static void test_main(void)
@@ -381,6 +401,12 @@ static void test_main(void)
 	LOG_DBG("Set previous");
 	if (!test_preset_prev(client, test_preset_index_5)) {
 		FAIL("Failed to set previous preset %d\n", test_preset_index_5);
+		return;
+	}
+
+	LOG_DBG("Write preset name");
+	if (!test_preset_write(client, test_preset_index_5, "Vacuum")) {
+		FAIL("Failed to write preset name %d\n", test_preset_index_5);
 		return;
 	}
 

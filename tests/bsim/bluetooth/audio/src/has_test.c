@@ -20,7 +20,7 @@ const uint8_t test_preset_index_5 = 0x05;
 const char *test_preset_name_1 = "test_preset_name_1";
 const char *test_preset_name_3 = "test_preset_name_3";
 const char *test_preset_name_5 = "test_preset_name_5";
-const enum bt_has_properties test_preset_properties = BT_HAS_PROP_AVAILABLE;
+const enum bt_has_properties test_preset_properties = BT_HAS_PROP_AVAILABLE | BT_HAS_PROP_WRITABLE;
 
 static int preset_select(uint8_t index, bool sync)
 {

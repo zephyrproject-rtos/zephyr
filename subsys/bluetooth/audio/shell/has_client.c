@@ -253,6 +253,30 @@ static int cmd_has_client_preset_prev(const struct shell *sh, size_t argc, char 
 	return err;
 }
 
+static int cmd_has_client_preset_write(const struct shell *sh, size_t argc, char **argv)
+{
+	int err = 0;
+	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	if (err < 0) {
+		shell_print(sh, "Invalid command parameter (err %d)", err);
+		return err;
+	}
+
+	if (default_client == NULL) {
+		shell_error(sh, "No client");
+		return -ENOEXEC;
+	}
+
+	err = bt_has_client_cmd_preset_write(default_client, index, argv[2]);
+	if (err != 0) {
+		shell_error(sh, "bt_has_client_cmd_preset_write (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	return err;
+}
+
 static int cmd_has_client(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
@@ -275,6 +299,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(has_client_cmds,
 	SHELL_CMD_ARG(preset-set, NULL, "<index_hex> [sync]", cmd_has_client_preset_set, 2, 1),
 	SHELL_CMD_ARG(preset-next, NULL, "[sync]", cmd_has_client_preset_next, 1, 1),
 	SHELL_CMD_ARG(preset-prev, NULL, "[sync]", cmd_has_client_preset_prev, 1, 1),
+	SHELL_CMD_ARG(preset-write, NULL, "<index_hex> <name>", cmd_has_client_preset_write, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 

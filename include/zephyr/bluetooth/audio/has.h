@@ -315,6 +315,20 @@ int bt_has_client_cmd_preset_next(struct bt_has_client *client, bool sync);
  */
 int bt_has_client_cmd_preset_prev(struct bt_has_client *client, bool sync);
 
+/**
+ * @brief Write Preset Name command.
+ *
+ * Client procedure to change the preset name.
+ * The status is returned in the @ref bt_has_client_cb.cmd_status callback.
+ *
+ * @param client Client instance.
+ * @param index Preset index to change the name of.
+ * @param name Preset name to write.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_has_client_cmd_preset_write(struct bt_has_client *client, uint8_t index, const char *name);
+
 /** Hearing Aid device Info Structure */
 struct bt_has_client_info {
 	/** Local identity */
