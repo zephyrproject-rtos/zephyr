@@ -179,6 +179,14 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb);
 typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 				int8_t tx_power, uint16_t duration);
 
+/**
+ * @typedef lora_api_time_on_air()
+ * @brief Callback API for calculating time on air
+ *
+ * @see lora_time_on_air() for argument descriptions.
+ */
+typedef int (*lora_api_time_on_air)(const struct device *dev, size_t len);
+
 __subsystem struct lora_driver_api {
 	lora_api_config config;
 	lora_api_send send;
@@ -186,6 +194,7 @@ __subsystem struct lora_driver_api {
 	lora_api_recv recv;
 	lora_api_recv_async recv_async;
 	lora_api_test_cw test_cw;
+	lora_api_time_on_air time_on_air;
 };
 
 /** @endcond */
@@ -319,6 +328,18 @@ static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
 	}
 
 	return api->test_cw(dev, frequency, tx_power, duration);
+}
+
+static inline int lora_time_on_air(const struct device *dev, size_t len)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->time_on_air == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->time_on_air(dev, len);
 }
 
 #ifdef __cplusplus
