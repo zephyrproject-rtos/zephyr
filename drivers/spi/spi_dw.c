@@ -113,12 +113,10 @@ static void push_data(const struct device *dev)
 				data = UNALIGNED_GET((uint16_t *)
 						     (spi->ctx.tx_buf));
 				break;
-#ifndef CONFIG_ARC
 			case 4:
 				data = UNALIGNED_GET((uint32_t *)
 						     (spi->ctx.tx_buf));
 				break;
-#endif
 			}
 		} else if (spi_context_rx_on(&spi->ctx)) {
 			/* No need to push more than necessary */
@@ -164,11 +162,9 @@ static void pull_data(const struct device *dev)
 			case 2:
 				UNALIGNED_PUT(data, (uint16_t *)spi->ctx.rx_buf);
 				break;
-#ifndef CONFIG_ARC
 			case 4:
 				UNALIGNED_PUT(data, (uint32_t *)spi->ctx.rx_buf);
 				break;
-#endif
 			}
 		}
 
@@ -222,8 +218,18 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		return -EINVAL;
 	}
 
+	if (info->max_xfer_size < SPI_WORD_SIZE_GET(config->operation)) {
+		LOG_ERR("Max xfer size is %u, word size of %u not allowed",
+			info->max_xfer_size, SPI_WORD_SIZE_GET(config->operation));
+		return -ENOTSUP;
+	}
+
 	/* Word size */
-	ctrlr0 |= DW_SPI_CTRLR0_DFS(SPI_WORD_SIZE_GET(config->operation));
+	if (info->max_xfer_size == 32) {
+		ctrlr0 |= DW_SPI_CTRLR0_DFS_32(SPI_WORD_SIZE_GET(config->operation));
+	} else {
+		ctrlr0 |= DW_SPI_CTRLR0_DFS_16(SPI_WORD_SIZE_GET(config->operation));
+	}
 
 	/* Determine how many bytes are required per-frame */
 	spi->dfs = SPI_WS_TO_DFS(SPI_WORD_SIZE_GET(config->operation));
@@ -597,6 +603,7 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 		.config_func = spi_dw_irq_config_##inst,                                    \
 		.serial_target = DT_INST_PROP(inst, serial_target),                         \
 		.fifo_depth = DT_INST_PROP(inst, fifo_depth),                               \
+		.max_xfer_size = DT_INST_PROP(inst, max_xfer_size),                         \
 		IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),)) \
 		COND_CODE_1(DT_INST_PROP(inst, aux_reg),                                    \
 			(.read_func = aux_reg_read,                                         \
