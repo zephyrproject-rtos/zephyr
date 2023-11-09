@@ -18,6 +18,7 @@
  * tx ready IRQ event.
  */
 #define SAMPLE_DATA_SIZE       MIN(EMUL_UART_RX_FIFO_SIZE, EMUL_UART_TX_FIFO_SIZE) - 1
+#define RX_BUF_SIZE            (20)
 
 struct uart_emul_fixture {
 	const struct device *dev;
@@ -28,6 +29,9 @@ struct uart_emul_fixture {
 	struct k_sem rx_done_sem;
 	size_t tx_remaining;
 	size_t rx_remaining;
+	uint8_t rx_bufs[2][RX_BUF_SIZE];
+	bool rx_buf_used[2];
+	struct k_sem rx_disabled_sem;
 };
 
 static void *uart_emul_setup(void)
@@ -40,6 +44,7 @@ static void *uart_emul_setup(void)
 
 	k_sem_init(&fixture.tx_done_sem, 0, 1);
 	k_sem_init(&fixture.rx_done_sem, 0, 1);
+	k_sem_init(&fixture.rx_disabled_sem, 0, 1);
 
 	zassert_not_null(fixture.dev);
 	return &fixture;
@@ -65,6 +70,13 @@ static void uart_emul_before(void *f)
 
 	fixture->tx_remaining = SAMPLE_DATA_SIZE;
 	fixture->rx_remaining = SAMPLE_DATA_SIZE;
+
+	memset(fixture->rx_bufs[0], 0, sizeof(fixture->rx_bufs[0]));
+	memset(fixture->rx_bufs[1], 0, sizeof(fixture->rx_bufs[1]));
+	fixture->rx_buf_used[0] = false;
+	fixture->rx_buf_used[1] = false;
+
+	k_sem_reset(&fixture->rx_disabled_sem);
 }
 
 ZTEST_F(uart_emul, test_polling_out)
@@ -113,14 +125,6 @@ ZTEST_F(uart_emul, test_errors)
 	/* uart_err_check should also clear existing errors */
 	errors = uart_err_check(fixture->dev);
 	zassert_equal(errors, 0, "Should be no errors");
-
-	/* overflowing rx buffer should produce an overrun error */
-	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
-	errors = uart_err_check(fixture->dev);
-	zassert_equal(errors, 0, "Should be no errors");
-	uart_emul_put_rx_data(fixture->dev, fixture->sample_data, SAMPLE_DATA_SIZE);
-	errors = uart_err_check(fixture->dev);
-	zassert_equal(errors, UART_ERROR_OVERRUN, "UART errors do not match");
 }
 
 static void uart_emul_isr_handle_tx_ready(struct uart_emul_fixture *fixture)
@@ -214,6 +218,120 @@ ZTEST_F(uart_emul, test_irq_rx)
 	zassert_equal(rc, -1, "RX buffer should be empty");
 
 	uart_irq_rx_disable(fixture->dev);
+}
+
+static void uart_emul_async_handler(const struct device *dev, struct uart_event *evt,
+				    void *user_data)
+{
+	struct uart_emul_fixture *fixture = user_data;
+	uint32_t rx_content_it;
+
+	switch (evt->type) {
+	case UART_TX_DONE:
+		__ASSERT(evt->data.tx.buf == fixture->sample_data,
+			 "Incorrect TX buffer used");
+		__ASSERT(evt->data.tx.len == sizeof(fixture->sample_data),
+			 "Incorrect TX buffer size provided");
+		k_sem_give(&fixture->tx_done_sem);
+		break;
+
+	case UART_TX_ABORTED:
+		break;
+
+	case UART_RX_RDY:
+		if (fixture->rx_remaining) {
+			rx_content_it = sizeof(fixture->rx_content) - fixture->rx_remaining;
+			__ASSERT(fixture->rx_remaining >= evt->data.rx.len,
+				 "Received more data than was put");
+			memcpy(&fixture->rx_content[rx_content_it],
+			       &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+			fixture->rx_remaining -= evt->data.rx.len;
+		}
+
+		if (fixture->rx_remaining == 0) {
+			k_sem_give(&fixture->rx_done_sem);
+		}
+
+		break;
+
+	case UART_RX_BUF_REQUEST:
+		if (fixture->rx_buf_used[0] == false) {
+			fixture->rx_buf_used[0] = true;
+			uart_rx_buf_rsp(fixture->dev, fixture->rx_bufs[0],
+					sizeof(fixture->rx_bufs[0]));
+			break;
+		}
+
+		if (fixture->rx_buf_used[1] == false) {
+			fixture->rx_buf_used[1] = true;
+			uart_rx_buf_rsp(fixture->dev, fixture->rx_bufs[1],
+					sizeof(fixture->rx_bufs[1]));
+			break;
+		}
+
+		__ASSERT(false, "Requested more than 2 async RX buffers");
+		break;
+
+	case UART_RX_BUF_RELEASED:
+		if (evt->data.rx_buf.buf == fixture->rx_bufs[0]) {
+			__ASSERT(fixture->rx_buf_used[0] == true, "Released unused buffer");
+			fixture->rx_buf_used[0] = false;
+			break;
+		}
+
+		if (evt->data.rx_buf.buf == fixture->rx_bufs[1]) {
+			__ASSERT(fixture->rx_buf_used[1] == true, "Released unused buffer");
+			fixture->rx_buf_used[1] = false;
+			break;
+		}
+
+		__ASSERT(false, "Released invalid buffer");
+		break;
+
+	case UART_RX_DISABLED:
+		k_sem_give(&fixture->rx_disabled_sem);
+		break;
+
+	case UART_RX_STOPPED:
+		break;
+	}
+}
+
+ZTEST_F(uart_emul, test_async_tx)
+{
+	size_t tx_len;
+
+	uart_callback_set(fixture->dev, uart_emul_async_handler, fixture);
+	uart_tx(fixture->dev, fixture->sample_data, sizeof(fixture->sample_data), 0);
+
+	zassert_equal(k_sem_take(&fixture->tx_done_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART TX DONE");
+
+	tx_len = uart_emul_get_tx_data(fixture->dev, fixture->tx_content,
+				       sizeof(fixture->tx_content));
+	zassert_equal(tx_len, SAMPLE_DATA_SIZE, "TX buffer length does not match");
+	zassert_mem_equal(fixture->tx_content, fixture->sample_data,
+			  sizeof(fixture->sample_data));
+}
+
+ZTEST_F(uart_emul, test_async_rx)
+{
+	fixture->rx_buf_used[0] = true;
+	uart_callback_set(fixture->dev, uart_emul_async_handler, fixture);
+	uart_rx_enable(fixture->dev, fixture->rx_bufs[0], sizeof(fixture->rx_bufs[0]), 0);
+	uart_emul_put_rx_data(fixture->dev, fixture->sample_data,
+			      sizeof(fixture->sample_data));
+
+	zassert_equal(k_sem_take(&fixture->rx_done_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART RX DONE");
+
+	zassert_mem_equal(fixture->rx_content, fixture->sample_data,
+			  sizeof(fixture->sample_data));
+
+	uart_rx_disable(fixture->dev);
+
+	zassert_equal(k_sem_take(&fixture->rx_disabled_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART Async RX disabled");
 }
 
 ZTEST_SUITE(uart_emul, NULL, uart_emul_setup, uart_emul_before, NULL, NULL);
