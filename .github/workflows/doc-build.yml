@@ -50,6 +50,7 @@ jobs:
         fetch-depth: 0
 
     - name: Rebase
+      if: github.event_name == 'pull_request'
       continue-on-error: true
       env:
         BASE_REF: ${{ github.base_ref }}
