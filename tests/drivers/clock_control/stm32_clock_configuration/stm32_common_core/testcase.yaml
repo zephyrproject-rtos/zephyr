@@ -6,7 +6,8 @@
 # - add the fixture in map file
 common:
   timeout: 5
-  tags: clock-control
+  tags:
+    - clock_control
 tests:
   drivers.clock.stm32_clock_configuration.common_core.l4_l5.sysclksrc_pll_48_msi_4:
     extra_args:
