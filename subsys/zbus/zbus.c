@@ -29,8 +29,8 @@ static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, si
 #else
 
 NET_BUF_POOL_FIXED_DEFINE(_zbus_msg_subscribers_pool,
-			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE),
 			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE),
+			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE),
 			  sizeof(struct zbus_channel *), NULL);
 
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
