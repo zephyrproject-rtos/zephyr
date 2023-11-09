@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(log_uart);
 static const char LOG_HEX_SEP[10] = "##ZLOGV1##";
 
 static const struct device *const uart_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_log_uart));
 static struct k_sem sem;
 static volatile bool in_panic;
 static bool use_async;
