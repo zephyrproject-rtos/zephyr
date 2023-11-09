@@ -197,6 +197,12 @@ enum os_mgmt_group_events {
 	/** Callback when an info command needs to output data, data is os_mgmt_info_append. */
 	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
 
+	/** Callback when a datetime get command has been received. */
+	MGMT_EVT_OP_OS_MGMT_DATETIME_GET        = MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 3),
+
+	/** Callback when a datetime set command has been received, data is struct rtc_time(). */
+	MGMT_EVT_OP_OS_MGMT_DATETIME_SET        = MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 4),
+
 	/** Used to enable all os_mgmt_group events. */
 	MGMT_EVT_OP_OS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_OS),
 };
