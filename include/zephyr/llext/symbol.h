@@ -78,6 +78,9 @@ struct llext_symtable {
 		.name = STRINGIFY(x), .addr = &x,				\
 	}
 
+#define LL_EXTENSION_SYMBOL(x) struct llext_symbol __attribute__((section(".exported_sym"), used)) \
+							symbol_##x = {STRINGIFY(x), &x}
+
 /**
  * @brief Export a system call to a table of symbols
  *

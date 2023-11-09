@@ -33,6 +33,7 @@ enum llext_mem {
 	LLEXT_MEM_DATA,
 	LLEXT_MEM_RODATA,
 	LLEXT_MEM_BSS,
+	LLEXT_MEM_EXPORT,
 	LLEXT_MEM_SYMTAB,
 	LLEXT_MEM_STRTAB,
 	LLEXT_MEM_SHSTRTAB,
@@ -60,8 +61,17 @@ struct llext {
 	/** Total size of the llext memory usage */
 	size_t mem_size;
 
-	/** Exported symbols from the llext, may be linked against by other llext */
+	/*
+	 * These are all global symbols in the extension, all of them don't
+	 * have to be exported to other extensions, but this table is needed for
+	 * faster internal linking, e.g. if the extension is built out of
+	 * several files, if any symbols are referenced between files, this
+	 * table will be used to link them.
+	 */
 	struct llext_symtable sym_tab;
+
+	/** Exported symbols from the llext, may be linked against by other llext */
+	struct llext_symtable exp_tab;
 
 	/** Extension use counter, prevents unloading while in use */
 	unsigned int use_count;

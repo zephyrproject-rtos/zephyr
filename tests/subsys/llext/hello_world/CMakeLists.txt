@@ -11,6 +11,8 @@ if(CONFIG_ARM)
 
     add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/hello_world.llext
 	COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c
+		-I ${PROJECT_SOURCE_DIR}/../../../../include
+		-imacros${PROJECT_BINARY_DIR}/../zephyr/include/generated/autoconf.h
 		-o ${PROJECT_BINARY_DIR}/hello_world.llext
 		${PROJECT_SOURCE_DIR}/hello_world.c
     )
@@ -19,6 +21,8 @@ elseif(CONFIG_XTENSA)
 
     add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/hello_world.llext
 	COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS}
+		-I ${PROJECT_SOURCE_DIR}/../../../../include
+		-imacros${PROJECT_BINARY_DIR}/../zephyr/include/generated/autoconf.h
 		-o ${PROJECT_BINARY_DIR}/hello_world.pre.llext
 		${PROJECT_SOURCE_DIR}/hello_world.c
 	COMMAND ${CROSS_COMPILE}strip -R .xt.*

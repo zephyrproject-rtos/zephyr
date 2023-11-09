@@ -75,7 +75,7 @@ struct llext *llext_by_name(const char *name)
 const void * const llext_find_sym(const struct llext_symtable *sym_table, const char *sym_name)
 {
 	if (sym_table == NULL) {
-		/* Buildin symbol table */
+		/* Built-in symbol table */
 		STRUCT_SECTION_FOREACH(llext_const_symbol, sym) {
 			if (strcmp(sym->name, sym_name) == 0) {
 				return sym->addr;
@@ -214,6 +214,9 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		} else if (strcmp(name, ".bss") == 0) {
 			sect_idx = LLEXT_SECT_BSS;
 			mem_idx = LLEXT_MEM_BSS;
+		} else if (strcmp(name, ".exported_sym") == 0) {
+			sect_idx = LLEXT_SECT_EXPORT;
+			mem_idx = LLEXT_MEM_EXPORT;
 		} else {
 			LOG_DBG("Not copied section %s", name);
 			continue;
@@ -239,6 +242,9 @@ static enum llext_section llext_sect_from_mem(enum llext_mem m)
 		break;
 	case LLEXT_MEM_RODATA:
 		s = LLEXT_SECT_RODATA;
+		break;
+	case LLEXT_MEM_EXPORT:
+		s = LLEXT_SECT_EXPORT;
 		break;
 	case LLEXT_MEM_TEXT:
 		s = LLEXT_SECT_TEXT;
@@ -397,6 +403,37 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	}
 	memset(sym_tab->syms, 0, syms_size);
 	ext->mem_size += syms_size;
+
+	return 0;
+}
+
+static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
+{
+	elf_shdr_t *shdr = ldr->sects + LLEXT_SECT_EXPORT;
+	struct llext_symbol *sym;
+	unsigned int i;
+
+	if (shdr->sh_size < sizeof(struct llext_symbol)) {
+		/* Not found, no symbols exported */
+		return 0;
+	}
+
+	struct llext_symtable *exp_tab = &ext->exp_tab;
+
+	exp_tab->sym_cnt = shdr->sh_size / sizeof(struct llext_symbol);
+	exp_tab->syms = k_heap_alloc(&llext_heap, exp_tab->sym_cnt * sizeof(struct llext_symbol),
+				     K_NO_WAIT);
+	if (!exp_tab->syms) {
+		return -ENOMEM;
+	}
+
+	for (i = 0, sym = ext->mem[LLEXT_MEM_EXPORT];
+	     i < exp_tab->sym_cnt;
+	     i++, sym++) {
+		exp_tab->syms[i].name = sym->name;
+		exp_tab->syms[i].addr = sym->addr;
+		LOG_DBG("sym %p name %s in %p", sym->addr, sym->name, exp_tab->syms + i);
+	}
 
 	return 0;
 }
@@ -624,6 +661,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 		} else if (strcmp(name, ".rel.data") == 0 ||
 			   strcmp(name, ".rela.data") == 0) {
 			loc = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
+		} else if (strcmp(name, ".rel.exported_sym") == 0) {
+			loc = (uintptr_t)ext->mem[LLEXT_MEM_EXPORT];
 		} else if (strcmp(name, ".rela.plt") == 0 ||
 			   strcmp(name, ".rela.dyn") == 0) {
 			llext_link_plt(ldr, ext, &shdr, do_local);
@@ -679,7 +718,8 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 						name, rel.r_offset, shdr.sh_link);
 					return -ENODATA;
 				}
-			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION) {
+			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
+				   ELF_ST_TYPE(sym.st_info) == STT_FUNC) {
 				/* Current relocation location holds an offset into the section */
 				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
 					+ sym.st_value
@@ -719,6 +759,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 	ldr->sect_cnt = 0;
+	ext->sym_tab.sym_cnt = 0;
 
 	size_t sect_map_sz = ldr->hdr.e_shnum * sizeof(uint32_t);
 
@@ -788,6 +829,12 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
+	ret = llext_export_symbols(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to export, ret %d", ret);
+		goto out;
+	}
+
 out:
 	k_heap_free(&llext_heap, ldr->sect_map);
 
@@ -798,11 +845,15 @@ out:
 				k_heap_free(&llext_heap, ext->mem[mem_idx]);
 			}
 		}
-		k_heap_free(&llext_heap, ext->sym_tab.syms);
+		k_heap_free(&llext_heap, ext->exp_tab.syms);
 	} else {
 		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
 			ext->mem[LLEXT_MEM_RODATA]);
 	}
+
+	ext->sym_tab.sym_cnt = 0;
+	k_heap_free(&llext_heap, ext->sym_tab.syms);
+	ext->sym_tab.syms = NULL;
 
 	return ret;
 }
@@ -912,7 +963,7 @@ int llext_unload(struct llext **ext)
 		}
 	}
 
-	k_heap_free(&llext_heap, tmp->sym_tab.syms);
+	k_heap_free(&llext_heap, tmp->exp_tab.syms);
 	k_heap_free(&llext_heap, tmp);
 
 	return 0;
@@ -922,7 +973,7 @@ int llext_call_fn(struct llext *ext, const char *sym_name)
 {
 	void (*fn)(void);
 
-	fn = llext_find_sym(&ext->sym_tab, sym_name);
+	fn = llext_find_sym(&ext->exp_tab, sym_name);
 	if (fn == NULL) {
 		return -EINVAL;
 	}
