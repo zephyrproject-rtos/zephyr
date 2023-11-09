@@ -135,6 +135,22 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 
 
 /**
+ * @brief Different traffic states of the LwM2M socket.
+ *
+ * This information can be used to give hints for the network interface
+ * that can decide what kind of power management should be used.
+ *
+ * These hints are given from CoAP layer messages, so usage of DTLS might affect the
+ * actual number of expected datagrams.
+ */
+enum lwm2m_socket_states {
+	LWM2M_SOCKET_STATE_ONGOING,	 /**< Ongoing traffic is expected. */
+	LWM2M_SOCKET_STATE_ONE_RESPONSE, /**< One response is expected for the next message. */
+	LWM2M_SOCKET_STATE_LAST,	 /**< Next message is the last one. */
+	LWM2M_SOCKET_STATE_NO_DATA,	 /**< No more data is expected. */
+};
+
+/**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
  */
@@ -249,6 +265,14 @@ struct lwm2m_ctx {
 	 *  copied into the actual resource buffer.
 	 */
 	uint8_t validate_buf[CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE];
+
+	/**
+	 * Callback to indicate transmission states.
+	 * Client application may request LwM2M engine to indicate hints about
+	 * transmission states and use that information to control various power
+	 * saving modes.
+	 */
+	void (*set_socket_state)(int fd, enum lwm2m_socket_states state);
 };
 
 /**
