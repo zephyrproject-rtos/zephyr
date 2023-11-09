@@ -77,6 +77,8 @@
 #define OA_TC6_HDR_SIZE		      4
 #define OA_TC6_FTR_SIZE		      4
 #define OA_TC6_BUF_ALLOC_TIMEOUT      K_MSEC(10)
+#define OA_TC6_FTR_RCA_MAX	      GENMASK(4, 0)
+#define OA_TC6_FTR_TXC_MAX	      GENMASK(4, 0)
 
 /**
  * @brief OA TC6 data.
