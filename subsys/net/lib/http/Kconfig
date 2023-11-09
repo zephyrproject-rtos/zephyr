@@ -32,13 +32,96 @@ config HTTP_CLIENT
 
 config HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
-	select WARN_EXPERIMENTAL
+	select HTTP_PARSER
+	select HTTP_PARSER_URL
+	select EXPERIMENTAL
 	help
-	  HTTP server support.
-	  Note: this is a work-in-progress
+	  HTTP1 and HTTP2 server support.
+
+if HTTP_SERVER
+
+config HTTP_SERVER_STACK_SIZE
+	int "HTTP server thread stack size"
+	default 3072
+	help
+	  HTTP server thread stack size for processing RX/TX events.
+
+config HTTP_SERVER_NUM_SERVICES
+	int "Number of HTTP Server Instances"
+	default 1
+	range 1 100
+	help
+	  This setting determines the number of http services that the server supports.
+
+config HTTP_SERVER_MAX_CLIENTS
+	int "Max number of HTTP/2 clients"
+	default 3
+	range 1 100
+	help
+	  This setting determines the maximum number of HTTP/2 clients that the server can handle at once.
+
+config HTTP_SERVER_MAX_STREAMS
+	int "Max number of HTTP/2 streams"
+	default 10
+	range 1 100
+	help
+	  This setting determines the maximum number of HTTP/2 streams for each client.
+
+config HTTP_SERVER_CLIENT_BUFFER_SIZE
+	int "Client Buffer Size"
+	default 256
+	range 64 1024
+	help
+	  This setting determines the buffer size for each client.
+
+config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
+	int "Size of the buffer used for decoding Huffman-encoded strings"
+	default 256
+	range 64 1024
+	help
+	  Size of the buffer used for decoding Huffman-encoded strings when
+	  processing HPACK compressed headers. This effectively limits the
+	  maximum length of an individual HTTP header supported.
+
+config HTTP_SERVER_MAX_URL_LENGTH
+	int "Maximum HTTP URL Length"
+	default 256
+	range 32 2048
+	help
+	  This setting determines the maximum length of the HTTP URL that the server can process.
+
+config HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
+	int "Maximum HTTP Content-Type Length"
+	default 64
+	range 1 128
+	help
+	  This setting determines the maximum length of the HTTP Content-Length field.
+
+config HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT
+	int "Client inactivity timeout (seconds)"
+	default 10
+	range 1 86400
+	help
+	  This timeout specifies maximum time the client may remain inactive
+	  (i. e. not sending or receiving any data) before the server drops the
+	  connection.
+
+endif
+
+# Hidden option to avoid having multiple individual options that are ORed together
+config HTTP
+	bool
+	depends on (HTTP_PARSER_URL || HTTP_PARSER || HTTP_CLIENT || HTTP_SERVER)
+	default y
 
 module = NET_HTTP
 module-dep = NET_LOG
 module-str = Log level for HTTP client library
 module-help = Enables HTTP client code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_HTTP_SERVER
+module-dep = NET_LOG
+module-str = Log level for HTTP server library
+module-help = Enables HTTP server code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
