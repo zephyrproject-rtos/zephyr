@@ -213,7 +213,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-static inline enum llext_section llext_sect_from_mem(enum llext_mem m)
+static enum llext_section llext_sect_from_mem(enum llext_mem m)
 {
 	enum llext_section s;
 
@@ -370,7 +370,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-static inline int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
+static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 {
 	int ret = 0;
 	size_t syms_size = ldr->sym_cnt * sizeof(struct llext_symbol);
@@ -384,7 +384,7 @@ static inline int llext_allocate_symtab(struct llext_loader *ldr, struct llext *
 	return ret;
 }
 
-static inline int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
+static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 {
 	size_t ent_size = ldr->sects[LLEXT_SECT_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_SECT_SYMTAB].sh_size;
