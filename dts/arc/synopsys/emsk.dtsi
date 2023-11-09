@@ -148,6 +148,7 @@
 			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -159,6 +160,7 @@
 			clocks = <&sysclk>;
 			interrupt-parent = <&intc>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
