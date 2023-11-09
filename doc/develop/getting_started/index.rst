@@ -118,11 +118,31 @@ The current minimum required version for the main dependencies are:
 
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
+      #. After the Homebrew installation script completes, follow the on-screen
+         instructions to add the Homebrew installation to the path.
+
+         * On macOS running on Apple Silicon, this is achieved with:
+
+           .. code-block:: bash
+
+              (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
+              source ~/.zprofile
+
+         * On macOS running on Intel, use the command for Apple Silicon, but replace ``/opt/homebrew/`` with ``/usr/local/``.
+
       #. Use ``brew`` to install the required dependencies:
 
          .. code-block:: bash
 
             brew install cmake ninja gperf python3 ccache qemu dtc wget libmagic
+
+      #. Add the Homebrew Python folder to the path, in order to be able to
+         execute ``python`` and ``pip`` as well ``python3`` and ``pip3``.
+
+           .. code-block:: bash
+
+              (echo; echo 'export PATH="'$(brew --prefix)'/opt/python/libexec/bin:$PATH"') >> ~/.zprofile
+              source ~/.zprofile
 
    .. group-tab:: Windows
 
