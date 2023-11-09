@@ -135,6 +135,27 @@ config MCUMGR_GRP_OS_ECHO
 	default y
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 
+config MCUMGR_GRP_OS_DATETIME
+	bool "Support for datetime command"
+	depends on RTC
+	depends on $(dt_alias_enabled,rtc)
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	help
+	  Enables support for the datetime get and set functions, this allows for using the
+	  `rtc` alias device as a timesource from which the current time can be written or read.
+
+config MCUMGR_GRP_OS_DATETIME_MS
+	bool "Support millisecond field in datetime commands"
+	depends on MCUMGR_GRP_OS_DATETIME
+
+config MCUMGR_GRP_OS_DATETIME_HOOK
+	bool "Datetime hook"
+	depends on MCUMGR_GRP_OS_DATETIME
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Allows applications to control and get notifications of when a datetime set/get
+	  command has been issued via an MCUmgr command.
+
 config MCUMGR_GRP_OS_MCUMGR_PARAMS
 	bool "MCUMGR Parameters retrieval command"
 
