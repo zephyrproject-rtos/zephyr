@@ -153,3 +153,32 @@ uint32_t adsp_clock_source_frequency(int source)
 
 	return adsp_clk_src_info[source].frequency;
 }
+
+#ifdef CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+void soc_adsp_clock_idle_entry(void)
+{
+	k_spinlock_key_t k;
+
+	k = k_spin_lock(&lock);
+	/* If we are already at the lowest clock, there is no need to do anything */
+	if (platform_cpu_clocks[0].current_freq != platform_cpu_clocks[0].lowest_freq) {
+		select_cpu_clock_hw(platform_cpu_clocks[0].lowest_freq);
+	}
+
+	k_spin_unlock(&lock, k);
+}
+
+void soc_adsp_clock_idle_exit(void)
+{
+	k_spinlock_key_t k;
+
+	k = k_spin_lock(&lock);
+	/* If the DSP should run at a higher clock than the lowest, restore this setting */
+	if (platform_cpu_clocks[0].current_freq != platform_cpu_clocks[0].lowest_freq) {
+		select_cpu_clock_hw(platform_cpu_clocks[0].current_freq);
+	}
+
+	k_spin_unlock(&lock, k);
+}
+
+#endif /* CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING */
