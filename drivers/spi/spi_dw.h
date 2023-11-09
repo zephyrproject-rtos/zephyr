@@ -33,6 +33,7 @@ struct spi_dw_config {
 	spi_dw_config_t config_func;
 	bool serial_target;
 	uint8_t fifo_depth;
+	uint8_t max_xfer_size;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -192,12 +193,6 @@ static int reg_test_bit(uint8_t bit, uint32_t addr, uint32_t off)
 
 #define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
 #define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
-
-#if defined(CONFIG_ARC)
-#define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_16
-#else
-#define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_32
-#endif
 
 /* 0x38 represents the bits 8, 16 and 32. Knowing that 24 is bits 8 and 16
  * These are the bits were when you divide by 8, you keep the result as it is.
