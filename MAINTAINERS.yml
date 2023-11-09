@@ -840,6 +840,20 @@ Release Notes:
   labels:
     - "area: CAN"
 
+"Drivers: Charger":
+  status: maintained
+  maintainers:
+    - aaronemassey
+    - rriveramcrus
+  files:
+    - drivers/charger/
+    - dts/bindings/charger/
+    - include/zephyr/drivers/charger.h
+    - tests/drivers/charger/
+    - doc/hardware/peripherals/charger.rst
+  labels:
+    - "area: Charger"
+
 "Drivers: Clock control":
   status: maintained
   maintainers:
