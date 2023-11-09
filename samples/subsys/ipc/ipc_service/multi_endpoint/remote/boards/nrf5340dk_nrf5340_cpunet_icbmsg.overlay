@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,ipc_shm;
+	};
+
+	reserved-memory {
+		/delete-node/ memory@20070000;
+
+		sram_ipc0_rx: memory@20070000 {
+			reg = <0x20070000 0x4000>;
+		};
+
+		sram_ipc0_tx: memory@20074000 {
+			reg = <0x20074000 0x4000>;
+		};
+
+		sram_ipc1_rx: memory@20078000 {
+			reg = <0x20078000 0x4000>;
+		};
+
+		sram_ipc1_tx: memory@2007C000 {
+			reg = <0x2007C000 0x4000>;
+		};
+	};
+
+	ipc {
+		/delete-node/ ipc0;
+
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			tx-region = <&sram_ipc0_tx>;
+			rx-region = <&sram_ipc0_rx>;
+			tx-blocks = <24>;
+			rx-blocks = <16>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-icbmsg";
+			tx-region = <&sram_ipc1_tx>;
+			rx-region = <&sram_ipc1_rx>;
+			tx-blocks = <48>;
+			rx-blocks = <32>;
+			mboxes = <&mbox 2>, <&mbox 3>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+		};
+	};
+};
