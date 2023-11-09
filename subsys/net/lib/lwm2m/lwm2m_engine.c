@@ -197,6 +197,11 @@ int lwm2m_socket_suspend(struct lwm2m_ctx *client_ctx)
 		lwm2m_close_socket(client_ctx);
 		/* store back the socket handle */
 		client_ctx->sock_fd = socket_temp_id;
+
+		if (client_ctx->set_socket_state) {
+			client_ctx->set_socket_state(client_ctx->sock_fd,
+						     LWM2M_SOCKET_STATE_NO_DATA);
+		}
 	}
 
 	return ret;
@@ -659,10 +664,10 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	return 0;
 }
 
-static int socket_send_message(struct lwm2m_ctx *client_ctx)
+static int socket_send_message(struct lwm2m_ctx *ctx)
 {
 	int rc;
-	sys_snode_t *msg_node = sys_slist_get(&client_ctx->pending_sends);
+	sys_snode_t *msg_node = sys_slist_get(&ctx->pending_sends);
 	struct lwm2m_message *msg;
 
 	if (!msg_node) {
@@ -677,6 +682,32 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 
 	if (msg->type == COAP_TYPE_CON) {
 		coap_pending_cycle(msg->pending);
+	}
+
+	if (ctx->set_socket_state) {
+#if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
+		bool empty = sys_slist_is_empty(&ctx->pending_sends) &&
+			     sys_slist_is_empty(&ctx->queued_messages);
+#else
+		bool empty = sys_slist_is_empty(&ctx->pending_sends);
+#endif
+		if (coap_pendings_count(ctx->pendings, ARRAY_SIZE(ctx->pendings)) > 1) {
+			empty = false;
+		}
+
+		if (!empty) {
+			ctx->set_socket_state(ctx->sock_fd, LWM2M_SOCKET_STATE_ONGOING);
+		} else {
+			switch (msg->type) {
+			case COAP_TYPE_CON:
+				ctx->set_socket_state(ctx->sock_fd,
+						      LWM2M_SOCKET_STATE_ONE_RESPONSE);
+				break;
+			default:
+				ctx->set_socket_state(ctx->sock_fd, LWM2M_SOCKET_STATE_LAST);
+				break;
+			}
+		}
 	}
 
 	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
