@@ -41,6 +41,10 @@ struct boot_params {
 	int cpu_num;
 };
 
+// smp_init_top fn pointer for turning core on/off using psci
+arch_cpustart_t secondary_core_fn;
+
+
 /* Offsets used in reset.S */
 BUILD_ASSERT(offsetof(struct boot_params, mpid) == BOOT_PARAM_MPID_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sp) == BOOT_PARAM_SP_OFFSET);
@@ -136,7 +140,6 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 void z_arm64_secondary_start(void)
 {
 	int cpu_num = arm64_cpu_boot_params.cpu_num;
-	arch_cpustart_t fn;
 	void *arg;
 
 	__ASSERT(arm64_cpu_boot_params.mpid == MPIDR_TO_CORE(GET_MPIDR()), "");
@@ -161,8 +164,11 @@ void z_arm64_secondary_start(void)
 	irq_enable(SGI_FPU_IPI);
 #endif
 #endif
-
-	fn = arm64_cpu_boot_params.fn;
+	if(secondary_core_fn==NULL)
+	{
+	    secondary_core_fn = arm64_cpu_boot_params.fn;
+	}
+	
 	arg = arm64_cpu_boot_params.arg;
 	barrier_dsync_fence_full();
 
@@ -175,7 +181,7 @@ void z_arm64_secondary_start(void)
 	barrier_dsync_fence_full();
 	sev();
 
-	fn(arg);
+	secondary_core_fn(arg);
 }
 
 #ifdef CONFIG_SMP
