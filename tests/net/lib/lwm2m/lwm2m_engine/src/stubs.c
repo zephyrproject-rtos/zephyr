@@ -19,6 +19,7 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_send_message_async, struct lwm2m_message *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_registry_lock);
 DEFINE_FAKE_VOID_FUNC(lwm2m_registry_unlock);
 DEFINE_FAKE_VALUE_FUNC(bool, coap_pending_cycle, struct coap_pending *);
+DEFINE_FAKE_VALUE_FUNC(size_t, coap_pendings_count, struct coap_pending *, size_t);
 DEFINE_FAKE_VALUE_FUNC(int, generate_notify_message, struct lwm2m_ctx *, struct observe_node *,
 		       void *);
 DEFINE_FAKE_VALUE_FUNC(int64_t, engine_observe_shedule_next_event, struct observe_node *, uint16_t,
@@ -41,6 +42,7 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
 DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
+DEFINE_FAKE_VOID_FUNC(engine_update_tx_time);
 
 static sys_slist_t obs_obj_path_list = SYS_SLIST_STATIC_INIT(&obs_obj_path_list);
 sys_slist_t *lwm2m_obs_obj_path_list(void)
