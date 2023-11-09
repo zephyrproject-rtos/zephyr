@@ -19,6 +19,11 @@
 /** @brief Type for NXP S32 pin configuration. */
 typedef Siul2_Port_Ip_PinSettingsConfig pinctrl_soc_pin_t;
 
+/* Alias for compatibility with previous RTD versions */
+#if !defined(FEATURE_SIUL2_MAX_NUMBER_OF_INPUT) && defined(FEATURE_SIUL2_MAX_NUMBER_OF_INPUT_U8)
+#define FEATURE_SIUL2_MAX_NUMBER_OF_INPUT FEATURE_SIUL2_MAX_NUMBER_OF_INPUT_U8
+#endif
+
 #if defined(SIUL2_PORT_IP_MULTIPLE_SIUL2_INSTANCES)
 #define NXP_S32_SIUL2_IDX(n)								\
 	n == 0 ? IP_SIUL2_0 : (n == 1 ? IP_SIUL2_1 : (					\
