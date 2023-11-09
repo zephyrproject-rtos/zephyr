@@ -237,6 +237,26 @@ int oa_tc6_update_buf_info(struct oa_tc6 *tc6)
 	tc6->rca = FIELD_GET(OA_BUFSTS_RCA, val);
 	tc6->txc = FIELD_GET(OA_BUFSTS_TXC, val);
 
+	/*
+	 * There is a mismatch in the max value of RBA(RCA) and TXC provided by the
+	 * OA TC6 standard.
+	 *
+	 * The OA_BUFSTS register has 8 bits for RBA(RCA) and TXC (max value is 0x30)
+	 *
+	 * However, with footer, the RBA(RCA) and TXC are saturated to 0x1F maximal
+	 * value (due to 32 bit constrain of footer size).
+	 *
+	 * To avoid any issues, the number read directly from OA_BUFSTS is saturated
+	 * as well.
+	 */
+	if (tc6->rca >= OA_TC6_FTR_RCA_MAX) {
+		tc6->rca = OA_TC6_FTR_RCA_MAX;
+	}
+
+	if (tc6->txc >= OA_TC6_FTR_TXC_MAX) {
+		tc6->txc = OA_TC6_FTR_TXC_MAX;
+	}
+
 	return 0;
 }
 
