@@ -360,7 +360,7 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 		if (stt == STT_FUNC && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
-			ldr->sym_cnt++;
+			ext->sym_tab.sym_cnt++;
 		} else {
 			LOG_DBG("unhandled symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
@@ -372,16 +372,14 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 
 static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 {
-	int ret = 0;
-	size_t syms_size = ldr->sym_cnt * sizeof(struct llext_symbol);
 	struct llext_symtable *sym_tab = &ext->sym_tab;
+	size_t syms_size = sym_tab->sym_cnt * sizeof(struct llext_symbol);
 
 	sym_tab->syms = k_heap_alloc(&llext_heap, syms_size, K_NO_WAIT);
-	sym_tab->sym_cnt = ldr->sym_cnt;
-	memset(sym_tab->syms, 0, ldr->sym_cnt * sizeof(struct llext_symbol));
+	memset(sym_tab->syms, 0, syms_size);
 	ext->mem_size += syms_size;
 
-	return ret;
+	return 0;
 }
 
 static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
@@ -570,7 +568,6 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext)
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 	ldr->sect_cnt = 0;
-	ldr->sym_cnt = 0;
 
 	size_t sect_map_sz = ldr->hdr.e_shnum * sizeof(uint32_t);
 
