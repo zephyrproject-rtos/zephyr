@@ -374,11 +374,11 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 {
 	int ret = 0;
 	size_t syms_size = ldr->sym_cnt * sizeof(struct llext_symbol);
+	struct llext_symtable *sym_tab = &ext->sym_tab;
 
-	ext->sym_tab.syms = k_heap_alloc(&llext_heap, syms_size,
-				       K_NO_WAIT);
-	ext->sym_tab.sym_cnt = ldr->sym_cnt;
-	memset(ext->sym_tab.syms, 0, ldr->sym_cnt * sizeof(struct llext_symbol));
+	sym_tab->syms = k_heap_alloc(&llext_heap, syms_size, K_NO_WAIT);
+	sym_tab->sym_cnt = ldr->sym_cnt;
+	memset(sym_tab->syms, 0, ldr->sym_cnt * sizeof(struct llext_symbol));
 	ext->mem_size += syms_size;
 
 	return ret;
@@ -389,6 +389,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 	size_t ent_size = ldr->sects[LLEXT_SECT_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_SECT_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
+	struct llext_symtable *sym_tab = &ext->sym_tab;
 	elf_sym_t sym;
 	int i, j, ret;
 	size_t pos;
@@ -418,12 +419,14 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 		if (stt == STT_FUNC && stb == STB_GLOBAL && sect != SHN_UNDEF) {
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-			ext->sym_tab.syms[j].name = name;
-			ext->sym_tab.syms[j].addr =
+			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
+
+			sym_tab->syms[j].name = name;
+			sym_tab->syms[j].addr =
 				(void *)((uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
 					 + sym.st_value);
 			LOG_DBG("function symbol %d name %s addr %p",
-				j, name, ext->sym_tab.syms[j].addr);
+				j, name, sym_tab->syms[j].addr);
 			j++;
 		}
 	}
