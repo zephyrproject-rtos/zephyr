@@ -6,73 +6,51 @@ common:
 tests:
   drivers.pwm.cc13xx_cc26xx_timer.build:
     platform_allow: cc1352p1_launchxl
-    tags: pwm_cc13xx_cc26xx_timer
   drivers.pwm.gecko.build:
     platform_allow: efr32_radio_brd4250b
-    tags: pwm_gecko
   drivers.pwm.imx.build:
     platform_allow: colibri_imx7d_m4
-    tags: pwm_imx
   drivers.pwm.litex.build:
     platform_allow: litex_vexriscv
-    tags: pwm_litex
   drivers.pwm.mcux.ftm.build:
     platform_allow: frdm_k22f
-    tags: pwm_mcux_ftm
   drivers.pwm.mcux.pwt.build:
     platform_allow: twr_ke18f
-    tags: pwm_mcux_pwt
     extra_configs:
       - CONFIG_PWM_CAPTURE=y
   drivers.pwm.mcux.tpm.build:
     platform_allow: frdm_kw41z
-    tags: pwm_mcux_tpm
   drivers.pwm.mcux.build:
     platform_allow: mimxrt1064_evk
-    tags: pwm_mcux
   drivers.pwm.mcux.sctimer.build:
     platform_allow: mimxrt685_evk_cm33
-    tags: pwm_mcux_sctimer
   drivers.pwm.rv32m1.tpm.build:
     platform_allow: rv32m1_vega_ri5cy
-    tags: pwm_rv32m1_tpm
   drivers.pwm.sifive.build:
     platform_allow: hifive1_revb
-    tags: pwm_sifive
   drivers.pwm.npcx.build:
     platform_allow: npcx7m6fb_evb
-    tags: pwm_npcx
   drivers.pwm.nrf.sw.build:
     platform_allow: nrf51dk_nrf51422
-    tags: pwm_nrf5_sw
   drivers.pwm.nrf.build:
     platform_allow: nrf52840dk_nrf52840
-    tags: pwm_nrfx
   drivers.pwm.pca9685.build:
     platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=adafruit_pca9685
-    tags: pwm_pca9685
   drivers.pwm.sam0.tcc.build:
     platform_allow: atsame54_xpro
-    tags: pwm_sam0_tcc
   drivers.pwm.build.sam:
     platform_allow:
       - sam_e70_xplained
       - sam_v71b_xult
-    tags: pwm_sam
   drivers.pwm.stm32.build:
     platform_allow: disco_l475_iot1
-    tags: pwm_stm32
   drivers.pwm.xec.build:
     platform_allow: mec15xxevb_assy6853
-    tags: pwm_xec
   drivers.pwm.build.xlnx:
     platform_allow: arty_a7_arm_designstart_m1
-    tags: pwm_xlnx_axi_timer
   drivers.pwm.build.test:
     platform_allow: qemu_cortex_m3
-    tags: pwm_test
   drivers.pwm.max31790.build:
     platform_allow: nucleo_f429zi
     extra_args: DTC_OVERLAY_FILE=max31790.overlay
-    tags: pwm_max31790
