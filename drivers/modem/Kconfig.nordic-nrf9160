@@ -1,0 +1,110 @@
+# Copyright (c) 2023 Sendrato B.V.
+# SPDX-License-Identifier: Apache-2.0
+
+# Nordic nRf9160 driver options
+
+config MODEM_NORDIC_NRF9160
+	bool "Nordic nRF9160 modem driver"
+	select MODEM_MODULES
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_BACKEND_UART
+	select MODEM_SOCKET
+	select RING_BUFFER
+	select NET_SOCKETS_OFFLOAD
+	help
+		Choose this setting to enable Nordic nRF9160 modem driver.
+		The driver is implemented assuming the nRf9160 is running
+		the Nordic's Serial LTE Monitor application available in
+		nRF SDK.
+
+if MODEM_NORDIC_NRF9160
+
+config MODEM_NORDIC_NRF9160_AUTOINIT
+	bool "Config to disable driver autoinit, will be necessary to call pm_device_action_run(RESUME) and net_if_up()"
+	default y
+
+config MODEM_NORDIC_NRF9160_RX_RINGBUF_SIZE
+	int "RX ringbuffer size, used to received data from sockets"
+	default 512
+	help
+		This ring buffer is used when receiving data from a socket.
+		From the modem we can only get all the data at once, this way
+		it's possible to return only the amount of data that has been
+		requested by the application.
+
+config MODEM_NORDIC_NRF9160_UART_RX_BUF_SIZE
+	int "RX buffer used by uart backend to receive data from the modem"
+	default 512
+	help
+		If using interrupt based UART the buffer will be split in:
+		 - 1/2 Receive (ring)buffer 0
+		 - 1/2 Receive (ring)buffer 1
+		If using async UART the buffer will be split in:
+		 - 1/4 UART receive buffer 0
+		 - 1/4 UART receive buffer 1
+		 - 2/4 Received data (ring)buffer
+
+config MODEM_NORDIC_NRF9160_UART_TX_BUF_SIZE
+	int "TX buffer used by uart backend to transmit data to the modem"
+	default 1024
+	help
+		The buffer will be entirely used as UART transmit buffer
+
+config MODEM_NRF9160_APN
+	string "APN"
+	default ""
+
+config MODEM_NORDIC_NRF9160_INIT_PRIORITY
+	int "Nordic nRF9160 driver init priority"
+	default 80
+	help
+		Nordic nRF9160 device driver initialization priority.
+		Do not mess with it unless you know what you are doing.
+		Note that the priority needs to be lower than the net stack
+		so that it can start before the networking sub-system.
+
+config MODEM_NORDIC_NRF9160_NET_IF_INIT_PRIORITY
+	int "Nordic nRF9160 network interface init priority"
+	default 79
+	help
+		Nordic nRF9160 network interface initialization priority.
+		This priority value must be lower than
+		MODEM_NORDIC_NRF9160_INIT_PRIORITY to be able to have the
+		network interface automatically enabled at boot. The device
+		associated to the network interface must be initialized
+		for the net_if_up() API to succeed, this config controls
+		the init priority of such device.
+
+config MODEM_NORDIC_NRF9160_WORKQ_STACK_SIZE
+	int "Modem work queue stack size"
+	default 768
+
+config MODEM_NORDIC_NRF9160_WORKQ_PRV_INIT_PRIORITY
+    int "Modem Nordic nRF9160 driver thread priority (0 - CONFIG_NUM_PREEMPT_PRIORITIES)"
+    default 7
+    help
+        Priority of the Nordic nRf9160 driver workq in the Zephyr stack upon initialisation.
+
+choice MODEM_NRF9160_NETWORK_MODE
+	prompt "Network mode used during modem initialization"
+	default MODEM_NRF9160_MODE_LTE_ONLY
+	help
+		nRF9160 modem can be configured to enable different
+		network modes. A combination of LTE, NB-IoT and GNSS
+		can be selected, with the possibility to specify
+		a preference. In this implementation GNSS is always
+		enabled.
+
+config MODEM_NRF9160_MODE_LTE_ONLY
+	bool "Network mode LTE-M only"
+
+config MODEM_NRF9160_MODE_DUAL
+	bool "Network mode dual LTE-M and NB-IOT"
+
+config MODEM_NRF9160_MODE_DUAL_LTE_PREF
+	bool "Network mode dual LTE-M and NB-IOT, with preference for LTE-M"
+
+endchoice
+
+endif

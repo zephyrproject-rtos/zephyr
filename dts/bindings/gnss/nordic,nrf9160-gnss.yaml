@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Sendrato B.V.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF9160 GNSS modem
+
+compatible: "nordic,nrf9160-gnss"
+
+include:
+  - uart-device.yaml
+  - gnss-pps.yaml
