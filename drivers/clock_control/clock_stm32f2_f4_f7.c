@@ -101,7 +101,8 @@ void config_pll_sysclock(void)
 __unused
 void config_plli2s(void)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_plli2s_clock)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_plli2s_clock) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f7_plli2s_clock)
 	LL_RCC_PLLI2S_ConfigDomain_I2S(get_pll_source(),
 				       pllm(STM32_PLLI2S_M_DIVISOR),
 				       STM32_PLLI2S_N_MULTIPLIER,
