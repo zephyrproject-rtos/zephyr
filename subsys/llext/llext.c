@@ -861,8 +861,11 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 
 		ldr->hdr = ehdr;
 		ret = do_llext_load(ldr, *ext, ldr_parm);
-		if (ret < 0)
+		if (ret < 0) {
+			k_heap_free(&llext_heap, *ext);
+			*ext = NULL;
 			return ret;
+		}
 
 		strncpy((*ext)->name, name, sizeof((*ext)->name));
 		(*ext)->name[sizeof((*ext)->name) - 1] = '\0';
