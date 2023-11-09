@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IPC_SERVICE_BACKEND_ICBMSG
+	bool "ICMSG backend with dynamically allocated buffers"
+	default y
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICBMSG_ENABLED
+	select IPC_SERVICE_ICMSG
+	help
+	  Choosing this backend results in multi endpoint implementation based
+	  on dynamically allocated buffers. References to them are send over
+	  ICMsg circular buffer.
+
+if IPC_SERVICE_BACKEND_ICBMSG
+
+config IPC_SERVICE_BACKEND_ICBMSG_NUM_EP
+	int "Endpoints count"
+	range 1 254
+	default 4
+	help
+	  Number of endpoints supported by the ICBMsg IPC service
+	  backend. The number of endpoints are applied to all the instances,
+	  so this value should be maximum number among all the instances.
+
+module = IPC_SERVICE_BACKEND_ICBMSG
+module-str = ICMSG backend with separate buffers
+module-help = Sets log level for ICMsg backend with buffers
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # IPC_SERVICE_BACKEND_ICBMSG
