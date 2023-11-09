@@ -2,7 +2,7 @@ tests:
   drivers.clock.clock_control_nrf5:
     tags:
       - drivers
-      - cloc
+      - clock_control
     platform_allow:
       - nrf51dk_nrf51422
       - nrf52dk_nrf52832
@@ -13,7 +13,7 @@ tests:
   drivers.clock.clock_control_nrf5_lfclk_rc:
     tags:
       - drivers
-      - clock
+      - clock_control
     platform_allow:
       - nrf51dk_nrf51422
       - nrf52dk_nrf52832
