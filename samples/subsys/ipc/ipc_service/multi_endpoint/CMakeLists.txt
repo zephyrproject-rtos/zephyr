@@ -15,5 +15,3 @@ endif()
 project(ipc_service)
 
 target_sources(app PRIVATE src/main.c)
-
-include(ExternalProject)
