@@ -57,4 +57,28 @@ static ALWAYS_INLINE void z_idelay(int n)
 	}
 }
 
+#ifdef CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+/**
+ * @brief Reduces the clock frequency when the DSP enters idle state.
+ *
+ * This function is intended to be called when the DSP core is about to enter
+ * an idle state. It checks if the current clock frequency is not already at its
+ * lowest setting and, if not, reduces it to the lowest frequency to save power.
+ *
+ * @see soc_adsp_clock_idle_exit()
+ */
+void soc_adsp_clock_idle_entry(void);
+
+/**
+ * @brief Restores the clock frequency when the DSP exits idle state.
+ *
+ * This function should be called when the DSP core exits an idle state. It checks
+ * if the clock frequency was previously reduced by adsp_clock_idle_entry. If so,
+ * it restores the clock frequency to its previous setting.
+ *
+ * @see soc_adsp_clock_idle_entry()
+ */
+void soc_adsp_clock_idle_exit(void);
+#endif /* CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING */
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_COMMON_SOC_H_ */

@@ -9,11 +9,13 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/state.h>
 #include <soc_util.h>
 #include <zephyr/cache.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
+#include <pm_data.h>
 #include "manifest.h"
 
 /* Important note about linkage:
@@ -154,6 +156,12 @@ __imr void boot_core0(void)
 	parse_manifest();
 	sys_cache_data_flush_all();
 
+#if CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+	/* Clock switching lock needs to be incremented for each active core.
+	 * This increment is specifically for the primary core.
+	 */
+	intel_adsp_acquire_clock_switch_lock(pm_state_custom_data_get(PM_STATE_ACTIVE, 0));
+#endif /* CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING */
 	xtensa_vecbase_lock();
 
 	/* Zephyr! */

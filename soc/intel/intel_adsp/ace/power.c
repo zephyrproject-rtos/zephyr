@@ -19,6 +19,7 @@
 #include <zephyr/drivers/mm/mm_drv_intel_adsp_mtl_tlb.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <mem_window.h>
+#include <pm_data.h>
 
 #define LPSRAM_MAGIC_VALUE      0x13579BDF
 #define LPSCTL_BATTR_MASK       GENMASK(16, 12)
@@ -439,11 +440,25 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_PM */
 
 #ifdef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#if CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+static struct k_spinlock idle_lock;
+#endif
 
 __no_optimization
 void arch_cpu_idle(void)
 {
 	uint32_t cpu = arch_proc_id();
+#if CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+	k_spinlock_key_t k;
+	struct intel_adsp_ace_pm_data *data =
+		(struct intel_adsp_ace_pm_data *) pm_state_custom_data_get(PM_STATE_ACTIVE, 0);
+
+	k = k_spin_lock(&idle_lock);
+	if (data && intel_adsp_release_clock_switch_lock(data))
+		soc_adsp_clock_idle_entry();
+
+	k_spin_unlock(&idle_lock, k);
+#endif /* CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING */
 
 	sys_trace_idle();
 
@@ -456,6 +471,13 @@ void arch_cpu_idle(void)
 	}
 
 	__asm__ volatile ("waiti 0");
+#if CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING
+	k = k_spin_lock(&idle_lock);
+	if (data && intel_adsp_acquire_clock_switch_lock(data))
+		soc_adsp_clock_idle_exit();
+
+	k_spin_unlock(&idle_lock, k);
+#endif /* CONFIG_ADSP_DYNAMIC_CLOCK_SWITCHING */
 }
 
 #endif /* CONFIG_ARCH_CPU_IDLE_CUSTOM */
