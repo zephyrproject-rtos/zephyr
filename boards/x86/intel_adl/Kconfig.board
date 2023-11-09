@@ -12,3 +12,9 @@ config BOARD_INTEL_ADL_RVP
 	depends on SOC_ALDER_LAKE
 	select X86_64
 	select HAS_COVERAGE_SUPPORT
+
+config BOARD_UP_SQUARED_PRO_7000
+	bool "UP SQUARED PRO 7000 board"
+	depends on SOC_ALDER_LAKE
+	select X86_64
+	select HAS_COVERAGE_SUPPORT
