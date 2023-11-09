@@ -253,6 +253,25 @@ static void rd_client_event(struct lwm2m_ctx *client,
 	}
 }
 
+static void socket_state(int fd, enum lwm2m_socket_states state)
+{
+	(void) fd;
+	switch (state) {
+	case LWM2M_SOCKET_STATE_ONGOING:
+		LOG_DBG("LWM2M_SOCKET_STATE_ONGOING");
+		break;
+	case LWM2M_SOCKET_STATE_ONE_RESPONSE:
+		LOG_DBG("LWM2M_SOCKET_STATE_ONE_RESPONSE");
+		break;
+	case LWM2M_SOCKET_STATE_LAST:
+		LOG_DBG("LWM2M_SOCKET_STATE_LAST");
+		break;
+	case LWM2M_SOCKET_STATE_NO_DATA:
+		LOG_DBG("LWM2M_SOCKET_STATE_NO_DATA");
+		break;
+	}
+}
+
 static void observe_cb(enum lwm2m_observe_event event,
 		       struct lwm2m_obj_path *path, void *user_data)
 {
@@ -367,6 +386,7 @@ int main(void)
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	client_ctx.tls_tag = CONFIG_LWM2M_APP_TLS_TAG;
 #endif
+	client_ctx.set_socket_state = socket_state;
 
 	/* client_ctx.sec_obj_inst is 0 as a starting point */
 	lwm2m_rd_client_start(&client_ctx, endpoint, flags, rd_client_event, observe_cb);

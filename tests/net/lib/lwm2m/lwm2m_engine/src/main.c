@@ -13,10 +13,11 @@
 #include "lwm2m_rd_client.h"
 
 #include "stubs.h"
-#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 #include "timer_model.h"
 #endif
 
+#define LOG_LEVEL	LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(lwm2m_engine_test);
 
 DEFINE_FFF_GLOBALS;
@@ -67,7 +68,7 @@ static void test_service(struct k_work *work)
 
 static void setup(void *data)
 {
-#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 	/* It is enough that some slow-down is happening on sleeps, it does not have to be
 	 * real time
 	 */
@@ -466,4 +467,71 @@ ZTEST(lwm2m_engine, test_security)
 	zassert_equal(tls_credential_add_fake.arg1_history[1], TLS_CREDENTIAL_PRIVATE_KEY);
 	zassert_equal(tls_credential_add_fake.arg1_history[2], TLS_CREDENTIAL_CA_CERTIFICATE);
 	zassert_equal(lwm2m_engine_stop(&ctx), 0);
+}
+
+static enum lwm2m_socket_states last_state;
+
+static void socket_state(int fd, enum lwm2m_socket_states state)
+{
+	(void) fd;
+	last_state = state;
+}
+
+ZTEST(lwm2m_engine, test_socket_state)
+{
+	int ret;
+	struct lwm2m_ctx ctx = {
+		.remote_addr.sa_family = AF_INET,
+		.sock_fd = -1,
+		.set_socket_state = socket_state,
+	};
+	struct lwm2m_message msg1 = {
+		.ctx = &ctx,
+		.type = COAP_TYPE_CON,
+	};
+	struct lwm2m_message msg2 = msg1;
+	struct lwm2m_message ack = {
+		.ctx = &ctx,
+		.type = COAP_TYPE_ACK,
+	};
+
+	sys_slist_init(&ctx.pending_sends);
+	ret = lwm2m_engine_start(&ctx);
+	zassert_equal(ret, 0);
+
+	/* One confimable in queue, should cause ONE_RESPONSE status */
+	coap_pendings_count_fake.return_val = 1;
+	sys_slist_append(&ctx.pending_sends, &msg1.node);
+	set_socket_events(ZSOCK_POLLOUT);
+	k_sleep(K_MSEC(100));
+	zassert_equal(last_state, LWM2M_SOCKET_STATE_ONE_RESPONSE);
+
+	/* More than one messages in queue, not empty, should cause ONGOING */
+	coap_pendings_count_fake.return_val = 2;
+	sys_slist_append(&ctx.pending_sends, &msg1.node);
+	sys_slist_append(&ctx.pending_sends, &msg2.node);
+	set_socket_events(ZSOCK_POLLOUT);
+	k_sleep(K_MSEC(100));
+	zassert_equal(last_state, LWM2M_SOCKET_STATE_ONGOING);
+
+	/* Last out, while waiting for ACK to both, should still cause ONGOING */
+	coap_pendings_count_fake.return_val = 2;
+	set_socket_events(ZSOCK_POLLOUT);
+	k_sleep(K_MSEC(100));
+	zassert_equal(last_state, LWM2M_SOCKET_STATE_ONGOING);
+
+	/* Only one Ack transmiting, nothing expected back -> LAST */
+	coap_pendings_count_fake.return_val = 0;
+	sys_slist_append(&ctx.pending_sends, &ack.node);
+	set_socket_events(ZSOCK_POLLOUT);
+	k_sleep(K_MSEC(100));
+	zassert_equal(last_state, LWM2M_SOCKET_STATE_LAST);
+
+	/* Socket suspended (as in QUEUE_RX_OFF), should cause NO_DATA */
+	ret = lwm2m_socket_suspend(&ctx);
+	zassert_equal(ret, 0);
+	zassert_equal(last_state, LWM2M_SOCKET_STATE_NO_DATA);
+
+	ret = lwm2m_engine_stop(&ctx);
+	zassert_equal(ret, 0);
 }
