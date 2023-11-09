@@ -11,7 +11,7 @@ config SOC_TOOLCHAIN_NAME
 	string
 	default "nxp_imx8m_adsp"
 
-# if SOC_MIMX8M_ADSP
+if SOC_MIMX8M_ADSP
 
 config SOC
 	string
@@ -23,12 +23,15 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000
 
+config DCACHE_LINE_SIZE
+	default 128
+
 config DYNAMIC_INTERRUPTS
 	default y
 
-config LOG
-	default y
+config GEN_IRQ_VECTOR_TABLE
+	default n
 
-# endif # SOC_MIMX8M_ADSP
+endif # SOC_MIMX8M_ADSP
 
 endif # SOC_SERIES_NXP_IMX8M
