@@ -95,6 +95,7 @@
 			reg = <0xf0008000 0x1000>;
 			clocks = <&spiclk>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -112,6 +113,7 @@
 			reg = <0xf1000000 0x1000>;
 			clocks = <&spiclk>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -137,6 +139,7 @@
 			interrupt-parent = <&intc>;
 			aux-reg;
 			fifo-depth = <16>;
+			max-xfer-size = <16>;
 		};
 
 		/* DFSS-SPI1 */
@@ -151,6 +154,7 @@
 			interrupt-parent = <&intc>;
 			aux-reg;
 			fifo-depth = <16>;
+			max-xfer-size = <16>;
 		};
 	};
 };

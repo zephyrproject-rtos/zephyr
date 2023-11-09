@@ -244,6 +244,7 @@
 			#size-cells = <0>;
 			reg = <0xfff00000 0x1000>;
 			fifo-depth = <256>;
+			max-xfer-size = <32>;
 			interrupts = <0 154 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "okay";
@@ -255,6 +256,7 @@
 			#size-cells = <0>;
 			reg = <0xfff01000 0x1000>;
 			fifo-depth = <256>;
+			max-xfer-size = <32>;
 			interrupts = <0 155 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "disabled";

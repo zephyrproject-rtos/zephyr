@@ -185,6 +185,7 @@
 			reg = <0xf0020000 0x1000>;
 			interrupts = <40 1>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			status = "disabled";
 		};
 
@@ -195,6 +196,7 @@
 			reg = <0xf0021000 0x1000>;
 			interrupts = <41 1>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			status = "disabled";
 		};
 
@@ -205,6 +207,7 @@
 			reg = <0xf0022000 0x1000>;
 			interrupts = <42 1>;
 			fifo-depth = <32>;
+			max-xfer-size = <16>;
 			status = "disabled";
 		};
 

@@ -34,3 +34,13 @@ properties:
       True if it is a Serial Target. False if it is a Serial
       Master. Corresponds to SSI_IS_MASTER of the Designware
       Synchronous Serial Interface.
+
+  max-xfer-size:
+    type: int
+    description: |
+      Maximum transfer size. Corresponds to SPI_MAX_XFER_SIZE
+      of the DesignWare Synchronous Serial Interface. Only
+      values of 16 and 32 are supported.
+    enum:
+      - 16
+      - 32
