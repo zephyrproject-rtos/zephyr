@@ -1,7 +1,7 @@
 common:
   tags:
     - drivers
-    - clock
+    - clock_control
   integration_platforms:
     - nrf51dk_nrf51422
 tests:

@@ -2,7 +2,7 @@ tests:
   drivers.clock.nrf_onoff_and_bt:
     tags:
       - drivers
-      - clock
+      - clock_control
     platform_allow:
       - nrf51dk_nrf51422
       - nrf52dk_nrf52832
