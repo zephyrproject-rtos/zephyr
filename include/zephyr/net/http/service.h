@@ -44,7 +44,7 @@ struct http_resource_desc {
 	const STRUCT_SECTION_ITERABLE_ALTERNATE(http_resource_desc_##_service, http_resource_desc, \
 						_name) = {                                         \
 		.resource = _resource,                                                             \
-		.detail = (_detail),                                                               \
+		.detail = (void *)(_detail),                                                       \
 	}
 
 struct http_service_desc {
@@ -55,12 +55,14 @@ struct http_service_desc {
 	size_t backlog;
 	struct http_resource_desc *res_begin;
 	struct http_resource_desc *res_end;
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	const sec_tag_t *sec_tag_list;
 	size_t sec_tag_list_size;
+#endif
 };
 
-#define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin, \
-				_res_end, ...)                                                \
+#define __z_http_service_define(_name, _host, _port, _concurrent, _backlog, _detail, _res_begin,   \
+				_res_end, ...)                                                     \
 	static const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                         \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
@@ -69,10 +71,12 @@ struct http_service_desc {
 		.backlog = (_backlog),                                                             \
 		.res_begin = (_res_begin),                                                         \
 		.res_end = (_res_end),                                                             \
-		.sec_tag_list = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (NULL),               \
-					    (GET_ARG_N(1, __VA_ARGS__))),                           \
-		.sec_tag_list_size = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (0),             \
-						 (GET_ARG_N(1, GET_ARGS_LESS_N(1, __VA_ARGS__)))), \
+		COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,                                        \
+			    (.sec_tag_list = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (NULL),  \
+							 (GET_ARG_N(1, __VA_ARGS__))),), ())       \
+		COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,                                        \
+			    (.sec_tag_list_size = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (0),\
+					     (GET_ARG_N(1, GET_ARGS_LESS_N(1, __VA_ARGS__))))), ())\
 	}
 
 /**
