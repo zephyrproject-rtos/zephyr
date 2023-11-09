@@ -154,8 +154,9 @@ The current minimum required version for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      These instructions must be run in a ``cmd.exe`` command prompt. The
-      required commands differ on PowerShell.
+      These instructions must be run in a ``cmd.exe`` command prompt terminal window.
+      In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
+      application from the Microsoft Store. The required commands differ on PowerShell.
 
       These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
       you can install dependencies from their respective websites and ensure
@@ -168,9 +169,9 @@ The current minimum required version for the main dependencies are:
 
       #. `Install chocolatey`_.
 
-      #. Open a ``cmd.exe`` window as **Administrator**. To do so, press the Windows key,
-         type "cmd.exe", right-click the result, and choose :guilabel:`Run as
-         Administrator`.
+      #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
+         type ``cmd.exe``, right-click the :guilabel:`Command Prompt`` search result, and choose
+         :guilabel:`Run as Administrator`.
 
       #. Disable global confirmation to avoid having to confirm the
          installation of individual programs:
@@ -191,7 +192,7 @@ The current minimum required version for the main dependencies are:
             As of November 2023, Python 3.12 is not recommended for Zephyr development on Windows,
             as some required Python dependencies may be difficult to install.
 
-      #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
+      #. Close the terminal window.
 
 .. _Chocolatey: https://chocolatey.org/
 .. _Install chocolatey: https://chocolatey.org/install
@@ -411,6 +412,8 @@ additional Python dependencies.
 
          .. group-tab:: Install within virtual environment
 
+            #. Open a ``cmd.exe`` terminal window **as a regular user**
+
             #. Create a new virtual environment:
 
                .. code-block:: bat
@@ -463,6 +466,8 @@ additional Python dependencies.
                   pip install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
          .. group-tab:: Install globally
+
+            #. Open a ``cmd.exe`` terminal window **as a regular user**
 
             #. Install west:
 
@@ -618,7 +623,7 @@ that are used to emulate, flash and debug Zephyr applications.
 
       .. _windows_zephyr_sdk:
 
-      #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
+      #. Open a ``cmd.exe`` terminal window **as a regular user**
 
       #. Download the `Zephyr SDK bundle
          <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
