@@ -30,6 +30,8 @@ struct gpio_kbd_matrix_config {
 struct gpio_kbd_matrix_data {
 	struct input_kbd_matrix_common_data common;
 	uint32_t last_col_state;
+	bool direct_read;
+	bool direct_write;
 };
 
 INPUT_KBD_STRUCT_CHECK(struct gpio_kbd_matrix_config,
@@ -48,6 +50,19 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 		state = BIT_MASK(common->col_size);
 	} else {
 		state = BIT(col);
+	}
+
+	if (data->direct_write) {
+		const struct gpio_dt_spec *gpio0 = &cfg->col_gpio[0];
+		gpio_port_pins_t gpio_mask;
+		gpio_port_value_t gpio_val;
+
+		gpio_mask = BIT_MASK(common->col_size) << gpio0->pin;
+		gpio_val = state << gpio0->pin;
+
+		gpio_port_set_masked(gpio0->port, gpio_mask, gpio_val);
+
+		return;
 	}
 
 	for (int i = 0; i < common->col_size; i++) {
@@ -71,7 +86,17 @@ static kbd_row_t gpio_kbd_matrix_read_row(const struct device *dev)
 {
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
+	struct gpio_kbd_matrix_data *data = dev->data;
 	int val = 0;
+
+	if (data->direct_read) {
+		const struct gpio_dt_spec *gpio0 = &cfg->row_gpio[0];
+		gpio_port_value_t gpio_val;
+
+		gpio_port_get(gpio0->port, &gpio_val);
+
+		return (gpio_val >> gpio0->pin) & BIT_MASK(common->row_size);
+	}
 
 	for (int i = 0; i < common->row_size; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->row_gpio[i];
@@ -102,10 +127,27 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 	}
 }
 
+static bool gpio_kbd_matrix_is_gpio_coherent(
+		const struct gpio_dt_spec *gpio, int gpio_count)
+{
+	const struct gpio_dt_spec *gpio0 = &gpio[0];
+
+	for (int i = 1; i < gpio_count; i++) {
+		if (gpio[i].port != gpio0->port ||
+		    gpio[i].dt_flags != gpio0->dt_flags ||
+		    gpio[i].pin != gpio0->pin + i) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int gpio_kbd_matrix_init(const struct device *dev)
 {
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
+	struct gpio_kbd_matrix_data *data = dev->data;
 	int ret;
 	int i;
 
@@ -151,6 +193,17 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 			return ret;
 		}
 	}
+
+	data->direct_read = gpio_kbd_matrix_is_gpio_coherent(
+			cfg->row_gpio, common->row_size);
+
+	if (cfg->col_drive_inactive) {
+		data->direct_write = gpio_kbd_matrix_is_gpio_coherent(
+				cfg->col_gpio, common->col_size);
+	}
+
+	LOG_DBG("direct_read: %d direct_write: %d",
+		data->direct_read, data->direct_write);
 
 	gpio_kbd_matrix_set_detect_mode(dev, true);
 
