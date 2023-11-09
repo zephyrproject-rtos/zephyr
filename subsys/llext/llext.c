@@ -376,6 +376,9 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	size_t syms_size = sym_tab->sym_cnt * sizeof(struct llext_symbol);
 
 	sym_tab->syms = k_heap_alloc(&llext_heap, syms_size, K_NO_WAIT);
+	if (!sym_tab->syms) {
+		return -ENOMEM;
+	}
 	memset(sym_tab->syms, 0, syms_size);
 	ext->mem_size += syms_size;
 
