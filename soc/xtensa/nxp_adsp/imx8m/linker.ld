@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@ OUTPUT_ARCH(xtensa)
 
 #include <zephyr/devicetree.h>
 #include <xtensa/config/core-isa.h>
-#include <soc/memory.h>
+#include <memory.h>
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/linker/linker-defs.h>
