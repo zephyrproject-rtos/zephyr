@@ -39,5 +39,12 @@ properties:
     required: true
     description: |
       GPIO for the keyboard matrix columns, supports up to 32 different GPIOs.
-      The pins will be driven according to the GPIO_ACTIVE_HIGH or
-      GPIO_ACTIVE_LOW flags when selected, high impedance when not selected.
+      When unselected, this pin will be either driven to inactive state or
+      configured to high impedance (input) depending on the col-drive-inactive
+      property.
+
+  col-drive-inactive:
+    type: boolean
+    description: |
+      If enabled, unselected column GPIOs will be driven to inactive state.
+      Default to configure unselected column GPIOs to high impedance.
