@@ -1,0 +1,16 @@
+- scenarios:
+  - dummy.agnostic.group1.subgroup1
+  comment: >
+    test all platforms
+
+- platforms:
+  - frdm_k64f
+  comment: >
+    test frdm_k64f
+
+- scenarios:
+  - dummy.agnostic.group1.subgroup2
+  platforms:
+  - qemu_x86_64
+  comment: >
+    test qemu_x86_64
