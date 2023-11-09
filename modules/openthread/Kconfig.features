@@ -92,6 +92,13 @@ config OPENTHREAD_CSL_RECEIVER
 	help
 	  Enable CSL Receiver support for Thread 1.2
 
+config OPENTHREAD_CSL_RECEIVER_LOCAL_TIME_SYNC
+	bool "Use local time for CSL synchronization"
+	help
+	  Use host time rather than radio platform time to track elapsed time
+	  since last CSL synchronization. This reduces the usage of radio API
+	  calls, and it is useful for platforms in which those are costly.
+
 config OPENTHREAD_DEVICE_PROP_LEADER_WEIGHT
 	bool "Device props for leader weight"
 	default n if (OPENTHREAD_THREAD_VERSION_1_1 || \
