@@ -187,10 +187,23 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 1:
 #endif
 	andi t0, t2, 0x7f	/* keep only the opcode bits */
+	/*
+	 * Major FP opcodes:
+	 * 0000111 = LOAD-FP
+	 * 0100111 = STORE-FP
+	 * 1000011 = MADD
+	 * 1000111 = MSUB
+	 * 1001011 = NMSUB
+	 * 1001111 = NMADD
+	 * 1010011 = OP-FP
+	 */
 	xori t1, t0, 0b1010011	/* OP-FP */
 	beqz t1, is_fp
-	ori  t0, t0, 0b0100000
-	xori t1, t0, 0b0100111	/* LOAD-FP / STORE-FP */
+	ori  t1, t0, 0b0100000
+	xori t1, t1, 0b0100111	/* LOAD-FP / STORE-FP */
+	beqz t1, is_fp
+	ori  t1, t0, 0b0001100
+	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
 	beqz t1, is_fp
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
