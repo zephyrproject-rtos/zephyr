@@ -671,7 +671,7 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 			SPI_MCR_PCSIS(BIT_MASK(SPI_NXP_S32_NUM_CS(n))) |		\
 			SPI_MCR_MDIS(0U) | SPI_MCR_XSPI(1U) | SPI_MCR_HALT(1U)),	\
 		.TransferMode = SPI_IP_POLLING,						\
-		.StateIndex   = SPI_NXP_S32_HW_INSTANCE(n),				\
+		.StateIndex   = n,							\
 		SPI_NXP_S32_SET_SLAVE(n)						\
 	}
 
