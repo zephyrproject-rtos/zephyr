@@ -29,10 +29,8 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
 .. code-block:: none
 
    $(dt_has_compat,<compatible string>)
-   $(dt_compat_enabled,<compatible string>)
    $(dt_compat_on_bus,<compatible string>,<bus>)
    $(dt_chosen_label,<property in /chosen>)
-   $(dt_chosen_enabled,<property in /chosen>)
    $(dt_chosen_path,<property in /chosen>)
    $(dt_chosen_has_compat,<property in /chosen>)
    $(dt_path_enabled,<node path>)
