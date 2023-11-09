@@ -933,6 +933,20 @@ static int can_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
+static void can_nxp_s32_isr_rx_tx(const struct device *dev)
+{
+	const struct can_nxp_s32_config *config = dev->config;
+
+	Canexcel_Ip_RxTxIRQHandler(config->instance);
+}
+
+static void can_nxp_s32_isr_error(const struct device *dev)
+{
+	const struct can_nxp_s32_config *config = dev->config;
+
+	Canexcel_Ip_ErrIRQHandler(config->instance);
+}
+
 static const struct can_driver_api can_nxp_s32_driver_api = {
 	.get_capabilities = can_nxp_s32_get_capabilities,
 	.start = can_nxp_s32_start,
@@ -983,19 +997,13 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 #endif
 };
 
-#define CAN_NXP_S32_NODE(n)			DT_NODELABEL(can##n)
-
-#define CAN_NXP_S32_IRQ_HANDLER(n, irq_name)	DT_CAT5(CANXL, n, _, irq_name, Handler)
-
-#define _CAN_NXP_S32_IRQ_CONFIG(node_id, prop, idx, n)					\
+#define _CAN_NXP_S32_IRQ_CONFIG(node_id, prop, idx)					\
 	do {										\
-		extern void (CAN_NXP_S32_IRQ_HANDLER(n,					\
-				DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)))(void);	\
 		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),				\
 				DT_IRQ_BY_IDX(node_id, idx, priority),			\
-				CAN_NXP_S32_IRQ_HANDLER(n,				\
+				UTIL_CAT(can_nxp_s32_isr_,				\
 					DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)),	\
-				NULL,							\
+				DEVICE_DT_GET(node_id),					\
 				DT_IRQ_BY_IDX(node_id, idx, flags));			\
 		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));				\
 	} while (false);
@@ -1003,15 +1011,14 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 #define CAN_NXP_S32_IRQ_CONFIG(n)							\
 	static void can_irq_config_##n(void)						\
 	{										\
-		DT_FOREACH_PROP_ELEM_VARGS(CAN_NXP_S32_NODE(n), interrupt_names,	\
-							_CAN_NXP_S32_IRQ_CONFIG, n);	\
+		DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, _CAN_NXP_S32_IRQ_CONFIG);	\
 	}
 
 #define CAN_NXP_S32_ERR_CALLBACK(n)							\
 	void nxp_s32_can_##n##_err_callback(uint8 instance, Canexcel_Ip_EventType eventType,\
 		uint32 u32SysStatus, const Canexcel_Ip_StateType *canexcelState)	\
 	{										\
-		const struct device *dev = DEVICE_DT_GET(CAN_NXP_S32_NODE(n));		\
+		const struct device *dev = DEVICE_DT_INST_GET(n);			\
 		can_nxp_s32_err_callback(dev, eventType, u32SysStatus, canexcelState);	\
 	}
 
@@ -1019,18 +1026,18 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	void nxp_s32_can_##n##_ctrl_callback(uint8 instance, Canexcel_Ip_EventType eventType,\
 			uint32 buffIdx, const Canexcel_Ip_StateType *canexcelState)	\
 	{										\
-		const struct device *dev = DEVICE_DT_GET(CAN_NXP_S32_NODE(n));		\
+		const struct device *dev = DEVICE_DT_INST_GET(n);			\
 		can_nxp_s32_ctrl_callback(dev, eventType, buffIdx, canexcelState);	\
 	}
 
 #if defined(CONFIG_CAN_FD_MODE)
 #define CAN_NXP_S32_TIMING_DATA_CONFIG(n)						\
-		.bitrate_data = DT_PROP(CAN_NXP_S32_NODE(n), bus_speed_data),		\
-		.sjw_data = DT_PROP(CAN_NXP_S32_NODE(n), sjw_data),			\
-		.prop_seg_data = DT_PROP_OR(CAN_NXP_S32_NODE(n), prop_seg_data, 0),	\
-		.phase_seg1_data = DT_PROP_OR(CAN_NXP_S32_NODE(n), phase_seg1_data, 0),	\
-		.phase_seg2_data = DT_PROP_OR(CAN_NXP_S32_NODE(n), phase_seg2_data, 0),	\
-		.sample_point_data = DT_PROP_OR(CAN_NXP_S32_NODE(n), sample_point_data, 0),
+		.bitrate_data = DT_INST_PROP(n, bus_speed_data),			\
+		.sjw_data = DT_INST_PROP(n, sjw_data),					\
+		.prop_seg_data = DT_INST_PROP_OR(n, prop_seg_data, 0),			\
+		.phase_seg1_data = DT_INST_PROP_OR(n, phase_seg1_data, 0),		\
+		.phase_seg2_data = DT_INST_PROP_OR(n, phase_seg2_data, 0),		\
+		.sample_point_data = DT_INST_PROP_OR(n, sample_point_data, 0),
 #define CAN_NXP_S32_FD_MODE	1
 #define CAN_NXP_S32_BRS		1
 #else
@@ -1045,11 +1052,17 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 #define CAN_NXP_S32_CTRL_OPTIONS 0
 #endif
 
+#define CAN_NXP_S32_HW_INSTANCE_CHECK(i, n) \
+	((DT_INST_REG_ADDR(n) == IP_CANXL_##i##__SIC_BASE) ? i : 0)
+
+#define CAN_NXP_S32_HW_INSTANCE(n) \
+	LISTIFY(__DEBRACKET CANXL_SIC_INSTANCE_COUNT, CAN_NXP_S32_HW_INSTANCE_CHECK, (|), n)
+
 #define CAN_NXP_S32_INIT_DEVICE(n)							\
 	CAN_NXP_S32_CTRL_CALLBACK(n)							\
 	CAN_NXP_S32_ERR_CALLBACK(n)							\
 	CAN_NXP_S32_IRQ_CONFIG(n)							\
-	PINCTRL_DT_DEFINE(CAN_NXP_S32_NODE(n));						\
+	PINCTRL_DT_INST_DEFINE(n);							\
 	Canexcel_Ip_ConfigType can_nxp_s32_default_config##n = {			\
 		.rx_mbdesc = (uint8)CONFIG_CAN_NXP_S32_MAX_RX,				\
 		.tx_mbdesc = (uint8)CONFIG_CAN_NXP_S32_MAX_TX,				\
@@ -1069,27 +1082,26 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 		.rx_msg = rx_msg_##n,							\
 	};										\
 	static struct can_nxp_s32_config can_nxp_s32_config_##n = {			\
-		.base_sic = (CANXL_SIC_Type *)						\
-				DT_REG_ADDR_BY_NAME(CAN_NXP_S32_NODE(n), sic),		\
+		.base_sic = (CANXL_SIC_Type *)DT_INST_REG_ADDR_BY_NAME(n, sic),		\
 		.base_grp_ctrl = (CANXL_GRP_CONTROL_Type *)				\
-				DT_REG_ADDR_BY_NAME(CAN_NXP_S32_NODE(n), grp_ctrl),	\
+				DT_INST_REG_ADDR_BY_NAME(n, grp_ctrl),			\
 		.base_dsc_ctrl = (CANXL_DSC_CONTROL_Type *)				\
-				DT_REG_ADDR_BY_NAME(CAN_NXP_S32_NODE(n), dsc_ctrl),	\
-		.instance = n,								\
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(CAN_NXP_S32_NODE(n))),	\
+				DT_INST_REG_ADDR_BY_NAME(n, dsc_ctrl),			\
+		.instance = CAN_NXP_S32_HW_INSTANCE(n),					\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)				\
-				DT_CLOCKS_CELL(CAN_NXP_S32_NODE(n), name),		\
-		.bitrate = DT_PROP(CAN_NXP_S32_NODE(n), bus_speed),			\
-		.sjw = DT_PROP(CAN_NXP_S32_NODE(n), sjw),				\
-		.prop_seg = DT_PROP_OR(CAN_NXP_S32_NODE(n), prop_seg, 0),		\
-		.phase_seg1 = DT_PROP_OR(CAN_NXP_S32_NODE(n), phase_seg1, 0),		\
-		.phase_seg2 = DT_PROP_OR(CAN_NXP_S32_NODE(n), phase_seg2, 0),		\
-		.sample_point = DT_PROP_OR(CAN_NXP_S32_NODE(n), sample_point, 0),	\
+				DT_INST_CLOCKS_CELL(n, name),				\
+		.bitrate = DT_INST_PROP(n, bus_speed),					\
+		.sjw = DT_INST_PROP(n, sjw),						\
+		.prop_seg = DT_INST_PROP_OR(n, prop_seg, 0),				\
+		.phase_seg1 = DT_INST_PROP_OR(n, phase_seg1, 0),			\
+		.phase_seg2 = DT_INST_PROP_OR(n, phase_seg2, 0),			\
+		.sample_point = DT_INST_PROP_OR(n, sample_point, 0),			\
 		CAN_NXP_S32_TIMING_DATA_CONFIG(n)					\
-		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(CAN_NXP_S32_NODE(n),	\
+		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(n,			\
 							CAN_NXP_S32_MAX_BITRATE),	\
-		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(CAN_NXP_S32_NODE(n), phys)),	\
-		.pin_cfg = PINCTRL_DT_DEV_CONFIG_GET(CAN_NXP_S32_NODE(n)),		\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phys)),			\
+		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.can_cfg = (Canexcel_Ip_ConfigType *)&can_nxp_s32_default_config##n,	\
 		.irq_config_func = can_irq_config_##n					\
 	};										\
@@ -1097,19 +1109,13 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	{										\
 		return can_nxp_s32_init(dev);						\
 	}										\
-	CAN_DEVICE_DT_DEFINE(CAN_NXP_S32_NODE(n),					\
-			     can_nxp_s32_##n##_init,					\
-			     NULL,							\
-			     &can_nxp_s32_data_##n,					\
-			     &can_nxp_s32_config_##n,					\
-			     POST_KERNEL,						\
-			     CONFIG_CAN_INIT_PRIORITY,					\
-			     &can_nxp_s32_driver_api);
+	CAN_DEVICE_DT_INST_DEFINE(n,							\
+				  can_nxp_s32_##n##_init,				\
+				  NULL,							\
+				  &can_nxp_s32_data_##n,				\
+				  &can_nxp_s32_config_##n,				\
+				  POST_KERNEL,						\
+				  CONFIG_CAN_INIT_PRIORITY,				\
+				  &can_nxp_s32_driver_api);
 
-#if DT_NODE_HAS_STATUS(CAN_NXP_S32_NODE(0), okay)
-CAN_NXP_S32_INIT_DEVICE(0)
-#endif
-
-#if DT_NODE_HAS_STATUS(CAN_NXP_S32_NODE(1), okay)
-CAN_NXP_S32_INIT_DEVICE(1)
-#endif
+DT_INST_FOREACH_STATUS_OKAY(CAN_NXP_S32_INIT_DEVICE)
