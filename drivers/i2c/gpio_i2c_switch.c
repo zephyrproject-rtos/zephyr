@@ -51,13 +51,13 @@ static int gpio_i2c_switch_transfer(const struct device *dev, struct i2c_msg *ms
 	}
 
 	/* enable switch */
-	gpio_pin_configure_dt(&config->gpio, GPIO_OUTPUT_HIGH);
+	gpio_pin_set_dt(&config->gpio, 1);
 	k_busy_wait(GPIO_I2C_TOGGLE_DELAY_US);
 
 	res = i2c_transfer(config->bus, msgs, num_msgs, addr);
 
 	/* disable switch */
-	gpio_pin_configure_dt(&config->gpio, GPIO_OUTPUT_LOW);
+	gpio_pin_set_dt(&config->gpio, 0);
 	k_busy_wait(GPIO_I2C_TOGGLE_DELAY_US);
 	k_mutex_unlock(&data->lock);
 
@@ -76,7 +76,7 @@ static int gpio_i2c_switch_init(const struct device *dev)
 
 	k_mutex_init(&data->lock);
 
-	return gpio_pin_configure_dt(&config->gpio, GPIO_OUTPUT_LOW);
+	return gpio_pin_configure_dt(&config->gpio, GPIO_OUTPUT_INACTIVE);
 }
 
 #define DEFINE_GPIO_I2C_SWITCH(inst)                                                               \
