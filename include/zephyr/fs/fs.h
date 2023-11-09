@@ -5,6 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief File System API
+ */
 #ifndef ZEPHYR_INCLUDE_FS_FS_H_
 #define ZEPHYR_INCLUDE_FS_FS_H_
 

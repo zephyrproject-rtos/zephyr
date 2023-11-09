@@ -5,7 +5,7 @@ File Systems
 
 Zephyr RTOS Virtual Filesystem Switch (VFS) allows applications to mount multiple
 file systems at different mount points (e.g., ``/fatfs`` and ``/lfs``). The
-mount point data structure contains all the necessary information required
+mount point data structure, :c:struct:`fs_mount_t` contains all the necessary information required
 to instantiate, mount, and operate on a file system. The File system Switch
 decouples the applications from directly accessing an individual file system's
 specific API or internal functions by introducing file system registration
@@ -40,7 +40,7 @@ where
 
 - ``FS_FATFS`` is the file system type like FATFS or LittleFS.
 - ``FATFS_MNTP`` is the mount point where the file system will be mounted.
-- ``fat_fs`` is the file system data which will be used by fs_mount() API.
+- ``fat_fs`` is the file system data which will be used by :c:func:`fs_mount()` API.
 
 
 
@@ -51,11 +51,16 @@ Samples for the VFS are mainly supplied in ``samples/subsys/fs``, although vario
 VFS usage are provided as important functionalities in samples for different subsystems.
 Here is the list of samples worth looking at:
 
-- ``samples/subsys/fs/fat_fs`` is an example of FAT file system usage with SDHC media;
-- ``samples/subsys/shell/fs`` is an example of Shell fs subsystem, using internal flash partition
-	formatted to LittleFS;
-- ``samples/subsys/usb/mass/`` example of USB Mass Storage device that uses FAT FS driver with RAM
-	or SPI connected FLASH, or LittleFS in flash, depending on the sample configuration.
+:zephyr:code-sample:`fs`
+    An example of FAT file system usage with SDHC media.
+
+:zephyr:code-sample:`shell-fs`
+    An example of the shell file system subsystem, using internal flash partition
+    formatted to LittleFS.
+
+:zephyr:code-sample:`usb-mass`
+    An example of USB Mass Storage device that uses FAT FS driver with RAM
+    or SPI connected FLASH, or LittleFS in flash, depending on the sample configuration.
 
 API Reference
 *************

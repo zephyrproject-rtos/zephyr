@@ -4,12 +4,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Flash circular buffer API
+ */
 #ifndef ZEPHYR_INCLUDE_FS_FCB_H_
 #define ZEPHYR_INCLUDE_FS_FCB_H_
 
-/*
- * Flash circular buffer.
- */
 #include <inttypes.h>
 #include <limits.h>
 

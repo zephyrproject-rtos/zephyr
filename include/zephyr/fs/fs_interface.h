@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief File system interface header
+ */
 #ifndef ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 #define ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 
@@ -12,6 +16,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @def MAX_FILE_NAME
+ * @brief Maximum length for a file name.
+ */
 
 #if (CONFIG_FILE_SYSTEM_MAX_FILE_NAME - 0) > 0
 #define MAX_FILE_NAME CONFIG_FILE_SYSTEM_MAX_FILE_NAME
@@ -45,7 +54,7 @@ extern "C" {
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 
 
-/* Type for fs_open flags */
+/** Type for fs_open flags */
 typedef uint8_t fs_mode_t;
 
 struct fs_mount_t;

@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief LittleFS API
+ */
 #ifndef ZEPHYR_INCLUDE_FS_LITTLEFS_H_
 #define ZEPHYR_INCLUDE_FS_LITTLEFS_H_
 
@@ -17,8 +21,17 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup littlefs LittleFS API
+ * @ingroup file_system_storage
+ * @{
+ */
+
 /** @brief Filesystem info structure for LittleFS mount */
 struct fs_littlefs {
+	/**
+	 * @cond INTERNAL_HIDDEN
+	 */
 	/* Defaulted in driver, customizable before mount. */
 	struct lfs_config cfg;
 
@@ -37,6 +50,9 @@ struct fs_littlefs {
 	struct lfs lfs;
 	void *backend;
 	struct k_mutex mutex;
+	/**
+	 * @endcond
+	 */
 };
 
 /** @brief Define a littlefs configuration with customized size
@@ -100,6 +116,10 @@ struct fs_littlefs {
 					  CONFIG_FS_LITTLEFS_PROG_SIZE,	 \
 					  CONFIG_FS_LITTLEFS_CACHE_SIZE, \
 					  CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE)
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

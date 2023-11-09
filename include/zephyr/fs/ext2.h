@@ -20,7 +20,7 @@
  */
 
 /**
- * @brief Configuration used to format ext2 file system.
+ * @brief Filesystem info structure for ext2 mount
  *
  * @note If a field is set to 0 then default value is used (see @ref
  * FS_EXT2_DECLARE_DEFAULT_CONFIG).
