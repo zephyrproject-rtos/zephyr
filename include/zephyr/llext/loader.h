@@ -92,7 +92,6 @@ struct llext_loader {
 	elf_shdr_t sects[LLEXT_SECT_COUNT];
 	uint32_t *sect_map;
 	uint32_t sect_cnt;
-	uint32_t sym_cnt;
 	/** @endcond */
 };
 
