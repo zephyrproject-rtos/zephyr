@@ -24,6 +24,7 @@ struct gpio_kbd_matrix_config {
 	const struct gpio_dt_spec *col_gpio;
 	struct gpio_callback *gpio_cb;
 	gpio_callback_handler_t handler;
+	bool col_drive_inactive;
 };
 
 struct gpio_kbd_matrix_data {
@@ -53,7 +54,9 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 		const struct gpio_dt_spec *gpio = &cfg->col_gpio[i];
 
 		if ((data->last_col_state ^ state) & BIT(i)) {
-			if (state & BIT(i)) {
+			if (cfg->col_drive_inactive) {
+				gpio_pin_set_dt(gpio, state & BIT(i));
+			} else if (state & BIT(i)) {
 				gpio_pin_configure_dt(gpio, GPIO_OUTPUT_ACTIVE);
 			} else {
 				gpio_pin_configure_dt(gpio, GPIO_INPUT);
@@ -114,7 +117,11 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		if (cfg->col_drive_inactive) {
+			ret = gpio_pin_configure_dt(gpio, GPIO_OUTPUT_INACTIVE);
+		} else {
+			ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		}
 		if (ret != 0) {
 			LOG_ERR("Pin %d configuration failed: %d", i, ret);
 			return ret;
@@ -186,6 +193,7 @@ static const struct input_kbd_matrix_api gpio_kbd_matrix_api = {
 		.col_gpio = gpio_kbd_matrix_col_gpio_##n,					\
 		.gpio_cb = gpio_kbd_matrix_gpio_cb_##n,						\
 		.handler = gpio_kbd_matrix_cb_##n,						\
+		.col_drive_inactive = DT_INST_PROP(n, col_drive_inactive),			\
 	};											\
 												\
 	static struct gpio_kbd_matrix_data gpio_kbd_matrix_data_##n;				\
