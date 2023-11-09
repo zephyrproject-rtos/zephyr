@@ -16,6 +16,7 @@
 
 #if defined(CONFIG_HTTP_SERVER)
 	ITERABLE_SECTION_ROM(http_service_desc, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(http_resource_desc, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
 #if defined(CONFIG_COAP_SERVER)
