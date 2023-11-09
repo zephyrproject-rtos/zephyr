@@ -73,7 +73,7 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 #define TEST_IRQ_DYN_LINE 5
 #endif
 
-void test_isr_dynamic(void)
+ZTEST(interrupt_feature, test_isr_dynamic)
 {
 	int vector_num;
 
@@ -118,5 +118,6 @@ extern const void *x86_irq_args[];
 			"interrupt triggered but handler has not run(%d)",
 			handler_has_run);
 
+	irq_disable(TEST_IRQ_DYN_LINE);
 }
 #endif /* CONFIG_GEN_SW_ISR_TABLE */
