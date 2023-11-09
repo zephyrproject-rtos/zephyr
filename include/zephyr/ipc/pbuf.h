@@ -117,6 +117,16 @@ struct pbuf {
 }
 
 /**
+ * @brief Macro calculates memory overhead taken by the header in shared memory.
+ *
+ * It contains the read index, write index and padding.
+ *
+ * @param dcache_align	Data cache alignment.
+ */
+#define PBUF_HEADER_OVERHEAD(dcache_align) \
+	(MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE)
+
+/**
  * @brief Statically define and initialize pbuf.
  *
  * @param name			Name of the pbuf.
