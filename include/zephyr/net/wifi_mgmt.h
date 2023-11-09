@@ -302,11 +302,11 @@ struct wifi_connect_req_params {
 	/** SSID length */
 	uint8_t ssid_length; /* Max 32 */
 	/** Pre-shared key */
-	uint8_t *psk;
+	const uint8_t *psk;
 	/** Pre-shared key length */
 	uint8_t psk_length; /* Min 8 - Max 64 */
 	/** SAE password (same as PSK but with no length restrictions), optional */
-	uint8_t *sae_password;
+	const uint8_t *sae_password;
 	/** SAE password length */
 	uint8_t sae_password_length; /* No length restrictions */
 	/** Frequency band */
