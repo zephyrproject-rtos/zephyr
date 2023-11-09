@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    OSRAM ams TMD2635 Proximity Sensor
+
+compatible: "ams,tmd2635"
+
+include: ams,tmd26xx-base.yaml
+
+properties:
+  proximity-sample-duration:
+    type: int
+    required: true
+    description: |
+      This register defines the duration of 1 proximity sample,
+      which is (PRATE + 1)*88µs. default: 0x1F

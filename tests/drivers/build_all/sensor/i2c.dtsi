@@ -879,3 +879,18 @@ test_i2c_lis2du12: lis2du12@7c {
 	accel-range = <LIS2DU12_DT_FS_16G>;
 	accel-odr = <LIS2DU12_DT_ODR_AT_800Hz>;
 };
+
+test_i2c_tmd2635: tmd2635@78 {
+	compatible = "ams,tmd2635";
+	reg = <0x78>;
+	int-gpios = <&test_gpio 0 0>;
+	proximity-gain = <4>;
+	proximity-pulse-length = <16>;
+	proximity-pulse-count = <15>;
+	proximity-high-threshold = <255>;
+	proximity-low-threshold = <0>;
+	proximity-led-drive-strength = <4>;
+	proximity-interrupt-filter = <0>;
+	proximity-sample-duration = <31>;
+	wait-time-factor = <0>;
+};

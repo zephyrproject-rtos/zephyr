@@ -1,33 +1,57 @@
 # Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# Copyright(c) 2023 Carl Zeiss Meditec AG
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig TMD2620
-	bool "OSRAM-AMS TMD2620 Proxmimity Sensor"
+menuconfig TMD26XX
+	bool "OSRAM-AMS TMD26XX Proxmimity Sensor"
 	default y
-	depends on DT_HAS_AMS_TMD2620_ENABLED
+	depends on DT_HAS_AMS_TMD2635_ENABLED || DT_HAS_AMS_TMD2620_ENABLED
 	select I2C
 	help
-	  Enable driver for TMD2620 Sensor
+	  Enable driver for TMD26XX Sensor (e.g. TMD2635, TMD2620).
 
-if TMD2620
+if TMD26XX
 
 choice
 	prompt "Trigger Mode"
-	default TMD2620_TRIGGER_NONE
+	default TMD26XX_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the driver.
 
-config TMD2620_TRIGGER_NONE
+config TMD26XX_TRIGGER_NONE
 	bool "No Trigger"
 
-config TMD2620_TRIGGER_GLOBAL_THREAD
+config TMD26XX_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
-	select TMD2620_TRIGGER
+	select TMD26XX_TRIGGER
 
 endchoice # Trigger Mode
 
-config TMD2620_TRIGGER
+config TMD26XX_TRIGGER
 	bool
 
-endif # TMD2620
+choice	TMD26XX_SELECT_MODE
+	prompt "Select Sensor type"
+	default TMD26XX_SELECT_TMD2620
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config TMD26XX_SELECT_TMD2620
+	bool "select none default support tmd2620"
+	depends on TMD26XX
+	select TMD2620
+
+config TMD26XX_SELECT_TMD2635
+	bool "supports tmd2635"
+	depends on TMD26XX
+	select TMD2635
+
+endchoice
+
+config TMD2620
+	bool
+config TMD2635
+	bool
+
+endif # TMD26XX
