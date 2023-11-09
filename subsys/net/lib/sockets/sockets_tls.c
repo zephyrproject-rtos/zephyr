@@ -741,6 +741,14 @@ static int wait(int sock, int timeout, int event)
 		}
 
 		if (fds.revents & ZSOCK_POLLERR) {
+			int optval;
+			socklen_t optlen = sizeof(optval);
+
+			if (zsock_getsockopt(fds.fd, SOL_SOCKET, SO_ERROR,
+					     &optval, &optlen) == 0) {
+				return -optval;
+			}
+
 			return -EIO;
 		}
 	}
