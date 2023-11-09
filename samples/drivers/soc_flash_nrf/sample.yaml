@@ -10,8 +10,7 @@ tests:
       - nrf52dk_nrf52832
     tags:
       - flash
-      - nrf52
-      - nrf9160
+      - drivers
     harness: console
     harness_config:
       fixture: external_flash

@@ -3,7 +3,7 @@ sample:
 tests:
   sample.boards.stm32.power_mgmt.adc:
     tags:
-      - ADC
+      - adc
       - power
     harness: console
     harness_config:
