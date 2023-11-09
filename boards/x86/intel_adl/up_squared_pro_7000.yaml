@@ -1,0 +1,17 @@
+identifier: up_squared_pro_7000
+name: UP SQUARED PRO 7000 board
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - acpi
+  - smp
+  - watchdog
+testing:
+  timeout_multiplier: 4
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: UP

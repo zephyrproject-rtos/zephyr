@@ -1,11 +1,12 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP
+if BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP || BOARD_UP_SQUARED_PRO_7000
 
 config BOARD
 	default "intel_adl_crb" if BOARD_INTEL_ADL_CRB
 	default "intel_adl_rvp" if BOARD_INTEL_ADL_RVP
+	default "up_squared_pro_7000" if BOARD_UP_SQUARED_PRO_7000
 
 config BUILD_OUTPUT_STRIPPED
 	default y
@@ -45,4 +46,4 @@ config SHELL_STACK_SIZE
 endif # SHELL
 endif # ACPI
 
-endif # BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP
+endif # BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP || BOARD_UP_SQUARED_PRO_7000
