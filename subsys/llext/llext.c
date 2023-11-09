@@ -517,7 +517,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 				rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
 				ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
-			uintptr_t link_addr, op_loc, op_code;
+			uintptr_t link_addr, op_loc;
 
 			op_loc = loc + rel.r_offset;
 
@@ -530,11 +530,6 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext)
 						"symbol table %s, offset %d, link section %d",
 						name, rel.r_offset, shdr.sh_link);
 					return -ENODATA;
-				} else {
-					op_code = (uintptr_t)(loc + rel.r_offset);
-
-					LOG_INF("found symbol %s at 0x%lx, updating op code 0x%lx",
-						name, link_addr, op_code);
 				}
 			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION) {
 				/* Current relocation location holds an offset into the section */
