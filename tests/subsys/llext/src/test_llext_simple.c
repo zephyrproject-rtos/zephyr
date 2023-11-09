@@ -38,7 +38,7 @@ ZTEST(llext, test_llext_simple)
 
 	zassert_ok(res, "load should succeed");
 
-	const void * const hello_world_fn = llext_find_sym(&ext->sym_tab, "hello_world");
+	const void * const hello_world_fn = llext_find_sym(&ext->exp_tab, "hello_world");
 
 	zassert_not_null(hello_world_fn, "hello_world should be an exported symbol");
 
