@@ -61,7 +61,7 @@ class TestTestPlan:
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_level(self, out_path, level, expected_tests):
         test_platforms = ['qemu_x86', 'frdm_k64f']
-        path = os.path.join(TEST_DATA, 'tests')
+        path = os.path.join(TEST_DATA, 'tests', 'dummy')
         config_path = os.path.join(TEST_DATA, 'test_config.yaml')
         args = ['-i','--outdir', out_path, '-T', path, '--level', level, '-y',
                 '--test-config', config_path] + \
