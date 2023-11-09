@@ -43,6 +43,8 @@
 #define DT_DRV_COMPAT raspberrypi_pico_adc
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_adc_emul)
 #define DT_DRV_COMPAT zephyr_adc_emul
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_ads1115)
+#define DT_DRV_COMPAT ti_ads1115
 #else
 #error No known devicetree compatible match for ADC shell
 #endif
