@@ -75,6 +75,17 @@ struct nsos_mid_pollfd {
 	short revents;
 };
 
+struct nsos_mid_addrinfo {
+	int                       ai_flags;
+	int                       ai_family;
+	int                       ai_socktype;
+	int                       ai_protocol;
+	size_t                    ai_addrlen;
+	struct nsos_mid_sockaddr *ai_addr;
+	char                     *ai_canonname;
+	struct nsos_mid_addrinfo *ai_next;
+};
+
 static inline void nsos_socket_flag_convert(int *flags_a, int flag_a,
 					    int *flags_b, int flag_b)
 {
@@ -96,5 +107,12 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 		      const struct nsos_mid_sockaddr *addr, size_t addrlen);
 int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
 			struct nsos_mid_sockaddr *addr, size_t *addrlen);
+
+
+int nsos_adapt_getaddrinfo(const char *node, const char *service,
+			   const struct nsos_mid_addrinfo *hints,
+			   struct nsos_mid_addrinfo **res,
+			   int *system_errno);
+void nsos_adapt_freeaddrinfo(struct nsos_mid_addrinfo *res);
 
 #endif /* __DRIVERS_NET_NSOS_H__ */
