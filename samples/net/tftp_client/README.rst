@@ -19,7 +19,7 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` or :ref:`networking_with_native_posix`
+- :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` or :ref:`networking_with_native_sim`
 - Linux machine
 
 Building and Running
@@ -42,7 +42,7 @@ Build the tftp-client sample application like this:
 
 The easiest way to setup this sample application is to build and run it
 as a native_sim application or as a QEMU target using the default configuration :file:`prj.conf`.
-This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_posix`.
+This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_sim`.
 
 Build the tftp-client sample application for :ref:`native_sim <native_sim>` like this:
 
