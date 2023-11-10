@@ -83,8 +83,7 @@ Build a POSIX-tracing image with:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
-	:board: native_posix
-	:conf: "prj_native_posix.conf"
+	:board: native_sim
 	:goals: build
 	:compact:
 
@@ -92,8 +91,8 @@ or:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing
-	:board: native_posix
-	:conf: "prj_native_posix_ctf.conf"
+	:board: native_sim
+	:conf: "prj_native_ctf.conf"
 	:goals: build
 	:compact:
 
