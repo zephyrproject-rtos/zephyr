@@ -170,17 +170,18 @@ Here are some examples present in Zephyr:
 #. Simple test of the EEPROM emulator:
 
    .. zephyr-app-commands::
-      :app: tests/drivers/eeprom
+      :app: tests/drivers/eeprom/api
       :board: native_sim
       :goals: build
 
-#. The same test has a second EEPROM which is an Atmel AT24 EEPROM driver
+#. The same test can be built with a second EEPROM which is an Atmel AT24 EEPROM driver
    connected via I2C an emulator:
 
    .. zephyr-app-commands::
-      :app: tests/drivers/eeprom
+      :app: tests/drivers/eeprom/api
       :board: native_sim
       :goals: build
+      :gen-args: -DDTC_OVERLAY_FILE=at2x_emul.overlay -DOVERLAY_CONFIG=at2x_emul.conf
 
 API Reference
 *************
