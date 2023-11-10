@@ -8,6 +8,16 @@
 #include <zephyr/kernel.h>
 #include <zephyr/acpi/acpi.h>
 
+#define APCI_TEST_DEV ACPI_DT_HAS_HID(DT_ALIAS(acpi_dev))
+
+#if APCI_TEST_DEV
+#define DEV_HID ACPI_DT_HID(DT_ALIAS(acpi_dev))
+#define DEV_UID ACPI_DT_UID(DT_ALIAS(acpi_dev))
+#else
+#define DEV_HID NULL
+#define DEV_UID NULL
+#endif
+
 ZTEST(acpi, test_mcfg_table)
 {
 	struct acpi_mcfg *mcfg;
@@ -17,14 +27,43 @@ ZTEST(acpi, test_mcfg_table)
 	zassert_not_null(mcfg, "Failed to get MCFG table");
 }
 
-ZTEST(acpi, test_irq_routing_table)
+ZTEST(acpi, test_dev_enum)
 {
-	static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
-	int status;
+	struct acpi_dev *dev;
+	ACPI_RESOURCE *res_lst;
+	int ret;
 
-	status = acpi_get_irq_routing_table(CONFIG_ACPI_PRT_BUS_NAME,
-					    irq_prt_table, ARRAY_SIZE(irq_prt_table));
-	zassert_ok(status, "Failed to get PRT");
+	Z_TEST_SKIP_IFNDEF(APCI_TEST_DEV);
+
+	dev = acpi_device_get(DEV_HID, DEV_UID);
+
+	zassert_not_null(dev, "Failed to get acpi device with given HID");
+
+	ret = acpi_current_resource_get(dev->path, &res_lst);
+
+	zassert_ok(ret, "Failed to get current resource setting");
+}
+
+ZTEST(acpi, test_resource_enum)
+{
+	struct acpi_dev *dev;
+	struct acpi_irq_resource irq_res;
+	struct acpi_mmio_resource mmio_res;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(APCI_TEST_DEV);
+
+	dev = acpi_device_get(DEV_HID, DEV_UID);
+
+	zassert_not_null(dev, "Failed to get acpi device with given HID");
+
+	ret = acpi_device_mmio_get(dev, &mmio_res);
+
+	zassert_ok(ret, "Failed to get MMIO resources");
+
+	ret = acpi_device_irq_get(dev, &irq_res);
+
+	zassert_ok(ret, "Failed to get IRQ resources");
 }
 
 ZTEST_SUITE(acpi, NULL, NULL, NULL, NULL, NULL);
