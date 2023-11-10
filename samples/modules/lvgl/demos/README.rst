@@ -31,7 +31,7 @@ These demos can be built as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :gen-args: -DCONFIG_LV_Z_DEMO_MUSIC=y
    :goals: run
    :compact:
@@ -39,7 +39,7 @@ These demos can be built as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :gen-args: -DCONFIG_LV_Z_DEMO_BENCHMARK=y
    :goals: run
    :compact:
@@ -47,7 +47,7 @@ These demos can be built as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :gen-args: -DCONFIG_LV_Z_DEMO_STRESS=y
    :goals: run
    :compact:
@@ -55,7 +55,7 @@ These demos can be built as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :gen-args: -DCONFIG_LV_Z_DEMO_WIDGETS=y
    :goals: run
    :compact:
