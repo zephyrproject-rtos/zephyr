@@ -1619,7 +1619,11 @@ struct shi_reg {
 	volatile uint8_t EVSTAT2;
 	/* 0x010: Event Enable 2 */
 	volatile uint8_t EVENABLE2;
-	volatile uint8_t reserved4[15];
+	/* 0x011: SHI Configuration 6 - only in chips which support enhanced buffer mode */
+	volatile uint8_t SHICFG6;
+	/* 0x012: Single Byte Output Buffer - only in chips which support enhanced buffer mode */
+	volatile uint8_t SBOBUF;
+	volatile uint8_t reserved4[13];
 	/* 0x20~0x9F: Output Buffer */
 	volatile uint8_t OBUF[128];
 	/* 0xA0~0x11F: Input Buffer */
@@ -1670,5 +1674,7 @@ struct shi_reg {
 #define NPCX_EVENABLE2_IBHF2EN           0
 #define NPCX_EVENABLE2_CSNREEN           1
 #define NPCX_EVENABLE2_CSNFEEN           2
+#define NPCX_SHICFG6_EBUFMD              0
+#define NPCX_SHICFG6_OBUF_SL             1
 
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
