@@ -14,7 +14,7 @@
 
 / {
 	model = "up_squared";
-	compatible = "up_board,up_squared";
+	compatible = "aaeon,up_squared";
 
 	aliases {
 		i2c-0 = &i2c0;
