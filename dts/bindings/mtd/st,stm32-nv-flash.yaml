@@ -12,3 +12,9 @@ properties:
     type: int
     description: max erase time(millisecond) of a flash sector or page or half-page
     required: true
+  flash-size:
+    type: int
+    description: |
+      This property defines the Internal SoC Flash size in KB. This is needed
+      since M4 CPU doesn't have access to flash controller register to read
+      the size. Define this in DTS to use flash controller driver on M4.

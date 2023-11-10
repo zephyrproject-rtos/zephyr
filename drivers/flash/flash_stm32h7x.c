@@ -31,11 +31,14 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32H7_FLASH_TIMEOUT	\
 	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
-#if defined(CONFIG_CPU_CORTEX_M4) && !defined(CONFIG_SOC_STM32H747XX)
-#error Flash driver on M4 core is not supported yet
+/* For M4, flash size can't be read from register as there is no register
+ * access. So read it from DT
+ */
+#if defined(CONFIG_CPU_CORTEX_M4)
+#define REAL_FLASH_SIZE_KB KB(DT_PROP(DT_INST(0, st_stm32_nv_flash), flash_size))
+#else
+#define REAL_FLASH_SIZE_KB KB(LL_GetFlashSize())
 #endif
-
-#define REAL_FLASH_SIZE_KB	KB(LL_GetFlashSize())
 #define SECTOR_PER_BANK		((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
 #define STM32H7_SERIES_MAX_FLASH_KB	KB(2048)

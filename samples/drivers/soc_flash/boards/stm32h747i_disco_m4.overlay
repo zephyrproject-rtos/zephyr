@@ -7,6 +7,7 @@
 };
 
 &flash1 {
+        flash-size = <2048>;
 	partitions {
 		compatible = "fixed-partitions";
 			#address-cells = <0x1>;
