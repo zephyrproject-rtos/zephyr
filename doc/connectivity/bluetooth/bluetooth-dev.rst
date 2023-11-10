@@ -33,7 +33,7 @@ There are 4 possible hardware setups to use with Zephyr and Bluetooth:
 
 #. Embedded
 #. QEMU with an external Controller
-#. Native POSIX with an external Controller
+#. :ref:`native_sim <native_sim>` with an external Controller
 #. Simulated nRF52 with BabbleSim
 
 Embedded
@@ -90,7 +90,7 @@ This setup relies on a "dual-chip" :ref:`configuration <bluetooth-configs>`
 which is comprised of the following devices:
 
 #. A :ref:`Host-only <bluetooth-build-types>` application running in the
-   :ref:`QEMU <application_run_qemu>` emulator or the ``native_posix`` native
+   :ref:`QEMU <application_run_qemu>` emulator or the :ref:`native_sim <native_sim>` native
    port of Zephyr
 #. A Controller, which can be one of the following types:
 
@@ -117,23 +117,23 @@ QEMU
 
 You can run the Zephyr Host on the :ref:`QEMU emulator<application_run_qemu>`
 and have it interact with a physical external Bluetooth Controller.
-Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
+Refer to :ref:`bluetooth_qemu_native` for full instructions on how to build and
 run an application in this setup.
 
-Native POSIX
-------------
+native_sim
+----------
 
 .. note::
    This is currently only available on GNU/Linux
 
-The :ref:`Native POSIX <native_posix>` target builds your Zephyr application
+The :ref:`native_sim <native_sim>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
 This executable is a normal Linux program, which can be debugged and
 instrumented like any other, and it communicates with a physical or virtual
 external Controller.
 
-Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
+Refer to :ref:`bluetooth_qemu_native` for full instructions on how to build and
 run an application with a physical controller. For the virtual controller refer
 to :ref:`bluetooth_virtual_posix`.
 
@@ -152,7 +152,7 @@ This board, uses:
    * The POSIX arch to emulate the processor.
    * `Models of the nrf52 HW <https://github.com/BabbleSim/ext_NRF52_hw_models/>`_
 
-Just like with the ``native_posix`` target, the build result is a normal Linux
+Just like with the :ref:`native_sim <native_sim>` target, the build result is a normal Linux
 executable.
 You can find more information on how to run simulations with one or several
 devices in
