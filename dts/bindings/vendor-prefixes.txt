@@ -10,6 +10,7 @@
 #
 # <vendor-prefix><TAB><Full name of vendor>
 
+aaeon	AAEON Technology Inc.
 abb	ABB
 abilis	Abilis Systems
 abracon	Abracon Corporation
