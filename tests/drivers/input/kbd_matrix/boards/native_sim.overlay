@@ -1,0 +1,17 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_kbd_scan: test-kbd-scan {
+		compatible = "test-kbd-scan";
+		row-size = <3>;
+		col-size = <3>;
+		poll-period-ms = <5>;
+		debounce-down-ms = <40>;
+		debounce-up-ms = <80>;
+		poll-timeout-ms = <500>;
+        };
+};
