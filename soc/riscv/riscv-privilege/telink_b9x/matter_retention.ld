@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#define TELINK_RAM_DATA_REGION         RAM_DLM
+#include "telink_b9x_regions.ld"
 
 /*
  * Moving BLE library sections (without suffix) to RAM DLM (non-retention)
@@ -33,3 +32,18 @@ SECTION_DATA_PROLOGUE(ram_dlm,,)
 	PROVIDE (_RAM_DLM_VMA_START = ADDR(ram_dlm));
 	PROVIDE (_RAM_DLM_LMA_START = LOADADDR(ram_dlm));
 } GROUP_DATA_LINK_IN(TELINK_RAM_DATA_REGION, ROMABLE_REGION)
+
+/*
+ * Moving BLE relative ramcode to special section
+ */
+SECTION_DATA_PROLOGUE(ram_code_ble,,)
+{
+	. = ALIGN(4);
+	*(.ram_code_ble)
+	*(".ram_code_ble.*")
+	"*b9x_bt.c.obj*"(.ram_code)
+
+	PROVIDE (_RAMCODE_BLE_VMA_END = .);
+	PROVIDE (_RAMCODE_BLE_VMA_START = ADDR(ram_code_ble));
+	PROVIDE (_RAMCODE_BLE_LMA_START = LOADADDR(ram_code_ble));
+} GROUP_DATA_LINK_IN(TELINK_RAM_CODE_REGION, ROMABLE_REGION)

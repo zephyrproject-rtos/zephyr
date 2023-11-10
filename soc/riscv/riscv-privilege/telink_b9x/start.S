@@ -66,6 +66,18 @@ start:
 	csrs   NDS_MMISC_CTL, t0
 
 #ifdef CONFIG_TELINK_B9x_MATTER_RETENTION_LAYOUT
+_RAMCODE_BLE_INIT:
+	la     t1, _RAMCODE_BLE_LMA_START
+	la     t2, _RAMCODE_BLE_VMA_START
+	la     t3, _RAMCODE_BLE_VMA_END
+_RAMCODE_BLE_INIT_BEGIN:
+	bleu   t3, t2, _RAM_DLM_INIT
+	lw     t0, 0(t1)
+	sw     t0, 0(t2)
+	addi   t1, t1, 4
+	addi   t2, t2, 4
+	j      _RAMCODE_BLE_INIT_BEGIN
+
 _RAM_DLM_INIT:
 	la     t1, _RAM_DLM_LMA_START
 	la     t2, _RAM_DLM_VMA_START
