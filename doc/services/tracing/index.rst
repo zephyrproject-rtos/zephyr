@@ -181,7 +181,7 @@ The following backends are currently supported:
 
 * UART
 * USB
-* File (Using native posix port)
+* File (Using the native port/with POSIX architecture based targets)
 * RTT (With SystemView)
 * RAM (buffer to be retrieved by a debugger)
 
