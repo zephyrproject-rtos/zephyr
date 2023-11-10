@@ -7,7 +7,7 @@ Networking with the host system
    :maxdepth: 1
    :hidden:
 
-   native_posix_setup.rst
+   native_sim_setup.rst
    qemu_eth_setup.rst
    qemu_setup.rst
    usbnet_setup.rst
@@ -60,7 +60,7 @@ possible:
     can attach host debugger directly to the running Zephyr instance. This
     requires that there is an adaptation driver in Zephyr for interfacing
     with the host system. An Ethernet driver exists in Zephyr for this purpose.
-    See :ref:`networking_with_native_posix` for details.
+    See :ref:`networking_with_native_sim` for details.
 
 * USB device networking.
 
