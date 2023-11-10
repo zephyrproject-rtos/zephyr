@@ -46,12 +46,12 @@ zephyr_library_sources_ifdef(CONFIG_ETH_NXP_S32_GMAC	eth_nxp_s32_gmac.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_NUMAKER		eth_numaker.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
-  set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
-  set_source_files_properties(${native_posix_source_files}
-    PROPERTIES COMPILE_DEFINITIONS
-    "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
-    )
   if (CONFIG_NATIVE_APPLICATION)
+    set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
+    set_source_files_properties(${native_posix_source_files}
+      PROPERTIES COMPILE_DEFINITIONS
+      "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
+    )
     zephyr_library_sources(${native_posix_source_files})
   else()
     zephyr_library_sources(eth_native_posix.c)
