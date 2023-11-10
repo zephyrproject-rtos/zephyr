@@ -22,3 +22,4 @@ tests:
     tags:
       - compression
       - lz4
+    platform_exclude: esp32s3_devkitm_appcpu
