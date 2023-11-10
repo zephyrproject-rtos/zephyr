@@ -182,7 +182,7 @@ Check the :ref:`native simulator C library choice section<native_sim_Clib_choice
 Debugging, coverage and address sanitizer
 *****************************************
 
-Just like with :ref:`native_posix<native_posix_debug>`, the resulting
+Just like with :ref:`native_sim<native_sim_debug>`, the resulting
 executables are Linux native applications.
 Therefore they can be debugged or instrumented with the same tools as any other
 native application, like for example ``gdb`` or ``valgrind``.
@@ -191,7 +191,7 @@ The same
 :ref:`code coverage analysis means from the POSIX arch<coverage_posix>`
 are inherited in this board.
 Similarly, the
-:ref:`address and undefined behavior sanitizers can be used as in native_posix<native_posix_asan>`.
+:ref:`address and undefined behavior sanitizers can be used as in native_sim<native_sim_asan>`.
 
 
 Note that BabbleSim will run fine if one or several of its components are
