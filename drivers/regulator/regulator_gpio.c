@@ -7,7 +7,6 @@
 
 #include <stdint.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -24,7 +23,6 @@ struct regulator_gpio_config {
 	uint8_t states_cnt;
 
 	const struct gpio_dt_spec enable;
-	int32_t startup_delay_us;
 };
 
 struct regulator_gpio_data {
@@ -71,14 +69,6 @@ static int regulator_gpio_enable(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("%s: can't enable regulator!", dev->name);
 		return ret;
-	}
-
-	if (cfg->startup_delay_us > 0U) {
-#ifdef CONFIG_MULTITHREADING
-		k_sleep(K_USEC(cfg->startup_delay_us));
-#else
-		k_busy_wait(cfg->startup_delay_us);
-#endif
 	}
 
 	return 0;
@@ -233,7 +223,6 @@ static int regulator_gpio_init(const struct device *dev)
 		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),                       \
 		.states = ((const int[])DT_INST_PROP(inst, states)),                               \
 		.states_cnt = DT_INST_PROP_LEN(inst, states) / 2,                                  \
-		.startup_delay_us = DT_INST_PROP_OR(inst, startup_delay_us, 0),                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, regulator_gpio_init, NULL, &data##inst, &config##inst,         \
 			      POST_KERNEL, CONFIG_REGULATOR_GPIO_INIT_PRIORITY,                    \

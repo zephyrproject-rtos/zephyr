@@ -256,3 +256,11 @@ properties:
     description: |
       Maximum difference between current and target voltages that can be changed
       safely in a single step.
+
+  startup-delay-us:
+    type: int
+    description: Startup time, in microseconds
+
+  off-on-delay-us:
+    type: int
+    description: Off to on delay time, in microseconds

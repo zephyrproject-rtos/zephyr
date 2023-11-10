@@ -60,6 +60,8 @@ child-binding:
         - regulator-initial-mode
         - regulator-min-microamp
         - regulator-max-microamp
+        - startup-delay-us
+        - off-on-delay-us
 
   properties:
     retention-microvolt:
