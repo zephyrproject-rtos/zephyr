@@ -944,7 +944,7 @@ static int cmd_provision_adv(const struct shell *sh, size_t argc,
 
 static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t *net_key = (uint8_t *)bt_mesh_shell_default_key;
+	uint8_t net_key[16];
 	uint16_t net_idx, addr;
 	uint32_t iv_index;
 	int err = 0;
@@ -962,6 +962,8 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 		shell_warn(sh, "Unable to parse input string argument");
 		return err;
 	}
+
+	memcpy(net_key, bt_mesh_shell_default_key, sizeof(net_key));
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
 		struct bt_mesh_cdb_subnet *sub;
