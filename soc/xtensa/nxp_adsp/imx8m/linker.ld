@@ -415,6 +415,11 @@ SECTIONS
 
 #include <zephyr/linker/common-ram.ld>
 
+  /* Used for C++ build */
+  .tm_clone_table : {
+    *(.tm_clone_table)
+  } >sdram0 :sdram0_phdr
+
   .bss (NOLOAD) : ALIGN(8)
   {
     . = ALIGN (8);
