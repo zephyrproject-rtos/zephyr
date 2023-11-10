@@ -67,7 +67,7 @@ Give access to a DeviceAdapter type object, that represents Device Under Test.
 This fixture is the core of pytest harness plugin. It is required to launch
 DUT (initialize logging, flash device, connect serial etc).
 This fixture yields a device prepared according to the requested type
-(native posix, qemu, hardware, etc.). All types of devices share the same API.
+(``native``, ``qemu``, ``hardware``, etc.). All types of devices share the same API.
 This allows for writing tests which are device-type-agnostic.
 Scope of this fixture is determined by the ``pytest_dut_scope``
 keyword placed under ``harness_config`` section.
