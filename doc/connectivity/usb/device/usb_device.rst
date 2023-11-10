@@ -445,14 +445,14 @@ the vendor requests:
 The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
 before transmitting any data.
 
-.. _testing_USB_native_posix:
+.. _testing_USB_native_sim:
 
-Testing over USPIP in native_posix
-***********************************
+Testing over USPIP in native_sim
+********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the native_posix configuration.
+the :ref:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 
