@@ -1913,6 +1913,28 @@ static bool sockaddr_equal(const struct sockaddr *a,
 	return false;
 }
 
+struct coap_observer *coap_find_observer(
+	struct coap_observer *observers, size_t len,
+	const struct sockaddr *addr,
+	const uint8_t *token, uint8_t token_len)
+{
+	if (token_len == 0U || token_len > COAP_TOKEN_MAX_LEN) {
+		return NULL;
+	}
+
+	for (size_t i = 0; i < len; i++) {
+		struct coap_observer *o = &observers[i];
+
+		if (o->tkl == token_len &&
+		    memcmp(o->token, token, token_len) == 0 &&
+		    sockaddr_equal(&o->addr, addr)) {
+			return o;
+		}
+	}
+
+	return NULL;
+}
+
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
 	const struct sockaddr *addr)
