@@ -220,7 +220,7 @@ Artificially long but functional example:
         "--enable-valgrind", action="store_true",
         help="""Run binary through valgrind and check for several memory access
         errors. Valgrind needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
+        works with host binaries such as those generated for the native_sim
         configuration and is mutual exclusive with --enable-asan.
         """)
 
@@ -228,7 +228,7 @@ Artificially long but functional example:
         "--enable-asan", action="store_true",
         help="""Enable address sanitizer to check for several memory access
         errors. Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
+        works with host binaries such as those generated for the native_sim
         configuration and is mutual exclusive with --enable-valgrind.
         """)
 
@@ -349,7 +349,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "--enable-lsan", action="store_true",
         help="""Enable leak sanitizer to check for heap memory leaks.
         Libasan needs to be installed on the host. This option only
-        works with host binaries such as those generated for the native_posix
+        works with host binaries such as those generated for the native_sim
         configuration and when --enable-asan is given.
         """)
 
@@ -358,7 +358,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         help="""Enable undefined behavior sanitizer to check for undefined
         behaviour during program execution. It uses an optional runtime library
         to provide better error diagnostics. This option only works with host
-        binaries such as those generated for the native_posix configuration.
+        binaries such as those generated for the native_sim configuration.
         """)
 
     parser.add_argument("--enable-size-report", action="store_true",
@@ -586,7 +586,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument(
         "--seed", type=int,
-        help="Seed for native posix pseudo-random number generator")
+        help="Seed for native_sim pseudo-random number generator")
 
     parser.add_argument(
         "--short-build-path",

@@ -246,7 +246,7 @@ class BinaryHandler(Handler):
                        "--track-origins=yes",
                        ] + command
 
-        # Only valid for native_posix
+        # Only valid for native_sim
         if self.seed is not None:
             command.append(f"--seed={self.seed}")
         if self.extra_test_args is not None:
