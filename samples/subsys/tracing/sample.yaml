@@ -60,11 +60,19 @@ tests:
     platform_allow: sam_e70_xplained
     depends_on: usb_device
     extra_args: CONF_FILE="prj_usb_ctf.conf"
-  sample.tracing.transport.native_posix:
-    platform_allow: native_posix
-  sample.tracing.transport.native_posix.ctf:
-    platform_allow: native_posix
-    extra_args: CONF_FILE="prj_native_posix_ctf.conf"
+  sample.tracing.transport.native:
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+  sample.tracing.transport.native.ctf:
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args: CONF_FILE="prj_native_ctf.conf"
   sample.tracing.percepio:
     platform_allow: frdm_k64f
     extra_args: CONF_FILE="prj_percepio.conf"
