@@ -835,6 +835,13 @@ class TwisterEnv:
             self.board_roots = None
             self.outdir = None
 
+        self.snippet_roots = [Path(ZEPHYR_BASE)]
+        modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+        for module in modules:
+            snippet_root = module.meta.get("build", {}).get("settings", {}).get("snippet_root")
+            if snippet_root:
+                self.snippet_roots.append(Path(module.project) / snippet_root)
+
         self.hwm = None
 
         self.test_config = options.test_config if options else None
