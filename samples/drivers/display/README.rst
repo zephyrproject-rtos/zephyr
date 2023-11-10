@@ -30,12 +30,12 @@ Below is an example on how to build for a :ref:`nrf52840dk_nrf52840` board with 
    :shield: adafruit_2_8_tft_touch_v2
    :compact:
 
-For testing purpose without the need of any hardware, the :ref:`native_posix`
+For testing purpose without the need of any hardware, the :ref:`native_sim <native_sim>`
 board is also supported and can be built as follows;
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: native_posix
+   :board: native_sim
    :goals: build
    :compact:
 
