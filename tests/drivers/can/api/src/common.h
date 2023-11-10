@@ -98,13 +98,13 @@ extern const struct can_frame test_std_fdf_frame_2;
 
 /**
  * @brief Standard (11-bit) CAN ID filter 1. This filter matches
- * ``test_std_frame_1``.
+ * ``test_std_frame_1`` and ``test_std_fdf_frame_1``.
  */
 extern const struct can_filter test_std_filter_1;
 
 /**
  * @brief Standard (11-bit) CAN ID filter 2. This filter matches
- * ``test_std_frame_2``.
+ * ``test_std_frame_2`` and ``test_std_fdf_frame_2``.
  */
 extern const struct can_filter test_std_filter_2;
 
@@ -161,18 +161,6 @@ extern const struct can_filter test_ext_rtr_filter_1;
  * ``TEST_CAN_SOME_STD_ID``.
  */
 extern const struct can_filter test_std_some_filter;
-
-/**
- * @brief Standard (11-bit) CAN FD ID filter 1. This filter matches
- * ``test_std_fdf_frame_1``.
- */
-extern const struct can_filter test_std_fdf_filter_1;
-
-/**
- * @brief Standard (11-bit) CAN FD ID filter 2. This filter matches
- * ``test_std_fdf_frame_2``.
- */
-extern const struct can_filter test_std_fdf_filter_2;
 
 /**
  * @brief Assert that two CAN frames are equal given a CAN ID mask.
