@@ -15,12 +15,12 @@ Building and Running
 
 In case the target board has defined an EEPROM with alias ``eeprom-0`` the
 sample can be built without further ado. This applies for example to the
-:ref:`native_posix` board:
+:ref:`native_sim` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/eeprom
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
    :compact:
 
