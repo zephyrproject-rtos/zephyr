@@ -53,7 +53,7 @@ possible:
     the host on which the model is running. See :ref:`networking_with_armfvp`
     for details.
 
-* native_posix board.
+* native_sim board.
 
   * The Zephyr instance can be executed as a user space process in the host
     system. This is the most convenient way to debug the Zephyr system as one
@@ -70,7 +70,7 @@ possible:
 
 * Connecting multiple Zephyr instances together.
 
-  * If you have multiple Zephyr instances, either QEMU or native_posix ones,
+  * If you have multiple Zephyr instances, either QEMU or native_sim ones,
     and want to create a connection between them, see
     :ref:`networking_with_multiple_instances` for details.
 

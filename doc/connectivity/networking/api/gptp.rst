@@ -40,7 +40,7 @@ Boards supported:
 - :ref:`nucleo_h745zi_q_board`
 - :ref:`nucleo_f767zi_board`
 - :ref:`sam_e70_xplained`
-- :ref:`native_posix` (only usable for simple testing, limited capabilities
+- :ref:`native_sim` (only usable for simple testing, limited capabilities
   due to lack of hardware clock)
 - :ref:`qemu_x86` (emulated, limited capabilities due to lack of hardware clock)
 
