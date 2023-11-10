@@ -82,7 +82,7 @@ static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 };
 
 /* Radio values for CC13X2P */
-#elif defined(CONFIG_SOC_CC1352P)
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
 /* CC1352P overrides from SmartRF Studio (200kbps, 50kHz deviation, 2-GFSK, 311.8kHz Rx BW) */
 static uint32_t ieee802154_cc13xx_overrides_sub_ghz[] = {
 	/* Tx: Configure PA ramp time, PACTL2.RC=0x3 (in ADI0, set PACTL2[4:3]=0x1) */
@@ -141,7 +141,7 @@ static uint32_t rf_prop_overrides_tx_20[] = {
 #if defined(CONFIG_SOC_CC1352R)
 static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_t ieee802154_cc13xx_subg_radio_div_setup = {
 	.commandNo = CMD_PROP_RADIO_DIV_SETUP,
-#elif defined(CONFIG_SOC_CC1352P)
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
 static volatile rfc_CMD_PROP_RADIO_DIV_SETUP_PA_t ieee802154_cc13xx_subg_radio_div_setup = {
 	.commandNo = CMD_PROP_RADIO_DIV_SETUP_PA,
 #endif /* CONFIG_SOC_CC1352x */
@@ -207,7 +207,7 @@ static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 #endif
 	RF_TxPowerTable_TERMINATION_ENTRY
 };
-#elif defined(CONFIG_SOC_CC1352P)
+#elif defined(CONFIG_SOC_CC1352P) || defined(CONFIG_SOC_CC1352P7)
 /* Sub GHz power table */
 static const RF_TxPowerTable_Entry ieee802154_cc13xx_subg_power_table[] = {
 	{ -20, RF_TxPowerTable_DEFAULT_PA_ENTRY(0, 3, 0, 2) },
