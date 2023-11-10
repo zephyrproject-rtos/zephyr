@@ -8,3 +8,4 @@ testing:
   only_tags:
     - kernel
     - sof
+vendor: nxp
