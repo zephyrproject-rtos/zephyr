@@ -534,7 +534,9 @@ static void arp_update(struct net_if *iface,
 		 * the pkt are not counted twice and the packet filter
 		 * callbacks are only called once.
 		 */
+		net_if_tx_lock(iface);
 		ret = net_if_l2(iface)->send(iface, pkt);
+		net_if_tx_unlock(iface);
 		if (ret < 0) {
 			net_pkt_unref(pkt);
 		}
