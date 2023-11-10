@@ -36,11 +36,16 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32H7_FLASH_TIMEOUT	\
 	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
+#define STM32H7_M4_FLASH_SIZE DT_PROP_OR(DT_INST(0, st_stm32_nv_flash), bank2_flash_size, 0)
 #ifdef CONFIG_CPU_CORTEX_M4
-#error Flash driver on M4 core is not supported yet
+#if STM32H7_M4_FLASH_SIZE == 0
+#error Flash driver on M4 requires the DT property bank2-flash-size
+#else
+#define REAL_FLASH_SIZE_KB (KB(STM32H7_M4_FLASH_SIZE * 2))
 #endif
-
-#define REAL_FLASH_SIZE_KB	KB(LL_GetFlashSize())
+#else
+#define REAL_FLASH_SIZE_KB KB(LL_GetFlashSize())
+#endif
 #define SECTOR_PER_BANK		((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
 #define STM32H7_SERIES_MAX_FLASH_KB	KB(2048)
