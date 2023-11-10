@@ -177,7 +177,8 @@ Build and Run an Application
 
 You can build, flash, and run Zephyr applications on real
 hardware using a supported host system. Depending on your operating system,
-you can also run it in emulation with QEMU, or as a native POSIX application.
+you can also run it in emulation with QEMU, or as a native application with
+:ref:`native_sim <native_sim>`.
 Additional information about building applications can be found in the
 :ref:`build_an_application` section.
 
@@ -291,22 +292,21 @@ To exit QEMU, type :kbd:`Ctrl-a`, then :kbd:`x`.
 
 Use ``qemu_cortex_m3`` to target an emulated Arm Cortex-M3 sample.
 
-.. _gs_posix:
+.. _gs_native:
 
-Run a Sample Application natively (POSIX OS)
-============================================
+Run a Sample Application natively (Linux)
+=========================================
 
-You can compile some samples to run as host processes
-on a POSIX OS. This is currently only tested on Linux hosts. See
-:ref:`native_posix` for more information. On 64-bit host operating systems, you
-need to install a 32-bit C library; see :ref:`native_posix_deps` for details.
+You can compile some samples to run as host programs
+on Linux. See :ref:`native_sim` for more information. On 64-bit host operating systems, you
+need to install a 32-bit C library, or build targeting :ref:`native_sim_64 <native_sim32_64>`.
 
-First, build Hello World for ``native_posix``.
+First, build Hello World for ``native_sim``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: build
 
 Next, run the application.
