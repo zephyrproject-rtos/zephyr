@@ -120,9 +120,6 @@ struct mcux_flexcan_rx_callback {
 		flexcan_fd_frame_t fd;
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 	} frame;
-#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-	bool fdf;
-#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 	can_rx_callback_t function;
 	void *arg;
 };
@@ -796,7 +793,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 				      void *user_data,
 				      const struct can_filter *filter)
 {
-	uint8_t supported = CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR;
+	const uint8_t supported = CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR;
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	status_t status;
@@ -805,10 +802,6 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	int i;
 
 	__ASSERT_NO_MSG(callback);
-
-	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD), config->flexcan_fd)) {
-		supported |= CAN_FILTER_FDF;
-	}
 
 	if ((filter->flags & ~(supported)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
@@ -834,11 +827,6 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 
 	data->rx_cbs[alloc].arg = user_data;
 	data->rx_cbs[alloc].function = callback;
-
-#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-	/* FDF filtering not supported in hardware, must be handled in driver */
-	data->rx_cbs[alloc].fdf = (filter->flags & CAN_FILTER_FDF) != 0;
-#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 	/* The indidual RX mask registers can only be written in freeze mode */
 	FLEXCAN_EnterFreezeMode(config->base);
@@ -1068,13 +1056,8 @@ static inline void mcux_flexcan_transfer_rx_idle(const struct device *dev,
 			mcux_flexcan_to_can_frame(&data->rx_cbs[alloc].frame.classic, &frame);
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 		}
-
-		if (!!(frame.flags & CAN_FRAME_FDF) == data->rx_cbs[alloc].fdf) {
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
-			function(dev, &frame, arg);
-#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-		}
-#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+		function(dev, &frame, arg);
 
 		/* Setup RX message buffer to receive next message */
 		xfer.mbIdx = mb;

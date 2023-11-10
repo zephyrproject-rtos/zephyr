@@ -209,9 +209,6 @@ struct can_frame {
 /** Filter matches data frames */
 #define CAN_FILTER_DATA BIT(2)
 
-/** Filter matches CAN FD frames (FDF) */
-#define CAN_FILTER_FDF BIT(3)
-
 /** @} */
 
 /**
@@ -1626,16 +1623,6 @@ static inline bool can_frame_matches_filter(const struct can_frame *frame,
 
 	if ((frame->flags & CAN_FRAME_RTR) != 0 && (filter->flags & CAN_FILTER_RTR) == 0) {
 		/* Remote transmission request (RTR) frame, non-RTR filter */
-		return false;
-	}
-
-	if ((frame->flags & CAN_FRAME_FDF) != 0 && (filter->flags & CAN_FILTER_FDF) == 0) {
-		/* CAN FD format frame, classic format filter */
-		return false;
-	}
-
-	if ((frame->flags & CAN_FRAME_FDF) == 0 && (filter->flags & CAN_FILTER_FDF) != 0) {
-		/* Classic frame, CAN FD format filter */
 		return false;
 	}
 

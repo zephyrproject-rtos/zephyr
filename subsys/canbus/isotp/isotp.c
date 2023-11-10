@@ -54,9 +54,7 @@ static inline void prepare_filter(struct can_filter *filter, struct isotp_msg_id
 {
 	filter->id = addr->ext_id;
 	filter->mask = mask;
-	filter->flags = CAN_FILTER_DATA |
-			((addr->flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0) |
-			((addr->flags & ISOTP_MSG_FDF) != 0 ? CAN_FILTER_FDF : 0);
+	filter->flags = CAN_FILTER_DATA | ((addr->flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0);
 }
 
 /*

@@ -511,11 +511,7 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	uint32_t mask;
 
 	__ASSERT_NO_MSG(callback != NULL);
-#if defined(CONFIG_CAN_FD_MODE)
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_FDF)) != 0) {
-#else
 	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA)) != 0) {
-#endif
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -565,8 +561,7 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	can_nxp_s32_config_rx_fifo_filter(dev, mb_indx);
 #else
 	data->rx_cbs[alloc].rx_info = (Canexcel_Ip_DataInfoType) {
-		.frame = !!(filter->flags & CAN_FILTER_FDF) ?
-				CANEXCEL_FD_FRAME : CANEXCEL_CLASIC_FRAME,
+		.frame = CANEXCEL_CLASIC_FRAME,
 		.idType = !!(filter->flags & CAN_FILTER_IDE) ?
 				CANEXCEL_MSG_ID_EXT : CANEXCEL_MSG_ID_STD,
 		.dataLength = CAN_NXP_S32_DATA_LENGTH,
