@@ -428,6 +428,8 @@ The following peripherals are currently provided with this board:
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
 
+.. _native_ptty_uart:
+
 PTTY UART
 =========
 
@@ -549,6 +551,8 @@ development by integrating more seamlessly with the host operating system:
   A backend/"bottom" for Zephyr's CTF tracing subsystem which writes the tracing
   data to a file in the host filesystem.
   More information can be found in :ref:`Common Tracing Format <ctf>`
+
+.. _native_fuse_flash:
 
 Host based flash access
 ***********************
