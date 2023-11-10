@@ -57,8 +57,13 @@ config SOC_FLASH_NRF_RADIO_SYNC_NONE
 endchoice
 
 config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
-	int
+	int "Multiplier for flash operation timeouts [x0.1]"
 	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
 	default 1
+	help
+	  This is a multiplier that will be divided by 10 that is applied
+	  to the flash erase and write operations timeout. The base for
+	  the multiplication would allow erasing all nRF flash pages in
+	  blocking mode.
 
 endif # SOC_FLASH_NRF_RRAM
