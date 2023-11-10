@@ -23,7 +23,7 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 {
 	const struct adxl367_dev_config *config = dev->config;
 
-	if (reg & ADXL367_READ) {
+	if ((reg & ADXL367_READ) != 0) {
 		return i2c_burst_read_dt(&config->i2c,
 					 ADXL367_TO_REG(reg),
 					 (uint8_t *) data, length);
@@ -70,7 +70,7 @@ int adxl367_i2c_reg_write_mask(const struct device *dev,
 	uint8_t tmp;
 
 	ret = adxl367_i2c_reg_read(dev, reg_addr, &tmp);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
