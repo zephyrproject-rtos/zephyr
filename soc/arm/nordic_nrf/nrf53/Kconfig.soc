@@ -98,6 +98,18 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
+config NRF_SPU_FLASH_REGION_SIZE
+	hex
+	default 0x4000
+	help
+	  FLASH region size for the NRF_SPU peripheral
+
+config NRF_SPU_RAM_REGION_SIZE
+	hex
+	default 0x2000
+	help
+	  RAM region size for the NRF_SPU peripheral
+
 config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
 	bool
 	depends on NRF_SOC_SECURE_SUPPORTED

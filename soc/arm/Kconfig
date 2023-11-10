@@ -34,27 +34,11 @@ config CPU_HAS_ARM_SAU
 
 config CPU_HAS_NRF_IDAU
 	bool
-	depends on SOC_SERIES_NRF91X || SOC_NRF5340_CPUAPP
 	select CPU_HAS_TEE
 	help
 	  MCU implements the nRF (vendor-specific) Security Attribution Unit.
 	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
 	  ARM terminology).
-
-if CPU_HAS_NRF_IDAU
-config NRF_SPU_FLASH_REGION_SIZE
-	hex
-	default 0x8000 if SOC_SERIES_NRF91X
-	default 0x4000 if SOC_NRF5340_CPUAPP
-	help
-	  FLASH region size for the NRF_SPU peripheral
-
-config NRF_SPU_RAM_REGION_SIZE
-	hex
-	default 0x2000 if SOC_SERIES_NRF91X || SOC_NRF5340_CPUAPP
-	help
-	  RAM region size for the NRF_SPU peripheral
-endif
 
 config HAS_SWO
 	bool
