@@ -4,6 +4,7 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
+      - native_sim
       - nrf52840dk_nrf52840
     tags: bluetooth
     harness: bluetooth
@@ -12,6 +13,7 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
+      - native_sim
       - nrf5340dk_nrf5340_cpuapp
     extra_args: OVERLAY_CONFIG="overlay-le-audio.conf"
     tags: bluetooth
@@ -21,6 +23,7 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
+      - native_sim
       - nrf52840dk_nrf52840
     extra_args: OVERLAY_CONFIG="overlay-mesh.conf"
     tags: bluetooth
@@ -30,6 +33,7 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
+      - native_sim
       - nrf52840dk_nrf52840
     extra_args: OVERLAY_CONFIG="overlay-mesh.conf;overlay-mesh-v1d1.conf"
     tags: bluetooth
