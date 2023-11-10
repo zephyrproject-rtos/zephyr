@@ -24,7 +24,7 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 	const struct adxl367_dev_config *config = dev->config;
 	uint8_t rw_reg, addr_reg;
 
-	if (reg & ADXL367_READ) {
+	if ((reg & ADXL367_READ) != 0) {
 		rw_reg = ADXL367_SPI_READ_REG;
 	} else {
 		rw_reg = ADXL367_SPI_WRITE_REG;
@@ -49,7 +49,7 @@ static int adxl367_bus_access(const struct device *dev, uint8_t reg,
 		.buffers = buf,
 	};
 
-	if (reg & ADXL367_READ) {
+	if ((reg & ADXL367_READ) != 0) {
 		const struct spi_buf_set rx = {
 			.buffers = buf,
 			.count = 3
@@ -97,7 +97,7 @@ int adxl367_spi_reg_write_mask(const struct device *dev,
 	uint8_t tmp;
 
 	ret = adxl367_spi_reg_read(dev, reg_addr, &tmp);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
