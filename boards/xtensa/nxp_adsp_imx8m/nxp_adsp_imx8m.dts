@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 };
 
 &pinctrl {
-	/omit-if-no-ref/ uart4_default: uart4_default {
+	uart4_default: uart4_default {
 		group0 {
 			pinmux = <&iomuxc_uart4_rxd_uart_rx_uart4_rx>,
 				<&iomuxc_uart4_txd_uart_tx_uart4_tx>;
