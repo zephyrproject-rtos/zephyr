@@ -8,7 +8,9 @@ description: |
   corresponding to short and long press.
 
   Can be optionally be associated to a specific device to listen for events
-  only from that device. Example configuration:
+  only from that device.
+
+  Example configuration:
 
   #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -23,12 +25,14 @@ description: |
 
   Example output:
 
+  # short press
   input event: dev=buttons          SYN type= 1 code= 11 value=1 # INPUT_KEY_0 press
   # release before one second
   input event: dev=buttons          SYN type= 1 code= 11 value=0 # INPUT_KEY_0 release
   input event: dev=longpress        SYN type= 1 code= 30 value=1 # INPUT_KEY_A press
   input event: dev=longpress        SYN type= 1 code= 30 value=0 # INPUT_KEY_A release
 
+  # long press
   input event: dev=buttons          SYN type= 1 code= 11 value=1 # INPUT_KEY_0 press
   # hold for more than one second
   input event: dev=longpress        SYN type= 1 code= 45 value=1 # INPUT_KEY_X press
@@ -52,9 +56,8 @@ properties:
 
   short-codes:
     type: array
-    required: true
     description: |
-      Array of key codes to be generated for short press (INPUT_KEY_* or
+      Optional array of key codes to be generated for short press (INPUT_KEY_* or
       INPUT_BTN_*).
 
   long-codes:
