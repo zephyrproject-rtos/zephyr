@@ -425,7 +425,7 @@ ZTEST(riscv_fpu_sharing, test_fp_insn_trap)
 	TEST_TRAP("fcvt.w.s %0, fa0");
 	zassert_true(reg == 12812820, "got %ld instead", reg);
 
-	/* NMSUB major opcode space */
+	/* MSUB major opcode space */
 	reg = 1234;
 	TEST_TRAP("fcvt.s.w fa1, %0");
 	TEST_TRAP("fmsub.s fa0, fa1, fa1, fa0");
