@@ -10,6 +10,10 @@
  * Zephyr (top) side of NSOS (Native Simulator Offloaded Sockets).
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include <string.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/offloaded_netdev.h>
@@ -19,6 +23,7 @@
 #include "sockets_internal.h"
 #include "nsos.h"
 #include "nsos_errno.h"
+#include "nsos_netdb.h"
 
 #include "nsi_host_trampolines.h"
 
@@ -501,6 +506,136 @@ static bool nsos_is_supported(int family, int type, int proto)
 NET_SOCKET_OFFLOAD_REGISTER(nsos, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_UNSPEC,
 			    nsos_is_supported, nsos_socket_create);
 
+struct zsock_addrinfo_wrap {
+	struct zsock_addrinfo addrinfo;
+	struct sockaddr_storage addr_storage;
+	struct nsos_mid_addrinfo *addrinfo_mid;
+};
+
+/*
+ * (Zephyr)
+ * zsock_addrinfo_wrap
+ * -----------------------
+ * | zsock_addrinfo      |
+ * -----------------------    (trampoline)
+ * | sockaddr_storage    |    nsos_addrinfo_wrap
+ * -----------------------    -----------------------------
+ * | nsos_mid_addrinfo * | -> | nsos_mid_addrinfo         |
+ * -----------------------    -----------------------------
+ *                            | nsos_mid_sockaddr_storage |
+ *                            -----------------------------    (Linux host)
+ *                            | addrinfo *                | -> addrinfo
+ *                            -----------------------------
+ */
+
+static int addrinfo_from_nsos_mid(struct nsos_mid_addrinfo *nsos_res,
+				  struct zsock_addrinfo **res)
+{
+	struct zsock_addrinfo_wrap *res_wraps;
+	size_t idx_res = 0;
+	size_t n_res = 0;
+
+	for (struct nsos_mid_addrinfo *res_p = nsos_res; res_p; res_p = res_p->ai_next) {
+		n_res++;
+	}
+
+	if (n_res == 0) {
+		return 0;
+	}
+
+	res_wraps = k_calloc(n_res, sizeof(*res_wraps));
+	if (!res_wraps) {
+		return -ENOMEM;
+	}
+
+	for (struct nsos_mid_addrinfo *res_p = nsos_res; res_p; res_p = res_p->ai_next, idx_res++) {
+		struct zsock_addrinfo_wrap *wrap = &res_wraps[idx_res];
+
+		wrap->addrinfo_mid = res_p;
+
+		wrap->addrinfo.ai_flags = res_p->ai_flags;
+		wrap->addrinfo.ai_family = res_p->ai_family;
+		wrap->addrinfo.ai_socktype = res_p->ai_socktype;
+		wrap->addrinfo.ai_protocol = res_p->ai_protocol;
+
+		wrap->addrinfo.ai_addr =
+			(struct sockaddr *)&wrap->addr_storage;
+		wrap->addrinfo.ai_addrlen = sizeof(wrap->addr_storage);
+
+		sockaddr_from_nsos_mid(wrap->addrinfo.ai_addr, &wrap->addrinfo.ai_addrlen,
+				       res_p->ai_addr, res_p->ai_addrlen);
+
+		wrap->addrinfo.ai_canonname =
+			res_p->ai_canonname ? strdup(res_p->ai_canonname) : NULL;
+		wrap->addrinfo.ai_next = &wrap[1].addrinfo;
+	}
+
+	res_wraps[n_res - 1].addrinfo.ai_next = NULL;
+
+	*res = &res_wraps->addrinfo;
+
+	return 0;
+}
+
+static int nsos_getaddrinfo(const char *node, const char *service,
+			    const struct zsock_addrinfo *hints,
+			    struct zsock_addrinfo **res)
+{
+	struct nsos_mid_addrinfo hints_mid;
+	struct nsos_mid_addrinfo *res_mid;
+	int system_errno;
+	int ret;
+
+	if (!res) {
+		return -EINVAL;
+	}
+
+	if (hints) {
+		hints_mid.ai_flags    = hints->ai_flags;
+		hints_mid.ai_family   = hints->ai_family;
+		hints_mid.ai_socktype = hints->ai_socktype;
+		hints_mid.ai_protocol = hints->ai_protocol;
+	}
+
+	ret = nsos_adapt_getaddrinfo(node, service,
+				     hints ? &hints_mid : NULL,
+				     &res_mid,
+				     &system_errno);
+	if (ret < 0) {
+		if (ret == NSOS_MID_EAI_SYSTEM) {
+			errno = errno_from_nsos_mid(system_errno);
+		}
+
+		return eai_from_nsos_mid(ret);
+	}
+
+	ret = addrinfo_from_nsos_mid(res_mid, res);
+	if (ret < 0) {
+		errno = -ret;
+		return EAI_SYSTEM;
+	}
+
+	return ret;
+}
+
+static void nsos_freeaddrinfo(struct zsock_addrinfo *res)
+{
+	struct zsock_addrinfo_wrap *wrap =
+		CONTAINER_OF(res, struct zsock_addrinfo_wrap, addrinfo);
+
+	for (struct zsock_addrinfo *res_p = res; res_p; res_p = res_p->ai_next) {
+		free(res_p->ai_canonname);
+	}
+
+	nsos_adapt_freeaddrinfo(wrap->addrinfo_mid);
+	k_free(wrap);
+}
+
+static const struct socket_dns_offload nsos_dns_ops = {
+	.getaddrinfo = nsos_getaddrinfo,
+	.freeaddrinfo = nsos_freeaddrinfo,
+};
+
 static int nsos_socket_offload_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
@@ -511,6 +646,8 @@ static int nsos_socket_offload_init(const struct device *arg)
 static void nsos_iface_api_init(struct net_if *iface)
 {
 	iface->if_dev->socket_offload = nsos_socket_create;
+
+	socket_offload_dns_register(&nsos_dns_ops);
 }
 
 static int nsos_iface_enable(const struct net_if *iface, bool enabled)
