@@ -19,13 +19,13 @@ Requirements
 ************
 
 For generic host connectivity, that can be used for debugging purposes, see
-:ref:`networking_with_native_posix` for details.
+:ref:`networking_with_native_sim` for details.
 
 Building and Running
 ********************
 
 A good way to run this sample is to run this gPTP application inside
-native_posix board as described in :ref:`networking_with_native_posix` or with
+native_posix board as described in :ref:`networking_with_native_sim` or with
 embedded device like NXP FRDM-K64F, Nucleo-H743-ZI, Nucleo-H745ZI-Q,
 Nucleo-F767ZI or Atmel SAM-E70 Xplained. Note that gPTP is only supported for
 boards that have an Ethernet port and which has support for collecting
