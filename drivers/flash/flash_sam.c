@@ -110,6 +110,9 @@ static bool sam_flash_section_is_within_area(const struct device *dev, off_t off
 		return true;
 	}
 
+	LOG_WRN("Section from 0x%x to 0x%x is not within flash area (0x0 to %x)",
+		(size_t)offset, (size_t)(offset + len), (size_t)config->area_size);
+
 	return false;
 }
 
@@ -118,8 +121,15 @@ static bool sam_flash_section_is_aligned_with_write_block_size(const struct devi
 {
 	const struct sam_flash_config *config = dev->config;
 
-	return sam_flash_aligned(offset, config->parameters.write_block_size) &&
-	       sam_flash_aligned(len, config->parameters.write_block_size);
+	if (sam_flash_aligned(offset, config->parameters.write_block_size) &&
+	    sam_flash_aligned(len, config->parameters.write_block_size)) {
+		return true;
+	}
+
+	LOG_WRN("Section from 0x%x to 0x%x is not aligned with write block size (%u)",
+		(size_t)offset, (size_t)(offset + len), config->parameters.write_block_size);
+
+	return false;
 }
 
 static bool sam_flash_section_is_aligned_with_pages(const struct device *dev, off_t offset,
@@ -237,6 +247,8 @@ static int sam_flash_write(const struct device *dev, off_t offset, const void *d
 		return -EINVAL;
 	}
 
+	LOG_DBG("Writing sector from 0x%x to 0x%x", (size_t)offset, (size_t)(offset + len));
+
 	key = k_spin_lock(&sam_data->lock);
 	if (sam_flash_write_dwords_to_flash(dev, offset, data, len / sizeof(uint32_t)) < 0) {
 		k_spin_unlock(&sam_data->lock, key);
@@ -285,9 +297,12 @@ static int sam_flash_erase_page(const struct device *dev, const struct flash_pag
 	const struct sam_flash_config *sam_config = dev->config;
 	Efc *regs = sam_config->regs;
 	uint32_t page_index;
+	int ret;
 
 	/* Convert from page offset to write page index */
 	page_index = info->start_offset / SAM_FLASH_WRITE_PAGE_SIZE;
+
+	LOG_DBG("Erasing page at 0x%x of size 0x%x", (size_t)info->start_offset, info->size);
 
 	/* Perform erase command of page */
 	switch (info->size) {
@@ -319,7 +334,15 @@ static int sam_flash_erase_page(const struct device *dev, const struct flash_pag
 		return -EINVAL;
 	}
 
-	return sam_flash_section_wait_until_ready(dev);
+	ret = sam_flash_section_wait_until_ready(dev);
+	if (ret == 0) {
+		return ret;
+	}
+
+	LOG_ERR("Failed to erase page at 0x%x of size 0x%x", (size_t)info->start_offset,
+		info->size);
+
+	return ret;
 }
 
 static bool sam_flash_erase_foreach_page(const struct flash_pages_info *info, void *data)
@@ -371,6 +394,8 @@ static int sam_flash_erase(const struct device *dev, off_t offset, size_t size)
 	if (!sam_flash_section_is_aligned_with_pages(dev, offset, size)) {
 		return -EINVAL;
 	}
+
+	LOG_DBG("Erasing sector from 0x%x to 0x%x", (size_t)offset, (size_t)(offset + size));
 
 	key = k_spin_lock(&sam_data->lock);
 	sam_data->erase_data.section_start = offset;
