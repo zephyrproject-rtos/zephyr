@@ -519,6 +519,102 @@ static int cmd_can_dbitrate_set(const struct shell *sh, size_t argc, char **argv
 	return 0;
 }
 
+static int can_shell_parse_timing(const struct shell *sh, size_t argc, char **argv,
+				  struct can_timing *timing)
+{
+	char *endptr;
+
+	timing->sjw = (uint32_t)strtoul(argv[2], &endptr, 10);
+	if (*endptr != '\0') {
+		shell_error(sh, "failed to parse sjw");
+		return -EINVAL;
+	}
+
+	timing->prop_seg = (uint32_t)strtoul(argv[3], &endptr, 10);
+	if (*endptr != '\0') {
+		shell_error(sh, "failed to parse prop_seg");
+		return -EINVAL;
+	}
+
+	timing->phase_seg1 = (uint32_t)strtoul(argv[4], &endptr, 10);
+	if (*endptr != '\0') {
+		shell_error(sh, "failed to parse phase_seg1");
+		return -EINVAL;
+	}
+
+	timing->phase_seg2 = (uint32_t)strtoul(argv[5], &endptr, 10);
+	if (*endptr != '\0') {
+		shell_error(sh, "failed to parse phase_seg2");
+		return -EINVAL;
+	}
+
+	timing->prescaler = (uint32_t)strtoul(argv[6], &endptr, 10);
+	if (*endptr != '\0') {
+		shell_error(sh, "failed to parse prescaler");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_can_timing_set(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = device_get_binding(argv[1]);
+	struct can_timing timing = { 0 };
+	int err;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	err = can_shell_parse_timing(sh, argc, argv, &timing);
+	if (err < 0) {
+		return err;
+	}
+
+	shell_print(sh, "setting timing to sjw %u, prop_seg %u, phase_seg1 %u, phase_seg2 %u, "
+		    "prescaler %u", timing.sjw, timing.prop_seg, timing.phase_seg1,
+		    timing.phase_seg2, timing.prescaler);
+
+	err = can_set_timing(dev, &timing);
+	if (err != 0) {
+		shell_error(sh, "failed to set timing (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int cmd_can_dtiming_set(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev = device_get_binding(argv[1]);
+	struct can_timing timing = { 0 };
+	int err;
+
+	if (!device_is_ready(dev)) {
+		shell_error(sh, "device %s not ready", argv[1]);
+		return -ENODEV;
+	}
+
+	err = can_shell_parse_timing(sh, argc, argv, &timing);
+	if (err < 0) {
+		return err;
+	}
+
+	shell_print(sh, "setting data phase timing to sjw %u, prop_seg %u, phase_seg1 %u, "
+		    "phase_seg2 %u, prescaler %u", timing.sjw, timing.prop_seg, timing.phase_seg1,
+		    timing.phase_seg2, timing.prescaler);
+
+	err = can_set_timing_data(dev, &timing);
+	if (err != 0) {
+		shell_error(sh, "failed to set data phase timing (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int cmd_can_mode_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = device_get_binding(argv[1]);
@@ -942,6 +1038,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 		"Set CAN controller data phase bitrate (sample point and SJW optional)\n"
 		"Usage: can dbitrate <device> <data phase bitrate> [sample point] [sjw]",
 		cmd_can_dbitrate_set, 3, 2),
+	SHELL_CMD_ARG(timing, &dsub_can_device_name,
+		"Set CAN controller timing\n"
+		"Usage: can timing <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
+		cmd_can_timing_set, 7, 0),
+	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
+		dtiming, &dsub_can_device_name,
+		"Set CAN controller data phase timing\n"
+		"Usage: can dtiming <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
+		cmd_can_dtiming_set, 7, 0),
 	SHELL_CMD_ARG(mode, &dsub_can_device_name_mode,
 		"Set CAN controller mode\n"
 		"Usage: can mode <device> <mode> [mode] [mode] [...]",
