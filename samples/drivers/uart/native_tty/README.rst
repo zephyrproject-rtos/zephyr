@@ -15,7 +15,7 @@ The source code for this sample application can be found at:
 :zephyr_file:`samples/drivers/uart/native-tty`.
 
 You can learn more about the Native TTY UART driver in the
-:ref:`TTY UART <native_tty_uart>` section of the Native posix board
+:ref:`TTY UART <native_tty_uart>` section of the native_sim board
 documentation.
 
 Requirements
@@ -34,12 +34,12 @@ Requirements
 Building and Running
 ********************
 
-This application can be built and executed on Native Posix as follows:
+This application can be built and executed on :ref:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/uart/native_tty
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
    :compact:
 
