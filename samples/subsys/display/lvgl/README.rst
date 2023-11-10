@@ -27,9 +27,9 @@ or a board with an integrated display:
 
 - :ref:`esp_wrover_kit`
 
-or a simulated display environment in a native Posix application:
+or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 
-- :ref:`native_posix`
+- :ref:`native_sim`
 - `SDL2`_
 
 or
@@ -53,15 +53,15 @@ Example building for :ref:`nrf52840dk_nrf52840`:
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
 
-Example building for :ref:`native_posix`:
+Example building for :ref:`native_sim <native_sim>`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
-   :board: native_posix
+   :board: native_sim
    :goals: build run
 
 Alternatively, if building from a 64-bit host machine, the previous target
-board argument may also be replaced by ``native_posix_64``.
+board argument may also be replaced by ``native_sim_64``.
 
 References
 **********
