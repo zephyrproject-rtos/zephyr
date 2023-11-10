@@ -682,16 +682,6 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			goto ack;
 		}
 
-		if (((frame.flags & CAN_FRAME_FDF) != 0U && (flags & CAN_FILTER_FDF) == 0U) ||
-		    ((frame.flags & CAN_FRAME_FDF) == 0U && (flags & CAN_FILTER_FDF) != 0U)) {
-			/* FDF bit does not match filter, drop frame */
-			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
-			if (err != 0) {
-				return;
-			}
-			goto ack;
-		}
-
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
 			if ((frame.flags & CAN_FRAME_RTR) == 0U) {
@@ -1121,12 +1111,7 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_CAN_FD_MODE
-	if ((filter->flags &
-	     ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0U) {
-#else  /* CONFIG_CAN_FD_MODE */
 	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0U) {
-#endif /* !CONFIG_CAN_FD_MODE */
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}

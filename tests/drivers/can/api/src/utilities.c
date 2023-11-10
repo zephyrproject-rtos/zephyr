@@ -120,18 +120,8 @@ ZTEST(can_utilities, test_can_frame_matches_filter)
 	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_ext_rtr_filter_1));
 
 	/* CAN FD format frames and filters */
-	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_fdf_filter_1));
-	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_fdf_filter_2));
-	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_fdf_filter_2));
-	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_fdf_filter_1));
-
-	/* CAN FD format frames and classic filters */
-	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_filter_1));
-	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_filter_2));
-
-	/* Classic format frames and CAN FD format filters */
-	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_fdf_filter_1));
-	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_std_fdf_filter_2));
+	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_filter_1));
+	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_filter_2));
 }
 
 ZTEST_SUITE(can_utilities, NULL, NULL, NULL, NULL, NULL);

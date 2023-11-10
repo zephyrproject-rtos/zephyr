@@ -219,26 +219,6 @@ const struct can_filter test_std_some_filter = {
 };
 
 /**
- * @brief Standard (11-bit) CAN FD ID filter 1. This filter matches
- * ``test_std_fdf_frame_1``.
- */
-const struct can_filter test_std_fdf_filter_1 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_FDF,
-	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN FD ID filter 2. This filter matches
- * ``test_std_fdf_frame_2``.
- */
-const struct can_filter test_std_fdf_filter_2 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_FDF,
-	.id = TEST_CAN_STD_ID_2,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
  * @brief Assert that two CAN frames are equal given a CAN ID mask.
  *
  * @param frame1  First CAN frame.
