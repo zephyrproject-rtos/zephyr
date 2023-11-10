@@ -91,8 +91,11 @@ static int coap_service_remove_observer(const struct coap_service *service,
 {
 	struct coap_observer *obs;
 
-	/* Prefer token to find the observer */
-	if (tkl > 0 && token != NULL) {
+	if (tkl > 0 && addr != NULL) {
+		/* Prefer addr+token to find the observer */
+		obs = coap_find_observer(service->data->observers, MAX_OBSERVERS, addr, token, tkl);
+	} else if (tkl > 0) {
+		/* Then try to to find the observer by token */
 		obs = coap_find_observer_by_token(service->data->observers, MAX_OBSERVERS, token,
 						  tkl);
 	} else if (addr != NULL) {
@@ -550,6 +553,8 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 {
 	const struct coap_service *service = NULL;
 	int ret;
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl;
 
 	if (!coap_packet_is_request(request)) {
 		return -EINVAL;
@@ -572,11 +577,25 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 		return -ENOENT;
 	}
 
+	tkl = coap_header_get_token(request, token);
+	if (tkl == 0) {
+		return -EINVAL;
+	}
+
 	(void)k_mutex_lock(&lock, K_FOREVER);
 
 	if (ret == 0) {
 		struct coap_observer *observer;
 
+		/* RFC7641 section 4.1 - Check if the current observer already exists */
+		observer = coap_find_observer(service->data->observers, MAX_OBSERVERS, addr, token,
+					      tkl);
+		if (observer != NULL) {
+			/* Client refresh */
+			goto unlock;
+		}
+
+		/* New client */
 		observer = coap_observer_next_unused(service->data->observers, MAX_OBSERVERS);
 		if (observer == NULL) {
 			ret = -ENOMEM;
@@ -586,10 +605,6 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
 		coap_observer_init(observer, request, addr);
 		coap_register_observer(resource, observer);
 	} else if (ret == 1) {
-		uint8_t token[COAP_TOKEN_MAX_LEN];
-		uint8_t tkl;
-
-		tkl = coap_header_get_token(request, token);
 		ret = coap_service_remove_observer(service, resource, addr, token, tkl);
 		if (ret < 0) {
 			LOG_WRN("Failed to remove observer (%d)", ret);
