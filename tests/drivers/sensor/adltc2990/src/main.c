@@ -49,6 +49,84 @@
 		      "expected %f, got %f", expected_temperature,                                 \
 		      sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000);
 
+/*** TEST-SUITE: ADLTC2990 Measurement Mode 0 0***/
+
+struct adltc2990_0_0_fixture {
+	const struct device *dev;
+	const struct emul *target;
+};
+
+static void *adltc2990_0_0_setup(void)
+{
+	static struct adltc2990_0_0_fixture fixture = {
+		.dev = DEVICE_DT_GET(DT_NODELABEL(adltc2990_0_0)),
+		.target = EMUL_DT_GET(DT_NODELABEL(adltc2990_0_0)),
+	};
+
+	zassert_not_null(fixture.dev);
+	zassert_not_null(fixture.target);
+	return &fixture;
+}
+
+static void adltc2990_0_0_before(void *f)
+{
+	struct adltc2990_0_0_fixture *fixture = f;
+
+	adltc2990_emul_reset(fixture->target);
+}
+
+ZTEST_SUITE(adltc2990_0_0, NULL, adltc2990_0_0_setup, adltc2990_0_0_before, NULL, NULL);
+
+ZTEST_F(adltc2990_0_0, test_measure_mode_internal_temperature_only)
+{
+	struct sensor_value value[1];
+
+	zassert_equal(-ENOTSUP, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_MAGN_X));
+	zassert_equal(-ENOTSUP, sensor_channel_get(fixture->dev, SENSOR_CHAN_MAGN_Z, value));
+	zassert_equal(-EINVAL, sensor_channel_get(fixture->dev, SENSOR_CHAN_CURRENT, value));
+	zassert_equal(-EINVAL, sensor_channel_get(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP, value));
+}
+
+/*** TEST-SUITE: ADLTC2990 Measurement Mode 4 3***/
+
+struct adltc2990_4_3_fixture {
+	const struct device *dev;
+	const struct emul *target;
+};
+
+static void *adltc2990_4_3_setup(void)
+{
+	static struct adltc2990_4_3_fixture fixture = {
+		.dev = DEVICE_DT_GET(DT_NODELABEL(adltc2990_4_3)),
+		.target = EMUL_DT_GET(DT_NODELABEL(adltc2990_4_3)),
+	};
+
+	zassert_not_null(fixture.dev);
+	zassert_not_null(fixture.target);
+	return &fixture;
+}
+
+static void adltc2990_4_3_before(void *f)
+{
+	struct adltc2990_4_3_fixture *fixture = f;
+
+	adltc2990_emul_reset(fixture->target);
+}
+
+ZTEST_SUITE(adltc2990_4_3, NULL, adltc2990_4_3_setup, adltc2990_4_3_before, NULL, NULL);
+
+ZTEST_F(adltc2990_4_3, test_available_channels)
+{
+	struct sensor_value value[3];
+
+	zassert_equal(0, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));
+	zassert_equal(0, sensor_channel_get(fixture->dev, SENSOR_CHAN_VOLTAGE, value));
+	zassert_equal(0, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP));
+	zassert_equal(0, sensor_channel_get(fixture->dev, SENSOR_CHAN_AMBIENT_TEMP, value));
+	zassert_equal(0, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_CURRENT));
+	zassert_equal(0, sensor_channel_get(fixture->dev, SENSOR_CHAN_CURRENT, value));
+}
+
 /*** TEST-SUITE: ADLTC2990 Measurement Mode 1 3***/
 
 struct adltc2990_1_3_fixture {
@@ -98,6 +176,7 @@ ZTEST_F(adltc2990_1_3, test_die_temperature)
 
 	CHECK_TEMPERATURE(temp_value, 0, -40.00, SENSOR_CHAN_DIE_TEMP);
 }
+
 ZTEST_F(adltc2990_1_3, test_ambient_temperature)
 {
 	/* 0b00000001 0b10010001 +25.0625 */
@@ -300,6 +379,17 @@ ZTEST_F(adltc2990_7_3, test_available_channels)
 	zassert_equal(-EINVAL, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_CURRENT));
 }
 
+ZTEST_F(adltc2990_7_3, test_is_device_busy)
+{
+	uint8_t is_busy = BIT(0);
+
+	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_STATUS, &is_busy);
+	zassert_equal(-EBUSY, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_ALL));
+	is_busy = 0;
+	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_STATUS, &is_busy);
+	zassert_equal(0, sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_ALL));
+}
+
 ZTEST_F(adltc2990_7_3, test_die_temperature)
 {
 	/* The following values are taken from datasheet and should translate to 398.1250K */
@@ -308,6 +398,11 @@ ZTEST_F(adltc2990_7_3, test_die_temperature)
 
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_INTERNAL_TEMP_MSB, &msb);
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_INTERNAL_TEMP_LSB, &lsb);
+
+	struct sensor_value *die_temp_value_null = (struct sensor_value *)NULL;
+
+	zassert_equal(-EINVAL,
+		      sensor_channel_get(fixture->dev, SENSOR_CHAN_ALL, die_temp_value_null));
 
 	struct sensor_value die_temp_value[1];
 
@@ -371,4 +466,39 @@ ZTEST_F(adltc2990_7_3, test_V1_V2_V3_V4_VCC)
 	zassert_between_inclusive(test_value, 6.0, 6.1, "Out of Range [6.0,6.1] %.6f", test_value);
 
 	zassert_equal(6, voltage_values[4].val1);
+}
+
+/*** TEST-SUITE: ADLTC2990 Measurement Mode Incorrect***/
+struct adltc2990_incorrect_fixture {
+	const struct device *dev;
+	const struct emul *target;
+};
+
+static void *adltc2990_incorrect_setup(void)
+{
+	static struct adltc2990_incorrect_fixture fixture = {
+		.dev = DEVICE_DT_GET(DT_NODELABEL(adltc2990_incorrect)),
+		.target = EMUL_DT_GET(DT_NODELABEL(adltc2990_incorrect)),
+	};
+
+	zassert_not_null(fixture.dev);
+	zassert_not_null(fixture.target);
+	return &fixture;
+}
+
+static void adltc2990_incorrect_before(void *f)
+{
+	struct adltc2990_incorrect_fixture *fixture = f;
+
+	adltc2990_emul_reset(fixture->target);
+}
+
+ZTEST_SUITE(adltc2990_incorrect, NULL, adltc2990_incorrect_setup, adltc2990_incorrect_before, NULL,
+	    NULL);
+
+ZTEST_F(adltc2990_incorrect, test_current_cannot_be_measured)
+{
+	struct sensor_value current[1];
+
+	zassert_equal(-EINVAL, sensor_channel_get(fixture->dev, SENSOR_CHAN_CURRENT, current));
 }
