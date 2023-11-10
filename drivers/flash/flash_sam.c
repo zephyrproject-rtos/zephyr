@@ -27,8 +27,11 @@ LOG_MODULE_REGISTER(flash_sam, CONFIG_FLASH_LOG_LEVEL);
 
 #define SAM_FLASH_WRITE_PAGE_SIZE (512)
 
+typedef void (*sam_flash_irq_init_fn_ptr)(void);
+
 struct sam_flash_config {
 	Efc *regs;
+	sam_flash_irq_init_fn_ptr irq_init;
 	off_t area_address;
 	off_t area_size;
 	struct flash_parameters parameters;
@@ -46,6 +49,7 @@ struct sam_flash_data {
 	const struct device *dev;
 	struct k_spinlock lock;
 	struct sam_flash_erase_data erase_data;
+	struct k_sem ready_sem;
 };
 
 static bool sam_flash_validate_offset_len(off_t offset, size_t len)
@@ -68,29 +72,61 @@ static bool sam_flash_aligned(size_t value, size_t alignment)
 
 static bool sam_flash_offset_is_on_write_page_boundary(off_t offset)
 {
-	return (sam_flash_aligned(offset, SAM_FLASH_WRITE_PAGE_SIZE));
+	return sam_flash_aligned(offset, SAM_FLASH_WRITE_PAGE_SIZE);
+}
+
+static inline void sam_flash_mask_ready_interrupt(const struct sam_flash_config *config)
+{
+	Efc *regs = config->regs;
+
+	regs->EEFC_FMR &= ~EEFC_FMR_FRDY;
+}
+
+static inline void sam_flash_unmask_ready_interrupt(const struct sam_flash_config *config)
+{
+	Efc *regs = config->regs;
+
+	regs->EEFC_FMR |= EEFC_FMR_FRDY;
+}
+
+static void sam_flash_isr(const struct device *dev)
+{
+	struct sam_flash_data *data = dev->data;
+	const struct sam_flash_config *config = dev->config;
+
+	sam_flash_mask_ready_interrupt(config);
+	k_sem_give(&data->ready_sem);
 }
 
 static int sam_flash_section_wait_until_ready(const struct device *dev)
 {
+	struct sam_flash_data *data = dev->data;
 	const struct sam_flash_config *config = dev->config;
 	Efc *regs = config->regs;
+	uint32_t eefc_fsr;
 
-	while (!(regs->EEFC_FSR & EEFC_FSR_FRDY)) {
-		k_msleep(20);
+	k_sem_reset(&data->ready_sem);
+	sam_flash_unmask_ready_interrupt(config);
+
+	if (k_sem_take(&data->ready_sem, K_MSEC(500)) < 0) {
+		LOG_ERR("Command did not execute in time");
+		return -EFAULT;
 	}
 
-	if (regs->EEFC_FSR & EEFC_FSR_FCMDE) {
+	/* FSR register is cleared on read */
+	eefc_fsr = regs->EEFC_FSR;
+
+	if (eefc_fsr & EEFC_FSR_FCMDE) {
 		LOG_ERR("Invalid command requested");
 		return -EPERM;
 	}
 
-	if (regs->EEFC_FSR & EEFC_FSR_FLOCKE) {
+	if (eefc_fsr & EEFC_FSR_FLOCKE) {
 		LOG_ERR("Tried to modify locked region");
 		return -EPERM;
 	}
 
-	if (regs->EEFC_FSR & EEFC_FSR_FLERR) {
+	if (eefc_fsr & EEFC_FSR_FLERR) {
 		LOG_ERR("Programming failed");
 		return -EPERM;
 	}
@@ -439,8 +475,12 @@ static struct flash_driver_api sam_flash_api = {
 static int sam_flash_init(const struct device *dev)
 {
 	struct sam_flash_data *sam_data = dev->data;
+	const struct sam_flash_config *sam_config = dev->config;
 
 	sam_data->dev = dev;
+	k_sem_init(&sam_data->ready_sem, 0, 1);
+	sam_flash_mask_ready_interrupt(sam_config);
+	sam_config->irq_init();
 	return 0;
 }
 
@@ -460,8 +500,17 @@ static int sam_flash_init(const struct device *dev)
 		SAM_FLASH_PAGES_LAYOUTS								\
 	};											\
 												\
+	static void sam_flash_irq_init_##inst(void)						\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
+			    sam_flash_isr, DEVICE_DT_INST_GET(inst), 0);			\
+		irq_enable(DT_INST_IRQN(inst));							\
+												\
+	}											\
+												\
 	static const struct sam_flash_config sam_flash_config##inst = {				\
 		.regs = (Efc *)DT_INST_REG_ADDR(inst),						\
+		.irq_init = sam_flash_irq_init_##inst,						\
 		.area_address = DT_REG_ADDR(SAM_FLASH_DEVICE),					\
 		.area_size = DT_REG_SIZE(SAM_FLASH_DEVICE),					\
 		.parameters = {									\
