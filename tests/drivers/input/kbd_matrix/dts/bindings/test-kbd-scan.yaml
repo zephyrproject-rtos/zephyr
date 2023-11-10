@@ -1,0 +1,8 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Keyboard scan test binding
+
+compatible: "test-kbd-scan"
+
+include: kbd-matrix-common.yaml
