@@ -80,7 +80,7 @@ static void longpress_cb(const struct device *dev, struct input_event *evt)
 		k_work_cancel_delayable(&entry->work);
 		if (entry->long_fired) {
 			input_report_key(dev, cfg->long_codes[i], 0, true, K_FOREVER);
-		} else {
+		} else if (cfg->short_codes != NULL) {
 			input_report_key(dev, cfg->short_codes[i], 1, true, K_FOREVER);
 			input_report_key(dev, cfg->short_codes[i], 0, true, K_FOREVER);
 		}
@@ -109,8 +109,9 @@ static int longpress_init(const struct device *dev)
 }
 
 #define INPUT_LONGPRESS_DEFINE(inst)                                                               \
-	BUILD_ASSERT(DT_INST_PROP_LEN(inst, input_codes) ==                                        \
-		     DT_INST_PROP_LEN(inst, short_codes));                                         \
+	BUILD_ASSERT((DT_INST_PROP_LEN(inst, input_codes) ==                                       \
+		      DT_INST_PROP_LEN_OR(inst, short_codes, 0)) ||                                \
+		     !DT_INST_NODE_HAS_PROP(inst, short_codes));                                   \
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, input_codes) ==                                        \
 		     DT_INST_PROP_LEN(inst, long_codes));                                          \
 	static void longpress_cb_##inst(struct input_event *evt)                                   \
@@ -120,12 +121,16 @@ static int longpress_init(const struct device *dev)
 	INPUT_CALLBACK_DEFINE(DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),                 \
 			      longpress_cb_##inst);                                                \
 	static const uint16_t longpress_input_codes_##inst[] = DT_INST_PROP(inst, input_codes);    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, short_codes), (                                     \
 	static const uint16_t longpress_short_codes_##inst[] = DT_INST_PROP(inst, short_codes);    \
+	));                                                                                        \
 	static const uint16_t longpress_long_codes_##inst[] = DT_INST_PROP(inst, long_codes);      \
 	static const struct longpress_config longpress_config_##inst = {                           \
 		.input_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input)),                  \
 		.input_codes = longpress_input_codes_##inst,                                       \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, short_codes), (                             \
 		.short_codes = longpress_short_codes_##inst,                                       \
+		))                                                                                 \
 		.long_codes = longpress_long_codes_##inst,                                         \
 		.num_codes = DT_INST_PROP_LEN(inst, input_codes),                                  \
 		.long_delays_ms = DT_INST_PROP(inst, long_delay_ms),                               \

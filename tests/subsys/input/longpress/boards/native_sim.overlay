@@ -19,4 +19,12 @@
 		long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
 		long-delay-ms = <100>;
         };
+
+	longpress_no_short: longpress-no-short {
+		input = <&fake_input_device>;
+		compatible = "zephyr,input-longpress";
+		input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+		long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+		long-delay-ms = <100>;
+	};
 };
