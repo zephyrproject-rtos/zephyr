@@ -1572,6 +1572,9 @@ static void comp_data_get(uint16_t server_addr, uint8_t page, struct net_buf_sim
 {
 	uint8_t page_rsp;
 
+	/* Let complete advertising of the transaction to prevent collisions. */
+	k_sleep(K_SECONDS(3));
+
 	net_buf_simple_reset(comp);
 	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, server_addr, page, &page_rsp, comp));
 	ASSERT_EQUAL(page, page_rsp);
