@@ -453,6 +453,8 @@ SECTIONS
   _end = ALIGN (8);
   PROVIDE(end = ALIGN (8));
 
+  /* Mostly unused, though newlib likes them */
+  _heap_sentry = .;
   __stack = SDRAM1_BASE + SDRAM1_SIZE;
   .comment  0 :  { *(.comment) }
   .debug  0 :  { *(.debug) }
