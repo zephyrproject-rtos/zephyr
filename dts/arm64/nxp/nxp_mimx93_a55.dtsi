@@ -7,7 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm64/armv8-a.dtsi>
-#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
@@ -70,7 +70,7 @@
 	};
 
 	ccm: ccm@44450000 {
-		compatible = "nxp,imx-ccm";
+		compatible = "nxp,imx-ccm-rev2";
 		reg = <0x44450000 DT_SIZE_K(64)>;
 		#clock-cells = <3>;
 	};
@@ -81,7 +81,7 @@
 		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+		clocks = <&ccm IMX_CCM_LPUART1_CLK 0x6c 24>;
 		status = "disabled";
 	};
 
@@ -91,7 +91,7 @@
 		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		interrupt-parent = <&gic>;
-		clocks = <&ccm IMX_CCM_LPUART_CLK 0x6c 24>;
+		clocks = <&ccm IMX_CCM_LPUART2_CLK 0x6c 24>;
 		status = "disabled";
 	};
 };
