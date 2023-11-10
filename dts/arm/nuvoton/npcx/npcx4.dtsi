@@ -295,6 +295,17 @@
 			context-buffer-size = <228>;
 			status = "disabled";
 		};
+
+		shi0: shi@4000f000 {
+			compatible = "nuvoton,npcx-shi-enhanced";
+			reg = <0x4000f000 0x120>;
+			interrupts = <18 1>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 1>;
+			status = "disabled";
+			buffer-rx-size = <128>;
+			buffer-tx-size = <128>;
+			shi-cs-wui =<&wui_io53>;
+		};
 	};
 
 	soc-if {
