@@ -26,14 +26,14 @@ The program runs in the following sequence:
 Building and Running
 ********************
 
-This application can be built and executed on native_posix as follows:
+This application can be built and executed on :ref:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/sensing/simple
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
    :compact:
 
-To build for another board, change "native_posix" above to that board's name.
-At the current stage, it only support native posix
+To build for another board, change "native_sim" above to that board's name.
+At the current stage, it only support native sim.
