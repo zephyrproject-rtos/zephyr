@@ -53,6 +53,10 @@ Device Drivers and Device Tree
         };
     };
 
+* The Bosch M_CAN CAN FD controller driver backend no longer supports software-based filtering of
+  Remote Transmission Request (RTR) frames. Applications can still filter on RTR/non-RTR frames in
+  their receive callback functions as needed.
+
 Power Management
 ================
 
