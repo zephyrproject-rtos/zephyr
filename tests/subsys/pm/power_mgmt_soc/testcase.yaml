@@ -5,6 +5,7 @@ tests:
       - cc1352r1_launchxl
       - mec15xxevb_assy6853
       - mec1501modular_assy6885
+      - nucleo_f429zi
       - nucleo_wb55rg
       - nucleo_l476rg
       - twr_ke18f
