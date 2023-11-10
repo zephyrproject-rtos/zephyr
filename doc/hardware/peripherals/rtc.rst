@@ -84,9 +84,9 @@ and clock calibration, these must be enabled by selecting
 :kconfig:option:`CONFIG_RTC_ALARM`, :kconfig:option:`CONFIG_RTC_UPDATE`
 and :kconfig:option:`CONFIG_RTC_CALIBRATION`.
 
-The following examples build the test suite for the ``native_posix``
+The following examples build the test suite for the ``native_sim``
 board. To build the test suite for a different board, replace the
-``native_posix`` board with your board.
+``native_sim`` board with your board.
 
 To build the test application with the default configuration, testing
 only the mandatory features, the following command can be used for
@@ -95,7 +95,7 @@ reference:
 .. zephyr-app-commands::
    :tool: west
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :zephyr-app: tests/drivers/rtc/rtc_api
    :goals: build
 
@@ -106,7 +106,7 @@ following command can be used for reference:
 .. zephyr-app-commands::
    :tool: west
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :zephyr-app: tests/drivers/rtc/rtc_api
    :goals: menuconfig
 
@@ -115,7 +115,7 @@ Then build the test application using the following command:
 .. zephyr-app-commands::
    :tool: west
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :zephyr-app: tests/drivers/rtc/rtc_api
    :maybe-skip-config:
    :goals: build
