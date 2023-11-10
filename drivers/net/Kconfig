@@ -224,4 +224,20 @@ config NET_CANBUS_INIT_PRIORITY
 
 endif # NET_CAN
 
+#
+# Native simulator offloaded sockets
+#
+
+config NET_NATIVE_OFFLOADED_SOCKETS
+	bool "Native Simulator offloaded sockets"
+	depends on ARCH_POSIX
+	depends on NATIVE_LIBRARY
+	depends on NET_SOCKETS_OFFLOAD
+	help
+	  Offloaded sockets for Native Simulator utilize host BSD sockets API (like socket(),
+	  connect(), send(), recvfrom(), etc.) in order to provide networking capability.
+
+	  This driver main advantage is that it is possible to use this driver without any
+	  additional setup on the host side, unlike with the native TAP Ethernet driver.
+
 endif # NET_DRIVERS
