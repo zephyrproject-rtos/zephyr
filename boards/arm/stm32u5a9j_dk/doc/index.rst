@@ -129,11 +129,11 @@ ST-LINK/V3.0. Virtual COM port interface. Default communication settings are
 115200 8N1.
 
 
-Programming
-***********
+Programming and Debugging
+*************************
 
 STM32U5A9J Discovery kit includes an ST-LINK/V3 embedded debug tool interface.
-This probe allows to flash the board using various tools.
+This probe allows to flash and debug the board using various tools.
 
 Flashing
 ========
@@ -162,6 +162,18 @@ You should see the following message on the console:
 .. code-block:: console
 
    Hello World! stm32u5a9j_dk
+
+Debugging
+=========
+
+Default debugger for this board is openocd. It could be used in the usual way
+with "west debug" command.
+Here is an example for the :zephyr:code-sample:`blinky` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32u5a9j_dk
+   :goals: debug
 
 
 .. _STM32U5A9J-DK website:
