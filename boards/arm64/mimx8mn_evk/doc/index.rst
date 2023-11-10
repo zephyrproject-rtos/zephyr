@@ -7,7 +7,7 @@ Overview
 ********
 
 i.MX8M Nano LPDDR4 EVK board is based on NXP i.MX8M Nano applications
-processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M47 core.
+processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M7 core.
 Zephyr OS is ported to run on the Cortex®-A53 core.
 
 - Board features:
