@@ -935,11 +935,32 @@ bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer);
 
 /**
+ * @brief Returns the observer that matches address @a addr
+ * and has token @a token.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param addr Address of the endpoint observing a resource
+ * @param token Pointer to the token
+ * @param token_len Length of valid bytes in the token
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
+ */
+struct coap_observer *coap_find_observer(
+	struct coap_observer *observers, size_t len,
+	const struct sockaddr *addr,
+	const uint8_t *token, uint8_t token_len);
+
+/**
  * @brief Returns the observer that matches address @a addr.
  *
  * @param observers Pointer to the array of observers
  * @param len Size of the array of observers
  * @param addr Address of the endpoint observing a resource
+ *
+ * @note The function coap_find_observer() should be preferred
+ * if both the observer's address and token are known.
  *
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.
@@ -955,6 +976,9 @@ struct coap_observer *coap_find_observer_by_addr(
  * @param len Size of the array of observers
  * @param token Pointer to the token
  * @param token_len Length of valid bytes in the token
+ *
+ * @note The function coap_find_observer() should be preferred
+ * if both the observer's address and token are known.
  *
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.
