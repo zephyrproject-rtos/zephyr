@@ -320,6 +320,7 @@ int main(void)
 		 * app only after we have a connection, then we can start
 		 * it right away.
 		 */
+		connected = true;
 		k_sem_give(&run_app);
 	}
 
