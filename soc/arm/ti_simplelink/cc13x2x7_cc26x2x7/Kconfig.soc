@@ -65,4 +65,11 @@ config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_LEVEL
 	help
 	  Set the active level of the pin selected for the bootloader backdoor.
 
+config CC13X2_CC26X2_XOSC_CAPARRAY_DELTA
+	hex "Cap array tuning delta"
+	range 0 0xFF
+	default 0xD5
+	help
+	  Enable a specific cap array tunning delta.
+
 endmenu

@@ -28,7 +28,7 @@
  * https://software-dl.ti.com/simplelink/esd/simplelink_cc13xx_cc26xx_sdk/6.20.00.29/exports/release_notes_simplelink_cc13xx_cc26xx_sdk_6_20_00_29.html#known-issues
  */
 #define SET_CCFG_MODE_CONF_XOSC_CAP_MOD        0x0
-#define SET_CCFG_MODE_CONF_XOSC_CAPARRAY_DELTA 0xD5
+#define SET_CCFG_MODE_CONF_XOSC_CAPARRAY_DELTA CONFIG_CC13X2_CC26X2_XOSC_CAPARRAY_DELTA
 #endif
 
 /* TI recommends setting CCFG values and then including the TI provided ccfg.c */
