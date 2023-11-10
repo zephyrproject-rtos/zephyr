@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -18,8 +17,6 @@ LOG_MODULE_REGISTER(regulator_fixed, CONFIG_REGULATOR_LOG_LEVEL);
 
 struct regulator_fixed_config {
 	struct regulator_common_config common;
-	uint32_t startup_delay_us;
-	uint32_t off_on_delay_us;
 	struct gpio_dt_spec enable;
 };
 
@@ -39,14 +36,6 @@ static int regulator_fixed_enable(const struct device *dev)
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
 	if (ret < 0) {
 		return ret;
-	}
-
-	if (cfg->off_on_delay_us > 0U) {
-#ifdef CONFIG_MULTITHREADING
-		k_sleep(K_USEC(cfg->off_on_delay_us));
-#else
-		k_busy_wait(cfg->off_on_delay_us);
-#endif
 	}
 
 	return 0;
@@ -113,8 +102,6 @@ static int regulator_fixed_init(const struct device *dev)
 			if (ret < 0) {
 				return ret;
 			}
-
-			k_busy_wait(cfg->startup_delay_us);
 		} else {
 			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
 			if (ret < 0) {
@@ -134,8 +121,6 @@ static int regulator_fixed_init(const struct device *dev)
                                                                                   \
 	static const struct regulator_fixed_config config##inst = {               \
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),             \
-		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),         \
-		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),           \
 		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),      \
 	};                                                                        \
                                                                                   \
