@@ -390,7 +390,7 @@ The following peripherals are currently provided with this board:
 **USB controller**
   It's possible to use the Virtual USB controller working over USB/IP
   protocol. More information can be found in
-  :ref:`Testing USB over USP/IP in native_posix <testing_USB_native_posix>`.
+  :ref:`Testing USB over USP/IP in native_sim <testing_USB_native_sim>`.
 
 **Display driver**
   A display driver is provided that creates a window on the host machine to
