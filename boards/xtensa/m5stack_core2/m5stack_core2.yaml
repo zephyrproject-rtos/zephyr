@@ -18,4 +18,4 @@ testing:
   ignore_tags:
     - net
     - bluetooth
-vendor: espressif
+vendor: m5stack

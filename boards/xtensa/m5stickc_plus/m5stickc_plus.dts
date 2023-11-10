@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "esp32";
-	compatible = "espressif,esp32";
+	model = "M5StickC Plus";
+	compatible = "m5stack,m5stickc-plus";
 
 	aliases {
 		led0 = &red_led;
