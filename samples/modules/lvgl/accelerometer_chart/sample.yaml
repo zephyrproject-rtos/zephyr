@@ -15,4 +15,4 @@ tests:
     modules:
       - lvgl
     integration_platforms:
-      - native_posix_64
+      - native_sim_64
