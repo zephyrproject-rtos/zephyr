@@ -206,6 +206,75 @@ ZTEST(can_shell, test_can_dbitrate_sample_point)
 	can_shell_test_dbitrate("can dbitrate " FAKE_CAN_NAME " 1000000 875", 1000000, 875);
 }
 
+ZTEST(can_shell, test_can_timing)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	struct can_timing expected = {
+		.sjw = 1U,
+		.prop_seg = 2U,
+		.phase_seg1 = 3U,
+		.phase_seg2 = 4U,
+		.prescaler = 5U,
+	};
+	int err;
+
+	fake_can_set_timing_fake.custom_fake = can_shell_test_capture_timing;
+
+	err = shell_execute_cmd(sh, "can timing " FAKE_CAN_NAME " 1 2 3 4 5");
+	zassert_ok(err, "failed to execute shell command (err %d)", err);
+	zassert_equal(fake_can_set_timing_fake.call_count, 1, "set_timing function not called");
+	zassert_equal(fake_can_set_timing_fake.arg0_val, fake_can_dev, "wrong device pointer");
+	assert_can_timing_equal(&expected, &timing_capture);
+}
+
+ZTEST(can_shell, test_can_timing_missing_value)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_FD_MODE);
+
+	err = shell_execute_cmd(sh, "can timing " FAKE_CAN_NAME);
+	zassert_not_equal(err, 0, " executed shell command without timing");
+	zassert_equal(fake_can_set_timing_fake.call_count, 0,
+		      "set_timing function called");
+}
+
+ZTEST(can_shell, test_can_dtiming)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	struct can_timing expected = {
+		.sjw = 1U,
+		.prop_seg = 2U,
+		.phase_seg1 = 3U,
+		.phase_seg2 = 4U,
+		.prescaler = 5U,
+	};
+	int err;
+
+	fake_can_set_timing_data_fake.custom_fake = can_shell_test_capture_timing;
+
+	err = shell_execute_cmd(sh, "can dtiming " FAKE_CAN_NAME " 1 2 3 4 5");
+	zassert_ok(err, "failed to execute shell command (err %d)", err);
+	zassert_equal(fake_can_set_timing_data_fake.call_count, 1,
+		      "set_timing_data function not called");
+	zassert_equal(fake_can_set_timing_data_fake.arg0_val, fake_can_dev, "wrong device pointer");
+	assert_can_timing_equal(&expected, &timing_capture);
+}
+
+ZTEST(can_shell, test_can_dtiming_missing_value)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_FD_MODE);
+
+	err = shell_execute_cmd(sh, "can dtiming " FAKE_CAN_NAME);
+	zassert_not_equal(err, 0, " executed shell command without dtiming");
+	zassert_equal(fake_can_set_timing_data_fake.call_count, 0,
+		      "set_timing_data function called");
+}
+
 ZTEST(can_shell, test_can_mode_missing_value)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
