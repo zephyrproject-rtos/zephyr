@@ -212,6 +212,9 @@ enum net_if_flag {
 	/** IPv6 Multicast Listener Discovery disabled. */
 	NET_IF_IPV6_NO_MLD,
 
+	/** Mutex locking on TX data path disabled on the interface. */
+	NET_IF_NO_TX_LOCK,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -613,6 +616,7 @@ struct net_if {
 #endif
 
 	struct k_mutex lock;
+	struct k_mutex tx_lock;
 };
 
 static inline void net_if_lock(struct net_if *iface)
@@ -627,6 +631,31 @@ static inline void net_if_unlock(struct net_if *iface)
 	NET_ASSERT(iface);
 
 	k_mutex_unlock(&iface->lock);
+}
+
+static inline bool net_if_flag_is_set(struct net_if *iface,
+				      enum net_if_flag value);
+
+static inline void net_if_tx_lock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
+		return;
+	}
+
+	(void)k_mutex_lock(&iface->tx_lock, K_FOREVER);
+}
+
+static inline void net_if_tx_unlock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
+		return;
+	}
+
+	k_mutex_unlock(&iface->tx_lock);
 }
 
 /**
