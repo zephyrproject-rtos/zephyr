@@ -806,7 +806,7 @@ class TestPlan:
                 if ts.required_snippets:
                     missing_snippet = False
                     snippet_args = {"snippets": ts.required_snippets}
-                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [Path(ZEPHYR_BASE), Path(ts.source_dir)])
+                    found_snippets = snippets.find_snippets_in_roots(snippet_args, [*self.env.snippet_roots, Path(ts.source_dir)])
 
                     # Search and check that all required snippet files are found
                     for this_snippet in snippet_args['snippets']:
