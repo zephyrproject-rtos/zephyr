@@ -32,7 +32,7 @@ Tests without radio activity: bsim tests with twister
 
 The :ref:`bsim boards<bsim boards>` can be used without radio activity, and in that case, it is not
 necessary to connect them to a phyisical layer simulation. Thanks to this, this target boards can
-be used just like :ref:`native_posix<native_posix>` with :ref:`twister <twister_script>`,
+be used just like :ref:`native_sim<native_sim>` with :ref:`twister <twister_script>`,
 to run all standard Zephyr twister tests, but with models of a real SOC HW, and their drivers.
 
 Tests with radio activity
