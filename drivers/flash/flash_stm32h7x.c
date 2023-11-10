@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32H7_FLASH_TIMEOUT	\
 	(2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
-#ifdef CONFIG_CPU_CORTEX_M4
+#if defined(CONFIG_CPU_CORTEX_M4) && !defined(CONFIG_SOC_STM32H747XX)
 #error Flash driver on M4 core is not supported yet
 #endif
 
