@@ -19,7 +19,7 @@ tests for different boards and different configurations to help keep the
 complete code tree buildable.
 
 When using (at least) one ``-v`` option, twister's console output
-shows for every test how the test is run (qemu, native_posix, etc.) or
+shows for every test how the test is run (qemu, native_sim, etc.) or
 whether the binary was just built.  There are a few reasons why twister
 only builds a test and doesn't run it:
 
@@ -1118,7 +1118,7 @@ An example of entries in a quarantine yaml:
         - kernel.common.nano64
       platforms:
         - .*_cortex_.*
-        - native_posix
+        - native_sim
 
 To exclude a platform, use the following syntax:
 
@@ -1272,7 +1272,7 @@ Running in Tests in Random Order
 ********************************
 Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
 run your tests in random order.  This can be beneficial for identifying
-dependencies between test cases.  For native_posix platforms, you can provide
+dependencies between test cases. For native_sim platforms, you can provide
 the seed to the random number generator by providing ``-seed=value`` as an
 argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.

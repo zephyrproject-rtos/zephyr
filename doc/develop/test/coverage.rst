@@ -109,7 +109,7 @@ You may postprocess these with your preferred tools. For example:
    :zephyr-app: samples/hello_world
    :gen-args: -DCONFIG_COVERAGE=y
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: build
    :compact:
 
@@ -140,7 +140,7 @@ For example, you may invoke::
 
 or::
 
-    $ twister --coverage -p native_posix -T tests/bluetooth
+    $ twister --coverage -p native_sim -T tests/bluetooth
 
 which will produce ``twister-out/coverage/index.html`` with the report.
 
