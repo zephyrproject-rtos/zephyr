@@ -1298,8 +1298,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	};                                                                           \
 	PLATFORM_DEV_DT_INST_DEFINE(n, uart_ns16550_init, UART_NS16550_ISR, NULL,\
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
-			      COND_CODE_1(CONFIG_UART_NS16550_PARENT_INIT_LEVEL,     \
-					  (POST_KERNEL), (PRE_KERNEL_1)), \
+			      PRE_KERNEL_1, \
 					  CONFIG_SERIAL_INIT_PRIORITY,             \
 			      &uart_ns16550_driver_api);
 
