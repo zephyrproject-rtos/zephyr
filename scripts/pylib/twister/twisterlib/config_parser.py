@@ -3,6 +3,7 @@
 # Copyright (c) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import copy
 import scl
 import warnings
 from typing import Union
@@ -176,7 +177,8 @@ class TwisterConfigParser:
                     {"CONF_FILE", "OVERLAY_CONFIG", "DTC_OVERLAY_FILE"}, v
                 )
             else:
-                d[k] = v
+                # Copy common value to avoid mutating it with test specific values below
+                d[k] = copy.copy(v)
 
         for k, v in self.scenarios[name].items():
             if k == "extra_args":
