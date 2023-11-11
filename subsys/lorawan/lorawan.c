@@ -621,15 +621,9 @@ out:
 	return ret;
 }
 
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void))
+void lorawan_register_battery_level_callback(uint8_t (*battery_lvl_cb)(void))
 {
-	if (battery_lvl_cb == NULL) {
-		return -EINVAL;
-	}
-
 	get_battery_level_user = battery_lvl_cb;
-
-	return 0;
 }
 
 void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb)
