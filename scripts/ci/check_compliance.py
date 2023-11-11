@@ -643,6 +643,8 @@ flagged.
         "BTTESTER_LOG_LEVEL",  # Used in tests/bluetooth/tester
         "BTTESTER_LOG_LEVEL_DBG",  # Used in tests/bluetooth/tester
         "CDC_ACM_PORT_NAME_",
+        "CHRE",  # Optional module
+        "CHRE_LOG_LEVEL_DBG",  # Optional module
         "CLOCK_STM32_SYSCLK_SRC_",
         "CMU",
         "COMPILER_RT_RTLIB",
@@ -689,6 +691,7 @@ flagged.
         "PEDO_THS_MIN",
         "REG1",
         "REG2",
+        "RIMAGE_SIGNING_SCHEMA",  # Optional module
         "SAMPLE_MODULE_LOG_LEVEL",  # Used as an example in samples/subsys/logging
         "SAMPLE_MODULE_LOG_LEVEL_DBG",  # Used in tests/subsys/logging/log_api
         "LOG_BACKEND_MOCK_OUTPUT_DEFAULT", #Referenced in tests/subsys/logging/log_syst
