@@ -28,8 +28,8 @@ static int tx_clean_used(struct eth_ivshmem_queue *q);
 static int get_rx_avail_desc_idx(struct eth_ivshmem_queue *q, uint16_t *avail_desc_idx);
 
 int eth_ivshmem_queue_init(
-		struct eth_ivshmem_queue *q, uintptr_t shmem,
-		size_t shmem_section_size, bool tx_buffer_first)
+		struct eth_ivshmem_queue *q, uintptr_t tx_shmem,
+		uintptr_t rx_shmem, size_t shmem_section_size)
 {
 	memset(q, 0, sizeof(*q));
 
@@ -44,14 +44,8 @@ int eth_ivshmem_queue_init(
 	q->desc_max_len = vring_desc_len;
 	q->vring_data_max_len = shmem_section_size - vring_header_size;
 	q->vring_header_size = vring_header_size;
-
-	if (tx_buffer_first) {
-		q->tx.shmem = (void *)shmem;
-		q->rx.shmem = (void *)(shmem + shmem_section_size);
-	} else {
-		q->rx.shmem = (void *)shmem;
-		q->tx.shmem = (void *)(shmem + shmem_section_size);
-	}
+	q->tx.shmem = (void *)tx_shmem;
+	q->rx.shmem = (void *)rx_shmem;
 
 	/* Init vrings */
 	vring_init(&q->tx.vring, vring_desc_len, q->tx.shmem, ETH_IVSHMEM_VRING_ALIGNMENT);
