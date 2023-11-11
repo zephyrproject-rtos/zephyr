@@ -66,4 +66,10 @@ config IVSHMEM_V2
 	  Enable ivshmem-v2 support.
 	  ivshmem-v2 is primarily used for IPC in the Jailhouse hypervisor.
 
+config IVSHMEM_V2_MAX_PEERS
+	int "Maximum number of ivshmem-v2 peers"
+	depends on IVSHMEM_V2
+	default 2
+	range 2 65536
+
 endif # VIRTUALIZATION
