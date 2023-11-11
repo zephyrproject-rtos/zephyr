@@ -143,6 +143,17 @@
 
 			#include "w1.dtsi"
 		};
+
+		test_i3c: i3c@f0cacc1a {
+			#address-cells = <3>;
+			#size-cells = <0>;
+			compatible = "vnd,i3c";
+			reg = <0xf0cacc1a 0x1000>;
+			status = "okay";
+
+			#include "i3c.dtsi"
+		};
+
 	};
 };
 

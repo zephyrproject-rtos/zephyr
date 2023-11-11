@@ -282,6 +282,7 @@ static void run_generic_test(const struct device *dev)
 
 /* Iterate through each of the emulated buses and create a test for each device. */
 DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(test_i2c), DECLARE_ZTEST_PER_DEVICE)
+DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(test_i3c), DECLARE_ZTEST_PER_DEVICE)
 DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(test_spi), DECLARE_ZTEST_PER_DEVICE)
 
 ZTEST_SUITE(generic, NULL, NULL, before, NULL, NULL);
