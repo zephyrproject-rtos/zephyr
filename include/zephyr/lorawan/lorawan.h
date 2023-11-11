@@ -187,10 +187,8 @@ struct lorawan_downlink_cb {
  * Should no callback be provided the lorawan backend will report 255.
  *
  * @param battery_lvl_cb Pointer to the battery level function
- *
- * @return 0 if successful, negative errno code if failure
  */
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
+void lorawan_register_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
 
 /**
  * @brief Register a callback to be run on downlink packets
