@@ -820,7 +820,7 @@ class TestPlan:
                     if not missing_snippet:
                         # Look for required snippets and check that they are applicable for these
                         # platforms/boards
-                        for this_snippet in found_snippets:
+                        for this_snippet in snippet_args['snippets']:
                             matched_snippet_board = False
 
                             # If the "appends" key is present with at least one entry then this
