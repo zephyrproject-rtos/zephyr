@@ -3,6 +3,7 @@
 zephyr_library()
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/charger.h)
 
+zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ2407X charger_bq2407x.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_BQ24190 charger_bq24190.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_MAX20335 charger_max20335.c)
 zephyr_library_sources_ifdef(CONFIG_SBS_CHARGER sbs_charger.c)

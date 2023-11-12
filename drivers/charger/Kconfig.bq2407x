@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ2407X
+	bool "TI BQ2407X charging chip"
+	default y
+	depends on DT_HAS_TI_BQ2407X_ENABLED
+	depends on GPIO

@@ -19,6 +19,7 @@ config CHARGER_INIT_PRIORITY
 	help
 	  Battery charger initialization priority.
 
+source "drivers/charger/Kconfig.bq2407x"
 source "drivers/charger/Kconfig.sbs_charger"
 source "drivers/charger/Kconfig.bq24190"
 source "drivers/charger/Kconfig.max20335"

@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI BQ2407X charger IC
+  example:
+    bq2407x {
+            compatible = "ti,bq2407x";
+            status = "okay";
+            ce-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+            pg-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+            stat1-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+            stat2-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+    };
+
+compatible: "ti,bq2407x"
+
+include: charger-device.yaml
+
+properties:
+  ce-gpios:
+    type: phandle-array
+    description: Charge enable GPIO
+    required: true
+
+  pg-gpios:
+    type: phandle-array
+    description: Power good GPIO
+    required: true
+
+  stat1-gpios:
+    type: phandle-array
+    description: Status 1 GPIO
+    required: true
+
+  stat2-gpios:
+    type: phandle-array
+    description: Status 2 GPIO
+    required: true
