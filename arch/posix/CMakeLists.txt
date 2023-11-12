@@ -94,12 +94,12 @@ elseif (CONFIG_NATIVE_LIBRARY)
 
     # Do not use the C library from this compiler/host,
     # but still use the basic compiler headers
-    # -fno-builtin to avoid the compiler using builtin replacements for std library functions
+    # no_builtin to avoid the compiler using builtin replacements for std library functions
     zephyr_compile_options(
       -nostdinc
       -isystem ${COMPILER_OWN_INCLUDE_PATH}
       $<TARGET_PROPERTY:compiler,freestanding>
-      -fno-builtin
+      $<TARGET_PROPERTY:compiler,no_builtin>
     )
   endif()
 endif()

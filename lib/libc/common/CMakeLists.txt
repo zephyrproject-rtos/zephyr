@@ -8,4 +8,4 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_MALLOC source/stdlib/malloc.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_STRNLEN source/string/strnlen.c)
 
 # Prevent compiler from optimizing calloc into an infinite recursive call
-zephyr_library_cc_option(-fno-builtin-malloc)
+zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin_malloc>)
