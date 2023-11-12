@@ -107,6 +107,7 @@
 #define AHB_FREQ_MAX		275000000UL
 #define APBx_FREQ_MAX		137500000UL
 #elif defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) ||\
+	  defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) ||\
 	  defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
 #define SYSCLK_FREQ_MAX		280000000UL
 #define AHB_FREQ_MAX		280000000UL
@@ -829,6 +830,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* HW semaphore Clock enable */
 #if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) || \
+	defined(CONFIG_SOC_STM32H7B0XX) || defined(CONFIG_SOC_STM32H7B0XXQ) || \
 	defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_HSEM);
 #else
