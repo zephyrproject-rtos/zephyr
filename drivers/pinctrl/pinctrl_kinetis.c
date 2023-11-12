@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 NXP
+ * Copyright (c) 2022-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,12 @@
 
 #define DT_DRV_COMPAT nxp_kinetis_pinmux
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/logging/log.h>
 #include <fsl_clock.h>
+
+LOG_MODULE_REGISTER(pinctrl_kinetis, CONFIG_PINCTRL_LOG_LEVEL);
 
 /* Port register addresses. */
 static PORT_Type *ports[] = {
@@ -28,7 +32,8 @@ static PORT_Type *ports[] = {
 #define PINCFG(mux) ((mux) & Z_PINCTRL_KINETIS_PCR_MASK)
 
 struct pinctrl_mcux_config {
-	clock_ip_name_t clock_ip_name;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
@@ -51,24 +56,36 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 static int pinctrl_mcux_init(const struct device *dev)
 {
 	const struct pinctrl_mcux_config *config = dev->config;
+	int err;
 
-	CLOCK_EnableClock(config->clock_ip_name);
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		LOG_ERR("failed to enable clock (err %d)", err);
+		return -EINVAL;
+	}
 
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ke1xf_sim), okay)
-#define INST_DT_CLOCK_IP_NAME(n) \
-	DT_REG_ADDR(DT_INST_PHANDLE(n, clocks)) + DT_INST_CLOCKS_CELL(n, name)
-#else
-#define INST_DT_CLOCK_IP_NAME(n) \
+#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_sim), okay)
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) \
 	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), \
 			DT_INST_CLOCKS_CELL(n, bits))
+#else
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) \
+	DT_INST_CLOCKS_CELL(n, name)
 #endif
 
 #define PINCTRL_MCUX_INIT(n)						\
 	static const struct pinctrl_mcux_config pinctrl_mcux_##n##_config = {\
-		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
+		.clock_subsys = (clock_control_subsys_t)		\
+				PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),	\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
