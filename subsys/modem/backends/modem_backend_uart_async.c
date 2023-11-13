@@ -13,9 +13,10 @@ LOG_MODULE_DECLARE(modem_backend_uart);
 #include <string.h>
 
 #define MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT       (0)
-#define MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT       (1)
-#define MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF1_USED_BIT       (2)
-#define MODEM_BACKEND_UART_ASYNC_STATE_RX_RBUF_USED_INDEX_BIT (3)
+#define MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT          (1)
+#define MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT       (2)
+#define MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF1_USED_BIT       (3)
+#define MODEM_BACKEND_UART_ASYNC_STATE_RX_RBUF_USED_INDEX_BIT (4)
 
 static void modem_backend_uart_async_flush(struct modem_backend_uart *backend)
 {
@@ -24,6 +25,22 @@ static void modem_backend_uart_async_flush(struct modem_backend_uart *backend)
 	while (uart_fifo_read(backend->uart, &c, 1) > 0) {
 		continue;
 	}
+}
+
+static bool modem_backend_uart_async_is_closed(struct modem_backend_uart *backend)
+{
+	if (!atomic_test_bit(&backend->async.state,
+			    MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT) &&
+	    !atomic_test_bit(&backend->async.state,
+			    MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT) &&
+	    !atomic_test_bit(&backend->async.state,
+			    MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT) &&
+	    !atomic_test_bit(&backend->async.state,
+			    MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF1_USED_BIT)) {
+		return true;
+	}
+
+	return false;
 }
 
 static uint8_t modem_backend_uart_async_rx_rbuf_used_index(struct modem_backend_uart *backend)
@@ -122,7 +139,8 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		break;
 
 	case UART_RX_DISABLED:
-		k_work_submit(&backend->async.rx_disabled_work);
+		atomic_clear_bit(&backend->async.state,
+				 MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT);
 		break;
 
 	case UART_RX_STOPPED:
@@ -131,6 +149,10 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 
 	default:
 		break;
+	}
+
+	if (modem_backend_uart_async_is_closed(backend)) {
+		k_work_submit(&backend->async.rx_disabled_work);
 	}
 }
 
@@ -158,6 +180,9 @@ static int modem_backend_uart_async_open(void *data)
 	if (ret < 0) {
 		return ret;
 	}
+
+	atomic_set_bit(&backend->async.state,
+		       MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT);
 
 	modem_pipe_notify_opened(&backend->pipe);
 	return 0;
@@ -229,6 +254,7 @@ static int modem_backend_uart_async_close(void *data)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 
+	uart_tx_abort(backend->uart);
 	uart_rx_disable(backend->uart);
 	return 0;
 }
