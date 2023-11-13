@@ -1033,7 +1033,7 @@ static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 
 	while (!ring_buf_put(dev_data->tx_ringbuf, &c, 1)) {
 		if (k_is_in_isr() || !dev_data->flow_ctrl) {
-			LOG_INF("Ring buffer full, discard %c", c);
+			LOG_WRN_ONCE("Ring buffer full, discard data");
 			break;
 		}
 
