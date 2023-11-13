@@ -8,14 +8,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_kbd_matrix.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_INPUT_LOG_LEVEL
 LOG_MODULE_REGISTER(input_kbd_matrix);
-
-#include "input_kbd_matrix.h"
 
 #define INPUT_KBD_MATRIX_ROW_MASK UINT8_MAX
 
