@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/toolchain.h>
 #include <mmu.h>
 #include <zephyr/linker/sections.h>

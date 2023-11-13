@@ -21,7 +21,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 	/* exports (private APIs) */
 

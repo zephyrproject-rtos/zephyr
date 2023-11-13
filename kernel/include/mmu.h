@@ -12,7 +12,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/linker/linker-defs.h>
 
 /*

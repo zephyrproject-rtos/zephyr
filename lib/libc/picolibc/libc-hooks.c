@@ -20,7 +20,7 @@
 #include <zephyr/sys/sem.h>
 #include <zephyr/logging/log.h>
 #ifdef CONFIG_MMU
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #endif
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)

@@ -13,7 +13,7 @@
 #include <offsets_short.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 /*
  * Definitions/macros for enabling paging

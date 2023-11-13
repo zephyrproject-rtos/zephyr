@@ -7,7 +7,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/xtensa/arch.h>
 #include <zephyr/arch/xtensa/cache.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 __weak bool sys_mm_is_phys_addr_in_range(uintptr_t phys)
 {

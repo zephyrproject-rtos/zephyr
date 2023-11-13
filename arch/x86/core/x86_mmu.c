@@ -7,7 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/x86/mmustructs.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>

@@ -21,6 +21,7 @@ zephyr_syscall_header_ifdef(
 
 zephyr_syscall_header_ifdef(
   CONFIG_MMU
+  ${ZEPHYR_BASE}/include/zephyr/kernel/mm.h
   ${ZEPHYR_BASE}/include/zephyr/sys/mem_manage.h
 )
 

@@ -26,7 +26,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/sys/barrier.h>
 
 #include <cmsis_core.h>
@@ -861,7 +861,7 @@ int z_arm_mmu_init(void)
  * @param phys 32-bit physical address.
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
- *              flags in sys/mem_manage.h.
+ *              flags in kernel/mm.h.
  * @retval 0 on success, -EINVAL if an invalid parameter is detected.
  */
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
@@ -939,7 +939,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
  * @param phys 32-bit physical address.
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
- *              flags in sys/mem_manage.h.
+ *              flags in kernel/mm.h.
  */
 void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {

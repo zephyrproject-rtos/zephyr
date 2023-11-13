@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DT_DRV_COMPAT snps_designware_ethernet
 
 #include <sys/types.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>
