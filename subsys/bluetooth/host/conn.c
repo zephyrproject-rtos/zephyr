@@ -903,11 +903,8 @@ void bt_conn_process_tx(struct bt_conn *conn)
 
 	LOG_DBG("conn %p", conn);
 
-	bool disconnecting = conn->state == BT_CONN_DISCONNECTED ||
-			     conn->state == BT_CONN_DISCONNECTING ||
-			     conn->state == BT_CONN_DISCONNECT_COMPLETE;
-
-	if (disconnecting && atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
+	if (conn->state == BT_CONN_DISCONNECTED &&
+	    atomic_test_and_clear_bit(conn->flags, BT_CONN_CLEANUP)) {
 		LOG_DBG("handle %u disconnected - cleaning up", conn->handle);
 		conn_cleanup(conn);
 		return;
