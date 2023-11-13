@@ -1131,6 +1131,9 @@ static int mcux_i3c_transfer(const struct device *dev,
 			goto out_xfer_i3c_stop_unlock;
 		}
 
+		/* write back the total number of bytes transferred */
+		msgs[i].num_xfer = ret;
+
 		if (emit_stop) {
 			/* After a STOP, send broadcast header before next msg */
 			send_broadcast = true;
@@ -1371,6 +1374,9 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 
 			goto out_ccc_stop;
 		}
+
+		/* write back the total number of bytes transferred */
+		payload->ccc.num_xfer = ret;
 	}
 
 	/* Wait for controller to say the operation is done */
@@ -1402,6 +1408,9 @@ static int mcux_i3c_do_ccc(const struct device *dev,
 
 				goto out_ccc_stop;
 			}
+
+			/* write back the total number of bytes transferred */
+			tgt_payload->num_xfer = ret;
 		}
 	}
 
