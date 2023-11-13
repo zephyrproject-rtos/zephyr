@@ -648,3 +648,84 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
+
+static struct bt_bap_stream *stream_allocated;
+static const struct bt_audio_codec_qos_pref qos_pref =
+	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+
+static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
+						enum bt_audio_dir dir,
+						const struct bt_audio_codec_cfg *codec_cfg,
+						struct bt_bap_stream **stream,
+						struct bt_audio_codec_qos_pref *const pref,
+						struct bt_bap_ascs_rsp *rsp)
+{
+	*stream = stream_allocated;
+	*pref = qos_pref;
+	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+
+	bt_bap_stream_cb_register(*stream, &mock_bap_stream_ops);
+
+	return 0;
+}
+
+ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	const struct bt_gatt_attr *ase, *cp;
+	struct bt_conn_info info;
+	uint8_t ase_id;
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
+		ase = fixture->ase_snk.attr;
+		ase_id = fixture->ase_snk.id;
+	} else {
+		ase = fixture->ase_src.attr;
+		ase_id = fixture->ase_src.id;
+	}
+
+	zexpect_not_null(ase);
+	zassert_not_equal(ase_id, 0x00);
+
+	cp = test_ase_control_point_get();
+	zexpect_not_null(cp);
+
+	bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
+
+	stream_allocated = stream;
+	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
+
+	/* Mock out of buffers case */
+	mock_bt_gatt_notify_cb_fake.return_val = -ENOMEM;
+
+	const uint8_t buf[] = {
+		0x01,           /* Opcode = Config Codec */
+		0x01,           /* Number_of_ASEs */
+		ase_id,         /* ASE_ID[0] */
+		0x01,           /* Target_Latency[0] = Target low latency */
+		0x02,           /* Target_PHY[0] = LE 2M PHY */
+		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
+		0x00, 0x00,     /* Codec_ID[0].Company_ID */
+		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00,           /* Codec_Specific_Configuration_Length[0] */
+	};
+
+	cp->write(conn, cp, (void *)buf, sizeof(buf), 0, 0);
+
+	/* Verification */
+	expect_bt_bap_stream_ops_configured_not_called();
+
+	mock_bt_gatt_notify_cb_fake.return_val = 0;
+
+	err = bt_conn_get_info(conn, &info);
+	zassert_equal(err, 0);
+
+	/* Wait for ASE state notification retry */
+	k_sleep(K_MSEC(BT_CONN_INTERVAL_TO_MS(info.le.interval)));
+
+	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
+
+	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+}
