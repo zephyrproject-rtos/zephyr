@@ -8,7 +8,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/drivers/gpio.h>
-#include "esp_sleep.h"
+#include <esp_sleep.h>
+#include <driver/gpio.h>
 
 /* Most development boards have "boot" button attached to GPIO0.
  * You can also change this to another pin.
@@ -36,7 +37,7 @@ int main(void)
 
 	const int wakeup_level = (button.dt_flags & GPIO_ACTIVE_LOW) ? 0 : 1;
 
-	esp_gpio_wakeup_enable(button.pin,
+	gpio_wakeup_enable(button.pin,
 			wakeup_level == 0 ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL);
 
 	while (true) {
