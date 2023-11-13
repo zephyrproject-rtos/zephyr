@@ -152,6 +152,9 @@ Drivers and Sensors
 
 * I3C
 
+  * The Legacy Virtual Register defines have been renamed from ``I3C_DCR_I2C_*``
+    to ``I3C_LVR_I2C_*``.
+
 * IEEE 802.15.4
 
 * Interrupt Controller
