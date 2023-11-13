@@ -163,19 +163,30 @@ static void z_log_msg_post_finalize(void)
 
 		k_spin_unlock(&process_lock, key);
 	} else if (proc_tid != NULL) {
-		if (cnt == 0) {
-			k_timer_start(&log_process_thread_timer,
-				      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
-				      K_NO_WAIT);
-		} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
-			   (cnt + 1) == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-			k_timer_stop(&log_process_thread_timer);
-			k_sem_give(&log_process_thread_sem);
+		/*
+		 * If CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD == 1,
+		 * timer is never needed. We release the processing
+		 * thread after every message is posted.
+		 */
+		if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD == 1) {
+			if (cnt == 0) {
+				k_sem_give(&log_process_thread_sem);
+			}
 		} else {
-			/* No action needed. Message processing will be triggered by the
-			 * timeout or when number of upcoming messages exceeds the
-			 * threshold.
-			 */
+			if (cnt == 0) {
+				k_timer_start(&log_process_thread_timer,
+					      K_MSEC(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS),
+					      K_NO_WAIT);
+			} else if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+				   (cnt + 1) == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+				k_timer_stop(&log_process_thread_timer);
+				k_sem_give(&log_process_thread_sem);
+			} else {
+				/* No action needed. Message processing will be triggered by the
+				 * timeout or when number of upcoming messages exceeds the
+				 * threshold.
+				 */
+			}
 		}
 	}
 }
