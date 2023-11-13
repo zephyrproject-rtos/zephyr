@@ -20,6 +20,20 @@ config BAP_BROADCAST_24_2_1
 
 endchoice
 
+config ENABLE_BROADCAST_CODE
+	bool "Enable Broadcast code"
+	default n
+	help
+		Enable encryption and use of broadcast code string.
+
+config BROADCAST_CODE_STRING
+	string "Broadcast code string"
+	default "Zephyr Broadcast Code"
+	depends on ENABLE_BROADCAST_CODE
+	help
+		Broadcast code of target broadcast device. If not empty string, source device
+		will broadcast the specified broadcast code.
+
 config ENABLE_LC3
 	bool "Enable the LC3 codec"
 	# By default let's enable it in the platforms we know are capable of supporting it

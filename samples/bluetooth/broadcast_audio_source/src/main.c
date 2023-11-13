@@ -230,7 +230,14 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	create_param.params_count = ARRAY_SIZE(subgroup_param);
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_active.qos;
+#if defined(CONFIG_ENABLE_BROADCAST_CODE)
+	create_param.encryption = true;
+	memset(create_param.broadcast_code, 0, BT_AUDIO_BROADCAST_CODE_SIZE);
+	memcpy(create_param.broadcast_code, CONFIG_BROADCAST_CODE_STRING,
+		   MIN(strlen(CONFIG_BROADCAST_CODE_STRING), BT_AUDIO_BROADCAST_CODE_SIZE));
+#else
 	create_param.encryption = false;
+#endif
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
