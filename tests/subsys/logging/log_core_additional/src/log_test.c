@@ -376,7 +376,7 @@ ZTEST(test_log_core_additional, test_log_timestamping)
  * @addtogroup logging
  */
 
-#define UART_BACKEND "log_backend_uart"
+#define UART_BACKEND "log_backend_uart0"
 ZTEST(test_log_core_additional, test_multiple_backends)
 {
 	int cnt;
