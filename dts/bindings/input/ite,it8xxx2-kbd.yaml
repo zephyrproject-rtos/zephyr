@@ -5,7 +5,7 @@ description: ITE it8xxx2 keyboard matrix controller
 
 compatible: "ite,it8xxx2-kbd"
 
-include: [kscan.yaml, pinctrl-device.yaml]
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -39,4 +39,10 @@ properties:
     required: true
 
   pinctrl-names:
+    required: true
+
+  row-size:
+    required: true
+
+  col-size:
     required: true

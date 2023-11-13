@@ -173,6 +173,8 @@
 		     &kso14_default
 		     &kso15_default>;
 	pinctrl-names = "default";
+	row-size = <8>;
+	col-size = <16>;
 
 	kscan_input: kscan-input {
 		compatible = "zephyr,kscan-input";
