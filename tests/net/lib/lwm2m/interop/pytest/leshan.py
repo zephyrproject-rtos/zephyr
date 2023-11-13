@@ -62,9 +62,9 @@ class Leshan:
         resp = self._s.get(f'{self.api_url}{path}', params=params, timeout=self.timeout)
         return Leshan.handle_response(resp)
 
-    def put_raw(self, path: str, data: str | dict | None = None, headers: dict | None = None):
+    def put_raw(self, path: str, data: str | dict | None = None, headers: dict | None = None, params: dict | None = None):
         """Send HTTP PUT query without any default parameters"""
-        resp = self._s.put(f'{self.api_url}{path}', data=data, headers=headers, timeout=self.timeout)
+        resp = self._s.put(f'{self.api_url}{path}', data=data, headers=headers, params=params, timeout=self.timeout)
         return Leshan.handle_response(resp)
 
     def put(self, path: str, data: str | dict, uri_options: str = ''):
@@ -107,6 +107,21 @@ class Leshan:
             kind = 'resourceInstance'
         rid = path.split('/')[-1]
         return self.put(f'/clients/{endpoint}/{path}', self._define_resource(rid, value, kind))
+
+    def write_attributes(self, endpoint: str, path: str, attributes: dict):
+        """Send LwM2M Write-Attributes to given path
+            example:
+                leshan.write_attributes(endpoint, '1/2/3, {'pmin': 10, 'pmax': 40})
+        """
+        return self.put_raw(f'/clients/{endpoint}/{path}/attributes', params=attributes)
+
+    def remove_attributes(self, endpoint: str, path: str, attributes: list):
+        """Send LwM2M Write-Attributes to given path
+            example:
+                leshan.remove_attributes(endpoint, '1/2/3, ['pmin', 'pmax'])
+        """
+        attrs = '&'.join(attributes)
+        return self.put_raw(f'/clients/{endpoint}/{path}/attributes?'+ attrs)
 
     def update_obj_instance(self, endpoint: str, path: str, resources: dict):
         """Update object instance"""
