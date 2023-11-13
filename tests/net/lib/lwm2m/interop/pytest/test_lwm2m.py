@@ -51,6 +51,7 @@ def test_LightweightM2M_1_1_int_104(shell: Shell, dut: DeviceAdapter, leshan: Le
     leshan.execute(endpoint, '1/0/8')
     dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_107(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-107 - Extending the lifetime of a registration"""
     leshan.write(endpoint, '1/0/1', 120)
@@ -66,6 +67,7 @@ def test_LightweightM2M_1_1_int_108(leshan, endpoint):
     """LightweightM2M-1.1-int-108 - Turn on Queue Mode"""
     assert leshan.get(f'/clients/{endpoint}')["queuemode"]
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_109(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-109 - Behavior in Queue Mode"""
     logger.debug('Wait for Queue RX OFF')
@@ -500,6 +502,7 @@ def test_LightweightM2M_1_1_int_281(shell: Shell, leshan: Leshan, endpoint: str)
 # Information Reporting Interface [300-399]
 #
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_301(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-301 - Observation and Notification of parameter values"""
     pwr_src = leshan.read(endpoint, '3/0/6')
@@ -527,6 +530,7 @@ def test_LightweightM2M_1_1_int_301(shell: Shell, leshan: Leshan, endpoint: str)
         assert (start + 15) <= time.time() + 1 # Allow 1 second slack. (pMinx + pMax=15)
     leshan.cancel_observe(endpoint, '3/0/7')
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-302 - Cancel Observations using Reset Operation"""
     leshan.observe(endpoint, '3/0/7')
@@ -546,6 +550,7 @@ def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Le
     shell.exec_command('lwm2m write /3/0/8/0 -u32 50')
     dut.readlines_until(regex=r'.*Observer removed for 3/0/8')
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_304(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-304 - Observe-Composite Operation"""
     assert leshan.put_raw(f'/clients/{endpoint}/1/0/1/attributes?pmin=30')['status'] == 'CHANGED(204)'
@@ -590,6 +595,8 @@ def test_LightweightM2M_1_1_int_307(shell: Shell, dut: DeviceAdapter, leshan: Le
     shell.exec_command('lwm2m send /3/0')
     dut.readlines_until(regex=r'.*SEND status: 0', timeout=5.0)
 
+
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_308(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-308 - Observe-Composite and Creating Object Instance"""
     shell.exec_command('lwm2m delete /16/0')
@@ -631,6 +638,7 @@ def test_LightweightM2M_1_1_int_308(shell: Shell, dut: DeviceAdapter, leshan: Le
     shell.exec_command('lwm2m write 1/0/2 -u32 1')
     shell.exec_command('lwm2m write 1/0/3 -u32 10')
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_309(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-309 - Observe-Composite and Deleting Object Instance"""
     shell.exec_command('lwm2m delete /16/0')
@@ -673,6 +681,7 @@ def test_LightweightM2M_1_1_int_309(shell: Shell, dut: DeviceAdapter, leshan: Le
     shell.exec_command('lwm2m write 1/0/2 -u32 1')
     shell.exec_command('lwm2m write 1/0/3 -u32 10')
 
+@pytest.mark.slow
 def test_LightweightM2M_1_1_int_310(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-310 - Observe-Composite and modification of parameter values"""
     # Need to use Configuration C.1
