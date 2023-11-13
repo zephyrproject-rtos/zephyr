@@ -8,13 +8,11 @@ include: base.yaml
 properties:
   row-size:
     type: int
-    required: true
     description: |
       The number of rows in the keyboard matrix.
 
   col-size:
     type: int
-    required: true
     description: |
       The number of column in the keyboard matrix.
 
