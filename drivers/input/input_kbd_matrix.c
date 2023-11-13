@@ -74,7 +74,7 @@ static bool input_kbd_matrix_ghosting(const struct device *dev)
 static bool input_kbd_matrix_scan(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
-	const struct input_kbd_matrix_api *api = &cfg->api;
+	const struct input_kbd_matrix_api *api = cfg->api;
 	int row;
 	uint8_t key_event = 0U;
 
@@ -264,7 +264,7 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 {
 	const struct device *dev = arg1;
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
-	const struct input_kbd_matrix_api *api = &cfg->api;
+	const struct input_kbd_matrix_api *api = cfg->api;
 	struct input_kbd_matrix_common_data *data = dev->data;
 
 	ARG_UNUSED(unused2);
