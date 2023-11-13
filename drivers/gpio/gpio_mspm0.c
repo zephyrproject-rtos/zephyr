@@ -141,6 +141,7 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 						 pull_res,
 						 DL_GPIO_HYSTERESIS_DISABLE,
 						 DL_GPIO_WAKEUP_DISABLE);
+		DL_GPIO_disableOutput(config->base, BIT(pin));
 		break;
 	case GPIO_OUTPUT:
 		DL_GPIO_initDigitalOutputFeatures(config->pincm_lut[pin],
