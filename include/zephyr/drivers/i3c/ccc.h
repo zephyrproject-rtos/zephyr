@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Intel Corporation
+ * Copyright 2023 Meta Platforms, Inc. and its affiliates
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -248,6 +249,15 @@ struct i3c_ccc_target_payload {
 
 	/** Length in bytes for @p data. */
 	size_t data_len;
+
+	/**
+	 * Total number of bytes transferred
+	 *
+	 * A Target can issue an EoD or the Controller can abort a transfer
+	 * before the length of the buffer. It is expected for the driver to
+	 * write to this after the transfer.
+	 */
+	size_t num_xfer;
 };
 
 /**
@@ -270,6 +280,14 @@ struct i3c_ccc_payload {
 
 		/** Length in bytes for optional data array. */
 		size_t data_len;
+
+		/**
+		 * Total number of bytes transferred
+		 *
+		 * A Controller can abort a transfer before the length of the buffer.
+		 * It is expected for the driver to write to this after the transfer.
+		 */
+		size_t num_xfer;
 	} ccc;
 
 	struct {
