@@ -271,6 +271,10 @@ class Leshan:
                 raise RuntimeError(f'No content received')
             payload = payload['content']
         for path, content in payload.items():
+            if path == "/":
+                for obj in content['objects']:
+                    data.update(cls._decode_obj(obj))
+                continue
             keys = [int(key) for key in path.lstrip("/").split('/')]
             if len(keys) == 1:
                 data.update(cls._decode_obj(content))

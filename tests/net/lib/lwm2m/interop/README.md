@@ -160,7 +160,7 @@ Tests are written from test spec;
 |LightweightM2M-1.1-int-232 - Querying basic information in SenML CBOR format|:white_check_mark:| |
 |LightweightM2M-1.1-int-233 - Setting basic information in SenML CBOR format|:white_check_mark:| |
 |LightweightM2M-1.1-int-234 - Setting basic information in SenML JSON format|:white_check_mark:| |
-|LightweightM2M-1.1-int-235 - Read-Composite Operation on root path|:large_orange_diamond:|Root Path is not yet supported by Leshan.|
+|LightweightM2M-1.1-int-235 - Read-Composite Operation on root path|:white_check_mark:| |
 |LightweightM2M-1.1-int-236 - Read-Composite - Partial Presence|:white_check_mark:| |
 |LightweightM2M-1.1-int-237 - Read on Object without specifying Content-Type|:white_check_mark:| |
 |LightweightM2M-1.1-int-241 - Executable Resource: Rebooting the device|:white_check_mark:| |
