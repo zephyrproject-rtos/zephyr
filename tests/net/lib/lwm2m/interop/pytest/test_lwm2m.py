@@ -202,7 +202,7 @@ def test_LightweightM2M_1_1_int_221(shell: Shell, leshan: Leshan, endpoint: str)
     """LightweightM2M-1.1-int-221 - Attempt to perform operations on Security"""
     assert leshan.read(endpoint, '0/0')['status'] == 'UNAUTHORIZED(401)'
     assert leshan.write(endpoint, '0/0/0', 'coap://localhost')['status'] == 'UNAUTHORIZED(401)'
-    assert leshan.put_raw(f'/clients/{endpoint}/0/attributes?pmin=10')['status'] == 'UNAUTHORIZED(401)'
+    assert leshan.write_attributes(endpoint, '0', {'pmin':10})['status'] == 'UNAUTHORIZED(401)'
 
 def test_LightweightM2M_1_1_int_222(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-222 - Read on Object"""
@@ -429,15 +429,12 @@ def test_LightweightM2M_1_1_int_260(shell: Shell, leshan: Leshan, endpoint: str)
     expected_keys = ['/3', '/3/0', '/3/0/1', '/3/0/2', '/3/0/3', '/3/0/4', '/3/0/6', '/3/0/7', '/3/0/8', '/3/0/9', '/3/0/11', '/3/0/16']
     missing_keys = [key for key in expected_keys if key not in resp.keys()]
     assert len(missing_keys) == 0
-    assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmin=10')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmax=200')['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '3', {'pmin': 10, 'pmax': 200})['status'] == 'CHANGED(204)'
     resp = leshan.discover(endpoint, '3/0')
     assert int(resp['/3/0/6']['dim']) == 2
     assert int(resp['/3/0/7']['dim']) == 2
     assert int(resp['/3/0/8']['dim']) == 2
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?lt=1')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?gt=6')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?st=1')['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '3/0/7', {'lt': 1, 'gt': 6, 'st': 1})['status'] == 'CHANGED(204)'
     resp = leshan.discover(endpoint, '3/0')
     expected_keys = ['/3/0', '/3/0/1', '/3/0/2', '/3/0/3', '/3/0/4', '/3/0/6', '/3/0/7', '/3/0/8', '/3/0/9', '/3/0/11', '/3/0/16']
     missing_keys = [key for key in expected_keys if key not in resp.keys()]
@@ -451,8 +448,9 @@ def test_LightweightM2M_1_1_int_260(shell: Shell, leshan: Leshan, endpoint: str)
     missing_keys = [key for key in expected_keys if key not in resp.keys()]
     assert len(missing_keys) == 0
     assert len(resp) == len(expected_keys)
+    # restore
+    leshan.remove_attributes(endpoint, '3', ['pmin', 'pmax'])
 
-@pytest.mark.skip(reason="Leshan don't allow writing attributes to resource instance")
 def test_LightweightM2M_1_1_int_261(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-261 - Write-Attribute Operation on a multiple resource"""
     resp = leshan.discover(endpoint, '3/0/11')
@@ -462,19 +460,20 @@ def test_LightweightM2M_1_1_int_261(shell: Shell, leshan: Leshan, endpoint: str)
     assert len(missing_keys) == 0
     assert len(resp) == len(expected_keys)
     assert int(resp['/3/0/11']['dim']) == 1
-    assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmin=10')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmax=200')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/attributes?pmax=320')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/11/0/attributes?pmax=100')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/11/0/attributes?epmin=1')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/11/0/attributes?epmax=20')['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '3', {'pmin':10, 'pmax':200})['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '3/0', {'pmax':320})['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '3/0/11/0', {'pmax':100, 'epmin':1, 'epmax':20})['status'] == 'CHANGED(204)'
     resp = leshan.discover(endpoint, '3/0/11')
     logger.debug(resp)
     assert int(resp['/3/0/11']['pmin']) == 10
     assert int(resp['/3/0/11']['pmax']) == 320
     assert int(resp['/3/0/11/0']['pmax']) == 100
-    assert int(resp['/3/0/11/0']['epmin']) == 1
-    assert int(resp['/3/0/11/0']['epmax']) == 20
+    # Note: Zephyr does not support epmin&epmax.
+    # Restore
+    leshan.remove_attributes(endpoint, '3', ['pmin', 'pmax'])
+    leshan.remove_attributes(endpoint, '3/0', ['pmax'])
+    leshan.remove_attributes(endpoint, '3/0/11/0', ['pmax'])
+
 
 def test_LightweightM2M_1_1_int_280(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-280 - Successful Read-Composite Operation"""
@@ -509,8 +508,7 @@ def test_LightweightM2M_1_1_int_301(shell: Shell, leshan: Leshan, endpoint: str)
     logger.debug(pwr_src)
     assert pwr_src[6][0] == 1
     assert pwr_src[6][1] == 5
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?pmin=5')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/3/0/7/attributes?pmax=10')['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '3/0/7', {'pmin': 5, 'pmax': 10})['status'] == 'CHANGED(204)'
     leshan.observe(endpoint, '3/0/7')
     with leshan.get_event_stream(endpoint, timeout=30) as events:
         shell.exec_command('lwm2m write /3/0/7/0 -u32 3000')
@@ -529,6 +527,7 @@ def test_LightweightM2M_1_1_int_301(shell: Shell, leshan: Leshan, endpoint: str)
         assert data[3][0][7][0] == 3500
         assert (start + 15) <= time.time() + 1 # Allow 1 second slack. (pMinx + pMax=15)
     leshan.cancel_observe(endpoint, '3/0/7')
+    leshan.remove_attributes(endpoint, '3/0/7', ['pmin', 'pmax'])
 
 @pytest.mark.slow
 def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
@@ -553,8 +552,10 @@ def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Le
 @pytest.mark.slow
 def test_LightweightM2M_1_1_int_304(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-304 - Observe-Composite Operation"""
-    assert leshan.put_raw(f'/clients/{endpoint}/1/0/1/attributes?pmin=30')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/1/0/1/attributes?pmax=45')['status'] == 'CHANGED(204)'
+    # Need to use Configuration C.1
+    shell.exec_command('lwm2m write 1/0/2 -u32 0')
+    shell.exec_command('lwm2m write 1/0/3 -u32 0')
+    assert leshan.write_attributes(endpoint, '1/0/1', {'pmin': 30, 'pmax': 45})['status'] == 'CHANGED(204)'
     data = leshan.composite_observe(endpoint, ['/1/0/1', '/3/0/11/0', '/3/0/16'])
     assert data[1][0][1] is not None
     assert data[3][0][11][0] is not None
@@ -575,6 +576,10 @@ def test_LightweightM2M_1_1_int_304(shell: Shell, leshan: Leshan, endpoint: str)
         assert (start + 30) < time.time()
         assert (start + 45) > time.time() - 1
     leshan.cancel_composite_observe(endpoint, ['/1/0/1', '/3/0/11/0', '/3/0/16'])
+    # Restore configuration C.3
+    shell.exec_command('lwm2m write 1/0/2 -u32 1')
+    shell.exec_command('lwm2m write 1/0/3 -u32 10')
+    leshan.remove_attributes(endpoint, '1/0/1', ['pmin', 'pmax'])
 
 def test_LightweightM2M_1_1_int_306(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-306 - Send Operation"""
@@ -620,8 +625,7 @@ def test_LightweightM2M_1_1_int_308(shell: Shell, dut: DeviceAdapter, leshan: Le
     content_both = {16: {0: resources_a, 1: resources_b}}
     assert leshan.create_obj_instance(endpoint, '16/0', resources_a)['status'] == 'CREATED(201)'
     dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
-    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmin=30')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmax=45')['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '16/0', {'pmin': 30, 'pmax': 45})['status'] == 'CHANGED(204)'
     data = leshan.composite_observe(endpoint, ['/16/0', '/16/1'])
     assert data == content_one
     with leshan.get_event_stream(endpoint, timeout=50) as events:
@@ -637,6 +641,7 @@ def test_LightweightM2M_1_1_int_308(shell: Shell, dut: DeviceAdapter, leshan: Le
     # Restore configuration C.3
     shell.exec_command('lwm2m write 1/0/2 -u32 1')
     shell.exec_command('lwm2m write 1/0/3 -u32 10')
+    leshan.remove_attributes(endpoint, '16/0', ['pmin','pmax'])
 
 @pytest.mark.slow
 def test_LightweightM2M_1_1_int_309(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
@@ -663,8 +668,7 @@ def test_LightweightM2M_1_1_int_309(shell: Shell, dut: DeviceAdapter, leshan: Le
     assert leshan.create_obj_instance(endpoint, '16/0', resources_a)['status'] == 'CREATED(201)'
     assert leshan.create_obj_instance(endpoint, '16/1', resources_b)['status'] == 'CREATED(201)'
     dut.readlines_until(regex='.*net_lwm2m_rd_client: Update Done', timeout=5.0)
-    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmin=30')['status'] == 'CHANGED(204)'
-    assert leshan.put_raw(f'/clients/{endpoint}/16/0/attributes?pmax=45')['status'] == 'CHANGED(204)'
+    assert leshan.write_attributes(endpoint, '16/0', {'pmin': 30, 'pmax': 45})['status'] == 'CHANGED(204)'
     data = leshan.composite_observe(endpoint, ['/16/0', '/16/1'])
     assert data == content_both
     with leshan.get_event_stream(endpoint, timeout=50) as events:
@@ -680,6 +684,7 @@ def test_LightweightM2M_1_1_int_309(shell: Shell, dut: DeviceAdapter, leshan: Le
     # Restore configuration C.3
     shell.exec_command('lwm2m write 1/0/2 -u32 1')
     shell.exec_command('lwm2m write 1/0/3 -u32 10')
+    leshan.remove_attributes(endpoint, '16/0', ['pmin', 'pmax'])
 
 @pytest.mark.slow
 def test_LightweightM2M_1_1_int_310(shell: Shell, leshan: Leshan, endpoint: str):
@@ -687,11 +692,9 @@ def test_LightweightM2M_1_1_int_310(shell: Shell, leshan: Leshan, endpoint: str)
     # Need to use Configuration C.1
     shell.exec_command('lwm2m write 1/0/2 -u32 0')
     shell.exec_command('lwm2m write 1/0/3 -u32 0')
-    # Ensure that our previous attributes are not conflicting
-    assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmin=0')['status'] == 'CHANGED(204)'
     leshan.composite_observe(endpoint, ['/1/0/1', '/3/0'])
     with leshan.get_event_stream(endpoint, timeout=50) as events:
-        assert leshan.put_raw(f'/clients/{endpoint}/3/attributes?pmax=5')['status'] == 'CHANGED(204)'
+        assert leshan.write_attributes(endpoint, '3', {'pmax': 5})['status'] == 'CHANGED(204)'
         start = time.time()
         data =  events.next_event('NOTIFICATION')
         assert data[3][0][0] == 'Zephyr'
@@ -704,6 +707,7 @@ def test_LightweightM2M_1_1_int_310(shell: Shell, leshan: Leshan, endpoint: str)
     # Restore configuration C.3
     shell.exec_command('lwm2m write 1/0/2 -u32 1')
     shell.exec_command('lwm2m write 1/0/3 -u32 10')
+    leshan.remove_attributes(endpoint, '3', ['pmax'])
 
 def test_LightweightM2M_1_1_int_311(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-311 - Send command"""
