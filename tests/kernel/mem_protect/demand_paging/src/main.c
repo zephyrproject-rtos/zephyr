@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/timing/timing.h>
 #include <mmu.h>
 #include <zephyr/linker/sections.h>

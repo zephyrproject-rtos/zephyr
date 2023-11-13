@@ -18,7 +18,7 @@
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/types.h>
 #ifdef CONFIG_MMU
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #endif
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL

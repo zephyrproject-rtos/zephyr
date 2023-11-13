@@ -20,7 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/mutex.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)

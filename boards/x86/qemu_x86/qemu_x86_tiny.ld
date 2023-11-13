@@ -10,7 +10,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 
 /* Bounds of physical RAM from DTS */

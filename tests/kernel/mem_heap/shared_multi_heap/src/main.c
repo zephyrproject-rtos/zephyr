@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 #include <zephyr/multi_heap/shared_multi_heap.h>
