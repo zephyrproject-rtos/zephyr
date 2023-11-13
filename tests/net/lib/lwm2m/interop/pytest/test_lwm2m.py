@@ -367,9 +367,12 @@ def test_LightweightM2M_1_1_int_234(shell: Shell, leshan: Leshan, endpoint: str)
     """LightweightM2M-1.1-int-234 - Setting basic information in SenML JSON format"""
     setting_basic_senml(shell, leshan, endpoint, 'SENML_JSON')
 
-@pytest.mark.skip("Leshan does not allow reading root path")
-def test_LightweightM2M_1_1_int_235():
+def test_LightweightM2M_1_1_int_235(leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-235 - Read-Composite Operation on root path"""
+    resp = leshan.composite_read(endpoint, ['/'])
+    expected_keys = [16, 1, 3, 5]
+    missing_keys = [key for key in expected_keys if key not in resp.keys()]
+    assert len(missing_keys) == 0
 
 def test_LightweightM2M_1_1_int_236(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-236 - Read-Composite - Partial Presence"""
