@@ -79,7 +79,7 @@ struct log_msg_hdr {
 	const void *source;
 	log_timestamp_t timestamp;
 #endif
-#if CONFIG_LOG_THREAD_ID_PREFIX
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
 	void *tid;
 #endif
 };
@@ -807,7 +807,7 @@ static inline log_timestamp_t log_msg_get_timestamp(struct log_msg *msg)
  */
 static inline void *log_msg_get_tid(struct log_msg *msg)
 {
-#if CONFIG_LOG_THREAD_ID_PREFIX
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
 	return msg->hdr.tid;
 #else
 	ARG_UNUSED(msg);
