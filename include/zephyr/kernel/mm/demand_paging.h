@@ -29,8 +29,11 @@
 #include <inttypes.h>
 #include <zephyr/sys/__assert.h>
 
+/**
+ * Paging Statistics.
+ */
 struct k_mem_paging_stats_t {
-#ifdef CONFIG_DEMAND_PAGING_STATS
+#if defined(CONFIG_DEMAND_PAGING_STATS) || defined(__DOXYGEN__)
 	struct {
 		/** Number of page faults */
 		unsigned long			cnt;
@@ -41,7 +44,7 @@ struct k_mem_paging_stats_t {
 		/** Number of page faults with IRQ unlocked */
 		unsigned long			irq_unlocked;
 
-#ifndef CONFIG_DEMAND_PAGING_ALLOW_IRQ
+#if !defined(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || defined(__DOXYGEN__)
 		/** Number of page faults while in ISR */
 		unsigned long			in_isr;
 #endif
@@ -57,8 +60,11 @@ struct k_mem_paging_stats_t {
 #endif /* CONFIG_DEMAND_PAGING_STATS */
 };
 
+/**
+ * Paging Statistics Histograms.
+ */
 struct k_mem_paging_histogram_t {
-#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+#if defined(CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM) || defined(__DOXYGEN__)
 	/* Counts for each bin in timing histogram */
 	unsigned long	counts[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
 
