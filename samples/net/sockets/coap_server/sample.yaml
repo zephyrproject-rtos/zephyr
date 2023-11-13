@@ -10,5 +10,5 @@ tests:
       - net
       - socket
     platform_allow:
-      - native_posix
+      - native_sim
       - qemu_x86
