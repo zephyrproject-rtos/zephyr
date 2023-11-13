@@ -632,6 +632,13 @@ config ARCH_HAS_CODE_DATA_RELOCATION
 	  When selected, the architecture/SoC implements support for
 	  CODE_DATA_RELOCATION in its linker scripts.
 
+config ARCH_HAS_IPI_CPU_STOP
+	bool
+	depends on SMP
+	help
+	  When selected, the architecture/SoC implements support for IPI_CPU_STOP
+	  IPI to halt other cpus.
+
 #
 # Hidden CPU family configs
 #

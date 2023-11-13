@@ -495,6 +495,13 @@ static inline uint32_t arch_proc_id(void);
  */
 void arch_sched_ipi(void);
 
+/**
+ * Broadcast cpu stop IPI to all cpus
+ *
+ * This will send IPI_CPU_STOP to all other CPUs in the system to halt.
+ * NOTE: Current CPU won't wait for other CPUs to halt.
+ */
+void arch_cpu_stop_async(void);
 #endif /* CONFIG_SMP */
 
 /**

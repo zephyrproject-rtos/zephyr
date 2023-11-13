@@ -28,6 +28,9 @@ FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
 	 * is enabled?
 	 */
 
+#ifdef CONFIG_ARCH_HAS_IPI_CPU_STOP
+	arch_cpu_stop_async();
+#endif
 	(void)arch_irq_lock();
 	for (;;) {
 		/* Spin endlessly */
