@@ -108,6 +108,87 @@ function(sysbuild_get variable)
 endfunction()
 
 # Usage:
+#   sysbuild_cache(CREATE APPLICATION <name> [CMAKE_RERUN])
+#
+# This function works on the sysbuild cache for sysbuild managed applications.
+#
+# Arguments:
+# CREATE            : Create or update existing sysbuild cache file for the application.
+#                     The sysbuild cache is only updated if it contain changes.
+# APPLICATION <name>: Name of the application.
+# CMAKE_RERUN       : Force a CMake rerun for the application during next build
+#                     invocation if the sysbuild cache has changed. It is
+#                     advised to always use this flag. Not using this flag can
+#                     reduce build time, but only do so if application is
+#                     guranteed to be up-to-date.
+#
+function(sysbuild_cache)
+  cmake_parse_arguments(SB_CACHE "CREATE;CMAKE_RERUN" "APPLICATION" "" ${ARGN})
+  zephyr_check_arguments_required(sysbuild_cache SB_CACHE APPLICATION)
+  zephyr_check_flags_required(sysbuild_cache SB_CACHE CREATE)
+
+  get_target_property(${SB_CACHE_APPLICATION}_MAIN_APP ${SB_CACHE_APPLICATION} MAIN_APP)
+  get_cmake_property(sysbuild_cache CACHE_VARIABLES)
+
+  foreach(var_name ${sysbuild_cache})
+    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD)$")
+      # Perform a dummy read to prevent a false warning about unused variables
+      # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
+      set(unused_tmp_var ${${var_name}})
+
+      # We don't want to pass internal CMake variables.
+      # Required CMake variable to be passed, like CMAKE_BUILD_TYPE must be
+      # passed using `-D` on command invocation.
+      get_property(var_type CACHE ${var_name} PROPERTY TYPE)
+      set(cache_entry "${var_name}:${var_type}=$CACHE{${var_name}}")
+      string(REPLACE ";" "\;" cache_entry "${cache_entry}")
+      list(APPEND sysbuild_cache_strings "${cache_entry}\n")
+    endif()
+  endforeach()
+  if(DEFINED BOARD_REVISION)
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}@${BOARD_REVISION}\n")
+  else()
+    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}\n")
+  endif()
+  list(APPEND sysbuild_cache_strings "SYSBUILD_NAME:STRING=${SB_CACHE_APPLICATION}\n")
+
+  if(${SB_CACHE_APPLICATION}_MAIN_APP)
+    list(APPEND sysbuild_cache_strings "SYSBUILD_MAIN_APP:BOOL=True\n")
+  endif()
+
+  if(${SB_CACHE_APPLICATION}_BOARD AND NOT DEFINED CACHE{${SB_CACHE_APPLICATION}_BOARD})
+    # Only set image specific board if provided.
+    # The sysbuild BOARD is exported through sysbuild cache, and will be used
+    # unless <image>_BOARD is defined.
+    list(APPEND sysbuild_cache_strings
+         "${SB_CACHE_APPLICATION}_BOARD:STRING=${${SB_CACHE_APPLICATION}_BOARD}\n"
+    )
+  endif()
+
+  get_target_property(${SB_CACHE_APPLICATION}_CACHE_FILE ${SB_CACHE_APPLICATION} CACHE_FILE)
+  file(WRITE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp ${sysbuild_cache_strings})
+  if(SB_CACHE_CMAKE_RERUN)
+    execute_process(COMMAND ${CMAKE_COMMAND} -E compare_files
+                    ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+                    ${${SB_CACHE_APPLICATION}_CACHE_FILE}
+                    RESULT_VARIABLE compare_res
+    )
+    if(NOT compare_res EQUAL 0)
+      zephyr_file_copy(${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+                       ${${SB_CACHE_APPLICATION}_CACHE_FILE}
+      )
+      ExternalProject_Get_Property(${SB_CACHE_APPLICATION} BINARY_DIR)
+      file(TOUCH_NOCREATE ${BINARY_DIR}/CMakeCache.txt)
+    endif()
+  else()
+    zephyr_file_copy(${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+                     ${${SB_CACHE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
+    )
+  endif()
+
+endfunction()
+
+# Usage:
 #   ExternalZephyrProject_Add(APPLICATION <name>
 #                             SOURCE_DIR <dir>
 #                             [BOARD <board> [BOARD_REVISION <revision>]]
@@ -372,9 +453,7 @@ function(ExternalZephyrProject_Cmake)
   )
 
   ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS)
-  get_target_property(${ZCMAKE_APPLICATION}_CACHE_FILE ${ZCMAKE_APPLICATION} CACHE_FILE)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
-  get_target_property(${ZCMAKE_APPLICATION}_MAIN_APP   ${ZCMAKE_APPLICATION} MAIN_APP)
 
   get_property(${ZCMAKE_APPLICATION}_CONF_SCRIPT TARGET ${ZCMAKE_APPLICATION}
                PROPERTY IMAGE_CONF_SCRIPT
@@ -390,46 +469,7 @@ function(ExternalZephyrProject_Cmake)
     endif()
   endforeach()
 
-  get_cmake_property(sysbuild_cache CACHE_VARIABLES)
-  foreach(var_name ${sysbuild_cache})
-    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD)$")
-      # Perform a dummy read to prevent a false warning about unused variables
-      # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
-      set(unused_tmp_var ${${var_name}})
-
-      # We don't want to pass internal CMake variables.
-      # Required CMake variable to be passed, like CMAKE_BUILD_TYPE must be
-      # passed using `-D` on command invocation.
-      get_property(var_type CACHE ${var_name} PROPERTY TYPE)
-      set(cache_entry "${var_name}:${var_type}=$CACHE{${var_name}}")
-      string(REPLACE ";" "\;" cache_entry "${cache_entry}")
-      list(APPEND sysbuild_cache_strings "${cache_entry}\n")
-    endif()
-  endforeach()
-  if(DEFINED BOARD_REVISION)
-    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}@${BOARD_REVISION}\n")
-  else()
-    list(APPEND sysbuild_cache_strings "BOARD:STRING=${BOARD}\n")
-  endif()
-  list(APPEND sysbuild_cache_strings "SYSBUILD_NAME:STRING=${ZCMAKE_APPLICATION}\n")
-
-  if(${ZCMAKE_APPLICATION}_MAIN_APP)
-    list(APPEND sysbuild_cache_strings "SYSBUILD_MAIN_APP:BOOL=True\n")
-  endif()
-
-  if(${ZCMAKE_APPLICATION}_BOARD AND NOT DEFINED CACHE{${ZCMAKE_APPLICATION}_BOARD})
-    # Only set image specific board if provided.
-    # The sysbuild BOARD is exported through sysbuild cache, and will be used
-    # unless <image>_BOARD is defined.
-    list(APPEND sysbuild_cache_strings
-         "${ZCMAKE_APPLICATION}_BOARD:STRING=${${ZCMAKE_APPLICATION}_BOARD}\n"
-    )
-  endif()
-
-  file(WRITE ${${ZCMAKE_APPLICATION}_CACHE_FILE}.tmp ${sysbuild_cache_strings})
-  zephyr_file_copy(${${ZCMAKE_APPLICATION}_CACHE_FILE}.tmp
-                   ${${ZCMAKE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
-  )
+  sysbuild_cache(CREATE APPLICATION ${ZCMAKE_APPLICATION})
 
   foreach(script ${${ZCMAKE_APPLICATION}_CONF_SCRIPT})
     include(${script})
