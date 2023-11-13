@@ -57,22 +57,35 @@ struct input_kbd_matrix_common_config {
 		_CONCAT(name, DEVICE_DT_NAME_GET(node_id)))
 
 /**
+ * @brief Defines the common keyboard matrix support data from devicetree,
+ * specify row and col count.
+ */
+#define INPUT_KBD_MATRIX_DT_DEFINE_ROW_COL(node_id, _row_size, _col_size) \
+	BUILD_ASSERT(IN_RANGE(_row_size, 1, 8), "invalid row-size"); \
+	BUILD_ASSERT(IN_RANGE(_col_size, 1, UINT8_MAX), "invalid col-size"); \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state)[_col_size]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state)[_col_size]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, previous_state)[_col_size]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, new_state)[_col_size]; \
+	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, scan_cycle_idx)[_row_size * _col_size];
+
+/**
  * @brief Defines the common keyboard matrix support data from devicetree.
  */
 #define INPUT_KBD_MATRIX_DT_DEFINE(node_id) \
-	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, row_size), 1, 8), "invalid row-size"); \
-	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, col_size), 1, UINT8_MAX), "invalid col-size"); \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
-			node_id, stable_state)[DT_PROP(node_id, col_size)]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
-			node_id, unstable_state)[DT_PROP(node_id, col_size)]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
-			node_id, previous_state)[DT_PROP(node_id, col_size)]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
-			node_id, new_state)[DT_PROP(node_id, col_size)]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME( \
-			node_id, scan_cycle_idx)[DT_PROP(node_id, row_size) * \
-						 DT_PROP(node_id, col_size)];
+	INPUT_KBD_MATRIX_DT_DEFINE_ROW_COL( \
+		node_id, DT_PROP(node_id, row_size), DT_PROP(node_id, col_size))
+
+/**
+ * @brief Defines the common keyboard matrix support data from devicetree
+ * instance, specify row and col count.
+ *
+ * @param inst Instance.
+ * @param row_size The matrix row count.
+ * @param col_size The matrix column count.
+ */
+#define INPUT_KBD_MATRIX_DT_INST_DEFINE_ROW_COL(inst, row_size, col_size) \
+	INPUT_KBD_MATRIX_DT_DEFINE_ROW_COL(DT_DRV_INST(inst), row_size, col_size)
 
 /**
  * @brief Defines the common keyboard matrix support data from devicetree instance.
@@ -83,15 +96,17 @@ struct input_kbd_matrix_common_config {
 	INPUT_KBD_MATRIX_DT_DEFINE(DT_DRV_INST(inst))
 
 /**
- * @brief Initialize common keyboard matrix config from devicetree.
+ * @brief Initialize common keyboard matrix config from devicetree, specify row and col count.
  *
  * @param api Pointer to a :c:struct:`input_kbd_matrix_api` structure.
+ * @param row_size The matrix row count.
+ * @param col_size The matrix column count.
  */
-#define INPUT_KBD_MATRIX_DT_COMMON_CONFIG_INIT(node_id, _api) \
+#define INPUT_KBD_MATRIX_DT_COMMON_CONFIG_INIT_ROW_COL(node_id, _api, _row_size, _col_size) \
 	{ \
 		.api = _api, \
-		.row_size = DT_PROP(node_id, row_size), \
-		.col_size = DT_PROP(node_id, col_size), \
+		.row_size = _row_size, \
+		.col_size = _col_size, \
 		.poll_period_us = DT_PROP(node_id, poll_period_ms) * USEC_PER_MSEC, \
 		.poll_timeout_ms = DT_PROP(node_id, poll_timeout_ms), \
 		.debounce_down_ms = DT_PROP(node_id, debounce_down_ms), \
@@ -105,6 +120,27 @@ struct input_kbd_matrix_common_config {
 		.matrix_new_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, new_state), \
 		.scan_cycle_idx = INPUT_KBD_MATRIX_DATA_NAME(node_id, scan_cycle_idx), \
 	}
+
+/**
+ * @brief Initialize common keyboard matrix config from devicetree.
+ *
+ * @param api Pointer to a :c:struct:`input_kbd_matrix_api` structure.
+ */
+#define INPUT_KBD_MATRIX_DT_COMMON_CONFIG_INIT(node_id, _api) \
+	INPUT_KBD_MATRIX_DT_COMMON_CONFIG_INIT_ROW_COL( \
+		node_id, _api, DT_PROP(node_id, row_size), DT_PROP(node_id, col_size))
+
+/**
+ * @brief Initialize common keyboard matrix config from devicetree instance,
+ * specify row and col count.
+ *
+ * @param inst Instance.
+ * @param api Pointer to a :c:struct:`input_kbd_matrix_api` structure.
+ * @param row_size The matrix row count.
+ * @param col_size The matrix column count.
+ */
+#define INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT_ROW_COL(inst, api, row_size, col_size) \
+	INPUT_KBD_MATRIX_DT_COMMON_CONFIG_INIT_ROW_COL(DT_DRV_INST(inst), api, row_size, col_size)
 
 /**
  * @brief Initialize common keyboard matrix config from devicetree instance.

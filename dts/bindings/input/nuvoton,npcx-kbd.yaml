@@ -29,3 +29,9 @@ properties:
         For example the WUI mapping on 8 KSI pads would be
            wui-maps = <&wui_io30 &wui_io31 &wui_io27 &wui_io26
                        &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true
