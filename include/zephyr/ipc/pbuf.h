@@ -16,7 +16,8 @@ extern "C" {
 
 /**
  * @brief Packed buffer API
- * @ingroup kernel_apis
+ * @defgroup pbuf Packed Buffer API
+ * @ingroup ipc
  * @{
  */
 
