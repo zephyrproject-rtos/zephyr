@@ -583,6 +583,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	} else {
 		DMA_DisableChannelPeriphRq(p_handle->base, p_handle->channel);
 	}
+	DMA_SetChannelPriority(p_handle->base, p_handle->channel, config->channel_priority);
 
 	data->busy = false;
 	if (config->dma_callback) {
