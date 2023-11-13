@@ -433,6 +433,7 @@ struct cdns_i3c_cmd {
 	uint32_t cmd0;
 	uint32_t cmd1;
 	uint32_t len;
+	uint32_t *num_xfer;
 	void *buf;
 	uint32_t error;
 };
@@ -1033,6 +1034,8 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		dcmd->buf = payload->ccc.data;
 		dcmd->len = payload->ccc.data_len;
 		dcmd->cmd0 |= CMD0_FIFO_PL_LEN(payload->ccc.data_len);
+		/* write the address of num_xfer which is to be updated upon message completion */
+		dcmd->num_xfer = &(payload->ccc.num_xfer);
 	} else if (payload->targets.num_targets > 0) {
 		dcmd->buf = payload->targets.payloads[0].data;
 		dcmd->len = payload->targets.payloads[0].data_len;
@@ -1041,6 +1044,8 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		if (payload->targets.payloads[0].rnw) {
 			dcmd->cmd0 |= CMD0_FIFO_RNW;
 		}
+		/* write the address of num_xfer which is to be updated upon message completion */
+		dcmd->num_xfer = &(payload->targets.payloads[0].num_xfer);
 		idx++;
 	}
 	num_cmds++;
@@ -1066,6 +1071,11 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 
 			cmd->buf = tgt_payload->data;
 			cmd->len = tgt_payload->data_len;
+			/*
+			 * write the address of num_xfer which is to be updated upon message
+			 * completion
+			 */
+			cmd->num_xfer = &(tgt_payload->num_xfer);
 
 			idx++;
 		}
@@ -1299,6 +1309,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 		/* Read any rx data into buffer */
 		if (cmd->cmd0 & CMD0_FIFO_RNW) {
 			rx = MIN(CMDR_XFER_BYTES(cmdr), cmd->len);
+			if (cmd->num_xfer != NULL) {
+				*cmd->num_xfer = rx;
+			}
 			ret = cdns_i3c_read_rx_fifo(config, cmd->buf, rx);
 		}
 
@@ -1422,6 +1435,9 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			cmd->cmd0 |= CMD0_FIFO_RNW;
 		}
+
+		/* i2c transfers are a don't care for num_xfer */
+		cmd->num_xfer = NULL;
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1723,6 +1739,9 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 		} else {
 			send_broadcast = true;
 		}
+
+		/* write the address of num_xfer which is to be updated upon message completion */
+		cmd->num_xfer = &(msgs[i].num_xfer);
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
