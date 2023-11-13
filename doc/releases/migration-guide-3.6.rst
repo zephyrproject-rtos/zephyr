@@ -99,7 +99,7 @@ Other Subsystems
 * Touchscreen drivers :dtcompatible:`focaltech,ft5336` and
   :dtcompatible:`goodix,gt911` were using the incorrect polarity for the
   respective ``reset-gpios``. This has been fixed so those signals now have to
-  be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree.`
+  be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree.
 
 Recommended Changes
 *******************
