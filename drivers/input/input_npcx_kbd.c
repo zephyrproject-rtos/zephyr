@@ -8,10 +8,10 @@
 #define DT_DRV_COMPAT nuvoton_npcx_kbd
 
 #include "soc_miwu.h"
-#include "input_kbd_matrix.h"
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/input/input_kbd_matrix.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
