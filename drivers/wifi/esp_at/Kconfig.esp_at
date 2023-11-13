@@ -11,6 +11,7 @@ menuconfig WIFI_ESP_AT
 	select MODEM_IFACE_UART
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
+	imply UART_USE_RUNTIME_CONFIGURE
 	help
 	  Enable Espressif AT Command offloaded WiFi driver. It is supported on
 	  any serial capable platform and communicates with Espressif chips
