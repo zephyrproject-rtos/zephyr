@@ -3132,6 +3132,8 @@ Userspace:
     - scripts/build/gen_relocate_app.py
     - include/zephyr/sys/kobject.h
     - include/zephyr/sys/mem_manage.h
+    - include/zephyr/kernel/mm.h
+    - include/zephyr/kernel/internal/mm.h
   labels:
     - "area: Userspace"
 

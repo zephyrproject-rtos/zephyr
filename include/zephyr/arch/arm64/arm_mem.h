@@ -8,7 +8,7 @@
 
 /*
  * Define ARM specific memory flags used by z_phys_map()
- * followed public definitions in include/sys/mem_manage.h.
+ * followed public definitions in include/kernel/mm.h.
  */
 /* For ARM64, K_MEM_CACHE_NONE is nGnRnE. */
 #define K_MEM_ARM_DEVICE_nGnRnE	K_MEM_CACHE_NONE
