@@ -21,11 +21,14 @@
  * @defgroup kernel_memory_management Kernel Memory Management
  * @ingroup kernel_apis
  * @{
- * @}
  */
 
-/*
- * Caching mode definitions. These are mutually exclusive.
+/**
+ * @name Caching mode definitions.
+ *
+ * These are mutually exclusive.
+ *
+ * @{
  */
 
 /** No caching. Most drivers want this. */
@@ -45,8 +48,14 @@
 /** Reserved bits for cache modes in k_map() flags argument */
 #define K_MEM_CACHE_MASK	(BIT(3) - 1)
 
-/*
- * Region permission attributes. Default is read-only, no user, no exec
+/** @} */
+
+/**
+ * @name Region permission attributes.
+ *
+ * Default is read-only, no user, no exec
+ *
+ * @{
  */
 
 /** Region will have read/write access (and not read-only) */
@@ -58,12 +67,18 @@
 /** Region will be accessible to user mode (normally supervisor-only) */
 #define K_MEM_PERM_USER		BIT(5)
 
-/*
- * Region mapping behaviour attributes
+/** @} */
+
+/**
+ * @name Region mapping behaviour attributes
+ *
+ * @{
  */
 
 /** Region will be mapped to 1:1 virtual and physical address */
 #define K_MEM_DIRECT_MAP	BIT(6)
+
+/** @} */
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
@@ -74,8 +89,10 @@
 extern "C" {
 #endif
 
-/*
- * k_mem_map() control flags
+/**
+ * @name k_mem_map() control flags
+ *
+ * @{
  */
 
 /**
@@ -97,6 +114,8 @@ extern "C" {
  * will be pre-fetched as necessary and pinned.
  */
 #define K_MEM_MAP_LOCK		BIT(17)
+
+/** @} */
 
 /**
  * Return the amount of free memory available
@@ -186,6 +205,8 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* !_ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_KERNEL_MM_H */
