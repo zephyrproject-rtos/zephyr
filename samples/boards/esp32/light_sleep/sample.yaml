@@ -1,0 +1,12 @@
+sample:
+  description: Espressif Light Sleep sample app
+  name: ESP Light Sleep
+tests:
+  sample.boards.esp32.light_sleep:
+    build_only: true
+    tags: pm
+    platform_allow:
+      - esp32_devkitc_wrover
+      - esp32c3_devkitm
+      - esp32s2_saola
+      - esp32s3_devkitm
