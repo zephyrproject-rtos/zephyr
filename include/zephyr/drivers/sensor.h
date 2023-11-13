@@ -107,6 +107,16 @@ enum sensor_channel {
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
 
+	/**
+	 * Particle count array
+	 * value1[(0.3-0.5µm)],
+	 * value2[(0.5-1.0µm)],
+	 * value3[(1.0-2.5µm)],
+	 * value4[(2.5-5.0µm)],
+	 * value5[(5.0-7.5µm)],
+	 * value6[(7.5-10.0µm)]
+	 */
+	SENSOR_CHAN_PARTICLE_COUNT,
 	/** 1.0 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_1_0,
 	/** 2.5 micro-meters Particulate Matter, in ug/m^3 */
