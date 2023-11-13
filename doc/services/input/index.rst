@@ -87,3 +87,8 @@ Input Event Definitions
 ***********************
 
 .. doxygengroup:: input_events
+
+Keyboard Matrix API Reference
+*****************************
+
+.. doxygengroup:: input_kbd_matrix
