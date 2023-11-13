@@ -165,7 +165,7 @@ typedef struct _dnode sys_dnode_t;
  *     }
  *
  * @param __dl A pointer on a sys_dlist_t to iterate on
- * @param __cn A pointer to peek each entry of the list
+ * @param __cn A container struct type pointer to peek each entry of the list
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_FOR_EACH_CONTAINER(__dl, __cn, __n)			\
@@ -184,8 +184,8 @@ typedef struct _dnode sys_dnode_t;
  *     }
  *
  * @param __dl A pointer on a sys_dlist_t to iterate on
- * @param __cn A pointer to peek each entry of the list
- * @param __cns A pointer for the loop to run safely
+ * @param __cn A container struct type pointer to peek each entry of the list
+ * @param __cns A container struct type pointer for the loop to run safely
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_FOR_EACH_CONTAINER_SAFE(__dl, __cn, __cns, __n)	\
