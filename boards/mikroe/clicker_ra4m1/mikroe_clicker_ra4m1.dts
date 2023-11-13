@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2024 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <renesas/ra/r7fa4m1ab3cfm.dtsi>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r7fa4m1xxxxxx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Mikroe Clicker RA4M1";
+	compatible = "renesas,r7fa4m1ab3cfm";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		ld1: led_1 {
+			gpios = <&ioport4 9 GPIO_ACTIVE_HIGH>;
+			label = "User LED 1";
+		};
+		ld2: led_2 {
+			gpios = <&ioport4 8 GPIO_ACTIVE_HIGH>;
+			label = "User LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		btn1: button_1 {
+			gpios = <&ioport3 4 GPIO_ACTIVE_LOW>;
+			label = "User Button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &ld1;
+		led1 = &ld2;
+		sw0 = &btn1;
+	};
+};
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			pinmux = <P410_RXD0>, <P411_TXD0>;
+		};
+	};
+};
+
+&sci0 {
+	status = "okay";
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport3 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&fcu {
+	status = "okay";
+};
+
+&mosc {
+	status = "okay";
+	clock-frequency = <12000000>;
+};
+
+&cgc {
+	clock-source = <&mosc>;
+	iclk-div = <1>;
+	pclka-div = <1>;
+	pclkb-div = <2>;
+	pclkc-div = <1>;
+	pclkd-div = <1>;
+	fclk-div = <2>;
+};
