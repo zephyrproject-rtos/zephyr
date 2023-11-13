@@ -120,3 +120,6 @@ uint8_t tester_unregister_mcp(void);
 
 uint8_t tester_init_mcs(void);
 uint8_t tester_unregister_mcs(void);
+
+uint8_t tester_init_ots(void);
+uint8_t tester_unregister_ots(void);
