@@ -175,6 +175,10 @@ Device Drivers and Device Tree
   * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
     :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
 
+* The ``CAN_FILTER_FDF`` flag for filtering classic CAN/CAN FD frames was removed since no known CAN
+  controllers implement support for this. Applications can still filter on classic CAN/CAN FD frames
+  in their receive callback functions as needed.
+
 * The io-channel cells of the following devicetree bindings were reduced from 2 (``positive`` and
   ``negative``) to the common ``input``, making it possible to use the various ADC DT macros with TI
   LMP90xxx ADC devices:
