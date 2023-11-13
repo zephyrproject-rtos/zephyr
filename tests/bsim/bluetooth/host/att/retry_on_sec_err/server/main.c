@@ -40,7 +40,8 @@ static void test_common(struct bt_conn **conn)
 	__ASSERT_NO_MSG(!err);
 
 	err = bt_testlib_adv_conn(conn, BT_ID_DEFAULT,
-				  (BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_FORCE_NAME_IN_AD));
+				  (BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_FORCE_NAME_IN_AD),
+				  NULL, 0, NULL, 0);
 	__ASSERT_NO_MSG(!err);
 }
 

@@ -195,8 +195,9 @@ void the_test(void)
 	if (peripheral) {
 		EXPECT_ZERO(bt_set_name("peripheral"));
 		EXPECT_ZERO(bt_testlib_adv_conn(
-			&conn, BT_ID_DEFAULT,
-			(BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_FORCE_NAME_IN_AD)));
+				&conn, BT_ID_DEFAULT,
+				(BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_FORCE_NAME_IN_AD),
+				NULL, 0, NULL, 0));
 	}
 
 	if (central) {

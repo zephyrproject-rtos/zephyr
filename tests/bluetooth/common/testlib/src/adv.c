@@ -35,7 +35,9 @@ static void connected_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connect
 	k_mutex_unlock(&g_ctx_lock);
 }
 
-int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options)
+int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options,
+			const struct bt_data *ad, size_t ad_len,
+			const struct bt_data *sd, size_t sd_len)
 {
 	int api_err;
 	struct bt_le_ext_adv *adv = NULL;
@@ -62,6 +64,10 @@ int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options)
 	api_err = bt_le_ext_adv_create(&param, &cb, &adv);
 	if (!api_err) {
 		api_err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	}
+
+	if (!api_err && (ad != NULL || sd != NULL)) {
+		api_err = bt_le_ext_adv_set_data(adv, ad, ad_len, sd, sd_len);
 	}
 
 	if (!api_err) {
