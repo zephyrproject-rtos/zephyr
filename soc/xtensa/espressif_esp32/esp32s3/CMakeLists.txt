@@ -12,6 +12,10 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_NEWLIB_LIBC newlib_fix.c)
 
+# Power Management
+zephyr_library_sources_ifdef(CONFIG_PM power.c)
+zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
+
 # get flash size to use in esptool as string
 math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
 
