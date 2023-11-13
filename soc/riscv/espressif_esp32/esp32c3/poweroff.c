@@ -10,6 +10,6 @@
 void z_sys_poweroff(void)
 {
 	/* Forces RTC domain to be always on */
-	esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+	esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
 	esp_deep_sleep_start();
 }
