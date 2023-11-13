@@ -221,17 +221,6 @@ static uint8_t *data_ref(struct net_buf *buf, uint8_t *data)
 	return pool->alloc->cb->ref(buf, data);
 }
 
-static void data_unref(struct net_buf *buf, uint8_t *data)
-{
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
-
-	if (buf->flags & NET_BUF_EXTERNAL_DATA) {
-		return;
-	}
-
-	pool->alloc->cb->unref(buf, data);
-}
-
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
 					k_timeout_t timeout, const char *func,
@@ -482,11 +471,6 @@ void net_buf_unref(struct net_buf *buf)
 
 		if (--buf->ref > 0) {
 			return;
-		}
-
-		if (buf->__buf) {
-			data_unref(buf, buf->__buf);
-			buf->__buf = NULL;
 		}
 
 		buf->data = NULL;
