@@ -357,7 +357,7 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
 #endif
 
-#if NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL
+#if defined(NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL)
 BUILD_ASSERT(
 	(NRFX_PPI_CHANNELS_USED_BY_802154_DRV & NRFX_PPI_CHANNELS_USED_BY_MPSL) == 0,
 	"PPI channels used by the IEEE802.15.4 radio driver overlap with those "
