@@ -211,7 +211,7 @@ static const struct input_kbd_matrix_api npcx_kbd_api = {
 };
 
 static const struct input_npcx_kbd_config npcx_kbd_cfg = {
-	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, npcx_kbd_api),
+	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, &npcx_kbd_api),
 	.base = (struct kbs_reg *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),

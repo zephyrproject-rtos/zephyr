@@ -34,7 +34,7 @@ struct input_kbd_matrix_api {
  * This structure **must** be placed first in the driver's config structure.
  */
 struct input_kbd_matrix_common_config {
-	struct input_kbd_matrix_api api;
+	const struct input_kbd_matrix_api *api;
 	uint8_t row_size;
 	uint8_t col_size;
 	uint32_t poll_period_us;
