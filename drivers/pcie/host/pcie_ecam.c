@@ -402,7 +402,7 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 	DEVICE_DT_INST_DEFINE(n, &pcie_ecam_init, NULL,				\
 			      &pcie_ecam_data##n,				\
 			      &pcie_ecam_config##n,				\
-			      PRE_KERNEL_1,					\
+			      PRE_KERNEL_2,					\
 			      CONFIG_PCIE_INIT_PRIORITY,			\
 			      &pcie_ecam_api);
 
