@@ -167,7 +167,7 @@ Tests are written from test spec;
 |LightweightM2M-1.1-int-256 - Write Operation Failure|:white_check_mark:| |
 |LightweightM2M-1.1-int-257 - Write-Composite Operation|:white_check_mark:| |
 |LightweightM2M-1.1-int-260 - Discover Command|:white_check_mark:| |
-|LightweightM2M-1.1-int-261 - Write-Attribute Operation on a multiple resource|:large_orange_diamond:|Leshan don't allow writing attributes to resource instance|
+|LightweightM2M-1.1-int-261 - Write-Attribute Operation on a multiple resource|:white_check_mark:| |
 |LightweightM2M-1.1-int-280 - Successful Read-Composite Operation|:white_check_mark:| |
 |LightweightM2M-1.1-int-281 - Partially Successful Read-Composite Operation|:white_check_mark:| |
 |LightweightM2M-1.1-int-301 - Observation and Notification of parameter values|:white_check_mark:| |
