@@ -68,7 +68,7 @@ Build the lwm2m-client sample application like this:
    :compact:
 
 The easiest way to setup this sample application is to build and run it
-as native POSIX application or as a QEMU target using the default configuration :file:`prj.conf`.
+as a native_sim application or as a QEMU target using the default configuration :file:`prj.conf`.
 This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_posix`.
 
 Download and run the latest build of the Leshan Demo Server:
