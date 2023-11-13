@@ -141,6 +141,7 @@ menuconfig BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
 	select BT_HCI_SETUP
+	select UART_USE_RUNTIME_CONFIGURE
 	depends on GPIO
 	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
 	depends on BT_H4
