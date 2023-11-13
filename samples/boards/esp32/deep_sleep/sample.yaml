@@ -1,0 +1,12 @@
+sample:
+  description: Espressif Deep Sleep sample app
+  name: ESP Deep Sleep
+tests:
+  sample.boards.esp32.deep_sleep:
+    build_only: true
+    tags: pm
+    platform_allow:
+      - esp32_devkitc_wrover
+      - esp32c3_devkitm
+      - esp32s2_saola
+      - esp32s3_devkitm
