@@ -304,6 +304,7 @@ struct zbus_channel_observation {
 	static struct zbus_channel_data _CONCAT(_zbus_chan_data_, _name) = {                       \
 		.observers_start_idx = -1, .observers_end_idx = -1};                               \
 	static K_MUTEX_DEFINE(_CONCAT(_zbus_mutex_, _name));                                       \
+	IF_ENABLED(CONFIG_CPP, (extern))                                                           \
 	const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                                     \
 		ZBUS_CHANNEL_NAME_INIT(_name) /* Maybe removed */                                  \
 			.message = &_CONCAT(_zbus_message_, _name),                                \
