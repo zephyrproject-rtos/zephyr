@@ -3,47 +3,47 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig KSCAN_XEC
-	bool "Microchip XEC series KSCAN driver"
+menuconfig INPUT_XEC_KBD
+	bool "Microchip XEC series keyboard matrix driver"
 	default y
-	depends on DT_HAS_MICROCHIP_XEC_KSCAN_ENABLED
+	depends on DT_HAS_MICROCHIP_XEC_KBD_ENABLED
 	select MULTITHREADING
 	select PINCTRL
 	help
 	  Enable the Microchip XEC Kscan IO driver.
 
-if KSCAN_XEC
+if INPUT_XEC_KBD
 
-config KSCAN_XEC_COLUMN_SIZE
+config INPUT_XEC_COLUMN_SIZE
 	int "Keyscan XEC Column Size"
 	default 16
 	help
 	  Adjust the value to your keyboard columns. The maximum
 	  column size for the Microchip XEC family is 18 (from 0 to 17).
 
-config KSCAN_XEC_ROW_SIZE
+config INPUT_XEC_ROW_SIZE
 	int "Keyscan XEC Row Size"
 	default 8
 	help
 	  Adjust the value to your keyboard rows. The maximum
 	  column size for the Microchip XEC family is 8 (from 0 to 7).
 
-config KSCAN_XEC_DEBOUNCE_DOWN
+config INPUT_XEC_DEBOUNCE_DOWN
 	int "Keyscan XEC Debounce Down"
 	default 10
 	help
 	  Determines the time in msecs for debouncing a key press.
 
-config KSCAN_XEC_DEBOUNCE_UP
+config INPUT_XEC_DEBOUNCE_UP
 	int "Keyscan XEC Debounce Up"
 	default 20
 	help
 	  Determines the time in msecs for debouncing a key release.
 
-config KSCAN_XEC_POLL_PERIOD
+config INPUT_XEC_POLL_PERIOD
 	int "Keyscan XEC Poll Period"
 	default 5
 	help
 	  Defines the poll period in msecs between between matrix scans.
 
-endif # KSCAN_XEC
+endif # INPUT_XEC
