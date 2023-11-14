@@ -16,6 +16,11 @@ import glob
 from pathlib import Path
 from git import Repo
 from west.manifest import Manifest
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader     # type: ignore
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
@@ -252,9 +257,6 @@ class Filters:
         # directory covers 2 architectures known to twister: riscv32 and riscv64.
         archs = set()
 
-        # if we have changes other than architecture related, consider this a
-        # global change and not architecture specific
-        _global_change = False
         remaining = self.get_remaining_files()
         for f in remaining:
             _match = re.match(r"^arch\/([^/]+)\/", f)
@@ -272,10 +274,6 @@ class Filters:
                     self.resolved_files.append(f)
             else:
                 _global_change = True
-
-        if _global_change:
-            self.full_twister = True
-            return
 
         _options = []
         for arch in archs:
@@ -329,6 +327,7 @@ class Filters:
         if len(all_boards) > 20:
             logging.warning(f"{len(boards)} boards changed, this looks like a global change, "
                             "skipping test handling, revert to default.")
+            logging.info("trigger full twister")
             self.full_twister = True
             return
 
@@ -378,6 +377,7 @@ class Filters:
         if len(tests) > 20:
             logging.warning(f"{len(tests)} tests changed, this looks like a global change, "
                             "skipping test handling, revert to default")
+            logging.info("trigger full twister")
             self.full_twister = True
             return
 
@@ -411,10 +411,31 @@ class Filters:
             self.resolved_files.append(changed_file)
             all_areas.update(areas)
 
+        config_path = "tests/test_config.yaml"
+        with open(config_path, encoding="utf-8") as f:
+            contents = f.read()
+
+            try:
+                raw = yaml.load(contents, Loader=SafeLoader)
+            except yaml.YAMLError as e:
+                logging.error("error parsing configuration file")
+
+        levels = raw.get('levels', [])
+        l = {}
+        l['name'] = 'custom'
+        l['description'] = 'custom'
+        adds = []
         for area in all_areas:
             logging.info(f"area {area.name} changed..")
-            for tag in area.tags:
-                self.tag_options.extend(["-t", tag ])
+            for suite in area.tests:
+                adds.append(f"{suite}.*")
+
+        l['adds'] = adds
+        levels.append(l)
+        with open('custom_config.yaml', 'w', encoding="utf-8") as fp:
+            fp.write(yaml.dump(raw))
+
+        self.get_plan(["--test-config", "custom_config.yaml", "--level", "custom"], integration=True)
 
     def find_tags(self):
         logging.info(f"-------------------  tags --------------")
