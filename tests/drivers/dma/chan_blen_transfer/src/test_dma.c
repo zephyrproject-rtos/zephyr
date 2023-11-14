@@ -22,16 +22,8 @@
 
 #define RX_BUFF_SIZE (48)
 
-#ifdef CONFIG_NOCACHE_MEMORY
-static __aligned(32) char tx_data[RX_BUFF_SIZE] __used
-	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
-static const char TX_DATA[] = "It is harder to be kind than to be wise........";
-static __aligned(32) char rx_data[RX_BUFF_SIZE] __used
-	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
-#else
-static const char tx_data[] = "It is harder to be kind than to be wise........";
-static char rx_data[RX_BUFF_SIZE] = { 0 };
-#endif
+static __aligned(32) const char tx_data[] = "It is harder to be kind than to be wise........";
+static __aligned(32) char rx_data[RX_BUFF_SIZE] = { 0 };
 
 static void test_done(const struct device *dma_dev, void *arg,
 		      uint32_t id, int status)
@@ -52,10 +44,6 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
 	}
-
-#ifdef CONFIG_NOCACHE_MEMORY
-	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
-#endif
 
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
