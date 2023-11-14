@@ -322,6 +322,11 @@ GROUP_START(ITCM)
 		__itcm_start = .;
 		*(.itcm)
 		*(".itcm.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function. */
+#include <snippets-itcm-section.ld>
+
 		__itcm_end = .;
 	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
 
@@ -356,6 +361,11 @@ GROUP_START(DTCM)
 		__dtcm_data_start = .;
 		*(.dtcm_data)
 		*(".dtcm_data.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function. */
+#include <snippets-dtcm-section.ld>
+
 		__dtcm_data_end = .;
 	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
 
