@@ -128,18 +128,18 @@ static int llext_find_tables(struct llext_loader *ldr)
 		case SHT_DYNSYM:
 			LOG_DBG("symtab at %d", i);
 			ldr->sects[LLEXT_SECT_SYMTAB] = shdr;
-			ldr->sect_map[i] = LLEXT_SECT_SYMTAB;
+			ldr->sect_map[i] = LLEXT_MEM_SYMTAB;
 			sect_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
 				LOG_DBG("shstrtab at %d", i);
 				ldr->sects[LLEXT_SECT_SHSTRTAB] = shdr;
-				ldr->sect_map[i] = LLEXT_SECT_SHSTRTAB;
+				ldr->sect_map[i] = LLEXT_MEM_SHSTRTAB;
 			} else {
 				LOG_DBG("strtab at %d", i);
 				ldr->sects[LLEXT_SECT_STRTAB] = shdr;
-				ldr->sect_map[i] = LLEXT_SECT_STRTAB;
+				ldr->sect_map[i] = LLEXT_MEM_STRTAB;
 			}
 			sect_cnt++;
 			break;
@@ -192,22 +192,27 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		LOG_DBG("section %d name %s", i, name);
 
 		enum llext_section sect_idx;
+		enum llext_mem mem_idx;
 
 		if (strcmp(name, ".text") == 0) {
 			sect_idx = LLEXT_SECT_TEXT;
+			mem_idx = LLEXT_MEM_TEXT;
 		} else if (strcmp(name, ".data") == 0) {
 			sect_idx = LLEXT_SECT_DATA;
+			mem_idx = LLEXT_MEM_DATA;
 		} else if (strcmp(name, ".rodata") == 0) {
 			sect_idx = LLEXT_SECT_RODATA;
+			mem_idx = LLEXT_MEM_RODATA;
 		} else if (strcmp(name, ".bss") == 0) {
 			sect_idx = LLEXT_SECT_BSS;
+			mem_idx = LLEXT_MEM_BSS;
 		} else {
 			LOG_DBG("Not copied section %s", name);
 			continue;
 		}
 
 		ldr->sects[sect_idx] = shdr;
-		ldr->sect_map[i] = sect_idx;
+		ldr->sect_map[i] = mem_idx;
 	}
 
 	return 0;
@@ -229,6 +234,9 @@ static enum llext_section llext_sect_from_mem(enum llext_mem m)
 		break;
 	case LLEXT_MEM_TEXT:
 		s = LLEXT_SECT_TEXT;
+		break;
+	case LLEXT_MEM_SYMTAB:
+		s = LLEXT_SECT_SYMTAB;
 		break;
 	case LLEXT_MEM_STRTAB:
 		s = LLEXT_SECT_STRTAB;
@@ -415,17 +423,18 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
-		uint32_t sect = sym.st_shndx;
+		unsigned int sect = sym.st_shndx;
 
 		if (stt == STT_FUNC && stb == STB_GLOBAL && sect != SHN_UNDEF) {
+			enum llext_mem mem = ldr->sect_map[sect];
+			enum llext_section sect_idx = llext_sect_from_mem(mem);
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
 			sym_tab->syms[j].name = name;
-			sym_tab->syms[j].addr =
-				(void *)((uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
-					 + sym.st_value);
+			sym_tab->syms[j].addr = (void *)((uintptr_t)ext->mem[mem]
+							 + sym.st_value);
 			LOG_DBG("function symbol %d name %s addr %p",
 				j, name, sym_tab->syms[j].addr);
 			j++;
