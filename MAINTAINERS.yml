@@ -3134,6 +3134,7 @@ Userspace:
     - include/zephyr/sys/mem_manage.h
     - include/zephyr/kernel/mm.h
     - include/zephyr/kernel/internal/mm.h
+    - include/zephyr/kernel/mm/demand_paging.h
   labels:
     - "area: Userspace"
 
