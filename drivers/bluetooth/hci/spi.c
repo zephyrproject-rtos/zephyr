@@ -95,15 +95,10 @@ static uint8_t attempts;
 
 #if defined(CONFIG_BT_BLUENRG_ACI)
 #define BLUENRG_ACI_WRITE_CONFIG_DATA       BT_OP(BT_OGF_VS, 0x000C)
-#define BLUENRG_ACI_WRITE_CONFIG_CMD_LL     0x2C
-#define BLUENRG_ACI_LL_MODE                 0x01
+#define BLUENRG_CONFIG_LL_ONLY_OFFSET       0x2C
+#define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
 
-struct bluenrg_aci_cmd_ll_param {
-    uint8_t cmd;
-    uint8_t length;
-    uint8_t value;
-};
-static int bt_spi_send_aci_config_data_controller_mode(void);
+static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t value_len);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
@@ -154,13 +149,16 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 	bool handled = false;
 
 	switch (bt_spi_get_evt(msg)) {
-	case EVT_BLUE_INITIALIZED:
+	case EVT_BLUE_INITIALIZED: {
 		k_sem_give(&sem_initialised);
 #if defined(CONFIG_BT_BLUENRG_ACI)
 		/* force BlueNRG to be on controller mode */
-		bt_spi_send_aci_config_data_controller_mode();
+		uint8_t data = 1;
+
+		bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
 #endif
 		handled = true;
+	}
 	default:
 		break;
 	}
@@ -224,25 +222,23 @@ static bool exit_irq_high_loop(void)
 #endif /* CONFIG_BT_SPI_BLUENRG */
 
 #if defined(CONFIG_BT_BLUENRG_ACI)
-static int bt_spi_send_aci_config_data_controller_mode(void)
+static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t value_len)
 {
-	struct bluenrg_aci_cmd_ll_param *param;
 	struct net_buf *buf;
+	uint8_t *cmd_data;
+	size_t data_len = 2 + value_len;
 
-	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, sizeof(*param));
+	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, data_len);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	param = net_buf_add(buf, sizeof(*param));
-	param->cmd = BLUENRG_ACI_WRITE_CONFIG_CMD_LL;
-	param->length = 0x1;
-	/* Force BlueNRG-MS roles to Link Layer only mode */
-	param->value = BLUENRG_ACI_LL_MODE;
+	cmd_data = net_buf_add(buf, data_len);
+	cmd_data[0] = offset;
+	cmd_data[1] = value_len;
+	memcpy(&cmd_data[2], value, value_len);
 
-	bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
-
-	return 0;
+	return bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
 }
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
