@@ -644,7 +644,7 @@ uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
-		if (proto != IPPROTO_ICMP) {
+		if (proto != IPPROTO_ICMP && proto != IPPROTO_IGMP) {
 			len = 2 * sizeof(struct in_addr);
 			sum = net_pkt_get_len(pkt) -
 				net_pkt_ip_hdr_len(pkt) -
@@ -700,14 +700,9 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
-uint16_t net_calc_chksum_igmp(uint8_t *data, size_t len)
+uint16_t net_calc_chksum_igmp(struct net_pkt *pkt)
 {
-	uint16_t sum;
-
-	sum = calc_chksum(0, data, len);
-	sum = (sum == 0U) ? 0xffff : htons(sum);
-
-	return ~sum;
+	return net_calc_chksum(pkt, IPPROTO_IGMP);
 }
 #endif /* CONFIG_NET_IPV4_IGMP */
 

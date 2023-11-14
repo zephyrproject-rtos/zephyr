@@ -56,7 +56,7 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct in_addr *addr,
 	igmp->max_rsp = 0U;
 	net_ipaddr_copy(&igmp->address, addr);
 	igmp->chksum = 0;
-	igmp->chksum = net_calc_chksum_igmp((uint8_t *)igmp, sizeof(*igmp));
+	igmp->chksum = net_calc_chksum_igmp(pkt);
 
 	if (net_pkt_set_data(pkt, &igmp_access)) {
 		return -ENOBUFS;
@@ -217,8 +217,7 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (net_calc_chksum_igmp((uint8_t *)igmp_hdr,
-				 sizeof(*igmp_hdr)) != 0U) {
+	if (net_calc_chksum_igmp(pkt)) {
 		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}

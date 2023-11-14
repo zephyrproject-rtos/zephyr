@@ -50,7 +50,7 @@ config NET_IPV4_ACCEPT_ZERO_BROADCAST
 	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
 
 config NET_IPV4_IGMP
-	bool "Internet Group Management Protocol (IGMP) support"
+	bool "Internet Group Management Protocol (IGMPv2) support"
 	select NET_IPV4_HDR_OPTIONS
 	help
 	  The value depends on your network needs. IGMP should normally be
@@ -58,6 +58,12 @@ config NET_IPV4_IGMP
 	  IGMPv2 and earlier versions. This requires IPv4 header support
 	  because IP Router Alert option must be sent.
 	  See RFC 2236 for details.
+
+config NET_IPV4_IGMPV3
+	bool "Internet Group Management Protocol version 3 (IGMPv3) support"
+	depends on NET_IPV4_IGMP
+	help
+	  Use IGMPv3 for managing the multicast groups.
 
 config NET_DHCPV4
 	bool "DHCPv4 client"
