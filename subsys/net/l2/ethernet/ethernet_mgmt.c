@@ -192,6 +192,14 @@ static int ethernet_set_config(uint32_t mgmt_request,
 
 		config.promisc_mode = params->promisc_mode;
 		type = ETHERNET_CONFIG_TYPE_PROMISC_MODE;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_T1S_PARAM) {
+		if (net_if_is_up(iface)) {
+			return -EACCES;
+		}
+
+		memcpy(&config.t1s_param, &params->t1s_param,
+		       sizeof(struct ethernet_t1s_param));
+		type = ETHERNET_CONFIG_TYPE_T1S_PARAM;
 	} else {
 		return -EINVAL;
 	}
@@ -224,6 +232,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_TXTIME_PARAM,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_PROMISC_MODE,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_T1S_PARAM,
 				  ethernet_set_config);
 
 static int ethernet_get_config(uint32_t mgmt_request,

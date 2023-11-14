@@ -196,6 +196,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 	ETHERNET_CONFIG_TYPE_FILTER,
 	ETHERNET_CONFIG_TYPE_PORTS_NUM,
+	ETHERNET_CONFIG_TYPE_T1S_PARAM,
 };
 
 enum ethernet_qav_param_type {
@@ -206,7 +207,53 @@ enum ethernet_qav_param_type {
 	ETHERNET_QAV_PARAM_TYPE_STATUS,
 };
 
+enum ethernet_t1s_param_type {
+	ETHERNET_T1S_PARAM_TYPE_PLCA_CONFIG,
+};
+
 /** @endcond */
+struct ethernet_t1s_param {
+	/** Type of T1S parameter */
+	enum ethernet_t1s_param_type type;
+	union {
+		/* PLCA is the Physical Layer (PHY) Collision
+		 * Avoidance technique employed with multidrop
+		 * 10Base-T1S standard.
+		 *
+		 * The PLCA parameters are described in standard [1]
+		 * as registers in memory map 4 (MMS = 4) (point 9.6).
+		 *
+		 * IDVER	(PLCA ID Version)
+		 * CTRL0	(PLCA Control 0)
+		 * CTRL1	(PLCA Control 1)
+		 * STATUS	(PLCA Status)
+		 * TOTMR	(PLCA TO Control)
+		 * BURST	(PLCA Burst Control)
+		 *
+		 * Those registers are implemented by each OA TC6
+		 * compliant vendor (like for e.g. LAN865x - e.g. [2]).
+		 *
+		 * Documents:
+		 * [1] - "OPEN Alliance 10BASE-T1x MAC-PHY Serial
+		 *       Interface" (ver. 1.1)
+		 * [2] - "DS60001734C" - LAN865x data sheet
+		 */
+		struct {
+			/** T1S PLCA enabled */
+			bool enable;
+			/** T1S PLCA node id range: 0 to 254 */
+			uint8_t node_id;
+			/** T1S PLCA node count range: 1 to 255 */
+			uint8_t node_count;
+			/** T1S PLCA burst count range: 0x0 to 0xFF */
+			uint8_t burst_count;
+			/** T1S PLCA burst timer */
+			uint8_t burst_timer;
+			/** T1S PLCA TO value */
+			uint8_t to_timer;
+		} plca;
+	};
+};
 
 struct ethernet_qav_param {
 	/** ID of the priority queue to use */
@@ -404,6 +451,7 @@ struct ethernet_config {
 
 		struct net_eth_addr mac_address;
 
+		struct ethernet_t1s_param t1s_param;
 		struct ethernet_qav_param qav_param;
 		struct ethernet_qbv_param qbv_param;
 		struct ethernet_qbu_param qbu_param;
