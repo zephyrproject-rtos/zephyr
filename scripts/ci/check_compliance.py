@@ -1177,6 +1177,11 @@ class KeepSorted(ComplianceTest):
     MARKER = "zephyr-keep-sorted"
 
     def check_file(self, file, fp):
+        mime_type = magic.from_file(file, mime=True)
+
+        if not mime_type.startswith("text/"):
+            return
+
         lines = []
         in_block = False
 
