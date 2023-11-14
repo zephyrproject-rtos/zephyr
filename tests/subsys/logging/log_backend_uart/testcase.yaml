@@ -6,7 +6,9 @@ common:
     - logging
     - backend
     - uart
-  platform_allow: qemu_x86
+  filter: CONFIG_UART_CONSOLE
+  integration_platforms:
+    - qemu_x86
 tests:
   logging.backend.uart.single:
     extra_args: DTC_OVERLAY_FILE="./single.overlay"
