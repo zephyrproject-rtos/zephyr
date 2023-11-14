@@ -76,7 +76,9 @@ Run the ``zephyr.exe`` executable as you would any other Linux console applicati
 This executable accepts several command line options depending on the
 compilation configuration.
 You can run it with the ``--help`` command line switch to get a list of
-available options::
+available options.
+
+.. code-block:: console
 
    $ ./build/zephyr/zephyr.exe --help
 
@@ -146,7 +148,7 @@ See
 .. _native_sim32_64:
 
 32 and 64bit versions
-*********************
+=====================
 
 native_sim comes with two targets: A 32 bit and 64 bit version.
 The 32 bit version, ``native_sim``, is the default target, which will compile
@@ -235,6 +237,7 @@ real time.
 You can do this with the ``--rt`` and ``--no-rt`` options from the command line.
 The default behavior is set with
 :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`.
+
 Note that all this model does is wait before raising the
 next system tick interrupt until the corresponding real/host time.
 If, for some reason, native_sim runs slower than real time, all this
@@ -266,11 +269,13 @@ How simulated time and real time relate to each other
 
 Simulated time (``st``) can be calculated from real time (``rt``) as
 
-``st = (rt - last_rt) * ratio + last_st``
+.. math::
+  st = (rt - last\_rt) \times ratio + last\_st
 
 And vice-versa:
 
-``rt = (st - last_st) / ratio + last_rt``
+.. math::
+  rt = (st - last\_st) / ratio + last\_rt
 
 Where ``last_rt`` and ``last_st`` are respectively the real time and the
 simulated time when the last clock ratio adjustment took place.
@@ -284,7 +289,7 @@ Peripherals
 
 The following peripherals are currently provided with this board:
 
-**Interrupt controller**:
+**Interrupt controller**
   A simple yet generic interrupt controller is provided. It can nest interrupts
   and provides interrupt priorities. Interrupts can be individually masked or
   unmasked. SW interrupts are also supported.
@@ -340,15 +345,15 @@ The following peripherals are currently provided with this board:
     execution speed of native_sim and the host load,
     it may return a value considerably ahead of the simulated time.
 
-**Entropy device**:
+**Entropy device**
   An entropy device based on the host :c:func:`random` API.
   This device will generate the same sequence of random numbers if initialized
   with the same random seed.
   You can change this random seed value by using the command line option:
-  ``--seed=<random_seed>`` where the value specified is a 32-bit integer
+  :samp:`--seed={<random_seed>}` where the value specified is a 32-bit integer
   such as 97229 (decimal),  0x17BCD (hex), or 0275715 (octal).
 
-**Ethernet driver**:
+**Ethernet driver**
   A simple TAP based ethernet driver is provided. The driver expects that the
   **zeth** network interface already exists in the host system. The **zeth**
   network interface can be created by the ``net-setup.sh`` script found in
@@ -363,7 +368,7 @@ The following peripherals are currently provided with this board:
    https://github.com/zephyrproject-rtos/net-tools
 
 
-**Bluetooth controller**:
+**Bluetooth controller**
   It's possible to use the host's Bluetooth adapter as a Bluetooth
   controller for Zephyr. To do this the HCI device needs to be passed as
   a command line option to ``zephyr.exe``. For example, to use ``hci0``,
@@ -382,12 +387,12 @@ The following peripherals are currently provided with this board:
   a virtual Bluetooth controller that does not depend on the Linux Bluetooth
   stack and its HCI interface.
 
-**USB controller**:
+**USB controller**
   It's possible to use the Virtual USB controller working over USB/IP
   protocol. More information can be found in
   :ref:`Testing USB over USP/IP in native_posix <testing_USB_native_posix>`.
 
-**Display driver**:
+**Display driver**
   A display driver is provided that creates a window on the host machine to
   render display content.
 
@@ -397,23 +402,25 @@ The following peripherals are currently provided with this board:
 
   On a Ubuntu 22.04 host system, for example, install the ``pkg-config`` and
   ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with
-  these commands::
+  these commands:
 
-    $ sudo apt-get install pkg-config libsdl2-dev:i386
-    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+  .. code-block:: console
+
+     $ sudo apt-get install pkg-config libsdl2-dev:i386
+     $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
 .. _SDL2:
    https://www.libsdl.org/download-2.0.php
 
-**Flash driver**:
+**Flash driver**
   A flash driver is provided that accesses all flash data through a binary file
   on the host file system. The behavior of the flash device can be configured
   through the native_sim board devicetree or Kconfig settings under
   :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
-  By default the binary data is located in the file *flash.bin* in the current
+  By default the binary data is located in the file :file:`flash.bin` in the current
   working directory. The location of this file can be changed through the
-  command line parameter *--flash*. The flash data will be stored in raw format
+  command line parameter ``--flash``. The flash data will be stored in raw format
   and the file will be truncated to match the size specified in the devicetree
   configuration. In case the file does not exists the driver will take care of
   creating the file, else the existing file is used.
@@ -422,7 +429,7 @@ The following peripherals are currently provided with this board:
   `Host based flash access`_ section.
 
 PTTY UART
-*********
+=========
 
 This driver can be configured with :kconfig:option:`CONFIG_UART_NATIVE_POSIX`
 to instantiate up to two UARTs. By default only one UART is enabled.
@@ -430,7 +437,7 @@ With :kconfig:option:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE`
 you can enable the second one.
 
 For the first UART, it can link it to a new
-pseudoterminal (i.e. ``/dev/pts<nbr>``), or map the UART input and
+pseudoterminal (i.e. :file:`/dev/pts{<nbr>}`), or map the UART input and
 output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
 :kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
@@ -444,11 +451,13 @@ which (by default) a normal Linux terminal is not.
 When :kconfig:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
 newly created UART pseudo-terminal will be displayed in the console.
 If you want to interact with it manually, you should attach a terminal emulator
-to it. This can be done, for example with the command::
+to it. This can be done, for example with the command:
+
+.. code-block:: console
 
    $ xterm -e screen /dev/<ttyn> &
 
-where ``/dev/<ttyn>`` should be replaced with the actual TTY device.
+where :file:`/dev/tty{<n>}` should be replaced with the actual TTY device.
 
 You may also chose to automatically attach a terminal emulator to the first UART
 by passing the command line option ``-attach_uart`` to the executable.
@@ -464,7 +473,7 @@ Neither runtime configuration or line control are supported.
 .. _native_tty_uart:
 
 TTY UART
-********
+========
 
 With this driver an application can use the polling UART API (``uart_poll_out``,
 ``uart_poll_in``) to write and read characters to and from a connected serial
@@ -472,14 +481,16 @@ port device.
 
 This driver is automatically enabled when a devicetree contains a node
 with ``"zephyr,native-tty-uart"`` compatible property and ``okay`` status, such
-as one below::
+as one below.
 
-	uart {
-		status = "okay";
-		compatible = "zephyr,native-tty-uart";
-		serial-port = "/dev/ttyUSB0";
-		current-speed = <115200>;
-	};
+.. code-block:: dts
+
+   uart {
+     status = "okay";
+     compatible = "zephyr,native-tty-uart";
+     serial-port = "/dev/ttyUSB0";
+     current-speed = <115200>;
+   };
 
 Interaction with serial ports can be configured in several different ways:
 
@@ -550,17 +561,19 @@ the required UNIX file system calls, and provides access to the flash file
 system partitions with normal operating system commands such as ``cd``,
 ``ls`` and ``mkdir``.
 
-By default the partitions are exposed through the directory *flash* in the
+By default the partitions are exposed through the directory :file:`flash/` in the
 current working directory. This directory can be changed via the command line
-option *--flash-mount*. As this directory operates as a mount point for FUSE
+option ``--flash-mount``. As this directory operates as a mount point for FUSE
 you have to ensure that it exists before starting the native_sim board.
 
 On exit, the native_sim board application will take care of unmounting the
 directory. In the unfortunate case that the native_sim board application
 crashes, you can cleanup the stale mount point by using the program
-``fusermount``::
+``fusermount``:
 
-    $ fusermount -u flash
+.. code-block:: console
+
+   $ fusermount -u flash
 
 Note that this feature requires a 32-bit version of the FUSE library, with a
 minimal version of 2.6, on the host system and ``pkg-config`` settings to
@@ -568,10 +581,12 @@ correctly pickup the FUSE install path and compiler flags.
 
 On a Ubuntu 22.04 host system, for example, install the ``pkg-config`` and
 ``libfuse-dev:i386`` packages, and configure the pkg-config search path with
-these commands::
+these commands:
 
-    $ sudo apt-get install pkg-config libfuse-dev:i386
-    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+.. code-block:: console
+
+   $ sudo apt-get install pkg-config libfuse-dev:i386
+   $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
 .. _native_sim_peripherals_c_compat:
 
