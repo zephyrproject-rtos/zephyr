@@ -1321,7 +1321,7 @@ static inline void uart_stm32_dma_tx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT
 	ARG_UNUSED(dev);
 
 	/*
@@ -1333,7 +1333,7 @@ static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 
 	LL_USART_DisableDMAReq_TX(config->usart);
-#endif /* ! st_stm32u5_dma */
+#endif
 }
 
 static inline void uart_stm32_dma_rx_enable(const struct device *dev)
@@ -1633,9 +1633,9 @@ static int uart_stm32_async_tx_abort(const struct device *dev)
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_dma)
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT
 	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-#endif /* st_stm32u5_dma */
+#endif
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	async_evt_tx_abort(data);
 
