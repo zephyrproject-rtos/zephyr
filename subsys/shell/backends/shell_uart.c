@@ -504,7 +504,7 @@ static int async_read(struct shell_uart_async *sh_uart,
 
 	for (size_t i = 0; i < blen; i++) {
 		if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
-			data[sh_cnt++] = buf[i];
+			((uint8_t *)data)[sh_cnt++] = buf[i];
 		}
 	}
 #else
