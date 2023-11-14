@@ -34,7 +34,7 @@ There are 4 possible hardware setups to use with Zephyr and Bluetooth:
 #. Embedded
 #. QEMU with an external Controller
 #. :ref:`native_sim <native_sim>` with an external Controller
-#. Simulated nRF52 with BabbleSim
+#. Simulated nRF5x with BabbleSim
 
 Embedded
 ========
@@ -137,32 +137,35 @@ Refer to :ref:`bluetooth_qemu_native` for full instructions on how to build and
 run an application with a physical controller. For the virtual controller refer
 to :ref:`bluetooth_virtual_posix`.
 
-Simulated nRF52 with BabbleSim
+Simulated nRF5x with BabbleSim
 ==============================
 
 .. note::
    This is currently only available on GNU/Linux
 
-The :ref:`nrf52_bsim board <nrf52_bsim>`, is a simulated target board
-which emulates the necessary peripherals of a nrf52 SOC to be able to develop
+The :ref:`nrf52_bsim <nrf52_bsim>` and :ref:`nrf5340bsim <nrf5340bsim>` boards,
+are simulated target boards
+which emulate the necessary peripherals of a nRF52/53 SOC to be able to develop
 and test BLE applications.
-This board, uses:
+These boards, use:
 
-   * `BabbleSim`_ to simulate the nrf52 modem and the radio environment.
-   * The POSIX arch to emulate the processor.
-   * `Models of the nrf52 HW <https://github.com/BabbleSim/ext_NRF52_hw_models/>`_
+   * `BabbleSim`_ to simulate the nRF5x modem and the radio environment.
+   * The POSIX arch and native simulator to emulate the processor, and run natively on your host.
+   * `Models of the nrf5x HW <https://github.com/BabbleSim/ext_NRF_hw_models/>`_
 
 Just like with the :ref:`native_sim <native_sim>` target, the build result is a normal Linux
 executable.
 You can find more information on how to run simulations with one or several
-devices in
-:ref:`this board's documentation <nrf52bsim_build_and_run>`
+devices in either of :ref:`these boards's documentation <nrf52bsim_build_and_run>`.
 
-Currently, only :ref:`Combined builds
+With the :ref:`nrf52_bsim <nrf52_bsim>`, only :ref:`Combined builds
 <bluetooth-build-types>` are possible, as this board does not yet have
 any models of a UART, or USB which could be used for an HCI interface towards
 another real or simulated device.
 
+With the :ref:`nrf5340bsim <nrf5340bsim>`, you can build with either, both controller and host
+on its network core, or, with the network core running only the controller, the application
+core running the host and your application, and the HCI transport over IPC.
 
 Initialization
 **************
