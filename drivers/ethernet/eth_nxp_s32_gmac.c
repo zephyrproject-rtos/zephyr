@@ -78,7 +78,7 @@ static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx, uint16_t vl
 #endif
 }
 
-#if defined(CONFIG_SOC_PART_NUMBER_S32K3)
+#if defined(CONFIG_SOC_SERIES_S32K3XX)
 static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 {
 	uint32_t regval;
@@ -105,7 +105,7 @@ static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 }
 #else
 #error "SoC not supported"
-#endif /* CONFIG_SOC_PART_NUMBER_S32K3 */
+#endif /* CONFIG_SOC_SERIES_S32K3XX */
 
 static int eth_nxp_s32_init(const struct device *dev)
 {
