@@ -1707,6 +1707,13 @@ int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 	net_pkt_alloc_buffer_debug(_pkt, _size, _proto, _timeout,	\
 				   __func__, __LINE__)
 
+int net_pkt_alloc_buffer_raw_debug(struct net_pkt *pkt, size_t size,
+				   k_timeout_t timeout,
+				   const char *caller, int line);
+#define net_pkt_alloc_buffer_raw(_pkt, _size, _timeout)	\
+	net_pkt_alloc_buffer_raw_debug(_pkt, _size, _timeout,	\
+				       __func__, __LINE__)
+
 struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						size_t size,
 						sa_family_t family,
@@ -1819,6 +1826,24 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 size_t size,
 			 enum net_ip_protocol proto,
 			 k_timeout_t timeout);
+#endif
+
+/**
+ * @brief Allocate buffer for a net_pkt, of specified size, w/o any additional
+ *        preconditions
+ *
+ * @details: The actual buffer size may be larger than requested one if fixed
+ *           size buffers are in use.
+ *
+ * @param pkt     The network packet requiring buffer to be allocated.
+ * @param size    The size of buffer being requested.
+ * @param timeout Maximum time to wait for an allocation.
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+#if !defined(NET_PKT_DEBUG_ENABLED)
+int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
+			     k_timeout_t timeout);
 #endif
 
 /**
