@@ -1197,6 +1197,67 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	return 0;
 }
 
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+int net_pkt_alloc_buffer_raw_debug(struct net_pkt *pkt, size_t size,
+				   k_timeout_t timeout, const char *caller,
+				   int line)
+#else
+int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
+			     k_timeout_t timeout)
+#endif
+{
+	struct net_buf_pool *pool = NULL;
+	struct net_buf *buf;
+
+	if (size == 0) {
+		return 0;
+	}
+
+	if (k_is_in_isr()) {
+		timeout = K_NO_WAIT;
+	}
+
+	NET_DBG("Data allocation size %zu", size);
+
+	if (pkt->context) {
+		pool = get_data_pool(pkt->context);
+	}
+
+	if (!pool) {
+		pool = pkt->slab == &tx_pkts ? &tx_bufs : &rx_bufs;
+	}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	buf = pkt_alloc_buffer(pool, size, timeout, caller, line);
+#else
+	buf = pkt_alloc_buffer(pool, size, timeout);
+#endif
+
+	if (!buf) {
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)",
+			size, caller, line);
+#else
+		NET_ERR("Data buffer (%zd) allocation failed.", size);
+#endif
+		return -ENOMEM;
+	}
+
+	net_pkt_append_buffer(pkt, buf);
+
+#if IS_ENABLED(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+	/* net_buf allocators shrink the buffer size to the requested size.
+	 * We don't want this behavior here, so restore the real size of the
+	 * last fragment.
+	 */
+	buf = net_buf_frag_last(buf);
+	buf->size = CONFIG_NET_BUF_DATA_SIZE;
+#endif
+
+	return 0;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout,
 				 const char *caller, int line)
