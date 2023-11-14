@@ -890,7 +890,24 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_RECEIVE_TIMING;
 	}
 
+	if (radio_caps & IEEE802154_RX_ON_WHEN_IDLE) {
+		caps |= OT_RADIO_CAPS_RX_ON_WHEN_IDLE;
+	}
+
 	return caps;
+}
+
+void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aRxOnWhenIdle)
+{
+	struct ieee802154_config config = {
+		.rx_on_when_idle = aRxOnWhenIdle
+	};
+
+	ARG_UNUSED(aInstance);
+
+	LOG_DBG("RxOnWhenIdle=%d", aRxOnWhenIdle ? 1 : 0);
+
+	radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_ON_WHEN_IDLE, &config);
 }
 
 bool otPlatRadioGetPromiscuous(otInstance *aInstance)
