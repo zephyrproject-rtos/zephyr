@@ -80,7 +80,7 @@ Please check :ref:`native_sim's how to<native_sim_how_to_use>` for more info.
 32 and 64bit versions
 *********************
 
-Just like :ref:`native_sim<native_sim>`, ``native_posix comes`` with two targets:
+Just like :ref:`native_sim<native_sim>`, ``native_posix`` comes with two targets:
 A 32 bit and 64 bit version.
 The 32 bit version, ``native_posix``, is the default target, which will compile
 your code for the ILP32 ABI (i386 in a x86 or x86_64 system) where pointers
