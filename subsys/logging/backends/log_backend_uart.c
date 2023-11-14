@@ -28,7 +28,7 @@ struct lbu_data {
 
 struct lbu_cb_ctx {
 	const struct log_output *output;
-	const struct device *device;
+	const struct device *uart_dev;
 	struct lbu_data *data;
 };
 
@@ -78,7 +78,7 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	int err;
 	const struct lbu_cb_ctx *cb_ctx = ctx;
 	struct lbu_data *lb_data = cb_ctx->data;
-	const struct device *uart_dev = cb_ctx->device;
+	const struct device *uart_dev = cb_ctx->uart_dev;
 
 	if (pm_device_runtime_is_enabled(uart_dev) && !k_is_in_isr()) {
 		if (pm_device_runtime_get(uart_dev) < 0) {
@@ -142,7 +142,7 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 static void log_backend_uart_init(struct log_backend const *const backend)
 {
 	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
-	const struct device *uart_dev = ctx->device;
+	const struct device *uart_dev = ctx->uart_dev;
 	struct lbu_data *data = ctx->data;
 
 	__ASSERT_NO_MSG(device_is_ready(uart_dev));
@@ -180,7 +180,7 @@ static void panic(struct log_backend const *const backend)
 {
 	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
 	struct lbu_data *data = ctx->data;
-	const struct device *uart_dev = ctx->device;
+	const struct device *uart_dev = ctx->uart_dev;
 
 	/* Ensure that the UART device is in active mode */
 #if defined(CONFIG_PM_DEVICE_RUNTIME)
@@ -238,7 +238,7 @@ const struct log_backend_api log_backend_uart_api = {
                                                                                                    \
 	static const struct lbu_cb_ctx lbu_cb_ctx##__VA_ARGS__ = {                                 \
 		.output = &lbu_output##__VA_ARGS__,                                                \
-		.device = DEVICE_DT_GET(node_id),                                                  \
+		.uart_dev = DEVICE_DT_GET(node_id),                                                \
 		.data = &lbu_data##__VA_ARGS__,                                                    \
 	};                                                                                         \
                                                                                                    \
