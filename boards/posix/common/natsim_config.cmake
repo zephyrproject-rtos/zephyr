@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-set(zephyr_build_path ${CMAKE_BINARY_DIR}/zephyr)
+set(zephyr_build_path ${APPLICATION_BINARY_DIR}/zephyr)
 get_property(CCACHE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
 
 target_link_options(native_simulator INTERFACE
