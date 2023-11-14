@@ -227,28 +227,28 @@ const struct log_backend_api log_backend_uart_api = {
 	.format_set = format_set,
 };
 
-#define LBU_DEFINE(node_id, idx)                                                                   \
-	static uint8_t lbu_buffer_##idx[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];                      \
-	LOG_OUTPUT_DEFINE(lbu_output_##idx, char_out, lbu_buffer_##idx,                            \
+#define LBU_DEFINE(node_id, ...)                                                                   \
+	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE];               \
+	LOG_OUTPUT_DEFINE(lbu_output##__VA_ARGS__, char_out, lbu_buffer##__VA_ARGS__,              \
 			  CONFIG_LOG_BACKEND_UART_BUFFER_SIZE);                                    \
                                                                                                    \
-	static struct lbu_data lbu_data_##idx = {                                                  \
+	static struct lbu_data lbu_data##__VA_ARGS__ = {                                           \
 		.log_format_current = CONFIG_LOG_BACKEND_UART_OUTPUT_DEFAULT,                      \
 	};                                                                                         \
                                                                                                    \
-	static const struct lbu_cb_ctx lbu_cb_ctx_##idx = {                                        \
-		.output = &lbu_output_##idx,                                                       \
+	static const struct lbu_cb_ctx lbu_cb_ctx##__VA_ARGS__ = {                                 \
+		.output = &lbu_output##__VA_ARGS__,                                                \
 		.device = DEVICE_DT_GET(node_id),                                                  \
-		.data = &lbu_data_##idx,                                                           \
+		.data = &lbu_data##__VA_ARGS__,                                                    \
 	};                                                                                         \
                                                                                                    \
-	LOG_BACKEND_DEFINE(log_backend_uart##idx, log_backend_uart_api,                            \
+	LOG_BACKEND_DEFINE(log_backend_uart##__VA_ARGS__, log_backend_uart_api,                    \
 			   IS_ENABLED(CONFIG_LOG_BACKEND_UART_AUTOSTART),                          \
-			   (void *)&lbu_cb_ctx_##idx);
+			   (void *)&lbu_cb_ctx##__VA_ARGS__);
 
 #if DT_HAS_CHOSEN(zephyr_log_uart)
 #define LBU_PHA_FN(node_id, prop, idx) LBU_DEFINE(DT_PHANDLE_BY_IDX(node_id, prop, idx), idx)
 DT_FOREACH_PROP_ELEM_SEP(DT_CHOSEN(zephyr_log_uart), uarts, LBU_PHA_FN, ());
 #else
-LBU_DEFINE(DT_CHOSEN(zephyr_console), 0);
+LBU_DEFINE(DT_CHOSEN(zephyr_console));
 #endif
