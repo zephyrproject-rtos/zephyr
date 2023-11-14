@@ -191,7 +191,7 @@
 	pinctrl-names = "default";
 };
 
-&kscan0 {
+&kbd0 {
 	status = "okay";
 
 	pinctrl-0 = < &ksi0_gpio017 &ksi1_gpio020 &ksi2_gpio021 &ksi3_gpio026
@@ -209,6 +209,10 @@
 		      &kso10_gpio123_sleep &kso11_gpio124_sleep &kso12_gpio125_sleep
 		      &kso13_gpio126_sleep >;
 	pinctrl-names = "default", "sleep";
+
+	kscan_input: kscan-input {
+		compatible = "zephyr,kscan-input";
+	};
 };
 
 &ksi0_gpio017 {

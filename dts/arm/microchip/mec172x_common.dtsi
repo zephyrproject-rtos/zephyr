@@ -651,8 +651,8 @@ adc0: adc@40007c00 {
 	#io-channel-cells = <1>;
 	clktime = <32>;
 };
-kscan0: kscan@40009c00 {
-	compatible = "microchip,xec-kscan";
+kbd0: kbd@40009c00 {
+	compatible = "microchip,xec-kbd";
 	reg = <0x40009c00 0x18>;
 	interrupts = <135 0>;
 	girqs = <21 25>;

@@ -17,7 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart1;
 		zephyr,flash = &flash0;
-		zephyr,keyboard-scan = &kscan0;
+		zephyr,keyboard-scan = &kscan_input;
 	};
 
 	aliases {
@@ -26,7 +26,7 @@
 
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
-		kscan0 = &kscan0;
+		kscan0 = &kscan_input;
 		watchdog0 = &wdog;
 	};
 };
@@ -100,7 +100,7 @@
 	pinctrl-names = "default";
 };
 
-&kscan0 {
+&kbd0 {
 	status = "okay";
 
 	pinctrl-0 = < &kso00_gpio040 &kso01_gpio045 &kso02_gpio046 &kso12_gpio125
@@ -118,6 +118,10 @@
 		      &ksi2_gpio021_sleep  &ksi3_gpio026_sleep  &ksi4_gpio027_sleep
 		      &ksi5_gpio030_sleep  &ksi6_gpio031_sleep  &ksi7_gpio032_sleep >;
 	pinctrl-names = "default", "sleep";
+
+	kscan_input: kscan-input {
+		compatible = "zephyr,kscan-input";
+	};
 };
 
 &peci0 {
