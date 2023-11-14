@@ -2032,10 +2032,12 @@ Networking:
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/wifi*.h
+    - include/zephyr/net/buf.h
     - samples/net/gptp/
     - samples/net/sockets/coap_*/
     - samples/net/lwm2m_client/
     - samples/net/wifi/
+    - subsys/net/buf*.c
     - subsys/net/l2/ethernet/gptp/
     - subsys/net/l2/ieee802154/
     - subsys/net/l2/wifi/
@@ -2070,10 +2072,10 @@ Networking:
     - jukkar
   files:
     - include/zephyr/net/buf.h
-    - subsys/net/buf.c
+    - subsys/net/buf*.c
     - tests/net/buf/
   labels:
-    - "area: Networking"
+    - "area: Networking Buffers"
 
 "Networking: Connection Manager":
   status: maintained
