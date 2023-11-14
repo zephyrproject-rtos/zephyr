@@ -71,7 +71,7 @@ static int nxp_s32_power_init(void)
 	};
 
 	const Power_Ip_PMC_ConfigType pmc_cfg = {
-#ifdef CONFIG_SOC_PART_NUMBER_S32K3
+#ifdef CONFIG_SOC_SERIES_S32K3XX
 		/* PMC Configuration Register (CONFIG) */
 		.ConfigRegister = PMC_CONFIG_LMEN(IS_ENABLED(CONFIG_NXP_S32_PMC_LMEN))
 			| PMC_CONFIG_LMBCTLEN(IS_ENABLED(CONFIG_NXP_S32_PMC_LMBCTLEN)),
