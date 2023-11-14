@@ -42,6 +42,8 @@ enum llext_section {
 	LLEXT_SECT_COUNT,
 };
 
+enum llext_mem;
+
 /**
  * @brief Linkable loadable extension loader context
  */
@@ -90,7 +92,7 @@ struct llext_loader {
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_SECT_COUNT];
-	uint32_t *sect_map;
+	enum llext_mem *sect_map;
 	uint32_t sect_cnt;
 	/** @endcond */
 };
