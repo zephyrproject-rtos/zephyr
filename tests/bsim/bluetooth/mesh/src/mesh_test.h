@@ -31,7 +31,7 @@
 #define TEST_VND_COMPANY_ID 0x1234
 #define TEST_VND_MOD_ID   0x5678
 
-#define MODEL_LIST(...) ((struct bt_mesh_model[]){ __VA_ARGS__ })
+#define MODEL_LIST(...) ((const struct bt_mesh_model[]){ __VA_ARGS__ })
 
 #define FAIL(msg, ...)                                                         \
 	do {                                                                   \
@@ -171,8 +171,8 @@ struct bt_mesh_test_sync_ctx {
 
 extern enum bst_result_t bst_result;
 extern const struct bt_mesh_test_cfg *cfg;
-extern struct bt_mesh_model *test_model;
-extern struct bt_mesh_model *test_vnd_model;
+extern const struct bt_mesh_model *test_model;
+extern const struct bt_mesh_model *test_vnd_model;
 extern const uint8_t test_net_key[16];
 extern const uint8_t test_app_key[16];
 extern const uint8_t test_va_uuid[16];

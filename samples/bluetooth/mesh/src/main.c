@@ -25,12 +25,12 @@
 #define OP_ONOFF_SET_UNACK BT_MESH_MODEL_OP_2(0x82, 0x03)
 #define OP_ONOFF_STATUS    BT_MESH_MODEL_OP_2(0x82, 0x04)
 
-static void attention_on(struct bt_mesh_model *mod)
+static void attention_on(const struct bt_mesh_model *mod)
 {
 	board_led_set(true);
 }
 
-static void attention_off(struct bt_mesh_model *mod)
+static void attention_off(const struct bt_mesh_model *mod)
 {
 	board_led_set(false);
 }
@@ -102,7 +102,7 @@ static inline uint8_t model_time_encode(int32_t ms)
 	return 0x3f;
 }
 
-static int onoff_status_send(struct bt_mesh_model *model,
+static int onoff_status_send(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx)
 {
 	uint32_t remaining;
@@ -151,7 +151,7 @@ static void onoff_timeout(struct k_work *work)
 
 /* Generic OnOff Server message handlers */
 
-static int gen_onoff_get(struct bt_mesh_model *model,
+static int gen_onoff_get(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -159,7 +159,7 @@ static int gen_onoff_get(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set_unack(struct bt_mesh_model *model,
+static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -202,7 +202,7 @@ static int gen_onoff_set_unack(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gen_onoff_set(struct bt_mesh_model *model,
+static int gen_onoff_set(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -221,7 +221,7 @@ static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
 
 /* Generic OnOff Client */
 
-static int gen_onoff_status(struct bt_mesh_model *model,
+static int gen_onoff_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -248,7 +248,7 @@ static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
 };
 
 /* This application only needs one element to contain its models */
-static struct bt_mesh_model models[] = {
+static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op, NULL,

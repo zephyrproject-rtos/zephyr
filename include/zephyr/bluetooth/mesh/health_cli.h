@@ -26,7 +26,7 @@ extern "C" {
 /** Health Client Model Context */
 struct bt_mesh_health_cli {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 
 	/** Publication structure instance */
 	struct bt_mesh_model_pub pub;

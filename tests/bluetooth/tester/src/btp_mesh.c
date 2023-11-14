@@ -454,7 +454,7 @@ static struct bt_mesh_dfu_srv dfu_srv =
 #define AUTH_METHOD_INPUT 0x03
 
 static struct model_data {
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 	uint16_t addr;
 	uint16_t appkey_idx;
 } model_bound[MODEL_BOUNDS_MAX];
@@ -587,7 +587,7 @@ static void get_faults(uint8_t *faults, uint8_t faults_size, uint8_t *dst, uint8
 	}
 }
 
-static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
+static int fault_get_cur(const struct bt_mesh_model *model, uint8_t *test_id,
 			 uint16_t *company_id, uint8_t *faults, uint8_t *fault_count)
 {
 	LOG_DBG("");
@@ -600,7 +600,7 @@ static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
 	return 0;
 }
 
-static int fault_get_reg(struct bt_mesh_model *model, uint16_t company_id,
+static int fault_get_reg(const struct bt_mesh_model *model, uint16_t company_id,
 			 uint8_t *test_id, uint8_t *faults, uint8_t *fault_count)
 {
 	LOG_DBG("company_id 0x%04x", company_id);
@@ -616,7 +616,7 @@ static int fault_get_reg(struct bt_mesh_model *model, uint16_t company_id,
 	return 0;
 }
 
-static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
+static int fault_clear(const struct bt_mesh_model *model, uint16_t company_id)
 {
 	LOG_DBG("company_id 0x%04x", company_id);
 
@@ -629,7 +629,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
 	return 0;
 }
 
-static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+static int fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t company_id)
 {
 	LOG_DBG("test_id 0x%02x company_id 0x%04x", test_id, company_id);
@@ -1024,7 +1024,7 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
 
-static struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
@@ -1091,7 +1091,7 @@ struct model_data *lookup_model_bound(uint16_t id)
 
 	return NULL;
 }
-static struct bt_mesh_model vnd_models[] = {
+static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(CID_LOCAL, VND_MODEL_ID_1, BT_MESH_MODEL_NO_OPS, NULL,
 			  NULL),
 };
@@ -1715,7 +1715,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_mesh_model_send_cmd *cp = cmd;
 	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
-	struct bt_mesh_model *model = NULL;
+	const struct bt_mesh_model *model = NULL;
 	uint16_t src;
 	int err;
 
@@ -5228,7 +5228,7 @@ void model_recv_ev(uint16_t src, uint16_t dst, const void *payload,
 	tester_event(BTP_SERVICE_ID_MESH, BTP_MESH_EV_MODEL_RECV, buf.data, buf.len);
 }
 
-static void model_bound_cb(uint16_t addr, struct bt_mesh_model *model,
+static void model_bound_cb(uint16_t addr, const struct bt_mesh_model *model,
 			   uint16_t key_idx)
 {
 	int i;
@@ -5249,7 +5249,7 @@ static void model_bound_cb(uint16_t addr, struct bt_mesh_model *model,
 	LOG_ERR("model_bound is full");
 }
 
-static void model_unbound_cb(uint16_t addr, struct bt_mesh_model *model,
+static void model_unbound_cb(uint16_t addr, const struct bt_mesh_model *model,
 			     uint16_t key_idx)
 {
 	int i;

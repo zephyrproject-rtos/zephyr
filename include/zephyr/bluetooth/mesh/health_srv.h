@@ -53,7 +53,7 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
-	int (*fault_get_cur)(struct bt_mesh_model *model, uint8_t *test_id,
+	int (*fault_get_cur)(const struct bt_mesh_model *model, uint8_t *test_id,
 			     uint16_t *company_id, uint8_t *faults,
 			     uint8_t *fault_count);
 
@@ -79,7 +79,7 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
-	int (*fault_get_reg)(struct bt_mesh_model *model, uint16_t company_id,
+	int (*fault_get_reg)(const struct bt_mesh_model *model, uint16_t company_id,
 			     uint8_t *test_id, uint8_t *faults,
 			     uint8_t *fault_count);
 
@@ -91,7 +91,7 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
-	int (*fault_clear)(struct bt_mesh_model *model, uint16_t company_id);
+	int (*fault_clear)(const struct bt_mesh_model *model, uint16_t company_id);
 
 	/** @brief Run a self-test.
 	 *
@@ -108,7 +108,7 @@ struct bt_mesh_health_srv_cb {
 	 * (negative) error code otherwise. Note that the fault array will not
 	 * be reported back to the client if the test execution didn't start.
 	 */
-	int (*fault_test)(struct bt_mesh_model *model, uint8_t test_id,
+	int (*fault_test)(const struct bt_mesh_model *model, uint8_t test_id,
 			  uint16_t company_id);
 
 	/** @brief Start calling attention to the device.
@@ -125,7 +125,7 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @param model Health Server model to start the attention state of.
 	 */
-	void (*attn_on)(struct bt_mesh_model *model);
+	void (*attn_on)(const struct bt_mesh_model *model);
 
 	/** @brief Stop the attention state.
 	 *
@@ -134,7 +134,7 @@ struct bt_mesh_health_srv_cb {
 	 *
 	 *  @param model
 	 */
-	void (*attn_off)(struct bt_mesh_model *model);
+	void (*attn_off)(const struct bt_mesh_model *model);
 };
 
 /**
@@ -149,7 +149,7 @@ struct bt_mesh_health_srv_cb {
 /** Mesh Health Server Model Context */
 struct bt_mesh_health_srv {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 
 	/** Optional callback struct */
 	const struct bt_mesh_health_srv_cb *cb;

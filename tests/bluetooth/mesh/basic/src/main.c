@@ -15,7 +15,7 @@
 
 static bool has_reg_fault = true;
 
-static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
+static int fault_get_cur(const struct bt_mesh_model *model, uint8_t *test_id,
 			 uint16_t *company_id, uint8_t *faults, uint8_t *fault_count)
 {
 	uint8_t reg_faults[MAX_FAULT] = { [0 ... (MAX_FAULT - 1)] = 0xff };
@@ -30,7 +30,7 @@ static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
 	return 0;
 }
 
-static int fault_get_reg(struct bt_mesh_model *model, uint16_t company_id,
+static int fault_get_reg(const struct bt_mesh_model *model, uint16_t company_id,
 			 uint8_t *test_id, uint8_t *faults, uint8_t *fault_count)
 {
 	if (company_id != BT_COMP_ID_LF) {
@@ -53,7 +53,7 @@ static int fault_get_reg(struct bt_mesh_model *model, uint16_t company_id,
 	return 0;
 }
 
-static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
+static int fault_clear(const struct bt_mesh_model *model, uint16_t company_id)
 {
 	if (company_id != BT_COMP_ID_LF) {
 		return -EINVAL;
@@ -64,7 +64,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
 	return 0;
 }
 
-static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+static int fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t company_id)
 {
 	if (company_id != BT_COMP_ID_LF) {
@@ -90,12 +90,12 @@ static struct bt_mesh_health_srv health_srv = {
 
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, MAX_FAULT);
 
-static struct bt_mesh_model root_models[] = {
+static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
-static int vnd_publish(struct bt_mesh_model *mod)
+static int vnd_publish(const struct bt_mesh_model *mod)
 {
 	printk("Vendor publish\n");
 	return 0;
@@ -109,7 +109,7 @@ static const struct bt_mesh_model_op vnd_ops[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static struct bt_mesh_model vnd_models[] = {
+static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, 0x1234, vnd_ops, &vnd_pub, NULL),
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, 0x4321, vnd_ops, &vnd_pub2, NULL),
 };
