@@ -2634,7 +2634,7 @@ Intel Platforms (Agilex):
     - gdengi
   collaborators:
     - nbalabak
-    - chongteikheng
+    - teikheng
   files:
     - boards/arm64/intel_*/
     - soc/arm64/intel_*/
