@@ -1,0 +1,34 @@
+/*
+ * Pins 2 and 3 must be connected to each other on the STMOD+1 connector to
+ * loopback RX/TX.
+ */
+
+/ {
+	aliases {
+		test-uart = &usart2;
+	};
+};
+
+&gpioh {
+	misc_fixed_usart2 {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3 &usart2_rts_pa1 &usart2_cts_pa0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+
+	dmas = <&gpdma1 0 27 STM32_DMA_PERIPH_TX
+		&gpdma1 1 26 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+
+	status = "okay";
+};
