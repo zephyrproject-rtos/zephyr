@@ -205,7 +205,7 @@
 /boards/arm64/fvp_baser_aemv8r/           @povergoing
 /boards/arm64/fvp_base_revc_2xaemv8a/     @carlocaione
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
-/boards/arm64/intel_socfpga_agilex5_socdk/ @chongteikheng
+/boards/arm64/intel_socfpga_agilex5_socdk/ @teikheng @gdengi
 /boards/arm64/rcar_*/                     @lorc @xakep-amatop
 /boards/Kconfig                           @tejlmand @galak @nashif @nordicjm
 # All cmake related files
