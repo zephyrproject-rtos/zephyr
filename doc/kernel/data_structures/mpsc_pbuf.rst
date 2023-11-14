@@ -54,7 +54,7 @@ Header state:
 +-------+------+----------------------+
 
 Packet buffer space contains free space, valid user packets and internal skip
-packets. Internal skip packets indicates padding, e.g. at the of the buffer.
+packets. Internal skip packets indicates padding, e.g. at the end of the buffer.
 
 Allocation
 ^^^^^^^^^^
