@@ -106,6 +106,11 @@ static int counter_rpi_pico_timer_set_alarm(const struct device *dev, uint8_t id
 
 static int counter_rpi_pico_timer_cancel_alarm(const struct device *dev, uint8_t id)
 {
+	struct counter_rpi_pico_timer_data *data = dev->data;
+	struct counter_rpi_pico_timer_ch_data *chdata = &data->ch_data[id];
+
+	chdata->callback = NULL;
+	chdata->user_data = NULL;
 	hardware_alarm_cancel(id);
 
 	return 0;
