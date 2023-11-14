@@ -807,3 +807,10 @@ test_i2c_lps22df: lps22df@78 {
 	drdy-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_i2c_lps28dfw: lps28dfw@5C {
+	compatible = "st,lps28dfw";
+	reg = <0x5C>;
+	drdy-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
