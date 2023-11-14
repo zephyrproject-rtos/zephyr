@@ -72,7 +72,7 @@ cmsis_dsp:
 
 mcumgr:
   files:
-    - subsys/mcumgr/
+    - subsys/mgmt/mcumgr/
     - tests/subsys/mgmt/mcumgr/
     - samples/subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/
