@@ -25,6 +25,11 @@ zephyr_syscall_header_ifdef(
   ${ZEPHYR_BASE}/include/zephyr/sys/mem_manage.h
 )
 
+zephyr_syscall_header_ifdef(
+  CONFIG_DEMAND_PAGING
+  ${ZEPHYR_BASE}/include/zephyr/kernel/mm/demand_paging.h
+)
+
 # If a pre-built static library containing kernel code exists in
 # this directory, libkernel.a, link it with the application code
 # instead of building from source.
