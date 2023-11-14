@@ -17,15 +17,6 @@ LOG_MODULE_DECLARE(modem_backend_uart);
 #define MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT       (2)
 #define MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF1_USED_BIT       (3)
 
-static void modem_backend_uart_async_flush(struct modem_backend_uart *backend)
-{
-	uint8_t c;
-
-	while (uart_fifo_read(backend->uart, &c, 1) > 0) {
-		continue;
-	}
-}
-
 static bool modem_backend_uart_async_is_closed(struct modem_backend_uart *backend)
 {
 	if (!atomic_test_bit(&backend->async.state,
@@ -142,7 +133,6 @@ static int modem_backend_uart_async_open(void *data)
 	int ret;
 
 	atomic_set(&backend->async.state, 0);
-	modem_backend_uart_async_flush(backend);
 	ring_buf_reset(&backend->async.receive_rb);
 
 	/* Reserve receive buffer 0 */
