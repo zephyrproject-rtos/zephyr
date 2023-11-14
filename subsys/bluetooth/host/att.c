@@ -698,14 +698,14 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		re_use = false;
 	}
 
-	if (re_use) {
+	if (re_use && !(chan->rsp_meta.att_chan)) {
 		/* There can only ever be one transaction at a time on a
 		 * bearer/channel. Use a dedicated channel meta-data to ensure
 		 * we can always queue an (error) RSP for each REQ. The ATT
 		 * module can then reschedule the RSP if it is not able to send
 		 * it immediately.
 		 */
-		if (chan->rsp_meta.att_chan) {
+		if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
 			/* Returning a NULL here will trigger an ATT timeout.
 			 * This is better than an assert as an assert would
 			 * allow a peer to DoS us.
@@ -713,21 +713,22 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 			LOG_ERR("already processing a REQ/RSP on chan %p", chan);
 
 			return NULL;
+		} else {
+			data = &chan->rsp_meta;
+
+			/* Re-use REQ buf to avoid dropping the REQ and timing out.
+			 * This only works if the bearer used to RX REQs is the same as
+			 * for sending the RSP. That should always be the case
+			 * (per-spec).
+			 */
+			__ASSERT_NO_MSG(chan->rsp_buf);
+			buf = net_buf_ref(chan->rsp_buf);
+
+			net_buf_reset(buf);
+			net_buf_reserve(buf, BT_L2CAP_BUF_SIZE(0));
+
+			LOG_DBG("re-using REQ buf %p for RSP", buf);
 		}
-		data = &chan->rsp_meta;
-
-		/* Re-use REQ buf to avoid dropping the REQ and timing out.
-		 * This only works if the bearer used to RX REQs is the same as
-		 * for sending the RSP. That should always be the case
-		 * (per-spec).
-		 */
-		__ASSERT_NO_MSG(chan->rsp_buf);
-		buf = net_buf_ref(chan->rsp_buf);
-
-		net_buf_reset(buf);
-		net_buf_reserve(buf, BT_L2CAP_BUF_SIZE(0));
-
-		LOG_DBG("re-using REQ buf %p for RSP", buf);
 	} else {
 		LOG_DBG("alloc buf & meta from global pools");
 		buf = bt_l2cap_create_pdu_timeout(NULL, 0, timeout);
