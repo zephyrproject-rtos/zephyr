@@ -217,6 +217,7 @@ fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
 focaltech	FocalTech Systems Co.,Ltd
+fpc	Fingerprint Cards AB
 frida	Shenzhen Frida LCD Co., Ltd.
 friendlyarm	Guangzhou FriendlyARM Computer Tech Co., Ltd
 fsl	Freescale Semiconductor
