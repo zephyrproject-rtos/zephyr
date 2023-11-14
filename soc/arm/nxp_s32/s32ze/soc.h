@@ -10,6 +10,12 @@
 /* Do not let CMSIS to handle GIC */
 #define __GIC_PRESENT 0
 
+#if defined(CONFIG_SOC_S32Z27_R52)
+#include <S32Z2.h>
+#else
+#error "SoC not supported"
+#endif
+
 /* Aliases for peripheral base addresses */
 
 /* SIUL2 */
