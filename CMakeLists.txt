@@ -1762,7 +1762,7 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       COMMENT "Building native simulator runner, and linking final executable"
       COMMAND
       ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
-        -r NSI_CONFIG_FILE=${CMAKE_BINARY_DIR}/zephyr/NSI/nsi_config
+        -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
       # nsi_config is created by the board cmake file
       DEPENDS ${logical_target_for_zephyr_elf}
       BYPRODUCTS ${KERNEL_EXE_NAME}
