@@ -16,11 +16,12 @@ extern "C" {
 
 /**
  * @brief Single producer, single consumer packet buffer API
- * @ingroup kernel_apis
+ * @defgroup spsc_buf SPSC (Single producer, single consumer) packet buffer API
+ * @ingroup datastructure_apis
  * @{
  */
 
-/**@defgroup SPSC_PBUF_FLAGS MPSC packet buffer flags
+/**@defgroup SPSC_PBUF_FLAGS SPSC packet buffer flags
  * @{
  */
 
