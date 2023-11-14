@@ -1270,8 +1270,20 @@ function(zephyr_linker_sources location)
   elseif("${location}" STREQUAL "NOCACHE_SECTION")
     set(snippet_path "${nocache_path}")
   elseif("${location}" STREQUAL "ITCM_SECTION")
+    dt_has_chosen(HAS_ITCM PROPERTY "zephyr,itcm")
+    if(NOT HAS_ITCM)
+      message(FATAL_ERROR "Trying to link snippet into itcm but no itcm available. "
+              "Add `zephyr,itcm` to the device tree if supported on your device or choose another "
+              "location.")
+    endif()
     set(snippet_path "${itcm_path}")
   elseif("${location}" STREQUAL "DTCM_SECTION")
+    dt_has_chosen(HAS_DTCM PROPERTY "zephyr,dtcm")
+    if(NOT HAS_DTCM)
+      message(FATAL_ERROR "Trying to link snippet into dtcm but no dtcm available. "
+              "Add `zephyr,dtcm` to the device tree if supported on your device or choose another "
+              "location.")
+    endif()
     set(snippet_path "${dtcm_path}")
   elseif("${location}" STREQUAL "PINNED_RAM_SECTIONS")
     set(snippet_path "${pinned_ram_sections_path}")
