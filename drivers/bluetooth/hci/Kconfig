@@ -120,6 +120,7 @@ config BT_SPI_INIT_PRIORITY
 
 config BT_BLUENRG_ACI
 	bool "ACI message with with BlueNRG-based devices"
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
