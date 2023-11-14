@@ -213,13 +213,11 @@ static uint16_t smp_shell_get_mtu(const struct net_buf *nb)
 
 static int smp_shell_tx_raw(const void *data, int len)
 {
-	const struct shell *const sh = shell_backend_uart_get_ptr();
-	const struct shell_uart *const su = sh->iface->ctx;
-	const struct shell_uart_ctrl_blk *const scb = su->ctrl_blk;
+	static const struct device *const sh_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_shell_uart));
 	const uint8_t *out = data;
 
 	while ((out != NULL) && (len != 0)) {
-		uart_poll_out(scb->dev, *out);
+		uart_poll_out(sh_dev, *out);
 		++out;
 		--len;
 	}
