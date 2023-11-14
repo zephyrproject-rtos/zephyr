@@ -337,11 +337,11 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	if (ret < 0)
 		return ret;
 
-	if (cfg->plca_enable) {
-		ret = lan865x_config_plca(dev, cfg->plca_node_id,
-					  cfg->plca_node_count,
-					  cfg->plca_burst_count,
-					  cfg->plca_burst_timer);
+	if (cfg->plca->enable) {
+		ret = lan865x_config_plca(dev, cfg->plca->node_id,
+					  cfg->plca->node_count,
+					  cfg->plca->burst_count,
+					  cfg->plca->burst_timer);
 		if (ret < 0) {
 			return ret;
 		}
@@ -540,17 +540,21 @@ static const struct ethernet_api lan865x_api_func = {
 };
 
 #define LAN865X_DEFINE(inst)                                                                       \
+	static struct lan865x_config_plca lan865x_config_plca_##inst = {                           \
+		.node_id = DT_INST_PROP(inst, plca_node_id),                                       \
+		.node_count = DT_INST_PROP(inst, plca_node_count),                                 \
+		.burst_count = DT_INST_PROP(inst, plca_burst_count),                               \
+		.burst_timer = DT_INST_PROP(inst, plca_burst_timer),                               \
+		.to_timer = DT_INST_PROP(inst, plca_to_timer),                                     \
+		.enable = DT_INST_PROP(inst, plca_enable),                                         \
+	};                                                                                         \
+												   \
 	static const struct lan865x_config lan865x_config_##inst = {                               \
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.reset = GPIO_DT_SPEC_INST_GET(inst, rst_gpios),                                   \
 		.timeout = CONFIG_ETH_LAN865X_TIMEOUT,                                             \
-		.plca_node_id = DT_INST_PROP(inst, plca_node_id),                                  \
-		.plca_node_count = DT_INST_PROP(inst, plca_node_count),                            \
-		.plca_burst_count = DT_INST_PROP(inst, plca_burst_count),                          \
-		.plca_burst_timer = DT_INST_PROP(inst, plca_burst_timer),                          \
-		.plca_to_timer = DT_INST_PROP(inst, plca_to_timer),                                \
-		.plca_enable = DT_INST_PROP(inst, plca_enable),                                    \
+		.plca = &lan865x_config_plca_##inst,                                               \
 	};                                                                                         \
 												   \
 	struct oa_tc6 oa_tc6_##inst = {                                                            \
