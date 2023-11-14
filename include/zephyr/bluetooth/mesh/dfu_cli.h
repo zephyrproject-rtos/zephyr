@@ -190,7 +190,7 @@ struct bt_mesh_dfu_cli {
 	/* runtime state */
 
 	uint32_t op;
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 
 	struct {
 		const struct bt_mesh_dfu_slot *slot;

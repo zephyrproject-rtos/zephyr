@@ -22,7 +22,7 @@ NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_TX_SDU_MAX);
 /** Mesh Opcodes Aggragator Server Model Context */
 static struct bt_mesh_op_agg_srv {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 	/** Response error code. */
 	int rsp_err;
 	/** Indicates that the received aggregated message
@@ -33,7 +33,7 @@ static struct bt_mesh_op_agg_srv {
 	struct op_agg_ctx ctx;
 } srv = {.ctx.sdu = &sdu};
 
-static int handle_sequence(struct bt_mesh_model *model,
+static int handle_sequence(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
@@ -114,7 +114,7 @@ const struct bt_mesh_model_op _bt_mesh_op_agg_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int op_agg_srv_init(struct bt_mesh_model *model)
+static int op_agg_srv_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Opcodes Aggregator Server only allowed in primary element");
@@ -131,7 +131,7 @@ static int op_agg_srv_init(struct bt_mesh_model *model)
 	return 0;
 }
 
-int bt_mesh_op_agg_srv_send(struct bt_mesh_model *model, struct net_buf_simple *msg)
+int bt_mesh_op_agg_srv_send(const struct bt_mesh_model *model, struct net_buf_simple *msg)
 {
 	int err;
 
