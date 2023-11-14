@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include <S32Z2.h>
+#include <soc.h>
 #include <Netc_Eth_Ip.h>
 #include <Netc_Eth_Ip_Irq.h>
 #include <Netc_EthSwt_Ip.h>
