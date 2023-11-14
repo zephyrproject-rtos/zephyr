@@ -4,30 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT microchip_xec_kscan
+#define DT_DRV_COMPAT microchip_xec_kbd
 
 #include <cmsis_core.h>
 #include <errno.h>
+#include <soc.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/input/input.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #ifdef CONFIG_SOC_SERIES_MEC172X
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #endif
-#include <zephyr/drivers/kscan.h>
-#include <zephyr/drivers/pinctrl.h>
-#include <zephyr/kernel.h>
-#include <soc.h>
-#include <zephyr/sys/atomic.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
-#include <zephyr/pm/device.h>
-#include <zephyr/pm/policy.h>
 
-#define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
-LOG_MODULE_REGISTER(kscan_mchp_xec);
+LOG_MODULE_REGISTER(input_xec_kbd, CONFIG_INPUT_LOG_LEVEL);
 
-#define MAX_MATRIX_KEY_COLS CONFIG_KSCAN_XEC_COLUMN_SIZE
-#define MAX_MATRIX_KEY_ROWS CONFIG_KSCAN_XEC_ROW_SIZE
+#define MAX_MATRIX_KEY_COLS CONFIG_INPUT_XEC_COLUMN_SIZE
+#define MAX_MATRIX_KEY_ROWS CONFIG_INPUT_XEC_ROW_SIZE
 
 #define KEYBOARD_COLUMN_DRIVE_ALL       -2
 #define KEYBOARD_COLUMN_DRIVE_NONE      -1
@@ -42,7 +40,7 @@ LOG_MODULE_REGISTER(kscan_mchp_xec);
 /* Thread stack size */
 #define TASK_STACK_SIZE 1024
 
-struct kscan_xec_config {
+struct xec_kbd_config {
 	struct kscan_regs *regs;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t rsvd[3];
@@ -54,7 +52,7 @@ struct kscan_xec_config {
 	bool wakeup_source;
 };
 
-struct kscan_xec_data {
+struct xec_kbd_data {
 	/* variables in usec units */
 	uint32_t deb_time_press;
 	uint32_t deb_time_rel;
@@ -71,24 +69,22 @@ struct kscan_xec_data {
 	uint8_t scan_clk_cycle[SCAN_OCURRENCES];
 	struct k_sem poll_lock;
 	uint8_t scan_cycles_idx;
-	kscan_callback_t callback;
 	struct k_thread thread;
-	atomic_t enable_scan;
 
 	K_KERNEL_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
 };
 
 #ifdef CONFIG_SOC_SERIES_MEC172X
-static void kscan_clear_girq_status(const struct device *dev)
+static void xec_kbd_clear_girq_status(const struct device *dev)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 
 	mchp_xec_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
 }
 
-static void kscan_configure_girq(const struct device *dev, bool enable)
+static void xec_kbd_configure_girq(const struct device *dev, bool enable)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 
 	if (enable) {
 		mchp_xec_ecia_enable(cfg->girq, cfg->girq_pos);
@@ -97,24 +93,24 @@ static void kscan_configure_girq(const struct device *dev, bool enable)
 	}
 }
 
-static void kscan_clr_slp_en(const struct device *dev)
+static void xec_kbd_clr_slp_en(const struct device *dev)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 
 	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
 }
 
 #else
-static void kscan_clear_girq_status(const struct device *dev)
+static void xec_kbd_clear_girq_status(const struct device *dev)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 
 	MCHP_GIRQ_SRC(cfg->girq) = BIT(cfg->girq_pos);
 }
 
-static void kscan_configure_girq(const struct device *dev, bool enable)
+static void xec_kbd_configure_girq(const struct device *dev, bool enable)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 
 	if (enable) {
 		MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
@@ -123,7 +119,7 @@ static void kscan_configure_girq(const struct device *dev, bool enable)
 	}
 }
 
-static void kscan_clr_slp_en(const struct device *dev)
+static void xec_kbd_clr_slp_en(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -131,10 +127,9 @@ static void kscan_clr_slp_en(const struct device *dev)
 }
 #endif
 
-
 static void drive_keyboard_column(const struct device *dev, int data)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 	struct kscan_regs *regs = cfg->regs;
 
 	if (data == KEYBOARD_COLUMN_DRIVE_ALL) {
@@ -153,7 +148,7 @@ static void drive_keyboard_column(const struct device *dev, int data)
 
 static uint8_t read_keyboard_row(const struct device *dev)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 	struct kscan_regs *regs = cfg->regs;
 
 	/* In this implementation a 1 means key pressed */
@@ -221,17 +216,17 @@ static bool read_keyboard_matrix(const struct device *dev, uint8_t *new_state)
 
 static void scan_matrix_xec_isr(const struct device *dev)
 {
-	struct kscan_xec_data *const data = dev->data;
+	struct xec_kbd_data *const data = dev->data;
 
-	kscan_clear_girq_status(dev);
+	xec_kbd_clear_girq_status(dev);
 	irq_disable(DT_INST_IRQN(0));
 	k_sem_give(&data->poll_lock);
-	LOG_DBG(" ");
+	LOG_DBG("");
 }
 
 static bool check_key_events(const struct device *dev)
 {
-	struct kscan_xec_data *const data = dev->data;
+	struct xec_kbd_data *const data = dev->data;
 	uint8_t matrix_new_state[MAX_MATRIX_KEY_COLS] = {0U};
 	bool key_pressed = false;
 	uint32_t cycles_now  = k_cycle_get_32();
@@ -322,10 +317,10 @@ static bool check_key_events(const struct device *dev)
 			 * application about the keys pressed.
 			 */
 			data->matrix_stable_state[c] ^= mask;
-			if (atomic_get(&data->enable_scan) == 1U) {
-				data->callback(dev, r, c,
-					       row_bit ? true : false);
-			}
+
+			input_report_abs(dev, INPUT_ABS_X, c, false, K_FOREVER);
+			input_report_abs(dev, INPUT_ABS_Y, r, false, K_FOREVER);
+			input_report_key(dev, INPUT_BTN_TOUCH, row_bit, true, K_FOREVER);
 		}
 	}
 
@@ -351,8 +346,8 @@ static bool poll_expired(uint32_t start_cycles, int64_t *timeout)
 
 void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 {
-	struct kscan_xec_config const *cfg = dev->config;
-	struct kscan_xec_data *const data = dev->data;
+	struct xec_kbd_config const *cfg = dev->config;
+	struct xec_kbd_data *const data = dev->data;
 	struct kscan_regs *regs = cfg->regs;
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
@@ -366,7 +361,7 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 		regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
 
 		/* Ignore isr when releasing a key as we are polling */
-		kscan_clear_girq_status(dev);
+		xec_kbd_clear_girq_status(dev);
 		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		irq_enable(DT_INST_IRQN(0));
 
@@ -377,7 +372,7 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 
 		uint32_t start_poll_cycles = k_cycle_get_32();
 
-		while (atomic_get(&data->enable_scan) == 1U) {
+		while (true) {
 			uint32_t start_period_cycles = k_cycle_get_32();
 
 			if (check_key_events(DEVICE_DT_INST_GET(0))) {
@@ -407,7 +402,7 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 			 * whole poll period is used
 			 */
 			if (wait_period > data->poll_period) {
-				LOG_DBG("wait_period : %u", wait_period);
+				LOG_DBG("wait_period: %u", wait_period);
 
 				wait_period = data->poll_period;
 			}
@@ -420,99 +415,63 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 	}
 }
 
-static int kscan_xec_configure(const struct device *dev,
-				 kscan_callback_t callback)
-{
-	struct kscan_xec_data *const data = dev->data;
-
-	if (!callback) {
-		return -EINVAL;
-	}
-
-	data->callback = callback;
-
-	kscan_clear_girq_status(dev);
-	kscan_configure_girq(dev, 1);
-
-	return 0;
-}
-
-static int kscan_xec_inhibit_interface(const struct device *dev)
-{
-	struct kscan_xec_data *const data = dev->data;
-
-	atomic_set(&data->enable_scan, 0);
-
-	return 0;
-}
-
-static int kscan_xec_enable_interface(const struct device *dev)
-{
-	struct kscan_xec_data *const data = dev->data;
-
-	atomic_set(&data->enable_scan, 1);
-
-	return 0;
-}
-
 #ifdef CONFIG_PM_DEVICE
-static int kscan_xec_pm_action(const struct device *dev, enum pm_device_action action)
+static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	struct kscan_xec_config const *cfg = dev->config;
+	struct xec_kbd_config const *cfg = dev->config;
 	struct kscan_regs *regs = cfg->regs;
-	int ret = 0;
+	int ret;
+
+	if (cfg->wakeup_source) {
+		return 0;
+	}
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (!(cfg->wakeup_source)) {
-			ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-			if (ret != 0) {
-				LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
-				return ret;
-			}
-			regs->KSO_SEL &= ~BIT(MCHP_KSCAN_KSO_EN_POS);
-			/* Clea Status register */
-			regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
-			regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret != 0) {
+			LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
+			return ret;
 		}
-	break;
+
+		regs->KSO_SEL &= ~BIT(MCHP_KSCAN_KSO_EN_POS);
+		/* Clear status register */
+		regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
+		regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
+		break;
+
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (!(cfg->wakeup_source)) {
-			regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
-			regs->KSI_IEN = (~MCHP_KSCAN_KSI_IEN_REG_MASK);
-			ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-			if (ret == -ENOENT) { /* pinctrl-1 does not exist.  */
-				ret = 0;
-			}
+		regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
+		regs->KSI_IEN = (~MCHP_KSCAN_KSI_IEN_REG_MASK);
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret != -ENOENT) {
+			/* pinctrl-1 does not exist */
+			return ret;
 		}
-	break;
+		break;
+
 	default:
-		ret = -ENOTSUP;
+		return -ENOTSUP;
 	}
-	return ret;
+
+	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct kscan_driver_api kscan_xec_driver_api = {
-	.config = kscan_xec_configure,
-	.disable_callback = kscan_xec_inhibit_interface,
-	.enable_callback = kscan_xec_enable_interface,
-};
-
-static int kscan_xec_init(const struct device *dev)
+static int xec_kbd_init(const struct device *dev)
 {
-	struct kscan_xec_config const *cfg = dev->config;
-	struct kscan_xec_data *const data = dev->data;
+	struct xec_kbd_config const *cfg = dev->config;
+	struct xec_kbd_data *const data = dev->data;
 	struct kscan_regs *regs = cfg->regs;
+	int ret;
 
-	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
 		LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
 		return ret;
 	}
 
-	kscan_clr_slp_en(dev);
+	xec_kbd_clr_slp_en(dev);
 
 	/* Enable predrive */
 	regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
@@ -522,15 +481,14 @@ static int kscan_xec_init(const struct device *dev)
 
 	/* Time figures are transformed from msec to usec */
 	data->deb_time_press = (uint32_t)
-		(CONFIG_KSCAN_XEC_DEBOUNCE_DOWN * MSEC_PER_MS);
+		(CONFIG_INPUT_XEC_DEBOUNCE_DOWN * MSEC_PER_MS);
 	data->deb_time_rel = (uint32_t)
-		(CONFIG_KSCAN_XEC_DEBOUNCE_UP * MSEC_PER_MS);
+		(CONFIG_INPUT_XEC_DEBOUNCE_UP * MSEC_PER_MS);
 	data->poll_period = (uint32_t)
-		(CONFIG_KSCAN_XEC_POLL_PERIOD * MSEC_PER_MS);
+		(CONFIG_INPUT_XEC_POLL_PERIOD * MSEC_PER_MS);
 	data->poll_timeout = 100 * MSEC_PER_MS;
 
 	k_sem_init(&data->poll_lock, 0, 1);
-	atomic_set(&data->enable_scan, 1);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			TASK_STACK_SIZE,
@@ -542,20 +500,20 @@ static int kscan_xec_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    scan_matrix_xec_isr, DEVICE_DT_INST_GET(0), 0);
 
+	xec_kbd_clear_girq_status(dev);
+	xec_kbd_configure_girq(dev, true);
+
 	return 0;
 }
 
-static struct kscan_xec_data kbd_data;
+static struct xec_kbd_data kbd_data;
 
 PINCTRL_DT_INST_DEFINE(0);
 
-/* To enable wakeup on the KSCAN, the DTS needs to have entries defined
- * in the KSCAN node in the DTS specifying it as a wake source;
- * Example as below
- *
- *	wakeup-source;
+/* To enable wakeup, set the "wakeup-source" on the keyboard scanning device
+ * node.
  */
-static struct kscan_xec_config kscan_xec_cfg_0 = {
+static struct xec_kbd_config xec_kbd_cfg_0 = {
 	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
 	.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),
 	.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),
@@ -565,9 +523,9 @@ static struct kscan_xec_config kscan_xec_cfg_0 = {
 	.wakeup_source = DT_INST_PROP(0, wakeup_source)
 };
 
-PM_DEVICE_DT_INST_DEFINE(0, kscan_xec_pm_action);
+PM_DEVICE_DT_INST_DEFINE(0, xec_kbd_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, kscan_xec_init,
-		      PM_DEVICE_DT_INST_GET(0), &kbd_data, &kscan_xec_cfg_0,
-		      POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
-		      &kscan_xec_driver_api);
+DEVICE_DT_INST_DEFINE(0, xec_kbd_init,
+		      PM_DEVICE_DT_INST_GET(0), &kbd_data, &xec_kbd_cfg_0,
+		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,
+		      NULL);

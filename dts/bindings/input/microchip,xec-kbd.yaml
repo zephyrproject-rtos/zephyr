@@ -4,17 +4,19 @@
 
 description: Microchip XEC keyboard matrix controller
 
-compatible: "microchip,xec-kscan"
+compatible: "microchip,xec-kbd"
 
-include: [kscan.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
   "#address-cells":
     required: true
     const: 1
+
   "#size-cells":
     type: int
     const: 0
+
   reg:
     required: true
 
