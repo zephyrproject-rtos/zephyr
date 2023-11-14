@@ -55,4 +55,12 @@ Zephyr's :file:`west.yml`.
 
 .. rst-class:: rst-columns
 
-- TBD
+.. list-table::
+   :header-rows: 1
+
+   * - project
+     - repo
+     - revision
+   * - heatshrink
+     - https://github.com/kickmaker/heatshrink
+     - bce543f477fa50cb1af5375f0c4271fd0ec83a93
