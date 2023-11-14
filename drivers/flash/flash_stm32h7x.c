@@ -228,6 +228,7 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev,
 {
 	struct flash_stm32_sector_t sector;
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	off_t temp_offset = offset + (CONFIG_FLASH_BASE_ADDRESS & 0xffffff);
 
 #ifdef DUAL_BANK
 	bool bank_swap;
@@ -235,20 +236,20 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev,
 	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK)
 			== FLASH_OPTCR_SWAP_BANK);
 	sector.sector_index = offset / FLASH_SECTOR_SIZE;
-	if ((offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
+	if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
 		sector.bank = 1;
 		sector.cr = &regs->CR1;
 		sector.sr = &regs->SR1;
-	} else if ((offset >= BANK2_OFFSET) && bank_swap) {
+	} else if ((temp_offset >= BANK2_OFFSET) && bank_swap) {
 		sector.sector_index -= BANK2_OFFSET / FLASH_SECTOR_SIZE;
 		sector.bank = 1;
 		sector.cr = &regs->CR2;
 		sector.sr = &regs->SR2;
-	} else if ((offset < (REAL_FLASH_SIZE_KB / 2)) && bank_swap) {
+	} else if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && bank_swap) {
 		sector.bank = 2;
 		sector.cr = &regs->CR1;
 		sector.sr = &regs->SR1;
-	} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
+	} else if ((temp_offset >= BANK2_OFFSET) && !bank_swap) {
 		sector.sector_index -= BANK2_OFFSET / FLASH_SECTOR_SIZE;
 		sector.bank = 2;
 		sector.cr = &regs->CR2;
