@@ -138,6 +138,9 @@ Build system and infrastructure
 * Added MCUboot image size reduction to sysbuild images which include MCUboot which prevents
   issues with building firmware images that are too large for MCUboot to swap.
 
+* Deprecated :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE`, users of this should transition to
+  having RAM set up properly in their board devicetree files.
+
 Drivers and Sensors
 *******************
 
