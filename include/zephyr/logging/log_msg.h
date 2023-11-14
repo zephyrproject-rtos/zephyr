@@ -679,11 +679,11 @@ __syscall void z_log_msg_static_create(const void *source,
  *
  * @param ap Variable list of string arguments.
  */
-__syscall void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
-					  uint8_t level, const void *data,
-					  size_t dlen, uint32_t package_flags,
-					  const char *fmt,
-					  va_list ap);
+void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
+				uint8_t level, const void *data,
+				size_t dlen, uint32_t package_flags,
+				const char *fmt,
+				va_list ap);
 
 /** @brief Create message at runtime.
  *
