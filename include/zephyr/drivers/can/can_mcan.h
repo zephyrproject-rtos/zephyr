@@ -640,7 +640,7 @@ enum can_mcan_psr_lec {
  */
 #define CAN_MCAN_DT_MRAM_DEFINE(node_id, _name)                                                    \
 	BUILD_ASSERT(CAN_MCAN_DT_MRAM_OFFSET(node_id) == 0, "offset must be 0");                   \
-	static char __noinit __nocache __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
+	static char __nocache_noinit __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
 
 /**
  * @brief Assert that the Message RAM configuration meets the Bosch M_CAN IP core restrictions
