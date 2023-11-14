@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(input_npcx_kbd);
 #define ROW_SIZE DT_INST_PROP(0, row_size)
 
 /* Driver config */
-struct input_npcx_kbd_config {
+struct npcx_kbd_config {
 	struct input_kbd_matrix_common_config common;
 	/* Keyboard scan controller base address */
 	struct kbs_reg *base;
@@ -40,24 +40,24 @@ struct input_npcx_kbd_config {
 	struct npcx_wui wui_maps[];
 };
 
-struct input_npcx_kbd_data {
+struct npcx_kbd_data {
 	struct input_kbd_matrix_common_data common;
 	struct miwu_callback ksi_callback[ROW_SIZE];
 };
 
-INPUT_KBD_STRUCT_CHECK(struct input_npcx_kbd_config, struct input_npcx_kbd_data);
+INPUT_KBD_STRUCT_CHECK(struct npcx_kbd_config, struct npcx_kbd_data);
 
 /* Keyboard scan local functions */
-static void input_npcx_kbd_ksi_isr(const struct device *dev, struct npcx_wui *wui)
+static void npcx_kbd_ksi_isr(const struct device *dev, struct npcx_wui *wui)
 {
 	ARG_UNUSED(wui);
 
 	input_kbd_matrix_poll_start(dev);
 }
 
-static void input_npcx_kbd_set_detect_mode(const struct device *dev, bool enabled)
+static void npcx_kbd_set_detect_mode(const struct device *dev, bool enabled)
 {
-	const struct input_npcx_kbd_config *const config = dev->config;
+	const struct npcx_kbd_config *const config = dev->config;
 
 	if (enabled) {
 		irq_enable(config->irq);
@@ -66,9 +66,9 @@ static void input_npcx_kbd_set_detect_mode(const struct device *dev, bool enable
 	}
 }
 
-static void input_npcx_kbd_drive_column(const struct device *dev, int col)
+static void npcx_kbd_drive_column(const struct device *dev, int col)
 {
-	const struct input_npcx_kbd_config *config = dev->config;
+	const struct npcx_kbd_config *config = dev->config;
 	const struct input_kbd_matrix_common_config *common = &config->common;
 	struct kbs_reg *const inst = config->base;
 	uint32_t mask;
@@ -98,9 +98,9 @@ static void input_npcx_kbd_drive_column(const struct device *dev, int col)
 	inst->KBSOUT1 = ((mask >> 16) & 0x03);
 }
 
-static int input_npcx_kbd_read_row(const struct device *dev)
+static int npcx_kbd_read_row(const struct device *dev)
 {
-	const struct input_npcx_kbd_config *config = dev->config;
+	const struct npcx_kbd_config *config = dev->config;
 	const struct input_kbd_matrix_common_config *common = &config->common;
 	struct kbs_reg *const inst = config->base;
 	int val;
@@ -113,10 +113,10 @@ static int input_npcx_kbd_read_row(const struct device *dev)
 	return val;
 }
 
-static void input_npcx_kbd_init_ksi_wui_callback(const struct device *dev,
-						 struct miwu_callback *callback,
-						 const struct npcx_wui *wui,
-						 miwu_dev_callback_handler_t handler)
+static void npcx_kbd_init_ksi_wui_callback(const struct device *dev,
+					   struct miwu_callback *callback,
+					   const struct npcx_wui *wui,
+					   miwu_dev_callback_handler_t handler)
 {
 	/* KSI signal which has no wake-up input source */
 	if (wui->table == NPCX_MIWU_TABLE_NONE) {
@@ -132,12 +132,12 @@ static void input_npcx_kbd_init_ksi_wui_callback(const struct device *dev,
 	npcx_miwu_irq_enable(wui);
 }
 
-static int input_npcx_kbd_init(const struct device *dev)
+static int npcx_kbd_init(const struct device *dev)
 {
 	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
-	const struct input_npcx_kbd_config *const config = dev->config;
+	const struct npcx_kbd_config *const config = dev->config;
 	const struct input_kbd_matrix_common_config *common = &config->common;
-	struct input_npcx_kbd_data *const data = dev->data;
+	struct npcx_kbd_data *const data = dev->data;
 	struct kbs_reg *const inst = config->base;
 	int ret;
 
@@ -176,7 +176,7 @@ static int input_npcx_kbd_init(const struct device *dev)
 	}
 
 	/* Drive all column lines to low for detection any key press */
-	input_npcx_kbd_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE);
+	npcx_kbd_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE);
 
 	if (common->row_size != ROW_SIZE) {
 		LOG_ERR("Unexpected ROW_SIZE: %d != %d", common->row_size, ROW_SIZE);
@@ -185,9 +185,9 @@ static int input_npcx_kbd_init(const struct device *dev)
 
 	/* Configure wake-up input and callback for keyboard input signal */
 	for (int i = 0; i < common->row_size; i++) {
-		input_npcx_kbd_init_ksi_wui_callback(
+		npcx_kbd_init_ksi_wui_callback(
 				dev, &data->ksi_callback[i], &config->wui_maps[i],
-				input_npcx_kbd_ksi_isr);
+				npcx_kbd_ksi_isr);
 	}
 
 	/* Configure pin-mux for keyboard scan device */
@@ -205,12 +205,12 @@ PINCTRL_DT_INST_DEFINE(0);
 INPUT_KBD_MATRIX_DT_INST_DEFINE(0);
 
 static const struct input_kbd_matrix_api npcx_kbd_api = {
-	.drive_column = input_npcx_kbd_drive_column,
-	.read_row = input_npcx_kbd_read_row,
-	.set_detect_mode = input_npcx_kbd_set_detect_mode,
+	.drive_column = npcx_kbd_drive_column,
+	.read_row = npcx_kbd_read_row,
+	.set_detect_mode = npcx_kbd_set_detect_mode,
 };
 
-static const struct input_npcx_kbd_config npcx_kbd_cfg = {
+static const struct npcx_kbd_config npcx_kbd_cfg_0 = {
 	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, &npcx_kbd_api),
 	.base = (struct kbs_reg *)DT_INST_REG_ADDR(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
@@ -220,10 +220,10 @@ static const struct input_npcx_kbd_config npcx_kbd_cfg = {
 	.wui_maps = NPCX_DT_WUI_ITEMS_LIST(0),
 };
 
-static struct input_npcx_kbd_data npcx_kbd_data;
+static struct npcx_kbd_data npcx_kbd_data_0;
 
-DEVICE_DT_INST_DEFINE(0, input_npcx_kbd_init, NULL,
-		      &npcx_kbd_data, &npcx_kbd_cfg,
+DEVICE_DT_INST_DEFINE(0, npcx_kbd_init, NULL,
+		      &npcx_kbd_data_0, &npcx_kbd_cfg_0,
 		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
