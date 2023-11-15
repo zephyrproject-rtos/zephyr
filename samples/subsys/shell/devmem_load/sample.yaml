@@ -9,7 +9,7 @@ common:
 tests:
   sample.devmem_load.polled:
     integration_platforms:
-      - native_posix
+      - native_sim
     extra_args: OVERLAY_CONFIG="prj_poll.conf"
   sample.devmem_load.uart.interrupt:
     integration_platforms:
