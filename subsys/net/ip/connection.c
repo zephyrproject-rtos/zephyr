@@ -154,7 +154,8 @@ static void conn_set_unused(struct net_conn *conn)
 }
 
 /* Check if we already have identical connection handler installed. */
-static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
+static struct net_conn *conn_find_handler(struct net_if *iface,
+					  uint16_t proto, uint8_t family,
 					  const struct sockaddr *remote_addr,
 					  const struct sockaddr *local_addr,
 					  uint16_t remote_port,
@@ -252,6 +253,13 @@ static struct net_conn *conn_find_handler(uint16_t proto, uint8_t family,
 			continue;
 		}
 
+		if (conn->context != NULL && iface != NULL &&
+		    net_context_is_bound_to_iface(conn->context)) {
+			if (iface != net_context_get_iface(conn->context)) {
+				continue;
+			}
+		}
+
 		k_mutex_unlock(&conn_lock);
 		return conn;
 	}
@@ -273,7 +281,8 @@ int net_conn_register(uint16_t proto, uint8_t family,
 	struct net_conn *conn;
 	uint8_t flags = 0U;
 
-	conn = conn_find_handler(proto, family, remote_addr, local_addr,
+	conn = conn_find_handler(context != NULL ? net_context_get_iface(context) : NULL,
+				 proto, family, remote_addr, local_addr,
 				 remote_port, local_port,
 				 context != NULL ?
 					net_context_is_reuseport_set(context) :
