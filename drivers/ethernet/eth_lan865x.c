@@ -426,7 +426,9 @@ static void lan865x_int_thread(const struct device *dev)
 		 * The IRQ_N is asserted when RCA becomes > 0, so update its value
 		 * before reading chunks.
 		 */
-		oa_tc6_update_buf_info(tc6);
+		if (oa_tc6_update_buf_info(tc6) < 0) {
+			continue;
+		}
 
 		while (tc6->rca > 0) {
 			lan865x_read_chunks(dev);
