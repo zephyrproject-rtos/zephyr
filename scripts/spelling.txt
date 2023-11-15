@@ -1080,6 +1080,7 @@ targetting||targeting
 teh||the
 temorary||temporary
 temproarily||temporarily
+the the||the
 therfore||therefore
 thier||their
 threds||threads
