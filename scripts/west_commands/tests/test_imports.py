@@ -45,5 +45,6 @@ def test_runner_imports():
                     'stm32flash',
                     'trace32',
                     'uf2',
+                    'wchisp',
                     'xtensa'))
     assert runner_names == expected

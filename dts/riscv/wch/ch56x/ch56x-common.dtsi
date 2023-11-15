@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <zephyr/dt-bindings/interrupt-controller/ch56x-int.h>
+
+#include <wch/qingke-v3.dtsi>
+
+/ {
+	soc {
+		flash: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_K(448)>;
+		};
+
+		rams: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(16)>;
+		};
+
+		ramx: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(16)>;
+		};
+
+		syscon: system-control@40001000 {
+			reg = <0x40001000 0x20>;
+		};
+
+		gpioa: gpio@40001040 {
+			compatible = "wch,ch56x-gpio";
+			reg = <0x40001040 0x20>;
+			interrupts = <CH56X_INT_GPIO>;
+			interruptible-pins = <2 0>, <3 1>, <4 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+		};
+
+		gpiob: gpio@40001060 {
+			compatible = "wch,ch56x-gpio";
+			reg = <0x40001060 0x20>;
+			interrupts = <CH56X_INT_GPIO>;
+			interruptible-pins = <3 3>, <4 4>, <11 5>, <12 6>, <15 7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <25>;
+		};
+	};
+
+	clocks {
+		clkmux: clkmux {
+			compatible = "wch,ch56x-clkmux";
+			clock-frequency = <DT_FREQ_M(15)>;
+			#clock-cells = <0>;
+		};
+	};
+};

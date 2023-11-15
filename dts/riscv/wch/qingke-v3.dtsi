@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/ch32v-qingke-v3-int.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "wch,qingke-v3";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&pfic>;
+
+		pfic: pfic@e000e000 {
+			compatible = "wch,ch32v-pfic";
+			reg = <0xe000e000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		systick: systick@e000f000 {
+			compatible = "wch,ch32v-v3-systick";
+			reg = <0xe000f000 0x14>;
+			interrupts = <QINGKE_V3_INT_SYSTICK>;
+		};
+	};
+};

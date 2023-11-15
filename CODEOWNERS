@@ -87,6 +87,7 @@
 /soc/riscv/riscv-privileged/neorv32/       @henrikbrixandersen
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
+/soc/riscv/riscv-privileged/wch_ch32v/     @xingrz
 /soc/x86/                                 @dcpleung @nashif
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
@@ -177,6 +178,8 @@
 /boards/posix/                            @aescolar @daor-oti
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
+/boards/riscv/ch565w_evt/                 @xingrz
+/boards/riscv/ch569w_evt/                 @xingrz
 /boards/riscv/rv32m1_vega/                @dleach02
 /boards/riscv/adp_xc7k_ae350/             @cwshu @kevinwang821020 @jimmyzhe
 /boards/riscv/longan_nano/                @soburi
@@ -261,6 +264,8 @@
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx @sylvioalves
 /drivers/clock_control/*cpg_mssr*         @aaillet
+/drivers/clock_control/*ch32v*            @xingrz
+/drivers/clock_control/*ch56x*            @xingrz
 /drivers/counter/                         @nordic-krch
 /drivers/console/ipm_console.c            @finikorg
 /drivers/console/semihost_console.c       @luozhongyao
@@ -332,6 +337,8 @@
 /drivers/gpio/*ads114s0x*                 @benediktibk
 /drivers/gpio/*bd8lb600fs*                @benediktibk
 /drivers/gpio/*pcal64xxa*                 @benediktibk
+/drivers/gpio/*ch32v*                     @xingrz
+/drivers/gpio/*ch56x*                     @xingrz
 /drivers/gpio/gpio_altera_pio.c           @shilinte
 /drivers/gpio/gpio_ad5592.c               @bbilas
 /drivers/hwinfo/                          @alexanderwachter
@@ -360,6 +367,7 @@
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
 /drivers/interrupt_controller/*esp32*     @sylvioalves
 /drivers/interrupt_controller/intc_nuclei_eclic.c  @soburi
+/drivers/interrupt_controller/*ch32v*     @xingrz
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic
@@ -494,6 +502,7 @@
 /drivers/timer/*rv32m1_lptmr*             @mbolivar
 /drivers/timer/*nrf_rtc*                  @anangl
 /drivers/timer/*hpet*                     @dcpleung
+/drivers/timer/*ch32v*                    @xingrz
 /drivers/usb/                             @jfischer-no
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/usb_c/                           @sambhurst
@@ -572,6 +581,7 @@
 /dts/riscv/starfive/                      @rajnesh-kanwal
 /dts/riscv/andes/andes_v5*                @cwshu @kevinwang821020 @jimmyzhe
 /dts/riscv/niosv/                         @sweeaun
+/dts/riscv/wch/                           @xingrz
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-a.dtsi                     @ibirnbaum
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
@@ -610,6 +620,7 @@
 /dts/bindings/*/andes*                    @cwshu @kevinwang821020 @jimmyzhe
 /dts/bindings/*/neorv32*                  @henrikbrixandersen
 /dts/bindings/*/*lan91c111*               @sgrrzhf
+/dts/bindings/*/wch*                      @xingrz
 /dts/bindings/i3c/                        @dcpleung
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
@@ -649,6 +660,7 @@
 /include/zephyr/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/zephyr/drivers/interrupt_controller/    @dcpleung @nashif
 /include/zephyr/drivers/interrupt_controller/gic.h @stephanosio
+/include/zephyr/drivers/interrupt_controller/intc_ch32v_pfic.h @xingrz
 /include/zephyr/drivers/modem/hl7800.h           @rerickson1
 /include/zephyr/drivers/pcie/                    @dcpleung
 /include/zephyr/drivers/hwinfo.h                 @alexanderwachter
@@ -697,6 +709,9 @@
 /include/zephyr/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/zephyr/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
+/include/zephyr/dt-bindings/gpio/ch56x*          @xingrz
+/include/zephyr/dt-bindings/interrupt-controller/ch32v* @xingrz
+/include/zephyr/dt-bindings/interrupt-controller/ch56x* @xingrz
 /include/zephyr/dt-bindings/pcie/                @dcpleung
 /include/zephyr/dt-bindings/pinctrl/esp*         @sylvioalves
 /include/zephyr/dt-bindings/pwm/*it8xxx2*        @RuibinChang
@@ -844,6 +859,7 @@ scripts/build/gen_image_info.py           @tejlmand
 /scripts/west_commands/blobs.py           @carlescufi
 /scripts/west_commands/fetchers/          @carlescufi
 /scripts/west_commands/runners/gd32isp.py @mbolivar-ampere @nandojve
+/scripts/west_commands/runners/wchisp.py  @xingrz
 /scripts/west_commands/tests/test_gd32isp.py @mbolivar-ampere @nandojve
 /scripts/west-commands.yml                @mbolivar-ampere
 /scripts/zephyr_module.py                 @tejlmand
