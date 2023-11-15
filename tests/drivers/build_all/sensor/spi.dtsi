@@ -312,3 +312,12 @@ test_spi_lps22df: lps22df@27 {
 	drdy-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_spi_lis2du12: lis2du12@28 {
+	compatible = "st,lis2du12";
+	reg = <0x28>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
