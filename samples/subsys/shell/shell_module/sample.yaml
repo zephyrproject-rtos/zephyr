@@ -7,7 +7,7 @@ tests:
     harness: keyboard
     min_ram: 40
     integration_platforms:
-      - native_posix
+      - native_sim
       - intel_socfpga_agilex5_socdk
   sample.shell.shell_module.usb:
     depends_on: usb_device
@@ -20,14 +20,14 @@ tests:
       - OVERLAY_CONFIG="overlay-usb.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     integration_platforms:
-      - native_posix
+      - native_sim
   sample.shell.shell_module.minimal:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
     integration_platforms:
-      - native_posix
+      - native_sim
   sample.shell.shell_module.getopt:
     integration_platforms:
       - qemu_x86
@@ -51,7 +51,7 @@ tests:
     min_ram: 40
     extra_args: CONF_FILE="prj_login.conf"
     integration_platforms:
-      - native_posix
+      - native_sim
   sample.shell.shell_module.robot:
     harness: robot
     harness_config:
