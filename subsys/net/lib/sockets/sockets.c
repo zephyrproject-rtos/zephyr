@@ -2421,8 +2421,7 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 				}
 			}
 
-			net_context_set_iface(ctx, iface);
-			ctx->flags |= NET_CONTEXT_BOUND_TO_IFACE;
+			net_context_bind_iface(ctx, iface);
 
 			return 0;
 		}
