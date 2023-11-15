@@ -554,6 +554,10 @@ static int read(const struct shell_transport *transport,
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 static void update(const struct shell_transport *transport)
 {
+	/*
+	 * This is dependent on the fact that `struct shell_uart_common`
+	 * is always the first member, regardless of the UART configuration
+	 */
 	struct shell_uart_common *sh_uart = (struct shell_uart_common *)transport->ctx;
 
 	smp_shell_process(&sh_uart->smp);
@@ -582,6 +586,15 @@ SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
+struct smp_shell_data *shell_uart_smp_shell_data_get_ptr(void)
+{
+	struct shell_uart_common *common = (struct shell_uart_common *)shell_transport_uart.ctx;
+
+	return &common->smp;
+}
+#endif
 
 static int enable_shell_uart(void)
 {
