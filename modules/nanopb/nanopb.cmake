@@ -6,13 +6,14 @@ include_guard(GLOBAL)
 
 list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_NANOPB_MODULE_DIR}/extra)
 
-find_program(PROTOC protoc)
-if(NOT PROTOC)
+find_package(Nanopb REQUIRED)
+
+if(NOT PROTOBUF_PROTOC_EXECUTABLE)
   message(FATAL_ERROR "'protoc' not found, please ensure protoc is installed\
 and in path. See https://docs.zephyrproject.org/latest/samples/modules/nanopb/README.html")
+else()
+  message(STATUS "Found protoc: ${PROTOBUF_PROTOC_EXECUTABLE}")
 endif()
-
-find_package(Nanopb REQUIRED)
 
 # Usage:
 #   list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
