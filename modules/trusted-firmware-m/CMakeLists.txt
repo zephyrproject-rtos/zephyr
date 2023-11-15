@@ -435,8 +435,8 @@ if (CONFIG_BUILD_WITH_TFM)
 
   else()
     zephyr_library_link_libraries(
-      ${TFM_API_NS_PATH}
       ${PLATFORM_NS_FILE}
+      ${TFM_API_NS_PATH}
       )
   endif()
 
