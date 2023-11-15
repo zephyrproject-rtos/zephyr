@@ -3668,9 +3668,19 @@ static void hci_vs_init(void)
 static int hci_init(void)
 {
 	int err;
+
 #if defined(CONFIG_BT_HCI_SETUP)
+	struct bt_hci_setup_params setup_params = { 0 };
+
+	bt_addr_copy(&setup_params.public_addr, BT_ADDR_ANY);
+#if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
+	if (bt_dev.id_count > 0 && bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_PUBLIC) {
+		bt_addr_copy(&setup_params.public_addr, &bt_dev.id_addr[BT_ID_DEFAULT].a);
+	}
+#endif /* defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR) */
+
 	if (bt_dev.drv->setup) {
-		err = bt_dev.drv->setup();
+		err = bt_dev.drv->setup(&setup_params);
 		if (err) {
 			return err;
 		}
