@@ -863,7 +863,7 @@ static uint32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
 		break;
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	case 7:
-		secure_fault(esf);
+		reason = secure_fault(esf);
 		break;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
