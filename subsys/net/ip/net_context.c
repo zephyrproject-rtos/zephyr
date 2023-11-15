@@ -121,7 +121,8 @@ static inline bool is_in_tcp_time_wait_state(struct net_context *context)
 #endif
 }
 
-static int check_used_port(enum net_ip_protocol proto,
+static int check_used_port(struct net_if *iface,
+			   enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr,
 			   bool reuseaddr_set,
@@ -138,6 +139,12 @@ static int check_used_port(enum net_ip_protocol proto,
 		      net_sin((struct sockaddr *)&
 			      contexts[i].local)->sin_port == local_port)) {
 			continue;
+		}
+
+		if (net_context_is_bound_to_iface(&contexts[i])) {
+			if (iface != NULL && iface != net_context_get_iface(&contexts[i])) {
+				continue;
+			}
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
@@ -271,7 +278,7 @@ static uint16_t find_available_port(struct net_context *context,
 
 	do {
 		local_port = sys_rand32_get() | 0x8000;
-	} while (check_used_port(net_context_get_proto(context),
+	} while (check_used_port(NULL, net_context_get_proto(context),
 				 htons(local_port), addr, false, false) == -EEXIST);
 
 	return htons(local_port);
@@ -285,7 +292,7 @@ bool net_context_port_in_use(enum net_ip_protocol proto,
 			   uint16_t local_port,
 			   const struct sockaddr *local_addr)
 {
-	return check_used_port(proto, htons(local_port), local_addr, false, false) != 0;
+	return check_used_port(NULL, proto, htons(local_port), local_addr, false, false) != 0;
 }
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
@@ -742,7 +749,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		ret = 0;
 		if (addr6->sin6_port) {
-			ret = check_used_port(context->proto,
+			ret = check_used_port(iface,
+					      context->proto,
 					      addr6->sin6_port,
 					      addr,
 					      net_context_is_reuseaddr_set(context),
@@ -750,6 +758,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			if (ret != 0) {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr6->sin6_port));
+				NET_DBG("Interface %d (%p)",
+					iface ? net_if_get_by_iface(iface) : 0, iface);
 				ret = -EADDRINUSE;
 				goto unlock_ipv6;
 			} else {
@@ -839,7 +849,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		ret = 0;
 		if (addr4->sin_port) {
-			ret = check_used_port(context->proto,
+			ret = check_used_port(iface,
+					      context->proto,
 					      addr4->sin_port,
 					      addr,
 					      net_context_is_reuseaddr_set(context),
@@ -848,6 +859,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 				NET_ERR("Port %d is in use!",
 					ntohs(addr4->sin_port));
 					ret = -EADDRINUSE;
+				NET_DBG("Interface %d (%p)",
+					iface ? net_if_get_by_iface(iface) : 0, iface);
 				goto unlock_ipv4;
 			} else {
 				net_sin_ptr(&context->local)->sin_port =
