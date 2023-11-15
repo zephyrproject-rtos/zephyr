@@ -34,6 +34,11 @@ static struct bt_vcp_vol_ctlr_cb *vcp_vol_ctlr_cb;
 static struct bt_vcp_vol_ctlr vol_ctlr_insts[CONFIG_BT_MAX_CONN];
 static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t opcode);
 
+static struct bt_vcp_vol_ctlr *vol_ctlr_get_by_conn(const struct bt_conn *conn)
+{
+	return &vol_ctlr_insts[bt_conn_index(conn)];
+}
+
 static uint8_t vcp_vol_ctlr_notify_handler(struct bt_conn *conn,
 					 struct bt_gatt_subscribe_params *params,
 					 const void *data, uint16_t length)
@@ -45,7 +50,7 @@ static uint8_t vcp_vol_ctlr_notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (handle == vol_ctlr->state_handle &&
 	    length == sizeof(vol_ctlr->state)) {
@@ -74,7 +79,7 @@ static uint8_t vcp_vol_ctlr_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 					      const void *data, uint16_t length)
 {
 	int cb_err = err;
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	vol_ctlr->busy = false;
 
@@ -112,7 +117,7 @@ static uint8_t vcp_vol_ctlr_read_flag_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	vol_ctlr->busy = false;
 
@@ -193,7 +198,7 @@ static uint8_t internal_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 					  const void *data, uint16_t length)
 {
 	int cb_err = 0;
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 	uint8_t opcode = vol_ctlr->cp_val.cp.opcode;
 
 
@@ -242,7 +247,7 @@ static uint8_t internal_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 static void vcp_vol_ctlr_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_write_params *params)
 {
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 	uint8_t opcode = vol_ctlr->cp_val.cp.opcode;
 	int cb_err = err;
 
@@ -288,7 +293,7 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 	struct bt_gatt_include *include;
 	uint8_t inst_idx;
 	int err;
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
 		LOG_DBG("Discover include complete for vol_ctlr: %u AICS and %u VOCS",
@@ -389,7 +394,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 	int err = 0;
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
 		LOG_DBG("Setup complete for vol_ctlr");
@@ -467,7 +472,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_service_val *prim_service;
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
 		LOG_DBG("Could not find a vol_ctlr instance on the server");
@@ -661,7 +666,7 @@ static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_vcp_vol_ctlr *vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (vol_ctlr->conn == conn) {
 		vcp_vol_ctlr_reset(vol_ctlr);
@@ -733,7 +738,7 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 		return -EINVAL;
 	}
 
-	vol_ctlr = &vol_ctlr_insts[bt_conn_index(conn)];
+	vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (vol_ctlr->busy) {
 		return -EBUSY;
@@ -835,6 +840,25 @@ int bt_vcp_vol_ctlr_included_get(struct bt_vcp_vol_ctlr *vol_ctlr,
 	included->aics = vol_ctlr->aics;
 
 	return 0;
+}
+
+struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn)
+{
+	struct bt_vcp_vol_ctlr *vol_ctlr;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("NULL conn pointer");
+		return NULL;
+	}
+
+	vol_ctlr = vol_ctlr_get_by_conn(conn);
+	if (vol_ctlr->conn == NULL) {
+		LOG_DBG("conn %p is not associated with volume controller. Do discovery first",
+			(void *)conn);
+		return NULL;
+	}
+
+	return vol_ctlr;
 }
 
 int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr, struct bt_conn **conn)
