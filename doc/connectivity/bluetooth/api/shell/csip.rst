@@ -14,7 +14,7 @@ or a laptop. The client is able to lock and release members of a coordinated
 set. While the coordinated set is locked, no other clients may lock the set.
 
 To lock a set, the client must connect to each of the set members it wants to
-lock. This implementation will always try to to connect to all the members of
+lock. This implementation will always try to connect to all the members of
 the set, and at the same time. Thus if the set size is 3, then
 :code:`BT_MAX_CONN` shall be at least 3.
 

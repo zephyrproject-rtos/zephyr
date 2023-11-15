@@ -421,7 +421,7 @@ There are a few actions related to connectivity that are (by default at least) p
 
    By default, Connection Manager will automatically take any bound iface admin-down if it has given up on associating.
 
-   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with with :c:func:`conn_mgr_if_set_flag`.
+   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`~conn_mgr_if_flag.CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
 
 .. _conn_mgr_control_api:
 

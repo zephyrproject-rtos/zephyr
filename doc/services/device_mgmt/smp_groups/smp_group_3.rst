@@ -333,7 +333,7 @@ Commit settings request header fields:
     | ``2``  | ``3``        | ``2``          |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 Commit settings response
 ========================
@@ -409,7 +409,7 @@ Load settings request header fields:
     | ``0``  | ``3``        | ``3``          |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 Load settings response
 ======================
@@ -479,7 +479,7 @@ Save settings request header fields:
     | ``2``  | ``3``        | ``3``          |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 Save settings response
 ======================
