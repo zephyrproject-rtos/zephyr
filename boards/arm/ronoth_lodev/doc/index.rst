@@ -8,7 +8,7 @@ Overview
 ========
 
 The Ronoth_ LoDev_ is a small open source board containing a `AcSIP S76S`_  SiP from AcSIP_.
-The `full LoDev design details`_ are available on on GitHub.  The LoDev_ board can be purchased
+The `full LoDev design details`_ are available on GitHub.  The LoDev_ board can be purchased
 from Ronoth_ or from CrowdSupply_.
 
 The S76S contains an STMicro STM32L073RZ MCU, a `Semtech SX1276`_ LoRaWAN transceiver,

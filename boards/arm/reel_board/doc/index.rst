@@ -462,8 +462,7 @@ Meaning of the Power Source Switch positions:
         X9 or X5.
 
     USB
-        link board BASE is powered from from USB connector
-        (via DCDC converter).
+        link board BASE is powered from USB connector (via DCDC converter).
 
     RB
         link board BASE is powered from reel board. The available power is

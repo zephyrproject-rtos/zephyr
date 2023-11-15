@@ -168,7 +168,7 @@ Firstly, we need to explain a few Jailhouse concepts that will be referred to la
   cell can utilize.
 
 * **Root cell**: refers to the cell in which Linux is running. This is the main cell which
-  will contain all the hardware resources that Linux will utilize and will be used used to assign
+  will contain all the hardware resources that Linux will utilize and will be used to assign
   resources to the inmates. The inmates CANNOT use resources such as the CPU that haven't been
   assigned to the root cell.
 

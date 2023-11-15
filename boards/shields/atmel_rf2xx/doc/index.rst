@@ -179,7 +179,7 @@ Pins Assignment of the Arduino Shield Modules
 MikroBus Shields
 ================
 
-MikroBus header is available available without advanced features.  It is
+MikroBus header is available without advanced features.  It is
 enabled selecting `atmel_rf2xx_mikrobus`_ variant option.
 
 Pins Assignment of the MikroBus Shield Modules

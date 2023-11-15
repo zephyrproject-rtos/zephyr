@@ -31,7 +31,7 @@ Hardware
 - External devices connected to the NXP LPC11U67 MCU:
 
   - ASMedia ASM2364 USB-to-PCIe bridge (I2C master on port O).
-  - 6 RGB LEDs connected connected to a TI LP5030 LED controller (I2C device on
+  - 6 RGB LEDs connected to a TI LP5030 LED controller (I2C device on
     port 1).
   - 1 white LED (SSD activity blinking).
 

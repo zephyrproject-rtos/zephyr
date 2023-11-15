@@ -84,7 +84,7 @@ More information about STM32L072CZ can be found here:
 Supported Features
 ==================
 
-The Zephyr Dragino NBSN95 Board board configuration supports the following hardware features:
+The Zephyr Dragino NBSN95 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
