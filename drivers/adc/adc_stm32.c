@@ -20,6 +20,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
@@ -760,6 +761,8 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 * the address is in a non-cacheable SRAM region.
 			 */
 			adc_context_on_sampling_done(&data->ctx, dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
+						 PM_ALL_SUBSTATES);
 		} else if (status < 0) {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
@@ -1060,6 +1063,8 @@ static void adc_stm32_isr(const struct device *dev)
 		if (++data->samples_count == data->channel_count) {
 			data->samples_count = 0;
 			adc_context_on_sampling_done(&data->ctx, dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
+						 PM_ALL_SUBSTATES);
 		}
 	}
 
@@ -1098,6 +1103,7 @@ static int adc_stm32_read(const struct device *dev,
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -1113,6 +1119,7 @@ static int adc_stm32_read_async(const struct device *dev,
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
