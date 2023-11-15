@@ -761,7 +761,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ldr->sect_cnt = 0;
 	ext->sym_tab.sym_cnt = 0;
 
-	size_t sect_map_sz = ldr->hdr.e_shnum * sizeof(uint32_t);
+	size_t sect_map_sz = ldr->hdr.e_shnum * sizeof(ldr->sect_map[0]);
 
 	ldr->sect_map = k_heap_alloc(&llext_heap, sect_map_sz, K_NO_WAIT);
 	if (!ldr->sect_map) {
@@ -769,7 +769,8 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		ret = -ENOMEM;
 		goto out;
 	}
-	memset(ldr->sect_map, 0, ldr->hdr.e_shnum*sizeof(uint32_t));
+	memset(ldr->sect_map, 0, sect_map_sz);
+
 	ldr->sect_cnt = ldr->hdr.e_shnum;
 	ext->mem_size += sect_map_sz;
 
