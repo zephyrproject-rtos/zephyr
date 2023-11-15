@@ -384,6 +384,20 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn,
 			     struct bt_vcp_vol_ctlr **vol_ctlr);
 
 /**
+ * @brief Get the volume controller from a connection pointer
+ *
+ * Get the Volume Control Profile Volume Controller pointer from a connection pointer.
+ * Only volume controllers that have been initiated via bt_vcp_vol_ctlr_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Volume Control Profile Volume Controller instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn);
+
+/**
  * @brief Get the connection pointer of a client instance
  *
  * Get the Bluetooth connection pointer of a Volume Control Service
