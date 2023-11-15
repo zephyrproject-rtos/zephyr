@@ -1281,20 +1281,27 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 {
 	int new_id, err;
 
-	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
-		if (addr->type != BT_ADDR_LE_RANDOM ||
-		    !BT_ADDR_IS_STATIC(&addr->a)) {
-			LOG_ERR("Only static random identity address supported");
-			return -EINVAL;
-		}
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
+		return -EINVAL;
+	}
 
+	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		if (id_find(addr) >= 0) {
 			return -EALREADY;
 		}
-	}
 
-	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
-		return -EINVAL;
+		if (addr->type == BT_ADDR_LE_PUBLIC && IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+			/* set the single public address */
+			if (bt_dev.id_count != 0) {
+				return -EALREADY;
+			}
+			bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], addr);
+			bt_dev.id_count++;
+			return BT_ID_DEFAULT;
+		} else if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
+			LOG_ERR("Only random static identity address supported");
+			return -EINVAL;
+		}
 	}
 
 	if (bt_dev.id_count == ARRAY_SIZE(bt_dev.id_addr)) {

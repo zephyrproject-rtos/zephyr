@@ -164,6 +164,16 @@ config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	  This has to be enabled when the BLE controller connected is Zephyr
 	  open source controller.
 
+config BT_HCI_SET_PUBLIC_ADDR
+	bool
+	select BT_HCI_SETUP
+	help
+	  Pass the controller's public address to the HCI driver in setup()
+
+	  This option should be enabled by drivers for controllers that support setting the
+	  public identity through vendor-specific commands. They can then implement the
+	  setup() HCI driver API function and get the address to set from the public_addr field.
+
 config BT_HCI_SETUP
 	bool
 	help

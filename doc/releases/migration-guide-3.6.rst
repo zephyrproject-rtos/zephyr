@@ -52,6 +52,11 @@ Device Drivers and Device Tree
             drdy-pin = <2>;
         };
     };
+* The optional :c:func:`setup()` function in the Bluetooth HCI driver API (enabled through
+  :kconfig:option:`CONFIG_BT_HCI_SETUP`) has gained a function parameter of type
+  :c:struct:`bt_hci_setup_params`. By default, the struct is empty, but drivers can opt-in to
+  :kconfig:option:`CONFIG_BT_HCI_SET_PUBLIC_ADDR` if they support setting the controller's public
+  identity address, which will then be passed in the ``public_addr`` field.
 
   (:github:`62994`)
 
