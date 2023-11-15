@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/sensor/lis2dh.h>
 #include <zephyr/dt-bindings/sensor/iis2iclx.h>
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
+#include <zephyr/dt-bindings/sensor/lis2dux12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
@@ -1009,6 +1010,16 @@ test_i2c_aht20: aht20@88 {
 test_i2c_am2301b: am2301b@89 {
 	compatible = "aosong,am2301b";
 	reg = <0x89>;
+};
+
+test_i2c_lis2dux12: lis2dux12@8a {
+	compatible = "st,lis2dux12";
+	reg = <0x8a>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_FREQUENCY>;
 	status = "okay";
 };
 
