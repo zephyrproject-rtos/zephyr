@@ -361,3 +361,12 @@ test_spi_iis328dq: iis328dq@2c {
 	int1-gpios = <&test_gpio 0 0>;
 	drdy-int-pad = <1>;
 };
+
+test_spi_lis2dux12: lis2dux12@2d {
+	compatible = "st,lis2dux12";
+	reg = <0x2d>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
