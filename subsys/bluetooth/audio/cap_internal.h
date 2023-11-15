@@ -36,6 +36,7 @@ enum bt_cap_common_proc_type {
 	BT_CAP_COMMON_PROC_TYPE_START,
 	BT_CAP_COMMON_PROC_TYPE_UPDATE,
 	BT_CAP_COMMON_PROC_TYPE_STOP,
+	BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE,
 };
 
 enum bt_cap_common_subproc_type {
@@ -65,13 +66,28 @@ struct bt_cap_initiator_proc_param {
 	};
 };
 
+struct bt_cap_commander_proc_param {
+	struct bt_conn *conn;
+	union {
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+		struct {
+			uint8_t volume;
+		} change_volume;
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
+
+		/* TODO Add other procedures */
+	};
+};
+
 struct bt_cap_common_proc_param {
 	union {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 		struct bt_cap_initiator_proc_param
 			initiator[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
-#endif          /* CONFIG_BT_CAP_INITIATOR_UNICAST */
-		/* TODO: Add commander_proc_param struct */
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+#if defined(CONFIG_BT_CAP_COMMANDER)
+		struct bt_cap_commander_proc_param commander[CONFIG_BT_MAX_CONN];
+#endif /* CONFIG_BT_CAP_COMMANDER */
 	};
 };
 
@@ -106,9 +122,11 @@ void bt_cap_common_clear_active_proc(void);
 void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt);
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type);
+struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
+					      union bt_cap_set_member *member);
 bool bt_cap_common_proc_is_active(void);
 bool bt_cap_common_proc_is_aborted(void);
-bool bt_cap_common_proc_all_streams_handled(void);
+bool bt_cap_common_proc_all_handled(void);
 bool bt_cap_common_proc_is_done(void);
 void bt_cap_common_abort_proc(struct bt_conn *conn, int err);
 bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn);
