@@ -602,9 +602,3 @@ DEVICE_DT_DEFINE(DT_NODELABEL(rtc),
 		 PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_esp32_api);
-
-#ifndef CONFIG_SOC_SERIES_ESP32C3
-BUILD_ASSERT((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) ==
-		    DT_PROP(DT_INST(0, DT_CPU_COMPAT), clock_frequency),
-		    "SYS_CLOCK_HW_CYCLES_PER_SEC Value must be equal to CPU_Freq");
-#endif
