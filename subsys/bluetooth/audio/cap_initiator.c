@@ -624,7 +624,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	}
 
 	if (bt_cap_common_proc_is_aborted()) {
-		if (bt_cap_common_proc_all_streams_handled()) {
+		if (bt_cap_common_proc_all_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
 		}
 
@@ -757,7 +757,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 	}
 
 	if (bt_cap_common_proc_is_aborted()) {
-		if (bt_cap_common_proc_all_streams_handled()) {
+		if (bt_cap_common_proc_all_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
 		}
 
@@ -813,7 +813,7 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	}
 
 	if (bt_cap_common_proc_is_aborted()) {
-		if (bt_cap_common_proc_all_streams_handled()) {
+		if (bt_cap_common_proc_all_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
 		}
 
@@ -1058,7 +1058,7 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 	}
 
 	if (bt_cap_common_proc_is_aborted()) {
-		if (bt_cap_common_proc_all_streams_handled()) {
+		if (bt_cap_common_proc_all_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
 		}
 
@@ -1202,7 +1202,7 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 	}
 
 	if (bt_cap_common_proc_is_aborted()) {
-		if (bt_cap_common_proc_all_streams_handled()) {
+		if (bt_cap_common_proc_all_handled()) {
 			cap_initiator_unicast_audio_proc_complete();
 		}
 
