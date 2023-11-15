@@ -90,7 +90,7 @@ const void * const llext_find_sym(const struct llext_symtable *sym_table, const 
  */
 static int llext_find_tables(struct llext_loader *ldr)
 {
-	int str_cnt, i, ret;
+	int sect_cnt, i, ret;
 	size_t pos;
 	elf_shdr_t shdr;
 
@@ -99,8 +99,8 @@ static int llext_find_tables(struct llext_loader *ldr)
 		ldr->sects[LLEXT_SECT_SYMTAB] = (elf_shdr_t){0};
 
 	/* Find symbol and string tables */
-	for (i = 0, str_cnt = 0, pos = ldr->hdr.e_shoff;
-	     i < ldr->hdr.e_shnum && str_cnt < 3;
+	for (i = 0, sect_cnt = 0, pos = ldr->hdr.e_shoff;
+	     i < ldr->hdr.e_shnum && sect_cnt < 3;
 	     i++, pos += ldr->hdr.e_shentsize) {
 		ret = llext_seek(ldr, pos);
 		if (ret != 0) {
@@ -129,7 +129,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 			LOG_DBG("symtab at %d", i);
 			ldr->sects[LLEXT_SECT_SYMTAB] = shdr;
 			ldr->sect_map[i] = LLEXT_SECT_SYMTAB;
-			str_cnt++;
+			sect_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
@@ -141,7 +141,7 @@ static int llext_find_tables(struct llext_loader *ldr)
 				ldr->sects[LLEXT_SECT_STRTAB] = shdr;
 				ldr->sect_map[i] = LLEXT_SECT_STRTAB;
 			}
-			str_cnt++;
+			sect_cnt++;
 			break;
 		default:
 			break;
