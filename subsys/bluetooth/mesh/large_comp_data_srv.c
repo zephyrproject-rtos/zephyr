@@ -177,7 +177,7 @@ static int large_comp_data_srv_init(const struct bt_mesh_model *model)
 
 	/* Large Composition Data Server model shall use the device key */
 	model->keys[0] = BT_MESH_KEY_DEV;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	srv.model = model;
 

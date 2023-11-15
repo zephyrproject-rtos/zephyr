@@ -169,7 +169,7 @@ static int sol_pdu_rpl_cli_init(const struct bt_mesh_model *mod)
 
 	msg_timeout = CONFIG_BT_MESH_SOL_PDU_RPL_CLI_TIMEOUT;
 
-	cli = *(mod->user_data);
+	cli = mod->rt->user_data;
 	cli->model = mod;
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 	return 0;

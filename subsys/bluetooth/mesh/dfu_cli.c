@@ -702,7 +702,7 @@ static void cancelled(struct bt_mesh_blob_cli *b)
 static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_cli *cli = *(mod->user_data);
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 	enum bt_mesh_dfu_status status;
 	enum bt_mesh_dfu_phase phase;
 	struct bt_mesh_dfu_target *target;
@@ -828,7 +828,7 @@ static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_cli *cli = *(mod->user_data);
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 	struct bt_mesh_dfu_target *target;
 	enum bt_mesh_dfu_iter it = BT_MESH_DFU_ITER_CONTINUE;
 	uint8_t img_cnt, idx;
@@ -927,7 +927,7 @@ static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 static int handle_metadata_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_cli *cli = *(mod->user_data);
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 	struct bt_mesh_dfu_metadata_status *rsp = cli->req.params;
 	uint8_t hdr, idx;
 
@@ -963,9 +963,9 @@ const struct bt_mesh_model_op _bt_mesh_dfu_cli_op[] = {
 
 static int dfu_cli_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfu_cli *cli = *(mod->user_data);
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 
-	if (*(mod->elem_idx) != 0) {
+	if (mod->rt->elem_idx != 0) {
 		LOG_ERR("DFU update client must be instantiated on first elem");
 		return -EINVAL;
 	}
@@ -983,7 +983,7 @@ static int dfu_cli_init(const struct bt_mesh_model *mod)
 
 static void dfu_cli_reset(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfu_cli *cli = *(mod->user_data);
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 
 	cli->req.type = REQ_NONE;
 	cli->req.addr = BT_MESH_ADDR_UNASSIGNED;

@@ -261,7 +261,7 @@ static int model3_init(const struct bt_mesh_model *model)
 	ASSERT_OK(bt_mesh_model_extend(model, model - 2));
 	ASSERT_OK(bt_mesh_model_extend(model, model - 1));
 
-	if (*(model->elem_idx) == 1) {
+	if (model->rt->elem_idx == 1) {
 		ASSERT_OK(bt_mesh_model_extend(model, &models[4]));
 	}
 

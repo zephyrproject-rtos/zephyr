@@ -31,19 +31,10 @@ LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 	 LCD_STATUS_FIELDS_LEN -                                                                   \
 	 BT_MESH_MIC_SHORT) /* 378 bytes */
 
-#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-#define BT_MESH_MODEL_NEXT_UNASSIGNED()				\
-	.next = (const struct bt_mesh_model *[]){ NULL },
-#else
-#define BT_MESH_MODEL_NEXT_UNASSIGNED()
-#endif
-
 #define TEST_MODEL_CNT_CB(_dummy_op, _metadata) \
 {                                               \
 	.id = 0x1234,                               \
-	.elem_idx = (uint8_t []) { 0 },		    \
-	.mod_idx = (uint8_t []) { 0 },		    \
-	.flags = (uint16_t []) { 0 },		    \
+	BT_MESH_MODEL_RUNTIME_INIT(NULL)		    \
 	.pub = NULL,                                \
 	.keys = NULL,                               \
 	.keys_cnt = 0,                              \
@@ -51,8 +42,6 @@ LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 	.groups_cnt = 0,                            \
 	.op = _dummy_op,                            \
 	.cb = NULL,                                 \
-	BT_MESH_MODEL_NEXT_UNASSIGNED()		    \
-	.user_data = (void *[]){ NULL },	    \
 	.metadata = _metadata,                      \
 }
 
