@@ -44,7 +44,7 @@ void memc_flexram_register_callback(flexram_callback_t callback, void *user_data
  * call from platform_init to set up flexram if using runtime map
  * must be inlined because cannot use stack
  */
-#define GPR17_REG_FILL(node_id, prop, idx) + (DT_PROP_BY_IDX(node_id, prop, idx) << idx)
+#define GPR17_REG_FILL(node_id, prop, idx) + (DT_PROP_BY_IDX(node_id, prop, idx) << (2*idx))
 static inline void memc_flexram_dt_partition(void)
 {
 	/* iomuxc_gpr must be const (in ROM region) because used in reconfiguring ram */
