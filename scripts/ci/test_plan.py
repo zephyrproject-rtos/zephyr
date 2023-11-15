@@ -74,29 +74,6 @@ def _get_match_fn(globs, regexes):
 
     return re.compile(regex).search
 
-class Tag:
-    """
-    Represents an entry for a tag in tags.yaml.
-
-    These attributes are available:
-
-    name:
-        List of GitHub labels for the area. Empty if the area has no 'labels'
-        key.
-
-    description:
-        Text from 'description' key, or None if the area has no 'description'
-        key
-    """
-    def _contains(self, path):
-        # Returns True if the area contains 'path', and False otherwise
-
-        return self._match_fn and self._match_fn(path) and not \
-            (self._exclude_match_fn and self._exclude_match_fn(path))
-
-    def __repr__(self):
-        return "<Tag {}>".format(self.name)
-
 class Filters:
     def __init__(self, repository_path, commits, ignore_path, alt_tags, testsuite_root,
                  platforms=[], detailed_test_id=True):
@@ -137,7 +114,6 @@ class Filters:
         if 'west.yml' in self.modified_files:
             self.find_modules()
 
-        #self.find_tags()
         self.find_tests()
         if not self.platforms:
             self.find_archs()
@@ -418,7 +394,7 @@ class Filters:
             try:
                 raw = yaml.load(contents, Loader=SafeLoader)
             except yaml.YAMLError as e:
-                logging.error("error parsing configuration file")
+                logging.error(f"error parsing configuration file: {e}")
 
         levels = raw.get('levels', [])
         l = {}
@@ -436,45 +412,6 @@ class Filters:
             fp.write(yaml.dump(raw))
 
         self.get_plan(["--test-config", "custom_config.yaml", "--level", "custom"], integration=True)
-
-    def find_tags(self):
-        logging.info(f"-------------------  tags --------------")
-        with open(self.tag_cfg_file, 'r') as ymlfile:
-            tags_config = yaml.safe_load(ymlfile)
-
-        tags = {}
-        for t,x in tags_config.items():
-            tag = Tag()
-            tag.exclude = True
-            tag.name = t
-
-            # tag._match_fn(path) tests if the path matches files and/or
-            # files-regex
-            tag._match_fn = _get_match_fn(x.get("files"), x.get("files-regex"))
-
-            # Like tag._match_fn(path), but for files-exclude and
-            # files-regex-exclude
-            tag._exclude_match_fn = \
-                _get_match_fn(x.get("files-exclude"), x.get("files-regex-exclude"))
-
-            tags[tag.name] = tag
-
-        remaining = self.get_remaining_files()
-        for f in remaining:
-            for t in tags.values():
-                if t._contains(f):
-                    t.exclude = False
-
-        exclude_tags = set()
-        for t in tags.values():
-            if t.exclude:
-                exclude_tags.add(t.name)
-
-        for tag in exclude_tags:
-            self.tag_options.extend(["-e", tag ])
-
-        if exclude_tags:
-            logging.info(f'Potential tag based filters: {exclude_tags}')
 
     def find_excludes(self):
         logging.info(f"-------------------  excludes --------------")
@@ -494,8 +431,6 @@ class Filters:
         logging.info(f"files to be ignored: {found}")
         files_not_resolved = list(filter(lambda x: x not in found, self.modified_files))
         logging.info(f"not resolved files: {files_not_resolved}")
-        return
-
 
     def post_filter(self):
         logging.info(f"-------------------  post filters --------------")
