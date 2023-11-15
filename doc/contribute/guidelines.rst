@@ -651,8 +651,8 @@ workflow here:
    request for the ``main`` branch. The title and message from your commit
    message should appear as well.
 
-#. GitHub will assign one or more suggested reviewers (based on the
-   CODEOWNERS file in the repo). If you are a project member, you can
+#. A bot will assign one or more suggested reviewers (based on the
+   MAINTAINERS file in the repo). If you are a project member, you can
    select additional reviewers now too.
 
 #. Click on the submit button and your pull request is sent and awaits

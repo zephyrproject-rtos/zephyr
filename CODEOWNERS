@@ -11,7 +11,12 @@
 # add others as needed.
 
 # Do not use wildcard on all source yet
-# *                                        @galak @nashif
+#
+# +++++++++++ NOTE ++++++++++++++++
+#
+# Please use the MAINTAINERS file to add yourself in an area or to add a new
+# component or code. This file is going to be deprecated and currently only had
+# entries that are not covered by the MAINTAINERS file.
 
 /soc/arm/aspeed/                          @aspeeddylan
 /soc/arm/atmel_sam/common/*_sam4l_*.c     @nandojve
