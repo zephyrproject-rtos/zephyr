@@ -94,8 +94,8 @@ At that point, the whole process starts over again.
 Release Quality Criteria
 ************************
 
-The current backlog of prioritized bugs shall be used as a quality metric to
-gate the final release. The following counts shall be used:
+The current backlog of prioritized bugs shall also be used as a quality metric
+to gate the final release. The following counts shall be used:
 
 .. csv-table:: Bug Count Release Thresholds
    :header: "High", "Medium", "Low"
@@ -109,6 +109,10 @@ gate the final release. The following counts shall be used:
    The "low" bug count target of <50 will be a phased approach starting with 150
    for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
 
+The final release must not contain any static analysis high-critical issues
+that can potentially compromise the functionality, security, or reliability of
+our software.  High-critical issues represent vulnerabilities that, if left
+unresolved, could have severe consequences.
 
 
 Release Milestones
@@ -269,8 +273,11 @@ components provided by the project:
 
 - Compliance with published coding guidelines, style guides and naming
   conventions and documentation of deviations.
-- Regular static analysis on the complete tree using available commercial and
-  open-source tools and documentation of deviations and false positives.
+- Static analysis reports
+
+  - Regular static analysis on the complete tree using available commercial and
+    open-source tools, and documentation of deviations and false positives.
+
 - Documented components and APIS
 - Requirements Catalog
 - Verification Plans
