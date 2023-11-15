@@ -1124,7 +1124,7 @@ recursively update the project's Git submodules whenever it updates the project
 itself. If it's ``false`` or missing, it has no effect.
 
 For example, let's say you have a source code repository ``foo``, which has
-some submodules, and you want ``west update`` to keep all of them them in sync,
+some submodules, and you want ``west update`` to keep all of them in sync,
 along with another project named ``bar`` in the same workspace.
 
 You can do that with this manifest file:
@@ -2050,7 +2050,7 @@ The ultimate outcomes of resolving manifest imports are:
   in the top-level file with those defined in imported files
 
 - a set of extension commands, which are drawn from the ``west-commands``
-  keys in in the top-level file and any imported files
+  keys in the top-level file and any imported files
 
 - a ``group-filter`` list, which is produced by combining the top-level and any
   imported filters
