@@ -115,6 +115,13 @@ config LWM2M_TLS_SESSION_CACHING
 	help
 	  Enabling this only when feature is supported in TLS library.
 
+config LWM2M_DTLS_CID
+	bool "DTLS Connection Identifier support"
+	default y if MBEDTLS_SSL_DTLS_CONNECTION_ID
+	help
+	  Request TLS stack to enable DTLS Connection identifier. This requires stack that support it
+	  and actual effect depends on the target server as well.
+
 config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	bool "Bootstrap support"
 	help
