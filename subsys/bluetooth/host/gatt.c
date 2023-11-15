@@ -854,9 +854,7 @@ static void db_hash_gen(void)
 	atomic_set_bit(gatt_sc.flags, DB_HASH_VALID);
 }
 
-#if defined(CONFIG_BT_SETTINGS)
 static void sc_indicate(uint16_t start, uint16_t end);
-#endif
 
 static void do_db_hash(void)
 {
@@ -1515,10 +1513,10 @@ void bt_gatt_init(void)
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
-    (defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
 static void sc_indicate(uint16_t start, uint16_t end)
 {
+#if defined(CONFIG_BT_GATT_DYNAMIC_DB) ||                                                          \
+	(defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
 	LOG_DBG("start 0x%04x end 0x%04x", start, end);
 
 	if (!atomic_test_and_set_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
@@ -1539,8 +1537,8 @@ submit:
 
 	/* Reschedule since the range has changed */
 	sc_work_submit(SC_TIMEOUT);
-}
 #endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
+}
 
 void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 {
@@ -5757,14 +5755,12 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (!bt_gatt_change_aware(conn, false)) {
 		/* Send a Service Changed indication if the current peer is
 		 * marked as change-unaware.
 		 */
 		sc_indicate(0x0001, 0xffff);
 	}
-#endif	/* CONFIG_BT_SETTINGS && CONFIG_BT_GATT_SERVICE_CHANGED */
 }
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
