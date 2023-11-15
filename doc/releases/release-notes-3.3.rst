@@ -811,7 +811,7 @@ Drivers and Sensors
 
   * Added new API :c:func:`pcie_scan` to scan for devices.
 
-    * This iterates through the the buses and devices which are expected to
+    * This iterates through the buses and devices which are expected to
       exist. The old method was to try all possible combination of buses
       and devices to determine if there is a device there.
       :c:func:`pci_init` and :c:func:`pcie_bdf_lookup` have been updated to
