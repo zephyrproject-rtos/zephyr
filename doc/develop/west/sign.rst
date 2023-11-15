@@ -40,7 +40,7 @@ Notes on the above commands:
 
 - ``YOUR_BOARD`` should be changed to match your board
 - The ``CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`` value is the insecure default
-  provided and used by by MCUboot for development and testing
+  provided and used by MCUboot for development and testing
 - You can change the ``hello_world`` application directory to any other
   application that can be loaded by MCUboot, such as the :zephyr:code-sample:`smp-svr` sample.
 
