@@ -1,0 +1,53 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 timer
+
+compatible: "adi,max32-timer"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-source:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Clock source to be used by the WDT peripheral. The following options
+      are available:
+      - 0: "ADI_MAX32_PRPH_CLK_SRC_PCLK" Peripheral clock
+      - 1: "ADI_MAX32_PRPH_CLK_SRC_EXTCLK" External Clock
+      - 2: "ADI_MAX32_PRPH_CLK_SRC_IBRO" Internal Baud Rate Oscillator
+      - 3: "ADI_MAX32_PRPH_CLK_SRC_ERFO" External Radio Frequency Oscillator
+      - 4: "ADI_MAX32_PRPH_CLK_SRC_ERTCO" External Real-Time Clock Oscillator
+      - 5: "ADI_MAX32_PRPH_CLK_SRC_INRO" Internal Ring Oscillator
+      - 6: "ADI_MAX32_PRPH_CLK_SRC_ISO" Internal Secondary Oscillator
+      - 7: "ADI_MAX32_PRPH_CLK_SRC_IBRO_DIV8" IBRO/8
+      The target device might not support every option please take a look on
+      target device user guide
+
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+    description: |
+      The prescaler that divides the timers source clock to set the timers count clock as follows:
+      F_cnt_clk = F_clock_source / prescaler
