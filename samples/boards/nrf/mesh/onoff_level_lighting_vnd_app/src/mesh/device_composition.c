@@ -991,7 +991,7 @@ static int vnd_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 		   struct net_buf_simple *buf)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 6 + 4);
-	struct vendor_state *state = *(model->user_data);
+	struct vendor_state *state = model->rt->user_data;
 
 	/* This is dummy response for demo purpose */
 	state->response = 0xA578FEB3;
@@ -1014,7 +1014,7 @@ static int vnd_set_unack(const struct bt_mesh_model *model,
 	uint8_t tid;
 	int current;
 	int64_t now;
-	struct vendor_state *state = *(model->user_data);
+	struct vendor_state *state = model->rt->user_data;
 
 	current = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);

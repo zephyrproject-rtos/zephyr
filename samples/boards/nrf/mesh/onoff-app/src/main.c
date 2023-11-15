@@ -286,7 +286,7 @@ static int gen_onoff_get(const struct bt_mesh_model *model,
 			 struct net_buf_simple *buf)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
-	struct led_onoff_state *onoff_state = *(model->user_data);
+	struct led_onoff_state *onoff_state = model->rt->user_data;
 
 	printk("addr 0x%04x onoff 0x%02x\n",
 	       bt_mesh_model_elem(model)->addr, onoff_state->current);
@@ -305,7 +305,7 @@ static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 			       struct net_buf_simple *buf)
 {
 	struct net_buf_simple *msg = model->pub->msg;
-	struct led_onoff_state *onoff_state = *(model->user_data);
+	struct led_onoff_state *onoff_state = model->rt->user_data;
 	int err;
 
 	onoff_state->current = net_buf_simple_pull_u8(buf);

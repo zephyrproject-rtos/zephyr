@@ -116,7 +116,7 @@ static int handle_receivers_add(const struct bt_mesh_model *mod, struct bt_mesh_
 				struct net_buf_simple *buf)
 {
 	enum bt_mesh_dfd_status status = BT_MESH_DFD_SUCCESS;
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	if (buf->len % 3) {
 		return -EINVAL;
@@ -146,7 +146,7 @@ static int handle_receivers_add(const struct bt_mesh_model *mod, struct bt_mesh_
 static int handle_receivers_delete_all(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	receivers_status_rsp(srv, ctx, bt_mesh_dfd_srv_receivers_delete_all(srv));
 
@@ -156,7 +156,7 @@ static int handle_receivers_delete_all(const struct bt_mesh_model *mod, struct b
 static int handle_receivers_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	uint16_t first, cnt;
 	uint8_t progress;
 	int i;
@@ -226,7 +226,7 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 	net_buf_simple_add_le32(&rsp, CONFIG_BT_MESH_DFD_SRV_SLOT_SPACE - size);
 
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	if (srv->oob_schemes.count > 0) {
 		net_buf_simple_add_u8(&rsp, 1);
@@ -271,7 +271,7 @@ static void status_rsp(struct bt_mesh_dfd_srv *srv, struct bt_mesh_msg_ctx *ctx,
 static int handle_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
 
@@ -281,7 +281,7 @@ static int handle_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *c
 static int handle_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	struct bt_mesh_dfd_start_params params;
 	uint8_t byte;
 
@@ -314,7 +314,7 @@ static int handle_suspend(const struct bt_mesh_model *mod,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	status_rsp(srv, ctx, bt_mesh_dfd_srv_suspend(srv));
 
@@ -324,7 +324,7 @@ static int handle_suspend(const struct bt_mesh_model *mod,
 static int handle_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	bt_mesh_dfd_srv_cancel(srv, ctx);
 
@@ -334,7 +334,7 @@ static int handle_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 static int handle_apply(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	status_rsp(srv, ctx, bt_mesh_dfd_srv_apply(srv));
 
@@ -396,7 +396,7 @@ static void upload_status_rsp(struct bt_mesh_dfd_srv *srv,
 static int handle_upload_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
 
@@ -441,7 +441,7 @@ static inline int set_upload_fwid(struct bt_mesh_dfd_srv *srv, struct bt_mesh_ms
 static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	size_t meta_len, fwid_len, size;
 	const uint8_t *meta, *fwid;
 	uint16_t timeout_base;
@@ -563,7 +563,7 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
 static int handle_upload_start_oob(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	uint8_t uri_len;
 	uint8_t *uri;
 	uint16_t fwid_len;
@@ -654,7 +654,7 @@ static int handle_upload_start_oob(const struct bt_mesh_model *mod, struct bt_me
 static int handle_upload_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_IDLE;
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
@@ -693,7 +693,7 @@ static void fw_status_rsp(struct bt_mesh_dfd_srv *srv,
 static int handle_fw_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	struct bt_mesh_dfu_slot *slot;
 	const uint8_t *fwid;
 	size_t fwid_len;
@@ -717,7 +717,7 @@ static int handle_fw_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 static int handle_fw_get_by_index(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	const struct bt_mesh_dfu_slot *slot;
 	uint16_t idx;
 
@@ -738,7 +738,7 @@ static int handle_fw_get_by_index(const struct bt_mesh_model *mod, struct bt_mes
 static int handle_fw_delete(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 	const uint8_t *fwid;
 	size_t fwid_len;
 
@@ -767,7 +767,7 @@ static enum bt_mesh_dfu_iter slot_del_cb(const struct bt_mesh_dfu_slot *slot,
 static int handle_fw_delete_all(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	fw_status_rsp(srv, ctx, bt_mesh_dfd_srv_fw_delete_all(srv), 0xffff, NULL, 0);
 
@@ -925,7 +925,7 @@ const struct bt_mesh_blob_srv_cb _bt_mesh_dfd_srv_blob_cb = {
 
 static int dfd_srv_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	srv->mod = mod;
 
@@ -938,7 +938,7 @@ static int dfd_srv_init(const struct bt_mesh_model *mod)
 
 static void dfd_srv_reset(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfd_srv *srv = *(mod->user_data);
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
 
 	dfd_phase_set(srv, BT_MESH_DFD_PHASE_IDLE);
 	srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_IDLE;
