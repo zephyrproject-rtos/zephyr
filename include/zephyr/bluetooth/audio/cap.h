@@ -317,7 +317,7 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
  * This will stop the current procedure from continuing and making it possible to run a new
  * Common Audio Profile procedure.
  *
- * It is recommended to do this if any existing procedure take longer time than expected, which
+ * It is recommended to do this if any existing procedure takes longer time than expected, which
  * could indicate a missing response from the Common Audio Profile Acceptor.
  *
  * This does not send any requests to any Common Audio Profile Acceptors involved with the current
@@ -655,6 +655,20 @@ struct bt_cap_commander_cb {
 	 */
 	void (*discovery_complete)(struct bt_conn *conn, int err,
 				   const struct bt_csip_set_coordinator_csis_inst *csis_inst);
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+	/**
+	 * @brief Callback for bt_cap_commander_change_volume().
+	 *
+	 * @param conn           Pointer to the connection where the error
+	 *                       occurred. NULL if @p err is 0 or if cancelled by
+	 *                       bt_cap_commander_cancel()
+	 * @param err            0 on success, BT_GATT_ERR() with a
+	 *                       specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *                       by bt_cap_commander_cancel().
+	 */
+	void (*volume_changed)(struct bt_conn *conn, int err);
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
 };
 
 /**
@@ -697,6 +711,30 @@ int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb);
  * @retval -EBUSY Already doing discovery for @p conn
  */
 int bt_cap_commander_discover(struct bt_conn *conn);
+
+/** @brief Cancel any current Common Audio Profile commander procedure
+ *
+ * This will stop the current procedure from continuing and making it possible to run a new
+ * Common Audio Profile procedure.
+ *
+ * It is recommended to do this if any existing procedure takes longer time than expected, which
+ * could indicate a missing response from the Common Audio Profile Acceptor.
+ *
+ * This does not send any requests to any Common Audio Profile Acceptors involved with the current
+ * procedure, and thus notifications from the Common Audio Profile Acceptors may arrive after this
+ * has been called. It is thus recommended to either only use this if a procedure has stalled, or
+ * wait a short while before starting any new Common Audio Profile procedure after this has been
+ * called to avoid getting notifications from the cancelled procedure. The wait time depends on
+ * the connection interval, the number of devices in the previous procedure and the behavior of the
+ * Common Audio Profile Acceptors.
+ *
+ * The respective callbacks of the procedure will be called as part of this with the connection
+ * pointer set to NULL and the err value set to -ECANCELED.
+ *
+ * @retval 0 on success
+ * @retval -EALREADY if no procedure is active
+ */
+int bt_cap_commander_cancel(void);
 
 struct bt_cap_commander_broadcast_reception_start_member_param {
 	/** Coordinated or ad-hoc set member. */
