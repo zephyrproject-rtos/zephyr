@@ -1,5 +1,5 @@
 tests:
-  virtualization.ivshmem:
+  drivers.virtualization.ivshmem:
     arch_allow:
       - x86
       - arm64

@@ -5,5 +5,5 @@ common:
   platform_allow: native_posix
   build_only: true
 tests:
-  fpga.build:
+  drivers.fpga.build:
     tags: fpga

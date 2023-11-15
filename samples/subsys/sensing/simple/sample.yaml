@@ -11,7 +11,7 @@ common:
     regex:
       - "sensing subsystem run successfully"
 tests:
-  sample.subsys.sensing.simple:
+  sample.sensing.simple:
     platform_allow:
       - native_sim
     tags: sensing
