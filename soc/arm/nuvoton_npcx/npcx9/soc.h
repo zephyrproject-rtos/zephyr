@@ -56,10 +56,4 @@
 #include <soc_pins.h>
 #include <soc_power.h>
 
-/* NPCX9 Clock definitions */
-#if DT_NODE_HAS_PROP(DT_NODELABEL(pcc), apb4_prescaler)
-/* APB4 clock divider if supported */
-#define APB4DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb4_prescaler) - 1)
-#endif
-
 #endif /* _NUVOTON_NPCX_SOC_H_ */
