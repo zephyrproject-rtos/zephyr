@@ -8,7 +8,7 @@
 #include <soc.h>
 
 #define FLEXRAM_DT_NODE DT_INST(0, nxp_flexram)
-#define IOMUXC_GPR_DT_NODE DT_INST(0, nxp_imx_gpr)
+#define IOMUXC_GPR_DT_NODE DT_NODELABEL(iomuxcgpr)
 
 #if defined(CONFIG_MEMC_NXP_FLEXRAM_MAGIC_ADDR_API) || \
 	defined(CONFIG_MEMC_NXP_FLEXRAM_ERROR_INTERRUPT)
