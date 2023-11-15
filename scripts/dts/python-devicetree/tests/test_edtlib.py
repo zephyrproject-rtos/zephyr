@@ -365,6 +365,18 @@ def test_include_filters():
         assert set(child.prop2specs.keys()) == {'child-prop-1', 'child-prop-2',
                                                 'x', 'z'}  # root level 'y' is blocked
 
+def test_include_paths():
+    '''Test "last modified" semantic for included bindings paths.'''
+
+    fname2path = {'base.yaml': 'test-bindings-include/base.yaml',
+                  'modified.yaml': 'test-bindings-include/modified.yaml'}
+
+    with from_here():
+        top = edtlib.Binding('test-bindings-include/top.yaml', fname2path)
+
+        assert 'modified.yaml' == os.path.basename(top.prop2specs["x"].path)
+        assert 'base.yaml' == os.path.basename(top.prop2specs["y"].path)
+        assert 'top.yaml' == os.path.basename(top.prop2specs["p"].path)
 
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''

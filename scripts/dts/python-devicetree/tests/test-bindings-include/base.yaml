@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+properties:
+  x:
+    type: int
+  y:
+    type: int
