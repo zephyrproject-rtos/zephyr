@@ -801,9 +801,9 @@ test_i2c_tsl2561: tsl2561@78 {
 	reg = <0x78>;
 };
 
-test_i2c_lps22df: lps22df@78 {
+test_i2c_lps22df: lps22df@79 {
 	compatible = "st,lps22df";
-	reg = <0x78>;
+	reg = <0x79>;
 	drdy-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
