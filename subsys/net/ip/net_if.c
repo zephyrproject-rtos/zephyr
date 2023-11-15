@@ -4876,6 +4876,16 @@ void net_if_init(void)
 		goto out;
 	}
 
+#if defined(CONFIG_ASSERT)
+	/* Do extra check that verifies that interface count is properly
+	 * done.
+	 */
+	int count_if;
+
+	NET_IFACE_COUNT(&count_if);
+	NET_ASSERT(count_if == if_count);
+#endif
+
 	iface_ipv6_init(if_count);
 	iface_ipv4_init(if_count);
 	iface_router_init();
