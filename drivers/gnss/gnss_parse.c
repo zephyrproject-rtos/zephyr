@@ -26,7 +26,7 @@ int gnss_parse_dec_to_nano(const char *str, int64_t *nano)
 	int64_t increment;
 
 	__ASSERT(str != NULL, "str argument must be provided");
-	__ASSERT(str != NULL, "nano argument must be provided");
+	__ASSERT(nano != NULL, "nano argument must be provided");
 
 	/* Find decimal */
 	while (str[pos] != '\0') {
