@@ -14,7 +14,7 @@ Using the CAP Acceptor
 ======================
 
 When the Bluetooth stack has been initialized (:code:`bt init`), the Acceptor can be registered by
-by calling :code:`cap_acceptor init`, which will register the CAS and CSIS services, as well as
+calling :code:`cap_acceptor init`, which will register the CAS and CSIS services, as well as
 register callbacks.
 
 .. code-block:: console

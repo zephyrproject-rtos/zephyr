@@ -478,7 +478,7 @@ Support for time series data
 LwM2M version 1.1 adds support for SenML CBOR and SenML JSON data formats. These data formats add
 support for time series data. Time series formats can be used for READ, NOTIFY and SEND operations.
 When data cache is enabled for a resource, each write will create a timestamped entry in a cache,
-and its content is then returned as a content in in READ, NOTIFY or SEND operation for a given
+and its content is then returned as a content in READ, NOTIFY or SEND operation for a given
 resource.
 
 Data cache is only supported for resources with a fixed data size.

@@ -669,7 +669,7 @@ The developer-visible changes to the :ref:`west-apis` are:
 
 West now requires Python 3.6 or later. Additionally, some features may rely on
 Python dictionaries being insertion-ordered; this is only an implementation
-detail in CPython 3.6, but is is part of the language specification as of
+detail in CPython 3.6, but it is part of the language specification as of
 Python 3.7.
 
 v0.6.3

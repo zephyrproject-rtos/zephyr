@@ -89,7 +89,7 @@ Glossary of Terms
 
    system power state
       System power states describe the power consumption of the system as a
-      whole. System power states are are represented by :c:enum:`pm_state`.
+      whole. System power states are represented by :c:enum:`pm_state`.
 
    west
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.

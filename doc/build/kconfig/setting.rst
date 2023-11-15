@@ -373,5 +373,4 @@ The :ref:`kconfig_tips_and_tricks` page has some tips for writing Kconfig
 files.
 
 The :zephyr_file:`kconfiglib.py <scripts/kconfig/kconfiglib.py>` docstring
-docstring (at the top of the file) goes over how symbol values are calculated
-in detail.
+(at the top of the file) goes over how symbol values are calculated in detail.

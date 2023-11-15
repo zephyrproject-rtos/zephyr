@@ -212,7 +212,7 @@ To connect your application to the Android Emulator follow the next steps:
 
     #. Build your Zephyr application and disable the HCI ACL flow
        control (i.e. ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n``) as the
-       the virtual controller from android does not support it at the moment.
+       virtual controller from android does not support it at the moment.
 
     #. Install Android Emulator version >= 33.1.4.0. The easiest way to do this is by installing
        the latest `Android Studio Preview`_ version.
