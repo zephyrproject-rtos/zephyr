@@ -66,6 +66,8 @@ source "drivers/pwm/Kconfig.litex"
 
 source "drivers/pwm/Kconfig.rv32m1_tpm"
 
+source "drivers/pwm/Kconfig.max32"
+
 source "drivers/pwm/Kconfig.mcux_tpm"
 
 source "drivers/pwm/Kconfig.sam0"
