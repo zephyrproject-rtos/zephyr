@@ -58,16 +58,4 @@
 #include <soc_pins.h>
 #include <soc_power.h>
 
-/* NPCX4 Clock definitions */
-#if DT_NODE_HAS_PROP(DT_NODELABEL(pcc), apb4_prescaler)
-/* APB4 clock divider if supported */
-#define APB4DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb4_prescaler) - 1)
-#endif
-
-#if (CORE_CLK > (MAX_OFMCLK / 2))
-#define FIU1DIV_VAL 1 /* If CORE_CLK > MAX_OFMCLK / 2, FIU1_CLK = CORE_CLK/2 */
-#else
-#define FIU1DIV_VAL 0 /* Else, FIU1_CLK = CORE_CLK */
-#endif
-
 #endif /* _NUVOTON_NPCX_SOC_H_ */
