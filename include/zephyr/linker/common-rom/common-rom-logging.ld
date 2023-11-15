@@ -2,7 +2,7 @@
 
 #include <zephyr/linker/iterable_sections.h>
 
-#ifdef CONFIG_LOG_FMT_SECTION_STRIP
+#if defined(CONFIG_LOG_FMT_SECTION_STRIP) && defined(DEVNULL_REGION)
 	SECTION_PROLOGUE(log_strings,(COPY),SUBALIGN(4))
 	{
 		Z_LINK_ITERABLE(log_strings);
