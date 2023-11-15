@@ -95,7 +95,7 @@ Building Secure/Non-Secure Zephyr applications
 The process requires the following steps:
 
 1. Build the Secure Zephyr application using ``-DBOARD=nrf9160_innblue22`` and
-   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the the application project configuration file.
+   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application project configuration file.
 2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160_innblue22_ns``.
 3. Merge the two binaries together.
 

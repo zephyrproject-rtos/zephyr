@@ -138,7 +138,7 @@ Programming and Debugging
 *************************
 
 Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
-are in place. Also place jumpers on the the TXD and RXD signals for a serial
+are in place. Also place jumpers on the TXD and RXD signals for a serial
 console using the XDS110 application serial port.
 
 Prerequisites:

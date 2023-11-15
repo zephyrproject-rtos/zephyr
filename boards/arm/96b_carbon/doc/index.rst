@@ -318,7 +318,7 @@ Replace :code:`<tty_device>` with the port where the board 96Boards Carbon
 can be found. For example, under Linux, :code:`/dev/ttyUSB0`.
 The ``-b`` option sets baud rate ignoring the value from config.
 
-Press the Reset button and you should see the the following message in your
+Press the Reset button and you should see the following message in your
 terminal:
 
 .. code-block:: console
