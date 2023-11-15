@@ -139,6 +139,16 @@ enum bt_hci_driver_bus {
 	BT_HCI_DRIVER_BUS_IPM           = 9,
 };
 
+#if defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)
+struct bt_hci_setup_params {
+	/** The public identity address to give to the controller. This field is used when the
+	 *  driver selects @kconfig{CONFIG_BT_HCI_SET_PUBLIC_ADDR} to indicate that it supports
+	 *  setting the controller's public address.
+	 */
+	bt_addr_t public_addr;
+};
+#endif
+
 /**
  * @brief Abstraction which represents the HCI transport to the controller.
  *
@@ -213,7 +223,7 @@ struct bt_hci_driver {
 	 *
 	 * @return 0 on success or negative error number on failure.
 	 */
-	int (*setup)(void);
+	int (*setup)(const struct bt_hci_setup_params *params);
 #endif /* defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)*/
 };
 
