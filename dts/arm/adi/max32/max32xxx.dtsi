@@ -231,6 +231,11 @@
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer1: timer@40011000 {
@@ -244,6 +249,11 @@
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -259,6 +269,11 @@
 				compatible = "adi,max32-counter";
 				status = "disabled";
 			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer3: timer@40013000 {
@@ -272,6 +287,11 @@
 			counter {
 				compatible = "adi,max32-counter";
 				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 	};
