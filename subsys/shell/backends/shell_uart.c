@@ -43,37 +43,6 @@ LOG_MODULE_REGISTER(shell_uart);
 		(CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE + \
 		 UART_ASYNC_RX_BUF_OVERHEAD))
 
-struct shell_uart_common {
-	const struct device *dev;
-	shell_transport_handler_t handler;
-	void *context;
-	bool blocking_tx;
-#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
-	struct smp_shell_data smp;
-#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
-};
-
-struct shell_uart_int_driven {
-	struct shell_uart_common common;
-	struct ring_buf tx_ringbuf;
-	struct ring_buf rx_ringbuf;
-	struct k_timer dtr_timer;
-	atomic_t tx_busy;
-};
-
-struct shell_uart_async {
-	struct shell_uart_common common;
-	struct k_sem tx_sem;
-	struct uart_async_rx async_rx;
-	atomic_t pending_rx_req;
-};
-
-struct shell_uart_polling {
-	struct shell_uart_common common;
-	struct ring_buf rx_ringbuf;
-	struct k_timer rx_timer;
-};
-
 static uint8_t __noinit async_rx_data[ASYNC_RX_BUF_SIZE];
 static uint8_t __noinit rx_ringbuf_data[CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE];
 static uint8_t __noinit tx_ringbuf_data[CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE];

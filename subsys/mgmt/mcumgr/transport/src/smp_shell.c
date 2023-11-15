@@ -64,8 +64,9 @@ extern struct shell_transport shell_transport_uart;
 static void smp_shell_input_timeout_handler(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
-	struct shell_uart *sh_uart = (struct shell_uart *)shell_transport_uart.ctx;
-	struct smp_shell_data *const data = &sh_uart->ctrl_blk->smp;
+	struct shell_uart_int_driven *sh_uart =
+		(struct shell_uart_int_driven *)shell_transport_uart.ctx;
+	struct smp_shell_data *const data = &sh_uart->common.smp;
 
 	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
 	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
