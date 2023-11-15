@@ -171,7 +171,6 @@ void k_thread_foreach_unlocked(
  * */
 #define K_ESSENTIAL (BIT(0))
 
-#if defined(CONFIG_FPU_SHARING)
 /**
  * @brief FPU registers are managed by context switch
  *
@@ -183,7 +182,6 @@ void k_thread_foreach_unlocked(
  */
 #define K_FP_IDX 1
 #define K_FP_REGS (BIT(K_FP_IDX))
-#endif
 
 /**
  * @brief user mode thread
@@ -214,10 +212,6 @@ void k_thread_foreach_unlocked(
  */
 #define K_CALLBACK_STATE (BIT(4))
 
-#ifdef CONFIG_ARC
-/* ARC processor Bitmask definitions for threads user options */
-
-#if defined(CONFIG_ARC_DSP_SHARING)
 /**
  * @brief DSP registers are managed by context switch
  *
@@ -225,13 +219,11 @@ void k_thread_foreach_unlocked(
  * This option indicates that the thread uses the CPU's DSP registers.
  * This instructs the kernel to take additional steps to save and
  * restore the contents of these registers when scheduling the thread.
- * No effect if @kconfig{CONFIG_ARC_DSP_SHARING} is not enabled.
+ * No effect if @kconfig{CONFIG_DSP_SHARING} is not enabled.
  */
 #define K_DSP_IDX 6
-#define K_ARC_DSP_REGS (BIT(K_DSP_IDX))
-#endif
+#define K_DSP_REGS (BIT(K_DSP_IDX))
 
-#if defined(CONFIG_ARC_AGU_SHARING)
 /**
  * @brief AGU registers are managed by context switch
  *
@@ -241,14 +233,8 @@ void k_thread_foreach_unlocked(
  * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
  */
 #define K_AGU_IDX 7
-#define K_ARC_AGU_REGS (BIT(K_AGU_IDX))
-#endif
-#endif
+#define K_AGU_REGS (BIT(K_AGU_IDX))
 
-#ifdef CONFIG_X86
-/* x86 Bitmask definitions for threads user options */
-
-#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_X86_SSE)
 /**
  * @brief FP and SSE registers are managed by context switch on x86
  *
@@ -259,8 +245,6 @@ void k_thread_foreach_unlocked(
  * the thread. No effect if @kconfig{CONFIG_X86_SSE} is not enabled.
  */
 #define K_SSE_REGS (BIT(7))
-#endif
-#endif
 
 /* end - thread options */
 
