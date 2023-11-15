@@ -6,7 +6,7 @@ Arduino Nano 33 IOT
 Overview
 ********
 
-The Arduino Nano 33 IOT is a a small form factor development board with USB,
+The Arduino Nano 33 IOT is a small form factor development board with USB,
 Wifi, Bluetooth, a 6 axis IMU, and secure element.
 
 .. image:: img/nano_33_iot.jpg
