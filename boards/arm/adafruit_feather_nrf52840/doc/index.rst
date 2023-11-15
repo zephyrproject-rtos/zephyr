@@ -129,7 +129,7 @@ Flash the image.
       :goals: flash
       :compact:
 
-You should see the the red LED blink.
+You should see the red LED blink.
 
 References
 **********

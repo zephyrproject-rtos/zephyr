@@ -30,7 +30,7 @@ Inactive and Optional Projects/Modules
 
 
 The projects below are optional and will not be downloaded when you
-call `west update`. You can add any of the the projects or modules listed below
+call `west update`. You can add any of the projects or modules listed below
 and use them to write application code and extend your workspace with the added
 functionality.
 

@@ -323,7 +323,7 @@ SOC and board layers
    This description applies to all current POSIX arch based boards on tree,
    but it is not a requirement for another board to follow what is described here.
 
-When the executable process is started (that is the the board
+When the executable process is started (that is the board
 :c:func:`main`, which is the linux executable C :c:func:`main`),
 first, early initialization steps are taken care of
 (command line argument parsing, initialization of the HW models, etc).

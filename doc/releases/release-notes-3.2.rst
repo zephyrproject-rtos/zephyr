@@ -335,7 +335,7 @@ Bluetooth
     payload updates with the Resolvable Private Address (RPA) rotations when
     the :kconfig:option:`CONFIG_BT_PRIVACY` is enabled.
   * Added a new :c:func:`bt_le_set_rpa_timeout()` API call to dynamically change
-    the the Resolvable Private Address (RPA) timeout when the
+    the Resolvable Private Address (RPA) timeout when the
     :kconfig:option:`CONFIG_BT_RPA_TIMEOUT_DYNAMIC` is enabled.
   * Added :c:func:`bt_conn_auth_cb_overlay` to overlay authentication callbacks
     for a Bluetooth LE connection.

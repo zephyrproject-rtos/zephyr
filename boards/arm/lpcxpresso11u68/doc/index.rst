@@ -107,7 +107,7 @@ Flashing
 The LPCXpresso11U68 board can be flashed by using the on-board LPC-Link2 debug
 probe (based on a NXP LPC43xx MCU). This MCU provides either a CMSIS-DAP or
 a J-Link interface. It depends on the embedded firmware image. The default
-OpenOCD configuration supports the the CMSIS-DAP interface. If you want to
+OpenOCD configuration supports the CMSIS-DAP interface. If you want to
 switch to J-Link, then you need to edit the
 ``boards/arm/lpcxpresso11u68/support/openocd.cfg`` file and to replace::
 

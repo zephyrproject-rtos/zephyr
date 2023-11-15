@@ -56,7 +56,7 @@ can be disabled if not needed.
 
 * **TCP** Transmission Control Protocol
   (`RFC 793 <https://tools.ietf.org/html/rfc793>`_) is supported. Both server
-  and client roles can be used the the application. The amount of TCP sockets
+  and client roles can be used the application. The amount of TCP sockets
   that are available to applications can be configured at build time.
 
 * **BSD Sockets API** Support for a subset of a

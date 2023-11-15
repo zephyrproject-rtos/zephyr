@@ -126,7 +126,7 @@ BLE Software Link Layer experimental support
 ==================================================
 This is an experimental feature supported on the Zephyr's RI5CY
 configuration, ``rv32m1_vega_ri5cy``. It  uses the Software Link Layer
-framework by Nordic Semi to enable the the on-SoC radio and transceiver for
+framework by Nordic Semi to enable the on-SoC radio and transceiver for
 implementing a software defined BLE controller. By using both the controller
 and the host stack available in Zephyr, the following BLE samples can be used
 with this board:

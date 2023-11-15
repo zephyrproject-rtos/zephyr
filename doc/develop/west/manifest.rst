@@ -248,7 +248,7 @@ next.
        remote Git repository.
 
        If the project has neither, the ``defaults`` section must specify a
-       ``remote``, which will be used as the the project's remote. Otherwise,
+       ``remote``, which will be used as the project's remote. Otherwise,
        the manifest is invalid.
 
    * - ``repo-path``
@@ -2049,7 +2049,7 @@ The ultimate outcomes of resolving manifest imports are:
 - a ``projects`` list, which is produced by combining the ``projects`` defined
   in the top-level file with those defined in imported files
 
-- a set of extension commands, which are drawn from the the ``west-commands``
+- a set of extension commands, which are drawn from the ``west-commands``
   keys in in the top-level file and any imported files
 
 - a ``group-filter`` list, which is produced by combining the top-level and any

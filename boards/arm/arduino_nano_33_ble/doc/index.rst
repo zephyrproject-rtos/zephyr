@@ -126,7 +126,7 @@ and there should be a pulsing orange LED near the USB port.
 
 Then, you can flash the image using the above script.
 
-You should see the the red LED blink.
+You should see the red LED blink.
 
 Debugging
 =========

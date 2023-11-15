@@ -69,7 +69,7 @@ Booting the board
    .. note::
       Use a baud rate of 115200.
 
-#. Power on the the board.
+#. Power on the board.
 
 #. Verify that the board got an IP address. Run from the Linux host:
 

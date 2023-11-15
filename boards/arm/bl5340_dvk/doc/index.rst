@@ -290,7 +290,7 @@ described below.
 
 .. note::
 
-   By default the the Secure image for BL5340's application core is
+   By default the Secure image for BL5340's application core is
    built using TF-M.
 
 Building the Secure firmware with TF-M
