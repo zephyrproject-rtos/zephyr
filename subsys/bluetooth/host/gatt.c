@@ -1515,8 +1515,7 @@ void bt_gatt_init(void)
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
-    (defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
+#if defined(CONFIG_BT_SETTINGS)
 static void sc_indicate(uint16_t start, uint16_t end)
 {
 	LOG_DBG("start 0x%04x end 0x%04x", start, end);
@@ -1540,7 +1539,7 @@ submit:
 	/* Reschedule since the range has changed */
 	sc_work_submit(SC_TIMEOUT);
 }
-#endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
+#endif /* BT_SETTINGS */
 
 void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 {
