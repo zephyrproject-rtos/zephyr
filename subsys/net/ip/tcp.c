@@ -638,6 +638,8 @@ static int tcp_conn_close(struct tcp *conn, int status)
 				       status, conn->recv_user_data);
 	}
 
+	k_sem_give(&conn->tx_sem);
+
 	return tcp_conn_unref(conn);
 }
 
