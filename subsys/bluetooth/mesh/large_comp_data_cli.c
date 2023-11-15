@@ -108,9 +108,9 @@ static int large_comp_data_cli_init(const struct bt_mesh_model *model)
 	}
 
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
-	cli = *(model->user_data);
+	cli = model->rt->user_data;
 	cli->model = model;
 
 	msg_timeout = 5000;

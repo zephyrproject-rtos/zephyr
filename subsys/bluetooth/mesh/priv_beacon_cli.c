@@ -141,11 +141,11 @@ static int priv_beacon_cli_init(const struct bt_mesh_model *model)
 		return -EINVAL;
 	}
 
-	cli = *(model->user_data);
+	cli = model->rt->user_data;
 	cli->model = model;
 	msg_timeout = 2 * MSEC_PER_SEC;
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 

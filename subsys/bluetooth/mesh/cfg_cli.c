@@ -1094,12 +1094,12 @@ static int cfg_cli_init(const struct bt_mesh_model *model)
 		return -EINVAL;
 	}
 
-	if (!*(model->user_data)) {
+	if (!model->rt->user_data) {
 		LOG_ERR("No Configuration Client context provided");
 		return -EINVAL;
 	}
 
-	cli = *(model->user_data);
+	cli = model->rt->user_data;
 	cli->model = model;
 	msg_timeout = CONFIG_BT_MESH_CFG_CLI_TIMEOUT;
 
@@ -1108,7 +1108,7 @@ static int cfg_cli_init(const struct bt_mesh_model *model)
 	 * and remote keys are allowed to access this model.
 	 */
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 

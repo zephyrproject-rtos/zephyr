@@ -155,7 +155,7 @@ static int sar_cfg_srv_init(const struct bt_mesh_model *model)
 	 * device-key is allowed to access this model.
 	 */
 	model->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

@@ -31,10 +31,11 @@
 #endif
 
 #ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-#define BT_MESH_MODEL_NEXT_UNASSIGNED()				\
-	.next = (const struct bt_mesh_model *[]){ NULL },
+#define BT_MESH_MODEL_RUNTIME_INIT(_user_data)			\
+	.rt = (void *)(void *[]){ NULL, NULL, (_user_data) },
 #else
-#define BT_MESH_MODEL_NEXT_UNASSIGNED()
+#define BT_MESH_MODEL_RUNTIME_INIT(_user_data)			\
+	.rt = (void *)(void *[]){ NULL, (_user_data) },
 #endif
 
 /**
@@ -432,9 +433,7 @@ struct bt_mesh_model_op {
 #define BT_MESH_MODEL_CNT_CB(_id, _op, _pub, _user_data, _keys, _grps, _cb)	\
 {										\
 	.id = (_id),								\
-	.elem_idx = (uint8_t []) { 0 },						\
-	.mod_idx = (uint8_t []) { 0 },						\
-	.flags = (uint16_t []) { 0 },						\
+	BT_MESH_MODEL_RUNTIME_INIT(_user_data)					\
 	.pub = _pub,								\
 	.keys = (uint16_t []) BT_MESH_MODEL_KEYS_UNUSED(_keys),			\
 	.keys_cnt = _keys,							\
@@ -443,8 +442,6 @@ struct bt_mesh_model_op {
 	BT_MESH_MODEL_UUIDS_UNASSIGNED()					\
 	.op = _op,								\
 	.cb = _cb,								\
-	BT_MESH_MODEL_NEXT_UNASSIGNED()						\
-	.user_data = (void *[]){ _user_data },					\
 }
 
 /**
@@ -469,9 +466,7 @@ struct bt_mesh_model_op {
 {												\
 	.vnd.company = (_company),								\
 	.vnd.id = (_id),									\
-	.elem_idx = (uint8_t []) { 0 },								\
-	.mod_idx = (uint8_t []) { 0 },								\
-	.flags = (uint16_t []) { 0 },								\
+	BT_MESH_MODEL_RUNTIME_INIT(_user_data)							\
 	.op = _op,										\
 	.pub = _pub,										\
 	.keys = (uint16_t []) BT_MESH_MODEL_KEYS_UNUSED(_keys),					\
@@ -479,8 +474,6 @@ struct bt_mesh_model_op {
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(_grps),				\
 	.groups_cnt = _grps,									\
 	BT_MESH_MODEL_UUIDS_UNASSIGNED()							\
-	BT_MESH_MODEL_NEXT_UNASSIGNED()								\
-	.user_data = (void *[]){ _user_data },							\
 	.cb = _cb,										\
 }
 
@@ -520,9 +513,7 @@ struct bt_mesh_model_op {
 #define BT_MESH_MODEL_METADATA_CB(_id, _op, _pub, _user_data, _cb, _metadata)                    \
 {                                                                            \
 	.id = (_id),                                                         \
-	.elem_idx = (uint8_t []) { 0 },					     \
-	.mod_idx = (uint8_t []) { 0 },					     \
-	.flags = (uint16_t []) { 0 },					     \
+	BT_MESH_MODEL_RUNTIME_INIT(_user_data)				     \
 	.pub = _pub,                                                         \
 	.keys = (uint16_t []) BT_MESH_MODEL_KEYS_UNUSED(CONFIG_BT_MESH_MODEL_KEY_COUNT), \
 	.keys_cnt = CONFIG_BT_MESH_MODEL_KEY_COUNT,                          \
@@ -531,8 +522,6 @@ struct bt_mesh_model_op {
 	BT_MESH_MODEL_UUIDS_UNASSIGNED()                                     \
 	.op = _op,                                                           \
 	.cb = _cb,                                                           \
-	BT_MESH_MODEL_NEXT_UNASSIGNED()					     \
-	.user_data = (void *[]){ _user_data },				     \
 	.metadata = _metadata,                                               \
 }
 #else
@@ -578,9 +567,7 @@ struct bt_mesh_model_op {
 {                                                                            \
 	.vnd.company = (_company),                                           \
 	.vnd.id = (_id),                                                     \
-	.elem_idx = (uint8_t []) { 0 },					     \
-	.mod_idx = (uint8_t []) { 0 },					     \
-	.flags = (uint16_t []) { 0 },					     \
+	BT_MESH_MODEL_RUNTIME_INIT(_user_data)				     \
 	.op = _op,                                                           \
 	.pub = _pub,                                                         \
 	.keys = (uint16_t []) BT_MESH_MODEL_KEYS_UNUSED(CONFIG_BT_MESH_MODEL_KEY_COUNT), \
@@ -588,8 +575,6 @@ struct bt_mesh_model_op {
 	.groups = (uint16_t []) BT_MESH_MODEL_GROUPS_UNASSIGNED(CONFIG_BT_MESH_MODEL_GROUP_COUNT), \
 	.groups_cnt = CONFIG_BT_MESH_MODEL_GROUP_COUNT,                      \
 	BT_MESH_MODEL_UUIDS_UNASSIGNED()                                     \
-	BT_MESH_MODEL_NEXT_UNASSIGNED()					     \
-	.user_data = (void *[]){ _user_data },				     \
 	.cb = _cb,                                                           \
 	.metadata = _metadata,                                               \
 }
@@ -900,10 +885,19 @@ struct bt_mesh_model {
 		const struct bt_mesh_mod_id_vnd vnd;
 	};
 
-	/* Internal information, mainly for persistent storage */
-	uint8_t  * const elem_idx;   /* Belongs to Nth element */
-	uint8_t  * const mod_idx;    /* Is the Nth model in the element */
-	uint16_t * const flags;      /* Model flags for internal bookkeeping */
+	/* Model runtime information */
+	struct {
+		uint8_t  elem_idx;   /* Belongs to Nth element */
+		uint8_t  mod_idx;    /* Is the Nth model in the element */
+		uint16_t flags;      /* Model flags for internal bookkeeping */
+
+#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
+		/* Pointer to the next model in a model extension list. */
+		const struct bt_mesh_model *next;
+#endif
+		/** Model-specific user data */
+		void *user_data;
+	} * const rt;
 
 	/** Model Publication */
 	struct bt_mesh_model_pub * const pub;
@@ -927,18 +921,10 @@ struct bt_mesh_model {
 	/** Model callback structure. */
 	const struct bt_mesh_model_cb * const cb;
 
-#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
-	/* Pointer to the next model in a model extension list. */
-	const struct bt_mesh_model ** const next;
-#endif
-
 #if defined(CONFIG_BT_MESH_LARGE_COMP_DATA_SRV) || defined(__DOXYGEN__)
 	/* Pointer to the array of model metadata entries. */
 	struct bt_mesh_models_metadata_entry **metadata;
 #endif
-
-	/** Model-specific user data */
-	void ** const user_data;
 };
 
 /** Callback structure for monitoring model message sending */
@@ -1048,7 +1034,7 @@ const struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *el
  */
 static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
 {
-	return (*(mod->elem_idx) == 0);
+	return (mod->rt->elem_idx == 0);
 }
 
 /** @brief Immediately store the model's user data in persistent storage.

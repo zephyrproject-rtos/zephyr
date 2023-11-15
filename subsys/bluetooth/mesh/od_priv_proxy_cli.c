@@ -100,10 +100,10 @@ static int on_demand_proxy_cli_init(const struct bt_mesh_model *mod)
 		return -EINVAL;
 	}
 
-	cli = *(mod->user_data);
+	cli = mod->rt->user_data;
 	cli->model = mod;
 	mod->keys[0] = BT_MESH_KEY_DEV_ANY;
-	*(mod->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 	msg_timeout = CONFIG_BT_MESH_OD_PRIV_PROXY_CLI_TIMEOUT;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);

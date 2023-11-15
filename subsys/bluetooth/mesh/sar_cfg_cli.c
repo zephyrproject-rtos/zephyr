@@ -94,17 +94,17 @@ static int bt_mesh_sar_cfg_cli_init(const struct bt_mesh_model *model)
 		return -EINVAL;
 	}
 
-	if (!*(model->user_data)) {
+	if (!model->rt->user_data) {
 		LOG_ERR("No SAR Configuration Client context provided");
 		return -EINVAL;
 	}
 
-	cli = *(model->user_data);
+	cli = model->rt->user_data;
 	cli->model = model;
 	cli->timeout = 2 * MSEC_PER_SEC;
 
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 
@@ -115,7 +115,7 @@ static void bt_mesh_sar_cfg_cli_reset(const struct bt_mesh_model *model)
 {
 	struct bt_mesh_sar_cfg_cli *model_cli;
 
-	model_cli = *(model->user_data);
+	model_cli = model->rt->user_data;
 
 	bt_mesh_msg_ack_ctx_clear(&model_cli->ack_ctx);
 }

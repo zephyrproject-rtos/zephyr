@@ -171,7 +171,7 @@ static const struct bt_mesh_model_op model_rpr_op1[] = {
 static int mock_model_init(const struct bt_mesh_model *mod)
 {
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	*(mod->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

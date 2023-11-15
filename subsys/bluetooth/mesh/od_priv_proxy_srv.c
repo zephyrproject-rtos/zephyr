@@ -98,7 +98,7 @@ static int od_priv_proxy_srv_init(const struct bt_mesh_model *mod)
 	}
 
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	*(mod->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_MODEL_EXTENSIONS)) {
 		bt_mesh_model_extend(mod, priv_beacon_srv);

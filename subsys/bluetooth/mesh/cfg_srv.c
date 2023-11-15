@@ -1238,7 +1238,7 @@ static enum bt_mesh_walk mod_sub_list_visitor(const struct bt_mesh_model *mod, v
 	int count = 0;
 	int i;
 
-	if (*(mod->elem_idx) != visit->elem_idx) {
+	if (mod->rt->elem_idx != visit->elem_idx) {
 		return BT_MESH_WALK_CONTINUE;
 	}
 
@@ -1257,7 +1257,7 @@ static enum bt_mesh_walk mod_sub_list_visitor(const struct bt_mesh_model *mod, v
 		count++;
 	}
 
-	LOG_DBG("sublist: model %u:%x: %u groups", *(mod->elem_idx), mod->id, count);
+	LOG_DBG("sublist: model %u:%x: %u groups", mod->rt->elem_idx, mod->id, count);
 
 	return BT_MESH_WALK_CONTINUE;
 }
@@ -1306,7 +1306,7 @@ static int mod_sub_get(const struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, id);
 
 	visit_ctx.msg = &msg;
-	visit_ctx.elem_idx = *(mod->elem_idx);
+	visit_ctx.elem_idx = mod->rt->elem_idx;
 	bt_mesh_model_extensions_walk(mod, mod_sub_list_visitor, &visit_ctx);
 
 send_list:
@@ -1365,7 +1365,7 @@ static int mod_sub_get_vnd(const struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, id);
 
 	visit_ctx.msg = &msg;
-	visit_ctx.elem_idx = *(mod->elem_idx);
+	visit_ctx.elem_idx = mod->rt->elem_idx;
 	bt_mesh_model_extensions_walk(mod, mod_sub_list_visitor, &visit_ctx);
 
 send_list:
@@ -1881,7 +1881,7 @@ static int mod_app_bind(const struct bt_mesh_model *model,
 	}
 
 	/* Some models only allow device key based access */
-	if (*(mod->flags) & BT_MESH_MOD_DEVKEY_ONLY) {
+	if (mod->rt->flags & BT_MESH_MOD_DEVKEY_ONLY) {
 		LOG_ERR("Client tried to bind AppKey to DevKey based model");
 		status = STATUS_CANNOT_BIND;
 		goto send_status;
@@ -2520,7 +2520,7 @@ static int cfg_srv_init(const struct bt_mesh_model *model)
 	 * device-key is allowed to access this model.
 	 */
 	model->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	*(model->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

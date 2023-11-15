@@ -1207,7 +1207,7 @@ static void rx_block_status(struct bt_mesh_blob_cli *cli,
 static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_cli *cli = *(mod->user_data);
+	struct bt_mesh_blob_cli *cli = mod->rt->user_data;
 	enum bt_mesh_blob_xfer_phase expected_phase;
 	struct bt_mesh_blob_target *target;
 	struct bt_mesh_blob_xfer_info info = { 0 };
@@ -1279,7 +1279,7 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 static int handle_block_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_cli *cli = *(mod->user_data);
+	struct bt_mesh_blob_cli *cli = mod->rt->user_data;
 	struct block_status status = {
 		.status = BT_MESH_BLOB_SUCCESS,
 		.block.number = cli->block.number,
@@ -1333,7 +1333,7 @@ static int handle_block_report(const struct bt_mesh_model *mod, struct bt_mesh_m
 static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_cli *cli = *(mod->user_data);
+	struct bt_mesh_blob_cli *cli = mod->rt->user_data;
 	struct bt_mesh_blob_target *target;
 	struct block_status status = { 0 };
 	uint8_t status_and_format;
@@ -1404,7 +1404,7 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_cli *cli = *(mod->user_data);
+	struct bt_mesh_blob_cli *cli = mod->rt->user_data;
 	struct bt_mesh_blob_cli_caps caps;
 	enum bt_mesh_blob_status status;
 	struct bt_mesh_blob_target *target;
@@ -1460,7 +1460,7 @@ const struct bt_mesh_model_op _bt_mesh_blob_cli_op[] = {
 
 static int blob_cli_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_blob_cli *cli = *(mod->user_data);
+	struct bt_mesh_blob_cli *cli = mod->rt->user_data;
 
 	cli->mod = mod;
 
@@ -1473,7 +1473,7 @@ static int blob_cli_init(const struct bt_mesh_model *mod)
 
 static void blob_cli_reset(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_blob_cli *cli = *(mod->user_data);
+	struct bt_mesh_blob_cli *cli = mod->rt->user_data;
 
 	cli_state_reset(cli);
 }

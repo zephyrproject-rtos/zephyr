@@ -1305,7 +1305,7 @@ static struct bt_le_scan_cb scan_cb = {
 
 static int rpr_srv_init(const struct bt_mesh_model *mod)
 {
-	if (*(mod->elem_idx) || srv.mod) {
+	if (mod->rt->elem_idx || srv.mod) {
 		LOG_ERR("Remote provisioning server must be initialized "
 			"on first element");
 		return -EINVAL;
@@ -1320,7 +1320,7 @@ static int rpr_srv_init(const struct bt_mesh_model *mod)
 	k_work_init(&srv.link.report, link_report_send_and_clear);
 	bt_le_scan_cb_register(&scan_cb);
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	*(mod->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }

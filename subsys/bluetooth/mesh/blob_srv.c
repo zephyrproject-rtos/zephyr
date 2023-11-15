@@ -418,7 +418,7 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 static int handle_xfer_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 
 	LOG_DBG("");
 
@@ -438,7 +438,7 @@ static int handle_xfer_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_c
 static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 	enum bt_mesh_blob_status status;
 	enum bt_mesh_blob_xfer_mode mode;
 	uint64_t id;
@@ -570,7 +570,7 @@ static int handle_xfer_cancel(const struct bt_mesh_model *mod, struct bt_mesh_ms
 			      struct net_buf_simple *buf)
 {
 	enum bt_mesh_blob_status status = BT_MESH_BLOB_SUCCESS;
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 	uint64_t id;
 
 	id = net_buf_simple_pull_le64(buf);
@@ -598,7 +598,7 @@ static int handle_block_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 			    struct net_buf_simple *buf)
 {
 	enum bt_mesh_blob_status status;
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 
 	switch (srv->phase) {
 	case BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK:
@@ -628,7 +628,7 @@ static int handle_block_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 static int handle_block_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 	enum bt_mesh_blob_status status;
 	uint16_t block_number, chunk_size;
 	int err;
@@ -723,7 +723,7 @@ rsp:
 static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 	struct bt_mesh_blob_chunk chunk;
 	size_t expected_size = 0;
 	uint16_t idx;
@@ -813,7 +813,7 @@ static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 
 	LOG_DBG("");
 
@@ -849,7 +849,7 @@ const struct bt_mesh_model_op _bt_mesh_blob_srv_op[] = {
 
 static int blob_srv_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 
 	srv->mod = mod;
 	srv->state.ttl = BT_MESH_TTL_DEFAULT;
@@ -865,7 +865,7 @@ static int blob_srv_settings_set(const struct bt_mesh_model *mod, const char *na
 				 size_t len_rd, settings_read_cb read_cb,
 				 void *cb_arg)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 	ssize_t len;
 
 	if (len_rd < offsetof(struct bt_mesh_blob_srv_state, blocks)) {
@@ -905,7 +905,7 @@ static int blob_srv_settings_set(const struct bt_mesh_model *mod, const char *na
 
 static int blob_srv_start(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 	int err = -ENOTSUP;
 
 	if (srv->phase == BT_MESH_BLOB_XFER_PHASE_INACTIVE) {
@@ -933,7 +933,7 @@ static int blob_srv_start(const struct bt_mesh_model *mod)
 
 static void blob_srv_reset(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_blob_srv *srv = *(mod->user_data);
+	struct bt_mesh_blob_srv *srv = mod->rt->user_data;
 
 	phase_set(srv, BT_MESH_BLOB_XFER_PHASE_INACTIVE);
 	srv->state.xfer.mode = BT_MESH_BLOB_XFER_MODE_NONE;

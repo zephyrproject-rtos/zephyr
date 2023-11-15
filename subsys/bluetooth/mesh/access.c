@@ -92,12 +92,12 @@ static struct mod_relation mod_rel_list[MOD_REL_LIST_SIZE];
 		 (idx)++)
 
 #define IS_MOD_BASE(mod, idx, offset) \
-	(mod_rel_list[(idx)].elem_base == *((mod)->elem_idx) && \
-	 mod_rel_list[(idx)].idx_base == *((mod)->mod_idx) + (offset))
+	(mod_rel_list[(idx)].elem_base == mod->rt->elem_idx && \
+	 mod_rel_list[(idx)].idx_base == mod->rt->mod_idx + (offset))
 
 #define IS_MOD_EXTENSION(mod, idx, offset) \
-	 (mod_rel_list[(idx)].elem_ext == *((mod)->elem_idx) && \
-	  mod_rel_list[(idx)].idx_ext == *((mod)->mod_idx) + (offset))
+	 (mod_rel_list[(idx)].elem_ext == mod->rt->elem_idx && \
+	  mod_rel_list[(idx)].idx_ext == mod->rt->mod_idx + (offset))
 
 #define RELATION_TYPE_EXT 0xFF
 
@@ -533,7 +533,7 @@ static void add_items_to_page(struct net_buf_simple *buf, const struct bt_mesh_m
 	MOD_REL_LIST_FOR_EACH(i) {
 		if (IS_MOD_EXTENSION(mod, i, sig_offset) &&
 		    mod_rel_list[i].type == RELATION_TYPE_EXT) {
-			elem_offset = *(mod->elem_idx) - mod_rel_list[i].elem_base;
+			elem_offset = mod->rt->elem_idx - mod_rel_list[i].elem_base;
 			mod_idx = mod_rel_list[i].idx_base;
 			if (ext_mod_cnt < 32 &&
 				elem_offset < 4 &&
@@ -569,7 +569,7 @@ static size_t mod_items_size(const struct bt_mesh_model *mod, uint8_t sig_offset
 
 	MOD_REL_LIST_FOR_EACH(i) {
 		if (IS_MOD_EXTENSION(mod, i, sig_offset)) {
-			offset = *(mod->elem_idx) - mod_rel_list[i].elem_base;
+			offset = mod->rt->elem_idx - mod_rel_list[i].elem_base;
 			temp_size += (ext_mod_cnt < 32 && offset < 4 && offset > -5) ? 1 : 2;
 		}
 	}
@@ -901,7 +901,7 @@ static void mod_publish(struct k_work *work)
 
 struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod)
 {
-	return &dev_comp->elem[*(mod->elem_idx)];
+	return &dev_comp->elem[mod->rt->elem_idx];
 }
 
 const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_idx)
@@ -975,9 +975,9 @@ static void mod_init(const struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
-	*(mod->elem_idx) = elem - dev_comp->elem;
+	mod->rt->elem_idx = elem - dev_comp->elem;
 	if (vnd) {
-		*(mod->mod_idx) = mod - elem->vnd_models;
+		mod->rt->mod_idx = mod - elem->vnd_models;
 
 		if (IS_ENABLED(CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE)) {
 			*err = bt_mesh_vnd_mod_msg_cid_check(mod);
@@ -987,7 +987,7 @@ static void mod_init(const struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		}
 
 	} else {
-		*(mod->mod_idx) = mod - elem->models;
+		mod->rt->mod_idx = mod - elem->models;
 	}
 
 	if (mod->cb && mod->cb->init) {
@@ -1107,7 +1107,7 @@ static enum bt_mesh_walk find_group_mod_visitor(const struct bt_mesh_model *mod,
 {
 	struct find_group_visitor_ctx *ctx = user_data;
 
-	if (*(mod->elem_idx) != *(ctx->mod->elem_idx)) {
+	if (mod->rt->elem_idx != ctx->mod->rt->elem_idx) {
 		return BT_MESH_WALK_CONTINUE;
 	}
 
@@ -1165,7 +1165,7 @@ static enum bt_mesh_walk find_uuid_mod_visitor(const struct bt_mesh_model *mod, 
 {
 	struct find_uuid_visitor_ctx *ctx = user_data;
 
-	if (*(mod->elem_idx) != *(ctx->mod->elem_idx)) {
+	if (mod->rt->elem_idx != ctx->mod->rt->elem_idx) {
 		return BT_MESH_WALK_CONTINUE;
 	}
 
@@ -1315,11 +1315,11 @@ bool bt_mesh_model_has_key(const struct bt_mesh_model *mod, uint16_t key)
 static bool model_has_dst(const struct bt_mesh_model *mod, uint16_t dst, const uint8_t *uuid)
 {
 	if (BT_MESH_ADDR_IS_UNICAST(dst)) {
-		return (dev_comp->elem[*(mod->elem_idx)].addr == dst);
+		return (dev_comp->elem[mod->rt->elem_idx].addr == dst);
 	} else if (BT_MESH_ADDR_IS_VIRTUAL(dst)) {
 		return !!bt_mesh_model_find_uuid(&mod, uuid);
 	} else if (BT_MESH_ADDR_IS_GROUP(dst) ||
-		  (BT_MESH_ADDR_IS_FIXED_GROUP(dst) &&  *(mod->elem_idx) != 0)) {
+		  (BT_MESH_ADDR_IS_FIXED_GROUP(dst) &&  mod->rt->elem_idx != 0)) {
 		return !!bt_mesh_model_find_group(&mod, dst);
 	}
 
@@ -1327,7 +1327,7 @@ static bool model_has_dst(const struct bt_mesh_model *mod, uint16_t dst, const u
 	 * the lower layers have already confirmed that we are subscribing to
 	 * it. All models on the primary element should receive the message.
 	 */
-	return *(mod->elem_idx) == 0;
+	return mod->rt->elem_idx == 0;
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_elem *elem,
@@ -1607,12 +1607,12 @@ void bt_mesh_model_extensions_walk(const struct bt_mesh_model *model,
 #else
 	const struct bt_mesh_model *it;
 
-	if (cb(model, user_data) == BT_MESH_WALK_STOP || !*(model->next)) {
+	if (cb(model, user_data) == BT_MESH_WALK_STOP || !model->rt->next) {
 		return;
 	}
 
 	/* List is circular. Step through all models until we reach the start: */
-	for (it = *(model->next); it != model; it = *(it->next)) {
+	for (it = model->rt->next; it != model; it = it->rt->next) {
 		if (cb(it, user_data) == BT_MESH_WALK_STOP) {
 			return;
 		}
@@ -1643,10 +1643,10 @@ static int mod_rel_register(const struct bt_mesh_model *base,
 {
 	LOG_DBG("");
 	struct mod_relation extension = {
-		*(base->elem_idx),
-		*(base->mod_idx) + get_sig_offset(base),
-		*(ext->elem_idx),
-		*(ext->mod_idx) + get_sig_offset(ext),
+		base->rt->elem_idx,
+		base->rt->mod_idx + get_sig_offset(base),
+		ext->rt->elem_idx,
+		ext->rt->mod_idx + get_sig_offset(ext),
 		type,
 	};
 	int i;
@@ -1670,18 +1670,18 @@ int bt_mesh_model_extend(const struct bt_mesh_model *extending_mod,
 {
 	const struct bt_mesh_model *a = extending_mod;
 	const struct bt_mesh_model *b = base_mod;
-	const struct bt_mesh_model *a_next = *(a->next);
-	const struct bt_mesh_model *b_next = *(b->next);
+	const struct bt_mesh_model *a_next = a->rt->next;
+	const struct bt_mesh_model *b_next = b->rt->next;
 	const struct bt_mesh_model *it;
 
-	*(base_mod->flags) |= BT_MESH_MOD_EXTENDED;
+	base_mod->rt->flags |= BT_MESH_MOD_EXTENDED;
 
 	if (a == b) {
 		return 0;
 	}
 
 	/* Check if a's list contains b */
-	for (it = a; (it != NULL) && (*(it->next) != a); it = *(it->next)) {
+	for (it = a; (it != NULL) && (it->rt->next != a); it = it->rt->next) {
 		if (it == b) {
 			goto register_extension;
 		}
@@ -1689,15 +1689,15 @@ int bt_mesh_model_extend(const struct bt_mesh_model *extending_mod,
 
 	/* Merge lists */
 	if (a_next) {
-		*(b->next) = a_next;
+		b->rt->next = a_next;
 	} else {
-		*(b->next) = a;
+		b->rt->next = a;
 	}
 
 	if (b_next) {
-		*(a->next) = b_next;
+		a->rt->next = b_next;
 	} else {
-		*(a->next) = b;
+		a->rt->next = b;
 	}
 
 register_extension:
@@ -1745,7 +1745,7 @@ int bt_mesh_model_correspond(const struct bt_mesh_model *corresponding_mod,
 
 bool bt_mesh_model_is_extended(const struct bt_mesh_model *model)
 {
-	return *(model->flags) & BT_MESH_MOD_EXTENDED;
+	return model->rt->flags & BT_MESH_MOD_EXTENDED;
 }
 
 static int mod_set_bind(const struct bt_mesh_model *mod, size_t len_rd,
@@ -2041,7 +2041,7 @@ BT_MESH_SETTINGS_DEFINE(comp, "cmp", comp_set);
 static void encode_mod_path(const struct bt_mesh_model *mod, bool vnd,
 			    const char *key, char *path, size_t path_len)
 {
-	uint16_t mod_key = (((uint16_t)*(mod->elem_idx) << 8) | *(mod->mod_idx));
+	uint16_t mod_key = (((uint16_t)mod->rt->elem_idx << 8) | mod->rt->mod_idx);
 
 	if (vnd) {
 		snprintk(path, path_len, "bt/mesh/v/%x/%s", mod_key, key);
@@ -2174,28 +2174,28 @@ static void store_pending_mod(const struct bt_mesh_model *mod,
 			      struct bt_mesh_elem *elem, bool vnd,
 			      bool primary, void *user_data)
 {
-	if (!*(mod->flags)) {
+	if (!mod->rt->flags) {
 		return;
 	}
 
-	if (*(mod->flags) & BT_MESH_MOD_BIND_PENDING) {
-		*(mod->flags) &= ~BT_MESH_MOD_BIND_PENDING;
+	if (mod->rt->flags & BT_MESH_MOD_BIND_PENDING) {
+		mod->rt->flags &= ~BT_MESH_MOD_BIND_PENDING;
 		store_pending_mod_bind(mod, vnd);
 	}
 
-	if (*(mod->flags) & BT_MESH_MOD_SUB_PENDING) {
-		*(mod->flags) &= ~BT_MESH_MOD_SUB_PENDING;
+	if (mod->rt->flags & BT_MESH_MOD_SUB_PENDING) {
+		mod->rt->flags &= ~BT_MESH_MOD_SUB_PENDING;
 		store_pending_mod_sub(mod, vnd);
 		store_pending_mod_sub_va(mod, vnd);
 	}
 
-	if (*(mod->flags) & BT_MESH_MOD_PUB_PENDING) {
-		*(mod->flags) &= ~BT_MESH_MOD_PUB_PENDING;
+	if (mod->rt->flags & BT_MESH_MOD_PUB_PENDING) {
+		mod->rt->flags &= ~BT_MESH_MOD_PUB_PENDING;
 		store_pending_mod_pub(mod, vnd);
 	}
 
-	if (*(mod->flags) & BT_MESH_MOD_DATA_PENDING) {
-		*(mod->flags) &= ~BT_MESH_MOD_DATA_PENDING;
+	if (mod->rt->flags & BT_MESH_MOD_DATA_PENDING) {
+		mod->rt->flags &= ~BT_MESH_MOD_DATA_PENDING;
 		mod->cb->pending_store(mod);
 	}
 }
@@ -2207,19 +2207,19 @@ void bt_mesh_model_pending_store(void)
 
 void bt_mesh_model_bind_store(const struct bt_mesh_model *mod)
 {
-	*(mod->flags) |= BT_MESH_MOD_BIND_PENDING;
+	mod->rt->flags |= BT_MESH_MOD_BIND_PENDING;
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }
 
 void bt_mesh_model_sub_store(const struct bt_mesh_model *mod)
 {
-	*(mod->flags) |= BT_MESH_MOD_SUB_PENDING;
+	mod->rt->flags |= BT_MESH_MOD_SUB_PENDING;
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }
 
 void bt_mesh_model_pub_store(const struct bt_mesh_model *mod)
 {
-	*(mod->flags) |= BT_MESH_MOD_PUB_PENDING;
+	mod->rt->flags |= BT_MESH_MOD_PUB_PENDING;
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }
 
@@ -2584,7 +2584,7 @@ void bt_mesh_model_settings_commit(void)
 
 void bt_mesh_model_data_store_schedule(const struct bt_mesh_model *mod)
 {
-	*(mod->flags) |= BT_MESH_MOD_DATA_PENDING;
+	mod->rt->flags |= BT_MESH_MOD_DATA_PENDING;
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_MOD_PENDING);
 }
 
