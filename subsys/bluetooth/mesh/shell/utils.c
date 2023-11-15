@@ -60,7 +60,7 @@ int bt_mesh_shell_mdl_print_all(const struct shell *sh, uint16_t mod_id)
 		if (mod) {
 			shell_print(sh,
 				    "Client model instance found at addr 0x%.4X. Element index: %d",
-				    comp->elem[i].addr, *(mod->elem_idx));
+				    comp->elem[i].addr, mod->rt->elem_idx);
 		}
 	}
 

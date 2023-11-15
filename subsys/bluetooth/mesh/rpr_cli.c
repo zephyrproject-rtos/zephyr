@@ -94,7 +94,7 @@ static int handle_extended_scan_report(const struct bt_mesh_model *mod, struct b
 				       struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_unprov dev = { 0 };
 	enum bt_mesh_rpr_status status;
 	bool found_dev = false;
@@ -127,7 +127,7 @@ static int handle_link_report(const struct bt_mesh_model *mod, struct bt_mesh_ms
 			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_link link;
 	uint8_t reason = PROV_BEARER_LINK_STATUS_SUCCESS;
 
@@ -164,7 +164,7 @@ static int handle_link_report(const struct bt_mesh_model *mod, struct bt_mesh_ms
 static int handle_link_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct bt_mesh_rpr_link *rsp;
 	struct bt_mesh_rpr_link link;
@@ -198,7 +198,7 @@ static int handle_link_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 static int handle_pdu_outbound_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	void *cb_data;
 	uint8_t num;
@@ -229,7 +229,7 @@ static int handle_pdu_outbound_report(const struct bt_mesh_model *mod, struct bt
 static int handle_pdu_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct pb_remote_ctx cb_ctx = {
 		cli,
@@ -260,7 +260,7 @@ static int handle_pdu_report(const struct bt_mesh_model *mod, struct bt_mesh_msg
 static int handle_scan_caps_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct bt_mesh_rpr_caps *caps;
 
@@ -284,7 +284,7 @@ static int handle_scan_caps_status(const struct bt_mesh_model *mod, struct bt_me
 static int handle_scan_report(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 	struct bt_mesh_rpr_unprov dev = { 0 };
 
@@ -316,7 +316,7 @@ static int handle_scan_report(const struct bt_mesh_model *mod, struct bt_mesh_ms
 static int handle_scan_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 	struct bt_mesh_rpr_scan_status *status;
 	struct bt_mesh_rpr_node srv = RPR_NODE(ctx);
 
@@ -363,13 +363,13 @@ static void link_timeout(struct k_work *work)
 
 static int rpr_cli_init(const struct bt_mesh_model *mod)
 {
-	if (*(mod->elem_idx)) {
+	if (mod->rt->elem_idx) {
 		LOG_ERR("Remote provisioning client must be initialized "
 			"on first element");
 		return -EINVAL;
 	}
 
-	struct bt_mesh_rpr_cli *cli = *(mod->user_data);
+	struct bt_mesh_rpr_cli *cli = mod->rt->user_data;
 
 	cli->mod = mod;
 	cli->link.time = LINK_TIMEOUT_SECONDS_DEFAULT;
@@ -378,7 +378,7 @@ static int rpr_cli_init(const struct bt_mesh_model *mod)
 	bt_mesh_msg_ack_ctx_init(&cli->prov_ack_ctx);
 	k_work_init_delayable(&cli->link.timeout, link_timeout);
 	mod->keys[0] = BT_MESH_KEY_DEV_ANY;
-	*(mod->flags) |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }
