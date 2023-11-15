@@ -59,13 +59,10 @@ enum smp_shell_mcumgr_state {
 };
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL_INPUT_TIMEOUT
-extern struct shell_transport shell_transport_uart;
-
 static void smp_shell_input_timeout_handler(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
-	struct shell_uart *sh_uart = (struct shell_uart *)shell_transport_uart.ctx;
-	struct smp_shell_data *const data = &sh_uart->ctrl_blk->smp;
+	struct smp_shell_data *const data = shell_uart_smp_shell_data_get_ptr();
 
 	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
 	atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
