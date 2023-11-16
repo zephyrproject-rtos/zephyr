@@ -6,7 +6,7 @@ tests:
     extra_configs:
       - arch:posix:CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     integration_platforms:
-      - native_posix
+      - native_sim
       - qemu_cortex_m3
     tags:
       - test_framework
