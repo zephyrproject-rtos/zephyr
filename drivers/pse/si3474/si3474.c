@@ -18,13 +18,21 @@
 
 LOG_MODULE_REGISTER(SI3474, CONFIG_PSE_LOG_LEVEL);
 
+int si3474_i2c_write_reg(const struct device *i2c, uint16_t dev_addr, uint8_t reg_ddr, uint8_t val)
+{
+	int res = i2c_reg_write_byte(i2c, dev_addr, reg_ddr, val);
+	if (res != 0) {
+		LOG_WRN("Si3474 device 0x%x writing 0x%x failed! [%i]", dev_addr, reg_ddr, res);
+	}
+	return res;
+}
+
 int si3474_i2c_read_reg(const struct device *i2c, uint16_t dev_addr, uint8_t reg_ddr, uint8_t *buff)
 {
 	int res = 0;
 	res = i2c_reg_read_byte(i2c, dev_addr, reg_ddr, buff);
 	if (res != 0) {
 		LOG_WRN("Si3474 device 0x%x reading 0x%x failed...! [%i]", dev_addr, reg_ddr, res);
-		return res;
 	}
 	return res;
 }
@@ -41,7 +49,7 @@ static int si3474_get_events(const struct device *dev, uint8_t *events)
 				  &pse_interrupt_buffer);
 	if (res != 0) {
 		LOG_WRN("Si3474 reading interrupt status failed");
-	}else {
+	} else {
 		for (int cnt = 0; cnt <= 8; cnt++) {
 			switch (pse_interrupt_buffer & mask) {
 			case POWER_ENABLE_CHANGE_IT:
@@ -137,7 +145,6 @@ static int si3474_set_events(const struct device *dev, uint8_t events)
 	res = i2c_reg_write_byte(cfg->i2c.bus, dev_address, INTERRUPT_MASK, events);
 	if (res != 0) {
 		LOG_WRN("Si3474 setting events failed!");
-		return res;
 	}
 	return res;
 }
@@ -301,7 +308,7 @@ static int si3474_init(const struct device *dev)
 
 	res = si3474_init_ports(dev);
 	if (res != 0) {
-		LOG_ERR("Configuring Si3474 interrupt and Over Suply Source pin failed");
+		LOG_ERR("Configuring Si3474 interrupt and Over Supply Source pin failed");
 		return -ENODEV;
 	}
 
