@@ -437,6 +437,13 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_int_tx_empty(spi);
 	ll_func_disable_int_rx_not_empty(spi);
 	ll_func_disable_int_errors(spi);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_DisableIT_EOT(spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 #endif
 
 
@@ -459,6 +466,15 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	if (LL_SPI_IsActiveFlag_MODF(spi)) {
 		LL_SPI_ClearFlag_MODF(spi);
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_ClearFlag_TXTF(spi);
+		LL_SPI_ClearFlag_OVR(spi);
+		LL_SPI_ClearFlag_EOT(spi);
+		LL_SPI_SetTransferSize(spi, 0);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 	ll_func_disable_spi(spi);
 
@@ -651,6 +667,52 @@ static int spi_stm32_release(const struct device *dev,
 	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
+	                                     const struct spi_buf_set *bufs)
+{
+	if (bufs == NULL) {
+		return 0;
+	}
+
+	uint32_t num_bytes = 0;
+
+	for (size_t i = 0; i < bufs->count; i++) {
+		num_bytes += bufs->buffers[i].len;
+	}
+
+	uint8_t bytes_per_frame = SPI_WORD_SIZE_GET(config->operation) / 8;
+
+	if ((num_bytes % bytes_per_frame) != 0) {
+		return -EINVAL;
+	}
+	return num_bytes / bytes_per_frame;
+}
+
+static int32_t spi_stm32_count_total_frames(const struct spi_config *config,
+	                                    const struct spi_buf_set *tx_bufs,
+	                                    const struct spi_buf_set *rx_bufs)
+{
+	int tx_frames = spi_stm32_count_bufset_frames(config, tx_bufs);
+
+	if (tx_frames < 0) {
+		return tx_frames;
+	}
+
+	int rx_frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+
+	if (rx_frames < 0) {
+		return rx_frames;
+	}
+
+	if (tx_frames > UINT16_MAX || rx_frames > UINT16_MAX) {
+		return -EMSGSIZE;
+	}
+
+	return MAX(rx_frames, tx_frames);
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 static int transceive(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
@@ -688,6 +750,19 @@ static int transceive(const struct device *dev,
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		int total_frames = spi_stm32_count_total_frames(
+			config, tx_bufs, rx_bufs);
+		if (total_frames < 0) {
+			ret = total_frames;
+			goto end;
+		}
+		LL_SPI_SetTransferSize(spi, (uint32_t)total_frames);
+	}
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_func_rx_is_not_empty(spi)) {
@@ -723,6 +798,13 @@ static int transceive(const struct device *dev,
 	spi_stm32_cs_control(dev, true);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->fifo_enabled) {
+		LL_SPI_EnableIT_EOT(spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 	ll_func_enable_int_errors(spi);
 
 	if (rx_bufs) {
