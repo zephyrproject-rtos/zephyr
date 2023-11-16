@@ -175,10 +175,6 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	uint8_t chunks, i;
 	int ret;
 
-	if (len == 0) {
-		return -ENODATA;
-	}
-
 	chunks = len / tc6->cps;
 	if (len % tc6->cps) {
 		chunks++;
@@ -218,32 +214,6 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		}
 
 		len -= tc6->cps;
-	}
-
-	return 0;
-}
-
-int oa_tc6_check_status(struct oa_tc6 *tc6)
-{
-	uint32_t sts;
-
-	if (tc6->exst) {
-		/*
-		 * Just clear any pending interrupts.
-		 * The RESETC is handled separately as it requires per
-		 * device configuration.
-		 */
-		oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
-		if (sts != 0) {
-			oa_tc6_reg_write(tc6, OA_STATUS0, sts);
-			LOG_WRN("EXST: OA_STATUS0: 0x%x", sts);
-		}
-
-		oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
-		if (sts != 0) {
-			oa_tc6_reg_write(tc6, OA_STATUS1, sts);
-			LOG_WRN("EXST: OA_STATUS1: 0x%x", sts);
-		}
 	}
 
 	return 0;
