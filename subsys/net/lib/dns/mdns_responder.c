@@ -706,6 +706,9 @@ static int init_listener(void)
 		}
 	}
 ipv6_out:
+	; /* Added ";" to avoid clang compile error because of
+	   * the "struct net_context *v4" after it.
+	   */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
