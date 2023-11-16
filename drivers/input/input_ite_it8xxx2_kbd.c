@@ -15,7 +15,6 @@
 #include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(input_ite_it8xxx2_kbd);
