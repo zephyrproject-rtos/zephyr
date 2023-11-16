@@ -175,7 +175,10 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	uint8_t chunks, i;
 	int ret;
 
-	chunks = (len / tc6->cps) + 1;
+	chunks = len / tc6->cps;
+	if (len % tc6->cps) {
+		chunks++;
+	}
 
 	/* Check if LAN865x has any free internal buffer space */
 	if (chunks > tc6->txc) {
