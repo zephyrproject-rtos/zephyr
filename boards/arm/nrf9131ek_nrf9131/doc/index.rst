@@ -210,8 +210,8 @@ Testing the LEDs and buttons in the nRF9131 EK
 There are 2 samples that allow you to test that the button and LED on
 the board are working properly with Zephyr:
 
-* :zephyr:code-sample:`blinky`
-* :zephyr:code-sample:`button`
+* :ref:`blinky-sample`
+* :ref:`button-sample`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
