@@ -28,7 +28,7 @@ Requirements
    ``/dev/ttyUSB0`` and ``/dev/ttyUSB1`` in the system. You can check what they
    are in your system by running the command ``ls -l /dev/tty*``. If that is not
    the case on your machine you can either change the ``serial-port`` properties
-   in the ``boards/native_posix.overlay`` file or using the command line options
+   in the ``boards/native_sim.overlay`` file or using the command line options
    ``-uart_port`` and ``-uart_port2``.
 
 Building and Running
