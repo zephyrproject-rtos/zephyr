@@ -241,9 +241,8 @@ static int eeprom_xec_read(const struct device *dev, off_t offset,
 	}
 
 	k_mutex_lock(&data->lock_mtx, K_FOREVER);
-#ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	/* EEPROM HW READ */
 	for (chunk_idx = 0; chunk_idx < len; chunk_idx += XEC_EEPROM_TRANSFER_SIZE_READ) {
 		if ((len-chunk_idx) < XEC_EEPROM_TRANSFER_SIZE_READ) {
@@ -252,9 +251,7 @@ static int eeprom_xec_read(const struct device *dev, off_t offset,
 		eeprom_xec_data_read_32_bytes(regs, &data_buf[chunk_idx],
 						chunk_size, (offset+chunk_idx));
 	}
-#ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 	k_mutex_unlock(&data->lock_mtx);
 
 	return 0;
@@ -280,9 +277,8 @@ static int eeprom_xec_write(const struct device *dev, off_t offset,
 	}
 
 	k_mutex_lock(&data->lock_mtx, K_FOREVER);
-#ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	/* EEPROM HW WRITE */
 	for (chunk_idx = 0; chunk_idx < len; chunk_idx += XEC_EEPROM_TRANSFER_SIZE_WRITE) {
 		if ((len-chunk_idx) < XEC_EEPROM_TRANSFER_SIZE_WRITE) {
@@ -291,9 +287,8 @@ static int eeprom_xec_write(const struct device *dev, off_t offset,
 		eeprom_xec_data_write_32_bytes(regs, &data_buf[chunk_idx],
 							chunk_size, (offset+chunk_idx));
 	}
-#ifdef CONFIG_PM_DEVICE
+
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 	k_mutex_unlock(&data->lock_mtx);
 
 	return 0;
