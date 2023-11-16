@@ -10,6 +10,13 @@
 #include <inttypes.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 
+/**
+ * @brief MCUmgr OS management client API
+ * @defgroup mcumgr_os_mgmt_client MCUmgr os_mgmt_client API
+ * @ingroup mcumgr
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,6 +60,10 @@ int os_mgmt_client_echo(struct os_mgmt_client *client, const char *echo_string);
  * @return @ref mcumgr_err_t code on failure.
  */
 int os_mgmt_client_reset(struct os_mgmt_client *client);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
