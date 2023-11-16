@@ -175,6 +175,10 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	uint8_t chunks, i;
 	int ret;
 
+	if (len == 0) {
+		return -ENODATA;
+	}
+
 	chunks = len / tc6->cps;
 	if (len % tc6->cps) {
 		chunks++;
