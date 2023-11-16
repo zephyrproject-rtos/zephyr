@@ -340,6 +340,8 @@ it needs to report either a pass or fail.  For example:
 
    ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
 
+.. _ztest_unit_testing:
+
 Quick start - Unit testing
 **************************
 
