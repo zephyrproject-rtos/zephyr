@@ -3,7 +3,7 @@ sample:
 tests:
   sample.app_dev.external_lib:
     integration_platforms:
-      - native_posix
+      - native_sim
     tags: external
     harness: console
     harness_config:
