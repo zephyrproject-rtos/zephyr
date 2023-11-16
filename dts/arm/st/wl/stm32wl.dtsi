@@ -259,6 +259,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>;
 			resets = <&rctl STM32_RESET(APB1H, 0U)>;
 			interrupts = <38 0>;
+			wakeup-line = <28>;
 			status = "disabled";
 		};
 
