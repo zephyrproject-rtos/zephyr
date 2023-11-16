@@ -3,4 +3,5 @@ tests:
     tags:
       - fuel_gauge
     filter: dt_compat_enabled("ti,bq27z746")
-    platform_allow: native_posix
+    platform_allow:
+      - native_sim
