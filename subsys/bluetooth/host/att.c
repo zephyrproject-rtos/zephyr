@@ -83,18 +83,6 @@ enum {
 	ATT_NUM_FLAGS,
 };
 
-struct bt_att_tx_meta_data {
-	struct bt_att_chan *att_chan;
-	uint16_t attr_count;
-	bt_gatt_complete_func_t func;
-	void *user_data;
-	enum bt_att_chan_opt chan_opt;
-};
-
-struct bt_att_tx_meta {
-	struct bt_att_tx_meta_data *data;
-};
-
 /* ATT channel specific data */
 struct bt_att_chan {
 	/* Connection this channel is associated with */
@@ -103,7 +91,6 @@ struct bt_att_chan {
 	ATOMIC_DEFINE(flags, ATT_NUM_FLAGS);
 	struct bt_att_req	*req;
 	struct k_fifo		tx_queue;
-	struct bt_att_tx_meta_data rsp_meta;
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
 };
@@ -172,6 +159,18 @@ static struct bt_att_req cancel;
  */
 static k_tid_t att_handle_rsp_thread;
 
+struct bt_att_tx_meta_data {
+	struct bt_att_chan *att_chan;
+	uint16_t attr_count;
+	bt_gatt_complete_func_t func;
+	void *user_data;
+	enum bt_att_chan_opt chan_opt;
+};
+
+struct bt_att_tx_meta {
+	struct bt_att_tx_meta_data *data;
+};
+
 #define bt_att_tx_meta_data(buf) (((struct bt_att_tx_meta *)net_buf_user_data(buf))->data)
 
 static struct bt_att_tx_meta_data tx_meta_data[CONFIG_BT_CONN_TX_MAX];
@@ -193,22 +192,9 @@ static struct bt_att_tx_meta_data *tx_meta_data_alloc(k_timeout_t timeout)
 static inline void tx_meta_data_free(struct bt_att_tx_meta_data *data)
 {
 	__ASSERT_NO_MSG(data);
-	bool alloc_from_global = PART_OF_ARRAY(tx_meta_data, data);
-
-	if (data == &data->att_chan->rsp_meta) {
-		/* "Free-ness" is kept by remote: There can only ever be one
-		 * transaction per-bearer.
-		 */
-		__ASSERT_NO_MSG(!alloc_from_global);
-	} else {
-		__ASSERT_NO_MSG(alloc_from_global);
-	}
 
 	(void)memset(data, 0, sizeof(*data));
-
-	if (alloc_from_global) {
-		k_fifo_put(&free_att_tx_meta_data, data);
-	}
+	k_fifo_put(&free_att_tx_meta_data, data);
 }
 
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf);
@@ -659,7 +645,6 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	struct net_buf *buf;
 	struct bt_att_tx_meta_data *data;
 	k_timeout_t timeout;
-	bool is_rsp = false;
 
 	if (len + sizeof(op) > bt_att_mtu(chan)) {
 		LOG_WRN("ATT MTU exceeded, max %u, wanted %zu", bt_att_mtu(chan),
@@ -672,7 +657,6 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 	case ATT_CONFIRMATION:
 		/* Use a timeout only when responding/confirming */
 		timeout = BT_ATT_TIMEOUT;
-		is_rsp = true;
 		break;
 	default:
 		timeout = K_FOREVER;
@@ -684,31 +668,11 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		return NULL;
 	}
 
-	if (is_rsp) {
-		/* There can only ever be one transaction at a time on a
-		 * bearer/channel. Use a dedicated channel meta-data to ensure
-		 * we can always queue an (error) RSP for each REQ. The ATT
-		 * module can then reschedule the RSP if it is not able to send
-		 * it immediately.
-		 */
-		if (chan->rsp_meta.att_chan) {
-			/* Returning a NULL here will trigger an ATT timeout.
-			 * This is better than an assert as an assert would
-			 * allow a peer to DoS us.
-			 */
-			LOG_ERR("already processing a transaction on chan %p", chan);
-
-			return NULL;
-		}
-		data = &chan->rsp_meta;
-		LOG_INF("alloc rsp meta");
-	} else {
-		data = tx_meta_data_alloc(timeout);
-		if (!data) {
-			LOG_WRN("Unable to allocate ATT TX meta");
-			net_buf_unref(buf);
-			return NULL;
-		}
+	data = tx_meta_data_alloc(timeout);
+	if (!data) {
+		LOG_WRN("Unable to allocate ATT TX meta");
+		net_buf_unref(buf);
+		return NULL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EATT)) {
