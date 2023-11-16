@@ -16,7 +16,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config HWINFO_SHELL
 	bool "HWINFO Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable hwinfo Shell for testing.

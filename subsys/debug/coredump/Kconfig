@@ -71,7 +71,6 @@ endchoice
 
 config DEBUG_COREDUMP_SHELL
 	bool "Coredump shell"
-	default y
 	depends on SHELL
 	help
 	  This shell provides access to coredump and its backends.
