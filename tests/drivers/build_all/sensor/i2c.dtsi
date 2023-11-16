@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
-#include <zephyr/dt-bindings/sensor/lps22df.h>
+#include <zephyr/dt-bindings/sensor/lps2xdf.h>
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
 #include <zephyr/dt-bindings/sensor/lis2dw12.h>
 #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
@@ -849,12 +849,23 @@ test_i2c_lps22df: lps22df@79 {
 	reg = <0x79>;
 	drdy-gpios = <&test_gpio 0 0>;
 	status = "okay";
-	odr = <LPS22DF_DT_ODR_10HZ>;
-	lpf = <LPS22DF_DT_LP_FILTER_ODR_4>;
-	avg = <LPS22DF_DT_AVG_128_SAMPLES>;
+	odr = <LPS2xDF_DT_ODR_10HZ>;
+	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
 };
 
 test_i2c_hs300x: hs300x@7a {
 	compatible = "renesas,hs300x";
 	reg = <0x7a>;
+};
+
+test_i2c_lps28dfw: lps28dfw@7b {
+	compatible = "st,lps28dfw";
+	reg = <0x7b>;
+	drdy-gpios = <&test_gpio 0 0>;
+	status = "okay";
+	odr = <LPS2xDF_DT_ODR_10HZ>;
+	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+	fs = <LPS28DFW_DT_FS_MODE_1_1260>;
 };
