@@ -27,6 +27,6 @@ To dump all binary descriptors in the image, run:
    west bindesc dump build/zephyr/zephyr.bin
 
 (Note: you can also dump the contents of ``zephyr.elf``, if your build system
-does not produce a ``*.bin`` file, e.g. compiling for ``native_posix``.)
+does not produce a ``*.bin`` file, e.g. compiling for ``native_sim``.)
 
 For more details see :ref:`binary_descriptors` and :ref:`west-bindesc`.
