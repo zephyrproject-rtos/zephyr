@@ -19,7 +19,7 @@
 #include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
-#if defined(CONFIG_ARC_DSP) && defined(CONFIG_ARC_DSP_SHARING)
+#if defined(CONFIG_ARC_DSP) && defined(CONFIG_DSP_SHARING)
 #include <zephyr/arch/arc/v2/dsp/arc_dsp.h>
 static struct k_spinlock lock;
 #endif
@@ -297,7 +297,7 @@ FUNC_NORETURN void z_arc_switch_to_main_no_multithreading(k_thread_entry_t main_
 }
 #endif /* !CONFIG_MULTITHREADING */
 
-#if defined(CONFIG_ARC_DSP) && defined(CONFIG_ARC_DSP_SHARING)
+#if defined(CONFIG_ARC_DSP) && defined(CONFIG_DSP_SHARING)
 void arc_dsp_disable(struct k_thread *thread, unsigned int options)
 {
 	/* Ensure a preemptive context switch does not occur */
@@ -319,4 +319,4 @@ void arc_dsp_enable(struct k_thread *thread, unsigned int options)
 
 	k_spin_unlock(&lock, key);
 }
-#endif /* CONFIG_ARC_DSP && CONFIG_ARC_DSP_SHARING */
+#endif /* CONFIG_ARC_DSP && CONFIG_DSP_SHARING */
