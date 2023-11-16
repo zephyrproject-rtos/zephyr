@@ -111,16 +111,8 @@ struct cmd_data {
 
 static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
 
-#if defined(CONFIG_BT_CONN)
-struct acl_data {
-	uint16_t acl_handle;
-};
-
-static struct acl_data acl_data[CONFIG_BT_BUF_ACL_RX_COUNT];
-#endif
-
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
-#define acl(buf) (&acl_data[net_buf_id(buf)])
+#define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
@@ -209,9 +201,10 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 {
 
 	struct bt_hci_cp_host_num_completed_packets *cp;
-	uint16_t handle = acl(buf)->acl_handle;
+	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 	struct bt_conn *conn;
+	uint8_t index = acl(buf)->index;
 
 	net_buf_destroy(buf);
 
@@ -220,9 +213,9 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
+	conn = bt_conn_lookup_index(index);
 	if (!conn) {
-		LOG_WRN("Unable to look up conn with ACL handle %u", handle);
+		LOG_WRN("Unable to look up conn with index 0x%02x", index);
 		return;
 	}
 
@@ -519,9 +512,10 @@ static void hci_acl(struct net_buf *buf)
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = bt_acl_flags(handle);
 
-	acl(buf)->acl_handle = bt_acl_handle(handle);
+	acl(buf)->handle = bt_acl_handle(handle);
+	acl(buf)->index = BT_CONN_INDEX_INVALID;
 
-	LOG_DBG("handle %u len %u flags %u", acl(buf)->acl_handle, len, flags);
+	LOG_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
 
 	if (buf->len != len) {
 		LOG_ERR("ACL data length mismatch (%u != %u)", buf->len, len);
@@ -529,12 +523,14 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(acl(buf)->acl_handle, BT_CONN_TYPE_ALL);
+	conn = bt_conn_lookup_handle(acl(buf)->handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
-		LOG_ERR("Unable to find conn for handle %u", acl(buf)->acl_handle);
+		LOG_ERR("Unable to find conn for handle %u", acl(buf)->handle);
 		net_buf_unref(buf);
 		return;
 	}
+
+	acl(buf)->index = bt_conn_index(conn);
 
 	bt_conn_recv(conn, buf, flags);
 	bt_conn_unref(conn);
