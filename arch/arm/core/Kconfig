@@ -271,7 +271,6 @@ config FP_HARDABI
 	# TF-M build system does not build the NS app and libraries correctly with Hard ABI.
 	# This limitation should be removed in the next TF-M synchronization.
 	depends on !TFM_BUILD_NS
-	depends on !(BUILD_WITH_TFM && !TFM_IPC)
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling

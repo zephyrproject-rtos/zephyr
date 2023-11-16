@@ -324,6 +324,7 @@ config TFM_IPC
 
 config TFM_SFN
 	bool "SFN model"
+	depends on !FP_HARDABI
 	help
 	  Use the SFN Model as the SPM backend for the PSA API.
 	  The SFN model supports the SFN Partition model, and isolation level 1.
