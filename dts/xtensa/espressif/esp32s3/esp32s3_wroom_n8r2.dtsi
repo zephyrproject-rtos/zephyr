@@ -11,8 +11,8 @@
 	reg = <0x0 DT_SIZE_M(8)>;
 };
 
-/* 8MB psram */
+/* 2MB psram */
 &psram0 {
-	reg = <0x3c000000 DT_SIZE_M(8)>;
+	reg = <0x3c000000 DT_SIZE_M(2)>;
 	status = "okay";
 };
