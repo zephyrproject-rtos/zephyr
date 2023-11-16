@@ -37,6 +37,10 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	default 2 if NET_IPV4_IGMP
 	default 1
 
+config NET_IF_MCAST_IPV4_SOURCE_COUNT
+	int "Max number of IPv4 sources per mcast address to be included or excluded"
+	default 1
+
 config NET_ICMPV4_ACCEPT_BROADCAST
 	bool "Accept broadcast ICMPv4 echo-request"
 	help
