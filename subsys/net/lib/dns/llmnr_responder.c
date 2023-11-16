@@ -118,7 +118,7 @@ static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr);
+		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
 
 		if (ret < 0) {
 			NET_DBG("Cannot add IPv4 multicast address to iface %p",
@@ -592,7 +592,7 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	struct in_addr *addr = user_data;
 	int ret;
 
-	ret = net_ipv4_igmp_join(iface, addr);
+	ret = net_ipv4_igmp_join(iface, addr, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);

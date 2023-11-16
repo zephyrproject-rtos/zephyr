@@ -50,17 +50,70 @@
 #define NET_IPV4_IGMP_REPORT_V3 0x22 /* v3 Membership report */
 
 struct net_ipv4_igmp_v2_query {
+	/* IGMP message type */
 	uint8_t type;
+	/* Max response code */
 	uint8_t max_rsp;
+	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
+	/* The multicast address being queried */
 	struct in_addr address;
 } __packed;
 
 struct net_ipv4_igmp_v2_report {
+	/* IGMP message type */
 	uint8_t type;
+	/* Max response code */
 	uint8_t max_rsp;
+	/* 16-bit ones' complement of the entire message */
 	uint16_t chksum;
+	/* The multicast address being queried */
 	struct in_addr address;
+} __packed;
+
+struct net_ipv4_igmp_v3_query {
+	/* IGMP message type */
+	uint8_t type;
+	/* Max response code */
+	uint8_t max_rsp;
+	/* 16-bit ones' complement of the entire message */
+	uint16_t chksum;
+	/* The multicast address being queried */
+	struct in_addr address;
+	/* Reserved field, ignore */
+	uint8_t reserved: 4;
+	/* Suppress Router-side Processing Flag */
+	uint8_t suppress: 1;
+	/* Querier's Robustness Variable */
+	uint8_t qrv: 3;
+	/* Querier's Query Interval Code */
+	uint8_t qqic;
+	/* Number of Source Addresses */
+	uint16_t sources_len;
+} __packed;
+
+struct net_ipv4_igmp_v3_group_record {
+	/* Record type */
+	uint8_t type;
+	/* Aux Data Len */
+	uint8_t aux_len;
+	/* Number of Source Addresses */
+	uint16_t sources_len;
+	/* The multicast address to report to*/
+	struct in_addr address;
+} __packed;
+
+struct net_ipv4_igmp_v3_report {
+	/* IGMP message type */
+	uint8_t type;
+	/* Reserved field, ignore */
+	uint8_t reserved_1;
+	/* 16-bit ones' complement of the entire message */
+	uint16_t chksum;
+	/* Reserved field, ignore */
+	uint16_t reserved_2;
+	/* Number of Group Records */
+	uint16_t groups_len;
 } __packed;
 
 /**
