@@ -28,32 +28,29 @@ static int wdt_nrf_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_nrfx_config *config = dev->config;
 	struct wdt_nrfx_data *data = dev->data;
-	nrfx_err_t err_code;
+	uint32_t behaviour;
 
 	/* Activate all available options. Run in all cases. */
-	config->config.behaviour = NRF_WDT_BEHAVIOUR_RUN_SLEEP_MASK |
-#if NRF_WDT_HAS_STOP
-				   NRF_WDT_BEHAVIOUR_STOP_ENABLE_MASK |
-#endif
-				   NRF_WDT_BEHAVIOUR_RUN_HALT_MASK;
+	behaviour = NRF_WDT_BEHAVIOUR_RUN_SLEEP_MASK | NRF_WDT_BEHAVIOUR_RUN_HALT_MASK;
 
 	/* Deactivate running in sleep mode. */
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		config->config.behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_SLEEP_MASK;
+		behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_SLEEP_MASK;
 	}
 
 	/* Deactivate running when debugger is attached. */
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		config->config.behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_HALT_MASK;
+		behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_HALT_MASK;
 	}
 
-	config->config.reload_value = data->m_timeout;
-
-	err_code = nrfx_wdt_reconfigure(&config->wdt, &config->config);
-
-	if (err_code != NRFX_SUCCESS) {
-		return -EBUSY;
-	}
+	nrf_wdt_behaviour_set(config->wdt.p_reg, behaviour);
+	/* The watchdog timer is driven by the LFCLK clock running at 32768 Hz.
+	 * The timeout value given in milliseconds needs to be converted here
+	 * to watchdog ticks.*/
+	nrf_wdt_reload_value_set(
+		config->wdt.p_reg,
+		(uint32_t)(((uint64_t)data->m_timeout * 32768U)
+			   / 1000));
 
 	nrfx_wdt_enable(&config->wdt);
 
@@ -62,21 +59,9 @@ static int wdt_nrf_setup(const struct device *dev, uint8_t options)
 
 static int wdt_nrf_disable(const struct device *dev)
 {
-#if NRFX_WDT_HAS_STOP
-	const struct wdt_nrfx_config *config = dev->config;
-	nrfx_err_t err_code;
-
-	err_code = nrfx_wdt_stop(&config->wdt);
-
-	if (err_code != NRFX_SUCCESS) {
-		return -ENOTSUP;
-	}
-
-	return 0;
-#else
+	/* Started watchdog cannot be stopped on nRF devices. */
 	ARG_UNUSED(dev);
 	return -EPERM;
-#endif
 }
 
 static int wdt_nrf_install_timeout(const struct device *dev,
