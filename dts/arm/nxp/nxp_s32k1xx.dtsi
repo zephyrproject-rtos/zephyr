@@ -1,0 +1,156 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		interrupt-parent = <&nvic>;
+
+		mpu: mpu@4000d000 {
+			compatible = "nxp,kinetis-mpu";
+			reg = <0x4000d000 0x1000>;
+			status = "disabled";
+		};
+
+		ftfc: flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfc";
+			reg = <0x40020000 0x1000>;
+			interrupts = <18 0>, <19 0>, <21 0>;
+			interrupt-names = "command-complete", "read-collision", "double-bit";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		porta: pinmux@40049000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x40049000 0x1000>;
+			clocks = <&clock NXP_S32_PORTA_CLK>;
+		};
+
+		portb: pinmux@4004a000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004a000 0x1000>;
+			clocks = <&clock NXP_S32_PORTB_CLK>;
+		};
+
+		portc: pinmux@4004b000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004b000 0x1000>;
+			clocks = <&clock NXP_S32_PORTC_CLK>;
+		};
+
+		portd: pinmux@4004c000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004c000 0x1000>;
+			clocks = <&clock NXP_S32_PORTD_CLK>;
+		};
+
+		porte: pinmux@4004d000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004d000 0x1000>;
+			clocks = <&clock NXP_S32_PORTE_CLK>;
+		};
+
+		clock: clock-controller@40064000 {
+			compatible = "nxp,s32-clock";
+			reg = <0x40064000 0x1000>, <0x40065000 0x1000>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		lpuart0: uart@4006a000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4006a000 0x1000>;
+			interrupts = <31 0>;
+			clocks = <&clock NXP_S32_LPUART0_CLK>;
+			status = "disabled";
+		};
+
+		lpuart1: uart@4006b000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4006b000 0x1000>;
+			interrupts = <33 0>;
+			clocks = <&clock NXP_S32_LPUART1_CLK>;
+			status = "disabled";
+		};
+
+		lpuart2: uart@4006c000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4006c000 0x1000>;
+			interrupts = <35 0>;
+			status = "disabled";
+		};
+
+		gpioa: gpio@400ff000 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff000 0x40>;
+			interrupts = <59 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@400ff040 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff040 0x40>;
+			interrupts = <60 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@400ff080 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff080 0x40>;
+			interrupts = <61 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
+			status = "disabled";
+		};
+
+		gpiod: gpio@400ff0c0 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff0c0 0x40>;
+			interrupts = <62 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
+			status = "disabled";
+		};
+
+		gpioe: gpio@400ff100 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x400ff100 0x40>;
+			interrupts = <63 2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
+			status = "disabled";
+		};
+	};
+};
