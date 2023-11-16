@@ -1359,6 +1359,16 @@ static int spi_nor_pm_control(const struct device *dev, enum pm_device_action ac
 	case PM_DEVICE_ACTION_TURN_ON:
 		/* Coming out of power off */
 		rc = spi_nor_configure(dev);
+#ifndef CONFIG_SPI_NOR_IDLE_IN_DPD
+		if (rc == 0) {
+			/* Move to DPD, the correct device state
+			 * for PM_DEVICE_STATE_SUSPENDED
+			 */
+			acquire_device(dev);
+			rc = enter_dpd(dev);
+			release_device(dev);
+		}
+#endif /* CONFIG_SPI_NOR_IDLE_IN_DPD */
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
