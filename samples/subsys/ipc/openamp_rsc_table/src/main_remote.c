@@ -321,7 +321,7 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 		if (tty_msg.len) {
 			snprintf(tx_buff, 13, "TTY 0x%04x: ", tty_ept.addr);
 			memcpy(&tx_buff[12], tty_msg.data, tty_msg.len);
-			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 13);
+			rpmsg_send(&tty_ept, tx_buff, tty_msg.len + 12);
 			rpmsg_release_rx_buffer(&tty_ept, tty_msg.data);
 		}
 		tty_msg.len = 0;
