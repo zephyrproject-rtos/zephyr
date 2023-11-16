@@ -302,6 +302,7 @@ endif # TFM_BL2
 
 choice TFM_MODEL
 	prompt "TF-M Firmware Framework model"
+	default TFM_SFN if TFM_PROFILE_TYPE_SMALL
 	default TFM_IPC
 	help
 	  The Firmware Framework M (FF-M) provides different programming models
