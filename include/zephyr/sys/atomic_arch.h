@@ -1,11 +1,15 @@
 /*
  * Copyright (c) 2021 Demant A/S
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_INCLUDE_SYS_ATOMIC_ARCH_H_
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_ARCH_H_
+
+#include <stdbool.h>
+#include <zephyr/sys/atomic_types.h>
 
 /* Included from <atomic.h> */
 
