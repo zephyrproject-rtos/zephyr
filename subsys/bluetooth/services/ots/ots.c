@@ -387,6 +387,10 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
 		return -ECANCELED;
 	}
 
+	if (ots->cur_obj == NULL) {
+		ots->cur_obj = obj;
+	}
+
 	return obj->id;
 }
 
