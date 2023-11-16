@@ -4,8 +4,6 @@ tests:
   sample.boards.stm32.power_mgmt.serial_wakeup:
     tags:
       - UART
-      - Wake
-      - up
       - power
     harness: console
     harness_config:
