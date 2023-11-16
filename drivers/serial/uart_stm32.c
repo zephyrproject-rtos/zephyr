@@ -1278,6 +1278,18 @@ static void uart_stm32_isr(const struct device *dev)
 	/* Clear errors */
 	uart_stm32_err_check(dev);
 #endif /* CONFIG_UART_ASYNC_API */
+
+#ifdef CONFIG_PM
+	if (LL_USART_IsEnabledIT_WKUP(config->usart) &&
+		LL_USART_IsActiveFlag_WKUP(config->usart)) {
+
+		LL_USART_ClearFlag_WKUP(config->usart);
+#ifdef USART_ISR_REACK
+		while (LL_USART_IsActiveFlag_REACK(config->usart) == 0) {
+		}
+#endif
+	}
+#endif
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
@@ -2005,7 +2017,14 @@ static int uart_stm32_init(const struct device *dev)
 		 * CONFIG_PM_DEVICE=n : Always active
 		 * CONFIG_PM_DEVICE=y : Controlled by pm_device_wakeup_enable()
 		 */
+
+		LL_USART_Disable(config->usart);
+		LL_USART_SetWKUPType(config->usart, LL_USART_WAKEUP_ON_RXNE);
+		LL_USART_EnableIT_WKUP(config->usart);
+		LL_USART_ClearFlag_WKUP(config->usart);
 		LL_USART_EnableInStopMode(config->usart);
+		LL_USART_Enable(config->usart);
+
 		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
 			/* Prepare the WAKEUP with the expected EXTI line */
 			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
