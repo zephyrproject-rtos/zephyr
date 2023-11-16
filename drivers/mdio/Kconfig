@@ -15,7 +15,6 @@ if MDIO
 
 config MDIO_SHELL
 	bool "MDIO Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable MDIO Shell.

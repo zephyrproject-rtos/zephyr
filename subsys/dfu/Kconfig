@@ -33,7 +33,6 @@ endchoice
 
 config MCUBOOT_SHELL
 	bool "MCUboot shell"
-	default y
 	depends on MCUBOOT_IMG_MANAGER
 	depends on SHELL
 	help

@@ -18,7 +18,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config USBD_SHELL
 	bool "USB device shell"
-	default y
 	depends on SHELL
 	help
 	  Enable USB device shell.
