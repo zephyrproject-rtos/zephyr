@@ -251,7 +251,7 @@ struct {
 			      * SENSOR_ATTR_SAMPLING_FREQUENCY attribute.
 			      */
 } bmi160_odr_map[] = {
-	{0,    0  }, {0,     780}, {1,     562}, {3,    120}, {6,   250},
+	{0,    0  }, {0,     781}, {1,     562}, {3,    125}, {6,   250},
 	{12,   500}, {25,    0  }, {50,    0  }, {100,  0  }, {200, 0  },
 	{400,  0  }, {800,   0  }, {1600,  0  }, {3200, 0  },
 };
@@ -281,19 +281,10 @@ static int bmi160_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli)
 static int bmi160_acc_odr_set(const struct device *dev, uint16_t freq_int,
 			      uint16_t freq_milli)
 {
-	struct bmi160_data *data = dev->data;
 	int odr = bmi160_freq_to_odr_val(freq_int, freq_milli);
 
 	if (odr < 0) {
 		return odr;
-	}
-
-	/* some odr values cannot be set in certain power modes */
-	if ((data->pmu_sts.acc == BMI160_PMU_NORMAL &&
-	     odr < BMI160_ODR_25_2) ||
-	    (data->pmu_sts.acc == BMI160_PMU_LOW_POWER &&
-	    odr < BMI160_ODR_25_32) || odr > BMI160_ODR_1600) {
-		return -ENOTSUP;
 	}
 
 	return bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
@@ -381,10 +372,11 @@ static int bmi160_do_calibration(const struct device *dev, uint8_t foc_conf)
 }
 
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
-static int bmi160_acc_range_set(const struct device *dev, int32_t range)
+static int bmi160_acc_range_set(const struct device *dev, const struct sensor_value *val)
 {
+	int32_t range_g = sensor_ms2_to_g(val);
 	struct bmi160_data *data = dev->data;
-	int32_t reg_val = bmi160_range_to_reg_val(range,
+	int32_t reg_val = bmi160_range_to_reg_val(range_g,
 						  bmi160_acc_range_map,
 						  BMI160_ACC_RANGE_MAP_SIZE);
 
@@ -392,12 +384,26 @@ static int bmi160_acc_range_set(const struct device *dev, int32_t range)
 		return reg_val;
 	}
 
+	switch (reg_val & 0xff) {
+	case BMI160_ACC_RANGE_2G:
+		range_g = 2;
+		break;
+	case BMI160_ACC_RANGE_4G:
+		range_g = 4;
+		break;
+	case BMI160_ACC_RANGE_8G:
+		range_g = 8;
+		break;
+	case BMI160_ACC_RANGE_16G:
+		range_g = 16;
+		break;
+	}
+
 	if (bmi160_byte_write(dev, BMI160_REG_ACC_RANGE, reg_val & 0xff) < 0) {
 		return -EIO;
 	}
 
-	data->scale.acc = BMI160_ACC_SCALE(range);
-
+	data->scale.acc = BMI160_ACC_SCALE(range_g);
 	return 0;
 }
 #endif
@@ -418,8 +424,7 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 		BMI160_REG_OFFSET_ACC_Z
 	};
 	int i;
-	int32_t ofs_u;
-	int8_t reg_val;
+	int32_t reg_val;
 
 	/* we need the offsets for all axis */
 	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
@@ -428,8 +433,8 @@ static int bmi160_acc_ofs_set(const struct device *dev,
 
 	for (i = 0; i < BMI160_AXES; i++, ofs++) {
 		/* convert offset to micro m/s^2 */
-		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
-		reg_val = ofs_u / BMI160_ACC_OFS_LSB;
+		reg_val =
+			CLAMP(sensor_value_to_micro(ofs) / BMI160_ACC_OFS_LSB, INT8_MIN, INT8_MAX);
 
 		if (bmi160_byte_write(dev, reg_addr[i], reg_val) < 0) {
 			return -EIO;
@@ -502,7 +507,7 @@ static int bmi160_acc_config(const struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		return bmi160_acc_range_set(dev, sensor_ms2_to_g(val));
+		return bmi160_acc_range_set(dev, val);
 #endif
 #if defined(CONFIG_BMI160_ACCEL_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -548,8 +553,9 @@ static int bmi160_gyr_odr_set(const struct device *dev, uint16_t freq_int,
 #endif
 
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
-static int bmi160_gyr_range_set(const struct device *dev, uint16_t range)
+static int bmi160_gyr_range_set(const struct device *dev, const struct sensor_value *val)
 {
+	uint16_t range = sensor_rad_to_degrees(val);
 	struct bmi160_data *data = dev->data;
 	int32_t reg_val = bmi160_range_to_reg_val(range,
 						bmi160_gyr_range_map,
@@ -557,6 +563,23 @@ static int bmi160_gyr_range_set(const struct device *dev, uint16_t range)
 
 	if (reg_val < 0) {
 		return reg_val;
+	}
+	switch (reg_val) {
+	case BMI160_GYR_RANGE_125DPS:
+		range = 125;
+		break;
+	case BMI160_GYR_RANGE_250DPS:
+		range = 250;
+		break;
+	case BMI160_GYR_RANGE_500DPS:
+		range = 500;
+		break;
+	case BMI160_GYR_RANGE_1000DPS:
+		range = 1000;
+		break;
+	case BMI160_GYR_RANGE_2000DPS:
+		range = 2000;
+		break;
 	}
 
 	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE, reg_val) < 0) {
@@ -600,15 +623,7 @@ static int bmi160_gyr_ofs_set(const struct device *dev,
 		/* convert offset to micro rad/s */
 		ofs_u = ofs->val1 * 1000000ULL + ofs->val2;
 
-		val = ofs_u / BMI160_GYR_OFS_LSB;
-
-		/*
-		 * The gyro offset is a 10 bit two-complement value. Make sure
-		 * the passed value is within limits.
-		 */
-		if (val < -512 || val > 512) {
-			return -EINVAL;
-		}
+		val = CLAMP(ofs_u / BMI160_GYR_OFS_LSB, -512, 511);
 
 		/* write the LSB */
 		if (bmi160_byte_write(dev, ofs_desc[i].lsb_addr,
@@ -661,7 +676,7 @@ static int bmi160_gyr_config(const struct device *dev,
 	switch (attr) {
 #if defined(CONFIG_BMI160_GYRO_RANGE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
-		return bmi160_gyr_range_set(dev, sensor_rad_to_degrees(val));
+		return bmi160_gyr_range_set(dev, val);
 #endif
 #if defined(CONFIG_BMI160_GYRO_ODR_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
@@ -723,6 +738,14 @@ static int bmi160_sample_fetch(const struct device *dev,
 		LOG_DBG("Device is suspended, fetch is unavailable");
 		ret = -EIO;
 		goto out;
+	}
+
+	if (chan == SENSOR_CHAN_DIE_TEMP) {
+		/* Die temperature is only valid when at least one measurement is active */
+		if (data->pmu_sts.raw == 0U) {
+			return -EINVAL;
+		}
+		return bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &data->sample.temperature);
 	}
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -826,20 +849,10 @@ static inline void bmi160_acc_channel_get(const struct device *dev,
 static int bmi160_temp_channel_get(const struct device *dev,
 				   struct sensor_value *val)
 {
-	uint16_t temp_raw = 0U;
-	int32_t temp_micro = 0;
 	struct bmi160_data *data = dev->data;
 
-	if (data->pmu_sts.raw == 0U) {
-		return -EINVAL;
-	}
-
-	if (bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &temp_raw) < 0) {
-		return -EIO;
-	}
-
 	/* the scale is 1/2^9/LSB = 1953 micro degrees */
-	temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + temp_raw * 1953ULL;
+	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + data->sample.temperature * 1953ULL;
 
 	val->val1 = temp_micro / 1000000ULL;
 	val->val2 = temp_micro % 1000000ULL;

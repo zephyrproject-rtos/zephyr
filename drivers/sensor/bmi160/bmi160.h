@@ -17,6 +17,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* registers */
 #define BMI160_REG_CHIPID		0x00
 #define BMI160_REG_ERR			0x02
@@ -467,6 +471,7 @@ union bmi160_pmu_status {
 /* Each sample has X, Y and Z */
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
+	uint16_t temperature;
 	struct {
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 		uint16_t gyr[BMI160_AXES];
@@ -540,5 +545,9 @@ int bmi160_acc_slope_config(const struct device *dev,
 			    const struct sensor_value *val);
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */
