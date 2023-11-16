@@ -175,6 +175,18 @@ struct emul {
 #define EMUL_DT_GET(node_id) (&EMUL_DT_NAME_GET(node_id))
 
 /**
+ * @brief Utility macro to obtain an optional reference to an emulator
+ *
+ * If the node identifier referes to a node with status `okay`, this returns `EMUL_DT_GET(node_id)`.
+ * Otherwise, it returns `NULL`.
+ *
+ * @param node_id A devicetree node identifier
+ * @return a @ref emul reference for the node identifier, which may be `NULL`.
+ */
+#define EMUL_DT_GET_OR_NULL(node_id)                                                               \
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay), (EMUL_DT_GET(node_id)), (NULL))
+
+/**
  * @brief Set up a list of emulators
  *
  * @param dev Device the emulators are attached to (e.g. an I2C controller)
