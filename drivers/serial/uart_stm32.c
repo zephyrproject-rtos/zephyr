@@ -1579,6 +1579,13 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 		return -EFAULT;
 	}
 
+	/* Flush RX data buffer */
+#ifdef USART_SR_RXNE
+	LL_USART_ClearFlag_RXNE(config->usart);
+#else
+	LL_USART_RequestRxDataFlush(config->usart);
+#endif /* USART_SR_RXNE */
+
 	/* Enable RX DMA requests */
 	uart_stm32_dma_rx_enable(dev);
 
