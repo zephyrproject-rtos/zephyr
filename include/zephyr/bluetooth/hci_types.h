@@ -571,6 +571,35 @@ struct bt_hci_rp_read_tx_power_level {
 	int8_t   tx_power_level;
 } __packed;
 
+#define BT_HCI_LE_TX_POWER_PHY_1M               0x01
+#define BT_HCI_LE_TX_POWER_PHY_2M               0x02
+#define BT_HCI_LE_TX_POWER_PHY_CODED_S8         0x03
+#define BT_HCI_LE_TX_POWER_PHY_CODED_S2         0x04
+#define BT_HCI_OP_LE_ENH_READ_TX_POWER_LEVEL    BT_OP(BT_OGF_LE, 0x0076)
+struct bt_hci_cp_le_read_tx_power_level {
+	uint16_t handle;
+	uint8_t  phy;
+} __packed;
+
+struct bt_hci_rp_le_read_tx_power_level {
+	uint8_t  status;
+	uint16_t handle;
+	uint8_t  phy;
+	int8_t   current_tx_power_level;
+	int8_t   max_tx_power_level;
+} __packed;
+
+#define BT_HCI_OP_LE_READ_REMOTE_TX_POWER_LEVEL	BT_OP(BT_OGF_LE, 0x0077)
+
+#define BT_HCI_LE_TX_POWER_REPORT_DISABLE       0x00
+#define BT_HCI_LE_TX_POWER_REPORT_ENABLE        0x01
+#define BT_HCI_OP_LE_SET_TX_POWER_REPORT_ENABLE BT_OP(BT_OGF_LE, 0x007A)
+struct bt_hci_cp_le_set_tx_power_report_enable {
+	uint16_t handle;
+	uint8_t  local_enable;
+	uint8_t  remote_enable;
+} __packed;
+
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031)
@@ -2903,6 +2932,26 @@ struct bt_hci_evt_le_req_peer_sca_complete {
 	uint8_t  status;
 	uint16_t handle;
 	uint8_t  sca;
+} __packed;
+
+/** Reason for Transmit power reporting.
+ */
+/* Local Transmit power changed. */
+#define	BT_HCI_LE_TX_POWER_REPORT_REASON_LOCAL_CHANGED         0x00
+/* Remote Transmit power changed. */
+#define	BT_HCI_LE_TX_POWER_REPORT_REASON_REMOTE_CHANGED        0x01
+/* HCI_LE_Read_Remote_Transmit_Power_Level command completed. */
+#define	BT_HCI_LE_TX_POWER_REPORT_REASON_READ_REMOTE_COMPLETED 0x02
+
+#define BT_HCI_EVT_LE_TRANSMIT_POWER_REPORT     0x21
+struct bt_hci_evt_le_transmit_power_report {
+	uint8_t	 status;
+	uint16_t handle;
+	uint8_t  reason;
+	uint8_t  phy;
+	int8_t   tx_power_level;
+	uint8_t  tx_power_level_flag;
+	int8_t   delta;
 } __packed;
 
 #define BT_HCI_EVT_LE_BIGINFO_ADV_REPORT        0x22
