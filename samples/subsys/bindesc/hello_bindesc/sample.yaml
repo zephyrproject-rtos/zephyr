@@ -3,7 +3,6 @@ sample:
 tests:
   sample.bindesc:
     tags: bindesc
-    filter: CONFIG_ARCH_SUPPORTS_ROM_START
-    build_only: true
+    filter: CONFIG_ARCH_SUPPORTS_ROM_START or CONFIG_ARCH_POSIX
     integration_platforms:
       - native_posix
