@@ -76,6 +76,10 @@ Bluetooth
   cleared on :c:func:`bt_enable`. Callbacks can now be registered before the initial
   call to :c:func:`bt_enable`, and should no longer be re-registered after a :c:func:`bt_disable`
   :c:func:`bt_enable` cycle.
+* The Bluetooth Mesh ``model`` declaration has been changed to add prefix ``const``.
+  The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
+  the new runtime structure, replaced by ``model->rt->user_data``, ``model->rt->elem_idx`` and
+  ``model->rt->mod_idx`` separately.
 
 LoRaWAN
 =======
