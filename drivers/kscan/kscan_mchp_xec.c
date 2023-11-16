@@ -373,9 +373,8 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 		drive_keyboard_column(dev, KEYBOARD_COLUMN_DRIVE_ALL);
 
 		k_sem_take(&data->poll_lock, K_FOREVER);
-#ifdef CONFIG_PM_DEVICE
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 		uint32_t start_poll_cycles = k_cycle_get_32();
 
 		while (atomic_get(&data->enable_scan) == 1U) {
@@ -416,9 +415,8 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 			/* Allow other threads to run while we sleep */
 			k_usleep(wait_period);
 		}
-#ifdef CONFIG_PM_DEVICE
+
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 	}
 }
 
