@@ -98,9 +98,11 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
 	struct input_kbd_matrix_common_data *data = dev->data;
 	uint8_t *matrix_new_state = cfg->matrix_new_state;
-	uint32_t cycles_now = k_cycle_get_32();
+	uint32_t cycles_now;
 	uint8_t row_changed;
 	uint8_t deb_col;
+
+	cycles_now = k_cycle_get_32();
 
 	data->scan_clk_cycle[data->scan_cycles_idx] = cycles_now;
 
@@ -215,10 +217,12 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 static void input_kbd_matrix_poll(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
-	k_timepoint_t poll_time_end = sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+	k_timepoint_t poll_time_end;
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
 	uint32_t wait_period_us;
+
+	poll_time_end = sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
 
 	while (true) {
 		uint32_t start_period_cycles = k_cycle_get_32();
