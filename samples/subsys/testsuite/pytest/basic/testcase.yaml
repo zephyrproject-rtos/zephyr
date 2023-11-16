@@ -1,6 +1,8 @@
 tests:
   sample.twister.pytest:
-    platform_allow: native_posix
+    platform_allow:
+      - native_posix
+      - native_sim
     harness: pytest
     harness_config:
       pytest_args: ["--custom-pytest-arg", "foo", "--cmdopt", "."]
@@ -8,4 +10,4 @@ tests:
       - test_framework
       - pytest
     integration_platforms:
-      - native_posix
+      - native_sim
