@@ -2290,6 +2290,7 @@ RISCV arch:
     - soc/riscv/
     - tests/arch/riscv/
     - doc/hardware/arch/risc-v.rst
+    - drivers/interrupt_controller/intc_plic.c
   labels:
     - "area: RISCV"
 
