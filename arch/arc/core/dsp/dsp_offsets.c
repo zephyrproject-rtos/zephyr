@@ -9,7 +9,7 @@
  * @brief ARCv2 DSP and AGU structure member offset definition file
  *
  */
-#ifdef CONFIG_ARC_DSP_SHARING
+#ifdef CONFIG_DSP_SHARING
 GEN_OFFSET_SYM(_callee_saved_stack_t, dsp_ctrl);
 GEN_OFFSET_SYM(_callee_saved_stack_t, acc0_glo);
 GEN_OFFSET_SYM(_callee_saved_stack_t, acc0_ghi);

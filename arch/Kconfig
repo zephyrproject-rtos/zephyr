@@ -656,6 +656,11 @@ config CPU_HAS_FPU
 	  This option is enabled when the CPU has hardware floating point
 	  unit.
 
+config CPU_HAS_DSP
+	bool
+	help
+	  This option is enabled when the CPU has hardware DSP unit.
+
 config CPU_HAS_FPU_DOUBLE_PRECISION
 	bool
 	select CPU_HAS_FPU
@@ -819,6 +824,17 @@ config CODE_DATA_RELOCATION
 	  files and placing them in a chosen memory region. Files to relocate and
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
+
+menu "DSP Options"
+
+config DSP_SHARING
+	bool "DSP register sharing"
+	depends on CPU_HAS_DSP
+	help
+	  This option enables preservation of the hardware DSP registers
+	  across context switches to allow multiple threads to perform concurrent
+	  DSP operations.
+endmenu
 
 menu "Floating Point Options"
 
