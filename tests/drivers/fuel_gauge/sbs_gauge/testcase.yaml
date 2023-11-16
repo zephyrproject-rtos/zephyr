@@ -5,7 +5,7 @@ tests:
       - fuel_gauge
     filter: >
       dt_compat_enabled("sbs,sbs-gauge-new-api") and
-      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
+      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_SIM)
     extra_args:
       - CONF_FILE="prj.conf;boards/emulated_board.conf"
       - DTC_OVERLAY_FILE="boards/emulated_board.overlay"
@@ -26,7 +26,7 @@ tests:
       - fuel_gauge
     filter: >
       dt_compat_enabled("sbs,sbs-gauge-new-api") and
-      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
+      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_SIM)
     platform_allow:
       - hifive_unmatched
       - qemu_cortex_a53
@@ -52,4 +52,5 @@ tests:
       - CONFIG_USERSPACE=y
     platform_allow:
       - native_posix
+      - native_sim
       - qemu_x86
