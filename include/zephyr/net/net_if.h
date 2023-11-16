@@ -94,6 +94,17 @@ struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
 
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	/** Sources to filter on */
+	struct net_addr sources[CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT];
+
+	/** Number of sources to be used by the filter */
+	uint16_t sources_len;
+
+	/** Filter mode (used in IGMPV3) */
+	uint8_t record_type;
+#endif
+
 	/** Is this multicast IP address used or not */
 	uint8_t is_used : 1;
 
