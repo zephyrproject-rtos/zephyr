@@ -208,4 +208,6 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 	/* Enter kernel, never return */
 	cpuboot->ready++;
 	cpuboot->fn(cpuboot->arg);
+
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
