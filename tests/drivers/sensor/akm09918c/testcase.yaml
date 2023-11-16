@@ -7,4 +7,5 @@ tests:
       - drivers
       - sensor
       - subsys
-    platform_allow: native_posix
+    platform_allow:
+      - native_sim
