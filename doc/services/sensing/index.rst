@@ -241,7 +241,7 @@ Device Tree Configuration
 Sensing subsystem using device tree to configuration all sensor instances and their properties,
 reporting relationships.
 
-See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_posix.overlay`
+See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_sim.overlay`
 
 API Reference
 *************
