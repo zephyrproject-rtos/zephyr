@@ -434,18 +434,14 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	 * give to the TE semaphore) before sending the frame
 	 */
 	if (config->te_gpio.port != NULL) {
-		if (IS_ENABLED(CONFIG_PM)) {
-			/* Block sleep state until next TE interrupt
-			 * so we can send frame during that interval
-			 */
-			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
-						PM_ALL_SUBSTATES);
-		}
+		/* Block sleep state until next TE interrupt so we can send
+		 * frame during that interval
+		 */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
+					 PM_ALL_SUBSTATES);
 		k_sem_take(&data->te_sem, K_FOREVER);
-		if (IS_ENABLED(CONFIG_PM)) {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-						PM_ALL_SUBSTATES);
-		}
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
+					 PM_ALL_SUBSTATES);
 	}
 	src = buf;
 	first_cmd = true;
