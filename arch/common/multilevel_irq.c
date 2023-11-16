@@ -16,25 +16,25 @@
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, interrupt_controller), (code))
 
 /*
- * Expands to node_id if its IRQN is equal to `irq`, nothing otherwise
- * This only works for `irq` between 0 & 4095, see `IS_EQ`
+ * Expands to node_id if its IRQN is equal to `_irq`, nothing otherwise
+ * This only works for `_irq` between 0 & 4095, see `IS_EQ`
  */
-#define Z_IF_DT_INTC_IRQN_EQ(node_id, irq) IF_ENABLED(IS_EQ(DT_IRQ(node_id, irq), irq), (node_id))
+#define Z_IF_DT_INTC_IRQN_EQ(node_id, _irq) IF_ENABLED(IS_EQ(DT_IRQ(node_id, irq), _irq), (node_id))
 
 /*
  * Expands to node_id if it's an interrupt controller & its IRQN is `irq`, or nothing otherwise
  */
-#define Z_DT_INTC_GET_IRQN(node_id, irq)                                                           \
-	Z_IF_DT_IS_INTC(node_id, Z_IF_DT_INTC_IRQN_EQ(node_id, irq))
+#define Z_DT_INTC_GET_IRQN(node_id, _irq)                                                          \
+	Z_IF_DT_IS_INTC(node_id, Z_IF_DT_INTC_IRQN_EQ(node_id, _irq))
 
 /**
- * Loop through child of "/soc" and get root interrupt controllers with `irq` as IRQN,
+ * Loop through child of "/soc" and get root interrupt controllers with `_irq` as IRQN,
  * this assumes only one device has the IRQN
- * @param irq irq number
- * @return node_id(s) that has the `irq` number, or empty if none of them has the `irq`
+ * @param _irq irq number
+ * @return node_id(s) that has the `_irq` number, or empty if none of them has the `_irq`
  */
-#define INTC_DT_IRQN_GET(irq)                                                                      \
-	DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_PATH(soc), Z_DT_INTC_GET_IRQN, irq)
+#define INTC_DT_IRQN_GET(_irq)                                                                     \
+	DT_FOREACH_CHILD_STATUS_OKAY_VARGS(DT_PATH(soc), Z_DT_INTC_GET_IRQN, _irq)
 
 /* If can't find any matching interrupt controller, fills with `NULL` */
 #define INTC_DEVICE_INIT(node_id) .dev = DEVICE_DT_GET_OR_NULL(node_id),
