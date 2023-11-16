@@ -674,6 +674,13 @@ static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 	const uint32_t block_size = rtio_mempool_block_size(r);
 	uint32_t bytes = max_sz;
 
+	/* Not every context has a block pool and the block size may return 0 in
+	 * that case
+	 */
+	if (block_size == 0) {
+		return -ENOMEM;
+	}
+
 	do {
 		size_t num_blks = DIV_ROUND_UP(bytes, block_size);
 		int rc = sys_mem_blocks_alloc_contiguous(r->block_pool, num_blks, (void **)buf);
