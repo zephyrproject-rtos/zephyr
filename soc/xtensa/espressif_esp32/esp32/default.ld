@@ -120,6 +120,8 @@ PROVIDE(_memmap_reset_vector = 0x40000400);
 
 SECTIONS
 {
+
+  _i_d_sram_offset =  SRAM_IRAM_ORG - SRAM_DRAM_ORG;
 #ifndef CONFIG_SIMPLE_BOOT 
   /* Reserve space for MCUboot header in the binary */
   .mcuboot_header :
@@ -212,6 +214,7 @@ SECTIONS
        *libzephyr.a:bootloader_console_loader.*
        *libzephyr.a:bootloader_panic.*
        *libzephyr.a:bootloader_soc.*
+
        *libzephyr.a:esp_image_format.*
        *libzephyr.a:flash_encrypt.*
        *libzephyr.a:flash_encryption_secure_features.*
