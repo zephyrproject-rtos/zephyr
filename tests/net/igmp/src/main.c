@@ -236,7 +236,7 @@ static void join_group(void)
 {
 	int ret;
 
-	ret = net_ipv4_igmp_join(net_iface, &mcast_addr);
+	ret = net_ipv4_igmp_join(net_iface, &mcast_addr, NULL);
 
 	if (ignore_already) {
 		zassert_true(ret == 0 || ret == -EALREADY,
