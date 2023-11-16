@@ -71,14 +71,14 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 	return local_irq_to_reg_offset(config->num_irqs) + 1;
 }
 
-static inline uint32_t get_claim_complete_offset(const struct device *dev)
+static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 
 	return config->reg + PLIC_REG_REGS_CLAIM_COMPLETE_OFFSET;
 }
 
-static inline uint32_t get_threshold_priority_offset(const struct device *dev)
+static inline mem_addr_t get_threshold_priority_addr(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 
@@ -240,7 +240,7 @@ const struct device *riscv_plic_get_dev(void)
 static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
-	mem_addr_t claim_complete_addr = get_claim_complete_offset(dev);
+	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
 	struct _isr_table_entry *ite;
 	int edge_irq;
 
@@ -305,7 +305,7 @@ static int plic_init(const struct device *dev)
 	const struct plic_config *config = dev->config;
 	mem_addr_t en_addr = config->irq_en;
 	mem_addr_t prio_addr = config->prio;
-	mem_addr_t thres_prio_addr = get_threshold_priority_offset(dev);
+	mem_addr_t thres_prio_addr = get_threshold_priority_addr(dev);
 
 	/* Ensure that all interrupts are disabled initially */
 	for (uint32_t i = 0; i < get_plic_enabled_size(dev); i++) {
