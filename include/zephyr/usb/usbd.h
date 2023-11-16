@@ -134,8 +134,8 @@ struct usbd_ch9_data {
 	uint32_t ep_halt;
 	/** USB device stack selected configuration */
 	uint8_t configuration;
-	/** Indicate new device address */
-	bool new_address;
+	/** Post status stage work required, e.g. set new device address */
+	bool post_status;
 	/** Array to track interfaces alternate settings */
 	uint8_t alternate[USBD_NUMOF_INTERFACES_MAX];
 };
