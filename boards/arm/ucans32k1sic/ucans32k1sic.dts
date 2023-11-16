@@ -1,0 +1,91 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <arm/nxp/nxp_s32k146.dtsi>
+#include "ucans32k1sic-pinctrl.dtsi"
+
+/ {
+	model = "NXP UCANS32K1SIC";
+	compatible = "nxp,ucans32k1sic";
+
+	chosen {
+		zephyr,sram = &sram_l;
+		zephyr,flash = &flash0;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,uart-pipe = &lpuart1;
+	};
+
+	aliases {
+		led0 = &led1_red;
+		led1 = &led1_green;
+		led2 = &led1_blue;
+		sw0 = &button_3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1_red: led_0 {
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+			label = "LED1_RGB_RED";
+		};
+		led1_green: led_1 {
+			gpios = <&gpiod 16 GPIO_ACTIVE_LOW>;
+			label = "LED1_RGB_GREEN";
+		};
+		led1_blue: led_2 {
+			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+			label = "LED1_RGB_BLUE";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_3: button_0 {
+			label = "SW3";
+			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
