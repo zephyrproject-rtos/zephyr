@@ -5,7 +5,7 @@ sample:
 common:
   tags: introduction
   integration_platforms:
-    - native_posix
+    - native_sim
   harness: console
   harness_config:
     type: one_line
