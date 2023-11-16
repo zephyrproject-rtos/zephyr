@@ -1836,6 +1836,8 @@ int bt_tbs_hold(uint8_t call_index)
 		status = tbs_hold_call(inst, &ccp);
 	}
 
+	notify_calls(inst);
+
 	return status;
 }
 
@@ -1851,6 +1853,8 @@ int bt_tbs_retrieve(uint8_t call_index)
 	if (inst != NULL) {
 		status = retrieve_call(inst, &ccp);
 	}
+
+	notify_calls(inst);
 
 	return status;
 }
@@ -1868,6 +1872,8 @@ int bt_tbs_terminate(uint8_t call_index)
 		status = terminate_call(inst, &ccp,
 					BT_TBS_REASON_SERVER_ENDED_CALL);
 	}
+
+	notify_calls(inst);
 
 	return status;
 }
@@ -2027,6 +2033,8 @@ int bt_tbs_remote_terminate(uint8_t call_index)
 		status = terminate_call(inst, &ccp,
 					BT_TBS_REASON_REMOTE_ENDED_CALL);
 	}
+
+	notify_calls(inst);
 
 	return status;
 }
