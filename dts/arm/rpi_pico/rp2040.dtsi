@@ -404,7 +404,9 @@
 			compatible = "raspberrypi,pico-rtc";
 			reg = <0x4005c000 DT_SIZE_K(4)>;
 			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "rtc";
 			resets = <&reset RPI_PICO_RESETS_RESET_RTC>;
+			alarms-count = <1>;
 			status = "disabled";
 		};
 	};
