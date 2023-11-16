@@ -5,7 +5,7 @@ description: RaspberryPi Pico RTC
 
 compatible: "raspberrypi,pico-rtc"
 
-include: [rtc.yaml, reset-device.yaml]
+include: [rtc-device.yaml, reset-device.yaml]
 
 properties:
   reg:
