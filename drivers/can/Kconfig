@@ -25,7 +25,6 @@ config CAN_INIT_PRIORITY
 
 config CAN_SHELL
 	bool "CAN shell"
-	default y
 	depends on SHELL
 	select POLL
 	help

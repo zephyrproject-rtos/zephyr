@@ -21,7 +21,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config LORA_SHELL
 	bool "LoRa Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable LoRa Shell for testing.

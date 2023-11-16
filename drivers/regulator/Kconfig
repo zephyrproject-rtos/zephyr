@@ -17,7 +17,6 @@ config REGULATOR_THREAD_SAFE_REFCNT
 
 config REGULATOR_SHELL
 	bool "Regulator shell"
-	default y
 	depends on SHELL
 	help
 	  Enable regulator shell framework, for interacting with regulators via

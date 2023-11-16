@@ -32,7 +32,6 @@ endif # PCIE_PRT
 
 config ACPI_SHELL
 	bool "ACPI command Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable commands for debugging ACPI using the built-in shell.
