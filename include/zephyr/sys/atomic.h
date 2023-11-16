@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997-2015, Wind River Systems, Inc.
  * Copyright (c) 2021 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,17 +13,13 @@
 #include <zephyr/toolchain.h>
 #include <stddef.h>
 
+#include <zephyr/sys/atomic_types.h> /* IWYU pragma: export */
 #include <zephyr/types.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef long atomic_t;
-typedef atomic_t atomic_val_t;
-typedef void *atomic_ptr_t;
-typedef atomic_ptr_t atomic_ptr_val_t;
 
 /* Low-level primitives come in several styles: */
 
