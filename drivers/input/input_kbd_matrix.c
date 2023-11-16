@@ -197,7 +197,8 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 	key_pressed = input_kbd_matrix_scan(dev);
 
 	for (int c = 0; c < cfg->col_size; c++) {
-		LOG_DBG("U%x, P%x, N%x",
+		LOG_DBG("c=%2d u=%02x p=%02x n=%02x",
+			c,
 			cfg->matrix_unstable_state[c],
 			cfg->matrix_previous_state[c],
 			cfg->matrix_new_state[c]);
@@ -273,7 +274,7 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 		api->set_detect_mode(dev, true);
 
 		k_sem_take(&data->poll_lock, K_FOREVER);
-		LOG_DBG("Start KB scan");
+		LOG_DBG("scan start");
 
 		/* Disable interrupt of KSI pins and start polling */
 		api->set_detect_mode(dev, false);
