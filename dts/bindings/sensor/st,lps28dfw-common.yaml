@@ -1,0 +1,23 @@
+# Copyright (c) 2023 STMicroelectronics
+# Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LPS28DFW pressure and temperature sensor. This is an
+    extension of st,lps22df driver binding.
+
+include: st,lps22df-common.yaml
+
+properties:
+  fs:
+    type: int
+    default: 0
+    description: |
+        Specify the full-scale mode.
+        The default is the power-on reset value.
+
+        0 = Mode 0, full scale up to 1260 hPa
+        1 = Mode 1, full scale up to 4060 hPa
+    enum:
+      - 0
+      - 1

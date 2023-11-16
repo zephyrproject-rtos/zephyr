@@ -130,6 +130,9 @@ config USE_STDC_LPS25HB
 config USE_STDC_LPS27HHW
 	bool
 
+config USE_STDC_LPS28DFW
+	bool
+
 config USE_STDC_LPS33HW
 	bool
 

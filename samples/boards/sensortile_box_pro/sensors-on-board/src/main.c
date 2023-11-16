@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#ifdef CONFIG_LPS22DF_TRIGGER
+#ifdef CONFIG_LPS2XDF_TRIGGER
 static int lps22df_trig_cnt;
 
 static void lps22df_trigger_handler(const struct device *dev,
@@ -78,7 +78,7 @@ static void lps22df_config(const struct device *lps22df)
 		return;
 	}
 
-#ifdef CONFIG_LPS22DF_TRIGGER
+#ifdef CONFIG_LPS2XDF_TRIGGER
 	struct sensor_trigger trig;
 
 	trig.type = SENSOR_TRIG_DATA_READY;
@@ -278,7 +278,7 @@ int main(void)
 		}
 #endif
 
-#ifndef CONFIG_LPS22DF_TRIGGER
+#ifndef CONFIG_LPS2XDF_TRIGGER
 		if (sensor_sample_fetch(lps22df) < 0) {
 			printf("LPS22DF Sensor sample update error\n");
 			return 0;
@@ -343,7 +343,7 @@ int main(void)
 		printf("LIS2MDL: Temperature: %.1f C\n",
 		       sensor_value_to_double(&lis2mdl_temp));
 
-#ifdef CONFIG_LPS22DF_TRIGGER
+#ifdef CONFIG_LPS2XDF_TRIGGER
 		printk("%d:: lps22df trig %d\n", cnt, lps22df_trig_cnt);
 #endif
 
