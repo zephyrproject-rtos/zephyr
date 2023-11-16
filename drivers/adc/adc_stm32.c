@@ -212,10 +212,6 @@ struct adc_stm32_cfg {
 	const uint32_t res_table[];
 };
 
-#ifdef CONFIG_ADC_STM32_SHARED_IRQS
-static bool init_irq = true;
-#endif
-
 #ifdef CONFIG_ADC_STM32_DMA
 static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
 {
@@ -1379,7 +1375,9 @@ static int adc_stm32_init(const struct device *dev)
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 #endif
 
-	config->irq_cfg_func();
+	if (config->irq_cfg_func) {
+		config->irq_cfg_func();
+	}
 
 #if defined(HAS_CALIBRATION)
 	adc_stm32_calibrate(dev);
@@ -1502,52 +1500,7 @@ static const struct adc_driver_api api_stm32_driver_api = {
 	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
 #endif
 
-#ifdef CONFIG_ADC_STM32_SHARED_IRQS
-
-bool adc_stm32_is_irq_active(ADC_TypeDef *adc)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-	return LL_ADC_IsActiveFlag_EOCS(adc) ||
-#else
-	return LL_ADC_IsActiveFlag_EOC(adc) ||
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) */
-	       LL_ADC_IsActiveFlag_OVR(adc) ||
-	       LL_ADC_IsActiveFlag_JEOS(adc) ||
-	       LL_ADC_IsActiveFlag_AWD1(adc);
-}
-
-#define HANDLE_IRQS(index)							\
-	static const struct device *const dev_##index =				\
-		DEVICE_DT_INST_GET(index);					\
-	const struct adc_stm32_cfg *cfg_##index = dev_##index->config;		\
-	ADC_TypeDef *adc_##index = (ADC_TypeDef *)(cfg_##index->base);		\
-										\
-	if (adc_stm32_is_irq_active(adc_##index)) {				\
-		adc_stm32_isr(dev_##index);					\
-	}
-
-static void adc_stm32_shared_irq_handler(void)
-{
-	DT_INST_FOREACH_STATUS_OKAY(HANDLE_IRQS);
-}
-
-static void adc_stm32_irq_init(void)
-{
-	if (init_irq) {
-		init_irq = false;
-		IRQ_CONNECT(DT_INST_IRQN(0),
-			DT_INST_IRQ(0, priority),
-			adc_stm32_shared_irq_handler, NULL, 0);
-		irq_enable(DT_INST_IRQN(0));
-	}
-}
-
-#define ADC_STM32_IRQ_CONFIG(index)
-#define ADC_STM32_IRQ_FUNC(index)					\
-	.irq_cfg_func = adc_stm32_irq_init,
-#define ADC_DMA_CHANNEL(id, src, dest)
-
-#elif defined(CONFIG_ADC_STM32_DMA) /* !CONFIG_ADC_STM32_SHARED_IRQS */
+#if defined(CONFIG_ADC_STM32_DMA)
 
 #define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
 	.dma = {									\
@@ -1574,38 +1527,120 @@ static void adc_stm32_irq_init(void)
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 	}
 
+#define ADC_STM32_IRQ_FUNC(index)					\
+	.irq_cfg_func = NULL,
+
+#else /* CONFIG_ADC_STM32_DMA */
+
+/*
+ * For series that share interrupt lines for multiple ADC instances
+ * and have separate interrupt lines for other ADCs (example,
+ * STM32G473 has 5 ADC instances, ADC1 and ADC2 share IRQn 18 while
+ * ADC3, ADC4 and ADC5 use IRQns 47, 61 and 62 respectively), generate
+ * a single common ISR function for each IRQn and call adc_stm32_isr
+ * for each device using that interrupt line for all enabled ADCs.
+ *
+ * To achieve the above, a "first" ADC instance must be chosen for all
+ * ADC instances sharing the same IRQn. This "first" ADC instance
+ * generates the code for the common ISR and for installing and
+ * enabling it while any other ADC sharing the same IRQn skips this
+ * code generation and does nothing. The common ISR code is generated
+ * to include calls to adc_stm32_isr for all instances using that same
+ * IRQn. From the example above, four ISR functions would be generated
+ * for IRQn 18, 47, 61 and 62, with possible "first" ADC instances
+ * being ADC1, ADC3, ADC4 and ADC5 if all ADCs were enabled, with the
+ * ISR function 18 calling adc_stm32_isr for both ADC1 and ADC2.
+ *
+ * For some of the macros below, pseudo-code is provided to describe
+ * its function.
+ */
+
+/*
+ * return (irqn == device_irqn(index)) ? index : NULL
+ */
+#define FIRST_WITH_IRQN_INTERNAL(index, irqn)                                                      \
+	COND_CODE_1(IS_EQ(irqn, DT_INST_IRQN(index)), (index,), (EMPTY,))
+
+/*
+ * Returns the "first" instance's index:
+ *
+ * instances = []
+ * for instance in all_active_adcs:
+ *     instances.append(first_with_irqn_internal(device_irqn(index)))
+ * for instance in instances:
+ *     if instance == NULL:
+ *         instances.remove(instance)
+ * return instances[0]
+ */
+#define FIRST_WITH_IRQN(index)                                                                     \
+	GET_ARG_N(1, LIST_DROP_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(FIRST_WITH_IRQN_INTERNAL,   \
+								       DT_INST_IRQN(index))))
+
+/*
+ * Provides code for calling adc_stm32_isr for an instance if its IRQn
+ * matches:
+ *
+ * if (irqn == device_irqn(index)):
+ *     return "adc_stm32_isr(DEVICE_DT_INST_GET(index));"
+ */
+#define HANDLE_IRQS(index, irqn)                                                                   \
+	COND_CODE_1(IS_EQ(irqn, DT_INST_IRQN(index)), (adc_stm32_isr(DEVICE_DT_INST_GET(index));), \
+		    (EMPTY))
+
+/*
+ * Name of the common ISR for a given IRQn (taken from a device with a
+ * given index). Example, for an ADC instance with IRQn 18, returns
+ * "adc_stm32_isr_18".
+ */
+#define ISR_FUNC(index) UTIL_CAT(adc_stm32_isr_, DT_INST_IRQN(index))
+
+/*
+ * Macro for generating code for the common ISRs (by looping of all
+ * ADC instances that share the same IRQn as that of the given device
+ * by index) and the function for setting up the ISR.
+ *
+ * Here is where both "first" and non-"first" instances have code
+ * generated for their interrupts via HANDLE_IRQS.
+ */
+#define GENERATE_ISR_CODE(index)                                                                   \
+	static void ISR_FUNC(index)(void)                                                          \
+	{                                                                                          \
+		DT_INST_FOREACH_STATUS_OKAY_VARGS(HANDLE_IRQS, DT_INST_IRQN(index))                \
+	}                                                                                          \
+                                                                                                   \
+	static void UTIL_CAT(ISR_FUNC(index), _init)(void)                                         \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), ISR_FUNC(index),    \
+			    NULL, 0);                                                              \
+		irq_enable(DT_INST_IRQN(index));                                                   \
+	}
+
+/*
+ * Limit generating code to only the "first" instance:
+ *
+ * if (first_with_irqn(index) == index):
+ *     generate_isr_code(index)
+ */
+#define GENERATE_ISR(index)                                                                        \
+	COND_CODE_1(IS_EQ(index, FIRST_WITH_IRQN(index)), (GENERATE_ISR_CODE(index)), (EMPTY))
+
+DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
+
+/* Only "first" instances need to call the ISR setup function */
+#define ADC_STM32_IRQ_FUNC(index)                                                                  \
+	.irq_cfg_func = COND_CODE_1(IS_EQ(index, FIRST_WITH_IRQN(index)),                          \
+				    (UTIL_CAT(ISR_FUNC(index), _init)), (NULL)),
+
+#endif /* CONFIG_ADC_STM32_DMA */
+
 #define ADC_DMA_CHANNEL(id, src, dest)							\
 	COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),					\
 			(ADC_DMA_CHANNEL_INIT(id, src, dest)),				\
 			(/* Required for other adc instances without dma */))
 
-#define ADC_STM32_IRQ_CONFIG(index)					\
-static void adc_stm32_cfg_func_##index(void){ EMPTY }
-#define ADC_STM32_IRQ_FUNC(index)					\
-	.irq_cfg_func = adc_stm32_cfg_func_##index,
-
-#else /* CONFIG_ADC_STM32_DMA */
-
-#define ADC_STM32_IRQ_CONFIG(index)					\
-static void adc_stm32_cfg_func_##index(void)				\
-{									\
-	IRQ_CONNECT(DT_INST_IRQN(index),				\
-		    DT_INST_IRQ(index, priority),			\
-		    adc_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
-	irq_enable(DT_INST_IRQN(index));				\
-}
-#define ADC_STM32_IRQ_FUNC(index)					\
-	.irq_cfg_func = adc_stm32_cfg_func_##index,
-#define ADC_DMA_CHANNEL(id, src, dest)
-
-#endif /* CONFIG_ADC_STM32_DMA && CONFIG_ADC_STM32_SHARED_IRQS */
-
-
 #define ADC_STM32_INIT(index)						\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
-									\
-ADC_STM32_IRQ_CONFIG(index)						\
 									\
 static const struct stm32_pclken pclken_##index[] =			\
 				 STM32_DT_INST_CLOCKS(index);		\
