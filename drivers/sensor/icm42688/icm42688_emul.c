@@ -329,7 +329,7 @@ static int icm42688_emul_backend_get_sample_range(const struct emul *target, enu
 }
 
 static int icm42688_emul_backend_set_channel(const struct emul *target, enum sensor_channel ch,
-					     q31_t value, int8_t shift)
+					     const q31_t *value, int8_t shift)
 {
 	if (!target || !target->data) {
 		return -EINVAL;
@@ -341,7 +341,7 @@ static int icm42688_emul_backend_set_channel(const struct emul *target, enum sen
 	uint8_t reg_addr;
 	int32_t reg_val;
 	int64_t value_unshifted =
-		shift < 0 ? ((int64_t)value >> -shift) : ((int64_t)value << shift);
+		shift < 0 ? ((int64_t)*value >> -shift) : ((int64_t)*value << shift);
 
 	switch (ch) {
 	case SENSOR_CHAN_DIE_TEMP:

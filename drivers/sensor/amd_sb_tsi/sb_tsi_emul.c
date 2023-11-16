@@ -100,7 +100,7 @@ static int sb_tsi_emul_init(const struct emul *target, const struct device *pare
 }
 
 static int sb_tsi_emul_set_channel(const struct emul *target, enum sensor_channel chan,
-				   q31_t value, int8_t shift)
+				   const q31_t *value, int8_t shift)
 {
 	struct sb_tsi_emul_data *data = target->data;
 	int64_t scaled_value;
@@ -111,7 +111,7 @@ static int sb_tsi_emul_set_channel(const struct emul *target, enum sensor_channe
 		return -ENOTSUP;
 	}
 
-	scaled_value = (int64_t)value << shift;
+	scaled_value = (int64_t)*value << shift;
 	millicelsius = scaled_value * 1000 / ((int64_t)INT32_MAX + 1);
 	reg_value = CLAMP(millicelsius / 125, 0, 0x7ff);
 
