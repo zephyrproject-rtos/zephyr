@@ -175,6 +175,14 @@ config BT_SCA_UPDATE
 	depends on !BT_CTLR || BT_CTLR_SCA_UPDATE_SUPPORT
 	help
 	  Enable support for Bluetooth 5.1 Sleep Clock Accuracy Update Procedure
+
+config BT_TRANSMIT_POWER_CONTROL
+	bool "LE Power Control"
+	depends on !BT_CTLR || BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	help
+	  Enable support for LE Power Control Request feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
