@@ -59,16 +59,21 @@ struct plic_config {
 static uint32_t save_irq;
 static const struct device *save_dev;
 
-static inline uint32_t local_irq_to_reg_offset(uint32_t local_irq)
+static inline uint32_t local_irq_to_reg_index(uint32_t local_irq)
 {
 	return local_irq >> LOG2(PLIC_REG_SIZE);
+}
+
+static inline uint32_t local_irq_to_reg_offset(uint32_t local_irq)
+{
+	return local_irq_to_reg_index(local_irq) * sizeof(uint32_t);
 }
 
 static inline uint32_t get_plic_enabled_size(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 
-	return local_irq_to_reg_offset(config->num_irqs) + 1;
+	return local_irq_to_reg_index(config->num_irqs) + 1;
 }
 
 static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
