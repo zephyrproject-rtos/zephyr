@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(input_kbd_matrix, CONFIG_INPUT_LOG_LEVEL);
 
@@ -239,20 +240,10 @@ static void input_kbd_matrix_poll(const struct device *dev)
 		cycles_diff = current_cycles - start_period_cycles;
 		wait_period_us = cfg->poll_period_us - k_cyc_to_us_floor32(cycles_diff);
 
-		/* Wait for at least 1ms */
-		if (wait_period_us < USEC_PER_MSEC) {
-			wait_period_us = USEC_PER_MSEC;
-		}
+		wait_period_us = CLAMP(wait_period_us,
+				       USEC_PER_MSEC, cfg->poll_period_us);
 
-		/*
-		 * Wait period results in a larger number when current cycles
-		 * counter wrap. In this case, the whole poll period is used
-		 */
-		if (wait_period_us > cfg->poll_period_us) {
-			LOG_DBG("wait_period_us: %u", wait_period_us);
-
-			wait_period_us = cfg->poll_period_us;
-		}
+		LOG_DBG("wait_period_us: %d", wait_period_us);
 
 		/* Allow other threads to run while we sleep */
 		k_usleep(wait_period_us);
