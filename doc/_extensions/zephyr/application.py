@@ -415,7 +415,7 @@ class ZephyrAppCommandsDirective(Directive):
                                               cmake_args, source_dir))
         if not compact:
             content.extend(['',
-                            '# Now run ninja on the generated build system:'])
+                            '# Now run the build tool on the generated build system:'])
 
         if 'build' in goals:
             content.append('{}{}{}'.format(generator, tool_build_dir,
