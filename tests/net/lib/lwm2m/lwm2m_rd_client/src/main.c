@@ -9,8 +9,8 @@
 #include <zephyr/fff.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/ztest.h>
-#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
-#include "timer_model.h"
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
+#include "nsi_timer_model.h"
 #endif
 #include <lwm2m_rd_client.h>
 
@@ -141,7 +141,7 @@ static void lwm2m_observe_cb(enum lwm2m_observe_event event, struct lwm2m_obj_pa
 
 static void my_suite_before(void *data)
 {
-#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 	/* It is enough that some slow-down is happening on sleeps, it does not have to be
 	 * real time
 	 */
