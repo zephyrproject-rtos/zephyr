@@ -182,17 +182,14 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 			input_report_key(dev, INPUT_BTN_TOUCH, row_bit, true, K_FOREVER);
 		}
 	}
+
+	data->scan_cycles_idx = (data->scan_cycles_idx + 1) % INPUT_KBD_MATRIX_SCAN_OCURRENCES;
 }
 
 static bool input_kbd_matrix_check_key_events(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
-	struct input_kbd_matrix_common_data *data = dev->data;
 	bool key_pressed;
-
-	if (++data->scan_cycles_idx >= INPUT_KBD_MATRIX_SCAN_OCURRENCES) {
-		data->scan_cycles_idx = 0U;
-	}
 
 	/* Scan the matrix */
 	key_pressed = input_kbd_matrix_scan(dev);
