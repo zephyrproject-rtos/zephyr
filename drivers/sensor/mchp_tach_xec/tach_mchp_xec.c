@@ -58,9 +58,8 @@ int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	struct tach_regs * const tach = cfg->regs;
 	uint8_t poll_count = 0;
 
-#ifdef CONFIG_PM_DEVICE
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	while (poll_count < PIN_STS_TIMEOUT) {
 		/* See whether internal counter is already latched */
 		if (tach->STATUS & MCHP_TACH_STS_CNT_RDY) {
@@ -74,9 +73,9 @@ int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 		/* Allow other threads to run while we sleep */
 		k_usleep(USEC_PER_MSEC);
 	}
-#ifdef CONFIG_PM_DEVICE
+
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	if (poll_count == PIN_STS_TIMEOUT) {
 		return -EINVAL;
 	}

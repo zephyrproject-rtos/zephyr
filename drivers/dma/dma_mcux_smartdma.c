@@ -148,12 +148,12 @@ static int dma_mcux_smartdma_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_mcux_smartdma_config *config = dev->config;
 
-#ifdef CONFIG_PM
 	/* Block PM transition until DMA completes */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	/* Kick off SMARTDMA */
 	config->base->CTRL = SMARTDMA_MAGIC | SMARTDMA_BOOT;
+
 	return 0;
 }
 
@@ -162,12 +162,13 @@ static int dma_mcux_smartdma_stop(const struct device *dev, uint32_t channel)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel);
+
 	/* Stop DMA  */
 	SMARTDMA_Reset();
-#ifdef CONFIG_PM
+
 	/* Release PM lock */
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	return 0;
 }
 
@@ -195,10 +196,9 @@ static void dma_mcux_smartdma_irq(const struct device *dev)
 	if (data->callback) {
 		data->callback(dev, data->user_data, 0, 0);
 	}
-#ifdef CONFIG_PM
+
 	/* Release PM lock */
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 }
 
 /**

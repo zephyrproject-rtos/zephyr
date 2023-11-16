@@ -172,9 +172,9 @@ static int ps2_xec_write(const struct device *dev, uint8_t value)
 		LOG_DBG("PS2 write timed out");
 		return -ETIMEDOUT;
 	}
-#ifdef CONFIG_PM_DEVICE
+
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 	/* Inhibit ps2 controller and clear status register */
 	regs->CTRL = 0x00;
 
@@ -306,33 +306,29 @@ static void ps2_xec_isr(const struct device *dev)
 	ps2_xec_girq_clr(config->girq_id, config->girq_bit);
 
 	if (status & MCHP_PS2_STATUS_RXD_RDY) {
-#ifdef CONFIG_PM_DEVICE
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
+
 		regs->CTRL = 0x00;
 		if (data->callback_isr) {
 			data->callback_isr(dev, regs->TRX_BUFF);
 		}
-#ifdef CONFIG_PM_DEVICE
+
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 	} else if (status &
 		    (MCHP_PS2_STATUS_TX_TMOUT | MCHP_PS2_STATUS_TX_ST_TMOUT)) {
 		/* Clear sticky bits and go to read mode */
 		regs->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
 		LOG_ERR("TX time out: %0x", status);
-#ifdef CONFIG_PM_DEVICE
+
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 	} else if (status &
 			(MCHP_PS2_STATUS_RX_TMOUT | MCHP_PS2_STATUS_PE | MCHP_PS2_STATUS_FE)) {
 		/* catch and clear rx error if any */
 		regs->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
 	} else if (status & MCHP_PS2_STATUS_TX_IDLE) {
 		/* Transfer completed, release the lock to enter low per mode */
-#ifdef CONFIG_PM_DEVICE
+
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-#endif
 	}
 
 	/* The control register reverts to RX automatically after
