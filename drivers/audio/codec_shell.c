@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/audio/codec.h>
 
@@ -55,7 +56,7 @@ static const struct args_index args_indx = {
 	.value = 4,
 };
 
-static int parse_named_int(const char *name, const char *keystack[], size_t count)
+static int parse_named_int(const char *name, const char *const keystack[], size_t count)
 {
 	char *endptr;
 	int i;
