@@ -5,8 +5,9 @@ common:
     - frdm_k64f
     - sam_e70_xplained
     - native_posix
+    - native_sim
   integration_platforms:
-    - native_posix
+    - native_sim
 tests:
   net.ptp.clock:
     min_ram: 32
