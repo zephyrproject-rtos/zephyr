@@ -364,6 +364,9 @@ void notify_le_phy_updated(struct bt_conn *conn);
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
+void notify_tx_power_report(struct bt_conn *conn,
+			    struct bt_conn_le_tx_power_report report);
+
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);
