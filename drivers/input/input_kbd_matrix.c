@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 
 #define LOG_LEVEL CONFIG_INPUT_LOG_LEVEL
 LOG_MODULE_REGISTER(input_kbd_matrix);
@@ -274,12 +275,17 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 		api->set_detect_mode(dev, true);
 
 		k_sem_take(&data->poll_lock, K_FOREVER);
+
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
 		LOG_DBG("Start KB scan");
 
 		/* Disable interrupt of KSI pins and start polling */
 		api->set_detect_mode(dev, false);
 
 		input_kbd_matrix_poll(dev);
+
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	}
 }
 
