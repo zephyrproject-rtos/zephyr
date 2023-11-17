@@ -176,52 +176,44 @@ static int bmi160_emul_io_spi(const struct emul *target, const struct spi_config
 	__ASSERT_NO_MSG(!tx_bufs || !rx_bufs || tx_bufs->count == rx_bufs->count);
 	count = tx_bufs ? tx_bufs->count : rx_bufs->count;
 
-	switch (count) {
-	case 2:
-		tx = tx_bufs->buffers;
-		txd = &tx_bufs->buffers[1];
-		rxd = rx_bufs ? &rx_bufs->buffers[1] : NULL;
-		switch (tx->len) {
-		case 1:
-			regn = *(uint8_t *)tx->buf;
-			if ((regn & BMI160_REG_READ) && rxd == NULL) {
-				LOG_ERR("Cannot read without rxd");
-				return -EPERM;
-			}
-			switch (txd->len) {
-			case 1:
-				if (regn & BMI160_REG_READ) {
-					regn &= BMI160_REG_MASK;
-					val = reg_read(target, regn);
-					*(uint8_t *)rxd->buf = val;
-				} else {
-					val = *(uint8_t *)txd->buf;
-					reg_write(target, regn, val);
-				}
-				break;
-			case BMI160_SAMPLE_SIZE:
-				if (regn & BMI160_REG_READ) {
-					for (int i = 0; i < BMI160_SAMPLE_SIZE; ++i) {
-						((uint8_t *)rxd->buf)[i] = reg_read(
-							target, (regn & BMI160_REG_MASK) + i);
-					}
-				} else {
-					LOG_DBG("Unknown sample write");
-				}
-				break;
-			default:
-				LOG_DBG("Unknown A txd->len %d", txd->len);
-				break;
-			}
-			break;
-		default:
-			LOG_DBG("Unknown tx->len %d", tx->len);
-			break;
-		}
-		break;
-	default:
+	if (count != 2) {
 		LOG_DBG("Unknown tx_bufs->count %d", count);
-		break;
+		return -EIO;
+	}
+	tx = tx_bufs->buffers;
+	txd = &tx_bufs->buffers[1];
+	rxd = rx_bufs ? &rx_bufs->buffers[1] : NULL;
+
+	if (tx->len != 1) {
+		LOG_DBG("Unknown tx->len %d", tx->len);
+		return -EIO;
+	}
+
+	regn = *(uint8_t *)tx->buf;
+	if ((regn & BMI160_REG_READ) && rxd == NULL) {
+		LOG_ERR("Cannot read without rxd");
+		return -EPERM;
+	}
+
+	if (txd->len == 1) {
+		if (regn & BMI160_REG_READ) {
+			regn &= BMI160_REG_MASK;
+			val = reg_read(target, regn);
+			*(uint8_t *)rxd->buf = val;
+		} else {
+			val = *(uint8_t *)txd->buf;
+			reg_write(target, regn, val);
+		}
+	} else {
+		if (regn & BMI160_REG_READ) {
+			regn &= BMI160_REG_MASK;
+			for (int i = 0; i < txd->len; ++i) {
+				((uint8_t *)rxd->buf)[i] = reg_read(target, regn + i);
+			}
+		} else {
+			LOG_ERR("Unknown sample write");
+			return -EIO;
+		}
 	}
 
 	return 0;
@@ -446,7 +438,6 @@ static int bmi160_emul_backend_get_sample_range(const struct emul *target, enum 
 	default:
 		return -EINVAL;
 	}
-
 }
 
 static int bmi160_emul_backend_set_offset(const struct emul *target, enum sensor_channel ch,
