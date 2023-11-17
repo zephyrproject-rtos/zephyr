@@ -82,6 +82,9 @@ Bluetooth
   The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
   the new runtime structure, replaced by ``model->rt->user_data``, ``model->rt->elem_idx`` and
   ``model->rt->mod_idx`` separately. (:github:`65152`)
+* The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
+  The ``elem->addr`` field has been changed to the new runtime structure, replaced by
+  ``elem->rt->addr``. (:github:`65388`)
 
 LoRaWAN
 =======
