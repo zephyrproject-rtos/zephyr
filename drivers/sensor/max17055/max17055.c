@@ -348,6 +348,7 @@ static int max17055_write_config(const struct device *dev)
 	uint16_t d_pacc = d_qacc * 44138 / design_capacity;
 	uint16_t i_chg_term = current_ma_to_max17055(config->rsense_mohms, config->i_chg_term);
 	uint16_t v_empty;
+	int ret;
 
 	LOG_DBG("Writing configuration parameters");
 	LOG_DBG("DesignCap: %u, dQAcc: %u, IChgTerm: %u, dPAcc: %u",
@@ -386,7 +387,10 @@ static int max17055_write_config(const struct device *dev)
 	uint16_t model_cfg = MODELCFG_REFRESH;
 
 	while (model_cfg & MODELCFG_REFRESH) {
-		max17055_reg_read(dev, MODEL_CFG, &model_cfg);
+		ret = max17055_reg_read(dev, MODEL_CFG, &model_cfg);
+		if (ret) {
+			return ret;
+		}
 		k_sleep(K_MSEC(10));
 	}
 
