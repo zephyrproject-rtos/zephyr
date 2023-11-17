@@ -14,7 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/barrier.h>
-#include <hal/nrf_rtc.h>
+#include <haly/nrfy_rtc.h>
 #include <zephyr/irq.h>
 
 #define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
@@ -72,32 +72,32 @@ static uint32_t counter_sub(uint32_t a, uint32_t b)
 
 static void set_comparator(int32_t chan, uint32_t cyc)
 {
-	nrf_rtc_cc_set(RTC, chan, cyc & COUNTER_MAX);
+	nrfy_rtc_cc_set(RTC, chan, cyc & COUNTER_MAX);
 }
 
 static bool event_check(int32_t chan)
 {
-	return nrf_rtc_event_check(RTC, NRF_RTC_CHANNEL_EVENT_ADDR(chan));
+	return nrfy_rtc_event_check(RTC, NRF_RTC_CHANNEL_EVENT_ADDR(chan));
 }
 
 static void event_clear(int32_t chan)
 {
-	nrf_rtc_event_clear(RTC, NRF_RTC_CHANNEL_EVENT_ADDR(chan));
+	nrfy_rtc_event_clear(RTC, NRF_RTC_CHANNEL_EVENT_ADDR(chan));
 }
 
 static void event_enable(int32_t chan)
 {
-	nrf_rtc_event_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
+	nrfy_rtc_event_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 }
 
 static void event_disable(int32_t chan)
 {
-	nrf_rtc_event_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
+	nrfy_rtc_event_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 }
 
 static uint32_t counter(void)
 {
-	return nrf_rtc_counter_get(RTC);
+	return nrfy_rtc_counter_get(RTC);
 }
 
 static uint32_t absolute_time_to_cc(uint64_t absolute_time)
@@ -132,7 +132,7 @@ static void full_int_unlock(uint32_t mcu_critical_state)
 uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
-	return nrf_rtc_event_address_get(RTC, nrf_rtc_compare_event_get(chan));
+	return nrfy_rtc_event_address_get(RTC, nrfy_rtc_compare_event_get(chan));
 }
 
 uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan)
@@ -143,9 +143,7 @@ uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan)
 		return 0;
 	}
 
-	nrf_rtc_task_t task = offsetof(NRF_RTC_Type, TASKS_CAPTURE[chan]);
-
-	return nrf_rtc_task_address_get(RTC, task);
+	return nrfy_rtc_task_address_get(RTC, nrfy_rtc_capture_task_get(chan));
 #else
 	ARG_UNUSED(chan);
 	return 0;
@@ -156,7 +154,7 @@ static bool compare_int_lock(int32_t chan)
 {
 	atomic_val_t prev = atomic_and(&int_mask, ~BIT(chan));
 
-	nrf_rtc_int_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
+	nrfy_rtc_int_disable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 
 	barrier_dmem_fence_full();
 	barrier_isync_fence_full();
@@ -176,7 +174,7 @@ static void compare_int_unlock(int32_t chan, bool key)
 {
 	if (key) {
 		atomic_or(&int_mask, BIT(chan));
-		nrf_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
+		nrfy_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 		if (atomic_get(&force_isr_mask) & BIT(chan)) {
 			NVIC_SetPendingIRQ(RTC_IRQn);
 		}
@@ -194,7 +192,7 @@ uint32_t z_nrf_rtc_timer_compare_read(int32_t chan)
 {
 	__ASSERT_NO_MSG(chan >= 0 && chan < CHAN_COUNT);
 
-	return nrf_rtc_cc_get(RTC, chan);
+	return nrfy_rtc_cc_get(RTC, chan);
 }
 
 uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t)
@@ -494,7 +492,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 
 static bool channel_processing_check_and_clear(int32_t chan)
 {
-	if (nrf_rtc_int_enable_check(RTC, NRF_RTC_CHANNEL_INT_MASK(chan))) {
+	if (nrfy_rtc_int_enable_check(RTC, NRF_RTC_CHANNEL_INT_MASK(chan))) {
 		/* The processing of channel can be caused by CC match
 		 * or be forced.
 		 */
@@ -568,9 +566,8 @@ void rtc_nrf_isr(const void *arg)
 		rtc_pretick_rtc1_isr_hook();
 	}
 
-	if (nrf_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
-	    nrf_rtc_event_check(RTC, NRF_RTC_EVENT_OVERFLOW)) {
-		nrf_rtc_event_clear(RTC, NRF_RTC_EVENT_OVERFLOW);
+	if (nrfy_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
+	    nrfy_rtc_events_process(RTC, NRF_RTC_INT_OVERFLOW_MASK)) {
 		overflow_cnt++;
 	}
 
@@ -623,7 +620,7 @@ int z_nrf_rtc_timer_trigger_overflow(void)
 		goto bail;
 	}
 
-	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_TRIGGER_OVERFLOW);
+	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_TRIGGER_OVERFLOW);
 	k_busy_wait(80);
 
 	uint64_t now = z_nrf_rtc_timer_read();
@@ -713,10 +710,10 @@ static void int_event_disable_rtc(void)
 			NRF_RTC_INT_COMPARE3_MASK;
 
 	/* Reset interrupt enabling to expected reset values */
-	nrf_rtc_int_disable(RTC, mask);
+	nrfy_rtc_int_disable(RTC, mask);
 
 	/* Reset event routing enabling to expected reset values */
-	nrf_rtc_event_disable(RTC, mask);
+	nrfy_rtc_event_disable(RTC, mask);
 }
 
 void sys_clock_disable(void)
@@ -739,13 +736,13 @@ static int sys_clock_driver_init(void)
 	int_event_disable_rtc();
 
 	/* TODO: replace with counter driver to access RTC */
-	nrf_rtc_prescaler_set(RTC, 0);
+	nrfy_rtc_prescaler_set(RTC, 0);
 	for (int32_t chan = 0; chan < CHAN_COUNT; chan++) {
 		cc_data[chan].target_time = TARGET_TIME_INVALID;
-		nrf_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
+		nrfy_rtc_int_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(chan));
 	}
 
-	nrf_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
+	nrfy_rtc_int_enable(RTC, NRF_RTC_INT_OVERFLOW_MASK);
 
 	NVIC_ClearPendingIRQ(RTC_IRQn);
 
@@ -753,8 +750,8 @@ static int sys_clock_driver_init(void)
 		    rtc_nrf_isr, 0, 0);
 	irq_enable(RTC_IRQn);
 
-	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
-	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
+	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
+	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
 
 	int_mask = BIT_MASK(CHAN_COUNT);
 	if (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT) {
