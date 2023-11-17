@@ -427,6 +427,7 @@ static int max17055_gauge_init(const struct device *dev)
 {
 	int16_t tmp;
 	const struct max17055_config *const config = dev->config;
+	int ret;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
@@ -445,7 +446,10 @@ static int max17055_gauge_init(const struct device *dev)
 	/* Wait for FSTAT_DNR to be cleared */
 	tmp = FSTAT_DNR;
 	while (tmp & FSTAT_DNR) {
-		max17055_reg_read(dev, FSTAT, &tmp);
+		ret = max17055_reg_read(dev, FSTAT, &tmp);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	if (max17055_init_config(dev)) {
