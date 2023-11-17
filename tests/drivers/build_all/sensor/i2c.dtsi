@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
 #include <zephyr/dt-bindings/sensor/lps22df.h>
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
+#include <zephyr/dt-bindings/sensor/lis2dw12.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -298,6 +299,11 @@ test_i2c_lis2dw12: lis2dw12@2d {
 	compatible = "st,lis2dw12";
 	reg = <0x2d>;
 	irq-gpios = <&test_gpio 0 0>;
+	wakeup-duration = <LIS2DW12_DT_WAKEUP_4_ODR>;
+	ff-threshold = <LIS2DW12_DT_FF_THRESHOLD_500_mg>;
+	tap-mode = <LIS2DW12_DT_SINGLE_DOUBLE_TAP>;
+	power-mode = <LIS2DW12_DT_HP_MODE>;
+	bw-filt = <LIS2DW12_DT_FILTER_BW_ODR_DIV_2>;
 };
 
 test_i2c_lis2mdl: lis2mdl@2e {
