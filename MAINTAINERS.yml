@@ -2281,6 +2281,7 @@ RISCV arch:
     - katsuster
     - edersondisouza
     - carlocaione
+    - npitre
   files:
     - arch/riscv/
     - boards/riscv/
