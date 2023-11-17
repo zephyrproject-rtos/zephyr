@@ -697,7 +697,8 @@ static void gatt_proxy_solicited(struct bt_mesh_subnet *sub)
 	int32_t remaining;
 
 	if (sub->priv_net_id_sent > 0) {
-		timeout = sub->priv_net_id_sent + MSEC_PER_SEC * bt_mesh_od_priv_proxy_get();
+		timeout = sub->priv_net_id_sent +
+			MSEC_PER_SEC * (int64_t) bt_mesh_od_priv_proxy_get();
 		remaining = MIN(timeout - now, INT32_MAX);
 	} else {
 		remaining = MSEC_PER_SEC * bt_mesh_od_priv_proxy_get();
