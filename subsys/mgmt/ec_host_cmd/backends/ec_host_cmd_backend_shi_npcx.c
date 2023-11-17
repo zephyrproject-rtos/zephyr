@@ -15,6 +15,7 @@
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #include <soc_miwu.h>
 
@@ -95,6 +96,11 @@ enum shi_npcx_state {
 	SHI_STATE_BAD_RECEIVED_DATA,
 };
 
+enum shi_npcx_pm_policy_state_flag {
+	SHI_NPCX_PM_POLICY_FLAG,
+	SHI_NPCX_PM_POLICY_FLAG_COUNT,
+};
+
 /* Device config */
 struct shi_npcx_config {
 	/* Serial Host Interface (SHI) base address */
@@ -127,6 +133,7 @@ struct shi_npcx_data {
 			       SHI_OUT_END_PAD] __aligned(4);
 	uint8_t *const out_msg;
 	uint8_t in_msg[CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST] __aligned(4);
+	ATOMIC_DEFINE(pm_policy_state_flag, SHI_NPCX_PM_POLICY_FLAG_COUNT);
 };
 
 struct ec_host_cmd_shi_npcx_ctx {
@@ -143,6 +150,22 @@ struct ec_host_cmd_shi_npcx_ctx {
 
 /* Forward declaration */
 static void shi_npcx_reset_prepare(const struct device *dev);
+
+static void shi_npcx_pm_policy_state_lock_get(struct shi_npcx_data *data,
+					       enum shi_npcx_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flag, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void shi_npcx_pm_policy_state_lock_put(struct shi_npcx_data *data,
+					    enum shi_npcx_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flag, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
 
 /* Read pointer of input or output buffer by consecutive reading */
 static uint32_t shi_npcx_read_buf_pointer(struct shi_reg *const inst)
@@ -495,6 +518,8 @@ static void shi_npcx_handle_cs_assert(const struct device *dev)
 	 * irrelevant now that CS is re-asserted.
 	 */
 	inst->EVSTAT = BIT(NPCX_EVSTAT_EOR);
+
+	shi_npcx_pm_policy_state_lock_get(data, SHI_NPCX_PM_POLICY_FLAG);
 }
 
 static void shi_npcx_handle_cs_deassert(const struct device *dev)
@@ -712,6 +737,8 @@ static void shi_npcx_reset_prepare(const struct device *dev)
 	shi_npcx_sec_ibf_int_enable(inst, 1);
 	irq_enable(DT_INST_IRQN(0));
 
+	shi_npcx_pm_policy_state_lock_put(data, SHI_NPCX_PM_POLICY_FLAG);
+
 	LOG_DBG("RDY-");
 }
 
@@ -768,6 +795,12 @@ static int shi_npcx_disable(const struct device *dev)
 		LOG_ERR("Turn off SHI clock fail %d", ret);
 		return ret;
 	}
+
+	/*
+	 * Allow deep sleep again in case CS dropped before ec was
+	 * informed in hook function and turn off SHI's interrupt in time.
+	 */
+	shi_npcx_pm_policy_state_lock_put(data, SHI_NPCX_PM_POLICY_FLAG);
 
 	return 0;
 }
