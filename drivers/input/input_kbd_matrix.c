@@ -16,8 +16,6 @@
 
 LOG_MODULE_REGISTER(input_kbd_matrix, CONFIG_INPUT_LOG_LEVEL);
 
-#define INPUT_KBD_MATRIX_ROW_MASK UINT8_MAX
-
 void input_kbd_matrix_poll_start(const struct device *dev)
 {
 	struct input_kbd_matrix_common_data *data = dev->data;
@@ -28,7 +26,7 @@ void input_kbd_matrix_poll_start(const struct device *dev)
 static bool input_kbd_matrix_ghosting(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
-	const uint8_t *state = cfg->matrix_new_state;
+	const kbd_row_t *state = cfg->matrix_new_state;
 
 	/*
 	 * Matrix keyboard designs are suceptible to ghosting.
@@ -59,7 +57,7 @@ static bool input_kbd_matrix_ghosting(const struct device *dev)
 			 * using z&(z-1) which is non-zero only if z has more
 			 * than one bit set.
 			 */
-			uint8_t common_row_bits = state[c] & state[c_next];
+			kbd_row_t common_row_bits = state[c] & state[c_next];
 
 			if (common_row_bits & (common_row_bits - 1)) {
 				return true;
@@ -74,8 +72,8 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
 	const struct input_kbd_matrix_api *api = cfg->api;
-	int row;
-	uint8_t key_event = 0U;
+	kbd_row_t row;
+	kbd_row_t key_event = 0U;
 
 	for (int col = 0; col < cfg->col_size; col++) {
 		api->drive_column(dev, col);
@@ -83,7 +81,7 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 		/* Allow the matrix to stabilize before reading it */
 		k_busy_wait(cfg->settle_time_us);
 
-		row = api->read_row(dev) & INPUT_KBD_MATRIX_ROW_MASK;
+		row = api->read_row(dev);
 		cfg->matrix_new_state[col] = row;
 		key_event |= row;
 	}
@@ -97,10 +95,10 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
 	struct input_kbd_matrix_common_data *data = dev->data;
-	uint8_t *matrix_new_state = cfg->matrix_new_state;
+	kbd_row_t *matrix_new_state = cfg->matrix_new_state;
 	uint32_t cycles_now;
-	uint8_t row_changed;
-	uint8_t deb_col;
+	kbd_row_t row_changed;
+	kbd_row_t deb_col;
 
 	cycles_now = k_cycle_get_32();
 
@@ -143,8 +141,8 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 
 		/* Debouncing for each row key occurs here */
 		for (int r = 0; r < cfg->row_size; r++) {
-			uint8_t mask = BIT(r);
-			uint8_t row_bit = matrix_new_state[c] & mask;
+			kbd_row_t mask = BIT(r);
+			kbd_row_t row_bit = matrix_new_state[c] & mask;
 
 			/* Continue if we already debounce a key */
 			if (!(deb_col & mask)) {

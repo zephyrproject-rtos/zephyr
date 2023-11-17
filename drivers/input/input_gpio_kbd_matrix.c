@@ -64,7 +64,7 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 	data->last_col_state = state;
 }
 
-static int gpio_kbd_matrix_read_row(const struct device *dev)
+static kbd_row_t gpio_kbd_matrix_read_row(const struct device *dev)
 {
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
