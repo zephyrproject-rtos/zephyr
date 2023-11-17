@@ -97,7 +97,7 @@ static void npcx_kbd_drive_column(const struct device *dev, int col)
 	inst->KBSOUT1 = ((mask >> 16) & 0x03);
 }
 
-static int npcx_kbd_read_row(const struct device *dev)
+static kbd_row_t npcx_kbd_read_row(const struct device *dev)
 {
 	const struct npcx_kbd_config *config = dev->config;
 	const struct input_kbd_matrix_common_config *common = &config->common;

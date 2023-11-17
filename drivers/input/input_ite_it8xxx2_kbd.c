@@ -79,7 +79,7 @@ static void it8xxx2_kbd_drive_column(const struct device *dev, int col)
 	}
 }
 
-static int it8xxx2_kbd_read_row(const struct device *dev)
+static kbd_row_t it8xxx2_kbd_read_row(const struct device *dev)
 {
 	const struct it8xxx2_kbd_config *const config = dev->config;
 	struct kscan_it8xxx2_regs *const inst = config->base;

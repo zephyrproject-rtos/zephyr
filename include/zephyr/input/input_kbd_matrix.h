@@ -29,6 +29,12 @@
 /** Number of tracked scan cycles */
 #define INPUT_KBD_MATRIX_SCAN_OCURRENCES 30U
 
+/** Row entry data type */
+typedef uint8_t kbd_row_t;
+
+/** Maximum number of rows */
+#define INPUT_KBD_MATRIX_ROW_BITS NUM_BITS(kbd_row_t)
+
 /**
  * @brief Keyboard matrix internal APIs.
  */
@@ -49,7 +55,7 @@ struct input_kbd_matrix_api {
 	 *
 	 * @param dev Pointer to the keyboard matrix device.
 	 */
-	int (*read_row)(const struct device *dev);
+	kbd_row_t (*read_row)(const struct device *dev);
 	/**
 	 * @brief Request to put the matrix in detection mode.
 	 *
@@ -80,10 +86,10 @@ struct input_kbd_matrix_common_config {
 	bool ghostkey_check;
 
 	/* extra data pointers */
-	uint8_t *matrix_stable_state;
-	uint8_t *matrix_unstable_state;
-	uint8_t *matrix_previous_state;
-	uint8_t *matrix_new_state;
+	kbd_row_t *matrix_stable_state;
+	kbd_row_t *matrix_unstable_state;
+	kbd_row_t *matrix_previous_state;
+	kbd_row_t *matrix_new_state;
 	uint8_t *scan_cycle_idx;
 };
 
@@ -96,12 +102,12 @@ struct input_kbd_matrix_common_config {
  * specify row and col count.
  */
 #define INPUT_KBD_MATRIX_DT_DEFINE_ROW_COL(node_id, _row_size, _col_size) \
-	BUILD_ASSERT(IN_RANGE(_row_size, 1, 8), "invalid row-size"); \
+	BUILD_ASSERT(IN_RANGE(_row_size, 1, INPUT_KBD_MATRIX_ROW_BITS), "invalid row-size"); \
 	BUILD_ASSERT(IN_RANGE(_col_size, 1, UINT8_MAX), "invalid col-size"); \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state)[_col_size]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state)[_col_size]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, previous_state)[_col_size]; \
-	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, new_state)[_col_size]; \
+	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state)[_col_size]; \
+	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state)[_col_size]; \
+	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, previous_state)[_col_size]; \
+	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, new_state)[_col_size]; \
 	static uint8_t INPUT_KBD_MATRIX_DATA_NAME(node_id, scan_cycle_idx)[_row_size * _col_size];
 
 /**
