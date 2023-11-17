@@ -155,8 +155,14 @@ static inline int send_err(int sock, struct tftpc *client, int err_code, char *e
 
 	/* Copy the Error String. */
 	if (err_msg != NULL) {
-		strcpy(client->tftp_buf + req_size, err_msg);
-		req_size += strlen(err_msg);
+		size_t copy_len = strlen(err_msg);
+
+		if (copy_len > sizeof(client->tftp_buf) - req_size) {
+			copy_len = sizeof(client->tftp_buf) - req_size;
+		}
+
+		memcpy(client->tftp_buf + req_size, err_msg, copy_len);
+		req_size += copy_len;
 	}
 
 	/* Send Error to server. */
