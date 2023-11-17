@@ -42,7 +42,7 @@ if(CONFIG_HAS_RPI_PICO)
       BUILD_ALWAYS TRUE
       )
 
-      add_dependencies(${ZEPHYR_CURRENT_LIBRARY} second_stage_bootloader)
+      zephyr_library_add_dependencies(second_stage_bootloader)
       zephyr_library_sources(${rp2_bootloader_asm})
   endif()
 
