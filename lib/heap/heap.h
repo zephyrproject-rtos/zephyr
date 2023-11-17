@@ -262,6 +262,23 @@ static inline bool size_too_big(struct z_heap *h, size_t bytes)
 	return (bytes / CHUNK_UNIT) >= h->end_chunk;
 }
 
+static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
+			   size_t *free_bytes)
+{
+	chunkid_t c;
+
+	*alloc_bytes = 0;
+	*free_bytes = 0;
+
+	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
+		if (chunk_used(h, c)) {
+			*alloc_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+		} else if (!solo_free_header(h, c)) {
+			*free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
+		}
+	}
+}
+
 /* For debugging */
 void heap_print_info(struct z_heap *h, bool dump_chunks);
 

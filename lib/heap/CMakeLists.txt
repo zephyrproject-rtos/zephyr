@@ -3,6 +3,8 @@
 zephyr_sources(
   heap.c
   heap-validate.c
+  heap-stress.c
+  heap-info.c
   multi_heap.c
   )
 
