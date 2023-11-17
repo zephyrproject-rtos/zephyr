@@ -328,8 +328,10 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-f") == 0) {
 		double new = 0;
 
-		lwm2m_atof(value, &new); /* Convert string -> float */
-		ret = lwm2m_set_f64(&path, new);
+		ret = lwm2m_atof(value, &new); /* Convert string -> float */
+		if (ret == 0) {
+			ret = lwm2m_set_f64(&path, new);
+		}
 	} else { /* All the types using stdlib funcs*/
 		char *e;
 
