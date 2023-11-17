@@ -658,10 +658,10 @@ static int remove_middle_option(struct coap_packet *cpkt,
 }
 int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code)
 {
-	uint16_t offset = cpkt->hdr_len;
+	uint16_t offset = 0;
 	uint16_t opt_delta = 0;
 	uint16_t opt_len = 0;
-	uint16_t previous_offset = cpkt->hdr_len;
+	uint16_t previous_offset = 0;
 	uint16_t previous_code = 0;
 	struct coap_option option;
 	int r;
@@ -677,6 +677,9 @@ int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code)
 	if (code > cpkt->delta) {
 		return 0;
 	}
+
+	offset = cpkt->hdr_len;
+	previous_offset = cpkt->hdr_len;
 
 	/* Find the requested option */
 	while (offset < cpkt->hdr_len + cpkt->opt_len) {
