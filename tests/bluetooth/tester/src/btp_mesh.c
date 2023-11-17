@@ -1096,7 +1096,7 @@ static const struct bt_mesh_model vnd_models[] = {
 			  NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 
@@ -1739,7 +1739,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 
 	/* Lookup source address */
 	for (int i = 0; i < ARRAY_SIZE(model_bound); i++) {
-		if (bt_mesh_model_elem(model_bound[i].model)->addr == src) {
+		if (bt_mesh_model_elem(model_bound[i].model)->rt->addr == src) {
 			model = model_bound[i].model;
 			ctx.app_idx = model_bound[i].appkey_idx;
 
