@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(input_gpio_qdec, CONFIG_INPUT_LOG_LEVEL);
 #define GPIO_QDEC_GPIO_NUM 2
 
 struct gpio_qdec_config {
-	struct gpio_dt_spec gpio[GPIO_QDEC_GPIO_NUM];
+	struct gpio_dt_spec ab_gpio[GPIO_QDEC_GPIO_NUM];
 	uint32_t sample_time_us;
 	uint32_t idle_timeout_ms;
 	uint16_t axis;
@@ -54,10 +54,10 @@ static uint8_t gpio_qdec_get_step(const struct device *dev)
 	const struct gpio_qdec_config *cfg = dev->config;
 	uint8_t step = 0x00;
 
-	if (gpio_pin_get_dt(&cfg->gpio[0])) {
+	if (gpio_pin_get_dt(&cfg->ab_gpio[0])) {
 		step |= 0x01;
 	}
-	if (gpio_pin_get_dt(&cfg->gpio[1])) {
+	if (gpio_pin_get_dt(&cfg->ab_gpio[1])) {
 		step |= 0x02;
 	}
 
@@ -135,7 +135,7 @@ static void gpio_qdec_irq_setup(const struct device *dev, bool enable)
 	int ret;
 
 	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
-		const struct gpio_dt_spec *gpio = &cfg->gpio[i];
+		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
 
 		ret = gpio_pin_interrupt_configure_dt(gpio, flags);
 		if (ret != 0) {
@@ -190,9 +190,9 @@ static int gpio_qdec_init(const struct device *dev)
 	k_timer_user_data_set(&data->sample_timer, (void *)dev);
 
 	gpio_init_callback(&data->gpio_cb, gpio_qdec_cb,
-			   BIT(cfg->gpio[0].pin) | BIT(cfg->gpio[1].pin));
+			   BIT(cfg->ab_gpio[0].pin) | BIT(cfg->ab_gpio[1].pin));
 	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
-		const struct gpio_dt_spec *gpio = &cfg->gpio[i];
+		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
 
 		if (!gpio_is_ready_dt(gpio)) {
 			LOG_ERR("%s is not ready", gpio->port->name);
@@ -226,8 +226,10 @@ static int gpio_qdec_init(const struct device *dev)
 		     "input_gpio_qdec: gpios must have exactly two entries");	\
 										\
 	static const struct gpio_qdec_config gpio_qdec_cfg_##n = {		\
-		.gpio = {GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 0),		\
-			 GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 1)},		\
+		.ab_gpio = {							\
+			GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 0),		\
+			GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 1),		\
+		},								\
 		.sample_time_us = DT_INST_PROP(n, sample_time_us),		\
 		.idle_timeout_ms = DT_INST_PROP(n, idle_timeout_ms),		\
 		.steps_per_period = DT_INST_PROP(n, steps_per_period),		\
