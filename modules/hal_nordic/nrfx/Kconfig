@@ -82,6 +82,11 @@ config NRFX_I2S0
 	depends on $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
 	select NRFX_I2S
 
+config NRFX_I2S20
+	bool "I2S20 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2s20,$(DT_COMPAT_NORDIC_NRF_I2S))
+	select NRFX_I2S
+
 config NRFX_IPC
 	bool "IPC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_IPC))
