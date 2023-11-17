@@ -222,7 +222,11 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Limit communication to the specific address:port */
-		connect(sock, &from_addr, from_addr_len);
+		if (connect(sock, &from_addr, from_addr_len) < 0) {
+			ret = -errno;
+			LOG_ERR("connect failed, err %d", ret);
+			break;
+		}
 
 		break;
 
