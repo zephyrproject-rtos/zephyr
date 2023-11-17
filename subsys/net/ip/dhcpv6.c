@@ -892,8 +892,13 @@ static int dhcpv6_parse_option_iaaddr(struct net_pkt *pkt, uint16_t length,
 
 			break;
 		default:
-			net_pkt_skip(pkt, sublen);
 			NET_DBG("Unexpected option %d length %d", code, sublen);
+
+			ret = net_pkt_skip(pkt, sublen);
+			if (ret < 0) {
+				return ret;
+			}
+
 			break;
 		}
 
@@ -980,8 +985,13 @@ static int dhcpv6_parse_option_ia_na(struct net_pkt *pkt, uint16_t length,
 			break;
 
 		default:
-			net_pkt_skip(pkt, sublen);
 			NET_DBG("Unexpected option %d length %d", code, sublen);
+
+			ret = net_pkt_skip(pkt, sublen);
+			if (ret < 0) {
+				return ret;
+			}
+
 			break;
 		}
 
@@ -1058,8 +1068,13 @@ static int dhcpv6_parse_option_iaprefix(struct net_pkt *pkt, uint16_t length,
 
 			break;
 		default:
-			net_pkt_skip(pkt, sublen);
 			NET_DBG("Unexpected option %d length %d", code, sublen);
+
+			ret = net_pkt_skip(pkt, sublen);
+			if (ret < 0) {
+				return ret;
+			}
+
 			break;
 		}
 
@@ -1145,8 +1160,13 @@ static int dhcpv6_parse_option_ia_pd(struct net_pkt *pkt, uint16_t length,
 
 			break;
 		default:
-			net_pkt_skip(pkt, sublen);
 			NET_DBG("Unexpected option %d length %d", code, sublen);
+
+			ret = net_pkt_skip(pkt, sublen);
+			if (ret < 0) {
+				return ret;
+			}
+
 			break;
 		}
 
@@ -1161,6 +1181,7 @@ static int dhcpv6_find_option(struct net_pkt *pkt, enum dhcpv6_option_code opt_c
 {
 	uint16_t length;
 	uint16_t code;
+	int ret;
 
 	while (net_pkt_read_be16(pkt, &code) == 0) {
 		if (net_pkt_read_be16(pkt, &length) < 0) {
@@ -1172,7 +1193,10 @@ static int dhcpv6_find_option(struct net_pkt *pkt, enum dhcpv6_option_code opt_c
 			return 0;
 		}
 
-		net_pkt_skip(pkt, length);
+		ret = net_pkt_skip(pkt, length);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return -ENOENT;
