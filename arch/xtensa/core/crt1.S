@@ -23,7 +23,6 @@
 
 .global __start
 .type	z_cstart, @function
-.type	z_mp_entry, @function
 
 #ifdef CONFIG_XTENSA_MMU
 .type	z_xtensa_mmu_init, @function
