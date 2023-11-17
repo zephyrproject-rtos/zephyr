@@ -481,7 +481,7 @@ class RimageSigner(Signer):
 
         #### -c sof/rimage/config/signing_schema.toml  ####
 
-        cmake_toml = target + '.toml'
+        cmake_toml = target + '.toml.h'
 
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
@@ -504,7 +504,18 @@ class RimageSigner(Signer):
         else:
             conf_dir = sof_src_dir / 'tools' / 'rimage' / 'config'
 
-        conf_path_cmd = ['-c', str(conf_dir / cmake_toml)] if conf_dir else []
+        if conf_dir:
+            pre_toml = target + '.toml'
+            output_toml = str(b / 'zephyr' / pre_toml)
+            compiler_path = cache.get("CMAKE_C_COMPILER", "")
+            preproc_cmd = [compiler_path] + ['-E', str(conf_dir / cmake_toml)] + ['-o', output_toml]
+            preproc_cmd += ['-I', str(sof_src_dir / 'src')]
+            preproc_cmd += ['-imacros', str(b / 'zephyr' / 'include' / 'generated' / 'autoconf.h')]
+            log.inf('Calling preprocessor\n' + quote_sh_list(preproc_cmd))
+            subprocess.check_call(preproc_cmd)
+            conf_path_cmd = ['-c', output_toml]
+        else:
+            conf_path_cmd = []
 
         log.inf('Signing for SOC target ' + target)
 
