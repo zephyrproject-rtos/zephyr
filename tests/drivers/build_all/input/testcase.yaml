@@ -13,3 +13,7 @@ tests:
       - CONFIG_INPUT_CST816S_INTERRUPT=n
       - CONFIG_INPUT_FT5336_INTERRUPT=y
       - CONFIG_INPUT_GT911_INTERRUPT=y
+
+  drivers.input.kbd_16_bit:
+    extra_configs:
+      - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
