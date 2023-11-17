@@ -68,6 +68,7 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 {
 	struct spi_emul *emul;
 	const struct spi_emul_api *api;
+	int ret;
 
 	emul = spi_emul_find(dev, config->slave);
 	if (!emul) {
@@ -77,6 +78,13 @@ static int spi_emul_io(const struct device *dev, const struct spi_config *config
 	api = emul->api;
 	__ASSERT_NO_MSG(emul->api);
 	__ASSERT_NO_MSG(emul->api->io);
+
+	if (emul->mock_api != NULL && emul->mock_api->io != NULL) {
+		ret = emul->mock_api->io(emul->target, config, tx_bufs, rx_bufs);
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+	}
 
 	return api->io(emul->target, config, tx_bufs, rx_bufs);
 }

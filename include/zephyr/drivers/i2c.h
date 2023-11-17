@@ -469,6 +469,18 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
 }
 
 /**
+ * @brief Check if the current message is a read operation
+ *
+ * @param msg The message to check
+ * @return true if the I2C message is sa read operation
+ * @return false if the I2C message is a write operation
+ */
+static inline bool i2c_is_read_op(struct i2c_msg *msg)
+{
+	return (msg->flags & I2C_MSG_READ) == I2C_MSG_READ;
+}
+
+/**
  * @brief Dump out an I2C message
  *
  * Dumps out a list of I2C messages. For any that are writes (W), the data is
