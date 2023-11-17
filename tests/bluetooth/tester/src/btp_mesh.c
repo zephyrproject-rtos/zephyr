@@ -820,7 +820,7 @@ static uint8_t priv_beacon_set(const void *cmd, uint16_t cmd_len,
 	val.enabled = cp->enabled;
 	val.rand_interval = cp->rand_interval;
 
-	err = bt_mesh_priv_beacon_cli_set(net.net_idx, cp->dst, &val);
+	err = bt_mesh_priv_beacon_cli_set(net.net_idx, cp->dst, &val, &val);
 	if (err) {
 		LOG_ERR("Failed to send Private Beacon Set (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -857,7 +857,7 @@ static uint8_t priv_gatt_proxy_set(const void *cmd, uint16_t cmd_len,
 
 	state = cp->state;
 
-	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(net.net_idx, cp->dst, &state);
+	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(net.net_idx, cp->dst, state, &state);
 	if (err) {
 		LOG_ERR("Failed to send Private GATT Proxy Set (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -896,7 +896,7 @@ static uint8_t priv_node_id_set(const void *cmd, uint16_t cmd_len,
 	val.net_idx = cp->net_idx;
 	val.state = cp->state;
 
-	err = bt_mesh_priv_beacon_cli_node_id_set(net.net_idx, cp->dst, &val);
+	err = bt_mesh_priv_beacon_cli_node_id_set(net.net_idx, cp->dst, &val, &val);
 	if (err) {
 		LOG_ERR("Failed to send Private Node Identity Set (err %d)", err);
 		return BTP_STATUS_FAILED;
