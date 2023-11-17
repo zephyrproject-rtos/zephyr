@@ -14,4 +14,10 @@ config INPUT_KBD_MATRIX_THREAD_STACK_SIZE
 	help
 	  Size of the stack used for the keyboard matrix thread.
 
+config INPUT_KBD_MATRIX_16_BIT_ROW
+	bool "16 bit row size support"
+	help
+	  Use a 16 bit type for the internal structure, allow using a matrix
+	  with up to 16 rows if the driver supports it.
+
 endif # INPUT_KBD_MATRIX

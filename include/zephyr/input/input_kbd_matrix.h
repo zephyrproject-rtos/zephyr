@@ -30,7 +30,11 @@
 #define INPUT_KBD_MATRIX_SCAN_OCURRENCES 30U
 
 /** Row entry data type */
+#if CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW
+typedef uint16_t kbd_row_t;
+#else
 typedef uint8_t kbd_row_t;
+#endif
 
 /** Maximum number of rows */
 #define INPUT_KBD_MATRIX_ROW_BITS NUM_BITS(kbd_row_t)
