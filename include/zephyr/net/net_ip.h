@@ -842,6 +842,19 @@ static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 }
 
 /**
+ * @brief Check if the given IPv6 address is a site local address.
+ *
+ * @param addr A valid pointer on an IPv6 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv6_is_sl_addr(const struct in6_addr *addr)
+{
+	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFEC0);
+}
+
+
+/**
  * @brief Check if the given IPv6 address is a unique local address.
  *
  * @param addr A valid pointer on an IPv6 address
@@ -851,6 +864,18 @@ static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 static inline bool net_ipv6_is_ula_addr(const struct in6_addr *addr)
 {
 	return addr->s6_addr[0] == 0xFD;
+}
+
+/**
+ * @brief Check if the given IPv6 address is a global address.
+ *
+ * @param addr A valid pointer on an IPv6 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv6_is_global_addr(const struct in6_addr *addr)
+{
+	return (addr->s6_addr[0] & 0xE0) == 0x20;
 }
 
 /**
