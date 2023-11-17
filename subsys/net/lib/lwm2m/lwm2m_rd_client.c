@@ -770,16 +770,20 @@ static int sm_send_bootstrap_registration(void)
 		goto cleanup;
 	}
 
-	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-				  "bs", strlen("bs"));
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+					"bs", strlen("bs"));
+	if (ret < 0) {
+		goto cleanup;
+	}
 
 	snprintk(query_buffer, sizeof(query_buffer) - 1, "ep=%s",
 		 client.ep_name);
-	/* TODO: handle return error */
-	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-				  query_buffer, strlen(query_buffer));
 
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+					query_buffer, strlen(query_buffer));
+	if (ret < 0) {
+		goto cleanup;
+	}
 
 	if (IS_ENABLED(CONFIG_LWM2M_VERSION_1_1)) {
 		int pct = LWM2M_FORMAT_OMA_TLV;
