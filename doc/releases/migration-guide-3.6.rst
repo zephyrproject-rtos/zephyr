@@ -115,3 +115,7 @@ Other Subsystems
 
 Recommended Changes
 *******************
+
+* New macros available for ST sensor DT properties setting. These macros have a self-explanatory
+  name that helps in recognizing what the property setting means (e.g. LSM6DSV16X_DT_ODR_AT_60Hz).
+  (:github:`65410`)
