@@ -1131,7 +1131,7 @@ static void tx_priv_setup(void)
 		FAIL("Beacon set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1169,7 +1169,7 @@ static void test_tx_priv_adv(void)
 	val.enabled = 1;
 	val.rand_interval = 1;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1178,7 +1178,7 @@ static void test_tx_priv_adv(void)
 
 	val.rand_interval = 0;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1187,7 +1187,7 @@ static void test_tx_priv_adv(void)
 
 	val.rand_interval = 0;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1196,7 +1196,7 @@ static void test_tx_priv_adv(void)
 
 	val.rand_interval = 3;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1328,7 +1328,7 @@ static void test_rx_priv_invalid(void)
 		FAIL("Beacon set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_priv_beacon_cli_set(0, rx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, rx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1361,7 +1361,7 @@ static void toggle_priv_beacon(uint16_t addr, uint8_t enabled)
 	val.enabled = enabled;
 	val.rand_interval = 1;
 
-	err = bt_mesh_priv_beacon_cli_set(0, addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}

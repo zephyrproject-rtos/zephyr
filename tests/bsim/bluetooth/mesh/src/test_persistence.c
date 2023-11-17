@@ -953,14 +953,16 @@ static void test_cfg_save(void)
 		.rand_interval = current_stack_cfg->priv_beacon_int,
 	};
 
-	err = bt_mesh_priv_beacon_cli_set(test_netkey_idx, TEST_ADDR, &priv_beacon_state);
+	err = bt_mesh_priv_beacon_cli_set(test_netkey_idx, TEST_ADDR, &priv_beacon_state,
+					  &priv_beacon_state);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err %d)", err);
 	}
 
 	uint8_t priv_beacon_gatt = current_stack_cfg->priv_beacon_gatt;
 
-	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(test_netkey_idx, TEST_ADDR, &priv_beacon_gatt);
+	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(test_netkey_idx, TEST_ADDR, priv_beacon_gatt,
+						     &priv_beacon_gatt);
 	if (err) {
 		FAIL("Failed to enable Private Beacon GATT proxy (err %d)", err);
 	}
