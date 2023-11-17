@@ -66,7 +66,7 @@ if(CONFIG_BINDESC_DEFINE_BUILD_TIME)
       bindesc_time_force_rebuild
       COMMAND ${CMAKE_COMMAND} ${CMAKE_BINARY_DIR}
     )
-    add_dependencies(${ZEPHYR_CURRENT_LIBRARY} bindesc_time_force_rebuild)
+    zephyr_library_add_dependencies(bindesc_time_force_rebuild)
   endif()
 endif()
 
