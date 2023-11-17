@@ -15,10 +15,7 @@ zephyr_sources(
   sem.c
   thread_entry.c
   timeutil.c
-  heap.c
-  heap-validate.c
   bitarray.c
-  multi_heap.c
   )
 
 zephyr_sources_ifdef(CONFIG_FDTABLE fdtable.c)
@@ -49,10 +46,6 @@ zephyr_sources_ifdef(CONFIG_SPSC_PBUF spsc_pbuf.c)
 zephyr_sources_ifdef(CONFIG_SCHED_DEADLINE p4wq.c)
 
 zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
-
-zephyr_sources_ifdef(CONFIG_SHARED_MULTI_HEAP shared_multi_heap.c)
-
-zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
 
 zephyr_sources_ifdef(CONFIG_UTF8 utf8.c)
 
