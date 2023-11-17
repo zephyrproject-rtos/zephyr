@@ -52,6 +52,7 @@ LOG_MODULE_REGISTER(soc);
  * @biref FW entry point called by ROM during normal boot flow
  */
 extern void rom_entry(void);
+void mp_resume_entry(void);
 
 struct core_state {
 	uint32_t a0;
@@ -104,6 +105,10 @@ void power_gate_exit(void)
 	cpu_early_init();
 	sys_cache_data_flush_and_invd_all();
 	_restore_core_context();
+
+	/* Secondary core is resumed by set_dx */
+	if (arch_proc_id())
+		mp_resume_entry();
 }
 
 __asm__(".align 4\n\t"
