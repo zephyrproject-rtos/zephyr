@@ -8,6 +8,7 @@
 
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
+#include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -699,6 +700,10 @@ test_i2c_lsm6dso16is: lsm6dso16is@68 {
 	compatible = "st,lsm6dso16is";
 	reg = <0x68>;
 	irq-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSO16IS_DT_FS_8G>;
+	accel-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
+	gyro-range = <LSM6DSO16IS_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
 };
 
 test_i2c_lsm6dsv16x: lsm6dsv16x@69 {
