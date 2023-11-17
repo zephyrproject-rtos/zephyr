@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/sensor/lps22df.h>
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
 #include <zephyr/dt-bindings/sensor/lis2dw12.h>
+#include <zephyr/dt-bindings/sensor/ism330dhcx.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -271,6 +272,8 @@ test_i2c_ism330dhcx: ism330dhcx@29 {
 	compatible = "st,ism330dhcx";
 	reg = <0x29>;
 	drdy-gpios = <&test_gpio 0 0>;
+	accel-odr = <ISM330DHCX_DT_ODR_104Hz>;
+	gyro-odr = <ISM330DHCX_DT_ODR_104Hz>;
 };
 
 test_i2c_lis2dh: lis2dh@2a {
