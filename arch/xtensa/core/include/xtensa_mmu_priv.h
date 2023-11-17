@@ -163,118 +163,31 @@ static ALWAYS_INLINE void xtensa_itlb_entry_write_sync(uint32_t pte, uint32_t en
 }
 
 /**
- * @brief Invalidate all ITLB entries.
+ * @brief Invalidate all autorefill DTLB and ITLB entries.
  *
- * This should be used carefully since all entries in the instruction TLB
- * will be erased and the only way to find lookup a physical address will be
- * through the page tables.
- */
-static inline void xtensa_itlb_invalidate_sync(void)
-{
-	uint8_t way, i;
-
-	for (way = 0; way < Z_XTENSA_ITLB_WAYS; way++) {
-		for (i = 0; i < (1 << XCHAL_ITLB_ARF_ENTRIES_LOG2); i++) {
-			uint32_t entry = way + (i << Z_XTENSA_PPN_SHIFT);
-
-			xtensa_itlb_entry_invalidate(entry);
-		}
-	}
-	__asm__ volatile("isync");
-}
-
-/**
- * @brief Invalidate all DTLB entries.
+ * This should be used carefully since all refill entries in the data
+ * and instruction TLB. At least two pages, the current code page and
+ * the current stack, will be repopulated by this code as it returns.
  *
- * This should be used carefully since all entries in the data TLB will be
- * erased and the only way to find lookup a physical address will be through
- * the page tables.
+ * This needs to be called in any circumstance where the mappings for
+ * a previously-used page table change.  It does not need to be called
+ * on context switch, where ASID tagging isolates entries for us.
  */
-static inline void xtensa_dtlb_invalidate_sync(void)
+static inline void xtensa_tlb_autorefill_invalidate(void)
 {
-	uint8_t way, i;
+	uint8_t way, i, entries;
 
-	for (way = 0; way < Z_XTENSA_DTLB_WAYS; way++) {
-		for (i = 0; i < (1 << XCHAL_DTLB_ARF_ENTRIES_LOG2); i++) {
-			uint32_t entry = way + (i << Z_XTENSA_PPN_SHIFT);
-
-			xtensa_dtlb_entry_invalidate(entry);
-		}
-	}
-	__asm__ volatile("isync");
-}
-
-/**
- * @brief Invalidates an autorefill DTLB entry.
- *
- * Invalidates the page table enrty that maps a given virtual address.
- */
-static inline void xtensa_dtlb_autorefill_invalidate_sync(void *vaddr)
-{
-	uint8_t way;
+	entries = BIT(MAX(XCHAL_ITLB_ARF_ENTRIES_LOG2,
+			   XCHAL_DTLB_ARF_ENTRIES_LOG2));
 
 	for (way = 0; way < Z_XTENSA_TLB_AUTOREFILL_WAYS; way++) {
-		xtensa_dtlb_entry_invalidate(Z_XTENSA_TLB_ENTRY((uint32_t)vaddr, way));
-	}
-	__asm__ volatile("dsync");
-}
-
-/**
- * @brief Invalidates an autorefill ITLB entry.
- *
- * Invalidates the page table enrty that maps a given virtual address.
- */
-static inline void xtensa_itlb_autorefill_invalidate_sync(void *vaddr)
-{
-	uint8_t way;
-
-	for (way = 0; way < Z_XTENSA_TLB_AUTOREFILL_WAYS; way++) {
-		xtensa_itlb_entry_invalidate(Z_XTENSA_TLB_ENTRY((uint32_t)vaddr, way));
-	}
-	__asm__ volatile("isync");
-}
-/**
- * @brief Invalidate all autorefill ITLB entries.
- *
- * This should be used carefully since all entries in the instruction TLB
- * will be erased and the only way to find lookup a physical address will be
- * through the page tables.
- */
-static inline void xtensa_itlb_autorefill_invalidate_all_sync(void)
-{
-	uint8_t way, i;
-
-	for (way = 0; way < Z_XTENSA_TLB_AUTOREFILL_WAYS; way++) {
-		for (i = 0; i < (1 << XCHAL_ITLB_ARF_ENTRIES_LOG2); i++) {
+		for (i = 0; i < entries; i++) {
 			uint32_t entry = way + (i << Z_XTENSA_PPN_SHIFT);
-
-			xtensa_itlb_entry_invalidate(entry);
+			xtensa_dtlb_entry_invalidate_sync(entry);
+			xtensa_itlb_entry_invalidate_sync(entry);
 		}
 	}
-	__asm__ volatile("isync");
 }
-
-/**
- * @brief Invalidate all autorefill DTLB entries.
- *
- * This should be used carefully since all entries in the data TLB will be
- * erased and the only way to find lookup a physical address will be through
- * the page tables.
- */
-static inline void xtensa_dtlb_autorefill_invalidate_all_sync(void)
-{
-	uint8_t way, i;
-
-	for (way = 0; way < Z_XTENSA_TLB_AUTOREFILL_WAYS; way++) {
-		for (i = 0; i < (1 << XCHAL_DTLB_ARF_ENTRIES_LOG2); i++) {
-			uint32_t entry = way + (i << Z_XTENSA_PPN_SHIFT);
-
-			xtensa_dtlb_entry_invalidate(entry);
-		}
-	}
-	__asm__ volatile("isync");
-}
-
 
 /**
  * @brief Set the page tables.
