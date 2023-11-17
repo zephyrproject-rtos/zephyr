@@ -1057,18 +1057,19 @@ static void solicitation_reset(struct bt_mesh_subnet *sub)
 #endif
 }
 
-static void gatt_connected(struct bt_conn *conn, uint8_t err)
+static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	struct bt_mesh_proxy_client *client;
 	struct bt_conn_info info;
+	int err;
 
-	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL || !service_registered ||
+	err = bt_conn_get_info(conn, &info);
+	if (err || info.role != BT_CONN_ROLE_PERIPHERAL || !service_registered ||
 	    info.id != BT_ID_DEFAULT) {
 		return;
 	}
 
-	LOG_DBG("conn %p err 0x%02x", (void *)conn, err);
+	LOG_DBG("conn %p err 0x%02x", (void *)conn, conn_err);
 
 	client = find_client(conn);
 
@@ -1107,9 +1108,10 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_conn_info info;
 	struct bt_mesh_proxy_client *client;
+	int err;
 
-	bt_conn_get_info(conn, &info);
-	if (info.role != BT_CONN_ROLE_PERIPHERAL || info.id != BT_ID_DEFAULT) {
+	err = bt_conn_get_info(conn, &info);
+	if (err || info.role != BT_CONN_ROLE_PERIPHERAL || info.id != BT_ID_DEFAULT) {
 		return;
 	}
 
