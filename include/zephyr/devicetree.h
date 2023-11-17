@@ -1612,7 +1612,7 @@
  *
  * @code{.dts}
  *     pcie0: pcie@0 {
- *             compatible = "intel,pcie";
+ *             compatible = "pcie-controller";
  *             reg = <0 1>;
  *             #address-cells = <3>;
  *             #size-cells = <2>;
@@ -1657,7 +1657,7 @@
  *
  * @code{.dts}
  *     pcie0: pcie@0 {
- *             compatible = "intel,pcie";
+ *             compatible = "pcie-controller";
  *             reg = <0 1>;
  *             #address-cells = <3>;
  *             #size-cells = <2>;
@@ -1711,7 +1711,7 @@
  *             #address-cells = <2>;
  *
  *             pcie0: pcie@0 {
- *                     compatible = "intel,pcie";
+ *                     compatible = "pcie-controller";
  *                     reg = <0 0 1>;
  *                     #address-cells = <3>;
  *                     #size-cells = <2>;
@@ -1764,7 +1764,7 @@
  *             #address-cells = <2>;
  *
  *             pcie0: pcie@0 {
- *                     compatible = "intel,pcie";
+ *                     compatible = "pcie-controller";
  *                     reg = <0 0 1>;
  *                     #address-cells = <3>;
  *                     #size-cells = <2>;
@@ -1804,7 +1804,7 @@
  *             #address-cells = <2>;
  *
  *             pcie0: pcie@0 {
- *                     compatible = "intel,pcie";
+ *                     compatible = "pcie-controller";
  *                     reg = <0 0 1>;
  *                     #address-cells = <3>;
  *                     #size-cells = <2>;
@@ -1853,7 +1853,7 @@
  *             #address-cells = <2>;
  *
  *             pcie0: pcie@0 {
- *                     compatible = "intel,pcie";
+ *                     compatible = "pcie-controller";
  *                     reg = <0 0 1>;
  *                     #address-cells = <3>;
  *                     #size-cells = <2>;
@@ -1902,7 +1902,7 @@
  *             #address-cells = <2>;
  *
  *             pcie0: pcie@0 {
- *                     compatible = "intel,pcie";
+ *                     compatible = "pcie-controller";
  *                     reg = <0 0 1>;
  *                     #address-cells = <3>;
  *                     #size-cells = <2>;
