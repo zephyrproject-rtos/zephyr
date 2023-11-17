@@ -847,13 +847,13 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 			   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	int ret;
+	int bytes_sent;
 
-	ret = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
+	bytes_sent = VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
 
-	sock_obj_core_update_send_stats(sock, ret);
+	sock_obj_core_update_send_stats(sock, bytes_sent);
 
-	return ret;
+	return bytes_sent;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -932,13 +932,13 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 
 ssize_t z_impl_zsock_sendmsg(int sock, const struct msghdr *msg, int flags)
 {
-	int ret;
+	int bytes_sent;
 
-	ret = VTABLE_CALL(sendmsg, sock, msg, flags);
+	bytes_sent = VTABLE_CALL(sendmsg, sock, msg, flags);
 
-	sock_obj_core_update_send_stats(sock, ret);
+	sock_obj_core_update_send_stats(sock, bytes_sent);
 
-	return ret;
+	return bytes_sent;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1498,13 +1498,13 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			     struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	int ret;
+	int bytes_received;
 
-	ret = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
+	bytes_received = VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
 
-	sock_obj_core_update_recv_stats(sock, ret);
+	sock_obj_core_update_recv_stats(sock, bytes_received);
 
-	return ret;
+	return bytes_received;
 }
 
 #ifdef CONFIG_USERSPACE
