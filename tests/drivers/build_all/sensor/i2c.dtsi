@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/sensor/lis2dw12.h>
 #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
 #include <zephyr/dt-bindings/sensor/iis2dlpc.h>
+#include <zephyr/dt-bindings/sensor/lis2dh.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -284,6 +285,9 @@ test_i2c_lis2dh: lis2dh@2a {
 	reg = <0x2a>;
 	irq-gpios = <&test_gpio 0 0>;
 	/* disconnect-sdo-sa0-pull-up; */
+	int1-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
+	int2-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
+	anym-mode = <LIS2DH_DT_ANYM_6D_POSITION>;
 };
 
 test_i2c_lis2dh12: lis2dh12@2b {
