@@ -1,0 +1,28 @@
+description: Awinic AW20216S LED Driver
+
+compatible: "awinic,aw20216s"
+
+include: ["spi-device.yaml", "led-controller.yaml"]
+
+on-bus: spi
+
+properties:
+  en-gpios:
+    type: phandle-array
+    description: Enable pin
+  sync-gpios:
+    type: phandle-array
+    description: Sync pin
+  current-limit:
+    type: int
+    default: 150
+    description: Global current limit
+  sl-current-limit:
+    type: int
+    default: 150
+    description: Switch level current limit
+
+child-binding:
+  properties:
+    index:
+      required: true
