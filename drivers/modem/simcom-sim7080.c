@@ -1466,7 +1466,7 @@ static int parse_cgnsinf(char *gps_buf)
 	gnss_data.run_status = 1;
 	gnss_data.fix_status = 1;
 
-	strncpy(gnss_data.utc, utc, sizeof(gnss_data.utc));
+	strncpy(gnss_data.utc, utc, sizeof(gnss_data.utc) - 1);
 
 	ret = gnss_split_on_dot(lat, &number, &fraction);
 	if (ret != 0) {
