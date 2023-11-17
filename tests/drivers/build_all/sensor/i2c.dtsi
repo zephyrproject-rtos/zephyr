@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
+#include <zephyr/dt-bindings/sensor/lps22hh.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -323,6 +324,7 @@ test_i2c_lps22hh: lps22hh@32 {
 	compatible = "st,lps22hh";
 	reg = <0x32>;
 	drdy-gpios = <&test_gpio 0 0>;
+	odr = <LPS22HH_DT_ODR_200HZ>;
 };
 
 test_i2c_lps25hb_press: lps25hb-press@33 {
