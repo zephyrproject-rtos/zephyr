@@ -9,11 +9,13 @@ tests:
   libraries.libc.minimal.mem_alloc:
     extra_args: CONF_FILE=prj.conf
     platform_exclude: twr_ke18f
+    filter: not CONFIG_REQUIRES_FULL_LIBC
     tags:
       - minimal_libc
   libraries.libc.minimal.mem_alloc_negative_testing:
     extra_args: CONF_FILE=prj_negative_testing.conf
     platform_exclude: twr_ke18f
+    filter: not CONFIG_REQUIRES_FULL_LIBC
     tags:
       - minimal_libc
   libraries.libc.newlib.mem_alloc:
