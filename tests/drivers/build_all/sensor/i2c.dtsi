@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
 #include <zephyr/dt-bindings/sensor/lis2dw12.h>
 #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
+#include <zephyr/dt-bindings/sensor/iis2dlpc.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -260,6 +261,8 @@ test_i2c_iis2dlpc: iis2dlpc@27 {
 	compatible = "st,iis2dlpc";
 	reg = <0x27>;
 	drdy-gpios = <&test_gpio 0 0>;
+	tap-mode = <IIS2DLPC_DT_SINGLE_DOUBLE_TAP>;
+	power-mode = <IIS2DLPC_DT_HP_MODE>;
 };
 
 test_i2c_iis2mdc: iis2mdc@28 {
