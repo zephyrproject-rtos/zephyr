@@ -45,6 +45,12 @@
 #define PLIC_REG_SIZE 32
 #define PLIC_REG_MASK BIT_MASK(LOG2(PLIC_REG_SIZE))
 
+#ifdef CONFIG_TEST_INTC_PLIC
+#define INTC_PLIC_STATIC
+#else
+#define INTC_PLIC_STATIC static inline
+#endif
+
 typedef void (*riscv_plic_irq_config_func_t)(void);
 struct plic_config {
 	mem_addr_t prio;
@@ -59,12 +65,12 @@ struct plic_config {
 static uint32_t save_irq;
 static const struct device *save_dev;
 
-static inline uint32_t local_irq_to_reg_index(uint32_t local_irq)
+INTC_PLIC_STATIC uint32_t local_irq_to_reg_index(uint32_t local_irq)
 {
 	return local_irq >> LOG2(PLIC_REG_SIZE);
 }
 
-static inline uint32_t local_irq_to_reg_offset(uint32_t local_irq)
+INTC_PLIC_STATIC uint32_t local_irq_to_reg_offset(uint32_t local_irq)
 {
 	return local_irq_to_reg_index(local_irq) * sizeof(uint32_t);
 }
