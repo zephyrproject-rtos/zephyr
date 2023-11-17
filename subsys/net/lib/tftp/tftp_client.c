@@ -293,7 +293,10 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 
 			if (client->callback == NULL) {
 				LOG_ERR("No callback defined.");
-				send_err(sock, client, TFTP_ERROR_DISK_FULL, NULL);
+				if (send_err(sock, client, TFTP_ERROR_DISK_FULL, NULL) < 0) {
+					LOG_ERR("Failed to send error response, err: %d",
+						-errno);
+				}
 				ret = TFTPC_BUFFER_OVERFLOW;
 				goto get_end;
 			}
