@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/sensor/ism330dhcx.h>
 #include <zephyr/dt-bindings/sensor/iis2dlpc.h>
 #include <zephyr/dt-bindings/sensor/lis2dh.h>
+#include <zephyr/dt-bindings/sensor/iis2iclx.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -504,6 +505,8 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	reg = <0x4c>;
 	drdy-gpios = <&test_gpio 0 0>;
 	int-pin = <1>;
+	range = <IIS2ICLX_DT_FS_2G>;
+	odr = <IIS2ICLX_DT_ODR_833Hz>;
 };
 
 test_i2c_wsen_hids: wsen_hids@4d {
