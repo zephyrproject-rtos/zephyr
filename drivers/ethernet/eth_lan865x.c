@@ -373,16 +373,16 @@ static void lan865x_read_chunks(const struct device *dev)
 	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 	pkt = net_pkt_rx_alloc(K_MSEC(cfg->timeout));
 	if (!pkt) {
-		LOG_ERR("OA RX: Could not allocate packet!");
 		k_sem_give(&ctx->tx_rx_sem);
+		LOG_ERR("OA RX: Could not allocate packet!");
 		return;
 	}
 
 	ret = oa_tc6_read_chunks(tc6, pkt);
-	k_sem_give(&ctx->tx_rx_sem);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(ctx->iface);
 		net_pkt_unref(pkt);
+		k_sem_give(&ctx->tx_rx_sem);
 		return;
 	}
 
@@ -392,6 +392,7 @@ static void lan865x_read_chunks(const struct device *dev)
 		LOG_ERR("OA RX: Could not process packet (%d)!", ret);
 		net_pkt_unref(pkt);
 	}
+	k_sem_give(&ctx->tx_rx_sem);
 }
 
 static void lan865x_int_thread(const struct device *dev)
