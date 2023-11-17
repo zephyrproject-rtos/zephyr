@@ -118,6 +118,16 @@ Device Drivers and Device Tree
      * - ``DT_INST_BUS_LABEL(inst)``
        - ``DT_PROP(DT_BUS(DT_DRV_INST(inst)), label)``
 
+* The :dtcompatible:`st,stm32-lptim` lptim which is selected for counting ticks during
+  low power modes is identified by **stm32_lp_tick_source** in the device tree as follows.
+  The stm32_lptim_timer driver has been changed to support this.
+
+  .. code-block:: devicetree
+
+    stm32_lp_tick_source: &lptim1 {
+            status = "okay";
+    };
+
 Power Management
 ================
 
