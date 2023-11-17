@@ -30,13 +30,8 @@
 #define BT_MESH_MODEL_UUIDS_UNASSIGNED()
 #endif
 
-#ifdef CONFIG_BT_MESH_MODEL_EXTENSIONS
 #define BT_MESH_MODEL_RUNTIME_INIT(_user_data)			\
-	.rt = (void *)(void *[]){ NULL, NULL, (_user_data) },
-#else
-#define BT_MESH_MODEL_RUNTIME_INIT(_user_data)			\
-	.rt = (void *)(void *[]){ NULL, (_user_data) },
-#endif
+	.rt = &(struct bt_mesh_model_rt_ctx){ .user_data = (_user_data) },
 
 /**
  * @brief Access layer
@@ -890,7 +885,7 @@ struct bt_mesh_model {
 	};
 
 	/* Model runtime information */
-	struct {
+	struct bt_mesh_model_rt_ctx {
 		uint8_t  elem_idx;   /* Belongs to Nth element */
 		uint8_t  mod_idx;    /* Is the Nth model in the element */
 		uint16_t flags;      /* Model flags for internal bookkeeping */
