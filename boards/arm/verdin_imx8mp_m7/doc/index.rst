@@ -25,18 +25,18 @@ The Verdin iMX8M Plus family consists of:
 | Verdin iMX8M Plus QuadLite 1GB IT               | i.MX 8M Plus QuadLite |
 +-------------------------------------------------+-----------------------+
 
-Quoting NXP
-
-::
+Quoting NXP:
 
    The i.MX 8M Plus family focuses on machine learning and vision, advanced multimedia, and industrial automation with high reliability.
    It is built to meet the needs of Smart Home, Building, City and Industry 4.0 applications.
 
 The Verdin iMX8M Plus integrates a total of 4 Arm Cortex™-A53 CPUs, operating at 1.6 GHz, alongside a single Arm Cortex™-M7F microcontroller operating at 800 MHz.
 
-.. image:: verdin_imx8mp_front.jpg
+.. figure:: verdin_imx8mp_front.jpg
    :align: center
-   :alt: Toradex Verdin iMX8M Plus (Credit: Toradex)
+   :alt: Toradex Verdin iMX8M Plus
+
+   Toradex Verdin iMX8M Plus (Credit: Toradex)
 
 Regarding the Cortex-A53 cluster, it employs the ARMv8-A architecture as a mid-range and energy-efficient processor. With four cores in this cluster, each core is
 equipped with its own L1 memory system. Moreover, the cluster incorporates a unified L2 cache that offers supplementary functions. This cache is housed within a single APR region.
@@ -129,7 +129,8 @@ Other hardware features are not currently supported by the port.
 Connections and IOs
 ===================
 
-UART:
+UART
+----
 
 Zephyr is configured to use the UART4 by default, which is connected to the FTDI
 USB converter on most Toradex carrier boards.
@@ -149,7 +150,8 @@ example). You can change the UART by changing the ``zephyr,console`` and
 | UART_4        | UART4           | Cortex-M4 debug UART      |
 +---------------+-----------------+---------------------------+
 
-GPIO:
+GPIO
+----
 
 All the GPIO banks available are enabled in the :zephyr_file:`dts/arm/nxp/nxp_imx8ml_m7.dtsi`.
 
@@ -195,8 +197,8 @@ For more information about memory mapping see the
 
 At compilation time you have to choose which RAM will be used. To facilitate this process, there are two targets available:
 
-- verdin_imx8mp_m7_itcm, which uses the ITCM configuration.
-- verdin_imx8mp_m7_ddr, which uses the DDR configuration.
+- ``verdin_imx8mp_m7_itcm``, which uses the ITCM configuration.
+- ``verdin_imx8mp_m7_ddr``, which uses the DDR configuration.
 
 
 Starting the Cortex-M7 via U-Boot
@@ -209,11 +211,11 @@ card into the board. Power it up and stop the u-boot execution at prompt.
 Load the M7 binary onto the desired memory and start its execution using:
 
 ITCM
-===
+====
 
 Loading the binary from an EXT4 partition:
 
-.. code-block:: console
+.. code-block:: shell
 
    ext4load mmc 2:2 ${loadaddr} /<path-to-binary>/zephyr.bin
    cp.b ${loadaddr} 0x7e0000 <size_of_binary_in_bytes>
@@ -224,7 +226,7 @@ DDR
 
 Loading the binary from an EXT4 partition:
 
-.. code-block:: console
+.. code-block:: shell
 
    ext4load mmc 2:2 ${loadaddr} /<path-to-binary>/zephyr.bin
    cp.b ${loadaddr} 0x80000000 <size_of_binary_in_bytes>
@@ -240,7 +242,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: verdin_imx8mp_m7
+   :board: verdin_imx8mp_m7_ddr
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -249,7 +251,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-v3.4.0-2300-g03905f7e55d2  ***
-   Hello World! verdin_imx8mp_m7
+   Hello World! verdin_imx8mp_m7_ddr
 
 References
 ==========
