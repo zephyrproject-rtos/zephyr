@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
 #include <zephyr/dt-bindings/sensor/lps22df.h>
+#include <zephyr/dt-bindings/sensor/lis2ds12.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -289,6 +290,8 @@ test_i2c_lis2ds12: lis2ds12@2c {
 	compatible = "st,lis2ds12";
 	reg = <0x2c>;
 	irq-gpios = <&test_gpio 0 0>;
+	power-mode = <LIS2DS12_DT_LOW_POWER>;
+	odr = <LIS2DS12_DT_ODR_12Hz5>;
 };
 
 test_i2c_lis2dw12: lis2dw12@2d {
