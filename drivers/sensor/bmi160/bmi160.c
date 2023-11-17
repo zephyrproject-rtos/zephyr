@@ -724,6 +724,128 @@ static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static int bmi160_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	int rc;
+
+	if (attr == SENSOR_ATTR_OFFSET) {
+		if (chan != SENSOR_CHAN_ACCEL_XYZ && chan != SENSOR_CHAN_GYRO_XYZ) {
+			return -EINVAL;
+		}
+
+		int8_t data[7];
+
+		rc = bmi160_read(dev, BMI160_REG_OFFSET_ACC_X, data, 7);
+		if (rc != 0) {
+			return rc;
+		}
+
+		if ((chan == SENSOR_CHAN_ACCEL_XYZ &&
+		     FIELD_GET(BIT(BMI160_ACC_OFS_EN_POS), data[6]) == 0) ||
+		    (chan == SENSOR_CHAN_GYRO_XYZ &&
+		     FIELD_GET(BIT(BMI160_GYR_OFS_EN_POS), data[6]) == 0)) {
+			for (int i = 0; i < 3; ++i) {
+				val[i].val1 = 0;
+				val[i].val2 = 0;
+			}
+		} else {
+			for (int i = 0; i < 3; ++i) {
+				if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+					int32_t ug = data[i] * INT32_C(3900);
+
+					sensor_ug_to_ms2(ug, &val[i]);
+				} else {
+					int32_t udeg =
+						(FIELD_GET(GENMASK((2 * i) + 1, 2 * i), data[6])
+						 << 8) |
+						data[3 + i];
+
+					udeg |= 0 - (udeg & 0x200);
+					udeg *= 61000;
+					sensor_10udegrees_to_rad(udeg / 10, &val[i]);
+				}
+			}
+		}
+		return 0;
+	}
+	if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+			int64_t rate_uhz;
+			uint8_t acc_odr;
+
+			if (IS_ENABLED(CONFIG_BMI160_ACCEL_ODR_RUNTIME)) {
+				/* Read the register */
+				rc = bmi160_byte_read(dev, BMI160_REG_ACC_CONF, &acc_odr);
+				if (rc != 0) {
+					return rc;
+				}
+				acc_odr = FIELD_GET(BMI160_ACC_CONF_ODR_MASK, acc_odr);
+			} else {
+				acc_odr = BMI160_DEFAULT_ODR_ACC;
+			}
+
+			rate_uhz = INT64_C(100000000) * BIT(acc_odr) / 256;
+			val->val1 = rate_uhz / 1000000;
+			val->val2 = rate_uhz - val->val1 * 1000000;
+			return 0;
+		} else if (chan == SENSOR_CHAN_GYRO_XYZ) {
+			int64_t rate_uhz;
+			uint8_t gyr_ord;
+
+			if (IS_ENABLED(CONFIG_BMI160_GYRO_ODR_RUNTIME)) {
+				/* Read the register */
+				rc = bmi160_byte_read(dev, BMI160_REG_GYR_CONF, &gyr_ord);
+				if (rc != 0) {
+					return rc;
+				}
+				gyr_ord = FIELD_GET(BMI160_GYR_CONF_ODR_MASK, gyr_ord);
+			} else {
+				gyr_ord = BMI160_DEFAULT_ODR_GYR;
+			}
+
+			rate_uhz = INT64_C(100000000) * BIT(gyr_ord) / 256;
+			val->val1 = rate_uhz / 1000000;
+			val->val2 = rate_uhz - val->val1 * 1000000;
+			return 0;
+
+		}
+		return -EINVAL;
+
+	}
+	if (attr == SENSOR_ATTR_FULL_SCALE) {
+		if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+			uint8_t acc_range;
+
+			if (IS_ENABLED(CONFIG_BMI160_ACCEL_RANGE_RUNTIME)) {
+				rc = bmi160_byte_read(dev, BMI160_REG_ACC_RANGE, &acc_range);
+				if (rc != 0) {
+					return rc;
+				}
+			} else {
+				acc_range = BMI160_DEFAULT_RANGE_ACC;
+			}
+			sensor_g_to_ms2(bmi160_acc_reg_val_to_range(acc_range), val);
+			return 0;
+		} else if (chan == SENSOR_CHAN_GYRO_XYZ) {
+			uint8_t gyr_range;
+
+			if (IS_ENABLED(CONFIG_BMI160_GYRO_RANGE_RUNTIME)) {
+				rc = bmi160_byte_read(dev, BMI160_REG_GYR_RANGE, &gyr_range);
+				if (rc != 0) {
+					return rc;
+				}
+			} else {
+				gyr_range = BMI160_DEFAULT_RANGE_GYR;
+			}
+			sensor_degrees_to_rad(bmi160_gyr_reg_val_to_range(gyr_range), val);
+			return 0;
+		}
+		return -EINVAL;
+	}
+	return -EINVAL;
+}
+
 static int bmi160_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
@@ -893,6 +1015,7 @@ static int bmi160_channel_get(const struct device *dev,
 
 static const struct sensor_driver_api bmi160_api = {
 	.attr_set = bmi160_attr_set,
+	.attr_get = bmi160_attr_get,
 #ifdef CONFIG_BMI160_TRIGGER
 	.trigger_set = bmi160_trigger_set,
 #endif
