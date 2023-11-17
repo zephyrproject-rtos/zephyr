@@ -131,7 +131,7 @@ static const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 
 uint16_t dummy_keys[CONFIG_BT_MESH_MODEL_KEY_COUNT] = { 0 };
 
-static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
+static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 		   BT_MESH_MODEL_CFG_CLI(&cfg_cli),

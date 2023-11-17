@@ -187,7 +187,7 @@ static int gen_onoff_get(const struct bt_mesh_model *model,
 	struct led_onoff_state *state = model->rt->user_data;
 
 	printk("addr 0x%04x onoff 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, state->current);
+	       bt_mesh_model_elem(model)->rt->addr, state->current);
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 	net_buf_simple_add_u8(&msg, state->current);
 
@@ -229,7 +229,7 @@ static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 
 	printk("addr 0x%02x state 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, state->current);
+	       bt_mesh_model_elem(model)->rt->addr, state->current);
 
 	if (set_led_state(state->dev_id, onoff)) {
 		printk("Failed to set led state\n");
@@ -404,7 +404,7 @@ static int vnd_hello(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 
 	printk("Hello message from 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_model_elem(model)->rt->addr) {
 		printk("Ignoring message from self\n");
 		return 0;
 	}
@@ -431,7 +431,7 @@ static int vnd_baduser(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 
 	printk("\"Bad user\" message from 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_model_elem(model)->rt->addr) {
 		printk("Ignoring message from self\n");
 		return 0;
 	}
@@ -455,7 +455,7 @@ static int vnd_heartbeat(const struct bt_mesh_model *model,
 	uint8_t init_ttl, hops;
 
 	/* Ignore messages from self */
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_model_elem(model)->rt->addr) {
 		return 0;
 	}
 
@@ -495,7 +495,7 @@ static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, MOD_LF, vnd_ops, &vnd_pub, NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 
@@ -638,12 +638,12 @@ void mesh_start(void)
 
 bool mesh_is_initialized(void)
 {
-	return elements[0].addr != BT_MESH_ADDR_UNASSIGNED;
+	return elements[0].rt->addr != BT_MESH_ADDR_UNASSIGNED;
 }
 
 uint16_t mesh_get_addr(void)
 {
-	return elements[0].addr;
+	return elements[0].rt->addr;
 }
 
 int mesh_init(void)

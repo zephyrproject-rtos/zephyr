@@ -81,7 +81,7 @@ static const struct bt_mesh_model models_vnd1[] = {
 			     &test_model_vnd1_cb),
 };
 
-static struct bt_mesh_elem elems[] = {
+static const struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models_1, models_vnd1),
 	BT_MESH_ELEM(1, models_2, BT_MESH_MODEL_NONE),
 	BT_MESH_ELEM(2, models_3, BT_MESH_MODEL_NONE),

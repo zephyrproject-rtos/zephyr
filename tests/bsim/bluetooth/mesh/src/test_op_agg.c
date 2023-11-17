@@ -119,7 +119,7 @@ const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
+static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV, BT_MESH_MODEL_CFG_CLI(&cfg_cli), BT_MESH_MODEL_OP_AGG_SRV,
 		   BT_MESH_MODEL_OP_AGG_CLI),

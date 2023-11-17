@@ -205,7 +205,7 @@ void bt_mesh_op_agg_cli_timeout_set(int32_t timeout)
 
 int bt_mesh_op_agg_cli_send(const struct bt_mesh_model *model, struct net_buf_simple *msg)
 {
-	uint16_t src = bt_mesh_model_elem(model)->addr;
+	uint16_t src = bt_mesh_model_elem(model)->rt->addr;
 
 	if (net_buf_simple_tailroom(&srcs) < 2) {
 		return -ENOMEM;

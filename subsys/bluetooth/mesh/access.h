@@ -20,7 +20,7 @@ enum {
 	BT_MESH_MOD_DATA_PENDING = BIT(5),
 };
 
-void bt_mesh_elem_register(struct bt_mesh_elem *elem, uint8_t count);
+void bt_mesh_elem_register(const struct bt_mesh_elem *elem, uint8_t count);
 
 uint8_t bt_mesh_elem_count(void);
 size_t bt_mesh_comp_page_size(uint8_t page);
@@ -29,7 +29,7 @@ size_t bt_mesh_metadata_page_0_size(void);
 int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset);
 
 /* Find local element based on unicast address */
-struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
+const struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
 
 bool bt_mesh_has_addr(uint16_t addr);
 bool bt_mesh_model_has_key(const struct bt_mesh_model *mod, uint16_t key);
@@ -43,7 +43,7 @@ uint16_t *bt_mesh_model_find_group(const struct bt_mesh_model **mod, uint16_t ad
 const uint8_t **bt_mesh_model_find_uuid(const struct bt_mesh_model **mod, const uint8_t *uuid);
 
 void bt_mesh_model_foreach(void (*func)(const struct bt_mesh_model *mod,
-					struct bt_mesh_elem *elem,
+					const struct bt_mesh_elem *elem,
 					bool vnd, bool primary,
 					void *user_data),
 			   void *user_data);

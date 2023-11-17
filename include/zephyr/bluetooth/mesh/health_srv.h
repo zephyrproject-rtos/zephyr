@@ -219,7 +219,7 @@ struct bt_mesh_health_srv {
  *
  *  @return 0 on success, or (negative) error code otherwise.
  */
-int bt_mesh_health_srv_fault_update(struct bt_mesh_elem *elem);
+int bt_mesh_health_srv_fault_update(const struct bt_mesh_elem *elem);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];

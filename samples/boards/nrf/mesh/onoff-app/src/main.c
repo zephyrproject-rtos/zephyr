@@ -236,7 +236,7 @@ const struct bt_mesh_model *mod_srv_sw[] = {
  * Root and Secondary Element Declarations
  */
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
 	BT_MESH_ELEM(0, secondary_0_models, BT_MESH_MODEL_NONE),
 	BT_MESH_ELEM(0, secondary_1_models, BT_MESH_MODEL_NONE),
@@ -289,7 +289,7 @@ static int gen_onoff_get(const struct bt_mesh_model *model,
 	struct led_onoff_state *onoff_state = model->rt->user_data;
 
 	printk("addr 0x%04x onoff 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, onoff_state->current);
+	       bt_mesh_model_elem(model)->rt->addr, onoff_state->current);
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 	net_buf_simple_add_u8(&msg, onoff_state->current);
 
@@ -310,7 +310,7 @@ static int gen_onoff_set_unack(const struct bt_mesh_model *model,
 
 	onoff_state->current = net_buf_simple_pull_u8(buf);
 	printk("addr 0x%02x state 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, onoff_state->current);
+	       bt_mesh_model_elem(model)->rt->addr, onoff_state->current);
 
 	gpio_pin_set_dt(&onoff_state->led_device, onoff_state->current);
 
@@ -361,7 +361,7 @@ static int gen_onoff_status(const struct bt_mesh_model *model,
 	state = net_buf_simple_pull_u8(buf);
 
 	printk("Node 0x%04x OnOff status from 0x%04x with state 0x%02x\n",
-	       bt_mesh_model_elem(model)->addr, ctx->addr, state);
+	       bt_mesh_model_elem(model)->rt->addr, ctx->addr, state);
 
 	return 0;
 }

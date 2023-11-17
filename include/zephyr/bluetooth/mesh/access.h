@@ -145,19 +145,23 @@ extern "C" {
  *  @param _mods      Array of models.
  *  @param _vnd_mods  Array of vendor models.
  */
-#define BT_MESH_ELEM(_loc, _mods, _vnd_mods)        \
-{                                                   \
-	.loc              = (_loc),                 \
-	.model_count      = ARRAY_SIZE(_mods),      \
-	.vnd_model_count  = ARRAY_SIZE(_vnd_mods),  \
-	.models           = (_mods),                \
-	.vnd_models       = (_vnd_mods),            \
+#define BT_MESH_ELEM(_loc, _mods, _vnd_mods)				\
+{									\
+	.rt		  = &(struct bt_mesh_elem_rt_ctx) { 0 },	\
+	.loc              = (_loc),					\
+	.model_count      = ARRAY_SIZE(_mods),				\
+	.vnd_model_count  = ARRAY_SIZE(_vnd_mods),			\
+	.models           = (_mods),					\
+	.vnd_models       = (_vnd_mods),				\
 }
 
 /** Abstraction that describes a Mesh Element */
 struct bt_mesh_elem {
-	/** Unicast Address. Set at runtime during provisioning. */
-	uint16_t addr;
+	/** Mesh Element runtime information */
+	struct bt_mesh_elem_rt_ctx {
+		/** Unicast Address. Set at runtime during provisioning. */
+		uint16_t addr;
+	} * const rt;
 
 	/** Location Descriptor (GATT Bluetooth Namespace Descriptors) */
 	const uint16_t loc;
@@ -1001,7 +1005,7 @@ static inline bool bt_mesh_model_pub_is_retransmission(const struct bt_mesh_mode
  *
  *  @return Pointer to the element that the given model belongs to.
  */
-struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod);
+const struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod);
 
 /** @brief Find a SIG model.
  *
@@ -1147,7 +1151,7 @@ struct bt_mesh_comp {
 	uint16_t vid; /**< Version ID */
 
 	size_t elem_count; /**< The number of elements in this device. */
-	struct bt_mesh_elem *elem; /**< List of elements. */
+	const struct bt_mesh_elem *elem; /**< List of elements. */
 };
 
 /** Composition data page 2 record. */

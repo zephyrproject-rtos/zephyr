@@ -79,7 +79,7 @@ static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
 
 static const struct bt_mesh_comp prb_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),

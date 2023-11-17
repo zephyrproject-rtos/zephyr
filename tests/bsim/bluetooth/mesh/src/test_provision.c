@@ -118,7 +118,7 @@ static struct bt_mesh_rpr_cli rpr_cli = {
 
 static const struct bt_mesh_comp rpr_cli_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&(struct bt_mesh_cfg_cli){}),
@@ -130,7 +130,7 @@ static const struct bt_mesh_comp rpr_cli_comp = {
 
 static const struct bt_mesh_comp rpr_srv_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_RPR_SRV),
@@ -141,7 +141,7 @@ static const struct bt_mesh_comp rpr_srv_comp = {
 
 static const struct bt_mesh_comp rpr_cli_srv_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&(struct bt_mesh_cfg_cli){}),
@@ -182,7 +182,7 @@ const struct bt_mesh_model_cb mock_model_cb = {
 
 static const struct bt_mesh_comp rpr_srv_comp_unresponsive = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
@@ -221,7 +221,7 @@ static const struct bt_mesh_comp2 comp_p2_2 = {.record_cnt = 2, .record = comp_r
 
 static const struct bt_mesh_comp rpr_srv_comp_2_elem = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_RPR_SRV),
