@@ -23,3 +23,7 @@ struct bt_csip_set_sirk {
 
 struct bt_csip_set_coordinator_csis_inst *bt_csip_set_coordinator_csis_inst_by_handle(
 	struct bt_conn *conn, uint16_t start_handle);
+
+void bt_csip_set_coordinator_set_members_sort_by_rank(
+	const struct bt_csip_set_coordinator_set_member *members[], size_t count,
+	const struct bt_csip_set_coordinator_set_info *info, bool ascending);

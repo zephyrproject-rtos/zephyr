@@ -186,17 +186,19 @@ static struct bt_csip_set_coordinator_svc_inst *get_next_active_instance(void)
 	return svc_inst;
 }
 
-static int member_rank_compare_asc(const void *m1, const void *m2)
+typedef int (*member_rank_compare_func_t)(const struct bt_csip_set_coordinator_set_member *member_1,
+					  const struct bt_csip_set_coordinator_set_member *member_2,
+					  const struct bt_csip_set_coordinator_set_info *info);
+
+static int member_rank_compare_asc(const struct bt_csip_set_coordinator_set_member *member_1,
+				   const struct bt_csip_set_coordinator_set_member *member_2,
+				   const struct bt_csip_set_coordinator_set_info *info)
 {
-	const struct bt_csip_set_coordinator_set_member *member_1 =
-		*(const struct bt_csip_set_coordinator_set_member **)m1;
-	const struct bt_csip_set_coordinator_set_member *member_2 =
-		*(const struct bt_csip_set_coordinator_set_member **)m2;
 	struct bt_csip_set_coordinator_svc_inst *svc_inst_1;
 	struct bt_csip_set_coordinator_svc_inst *svc_inst_2;
 
-	svc_inst_1 = lookup_instance_by_set_info(member_1, active.info);
-	svc_inst_2 = lookup_instance_by_set_info(member_2, active.info);
+	svc_inst_1 = lookup_instance_by_set_info(member_1, info);
+	svc_inst_2 = lookup_instance_by_set_info(member_2, info);
 
 	if (svc_inst_1 == NULL) {
 		LOG_ERR("svc_inst_1 was NULL for member %p", member_1);
@@ -211,12 +213,14 @@ static int member_rank_compare_asc(const void *m1, const void *m2)
 	return svc_inst_1->set_info->rank - svc_inst_2->set_info->rank;
 }
 
-static int member_rank_compare_desc(const void *m1, const void *m2)
+static int member_rank_compare_desc(const struct bt_csip_set_coordinator_set_member *member_1,
+				    const struct bt_csip_set_coordinator_set_member *member_2,
+				    const struct bt_csip_set_coordinator_set_info *info)
 {
 	/* If we call the "compare ascending" function with the members
 	 * reversed, it will work as a descending comparison
 	 */
-	return member_rank_compare_asc(m2, m1);
+	return member_rank_compare_asc(member_2, member_1, info);
 }
 
 static void active_members_store_ordered(const struct bt_csip_set_coordinator_set_member *members[],
@@ -224,20 +228,50 @@ static void active_members_store_ordered(const struct bt_csip_set_coordinator_se
 					 const struct bt_csip_set_coordinator_set_info *info,
 					 bool ascending)
 {
+	/* FIXME: The operation below shall not be allowed, as it looses pointer constness */
 	(void)memcpy(active.members, members, count * sizeof(members[0U]));
 	active.members_count = count;
 	active.info = info;
 
+	bt_csip_set_coordinator_set_members_sort_by_rank(
+		(const struct bt_csip_set_coordinator_set_member **)active.members,
+		active.members_count, active.info, ascending);
+}
+
+void bt_csip_set_coordinator_set_members_sort_by_rank(
+	const struct bt_csip_set_coordinator_set_member *members[], size_t count,
+	const struct bt_csip_set_coordinator_set_info *info, bool ascending)
+{
+	member_rank_compare_func_t func = ascending ? member_rank_compare_asc :
+						      member_rank_compare_desc;
+
 	if (count > 1U && CONFIG_BT_MAX_CONN > 1) {
-		qsort(active.members, count, sizeof(members[0U]),
-		ascending ? member_rank_compare_asc : member_rank_compare_desc);
+		for (size_t i = 0; i < count - 1; i++) {
+			bool swapped = false;
+
+			for (size_t j = 0; j < count - i - 1; j++) {
+				if (func(members[j], members[j + 1], info) > 0) {
+					const struct bt_csip_set_coordinator_set_member *tmp;
+
+					tmp = members[j];
+					members[j] = members[j + 1];
+					members[j + 1] = tmp;
+
+					swapped = true;
+				}
+			}
+
+			if (!swapped) {
+				break;
+			}
+		}
 
 #if defined(CONFIG_ASSERT)
 		for (size_t i = 1U; i < count; i++) {
 			const struct bt_csip_set_coordinator_svc_inst *svc_inst_1 =
-				lookup_instance_by_set_info(active.members[i - 1U], info);
+				lookup_instance_by_set_info(members[i - 1U], info);
 			const struct bt_csip_set_coordinator_svc_inst *svc_inst_2 =
-				lookup_instance_by_set_info(active.members[i], info);
+				lookup_instance_by_set_info(members[i], info);
 			const uint8_t rank_1 = svc_inst_1->set_info->rank;
 			const uint8_t rank_2 = svc_inst_2->set_info->rank;
 
