@@ -48,7 +48,7 @@ static int cmd_priv_beacon_set(const struct shell *sh, size_t argc, char *argv[]
 
 	err = bt_mesh_priv_beacon_cli_set(bt_mesh_shell_target_ctx.net_idx,
 					  bt_mesh_shell_target_ctx.dst,
-					  &val);
+					  &val, &val);
 	if (err) {
 		shell_error(sh, "Failed to send Private Beacon Set (err %d)", err);
 		return 0;
@@ -86,7 +86,7 @@ static int cmd_priv_gatt_proxy_set(const struct shell *sh, size_t argc, char *ar
 	}
 
 	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(bt_mesh_shell_target_ctx.net_idx,
-						     bt_mesh_shell_target_ctx.dst, &state);
+						     bt_mesh_shell_target_ctx.dst, state, &state);
 	if (err) {
 		shell_error(sh, "Failed to send Private GATT Proxy Set (err %d)", err);
 		return 0;
@@ -130,7 +130,7 @@ static int cmd_priv_node_id_set(const struct shell *sh, size_t argc, char *argv[
 	}
 
 	err = bt_mesh_priv_beacon_cli_node_id_set(bt_mesh_shell_target_ctx.net_idx,
-						  bt_mesh_shell_target_ctx.dst, &val);
+						  bt_mesh_shell_target_ctx.dst, &val, &val);
 	if (err) {
 		shell_error(sh, "Failed to send Private Node Identity Set (err %d)", err);
 		return 0;
