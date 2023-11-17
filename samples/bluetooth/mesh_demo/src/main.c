@@ -86,7 +86,7 @@ static int vnd_button_pressed(const struct bt_mesh_model *model,
 {
 	printk("src 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+	if (ctx->addr == bt_mesh_model_elem(model)->rt->addr) {
 		return 0;
 	}
 
@@ -105,7 +105,7 @@ static const struct bt_mesh_model vnd_models[] = {
 	BT_MESH_MODEL_VND(BT_COMP_ID_LF, MOD_LF, vnd_ops, NULL, NULL),
 };
 
-static struct bt_mesh_elem elements[] = {
+static const struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 
