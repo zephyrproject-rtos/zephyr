@@ -11,7 +11,7 @@
 /*
  * Print heap info for debugging / analysis purpose
  */
-void heap_print_info(struct z_heap *h, bool dump_chunks)
+static void heap_print_info(struct z_heap *h, bool dump_chunks)
 {
 	int i, nb_buckets = bucket_idx(h, h->end_chunk) + 1;
 	size_t free_bytes, allocated_bytes, total, overhead;

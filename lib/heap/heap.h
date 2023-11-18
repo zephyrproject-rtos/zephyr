@@ -279,7 +279,4 @@ static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
 	}
 }
 
-/* For debugging */
-void heap_print_info(struct z_heap *h, bool dump_chunks);
-
 #endif /* ZEPHYR_INCLUDE_LIB_OS_HEAP_H_ */
