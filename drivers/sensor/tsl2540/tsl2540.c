@@ -162,8 +162,12 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR, TSL2540_ENABLE_MASK &
-				~TSL2540_ENABLE_CONF);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_ENABLE_ADDR, TSL2540_ENABLE_MASK &
+				    ~TSL2540_ENABLE_CONF);
+	if (ret) {
+		k_sem_give(&data->sem);
+		return ret;
+	}
 
 #if CONFIG_TSL2540_TRIGGER
 	if (chan == SENSOR_CHAN_LIGHT) {
