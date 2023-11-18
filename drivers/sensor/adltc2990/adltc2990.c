@@ -142,7 +142,7 @@ static int adltc2990_trigger_measurement(const struct device *dev)
 }
 
 static int adltc2990_fetch_property_value(const struct device *dev,
-					      enum adltc2990_monitoring_type type,
+					  enum adltc2990_monitoring_type type,
 					  enum adltc2990_monitor_pins pin,
 					  int32_t *output)
 {
@@ -187,9 +187,17 @@ static int adltc2990_fetch_property_value(const struct device *dev,
 		return -EINVAL;
 	}
 	}
+	int ret;
 
-	i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value);
-	i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value);
+	ret = i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value);
+	if (ret) {
+		return ret;
+	}
+
+	ret = i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value);
+	if (ret) {
+		return ret;
+	}
 	uint16_t conversion_factor;
 	uint8_t negative_bit_index = 14U, sensor_val_divisor = 100U;
 
