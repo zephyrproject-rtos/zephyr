@@ -49,8 +49,6 @@ zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 
 zephyr_sources_ifdef(CONFIG_UTF8 utf8.c)
 
-zephyr_sources_ifdef(CONFIG_SYS_MEM_BLOCKS mem_blocks.c)
-
 zephyr_sources_ifdef(CONFIG_WINSTREAM winstream.c)
 
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)

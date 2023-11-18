@@ -169,5 +169,4 @@ config UTF8
 
 rsource "Kconfig.cbprintf"
 
-
 endmenu
