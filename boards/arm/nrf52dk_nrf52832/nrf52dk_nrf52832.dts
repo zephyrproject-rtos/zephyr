@@ -148,6 +148,11 @@
 
 &gpio0 {
 	status = "okay";
+	gpio-reserved-ranges = <0 11>, <21 1>, <28 4>;
+	gpio-line-names = "", "", "", "", "", "", "", "",
+		"", "", "", "DO", "D1", "BUTTON1", "BUTTON2", "BUTTON3",
+		"BUTTON4", "LED1", "LED2", "LED3", "LED4", "", "D10", "D11",
+		"D12", "D13", "D14", "D15", "", "", "", "";
 };
 
 arduino_serial: &uart0 {
