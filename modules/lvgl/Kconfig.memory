@@ -26,6 +26,7 @@ choice LV_Z_MEMORY_POOL
 
 	config LV_Z_MEM_POOL_SYS_HEAP
 		bool "User space lvgl pool"
+		select SYS_HEAP_INFO
 		help
 		  Use a dedicated memory pool from a private sys heap.
 
