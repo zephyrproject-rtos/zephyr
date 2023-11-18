@@ -38,8 +38,9 @@
 		group3 {
 			pinmux = <&iomuxc_gpio_disp_b1_11_enet_1g_ref_clk1>;
 			drive-strength = "high";
-			slew-rate = "slow";
+			slew-rate = "fast";
 			input-enable;
+			bias-pull-down;
 		};
 	};
 
