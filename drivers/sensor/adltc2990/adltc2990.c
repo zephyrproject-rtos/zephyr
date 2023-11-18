@@ -93,13 +93,20 @@ static enum adltc2990_monitoring_type adltc2990_get_v3_v4_measurement_modes(uint
 	return type;
 }
 
-static bool adltc2990_is_busy(const struct device *dev)
+static int adltc2990_is_busy(const struct device *dev, bool *is_busy)
 {
 	const struct adltc2990_config *cfg = dev->config;
 	uint8_t status_reg = 0;
+	int ret;
 
-	i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg);
-	return status_reg & BIT(0);
+	ret = i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg);
+	if (ret) {
+		return ret;
+	}
+
+	*is_busy = status_reg & BIT(0);
+
+	return 0;
 }
 
 static void adltc2990_get_v1_v2_val(const struct device *dev, struct sensor_value *val,
@@ -240,6 +247,7 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		cfg->measurement_mode[1], cfg->measurement_mode[0]);
 
 	float voltage_divider_ratio;
+	int ret;
 
 	switch (chan) {
 	case SENSOR_CHAN_DIE_TEMP: {
@@ -334,7 +342,14 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		break;
 	}
 	case SENSOR_CHAN_ALL: {
-		if (adltc2990_is_busy(dev)) {
+		bool is_busy;
+
+		ret = adltc2990_is_busy(dev, &is_busy);
+		if (ret) {
+			return ret;
+		}
+
+		if (is_busy) {
 			LOG_INF("ADLTC2990 conversion ongoing");
 			return -EBUSY;
 		}
