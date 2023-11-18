@@ -701,37 +701,18 @@ int usbd_device_set_pid(struct usbd_contex *const uds_ctx,
 			const uint16_t pid);
 
 /**
- * @brief Set USB device descriptor value bDeviceClass
+ * @brief Set USB device descriptor code triple Base Class, SubClass, and Protocol
  *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] value   bDeviceClass value
- *
- * @return 0 on success, other values on fail.
- */
-int usbd_device_set_class(struct usbd_contex *const uds_ctx,
-			  const uint8_t value);
-
-/**
- * @brief Set USB device descriptor value bDeviceSubClass
- *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] value   bDeviceSubClass value
+ * @param[in] uds_ctx  Pointer to USB device support context
+ * @param[in] class    bDeviceClass value
+ * @param[in] subclass bDeviceSubClass value
+ * @param[in] protocol bDeviceProtocol value
  *
  * @return 0 on success, other values on fail.
  */
-int usbd_device_set_subclass(struct usbd_contex *const uds_ctx,
-			     const uint8_t value);
-
-/**
- * @brief Set USB device descriptor value bDeviceProtocol
- *
- * @param[in] uds_ctx Pointer to USB device support context
- * @param[in] value   bDeviceProtocol value
- *
- * @return 0 on success, other values on fail.
- */
-int usbd_device_set_proto(struct usbd_contex *const uds_ctx,
-			  const uint8_t value);
+int usbd_device_set_code_triple(struct usbd_contex *const uds_ctx,
+				const uint8_t class, const uint8_t subclass,
+				const uint8_t protocol);
 
 /**
  * @brief Setup USB device configuration attribute Remote Wakeup
