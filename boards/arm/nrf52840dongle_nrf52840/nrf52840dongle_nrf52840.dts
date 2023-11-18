@@ -106,10 +106,18 @@
 
 &gpio0 {
 	status = "okay";
+	gpio-reserved-ranges = <0 6>, <7 1>, <9 3>, <13 19>;
+	gpio-line-names = "", "", "", "", "", "", "LED1", "",
+		"LED2 R", "", "", "", "LED2 B", "", "", "",
+		"", "", "", "", "", "", "", "",
+		"", "", "", "", "", "", "", "";
 };
 
 &gpio1 {
 	status = "okay";
+	gpio-reserved-ranges = <0 6>, <7 2>, <10 6>;
+	gpio-line-names = "", "", "", "", "", "", "SW1", "",
+		"", "LED2 G", "", "", "", "", "", "";
 };
 
 &uart0 {
