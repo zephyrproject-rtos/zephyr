@@ -112,8 +112,20 @@ config SYS_HEAP_AUTO
 
 endchoice
 
+config MULTI_HEAP
+	bool "Multi-heap manager"
+	help
+	  Allows multiple sys_heap regions to be unified under a single
+	  allocation API.  Sometimes apps need the ability to share multiple
+	  discontiguous regions in a single "heap", or
+	  to have memory of different "types" be allocated heuristically based
+	  on usage (e.g. cacheability, latency, power...).  This allows a
+	  user-specified function to select the underlying memory to use for
+	  each application.
+
 config SHARED_MULTI_HEAP
 	bool "Shared multi-heap manager"
+	select MULTI_HEAP
 	help
 	  Enable support for a shared multi-heap manager that uses the
 	  multi-heap allocator to manage a set of reserved memory regions with
