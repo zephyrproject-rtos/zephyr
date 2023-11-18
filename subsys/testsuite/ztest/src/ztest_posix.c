@@ -172,6 +172,10 @@ static bool z_ztest_testargs_contains(const char *suite_name, const char *test_n
 	return found;
 }
 
+#ifdef CONFIG_ZTEST_SHELL
+/* see ztest_shell.c */
+bool z_ztest_should_test_run(const char *suite, const char *test);
+#else
 /**
  * @brief Determines if the test case should run based on test cases listed
  *	  in the command line argument.
@@ -192,6 +196,7 @@ bool z_ztest_should_test_run(const char *suite, const char *test)
 
 	return run_test;
 }
+#endif
 
 /**
  * @brief Determines if the test suite should run based on test cases listed

@@ -62,6 +62,13 @@ static void end_report(void)
 	}
 }
 
+#ifdef CONFIG_ZTEST_SHELL
+void __ztest_shell_end_report(void)
+{
+	end_report();
+}
+#endif
+
 static int cleanup_test(struct ztest_unit_test *test)
 {
 	int ret = TC_PASS;
@@ -1072,6 +1079,8 @@ void ztest_verify_all_test_suites_ran(void)
 
 void ztest_run_all(const void *state) { ztest_api.run_all(state); }
 
+#ifdef CONFIG_ZTEST_MAIN
+
 void __weak test_main(void)
 {
 	ztest_run_all(NULL);
@@ -1156,3 +1165,5 @@ int main(void)
 	return 0;
 }
 #endif
+
+#endif /* CONFIG_ZTEST_MAIN */
