@@ -280,46 +280,19 @@ static int cmd_device_vid(const struct shell *sh, size_t argc,
 	return ret;
 }
 
-static int cmd_device_class(const struct shell *sh, size_t argc,
-			    char *argv[])
+static int cmd_device_code_triple(const struct shell *sh, size_t argc,
+				  char *argv[])
 {
-	uint8_t value;
+	uint8_t class, subclass, protocol;
 	int ret;
 
-	value = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_class(my_uds_ctx, value);
+	class = strtol(argv[1], NULL, 16);
+	subclass = strtol(argv[2], NULL, 16);
+	protocol = strtol(argv[3], NULL, 16);
+	ret = usbd_device_set_code_triple(my_uds_ctx, class, subclass, protocol);
 	if (ret) {
-		shell_error(sh, "dev: failed to set device class to %x", value);
-	}
-
-	return ret;
-}
-
-static int cmd_device_subclass(const struct shell *sh, size_t argc,
-			       char *argv[])
-{
-	uint8_t value;
-	int ret;
-
-	value = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_subclass(my_uds_ctx, value);
-	if (ret) {
-		shell_error(sh, "dev: failed to set device subclass to %x", value);
-	}
-
-	return ret;
-}
-
-static int cmd_device_proto(const struct shell *sh, size_t argc,
-			    char *argv[])
-{
-	uint8_t value;
-	int ret;
-
-	value = strtol(argv[1], NULL, 16);
-	ret = usbd_device_set_proto(my_uds_ctx, value);
-	if (ret) {
-		shell_error(sh, "dev: failed to set device proto to %x", value);
+		shell_error(sh, "dev: failed to set device code triple to %x %x %x",
+			    class, subclass, protocol);
 	}
 
 	return ret;
@@ -467,12 +440,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 		      cmd_device_pid, 2, 0),
 	SHELL_CMD_ARG(vid, NULL, "<idVendor>",
 		      cmd_device_vid, 2, 0),
-	SHELL_CMD_ARG(class, NULL, "<bDeviceClass>",
-		      cmd_device_class, 2, 0),
-	SHELL_CMD_ARG(subclass, NULL, "<bDeviceSubClass>",
-		      cmd_device_subclass, 2, 0),
-	SHELL_CMD_ARG(proto, NULL, "<bDeviceProtocol>",
-		      cmd_device_proto, 2, 0),
+	SHELL_CMD_ARG(triple, NULL, "<bDeviceClass> <bDeviceSubClass> <bDeviceProtocol>",
+		      cmd_device_code_triple, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
