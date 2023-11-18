@@ -1,14 +1,12 @@
 tests:
-  kernel.memory_heap:
+  libraries.multi_heap:
     tags:
-      - kernel
-      - memory_heap
+      - multi_heap
     extra_configs:
       - CONFIG_IRQ_OFFLOAD=y
-  kernel.memory_heap.no_mt:
+  libraries.multi_heap.no_mt:
     tags:
-      - kernel
-      - memory_heap
+      - multi_heap
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_m0
