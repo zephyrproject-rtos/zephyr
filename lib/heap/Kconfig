@@ -13,6 +13,11 @@ config SYS_HEAP_VALIDATE
 	  environments that require sensitive detection of memory
 	  corruption.
 
+config SYS_HEAP_STRESS
+	bool "General purpose heap stress test"
+	help
+	  Stresses the heap.
+
 config SYS_HEAP_ALLOC_LOOPS
 	int "Number of tries in the inner heap allocation loop"
 	default 3
