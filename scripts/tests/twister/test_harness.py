@@ -24,8 +24,13 @@ SAMPLE_GTEST_START = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Running all tests.[0m"
 )
 SAMPLE_GTEST_FMT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test}[0m"
+SAMPLE_GTEST_FMT_VARIANT = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test} (0 ms)[0m"
+SAMPLE_GTEST_FMT_FAIL_WITH_PARAM = "[00:00:00.000,000] [0m<inf> label:  [{state}] {suite}.{test}, where GetParam() = 8-byte object <0B-00 00-00 00-9A 80-F7> (0 ms total)[0m"
 SAMPLE_GTEST_END = (
     "[00:00:00.000,000] [0m<inf> label:  [==========] Done running all tests.[0m"
+)
+SAMPLE_GTEST_END_VARIANT = (
+    "[00:00:00.000,000] [0m<inf> label:  [----------] Global test environment tear-down[0m"
 )
 
 
@@ -135,6 +140,26 @@ def test_gtest_all_pass(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
     assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
 
+def test_gtest_all_pass_with_variant(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test_name"
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.state == "passed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test_name").status == "passed"
+
 
 def test_gtest_one_fail(gtest):
     process_logs(
@@ -164,6 +189,61 @@ def test_gtest_one_fail(gtest):
     assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
     assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
 
+def test_gtest_one_fail_with_variant(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.state == "failed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test0").status == "passed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
+
+def test_gtest_one_fail_with_variant_and_param(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_PASS_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT_VARIANT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_FMT_FAIL_WITH_PARAM.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_END_VARIANT,
+        ],
+    )
+    assert gtest.state == "failed"
+    assert len(gtest.detected_suite_names) == 1
+    assert gtest.detected_suite_names[0] == "suite_name"
+    assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test0").status == "passed"
+    assert gtest.instance.get_case_by_name("id.suite_name.test1") is not None
+    assert gtest.instance.get_case_by_name("id.suite_name.test1").status == "failed"
 
 def test_gtest_missing_result(gtest):
     with pytest.raises(

@@ -493,10 +493,12 @@ class Pytest(Harness):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+    TEST_START_PATTERN = r"\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>[^\s]*)"
+    TEST_PASS_PATTERN = r"\[       OK \] (?P<suite_name>.*)\.(?P<test_name>[^\s]*)"
+    TEST_FAIL_PATTERN = r"\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>[^\s]*)"
+    TEST_FAIL_PARAMETERIZED = r"\[  FAILED  \] (?P<suite_name>[^.]*)\.(?P<test_name>[^,*]*),"
+    FINISHED_PATTERN = r"\[==========\] Done running all tests\.$"
+    FINISHED_PATTERN1 = r"\[----------\] Global test environment tear-down"
 
     def __init__(self):
         super().__init__()
@@ -539,7 +541,8 @@ class Gtest(Harness):
 
         # Check if the test run finished
         finished_match = re.search(self.FINISHED_PATTERN, non_ansi_line)
-        if finished_match:
+        finished_match1 = re.search(self.FINISHED_PATTERN1, non_ansi_line)
+        if finished_match or finished_match1:
             tc = self.instance.get_case_or_create(self.id)
             if self.has_failures or self.tc is not None:
                 self.state = "failed"
@@ -576,6 +579,9 @@ class Gtest(Harness):
         test_pass_match = re.search(self.TEST_PASS_PATTERN, line)
         if test_pass_match:
             return "passed", "{}.{}.{}".format(self.id, test_pass_match.group("suite_name"), test_pass_match.group("test_name"))
+        test_fail_param_match = re.search(self.TEST_FAIL_PARAMETERIZED, line)
+        if test_fail_param_match:
+            return "failed", "{}.{}.{}".format(self.id, test_fail_param_match.group("suite_name"), test_fail_param_match.group("test_name"))
         test_fail_match = re.search(self.TEST_FAIL_PATTERN, line)
         if test_fail_match:
             return "failed", "{}.{}.{}".format(self.id, test_fail_match.group("suite_name"), test_fail_match.group("test_name"))
