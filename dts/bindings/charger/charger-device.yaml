@@ -1,0 +1,11 @@
+# Copyright (c) Bjarki Arge Andreasen
+# SPDX -License-Identifier: Apache-2.0
+
+description: Base properties for charger devices
+
+include: base.yaml
+
+properties:
+  enable-charging:
+    type: boolean
+    description: Enable charging by default
