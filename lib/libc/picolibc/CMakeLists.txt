@@ -9,6 +9,7 @@ zephyr_library_sources(
   exit.c
   locks.c
   stdio.c
+  write.c
   )
 
 # Do not allow LTO when compiling libc-hooks.c file
