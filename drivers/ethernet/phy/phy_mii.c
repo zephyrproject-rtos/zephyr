@@ -120,13 +120,13 @@ static int get_id(const struct device *dev, uint32_t *phy_id)
 		return -EIO;
 	}
 
-	*phy_id = (value & 0xFFFF) << 16;
+	*phy_id = value << 16;
 
 	if (reg_read(dev, MII_PHYID2R, &value) < 0) {
 		return -EIO;
 	}
 
-	*phy_id |= (value & 0xFFFF);
+	*phy_id |= value;
 
 	return 0;
 }
