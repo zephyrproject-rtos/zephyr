@@ -9,6 +9,7 @@ zephyr_library_sources(
   exit.c
   locks.c
   stdio.c
+  write.c
   )
 
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
