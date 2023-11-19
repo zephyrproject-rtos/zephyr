@@ -132,15 +132,8 @@
  *
  * PTE_ENTRY_ADDRESS = PTEVADDR + ((VADDR / 4096) * 4)
  */
-#define Z_XTENSA_PTE_ENTRY_VADDR(vaddr) \
-	(Z_XTENSA_PTEVADDR + (((vaddr) / KB(4)) * 4))
-
-/*
- * The address of the top level page where the page
- * is located in the virtual address.
- */
-#define Z_XTENSA_PAGE_TABLE_VADDR \
-	Z_XTENSA_PTE_ENTRY_VADDR(Z_XTENSA_PTEVADDR)
+#define Z_XTENSA_PTE_ENTRY_VADDR(base, vaddr) \
+	((base) + (((vaddr) / KB(4)) * 4))
 
 /*
  * Get asid for a given ring from rasid register.
@@ -348,5 +341,9 @@ static inline void xtensa_dtlb_vaddr_invalidate(void *vaddr)
 		xtensa_dtlb_entry_invalidate_sync(entry);
 	}
 }
+
+void xtensa_init_paging(uint32_t *l1_page);
+
+void xtensa_set_paging(uint32_t asid, uint32_t *l1_page);
 
 #endif /* ZEPHYR_ARCH_XTENSA_XTENSA_MMU_PRIV_H_ */
