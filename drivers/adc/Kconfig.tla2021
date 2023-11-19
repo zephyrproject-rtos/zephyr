@@ -13,7 +13,7 @@ if ADC_TLA2021
 
 config ADC_TLA2021_INIT_PRIORITY
 	int "Priority for the driver initialization"
-	default ADC_INIT_PRIORITY
+	default 80
 	help
 	  Fine tune the priority for the driver initialization. Make sure it's
 	  higher (-> lower priority) than I2C_INIT_PRIORITY.
