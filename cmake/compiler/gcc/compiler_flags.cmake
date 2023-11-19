@@ -169,9 +169,11 @@ endif()
 
 if(NOT CONFIG_NO_OPTIMIZATIONS)
   # _FORTIFY_SOURCE: Detect common-case buffer overflows for certain functions
-  # _FORTIFY_SOURCE=1 : Compile-time checks (requires -O1 at least)
-  # _FORTIFY_SOURCE=2 : Additional lightweight run-time checks
-  set_compiler_property(PROPERTY security_fortify_compile_time _FORTIFY_SOURCE=1)
+  # _FORTIFY_SOURCE=1 : Loose checking (use wide bounds checks)
+  # _FORTIFY_SOURCE=2 : Tight checking (use narrow bounds checks)
+  # GCC always does compile-time bounds checking for string/mem functions, so
+  # there's no additional value to set here
+  set_compiler_property(PROPERTY security_fortify_compile_time)
   set_compiler_property(PROPERTY security_fortify_run_time _FORTIFY_SOURCE=2)
 endif()
 
