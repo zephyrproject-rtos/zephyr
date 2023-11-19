@@ -41,5 +41,6 @@ source "drivers/display/Kconfig.mcux_dcnano_lcdif"
 source "drivers/display/Kconfig.otm8009a"
 source "drivers/display/Kconfig.hx8394"
 source "drivers/display/Kconfig.gc9x01x"
+source "drivers/display/Kconfig.led_strip_matrix"
 
 endif # DISPLAY

@@ -24,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_RM68200		display_rm68200.c)
 zephyr_library_sources_ifdef(CONFIG_RM67162		display_rm67162.c)
 zephyr_library_sources_ifdef(CONFIG_HX8394		display_hx8394.c)
 zephyr_library_sources_ifdef(CONFIG_GC9X01X		display_gc9x01x.c)
+zephyr_library_sources_ifdef(CONFIG_LED_STRIP_MATRIX	display_led_strip_matrix.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c

@@ -65,6 +65,37 @@
 				width = <240>;
 				height = <240>;
 			};
+
+			test_led_strip_0: lpd8806@2 {
+				compatible = "greeled,lpd8806";
+				reg = <2>;
+				spi-max-frequency = <2000000>;
+			};
+
+			test_led_strip_1: ws2812_spi@3 {
+				compatible = "worldsemi,ws2812-spi";
+				reg = <3>;
+				spi-max-frequency = <2000000>;
+				spi-one-frame = <1>;
+				spi-zero-frame = <1>;
+				chain-length = <256>;
+				color-mapping = <0 1 2>;
+				reset-delay = <280>;
+			};
+		};
+
+		test_led_strip_matrix {
+			compatible = "led-strip-matrix";
+			status = "okay";
+
+			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
+			chain-lengths = <256>, <256>;
+			width = <32>;
+			height = <16>;
+			horizontal-modules = <2>;
+			vertical-modules = <1>;
+			circulative;
+			start-from-right;
 		};
 	};
 };
