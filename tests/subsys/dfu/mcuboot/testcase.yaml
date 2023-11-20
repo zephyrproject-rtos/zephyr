@@ -4,6 +4,8 @@ tests:
       - nrf52840dk_nrf52840
       - native_posix
       - native_posix_64
+      - native_sim
+      - native_sim_64
     tags: dfu_mcuboot
     integration_platforms:
       - nrf52840dk_nrf52840
