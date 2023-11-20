@@ -44,7 +44,7 @@ int nsi_exit_inner(int exit_code)
 	return max_exit_code;
 }
 
-void nsi_exit(int exit_code)
+NSI_FUNC_NORETURN void nsi_exit(int exit_code)
 {
 	exit(nsi_exit_inner(exit_code));
 }
