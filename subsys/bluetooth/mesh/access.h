@@ -96,8 +96,25 @@ void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
  *
  * @param ctx The Bluetooth Mesh message context.
  * @param buf The message payload.
+ * @param src_addr The source address of model
+ * @param cb Callback function.
+ * @param cb_data Callback data.
  *
  * @return 0 on success or negative error code on failure.
  */
 int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
 			const struct bt_mesh_send_cb *cb, void *cb_data);
+
+/** @brief Initialize the Access layer.
+ *
+ * Initialize the delayable message mechanism if it has been enabled.
+ */
+void bt_mesh_access_init(void);
+
+/** @brief Suspend the Access layer.
+ */
+void bt_mesh_access_suspend(void);
+
+/** @brief Reset the Access layer.
+ */
+void bt_mesh_access_reset(void);
