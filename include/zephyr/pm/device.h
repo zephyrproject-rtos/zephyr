@@ -220,7 +220,7 @@ struct pm_device {
  * @param dev_id Device id.
  */
 #define Z_PM_DEVICE_DEFINE_SLOT(dev_id)					\
-	static const STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
+	static STRUCT_SECTION_ITERABLE_ALTERNATE(pm_device_slots, device, \
 			_CONCAT(__pm_slot_, dev_id))
 
 #ifdef CONFIG_PM_DEVICE
