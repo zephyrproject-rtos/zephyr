@@ -231,6 +231,8 @@
 		      &kso10_gpio123_sleep &kso11_gpio124_sleep &kso12_gpio125_sleep
 		      &kso13_gpio126_sleep >;
 	pinctrl-names = "default", "sleep";
+	row-size = <8>;
+	col-size = <16>;
 
 	kscan_input: kscan-input {
 		compatible = "zephyr,kscan-input";
