@@ -216,6 +216,39 @@ static bool init_irq = true;
 #endif
 
 #ifdef CONFIG_ADC_STM32_DMA
+static void adc_stm32_enable_dma_support(ADC_TypeDef *adc)
+{
+	/* Allow ADC to create DMA request and set to one-shot mode as implemented in HAL drivers */
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+
+#if defined(ADC_VER_V5_V90)
+	if (adc == ADC3) {
+		LL_ADC_REG_SetDMATransferMode(adc,
+			ADC3_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+		LL_ADC_EnableDMAReq(adc);
+	} else {
+		LL_ADC_REG_SetDataTransferMode(adc,
+			ADC_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
+	}
+#elif defined(ADC_VER_V5_X)
+	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
+#else
+#error "Unsupported ADC version"
+#endif
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) /* defined(CONFIG_SOC_SERIES_STM32H7X) */
+
+#error "The STM32F1 ADC + DMA is not yet supported"
+
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+
+	/* Default mechanism for other MCUs */
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
+
+#endif
+}
+
 static int adc_stm32_dma_start(const struct device *dev,
 			       void *buffer, size_t channel_count)
 {
@@ -257,21 +290,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 		return ret;
 	}
 
-	/* Allow ADC to create DMA request and set to one-shot mode,
-	 * as implemented in HAL drivers, if applicable.
-	 */
-#if defined(ADC_VER_V5_V90)
-	if (adc == ADC3) {
-		LL_ADC_REG_SetDMATransferMode(adc,
-			ADC3_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
-		LL_ADC_EnableDMAReq(adc);
-	} else {
-		LL_ADC_REG_SetDataTransferMode(adc,
-			ADC_CFGR_DMACONTREQ(LL_ADC_REG_DMA_TRANSFER_LIMITED));
-	}
-#elif defined(ADC_VER_V5_X)
-	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DMA_TRANSFER_LIMITED);
-#endif
+	adc_stm32_enable_dma_support(adc);
 
 	data->dma_error = 0;
 	ret = dma_start(data->dma.dma_dev, data->dma.channel);
