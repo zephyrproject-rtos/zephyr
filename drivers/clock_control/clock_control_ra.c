@@ -16,7 +16,7 @@
 #if DT_SAME_NODE(DT_INST_PROP(0, clock_source), DT_PATH(clocks, pll))
 #define SYSCLK_SRC pll
 #elif DT_SAME_NODE(DT_INST_PROP(0, clock_source), DT_PATH(clocks, mosc))
-#define SYSCLK_SRC moco
+#define SYSCLK_SRC mosc
 #elif DT_SAME_NODE(DT_INST_PROP(0, clock_source), DT_PATH(clocks, sosc))
 #define SYSCLK_SRC soco
 #elif DT_SAME_NODE(DT_INST_PROP(0, clock_source), DT_PATH(clocks, hoco))
