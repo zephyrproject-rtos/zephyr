@@ -5,6 +5,7 @@ if(CONFIG_WIFI_ESWIFI)
   zephyr_library_include_directories(
   # IP headers
   ${ZEPHYR_BASE}/subsys/net/ip
+  ${ZEPHYR_BASE}/subsys/net/lib/sockets
   )
 
   zephyr_library_sources(
