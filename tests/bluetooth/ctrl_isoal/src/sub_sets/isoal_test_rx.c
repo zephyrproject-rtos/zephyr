@@ -2,11 +2,6 @@
  * Copyright (c) 2022 Demant
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- *  Run this test from zephyr directory as:
- *
- *     ./scripts/twister --coverage -p native_posix -v -T tests/bluetooth/ctrl_isoal/
- *
  */
 
 FAKE_VALUE_FUNC(isoal_status_t,
