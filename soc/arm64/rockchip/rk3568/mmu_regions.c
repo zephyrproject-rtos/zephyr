@@ -26,7 +26,7 @@ static const struct arm_mmu_region mmu_regions[] = {
                   DT_REG_ADDR_BY_IDX(DT_INST(0, zephyr_model), 0),
                   DT_REG_SIZE_BY_IDX(DT_INST(0, zephyr_model), 0),
                   MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
-    #endif
+       #endif
 
 };
 
