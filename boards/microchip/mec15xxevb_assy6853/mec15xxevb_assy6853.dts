@@ -175,6 +175,8 @@
 		      &ksi2_gpio021_sleep  &ksi3_gpio026_sleep  &ksi4_gpio027_sleep
 		      &ksi5_gpio030_sleep  &ksi6_gpio031_sleep  &ksi7_gpio032_sleep >;
 	pinctrl-names = "default", "sleep";
+	row-size = <8>;
+	col-size = <16>;
 
 	kscan_input: kscan-input {
 		compatible = "zephyr,kscan-input";

@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_kbd_matrix.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -24,394 +25,114 @@
 
 LOG_MODULE_REGISTER(input_xec_kbd, CONFIG_INPUT_LOG_LEVEL);
 
-#define MAX_MATRIX_KEY_COLS CONFIG_INPUT_XEC_COLUMN_SIZE
-#define MAX_MATRIX_KEY_ROWS CONFIG_INPUT_XEC_ROW_SIZE
-
-#define KEYBOARD_COLUMN_DRIVE_ALL       -2
-#define KEYBOARD_COLUMN_DRIVE_NONE      -1
-
-/* Poll period/debouncing rely on the 32KHz clock with 30 usec clock cycles */
-#define CLOCK_32K_HW_CYCLES_TO_US(X) \
-	(uint32_t)((((uint64_t)(X) * 1000000U) / sys_clock_hw_cycles_per_sec()))
-/* Milliseconds in microseconds */
-#define MSEC_PER_MS 1000U
-/* Number of tracked scan times */
-#define SCAN_OCURRENCES 30U
-/* Thread stack size */
-#define TASK_STACK_SIZE 1024
-
 struct xec_kbd_config {
+	struct input_kbd_matrix_common_config common;
+
 	struct kscan_regs *regs;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t rsvd[3];
 	uint8_t girq;
 	uint8_t girq_pos;
-	uint8_t irq_pri;
+#ifdef CONFIG_SOC_SERIES_MEC172X
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
+#endif
 	bool wakeup_source;
 };
 
 struct xec_kbd_data {
-	/* variables in usec units */
-	uint32_t deb_time_press;
-	uint32_t deb_time_rel;
-	int64_t poll_timeout;
-	uint32_t poll_period;
-	uint8_t matrix_stable_state[MAX_MATRIX_KEY_COLS];
-	uint8_t matrix_unstable_state[MAX_MATRIX_KEY_COLS];
-	uint8_t matrix_previous_state[MAX_MATRIX_KEY_COLS];
-	/* Index in to the scan_clock_cycle to indicate start of debouncing */
-	uint8_t scan_cycle_idx[MAX_MATRIX_KEY_COLS][MAX_MATRIX_KEY_ROWS];
-	/* Track previous "elapsed clock cycles" per matrix scan. This
-	 * is used to calculate the debouncing time for every key
-	 */
-	uint8_t scan_clk_cycle[SCAN_OCURRENCES];
-	struct k_sem poll_lock;
-	uint8_t scan_cycles_idx;
-	struct k_thread thread;
-
-	K_KERNEL_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
+	struct input_kbd_matrix_common_data common;
+	bool pm_lock_taken;
 };
 
-#ifdef CONFIG_SOC_SERIES_MEC172X
 static void xec_kbd_clear_girq_status(const struct device *dev)
 {
 	struct xec_kbd_config const *cfg = dev->config;
 
+#ifdef CONFIG_SOC_SERIES_MEC172X
 	mchp_xec_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
+#else
+	MCHP_GIRQ_SRC(cfg->girq) = BIT(cfg->girq_pos);
+#endif
 }
 
-static void xec_kbd_configure_girq(const struct device *dev, bool enable)
+static void xec_kbd_configure_girq(const struct device *dev)
 {
 	struct xec_kbd_config const *cfg = dev->config;
 
-	if (enable) {
-		mchp_xec_ecia_enable(cfg->girq, cfg->girq_pos);
-	} else {
-		mchp_xec_ecia_disable(cfg->girq, cfg->girq_pos);
-	}
+#ifdef CONFIG_SOC_SERIES_MEC172X
+	mchp_xec_ecia_enable(cfg->girq, cfg->girq_pos);
+#else
+	MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
+#endif
 }
 
 static void xec_kbd_clr_slp_en(const struct device *dev)
 {
+#ifdef CONFIG_SOC_SERIES_MEC172X
 	struct xec_kbd_config const *cfg = dev->config;
 
 	z_mchp_xec_pcr_periph_sleep(cfg->pcr_idx, cfg->pcr_pos, 0);
-}
-
 #else
-static void xec_kbd_clear_girq_status(const struct device *dev)
-{
-	struct xec_kbd_config const *cfg = dev->config;
-
-	MCHP_GIRQ_SRC(cfg->girq) = BIT(cfg->girq_pos);
-}
-
-static void xec_kbd_configure_girq(const struct device *dev, bool enable)
-{
-	struct xec_kbd_config const *cfg = dev->config;
-
-	if (enable) {
-		MCHP_GIRQ_ENSET(cfg->girq) = BIT(cfg->girq_pos);
-	} else {
-		MCHP_GIRQ_ENCLR(cfg->girq) = BIT(cfg->girq_pos);
-	}
-}
-
-static void xec_kbd_clr_slp_en(const struct device *dev)
-{
 	ARG_UNUSED(dev);
-
 	mchp_pcr_periph_slp_ctrl(PCR_KEYSCAN, 0);
-}
 #endif
+}
 
-static void drive_keyboard_column(const struct device *dev, int data)
+static void xec_kbd_drive_column(const struct device *dev, int data)
 {
 	struct xec_kbd_config const *cfg = dev->config;
 	struct kscan_regs *regs = cfg->regs;
 
-	if (data == KEYBOARD_COLUMN_DRIVE_ALL) {
+	if (data == INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL) {
 		/* KSO output controlled by the KSO_SELECT field */
 		regs->KSO_SEL = MCHP_KSCAN_KSO_ALL;
-	} else if (data == KEYBOARD_COLUMN_DRIVE_NONE) {
+	} else if (data == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
 		/* Keyboard scan disabled. All KSO output buffers disabled */
 		regs->KSO_SEL = MCHP_KSCAN_KSO_EN;
 	} else {
-		/* It is assumed, KEYBOARD_COLUMN_DRIVE_ALL was
-		 * previously set
-		 */
+		/* Assume, ALL was previously set */
 		regs->KSO_SEL = data;
 	}
 }
 
-static uint8_t read_keyboard_row(const struct device *dev)
+static kbd_row_t xec_kbd_read_row(const struct device *dev)
 {
 	struct xec_kbd_config const *cfg = dev->config;
 	struct kscan_regs *regs = cfg->regs;
 
 	/* In this implementation a 1 means key pressed */
-	return ~(regs->KSI_IN & 0xFF);
+	return ~(regs->KSI_IN & 0xff);
 }
 
-static bool is_matrix_ghosting(const uint8_t *state)
+static void xec_kbd_isr(const struct device *dev)
 {
-	/* matrix keyboard designs are susceptible to ghosting.
-	 * An extra key appears to be pressed when 3 keys
-	 * belonging to the same block are pressed.
-	 * for example, in the following block
-	 *
-	 * . . w . q .
-	 * . . . . . .
-	 * . . . . . .
-	 * . . m . a .
-	 *
-	 * the key m would look as pressed if the user pressed keys
-	 * w, q and a simultaneously. A block can also be formed,
-	 * with not adjacent columns.
-	 */
-	for (int c = 0; c <  MAX_MATRIX_KEY_COLS; c++) {
-		if (!state[c])
-			continue;
-
-		for (int c_n = c + 1; c_n <  MAX_MATRIX_KEY_COLS; c_n++) {
-			/* we and the columns to detect a "block".
-			 * this is an indication of ghosting, due to current
-			 * flowing from a key which was never pressed. in our
-			 * case, current flowing is a bit set to 1 as we
-			 * flipped the bits when the matrix was scanned.
-			 * now we or the columns using z&(z-1) which is
-			 * non-zero only if z has more than one bit set.
-			 */
-			uint8_t common_row_bits = state[c] & state[c_n];
-
-			if (common_row_bits & (common_row_bits - 1))
-				return true;
-		}
-	}
-
-	return false;
-}
-
-static bool read_keyboard_matrix(const struct device *dev, uint8_t *new_state)
-{
-	uint8_t row;
-	uint8_t key_event = 0U;
-
-	for (int col = 0; col < MAX_MATRIX_KEY_COLS; col++) {
-		drive_keyboard_column(dev, col);
-
-		/* Allow the matrix to stabilize before reading it */
-		k_busy_wait(50U);
-		row = read_keyboard_row(dev);
-		new_state[col] = row;
-		key_event |= row;
-	}
-
-	drive_keyboard_column(dev, KEYBOARD_COLUMN_DRIVE_NONE);
-
-	return key_event != 0U ? true : false;
-}
-
-static void scan_matrix_xec_isr(const struct device *dev)
-{
-	struct xec_kbd_data *const data = dev->data;
-
 	xec_kbd_clear_girq_status(dev);
 	irq_disable(DT_INST_IRQN(0));
-	k_sem_give(&data->poll_lock);
-	LOG_DBG("");
+
+	input_kbd_matrix_poll_start(dev);
 }
 
-static bool check_key_events(const struct device *dev)
-{
-	struct xec_kbd_data *const data = dev->data;
-	uint8_t matrix_new_state[MAX_MATRIX_KEY_COLS] = {0U};
-	bool key_pressed = false;
-	uint32_t cycles_now  = k_cycle_get_32();
-
-	if (++data->scan_cycles_idx >= SCAN_OCURRENCES) {
-		data->scan_cycles_idx = 0U;
-	}
-
-	data->scan_clk_cycle[data->scan_cycles_idx] = cycles_now;
-
-	/* Scan the matrix */
-	key_pressed = read_keyboard_matrix(dev, matrix_new_state);
-
-	/* Abort if ghosting is detected */
-	if (is_matrix_ghosting(matrix_new_state)) {
-		return false;
-	}
-
-	uint8_t row_changed = 0U;
-	uint8_t deb_col;
-
-	/* The intent of this loop is to gather information related to key
-	 * changes.
-	 */
-	for (int c = 0; c < MAX_MATRIX_KEY_COLS; c++) {
-		/* Check if there was an update from the previous scan */
-		row_changed = matrix_new_state[c] ^
-					data->matrix_previous_state[c];
-
-		if (!row_changed) {
-			continue;
-		}
-
-		for (int r = 0; r < MAX_MATRIX_KEY_ROWS; r++) {
-			/* Index all they keys that changed for each row
-			 * in order to debounce each key in terms of it
-			 */
-			if (row_changed & BIT(r)) {
-				data->scan_cycle_idx[c][r] =
-					data->scan_cycles_idx;
-			}
-		}
-
-		data->matrix_unstable_state[c] |= row_changed;
-		data->matrix_previous_state[c] = matrix_new_state[c];
-	}
-
-	for (int c = 0; c < MAX_MATRIX_KEY_COLS; c++) {
-		deb_col = data->matrix_unstable_state[c];
-
-		if (!deb_col) {
-			continue;
-		}
-
-		/* Debouncing for each row key occurs here */
-		for (int r = 0; r < MAX_MATRIX_KEY_ROWS; r++) {
-			uint8_t mask = BIT(r);
-			uint8_t row_bit = matrix_new_state[c] & mask;
-
-			/* Continue if we already debounce a key */
-			if (!(deb_col & mask)) {
-				continue;
-			}
-
-			/* Convert the clock cycle differences to usec */
-			uint32_t debt = CLOCK_32K_HW_CYCLES_TO_US(cycles_now -
-			data->scan_clk_cycle[data->scan_cycle_idx[c][r]]);
-
-			/* Does the key requires more time to be debounced? */
-			if (debt < (row_bit ? data->deb_time_press :
-						data->deb_time_rel)) {
-				/* Need more time to debounce */
-				continue;
-			}
-
-			data->matrix_unstable_state[c] &= ~row_bit;
-
-			/* Check if there was a change in the stable state */
-			if ((data->matrix_stable_state[c] & mask)
-								== row_bit) {
-				/* Key state did not change */
-				continue;
-
-			}
-
-			/* The current row has been debounced, therefore update
-			 * the stable state. Then, proceed to notify the
-			 * application about the keys pressed.
-			 */
-			data->matrix_stable_state[c] ^= mask;
-
-			input_report_abs(dev, INPUT_ABS_X, c, false, K_FOREVER);
-			input_report_abs(dev, INPUT_ABS_Y, r, false, K_FOREVER);
-			input_report_key(dev, INPUT_BTN_TOUCH, row_bit, true, K_FOREVER);
-		}
-	}
-
-	return key_pressed;
-}
-
-static bool poll_expired(uint32_t start_cycles, int64_t *timeout)
-{
-	uint32_t stop_cycles;
-	uint32_t cycles_spent;
-	uint32_t microsecs_spent;
-
-	stop_cycles = k_cycle_get_32();
-	cycles_spent =  stop_cycles - start_cycles;
-	microsecs_spent = CLOCK_32K_HW_CYCLES_TO_US(cycles_spent);
-
-	/* Update the timeout value */
-	*timeout -= microsecs_spent;
-
-	return *timeout >= 0;
-
-}
-
-void polling_task(const struct device *dev, void *dummy2, void *dummy3)
+static void xec_kbd_set_detect_mode(const struct device *dev, bool enabled)
 {
 	struct xec_kbd_config const *cfg = dev->config;
-	struct xec_kbd_data *const data = dev->data;
+	struct xec_kbd_data *data = dev->data;
 	struct kscan_regs *regs = cfg->regs;
-	uint32_t current_cycles;
-	uint32_t cycles_diff;
-	uint32_t wait_period;
-	int64_t local_poll_timeout = data->poll_timeout;
 
-	ARG_UNUSED(dummy2);
-	ARG_UNUSED(dummy3);
+	if (enabled) {
+		if (data->pm_lock_taken) {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
+						 PM_ALL_SUBSTATES);
+		}
 
-	while (true) {
 		regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
 
-		/* Ignore isr when releasing a key as we are polling */
 		xec_kbd_clear_girq_status(dev);
 		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 		irq_enable(DT_INST_IRQN(0));
-
-		drive_keyboard_column(dev, KEYBOARD_COLUMN_DRIVE_ALL);
-
-		k_sem_take(&data->poll_lock, K_FOREVER);
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-
-		uint32_t start_poll_cycles = k_cycle_get_32();
-
-		while (true) {
-			uint32_t start_period_cycles = k_cycle_get_32();
-
-			if (check_key_events(DEVICE_DT_INST_GET(0))) {
-				local_poll_timeout = data->poll_timeout;
-				start_poll_cycles = k_cycle_get_32();
-			} else if (!poll_expired(start_poll_cycles,
-					      &local_poll_timeout)) {
-				break;
-			}
-
-			/* Subtract the time invested from the sleep period
-			 * in order to compensate for the time invested
-			 * in debouncing a key
-			 */
-			current_cycles = k_cycle_get_32();
-			cycles_diff = current_cycles - start_period_cycles;
-			wait_period =  data->poll_period -
-				CLOCK_32K_HW_CYCLES_TO_US(cycles_diff);
-
-			/* Override wait_period in case it is less than 1 ms */
-			if (wait_period < MSEC_PER_MS) {
-				wait_period = MSEC_PER_MS;
-			}
-
-			/* wait period results in a larger number when
-			 * current cycles counter wrap. In this case, the
-			 * whole poll period is used
-			 */
-			if (wait_period > data->poll_period) {
-				LOG_DBG("wait_period: %u", wait_period);
-
-				wait_period = data->poll_period;
-			}
-
-			/* Allow other threads to run while we sleep */
-			k_usleep(wait_period);
-		}
-
-		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	} else {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE,
+					 PM_ALL_SUBSTATES);
+		data->pm_lock_taken = true;
 	}
 }
 
@@ -461,7 +182,6 @@ static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action act
 static int xec_kbd_init(const struct device *dev)
 {
 	struct xec_kbd_config const *cfg = dev->config;
-	struct xec_kbd_data *const data = dev->data;
 	struct kscan_regs *regs = cfg->regs;
 	int ret;
 
@@ -479,53 +199,51 @@ static int xec_kbd_init(const struct device *dev)
 	regs->KSO_SEL &= ~BIT(MCHP_KSCAN_KSO_EN_POS);
 	regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
 
-	/* Time figures are transformed from msec to usec */
-	data->deb_time_press = (uint32_t)
-		(CONFIG_INPUT_XEC_DEBOUNCE_DOWN * MSEC_PER_MS);
-	data->deb_time_rel = (uint32_t)
-		(CONFIG_INPUT_XEC_DEBOUNCE_UP * MSEC_PER_MS);
-	data->poll_period = (uint32_t)
-		(CONFIG_INPUT_XEC_POLL_PERIOD * MSEC_PER_MS);
-	data->poll_timeout = 100 * MSEC_PER_MS;
-
-	k_sem_init(&data->poll_lock, 0, 1);
-
-	k_thread_create(&data->thread, data->thread_stack,
-			TASK_STACK_SIZE,
-			(void (*)(void *, void *, void *))polling_task,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(4), 0, K_NO_WAIT);
-
 	/* Interrupts are enabled in the thread function */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    scan_matrix_xec_isr, DEVICE_DT_INST_GET(0), 0);
+		    xec_kbd_isr, DEVICE_DT_INST_GET(0), 0);
 
 	xec_kbd_clear_girq_status(dev);
-	xec_kbd_configure_girq(dev, true);
+	xec_kbd_configure_girq(dev);
 
-	return 0;
+	return input_kbd_matrix_common_init(dev);
 }
 
-static struct xec_kbd_data kbd_data;
-
 PINCTRL_DT_INST_DEFINE(0);
+
+PM_DEVICE_DT_INST_DEFINE(0, xec_kbd_pm_action);
+
+INPUT_KBD_MATRIX_DT_INST_DEFINE(0);
+
+static const struct input_kbd_matrix_api xec_kbd_api = {
+	.drive_column = xec_kbd_drive_column,
+	.read_row = xec_kbd_read_row,
+	.set_detect_mode = xec_kbd_set_detect_mode,
+};
 
 /* To enable wakeup, set the "wakeup-source" on the keyboard scanning device
  * node.
  */
 static struct xec_kbd_config xec_kbd_cfg_0 = {
+	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, &xec_kbd_api),
 	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
-	.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),
-	.girq_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),
-	.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 0)),
-	.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 1)),
+	.girq = DT_INST_PROP_BY_IDX(0, girqs, 0),
+	.girq_pos = DT_INST_PROP_BY_IDX(0, girqs, 1),
+#ifdef CONFIG_SOC_SERIES_MEC172X
+	.pcr_idx = DT_INST_PROP_BY_IDX(0, pcrs, 0),
+	.pcr_pos = DT_INST_PROP_BY_IDX(0, pcrs, 1),
+#endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.wakeup_source = DT_INST_PROP(0, wakeup_source)
 };
 
-PM_DEVICE_DT_INST_DEFINE(0, xec_kbd_pm_action);
+static struct xec_kbd_data kbd_data_0;
 
 DEVICE_DT_INST_DEFINE(0, xec_kbd_init,
-		      PM_DEVICE_DT_INST_GET(0), &kbd_data, &xec_kbd_cfg_0,
-		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,
-		      NULL);
+		      PM_DEVICE_DT_INST_GET(0), &kbd_data_0, &xec_kbd_cfg_0,
+		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	     "only one microchip,xec-kbd compatible node can be supported");
+BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, row_size), 1, 8), "invalid row-size");
+BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, col_size), 1, 18), "invalid col-size");
