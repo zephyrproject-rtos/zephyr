@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/net/lwm2m.h>
+#include <zephyr/net/conn_mgr_monitor.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include "modules.h"
 
 #define APP_BANNER "Run LWM2M client"
@@ -28,6 +30,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CLIENT_SERIAL_NUMBER	"345000123"
 #define CLIENT_FIRMWARE_VER	"1.0"
 #define CLIENT_HW_VER		"1.0.1"
+
+/* Macros used to subscribe to specific Zephyr NET management events. */
+#define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
+#define CONN_LAYER_EVENT_MASK (NET_EVENT_CONN_IF_FATAL_ERROR)
 
 static uint8_t bat_idx = LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT;
 static int bat_mv = 3800;
@@ -51,6 +57,12 @@ BUILD_ASSERT(sizeof(endpoint) <= CONFIG_LWM2M_SECURITY_KEY_SIZE,
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 static struct k_sem quit_lock;
+
+/* Zephyr NET management event callback structures. */
+static struct net_mgmt_event_callback l4_cb;
+static struct net_mgmt_event_callback conn_cb;
+
+static K_SEM_DEFINE(network_connected_sem, 0, 1);
 
 static int device_reboot_cb(uint16_t obj_inst_id,
 			    uint8_t *args, uint16_t args_len)
@@ -265,6 +277,47 @@ static void observe_cb(enum lwm2m_observe_event event,
 	}
 }
 
+static void on_net_event_l4_disconnected(void)
+{
+	LOG_INF("Disconnected from network");
+	lwm2m_engine_pause();
+}
+
+static void on_net_event_l4_connected(void)
+{
+	LOG_INF("Connected to network");
+	k_sem_give(&network_connected_sem);
+	lwm2m_engine_resume();
+}
+
+static void l4_event_handler(struct net_mgmt_event_callback *cb,
+			     uint32_t event,
+			     struct net_if *iface)
+{
+	switch (event) {
+	case NET_EVENT_L4_CONNECTED:
+		LOG_INF("IP Up");
+		on_net_event_l4_connected();
+		break;
+	case NET_EVENT_L4_DISCONNECTED:
+		LOG_INF("IP down");
+		on_net_event_l4_disconnected();
+		break;
+	default:
+		break;
+	}
+}
+
+static void connectivity_event_handler(struct net_mgmt_event_callback *cb,
+				       uint32_t event,
+				       struct net_if *iface)
+{
+	if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
+		LOG_ERR("Fatal error received from the connectivity layer");
+		return;
+	}
+}
+
 int main(void)
 {
 	uint32_t flags = IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) ?
@@ -274,6 +327,31 @@ int main(void)
 	LOG_INF(APP_BANNER);
 
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
+
+	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
+		/* Setup handler for Zephyr NET Connection Manager events. */
+		net_mgmt_init_event_callback(&l4_cb, l4_event_handler, L4_EVENT_MASK);
+		net_mgmt_add_event_callback(&l4_cb);
+
+		/* Setup handler for Zephyr NET Connection Manager Connectivity layer. */
+		net_mgmt_init_event_callback(&conn_cb, connectivity_event_handler,
+					     CONN_LAYER_EVENT_MASK);
+		net_mgmt_add_event_callback(&conn_cb);
+
+		ret = net_if_up(net_if_get_default());
+
+		if (ret < 0 && ret != -EALREADY) {
+			LOG_ERR("net_if_up, error: %d", ret);
+			return ret;
+		}
+
+		ret = conn_mgr_if_connect(net_if_get_default());
+		/* Ignore errors from interfaces not requiring connectivity */
+		if (ret == 0) {
+			LOG_INF("Connecting to network");
+			k_sem_take(&network_connected_sem, K_FOREVER);
+		}
+	}
 
 	ret = lwm2m_setup();
 	if (ret < 0) {
