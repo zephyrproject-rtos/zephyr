@@ -6,7 +6,7 @@ description: Microchip XEC keyboard matrix controller
 
 compatible: "microchip,xec-kbd"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
 
 properties:
   "#address-cells":
@@ -32,3 +32,9 @@ properties:
     type: array
     required: true
     description: ADC PCR register index and bit position
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true
