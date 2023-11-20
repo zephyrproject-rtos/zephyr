@@ -186,9 +186,13 @@ __imr void soc_mp_init(void)
 
 int soc_adsp_halt_cpu(int id)
 {
+	unsigned int irq_mask;
+
 	if (id == 0 || id == arch_curr_cpu()->id) {
 		return -EINVAL;
 	}
+
+	irq_mask = CAVS_L2_IDC;
 
 #ifdef CONFIG_INTEL_ADSP_TIMER
 	/*
@@ -196,8 +200,10 @@ int soc_adsp_halt_cpu(int id)
 	 * by itself once WFI (wait for interrupt) instruction
 	 * runs.
 	 */
-	CAVS_INTCTRL[id].l2.set = CAVS_L2_DWCT0;
+	irq_mask |= CAVS_L2_DWCT0;
 #endif
+
+	CAVS_INTCTRL[id].l2.set = irq_mask;
 
 	/* Stop sending IPIs to this core */
 	soc_cpus_active[id] = false;
