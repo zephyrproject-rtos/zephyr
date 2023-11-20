@@ -3,9 +3,6 @@
 
 if SOC_MPS3_AN547
 
-config SOC
-	default "mps3_an547"
-
 config NUM_IRQS
 	default 128
 
