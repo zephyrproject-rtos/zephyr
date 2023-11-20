@@ -1,0 +1,4 @@
+series:
+- name: mps3
+  socs:
+  - name: an547
