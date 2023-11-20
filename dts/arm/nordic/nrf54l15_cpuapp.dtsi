@@ -51,6 +51,7 @@
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
+			#nordic,ficr-cells = <1>;
 		};
 
 		sram0: memory@20000000 {
