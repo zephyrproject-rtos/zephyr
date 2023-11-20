@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MPS3
+	select SOC_SERIES_MPS3
+	select SOC_MPS3_AN547
