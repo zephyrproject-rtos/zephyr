@@ -25,4 +25,8 @@
 #define NSI_ARG_UNUSED(x) (void)(x)
 #endif
 
+#define NSI_CODE_UNREACHABLE __builtin_unreachable()
+
+#define NSI_FUNC_NORETURN __attribute__((__noreturn__))
+
 #endif /* NSI_COMMON_SRC_INCL_NSI_UTILS_H */
