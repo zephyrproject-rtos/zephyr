@@ -50,9 +50,9 @@ static struct k_spinlock latency_lock;
 /** List of maximum latency requests. */
 static sys_slist_t latency_reqs;
 /** Maximum CPU latency in us */
-static int32_t max_latency_us = SYS_FOREVER_US;
+static uint32_t max_latency_us = SYS_FOREVER_US;
 /** Maximum CPU latency in cycles */
-static int32_t max_latency_cyc = -1;
+static uint32_t max_latency_cyc = -1;
 /** List of latency change subscribers. */
 static sys_slist_t latency_subs;
 
@@ -66,26 +66,26 @@ static int64_t next_event_cyc = -1;
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
 {
-	int32_t new_max_latency_us = SYS_FOREVER_US;
+	uint32_t new_max_latency_us = SYS_FOREVER_US;
 	struct pm_policy_latency_request *req;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&latency_reqs, req, node) {
 		if ((new_max_latency_us == SYS_FOREVER_US) ||
-		    ((int32_t)req->value_us < new_max_latency_us)) {
-			new_max_latency_us = (int32_t)req->value_us;
+		    (req->value_us < new_max_latency_us)) {
+			new_max_latency_us = req->value_us;
 		}
 	}
 
 	if (max_latency_us != new_max_latency_us) {
 		struct pm_policy_latency_subscription *sreq;
-		int32_t new_max_latency_cyc = -1;
+		uint32_t new_max_latency_cyc = -1;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&latency_subs, sreq, node) {
 			sreq->cb(new_max_latency_us);
 		}
 
 		if (new_max_latency_us != SYS_FOREVER_US) {
-			new_max_latency_cyc = (int32_t)k_us_to_cyc_ceil32(new_max_latency_us);
+			new_max_latency_cyc = k_us_to_cyc_ceil32(new_max_latency_us);
 		}
 
 		max_latency_us = new_max_latency_us;
