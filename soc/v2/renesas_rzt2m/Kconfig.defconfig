@@ -3,9 +3,6 @@
 
 if SOC_RENESAS_RZT2M
 
-config SOC
-	default "renesas_rzt2m"
-
 config NUM_IRQS
 	default 994
 
