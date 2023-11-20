@@ -1677,4 +1677,6 @@ struct shi_reg {
 #define NPCX_SHICFG6_EBUFMD              0
 #define NPCX_SHICFG6_OBUF_SL             1
 
+#define IBF_IBHF_EN_MASK                 (BIT(NPCX_EVENABLE_IBFEN) | BIT(NPCX_EVENABLE_IBHFEN))
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
