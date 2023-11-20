@@ -53,7 +53,8 @@ choice EC_HOST_CMD_BACKEND_SHI_DRIVER
 
 config EC_HOST_CMD_BACKEND_SHI_NPCX
 	bool "SHI by Nuvoton"
-	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED
+	depends on DT_HAS_NUVOTON_NPCX_SHI_ENABLED || \
+		   DT_HAS_NUVOTON_NPCX_SHI_ENHANCED_ENABLED
 	help
 	  This option enables the driver for SHI backend in the
 	  Nuvoton NPCX chip.
@@ -66,6 +67,13 @@ config EC_HOST_CMD_BACKEND_SHI_ITE
 	  ITE IT8xxx2 chips family.
 
 endchoice
+
+config EC_HOST_CMD_BACKEND_SHI_NPCX_ENHANCED_BUF_MODE
+	def_bool DT_HAS_NUVOTON_NPCX_SHI_ENHANCED_ENABLED
+	help
+	  In this mode, besides the original 128-bytes FIFO, an additional
+	  single-byte output buffer can be selected/switched to generate a
+	  response to simultaneous Read/Write transactions.
 
 config EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST
 	int "Max data size for the version 3 request packet"
