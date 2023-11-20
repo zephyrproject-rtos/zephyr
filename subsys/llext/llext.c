@@ -23,11 +23,6 @@ static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
 static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
 
-sys_slist_t *llext_list(void)
-{
-	return &_llext_list;
-}
-
 ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 {
 	elf_shdr_t *shdr;
@@ -57,8 +52,7 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 
 struct llext *llext_by_name(const char *name)
 {
-	sys_slist_t *mlist = llext_list();
-	sys_snode_t *node = sys_slist_peek_head(mlist);
+	sys_snode_t *node = sys_slist_peek_head(&_llext_list);
 	struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
 
 	while (node != NULL) {
