@@ -7,7 +7,7 @@ common:
     - bbram
   build_only: true
   harness: ztest
-  platform_exclude: native_posix
+  arch_exclude: posix
 tests:
   drivers.bbram.it8xxx2:
     filter: dt_compat_enabled("ite,it8xxx2-bbram")
