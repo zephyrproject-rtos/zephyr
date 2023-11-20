@@ -5,10 +5,12 @@ tests:
       - qemu_x86
       - native_posix
       - native_posix_64
+      - native_sim
+      - native_sim_64
       - mr_canhubk3
     tags: flash_map
     integration_platforms:
-      - native_posix
+      - native_sim
   storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
     platform_allow:
@@ -27,7 +29,9 @@ tests:
       - qemu_x86
       - native_posix
       - native_posix_64
+      - native_sim
+      - native_sim_64
       - mr_canhubk3
     tags: flash_map
     integration_platforms:
-      - native_posix
+      - native_sim
