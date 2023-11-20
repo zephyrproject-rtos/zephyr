@@ -6,6 +6,9 @@
  */
 
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/zsai.h>
+#include <zephyr/drivers/zsai_infoword.h>
+#include <zephyr/drivers/zsai_ioctl.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -18,6 +21,23 @@ LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
 static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate);
 static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry);
+
+#if !(IS_ENABLED(CONFIG_ZSAI_DEVICE_HAS_ERASE))
+#error No device with erase enabled, NVS can not work with this setup.
+#endif
+
+#define MINIMAL_SECTOR(size) (MIN(size, 4096))
+
+static inline uint8_t erase_value_or_default(const struct device *dev)
+{
+#if IS_ENABLED(CONFIG_ZSAI_DEVICE_HAS_ERASE)
+	if (ZSAI_ERASE_SUPPORTED(dev)) {
+		return ZSAI_ERASE_VALUE(dev);
+	}
+#endif
+	/* For all devices that do not support erase use 0xff as default value */
+	return 0xff;
+}
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 
@@ -88,7 +108,7 @@ static void nvs_lookup_cache_invalidate(struct nvs_fs *fs, uint32_t sector)
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 {
-	uint8_t write_block_size = fs->flash_parameters->write_block_size;
+	uint8_t write_block_size = ZSAI_WRITE_BLOCK_SIZE(fs->flash_device);
 
 	if (write_block_size <= 1U) {
 		return len;
@@ -114,12 +134,12 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	}
 
 	offset = fs->offset;
-	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
+	offset += MINIMAL_SECTOR(fs->sector_size) * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	blen = len & ~(fs->flash_parameters->write_block_size - 1U);
+	blen = len & ~(ZSAI_WRITE_BLOCK_SIZE(fs->flash_device) - 1U);
 	if (blen > 0) {
-		rc = flash_write(fs->flash_device, offset, data8, blen);
+		rc = zsai_write(fs->flash_device, data8, offset, blen);
 		if (rc) {
 			/* flash write error */
 			goto end;
@@ -130,11 +150,11 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	}
 	if (len) {
 		memcpy(buf, data8, len);
-		(void)memset(buf + len, fs->flash_parameters->erase_value,
-			fs->flash_parameters->write_block_size - len);
+		(void)memset(buf + len, erase_value_or_default(fs->flash_device),
+			ZSAI_WRITE_BLOCK_SIZE(fs->flash_device) - len);
 
-		rc = flash_write(fs->flash_device, offset, buf,
-				 fs->flash_parameters->write_block_size);
+		rc = zsai_write(fs->flash_device, buf, offset, 
+				ZSAI_WRITE_BLOCK_SIZE(fs->flash_device));
 	}
 
 end:
@@ -149,10 +169,10 @@ static int nvs_flash_rd(struct nvs_fs *fs, uint32_t addr, void *data,
 	off_t offset;
 
 	offset = fs->offset;
-	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
+	offset += MINIMAL_SECTOR(fs->sector_size) * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	rc = flash_read(fs->flash_device, offset, data, len);
+	rc = zsai_read(fs->flash_device, data, offset, len);
 	return rc;
 }
 
@@ -209,7 +229,7 @@ static int nvs_flash_block_cmp(struct nvs_fs *fs, uint32_t addr, const void *dat
 	uint8_t buf[NVS_BLOCK_SIZE];
 
 	block_size =
-		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+		NVS_BLOCK_SIZE & ~(ZSAI_WRITE_BLOCK_SIZE(fs->flash_device) - 1U);
 
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
@@ -240,7 +260,7 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 	uint8_t cmp[NVS_BLOCK_SIZE];
 
 	block_size =
-		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+		NVS_BLOCK_SIZE & ~(ZSAI_WRITE_BLOCK_SIZE(fs->flash_device) - 1U);
 
 	(void)memset(cmp, value, block_size);
 	while (len) {
@@ -265,7 +285,7 @@ static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
 	uint8_t buf[NVS_BLOCK_SIZE];
 
 	block_size =
-		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+		NVS_BLOCK_SIZE & ~(ZSAI_WRITE_BLOCK_SIZE(fs->flash_device) - 1U);
 
 	while (len) {
 		bytes_to_copy = MIN(block_size, len);
@@ -294,22 +314,27 @@ static int nvs_flash_erase_sector(struct nvs_fs *fs, uint32_t addr)
 	addr &= ADDR_SECT_MASK;
 
 	offset = fs->offset;
-	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
+	offset += MINIMAL_SECTOR(fs->sector_size) * (addr >> ADDR_SECT_SHIFT);
 
 	LOG_DBG("Erasing flash at %lx, len %d", (long int) offset,
-		fs->sector_size);
+		MINIMAL_SECTOR(fs->sector_size));
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 	nvs_lookup_cache_invalidate(fs, addr >> ADDR_SECT_SHIFT);
 #endif
-	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
+	if (ZSAI_ERASE_SUPPORTED(fs->flash_device)) {
+		rc = zsai_erase(fs->flash_device, offset, MINIMAL_SECTOR(fs->sector_size));
+	} else {
+		rc = zsai_fill(fs->flash_device, erase_value_or_default(fs->flash_device),
+				offset, MINIMAL_SECTOR(fs->sector_size));
+	}
 
 	if (rc) {
 		return rc;
 	}
 
-	if (nvs_flash_cmp_const(fs, addr, fs->flash_parameters->erase_value,
-			fs->sector_size)) {
+	if (nvs_flash_cmp_const(fs, addr, erase_value_or_default(fs->flash_device),
+			MINIMAL_SECTOR(fs->sector_size))) {
 		rc = -ENXIO;
 	}
 
@@ -368,7 +393,7 @@ static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	if ((nvs_ate_crc8_check(entry)) ||
-	    (entry->offset >= (fs->sector_size - ate_size))) {
+	    (entry->offset >= (MINIMAL_SECTOR(fs->sector_size) - ate_size))) {
 		return 0;
 	}
 
@@ -391,7 +416,7 @@ static int nvs_close_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 	}
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
-	if ((fs->sector_size - entry->offset) % ate_size) {
+	if ((MINIMAL_SECTOR(fs->sector_size) - entry->offset) % ate_size) {
 		return 0;
 	}
 
@@ -481,7 +506,7 @@ static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 	}
 
 	*addr += ate_size;
-	if (((*addr) & ADDR_OFFS_MASK) != (fs->sector_size - ate_size)) {
+	if (((*addr) & ADDR_OFFS_MASK) != (MINIMAL_SECTOR(fs->sector_size) - ate_size)) {
 		return 0;
 	}
 
@@ -497,7 +522,7 @@ static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 		return rc;
 	}
 
-	rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
+	rc = nvs_ate_cmp_const(&close_ate, erase_value_or_default(fs->flash_device));
 	/* at the end of filesystem */
 	if (!rc) {
 		*addr = fs->ate_wra;
@@ -546,7 +571,7 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	close_ate.part = 0xff;
 
 	fs->ate_wra &= ADDR_SECT_MASK;
-	fs->ate_wra += (fs->sector_size - ate_size);
+	fs->ate_wra += (MINIMAL_SECTOR(fs->sector_size) - ate_size);
 
 	nvs_ate_crc8_update(&close_ate);
 
@@ -589,7 +614,7 @@ static int nvs_gc(struct nvs_fs *fs)
 
 	sec_addr = (fs->ate_wra & ADDR_SECT_MASK);
 	nvs_sector_advance(fs, &sec_addr);
-	gc_addr = sec_addr + fs->sector_size - ate_size;
+	gc_addr = sec_addr + MINIMAL_SECTOR(fs->sector_size) - ate_size;
 
 	/* if the sector is not closed don't do gc */
 	rc = nvs_flash_ate_rd(fs, gc_addr, &close_ate);
@@ -598,7 +623,7 @@ static int nvs_gc(struct nvs_fs *fs)
 		return rc;
 	}
 
-	rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
+	rc = nvs_ate_cmp_const(&close_ate, erase_value_or_default(fs->flash_device));
 	if (!rc) {
 		goto gc_done;
 	}
@@ -711,7 +736,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	 */
 	uint32_t addr = 0U;
 	uint16_t i, closed_sectors = 0;
-	uint8_t erase_value = fs->flash_parameters->erase_value;
+	uint8_t erase_value = erase_value_or_default(fs->flash_device);
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
@@ -721,7 +746,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	 */
 	for (i = 0; i < fs->sector_count; i++) {
 		addr = (i << ADDR_SECT_SHIFT) +
-		       (uint16_t)(fs->sector_size - ate_size);
+		       (uint16_t)(MINIMAL_SECTOR(fs->sector_size) - ate_size);
 		rc = nvs_flash_cmp_const(fs, addr, erase_value,
 					 sizeof(struct nvs_ate));
 		if (rc) {
@@ -817,7 +842,7 @@ static int nvs_startup(struct nvs_fs *fs)
 	 */
 	addr = fs->ate_wra & ADDR_SECT_MASK;
 	nvs_sector_advance(fs, &addr);
-	rc = nvs_flash_cmp_const(fs, addr, erase_value, fs->sector_size);
+	rc = nvs_flash_cmp_const(fs, addr, erase_value, MINIMAL_SECTOR(fs->sector_size));
 	if (rc < 0) {
 		goto end;
 	}
@@ -829,7 +854,7 @@ static int nvs_startup(struct nvs_fs *fs)
 		struct nvs_ate gc_done_ate;
 
 		addr = fs->ate_wra + ate_size;
-		while ((addr & ADDR_OFFS_MASK) < (fs->sector_size - ate_size)) {
+		while ((addr & ADDR_OFFS_MASK) < (MINIMAL_SECTOR(fs->sector_size) - ate_size)) {
 			rc = nvs_flash_ate_rd(fs, addr, &gc_done_ate);
 			if (rc) {
 				goto end;
@@ -857,7 +882,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			goto end;
 		}
 		fs->ate_wra &= ADDR_SECT_MASK;
-		fs->ate_wra += (fs->sector_size - 2 * ate_size);
+		fs->ate_wra += (MINIMAL_SECTOR(fs->sector_size) - 2 * ate_size);
 		fs->data_wra = (fs->ate_wra & ADDR_SECT_MASK);
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 		/**
@@ -886,14 +911,14 @@ static int nvs_startup(struct nvs_fs *fs)
 			break;
 		}
 
-		fs->data_wra += fs->flash_parameters->write_block_size;
+		fs->data_wra += ZSAI_WRITE_BLOCK_SIZE(fs->flash_device);
 	}
 
 	/* If the ate_wra is pointing to the first ate write location in a
 	 * sector and data_wra is not 0, erase the sector as it contains no
 	 * valid data (this also avoids closing a sector without any data).
 	 */
-	if (((fs->ate_wra + 2 * ate_size) == fs->sector_size) &&
+	if (((fs->ate_wra + 2 * ate_size) == MINIMAL_SECTOR(fs->sector_size)) &&
 	    (fs->data_wra != (fs->ate_wra & ADDR_SECT_MASK))) {
 		rc = nvs_flash_erase_sector(fs, fs->ate_wra);
 		if (rc) {
@@ -913,7 +938,7 @@ end:
 	 * space when doing gc.
 	 */
 	if ((!rc) && ((fs->ate_wra & ADDR_OFFS_MASK) ==
-		      (fs->sector_size - 2 * ate_size))) {
+		      (MINIMAL_SECTOR(fs->sector_size) - 2 * ate_size))) {
 
 		rc = nvs_add_gc_done_ate(fs);
 	}
@@ -949,18 +974,17 @@ int nvs_mount(struct nvs_fs *fs)
 {
 
 	int rc;
-	struct flash_pages_info info;
+	struct zsai_ioctl_range info;
 	size_t write_block_size;
+
+	if (!ZSAI_ERASE_SUPPORTED(fs->flash_device)) {
+		LOG_ERR("Attempting to setup NVS on device without erase");
+		return -ENOTSUP;
+	}
 
 	k_mutex_init(&fs->nvs_lock);
 
-	fs->flash_parameters = flash_get_parameters(fs->flash_device);
-	if (fs->flash_parameters == NULL) {
-		LOG_ERR("Could not obtain flash parameters");
-		return -EINVAL;
-	}
-
-	write_block_size = flash_get_write_block_size(fs->flash_device);
+	write_block_size = ZSAI_WRITE_BLOCK_SIZE(fs->flash_device);
 
 	/* check that the write block size is supported */
 	if (write_block_size > NVS_BLOCK_SIZE || write_block_size == 0) {
@@ -969,14 +993,24 @@ int nvs_mount(struct nvs_fs *fs)
 	}
 
 	/* check that sector size is a multiple of pagesize */
-	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
-	if (rc) {
+	rc = zsai_get_page_info(fs->flash_device, fs->offset, &info);
+	if (rc && rc != -ENOTSUP) {
 		LOG_ERR("Unable to get page info");
 		return -EINVAL;
-	}
-	if (!fs->sector_size || fs->sector_size % info.size) {
+	} else if (rc == -ENOTSUP) {
+		LOG_WRN("Device is not paged\n");
+	} else if (!fs->sector_size || MINIMAL_SECTOR(fs->sector_size) % info.size) {
 		LOG_ERR("Invalid sector size");
 		return -EINVAL;
+	}
+
+	if (MINIMAL_SECTOR(fs->sector_size) > fs->sector_size) {
+		LOG_WRN("Sector size %d rounded up to minimum %d\n",
+			fs->sector_size, MINIMAL_SECTOR(fs->sector_size));
+	}
+
+	if (!ZSAI_ERASE_SUPPORTED(fs->flash_device)) {
+		LOG_WRN("NVS is not optimal choice for devices withouth hardware erase\n");
 	}
 
 	/* check the number of sectors, it should be at least 2 */
@@ -993,7 +1027,7 @@ int nvs_mount(struct nvs_fs *fs)
 	/* nvs is ready for use */
 	fs->ready = true;
 
-	LOG_INF("%d Sectors of %d bytes", fs->sector_count, fs->sector_size);
+	LOG_INF("%d Sectors of %d bytes", fs->sector_count, MINIMAL_SECTOR(fs->sector_size));
 	LOG_INF("alloc wra: %d, %x",
 		(fs->ate_wra >> ADDR_SECT_SHIFT),
 		(fs->ate_wra & ADDR_OFFS_MASK));
