@@ -930,9 +930,9 @@ static int nrf5_configure(const struct device *dev,
 
 #if defined(CONFIG_NRF_802154_SER_HOST)
 		net_time_t period_ns = nrf5_data.csl_period * NSEC_PER_TEN_SYMBOLS;
-		bool changed = (config->csl_rx_time - nrf5_data.csl_rx_time) % period_ns;
+		bool changed = (config->expected_rx_time - nrf5_data.csl_rx_time) % period_ns;
 
-		nrf5_data.csl_rx_time = config->csl_rx_time;
+		nrf5_data.csl_rx_time = config->expected_rx_time;
 
 		if (changed)
 #endif /* CONFIG_NRF_802154_SER_HOST */
