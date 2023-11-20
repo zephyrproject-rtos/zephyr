@@ -23,6 +23,8 @@ static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
 static sys_slist_t _llext_list = SYS_SLIST_STATIC_INIT(&_llext_list);
 
+static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
+
 ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 {
 	elf_shdr_t *shdr;
@@ -50,19 +52,28 @@ ssize_t llext_find_section(struct llext_loader *ldr, const char *search_name)
 	return -ENOENT;
 }
 
+/*
+ * Note, that while we protect the global llext list while searching, we release
+ * the lock before returning the found extension to the caller. Therefore it's
+ * a responsibility of the caller to protect against races with a freeing
+ * context when calling this function.
+ */
 struct llext *llext_by_name(const char *name)
 {
-	sys_snode_t *node = sys_slist_peek_head(&_llext_list);
-	struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
+	k_mutex_lock(&llext_lock, K_FOREVER);
 
-	while (node != NULL) {
+	for (sys_snode_t *node = sys_slist_peek_head(&_llext_list);
+	     node != NULL;
+	     node = sys_slist_peek_next(node)) {
+		struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
+
 		if (strncmp(ext->name, name, sizeof(ext->name)) == 0) {
+			k_mutex_unlock(&llext_lock);
 			return ext;
 		}
-		node = sys_slist_peek_next(node);
-		ext = CONTAINER_OF(node, struct llext, _llext_list);
 	}
 
+	k_mutex_unlock(&llext_lock);
 	return NULL;
 }
 
@@ -71,6 +82,8 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 	sys_snode_t *node;
 	unsigned int i;
 	int ret = 0;
+
+	k_mutex_lock(&llext_lock, K_FOREVER);
 
 	for (node = sys_slist_peek_head(&_llext_list), i = 0;
 	     node;
@@ -83,6 +96,7 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 		}
 	}
 
+	k_mutex_unlock(&llext_lock);
 	return ret;
 }
 
@@ -873,8 +887,6 @@ out:
 	return ret;
 }
 
-static struct k_mutex llext_lock = Z_MUTEX_INITIALIZER(llext_lock);
-
 int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 	       struct llext_load_param *ldr_parm)
 {
@@ -886,28 +898,26 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 	if (*ext) {
 		/* The use count is at least 1 */
 		ret = (*ext)->use_count++;
-		k_mutex_unlock(&llext_lock);
-		return ret;
+		goto out;
 	}
-
-	k_mutex_unlock(&llext_lock);
 
 	ret = llext_seek(ldr, 0);
 	if (ret != 0) {
 		LOG_ERR("Failed to seek for ELF header");
-		return ret;
+		goto out;
 	}
 
 	ret = llext_read(ldr, &ehdr, sizeof(ehdr));
 	if (ret != 0) {
 		LOG_ERR("Failed to read ELF header");
-		return ret;
+		goto out;
 	}
 
 	/* check whether this is an valid elf file */
 	if (memcmp(ehdr.e_ident, ELF_MAGIC, sizeof(ELF_MAGIC)) != 0) {
 		LOG_HEXDUMP_ERR(ehdr.e_ident, 16, "Invalid ELF, magic does not match");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	switch (ehdr.e_type) {
@@ -917,7 +927,8 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		*ext = k_heap_alloc(&llext_heap, sizeof(struct llext), K_NO_WAIT);
 		if (*ext == NULL) {
 			LOG_ERR("Not enough memory for extension metadata");
-			return -ENOMEM;
+			ret = -ENOMEM;
+			goto out;
 		}
 		memset(*ext, 0, sizeof(struct llext));
 
@@ -926,7 +937,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		if (ret < 0) {
 			k_heap_free(&llext_heap, *ext);
 			*ext = NULL;
-			return ret;
+			goto out;
 		}
 
 		strncpy((*ext)->name, name, sizeof((*ext)->name));
@@ -939,10 +950,12 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		break;
 	default:
 		LOG_ERR("Unsupported elf file type %x", ehdr.e_type);
-		return -EINVAL;
+		ret = -EINVAL;
 	}
 
-	return 0;
+out:
+	k_mutex_unlock(&llext_lock);
+	return ret;
 }
 
 int llext_unload(struct llext **ext)
