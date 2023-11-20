@@ -4,18 +4,23 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mps3_an547_ns
-name: Arm MPS3-AN547_ns
+identifier: mps3/an547
+name: Arm MPS3-AN547
 type: mcu
 arch: arm
-ram: 2048
-flash: 384
+ram: 512
+flash: 512
 simulation: qemu
 toolchain:
   - gnuarmemb
   - zephyr
   - xtools
+supported:
+  - gpio
 testing:
-  default: true
-  only_tags:
-    - tfm
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm
