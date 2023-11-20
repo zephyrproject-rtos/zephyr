@@ -25,3 +25,11 @@ CONFIG_UART_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
+
+# Specific to beadedstream Spot Logger and D605N
+# (might want to make a separate board file at some point)
+
+# LFCLK/SYSTEM CLOCK/32.768Khz clock source
+CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING=y
+
+
