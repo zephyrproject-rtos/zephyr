@@ -921,10 +921,6 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 		}
 		memset(*ext, 0, sizeof(struct llext));
 
-		for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
-			(*ext)->mem[i] = NULL;
-		}
-
 		ldr->hdr = ehdr;
 		ret = do_llext_load(ldr, *ext, ldr_parm);
 		if (ret < 0) {
