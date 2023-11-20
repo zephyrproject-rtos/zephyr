@@ -73,6 +73,57 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			gpio0: gpio@0 {
+				compatible = "nxp,lpc-gpio";
+				reg = <0x100000 0x1000>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+				port = <0>;
+			};
+
+			gpio1: gpio@1 {
+				compatible = "nxp,lpc-gpio";
+				reg = <0x100000 0x1000>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+				port = <1>;
+			};
+
+			pint: pint@25000 {
+				compatible = "nxp,pint";
+				reg = <0x25000 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				#address-cells = <0>;
+				interrupts = <6 0 0>, <7 0 0>;
+				num-lines = <8>;
+				num-inputs = <64>;
+			};
+
+			iocon: iocon@4000 {
+				compatible = "nxp,lpc-iocon";
+				reg = <0x4000 0x1000>;
+				pinctrl: pinctrl {
+					compatible = "nxp,rt-iocon-pinctrl";
+				};
+			};
+
+			clkctl1: clkctl@21000 {
+				compatible = "nxp,lpc-syscon";
+				reg = <0x21000 0x1000>;
+				#clock-cells = <1>;
+			};
+
+			flexcomm0: flexcomm@106000 {
+				compatible = "nxp,lpc-flexcomm";
+				reg = <0x106000 0x1000>;
+				clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+				interrupts = <5 0 0>;
+				status = "disabled";
+			};
+
 			inputmux: inputmux@26000 {
 				compatible = "nxp,inputmux";
 				reg = <0x26000 0x2000>;
