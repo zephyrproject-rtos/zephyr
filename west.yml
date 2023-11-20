@@ -32,6 +32,9 @@ manifest:
     - name: acpica
       revision: 10ae1038e51eb9306f73c3bbcfc4fde954bb9625
       path: modules/lib/acpica
+    - name: paddlelite
+      path: modules/lib/paddlelite
+      repo-path: paddlelite
     - name: bsim
       repo-path: babblesim-manifest
       revision: 384a091445c57b44ac8cbd18ebd245b47c71db94
