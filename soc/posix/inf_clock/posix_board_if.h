@@ -7,6 +7,7 @@
 #define _POSIX_CORE_BOARD_PROVIDED_IF_H
 
 #include <zephyr/types.h>
+#include <zephyr/toolchain.h>
 
 /*
  * This file lists the functions the posix "inf_clock" soc
@@ -22,7 +23,7 @@ extern "C" {
 #endif
 
 void posix_irq_handler(void);
-void posix_exit(int exit_code);
+FUNC_NORETURN void posix_exit(int exit_code);
 uint64_t posix_get_hw_cycle(void);
 void posix_cpu_hold(uint32_t usec_to_waste);
 
