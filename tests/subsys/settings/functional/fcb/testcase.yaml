@@ -5,6 +5,8 @@ tests:
       - nrf52dk_nrf52832
       - native_posix
       - native_posix_64
+      - native_sim
+      - native_sim_64
       - mr_canhubk3
     integration_platforms:
       - nrf52840dk_nrf52840
@@ -16,9 +18,11 @@ tests:
     platform_allow:
       - native_posix
       - native_posix_64
+      - native_sim
+      - native_sim_64
       - mr_canhubk3
     integration_platforms:
-      - native_posix
+      - native_sim
     tags:
       - settings
       - fcb
