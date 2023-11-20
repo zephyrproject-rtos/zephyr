@@ -6,7 +6,9 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
 /*
@@ -133,28 +135,31 @@ unsigned int z_get_sw_isr_irq_from_device(const struct device *dev)
 
 unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 {
-	unsigned int table_idx;
-	unsigned int level, parent_irq, parent_offset;
+	unsigned int table_idx, level, parent_irq, local_irq, parent_offset;
 	const struct _irq_parent_entry *entry = NULL;
 
 	level = irq_get_level(irq);
 
 	if (level == 2U) {
+		local_irq = irq_from_level_2(irq);
+		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 		parent_irq = irq_parent_level_2(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl2_irq_list,
 					 CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
 		parent_offset = entry != NULL ? entry->offset : 0U;
-		table_idx = parent_offset + irq_from_level_2(irq);
+		table_idx = parent_offset + local_irq;
 	}
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
 	else if (level == 3U) {
+		local_irq = irq_from_level_3(irq);
+		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 		parent_irq = irq_parent_level_3(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl3_irq_list,
 					 CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
 		parent_offset = entry != NULL ? entry->offset : 0U;
-		table_idx = parent_offset + irq_from_level_3(irq);
+		table_idx = parent_offset + local_irq;
 	}
 #endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
 	else {
@@ -162,6 +167,8 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 	}
 
 	table_idx -= CONFIG_GEN_IRQ_START_VECTOR;
+
+	__ASSERT_NO_MSG(table_idx < IRQ_TABLE_SIZE);
 
 	return table_idx;
 }

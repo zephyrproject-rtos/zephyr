@@ -32,7 +32,7 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_idx)
 		parent_isr_offset = _lvl2_irq_list[i].offset;
 
 		for (unsigned int local_irq = 0;
-		     local_irq < BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS); local_irq++) {
+		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
 			test_irq = irq_to_level_2(local_irq) | parent_irq;
 			test_isr_offset = z_get_sw_isr_table_idx(test_irq);
 			zassert_equal(parent_isr_offset + local_irq, test_isr_offset,
@@ -65,7 +65,7 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_dev)
 		parent_irq = _lvl2_irq_list[i].irq;
 
 		for (unsigned int local_irq = 0;
-		     local_irq < BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS); local_irq++) {
+		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
 			test_irq = irq_to_level_2(local_irq) | parent_irq;
 			test_dev = z_get_sw_isr_device_from_irq(test_irq);
 			zassert_equal_ptr(parent_dev, test_dev, "expected dev: %p, got: %p",
