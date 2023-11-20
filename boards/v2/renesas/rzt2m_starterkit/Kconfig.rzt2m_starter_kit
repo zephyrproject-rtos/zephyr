@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RZT2M_STARTER_KIT
+	select SOC_RENESAS_RZT2M
