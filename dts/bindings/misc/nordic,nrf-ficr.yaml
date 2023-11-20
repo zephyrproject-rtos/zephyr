@@ -7,3 +7,11 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  "#nordic,ficr-cells":
+    type: int
+    required: true
+    const: 1
+
+nordic,ficr-cells:
+  - offset
