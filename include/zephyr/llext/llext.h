@@ -78,11 +78,6 @@ struct llext {
 };
 
 /**
- * @brief List head of loaded extensions
- */
-sys_slist_t *llext_list(void);
-
-/**
  * @brief Find an llext by name
  *
  * @param[in] name String name of the llext
