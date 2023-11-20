@@ -858,30 +858,32 @@ class TestPlan:
                 # will match against to determine if it should be scheduled to run. A key containing a
                 # field name that the platform does not have will filter the platform.
                 #
-                # A simple example is keying on arch and simulation to run a test once per unique (arch, simulation) platform.
+                # A simple example is keying on arch and simulation
+                # to run a test once per unique (arch, simulation) platform.
                 if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
-                    # form a key by sorting the key fields first, then fetching the key fields from plat if they exist
-                    # if a field does not exist the test is still scheduled on that platform as its undeterminable.
                     key_fields = sorted(set(ts.platform_key))
-                    key = [getattr(plat, key_field) for key_field in key_fields]
-                    has_all_fields = True
-                    for key_field in key_fields:
-                        if key_field is None or key_field == 'na':
-                            has_all_fields = False
-                    if has_all_fields:
-                        test_key = copy.deepcopy(key)
-                        test_key.append(ts.name)
-                        test_key = tuple(test_key)
-                        keyed_test = keyed_tests.get(test_key)
+                    keys = [getattr(plat, key_field) for key_field in key_fields]
+                    for key in keys:
+                        if key is None or key == 'na':
+                            instance.add_filter(
+                                f"Excluded platform missing key fields demanded by test {key_fields}",
+                                Filters.PLATFORM
+                            )
+                            break
+                    else:
+                        test_keys = copy.deepcopy(keys)
+                        test_keys.append(ts.name)
+                        test_keys = tuple(test_keys)
+                        keyed_test = keyed_tests.get(test_keys)
                         if keyed_test is not None:
                             plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
                             instance.add_filter(f"Already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
                         else:
                             # do not add a platform to keyed tests if previously filtered
                             if not instance.filters:
-                                keyed_tests[test_key] = {'plat': plat, 'ts': ts}
-                    else:
-                        instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
+                                keyed_tests[test_keys] = {'plat': plat, 'ts': ts}
+                            else:
+                                instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
