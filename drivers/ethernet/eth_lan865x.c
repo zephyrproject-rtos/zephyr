@@ -577,8 +577,8 @@ static const struct ethernet_api lan865x_api_func = {
 	static struct lan865x_data lan865x_data_##inst = {                                         \
 		.mac_address = DT_INST_PROP(inst, local_mac_address),                              \
 		.tx_rx_sem =                                                                       \
-			Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, UINT_MAX),           \
-		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, UINT_MAX),          \
+			Z_SEM_INITIALIZER((lan865x_data_##inst).tx_rx_sem, 1, 1),                  \
+		.int_sem = Z_SEM_INITIALIZER((lan865x_data_##inst).int_sem, 0, 1),                 \
 		.tc6 = &oa_tc6_##inst                                                              \
 	};                                                                                         \
 												   \
