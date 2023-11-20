@@ -235,6 +235,11 @@ config SRAM_OFFSET
 
 	  If unsure, leave at the default value 0.
 
+config ZERVICE
+	bool "Zervice support"
+	help
+	  Support for the named-based dependency mechanism for services.
+
 menu "Linker Sections"
 
 config LINKER_USE_BOOT_SECTION

@@ -1193,7 +1193,7 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
-if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS OR CONFIG_ZERVICE)
   configure_linker_script(
     ${ZEPHYR_CURRENT_LINKER_CMD}
     "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
@@ -1403,6 +1403,25 @@ if(CONFIG_USERSPACE)
   )
 endif()
 
+if(CONFIG_ZERVICE)
+    set(GEN_ZERVICES_LD ${ZEPHYR_BASE}/scripts/build/gen_zervices_ld.py)
+    set(ZERVICE_LD_OUTPUT ${PROJECT_BINARY_DIR}/include/generated/zervice.ld)
+    add_custom_target(
+      zervices_ld_final
+      COMMAND
+      ${PYTHON_EXECUTABLE}
+      ${GEN_ZERVICES_LD}
+      --map ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
+      --elf ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.elf
+      --device-tree-generated ${DEVICETREE_GENERATED_H}
+      --output ${ZERVICE_LD_OUTPUT}
+      --config ${DOTCONFIG}
+      DEPENDS
+      ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+endif()
+
 configure_linker_script(
   ${ZEPHYR_CURRENT_LINKER_CMD}
   "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
@@ -1481,6 +1500,9 @@ else()
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
   )
+  if(CONFIG_ZERVICE)
+    add_dependencies(linker_zephyr_final_script_target zervices_ld_final)
+  endif()
 
   add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GASF} ${GKSF})
   toolchain_ld_link_elf(

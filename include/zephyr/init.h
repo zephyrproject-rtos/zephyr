@@ -147,9 +147,9 @@ struct init_entry {
  * linker scripts to sort them according to the specified
  * level/priority/sub-priority.
  */
-#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                           \
-	__attribute__((__section__(                                           \
-		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_")))
+#define Z_INIT_ENTRY_SECTION(level, prio, sub_prio, name)                         \
+	__attribute__((__section__(                                               \
+		".z_init_" #level STRINGIFY(prio)"_" STRINGIFY(sub_prio)"_" STRINGIFY(name))))
 
 
 /* Designated initializers where added to C in C99. There were added to
@@ -237,9 +237,25 @@ struct init_entry {
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
-		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
+		Z_INIT_ENTRY_SECTION(level, prio, 0, Z_INIT_ENTRY_NAME(name))             \
+			__used __noasan                                                   \
 		Z_INIT_ENTRY_NAME(name) = {.init_fn = {.sys = (init_fn_)},                \
 			Z_INIT_SYS_INIT_DEV_NULL}
+
+#define ZERVICE_DEFINE(init_fn_, before, after)                                \
+	static const Z_DECL_ALIGN(struct init_entry)                           \
+		__attribute__((__section__(".z_zervice_" STRINGIFY(init_fn_))))\
+		__used __noasan                                                \
+		Z_INIT_ENTRY_NAME(init_fn_) = {                                \
+			.init_fn = {.sys = (init_fn_)},                        \
+			.dev = NULL,                                           \
+	};                                                                     \
+	__attribute__((__section__(".z_zervicedeps"))) __used __noasan         \
+		static const char CONCAT(Z_INIT_ENTRY_NAME(init_fn_),          \
+				_before)[] = before;                           \
+	static const char __attribute__((__section__(".z_zervicedeps")))       \
+		__used __noasan                                                \
+		CONCAT(Z_INIT_ENTRY_NAME(init_fn_), _after)[] = after
 
 /** @} */
 

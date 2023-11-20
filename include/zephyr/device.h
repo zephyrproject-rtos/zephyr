@@ -1004,7 +1004,8 @@ __syscall int device_init(const struct device *dev);
 	Z_DEVICE_LEVEL_CHECK_DEPRECATED_LEVEL(level)                                               \
                                                                                                    \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
-		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
+		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id),                                      \
+			Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))                                \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
 					    (init_fn_)},                                           \

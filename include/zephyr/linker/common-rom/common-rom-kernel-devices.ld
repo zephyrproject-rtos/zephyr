@@ -11,17 +11,45 @@
 		 * by level, sorted by priority within a level)
 		 */
 		__init_start = .;
+#ifdef CONFIG_ZERVICE
+#ifdef LINKER_ZEPHYR_FINAL
+#include <zervice.ld>
+#else
+	KEEP(*(.z_zervicedeps))
+	__init_EARLY_start = .;
+	KEEP(*(SORT(.z_init_EARLY?_*)));
+	KEEP(*(SORT(.z_init_EARLY??_*)));
+	__init_PRE_KERNEL_1_start = .;
+	KEEP(*(SORT(.z_init_PRE_KERNEL_1?_*)));
+	KEEP(*(SORT(.z_init_PRE_KERNEL_1??_*)));
+	__init_PRE_KERNEL_2_start = .;
+	KEEP(*(SORT(.z_init_PRE_KERNEL_2?_*)));
+	KEEP(*(SORT(.z_init_PRE_KERNEL_2??_*)));
+	__init_POST_KERNEL_start = .;
+	KEEP(*(SORT(.z_init_POST_KERNEL?_*)));
+	KEEP(*(SORT(.z_init_POST_KERNEL??_*)));
+	__init_APPLICATION_start = .;
+	KEEP(*(SORT(.z_init_APPLICATION?_*)));
+	KEEP(*(SORT(.z_init_APPLICATION??_*)));
+	KEEP(*(.z_zervice_*));
+#endif /* LINKER_ZEPHYR_FINAL */
+#else
 		CREATE_OBJ_LEVEL(init, EARLY)
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(init, POST_KERNEL)
 		CREATE_OBJ_LEVEL(init, APPLICATION)
 		CREATE_OBJ_LEVEL(init, SMP)
+#endif
 		__init_end = .;
 		__deferred_init_list_start = .;
 		KEEP(*(.z_deferred_init))
 		__deferred_init_list_end = .;
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#ifdef LINKER_ZEPHYR_FINAL
+	/DISCARD/ : { *(.z_zervicedeps) }
+#endif
 
 	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
 
