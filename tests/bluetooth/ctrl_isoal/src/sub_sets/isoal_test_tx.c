@@ -2,11 +2,6 @@
  * Copyright (c) 2020 Demant
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- *  Run this test from zephyr directory as:
- *
- *     ./scripts/twister --coverage -p native_posix -v -T tests/bluetooth/ctrl_isoal/
- *
  */
 
 /* Each segment header in a test would usually be written to when it is first
