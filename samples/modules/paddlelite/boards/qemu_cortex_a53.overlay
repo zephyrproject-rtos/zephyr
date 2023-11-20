@@ -1,0 +1,22 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x40000000 0x0 DT_SIZE_M(2048)>;
+		};	
+
+		model: model@70000000 {
+            compatible = "zephyr,model";
+            reg = <0x0 0x70000000 0x0 DT_SIZE_M(128)>;
+	    };
+	};
+
+
+	
+
+};
+
