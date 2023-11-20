@@ -205,8 +205,6 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 	LOG_DBG("direct_read: %d direct_write: %d",
 		data->direct_read, data->direct_write);
 
-	gpio_kbd_matrix_set_detect_mode(dev, true);
-
 	return input_kbd_matrix_common_init(dev);
 }
 
