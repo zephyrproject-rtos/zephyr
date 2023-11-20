@@ -139,6 +139,8 @@ config ARCH_POSIX
 	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
 	select BARRIER_OPERATIONS_BUILTIN
+	# native_posix gets its memory cleared on entry by the host OS
+	select SKIP_BSS_CLEAR
 	help
 	  POSIX (native) architecture
 

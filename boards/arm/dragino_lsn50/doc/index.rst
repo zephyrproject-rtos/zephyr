@@ -85,7 +85,7 @@ More information about STM32L072CZ can be found here:
 Supported Features
 ==================
 
-The Zephyr Dragino LSN50 Board board configuration supports the following hardware features:
+The Zephyr Dragino LSN50 board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

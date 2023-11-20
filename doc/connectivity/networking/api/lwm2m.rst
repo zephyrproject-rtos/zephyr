@@ -404,6 +404,11 @@ NoSec
 In all modes, Server URI resource (ID 0) must contain the full URI for the target server.
 When DNS names are used, the DNS resolver must be enabled.
 
+When DTLS is used, following options are recommended to reduce DTLS handshake traffic when connection is re-established:
+
+* :kconfig:option:`CONFIG_LWM2M_DTLS_CID` enables DTLS Connection Identifier support. When server supports it, this completely removes the handshake when device resumes operation after long idle period. Greatly helps when NAT mappings have timed out.
+* :kconfig:option:`CONFIG_LWM2M_TLS_SESSION_CACHING` uses session cache when before falling back to full DTLS handshake. Reduces few packets from handshake, when session is still cached on server side. Most significant effect is to avoid full registration.
+
 LwM2M stack provides callbacks in the :c:struct:`lwm2m_ctx` structure.
 They are used to feed keys from the LwM2M security object into the TLS credential subsystem.
 By default, these callbacks can be left as NULL pointers, in which case default callbacks are used.
@@ -478,7 +483,7 @@ Support for time series data
 LwM2M version 1.1 adds support for SenML CBOR and SenML JSON data formats. These data formats add
 support for time series data. Time series formats can be used for READ, NOTIFY and SEND operations.
 When data cache is enabled for a resource, each write will create a timestamped entry in a cache,
-and its content is then returned as a content in in READ, NOTIFY or SEND operation for a given
+and its content is then returned as a content in READ, NOTIFY or SEND operation for a given
 resource.
 
 Data cache is only supported for resources with a fixed data size.

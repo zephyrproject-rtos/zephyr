@@ -16,7 +16,8 @@ volatile struct {
 	void *arg;
 } riscv_cpu_init[CONFIG_MP_MAX_NUM_CPUS];
 
-volatile uintptr_t riscv_cpu_wake_flag;
+volatile uintptr_t __noinit riscv_cpu_wake_flag;
+volatile uintptr_t riscv_cpu_boot_flag;
 volatile void *riscv_cpu_sp;
 
 extern void __start(void);
@@ -28,7 +29,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	riscv_cpu_init[cpu_num].arg = arg;
 
 	riscv_cpu_sp = Z_KERNEL_STACK_BUFFER(stack) + sz;
-	riscv_cpu_wake_flag = _kernel.cpus[cpu_num].arch.hartid;
+	riscv_cpu_boot_flag = 0U;
 
 #ifdef CONFIG_PM_CPU_OPS
 	if (pm_cpu_on(cpu_num, (uintptr_t)&__start)) {
@@ -37,8 +38,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	}
 #endif
 
-	while (riscv_cpu_wake_flag != 0U) {
-		;
+	while (riscv_cpu_boot_flag == 0U) {
+		riscv_cpu_wake_flag = _kernel.cpus[cpu_num].arch.hartid;
 	}
 }
 

@@ -65,9 +65,9 @@ This port is designed and tested to run in Linux.
 
    The 32 bit version of this port does not directly work in Windows Subsystem
    for Linux (WSL) because WSL does not support native 32-bit binaries.
-   You may want to consider WSL2, or, if using native_posix,
-   you can also just use the native_posix_64
-   target: Check :ref:`32 and 64bit versions<native_posix32_64>`.
+   You may want to consider WSL2, or, if using :ref:`native_sim <native_sim>`,
+   you can also just use the ``native_sim_64``
+   target: Check :ref:`32 and 64bit versions<native_sim32_64>`.
    Otherwise `with some tinkering
    <https://github.com/microsoft/WSL/issues/2468#issuecomment-374904520>`_ it
    should be possible to make it work.
@@ -323,7 +323,7 @@ SOC and board layers
    This description applies to all current POSIX arch based boards on tree,
    but it is not a requirement for another board to follow what is described here.
 
-When the executable process is started (that is the the board
+When the executable process is started (that is the board
 :c:func:`main`, which is the linux executable C :c:func:`main`),
 first, early initialization steps are taken care of
 (command line argument parsing, initialization of the HW models, etc).
@@ -391,7 +391,7 @@ Busy waits
 ==========
 
 Busy waits work thanks to provided board functionality.
-This does not need to be the same for all boards, but both native_posix and the
+This does not need to be the same for all boards, but both native_sim and the
 nrf52_bsim board work similarly thru the combination of a board specific
 `arch_busy_wait()` and a special fake HW timer (provided by the board).
 

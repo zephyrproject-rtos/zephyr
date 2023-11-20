@@ -13,6 +13,7 @@ periodically reads and displays data on the console from the following
 sensors:
 
 - HTS221: ambient temperature and relative humidity
+- LPS22DF: ambient temperature and atmospheric pressure
 - LSM6DSV16X: 6-Axis acceleration and angular velocity
 
 Requirements
@@ -62,6 +63,8 @@ The sample code outputs sensors data on the SensorTile.box Pro console.
 
     HTS221: Temperature: 26.4 C
     HTS221: Relative Humidity: 60.5%
+    LPS22DF: Temperature: 28.4 C
+    LPS22DF: Pressure:99.694 kpa
     LSM6DSV16X: Accel (m.s-2): x: -0.158, y: 0.158, z: 9.811
     LSM6DSV16X: GYro (dps): x: 0.003, y: 0.000, z: -0.005
     1:: lsm6dsv16x acc trig 836

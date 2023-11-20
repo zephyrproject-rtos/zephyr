@@ -425,11 +425,20 @@ static int bt_spi_send(struct net_buf *buf)
 		  (header_rx[1] | header_rx[2] | header_rx[3] | header_rx[4]) == 0U) && !ret);
 
 	if (!ret) {
+		/* Delay here is rounded up to next tick */
+		k_sleep(K_USEC(DATA_DELAY_US));
 		/* Transmit the message */
-		do {
+		while (true) {
 			ret = bt_spi_transceive(buf->data, buf->len,
 						rx_first, 1);
-		} while (rx_first[0] == 0U && !ret);
+			if (rx_first[0] != 0U || ret) {
+				break;
+			}
+			/* Consider increasing controller-data-delay-us
+			 * if this message is extremely common.
+			 */
+			LOG_DBG("Controller not ready for SPI transaction of %d bytes", buf->len);
+		}
 	}
 
 	release_cs();

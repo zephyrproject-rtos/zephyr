@@ -175,7 +175,9 @@
 		compatible = "st,lsm6dsv16x";
 		spi-max-frequency = <DT_FREQ_M(10)>; /* 10 MHz */
 		reg = <0>;
-		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+		int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+		int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+
 		drdy-pin = <2>;
 	};
 };
@@ -210,6 +212,13 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	lps22df@5d {
+		compatible = "st,lps22df";
+		reg = <0x5d>;
+		drdy-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 

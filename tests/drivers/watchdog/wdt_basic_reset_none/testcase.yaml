@@ -6,6 +6,8 @@ tests:
     platform_allow:
       - s32z270dc2_rtu0_r52
       - s32z270dc2_rtu1_r52
+      - s32z270dc2_rtu0_r52@D
+      - s32z270dc2_rtu1_r52@D
     tags:
       - drivers
       - watchdog

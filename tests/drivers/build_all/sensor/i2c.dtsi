@@ -695,7 +695,8 @@ test_i2c_lsm6dso16is: lsm6dso16is@68 {
 test_i2c_lsm6dsv16x: lsm6dsv16x@69 {
 	compatible = "st,lsm6dsv16x";
 	reg = <0x69>;
-	irq-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_mcp9600: mcp9600@6a {
@@ -792,4 +793,22 @@ test_i2c_adxl367: adxl367@77 {
 	compatible = "adi,adxl367";
 	reg = <0x77>;
 	odr = <4>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tsl2561: tsl2561@78 {
+	compatible = "ams,tsl2561";
+	reg = <0x78>;
+};
+
+test_i2c_lps22df: lps22df@79 {
+	compatible = "st,lps22df";
+	reg = <0x79>;
+	drdy-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
+test_i2c_hs300x: hs300x@79 {
+	compatible = "renesas,hs300x";
+	reg = <0x79>;
 };

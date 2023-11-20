@@ -206,3 +206,6 @@ endif()
 
 # Remove after testing that -Wshadow works
 set_compiler_property(PROPERTY warning_shadow_variables)
+
+set_compiler_property(PROPERTY no_builtin -fno-builtin)
+set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)

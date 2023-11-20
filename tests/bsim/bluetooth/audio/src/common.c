@@ -5,6 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "bs_dynargs.h"
+#include "bs_pc_backchannel.h"
+#include <argparse.h>
+#include <posix_native_task.h>
+
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -134,4 +139,183 @@ void test_init(void)
 {
 	bst_ticker_set_next_tick_absolute(WAIT_TIME);
 	bst_result = In_progress;
+}
+
+#define SYNC_MSG_SIZE 1
+static int32_t dev_cnt;
+static uint backchannel_nums[255];
+static uint chan_cnt;
+
+static void register_more_cmd_args(void)
+{
+	static bs_args_struct_t args_struct_toadd[] = {
+		{
+			.option = "D",
+			.name = "number_devices",
+			.type = 'i',
+			.dest = (void *)&dev_cnt,
+			.descript = "Number of devices which will connect in this phy",
+			.is_mandatory = true,
+		},
+		ARG_TABLE_ENDMARKER,
+	};
+
+	bs_add_extra_dynargs(args_struct_toadd);
+}
+NATIVE_TASK(register_more_cmd_args, PRE_BOOT_1, 100);
+
+/**
+ * @brief Get the channel id based on remote device ID
+ *
+ * The is effectively a very simple hashing function to generate unique channel IDs from device IDs
+ *
+ * @param dev 16-bit device ID
+ *
+ * @return uint 32-bit channel ID
+ */
+static uint get_chan_num(uint16_t dev)
+{
+	uint16_t self = (uint16_t)bsim_args_get_global_device_nbr();
+	uint channel_id;
+
+	if (self < dev) {
+		channel_id = (dev << 16) | self;
+	} else {
+		channel_id = (self << 16) | dev;
+	}
+
+	return channel_id;
+}
+
+/**
+ * @brief Set up the backchannels between each pair of device
+ *
+ * Each pair of devices will get a unique channel
+ */
+static void setup_backchannels(void)
+{
+	__ASSERT_NO_MSG(dev_cnt > 0 && dev_cnt < ARRAY_SIZE(backchannel_nums));
+	const uint self = bsim_args_get_global_device_nbr();
+	uint device_numbers[dev_cnt];
+	uint *channels;
+
+	for (int32_t i = 0; i < dev_cnt; i++) {
+		if (i != self) { /* skip ourselves*/
+			backchannel_nums[chan_cnt] = get_chan_num((uint16_t)i);
+			device_numbers[chan_cnt++] = i;
+		}
+	}
+
+	channels = bs_open_back_channel(self, device_numbers, backchannel_nums, chan_cnt);
+	__ASSERT_NO_MSG(channels != NULL);
+}
+NATIVE_TASK(setup_backchannels, PRE_BOOT_3, 100);
+
+static uint get_chan_id_from_chan_num(uint chan_num)
+{
+	for (uint i = 0; i < ARRAY_SIZE(backchannel_nums); i++) {
+		if (backchannel_nums[i] == chan_num) {
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+void backchannel_sync_send(uint dev)
+{
+	const uint chan_id = get_chan_id_from_chan_num(get_chan_num((uint16_t)dev));
+	uint8_t sync_msg[SYNC_MSG_SIZE] = {0};
+
+	printk("Sending sync to %u\n", chan_id);
+	bs_bc_send_msg(chan_id, sync_msg, ARRAY_SIZE(sync_msg));
+}
+
+void backchannel_sync_send_all(void)
+{
+	for (int32_t i = 0; i < dev_cnt; i++) {
+		const uint self = bsim_args_get_global_device_nbr();
+
+		if (i != self) { /* skip ourselves*/
+			backchannel_sync_send(i);
+		}
+	}
+}
+
+void backchannel_sync_wait(uint dev)
+{
+	const uint chan_id = get_chan_id_from_chan_num(get_chan_num((uint16_t)dev));
+
+	printk("Waiting for sync to %u\n", chan_id);
+
+	while (true) {
+		if (bs_bc_is_msg_received(chan_id) > 0) {
+			uint8_t sync_msg[SYNC_MSG_SIZE];
+
+			bs_bc_receive_msg(chan_id, sync_msg, ARRAY_SIZE(sync_msg));
+			/* We don't really care about the content of the message */
+			break;
+		}
+
+		k_sleep(K_MSEC(1));
+	}
+}
+
+void backchannel_sync_wait_all(void)
+{
+	for (int32_t i = 0; i < dev_cnt; i++) {
+		const uint self = bsim_args_get_global_device_nbr();
+
+		if (i != self) { /* skip ourselves*/
+			backchannel_sync_wait(i);
+		}
+	}
+}
+
+void backchannel_sync_wait_any(void)
+{
+	while (true) {
+		for (int32_t i = 0; i < dev_cnt; i++) {
+			const uint self = bsim_args_get_global_device_nbr();
+
+			if (i != self) { /* skip ourselves*/
+				const uint chan_id =
+					get_chan_id_from_chan_num(get_chan_num((uint16_t)i));
+
+				if (bs_bc_is_msg_received(chan_id) > 0) {
+					uint8_t sync_msg[SYNC_MSG_SIZE];
+
+					bs_bc_receive_msg(chan_id, sync_msg, ARRAY_SIZE(sync_msg));
+					/* We don't really care about the content of the message */
+
+					return;
+				}
+			}
+		}
+
+		k_sleep(K_MSEC(100));
+	}
+}
+
+void backchannel_sync_clear(uint dev)
+{
+	const uint chan_id = get_chan_id_from_chan_num(get_chan_num((uint16_t)dev));
+
+	while (bs_bc_is_msg_received(chan_id)) {
+		uint8_t sync_msg[SYNC_MSG_SIZE];
+
+		bs_bc_receive_msg(chan_id, sync_msg, ARRAY_SIZE(sync_msg));
+		/* We don't really care about the content of the message */
+	}
+}
+
+void backchannel_sync_clear_all(void)
+{
+	for (int32_t i = 0; i < dev_cnt; i++) {
+		const uint self = bsim_args_get_global_device_nbr();
+
+		if (i != self) { /* skip ourselves*/
+			backchannel_sync_clear(i);
+		}
+	}
 }

@@ -6,6 +6,15 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <4>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>;
+};
+
 &sysclk {
 	clock-frequency = <500000000>;
 };
@@ -234,13 +243,12 @@
 		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
 		/delete-node/ usbd@402e0000;
 		usb1: usbd@400e4000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x400e4000 0x200>;
 			interrupts = <25 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&usbclk>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 

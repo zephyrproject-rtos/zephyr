@@ -44,7 +44,7 @@ def terminate_process(proc: subprocess.Popen) -> None:
     for child in psutil.Process(proc.pid).children(recursive=True):
         try:
             os.kill(child.pid, signal.SIGTERM)
-        except ProcessLookupError:
+        except (ProcessLookupError, psutil.NoSuchProcess):
             pass
     proc.terminate()
     # sleep for a while before attempting to kill

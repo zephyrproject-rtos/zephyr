@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 
 #if !defined(_ASMLANGUAGE)
+#include <zephyr/device.h>
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
 
@@ -42,6 +43,12 @@ struct _isr_table_entry {
  * irq line
  */
 extern struct _isr_table_entry _sw_isr_table[];
+
+struct _irq_parent_entry {
+	const struct device *dev;
+	unsigned int irq;
+	unsigned int offset;
+};
 
 /*
  * Data structure created in a special binary .intlist section for each
@@ -76,16 +83,6 @@ void z_shared_isr(const void *data);
 
 extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #endif /* CONFIG_SHARED_INTERRUPTS */
-
-/**
- * @brief Helper function used to compute the index in _sw_isr_table
- * based on passed IRQ.
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return corresponding index in _sw_isr_table
- */
-unsigned int z_get_sw_isr_table_idx(unsigned int irq);
 
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)

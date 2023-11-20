@@ -1,0 +1,28 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Multirate Timer
+
+compatible: "nxp,mrt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-channels:
+    type: int
+    required: true
+    description: Number of channels on the IP version
+
+  num-bits:
+    type: int
+    required: true
+    description: Timer width in bits of IP version
+
+  clocks:
+    required: true

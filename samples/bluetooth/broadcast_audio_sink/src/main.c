@@ -81,6 +81,8 @@ static uint32_t requested_bis_sync;
 static uint32_t bis_index_bitfield;
 static uint8_t sink_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 
+uint64_t total_rx_iso_packet_count; /* This value is exposed to test code */
+
 #if defined(CONFIG_LIBLC3)
 
 #include "lc3.h"
@@ -182,6 +184,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	printk("Stream %p started\n", stream);
 
+	total_rx_iso_packet_count = 0U;
 	sink_stream->recv_cnt = 0U;
 	sink_stream->loss_cnt = 0U;
 	sink_stream->valid_cnt = 0U;
@@ -234,6 +237,7 @@ static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 #endif /* defined(CONFIG_LIBLC3) */
 	}
 
+	total_rx_iso_packet_count++;
 	sink_stream->recv_cnt++;
 	if ((sink_stream->recv_cnt % 1000U) == 0U) {
 		printk("Stream %p: received %u total ISO packets: Valid %u | Error %u | Loss %u\n",

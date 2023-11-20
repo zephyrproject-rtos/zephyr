@@ -48,7 +48,7 @@ static int32_t msg_timeout;
 
 static struct bt_mesh_cfg_cli *cli;
 
-static int comp_data_status(struct bt_mesh_model *model,
+static int comp_data_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -85,7 +85,7 @@ static int comp_data_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static uint8_t state_status_u8(struct bt_mesh_model *model,
+static uint8_t state_status_u8(const struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf,
 			   uint32_t expect_status)
@@ -111,7 +111,7 @@ static uint8_t state_status_u8(struct bt_mesh_model *model,
 	return status;
 }
 
-static int beacon_status(struct bt_mesh_model *model,
+static int beacon_status(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -126,7 +126,7 @@ static int beacon_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int ttl_status(struct bt_mesh_model *model,
+static int ttl_status(const struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
@@ -141,7 +141,7 @@ static int ttl_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int friend_status(struct bt_mesh_model *model,
+static int friend_status(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -156,7 +156,7 @@ static int friend_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int gatt_proxy_status(struct bt_mesh_model *model,
+static int gatt_proxy_status(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -178,7 +178,7 @@ struct krp_param {
 	uint8_t *phase;
 };
 
-static int krp_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int krp_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	int err = 0;
@@ -223,7 +223,7 @@ struct relay_param {
 	uint8_t *transmit;
 };
 
-static int relay_status(struct bt_mesh_model *model,
+static int relay_status(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
@@ -257,7 +257,7 @@ static int relay_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int net_transmit_status(struct bt_mesh_model *model,
+static int net_transmit_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
@@ -277,7 +277,7 @@ struct net_key_param {
 	uint16_t net_idx;
 };
 
-static int net_key_status(struct bt_mesh_model *model,
+static int net_key_status(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -345,7 +345,7 @@ int bt_mesh_key_idx_unpack_list(struct net_buf_simple *buf, uint16_t *dst_arr,
 	return buf->len > 0 ? -EMSGSIZE : 0;
 }
 
-static int net_key_list(struct bt_mesh_model *model,
+static int net_key_list(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
@@ -381,7 +381,7 @@ done:
 	return err;
 }
 
-static int node_reset_status(struct bt_mesh_model *model,
+static int node_reset_status(const struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
@@ -412,7 +412,7 @@ struct app_key_param {
 	uint16_t app_idx;
 };
 
-static int app_key_status(struct bt_mesh_model *model,
+static int app_key_status(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -461,7 +461,7 @@ struct app_key_list_param {
 	size_t *key_cnt;
 };
 
-static int app_key_list(struct bt_mesh_model *model,
+static int app_key_list(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
@@ -521,7 +521,7 @@ struct mod_app_param {
 	uint16_t cid;
 };
 
-static int mod_app_status(struct bt_mesh_model *model,
+static int mod_app_status(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -695,7 +695,7 @@ done:
 	return err;
 }
 
-static int mod_app_list(struct bt_mesh_model *model,
+static int mod_app_list(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
@@ -704,7 +704,7 @@ static int mod_app_list(struct bt_mesh_model *model,
 	return mod_app_list_handle(ctx, buf, OP_SIG_MOD_APP_LIST, false);
 }
 
-static int mod_app_list_vnd(struct bt_mesh_model *model,
+static int mod_app_list_vnd(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -722,7 +722,7 @@ struct mod_pub_param {
 	struct bt_mesh_cfg_cli_mod_pub *pub;
 };
 
-static int mod_pub_status(struct bt_mesh_model *model,
+static int mod_pub_status(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -807,7 +807,7 @@ struct mod_sub_param {
 	uint16_t cid;
 };
 
-static int mod_sub_status(struct bt_mesh_model *model,
+static int mod_sub_status(const struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -866,7 +866,7 @@ done:
 	return err;
 }
 
-static int mod_sub_list(struct bt_mesh_model *model,
+static int mod_sub_list(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
@@ -875,7 +875,7 @@ static int mod_sub_list(struct bt_mesh_model *model,
 	return mod_sub_list_handle(ctx, buf, OP_MOD_SUB_LIST, false);
 }
 
-static int mod_sub_list_vnd(struct bt_mesh_model *model,
+static int mod_sub_list_vnd(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -890,7 +890,7 @@ struct hb_sub_param {
 	struct bt_mesh_cfg_cli_hb_sub *sub;
 };
 
-static int hb_sub_status(struct bt_mesh_model *model,
+static int hb_sub_status(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -934,7 +934,7 @@ struct hb_pub_param {
 	struct bt_mesh_cfg_cli_hb_pub *pub;
 };
 
-static int hb_pub_status(struct bt_mesh_model *model,
+static int hb_pub_status(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
@@ -979,7 +979,7 @@ struct node_idt_param {
 	uint8_t *identity;
 };
 
-static int node_identity_status(struct bt_mesh_model *model,
+static int node_identity_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -1020,7 +1020,7 @@ struct lpn_timeout_param {
 	int32_t *polltimeout;
 };
 
-static int lpn_timeout_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int lpn_timeout_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
 	struct lpn_timeout_param *param;
@@ -1087,19 +1087,19 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int cfg_cli_init(struct bt_mesh_model *model)
+static int cfg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Configuration Client only allowed in primary element");
 		return -EINVAL;
 	}
 
-	if (!model->user_data) {
+	if (!model->rt->user_data) {
 		LOG_ERR("No Configuration Client context provided");
 		return -EINVAL;
 	}
 
-	cli = model->user_data;
+	cli = model->rt->user_data;
 	cli->model = model;
 	msg_timeout = CONFIG_BT_MESH_CFG_CLI_TIMEOUT;
 
@@ -1108,7 +1108,7 @@ static int cfg_cli_init(struct bt_mesh_model *model)
 	 * and remote keys are allowed to access this model.
 	 */
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 

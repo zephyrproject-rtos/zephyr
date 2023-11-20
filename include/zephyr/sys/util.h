@@ -251,6 +251,15 @@ extern "C" {
 	})
 
 /**
+ * @brief Concatenate two tokens into one
+ *
+ * Concatenate two tokens,  @p x and @p y, into a combined token during the preprocessor pass.
+ * This can be used to, for ex., build an identifier out of two parts,
+ * where one of those parts may be, for ex, a number, another macro, or a macro argument.
+ */
+#define CONCAT(x, y) _DO_CONCAT(x, y)
+
+/**
  * @brief Value of @p x rounded up to the next multiple of @p align.
  */
 #define ROUND_UP(x, align)                                   \

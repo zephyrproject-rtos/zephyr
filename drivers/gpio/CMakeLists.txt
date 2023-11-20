@@ -4,6 +4,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/gpio.h)
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_GPIO_AD5592     gpio_ad5592.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_AXP192     gpio_axp192.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_TELINK_B91 gpio_b91.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_INFINEON_CAT1 gpio_ifx_cat1.c)
@@ -86,6 +87,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_SEDI    gpio_sedi.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ALTERA_PIO gpio_altera_pio.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_BCM2711    gpio_bcm2711.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_RA         gpio_ra.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_RZT2M    gpio_rzt2m.c)
 
 if (CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)

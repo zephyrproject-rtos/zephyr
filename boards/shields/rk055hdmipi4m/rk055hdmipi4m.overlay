@@ -30,7 +30,7 @@
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		irq-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
 	};
 };
 

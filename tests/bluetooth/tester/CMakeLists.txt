@@ -59,3 +59,7 @@ endif()
 if (CONFIG_BT_CAP_ACCEPTOR)
     target_sources(app PRIVATE src/btp_cas.c)
 endif()
+
+if(CONFIG_BT_MCC)
+    target_sources(app PRIVATE src/btp_mcp.c)
+endif()

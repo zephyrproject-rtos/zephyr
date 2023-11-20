@@ -1164,6 +1164,57 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id)
 	fixture->source = NULL;
 }
 
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_source_null)
+{
+	uint32_t broadcast_id;
+	int err;
+
+	err = bt_bap_broadcast_source_get_id(NULL, &broadcast_id);
+	zassert_not_equal(0, err, "Did not fail with null source");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_id_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_get_id(fixture->source, NULL);
+	zassert_not_equal(0, err, "Did not fail with null ID");
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_id_inval_state)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source *source;
+	uint32_t broadcast_id;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	source = fixture->source;
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+
+	err = bt_bap_broadcast_source_get_id(source, &broadcast_id);
+	zassert_not_equal(0, err, "Did not fail with deleted broadcast source");
+}
+
 ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_single_bis)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
@@ -1278,6 +1329,104 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base)
 
 		zassert_mem_equal(expected_base, base_buf.data, base_buf.len);
 	}
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_inval_source_null)
+{
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 64);
+
+	err = bt_bap_broadcast_source_get_base(NULL, &base_buf);
+	zassert_not_equal(0, err, "Did not fail with null source");
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_inval_base_buf_null)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_get_base(fixture->source, NULL);
+	zassert_not_equal(0, err, "Did not fail with null BASE buffer");
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+}
+
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_inval_state)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	struct bt_bap_broadcast_source *source;
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 64);
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	source = fixture->source;
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+
+	err = bt_bap_broadcast_source_get_base(source, &base_buf);
+	zassert_not_equal(0, err, "Did not fail with deleted broadcast source");
+}
+
+/** This tests that providing a buffer too small for _any_ BASE fails correctly */
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_inval_very_small_buf)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 15); /* Too small to hold any BASE */
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_get_base(fixture->source, &base_buf);
+	zassert_not_equal(0, err, "Did not fail with too small base_buf (%u)", base_buf.size);
+
+	err = bt_bap_broadcast_source_delete(fixture->source);
+	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);
+	fixture->source = NULL;
+}
+
+/** This tests that providing a buffer too small for the BASE we want to setup fails correctly */
+ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_inval_small_buf)
+{
+	struct bt_bap_broadcast_source_param *create_param = fixture->param;
+	int err;
+
+	/* Can hold a base, but not large enough for this configuration */
+	NET_BUF_SIMPLE_DEFINE(base_buf, 64);
+
+	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
+	       create_param->params_count, fixture->stream_cnt);
+
+	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
+	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
+
+	err = bt_bap_broadcast_source_get_base(fixture->source, &base_buf);
+	zassert_not_equal(0, err, "Did not fail with too small base_buf (%u)", base_buf.size);
 
 	err = bt_bap_broadcast_source_delete(fixture->source);
 	zassert_equal(0, err, "Unable to delete broadcast source: err %d", err);

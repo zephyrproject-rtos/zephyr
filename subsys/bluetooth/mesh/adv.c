@@ -157,7 +157,6 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 					    tag, xmit, timeout);
 }
 
-#if CONFIG_BT_MESH_RELAY_ADV_SETS || CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE
 static struct net_buf *process_events(struct k_poll_event *ev, int count)
 {
 	for (; count; ev++, count--) {
@@ -186,12 +185,15 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_adv_queue,
 						0),
-#if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
+#if defined(CONFIG_BT_MESH_RELAY) && \
+	(defined(CONFIG_BT_MESH_ADV_LEGACY) || \
+	 defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET) || \
+	 !(CONFIG_BT_MESH_RELAY_ADV_SETS))
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 						K_POLL_MODE_NOTIFY_ONLY,
 						&bt_mesh_relay_queue,
 						0),
-#endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
+#endif
 	};
 
 	err = k_poll(events, ARRAY_SIZE(events), timeout);
@@ -209,27 +211,13 @@ struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tag_bit tags, k_time
 		return net_buf_get(&bt_mesh_friend_queue, timeout);
 	}
 
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-	if (!(tags & BT_MESH_ADV_TAG_BIT_LOCAL)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_RELAY) &&
+	    !(tags & BT_MESH_ADV_TAG_BIT_LOCAL)) {
 		return net_buf_get(&bt_mesh_relay_queue, timeout);
 	}
-#endif
 
 	return bt_mesh_adv_buf_get(timeout);
 }
-#else /* !(CONFIG_BT_MESH_RELAY_ADV_SETS || CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) */
-struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
-{
-	return net_buf_get(&bt_mesh_adv_queue, timeout);
-}
-
-struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tag_bit tags, k_timeout_t timeout)
-{
-	ARG_UNUSED(tags);
-
-	return bt_mesh_adv_buf_get(timeout);
-}
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS || CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
 
 void bt_mesh_adv_buf_get_cancel(void)
 {
@@ -237,9 +225,9 @@ void bt_mesh_adv_buf_get_cancel(void)
 
 	k_fifo_cancel_wait(&bt_mesh_adv_queue);
 
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-	k_fifo_cancel_wait(&bt_mesh_relay_queue);
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
+	if (IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
+		k_fifo_cancel_wait(&bt_mesh_relay_queue);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)) {
 		k_fifo_cancel_wait(&bt_mesh_friend_queue);
@@ -267,15 +255,14 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 		return;
 	}
 
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-	if (BT_MESH_ADV(buf)->tag == BT_MESH_ADV_TAG_RELAY ||
+	if ((IS_ENABLED(CONFIG_BT_MESH_RELAY) &&
+	    BT_MESH_ADV(buf)->tag == BT_MESH_ADV_TAG_RELAY) ||
 	    (IS_ENABLED(CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS) &&
 	     BT_MESH_ADV(buf)->tag == BT_MESH_ADV_TAG_PROV)) {
 		net_buf_put(&bt_mesh_relay_queue, net_buf_ref(buf));
 		bt_mesh_adv_buf_relay_ready();
 		return;
 	}
-#endif
 
 	net_buf_put(&bt_mesh_adv_queue, net_buf_ref(buf));
 	bt_mesh_adv_buf_local_ready();

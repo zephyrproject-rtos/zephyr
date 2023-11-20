@@ -321,6 +321,69 @@ static int bq27427_ccgain_quirk(const struct device *dev)
 	return 0;
 }
 
+static int bq274xx_ensure_chemistry(const struct device *dev)
+{
+	struct bq274xx_data *data = dev->data;
+	const struct bq274xx_config *const config = dev->config;
+	uint16_t chem_id = config->chemistry_id;
+
+	if (chem_id == 0) {
+		/* No chemistry ID set, rely on the default of the device.*/
+		return 0;
+	}
+	int ret;
+	uint16_t val;
+
+	ret = bq274xx_ctrl_reg_write(dev, BQ274XX_CTRL_CHEM_ID);
+	if (ret < 0) {
+		LOG_ERR("Unable to write control register");
+		return -EIO;
+	}
+
+	ret = bq274xx_cmd_reg_read(dev, BQ274XX_CMD_CONTROL, &val);
+	if (ret < 0) {
+		LOG_ERR("Unable to read register");
+		return -EIO;
+	}
+
+	LOG_DBG("Chem ID: %04x", val);
+
+	if (val != chem_id) {
+		/* Only the bq27427 has a configurable Chemistry ID. On bq27421, it depends on the
+		 * variant of the chip, so just error out if the chemistry ID is wrong.
+		 */
+		if (data->regs != &bq27427_regs) {
+			LOG_ERR("Unable to confirm chemistry ID 0x%04x. Device reported 0x%04x",
+				chem_id, val);
+			return -EIO;
+		}
+
+		uint16_t cmd;
+
+		switch (val) {
+		case BQ27427_CHEM_ID_A:
+			cmd = BQ27427_CTRL_CHEM_A;
+			break;
+		case BQ27427_CHEM_ID_B:
+			cmd = BQ27427_CTRL_CHEM_B;
+			break;
+		case BQ27427_CHEM_ID_C:
+			cmd = BQ27427_CTRL_CHEM_C;
+			break;
+		default:
+			LOG_ERR("Unsupported chemistry ID 0x%04x", val);
+			return -EINVAL;
+		}
+
+		ret = bq274xx_ctrl_reg_write(dev, cmd);
+		if (ret < 0) {
+			LOG_ERR("Unable to configure chemistry");
+			return -EIO;
+		}
+	}
+	return 0;
+}
+
 static int bq274xx_gauge_configure(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
@@ -388,6 +451,11 @@ static int bq274xx_gauge_configure(const struct device *dev)
 			if (ret < 0) {
 				return ret;
 			}
+		}
+
+		ret = bq274xx_ensure_chemistry(dev);
+		if (ret < 0) {
+			return ret;
 		}
 
 		ret = bq274xx_mode_cfgupdate(dev, false);
@@ -798,6 +866,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.design_capacity = DT_INST_PROP(index, design_capacity),	\
 		.taper_current = DT_INST_PROP(index, taper_current),		\
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),	\
+		.chemistry_id = DT_INST_PROP_OR(index, chemistry_id, 0),			\
 		.lazy_loading = DT_INST_PROP(index, zephyr_lazy_load),		\
 	};									\
 										\

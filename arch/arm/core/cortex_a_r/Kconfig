@@ -99,7 +99,7 @@ config CPU_CORTEX_R52
 	select AARCH32_ARMV8_R
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
-	select VFP_SP_D16
+	select VFP_SP_D16 if !USE_SWITCH
 	help
 	  This option signifies the use of a Cortex-R52 CPU
 
@@ -130,6 +130,7 @@ config ARMV7_R_FP
 config AARCH32_ARMV8_R
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select SCHED_IPI_SUPPORTED if SMP
 	help
 	  This option signifies the use of an ARMv8-R AArch32 processor
 	  implementation.
@@ -188,3 +189,6 @@ config ICACHE_LINE_SIZE
 	default 32
 
 endif # CPU_AARCH32_CORTEX_R
+
+config TEST_EXTRA_STACK_SIZE
+	default 1024 if SMP

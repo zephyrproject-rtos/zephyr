@@ -325,21 +325,19 @@
 	};
 
 	usbfs: usbfs@84000 {
-		compatible = "nxp,mcux-usbd";
+		compatible = "nxp,lpcip3511";
 		reg = <0x84000 0x1000>;
 		interrupts = <28 1>;
 		num-bidir-endpoints = <5>;
 		maximum-speed = "full-speed";
-		usb-controller-index = "LpcIp3511Fs0";
 		status = "disabled";
 	};
 
 	usbhs: usbhs@94000 {
-		compatible = "nxp,mcux-usbd";
+		compatible = "nxp,lpcip3511";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;
 		num-bidir-endpoints = <6>;
-		usb-controller-index = "LpcIp3511Hs0";
 		status = "disabled";
 	};
 
@@ -411,6 +409,38 @@
 		clocks = <&syscon MCUX_SCTIMER_CLK>;
 		prescaler = <2>;
 		#pwm-cells = <3>;
+	};
+
+	mrt: mrt@d000 {
+		compatible = "nxp,mrt";
+		reg = <0xd000 0x100>;
+		interrupts = <9 0>;
+		num-channels = <4>;
+		num-bits = <24>;
+		clocks = <&syscon MCUX_MRT_CLK>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		mrt_channel0: mrt_channel@0 {
+			compatible = "nxp,mrt-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+		mrt_channel1: mrt_channel@1 {
+			compatible = "nxp,mrt-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+		mrt_channel2: mrt_channel@2 {
+			compatible = "nxp,mrt-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+		mrt_channel3: mrt_channel@3 {
+			compatible = "nxp,mrt-channel";
+			reg = <3>;
+			status = "disabled";
+		};
 	};
 };
 

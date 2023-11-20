@@ -217,7 +217,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_mcux_usbd, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_lpcip3511, okay)
 	/*< Turn on USB Phy */
 #if defined(CONFIG_SOC_LPC55S36)
 	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
@@ -248,7 +248,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* USB_DEVICE_TYPE_FS */
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_mcux_usbd, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_lpcip3511, okay)
 	/* enable usb1 host clock */
 	CLOCK_EnableClock(kCLOCK_Usbh1);
 	/* Put PHY powerdown under software control */
@@ -346,6 +346,10 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	POWER_DisablePD(kPDRUNCFG_PD_DAC0);
 #endif /* SOC platform */
 #endif /* DAC */
+
+#ifdef CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT_RST_SHIFT_RSTn);
+#endif
 
 }
 

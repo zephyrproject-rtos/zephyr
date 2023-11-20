@@ -35,9 +35,9 @@ union acpi_dmar_id {
 };
 
 struct acpi_mcfg {
-	struct acpi_table_header header;
+	ACPI_TABLE_HEADER header;
 	uint64_t _reserved;
-	struct acpi_mcfg_allocation pci_segs[];
+	ACPI_MCFG_ALLOCATION pci_segs[];
 } __packed;
 
 /**
@@ -80,7 +80,7 @@ int acpi_current_resource_free(ACPI_RESOURCE *res);
  *
  * @param bus_name the name of the bus
  * @param rt_table the IRQ routing table
- * @param rt_size the the size of IRQ routing table
+ * @param rt_size number of elements in the IRQ routing table
  * @return return 0 on success or error code
  */
 int acpi_get_irq_routing_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size);
@@ -149,7 +149,7 @@ void *acpi_table_get(char *signature, int inst);
  * @param num_inst number of instance for the requested table
  * @return return 0 on success or error code
  */
-int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num_inst);
+int acpi_madt_entry_get(int type, ACPI_SUBTABLE_HEADER **tables, int *num_inst);
 
 /**
  * @brief retrieve DMA remapping structure for the given type.
@@ -158,8 +158,7 @@ int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num
  * @param tables pointer to the dmar id structure
  * @return return 0 on success or error code
  */
-int acpi_dmar_entry_get(enum AcpiDmarType type,
-	struct acpi_subtable_header **tables);
+int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables);
 
 /**
  * @brief retrieve acpi DRHD info for the given scope.
@@ -171,8 +170,8 @@ int acpi_dmar_entry_get(enum AcpiDmarType type,
  * @param max_inst maximum number of entry for the given dmar_id buffer
  * @return return 0 on success or error code
  */
-int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
-	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
+int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scope,
+		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
 
 /**
  * @brief Retrieve the 'n'th enabled local apic info.
@@ -180,5 +179,5 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
  * @param cpu_num the cpu number
  * @return local apic info on success or NULL otherwise
  */
-struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num);
+ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num);
 #endif

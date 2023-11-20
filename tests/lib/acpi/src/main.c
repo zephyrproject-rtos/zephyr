@@ -23,7 +23,7 @@ ZTEST(acpi, test_irq_routing_table)
 	int status;
 
 	status = acpi_get_irq_routing_table(CONFIG_ACPI_PRT_BUS_NAME,
-					    irq_prt_table, sizeof(irq_prt_table));
+					    irq_prt_table, ARRAY_SIZE(irq_prt_table));
 	zassert_ok(status, "Failed to get PRT");
 }
 

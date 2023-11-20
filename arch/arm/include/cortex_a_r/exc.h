@@ -35,12 +35,12 @@ extern volatile irq_offload_routine_t offload_routine;
 /* Check the CPSR mode bits to see if we are in IRQ or FIQ mode */
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	return (_kernel.cpus[0].nested != 0U);
+	return (arch_curr_cpu()->nested != 0U);
 }
 
 static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
 {
-	return (_kernel.cpus[0].nested > 1U) ? (true) : (false);
+	return (arch_curr_cpu()->arch.exc_depth > 1U) ? (true) : (false);
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -54,7 +54,9 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t
 }
 #endif
 
+#ifndef CONFIG_USE_SWITCH
 extern void z_arm_cortex_r_svc(void);
+#endif
 
 #ifdef __cplusplus
 }

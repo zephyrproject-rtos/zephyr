@@ -6,3 +6,4 @@ project(spinlock)
 
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/spinlock_error_case.c)
+target_sources(app PRIVATE src/spinlock_fairness.c)

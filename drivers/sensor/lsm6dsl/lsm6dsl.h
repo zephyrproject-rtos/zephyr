@@ -667,6 +667,7 @@ struct lsm6dsl_data {
 #endif
 	const struct lsm6dsl_transfer_function *hw_tf;
 	uint16_t accel_freq;
+	uint16_t gyro_freq;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	const struct device *dev;

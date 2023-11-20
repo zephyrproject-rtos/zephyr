@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - logging
+    - backend
+    - uart
+  filter: CONFIG_UART_CONSOLE
+  integration_platforms:
+    - qemu_x86
+tests:
+  logging.backend.uart.single:
+    extra_args: DTC_OVERLAY_FILE="./single.overlay"
+  logging.backend.uart.multi:
+    extra_args: DTC_OVERLAY_FILE="./multi.overlay"

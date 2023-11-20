@@ -130,7 +130,7 @@ config LSM6DSL_ACCEL_FS
 
 config LSM6DSL_ACCEL_ODR
 	int "Accelerometer Output data rate frequency"
-	range 0 10
+	range 0 11
 	default 0
 	help
 	  Specify the default accelerometer output data rate expressed in
@@ -146,6 +146,7 @@ config LSM6DSL_ACCEL_ODR
 	  8: 1666Hz
 	  9: 3332Hz
 	  10: 6664Hz
+	  11: 1.6Hz
 endmenu
 
 endif # LSM6DSL

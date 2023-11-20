@@ -4,7 +4,7 @@ sample:
 common:
   tags: net mqtt cloud
   harness: net
-  filter: CONFIG_FULL_LIBC_SUPPORTED && not CONFIG_NATIVE_LIBC
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   extra_args: USE_DUMMY_CREDS=1
 tests:
   sample.net.cloud.aws_iot_mqtt:

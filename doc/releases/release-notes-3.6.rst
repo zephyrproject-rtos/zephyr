@@ -110,6 +110,8 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
+- Dropped the ``COMPAT_INCLUDES`` option, it was unused since 3.0.
+
 Drivers and Sensors
 *******************
 
@@ -244,6 +246,9 @@ Libraries / Subsystems
 
   * Fixed an issue in MCUmgr which would cause a user data buffer overflow if the UDP transport was
     enabled on IPv4 only but IPv6 support was enabled in the kernel.
+
+  * Implemented datetime functionality in MCUmgr OS management group, this makes use of the RTC
+    driver API.
 
 * File systems
 

@@ -125,6 +125,14 @@ config UART_PIPE
 	  data (as contrary to console UART driver) and all aspects of received
 	  protocol data are handled by application provided callback.
 
+config UART_ASYNC_RX_HELPER
+	bool "Helper for UART asynchronous reception"
+	help
+	  Module implements handling of reception of variable length data using
+	  Asynchronous UART API. It can be used in cases where received data processing
+	  is delayed. Module implements zero-copy approach with multiple reception
+	  buffers.
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.b91"
@@ -246,5 +254,7 @@ source "drivers/serial/Kconfig.bcm2711"
 source "drivers/serial/Kconfig.intel_lw"
 
 source "drivers/serial/Kconfig.ra"
+
+source "drivers/serial/Kconfig.rzt2m"
 
 endif # SERIAL

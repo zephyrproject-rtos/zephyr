@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 #define TEST_MODEL_CNT_CB(_dummy_op, _metadata) \
 {                                               \
 	.id = 0x1234,                               \
+	BT_MESH_MODEL_RUNTIME_INIT(NULL)		    \
 	.pub = NULL,                                \
 	.keys = NULL,                               \
 	.keys_cnt = 0,                              \
@@ -41,7 +42,6 @@ LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 	.groups_cnt = 0,                            \
 	.op = _dummy_op,                            \
 	.cb = NULL,                                 \
-	.user_data = NULL,                          \
 	.metadata = _metadata,                      \
 }
 

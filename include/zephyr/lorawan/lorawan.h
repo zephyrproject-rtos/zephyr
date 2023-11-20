@@ -175,22 +175,32 @@ struct lorawan_downlink_cb {
 };
 
 /**
- * @brief Add battery level callback function.
+ * @brief Defines the battery level callback handler function signature.
+ *
+ * @retval 0      if the node is connected to an external power source
+ * @retval 1..254 battery level, where 1 is the minimum and 254 is the maximum value
+ * @retval 255    if the node was not able to measure the battery level
+ */
+typedef uint8_t (*lorawan_battery_level_cb_t)(void);
+
+/**
+ * @brief Defines the datarate changed callback handler function signature.
+ *
+ * @param dr Updated datarate.
+ */
+typedef void (*lorawan_dr_changed_cb_t)(enum lorawan_datarate dr);
+
+/**
+ * @brief Register a battery level callback function.
  *
  * Provide the LoRaWAN stack with a function to be called whenever a battery
- * level needs to be read. As per LoRaWAN specification the callback needs to
- * return "0:      node is connected to an external power source,
- *         1..254: battery level, where 1 is the minimum and 254 is the maximum
- *                 value,
- *         255: the node was not able to measure the battery level"
+ * level needs to be read.
  *
  * Should no callback be provided the lorawan backend will report 255.
  *
- * @param battery_lvl_cb Pointer to the battery level function
- *
- * @return 0 if successful, negative errno code if failure
+ * @param cb Pointer to the battery level function
  */
-int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
+void lorawan_register_battery_level_callback(lorawan_battery_level_cb_t cb);
 
 /**
  * @brief Register a callback to be run on downlink packets
@@ -205,12 +215,9 @@ void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
  * The callback is called once upon successfully joining a network and again
  * each time the datarate changes due to ADR.
  *
- * The callback function takes one parameter:
- *	- dr - updated datarate
- *
- * @param dr_cb Pointer to datarate update callback
+ * @param cb Pointer to datarate update callback
  */
-void lorawan_register_dr_changed_callback(void (*dr_cb)(enum lorawan_datarate));
+void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb);
 
 /**
  * @brief Join the LoRaWAN network

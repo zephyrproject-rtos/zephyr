@@ -2,12 +2,24 @@
 
 zephyr_library()
 
+zephyr_library_include_directories(include)
+
 # Library may be empty due to kconfigs
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
+if(CONFIG_GEN_ISR_TABLES)
+  zephyr_library_sources(
+    sw_isr_common.c
+  )
+  zephyr_library_sources_ifdef(
+    CONFIG_DYNAMIC_INTERRUPTS
+    dynamic_isr.c
+  )
+endif()
+
 zephyr_library_sources_ifdef(
-  CONFIG_GEN_ISR_TABLES
-  sw_isr_common.c
+  CONFIG_MULTI_LEVEL_INTERRUPTS
+  multilevel_irq.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)

@@ -8,6 +8,7 @@ menuconfig SDHC
 
 if SDHC
 
+source "drivers/sdhc/Kconfig.ifx_cat1"
 source "drivers/sdhc/Kconfig.imx"
 source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.mcux_sdif"

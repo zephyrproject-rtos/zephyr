@@ -243,6 +243,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
 	PR("Flags     : %s\n", iface_flags2str(iface));
+	PR("Device    : %s (%p)\n",
+	   net_if_get_device(iface) ? net_if_get_device(iface)->name : "<?>",
+	   net_if_get_device(iface));
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {

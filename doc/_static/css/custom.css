@@ -582,6 +582,14 @@ kbd, .kbd,
     vertical-align: middle;
 }
 
+/* guilabel and menuselection tweaks */
+.rst-content .guilabel,
+.rst-content .menuselection {
+    color: var(--body-color);
+    background-color: var(--guiitems-background-color);
+    border-color: var(--guiitems-border-color);
+}
+
 /* Buttons */
 
 .btn-neutral {

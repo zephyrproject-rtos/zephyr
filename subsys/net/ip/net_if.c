@@ -254,7 +254,9 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 
+		net_if_tx_lock(iface);
 		status = net_if_l2(iface)->send(iface, pkt);
+		net_if_tx_unlock(iface);
 
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
 			uint32_t end_tick = k_cycle_get_32();
@@ -426,6 +428,7 @@ static inline void init_iface(struct net_if *iface)
 #endif
 
 	k_mutex_init(&iface->lock);
+	k_mutex_init(&iface->tx_lock);
 
 	api->init(iface);
 }
@@ -436,8 +439,6 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	enum net_verdict verdict = NET_OK;
 	int status = -EIO;
-
-	net_if_lock(iface);
 
 	if (!net_if_flag_is_set(iface, NET_IF_LOWER_UP) ||
 	    net_if_flag_is_set(iface, NET_IF_SUSPENDED)) {
@@ -520,8 +521,6 @@ done:
 		/* Packet is ready to be sent by L2, let's queue */
 		net_if_queue_tx(iface, pkt);
 	}
-
-	net_if_unlock(iface);
 
 	return verdict;
 }
@@ -4876,6 +4875,16 @@ void net_if_init(void)
 		NET_ERR("There is no network interface to work with!");
 		goto out;
 	}
+
+#if defined(CONFIG_ASSERT)
+	/* Do extra check that verifies that interface count is properly
+	 * done.
+	 */
+	int count_if;
+
+	NET_IFACE_COUNT(&count_if);
+	NET_ASSERT(count_if == if_count);
+#endif
 
 	iface_ipv6_init(if_count);
 	iface_ipv4_init(if_count);

@@ -68,7 +68,7 @@ static void get_faults(uint8_t *faults, uint8_t faults_size, uint8_t *dst, uint8
 	}
 }
 
-static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
+static int fault_get_cur(const struct bt_mesh_model *model, uint8_t *test_id,
 			 uint16_t *company_id, uint8_t *faults, uint8_t *fault_count)
 {
 	shell_print_ctx("Sending current faults");
@@ -81,7 +81,7 @@ static int fault_get_cur(struct bt_mesh_model *model, uint8_t *test_id,
 	return 0;
 }
 
-static int fault_get_reg(struct bt_mesh_model *model, uint16_t cid,
+static int fault_get_reg(const struct bt_mesh_model *model, uint16_t cid,
 			 uint8_t *test_id, uint8_t *faults, uint8_t *fault_count)
 {
 	if (cid != CONFIG_BT_COMPANY_ID) {
@@ -99,7 +99,7 @@ static int fault_get_reg(struct bt_mesh_model *model, uint16_t cid,
 	return 0;
 }
 
-static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
+static int fault_clear(const struct bt_mesh_model *model, uint16_t cid)
 {
 	if (cid != CONFIG_BT_COMPANY_ID) {
 		return -EINVAL;
@@ -110,7 +110,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
 	return 0;
 }
 
-static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+static int fault_test(const struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t cid)
 {
 	if (cid != CONFIG_BT_COMPANY_ID) {
@@ -124,12 +124,12 @@ static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 	return 0;
 }
 
-static void attention_on(struct bt_mesh_model *model)
+static void attention_on(const struct bt_mesh_model *model)
 {
 	shell_print_ctx("Attention On");
 }
 
-static void attention_off(struct bt_mesh_model *model)
+static void attention_off(const struct bt_mesh_model *model)
 {
 	shell_print_ctx("Attention Off");
 }
@@ -387,6 +387,7 @@ static int cmd_proxy_disconnect(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_PROXY_CLIENT */
 
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 static int cmd_proxy_solicit(const struct shell *sh, size_t argc,
@@ -410,7 +411,6 @@ static int cmd_proxy_solicit(const struct shell *sh, size_t argc,
 	return err;
 }
 #endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
-#endif /* CONFIG_BT_MESH_PROXY_CLIENT */
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */
 
 #if defined(CONFIG_BT_MESH_SHELL_PROV)
@@ -944,7 +944,7 @@ static int cmd_provision_adv(const struct shell *sh, size_t argc,
 
 static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t *net_key = (uint8_t *)bt_mesh_shell_default_key;
+	uint8_t net_key[16];
 	uint16_t net_idx, addr;
 	uint32_t iv_index;
 	int err = 0;
@@ -962,6 +962,8 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 		shell_warn(sh, "Unable to parse input string argument");
 		return err;
 	}
+
+	memcpy(net_key, bt_mesh_shell_default_key, sizeof(net_key));
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
 		struct bt_mesh_cdb_subnet *sub;
@@ -1739,11 +1741,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(proxy_cmds,
 #if defined(CONFIG_BT_MESH_PROXY_CLIENT)
 	SHELL_CMD_ARG(connect, NULL, "<NetKeyIdx>", cmd_proxy_connect, 2, 0),
 	SHELL_CMD_ARG(disconnect, NULL, "<NetKeyIdx>", cmd_proxy_disconnect, 2, 0),
+#endif
 
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 	SHELL_CMD_ARG(solicit, NULL, "<NetKeyIdx>",
 		      cmd_proxy_solicit, 2, 0),
-#endif
 #endif
 	SHELL_SUBCMD_SET_END);
 #endif /* CONFIG_BT_MESH_SHELL_GATT_PROXY */

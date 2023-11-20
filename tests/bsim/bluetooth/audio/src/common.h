@@ -12,10 +12,10 @@
 
 #include <zephyr/kernel.h>
 
+#include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "time_machine.h"
-#include "bstests.h"
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -97,6 +97,13 @@ extern volatile bt_security_t security_level;
 void disconnected(struct bt_conn *conn, uint8_t reason);
 void test_tick(bs_time_t HW_device_time);
 void test_init(void);
+void backchannel_sync_send(uint dev);
+void backchannel_sync_send_all(void);
+void backchannel_sync_wait(uint dev);
+void backchannel_sync_wait_all(void);
+void backchannel_sync_wait_any(void);
+void backchannel_sync_clear(uint dev);
+void backchannel_sync_clear_all(void);
 
 struct bap_test_stream {
 	struct bt_bap_stream stream;

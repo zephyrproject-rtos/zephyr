@@ -66,6 +66,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_QTMR
 	DEVS_FOR_DT_COMPAT(nxp_imx_tmr)
 #endif
+#ifdef CONFIG_COUNTER_NXP_MRT
+	DEVS_FOR_DT_COMPAT(nxp_mrt_channel)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif

@@ -230,7 +230,7 @@ static int gt911_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	r = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
+	r = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 	if (r < 0) {
 		LOG_ERR("Could not configure reset GPIO pin");
 		return r;
@@ -253,10 +253,10 @@ static int gt911_init(const struct device *dev)
 	/* Delay at least 10 ms after power on before we configure gt911 */
 	k_sleep(K_MSEC(20));
 	/* reset the device and confgiure the addr mode0 */
-	gpio_pin_set_dt(&config->rst_gpio, 0);
+	gpio_pin_set_dt(&config->rst_gpio, 1);
 	/* hold down at least 1us, 1ms here */
 	k_sleep(K_MSEC(1));
-	gpio_pin_set_dt(&config->rst_gpio, 1);
+	gpio_pin_set_dt(&config->rst_gpio, 0);
 	/* hold down at least 5ms. This is the point the INT pin must be low. */
 	k_sleep(K_MSEC(5));
 	/* hold down 50ms to make sure the address available */

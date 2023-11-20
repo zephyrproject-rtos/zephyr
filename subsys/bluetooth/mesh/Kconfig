@@ -1049,13 +1049,10 @@ config BT_MESH_FRIEND_ADV_LATENCY
 endif # BT_MESH_FRIEND
 
 menuconfig BT_MESH_V1d1
-	bool "Bluetooth mesh v1.1 support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth mesh v1.1 support"
 	help
 	  This option enables Bluetooth mesh v1.1 support. Bluetooth mesh v1.1
-	  is backward compatible with v1.0.1. The stack cannot be qualified
-	  with this option enabled because the Bluetooth mesh v1.1 specification
-	  is in a draft state.
+	  is backward compatible with v1.0.1.
 
 config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
 	bool "Support CMAC AES128 for OOB authentication" if BT_MESH_V1d1
@@ -1442,11 +1439,10 @@ config BT_MESH_SOLICITATION
 	bool
 
 config BT_MESH_PROXY_SOLICITATION
-	bool "Proxy solicitation feature for Proxy Client support"
-	depends on BT_MESH_PROXY_CLIENT
+	bool "Proxy solicitation feature"
 	select BT_MESH_SOLICITATION
 	help
-	  This option enables support for sending Solicitation PDUs for Proxy Client.
+	  This option enables support for sending Solicitation PDUs.
 
 config BT_MESH_SOL_ADV_XMIT
 	int "Solicitation PDU retransmission count"

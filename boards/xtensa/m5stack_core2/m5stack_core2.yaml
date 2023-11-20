@@ -14,8 +14,7 @@ supported:
   - pinmux
   - nvs
 testing:
-  default: true
   ignore_tags:
     - net
     - bluetooth
-vendor: espressif
+vendor: m5stack

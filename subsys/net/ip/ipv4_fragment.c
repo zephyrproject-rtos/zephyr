@@ -203,6 +203,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
 
 	net_pkt_set_data(pkt, &ipv4_access);
+	net_pkt_set_ip_reassembled(pkt, true);
 
 	LOG_DBG("New pkt %p IPv4 len is %d bytes", pkt, net_pkt_get_len(pkt));
 
@@ -480,14 +481,18 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	ipv4_hdr->len = htons((fit_len + net_pkt_ip_hdr_len(pkt)));
 
 	ipv4_hdr->chksum = 0;
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(frag_pkt))) {
-		ipv4_hdr->chksum = net_calc_chksum_ipv4(frag_pkt);
-	}
+	ipv4_hdr->chksum = net_calc_chksum_ipv4(frag_pkt);
+
+	net_pkt_set_chksum_done(frag_pkt, true);
 
 	net_pkt_set_data(frag_pkt, &ipv4_access);
 
 	net_pkt_set_overwrite(frag_pkt, false);
 	net_pkt_cursor_restore(frag_pkt, &cur);
+
+	if (final) {
+		net_pkt_set_context(frag_pkt, net_pkt_context(pkt));
+	}
 
 	/* If everything has been ok so far, we can send the packet. */
 	ret = net_send_data(frag_pkt);
@@ -553,6 +558,35 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	fit_len *= 8;
 
 	pkt_len -= net_pkt_ip_hdr_len(pkt);
+
+	/* Calculate the L4 checksum (if not done already) before the fragmentation. */
+	if (!net_pkt_is_chksum_done(pkt)) {
+		struct net_pkt_cursor backup;
+
+		net_pkt_cursor_backup(pkt, &backup);
+		net_pkt_acknowledge_data(pkt, &frag_access);
+
+		switch (frag_hdr->proto) {
+		case IPPROTO_ICMP:
+			ret = net_icmpv4_finalize(pkt, true);
+			break;
+		case IPPROTO_TCP:
+			ret = net_tcp_finalize(pkt, true);
+			break;
+		case IPPROTO_UDP:
+			ret = net_udp_finalize(pkt, true);
+			break;
+		default:
+			ret = 0;
+			break;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+
+		net_pkt_cursor_restore(pkt, &backup);
+	}
 
 	while (frag_offset < pkt_len) {
 		bool final = false;

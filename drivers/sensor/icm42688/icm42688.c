@@ -82,7 +82,7 @@ int icm42688_channel_parse_readings(enum sensor_channel chan, int16_t readings[7
 }
 
 static int icm42688_channel_get(const struct device *dev, enum sensor_channel chan,
-			 struct sensor_value *val)
+				struct sensor_value *val)
 {
 	struct icm42688_dev_data *data = dev->data;
 
@@ -156,6 +156,17 @@ static int icm42688_attr_set(const struct device *dev, enum sensor_channel chan,
 			res = -EINVAL;
 		}
 		break;
+	case SENSOR_CHAN_ALL:
+		if (attr == SENSOR_ATTR_BATCH_DURATION) {
+			if (val->val1 < 0) {
+				return -EINVAL;
+			}
+			new_config.batch_ticks = val->val1;
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
 	default:
 		LOG_ERR("Unsupported channel");
 		res = -EINVAL;
@@ -199,6 +210,15 @@ static int icm42688_attr_get(const struct device *dev, enum sensor_channel chan,
 			icm42688_gyro_reg_to_odr(cfg->gyro_odr, val);
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
 			icm42688_gyro_reg_to_fs(cfg->gyro_fs, val);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
+	case SENSOR_CHAN_ALL:
+		if (attr == SENSOR_ATTR_BATCH_DURATION) {
+			val->val1 = cfg->batch_ticks;
+			val->val2 = 0;
 		} else {
 			LOG_ERR("Unsupported attribute");
 			res = -EINVAL;
@@ -257,7 +277,13 @@ int icm42688_init(const struct device *dev)
 	data->cfg.gyro_mode = ICM42688_GYRO_LN;
 	data->cfg.gyro_fs = ICM42688_GYRO_FS_125;
 	data->cfg.gyro_odr = ICM42688_GYRO_ODR_1000;
-	data->cfg.fifo_en = false;
+	data->cfg.temp_dis = false;
+	data->cfg.fifo_en = IS_ENABLED(CONFIG_ICM42688_STREAM);
+	data->cfg.batch_ticks = 0;
+	data->cfg.fifo_hires = 0;
+	data->cfg.interrupt1_drdy = 0;
+	data->cfg.interrupt1_fifo_ths = 0;
+	data->cfg.interrupt1_fifo_full = 0;
 
 	res = icm42688_configure(dev, &data->cfg);
 	if (res != 0) {
@@ -283,8 +309,15 @@ void icm42688_unlock(const struct device *dev)
 #define ICM42688_SPI_CFG                                                                           \
 	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
+#define ICM42688_RTIO_DEFINE(inst)                                                                 \
+	SPI_DT_IODEV_DEFINE(icm42688_spi_iodev_##inst, DT_DRV_INST(inst), ICM42688_SPI_CFG, 0U);   \
+	RTIO_DEFINE(icm42688_rtio_##inst, 8, 4);
+
 #define ICM42688_DEFINE_DATA(inst)                                                                 \
-	static struct icm42688_dev_data icm42688_driver_##inst;
+	IF_ENABLED(CONFIG_ICM42688_STREAM, (ICM42688_RTIO_DEFINE(inst)));                          \
+	static struct icm42688_dev_data icm42688_driver_##inst = {                                 \
+		IF_ENABLED(CONFIG_ICM42688_STREAM, (.r = &icm42688_rtio_##inst,                    \
+						    .spi_iodev = &icm42688_spi_iodev_##inst,))};
 
 #define ICM42688_INIT(inst)                                                                        \
 	ICM42688_DEFINE_DATA(inst);                                                                \

@@ -700,7 +700,7 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 					<GIC_SPI 225 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "RX_TX_DATA_IRQ", "INT_ERROR_IRQ";
+			interrupt-names = "rx_tx", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 		};
 
@@ -713,7 +713,7 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 					<GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "RX_TX_DATA_IRQ", "INT_ERROR_IRQ";
+			interrupt-names = "rx_tx", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 		};
 	};

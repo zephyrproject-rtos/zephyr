@@ -12,131 +12,129 @@
 #include <zephyr/acpi/acpi.h>
 #include <zephyr/shell/shell.h>
 
-#define MAX_PR_BUFF (4096)
-
-static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
-static uint8_t prs_buffer[MAX_PR_BUFF];
-
 static void dump_dev_res(const struct shell *sh, ACPI_RESOURCE *res_lst)
 {
 	ACPI_RESOURCE *res = res_lst;
 
-	shell_print(sh, "\n**** ACPI Device Resource Info ****\n");
+	shell_print(sh, "**** ACPI Device Resource Info ****");
 
 	do {
 
 		if (!res->Length) {
-			shell_error(sh, "Error: zero length found!\n");
+			shell_error(sh, "Error: zero length found!");
 			break;
 		}
 
 		switch (res->Type) {
 		case ACPI_RESOURCE_TYPE_IRQ:
-			shell_print(sh, "\nACPI_RESOURCE_TYPE_IRQ\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_IRQ");
 			ACPI_RESOURCE_IRQ *irq_res = &res->Data.Irq;
 
-			shell_print(sh,
-				"DescriptorLength: %x, Triggering:%x, Polarity:%x, Shareable:%x,",
-			       irq_res->DescriptorLength, irq_res->Triggering, irq_res->Polarity,
-			       irq_res->Shareable);
-			shell_print(sh,
-				"InterruptCount:%d, Interrupts[0]:%x\n", irq_res->InterruptCount,
-			       irq_res->Interrupts[0]);
+			shell_print(sh, "\tDescriptorLength: %x", irq_res->DescriptorLength);
+			shell_print(sh, "\tTriggering: %x", irq_res->Triggering);
+			shell_print(sh, "\tPolarity: %x", irq_res->Polarity);
+			shell_print(sh, "\tShareable: %x", irq_res->Shareable);
+			shell_print(sh, "\tInterruptCount: %d", irq_res->InterruptCount);
+			shell_print(sh, "\tInterrupts[0]: %x", irq_res->Interrupts[0]);
 			break;
-		case ACPI_RESOURCE_TYPE_IO:
-			ACPI_RESOURCE_IO * io_res = &res->Data.Io;
+		case ACPI_RESOURCE_TYPE_IO: {
+			ACPI_RESOURCE_IO *io_res = &res->Data.Io;
 
-			shell_print(sh, "\n ACPI_RESOURCE_TYPE_IO\n");
-			shell_print(sh,
-				"IoDecode: %x, Alignment:%x, AddressLength:%x, Minimum:%x,Maximum:%x\n",
-				   io_res->IoDecode, io_res->Alignment,
-				   io_res->AddressLength, io_res->Minimum,
-				   io_res->Maximum);
+			shell_print(sh, "ACPI_RESOURCE_TYPE_IO");
+			shell_print(sh, "\tIoDecode: %x", io_res->IoDecode);
+			shell_print(sh, "\tAlignment: %x", io_res->Alignment);
+			shell_print(sh, "\tAddressLength: %x", io_res->AddressLength);
+			shell_print(sh, "\tMinimum: %x", io_res->Minimum);
+			shell_print(sh, "\tMaximum: %x", io_res->Maximum);
 			break;
+		}
 		case ACPI_RESOURCE_TYPE_DMA:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_DMA\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_DMA");
 			break;
 		case ACPI_RESOURCE_TYPE_START_DEPENDENT:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_START_DEPENDENT\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_START_DEPENDENT");
 			break;
 		case ACPI_RESOURCE_TYPE_END_DEPENDENT:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_END_DEPENDENT\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_END_DEPENDENT");
 			break;
 		case ACPI_RESOURCE_TYPE_FIXED_IO:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_FIXED_IO\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_FIXED_IO");
 			break;
 		case ACPI_RESOURCE_TYPE_VENDOR:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_VENDOR\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_VENDOR");
 			break;
 		case ACPI_RESOURCE_TYPE_MEMORY24:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_MEMORY24\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_MEMORY24");
 			break;
-		case ACPI_RESOURCE_TYPE_MEMORY32:
-			ACPI_RESOURCE_MEMORY32 * mem_res = &res->Data.Memory32;
+		case ACPI_RESOURCE_TYPE_MEMORY32: {
+			ACPI_RESOURCE_MEMORY32 *mem_res = &res->Data.Memory32;
 
-			shell_print(sh, "\nACPI_RESOURCE_TYPE_MEMORY32\n\n");
-			shell_print(sh, "Minimum:%x, Maximum:%x\n",
-				mem_res->Minimum, mem_res->Maximum);
+			shell_print(sh, "ACPI_RESOURCE_TYPE_MEMORY32");
+			shell_print(sh, "\tMinimum: %x", mem_res->Minimum);
+			shell_print(sh, "\tMaximum: %x", mem_res->Maximum);
 			break;
-		case ACPI_RESOURCE_TYPE_FIXED_MEMORY32:
-			ACPI_RESOURCE_FIXED_MEMORY32 * fix_mem_res = &res->Data.FixedMemory32;
+		}
+		case ACPI_RESOURCE_TYPE_FIXED_MEMORY32: {
+			ACPI_RESOURCE_FIXED_MEMORY32 *fix_mem_res = &res->Data.FixedMemory32;
 
-			shell_print(sh, "\nACPI_RESOURCE_TYPE_FIXED_MEMORY32\n\n");
-			shell_print(sh, "Address:%x\n", fix_mem_res->Address);
+			shell_print(sh, "ACPI_RESOURCE_TYPE_FIXED_MEMORY32");
+			shell_print(sh, "\tAddress: %x", fix_mem_res->Address);
 			break;
+		}
 		case ACPI_RESOURCE_TYPE_ADDRESS16:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_ADDRESS16\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_ADDRESS16");
 			break;
-		case ACPI_RESOURCE_TYPE_ADDRESS32:
-			ACPI_RESOURCE_ADDRESS32 * add_res = &res->Data.Address32;
+		case ACPI_RESOURCE_TYPE_ADDRESS32: {
+			ACPI_RESOURCE_ADDRESS32 *add_res = &res->Data.Address32;
 
-			shell_print(sh, "\nACPI_RESOURCE_TYPE_ADDRESS32\n\n");
-			shell_print(sh, "Minimum:%x, Maximum:%x\n", add_res->Address.Minimum,
-				add_res->Address.Maximum);
+			shell_print(sh, "ACPI_RESOURCE_TYPE_ADDRESS32");
+			shell_print(sh, "\tMinimum: %x", add_res->Address.Minimum);
+			shell_print(sh, "\tMaximum: %x", add_res->Address.Maximum);
 			break;
-		case ACPI_RESOURCE_TYPE_ADDRESS64:
-			ACPI_RESOURCE_ADDRESS64 * add_res64 = &res->Data.Address64;
+		}
+		case ACPI_RESOURCE_TYPE_ADDRESS64: {
+			ACPI_RESOURCE_ADDRESS64 *add_res64 = &res->Data.Address64;
 
-			shell_print(sh, "\nACPI_RESOURCE_TYPE_ADDRESS64\n\n");
-			shell_print(sh,
-					"Minimum:%llx, Maximum:%llx\n", add_res64->Address.Minimum,
-						add_res64->Address.Maximum);
+			shell_print(sh, "ACPI_RESOURCE_TYPE_ADDRESS64");
+			shell_print(sh, "\tMinimum: %llx", add_res64->Address.Minimum);
+			shell_print(sh, "\tMaximum: %llx", add_res64->Address.Maximum);
 			break;
+		}
 		case ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_ADDRESS64");
 			break;
 		case ACPI_RESOURCE_TYPE_EXTENDED_IRQ:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_IRQ\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_EXTENDED_IRQ");
 			break;
 		case ACPI_RESOURCE_TYPE_GENERIC_REGISTER:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_GENERIC_REGISTER\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_GENERIC_REGISTER");
 			break;
 		case ACPI_RESOURCE_TYPE_GPIO:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_GPIO\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_GPIO");
 			break;
 		case ACPI_RESOURCE_TYPE_FIXED_DMA:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_FIXED_DMA\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_FIXED_DMA");
 			break;
 		case ACPI_RESOURCE_TYPE_SERIAL_BUS:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_SERIAL_BUS\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_SERIAL_BUS");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_FUNCTION:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_FUNCTION\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_FUNCTION");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_CONFIG:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_CONFIG\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_CONFIG");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_GROUP:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION:
-			shell_print(sh,
-					"ACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP_FUNCTION");
 			break;
 		case ACPI_RESOURCE_TYPE_PIN_GROUP_CONFIG:
-			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP_CONFIG\n\n");
+			shell_print(sh, "ACPI_RESOURCE_TYPE_PIN_GROUP_CONFIG");
 			break;
 		default:
+			shell_error(sh, "Unknown resource type %d", res->Type);
 		}
 
 		res = ACPI_NEXT_RESOURCE(res);
@@ -150,13 +148,13 @@ static int dump_dev_crs(const struct shell *sh, size_t argc, char **argv)
 	ACPI_RESOURCE *res_lst;
 
 	if (argc < 2) {
-		shell_error(sh, "invalid arugment\n");
+		shell_error(sh, "invalid arugment");
 		return -EINVAL;
 	}
 
 	status = acpi_current_resource_get(argv[1], &res_lst);
 	if (status) {
-		shell_error(sh, "Error on ACPI _CRS method: %d\n", status);
+		shell_error(sh, "Error on ACPI _CRS method: %d", status);
 		return status;
 	}
 
@@ -170,16 +168,16 @@ static int dump_dev_crs(const struct shell *sh, size_t argc, char **argv)
 static int dump_dev_prs(const struct shell *sh, size_t argc, char **argv)
 {
 	int status;
-	ACPI_RESOURCE *res_lst = (ACPI_RESOURCE *)prs_buffer;
+	ACPI_RESOURCE *res_lst;
 
 	if (argc < 2) {
-		shell_error(sh, "invalid arugment\n");
+		shell_error(sh, "invalid arugment");
 		return -EINVAL;
 	}
 
 	status = acpi_possible_resource_get(argv[1], &res_lst);
 	if (status) {
-		shell_error(sh, "Error in on ACPI _PRS method: %d\n", status);
+		shell_error(sh, "Error in on ACPI _PRS method: %d", status);
 		return status;
 	}
 
@@ -190,29 +188,31 @@ static int dump_dev_prs(const struct shell *sh, size_t argc, char **argv)
 
 static int dump_prt(const struct shell *sh, size_t argc, char **argv)
 {
-	int status, cnt;
-	ACPI_PCI_ROUTING_TABLE *prt;
+	IF_ENABLED(CONFIG_PCIE_PRT, ({
+		static ACPI_PCI_ROUTING_TABLE irq_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
+		int status, cnt;
+		ACPI_PCI_ROUTING_TABLE *prt;
 
-	if (argc < 2) {
-		shell_error(sh, "invalid arugment\n");
-		return -EINVAL;
-	}
+		if (argc < 2) {
+			shell_error(sh, "invalid arugment");
+			return -EINVAL;
+		}
 
-	status = acpi_get_irq_routing_table(argv[1],
-						irq_prt_table, sizeof(irq_prt_table));
-	if (status) {
-		return status;
-	}
+		status = acpi_get_irq_routing_table(argv[1],
+						    irq_prt_table, ARRAY_SIZE(irq_prt_table));
+		if (status) {
+			return status;
+		}
 
-	prt = irq_prt_table;
-	for (cnt = 0; prt->Length; cnt++) {
-		shell_print(sh, "[%02X] PCI IRQ Routing Table Package\n", cnt);
-		shell_print(sh,
-			"DevNum: %lld Pin:%d IRQ: %d\n", (prt->Address >> 16) & 0xFFFF, prt->Pin,
-		       prt->SourceIndex);
+		prt = irq_prt_table;
+		for (cnt = 0; prt->Length; cnt++) {
+			shell_print(sh, "[%02X] PCI IRQ Routing Table Package", cnt);
+			shell_print(sh, "\tDevNum: %lld Pin: %d IRQ: %d",
+				    (prt->Address >> 16) & 0xFFFF, prt->Pin, prt->SourceIndex);
 
-		prt = ACPI_ADD_PTR(ACPI_PCI_ROUTING_TABLE, prt, prt->Length);
-	}
+			prt = ACPI_ADD_PTR(ACPI_PCI_ROUTING_TABLE, prt, prt->Length);
+		}
+	})); /* IF_ENABLED(CONFIG_PCIE_PRT) */
 
 	return 0;
 }
@@ -227,10 +227,11 @@ static int enum_dev(const struct shell *sh, size_t argc, char **argv)
 
 	dev = acpi_device_get(argv[1], 0);
 	if (!dev || !dev->res_lst) {
-		shell_error(sh, "acpi get device failed for HID: %s\n", argv[1]);
+		shell_error(sh, "acpi get device failed for HID: %s", argv[1]);
 		return -EIO;
 	}
-	shell_print(sh, "\nName:%s\n", dev->path ? dev->path : "Non");
+
+	shell_print(sh, "Name: %s", dev->path ? dev->path : "None");
 	dump_dev_res(sh, dev->res_lst);
 
 	return 0;
@@ -244,17 +245,17 @@ static int read_table(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	shell_print(sh, "ACPI Table Name: %s\n", argv[1]);
-
 	table = acpi_table_get(argv[1], 0);
 	if (!table) {
-		shell_error(sh, "ACPI get table failed\n");
+		shell_error(sh, "ACPI get table %s failed", argv[1]);
 		return -EIO;
 	}
 
-	shell_print(sh, "ACPI Table Info:\n");
-	shell_print(sh, "Signature: %4s Table Length:%d Revision:%d OemId:%s\n",
-		table->Signature, table->Length, table->Revision, table->OemId);
+	shell_print(sh, "ACPI Table %s:", argv[1]);
+	shell_print(sh, "\tSignature: %.4s", table->Signature);
+	shell_print(sh, "\tTable Length: %d", table->Length);
+	shell_print(sh, "\tRevision: %d", table->Revision);
+	shell_print(sh, "\tOemId: %s", table->OemId);
 
 	return 0;
 }
@@ -267,8 +268,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD(prs, NULL,
 		  "display device possible resource settings (eg:acpi crs _SB.PC00.LPCB.RTC)",
 		  dump_dev_prs),
-	SHELL_CMD(prt, NULL, "display PRT details for a given bus (eg:acpi prt _SB.PC00)",
-		  dump_prt),
+	SHELL_COND_CMD(CONFIG_PCIE_PRT, prt, NULL,
+		       "display PRT details for a given bus (eg:acpi prt _SB.PC00)",
+		       dump_prt),
 	SHELL_CMD(enum, NULL,
 		  "enumerate device using hid (for enum HPET timer device,eg:acpi enum PNP0103)",
 		  enum_dev),

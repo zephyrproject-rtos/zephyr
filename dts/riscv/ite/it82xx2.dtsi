@@ -885,6 +885,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <SMB_CHANNEL_A>;
+			channel-switch-sel = <I2C_CHA_LOCATE>;
 			scl-gpios = <&gpiob 3 0>;
 			sda-gpios = <&gpiob 4 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBA>;
@@ -899,6 +900,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <SMB_CHANNEL_B>;
+			channel-switch-sel = <I2C_CHB_LOCATE>;
 			scl-gpios = <&gpioc 1 0>;
 			sda-gpios = <&gpioc 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBB>;
@@ -913,6 +915,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <SMB_CHANNEL_C>;
+			channel-switch-sel = <I2C_CHC_LOCATE>;
 			scl-gpios = <&gpiof 6 0>;
 			sda-gpios = <&gpiof 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBC>;
@@ -927,6 +930,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <I2C_CHANNEL_D>;
+			channel-switch-sel = <I2C_CHD_LOCATE>;
 			scl-gpios = <&gpioh 1 0>;
 			sda-gpios = <&gpioh 2 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBD>;
@@ -941,6 +945,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <I2C_CHANNEL_E>;
+			channel-switch-sel = <I2C_CHE_LOCATE>;
 			scl-gpios = <&gpioe 0 0>;
 			sda-gpios = <&gpioe 7 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBE>;
@@ -955,6 +960,7 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 			port-num = <I2C_CHANNEL_F>;
+			channel-switch-sel = <I2C_CHF_LOCATE>;
 			scl-gpios = <&gpioa 4 0>;
 			sda-gpios = <&gpioa 5 0>;
 			clock-gate-offset = <CGC_OFFSET_SMBF>;

@@ -25,7 +25,7 @@ from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import BuildError
+from twisterlib.error import BuildError, ConfigurationError
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -40,6 +40,9 @@ if sys.platform == 'linux':
 
 from twisterlib.log_helper import log_command
 from twisterlib.testinstance import TestInstance
+from twisterlib.environment import TwisterEnv
+from twisterlib.testsuite import TestSuite
+from twisterlib.platform import Platform
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.harness import HarnessImporter, Pytest
 
@@ -220,7 +223,7 @@ class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
+    def __init__(self, testsuite: TestSuite, platform: Platform, source_dir, build_dir, jobserver):
 
         self.cwd = None
         self.capture_output = True
@@ -414,7 +417,7 @@ class CMake:
 
 class FilterBuilder(CMake):
 
-    def __init__(self, testsuite, platform, source_dir, build_dir, jobserver):
+    def __init__(self, testsuite: TestSuite, platform: Platform, source_dir, build_dir, jobserver):
         super().__init__(testsuite, platform, source_dir, build_dir, jobserver)
 
         self.log = "config-twister.log"
@@ -517,7 +520,7 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
-    def __init__(self, instance, env, jobserver, **kwargs):
+    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
@@ -527,8 +530,7 @@ class ProjectBuilder(FilterBuilder):
         self.env = env
         self.duts = None
 
-    @staticmethod
-    def log_info(filename, inline_logs):
+    def log_info(self, filename, inline_logs, log_testcases=False):
         filename = os.path.abspath(os.path.realpath(filename))
         if inline_logs:
             logger.info("{:-^100}".format(filename))
@@ -542,6 +544,17 @@ class ProjectBuilder(FilterBuilder):
             logger.error(data)
 
             logger.info("{:-^100}".format(filename))
+
+            if log_testcases:
+                for tc in self.instance.testcases:
+                    if not tc.reason:
+                        continue
+                    logger.info(
+                        f"\n{str(tc.name).center(100, '_')}\n"
+                        f"{tc.reason}\n"
+                        f"{100*'_'}\n"
+                        f"{tc.output}"
+                    )
         else:
             logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
 
@@ -551,9 +564,12 @@ class ProjectBuilder(FilterBuilder):
         b_log = "{}/build.log".format(build_dir)
         v_log = "{}/valgrind.log".format(build_dir)
         d_log = "{}/device.log".format(build_dir)
+        pytest_log = "{}/twister_harness.log".format(build_dir)
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info("{}".format(v_log), inline_logs)
+        elif os.path.exists(pytest_log) and os.path.getsize(pytest_log) > 0:
+            self.log_info("{}".format(pytest_log), inline_logs, log_testcases=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info("{}".format(h_log), inline_logs)
         elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
@@ -1043,7 +1059,7 @@ class ProjectBuilder(FilterBuilder):
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
 
-            if(self.options.seed is not None and instance.platform.name.startswith("native_posix")):
+            if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
                 if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
                     self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
@@ -1053,7 +1069,14 @@ class ProjectBuilder(FilterBuilder):
                 instance.handler.extra_test_args = self.options.extra_test_args
 
             harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
-            harness.configure(instance)
+            try:
+                harness.configure(instance)
+            except ConfigurationError as error:
+                instance.status = "error"
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+            #
             if isinstance(harness, Pytest):
                 harness.pytest_run(instance.handler.get_test_timeout())
             else:

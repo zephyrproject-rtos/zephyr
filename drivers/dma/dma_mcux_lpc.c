@@ -18,6 +18,7 @@
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/drivers/dma/dma_mcux_lpc.h>
 
 #define DT_DRV_COMPAT nxp_lpc_dma
 
@@ -554,11 +555,35 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		data->descriptors_queued = true;
 	}
 
-	if (is_periph) {
+	if (config->dma_slot) {
+		uint32_t cfg_reg = 0;
+
+		/* User supplied manual trigger configuration */
+		if (config->dma_slot & LPC_DMA_PERIPH_REQ_EN) {
+			cfg_reg |= DMA_CHANNEL_CFG_PERIPHREQEN_MASK;
+		}
+		if (config->dma_slot & LPC_DMA_HWTRIG_EN) {
+			/* Setup hardware trigger */
+			cfg_reg |= DMA_CHANNEL_CFG_HWTRIGEN_MASK;
+			if (config->dma_slot & LPC_DMA_TRIGTYPE_LEVEL) {
+				cfg_reg |= DMA_CHANNEL_CFG_TRIGTYPE_MASK;
+			}
+			if (config->dma_slot & LPC_DMA_TRIGPOL_HIGH_RISING) {
+				cfg_reg |= DMA_CHANNEL_CFG_TRIGPOL_MASK;
+			}
+			if (config->dma_slot & LPC_DMA_TRIGBURST) {
+				cfg_reg |= DMA_CHANNEL_CFG_TRIGBURST_MASK;
+				cfg_reg |= DMA_CHANNEL_CFG_BURSTPOWER(
+					LPC_DMA_GET_BURSTPOWER(config->dma_slot));
+			}
+		}
+		p_handle->base->CHANNEL[p_handle->channel].CFG = cfg_reg;
+	} else if (is_periph) {
 		DMA_EnableChannelPeriphRq(p_handle->base, p_handle->channel);
 	} else {
 		DMA_DisableChannelPeriphRq(p_handle->base, p_handle->channel);
 	}
+	DMA_SetChannelPriority(p_handle->base, p_handle->channel, config->channel_priority);
 
 	data->busy = false;
 	if (config->dma_callback) {

@@ -12,6 +12,10 @@
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <fsl_clock.h>
 
+#if defined(CONFIG_SOC_MIMX8QM_ADSP) || defined(CONFIG_SOC_MIMX8QXP_ADSP)
+#include <main/ipc.h>
+#endif
+
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
@@ -39,18 +43,34 @@ static const clock_ip_name_t uart_clocks[] = {
 	kCLOCK_Uart4,
 };
 #endif
-#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX93_A55)
-static const clock_root_t lpuart_clk_root[] = {
-	kCLOCK_Root_Lpuart1,
-	kCLOCK_Root_Lpuart2,
-	kCLOCK_Root_Lpuart3,
-	kCLOCK_Root_Lpuart4,
-	kCLOCK_Root_Lpuart5,
-	kCLOCK_Root_Lpuart6,
-	kCLOCK_Root_Lpuart7,
-	kCLOCK_Root_Lpuart8,
+
+#ifdef CONFIG_UART_MCUX_LPUART
+
+#ifdef CONFIG_SOC_MIMX8QM_ADSP
+static const clock_ip_name_t lpuart_clocks[] = {
+	kCLOCK_DMA_Lpuart0,
+	kCLOCK_DMA_Lpuart1,
+	kCLOCK_DMA_Lpuart2,
+	kCLOCK_DMA_Lpuart3,
+	kCLOCK_DMA_Lpuart4,
 };
-#endif
+
+static const uint32_t lpuart_rate = MHZ(80);
+#endif /* CONFIG_SOC_MIMX8QM_ADSP */
+
+#ifdef CONFIG_SOC_MIMX8QXP_ADSP
+static const clock_ip_name_t lpuart_clocks[] = {
+	kCLOCK_DMA_Lpuart0,
+	kCLOCK_DMA_Lpuart1,
+	kCLOCK_DMA_Lpuart2,
+	kCLOCK_DMA_Lpuart3,
+};
+
+static const uint32_t lpuart_rate = MHZ(80);
+#endif /* CONFIG_SOC_MIMX8QXP_ADSP */
+
+#endif /* CONFIG_UART_MCUX_LPUART */
+
 
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
@@ -65,6 +85,25 @@ static int mcux_ccm_on(const struct device *dev,
 	case IMX_CCM_UART3_CLK:
 	case IMX_CCM_UART4_CLK:
 		CLOCK_EnableClock(uart_clocks[instance]);
+		return 0;
+#endif
+
+#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QM_ADSP)
+	case IMX_CCM_LPUART1_CLK:
+	case IMX_CCM_LPUART2_CLK:
+	case IMX_CCM_LPUART3_CLK:
+	case IMX_CCM_LPUART4_CLK:
+	case IMX_CCM_LPUART5_CLK:
+		CLOCK_EnableClock(lpuart_clocks[instance]);
+		return 0;
+#endif
+
+#if defined(CONFIG_UART_MCUX_LPUART) && defined(CONFIG_SOC_MIMX8QXP_ADSP)
+	case IMX_CCM_LPUART1_CLK:
+	case IMX_CCM_LPUART2_CLK:
+	case IMX_CCM_LPUART3_CLK:
+	case IMX_CCM_LPUART4_CLK:
+		CLOCK_EnableClock(lpuart_clocks[instance]);
 		return 0;
 #endif
 	default:
@@ -128,27 +167,29 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_UART_MCUX_LPUART
-#ifdef CONFIG_SOC_MIMX93_A55
+
+#if defined(CONFIG_SOC_MIMX8QM_ADSP)
 	case IMX_CCM_LPUART1_CLK:
 	case IMX_CCM_LPUART2_CLK:
 	case IMX_CCM_LPUART3_CLK:
 	case IMX_CCM_LPUART4_CLK:
 	case IMX_CCM_LPUART5_CLK:
-	case IMX_CCM_LPUART6_CLK:
-	case IMX_CCM_LPUART7_CLK:
-	case IMX_CCM_LPUART8_CLK:
-	{
 		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
-		clock_root_t clk_root = lpuart_clk_root[instance];
-		uint32_t uart_mux = CLOCK_GetRootClockMux(clk_root);
-		uint32_t divider = CLOCK_GetRootClockDiv(clk_root);
 
-		if (uart_mux == 0)
-			*rate = MHZ(24) / divider;
-		else
-			LOG_ERR("LPUART Clock is not supported\r\n");
+		CLOCK_SetIpFreq(lpuart_clocks[instance], lpuart_rate);
+		*rate = CLOCK_GetIpFreq(lpuart_clocks[instance]);
+		break;
 
-	} break;
+#elif defined(CONFIG_SOC_MIMX8QXP_ADSP)
+	case IMX_CCM_LPUART1_CLK:
+	case IMX_CCM_LPUART2_CLK:
+	case IMX_CCM_LPUART3_CLK:
+	case IMX_CCM_LPUART4_CLK:
+		uint32_t instance = clock_name & IMX_CCM_INSTANCE_MASK;
+
+		CLOCK_SetIpFreq(lpuart_clocks[instance], lpuart_rate);
+		*rate = CLOCK_GetIpFreq(lpuart_clocks[instance]);
+		break;
 
 #else
 	case IMX_CCM_LPUART_CLK:
@@ -270,6 +311,22 @@ static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.get_rate = mcux_ccm_get_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL,
+static int mcux_ccm_init(const struct device *dev)
+{
+#if defined(CONFIG_SOC_MIMX8QM_ADSP) || defined(CONFIG_SOC_MIMX8QXP_ADSP)
+	sc_ipc_t ipc_handle;
+	int ret;
+
+	ret = sc_ipc_open(&ipc_handle, DT_REG_ADDR(DT_NODELABEL(scu_mu)));
+	if (ret != SC_ERR_NONE) {
+		return -ENODEV;
+	}
+
+	CLOCK_Init(ipc_handle);
+#endif
+	return 0;
+}
+
+DEVICE_DT_INST_DEFINE(0, mcux_ccm_init, NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &mcux_ccm_driver_api);

@@ -321,6 +321,10 @@ static ALWAYS_INLINE void clock_init(void)
 	flexspi_setup_clock(FLEXSPI, 1U, 9U);
 #endif
 
+#if CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT0_RST_SHIFT_RSTn);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

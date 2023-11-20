@@ -26,7 +26,7 @@
       {%- set git_last_updated, sha1 = pagename | git_info | default((None, None), true) %}
       {%- if sha1 %}
         <a href="{{ pagename | gh_link_get_open_issue_url(sha1) }}" class="fa fa-bug">
-          {{ _('Report an issue')}}
+          {{ _('Report an issue with this page')}}
         </a>
       {% endif %}
     {% endif %}

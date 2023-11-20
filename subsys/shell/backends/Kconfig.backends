@@ -42,23 +42,44 @@ config SHELL_PROMPT_UART
 	  Displayed prompt name for UART backend. If prompt is set, the shell will
 	  send two newlines during initialization.
 
-# Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	bool "Interrupt driven"
 	default y
 	depends on SERIAL_SUPPORT_INTERRUPT
+
+choice SHELL_BACKEND_SERIAL_API
+	prompt "Mode"
+	default SHELL_BACKEND_SERIAL_API_ASYNC if UART_ASYNC_API
+	default SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN if SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	default SHELL_BACKEND_SERIAL_API_POLLING
+
+config SHELL_BACKEND_SERIAL_API_POLLING
+	prompt "Polling"
+
+config SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN
+	bool "Interrupt driven"
+	depends on SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
+
+
+config SHELL_BACKEND_SERIAL_API_ASYNC
+	bool "Asynchronous"
+	depends on SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_RX_HELPER
+
+endchoice
 
 config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 	int "Set TX ring buffer size"
 	default 8
-	depends on SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	depends on SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN
 	help
 	  If UART is utilizing DMA transfers then increasing ring buffer size
 	  increases transfers length and reduces number of interrupts.
 
 config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 	int "Set RX ring buffer size"
+	depends on SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN || SHELL_BACKEND_SERIAL_API_POLLING
 	default 256 if MCUMGR_TRANSPORT_SHELL
 	default 64
 	help
@@ -68,16 +89,45 @@ config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 	  escape sequences). However, if bulk data is transferred it may be
 	  required to increase it.
 
+if SHELL_BACKEND_SERIAL_API_ASYNC
+
+config SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT
+	int "RX inactivity timeout (in microseconds)"
+	default 10000
+	help
+	  Inactivity timeout after which received data is reported.
+
+config SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_COUNT
+	int "Number of RX buffers"
+	default 4
+	range 2 64
+	help
+	  Number of RX buffers. Some UART driver implementations changes buffers
+	  on timeout so this number should be big enough to cover handling on
+	  time incoming data. 4 should be enough for almost all the cases unless
+	  CPU load is high and there is very high shell thread latency.
+
+config SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE
+	int "Size of the RX buffer"
+	default 16
+	help
+	  Size of a single RX buffer. Together with buffer count it defines the
+	  space that can hold RX data. It may be decreased if shell input is
+	  slow and may need to be increased if long messages are pasted directly
+	  to the shell prompt.
+
+endif # SHELL_BACKEND_SERIAL_API_ASYNC
+
 config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
 	default 10
-	depends on !SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	depends on SHELL_BACKEND_SERIAL_API_POLLING
 	help
 	  Determines how often UART is polled for RX byte.
 
 config SHELL_BACKEND_SERIAL_CHECK_DTR
 	bool "Check DTR signal before TX"
-	depends on SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	depends on SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN
 	depends on UART_LINE_CTRL
 	help
 	  Check DTR signal before TX.

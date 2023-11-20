@@ -8,10 +8,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <fsl_common.h>
-
-#define NXP_MPU_BASE SYSMPU_BASE
-
 #define NXP_MPU_REGION_NUMBER 12
 
 /* Bus Master User Mode Access */

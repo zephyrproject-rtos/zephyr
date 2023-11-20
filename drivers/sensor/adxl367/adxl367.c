@@ -46,13 +46,13 @@ static int adxl367_setup_activity_detection(const struct device *dev,
 					  FIELD_PREP(ADXL367_ACT_INACT_CTL_ACT_EN_MSK, th->enable) |
 					  FIELD_PREP(ADXL367_ACT_INACT_CTL_ACT_REF_MSK,
 						     th->referenced));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_THRESH_ACT_H, ADXL367_THRESH_H_MSK,
 					  FIELD_PREP(ADXL367_THRESH_H_MSK, th->value >> 6));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -84,13 +84,13 @@ static int adxl367_setup_inactivity_detection(const struct device *dev,
 						     th->enable) |
 					  FIELD_PREP(ADXL367_ACT_INACT_CTL_INACT_REF_MSK,
 						     th->referenced));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_THRESH_INACT_H, ADXL367_THRESH_H_MSK,
 					  FIELD_PREP(ADXL367_THRESH_H_MSK, th->value >> 6));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -117,7 +117,7 @@ static int adxl367_set_op_mode(const struct device *dev,
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_POWER_CTL,
 					  ADXL367_POWER_CTL_MEASURE_MSK,
 					  FIELD_PREP(ADXL367_POWER_CTL_MEASURE_MSK, op_mode));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -259,7 +259,7 @@ static int adxl367_set_inactivity_time(const struct device *dev,
 	struct adxl367_data *data = dev->data;
 
 	ret = data->hw_tf->write_reg(dev, ADXL367_TIME_INACT_H, time >> 8);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -277,58 +277,79 @@ int adxl367_self_test(const struct device *dev)
 {
 	int ret;
 	struct adxl367_data *data = dev->data;
+	const struct adxl367_dev_config *cfg = dev->config;
 	int16_t x_axis_1, x_axis_2, dif, min, max;
 	uint8_t read_val[2];
 
+	uint32_t st_delay_ms;
+
+	/* 4 / ODR value in ms */
+	switch (cfg->odr) {
+	case ADXL367_ODR_12P5HZ:
+		st_delay_ms = 320;
+	case ADXL367_ODR_25HZ:
+		st_delay_ms = 160;
+	case ADXL367_ODR_50HZ:
+		st_delay_ms = 80;
+	case ADXL367_ODR_100HZ:
+		st_delay_ms = 40;
+	case ADXL367_ODR_200HZ:
+		st_delay_ms = 20;
+	case ADXL367_ODR_400HZ:
+		st_delay_ms = 10;
+	default:
+		return -EINVAL;
+	}
+
 	ret = adxl367_set_op_mode(dev, ADXL367_MEASURE);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_SELF_TEST, ADXL367_SELF_TEST_ST_MSK,
 				    FIELD_PREP(ADXL367_SELF_TEST_ST_MSK, 1));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
-	/* 4 / default ODR = 40ms */
-	k_sleep(K_MSEC(40));
+	/* 4 / ODR */
+	k_sleep(K_MSEC(st_delay_ms));
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL367_X_DATA_H, read_val, 2);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	x_axis_1 = ((int16_t)read_val[0] << 6) + (read_val[1] >> 2);
 
 	/* extend sign to 16 bits */
-	if (x_axis_1 & BIT(13)) {
+	if ((x_axis_1 & BIT(13)) != 0) {
 		x_axis_1 |= GENMASK(15, 14);
 	}
 
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_SELF_TEST,
 					  ADXL367_SELF_TEST_ST_FORCE_MSK,
 					  FIELD_PREP(ADXL367_SELF_TEST_ST_FORCE_MSK, 1));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
-	/* 4 / default ODR = 40ms */
-	k_sleep(K_MSEC(40));
+	/* 4 / ODR */
+	k_sleep(K_MSEC(st_delay_ms));
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL367_X_DATA_H, read_val, 2);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	x_axis_2 = ((int16_t)read_val[0] << 6) + (read_val[1] >> 2);
 
 	/* extend sign to 16 bits */
-	if (x_axis_2 & BIT(13))
+	if ((x_axis_2 & BIT(13)) != 0)
 		x_axis_2 |= GENMASK(15, 14);
 
 	ret = adxl367_set_op_mode(dev, ADXL367_STANDBY);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -336,7 +357,7 @@ int adxl367_self_test(const struct device *dev)
 					  ADXL367_SELF_TEST_ST_MSK,
 					  FIELD_PREP(ADXL367_SELF_TEST_ST_FORCE_MSK, 0) |
 					  FIELD_PREP(ADXL367_SELF_TEST_ST_MSK, 0));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -395,7 +416,7 @@ int adxl367_set_fifo_sample_sets_nb(const struct device *dev,
 					  ADXL367_FIFO_CONTROL_FIFO_SAMPLES_MSK,
 					  FIELD_PREP(ADXL367_FIFO_CONTROL_FIFO_SAMPLES_MSK,
 					  fifo_samples_msb));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -478,7 +499,7 @@ int adxl367_set_fifo_format(const struct device *dev,
 				    ADXL367_FIFO_CONTROL,
 				    ADXL367_FIFO_CONTROL_FIFO_CHANNEL_MSK,
 				    FIELD_PREP(ADXL367_FIFO_CONTROL_FIFO_CHANNEL_MSK, format));
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -551,17 +572,17 @@ int adxl367_fifo_setup(const struct device *dev,
 	int ret;
 
 	ret = adxl367_set_fifo_mode(dev, mode);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_fifo_format(dev, format);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_fifo_sample_sets_nb(dev, sets_nb);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -581,13 +602,13 @@ static int adxl367_reset(const struct device *dev)
 	struct adxl367_data *data = dev->data;
 
 	ret = adxl367_set_op_mode(dev, ADXL367_STANDBY);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	/* Writing code 0x52 resets the device */
 	ret = data->hw_tf->write_reg(dev, ADXL367_SOFT_RESET, ADXL367_RESET_CODE);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -614,19 +635,19 @@ int adxl367_get_accel_data(const struct device *dev,
 	uint8_t reg_data, nready = 1U;
 	struct adxl367_data *data = dev->data;
 
-	while (nready) {
+	while (nready != 0) {
 		ret = data->hw_tf->read_reg(dev, ADXL367_STATUS, &reg_data);
-		if (ret) {
+		if (ret != 0) {
 			return ret;
 		}
 
-		if (reg_data & ADXL367_STATUS_DATA_RDY) {
+		if ((reg_data & ADXL367_STATUS_DATA_RDY) != 0) {
 			nready = 0U;
 		}
 	}
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL367_X_DATA_H, xyz_values, 6);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -636,15 +657,15 @@ int adxl367_get_accel_data(const struct device *dev,
 	accel_data->z = ((int16_t)xyz_values[4] << 6) + (xyz_values[5] >> 2);
 
 	/* extend sign to 16 bits */
-	if (accel_data->x & BIT(13)) {
+	if ((accel_data->x & BIT(13)) != 0) {
 		accel_data->x |= GENMASK(15, 14);
 	}
 
-	if (accel_data->y & BIT(13)) {
+	if ((accel_data->y & BIT(13)) != 0) {
 		accel_data->y |= GENMASK(15, 14);
 	}
 
-	if (accel_data->z & BIT(13)) {
+	if ((accel_data->z & BIT(13)) != 0) {
 		accel_data->z |= GENMASK(15, 14);
 	}
 
@@ -667,25 +688,25 @@ int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp)
 	uint8_t reg_data, nready = 1U;
 	struct adxl367_data *data = dev->data;
 
-	while (nready) {
+	while (nready != 0) {
 		ret = data->hw_tf->read_reg(dev, ADXL367_STATUS, &reg_data);
-		if (ret) {
+		if (ret != 0) {
 			return ret;
 		}
 
-		if (reg_data & ADXL367_STATUS_DATA_RDY) {
+		if ((reg_data & ADXL367_STATUS_DATA_RDY) != 0) {
 			nready = 0U;
 		}
 	}
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL367_TEMP_H, temp, 2);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	*raw_temp = ((int16_t)temp[0] << 6) + (temp[1] >> 2);
 	/* extend sign to 16 bits */
-	if (*raw_temp & BIT(13)) {
+	if ((*raw_temp & BIT(13)) != 0) {
 		*raw_temp |= GENMASK(15, 14);
 	}
 
@@ -785,7 +806,7 @@ static int adxl367_sample_fetch(const struct device *dev,
 	int ret;
 
 	ret = adxl367_get_accel_data(dev, &data->sample);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -846,6 +867,9 @@ static const struct sensor_driver_api adxl367_api_funcs = {
 	.attr_set     = adxl367_attr_set,
 	.sample_fetch = adxl367_sample_fetch,
 	.channel_get  = adxl367_channel_get,
+#ifdef CONFIG_ADXL367_TRIGGER
+	.trigger_set = adxl367_trigger_set,
+#endif
 };
 
 static int adxl367_probe(const struct device *dev)
@@ -856,16 +880,16 @@ static int adxl367_probe(const struct device *dev)
 	int ret;
 
 	ret = adxl367_reset(dev);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = data->hw_tf->read_reg(dev, ADXL367_DEVID, &dev_id);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 	ret = data->hw_tf->read_reg(dev, ADXL367_PART_ID, &part_id);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -876,50 +900,54 @@ static int adxl367_probe(const struct device *dev)
 
 	data->range = cfg->range;
 
+#ifdef CONFIG_ADXL367_TRIGGER
+	data->act_proc_mode = ADXL367_LINKED;
+#else
 	data->act_proc_mode = ADXL367_LOOPED;
+#endif
 
 	ret = adxl367_self_test(dev);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_temp_read_en(dev, cfg->temp_en);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_autosleep(dev, cfg->autosleep);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_low_noise(dev, cfg->low_noise);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_setup_activity_detection(dev, &cfg->activity_th);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_setup_inactivity_detection(dev, &cfg->inactivity_th);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_activity_time(dev, cfg->activity_time);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_inactivity_time(dev, cfg->inactivity_time);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_output_rate(dev, cfg->odr);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -927,17 +955,25 @@ static int adxl367_probe(const struct device *dev)
 				 cfg->fifo_config.fifo_format,
 				 cfg->fifo_config.fifo_read_mode,
 				 cfg->fifo_config.fifo_samples);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
+if (IS_ENABLED(CONFIG_ADXL367_TRIGGER)) {
+	ret = adxl367_init_interrupt(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize interrupt!");
+		return -EIO;
+	}
+}
+
 	ret = adxl367_set_op_mode(dev, cfg->op_mode);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
 	ret = adxl367_set_range(dev, data->range);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -950,7 +986,7 @@ static int adxl367_init(const struct device *dev)
 	const struct adxl367_dev_config *cfg = dev->config;
 
 	ret = cfg->bus_init(dev);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Failed to initialize sensor bus\n");
 		return ret;
 	}
@@ -976,6 +1012,13 @@ static int adxl367_init(const struct device *dev)
 			      POST_KERNEL,				\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &adxl367_api_funcs);
+
+#ifdef CONFIG_ADXL367_TRIGGER
+#define ADXL367_CFG_IRQ(inst) \
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
+#else
+#define ADXL367_CFG_IRQ(inst)
+#endif /* CONFIG_ADXL367_TRIGGER */
 
 #define ADXL367_CONFIG(inst)								\
 		.odr = DT_INST_PROP(inst, odr),						\
@@ -1011,6 +1054,8 @@ static int adxl367_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
 					SPI_TRANSFER_MSB, 0),		\
 		ADXL367_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		(ADXL367_CFG_IRQ(inst)), ())				\
 	}
 
 #define ADXL367_DEFINE_SPI(inst)					\
@@ -1028,6 +1073,8 @@ static int adxl367_init(const struct device *dev)
 		.bus_init = adxl367_i2c_init,				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
 		ADXL367_CONFIG(inst)					\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		(ADXL367_CFG_IRQ(inst)), ())				\
 	}
 
 #define ADXL367_DEFINE_I2C(inst)					\

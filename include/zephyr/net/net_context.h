@@ -672,6 +672,23 @@ static inline void net_context_set_iface(struct net_context *context,
 	context->iface = net_if_get_by_iface(iface);
 }
 
+/**
+ * @brief Bind network interface to this context.
+ *
+ * @details This function binds network interface to this context.
+ *
+ * @param context Network context.
+ * @param iface Network interface.
+ */
+static inline void net_context_bind_iface(struct net_context *context,
+					  struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	context->flags |= NET_CONTEXT_BOUND_TO_IFACE;
+	net_context_set_iface(context, iface);
+}
+
 static inline uint8_t net_context_get_ipv4_ttl(struct net_context *context)
 {
 	return context->ipv4_ttl;

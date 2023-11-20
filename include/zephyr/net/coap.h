@@ -239,6 +239,29 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
 			      struct coap_observer *observer);
 
 /**
+ * @brief Event types for observer event callbacks.
+ */
+enum coap_observer_event {
+	/** An observer was added. */
+	COAP_OBSERVER_ADDED = 0,
+	/** An observer was removed. */
+	COAP_OBSERVER_REMOVED,
+};
+
+/**
+ * @typedef coap_observer_event_handler_t
+ * @brief Type of the handler being called when a resource's observers has been modified.
+ * Either an observer was added or removed.
+ *
+ * @param resource A pointer to a CoAP resource for which the event occurred
+ * @param observer The observer being added/removed
+ * @param event The event type
+ */
+typedef void (*coap_observer_event_handler_t)(struct coap_resource *resource,
+					      struct coap_observer *observer,
+					      enum coap_observer_event event);
+
+/**
  * @brief Description of CoAP resource.
  *
  * CoAP servers often want to register resources, so that clients can act on
@@ -252,6 +275,13 @@ struct coap_resource {
 	void *user_data;
 	sys_slist_t observers;
 	int age;
+#if defined(CONFIG_COAP_OBSERVER_EVENTS) || defined(DOXYGEN)
+	/**
+	 * Optional observer event callback function
+	 * Only available when @kconfig{CONFIG_COAP_OBSERVER_EVENTS} is enabled.
+	 */
+	coap_observer_event_handler_t observer_event_handler;
+#endif
 };
 
 /**
@@ -274,7 +304,7 @@ struct coap_packet {
 	uint8_t hdr_len;  /**< CoAP header length */
 	uint16_t opt_len; /**< Total options length (delta + len + value) */
 	uint16_t delta;   /**< Used for delta calculation in CoAP packet */
-#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXGEN)
+#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXYGEN)
 	/**
 	 * Application specific user data.
 	 * Only available when @kconfig{CONFIG_COAP_KEEP_USER_DATA} is enabled.
@@ -374,6 +404,15 @@ uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token);
 uint8_t coap_header_get_code(const struct coap_packet *cpkt);
 
 /**
+ * @brief Modifies the code of the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ * @param code CoAP code
+ * @return 0 on success, -EINVAL on failure
+ */
+int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code);
+
+/**
  * @brief Returns the message id associated with the CoAP packet.
  *
  * @param cpkt CoAP packet representation
@@ -393,6 +432,20 @@ uint16_t coap_header_get_id(const struct coap_packet *cpkt);
  */
 const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
 				       uint16_t *len);
+
+/**
+ * @brief Verify if CoAP URI path matches with provided options.
+ *
+ * @param path Null-terminated array of strings.
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ *
+ * @return true if the CoAP URI path matches,
+ *        false otherwise.
+ */
+bool coap_uri_path_match(const char * const *path,
+			 struct coap_option *options,
+			 uint8_t opt_num);
 
 /**
  * @brief Parses the CoAP packet in data, validating it and
@@ -569,17 +622,51 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 			       uint16_t payload_len);
 
 /**
+ * @brief Check if a CoAP packet is a CoAP request.
+ *
+ * @param cpkt Packet to be checked.
+ *
+ * @return true if the packet is a request,
+ *        false otherwise.
+ */
+bool coap_packet_is_request(const struct coap_packet *cpkt);
+
+/**
  * @brief When a request is received, call the appropriate methods of
  * the matching resources.
  *
  * @param cpkt Packet received
  * @param resources Array of known resources
+ * @param resources_len Number of resources in the array
  * @param options Parsed options from coap_packet_parse()
  * @param opt_num Number of options
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval 0 in case of success.
+ * @retval >= 0 in case of success.
+ * @retval -ENOTSUP in case of invalid request code.
+ * @retval -EPERM in case resource handler is not implemented.
+ * @retval -ENOENT in case the resource is not found.
+ */
+int coap_handle_request_len(struct coap_packet *cpkt,
+			    struct coap_resource *resources,
+			    size_t resources_len,
+			    struct coap_option *options,
+			    uint8_t opt_num,
+			    struct sockaddr *addr, socklen_t addr_len);
+
+/**
+ * @brief When a request is received, call the appropriate methods of
+ * the matching resources.
+ *
+ * @param cpkt Packet received
+ * @param resources Array of known resources (terminated with empty resource)
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ * @param addr Peer address
+ * @param addr_len Peer address length
+ *
+ * @retval >= 0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -841,9 +928,29 @@ bool coap_register_observer(struct coap_resource *resource,
  *
  * @param resource Resource in which to remove the observer
  * @param observer Observer to be removed
+ *
+ * @return true if the observer was found and removed.
  */
-void coap_remove_observer(struct coap_resource *resource,
+bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer);
+
+/**
+ * @brief Returns the observer that matches address @a addr
+ * and has token @a token.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param addr Address of the endpoint observing a resource
+ * @param token Pointer to the token
+ * @param token_len Length of valid bytes in the token
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
+ */
+struct coap_observer *coap_find_observer(
+	struct coap_observer *observers, size_t len,
+	const struct sockaddr *addr,
+	const uint8_t *token, uint8_t token_len);
 
 /**
  * @brief Returns the observer that matches address @a addr.
@@ -852,12 +959,33 @@ void coap_remove_observer(struct coap_resource *resource,
  * @param len Size of the array of observers
  * @param addr Address of the endpoint observing a resource
  *
+ * @note The function coap_find_observer() should be preferred
+ * if both the observer's address and token are known.
+ *
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.
  */
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
 	const struct sockaddr *addr);
+
+/**
+ * @brief Returns the observer that has token @a token.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param token Pointer to the token
+ * @param token_len Length of valid bytes in the token
+ *
+ * @note The function coap_find_observer() should be preferred
+ * if both the observer's address and token are known.
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
+ */
+struct coap_observer *coap_find_observer_by_token(
+	struct coap_observer *observers, size_t len,
+	const uint8_t *token, uint8_t token_len);
 
 /**
  * @brief Returns the next available observer representation.

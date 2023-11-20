@@ -121,7 +121,8 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,	/* 0x25 */
-				   <&test_gpio 0 0>;	/* 0x26 */
+				   <&test_gpio 0 0>,	/* 0x26 */
+				   <&test_gpio 0 0>;	/* 0x27 */
 
 			#include "spi.dtsi"
 		};
@@ -143,6 +144,17 @@
 
 			#include "w1.dtsi"
 		};
+
+		test_i3c: i3c@f0cacc1a {
+			#address-cells = <3>;
+			#size-cells = <0>;
+			compatible = "vnd,i3c";
+			reg = <0xf0cacc1a 0x1000>;
+			status = "okay";
+
+			#include "i3c.dtsi"
+		};
+
 	};
 };
 

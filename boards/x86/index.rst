@@ -7,4 +7,4 @@ x86 Boards
    :maxdepth: 1
    :glob:
 
-   **/index
+   [!common]*/**/*

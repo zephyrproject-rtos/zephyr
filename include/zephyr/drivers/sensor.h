@@ -251,6 +251,12 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when no motion has been detected for a while. */
 	SENSOR_TRIG_STATIONARY,
+
+	/** Trigger fires when the FIFO watermark has been reached. */
+	SENSOR_TRIG_FIFO_WATERMARK,
+
+	/** Trigger fires when the FIFO becomes full. */
+	SENSOR_TRIG_FIFO_FULL,
 	/**
 	 * Number of all common sensor triggers.
 	 */
@@ -328,6 +334,10 @@ enum sensor_attribute {
 	 *  to the new sampling frequency.
 	 */
 	SENSOR_ATTR_FF_DUR,
+
+	/** Hardware batch duration in ticks */
+	SENSOR_ATTR_BATCH_DURATION,
+
 	/**
 	 * Number of all common sensor attributes.
 	 */
@@ -466,6 +476,15 @@ struct sensor_decoder_api {
 	 */
 	int (*decode)(const uint8_t *buffer, enum sensor_channel channel, size_t channel_idx,
 		      uint32_t *fit, uint16_t max_count, void *data_out);
+
+	/**
+	 * @brief Check if the given trigger type is present
+	 *
+	 * @param[in] buffer The buffer provided on the @ref rtio context
+	 * @param[in] trigger The trigger type in question
+	 * @return Whether the trigger is present in the buffer
+	 */
+	bool (*has_trigger)(const uint8_t *buffer, enum sensor_trigger_type trigger);
 };
 
 /**
@@ -538,13 +557,38 @@ int sensor_natively_supported_channel_size_info(enum sensor_channel channel, siz
 typedef int (*sensor_get_decoder_t)(const struct device *dev,
 				    const struct sensor_decoder_api **api);
 
+/**
+ * @brief Options for what to do with the associated data when a trigger is consumed
+ */
+enum sensor_stream_data_opt {
+	/** @brief Include whatever data is associated with the trigger */
+	SENSOR_STREAM_DATA_INCLUDE = 0,
+	/** @brief Do nothing with the associated trigger data, it may be consumed later */
+	SENSOR_STREAM_DATA_NOP = 1,
+	/** @brief Flush/clear whatever data is associated with the trigger */
+	SENSOR_STREAM_DATA_DROP = 2,
+};
+
+struct sensor_stream_trigger {
+	enum sensor_trigger_type trigger;
+	enum sensor_stream_data_opt opt;
+};
+
+#define SENSOR_STREAM_TRIGGER_PREP(_trigger, _opt)                                                 \
+	{                                                                                          \
+		.trigger = (_trigger), .opt = (_opt),                                              \
+	}
 /*
  * Internal data structure used to store information about the IODevice for async reading and
  * streaming sensor data.
  */
 struct sensor_read_config {
 	const struct device *sensor;
-	enum sensor_channel *const channels;
+	const bool is_streaming;
+	union {
+		enum sensor_channel *const channels;
+		struct sensor_stream_trigger *const triggers;
+	};
 	size_t count;
 	const size_t max;
 };
@@ -564,14 +608,45 @@ struct sensor_read_config {
  * @endcode
  */
 #define SENSOR_DT_READ_IODEV(name, dt_node, ...)                                                   \
-	static enum sensor_channel __channel_array_##name[] = {__VA_ARGS__};                       \
-	static struct sensor_read_config __sensor_read_config_##name = {                           \
+	static enum sensor_channel _CONCAT(__channel_array_, name)[] = {__VA_ARGS__};              \
+	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
-		.channels = __channel_array_##name,                                                \
-		.count = ARRAY_SIZE(__channel_array_##name),                                       \
-		.max = ARRAY_SIZE(__channel_array_##name),                                         \
+		.is_streaming = false,                                                             \
+		.channels = _CONCAT(__channel_array_, name),                                       \
+		.count = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                              \
+		.max = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                                \
 	};                                                                                         \
-	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &__sensor_read_config_##name)
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
+
+/**
+ * @brief Define a stream instance of a sensor
+ *
+ * Use this macro to generate a @ref rtio_iodev for starting a stream that's triggered by specific
+ * interrupts. Example:
+ *
+ * @code(.c)
+ * SENSOR_DT_STREAM_IODEV(imu_stream, DT_ALIAS(imu),
+ *     {SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE},
+ *     {SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP});
+ *
+ * int main(void) {
+ *   struct rtio_sqe *handle;
+ *   sensor_stream(&imu_stream, &rtio, NULL, &handle);
+ *   k_msleep(1000);
+ *   rtio_sqe_cancel(handle);
+ * }
+ * @endcode
+ */
+#define SENSOR_DT_STREAM_IODEV(name, dt_node, ...)                                                 \
+	static struct sensor_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};     \
+	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
+		.sensor = DEVICE_DT_GET(dt_node),                                                  \
+		.is_streaming = true,                                                              \
+		.triggers = _CONCAT(__trigger_array_, name),                                       \
+		.count = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                              \
+		.max = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                                \
+	};                                                                                         \
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
 
 /* Used to submit an RTIO sqe to the sensor's iodev */
 typedef int (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
@@ -880,7 +955,7 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 {
 	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev->data;
 
-	if (cfg->max < num_channels) {
+	if (cfg->max < num_channels || cfg->is_streaming) {
 		return -ENOMEM;
 	}
 
@@ -888,6 +963,28 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 	memcpy(cfg->channels, channels, num_channels * sizeof(enum sensor_channel));
 	cfg->count = num_channels;
 	return 0;
+}
+
+static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
+				struct rtio_sqe **handle)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		struct rtio_sqe sqe;
+
+		rtio_sqe_prep_read_multishot(&sqe, iodev, RTIO_PRIO_NORM, userdata);
+		rtio_sqe_copy_in_get_handles(ctx, &sqe, handle, 1);
+	} else {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+
+		if (sqe == NULL) {
+			return -ENOMEM;
+		}
+		if (handle != NULL) {
+			*handle = sqe;
+		}
+		rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
+	}
+	rtio_submit(ctx, 0);
 	return 0;
 }
 

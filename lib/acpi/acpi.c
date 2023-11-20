@@ -14,37 +14,32 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ACPI, CONFIG_ACPI_LOG_LEVEL);
 
-struct acpi {
+static struct {
 	struct acpi_dev child_dev[CONFIG_ACPI_DEV_MAX];
 	int num_dev;
+#ifdef CONFIG_PCIE_PRT
 	ACPI_PCI_ROUTING_TABLE pci_prt_table[CONFIG_ACPI_MAX_PRT_ENTRY];
+#endif
 	bool early_init;
-	int status;
-};
-
-static struct acpi bus_ctx = {
+	ACPI_STATUS status;
+} acpi = {
 	.status = AE_NOT_CONFIGURED,
 };
-
-static ACPI_TABLE_DESC acpi_tables[CONFIG_ACPI_MAX_INIT_TABLES];
 
 static int acpi_init(void);
 
 static int check_init_status(void)
 {
-	int ret;
+	if (acpi.status == AE_NOT_CONFIGURED) {
+		acpi.status = acpi_init();
+	}
 
-	if (ACPI_SUCCESS(bus_ctx.status)) {
+	if (ACPI_SUCCESS(acpi.status)) {
 		return 0;
-	}
-
-	if (bus_ctx.status == AE_NOT_CONFIGURED) {
-		ret = acpi_init();
 	} else {
-		LOG_ERR("ACPI init was not success\n");
-		ret = -EIO;
+		LOG_ERR("ACPI init was not success");
+		return -EIO;
 	}
-	return ret;
 }
 
 static void notify_handler(ACPI_HANDLE device, UINT32 value, void *ctx)
@@ -80,15 +75,12 @@ static ACPI_STATUS initialize_acpica(void)
 	}
 
 	/* Initialize the ACPI Table Manager and get all ACPI tables */
-	if (!bus_ctx.early_init) {
+	if (!acpi.early_init) {
 		status = AcpiInitializeTables(NULL, 16, FALSE);
-	} else {
-		/* Copy the root table list to dynamic memory if already initialized */
-		status = AcpiReallocateRootTable();
-	}
-	if (ACPI_FAILURE(status)) {
-		ACPI_EXCEPTION((AE_INFO, status, "While initializing Table Manager"));
-		goto exit;
+		if (ACPI_FAILURE(status)) {
+			ACPI_EXCEPTION((AE_INFO, status, "While initializing Table Manager"));
+			goto exit;
+		}
 	}
 
 	/* Create the ACPI namespace from ACPI tables */
@@ -199,64 +191,19 @@ static ACPI_STATUS acpi_enable_pic_mode(void)
 	return status;
 }
 
-static int acpi_get_irq_table(struct acpi *bus, char *bus_name,
-				ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
-{
-	ACPI_BUFFER rt_buffer;
-	ACPI_NAMESPACE_NODE *node;
-	int status;
-
-	LOG_DBG("%s", bus_name);
-
-	node = acpi_evaluate_method(bus_name, METHOD_NAME__PRT);
-	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", bus_name);
-		return -ENODEV;
-	}
-
-	rt_buffer.Pointer = rt_table;
-	rt_buffer.Length = rt_size;
-
-	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
-	if (ACPI_FAILURE(status)) {
-		LOG_ERR("unable to retrieve IRQ Routing Table: %s", bus_name);
-		return -EIO;
-	}
-
-	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
-		if (!bus->pci_prt_table[i].SourceIndex) {
-			break;
-		}
-		if (IS_ENABLED(CONFIG_X86_64)) {
-			/* mark the PRT irq numbers as reserved. */
-			arch_irq_set_used(bus->pci_prt_table[i].SourceIndex);
-		}
-	}
-
-	return 0;
-}
-
-static int acpi_retrieve_legacy_irq(struct acpi *bus)
-{
-	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
-	return acpi_get_irq_table(bus, CONFIG_ACPI_PRT_BUS_NAME,
-				  bus->pci_prt_table, sizeof(bus->pci_prt_table));
-}
-
 static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 level, void *ctx,
 					      void **ret_value)
 {
 	ACPI_NAMESPACE_NODE *node;
 	ACPI_BUFFER rt_buffer;
-	struct acpi *bus = (struct acpi *)ctx;
 	struct acpi_dev *child_dev;
 
 	node = ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, obj_handle);
 	char *path_name;
-	int status;
+	ACPI_STATUS status;
 	ACPI_DEVICE_INFO *dev_info;
 
-	LOG_DBG("%s %p\n", __func__, node);
+	LOG_DBG("%s %p", __func__, node);
 
 	/* get device info such as HID, Class ID etc. */
 	status = AcpiGetObjectInfo(obj_handle, &dev_info);
@@ -265,20 +212,20 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 		goto exit;
 	}
 
-	if (bus->num_dev >= CONFIG_ACPI_DEV_MAX) {
+	if (acpi.num_dev >= CONFIG_ACPI_DEV_MAX) {
 		return AE_NO_MEMORY;
 	}
 
-	child_dev = (struct acpi_dev *)&bus->child_dev[bus->num_dev++];
+	child_dev = (struct acpi_dev *)&acpi.child_dev[acpi.num_dev++];
 	child_dev->handle = obj_handle;
 	child_dev->dev_info = dev_info;
 
 	path_name = AcpiNsGetNormalizedPathname(node, TRUE);
 	if (!path_name) {
-		LOG_ERR("No memory for path_name\n");
+		LOG_ERR("No memory for path_name");
 		goto exit;
 	} else {
-		LOG_DBG("Device path: %s\n", path_name);
+		LOG_DBG("Device path: %s", path_name);
 		child_dev->path = path_name;
 	}
 
@@ -297,54 +244,14 @@ exit:
 	return status;
 }
 
-static int acpi_enum_devices(struct acpi *bus)
+static int acpi_enum_devices(void)
 {
 	LOG_DBG("");
 
 	AcpiWalkNamespace(ACPI_TYPE_DEVICE, ACPI_ROOT_OBJECT, ACPI_UINT32_MAX,
-			  dev_resource_enum_callback, NULL, bus, NULL);
+			  dev_resource_enum_callback, NULL, NULL, NULL);
 
 	return 0;
-}
-
-static int acpi_init(void)
-{
-	int status;
-
-	LOG_DBG("");
-
-	if (bus_ctx.status != AE_NOT_CONFIGURED) {
-		LOG_DBG("acpi init already done");
-		return bus_ctx.status;
-	}
-
-	/* For debug version only */
-	ACPI_DEBUG_INITIALIZE();
-
-	status = initialize_acpica();
-	if (ACPI_FAILURE(status)) {
-		LOG_ERR("Error in ACPI init:%d", status);
-		goto exit;
-	}
-
-	/* Enable IO APIC mode */
-	status = acpi_enable_pic_mode();
-	if (ACPI_FAILURE(status)) {
-		LOG_WRN("Error in enable pic mode acpi method:%d", status);
-	}
-
-	status = acpi_retrieve_legacy_irq(&bus_ctx);
-	if (status) {
-		LOG_ERR("Error in retrieve legacy interrupt info:%d", status);
-		goto exit;
-	}
-
-	acpi_enum_devices(&bus_ctx);
-
-exit:
-	bus_ctx.status = status;
-
-	return status;
 }
 
 static int acpi_early_init(void)
@@ -353,20 +260,153 @@ static int acpi_early_init(void)
 
 	LOG_DBG("");
 
-	if (bus_ctx.early_init) {
+	if (acpi.early_init) {
 		LOG_DBG("acpi early init already done");
 		return 0;
 	}
 
-	status = AcpiInitializeTables(acpi_tables, CONFIG_ACPI_MAX_INIT_TABLES, TRUE);
+	status = AcpiInitializeTables(NULL, 16, FALSE);
 	if (ACPI_FAILURE(status)) {
 		LOG_ERR("Error in acpi table init:%d", status);
 		return -EIO;
 	}
 
-	bus_ctx.early_init = true;
+	acpi.early_init = true;
 
 	return 0;
+}
+
+int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
+{
+	ACPI_BUFFER rt_buffer;
+	ACPI_NAMESPACE_NODE *node;
+	ACPI_STATUS status;
+
+	LOG_DBG("%s", dev_name);
+
+	status = check_init_status();
+	if (status) {
+		return -EAGAIN;
+	}
+
+	node = acpi_evaluate_method(dev_name, METHOD_NAME__CRS);
+	if (!node) {
+		LOG_ERR("Evaluation failed for given device: %s", dev_name);
+		return -ENOTSUP;
+	}
+
+	rt_buffer.Pointer = NULL;
+	rt_buffer.Length = ACPI_ALLOCATE_LOCAL_BUFFER;
+
+	status = AcpiGetCurrentResources(node, &rt_buffer);
+	if (ACPI_FAILURE(status)) {
+		LOG_ERR("AcpiGetCurrentResources failed: %s", AcpiFormatException(status));
+		return -ENOTSUP;
+	} else {
+		*res = rt_buffer.Pointer;
+	}
+
+	return 0;
+}
+
+int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
+{
+	ACPI_BUFFER rt_buffer;
+	ACPI_NAMESPACE_NODE *node;
+	ACPI_STATUS status;
+
+	LOG_DBG("%s", dev_name);
+
+	status = check_init_status();
+	if (status) {
+		return -EAGAIN;
+	}
+
+	node = acpi_evaluate_method(dev_name, METHOD_NAME__PRS);
+	if (!node) {
+		LOG_ERR("Evaluation failed for given device: %s", dev_name);
+		return -ENOTSUP;
+	}
+
+	rt_buffer.Pointer = NULL;
+	rt_buffer.Length = ACPI_ALLOCATE_LOCAL_BUFFER;
+
+	AcpiGetPossibleResources(node, &rt_buffer);
+	*res = rt_buffer.Pointer;
+
+	return 0;
+}
+
+int acpi_current_resource_free(ACPI_RESOURCE *res)
+{
+	ACPI_FREE(res);
+
+	return 0;
+}
+
+#ifdef CONFIG_PCIE_PRT
+static int acpi_get_irq_table(char *bus_name, ACPI_PCI_ROUTING_TABLE *rt_table, uint32_t rt_size)
+{
+	ACPI_BUFFER rt_buffer;
+	ACPI_NAMESPACE_NODE *node;
+	ACPI_STATUS status;
+
+	LOG_DBG("%s", bus_name);
+
+	node = acpi_evaluate_method(bus_name, METHOD_NAME__PRT);
+	if (!node) {
+		LOG_ERR("Evaluation failed for given device: %s", bus_name);
+		return -ENODEV;
+	}
+
+	rt_buffer.Pointer = rt_table;
+	rt_buffer.Length = rt_size * sizeof(ACPI_PCI_ROUTING_TABLE);
+
+	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
+	if (ACPI_FAILURE(status)) {
+		LOG_ERR("unable to retrieve IRQ Routing Table: %s", bus_name);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int acpi_retrieve_legacy_irq(void)
+{
+	int ret;
+
+	/* TODO: assume platform have only one PCH with single PCI bus (bus 0). */
+	ret = acpi_get_irq_table(CONFIG_ACPI_PRT_BUS_NAME,
+				 acpi.pci_prt_table, ARRAY_SIZE(acpi.pci_prt_table));
+	if (ret) {
+		return ret;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(acpi.pci_prt_table); i++) {
+		if (!acpi.pci_prt_table[i].SourceIndex) {
+			break;
+		}
+		if (IS_ENABLED(CONFIG_X86_64)) {
+			/* mark the PRT irq numbers as reserved. */
+			arch_irq_set_used(acpi.pci_prt_table[i].SourceIndex);
+		}
+	}
+
+	return 0;
+
+}
+
+int acpi_get_irq_routing_table(char *bus_name,
+			       ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size)
+{
+	int ret;
+
+	ret = check_init_status();
+	if (ret) {
+		return ret;
+	}
+
+	return acpi_get_irq_table(bus_name, rt_table, rt_size);
 }
 
 uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
@@ -384,109 +424,23 @@ uint32_t acpi_legacy_irq_get(pcie_bdf_t bdf)
 	LOG_DBG("Device irq info: slot:%d pin:%d", slot, pin);
 
 	for (int i = 0; i < CONFIG_ACPI_MAX_PRT_ENTRY; i++) {
-		if (((bus_ctx.pci_prt_table[i].Address >> 16) & 0xffff) == slot &&
-		    bus_ctx.pci_prt_table[i].Pin + 1 == pin) {
+		if (((acpi.pci_prt_table[i].Address >> 16) & 0xffff) == slot &&
+		    acpi.pci_prt_table[i].Pin + 1 == pin) {
 			LOG_DBG("[%d]Device irq info: slot:%d pin:%d irq:%d", i, slot, pin,
-				bus_ctx.pci_prt_table[i].SourceIndex);
-			return bus_ctx.pci_prt_table[i].SourceIndex;
+				acpi.pci_prt_table[i].SourceIndex);
+			return acpi.pci_prt_table[i].SourceIndex;
 		}
 	}
 
 	return UINT_MAX;
 }
-
-int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
-{
-	ACPI_BUFFER rt_buffer;
-	ACPI_NAMESPACE_NODE *node;
-	int status;
-
-	LOG_DBG("%s", dev_name);
-
-	status = check_init_status();
-	if (status) {
-		return status;
-	}
-
-	node = acpi_evaluate_method(dev_name, METHOD_NAME__CRS);
-	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", dev_name);
-		status = -ENOTSUP;
-		goto exit;
-	}
-
-	rt_buffer.Pointer = NULL;
-	rt_buffer.Length = ACPI_ALLOCATE_LOCAL_BUFFER;
-
-	status = AcpiGetCurrentResources(node, &rt_buffer);
-	if (ACPI_FAILURE(status)) {
-		LOG_ERR("AcpiGetCurrentResources failed: %s", AcpiFormatException(status));
-		status = -ENOTSUP;
-	} else {
-		*res = rt_buffer.Pointer;
-	}
-
-exit:
-
-	return status;
-}
-
-int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
-{
-	ACPI_BUFFER rt_buffer;
-	ACPI_NAMESPACE_NODE *node;
-	int status;
-
-	LOG_DBG("%s", dev_name);
-
-	status = check_init_status();
-	if (status) {
-		return status;
-	}
-
-	node = acpi_evaluate_method(dev_name, METHOD_NAME__PRS);
-	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", dev_name);
-		status = -ENOTSUP;
-		goto exit;
-	}
-
-	rt_buffer.Pointer = NULL;
-	rt_buffer.Length = ACPI_ALLOCATE_LOCAL_BUFFER;
-
-	AcpiGetPossibleResources(node, &rt_buffer);
-	*res = rt_buffer.Pointer;
-
-exit:
-
-	return status;
-}
-
-int acpi_current_resource_free(ACPI_RESOURCE *res)
-{
-	ACPI_FREE(res);
-
-	return 0;
-}
-
-int acpi_get_irq_routing_table(char *bus_name,
-			       ACPI_PCI_ROUTING_TABLE *rt_table, size_t rt_size)
-{
-	int ret;
-
-	ret = check_init_status();
-	if (ret) {
-		return ret;
-	}
-
-	return acpi_get_irq_table(&bus_ctx, bus_name, rt_table, rt_size);
-}
+#endif /* CONFIG_PCIE_PRT */
 
 ACPI_RESOURCE *acpi_resource_parse(ACPI_RESOURCE *res, int res_type)
 {
 	do {
 		if (!res->Length) {
-			LOG_DBG("Error: zero length found!\n");
+			LOG_DBG("Error: zero length found!");
 			break;
 		} else if (res->Type == res_type) {
 			break;
@@ -546,7 +500,7 @@ int acpi_device_type_get(ACPI_RESOURCE *res)
 
 	do {
 		if (!res->Length) {
-			LOG_ERR("Error: zero length found!\n");
+			LOG_ERR("Error: zero length found!");
 			break;
 		}
 		type = acpi_res_type(res);
@@ -571,9 +525,9 @@ struct acpi_dev *acpi_device_get(char *hid, int inst)
 	}
 
 	do {
-		child_dev = &bus_ctx.child_dev[i];
+		child_dev = &acpi.child_dev[i];
 		if (!child_dev->path) {
-			LOG_DBG("NULL device path found\n");
+			LOG_DBG("NULL device path found");
 			continue;
 		}
 
@@ -592,22 +546,22 @@ struct acpi_dev *acpi_device_get(char *hid, int inst)
 				return child_dev;
 			}
 		}
-	} while (i++ < bus_ctx.num_dev);
+	} while (i++ < acpi.num_dev);
 
 	return NULL;
 }
 
 struct acpi_dev *acpi_device_by_index_get(int index)
 {
-	return index < bus_ctx.num_dev ? &bus_ctx.child_dev[index] : NULL;
+	return index < acpi.num_dev ? &acpi.child_dev[index] : NULL;
 }
 
 void *acpi_table_get(char *signature, int inst)
 {
-	int status;
+	ACPI_STATUS status;
 	ACPI_TABLE_HEADER *table;
 
-	if (!bus_ctx.early_init) {
+	if (!acpi.early_init) {
 		status = acpi_early_init();
 		if (status) {
 			LOG_ERR("ACPI early init failed");
@@ -624,7 +578,7 @@ void *acpi_table_get(char *signature, int inst)
 	return (void *)table;
 }
 
-static uint32_t acpi_get_subtable_entry_num(int type, struct acpi_subtable_header *subtable,
+static uint32_t acpi_get_subtable_entry_num(int type, ACPI_SUBTABLE_HEADER *subtable,
 					    uintptr_t offset, uintptr_t base, uint32_t madt_len)
 {
 	uint32_t subtable_cnt = 0;
@@ -644,12 +598,12 @@ static uint32_t acpi_get_subtable_entry_num(int type, struct acpi_subtable_heade
 	return subtable_cnt;
 }
 
-int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num_inst)
+int acpi_madt_entry_get(int type, ACPI_SUBTABLE_HEADER **tables, int *num_inst)
 {
-	struct acpi_table_header *madt = acpi_table_get("APIC", 0);
+	ACPI_TABLE_HEADER *madt = acpi_table_get("APIC", 0);
 	uintptr_t base = POINTER_TO_UINT(madt);
 	uintptr_t offset = sizeof(ACPI_TABLE_MADT);
-	struct acpi_subtable_header *subtable;
+	ACPI_SUBTABLE_HEADER *subtable;
 
 	if (!madt) {
 		return -EIO;
@@ -672,15 +626,15 @@ int acpi_madt_entry_get(int type, struct acpi_subtable_header **tables, int *num
 	return -ENODEV;
 }
 
-int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **tables)
+int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables)
 {
 	struct acpi_table_dmar *dmar = acpi_table_get("DMAR", 0);
 	uintptr_t base = POINTER_TO_UINT(dmar);
 	uintptr_t offset = sizeof(ACPI_TABLE_DMAR);
-	struct acpi_dmar_header *subtable;
+	ACPI_DMAR_HEADER *subtable;
 
 	if (!dmar) {
-		LOG_ERR("error on get DMAR table\n");
+		LOG_ERR("error on get DMAR table");
 		return -EIO;
 	}
 
@@ -697,22 +651,22 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, struct acpi_subtable_header **ta
 	return -ENODEV;
 }
 
-int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *dev_scope,
-	union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
+int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scope,
+		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
 {
 	uintptr_t offset = sizeof(ACPI_DMAR_HARDWARE_UNIT);
 	uint32_t i = 0;
-	struct acpi_dmar_header *drdh;
-	struct acpi_dmar_device_scope *subtable;
-	struct acpi_dmar_pci_path *dev_path;
+	ACPI_DMAR_HEADER *drdh;
+	ACPI_DMAR_DEVICE_SCOPE *subtable;
+	ACPI_DMAR_PCI_PATH *dev_path;
 	int ret;
 	uintptr_t base;
 	int scope_size;
 
 	ret = acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
-				  (struct acpi_subtable_header **)&drdh);
+				  (ACPI_SUBTABLE_HEADER **)&drdh);
 	if (ret) {
-		LOG_ERR("Error on retrieve DMAR table\n");
+		LOG_ERR("Error on retrieve DMAR table");
 		return ret;
 	}
 
@@ -736,7 +690,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 
 			while (num_path--) {
 				if (i >= max_inst) {
-					LOG_ERR("DHRD not enough buffer size\n");
+					LOG_ERR("DHRD not enough buffer size");
 					return -ENOBUFS;
 				}
 				dmar_id[i].bits.bus = subtable->Bus;
@@ -757,7 +711,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 
 	*num_inst = i;
 	if (!i) {
-		LOG_ERR("Error on retrieve DRHD Info\n");
+		LOG_ERR("Error on retrieve DRHD Info");
 		return -ENODEV;
 	}
 
@@ -770,9 +724,9 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, struct acpi_dmar_device_scope *d
 
 #define ACPI_CPU_FLAGS_ENABLED 0x01u
 
-struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num)
+ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num)
 {
-	struct acpi_madt_local_apic *lapic;
+	ACPI_MADT_LOCAL_APIC *lapic;
 	int cpu_cnt;
 	int idx;
 
@@ -793,4 +747,41 @@ struct acpi_madt_local_apic *acpi_local_apic_get(int cpu_num)
 	}
 
 	return NULL;
+}
+
+static int acpi_init(void)
+{
+	ACPI_STATUS status;
+
+	LOG_DBG("");
+
+	/* For debug version only */
+	ACPI_DEBUG_INITIALIZE();
+
+	status = initialize_acpica();
+	if (ACPI_FAILURE(status)) {
+		LOG_ERR("Error in ACPI init:%d", status);
+		goto exit;
+	}
+
+	/* Enable IO APIC mode */
+	status = acpi_enable_pic_mode();
+	if (ACPI_FAILURE(status)) {
+		LOG_WRN("Error in enable pic mode acpi method:%d", status);
+	}
+
+#ifdef CONFIG_PCIE_PRT
+	int ret = acpi_retrieve_legacy_irq();
+
+	if (ret) {
+		LOG_ERR("Error in retrieve legacy interrupt info:%d", ret);
+		status = AE_ERROR;
+		goto exit;
+	}
+#endif
+
+	acpi_enum_devices();
+
+exit:
+	return status;
 }

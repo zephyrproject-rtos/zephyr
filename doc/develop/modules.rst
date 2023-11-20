@@ -818,7 +818,7 @@ to the path containing the CMake file.
 To include a module's Kconfig file, set the variable ``ZEPHYR_<MODULE_NAME>_KCONFIG``
 to the path to the Kconfig file.
 
-The following is an example on how to add support the the ``FOO`` module.
+The following is an example on how to add support the ``FOO`` module.
 
 Create the following structure
 

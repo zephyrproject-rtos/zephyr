@@ -35,6 +35,8 @@ app=tests/bsim/bluetooth/host/att/eatt_notif conf_file=prj.conf compile
 app=tests/bsim/bluetooth/host/att/mtu_update compile
 app=tests/bsim/bluetooth/host/att/read_fill_buf/client compile
 app=tests/bsim/bluetooth/host/att/read_fill_buf/server compile
+app=tests/bsim/bluetooth/host/att/retry_on_sec_err/client compile
+app=tests/bsim/bluetooth/host/att/retry_on_sec_err/server compile
 app=tests/bsim/bluetooth/host/att/sequential/dut compile
 app=tests/bsim/bluetooth/host/att/sequential/tester compile
 app=tests/bsim/bluetooth/host/att/long_read compile
@@ -69,6 +71,7 @@ app=tests/bsim/bluetooth/host/misc/disconnect/tester compile
 
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile
+app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_sharing.conf compile
 app=tests/bsim/bluetooth/host/privacy/device compile
 app=tests/bsim/bluetooth/host/privacy/legacy compile
 

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Grinn
+# SPDX -License-Identifier: Apache-2.0
+
+config DAC_AD5592
+	bool "AD5592 DAC driver"
+	default y
+	depends on DT_HAS_ADI_AD5592_DAC_ENABLED
+	select MFD
+	help
+	  Enable the AD5592 DAC driver.

@@ -99,6 +99,7 @@ static void telnet_reply_dont_command(struct telnet_simple_command *cmd)
 {
 	switch (cmd->opt) {
 	case NVT_OPT_ECHO:
+	{
 		int ret = telnet_echo_set(sh_telnet->shell_context, false);
 
 		if (ret >= 0) {
@@ -107,6 +108,7 @@ static void telnet_reply_dont_command(struct telnet_simple_command *cmd)
 			cmd->op = NVT_CMD_WILL;
 		}
 		break;
+	}
 	default:
 		cmd->op = NVT_CMD_WONT;
 		break;
@@ -123,6 +125,7 @@ static void telnet_reply_do_command(struct telnet_simple_command *cmd)
 		cmd->op = NVT_CMD_WILL;
 		break;
 	case NVT_OPT_ECHO:
+	{
 		int ret = telnet_echo_set(sh_telnet->shell_context, true);
 
 		if (ret >= 0) {
@@ -131,6 +134,7 @@ static void telnet_reply_do_command(struct telnet_simple_command *cmd)
 			cmd->op = NVT_CMD_WONT;
 		}
 		break;
+	}
 	default:
 		cmd->op = NVT_CMD_WONT;
 		break;

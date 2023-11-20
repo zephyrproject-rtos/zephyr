@@ -57,7 +57,7 @@ const char *net_icmpv6_type2str(int icmpv6_type)
 	return "?";
 }
 
-int net_icmpv6_finalize(struct net_pkt *pkt)
+int net_icmpv6_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
@@ -69,8 +69,9 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) || force_chksum) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
+		net_pkt_set_chksum_done(pkt, true);
 	}
 
 	return net_pkt_set_data(pkt, &icmp_access);
@@ -341,7 +342,8 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	}
 
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) ||
+	    net_pkt_is_ip_reassembled(pkt)) {
 		if (net_calc_chksum_icmpv6(pkt) != 0U) {
 			NET_DBG("DROP: invalid checksum");
 			goto drop;

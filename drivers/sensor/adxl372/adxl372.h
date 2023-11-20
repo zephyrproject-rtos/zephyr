@@ -365,14 +365,11 @@ int adxl372_i2c_init(const struct device *dev);
 int adxl372_get_status(const struct device *dev,
 		       uint8_t *status1, uint8_t *status2, uint16_t *fifo_entries);
 
-int adxl372_reg_write_mask(const struct device *dev,
-			   uint8_t reg_addr, uint32_t mask, uint8_t data);
-
 int adxl372_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
 int adxl372_init_interrupt(const struct device *dev);
-#endif /* CONFIG_ADT7420_TRIGGER */
+#endif /* CONFIG_ADXL372_TRIGGER */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */

@@ -19,7 +19,7 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` or :ref:`networking_with_native_posix`
+- :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` or :ref:`networking_with_native_sim`
 - Linux machine
 
 Building and Running
@@ -41,15 +41,15 @@ Build the tftp-client sample application like this:
    :compact:
 
 The easiest way to setup this sample application is to build and run it
-as native POSIX application or as a QEMU target using the default configuration :file:`prj.conf`.
-This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_posix`.
+as a native_sim application or as a QEMU target using the default configuration :file:`prj.conf`.
+This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_sim`.
 
-Build the tftp-client sample application for native_posix like this:
+Build the tftp-client sample application for :ref:`native_sim <native_sim>` like this:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/tftp_client
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
    :compact:
 
@@ -70,7 +70,7 @@ configurations in ``prj.conf``::
 Sample output
 ==================================
 
-Sample run on native_posix platform with TFTP server on host machine
+Sample run on native_sim platform with TFTP server on host machine
 Launch net-setup.sh in net-tools
 .. code-block:: console
 

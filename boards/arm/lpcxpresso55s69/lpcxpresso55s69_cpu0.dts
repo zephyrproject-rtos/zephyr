@@ -204,3 +204,7 @@ i2s1: &flexcomm7 {
 &dma1 {
 	status = "okay";
 };
+
+&mrt_channel0 {
+	status = "okay";
+};

@@ -13,8 +13,12 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/settings/settings.h>
 
 #include "common/bt_str.h"
+
+#define ID_A_INDEX 1
+#define ID_B_INDEX 2
 
 #define ADV_SET_INDEX_ONE   0x00
 #define ADV_SET_INDEX_TWO   0x01
@@ -66,8 +70,7 @@ static void create_adv(struct bt_le_ext_adv **adv, int id)
 void start_advertising(void)
 {
 	int err;
-	int id_a;
-	int id_b;
+	size_t bt_id_count;
 
 	/* Enable bluetooth */
 	err = bt_enable(NULL);
@@ -75,24 +78,44 @@ void start_advertising(void)
 		FAIL("Failed to enable bluetooth (err %d\n)", err);
 	}
 
-	id_a = bt_id_create(NULL, NULL);
-	if (id_a < 0) {
-		FAIL("bt_id_create id_a failed (err %d)\n", id_a);
+	err = settings_load();
+	if (err) {
+		FAIL("Failed to enable settings (err %d\n)", err);
 	}
 
-	id_b = bt_id_create(NULL, NULL);
-	if (id_b < 0) {
-		FAIL("bt_id_create id_b failed (err %d)\n", id_b);
+	bt_id_get(NULL, &bt_id_count);
+	if (bt_id_count == 1) {
+		int id_a;
+		int id_b;
+
+		printk("No extra identity found in settings, creating new ones...\n");
+
+		id_a = bt_id_create(NULL, NULL);
+		if (id_a != ID_A_INDEX) {
+			FAIL("bt_id_create id_a failed (err %d)\n", id_a);
+		}
+
+		id_b = bt_id_create(NULL, NULL);
+		if (id_b != ID_B_INDEX) {
+			FAIL("bt_id_create id_b failed (err %d)\n", id_b);
+		}
+	} else {
+		printk("Extra identities loaded from settings\n");
+	}
+
+	bt_id_get(NULL, &bt_id_count);
+	if (bt_id_count != CONFIG_BT_ID_MAX) {
+		FAIL("bt_id_get returned incorrect number of identities %u\n", bt_id_count);
 	}
 
 	for (int i = 0; i < CONFIG_BT_EXT_ADV_MAX_ADV_SET; i++) {
 
 		if (i != ADV_SET_INDEX_THREE) {
 			/* Create advertising set 1 and 2 with same id */
-			create_adv(&adv_set[i], id_a);
+			create_adv(&adv_set[i], ID_A_INDEX);
 		} else {
 			/* Create advertising set 3 with different id */
-			create_adv(&adv_set[i], id_b);
+			create_adv(&adv_set[i], ID_B_INDEX);
 		}
 
 		/* Set extended advertising data */

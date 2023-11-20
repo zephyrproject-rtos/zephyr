@@ -82,6 +82,13 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>,
+			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	prescaler = <32768>;
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
 	pinctrl-names = "default";

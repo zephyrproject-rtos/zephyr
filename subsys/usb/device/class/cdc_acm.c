@@ -223,12 +223,27 @@ static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
 		k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
 	}
 
-	if (ring_buf_is_empty(dev_data->tx_ringbuf)) {
+	/* If size is 0, we want to schedule tx work even if ringbuf is empty to
+	 * ensure that actual payload will not be sent before initialization
+	 * timeout passes.
+	 */
+	if (ring_buf_is_empty(dev_data->tx_ringbuf) && size) {
 		LOG_DBG("tx_ringbuf is empty");
 		return;
 	}
 
-	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
+	/* If size is 0, it means that host started polling IN data because it
+	 * has read the ZLP we armed when interface was configured. This ZLP is
+	 * probably the best indication that host has started to read the data.
+	 * Wait initialization timeout before sending actual payload to make it
+	 * possible for application to disable ECHO. The echo is long known
+	 * problem related to the fact that POSIX defaults to ECHO ON and thus
+	 * every application that opens tty device (on Linux) will have ECHO
+	 * enabled in the short window between open() and ioctl() that disables
+	 * the echo (if application wishes to disable the echo).
+	 */
+	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, size ?
+				  K_NO_WAIT : K_MSEC(CONFIG_CDC_ACM_TX_DELAY_MS));
 }
 
 static void tx_work_handler(struct k_work *work)
@@ -244,6 +259,10 @@ static void tx_work_handler(struct k_work *work)
 
 	if (usb_transfer_is_busy(ep)) {
 		LOG_DBG("Transfer is ongoing");
+		return;
+	}
+
+	if (!dev_data->configured) {
 		return;
 	}
 
@@ -375,12 +394,10 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 			dev_data->configured = true;
 			cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
 					dev_data);
-		}
-		if (!dev_data->tx_ready) {
-			dev_data->tx_ready = true;
-			/* if wait tx irq, invoke callback */
-			if (dev_data->cb != NULL && dev_data->tx_irq_ena) {
-				k_work_submit_to_queue(&USB_WORK_Q, &dev_data->cb_work);
+			/* Queue ZLP on IN endpoint so we know when host starts polling */
+			if (!dev_data->tx_ready) {
+				usb_transfer(cfg->endpoint[ACM_IN_EP_IDX].ep_addr, NULL, 0,
+					     USB_TRANS_WRITE, cdc_acm_write_cb, dev_data);
 			}
 		}
 		break;
@@ -1011,11 +1028,6 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
 static void cdc_acm_poll_out(const struct device *dev, unsigned char c)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
-
-	if (!dev_data->configured || dev_data->suspended) {
-		LOG_INF("USB device not ready, drop data");
-		return;
-	}
 
 	dev_data->tx_ready = false;
 

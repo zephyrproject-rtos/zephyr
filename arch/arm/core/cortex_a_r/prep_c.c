@@ -44,6 +44,13 @@ Z_GENERIC_SECTION(.vt_pointer_section) __attribute__((used))
 void *_vector_table_pointer;
 #endif
 
+#ifdef CONFIG_ARM_MPU
+extern void z_arm_mpu_init(void);
+extern void z_arm_configure_static_mpu_regions(void);
+#elif defined(CONFIG_ARM_AARCH32_MMU)
+extern int z_arm_mmu_init(void);
+#endif
+
 #if defined(CONFIG_AARCH32_ARMV8_R)
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
@@ -140,6 +147,9 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_arm_prep_c(void)
 {
+	/* Initialize tpidruro with our struct _cpu instance address */
+	write_tpidruro((uintptr_t)&_kernel.cpus[0]);
+
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
@@ -150,6 +160,12 @@ void z_arm_prep_c(void)
 	z_arm_init_stacks();
 #endif
 	z_arm_interrupt_init();
+#ifdef CONFIG_ARM_MPU
+	z_arm_mpu_init();
+	z_arm_configure_static_mpu_regions();
+#elif defined(CONFIG_ARM_AARCH32_MMU)
+	z_arm_mmu_init();
+#endif
 	z_cstart();
 	CODE_UNREACHABLE;
 }

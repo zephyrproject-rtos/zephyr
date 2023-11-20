@@ -17,6 +17,7 @@
 		uart-5 = &uart5;
 		i2c-0 = &i2c3;
 		watchdog0 = &watchdog0;
+		sdhc0 = &sdhc0;
 	};
 
 	chosen {
@@ -50,7 +51,7 @@ uart2: &scb2 {
 
 	current-speed = <115200>;
 
-	/* HCI-UART pins*/
+	/* HCI-UART pins */
 	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
 	pinctrl-names = "default";
 
@@ -65,6 +66,25 @@ uart2: &scb2 {
 		 * node, cyw43xx driver will use bus/current-speed as default speed.
 		 */
 		fw-download-speed = <3000000>;
+	};
+};
+
+&sdhc0 {
+	status = "okay";
+
+	/* SDIO pins */
+	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
+		     &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
+	pinctrl-names = "default";
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios    = <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt0 4 GPIO_ACTIVE_HIGH>;
 	};
 };
 

@@ -19,6 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#include <zephyr/pm/device.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <stm32_ll_pwr.h>
@@ -341,6 +342,52 @@ static int check_buffer(const struct adc_sequence *sequence,
 	return 0;
 }
 
+/*
+ * Enable ADC peripheral, and wait until ready if required by SOC.
+ */
+static int adc_stm32_enable(ADC_TypeDef *adc)
+{
+	if (LL_ADC_IsEnabled(adc) == 1UL) {
+		return 0;
+	}
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_ClearFlag_ADRDY(adc);
+	LL_ADC_Enable(adc);
+
+	/*
+	 * Enabling ADC modules in many series may fail if they are
+	 * still not stabilized, this will wait for a short time (about 1ms)
+	 * to ensure ADC modules are properly enabled.
+	 */
+	uint32_t count_timeout = 0;
+
+	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
+#ifdef CONFIG_SOC_SERIES_STM32F0X
+		/* For F0, continue to write ADEN=1 until ADRDY=1 */
+		if (LL_ADC_IsEnabled(adc) == 0UL) {
+			LL_ADC_Enable(adc);
+		}
+#endif /* CONFIG_SOC_SERIES_STM32F0X */
+		count_timeout++;
+		k_busy_wait(100);
+		if (count_timeout >= 10) {
+			return -ETIMEDOUT;
+		}
+	}
+#else
+	/*
+	 * On STM32F1, F2, F37x, F4, F7 and L1, do not re-enable the ADC.
+	 * On F1 and F37x if ADON holds 1 (LL_ADC_IsEnabled is true) and 1 is
+	 * written, then conversion starts. That's not what is expected.
+	 */
+	LL_ADC_Enable(adc);
+#endif
+
+	return 0;
+}
+
 static void adc_stm32_start_conversion(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config;
@@ -355,81 +402,6 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	LL_ADC_REG_StartConversionSWStart(adc);
 #endif
 }
-
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-
-#define HAS_CALIBRATION
-
-/* Number of ADC clock cycles to wait before of after starting calibration */
-#if defined(LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES)
-#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES
-#elif defined(LL_ADC_DELAY_ENABLE_CALIB_ADC_CYCLES)
-#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_ENABLE_CALIB_ADC_CYCLES
-#elif defined(LL_ADC_DELAY_DISABLE_CALIB_ADC_CYCLES)
-#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_DISABLE_CALIB_ADC_CYCLES
-#endif
-
-static void adc_stm32_calib_delay(const struct device *dev)
-{
-	/*
-	 * Calibration of F1 and F3 (ADC1_V2_5) must start two cycles after ADON
-	 * is set.
-	 * Other ADC modules have to wait for some cycles after calibration to
-	 * be enabled.
-	 */
-	const struct adc_stm32_cfg *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	uint32_t adc_rate, wait_cycles;
-
-	if (clock_control_get_rate(clk,
-		(clock_control_subsys_t) &config->pclken[0], &adc_rate) < 0) {
-		LOG_ERR("ADC clock rate get error.");
-	}
-
-	if (adc_rate == 0) {
-		LOG_ERR("ADC Clock rate null");
-		return;
-	}
-	wait_cycles = SystemCoreClock / adc_rate *
-		      ADC_DELAY_CALIB_ADC_CYCLES;
-
-	for (int i = wait_cycles; i >= 0; i--) {
-	}
-}
-
-static void adc_stm32_calib(const struct device *dev)
-{
-	const struct adc_stm32_cfg *config =
-		(const struct adc_stm32_cfg *)dev->config;
-	ADC_TypeDef *adc = config->base;
-
-#if defined(STM32F3X_ADC_V1_1) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
-#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32WLX) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	LL_ADC_StartCalibration(adc);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
-#endif
-	/* Make sure ADCAL is cleared before returning for proper operations
-	 * on the ADC control register, for enabling the peripheral for example
-	 */
-	while (LL_ADC_IsCalibrationOnGoing(adc)) {
-	}
-}
-#endif
 
 /*
  * Disable ADC peripheral, and wait until it is disabled
@@ -477,6 +449,134 @@ static void adc_stm32_disable(ADC_TypeDef *adc)
 	while (LL_ADC_IsEnabled(adc) == 1UL) {
 	}
 }
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+
+#define HAS_CALIBRATION
+
+/* Number of ADC clock cycles to wait before of after starting calibration */
+#if defined(LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES)
+#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_CALIB_ENABLE_ADC_CYCLES
+#elif defined(LL_ADC_DELAY_ENABLE_CALIB_ADC_CYCLES)
+#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_ENABLE_CALIB_ADC_CYCLES
+#elif defined(LL_ADC_DELAY_DISABLE_CALIB_ADC_CYCLES)
+#define ADC_DELAY_CALIB_ADC_CYCLES	LL_ADC_DELAY_DISABLE_CALIB_ADC_CYCLES
+#endif
+
+static void adc_stm32_calibration_delay(const struct device *dev)
+{
+	/*
+	 * Calibration of F1 and F3 (ADC1_V2_5) must start two cycles after ADON
+	 * is set.
+	 * Other ADC modules have to wait for some cycles after calibration to
+	 * be enabled.
+	 */
+	const struct adc_stm32_cfg *config = dev->config;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	uint32_t adc_rate, wait_cycles;
+
+	if (clock_control_get_rate(clk,
+		(clock_control_subsys_t) &config->pclken[0], &adc_rate) < 0) {
+		LOG_ERR("ADC clock rate get error.");
+	}
+
+	if (adc_rate == 0) {
+		LOG_ERR("ADC Clock rate null");
+		return;
+	}
+	wait_cycles = SystemCoreClock / adc_rate *
+		      ADC_DELAY_CALIB_ADC_CYCLES;
+
+	for (int i = wait_cycles; i >= 0; i--) {
+	}
+}
+
+static void adc_stm32_calibration_start(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = config->base;
+
+#if defined(STM32F3X_ADC_V1_1) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
+	LL_ADC_StartCalibration(adc, LL_ADC_SINGLE_ENDED);
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX) || \
+	defined(CONFIG_SOC_SERIES_STM32WBAX)
+	LL_ADC_StartCalibration(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
+#endif
+	/* Make sure ADCAL is cleared before returning for proper operations
+	 * on the ADC control register, for enabling the peripheral for example
+	 */
+	while (LL_ADC_IsCalibrationOnGoing(adc)) {
+	}
+}
+
+static int adc_stm32_calibrate(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = config->base;
+	int err;
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	adc_stm32_disable(adc);
+	adc_stm32_calibration_start(dev);
+	adc_stm32_calibration_delay(dev);
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+
+	err = adc_stm32_enable(adc);
+	if (err < 0) {
+		return err;
+	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	adc_stm32_calibration_delay(dev);
+	adc_stm32_calibration_start(dev);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	/*
+	 * To ensure linearity the factory calibration values
+	 * should be loaded on initialization.
+	 */
+	uint32_t channel_offset = 0U;
+	uint32_t linear_calib_buffer = 0U;
+
+	if (adc == ADC1) {
+		channel_offset = 0UL;
+	} else if (adc == ADC2) {
+		channel_offset = 8UL;
+	} else   /*Case ADC3*/ {
+		channel_offset = 16UL;
+	}
+	/* Read factory calibration factors */
+	for (uint32_t count = 0UL; count < ADC_LINEAR_CALIB_REG_COUNT; count++) {
+		linear_calib_buffer = *(uint32_t *)(
+			ADC_LINEAR_CALIB_REG_1_ADDR + channel_offset + count
+		);
+		LL_ADC_SetCalibrationLinearFactor(
+			adc, LL_ADC_CALIB_LINEARITY_WORD1 << count,
+			linear_calib_buffer
+		);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
+
+	return 0;
+}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) */
 
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
@@ -608,52 +708,6 @@ static int adc_stm32_oversampling(ADC_TypeDef *adc, uint8_t ratio)
 	return 0;
 }
 #endif /* CONFIG_SOC_SERIES_STM32xxx */
-
-/*
- * Enable ADC peripheral, and wait until ready if required by SOC.
- */
-static int adc_stm32_enable(ADC_TypeDef *adc)
-{
-	if (LL_ADC_IsEnabled(adc) == 1UL) {
-		return 0;
-	}
-
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-	LL_ADC_ClearFlag_ADRDY(adc);
-	LL_ADC_Enable(adc);
-
-	/*
-	 * Enabling ADC modules in many series may fail if they are
-	 * still not stabilized, this will wait for a short time (about 1ms)
-	 * to ensure ADC modules are properly enabled.
-	 */
-	uint32_t count_timeout = 0;
-
-	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
-#ifdef CONFIG_SOC_SERIES_STM32F0X
-		/* For F0, continue to write ADEN=1 until ADRDY=1 */
-		if (LL_ADC_IsEnabled(adc) == 0UL) {
-			LL_ADC_Enable(adc);
-		}
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
-		count_timeout++;
-		k_busy_wait(100);
-		if (count_timeout >= 10) {
-			return -ETIMEDOUT;
-		}
-	}
-#else
-	/*
-	 * On STM32F1, F2, F37x, F4, F7 and L1, do not re-enable the ADC.
-	 * On F1 and F37x if ADON holds 1 (LL_ADC_IsEnabled is true) and 1 is
-	 * written, then conversion starts. That's not what is expected.
-	 */
-	LL_ADC_Enable(adc);
-#endif
-
-	return 0;
-}
 
 #ifdef CONFIG_ADC_STM32_DMA
 static void dma_callback(const struct device *dev, void *user_data,
@@ -899,12 +953,8 @@ static int start_read(const struct device *dev,
 #endif /* HAS_OVERSAMPLING */
 
 	if (sequence->calibrate) {
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-
-		/* we cannot calibrate the ADC while the ADC is enabled */
-		adc_stm32_disable(adc);
-		adc_stm32_calib(dev);
+#if defined(HAS_CALIBRATION)
+		adc_stm32_calibrate(dev);
 #else
 		LOG_ERR("Calibration not supported");
 		return -ENOTSUP;
@@ -1236,6 +1286,8 @@ static int adc_stm32_init(const struct device *dev)
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	int err;
 
+	ARG_UNUSED(adc); /* Necessary to avoid warnings on some series */
+
 	LOG_DBG("Initializing %s", dev->name);
 
 	if (!device_is_ready(clk)) {
@@ -1264,6 +1316,7 @@ static int adc_stm32_init(const struct device *dev)
 		LOG_ERR("ADC pinctrl setup failed (%d)", err);
 		return err;
 	}
+
 #if defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Enable the independent analog supply */
 	LL_PWR_EnableVDDA();
@@ -1289,12 +1342,9 @@ static int adc_stm32_init(const struct device *dev)
 	 * mode, and restore its calibration parameters if there are some
 	 * previously stored calibration parameters.
 	 */
-
 	LL_ADC_DisableDeepPowerDown(adc);
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
-	/* The ADC clock must be disabled by clock gating during CPU1 sleep/stop */
-	LL_APB2_GRP1_DisableClockSleep(LL_APB2_GRP1_PERIPH_ADC);
 #endif
+
 	/*
 	 * Many ADC modules need some time to be stabilized before performing
 	 * any enable or calibration actions.
@@ -1306,55 +1356,95 @@ static int adc_stm32_init(const struct device *dev)
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 #endif
 
-#if defined(HAS_CALIBRATION) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-	adc_stm32_disable(adc);
-	adc_stm32_calib(dev);
-	adc_stm32_calib_delay(dev);
-#endif /* HAS_CALIBRATION && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
-
-	err = adc_stm32_enable(adc);
-	if (err < 0) {
-		return err;
-	}
-
 	config->irq_cfg_func();
 
-#if defined(HAS_CALIBRATION) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-	adc_stm32_calib_delay(dev);
-	adc_stm32_calib(dev);
-	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
-#endif /* HAS_CALIBRATION && DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+#if defined(HAS_CALIBRATION)
+	adc_stm32_calibrate(dev);
+#endif /* HAS_CALIBRATION */
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
-	/*
-	 * To ensure linearity the factory calibration values
-	 * should be loaded on initialization.
-	 */
-	uint32_t channel_offset = 0U;
-	uint32_t linear_calib_buffer = 0U;
-
-	if (adc == ADC1) {
-		channel_offset = 0UL;
-	} else if (adc == ADC2) {
-		channel_offset = 8UL;
-	} else   /*Case ADC3*/ {
-		channel_offset = 16UL;
-	}
-	/* Read factory calibration factors */
-	for (uint32_t count = 0UL; count < ADC_LINEAR_CALIB_REG_COUNT; count++) {
-		linear_calib_buffer = *(uint32_t *)(
-			ADC_LINEAR_CALIB_REG_1_ADDR + channel_offset + count
-		);
-		LL_ADC_SetCalibrationLinearFactor(
-			adc, LL_ADC_CALIB_LINEARITY_WORD1 << count,
-			linear_calib_buffer
-		);
-	}
-#endif
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int adc_stm32_suspend_setup(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int err;
+
+	/* Disable ADC */
+	adc_stm32_disable(adc);
+
+#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
+	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	/* Disable ADC internal voltage regulator */
+	LL_ADC_DisableInternalRegulator(adc);
+	while (LL_ADC_IsInternalRegulatorEnabled(adc) == 1U) {
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+	/*
+	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into
+	 * deep sleep mode.
+	 */
+
+	LL_ADC_EnableDeepPowerDown(adc);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+	/* Disable the independent analog supply */
+	LL_PWR_DisableVDDA();
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+
+	/* Stop device clock. Note: fixed clocks are not handled yet. */
+	err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
+	if (err != 0) {
+		LOG_ERR("Could not disable ADC clock");
+		return err;
+	}
+
+	/* Move pins to sleep state */
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if ((err < 0) && (err != -ENOENT)) {
+		/*
+		 * If returning -ENOENT, no pins where defined for sleep mode :
+		 * Do not output on console (might sleep already) when going to sleep,
+		 * "ADC pinctrl sleep state not available"
+		 * and don't block PM suspend.
+		 * Else return the error.
+		 */
+		return err;
+	}
+
+	return 0;
+}
+
+static int adc_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		return adc_stm32_init(dev);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return adc_stm32_suspend_setup(dev);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct adc_driver_api api_stm32_driver_api = {
 	.channel_setup = adc_stm32_channel_setup,
@@ -1518,8 +1608,10 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_DMA_CHANNEL(index, dmamux, NULL, PERIPHERAL, MEMORY)	\
 };									\
 									\
+PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);			\
+									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, NULL,				\
+		    &adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);

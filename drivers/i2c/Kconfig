@@ -195,4 +195,11 @@ config I2C_RV32M1_LPI2C
 	help
 	  Enable the RV32M1 LPI2C driver.
 
+config GPIO_I2C_SWITCH
+	bool "GPIO controlled I2C bus switch"
+	default y
+	depends on DT_HAS_GPIO_I2C_SWITCH_ENABLED
+	help
+	  Enable GPIO controlled I2C bus switch driver.
+
 endif # I2C

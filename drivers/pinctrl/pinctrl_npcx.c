@@ -38,17 +38,10 @@ static const struct npcx_pwm_pinctrl_config pwm_pinctrl_cfg[] = {
 /* Pin-control local functions for peripheral devices */
 static bool npcx_periph_pinmux_has_lock(int group)
 {
-#if defined(CONFIG_SOC_SERIES_NPCX7)
-	if (group == 0x00 || (group >= 0x02 && group <= 0x04) || group == 0x06 ||
-		group == 0x0b || group == 0x0f) {
+	if ((BIT(group) & NPCX_DEVALT_LK_GROUP_MASK) != 0) {
 		return true;
 	}
-#elif defined(CONFIG_SOC_SERIES_NPCX9)
-	if (group == 0x00 || (group >= 0x02 && group <= 0x06) || group == 0x0b ||
-		group == 0x0d || (group >= 0x0f && group <= 0x12)) {
-		return true;
-	}
-#endif
+
 	return false;
 }
 

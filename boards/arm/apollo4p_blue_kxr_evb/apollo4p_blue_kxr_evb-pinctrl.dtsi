@@ -192,4 +192,17 @@
 			ambiq,iom-nce-module = <36>;
 		};
 	};
+
+	xo32m_default: xo32m_default {
+		group1 {
+			pinmux = <CLKOUT_32M_P46>;
+			drive-strength = "0.1";
+		};
+	};
+	xo32k_default: xo32k_default {
+		group1 {
+			pinmux = <XT32KHZ_P4>;
+			drive-strength = "0.1";
+		};
+	};
 };

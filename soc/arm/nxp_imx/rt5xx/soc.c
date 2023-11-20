@@ -419,6 +419,10 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1);
 #endif
 
+#if CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT0_RST_SHIFT_RSTn);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 
@@ -469,6 +473,17 @@ void __weak imxrt_post_init_display_interface(void)
 	/* Deassert MIPI DPHY reset. */
 	RESET_ClearPeripheralReset(kMIPI_DSI_PHY_RST_SHIFT_RSTn);
 }
+
+void __weak imxrt_deinit_display_interface(void)
+{
+	/* Assert MIPI DPHY and DSI reset */
+	RESET_SetPeripheralReset(kMIPI_DSI_PHY_RST_SHIFT_RSTn);
+	RESET_SetPeripheralReset(kMIPI_DSI_CTRL_RST_SHIFT_RSTn);
+	/* Remove clock from DPHY */
+	CLOCK_AttachClk(kNONE_to_MIPI_DPHY_CLK);
+}
+
+
 #endif
 
 /**

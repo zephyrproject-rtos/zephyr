@@ -35,3 +35,16 @@ config BT_CAP_INITIATOR
 	select EXPERIMENTAL
 	help
 	  Enabling this will enable the CAP Initiator role.
+
+
+config BT_CAP_COMMANDER
+	bool "Common Audio Profile Initiator Role Support [EXPERIMENTAL]"
+	depends on (BT_BAP_BROADCAST_ASSISTANT && BT_BAP_SCAN_DELEGATOR && BT_CSIP_SET_COORDINATOR) || \
+		   (BT_BAP_SCAN_DELEGATOR && BT_CSIP_SET_COORDINATOR) || \
+		   (BT_VCP_VOL_CTLR && BT_CSIP_SET_COORDINATOR) || \
+		   (BT_MICP_MIC_CTLR && BT_CSIP_SET_COORDINATOR) || \
+		   BT_TBS_CLIENT || \
+		   BT_MCC
+	select EXPERIMENTAL
+	help
+	  Enabling this will enable the CAP Initiator role.

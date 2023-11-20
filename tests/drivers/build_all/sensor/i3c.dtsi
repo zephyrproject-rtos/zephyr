@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for i3c devices
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+test_i3c_lps22hh: lps22hh@100000803E0000001 {
+	compatible = "st,lps22hh";
+	reg = <0x1 0x00000803 0xE0000001>;
+	assigned-address = <0x1>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i3c_lps22df: lps22df@200000803E0000002 {
+	compatible = "st,lps22df";
+	reg = <0x2 0x00000803 0xE0000002>;
+	assigned-address = <0x2>;
+	drdy-gpios = <&test_gpio 0 0>;
+};

@@ -382,6 +382,16 @@ config INIT_STACKS
 	  water mark can be easily determined. This applies to the stack areas
 	  for threads, as well as to the interrupt stack.
 
+config SKIP_BSS_CLEAR
+	bool
+	help
+	  This option disables software .bss section zeroing during Zephyr
+	  initialization. Such boot-time optimization could be used for
+	  platforms where .bss section is zeroed-out externally.
+	  Please pay attention that when this option is enabled
+	  the responsibility for .bss zeroing in all possible scenarios
+	  (mind e.g. SW reset) is delegated to the external SW or HW.
+
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
@@ -1193,6 +1203,19 @@ config KERNEL_COHERENCE
 	  Code that creates kernel data structures in uncached regions
 	  may fail strangely.  Some assertions exist to catch these
 	  mistakes, but not all circumstances can be tested.
+
+config TICKET_SPINLOCKS
+	bool "Ticket spinlocks for lock acquisition fairness [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Basic spinlock implementation is based on single
+	  atomic variable and doesn't guarantee locking fairness
+	  across multiple CPUs. It's even possible that single CPU
+	  will win the contention every time which will result
+	  in a live-lock.
+	  Ticket spinlocks provide a FIFO order of lock acquisition
+	  which resolves such unfairness issue at the cost of slightly
+	  increased memory footprint.
 
 endmenu
 

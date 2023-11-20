@@ -175,6 +175,37 @@ CDC ACM UART as backend for a subsystem or application:
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
 * ``zephyr,uart-mcumgr`` used by :zephyr:code-sample:`smp-svr` sample
 
+POSIX default tty ECHO mitigation
+---------------------------------
+
+POSIX systems, like Linux, default to enabling ECHO on tty devices. Host side
+application can disable ECHO by calling ``open()`` on the tty device and issuing
+``ioctl()`` (preferably via ``tcsetattr()``) to disable echo if it is not desired.
+Unfortunately, there is an inherent race between the ``open()`` and ``ioctl()``
+where the ECHO is enabled and any characters received (even if host application
+does not call ``read()``) will be echoed back. This issue is especially visible
+when the CDC ACM port is used without any real UART on the other side because
+there is no arbitrary delay due to baud rate.
+
+To mitigate the issue, Zephyr CDC ACM implementation arms IN endpoint with ZLP
+after device is configured. When the host reads the ZLP, which is pretty much
+the best indication that host application has opened the tty device, Zephyr will
+force :kconfig:option:`CONFIG_CDC_ACM_TX_DELAY_MS` millisecond delay before real
+payload is sent. This should allow sufficient time for first, and only first,
+application that opens the tty device to disable ECHO if ECHO is not desired.
+If ECHO is not desired at all from CDC ACM device it is best to set up udev rule
+to disable ECHO as soon as device is connected.
+
+ECHO is particurarly unwanted when CDC ACM instance is used for Zephyr shell,
+because the control characters to set color sent back to shell are interpreted
+as (invalid) command and user will see garbage as a result. While minicom does
+disable ECHO by default, on exit with reset it will restore the termios settings
+to whatever was set on entry. Therefore, if minicom is the first application to
+open the tty device, the exit with reset will enable ECHO back and thus set up
+a problem for the next application (which cannot be mitigated at Zephyr side).
+To prevent the issue it is recommended either to leave minicom without reset or
+to disable ECHO before minicom is started.
+
 DFU
 ===
 
@@ -414,14 +445,14 @@ the vendor requests:
 The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
 before transmitting any data.
 
-.. _testing_USB_native_posix:
+.. _testing_USB_native_sim:
 
-Testing over USPIP in native_posix
-***********************************
+Testing over USPIP in native_sim
+********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the native_posix configuration.
+the :ref:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 

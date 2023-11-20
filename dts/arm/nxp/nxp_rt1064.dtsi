@@ -7,6 +7,27 @@
 
 #include <nxp/nxp_rt1060.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <16>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>;
+};
+
 &flexspi2 {
 	status = "okay";
 	reg = <0x402a4000 0x4000>, <0x70000000 DT_SIZE_M(4)>;

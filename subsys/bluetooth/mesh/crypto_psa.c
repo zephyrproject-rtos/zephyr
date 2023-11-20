@@ -7,6 +7,7 @@
 #include <errno.h>
 
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/sys/check.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -509,4 +510,13 @@ int bt_mesh_key_compare(const uint8_t raw_key[16], const struct bt_mesh_key *key
 	}
 
 	return memcmp(out, raw_key, 16);
+}
+
+__weak int bt_rand(void *buf, size_t len)
+{
+	CHECKIF(buf == NULL || len == 0) {
+		return -EINVAL;
+	}
+
+	return psa_generate_random(buf, len) == PSA_SUCCESS ? 0 : -EIO;
 }

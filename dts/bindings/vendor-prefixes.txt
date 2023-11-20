@@ -10,6 +10,7 @@
 #
 # <vendor-prefix><TAB><Full name of vendor>
 
+aaeon	AAEON Technology Inc.
 abb	ABB
 abilis	Abilis Systems
 abracon	Abracon Corporation
@@ -243,6 +244,7 @@ google	Google, Inc.
 greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
+gss	Gas Sensing Solutions Ltd.
 gumstix	Gumstix, Inc.
 hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation

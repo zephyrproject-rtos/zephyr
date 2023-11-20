@@ -8,10 +8,12 @@ tests:
       - qemu_cortex_m3
       - qemu_x86
       - nrf5340dk_nrf5340_cpuapp
+      - nrf5340bsim_nrf5340_cpuapp
     integration_platforms:
       - qemu_x86
       - nrf5340dk_nrf5340_cpuapp
     tags: bluetooth
+    sysbuild: true
   sample.bluetooth.broadcast_audio_sink.bt_ll_sw_split:
     harness: bluetooth
     platform_allow:

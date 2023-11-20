@@ -18,11 +18,11 @@ function Execute_AC_5() {
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_initiator_ac_5 \
-        -RealEncryption=1 -rs=23 -argstest sink_preset $1 source_preset $2
+        -RealEncryption=1 -rs=23 -D=2 -argstest sink_preset $1 source_preset $2
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_acceptor_unicast \
-        -RealEncryption=1 -rs=46
+        -RealEncryption=1 -rs=46 -D=2
 
     # Simulation time should be larger than the WAIT_TIME in common.h
     Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
@@ -46,4 +46,4 @@ Execute_AC_5 48_2_1 48_2_1
 Execute_AC_5 48_3_1 48_3_1
 Execute_AC_5 48_4_1 48_4_1
 Execute_AC_5 48_5_1 48_5_1
-# Execute_AC_5 48_6_1 48_6_1 # ASSERTION FAIL [c_latency <= cig->c_latency]
+Execute_AC_5 48_6_1 48_6_1

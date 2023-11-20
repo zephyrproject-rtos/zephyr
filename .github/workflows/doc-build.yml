@@ -50,6 +50,7 @@ jobs:
         fetch-depth: 0
 
     - name: Rebase
+      if: github.event_name == 'pull_request'
       continue-on-error: true
       env:
         BASE_REF: ${{ github.base_ref }}
@@ -160,6 +161,10 @@ jobs:
       cancel-in-progress: true
 
     steps:
+    - name: Apply container owner mismatch workaround
+      run: |
+        git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
     - name: checkout
       uses: actions/checkout@v3
 

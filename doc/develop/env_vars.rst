@@ -72,7 +72,7 @@ Option 2: In all Terminals
       You can then run ``rapidee`` from your terminal to launch the program and set
       environment variables. Make sure to use the "User" environment variables area
       -- otherwise, you have to run RapidEE as administrator. Also make sure to save
-      your changes by clicking the Save button at top left before exiting.Settings
+      your changes by clicking the Save button at top left before exiting. Settings
       you make in RapidEE will be available whenever you open a new terminal window.
 
 .. _env_vars_zephyrrc:

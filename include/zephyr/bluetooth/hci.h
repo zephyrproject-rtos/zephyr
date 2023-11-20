@@ -97,6 +97,19 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
  */
 int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
 
+/** @brief Obtain the version string given a core version number.
+ *
+ * The core version of a controller can be obtained by issuing
+ * the HCI Read Local Version Information command.
+ *
+ * See also the defines prefixed with BT_HCI_VERSION_.
+ *
+ * @param core_version The core version.
+ *
+ * @return Version string corresponding to the core version number.
+ */
+const char *bt_hci_get_ver_str(uint8_t core_version);
+
 /** @typedef bt_hci_vnd_evt_cb_t
   * @brief Callback type for vendor handling of HCI Vendor-Specific Events.
   *

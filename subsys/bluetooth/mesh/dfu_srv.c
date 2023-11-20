@@ -125,10 +125,10 @@ static void verify(struct bt_mesh_dfu_srv *srv)
 	}
 }
 
-static int handle_info_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 	uint8_t idx, limit;
 
 	if (srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
@@ -187,10 +187,10 @@ static int handle_info_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ct
 	return 0;
 }
 
-static int handle_metadata_check(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_metadata_check(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 	enum bt_mesh_dfu_status status;
 	enum bt_mesh_dfu_effect effect;
 	uint8_t idx;
@@ -239,10 +239,10 @@ static void update_status_rsp(struct bt_mesh_dfu_srv *srv,
 	bt_mesh_model_send(srv->mod, ctx, &buf, send_cb, srv);
 }
 
-static int handle_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 
 	LOG_DBG("");
 
@@ -262,10 +262,10 @@ static inline bool is_active_update(struct bt_mesh_dfu_srv *srv, uint8_t idx,
 		srv->update.meta != meta_checksum);
 }
 
-static int handle_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 	const struct bt_mesh_blob_io *io;
 	uint16_t timeout_base, meta_checksum;
 	enum bt_mesh_dfu_status status;
@@ -371,10 +371,10 @@ rsp:
 	return 0;
 }
 
-static int handle_cancel(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 
 	if (srv->update.idx == UPDATE_IDX_NONE) {
 		goto rsp;
@@ -392,10 +392,10 @@ rsp:
 	return 0;
 }
 
-static int handle_apply(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_apply(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 	static const struct bt_mesh_send_cb send_cb = {
 		.start = apply_rsp_sending,
 		.end = apply_rsp_sent,
@@ -435,9 +435,9 @@ const struct bt_mesh_model_op _bt_mesh_dfu_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int dfu_srv_init(struct bt_mesh_model *mod)
+static int dfu_srv_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 
 	srv->mod = mod;
 	srv->update.idx = UPDATE_IDX_NONE;
@@ -455,11 +455,11 @@ static int dfu_srv_init(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static int dfu_srv_settings_set(struct bt_mesh_model *mod, const char *name,
+static int dfu_srv_settings_set(const struct bt_mesh_model *mod, const char *name,
 				size_t len_rd, settings_read_cb read_cb,
 				void *cb_arg)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 	ssize_t len;
 
 	if (len_rd < sizeof(srv->update)) {
@@ -484,9 +484,9 @@ static int dfu_srv_settings_set(struct bt_mesh_model *mod, const char *name,
 	return 0;
 }
 
-static void dfu_srv_reset(struct bt_mesh_model *mod)
+static void dfu_srv_reset(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfu_srv *srv = mod->user_data;
+	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
 
 	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
 	erase_state(srv);

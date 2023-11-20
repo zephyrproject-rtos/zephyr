@@ -148,6 +148,12 @@ struct zbus_channel_observation {
 	const struct zbus_observer *const obs;
 };
 
+#ifdef __cplusplus
+#define _ZBUS_CPP_EXTERN extern
+#else
+#define _ZBUS_CPP_EXTERN
+#endif /* __cplusplus */
+
 #if defined(CONFIG_ZBUS_ASSERT_MOCK)
 #define _ZBUS_ASSERT(_cond, _fmt, ...)                                                             \
 	do {                                                                                       \
@@ -304,7 +310,7 @@ struct zbus_channel_observation {
 	static struct zbus_channel_data _CONCAT(_zbus_chan_data_, _name) = {                       \
 		.observers_start_idx = -1, .observers_end_idx = -1};                               \
 	static K_MUTEX_DEFINE(_CONCAT(_zbus_mutex_, _name));                                       \
-	const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                                     \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_channel, _name) = {                    \
 		ZBUS_CHANNEL_NAME_INIT(_name) /* Maybe removed */                                  \
 			.message = &_CONCAT(_zbus_message_, _name),                                \
 		.message_size = sizeof(_type), .user_data = _user_data, .validator = (_validator), \

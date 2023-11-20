@@ -316,7 +316,7 @@ Pull Requests and Issues
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Discord
+conversation on the `Zephyr devel mailing list`_ (or the `Zephyr Discord
 Server`_) to see what others think of your issue (and proposed solution).  You
 may find others that have encountered the issue you're finding, or that have
 similar ideas for changes or additions.  Send a message to the `Zephyr devel
@@ -360,7 +360,7 @@ gitlint
 
 When you submit a pull request to the project, a series of checks are
 performed to verify your commit messages meet the requirements. The same step
-done during the CI process can be performed locally using the the ``gitlint``
+done during the CI process can be performed locally using the ``gitlint``
 command.
 
 Run ``gitlint`` locally in your tree and branch where your patches have been
@@ -651,8 +651,8 @@ workflow here:
    request for the ``main`` branch. The title and message from your commit
    message should appear as well.
 
-#. GitHub will assign one or more suggested reviewers (based on the
-   CODEOWNERS file in the repo). If you are a project member, you can
+#. A bot will assign one or more suggested reviewers (based on the
+   MAINTAINERS file in the repo). If you are a project member, you can
    select additional reviewers now too.
 
 #. Click on the submit button and your pull request is sent and awaits

@@ -306,6 +306,12 @@ struct elf32_rel {
 	elf32_word r_info;
 };
 
+struct elf32_rela {
+	elf32_addr r_offset;
+	elf32_word r_info;
+	elf32_word r_addend;
+};
+
 /**
  * @brief Relocation symbol index from r_info
  *
@@ -328,6 +334,12 @@ struct elf64_rel {
 	elf64_addr r_offset;
 	/** Information about relocation, related symbol and type */
 	elf64_xword r_info;
+};
+
+struct elf64_rela {
+	elf64_addr r_offset;
+	elf64_word r_info;
+	elf64_word r_addend;
 };
 
 /** @brief Relocation symbol from r_info
@@ -435,7 +447,8 @@ typedef elf64_half elf_half;
 /** Machine sized integer */
 typedef elf64_xword elf_word;
 /** Machine sized relocation struct */
-typedef struct elf64_rela elf_rel_t;
+typedef struct elf64_rel elf_rel_t;
+typedef struct elf64_rela elf_rela_t;
 /** Machine sized symbol struct */
 typedef struct elf64_sym elf_sym_t;
 /** Machine sized macro alias for obtaining a relocation symbol */
@@ -461,6 +474,7 @@ typedef elf32_half elf_half;
 typedef elf32_word elf_word;
 /** Machine sized relocation struct */
 typedef struct elf32_rel elf_rel_t;
+typedef struct elf32_rela elf_rela_t;
 /** Machine sized symbol struct */
 typedef struct elf32_sym elf_sym_t;
 /** Machine sized macro alias for obtaining a relocation symbol */

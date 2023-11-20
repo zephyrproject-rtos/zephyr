@@ -106,6 +106,7 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 #define DMA_NAME(i, _) test_dma##i
 #define DMA_LIST       LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
 
+#if CONFIG_DMA_TRANSFER_BURST16
 #define TEST_TASK(dma_name)                                                                        \
 	ZTEST(dma_m2m, test_##dma_name##_m2m_chan0_burst8)                                         \
 	{                                                                                          \
@@ -130,5 +131,19 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
 		zassert_true((test_task(dma, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16) == TC_PASS));   \
 	}
+#else
+#define TEST_TASK(dma_name)                                                                        \
+	ZTEST(dma_m2m, test_##dma_name##_m2m_chan0_burst8)                                         \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_task(dma, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8) == TC_PASS));    \
+	}                                                                                          \
+                                                                                                   \
+	ZTEST(dma_m2m, test_##dma_name##_m2m_chan1_burst8)                                         \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_task(dma, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8) == TC_PASS));    \
+	}
+#endif
 
 FOR_EACH(TEST_TASK, (), DMA_LIST);

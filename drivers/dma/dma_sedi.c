@@ -254,9 +254,8 @@ static int dma_sedi_chan_config(const struct device *dev, uint32_t channel,
 
 	const struct dma_sedi_config_info *const info = DEV_CFG(dev);
 	struct dma_sedi_driver_data *const data = DEV_DATA(dev);
-	struct dma_config *local_config = &(data->dma_configs[channel]);
 
-	local_config->head_block = config->head_block;
+	memcpy(&(data->dma_configs[channel]), config, sizeof(struct dma_config));
 
 	/* initialize the dma controller, following the sedi api*/
 	sedi_dma_event_cb_t cb = dma_handler;
@@ -366,58 +365,6 @@ static int dma_sedi_init(const struct device *dev)
 
 	return 0;
 }
-
-#ifdef CONFIG_PM_DEVICE
-
-static bool is_dma_busy(sedi_dma_t dev)
-{
-	sedi_dma_status_t chn_status;
-
-	for (int chn = 0; chn < DMA_CHANNEL_NUM; chn++) {
-		sedi_dma_get_status(dev, chn, &chn_status);
-		if (chn_status.busy == 1) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static int dma_change_device_power(const struct device *dev,
-		enum pm_device_action action)
-{
-	struct dma_sedi_driver_data *const data = DEV_DATA(dev);
-	const struct dma_sedi_config_info *const info = DEV_CFG(dev);
-	sedi_dma_t dma_dev = info->peripheral_id;
-	int ret;
-
-	sedi_power_state_t state;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		state = SEDI_POWER_FULL;
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		if (is_dma_busy(dma_dev)) {
-			return -EBUSY;
-		}
-		state = SEDI_POWER_SUSPEND;
-		break;
-
-	default:
-		return -ENOTSUP;
-	}
-
-	for (uint8_t chn = 0; chn < DMA_CHANNEL_NUM; chn++) {
-		ret = sedi_dma_set_power(dma_dev, chn, state);
-		if (ret != SEDI_DRIVER_OK) {
-			return -EIO;
-		}
-	}
-
-	return 0;
-}
-
-#endif
 
 #define DMA_DEVICE_INIT_SEDI(inst) \
 	static void dma_sedi_##inst##_irq_config(void);			\

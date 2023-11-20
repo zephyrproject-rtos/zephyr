@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,17 +33,18 @@
 #include "usb_phy.h"
 #include "usb.h"
 #endif
+#include "memc_nxp_flexram.h"
 
 #include <cmsis_core.h>
 
 #define DUAL_CORE_MU_ENABLED \
-	(CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX_REV2)
+	(CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX)
 
 #if DUAL_CORE_MU_ENABLED
 /* Dual core mode is enabled, and messaging unit is present */
 #include <fsl_mu.h>
 #define BOOT_FLAG 0x1U
-#define MU_BASE (MU_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_mu_rev2))
+#define MU_BASE (MU_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_mu))
 #endif
 
 #if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
@@ -689,6 +690,11 @@ static int imxrt_init(void)
 void z_arm_platform_init(void)
 {
 	SystemInit();
+
+#if defined(FLEXRAM_RUNTIME_BANKS_USED)
+	/* Configure flexram if not running from RAM */
+	memc_flexram_dt_partition();
+#endif
 }
 #endif
 

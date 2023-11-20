@@ -515,13 +515,16 @@ enum ieee802154_hw_caps {
 	/** TX security supported (key management, encryption and authentication) */
 	IEEE802154_HW_TX_SEC = BIT(11),
 
+	/** RxOnWhenIdle handling supported */
+	IEEE802154_RX_ON_WHEN_IDLE = BIT(12),
+
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
 	 */
 };
 
 /** @brief Number of bits used by ieee802154_hw_caps type. */
-#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (12)
+#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (13)
 
 /** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
 #define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
@@ -622,6 +625,9 @@ enum ieee802154_tx_mode {
 	 * Transmit packet in the future, perform CCA before transmission.
 	 *
 	 * @note requires IEEE802154_HW_TXTIME capability.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 
@@ -699,7 +705,8 @@ enum ieee802154_config_type {
 	 * larger than the current frame counter associated with the same key,
 	 * see sections 8.2.2, 9.2.4 g/h) and 9.4.3.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_MAC_KEYS,
 
@@ -715,7 +722,8 @@ enum ieee802154_config_type {
 	 * Drivers SHALL return -EINVAL in case the configured frame counter
 	 * does not conform to this requirement.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
@@ -723,7 +731,8 @@ enum ieee802154_config_type {
 	 * Sets the current MAC frame counter value if the provided value is greater than
 	 * the current one.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 *
 	 * @warning This configuration option does not conform to the
 	 * requirements specified in #61227 as it is redundant with @ref
@@ -777,6 +786,9 @@ enum ieee802154_config_type {
 	 *
 	 * @note requires @ref IEEE802154_HW_RXTIME capability and is available
 	 * in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
@@ -906,6 +918,9 @@ enum ieee802154_config_type {
 	 *                                         +--------------------- loop ---------+
 	 *
 	 * @note Available in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
@@ -957,6 +972,9 @@ enum ieee802154_config_type {
 	 * same clock (as in PTP).
 	 *
 	 * @note Available in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_EXPECTED_RX_TIME,
 
@@ -1033,8 +1051,43 @@ enum ieee802154_config_type {
 	 * @note requires @ref IEEE802154_HW_RX_TX_ACK capability and is
 	 * available in any interface operational state. Currently we only
 	 * support header IEs but that may change in the future.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
+	 *
+	 * @note Required for Thread 1.2 Link Metrics feature (see Thread
+	 * specification 1.2.0, ch. 4.11.3.3).
 	 */
 	IEEE802154_CONFIG_ENH_ACK_HEADER_IE,
+
+	/**
+	 * Enable/disable RxOnWhenIdle MAC PIB attribute (Table 8-94).
+	 *
+	 * Since there is no clear guidance in IEEE 802.15.4 specification about the definition of
+	 * an "idle period", this implementation expects that drivers use the RxOnWhenIdle attribute
+	 * to determine next radio state (false --> off, true --> receive) in the following
+	 * scenarios:
+	 * - Finalization of a regular frame reception task, provided that:
+	 *   - The frame is received without errors and passes the filtering and it's not an
+	 *     spurious ACK.
+	 *   - ACK is not requested or transmission of ACK is not possible due to internal
+	 *     conditions.
+	 * - Finalization of a frame transmission or transmission of an ACK frame, when ACK is not
+	 *     requested in the transmitted frame.
+	 * - Finalization of the reception operation of a requested ACK due to:
+	 *   - ACK timeout expiration.
+	 *   - Reception of an invalid ACK or not an ACK frame.
+	 *   - Reception of the proper ACK, unless the transmitted frame was a Data Request Command
+	 *     and the frame pending bit on the received ACK is set to true. In this case the radio
+	 *     platform implementation SHOULD keep the receiver on until a determined timeout which
+	 *     triggers an idle period start.
+	 * - Finalization of a stand alone CCA task.
+	 * - Finalization of a CCA operation with busy result during CSMA/CA procedure.
+	 * - Finalization of an Energy Detection task.
+	 * - Finalization of a scheduled radio reception window
+	 *     (see @ref IEEE802154_CONFIG_RX_SLOT).
+	 */
+	IEEE802154_CONFIG_RX_ON_WHEN_IDLE,
 
 	/** Number of types defined in ieee802154_config_type. */
 	IEEE802154_CONFIG_COMMON_COUNT,
@@ -1081,6 +1134,9 @@ struct ieee802154_config {
 
 		/** see @ref IEEE802154_CONFIG_PROMISCUOUS */
 		bool promiscuous;
+
+		/** see @ref IEEE802154_CONFIG_RX_ON_WHEN_IDLE */
+		bool rx_on_when_idle;
 
 		/** see @ref IEEE802154_CONFIG_EVENT_HANDLER */
 		ieee802154_event_cb_t event_handler;

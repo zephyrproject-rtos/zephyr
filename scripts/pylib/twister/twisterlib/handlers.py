@@ -56,7 +56,7 @@ def terminate_process(proc):
     for child in psutil.Process(proc.pid).children(recursive=True):
         try:
             os.kill(child.pid, signal.SIGTERM)
-        except ProcessLookupError:
+        except (ProcessLookupError, psutil.NoSuchProcess):
             pass
     proc.terminate()
     # sleep for a while before attempting to kill
@@ -182,7 +182,7 @@ class BinaryHandler(Handler):
             self.pid_fn = None  # clear so we don't try to kill the binary twice
             try:
                 os.kill(pid, signal.SIGKILL)
-            except ProcessLookupError:
+            except (ProcessLookupError, psutil.NoSuchProcess):
                 pass
 
     def _output_reader(self, proc):
@@ -246,7 +246,7 @@ class BinaryHandler(Handler):
                        "--track-origins=yes",
                        ] + command
 
-        # Only valid for native_posix
+        # Only valid for native_sim
         if self.seed is not None:
             command.append(f"--seed={self.seed}")
         if self.extra_test_args is not None:
@@ -805,7 +805,7 @@ class QEMUHandler(Handler):
             try:
                 if pid:
                     os.kill(pid, signal.SIGTERM)
-            except ProcessLookupError:
+            except (ProcessLookupError, psutil.NoSuchProcess):
                 # Oh well, as long as it's dead! User probably sent Ctrl-C
                 pass
 
@@ -864,6 +864,8 @@ class QEMUHandler(Handler):
                         if cpu_time < timeout and not out_state:
                             timeout_time = time.time() + (timeout - cpu_time)
                             continue
+                except psutil.NoSuchProcess:
+                    pass
                 except ProcessLookupError:
                     out_state = "failed"
                     break

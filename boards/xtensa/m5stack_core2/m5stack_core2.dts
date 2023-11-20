@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/regulator/axp192.h>
 
 / {
-	model = "esp32";
-	compatible = "espressif,esp32";
+	model = "M5Stack Core2";
+	compatible = "m5stack,core2";
 
 	aliases {
 		pwr-led = &pwr_led;

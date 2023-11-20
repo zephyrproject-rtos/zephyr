@@ -1,6 +1,6 @@
 # NXP S32Z/E MCUs family
 
-# Copyright 2022 NXP
+# Copyright 2022-2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -18,7 +18,7 @@ if SOC_SERIES_S32ZE_R52
 config SOC_PART_NUMBER_S32Z27
 	bool
 
-config SOC_PART_NUMBER_S32ZE_R52
+config SOC_PART_NUMBER
 	string
 	default "S32Z27" if SOC_PART_NUMBER_S32Z27
 	help

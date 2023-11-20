@@ -21,5 +21,6 @@ config CHARGER_INIT_PRIORITY
 
 source "drivers/charger/Kconfig.sbs_charger"
 source "drivers/charger/Kconfig.bq24190"
+source "drivers/charger/Kconfig.max20335"
 
 endif # CHARGER

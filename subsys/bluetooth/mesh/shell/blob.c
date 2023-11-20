@@ -271,7 +271,7 @@ static int cmd_flash_stream_unset(const struct shell *sh, size_t argc, char *arg
 
 #if defined(CONFIG_BT_MESH_SHELL_BLOB_CLI)
 
-static struct bt_mesh_model *mod_cli;
+static const struct bt_mesh_model *mod_cli;
 
 static void blob_cli_inputs_prepare(uint16_t group)
 {
@@ -351,7 +351,7 @@ static int cmd_tx(const struct shell *sh, size_t argc, char *argv[])
 			    "pull",
 		    blob_cli_xfer.xfer.size, group);
 
-	err = bt_mesh_blob_cli_send((struct bt_mesh_blob_cli *)mod_cli->user_data,
+	err = bt_mesh_blob_cli_send((struct bt_mesh_blob_cli *)mod_cli->rt->user_data,
 				    &blob_cli_xfer.inputs,
 				    &blob_cli_xfer.xfer, bt_mesh_shell_blob_io);
 	if (err) {
@@ -421,7 +421,7 @@ static int cmd_caps(const struct shell *sh, size_t argc, char *argv[])
 
 	blob_cli_inputs_prepare(group);
 
-	err = bt_mesh_blob_cli_caps_get((struct bt_mesh_blob_cli *)mod_cli->user_data,
+	err = bt_mesh_blob_cli_caps_get((struct bt_mesh_blob_cli *)mod_cli->rt->user_data,
 					&blob_cli_xfer.inputs);
 	if (err) {
 		shell_print(sh, "Boundary check start failed (err: %d)", err);
@@ -438,7 +438,7 @@ static int cmd_tx_cancel(const struct shell *sh, size_t argc,
 	}
 
 	shell_print(sh, "Cancelling transfer");
-	bt_mesh_blob_cli_cancel((struct bt_mesh_blob_cli *)mod_cli->user_data);
+	bt_mesh_blob_cli_cancel((struct bt_mesh_blob_cli *)mod_cli->rt->user_data);
 
 	return 0;
 }
@@ -465,7 +465,7 @@ static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 
 	blob_cli_inputs_prepare(group);
 
-	err = bt_mesh_blob_cli_xfer_progress_get((struct bt_mesh_blob_cli *)mod_cli->user_data,
+	err = bt_mesh_blob_cli_xfer_progress_get((struct bt_mesh_blob_cli *)mod_cli->rt->user_data,
 						 &blob_cli_xfer.inputs);
 	if (err) {
 		shell_print(sh, "ERR %d", err);
@@ -482,7 +482,7 @@ static int cmd_tx_suspend(const struct shell *sh, size_t argc,
 	}
 
 	shell_print(sh, "Suspending transfer");
-	bt_mesh_blob_cli_suspend((struct bt_mesh_blob_cli *)mod_cli->user_data);
+	bt_mesh_blob_cli_suspend((struct bt_mesh_blob_cli *)mod_cli->rt->user_data);
 
 	return 0;
 }
@@ -494,7 +494,7 @@ static int cmd_tx_resume(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Resuming transfer");
-	bt_mesh_blob_cli_resume((struct bt_mesh_blob_cli *)mod_cli->user_data);
+	bt_mesh_blob_cli_resume((struct bt_mesh_blob_cli *)mod_cli->rt->user_data);
 
 	return 0;
 }
@@ -503,7 +503,7 @@ static int cmd_tx_resume(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_MESH_SHELL_BLOB_SRV)
 
-static struct bt_mesh_model *mod_srv;
+static const struct bt_mesh_model *mod_srv;
 
 static int cmd_rx(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -530,7 +530,7 @@ static int cmd_rx(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Receive BLOB 0x%x", id);
-	err = bt_mesh_blob_srv_recv((struct bt_mesh_blob_srv *)mod_srv->user_data,
+	err = bt_mesh_blob_srv_recv((struct bt_mesh_blob_srv *)mod_srv->rt->user_data,
 				    id, bt_mesh_shell_blob_io, BT_MESH_TTL_MAX, timeout_base);
 	if (err) {
 		shell_print(sh, "BLOB RX setup failed (%d)", err);
@@ -548,7 +548,7 @@ static int cmd_rx_cancel(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Cancelling BLOB rx");
-	err = bt_mesh_blob_srv_cancel((struct bt_mesh_blob_srv *)mod_srv->user_data);
+	err = bt_mesh_blob_srv_cancel((struct bt_mesh_blob_srv *)mod_srv->rt->user_data);
 	if (err) {
 		shell_print(sh, "BLOB cancel failed (%d)", err);
 	}

@@ -12,6 +12,7 @@ tests:
       - m2gl025_miv
       - qemu_xtensa
       - esp32s2_saola
+      - esp32s2_lolin_mini
       - esp32s3_devkitm
     filter: not CONFIG_SOC_NSIM
     timeout: 480

@@ -118,19 +118,7 @@ zephyr_include_directories(
 
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
-# Don't add non-existing include directories, it creates noise and
-# warnings in some tooling
-foreach(optional_include_dir
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include/${SOC_NAME}
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
-  )
-  if(EXISTS ${optional_include_dir})
-    zephyr_include_directories(${optional_include_dir})
-  endif()
-endforeach()
+zephyr_include_directories(${SOC_DIR}/${ARCH}/${SOC_PATH})
 
 # Don't inherit compiler flags from the environment
 foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
@@ -1774,7 +1762,7 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       COMMENT "Building native simulator runner, and linking final executable"
       COMMAND
       ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
-        -r NSI_CONFIG_FILE=${CMAKE_BINARY_DIR}/zephyr/NSI/nsi_config
+        -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
       # nsi_config is created by the board cmake file
       DEPENDS ${logical_target_for_zephyr_elf}
       BYPRODUCTS ${KERNEL_EXE_NAME}

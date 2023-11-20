@@ -28,28 +28,25 @@ core on the simulated nRF5340 SOC.
 
 These boards include models of some of the nRF5340 SOC peripherals:
 
-* Radio
-* Timers
 * AAR (Accelerated Address Resolver)
 * AES CCM & AES ECB encryption HW
 * CLOCK (Clock control)
 * DPPI (Distributed Programmable Peripheral Interconnect)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
+* IPC (Interprocessor communication)
+* MUTEX (Mutual exclusive peripheral)
 * NVMC (Non-Volatile Memory Controller / Flash)
+* RADIO
 * RNG (Random Number Generator)
 * RTC (Real Time Counter)
 * TEMP (Temperature sensor)
+* TIMER
 * UICR (User Information Configuration Registers)
 
 and will use the same drivers as the nrf5340dk targets for these.
 For more information on what is modelled to which level of detail,
 check the `HW models implementation status`_.
-
-.. note::
-
-   The IPC and MUTEX peripherals are not yet present in these models. Therefore communication
-   between the cores using Zephyr's IPC driver is not yet possible.
 
 Note that unlike a real nrf5340 device, the nrf5340bsim boards have unlimited RAM and flash for
 code.

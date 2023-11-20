@@ -785,6 +785,7 @@ TESTDATA_4 = [
 )
 def test_projectbuilder_log_info(
     caplog,
+    mocked_jobserver,
     inline_logs,
     read_exception,
     expected_logs
@@ -802,10 +803,14 @@ def test_projectbuilder_log_info(
 
     filename = 'dummy_file.log'
 
+    env_mock = mock.Mock()
+    instance_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     with mock.patch('builtins.open', mock_open), \
          mock.patch('os.path.realpath', mock_realpath), \
          mock.patch('os.path.abspath', mock_abspath):
-        ProjectBuilder.log_info(filename, inline_logs)
+        pb.log_info(filename, inline_logs)
 
     assert all([log in caplog.text for log in expected_logs])
 
@@ -1876,14 +1881,14 @@ def test_projectbuilder_sanitize_zephyr_base_from_files(
 TESTDATA_13 = [
     (
         'error', True, True, False,
-        ['INFO     twister:runner.py:950 20/25 dummy platform' \
+        ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                                ERROR dummy reason (cmake)'],
         None
     ),
     (
         'failed', False, False, False,
-        ['ERROR    twister:runner.py:904 dummy platform' \
+        ['ERROR     dummy platform' \
          '            dummy.testsuite.name' \
          '                                FAILED : dummy reason'],
         'INFO    - Total complete:   20/  25  80%  skipped:    3,' \
@@ -1891,7 +1896,7 @@ TESTDATA_13 = [
     ),
     (
         'skipped', True, False, False,
-        ['INFO     twister:runner.py:950 20/25 dummy platform' \
+        ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               SKIPPED (dummy reason)'],
         None
@@ -1904,7 +1909,7 @@ TESTDATA_13 = [
     ),
     (
         'passed', True, False, True,
-        ['INFO     twister:runner.py:950 20/25 dummy platform' \
+        ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED' \
          ' (dummy handler type: dummy dut, 60.000s)'],
@@ -1912,7 +1917,7 @@ TESTDATA_13 = [
     ),
     (
         'passed', True, False, False,
-        ['INFO     twister:runner.py:950 20/25 dummy platform' \
+        ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED (build)'],
         None
@@ -1925,7 +1930,7 @@ TESTDATA_13 = [
     ),
     (
         'timeout', True, False, True,
-        ['INFO     twister:runner.py:950 20/25 dummy platform' \
+        ['INFO      20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               UNKNOWN' \
          ' (dummy handler type: dummy dut, 60.000s/seed: 123)'],
@@ -1988,11 +1993,13 @@ def test_projectbuilder_report_out(
 
     assert results_mock.cases == 25
 
-    assert all([log in re.sub(
+    trim_actual_log = re.sub(
         r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])',
         '',
         caplog.text
-    ) for log in expected_logs])
+    )
+    trim_actual_log = re.sub(r'twister:runner.py:\d+', '', trim_actual_log)
+    assert all([log in trim_actual_log for log in expected_logs])
 
     if expected_out:
         out, err = capfd.readouterr()
@@ -2093,7 +2100,7 @@ TESTDATA_14 = [
         True,
         'device',
         234,
-        'native_posix',
+        'native_sim',
         'posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_POSIX': 'y'},
         'pytest',
@@ -2108,7 +2115,7 @@ TESTDATA_14 = [
         True,
         'not device',
         None,
-        'native_posix',
+        'native_sim',
         'not posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_POSIX': 'y'},
         'not pytest',
@@ -2123,7 +2130,7 @@ TESTDATA_14 = [
         False,
         'device',
         234,
-        'native_posix',
+        'native_sim',
         'posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_POSIX': 'y'},
         'pytest',

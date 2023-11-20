@@ -140,6 +140,7 @@ depends on" relation:
 - a node directly depends on any nodes its properties refer to by phandle
 - a node directly depends on its ``interrupt-parent`` if it has an
   ``interrupts`` property
+- a parent node inherits all dependencies from its child nodes
 
 A *dependency ordering* of a devicetree is a list of its nodes, where each node
 ``n`` appears earlier in the list than any nodes that depend on ``n``. A node's
@@ -423,6 +424,9 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,log-uart
+     - Sets the UART device(s) used by the logging subsystem's UART backend.
+       If defined, the UART log backend would output to the devices listed in this node.
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
    * - zephyr,osdp-uart

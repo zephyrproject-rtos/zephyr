@@ -67,6 +67,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 			(void)memcpy(metadata, base->subgroups[0].codec_cfg.meta,
 				     sizeof(base->subgroups[0].codec_cfg.meta));
 
+			printk("Metadata updated\n");
 			SET_FLAG(flag_base_metadata_updated);
 		}
 
@@ -263,7 +264,10 @@ static void recv_cb(struct bt_bap_stream *stream,
 {
 	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
 
-	printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len, info->ts);
+	if ((test_stream->rx_cnt % 100U) == 0U) {
+		printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len,
+		       info->ts);
+	}
 
 	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
 		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
@@ -276,7 +280,11 @@ static void recv_cb(struct bt_bap_stream *stream,
 	}
 
 	if (info->flags & BT_ISO_FLAGS_ERROR) {
-		FAIL("ISO receive error\n");
+		/* Fail the test if we have not received what we expected */
+		if (!TEST_FLAG(flag_received)) {
+			FAIL("ISO receive error\n");
+		}
+
 		return;
 	}
 
@@ -654,15 +662,19 @@ static void test_common(void)
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	/* Ensure that we also see the metadata update */
 	printk("Waiting for metadata update\n");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 }
 
 static void test_main(void)
 {
 	test_common();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
@@ -692,6 +704,8 @@ static void test_sink_disconnect(void)
 
 	test_broadcast_delete_inval();
 	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
 	PASS("Broadcast sink disconnect passed\n");
 }
@@ -728,6 +742,12 @@ static void broadcast_sink_with_assistant(void)
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
+
+	/* Ensure that we also see the metadata update */
+	printk("Waiting for metadata update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated)
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	printk("Waiting for BIG sync terminate request\n");
 	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
@@ -737,6 +757,8 @@ static void broadcast_sink_with_assistant(void)
 	WAIT_FOR_UNSET_FLAG(flag_pa_request);
 	test_pa_sync_delete();
 	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
 	PASS("Broadcast sink with assistant passed\n");
 }

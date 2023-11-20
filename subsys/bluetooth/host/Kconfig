@@ -163,12 +163,13 @@ rsource "../mesh/Kconfig"
 rsource "../audio/Kconfig"
 
 config BT_HOST_CRYPTO
-	# Hidden option that compiles in AES encryption support using TinyCrypt
-	# library if this is not provided by the controller implementation.
-	bool
+	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
 	select TINYCRYPT
 	select TINYCRYPT_AES
+	help
+	  The option adds the AES encryption support using TinyCrypt
+	  library if this is not provided by the controller implementation.
 
 config BT_HOST_CRYPTO_PRNG
 	bool "Use Tinycrypt library for random number generation"
@@ -467,6 +468,18 @@ config BT_RPA_TIMEOUT_DYNAMIC
 	help
 	  This option allows the user to override the default value of
 	  the Resolvable Private Address timeout using dedicated APIs.
+
+config BT_RPA_SHARING
+	bool "Share the Resolvable Private Address between advertising sets"
+	depends on BT_PRIVACY && BT_EXT_ADV
+	help
+	  This option configures the advertising sets linked with the same
+	  Bluetooth identity to use the same Resolvable Private Address in
+	  a given rotation period. After the RPA timeout, the new RPA is
+	  generated and shared between the advertising sets in the subsequent
+	  rotation period. When this option is disabled, the generated RPAs
+	  of the advertising sets differ from each other in a given rotation
+	  period.
 
 config BT_SIGNING
 	bool "Data signing support"

@@ -890,7 +890,24 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_RECEIVE_TIMING;
 	}
 
+	if (radio_caps & IEEE802154_RX_ON_WHEN_IDLE) {
+		caps |= OT_RADIO_CAPS_RX_ON_WHEN_IDLE;
+	}
+
 	return caps;
+}
+
+void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aRxOnWhenIdle)
+{
+	struct ieee802154_config config = {
+		.rx_on_when_idle = aRxOnWhenIdle
+	};
+
+	ARG_UNUSED(aInstance);
+
+	LOG_DBG("RxOnWhenIdle=%d", aRxOnWhenIdle ? 1 : 0);
+
+	radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_ON_WHEN_IDLE, &config);
 }
 
 bool otPlatRadioGetPromiscuous(otInstance *aInstance)
@@ -1414,7 +1431,7 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 
 	header_ie_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
 						aLinkMetrics.mRssi, header_ie_buf);
-	config.ack_ie.header_ie = (struct ieee802154_ie_header *)header_ie_buf;
+	config.ack_ie.header_ie = (struct ieee802154_header_ie *)header_ie_buf;
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;

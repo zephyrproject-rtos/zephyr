@@ -116,11 +116,31 @@ The current minimum required version for the main dependencies are:
 
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
+      #. After the Homebrew installation script completes, follow the on-screen
+         instructions to add the Homebrew installation to the path.
+
+         * On macOS running on Apple Silicon, this is achieved with:
+
+           .. code-block:: bash
+
+              (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
+              source ~/.zprofile
+
+         * On macOS running on Intel, use the command for Apple Silicon, but replace ``/opt/homebrew/`` with ``/usr/local/``.
+
       #. Use ``brew`` to install the required dependencies:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc wget libmagic
+            brew install cmake ninja gperf python3 ccache qemu dtc libmagic
+
+      #. Add the Homebrew Python folder to the path, in order to be able to
+         execute ``python`` and ``pip`` as well ``python3`` and ``pip3``.
+
+           .. code-block:: bash
+
+              (echo; echo 'export PATH="'$(brew --prefix)'/opt/python/libexec/bin:$PATH"') >> ~/.zprofile
+              source ~/.zprofile
 
    .. group-tab:: Windows
 
@@ -134,8 +154,9 @@ The current minimum required version for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      These instructions must be run in a ``cmd.exe`` command prompt. The
-      required commands differ on PowerShell.
+      These instructions must be run in a ``cmd.exe`` command prompt terminal window.
+      In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
+      application from the Microsoft Store. The required commands differ on PowerShell.
 
       These instructions rely on `Chocolatey`_. If Chocolatey isn't an option,
       you can install dependencies from their respective websites and ensure
@@ -148,9 +169,9 @@ The current minimum required version for the main dependencies are:
 
       #. `Install chocolatey`_.
 
-      #. Open a ``cmd.exe`` window as **Administrator**. To do so, press the Windows key,
-         type "cmd.exe", right-click the result, and choose :guilabel:`Run as
-         Administrator`.
+      #. Open a ``cmd.exe`` terminal window as **Administrator**. To do so, press the Windows key,
+         type ``cmd.exe``, right-click the :guilabel:`Command Prompt`` search result, and choose
+         :guilabel:`Run as Administrator`.
 
       #. Disable global confirmation to avoid having to confirm the
          installation of individual programs:
@@ -171,7 +192,7 @@ The current minimum required version for the main dependencies are:
             As of November 2023, Python 3.12 is not recommended for Zephyr development on Windows,
             as some required Python dependencies may be difficult to install.
 
-      #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
+      #. Close the terminal window.
 
 .. _Chocolatey: https://chocolatey.org/
 .. _Install chocolatey: https://chocolatey.org/install
@@ -391,6 +412,8 @@ additional Python dependencies.
 
          .. group-tab:: Install within virtual environment
 
+            #. Open a ``cmd.exe`` terminal window **as a regular user**
+
             #. Create a new virtual environment:
 
                .. code-block:: bat
@@ -402,10 +425,7 @@ additional Python dependencies.
 
                .. code-block:: bat
 
-                  :: cmd.exe
                   zephyrproject\.venv\Scripts\activate.bat
-                  :: PowerShell
-                  zephyrproject\.venv\Scripts\Activate.ps1
 
                Once activated your shell will be prefixed with ``(.venv)``. The
                virtual environment can be deactivated at any time by running
@@ -447,6 +467,8 @@ additional Python dependencies.
 
          .. group-tab:: Install globally
 
+            #. Open a ``cmd.exe`` terminal window **as a regular user**
+
             #. Install west:
 
                .. code-block:: bat
@@ -478,8 +500,8 @@ additional Python dependencies.
                   pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
 
-Install Zephyr SDK
-******************
+Install the Zephyr SDK
+**********************
 
 The :ref:`Zephyr Software Development Kit (SDK) <toolchain_zephyr_sdk>`
 contains toolchains for each of Zephyr's supported architectures, which
@@ -489,156 +511,9 @@ Zephyr applications.
 It also contains additional host tools, such as custom QEMU and OpenOCD builds
 that are used to emulate, flash and debug Zephyr applications.
 
-.. tabs::
-
-   .. group-tab:: Ubuntu
-
-      .. _ubuntu_zephyr_sdk:
-
-      #. Download and verify the `Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
-
-         .. code-block:: bash
-
-            cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/zephyr-sdk-0.16.3_linux-x86_64.tar.xz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/sha256.sum | shasum --check --ignore-missing
-
-         If your host architecture is 64-bit ARM (for example, Raspberry Pi), replace ``x86_64``
-         with ``aarch64`` in order to download the 64-bit ARM Linux SDK.
-
-      #. Extract the Zephyr SDK bundle archive:
-
-         .. code-block:: bash
-
-            tar xvf zephyr-sdk-0.16.3_linux-x86_64.tar.xz
-
-         .. note::
-            It is recommended to extract the Zephyr SDK bundle at one of the following locations:
-
-            * ``$HOME``
-            * ``$HOME/.local``
-            * ``$HOME/.local/opt``
-            * ``$HOME/bin``
-            * ``/opt``
-            * ``/usr/local``
-
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.3`` directory and, when
-            extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.16.3``.
-
-      #. Run the Zephyr SDK bundle setup script:
-
-         .. code-block:: bash
-
-            cd zephyr-sdk-0.16.3
-            ./setup.sh
-
-         .. note::
-            You only need to run the setup script once after extracting the Zephyr SDK bundle.
-
-            You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
-            the initial setup.
-
-      #. Install `udev <https://en.wikipedia.org/wiki/Udev>`_ rules, which
-         allow you to flash most Zephyr boards as a regular user:
-
-         .. code-block:: bash
-
-            sudo cp ~/zephyr-sdk-0.16.3/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
-            sudo udevadm control --reload
-
-   .. group-tab:: macOS
-
-      .. _macos_zephyr_sdk:
-
-      #. Download and verify the `Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
-
-         .. code-block:: bash
-
-            cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/zephyr-sdk-0.16.3_macos-x86_64.tar.xz
-            wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/sha256.sum | shasum --check --ignore-missing
-
-         If your host architecture is 64-bit ARM (Apple Silicon, also known as M1), replace
-         ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
-
-      #. Extract the Zephyr SDK bundle archive:
-
-         .. code-block:: bash
-
-            tar xvf zephyr-sdk-0.16.3_macos-x86_64.tar.xz
-
-         .. note::
-            It is recommended to extract the Zephyr SDK bundle at one of the following locations:
-
-            * ``$HOME``
-            * ``$HOME/.local``
-            * ``$HOME/.local/opt``
-            * ``$HOME/bin``
-            * ``/opt``
-            * ``/usr/local``
-
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.3`` directory and, when
-            extracted under ``$HOME``, the resulting installation path will be
-            ``$HOME/zephyr-sdk-0.16.3``.
-
-      #. Run the Zephyr SDK bundle setup script:
-
-         .. code-block:: bash
-
-            cd zephyr-sdk-0.16.3
-            ./setup.sh
-
-         .. note::
-            You only need to run the setup script once after extracting the Zephyr SDK bundle.
-
-            You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
-            the initial setup.
-
-   .. group-tab:: Windows
-
-      .. _windows_zephyr_sdk:
-
-      #. Open a ``cmd.exe`` window by pressing the Windows key typing "cmd.exe".
-
-      #. Download the `Zephyr SDK bundle
-         <https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v0.16.3>`_:
-
-         .. code-block:: bat
-
-            cd %HOMEPATH%
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.3/zephyr-sdk-0.16.3_windows-x86_64.7z
-
-      #. Extract the Zephyr SDK bundle archive:
-
-         .. code-block:: bat
-
-            7z x zephyr-sdk-0.16.3_windows-x86_64.7z
-
-         .. note::
-            It is recommended to extract the Zephyr SDK bundle at one of the following locations:
-
-            * ``%HOMEPATH%``
-            * ``%PROGRAMFILES%``
-
-            The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.3`` directory and, when
-            extracted under ``%HOMEPATH%``, the resulting installation path will be
-            ``%HOMEPATH%\zephyr-sdk-0.16.3``.
-
-      #. Run the Zephyr SDK bundle setup script:
-
-         .. code-block:: bat
-
-            cd zephyr-sdk-0.16.3
-            setup.cmd
-
-         .. note::
-            You only need to run the setup script once after extracting the Zephyr SDK bundle.
-
-            You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
-            the initial setup.
+.. include:: ../toolchains/zephyr_sdk.rst
+   :start-after: toolchain_zephyr_sdk_install_start
+   :end-before: toolchain_zephyr_sdk_install_end
 
 .. _getting_started_run_sample:
 

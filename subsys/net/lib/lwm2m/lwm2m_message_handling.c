@@ -2065,6 +2065,13 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 		if (block_num < block_ctx->expected) {
 			LOG_WRN("Block already handled %d, expected %d", block_num,
 				block_ctx->expected);
+			(void)coap_header_set_code(msg->out.out_cpkt, COAP_RESPONSE_CODE_CONTINUE);
+			/* Respond with the original Block1 header, original Ack migh have been
+			 * lost, and this is a retry. We don't know the original response, but
+			 * since it is handled, just assume we can continue.
+			 */
+			(void)coap_append_option_int(msg->out.out_cpkt, COAP_OPTION_BLOCK1,
+						     block_opt);
 			return 0;
 		}
 		if (block_num > block_ctx->expected) {
@@ -2087,30 +2094,35 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 		 * number.
 		 */
 		block_ctx->expected += GET_BLOCK_SIZE(block_opt) - block_ctx->ctx.block_size + 1;
-
-		/* Handle blockwise 1 (Part 1): Set response code */
-		if (!last_block) {
-			msg->code = COAP_RESPONSE_CODE_CONTINUE;
-		}
 	}
 
 	r = do_write_op(msg, format);
 
 	/* Handle blockwise 1 (Part 2): Append BLOCK1 option / free context */
 	if (block_ctx) {
-		if (r >= 0 && !last_block) {
-			/* More to come, ack with correspond block # */
+		if (r >= 0) {
+			/* Add block1 option to response.
+			 * As RFC7959 Section-2.3, More flag is off, because we have already
+			 * written the data.
+			 */
 			r = coap_append_block1_option(msg->out.out_cpkt, &block_ctx->ctx);
 			if (r < 0) {
 				/* report as internal server error */
-				LOG_ERR("Fail adding block1 option: %d", r);
+				LOG_DBG("Fail adding block1 option: %d", r);
 				r = -EINVAL;
+			}
+			if (!last_block) {
+				r = coap_header_set_code(msg->out.out_cpkt,
+							 COAP_RESPONSE_CODE_CONTINUE);
+				if (r < 0) {
+					LOG_DBG("Failed to modify response code");
+					r = -EINVAL;
+				}
 			}
 		}
 		if (r < 0 || last_block) {
 			/* Free context when finished or when there is error */
 			free_block_ctx(block_ctx);
-
 		}
 	}
 

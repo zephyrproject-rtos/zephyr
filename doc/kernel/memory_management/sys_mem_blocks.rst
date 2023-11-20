@@ -112,7 +112,7 @@ to a 4-byte boundary:
 
    SYS_MEM_BLOCKS_DEFINE(allocator, 64, 4, 4);
 
-Similarly, you can define a memory slab in private scope:
+Similarly, you can define a memory blocks allocator in private scope:
 
 .. code-block:: c
 

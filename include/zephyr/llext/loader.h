@@ -42,6 +42,8 @@ enum llext_section {
 	LLEXT_SECT_COUNT,
 };
 
+enum llext_mem;
+
 /**
  * @brief Linkable loadable extension loader context
  */
@@ -73,14 +75,25 @@ struct llext_loader {
 	 * @retval 0 Success
 	 * @retval -errno Error reading (any errno)
 	 */
-	int (*seek)(struct llext_loader *s, size_t pos);
+	int (*seek)(struct llext_loader *ldr, size_t pos);
+
+	/**
+	 * @brief Peek at an absolute location
+	 *
+	 * Return a pointer to the buffer at specified offset.
+	 *
+	 * @param[in] ldr Loader
+	 * @param[in] pos Position to obtain a pointer to
+	 *
+	 * @retval pointer into the buffer
+	 */
+	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_SECT_COUNT];
-	uint32_t *sect_map;
+	enum llext_mem *sect_map;
 	uint32_t sect_cnt;
-	uint32_t sym_cnt;
 	/** @endcond */
 };
 

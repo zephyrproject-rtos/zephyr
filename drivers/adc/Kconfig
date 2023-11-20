@@ -116,4 +116,8 @@ source "drivers/adc/Kconfig.max1125x"
 
 source "drivers/adc/Kconfig.max11102_17"
 
+source "drivers/adc/Kconfig.ad5592"
+
+source "drivers/adc/Kconfig.ltc2451"
+
 endif # ADC

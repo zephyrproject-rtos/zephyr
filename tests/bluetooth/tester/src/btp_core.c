@@ -92,6 +92,9 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CAS);
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_MCC)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MCP);
+#endif /* CONFIG_BT_MCC */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -192,6 +195,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_cas();
 		break;
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_MCC)
+	case BTP_SERVICE_ID_MCP:
+		status = tester_init_mcp();
+		break;
+#endif /* CONFIG_BT_MCC */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -291,6 +299,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_cas();
 		break;
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_MCC)
+	case BTP_SERVICE_ID_MCP:
+		status = tester_unregister_mcp();
+		break;
+#endif /* CONFIG_BT_MCC */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
