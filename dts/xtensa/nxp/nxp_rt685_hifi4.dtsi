@@ -25,6 +25,19 @@
 	};
 
 	soc {
+		interrupt-parent = <&core_intc>;
+
+		/*
+		 * Dummy interrupt controller node - IRQs are handled directly by platform code.
+		 * INPUTMUX (IRQ allocation) is set up in mimxrt685s/hifi4 soc.c.
+		 */
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
 		itcm: memory@24020000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -70,6 +83,76 @@
 
 			adsp_data: memory@20440000 {
 				reg = <0x20440000 DT_SIZE_K(256)>;
+			};
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpio: gpio@100000 {
+				reg = <0x100000 0x1000>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				compatible = "nxp,lpc-gpio";
+
+				gpio0: gpio@0 {
+					reg = <0>;
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-source = "pint";
+
+					compatible = "nxp,lpc-gpio-port";
+				};
+
+				gpio1: gpio@1 {
+					reg = <1>;
+
+					gpio-controller;
+					#gpio-cells = <2>;
+					int-source = "pint";
+
+					compatible = "nxp,lpc-gpio-port";
+				};
+			};
+
+			pint: pint@25000 {
+				compatible = "nxp,pint";
+				reg = <0x25000 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				#address-cells = <0>;
+				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
+					<11 0 0>, <12 0 0>, <13 0 0>, <14 0 0>;
+				num-lines = <8>;
+				num-inputs = <64>;
+			};
+
+			iocon: iocon@4000 {
+				compatible = "nxp,lpc-iocon";
+				reg = <0x4000 0x1000>;
+				pinctrl: pinctrl {
+					compatible = "nxp,rt-iocon-pinctrl";
+				};
+			};
+
+			clkctl1: clkctl@21000 {
+				compatible = "nxp,lpc-syscon";
+				reg = <0x21000 0x1000>;
+				#clock-cells = <1>;
+			};
+
+			flexcomm0: flexcomm@106000 {
+				compatible = "nxp,lpc-flexcomm";
+				reg = <0x106000 0x1000>;
+				clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+				interrupts = <5 0 0>;
+				status = "disabled";
 			};
 		};
 	};
