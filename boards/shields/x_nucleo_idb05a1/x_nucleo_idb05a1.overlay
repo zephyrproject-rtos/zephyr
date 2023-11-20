@@ -8,7 +8,7 @@
 	cs-gpios = <&arduino_header 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;	      /* A1 */
 
 	spbtle_rf_x_nucleo_idb05a1: spbtle-rf@0 {
-		compatible = "zephyr,bt-hci-spi";
+		compatible = "zephyr,bt-hci-spi", "st,hci-spi-v1";
 		reg = <0>;
 		reset-gpios = <&arduino_header 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>; /* D7 */
 		irq-gpios = <&arduino_header 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;  /* A0 */
