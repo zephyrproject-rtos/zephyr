@@ -91,6 +91,16 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	}
 
 	sync_iso = sync_iso_get(big_handle);
+	if (!sync_iso) {
+		/* Host requested more than supported number of ISO Synchronized
+		 * Receivers.
+		 * Or probably HCI handles where not translated to zero-indexed
+		 * controller handles?
+		 */
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	/* Check if this ISO already is associated with a Periodic Sync */
 	if (sync_iso->sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
