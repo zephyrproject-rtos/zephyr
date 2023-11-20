@@ -203,12 +203,14 @@ EL1_Reset_Handler:
 #if CONFIG_MP_MAX_NUM_CPUS > 1
     get_cpu_id r1
 
+2:
     ldrex r2, [r0, #BOOT_PARAM_MPID_OFFSET]
     cmp r2, #-1
     bne 1f
     strex r3, r1, [r0, #BOOT_PARAM_MPID_OFFSET]
     cmp r3, #0
     beq _primary_core
+    b 2b
 
 1:
     dmb ld
