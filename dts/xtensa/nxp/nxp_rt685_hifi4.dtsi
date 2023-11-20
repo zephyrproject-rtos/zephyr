@@ -1,0 +1,76 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,sram = &adsp_data;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		itcm: memory@24020000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x24020000 DT_SIZE_K(64)>;
+
+			adsp_reset: memory@24020000 {
+				reg = <0x24020000 DT_SIZE_K(1)>;
+			};
+		};
+
+		dtcm: memory@24000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x24000000 DT_SIZE_K(64)>;
+		};
+
+		ram0_cached: memory@200000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x00200000 DT_SIZE_K(512)>;
+		};
+
+		ram0_noncached: memory@20400000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x20400000 DT_SIZE_K(512)>;
+
+			adsp_text: memory@20400000 {
+				reg = <0x20400000 DT_SIZE_K(256)>;
+			};
+
+			adsp_data: memory@20440000 {
+				reg = <0x20440000 DT_SIZE_K(256)>;
+			};
+		};
+	};
+};
