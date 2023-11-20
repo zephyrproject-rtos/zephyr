@@ -532,7 +532,6 @@ def test_LightweightM2M_1_1_int_301(shell: Shell, leshan: Leshan, endpoint: str)
     leshan.cancel_observe(endpoint, '3/0/7')
     leshan.remove_attributes(endpoint, '3/0/7', ['pmin', 'pmax'])
 
-@pytest.mark.slow
 def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-302 - Cancel Observations using Reset Operation"""
     leshan.observe(endpoint, '3/0/7')
@@ -541,15 +540,32 @@ def test_LightweightM2M_1_1_int_302(shell: Shell, dut: DeviceAdapter, leshan: Le
         shell.exec_command('lwm2m write /3/0/7/0 -u32 4000')
         data =  events.next_event('NOTIFICATION')
         assert data[3][0][7][0] == 4000
-    leshan.cancel_observe(endpoint, '3/0/7')
+    leshan.passive_cancel_observe(endpoint, '3/0/7')
     shell.exec_command('lwm2m write /3/0/7/0 -u32 3000')
     dut.readlines_until(regex=r'.*Observer removed for 3/0/7')
     with leshan.get_event_stream(endpoint) as events:
         shell.exec_command('lwm2m write /3/0/8/0 -u32 100')
         data =  events.next_event('NOTIFICATION')
         assert data[3][0][8][0] == 100
-    leshan.cancel_observe(endpoint, '3/0/8')
+    leshan.passive_cancel_observe(endpoint, '3/0/8')
     shell.exec_command('lwm2m write /3/0/8/0 -u32 50')
+    dut.readlines_until(regex=r'.*Observer removed for 3/0/8')
+
+def test_LightweightM2M_1_1_int_303(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-303 - Cancel observations using Observe with Cancel parameter"""
+    leshan.observe(endpoint, '3/0/7')
+    leshan.observe(endpoint, '3/0/8')
+    with leshan.get_event_stream(endpoint) as events:
+        shell.exec_command('lwm2m write /3/0/7/0 -u32 4000')
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][7][0] == 4000
+    leshan.cancel_observe(endpoint, '3/0/7')
+    dut.readlines_until(regex=r'.*Observer removed for 3/0/7')
+    with leshan.get_event_stream(endpoint) as events:
+        shell.exec_command('lwm2m write /3/0/8/0 -u32 100')
+        data =  events.next_event('NOTIFICATION')
+        assert data[3][0][8][0] == 100
+    leshan.cancel_observe(endpoint, '3/0/8')
     dut.readlines_until(regex=r'.*Observer removed for 3/0/8')
 
 @pytest.mark.slow
@@ -583,6 +599,14 @@ def test_LightweightM2M_1_1_int_304(shell: Shell, leshan: Leshan, endpoint: str)
     shell.exec_command('lwm2m write 1/0/2 -u32 1')
     shell.exec_command('lwm2m write 1/0/3 -u32 10')
     leshan.remove_attributes(endpoint, '1/0/1', ['pmin', 'pmax'])
+
+def test_LightweightM2M_1_1_int_305(dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-305 - Cancel Observation-Composite Operation"""
+    leshan.composite_observe(endpoint, ['/1/0/1', '/3/0/11/0', '/3/0/16'])
+    leshan.cancel_composite_observe(endpoint, ['/1/0/1', '/3/0/11/0', '/3/0/16'])
+    dut.readlines_until(regex=r'.*Observer removed for 1/0/1')
+    dut.readlines_until(regex=r'.*Observer removed for 3/0/11/0')
+    dut.readlines_until(regex=r'.*Observer removed for 3/0/16')
 
 def test_LightweightM2M_1_1_int_306(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-306 - Send Operation"""
