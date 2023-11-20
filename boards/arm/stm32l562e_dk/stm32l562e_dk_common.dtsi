@@ -115,7 +115,7 @@
 	status = "okay";
 
 	spbtle-rf@0 {
-		compatible = "zephyr,bt-hci-spi";
+		compatible = "zephyr,bt-hci-spi", "st,hci-spi-v1";
 		reg = <0>;
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
