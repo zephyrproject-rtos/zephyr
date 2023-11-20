@@ -5,4 +5,8 @@ tests:
   modem.modem_cmux:
     tags: modem_cmux
     harness: ztest
-    platform_allow: native_posix
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
