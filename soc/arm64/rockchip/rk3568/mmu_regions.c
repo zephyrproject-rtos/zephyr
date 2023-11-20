@@ -20,6 +20,13 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 1),
 			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 1),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_NS),
+	
+	#ifdef CONFIG_PADDLE_LITE
+	MMU_REGION_FLAT_ENTRY("MODEL",
+                  DT_REG_ADDR_BY_IDX(DT_INST(0, zephyr_model), 0),
+                  DT_REG_SIZE_BY_IDX(DT_INST(0, zephyr_model), 0),
+                  MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
+    #endif
 
 };
 
