@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Lemonbeat GmbH
+ * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,9 +26,11 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &iap;
 	};
 
 	gpio_keys {
@@ -95,22 +98,27 @@
 };
 
 &flash0 {
-	/*
-	 * LPC flash controller requires minimum 512 byte write to flash,
-	 * so MCUBoot is not supported. Just provide storage and code partition.
-	 */
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		slot0_partition: partition@0 {
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(32)>;
+		};
+		slot0_partition: partition@8000 {
 			label = "image-0";
-			reg = <0x00000000 DT_SIZE_K(448)>;
+			reg = <0x00008000 DT_SIZE_K(208)>;
+		};
+		slot1_partition: partition@3C000 {
+			label = "image-1";
+			reg = <0x0003C000 DT_SIZE_K(208)>;
 		};
 		storage_partition: partition@70000 {
 			label = "storage";
-			reg = <0x00070000 DT_SIZE_K(64)>;
+			reg = <0x00070000 DT_SIZE_K(52)>;
 		};
+		/* The last 12KBs are reserved for PFR. */
 	};
 };
 
