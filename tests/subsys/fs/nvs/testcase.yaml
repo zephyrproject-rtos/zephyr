@@ -10,4 +10,4 @@ tests:
     extra_args:
       - CONFIG_NVS_LOOKUP_CACHE=y
       - CONFIG_NVS_LOOKUP_CACHE_SIZE=64
-    platform_allow: native_posix
+    platform_allow: native_sim
