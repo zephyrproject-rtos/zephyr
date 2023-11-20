@@ -56,7 +56,7 @@ static uint8_t mfg_data[BT_MFG_DATA_LEN] = { 0xFF, 0xFF, };
 
 static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
-#if defined(CONFIG_BT_CTLR_ADV_DATA_CHAIN)
+#if CONFIG_BT_CTLR_ADV_DATA_LEN_MAX > 255
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #endif
 };
