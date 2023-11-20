@@ -37,10 +37,12 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_idx)
 		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
 			unsigned int test_irq = irq_to_level_2(local_irq) | parent_irq[i];
 			unsigned int test_isr_offset = z_get_sw_isr_table_idx(test_irq);
+			unsigned int isr_offset =
+				l2_isr_offset + local_irq + (i * CONFIG_MAX_IRQ_PER_AGGREGATOR);
 
-			zassert_equal(l2_isr_offset + local_irq, test_isr_offset,
+			zassert_equal(isr_offset, test_isr_offset,
 				      "%d: expected offset: %d, got: %d", i,
-				      l2_isr_offset + local_irq, test_isr_offset);
+				      isr_offset, test_isr_offset);
 		}
 	}
 }
