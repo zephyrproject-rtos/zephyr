@@ -35,6 +35,7 @@
 		ficr: ficr@1ff0000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0x01ff0000 0x1000>;
+			#nordic,ficr-cells = <1>;
 			status = "okay";
 		};
 
