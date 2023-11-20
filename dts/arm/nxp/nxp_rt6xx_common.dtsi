@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/misc/nxp_rtxxx_adsp_ctl.h>
 
 / {
 	chosen {
@@ -44,6 +45,28 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
 				min-residency-us = <1000>;
+			};
+		};
+	};
+
+	soc {
+		adsp: adsp {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			compatible = "nxp,rtxxx-adsp-ctl";
+			sysctl = <&sysctl0>;
+
+			status = "disabled";
+
+			region@24000000 {
+				reg = <0x24000000 0x10000>;
+				type = <NXP_RTXXX_ADSP_REGION_DATA>;
+			};
+
+			region@24020000 {
+				reg = <0x24020000 0x10000>;
+				type = <NXP_RTXXX_ADSP_REGION_TEXT>;
 			};
 		};
 	};
@@ -102,6 +125,15 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	/*
+	 * Dummy node - it does not instantiate a real driver, rather it provide the
+	 * base address of the SYSCTL0 block for use with the "adsp" node.
+	 */
+	sysctl0: sysctl@2000 {
+		reg = <0x2000 0x2000>;
+		compatible = "nxp,rt6xx-sysctl";
 	};
 
 	iocon: iocon@4000 {
