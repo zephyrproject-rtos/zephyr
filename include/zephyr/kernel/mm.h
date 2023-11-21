@@ -14,7 +14,6 @@
 #endif
 
 #include <zephyr/kernel/internal/mm.h>
-#include <zephyr/kernel/mm/demand_paging.h>
 
 /**
  * @brief Kernel Memory Management
