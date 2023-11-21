@@ -11,6 +11,10 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
+BUILD_ASSERT((CONFIG_NUM_2ND_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
+		     BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
+	     "L2 bits not enough to cover the number of L2 IRQs");
+
 /*
  * Insert code if the node_id is an interrupt controller
  */
@@ -57,6 +61,10 @@ const struct _irq_parent_entry _lvl2_irq_list[CONFIG_NUM_2ND_LEVEL_AGGREGATORS]
 		CONFIG_2ND_LVL_ISR_TBL_OFFSET) };
 
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+
+BUILD_ASSERT((CONFIG_NUM_3RD_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
+		     BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
+	     "L3 bits not enough to cover the number of L3 IRQs");
 
 #define CAT_3RD_LVL_LIST(i, base) \
 	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_3RD_LVL_INTR_0##i##_OFFSET), \
