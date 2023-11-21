@@ -309,8 +309,9 @@ class Pytest(Harness):
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
+        handler: Handler = self.instance.handler
         pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
-        pytest_args = config.get('pytest_args', []) if config else []
+        pytest_args_yaml = config.get('pytest_args', []) if config else []
         pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
         command = [
             'pytest',
@@ -324,11 +325,18 @@ class Pytest(Harness):
         ]
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
-        command.extend(pytest_args)
+
+        if handler.options.pytest_args:
+            command.append(handler.options.pytest_args)
+            if pytest_args_yaml:
+                logger.warning(f'The pytest_args ({handler.options.pytest_args}) specified '
+                               'in the command line will override the pytest_args defined '
+                               f'in the YAML file {pytest_args_yaml}')
+        else:
+            command.extend(pytest_args_yaml)
+
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
-
-        handler: Handler = self.instance.handler
 
         if handler.options.verbose > 1:
             command.extend([
@@ -489,6 +497,9 @@ class Pytest(Harness):
                         tc.status = 'error'
                     tc.reason = elem.get('message')
                     tc.output = elem.text
+        else:
+            self.state = 'skipped'
+            self.instance.reason = 'No tests collected'
 
 
 class Gtest(Harness):
