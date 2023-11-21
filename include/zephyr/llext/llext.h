@@ -92,6 +92,19 @@ sys_slist_t *llext_list(void);
 struct llext *llext_by_name(const char *name);
 
 /**
+ * @brief Iterate overall registered llext instances
+ *
+ * Calls a provided callback function for each registered extension or until the
+ * callback function returns a non-0 value.
+ *
+ * @param[in] fn callback function
+ * @param[in] arg a private argument to be provided to the callback function
+ * @retval 0 if no extensions are registered
+ * @retval value returned by the most recent callback invocation
+ */
+int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg);
+
+/**
  * @brief llext loader parameters
  *
  * These are parameters, not saved in the permanent llext context, needed only
