@@ -109,7 +109,7 @@
 			reg = <0xe4000000 0x04000000>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
-			interrupts-extended = <&CPU0_intc 0 &CPU1_intc 0>;
+			interrupts-extended = <&CPU0_intc 11 &CPU1_intc 11>;
 		};
 
 		plic_sw0: interrupt-controller@e6400000 {

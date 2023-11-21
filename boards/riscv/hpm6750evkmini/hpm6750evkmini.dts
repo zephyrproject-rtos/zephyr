@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2022 HPMicro
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <hpmicro/hpm6750.dtsi>
+#include "hpm6750evkmini-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "HPMicro HPM6750EVKMINI";
+	compatible = "HPMicro,hpm6750evkmini";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram;
+		zephyr,itcm = &ilm;
+		zephyr,dtcm = &dlm;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	dram: memory@40000000 {
+		device_type = "memory";
+		reg = <0x40000000 DT_SIZE_M(16)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_r: led_r {
+			gpios = <&gpiob 19 GPIO_ACTIVE_LOW>;
+			label = "LEDR";
+		};
+		led_g: led_g {
+			gpios = <&gpiob 18 GPIO_ACTIVE_LOW>;
+			label = "LEDG";
+		};
+		led_b: led_b {
+			gpios = <&gpiob 20 GPIO_ACTIVE_LOW>;
+			label = "LEDB";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		wbutn: button_1 {
+			label = "Key";
+			gpios = <&gpiod 20 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+
+		pbutn: button_2 {
+			label = "Key";
+			gpios = <&gpioz 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_POWER>;
+		};
+	};
+
+	aliases {
+		led0 = &led_r;
+		led1 = &led_g;
+		led2 = &led_b;
+		sw0 = &wbutn;
+	};
+};
+
+&gpio0 {
+
+	gpiob: gpio@1 {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <0x0 0x4000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		hpmicro-gpio-port = <1>;
+		interrupts = <2 1>;
+		interrupt-parent = <&plic0>;
+		status = "okay";
+	};
+
+	gpiod: gpio@3 {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <0x0 0x4000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		hpmicro-gpio-port = <3>;
+		interrupts = <4 1>;
+		interrupt-parent = <&plic0>;
+		status = "okay";
+	};
+
+	gpioz: gpio@8 {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <0x00 0x4000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		hpmicro-gpio-port = <15>;
+		interrupts = <9 1>;
+		interrupt-parent = <&plic0>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_uart0>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x3000>;
+		};
+
+		slot0_partition: partition@3000 {
+			label = "image-0";
+			reg = <0x3000 DT_SIZE_M(4)>;
+		};
+	};
+};

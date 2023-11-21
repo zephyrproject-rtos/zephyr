@@ -22,10 +22,10 @@ config TEST_EXTRA_STACK_SIZE
 	default 2048
 
 config 2ND_LVL_ISR_TBL_OFFSET
-	default 0
+	default 12
 
 config 2ND_LVL_INTR_00_OFFSET
-	default 0
+	default 11
 
 config MAX_IRQ_PER_AGGREGATOR
 	default 112
