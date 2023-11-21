@@ -763,9 +763,9 @@ following example illustrates the runtime registration usage.
     void thread_entry(void) {
             // ...
             /* Adding the observer to channel chan1 */
-            zbus_chan_add_obs(&chan1, &my_listener);
+            zbus_chan_add_obs(&chan1, &my_listener, K_NO_WAIT);
             /* Removing the observer from channel chan1 */
-            zbus_chan_rm_obs(&chan1, &my_listener);
+            zbus_chan_rm_obs(&chan1, &my_listener, K_NO_WAIT);
 
 
 Samples
