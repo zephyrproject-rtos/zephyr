@@ -16,10 +16,13 @@
 
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/debug/early_print.h>
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
+
+__weak void z_early_print_init(int state) { }
 
 /*
  * These simple memset/memcpy alternatives are necessary as the optimized
@@ -53,6 +56,8 @@ void z_early_memcpy(void *dst, const void *src, size_t n)
  */
 void z_arm64_prep_c(void)
 {
+	z_early_print_init(EARLY_PRINT_INIT);
+
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
 
@@ -63,6 +68,7 @@ void z_arm64_prep_c(void)
 	z_arm64_safe_exception_stack_init();
 #endif
 	z_arm64_mm_init(true);
+	z_early_print_init(EARLY_PRINT_MMIO_MAP);
 	z_arm64_interrupt_init();
 	z_cstart();
 

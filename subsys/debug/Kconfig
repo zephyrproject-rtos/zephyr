@@ -228,6 +228,21 @@ config EARLY_CONSOLE
 	  initialize its driver earlier than normal, in order to get the stdout
 	  sent through the console at the earliest stage possible.
 
+config EARLY_PRINT
+	bool "This option enables print at the earliest stage possible"
+	help
+	  This option will enable print as early as possible, even before
+	  z_cstart(), for debugging purpose.
+
+if EARLY_PRINT
+
+choice
+	prompt "Early print mode"
+
+endchoice
+
+endif # EARLY_PRINT
+
 config ASSERT
 	bool "__ASSERT() macro"
 	default y if TEST
