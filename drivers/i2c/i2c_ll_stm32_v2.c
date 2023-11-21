@@ -143,8 +143,7 @@ static void stm32_i2c_slave_event(const struct device *dev)
 			return;
 		}
 	}
-
-	slave_cfg = data->slave_cfg;
+	/* slave_cfg has been arbitrated above - now safe to pickup the associated callbacks */
 	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
