@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023 Sebastian Schlupp
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/same51j-pinctrl.h>
+
+&pinctrl {
+	/*PWM line routed to onboard LED0*/
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA14F_TCC2_WO0>;
+		};
+	};
+	sercom5_uart_default: sercom5_uart_default {
+		group1 {
+			pinmux = <PB16C_SERCOM5_PAD0>,
+				 <PB17C_SERCOM5_PAD1>;
+		};
+	};
+	sercom2_i2c_default: sercom2_i2c_default {
+		group1 {
+			pinmux = <PA12C_SERCOM2_PAD0>,
+				 <PA13C_SERCOM2_PAD1>;
+		};
+	};
+	sercom1_spi_default: sercom1_spi_default {
+		group1 {
+			pinmux = <PA17C_SERCOM1_PAD1>,
+				 <PA16C_SERCOM1_PAD0>,
+				 <PA19C_SERCOM1_PAD3>;
+		};
+	};
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PA8C_SERCOM0_PAD0>,
+				 <PA9C_SERCOM0_PAD1>;
+		};
+	};
+/*	can1_default: can1_default {
+*		group1 {
+*			pinmux = <PB13H_CAN1_RX>,
+*				 <PB12H_CAN1_TX>;
+*		};
+*	};
+*/
+	usb_dc_default: usb_dc_default {
+		group1 {
+			pinmux = <PA25H_USB_DP>,
+				 <PA24H_USB_DM>;
+		};
+	};
+};
