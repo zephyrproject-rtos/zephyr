@@ -517,6 +517,8 @@ static inline unsigned int arch_num_cpus(void);
  */
 
 #ifdef CONFIG_USERSPACE
+#include <zephyr/arch/syscall.h>
+
 /**
  * Invoke a system call with 0 arguments.
  *
