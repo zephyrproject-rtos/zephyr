@@ -92,6 +92,34 @@
 };
 
 /*
+ * Set flags of unused pins as GPIO_ACTIVE_HIGH (0 << 0), which will be
+ * interpreted by GPIO driver as GPIO_DISCONNECTED, without setting the gpio as
+ * either input or output. The STM32 GPIO driver will set these pins as analog
+ * to reduce power consumption.
+ */
+&gpiob {
+	unused {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>, <5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioc {
+	unused {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>, <14 GPIO_ACTIVE_HIGH>,
+			<15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioh {
+	unused {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/*
  * The board uses STM32F412CG in UFQFPN48 package in which gpio[d-g] is not
  * exposed, so disable it.
  */
