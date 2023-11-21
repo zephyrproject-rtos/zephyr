@@ -14,7 +14,8 @@ tests:
     extra_args:
       DTC_OVERLAY_FILE="./app.multi_instance.overlay"
     extra_configs:
-      - CONFIG_NUM_IRQS=116
+      - CONFIG_NUM_IRQS=2059
+      - CONFIG_2ND_LEVEL_INTERRUPT_BITS=11
       - CONFIG_MULTI_LEVEL_INTERRUPTS=y
       - CONFIG_DYNAMIC_INTERRUPTS=y
       - CONFIG_NUM_2ND_LEVEL_AGGREGATORS=2
