@@ -139,6 +139,115 @@ static inline int z_cbprintf_cxx_is_word_num(T arg)
 	_Pragma("GCC diagnostic pop")
 }
 
+/* C++ version for determining if argument is a none character pointer. */
+static inline int z_cbprintf_cxx_is_none_char_ptr(char)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(unsigned char)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(short)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(unsigned short)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(int)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(unsigned int)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(long)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(unsigned long)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(long long)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(unsigned long long)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(float)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(double)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(volatile char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(const char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(const volatile char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(unsigned char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(volatile unsigned char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(const unsigned char *)
+{
+	return 0;
+}
+
+static inline int z_cbprintf_cxx_is_none_char_ptr(const volatile unsigned char *)
+{
+	return 0;
+}
+
+template < typename T >
+static inline int z_cbprintf_cxx_is_none_char_ptr(T arg)
+{
+	ARG_UNUSED(arg);
+
+	return 1;
+}
+
 /* C++ version for calculating argument size. */
 static inline size_t z_cbprintf_cxx_arg_size(float f)
 {
