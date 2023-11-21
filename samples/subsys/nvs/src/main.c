@@ -44,13 +44,16 @@
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/zsai.h>
+#include <zephyr/drivers/zsai_infoword.h>
+#include <zephyr/drivers/zsai_ioctl.h>
 #include <zephyr/fs/nvs.h>
 
 static struct nvs_fs fs;
 
 #define NVS_PARTITION		storage_partition
-#define NVS_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(NVS_PARTITION)
-#define NVS_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(NVS_PARTITION)
+#define NVS_PARTITION_DEVICE	DEVICE_DT_GET(DT_NODELABEL(zsai_something))
+#define NVS_PARTITION_OFFSET	0
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME      100
@@ -71,7 +74,7 @@ int main(void)
 	char buf[16];
 	uint8_t key[8], longarray[128];
 	uint32_t reboot_counter = 0U, reboot_counter_his;
-	struct flash_pages_info info;
+	struct zsai_ioctl_range info;
 
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
@@ -84,9 +87,12 @@ int main(void)
 		return 0;
 	}
 	fs.offset = NVS_PARTITION_OFFSET;
-	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
-	if (rc) {
+	rc = zsai_get_page_info(fs.flash_device, fs.offset, &info);
+	if (rc && rc != -ENOTSUP) {
 		printk("Unable to get page info\n");
+		return 0;
+	} else if (rc == -ENOTSUP) {
+		printk("Device has no paged layout, ");
 		return 0;
 	}
 	fs.sector_size = info.size;
