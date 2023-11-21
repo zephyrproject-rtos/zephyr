@@ -592,11 +592,16 @@ struct ieee802154_filter {
  * IEEE802154_CONFIG_MAC_KEYS.
  */
 struct ieee802154_key {
+	/** Key material */
 	uint8_t *key_value;
+	/** Initial value of frame counter associated with the key, see section 9.4.3 */
 	uint32_t key_frame_counter;
+	/** Indicates if per-key frame counter should be used, see section 9.4.3 */
 	bool frame_counter_per_key;
+	/** Key Identifier Mode, see section 9.4.2.3, Table 9-7 */
 	uint8_t key_id_mode;
-	uint8_t key_index;
+	/** Key Identifier, see section 9.4.4 */
+	uint8_t *key_id;
 };
 
 /** IEEE 802.15.4 Transmission mode. */
