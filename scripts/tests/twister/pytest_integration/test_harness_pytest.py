@@ -25,6 +25,7 @@ def testinstance() -> TestInstance:
     testinstance.handler = mock.Mock()
     testinstance.handler.options = mock.Mock()
     testinstance.handler.options.verbose = 1
+    testinstance.handler.options.pytest_args = None
     testinstance.handler.type_str = 'native'
     return testinstance
 
@@ -65,6 +66,18 @@ def test_pytest_command_extra_args(testinstance: TestInstance):
     command = pytest_harness.generate_command()
     for c in pytest_args:
         assert c in command
+
+
+def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
+    pytest_harness = Pytest()
+    pytest_args_from_yaml = '-k test_from_yaml'
+    pytest_args_from_cmd = '-k test_from_cmd'
+    testinstance.testsuite.harness_config['pytest_args'] = [pytest_args_from_yaml]
+    testinstance.handler.options.pytest_args = pytest_args_from_cmd
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    assert pytest_args_from_cmd in command
+    assert pytest_args_from_yaml not in command
 
 
 @pytest.mark.parametrize(
@@ -222,3 +235,56 @@ def test_if_report_with_skip(pytester, testinstance: TestInstance):
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
         assert tc.status == "skipped"
+
+
+def test_if_report_with_filter(pytester, testinstance: TestInstance):
+    test_file_content = textwrap.dedent("""
+        import pytest
+        def test_A():
+            pass
+        def test_B():
+            pass
+    """)
+    test_file = pytester.path / 'test_filter.py'
+    test_file.write_text(test_file_content)
+    report_file = pytester.path / 'report.xml'
+    result = pytester.runpytest(
+        str(test_file),
+        '-k', 'test_B',
+        f'--junit-xml={str(report_file)}'
+    )
+    result.assert_outcomes(passed=1)
+    assert report_file.is_file()
+
+    pytest_harness = Pytest()
+    pytest_harness.configure(testinstance)
+    pytest_harness.report_file = report_file
+    pytest_harness._update_test_status()
+    assert pytest_harness.state == "passed"
+    assert testinstance.status == "passed"
+    assert len(testinstance.testcases) == 1
+
+
+def test_if_report_with_no_collected(pytester, testinstance: TestInstance):
+    test_file_content = textwrap.dedent("""
+        import pytest
+        def test_A():
+            pass
+    """)
+    test_file = pytester.path / 'test_filter.py'
+    test_file.write_text(test_file_content)
+    report_file = pytester.path / 'report.xml'
+    result = pytester.runpytest(
+        str(test_file),
+        '-k', 'test_B',
+        f'--junit-xml={str(report_file)}'
+    )
+    result.assert_outcomes(passed=0)
+    assert report_file.is_file()
+
+    pytest_harness = Pytest()
+    pytest_harness.configure(testinstance)
+    pytest_harness.report_file = report_file
+    pytest_harness._update_test_status()
+    assert pytest_harness.state == "skipped"
+    assert testinstance.status == "skipped"
