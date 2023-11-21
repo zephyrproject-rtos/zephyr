@@ -717,4 +717,40 @@ ZTEST(util, test_mem_xor_128)
 	zassert_mem_equal(expected_result, dst, 16);
 }
 
+ZTEST(util, test_CONCAT)
+{
+#define _CAT_PART1 1
+#define CAT_PART1 _CAT_PART1
+#define _CAT_PART2 2
+#define CAT_PART2 _CAT_PART2
+#define _CAT_PART3 3
+#define CAT_PART3 _CAT_PART3
+#define _CAT_PART4 4
+#define CAT_PART4 _CAT_PART4
+#define _CAT_PART5 5
+#define CAT_PART5 _CAT_PART5
+#define _CAT_PART6 6
+#define CAT_PART6 _CAT_PART6
+#define _CAT_PART7 7
+#define CAT_PART7 _CAT_PART7
+#define _CAT_PART8 8
+#define CAT_PART8 _CAT_PART8
+
+	zassert_equal(CONCAT(CAT_PART1), 1);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2), 12);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2, CAT_PART3), 123);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2, CAT_PART3, CAT_PART4), 1234);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2, CAT_PART3, CAT_PART4, CAT_PART5), 12345);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2, CAT_PART3, CAT_PART4, CAT_PART5, CAT_PART6),
+			123456);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2, CAT_PART3, CAT_PART4,
+			     CAT_PART5, CAT_PART6, CAT_PART7),
+			1234567);
+	zassert_equal(CONCAT(CAT_PART1, CAT_PART2, CAT_PART3, CAT_PART4,
+			     CAT_PART5, CAT_PART6, CAT_PART7, CAT_PART8),
+			12345678);
+
+	zassert_equal(CONCAT(CAT_PART1, CONCAT(CAT_PART2, CAT_PART3)), 123);
+}
+
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);
