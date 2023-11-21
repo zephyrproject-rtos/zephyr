@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro Limited
- * Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -17,6 +17,7 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
+#include <zephyr/debug/early_print.h>
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
@@ -46,6 +47,7 @@ struct pl011_data {
 	DEVICE_MMIO_RAM;
 	uint32_t baud_rate;	/* Baud rate */
 	bool sbsa;		/* SBSA mode */
+	int early_enabled;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	volatile bool sw_call_txdrdy;
 	uart_irq_callback_user_data_t irq_cb;
@@ -286,14 +288,17 @@ static const struct uart_driver_api pl011_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-static int pl011_init(const struct device *dev)
+static int _pl011_init(const struct device *dev, bool early)
 {
 	const struct pl011_config *config = dev->config;
 	struct pl011_data *data = dev->data;
 	int ret;
 	uint32_t lcrh;
 
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	if (!early && !data->early_enabled) {
+		/* Non-early uart need to do mapping in multi pl011 cases. */
+		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	}
 
 	/*
 	 * If working in SBSA mode, we assume that UART is already configured,
@@ -337,12 +342,14 @@ static int pl011_init(const struct device *dev)
 		lcrh |= PL011_LCRH_WLEN_SIZE(8) << PL011_LCRH_WLEN_SHIFT;
 		get_uart(dev)->lcr_h = lcrh;
 
-		/* Setting transmit and receive interrupt FIFO level */
-		get_uart(dev)->ifls = FIELD_PREP(PL011_IFLS_TXIFLSEL_M, TXIFLSEL_1_8_FULL)
-			| FIELD_PREP(PL011_IFLS_RXIFLSEL_M, RXIFLSEL_1_2_FULL);
+		if (!early) {
+			/* Setting transmit and receive interrupt FIFO level */
+			get_uart(dev)->ifls = FIELD_PREP(PL011_IFLS_TXIFLSEL_M, TXIFLSEL_1_8_FULL) |
+					      FIELD_PREP(PL011_IFLS_RXIFLSEL_M, RXIFLSEL_1_2_FULL);
 
-		/* Enabling the FIFOs */
-		pl011_enable_fifo(dev);
+			/* Enabling the FIFOs */
+			pl011_enable_fifo(dev);
+		}
 	}
 	/* initialize all IRQs as masked */
 	get_uart(dev)->imsc = 0U;
@@ -356,14 +363,91 @@ static int pl011_init(const struct device *dev)
 		barrier_isync_fence_full();
 	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->irq_config_func(dev);
-	data->sw_call_txdrdy = true;
+	if (!early) {
+		config->irq_config_func(dev);
+		data->sw_call_txdrdy = true;
+	}
 #endif
 	if (!data->sbsa) {
 		pl011_enable(dev);
 	}
 
 	return 0;
+}
+
+#ifdef CONFIG_EARLY_PRINT_USE_UART_PL011
+static inline int current_core_mmu_enabled(void)
+{
+#ifdef CONFIG_ARM64
+	return read_sctlr_el1() & SCTLR_M_BIT;
+#else
+	return -1;
+#endif
+}
+
+static inline volatile struct pl011_regs *const get_early_uart(const struct device *dev, int mmu)
+{
+	if (mmu) {
+		return (volatile struct pl011_regs *const)DEVICE_MMIO_GET(dev);
+	}
+#ifdef DEVICE_MMIO_IS_IN_RAM
+	return (volatile struct pl011_regs *const)(DEVICE_MMIO_ROM_PTR(dev)->phys_addr);
+#else
+	return (volatile struct pl011_regs *const)(DEVICE_MMIO_ROM_PTR(dev)->addr);
+#endif
+}
+
+int arch_printk_char_out(int c)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	struct pl011_data *data = dev->data;	/* No need to check if dev is NULL */
+	int mmu = current_core_mmu_enabled();
+
+	if (!data->early_enabled || mmu < 0) {
+		return 0;
+	}
+
+	/*
+	 * The get_early_uart is used to get the uart from either virt addr or phys addrs at
+	 * runtime according to the mmu enablement of the current core. This is for SMP booting.
+	 */
+	while (get_early_uart(dev, mmu)->fr & PL011_FR_TXFF) {
+		; /* Wait */
+	}
+
+	/* Send a character */
+	get_early_uart(dev, mmu)->dr = (uint32_t)c;
+
+	return 0;
+}
+
+void z_early_print_init(int stage)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	struct pl011_data *data = dev->data;	/* No need to check if dev is NULL */
+
+	/*
+	 * Two stages:
+	 * stage EARLY_PRINT_INIT: uart enablement with basic print features.
+	 * stage EARLY_PRINT_MMIO_MAP: mem_map for uart mmio after MMU is enabled.
+	 */
+	if (stage == EARLY_PRINT_INIT) {
+#ifdef DEVICE_MMIO_IS_IN_RAM
+		/* Need a 1:1 map before early map */
+		data->_mmio = DEVICE_MMIO_ROM_PTR(dev)->phys_addr;
+#endif
+		data->early_enabled = _pl011_init(dev, true) == 0;
+	} else if (stage == EARLY_PRINT_MMIO_MAP && data->early_enabled) {
+		/* Do MMIO map after MMU is enabled */
+		DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	}
+}
+
+#endif /* CONFIG_EARLY_PRINT_USE_UART_PL011 */
+
+static int pl011_init(const struct device *dev)
+{
+	return _pl011_init(dev, false);
 }
 
 #if defined(CONFIG_PINCTRL)

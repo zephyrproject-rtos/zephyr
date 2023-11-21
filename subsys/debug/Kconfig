@@ -239,6 +239,8 @@ if EARLY_PRINT
 choice
 	prompt "Early print mode"
 
+source "drivers/serial/Kconfig.earlyprint"
+
 endchoice
 
 endif # EARLY_PRINT
