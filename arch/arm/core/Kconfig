@@ -276,8 +276,6 @@ config FP_HARDABI
 	  point instructions are generated and uses FPU-specific calling
 	  conventions.
 
-	  Note: When building with TF-M enabled only the IPC mode is supported.
-
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
 	help
