@@ -72,6 +72,26 @@ struct llext *llext_by_name(const char *name)
 	return NULL;
 }
 
+int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
+{
+	sys_snode_t *node;
+	unsigned int i;
+	int ret = 0;
+
+	for (node = sys_slist_peek_head(&_llext_list), i = 0;
+	     node;
+	     node = sys_slist_peek_next(node), i++) {
+		struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
+
+		ret = fn(ext, arg);
+		if (ret) {
+			break;
+		}
+	}
+
+	return ret;
+}
+
 const void * const llext_find_sym(const struct llext_symtable *sym_table, const char *sym_name)
 {
 	if (sym_table == NULL) {
