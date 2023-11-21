@@ -238,6 +238,21 @@ struct input_kbd_matrix_common_data {
  */
 void input_kbd_matrix_poll_start(const struct device *dev);
 
+#ifdef CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK
+/**
+ * @brief Drive column hook
+ *
+ * This can be implemented by the application to handle column selection
+ * quirks. Called after the driver specific drive_column function.
+ *
+ * @param dev Keyboard matrix device instance.
+ * @param col The column to drive, or
+ *      @ref INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE or
+ *      @ref INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL.
+ */
+void input_kbd_matrix_drive_column_hook(const struct device *dev, int col);
+#endif
+
 /**
  * @brief Common function to initialize a keyboard matrix device at init time.
  *
