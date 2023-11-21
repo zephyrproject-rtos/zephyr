@@ -8,7 +8,7 @@
 #include <kernel_internal.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/kernel/mm.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 
 extern struct k_mem_paging_stats_t paging_stats;
 
