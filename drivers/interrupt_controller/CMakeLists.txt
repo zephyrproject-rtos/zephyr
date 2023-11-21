@@ -42,4 +42,11 @@ if(CONFIG_INTEL_VTD_ICTL)
   zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
 endif()
 
+if(CONFIG_PLIC_SHELL)
+  message(WARNING "
+      WARNING:  `CONFIG_PLIC_SHELL` is enabled.
+      This can use quite a bit of RAM (PLICs * IRQs * sizeof(uint16_t))"
+  )
+endif()
+
 zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)
