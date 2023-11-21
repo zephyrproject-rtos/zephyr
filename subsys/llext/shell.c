@@ -52,45 +52,57 @@ static int cmd_llext_list_symbols(const struct shell *sh, size_t argc, char *arg
 	return 0;
 }
 
-static void llext_name_get(size_t idx, struct shell_static_entry *entry)
+struct llext_shell_cmd {
+	unsigned int tgt;
+	unsigned int idx;
+	struct llext *ext;
+};
+
+static int llext_shell_name_cb(struct llext *ext, void *arg)
 {
-	sys_slist_t *ext_list = llext_list();
-	sys_snode_t *node = sys_slist_peek_head(ext_list);
+	struct llext_shell_cmd *cmd = arg;
 
-	entry->syntax = NULL;
-
-	for (int i = 0; i < idx; i++) {
-		node = sys_slist_peek_next(node);
-
-		if (node == NULL) {
-			goto out;
-		}
+	if (cmd->tgt == cmd->idx) {
+		cmd->ext = ext;
+		return 1;
 	}
 
-	struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
+	cmd->idx++;
 
-	entry->syntax = ext->name;
-out:
-	entry->syntax = NULL;
+	return 0;
+}
+
+static void llext_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	struct llext_shell_cmd cmd = {.tgt = idx};
+
+	llext_iterate(llext_shell_name_cb, &cmd);
+
+	entry->syntax = cmd.ext ? cmd.ext->name : NULL;
 	entry->help = NULL;
 	entry->subcmd = NULL;
-
 }
 
 SHELL_DYNAMIC_CMD_CREATE(msub_llext_name, llext_name_get);
 
+struct llext_shell_list {
+	const struct shell *sh;
+};
+
+static int llext_shell_list_cb(struct llext *ext, void *arg)
+{
+	struct llext_shell_list *sl = arg;
+
+	shell_print(sl->sh, "| %16s | %12d |", ext->name, ext->mem_size);
+	return 0;
+}
+
 static int cmd_llext_list(const struct shell *sh, size_t argc, char *argv[])
 {
-	sys_snode_t *node;
-	struct llext *ext;
+	struct llext_shell_list sl = {.sh = sh};
 
 	shell_print(sh, "| Name             | Size         |");
-	SYS_SLIST_FOR_EACH_NODE(llext_list(), node) {
-		ext = CONTAINER_OF(node, struct llext, _llext_list);
-		shell_print(sh, "| %16s | %12d |", ext->name, ext->mem_size);
-	}
-
-	return 0;
+	return llext_iterate(llext_shell_list_cb, &sl);
 }
 
 static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE];
