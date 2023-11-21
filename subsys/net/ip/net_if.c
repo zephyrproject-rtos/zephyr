@@ -4388,6 +4388,11 @@ static void update_operational_state(struct net_if *iface)
 		goto exit;
 	}
 
+	if (!device_is_ready(net_if_get_device(iface))) {
+		new_state = NET_IF_OPER_LOWERLAYERDOWN;
+		goto exit;
+	}
+
 	if (!net_if_is_carrier_ok(iface)) {
 #if defined(CONFIG_NET_L2_VIRTUAL)
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
@@ -4462,6 +4467,27 @@ int net_if_up(struct net_if *iface)
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
+	} else {
+		/* If the L2 does not implement enable(), then the network
+		 * device driver cannot implement start(), in which case
+		 * we can do simple check here and not try to bring interface
+		 * up as the device is not ready.
+		 *
+		 * If the network device driver does implement start(), then
+		 * it could bring the interface up when the enable() is called
+		 * few lines below.
+		 */
+		const struct device *dev;
+
+		dev = net_if_get_device(iface);
+		NET_ASSERT(dev);
+
+		/* If the device is not ready it is pointless trying to take it up. */
+		if (!device_is_ready(dev)) {
+			NET_DBG("Device %s (%p) is not ready", dev->name, dev);
+			status = -ENXIO;
+			goto out;
+		}
 	}
 
 	/* Notify L2 to enable the interface */
