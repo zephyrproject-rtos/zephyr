@@ -8,7 +8,7 @@
 #define ZEPHYR_INCLUDE_KERNEL_THREAD_H_
 
 #ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
-#include <zephyr/kernel/mm.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 #endif
 
 #include <zephyr/kernel/stats.h>

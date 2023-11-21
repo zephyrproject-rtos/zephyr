@@ -18,6 +18,10 @@
 #include "test_syscalls.h"
 #endif
 
+#if defined(CONFIG_DEMAND_PAGING)
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
+
 #if defined(CONFIG_X86) && defined(CONFIG_X86_MMU)
 #define STACKSIZE (8192)
 #else
