@@ -125,12 +125,6 @@ config BT_BLUENRG_ACI
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
-config BT_SPI_BLUENRG
-	bool "Compatibility with BlueNRG-based devices"
-	help
-	  Enable support for devices compatible with the BlueNRG Bluetooth
-	  Stack. Current driver supports: ST BLUENRG-MS.
-
 endif # BT_SPI
 
 config BT_STM32_IPM_RX_STACK_SIZE
