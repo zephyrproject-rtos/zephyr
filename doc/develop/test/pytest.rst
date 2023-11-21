@@ -56,6 +56,16 @@ Pytest scans the given locations looking for tests, following its default
 `discovery rules <https://docs.pytest.org/en/7.1.x/explanation/goodpractices.html#conventions-for-python-test-discovery>`_
 One can also pass some extra arguments to the pytest from yaml file using ``pytest_args`` keyword
 under ``harness_config``, e.g.: ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``.
+There is also an option to pass ``--pytest-args`` through Twister command line parameters.
+This can be particularly useful when one wants to select a specific testcase from a test suite.
+For instance, one can use a command:
+
+.. code-block:: console
+
+   $ ./scripts/twister --platform native_sim -T samples/subsys/testsuite/pytest/shell \
+   -s samples/subsys/testsuite/pytest/shell/sample.pytest.shell \
+   --pytest-args='-k test_shell_print_version'
+
 
 Helpers & fixtures
 ==================
