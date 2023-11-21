@@ -155,6 +155,7 @@ ARM arch:
     - bbolen
     - povergoing
     - ithinuel
+    - sgrrzhf
   files:
     - arch/arm/
     - arch/arm/core/offsets/
