@@ -70,6 +70,15 @@ config LOG_FMT_SECTION_STRIP
 	depends on LOG_FMT_SECTION
 	depends on LINKER_DEVNULL_SUPPORT
 	imply LINKER_DEVNULL_MEMORY
+	imply LOG_FMT_STRING_VALIDATE
+
+config LOG_FMT_STRING_VALIDATE
+	bool "Validate logging strings"
+	help
+	  Logging strings cannot use %p with character pointers. They should be
+	  casted to the pointer of another type (e.g. void *). With this feature
+	  enabled, at compile time, the preprocessor detects strings with %p
+	  without casting and reports an error at runtime.
 
 config LOG_USE_TAGGED_ARGUMENTS
 	bool "Using tagged arguments for packaging"
