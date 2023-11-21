@@ -1192,20 +1192,14 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 	struct ieee802154_key keys[] = {
 		{
 			.key_id_mode = key_id_mode,
-			.key_index = aKeyId == 1 ? 0x80 : aKeyId - 1,
-			.key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
 			.key_id_mode = key_id_mode,
-			.key_index = aKeyId,
-			.key_value = (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
 			.key_id_mode = key_id_mode,
-			.key_index = aKeyId == 0x80 ? 1 : aKeyId + 1,
-			.key_value = (uint8_t *)aNextKey->mKeyMaterial.mKey.m8,
 			.frame_counter_per_key = false,
 		},
 		{
@@ -1219,9 +1213,24 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 		},
 	};
 
-	/* aKeyId in range: (1, 0x80) means valid keys
-	 * aKeyId == 0 is used only to clear keys for stack reset in RCP
-	 */
+	if (key_id_mode == 1) {
+		/* aKeyId in range: (1, 0x80) means valid keys */
+		uint8_t prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
+		uint8_t next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
+
+		keys[0].key_id = &prev_key_id;
+		keys[0].key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8;
+
+		keys[1].key_id = &aKeyId;
+		keys[1].key_value = (uint8_t *)aCurrKey->mKeyMaterial.mKey.m8;
+
+		keys[2].key_id = &next_key_id;
+		keys[2].key_value = (uint8_t *)aNextKey->mKeyMaterial.mKey.m8;
+	} else {
+		/* aKeyId == 0 is used only to clear keys for stack reset in RCP */
+		__ASSERT_NO_MSG((key_id_mode == 0) && (aKeyId == 0));
+	}
+
 	struct ieee802154_config config = {
 		.mac_keys = aKeyId == 0 ? clear_keys : keys,
 	};
