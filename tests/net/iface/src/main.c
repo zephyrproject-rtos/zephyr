@@ -66,6 +66,7 @@ static struct net_if *iface4;
 static bool test_failed;
 static bool test_started;
 static struct k_sem wait_data;
+static bool device_ok;
 
 #define WAIT_TIME 250
 
@@ -101,6 +102,15 @@ static void net_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
+}
+
+static int dev_init(const struct device *dev)
+{
+	if (device_ok == false) {
+		return -EAGAIN;
+	}
+
+	return 0;
 }
 
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
@@ -144,7 +154,7 @@ static struct dummy_api net_iface_api = {
 NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
-			 NULL,
+			 dev_init,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
@@ -314,7 +324,9 @@ static void *iface_setup(void)
 {
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
-	int idx;
+	const struct device *dev;
+	bool status;
+	int idx, ret;
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -341,6 +353,42 @@ static void *iface_setup(void)
 	zassert_not_null(iface1, "Interface 1");
 	zassert_not_null(iface2, "Interface 2");
 	zassert_not_null(iface3, "Interface 3");
+
+	/* Make sure that the first interface device is not ready */
+	dev = net_if_get_device(iface1);
+	zassert_not_null(dev, "Device is not set!");
+
+	status = device_is_ready(dev);
+	zassert_equal(status, false,  "Device %s (%p) is ready!",
+		      dev->name, dev);
+
+	/* Trying to take the interface up will fail */
+	ret = net_if_up(iface1);
+	zassert_equal(ret, -ENXIO, "Interface 1 is up (%d)", ret);
+
+	/* Try to set dormant state */
+	net_if_dormant_on(iface1);
+
+	/* Operational state should be "oper down" */
+	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_DOWN,
+		      "Invalid operational state (%d)",
+		      iface1->if_dev->oper_state);
+
+	/* Mark the device ready and take the interface up */
+	dev->state->init_res = 0;
+	device_ok = true;
+
+	ret = net_if_up(iface1);
+	zassert_equal(ret, 0, "Interface 1 is not up (%d)", ret);
+
+	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_DORMANT,
+		      "Invalid operational state (%d)",
+		      iface1->if_dev->oper_state);
+
+	net_if_dormant_off(iface1);
+	zassert_equal(iface1->if_dev->oper_state, NET_IF_OPER_UP,
+		      "Invalid operational state (%d)",
+		      iface1->if_dev->oper_state);
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
