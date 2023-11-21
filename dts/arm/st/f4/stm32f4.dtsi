@@ -22,6 +22,7 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,cortex-m-idle-timer = &rtc;
 	};
 
 	cpus {
