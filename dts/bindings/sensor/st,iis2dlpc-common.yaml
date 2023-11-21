@@ -3,10 +3,10 @@
 
 description: |
     When setting the odr property in a .dts or .dtsi file you may include
-    st_iis2dlpc.h and use the macros defined there.
+    iis2dlpc.h and use the macros defined there.
 
     Example:
-    #include <zephyr/dt-bindings/sensor/st_iis2dlpc.h>
+    #include <zephyr/dt-bindings/sensor/iis2dlpc.h>
 
     iis2dlpc: iis2dlpc@0 {
       ...
