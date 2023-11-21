@@ -68,6 +68,18 @@ static bool input_kbd_matrix_ghosting(const struct device *dev)
 	return false;
 }
 
+static void input_kbd_matrix_drive_column(const struct device *dev, int col)
+{
+	const struct input_kbd_matrix_common_config *cfg = dev->config;
+	const struct input_kbd_matrix_api *api = cfg->api;
+
+	api->drive_column(dev, col);
+
+#ifdef CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK
+	input_kbd_matrix_drive_column_hook(dev, col);
+#endif
+}
+
 static bool input_kbd_matrix_scan(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
@@ -76,7 +88,7 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 	kbd_row_t key_event = 0U;
 
 	for (int col = 0; col < cfg->col_size; col++) {
-		api->drive_column(dev, col);
+		input_kbd_matrix_drive_column(dev, col);
 
 		/* Allow the matrix to stabilize before reading it */
 		k_busy_wait(cfg->settle_time_us);
@@ -86,7 +98,7 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 		key_event |= row;
 	}
 
-	api->drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE);
+	input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE);
 
 	return key_event != 0U;
 }
@@ -260,7 +272,7 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 	ARG_UNUSED(unused3);
 
 	while (true) {
-		api->drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL);
+		input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL);
 		api->set_detect_mode(dev, true);
 
 		k_sem_take(&data->poll_lock, K_FOREVER);

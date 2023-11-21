@@ -20,4 +20,11 @@ config INPUT_KBD_MATRIX_16_BIT_ROW
 	  Use a 16 bit type for the internal structure, allow using a matrix
 	  with up to 16 rows if the driver supports it.
 
+config INPUT_KBD_DRIVE_COLUMN_HOOK
+	bool
+	help
+	  Call an application specific hook after the driver specific
+	  drive_column implementation. The application must implement the
+	  input_kbd_matrix_drive_column_hook function.
+
 endif # INPUT_KBD_MATRIX
