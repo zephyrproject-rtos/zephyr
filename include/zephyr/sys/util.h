@@ -269,13 +269,18 @@ extern "C" {
 	})
 
 /**
- * @brief Concatenate two tokens into one
+ * @brief Concatenate input arguments
  *
- * Concatenate two tokens,  @p x and @p y, into a combined token during the preprocessor pass.
- * This can be used to, for ex., build an identifier out of two parts,
+ * Concatenate provided tokens into a combined token during the preprocessor pass.
+ * This can be used to, for ex., build an identifier out of multiple parts,
  * where one of those parts may be, for ex, a number, another macro, or a macro argument.
+ *
+ * @param ... Tokens to concatencate
+ *
+ * @return Concatenated token.
  */
-#define CONCAT(x, y) _DO_CONCAT(x, y)
+#define CONCAT(...) \
+	UTIL_CAT(_CONCAT_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
 
 /**
  * @brief Value of @p x rounded up to the next multiple of @p align.
