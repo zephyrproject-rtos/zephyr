@@ -190,6 +190,30 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_INST(_inst) COND_CODE_1(CONFIG_LOG, (_inst), NULL)
 
+/* If strings are removed from the binary then there is a risk of creating invalid
+ * cbprintf package if %p is used with character pointer which is interpreted as
+ * string. A compile time check is performed (since format string is known at
+ * compile time) and check fails logging message is not created but error is
+ * emitted instead. String check may increase compilation time so it is not
+ * always performed (could significantly increase CI time).
+ */
+#if CONFIG_LOG_FMT_STRING_VALIDATE
+#define LOG_STRING_WARNING(_mode, _src, ...) \
+	    Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
+			     Z_LOG_LOCAL_DOMAIN_ID, _src, LOG_LEVEL_ERR, NULL, 0, \
+			     "char pointer used for %%p, cast to void *:\"%s\"", \
+			     GET_ARG_N(1, __VA_ARGS__))
+
+#define LOG_POINTERS_VALIDATE(string_ok, ...) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	string_ok = Z_CBPRINTF_POINTERS_VALIDATE(__VA_ARGS__); \
+	_Pragma("GCC diagnostic pop")
+#else
+#define LOG_POINTERS_VALIDATE(string_ok, ...) string_ok = true
+#define LOG_STRING_WARNING(_mode, _src, ...)
+#endif
+
 /*****************************************************************************/
 /****************** Macros for standard logging ******************************/
 /*****************************************************************************/
@@ -234,6 +258,12 @@ static inline char z_log_minimal_level_to_char(int level)
 	int _mode; \
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 		(void *)_dsource : (void *)_source; \
+	bool string_ok; \
+	LOG_POINTERS_VALIDATE(string_ok, __VA_ARGS__); \
+	if (!string_ok) { \
+		LOG_STRING_WARNING(_mode, _src, __VA_ARGS__); \
+		break; \
+	} \
 	Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, NULL,\
 			  0, __VA_ARGS__); \
