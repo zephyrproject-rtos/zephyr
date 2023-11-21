@@ -944,7 +944,6 @@ static void ascs_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
 		return;
 	}
 
