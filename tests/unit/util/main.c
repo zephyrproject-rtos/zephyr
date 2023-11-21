@@ -68,7 +68,7 @@ ZTEST(util, test_COND_CODE_1) {
 	#define TEST_DEFINE_1 1
 	#define TEST_DEFINE_0 0
 	/* Test validates that expected code has been injected. Failure would
-	 * be seen in compilation (lack of variable or ununsed variable.
+	 * be seen in compilation (lack of variable or unused variable).
 	 */
 	COND_CODE_1(1, (uint32_t x0 = 1;), (uint32_t y0;))
 	zassert_true((x0 == 1));
@@ -85,7 +85,7 @@ ZTEST(util, test_COND_CODE_1) {
 
 ZTEST(util, test_COND_CODE_0) {
 	/* Test validates that expected code has been injected. Failure would
-	 * be seen in compilation (lack of variable or ununsed variable.
+	 * be seen in compilation (lack of variable or unused variable).
 	 */
 	COND_CODE_0(0, (uint32_t x0 = 1;), (uint32_t y0;))
 	zassert_true((x0 == 1));
@@ -173,7 +173,7 @@ static int inc_func(bool cleanup)
 {
 	static int a;
 
-        if (cleanup) {
+	if (cleanup) {
 		a = 1;
 	}
 
