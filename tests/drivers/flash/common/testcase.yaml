@@ -21,7 +21,7 @@ tests:
       - OVERLAY_CONFIG=boards/nrf52840_flash_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_mx25l51245g.overlay
     harness_config:
-      fixture: external_flash
+      fixture: external_flash_mx25l51245g
     integration_platforms:
       - nrf52840dk_nrf52840
   drivers.flash.common.soc_flash_nrf:
@@ -78,11 +78,15 @@ tests:
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
+    harness_config:
+      fixture: external_flash_mx25v1635f
   drivers.flash.common.spi_nor_wp_hold:
     platform_allow: nrf52840dk_nrf52840
     extra_args:
       - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay
+    harness_config:
+      fixture: external_flash_mx25v1635f
   drivers.flash.common.sam0:
     platform_allow:
       - atsamd20_xpro
