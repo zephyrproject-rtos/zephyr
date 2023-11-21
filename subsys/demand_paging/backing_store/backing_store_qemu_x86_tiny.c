@@ -20,6 +20,7 @@
 #include <kernel_arch_interface.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 
 void *location_to_flash(uintptr_t location)
 {

@@ -11,6 +11,10 @@
 #include <ksched.h>
 #include <x86_mmu.h>
 
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
+
 #ifndef CONFIG_X86_KPTI
 /* Update the to the incoming thread's page table, and update the location of
  * the privilege elevation stack.

@@ -20,6 +20,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
+
 /*
  * General terminology:
  * - A page frame is a page-sized physical memory region in RAM. It is a
