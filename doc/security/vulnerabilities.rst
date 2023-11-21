@@ -1506,7 +1506,16 @@ Under embargo until 2023/11/01
 CVE-2023-5055
 -------------
 
-Under embargo until 2023/11/01
+L2CAP: Possible Stack based buffer overflow in le_ecred_reconf_req()
+
+- `Zephyr project bug tracker GHSA-wr8r-7f8x-24jj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wr8r-7f8x-24jj>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 62381 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/62381>`_
+
 
 CVE-2023-5139
 -------------
