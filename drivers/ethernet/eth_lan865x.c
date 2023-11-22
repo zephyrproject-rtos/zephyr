@@ -124,6 +124,8 @@ static int lan865x_gpio_reset(const struct device *dev)
 	struct lan865x_data *ctx = dev->data;
 
 	ctx->reset = false;
+	ctx->tc6->protected = false;
+
 	/* Perform (GPIO based) HW reset */
 	/* assert RESET_N low for 10 µs (5 µs min) */
 	gpio_pin_set_dt(&cfg->reset, 1);
