@@ -72,6 +72,7 @@ extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
 extern bool net_context_is_v6only_set(struct net_context *context);
+extern bool net_context_is_recv_pktinfo_set(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
@@ -91,6 +92,11 @@ static inline bool net_context_is_reuseaddr_set(struct net_context *context)
 	return false;
 }
 static inline bool net_context_is_reuseport_set(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return false;
+}
+static inline bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
 	ARG_UNUSED(context);
 	return false;
