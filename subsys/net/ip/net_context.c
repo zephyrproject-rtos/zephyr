@@ -1604,6 +1604,36 @@ static int get_context_recv_pktinfo(struct net_context *context,
 #endif
 }
 
+static int get_context_recv_pktinfo(struct net_context *context,
+				    void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->options.recv_pktinfo == true) {
+		*((int *)value) = (int) true;
+	} else {
+		*((int *)value) = (int) false;
+	}
+
+	*len = sizeof(int);
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2759,6 +2789,32 @@ static int set_context_recv_pktinfo(struct net_context *context,
 {
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 	return set_bool_option(&context->options.recv_pktinfo, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_recv_pktinfo(struct net_context *context,
+				    const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	bool pktinfo = false;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (*((int *) value) != 0) {
+		pktinfo = true;
+	}
+
+	context->options.recv_pktinfo = pktinfo;
+
+	return 0;
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
