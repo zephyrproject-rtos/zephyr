@@ -688,10 +688,6 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 
 int ext2_inode_trunc(struct ext2_inode *inode, off_t length)
 {
-	if (length > UINT32_MAX) {
-		return -ENOTSUP;
-	}
-
 	int rc = 0;
 	uint32_t new_size = (uint32_t)length;
 	uint32_t old_size = inode->i_size;
