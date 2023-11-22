@@ -1,0 +1,19 @@
+---
+sample:
+  name: Speaker sample
+tests:
+  sample.drivers.audio.speaker:
+    tags: speaker
+    platform_allow:
+      - mimxrt1060_evkb
+    integration_platforms:
+      - mimxrt1060_evkb
+    harness: console
+    harness_config:
+      fixture: tas2x63evm
+      type: multi_line
+      ordered: true
+      regex:
+        - "i2s_sample: Starting I2S audio sample app ..."
+        - "i2s_sample: Stream with 478208 bytes started"
+        - "i2s_sample: Exiting I2S audio sample app ..."

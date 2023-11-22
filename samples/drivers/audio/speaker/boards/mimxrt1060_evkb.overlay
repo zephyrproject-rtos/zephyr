@@ -1,0 +1,23 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		speaker-i2s = &sai1;
+		audio0 = &audio;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+	audio: tas2563@4c {
+		compatible = "ti,tas2563";
+		status = "okay";
+		reg = <0x4C>;
+		supply-gpios = <&gpio1 26 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpio1 27 GPIO_ACTIVE_LOW>;
+	};
+};
