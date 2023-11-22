@@ -54,8 +54,10 @@ static int sdl_display_init(const struct device *dev)
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		;
 
-	int rc = sdl_display_init_bottom(config->height, config->width, &disp_data->window,
-					 &disp_data->renderer, &disp_data->texture);
+	int rc = sdl_display_init_bottom(config->height, config->width,
+					 CONFIG_SDL_DISPLAY_ZOOM_PCT,
+					 &disp_data->window, &disp_data->renderer,
+					 &disp_data->texture);
 
 	if (rc != 0) {
 		LOG_ERR("Failed to create SDL display");
