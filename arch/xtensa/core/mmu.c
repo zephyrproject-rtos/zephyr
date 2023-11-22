@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <xtensa/config/core-isa.h>
 #include <xtensa_mmu_priv.h>
+#include <zephyr/cache.h>
 
 #define ASID_INVALID 0
 
