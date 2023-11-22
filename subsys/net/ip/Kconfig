@@ -737,6 +737,14 @@ config NET_CONTEXT_REUSEPORT
 	  Allow to set the SO_REUSEPORT flag on a socket. This enables multiple
 	  sockets to bind to the same local IP address and port combination.
 
+config NET_CONTEXT_RECV_PKTINFO
+	bool "Add receive PKTINFO support to net_context"
+	depends on NET_UDP
+	help
+	  Allow to set the IP_PKTINFO or IPV6_RECVPKTINFO flags on a socket.
+	  This way user can get extra information about the received data in the
+	  socket.
+
 config NET_TEST
 	bool "Network Testing"
 	help

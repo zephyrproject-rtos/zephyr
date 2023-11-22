@@ -332,6 +332,9 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
 		bool ipv6_v6only;
 #endif
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+		bool recv_pktinfo;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1102,6 +1105,7 @@ enum net_context_option {
 	NET_OPT_REUSEADDR	= 9,
 	NET_OPT_REUSEPORT	= 10,
 	NET_OPT_IPV6_V6ONLY	= 11,
+	NET_OPT_RECV_PKTINFO    = 12,
 };
 
 /**

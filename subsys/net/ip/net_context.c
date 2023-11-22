@@ -89,6 +89,17 @@ bool net_context_is_v6only_set(struct net_context *context)
 #endif
 }
 
+bool net_context_is_recv_pktinfo_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	return context->options.recv_pktinfo;
+#else
+	ARG_UNUSED(context);
+
+	return false;
+#endif
+}
+
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 static inline bool is_in_tcp_listen_state(struct net_context *context)
 {
@@ -1558,6 +1569,36 @@ static int get_context_ipv6_v6only(struct net_context *context,
 #endif
 }
 
+static int get_context_recv_pktinfo(struct net_context *context,
+				    void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	if (!value || !len) {
+		return -EINVAL;
+	}
+
+	if (*len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->options.recv_pktinfo == true) {
+		*((int *)value) = (int) true;
+	} else {
+		*((int *)value) = (int) false;
+	}
+
+	*len = sizeof(int);
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2697,6 +2738,32 @@ static int set_context_ipv6_v6only(struct net_context *context,
 #endif
 }
 
+static int set_context_recv_pktinfo(struct net_context *context,
+				    const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+	bool pktinfo = false;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (*((int *) value) != 0) {
+		pktinfo = true;
+	}
+
+	context->options.recv_pktinfo = pktinfo;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2744,6 +2811,9 @@ int net_context_set_option(struct net_context *context,
 		break;
 	case NET_OPT_IPV6_V6ONLY:
 		ret = set_context_ipv6_v6only(context, value, len);
+		break;
+	case NET_OPT_RECV_PKTINFO:
+		ret = set_context_recv_pktinfo(context, value, len);
 		break;
 	}
 
@@ -2799,6 +2869,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_IPV6_V6ONLY:
 		ret = get_context_ipv6_v6only(context, value, len);
+		break;
+	case NET_OPT_RECV_PKTINFO:
+		ret = get_context_recv_pktinfo(context, value, len);
 		break;
 	}
 
