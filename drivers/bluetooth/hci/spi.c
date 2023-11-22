@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(bt_driver);
 /* Offsets */
 #define STATUS_HEADER_READY	0
 #define STATUS_HEADER_TOREAD	3
+#define STATUS_HEADER_TOWRITE	1
 
 #define PACKET_TYPE		0
 #define EVT_HEADER_TYPE		0
@@ -169,6 +170,8 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 /* On BlueNRG-MS, host is expected to read */
 /* as long as IRQ pin is high */
 #define READ_CONDITION IS_IRQ_HIGH
+/* We cannot retry write data without reading again the header */
+#define WRITE_DATA_CONDITION(...) true
 
 static void assert_cs(void)
 {
@@ -194,6 +197,8 @@ static int bt_spi_get_header(uint8_t op, uint8_t *size)
 			return 0;
 		}
 		size_offset = STATUS_HEADER_TOREAD;
+	} else if (op == SPI_WRITE) {
+		size_offset = STATUS_HEADER_TOWRITE;
 	}
 	attempts = IRQ_HIGH_MAX_READ;
 	do {
@@ -224,6 +229,7 @@ static int bt_spi_get_header(uint8_t op, uint8_t *size)
 
 #define release_cs(...)
 #define READ_CONDITION false
+#define WRITE_DATA_CONDITION(ret, rx_first) (rx_first != 0U || ret)
 
 static int bt_spi_get_header(uint8_t op, uint8_t *size)
 {
@@ -247,6 +253,10 @@ static int bt_spi_get_header(uint8_t op, uint8_t *size)
 			/* When reading, keep looping if read buffer is not valid */
 			loop_cond = ((header_slave[STATUS_HEADER_TOREAD] == 0U) ||
 					(header_slave[STATUS_HEADER_TOREAD] == 0xFF));
+		} else {
+			/* When writing, keep looping if all bytes are zero */
+			loop_cond = ((header_slave[1] | header_slave[2] | header_slave[3] |
+					header_slave[4]) == 0U);
 		}
 	} while ((header_slave[STATUS_HEADER_READY] != READY_NOW) || loop_cond);
 
@@ -420,8 +430,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 static int bt_spi_send(struct net_buf *buf)
 {
-	uint8_t header_tx[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	uint8_t header_rx[5];
+	uint8_t size;
 	uint8_t rx_first[1];
 	int ret;
 
@@ -449,33 +458,28 @@ static int bt_spi_send(struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	/* Poll sanity values until device has woken-up */
-	do {
-		kick_cs();
-		ret = bt_spi_transceive(header_tx, 5, header_rx, 5);
+	ret = bt_spi_get_header(SPI_WRITE, &size);
+	size = MIN(buf->len, size);
 
-		/*
-		 * RX Header must contain a sanity check Byte and size
-		 * information.  If it does not contain BOTH then it is
-		 * sleeping or still in the initialisation stage (waking-up).
-		 */
-	} while ((header_rx[STATUS_HEADER_READY] != READY_NOW ||
-		  (header_rx[1] | header_rx[2] | header_rx[3] | header_rx[4]) == 0U) && !ret);
+	if (size < buf->len) {
+		LOG_WRN("Unable to write full data, skipping");
+		ret = -ECANCELED;
+	}
 
 	if (!ret) {
 		/* Delay here is rounded up to next tick */
 		k_sleep(K_USEC(DATA_DELAY_US));
 		/* Transmit the message */
 		while (true) {
-			ret = bt_spi_transceive(buf->data, buf->len,
+			ret = bt_spi_transceive(buf->data, size,
 						rx_first, 1);
-			if (rx_first[0] != 0U || ret) {
+			if (WRITE_DATA_CONDITION(ret, rx_first[0])) {
 				break;
 			}
 			/* Consider increasing controller-data-delay-us
 			 * if this message is extremely common.
 			 */
-			LOG_DBG("Controller not ready for SPI transaction of %d bytes", buf->len);
+			LOG_DBG("Controller not ready for SPI transaction of %d bytes", size);
 		}
 	}
 
