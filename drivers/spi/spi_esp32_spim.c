@@ -71,7 +71,8 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	size_t max_buf_sz =
 		cfg->dma_enabled ? SPI_DMA_MAX_BUFFER_SIZE : SOC_SPI_MAXIMUM_BUFFER_SIZE;
 	size_t transfer_len_bytes = MIN(chunk_len_bytes, max_buf_sz);
-	size_t bit_len =  transfer_len_bytes << 3;
+	size_t transfer_len_frames = transfer_len_bytes / data->dfs;
+	size_t bit_len = transfer_len_bytes << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;
 	uint8_t dma_len_tx = MIN(ctx->tx_len * data->dfs, SPI_DMA_MAX_BUFFER_SIZE);
@@ -90,7 +91,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 			memcpy(tx_temp, &ctx->tx_buf[0], dma_len_tx);
 		}
 		if (ctx->rx_buf && (!esp_ptr_dma_capable((uint32_t *)&ctx->rx_buf[0]) ||
-				    ((int)&ctx->rx_buf[0] % 4 != 0) || (dma_len_tx % 4 != 0))) {
+				    ((int)&ctx->rx_buf[0] % 4 != 0) || (dma_len_rx % 4 != 0))) {
 			/* The rx buffer need to be length of
 			 * multiples of 32 bits to avoid heap
 			 * corruption.
@@ -112,9 +113,11 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	hal_trans->tx_bitlen = bit_len;
 	hal_trans->rx_bitlen = bit_len;
 
-	/* keep cs line active ultil last transmission */
+	/* keep cs line active until last transmission */
 	hal_trans->cs_keep_active =
-		(!ctx->num_cs_gpios && (ctx->rx_count > 1 || ctx->tx_count > 1));
+		(!ctx->num_cs_gpios &&
+		 (ctx->rx_count > 1 || ctx->tx_count > 1 || ctx->rx_len > transfer_len_frames ||
+		  ctx->tx_len > transfer_len_frames));
 
 	/* configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
@@ -122,7 +125,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* send data */
 	spi_hal_user_start(hal);
-	spi_context_update_tx(&data->ctx, data->dfs, transfer_len_bytes/data->dfs);
+	spi_context_update_tx(&data->ctx, data->dfs, transfer_len_frames);
 
 	while (!spi_hal_usr_is_done(hal)) {
 		/* nop */
@@ -135,7 +138,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 		memcpy(&ctx->rx_buf[0], rx_temp, transfer_len_bytes);
 	}
 
-	spi_context_update_rx(&data->ctx, data->dfs, transfer_len_bytes/data->dfs);
+	spi_context_update_rx(&data->ctx, data->dfs, transfer_len_frames);
 
 	k_free(tx_temp);
 	k_free(rx_temp);
