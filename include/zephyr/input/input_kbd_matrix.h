@@ -32,8 +32,10 @@
 /** Row entry data type */
 #if CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW
 typedef uint16_t kbd_row_t;
+#define PRIkbdrow "%04x"
 #else
 typedef uint8_t kbd_row_t;
+#define PRIkbdrow "%02x"
 #endif
 
 /** Maximum number of rows */
