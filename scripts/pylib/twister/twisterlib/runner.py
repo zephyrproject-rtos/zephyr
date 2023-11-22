@@ -263,27 +263,31 @@ class CMake:
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
+        start_time = time.time()
         if sys.platform == 'linux':
             p = self.jobserver.popen(cmd, **kwargs)
         else:
             p = subprocess.Popen(cmd, **kwargs)
+        logger.debug(f'Running {"".join(cmd)}')
 
         out, _ = p.communicate()
 
-        results = {}
+        ret = {}
+        duration = time.time() - start_time
+        self.instance.build_time += duration
         if p.returncode == 0:
-            msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
+            msg = f"Finished building {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
+            logger.debug(msg)
 
             self.instance.status = "passed"
             if not self.instance.run:
                 self.instance.add_missing_case_status("skipped", "Test was built only")
-            results = {'msg': msg, "returncode": p.returncode, "instance": self.instance}
+            ret = {"returncode": p.returncode}
 
             if out:
                 log_msg = out.decode(self.default_encoding)
                 with open(os.path.join(self.build_dir, self.log), "a", encoding=self.default_encoding) as log:
                     log.write(log_msg)
-
             else:
                 return None
         else:
@@ -310,12 +314,11 @@ class CMake:
                     self.instance.status = "error"
                     self.instance.reason = "Build failure"
 
-            results = {
-                "returncode": p.returncode,
-                "instance": self.instance,
+            ret = {
+                "returncode": p.returncode
             }
 
-        return results
+        return ret
 
     def run_cmake(self, args="", filter_stages=[]):
 
@@ -384,18 +387,24 @@ class CMake:
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
+        start_time = time.time()
         if sys.platform == 'linux':
             p = self.jobserver.popen(cmd, **kwargs)
         else:
             p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
 
+        duration = time.time() - start_time
+        self.instance.build_time += duration
+
         if p.returncode == 0:
             filter_results = self.parse_generated(filter_stages)
-            msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
+            msg = f"Finished running cmake {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
             logger.debug(msg)
-            results = {'msg': msg, 'filter': filter_results}
-
+            ret = {
+                    'returncode': p.returncode,
+                    'filter': filter_results
+                    }
         else:
             self.instance.status = "error"
             self.instance.reason = "Cmake build failure"
@@ -404,7 +413,7 @@ class CMake:
                 tc.status = self.instance.status
 
             logger.error("Cmake build failure: %s for %s" % (self.source_dir, self.platform.name))
-            results = {"returncode": p.returncode}
+            ret = {"returncode": p.returncode}
 
         if out:
             os.makedirs(self.build_dir, exist_ok=True)
@@ -412,7 +421,7 @@ class CMake:
                 log_msg = out.decode(self.default_encoding)
                 log.write(log_msg)
 
-        return results
+        return ret
 
 
 class FilterBuilder(CMake):
@@ -502,14 +511,14 @@ class FilterBuilder(CMake):
                         edt = pickle.load(f)
                 else:
                     edt = None
-                res = expr_parser.parse(self.testsuite.filter, filter_data, edt)
+                ret = expr_parser.parse(self.testsuite.filter, filter_data, edt)
 
             except (ValueError, SyntaxError) as se:
                 sys.stderr.write(
                     "Failed processing %s\n" % self.testsuite.yamlfile)
                 raise se
 
-            if not res:
+            if not ret:
                 return {os.path.join(self.platform.name, self.testsuite.name): True}
             else:
                 return {os.path.join(self.platform.name, self.testsuite.name): False}
@@ -584,12 +593,12 @@ class ProjectBuilder(FilterBuilder):
         self.instance.setup_handler(self.env)
 
         if op == "filter":
-            res = self.cmake(filter_stages=self.instance.filter_stages)
+            ret = self.cmake(filter_stages=self.instance.filter_stages)
             if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 # Here we check the dt/kconfig filter results coming from running cmake
-                if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
+                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "filtered"
                     self.instance.reason = "runtime filter"
@@ -600,8 +609,8 @@ class ProjectBuilder(FilterBuilder):
                     pipeline.put({"op": "cmake", "test": self.instance})
 
         # The build process, call cmake and build with configured generator
-        if op == "cmake":
-            res = self.cmake()
+        elif op == "cmake":
+            ret = self.cmake()
             if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.options.cmake_only:
@@ -610,7 +619,7 @@ class ProjectBuilder(FilterBuilder):
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 # Here we check the runtime filter results coming from running cmake
-                if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
+                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "filtered"
                     self.instance.reason = "runtime filter"
@@ -622,8 +631,8 @@ class ProjectBuilder(FilterBuilder):
 
         elif op == "build":
             logger.debug("build test: %s" % self.instance.name)
-            res = self.build()
-            if not res:
+            ret = self.build()
+            if not ret:
                 self.instance.status = "error"
                 self.instance.reason = "Build Failure"
                 pipeline.put({"op": "report", "test": self.instance})
@@ -634,7 +643,7 @@ class ProjectBuilder(FilterBuilder):
                     results.skipped_runtime += 1
                     self.instance.add_missing_case_status("skipped", self.instance.reason)
 
-                if res.get('returncode', 1) > 0:
+                if ret.get('returncode', 1) > 0:
                     self.instance.add_missing_case_status("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
@@ -1040,13 +1049,10 @@ class ProjectBuilder(FilterBuilder):
             self.options.extra_args, # CMake extra args
             self.instance.build_dir,
         )
-
-        res = self.run_cmake(args,filter_stages)
-        return res
+        return self.run_cmake(args,filter_stages)
 
     def build(self):
-        res = self.run_build(['--build', self.build_dir])
-        return res
+        return self.run_build(['--build', self.build_dir])
 
     def run(self):
 
@@ -1289,11 +1295,11 @@ class TwisterRunner:
 
         processes = []
 
-        for job in range(self.jobs):
-            logger.debug(f"Launch process {job}")
+        for _ in range(self.jobs):
             p = Process(target=self.pipeline_mgr, args=(pipeline, done, lock, self.results, ))
             processes.append(p)
             p.start()
+        logger.debug(f"Launched {self.jobs} jobs")
 
         try:
             for p in processes:
