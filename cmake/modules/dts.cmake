@@ -134,7 +134,7 @@ set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 if(EXISTS ${DTS_SOURCE})
   # We found a devicetree. Check for a board revision overlay.
-  if(BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
+  if(DEFINED BOARD_REVISION AND EXISTS ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
     list(APPEND DTS_SOURCE ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
   endif()
 else()
