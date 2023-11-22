@@ -20,13 +20,13 @@ LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 #define NEORV32_UART_CTRL_OFFSET 0x00
 #define NEORV32_UART_DATA_OFFSET 0x04
 
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 /* UART_CTRL register bits */
 #define NEORV32_UART_CTRL_BAUD_MASK   BIT_MASK(12)
 #define NEORV32_UART_CTRL_BAUD_POS    0U
 #define NEORV32_UART_CTRL_PRSC_MASK   BIT_MASK(3)
 #define NEORV32_UART_CTRL_PRSC_POS    24U
-#define NEORV32_UART_CTRL_RTS_EN      BIT(20)
-#define NEORV32_UART_CTRL_CTS_EN      BIT(21)
+#define NEORV32_UART_CTRL_RTS_CTS_EN  (BIT(20) | BIT(21))
 #define NEORV32_UART_CTRL_PMODE_NONE  BIT(22)
 #define NEORV32_UART_CTRL_PMODE_EVEN  BIT(23)
 #define NEORV32_UART_CTRL_PMODE_ODD  (BIT(22) | BIT(23))
@@ -38,6 +38,23 @@ LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 #define NEORV32_UART_DATA_FERR  BIT(29)
 #define NEORV32_UART_DATA_OVERR BIT(30)
 #define NEORV32_UART_DATA_AVAIL BIT(31)
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+#define NEORV32_UART_CTRL_BAUD_MASK   BIT_MASK(10)
+#define NEORV32_UART_CTRL_BAUD_POS    6
+#define NEORV32_UART_CTRL_PRSC_MASK   BIT_MASK(3)
+#define NEORV32_UART_CTRL_PRSC_POS    3
+#define NEORV32_UART_CTRL_RTS_CTS_EN  BIT(2)
+#define NEORV32_UART_CTRL_EN          BIT(0)
+#define NEORV32_UART_CTRL_RX_NEMPTY   BIT(16)
+#define NEORV32_UART_CTRL_TX_FULL     BIT(21)
+#define NEORV32_UART_CTRL_IRQ_RX_NEMPTY BIT(22)
+#define NEORV32_UART_CTRL_IRQ_RX_HALF BIT(23)
+#define NEORV32_UART_CTRL_IRQ_RX_FULL BIT(24)
+#define NEORV32_UART_CTRL_IRQ_TX_EMPTY BIT(25)
+#define NEORV32_UART_CTRL_IRQ_TX_NHALF BIT(26)
+#define NEORV32_UART_CTRL_RX_OVER     BIT(30)
+#define NEORV32_UART_CTRL_TX_BUSY     BIT(31)
+#endif
 
 struct neorv32_uart_config {
 	const struct device *syscon;
@@ -52,7 +69,11 @@ struct neorv32_uart_config {
 
 struct neorv32_uart_data {
 	struct uart_config uart_cfg;
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	uint32_t last_data;
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+	uint32_t last_ctrl;
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	struct k_timer timer;
 	uart_irq_callback_user_data_t callback;
@@ -63,8 +84,17 @@ struct neorv32_uart_data {
 static inline uint32_t neorv32_uart_read_ctrl(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
+#ifdef CONFIG_SOC_NEORV32_V1_9_0
+	struct neorv32_uart_data *data = dev->data;
+#endif
+	uint32_t reg;
 
-	return sys_read32(config->base + NEORV32_UART_CTRL_OFFSET);
+	reg = sys_read32(config->base + NEORV32_UART_CTRL_OFFSET);
+#ifdef CONFIG_SOC_NEORV32_V1_9_0
+	data->last_ctrl = reg;
+#endif
+
+	return reg;
 }
 
 static inline void neorv32_uart_write_ctrl(const struct device *dev, uint32_t ctrl)
@@ -77,12 +107,16 @@ static inline void neorv32_uart_write_ctrl(const struct device *dev, uint32_t ct
 static inline uint32_t neorv32_uart_read_data(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	struct neorv32_uart_data *data = dev->data;
+#endif
 	uint32_t reg;
 
 	/* Cache status bits as they are cleared upon read */
 	reg = sys_read32(config->base + NEORV32_UART_DATA_OFFSET);
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	data->last_data = reg;
+#endif
 
 	return reg;
 }
@@ -96,22 +130,39 @@ static inline void neorv32_uart_write_data(const struct device *dev, uint32_t da
 
 static int neorv32_uart_poll_in(const struct device *dev, unsigned char *c)
 {
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	uint32_t data;
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+	uint32_t ctrl;
+#endif
 
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	data = neorv32_uart_read_data(dev);
 
 	if ((data & NEORV32_UART_DATA_AVAIL) != 0) {
 		*c = data & BIT_MASK(8);
 		return 0;
 	}
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+	ctrl = neorv32_uart_read_ctrl(dev);
+	if ((ctrl & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
+		*c = neorv32_uart_read_data(dev) & BIT_MASK(8);
+		return 0;
+	}
+#endif
 
 	return -1;
 }
 
 static void neorv32_uart_poll_out(const struct device *dev, unsigned char c)
 {
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	while ((neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_TX_BUSY) != 0) {
 	}
+#elif CONFIG_SOC_NEORV32_V1_9_0
+	while ((neorv32_uart_read_ctrl(dev) & NEORV32_UART_CTRL_TX_FULL) != 0) {
+	}
+#endif
 
 	neorv32_uart_write_data(dev, c);
 }
@@ -121,6 +172,7 @@ static int neorv32_uart_err_check(const struct device *dev)
 	struct neorv32_uart_data *data = dev->data;
 	int err = 0;
 
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	if ((data->last_data & NEORV32_UART_DATA_OVERR) != 0) {
 		err |= UART_ERROR_OVERRUN;
 	}
@@ -135,6 +187,13 @@ static int neorv32_uart_err_check(const struct device *dev)
 
 	data->last_data &= ~(NEORV32_UART_DATA_OVERR | NEORV32_UART_DATA_PERR |
 		NEORV32_UART_DATA_FERR);
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+	if ((data->last_ctrl & NEORV32_UART_CTRL_RX_OVER) != 0) {
+		err |= UART_ERROR_OVERRUN;
+	}
+
+	data->last_ctrl &= ~NEORV32_UART_CTRL_RX_OVER;
+#endif
 
 	return err;
 }
@@ -163,14 +222,18 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 
 	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 		ctrl |= NEORV32_UART_CTRL_PMODE_NONE;
+#endif
 		break;
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	case UART_CFG_PARITY_ODD:
 		ctrl |= NEORV32_UART_CTRL_PMODE_ODD;
 		break;
 	case UART_CFG_PARITY_EVEN:
 		ctrl |= NEORV32_UART_CTRL_PMODE_EVEN;
 		break;
+#endif
 	default:
 		LOG_ERR("unsupported parity mode %d", cfg->parity);
 		return -ENOTSUP;
@@ -181,7 +244,7 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 		ctrl |= 0;
 		break;
 	case UART_CFG_FLOW_CTRL_RTS_CTS:
-		ctrl |= NEORV32_UART_CTRL_RTS_EN | NEORV32_UART_CTRL_CTS_EN;
+		ctrl |= NEORV32_UART_CTRL_RTS_CTS_EN;
 		break;
 	default:
 		LOG_ERR("unsupported flow control mode %d", cfg->flow_ctrl);
@@ -222,6 +285,10 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 	ctrl |= (baudxx - 1) << NEORV32_UART_CTRL_BAUD_POS;
 	ctrl |= prscx << NEORV32_UART_CTRL_PRSC_POS;
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) && defined(CONFIG_SOC_NEORV32_V1_9_0)
+	ctrl |= NEORV32_UART_CTRL_IRQ_RX_NEMPTY | NEORV32_UART_CTRL_IRQ_TX_NHALF;
+#endif
+
 	data->uart_cfg = *cfg;
 	neorv32_uart_write_ctrl(dev, ctrl);
 
@@ -251,7 +318,11 @@ static int neorv32_uart_fifo_fill(const struct device *dev, const uint8_t *tx_da
 	__ASSERT_NO_MSG(tx_data != NULL);
 
 	ctrl = neorv32_uart_read_ctrl(dev);
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	if ((ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0) {
+#elif CONFIG_SOC_NEORV32_V1_9_0
+	if ((ctrl & NEORV32_UART_CTRL_TX_FULL) == 0) {
+#endif
 		neorv32_uart_write_data(dev, *tx_data);
 		return 1;
 	}
@@ -270,6 +341,7 @@ static int neorv32_uart_fifo_read(const struct device *dev, uint8_t *rx_data, co
 
 	__ASSERT_NO_MSG(rx_data != NULL);
 
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	while ((data->last_data & NEORV32_UART_DATA_AVAIL) != 0) {
 		rx_data[count++] = data->last_data & BIT_MASK(8);
 		data->last_data &= ~(NEORV32_UART_DATA_AVAIL);
@@ -280,6 +352,18 @@ static int neorv32_uart_fifo_read(const struct device *dev, uint8_t *rx_data, co
 
 		(void)neorv32_uart_read_data(dev);
 	}
+#elif CONFIG_SOC_NEORV32_V1_9_0
+	while ((data->last_ctrl & NEORV32_UART_CTRL_RX_NEMPTY) != 0) {
+		rx_data[count++] = neorv32_uart_read_data(dev) & BIT_MASK(8);
+		data->last_ctrl &= ~(NEORV32_UART_CTRL_RX_NEMPTY);
+
+		if (count >= size) {
+			break;
+		}
+
+		(void)neorv32_uart_read_ctrl(dev);
+	}
+#endif
 
 	return count;
 }
@@ -304,7 +388,11 @@ static void neorv32_uart_irq_tx_enable(const struct device *dev)
 	irq_enable(config->tx_irq);
 
 	ctrl = neorv32_uart_read_ctrl(dev);
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	if ((ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0) {
+#elif CONFIG_SOC_NEORV32_V1_9_0
+	if ((ctrl & NEORV32_UART_CTRL_TX_FULL) == 0) {
+#endif
 		/*
 		 * TX done event already generated an edge interrupt. Generate a
 		 * soft interrupt and have it call the callback function in
@@ -332,7 +420,11 @@ static int neorv32_uart_irq_tx_ready(const struct device *dev)
 
 	ctrl = neorv32_uart_read_ctrl(dev);
 
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	return (ctrl & NEORV32_UART_CTRL_TX_BUSY) == 0;
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+	return (ctrl & NEORV32_UART_CTRL_TX_FULL) == 0;
+#endif
 }
 
 static void neorv32_uart_irq_rx_enable(const struct device *dev)
@@ -367,7 +459,11 @@ static int neorv32_uart_irq_rx_ready(const struct device *dev)
 		return 0;
 	}
 
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 	return (data->last_data & NEORV32_UART_DATA_AVAIL) != 0;
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+	return (data->last_ctrl & NEORV32_UART_CTRL_RX_NEMPTY) != 0;
+#endif
 }
 
 static int neorv32_uart_irq_is_pending(const struct device *dev)
@@ -382,7 +478,11 @@ static int neorv32_uart_irq_update(const struct device *dev)
 
 	if (irq_is_enabled(config->rx_irq)) {
 		/* Cache data for use by rx_ready() and fifo_read() */
+#ifdef CONFIG_SOC_NEORV32_V1_6_1
 		(void)neorv32_uart_read_data(dev);
+#elif defined(CONFIG_SOC_NEORV32_V1_9_0)
+		(void)neorv32_uart_read_ctrl(dev);
+#endif
 	}
 
 	return 1;
