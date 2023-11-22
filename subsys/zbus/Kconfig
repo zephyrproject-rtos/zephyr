@@ -52,7 +52,6 @@ endif # ZBUS_MSG_SUBSCRIBER
 
 config ZBUS_RUNTIME_OBSERVERS
 	bool "Runtime observers support."
-	default n
 
 config ZBUS_ASSERT_MOCK
 	bool "Zbus assert mock for test purposes."
