@@ -304,6 +304,7 @@ class Reporting:
 
             if instance.status is not None:
                 suite["execution_time"] =  f"{float(handler_time):.2f}"
+            suite["build_time"] =  f"{float(instance.build_time):.2f}"
 
             testcases = []
 

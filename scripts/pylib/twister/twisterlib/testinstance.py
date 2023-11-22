@@ -50,6 +50,7 @@ class TestInstance:
         self.handler = None
         self.outdir = outdir
         self.execution_time = 0
+        self.build_time = 0
         self.retries = 0
 
         self.name = os.path.join(platform.name, testsuite.name)
