@@ -56,6 +56,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/mem_manage.h>
 
 /* Just like Z_MEM_PHYS_ADDR() but with type safety and assertions */
 static inline uintptr_t z_mem_phys_addr(void *virt)
