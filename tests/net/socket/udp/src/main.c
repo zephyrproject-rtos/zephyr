@@ -783,8 +783,8 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 	uint32_t start_time, time_diff;
 
 	struct timeval optval = {
-		.tv_sec = 2,
-		.tv_usec = 500000,
+		.tv_sec = 0,
+		.tv_usec = 300000,
 	};
 
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
@@ -800,7 +800,7 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 			sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
-	optval.tv_usec = 0;
+	optval.tv_usec = 400000;
 	rv = setsockopt(sock2, SOL_SOCKET, SO_RCVTIMEO, &optval,
 			sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
@@ -814,7 +814,7 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 
 	zassert_equal(recved, -1, "Unexpected return code");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
-	zassert_true(time_diff >= 2500, "Expected timeout after 2500ms but "
+	zassert_true(time_diff >= 300, "Expected timeout after 300ms but "
 			"was %dms", time_diff);
 
 	start_time = k_uptime_get_32();
@@ -824,7 +824,7 @@ ZTEST(net_socket_udp, test_09_so_rcvtimeo)
 
 	zassert_equal(recved, -1, "Unexpected return code");
 	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
-	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
+	zassert_true(time_diff >= 400, "Expected timeout after 400ms but "
 			"was %dms", time_diff);
 
 	rv = close(sock1);
