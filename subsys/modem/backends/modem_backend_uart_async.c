@@ -44,6 +44,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 	case UART_TX_DONE:
 		atomic_clear_bit(&backend->async.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT);
+		k_work_submit(&backend->transmit_idle_work);
 
 		break;
 
@@ -51,6 +52,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		LOG_WRN("Transmit aborted");
 		atomic_clear_bit(&backend->async.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT);
+		k_work_submit(&backend->transmit_idle_work);
 
 		break;
 
