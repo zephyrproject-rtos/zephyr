@@ -13,7 +13,7 @@ levels:
   - name: acceptance
     description: >
       More coverage
+    inherits:
+      - smoke
     adds:
       - kernel.*
-      - arch.interrupt
-      - boards.*
