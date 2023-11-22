@@ -99,6 +99,20 @@ static void free_tx_meta_data(struct l2cap_tx_meta_data *data)
 
 static sys_slist_t servers;
 
+static void l2cap_tx_buf_destroy(struct bt_conn *conn, struct net_buf *buf, int err)
+{
+	struct l2cap_tx_meta_data *data = l2cap_tx_meta_data(buf);
+	bt_conn_tx_cb_t cb = data->cb;
+	void *cb_user_data = data->user_data;
+
+	free_tx_meta_data(data);
+	net_buf_unref(buf);
+
+	/* Make sure to call associated callback, if any */
+	if (cb) {
+		cb(conn, cb_user_data, err);
+	}
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -933,7 +947,7 @@ static void l2cap_chan_tx_process(struct k_work *work)
 				 */
 				k_work_schedule(&ch->tx_work, K_MSEC(CONFIG_BT_L2CAP_RESCHED_MS));
 			} else {
-				net_buf_unref(buf);
+				l2cap_tx_buf_destroy(ch->chan.conn, buf, sent);
 			}
 			break;
 		}
@@ -984,13 +998,13 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	}
 
 	if (le_chan->tx_buf) {
-		net_buf_unref(le_chan->tx_buf);
+		l2cap_tx_buf_destroy(chan->conn, le_chan->tx_buf, -ESHUTDOWN);
 		le_chan->tx_buf = NULL;
 	}
 
 	/* Remove buffers on the TX queue */
 	while ((buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
+		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
 	}
 
 	/* Remove buffers on the RX queue */
@@ -1910,6 +1924,9 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
 	if (!chan) {
 		/* Received SDU sent callback for disconnected channel */
+		if (cb) {
+			cb(conn, cb_user_data, -ESHUTDOWN);
+		}
 		return;
 	}
 
@@ -2257,13 +2274,13 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 
 	/* Cleanup outstanding request */
 	if (le_chan->tx_buf) {
-		net_buf_unref(le_chan->tx_buf);
+		l2cap_tx_buf_destroy(chan->conn, le_chan->tx_buf, -ESHUTDOWN);
 		le_chan->tx_buf = NULL;
 	}
 
 	/* Remove buffers on the TX queue */
 	while ((buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
+		l2cap_tx_buf_destroy(chan->conn, buf, -ESHUTDOWN);
 	}
 
 	/* Remove buffers on the RX queue */
