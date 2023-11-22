@@ -1,0 +1,33 @@
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, tonies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_TAS2563
+	bool "TAS2563 audio DAC support"
+	default y
+	depends on DT_HAS_TI_TAS2563_ENABLED
+	select I2C
+	select I2S
+	depends on GPIO
+	help
+	  Enable TAS2563 support on the selected board
+
+config AUDIO_TAS2563_TIMEOUT_MS
+	int
+	default 20
+	help
+	  Timeout int milliseconds for e.g. claiming a semaphore in the driver
+
+config AUDIO_TAS2563_DUMP_REGISTERS
+	bool "Dump all values in TAS2563 audio DAC"
+	default n
+	help
+	  Dump all values in TAS2563 audio DAC. Very experimental
+	  the DAC may not work at all, when using this.
+
+config AUDIO_TAS2563_WORKQUEUE_STACK_SIZE
+	int
+	default 512
+	help
+	  Stack size for the codec work queue
