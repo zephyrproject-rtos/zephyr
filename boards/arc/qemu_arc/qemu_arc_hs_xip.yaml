@@ -1,5 +1,5 @@
 identifier: qemu_arc_hs_xip
-name: QEMU Emulation for ARC HS
+name: QEMU Emulation for ARC HS (XIP)
 type: qemu
 simulation: qemu
 arch: arc

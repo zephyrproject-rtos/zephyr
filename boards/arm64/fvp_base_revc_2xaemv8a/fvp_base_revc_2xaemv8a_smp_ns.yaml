@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: fvp_base_revc_2xaemv8a_smp_ns
-name: FVP Emulation FVP_Base_RevC-2xAEMvA
+name: FVP Emulation FVP_Base_RevC-2xAEMvA (SMP)
 arch: arm64
 type: sim
 toolchain:
