@@ -25,6 +25,9 @@ sys.path.insert(0, str(ZEPHYR_BASE / "doc" / "_scripts"))
 # for autodoc directives on runners.xyz.
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "west_commands"))
 
+# Add the directory which contains the pytest-twister-pytest
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "pytest-twister-harness" / "src"))
+
 import redirects
 
 try:
