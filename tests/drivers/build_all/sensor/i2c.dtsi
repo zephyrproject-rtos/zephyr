@@ -854,7 +854,7 @@ test_i2c_lps22df: lps22df@79 {
 	avg = <LPS22DF_DT_AVG_128_SAMPLES>;
 };
 
-test_i2c_hs300x: hs300x@79 {
+test_i2c_hs300x: hs300x@7a {
 	compatible = "renesas,hs300x";
-	reg = <0x79>;
+	reg = <0x7a>;
 };
