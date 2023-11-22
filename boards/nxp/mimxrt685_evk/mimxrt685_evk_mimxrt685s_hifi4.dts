@@ -1,0 +1,16 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt685_hifi4.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#include "mimxrt685_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP MIMXRT685-EVK board, HiFi 4 DSP domain";
+	compatible = "nxp,mimxrt685";
+};
