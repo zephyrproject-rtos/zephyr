@@ -20,6 +20,21 @@ config INPUT_KBD_MATRIX_16_BIT_ROW
 	  Use a 16 bit type for the internal structure, allow using a matrix
 	  with up to 16 rows if the driver supports it.
 
+config INPUT_SHELL_KBD_MATRIX_STATE
+	bool "Input kbd_matrix_state shell command"
+	depends on INPUT_SHELL
+	help
+	  Enable an input kbd_matrix_state shell command to log the state of a
+	  keyboard matrix device.
+
+config INPUT_SHELL_KBD_MATRIX_STATE_MAX_COLS
+	int "Maximum column count for the kbd_matrix_state command"
+	default 32
+	depends on INPUT_SHELL_KBD_MATRIX_STATE
+	help
+	  Maximum column count for a device processed by the input
+	  kbd_matrix_state shell command.
+
 config INPUT_KBD_DRIVE_COLUMN_HOOK
 	bool
 	help
