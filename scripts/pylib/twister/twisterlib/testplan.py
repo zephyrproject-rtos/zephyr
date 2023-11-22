@@ -416,7 +416,6 @@ class TestPlan:
                     self.platforms.append(platform)
                     if not platform_config.get('override_default_platforms', False):
                         if platform.default:
-                            logger.debug(f"adding {platform.name} to default platforms")
                             self.default_platforms.append(platform.name)
                     else:
                         if platform.name in platform_config.get('default_platforms', []):
