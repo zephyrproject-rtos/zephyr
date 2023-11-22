@@ -31,7 +31,9 @@
  */
 #define PLIC_REG_PRIO_OFFSET 0x0
 #define PLIC_REG_IRQ_EN_OFFSET 0x2000
+#define PLIC_REG_IRQ_EN_SIZE 0x80
 #define PLIC_REG_REGS_OFFSET 0x200000
+#define PLIC_REG_REGS_SIZE 0x1000
 #define PLIC_REG_REGS_THRES_PRIORITY_OFFSET 0
 #define PLIC_REG_REGS_CLAIM_COMPLETE_OFFSET sizeof(uint32_t)
 /*
@@ -346,12 +348,17 @@ static int plic_init(const struct device *dev)
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+#define HART_TO_CONTEXT                                                                            \
+	COND_CODE_1(IS_EQ(CONFIG_RV_BOOT_HART, 0), (0), ((CONFIG_RV_BOOT_HART * 2) - 1))
+
 #define PLIC_INTC_CONFIG_INIT(n)                                                                   \
 	PLIC_INTC_IRQ_FUNC_DECLARE(n);                                                             \
 	static const struct plic_config plic_config_##n = {                                        \
 		.prio = PLIC_BASE_ADDR(n) + PLIC_REG_PRIO_OFFSET,                                  \
-		.irq_en = PLIC_BASE_ADDR(n) + PLIC_REG_IRQ_EN_OFFSET,                              \
-		.reg = PLIC_BASE_ADDR(n) + PLIC_REG_REGS_OFFSET,                                   \
+		.irq_en = PLIC_BASE_ADDR(n) + PLIC_REG_IRQ_EN_OFFSET +                             \
+			  (HART_TO_CONTEXT * PLIC_REG_IRQ_EN_SIZE),                                \
+		.reg = PLIC_BASE_ADDR(n) + PLIC_REG_REGS_OFFSET +                                  \
+		       (HART_TO_CONTEXT * PLIC_REG_REGS_SIZE),                                     \
 		.trig = PLIC_BASE_ADDR(n) + PLIC_REG_TRIG_TYPE_OFFSET,                             \
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
 		.num_irqs = DT_INST_PROP(n, riscv_ndev),                                           \
