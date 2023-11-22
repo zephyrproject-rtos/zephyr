@@ -6,7 +6,8 @@ nRF9131 EK
 Overview
 ********
 
-The nRF9131 EK (PCA10165) is a single-board evaluation kit for the nRF9131 SiP for LTE-M and NB-IoT.
+The nRF9131 EK (PCA10165) is a single-board evaluation kit for the nRF9131 SiP
+for DECT NR+ and LTE-M/NB-IoT with GNSS.
 The nrf9131ek_nrf9131 board configuration provides support for the Nordic Semiconductor nRF9131 ARM
 Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 
