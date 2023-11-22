@@ -1,0 +1,34 @@
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, tonies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config APP_AUDIO_SAMPLE_FREQ
+    int "Audio sample frequency (Hz)"
+    default 48000
+
+config APP_AUDIO_NUM_CHANNELS
+    int "Number of audio channels"
+    default 4
+
+config APP_AUDIO_SAMPLES
+    int "Number of audio samples"
+    default 64
+
+config APP_AUDIO_SAMPLE_BIT_WIDTH
+    int "Audio sample bit width (bits)"
+    default 16
+
+config APP_I2S_PLAY_BUF_COUNT
+    int "Number of I2S playback buffers"
+    default 20
+
+config APP_I2S_TX_PRELOAD_BUF_COUNT
+    int "Number of I2S buffers preloaded with silence"
+    default 2
+
+module = APP
+module-str = Application
+source "subsys/logging/Kconfig.template.log_config"
