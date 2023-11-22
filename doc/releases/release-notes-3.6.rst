@@ -272,6 +272,11 @@ Libraries / Subsystems
 
 * ZBus
 
+  * Renamed :kconfig:option:`ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC` and
+    :kconfig:option:`ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC`
+    with :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` and
+    :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC`
+
 HALs
 ****
 
