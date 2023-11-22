@@ -33,6 +33,7 @@ config BT_BUF_ACL_TX_SIZE
 config BT_BUF_ACL_TX_COUNT
 	int "Number of outgoing ACL data buffers"
 	default 7 if BT_HCI_RAW
+	default 4 if BT_MESH_GATT
 	default 3
 	range 1 255
 	help
