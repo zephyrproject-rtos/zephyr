@@ -1,0 +1,9 @@
+---
+tests:
+  drivers.audio.unit:
+    tags:
+      - driver
+      - audio
+    type: unit
+    extra_configs:
+      - CONFIG_LOG_CUSTOM_HEADER=y
