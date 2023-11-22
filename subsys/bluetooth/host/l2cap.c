@@ -427,12 +427,12 @@ void bt_l2cap_disconnected(struct bt_conn *conn)
 	}
 }
 
-static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
-					       uint8_t code, uint8_t ident,
+static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 					       uint16_t len)
 {
 	struct bt_l2cap_sig_hdr *hdr;
 	struct net_buf_pool *pool = NULL;
+	struct net_buf *buf;
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	if (code == BT_L2CAP_DISCONN_REQ) {
@@ -497,7 +497,7 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 
 	ch->ident = get_ident();
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_LE_CONN_REQ,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_REQ,
 				      ch->ident, sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
@@ -532,7 +532,7 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 
 	ident = get_ident();
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_ECRED_CONN_REQ, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_CONN_REQ, ident,
 				      sizeof(*req) +
 				      (channels * sizeof(uint16_t)));
 
@@ -667,7 +667,7 @@ static void l2cap_send_reject(struct bt_conn *conn, uint8_t ident,
 	struct bt_l2cap_cmd_reject *rej;
 	struct net_buf *buf;
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_CMD_REJECT, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CMD_REJECT, ident,
 				      sizeof(*rej) + data_len);
 	if (!buf) {
 		return;
@@ -728,7 +728,7 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	LOG_DBG("min 0x%04x max 0x%04x latency: 0x%04x timeout: 0x%04x", param.interval_min,
 		param.interval_max, param.latency, param.timeout);
 
-	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_CONN_PARAM_RSP, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CONN_PARAM_RSP, ident,
 				      sizeof(*rsp));
 	if (!buf) {
 		return;
@@ -1149,7 +1149,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_LE_CONN_RSP, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_RSP, ident,
 				      sizeof(*rsp));
 	if (!buf) {
 		return;
@@ -1292,7 +1292,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 response:
-	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_ECRED_CONN_RSP, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_CONN_RSP, ident,
 				      sizeof(*rsp) +
 				      (sizeof(scid) * req_cid_count));
 	if (!buf) {
@@ -1414,7 +1414,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	LOG_DBG("mtu %u mps %u", mtu, mps);
 
 response:
-	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_ECRED_RECONF_RSP, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_RECONF_RSP, ident,
 				      sizeof(*rsp));
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
@@ -1513,7 +1513,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		return;
 	}
 
-	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_DISCONN_RSP, ident,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_RSP, ident,
 				      sizeof(*rsp));
 	if (!buf) {
 		return;
@@ -2301,7 +2301,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_LE_CREDITS, get_ident(),
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
 	if (!buf) {
 		LOG_ERR("Unable to send credits update");
@@ -2331,7 +2331,7 @@ static int l2cap_chan_send_credits_pdu(struct bt_conn *conn, uint16_t cid, uint1
 	struct net_buf *buf;
 	struct bt_l2cap_le_credits *ev;
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_LE_CREDITS, get_ident(), sizeof(*ev));
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(), sizeof(*ev));
 	if (!buf) {
 		return -ENOBUFS;
 	}
@@ -2767,7 +2767,7 @@ int bt_l2cap_update_conn_param(struct bt_conn *conn,
 	struct net_buf *buf;
 	int err;
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_CONN_PARAM_REQ,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_CONN_PARAM_REQ,
 				      get_ident(), sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
@@ -3027,7 +3027,7 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 
 	ident = get_ident();
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_ECRED_RECONF_REQ,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_RECONF_REQ,
 				      ident,
 				      sizeof(*req) + (i * sizeof(uint16_t)));
 	if (!buf) {
@@ -3114,7 +3114,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	le_chan->ident = get_ident();
 
-	buf = l2cap_create_le_sig_pdu(NULL, BT_L2CAP_DISCONN_REQ,
+	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_REQ,
 				      le_chan->ident, sizeof(*req));
 	if (!buf) {
 		return -ENOMEM;
