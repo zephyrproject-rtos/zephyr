@@ -7,7 +7,7 @@ Overview
 ********
 
 The nRF9161 DK (PCA10153) is a single-board development kit for evaluation and
-development on the nRF9161 SiP for LTE-M and NB-IoT. The nrf9161dk_nrf9161
+development on the nRF9161 SiP for DECT NR+ and LTE-M/NB-IoT with GNSS. The nrf9161dk_nrf9161
 board configuration provides support for the Nordic Semiconductor nRF9161 ARM
 Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 
