@@ -22,9 +22,7 @@
 #include <zephyr/logging/log.h>
 
 #include <zephyr/pm/device.h>
-#ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/policy.h>
-#endif
 
 LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 
