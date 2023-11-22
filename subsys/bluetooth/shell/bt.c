@@ -4071,9 +4071,12 @@ static int cmd_auth_passkey_notify(const struct shell *sh,
 
 	err = 0;
 	type = shell_strtoul(argv[1], 0, &err);
-	if (err || !IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
-			     BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
-		shell_error(sh, "<type> must be a value in range of enum bt_conn_auth_keypress");
+	if (err ||
+	    (type != BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED &&
+	     type != BT_CONN_AUTH_KEYPRESS_DIGIT_ENTERED &&
+	     type != BT_CONN_AUTH_KEYPRESS_DIGIT_ERASED && type != BT_CONN_AUTH_KEYPRESS_CLEARED &&
+	     type != BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		shell_error(sh, "<type> must be a value of enum bt_conn_auth_keypress");
 		return -EINVAL;
 	}
 
