@@ -909,19 +909,17 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	while (1) {
 		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
 		if (status < 0) {
+			status = send_check_and_wait(ctx, status,
+						     buf_timeout,
+						     timeout, &retry_timeout);
 			if (status < 0) {
-				status = send_check_and_wait(ctx, status,
-							     buf_timeout,
-							     timeout, &retry_timeout);
-				if (status < 0) {
-					return status;
-				}
-
-				/* Update the timeout value in case loop is repeated. */
-				timeout = sys_timepoint_timeout(end);
-
-				continue;
+				return status;
 			}
+
+			/* Update the timeout value in case loop is repeated. */
+			timeout = sys_timepoint_timeout(end);
+
+			continue;
 		}
 
 		break;
