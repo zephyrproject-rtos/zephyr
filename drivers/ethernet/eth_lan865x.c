@@ -121,7 +121,9 @@ static int lan865x_wait_for_reset(const struct device *dev)
 static int lan865x_gpio_reset(const struct device *dev)
 {
 	const struct lan865x_config *cfg = dev->config;
+	struct lan865x_data *ctx = dev->data;
 
+	ctx->reset = false;
 	/* Perform (GPIO based) HW reset */
 	/* assert RESET_N low for 10 µs (5 µs min) */
 	gpio_pin_set_dt(&cfg->reset, 1);
@@ -495,8 +497,6 @@ static int lan865x_init(const struct device *dev)
 				K_PRIO_COOP(CONFIG_ETH_LAN865X_IRQ_THREAD_PRIO),
 				0, K_NO_WAIT);
 	k_thread_name_set(ctx->tid_int, "lan865x_interrupt");
-
-	ctx->reset = false;
 
 	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	if (!gpio_is_ready_dt(&cfg->reset)) {
