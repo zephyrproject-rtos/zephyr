@@ -271,8 +271,9 @@ static void plic_irq_handler(const struct device *dev)
 	 * If the IRQ is out of range, call z_irq_spurious.
 	 * A call to z_irq_spurious will not return.
 	 */
-	if (local_irq == 0U || local_irq >= config->num_irqs)
+	if (local_irq == 0U || local_irq >= config->num_irqs) {
 		z_irq_spurious(NULL);
+	}
 
 	edge_irq = riscv_plic_is_edge_irq(dev, local_irq);
 
@@ -281,8 +282,9 @@ static void plic_irq_handler(const struct device *dev)
 	 * to indicate to the PLIC controller that the IRQ has been handled
 	 * for edge triggered interrupts.
 	 */
-	if (edge_irq)
+	if (edge_irq != 0) {
 		sys_write32(local_irq, claim_complete_addr);
+	}
 
 	const uint32_t parent_irq = COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
 						(z_get_sw_isr_irq_from_device(dev)), (0U));
@@ -300,8 +302,9 @@ static void plic_irq_handler(const struct device *dev)
 	 * PLIC controller that the IRQ has been handled
 	 * for level triggered interrupts.
 	 */
-	if (!edge_irq)
+	if (edge_irq == 0) {
 		sys_write32(local_irq, claim_complete_addr);
+	}
 }
 
 /**
