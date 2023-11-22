@@ -125,8 +125,8 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	const struct i2c_target_callbacks *slave_cb;
-	struct i2c_target_config *slave_cfg;
-
+	struct i2c_target_config *slave_cfg = data->slave_cfg;
+	
 	if (data->slave_cfg->flags != I2C_TARGET_FLAGS_ADDR_10_BITS) {
 		uint8_t slave_address;
 
