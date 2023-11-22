@@ -57,6 +57,9 @@ struct nrf5_802154_config {
 };
 
 static struct nrf5_802154_data nrf5_data;
+#if defined(CONFIG_IEEE802154_RAW_MODE)
+static const struct device *nrf5_dev;
+#endif
 
 #define DRX_SLOT_RX 0 /* Delayed reception window ID */
 
@@ -94,6 +97,15 @@ static struct nrf5_802154_data nrf5_data;
 #else
 #define IEEE802154_NRF5_VENDOR_OUI (uint32_t)0xF4CE36
 #endif
+
+static inline const struct device *nrf5_get_device(void)
+{
+#if defined(CONFIG_IEEE802154_RAW_MODE)
+	return nrf5_dev;
+#else
+	return net_if_get_device(nrf5_data.iface);
+#endif
+}
 
 static void nrf5_get_eui64(uint8_t *mac)
 {
@@ -726,6 +738,9 @@ static int nrf5_init(const struct device *dev)
 {
 	const struct nrf5_802154_config *nrf5_radio_cfg = NRF5_802154_CFG(dev);
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
+#if defined(CONFIG_IEEE802154_RAW_MODE)
+	nrf5_dev = dev;
+#endif
 
 	k_fifo_init(&nrf5_radio->rx_fifo);
 	k_sem_init(&nrf5_radio->tx_wait, 0, 1);
@@ -1046,7 +1061,7 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 
 void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 {
-	const struct device *dev = net_if_get_device(nrf5_data.iface);
+	const struct device *dev = nrf5_get_device();
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (id == DRX_SLOT_RX) {
@@ -1165,7 +1180,7 @@ void nrf_802154_energy_detected(const nrf_802154_energy_detected_t *result)
 		energy_scan_done_cb_t callback = nrf5_data.energy_scan_done;
 
 		nrf5_data.energy_scan_done = NULL;
-		callback(net_if_get_device(nrf5_data.iface), result->ed_dbm);
+		callback(nrf5_get_device(), result->ed_dbm);
 	}
 }
 
@@ -1175,7 +1190,7 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 		energy_scan_done_cb_t callback = nrf5_data.energy_scan_done;
 
 		nrf5_data.energy_scan_done = NULL;
-		callback(net_if_get_device(nrf5_data.iface), SHRT_MAX);
+		callback(nrf5_get_device(), SHRT_MAX);
 	}
 }
 
