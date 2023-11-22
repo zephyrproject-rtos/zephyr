@@ -158,6 +158,11 @@ Other Subsystems
   respective ``reset-gpios``. This has been fixed so those signals now have to
   be flagged as :c:macro:`GPIO_ACTIVE_LOW` in the devicetree. (:github:`64800`)
 
+* The :kconfig:option:`ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC`
+  and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC`
+  zbus options are renamed. Instead, the new :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC`
+  and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
+
 Recommended Changes
 *******************
 
