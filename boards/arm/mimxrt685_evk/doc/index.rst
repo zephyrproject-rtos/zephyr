@@ -62,52 +62,52 @@ configuration supports the hardware features below.  Another very similar
 board is the :ref:`mimxrt595_evk`, and that board may have additional features
 already supported, which can also be re-used on this mimxrt685_evk board:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| OS_TIMER  | on-chip    | os timer                            |
-+-----------+------------+-------------------------------------+
-| IOCON     | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | OctalSPI Flash                      |
-+-----------+------------+-------------------------------------+
-| USART     | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2S       | on-chip    | i2s                                 |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| HWINFO    | on-chip    | Unique device serial number         |
-+-----------+------------+-------------------------------------+
-| RTC       | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| WDT       | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| SDHC      | on-chip    | disk access                         |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | adc                                 |
-+-----------+------------+-------------------------------------+
-| CTIMER    | on-chip    | counter                             |
-+-----------+------------+-------------------------------------+
-| TRNG      | on-chip    | entropy                             |
-+-----------+------------+-------------------------------------+
-| FLEXSPI   | on-chip    | flash programming                   |
-+-----------+------------+-------------------------------------+
++-----------+------------+-------------------------------------+------------------+
+| Interface | Controller | Driver/Component                    | Enabled on cores |
++===========+============+=====================================+==================+
+| NVIC      | on-chip    | nested vector interrupt controller  | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| SYSTICK   | on-chip    | systick                             | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| OS_TIMER  | on-chip    | os timer                            | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| IOCON     | on-chip    | pinmux                              | CM33, HiFi 4     |
++-----------+------------+-------------------------------------+------------------+
+| GPIO      | on-chip    | gpio                                | CM33, HiFi 4     |
++-----------+------------+-------------------------------------+------------------+
+| FLASH     | on-chip    | OctalSPI Flash                      | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| USART     | on-chip    | serial port-polling;                | CM33, HiFi 4     |
+|           |            | serial port-interrupt               |                  |
++-----------+------------+-------------------------------------+------------------+
+| I2C       | on-chip    | i2c                                 | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| SPI       | on-chip    | spi                                 | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| I2S       | on-chip    | i2s                                 | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| CLOCK     | on-chip    | clock_control                       | CM33, HiFi 4     |
++-----------+------------+-------------------------------------+------------------+
+| HWINFO    | on-chip    | Unique device serial number         | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| RTC       | on-chip    | counter                             | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| PWM       | on-chip    | pwm                                 | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| WDT       | on-chip    | watchdog                            | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| SDHC      | on-chip    | disk access                         | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| USB       | on-chip    | USB device                          | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| ADC       | on-chip    | adc                                 | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| CTIMER    | on-chip    | counter                             | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| TRNG      | on-chip    | entropy                             | CM33             |
++-----------+------------+-------------------------------------+------------------+
+| FLEXSPI   | on-chip    | flash programming                   | CM33             |
++-----------+------------+-------------------------------------+------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -351,6 +351,28 @@ steps:
 
 #. Reset by pressing SW3
 
+HiFi 4 DSP core
+===============
+
+The Cadence HiFi 4 DSP core is currently supported by Zephyr and Cadence's proprietary toolchain.
+
+To build a project:
+
+- Set the ``XTENSA_CORE``, ``XTENSA_TOOLCHAIN_PATH``, ``TOOLCHAIN_VER`` and
+  ``ZEPHYR_TOOLCHAIN_VARIANT`` according to your environment and the particular
+  toolchain version you want to use (``ZEPHYR_TOOLCHAIN_VARIANT`` should be
+  ``xcc`` or ``xt-clang``).
+- Build the project with:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nxp_adsp_rt685
+   :goals: build
+
+Debugging can be directly carried out using the J-Link GDB server with ``xt-gdb`` connected. It's
+also possible to debug the HiFi 4 DSP in tandem with the ARM core of this device using the ``xt-ocd``
+daemon. See `RT600 Dual-Core Communication and Debugging`_ for details.
+
 .. _MIMXRT685-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK
 
@@ -368,3 +390,6 @@ steps:
 
 .. _i.MX RT685 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=UM11147
+
+.. _RT600 Dual-Core Communication and Debugging:
+   https://www.nxp.com/docs/en/application-note/AN12789.pdf

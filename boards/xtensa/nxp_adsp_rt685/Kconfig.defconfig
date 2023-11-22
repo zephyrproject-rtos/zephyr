@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC.
+# Copyright (c) 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NXP_ADSP_RT685
+
+config BOARD
+	default "nxp_adsp_RT685"
+
+endif # BOARD_NXP_ADSP_RT685

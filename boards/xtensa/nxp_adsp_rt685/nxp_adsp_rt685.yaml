@@ -1,0 +1,11 @@
+identifier: nxp_adsp_rt685
+name: i.MXRT685 DSP
+type: mcu
+arch: xtensa
+ram: 64
+flash: 64
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
