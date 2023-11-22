@@ -1,5 +1,5 @@
 identifier: nsim_hs_sram
-name: HS nSIM simulator
+name: HS nSIM simulator (SRAM)
 type: sim
 simulation: nsim
 simulation_exec: nsimdrv

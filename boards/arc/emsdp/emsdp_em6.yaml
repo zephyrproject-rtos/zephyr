@@ -1,5 +1,5 @@
 identifier: emsdp_em6
-name: EM Software Development Platform
+name: EM Software Development Platform (EM6)
 type: mcu
 arch: arc
 toolchain:

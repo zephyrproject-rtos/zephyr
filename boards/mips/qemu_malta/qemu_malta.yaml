@@ -1,5 +1,5 @@
 identifier: qemu_malta
-name: QEMU emulation for MIPS
+name: QEMU emulation for MIPS (little endian)
 type: qemu
 simulation: qemu
 arch: mips
