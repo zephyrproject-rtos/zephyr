@@ -39,4 +39,11 @@ choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 
 endchoice
 
+config SDL_DISPLAY_ZOOM_PCT
+	int "Default zoom percentage"
+	default 100
+	range 10 10000
+	help
+	  SDL window zoom percentage to adjust readability on small screens
+
 endif # SDL_DISPLAY
