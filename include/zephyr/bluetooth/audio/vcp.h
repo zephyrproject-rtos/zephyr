@@ -353,6 +353,9 @@ struct bt_vcp_vol_ctlr_cb {
 
 	/* Audio Input Control Service callbacks */
 	struct bt_aics_cb             aics_cb;
+
+	/** Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /**
@@ -360,9 +363,22 @@ struct bt_vcp_vol_ctlr_cb {
  *
  * @param cb   The callback structure.
  *
- * @return 0 if success, errno on failure.
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
 int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
+
+/**
+ * @brief Unregisters the callbacks used by the Volume Controller.
+ *
+ * @param cb   The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was not registered
+ */
+int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb);
 
 /**
  * @brief Discover Volume Control Service and included services.
