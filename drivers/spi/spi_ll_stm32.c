@@ -851,7 +851,41 @@ static int transceive_dma(const struct device *dev,
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
 	}
 
+	size_t total_len = MAX(data->ctx.tx_len, data->ctx.rx_len);
+	/* either total_len, or the overlapping part of RX and TX buffers in case of mismatched
+	 * lengths
+	 */
+	size_t first_dma_len;
+
+	if (data->ctx.rx_len == 0) {
+		first_dma_len = data->ctx.tx_len;
+	} else if (data->ctx.tx_len == 0) {
+		first_dma_len = data->ctx.rx_len;
+	} else {
+		first_dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+	}
+
+	size_t second_dma_len = total_len - first_dma_len;
+	size_t num_dma_transfers;
+
+	if (first_dma_len == 0) {
+		num_dma_transfers = 0;
+	} else if (second_dma_len == 0) {
+		num_dma_transfers = 1;
+	} else {
+		num_dma_transfers = 2;
+	}
+
+	bool transfer_size_used = false;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	/* conservative check, a couple bytes may be needed for CRC */
+	if (first_dma_len < 0xfff0 && second_dma_len < 0xfff0) {
+		transfer_size_used = true;
+
+		LL_SPI_SetTransferSize(spi, first_dma_len);
+		LL_SPI_SetReloadSize(spi, second_dma_len);
+	}
+
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
 	LL_SPI_EnableDMAReq_RX(spi);
 	LL_SPI_EnableDMAReq_TX(spi);
@@ -867,16 +901,9 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
-	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
-		size_t dma_len;
-
-		if (data->ctx.rx_len == 0) {
-			dma_len = data->ctx.tx_len;
-		} else if (data->ctx.tx_len == 0) {
-			dma_len = data->ctx.rx_len;
-		} else {
-			dma_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
-		}
+	for (int i = 0; i < num_dma_transfers; i++) {
+		bool last_transfer = (i == (num_dma_transfers - 1));
+		size_t dma_len = (i == 0) ? first_dma_len : second_dma_len;
 
 		data->status_flags = 0;
 
@@ -908,7 +935,7 @@ static int transceive_dma(const struct device *dev,
 			 k_yield());
 #else
 		/* wait until spi is no more busy (spi TX fifo is really empty) */
-		while (ll_func_spi_dma_complete(spi) == 0) {
+		while (ll_func_spi_dma_complete(spi, transfer_size_used && !last_transfer) == 0) {
 		}
 #endif
 
@@ -924,6 +951,10 @@ static int transceive_dma(const struct device *dev,
 		spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
 		spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_ClearFlag_TXTF(spi);
+#endif
 
 	/* spi complete relies on SPI Status Reg which cannot be disabled */
 	spi_stm32_complete(dev, ret);

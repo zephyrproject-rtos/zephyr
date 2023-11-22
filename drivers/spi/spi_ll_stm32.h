@@ -81,11 +81,19 @@ static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t locat
 #endif /* st_stm32h7_spi */
 }
 
-/* checks that DMA Tx packet is fully transmitted over the SPI */
-static inline uint32_t ll_func_spi_dma_complete(SPI_TypeDef *spi)
+/* checks that DMA Tx packet is fully transmitted over the SPI.
+ *
+ * partial_transfer_size should be set if TSIZE is in use and will be reloaded from TSER at the end
+ * of this transfer to start another transfer in the same transaction.
+ */
+static inline uint32_t ll_func_spi_dma_complete(SPI_TypeDef *spi, bool partial_transfer_size)
 {
 #ifdef LL_SPI_SR_TXC
-	return LL_SPI_IsActiveFlag_TXC(spi);
+	if (partial_transfer_size) {
+		return LL_SPI_IsActiveFlag_TSER(spi);
+	} else {
+		return LL_SPI_IsActiveFlag_TXC(spi);
+	}
 #else
 	/* the SPI Tx empty and busy flags are needed */
 	return (LL_SPI_IsActiveFlag_TXE(spi) &&
