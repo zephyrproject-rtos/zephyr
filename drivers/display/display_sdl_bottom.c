@@ -11,12 +11,12 @@
 #include <SDL.h>
 #include "nsi_tracing.h"
 
-int sdl_display_init_bottom(uint16_t height, uint16_t width,
+int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 			    void **window, void **renderer, void **texture)
 {
 	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
-				   SDL_WINDOWPOS_UNDEFINED, width,
-				   height, SDL_WINDOW_SHOWN);
+				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
+				   height * zoom_pct / 100, SDL_WINDOW_SHOWN);
 	if (*window == NULL) {
 		nsi_print_warning("Failed to create SDL window: %s", SDL_GetError());
 		return -1;
