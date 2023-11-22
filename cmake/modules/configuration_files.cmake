@@ -39,7 +39,17 @@ else()
   set(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
 endif()
 
+zephyr_get(global_conf_file SYSBUILD GLOBAL VAR CONF_FILE)
 zephyr_get(CONF_FILE SYSBUILD LOCAL)
+
+if(DEFINED global_conf_file AND NOT DEFINED CONF_FILE)
+  # Global level project file provided, check if this file exists
+  if(EXISTS "${APPLICATION_CONFIG_DIR}/${global_conf_file}")
+    # Global sysbuild config will be used for this image
+    set(CONF_FILE ${global_conf_file})
+  endif()
+endif()
+
 if(DEFINED CONF_FILE)
   # This ensures that CACHE{CONF_FILE} will be set correctly to current scope
   # variable CONF_FILE. An already current scope variable will stay the same.
