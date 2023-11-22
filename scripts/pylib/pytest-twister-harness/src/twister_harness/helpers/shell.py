@@ -55,7 +55,7 @@ class Shell:
         Send shell command to a device and return response. Passed command
         is extended by double enter sings - first one to execute this command
         on a device, second one to receive next prompt what is a signal that
-        execution was finished.
+        execution was finished. Method returns printout of the executed command.
         """
         timeout = timeout or self.base_timeout
         command_ext = f'{command}\n\n'
