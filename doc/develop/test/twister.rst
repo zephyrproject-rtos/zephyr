@@ -514,14 +514,36 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per testcase and the fixture name has to
         be unique across all tests in the test suite.
 
+.. _pytest_root:
+
     pytest_root: <list of pytest testpaths> (default pytest)
-        Specify a list of pytest directories, files or subtests that need to be executed
-        when test case begin to running, default pytest directory is pytest.
-        After pytest finished, twister will check if this case pass or fail according
-        to the pytest report.
+        Specify a list of pytest directories, files or subtests that need to be
+        executed when a test case begins to run. The default pytest directory is
+        ``pytest``. After the pytest run is finished, Twister will check if
+        the test case passed or failed according to the pytest report.
+        As an example, a list of valid pytest roots is presented below:
+
+        .. code-block:: yaml
+
+            harness_config:
+              pytest_root:
+                - "pytest/test_shell_help.py"
+                - "../shell/pytest/test_shell.py"
+                - "/tmp/test_shell.py"
+                - "~/tmp/test_shell.py"
+                - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
+                - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
+                - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
+
+.. _pytest_args:
 
     pytest_args: <list of arguments> (default empty)
-        Specify a list of additional arguments to pass to ``pytest``.
+        Specify a list of additional arguments to pass to ``pytest`` e.g.:
+        ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
+        ``--pytest-args`` can be passed multiple times to pass several arguments
+        to the pytest.
+
+.. _pytest_dut_scope:
 
     pytest_dut_scope: <function|class|module|package|session> (default function)
         The scope for which ``dut`` and ``shell`` pytest fixtures are shared.

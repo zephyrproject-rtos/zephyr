@@ -25,7 +25,11 @@ logger = logging.getLogger(__name__)
 
 
 class DeviceAdapter(abc.ABC):
-    """Class defines an interface for all devices."""
+    """
+    This class defines a common interface for all device types (hardware,
+    simulator, QEMU) used in tests to gathering device output and send data to
+    it.
+    """
 
     def __init__(self, device_config: DeviceConfig) -> None:
         """
@@ -54,8 +58,8 @@ class DeviceAdapter(abc.ABC):
     def launch(self) -> None:
         """
         Start by closing previously running application (no effect if not
-        needed). Then, flash and run test application. Finally, start a reader
-        thread capturing an output from a device.
+        needed). Then, flash and run test application. Finally, start an
+        internal reader thread capturing an output from a device.
         """
         self.close()
         self._clear_internal_resources()
@@ -100,7 +104,7 @@ class DeviceAdapter(abc.ABC):
     def readline(self, timeout: float | None = None, print_output: bool = True) -> str:
         """
         Read line from device output. If timeout is not provided, then use
-        base_timeout
+        base_timeout.
         """
         timeout = timeout or self.base_timeout
         if self.is_device_connected() or not self._device_read_queue.empty():
@@ -125,13 +129,13 @@ class DeviceAdapter(abc.ABC):
         until following conditions:
 
         1. If regex is provided - read until regex regex is found in read
-           line (or until timeout)
+           line (or until timeout).
         2. If num_of_lines is provided - read until number of read lines is
-           equal to num_of_lines (or until timeout)
+           equal to num_of_lines (or until timeout).
         3. If none of above is provided - return immediately lines collected so
-           far in internal queue
+           far in internal buffer.
 
-        If timeout is not provided, then use base_timeout
+        If timeout is not provided, then use base_timeout.
         """
         timeout = timeout or self.base_timeout
         if regex:
