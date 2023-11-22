@@ -57,10 +57,12 @@ static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *
 	return ETHERNET_LINK_10BASE_T | ETHERNET_PROMISC_MODE;
 }
 
+static int lan865x_gpio_reset(const struct device *dev);
 static void lan865x_write_macaddress(const struct device *dev);
 static int lan865x_set_config(const struct device *dev, enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
+	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
 	int ret = -ENOTSUP;
 
@@ -95,6 +97,25 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 				     NET_LINK_ETHERNET);
 
 		return lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_ON);
+	}
+
+	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
+		ret = lan865x_mac_rxtx_control(dev, LAN865x_MAC_TXRX_OFF);
+		if (ret) {
+			return ret;
+		}
+
+		if (config->t1s_param.type == ETHERNET_T1S_PARAM_TYPE_PLCA_CONFIG) {
+			cfg->plca->enable = config->t1s_param.plca.enable;
+			cfg->plca->node_id = config->t1s_param.plca.node_id;
+			cfg->plca->node_count = config->t1s_param.plca.node_count;
+			cfg->plca->burst_count = config->t1s_param.plca.burst_count;
+			cfg->plca->burst_timer = config->t1s_param.plca.burst_timer;
+			cfg->plca->to_timer = config->t1s_param.plca.to_timer;
+		}
+
+		/* Reset is required to re-program PLCA new configuration */
+		lan865x_gpio_reset(dev);
 	}
 
 	return ret;
