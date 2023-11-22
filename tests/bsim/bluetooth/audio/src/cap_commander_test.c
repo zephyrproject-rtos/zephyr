@@ -10,7 +10,7 @@
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
-#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
 #include "bap_common.h"
@@ -20,14 +20,16 @@ extern enum bst_result_t bst_result;
 static struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN];
 static volatile size_t connected_conn_cnt;
 
-CREATE_FLAG(flag_discovered);
+CREATE_FLAG(flag_cas_discovered);
+CREATE_FLAG(flag_vcs_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
+CREATE_FLAG(flag_volume_changed);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
-		FAIL("Failed to discover CAS: %d", err);
+		FAIL("Failed to discover CAS: %d\n", err);
 
 		return;
 	}
@@ -44,11 +46,51 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 		printk("Found CAS\n");
 	}
 
-	SET_FLAG(flag_discovered);
+	SET_FLAG(flag_cas_discovered);
+}
+
+static void cap_volume_changed_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
+		return;
+	}
+
+	SET_FLAG(flag_volume_changed);
 }
 
 static struct bt_cap_commander_cb cap_cb = {
 	.discovery_complete = cap_discovery_complete_cb,
+	.volume_changed = cap_volume_changed_cb,
+};
+
+static void cap_vcp_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, uint8_t vocs_count,
+				uint8_t aics_count)
+{
+	if (err != 0) {
+		FAIL("Failed to discover VCS: %d\n", err);
+
+		return;
+	}
+
+	printk("VCS for %p found with %u VOCS and %u AICS\n", vol_ctlr, vocs_count, aics_count);
+	SET_FLAG(flag_vcs_discovered);
+}
+
+static void cap_vcp_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, uint8_t volume,
+			     uint8_t mute)
+{
+	if (err != 0) {
+		FAIL("VCP state cb err (%d)\n", err);
+		return;
+	}
+
+	printk("State for %p: volume %u, mute %u\n", vol_ctlr, volume, mute);
+}
+
+static struct bt_vcp_vol_ctlr_cb vcp_cb = {
+	.discover = cap_vcp_discover_cb,
+	.state = cap_vcp_state_cb,
 };
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -76,6 +118,12 @@ static void init(void)
 	err = bt_cap_commander_register_cb(&cap_cb);
 	if (err != 0) {
 		FAIL("Failed to register CAP callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_vcp_vol_ctlr_cb_register(&vcp_cb);
+	if (err != 0) {
+		FAIL("Failed to register VCP callbacks (err %d)\n", err);
 		return;
 	}
 }
@@ -155,7 +203,7 @@ static void discover_cas(struct bt_conn *conn)
 {
 	int err;
 
-	UNSET_FLAG(flag_discovered);
+	UNSET_FLAG(flag_cas_discovered);
 
 	err = bt_cap_commander_discover(conn);
 	if (err != 0) {
@@ -163,7 +211,50 @@ static void discover_cas(struct bt_conn *conn)
 		return;
 	}
 
-	WAIT_FOR_FLAG(flag_discovered);
+	WAIT_FOR_FLAG(flag_cas_discovered);
+}
+
+static void discover_vcs(struct bt_conn *conn)
+{
+	struct bt_vcp_vol_ctlr *vol_ctlr;
+	int err;
+
+	UNSET_FLAG(flag_vcs_discovered);
+
+	err = bt_vcp_vol_ctlr_discover(conn, &vol_ctlr);
+	if (err != 0) {
+		printk("Failed to discover VCS: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_vcs_discovered);
+}
+
+static void test_change_volume(void)
+{
+	union bt_cap_set_member members[CONFIG_BT_MAX_CONN];
+	const struct bt_cap_commander_change_volume_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.members = members,
+		.count = connected_conn_cnt,
+		.volume = 177,
+	};
+	int err;
+
+	printk("Changing volume to %u\n", param.volume);
+
+	for (size_t i = 0U; i < param.count; i++) {
+		param.members[i].member = connected_conns[i];
+	}
+
+	err = bt_cap_commander_change_volume(&param);
+	if (err != 0) {
+		FAIL("Failed to change volume: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_volume_changed);
+	printk("Volume changed to %u\n", param.volume);
 }
 
 static void test_main_cap_commander_capture_and_render(void)
@@ -177,10 +268,19 @@ static void test_main_cap_commander_capture_and_render(void)
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
 
 		/* TODO: We should use CSIP to find set members */
-		discover_cas(default_conn);
+		discover_cas(connected_conns[i]);
+
+		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
+			discover_vcs(connected_conns[i]);
+		}
 	}
 
-	/* TODO: Do CAP Commander stuff */
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR)) {
+		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
+			test_change_volume();
+		}
+		/* TODO: Add test of offset (VOCS), Mic (MICP) and gain (AICS) */
+	}
 
 	/* Disconnect all CAP acceptors */
 	for (size_t i = 0U; i < connected_conn_cnt; i++) {

@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
 #include "bap_common.h"
@@ -650,9 +651,49 @@ static void init(void)
 		}
 	}
 
-	set_supported_contexts();
-	set_available_contexts();
-	set_location();
+	if (IS_ENABLED(CONFIG_BT_PACS)) {
+		set_supported_contexts();
+		set_available_contexts();
+		set_location();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND)) {
+		char output_desc[CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT][16];
+		char input_desc[CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT][16];
+		struct bt_vcp_vol_rend_register_param vcp_param = {0};
+
+		for (size_t i = 0U; i < ARRAY_SIZE(vcp_param.vocs_param); i++) {
+			vcp_param.vocs_param[i].location_writable = true;
+			vcp_param.vocs_param[i].desc_writable = true;
+			snprintf(output_desc[i], sizeof(output_desc[i]), "Output %d", i + 1);
+			vcp_param.vocs_param[i].output_desc = output_desc[i];
+			vcp_param.vocs_param[i].cb = NULL;
+		}
+
+		for (size_t i = 0U; i < ARRAY_SIZE(vcp_param.aics_param); i++) {
+			vcp_param.aics_param[i].desc_writable = true;
+			snprintf(input_desc[i], sizeof(input_desc[i]), "Input %d", i + 1);
+			vcp_param.aics_param[i].description = input_desc[i];
+			vcp_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
+			vcp_param.aics_param[i].status = true;
+			vcp_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
+			vcp_param.aics_param[i].units = 1;
+			vcp_param.aics_param[i].min_gain = 0;
+			vcp_param.aics_param[i].max_gain = 100;
+			vcp_param.aics_param[i].cb = NULL;
+		}
+
+		vcp_param.step = 1;
+		vcp_param.mute = BT_VCP_STATE_UNMUTED;
+		vcp_param.volume = 100;
+		vcp_param.cb = NULL;
+		err = bt_vcp_vol_rend_register(&vcp_param);
+		if (err != 0) {
+			FAIL("Failed to register VCS (err %d)\n", err);
+
+			return;
+		}
+	}
 }
 
 static void test_cap_acceptor_unicast(void)
