@@ -228,15 +228,8 @@ static void uart_mcumgr_setup(const struct device *uart)
 #else
 static void uart_mcumgr_setup(const struct device *uart)
 {
-	uint8_t c;
-
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);
-
-	/* Drain the fifo */
-	while (uart_fifo_read(uart, &c, 1)) {
-		continue;
-	}
 
 	uart_irq_callback_set(uart, uart_mcumgr_isr);
 
