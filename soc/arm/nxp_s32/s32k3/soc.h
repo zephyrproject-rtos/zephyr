@@ -10,12 +10,7 @@
 #include <S32K344.h>
 
 #if defined(CONFIG_CMSIS_RTOS_V2)
-/*
- * The HAL is defining these symbols already. To avoid redefinitions,
- * let CMSIS RTOS wrapper define them.
- */
-#undef TRUE
-#undef FALSE
+#include <cmsis_rtos_v2_adapt.h>
 #endif
 
 /* Aliases for peripheral base addresses */
