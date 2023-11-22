@@ -424,8 +424,11 @@ exchanges accelerometer data, for example.
     K_THREAD_DEFINE(subscriber_task_id, 512, subscriber_task, NULL, NULL, NULL, 3, 0, 0);
 
     ZBUS_MSG_SUBSCRIBER_DEFINE(my_msg_subscriber);
-    static void msg_subscriber_task(void *sub)
+    static void msg_subscriber_task(void *ptr1, void *ptr2, void *ptr3)
     {
+            ARG_UNUSED(ptr1);
+            ARG_UNUSED(ptr2);
+            ARG_UNUSED(ptr3);
             const struct zbus_channel *chan;
 
             struct acc_msg acc = {0};
