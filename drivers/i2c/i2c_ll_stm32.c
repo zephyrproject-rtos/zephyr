@@ -62,20 +62,19 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t i2c_clock = 0U;
 	int ret;
 
 	if (IS_ENABLED(STM32_I2C_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t)&cfg->pclken[1],
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
 			return -EIO;
 		}
 	} else {
-		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[0],
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
 					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
