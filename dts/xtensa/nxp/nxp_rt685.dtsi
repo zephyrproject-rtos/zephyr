@@ -6,6 +6,7 @@
 #include <xtensa/xtensa.dtsi>
 #include <mem.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/misc/nxp-inputmux-rt6xx.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -21,6 +22,21 @@
 	};
 
 	soc {
+		interrupt-parent = <&core_intc>;
+
+		/*
+		 * Dummy interrupt controller node - IRQs are handled directly by soc.c if
+		 * building for the RT685 DSP.
+		 *
+		 * Be sure to configure the inputmux node for appropriate interrupt routing.
+		 */
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
 		itcm: memory@24020000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -48,6 +64,172 @@
 
 			adsp_data: memory@24000000 {
 				reg = <0x24000000 DT_SIZE_K(64)>;
+			};
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			inputmux: inputmux@26000 {
+				compatible = "nxp,inputmux";
+				reg = <0x26000 0x2000>;
+				status = "okay";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/*
+				 * INPUTMUX interrupt multiplexing - interrupts coming to the
+				 * HiFi4 DSP are multiplexed (dynamically routed) rather than
+				 * statically wired in the silicon.
+				 *
+				 * Physical IRQ number also determines its priority - see
+				 * Table 1460 of UM11147 (RT6xx User manual).
+				 */
+				dsp-interrupts@140 {
+					reg = <0x140>;
+
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					adsp_int5: int@0 {
+						reg = <0>;
+						source = <ADSP_IRQ_SRC_FLEXCOMM0>;
+					};
+
+					adsp_int6: int@1 {
+						reg = <1>;
+						source = <ADSP_IRQ_SRC_GPIO_INT0_IRQ0>;
+					};
+
+					adsp_int7: int@2 {
+						reg = <2>;
+						source = <ADSP_IRQ_SRC_GPIO_INT0_IRQ1>;
+					};
+
+					adsp_int8: int@3 {
+						reg = <3>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int9: int@4 {
+						reg = <4>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int10: int@5 {
+						reg = <5>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int11: int@6 {
+						reg = <6>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int12: int@7 {
+						reg = <7>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int13: int@8 {
+						reg = <8>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int14: int@9 {
+						reg = <9>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int15: int@a {
+						reg = <10>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int16: int@b {
+						reg = <11>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int17: int@c {
+						reg = <12>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int18: int@d {
+						reg = <13>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int19: int@e {
+						reg = <14>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int20: int@f {
+						reg = <15>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int21: int@10 {
+						reg = <16>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int22: int@11 {
+						reg = <17>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int23: int@12 {
+						reg = <18>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int24: int@13 {
+						reg = <19>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int25: int@14 {
+						reg = <20>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int26: int@15 {
+						reg = <21>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int27: int@16 {
+						reg = <22>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int28: int@17 {
+						reg = <23>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int29: int@18 {
+						reg = <24>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int30: int@19 {
+						reg = <25>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+
+					adsp_int31: int@1a {
+						reg = <26>;
+						source = <ADSP_IRQ_SRC_NONE>;
+					};
+				};
 			};
 		};
 	};

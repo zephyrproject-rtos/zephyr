@@ -1,0 +1,45 @@
+# Copyright (c) 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+compatible: "nxp,inputmux"
+description: NXP i.MX INPUTMUX driver. Routes internal SoC signals.
+
+properties:
+  reg:
+    required: true
+  "#address-cells":
+    const: 1
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: INPUTMUX assignment block
+
+  properties:
+    reg:
+      required: true
+      type: int
+      description: Offset in instance's base register.
+    "#address-cells":
+      required: true
+      type: int
+      const: 1
+    "#size-cells":
+      required: true
+      type: int
+      const: 0
+
+  child-binding:
+    description: INPUTMUX assignment
+
+    properties:
+      reg:
+        required: true
+        type: int
+        description: Offset from assignment block base.
+      source:
+        required: true
+        type: int
+        description: Assignment source.
