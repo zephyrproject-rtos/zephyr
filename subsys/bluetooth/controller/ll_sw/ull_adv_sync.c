@@ -403,6 +403,14 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 
 				/* No AD data overflow */
 				ad_len_overflow = 0U;
+
+				/* No chain PDU.
+				 * Note: Not required to assign as referencing
+				 * is guarded by the fact that ad_len_overflow
+				 * is zero; having the below to make compilers
+				 * not complain of uninitialized variable.
+				 */
+				ad_len_chain = 0U;
 			}
 		}
 	} else {
@@ -484,7 +492,16 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 			/* Proceed to add chain PDU */
 			err = 0U;
 		} else {
+			/* No AD data overflow */
 			ad_len_overflow = 0U;
+
+			/* No chain PDU.
+			 * Note: Not required to assign as referencing is
+			 * guarded by the fact that ad_len_overflow is zero;
+			 * having the below to make compilers not complain of
+			 * uninitialized variable.
+			 */
+			ad_len_chain = 0U;
 		}
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 	}
