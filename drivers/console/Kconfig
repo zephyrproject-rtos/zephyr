@@ -222,6 +222,7 @@ endif # UART_MCUMGR
 config XTENSA_SIM_CONSOLE
 	bool "Use Xtensa simulator console"
 	depends on SIMULATOR_XTENSA
+	depends on !WINSTREAM_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	default y
 	help
