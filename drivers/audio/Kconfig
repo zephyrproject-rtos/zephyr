@@ -21,7 +21,7 @@ if AUDIO_CODEC
 
 config AUDIO_CODEC_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default 90
 	help
 	  Audio codec device driver initialization priority.
 
@@ -37,6 +37,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/audio/Kconfig.tas6422dac"
 source "drivers/audio/Kconfig.tlv320dac"
+source "drivers/audio/Kconfig.tas2563"
 
 endif # AUDIO_CODEC
 
