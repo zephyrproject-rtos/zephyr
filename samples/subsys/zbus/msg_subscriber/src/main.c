@@ -26,14 +26,14 @@ void on_heap_free(uintptr_t heap_id, void *mem, size_t bytes)
 		(unsigned int)total_allocated);
 }
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC)
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 
 HEAP_LISTENER_ALLOC_DEFINE(my_heap_listener_alloc, HEAP_ID_FROM_POINTER(&_system_heap),
 			   on_heap_alloc);
 
 HEAP_LISTENER_FREE_DEFINE(my_heap_listener_free, HEAP_ID_FROM_POINTER(&_system_heap), on_heap_free);
 
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC */
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 struct acc_msg {
 	int x;
 	int y;
@@ -173,12 +173,12 @@ int main(void)
 
 	total_allocated = 0;
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC)
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 
 	heap_listener_register(&my_heap_listener_alloc);
 	heap_listener_register(&my_heap_listener_free);
 
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC */
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 
 	while (1) {
 		LOG_INF("----> Publishing to %s channel", zbus_chan_name(&acc_data_chan));

@@ -25,13 +25,14 @@ config ZBUS_MSG_SUBSCRIBER
 
 if ZBUS_MSG_SUBSCRIBER
 
-choice
+choice ZBUS_MSG_SUBSCRIBER_BUF_ALLOC
 	prompt "ZBus msg_subscribers buffer allocation"
+	default ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
 
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC
+config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC
 	bool "Use heap to allocate msg_subscriber buffers data"
 
-config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+config ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 	bool "Use fixed data size for msg_subscriber buffers pool"
 
 endchoice
@@ -40,12 +41,12 @@ config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
 	default 16
 	int "The count of net_buf available to be used simutaneously."
 
-if ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
 	int "The size of the biggest message used with ZBus."
 
-endif # ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC
+endif # ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
 
 endif # ZBUS_MSG_SUBSCRIBER
 

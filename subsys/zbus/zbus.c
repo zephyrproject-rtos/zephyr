@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC)
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 
 NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE,
 			 sizeof(struct zbus_channel *), NULL);
@@ -42,7 +42,7 @@ static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, si
 		 (int)size);
 	return net_buf_alloc(&_zbus_msg_subscribers_pool, timeout);
 }
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC */
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
 

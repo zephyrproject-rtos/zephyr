@@ -95,7 +95,7 @@ tests:
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
-      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
       - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
     harness_config:
       type: multi_line

@@ -823,9 +823,9 @@ Related configuration options:
 * :kconfig:option:`CONFIG_ZBUS_OBSERVER_NAME` enables the name of observers to be available inside
   the channels metadata;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER` enables the message subscriber observer type;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC` uses the heap to allocate message
+* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC` uses the heap to allocate message
   buffers;
-* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC` uses the stack to allocate message
+* :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` uses the stack to allocate message
   buffers;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` the available number of message
   buffers to be used simultaneously;
