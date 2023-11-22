@@ -908,7 +908,7 @@ static int transceive_dma(const struct device *dev,
 			 k_yield());
 #else
 		/* wait until spi is no more busy (spi TX fifo is really empty) */
-		while (ll_func_spi_dma_busy(spi) == 0) {
+		while (ll_func_spi_dma_complete(spi) == 0) {
 		}
 #endif
 

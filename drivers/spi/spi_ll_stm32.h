@@ -82,7 +82,7 @@ static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t locat
 }
 
 /* checks that DMA Tx packet is fully transmitted over the SPI */
-static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
+static inline uint32_t ll_func_spi_dma_complete(SPI_TypeDef *spi)
 {
 #ifdef LL_SPI_SR_TXC
 	return LL_SPI_IsActiveFlag_TXC(spi);
