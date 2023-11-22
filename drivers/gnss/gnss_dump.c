@@ -5,6 +5,7 @@
  */
 
 #include "gnss_dump.h"
+#include <stdlib.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -94,20 +95,22 @@ int gnss_dump_info(char *str, uint16_t strsize, const struct gnss_info *info)
 int gnss_dump_nav_data(char *str, uint16_t strsize, const struct navigation_data *nav_data)
 {
 	int ret;
-	int32_t altitude_int;
-	int32_t altitude_fraction;
-	const char *fmt = "navigation_data: {latitude: %lli.%lli, longitude : %lli.%lli, "
-			  "bearing %u.%u, speed %u.%u, altitude: %i.%i}";
+	const char *fmt = "navigation_data: {latitude: %s%lli.%09lli, longitude : %s%lli.%09lli, "
+			  "bearing %u.%03u, speed %u.%03u, altitude: %s%i.%03i}";
+	char *lat_sign = nav_data->latitude < 0 ? "-" : "";
+	char *lon_sign = nav_data->longitude < 0 ? "-" : "";
+	char *alt_sign = nav_data->altitude < 0 ? "-" : "";
 
-	altitude_int = nav_data->altitude / 1000;
-	altitude_fraction = nav_data->altitude % 1000;
-	altitude_fraction = (altitude_fraction < 0) ? -altitude_fraction : altitude_fraction;
-
-	ret = snprintk(str, strsize, fmt, nav_data->latitude / 1000000000,
-		       nav_data->latitude % 1000000000, nav_data->longitude / 1000000000,
-		       nav_data->longitude % 1000000000, nav_data->bearing / 1000,
-		       nav_data->bearing % 1000, nav_data->speed / 1000, nav_data->speed % 1000,
-		       altitude_int, altitude_fraction);
+	ret = snprintk(str, strsize, fmt,
+		       lat_sign,
+		       llabs(nav_data->latitude) / 1000000000,
+		       llabs(nav_data->latitude) % 1000000000,
+		       lon_sign,
+		       llabs(nav_data->longitude) / 1000000000,
+		       llabs(nav_data->longitude) % 1000000000,
+		       nav_data->bearing / 1000, nav_data->bearing % 1000,
+		       nav_data->speed / 1000, nav_data->speed % 1000,
+		       alt_sign, abs(nav_data->altitude) / 1000, abs(nav_data->altitude) % 1000);
 
 	return (strsize < ret) ? -ENOMEM : 0;
 }
