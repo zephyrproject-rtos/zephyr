@@ -2757,6 +2757,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
+
+		case IP_PKTINFO:
+			if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_RECV_PKTINFO,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
 
 		break;
@@ -2776,6 +2793,23 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
+
+		case IPV6_RECVPKTINFO:
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_RECV_PKTINFO,
+							     optval,
+							     optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 
 		case IPV6_TCLASS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {

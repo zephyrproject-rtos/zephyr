@@ -1095,9 +1095,32 @@ struct ifreq {
 /** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */
 #define IP_TOS 1
 
+/** sockopt: Pass an IP_PKTINFO ancillary message that contains a
+ *  pktinfo structure that supplies some information about the
+ *  incoming packet.
+ */
+#define IP_PKTINFO 8
+
+struct in_pktinfo {
+	unsigned int   ipi_ifindex;  /* Interface index */
+	struct in_addr ipi_spec_dst; /* Local address */
+	struct in_addr ipi_addr;     /* Header Destination address */
+};
+
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Don't support IPv4 access (ignored, for compatibility) */
 #define IPV6_V6ONLY 26
+
+/** sockopt: Pass an IPV6_RECVPKTINFO ancillary message that contains a
+ *  in6_pktinfo structure that supplies some information about the
+ *  incoming packet. See RFC 3542.
+ */
+#define IPV6_RECVPKTINFO 49
+
+struct in6_pktinfo {
+	struct in6_addr ipi6_addr;    /* src/dst IPv6 address */
+	unsigned int    ipi6_ifindex; /* send/recv interface index */
+};
 
 /** sockopt: Set or receive the traffic class value for an outgoing packet. */
 #define IPV6_TCLASS 67
