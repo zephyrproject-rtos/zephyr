@@ -3,6 +3,7 @@
 
 menuconfig ZBUS
 	bool "Zbus support"
+	depends on MULTITHREADING
 	help
 	  Enables support for Zephyr message bus.
 
