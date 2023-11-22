@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <neorv32.dtsi>
+#include <neorv32_1_6_1.dtsi>
 #include <freq.h>
 #include <mem.h>
 
