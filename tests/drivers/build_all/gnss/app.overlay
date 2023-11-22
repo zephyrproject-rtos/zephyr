@@ -1,0 +1,22 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+                test_uart: uart@0 {
+                        compatible = "vnd,serial";
+                        reg = <0x0 0x1000>;
+                        status = "okay";
+
+			gnss: gnss-nmea-generic {
+				compatible = "gnss-nmea-generic";
+			};
+                };
+	};
+};
