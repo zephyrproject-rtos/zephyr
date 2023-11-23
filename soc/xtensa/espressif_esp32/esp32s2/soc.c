@@ -37,6 +37,7 @@
 #endif /* CONFIG_MCUBOOT */
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
+extern void esp_reset_reason_init(void);
 
 #if CONFIG_ESP_SPIRAM
 extern int _ext_ram_bss_start;
@@ -90,6 +91,8 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	 * arch_kernel_init() is invoked.
 	 */
 	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+
+	esp_reset_reason_init();
 
 #ifdef CONFIG_MCUBOOT
 	/* MCUboot early initialisation. */
