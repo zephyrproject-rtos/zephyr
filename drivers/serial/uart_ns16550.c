@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 
 #define UART_NS16550_PCP_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pcp)
 #define UART_NS16550_DLF_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dlf)
+#define UART_NS16550_DMAS_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
@@ -1402,6 +1403,7 @@ static void async_user_callback(const struct device *dev, struct uart_event *evt
 	}
 }
 
+#if UART_NS16550_DMAS_ENABLED
 static void async_evt_tx_done(struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
@@ -1420,6 +1422,7 @@ static void async_evt_tx_done(struct device *dev)
 
 	async_user_callback(dev, &event);
 }
+#endif
 
 static void async_evt_rx_rdy(const struct device *dev)
 {
@@ -1535,6 +1538,7 @@ static void prepare_rx_dma_block_config(const struct device *dev)
 	head_block_config->block_size = rx_dma_params->buf_len;
 }
 
+#if UART_NS16550_DMAS_ENABLED
 static void dma_callback(const struct device *dev, void *user_data, uint32_t channel,
 			 int status)
 {
@@ -1568,6 +1572,7 @@ static void dma_callback(const struct device *dev, void *user_data, uint32_t cha
 		}
 	}
 }
+#endif
 
 static int uart_ns16550_callback_set(const struct device *dev, uart_callback_t callback,
 				    void *user_data)
