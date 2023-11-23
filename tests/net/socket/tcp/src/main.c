@@ -16,6 +16,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #define TEST_STR_SMALL "test"
 
+#define TEST_STR_LONG \
+	"The Zephyr Project, a Linux Foundation hosted Collaboration " \
+	"Project, is an open source collaborative effort uniting leaders " \
+	"from across the industry to build a best-in-breed small, scalable, " \
+	"real-time operating system (RTOS) optimized for resource-" \
+	"constrained devices, across multiple architectures."
+
 #define MY_IPV4_ADDR "127.0.0.1"
 #define MY_IPV6_ADDR "::1"
 
@@ -126,6 +133,21 @@ static void test_recvfrom(int sock,
 	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
 		      0,
 		      "unexpected data");
+}
+
+static void test_recvmsg(int sock,
+			 struct msghdr *msg,
+			 int flags,
+			 size_t expected,
+			 int line)
+{
+	ssize_t recved;
+
+	recved = recvmsg(sock, msg, flags);
+
+	zassert_equal(recved, expected,
+		      "line %d, unexpected received bytes (%d vs %d)",
+		      line, recved, expected);
 }
 
 static void test_shutdown(int sock, int how)
@@ -689,6 +711,111 @@ ZTEST_USER(net_socket_tcp, test_v6_sendto_recvfrom_null_dest)
 	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_recvfrom(new_sock, 0, NULL, NULL);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+#define MAX_BUF_LEN 64
+#define SMALL_BUF_LEN (sizeof(TEST_STR_SMALL) - 1 - 2)
+	char buf[MAX_BUF_LEN];
+	char buf2[SMALL_BUF_LEN];
+	char buf3[MAX_BUF_LEN];
+	struct iovec io_vector[3];
+	struct msghdr msg;
+	int i, len;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_sendto(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
+		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	/* Read data first in one chunk */
+	io_vector[0].iov_base = buf;
+	io_vector[0].iov_len = sizeof(buf);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &addr;
+	msg.msg_namelen = addrlen;
+
+	test_recvmsg(new_sock, &msg, MSG_PEEK, strlen(TEST_STR_SMALL),
+		     __LINE__);
+	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
+			  "wrong data (%s)", buf);
+
+	/* Then in two chunks */
+	io_vector[0].iov_base = buf2;
+	io_vector[0].iov_len = sizeof(buf2);
+	io_vector[1].iov_base = buf;
+	io_vector[1].iov_len = sizeof(buf);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 2;
+	msg.msg_name = &addr;
+	msg.msg_namelen = addrlen;
+
+	test_recvmsg(new_sock, &msg, 0, strlen(TEST_STR_SMALL), __LINE__);
+	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_SMALL, msg.msg_iov[0].iov_len,
+			  "wrong data in %s", "iov[0]");
+	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_SMALL[msg.msg_iov[0].iov_len],
+			  msg.msg_iov[1].iov_len,
+			  "wrong data in %s", "iov[1]");
+
+	/* Send larger test buffer */
+	test_sendto(c_sock, TEST_STR_LONG, strlen(TEST_STR_LONG), 0,
+		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	/* Verify that the data is truncated */
+	io_vector[0].iov_base = buf;
+	io_vector[0].iov_len = sizeof(buf);
+	io_vector[1].iov_base = buf2;
+	io_vector[1].iov_len = sizeof(buf2);
+	io_vector[2].iov_base = buf3;
+	io_vector[2].iov_len = sizeof(buf3);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 3;
+	msg.msg_name = &addr;
+	msg.msg_namelen = addrlen;
+
+	for (i = 0, len = 0; i < msg.msg_iovlen; i++) {
+		len += msg.msg_iov[i].iov_len;
+	}
+
+	test_recvmsg(new_sock, &msg, 0, len, __LINE__);
+	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_LONG, msg.msg_iov[0].iov_len,
+			  "wrong data in %s", "iov[0]");
+	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_LONG[msg.msg_iov[0].iov_len],
+			  msg.msg_iov[1].iov_len,
+			  "wrong data in %s", "iov[1]");
+	zassert_mem_equal(msg.msg_iov[2].iov_base,
+			  &TEST_STR_LONG[msg.msg_iov[0].iov_len + msg.msg_iov[1].iov_len],
+			  msg.msg_iov[2].iov_len,
+			  "wrong data in %s", "iov[2]");
 
 	test_close(new_sock);
 	test_close(s_sock);
