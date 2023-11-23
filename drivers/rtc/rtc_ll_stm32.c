@@ -77,34 +77,6 @@ struct rtc_stm32_data {
 	struct k_mutex lock;
 };
 
-static int rtc_stm32_enter_initialization_mode(bool kernel_available)
-{
-	if (kernel_available) {
-		LL_RTC_EnableInitMode(RTC);
-		bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_msleep(1));
-
-		if (!success) {
-			return -EIO;
-		}
-	} else {
-		/* kernel is not available so use the blocking but otherwise equivalent function
-		 * provided by LL
-		 */
-		ErrorStatus status = LL_RTC_EnterInitMode(RTC);
-
-		if (status != SUCCESS) {
-			return -EIO;
-		}
-	}
-
-	return 0;
-}
-
-static inline void rtc_stm32_leave_initialization_mode(void)
-{
-	LL_RTC_DisableInitMode(RTC);
-}
-
 static int rtc_stm32_configure(const struct device *dev)
 {
 	const struct rtc_stm32_config *cfg = dev->config;
@@ -123,14 +95,17 @@ static int rtc_stm32_configure(const struct device *dev)
 	if ((hour_format != LL_RTC_HOURFORMAT_24HOUR) ||
 	    (sync_prescaler != cfg->sync_prescaler) ||
 	    (async_prescaler != cfg->async_prescaler)) {
-		err = rtc_stm32_enter_initialization_mode(false);
-		if (err == 0) {
+		ErrorStatus status = LL_RTC_EnterInitMode(RTC);
+
+		if (status == SUCCESS) {
 			LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
 			LL_RTC_SetSynchPrescaler(RTC, cfg->sync_prescaler);
 			LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
+		} else {
+			err = -EIO;
 		}
 
-		rtc_stm32_leave_initialization_mode();
+		LL_RTC_DisableInitMode(RTC);
 	}
 
 #ifdef RTC_CR_BYPSHAD
@@ -219,13 +194,14 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 
 	LL_RTC_DisableWriteProtection(RTC);
 
-	err = rtc_stm32_enter_initialization_mode(true);
-	if (err) {
+	ErrorStatus status = LL_RTC_EnterInitMode(RTC);
+
+	if (status != SUCCESS) {
 #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 		LL_PWR_DisableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 		k_mutex_unlock(&data->lock);
-		return err;
+		return -EIO;
 	}
 
 	LL_RTC_DATE_SetYear(RTC, bin2bcd(real_year - RTC_YEAR_REF));
@@ -245,7 +221,7 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	LL_RTC_TIME_SetMinute(RTC, bin2bcd(timeptr->tm_min));
 	LL_RTC_TIME_SetSecond(RTC, bin2bcd(timeptr->tm_sec));
 
-	rtc_stm32_leave_initialization_mode();
+	LL_RTC_DisableInitMode(RTC);
 
 	LL_RTC_EnableWriteProtection(RTC);
 
