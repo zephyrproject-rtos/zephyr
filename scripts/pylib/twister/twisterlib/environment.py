@@ -453,6 +453,15 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
              "faster compilation since builds will be incremental.")
 
     parser.add_argument(
+        "--aggressive-no-clean", action="store_true",
+        help="Re-use the outdir before building and do not re-run cmake. Will result in "
+             "much faster compilation since builds will be incremental. This option might "
+             " result in build failures and inconsistencies if dependencies change or when "
+             " applied on a significantly changed code base. Use on your own "
+             " risk. It is recommended to only use this option for local "
+             " development and when testing localized change in a subsystem.")
+
+    parser.add_argument(
         '--detailed-test-id', action='store_true',
         help="Include paths to tests' locations in tests' names. Names will follow "
              "PATH_TO_TEST/SCENARIO_NAME schema "
@@ -739,6 +748,9 @@ def parse_arguments(parser, args, options = None):
 
     if options.show_footprint or options.compare_report:
         options.enable_size_report = True
+
+    if options.aggressive_no_clean:
+        options.no_clean = True
 
     if options.coverage:
         options.enable_coverage = True
