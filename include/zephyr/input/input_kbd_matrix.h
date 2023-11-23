@@ -88,6 +88,7 @@ struct input_kbd_matrix_common_config {
 	uint32_t debounce_up_us;
 	uint32_t settle_time_us;
 	bool ghostkey_check;
+	const kbd_row_t *actual_key_mask;
 
 	/* extra data pointers */
 	kbd_row_t *matrix_stable_state;
@@ -108,6 +109,12 @@ struct input_kbd_matrix_common_config {
 #define INPUT_KBD_MATRIX_DT_DEFINE_ROW_COL(node_id, _row_size, _col_size) \
 	BUILD_ASSERT(IN_RANGE(_row_size, 1, INPUT_KBD_MATRIX_ROW_BITS), "invalid row-size"); \
 	BUILD_ASSERT(IN_RANGE(_col_size, 1, UINT8_MAX), "invalid col-size"); \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
+	BUILD_ASSERT(DT_PROP_LEN(node_id, actual_key_mask) == _col_size, \
+		     "actual-key-mask size does not match the number of columns"); \
+	static const kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask)[_col_size] = \
+		DT_PROP(node_id, actual_key_mask); \
+	)) \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state)[_col_size]; \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state)[_col_size]; \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, previous_state)[_col_size]; \
@@ -159,6 +166,9 @@ struct input_kbd_matrix_common_config {
 		.debounce_up_us = DT_PROP(node_id, debounce_up_ms) * USEC_PER_MSEC, \
 		.settle_time_us = DT_PROP(node_id, settle_time_us), \
 		.ghostkey_check = !DT_PROP(node_id, no_ghostkey_check), \
+		IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
+		.actual_key_mask = INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask), \
+		)) \
 		\
 		.matrix_stable_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state), \
 		.matrix_unstable_state = INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state), \
