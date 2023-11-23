@@ -435,23 +435,7 @@ static void lan865x_int_thread(const struct device *dev)
 			lan865x_read_chunks(dev);
 		}
 
-		if (tc6->exst) {
-			/*
-			 * Just clear any pending interrupts - data RX will be served
-			 * earlier.
-			 * The RESETC is handled separately as it requires LAN865x device
-			 * configuration.
-			 */
-			oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
-			if (sts != 0) {
-				oa_tc6_reg_write(tc6, OA_STATUS0, sts);
-			}
-
-			oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
-			if (sts != 0) {
-				oa_tc6_reg_write(tc6, OA_STATUS1, sts);
-			}
-		}
+		oa_tc6_check_status(tc6);
 	}
 }
 
