@@ -30,6 +30,8 @@
 #include "bootloader_init.h"
 #endif /* CONFIG_MCUBOOT */
 
+extern void esp_reset_reason_init(void);
+
 /*
  * This is written in C rather than assembly since, during the port bring up,
  * Zephyr is being booted by the Espressif bootloader.  With it, the C stack
@@ -55,6 +57,8 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
+
+	esp_reset_reason_init();
 
 #ifdef CONFIG_MCUBOOT
 	/* MCUboot early initialisation.
