@@ -79,6 +79,8 @@ tests:
     platform_allow:
       - native_posix_64
       - native_posix
+      - native_sim_64
+      - native_sim
       - qemu_x86
       - qemu_x86_64
     min_ram: 36
