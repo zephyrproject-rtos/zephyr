@@ -552,6 +552,7 @@ static int cap_initiator_unicast_audio_configure(
 	codec_cfg = &proc_param->start.codec_cfg;
 	conn = proc_param->start.conn;
 	ep = proc_param->start.ep;
+	active_proc->proc_initiated_cnt++;
 
 	/* Since BAP operations may require a write long or a read long on the notification,
 	 * we cannot assume that we can do multiple streams at once, thus do it one at a time.
@@ -562,8 +563,6 @@ static int cap_initiator_unicast_audio_configure(
 		LOG_DBG("Failed to config stream %p: %d", proc_param->stream, err);
 
 		bt_cap_common_clear_active_proc();
-	} else {
-		active_proc->proc_initiated_cnt++;
 	}
 
 	return err;
@@ -646,6 +645,7 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		ep = proc_param->start.ep;
 		codec_cfg = &proc_param->start.codec_cfg;
 		bap_stream = &next_cap_stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
 
 		/* Since BAP operations may require a write long or a read long on the notification,
 		 * we cannot assume that we can do multiple streams at once, thus do it one at a
@@ -659,8 +659,6 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 
 			bt_cap_common_abort_proc(conn, err);
 			cap_initiator_unicast_audio_proc_complete();
-		} else {
-			active_proc->proc_initiated_cnt++;
 		}
 
 		return;
@@ -712,6 +710,8 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 			break;
 		}
 
+		active_proc->proc_initiated_cnt++;
+
 		err = bt_bap_stream_qos(conns[i], unicast_group);
 		if (err != 0) {
 			LOG_DBG("Failed to set stream QoS for conn %p and group %p: %d",
@@ -728,8 +728,6 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 
 			return;
 		}
-
-		active_proc->proc_initiated_cnt++;
 	}
 }
 
@@ -773,6 +771,7 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 	proc_param = &active_proc->proc_param.initiator[0];
 	next_cap_stream = proc_param->stream;
 	bap_stream = &next_cap_stream->bap_stream;
+	active_proc->proc_initiated_cnt++;
 
 	/* Since BAP operations may require a write long or a read long on the notification, we
 	 * cannot assume that we can do multiple streams at once, thus do it one at a time.
@@ -785,8 +784,6 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 
 		bt_cap_common_abort_proc(bap_stream->conn, err);
 		cap_initiator_unicast_audio_proc_complete();
-	} else {
-		active_proc->proc_initiated_cnt++;
 	}
 }
 
@@ -825,6 +822,8 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 			active_proc->proc_param.initiator[active_proc->proc_done_cnt].stream;
 		struct bt_bap_stream *next_bap_stream = &next_cap_stream->bap_stream;
 
+		active_proc->proc_initiated_cnt++;
+
 		/* Since BAP operations may require a write long or a read long on the notification,
 		 * we cannot assume that we can do multiple streams at once, thus do it one at a
 		 * time.
@@ -838,8 +837,6 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 
 			bt_cap_common_abort_proc(next_bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete();
-		} else {
-			active_proc->proc_initiated_cnt++;
 		}
 
 		return;
@@ -1011,14 +1008,13 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	bap_stream = &proc_param->stream->bap_stream;
 	meta_len = proc_param->meta_update.meta_len;
 	meta = proc_param->meta_update.meta;
+	active_proc->proc_initiated_cnt++;
 
 	err = bt_bap_stream_metadata(bap_stream, meta, meta_len);
 	if (err != 0) {
 		LOG_DBG("Failed to update metadata for stream %p: %d", proc_param->stream, err);
 
 		bt_cap_common_clear_active_proc();
-	} else {
-		active_proc->proc_initiated_cnt++;
 	}
 
 	return err;
@@ -1079,6 +1075,7 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 		meta = proc_param->meta_update.meta;
 		next_cap_stream = proc_param->stream;
 		bap_stream = &next_cap_stream->bap_stream;
+		active_proc->proc_initiated_cnt++;
 
 		/* Since BAP operations may require a write long or a read long on the notification,
 		 * we cannot assume that we can do multiple streams at once, thus do it one at a
@@ -1094,8 +1091,6 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 
 			bt_cap_common_abort_proc(bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete();
-		} else {
-			active_proc->proc_initiated_cnt++;
 		}
 
 		return;
@@ -1169,14 +1164,13 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 	 */
 	proc_param = &active_proc->proc_param.initiator[0];
 	bap_stream = &proc_param->stream->bap_stream;
+	active_proc->proc_initiated_cnt++;
 
 	err = bt_bap_stream_release(bap_stream);
 	if (err != 0) {
 		LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
 
 		bt_cap_common_clear_active_proc();
-	} else {
-		active_proc->proc_initiated_cnt++;
 	}
 
 	return err;
@@ -1215,6 +1209,7 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
 		int err;
 
+		active_proc->proc_initiated_cnt++;
 		/* Since BAP operations may require a write long or a read long on the notification,
 		 * we cannot assume that we can do multiple streams at once, thus do it one at a
 		 * time.
@@ -1227,8 +1222,6 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 
 			bt_cap_common_abort_proc(bap_stream->conn, err);
 			cap_initiator_unicast_audio_proc_complete();
-		} else {
-			active_proc->proc_initiated_cnt++;
 		}
 	} else {
 		cap_initiator_unicast_audio_proc_complete();

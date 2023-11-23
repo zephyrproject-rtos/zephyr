@@ -253,14 +253,13 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 
 		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
 		conn = proc_param->conn;
+		active_proc->proc_initiated_cnt++;
 		err = bt_vcp_vol_ctlr_set_vol(bt_vcp_vol_ctlr_get_by_conn(conn),
 					      proc_param->change_volume.volume);
 		if (err != 0) {
 			LOG_DBG("Failed to set volume for conn %p: %d", (void *)conn, err);
 			bt_cap_common_abort_proc(conn, err);
 			cap_commander_unicast_audio_proc_complete();
-		} else {
-			active_proc->proc_initiated_cnt++;
 		}
 	} else {
 		cap_commander_unicast_audio_proc_complete();
@@ -322,14 +321,13 @@ int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_p
 
 	proc_param = &active_proc->proc_param.commander[0];
 	conn = proc_param->conn;
+	active_proc->proc_initiated_cnt++;
 	err = bt_vcp_vol_ctlr_set_vol(bt_vcp_vol_ctlr_get_by_conn(conn),
 				      proc_param->change_volume.volume);
 	if (err != 0) {
 		LOG_DBG("Failed to set volume for conn %p: %d", (void *)conn, err);
 		return -ENOEXEC;
 	}
-
-	active_proc->proc_initiated_cnt++;
 
 	return 0;
 }

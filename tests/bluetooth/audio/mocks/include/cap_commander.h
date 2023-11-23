@@ -10,12 +10,13 @@
 #include <zephyr/fff.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-extern struct bt_cap_commander_cb mock_cap_commander_cb;
+extern const struct bt_cap_commander_cb mock_cap_commander_cb;
 
 void mock_cap_commander_init(void);
 void mock_cap_commander_cleanup(void);
 
 DECLARE_FAKE_VOID_FUNC(mock_cap_commander_discovery_complete_cb, struct bt_conn *, int,
 		       const struct bt_csip_set_coordinator_csis_inst *);
+DECLARE_FAKE_VOID_FUNC(mock_cap_commander_volume_changed_cb, struct bt_conn *, int);
 
 #endif /* MOCKS_CAP_COMMANDER_H_ */

@@ -34,12 +34,38 @@ int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr, struct bt_c
 
 int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 {
-	if (vcp_cb->vol_set != NULL) {
+	if (vcp_cb != NULL && vcp_cb->vol_set != NULL) {
 		vcp_cb->vol_set(vol_ctlr, 0);
 	}
+
+	return 0;
+}
+
+int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **vol_ctlr)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(vol_ctlrs); i++) {
+		if (vol_ctlrs[i].conn == NULL) {
+			vol_ctlrs[i].conn = conn;
+			*vol_ctlr = &vol_ctlrs[i];
+			return 0;
+		}
+	}
+
+	return -ENOMEM;
 }
 
 int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb)
 {
 	vcp_cb = cb;
+
+	return 0;
+}
+
+void mock_bt_vcp_init(void)
+{
+	memset(vol_ctlrs, 0, sizeof(vol_ctlrs));
+}
+
+void mock_bt_vcp_cleanup(void)
+{
 }
