@@ -58,6 +58,7 @@ elseif(CONFIG_BT_CTLR_LOW_LAT)
  target_sources(app PRIVATE
   src/test_friendship.c
   src/test_transport.c
+  src/test_suspend.c
  )
 
 else()
@@ -72,6 +73,7 @@ else()
   src/test_access.c
   src/test_iv_index.c
   src/test_advertiser.c
+  src/test_suspend.c
  )
 
  if(CONFIG_BT_MESH_V1d1)
