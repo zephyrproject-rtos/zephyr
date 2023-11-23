@@ -32,8 +32,8 @@ multiple processes.
     pthread_barrierattr_init(),yes
     pthread_barrierattr_setpshared(),yes
     pthread_cancel(),yes
-    pthread_cleanup_pop(),
-    pthread_cleanup_push(),
+    pthread_cleanup_pop(),yes
+    pthread_cleanup_push(),yes
     pthread_cond_broadcast(),yes
     pthread_cond_destroy(),yes
     pthread_cond_init(),yes
