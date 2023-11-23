@@ -30,6 +30,12 @@ LOG_MODULE_REGISTER(pthread, CONFIG_PTHREAD_LOG_LEVEL);
 
 #define PTHREAD_INIT_FLAGS PTHREAD_CANCEL_ENABLE
 
+struct __pthread_cleanup {
+	void (*routine)(void *arg);
+	void *arg;
+	sys_snode_t node;
+};
+
 enum posix_thread_qid {
 	/* ready to be started via pthread_create() */
 	POSIX_THREAD_READY_Q,
@@ -140,6 +146,46 @@ pthread_t pthread_self(void)
 int pthread_equal(pthread_t pt1, pthread_t pt2)
 {
 	return (pt1 == pt2);
+}
+
+static inline void __z_pthread_cleanup_init(struct __pthread_cleanup *c, void (*routine)(void *arg),
+					    void *arg)
+{
+	*c = (struct __pthread_cleanup){
+		.routine = routine,
+		.arg = arg,
+		.node = {0},
+	};
+}
+
+void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void *arg)
+{
+	struct posix_thread *const t = to_posix_thread(pthread_self());
+	struct __pthread_cleanup *const c = (struct __pthread_cleanup *)cleanup;
+
+	BUILD_ASSERT(3 * sizeof(void *) == sizeof(*c));
+	__ASSERT_NO_MSG(t != NULL);
+	__ASSERT_NO_MSG(c != NULL);
+	__ASSERT_NO_MSG(routine != NULL);
+	__z_pthread_cleanup_init(c, routine, arg);
+	sys_slist_prepend(&t->cleanup_list, &c->node);
+}
+
+void __z_pthread_cleanup_pop(int execute)
+{
+	sys_snode_t *node;
+	struct __pthread_cleanup *c;
+	struct posix_thread *const t = to_posix_thread(pthread_self());
+
+	__ASSERT_NO_MSG(t != NULL);
+	node = sys_slist_get(&t->cleanup_list);
+	__ASSERT_NO_MSG(node != NULL);
+	c = CONTAINER_OF(node, struct __pthread_cleanup, node);
+	__ASSERT_NO_MSG(c != NULL);
+	__ASSERT_NO_MSG(c->routine != NULL);
+	if (execute) {
+		c->routine(c->arg);
+	}
 }
 
 static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
@@ -414,6 +460,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		}
 		t->cancel_pending = false;
 		sys_slist_init(&t->key_list);
+		sys_slist_init(&t->cleanup_list);
 		t->dynamic_stack = _attr == NULL ? attr->stack : NULL;
 	}
 	k_spin_unlock(&pthread_pool_lock, key);

@@ -24,6 +24,9 @@
 struct posix_thread {
 	struct k_thread thread;
 
+	/* List nodes for pthread_cleanup_push() / pthread_cleanup_pop() */
+	sys_slist_t cleanup_list;
+
 	/* List node for ready_q, run_q, or done_q */
 	sys_dnode_t q_node;
 
