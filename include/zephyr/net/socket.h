@@ -467,6 +467,20 @@ __syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
 				 socklen_t *addrlen);
 
 /**
+ * @brief Receive a message from an arbitrary network address
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/recvmsg.html>`__
+ * for normative description.
+ * This function is also exposed as ``recvmsg()``
+ * if :kconfig:option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrst
+ */
+__syscall ssize_t zsock_recvmsg(int sock, struct msghdr *msg, int flags);
+
+/**
  * @brief Receive data from a connected peer
  *
  * @details
@@ -860,6 +874,12 @@ static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
 			       struct sockaddr *src_addr, socklen_t *addrlen)
 {
 	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+}
+
+/** POSIX wrapper for @ref zsock_recvmsg */
+static inline ssize_t recvmsg(int sock, struct msghdr *msg, int flags)
+{
+	return zsock_recvmsg(sock, msg, flags);
 }
 
 /** POSIX wrapper for @ref zsock_poll */
