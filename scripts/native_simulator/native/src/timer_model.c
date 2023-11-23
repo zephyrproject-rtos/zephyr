@@ -126,7 +126,12 @@ static inline void host_clock_gettime(struct timespec *tv)
 #endif
 }
 
-static uint64_t get_host_us_time(void)
+/*
+ * This function is globally available only for tests purposes
+ * It should not be used for any functional purposes,
+ * and as such is not present in this component header.
+ */
+uint64_t get_host_us_time(void)
 {
 	struct timespec tv;
 
