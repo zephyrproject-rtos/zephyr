@@ -16,6 +16,9 @@ static int32_t destroyed_values[2];
 static const int32_t forty_two = FORTY_TWO;
 static const int32_t seventy_three = SEVENTY_THREE;
 
+static thrd_t thread1;
+static thrd_t thread2;
+
 static void destroy_fn(void *arg)
 {
 	int32_t val = *(int32_t *)arg;
@@ -59,8 +62,6 @@ static int thread_fn(void *arg)
 /* test out separate threads doing tss_get() / tss_set() */
 ZTEST(libc_tss, test_tss_get_set)
 {
-	thrd_t thread1;
-	thrd_t thread2;
 	int res1 = BIOS_FOOD;
 	int res2 = BIOS_FOOD;
 
