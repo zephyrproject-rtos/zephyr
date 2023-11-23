@@ -61,7 +61,7 @@ multiple processes.
     pthread_once(),yes
     pthread_self(),yes
     pthread_setcancelstate(),yes
-    pthread_setcanceltype(),
+    pthread_setcanceltype(),yes
     pthread_setspecific(),yes
     pthread_sigmask(),
     pthread_testcancel(),
