@@ -32,16 +32,15 @@ extern "C" {
  * @brief LED information structure
  *
  * This structure gathers useful information about LED controller.
- *
- * @param label LED label.
- * @param num_colors Number of colors per LED.
- * @param index Index of the LED on the controller.
- * @param color_mapping Mapping of the LED colors.
  */
 struct led_info {
+	/** LED label */
 	const char *label;
+	/** Number of colors per LED */
 	uint32_t index;
+	/** Index of the LED on the controller */
 	uint8_t num_colors;
+	/** Mapping of the LED colors */
 	const uint8_t *color_mapping;
 };
 
