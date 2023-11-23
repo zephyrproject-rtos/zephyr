@@ -6,7 +6,7 @@ common:
     - log_api
     - logging
   integration_platforms:
-    - native_posix
+    - native_sim
   filter: not CONFIG_LOG_ALWAYS_RUNTIME
 tests:
   logging.message:

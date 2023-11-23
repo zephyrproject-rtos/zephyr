@@ -9,7 +9,7 @@ common:
     - arch
     - simulation
   integration_platforms:
-    - native_posix
+    - native_sim
   min_ram: 32
 tests:
   logging.deferred.api.overflow_rt_filter:
@@ -59,6 +59,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_OVERRIDE_LEVEL=4
@@ -110,6 +111,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_IMMEDIATE=y
@@ -122,6 +124,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
@@ -315,6 +318,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -328,6 +332,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a9
       - native_posix
+      - native_sim
     toolchain_exclude: xcc
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
