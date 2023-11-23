@@ -434,7 +434,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
 			interrupts = <67 1>;
 			interrupt-names = "wakeup";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -446,7 +445,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
 			interrupts = <68 0>;
 			interrupt-names = "global";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -458,7 +456,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00001000>;
 			interrupts = <98 0>;
 			interrupt-names = "global";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -470,7 +467,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00002000>;
 			interrupts = <110 0>;
 			interrupt-names = "global";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
