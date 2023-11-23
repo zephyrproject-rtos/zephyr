@@ -9,7 +9,7 @@ common:
     - mcumgr
     - fs_mgmt_hash_supported
   integration_platforms:
-    - native_posix
+    - native_sim
 tests:
   mgmt.mcumgr.fs.mgmt.hash.supported.crc32:
     extra_args: >
