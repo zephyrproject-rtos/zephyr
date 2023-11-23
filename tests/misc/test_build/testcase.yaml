@@ -8,7 +8,7 @@ tests:
     extra_args: CONF_FILE=debug.conf
     tags: debug
     integration_platforms:
-      - native_posix
+      - native_sim
     filter: CONFIG_CONSOLE_HAS_DRIVER
   bootloader.mcuboot.build:
     tags: mcuboot
@@ -25,6 +25,6 @@ tests:
     build_only: true
     tags: kconfig
     integration_platforms:
-      - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"
