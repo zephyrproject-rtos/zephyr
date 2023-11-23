@@ -74,12 +74,13 @@ config WIFI_NM_WPA_SUPPLICANT_ROBUST_AV
 	bool "Robust Audio Video streaming support"
 	default y
 
+# Hidden as these are mandatory for WFA certification
 config WIFI_NM_WPA_SUPPLICANT_WMM_AC
-	bool "WMM admission control"
+	bool
 	default y
 
 config WIFI_NM_WPA_SUPPLICANT_MBO
-	bool "Agile Multiband support"
+	bool
 	default y
 
 config WIFI_NM_WPA_SUPPLICANT_WNM
