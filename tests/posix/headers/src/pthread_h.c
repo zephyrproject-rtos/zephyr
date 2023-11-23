@@ -104,7 +104,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_detach);
 		zassert_not_null(pthread_equal);
 		zassert_not_null(pthread_exit);
-		/* zassert_not_null(pthread_getconcurrency); */ /* not implemented */
+		zassert_not_null(pthread_getconcurrency);
 		/* zassert_not_null(pthread_getcpuclockid); */ /* not implemented */
 		zassert_not_null(pthread_getschedparam);
 		zassert_not_null(pthread_getspecific);
@@ -149,7 +149,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_self);
 		zassert_not_null(pthread_setcancelstate);
 		zassert_not_null(pthread_setcanceltype);
-		/* zassert_not_null(pthread_setconcurrency); */ /* not implemented */
+		zassert_not_null(pthread_setconcurrency);
 		zassert_not_null(pthread_setschedparam);
 		/* zassert_not_null(pthread_setschedprio); */ /* not implemented */
 		zassert_not_null(pthread_setspecific);
