@@ -135,6 +135,11 @@ pthread_t pthread_self(void)
 	return mark_pthread_obj_initialized(bit);
 }
 
+int pthread_equal(pthread_t pt1, pthread_t pt2)
+{
+	return (pt1 == pt2);
+}
+
 static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 {
 	if (priority >= sched_get_priority_min(policy) &&
@@ -973,10 +978,4 @@ static int posix_thread_pool_init(void)
 
 	return 0;
 }
-
-int pthread_equal(pthread_t pt1, pthread_t pt2)
-{
-	return (pt1 == pt2);
-}
-
 SYS_INIT(posix_thread_pool_init, PRE_KERNEL_1, 0);
