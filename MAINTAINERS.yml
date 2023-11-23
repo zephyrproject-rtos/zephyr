@@ -2004,7 +2004,7 @@ Native POSIX/Sim and POSIX arch:
     - scripts/native_simulator/
     - scripts/valgrind.supp
     - soc/posix/
-    - tests/boards/native_posix/
+    - tests/boards/native_sim/
   labels:
     - "area: native port"
   description: >-
