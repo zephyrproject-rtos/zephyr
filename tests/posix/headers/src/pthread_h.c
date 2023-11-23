@@ -28,7 +28,7 @@ ZTEST(posix_headers, test_pthread_h)
 	/* zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED); */ /* not implemented */
 	zassert_not_equal(-1, PTHREAD_CANCEL_DISABLE);
 
-	/* zassert_not_equal(-1, PTHREAD_CANCELED); */ /* not implemented */
+	zassert_not_equal((void *)-42, PTHREAD_CANCELED);
 
 	zassert_not_equal(-1, PTHREAD_CREATE_DETACHED);
 	zassert_not_equal(-1, PTHREAD_CREATE_JOINABLE);
@@ -49,14 +49,14 @@ ZTEST(posix_headers, test_pthread_h)
 	zassert_not_equal(-1, PTHREAD_PRIO_NONE);
 	/* zassert_not_equal(-1, PTHREAD_PRIO_PROTECT); */ /* not implemented */
 
-	/* zassert_not_equal(-1, PTHREAD_PROCESS_SHARED); */ /* not implemented */
-	/* zassert_not_equal(-1, PTHREAD_PROCESS_PRIVATE); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_PROCESS_SHARED);
+	zassert_not_equal(-1, PTHREAD_PROCESS_PRIVATE);
 
 	/* zassert_not_equal(-1, PTHREAD_SCOPE_PROCESS); */ /* not implemented */
 	/* zassert_not_equal(-1, PTHREAD_SCOPE_SYSTEM); */ /* not implemented */
 
-	/* pthread_cond_t cond = PTHREAD_COND_INITIALIZER; */ /* not implemented */
-	/* pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER; */ /* not implemented */
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 	/* pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER; */ /* not implemented */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
