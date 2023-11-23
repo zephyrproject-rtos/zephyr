@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 #define NEVER UINT64_MAX
+#define NSI_NEVER UINT64_MAX
 
 void hwm_one_event(void);
 void hwm_init(void);
