@@ -375,7 +375,15 @@ void sys_clock_idle_exit(void)
 		cycle_post_idle = cycle_count + elapsed();
 
 		/* Calculate has much time has pasted since last measurement for both timers */
-		idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
+		/* Check IDLE timer overflow */
+		if (idle_timer_pre_idle > idle_timer_post) {
+			idle_timer_diff =
+				(counter_get_top_value(idle_timer) - idle_timer_pre_idle) +
+				idle_timer_post + 1;
+
+		} else {
+			idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
+		}
 		idle_timer_us = counter_ticks_to_us(idle_timer, idle_timer_diff);
 
 #ifndef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
