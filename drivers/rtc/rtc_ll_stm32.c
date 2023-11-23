@@ -181,6 +181,10 @@ static int rtc_stm32_init(const struct device *dev)
 
 	err = rtc_stm32_configure(dev);
 
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
 	return err;
 }
 
@@ -208,10 +212,18 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 	LOG_INF("Setting clock");
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
 	LL_RTC_DisableWriteProtection(RTC);
 
 	err = rtc_stm32_enter_initialization_mode(true);
 	if (err) {
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+		LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 		k_mutex_unlock(&data->lock);
 		return err;
 	}
@@ -236,6 +248,10 @@ static int rtc_stm32_set_time(const struct device *dev, const struct rtc_time *t
 	rtc_stm32_leave_initialization_mode();
 
 	LL_RTC_EnableWriteProtection(RTC);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	k_mutex_unlock(&data->lock);
 
@@ -359,11 +375,19 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 		return -EIO;
 	}
 
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
+
 	LL_RTC_DisableWriteProtection(RTC);
 
 	MODIFY_REG(RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
 
 	LL_RTC_EnableWriteProtection(RTC);
+
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_DisableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	return 0;
 }
