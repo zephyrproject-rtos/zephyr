@@ -17,7 +17,7 @@ multiple processes.
    :header: API, Supported
    :widths: 50,10
 
-    pthread_atfork(),
+    pthread_atfork(),yes
     pthread_attr_destroy(),yes
     pthread_attr_getdetachstate(),yes
     pthread_attr_getschedparam(),yes
