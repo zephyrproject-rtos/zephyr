@@ -249,4 +249,13 @@ int oa_tc6_update_buf_info(struct oa_tc6 *tc6);
  */
 int oa_tc6_reg_rmw(struct oa_tc6 *tc6, const uint32_t reg,
 		   uint32_t mask, uint32_t val);
+
+/**
+ * @brief Check the status of OA TC6 device
+ *
+ * @param tc6 OA TC6 specific data
+ *
+ * @return 0 if successful, <0 otherwise.
+ */
+int oa_tc6_check_status(struct oa_tc6 *tc6);
 #endif /* OA_TC6_CFG_H__ */

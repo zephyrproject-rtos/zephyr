@@ -223,6 +223,32 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	return 0;
 }
 
+int oa_tc6_check_status(struct oa_tc6 *tc6)
+{
+	uint32_t sts;
+
+	if (tc6->exst) {
+		/*
+		 * Just clear any pending interrupts.
+		 * The RESETC is handled separately as it requires per
+		 * device configuration.
+		 */
+		oa_tc6_reg_read(tc6, OA_STATUS0, &sts);
+		if (sts != 0) {
+			oa_tc6_reg_write(tc6, OA_STATUS0, sts);
+			LOG_WRN("EXST: OA_STATUS0: 0x%x", sts);
+		}
+
+		oa_tc6_reg_read(tc6, OA_STATUS1, &sts);
+		if (sts != 0) {
+			oa_tc6_reg_write(tc6, OA_STATUS1, sts);
+			LOG_WRN("EXST: OA_STATUS1: 0x%x", sts);
+		}
+	}
+
+	return 0;
+}
+
 static void oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
 {
 	tc6->exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
