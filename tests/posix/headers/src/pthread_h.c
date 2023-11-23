@@ -60,7 +60,7 @@ ZTEST(posix_headers, test_pthread_h)
 	/* pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER; */ /* not implemented */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(pthread_atfork); */ /* not implemented */
+		zassert_not_null(pthread_atfork);
 		zassert_not_null(pthread_attr_destroy);
 		zassert_not_null(pthread_attr_getdetachstate);
 		/* zassert_not_null(pthread_attr_getguardsize); */ /* not implemented */
