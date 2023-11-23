@@ -906,3 +906,33 @@ ZTEST(posix_apis, test_pthread_set_get_concurrency)
 	/* EAGAIN if the a system resource to be exceeded */
 	zassert_equal(EAGAIN, pthread_setconcurrency(CONFIG_MP_MAX_NUM_CPUS + 1));
 }
+
+static void cleanup_handler(void *arg)
+{
+	bool *boolp = (bool *)arg;
+
+	*boolp = true;
+}
+
+static void *test_pthread_cleanup_entry(void *arg)
+{
+	bool executed[2] = {0};
+
+	pthread_cleanup_push(cleanup_handler, &executed[0]);
+	pthread_cleanup_push(cleanup_handler, &executed[1]);
+	pthread_cleanup_pop(false);
+	pthread_cleanup_pop(true);
+
+	zassert_true(executed[0]);
+	zassert_false(executed[1]);
+
+	return NULL;
+}
+
+ZTEST(posix_apis, test_pthread_cleanup)
+{
+	pthread_t th;
+
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry, NULL));
+	zassert_ok(pthread_join(th, NULL));
+}
