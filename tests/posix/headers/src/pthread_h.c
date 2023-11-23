@@ -23,9 +23,10 @@ ZTEST(posix_headers, test_pthread_h)
 {
 	zassert_not_equal(-1, PTHREAD_BARRIER_SERIAL_THREAD);
 
-	/* zassert_not_equal(-1, PTHREAD_CANCEL_ASYNCHRONOUS); */ /* not implemented */
+	zassert_not_equal(-1, PTHREAD_CANCEL_ASYNCHRONOUS);
+	zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED);
+
 	zassert_not_equal(-1, PTHREAD_CANCEL_ENABLE);
-	/* zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED); */ /* not implemented */
 	zassert_not_equal(-1, PTHREAD_CANCEL_DISABLE);
 
 	zassert_not_equal((void *)-42, PTHREAD_CANCELED);
@@ -146,8 +147,8 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_rwlockattr_init);
 		/* zassert_not_null(pthread_rwlockattr_setpshared); */ /* not implemented */
 		zassert_not_null(pthread_self);
-		/* zassert_not_null(pthread_setcancelstate); */ /* not implemented */
-		/* zassert_not_null(pthread_setcanceltype); */ /* not implemented */
+		zassert_not_null(pthread_setcancelstate);
+		zassert_not_null(pthread_setcanceltype);
 		/* zassert_not_null(pthread_setconcurrency); */ /* not implemented */
 		zassert_not_null(pthread_setschedparam);
 		/* zassert_not_null(pthread_setschedprio); */ /* not implemented */
