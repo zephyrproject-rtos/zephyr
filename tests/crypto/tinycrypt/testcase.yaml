@@ -11,5 +11,5 @@ tests:
       - m2gl025_miv
     timeout: 500
     integration_platforms:
-      - native_posix
+      - native_sim
     toolchain_exclude: xcc
