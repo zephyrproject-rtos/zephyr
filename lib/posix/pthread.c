@@ -501,6 +501,34 @@ int pthread_setcancelstate(int state, int *oldstate)
 }
 
 /**
+ * @brief Set cancelability Type.
+ *
+ * See IEEE 1003.1
+ */
+int pthread_setcanceltype(int type, int *oldtype)
+{
+	k_spinlock_key_t key;
+	struct posix_thread *t;
+
+	if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
+		LOG_ERR("Invalid pthread cancel type %d", type);
+		return EINVAL;
+	}
+
+	t = to_posix_thread(pthread_self());
+	if (t == NULL) {
+		return EINVAL;
+	}
+
+	key = k_spin_lock(&pthread_pool_lock);
+	*oldtype = t->cancel_type;
+	t->cancel_type = type;
+	k_spin_unlock(&pthread_pool_lock, key);
+
+	return 0;
+}
+
+/**
  * @brief Cancel execution of a thread.
  *
  * See IEEE 1003.1

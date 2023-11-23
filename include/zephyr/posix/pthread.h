@@ -33,6 +33,8 @@ extern "C" {
 #define PTHREAD_CANCELED       ((void *)-1)
 #define PTHREAD_CANCEL_ENABLE  0
 #define PTHREAD_CANCEL_DISABLE 1
+#define PTHREAD_CANCEL_DEFERRED     0
+#define PTHREAD_CANCEL_ASYNCHRONOUS 1
 
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT                                                                          \
@@ -452,6 +454,7 @@ int pthread_detach(pthread_t thread);
 int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg);
 int pthread_setcancelstate(int state, int *oldstate);
+int pthread_setcanceltype(int type, int *oldtype);
 int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam);
 int pthread_setschedparam(pthread_t pthread, int policy,

@@ -38,6 +38,7 @@ struct posix_thread {
 
 	/* Pthread cancellation */
 	uint8_t cancel_state;
+	uint8_t cancel_type;
 	bool cancel_pending;
 
 	/* Detach state */
