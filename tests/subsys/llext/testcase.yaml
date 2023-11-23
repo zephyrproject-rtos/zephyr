@@ -11,6 +11,8 @@ tests:
       - nuvoton_pfm_m487 # See #63167
   llext.simple.xtensa:
     arch_allow: xtensa
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
     # Broken platforms
     platform_exclude:
       - qemu_xtensa_mmu # ELF sections are read-only, and without peek() .text copy isn't executable
