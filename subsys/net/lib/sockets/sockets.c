@@ -1194,6 +1194,7 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 }
 
 static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
+				       struct msghdr *msg,
 				       void *buf,
 				       size_t max_len,
 				       int flags,
@@ -1283,12 +1284,58 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		}
 	}
 
-	recv_len = net_pkt_remaining_data(pkt);
-	read_len = MIN(recv_len, max_len);
+	if (msg != NULL) {
+		int iovec = 0;
+		size_t tmp_read_len;
 
-	if (net_pkt_read(pkt, buf, read_len)) {
-		errno = ENOBUFS;
-		goto fail;
+		if (msg->msg_iovlen < 1 || msg->msg_iov == NULL) {
+			errno = ENOMEM;
+			return -1;
+		}
+
+		recv_len = net_pkt_remaining_data(pkt);
+		tmp_read_len = read_len = MIN(recv_len, max_len);
+
+		while (tmp_read_len > 0) {
+			size_t len;
+
+			buf = msg->msg_iov[iovec].iov_base;
+			if (buf == NULL) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			len = MIN(tmp_read_len, msg->msg_iov[iovec].iov_len);
+
+			if (net_pkt_read(pkt, buf, len)) {
+				errno = ENOBUFS;
+				goto fail;
+			}
+
+			if (len <= tmp_read_len) {
+				tmp_read_len -= len;
+				msg->msg_iov[iovec].iov_len = len;
+				iovec++;
+			} else {
+				errno = EINVAL;
+				return -1;
+			}
+		}
+
+		msg->msg_iovlen = iovec;
+
+		if (recv_len != read_len) {
+			msg->msg_flags |= ZSOCK_MSG_TRUNC;
+		}
+
+	} else {
+		recv_len = net_pkt_remaining_data(pkt);
+		read_len = MIN(recv_len, max_len);
+
+		if (net_pkt_read(pkt, buf, read_len)) {
+			errno = ENOBUFS;
+			goto fail;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
@@ -1391,13 +1438,27 @@ static int zsock_fionread_ctx(struct net_context *ctx)
 	return MIN(ret, INT_MAX);
 }
 
-static ssize_t zsock_recv_stream_timed(struct net_context *ctx, uint8_t *buf, size_t max_len,
+static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct msghdr *msg,
+				       uint8_t *buf, size_t max_len,
 				       int flags, k_timeout_t timeout)
 {
 	int res;
 	k_timepoint_t end;
-	size_t recv_len = 0;
+	size_t recv_len = 0, iovec, available_len, max_iovlen = 0;
 	const bool waitall = (flags & ZSOCK_MSG_WAITALL) == ZSOCK_MSG_WAITALL;
+
+	if (msg != NULL && buf == NULL) {
+		if (msg->msg_iovlen < 1) {
+			return -EINVAL;
+		}
+
+		iovec = 0;
+
+		buf = msg->msg_iov[iovec].iov_base;
+		available_len = msg->msg_iov[iovec].iov_len;
+		msg->msg_iov[iovec].iov_len = 0;
+		max_iovlen = msg->msg_iovlen;
+	}
 
 	for (end = sys_timepoint_calc(timeout); max_len > 0; timeout = sys_timepoint_timeout(end)) {
 
@@ -1416,11 +1477,48 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, uint8_t *buf, si
 			}
 		}
 
-		res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags);
-		recv_len += res;
-		if (res == 0) {
-			if (recv_len == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		if (msg != NULL) {
+again:
+			res = zsock_recv_stream_immediate(ctx, &buf, &available_len, flags);
+			recv_len += res;
+
+			if (res == 0 && recv_len == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				return -EAGAIN;
+			}
+
+			msg->msg_iov[iovec].iov_len += res;
+			buf = (uint8_t *)(msg->msg_iov[iovec].iov_base) + res;
+			max_len -= res;
+
+			if (available_len == 0) {
+				/* All data to this iovec was written */
+				iovec++;
+
+				if (iovec == max_iovlen) {
+					break;
+				}
+
+				msg->msg_iovlen = iovec;
+				buf = msg->msg_iov[iovec].iov_base;
+				available_len = msg->msg_iov[iovec].iov_len;
+				msg->msg_iov[iovec].iov_len = 0;
+
+				/* If there is more data, read it now and do not wait */
+				if (buf != NULL && available_len > 0) {
+					goto again;
+				}
+
+				continue;
+			}
+
+		} else {
+			res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags);
+			recv_len += res;
+
+			if (res == 0) {
+				if (recv_len == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+					return -EAGAIN;
+				}
 			}
 		}
 
@@ -1432,7 +1530,8 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, uint8_t *buf, si
 	return recv_len;
 }
 
-static ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size_t max_len, int flags)
+static ssize_t zsock_recv_stream(struct net_context *ctx, struct msghdr *msg,
+				 void *buf, size_t max_len, int flags)
 {
 	ssize_t res;
 	size_t recv_len = 0;
@@ -1459,7 +1558,7 @@ static ssize_t zsock_recv_stream(struct net_context *ctx, void *buf, size_t max_
 		return 0;
 	}
 
-	res = zsock_recv_stream_timed(ctx, buf, max_len, flags, timeout);
+	res = zsock_recv_stream_timed(ctx, msg, buf, max_len, flags, timeout);
 	recv_len += MAX(0, res);
 
 	if (res < 0) {
@@ -1485,9 +1584,9 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 	}
 
 	if (sock_type == SOCK_DGRAM) {
-		return zsock_recv_dgram(ctx, buf, max_len, flags, src_addr, addrlen);
+		return zsock_recv_dgram(ctx, NULL, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
-		return zsock_recv_stream(ctx, buf, max_len, flags);
+		return zsock_recv_stream(ctx, NULL, buf, max_len, flags);
 	} else {
 		__ASSERT(0, "Unknown socket type");
 	}
@@ -1537,6 +1636,207 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 	return ret;
 }
 #include <syscalls/zsock_recvfrom_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
+			  int flags)
+{
+	enum net_sock_type sock_type = net_context_get_type(ctx);
+	size_t i, max_len = 0;
+
+	if (msg == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	for (i = 0; i < msg->msg_iovlen; i++) {
+		max_len += msg->msg_iov[i].iov_len;
+	}
+
+	if (sock_type == SOCK_DGRAM) {
+		return zsock_recv_dgram(ctx, msg, NULL, max_len, flags,
+					msg->msg_name, &msg->msg_namelen);
+	} else if (sock_type == SOCK_STREAM) {
+		return zsock_recv_stream(ctx, msg, NULL, max_len, flags);
+	}
+
+	__ASSERT(0, "Unknown socket type");
+
+	errno = ENOTSUP;
+
+	return -1;
+}
+
+ssize_t z_impl_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
+{
+	int bytes_received;
+
+	bytes_received = VTABLE_CALL(recvmsg, sock, msg, flags);
+
+	sock_obj_core_update_recv_stats(sock, bytes_received);
+
+	return bytes_received;
+}
+
+#ifdef CONFIG_USERSPACE
+ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
+{
+	struct msghdr msg_copy;
+	size_t iovlen;
+	size_t i;
+	int ret;
+
+	if (msg == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	K_OOPS(k_usermode_from_copy(&msg_copy, (void *)msg, sizeof(msg_copy)));
+
+	k_usermode_from_copy(&iovlen, &msg->msg_iovlen, sizeof(iovlen));
+
+	msg_copy.msg_name = NULL;
+	msg_copy.msg_control = NULL;
+
+	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov,
+				       msg->msg_iovlen * sizeof(struct iovec));
+	if (!msg_copy.msg_iov) {
+		errno = ENOMEM;
+		goto fail;
+	}
+
+	/* Clear the pointers in the copy so that if the allocation in the
+	 * next loop fails, we do not try to free non allocated memory
+	 * in fail branch.
+	 */
+	memset(msg_copy.msg_iov, 0, msg->msg_iovlen * sizeof(struct iovec));
+
+	for (i = 0; i < iovlen; i++) {
+		/* TODO: In practice we do not need to copy the actual data
+		 * in msghdr when receiving data but currently there is no
+		 * ready made function to do just that (unless we want to call
+		 * relevant malloc function here ourselves). So just use
+		 * the copying variant for now.
+		 */
+		msg_copy.msg_iov[i].iov_base =
+			k_usermode_alloc_from_copy(msg->msg_iov[i].iov_base,
+						   msg->msg_iov[i].iov_len);
+		if (!msg_copy.msg_iov[i].iov_base) {
+			errno = ENOMEM;
+			goto fail;
+		}
+
+		msg_copy.msg_iov[i].iov_len = msg->msg_iov[i].iov_len;
+	}
+
+	if (msg->msg_namelen > 0) {
+		if (msg->msg_name == NULL) {
+			errno = EINVAL;
+			goto fail;
+		}
+
+		msg_copy.msg_name = k_usermode_alloc_from_copy(msg->msg_name,
+							   msg->msg_namelen);
+		if (msg_copy.msg_name == NULL) {
+			errno = ENOMEM;
+			goto fail;
+		}
+	}
+
+	if (msg->msg_controllen > 0) {
+		if (msg->msg_control == NULL) {
+			errno = EINVAL;
+			goto fail;
+		}
+
+		msg_copy.msg_control =
+			k_usermode_alloc_from_copy(msg->msg_control,
+						   msg->msg_controllen);
+		if (msg_copy.msg_control == NULL) {
+			errno = ENOMEM;
+			goto fail;
+		}
+	}
+
+	ret = z_impl_zsock_recvmsg(sock, &msg_copy, flags);
+
+	/* Do not copy anything back if there was an error or nothing was
+	 * received.
+	 */
+	if (ret > 0) {
+		if (msg->msg_namelen > 0 && msg->msg_name != NULL) {
+			K_OOPS(k_usermode_to_copy(msg->msg_name,
+						  msg_copy.msg_name,
+						  msg_copy.msg_namelen));
+		}
+
+		if (msg->msg_controllen > 0 &&
+		    msg->msg_control != NULL) {
+			K_OOPS(k_usermode_to_copy(msg->msg_control,
+						  msg_copy.msg_control,
+						  msg_copy.msg_controllen));
+		}
+
+		k_usermode_to_copy(&msg->msg_iovlen,
+				   &msg_copy.msg_iovlen,
+				   sizeof(msg->msg_iovlen));
+
+		/* The new iovlen cannot be bigger than the original one */
+		NET_ASSERT(msg_copy.msg_iovlen <= iovlen);
+
+		for (i = 0; i < iovlen; i++) {
+			if (i < msg_copy.msg_iovlen) {
+				K_OOPS(k_usermode_to_copy(msg->msg_iov[i].iov_base,
+							  msg_copy.msg_iov[i].iov_base,
+							  msg_copy.msg_iov[i].iov_len));
+				K_OOPS(k_usermode_to_copy(&msg->msg_iov[i].iov_len,
+							  &msg_copy.msg_iov[i].iov_len,
+							  sizeof(msg->msg_iov[i].iov_len)));
+			} else {
+				/* Clear out those vectors that we could not populate */
+				msg->msg_iov[i].iov_len = 0;
+			}
+		}
+
+		k_usermode_to_copy(&msg->msg_flags,
+				   &msg_copy.msg_flags,
+				   sizeof(msg->msg_flags));
+	}
+
+	k_free(msg_copy.msg_name);
+	k_free(msg_copy.msg_control);
+
+	/* Note that we need to free according to original iovlen */
+	for (i = 0; i < iovlen; i++) {
+		k_free(msg_copy.msg_iov[i].iov_base);
+	}
+
+	k_free(msg_copy.msg_iov);
+
+	return ret;
+
+fail:
+	if (msg_copy.msg_name) {
+		k_free(msg_copy.msg_name);
+	}
+
+	if (msg_copy.msg_control) {
+		k_free(msg_copy.msg_control);
+	}
+
+	if (msg_copy.msg_iov) {
+		for (i = 0; i < msg_copy.msg_iovlen; i++) {
+			if (msg_copy.msg_iov[i].iov_base) {
+				k_free(msg_copy.msg_iov[i].iov_base);
+			}
+		}
+
+		k_free(msg_copy.msg_iov);
+	}
+
+	return -1;
+}
+#include <syscalls/zsock_recvmsg_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 /* As this is limited function, we don't follow POSIX signature, with
@@ -2822,6 +3122,11 @@ static ssize_t sock_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 	return zsock_sendmsg_ctx(obj, msg, flags);
 }
 
+static ssize_t sock_recvmsg_vmeth(void *obj, struct msghdr *msg, int flags)
+{
+	return zsock_recvmsg_ctx(obj, msg, flags);
+}
+
 static ssize_t sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 				   int flags, struct sockaddr *src_addr,
 				   socklen_t *addrlen)
@@ -2872,6 +3177,7 @@ const struct socket_op_vtable sock_fd_op_vtable = {
 	.accept = sock_accept_vmeth,
 	.sendto = sock_sendto_vmeth,
 	.sendmsg = sock_sendmsg_vmeth,
+	.recvmsg = sock_recvmsg_vmeth,
 	.recvfrom = sock_recvfrom_vmeth,
 	.getsockopt = sock_getsockopt_vmeth,
 	.setsockopt = sock_setsockopt_vmeth,
