@@ -404,7 +404,6 @@ static void mcc_discover_cb(struct bt_conn *conn, int err)
 
 	if (err) {
 		LOG_DBG("Discovery failed (%d)", err);
-		return;
 	}
 
 	mcc_inst = lookup_inst_by_conn(conn);
