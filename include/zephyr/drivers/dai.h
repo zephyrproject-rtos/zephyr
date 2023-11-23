@@ -64,10 +64,10 @@ enum dai_type {
  * @brief DAI Direction
  */
 enum dai_dir {
-	/** Receive data */
-	DAI_DIR_RX = 1,
 	/** Transmit data */
-	DAI_DIR_TX,
+	DAI_DIR_TX = 0,
+	/** Receive data */
+	DAI_DIR_RX,
 	/** Both receive and transmit data */
 	DAI_DIR_BOTH,
 };
