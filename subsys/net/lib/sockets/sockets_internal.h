@@ -70,6 +70,7 @@ struct socket_op_vtable {
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
 	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
+	ssize_t (*recvmsg)(void *obj, struct msghdr *msg, int flags);
 	int (*getpeername)(void *obj, struct sockaddr *addr,
 			   socklen_t *addrlen);
 	int (*getsockname)(void *obj, struct sockaddr *addr,
