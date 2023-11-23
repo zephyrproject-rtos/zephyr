@@ -1751,7 +1751,6 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       post_build_byproducts
       ${KERNEL_EXE_NAME}
       )
-    set(BYPRODUCT_KERNEL_EXE_NAME "${PROJECT_BINARY_DIR}/${KERNEL_EXE_NAME}" CACHE FILEPATH "Kernel exe file" FORCE)
   else()
     if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
       set(MAKE "${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "cmake defined make")
@@ -1768,6 +1767,7 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       BYPRODUCTS ${KERNEL_EXE_NAME}
     )
   endif()
+  set(BYPRODUCT_KERNEL_EXE_NAME "${PROJECT_BINARY_DIR}/${KERNEL_EXE_NAME}" CACHE FILEPATH "Kernel exe file" FORCE)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
@@ -1784,21 +1784,32 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
     )
 endif()
 
-if(CONFIG_CHECK_INIT_PRIORITIES)
-  list(APPEND
-    post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
-      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
-    )
-endif()
-
 if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
+  set(check_init_priorities_input
+      $<IF:$<TARGET_EXISTS:native_runner_executable>,${BYPRODUCT_KERNEL_EXE_NAME},${BYPRODUCT_KERNEL_ELF_NAME}>
+  )
+  set(check_init_priorities_command
+      ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
+      --elf-file=${check_init_priorities_input}
+  )
+  set(check_init_priorities_dependencies
+      ${logical_target_for_zephyr_elf}
+      $<$<TARGET_EXISTS:native_runner_executable>:native_runner_executable>
+  )
+
+  if(CONFIG_CHECK_INIT_PRIORITIES)
+    add_custom_target(
+      check_init_priorities
+      ALL
+      COMMAND ${check_init_priorities_command}
+      DEPENDS ${check_init_priorities_dependencies}
+    )
+  endif()
+
   add_custom_target(
     initlevels
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
-      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
-      --initlevels
-    DEPENDS ${logical_target_for_zephyr_elf}
+    COMMAND ${check_init_priorities_command} --initlevels
+    DEPENDS ${check_init_priorities_dependencies}
     USES_TERMINAL
   )
 endif()
