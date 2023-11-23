@@ -999,9 +999,11 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \
 		.uart_config = {.baudrate = DT_INST_PROP(idx, current_speed),                      \
-				.parity = UART_CFG_PARITY_NONE,                                    \
-				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
-				.data_bits = UART_CFG_DATA_BITS_8,                                 \
+				.parity = DT_INST_ENUM_IDX_OR(idx, parity, UART_CFG_PARITY_NONE),  \
+				.stop_bits = DT_INST_ENUM_IDX_OR(idx, stop_bits,                   \
+								 UART_CFG_STOP_BITS_1),            \
+				.data_bits = DT_INST_ENUM_IDX_OR(idx, data_bits,                   \
+								 UART_CFG_DATA_BITS_8),            \
 				.flow_ctrl = MAX(COND_CODE_1(DT_INST_PROP(idx, hw_rs485_hd_mode),  \
 							     (UART_CFG_FLOW_CTRL_RS485),           \
 							     (UART_CFG_FLOW_CTRL_NONE)),           \
