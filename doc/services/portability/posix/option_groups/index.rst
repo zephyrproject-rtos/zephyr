@@ -99,8 +99,8 @@ This table lists service support status in Zephyr:
 
     pthread_attr_getstack(),yes
     pthread_attr_setstack(),yes
-    pthread_getconcurrency(),
-    pthread_setconcurrency()
+    pthread_getconcurrency(),yes
+    pthread_setconcurrency(),yes
 
 .. _posix_option_group_c_lang_support:
 
