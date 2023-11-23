@@ -1439,18 +1439,18 @@ static void comm_sendmsg_recvmsg(int client_sock,
 				 int server_sock,
 				 struct sockaddr *server_addr,
 				 socklen_t server_addrlen,
-				 void *cmsg, int cmsg_len)
+				 struct msghdr *msg,
+				 void *cmsgbuf, int cmsgbuf_len)
 {
 #define MAX_BUF_LEN 64
 #define SMALL_BUF_LEN (sizeof(TEST_STR_SMALL) - 1 - 2)
 	char buf[MAX_BUF_LEN];
 	char buf2[SMALL_BUF_LEN];
 	struct iovec io_vector[2];
-	struct msghdr msg;
 	ssize_t sent;
 	ssize_t recved;
-	struct sockaddr_in addr;
-	socklen_t addrlen = sizeof(addr);
+	struct sockaddr addr;
+	socklen_t addrlen = server_addrlen;
 	int len, i;
 
 	zassert_not_null(client_addr, "null client addr");
@@ -1461,7 +1461,7 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	 */
 
 	sent = sendmsg(client_sock, client_msg, 0);
-	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
+	zassert_true(sent > 0, "sendmsg failed, %s (%d)", strerror(errno), -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
 		len += client_msg->msg_iov[i].iov_len;
@@ -1473,18 +1473,17 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	io_vector[0].iov_base = buf;
 	io_vector[0].iov_len = sizeof(buf);
 
-	memset(&msg, 0, sizeof(msg));
-	msg.msg_control = cmsg;
-	msg.msg_controllen = cmsg_len;
-	msg.msg_iov = io_vector;
-	msg.msg_iovlen = 1;
-	msg.msg_name = &addr;
-	msg.msg_namelen = addrlen;
+	memset(msg, 0, sizeof(*msg));
+	msg->msg_control = cmsgbuf;
+	msg->msg_controllen = cmsgbuf_len;
+	msg->msg_iov = io_vector;
+	msg->msg_iovlen = 1;
+	msg->msg_name = &addr;
+	msg->msg_namelen = addrlen;
 
 	/* Test recvmsg(MSG_PEEK) */
-	addrlen = sizeof(addr);
-	recved = recvmsg(server_sock, &msg, MSG_PEEK);
-	zassert_true(recved > 0, "recvmsg fail, %s (%d)", strerror(errno), errno);
+	recved = recvmsg(server_sock, msg, MSG_PEEK);
+	zassert_true(recved > 0, "recvmsg fail, %s (%d)", strerror(errno), -errno);
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes (%d vs %d)",
 		      recved, strlen(TEST_STR_SMALL));
@@ -1496,9 +1495,8 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Test normal recvmsg() */
-	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
-	recved = recvmsg(server_sock, &msg, 0);
+	recved = recvmsg(server_sock, msg, 0);
 	zassert_true(recved > 0, "recvfrom fail");
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
@@ -1507,10 +1505,20 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Check the client port */
-	if (net_sin(client_addr)->sin_port != ANY_PORT) {
-		zassert_equal(net_sin(client_addr)->sin_port,
-			      addr.sin_port,
-			      "unexpected client port");
+	if (addr.sa_family == AF_INET) {
+		if (net_sin(client_addr)->sin_port != ANY_PORT) {
+			zassert_equal(net_sin(client_addr)->sin_port,
+				      net_sin(&addr)->sin_port,
+				      "unexpected client port");
+		}
+	}
+
+	if (addr.sa_family == AF_INET6) {
+		if (net_sin6(client_addr)->sin6_port != ANY_PORT) {
+			zassert_equal(net_sin6(client_addr)->sin6_port,
+				      net_sin6(&addr)->sin6_port,
+				      "unexpected client port");
+		}
 	}
 
 	/* Then send the message again and verify that we could receive
@@ -1531,43 +1539,41 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	io_vector[1].iov_base = buf;
 	io_vector[1].iov_len = sizeof(buf);
 
-	memset(&msg, 0, sizeof(msg));
-	msg.msg_control = cmsg;
-	msg.msg_controllen = cmsg_len;
-	msg.msg_iov = io_vector;
-	msg.msg_iovlen = 2;
-	msg.msg_name = &addr;
-	msg.msg_namelen = addrlen;
+	memset(msg, 0, sizeof(*msg));
+	msg->msg_control = cmsgbuf;
+	msg->msg_controllen = cmsgbuf_len;
+	msg->msg_iov = io_vector;
+	msg->msg_iovlen = 2;
+	msg->msg_name = &addr;
+	msg->msg_namelen = addrlen;
 
 	/* Test recvmsg(MSG_PEEK) */
-	addrlen = sizeof(addr);
-	recved = recvmsg(server_sock, &msg, MSG_PEEK);
+	recved = recvmsg(server_sock, msg, MSG_PEEK);
 	zassert_true(recved >= 0, "recvfrom fail (errno %d)", errno);
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes (%d vs %d)", recved, strlen(TEST_STR_SMALL));
 	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
 		      sent, recved);
 
-	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_SMALL, msg.msg_iov[0].iov_len,
+	zassert_mem_equal(msg->msg_iov[0].iov_base, TEST_STR_SMALL, msg->msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
-	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_SMALL[msg.msg_iov[0].iov_len],
-			  msg.msg_iov[1].iov_len,
+	zassert_mem_equal(msg->msg_iov[1].iov_base, &TEST_STR_SMALL[msg->msg_iov[0].iov_len],
+			  msg->msg_iov[1].iov_len,
 			  "wrong data in %s", "iov[1]");
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Test normal recvfrom() */
-	addrlen = sizeof(addr);
-	recved = recvmsg(server_sock, &msg, MSG_PEEK);
+	recved = recvmsg(server_sock, msg, MSG_PEEK);
 	zassert_true(recved >= 0, "recvfrom fail (errno %d)", errno);
 	zassert_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes (%d vs %d)", recved, strlen(TEST_STR_SMALL));
 	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
 		      sent, recved);
 
-	zassert_mem_equal(msg.msg_iov[0].iov_base, TEST_STR_SMALL, msg.msg_iov[0].iov_len,
+	zassert_mem_equal(msg->msg_iov[0].iov_base, TEST_STR_SMALL, msg->msg_iov[0].iov_len,
 			  "wrong data in %s", "iov[0]");
-	zassert_mem_equal(msg.msg_iov[1].iov_base, &TEST_STR_SMALL[msg.msg_iov[0].iov_len],
-			  msg.msg_iov[1].iov_len,
+	zassert_mem_equal(msg->msg_iov[1].iov_base, &TEST_STR_SMALL[msg->msg_iov[0].iov_len],
+			  msg->msg_iov[1].iov_len,
 			  "wrong data in %s", "iov[1]");
 	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
@@ -1585,22 +1591,21 @@ static void comm_sendmsg_recvmsg(int client_sock,
 	io_vector[0].iov_base = buf2;
 	io_vector[0].iov_len = sizeof(buf2);
 
-	memset(&msg, 0, sizeof(msg));
-	msg.msg_control = cmsg;
-	msg.msg_controllen = cmsg_len;
-	msg.msg_iov = io_vector;
-	msg.msg_iovlen = 1;
-	msg.msg_name = &addr;
-	msg.msg_namelen = addrlen;
+	memset(msg, 0, sizeof(*msg));
+	msg->msg_control = cmsgbuf;
+	msg->msg_controllen = cmsgbuf_len;
+	msg->msg_iov = io_vector;
+	msg->msg_iovlen = 1;
+	msg->msg_name = &addr;
+	msg->msg_namelen = addrlen;
 
 	/* Test recvmsg */
-	addrlen = sizeof(addr);
-	recved = recvmsg(server_sock, &msg, 0);
+	recved = recvmsg(server_sock, msg, 0);
 	zassert_true(recved > 0, "recvmsg fail, %s (%d)", strerror(errno), errno);
 	zassert_equal(recved, sizeof(buf2),
 		      "unexpected received bytes (%d vs %d)",
 		      recved, sizeof(buf2));
-	zassert_true(msg.msg_flags & MSG_TRUNC, "Message not truncated");
+	zassert_true(msg->msg_flags & MSG_TRUNC, "Message not truncated");
 
 	zassert_mem_equal(buf2, TEST_STR_SMALL, sizeof(buf2),
 			  "wrong data (%s)", buf2);
@@ -1614,7 +1619,7 @@ ZTEST_USER(net_socket_udp, test_27_recvmsg_user)
 	int server_sock;
 	struct sockaddr_in client_addr;
 	struct sockaddr_in server_addr;
-	struct msghdr msg;
+	struct msghdr msg, server_msg;
 	struct iovec io_vector[1];
 
 	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
@@ -1646,12 +1651,207 @@ ZTEST_USER(net_socket_udp, test_27_recvmsg_user)
 			     server_sock,
 			     (struct sockaddr *)&server_addr,
 			     sizeof(server_addr),
-			     NULL, 0);
+			     &server_msg, NULL, 0);
 
 	rv = close(client_sock);
 	zassert_equal(rv, 0, "close failed");
 	rv = close(server_sock);
 	zassert_equal(rv, 0, "close failed");
+}
+
+static void run_ancillary_recvmsg_test(int client_sock,
+				       struct sockaddr *client_addr,
+				       int client_addr_len,
+				       int server_sock,
+				       struct sockaddr *server_addr,
+				       int server_addr_len)
+{
+	int rv;
+	int opt;
+	int ifindex = 0;
+	socklen_t optlen;
+	struct sockaddr addr = { 0 };
+	struct net_if *iface;
+	struct msghdr msg;
+	struct msghdr server_msg;
+	struct iovec io_vector[1];
+	struct cmsghdr *cmsg, *prevcmsg;
+	union {
+		struct cmsghdr hdr;
+		unsigned char  buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
+	} cmsgbuf;
+#define SMALL_BUF_LEN (sizeof(TEST_STR_SMALL) - 1 - 2)
+	char buf[MAX_BUF_LEN];
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RECV_PKTINFO);
+
+	rv = bind(server_sock, server_addr, server_addr_len);
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = bind(client_sock, client_addr, client_addr_len);
+	zassert_equal(rv, 0, "client bind failed");
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = server_addr;
+	msg.msg_namelen = server_addr_len;
+
+	comm_sendmsg_recvmsg(client_sock,
+			     client_addr,
+			     client_addr_len,
+			     &msg,
+			     server_sock,
+			     server_addr,
+			     server_addr_len,
+			     &server_msg, &cmsgbuf.buf, sizeof(cmsgbuf.buf));
+
+	for (prevcmsg = NULL, cmsg = CMSG_FIRSTHDR(&server_msg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = CMSG_NXTHDR(&server_msg, cmsg)) {
+		if (cmsg->cmsg_level == IPPROTO_IP &&
+		    cmsg->cmsg_type == IP_PKTINFO) {
+			net_sin(&addr)->sin_addr = ((struct in_pktinfo *)CMSG_DATA(cmsg))->ipi_addr;
+			break;
+		}
+	}
+
+	/* As we have not set the socket option, the address should not be set */
+	if (server_addr->sa_family == AF_INET) {
+		zassert_equal(net_sin(&addr)->sin_addr.s_addr, INADDR_ANY, "Source address set!");
+	}
+
+	if (server_addr->sa_family == AF_INET6) {
+		zassert_true(net_sin6(&addr)->sin6_addr.s6_addr32[0] == 0 &&
+			     net_sin6(&addr)->sin6_addr.s6_addr32[1] == 0 &&
+			     net_sin6(&addr)->sin6_addr.s6_addr32[2] == 0 &&
+			     net_sin6(&addr)->sin6_addr.s6_addr32[3] == 0,
+			     "Source address set!");
+	}
+
+	opt = 1;
+	optlen = sizeof(opt);
+	rv = setsockopt(server_sock, IPPROTO_IP, IP_PKTINFO, &opt, optlen);
+	zassert_equal(rv, 0, "setsockopt failed (%d)", -errno);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = server_addr;
+	msg.msg_namelen = server_addr_len;
+
+	comm_sendmsg_recvmsg(client_sock,
+			     client_addr,
+			     client_addr_len,
+			     &msg,
+			     server_sock,
+			     server_addr,
+			     server_addr_len,
+			     &server_msg, &cmsgbuf.buf, sizeof(cmsgbuf.buf));
+
+	for (cmsg = CMSG_FIRSTHDR(&server_msg); cmsg != NULL;
+	     cmsg = CMSG_NXTHDR(&server_msg, cmsg)) {
+		if (cmsg->cmsg_level == IPPROTO_IP &&
+		    cmsg->cmsg_type == IP_PKTINFO) {
+			net_sin(&addr)->sin_addr =
+				((struct in_pktinfo *)CMSG_DATA(cmsg))->ipi_addr;
+			ifindex = ((struct in_pktinfo *)CMSG_DATA(cmsg))->ipi_ifindex;
+			break;
+		}
+
+		if (cmsg->cmsg_level == IPPROTO_IPV6 &&
+		    cmsg->cmsg_type == IPV6_RECVPKTINFO) {
+			net_ipaddr_copy(&net_sin6(&addr)->sin6_addr,
+					&((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_addr);
+			ifindex = ((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_ifindex;
+			break;
+		}
+	}
+
+	if (server_addr->sa_family == AF_INET) {
+		zassert_equal(net_sin(&addr)->sin_addr.s_addr,
+			      net_sin(server_addr)->sin_addr.s_addr,
+			      "Source address not set properly!");
+	}
+
+	if (server_addr->sa_family == AF_INET6) {
+		zassert_mem_equal(&net_sin6(&addr)->sin6_addr,
+				  &net_sin6(server_addr)->sin6_addr,
+				  sizeof(struct in6_addr),
+				  "Source address not set properly!");
+	}
+
+	if (!k_is_user_context()) {
+		iface = net_if_get_default();
+		zassert_equal(ifindex, net_if_get_by_iface(iface));
+	}
+
+	/* Make sure that the recvmsg() fails if control area is too small */
+	rv = sendto(client_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
+		    server_addr, server_addr_len);
+	zassert_equal(rv, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", -errno);
+
+	io_vector[0].iov_base = buf;
+	io_vector[0].iov_len = sizeof(buf);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = 1; /* making sure the control buf is always too small */
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+
+	rv = recvmsg(server_sock, &msg, 0);
+	zassert_true(rv, "recvmsg succeed (%d)", rv);
+
+	zassert_true(msg.msg_flags & MSG_CTRUNC, "Control message not truncated");
+
+	rv = close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST_USER(net_socket_udp, test_28_recvmsg_ancillary_ipv4_pktinfo_data_user)
+{
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	int client_sock;
+	int server_sock;
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	run_ancillary_recvmsg_test(client_sock,
+				   (struct sockaddr *)&client_addr,
+				   sizeof(client_addr),
+				   server_sock,
+				   (struct sockaddr *)&server_addr,
+				   sizeof(server_addr));
+}
+
+ZTEST_USER(net_socket_udp, test_29_recvmsg_ancillary_ipv6_pktinfo_data_user)
+{
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+	int client_sock;
+	int server_sock;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	run_ancillary_recvmsg_test(client_sock,
+				   (struct sockaddr *)&client_addr,
+				   sizeof(client_addr),
+				   server_sock,
+				   (struct sockaddr *)&server_addr,
+				   sizeof(server_addr));
 }
 
 static void after(void *arg)

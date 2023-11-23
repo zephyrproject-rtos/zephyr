@@ -16,3 +16,6 @@ tests:
   net.socket.udp.ipv6_fragment:
     extra_configs:
       - CONFIG_NET_IPV6_FRAGMENT=y
+  net.socket.udp.pktinfo:
+    extra_configs:
+      - CONFIG_NET_CONTEXT_RECV_PKTINFO=y
