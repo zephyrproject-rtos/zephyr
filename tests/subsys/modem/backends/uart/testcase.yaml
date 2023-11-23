@@ -1,21 +1,19 @@
 # Copyright (c) 2023 Trackunit Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+  platform_allow:
+    - b_u585i_iot02a
+    - nrf5340dk_nrf5340_cpuapp
+
 tests:
   modem.backends.uart.async:
-    tags: modem_backend
-    harness: ztest
-    platform_allow:
-      - b_u585i_iot02a
-      - nrf5340dk_nrf5340_cpuapp
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
 
   modem.backends.uart.isr:
-    tags: modem_backend
-    harness: ztest
-    platform_allow:
-      - b_u585i_iot02a
-      - nrf5340dk_nrf5340_cpuapp
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
