@@ -302,7 +302,6 @@ static void mcc_discover_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
 		LOG_DBG("Discovery failed (%d)", err);
-		return;
 	}
 
 	btp_send_mcp_found_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
