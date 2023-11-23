@@ -49,6 +49,14 @@ properties:
       Delay between setting column output and reading the row values. Defaults
       to 50us if unspecified.
 
+  actual-key-mask:
+    type: array
+    description:
+      Keyboard scanning mask. For each keyboard column, specify which
+      keyboard rows actually exist. Can be used to avoid triggering the ghost
+      detection on non existing keys. No masking by default, any combination is
+      valid.
+
   no-ghostkey-check:
     type: boolean
     description: |

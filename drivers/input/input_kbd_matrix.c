@@ -94,6 +94,11 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 		k_busy_wait(cfg->settle_time_us);
 
 		row = api->read_row(dev);
+
+		if (cfg->actual_key_mask != NULL) {
+			row &= cfg->actual_key_mask[col];
+		}
+
 		cfg->matrix_new_state[col] = row;
 		key_event |= row;
 	}
