@@ -250,20 +250,20 @@ TESTDATA_1_1 = [
 ]
 TESTDATA_1_2 = [
     (0, False, 'dummy out',
-     True, True, True, True, 'passed', None, False, True),
+     True, True, 'passed', None, False, True),
     (0, True, '',
-     False, False, False, False, 'passed', None, False, False),
+     False, False, 'passed', None, False, False),
     (1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
-     False, True, True, True, 'skipped', 'FLASH overflow', True, False),
+     True,  True, 'skipped', 'FLASH overflow', True, False),
     (1, True, 'Error: Image size (99 B) + trailer (1 B) exceeds requested size',
-     False, True, True, True, 'skipped', 'imgtool overflow', True, False),
+     True, True, 'skipped', 'imgtool overflow', True, False),
     (1, True, 'mock.ANY',
-     False, True, True, True, 'error', 'Build failure', False, False)
+     True, True, 'error', 'Build failure', False, False)
 ]
 
 @pytest.mark.parametrize(
-    'return_code, is_instance_run, p_out, expect_msg, expect_returncode,' \
-    ' expect_instance, expect_writes, expected_status, expected_reason,' \
+    'return_code, is_instance_run, p_out, expect_returncode,' \
+    ' expect_writes, expected_status, expected_reason,' \
     ' expected_change_skip, expected_add_missing',
     TESTDATA_1_2,
     ids=['no error, no instance run', 'no error, instance run',
@@ -275,9 +275,7 @@ def test_cmake_run_build(
     return_code,
     is_instance_run,
     p_out,
-    expect_msg,
     expect_returncode,
-    expect_instance,
     expect_writes,
     expected_status,
     expected_reason,
@@ -303,6 +301,7 @@ def test_cmake_run_build(
         popen=mock.Mock(side_effect=mock_popen)
     )
     instance_mock = mock.Mock(add_missing_case_status=mock.Mock())
+    instance_mock.build_time = 0
     instance_mock.run = is_instance_run
     instance_mock.status = None
     instance_mock.reason = None
@@ -328,14 +327,8 @@ def test_cmake_run_build(
         result = cmake.run_build(args=['arg1', 'arg2'])
 
     expected_results = {}
-    if expect_msg:
-        expected_results['msg'] = 'Finished building %s for %s' % \
-                                   (os.path.join('source', 'dir'), \
-                                    '<platform name>')
     if expect_returncode:
         expected_results['returncode'] = return_code
-    if expect_instance:
-        expected_results['instance'] = instance_mock
     if expected_results == {}:
         expected_results = None
 
@@ -369,7 +362,7 @@ TESTDATA_2_1 = [
 TESTDATA_2_2 = [
     (True, ['dummy_stage_1', 'ds2'],
      0, False, '',
-     True, False, True, False,
+     True, True, False,
      None, None,
      [os.path.join('dummy', 'cmake'),
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
@@ -383,7 +376,7 @@ TESTDATA_2_2 = [
       '-Pzephyr_base/cmake/package_helper.cmake']),
     (False, [],
      1, True, 'ERROR: region `FLASH\' overflowed by 123 MB',
-     False, True, False, True,
+     True, False, True,
      'error', 'Cmake build failure',
      [os.path.join('dummy', 'cmake'),
       '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
@@ -398,7 +391,7 @@ TESTDATA_2_2 = [
 
 @pytest.mark.parametrize(
     'error_warns, f_stages,' \
-    ' return_code, is_instance_run, p_out, expect_msg, expect_returncode,' \
+    ' return_code, is_instance_run, p_out, expect_returncode,' \
     ' expect_filter, expect_writes, expected_status, expected_reason,' \
     ' expected_cmd',
     TESTDATA_2_2,
@@ -412,7 +405,6 @@ def test_cmake_run_cmake(
     return_code,
     is_instance_run,
     p_out,
-    expect_msg,
     expect_returncode,
     expect_filter,
     expect_writes,
@@ -442,6 +434,7 @@ def test_cmake_run_cmake(
     instance_mock = mock.Mock(add_missing_case_status=mock.Mock())
     instance_mock.run = is_instance_run
     instance_mock.run_id = 1
+    instance_mock.build_time = 0
     instance_mock.status = None
     instance_mock.reason = None
     instance_mock.testsuite = mock.Mock()
@@ -476,10 +469,6 @@ def test_cmake_run_cmake(
         result = cmake.run_cmake(args=['arg1', 'arg2'], filter_stages=f_stages)
 
     expected_results = {}
-    if expect_msg:
-        expected_results['msg'] = 'Finished building %s for %s' % \
-                                   (os.path.join('source', 'dir'), \
-                                    '<platform name>')
     if expect_returncode:
         expected_results['returncode'] = return_code
     if expect_filter:
@@ -2650,11 +2639,6 @@ def test_twisterrunner_execute(caplog):
     with mock.patch('twisterlib.runner.Process', process_mock):
         tr.execute(pipeline_mock, done_mock)
 
-    assert 'Launch process 0' in caplog.text
-    assert 'Launch process 1' in caplog.text
-    assert 'Launch process 2' in caplog.text
-    assert 'Launch process 3' in caplog.text
-    assert 'Launch process 4' in caplog.text
     assert 'Execution interrupted' in caplog.text
 
     assert len(process_mock().start.call_args_list) == 5
