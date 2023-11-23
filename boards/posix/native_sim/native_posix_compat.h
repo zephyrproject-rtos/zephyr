@@ -33,6 +33,8 @@ static ALWAYS_INLINE uint64_t hwm_get_time(void)
 	return nsi_hws_get_time();
 }
 
+#define NEVER NSI_NEVER
+
 #ifdef __cplusplus
 }
 #endif
