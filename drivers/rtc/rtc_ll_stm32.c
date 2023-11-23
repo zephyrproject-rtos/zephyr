@@ -139,7 +139,6 @@ static int rtc_stm32_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	/* Enable Backup access */
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 #if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
 	LL_PWR_EnableBkUpAccess();
 #endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
@@ -149,6 +148,8 @@ static int rtc_stm32_init(const struct device *dev)
 		LOG_ERR("clock configure failed\n");
 		return -EIO;
 	}
+
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	LL_RCC_EnableRTC();
 
