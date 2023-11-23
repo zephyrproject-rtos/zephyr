@@ -25,8 +25,7 @@ LOG_MODULE_REGISTER(pthread, CONFIG_PTHREAD_LOG_LEVEL);
 #define DYNAMIC_STACK_SIZE 0
 #endif
 
-#define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
-#define PTHREAD_CANCELED	((void *) -1)
+#define PTHREAD_INIT_FLAGS PTHREAD_CANCEL_ENABLE
 
 enum posix_thread_qid {
 	/* ready to be started via pthread_create() */
