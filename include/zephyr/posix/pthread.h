@@ -477,6 +477,8 @@ int pthread_key_delete(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 void *pthread_getspecific(pthread_key_t key);
 int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));
+int pthread_getconcurrency(void);
+int pthread_setconcurrency(int new_level);
 
 /* Glibc / Oracle Extension Functions */
 

@@ -51,7 +51,7 @@ static sys_dlist_t run_q = SYS_DLIST_STATIC_INIT(&run_q);
 static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 static struct k_spinlock pthread_pool_lock;
-
+static int pthread_concurrency;
 static K_MUTEX_DEFINE(pthread_once_lock);
 
 static const struct pthread_attr init_pthread_attrs = {
@@ -462,6 +462,34 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	*th = mark_pthread_obj_initialized(posix_thread_to_offset(t));
 
 	LOG_DBG("Created pthread %p", &t->thread);
+
+	return 0;
+}
+
+int pthread_getconcurrency(void)
+{
+	int ret;
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		ret = pthread_concurrency;
+	}
+
+	return ret;
+}
+
+int pthread_setconcurrency(int new_level)
+{
+	if (new_level < 0) {
+		return EINVAL;
+	}
+
+	if (new_level > CONFIG_MP_MAX_NUM_CPUS) {
+		return EAGAIN;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		pthread_concurrency = new_level;
+	}
 
 	return 0;
 }
