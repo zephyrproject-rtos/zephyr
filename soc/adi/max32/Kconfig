@@ -17,6 +17,9 @@ config SOC_MAX32655
 config SOC_MAX32662
 	select CPU_CORTEX_M4
 
+config SOC_MAX32666
+	select CPU_CORTEX_M4
+
 config SOC_MAX32670
 	select CPU_CORTEX_M4
 
