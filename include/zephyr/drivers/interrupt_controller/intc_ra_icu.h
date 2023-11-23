@@ -35,4 +35,8 @@ extern int ra_icu_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 				      void (*routine)(const void *parameter), const void *parameter,
 				      uint32_t flags);
 
+extern int ra_icu_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+					 void (*routine)(const void *parameter),
+					 const void *parameter, uint32_t flags);
+
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RA_ICU_H_ */

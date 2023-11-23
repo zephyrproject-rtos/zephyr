@@ -104,5 +104,23 @@ int ra_icu_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	return irqn;
 }
 
+int ra_icu_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+				  void (*routine)(const void *parameter), const void *parameter,
+				  uint32_t flags)
+{
+	int irqn = irq;
+
+	if (irq == RA_ICU_IRQ_UNSPECIFIED) {
+		return -EINVAL;
+	}
+
+	irq_disable(irqn);
+	sys_write32(0, IELSRn_REG(irqn));
+	z_isr_install(irqn, z_irq_spurious, NULL);
+	z_arm_irq_priority_set(irqn, 0, 0);
+
+	return 0;
+}
+
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		      NULL);
