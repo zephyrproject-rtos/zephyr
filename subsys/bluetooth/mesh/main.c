@@ -460,6 +460,13 @@ int bt_mesh_suspend(void)
 
 	bt_mesh_model_foreach(model_suspend, NULL);
 
+	err = bt_mesh_adv_disable();
+	if (err) {
+		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		LOG_WRN("Disabling advertisers failed (err %d)", err);
+		return err;
+	}
+
 	return 0;
 }
 
@@ -486,6 +493,17 @@ int bt_mesh_resume(void)
 
 	if (!atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
 		return -EALREADY;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		bt_mesh_adv_init();
+	}
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		LOG_WRN("Re-enabling advertisers failed (err %d)", err);
+		return err;
 	}
 
 	err = bt_mesh_scan_enable();
