@@ -37,9 +37,12 @@ extern "C" {
  * @name SPI operational mode
  * @{
  */
-#define SPI_OP_MODE_MASTER	0U
-#define SPI_OP_MODE_SLAVE	BIT(0)
+#define SPI_OP_MODE_MASTER	0U      /**< Master mode. */
+#define SPI_OP_MODE_SLAVE	BIT(0)  /**< Slave mode. */
+/** @cond INTERNAL_HIDDEN */
 #define SPI_OP_MODE_MASK	0x1U
+/** @endcond */
+/** Get SPI operational mode. */
 #define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 /** @} */
 
@@ -70,8 +73,10 @@ extern "C" {
  * support this, and can be used for testing purposes only.
  */
 #define SPI_MODE_LOOP		BIT(3)
-
+/** @cond INTERNAL_HIDDEN */
 #define SPI_MODE_MASK		(0xEU)
+/** @endcond */
+/** Get SPI polarity and phase mode bits. */
 #define SPI_MODE_GET(_mode_)			\
 	((_mode_) & SPI_MODE_MASK)
 
@@ -81,19 +86,22 @@ extern "C" {
  * @name SPI Transfer modes (host controller dependent)
  * @{
  */
-#define SPI_TRANSFER_MSB	(0U)
-#define SPI_TRANSFER_LSB	BIT(4)
+#define SPI_TRANSFER_MSB	(0U)    /**< Most significant bit first. */
+#define SPI_TRANSFER_LSB	BIT(4)  /**< Least significant bit first. */
 /** @} */
 
 /**
  * @name SPI word size
  * @{
  */
+/** @cond INTERNAL_HIDDEN */
 #define SPI_WORD_SIZE_SHIFT	(5U)
 #define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
+/** @endcond */
+/** Get SPI word size. */
 #define SPI_WORD_SIZE_GET(_operation_)					\
 	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
-
+/** Set SPI word size. */
 #define SPI_WORD_SET(_word_size_)		\
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
 /** @} */
@@ -102,16 +110,16 @@ extern "C" {
  * @name Specific SPI devices control bits
  * @{
  */
-/* Requests - if possible - to keep CS asserted after the transaction */
+/** Requests - if possible - to keep CS asserted after the transaction */
 #define SPI_HOLD_ON_CS		BIT(12)
-/* Keep the device locked after the transaction for the current config.
+/** Keep the device locked after the transaction for the current config.
  * Use this with extreme caution (see spi_release() below) as it will
  * prevent other callers to access the SPI device until spi_release() is
  * properly called.
  */
 #define SPI_LOCK_ON		BIT(13)
 
-/* Active high logic on CS - Usually, and by default, CS logic is active
+/** Active high logic on CS. Usually, and by default, CS logic is active
  * low. However, some devices may require the reverse logic: active high.
  * This bit will request the controller to use that logic. Note that not
  * all controllers are able to handle that natively. In this case deferring
@@ -130,12 +138,13 @@ extern "C" {
  * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
  * only supported one.
  */
-#define SPI_LINES_SINGLE	(0U << 16)
-#define SPI_LINES_DUAL		(1U << 16)
-#define SPI_LINES_QUAD		(2U << 16)
-#define SPI_LINES_OCTAL		(3U << 16)
+#define SPI_LINES_SINGLE	(0U << 16)     /**< Single line */
+#define SPI_LINES_DUAL		(1U << 16)     /**< Dual lines */
+#define SPI_LINES_QUAD		(2U << 16)     /**< Quad lines */
+#define SPI_LINES_OCTAL		(3U << 16)     /**< Octal lines */
 
-#define SPI_LINES_MASK		(0x3U << 16)
+#define SPI_LINES_MASK		(0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
+
 /** @} */
 
 /**
@@ -225,22 +234,28 @@ struct spi_cs_control {
  *
  * Example devicetree fragment:
  *
- *     spi@... {
+ * @code{.devicetree}
+ *     spi@abcd0001 {
  *             cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
  *             spidev: spi-device@0 { ... };
  *     };
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     struct spi_cs_control ctrl =
  *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 2);
+ * @endcode
  *
  * This example is equivalent to:
  *
+ * @code{.c}
  *     struct spi_cs_control ctrl = {
  *             .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
  *             .delay = 2,
  *     };
+ * @endcode
  *
  * @param node_id Devicetree node identifier for a device on a SPI bus
  * @param delay_ The @p delay field to set in the @p spi_cs_control
@@ -356,12 +371,11 @@ struct spi_config {
 
 /**
  * @brief Complete SPI DT information
- *
- * @param bus is the SPI bus
- * @param config is the slave specific configuration
  */
 struct spi_dt_spec {
+	/** SPI bus */
 	const struct device *bus;
+	/** Slave specific configuration */
 	struct spi_config config;
 };
 
@@ -405,25 +419,24 @@ struct spi_dt_spec {
 
 /**
  * @brief SPI buffer structure
- *
- * @param buf is a valid pointer on a data buffer, or NULL otherwise.
- * @param len is the length of the buffer or, if buf is NULL, will be the
- *    length which as to be sent as dummy bytes (as TX buffer) or
- *    the length of bytes that should be skipped (as RX buffer).
  */
 struct spi_buf {
+	/** Valid pointer to a data buffer, or NULL otherwise */
 	void *buf;
+	/** Length of the buffer @a buf.
+	 * If @a buf is NULL, length which as to be sent as dummy bytes (as TX
+	 * buffer) or the length of bytes that should be skipped (as RX buffer).
+	 */
 	size_t len;
 };
 
 /**
  * @brief SPI buffer array structure
- *
- * @param buffers is a valid pointer on an array of spi_buf, or NULL.
- * @param count is the length of the array pointed by buffers.
  */
 struct spi_buf_set {
+	/** Pointer to an array of spi_buf, or NULL */
 	const struct spi_buf *buffers;
+	/** Length of the array pointed by @a buffers */
 	size_t count;
 };
 
