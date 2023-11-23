@@ -387,19 +387,6 @@ static int sys_clock_driver_init(void)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(DT_PROP(DT_DRV_INST(0), st_static_prescaler))) {
-		/*
-		 * LPTIM of the stm32, like stm32U5, which has a clock source x2.
-		 * A full 16bit LPTIM counter is counting 4s at 2 * 1/32768 (with LSE)
-		 * Time base = (4s * freq) - 1
-		 */
-		lptim_clock_freq = lptim_clock_freq / 2;
-	}
-	/*
-	 * Else, a full 16bit LPTIM counter is counting 2s at 1/32768 (with LSE)
-	 * Time base = (2s * freq) - 1
-	 */
-
 	/* Actual lptim clock freq when the clock source is reduced by the prescaler */
 	lptim_clock_freq = lptim_clock_freq / LPTIM_CLOCK_RATIO;
 
