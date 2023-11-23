@@ -340,8 +340,6 @@ static int uart_ra_init(const struct device *dev)
 		return ret;
 	}
 
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
-
 	ret = uart_ra_configure(dev, &data->current_config);
 	if (ret != 0) {
 		return ret;
@@ -360,7 +358,7 @@ static const struct uart_driver_api uart_ra_driver_api = {
 };
 
 /* Device Instantiation */
-#define UART_RCAR_INIT_CFG(n)                                                                      \
+#define UART_RA_INIT_CFG(n)                                                                        \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(n));                                                      \
 	static const struct uart_ra_cfg uart_ra_cfg_##n = {                                        \
 		.regs = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
@@ -370,8 +368,8 @@ static const struct uart_driver_api uart_ra_driver_api = {
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
 	}
 
-#define UART_RCAR_INIT(n)							\
-	UART_RCAR_INIT_CFG(n);                                                  \
+#define UART_RA_INIT(n)							\
+	UART_RA_INIT_CFG(n);                                                  \
 										\
 	static struct uart_ra_data uart_ra_data_##n = {				\
 		.current_config = {						\
@@ -392,4 +390,4 @@ static const struct uart_driver_api uart_ra_driver_api = {
 			      &uart_ra_driver_api);				\
 										\
 
-DT_INST_FOREACH_STATUS_OKAY(UART_RCAR_INIT)
+DT_INST_FOREACH_STATUS_OKAY(UART_RA_INIT)
