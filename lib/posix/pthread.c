@@ -16,6 +16,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(pthread, CONFIG_PTHREAD_LOG_LEVEL);
 
@@ -24,6 +25,8 @@ LOG_MODULE_REGISTER(pthread, CONFIG_PTHREAD_LOG_LEVEL);
 #else
 #define DYNAMIC_STACK_SIZE 0
 #endif
+
+#define _pthread_cancel_pos LOG2(PTHREAD_CANCEL_DISABLE)
 
 #define PTHREAD_INIT_FLAGS PTHREAD_CANCEL_ENABLE
 
@@ -406,7 +409,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		sys_dlist_append(&run_q, &t->q_node);
 		t->qid = POSIX_THREAD_RUN_Q;
 		t->detachstate = attr->detachstate;
-		if ((BIT(_PTHREAD_CANCEL_POS) & attr->flags) != 0) {
+		if ((BIT(_pthread_cancel_pos) & attr->flags) != 0) {
 			t->cancel_state = PTHREAD_CANCEL_ENABLE;
 		}
 		t->cancel_pending = false;
