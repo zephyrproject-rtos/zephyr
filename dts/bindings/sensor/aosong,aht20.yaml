@@ -1,0 +1,8 @@
+# Copyright (c) 2023, Konrad Sikora
+# SPDX-License-Identifier: Apache-2.0
+
+description: Aosong AHT20 Integrated temperature and humidity sensor
+
+compatible: "aosong,aht20"
+
+include: [sensor-device.yaml, i2c-device.yaml]

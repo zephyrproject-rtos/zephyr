@@ -1,0 +1,19 @@
+# AHT20 temperature and humidity sensor driver configuration
+
+# Copyright (c) 2023 Konrad Sikora
+# SPDX-License-Identifier: Apache-2.0
+
+config AHT20
+	bool "AHT20 temperature and humidity sensor"
+	default y
+	depends on DT_HAS_AOSONG_AHT20_ENABLED
+	select I2C
+	help
+	  Enable driver for AHT20 temperature and humidity sensor.
+
+config AHT20_CRC
+	bool "Use CRC error detection"
+	default y
+	select CRC
+	help
+	  Verify CRC of the RX data

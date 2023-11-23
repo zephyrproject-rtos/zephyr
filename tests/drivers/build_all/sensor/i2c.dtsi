@@ -858,3 +858,8 @@ test_i2c_hs300x: hs300x@79 {
 	compatible = "renesas,hs300x";
 	reg = <0x79>;
 };
+
+test_i2c_aht20: aht20@7a {
+	compatible = "aosong,aht20";
+	reg = <0x7a>;
+};
