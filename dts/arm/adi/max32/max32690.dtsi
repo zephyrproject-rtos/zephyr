@@ -54,6 +54,17 @@
 	};
 };
 
+&adc {
+	compatible = "adi,max32-adc-sar", "adi,max32-adc";
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+	clock-divider = <16>;
+	channel-count = <21>;
+	track-count = <4>;
+	idle-count = <5>;
+	vref-mv = <1250>;
+	resolution = <12>;
+};
+
 /* MAX32690 extra peripherals. */
 / {
 	soc {
