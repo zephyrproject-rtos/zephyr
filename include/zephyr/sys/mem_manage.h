@@ -7,8 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 #define ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 
-#include <zephyr/kernel/mm.h>
-
 /**
  * @brief Memory Management
  * @defgroup memory_management Memory Management
