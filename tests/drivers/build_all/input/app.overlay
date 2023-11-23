@@ -33,6 +33,7 @@
 			col-gpios = <&test_gpio 2 GPIO_ACTIVE_LOW>,
 				    <&test_gpio 3 GPIO_ACTIVE_LOW>,
 				    <&test_gpio 4 GPIO_ACTIVE_LOW>;
+			actual-key-mask = <0x0f 0x0a 0x0b>;
 		};
 
 		kbd-matrix-1 {
