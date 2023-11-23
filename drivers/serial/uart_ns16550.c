@@ -261,7 +261,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define CLR_SRC_TRAN(dev) (get_port(dev) + REG_LPSS_CLR_SRC_TRAN)
 #define MST(dev) (get_port(dev) + REG_LPSS_MST)
 
-#define MASK_LPSS_INT(chan) (BIT(8) << chan) /* mask LPSS DMA Interrupt */
 #define UNMASK_LPSS_INT(chan) (BIT(chan) | (BIT(8) << chan)) /* unmask LPSS DMA Interrupt */
 #endif
 
@@ -1287,8 +1286,6 @@ static void uart_ns16550_isr(const struct device *dev)
 		if (IIR_status & IIR_RBRF) {
 			async_timer_start(&dev_data->async.rx_dma_params.timeout_work,
 					  dev_data->async.rx_dma_params.timeout_us);
-			ns16550_outword(config, CLR_SRC_TRAN(dev),
-					BIT(dev_data->async.rx_dma_params.dma_channel));
 			return;
 		}
 	}
@@ -1486,7 +1483,6 @@ static void uart_ns16550_async_rx_flush(const struct device *dev)
 
 static int uart_ns16550_rx_disable(const struct device *dev)
 {
-	const struct uart_ns16550_device_config * const config = dev->config;
 	struct uart_ns16550_dev_data *data = (struct uart_ns16550_dev_data *)dev->data;
 	struct uart_ns16550_rx_dma_params *dma_params = &data->async.rx_dma_params;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
@@ -1519,10 +1515,6 @@ static int uart_ns16550_rx_disable(const struct device *dev)
 
 	async_user_callback(dev, &event);
 
-	if (IS_ENABLED(CONFIG_UART_NS16550_INTEL_LPSS_DMA)) {
-		ns16550_outword(config, MST(dev), UNMASK_LPSS_INT(dma_params->dma_channel));
-	}
-
 out:
 	k_spin_unlock(&data->lock, key);
 	return ret;
@@ -1538,7 +1530,7 @@ static void prepare_rx_dma_block_config(const struct device *dev)
 
 	struct dma_block_config *head_block_config = &rx_dma_params->active_dma_block;
 
-	head_block_config->dest_address = (uint64_t)rx_dma_params->buf;
+	head_block_config->dest_address = (uintptr_t)rx_dma_params->buf;
 	head_block_config->source_address = data->phys_addr;
 	head_block_config->block_size = rx_dma_params->buf_len;
 }
@@ -1568,7 +1560,7 @@ static void dma_callback(const struct device *dev, void *user_data, uint32_t cha
 		if (rx_params->buf != NULL &&
 		    rx_params->buf_len > 0) {
 			dma_reload(dev, rx_params->dma_channel, data->phys_addr,
-				   (uint64_t)rx_params->buf, rx_params->buf_len);
+				   (uintptr_t)rx_params->buf, rx_params->buf_len);
 			dma_start(dev, rx_params->dma_channel);
 			async_evt_rx_buf_request(uart_dev);
 		} else {
@@ -1603,7 +1595,7 @@ static int uart_ns16550_tx(const struct device *dev, const uint8_t *buf, size_t 
 
 	tx_params->buf = buf;
 	tx_params->buf_len = len;
-	tx_params->active_dma_block.source_address = (uint64_t)buf;
+	tx_params->active_dma_block.source_address = (uintptr_t)buf;
 	tx_params->active_dma_block.dest_address = data->phys_addr;
 	tx_params->active_dma_block.block_size = len;
 	tx_params->active_dma_block.next_block = NULL;
@@ -1681,13 +1673,13 @@ static int uart_ns16550_rx_enable(const struct device *dev, uint8_t *buf, const 
 	rx_dma_params->buf = buf;
 	rx_dma_params->buf_len = len;
 
-	if (IS_ENABLED(CONFIG_UART_NS16550_INTEL_LPSS_DMA)) {
-		ns16550_outword(config, MST(dev), UNMASK_LPSS_INT(DMA_INTEL_LPSS_RX_CHAN));
-	} else {
-		ns16550_outbyte(config, IER(dev),
-				(ns16550_inbyte(config, IER(dev)) | IER_RXRDY));
-		ns16550_outbyte(config, FCR(dev), FCR_FIFO);
-	}
+#if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
+	ns16550_outword(config, MST(dev), UNMASK_LPSS_INT(rx_dma_params->dma_channel));
+#else
+	ns16550_outbyte(config, IER(dev),
+			(ns16550_inbyte(config, IER(dev)) | IER_RXRDY));
+	ns16550_outbyte(config, FCR(dev), FCR_FIFO);
+#endif
 	prepare_rx_dma_block_config(dev);
 	dma_config(rx_dma_params->dma_dev,
 		   rx_dma_params->dma_channel,
