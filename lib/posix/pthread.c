@@ -954,6 +954,15 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len)
 #endif
 }
 
+int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void))
+{
+	ARG_UNUSED(prepare);
+	ARG_UNUSED(parent);
+	ARG_UNUSED(child);
+
+	return ENOSYS;
+}
+
 static int posix_thread_pool_init(void)
 {
 	size_t i;
