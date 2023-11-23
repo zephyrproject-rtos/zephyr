@@ -44,16 +44,25 @@ extern "C" {
 /** @name Modbus exception codes
  *  @{
  */
-/* Modbus exception codes */
+/** No exception */
 #define MODBUS_EXC_NONE				0
+/** Illegal function code */
 #define MODBUS_EXC_ILLEGAL_FC			1
+/** Illegal data address */
 #define MODBUS_EXC_ILLEGAL_DATA_ADDR		2
+/** Illegal data value */
 #define MODBUS_EXC_ILLEGAL_DATA_VAL		3
+/** Server device failure */
 #define MODBUS_EXC_SERVER_DEVICE_FAILURE	4
+/** Acknowledge */
 #define MODBUS_EXC_ACK				5
+/** Server device busy */
 #define MODBUS_EXC_SERVER_DEVICE_BUSY		6
+/** Memory parity error */
 #define MODBUS_EXC_MEM_PARITY_ERROR		8
+/** Gateway path unavailable */
 #define MODBUS_EXC_GW_PATH_UNAVAILABLE		10
+/** Gateway target device failed to respond */
 #define MODBUS_EXC_GW_TARGET_FAILED_TO_RESP	11
 /** @} */
 
