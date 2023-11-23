@@ -142,6 +142,22 @@ static int riscv_plic_is_edge_irq(const struct device *dev, uint32_t local_irq)
 	return sys_read32(trig_addr) & BIT(local_irq);
 }
 
+static void plic_irq_enable_set_state(uint32_t irq, bool enable)
+{
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const struct plic_config *config = dev->config;
+	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
+	uint32_t en_value;
+	uint32_t key;
+
+	key = irq_lock();
+	en_value = sys_read32(en_addr);
+	WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, enable);
+	sys_write32(en_value, en_addr);
+	irq_unlock(key);
+}
+
 /**
  * @brief Enable a riscv PLIC-specific interrupt line
  *
@@ -154,18 +170,7 @@ static int riscv_plic_is_edge_irq(const struct device *dev, uint32_t local_irq)
  */
 void riscv_plic_irq_enable(uint32_t irq)
 {
-	const struct device *dev = get_plic_dev_from_irq(irq);
-	const struct plic_config *config = dev->config;
-	const uint32_t local_irq = irq_from_level_2(irq);
-	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
-	uint32_t en_value;
-	uint32_t key;
-
-	key = irq_lock();
-	en_value = sys_read32(en_addr);
-	WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, true);
-	sys_write32(en_value, en_addr);
-	irq_unlock(key);
+	plic_irq_enable_set_state(irq, true);
 }
 
 /**
@@ -180,18 +185,7 @@ void riscv_plic_irq_enable(uint32_t irq)
  */
 void riscv_plic_irq_disable(uint32_t irq)
 {
-	const struct device *dev = get_plic_dev_from_irq(irq);
-	const struct plic_config *config = dev->config;
-	const uint32_t local_irq = irq_from_level_2(irq);
-	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
-	uint32_t en_value;
-	uint32_t key;
-
-	key = irq_lock();
-	en_value = sys_read32(en_addr);
-	WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, false);
-	sys_write32(en_value, en_addr);
-	irq_unlock(key);
+	plic_irq_enable_set_state(irq, false);
 }
 
 /**
