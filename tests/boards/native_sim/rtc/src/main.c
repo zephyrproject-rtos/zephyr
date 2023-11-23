@@ -19,7 +19,7 @@
 
 static char *us_time_to_str(char *dest, uint64_t time)
 {
-	if (time != NEVER) {
+	if (time != NSI_NEVER) {
 		unsigned int hour;
 		unsigned int minute;
 		unsigned int second;
