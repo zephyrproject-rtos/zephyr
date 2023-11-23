@@ -10,9 +10,9 @@ jobs:
   check-errno:
     runs-on: ubuntu-22.04
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
 
     steps:
       - name: Apply container owner mismatch workaround
