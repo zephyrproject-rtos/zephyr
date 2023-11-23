@@ -30,13 +30,13 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       EDTT_PATH: ../tools/edtt
