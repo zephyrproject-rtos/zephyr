@@ -5,10 +5,13 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/kernel/mm.h>
 #include <zephyr/toolchain.h>
 #include <mmu.h>
 #include <zephyr/linker/sections.h>
+
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif /* CONFIG_DEMAND_PAGING */
 
 /* 32-bit IA32 page tables have no mechanism to restrict execution */
 #if defined(CONFIG_X86) && !defined(CONFIG_X86_64) && !defined(CONFIG_X86_PAE)
