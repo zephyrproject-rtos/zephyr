@@ -53,6 +53,8 @@ static int barrier_failed;
 static int barrier_done[N_THR_E];
 static int barrier_return[N_THR_E];
 
+static uint32_t param;
+
 /* First phase bounces execution between two threads using a condition
  * variable, continuously testing that no other thread is mucking with
  * the protected state.  This ends with all threads going back to
@@ -827,15 +829,14 @@ static void *fun(void *arg)
 ZTEST(posix_apis, test_pthread_dynamic_stacks)
 {
 	pthread_t th;
-	uint32_t x = 0;
 
 	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
 		ztest_test_skip();
 	}
 
-	zassert_ok(pthread_create(&th, NULL, fun, &x));
+	zassert_ok(pthread_create(&th, NULL, fun, &param));
 	zassert_ok(pthread_join(th, NULL));
-	zassert_equal(BIOS_FOOD, x);
+	zassert_equal(BIOS_FOOD, param);
 }
 
 static void *non_null_retval(void *arg)
