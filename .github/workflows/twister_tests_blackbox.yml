@@ -22,9 +22,9 @@ jobs:
         python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
         os: [ubuntu-22.04]
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
 
     steps:
     - name: Apply Container Owner Mismatch Workaround
