@@ -173,7 +173,8 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
 
     Returns:
         Optional[Tuple[str, str]] -- Tuple with the date and SHA1 of the last commit made to the
-        page, or None if the page is not in the repo.
+        page, or None if the page is not in the repo (generated file, or manually authored file not
+        yet tracked by git).
     """
 
     page_prefix = get_page_prefix(app, pagename)
@@ -185,6 +186,15 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
         page_prefix,
         app.env.doc2path(pagename, False),
     )
+
+    # Check if the file is tracked by git
+    try:
+        subprocess.check_output(
+            ["git", "ls-files", "--error-unmatch", orig_path],
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError:
+        return None
 
     try:
         date_and_sha1 = (
@@ -211,7 +221,6 @@ def git_info_filter(app: Sphinx, pagename) -> Optional[Tuple[str, str]]:
         return (date, sha1)
     except subprocess.CalledProcessError:
         return None
-
 
 def add_jinja_filter(app: Sphinx):
     if app.builder.format != "html":
