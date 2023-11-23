@@ -1,7 +1,7 @@
 tests:
   logging.log_link_order:
     integration_platforms:
-      - native_posix
+      - native_sim
     tags:
       - log_links
       - logging
