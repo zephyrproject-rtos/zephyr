@@ -10,6 +10,7 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/pthread_key.h>
 #include <zephyr/sys/bitarray.h>
+#include <zephyr/sys/__assert.h>
 
 struct pthread_key_data {
 	sys_snode_t node;
@@ -120,6 +121,8 @@ int pthread_key_create(pthread_key_t *key,
  */
 int pthread_key_delete(pthread_key_t key)
 {
+	size_t bit;
+	__unused int ret;
 	pthread_key_obj *key_obj;
 	struct pthread_key_data *key_data;
 	sys_snode_t *node_l, *next_node_l;
@@ -145,7 +148,9 @@ int pthread_key_delete(pthread_key_t key)
 		k_free((void *)key_data);
 	}
 
-	(void)sys_bitarray_free(&posix_key_bitarray, 1, 0);
+	bit = posix_key_to_offset(key_obj);
+	ret = sys_bitarray_free(&posix_key_bitarray, 1, bit);
+	__ASSERT_NO_MSG(ret == 0);
 
 	k_spin_unlock(&pthread_key_lock, key_key);
 
