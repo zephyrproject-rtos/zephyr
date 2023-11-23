@@ -94,10 +94,10 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_cond_timedwait);
 		zassert_not_null(pthread_cond_wait);
 		zassert_not_null(pthread_condattr_destroy);
-		/* zassert_not_null(pthread_condattr_getclock); */ /* not implemented */
+		zassert_not_null(pthread_condattr_getclock);
 		/* zassert_not_null(pthread_condattr_getpshared); */ /* not implemented */
 		zassert_not_null(pthread_condattr_init);
-		/* zassert_not_null(pthread_condattr_setclock); */ /* not implemented */
+		zassert_not_null(pthread_condattr_setclock);
 		/* zassert_not_null(pthread_condattr_setpshared); */ /* not implemented */
 		zassert_not_null(pthread_create);
 		zassert_not_null(pthread_detach);
