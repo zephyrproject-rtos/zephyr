@@ -152,10 +152,11 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_setschedparam);
 		/* zassert_not_null(pthread_setschedprio); */ /* not implemented */
 		zassert_not_null(pthread_setspecific);
-		/* zassert_not_null(pthread_spin_destroy); */ /* not implemented */
-		/* zassert_not_null(pthread_spin_init); */ /* not implemented */
-		/* zassert_not_null(pthread_spin_lock); */ /* not implemented */
-		/* zassert_not_null(pthread_spin_unlock); */ /* not implemented */
+		zassert_not_null(pthread_spin_destroy);
+		zassert_not_null(pthread_spin_init);
+		zassert_not_null(pthread_spin_lock);
+		zassert_not_null(pthread_spin_trylock);
+		zassert_not_null(pthread_spin_unlock);
 		/* zassert_not_null(pthread_testcancel); */ /* not implemented */
 	}
 }
