@@ -366,17 +366,28 @@ void sys_clock_idle_exit(void)
 {
 #ifdef CONFIG_CORTEX_M_SYSTICK_IDLE_TIMER
 	if (timeout_idle) {
-		cycle_t systick_diff, missed_cycles;
+		cycle_t cycle_post_idle, systick_diff, missed_cycles;
 		uint32_t idle_timer_diff, idle_timer_post, dcycles, dticks;
 		uint64_t systick_us, idle_timer_us, measurement_diff_us;
 
 		/* Get current values for both timers */
 		counter_get_value(idle_timer, &idle_timer_post);
-		systick_diff = cycle_count + elapsed() - cycle_pre_idle;
+		cycle_post_idle = cycle_count + elapsed();
 
 		/* Calculate has much time has pasted since last measurement for both timers */
 		idle_timer_diff = idle_timer_post - idle_timer_pre_idle;
 		idle_timer_us = counter_ticks_to_us(idle_timer, idle_timer_diff);
+
+#ifndef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+		/* Check cycle counter overflow when using uint32_t */
+		if (cycle_pre_idle > cycle_post_idle) {
+			systick_diff = (UINT32_MAX - cycle_pre_idle) + cycle_post_idle + 1;
+		} else {
+			systick_diff = cycle_post_idle - cycle_pre_idle;
+		}
+#else
+		systick_diff = cycle_post_idle - cycle_pre_idle;
+#endif /* !CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER */
 		systick_us =
 			((uint64_t)systick_diff * USEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
 
