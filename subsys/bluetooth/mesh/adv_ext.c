@@ -506,6 +506,36 @@ int bt_mesh_adv_enable(void)
 	return 0;
 }
 
+int bt_mesh_adv_disable(void)
+{
+	int err;
+	struct k_work_sync sync;
+
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		k_work_flush_delayable(&advs[i].work, &sync);
+
+		err = bt_le_ext_adv_stop(advs[i].instance);
+		if (err) {
+			LOG_ERR("Failed to stop adv %d", err);
+			return err;
+		}
+
+		/* `adv_sent` is called to finish transmission of an adv buffer that was pushed to
+		 * the host before the advertiser was stopped, but did not finish.
+		 */
+		adv_sent(advs[i].instance, NULL);
+
+		err = bt_le_ext_adv_delete(advs[i].instance);
+		if (err) {
+			LOG_ERR("Failed to delete adv %d", err);
+			return err;
+		}
+		advs[i].instance = NULL;
+	}
+
+	return 0;
+}
+
 int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param,
 			   int32_t duration,
 			   const struct bt_data *ad, size_t ad_len,
