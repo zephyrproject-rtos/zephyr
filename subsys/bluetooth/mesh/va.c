@@ -306,6 +306,10 @@ void bt_mesh_va_clear(void)
 {
 	int i;
 
+	if (CONFIG_BT_MESH_LABEL_COUNT == 0) {
+		return;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(virtual_addrs); i++) {
 		if (virtual_addrs[i].ref) {
 			virtual_addrs[i].ref = 0U;
