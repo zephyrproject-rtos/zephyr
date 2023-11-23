@@ -1250,12 +1250,17 @@ class TwisterRunner:
                 instance.filter_stages = []
                 if instance.testsuite.filter:
                     instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
+
                 if test_only and instance.run:
                     pipeline.put({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
                     pipeline.put({"op": "filter", "test": instance})
                 else:
-                    pipeline.put({"op": "cmake", "test": instance})
+                    cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
+                    if os.path.exists(cache_file) and self.env.options.aggressive_no_clean:
+                        pipeline.put({"op": "build", "test": instance})
+                    else:
+                        pipeline.put({"op": "cmake", "test": instance})
 
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
