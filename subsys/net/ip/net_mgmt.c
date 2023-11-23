@@ -240,12 +240,14 @@ static int mgmt_event_wait_call(struct net_if *iface,
 	net_mgmt_add_event_callback(&sync);
 
 	ret = k_sem_take(sync.sync_call, timeout);
+
+	net_mgmt_del_event_callback(&sync);
+
 	if (ret < 0) {
 		if (ret == -EAGAIN) {
 			ret = -ETIMEDOUT;
 		}
 
-		net_mgmt_del_event_callback(&sync);
 		return ret;
 	}
 
