@@ -30,10 +30,9 @@ extern "C" {
 #define PTHREAD_PROCESS_SHARED  1
 
 /* Pthread cancellation */
-#define PTHREAD_CANCELED        ((void *)-1)
-#define _PTHREAD_CANCEL_POS	0
-#define PTHREAD_CANCEL_ENABLE	(0U << _PTHREAD_CANCEL_POS)
-#define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCELED       ((void *)-1)
+#define PTHREAD_CANCEL_ENABLE  0
+#define PTHREAD_CANCEL_DISABLE 1
 
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT                                                                          \
