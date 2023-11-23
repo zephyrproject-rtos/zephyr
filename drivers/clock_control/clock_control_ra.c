@@ -289,6 +289,8 @@ static int clock_control_ra_init(const struct device *dev)
 	SYSTEM_write32(SCKDIVCR_OFFSET, SCKDIVCR_INIT_VALUE);
 	SYSTEM_write8(SCKSCR_OFFSET, SCKSCR_INIT_VALUE);
 
+	/* re-read system clock setting and apply to hw_cycles */
+	sysclk = SYSTEM_read8(SCKSCR_OFFSET);
 	z_clock_hw_cycles_per_sec = clock_freqs[sysclk];
 
 	SYSTEM_write8(OPCCR_OFFSET, 0);
