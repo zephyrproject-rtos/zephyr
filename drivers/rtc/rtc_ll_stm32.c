@@ -79,22 +79,10 @@ struct rtc_stm32_data {
 
 static int rtc_stm32_enter_initialization_mode(bool kernel_available)
 {
-	if (kernel_available) {
-		LL_RTC_EnableInitMode(RTC);
-		bool success = WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, k_busy_wait(1));
+	ErrorStatus status = LL_RTC_EnterInitMode(RTC);
 
-		if (!success) {
-			return -EIO;
-		}
-	} else {
-		/* kernel is not available so use the blocking but otherwise equivalent function
-		 * provided by LL
-		 */
-		ErrorStatus status = LL_RTC_EnterInitMode(RTC);
-
-		if (status != SUCCESS) {
-			return -EIO;
-		}
+	if (status != SUCCESS) {
+		return -EIO;
 	}
 
 	return 0;
@@ -362,7 +350,7 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 	}
 
 	/* wait for recalibration to be ok if a previous recalibration occurred */
-	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RECALP(RTC) == 0, 100000, k_busy_wait(1))) {
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RECALP(RTC) == 0, 10000, k_busy_wait(1000))) {
 		return -EIO;
 	}
 
