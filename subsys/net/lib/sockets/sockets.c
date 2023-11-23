@@ -909,17 +909,19 @@ ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 	while (1) {
 		status = net_context_sendmsg(ctx, msg, flags, NULL, timeout, NULL);
 		if (status < 0) {
-			status = send_check_and_wait(ctx, status,
-						     buf_timeout,
-						     timeout, &retry_timeout);
 			if (status < 0) {
-				return status;
+				status = send_check_and_wait(ctx, status,
+							     buf_timeout,
+							     timeout, &retry_timeout);
+				if (status < 0) {
+					return status;
+				}
+
+				/* Update the timeout value in case loop is repeated. */
+				timeout = sys_timepoint_timeout(end);
+
+				continue;
 			}
-
-			/* Update the timeout value in case loop is repeated. */
-			timeout = sys_timepoint_timeout(end);
-
-			continue;
 		}
 
 		break;
@@ -1191,96 +1193,6 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 	return 0;
 }
 
-
-static int insert_pktinfo(struct msghdr *msg, int level, int type,
-			  void *pktinfo, size_t pktinfo_len)
-{
-	struct cmsghdr *cmsg;
-
-	if (msg->msg_controllen < pktinfo_len) {
-		return -EINVAL;
-	}
-
-	cmsg = CMSG_FIRSTHDR(msg);
-	if (cmsg == NULL) {
-		return -EINVAL;
-	}
-
-	cmsg->cmsg_len = CMSG_LEN(pktinfo_len);
-	cmsg->cmsg_level = level;
-	cmsg->cmsg_type = type;
-
-	memcpy(CMSG_DATA(cmsg), pktinfo, pktinfo_len);
-
-	return 0;
-}
-
-static int add_pktinfo(struct net_context *ctx,
-			struct net_pkt *pkt,
-			struct msghdr *msg)
-{
-	int ret = -ENOTSUP;
-	struct net_pkt_cursor backup;
-
-	net_pkt_cursor_backup(pkt, &backup);
-	net_pkt_cursor_init(pkt);
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access,
-						      struct net_ipv4_hdr);
-		struct in_pktinfo info;
-		struct net_ipv4_hdr *ipv4_hdr;
-
-		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(
-							pkt, &ipv4_access);
-		if (ipv4_hdr == NULL ||
-		    net_pkt_acknowledge_data(pkt, &ipv4_access) ||
-		    net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
-			ret = -ENOBUFS;
-			goto out;
-		}
-
-		net_ipv4_addr_copy_raw((uint8_t *)&info.ipi_addr, ipv4_hdr->dst);
-		net_ipv4_addr_copy_raw((uint8_t *)&info.ipi_spec_dst,
-				       (uint8_t *)net_sin_ptr(&ctx->local)->sin_addr);
-		info.ipi_ifindex = ctx->iface;
-
-		ret = insert_pktinfo(msg, IPPROTO_IP, IP_PKTINFO,
-				     &info, sizeof(info));
-
-		goto out;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
-						      struct net_ipv6_hdr);
-		struct in6_pktinfo info;
-		struct net_ipv6_hdr *ipv6_hdr;
-
-		ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(
-							pkt, &ipv6_access);
-		if (ipv6_hdr == NULL ||
-		    net_pkt_acknowledge_data(pkt, &ipv6_access) ||
-		    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
-			ret = -ENOBUFS;
-			goto out;
-		}
-
-		net_ipv6_addr_copy_raw((uint8_t *)&info.ipi6_addr, ipv6_hdr->dst);
-		info.ipi6_ifindex = ctx->iface;
-
-		ret = insert_pktinfo(msg, IPPROTO_IPV6, IPV6_RECVPKTINFO,
-				     &info, sizeof(info));
-
-		goto out;
-	}
-
-out:
-	net_pkt_cursor_restore(pkt, &backup);
-
-	return ret;
-}
-
 static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       struct msghdr *msg,
 				       void *buf,
@@ -1423,15 +1335,6 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		if (net_pkt_read(pkt, buf, read_len)) {
 			errno = ENOBUFS;
 			goto fail;
-		}
-	}
-
-	if (msg != NULL && msg->msg_control != NULL && msg->msg_controllen > 0) {
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
-		    net_context_is_recv_pktinfo_set(ctx)) {
-			if (add_pktinfo(ctx, pkt, msg) < 0) {
-				msg->msg_flags |= ZSOCK_MSG_CTRUNC;
-			}
 		}
 	}
 
@@ -1684,13 +1587,11 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		return zsock_recv_dgram(ctx, NULL, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
 		return zsock_recv_stream(ctx, NULL, buf, max_len, flags);
+	} else {
+		__ASSERT(0, "Unknown socket type");
 	}
 
-	__ASSERT(0, "Unknown socket type");
-
-	errno = ENOTSUP;
-
-	return -1;
+	return 0;
 }
 
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
@@ -2858,23 +2759,6 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
-
-		case IP_PKTINFO:
-			if (IS_ENABLED(CONFIG_NET_IPV4) &&
-			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO)) {
-				ret = net_context_set_option(ctx,
-							     NET_OPT_RECV_PKTINFO,
-							     optval,
-							     optlen);
-				if (ret < 0) {
-					errno  = -ret;
-					return -1;
-				}
-
-				return 0;
-			}
-
-			break;
 		}
 
 		break;
@@ -2894,23 +2778,6 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
-
-		case IPV6_RECVPKTINFO:
-			if (IS_ENABLED(CONFIG_NET_IPV6) &&
-			    IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO)) {
-				ret = net_context_set_option(ctx,
-							     NET_OPT_RECV_PKTINFO,
-							     optval,
-							     optlen);
-				if (ret < 0) {
-					errno  = -ret;
-					return -1;
-				}
-
-				return 0;
-			}
-
-			break;
 
 		case IPV6_TCLASS:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_DSCP_ECN)) {
