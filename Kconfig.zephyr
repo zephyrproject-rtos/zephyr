@@ -777,7 +777,9 @@ config BUILD_OUTPUT_STRIP_PATHS
 config CHECK_INIT_PRIORITIES
 	bool "Build time initialization priorities check"
 	default y
-	depends on !NATIVE_LIBRARY
+	# If we are building a native_simulator target, we can only check the init priorities
+	# if we are building the final output but we are not assembling several images together
+	depends on !(NATIVE_LIBRARY && (!BUILD_OUTPUT_EXE || NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS != ""))
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "armclang"
 	help
 	  Check the build for initialization priority issues by comparing the
