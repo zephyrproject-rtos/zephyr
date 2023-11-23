@@ -17,6 +17,7 @@ static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 
 pthread_mutex_t mutex1;
 pthread_mutex_t mutex2;
+pthread_mutex_t mutex;
 
 void *normal_mutex_entry(void *p1)
 {
@@ -213,12 +214,12 @@ static void timespec_add_ms(struct timespec *ts, uint32_t ms)
 static void *test_mutex_timedlock_fn(void *arg)
 {
 	struct timespec time_point;
-	pthread_mutex_t *mutex = (pthread_mutex_t *)arg;
+	pthread_mutex_t *mtx = (pthread_mutex_t *)arg;
 
 	zassume_ok(clock_gettime(CLOCK_MONOTONIC, &time_point));
 	timespec_add_ms(&time_point, TIMEDLOCK_TIMEOUT_MS);
 
-	return INT_TO_POINTER(pthread_mutex_timedlock(mutex, &time_point));
+	return INT_TO_POINTER(pthread_mutex_timedlock(mtx, &time_point));
 }
 
 /** @brief Test to verify @ref pthread_mutex_timedlock returns ETIMEDOUT */
@@ -226,7 +227,6 @@ ZTEST(posix_apis, test_mutex_timedlock)
 {
 	void *ret;
 	pthread_t th;
-	pthread_t mutex;
 	pthread_attr_t attr;
 
 	zassert_ok(pthread_attr_init(&attr));
