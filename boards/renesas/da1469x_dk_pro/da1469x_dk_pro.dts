@@ -168,3 +168,10 @@ zephyr_udc0: &usbd {
 	pinctrl-0 = <&spi2_controller>;
 	pinctrl-names = "default";
 };
+
+&mipi_dbi {
+	pinctrl-0 = <&mipi_dbi_default>;
+	pinctrl-1 = <&mipi_dbi_read>;
+	pinctrl-2 = <&mipi_dbi_sleep>;
+	pinctrl-names = "default", "read", "sleep";
+};

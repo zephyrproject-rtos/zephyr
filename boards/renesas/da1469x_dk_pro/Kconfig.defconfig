@@ -5,8 +5,25 @@
 
 if BOARD_DA1469X_DK_PRO
 
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+# LCDC imposes display buffer's stride be word aligned
 config LV_Z_AREA_X_ALIGNMENT_WIDTH
 	default 2
-	depends on LVGL
+
+endif # LVGL
+
+if INPUT
+
+config INPUT_FT5336_INTERRUPT
+	default y
+
+config LV_Z_POINTER_INPUT_MSGQ_COUNT
+	default 70
+
+endif # INPUT
 
 endif # BOARD_DA1469X_DK_PRO

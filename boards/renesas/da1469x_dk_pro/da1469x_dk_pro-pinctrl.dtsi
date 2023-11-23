@@ -55,4 +55,43 @@
 			input-enable;
 		};
 	};
+
+	/omit-if-no-ref/ mipi_dbi_default: mipi_dbi_default {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(LCD_SPI_DC, 0, 20)>,
+				<SMARTBOND_PINMUX(LCD_SPI_EN, 0, 21)>,
+				<SMARTBOND_PINMUX(LCD_SPI_DO, 0, 24)>,
+				<SMARTBOND_PINMUX(LCD_SPI_CLK, 0, 27)>;
+		};
+		group2 {
+			/* TE signal - mapped on fixed positions */
+			pinmux = <SMARTBOND_PINMUX(LCD, 1, 22)>;
+		};
+	};
+
+	/omit-if-no-ref/ mipi_dbi_sleep: mipi_dbi_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 20)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 21)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 24)>,
+				<SMARTBOND_PINMUX(GPIO, 0, 27)>;
+				output-enable;
+		};
+		group2 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 1, 22)>;
+			input-enable;
+		};
+	};
+
+	/* Same signal can be multiplexed to multiple I/O pins */
+	/omit-if-no-ref/ mipi_dbi_read: mipi_dbi_read {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(SPI2_CLK, 0, 27)>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <SMARTBOND_PINMUX(SPI2_DI, 0, 26)>;
+			input-enable;
+		};
+	};
 };
