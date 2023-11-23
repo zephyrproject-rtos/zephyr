@@ -213,3 +213,34 @@ ZTEST(posix_apis, test_key_Nto1_thread)
 	}
 	printk("\n");
 }
+
+ZTEST(posix_apis, test_key_resource_leak)
+{
+	pthread_key_t key;
+
+	for (size_t i = 0; i < CONFIG_MAX_PTHREAD_KEY_COUNT; ++i) {
+		zassert_ok(pthread_key_create(&key, NULL), "failed to create key %zu", i);
+		zassert_ok(pthread_key_delete(key), "failed to delete key %zu", i);
+	}
+}
+
+ZTEST(posix_apis, test_correct_key_is_deleted)
+{
+	pthread_key_t key;
+	size_t j = CONFIG_MAX_PTHREAD_KEY_COUNT - 1;
+	pthread_key_t keys[CONFIG_MAX_PTHREAD_KEY_COUNT];
+
+	for (size_t i = 0; i < ARRAY_SIZE(keys); ++i) {
+		zassert_ok(pthread_key_create(&keys[i], NULL), "failed to create key %zu", i);
+	}
+
+	key = keys[j];
+	zassert_ok(pthread_key_delete(keys[j]));
+	zassert_ok(pthread_key_create(&keys[j], NULL), "failed to create key %zu", j);
+
+	zassert_equal(key, keys[j], "deleted key %x instead of key %x", keys[j], key);
+
+	for (size_t i = 0; i < ARRAY_SIZE(keys); ++i) {
+		zassert_ok(pthread_key_delete(keys[i]), "failed to delete key %zu", i);
+	}
+}
