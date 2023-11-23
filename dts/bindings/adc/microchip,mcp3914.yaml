@@ -1,0 +1,109 @@
+# Copyright 2013 EVOS Energy Pty Ltd
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+
+description: |
+  Driver for MCP3914 8 ch ADC on SPI bus.
+
+compatible: "microchip,mcp3914"
+
+include:
+  - spi-device.yaml
+  - name: adc-controller.yaml
+    child-binding:
+      property-allowlist:
+        - reg
+        - zephyr,gain
+        - zephyr,reference
+        - zephyr,acquisition-time
+        - zephyr,resolution
+
+properties:
+
+  "#io-channel-cells":
+    const: 1
+
+  mclk-src:
+    type: string
+    description: |
+      Device digital clock source
+      - "MCP3914_CLK_SRC_XTAL"
+      - "MCP3914_CLK_SRC_EXT" .. POR default
+    default:
+      "MCP3914_CLK_SRC_EXT"
+    enum:
+      - "MCP3914_CLK_SRC_XTAL"
+      - "MCP3914_CLK_SRC_EXT"
+
+  mclk-freq:
+    type: int
+    description: |
+      Master clock frequency, in MHz. (Unused at the moment)
+    required:
+      true
+
+  channel-count:
+    type: int
+    description: Number of channels available on this device
+    default: 8
+
+  amclk-prescale:
+    type: string
+    description: |
+      Master clock to analogue master clock divider
+      - "MCP3914_AMCLK_PRESCALE_NONE" .. POR default
+      - "MCP3914_AMCLK_PRESCALE_DIV2"
+      - "MCP3914_AMCLK_PRESCALE_DIV4"
+      - "MCP3914_AMCLK_PRESCALE_DIV8"
+    default:
+      "MCP3914_AMCLK_PRESCALE_NONE"
+    enum:
+      - "MCP3914_AMCLK_PRESCALE_NONE"
+      - "MCP3914_AMCLK_PRESCALE_DIV2"
+      - "MCP3914_AMCLK_PRESCALE_DIV4"
+      - "MCP3914_AMCLK_PRESCALE_DIV8"
+
+  hware-osr:
+    type: string
+    description: |
+      Oversampling ratio applied to all channels on device
+      - "MCP3914_OSR_32"
+      - "MCP3914_OSR_64"
+      - "MCP3914_OSR_128"
+      - "MCP3914_OSR_256" .. POR default
+      - "MCP3914_OSR_512"
+      - "MCP3914_OSR_1024"
+      - "MCP3914_OSR_2048"
+      - "MCP3914_OSR_4096"
+    default:
+      "MCP3914_OSR_256"
+    enum:
+      - "MCP3914_OSR_32"
+      - "MCP3914_OSR_64"
+      - "MCP3914_OSR_128"
+      - "MCP3914_OSR_256"
+      - "MCP3914_OSR_512"
+      - "MCP3914_OSR_1024"
+      - "MCP3914_OSR_2048"
+      - "MCP3914_OSR_4096"
+
+  dready-gpios:
+    type: phandle-array
+    description: |
+      The /DR signal from the device goes low when
+      the ADC has valid data to read. Required as
+      driver hasn't implement polling as yet.
+
+io-channel-cells:
+  - input
