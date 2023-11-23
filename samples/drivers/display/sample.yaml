@@ -107,6 +107,16 @@ tests:
       - native_posix_64
       - native_sim_64
     tags: display
+  sample.display.mipi_dbi:
+    platform_allow:
+      - da1469x_dk_pro
+    extra_args: DTC_OVERLAY_FILE="boards/da1469x_dk_pro_mipi_dbi.overlay"
+    tags:
+      - display
+      - mipi_dbi
+    harness: console
+    harness_config:
+      fixture: fixture_display
   sample.display.dummy:
     platform_allow:
       - native_posix
