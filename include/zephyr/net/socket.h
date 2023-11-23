@@ -57,6 +57,9 @@ struct zsock_pollfd {
 
 /** zsock_recv: Read data without removing it from socket input queue */
 #define ZSOCK_MSG_PEEK 0x02
+/** zsock_recvmsg: Control data buffer too small.
+ */
+#define ZSOCK_MSG_CTRUNC 0x08
 /** zsock_recv: return the real length of the datagram, even when it was longer
  *  than the passed buffer
  */
@@ -979,6 +982,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 
 /** POSIX wrapper for @ref ZSOCK_MSG_PEEK */
 #define MSG_PEEK ZSOCK_MSG_PEEK
+/** POSIX wrapper for @ref ZSOCK_MSG_CTRUNC */
+#define MSG_CTRUNC ZSOCK_MSG_CTRUNC
 /** POSIX wrapper for @ref ZSOCK_MSG_TRUNC */
 #define MSG_TRUNC ZSOCK_MSG_TRUNC
 /** POSIX wrapper for @ref ZSOCK_MSG_DONTWAIT */
