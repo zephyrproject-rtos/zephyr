@@ -184,32 +184,3 @@ bool sys_heap_validate(struct sys_heap *heap)
 	}
 	return true;
 }
-
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-
-int sys_heap_runtime_stats_get(struct sys_heap *heap,
-		struct sys_memory_stats *stats)
-{
-	if ((heap == NULL) || (stats == NULL)) {
-		return -EINVAL;
-	}
-
-	stats->free_bytes = heap->heap->free_bytes;
-	stats->allocated_bytes = heap->heap->allocated_bytes;
-	stats->max_allocated_bytes = heap->heap->max_allocated_bytes;
-
-	return 0;
-}
-
-int sys_heap_runtime_stats_reset_max(struct sys_heap *heap)
-{
-	if (heap == NULL) {
-		return -EINVAL;
-	}
-
-	heap->heap->max_allocated_bytes = heap->heap->allocated_bytes;
-
-	return 0;
-}
-
-#endif
