@@ -212,6 +212,16 @@ int lwm2m_security_index_to_inst_id(int index)
 	return inst[index].obj_inst_id;
 }
 
+int lwm2m_security_short_id_to_inst(uint16_t short_id)
+{
+	for (int i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (short_server_id[i] == short_id) {
+			return inst[i].obj_inst_id;
+		}
+	}
+	return -ENOENT;
+}
+
 int lwm2m_security_mode(struct lwm2m_ctx *ctx)
 {
 	int ret;
