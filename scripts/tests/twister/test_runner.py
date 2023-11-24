@@ -2529,11 +2529,11 @@ def test_twisterrunner_add_tasks_to_queue(
         return [filter]
 
     instances = {
-        'dummy1': mock.Mock(run=True, retries=0, status='passed'),
-        'dummy2': mock.Mock(run=True, retries=0, status='skipped'),
-        'dummy3': mock.Mock(run=True, retries=0, status='filtered'),
-        'dummy4': mock.Mock(run=True, retries=0, status='error'),
-        'dummy5': mock.Mock(run=True, retries=0, status='failed')
+        'dummy1': mock.Mock(run=True, retries=0, status='passed', build_dir="/tmp"),
+        'dummy2': mock.Mock(run=True, retries=0, status='skipped', build_dir="/tmp"),
+        'dummy3': mock.Mock(run=True, retries=0, status='filtered', build_dir="/tmp"),
+        'dummy4': mock.Mock(run=True, retries=0, status='error', build_dir="/tmp"),
+        'dummy5': mock.Mock(run=True, retries=0, status='failed', build_dir="/tmp")
     }
     instances['dummy4'].testsuite.filter = 'some'
     instances['dummy5'].testsuite.filter = 'full'
