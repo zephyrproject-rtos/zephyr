@@ -303,6 +303,11 @@ Networking
   The IPv6 hop limit value is also changed so that unicast and multicast packets can have a
   different one. (:github:`65886`)
 
+* The Ethernet phy APIs defined in ``<zephyr/net/phy.h>`` are removed from syscall list.
+  The APIs were marked as callable from usermode but in practice this does not work as the device
+  cannot be accessed from usermode thread. This means that the API calls will need to made
+  from supervisor mode thread.
+
 Other Subsystems
 ================
 
