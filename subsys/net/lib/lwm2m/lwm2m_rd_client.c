@@ -62,6 +62,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rd_client.h"
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_util.h"
+#include "lwm2m_obj_server.h"
 
 #define LWM2M_RD_CLIENT_URI "rd"
 #define CLIENT_EP_LEN		CONFIG_LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
