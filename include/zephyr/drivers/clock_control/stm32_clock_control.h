@@ -369,6 +369,7 @@
 #define STM32_HSE_ENABLED	1
 #define STM32_HSE_BYPASS	DT_PROP(DT_NODELABEL(clk_hse), hse_bypass)
 #define STM32_HSE_FREQ		DT_PROP(DT_NODELABEL(clk_hse), clock_frequency)
+#define STM32_HSE_CSS		DT_PROP(DT_NODELABEL(clk_hse), css_enabled)
 #elif DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hse), st_stm32wl_hse_clock, okay)
 #define STM32_HSE_ENABLED	1
 #define STM32_HSE_TCXO		DT_PROP(DT_NODELABEL(clk_hse), hse_tcxo)
@@ -459,5 +460,17 @@ struct stm32_pclken {
  */
 #define STM32_CLOCK_VAL_GET(clock) \
 	(((clock) >> STM32_CLOCK_VAL_SHIFT) & STM32_CLOCK_VAL_MASK)
+
+#if defined(STM32_HSE_CSS)
+/**
+ * @brief Called if the HSE clock security system detects a clock fault.
+ *
+ * The function is called in interrupt context.
+ *
+ * The default (weakly-linked) implementation does nothing and should be
+ * overridden.
+ */
+void stm32_hse_css_callback(void);
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */
