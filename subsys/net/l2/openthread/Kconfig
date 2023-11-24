@@ -324,21 +324,15 @@ config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
 config OPENTHREAD_CRYPTO_PSA
 	bool "ARM PSA crypto API"
 	depends on MBEDTLS_PSA_CRYPTO_C || BUILD_WITH_TFM
-	select OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
+	select OPENTHREAD_PLATFORM_KEY_REF
 	select OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
 	  Enable crypto backend library implementation based on ARM PSA crypto
 	  API instead of the default, using mbedTLS.
 
-config OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
-	bool "Cryptographic key reference support"
-	help
-	  Enable usage of cryptographic key references instead of literal keys
-	  This requires a crypto backend library that supports key references.
-
 config OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	bool "Make MAC keys exportable"
-	depends on OPENTHREAD_PLATFORM_KEY_REFERENCES_ENABLE
+	depends on OPENTHREAD_PLATFORM_KEY_REF
 	help
 	  Enable the creation of exportable MAC keys in the OpenThread Key Manager.
 
