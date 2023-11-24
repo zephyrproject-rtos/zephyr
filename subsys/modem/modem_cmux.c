@@ -881,7 +881,7 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 
 		ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
 
-		if (ret == 0) {
+		if (ret < reserved_size) {
 			break;
 		}
 	}
