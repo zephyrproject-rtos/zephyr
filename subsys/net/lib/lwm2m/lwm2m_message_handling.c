@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_obj_access_control.h"
+#include "lwm2m_obj_server.h"
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
