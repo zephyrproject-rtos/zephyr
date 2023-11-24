@@ -603,6 +603,9 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * accepted);
  * (2) no UTF-8 validation is performed; and
  * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * 
+ * @warning For memory performance reasons this function parses in-place and
+ * might modify the input JSON-encoded object
  *
  * @param json Pointer to JSON-encoded value to be parsed
  * @param len Length of JSON-encoded value
@@ -642,6 +645,9 @@ int64_t json_obj_parse(char *json, size_t len,
  * accepted);
  * (2) no UTF-8 validation is performed; and
  * (3) only integer numbers are supported (no strtod() in the minimal libc).
+ * 
+ * @warning For memory performance reasons this function parses in-place and
+ * might modify the input JSON-encoded object
  *
  * @param json Pointer to JSON-encoded array to be parsed
  * @param len Length of JSON-encoded array
@@ -677,6 +683,9 @@ int json_arr_separate_object_parse_init(struct json_obj *json, char *payload, si
  *
  * Parses the JSON-encoded object pointed to by @a json object array, with
  * size @a len, according to the descriptor pointed to by @a descr.
+ * 
+ * @warning For memory performance reasons this function parses in-place and
+ * might modify the input JSON-encoded object
  *
  * @param json Pointer to JSON-object message state
  * @param descr Pointer to the descriptor array
