@@ -472,7 +472,7 @@ config X86_EFI_CONSOLE
 	bool
 	depends on X86_EFI && X86_64 && !X86_VERY_EARLY_CONSOLE
 	select EFI_CONSOLE
-	default y
+	default y if !UART_CONSOLE
 	help
 	  This enables the use of the UEFI console device as the
 	  Zephyr printk handler.  It requires that no interferences
