@@ -36,6 +36,8 @@ static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 static uint8_t oob_legacy_tk[16] = { 0 };
 
+static bool filter_list_in_use;
+
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static struct bt_le_oob oob_sc_local = { 0 };
 static struct bt_le_oob oob_sc_remote = { 0 };
@@ -578,6 +580,14 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 
 	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
 		param->options |= BT_LE_ADV_OPT_CONNECTABLE;
+
+		if (filter_list_in_use) {
+			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
+		}
+	}
+
+	if (filter_list_in_use) {
+		param->options |= BT_LE_ADV_OPT_FILTER_SCAN_REQ;
 	}
 
 	switch (own_addr_type) {
@@ -1304,6 +1314,8 @@ static uint8_t set_filter_list(const void *cmd, uint16_t cmd_len,
 			return BTP_STATUS_FAILED;
 		}
 	}
+
+	filter_list_in_use = cp->cnt != 0;
 
 	return BTP_STATUS_SUCCESS;
 }
