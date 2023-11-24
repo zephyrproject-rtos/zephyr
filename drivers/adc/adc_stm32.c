@@ -1379,6 +1379,7 @@ static int adc_stm32_init(const struct device *dev)
 
 #if defined(HAS_CALIBRATION)
 	adc_stm32_calibrate(dev);
+	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
 
 	adc_context_unlock_unconditionally(&data->ctx);
