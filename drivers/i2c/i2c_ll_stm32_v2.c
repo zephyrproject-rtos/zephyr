@@ -142,9 +142,19 @@ static void stm32_i2c_slave_event(const struct device *dev)
 			__ASSERT_NO_MSG(0);
 			return;
 		}
+	} else {
+		/* On STM32 the LL_I2C_GetAddressMatchCode & (ISR register) returns
+		 * only 7bits of address match so 10 bit dual addressing is broken.
+		 * Revert to assuming single address match.
+		 */
+		if (data->slave_cfg != NULL) {
+			slave_cfg = data->slave_cfg;
+		} else {
+			__ASSERT_NO_MSG(0);
+			return;
+		}
 	}
 
-	slave_cfg = data->slave_cfg;
 	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
