@@ -123,6 +123,67 @@ static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
 }
 #endif /* CONFIG_BT_CONN || (CONFIG_BT_BROADCASTER && CONFIG_BT_EXT_ADV) */
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+static const char *tx_power_flag2str(int8_t flag)
+{
+	switch (flag) {
+	case 0:
+		return "Neither Max nor Min Tx Power";
+	case 1:
+		return "Tx Power Level is at minimum";
+	case 2:
+		return "Tx Power Level is at maximum";
+	/* Current Tx Power Level is the only available one*/
+	case 3:
+		return "Tx Power Level is at minimum & maximum.";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *tx_power_report_reason2str(uint8_t reason)
+{
+	switch (reason) {
+	case BT_HCI_LE_TX_POWER_REPORT_REASON_LOCAL_CHANGED:
+		return "Local Tx Power changed";
+	case BT_HCI_LE_TX_POWER_REPORT_REASON_REMOTE_CHANGED:
+		return "Remote Tx Power changed";
+	case BT_HCI_LE_TX_POWER_REPORT_REASON_READ_REMOTE_COMPLETED:
+		return "Completed to read remote Tx Power";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *tx_pwr_ctrl_phy2str(enum bt_conn_le_tx_power_phy phy)
+{
+	switch (phy) {
+	case BT_CONN_LE_TX_POWER_PHY_NONE:
+		return "None";
+	case BT_CONN_LE_TX_POWER_PHY_1M:
+		return "LE 1M";
+	case BT_CONN_LE_TX_POWER_PHY_2M:
+		return "LE 2M";
+	case BT_CONN_LE_TX_POWER_PHY_CODED_S8:
+		return "LE Coded S8";
+	case BT_CONN_LE_TX_POWER_PHY_CODED_S2:
+		return "LE Coded S2";
+	default:
+		return "Unknown";
+	}
+}
+
+static const char *enabled2str(bool enabled)
+{
+	if (enabled) {
+		return "Enabled";
+	} else {
+		return "Disabled";
+	}
+}
+
+#endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
+
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_scan_off(const struct shell *sh);
 static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[]);
@@ -809,6 +870,19 @@ void le_phy_updated(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+void tx_power_report(struct bt_conn *conn,
+		    const struct bt_conn_le_tx_power_report *report)
+{
+	shell_print(ctx_shell, "Tx Power Report: Reason: %s, PHY: %s, Tx Power Level: %d",
+		    tx_power_report_reason2str(report->reason), tx_pwr_ctrl_phy2str(report->phy),
+		    report->tx_power_level);
+	shell_print(ctx_shell, "Tx Power Level Flag Info: %s, Delta: %d",
+		    tx_power_flag2str(report->tx_power_level_flag), report->delta);
+}
+#endif
+
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -828,6 +902,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	.le_phy_updated = le_phy_updated,
+#endif
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	.tx_power_report = tx_power_report,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -2608,6 +2685,102 @@ static int cmd_per_adv_set_info_transfer(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER && CONFIG_BT_PER_ADV */
 
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+static int cmd_read_remote_tx_power(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc < 3) {
+		int err = 0;
+		enum bt_conn_le_tx_power_phy phy = strtoul(argv[1], NULL, 16);
+
+		err = bt_conn_le_get_remote_tx_power_level(default_conn, phy);
+
+		if (!err) {
+			shell_print(sh, "Read Remote TX Power for PHY %s",
+				    tx_pwr_ctrl_phy2str(phy));
+		} else {
+			shell_print(sh, "error %d", err);
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+	return 0;
+}
+
+static int cmd_read_local_tx_power(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (argc < 3) {
+		struct bt_conn_le_tx_power tx_power_level;
+
+		tx_power_level.phy = strtoul(argv[1], NULL, 16);
+
+		int8_t unachievable_current_level = -100;
+		/* Arbitrary, these are output parameters.*/
+		tx_power_level.current_level = unachievable_current_level;
+		tx_power_level.max_level = 6;
+
+		if (default_conn == NULL) {
+			shell_error(sh, "Conn handle error, at least one connection is required.");
+			return -ENOEXEC;
+		}
+		err = bt_conn_le_get_tx_power_level(default_conn, &tx_power_level);
+		if (err) {
+			shell_print(sh, "Commad returned error error %d", err);
+			return err;
+		}
+		if (tx_power_level.current_level == unachievable_current_level) {
+			shell_print(sh, "We received no current tx power level.");
+			return -EIO;
+		}
+		shell_print(sh, "Read local TX Power: current level: %d, PHY: %s, Max Level: %d",
+			    tx_power_level.current_level,
+			    tx_pwr_ctrl_phy2str((enum bt_conn_le_tx_power_phy)tx_power_level.phy),
+			    tx_power_level.max_level);
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return err;
+}
+
+static int cmd_set_power_report_enable(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (argc < 4) {
+		int err = 0;
+		bool local_enable = 0;
+		bool remote_enable = 0;
+
+		if (*argv[1] == '1') {
+			local_enable = 1;
+		}
+		if (*argv[2] == '1') {
+			remote_enable = 1;
+		}
+		if (default_conn == NULL) {
+			shell_error(sh, "Conn handle error, at least one connection is required.");
+			return -ENOEXEC;
+		}
+		err = bt_conn_le_set_tx_power_report_enable(default_conn, local_enable,
+							     remote_enable);
+		if (!err) {
+			shell_print(sh, "Tx Power Report: local: %s, remote: %s",
+				    enabled2str(local_enable), enabled2str(remote_enable));
+		} else {
+			shell_print(sh, "error %d", err);
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+	return 0;
+}
+
+#endif
+
+
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
@@ -4015,6 +4188,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_default_handler),
 	SHELL_CMD_ARG(scan-verbose-output, NULL, "<value: on, off>", cmd_scan_verbose_output, 2, 0),
 #endif /* CONFIG_BT_OBSERVER */
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+	SHELL_CMD_ARG(read-remote-tx-power, NULL, HELP_NONE, cmd_read_remote_tx_power, 2, 0),
+	SHELL_CMD_ARG(read-local-tx-power, NULL, HELP_NONE, cmd_read_local_tx_power, 2, 0),
+	SHELL_CMD_ARG(set-power-report-enable, NULL, HELP_NONE, cmd_set_power_report_enable, 3, 0),
+#endif
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> [mode: discov, non_discov] "
