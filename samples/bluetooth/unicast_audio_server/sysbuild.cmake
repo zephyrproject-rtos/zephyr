@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT("${SB_CONFIG_NET_CORE_BOARD}" STREQUAL ""))
+if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
 	# For builds in the nrf5340, we build the netcore image with the controller
 
 	set(NET_APP hci_ipc)
