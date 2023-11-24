@@ -7,6 +7,8 @@
 Overview
 ********
 
+x
+
 This sample app demonstrates use of a USB DFU Class driver provided
 by the Zephyr project.
 
