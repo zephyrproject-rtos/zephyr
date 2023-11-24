@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: zephyrproject-rtos/action-first-interaction@v1.1.1-zephyr-4
+      - uses: zephyrproject-rtos/action-first-interaction@v1.1.1-zephyr-5
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
