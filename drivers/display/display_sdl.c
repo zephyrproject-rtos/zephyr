@@ -13,10 +13,13 @@
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include "display_sdl_bottom.h"
+#include "cmdline.h"
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_sdl);
+
+static uint32_t sdl_display_zoom_pct;
 
 struct sdl_display_config {
 	uint16_t height;
@@ -54,8 +57,12 @@ static int sdl_display_init(const struct device *dev)
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		;
 
+	if (sdl_display_zoom_pct == UINT32_MAX) {
+		sdl_display_zoom_pct = CONFIG_SDL_DISPLAY_ZOOM_PCT;
+	}
+
 	int rc = sdl_display_init_bottom(config->height, config->width,
-					 CONFIG_SDL_DISPLAY_ZOOM_PCT,
+					 sdl_display_zoom_pct,
 					 &disp_data->window, &disp_data->renderer,
 					 &disp_data->texture);
 
@@ -388,3 +395,22 @@ static const struct display_driver_api sdl_display_api = {
 	NATIVE_TASK(sdl_display_cleanup_##n, ON_EXIT, 1);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_SDL_DEFINE)
+
+static void display_sdl_native_posix_options(void)
+{
+	static struct args_struct_t sdl_display_options[] = {
+		{ .option = "display_zoom_pct",
+		  .name = "pct",
+		  .type = 'u',
+		  .dest = (void *)&sdl_display_zoom_pct,
+		  .descript = "Display zoom percentage (100 == 1:1 scale), "
+			      "by default " STRINGIFY(CONFIG_SDL_DISPLAY_ZOOM_PCT)
+			      " = CONFIG_SDL_DISPLAY_ZOOM_PCT"
+		},
+		ARG_TABLE_ENDMARKER
+	};
+
+	native_add_command_line_opts(sdl_display_options);
+}
+
+NATIVE_TASK(display_sdl_native_posix_options, PRE_BOOT_1, 1);
