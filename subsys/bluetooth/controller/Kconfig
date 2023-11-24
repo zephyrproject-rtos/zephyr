@@ -101,6 +101,9 @@ config BT_CTLR_READ_ISO_LINK_QUALITY_SUPPORT
 		   BT_CTLR_PERIPHERAL_ISO_SUPPORT
 	bool
 
+config BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -483,6 +486,14 @@ config BT_CTLR_CONN_RSSI
 	default y if BT_HCI_RAW
 	help
 	  Enable connection RSSI measurement.
+
+config BT_CTLR_LE_POWER_CONTROL
+	bool "LE Power Control Request Feature"
+	depends on BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	default y if BT_TRANSMIT_POWER_CONTROL
+	help
+	  Enable support for LE Power Control Request feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
 
 endif # BT_CONN
 
