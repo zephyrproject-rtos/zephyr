@@ -388,6 +388,12 @@ else()
   set(OT_PING_SENDER OFF CACHE BOOL "Enable ping sender support" FORCE)
 endif()
 
+if(OPENTHREAD_PLATFORM_KEY_REF)
+  set(OT_PLATFORM_KEY_REF ON CACHE BOOL "Enable platform key reference support" FORCE)
+else()
+  set(OT_PLATFORM_KEY_REF OFF CACHE BOOL "Enable platform key reference support" FORCE)
+endif()
+
 if(CONFIG_OPENTHREAD_PLATFORM_NETIF)
   set(OT_PLATFORM_NETIF ON CACHE BOOL "Enable platform netif support" FORCE)
 else()
