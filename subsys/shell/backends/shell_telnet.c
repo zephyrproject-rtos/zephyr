@@ -39,6 +39,11 @@ static void telnet_end_client_connection(void)
 {
 	struct net_pkt *pkt;
 
+	/* Do not try to disconnect if we already are disconnected */
+	if (sh_telnet->client_ctx == NULL) {
+		return;
+	}
+
 	(void)net_context_put(sh_telnet->client_ctx);
 
 	sh_telnet->client_ctx = NULL;
