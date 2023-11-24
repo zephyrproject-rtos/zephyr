@@ -226,15 +226,6 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr);
 
 /**
- * @brief Read from OA TC6 device and update buffer information
- *
- * @param tc6 OA TC6 specific data
- *
- * @return 0 if successful, <0 otherwise.
- */
-int oa_tc6_update_buf_info(struct oa_tc6 *tc6);
-
-/**
  * @brief Read, modify and write control register from OA TC6 device
  *
  * @param tc6 OA TC6 specific data

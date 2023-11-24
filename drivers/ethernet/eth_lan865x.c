@@ -449,16 +449,15 @@ static void lan865x_int_thread(const struct device *dev)
 		}
 
 		/*
-		 * The IRQ_N is asserted when RCA becomes > 0, so update its value
-		 * before reading chunks.
+		 * The IRQ_N is asserted when RCA becomes > 0. As described in
+		 * OPEN Alliance 10BASE-T1x standard it is deasserted when first
+		 * data header is received by LAN865x.
+		 *
+		 * Hence, it is mandatory to ALWAYS read at least one data chunk!
 		 */
-		if (oa_tc6_update_buf_info(tc6) < 0) {
-			continue;
-		}
-
-		while (tc6->rca > 0) {
+		do {
 			lan865x_read_chunks(dev);
-		}
+		} while (tc6->rca > 0);
 
 		oa_tc6_check_status(tc6);
 	}

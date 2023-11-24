@@ -257,42 +257,6 @@ static void oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
 	tc6->txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
 }
 
-int oa_tc6_update_buf_info(struct oa_tc6 *tc6)
-{
-	uint32_t val;
-	int ret;
-
-	ret = oa_tc6_reg_read(tc6, OA_BUFSTS, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	tc6->rca = FIELD_GET(OA_BUFSTS_RCA, val);
-	tc6->txc = FIELD_GET(OA_BUFSTS_TXC, val);
-
-	/*
-	 * There is a mismatch in the max value of RBA(RCA) and TXC provided by the
-	 * OA TC6 standard.
-	 *
-	 * The OA_BUFSTS register has 8 bits for RBA(RCA) and TXC (max value is 0x30)
-	 *
-	 * However, with footer, the RBA(RCA) and TXC are saturated to 0x1F maximal
-	 * value (due to 32 bit constrain of footer size).
-	 *
-	 * To avoid any issues, the number read directly from OA_BUFSTS is saturated
-	 * as well.
-	 */
-	if (tc6->rca >= OA_TC6_FTR_RCA_MAX) {
-		tc6->rca = OA_TC6_FTR_RCA_MAX;
-	}
-
-	if (tc6->txc >= OA_TC6_FTR_TXC_MAX) {
-		tc6->txc = OA_TC6_FTR_TXC_MAX;
-	}
-
-	return 0;
-}
-
 int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_tx,
 				     uint32_t hdr, uint32_t *ftr)
 {
@@ -346,8 +310,8 @@ int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 {
 	struct net_buf *buf_rx = NULL;
-	uint8_t chunks, sbo, ebo;
 	uint32_t hdr, ftr;
+	uint8_t sbo, ebo;
 	int ret;
 
 	/*
@@ -359,7 +323,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		tc6->concat_buf = NULL;
 	}
 
-	for (chunks = tc6->rca; chunks; chunks--) {
+	do {
 		buf_rx = net_pkt_get_frag(pkt, tc6->cps, OA_TC6_BUF_ALLOC_TIMEOUT);
 		if (!buf_rx) {
 			LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
@@ -443,7 +407,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			 */
 			break;
 		}
-	}
+	} while (tc6->rca > 0);
 
 	return 0;
 
