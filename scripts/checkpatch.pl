@@ -389,6 +389,7 @@ our $Attribute	= qr{
 			__always_unused|
 			__noreturn|
 			__used|
+			__unused|
 			__cold|
 			__pure|
 			__noclone|
