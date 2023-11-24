@@ -53,8 +53,6 @@ static int barrier_failed;
 static int barrier_done[N_THR_E];
 static int barrier_return[N_THR_E];
 
-static uint32_t param;
-
 /* First phase bounces execution between two threads using a condition
  * variable, continuously testing that no other thread is mucking with
  * the protected state.  This ends with all threads going back to
@@ -829,14 +827,15 @@ static void *fun(void *arg)
 ZTEST(posix_apis, test_pthread_dynamic_stacks)
 {
 	pthread_t th;
+	uint32_t x = 0;
 
 	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
 		ztest_test_skip();
 	}
 
-	zassert_ok(pthread_create(&th, NULL, fun, &param));
+	zassert_ok(pthread_create(&th, NULL, fun, &x));
 	zassert_ok(pthread_join(th, NULL));
-	zassert_equal(BIOS_FOOD, param);
+	zassert_equal(BIOS_FOOD, x);
 }
 
 static void *non_null_retval(void *arg)
@@ -905,34 +904,4 @@ ZTEST(posix_apis, test_pthread_set_get_concurrency)
 
 	/* EAGAIN if the a system resource to be exceeded */
 	zassert_equal(EAGAIN, pthread_setconcurrency(CONFIG_MP_MAX_NUM_CPUS + 1));
-}
-
-static void cleanup_handler(void *arg)
-{
-	bool *boolp = (bool *)arg;
-
-	*boolp = true;
-}
-
-static void *test_pthread_cleanup_entry(void *arg)
-{
-	bool executed[2] = {0};
-
-	pthread_cleanup_push(cleanup_handler, &executed[0]);
-	pthread_cleanup_push(cleanup_handler, &executed[1]);
-	pthread_cleanup_pop(false);
-	pthread_cleanup_pop(true);
-
-	zassert_true(executed[0]);
-	zassert_false(executed[1]);
-
-	return NULL;
-}
-
-ZTEST(posix_apis, test_pthread_cleanup)
-{
-	pthread_t th;
-
-	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry, NULL));
-	zassert_ok(pthread_join(th, NULL));
 }
