@@ -8,3 +8,8 @@ config NET_CORE_BOARD
 	default "nrf5340dk_nrf5340_cpunet" if $(BOARD) = "nrf5340dk_nrf5340_cpuapp"
 	default "nrf5340_audio_dk_nrf5340_cpunet" if $(BOARD) = "nrf5340_audio_dk_nrf5340_cpuapp"
 	default "nrf5340bsim_nrf5340_cpunet" if $(BOARD) = "nrf5340bsim_nrf5340_cpuapp"
+
+config NET_CORE_IMAGE_HCI_IPC
+	bool "HCI IPC image on network core"
+	default y
+	depends on NET_CORE_BOARD != ""
