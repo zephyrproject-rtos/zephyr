@@ -2185,6 +2185,7 @@ Networking:
     - canisLupus1313
     - mariuszpos
     - edmont
+    - maciejbaczmanski
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -3666,6 +3667,7 @@ West:
     - canisLupus1313
     - mariuszpos
     - edmont
+    - maciejbaczmanski
   files:
     - modules/openthread/
   labels:
