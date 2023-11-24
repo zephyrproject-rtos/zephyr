@@ -1602,7 +1602,7 @@ Release Notes:
 EC Host Commands:
   status: maintained
   maintainers:
-    - semihalf-niedzwiecki-dawid
+    - niedzwiecki-dawid
   files:
     - subsys/mgmt/ec_host_cmd/
     - include/zephyr/mgmt/ec_host_cmd/
