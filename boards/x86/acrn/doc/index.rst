@@ -62,86 +62,71 @@ Ubuntu 22.04 ISO image use the Zephyr EFI Boot media image.
 Assemble EFI Boot Media
 ***********************
 
-ACRN will boot on the hardware via the GNU GRUB bootloader, which is
-itself launched from the EFI firmware.  These need to be configured
-correctly.
+In the ACRN Shared scenario User VM will be launched from the Service VM.
+The User VM should be inside the image specified in the launch script.
+The Location of the image is defined during the configuration phase.
 
-Locate GRUB
-===========
+Script :file:`launch_user_vm_id1.sh` has the following parameter:
 
-First, you will need a GRUB EFI binary that corresponds to your
-hardware.  In many cases, a simple upstream build from source or a
-copy from a friendly Linux distribution will work.  In some cases it
-will not, however, and GRUB will need to be specially patched for
-specific hardware.  Contact your hardware support team (pause for
-laughter) for clear instructions for how to build a working GRUB.  In
-practice you may just need to ask around and copy a binary from the
-last test that worked for someone.
+.. code-block:: console
 
-Create EFI Boot Filesystem
+   `add_virtual_device   3 virtio-blk /path_to/zephyr.img`
+
+Create FAT disk image
+=====================
+
+Please install :program:`mtools` for accessing FAT disk images without
+mounting.
+
+Create and format disk image with the following commands:
+
+.. code-block:: console
+
+   # Create 10M file
+   $ dd if=/dev/zero of=zephyr.img bs=1M count=10
+
+   # Format image
+   $ mformat -i zephyr.img ::
+
+Populate Zephyr disk image
 ==========================
 
-Now attach your boot media (e.g. a USB stick on /dev/sdb, your
-hardware may differ!) to a Linux system and create an EFI boot
-partition (type code 0xEF) large enough to store your boot artifacts.
-This command feeds the relevant commands to fdisk directly, but you
-can type them yourself if you like:
+Copy built :file:`zephyr.efi` to the disk image with:
 
-    .. code-block:: console
+.. code-block:: console
 
-        # for i in n p 1 "" "" t ef w; do echo $i; done | fdisk /dev/sdb
-        ...
-        <lots of fdisk output>
+   $ mcopy -i zephyr.img build/zephyr/zephyr.efi ::
 
-Now create a FAT filesystem in the new partition and mount it:
+To avoid manually running :file:`zephyr.efi`, create :file:`startup.nsh`,
+and put it inside the Zephyr disk image. UEFI shell looks for this script
+file in any of the FAT file systems available and executes it.
 
-    .. code-block:: console
+Content of the :file:`startup.nsh`:
 
-        # mkfs.vfat -n ACRN_ZEPHYR /dev/sdb1
-        # mkdir -p /mnt/acrn
-        # mount /dev/sdb1 /mnt/acrn
+.. code-block:: bash
 
-Copy Images and Configure GRUB
-==============================
+   @echo "Auto starting zephyr.efi"
+   zephyr.efi
 
-ACRN does not have access to a runtime filesystem of its own.  It
-receives its guest VMs (i.e. zephyr.bin) as GRUB "multiboot" modules.
-This means that we must rely on GRUB's filesystem driver.  The three
-files (GRUB, ACRN and Zephyr) all need to be copied into the
-"/efi/boot" directory of the boot media.  Note that GRUB must be named
-"bootx64.efi" for the firmware to recognize it as the bootloader:
+Copy :file:`startup.nsh` to the Zephyr disk image with:
 
-    .. code-block:: console
+.. code-block:: console
 
-        # mkdir -p /mnt/acrn/efi/boot
-        # cp $PATH_TO_GRUB_BINARY /mnt/acrn/efi/boot/bootx64.efi
-        # cp $ZEPHYR_BASE/build/zephyr/zephyr.bin /mnt/acrn/efi/boot/
-        # cp $PATH_TO_ACRN/build/hypervisor/acrn.bin /mnt/acrn/efi/boot/
+   $ mcopy -i zephyr.img startup.nsh ::
 
-At boot, GRUB will load a "efi/boot/grub.cfg" file for its runtime
-configuration instructions (a feature, ironically, that both ACRN and
-Zephyr lack!).  This needs to load acrn.bin as the boot target and
-pass it the zephyr.bin file as its first module (because Zephyr was
-configured as ``<vm id="0">`` above).  This minimal configuration will
-work fine for all but the weirdest hardware (i.e. "hd0" is virtually
-always the boot filesystem from which grub loaded), no need to fiddle
-with GRUB plugins or menus or timeouts:
+Verify the Zephyr image with the following command:
 
-    .. code-block:: console
+.. code-block:: console
 
-        # cat > /mnt/acrn/efi/boot/grub.cfg<<EOF
-        set root='hd0,msdos1'
-        multiboot2 /efi/boot/acrn.bin
-        module2 /efi/boot/zephyr.bin Zephyr_RawImage
-        boot
-        EOF
+   $ mdir -i zephyr.img
+    Volume in drive : has no label
+    Volume Serial Number is 5FF6-E430
+   Directory for ::/
 
-Now the filesystem should be complete
-
-    .. code-block:: console
-
-        # umount /dev/sdb1
-        # sync
+   zephyr   efi    107841 2023-11-24  12:09
+   startup  nsh        44 2023-11-24  12:11
+          2 files             107 885 bytes
+                           10 342 400 bytes free
 
 Launch Zephyr User VM
 *********************
@@ -156,9 +141,23 @@ Login to Service VM and start Zephyr User VM with:
    $ cd acrn-work
    $ sudo ./launch_user_vm_id1.sh
 
-   WARNING: no console will be available to OS
-   error: no suitable video mode found.
-   *** Booting Zephyr OS build zephyr-v3.5.0 ***
+   UEFI Interactive Shell v2.2
+   EDK II
+   UEFI v2.70 (ARCN, 0x00010000)
+   Mapping table
+         FS0: Alias(s):F0:;BLK0:
+             PciRoot(0x0)/Pci(0x3,0x0)
+   Press ESC in 1 seconds to skip startup.nsh or any other key to continue.
+   Auto starting zephyr.efi
+   Shell> zephyr.efi
+   *** Zephyr EFI Loader ***
+   RSDP found at 0x7f9fa014
+   Zeroing 99424 bytes of memory at 0x105000
+   Copying 32768 data bytes to 0x1000 from image offset
+   Copying 20480 data bytes to 0x100000 from image offset 32768
+   Copying 48032 data bytes to 0x11d460 from image offset 53248
+   Jumping to Entry Point: 0x1137 (48 31 c0 48 31 d2 48)
+   *** Booting Zephyr OS build zephyr-v3.5.0-2061-ga44f9fe02961 ***
    Hello World! acrn
 
 References
