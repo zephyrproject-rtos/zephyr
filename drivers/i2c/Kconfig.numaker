@@ -1,0 +1,14 @@
+# NUMAKER I2C driver configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_NUMAKER
+	bool "Nuvoton NuMaker I2C driver"
+	default y
+	select HAS_NUMAKER_I2C
+	depends on DT_HAS_NUVOTON_NUMAKER_I2C_ENABLED
+	help
+	  This option enables I2C driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker I2C.
