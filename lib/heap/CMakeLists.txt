@@ -4,6 +4,7 @@ zephyr_sources(
   heap.c
   )
 
+zephyr_sources_ifdef(CONFIG_SYS_HEAP_RUNTIME_STATS heap_stats.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_INFO heap_info.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_VALIDATE heap_validate.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_STRESS heap_stress.c)
