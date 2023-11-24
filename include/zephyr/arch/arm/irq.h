@@ -166,11 +166,11 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 	}
 }
 
-#define ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name, ...) \
 	static inline int name##_body(void); \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wattributes\"") \
-	__attribute__ ((interrupt ("IRQ"))) void name(void) \
+	__VA_ARGS__ __attribute__ ((interrupt("IRQ"))) void name(void) \
 	{ \
 		int check_reschedule; \
 		ISR_DIRECT_HEADER(); \

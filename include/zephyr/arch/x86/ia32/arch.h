@@ -320,9 +320,9 @@ static inline void arch_isr_direct_footer(int swap)
 	}
 }
 
-#define ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name, ...) \
 	static inline int name##_body(void); \
-	__attribute__ ((interrupt)) void name(void *stack_frame) \
+	__VA_ARGS__ __attribute__ ((interrupt)) void name(void *stack_frame) \
 	{ \
 		ARG_UNUSED(stack_frame); \
 		int check_reschedule; \

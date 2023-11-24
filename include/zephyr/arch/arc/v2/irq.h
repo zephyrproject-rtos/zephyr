@@ -122,9 +122,9 @@ extern void arch_isr_direct_header(void);
  * Scheduling can not be done in direct isr. If required, please use kernel
  * aware interrupt handling
  */
-#define ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name, ...) \
 	static inline int name##_body(void); \
-	__attribute__ ((_ARC_DIRECT_ISR_FUNC_ATTRIBUTE))void name(void) \
+	__VA_ARGS__ __attribute__ ((_ARC_DIRECT_ISR_FUNC_ATTRIBUTE))void name(void) \
 	{ \
 		ISR_DIRECT_HEADER(); \
 		name##_body(); \

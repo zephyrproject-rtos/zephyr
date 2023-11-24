@@ -92,9 +92,9 @@ static inline void arch_isr_direct_footer(int swap)
 /*
  * TODO: Add support for rescheduling
  */
-#define ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name, ...) \
 	static inline int name##_body(void); \
-	__attribute__ ((interrupt)) void name(void) \
+	__VA_ARGS__ __attribute__ ((interrupt)) void name(void) \
 	{ \
 		ISR_DIRECT_HEADER(); \
 		name##_body(); \

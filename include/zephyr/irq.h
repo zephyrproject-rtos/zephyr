@@ -201,8 +201,9 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  *      }
  *
  * @param name symbol name of the ISR
+ * @param ...  attributes to add to the isr
  */
-#define ISR_DIRECT_DECLARE(name) ARCH_ISR_DIRECT_DECLARE(name)
+#define ISR_DIRECT_DECLARE(name, ...) ARCH_ISR_DIRECT_DECLARE(name, __VA_ARGS__)
 
 /**
  * @brief Lock interrupts.

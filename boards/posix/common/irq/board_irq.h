@@ -60,9 +60,9 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio,
  * All pre/post irq work of the interrupt is handled in the board
  * posix_irq_handler() both for direct and normal interrupts together
  */
-#define ARCH_ISR_DIRECT_DECLARE(name) \
+#define ARCH_ISR_DIRECT_DECLARE(name, ...) \
 	static inline int name##_body(void); \
-	int name(void) \
+	__VA_ARGS__ int name(void) \
 	{ \
 		int check_reschedule; \
 		check_reschedule = name##_body(); \
