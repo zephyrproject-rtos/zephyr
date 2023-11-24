@@ -169,14 +169,24 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	cs-gpios = <&gpioi 5 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpioi 5 GPIO_ACTIVE_LOW>, <&gpioi 7 GPIO_ACTIVE_LOW>;
 
 	lsm6dsv16x: lsm6dsv16x@0 {
 		compatible = "st,lsm6dsv16x";
-		spi-max-frequency = <DT_FREQ_M(10)>; /* 10 MHz */
+		spi-max-frequency = <DT_FREQ_M(10)>;
 		reg = <0>;
 		int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
 		int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+
+		drdy-pin = <2>;
+	};
+
+	lis2du12: lis2du12@1 {
+		compatible = "st,lis2du12";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <1>;
+		int1-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+		int2-gpios = <&gpiof 15 GPIO_ACTIVE_HIGH>;
 
 		drdy-pin = <2>;
 	};
