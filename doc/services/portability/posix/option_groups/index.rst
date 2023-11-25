@@ -82,10 +82,10 @@ This table lists service support status in Zephyr:
     pthread_mutexattr_gettype(),yes
     pthread_mutexattr_settype(),yes
 
-.. _posix_option_group_xsi_thread_ext:
+.. _posix_option_group_xsi_threads_ext:
 
-XSI_THREAD_EXT
-==============
+XSI_THREADS_EXT
+===============
 
 The XSI_THREADS_EXT option group is required because it provides
 functions to control a thread's stack. This is considered useful for any
@@ -93,7 +93,7 @@ real-time application.
 
 This table lists service support status in Zephyr:
 
-.. csv-table:: XSI_THREAD_EXT
+.. csv-table:: XSI_THREADS_EXT
    :header: API, Supported
    :widths: 50,10
 
