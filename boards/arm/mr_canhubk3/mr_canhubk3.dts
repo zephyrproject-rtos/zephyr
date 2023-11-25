@@ -409,10 +409,18 @@
 	phy-connection-type = "rmii";
 	local-mac-address = [02 04 9f aa bb cc];
 	status = "okay";
+};
 
-	fixed-link {
-		speed = <100>;
-		full-duplex;
+&mdio0 {
+	pinctrl-0 = <&mdio0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@12 {
+		compatible = "nxp,tja1103";
+		status = "okay";
+		reg = <0x12>;
+		master-slave = "slave";
 	};
 };
 

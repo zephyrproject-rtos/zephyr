@@ -39,6 +39,14 @@ config PHY_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
 
+config PHY_TJA1103
+	bool "TJA1103 PHY driver"
+	default y
+	depends on DT_HAS_NXP_TJA1103_ENABLED
+	depends on MDIO
+	help
+	  Enable TJA1103 PHY driver.
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000
