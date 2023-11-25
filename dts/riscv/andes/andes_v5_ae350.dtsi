@@ -167,7 +167,7 @@
 		ranges;
 
 		plic0: interrupt-controller@e4000000 {
-			compatible = "sifive,plic-1.0.0";
+			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
