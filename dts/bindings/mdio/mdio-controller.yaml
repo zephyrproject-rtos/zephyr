@@ -15,3 +15,10 @@ properties:
   "#size-cells":
     required: true
     const: 0
+
+  suppress-preamble:
+    type: boolean
+    description: |
+      When present, the SMA suppresses the 32-bit preamble and transmits
+      MDIO frames with only 1 preamble bit. By default, the MDIO frame
+      always has 32 bits of preamble as defined in the IEEE 802.3 specs.
