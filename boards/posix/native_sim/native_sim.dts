@@ -170,6 +170,8 @@
 		low-level;
 		gpio-controller;
 		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
 	};
 
 	zephyr_udc0: udc0 {

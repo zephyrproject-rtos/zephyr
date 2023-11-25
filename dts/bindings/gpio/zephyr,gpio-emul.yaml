@@ -5,7 +5,7 @@ description: GPIO Emulator
 
 compatible: "zephyr,gpio-emul"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, interrupt-controller.yaml, base.yaml]
 
 properties:
   reg:
@@ -32,4 +32,8 @@ properties:
 
 gpio-cells:
   - pin
+  - flags
+
+interrupt-cells:
+  - irq
   - flags
