@@ -66,6 +66,22 @@ multiple processes.
     pthread_sigmask(),
     pthread_testcancel(),
 
+.. _posix_option_group_posix_threads_ext:
+
+POSIX_THREADS_EXT
+=================
+
+This table lists service support status in Zephyr:
+
+.. csv-table:: POSIX_THREADS_EXT
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_attr_getguardsize(),
+    pthread_attr_setguardsize(),
+    pthread_mutexattr_gettype(),yes
+    pthread_mutexattr_settype(),yes
+
 .. _posix_option_group_xsi_thread_ext:
 
 XSI_THREAD_EXT
@@ -81,9 +97,7 @@ This table lists service support status in Zephyr:
    :header: API, Supported
    :widths: 50,10
 
-    pthread_attr_getguardsize(),
     pthread_attr_getstack(),yes
-    pthread_attr_setguardsize(),
     pthread_attr_setstack(),yes
     pthread_getconcurrency(),
     pthread_setconcurrency()
