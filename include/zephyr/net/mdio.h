@@ -110,6 +110,8 @@ enum mdio_opcode {
 #define MDIO_AN_T1_ADV_M		0x0203U
 /** BASE-T1 Auto-negotiation advertisement register [47:32] */
 #define MDIO_AN_T1_ADV_H		0x0204U
+/* BASE-T1 PMA/PMD control register */
+#define MDIO_PMA_PMD_BT1_CTRL		0x0834U
 
 /* BASE-T1 Auto-negotiation Control register */
 /** Auto-negotiation Restart */
@@ -154,6 +156,10 @@ enum mdio_opcode {
 #define MDIO_AN_T1_ADV_H_10L_TX_HI_REQ	BIT(12)
 /* 10BASE-T1L High Level Transmit Operating Mode Ability */
 #define MDIO_AN_T1_ADV_H_10L_TX_HI	BIT(13)
+
+/* BASE-T1 PMA/PMD control register */
+/** BASE-T1 master/slave configuration */
+#define MDIO_PMA_PMD_BT1_CTRL_CFG_MST	BIT(14)
 
 
 /* 10BASE-T1L registers */

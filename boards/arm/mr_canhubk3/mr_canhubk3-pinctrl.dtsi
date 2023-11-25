@@ -270,6 +270,18 @@
 		};
 	};
 
+	mdio0_default: mdio0_default {
+		group1 {
+			pinmux = <(PTD16_EMAC_MII_RMII_MDIO_O | PTD16_EMAC_MII_RMII_MDIO_I)>;
+			input-enable;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PTE8_EMAC_MII_RMII_MDC>;
+			output-enable;
+		};
+	};
+
 	emios0_default: emios0_default {
 		group1 {
 			pinmux = <PTB12_EMIOS_0_CH0_X_O>, <PTB13_EMIOS_0_CH1_G_O>,
