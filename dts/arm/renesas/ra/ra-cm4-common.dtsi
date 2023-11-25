@@ -39,21 +39,21 @@
 		hoco: hoco {
 			compatible = "fixed-clock";
 			clock-frequency = <24000000>;
-			status = "disabled";
+			status = "okay";
 			#clock-cells = <0>;
 		};
 
 		moco: moco {
 			compatible = "fixed-clock";
 			clock-frequency = <8000000>;
-			status = "disabled";
+			status = "okay";
 			#clock-cells = <0>;
 		};
 
 		loco: loco {
 			compatible = "fixed-clock";
 			clock-frequency = <32768>;
-			status = "disabled";
+			status = "okay";
 			#clock-cells = <0>;
 		};
 
