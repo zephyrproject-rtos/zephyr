@@ -224,6 +224,17 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 	return key_pressed;
 }
 
+static k_timepoint_t input_kbd_matrix_poll_timeout(const struct device *dev)
+{
+	const struct input_kbd_matrix_common_config *cfg = dev->config;
+
+	if (cfg->poll_timeout_ms == 0) {
+		return sys_timepoint_calc(K_FOREVER);
+	}
+
+	return sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+}
+
 static void input_kbd_matrix_poll(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
@@ -232,13 +243,13 @@ static void input_kbd_matrix_poll(const struct device *dev)
 	uint32_t cycles_diff;
 	uint32_t wait_period_us;
 
-	poll_time_end = sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+	poll_time_end = input_kbd_matrix_poll_timeout(dev);
 
 	while (true) {
 		uint32_t start_period_cycles = k_cycle_get_32();
 
 		if (input_kbd_matrix_check_key_events(dev)) {
-			poll_time_end = sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+			poll_time_end = input_kbd_matrix_poll_timeout(dev);
 		} else if (sys_timepoint_expired(poll_time_end)) {
 			break;
 		}
