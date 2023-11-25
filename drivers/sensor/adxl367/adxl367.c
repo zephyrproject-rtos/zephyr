@@ -287,16 +287,22 @@ int adxl367_self_test(const struct device *dev)
 	switch (cfg->odr) {
 	case ADXL367_ODR_12P5HZ:
 		st_delay_ms = 320;
+		break;
 	case ADXL367_ODR_25HZ:
 		st_delay_ms = 160;
+		break;
 	case ADXL367_ODR_50HZ:
 		st_delay_ms = 80;
+		break;
 	case ADXL367_ODR_100HZ:
 		st_delay_ms = 40;
+		break;
 	case ADXL367_ODR_200HZ:
 		st_delay_ms = 20;
+		break;
 	case ADXL367_ODR_400HZ:
 		st_delay_ms = 10;
+		break;
 	default:
 		return -EINVAL;
 	}
