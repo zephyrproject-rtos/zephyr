@@ -154,6 +154,7 @@ struct adxl345_dev_data {
 	enum adxl345_odr odr;
 	enum adxl345_range range;
 	enum adxl345_fifo fifo_mode;
+	uint16_t scale_factor;
 
 #if defined(CONFIG_ADXL345_TRIGGER)
 	struct gpio_callback gpio_cb;

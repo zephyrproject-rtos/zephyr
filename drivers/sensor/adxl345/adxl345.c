@@ -120,7 +120,6 @@ static inline bool adxl345_bus_is_ready(const struct device *dev)
 
 static int adxl345_read_sample(const struct device *dev, struct adxl345_sample *sample)
 {
-	int16_t raw_x, raw_y, raw_z;
 	uint8_t axis_data[6];
 
 	int rc = adxl345_reg_read(dev, ADXL345_X_AXIS_DATA_0_REG, axis_data, 6);
@@ -130,27 +129,17 @@ static int adxl345_read_sample(const struct device *dev, struct adxl345_sample *
 		return rc;
 	}
 
-	raw_x = axis_data[0] | (axis_data[1] << 8);
-	raw_y = axis_data[2] | (axis_data[3] << 8);
-	raw_z = axis_data[4] | (axis_data[5] << 8);
-
-	sample->x = raw_x;
-	sample->y = raw_y;
-	sample->z = raw_z;
-
-	LOG_INF("Sample raw: x: %d, y: %d, z: %d", raw_x, raw_y, raw_z);
+	sample->x = axis_data[0] | (axis_data[1] << 8);
+	sample->y = axis_data[2] | (axis_data[3] << 8);
+	sample->z = axis_data[4] | (axis_data[5] << 8);
 
 	return 0;
 }
 
-static void adxl345_accel_convert(struct sensor_value *val, int16_t sample)
+static inline void adxl345_accel_convert(struct sensor_value *val, int16_t sample, uint16_t scale)
 {
-	if (sample & BIT(9)) {
-		sample |= ADXL345_COMPLEMENT;
-	}
-
-	val->val1 = ((sample * SENSOR_G) / 32) / 1000000;
-	val->val2 = ((sample * SENSOR_G) / 32) % 1000000;
+	int64_t micro_g = (sample * scale) * 1000;
+	sensor_ug_to_ms2(micro_g, val);
 }
 
 static int adxl345_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -199,21 +188,21 @@ static int adxl345_channel_get(const struct device *dev, enum sensor_channel cha
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl345_accel_convert(val, data->bufx[data->sample_number]);
+		adxl345_accel_convert(val, data->bufx[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl345_accel_convert(val, data->bufy[data->sample_number]);
+		adxl345_accel_convert(val, data->bufy[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl345_accel_convert(val, data->bufz[data->sample_number]);
+		adxl345_accel_convert(val, data->bufz[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl345_accel_convert(val++, data->bufx[data->sample_number]);
-		adxl345_accel_convert(val++, data->bufy[data->sample_number]);
-		adxl345_accel_convert(val, data->bufz[data->sample_number]);
+		adxl345_accel_convert(val++, data->bufx[data->sample_number], data->scale_factor);
+		adxl345_accel_convert(val++, data->bufy[data->sample_number], data->scale_factor);
+		adxl345_accel_convert(val, data->bufz[data->sample_number], data->scale_factor);
 		data->sample_number++;
 		break;
 	default:
@@ -243,10 +232,29 @@ static int adxl345_set_output_rate(const struct device *dev, const enum adxl345_
 
 static int adxl345_set_range(const struct device *dev, const enum adxl345_range range)
 {
-	int rc = adxl345_reg_write_mask(dev, ADXL345_DATA_FORMAT_REG, ADXL345_DATA_FORMAT_RANGE_MSK,
-					range);
+	int rc;
+	struct adxl345_dev_data *data = dev->data;
+
+	rc = adxl345_reg_write_mask(dev, ADXL345_DATA_FORMAT_REG, ADXL345_DATA_FORMAT_RANGE_MSK,
+				    range);
 	if (rc < 0) {
 		return -EIO;
+	}
+
+	switch (range) {
+	case ADXL345_2G_RANGE:
+		data->scale_factor = 4;
+		break;
+	case ADXL345_4G_RANGE:
+		data->scale_factor = 8;
+		break;
+	case ADXL345_8G_RANGE:
+		data->scale_factor = 16;
+		break;
+	case ADXL345_16G_RANGE:
+	default:
+		data->scale_factor = 32;
+		break;
 	}
 
 	return rc;
