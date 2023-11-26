@@ -40,8 +40,10 @@ node-macro =/ %s"DT_N" path-id %s"_IRQ_NUM"
 node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT "_EXISTS"
 node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
+node-macro =/ %s"DT_N" path-id %s"_CONTROLLER"
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
+node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name "_CONTROLLER"
 ; The ranges property is also special.
 node-macro =/ %s"DT_N" path-id %s"_RANGES_NUM"
 node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT "_EXISTS"
