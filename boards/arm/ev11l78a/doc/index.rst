@@ -55,6 +55,9 @@ features:
     * - ADC
       - on-chip
       - Analog to Digital Converter
+    * - DAC
+      - on-chip
+      - Digital to Analog Converter
     * - GPIO
       - on-chip
       - I/O ports
