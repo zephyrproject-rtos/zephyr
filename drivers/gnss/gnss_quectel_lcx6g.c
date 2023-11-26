@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/drivers/gnss.h>
+#include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/modem/chat.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/kernel.h>
@@ -14,7 +15,6 @@
 #include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
-#include "gnss_publish.h"
 #include "gnss_nmea0183.h"
 #include "gnss_nmea0183_match.h"
 #include "gnss_parse.h"
