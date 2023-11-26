@@ -63,23 +63,20 @@ static int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
-static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
-				     uint8_t *data, size_t len)
+static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr, uint8_t *data,
+			      size_t len)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 
 	return cfg->reg_access(dev, cmd, addr, data, len);
 }
 
-static inline int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
-				    uint8_t len)
+static inline int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data, uint8_t len)
 {
-
 	return adxl345_reg_access(dev, ADXL345_WRITE_CMD, addr, data, len);
 }
 
-static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
-				   uint8_t len)
+static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data, uint8_t len)
 {
 	return adxl345_reg_access(dev, ADXL345_READ_CMD, addr, data, len);
 }
@@ -95,7 +92,7 @@ static inline int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, 
 }
 
 static inline int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask,
-					 uint8_t data)
+				  uint8_t data)
 {
 	int ret;
 	uint8_t tmp;

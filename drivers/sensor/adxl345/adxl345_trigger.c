@@ -18,28 +18,76 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
+static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
+				     uint8_t *data, size_t len)
+{
+	const struct adxl345_dev_config *cfg = dev->config;
+
+	return cfg->reg_access(dev, cmd, addr, data, len);
+}
+
+static inline int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
+				    uint8_t len)
+{
+	return adxl345_reg_access(dev, ADXL345_WRITE_CMD, addr, data, len);
+}
+
+static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
+				   uint8_t len)
+{
+	return adxl345_reg_access(dev, ADXL345_READ_CMD, addr, data, len);
+}
+
+static inline int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
+{
+	return adxl345_reg_write(dev, addr, &val, 1);
+}
+
+static inline int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
+{
+	return adxl345_reg_read(dev, addr, buf, 1);
+}
+
+static inline int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask,
+					 uint8_t data)
+{
+	int ret;
+	uint8_t tmp;
+
+	ret = adxl345_reg_read_byte(dev, reg_addr, &tmp);
+	if (ret != 0) {
+		return ret;
+	}
+
+	tmp &= ~mask;
+	tmp |= data;
+
+	return adxl345_reg_write_byte(dev, reg_addr, tmp);
+}
+
 static void adxl345_thread_cb(const struct device *dev)
 {
-	LOG_INF("NEW ADXL TRIGGER RECEIVED");
-	const struct adxl345_dev_config *cfg = dev->config;
 	struct adxl345_dev_data *drv_data = dev->data;
 	uint8_t status;
 	int rc;
 
 	// Read and clear the interrupt status
-	rc = adxl345_reg_read_byte(drv_data->dev, ADXL345_INT_SOURCE, &status);
+	rc = adxl345_reg_read_byte(drv_data->dev, ADXL345_INT_SOURCE_REG, &status);
 	if (0 != rc) {
 		return;
 	}
 
 	if (NULL != drv_data->drdy_handler) {
-		if (FIELD_GET(ADXL345_INT_SOURCE_DATA_RDY_MSK, status) != 0) {
+		if (FIELD_GET(ADXL345_INT_SOURCE_DATA_READY_BIT, status) != 0) {
 			drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 		}
 	}
 
-	rc = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
-	__ASSERT(ret == 0, "Interrupt configuration failed");
+	if (NULL != drv_data->waterfall_handler) {
+		if (FIELD_GET(ADXL345_INT_SOURCE_WATERMARK_BIT, status) != 0) {
+			drv_data->waterfall_handler(dev, drv_data->drdy_trigger);
+		}
+	}
 }
 
 static void adxl345_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -99,19 +147,14 @@ int adxl345_trigger_set(const struct device *dev, const struct sensor_trigger *t
 	case SENSOR_TRIG_DATA_READY: {
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = trig;
-		int_mask = ADXL345_INT_ENABLE_DATA_RDY_MSK;
+		int_mask = ADXL345_INT_ENABLE_DATA_READY_BIT;
 		break;
 	}
-	case SENSOR_TRIG_TAP: {
-		drv_data->single_tap_handler = handler;
-		drv_data->single_tap_trigger = trig;
-		int_mask = ADXL345_INT_ENABLE_SINGLE_TAP_MSK;
-		adxl345_reg_write_mask(dev, ADXL345_DUR, 0xFF, 1);
-		adxl345_reg_write_mask(dev, ADXL345_THRESH_TAP, 0xFF, 1);
-		adxl345_reg_write_mask(dev, ADXL345_TAP_AXES, 0b111, 0b111);
-
-		int_mask = ADXL345_INT_ENABLE_SINGLE_TAP_MSK;
-
+	case SENSOR_TRIG_FIFO_WATERMARK: {
+		drv_data->waterfall_handler = handler;
+		drv_data->waterfall_trigger = trig;
+		int_mask = ADXL345_INT_ENABLE_WATERMARK_BIT;
+		adxl345_reg_write_mask(dev, ADXL345_FIFO_CTL_REG, ADXL345_FIFO_CTL_SAMPLE_MSK, 10);
 		break;
 	}
 	default:
@@ -119,22 +162,22 @@ int adxl345_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		return -ENOTSUP;
 	}
 
-	rc = adxl345_reg_write_mask(dev, ADXL345_INT_MAP, 0xFF, 0xFF);
-	if (0 != rc) {
-		return rc;
-	}
-
-	rc = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE, int_mask, int_mask);
-	if (0 != rc) {
-		return rc;
-	}
-
-	rc = adxl345_reg_read_byte(dev, ADXL345_INT_SOURCE, &status);
-	if (0 != rc) {
-		return rc;
-	}
+	// TODO: add support for setting the interrupt map (INT pin on ADXL345)
 
 	rc = gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
+	if (0 != rc) {
+		return rc;
+	}
+
+	rc = adxl345_reg_write_mask(dev, ADXL345_INT_ENABLE_REG, int_mask, int_mask);
+	if (0 != rc) {
+		return rc;
+	}
+
+	rc = adxl345_reg_read_byte(dev, ADXL345_INT_SOURCE_REG, &status);
+	if (0 != rc) {
+		return rc;
+	}
 
 	return rc;
 }
@@ -168,9 +211,8 @@ int adxl345_init_interrupt(const struct device *dev)
 		return rc;
 	}
 
-	// enable interrupt only when at least one trigger is configured
-
-	drv_data->dev = dev;
+	// reset sensor registers
+	rc = adxl345_reg_write_byte(dev, ADXL345_INT_ENABLE_REG, 0);
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
 	// TODO: validate return code of thread creation
@@ -183,5 +225,6 @@ int adxl345_init_interrupt(const struct device *dev)
 	drv_data->work.handler = adxl345_work_cb;
 #endif
 
+	drv_data->dev = dev;
 	return 0;
 }

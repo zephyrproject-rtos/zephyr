@@ -161,8 +161,9 @@ struct adxl345_dev_data {
 
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;
-	sensor_trigger_handler_t single_tap_handler;
-	const struct sensor_trigger *single_tap_trigger;
+	sensor_trigger_handler_t waterfall_handler;
+	const struct sensor_trigger *waterfall_trigger;
+
 	const struct device *dev;
 
 #if defined(CONFIG_ADXL345_TRIGGER_OWN_THREAD)
@@ -205,11 +206,8 @@ struct adxl345_dev_config {
 
 #ifdef CONFIG_ADXL345_TRIGGER
 int adxl345_init_interrupt(const struct device *dev);
-int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
-int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask, uint8_t data);
-
 int adxl345_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler);
+			sensor_trigger_handler_t handle);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */
