@@ -1,0 +1,13 @@
+# Copyright (c) 2023, Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO used to enable the power Sink on the EV11L78A board
+
+compatible: "microchip,ev11l78a-ensink"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to enable the power sink on the EV11L78A board, output.

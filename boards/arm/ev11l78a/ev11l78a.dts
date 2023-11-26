@@ -43,6 +43,11 @@
 		sense-gain-mult = <100>;
 	};
 
+	enable_sink: enable_sink {
+		compatible = "microchip,ev11l78a-ensink";
+		gpios = <&porta 22 GPIO_ACTIVE_HIGH>;
+	};
+
 };
 
 &cpu0 {
