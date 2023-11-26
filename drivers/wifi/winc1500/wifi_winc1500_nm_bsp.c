@@ -52,13 +52,13 @@ int8_t nm_bsp_deinit(void)
 void nm_bsp_reset(void)
 {
 	gpio_pin_set_dt(&winc1500_config.chip_en_gpio, 0);
-	gpio_pin_set_dt(&winc1500_config.reset_gpio, 0);
+	gpio_pin_set_dt(&winc1500_config.reset_gpio, 1);
 	nm_bsp_sleep(100);
 
 	gpio_pin_set_dt(&winc1500_config.chip_en_gpio, 1);
 	nm_bsp_sleep(10);
 
-	gpio_pin_set_dt(&winc1500_config.reset_gpio, 1);
+	gpio_pin_set_dt(&winc1500_config.reset_gpio, 0);
 	nm_bsp_sleep(10);
 }
 
