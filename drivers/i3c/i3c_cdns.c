@@ -375,9 +375,11 @@
 #define I3C_MAX_MSGS				10
 #define I3C_SIR_DEFAULT_DA			0x7F
 #define I3C_MAX_IDLE_CANCEL_WAIT_RETRIES	50
-#define I3C_MAX_IDLE_WAIT_RETRIES		5000
 #define I3C_PRESCL_REG_SCALE			(4)
 #define I2C_PRESCL_REG_SCALE			(5)
+#define I3C_WAIT_FOR_IDLE_STATE_US		100
+#define I3C_IDLE_TIMEOUT_CYC                                                                       \
+	(I3C_WAIT_FOR_IDLE_STATE_US * (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC))
 
 /* Target T_LOW period in open-drain mode. */
 #define I3C_BUS_TLOW_OD_MIN_NS 200
@@ -608,6 +610,25 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 		}
 		val = sys_le32_to_cpu(sys_read32(config->base + RX_FIFO));
 		memcpy(ptr, &val, remain);
+	}
+
+	return 0;
+}
+
+static inline int cdns_i3c_wait_for_idle(const struct device *dev)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	uint32_t start_time = k_cycle_get_32();
+
+	/**
+	 * Spin waiting for device to go idle. It is unlikely that this will
+	 * actually take any time unless if the last transaction came immediately
+	 * after an error condition.
+	 */
+	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE)) {
+		if (k_cycle_get_32() - start_time > I3C_IDLE_TIMEOUT_CYC) {
+			return -EAGAIN;
+		}
 	}
 
 	return 0;
@@ -995,19 +1016,9 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
-	/**
-	 * Spin waiting for device to go idle. It is unlikely that this will
-	 * actually take any time unless if the last transaction came immediately
-	 * after an error condition.
-	 */
-	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
-
-	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
-		retry_count--;
-	}
-	if (retry_count == 0) {
-		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
-		ret = -EAGAIN;
+	/* wait for idle */
+	ret = cdns_i3c_wait_for_idle(dev);
+	if (ret != 0) {
 		goto error;
 	}
 
@@ -1383,19 +1394,9 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
-	/**
-	 * Spin waiting for device to go idle. It is unlikely that this will
-	 * actually take any time unless if the last transaction came immediately
-	 * after an error condition.
-	 */
-	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
-
-	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
-		retry_count--;
-	}
-	if (retry_count == 0) {
-		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
-		ret = -EAGAIN;
+	/* wait for idle */
+	ret = cdns_i3c_wait_for_idle(dev);
+	if (ret != 0) {
 		goto error;
 	}
 
@@ -1676,19 +1677,9 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
-	/**
-	 * Spin waiting for device to go idle. It is unlikely that this will
-	 * actually take any time unless if the last transaction came immediately
-	 * after an error condition.
-	 */
-	uint32_t retry_count = I3C_MAX_IDLE_WAIT_RETRIES;
-
-	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE) && (retry_count > 0)) {
-		retry_count--;
-	}
-	if (retry_count == 0) {
-		LOG_ERR("%s: Unable to start transfer, device not idle", dev->name);
-		ret = -EAGAIN;
+	/* wait for idle */
+	ret = cdns_i3c_wait_for_idle(dev);
+	if (ret != 0) {
 		goto error;
 	}
 
