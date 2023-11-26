@@ -215,6 +215,18 @@ static inline void gclk_main_configure(void)
 	GCLK->GENCTRL[0].bit.SRC = GCLK_GENCTRL_SRC_DFLL48M_Val;
 }
 
+#if !CONFIG_USB_DC_SAM0
+#define gclk_usb_configure()
+#else
+static inline void gclk_usb_configure(void)
+{
+	GCLK->GENCTRL[2].reg = 0
+		| GCLK_GENCTRL_SRC_DFLL48M
+		| GCLK_GENCTRL_DIV(1)
+		| GCLK_GENCTRL_GENEN;
+}
+#endif
+
 #if !CONFIG_ADC_SAM0
 #define gclk_adc_configure()
 #else
@@ -255,5 +267,6 @@ void z_arm_platform_init(void)
 	flash_waitstates_init();
 	pm_init();
 	gclk_main_configure();
+	gclk_usb_configure();
 	gclk_adc_configure();
 }
