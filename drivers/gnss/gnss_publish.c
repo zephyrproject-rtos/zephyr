@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "gnss_publish.h"
+#include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
 

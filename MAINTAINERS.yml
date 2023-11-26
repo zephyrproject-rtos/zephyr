@@ -1103,6 +1103,7 @@ Release Notes:
     - doc/hardware/peripherals/gnss.rst
     - drivers/gnss/
     - include/zephyr/drivers/gnss.h
+    - include/zephyr/drivers/gnss/
     - tests/drivers/build_all/gnss/
     - tests/drivers/gnss/
   labels:
