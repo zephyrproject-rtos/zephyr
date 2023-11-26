@@ -349,6 +349,32 @@ enum sensor_attribute {
 	 */
 	SENSOR_ATTR_PRIV_START = SENSOR_ATTR_COMMON_COUNT,
 
+
+	/**
+	 * Threshold in milli G to identify an active movement
+	 */
+	SENSOR_ATTR_ACTIVE_THRESH,
+
+	/**
+	 * Threshold in milli G to identify an inactive movement
+	 */
+	SENSOR_ATTR_INACTIVE_THRESH,
+
+	/**
+	 * Threshold in milliseconds to identify an inactive movement
+	 */
+	SENSOR_ATTR_INACTIVE_TIME,
+
+	/**
+	 * Amount of samples in the FIFO to trigger interrupt if exceeds
+	 */
+	SENSOR_ATTR_WATERFALL_LEVEL,
+
+	/**
+	 *  Various accelerator sensors have the attribute to link active and inactive movements
+	 */
+	SENSOR_ATTR_LINK_MOVEMENT,
+
 	/**
 	 * Maximum value describing a sensor attribute type.
 	 */

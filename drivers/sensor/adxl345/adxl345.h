@@ -163,6 +163,10 @@ struct adxl345_dev_data {
 	const struct sensor_trigger *drdy_trigger;
 	sensor_trigger_handler_t waterfall_handler;
 	const struct sensor_trigger *waterfall_trigger;
+	sensor_trigger_handler_t active_handler;
+	const struct sensor_trigger *active_trigger;
+	sensor_trigger_handler_t inactive_handler;
+	const struct sensor_trigger *inactive_trigger;
 
 	const struct device *dev;
 

@@ -88,6 +88,18 @@ static void adxl345_thread_cb(const struct device *dev)
 			drv_data->waterfall_handler(dev, drv_data->drdy_trigger);
 		}
 	}
+
+	if (NULL != drv_data->active_handler) {
+		if (FIELD_GET(ADXL345_INT_SOURCE_ACTIVE_BIT, status) != 0) {
+			drv_data->active_handler(dev, drv_data->drdy_trigger);
+		}
+	}
+
+	if (NULL != drv_data->inactive_handler) {
+		if (FIELD_GET(ADXL345_INT_SOURCE_INACTIVE_BIT, status) != 0) {
+			drv_data->inactive_handler(dev, drv_data->drdy_trigger);
+		}
+	}
 }
 
 static void adxl345_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -154,7 +166,26 @@ int adxl345_trigger_set(const struct device *dev, const struct sensor_trigger *t
 		drv_data->waterfall_handler = handler;
 		drv_data->waterfall_trigger = trig;
 		int_mask = ADXL345_INT_ENABLE_WATERMARK_BIT;
-		adxl345_reg_write_mask(dev, ADXL345_FIFO_CTL_REG, ADXL345_FIFO_CTL_SAMPLE_MSK, 10);
+		break;
+	}
+	case SENSOR_TRIG_MOTION: {
+		drv_data->active_handler = handler;
+		drv_data->active_trigger = trig;
+		int_mask = ADXL345_INT_ENABLE_ACTIVE_BIT;
+		// TODO: make axis selection dynamic via sensor_attr_set
+		adxl345_reg_write_mask(dev, ADXL345_ACT_INACT_CTL_REG,
+				       ADXL345_ACT_INACT_CTL_ACT_AXIS_MSK,
+				       ADXL345_ACT_INACT_CTL_ACT_AXIS_MSK);
+		break;
+	}
+	case SENSOR_TRIG_STATIONARY: {
+		drv_data->inactive_handler = handler;
+		drv_data->inactive_trigger = trig;
+		int_mask = ADXL345_INT_ENABLE_INACTIVE_BIT;
+		// TODO: make axis selection dynamic via sensor_attr_set
+		adxl345_reg_write_mask(dev, ADXL345_ACT_INACT_CTL_REG,
+				       ADXL345_ACT_INACT_CTL_INACT_AXIS_MSK,
+				       ADXL345_ACT_INACT_CTL_INACT_AXIS_MSK);
 		break;
 	}
 	default:

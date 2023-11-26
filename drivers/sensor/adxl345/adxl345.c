@@ -63,20 +63,22 @@ static int adxl345_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
-static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr, uint8_t *data,
-			      size_t len)
+static inline int adxl345_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr,
+				     uint8_t *data, size_t len)
 {
 	const struct adxl345_dev_config *cfg = dev->config;
 
 	return cfg->reg_access(dev, cmd, addr, data, len);
 }
 
-static inline int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data, uint8_t len)
+static inline int adxl345_reg_write(const struct device *dev, uint8_t addr, uint8_t *data,
+				    uint8_t len)
 {
 	return adxl345_reg_access(dev, ADXL345_WRITE_CMD, addr, data, len);
 }
 
-static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data, uint8_t len)
+static inline int adxl345_reg_read(const struct device *dev, uint8_t addr, uint8_t *data,
+				   uint8_t len)
 {
 	return adxl345_reg_access(dev, ADXL345_READ_CMD, addr, data, len);
 }
@@ -92,7 +94,7 @@ static inline int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, 
 }
 
 static inline int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask,
-				  uint8_t data)
+					 uint8_t data)
 {
 	int ret;
 	uint8_t tmp;
@@ -208,14 +210,6 @@ static int adxl345_channel_get(const struct device *dev, enum sensor_channel cha
 
 	return 0;
 }
-
-static const struct sensor_driver_api adxl345_api_funcs = {
-	.sample_fetch = adxl345_sample_fetch,
-	.channel_get = adxl345_channel_get,
-#ifdef CONFIG_ADXL345_TRIGGER
-	.trigger_set = adxl345_trigger_set,
-#endif
-};
 
 static int adxl345_set_output_rate(const struct device *dev, const enum adxl345_odr odr)
 {
@@ -369,6 +363,37 @@ static int adxl345_init(const struct device *dev)
 
 	return 0;
 }
+
+static int adxl345_attr_set(const struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr, const struct sensor_value *val)
+{
+	switch (attr) {
+	case SENSOR_ATTR_WATERFALL_LEVEL:
+		return adxl345_reg_write_mask(dev, ADXL345_FIFO_CTL_REG,
+					      ADXL345_FIFO_CTL_SAMPLE_MSK, 10);
+	case SENSOR_ATTR_ACTIVE_THRESH:
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, (val->val1) / 62.5);
+	case SENSOR_ATTR_INACTIVE_THRESH:
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_INACT_REG, (val->val1) / 62.5);
+	case SENSOR_ATTR_INACTIVE_TIME:
+		return adxl345_reg_write_byte(dev, ADXL345_TIME_INACT_REG, (val->val1) / 1000);
+	case SENSOR_ATTR_LINK_MOVEMENT:
+		return adxl345_reg_write_mask(dev, ADXL345_POWER_CTL_REG,
+					      ADXL345_POWER_CTL_LINK_BIT,
+					      ADXL345_POWER_CTL_LINK_BIT);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static const struct sensor_driver_api adxl345_api_funcs = {
+	.sample_fetch = adxl345_sample_fetch,
+	.channel_get = adxl345_channel_get,
+	.attr_set = adxl345_attr_set,
+#ifdef CONFIG_ADXL345_TRIGGER
+	.trigger_set = adxl345_trigger_set,
+#endif
+};
 
 #ifdef CONFIG_ADXL345_TRIGGER
 #define ADXL345_CFG_IRQ(inst) .interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
