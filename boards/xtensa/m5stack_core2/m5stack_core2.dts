@@ -182,10 +182,12 @@
 	pinctrl-names = "default";
 	dma-enabled;
 	clock-frequency = <20000000>;
-	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
+			   <&gpio0 4 GPIO_ACTIVE_LOW>;
 
 	ili9342c: ili9342c@0 {
 		compatible = "ilitek,ili9342c";
+		status = "okay";
 		spi-max-frequency = <30000000>;
 		reg = <0>;
 		cmd-data-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
@@ -196,6 +198,18 @@
 		width = <320>;
 		height = <240>;
 		rotation = <0>;
+	};
+
+	sdhc0: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <20000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+
 	};
 };
 
