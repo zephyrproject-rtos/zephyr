@@ -15,5 +15,6 @@ supported:
   - dma
   - watchdog
   - spi
+  - adc
 ram: 128
 flash: 512
