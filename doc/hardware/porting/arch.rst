@@ -61,9 +61,9 @@ Common steps for all architectures:
 * If running an :abbr:`XIP (eXecute-In-Place)` kernel, copy initialized data
   from ROM to RAM.
 * If not using an ELF loader, zero the BSS section.
-* Jump to :code:`_Cstart()`, the early kernel initialization
+* Jump to :code:`z_cstart()`, the early kernel initialization
 
-  * :code:`_Cstart()` is responsible for context switching out of the fake
+  * :code:`z_cstart()` is responsible for context switching out of the fake
     context running at startup into the main thread.
 
 Some examples of architecture-specific steps that have to be taken:
