@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr Sensor Device
+
+compatible: "zephyr,sensor-channel"
+
+include: sensor-channel.yaml
