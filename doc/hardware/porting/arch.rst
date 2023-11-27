@@ -47,6 +47,16 @@ some are optional:
 * **Linker scripts and toolchains**: architecture-specific details will most
   likely be needed in the build system and when linking the image (required).
 
+* **Memory Management and Memory Mapping**: for architecture-specific details
+  on supporting memory management and memory mapping.
+
+* **Stack Objects**: for architecture-specific details on memory protection
+  hardware regarding stack objects.
+
+* **User Mode Threads**: for supporting threads in user mode.
+
+* **GDB Stub**: for supporting GDB stub to enable remote debugging.
+
 Early Boot Sequence
 *******************
 
@@ -467,8 +477,8 @@ be derived from the linker scripts of other architectures. Some sections might
 be specific to the new architecture, for example the SCB section on ARM and the
 IDT section on x86.
 
-Memory Management
-*****************
+Memory Management and Memory Mapping
+************************************
 
 If the target platform enables paging and requires drivers to memory-map
 their I/O regions, :kconfig:option:`CONFIG_MMU` needs to be enabled and the
