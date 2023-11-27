@@ -448,8 +448,6 @@ static int sys_clock_driver_init(void)
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
-	accumulated_lptim_cnt = 0;
-
 #if !defined(CONFIG_SOC_SERIES_STM32U5X) && \
 	!defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Enable the LPTIM counter */
