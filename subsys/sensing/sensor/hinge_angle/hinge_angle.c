@@ -157,7 +157,7 @@ static void hinge_reporter_on_data_event(sensing_sensor_handle_t handle,
 		.on_data_event = hinge_reporter_on_data_event,			\
 		.context = &_CONCAT(hinge_ctx, _inst),				\
 	};									\
-	SENSING_SENSOR_DT_INST_DEFINE(_inst, &hinge_reg,			\
+	SENSING_SENSORS_DT_INST_DEFINE(_inst, &hinge_reg,			\
 		&_CONCAT(hinge_cb, _inst),					\
 		&hinge_init, NULL,						\
 		&_CONCAT(hinge_ctx, _inst), NULL,				\
