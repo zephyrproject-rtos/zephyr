@@ -32,6 +32,11 @@ config SOC_LATE_INIT_HOOK
 	help
 	  Run a late SoC initialization hook.
 
+config SOC_SMP_PER_CORE_INIT_HOOK
+	bool "Per-core initialization during SMP bringup SoC hook"
+	help
+	  Per-core initialization during SMP bringup SoC hook
+
 config BOARD_EARLY_INIT_HOOK
 	bool "Run early board hook"
 	help

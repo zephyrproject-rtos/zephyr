@@ -10,8 +10,10 @@
 #include <ipi.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
+#include <zephyr/platform/hooks.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -75,10 +77,15 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
 #endif
+#ifdef CONFIG_SOC_SMP_PER_CORE_INIT_HOOK
+	soc_smp_per_core_init_hook();
+#endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
 
 #ifdef CONFIG_SMP
+
+#ifndef CONFIG_RISCV_SOC_HAS_CUSTOM_SMP_IPI
 
 #define MSIP_BASE 0x2000000UL
 #define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
@@ -102,11 +109,6 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 	}
 
 	arch_irq_unlock(key);
-}
-
-void arch_sched_broadcast_ipi(void)
-{
-	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
 }
 
 #ifdef CONFIG_FPU_SHARING
@@ -171,5 +173,12 @@ int arch_smp_init(void)
 	irq_enable(RISCV_IRQ_MSOFT);
 
 	return 0;
+}
+
+#endif /* CONFIG_RISCV_SOC_HAS_CUSTOM_SMP_IPI */
+
+void arch_sched_broadcast_ipi(void)
+{
+	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
 }
 #endif /* CONFIG_SMP */
