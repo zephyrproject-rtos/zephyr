@@ -869,3 +869,8 @@ test_i2c_lps28dfw: lps28dfw@7b {
 	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
 	fs = <LPS28DFW_DT_FS_MODE_1_1260>;
 };
+
+test_i2c_ltr329: ltr329@7c {
+	compatible = "ltr,329";
+	reg = <0x7b>;
+};
