@@ -57,6 +57,15 @@ def expected_gdb():
     re.compile(r'Breakpoint 1, test '),
     re.compile(r'Breakpoint 2, main '),
     re.compile(r'GDB:PASSED'),
+    re.compile(r'Breakpoint 3, k_thread_abort '),
+    re.compile(r'2 .* breakpoint .* in main '),
+    ]
+
+@pytest.fixture(scope="module")
+def unexpected_gdb():
+    return [
+    re.compile(r'breakpoint .* in test '),
+    re.compile(r'breakpoint .* in k_thread_abort '),
     ]
 
 @pytest.fixture(scope="module")
@@ -67,7 +76,7 @@ def expected_gdb_detach():
     ]
 
 
-def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb, expected_gdb_detach):
+def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb, expected_gdb_detach, unexpected_gdb):
     """
     Test gdbstub feature using a GDB script. We connect to the DUT, run the
     GDB script then evaluate return code and expected patterns at the GDB
@@ -76,6 +85,7 @@ def test_gdbstub(dut: DeviceAdapter, gdb_process, expected_app, expected_gdb, ex
     logger.debug(f"GDB output:\n{gdb_process.stdout}\n")
     assert gdb_process.returncode == 0
     assert all([ex_re.search(gdb_process.stdout, re.MULTILINE) for ex_re in expected_gdb]), 'No expected GDB output'
+    assert not any([ex_re.search(gdb_process.stdout, re.MULTILINE) for ex_re in unexpected_gdb]), 'Unexpected GDB output'
     assert any([ex_re.search(gdb_process.stdout, re.MULTILINE) for ex_re in expected_gdb_detach]), 'No expected GDB quit'
     app_output = '\n'.join(dut.readlines(print_output = False))
     logger.debug(f"App output:\n{app_output}\n")
