@@ -468,7 +468,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 
 int pthread_getconcurrency(void)
 {
-	int ret;
+	int ret = 0;
 
 	K_SPINLOCK(&pthread_pool_lock) {
 		ret = pthread_concurrency;
