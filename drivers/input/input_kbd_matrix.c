@@ -174,7 +174,7 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 				continue;
 			}
 
-			cfg->matrix_unstable_state[c] &= ~row_bit;
+			cfg->matrix_unstable_state[c] &= ~mask;
 
 			/* Check if there was a change in the stable state */
 			if ((cfg->matrix_stable_state[c] & mask) == row_bit) {
