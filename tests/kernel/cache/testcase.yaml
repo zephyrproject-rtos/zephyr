@@ -8,6 +8,8 @@ tests:
       - qemu_xtensa
       - qemu_cortex_a53
       - nsim_em
+      - qemu_x86
+      - qemu_x86_64
   kernel.cache.api.minimallibc:
     tags:
       - kernel
@@ -18,5 +20,7 @@ tests:
       - qemu_xtensa
       - qemu_cortex_a53
       - nsim_em
+      - qemu_x86
+      - qemu_x86_64
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
