@@ -147,4 +147,12 @@ config NRF52_ANOMALY_109_WORKAROUND
 	  64MHz clock at the same time as the peripheral that is using DMA is started.
 	  This anomaly applies to IC revisions up to "3", the most recent one.
 
+config NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
+	int "Anomaly 109 workaround EGU instance"
+	depends on NRF52_ANOMALY_109_WORKAROUND
+	range 0 5
+	default 5
+	help
+	  EGU instance used by the nRF52 Anomaly 109 workaround for PWM.
+
 endif # SOC_SERIES_NRF52X
