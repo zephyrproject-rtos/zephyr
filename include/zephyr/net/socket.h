@@ -1112,6 +1112,9 @@ struct in_pktinfo {
 	struct in_addr ipi_addr;     /* Header Destination address */
 };
 
+/** sockopt: Set IPv4 multicast TTL value. */
+#define IP_MULTICAST_TTL 33
+
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Don't support IPv4 access */
 #define IPV6_V6ONLY 26
