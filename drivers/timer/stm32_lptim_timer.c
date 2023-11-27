@@ -17,6 +17,8 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/spinlock.h>
 
@@ -79,6 +81,32 @@ static uint32_t autoreload_next;
 static bool autoreload_ready = true;
 
 static struct k_spinlock lock;
+
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+
+#define CURRENT_CPU \
+	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
+
+#define cycle_t uint32_t
+
+/* This local variable indicates that the timeout was set right before
+ * entering standby state.
+ *
+ * It is used for chips that has to use a separate standby timer in such
+ * case because the LPTIM is not clocked in some low power mode state.
+ */
+static bool timeout_stdby;
+
+/* Cycle counter before entering the standby state. */
+static cycle_t lptim_cnt_pre_stdby;
+
+/* Standby timer value before entering the standby state. */
+static uint32_t stdby_timer_pre_stdby;
+
+/* Standby timer used for timer while entering the standby state */
+static const struct device *stdby_timer = DEVICE_DT_GET(DT_CHOSEN(st_lptim_stdby_timer));
+
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 
 static inline bool arrm_state_get(void)
 {
@@ -170,6 +198,41 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	int err;
 
 	ARG_UNUSED(idle);
+
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	const struct pm_state_info *next;
+
+	next = pm_policy_next_state(CURRENT_CPU, ticks);
+
+	if ((next != NULL) && (next->state == PM_STATE_SUSPEND_TO_RAM)) {
+		uint64_t timeout_us =
+			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+		struct counter_alarm_cfg cfg = {
+			.callback = NULL,
+			.ticks = counter_us_to_ticks(stdby_timer, timeout_us),
+			.user_data = NULL,
+			.flags = 0,
+		};
+
+		timeout_stdby = true;
+
+		/* Set the alarm using timer that runs the standby.
+		 * Needed rump-up/setting time, lower accurency etc. should be
+		 * included in the exit-latency in the power state definition.
+		 */
+		counter_cancel_channel_alarm(stdby_timer, 0);
+		counter_set_channel_alarm(stdby_timer, 0, &cfg);
+
+		/* Store current values to calculate a difference in
+		 * measurements after exiting the standby state.
+		 */
+		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
+		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
+
+		return;
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
@@ -478,6 +541,56 @@ static int sys_clock_driver_init(void)
 
 #endif
 	return 0;
+}
+
+void sys_clock_idle_exit(void)
+{
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	if (clock_control_get_status(clk_ctrl,
+				     (clock_control_subsys_t) &lptim_clk[0])
+				     != CLOCK_CONTROL_STATUS_ON) {
+		sys_clock_driver_init();
+	} else if (timeout_stdby) {
+		cycle_t missed_lptim_cnt;
+		uint32_t stdby_timer_diff, stdby_timer_post, dticks;
+		uint64_t stdby_timer_us;
+
+		/* Get current value for standby timer and reset LPTIM counter value
+		 * to start anew.
+		 */
+		LL_LPTIM_ResetCounter(LPTIM);
+		counter_get_value(stdby_timer, &stdby_timer_post);
+
+		/* Calculate how much time has passed since last measurement for standby timer */
+		/* Check IDLE timer overflow */
+		if (stdby_timer_pre_stdby > stdby_timer_post) {
+			stdby_timer_diff =
+				(counter_get_top_value(stdby_timer) - stdby_timer_pre_stdby) +
+				stdby_timer_post + 1;
+
+		} else {
+			stdby_timer_diff = stdby_timer_post - stdby_timer_pre_stdby;
+		}
+		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
+
+		/* Convert standby time in LPTIM cnt */
+		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) /
+				   USEC_PER_SEC;
+		/* Add the LPTIM cnt pre standby */
+		missed_lptim_cnt += lptim_cnt_pre_stdby;
+
+		/* Update the cycle counter to include the cycles missed in standby */
+		accumulated_lptim_cnt += missed_lptim_cnt;
+
+		/* Announce the passed ticks to the kernel */
+		dticks = (missed_lptim_cnt * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+				/ lptim_clock_freq;
+		sys_clock_announce(dticks);
+
+		/* We've already performed all needed operations */
+		timeout_stdby = false;
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 }
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
