@@ -59,6 +59,24 @@ API Reference
 
 .. doxygengroup:: math_dsp
 
+.. doxygengroup:: math_dsp_basic
+.. doxygengroup:: math_dsp_basic_mult
+.. doxygengroup:: math_dsp_basic_add
+.. doxygengroup:: math_dsp_basic_sub
+.. doxygengroup:: math_dsp_basic_scale
+.. doxygengroup:: math_dsp_basic_abs
+.. doxygengroup:: math_dsp_basic_dot
+.. doxygengroup:: math_dsp_basic_shift
+.. doxygengroup:: math_dsp_basic_offset
+.. doxygengroup:: math_dsp_basic_negate
+.. doxygengroup:: math_dsp_basic_and
+.. doxygengroup:: math_dsp_basic_or
+.. doxygengroup:: math_dsp_basic_not
+.. doxygengroup:: math_dsp_basic_xor
+.. doxygengroup:: math_dsp_basic_clip
+
+.. doxygengroup:: math_printing
+
 .. _subsys/dsp/Kconfig: https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/dsp/Kconfig
 .. _subsys/dsp/CMakeLists.txt: https://github.com/zephyrproject-rtos/zephyr/blob/main/subsys/dsp/CMakeLists.txt
 .. _include/zephyr/dsp/dsp.h: https://github.com/zephyrproject-rtos/zephyr/blob/main/include/zephyr/dsp/dsp.h
