@@ -112,6 +112,8 @@ Build system and infrastructure
 
 * Dropped the ``COMPAT_INCLUDES`` option, it was unused since 3.0.
 
+* Fixed an issue whereby board revision ``0`` did not include overlay files for that revision.
+
 Drivers and Sensors
 *******************
 
