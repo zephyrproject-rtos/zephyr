@@ -163,7 +163,7 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 
 			uint8_t cyc_idx = c * cfg->row_size + r;
 			uint8_t scan_cyc_idx = cfg->scan_cycle_idx[cyc_idx];
-			uint8_t scan_clk_cycle = data->scan_clk_cycle[scan_cyc_idx];
+			uint32_t scan_clk_cycle = data->scan_clk_cycle[scan_cyc_idx];
 
 			/* Convert the clock cycle differences to usec */
 			uint32_t deb_t_us = k_cyc_to_us_floor32(cycles_now - scan_clk_cycle);

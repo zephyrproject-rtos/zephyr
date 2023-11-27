@@ -205,7 +205,7 @@ struct input_kbd_matrix_common_config {
  */
 struct input_kbd_matrix_common_data {
 	/* Track previous cycles, used for debouncing. */
-	uint8_t scan_clk_cycle[INPUT_KBD_MATRIX_SCAN_OCURRENCES];
+	uint32_t scan_clk_cycle[INPUT_KBD_MATRIX_SCAN_OCURRENCES];
 	uint8_t scan_cycles_idx;
 
 	struct k_sem poll_lock;
