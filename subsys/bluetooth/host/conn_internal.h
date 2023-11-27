@@ -307,9 +307,6 @@ void bt_conn_disconnect_all(uint8_t id);
 /* Allocate new connection object */
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size);
 
-/* Look up an existing connection */
-struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type);
-
 static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
 	switch (conn->state) {

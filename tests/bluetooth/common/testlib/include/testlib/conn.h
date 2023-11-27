@@ -72,4 +72,12 @@ int bt_testlib_wait_disconnected(struct bt_conn *conn);
  */
 void bt_testlib_conn_unref(struct bt_conn **connp);
 
+/**
+ * @brief Wait for encryption
+ *
+ * Thread-safe.
+ */
+int testlib_wait_for_encryption(struct bt_conn *conn);
+
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_ */

@@ -407,6 +407,8 @@ struct bt_conn_info {
 	enum bt_conn_state state;
 	/** Security specific info. */
 	struct bt_security_info security;
+	/** HCI connection handle */
+	uint16_t handle;
 };
 
 /** LE Connection Remote Info Structure */
@@ -1055,6 +1057,28 @@ struct bt_conn_cb {
 	struct bt_conn_cb *_next;
 };
 
+/** @brief LTK request hook.
+ *
+ * This hook is called when the host receives a
+ * HCI_LE_Long_Term_Key_Request event.
+ *
+ * @param evt Raw event data. Can be parsed as @ref bt_hci_evt_le_ltk_request.
+ * @retval false The hook defers to the default handler.
+ * @retval true The hook takes responsibility for handling this event.
+ */
+typedef bool (*bt_conn_ltk_request_hook_t)(const uint8_t *evt);
+
+/** @brief Install the LTK request hook.
+ *
+ * Only one hook can be installed.
+ *
+ * @param cb Hook to install.
+ *
+ * @retval 0 Success
+ * @retval -ENOSPC A hook was already installed
+ */
+int bt_conn_ltk_request_hook_install(bt_conn_ltk_request_hook_t cb);
+
 /** @brief Register connection callbacks.
  *
  *  Register callbacks to monitor the state of connections.
@@ -1671,6 +1695,15 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
  *  @return Valid connection object on success or NULL otherwise.
  */
 struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer);
+
+/** @brief Lookup connection object by HCI connection handle.
+ *
+ * @param handle HCI connection handle.
+ * @param type Connection type.
+ *
+ * @return Connection object or NULL if not found.
+ */
+struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type);
 
 #ifdef __cplusplus
 }

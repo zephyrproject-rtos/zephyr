@@ -2195,6 +2195,25 @@ static void hci_hardware_error(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_SMP)
+static bt_conn_ltk_request_hook_t ltk_request_hook;
+
+int bt_conn_ltk_request_hook_install(bt_conn_ltk_request_hook_t cb)
+{
+	bool ok;
+
+	ok = atomic_ptr_cas((atomic_ptr_t)&ltk_request_hook, NULL, (atomic_ptr_val_t)cb);
+
+	return ok ? 0 : -ENOSPC;
+}
+
+static bool ltk_req_hook_trigger(struct net_buf *buf)
+{
+	if (ltk_request_hook) {
+		return ltk_request_hook(buf->data);
+	}
+	return false;
+}
+
 static void le_ltk_neg_reply(uint16_t handle)
 {
 	struct bt_hci_cp_le_ltk_req_neg_reply *cp;
@@ -2238,6 +2257,13 @@ static void le_ltk_request(struct net_buf *buf)
 	struct bt_conn *conn;
 	uint16_t handle;
 	uint8_t ltk[16];
+
+	if (ltk_req_hook_trigger(buf)) {
+		/* The hook handles the event and is responsible for replying to
+		 * the controller.
+		 */
+		return;
+	}
 
 	handle = sys_le16_to_cpu(evt->handle);
 
