@@ -72,6 +72,11 @@ config WIFI_SHELL_MAX_AP_STA
 	  This option defines the maximum number of APs and STAs that can be managed
 	  in Wi-Fi shell.
 
+config WIFI_MGMT_SCAN_DISABLE_DFS_CHANNELS
+	bool "Disables dfs channels in scan operation."
+	help
+	  This option disables inclusion of dfs channels in scan operation.
+
 config WIFI_NM
 	bool "Wi-Fi Network manager support"
 	help
