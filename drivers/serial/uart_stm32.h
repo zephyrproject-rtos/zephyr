@@ -49,6 +49,8 @@ struct uart_stm32_config {
 	uint8_t de_deassert_time;
 	/* enable de pin inversion */
 	bool de_invert;
+	/* enable fifo */
+	bool fifo_enable;
 	/* pin muxing */
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
