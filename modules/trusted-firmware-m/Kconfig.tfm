@@ -17,7 +17,6 @@ config TFM_BOARD
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "arm/musca_b1" if BOARD_MUSCA_B1
 	default "arm/musca_s1" if BOARD_MUSCA_S1
-	default "lairdconnectivity/bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP_NS
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9160" if SOC_NRF9160
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9120" if SOC_NRF9120
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
