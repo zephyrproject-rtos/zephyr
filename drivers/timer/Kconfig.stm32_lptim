@@ -3,6 +3,8 @@
 # Copyright (c) 2019 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
+
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer [EXPERIMENTAL]"
 	default y
@@ -55,5 +57,23 @@ config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
 	  To prevent misconfigurations, a dedicated check is implemented
 	  in the driver.
 	  This options allows to override this check
+
+config STM32_LPTIM_STDBY_TIMER
+	bool "Use an additional timer while entering Standby mode"
+	default $(dt_chosen_enabled,$(DT_CHOSEN_STDBY_TIMER))
+	depends on COUNTER
+	depends on TICKLESS_KERNEL
+	select EXPERIMENTAL
+	help
+	  There are chips e.g. STM32WBAX family that use LPTIM as a system timer,
+	  but LPTIM is not clocked in standby mode. These chips usually have
+	  another timer that is not stopped, but it has lower frequency e.g.
+	  RTC, thus it can't be used as a main system timer.
+
+	  Use the Standby timer for timeout (wakeup) when the system is entering
+	  Standby state.
+
+	  The chosen Standby timer node has to support setting alarm from the
+	  counter API.
 
 endif # STM32_LPTIM_TIMER
