@@ -351,7 +351,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		}
 
 		if (!FIELD_GET(OA_DATA_FTR_DV, ftr)) {
-			LOG_ERR("OA RX: Data chunk not valid, skip!");
+			LOG_DBG("OA RX: Data chunk not valid, skip!");
 			goto unref_buf;
 		}
 
