@@ -125,13 +125,16 @@ static const struct device *const vtd =
 	DEVICE_DT_GET_OR_NULL(DT_INST(0, intel_vt_d));
 static uint16_t ioapic_id;
 
-
 static bool get_vtd(void)
 {
-	union acpi_dmar_id *dmar_id;
+	union acpi_dmar_id dmar_id;
 	int inst_cnt;
 
-	if (vtd != NULL) {
+	if (!device_is_ready(vtd)) {
+		return false;
+	}
+
+	if (ioapic_id != 0) {
 		return true;
 	}
 
@@ -140,9 +143,9 @@ static bool get_vtd(void)
 		return false;
 	}
 
-	ioapic_id = dmar_id->raw;
+	ioapic_id = dmar_id.raw;
 
-	return vtd == NULL ? false : true;
+	return true;
 }
 #endif /* CONFIG_INTEL_VTD_ICTL && !INTEL_VTD_ICTL_XAPIC_PASSTHROUGH */
 
