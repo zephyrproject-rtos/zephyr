@@ -1684,11 +1684,13 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		return zsock_recv_dgram(ctx, NULL, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
 		return zsock_recv_stream(ctx, NULL, buf, max_len, flags);
-	} else {
-		__ASSERT(0, "Unknown socket type");
 	}
 
-	return 0;
+	__ASSERT(0, "Unknown socket type");
+
+	errno = ENOTSUP;
+
+	return -1;
 }
 
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
