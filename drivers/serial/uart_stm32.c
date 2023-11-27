@@ -1956,6 +1956,12 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	}
 #endif
 
+#ifdef USART_CR1_FIFOEN
+	if (config->fifo_enable) {
+		LL_USART_EnableFIFO(config->usart);
+	}
+#endif
+
 	LL_USART_Enable(config->usart);
 
 #ifdef USART_ISR_TEACK
@@ -2334,6 +2340,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.de_assert_time = DT_INST_PROP(index, de_assert_time),		\
 	.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
 	.de_invert = DT_INST_PROP(index, de_invert),			\
+	.fifo_enable = DT_INST_PROP(index, fifo_enable),		\
 	STM32_UART_IRQ_HANDLER_FUNC(index)				\
 	STM32_UART_PM_WAKEUP(index)					\
 };									\
