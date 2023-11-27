@@ -7,8 +7,8 @@ description: Sensing subsystem sensor common properties bindings.
 include: sensor-device.yaml
 
 properties:
-  sensor-type:
-    type: int
+  sensor-types:
+    type: array
     required: true
     description: sensor type id (follow HID spec definition)
 
@@ -23,6 +23,10 @@ properties:
   reporters:
     type: phandles
     description: sensor reporters
+
+  reporters-index:
+    type: array
+    description: the index in sensor-types of reporter if the reporter support multiple sensor-types
 
   stream-mode:
     type: boolean

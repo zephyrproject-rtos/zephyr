@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "zephyr/devicetree.h"
 #define DT_DRV_COMPAT zephyr_sensing_phy_3d_sensor
 
 #include <stdlib.h>
@@ -250,9 +251,9 @@ static const struct sensing_sensor_register_info phy_3d_sensor_reg = {
 		.hw_dev = DEVICE_DT_GET(				\
 				DT_PHANDLE(DT_DRV_INST(_inst),		\
 				underlying_device)),			\
-		.sensor_type = DT_PROP(DT_DRV_INST(_inst), sensor_type),\
+		.sensor_type = DT_PROP_BY_IDX(DT_DRV_INST(_inst), sensor_types, 0),\
 	};								\
-	SENSING_SENSOR_DT_INST_DEFINE(_inst, &phy_3d_sensor_reg, NULL,	\
+	SENSING_SENSORS_DT_INST_DEFINE(_inst, &phy_3d_sensor_reg, NULL,	\
 		&phy_3d_sensor_init, NULL,				\
 		&_CONCAT(data, _inst), &_CONCAT(cfg, _inst),		\
 		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
