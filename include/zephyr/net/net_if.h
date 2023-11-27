@@ -380,6 +380,9 @@ struct net_if_ipv4 {
 
 	/** IPv4 time-to-live */
 	uint8_t ttl;
+
+	/** IPv4 time-to-live for multicast packets */
+	uint8_t mcast_ttl;
 };
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
@@ -1915,6 +1918,23 @@ uint8_t net_if_ipv4_get_ttl(struct net_if *iface);
  * @param ttl Time-to-live value
  */
 void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl);
+
+/**
+ * @brief Get IPv4 multicast time-to-live value specified for a given interface
+ *
+ * @param iface Network interface
+ *
+ * @return Time-to-live
+ */
+uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface);
+
+/**
+ * @brief Set IPv4 multicast time-to-live value specified to a given interface
+ *
+ * @param iface Network interface
+ * @param ttl Time-to-live value
+ */
+void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl);
 
 /**
  * @brief Check if this IPv4 address belongs to one of the interfaces.

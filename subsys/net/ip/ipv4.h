@@ -127,7 +127,6 @@ struct net_ipv4_igmp_v3_report {
  * @param id Fragment id
  * @param flags Fragmentation flags
  * @param offset Fragment offset
- * @param ttl Time-to-live value
  *
  * @return 0 on success, negative errno otherwise.
  */
@@ -138,8 +137,7 @@ int net_ipv4_create_full(struct net_pkt *pkt,
 			 uint8_t tos,
 			 uint16_t id,
 			 uint8_t flags,
-			 uint16_t offset,
-			 uint8_t ttl);
+			 uint16_t offset);
 #else
 static inline int net_ipv4_create_full(struct net_pkt *pkt,
 				       const struct in_addr *src,
@@ -147,8 +145,7 @@ static inline int net_ipv4_create_full(struct net_pkt *pkt,
 				       uint8_t tos,
 				       uint16_t id,
 				       uint8_t flags,
-				       uint16_t offset,
-				       uint8_t ttl)
+				       uint16_t offset)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(src);
@@ -157,7 +154,6 @@ static inline int net_ipv4_create_full(struct net_pkt *pkt,
 	ARG_UNUSED(id);
 	ARG_UNUSED(flags);
 	ARG_UNUSED(offset);
-	ARG_UNUSED(ttl);
 
 	return -ENOTSUP;
 }

@@ -207,7 +207,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 		ret = net_ipv4_create_full(tmp, ctx->my4addr,
 					   &ctx->peer.in_addr,
 					   tos, 0U, NET_IPV4_DF,
-					   0U, net_pkt_ipv4_ttl(tmp));
+					   0U);
 		if (ret < 0) {
 			goto out;
 		}
