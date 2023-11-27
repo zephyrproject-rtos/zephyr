@@ -537,22 +537,21 @@ account storage for TLS and ASLR random offsets.
 
 .. code-block:: none
 
-	+---------------------+ <- thread.stack_obj
-	| Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
-	+---------------------+
-	| Carved-out memory   |
-	|.....................| <- thread.stack_info.start
-	| Unused stack buffer |
-	|                     |
-	|.....................| <- thread's current stack pointer
-	| Used stack buffer   |
-	|                     |
-	|.....................| <- Initial stack pointer. Computable
-	| ASLR Random offset  |      with thread.stack_info.delta
-	+---------------------| <- thread.userspace_local_data
-	| Thread-local data   |
-	+---------------------+ <- thread.stack_info.start +
-	                             thread.stack_info.size
+   +---------------------+ <- thread.stack_obj
+   | Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
+   +---------------------+
+   | Carved-out memory   |
+   |.....................| <- thread.stack_info.start
+   | Unused stack buffer |
+   |                     |
+   |.....................| <- thread's current stack pointer
+   | Used stack buffer   |
+   |                     |
+   |.....................| <- Initial stack pointer. Computable
+   | ASLR Random offset  |      with thread.stack_info.delta
+   +---------------------| <- thread.userspace_local_data
+   | Thread-local data   |
+   +---------------------+ <- thread.stack_info.start + thread.stack_info.size
 
 
 At present, Zephyr does not support stacks that grow upward.
