@@ -110,7 +110,7 @@ Boards & SoC Support
 Build system and infrastructure
 *******************************
 
-- Dropped the ``COMPAT_INCLUDES`` option, it was unused since 3.0.
+* Dropped the ``COMPAT_INCLUDES`` option, it was unused since 3.0.
 
 Drivers and Sensors
 *******************
