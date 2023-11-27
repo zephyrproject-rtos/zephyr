@@ -210,6 +210,8 @@
 /drivers/ethernet/*adin2111*              @GeorgeCGV
 /drivers/ethernet/*oa_tc6*                @lmajewski
 /drivers/ethernet/*lan865x*               @lmajewski
+/drivers/ethernet/dwc_xgmac               @Smale-12048867
+/drivers/ethernet/dwc_xgmac/dwc_xgmac     @Smale-12048867
 /drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf @jukkar
 /drivers/ethernet/phy/*adin2111*          @GeorgeCGV
 /drivers/mdio/*adin2111*                  @GeorgeCGV
