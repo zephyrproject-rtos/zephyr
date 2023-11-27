@@ -23,3 +23,5 @@ tests:
   sample.sensor.hts221.trigger:
     extra_configs:
       - CONFIG_HTS221_TRIGGER_OWN_THREAD=y
+    platform_exclude:
+      - b_u585i_iot02a
