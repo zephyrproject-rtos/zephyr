@@ -36,6 +36,14 @@
 
 #if defined(RNG_CR_CONDRST)
 #define STM32_CONDRST_SUPPORT
+
+/* These calls are named differently in the STM32L4 LL RNG driver */
+#if defined(STM32L4)
+#define LL_RNG_EnableCondReset(x) LL_RNG_SetConditioningResetBit(x)
+#define LL_RNG_DisableCondReset(x) LL_RNG_ResetConditioningResetBit(x)
+#define LL_RNG_IsEnabledCondReset(x) LL_RNG_IsResetConditioningBitSet(x)
+#endif
+
 #endif
 
 /*
