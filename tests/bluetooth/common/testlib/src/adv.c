@@ -13,6 +13,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 
+#include <testlib/adv.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_testlib_adv, LOG_LEVEL_DBG);
+
 struct bt_testlib_adv_ctx {
 	struct bt_conn **result;
 	struct k_condvar done;
@@ -33,6 +38,28 @@ static void connected_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_connect
 	k_condvar_signal(&g_ctx->done);
 
 	k_mutex_unlock(&g_ctx_lock);
+}
+
+int bt_testlib_adv_conn_name(struct bt_conn **conn, const char *name)
+{
+	const int id = BT_ID_DEFAULT;
+	const uint32_t adv_options = BT_LE_ADV_OPT_USE_NAME | BT_LE_ADV_OPT_FORCE_NAME_IN_AD;
+
+	int err;
+
+	err = bt_set_name(name);
+	if (err) {
+		LOG_ERR("Failed to set name: %d", err);
+		return err;
+	}
+
+	err = bt_testlib_adv_conn(conn, id, adv_options);
+	if (err) {
+		LOG_ERR("Failed to advertise and connect: %d", err);
+		return err;
+	}
+
+	return 0;
 }
 
 int bt_testlib_adv_conn(struct bt_conn **conn, int id, uint32_t adv_options)

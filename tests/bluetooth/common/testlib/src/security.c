@@ -106,3 +106,28 @@ int bt_testlib_secure(struct bt_conn *conn, bt_security_t new_minimum)
 	__ASSERT_NO_MSG(ctx.result >= 0);
 	return ctx.result;
 }
+
+int testlib_wait_for_encryption(struct bt_conn *conn)
+{
+	struct testlib_security_ctx ctx = {
+		.conn = conn,
+		.new_minimum = BT_SECURITY_L2,
+	};
+
+	k_condvar_init(&ctx.done);
+
+	k_sem_take(&g_ctx_free, K_FOREVER);
+	k_mutex_lock(&g_ctx_lock, K_FOREVER);
+
+	if (bt_conn_get_security(conn) < BT_SECURITY_L2) {
+		g_ctx = &ctx;
+		k_condvar_wait(&ctx.done, &g_ctx_lock, K_FOREVER);
+		g_ctx = NULL;
+	}
+
+	k_mutex_unlock(&g_ctx_lock);
+	k_sem_give(&g_ctx_free);
+
+	__ASSERT_NO_MSG(ctx.result >= 0);
+	return ctx.result;
+}

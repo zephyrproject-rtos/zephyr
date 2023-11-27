@@ -41,4 +41,14 @@ int bt_testlib_gatt_discover_characteristic(uint16_t *const result_value_handle,
 					    const struct bt_uuid *uuid, uint16_t start_handle,
 					    uint16_t svc_end_handle);
 
+/** Discover characteristic value handle by service and characteristic
+ * UUID.
+ *
+ * This is a convenience wrapper around
+ * @ref bt_testlib_gatt_discover_primary and @ref
+ * bt_testlib_gatt_discover_characteristic.
+ */
+int bt_testlib_gatt_discover_svc_chrc_val(struct bt_conn *conn, const struct bt_uuid *svc,
+					  const struct bt_uuid *chrc, uint16_t *chrc_value_handle);
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_ATT_READ_H_ */

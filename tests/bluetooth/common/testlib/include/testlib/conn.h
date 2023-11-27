@@ -5,6 +5,7 @@
 #ifndef ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_
 #define ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_
 
+#include <stdint.h>
 #include <zephyr/bluetooth/conn.h>
 
 /**
@@ -71,5 +72,14 @@ int bt_testlib_wait_disconnected(struct bt_conn *conn);
  * moves the reference into @ref bt_conn_unref.
  */
 void bt_testlib_conn_unref(struct bt_conn **connp);
+
+/**
+ * @brief Wait for encryption
+ *
+ * Thread-safe.
+ */
+int testlib_wait_for_encryption(struct bt_conn *conn);
+
+int bt_testlib_get_conn_handle(struct bt_conn *conn, uint16_t *handle);
 
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_ */

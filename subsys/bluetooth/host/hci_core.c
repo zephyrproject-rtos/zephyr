@@ -2241,6 +2241,19 @@ static void le_ltk_request(struct net_buf *buf)
 	uint16_t handle;
 	uint8_t ltk[16];
 
+	if (IS_ENABLED(CONFIG_BT_HOOK_CONN_LTK_REQUEST)) {
+		/* The hook handles the event and is responsible for replying to
+		 * the controller.
+		 *
+		 * This symbol is defined by the application. If you get
+		 * a linker error here, please read the documentation
+		 * for the hook.
+		 */
+		if (bt_hook_conn_ltk_request(buf->data)) {
+			return;
+		}
+	}
+
 	handle = sys_le16_to_cpu(evt->handle);
 
 	LOG_DBG("handle %u", handle);

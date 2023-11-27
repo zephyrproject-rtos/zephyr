@@ -704,6 +704,15 @@ rsource "Kconfig.l2cap"
 rsource "Kconfig.gatt"
 rsource "../services/Kconfig"
 
+config BT_HOOK_CONN_LTK_REQUEST
+	bool "Enable LTK request hook"
+	help
+	  When enabled, the stack expects the application to define a
+	  global symbol named bt_hook_conn_ltk_request. This hook is
+	  invoked when the stack receives a LTK request from the peer,
+	  and it allows the application to decide provide a LTK to
+	  respond with.
+
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 0 if !BT_SMP

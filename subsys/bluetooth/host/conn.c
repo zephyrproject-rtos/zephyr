@@ -2490,6 +2490,7 @@ static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
 
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
+	info->handle = conn->handle;
 	info->type = conn->type;
 	info->role = conn->role;
 	info->id = conn->id;
