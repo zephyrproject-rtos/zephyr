@@ -560,7 +560,7 @@ int arch_printk_char_out(int c);
 /**
  * Architecture-specific kernel initialization hook
  *
- * This function is invoked near the top of _Cstart, for additional
+ * This function is invoked near the top of z_cstart, for additional
  * architecture-specific setup before the rest of the kernel is brought up.
  */
 static inline void arch_kernel_init(void);

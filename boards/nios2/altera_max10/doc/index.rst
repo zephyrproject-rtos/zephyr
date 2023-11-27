@@ -240,7 +240,7 @@ You will see output similar to the following:
    (gdb) c
    Continuing.
 
-   Breakpoint 2, _Cstart () at /projects/zephyr/kernel/init.c:348
+   Breakpoint 2, z_cstart () at /projects/zephyr/kernel/init.c:348
    348     {
    (gdb)
 
