@@ -314,8 +314,17 @@ static void modem_ppp_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 {
 	struct modem_ppp *ppp = (struct modem_ppp *)user_data;
 
-	if (event == MODEM_PIPE_EVENT_RECEIVE_READY) {
+	switch (event) {
+	case MODEM_PIPE_EVENT_RECEIVE_READY:
 		k_work_submit(&ppp->process_work);
+		break;
+
+	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
+		k_work_submit(&ppp->send_work);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -351,22 +360,20 @@ static void modem_ppp_send_handler(struct k_work *item)
 		}
 	}
 
-	reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
-	if (reserved_size == 0) {
-		ring_buf_get_finish(&ppp->transmit_rb, 0);
-		return;
-	}
+	while (!ring_buf_is_empty(&ppp->transmit_rb)) {
+		reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
 
-	ret = modem_pipe_transmit(ppp->pipe, reserved, reserved_size);
-	if (ret < 0) {
-		ring_buf_get_finish(&ppp->transmit_rb, 0);
-	} else {
+		ret = modem_pipe_transmit(ppp->pipe, reserved, reserved_size);
+		if (ret < 0) {
+			ring_buf_get_finish(&ppp->transmit_rb, 0);
+			break;
+		}
+
 		ring_buf_get_finish(&ppp->transmit_rb, (uint32_t)ret);
-	}
 
-	/* Resubmit send work if data remains */
-	if ((ring_buf_is_empty(&ppp->transmit_rb) == false) || (ppp->tx_pkt != NULL)) {
-		k_work_submit(&ppp->send_work);
+		if (ret < reserved_size) {
+			break;
+		}
 	}
 }
 
