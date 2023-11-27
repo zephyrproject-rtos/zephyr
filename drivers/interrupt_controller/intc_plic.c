@@ -22,6 +22,7 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#include <zephyr/drivers/interrupt_controller.h>
 #include <zephyr/irq.h>
 
 #define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
@@ -303,6 +304,97 @@ static void plic_irq_handler(const struct device *dev)
 	if (!edge_irq)
 		sys_write32(local_irq, claim_complete_addr);
 }
+
+static inline int intc_plic_irq_enable(const struct device *dev, uint32_t irq)
+{
+	ARG_UNUSED(dev);
+
+	riscv_plic_irq_enable(irq);
+
+	return 0;
+}
+
+static inline int intc_plic_irq_disable(const struct device *dev, uint32_t irq)
+{
+	ARG_UNUSED(dev);
+
+	riscv_plic_irq_disable(irq);
+
+	return 0;
+}
+
+static inline int intc_plic_irq_configure(const struct device *dev, uint32_t irq,
+					  unsigned int priority, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(flags);
+
+	riscv_plic_set_priority(irq, priority);
+
+	return 0;
+}
+
+static inline bool intc_plic_irq_is_enabled(const struct device *dev, uint32_t irq)
+{
+	ARG_UNUSED(dev);
+
+	return (riscv_plic_irq_is_enabled(irq) == 0) ? false : true;
+}
+
+static inline bool intc_plic_irq_is_pending(const struct device *dev, uint32_t irq)
+{
+	ARG_UNUSED(dev);
+
+	return riscv_plic_get_irq(void) == irq;
+}
+
+static inline uint64_t intc_plic_get_active_irq(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return riscv_plic_get_irq();
+}
+
+const struct device *intc_plic_get_active_dev(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return riscv_plic_get_dev();
+}
+
+void intc_plic_irq_enter_isr(const struct device *dev, uint32_t irq)
+{
+	struct _isr_table_entry *ite;
+	const unsigned int isr_offset =
+		COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS), (z_get_sw_isr_table_idx(irq)),
+			    (irq_from_level_2(irq) + CONFIG_2ND_LVL_ISR_TBL_OFFSET));
+
+	ARG_UNUSED(dev);
+
+	/* Call the corresponding IRQ handler in _sw_isr_table */
+	ite = (struct _isr_table_entry *)&_sw_isr_table[isr_offset];
+	ite->isr(ite->arg);
+}
+
+int intc_plic_irq_set_isr(const struct device *dev, uint32_t irq, uint32_t priority, void *routine,
+		     void *data, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+
+	return arch_irq_connect_dynamic(irq, priority, routine, data, flags);
+}
+
+static const struct interrupt_controller_driver_api intc_plic_driver = {
+	.intc_irq_enable = intc_plic_irq_enable,
+	.intc_irq_disable = intc_plic_irq_disable,
+	.intc_irq_configure = intc_plic_irq_configure,
+	.intc_irq_is_enabled = intc_plic_irq_is_enabled,
+	.intc_irq_is_pending = intc_plic_irq_is_pending,
+	.intc_get_active_irq = intc_plic_get_active_irq,
+	.intc_get_active_dev = intc_plic_get_active_dev,
+	.intc_irq_set_isr = intc_plic_irq_set_isr,
+	.intc_irq_enter_isr = intc_plic_irq_enter_isr,
+};
 
 /**
  * @brief Initialize the Platform Level Interrupt Controller
