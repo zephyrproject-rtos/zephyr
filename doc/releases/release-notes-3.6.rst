@@ -63,6 +63,9 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Nordic SoCs now imply :kconfig:option:`CONFIG_XIP` instead of selecting it, this allows for
+    creating RAM-based applicatins by disabling it.
+
 * Added support for these ARC boards:
 
 * Added support for these ARM boards:
