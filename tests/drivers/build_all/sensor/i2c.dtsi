@@ -1264,3 +1264,8 @@ test_i2c_bmm350: bmm350@ac {
 	reg = <0xac>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ltr329: ltr329@aa {
+	compatible = "liteon,ltr329";
+	reg = <0xad>;
+};
