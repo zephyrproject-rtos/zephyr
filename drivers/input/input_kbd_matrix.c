@@ -166,10 +166,10 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 			uint8_t scan_clk_cycle = data->scan_clk_cycle[scan_cyc_idx];
 
 			/* Convert the clock cycle differences to usec */
-			uint32_t debt = k_cyc_to_us_floor32(cycles_now - scan_clk_cycle);
+			uint32_t deb_t_us = k_cyc_to_us_floor32(cycles_now - scan_clk_cycle);
 
 			/* Does the key requires more time to be debounced? */
-			if (debt < (row_bit ? cfg->debounce_down_ms : cfg->debounce_up_ms)) {
+			if (deb_t_us < (row_bit ? cfg->debounce_down_us : cfg->debounce_up_us)) {
 				/* Need more time to debounce */
 				continue;
 			}
