@@ -841,6 +841,17 @@ class TestPlan:
                                 instance.add_filter("Snippet not supported", Filters.PLATFORM)
                                 break
 
+                # handle quarantined tests
+                if self.quarantine:
+                    matched_quarantine = self.quarantine.get_matched_quarantine(
+                        instance.testsuite.id, plat.name, plat.arch, plat.simulation
+                    )
+                    if matched_quarantine and not self.options.quarantine_verify:
+                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARENTINE)
+                    if not matched_quarantine and self.options.quarantine_verify:
+                        instance.add_filter("Not under quarantine", Filters.QUARENTINE)
+
+
                 # platform_key is a list of unique platform attributes that form a unique key a test
                 # will match against to determine if it should be scheduled to run. A key containing a
                 # field name that the platform does not have will filter the platform.
@@ -862,21 +873,13 @@ class TestPlan:
                         keyed_test = keyed_tests.get(test_key)
                         if keyed_test is not None:
                             plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
-                            instance.add_filter(f"Excluded test already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
+                            instance.add_filter(f"Already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
                         else:
-                            keyed_tests[test_key] = {'plat': plat, 'ts': ts}
+                            # do not add a platform to keyed tests if previously filtered
+                            if not instance.filters:
+                                keyed_tests[test_key] = {'plat': plat, 'ts': ts}
                     else:
                         instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
-
-                # handle quarantined tests
-                if self.quarantine:
-                    matched_quarantine = self.quarantine.get_matched_quarantine(
-                        instance.testsuite.id, plat.name, plat.arch, plat.simulation
-                    )
-                    if matched_quarantine and not self.options.quarantine_verify:
-                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARENTINE)
-                    if not matched_quarantine and self.options.quarantine_verify:
-                        instance.add_filter("Not under quarantine", Filters.QUARENTINE)
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
