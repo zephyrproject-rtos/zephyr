@@ -4320,7 +4320,7 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 	struct bt_hci_cp_le_set_host_chan_classif *cp;
 	struct net_buf *buf;
 
-	if (!IS_ENABLED(CONFIG_BT_CENTRAL)) {
+	if (!(IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_BROADCASTER))) {
 		return -ENOTSUP;
 	}
 
