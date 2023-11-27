@@ -116,10 +116,11 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev)
  */
 static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
 {
-	const struct device *dev = COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
-					       (z_get_sw_isr_device_from_irq(irq)), (NULL));
-
-	return dev == NULL ? DEVICE_DT_INST_GET(0) : dev;
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+	return z_get_sw_isr_device_from_irq(irq);
+#else
+	return DEVICE_DT_INST_GET(0);
+#endif
 }
 
 /**
