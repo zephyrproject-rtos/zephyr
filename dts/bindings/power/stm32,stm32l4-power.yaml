@@ -1,0 +1,10 @@
+compatible: "stm32,stm32l4-power"
+
+include: zephyr,power-state.yaml
+
+properties:
+  sram-retention:
+    type: boolean
+    description: |
+      SRAM retention during low power mode if true
+      SRAM content is lost during low power mode if false

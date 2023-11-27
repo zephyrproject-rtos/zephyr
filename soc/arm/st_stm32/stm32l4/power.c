@@ -43,7 +43,11 @@ void set_mode_stop(uint8_t substate_id)
 		break;
 	case 3: /* this corresponds to the STOP2 mode: */
 #ifdef PWR_CR1_RRSTP
+#if IS_ENABLED(DT_PROP(DT_PHANDLE_BY_IDX(DT_NODELABEL(cpu0), cpu_power_states, 2), sram_retention))
+		LL_PWR_EnableSRAM3Retention();
+#else
 		LL_PWR_DisableSRAM3Retention();
+#endif /* IS_ENABLED */
 #endif /* PWR_CR1_RRSTP */
 		/* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
