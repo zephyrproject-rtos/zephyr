@@ -42,6 +42,12 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "tcp.h"
 #endif
 
+#ifdef CONFIG_NET_INITIAL_MCAST_TTL
+#define INITIAL_MCAST_TTL CONFIG_NET_INITIAL_MCAST_TTL
+#else
+#define INITIAL_MCAST_TTL 1
+#endif
+
 #ifndef EPFNOSUPPORT
 /* Some old versions of newlib haven't got this defined in errno.h,
  * Just use EPROTONOSUPPORT in this case
@@ -479,6 +485,8 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 					ret = -EADDRINUSE;
 					break;
 				}
+
+				contexts[i].ipv4_mcast_ttl = INITIAL_MCAST_TTL;
 			}
 		}
 
@@ -1535,6 +1543,26 @@ static int get_context_dscp_ecn(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	return get_uint8_option(context->options.dscp_ecn,
 				value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_mcast_ttl(struct net_context *context,
+				 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4)
+	*((int *)value) = context->ipv4_mcast_ttl;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -2712,6 +2740,24 @@ static int set_context_dscp_ecn(struct net_context *context,
 #endif
 }
 
+static int set_context_mcast_ttl(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4)
+	uint8_t mcast_ttl = *((int *)value);
+
+	len = sizeof(context->ipv4_mcast_ttl);
+
+	return set_uint8_option(&context->ipv4_mcast_ttl, &mcast_ttl, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_reuseaddr(struct net_context *context,
 				 const void *value, size_t len)
 {
@@ -2807,6 +2853,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_DSCP_ECN:
 		ret = set_context_dscp_ecn(context, value, len);
 		break;
+	case NET_OPT_MCAST_TTL:
+		ret = set_context_mcast_ttl(context, value, len);
+		break;
 	case NET_OPT_REUSEADDR:
 		ret = set_context_reuseaddr(context, value, len);
 		break;
@@ -2864,6 +2913,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_DSCP_ECN:
 		ret = get_context_dscp_ecn(context, value, len);
+		break;
+	case NET_OPT_MCAST_TTL:
+		ret = get_context_mcast_ttl(context, value, len);
 		break;
 	case NET_OPT_REUSEADDR:
 		ret = get_context_reuseaddr(context, value, len);

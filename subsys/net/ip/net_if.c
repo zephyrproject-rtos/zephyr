@@ -3151,6 +3151,47 @@ out:
 #endif
 }
 
+uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv4->mcast_ttl;
+out:
+	net_if_unlock(iface);
+
+	return ret;
+#else
+	ARG_UNUSED(iface);
+
+	return 0;
+#endif
+}
+
+void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	iface->config.ip.ipv4->mcast_ttl = ttl;
+out:
+	net_if_unlock(iface);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ttl);
+#endif
+}
+
 struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
 						struct in_addr *addr)
 {
@@ -4035,6 +4076,7 @@ static void iface_ipv4_init(int if_count)
 
 	for (i = 0; i < ARRAY_SIZE(ipv4_addresses); i++) {
 		ipv4_addresses[i].ipv4.ttl = CONFIG_NET_INITIAL_TTL;
+		ipv4_addresses[i].ipv4.mcast_ttl = CONFIG_NET_INITIAL_MCAST_TTL;
 	}
 }
 

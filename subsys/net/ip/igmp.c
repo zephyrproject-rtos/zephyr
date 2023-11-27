@@ -191,6 +191,9 @@ static int igmp_v2_create_packet(struct net_pkt *pkt, const struct in_addr *dst,
 	const uint32_t router_alert = 0x94040000; /* RFC 2213 ch 2.1 */
 	int ret;
 
+	/* TTL set to 1, RFC 3376 ch 2 */
+	net_pkt_set_ipv4_ttl(pkt, 1U);
+
 	ret = net_ipv4_create_full(pkt,
 				   net_if_ipv4_select_src_addr(
 							net_pkt_iface(pkt),
@@ -199,8 +202,7 @@ static int igmp_v2_create_packet(struct net_pkt *pkt, const struct in_addr *dst,
 				   0U,
 				   0U,
 				   0U,
-				   0U,
-				   1U);  /* TTL set to 1, RFC 3376 ch 2 */
+				   0U);
 	if (ret) {
 		return -ENOBUFS;
 	}
@@ -222,8 +224,11 @@ static int igmp_v3_create_packet(struct net_pkt *pkt, const struct in_addr *dst,
 	const uint32_t router_alert = 0x94040000; /* RFC 2213 ch 2.1 */
 	int ret;
 
+	/* TTL set to 1, RFC 3376 ch 2 */
+	net_pkt_set_ipv4_ttl(pkt, 1U);
+
 	ret = net_ipv4_create_full(pkt, net_if_ipv4_select_src_addr(net_pkt_iface(pkt), dst), dst,
-				   0U, 0U, 0U, 0U, 1U); /* TTL set to 1, RFC 3376 ch 2 */
+				   0U, 0U, 0U, 0U);
 	if (ret) {
 		return -ENOBUFS;
 	}
