@@ -1678,7 +1678,18 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
-void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
+void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
+
+/* The old hop limit setter function is deprecated because the naming
+ * of it was incorrect. The API name was missing "_if_" so this function
+ * should not be used.
+ */
+__deprecated
+static inline void net_ipv6_set_hop_limit(struct net_if *iface,
+					  uint8_t hop_limit)
+{
+	net_if_ipv6_set_hop_limit(iface, hop_limit);
+}
 
 /**
  * @brief Get IPv6 multicast hop limit specified for a given interface. This is the

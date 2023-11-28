@@ -464,7 +464,7 @@ static int interface_set_config(struct net_if *iface,
 			ctx->family = AF_INET6;
 			net_virtual_set_name(iface, "IPv6 tunnel");
 
-			net_ipv6_set_hop_limit(iface, 64);
+			net_if_ipv6_set_hop_limit(iface, 64);
 
 			if (ctx->attached_to == NULL) {
 				(void)net_virtual_interface_attach(iface,
