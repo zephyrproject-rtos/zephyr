@@ -7,7 +7,6 @@
 #include "posix_internal.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/pthread_key.h>
 #include <zephyr/sys/bitarray.h>
@@ -17,8 +16,6 @@ struct pthread_key_data {
 	sys_snode_t node;
 	pthread_thread_data thread_data;
 };
-
-LOG_MODULE_REGISTER(pthread_key, CONFIG_PTHREAD_KEY_LOG_LEVEL);
 
 static struct k_spinlock pthread_key_lock;
 
@@ -53,19 +50,16 @@ static pthread_key_obj *get_posix_key(pthread_key_t key)
 
 	/* if the provided cond does not claim to be initialized, its invalid */
 	if (!is_pthread_obj_initialized(key)) {
-		LOG_ERR("Key is uninitialized (%x)", key);
 		return NULL;
 	}
 
 	/* Mask off the MSB to get the actual bit index */
 	if (sys_bitarray_test_bit(&posix_key_bitarray, bit, &actually_initialized) < 0) {
-		LOG_ERR("Key is invalid (%x)", key);
 		return NULL;
 	}
 
 	if (actually_initialized == 0) {
 		/* The cond claims to be initialized but is actually not */
-		LOG_ERR("Key claims to be initialized (%x)", key);
 		return NULL;
 	}
 
@@ -116,7 +110,6 @@ int pthread_key_create(pthread_key_t *key,
 	sys_slist_init(&(new_key->key_data_l));
 
 	new_key->destructor = destructor;
-	LOG_DBG("Initialized key %p (%x)", new_key, *key);
 
 	return 0;
 }
@@ -153,7 +146,6 @@ int pthread_key_delete(pthread_key_t key)
 
 		/* Deallocate the object's memory */
 		k_free((void *)key_data);
-		LOG_DBG("Freed key data %p for key %x in thread %x", key_data, key, pthread_self());
 	}
 
 	bit = posix_key_to_offset(key_obj);
@@ -161,8 +153,6 @@ int pthread_key_delete(pthread_key_t key)
 	__ASSERT_NO_MSG(ret == 0);
 
 	k_spin_unlock(&pthread_key_lock, key_key);
-
-	LOG_DBG("Deleted key %p (%x)", key_obj, key);
 
 	return 0;
 }
@@ -204,8 +194,6 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 				 * associate thread specific data
 				 */
 				thread_spec_data->spec_data = (void *)value;
-				LOG_DBG("Paired key %x to value %p for thread %x", key, value,
-					pthread_self());
 				goto out;
 			}
 	}
@@ -214,13 +202,9 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 		key_data = k_malloc(sizeof(struct pthread_key_data));
 
 		if (key_data == NULL) {
-			LOG_ERR("Failed to allocate key data for key %x", key);
 			retval = ENOMEM;
 			goto out;
 		}
-
-		LOG_DBG("Allocated key data %p for key %x in thread %x", key_data, key,
-			pthread_self());
 
 		/* Associate thread specific data, initialize new key */
 		key_data->thread_data.key = key_obj;
@@ -231,8 +215,6 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 
 		/* Append new key data to the key object's list */
 		sys_slist_append(&(key_obj->key_data_l), (sys_snode_t *)key_data);
-
-		LOG_DBG("Paired key %x to value %p for thread %x", key, value, pthread_self());
 	}
 
 out:
