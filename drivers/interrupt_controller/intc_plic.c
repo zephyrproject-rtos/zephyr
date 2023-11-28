@@ -140,7 +140,7 @@ static int riscv_plic_is_edge_irq(const struct device *dev, uint32_t local_irq)
 	const struct plic_config *config = dev->config;
 	mem_addr_t trig_addr = config->trig + local_irq_to_reg_offset(local_irq);
 
-	return sys_read32(trig_addr) & BIT(local_irq);
+	return sys_read32(trig_addr) & BIT(local_irq & PLIC_REG_MASK);
 }
 
 static void plic_irq_enable_set_state(uint32_t irq, bool enable)
