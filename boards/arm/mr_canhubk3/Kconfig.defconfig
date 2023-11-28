@@ -13,6 +13,19 @@ config UART_CONSOLE
 
 endif # SERIAL
 
+if SPI
+
+config SPI_INIT_PRIORITY
+	default 50
+
+if WDT_NXP_FS26
+
+config WDT_NXP_FS26_INIT_PRIORITY
+	default 51
+
+endif # WDT_NXP_FS26
+endif # SPI
+
 if CAN
 
 config GPIO
