@@ -2864,7 +2864,6 @@ TI SimpleLink Platforms:
     - vaishnavachath
   collaborators:
     - vanti
-    - cfriedt
   files:
     - boards/arm/cc13*/
     - boards/arm/cc26*/
@@ -3486,8 +3485,6 @@ West:
   status: maintained
   maintainers:
     - vaishnavachath
-  collaborators:
-    - cfriedt
   files: []
   labels:
     - "platform: TI"
