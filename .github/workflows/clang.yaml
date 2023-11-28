@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ["native_posix"]
+        platform: ["native_sim"]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
