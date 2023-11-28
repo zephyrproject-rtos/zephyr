@@ -290,6 +290,9 @@ struct net_if_ipv6 {
 
 	/** IPv6 hop limit */
 	uint8_t hop_limit;
+
+	/** IPv6 multicast hop limit */
+	uint8_t mcast_hop_limit;
 };
 
 #if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
@@ -1676,6 +1679,24 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
  * @param hop_limit New hop limit
  */
 void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
+
+/**
+ * @brief Get IPv6 multicast hop limit specified for a given interface. This is the
+ * default value but can be overridden by the user.
+ *
+ * @param iface Network interface
+ *
+ * @return Hop limit
+ */
+uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface);
+
+/**
+ * @brief Set the default IPv6 multicast hop limit of a given interface.
+ *
+ * @param iface Network interface
+ * @param hop_limit New hop limit
+ */
+void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit);
 
 /**
  * @brief Set IPv6 reachable time for a given interface
