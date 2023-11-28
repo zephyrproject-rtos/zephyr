@@ -6,7 +6,7 @@ tests:
       - charger
     filter: >
       dt_compat_enabled("sbs,sbs-charger") and
-      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
+      (CONFIG_QEMU_TARGET or CONFIG_ARCH_POSIX)
     extra_args:
       CONF_FILE="prj.conf;boards/emulated_board.conf"
       DTC_OVERLAY_FILE="boards/emulated_board.overlay"
@@ -26,7 +26,7 @@ tests:
       - charger
     filter: >
       dt_compat_enabled("sbs,sbs-charger") and
-      (CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX)
+      (CONFIG_QEMU_TARGET or CONFIG_ARCH_POSIX)
     platform_allow:
       - qemu_cortex_a53
       - qemu_cortex_a53_smp
