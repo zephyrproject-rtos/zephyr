@@ -1257,7 +1257,6 @@ static void uart_stm32_isr(const struct device *dev)
 			LL_USART_IsActiveFlag_TC(config->usart)) {
 
 		LL_USART_DisableIT_TC(config->usart);
-		LL_USART_ClearFlag_TC(config->usart);
 		/* Generate TX_DONE event when transmission is done */
 		async_evt_tx_done(data);
 
