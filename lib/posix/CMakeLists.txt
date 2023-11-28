@@ -13,6 +13,9 @@ if(CONFIG_POSIX_API)
 endif()
 
 if(CONFIG_POSIX_SIGNAL)
+  zephyr_syscall_header(
+    ${ZEPHYR_BASE}/lib/posix/posix_internal.h
+  )
   set(STRSIGNAL_TABLE_H ${GEN_DIR}/posix/strsignal_table.h)
 
   add_custom_command(

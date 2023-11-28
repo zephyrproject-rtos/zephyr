@@ -49,12 +49,17 @@ extern "C" {
 #define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
 #define _NSIG (SIGRTMAX + 1)
 
+#define SIG_DFL Z_SIG_DFL
+#define SIG_IGN Z_SIG_IGN
+#define SIG_ERR Z_SIG_ERR
+
 BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
 
 typedef struct {
 	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
 } sigset_t;
 
+int kill(pid_t pid, int sig);
 char *strsignal(int signum);
 int sigemptyset(sigset_t *set);
 int sigfillset(sigset_t *set);
@@ -89,6 +94,12 @@ struct sigevent {
 	void (*sigev_notify_function)(union sigval val);
 	pthread_attr_t *sigev_notify_attributes;
 };
+
+typedef void (*sighandler_t)(int sig);
+sighandler_t signal(int sig, sighandler_t handler);
+int kill(pid_t pid, int sig);
+pid_t getpid(void);
+pid_t getppid(void);
 
 #ifdef __cplusplus
 }

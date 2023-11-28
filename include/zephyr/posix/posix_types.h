@@ -21,6 +21,13 @@
 extern "C" {
 #endif
 
+#define _z_sighdlr void (*)(int)
+#define Z_SIG_DFL  ((_z_sighdlr)0)
+#define Z_SIG_IGN  ((_z_sighdlr)1)
+#define Z_SIG_ERR  ((_z_sighdlr)-1)
+
+typedef pid_t z_pid_t;
+
 #ifndef __useconds_t_defined
 typedef unsigned long useconds_t;
 #endif

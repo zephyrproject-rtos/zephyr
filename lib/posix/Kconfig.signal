@@ -23,4 +23,35 @@ config POSIX_SIGNAL_STRING_DESC
 	  Use full description for the strsignal API.
 	  Will use 256 bytes of ROM.
 
+config POSIX_SIGNAL_DEFAULT_PID
+	int "Default system-wide process identifier (PID)"
+	range 2 2147483647
+	default 2
+	help
+	  To maintain compatibility with some other POSIX operating systems, a PID of zero is used to
+	  indicate that the process exists in another namespace. PID zero is also used by the
+	  scheduler in some cases. PID one is usually reserved for the init process.
+
+	  Other (positive) PID values are fair to use here.
+
+config POSIX_SIGNAL_DEFAULT_PARENT_PID
+	int ""
+	default 0
+	help
+	  To maintain compatibility with some other POSIX operating systems, a PID of zero is used to
+	  indicate that the process exists in another namespace. PID one is reserved for the init
+	  process.
+
+config POSIX_SIGNAL_ONE_HANDLER
+	bool "Only reserve space for one signal handler"
+	help
+	  Typically POSIX systems can support installing many signal handlers for different signals
+	  simultaneously.
+
+	  This does, however, consume memory. In the interest of reducing memory usage, only allow
+	  installing one user-specified signal handler for all signals.
+
 endif
+
+TYPE = POSIX_SIGNAL
+source "lib/posix/Kconfig.template.with_logging"
