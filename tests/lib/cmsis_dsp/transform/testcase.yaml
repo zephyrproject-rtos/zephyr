@@ -11,7 +11,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 512
     min_ram: 64
@@ -39,7 +39,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 512
     min_ram: 64
@@ -67,7 +67,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 1024
     min_ram: 64
@@ -93,7 +93,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 1024
     min_ram: 64
@@ -173,7 +173,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 1024
     min_ram: 64
@@ -199,7 +199,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 512
     min_ram: 64
@@ -227,7 +227,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 1024
     min_ram: 160
@@ -253,7 +253,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 1024
     min_ram: 64

@@ -6,7 +6,7 @@ tests:
       - frdm_k64f
       - sam_e70_xplained
       - mps2_an521
-      - native_posix
+      - native_sim
     tags: cmsis_dsp
     min_flash: 128
     min_ram: 144
