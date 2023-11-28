@@ -731,7 +731,7 @@ ZTEST(net_socket_udp, test_08_so_txtime)
 	struct sockaddr_in6 bind_addr6;
 	int sock1, sock2, rv;
 	socklen_t optlen;
-	bool optval;
+	int optval;
 
 	prepare_sock_udp_v4(MY_IPV4_ADDR, 55555, &sock1, &bind_addr4);
 	prepare_sock_udp_v6(MY_IPV6_ADDR, 55555, &sock2, &bind_addr6);
@@ -1039,7 +1039,7 @@ ZTEST_USER(net_socket_udp, test_18_v6_sendmsg_with_txtime)
 {
 	int rv;
 	int client_sock;
-	bool optval;
+	int optval;
 	net_time_t txtime;
 	struct sockaddr_in6 client_addr;
 	struct msghdr msg;
