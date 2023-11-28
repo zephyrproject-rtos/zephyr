@@ -3,7 +3,7 @@ tests:
     filter: CONFIG_SERIAL
     tags: drivers uart
     integration_platforms:
-      - native_posix
+      - native_sim
   drivers.uart.async_rx.ztress:
     filter: CONFIG_SERIAL
     tags: drivers uart
