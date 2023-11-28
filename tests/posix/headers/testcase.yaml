@@ -2,8 +2,6 @@ common:
   filter: not (CONFIG_NATIVE_BUILD and CONFIG_EXTERNAL_LIBC)
   tags:
     - posix
-    - net
-    - socket
   min_ram: 32
 tests:
   portability.posix.headers.with_posix_api:
