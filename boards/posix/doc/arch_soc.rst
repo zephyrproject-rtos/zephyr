@@ -169,6 +169,24 @@ In the previous example, modifying the code as follows would work:
     #endif
    }
 
+.. _posix_arch_unsupported:
+
+Significant unsupported features
+********************************
+
+Currently, these are the most significant features which are not supported in this architecture:
+
+* :ref:`User mode/userspace <usermode_api>`: When building for these targets,
+  :kconfig:option:`CONFIG_USERSPACE` will always be disabled,
+  and all calls into the kernel will be done as normal calls.
+
+* Stack checks: :kconfig:option:`CONFIG_HW_STACK_PROTECTION`,
+  :kconfig:option:`CONFIG_STACK_CANARIES`, and
+  :kconfig:option:`CONFIG_THREAD_ANALYZER`.
+  This is due to how Zephyr allocated threads' stacks are not `actually` being used like they are
+  in other architectures. Check
+  :ref:`the architecture section's architecture layer paragraph <posix_arch_design_archl>`
+  for more information.
 
 .. _posix_arch_rationale:
 
@@ -293,6 +311,8 @@ Architecture and design
 
     Zephyr layering when built against an embedded target (left), and
     targeting a POSIX arch based board (right)
+
+.. _posix_arch_design_archl:
 
 Arch layer
 ==========

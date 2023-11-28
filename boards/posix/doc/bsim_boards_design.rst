@@ -167,12 +167,15 @@ The basic architecture layering of these boards is as follows:
     Overall architecture in a Zephyr application in an embedded target vs a bsim
     target
 
-Important limitations
-=====================
+Important limitations and unsupported features
+==============================================
 
 All native and bsim boards share the same set of
 :ref:`important limitations which<posix_arch_limitations>`
 are inherited from the POSIX arch and `inf_clock` design.
+
+Similarly, they inherit the POSIX architecture
+:ref:`unsupported features set <posix_arch_unsupported>`.
 
 .. _Threading:
 
