@@ -427,7 +427,7 @@ struct bt_cap_initiator_broadcast_create_param {
  * @brief Create a Common Audio Profile broadcast source.
  *
  * Create a new audio broadcast source with one or more audio streams.
- * * *
+ *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
  * to be enabled.
@@ -493,7 +493,7 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
  */
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source);
 
-/*
+/**
  * @brief Delete Common Audio Profile broadcast source
  *
  * This can only be done after the broadcast source has been stopped by calling
