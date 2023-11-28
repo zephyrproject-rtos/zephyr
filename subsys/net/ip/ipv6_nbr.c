@@ -2438,8 +2438,8 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	retrans_timer = ntohl(ra_hdr->retrans_timer);
 
 	if (ra_hdr->cur_hop_limit) {
-		net_ipv6_set_hop_limit(net_pkt_iface(pkt),
-				       ra_hdr->cur_hop_limit);
+		net_if_ipv6_set_hop_limit(net_pkt_iface(pkt),
+					  ra_hdr->cur_hop_limit);
 		NET_DBG("New hop limit %d",
 			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt)));
 	}
