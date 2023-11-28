@@ -1113,7 +1113,7 @@ struct in_pktinfo {
 };
 
 /* Socket options for IPPROTO_IPV6 level */
-/** sockopt: Don't support IPv4 access (ignored, for compatibility) */
+/** sockopt: Don't support IPv4 access */
 #define IPV6_V6ONLY 26
 
 /** sockopt: Pass an IPV6_RECVPKTINFO ancillary message that contains a
