@@ -11,10 +11,16 @@
 
 #if defined(_ASMLANGUAGE)
 
+#if defined(CONFIG_SOC_NRF53_ANOMALY_168_WORKAROUND_FOR_EXECUTION_FROM_RAM)
 #define SOC_ON_EXIT_CPU_IDLE \
+	.rept 26 \
 	nop; \
+	.endr
+#elif defined(CONFIG_SOC_NRF53_ANOMALY_168_WORKAROUND)
+#define SOC_ON_EXIT_CPU_IDLE \
+	.rept 8 \
 	nop; \
-	nop; \
-	nop;
+	.endr
+#endif
 
 #endif /* _ASMLANGUAGE */
