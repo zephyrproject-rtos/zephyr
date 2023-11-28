@@ -2638,6 +2638,47 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 	return iface_router_rm(router);
 }
 
+uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv6->mcast_hop_limit;
+out:
+	net_if_unlock(iface);
+
+	return ret;
+#else
+	ARG_UNUSED(iface);
+
+	return 0;
+#endif
+}
+
+void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	iface->config.ip.ipv6->mcast_hop_limit = hop_limit;
+out:
+	net_if_unlock(iface);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(hop_limit);
+#endif
+}
+
 uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
@@ -2980,6 +3021,7 @@ static void iface_ipv6_init(int if_count)
 
 	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
 		ipv6_addresses[i].ipv6.hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
+		ipv6_addresses[i].ipv6.mcast_hop_limit = CONFIG_NET_INITIAL_MCAST_HOP_LIMIT;
 		ipv6_addresses[i].ipv6.base_reachable_time = REACHABLE_TIME;
 
 		net_if_ipv6_set_reachable_time(&ipv6_addresses[i].ipv6);
