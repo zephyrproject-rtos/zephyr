@@ -44,6 +44,8 @@ Important limitations
 ``native_sim`` is based on the :ref:`POSIX architecture<Posix arch>`, and therefore
 :ref:`its limitations <posix_arch_limitations>` and considerations apply to it.
 
+Until https://github.com/zephyrproject-rtos/zephyr/issues/6044 is resolved, some limitations exist with current implementation.
+
 .. _native_sim_how_to_use:
 
 How to use it
