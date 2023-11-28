@@ -35,27 +35,34 @@ extern "C" {
  *   - 1: I3C Controller capable
  *   - 2: Reserved
  *   - 3: Reserved
+ *   .
  * - BCR[5]: Advanced Capabilities
  *   - 0: Does not support optional advanced capabilities.
  *   - 1: Supports optional advanced capabilities which
  *        can be viewed via GETCAPS CCC.
- * - BCR[4}: Virtual Target Support
+ *   .
+ * - BCR[4]: Virtual Target Support
  *   - 0: Is not a virtual target.
  *   - 1: Is a virtual target.
+ *   .
  * - BCR[3]: Offline Capable
  *   - 0: Will always response to I3C commands.
  *   - 1: Will not always response to I3C commands.
+ *   .
  * - BCR[2]: IBI Payload
  *   - 0: No data bytes following the accepted IBI.
  *   - 1: One data byte (MDB, Mandatory Data Byte) follows
  *        the accepted IBI. Additional data bytes may also
  *        follows.
+ *   .
  * - BCR[1]: IBI Request Capable
  *   - 0: Not capable
  *   - 1: Capable
+ *   .
  * - BCR[0]: Max Data Speed Limitation
  *   - 0: No Limitation
  *   - 1: Limitation obtained via GETMXDS CCC.
+ *   .
  *
  * @{
  */
