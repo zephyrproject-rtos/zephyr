@@ -1718,6 +1718,9 @@ static void check_rst_succeed(struct net_context *ctx,
 
 	net_context_put(ctx);
 	net_context_put(accepted_ctx);
+
+	/* Let other threads run (so the TCP context is actually freed) */
+	k_msleep(10);
 }
 
 ZTEST(net_tcp, test_client_invalid_rst)
