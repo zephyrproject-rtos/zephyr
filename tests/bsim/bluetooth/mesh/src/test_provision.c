@@ -657,7 +657,7 @@ static void test_device_pb_adv_reprovision(void)
 	for (int i = 0; i < PROV_REPROV_COUNT; i++) {
 		/* Keep a long timeout so the prov multi case has time to finish: */
 		LOG_INF("Dev prov loop #%d, waiting for prov ...\n", i);
-		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
+		ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(25)));
 	}
 
 	PASS();

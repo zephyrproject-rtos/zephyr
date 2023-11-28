@@ -71,6 +71,22 @@ enum {
 	ADV_NUM_FLAGS,
 };
 
+enum {
+	DELAYABLE_ADV_CTX_IN_USE,
+	DELAYABLE_ADV_CTX_RETRANSMIT,
+
+	DELAYABLE_ADV_CTX_NUM_FLAGS,
+};
+
+struct delayable_adv_ctx {
+	sys_snode_t node;
+	struct bt_mesh_adv *adv;
+	const struct bt_mesh_send_cb *cb;
+	void *cb_data;
+
+	ATOMIC_DEFINE(flags, DELAYABLE_ADV_CTX_NUM_FLAGS);
+} delayable_advs_ctx[CONFIG_BT_MESH_PB_ADV_DELAYABLE_ADV_COUNT];
+
 struct pb_adv {
 	uint32_t id; /* Link ID */
 
@@ -113,6 +129,12 @@ struct pb_adv {
 
 	/* Protocol timeout */
 	struct k_work_delayable prot_timer;
+
+	/* Transmit random delay timer */
+	struct k_work_delayable random_delay;
+
+	/* List of delayed advertisements */
+	sys_slist_t delayable_advs;
 };
 
 struct prov_rx {
@@ -131,6 +153,10 @@ static void link_ack(struct prov_rx *rx, struct net_buf_simple *buf);
 static void link_close(struct prov_rx *rx, struct net_buf_simple *buf);
 static void prov_link_close(enum prov_bearer_link_status status);
 static void close_link(enum prov_bearer_link_status status);
+static void delayable_adv_ctx_clear(struct bt_mesh_adv *adv);
+static bool delayable_adv_ctx_push(void);
+static struct delayable_adv_ctx *delayable_adv_ctx_head_get(void);
+static void delayable_adv_ctx_release(struct delayable_adv_ctx *ctx);
 
 static void buf_sent(int err, void *user_data)
 {
@@ -187,6 +213,9 @@ static void free_segments(void)
 		}
 
 		bt_mesh_adv_unref(adv);
+
+		/* Active adv is terminated, remove it from the list. */
+		delayable_adv_ctx_clear(adv);
 	}
 }
 
@@ -211,17 +240,28 @@ static void prov_clear_tx(void)
 
 static void reset_adv_link(void)
 {
+	struct delayable_adv_ctx *ctx;
+
 	LOG_DBG("");
+
+	/* Clear all pending delayable advs. */
+	ctx = delayable_adv_ctx_head_get();
+	while (ctx) {
+		delayable_adv_ctx_release(ctx);
+		ctx = delayable_adv_ctx_head_get();
+	}
+
 	prov_clear_tx();
 
 	/* If this fails, the work handler will exit early on the LINK_ACTIVE
 	 * check.
 	 */
 	(void)k_work_cancel_delayable(&link.prot_timer);
+	(void)k_work_cancel_delayable(&link.random_delay);
 
 	if (atomic_test_bit(link.flags, ADV_PROVISIONER)) {
-		/* Clear everything except the retransmit and protocol timer
-		 * delayed work objects.
+		/* Clear everything except the random_delay, retransmit
+		 * and protocol timer delayed work objects.
 		 */
 		(void)memset(&link, 0, offsetof(struct pb_adv, tx.retransmit));
 		link.rx.id = XACT_ID_NVAL;
@@ -317,6 +357,141 @@ static void protocol_timeout(struct k_work *work)
 	link.rx.seg = 0U;
 	prov_link_close(PROV_BEARER_LINK_STATUS_TIMEOUT);
 }
+
+static struct delayable_adv_ctx *delayable_adv_ctx_get_unused(void)
+{
+	for (int i = 0; i < CONFIG_BT_MESH_PB_ADV_DELAYABLE_ADV_COUNT; i++) {
+		if (!atomic_test_bit(delayable_advs_ctx[i].flags, DELAYABLE_ADV_CTX_IN_USE)) {
+			return &delayable_advs_ctx[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct delayable_adv_ctx *delayable_adv_ctx_assign(struct bt_mesh_adv *adv,
+							  const struct bt_mesh_send_cb *cb,
+							  void *cb_data, bool retransmit)
+{
+	struct delayable_adv_ctx *ctx;
+
+	ctx = delayable_adv_ctx_get_unused();
+	if (!ctx) {
+		LOG_WRN("Purge pending delayed advertisement.");
+		if (!delayable_adv_ctx_push()) {
+			return NULL;
+		}
+
+		ctx = delayable_adv_ctx_get_unused();
+		if (!ctx) {
+			return NULL;
+		}
+	}
+
+	atomic_set_bit(ctx->flags, DELAYABLE_ADV_CTX_IN_USE);
+	ctx->adv = adv;
+	ctx->cb = cb;
+	ctx->cb_data = cb_data;
+	if (retransmit) {
+		atomic_set_bit(ctx->flags, DELAYABLE_ADV_CTX_RETRANSMIT);
+	}
+
+	return ctx;
+}
+
+static void delayable_adv_ctx_release(struct delayable_adv_ctx *ctx)
+{
+	if (!atomic_test_and_clear_bit(ctx->flags, DELAYABLE_ADV_CTX_RETRANSMIT)) {
+		bt_mesh_adv_unref(ctx->adv);
+	}
+
+	(void)sys_slist_find_and_remove(&link.delayable_advs, &ctx->node);
+	atomic_clear_bit(ctx->flags, DELAYABLE_ADV_CTX_IN_USE);
+
+}
+
+static struct delayable_adv_ctx *delayable_adv_ctx_head_get(void)
+{
+	sys_snode_t *node = sys_slist_peek_head(&link.delayable_advs);
+
+	if (!node) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(node, struct delayable_adv_ctx, node);
+}
+
+static void delayable_adv_ctx_reschedule(void)
+{
+	uint16_t random_delay;
+	k_timeout_t delay;
+
+	if (sys_slist_is_empty(&link.delayable_advs)) {
+		return;
+	}
+
+	(void)bt_rand(&random_delay, sizeof(random_delay));
+	random_delay = 20 + (random_delay % 30);
+	delay = K_MSEC(random_delay);
+
+	LOG_DBG("delay %u", random_delay);
+
+	k_work_schedule(&link.random_delay, delay);
+}
+
+static bool delayable_adv_ctx_push(void)
+{
+	struct delayable_adv_ctx *ctx;
+
+	ctx = delayable_adv_ctx_head_get();
+
+	if (!ctx) {
+		return false;
+	}
+
+	LOG_DBG("%u bytes: %s", ctx->adv->b.len, bt_hex(ctx->adv->b.data, ctx->adv->b.len));
+	bt_mesh_adv_send(ctx->adv, ctx->cb, ctx->cb_data);
+
+	delayable_adv_ctx_release(ctx);
+	return true;
+}
+
+static void delayable_adv_handler(struct k_work *work)
+{
+	if (delayable_adv_ctx_push()) {
+		delayable_adv_ctx_reschedule();
+	}
+}
+
+static void adv_delay_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
+			   void *cb_data, bool retransmit)
+{
+	struct delayable_adv_ctx *ctx;
+
+	ctx = delayable_adv_ctx_assign(adv, cb, cb_data, retransmit);
+
+	if (!ctx) {
+		LOG_WRN("Unable to allocate delayable advertiser context, sending immediately.");
+		bt_mesh_adv_send(adv, cb, cb_data);
+		return;
+	}
+
+	sys_slist_append(&link.delayable_advs, &ctx->node);
+	delayable_adv_ctx_reschedule();
+}
+
+static void delayable_adv_ctx_clear(struct bt_mesh_adv *adv)
+{
+	struct delayable_adv_ctx *current;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&link.delayable_advs, current, node) {
+		if (current->adv == adv) {
+			delayable_adv_ctx_release(current);
+			return;
+		}
+	}
+}
+
 /*******************************************************************************
  * Generic provisioning
  ******************************************************************************/
@@ -354,8 +529,7 @@ static void gen_prov_ack_send(uint8_t xact_id)
 	net_buf_simple_add_u8(&adv->b, xact_id);
 	net_buf_simple_add_u8(&adv->b, GPC_ACK);
 
-	bt_mesh_adv_send(adv, complete, NULL);
-	bt_mesh_adv_unref(adv);
+	adv_delay_send(adv, complete, NULL, false);
 }
 
 static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
@@ -370,6 +544,10 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 			gen_prov_ack_send(rx->xact_id);
 		}
 
+		return;
+	} else if (rx->xact_id == next_transaction_id(link.rx.id) && link.tx.adv[0]) {
+		LOG_WRN("xact 0x%x equal next transaction id 0x%x, but tx buf is not empty",
+			 rx->xact_id, next_transaction_id(link.rx.id));
 		return;
 	}
 
@@ -467,6 +645,10 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 	} else if (rx->xact_id != next_transaction_id(link.rx.id)) {
 		LOG_WRN("Unexpected xact 0x%x, expected 0x%x", rx->xact_id,
 			next_transaction_id(link.rx.id));
+		return;
+	} else if (rx->xact_id == next_transaction_id(link.rx.id) && link.tx.adv[0]) {
+		LOG_WRN("xact 0x%x equal next transaction id 0x%x, but tx buf is not empty",
+			 rx->xact_id, next_transaction_id(link.rx.id));
 		return;
 	}
 
@@ -608,7 +790,7 @@ static void send_reliable(void)
 
 		LOG_DBG("%u bytes: %s", adv->b.len, bt_hex(adv->b.data, adv->b.len));
 
-		bt_mesh_adv_send(adv, NULL, NULL);
+		adv_delay_send(adv, NULL, NULL, true);
 	}
 
 	k_work_reschedule(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
@@ -678,8 +860,7 @@ static int bearer_ctl_send_unacked(struct bt_mesh_adv *adv, void *user_data)
 	prov_clear_tx();
 	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
-	bt_mesh_adv_send(adv, &buf_sent_cb, user_data);
-	bt_mesh_adv_unref(adv);
+	adv_delay_send(adv, &buf_sent_cb, user_data, false);
 
 	return 0;
 }
@@ -942,7 +1123,12 @@ static void prov_link_close(enum prov_bearer_link_status status)
 void bt_mesh_pb_adv_init(void)
 {
 	k_work_init_delayable(&link.prot_timer, protocol_timeout);
+	k_work_init_delayable(&link.random_delay, delayable_adv_handler);
 	k_work_init_delayable(&link.tx.retransmit, prov_retransmit);
+	sys_slist_init(&link.delayable_advs);
+	for (int i = 0; i < CONFIG_BT_MESH_PB_ADV_DELAYABLE_ADV_COUNT; i++) {
+		atomic_clear(delayable_advs_ctx[i].flags);
+	}
 }
 
 void bt_mesh_pb_adv_reset(void)

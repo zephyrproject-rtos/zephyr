@@ -231,6 +231,13 @@ config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 	help
 	  Timeout value of retransmit provisioning PDUs.
 
+config BT_MESH_PB_ADV_DELAYABLE_ADV_COUNT
+	int "Number of randomly delayed generic provisioning PDUs"
+	default 4
+	help
+	  The maximum number of generic provisioning PDUs that can be delayed at
+	  the same time.
+
 endif # BT_MESH_PB_ADV
 
 if BT_CONN
