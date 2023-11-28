@@ -204,20 +204,17 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 		if (key_data == NULL) {
 			retval = ENOMEM;
 			goto out;
-
-		} else {
-			/* Associate thread specific data, initialize new key */
-			key_data->thread_data.key = key_obj;
-			key_data->thread_data.spec_data = (void *)value;
-
-			/* Append new thread key data to thread's key list */
-			sys_slist_append((&thread->key_list),
-				(sys_snode_t *)(&key_data->thread_data));
-
-			/* Append new key data to the key object's list */
-			sys_slist_append(&(key_obj->key_data_l),
-					(sys_snode_t *)key_data);
 		}
+
+		/* Associate thread specific data, initialize new key */
+		key_data->thread_data.key = key_obj;
+		key_data->thread_data.spec_data = (void *)value;
+
+		/* Append new thread key data to thread's key list */
+		sys_slist_append((&thread->key_list), (sys_snode_t *)(&key_data->thread_data));
+
+		/* Append new key data to the key object's list */
+		sys_slist_append(&(key_obj->key_data_l), (sys_snode_t *)key_data);
 	}
 
 out:
