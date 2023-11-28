@@ -1962,6 +1962,27 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	}
 #endif
 
+#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+	if (config->wakeup_source) {
+		/* Enable ability to wakeup device in Stop mode
+		 * Effect depends on CONFIG_PM_DEVICE status:
+		 * CONFIG_PM_DEVICE=n : Always active
+		 * CONFIG_PM_DEVICE=y : Controlled by pm_device_wakeup_enable()
+		 */
+#ifdef USART_CR3_WUFIE
+		LL_USART_SetWKUPType(config->usart, LL_USART_WAKEUP_ON_RXNE);
+		LL_USART_EnableIT_WKUP(config->usart);
+		LL_USART_ClearFlag_WKUP(config->usart);
+#endif
+		LL_USART_EnableInStopMode(config->usart);
+
+		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
+			/* Prepare the WAKEUP with the expected EXTI line */
+			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
+		}
+	}
+#endif /* CONFIG_PM */
+
 	LL_USART_Enable(config->usart);
 
 #ifdef USART_ISR_TEACK
@@ -2015,29 +2036,6 @@ static int uart_stm32_init(const struct device *dev)
 	defined(CONFIG_UART_ASYNC_API)
 	config->irq_config_func(dev);
 #endif /* CONFIG_PM || CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
-
-#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
-	if (config->wakeup_source) {
-		/* Enable ability to wakeup device in Stop mode
-		 * Effect depends on CONFIG_PM_DEVICE status:
-		 * CONFIG_PM_DEVICE=n : Always active
-		 * CONFIG_PM_DEVICE=y : Controlled by pm_device_wakeup_enable()
-		 */
-#ifdef USART_CR3_WUFIE
-		LL_USART_Disable(config->usart);
-		LL_USART_SetWKUPType(config->usart, LL_USART_WAKEUP_ON_RXNE);
-		LL_USART_EnableIT_WKUP(config->usart);
-		LL_USART_ClearFlag_WKUP(config->usart);
-		LL_USART_Enable(config->usart);
-#endif
-		LL_USART_EnableInStopMode(config->usart);
-
-		if (config->wakeup_line != STM32_EXTI_LINE_NONE) {
-			/* Prepare the WAKEUP with the expected EXTI line */
-			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
-		}
-	}
-#endif /* CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
 	return uart_stm32_async_init(dev);
