@@ -603,6 +603,19 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		usbd: usbd@400c0000 {
+			compatible = "nuvoton,numaker-usbd";
+			reg = <0x400c0000 0x1000>;
+			interrupts = <53 0>;
+			resets = <&rst NUMAKER_USBD_RST>;
+			clocks = <&pcc NUMAKER_USBD_MODULE NUMAKER_CLK_CLKSEL0_USBSEL_PLL_DIV2
+				  NUMAKER_CLK_CLKDIV0_USB(2)>;
+			dma-buffer-size = <1536>;
+			status = "disabled";
+			num-bidir-endpoints = <25>;
+			disallow-iso-in-out-same-number;
+		};
 	};
 };
 

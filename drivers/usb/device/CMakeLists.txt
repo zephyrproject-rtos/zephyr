@@ -20,5 +20,6 @@ zephyr_library_sources_ifdef(CONFIG_USB_NRFX         usb_dc_nrfx.c)
 zephyr_library_sources_ifdef(CONFIG_USB_MCUX         usb_dc_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_USB_DC_SMARTBOND usb_dc_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_USB_DC_IT82XX2   usb_dc_it82xx2.c)
+zephyr_library_sources_ifdef(CONFIG_USB_DC_NUMAKER   usb_dc_numaker.c)
 
 endif()
