@@ -22,6 +22,13 @@ tests:
     tags: bluetooth
     harness: keyboard
     min_flash: 145
+  bluetooth.shell.power_control_request:
+    extra_configs:
+      - CONFIG_BT_TRANSMIT_POWER_CONTROL=y
+      - CONFIG_BT_CTLR=n
+    platform_allow:
+      - native_posix
+    build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:
       - OVERLAY_CONFIG=cdc_acm.conf
