@@ -94,25 +94,27 @@ static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *
 static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 					 struct gpio_keys_callback *cb, uint32_t zephyr_code)
 {
-	int retval;
-	gpio_flags_t flags;
+	int ret;
 
 	gpio_init_callback(&cb->gpio_cb, gpio_keys_interrupt, BIT(gpio_spec->pin));
 
-	retval = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
-	if (retval < 0) {
+	ret = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
+	if (ret < 0) {
 		LOG_ERR("Could not set gpio callback");
-		return retval;
+		return ret;
 	}
 
 	cb->pin_state = -1;
-	flags = GPIO_INT_EDGE_BOTH & ~GPIO_INT_MODE_DISABLED;
 
 	LOG_DBG("%s [0x%p, %d]", __func__, gpio_spec->port, gpio_spec->pin);
 
-	retval = z_impl_gpio_pin_interrupt_configure(gpio_spec->port, gpio_spec->pin, flags);
+	ret = gpio_pin_interrupt_configure_dt(gpio_spec, GPIO_INT_EDGE_BOTH);
+	if (ret < 0) {
+		LOG_ERR("interrupt configuration failed: %d", ret);
+		return ret;
+	}
 
-	return retval;
+	return 0;
 }
 
 static int gpio_keys_init(const struct device *dev)
