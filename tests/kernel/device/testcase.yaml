@@ -3,7 +3,7 @@ common:
     - device
     - userspace
   integration_platforms:
-    - native_posix
+    - native_sim
 tests:
   kernel.device:
     tags:

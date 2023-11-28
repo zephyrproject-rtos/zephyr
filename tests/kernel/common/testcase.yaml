@@ -20,7 +20,7 @@ tests:
     # Some configurations are known-incompliant and won't build
     filter: not ((CONFIG_I2C or CONFIG_SPI) and CONFIG_USERSPACE)
     integration_platforms:
-      - native_posix
+      - native_sim
     extra_configs:
       - CONFIG_MISRA_SANE=y
   kernel.common.minimallibc:
