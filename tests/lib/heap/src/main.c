@@ -21,8 +21,8 @@
  */
 # define MEMSZ (192 * 1024)
 #elif defined(CONFIG_ARCH_POSIX)
-/* native_posix doesn't support CONFIG_SRAM_SIZE at all (because
- * it can link anything big enough to fit on the host), so just use a
+/* POSIX arch based targets don't support CONFIG_SRAM_SIZE at all (because
+ * they can link anything big enough to fit on the host), so just use a
  * reasonable value.
  */
 # define MEMSZ (2 * 1024 * 1024)
