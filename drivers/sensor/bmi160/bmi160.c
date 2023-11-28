@@ -403,7 +403,7 @@ static int bmi160_acc_range_set(const struct device *dev, const struct sensor_va
 		return -EIO;
 	}
 
-	data->scale.acc = BMI160_ACC_SCALE(range_g);
+	data->scale.acc_numerator = BMI160_ACC_SCALE_NUMERATOR(range_g);
 	return 0;
 }
 #endif
@@ -586,7 +586,7 @@ static int bmi160_gyr_range_set(const struct device *dev, const struct sensor_va
 		return -EIO;
 	}
 
-	data->scale.gyr = BMI160_GYR_SCALE(range);
+	data->scale.gyr_numerator = BMI160_GYR_SCALE_NUMERATOR(range);
 
 	return 0;
 }
@@ -899,24 +899,18 @@ out:
 	return ret;
 }
 
-static void bmi160_to_fixed_point(int16_t raw_val, uint16_t scale,
-				  struct sensor_value *val)
+static void bmi160_to_fixed_point(int16_t raw_val, int64_t scale_numerator,
+				  uint32_t scale_denominator, struct sensor_value *val)
 {
-	int32_t converted_val;
+	int64_t converted_val = (int64_t)raw_val * scale_numerator / scale_denominator;
 
-	/*
-	 * maximum converted value we can get is: max(raw_val) * max(scale)
-	 *	max(raw_val) = +/- 2^15
-	 *	max(scale) = 4785
-	 *	max(converted_val) = 156794880 which is less than 2^31
-	 */
-	converted_val = raw_val * scale;
 	val->val1 = converted_val / 1000000;
 	val->val2 = converted_val % 1000000;
 }
 
 static void bmi160_channel_convert(enum sensor_channel chan,
-				   uint16_t scale,
+				   int64_t scale_numerator,
+				   uint32_t scale_denominator,
 				   uint16_t *raw_xyz,
 				   struct sensor_value *val)
 {
@@ -942,7 +936,7 @@ static void bmi160_channel_convert(enum sensor_channel chan,
 	}
 
 	for (i = ofs_start; i <= ofs_stop ; i++, val++) {
-		bmi160_to_fixed_point(raw_xyz[i], scale, val);
+		bmi160_to_fixed_point(raw_xyz[i], scale_numerator, scale_denominator, val);
 	}
 }
 
@@ -953,7 +947,8 @@ static inline void bmi160_gyr_channel_get(const struct device *dev,
 {
 	struct bmi160_data *data = dev->data;
 
-	bmi160_channel_convert(chan, data->scale.gyr, data->sample.gyr, val);
+	bmi160_channel_convert(chan, data->scale.gyr_numerator, BMI160_GYR_SCALE_DENOMINATOR,
+			       data->sample.gyr, val);
 }
 #endif
 
@@ -964,7 +959,8 @@ static inline void bmi160_acc_channel_get(const struct device *dev,
 {
 	struct bmi160_data *data = dev->data;
 
-	bmi160_channel_convert(chan, data->scale.acc, data->sample.acc, val);
+	bmi160_channel_convert(chan, data->scale.acc_numerator, BMI160_ACC_SCALE_DENOMINATOR,
+			       data->sample.acc, val);
 }
 #endif
 
@@ -1130,7 +1126,7 @@ int bmi160_init(const struct device *dev)
 
 	acc_range = bmi160_acc_reg_val_to_range(BMI160_DEFAULT_RANGE_ACC);
 
-	data->scale.acc = BMI160_ACC_SCALE(acc_range);
+	data->scale.acc_numerator = BMI160_ACC_SCALE_NUMERATOR(acc_range);
 
 	/* set gyro default range */
 	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE,
@@ -1141,7 +1137,7 @@ int bmi160_init(const struct device *dev)
 
 	gyr_range = bmi160_gyr_reg_val_to_range(BMI160_DEFAULT_RANGE_GYR);
 
-	data->scale.gyr = BMI160_GYR_SCALE(gyr_range);
+	data->scale.gyr_numerator = BMI160_GYR_SCALE_NUMERATOR(gyr_range);
 
 	if (bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
 				    BMI160_ACC_CONF_ODR_POS,
