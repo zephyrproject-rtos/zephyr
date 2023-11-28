@@ -300,9 +300,11 @@ enum bmi160_odr {
 #define BMI160_GYR_RANGE_250DPS		3
 #define BMI160_GYR_RANGE_125DPS		4
 
-#define BMI160_ACC_SCALE(range_g)	((2 * range_g * SENSOR_G) / 65536LL)
-#define BMI160_GYR_SCALE(range_dps)\
-				((2 * range_dps * SENSOR_PI) / 180LL / 65536LL)
+#define BMI160_ACC_SCALE_NUMERATOR(range_g) (2 * (range_g) * SENSOR_G)
+#define BMI160_ACC_SCALE_DENOMINATOR UINT16_MAX
+
+#define BMI160_GYR_SCALE_NUMERATOR(range_dps) (2 * (range_dps) * SENSOR_PI)
+#define BMI160_GYR_SCALE_DENOMINATOR (UINT32_C(180) * UINT16_MAX)
 
 /* default settings, based on menuconfig options */
 
@@ -483,8 +485,10 @@ union bmi160_sample {
 };
 
 struct bmi160_scale {
-	uint16_t acc; /* micro m/s^2/lsb */
-	uint16_t gyr; /* micro radians/s/lsb */
+	/* numerator / denominator => micro m/s^2/lsb */
+	int32_t acc_numerator;
+	/* numerator / denominator => micro radians/s/lsb */
+	int64_t gyr_numerator;
 };
 
 struct bmi160_data {
