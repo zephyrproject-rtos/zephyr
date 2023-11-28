@@ -616,6 +616,11 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param, uint8_t own_ad
 	    BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
 		param->options |= BT_LE_ADV_OPT_EXT_ADV;
 		if (ext_adv != NULL) {
+			err = bt_le_ext_adv_stop(ext_adv);
+			if (err != 0) {
+				return err;
+			}
+
 			err = bt_le_ext_adv_delete(ext_adv);
 			if (err != 0) {
 				return err;
@@ -1563,11 +1568,8 @@ static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
 	}
 
 	err = tester_gap_padv_set_data(padv, padv_len);
-	if (err != 0) {
-		return BTP_STATUS_FAILED;
-	}
 
-	return BTP_STATUS_SUCCESS;
+	return BTP_STATUS_VAL(err);
 }
 
 int tester_gap_padv_create_sync(struct bt_le_per_adv_sync_param *create_params)
@@ -1625,11 +1627,8 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 	}
 
 	err = tester_gap_padv_create_sync(&create_params);
-	if (err != 0) {
-		return BTP_STATUS_FAILED;
-	}
 
-	return BTP_STATUS_SUCCESS;
+	return BTP_STATUS_VAL(err);
 }
 
 static uint8_t padv_sync_transfer_set_info(const void *cmd, uint16_t cmd_len,
