@@ -74,6 +74,7 @@ config TFM_PROFILE
 	depends on BUILD_WITH_TFM
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
 	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
+	default "profile_medium_arotless" if TFM_PROFILE_TYPE_AROTLESS
 	default "profile_large" if TFM_PROFILE_TYPE_LARGE
 	help
 	  Build profile used to build tfm_s image. The available values are
@@ -98,6 +99,9 @@ config TFM_PROFILE_TYPE_SMALL
 
 config TFM_PROFILE_TYPE_MEDIUM
 	bool "TF-M build profile: medium"
+
+config TFM_PROFILE_TYPE_AROTLESS
+	bool "TF-M build profile: ARoT-less"
 
 config TFM_PROFILE_TYPE_LARGE
 	bool "TF-M build profile: large"
