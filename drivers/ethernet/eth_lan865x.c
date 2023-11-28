@@ -425,6 +425,7 @@ static void lan865x_int_thread(const struct device *dev)
 	struct lan865x_data *ctx = dev->data;
 	struct oa_tc6 *tc6 = ctx->tc6;
 	uint32_t sts, val, ftr;
+	int ret;
 
 	while (true) {
 		k_sem_take(&ctx->int_sem, K_FOREVER);
@@ -459,7 +460,10 @@ static void lan865x_int_thread(const struct device *dev)
 			lan865x_read_chunks(dev);
 		} while (tc6->rca > 0);
 
-		oa_tc6_check_status(tc6);
+		ret = oa_tc6_check_status(tc6);
+		if (ret == -EIO) {
+			lan865x_gpio_reset(dev);
+		}
 	}
 }
 
