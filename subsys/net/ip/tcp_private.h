@@ -274,6 +274,7 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
 	struct k_work_delayable ack_timer;
+	struct k_work conn_release;
 
 	union {
 		/* Because FIN and establish timers are never happening
