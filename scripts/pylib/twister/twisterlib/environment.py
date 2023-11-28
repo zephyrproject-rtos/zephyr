@@ -216,7 +216,8 @@ Artificially long but functional example:
         and 'fifo_loop' is a name of a function found in main.c without test prefix.
         """)
 
-    parser.add_argument("--pytest-args",
+    parser.add_argument(
+        "--pytest-args", action="append",
         help="""Pass additional arguments to the pytest subprocess. This parameter
         will override the pytest_args from the harness_config in YAML file.
         """)
