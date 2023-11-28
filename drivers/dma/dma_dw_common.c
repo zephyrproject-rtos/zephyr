@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <soc.h>
 #include "dma_dw_common.h"
@@ -546,6 +547,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 	struct dw_dma_dev_data *dev_data = dev->data;
 	struct dw_dma_chan_data *chan_data = &dev_data->chan[channel];
+	enum pm_device_state pm_state;
 	int ret = 0;
 
 	if (channel >= DW_CHAN_COUNT) {
@@ -553,7 +555,17 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 		goto out;
 	}
 
+	/*
+	 * skip if device is not active. if we get an error for state_get,
+	 * do not skip but check actual hardware state and stop if
+	 * needed
+	 */
+	ret = pm_device_state_get(dev, &pm_state);
+	if (!ret && pm_state != PM_DEVICE_STATE_ACTIVE)
+		goto out;
+
 	if (!dw_dma_is_enabled(dev, channel) && chan_data->state != DW_DMA_SUSPENDED) {
+		ret = 0;
 		goto out;
 	}
 
