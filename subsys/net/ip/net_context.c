@@ -1408,10 +1408,6 @@ static int get_context_priority(struct net_context *context,
 	return get_uint8_option(context->options.priority,
 				value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1436,10 +1432,6 @@ static int get_context_proxy(struct net_context *context,
 
 	return 0;
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1451,10 +1443,6 @@ static int get_context_txtime(struct net_context *context,
 	return get_bool_option(context->options.txtime,
 			       value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1471,10 +1459,6 @@ static int get_context_rcvtimeo(struct net_context *context,
 
 	return 0;
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1491,10 +1475,6 @@ static int get_context_sndtimeo(struct net_context *context,
 
 	return 0;
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1506,10 +1486,6 @@ static int get_context_rcvbuf(struct net_context *context,
 	return get_uint16_option(context->options.rcvbuf,
 				 value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1521,10 +1497,6 @@ static int get_context_sndbuf(struct net_context *context,
 	return get_uint16_option(context->options.sndbuf,
 				 value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1536,10 +1508,6 @@ static int get_context_dscp_ecn(struct net_context *context,
 	return get_uint8_option(context->options.dscp_ecn,
 				value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1551,10 +1519,6 @@ static int get_context_reuseaddr(struct net_context *context,
 	return get_bool_option(context->options.reuseaddr,
 			       value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1566,10 +1530,6 @@ static int get_context_reuseport(struct net_context *context,
 	return get_bool_option(context->options.reuseport,
 			       value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -1595,36 +1555,6 @@ static int get_context_recv_pktinfo(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 	return get_bool_option(context->options.recv_pktinfo,
 			       value, len);
-#else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
-	return -ENOTSUP;
-#endif
-}
-
-static int get_context_recv_pktinfo(struct net_context *context,
-				    void *value, size_t *len)
-{
-#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
-	if (!value || !len) {
-		return -EINVAL;
-	}
-
-	if (*len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if (context->options.recv_pktinfo == true) {
-		*((int *)value) = (int) true;
-	} else {
-		*((int *)value) = (int) false;
-	}
-
-	*len = sizeof(int);
-
-	return 0;
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -2611,10 +2541,6 @@ static int set_context_priority(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
 	return set_uint8_option(&context->options.priority, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2625,10 +2551,6 @@ static int set_context_txtime(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
 	return set_bool_option(&context->options.txtime, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2652,10 +2574,6 @@ static int set_context_proxy(struct net_context *context,
 
 	return 0;
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2672,10 +2590,6 @@ static int set_context_rcvtimeo(struct net_context *context,
 
 	return 0;
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2692,10 +2606,6 @@ static int set_context_sndtimeo(struct net_context *context,
 
 	return 0;
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2706,10 +2616,6 @@ static int set_context_rcvbuf(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
 	return set_uint16_option(&context->options.rcvbuf, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2720,10 +2626,6 @@ static int set_context_sndbuf(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
 	return set_uint16_option(&context->options.sndbuf, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2734,10 +2636,6 @@ static int set_context_dscp_ecn(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	return set_uint8_option(&context->options.dscp_ecn, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2748,10 +2646,6 @@ static int set_context_reuseaddr(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_REUSEADDR)
 	return set_bool_option(&context->options.reuseaddr, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2762,10 +2656,6 @@ static int set_context_reuseport(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_REUSEPORT)
 	return set_bool_option(&context->options.reuseport, value, len);
 #else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
 	return -ENOTSUP;
 #endif
 }
@@ -2789,32 +2679,6 @@ static int set_context_recv_pktinfo(struct net_context *context,
 {
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 	return set_bool_option(&context->options.recv_pktinfo, value, len);
-#else
-	ARG_UNUSED(context);
-	ARG_UNUSED(value);
-	ARG_UNUSED(len);
-
-	return -ENOTSUP;
-#endif
-}
-
-static int set_context_recv_pktinfo(struct net_context *context,
-				    const void *value, size_t len)
-{
-#if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
-	bool pktinfo = false;
-
-	if (len != sizeof(int)) {
-		return -EINVAL;
-	}
-
-	if (*((int *) value) != 0) {
-		pktinfo = true;
-	}
-
-	context->options.recv_pktinfo = pktinfo;
-
-	return 0;
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
