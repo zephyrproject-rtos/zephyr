@@ -118,9 +118,8 @@ ZTEST(common_errno, test_thread_context)
 
 void thread_entry_user(void *p1, void *p2, void *p3)
 {
-#ifdef CONFIG_ARCH_POSIX
-	/* The errno in native posix will be handled by native
-	 * operation system, so we skip it.
+#ifdef CONFIG_NATIVE_LIBC
+	/* The errno when using the host C library will be handled by it, so we skip it.
 	 */
 	ztest_test_skip();
 #else
