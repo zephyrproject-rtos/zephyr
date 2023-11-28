@@ -2702,7 +2702,7 @@ out:
 #endif
 }
 
-void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
+void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
