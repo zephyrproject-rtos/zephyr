@@ -227,6 +227,11 @@ int oa_tc6_check_status(struct oa_tc6 *tc6)
 {
 	uint32_t sts;
 
+	if (!tc6->sync) {
+		LOG_ERR("SYNC: Configuration lost, reset IC!");
+		return -EIO;
+	}
+
 	if (tc6->exst) {
 		/*
 		 * Just clear any pending interrupts.
