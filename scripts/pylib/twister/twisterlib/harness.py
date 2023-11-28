@@ -326,15 +326,6 @@ class Pytest(Harness):
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
 
-        if handler.options.pytest_args:
-            command.append(handler.options.pytest_args)
-            if pytest_args_yaml:
-                logger.warning(f'The pytest_args ({handler.options.pytest_args}) specified '
-                               'in the command line will override the pytest_args defined '
-                               f'in the YAML file {pytest_args_yaml}')
-        else:
-            command.extend(pytest_args_yaml)
-
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
 
@@ -354,6 +345,16 @@ class Pytest(Harness):
             command.append('--device-type=custom')
         else:
             raise PytestHarnessException(f'Handling of handler {handler.type_str} not implemented yet')
+
+        if handler.options.pytest_args:
+            command.extend(handler.options.pytest_args)
+            if pytest_args_yaml:
+                logger.warning(f'The pytest_args ({handler.options.pytest_args}) specified '
+                               'in the command line will override the pytest_args defined '
+                               f'in the YAML file {pytest_args_yaml}')
+        else:
+            command.extend(pytest_args_yaml)
+
         return command
 
     def _generate_parameters_for_hardware(self, handler: Handler):
