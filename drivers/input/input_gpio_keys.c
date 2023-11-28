@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(gpio_keys, CONFIG_INPUT_LOG_LEVEL);
 
 struct gpio_keys_callback {
 	struct gpio_callback gpio_cb;
-	uint32_t zephyr_code;
 	int8_t pin_state;
 };
 
@@ -106,7 +105,6 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 		return retval;
 	}
 
-	cb->zephyr_code = zephyr_code;
 	cb->pin_state = -1;
 	flags = GPIO_INT_EDGE_BOTH & ~GPIO_INT_MODE_DISABLED;
 
