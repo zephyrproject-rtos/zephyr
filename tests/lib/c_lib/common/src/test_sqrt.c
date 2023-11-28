@@ -109,10 +109,10 @@ int32_t *p_root_squared = (int32_t *)&root_squared;
 	/* Conversion not supported with minimal_libc without
 	 * CBPRINTF_FP_SUPPORT.
 	 *
-	 * Conversion not supported without FPU except on native POSIX.
+	 * Conversion not supported without FPU except on POSIX arch based targets.
 	 */
 	if (!(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX))) {
+		 || IS_ENABLED(CONFIG_ARCH_POSIX))) {
 		ztest_test_skip();
 		return;
 	}
@@ -176,10 +176,10 @@ int64_t *p_root_squared = (int64_t *)&root_squared;
 
 	max_error = 0;
 	/*
-	 * sqrt is not supported without FPU except on native POSIX.
+	 * sqrt is not supported without FPU except on POSIX arch based targets.
 	 */
 	if (!(IS_ENABLED(CONFIG_FPU)
-		 || IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX))) {
+		 || IS_ENABLED(CONFIG_ARCH_POSIX))) {
 		ztest_test_skip();
 		return;
 	}
