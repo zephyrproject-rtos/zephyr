@@ -44,7 +44,7 @@ menuconfig BUILD_WITH_TFM
 
 	  Notes:
 	    Building with the "_ns" BOARD variant (e.g. "mps2_an521_ns")
-		ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
+	    ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
 
 	    By default we allow Zephyr preemptible threads be preempted
 	    while performing a secure function call.
