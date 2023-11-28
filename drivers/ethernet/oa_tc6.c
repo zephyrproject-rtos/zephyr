@@ -197,7 +197,7 @@ int oa_tc6_send_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			FIELD_PREP(OA_DATA_HDR_SWO, 0);
 
 		if (i == 1) {
-			hdr |=	FIELD_PREP(OA_DATA_HDR_SV, 1);
+			hdr |= FIELD_PREP(OA_DATA_HDR_SV, 1);
 		}
 
 		if (i == chunks) {
