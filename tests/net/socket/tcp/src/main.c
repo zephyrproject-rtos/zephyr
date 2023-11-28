@@ -2189,6 +2189,10 @@ static void test_ioctl_fionread_common(int af)
 		zassert_ok(ioctl(fd[i], ZFD_IOCTL_FIONREAD, &avail));
 		zassert_equal(0, avail, "exp: %d: act: %d", 0, avail);
 	}
+
+	close(fd[SERVER]);
+	close(fd[CLIENT]);
+	close(fd[ACCEPT]);
 }
 
 ZTEST(net_socket_tcp, test_ioctl_fionread_v4)
