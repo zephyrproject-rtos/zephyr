@@ -71,6 +71,8 @@ app=tests/bsim/bluetooth/host/l2cap/send_on_connect conf_file=prj_ecred.conf com
 app=tests/bsim/bluetooth/host/misc/disable compile
 app=tests/bsim/bluetooth/host/misc/disconnect/dut compile
 app=tests/bsim/bluetooth/host/misc/disconnect/tester compile
+app=tests/bsim/bluetooth/host/misc/conn_stress/central compile
+app=tests/bsim/bluetooth/host/misc/conn_stress/peripheral compile
 
 app=tests/bsim/bluetooth/host/privacy/central compile
 app=tests/bsim/bluetooth/host/privacy/peripheral compile
