@@ -91,7 +91,7 @@ choice TFM_PROFILE_TYPE
 	  isolation level.
 
 config TFM_PROFILE_TYPE_NOT_SET
-	bool "TF-M build profile is not set"
+	bool "TF-M build profile: not set (base)"
 
 config TFM_PROFILE_TYPE_SMALL
 	bool "TF-M build profile: small"
