@@ -14,6 +14,12 @@ the :ref:`release notes<zephyr_3.6>`.
 Required changes
 ****************
 
+Boards
+======
+
+  * The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
+    applications that use this should switch to using the :ref:`boot_mode_api` instead.
+
 Kernel
 ======
 
