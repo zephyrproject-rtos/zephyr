@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "../../../../lib/posix/posix_internal.h"
+
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -217,3 +219,112 @@ ZTEST(posix_apis, test_signal_strsignal)
 	zassert_mem_equal(strsignal(SIGSYS), "Signal 31", sizeof("Signal 31"));
 #endif
 }
+
+ZTEST(signal, test_z_pid_set)
+{
+	zassert_equal(z_pid_set(0), -EINVAL);
+	zassert_ok(z_pid_set(2));
+}
+
+static bool sigusr1_signaled;
+static void test_signal_sigusr1_handler(int sig)
+{
+	if (sig == SIGUSR1) {
+		sigusr1_signaled = true;
+	}
+}
+
+ZTEST(signal, test_signal)
+{
+	/* invalid signal and handler */
+	zassert_equal(signal(INT_MAX, SIG_ERR), SIG_ERR);
+	zassert_equal(errno, EINVAL);
+
+	/* invalid signal */
+	zassert_equal(signal(INT_MAX, SIG_DFL), SIG_ERR);
+	zassert_equal(errno, EINVAL);
+
+	/* cannot ignore signals that we cannot ignore */
+	zassert_equal(signal(SIGKILL, test_signal_sigusr1_handler), SIG_ERR);
+	zassert_equal(errno, EINVAL);
+	zassert_equal(signal(SIGSTOP, SIG_IGN), SIG_ERR);
+	zassert_equal(errno, EINVAL);
+
+	/* cannot catch signals that we cannot catch */
+	zassert_equal(signal(SIGKILL, SIG_IGN), SIG_ERR);
+	zassert_equal(errno, EINVAL);
+
+	/* canned handlers */
+	zassert_equal(signal(SIGUSR1, SIG_IGN), SIG_DFL);
+	zassert_equal(signal(SIGUSR1, SIG_DFL), SIG_IGN);
+
+	/* custom handler */
+	zassert_equal(signal(SIGUSR1, test_signal_sigusr1_handler), SIG_DFL);
+}
+
+ZTEST(signal, test_kill)
+{
+	/* unknown pid, invalid signal */
+	zassert_equal(kill(~getpid(), INT_MAX), -1);
+	zassert_equal(errno, ESRCH);
+
+	/* unknown pid, valid signal */
+	zassert_equal(kill(~getpid(), SIGUSR1), -1);
+	zassert_equal(errno, ESRCH);
+
+	/* current pid, test pid is valid */
+	zassert_ok(kill(getpid(), 0));
+
+	/* custom handler */
+	sigusr1_signaled = false;
+	(void)signal(SIGUSR1, test_signal_sigusr1_handler);
+	zassert_ok(kill(getpid(), SIGUSR1));
+	k_msleep(100);
+	zassert_true(sigusr1_signaled);
+
+	/* ignored signal */
+	sigusr1_signaled = false;
+	(void)signal(SIGUSR1, SIG_IGN);
+	zassert_ok(kill(getpid(), SIGUSR1));
+	k_msleep(100);
+	zassert_false(sigusr1_signaled);
+	(void)signal(SIGUSR1, SIG_DFL);
+}
+
+ZTEST(signal, test_kill_for_each_signal)
+{
+	/* all signals with SIG_DFL */
+	for (int i = 1; i < _NSIG; ++i) {
+		(void)signal(i, SIG_DFL);
+		zassert_ok(kill(getpid(), i));
+	}
+}
+
+#if 0
+static void test_permissions_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		/* We have all permissions in kernel mode :-) */
+		ztest_test_pass();
+	}
+
+	/* ensure signal management functions fail with EPERM */
+	zassert_equal(kill(getpid(), 0), -1);
+	zassert_equal(errno, EPERM);
+
+	zassert_equal(signal(SIGINT, SIG_DFL), SIG_ERR);
+	zassert_equal(errno, EPERM);
+
+	zassert_equal(z_pid_set(2), -EPERM);
+}
+
+ZTEST(signal, test_permissions)
+{
+	k_thread_user_mode_enter(test_permissions_entry, NULL, NULL, NULL);
+}
+
+ZTEST_SUITE(signal, NULL, NULL, NULL, NULL, NULL);
