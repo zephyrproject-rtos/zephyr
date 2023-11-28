@@ -1116,6 +1116,9 @@ struct in_pktinfo {
 #define IP_MULTICAST_TTL 33
 
 /* Socket options for IPPROTO_IPV6 level */
+/** sockopt: Set the unicast hop limit for the socket. */
+#define IPV6_UNICAST_HOPS	16
+
 /** sockopt: Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
 
