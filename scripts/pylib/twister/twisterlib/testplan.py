@@ -56,6 +56,8 @@ class Filters:
     CMD_LINE = 'command line filter'
     # filters in the testsuite yaml definition
     TESTSUITE = 'testsuite filter'
+    # filters in the testplan yaml definition
+    TESTPLAN = 'testplan filter'
     # filters realted to platform definition
     PLATFORM = 'Platform related filter'
     # in case a test suite was quarantined.
@@ -717,7 +719,7 @@ class TestPlan:
                     tl = self.get_level(self.options.level)
                     planned_scenarios = tl.scenarios
                     if ts.id not in planned_scenarios and not set(ts.levels).intersection(set(tl.levels)):
-                        instance.add_filter("Not part of requested test plan", Filters.TESTSUITE)
+                        instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
 
                 if runnable and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.CMD_LINE)
@@ -1006,10 +1008,10 @@ def change_skip_to_error_if_integration(options, instance):
     ''' All skips on integration_platforms are treated as errors.'''
     if instance.platform.name in instance.testsuite.integration_platforms \
         and "quarantine" not in instance.reason.lower():
-        # Do not treat this as error if filter type is command line
+        # Do not treat this as error for a list of filter types.
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
-                         Filters.TOOLCHAIN, Filters.MODULE}
+                         Filters.TOOLCHAIN, Filters.MODULE, Filters.TESTPLAN}
         if filters.intersection(ignore_filters):
             return
         instance.status = "error"
