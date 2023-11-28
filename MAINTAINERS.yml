@@ -2807,7 +2807,7 @@ STM32 Platforms:
     - drivers/*/*stm32*.c
     - drivers/*/*stm32*.h
     - drivers/*/*/*stm32*
-    - drivers/*/*stm32
+    - drivers/*/*stm32*
     - dts/arm/st/
     - dts/bindings/*/*stm32*
     - soc/arm/st_stm32/
