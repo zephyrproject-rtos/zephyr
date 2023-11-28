@@ -1284,6 +1284,10 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	uint32_t rx = 0;
 	int ret = 0;
 	struct cdns_i3c_cmd *cmd;
+	bool was_full;
+
+	/* Used only to determine in the case of a controller abort */
+	was_full = cdns_i3c_rx_fifo_full(config);
 
 	/* Disable further interrupts */
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
@@ -1324,12 +1328,33 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 		case CMDR_NO_ERROR:
 			break;
 
+		case CMDR_MST_ABORT:
+			/*
+			 * A controller abort is forced if the RX FIFO fills up
+			 * There is also the case where the fifo can be full as
+			 * the len of the packet is the same length of the fifo
+			 * Check that the requested len is greater than the total
+			 * transferred to confirm that is not case. Otherwise the
+			 * abort was caused by the buffer length being meet and
+			 * the target did not give an End of Data (EoD) in the T
+			 * bit. Do not treat that condition as an error because
+			 * some targets will just auto-increment the read address
+			 * way beyond the buffer not giving an EoD.
+			 */
+			if ((was_full) && (data->xfer.cmds[i].len > *data->xfer.cmds[i].num_xfer)) {
+				ret = -ENOSPC;
+			} else {
+				LOG_DBG("%s: Controller Abort due to buffer length excedded with "
+					"no EoD from target",
+					dev->name);
+			}
+			break;
+
 		case CMDR_DDR_PREAMBLE_ERROR:
 		case CMDR_DDR_PARITY_ERROR:
 		case CMDR_M0_ERROR:
 		case CMDR_M1_ERROR:
 		case CMDR_M2_ERROR:
-		case CMDR_MST_ABORT:
 		case CMDR_NACK_RESP:
 		case CMDR_DDR_DROPPED:
 			ret = -EIO;
