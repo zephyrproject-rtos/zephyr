@@ -45,6 +45,7 @@ static const char test_str_all_tx_bufs[] =
 #define MY_IPV4_ADDR "127.0.0.1"
 #define MY_IPV6_ADDR "::1"
 #define MY_MCAST_IPV4_ADDR "224.0.0.1"
+#define MY_MCAST_IPV6_ADDR "ff00::1"
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
@@ -1980,6 +1981,19 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 						      "Invalid mcast ttl (%d vs %d)",
 						      ipv4->ttl, expected_mcast_ttl);
 				}
+			} else if (family == AF_INET6) {
+				struct net_ipv6_hdr *ipv6 =
+					(struct net_ipv6_hdr *)&data_to_receive[0];
+
+				if (expected_ttl > 0) {
+					zassert_equal(ipv6->hop_limit, expected_ttl,
+						      "Invalid hop limit (%d vs %d)",
+						      ipv6->hop_limit, expected_ttl);
+				} else if (expected_mcast_ttl > 0) {
+					zassert_equal(ipv6->hop_limit, expected_mcast_ttl,
+						      "Invalid mcast hop limit (%d vs %d)",
+						      ipv6->hop_limit, expected_mcast_ttl);
+				}
 			} else {
 				zassert_true(false, "Invalid address family (%d)",
 					     family);
@@ -2048,6 +2062,74 @@ ZTEST(net_socket_udp, test_31_v4_mcast_ttl)
 		       (struct sockaddr *)&server_addr, sizeof(server_addr),
 		       (struct sockaddr *)&sendto_addr, sizeof(sendto_addr),
 		       AF_INET, 0, mcast_ttl);
+}
+
+ZTEST(net_socket_udp, test_33_v6_mcast_hops)
+{
+	int ret;
+	int client_sock;
+	int server_sock;
+	int packet_sock;
+	int mcast_hops, if_mcast_hops;
+	int verify, opt;
+	socklen_t optlen;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+	struct sockaddr_in6 sendto_addr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
+
+	ret = bind_socket(packet_sock, lo0);
+	zassert_equal(ret, 0, "packet socket bind failed");
+
+	zassert_not_null(lo0->config.ip.ipv6,
+			 "Interface %d (%p) no IPv6 configured",
+			 net_if_get_by_iface(lo0), lo0);
+
+	/* First make sure setting hop limit to -1 works as expected (route default
+	 * value should be used).
+	 */
+	if_mcast_hops = net_if_ipv6_get_mcast_hop_limit(lo0);
+
+	opt = -1;
+	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &opt,
+			sizeof(opt));
+	zassert_equal(ret, 0, "Cannot set multicast hop limit (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
+			 &optlen);
+	zassert_equal(ret, 0, "Cannot get multicast hop limit (%d)", -errno);
+	zassert_equal(verify, if_mcast_hops, "Different multicast hop limit (%d vs %d)",
+		      if_mcast_hops, verify);
+
+	/* Then test the normal case where we set the value */
+	mcast_hops = 8;
+	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &mcast_hops,
+			sizeof(mcast_hops));
+	zassert_equal(ret, 0, "Cannot set multicast hop limit (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
+			 &optlen);
+	zassert_equal(ret, 0, "Cannot get multicast hop limit (%d)", -errno);
+	zassert_equal(verify, mcast_hops, "Different multicast hop limit (%d vs %d)",
+		      mcast_hops, verify);
+
+	ret = net_addr_pton(AF_INET6, MY_MCAST_IPV6_ADDR, &sendto_addr.sin6_addr);
+	zassert_equal(ret, 0, "Cannot get IPv6 address (%d)", ret);
+
+	test_check_ttl(client_sock, server_sock, packet_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       (struct sockaddr *)&sendto_addr, sizeof(sendto_addr),
+		       AF_INET6, 0, mcast_hops);
 }
 
 static void after(void *arg)
