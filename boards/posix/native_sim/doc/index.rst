@@ -412,6 +412,8 @@ The following peripherals are currently provided with this board:
 
   .. code-block:: console
 
+     $ sudo dpkg --add-architecture i386
+     $ sudo apt update
      $ sudo apt-get install pkg-config libsdl2-dev:i386
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
@@ -595,6 +597,8 @@ these commands:
 
 .. code-block:: console
 
+   $ sudo dpkg --add-architecture i386
+   $ sudo apt update
    $ sudo apt-get install pkg-config libfuse-dev:i386
    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
