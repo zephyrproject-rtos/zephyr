@@ -10,7 +10,7 @@
 #include <zephyr/arch/riscv/csr.h>
 
 GTEXT(__nuclei_start)
-SECTION_FUNC(vectors, __nuclei_start)
+SECTION_FUNC(init, __nuclei_start)
 	/* Disable Global Interrupt */
 	csrc mstatus, MSTATUS_MIE
 	/* Jump to logical address first to ensure correct operation of RAM region  */
