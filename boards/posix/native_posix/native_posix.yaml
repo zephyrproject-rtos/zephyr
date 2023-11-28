@@ -19,6 +19,4 @@ supported:
   - spi
   - gpio
   - rtc
-testing:
-  default: true
 vendor: zephyr
