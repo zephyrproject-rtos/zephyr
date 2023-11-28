@@ -16,46 +16,21 @@ SECTION_FUNC(vectors, __nuclei_start)
 	/* Jump to logical address first to ensure correct operation of RAM region  */
 	la	a0, __nuclei_start
 	li	a1, 1
-	slli	a1, a1, 29
+	slli	a1, a1, 29 # 0x2000 0000
 	bleu	a1, a0, _start0800
-	srli	a1, a1, 2
+	srli	a1, a1, 2  # 0x0800 0000
 	bleu	a1, a0, _start0800
 	la	a0, _start0800
 	add	a0, a0, a1
 	jr	a0
 
 _start0800:
-
-#if defined(CONFIG_RISCV_GP)
-	/* Initialize global pointer */
-	.option push
-	.option norelax
-	la	gp, __global_pointer$
-	.option pop
-#endif
-
-	.option norvc;
-
 	/* Set the the NMI base to share with mtvec by setting CSR_MMISC_CTL */
 	li	t0, 0x200
 	csrs	CSR_MMISC_CTL, t0
 
-	/* Initial the CSR MTVEC for the Trap ane NMI base addr */
-	la	t0, trap_entry
-	csrw	mtvec, t0
-
-	/* Direct Mode: All exceptions set pc to BASE. */
-	csrc	mtvec, 0x3
-
 	/* Disable performance counter */
 	csrsi	mcountinhibit, 0x5
 
-	/* Jump to __reset */
-	tail __reset
-
-1:
-	j 1b
-
-.align 6
-trap_entry:
-	tail _isr_wrapper
+	/* Jump to common start */
+	tail __start
