@@ -12,13 +12,14 @@ config SOC_NRF5340_CPUAPP
 	select HAS_POWEROFF
 	select SOC_COMPATIBLE_NRF5340_CPUAPP
 	imply SOC_NRF53_RTC_PRETICK
+	imply SOC_NRF53_ANOMALY_168_WORKAROUND
 
 config SOC_NRF5340_CPUNET
 	bool
-	select ARM_ON_EXIT_CPU_IDLE
 	select SOC_COMPATIBLE_NRF5340_CPUNET
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	imply SOC_NRF53_RTC_PRETICK if !WDT_NRFX
+	imply SOC_NRF53_ANOMALY_168_WORKAROUND
 
 choice
 	prompt "nRF53x MCU Selection"
@@ -78,6 +79,25 @@ config SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET
 	default 11
 
 endif
+
+config SOC_NRF53_ANOMALY_168_WORKAROUND
+	bool "Workaround for nRF5340 anomaly 168"
+	select ARM_ON_EXIT_CPU_IDLE
+	help
+	  Indicates that the workaround for the anomaly 168 that affects
+	  the nRF5340 SoC should be applied.
+	  The workaround involves execution of 8 NOP instructions when the CPU
+	  exist its idle state (when the WFI/WFE instruction returns) and it is
+	  enabled by default for both the application and network core.
+
+config SOC_NRF53_ANOMALY_168_WORKAROUND_FOR_EXECUTION_FROM_RAM
+	bool "Extend the workaround to execution at 128 MHz from RAM"
+	depends on SOC_NRF53_ANOMALY_168_WORKAROUND && SOC_NRF5340_CPUAPP
+	help
+	  Indicates that the anomaly 168 workaround is to be extended to cover
+	  also a specific case when the WFI/WFE instruction is executed at 128
+	  MHz from RAM. Then, 26 instead of 8 NOP instructions needs to be
+	  executed after WFI/WFE. This extension is not enabled by default.
 
 if SOC_NRF5340_CPUAPP
 
