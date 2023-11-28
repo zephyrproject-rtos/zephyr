@@ -306,5 +306,10 @@ Documentation
 Tests and Samples
 *****************
 
+* :ref:`native_sim<native_sim>` has replaced :ref:`native_posix<native_posix>` as the default
+  test platform.
+  :ref:`native_posix<native_posix>` remains supported and used in testing but will be deprecated
+  in a future release.
+
 * Fixed an issue in :zephyr:code-sample:`smp-svr` sample whereby if USB was already initialised,
   application would fail to boot properly.
