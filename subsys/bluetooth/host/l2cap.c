@@ -97,6 +97,15 @@ static void free_tx_meta_data(struct l2cap_tx_meta_data *data)
 
 #define l2cap_tx_meta_data(buf) (((struct l2cap_tx_meta *)net_buf_user_data(buf))->data)
 
+static void free_buf_tx_meta_data(struct net_buf **buf)
+{
+	/* Frees metadata if it exists and clears the buf's meta pointer. */
+	if (net_buf_user_data(*buf)) {
+		free_tx_meta_data(l2cap_tx_meta_data(*buf));
+		l2cap_tx_meta_data(*buf) = NULL;
+	}
+}
+
 static sys_slist_t servers;
 
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -984,12 +993,14 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	}
 
 	if (le_chan->tx_buf) {
+		free_buf_tx_meta_data(&le_chan->tx_buf);
 		net_buf_unref(le_chan->tx_buf);
 		le_chan->tx_buf = NULL;
 	}
 
 	/* Remove buffers on the TX queue */
 	while ((buf = net_buf_get(&le_chan->tx_queue, K_NO_WAIT))) {
+		free_buf_tx_meta_data(&buf);
 		net_buf_unref(buf);
 	}
 
@@ -1000,6 +1011,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 
 	/* Destroy segmented SDU if it exists */
 	if (le_chan->_sdu) {
+		free_buf_tx_meta_data(&le_chan->_sdu);
 		net_buf_unref(le_chan->_sdu);
 		le_chan->_sdu = NULL;
 		le_chan->_sdu_len = 0U;
