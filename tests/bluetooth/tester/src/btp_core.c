@@ -194,6 +194,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_csis();
 		break;
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
+	case BTP_SERVICE_ID_CSIP:
+		status = tester_init_csip();
+		break;
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
 #if defined(CONFIG_BT_TBS_CLIENT)
 	case BTP_SERVICE_ID_CCP:
 		status = tester_init_ccp();
@@ -204,6 +209,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_cas();
 		break;
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_CAP_INITIATOR)
+	case BTP_SERVICE_ID_CAP:
+		status = tester_init_cap();
+		break;
+#endif /* CONFIG_BT_CAP_INITIATOR */
 #if defined(CONFIG_BT_MCC)
 	case BTP_SERVICE_ID_MCP:
 		status = tester_init_mcp();
@@ -316,6 +326,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_csis();
 		break;
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_CSIP_SET_COORDINATOR)
+	case BTP_SERVICE_ID_CSIP:
+		status = tester_unregister_csip();
+		break;
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
 #if defined(CONFIG_BT_TBS_CLIENT)
 	case BTP_SERVICE_ID_CCP:
 		status = tester_unregister_ccp();
@@ -326,6 +341,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_cas();
 		break;
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_CAP_INITIATOR)
+	case BTP_SERVICE_ID_CAP:
+		status = tester_unregister_cap();
+		break;
+#endif /* CONFIG_BT_CAP_INITIATOR */
 #if defined(CONFIG_BT_MCC)
 	case BTP_SERVICE_ID_MCP:
 		status = tester_unregister_mcp();
