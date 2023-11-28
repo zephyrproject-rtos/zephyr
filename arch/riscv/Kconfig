@@ -346,6 +346,14 @@ config GEN_IRQ_VECTOR_TABLE
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
+config CBOM_ICACHE_SUPPORTED
+	bool
+	depends on RISCV_ISA_EXT_ZICBOM && ICACHE
+
+config CBOM_DCACHE_SUPPORTED
+	bool
+	depends on RISCV_ISA_EXT_ZICBOM && DCACHE
+
 rsource "Kconfig.isa"
 rsource "Kconfig.core"
 

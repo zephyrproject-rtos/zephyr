@@ -146,3 +146,26 @@ config RISCV_ISA_EXT_ZBS
 	  The Zbs instructions can be used for single-bit instructions that
 	  provide a mechanism to set, clear, invert, or extract a single bit in
 	  a register.
+
+config RISCV_ISA_EXT_ZICBOM
+	bool
+	help
+	  (Zicbom) - Standard Extension for Cache Management
+
+	  The Zicbom extension defines a set of cache-block management instructions:
+	  CBO.INVAL, CBO.CLEAN, and CBO.FLUSH.
+
+config RISCV_ISA_EXT_ZICBOZ
+	bool
+	help
+	  (Zicboz) - Standard Extension for Cache Zero Operation
+
+	  The Zicboz extension defines a cache-block zero instruction: CBO.ZERO.
+
+config RISCV_ISA_EXT_ZICBOP
+	bool
+	help
+	  (Zicbop) - Standard Extension for Cache Prefetch Operation
+
+	  The Zicbop extension defines a set of cache-block prefetch instructions:
+	  PREFETCH.R, PREFETCH.W, and PREFETCH.I.

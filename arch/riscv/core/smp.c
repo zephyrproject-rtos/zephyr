@@ -71,6 +71,9 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
+#if defined(CONFIG_ARCH_CACHE)
+	z_riscv_cache_init();
+#endif
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
 #endif

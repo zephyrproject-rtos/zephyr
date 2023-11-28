@@ -16,6 +16,7 @@
 #define ZEPHYR_ARCH_RISCV_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #include <kernel_arch_data.h>
+#include <zephyr/cache.h>
 #include <pmp.h>
 
 #ifdef __cplusplus
@@ -52,6 +53,9 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
+#endif
+#if defined(CONFIG_ARCH_CACHE)
+	z_riscv_cache_init();
 #endif
 }
 
