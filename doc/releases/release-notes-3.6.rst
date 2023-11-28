@@ -59,6 +59,8 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Added support for Renesas R-Car Gen4 series
+
 * Removed support for these SoC series:
 
 * Made these changes in other SoC series:
@@ -69,6 +71,8 @@ Boards & SoC Support
 * Added support for these ARC boards:
 
 * Added support for these ARM boards:
+
+  * Added support for Renesas R-Car Spider board CR52: ``rcar_spider_cr52``
 
 * Added support for these ARM64 boards:
 
@@ -126,6 +130,8 @@ Drivers and Sensors
 
 * Clock control
 
+  * Renesas R-Car clock control driver now supports Gen4 SoCs
+
 * Counter
 
 * DAC
@@ -145,6 +151,8 @@ Drivers and Sensors
 * Flash
 
 * GPIO
+
+  * Renesas R-Car GPIO driver now supports Gen4 SoCs
 
 * I2C
 
@@ -166,6 +174,8 @@ Drivers and Sensors
 * ACPI
 
 * Pin control
+
+  * Renesas R-Car pinctrl driver now supports Gen4 SoCs
 
 * PWM
 
