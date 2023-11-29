@@ -565,7 +565,7 @@ static int cmd_unlock(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 {
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if (K_HEAP_MEM_POOL_SIZE > 0)
 	int rc;
 	int elems;
 	struct lwm2m_time_series_elem *cache;

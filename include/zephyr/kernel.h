@@ -420,7 +420,7 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 				       size_t *unused_ptr);
 #endif
 
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if (K_HEAP_MEM_POOL_SIZE > 0)
 /**
  * @brief Assign the system heap as a thread's resource pool
  *
@@ -434,7 +434,7 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
  *
  */
 void k_thread_system_pool_assign(struct k_thread *thread);
-#endif /* (CONFIG_HEAP_MEM_POOL_SIZE > 0) */
+#endif /* (K_HEAP_MEM_POOL_SIZE > 0) */
 
 /**
  * @brief Sleep until a thread exits
