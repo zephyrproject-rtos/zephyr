@@ -42,6 +42,15 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 	int ret;
 
 	size = (mock->limit < size) ? mock->limit : size;
+
+	if (mock->bridge) {
+		struct modem_backend_mock *t_mock = mock->bridge;
+
+		ret = ring_buf_put(&t_mock->rx_rb, buf, size);
+		k_work_submit(&t_mock->received_work_item.work);
+		return ret;
+	}
+
 	ret = ring_buf_put(&mock->tx_rb, buf, size);
 	if (modem_backend_mock_update(mock, buf, size)) {
 		modem_backend_mock_put(mock, mock->transaction->put,
@@ -129,4 +138,10 @@ void modem_backend_mock_prime(struct modem_backend_mock *mock,
 {
 	mock->transaction = transaction;
 	mock->transaction_match_cnt = 0;
+}
+
+void modem_backend_mock_bridge(struct modem_backend_mock *mock_a, struct modem_backend_mock *mock_b)
+{
+	mock_a->bridge = mock_b;
+	mock_b->bridge = mock_a;
 }

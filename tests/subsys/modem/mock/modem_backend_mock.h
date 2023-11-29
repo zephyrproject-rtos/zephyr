@@ -41,6 +41,8 @@ struct modem_backend_mock {
 
 	/* Max allowed read/write size */
 	size_t limit;
+	/* Mock Brige pair */
+	struct modem_backend_mock *bridge;
 };
 
 struct modem_backend_mock_config {
@@ -62,5 +64,8 @@ void modem_backend_mock_put(struct modem_backend_mock *mock, const uint8_t *buf,
 
 void modem_backend_mock_prime(struct modem_backend_mock *mock,
 			      const struct modem_backend_mock_transaction *transaction);
+
+void modem_backend_mock_bridge(struct modem_backend_mock *mock_a,
+			       struct modem_backend_mock *mock_b);
 
 #endif /* ZEPHYR_DRIVERS_MODEM_MODEM_PIPE_MOCK */
