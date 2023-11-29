@@ -156,6 +156,18 @@ struct adc_channel_cfg {
 	 */
 	uint8_t current_source_pin[2];
 #endif /* CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_VBIAS_PIN
+	/**
+	 * Output pins for the bias voltage.
+	 * This is only available if the driver enables this feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_VBIAS_PIN.
+	 * The field is interpreted as a bitmask, where each bit represents
+	 * one of the input pins. The actual mapping to the physical pins
+	 * depends on the driver itself.
+	 */
+	uint32_t vbias_pins;
+#endif /* CONFIG_ADC_CONFIGURABLE_VBIAS_PIN */
 };
 
 /**
@@ -236,6 +248,8 @@ IF_ENABLED(DT_PROP(node_id, zephyr_differential), \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
 	(.current_source_pin_set = DT_NODE_HAS_PROP(node_id, zephyr_current_source_pin), \
 	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
+	(.vbias_pins = DT_PROP_OR(node_id, zephyr_vbias_pins, 0),)) \
 }
 
 /**
