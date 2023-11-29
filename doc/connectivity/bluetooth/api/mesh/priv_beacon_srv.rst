@@ -11,7 +11,7 @@ The Private Beacon Server model is introduced in the Bluetooth Mesh Protocol
 Specification version 1.1, and controls the mesh node's Private Beacon state,
 Private GATT Proxy state and Private Node Identity state.
 
-The Private Beacons feature adds privacy to the different Bluetooth mesh
+The Private Beacons feature adds privacy to the different Bluetooth Mesh
 beacons by periodically randomizing the beacon input data. This protects the
 mesh node from being tracked by devices outside the mesh network, and hides the
 network's IV index, IV update and the Key Refresh state. The Private Beacon Server

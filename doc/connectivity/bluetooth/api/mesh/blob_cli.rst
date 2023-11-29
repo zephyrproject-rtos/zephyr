@@ -67,7 +67,7 @@ Target nodes having the BLOB Transfer Server model subscribe to this group addre
 
 Using group addresses for transferring the BLOBs can generally increase the transfer speed, as the
 BLOB Transfer Client sends each message to all Target nodes at the same time. However, sending
-large, segmented messages to group addresses in Bluetooth mesh is generally less reliable than
+large, segmented messages to group addresses in Bluetooth Mesh is generally less reliable than
 sending them to unicast addresses, as there is no transport layer acknowledgment mechanism for
 groups. This can lead to longer recovery periods at the end of each block, and increases the risk of
 losing Target nodes. Using group addresses for BLOB transfers will generally only pay off if the

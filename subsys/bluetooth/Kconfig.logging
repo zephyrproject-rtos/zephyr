@@ -469,56 +469,56 @@ config BT_MESH_DEBUG_NET
 	select DEPRECATED
 	help
 	  Use this option to enable Network layer debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_RPL
 	bool "[DEPRECATED] Replay protection list debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Replay protection list debug logs
-	  for the Bluetooth mesh functionality.
+	  for the Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_TRANS
 	bool "[DEPRECATED] Transport layer debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Transport layer debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_BEACON
 	bool "[DEPRECATED] Beacon debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Beacon-related debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_CRYPTO
 	bool "[DEPRECATED] Crypto debug"
 	select DEPRECATED
 	help
 	  Use this option to enable cryptographic debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_KEYS
 	bool "[DEPRECATED] Key management debug"
 	select DEPRECATED
 	help
 	  Use this option to enable key management debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROV
 	bool "[DEPRECATED] Provisioning debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Provisioning debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROVISIONER
 	bool "[DEPRECATED] Provisioner debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Provisioner debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROV_DEVICE
 	bool "[DEPRECATED] Provisioning device debug"
@@ -532,7 +532,7 @@ config BT_MESH_DEBUG_ACCESS
 	select DEPRECATED
 	help
 	  Use this option to enable Access layer and device composition
-	  related debug logs for Bluetooth mesh.
+	  related debug logs for Bluetooth Mesh.
 
 config BT_MESH_DEBUG_MODEL
 	bool "[DEPRECATED] Foundation model debug"
@@ -546,21 +546,21 @@ config BT_MESH_DEBUG_ADV
 	select DEPRECATED
 	help
 	  Use this option to enable advertising debug logs for
-	  the Bluetooth mesh functionality.
+	  the Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_LOW_POWER
 	bool "[DEPRECATED] Low Power debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Low Power debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_FRIEND
 	bool "[DEPRECATED] Friend debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Friend debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROXY
 	bool "[DEPRECATED] Proxy debug"
@@ -588,7 +588,7 @@ config BT_MESH_DEBUG_CFG
 	select DEPRECATED
 	help
 	  Use this option to enable node configuration debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 endmenu # [DEPRECATED] Mesh
 

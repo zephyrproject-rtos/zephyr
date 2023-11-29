@@ -6,7 +6,7 @@ Bluetooth: Mesh Demo
 Overview
 ********
 
-This sample is a Bluetooth mesh application intended for demonstration
+This sample is a Bluetooth Mesh application intended for demonstration
 purposes only. The application provisions and configures itself (i.e. no
 external provisioner needed) with hard-coded network and application key
 values. The local unicast address can be set using a NODE_ADDR build
