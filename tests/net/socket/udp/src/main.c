@@ -14,6 +14,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
 
 #include "ipv6.h"
 #include "net_private.h"
@@ -1924,6 +1926,10 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 		.tv_sec = 0,
 		.tv_usec = 100000,
 	};
+#if defined(CONFIG_NET_STATISTICS)
+	struct net_stats_ip ipv4_stats_before, ipv4_stats_after;
+	struct net_stats_ip ipv6_stats_before, ipv6_stats_after;
+#endif
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_INTERFACE_NAME);
 
@@ -2025,10 +2031,27 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 			      option == IP_TTL ? "unicast" : "multicast",
 			      -errno);
 
+#if defined(CONFIG_NET_STATISTICS)
+		/* Get IPv4 stats and verify they are updated for dropped
+		 * packets.
+		 */
+		net_mgmt(NET_REQUEST_STATS_GET_IPV4, lo0,
+			 &ipv4_stats_before, sizeof(ipv4_stats_before));
+#endif
 		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
 			     addr_sendto, addrlen_sendto);
 		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
 
+#if defined(CONFIG_NET_STATISTICS)
+		net_mgmt(NET_REQUEST_STATS_GET_IPV4, lo0,
+			 &ipv4_stats_after, sizeof(ipv4_stats_after));
+
+		zassert_equal(ipv4_stats_before.drop + 1,
+			      ipv4_stats_after.drop,
+			      "Dropped statistics not updated (%d vs %d)",
+			      ipv4_stats_before.drop + 1,
+			      ipv4_stats_after.drop);
+#endif
 		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
 		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
 	}
@@ -2052,12 +2075,30 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 			      option == IPV6_UNICAST_HOPS ? "unicast" : "multicast",
 			      -errno);
 
+#if defined(CONFIG_NET_STATISTICS)
+		/* Get IPv6 stats and verify they are updated for dropped
+		 * packets.
+		 */
+		net_mgmt(NET_REQUEST_STATS_GET_IPV6, lo0,
+			 &ipv6_stats_before, sizeof(ipv6_stats_before));
+#endif
 		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
 			     addr_sendto, addrlen_sendto);
 		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
 
+#if defined(CONFIG_NET_STATISTICS)
+		net_mgmt(NET_REQUEST_STATS_GET_IPV6, lo0,
+			 &ipv6_stats_after, sizeof(ipv6_stats_after));
+
+		zassert_equal(ipv6_stats_before.drop + 1,
+			      ipv6_stats_after.drop,
+			      "Dropped statistics not updated (%d vs %d)",
+			      ipv6_stats_before.drop + 1,
+			      ipv6_stats_after.drop);
+#endif
 		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
 		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
+
 	}
 
 	ret = close(sock_c);
