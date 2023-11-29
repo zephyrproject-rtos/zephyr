@@ -707,9 +707,6 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	}
 
 	COAP_SERVICE_FOREACH(svc) {
-		/* Init all file descriptors to -1 */
-		svc->data->sock_fd = -1;
-
 		if (svc->flags & COAP_SERVICE_AUTOSTART) {
 			ret = coap_service_start(svc);
 			if (ret < 0) {
