@@ -749,6 +749,7 @@ class ProjectBuilder(FilterBuilder):
         logger.debug("Cleaning up {}".format(self.instance.build_dir))
         allow = [
             os.path.join('zephyr', '.config'),
+            os.path.join('zephyr', 'tfm_merged.hex'),
             'handler.log',
             'build.log',
             'device.log',
