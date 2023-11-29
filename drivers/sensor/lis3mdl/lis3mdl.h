@@ -110,6 +110,7 @@ static const uint16_t lis3mdl_magn_gain[] = {
 };
 
 struct lis3mdl_data {
+	bool single_mode;
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
