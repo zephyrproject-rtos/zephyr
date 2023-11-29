@@ -8,4 +8,5 @@ common:
     - native_sim
 
 tests:
-  net.coap.server.common: {}
+  net.coap.server.common:
+    harness: coap
