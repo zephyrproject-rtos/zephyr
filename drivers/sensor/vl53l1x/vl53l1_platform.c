@@ -51,7 +51,8 @@ VL53L1_Error VL53L1_ReadMulti(VL53L1_Dev_t *pdev, uint16_t reg,
 
 	reg = sys_cpu_to_be16(reg);
 
-	status_int = i2c_write_read(pdev->i2c, pdev->I2cDevAddr, (uint8_t *)(&reg), 2, pdata, count);
+	status_int = i2c_write_read(pdev->i2c, pdev->I2cDevAddr,
+			(uint8_t *)(&reg), 2, pdata, count);
 
 	if (status_int < 0) {
 		status = VL53L1_ERROR_CONTROL_INTERFACE;
