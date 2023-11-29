@@ -45,6 +45,14 @@ static k_thread_stack_t *overflow_stack =
 #endif
 #endif
 
+/* On architectures with additional reg banks k_current_get()
+ * shows undefined behavior and returns wrong tls-pointer as
+ * reg banks may appear unsynchronized
+ */
+#if defined(CONFIG_ARC) && (CONFIG_RGF_NUM_BANKS > 1)
+#define NO_TLS_IN_EXCEPTION
+#endif
+
 static struct k_thread alt_thread;
 volatile int rv;
 
@@ -60,7 +68,11 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		k_fatal_halt(reason);
 	}
 
+#ifdef NO_TLS_IN_EXCEPTION
 	if (k_sched_current_thread_query() != &alt_thread) {
+#else
+	if (k_current_get() != &alt_thread) {
+#endif
 		printk("Wrong thread crashed\n");
 		printk("PROJECT EXECUTION FAILED\n");
 		k_fatal_halt(reason);
