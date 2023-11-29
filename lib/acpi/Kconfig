@@ -30,6 +30,10 @@ config ACPI_MAX_PRT_ENTRY
 
 endif # PCIE_PRT
 
+# Default minimum system heap required by ACPI
+config HEAP_MEM_POOL_ADD_SIZE_ACPI
+	def_int 1048576 # 1MB
+
 config ACPI_SHELL
 	bool "ACPI command Shell"
 	depends on SHELL

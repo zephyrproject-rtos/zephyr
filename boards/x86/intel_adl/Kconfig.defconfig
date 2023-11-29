@@ -33,7 +33,7 @@ config ACPI
 	default y
 
 if ACPI
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_ACPI
 	default 64000000
 config MAIN_STACK_SIZE
 	default 320000
