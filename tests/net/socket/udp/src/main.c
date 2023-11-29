@@ -1908,7 +1908,7 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 {
 	uint8_t tx_buf = 0xab;
 	uint8_t rx_buf;
-	int ret, count = 10;
+	int ret, count = 10, opt;
 #define IPV4_HDR_SIZE sizeof(struct net_ipv4_hdr)
 #define IPV6_HDR_SIZE sizeof(struct net_ipv6_hdr)
 #define UDP_HDR_SIZE sizeof(struct net_udp_hdr)
@@ -2006,6 +2006,32 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 	}
 
 	zassert_true(count > 0, "timeout while waiting data");
+
+	if (family == AF_INET) {
+		/* Set TTL to 0 and make sure the packet is dropped and not
+		 * received
+		 */
+		int option;
+
+		if (expected_ttl > 0) {
+			option = IP_TTL;
+		} else {
+			option = IP_MULTICAST_TTL;
+		}
+
+		opt = 0;
+		ret = setsockopt(sock_c, IPPROTO_IP, option, &opt, sizeof(opt));
+		zassert_equal(ret, 0, "Cannot set %s TTL (%d)",
+			      option == IP_TTL ? "unicast" : "multicast",
+			      -errno);
+
+		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+			     addr_sendto, addrlen_sendto);
+		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
+
+		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
+		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
+	}
 
 	ret = close(sock_c);
 	zassert_equal(ret, 0, "close failed");
