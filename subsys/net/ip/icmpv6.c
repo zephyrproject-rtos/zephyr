@@ -130,7 +130,12 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  (struct in6_addr *)ip_hdr->dst);
+						  (struct in6_addr *)ip_hdr->src);
+
+		if (net_ipv6_is_addr_unspecified(src)) {
+			NET_DBG("DROP: No src address match");
+			goto drop;
+		}
 	} else {
 		src = (struct in6_addr *)ip_hdr->dst;
 	}
