@@ -2033,6 +2033,33 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
 	}
 
+	if (family == AF_INET6) {
+		/* Set hoplimit to 0 and make sure the packet is dropped and not
+		 * received.
+		 */
+		int option;
+
+		if (expected_ttl > 0) {
+			option = IPV6_UNICAST_HOPS;
+		} else {
+			option = IPV6_MULTICAST_HOPS;
+		}
+
+		opt = 0;
+		ret = setsockopt(sock_c, IPPROTO_IPV6, option,
+				 &opt, sizeof(opt));
+		zassert_equal(ret, 0, "Cannot set %s hops (%d)",
+			      option == IPV6_UNICAST_HOPS ? "unicast" : "multicast",
+			      -errno);
+
+		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+			     addr_sendto, addrlen_sendto);
+		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
+
+		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
+		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
+	}
+
 	ret = close(sock_c);
 	zassert_equal(ret, 0, "close failed");
 	ret = close(sock_s);
