@@ -16,7 +16,8 @@ config SPI
 config ENTROPY_GENERATOR
 	default y
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 98304 if WIFI
 	default 40960 if BT
 	default 4096
