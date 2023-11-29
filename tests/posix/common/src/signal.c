@@ -326,5 +326,6 @@ ZTEST(signal, test_permissions)
 {
 	k_thread_user_mode_enter(test_permissions_entry, NULL, NULL, NULL);
 }
+#endif
 
 ZTEST_SUITE(signal, NULL, NULL, NULL, NULL, NULL);
