@@ -296,62 +296,143 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-/* Shift a SPI frame as master. */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
+/* Get number of spaces for SPI frames currently available in the Tx FIFO. */
+static inline size_t spi_stm32_get_tx_fifo_free(SPI_TypeDef *spi, struct spi_stm32_data *data)
+{
+	size_t octets_available = 0;
+
+	switch (LL_SPI_GetTxFIFOLevel(spi)) {
+	case LL_SPI_TX_FIFO_EMPTY:
+		octets_available = 4;
+		break;
+	case LL_SPI_TX_FIFO_QUARTER_FULL:
+		octets_available = 3;
+		break;
+	case LL_SPI_TX_FIFO_HALF_FULL:
+		octets_available = 2;
+		break;
+	case LL_SPI_TX_FIFO_FULL: /* fallthrough */
+	default:
+		octets_available = 0;
+		break;
+	}
+	return (octets_available * 8) / SPI_WORD_SIZE_GET(data->ctx.config->operation);
+}
+
+/* Get number of spaces for SPI frames currently available in the Rx FIFO. */
+static inline size_t spi_stm32_get_rx_fifo_free(SPI_TypeDef *spi, struct spi_stm32_data *data)
+{
+	size_t octets_available = 0;
+
+	switch (LL_SPI_GetRxFIFOLevel(spi)) {
+	case LL_SPI_RX_FIFO_EMPTY:
+		octets_available = 4;
+		break;
+	case LL_SPI_RX_FIFO_QUARTER_FULL:
+		octets_available = 3;
+		break;
+	case LL_SPI_RX_FIFO_HALF_FULL:
+		octets_available = 2;
+		break;
+	case LL_SPI_RX_FIFO_FULL: /* fallthrough */
+	default:
+		octets_available = 0;
+		break;
+	}
+	return (octets_available * 8) / SPI_WORD_SIZE_GET(data->ctx.config->operation);
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
+
+/* Shift at least one SPI frame as master.
+ * In case of this SPI supporting FIFO-mode, shift through as many frames as
+ * possible without generating either Rx- or Tx-FIFO overflow.
+ */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	uint16_t tx_frame = SPI_STM32_TX_NOP;
-	uint16_t rx_frame;
-
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	/* With the STM32MP1, STM32U5 and the STM32H7,
-	 * if the device is the SPI master,
-	 * we need to enable the start of the transfer with
-	 * LL_SPI_StartMasterTransfer(spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
+	/* In one "shift" transaction, push out as many SPI frames as there is space available
+	 * in both Rx and Tx FIFOs, tops as many bytes as there are to transmit or to receive.
+	 * left in this transaction.
 	 */
-	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
-		LL_SPI_StartMasterTransfer(spi);
-		while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-			/* NOP */
+	size_t frames_in_flight = 0;
+	const size_t fifo_spaces_free =
+		MIN(spi_stm32_get_tx_fifo_free(spi, data), spi_stm32_get_rx_fifo_free(spi, data));
+	size_t max_frames_to_send = MIN(fifo_spaces_free, MAX(data->ctx.tx_len, data->ctx.rx_len));
+
+	while (max_frames_to_send && ll_func_tx_is_empty(spi))
+#endif
+	{
+		uint16_t tx_frame = SPI_STM32_TX_NOP;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		/* With the STM32MP1, STM32U5 and the STM32H7,
+		 * if the device is the SPI master,
+		 * we need to enable the start of the transfer with
+		 * LL_SPI_StartMasterTransfer(spi)
+		 */
+		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+			LL_SPI_StartMasterTransfer(spi);
+			while (!LL_SPI_IsActiveMasterTransfer(spi)) {
+				/* NOP */
+			}
 		}
-	}
 #endif
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			if (spi_context_tx_buf_on(&data->ctx)) {
+				tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+			}
+			LL_SPI_TransmitData8(spi, tx_frame);
+			/* The update is ignored if TX is off. */
+			spi_context_update_tx(&data->ctx, 1, 1);
+		} else {
+			if (spi_context_tx_buf_on(&data->ctx)) {
+				tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
+			}
+			LL_SPI_TransmitData16(spi, tx_frame);
+			/* The update is ignored if TX is off. */
+			spi_context_update_tx(&data->ctx, 2, 1);
 		}
-		LL_SPI_TransmitData8(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 1, 1);
-	} else {
-		if (spi_context_tx_buf_on(&data->ctx)) {
-			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-		}
-		LL_SPI_TransmitData16(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 2, 1);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
+		max_frames_to_send--;
+		frames_in_flight++;
+#endif
 	}
 
-	while (!ll_func_rx_is_not_empty(spi)) {
-		/* NOP */
-	}
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
+	while (frames_in_flight)
+#endif
+	{
+		uint16_t rx_frame;
 
-	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-		rx_frame = LL_SPI_ReceiveData8(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+		while (!ll_func_rx_is_not_empty(spi)) {
+			/* NOP */
 		}
-		spi_context_update_rx(&data->ctx, 1, 1);
-	} else {
-		rx_frame = LL_SPI_ReceiveData16(spi);
-		if (spi_context_rx_buf_on(&data->ctx)) {
-			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			rx_frame = LL_SPI_ReceiveData8(spi);
+			if (spi_context_rx_buf_on(&data->ctx)) {
+				UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+			}
+			spi_context_update_rx(&data->ctx, 1, 1);
+		} else {
+			rx_frame = LL_SPI_ReceiveData16(spi);
+			if (spi_context_rx_buf_on(&data->ctx)) {
+				UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+			}
+			spi_context_update_rx(&data->ctx, 2, 1);
 		}
-		spi_context_update_rx(&data->ctx, 2, 1);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
+		frames_in_flight--;
+#endif
 	}
 }
 
