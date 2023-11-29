@@ -1748,6 +1748,11 @@ ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct msghdr *msg,
 		return -1;
 	}
 
+	if (msg->msg_iov == NULL) {
+		errno = ENOMEM;
+		return -1;
+	}
+
 	for (i = 0; i < msg->msg_iovlen; i++) {
 		max_len += msg->msg_iov[i].iov_len;
 	}
@@ -1787,6 +1792,11 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct msghdr *msg, int flags)
 
 	if (msg == NULL) {
 		errno = EINVAL;
+		return -1;
+	}
+
+	if (msg->msg_iov == NULL) {
+		errno = ENOMEM;
 		return -1;
 	}
 
