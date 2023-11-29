@@ -54,9 +54,9 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 
 void mock_bt_csip_init(void)
 {
-	csip_cb = NULL;
 }
 
 void mock_bt_csip_cleanup(void)
 {
+	csip_cb = NULL;
 }
