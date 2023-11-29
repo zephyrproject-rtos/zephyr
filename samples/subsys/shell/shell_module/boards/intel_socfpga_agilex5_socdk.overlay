@@ -35,3 +35,11 @@
 &sdmmc {
 	status = "okay";
 };
+
+&io96b0 {
+	status = "okay";
+};
+
+&io96b1 {
+	status = "okay";
+};
