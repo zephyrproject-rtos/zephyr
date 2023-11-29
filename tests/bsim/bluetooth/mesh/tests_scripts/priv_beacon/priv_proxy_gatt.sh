@@ -17,13 +17,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 4. Both TX and RX device verifies that the IV index has been updated.
 #    This proves that the RX device (Proxy CLI) successfully received
 #    a Private beacon over the GATT connection
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf
 RunTest mesh_priv_proxy_gatt_priv_beacon \
 	beacon_tx_priv_gatt_proxy \
 	beacon_rx_priv_gatt_proxy
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf_overlay_psa_conf
 RunTest mesh_priv_proxy_gatt_priv_beacon \
 	beacon_tx_priv_gatt_proxy \
