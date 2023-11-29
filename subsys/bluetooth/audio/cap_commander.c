@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include "cap_internal.h"
 #include "ccid_internal.h"
 #include "csip_internal.h"
@@ -109,6 +110,13 @@ static void cap_commander_unicast_audio_proc_complete(void)
 			cap_cb->volume_changed(failed_conn, err);
 		}
 		break;
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+	case BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE:
+		if (cap_cb->volume_offset_changed != NULL) {
+			cap_cb->volume_offset_changed(failed_conn, err);
+		}
+		break;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 	case BT_CAP_COMMON_PROC_TYPE_NONE:
 	default:
@@ -131,6 +139,25 @@ int bt_cap_commander_cancel(void)
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
+static struct bt_vcp_vol_ctlr_cb vol_ctlr_cb;
+static bool vcp_cb_registered;
+
+static int cap_commander_register_vcp_cb(void)
+{
+	int err;
+
+	err = bt_vcp_vol_ctlr_cb_register(&vol_ctlr_cb);
+	if (err != 0) {
+		LOG_DBG("Failed to register VCP callbacks: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	vcp_cb_registered = true;
+
+	return 0;
+}
+
 static bool valid_change_volume_param(const struct bt_cap_commander_change_volume_param *param)
 {
 	CHECKIF(param == NULL) {
@@ -156,35 +183,11 @@ static bool valid_change_volume_param(const struct bt_cap_commander_change_volum
 
 	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->members[i];
-		struct bt_cap_common_client *client = NULL;
+		const struct bt_cap_common_client *client =
+			bt_cap_common_get_client(param->type, member);
 
-		if (param->type == BT_CAP_SET_TYPE_AD_HOC) {
-
-			CHECKIF(member->member == NULL) {
-				LOG_DBG("param->members[%zu].member is NULL", i);
-				return false;
-			}
-
-			client = bt_cap_common_get_client_by_acl(member->member);
-			if (client == NULL || !client->cas_found) {
-				LOG_DBG("CAS was not found for param->members[%zu]", i);
-				return false;
-			}
-		} else if (param->type == BT_CAP_SET_TYPE_CSIP) {
-			CHECKIF(member->csip == NULL) {
-				LOG_DBG("param->members[%zu].csip is NULL", i);
-				return false;
-			}
-
-			client = bt_cap_common_get_client_by_csis(member->csip);
-			if (client == NULL) {
-				LOG_DBG("CSIS was not found for param->members[%zu]", i);
-				return false;
-			}
-		}
-
-		if (client == NULL || !client->cas_found) {
-			LOG_DBG("CAS was not found for param->members[%zu]", i);
+		if (client == NULL) {
+			LOG_DBG("Invalid param->members[%zu]", i);
 			return false;
 		}
 
@@ -269,11 +272,7 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_param *param)
 {
 	const struct bt_cap_commander_proc_param *proc_param;
-	static struct bt_vcp_vol_ctlr_cb vol_ctlr_cb = {
-		.vol_set = cap_commander_vcp_vol_set_cb,
-	};
 	struct bt_cap_common_proc *active_proc;
-	static bool cb_registered;
 	struct bt_conn *conn;
 	int err;
 
@@ -289,16 +288,11 @@ int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_p
 
 	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE, param->count);
 
-	if (!cb_registered) {
-		/* Ensure that ops are registered before any procedures are started */
-		err = bt_vcp_vol_ctlr_cb_register(&vol_ctlr_cb);
-		if (err != 0) {
-			LOG_DBG("Failed to register VCP callbacks: %d", err);
+	vol_ctlr_cb.vol_set = cap_commander_vcp_vol_set_cb;
+	if (!vcp_cb_registered && cap_commander_register_vcp_cb() != 0) {
+		LOG_DBG("Failed to register VCP callbacks");
 
-			return -ENOEXEC;
-		}
-
-		cb_registered = true;
+		return -ENOEXEC;
 	}
 
 	active_proc = bt_cap_common_get_active_proc();
@@ -332,11 +326,217 @@ int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_p
 	return 0;
 }
 
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+static bool
+valid_change_offset_param(const struct bt_cap_commander_change_volume_offset_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count == 0) {
+		LOG_DBG("Invalid param->count: %u", param->count);
+		return false;
+	}
+
+	CHECKIF(param->param == NULL) {
+		LOG_DBG("param->param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count > CONFIG_BT_MAX_CONN) {
+		LOG_DBG("param->count (%zu) is larger than CONFIG_BT_MAX_CONN (%d)", param->count,
+			CONFIG_BT_MAX_CONN);
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_cap_commander_change_volume_offset_member_param *member_param =
+			&param->param[i];
+		const union bt_cap_set_member *member = &member_param->member;
+		const struct bt_cap_common_client *client =
+			bt_cap_common_get_client(param->type, member);
+		struct bt_vcp_vol_ctlr *vol_ctlr;
+		struct bt_vcp_included included;
+		int err;
+
+		if (client == NULL) {
+			LOG_DBG("Invalid param->param[%zu].member", i);
+			return false;
+		}
+
+		vol_ctlr = bt_vcp_vol_ctlr_get_by_conn(client->conn);
+		if (vol_ctlr == NULL) {
+			LOG_DBG("Volume control not available for param->param[%zu].member", i);
+			return false;
+		}
+
+		err = bt_vcp_vol_ctlr_included_get(vol_ctlr, &included);
+		if (err != 0 || included.vocs_cnt == 0) {
+			LOG_DBG("Volume offset control not available for param->param[%zu].member",
+				i);
+			return -ENOEXEC;
+		}
+
+		if (!IN_RANGE(member_param->offset, BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET)) {
+			LOG_DBG("Invalid offset %d for param->param[%zu].offset",
+				member_param->offset, i);
+			return false;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			const union bt_cap_set_member *other = &param->param[j].member;
+
+			if (other == member) {
+				LOG_DBG("param->param[%zu].member (%p) is duplicated by "
+					"param->param[%zu].member (%p)",
+					j, other, i, member);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_conn *conn;
+	int vocs_err;
+
+	LOG_DBG("bt_vocs %p", (void *)inst);
+
+	vocs_err = bt_vocs_client_conn_get(inst, &conn);
+	if (vocs_err != 0) {
+		LOG_ERR("Failed to get conn by inst: %d", vocs_err);
+		return;
+	}
+
+	LOG_DBG("conn %p", (void *)conn);
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed to set offset: %d", err);
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Conn %p offset updated (%zu/%zu streams done)", (void *)conn,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		LOG_DBG("Proc is aborted");
+		if (bt_cap_common_proc_all_handled()) {
+			LOG_DBG("All handled");
+			cap_commander_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		const struct bt_cap_commander_proc_param *proc_param;
+
+		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
+		conn = proc_param->conn;
+		active_proc->proc_initiated_cnt++;
+
+		err = bt_vocs_state_set(proc_param->change_offset.vocs,
+					proc_param->change_offset.offset);
+		if (err != 0) {
+			LOG_DBG("Failed to set offset for conn %p: %d", (void *)conn, err);
+			bt_cap_common_abort_proc(conn, err);
+			cap_commander_unicast_audio_proc_complete();
+		}
+	} else {
+		cap_commander_unicast_audio_proc_complete();
+	}
+}
+
 int bt_cap_commander_change_volume_offset(
 	const struct bt_cap_commander_change_volume_offset_param *param)
 {
-	return -ENOSYS;
+	const struct bt_cap_commander_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
+	struct bt_conn *conn;
+	int err;
+
+	if (bt_cap_common_proc_is_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	if (!valid_change_offset_param(param)) {
+		return -EINVAL;
+	}
+
+	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE, param->count);
+
+	vol_ctlr_cb.vocs_cb.set_offset = cap_commander_vcp_set_offset_cb;
+	if (!vcp_cb_registered && cap_commander_register_vcp_cb() != 0) {
+		LOG_DBG("Failed to register VCP callbacks");
+
+		return -ENOEXEC;
+	}
+
+	active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_cap_commander_change_volume_offset_member_param *member_param =
+			&param->param[i];
+		struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, &member_param->member);
+		struct bt_vcp_included included;
+
+		if (member_conn == NULL) {
+			LOG_DBG("Invalid param->members[%zu]", i);
+			return -EINVAL;
+		}
+
+		vol_ctlr = bt_vcp_vol_ctlr_get_by_conn(member_conn);
+		if (vol_ctlr == NULL) {
+			LOG_DBG("Invalid param->members[%zu] vol_ctlr", i);
+			return -EINVAL;
+		}
+
+		err = bt_vcp_vol_ctlr_included_get(vol_ctlr, &included);
+		if (err != 0 || included.vocs_cnt == 0) {
+			LOG_DBG("Invalid param->members[%zu] vocs", i);
+			return -EINVAL;
+		}
+
+		/* Store the necessary parameters as we cannot assume that the supplied parameters
+		 * are kept valid
+		 */
+		active_proc->proc_param.commander[i].conn = member_conn;
+		active_proc->proc_param.commander[i].change_offset.offset = member_param->offset;
+		/* TODO: For now we just use the first VOCS instance
+		 * - How should we handle multiple?
+		 */
+		active_proc->proc_param.commander[i].change_offset.vocs = included.vocs[0];
+	}
+
+	proc_param = &active_proc->proc_param.commander[0];
+	conn = proc_param->conn;
+	active_proc->proc_initiated_cnt++;
+
+	err = bt_vocs_state_set(proc_param->change_offset.vocs, proc_param->change_offset.offset);
+	if (err != 0) {
+		LOG_DBG("Failed to set volume for conn %p: %d", (void *)conn, err);
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 
 int bt_cap_commander_change_volume_mute_state(
 	const struct bt_cap_commander_change_volume_mute_state_param *param)

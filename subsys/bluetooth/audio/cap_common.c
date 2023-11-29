@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
 
 #include "cap_internal.h"
 #include "csip_internal.h"
@@ -52,7 +53,7 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
-					      union bt_cap_set_member *member)
+					      const union bt_cap_set_member *member)
 {
 	if (type == BT_CAP_SET_TYPE_CSIP) {
 		struct bt_cap_common_client *client;
@@ -120,6 +121,7 @@ static bool active_proc_is_commander(void)
 {
 	switch (active_proc.proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE:
+	case BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE:
 		return true;
 	default:
 		return false;
@@ -215,6 +217,39 @@ bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst 
 	}
 
 	return NULL;
+}
+
+struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
+						      const union bt_cap_set_member *member)
+{
+	struct bt_cap_common_client *client = NULL;
+
+	if (type == BT_CAP_SET_TYPE_AD_HOC) {
+		CHECKIF(member->member == NULL) {
+			LOG_DBG("member->member is NULL");
+			return NULL;
+		}
+
+		client = bt_cap_common_get_client_by_acl(member->member);
+	} else if (type == BT_CAP_SET_TYPE_CSIP) {
+		CHECKIF(member->csip == NULL) {
+			LOG_DBG("member->csip is NULL");
+			return NULL;
+		}
+
+		client = bt_cap_common_get_client_by_csis(member->csip);
+		if (client == NULL) {
+			LOG_DBG("CSIS was not found for member");
+			return NULL;
+		}
+	}
+
+	if (client == NULL || !client->cas_found) {
+		LOG_DBG("CAS was not found for member %p", member);
+		return NULL;
+	}
+
+	return client;
 }
 
 static void cap_common_discover_complete(struct bt_conn *conn, int err,

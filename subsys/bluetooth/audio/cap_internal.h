@@ -37,6 +37,7 @@ enum bt_cap_common_proc_type {
 	BT_CAP_COMMON_PROC_TYPE_UPDATE,
 	BT_CAP_COMMON_PROC_TYPE_STOP,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE,
+	BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE,
 };
 
 enum bt_cap_common_subproc_type {
@@ -74,6 +75,12 @@ struct bt_cap_commander_proc_param {
 			uint8_t volume;
 		} change_volume;
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+		struct {
+			int16_t offset;
+			struct bt_vocs *vocs;
+		} change_offset;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 
 		/* TODO Add other procedures */
 	};
@@ -123,7 +130,7 @@ void bt_cap_common_start_proc(enum bt_cap_common_proc_type proc_type, size_t pro
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type);
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
-					      union bt_cap_set_member *member);
+					      const union bt_cap_set_member *member);
 bool bt_cap_common_proc_is_active(void);
 bool bt_cap_common_proc_is_aborted(void);
 bool bt_cap_common_proc_all_handled(void);
@@ -135,6 +142,8 @@ void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason);
 struct bt_cap_common_client *bt_cap_common_get_client_by_acl(const struct bt_conn *acl);
 struct bt_cap_common_client *
 bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst *csis_inst);
+struct bt_cap_common_client *bt_cap_common_get_client(enum bt_cap_set_type type,
+						      const union bt_cap_set_member *member);
 
 typedef void (*bt_cap_common_discover_func_t)(
 	struct bt_conn *conn, int err, const struct bt_csip_set_coordinator_csis_inst *csis_inst);
