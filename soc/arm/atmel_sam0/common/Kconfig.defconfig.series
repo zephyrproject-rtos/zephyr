@@ -10,8 +10,8 @@ config HWINFO_SAM0
 
 if USB_DEVICE_DRIVER
 
-config HEAP_MEM_POOL_SIZE
-	default 1024
+config HEAP_MEM_POOL_ADD_SIZE_SOC
+	def_int 1024
 
 endif # USB_DEVICE_DRIVER
 
