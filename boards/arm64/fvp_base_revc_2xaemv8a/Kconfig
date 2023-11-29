@@ -14,5 +14,6 @@
 # This doesn't necessarily include the Interrupt Translation Table, which are
 # 256bytes aligned tables, for reference a 32 ITEs table needs 256bytes.
 # With 11x64K HEAP, up to 116 ITT tables of 32 ITEs can be allocated.
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 720896 if GIC_V3_ITS
