@@ -5,7 +5,8 @@ config BOARD
 	default "icev_wireless"
 	depends on BOARD_ICEV_WIRELESS
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 98304 if WIFI
 	default 40960 if BT
 	default 4096
