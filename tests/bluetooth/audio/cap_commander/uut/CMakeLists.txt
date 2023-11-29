@@ -13,6 +13,7 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/net/buf_simple.c
   csip.c
   vcp.c
+  vocs.c
 )
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/audio/mocks mocks)
