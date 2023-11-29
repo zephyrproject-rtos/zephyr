@@ -483,6 +483,24 @@ end:
 	return ret;
 }
 
+int coap_service_is_running(const struct coap_service *service)
+{
+	int ret;
+
+	if (!coap_service_in_section(service)) {
+		__ASSERT_NO_MSG(false);
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	ret = (service->data->sock_fd < 0) ? 0 : 1;
+
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
 		      const struct sockaddr *addr, socklen_t addr_len)
 {
