@@ -19,12 +19,12 @@
 
 LOG_MODULE_DECLARE(clock_control_rcar);
 
-#define R8A7795_CLK_SD_STOP_BIT 8
-#define R8A7795_CLK_SD_DIV_MASK 0x3
+#define R8A7795_CLK_SD_STOP_BIT  8
+#define R8A7795_CLK_SD_DIV_MASK  0x3
 #define R8A7795_CLK_SD_DIV_SHIFT 0
 
-#define R8A7795_CLK_SDH_STOP_BIT 9
-#define R8A7795_CLK_SDH_DIV_MASK 0x7
+#define R8A7795_CLK_SDH_STOP_BIT  9
+#define R8A7795_CLK_SDH_DIV_MASK  0x7
 #define R8A7795_CLK_SDH_DIV_SHIFT 2
 
 #define R8A7795_CLK_CANFD_STOP_BIT 8
@@ -40,8 +40,8 @@ struct r8a7795_cpg_mssr_data {
 
 /* NOTE: the array MUST be sorted by module field */
 static struct cpg_clk_info_table core_props[] = {
-	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_S3D4, RCAR_CPG_NONE,
-				RCAR_CPG_NONE, RCAR_CPG_KHZ(66600)),
+	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_S3D4, RCAR_CPG_NONE, RCAR_CPG_NONE,
+				RCAR_CPG_KHZ(66600)),
 
 	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_SD0H, 0x0074, RCAR_CPG_NONE, RCAR_CPG_MHZ(800)),
 	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_SD0, 0x0074, R8A7795_CLK_SD0H, RCAR_CPG_MHZ(800)),
@@ -57,8 +57,8 @@ static struct cpg_clk_info_table core_props[] = {
 
 	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_CANFD, 0x0244, RCAR_CPG_NONE, RCAR_CPG_MHZ(800)),
 
-	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_S0D12, RCAR_CPG_NONE,
-				RCAR_CPG_NONE, RCAR_CPG_KHZ(66600)),
+	RCAR_CORE_CLK_INFO_ITEM(R8A7795_CLK_S0D12, RCAR_CPG_NONE, RCAR_CPG_NONE,
+				RCAR_CPG_KHZ(66600)),
 };
 
 /* NOTE: the array MUST be sorted by module field */
@@ -72,8 +72,7 @@ static struct cpg_clk_info_table mod_props[] = {
 };
 
 static int r8a7795_cpg_enable_disable_core(const struct device *dev,
-					struct cpg_clk_info_table *clk_info,
-					uint32_t enable)
+					   struct cpg_clk_info_table *clk_info, uint32_t enable)
 {
 	int ret = 0;
 	uint32_t reg;
@@ -113,8 +112,7 @@ static int r8a7795_cpg_enable_disable_core(const struct device *dev,
 	return ret;
 }
 
-static int r8a7795_cpg_core_clock_endisable(const struct device *dev,
-					    struct rcar_cpg_clk *clk,
+static int r8a7795_cpg_core_clock_endisable(const struct device *dev, struct rcar_cpg_clk *clk,
 					    bool enable)
 {
 	struct cpg_clk_info_table *clk_info;
@@ -132,7 +130,7 @@ static int r8a7795_cpg_core_clock_endisable(const struct device *dev,
 			uintptr_t rate = clk->rate;
 
 			ret = rcar_cpg_set_rate(dev, (clock_control_subsys_t)clk,
-						   (clock_control_subsys_rate_t)rate);
+						(clock_control_subsys_rate_t)rate);
 			if (ret < 0) {
 				return ret;
 			}
@@ -146,8 +144,7 @@ static int r8a7795_cpg_core_clock_endisable(const struct device *dev,
 	return ret;
 }
 
-static int r8a7795_cpg_mssr_start_stop(const struct device *dev,
-				       clock_control_subsys_t sys,
+static int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_subsys_t sys,
 				       bool enable)
 {
 	struct rcar_cpg_clk *clk = (struct rcar_cpg_clk *)sys;
@@ -258,14 +255,12 @@ static int r8a7795_set_rate_helper(uint32_t module, uint32_t *divider, uint32_t 
 	return ret;
 }
 
-static int r8a7795_cpg_mssr_start(const struct device *dev,
-				  clock_control_subsys_t sys)
+static int r8a7795_cpg_mssr_start(const struct device *dev, clock_control_subsys_t sys)
 {
 	return r8a7795_cpg_mssr_start_stop(dev, sys, true);
 }
 
-static int r8a7795_cpg_mssr_stop(const struct device *dev,
-				 clock_control_subsys_t sys)
+static int r8a7795_cpg_mssr_stop(const struct device *dev, clock_control_subsys_t sys)
 {
 	return r8a7795_cpg_mssr_start_stop(dev, sys, false);
 }
