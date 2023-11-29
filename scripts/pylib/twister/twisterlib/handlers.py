@@ -988,6 +988,7 @@ class QEMUHandler(Handler):
         self.thread.daemon = True
         logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
         self.thread.start()
+        thread_max_time = time.time() + self.get_test_timeout()
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
@@ -1019,8 +1020,8 @@ class QEMUHandler(Handler):
                 self.returncode = proc.returncode
             # Need to wait for harness to finish processing
             # output from QEMU. Otherwise it might miss some
-            # error messages.
-            self.thread.join(0)
+            # messages.
+            self.thread.join(max(thread_max_time - time.time(), 0))
             if self.thread.is_alive():
                 logger.debug("Timed out while monitoring QEMU output")
 
