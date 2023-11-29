@@ -2380,7 +2380,6 @@ size_t bt_mesh_comp_page_size(uint8_t page)
 
 int bt_mesh_comp_store(void)
 {
-#if IS_ENABLED(CONFIG_BT_MESH_V1d1)
 	NET_BUF_SIMPLE_DEFINE(buf, CONFIG_BT_MESH_COMP_PST_BUF_SIZE);
 	int err;
 
@@ -2410,7 +2409,7 @@ int bt_mesh_comp_store(void)
 
 		LOG_DBG("Stored CDP%d", comp_data_pages[i].page);
 	}
-#endif
+
 	return 0;
 }
 

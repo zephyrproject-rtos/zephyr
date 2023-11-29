@@ -9,12 +9,6 @@ RunTest mesh_friendship_msg_frnd \
 	friendship_friend_msg \
 	friendship_lpn_msg_frnd
 
-conf=prj_mesh1d1_conf
-RunTest mesh_friendship_msg_frnd_1d1 \
-	friendship_friend_msg \
-	friendship_lpn_msg_frnd
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_friendship_msg_frnd_psa \
 	friendship_friend_msg \

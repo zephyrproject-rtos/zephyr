@@ -94,7 +94,6 @@ static void async_send_end(int err, void *data)
 
 static void rx_sar_conf(void)
 {
-#ifdef CONFIG_BT_MESH_V1d1
 	/* Reconfigure SAR Receiver state so that the transport layer does
 	 * generate Segmented Acks as rarely as possible.
 	 */
@@ -110,7 +109,6 @@ static void rx_sar_conf(void)
 	bt_mesh_test_sar_conf_set(NULL, &rx_set);
 #else
 	bt_mesh.sar_rx = rx_set;
-#endif
 #endif
 }
 

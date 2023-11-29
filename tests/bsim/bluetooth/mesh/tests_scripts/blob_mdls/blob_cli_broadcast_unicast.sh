@@ -4,9 +4,7 @@
 
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
-conf=prj_mesh1d1_conf
 RunTest blob_broadcast_unicast blob_cli_broadcast_unicast
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest blob_broadcast_unicast_psa blob_cli_broadcast_unicast

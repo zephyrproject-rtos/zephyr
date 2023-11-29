@@ -8,12 +8,6 @@ RunTest mesh_scanner_invalid_ad_type \
 	scanner_tx_invalid_ad_type \
 	scanner_rx_invalid_packet
 
-conf=prj_mesh1d1_conf
-RunTest mesh_scanner_invalid_ad_type_1d1 \
-	scanner_tx_invalid_ad_type \
-	scanner_rx_invalid_packet
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_scanner_invalid_ad_type_psa \
 	scanner_tx_invalid_ad_type \

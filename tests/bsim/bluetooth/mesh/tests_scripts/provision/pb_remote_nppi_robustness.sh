@@ -13,13 +13,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 4. Execute composition refresh procedure 3 times for the third device.
 # 5. Execute address refresh procedure 3 times for the third device.
 # (Step 3-5 is executed without sending a node reset message)
-conf=prj_mesh1d1_conf
 RunTest mesh_prov_pb_remote_nppi_robustness \
 	prov_provisioner_pb_remote_client_nppi_robustness \
 	prov_device_pb_remote_server_unproved \
 	prov_device_pb_remote_server_nppi_robustness
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_nppi_robustness_psa \
 	prov_provisioner_pb_remote_client_nppi_robustness \
