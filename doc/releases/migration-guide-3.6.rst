@@ -185,6 +185,9 @@ Bootloader
 Bluetooth
 =========
 
+* ATT now has its own TX buffer pool.
+  If extra ATT buffers were configured using :kconfig:option:`CONFIG_BT_L2CAP_TX_BUF_COUNT`,
+  they now instead should be configured through :kconfig:option:`CONFIG_BT_ATT_TX_COUNT`.
 * The HCI implementation for both the Host and the Controller sides has been
   renamed for the IPC transport. The ``CONFIG_BT_RPMSG`` Kconfig option is now
   :kconfig:option:`CONFIG_BT_HCI_IPC`, and the ``zephyr,bt-hci-rpmsg-ipc``

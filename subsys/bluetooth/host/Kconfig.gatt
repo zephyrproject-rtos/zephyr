@@ -5,6 +5,15 @@
 
 menu "ATT and GATT Options"
 
+config BT_ATT_TX_COUNT
+	int "Number of ATT buffers"
+	default BT_BUF_ACL_TX_COUNT
+	default 3
+	range 1 255
+	help
+	  These buffers are only used for sending anything over ATT.
+	  Requests, responses, indications, confirmations, notifications.
+
 config BT_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
 	default 0
