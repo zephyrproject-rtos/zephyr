@@ -8,7 +8,8 @@ if BOARD_ESP32S3_DEVKITM
 config BOARD
 	default "esp32s3_devkitm"
 
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 98304 if WIFI
 	default 40960 if BT
 	default 4096
@@ -24,8 +25,8 @@ if BOARD_ESP32S3_DEVKITM_APPCPU
 config BOARD
 	default "esp32s3_devkitm_appcpu"
 
-config HEAP_MEM_POOL_SIZE
-	default 4096
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	def_int 4096
 
 config KERNEL_BIN_NAME
 	default "esp32_net_firmware"
