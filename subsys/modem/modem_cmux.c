@@ -340,9 +340,11 @@ static void modem_cmux_acknowledge_received_frame(struct modem_cmux *cmux)
 	}
 }
 
-static void modem_cmux_on_msc_command(struct modem_cmux *cmux)
+static void modem_cmux_on_msc_command(struct modem_cmux *cmux, struct modem_cmux_command *command)
 {
-	modem_cmux_acknowledge_received_frame(cmux);
+	if (command->type.cr) {
+		modem_cmux_acknowledge_received_frame(cmux);
+	}
 }
 
 static void modem_cmux_on_fcon_command(struct modem_cmux *cmux)
@@ -361,17 +363,27 @@ static void modem_cmux_on_fcoff_command(struct modem_cmux *cmux)
 	modem_cmux_acknowledge_received_frame(cmux);
 }
 
-static void modem_cmux_on_cld_command(struct modem_cmux *cmux)
+static void modem_cmux_on_cld_command(struct modem_cmux *cmux, struct modem_cmux_command *command)
 {
-	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING) {
+	if (command->type.cr) {
+		modem_cmux_acknowledge_received_frame(cmux);
+	}
+
+	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING &&
+	    cmux->state != MODEM_CMUX_STATE_CONNECTED) {
 		LOG_WRN("Unexpected close down");
+		return;
+	}
+
+	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTING) {
+		k_work_cancel_delayable(&cmux->disconnect_work);
 	}
 
 	cmux->state = MODEM_CMUX_STATE_DISCONNECTED;
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 	cmux->flow_control_on = false;
 	k_mutex_unlock(&cmux->transmit_rb_lock);
-	k_work_cancel_delayable(&cmux->disconnect_work);
+
 	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
 	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
 	k_event_post(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
@@ -381,7 +393,6 @@ static void modem_cmux_on_control_frame_ua(struct modem_cmux *cmux)
 {
 	if (cmux->state != MODEM_CMUX_STATE_CONNECTING) {
 		LOG_DBG("Unexpected UA frame");
-
 		return;
 	}
 
@@ -414,11 +425,11 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 
 	switch (command->type.value) {
 	case MODEM_CMUX_COMMAND_CLD:
-		modem_cmux_on_cld_command(cmux);
+		modem_cmux_on_cld_command(cmux, command);
 		break;
 
 	case MODEM_CMUX_COMMAND_MSC:
-		modem_cmux_on_msc_command(cmux);
+		modem_cmux_on_msc_command(cmux, command);
 		break;
 
 	case MODEM_CMUX_COMMAND_FCON:
@@ -435,6 +446,40 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 	}
 }
 
+static void modem_cmux_connect_response_transmit(struct modem_cmux *cmux)
+{
+	struct modem_cmux_frame frame = {
+		.dlci_address = cmux->frame.dlci_address,
+		.cr = cmux->frame.cr,
+		.pf = cmux->frame.pf,
+		.type = MODEM_CMUX_FRAME_TYPE_UA,
+		.data = NULL,
+		.data_len = 0,
+	};
+
+	LOG_DBG("SABM/DISC request state send ack");
+	modem_cmux_transmit_cmd_frame(cmux, &frame);
+}
+
+static void modem_cmux_on_control_frame_sabm(struct modem_cmux *cmux)
+{
+	modem_cmux_connect_response_transmit(cmux);
+
+	if ((cmux->state == MODEM_CMUX_STATE_CONNECTED) ||
+	    (cmux->state == MODEM_CMUX_STATE_DISCONNECTING)) {
+		LOG_DBG("Connect request not accepted");
+		return;
+	}
+
+	cmux->state = MODEM_CMUX_STATE_CONNECTED;
+	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
+	cmux->flow_control_on = true;
+	k_mutex_unlock(&cmux->transmit_rb_lock);
+	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_CONNECTED);
+	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
+	k_event_post(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
+}
+
 static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 {
 	modem_cmux_log_received_frame(&cmux->frame);
@@ -446,6 +491,10 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 
 	case MODEM_CMUX_FRAME_TYPE_UIH:
 		modem_cmux_on_control_frame_uih(cmux);
+		break;
+
+	case MODEM_CMUX_FRAME_TYPE_SABM:
+		modem_cmux_on_control_frame_sabm(cmux);
 		break;
 
 	default:
@@ -509,6 +558,39 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	modem_pipe_notify_receive_ready(&dlci->pipe);
 }
 
+static void modem_cmux_on_dlci_frame_sabm(struct modem_cmux_dlci *dlci)
+{
+	struct modem_cmux *cmux = dlci->cmux;
+
+	modem_cmux_connect_response_transmit(cmux);
+
+	if (dlci->state == MODEM_CMUX_DLCI_STATE_OPEN) {
+		LOG_DBG("Unexpected SABM frame");
+		return;
+	}
+
+	dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
+	modem_pipe_notify_opened(&dlci->pipe);
+	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
+	ring_buf_reset(&dlci->receive_rb);
+	k_mutex_unlock(&dlci->receive_rb_lock);
+}
+
+static void modem_cmux_on_dlci_frame_disc(struct modem_cmux_dlci *dlci)
+{
+	struct modem_cmux *cmux = dlci->cmux;
+
+	modem_cmux_connect_response_transmit(cmux);
+
+	if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
+		LOG_DBG("Unexpected Disc frame");
+		return;
+	}
+
+	dlci->state = MODEM_CMUX_DLCI_STATE_CLOSED;
+	modem_pipe_notify_closed(&dlci->pipe);
+}
+
 static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 {
 	struct modem_cmux_dlci *dlci;
@@ -530,6 +612,14 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 
 	case MODEM_CMUX_FRAME_TYPE_UIH:
 		modem_cmux_on_dlci_frame_uih(dlci);
+		break;
+
+	case MODEM_CMUX_FRAME_TYPE_SABM:
+		modem_cmux_on_dlci_frame_sabm(dlci);
+		break;
+
+	case MODEM_CMUX_FRAME_TYPE_DISC:
+		modem_cmux_on_dlci_frame_disc(dlci);
 		break;
 
 	default:
@@ -996,6 +1086,7 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	k_work_init_delayable(&cmux->connect_work, modem_cmux_connect_handler);
 	k_work_init_delayable(&cmux->disconnect_work, modem_cmux_disconnect_handler);
 	k_event_init(&cmux->event);
+	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
 	k_event_post(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
 }
 
@@ -1071,7 +1162,6 @@ int modem_cmux_disconnect(struct modem_cmux *cmux)
 	if (ret < 0) {
 		return ret;
 	}
-
 	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false,
 			 MODEM_CMUX_T2_TIMEOUT) == 0) {
 		return -EAGAIN;
