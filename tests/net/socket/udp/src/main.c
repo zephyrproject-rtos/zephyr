@@ -1415,7 +1415,7 @@ ZTEST_USER(net_socket_udp, test_26_recvmsg_invalid)
 	msg.msg_control = &cmsgbuf.buf;
 
 	ret = recvmsg(0, &msg, 0);
-	zassert_true(ret < 0, "recvmsg() succeed");
+	zassert_true(ret < 0 && errno == ENOMEM, "Wrong errno (%d)", errno);
 
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
@@ -1462,6 +1462,11 @@ static void comm_sendmsg_recvmsg(int client_sock,
 
 	sent = sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed, %s (%d)", strerror(errno), -errno);
+
+	/* One negative test with invalid msg_iov */
+	memset(msg, 0, sizeof(*msg));
+	recved = recvmsg(server_sock, msg, 0);
+	zassert_true(recved < 0 && errno == ENOMEM, "Wrong errno (%d)", errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
 		len += client_msg->msg_iov[i].iov_len;
