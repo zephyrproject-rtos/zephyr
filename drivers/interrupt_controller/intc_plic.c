@@ -32,11 +32,12 @@
  * These registers' offset are defined in the RISCV PLIC specs, see:
  * https://github.com/riscv/riscv-plic-spec
  */
-#define PLIC_REG_PRIO_OFFSET 0x0
-#define PLIC_REG_IRQ_EN_OFFSET 0x2000
-#define PLIC_REG_REGS_OFFSET 0x200000
-#define PLIC_REG_REGS_THRES_PRIORITY_OFFSET 0
-#define PLIC_REG_REGS_CLAIM_COMPLETE_OFFSET sizeof(uint32_t)
+#define CONTEXT_BASE 0x200000
+#define CONTEXT_SIZE 0x1000
+#define CONTEXT_THRESHOLD 0x00
+#define CONTEXT_CLAIM 0x04
+#define CONTEXT_ENABLE_BASE 0x2000
+#define CONTEXT_ENABLE_SIZE 0x80
 /*
  * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
  * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
@@ -105,18 +106,50 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 	return local_irq_to_reg_index(config->num_irqs) + 1;
 }
 
+static inline uint32_t get_first_context(uint32_t hartid)
+{
+	return hartid == 0 ? 0 : (hartid * 2) - 1;
+}
+
+static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t cpu_num)
+{
+	const struct plic_config *config = dev->config;
+	uint32_t hartid;
+	/*
+	 * We want to return the irq_en address for the context of given hart.
+	 * If hartid is 0, we return the devices irq_en property, job done. If it is
+	 * greater than zero, we assume that there are two context's associated with
+	 * each hart: M mode enable, followed by S mode enable. We return the M mode
+	 * enable address.
+	 */
+#if CONFIG_SMP
+	hartid = _kernel.cpus[cpu_num].arch.hartid;
+#else
+	hartid = arch_proc_id();
+#endif
+	return  config->irq_en + get_first_context(hartid) * CONTEXT_ENABLE_SIZE;
+}
+
 static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 
-	return config->reg + PLIC_REG_REGS_CLAIM_COMPLETE_OFFSET;
+	return config->reg + CONTEXT_CLAIM;
 }
 
-static inline mem_addr_t get_threshold_priority_addr(const struct device *dev)
+
+static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, uint32_t cpu_num)
 {
 	const struct plic_config *config = dev->config;
+	uint32_t hartid;
 
-	return config->reg + PLIC_REG_REGS_THRES_PRIORITY_OFFSET;
+#if CONFIG_SMP
+	hartid = _kernel.cpus[cpu_num].arch.hartid;
+#else
+	hartid = arch_proc_id();
+#endif
+
+	return config->reg + (get_first_context(hartid) * CONTEXT_SIZE);
 }
 
 /**
@@ -163,17 +196,21 @@ static uint32_t __maybe_unused riscv_plic_irq_trig_val(const struct device *dev,
 static void plic_irq_enable_set_state(uint32_t irq, bool enable)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
-	const struct plic_config *config = dev->config;
 	const uint32_t local_irq = irq_from_level_2(irq);
-	mem_addr_t en_addr = config->irq_en + local_irq_to_reg_offset(local_irq);
-	uint32_t en_value;
-	uint32_t key;
 
-	key = irq_lock();
-	en_value = sys_read32(en_addr);
-	WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, enable);
-	sys_write32(en_value, en_addr);
-	irq_unlock(key);
+	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
+		mem_addr_t en_addr =
+			get_context_en_addr(dev, cpu_num) + local_irq_to_reg_offset(local_irq);
+
+		uint32_t en_value;
+		uint32_t key;
+
+		key = irq_lock();
+		en_value = sys_read32(en_addr);
+		WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, enable);
+		sys_write32(en_value, en_addr);
+		irq_unlock(key);
+	}
 }
 
 /**
@@ -355,22 +392,27 @@ static void plic_irq_handler(const struct device *dev)
 static int plic_init(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
-	mem_addr_t en_addr = config->irq_en;
+	mem_addr_t en_addr, thres_prio_addr;
 	mem_addr_t prio_addr = config->prio;
-	mem_addr_t thres_prio_addr = get_threshold_priority_addr(dev);
 
-	/* Ensure that all interrupts are disabled initially */
-	for (uint32_t i = 0; i < get_plic_enabled_size(dev); i++) {
-		sys_write32(0U, en_addr + (i * sizeof(uint32_t)));
+	/* Iterate through each of the contexts, HART + PRIV */
+	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
+		en_addr = get_context_en_addr(dev, cpu_num);
+		thres_prio_addr = get_threshold_priority_addr(dev, cpu_num);
+
+		/* Ensure that all interrupts are disabled initially */
+		for (uint32_t i = 0; i < get_plic_enabled_size(dev); i++) {
+			sys_write32(0U, en_addr + (i * sizeof(uint32_t)));
+		}
+
+		/* Set threshold priority to 0 */
+		sys_write32(0U, thres_prio_addr);
 	}
 
 	/* Set priority of each interrupt line to 0 initially */
 	for (uint32_t i = 0; i < config->num_irqs; i++) {
 		sys_write32(0U, prio_addr + (i * sizeof(uint32_t)));
 	}
-
-	/* Set threshold priority to 0 */
-	sys_write32(0U, thres_prio_addr);
 
 	/* Configure IRQ for PLIC driver */
 	config->irq_config_func();
@@ -514,9 +556,9 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 #define PLIC_INTC_CONFIG_INIT(n)                                                                   \
 	PLIC_INTC_IRQ_FUNC_DECLARE(n);                                                             \
 	static const struct plic_config plic_config_##n = {                                        \
-		.prio = PLIC_BASE_ADDR(n) + PLIC_REG_PRIO_OFFSET,                                  \
-		.irq_en = PLIC_BASE_ADDR(n) + PLIC_REG_IRQ_EN_OFFSET,                              \
-		.reg = PLIC_BASE_ADDR(n) + PLIC_REG_REGS_OFFSET,                                   \
+		.prio = PLIC_BASE_ADDR(n),                                                         \
+		.irq_en = PLIC_BASE_ADDR(n) + CONTEXT_ENABLE_BASE,                                 \
+		.reg = PLIC_BASE_ADDR(n) + CONTEXT_BASE,                                           \
 		IF_ENABLED(PLIC_SUPPORTS_TRIG_TYPE,                                                \
 			   (.trig = PLIC_BASE_ADDR(n) + PLIC_REG_TRIG_TYPE_OFFSET,))               \
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
