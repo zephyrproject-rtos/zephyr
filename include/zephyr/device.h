@@ -974,7 +974,10 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = {COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) = \
 					    (init_fn_)},                                           \
-			.dev = &DEVICE_NAME_GET(dev_id),                                           \
+			{                                                                          \
+				COND_CODE_1(Z_DEVICE_IS_MUTABLE(node_id), (.dev_rw), (.dev)) =     \
+					&DEVICE_NAME_GET(dev_id),                                  \
+			},                                                                         \
 	}
 
 /**
