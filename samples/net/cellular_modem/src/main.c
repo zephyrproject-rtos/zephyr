@@ -13,6 +13,8 @@
 #include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
+#include <zephyr/drivers/cellular.h>
+
 #define SAMPLE_TEST_ENDPOINT_HOSTNAME		("test-endpoint.com")
 #define SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT	(7780)
 #define SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT	(7781)
@@ -41,6 +43,48 @@ static void init_sample_test_packet(void)
 {
 	for (size_t i = 0; i < sizeof(sample_test_packet); i++) {
 		sample_test_packet[i] = sample_prng_random();
+	}
+}
+
+static void print_cellular_info(void)
+{
+	int rc;
+	int16_t rssi;
+	char buffer[64];
+
+	rc = cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &rssi);
+	if (!rc) {
+		printk("RSSI %d\n", rssi);
+	}
+
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, &buffer[0], sizeof(buffer));
+	if (!rc) {
+		printk("IMEI: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MODEL_ID, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("MODEL_ID: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MANUFACTURER, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("MANUFACTURER: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_SIM_IMSI, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("SIM_IMSI: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_SIM_ICCID, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("SIM_ICCID: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_FW_VERSION, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("FW_VERSION: %s\n", buffer);
 	}
 }
 
@@ -263,6 +307,9 @@ int main(void)
 	ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
 					   NET_EVENT_DNS_SERVER_ADD, &raised_event, &info,
 					   &info_len, K_SECONDS(10));
+
+	printk("Retrieving cellular info\n");
+	print_cellular_info();
 
 	printk("Performing DNS lookup of %s\n", SAMPLE_TEST_ENDPOINT_HOSTNAME);
 	ret = sample_dns_request();
