@@ -15,13 +15,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    advertisemen from each of the networks within the given time
 #    limit.
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf
 RunTest mesh_priv_proxy_net_id_multi \
 	beacon_tx_priv_multi_net_id \
 	beacon_rx_priv_multi_net_id
 
-conf=prj_mesh1d1_conf
 overlay=overlay_gatt_conf_overlay_psa_conf
 RunTest mesh_priv_proxy_net_id_multi \
 	beacon_tx_priv_multi_net_id \

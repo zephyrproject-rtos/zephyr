@@ -58,6 +58,7 @@ Bluetooth
     the transmitted responses on the Access layer.
     The functionality is enabled by the :kconfig:option:`CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG`
     Kconfig option.
+  * The Bluetooth Mesh Protocol 1.1 is now supported by default.
 
 * Controller
 

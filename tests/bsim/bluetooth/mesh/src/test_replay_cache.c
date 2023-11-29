@@ -78,7 +78,6 @@ static void rx_ended(uint8_t *data, size_t len)
 
 static void tx_sar_conf(void)
 {
-#ifdef CONFIG_BT_MESH_V1d1
 	/* Reconfigure SAR Transmitter state so that the transport layer doesn't
 	 * retransmit.
 	 */
@@ -97,12 +96,10 @@ static void tx_sar_conf(void)
 #else
 	bt_mesh.sar_tx = tx_set;
 #endif
-#endif
 }
 
 static void rx_sar_conf(void)
 {
-#ifdef CONFIG_BT_MESH_V1d1
 	/* Reconfigure SAR Receiver state so that the transport layer does
 	 * generate Segmented Acks as rarely as possible.
 	 */
@@ -118,7 +115,6 @@ static void rx_sar_conf(void)
 	bt_mesh_test_sar_conf_set(NULL, &rx_set);
 #else
 	bt_mesh.sar_rx = rx_set;
-#endif
 #endif
 }
 
