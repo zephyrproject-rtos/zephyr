@@ -60,8 +60,8 @@ zephyr_library_sources_ifdef(
   cap_initiator.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_HAS_CLIENT
-  has_client.c
+  CONFIG_BT_HAP_HARC
+  hap_harc.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_TMAP
