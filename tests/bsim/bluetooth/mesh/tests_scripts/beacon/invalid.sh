@@ -8,12 +8,6 @@ RunTest mesh_beacon_invalid \
 	beacon_tx_invalid \
 	beacon_rx_invalid
 
-conf=prj_mesh1d1_conf
-RunTest mesh_beacon_invalid_1d1 \
-	beacon_tx_invalid \
-	beacon_rx_invalid
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_beacon_invalid_psa \
 	beacon_tx_invalid \

@@ -512,56 +512,6 @@ config BT_MESH_TX_SEG_MAX
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
 
-if !BT_MESH_V1d1
-
-config BT_MESH_TX_SEG_RETRANS_COUNT
-	int "Transport message segment retransmit attempts"
-	default 4
-	range 1 8
-	help
-	  Maximum number of transport message segment retransmit attempts
-	  for outgoing segment message.
-
-config BT_MESH_TX_SEG_RETRANS_TIMEOUT_UNICAST
-	int "Transport message segment retransmit interval for unicast messages"
-	default 400
-	range 200 500
-	help
-	  Maximum time of retransmit segment message to unicast address.
-
-config BT_MESH_TX_SEG_RETRANS_TIMEOUT_GROUP
-	int "Transport message segment retransmit interval for group messages"
-	default 50
-	range 20 200
-	help
-	  Maximum time of retransmit segment message to group address.
-
-config BT_MESH_SEG_ACK_BASE_TIMEOUT
-	int "SegAck transmission base timeout"
-	default 150
-	range 150 400
-	help
-	  Defines a base timeout for the acknowledgment timer used to delay
-	  transmission of the Segmented Acknowledgment message.
-
-config BT_MESH_SEG_ACK_PER_HOP_TIMEOUT
-	int "SegAck transmission timeout per hop"
-	default 50
-	range 50 250
-	help
-	  Defines an additional per-hop timeout for the acknowledgment timer
-	  used to delay transmission of the Segmented Acknowledgment message.
-
-config BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT
-	int "SegAck transmission timeout per segment not yet received"
-	default 0
-	range 0 100
-	help
-	  Defines an additional timeout for the acknowledgment timer for every
-	  segment not yet received.
-
-endif # !BT_MESH_V1d1
-
 endmenu # Transport SAR configuration
 
 config BT_MESH_DEFAULT_TTL
@@ -1112,20 +1062,12 @@ config BT_MESH_FRIEND_ADV_LATENCY
 
 endif # BT_MESH_FRIEND
 
-menuconfig BT_MESH_V1d1
-	bool "Bluetooth Mesh v1.1 support"
-	help
-	  This option enables Bluetooth Mesh v1.1 support. Bluetooth Mesh v1.1
-	  is backward compatible with v1.0.1.
-
 config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
-	bool "Support CMAC AES128 for OOB authentication" if BT_MESH_V1d1
+	bool "Support CMAC AES128 for OOB authentication"
 	depends on BT_MESH_PROV
 	default y
 	help
 	  Enable this option to support CMAC AES128 for OOB authentication.
-
-if BT_MESH_V1d1
 
 config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 	bool "Support HMAC SHA256 for OOB authentication"
@@ -1695,8 +1637,6 @@ config BT_MESH_SAR_RX_ACK_RETRANS_COUNT
 	  CONFIG_BT_MESH_SAR_RX_SEG_THRESHOLD value.
 
 endmenu
-
-endif # BT_MESH_V1d1
 
 menu "Capabilities"
 

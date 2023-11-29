@@ -302,6 +302,25 @@ Bluetooth
   * Deprecated :kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE`. This option is
     replaced by new option :kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` to
     be aligned with Mesh Protocol Specification v1.1, section 5.4. (:github:`64252`)
+  * Removed the ``CONFIG_BT_MESH_V1d1`` Kconfig option.
+  * Removed the ``CONFIG_BT_MESH_TX_SEG_RETRANS_COUNT``,
+    ``CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_UNICAST``,
+    ``CONFIG_BT_MESH_TX_SEG_RETRANS_TIMEOUT_GROUP``, ``CONFIG_BT_MESH_SEG_ACK_BASE_TIMEOUT``,
+    ``CONFIG_BT_MESH_SEG_ACK_PER_HOP_TIMEOUT``, ``BT_MESH_SEG_ACK_PER_SEGMENT_TIMEOUT``
+    Kconfig options. They are superseded by the
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_SEG_INT_STEP`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_COUNT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_WITHOUT_PROG_COUNT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_COUNT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_INT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_SEG_THRESHOLD`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_DELAY_INC`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_DISCARD_TIMEOUT`,
+    :kconfig:option:`CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT` Kconfig options.
+
 
 LoRaWAN
 =======

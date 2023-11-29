@@ -18,24 +18,13 @@ mkdir -p ${WORK_DIR}
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/mesh compile
-app=tests/bsim/bluetooth/mesh conf_overlay=overlay_low_lat.conf compile
 app=tests/bsim/bluetooth/mesh conf_overlay=overlay_pst.conf compile
 app=tests/bsim/bluetooth/mesh conf_overlay=overlay_gatt.conf compile
-app=tests/bsim/bluetooth/mesh conf_file=prj_mesh1d1.conf compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay=overlay_pst.conf compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay=overlay_gatt.conf compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay=overlay_low_lat.conf compile
-app=tests/bsim/bluetooth/mesh conf_file=prj_mesh1d1.conf conf_overlay=overlay_psa.conf compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay="overlay_pst.conf;overlay_psa.conf" compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay="overlay_gatt.conf;overlay_psa.conf" compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay="overlay_low_lat.conf;overlay_psa.conf" compile
-app=tests/bsim/bluetooth/mesh \
-  conf_file=prj_mesh1d1.conf conf_overlay="overlay_gatt.conf;overlay_low_lat.conf" compile
+app=tests/bsim/bluetooth/mesh conf_overlay=overlay_low_lat.conf compile
+app=tests/bsim/bluetooth/mesh conf_overlay=overlay_psa.conf compile
+app=tests/bsim/bluetooth/mesh conf_overlay="overlay_pst.conf;overlay_psa.conf" compile
+app=tests/bsim/bluetooth/mesh conf_overlay="overlay_gatt.conf;overlay_psa.conf" compile
+app=tests/bsim/bluetooth/mesh conf_overlay="overlay_low_lat.conf;overlay_psa.conf" compile
+app=tests/bsim/bluetooth/mesh conf_overlay="overlay_gatt.conf;overlay_low_lat.conf" compile
 
 wait_for_background_jobs

@@ -20,12 +20,10 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    composition refresh procedure on it self with local RPR client and server.
 # 7. The first device (prov_device_pb_remote_client_server_same_dev) execute
 #    address refresh procedure on it self with local RPR client and server.
-conf=prj_mesh1d1_conf
 RunTest mesh_prov_pb_remote_client_server_same_dev \
 	prov_device_pb_remote_client_server_same_dev \
 	prov_device_pb_remote_server_same_dev
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_client_server_same_dev \
 	prov_device_pb_remote_client_server_same_dev \
