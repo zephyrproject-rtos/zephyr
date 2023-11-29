@@ -365,6 +365,13 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		const struct bt_cap_stream *cap_stream = stream_param->stream;
 		const struct bt_audio_codec_cfg *codec_cfg = stream_param->codec_cfg;
 		const struct bt_bap_stream *bap_stream;
+		const struct bt_cap_common_client *client =
+			bt_cap_common_get_client(param->type, member);
+
+		if (client == NULL) {
+			LOG_DBG("Invalid param->members[%zu]", i);
+			return false;
+		}
 
 		CHECKIF(stream_param->codec_cfg == NULL) {
 			LOG_DBG("param->stream_params[%zu].codec_cfg  is NULL", i);
@@ -384,37 +391,6 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 		CHECKIF(member == NULL) {
 			LOG_DBG("param->stream_params[%zu].member is NULL", i);
 			return false;
-		}
-
-		if (param->type == BT_CAP_SET_TYPE_AD_HOC) {
-			struct bt_cap_common_client *client;
-
-			CHECKIF(member->member == NULL) {
-				LOG_DBG("param->members[%zu] is NULL", i);
-				return false;
-			}
-
-			client = bt_cap_common_get_client_by_acl(member->member);
-
-			if (!client->cas_found) {
-				LOG_DBG("CAS was not found for param->members[%zu]", i);
-				return false;
-			}
-		}
-
-		if (param->type == BT_CAP_SET_TYPE_CSIP) {
-			struct bt_cap_common_client *client;
-
-			CHECKIF(member->csip == NULL) {
-				LOG_DBG("param->csip.set[%zu] is NULL", i);
-				return false;
-			}
-
-			client = bt_cap_common_get_client_by_csis(member->csip);
-			if (client == NULL) {
-				LOG_DBG("CSIS was not found for param->members[%zu]", i);
-				return false;
-			}
 		}
 
 		CHECKIF(cap_stream == NULL) {
@@ -515,18 +491,7 @@ static int cap_initiator_unicast_audio_configure(
 		union bt_cap_set_member *member = &stream_param->member;
 		struct bt_cap_stream *cap_stream = stream_param->stream;
 
-		if (param->type == BT_CAP_SET_TYPE_AD_HOC) {
-			conn = member->member;
-		} else {
-			struct bt_cap_common_client *client;
-
-			/* We have verified that `client` wont be NULL in
-			 * `valid_unicast_audio_start_param`.
-			 */
-			client = bt_cap_common_get_client_by_csis(member->csip);
-			__ASSERT(client != NULL, "client is NULL");
-			conn = client->conn;
-		}
+		conn = bt_cap_common_get_member_conn(param->type, member);
 
 		/* Ensure that ops are registered before any procedures are started */
 		bt_cap_stream_ops_register_bap(cap_stream);
