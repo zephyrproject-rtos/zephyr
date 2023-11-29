@@ -2518,6 +2518,16 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case IP_TTL:
+			ret = net_context_get_option(ctx, NET_OPT_TTL,
+						     optval, optlen);
+			if (ret < 0) {
+				errno  = -ret;
+				return -1;
+			}
+
+			return 0;
+
 		case IP_MULTICAST_TTL:
 			ret = net_context_get_option(ctx, NET_OPT_MCAST_TTL,
 						     optval, optlen);
@@ -2920,6 +2930,16 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 		case IP_MULTICAST_TTL:
 			ret = net_context_set_option(ctx, NET_OPT_MCAST_TTL,
+						     optval, optlen);
+			if (ret < 0) {
+				errno  = -ret;
+				return -1;
+			}
+
+			return 0;
+
+		case IP_TTL:
+			ret = net_context_set_option(ctx, NET_OPT_TTL,
 						     optval, optlen);
 			if (ret < 0) {
 				errno  = -ret;

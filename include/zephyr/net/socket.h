@@ -1100,6 +1100,9 @@ struct ifreq {
 /** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */
 #define IP_TOS 1
 
+/** sockopt: Set or receive the Time-To-Live value for an outgoing packet. */
+#define IP_TTL 2
+
 /** sockopt: Pass an IP_PKTINFO ancillary message that contains a
  *  pktinfo structure that supplies some information about the
  *  incoming packet.

@@ -1137,6 +1137,7 @@ enum net_context_option {
 	NET_OPT_MCAST_TTL         = 13,
 	NET_OPT_MCAST_HOP_LIMIT   = 14,
 	NET_OPT_UNICAST_HOP_LIMIT = 15,
+	NET_OPT_TTL               = 16,
 };
 
 /**
