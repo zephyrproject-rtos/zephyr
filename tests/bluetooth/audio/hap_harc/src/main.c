@@ -15,6 +15,7 @@
 #include "conn.h"
 #include "csip.h"
 #include "has_client.h"
+#include "has_internal.h"
 
 DEFINE_FFF_GLOBALS;
 
