@@ -134,7 +134,17 @@ static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 
-	return config->reg + CONTEXT_CLAIM;
+	/*
+	 * We want to return the claim complete addr for the hart's context.
+	 * We are making a few assumptions here:
+	 * 1. for hart 0, return the first context claim complete.
+	 * 2. for any other hart, we assume they have two privileged mode contexts
+	 * which are contiguous, where the m mode context is first.
+	 * We return the m mode context.
+	 */
+
+	return config->reg + get_first_context(arch_proc_id()) * CONTEXT_SIZE +
+	       CONTEXT_CLAIM;
 }
 
 
