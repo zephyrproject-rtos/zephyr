@@ -199,7 +199,7 @@ struct coap_service {
  * @param service Pointer to CoAP service
  * @retval 0 in case of success.
  * @retval -EALREADY in case of an already running service.
- * @retval -ENOMEM in case the server has no available context.
+ * @retval -ENOTSUP in case the server has no valid host and port configuration.
  */
 int coap_service_start(const struct coap_service *service);
 
