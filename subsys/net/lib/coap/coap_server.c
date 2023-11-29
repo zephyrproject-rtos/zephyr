@@ -220,6 +220,19 @@ static int coap_server_process(int sock_fd)
 					      COAP_SERVICE_RESOURCE_COUNT(service),
 					      options, opt_num, &client_addr, client_addr_len);
 
+		/* Translate errors to response codes */
+		switch (ret) {
+		case -ENOENT:
+			ret = COAP_RESPONSE_CODE_NOT_FOUND;
+			break;
+		case -ENOTSUP:
+			ret = COAP_RESPONSE_CODE_BAD_REQUEST;
+			break;
+		case -EPERM:
+			ret = COAP_RESPONSE_CODE_NOT_ALLOWED;
+			break;
+		}
+
 		/* Shortcut for replying a code without a body */
 		if (ret > 0 && type == COAP_TYPE_CON) {
 			/* Minimal sized ack buffer */
