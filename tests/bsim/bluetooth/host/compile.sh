@@ -39,6 +39,8 @@ app=tests/bsim/bluetooth/host/att/retry_on_sec_err/client compile
 app=tests/bsim/bluetooth/host/att/retry_on_sec_err/server compile
 app=tests/bsim/bluetooth/host/att/sequential/dut compile
 app=tests/bsim/bluetooth/host/att/sequential/tester compile
+app=tests/bsim/bluetooth/host/att/pipeline/dut compile
+app=tests/bsim/bluetooth/host/att/pipeline/tester compile
 app=tests/bsim/bluetooth/host/att/long_read compile
 app=tests/bsim/bluetooth/host/att/open_close compile
 
