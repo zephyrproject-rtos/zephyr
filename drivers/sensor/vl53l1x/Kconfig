@@ -29,4 +29,17 @@ config VL53L1X_XSHUT
 	  Enable to use the xshut pin on the VL53L1X. If not, the pin should be
 	  connected to VDD.
 
+config VL53L1X_RECONFIGURE_ADDRESS
+	bool "Support reconfigurable sensor address"
+	depends on VL53L1X
+	help
+	  Enable support for reconfiguring the sensor address at runtime.
+	  When this option is enabled, all sensors declared in the device tree
+	  must have an xshut-gpio property.
+
+	  All sensors are disabled during initialization. When reading the first
+	  value from a sensor, it is powered up and its I2C address is reconfigured
+	  from the manufacturer default (0x29) to the address specified in the
+	  device tree.
+
 endif # VL53L1X

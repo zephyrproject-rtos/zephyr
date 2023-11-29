@@ -27,7 +27,8 @@ typedef struct {
 	/*!< New data ready poll duration in ms - for debug */
 	uint32_t new_data_ready_poll_duration_ms;
 	/*!< I2C device handle */
-	const struct i2c_dt_spec *i2c;
+	uint8_t I2cDevAddr;      /* i2c device address user specific field */
+	const struct device *i2c;
 } VL53L1_Dev_t;
 
 

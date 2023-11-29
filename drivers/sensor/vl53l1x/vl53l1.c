@@ -25,6 +25,8 @@
 
 LOG_MODULE_REGISTER(VL53L1X, CONFIG_SENSOR_LOG_LEVEL);
 
+#define VL53L1X_INITIAL_ADDR	0x29
+
 struct vl53l1x_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_VL53L1X_XSHUT
@@ -36,6 +38,7 @@ struct vl53l1x_config {
 };
 
 struct vl53l1x_data {
+	bool started;
 	VL53L1_Dev_t vl53l1x;
 	VL53L1_RangingMeasurementData_t data;
 	VL53L1_DistanceModes distance_mode;
@@ -112,6 +115,12 @@ static int vl53l1x_init_interrupt(const struct device *dev)
 
 	drv_data->work.handler = vl53l1x_worker;
 
+	ret = gpio_pin_interrupt_configure_dt(&config->gpio1, GPIO_INT_EDGE_TO_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("[%s] Unable to config interrupt", dev->name);
+		return -EIO;
+	}
+
 	return 0;
 }
 #endif
@@ -136,6 +145,21 @@ static int vl53l1x_initialize(const struct device *dev)
 			return -EIO;
 		}
 		/* Boot duration is 1.2 ms max */
+		k_sleep(K_MSEC(2));
+	}
+#endif
+
+#ifdef CONFIG_VL53L1X_RECONFIGURE_ADDRESS
+	if (config->i2c.addr != VL53L1X_INITIAL_ADDR) {
+		ret = VL53L1_SetDeviceAddress(&drv_data->vl53l1x, 2 * config->i2c.addr);
+		if (ret != 0) {
+			LOG_ERR("[%s] Unable to reconfigure I2C address",
+				dev->name);
+			return -EIO;
+		}
+
+		drv_data->vl53l1x.I2cDevAddr = config->i2c.addr;
+		LOG_DBG("[%s] I2C address reconfigured", dev->name);
 		k_sleep(K_MSEC(2));
 	}
 #endif
@@ -180,6 +204,8 @@ static int vl53l1x_initialize(const struct device *dev)
 		return -EINVAL;
 	}
 
+	drv_data->started = true;
+	LOG_DBG("[%s] Started", dev->name);
 	return 0;
 }
 
@@ -302,9 +328,17 @@ static int vl53l1x_sample_fetch(const struct device *dev,
 {
 	struct vl53l1x_data *drv_data = dev->data;
 	VL53L1_Error ret;
+	int r;
 
 	__ASSERT_NO_MSG((chan == SENSOR_CHAN_ALL)
 			|| (chan == SENSOR_CHAN_DISTANCE));
+
+	if (!drv_data->started) {
+		r = vl53l1x_initialize(dev);
+		if (r < 0) {
+			return r;
+		}
+	}
 
 	/* Will immediately stop current measurement */
 	ret = VL53L1_StopMeasurement(&drv_data->vl53l1x);
@@ -312,16 +346,6 @@ static int vl53l1x_sample_fetch(const struct device *dev,
 		LOG_ERR("VL53L1_StopMeasurement return error (%d)", ret);
 		return -EBUSY;
 	}
-
-#ifdef CONFIG_VL53L1X_INTERRUPT_MODE
-	const struct vl53l1x_config *config = dev->config;
-
-	ret = gpio_pin_interrupt_configure_dt(&config->gpio1, GPIO_INT_EDGE_TO_INACTIVE);
-	if (ret < 0) {
-		LOG_ERR("[%s] Unable to config interrupt", dev->name);
-		return -EIO;
-	}
-#endif
 
 	ret = VL53L1_StartMeasurement(&drv_data->vl53l1x);
 	if (ret != VL53L1_ERROR_NONE) {
@@ -418,12 +442,27 @@ static int vl53l1x_init(const struct device *dev)
 	const struct vl53l1x_config *config = dev->config;
 
 	/* Initialize the HAL i2c peripheral */
-	drv_data->vl53l1x.i2c = &config->i2c;
+	drv_data->vl53l1x.I2cDevAddr = VL53L1X_INITIAL_ADDR;
+	drv_data->vl53l1x.i2c = config->i2c.bus;
 
 	if (!device_is_ready(config->i2c.bus)) {
 		LOG_ERR("I2C bus is not ready");
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_VL53L1X_RECONFIGURE_ADDRESS
+	if (!config->xshut.port) {
+		LOG_ERR("[%s] Missing XSHUT gpio spec", dev->name);
+		return -ENOTSUP;
+	}
+#else
+	if (config->i2c.addr != VL53L1X_INITIAL_ADDR) {
+		LOG_ERR("[%s] Invalid device address (should be 0x%X or "
+			"CONFIG_VL53L1X_RECONFIGURE_ADDRESS should be enabled)",
+			dev->name, VL53L1X_INITIAL_ADDR);
+		return -ENOTSUP;
+	}
+#endif
 
 	/* Configure gpio connected to VL53L1X's XSHUT pin to
 	 * allow deepest sleep mode
@@ -448,10 +487,20 @@ static int vl53l1x_init(const struct device *dev)
 		}
 #endif
 
+#ifdef CONFIG_VL53L1X_RECONFIGURE_ADDRESS
+	/* Pull XSHUT low to shut down the sensor for now */
+	ret = gpio_pin_set_dt(&config->xshut, 0);
+	if (ret < 0) {
+		LOG_ERR("[%s] Unable to shutdown sensor", dev->name);
+		return -EIO;
+	}
+	LOG_DBG("[%s] Shutdown", dev->name);
+#else
 	ret = vl53l1x_initialize(dev);
 	if (ret) {
 		return ret;
 	}
+#endif
 
 	LOG_DBG("[%s] Initialized", dev->name);
 	return 0;
