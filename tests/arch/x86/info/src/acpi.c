@@ -10,35 +10,30 @@ static const uint32_t dmar_scope[] = {ACPI_DMAR_SCOPE_TYPE_ENDPOINT, ACPI_DMAR_S
 				      ACPI_DMAR_SCOPE_TYPE_IOAPIC, ACPI_DMAR_SCOPE_TYPE_HPET,
 				      ACPI_DMAR_SCOPE_TYPE_NAMESPACE};
 
+static const char *get_dmar_scope_type(int type)
+{
+	switch (type) {
+	case ACPI_DMAR_SCOPE_TYPE_ENDPOINT:
+		return "PCI Endpoint";
+	case ACPI_DMAR_SCOPE_TYPE_BRIDGE:
+		return "PCI Sub-hierarchy";
+	case ACPI_DMAR_SCOPE_TYPE_IOAPIC:
+		return "IOAPIC";
+	case ACPI_DMAR_SCOPE_TYPE_HPET:
+		return "MSI Capable HPET";
+	case ACPI_DMAR_SCOPE_TYPE_NAMESPACE:
+		return "ACPI name-space enumerated";
+	default:
+		return "unknown";
+	}
+}
+
 static void vtd_dev_scope_info(int type, struct acpi_dmar_device_scope *dev_scope,
 			       union acpi_dmar_id *dmar_id, int num_inst)
 {
 	int i = 0;
 
-	printk("\t\t\t. Type: ");
-
-	switch (type) {
-	case ACPI_DMAR_SCOPE_TYPE_ENDPOINT:
-		printk("PCI Endpoint");
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_BRIDGE:
-		printk("PCI Sub-hierarchy");
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_IOAPIC:
-
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_HPET:
-		printk("MSI Capable HPET");
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_NAMESPACE:
-		printk("ACPI name-space enumerated");
-		break;
-	default:
-		printk("unknown\n");
-		return;
-	}
-
-	printk("\n");
+	printk("\t\t\t. Type: %s\n", get_dmar_scope_type(type));
 
 	printk("\t\t\t. Enumeration ID %u\n", dev_scope->EnumerationId);
 	printk("\t\t\t. PCI Bus %u\n", dev_scope->Bus);
@@ -69,9 +64,10 @@ static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
 	printk("\t\t- Base Address 0x%llx\n", drhd->Address);
 
 	printk("\t\t- Device Scopes:\n");
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < ARRAY_SIZE(dmar_scope); i++) {
 		if (acpi_drhd_get(dmar_scope[i], &dev_scope, dmar_id, &num_inst, 4u)) {
-			printk(" No DRHD entry found for scope type:%d\n", dmar_scope[i]);
+			printk(" No DRHD entry found for scope type: %s\n",
+			       get_dmar_scope_type(dmar_scope[i]));
 			continue;
 		}
 
