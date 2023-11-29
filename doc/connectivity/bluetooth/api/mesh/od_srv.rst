@@ -3,7 +3,7 @@
 On-Demand Private Proxy Server
 ##############################
 
-The On-Demand Private Proxy Server model is a foundation model defined by the Bluetooth mesh
+The On-Demand Private Proxy Server model is a foundation model defined by the Bluetooth Mesh
 specification. It is enabled with the :kconfig:option:`CONFIG_BT_MESH_OD_PRIV_PROXY_SRV` option.
 
 The On-Demand Private Proxy Server model was introduced in the Bluetooth Mesh Protocol Specification
