@@ -1336,7 +1336,7 @@ struct bt_gatt_exchange_params {
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  *
  *  @retval -EALREADY The MTU exchange procedure has been already performed.
  */
@@ -1502,7 +1502,7 @@ struct bt_gatt_discover_params {
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_discover(struct bt_conn *conn,
 		     struct bt_gatt_discover_params *params);
@@ -1617,7 +1617,7 @@ struct bt_gatt_read_params {
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
@@ -1670,7 +1670,7 @@ struct bt_gatt_write_params {
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside Bluetooth event context to get blocking behavior. Queue size is
- *  controlled by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  controlled by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
 
@@ -1707,7 +1707,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 				      const void *data, uint16_t length,
@@ -1733,7 +1733,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 static inline int bt_gatt_write_without_response(struct bt_conn *conn,
 						 uint16_t handle, const void *data,
@@ -1895,7 +1895,7 @@ struct bt_gatt_subscribe_params {
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
@@ -1941,7 +1941,7 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);
