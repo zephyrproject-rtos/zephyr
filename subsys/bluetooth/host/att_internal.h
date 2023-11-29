@@ -291,8 +291,6 @@ struct bt_att_req {
 	void *user_data;
 };
 
-void att_sent(struct bt_conn *conn, void *user_data);
-
 void bt_att_init(void);
 uint16_t bt_att_get_mtu(struct bt_conn *conn);
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op,
