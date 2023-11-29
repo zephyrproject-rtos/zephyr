@@ -118,7 +118,6 @@ static int r8a7795_cpg_core_clock_endisable(const struct device *dev, struct rca
 	struct cpg_clk_info_table *clk_info;
 	struct r8a7795_cpg_mssr_data *data = dev->data;
 	k_spinlock_key_t key;
-	int ret = 0;
 
 	clk_info = rcar_cpg_find_clk_info_by_module_id(dev, clk->domain, clk->module);
 	if (!clk_info) {
@@ -127,6 +126,7 @@ static int r8a7795_cpg_core_clock_endisable(const struct device *dev, struct rca
 
 	if (enable) {
 		if (clk->rate > 0) {
+			int ret;
 			uintptr_t rate = clk->rate;
 
 			ret = rcar_cpg_set_rate(dev, (clock_control_subsys_t)clk,
@@ -141,14 +141,14 @@ static int r8a7795_cpg_core_clock_endisable(const struct device *dev, struct rca
 	r8a7795_cpg_enable_disable_core(dev, clk_info, enable);
 	k_spin_unlock(&data->cmn.lock, key);
 
-	return ret;
+	return 0;
 }
 
 static int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_subsys_t sys,
 				       bool enable)
 {
 	struct rcar_cpg_clk *clk = (struct rcar_cpg_clk *)sys;
-	int ret = -EINVAL;
+	int ret;
 
 	if (!dev || !sys) {
 		return -EINVAL;
@@ -163,6 +163,8 @@ static int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_s
 		k_spin_unlock(&data->cmn.lock, key);
 	} else if (clk->domain == CPG_CORE) {
 		ret = r8a7795_cpg_core_clock_endisable(dev, clk, enable);
+	} else {
+		ret = -EINVAL;
 	}
 
 	return ret;
@@ -170,8 +172,6 @@ static int r8a7795_cpg_mssr_start_stop(const struct device *dev, clock_control_s
 
 static uint32_t r8a7795_get_div_helper(uint32_t reg_val, uint32_t module)
 {
-	uint32_t divider = RCAR_CPG_NONE;
-
 	switch (module) {
 	case R8A7795_CLK_SD0H:
 	case R8A7795_CLK_SD1H:
@@ -180,35 +180,29 @@ static uint32_t r8a7795_get_div_helper(uint32_t reg_val, uint32_t module)
 		reg_val >>= R8A7795_CLK_SDH_DIV_SHIFT;
 		/* setting of value bigger than 4 is prohibited */
 		if ((reg_val & R8A7795_CLK_SDH_DIV_MASK) < 5) {
-			divider = 1 << (reg_val & R8A7795_CLK_SDH_DIV_MASK);
+			return 1 << (reg_val & R8A7795_CLK_SDH_DIV_MASK);
+		} else {
+			return RCAR_CPG_NONE;
 		}
-		break;
 	case R8A7795_CLK_SD0:
 	case R8A7795_CLK_SD1:
 	case R8A7795_CLK_SD2:
 	case R8A7795_CLK_SD3:
 		/* convert only two possible values 0,1 to 2,4 */
-		divider = 1 << ((reg_val & R8A7795_CLK_SD_DIV_MASK) + 1);
-		break;
+		return 1 << ((reg_val & R8A7795_CLK_SD_DIV_MASK) + 1);
 	case R8A7795_CLK_CANFD:
 		/* according to documentation, divider value stored in reg is equal to: val + 1 */
-		divider = (reg_val & R8A7795_CLK_CANFD_DIV_MASK) + 1;
-		break;
+		return (reg_val & R8A7795_CLK_CANFD_DIV_MASK) + 1;
 	case R8A7795_CLK_S3D4:
 	case R8A7795_CLK_S0D12:
-		divider = 1;
-		break;
+		return 1;
 	default:
-		break;
+		return RCAR_CPG_NONE;
 	}
-
-	return divider;
 }
 
 static int r8a7795_set_rate_helper(uint32_t module, uint32_t *divider, uint32_t *div_mask)
 {
-	int ret = -ENOTSUP;
-
 	switch (module) {
 	case R8A7795_CLK_SD0:
 	case R8A7795_CLK_SD1:
@@ -219,40 +213,35 @@ static int r8a7795_set_rate_helper(uint32_t module, uint32_t *divider, uint32_t 
 			/* convert 2/4 to 0/1 */
 			*divider >>= 2;
 			*div_mask = R8A7795_CLK_SD_DIV_MASK << R8A7795_CLK_SD_DIV_SHIFT;
-			ret = 0;
+			return 0;
 		} else {
-			ret = -EINVAL;
+			return -EINVAL;
 		}
-		break;
 	case R8A7795_CLK_SD0H:
 	case R8A7795_CLK_SD1H:
 	case R8A7795_CLK_SD2H:
 	case R8A7795_CLK_SD3H:
 		/* divider should be power of two and max possible value 16 */
 		if (!is_power_of_two(*divider) || *divider > 16) {
-			ret = -EINVAL;
+			return -EINVAL;
 			break;
 		}
-		ret = 0;
 		/* 1,2,4,8,16 have to be converted to 0,1,2,3,4 and then shifted */
 		*divider = (find_lsb_set(*divider) - 1) << R8A7795_CLK_SDH_DIV_SHIFT;
 		*div_mask = R8A7795_CLK_SDH_DIV_MASK << R8A7795_CLK_SDH_DIV_SHIFT;
-		break;
+		return 0;
 	case R8A7795_CLK_CANFD:
 		/* according to documentation, divider value stored in reg is equal to: val + 1 */
 		*divider -= 1;
 		if (*divider <= R8A7795_CLK_CANFD_DIV_MASK) {
-			ret = 0;
 			*div_mask = R8A7795_CLK_CANFD_DIV_MASK;
+			return 0;
 		} else {
-			ret = -EINVAL;
+			return -EINVAL;
 		}
-		break;
 	default:
-		break;
+		return -ENOTSUP;
 	}
-
-	return ret;
 }
 
 static int r8a7795_cpg_mssr_start(const struct device *dev, clock_control_subsys_t sys)
