@@ -162,25 +162,25 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	status = metal_register_generic_device(&shm_device);
 	if (status != 0) {
 		printk("Couldn't register shared memory device: %d\n", status);
-		return;
+		goto _metal_cleanup;
 	}
 
 	status = metal_device_open("generic", SHM_DEVICE_NAME, &device);
 	if (status != 0) {
 		printk("metal_device_open failed: %d\n", status);
-		return;
+		goto _metal_cleanup;
 	}
 
 	io = metal_device_io_region(device, 0);
 	if (io == NULL) {
 		printk("metal_device_io_region failed to get region\n");
-		return;
+		goto _metal_cleanup;
 	}
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {
 		printk("IPM device is not ready\n");
-		return;
+		goto _metal_cleanup;
 	}
 
 	ipm_register_callback(ipm_handle, platform_ipm_callback, NULL);
@@ -188,19 +188,19 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	status = ipm_set_enabled(ipm_handle, 1);
 	if (status != 0) {
 		printk("ipm_set_enabled failed\n");
-		return;
+		goto _metal_cleanup;
 	}
 
 	/* setup vdev */
 	vqueue[0] = virtqueue_allocate(VRING_SIZE);
 	if (vqueue[0] == NULL) {
 		printk("virtqueue_allocate failed to alloc vqueue[0]\n");
-		return;
+		goto _vq_cleanup;
 	}
 	vqueue[1] = virtqueue_allocate(VRING_SIZE);
 	if (vqueue[1] == NULL) {
 		printk("virtqueue_allocate failed to alloc vqueue[1]\n");
-		return;
+		goto _vq_cleanup;
 	}
 
 	vdev.role = RPMSG_REMOTE;
@@ -224,7 +224,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	status = rpmsg_init_vdev(&rvdev, &vdev, NULL, io, NULL);
 	if (status != 0) {
 		printk("rpmsg_init_vdev failed %d\n", status);
-		return;
+		goto _vq_cleanup;
 	}
 
 	rdev = rpmsg_virtio_get_rpmsg_device(&rvdev);
@@ -233,7 +233,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 			RPMSG_ADDR_ANY, endpoint_cb, rpmsg_service_unbind);
 	if (status != 0) {
 		printk("rpmsg_create_ept failed %d\n", status);
-		return;
+		goto _cleanup;
 	}
 
 	while (message < 99) {
@@ -251,6 +251,12 @@ void app_task(void *arg1, void *arg2, void *arg3)
 
 _cleanup:
 	rpmsg_deinit_vdev(&rvdev);
+_vq_cleanup:
+	for (int i = 0; i < 2; i++) {
+		if (vqueue[i] != NULL)
+			metal_free_memory(vqueue[i]);
+	}
+_metal_cleanup:
 	metal_finish();
 
 	printk("OpenAMP demo ended.\n");
