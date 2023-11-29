@@ -30,7 +30,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 {
 	struct cv2_mslab *mslab;
 
-	BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE >=
+	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >=
 		     CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
 		     "heap must be configured to be at least the max dynamic size");
 
