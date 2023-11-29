@@ -49,7 +49,8 @@ endchoice
 endif # BT
 
 # Heap Pool Size
-config HEAP_MEM_POOL_SIZE
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 15000 if WIFI
 	default 4096
 
