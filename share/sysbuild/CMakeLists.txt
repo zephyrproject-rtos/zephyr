@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Nordic Semiconductor
+# Copyright (c) 2023 Nordic Semiconductor
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -18,7 +18,10 @@ set(APP_DIR ${APP_DIR} CACHE PATH "Main Application Source Directory")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/modules)
 # List of Zephyr and sysbuild CMake modules we need for sysbuild.
 # Note: sysbuild_kconfig will internally load kconfig CMake module.
-set(zephyr_modules extensions sysbuild_extensions python west root zephyr_module boards shields sysbuild_kconfig)
+set(zephyr_modules extensions
+    sysbuild_extensions python west root zephyr_module boards shields
+    sysbuild_kconfig native_simulator_sb_extensions
+  )
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS ${zephyr_modules})
 
