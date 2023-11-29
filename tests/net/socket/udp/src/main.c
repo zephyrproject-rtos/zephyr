@@ -2015,7 +2015,55 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 	zassert_equal(ret, 0, "close failed");
 }
 
-ZTEST(net_socket_udp, test_31_v4_mcast_ttl)
+ZTEST(net_socket_udp, test_31_v4_ttl)
+{
+	int ret;
+	int client_sock;
+	int server_sock;
+	int packet_sock;
+	int ttl, verify;
+	socklen_t optlen;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
+
+	ret = bind_socket(packet_sock, lo0);
+	zassert_equal(ret, 0, "packet socket bind failed");
+
+	zassert_not_null(lo0->config.ip.ipv4,
+			 "Interface %d (%p) no IPv4 configured",
+			 net_if_get_by_iface(lo0), lo0);
+
+	ttl = 16;
+	net_if_ipv4_set_ttl(lo0, ttl);
+	verify = net_if_ipv4_get_ttl(lo0);
+	zassert_equal(verify, ttl, "Different TTLs (%d vs %d)", ttl, verify);
+
+	ttl = 128;
+	ret = setsockopt(client_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+	zassert_equal(ret, 0, "Cannot set unicast TTL (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IP, IP_TTL, &verify, &optlen);
+	zassert_equal(ret, 0, "Cannot get unicast TTL (%d)", -errno);
+	zassert_equal(verify, ttl, "Different unicast TTL (%d vs %d)",
+		      ttl, verify);
+
+	test_check_ttl(client_sock, server_sock, packet_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       AF_INET, ttl, 0);
+}
+
+ZTEST(net_socket_udp, test_32_v4_mcast_ttl)
 {
 	int ret;
 	int client_sock;
