@@ -24,6 +24,7 @@ CREATE_FLAG(flag_cas_discovered);
 CREATE_FLAG(flag_vcs_discovered);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_volume_changed);
+CREATE_FLAG(flag_volume_offset_changed);
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
@@ -59,9 +60,20 @@ static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 	SET_FLAG(flag_volume_changed);
 }
 
+static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		FAIL("Failed to change volume for conn %p: %d\n", conn, err);
+		return;
+	}
+
+	SET_FLAG(flag_volume_offset_changed);
+}
+
 static struct bt_cap_commander_cb cap_cb = {
 	.discovery_complete = cap_discovery_complete_cb,
 	.volume_changed = cap_volume_changed_cb,
+	.volume_offset_changed = cap_volume_offset_changed_cb,
 };
 
 static void cap_vcp_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, uint8_t vocs_count,
@@ -242,6 +254,7 @@ static void test_change_volume(void)
 	int err;
 
 	printk("Changing volume to %u\n", param.volume);
+	UNSET_FLAG(flag_volume_changed);
 
 	for (size_t i = 0U; i < param.count; i++) {
 		param.members[i].member = connected_conns[i];
@@ -255,6 +268,34 @@ static void test_change_volume(void)
 
 	WAIT_FOR_FLAG(flag_volume_changed);
 	printk("Volume changed to %u\n", param.volume);
+}
+
+static void test_change_volume_offset(void)
+{
+	struct bt_cap_commander_change_volume_offset_member_param member_params[CONFIG_BT_MAX_CONN];
+	const struct bt_cap_commander_change_volume_offset_param param = {
+		.type = BT_CAP_SET_TYPE_AD_HOC,
+		.param = member_params,
+		.count = connected_conn_cnt,
+	};
+	int err;
+
+	printk("Changing volume offset\n");
+	UNSET_FLAG(flag_volume_offset_changed);
+
+	for (size_t i = 0U; i < param.count; i++) {
+		member_params[i].member.member = connected_conns[i];
+		member_params[i].offset = 100 + i;
+	}
+
+	err = bt_cap_commander_change_volume_offset(&param);
+	if (err != 0) {
+		FAIL("Failed to change volume: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_volume_offset_changed);
+	printk("Volume offset changed\n");
 }
 
 static void test_main_cap_commander_capture_and_render(void)
@@ -278,6 +319,10 @@ static void test_main_cap_commander_capture_and_render(void)
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_COORDINATOR)) {
 		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
 			test_change_volume();
+
+			if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR_VOCS)) {
+				test_change_volume_offset();
+			}
 		}
 		/* TODO: Add test of offset (VOCS), Mic (MICP) and gain (AICS) */
 	}
