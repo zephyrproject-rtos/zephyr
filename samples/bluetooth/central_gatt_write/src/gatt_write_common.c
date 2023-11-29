@@ -27,6 +27,11 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 	delta = k_cycle_get_32() - cycle_stamp;
 	delta = k_cyc_to_ns_floor64(delta);
 
+	if (delta == 0) {
+		/* Skip division by zero */
+		return;
+	}
+
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
 	 */
