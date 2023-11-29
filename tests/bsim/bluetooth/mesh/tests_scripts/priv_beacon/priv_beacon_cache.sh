@@ -12,12 +12,10 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 2. TX device sends a secondary private beacons to the RX device, marking the end of the test.
 # 3. RX device verifies that only one of the two identical beacons was processed.
 
-conf=prj_mesh1d1_conf
 RunTest mesh_priv_beacon_cache \
 	beacon_tx_priv_beacon_cache \
 	beacon_rx_priv_beacon_cache
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_priv_beacon_cache \
 	beacon_tx_priv_beacon_cache \

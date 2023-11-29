@@ -27,9 +27,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define BEACON_INTERVAL 10 /*seconds*/
 
 #define BEACON_TYPE_SECURE 0x01
-#if CONFIG_BT_MESH_V1d1
 #define BEACON_TYPE_PRIVATE 0x02
-#endif
 
 static uint8_t test_net_key_2[16] = { 0xca, 0x11, 0xab, 0x1e };
 static struct {
@@ -71,7 +69,6 @@ BT_MESH_BEACON_CB_DEFINE(snb) = {
 
 /* Setting for scanner defining what beacon is expected next, SNB as default */
 static uint8_t expected_beacon = BEACON_TYPE_SECURE;
-#if CONFIG_BT_MESH_V1d1
 static struct bt_mesh_cfg_cli cfg_cli;
 
 static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
@@ -99,7 +96,6 @@ static uint8_t last_random[13];
 static bt_addr_le_t last_beacon_adv_addr;
 
 static struct bt_mesh_key priv_beacon_key;
-#endif /* CONFIG_BT_MESH_V1d1 */
 
 static int random_interval;
 
@@ -330,13 +326,11 @@ static struct k_sem observer_sem;
 static struct {
 	uint8_t flags;
 	uint32_t iv_index;
-#if CONFIG_BT_MESH_V1d1
 	uint8_t random[13];
 	uint64_t pp_hash;
 	uint64_t pp_random;
 	uint64_t net_id;
 	bt_addr_le_t adv_addr;
-#endif
 	bool (*process_cb)(const uint8_t *net_id, void *ctx);
 	void *user_ctx;
 } beacon;
@@ -364,7 +358,6 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 		net_id = net_buf_simple_pull_mem(buf, 8);
 		beacon.iv_index = net_buf_simple_pull_be32(buf);
 	}
-#if CONFIG_BT_MESH_V1d1
 	else if (expected_beacon == BEACON_TYPE_PRIVATE) {
 		uint8_t private_beacon_data[5];
 
@@ -377,7 +370,7 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 		beacon.flags = private_beacon_data[0];
 		beacon.iv_index = sys_get_be32(&private_beacon_data[1]);
 	}
-#endif
+
 	if (!beacon.process_cb || beacon.process_cb(net_id, beacon.user_ctx)) {
 		k_sem_give(&observer_sem);
 	}
@@ -1059,8 +1052,6 @@ static void test_tx_beacon_cache(void)
 
 	PASS();
 }
-
-#if CONFIG_BT_MESH_V1d1
 
 typedef void (*priv_beacon_cb)(const struct bt_mesh_prb *prb);
 
@@ -2196,8 +2187,6 @@ static void test_rx_priv_gatt_proxy(void)
 
 #endif
 
-#endif /* CONFIG_BT_MESH_V1d1 */
-
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "beacon_" #role "_" #name,          \
@@ -2216,7 +2205,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(tx, secure_beacon_interval, "Beacon: send secure beacons"),
 	TEST_CASE(tx, beacon_cache,   "Beacon: advertise duplicate SNBs"),
-#if CONFIG_BT_MESH_V1d1
 	TEST_CASE(tx, priv_on_iv_update,   "Private Beacon: send on IV update"),
 	TEST_CASE(tx, priv_on_key_refresh,   "Private Beacon: send on Key Refresh"),
 	TEST_CASE(tx, priv_adv,   "Private Beacon: advertise Private Beacons"),
@@ -2231,7 +2219,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, proxy_adv_multi_subnet_coex,   "Proxy Adv: Multi subnet coex proxy adv"),
 	TEST_CASE(tx, proxy_adv_solicit_trigger,   "Proxy Adv: Trigger Solicitation"),
 #endif
-#endif
 
 	TEST_CASE(rx, on_iv_update,   "Beacon: receive with IV update flag"),
 	TEST_CASE(rx, on_key_refresh,  "Beacon: receive with key refresh flag"),
@@ -2240,7 +2227,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(rx, secure_beacon_interval, "Beacon: receive and send secure beacons"),
 	TEST_CASE(rx, beacon_cache,   "Beacon: receive duplicate SNBs"),
-#if CONFIG_BT_MESH_V1d1
 	TEST_CASE(rx, priv_adv,   "Private Beacon: verify random regeneration"),
 	TEST_CASE(rx, priv_invalid,   "Private Beacon: receive invalid beacons"),
 	TEST_CASE(rx, priv_interleave,   "Private Beacon: interleaved with SNB"),
@@ -2251,7 +2237,6 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, priv_multi_net_id,   "Private Proxy: scan for multiple Net ID"),
 	TEST_CASE(rx, priv_gatt_proxy,   "Private Proxy: Receive Private Beacons over GATT"),
 	TEST_CASE(rx, proxy_adv_multi_subnet_coex,   "Proxy Adv: Multi subnet coex proxy adv"),
-#endif
 #endif
 	BSTEST_END_MARKER
 };
