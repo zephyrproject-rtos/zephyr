@@ -133,7 +133,7 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 #endif
 		.name = "data",
 	},
-#if CONFIG_HEAP_MEM_POOL_SIZE > 0
+#if K_HEAP_MEM_POOL_SIZE > 0
 	/* System heap memory */
 	{
 		.start = (uint32_t)_heap_start,

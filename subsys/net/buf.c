@@ -166,7 +166,7 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 	.unref = fixed_data_unref,
 };
 
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if (K_HEAP_MEM_POOL_SIZE > 0)
 
 static uint8_t *heap_data_alloc(struct net_buf *buf, size_t *size,
 			     k_timeout_t timeout)
@@ -205,7 +205,7 @@ const struct net_buf_data_alloc net_buf_heap_alloc = {
 	.cb = &net_buf_heap_cb,
 };
 
-#endif /* CONFIG_HEAP_MEM_POOL_SIZE > 0 */
+#endif /* K_HEAP_MEM_POOL_SIZE > 0 */
 
 static uint8_t *data_alloc(struct net_buf *buf, size_t *size, k_timeout_t timeout)
 {

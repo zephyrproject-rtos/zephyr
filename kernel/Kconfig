@@ -840,8 +840,24 @@ config HEAP_MEM_POOL_SIZE
 	help
 	  This option specifies the size of the heap memory pool used when
 	  dynamically allocating memory using k_malloc(). The maximum size of
-	  the memory pool is only limited to available memory. A size of zero
-	  means that no heap memory pool is defined.
+	  the memory pool is only limited to available memory. If subsystems
+	  specify HEAP_MEM_POOL_ADD_SIZE_* options, these will be added together
+	  and the sum will be compared to the HEAP_MEM_POOL_SIZE value.
+	  If the sum is greater than the HEAP_MEM_POOL_SIZE option (even if this
+	  has the default 0 value), then the actual heap size will be rounded up
+	  to the sum of the individual requirements (unless the
+	  HEAP_MEM_POOL_IGNORE_MIN option is enabled). If the final value, after
+	  considering both this option as well as sum of the custom
+	  requirements, ends up being zero, then no system heap will be
+	  available.
+
+config HEAP_MEM_POOL_IGNORE_MIN
+	bool "Ignore the minimum heap memory pool requirement"
+	help
+	  This option can be set to force setting a smaller heap memory pool
+	  size than what's specified by enabled subsystems. This can be useful
+	  when optimizing memory usage and a more precise minimum heap size
+	  is known for a given application.
 
 endif # KERNEL_MEM_POOL
 
