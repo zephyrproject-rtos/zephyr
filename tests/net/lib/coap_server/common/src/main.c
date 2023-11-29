@@ -48,7 +48,7 @@ COAP_RESOURCE_DEFINE(resource_1, service_A, {
 });
 
 static uint16_t service_B_port;
-COAP_SERVICE_DEFINE(service_B, "b.service.com", &service_B_port, COAP_SERVICE_AUTOSTART);
+COAP_SERVICE_DEFINE(service_B, "b.service.com", &service_B_port, 0);
 
 static const char * const resource_2_path[] = { "res2", "sub", NULL };
 COAP_RESOURCE_DEFINE(resource_2, service_B, {
@@ -132,7 +132,7 @@ ZTEST(coap_service, test_COAP_SERVICE_FOREACH)
 			zassert_equal(svc->flags & COAP_SERVICE_AUTOSTART, COAP_SERVICE_AUTOSTART);
 		} else if (svc == &service_B) {
 			have_service_B = 1;
-			zassert_equal(svc->flags & COAP_SERVICE_AUTOSTART, COAP_SERVICE_AUTOSTART);
+			zassert_equal(svc->flags & COAP_SERVICE_AUTOSTART, 0);
 		} else if (svc == &service_C) {
 			have_service_C = 1;
 			zassert_equal(svc->flags & COAP_SERVICE_AUTOSTART, 0);
