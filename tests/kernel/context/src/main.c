@@ -80,6 +80,13 @@ extern const int32_t z_sys_timer_irq_for_test;
 #define HAS_POWERSAVE_INSTRUCTION
 #endif
 
+/* On architectures with additional reg banks k_current_get()
+ * shows undefined behavior and returns wrong tls-pointer as
+ * reg banks may appear unsynchronized
+ */
+#if defined(CONFIG_ARC) && (CONFIG_RGF_NUM_BANKS > 1)
+#define NO_TLS_IN_EXCEPTION
+#endif
 
 
 typedef struct {
@@ -127,7 +134,11 @@ static void isr_handler(const void *data)
 
 	switch (isr_info.command) {
 	case THREAD_SELF_CMD:
+#ifdef NO_TLS_IN_EXCEPTION
+		isr_info.data = (void *)k_sched_current_thread_query();
+#else
 		isr_info.data = (void *)k_current_get();
+#endif
 		break;
 
 	case EXEC_CTX_TYPE_CMD:
