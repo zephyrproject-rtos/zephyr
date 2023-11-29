@@ -95,20 +95,6 @@ static const uint16_t srcr[] = {
 	0x0BC, 0x0C4, 0x1C8, 0x1CC,
 	0x920, 0x924, 0x928, 0x92C,
 };
-
-/* CAN FD Clock Frequency Control Register */
-#define CANFDCKCR                 0x244
-
-/* Clock stop bit */
-#define CANFDCKCR_CKSTP           BIT(8)
-
-/* CANFD Clock */
-#define CANFDCKCR_PARENT_CLK_RATE 800000000
-#define CANFDCKCR_DIVIDER_MASK    0x1FF
-
-/* Peripherals Clocks */
-#define S3D4_CLK_RATE             66600000	/* SCIF	*/
-#define S0D12_CLK_RATE            66600000	/* PWM	*/
 #elif defined(CONFIG_SOC_SERIES_RCAR_GEN4)
 /* Software Reset Clearing Register offsets */
 #define SRSTCLR(i) (0x2C80 + (i) * 4)
