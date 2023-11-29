@@ -23,8 +23,9 @@ if DMA_MCUX_LPC
 
 # Memory from the heap pool is used to allocate DMA descriptors for
 # channels that use multiple blocks for a DMA transfer.
-# Adjust HEAP_MEM_POOL_SIZE in case you need more memory.
-config HEAP_MEM_POOL_SIZE
+# Adjust HEAP_MEM_POOL_MIN_SIZE in case you need more memory.
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
 	default 4096
 
 endif # DMA_MCUX_LPC
