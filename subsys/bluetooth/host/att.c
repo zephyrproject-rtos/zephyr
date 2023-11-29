@@ -72,8 +72,6 @@ K_MEM_SLAB_DEFINE(req_slab, sizeof(struct bt_att_req),
 		  CONFIG_BT_L2CAP_TX_BUF_COUNT, __alignof__(struct bt_att_req));
 
 enum {
-	ATT_PENDING_RSP,
-	ATT_PENDING_CFM,
 	ATT_CONNECTED,
 	ATT_ENHANCED,
 	ATT_PENDING_SENT,
@@ -540,10 +538,6 @@ static void chan_cfm_sent(struct bt_conn *conn, struct bt_att_tx_meta_data *user
 
 	LOG_DBG("chan %p", chan);
 
-	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
-		atomic_clear_bit(chan->flags, ATT_PENDING_CFM);
-	}
-
 	tx_meta_data_free(data);
 }
 
@@ -553,10 +547,6 @@ static void chan_rsp_sent(struct bt_conn *conn, struct bt_att_tx_meta_data *user
 	struct bt_att_chan *chan = data->att_chan;
 
 	LOG_DBG("chan %p", chan);
-
-	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
-		atomic_clear_bit(chan->flags, ATT_PENDING_RSP);
-	}
 
 	tx_meta_data_free(data);
 }
@@ -2906,19 +2896,6 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 				     BT_ATT_ERR_NOT_SUPPORTED);
 		}
 		return 0;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
-		if (handler->type == ATT_REQUEST &&
-		    atomic_test_and_set_bit(att_chan->flags, ATT_PENDING_RSP)) {
-			LOG_WRN("Ignoring unexpected request");
-			return 0;
-		} else if (handler->type == ATT_INDICATION &&
-			   atomic_test_and_set_bit(att_chan->flags,
-						   ATT_PENDING_CFM)) {
-			LOG_WRN("Ignoring unexpected indication");
-			return 0;
-		}
 	}
 
 	if (buf->len < handler->expect_len) {
