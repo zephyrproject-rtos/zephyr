@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(ads114s0x, CONFIG_ADC_LOG_LEVEL);
 #define ADS114S0X_REF_INTERNAL                              2500
 #define ADS114S0X_GPIO_MAX                                  3
 #define ADS114S0X_POWER_ON_RESET_TIME_IN_US                 2200
+#define ADS114S0X_VBIAS_PIN_MAX                             7
+#define ADS114S0X_VBIAS_PIN_MIN                             0
 
 /* Not mentioned in the datasheet, but instead determined experimentally. */
 #define ADS114S0X_RESET_DELAY_TIME_SAFETY_MARGIN_IN_US 1000
@@ -317,6 +319,14 @@ enum ads114s0x_register {
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, value)                                        \
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,          \
 				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH 1
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS    7
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_GET(value)                                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS,                 \
+				     ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH)
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_SET(target, value)                                       \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS,         \
+				     ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH)
 #define ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH 4
 #define ADS114S0X_REGISTER_GPIODAT_DIR_POS    4
 #define ADS114S0X_REGISTER_GPIODAT_DIR_GET(value)                                                  \
@@ -410,6 +420,7 @@ struct ads114s0x_config {
 	const struct gpio_dt_spec gpio_data_ready;
 	const struct gpio_dt_spec gpio_start_sync;
 	int idac_current;
+	uint8_t vbias_level;
 };
 
 struct ads114s0x_data {
@@ -597,9 +608,10 @@ static int ads114s0x_channel_setup(const struct device *dev,
 	uint8_t idac_magnitude = 0;
 	uint8_t idac_mux = 0;
 	uint8_t pin_selections[4];
+	uint8_t vbias = 0;
 	size_t pin_selections_size;
 	int result;
-	enum ads114s0x_register register_addresses[6];
+	enum ads114s0x_register register_addresses[7];
 	uint8_t values[ARRAY_SIZE(register_addresses)];
 	uint16_t acquisition_time_value = ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 	uint16_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(channel_cfg->acquisition_time);
@@ -820,20 +832,33 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		}
 	}
 
+	ADS114S0X_REGISTER_VBIAS_VB_LEVEL_SET(vbias, config->vbias_level);
+
+	if ((channel_cfg->vbias_pins &
+	     ~GENMASK(ADS114S0X_VBIAS_PIN_MAX, ADS114S0X_VBIAS_PIN_MIN)) != 0) {
+		LOG_ERR("%s: invalid VBIAS pin selection 0x%08X", dev->name,
+			channel_cfg->vbias_pins);
+		return -EINVAL;
+	}
+
+	vbias |= channel_cfg->vbias_pins;
+
 	register_addresses[0] = ADS114S0X_REGISTER_INPMUX;
 	register_addresses[1] = ADS114S0X_REGISTER_PGA;
 	register_addresses[2] = ADS114S0X_REGISTER_DATARATE;
 	register_addresses[3] = ADS114S0X_REGISTER_REF;
 	register_addresses[4] = ADS114S0X_REGISTER_IDACMAG;
 	register_addresses[5] = ADS114S0X_REGISTER_IDACMUX;
-	BUILD_ASSERT(ARRAY_SIZE(register_addresses) == 6);
+	register_addresses[6] = ADS114S0X_REGISTER_VBIAS;
+	BUILD_ASSERT(ARRAY_SIZE(register_addresses) == 7);
 	values[0] = input_mux;
 	values[1] = gain;
 	values[2] = data_rate;
 	values[3] = reference_control;
 	values[4] = idac_magnitude;
 	values[5] = idac_mux;
-	BUILD_ASSERT(ARRAY_SIZE(values) == 6);
+	values[6] = vbias;
+	BUILD_ASSERT(ARRAY_SIZE(values) == 7);
 
 	result = ads114s0x_write_multiple_registers(dev, register_addresses, values,
 						    ARRAY_SIZE(values));
@@ -1474,6 +1499,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),             \
 		.idac_current = DT_INST_PROP(n, idac_current),                                     \
+		.vbias_level = DT_INST_PROP(n, vbias_level),                                       \
 	};                                                                                         \
 	static struct ads114s0x_data data_##n;                                                     \
 	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \
