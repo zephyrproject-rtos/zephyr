@@ -4,7 +4,7 @@ Bluetooth: Mesh Generic OnOff, Generic Level, Lighting & Vendor Models
 ######################################################################
 Overview
 ********
-This is a application demonstrating a Bluetooth mesh node in
+This is a application demonstrating a Bluetooth Mesh node in
 which Root element has following models
 
 - Generic OnOff Server

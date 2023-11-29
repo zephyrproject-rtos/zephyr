@@ -1,13 +1,13 @@
-# Bluetooth mesh shell configuration options
+# Bluetooth Mesh shell configuration options
 
 # Copyright (c) 2022 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_MESH_SHELL
-	bool "Bluetooth mesh shell"
+	bool "Bluetooth Mesh shell"
 	select SHELL
 	help
-	  Activate shell module that provides Bluetooth mesh commands to
+	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
 
 if BT_MESH_SHELL
@@ -24,7 +24,7 @@ config BT_MESH_SHELL_PROV_CTX_INSTANCE
 	depends on BT_MESH_SHELL_PROV
 	help
 	  This option enables the provisioning context instance in the
-	  Bluetooth mesh shell module together with several provisioning
+	  Bluetooth Mesh shell module together with several provisioning
 	  commands and target utility features. To use the provisioning
 	  context instance, use bt_mesh_shell_prov in the
 	  initialization of mesh.
@@ -54,7 +54,7 @@ config BT_MESH_SHELL_HEALTH_SRV_INSTANCE
 	depends on BT_MESH_SHELL_TEST
 	help
 	  This option enables Health Server model instance in the
-	  Bluetooth mesh shell module together with fault controlling
+	  Bluetooth Mesh shell module together with fault controlling
 	  shell commands. To use the model instance, add bt_mesh_shell_health_srv
 	  to the device composition data. Use BT_MESH_SHELL_HEALTH_PUB_DEFINE to
 	  instantiate publication context.

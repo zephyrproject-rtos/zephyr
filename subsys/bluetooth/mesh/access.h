@@ -94,7 +94,7 @@ void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
  * Send a mesh model layer message out into the mesh network without having instantiated
  * the relevant mesh models.
  *
- * @param ctx The Bluetooth mesh message context.
+ * @param ctx The Bluetooth Mesh message context.
  * @param buf The message payload.
  *
  * @return 0 on success or negative error code on failure.

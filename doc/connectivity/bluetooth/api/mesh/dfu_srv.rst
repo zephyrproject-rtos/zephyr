@@ -16,7 +16,7 @@ Firmware images
 
 The Firmware Update Server holds a list of all the updatable firmware images on the device. The full
 list shall be passed to the server through the ``_imgs`` parameter in
-:c:macro:`BT_MESH_DFU_SRV_INIT`, and must be populated before the Bluetooth mesh subsystem is
+:c:macro:`BT_MESH_DFU_SRV_INIT`, and must be populated before the Bluetooth Mesh subsystem is
 started. Each firmware image in the image list must be independently updatable, and should have its
 own firmware ID.
 
@@ -33,9 +33,9 @@ application is described below:
 
 .. figure:: images/dfu_srv.svg
    :align: center
-   :alt: Bluetooth mesh Firmware Update Server transfer
+   :alt: Bluetooth Mesh Firmware Update Server transfer
 
-   Bluetooth mesh Firmware Update Server transfer
+   Bluetooth Mesh Firmware Update Server transfer
 
 Transfer check
 ==============
@@ -118,7 +118,7 @@ updated image.
 When the transfer applies to the mesh application itself, the device might have to reboot as part of
 the swap. This restart can be performed from inside the apply callback, or done asynchronously.
 After booting up with the new firmware, the firmware image table should be updated before the
-Bluetooth mesh subsystem is started.
+Bluetooth Mesh subsystem is started.
 
 The Distributor will read out the firmware image table to confirm that the transfer was successfully
 applied. If the metadata check indicated that the device would become unprovisioned, the Target node
