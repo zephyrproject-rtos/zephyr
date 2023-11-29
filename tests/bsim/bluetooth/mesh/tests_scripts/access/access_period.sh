@@ -7,11 +7,6 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_access_per_pub \
 	access_tx_period access_rx_period
 
-conf=prj_mesh1d1_conf
-RunTest mesh_access_per_pub_1d1 \
-	access_tx_period access_rx_period
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_access_per_pub_psa \
 	access_tx_period access_rx_period

@@ -7,11 +7,6 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 RunTest mesh_access_pub_transmit_delayable_retr \
 	access_tx_transmit_delayable access_rx_transmit_delayable
 
-conf=prj_mesh1d1_conf
-RunTest mesh_access_pub_transmit_delayable_retr_1d1 \
-	access_tx_transmit_delayable access_rx_transmit_delayable
-
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_access_pub_transmit_delayable_retr_psa \
 	access_tx_transmit_delayable access_rx_transmit_delayable

@@ -35,10 +35,7 @@
 #include "prov.h"
 #include "cfg.h"
 #include "statistic.h"
-
-#ifdef CONFIG_BT_MESH_V1d1
 #include "sar_cfg_internal.h"
-#endif
 
 #define LOG_LEVEL CONFIG_BT_MESH_NET_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -84,10 +81,8 @@ static uint16_t msg_cache_next;
 /* Singleton network context (the implementation only supports one) */
 struct bt_mesh_net bt_mesh = {
 	.local_queue = SYS_SLIST_STATIC_INIT(&bt_mesh.local_queue),
-#ifdef CONFIG_BT_MESH_V1d1
 	.sar_tx = BT_MESH_SAR_TX_INIT,
 	.sar_rx = BT_MESH_SAR_RX_INIT,
-#endif
 
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 	.priv_beacon_int = 0x3c,
