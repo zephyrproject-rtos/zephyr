@@ -64,7 +64,7 @@
 
 			flash0: flash@8000000 {
 				compatible = "gd,gd32-nv-flash-v2", "soc-nv-flash";
-				write-block-size = <2>;
+				write-block-size = <4>;
 				max-erase-time-ms = <2578>;
 				bank0-page-size = <DT_SIZE_K(1)>;
 				bank1-page-size = <DT_SIZE_K(1)>;
