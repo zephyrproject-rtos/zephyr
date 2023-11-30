@@ -253,8 +253,6 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 		pincfg.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_NONE;
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
-		irq_disable(dev_cfg->irq_num);
-
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 		ret = am_hal_gpio_interrupt_irq_status_get(dev_cfg->irq_num, false, &int_status);
