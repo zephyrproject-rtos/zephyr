@@ -700,7 +700,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	    (IS_ENABLED(CONFIG_NET_GPTP_VLAN) || ptype != htons(NET_ETH_PTYPE_PTP))) {
 		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
 			ret = -EINVAL;
-			goto error;
+			goto arp_error;
 		}
 
 		set_vlan_priority(ctx, pkt);
@@ -710,7 +710,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	if (!ethernet_fill_header(ctx, pkt, ptype)) {
 		ret = -ENOMEM;
-		goto error;
+		goto arp_error;
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -720,20 +720,7 @@ send:
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
 		ethernet_remove_l2_header(pkt);
-		if (IS_ENABLED(CONFIG_NET_ARP) && ptype == htons(NET_ETH_PTYPE_ARP)) {
-			/* Original packet was added to ARP's pending Q, so, to avoid it
-			 * being freed, take a reference, the reference is dropped when we
-			 * clear the pending Q in ARP and then it will be freed by net_if.
-			 */
-			net_pkt_ref(orig_pkt);
-			if (net_arp_clear_pending(iface,
-				(struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
-				NET_DBG("Could not find pending ARP entry");
-			}
-			/* Free the ARP request */
-			net_pkt_unref(pkt);
-		}
-		goto error;
+		goto arp_error;
 	}
 
 	ethernet_update_tx_stats(iface, pkt);
@@ -743,6 +730,23 @@ send:
 
 	net_pkt_unref(pkt);
 error:
+	return ret;
+
+arp_error:
+	if (IS_ENABLED(CONFIG_NET_ARP) && ptype == htons(NET_ETH_PTYPE_ARP)) {
+		/* Original packet was added to ARP's pending Q, so, to avoid it
+		 * being freed, take a reference, the reference is dropped when we
+		 * clear the pending Q in ARP and then it will be freed by net_if.
+		 */
+		net_pkt_ref(orig_pkt);
+		if (net_arp_clear_pending(
+			    iface, (struct in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+			NET_DBG("Could not find pending ARP entry");
+		}
+		/* Free the ARP request */
+		net_pkt_unref(pkt);
+	}
+
 	return ret;
 }
 
