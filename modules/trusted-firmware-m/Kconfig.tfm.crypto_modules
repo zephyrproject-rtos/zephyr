@@ -10,6 +10,7 @@ if TFM_PARTITION_CRYPTO
 config TFM_CRYPTO_RNG_MODULE_ENABLED
 	bool "Random number generator crypto module"
 	default y
+	depends on PSA_WANT_GENERATE_RANDOM && NRF_SECURITY
 	help
 	  Enables the random number generator  module within the crypto partition.
 	  Unset this option if 'psa_generate_random' is not used.
