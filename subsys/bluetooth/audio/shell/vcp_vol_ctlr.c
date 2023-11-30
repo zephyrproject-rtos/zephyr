@@ -24,7 +24,7 @@ static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 	if (err != 0) {
 		shell_error(ctx_shell, "VCP discover failed (%d)", err);
 	} else {
-		shell_print(ctx_shell, "VCP discover done with %u AICS",
+		shell_print(ctx_shell, "VCP discover done with %u VOCS and %u AICS", vocs_count,
 			    aics_count);
 
 		if (bt_vcp_vol_ctlr_included_get(vol_ctlr, &vcp_included)) {

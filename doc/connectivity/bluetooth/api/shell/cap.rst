@@ -159,7 +159,9 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
    cap_commander --help
    cap_commander - Bluetooth CAP commander shell commands
    Subcommands:
-     discover        :Discover CAS
+     discover       :Discover CAS
+     change_volume  :Change volume on all connections <volume>
+
 
 Before being able to perform any stream operation, the device must also perform the
 :code:`bap discover` operation to discover the ASEs and PAC records. The :code:`bap init`
@@ -174,3 +176,20 @@ Discovering CAS and CSIS on a device:
 
    uart:~$ cap_commander discover
    discovery completed with CSIS
+
+
+Setting the volume on all connected devices:
+
+.. code-block:: console
+
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$ cap_commander change_volume 15
+   uart:~$ cap_commander change_volume 15
+   Setting volume to 15 on 2 connections
+   VCP volume 15, mute 0
+   VCP vol_set done
+   VCP volume 15, mute 0
+   VCP flags 0x01
+   VCP vol_set done
+   Volume change completed
