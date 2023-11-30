@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "socks.h"
 #endif
 
+#include <zephyr/net/igmp.h>
+
 #include "../../ip/net_stats.h"
 
 #include "sockets_internal.h"
@@ -2642,6 +2644,62 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 #include <syscalls/zsock_getsockopt_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
+				socklen_t optlen, bool do_join)
+{
+	struct ip_mreqn *mreqn;
+	struct net_if *iface;
+	int ifindex, ret;
+
+	if (optval == NULL || optlen != sizeof(struct ip_mreqn)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	mreqn = (struct ip_mreqn *)optval;
+
+	if (mreqn->imr_multiaddr.s_addr == INADDR_ANY) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (mreqn->imr_ifindex != 0) {
+		iface = net_if_get_by_index(mreqn->imr_ifindex);
+	} else {
+		ifindex = net_if_ipv4_addr_lookup_by_index(&mreqn->imr_address);
+		iface = net_if_get_by_index(ifindex);
+	}
+
+	if (iface == NULL) {
+		/* Check if ctx has already an interface and if not,
+		 * then select the default interface.
+		 */
+		if (ctx->iface <= 0) {
+			iface = net_if_get_default();
+		} else {
+			iface = net_if_get_by_index(ctx->iface);
+		}
+
+		if (iface == NULL) {
+			errno = EINVAL;
+			return -1;
+		}
+	}
+
+	if (do_join) {
+		ret = net_ipv4_igmp_join(iface, &mreqn->imr_multiaddr, NULL);
+	} else {
+		ret = net_ipv4_igmp_leave(iface, &mreqn->imr_multiaddr);
+	}
+
+	if (ret < 0) {
+		errno  = -ret;
+		return -1;
+	}
+
+	return 0;
+}
+
 int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 const void *optval, socklen_t optlen)
 {
@@ -2947,6 +3005,22 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
+
+		case IP_ADD_MEMBERSHIP:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				return ipv4_multicast_group(ctx, optval,
+							    optlen, true);
+			}
+
+			break;
+
+		case IP_DROP_MEMBERSHIP:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				return ipv4_multicast_group(ctx, optval,
+							    optlen, false);
+			}
+
+			break;
 		}
 
 		break;
