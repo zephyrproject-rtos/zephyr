@@ -31,3 +31,7 @@ tests:
     extra_args: DTC_OVERLAY_FILE=ds2485.overlay
     harness_config:
       fixture: w1_ds2485_idle
+  drivers.w1.max32:
+    filter: dt_compat_enabled("adi,max32-w1")
+    platform_allow:
+      - max32655evkit/max32655/m4
