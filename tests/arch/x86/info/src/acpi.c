@@ -28,22 +28,18 @@ static const char *get_dmar_scope_type(int type)
 	}
 }
 
-static void vtd_dev_scope_info(int type, struct acpi_dmar_device_scope *dev_scope,
+static void vtd_dev_scope_info(struct acpi_dmar_device_scope *dev_scope,
 			       union acpi_dmar_id *dmar_id, int num_inst)
 {
 	int i = 0;
 
-	printk("\t\t\t. Type: %s\n", get_dmar_scope_type(type));
-
 	printk("\t\t\t. Enumeration ID %u\n", dev_scope->EnumerationId);
-	printk("\t\t\t. PCI Bus %u\n", dev_scope->Bus);
 
 	for (; num_inst > 0; num_inst--, i++) {
-		printk("Info: Bus: %d, dev:%d, fun:%d\n", dmar_id[i].bits.bus,
-			dmar_id[i].bits.device, dmar_id[i].bits.function);
+		printk("\t\t\t. BDF 0x%x:0x%x:0x%x\n",
+		       dmar_id[i].bits.bus, dmar_id[i].bits.device,
+		       dmar_id[i].bits.function);
 	}
-
-	printk("\n");
 }
 
 static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
@@ -66,14 +62,14 @@ static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
 	printk("\t\t- Device Scopes:\n");
 	for (i = 0; i < ARRAY_SIZE(dmar_scope); i++) {
 		if (acpi_drhd_get(dmar_scope[i], &dev_scope, dmar_id, &num_inst, 4u)) {
-			printk(" No DRHD entry found for scope type: %s\n",
+			printk("\t\tNo DRHD type: %s\n",
 			       get_dmar_scope_type(dmar_scope[i]));
 			continue;
 		}
 
-		printk("Found DRHD entry: %d\n", i);
+		printk("\t\tDRHD type %s\n", get_dmar_scope_type(dmar_scope[i]));
 
-		vtd_dev_scope_info(dmar_scope[i], &dev_scope, dmar_id, num_inst);
+		vtd_dev_scope_info(&dev_scope, dmar_id, num_inst);
 	}
 
 	printk("\n");
@@ -105,7 +101,7 @@ static void vtd_info(void)
 
 		if (acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
 					(struct acpi_subtable_header **)&drhd)) {
-			printk("error in retrieve DHRD!!\n");
+			printk("\tError in retrieving DHRD!!\n");
 			return;
 		}
 		vtd_drhd_info(drhd);
