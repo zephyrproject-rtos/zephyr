@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <net/if.h>
+#include <linux/if.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #else

@@ -615,7 +615,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
 
      adc, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, all
      bluetooth, userchan, :kconfig:option:`CONFIG_BT_USERCHAN`, host libC
-     can, can native posix, :kconfig:option:`CONFIG_CAN_NATIVE_POSIX_LINUX`, host libC
+     can, can native posix, :kconfig:option:`CONFIG_CAN_NATIVE_POSIX_LINUX`, all
      console backend, POSIX arch console, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, all
      display, display SDL, :kconfig:option:`CONFIG_SDL_DISPLAY`, all
      entropy, native posix entropy, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, all
