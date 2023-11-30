@@ -339,7 +339,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 		return -ENOMEM;
 	}
 
-	net_context_set_ipv4_ttl(ctx, 255);
+	net_context_set_ipv4_mcast_ttl(ctx, 255);
 
 	return 0;
 }
@@ -389,7 +389,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 		return -ENOMEM;
 	}
 
-	net_context_set_ipv6_hop_limit(ctx, 255);
+	net_context_set_ipv6_mcast_hop_limit(ctx, 255);
 
 #endif /* CONFIG_NET_IPV6 */
 	return 0;
