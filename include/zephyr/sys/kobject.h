@@ -195,7 +195,7 @@ static inline bool k_object_is_valid(const void *obj, enum k_objects otype)
 /* LCOV_EXCL_STOP */
 #endif /* !CONFIG_USERSPACE */
 
-#ifdef CONFIG_DYNAMIC_OBJECTS
+#if defined(CONFIG_DYNAMIC_OBJECTS) || defined(__DOXYGEN__)
 /**
  * Allocate a kernel object of a designated type
  *
@@ -203,6 +203,9 @@ static inline bool k_object_is_valid(const void *obj, enum k_objects otype)
  * returning a pointer to it. The object will be returned in an uninitialized
  * state, with the calling thread being granted permission on it. The memory
  * for the object will be allocated out of the calling thread's resource pool.
+ *
+ * @note This function is available only if @kconfig{CONFIG_DYNAMIC_OBJECTS}
+ * is selected.
  *
  * @note Thread stack object has to use k_object_alloc_size() since stacks may
  * have different sizes.
@@ -224,6 +227,9 @@ __syscall void *k_object_alloc(enum k_objects otype);
  * This function is specially helpful for thread stack objects because
  * their sizes can vary. Other objects should probably look k_object_alloc().
  *
+ * @note This function is available only if @kconfig{CONFIG_DYNAMIC_OBJECTS}
+ * is selected.
+ *
  * @param otype Requested kernel object type
  * @param size Requested kernel object size
  * @return A pointer to the allocated kernel object, or NULL if memory wasn't
@@ -237,6 +243,9 @@ __syscall void *k_object_alloc_size(enum k_objects otype, size_t size);
  * This will return memory for a kernel object back to resource pool it was
  * allocated from.  Care must be exercised that the object will not be used
  * during or after when this call is made.
+ *
+ * @note This function is available only if @kconfig{CONFIG_DYNAMIC_OBJECTS}
+ * is selected.
  *
  * @param obj Pointer to the kernel object memory address.
  */
