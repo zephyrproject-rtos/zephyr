@@ -73,6 +73,32 @@ extern "C" {
  */
 #define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
+#ifndef _ASMLANGUAGE
+#if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__))
+#	error Missing required predefined macros for BITS_PER_LONG calculation
+#endif
+
+/** Number of bits in a long int. */
+#define BITS_PER_LONG	(__CHAR_BIT__ * __SIZEOF_LONG__)
+
+/** Number of bits in a long long int. */
+#define BITS_PER_LONG_LONG	(__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
+
+/**
+ * @brief Create a contiguous bitmask starting at bit position @p l
+ *        and ending at position @p h.
+ */
+#define GENMASK(h, l) \
+	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+
+/**
+ * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
+ *        and ending at position @p h.
+ */
+#define GENMASK64(h, l) \
+	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
+#endif	/* !_ASMLANGUAGE */
+
 /** @brief Check if a @p x is a power of two */
 #define IS_POWER_OF_TWO(x) (((x) != 0U) && (((x) & ((x) - 1U)) == 0U))
 
