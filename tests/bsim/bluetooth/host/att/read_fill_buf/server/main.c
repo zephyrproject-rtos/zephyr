@@ -8,10 +8,10 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "../testlib/bs_macro.h"
-#include "../testlib/adv.h"
+#include <testlib/adv.h>
 
 #include "../common_defs.h"
+#include "../support/bs_macro.h"
 
 LOG_MODULE_REGISTER(server, LOG_LEVEL_DBG);
 
