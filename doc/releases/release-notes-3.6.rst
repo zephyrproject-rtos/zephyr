@@ -226,6 +226,9 @@ Networking
     unicast and multicast packets. This can be controlled in each socket via
     :c:func:`setsockopt` API.
 
+  * Added support for compile time network event handlers using the macro
+    :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER`.
+
 * MQTT-SN:
 
 * OpenThread:
