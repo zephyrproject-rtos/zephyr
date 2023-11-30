@@ -138,16 +138,16 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 				       enum bt_att_chan_opt bearer, uint16_t handle,
 				       uint16_t offset)
 {
-	struct bt_testlib_att_read_closure ctx = {
-		.result_size = result_size,
-		.conn = conn,
-		.att_mtu = result_att_mtu,
-		.result_data = result_data,
-		.params = {
-			.handle_count = 1,
-			.single = {.handle = handle, .offset = offset},
-			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer,))
-		}};
+	struct bt_testlib_att_read_closure ctx = {};
+
+	ctx.att_mtu = result_att_mtu;
+	ctx.conn = conn;
+	ctx.params.handle_count = 1;
+	ctx.params.single.handle = handle;
+	ctx.params.single.offset = offset;
+	ctx.result_data = result_data;
+	ctx.result_size = result_size;
+	IF_ENABLED(CONFIG_BT_EATT, (ctx.params.chan_opt = bearer));
 
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
 		__ASSERT(IS_ENABLED(CONFIG_BT_EATT), "EATT not complied in");
@@ -162,17 +162,16 @@ int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *resu
 {
 	int err;
 	uint16_t _result_data_size = 0;
+	struct bt_testlib_att_read_closure ctx = {};
 
-	struct bt_testlib_att_read_closure ctx = {
-		.long_read = true,
-		.result_size = &_result_data_size,
-		.conn = conn,
-		.result_data = result_data,
-		.params = {
-			.handle_count = 1,
-			.single = {.handle = handle, .offset = offset},
-			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer,))
-		}};
+	ctx.att_mtu = result_att_mtu;
+	ctx.conn = conn;
+	ctx.long_read = true, ctx.params.handle_count = 1;
+	ctx.params.single.handle = handle;
+	ctx.params.single.offset = offset;
+	ctx.result_data = result_data;
+	ctx.result_size = &_result_data_size;
+	IF_ENABLED(CONFIG_BT_EATT, (ctx.params.chan_opt = bearer));
 
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
 		__ASSERT(IS_ENABLED(CONFIG_BT_EATT), "EATT not complied in");
