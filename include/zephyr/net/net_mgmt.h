@@ -15,6 +15,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,7 +108,7 @@ struct net_mgmt_event_callback;
  * @brief Define the user's callback handler function signature
  * @param cb Original struct net_mgmt_event_callback owning this handler.
  * @param mgmt_event The network event being notified.
- * @param iface A pointer on a struct net_if to which the the event belongs to,
+ * @param iface A pointer on a struct net_if to which the event belongs to,
  *        if it's an event on an iface. NULL otherwise.
  */
 typedef void (*net_mgmt_event_handler_t)(struct net_mgmt_event_callback *cb,
@@ -162,6 +163,53 @@ struct net_mgmt_event_callback {
 		uint32_t raised_event;
 	};
 };
+
+/**
+ * @typedef net_mgmt_event_static_handler_t
+ * @brief Define the user's callback handler function signature
+ * @param mgmt_event The network event being notified.
+ * @param iface A pointer on a struct net_if to which the event belongs to,
+ *        if it's an event on an iface. NULL otherwise.
+ * @param info A valid pointer on a data understood by the handler.
+ *        NULL otherwise.
+ * @param info_length Length in bytes of the memory pointed by @p info.
+ * @param user_data Data provided by the user to the handler.
+ */
+typedef void (*net_mgmt_event_static_handler_t)(uint32_t mgmt_event,
+						struct net_if *iface,
+						void *info, size_t info_length,
+						void *user_data);
+
+/** @cond INTERNAL_HIDDEN */
+
+/* Structure for event handler registered at compile time */
+struct net_mgmt_event_static_handler {
+	uint32_t event_mask;
+	net_mgmt_event_static_handler_t handler;
+	void *user_data;
+};
+
+/** @endcond */
+
+/**
+ * @brief Define a static network event handler.
+ * @param _name Name of the event handler.
+ * @param _event_mask A mask of network events on which the passed handler should
+ *        be called in case those events come.
+ *        Note that only the command part is treated as a mask,
+ *        matching one to several commands. Layer and layer code will
+ *        be made of an exact match. This means that in order to
+ *        receive events from multiple layers, one must have multiple
+ *        listeners registered, one for each layer being listened.
+ * @param _func The function to be called upon network events being emitted.
+ * @param _user_data User data passed to the handler being called on network events.
+ */
+#define NET_MGMT_REGISTER_EVENT_HANDLER(_name, _event_mask, _func, _user_data)	\
+	const STRUCT_SECTION_ITERABLE(net_mgmt_event_static_handler, _name) = {	\
+		.event_mask = _event_mask,					\
+		.handler = _func,						\
+		.user_data = (void *)_user_data,				\
+	}
 
 /**
  * @brief Helper to initialize a struct net_mgmt_event_callback properly
