@@ -23,15 +23,15 @@
 
 LOG_MODULE_REGISTER(ads114s0x, CONFIG_ADC_LOG_LEVEL);
 
-#define ADS114S0X_CLK_FREQ_IN_KHZ			    4096
-#define ADS114S0X_RESET_LOW_TIME_IN_CLOCK_CYCLES	    4
+#define ADS114S0X_CLK_FREQ_IN_KHZ                           4096
+#define ADS114S0X_RESET_LOW_TIME_IN_CLOCK_CYCLES            4
 #define ADS114S0X_START_SYNC_PULSE_DURATION_IN_CLOCK_CYCLES 4
-#define ADS114S0X_SETUP_TIME_IN_CLOCK_CYCLES		    32
-#define ADS114S0X_INPUT_SELECTION_AINCOM		    12
-#define ADS114S0X_RESOLUTION				    16
-#define ADS114S0X_REF_INTERNAL				    2500
-#define ADS114S0X_GPIO_MAX				    3
-#define ADS114S0X_POWER_ON_RESET_TIME_IN_US		    2200
+#define ADS114S0X_SETUP_TIME_IN_CLOCK_CYCLES                32
+#define ADS114S0X_INPUT_SELECTION_AINCOM                    12
+#define ADS114S0X_RESOLUTION                                16
+#define ADS114S0X_REF_INTERNAL                              2500
+#define ADS114S0X_GPIO_MAX                                  3
+#define ADS114S0X_POWER_ON_RESET_TIME_IN_US                 2200
 
 /* Not mentioned in the datasheet, but instead determined experimentally. */
 #define ADS114S0X_RESET_DELAY_TIME_SAFETY_MARGIN_IN_US 1000
@@ -94,7 +94,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_ID_DEV_ID_POS,              \
 				     ADS114S0X_REGISTER_ID_DEV_ID_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_FL_POR_POS	7
+#define ADS114S0X_REGISTER_STATUS_FL_POR_POS    7
 #define ADS114S0X_REGISTER_STATUS_FL_POR_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_POR_POS,                  \
 				     ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH)
@@ -102,7 +102,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_POR_POS,          \
 				     ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_NOT_RDY_POS	 6
+#define ADS114S0X_REGISTER_STATUS_NOT_RDY_POS    6
 #define ADS114S0X_REGISTER_STATUS_NOT_RDY_GET(value)                                               \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_NOT_RDY_POS,                 \
 				     ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH)
@@ -142,7 +142,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS,      \
 				     ADS114S0X_REGISTER_STATUS_FL_N_RAILN_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS	   1
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS    1
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L1_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS,               \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH)
@@ -150,7 +150,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS,       \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS	   0
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS    0
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L0_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS,               \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH)
@@ -190,7 +190,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_PGA_EN_POS,             \
 				     ADS114S0X_REGISTER_PGA_PGA_EN_LENGTH)
 #define ADS114S0X_REGISTER_PGA_GAIN_LENGTH 3
-#define ADS114S0X_REGISTER_PGA_GAIN_POS	   0
+#define ADS114S0X_REGISTER_PGA_GAIN_POS    0
 #define ADS114S0X_REGISTER_PGA_GAIN_GET(value)                                                     \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_GAIN_POS,                       \
 				     ADS114S0X_REGISTER_PGA_GAIN_LENGTH)
@@ -198,7 +198,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_GAIN_POS,               \
 				     ADS114S0X_REGISTER_PGA_GAIN_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH 1
-#define ADS114S0X_REGISTER_DATARATE_G_CHOP_POS	  7
+#define ADS114S0X_REGISTER_DATARATE_G_CHOP_POS    7
 #define ADS114S0X_REGISTER_DATARATE_G_CHOP_GET(value)                                              \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_G_CHOP_POS,                \
 				     ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH)
@@ -214,7 +214,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_CLK_POS,           \
 				     ADS114S0X_REGISTER_DATARATE_CLK_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_MODE_LENGTH 1
-#define ADS114S0X_REGISTER_DATARATE_MODE_POS	5
+#define ADS114S0X_REGISTER_DATARATE_MODE_POS    5
 #define ADS114S0X_REGISTER_DATARATE_MODE_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_MODE_POS,                  \
 				     ADS114S0X_REGISTER_DATARATE_MODE_LENGTH)
@@ -222,7 +222,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_MODE_POS,          \
 				     ADS114S0X_REGISTER_DATARATE_MODE_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH 1
-#define ADS114S0X_REGISTER_DATARATE_FILTER_POS	  4
+#define ADS114S0X_REGISTER_DATARATE_FILTER_POS    4
 #define ADS114S0X_REGISTER_DATARATE_FILTER_GET(value)                                              \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_FILTER_POS,                \
 				     ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH)
@@ -238,7 +238,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_DR_POS,            \
 				     ADS114S0X_REGISTER_DATARATE_DR_LENGTH)
 #define ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH 2
-#define ADS114S0X_REGISTER_REF_FL_REF_EN_POS	6
+#define ADS114S0X_REGISTER_REF_FL_REF_EN_POS    6
 #define ADS114S0X_REGISTER_REF_FL_REF_EN_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS,                  \
 				     ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH)
@@ -246,7 +246,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS,          \
 				     ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH)
 #define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH 1
-#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS	   5
+#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS    5
 #define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS,               \
 				     ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH)
@@ -254,7 +254,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS,       \
 				     ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH)
 #define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH 1
-#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS	   4
+#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS    4
 #define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS,               \
 				     ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH)
@@ -302,7 +302,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS,           \
 				     ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH 4
-#define ADS114S0X_REGISTER_IDACMUX_I2MUX_POS	4
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_POS    4
 #define ADS114S0X_REGISTER_IDACMUX_I2MUX_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,                  \
 				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
@@ -310,7 +310,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,          \
 				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH 4
-#define ADS114S0X_REGISTER_IDACMUX_I1MUX_POS	0
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_POS    0
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,                  \
 				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
@@ -424,10 +424,10 @@ struct ads114s0x_data {
 	int16_t *buffer_ptr;
 #if CONFIG_ADC_ADS114S0X_GPIO
 	struct k_mutex gpio_lock;
-	uint8_t gpio_enabled;	/* one bit per GPIO, 1 = enabled */
+	uint8_t gpio_enabled;   /* one bit per GPIO, 1 = enabled */
 	uint8_t gpio_direction; /* one bit per GPIO, 1 = input */
-	uint8_t gpio_value;	/* one bit per GPIO, 1 = high */
-#endif				/* CONFIG_ADC_ADS114S0X_GPIO */
+	uint8_t gpio_value;     /* one bit per GPIO, 1 = high */
+#endif                          /* CONFIG_ADC_ADS114S0X_GPIO */
 };
 
 static void ads114s0x_data_ready_handler(const struct device *dev, struct gpio_callback *gpio_cb,
@@ -1368,10 +1368,10 @@ static int ads114s0x_init(const struct device *dev)
 	}
 
 #if CONFIG_ADC_ASYNC
-	k_tid_t tid = k_thread_create(
-		&data->thread, config->stack, CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE,
-		ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
-		CONFIG_ADC_ADS114S0X_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&data->thread, config->stack,
+				      CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE,
+				      ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
+				      CONFIG_ADC_ADS114S0X_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_ads114s0x");
 #endif
 
@@ -1472,7 +1472,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),             \
-		.idac_current = DT_INST_PROP(n,	idac_current),                                     \
+		.idac_current = DT_INST_PROP(n, idac_current),                                     \
 	};                                                                                         \
 	static struct ads114s0x_data data_##n;                                                     \
 	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \
