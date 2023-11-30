@@ -15,6 +15,7 @@ LOG_MODULE_DECLARE(flash_gd32);
 #define GD32_NV_FLASH_V2_NODE		DT_INST(0, gd_gd32_nv_flash_v2)
 #define GD32_NV_FLASH_V2_TIMEOUT	DT_PROP(GD32_NV_FLASH_V2_NODE, max_erase_time_ms)
 
+#if !defined(CONFIG_SOC_GD32A503)
 /**
  * @brief GD32 FMC v2 flash memory has 2 banks.
  * Bank0 holds the first 512KB, bank1 is used give capacity for reset.
@@ -30,6 +31,23 @@ LOG_MODULE_DECLARE(flash_gd32);
 #define GD32_NV_FLASH_V2_BANK1_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank1_page_size)
 #endif
 
+#elif defined(CONFIG_SOC_GD32A503)
+/**
+ * @brief GD32A503 series flash memory has 2 banks.
+ * Bank0 holds the first 256KB, bank1 is used give capacity for reset.
+ * The page size is 1KB for all banks.
+ */
+#if (PRE_KB(256) >= SOC_NV_FLASH_SIZE)
+#define GD32_NV_FLASH_V2_BANK0_SIZE		SOC_NV_FLASH_SIZE
+#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
+#else
+#define GD32_NV_FLASH_V2_BANK0_SIZE		KB(256)
+#define GD32_NV_FLASH_V2_BANK0_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank0_page_size)
+#define GD32_NV_FLASH_V2_BANK1_SIZE		(SOC_NV_FLASH_SIZE - KB(256))
+#define GD32_NV_FLASH_V2_BANK1_PAGE_SIZE	DT_PROP(GD32_NV_FLASH_V2_NODE, bank1_page_size)
+#endif
+#endif
+
 #define GD32_FMC_V2_BANK0_WRITE_ERR (FMC_STAT0_PGERR | FMC_STAT0_WPERR)
 #define GD32_FMC_V2_BANK0_ERASE_ERR FMC_STAT0_WPERR
 
@@ -42,7 +60,7 @@ static struct flash_pages_layout gd32_fmc_v2_layout[] = {
 	.pages_size = GD32_NV_FLASH_V2_BANK0_PAGE_SIZE,
 	.pages_count = GD32_NV_FLASH_V2_BANK0_SIZE / GD32_NV_FLASH_V2_BANK0_PAGE_SIZE
 	},
-#ifdef FLASH_GD32_BANK1_SIZE
+#ifdef GD32_NV_FLASH_V2_BANK1_SIZE
 	{
 	.pages_size = GD32_NV_FLASH_V2_BANK1_PAGE_SIZE,
 	.pages_count = GD32_NV_FLASH_V2_BANK1_SIZE / GD32_NV_FLASH_V2_BANK1_PAGE_SIZE
@@ -77,7 +95,7 @@ static int gd32_fmc_v2_bank0_wait_idle(void)
 
 static int gd32_fmc_v2_bank0_write(off_t offset, const void *data, size_t len)
 {
-	flash_prg_t *prg_flash = (flash_prg_t *)((uint8_t *)SOC_NV_FLASH_SIZE + offset);
+	flash_prg_t *prg_flash = (flash_prg_t *)((uint8_t *)SOC_NV_FLASH_ADDR + offset);
 	flash_prg_t *prg_data = (flash_prg_t *)data;
 	int ret = 0;
 
@@ -158,14 +176,14 @@ static int gd32_fmc_v2_bank0_erase_block(off_t offset, size_t size)
 			return ret;
 		}
 
-		size -= GD32_NV_FLASH_V2_BANK0_SIZE;
-		page_addr += GD32_NV_FLASH_V2_BANK0_SIZE;
+		size -= GD32_NV_FLASH_V2_BANK0_PAGE_SIZE;
+		page_addr += GD32_NV_FLASH_V2_BANK0_PAGE_SIZE;
 	}
 
 	return 0;
 }
 
-#ifdef FLASH_GD32_BANK1_SIZE
+#ifdef GD32_NV_FLASH_V2_BANK1_SIZE
 static inline void gd32_fmc_v2_bank1_unlock(void)
 {
 	FMC_KEY1 = UNLOCK_KEY0;
@@ -179,7 +197,7 @@ static inline void gd32_fmc_v2_bank1_lock(void)
 
 static int gd32_fmc_v2_bank1_wait_idle(void)
 {
-	const int64_t expired_time = k_uptime_get() + FLASH_GD32_TIMEOUT;
+	const int64_t expired_time = k_uptime_get() + GD32_NV_FLASH_V2_TIMEOUT;
 
 	while (FMC_STAT1 & FMC_STAT1_BUSY) {
 		if (k_uptime_get() > expired_time) {
@@ -279,7 +297,7 @@ static int gd32_fmc_v2_bank1_erase_block(off_t offset, size_t size)
 
 	return 0;
 }
-#endif /* FLASH_GD32_BANK1_SIZE */
+#endif /* GD32_NV_FLASH_V2_BANK1_SIZE */
 
 bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 {
@@ -297,17 +315,17 @@ bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 
 	} else {
 		if (offset < GD32_NV_FLASH_V2_BANK0_SIZE) {
-			if (offset % GD32_NV_FLASH_V2_BANK0_SIZE) {
+			if (offset % GD32_NV_FLASH_V2_BANK0_PAGE_SIZE) {
 				return false;
 			}
 
 			if (((offset + len) <= GD32_NV_FLASH_V2_BANK0_SIZE) &&
-			    (len % GD32_NV_FLASH_V2_BANK0_SIZE)) {
+			    (len % GD32_NV_FLASH_V2_BANK0_PAGE_SIZE)) {
 				return false;
 			}
 		}
 
-#ifdef FLASH_GD32_BANK1_SIZE
+#ifdef GD32_NV_FLASH_V2_BANK1_SIZE
 		/* Remove bank0 info from offset and len. */
 		if ((offset < GD32_NV_FLASH_V2_BANK0_SIZE) &&
 		    ((offset + len) > GD32_NV_FLASH_V2_BANK0_SIZE))  {
@@ -316,8 +334,8 @@ bool flash_gd32_valid_range(off_t offset, uint32_t len, bool write)
 		}
 
 		if (offset >= GD32_NV_FLASH_V2_BANK0_SIZE) {
-			if ((offset % GD32_NV_FLASH_V2_BANK1_SIZE) ||
-			    (len % GD32_NV_FLASH_V2_BANK1_SIZE)) {
+			if ((offset % GD32_NV_FLASH_V2_BANK1_PAGE_SIZE) ||
+			    (len % GD32_NV_FLASH_V2_BANK1_PAGE_SIZE)) {
 				return false;
 			}
 		}
@@ -345,7 +363,7 @@ int flash_gd32_write_range(off_t offset, const void *data, size_t len)
 		}
 	}
 
-#ifdef FLASH_GD32_BANK1_SIZE
+#ifdef GD32_NV_FLASH_V2_BANK1_SIZE
 	size_t len1 = len - len0;
 
 	if (len1 == 0U) {
@@ -384,7 +402,7 @@ int flash_gd32_erase_block(off_t offset, size_t size)
 		}
 	}
 
-#ifdef FLASH_GD32_BANK1_SIZE
+#ifdef GD32_NV_FLASH_V2_BANK1_SIZE
 	size_t size1 = size - size0;
 
 	if (size1 == 0U) {
