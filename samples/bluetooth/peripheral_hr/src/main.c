@@ -103,9 +103,86 @@ static void hrs_notify(void)
 	bt_hrs_notify(heartrate);
 }
 
+/* Re-declaring ISRs used by BT_LL_SW_SPLIT does not work as the ISR are
+ * statically assigned at application link time.
+ *
+ * #define DOES_NOT_WORK_WITH_BT_LL_SW_SPLIT 1
+ *
+ */
+
+#if defined(DOES_NOT_WORK_WITH_BT_LL_SW_SPLIT)
+ISR_DIRECT_DECLARE(xyz_radio_nrf5_isr)
+{
+	/* Reset the DISABLED event we wished to generate */
+	NRF_RADIO->EVENTS_DISABLED = 0U;
+
+	printk("%s: here\n", __func__);
+
+	ISR_DIRECT_PM();
+
+	return 1;
+}
+#else
+static void xyz_radio_nrf5_isr(const void *param)
+{
+	/* BT_LL_SW_SPLIT pass-through its ISR_DIRECT_CONNECT to here */
+
+	/* Reset the DISABLED event we generated */
+	NRF_RADIO->EVENTS_DISABLED = 0U;
+
+	/* Hey we are here */
+	printk("%s: here\n", __func__);
+}
+#endif
+
 int main(void)
 {
+	int timeout = 10;
 	int err;
+
+	if (NRF_POWER->GPREGRET != 0U) {
+		printk("Xyz initialized.\n");
+
+#if defined(CONFIG_DYNAMIC_DIRECT_INTERRUPTS)
+		irq_connect_dynamic(RADIO_IRQn, 2, xyz_radio_nrf5_isr, NULL, 0U);
+
+#else /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+#if defined(DOES_NOT_WORK_WITH_BT_LL_SW_SPLIT)
+		IRQ_DIRECT_CONNECT(RADIO_IRQn, 2, xyz_radio_nrf5_isr, 0);
+#else
+		/* Use the internal interface of BT_LL_SW_SPLIT to set our
+		 * custom Radio ISR. Here, the priority is set by
+		 * BT_LL_SW_SPLIT implementation and can not be changed without
+		 * modification to BT_LL_SW_SPLIT implementation.
+		 */
+		extern void radio_isr_set(void (*cb)(void *), void *param);
+
+		radio_isr_set(xyz_radio_nrf5_isr, NULL);
+
+		/* Other ISRs declared/connected by BT_LL_SW_SPLIT needs to be
+		 * ported in a PR to be dynamic, use irq_connect_dynamic and
+		 * irq_disconnect_dynamic so that custom ISRs can be set for
+		 * them.
+		 */
+#endif
+#endif /* !CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
+
+		NRF_RADIO->INTENSET = RADIO_INTENSET_DISABLED_Msk;
+
+		irq_enable(RADIO_IRQn);
+
+		NRF_RADIO->TASKS_DISABLE = 1U;
+
+		while (1) {
+			k_sleep(K_SECONDS(1));
+
+			timeout--;
+			if (!timeout) {
+				NRF_POWER->GPREGRET = 0U;
+				NVIC_SystemReset();
+			}
+		}
+	}
 
 	err = bt_enable(NULL);
 	if (err) {
@@ -128,6 +205,13 @@ int main(void)
 
 		/* Battery level simulation */
 		bas_notify();
+
+		timeout--;
+		if (!timeout) {
+			NRF_POWER->GPREGRET = 1U;
+			NVIC_SystemReset();
+		}
 	}
+
 	return 0;
 }
