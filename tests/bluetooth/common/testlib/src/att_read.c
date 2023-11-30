@@ -86,6 +86,10 @@ static int bt_testlib_sync_bt_gatt_read(struct bt_testlib_att_read_closure *ctx)
 {
 	int api_err;
 
+	if (ctx->result_size) {
+		*ctx->result_size = 0;
+	}
+
 	ctx->params.func = att_read_cb;
 
 	k_mutex_init(&ctx->lock);
@@ -155,8 +159,6 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
 		__ASSERT(IS_ENABLED(CONFIG_BT_EATT), "EATT not complied in");
 	}
-
-	*result_size = 0;
 
 	return bt_testlib_sync_bt_gatt_read(&ctx);
 }
