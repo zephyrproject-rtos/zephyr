@@ -560,6 +560,17 @@ config BT_CTLR_ZLI
 	  shall not use Zero Latency IRQ themselves when this option is selected,
 	  else will impact controller stability.
 
+config BT_CTLR_DYNAMIC_INTERRUPTS
+	bool "Use Dynamic Interrupts allocation only"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Allocate all Controller required interrupts dynamically. This makes
+	  sure that interrupts are properly connected when the Controller is
+	  initialized and not only during the system startup. Thanks to that
+	  application is able to enable Controller and its ISR at runtime, and
+	  permit use of SoC's peripheral for custom use when Bluetooth is not
+	  enabled.
+
 config BT_CTLR_OPTIMIZE_FOR_SPEED
 	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
 	bool
