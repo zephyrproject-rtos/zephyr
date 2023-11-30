@@ -107,6 +107,10 @@ static inline void mgmt_rebuild_global_event_mask(void)
 
 	global_event_mask = 0U;
 
+	STRUCT_SECTION_FOREACH(net_mgmt_event_static_handler, it) {
+		mgmt_add_event_mask(it->event_mask);
+	}
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
 		mgmt_add_event_mask(cb->event_mask);
 	}
@@ -189,6 +193,30 @@ static inline void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt
 #endif
 }
 
+static inline void mgmt_run_static_callbacks(const struct mgmt_event_entry * const mgmt_event)
+{
+	STRUCT_SECTION_FOREACH(net_mgmt_event_static_handler, it) {
+		if (!(NET_MGMT_GET_LAYER(mgmt_event->event) ==
+		      NET_MGMT_GET_LAYER(it->event_mask)) ||
+		    !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) ==
+		      NET_MGMT_GET_LAYER_CODE(it->event_mask)) ||
+		    (NET_MGMT_GET_COMMAND(mgmt_event->event) &&
+		     NET_MGMT_GET_COMMAND(it->event_mask) &&
+		     !(NET_MGMT_GET_COMMAND(mgmt_event->event) &
+		       NET_MGMT_GET_COMMAND(it->event_mask)))) {
+			continue;
+		}
+
+		it->handler(mgmt_event->event, mgmt_event->iface,
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+			    (void *)mgmt_event->info, mgmt_event->info_length,
+#else
+			    NULL, 0U,
+#endif
+			    it->user_data);
+	}
+}
+
 static void mgmt_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -196,6 +224,8 @@ static void mgmt_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct mgmt_event_entry mgmt_event;
+
+	mgmt_rebuild_global_event_mask();
 
 	while (1) {
 		mgmt_pop_event(&mgmt_event);
@@ -205,6 +235,7 @@ static void mgmt_thread(void *p1, void *p2, void *p3)
 		/* take the lock to prevent changes to the callback structure during use */
 		(void)k_mutex_lock(&net_mgmt_callback_lock, K_FOREVER);
 
+		mgmt_run_static_callbacks(&mgmt_event);
 		mgmt_run_callbacks(&mgmt_event);
 
 		(void)k_mutex_unlock(&net_mgmt_callback_lock);
