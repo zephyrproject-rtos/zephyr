@@ -1117,6 +1117,16 @@ struct in_pktinfo {
 
 /** sockopt: Set IPv4 multicast TTL value. */
 #define IP_MULTICAST_TTL 33
+/** sockopt: Join IPv4 multicast group. */
+#define IP_ADD_MEMBERSHIP 35
+/** sockopt: Leave IPv4 multicast group. */
+#define IP_DROP_MEMBERSHIP 36
+
+struct ip_mreqn {
+	struct in_addr imr_multiaddr; /* IP multicast group address */
+	struct in_addr imr_address;   /* IP address of local interface */
+	int            imr_ifindex;   /* interface index */
+};
 
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Set the unicast hop limit for the socket. */
