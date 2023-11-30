@@ -30,12 +30,12 @@ static int st_stm32f7_init(void)
 	/* Enable ART Flash cache accelerator */
 	LL_FLASH_EnableART();
 
-	SCB_EnableICache();
+	if (IS_ENABLED(CONFIG_ICACHE)) {
+		SCB_EnableICache();
+	}
 
 	if (IS_ENABLED(CONFIG_DCACHE)) {
-		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-			SCB_EnableDCache();
-		}
+		SCB_EnableDCache();
 	}
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
