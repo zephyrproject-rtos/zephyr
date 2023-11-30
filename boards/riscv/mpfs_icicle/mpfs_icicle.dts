@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <microchip/mpfs-icicle.dtsi>
+#include <microchip/mpfs.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <mem.h>
 
