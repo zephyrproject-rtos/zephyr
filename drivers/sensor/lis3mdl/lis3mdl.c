@@ -73,8 +73,10 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	 */
 	if (drv_data->single_mode) {
 		uint8_t chip_cfg[2];
+		
 		chip_cfg[0] = LIS3MDL_REG_CTRL3;
 		chip_cfg[1] = LIS3MDL_MD_SINGLE;
+		
 		if (i2c_write_dt(&config->i2c, chip_cfg, 2) < 0) {
 			LOG_DBG("Failed to set SINGLE mode.");
 			return -EIO;
