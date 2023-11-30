@@ -32,6 +32,7 @@ static uint32_t event2throw;
 static uint32_t throw_times;
 static uint32_t throw_sleep;
 static bool with_info;
+static bool with_static;
 static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
@@ -65,6 +66,35 @@ static int test_mgmt_request(uint32_t mgmt_request,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(TEST_MGMT_REQUEST, test_mgmt_request);
+
+static void test_mgmt_event_handler(uint32_t mgmt_event, struct net_if *iface, void *info,
+				    size_t info_length, void *user_data)
+{
+	if (!with_static) {
+		return;
+	}
+
+	TC_PRINT("\t\tReceived static event 0x%08X\n", mgmt_event);
+
+	ARG_UNUSED(user_data);
+
+	if (with_info && info) {
+		if (info_length != info_length_in_test) {
+			rx_calls = (uint32_t) -1;
+			return;
+		}
+
+		if (memcmp(info_data, info, info_length_in_test)) {
+			rx_calls = (uint32_t) -1;
+			return;
+		}
+	}
+
+	rx_event = mgmt_event;
+	rx_calls++;
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(my_test_handler, TEST_MGMT_EVENT, test_mgmt_event_handler, NULL);
 
 int fake_dev_init(const struct device *dev)
 {
@@ -238,6 +268,33 @@ static int test_synchronous_event_listener(uint32_t times, bool on_iface)
 	return TC_PASS;
 }
 
+static int test_static_event_listener(uint32_t times, bool info)
+{
+	TC_PRINT("- Static event listener %s\n", info ? "with info" : "");
+
+	event2throw = TEST_MGMT_EVENT;
+	throw_times = times;
+	throw_sleep = 0;
+	with_info = info;
+	with_static = true;
+
+	k_sem_give(&thrower_lock);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+
+	TC_PRINT("\tReceived 0x%08X %u times\n",
+			rx_event, rx_calls);
+
+	zassert_equal(rx_event, event2throw, "rx_event check failed");
+	zassert_equal(rx_calls, times, "rx_calls check failed");
+
+	rx_event = rx_calls = 0U;
+	with_static = false;
+
+	return TC_PASS;
+}
+
 static void initialize_event_tests(void)
 {
 	event2throw = 0U;
@@ -274,12 +331,8 @@ static int test_core_event(uint32_t event, bool (*func)(void))
 
 	zassert_true(func(), "func() check failed");
 
-	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
-		/* Let the network stack to proceed */
-		k_msleep(THREAD_SLEEP);
-	} else {
-		k_yield();
-	}
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
 
 	zassert_true(rx_calls > 0 && rx_calls != -1, "rx_calls empty");
 	zassert_equal(rx_event, event, "rx_event check failed, "
@@ -344,6 +397,18 @@ ZTEST(mgmt_fn_test_suite, test_mgmt)
 
 	zassert_false(test_sending_event_info(2, true),
 		      "test_sending_event failed");
+
+	zassert_false(test_static_event_listener(1, false),
+		      "test_static_event_listener failed");
+
+	zassert_false(test_static_event_listener(2, false),
+		      "test_static_event_listener failed");
+
+	zassert_false(test_static_event_listener(1, true),
+		      "test_static_event_listener failed");
+
+	zassert_false(test_static_event_listener(2, true),
+		      "test_static_event_listener failed");
 
 	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_ADD, _iface_ip6_add),
 		      "test_core_event failed");
