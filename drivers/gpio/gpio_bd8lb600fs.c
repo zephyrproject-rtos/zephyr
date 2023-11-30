@@ -30,40 +30,61 @@ struct bd8lb600fs_config {
 
 	struct spi_dt_spec bus;
 	const struct gpio_dt_spec gpio_reset;
+	int gpios_count;
 };
 
 struct bd8lb600fs_drv_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data data;
-	uint8_t state;	    /* each bit is one output channel, bit 0 = channel 1, ... */
-	uint8_t configured; /* each bit defines if the output channel is configured, see state */
+	uint32_t state;	    /* each bit is one output channel, bit 0 = channel 1, ... */
+	uint32_t configured; /* each bit defines if the output channel is configured, see state */
 	struct k_mutex lock;
+	int instance_count_actual;
+	int gpios_count_actual;
 };
 
-static int write_state(const struct bd8lb600fs_config *config, uint8_t state)
+static int write_state(const struct device *dev, uint32_t state)
 {
-	LOG_DBG("writing state 0x%02X to BD8LB600FS", state);
+	const struct bd8lb600fs_config *config = dev->config;
+	struct bd8lb600fs_drv_data *drv_data = dev->data;
+
+	LOG_DBG("%s: writing state 0x%08X to BD8LB600FS", dev->name, state);
 
 	uint16_t state_converted = 0;
-	uint8_t buffer_tx[2];
-	const struct spi_buf tx_buf[] = {{
+	uint8_t buffer_tx[8];
+	const struct spi_buf tx_buf = {
 		.buf = buffer_tx,
-		.len = ARRAY_SIZE(buffer_tx),
-	}};
+		.len = drv_data->instance_count_actual * sizeof(state_converted),
+	};
 	const struct spi_buf_set tx = {
-		.buffers = tx_buf,
-		.count = ARRAY_SIZE(tx_buf),
+		.buffers = &tx_buf,
+		.count = 1,
 	};
 
-	for (size_t i = 0; i < 8; ++i) {
-		if ((state & BIT(i)) == 0) {
-			state_converted |= OUTPUT_OFF_WITH_OPEN_LOAD_DETECTION << (i * 2);
-		} else {
-			state_converted |= OUTPUT_ON << (i * 2);
+	memset(buffer_tx, 0x00, sizeof(buffer_tx));
+
+	for (size_t j = 0; j < drv_data->instance_count_actual; ++j) {
+		int instance_position = (drv_data->instance_count_actual - j - 1) * 2;
+
+		state_converted = 0;
+
+		for (size_t i = 0; i < 8; ++i) {
+			if ((state & BIT(i + j*8)) == 0) {
+				state_converted |= OUTPUT_OFF_WITH_OPEN_LOAD_DETECTION << (i * 2);
+			} else {
+				state_converted |= OUTPUT_ON << (i * 2);
+			}
 		}
+
+		LOG_DBG("%s: configuration for instance %i: %04X (position %i)",
+			dev->name,
+			j,
+			state_converted,
+			instance_position);
+		sys_put_be16(state_converted, buffer_tx + instance_position);
 	}
 
-	sys_put_be16(state_converted, buffer_tx);
+	LOG_HEXDUMP_DBG(buffer_tx, ARRAY_SIZE(buffer_tx), "configuration written out");
 
 	int result = spi_write_dt(&config->bus, &tx);
 
@@ -77,7 +98,6 @@ static int write_state(const struct bd8lb600fs_config *config, uint8_t state)
 
 static int bd8lb600fs_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct bd8lb600fs_config *config = dev->config;
 	struct bd8lb600fs_drv_data *drv_data = dev->data;
 
 	/* cannot execute a bus operation in an ISR context */
@@ -85,7 +105,7 @@ static int bd8lb600fs_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 		return -EWOULDBLOCK;
 	}
 
-	if (pin > 7) {
+	if (pin >= drv_data->gpios_count_actual) {
 		LOG_ERR("invalid pin number %i", pin);
 		return -EINVAL;
 	}
@@ -130,7 +150,7 @@ static int bd8lb600fs_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 
 	WRITE_BIT(drv_data->configured, pin, 1);
 
-	int result = write_state(config, drv_data->state);
+	int result = write_state(dev, drv_data->state);
 
 	k_mutex_unlock(&drv_data->lock);
 
@@ -145,7 +165,6 @@ static int bd8lb600fs_port_get_raw(const struct device *dev, uint32_t *value)
 
 static int bd8lb600fs_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
-	const struct bd8lb600fs_config *config = dev->config;
 	struct bd8lb600fs_drv_data *drv_data = dev->data;
 
 	/* cannot execute a bus operation in an ISR context */
@@ -156,7 +175,7 @@ static int bd8lb600fs_port_set_masked_raw(const struct device *dev, uint32_t mas
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 	drv_data->state = (drv_data->state & ~mask) | (mask & value);
 
-	int result = write_state(config, drv_data->state);
+	int result = write_state(dev, drv_data->state);
 
 	k_mutex_unlock(&drv_data->lock);
 
@@ -175,7 +194,6 @@ static int bd8lb600fs_port_clear_bits_raw(const struct device *dev, uint32_t mas
 
 static int bd8lb600fs_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	const struct bd8lb600fs_config *config = dev->config;
 	struct bd8lb600fs_drv_data *drv_data = dev->data;
 
 	/* cannot execute a bus operation in an ISR context */
@@ -186,7 +204,7 @@ static int bd8lb600fs_port_toggle_bits(const struct device *dev, uint32_t mask)
 	k_mutex_lock(&drv_data->lock, K_FOREVER);
 	drv_data->state ^= mask;
 
-	int result = write_state(config, drv_data->state);
+	int result = write_state(dev, drv_data->state);
 
 	k_mutex_unlock(&drv_data->lock);
 
@@ -219,6 +237,22 @@ static int bd8lb600fs_init(const struct device *dev)
 		return result;
 	}
 
+	drv_data->instance_count_actual = config->gpios_count / 8;
+
+	if (config->gpios_count % 8 != 0) {
+		LOG_ERR("%s: number of GPIOs %i is not a multiple of 8",
+			dev->name, config->gpios_count);
+		return -EINVAL;
+	}
+
+	if (drv_data->instance_count_actual > 4) {
+		LOG_ERR("%s: only a maximum of 4 devices are supported for the daisy chaining",
+			dev->name);
+		return -EINVAL;
+	}
+
+	drv_data->gpios_count_actual = drv_data->instance_count_actual * 8;
+
 	result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 
 	if (result != 0) {
@@ -242,6 +276,7 @@ static int bd8lb600fs_init(const struct device *dev)
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
 			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
 		.gpio_reset = GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), reset_gpios, 0),          \
+		.gpios_count = DT_INST_PROP(inst, ngpios), \
 	};                                                                                         \
                                                                                                    \
 	static struct bd8lb600fs_drv_data bd8lb600fs_##inst##_drvdata = {                          \
