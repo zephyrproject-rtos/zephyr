@@ -116,13 +116,6 @@ struct nxp_enet_mac_data {
  ********************
  */
 
-extern void nxp_enet_mdio_callback(const struct device *mdio_dev,
-				enum nxp_enet_callback_reason event);
-
-extern void nxp_enet_ptp_clock_callback(const struct device *dev,
-		enum nxp_enet_callback_reason event,
-		union nxp_enet_ptp_data *ptp_data);
-
 static inline struct net_if *get_iface(struct nxp_enet_mac_data *data, uint16_t vlan_tag)
 {
 #if defined(CONFIG_NET_VLAN)
@@ -632,6 +625,22 @@ static int nxp_enet_phy_init(const struct device *dev)
  ****************************
  */
 
+void nxp_enet_driver_cb(const struct device *dev,
+				enum nxp_enet_driver dev_type,
+				enum nxp_enet_callback_reason event,
+				void *data)
+{
+	if (dev_type == NXP_ENET_MDIO) {
+		nxp_enet_mdio_callback(dev, event, data);
+	}
+
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
+	if (dev_type == NXP_ENET_PTP_CLOCK) {
+		nxp_enet_ptp_clock_callback(dev, event, data);
+	}
+#endif
+}
+
 static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 #if FSL_FEATURE_ENET_QUEUE > 1
 			 uint32_t ringId,
@@ -704,7 +713,7 @@ static void eth_nxp_enet_isr(const struct device *dev)
 
 	if (eir & ENET_EIR_MII_MASK) {
 		/* Callback to MDIO driver for relevant interrupt */
-		nxp_enet_mdio_callback(config->mdio, nxp_enet_interrupt);
+		nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_INTERRUPT, NULL);
 	}
 
 	irq_unlock(irq_lock_key);
@@ -798,13 +807,11 @@ static int eth_nxp_enet_init(const struct device *dev)
 		  data->mac_addr,
 		  enet_module_clock_rate);
 
-	nxp_enet_mdio_callback(config->mdio, nxp_enet_module_reset);
+	nxp_enet_driver_cb(config->mdio, NXP_ENET_MDIO, NXP_ENET_MODULE_RESET, NULL);
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	union nxp_enet_ptp_data ptp_data;
-
-	nxp_enet_ptp_clock_callback(config->ptp_clock, nxp_enet_module_reset, &ptp_data);
-	data->ptp_mutex = ptp_data.for_mac.ptp_mutex;
+	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK,
+				NXP_ENET_MODULE_RESET, &data->ptp_mutex);
 	ENET_SetTxReclaim(&data->enet_handle, true, 0);
 #endif
 
