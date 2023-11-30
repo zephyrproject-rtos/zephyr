@@ -800,7 +800,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
 
-	ENET_Init(config->base,
+	ENET_Up(config->base,
 		  &data->enet_handle,
 		  &enet_config,
 		  &config->buffer_config,
@@ -971,7 +971,7 @@ static const struct ethernet_api api_funcs = {
 	.txFrameInfo = NULL
 #endif
 
-#define NXP_ENET_INIT(n)								\
+#define NXP_ENET_MAC_INIT(n)								\
 		NXP_ENET_GENERATE_MAC(n)						\
 											\
 		PINCTRL_DT_INST_DEFINE(n);						\
@@ -1046,5 +1046,30 @@ static const struct ethernet_api api_funcs = {
 					&nxp_enet_##n##_data, &nxp_enet_##n##_config,	\
 					CONFIG_ETH_INIT_PRIORITY,			\
 					&api_funcs, NET_ETH_MTU);
+
+DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MAC_INIT)
+
+
+/*
+ * ENET module-level management
+ */
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_enet
+
+#define NXP_ENET_INIT(n)								\
+											\
+int nxp_enet_##n##_init(void)								\
+{											\
+	clock_control_on(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
+			(void *)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name));		\
+											\
+	ENET_Reset((ENET_Type *)DT_INST_REG_ADDR(n));					\
+											\
+	return 0;									\
+}											\
+											\
+	/* Init the module before any of the MAC, MDIO, or PTP clock */			\
+	SYS_INIT(nxp_enet_##n##_init, POST_KERNEL, 0);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_INIT)
