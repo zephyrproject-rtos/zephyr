@@ -49,13 +49,16 @@
 		};
 
 		test_phandles: phandle-holder-0 {
+                        /*
+                         * There should only be one vnd,phandle-holder in the entire DTS.
+                         */
 			compatible = "vnd,phandle-holder";
 			/*
 			 * At least one of these phandles must refer to
 			 * test_gpio_1, or dependency ordinal tests may fail.
 			 */
 			ph = <&test_gpio_1>;
-			phs = <&test_gpio_1 &test_gpio_2 &test_i2c>;
+			phs = <&test_i2c &test_spi>;
 			phs-or = <&test_enum_default_0 &test_enum_default_1>;
 			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
 			pha-gpios = <&test_gpio_1 50 60>, <0>, <&test_gpio_3 70>, <&test_gpio_2 80 90>;
@@ -126,7 +129,6 @@
 			reg = < 0x0 0x1000 >;
 			interrupts = <3 1>;
 			#gpio-cells = < 0x2 >;
-			label = "TEST_GPIO_0";
 			status = "disabled";
 		};
 
@@ -157,6 +159,7 @@
 			label = "TEST_GPIO_1";
 			interrupts = <4 3>;
 			status = "okay";
+                        ngpios = <100>;
 
 			test_gpio_hog_1 {
 				gpio-hog;
@@ -182,6 +185,7 @@
 			interrupts = <5 2>;
 			label = "TEST_GPIO_2";
 			status = "okay";
+                        ngpios = <200>;
 
 			test_gpio_hog_3 {
 				gpio-hog;
@@ -697,4 +701,9 @@
 			reg-names = "test_name";
 		};
 	};
+
+        non-deprecated-label {
+                compatible = "vnd,non-deprecated-label";
+                label = "FOO";
+        };
 };
