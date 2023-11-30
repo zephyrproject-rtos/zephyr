@@ -6,6 +6,8 @@
 
 description: |
     This is a representation of the Rohm BD8LB600FS SPI Gpio Expander.
+    Multiple instances may be daisy chained, which can be configured
+    via the number of supported GPIOs.
 
 compatible: "rohm,bd8lb600fs"
 
@@ -18,13 +20,15 @@ properties:
   ngpios:
     type: int
     required: true
-    const: 8
-    description: Number of gpios supported
+    description: |
+      Number of pins for the expander. This must be a multiple of 8.
+      The number of pins also defines how many devices are daisy chained.
+      Set to 8 for one instance without daisy chaining.
 
   reset-gpios:
     type: phandle-array
     required: true
-    description: "GPIO for reset"
+    description: GPIO for reset
 
 gpio-cells:
   - pin
