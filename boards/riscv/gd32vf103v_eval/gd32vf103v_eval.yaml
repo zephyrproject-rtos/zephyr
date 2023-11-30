@@ -10,10 +10,11 @@ flash: 128
 toolchain:
   - zephyr
 supported:
-  - uart
+  - dma
+  - flash
   - gpio
   - pwm
-  - watchdog
-  - dma
   - spi
+  - uart
+  - watchdog
 vendor: gd
