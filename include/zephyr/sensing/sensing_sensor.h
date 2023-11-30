@@ -66,8 +66,7 @@ enum {
 };
 
 /**
- * @struct sensing_connection information
- * @brief sensing_connection indicates connection from reporter(source) to client(sink)
+ * @brief Connection between a source and sink of sensor data
  */
 struct sensing_connection {
 	sys_snode_t snode;
@@ -85,7 +84,6 @@ struct sensing_connection {
 };
 
 /**
- * @struct sensing_sensor
  * @brief Internal sensor instance data structure.
  *
  * Each sensor instance will have its unique data structure for storing all
