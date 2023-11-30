@@ -54,12 +54,12 @@ static int stm32h7_m4_wakeup(void)
  */
 static int stm32h7_init(void)
 {
-	SCB_EnableICache();
+	if (IS_ENABLED(CONFIG_ICACHE)) {
+		SCB_EnableICache();
+	}
 
 	if (IS_ENABLED(CONFIG_DCACHE)) {
-		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-			SCB_EnableDCache();
-		}
+		SCB_EnableDCache();
 	}
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
