@@ -326,6 +326,9 @@ events, setup a callback function:
 			LOG_DBG("Deregistration client");
 			break;
 
+		case LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED:
+			LOG_DBG("LwM2M server disabled");
+		  break;
 		}
 	}
 
@@ -545,7 +548,7 @@ The engine state machine shows when the events are spawned.
 Events depicted in the diagram are listed in the table.
 The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
 
-.. figure:: images/lwm2m_engine_state_machine.png
+.. figure:: images/lwm2m_engine_state_machine.svg
     :alt: LwM2M engine state machine
 
     State machine for the LwM2M engine
@@ -557,79 +560,116 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
    * - Event ID
      - Event Name
      - Description
-     - Actions
    * - 0
      - NONE
      - No event
-     - Do nothing
    * - 1
      - BOOTSTRAP_REG_FAILURE
      - Bootstrap registration failed.
        Occurs if there is a timeout or failure in bootstrap registration.
-     - Retry bootstrap
    * - 2
      - BOOTSTRAP_REG_COMPLETE
      - Bootstrap registration complete.
        Occurs after successful bootstrap registration.
-     - No actions needed
    * - 3
      - BOOTSTRAP_TRANSFER_COMPLETE
      - Bootstrap finish command received from the server.
-     - No actions needed, client proceeds to registration.
    * - 4
      - REGISTRATION_FAILURE
      - Registration to LwM2M server failed.
        Occurs if there is a failure in the registration.
-     - Retry registration
    * - 5
      - REGISTRATION_COMPLETE
      - Registration to LwM2M server successful.
        Occurs after a successful registration reply from the LwM2M server
        or when session resumption is used.
-     - No actions needed
    * - 6
      - REG_TIMEOUT
      - Registration or registration update timeout.
-       Occurs if there is a timeout during registration.
-       NOTE: If registration fails without a timeout,
-       a full registration is triggered automatically and
-       no registration update failure event is generated.
-     - No actions needed, client proceeds to re-registration automatically.
+       Occurs if there is a timeout during registration. Client have lost connection to the server.
    * - 7
      - REG_UPDATE_COMPLETE
      - Registration update completed.
        Occurs after successful registration update reply from the LwM2M server.
-     - No actions needed
    * - 8
      - DEREGISTER_FAILURE
      - Deregistration to LwM2M server failed.
        Occurs if there is a timeout or failure in the deregistration.
-     - No actions needed, client proceeds to idle state automatically.
    * - 9
      - DISCONNECT
-     - Disconnected from LwM2M server.
-       Occurs if there is a timeout during communication with server.
-       Also triggered after deregistration has been done.
-     - If connection is required, the application should restart the client.
+     - LwM2M client have de-registered from server and is now stopped.
+       Triggered only if the application have requested the client to stop.
    * - 10
      - QUEUE_MODE_RX_OFF
      - Used only in queue mode, not actively listening for incoming packets.
        In queue mode the client is not required to actively listen for the incoming packets
        after a configured time period.
-     - No actions needed
    * - 11
      - ENGINE_SUSPENDED
      - Indicate that client has now paused as a result of calling :c:func:`lwm2m_engine_pause`.
        State machine is no longer running and the handler thread is suspended.
        All timers are stopped so notifications are not triggered.
-     - Engine can be resumed by calling :c:func:`lwm2m_engine_resume`.
    * - 12
+     - SERVER_DISABLED
+     - Server have executed the disable command.
+       Client will deregister and stay idle for the disable period.
+   * - 13
      - NETWORK_ERROR
      - Sending messages to the network failed too many times.
-       If sending a message fails, it will be retried.
-       If the retry counter reaches its limits, this event will be triggered.
-     - No actions needed, client will do a re-registrate automatically.
+       Client cannot reach any servers or fallback to bootstrap.
+       LwM2M engine cannot recover and have stopped.
 
+The LwM2M client engine handles most of the state transitions automatically. The application
+needs to handle only the events that indicate that the client have stopped or is in a state
+where it cannot recover.
+
+.. list-table:: How application should react to events
+   :widths: auto
+   :header-rows: 1
+
+   * - Event Name
+     - How application should react
+   * - NONE
+     - Ignore the event.
+   * - BOOTSTRAP_REG_FAILURE
+     - Try to recover network connection. Then restart the client by calling :c:func:`lwm2m_rd_client_start`.
+       This might also indicate configuration issue.
+   * - BOOTSTRAP_REG_COMPLETE
+     - No actions needed
+   * - BOOTSTRAP_TRANSFER_COMPLETE
+     - No actions needed
+   * - REGISTRATION_FAILURE
+     - No actions needed
+   * - REGISTRATION_COMPLETE
+     - No actions needed.
+       Application can send or receive data.
+   * - REG_TIMEOUT
+     - No actions needed.
+       Client proceeds to re-registration automatically. Cannot send or receive data.
+   * - REG_UPDATE_COMPLETE
+     - No actions needed
+       Application can send or receive data.
+   * - DEREGISTER_FAILURE
+     - No actions needed, client proceeds to idle state automatically. Cannot send or receive data.
+   * - DISCONNECT
+     - Engine have stopped as a result of calling :c:func:`lwm2m_rd_client_stop`.
+       If connection is required, the application should restart the client by calling :c:func:`lwm2m_rd_client_start`.
+   * - QUEUE_MODE_RX_OFF
+     - No actions needed.
+       Application can send but cannot receive data.
+       Any data transmission will trigger a registration update.
+   * - ENGINE_SUSPENDED
+     - Engine can be resumed by calling :c:func:`lwm2m_engine_resume`.
+       Cannot send or receive data.
+   * - SERVER_DISABLED
+     - No actions needed, client will re-register once the disable period is over.
+       Cannot send or receive data.
+   * - NETWORK_ERROR
+     - Try to recover network connection. Then restart the client by calling :c:func:`lwm2m_rd_client_start`.
+       This might also indicate configuration issue.
+
+Sending of data in the table above refers to calling :c:func:`lwm2m_send_cb` or by writing into of of the observed resources where observation would trigger a notify message.
+Receiving of data refers to receiving read, write or execute operations from the server. Application can register callbacks for these operations.
 
 Configuring lifetime and activity period
 ****************************************
