@@ -92,3 +92,8 @@ tests:
       - atsamd20_xpro
       - atsamr21_xpro
       - atsame54_xpro
+  drivers.flash.common.gd32:
+    platform_allow:
+      - gd32vf103v_eval
+      - gd32a503v_eval
+      - gd32f470i_eval
