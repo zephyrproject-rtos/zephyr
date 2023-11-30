@@ -224,5 +224,13 @@
 				status = "disabled";
 			};
 		};
+
+		w1: w1@4003d000 {
+			compatible = "adi,max32-w1";
+			reg = <0x4003d000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 13>;
+			interrupts = <67 0>;
+			status = "disabled";
+		};
 	};
 };
