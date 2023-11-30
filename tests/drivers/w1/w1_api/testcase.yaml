@@ -7,6 +7,7 @@ common:
   platform_allow:
     - nucleo_g0b1re
     - nrf52840dk/nrf52840
+    - max32655evkit/max32655/m4
   integration_platforms:
     - nrf52840dk/nrf52840
 
