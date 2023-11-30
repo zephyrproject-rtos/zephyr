@@ -380,3 +380,33 @@ int bt_testlib_gatt_discover_characteristic(uint16_t *const result_value_handle,
 	__ASSERT_NO_MSG(ctx->att_err >= 0);
 	return ctx->att_err;
 }
+
+int bt_testlib_gatt_find_value_handle(struct bt_conn *conn, const struct bt_uuid *svc,
+				      const struct bt_uuid *chrc, uint16_t *chrc_value_handle)
+{
+	int err;
+	uint16_t svc_handle;
+	uint16_t svc_end_handle;
+	uint16_t chrc_end_handle;
+
+	err = bt_testlib_gatt_discover_primary(&svc_handle, &svc_end_handle, conn, svc, 1, 0xffff);
+
+	LOG_INF("svc_handle: %u, svc_end_handle: %u", svc_handle, svc_end_handle);
+
+	if (err) {
+		LOG_WRN("Failed to discover primary service %d", err);
+		return err;
+	}
+
+	err = bt_testlib_gatt_discover_characteristic(chrc_value_handle, &chrc_end_handle, NULL,
+						      conn, chrc, (svc_handle + 1), svc_end_handle);
+
+	LOG_INF("chrc_value_handle: %u, chrc_end_handle: %u", *chrc_value_handle, chrc_end_handle);
+
+	if (err) {
+		LOG_WRN("Failed to discover characteristic %d", err);
+		return err;
+	}
+
+	return 0;
+}

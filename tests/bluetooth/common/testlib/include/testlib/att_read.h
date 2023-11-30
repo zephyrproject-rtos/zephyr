@@ -41,4 +41,7 @@ int bt_testlib_gatt_discover_characteristic(uint16_t *const result_value_handle,
 					    const struct bt_uuid *uuid, uint16_t start_handle,
 					    uint16_t svc_end_handle);
 
+int bt_testlib_gatt_find_value_handle(struct bt_conn *conn, const struct bt_uuid *svc,
+				      const struct bt_uuid *chrc, uint16_t *chrc_value_handle);
+
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_ATT_READ_H_ */

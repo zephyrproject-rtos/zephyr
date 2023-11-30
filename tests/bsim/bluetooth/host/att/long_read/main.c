@@ -91,24 +91,6 @@ static struct bt_gatt_service svc = {
 	.attr_count = ARRAY_SIZE(attrs),
 };
 
-static void find_the_chrc(struct bt_conn *conn, uint16_t *chrc_value_handle)
-{
-	uint16_t svc_handle;
-	uint16_t svc_end_handle;
-	uint16_t chrc_end_handle;
-
-	EXPECT_ZERO(bt_testlib_gatt_discover_primary(&svc_handle, &svc_end_handle, conn, UUID_1, 1,
-						     0xffff));
-
-	LOG_INF("svc_handle: %u, svc_end_handle: %u", svc_handle, svc_end_handle);
-
-	EXPECT_ZERO(bt_testlib_gatt_discover_characteristic(chrc_value_handle, &chrc_end_handle,
-							    NULL, conn, UUID_2, (svc_handle + 1),
-							    svc_end_handle));
-
-	LOG_INF("chrc_value_handle: %u, chrc_end_handle: %u", *chrc_value_handle, chrc_end_handle);
-}
-
 static void bs_sync_all_log(char *log_msg)
 {
 	/* Everyone meets here. */
@@ -215,7 +197,7 @@ void the_test(void)
 
 	/* Perform discovery. */
 	if (central) {
-		find_the_chrc(conn, &chrc_value_handle);
+		bt_testlib_gatt_find_value_handle(conn, UUID_1, UUID_2, &chrc_value_handle);
 	}
 
 	bs_sync_all_log("Testing UATT");
