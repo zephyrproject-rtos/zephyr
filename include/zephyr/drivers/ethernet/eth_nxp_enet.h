@@ -29,27 +29,37 @@ extern "C" {
  * Interrupt enable: The driver's relevant interrupt was enabled in NVIC
  */
 enum nxp_enet_callback_reason {
-	nxp_enet_module_reset,
-	nxp_enet_interrupt,
-	nxp_enet_interrupt_enabled,
+	NXP_ENET_MODULE_RESET,
+	NXP_ENET_INTERRUPT,
+	NXP_ENET_INTERRUPT_ENABLED,
 };
 
-struct nxp_enet_ptp_data_for_mac {
-	struct k_mutex *ptp_mutex;
+enum nxp_enet_driver {
+	NXP_ENET_MAC,
+	NXP_ENET_MDIO,
+	NXP_ENET_PTP_CLOCK,
 };
 
-union nxp_enet_ptp_data {
-	struct nxp_enet_ptp_data_for_mac for_mac;
-};
-
-/* Calback for mdio device called from mac driver */
-void nxp_enet_mdio_callback(const struct device *mdio_dev,
-		enum nxp_enet_callback_reason event);
-
-void nxp_enet_ptp_clock_callback(const struct device *dev,
+extern void nxp_enet_mdio_callback(const struct device *mdio_dev,
 		enum nxp_enet_callback_reason event,
-		union nxp_enet_ptp_data *ptp_data);
+		void *data);
 
+extern void nxp_enet_ptp_clock_callback(const struct device *dev,
+		enum nxp_enet_callback_reason event,
+		void *data);
+
+/*
+ * Internal implementation, inter-driver communication function
+ *
+ * dev: target device to call back
+ * dev_type: which driver to call back
+ * event: reason/cause of callback
+ * data: opaque data, will be interpreted based on reason and target driver
+ */
+extern void nxp_enet_driver_cb(const struct device *dev,
+				enum nxp_enet_driver dev_type,
+				enum nxp_enet_callback_reason event,
+				void *data);
 
 #ifdef __cplusplus
 }
