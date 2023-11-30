@@ -19,6 +19,10 @@ endif()
 
 board_runner_args(pyocd "--target=lpc55s69")
 
+if(CONFIG_BUILD_WITH_TFM)
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
