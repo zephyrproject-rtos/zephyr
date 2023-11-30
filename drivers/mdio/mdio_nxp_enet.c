@@ -62,7 +62,7 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 		 * ethernet driver has not initiaized, just do a busy wait
 		 */
 		k_busy_wait(USEC_PER_MSEC * config->timeout);
-		if (base->EIR && ENET_EIR_MII_MASK == ENET_EIR_MII_MASK) {
+		if (base->EIR & ENET_EIR_MII_MASK) {
 			ret = 0;
 		} else {
 			ret = -ETIMEDOUT;
@@ -70,7 +70,7 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 	} else if (k_sem_take(&data->mdio_sem, K_MSEC(config->timeout))) {
 		/* Interrupt was enabled but did not occur in time */
 		ret = -ETIMEDOUT;
-	} else if (base->EIR && ENET_EIR_MII_MASK == ENET_EIR_MII_MASK) {
+	} else if (base->EIR & ENET_EIR_MII_MASK) {
 		/* Interrupt happened meaning mdio transaction completed */
 		ret = 0;
 	} else {
