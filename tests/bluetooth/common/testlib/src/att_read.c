@@ -39,13 +39,6 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
-	if (read_data == NULL) {
-		__ASSERT_NO_MSG(ctx->long_read);
-		k_condvar_signal(&ctx->done);
-		k_mutex_unlock(&ctx->lock);
-		return BT_GATT_ITER_STOP;
-	}
-
 	ctx->att_err = att_err;
 
 	if (!att_err && ctx->result_handle) {
@@ -60,7 +53,7 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 		}
 	}
 
-	if (!att_err && ctx->result_data) {
+	if (read_data && ctx->result_data) {
 		uint16_t result_data_size =
 			MIN(read_len, net_buf_simple_tailroom(ctx->result_data));
 
@@ -71,7 +64,7 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 		*ctx->att_mtu = params->_att_mtu;
 	}
 
-	if (ctx->long_read) {
+	if (ctx->long_read && read_data) {
 		/* Don't signal `&ctx->done` */
 		k_mutex_unlock(&ctx->lock);
 		return BT_GATT_ITER_CONTINUE;
