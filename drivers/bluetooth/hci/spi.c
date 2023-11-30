@@ -243,22 +243,20 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	return bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
 }
 
-int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
+static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
 {
 	int ret;
-	const bt_addr_t addr = params->public_addr;
+	const bt_addr_t *addr = &params->public_addr;
 
-	if (bt_addr_eq(&addr, BT_ADDR_NONE) || bt_addr_eq(&addr, BT_ADDR_ANY)) {
-		return -EINVAL;
-	}
+	if (!bt_addr_eq(addr, BT_ADDR_NONE) && !bt_addr_eq(addr, BT_ADDR_ANY)) {
+		ret = bt_spi_send_aci_config(
+			BLUENRG_CONFIG_PUBADDR_OFFSET,
+			addr->val, sizeof(addr->val));
 
-	ret = bt_spi_send_aci_config(
-		BLUENRG_CONFIG_PUBADDR_OFFSET,
-		addr.val, sizeof(addr.val));
-
-	if (ret != 0) {
-		LOG_ERR("Failed to set BlueNRG public address (%d)", ret);
-		return ret;
+		if (ret != 0) {
+			LOG_ERR("Failed to set BlueNRG public address (%d)", ret);
+			return ret;
+		}
 	}
 
 	return 0;
