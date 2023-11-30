@@ -19,6 +19,8 @@
 	clock-frequency = <DT_FREQ_K(80)>;
 };
 
+/delete-node/ &w1;
+
 /* MAX32670 extra peripherals. */
 / {
 	soc {
