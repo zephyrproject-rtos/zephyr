@@ -95,13 +95,21 @@ static struct lwm2m_engine_res_inst
 
 static int disable_cb(uint16_t obj_inst_id, uint8_t *args, uint16_t args_len)
 {
-	int i;
+	ARG_UNUSED(args);
+	ARG_UNUSED(args_len);
 
-	LOG_DBG("DISABLE %d", obj_inst_id);
-	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
+	int ret;
+
+	for (int i = 0; i < MAX_INSTANCE_COUNT; i++) {
 		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
-			disabled_until[i] = sys_timepoint_calc(K_SECONDS(disabled_timeout[i]));
-			return 0;
+			LOG_DBG("DISABLE %d", obj_inst_id);
+			ret = lwm2m_rd_client_server_disabled(obj_inst_id);
+			if (ret == 0) {
+				disabled_until[i] =
+					sys_timepoint_calc(K_SECONDS(disabled_timeout[i]));
+				return 0;
+			}
+			return ret;
 		}
 	}
 

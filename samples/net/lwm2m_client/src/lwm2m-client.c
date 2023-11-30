@@ -191,6 +191,10 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		/* do nothing */
 		break;
 
+	case LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED:
+		LOG_DBG("LwM2M server disabled");
+		break;
+
 	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE:
 		LOG_DBG("Bootstrap registration failure!");
 		break;

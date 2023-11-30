@@ -59,6 +59,8 @@ DECLARE_FAKE_VALUE_FUNC(int, lwm2m_socket_close, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_close_socket, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_socket_suspend, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_inst_id_to_index, uint16_t);
+DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_short_id_to_inst, uint16_t);
+DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_index_to_inst_id, int);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_engine_connection_resume, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_push_queued_buffers, struct lwm2m_ctx *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_engine_context_init, struct lwm2m_ctx *);
@@ -68,10 +70,15 @@ DECLARE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(char *, lwm2m_sprint_ip_addr, const struct sockaddr *);
 char *lwm2m_sprint_ip_addr_fake_default(const struct sockaddr *addr);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_server_short_id_to_inst, uint16_t);
-DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_index_to_inst_id, int);
+DECLARE_FAKE_VALUE_FUNC(int, lwm2m_server_disable, uint16_t, k_timeout_t);
+DECLARE_FAKE_VALUE_FUNC(uint8_t, lwm2m_server_get_prio, uint16_t);
+DECLARE_FAKE_VOID_FUNC(lwm2m_server_reset_timestamps);
+
+
 void wait_for_service(uint16_t cycles);
 void test_lwm2m_engine_start_service(void);
 void test_lwm2m_engine_stop_service(void);
+void stub_lwm2m_server_disable(bool disable);
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h  */
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_init_message, struct lwm2m_message *);

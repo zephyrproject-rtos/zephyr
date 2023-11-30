@@ -116,6 +116,24 @@ char *lwm2m_sprint_ip_addr_fake_default(const struct sockaddr *addr)
 
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_server_short_id_to_inst, uint16_t);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_index_to_inst_id, int);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_short_id_to_inst, uint16_t);
+DEFINE_FAKE_VALUE_FUNC(int, lwm2m_server_disable, uint16_t, k_timeout_t);
+DEFINE_FAKE_VALUE_FUNC(uint8_t, lwm2m_server_get_prio, uint16_t);
+DEFINE_FAKE_VOID_FUNC(lwm2m_server_reset_timestamps);
+
+static bool srv_disabled;
+bool lwm2m_server_select(uint16_t *obj_inst_id)
+{
+	if (obj_inst_id) {
+		*obj_inst_id = 0;
+	}
+	return !srv_disabled;
+}
+
+void stub_lwm2m_server_disable(bool disable)
+{
+	srv_disabled = disable;
+}
 
 k_work_handler_t service;
 int64_t next;
@@ -177,9 +195,13 @@ void test_lwm2m_engine_start_service(void)
 
 void test_lwm2m_engine_stop_service(void)
 {
+	struct k_work_sync sync;
+
 	pending_message_cb = NULL;
+	pending_message = NULL;
 	running = false;
 	k_work_cancel(&service_work);
+	k_work_flush(&service_work, &sync);
 }
 
 /* subsys/net/lib/lwm2m/lwm2m_message_handling.h */
