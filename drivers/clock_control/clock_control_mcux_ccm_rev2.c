@@ -17,6 +17,11 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_ccm_on(const struct device *dev,
 				  clock_control_subsys_t sub_system)
 {
+#ifdef CONFIG_ETH_NXP_ENET
+	if ((uint32_t)sub_system == IMX_CCM_ENET_CLK) {
+		CLOCK_EnableClock(kCLOCK_Enet);
+	}
+#endif
 	return 0;
 }
 
