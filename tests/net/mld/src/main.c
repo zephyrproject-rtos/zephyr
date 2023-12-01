@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/socket.h>
 
 #include <zephyr/random/random.h>
 
@@ -587,6 +588,90 @@ ZTEST(net_mld_test_suite, test_no_mld_flag)
 	zassert_false(is_leave_msg_ok, "Received leave message when not expected");
 
 	net_if_flag_clear(net_iface, NET_IF_IPV6_NO_MLD);
+}
+
+static void socket_group_with_index(const struct in6_addr *local_addr, bool do_join)
+{
+	struct ipv6_mreq mreq = { 0 };
+	int option;
+	int ret, fd;
+
+	if (do_join) {
+		option = IPV6_ADD_MEMBERSHIP;
+	} else {
+		option = IPV6_DROP_MEMBERSHIP;
+	}
+
+	fd = zsock_socket(AF_INET6, SOCK_DGRAM, 0);
+	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
+
+	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+			       NULL, sizeof(mreq));
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+			       (void *)&mreq, 1);
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	/* First try with empty mreq */
+	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+			       (void *)&mreq, sizeof(mreq));
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	mreq.ipv6mr_ifindex = net_if_ipv6_addr_lookup_by_index(local_addr);
+	memcpy(&mreq.ipv6mr_multiaddr, &mcast_addr,
+	       sizeof(mreq.ipv6mr_multiaddr));
+
+	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+			       (void *)&mreq, sizeof(mreq));
+
+	if (do_join) {
+		if (ignore_already) {
+			zassert_true(ret == 0 || ret == -EALREADY,
+				     "Cannot join IPv6 multicast group (%d)",
+				     -errno);
+		} else {
+			zassert_equal(ret, 0,
+				      "Cannot join IPv6 multicast group (%d)",
+				      -errno);
+		}
+	} else {
+		zassert_equal(ret, 0, "Cannot leave IPv6 multicast group (%d)",
+			      -errno);
+
+		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+			/* Let the network stack to proceed */
+			k_msleep(THREAD_SLEEP);
+		} else {
+			k_yield();
+		}
+	}
+
+	zsock_close(fd);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+}
+
+static void socket_join_group_with_index(const struct in6_addr *addr)
+{
+	socket_group_with_index(addr, true);
+}
+
+static void socket_leave_group_with_index(const struct in6_addr *addr)
+{
+	socket_group_with_index(addr, false);
+}
+
+ZTEST_USER(net_mld_test_suite, test_socket_catch_join_with_index)
+{
+	socket_join_group_with_index(net_ipv6_unspecified_address());
+	socket_leave_group_with_index(net_ipv6_unspecified_address());
+	socket_join_group_with_index(&my_addr);
+	socket_leave_group_with_index(&my_addr);
 }
 
 ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, NULL, NULL, NULL);
