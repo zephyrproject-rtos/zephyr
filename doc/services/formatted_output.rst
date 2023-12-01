@@ -180,6 +180,10 @@ Limitations and recommendations
   static packaging is possible and it will append all detected strings. Character pointer
   used for ``%p`` will be considered as string pointer. Copying from unexpected location
   can have serious consequences (e.g., memory fault or security violation).
+* Packaging does not support string with precision specifier, e.g. ``%.10s``. That is because
+  packaging looks only at argument types. Using this parameter will result in appending
+  whole string to the message (until null termination) which may lead to exceeded message
+  size or fault if string is not null terminated.
 
 API Reference
 *************
