@@ -17,6 +17,7 @@ import tempfile
 import traceback
 import shlex
 import shutil
+import textwrap
 
 from yamllint import config, linter
 
@@ -1176,13 +1177,28 @@ class KeepSorted(ComplianceTest):
 
     MARKER = "zephyr-keep-sorted"
 
+    def block_is_sorted(self, block_data):
+        lines = []
+
+        for line in textwrap.dedent(block_data).splitlines():
+            if len(lines) > 0 and line.startswith((" ", "\t")):
+                # Fold back indented lines
+                lines[-1] += line.strip()
+            else:
+                lines.append(line.strip())
+
+        if lines != sorted(lines):
+            return False
+
+        return True
+
     def check_file(self, file, fp):
         mime_type = magic.from_file(file, mime=True)
 
         if not mime_type.startswith("text/"):
             return
 
-        lines = []
+        block_data = ""
         in_block = False
 
         start_marker = f"{self.MARKER}-start"
@@ -1195,7 +1211,7 @@ class KeepSorted(ComplianceTest):
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
                                      desc=desc)
                 in_block = True
-                lines = []
+                block_data = ""
             elif stop_marker in line:
                 if not in_block:
                     desc = f"{stop_marker} without {start_marker}"
@@ -1203,18 +1219,15 @@ class KeepSorted(ComplianceTest):
                                      desc=desc)
                 in_block = False
 
-                if lines != sorted(lines):
+                if not self.block_is_sorted(block_data):
                     desc = f"sorted block is not sorted"
                     self.fmtd_failure("error", "KeepSorted", file, line_num,
-                                     desc=desc)
+                                      desc=desc)
             elif not line.strip() or line.startswith("#"):
                 # Ignore comments and blank lines
                 continue
             elif in_block:
-                if line.startswith((" ", "\t")):
-                    lines[-1] += line
-                else:
-                    lines.append(line)
+                block_data += line
 
         if in_block:
             self.failure(f"unterminated {start_marker} in {file}")
