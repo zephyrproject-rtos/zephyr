@@ -478,21 +478,30 @@ harness_config: <harness configuration options>
     type: <one_line|multi_line> (required)
         Depends on the regex string to be matched
 
-
-    record: <recording options>
-      regex: <expression> (required)
-        Any string that the particular test case prints to record test
-        results.
-
-    regex: <expression> (required)
-        Any string that the particular test case prints to confirm test
-        runs as expected.
+    regex: <list of regular expressions> (required)
+        Strings with regular expressions to match with the test's output
+        to confirm the test runs as expected.
 
     ordered: <True|False> (default False)
         Check the regular expression strings in orderly or randomly fashion
 
     repeat: <integer>
         Number of times to validate the repeated regex expression
+
+    record: <recording options> (optional)
+      regex: <regular expression> (required)
+        The regular experssion with named subgroups to match data fields
+        at the test's output lines where the test provides some custom data
+        for further analysis. These records will be written into the build
+        directory 'recording.csv' file as well as 'recording' property
+        of the test suite object in 'twister.json'.
+
+        For example, to extract three data fields 'metric', 'cycles', 'nanoseconds':
+
+        .. code-block:: yaml
+
+          record:
+            regex: "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
 
     fixture: <expression>
         Specify a test case dependency on an external device(e.g., sensor),

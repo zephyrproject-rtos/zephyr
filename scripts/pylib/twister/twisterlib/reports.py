@@ -347,6 +347,10 @@ class Reporting:
                 testcases.append(testcase)
 
             suite['testcases'] = testcases
+
+            if instance.recording is not None:
+                suite['recording'] = instance.recording
+
             suites.append(suite)
 
         report["testsuites"] = suites

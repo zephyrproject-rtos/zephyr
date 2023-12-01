@@ -209,40 +209,35 @@ def test_handler_record(mocked_instance):
     instance.testcases = [mock.Mock()]
 
     handler = Handler(instance)
-    handler.suite_name_check = True
 
-    harness = twisterlib.harness.Test()
-    harness.recording = ['dummy recording']
-    type(harness).fieldnames = mock.PropertyMock(return_value=[])
-
-    mock_writerow = mock.Mock()
-    mock_writer = mock.Mock(writerow=mock_writerow)
+    harness = twisterlib.harness.Harness()
+    harness.recording = [ {'field_1':  'recording_1_1', 'field_2': 'recording_1_2'},
+                          {'field_1':  'recording_2_1', 'field_2': 'recording_2_2'}
+                        ]
 
     with mock.patch(
         'builtins.open',
         mock.mock_open(read_data='')
     ) as mock_file, \
-         mock.patch(
-        'csv.writer',
-        mock.Mock(return_value=mock_writer)
-    ) as mock_writer_constructor:
+        mock.patch(
+        'csv.DictWriter.writerow',
+        mock.Mock()
+    ) as mock_writeheader, \
+        mock.patch(
+        'csv.DictWriter.writerows',
+        mock.Mock()
+    ) as mock_writerows:
         handler.record(harness)
+
+    print(mock_file.mock_calls)
 
     mock_file.assert_called_with(
         os.path.join(instance.build_dir, 'recording.csv'),
         'at'
     )
 
-    mock_writer_constructor.assert_called_with(
-        mock_file(),
-        harness.fieldnames,
-        lineterminator=os.linesep
-    )
-
-    mock_writerow.assert_has_calls(
-        [mock.call(harness.fieldnames)] + \
-        [mock.call(recording) for recording in harness.recording]
-    )
+    mock_writeheader.assert_has_calls([mock.call({ k:k for k in harness.recording[0].keys()})])
+    mock_writerows.assert_has_calls([mock.call(harness.recording)])
 
 
 def test_handler_terminate(mocked_instance):
