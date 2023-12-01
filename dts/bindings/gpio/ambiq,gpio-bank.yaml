@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq GPIO bank node
+
+compatible: "ambiq,gpio-bank"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      This property indicates the register address offset of each GPIO child node
+      under the "ambiq,gpio" parent node. The register address of pin described in
+      gpio-cells can be obtained by: base address + child address offset + (pin << 2).
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
