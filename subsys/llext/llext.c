@@ -11,6 +11,7 @@
 #include <zephyr/llext/loader.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
@@ -775,6 +776,15 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 			arch_elf_relocate(&rel, op_loc, link_addr);
 		}
 	}
+
+#ifdef CONFIG_CACHE_MANAGEMENT
+	/* Make sure changes to ext sections are flushed to RAM */
+	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
+		if (ext->mem[i]) {
+			arch_dcache_flush_range(ext->mem[i], ext->mem_size[i]);
+		}
+	}
+#endif
 
 	return 0;
 }
