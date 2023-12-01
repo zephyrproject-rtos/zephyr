@@ -1355,6 +1355,17 @@ static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			      struct bt_le_per_adv_sync_synced_info *info)
 {
 	LOG_DBG("");
+
+	if (sync == pa_sync) {
+		struct btp_gap_ev_periodic_sync_established_ev ev;
+
+		bt_addr_le_copy(&ev.address, info->addr);
+		ev.sync_handle = sys_cpu_to_le16(sync->handle);
+		ev.status = 0;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_ESTABLISHED,
+			     &ev, sizeof(ev));
+	}
 }
 
 static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
@@ -1363,8 +1374,16 @@ static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 	LOG_DBG("");
 
 	if (sync == pa_sync) {
+		struct btp_gap_ev_periodic_sync_lost_ev ev;
+
 		LOG_DBG("PA sync lost with reason %u", info->reason);
 		pa_sync = NULL;
+
+		ev.sync_handle = sys_cpu_to_le16(sync->handle);
+		ev.reason = info->reason;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_LOST,
+			     &ev, sizeof(ev));
 	}
 }
 
