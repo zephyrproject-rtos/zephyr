@@ -10,7 +10,6 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/symbol.h>
-#include <zephyr/llext/loader.h>
 #include <sys/types.h>
 #include <stdbool.h>
 
@@ -26,7 +25,7 @@ extern "C" {
  */
 
 /**
- * @brief Enum of memory regions for lookup tables
+ * @brief List of ELF regions that are stored or referenced in the llext
  */
 enum llext_mem {
 	LLEXT_MEM_TEXT,
@@ -40,6 +39,8 @@ enum llext_mem {
 
 	LLEXT_MEM_COUNT,
 };
+
+struct llext_loader;
 
 /**
  * @brief Linkable loadable extension
@@ -55,7 +56,7 @@ struct llext {
 	/** Lookup table of llext memory regions */
 	void *mem[LLEXT_MEM_COUNT];
 
-	/** Memory allocated on heap */
+	/** Is the memory for this section allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
 
 	/** Size of each stored section */
