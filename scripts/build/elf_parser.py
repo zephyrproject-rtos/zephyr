@@ -283,6 +283,6 @@ class ZephyrElf:
                 )
             dot.node(str(dev.ordinal), text)
         for dev in self.devices:
-            for sup in dev.devs_supports:
+            for sup in sorted(dev.devs_supports):
                 dot.edge(str(dev.ordinal), str(sup.ordinal))
         return dot
