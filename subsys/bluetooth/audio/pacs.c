@@ -67,6 +67,16 @@ enum {
 static struct pacs_client {
 	bt_addr_le_t addr;
 
+#if defined(CONFIG_BT_PAC_SNK)
+	/* Sink Available Contexts override value */
+	uint16_t *snk_available_contexts;
+#endif /* CONFIG_BT_PAC_SNK */
+
+#if defined(CONFIG_BT_PAC_SRC)
+	/* Source Available Contexts override value */
+	uint16_t *src_available_contexts;
+#endif /* CONFIG_BT_PAC_SRC */
+
 	/* Pending notification flags */
 	ATOMIC_DEFINE(flags, FLAG_NUM);
 } clients[CONFIG_BT_MAX_PAIRED];
@@ -197,8 +207,10 @@ static ssize_t available_contexts_read(struct bt_conn *conn,
 				       uint16_t len, uint16_t offset)
 {
 	struct bt_pacs_context context = {
-		.snk = sys_cpu_to_le16(snk_available_contexts),
-		.src = sys_cpu_to_le16(src_available_contexts),
+		.snk = sys_cpu_to_le16(
+				bt_pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SINK)),
+		.src = sys_cpu_to_le16(
+				bt_pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SOURCE)),
 	};
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
@@ -336,17 +348,6 @@ static void snk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 #endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
-
-static inline int set_snk_available_contexts(uint16_t contexts)
-{
-	return set_available_contexts(contexts, &snk_available_contexts,
-				      snk_supported_contexts);
-}
-#else
-static inline int set_snk_available_contexts(uint16_t contexts)
-{
-	return -ENOTSUP;
-}
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SNK_LOC)
@@ -452,17 +453,6 @@ static void src_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("attr %p value 0x%04x", attr, value);
 }
 #endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
-
-static inline int set_src_available_contexts(uint16_t contexts)
-{
-	return set_available_contexts(contexts, &src_available_contexts,
-				      src_supported_contexts);
-}
-#else
-static inline int set_src_available_contexts(uint16_t contexts)
-{
-	return -ENOTSUP;
-}
 #endif /* CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SRC_LOC)
@@ -730,8 +720,10 @@ static int pac_notify(struct bt_conn *conn, enum bt_audio_dir dir)
 static int available_contexts_notify(struct bt_conn *conn)
 {
 	struct bt_pacs_context context = {
-		.snk = sys_cpu_to_le16(snk_available_contexts),
-		.src = sys_cpu_to_le16(src_available_contexts),
+		.snk = sys_cpu_to_le16(
+				bt_pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SINK)),
+		.src = sys_cpu_to_le16(
+				bt_pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SOURCE)),
 	};
 	int err;
 
@@ -961,27 +953,49 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 	}
 }
 
+static void pacs_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	struct pacs_client *client;
+
+	client = client_lookup_conn(conn);
+	if (client == NULL) {
+		return;
+	}
+
+#if defined(CONFIG_BT_PAC_SNK)
+	if (client->snk_available_contexts != NULL) {
+		uint16_t old = POINTER_TO_UINT(client->snk_available_contexts);
+		uint16_t new;
+
+		client->snk_available_contexts = NULL;
+		new = bt_pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SINK);
+
+		atomic_set_bit_to(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED, old != new);
+	}
+#endif /* CONFIG_BT_PAC_SNK */
+
+#if defined(CONFIG_BT_PAC_SRC)
+	if (client->src_available_contexts != NULL) {
+		uint16_t old = POINTER_TO_UINT(client->src_available_contexts);
+		uint16_t new;
+
+		client->src_available_contexts = NULL;
+		new = bt_pacs_get_available_contexts_for_conn(conn, BT_AUDIO_DIR_SOURCE);
+
+		atomic_set_bit_to(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED, old != new);
+	}
+#endif /* CONFIG_BT_PAC_SRC */
+}
+
 static struct bt_conn_cb conn_callbacks = {
 	.security_changed = pacs_security_changed,
+	.disconnected = pacs_disconnected,
 };
 
 static struct bt_conn_auth_info_cb auth_callbacks = {
 	.pairing_complete = pacs_auth_pairing_complete,
 	.bond_deleted = pacs_bond_deleted
 };
-
-bool bt_pacs_context_available(enum bt_audio_dir dir, uint16_t context)
-{
-	if (dir == BT_AUDIO_DIR_SOURCE) {
-		return (context & src_available_contexts) == context;
-	}
-
-	if (dir == BT_AUDIO_DIR_SINK) {
-		return (context & snk_available_contexts) == context;
-	}
-
-	return false;
-}
 
 void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func, void *user_data)
 {
@@ -1122,12 +1136,73 @@ int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context 
 {
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
-		return set_snk_available_contexts(contexts);
+		return set_available_contexts(contexts, &snk_available_contexts,
+					      supported_context_get(dir));
 	case BT_AUDIO_DIR_SOURCE:
-		return set_src_available_contexts(contexts);
+		return set_available_contexts(contexts, &src_available_contexts,
+					      supported_context_get(dir));
 	}
 
 	return -EINVAL;
+}
+
+int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_audio_dir dir,
+						 enum bt_audio_context *contexts)
+{
+	enum bt_audio_context old = bt_pacs_get_available_contexts_for_conn(conn, dir);
+	struct bt_conn_info info = { 0 };
+	struct pacs_client *client;
+	int err;
+
+	client = client_lookup_conn(conn);
+	if (client == NULL) {
+		return -ENOENT;
+	}
+
+	err = bt_conn_get_info(conn, &info);
+	if (err < 0) {
+		LOG_ERR("Could not get conn info: %d", err);
+		return err;
+	}
+
+	switch (dir) {
+#if defined(CONFIG_BT_PAC_SNK)
+	case BT_AUDIO_DIR_SINK:
+		if (contexts != NULL) {
+			client->snk_available_contexts = UINT_TO_POINTER(*contexts);
+		} else {
+			client->snk_available_contexts = NULL;
+		}
+
+		break;
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SRC)
+	case BT_AUDIO_DIR_SOURCE:
+		if (contexts != NULL) {
+			client->src_available_contexts = UINT_TO_POINTER(*contexts);
+		} else {
+			client->src_available_contexts = NULL;
+		}
+
+		break;
+#endif /* CONFIG_BT_PAC_SRC */
+	default:
+		return -EINVAL;
+	}
+
+	if (bt_pacs_get_available_contexts_for_conn(conn, dir) == old) {
+		/* No change. Skip notification */
+		return 0;
+	}
+
+	atomic_set_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED);
+
+	/* Send notification on encrypted link only */
+	if (info.security.level > BT_SECURITY_L1) {
+		k_work_submit(&deferred_nfy_work);
+	}
+
+	return 0;
 }
 
 int bt_pacs_set_supported_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
@@ -1171,4 +1246,40 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 	}
 
 	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+}
+
+enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
+							      enum bt_audio_dir dir)
+{
+	const struct pacs_client *client;
+
+	CHECKIF(conn == NULL) {
+		LOG_ERR("NULL conn");
+		return -EINVAL;
+	}
+
+	client = client_lookup_conn(conn);
+	if (client == NULL) {
+		LOG_ERR("No client context for conn %p", (void *)conn);
+		return bt_pacs_get_available_contexts(dir);
+	}
+
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+#if defined(CONFIG_BT_PAC_SNK)
+		if (client->snk_available_contexts != NULL) {
+			return POINTER_TO_UINT(client->snk_available_contexts);
+		}
+#endif /* CONFIG_BT_PAC_SNK */
+		break;
+	case BT_AUDIO_DIR_SOURCE:
+#if defined(CONFIG_BT_PAC_SRC)
+		if (client->src_available_contexts != NULL) {
+			return POINTER_TO_UINT(client->src_available_contexts);
+		}
+#endif /* CONFIG_BT_PAC_SRC */
+		break;
+	}
+
+	return bt_pacs_get_available_contexts(dir);
 }

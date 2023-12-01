@@ -96,6 +96,37 @@ int bt_pacs_set_available_contexts(enum bt_audio_dir dir,
  */
 enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir);
 
+/** @brief Set the available contexts for a given connection
+ *
+ * This function sets the available contexts value for a given @p conn connection object.
+ * If the @p contexts parameter is NULL the available contexts value is reset to default.
+ * The default value of the available contexts is set using @ref bt_pacs_set_available_contexts
+ * function.
+ * The Available Context Value is reset to default on ACL disconnection.
+ *
+ * @param conn     Connection object.
+ * @param dir      Direction of the endpoints to change available contexts for.
+ * @param contexts The contexts to be set or NULL to reset to default.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_audio_dir dir,
+						 enum bt_audio_context *contexts);
+
+/** @brief Get the available contexts for a given connection
+ *
+ * This server function returns the available contexts value for a given @p conn connection object.
+ * The value returned is the one set with @ref bt_pacs_conn_set_available_contexts_for_conn function
+ * or the default value set with @ref bt_pacs_set_available_contexts function.
+ *
+ * @param conn     Connection object.
+ * @param dir      Direction of the endpoints to get contexts for.
+ *
+ * @return Bitmask of available contexts.
+ */
+enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
+							      enum bt_audio_dir dir);
+
 /** @brief Set the supported contexts for an endpoint type
  *
  * @param dir      Direction of the endpoints to change available contexts for.
