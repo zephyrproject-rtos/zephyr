@@ -81,9 +81,20 @@ static void llext_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->syntax = cmd.ext ? cmd.ext->name : NULL;
 	entry->help = NULL;
 	entry->subcmd = NULL;
+	entry->handler = NULL;
+	entry->args.mandatory = 0;
+	entry->args.optional = 0;
 }
-
 SHELL_DYNAMIC_CMD_CREATE(msub_llext_name, llext_name_get);
+
+static void llext_name_arg_get(size_t idx, struct shell_static_entry *entry)
+{
+	llext_name_get(idx, entry);
+	if (entry->syntax) {
+		entry->args.mandatory = 1;
+	}
+}
+SHELL_DYNAMIC_CMD_CREATE(msub_llext_name_arg, llext_name_arg_get);
 
 struct llext_shell_list {
 	const struct shell *sh;
@@ -175,12 +186,11 @@ static int cmd_llext_call_fn(const struct shell *sh, size_t argc, char *argv[])
 /* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_llext,
 	SHELL_CMD(list, NULL, LLEXT_LIST_HELP, cmd_llext_list),
-	SHELL_CMD_ARG(load_hex, NULL, LLEXT_LOAD_HEX_HELP, cmd_llext_load_hex,
-		3, 0),
+	SHELL_CMD_ARG(load_hex, NULL, LLEXT_LOAD_HEX_HELP, cmd_llext_load_hex, 3, 0),
 	SHELL_CMD_ARG(unload, &msub_llext_name, LLEXT_UNLOAD_HELP, cmd_llext_unload, 2, 0),
 	SHELL_CMD_ARG(list_symbols, &msub_llext_name, LLEXT_LIST_SYMBOLS_HELP,
 		      cmd_llext_list_symbols, 2, 0),
-	SHELL_CMD_ARG(call_fn, &msub_llext_name, LLEXT_CALL_FN_HELP,
+	SHELL_CMD_ARG(call_fn, &msub_llext_name_arg, LLEXT_CALL_FN_HELP,
 		      cmd_llext_call_fn, 3, 0),
 
 	SHELL_SUBCMD_SET_END
