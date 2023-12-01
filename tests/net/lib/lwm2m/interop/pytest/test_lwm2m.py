@@ -171,6 +171,7 @@ def verify_setting_basic_in_format(shell, leshan, endpoint, format):
     verify_server_object(server_obj)
     # Remove Read-Only resources, so we don't end up writing those
     del server_obj[0][0]
+    del server_obj[0][13]
     data = {
         2: 101,
         3: 1010,
@@ -208,7 +209,7 @@ def test_LightweightM2M_1_1_int_222(shell: Shell, leshan: Leshan, endpoint: str)
     """LightweightM2M-1.1-int-222 - Read on Object"""
     resp = leshan.read(endpoint, '1')
     assert len(resp) == 1
-    assert len(resp[1][0]) == 9
+    assert len(resp[1][0]) == 11
     resp = leshan.read(endpoint, '3')
     assert len(resp) == 1
     assert len(resp[3]) == 1
@@ -218,7 +219,7 @@ def test_LightweightM2M_1_1_int_222(shell: Shell, leshan: Leshan, endpoint: str)
 def test_LightweightM2M_1_1_int_223(shell: Shell, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-223 - Read on Object Instance"""
     resp = leshan.read(endpoint, '1/0')
-    assert len(resp[0]) == 9
+    assert len(resp[0]) == 11
     resp = leshan.read(endpoint, '3/0')
     assert len(resp[0]) == 15
     assert resp[0][0] == 'Zephyr'
@@ -282,7 +283,7 @@ def test_LightweightM2M_1_1_int_229(shell: Shell, leshan: Leshan, endpoint: str)
         assert resp[3] is not None
         assert resp[1][0] is not None
         assert len(resp[3][0]) == 15
-        assert len(resp[1][0]) == 9
+        assert len(resp[1][0]) == 11
 
         resp = leshan.composite_read(endpoint, ['1/0/1', '/3/0/11/0'])
         logger.debug(resp)
@@ -370,7 +371,7 @@ def test_LightweightM2M_1_1_int_234(shell: Shell, leshan: Leshan, endpoint: str)
 def test_LightweightM2M_1_1_int_235(leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-235 - Read-Composite Operation on root path"""
     resp = leshan.composite_read(endpoint, ['/'])
-    expected_keys = [16, 1, 3, 5]
+    expected_keys = [1, 3, 5]
     missing_keys = [key for key in expected_keys if key not in resp.keys()]
     assert len(missing_keys) == 0
 
