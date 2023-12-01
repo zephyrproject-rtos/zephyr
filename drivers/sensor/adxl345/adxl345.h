@@ -212,6 +212,10 @@ struct adxl345_dev_config {
 int adxl345_init_interrupt(const struct device *dev);
 int adxl345_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handle);
+
+int adxl345_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf);
+int adxl345_reg_write_mask(const struct device *dev, uint8_t reg_addr, uint32_t mask, uint8_t data);
+int adxl345_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_H_ */
