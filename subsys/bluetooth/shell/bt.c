@@ -1196,17 +1196,21 @@ static int cmd_appearance(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	uint16_t app;
-	int err;
+	int err = 0;
 	const char *val;
 
 	val = argv[1];
-	if (strlen(val) != 6 || strncmp(val, "0x", 2) ||
-	    !hex2bin(&val[2], strlen(&val[2]), ((uint8_t *)&app), sizeof(app))) {
+
+	if (strlen(val) != 6 || strncmp(val, "0x", 2)) {
 		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
 		return -EINVAL;
 	}
 
-	app = sys_be16_to_cpu(app);
+	app = shell_strtoul(val, 16, &err);
+	if (err) {
+		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
+		return -EINVAL;
+	}
 
 	err = bt_set_appearance(app);
 	if (err) {
