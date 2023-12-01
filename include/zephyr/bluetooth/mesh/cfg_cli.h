@@ -96,8 +96,8 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param buf       Message buffer containing subscription addresses.
 	 */
 	void (*mod_sub_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
-			       uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
-			       struct net_buf_simple *buf);
+			     uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
+			     struct net_buf_simple *buf);
 
 	/** @brief Optional callback for Node Reset Status messages.
 	 *
@@ -128,7 +128,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param status      Status Code for requesting message.
 	 */
 	void (*ttl_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
-				uint8_t status);
+			   uint8_t status);
 
 	/** @brief Optional callback for Friend Status messages.
 	 *
@@ -139,7 +139,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param status      Status Code for requesting message.
 	 */
 	void (*friend_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
-				uint8_t status);
+			      uint8_t status);
 
 	/** @brief Optional callback for GATT Proxy Status messages.
 	 *
@@ -150,7 +150,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param status      Status Code for requesting message.
 	 */
 	void (*gatt_proxy_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
-				uint8_t status);
+				  uint8_t status);
 
 	/** @brief Optional callback for Network Transmit Status messages.
 	 *
@@ -199,7 +199,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param buf	Message buffer containing key indexes.
 	 */
 	void (*net_key_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr,
-			    struct net_buf_simple *buf);
+			     struct net_buf_simple *buf);
 
 	/** @brief Optional callback for AppKey Status messages.
 	 *
@@ -229,7 +229,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param buf     Message buffer containing key indexes.
 	 */
 	void (*app_key_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
-			    uint16_t net_idx, struct net_buf_simple *buf);
+			     uint16_t net_idx, struct net_buf_simple *buf);
 
 	/** @brief Optional callback for Model App Status messages.
 	 *
@@ -262,8 +262,8 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param buf       Message buffer containing key indexes.
 	 */
 	void (*mod_app_list)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
-			       uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
-			       struct net_buf_simple *buf);
+			     uint16_t elem_addr, uint16_t mod_id, uint16_t cid,
+			     struct net_buf_simple *buf);
 
 	/** @brief Optional callback for Node Identity Status messages.
 	 *
@@ -326,7 +326,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param sub    HB subscription configuration parameters.
 	 */
 	void (*hb_sub_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr, uint8_t status,
-				 struct bt_mesh_cfg_cli_hb_sub *sub);
+			      struct bt_mesh_cfg_cli_hb_sub *sub);
 };
 
 /** Mesh Configuration Client Model Context */
