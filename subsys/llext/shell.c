@@ -93,7 +93,7 @@ static int llext_shell_list_cb(struct llext *ext, void *arg)
 {
 	struct llext_shell_list *sl = arg;
 
-	shell_print(sl->sh, "| %16s | %12d |", ext->name, ext->mem_size);
+	shell_print(sl->sh, "| %16s | %12d |", ext->name, ext->alloc_size);
 	return 0;
 }
 

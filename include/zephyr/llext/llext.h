@@ -58,8 +58,11 @@ struct llext {
 	/** Memory allocated on heap */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
 
-	/** Total size of the llext memory usage */
-	size_t mem_size;
+	/** Size of each stored section */
+	size_t mem_size[LLEXT_MEM_COUNT];
+
+	/** Total llext allocation size */
+	size_t alloc_size;
 
 	/*
 	 * These are all global symbols in the extension, all of them don't

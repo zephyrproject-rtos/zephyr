@@ -302,6 +302,7 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	if (!ldr->sects[sect_idx].sh_size) {
 		return 0;
 	}
+	ext->mem_size[mem_idx] = ldr->sects[sect_idx].sh_size;
 
 	if (ldr->sects[sect_idx].sh_type != SHT_NOBITS &&
 	    IS_ENABLED(CONFIG_LLEXT_STORAGE_WRITABLE)) {
@@ -318,7 +319,7 @@ static int llext_copy_section(struct llext_loader *ldr, struct llext *ext,
 	if (!ext->mem[mem_idx]) {
 		return -ENOMEM;
 	}
-	ext->mem_size += ldr->sects[sect_idx].sh_size;
+	ext->alloc_size += ldr->sects[sect_idx].sh_size;
 
 	if (ldr->sects[sect_idx].sh_type == SHT_NOBITS) {
 		memset(ext->mem[mem_idx], 0, ldr->sects[sect_idx].sh_size);
@@ -431,7 +432,7 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 		return -ENOMEM;
 	}
 	memset(sym_tab->syms, 0, syms_size);
-	ext->mem_size += syms_size;
+	ext->alloc_size += syms_size;
 
 	return 0;
 }
@@ -801,7 +802,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	memset(ldr->sect_map, 0, sect_map_sz);
 
 	ldr->sect_cnt = ldr->hdr.e_shnum;
-	ext->mem_size += sect_map_sz;
+	ext->alloc_size += sect_map_sz;
 
 	LOG_DBG("Finding ELF tables...");
 	ret = llext_find_tables(ldr);
