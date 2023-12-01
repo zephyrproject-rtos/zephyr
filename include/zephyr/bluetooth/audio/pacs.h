@@ -1,5 +1,5 @@
 /* @file
- * @brief Internal APIs for Audio Capabilities handling
+ * @brief APIs for Audio Capabilities handling
  *
  * Copyright (c) 2021 Intel Corporation
  * Copyright (c) 2021-2022 Nordic Semiconductor ASA
