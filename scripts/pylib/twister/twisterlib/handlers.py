@@ -100,12 +100,19 @@ class Handler:
 
     def record(self, harness):
         if harness.recording:
+            if self.instance.recording is None:
+                self.instance.recording = harness.recording.copy()
+            else:
+                self.instance.recording.extend(harness.recording)
+
             filename = os.path.join(self.build_dir, "recording.csv")
             with open(filename, "at") as csvfile:
-                cw = csv.writer(csvfile, harness.fieldnames, lineterminator=os.linesep)
-                cw.writerow(harness.fieldnames)
-                for instance in harness.recording:
-                    cw.writerow(instance)
+                cw = csv.DictWriter(csvfile,
+                                    fieldnames = harness.recording[0].keys(),
+                                    lineterminator = os.linesep,
+                                    quoting = csv.QUOTE_NONNUMERIC)
+                cw.writeheader()
+                cw.writerows(harness.recording)
 
     def terminate(self, proc):
         terminate_process(proc)
