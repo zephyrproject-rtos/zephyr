@@ -68,9 +68,6 @@ elseif(CACHED_CONF_FILE)
   # That value has precedence over anything else than a new
   # `cmake -DCONF_FILE=<file>` invocation.
   set(CONF_FILE ${CACHED_CONF_FILE})
-elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
-  set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj_${BOARD}.conf)
-  find_package(Deprecated COMPONENTS PRJ_BOARD)
 elseif(EXISTS   ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_CONFIG_DIR}/prj.conf)
   set(CONF_FILE_INCLUDE_FRAGMENTS true)
