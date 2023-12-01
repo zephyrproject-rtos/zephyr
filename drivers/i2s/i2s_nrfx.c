@@ -226,6 +226,10 @@ static void free_rx_buffer(struct i2s_nrfx_drv_data *drv_data, void *buffer)
 static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data,
 				nrfx_i2s_buffers_t *next)
 {
+	uint32_t block_size = (drv_data->active_dir == I2S_DIR_TX)
+				? drv_data->tx.cfg.block_size
+				: drv_data->rx.cfg.block_size;
+
 	drv_data->last_tx_buffer = next->p_tx_buffer;
 
 	if (drv_data->active_dir != I2S_DIR_TX) { /* -> RX active */
@@ -235,6 +239,8 @@ static bool supply_next_buffers(struct i2s_nrfx_drv_data *drv_data,
 			return false;
 		}
 	}
+
+	next->buffer_size = block_size / sizeof(uint32_t);
 
 	LOG_DBG("Next buffers: %p/%p", next->p_tx_buffer, next->p_rx_buffer);
 	nrfx_i2s_next_buffers_set(drv_data->p_i2s, next);
@@ -661,10 +667,10 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 				      : drv_data->rx.cfg.block_size;
 		nrfx_err_t err;
 
+		initial_buffers.buffer_size = block_size / sizeof(uint32_t);
 		drv_data->last_tx_buffer = initial_buffers.p_tx_buffer;
 
-		err = nrfx_i2s_start(drv_data->p_i2s, &initial_buffers,
-				     block_size / sizeof(uint32_t), 0);
+		err = nrfx_i2s_start(drv_data->p_i2s, &initial_buffers, 0);
 		if (err == NRFX_SUCCESS) {
 			return 0;
 		}
