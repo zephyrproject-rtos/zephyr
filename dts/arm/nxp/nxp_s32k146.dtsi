@@ -33,6 +33,8 @@
 	};
 };
 
+/delete-node/ &lpi2c1;
+
 &nvic {
 	arm,num-irq-priority-bits = <4>;
 };
