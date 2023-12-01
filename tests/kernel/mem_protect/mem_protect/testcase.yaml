@@ -9,7 +9,9 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
-    platform_exclude: twr_ke18f
+    platform_exclude:
+      - twr_ke18f
+      - ucans32k1sic
     extra_args:
       - CONFIG_TEST_HW_STACK_PROTECTION=n
       - CONFIG_MINIMAL_LIBC=y
