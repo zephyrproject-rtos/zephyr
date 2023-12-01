@@ -35,6 +35,19 @@ properties:
     description: |
       GPIO for the A and B encoder signals.
 
+  led-gpios:
+    type: phandle-array
+    description: |
+      GPIOs for LED or other components needed for sensing the AB signals.
+
+  led-pre-us:
+    type: int
+    description: |
+      Time between enabling the led-gpios output pins and reading the encoder
+      state on the input pins, meant to give the state detector (such a
+      phototransistor) time to settle to right state. Required if led-gpios and
+      idle-poll-time-us are specified, can be explicitly set to 0 for no delay.
+
   steps-per-period:
     type: int
     required: true
@@ -54,6 +67,15 @@ properties:
     description: |
       How often to sample the A and B signal lines when tracking the encoder
       movement.
+
+  idle-poll-time-us:
+    type: int
+    description: |
+      How often to sample the A and B signal while idling. If unset then the
+      driver will use the GPIO interrupt to exit idle state, and any GPIO
+      specified in led-gpios will be enabled all the time. If non zero, then
+      the driver will poll every idle-poll-time-us microseconds while idle, and
+      only activate led-gpios before sampling the encoder state.
 
   idle-timeout-ms:
     type: int

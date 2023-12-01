@@ -13,6 +13,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(input_gpio_qdec, CONFIG_INPUT_LOG_LEVEL);
@@ -21,7 +23,11 @@ LOG_MODULE_REGISTER(input_gpio_qdec, CONFIG_INPUT_LOG_LEVEL);
 
 struct gpio_qdec_config {
 	struct gpio_dt_spec ab_gpio[GPIO_QDEC_GPIO_NUM];
+	const struct gpio_dt_spec *led_gpio;
+	uint8_t led_gpio_count;
+	uint32_t led_pre_us;
 	uint32_t sample_time_us;
+	uint32_t idle_poll_time_us;
 	uint32_t idle_timeout_ms;
 	uint16_t axis;
 	uint8_t steps_per_period;
@@ -35,6 +41,7 @@ struct gpio_qdec_data {
 	struct k_work event_work;
 	struct k_work_delayable idle_work;
 	struct gpio_callback gpio_cb;
+	atomic_t polling;
 };
 
 /* Positive transitions */
@@ -49,16 +56,93 @@ struct gpio_qdec_data {
 #define QDEC_HH_LH 0x31
 #define QDEC_HL_HH 0x23
 
+static void gpio_qdec_irq_setup(const struct device *dev, bool enable)
+{
+	const struct gpio_qdec_config *cfg = dev->config;
+	gpio_flags_t flags = enable ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
+	int ret;
+
+	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
+		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
+
+		ret = gpio_pin_interrupt_configure_dt(gpio, flags);
+		if (ret != 0) {
+			LOG_ERR("Pin %d interrupt configuration failed: %d", i, ret);
+			return;
+		}
+	}
+}
+
+static bool gpio_qdec_idle_polling_mode(const struct device *dev)
+{
+	const struct gpio_qdec_config *cfg = dev->config;
+
+	if (cfg->idle_poll_time_us > 0) {
+		return true;
+	}
+
+	return false;
+}
+
+static void gpio_qdec_poll_mode(const struct device *dev)
+{
+	const struct gpio_qdec_config *cfg = dev->config;
+	struct gpio_qdec_data *data = dev->data;
+
+	if (!gpio_qdec_idle_polling_mode(dev)) {
+		gpio_qdec_irq_setup(dev, false);
+	}
+
+	k_timer_start(&data->sample_timer, K_NO_WAIT,
+		      K_USEC(cfg->sample_time_us));
+
+	atomic_set(&data->polling, 1);
+
+	LOG_DBG("polling start");
+}
+
+static void gpio_qdec_idle_mode(const struct device *dev)
+{
+	const struct gpio_qdec_config *cfg = dev->config;
+	struct gpio_qdec_data *data = dev->data;
+
+	if (gpio_qdec_idle_polling_mode(dev)) {
+		k_timer_start(&data->sample_timer, K_NO_WAIT,
+			      K_USEC(cfg->idle_poll_time_us));
+	} else {
+		k_timer_stop(&data->sample_timer);
+		gpio_qdec_irq_setup(dev, true);
+	}
+
+	atomic_set(&data->polling, 0);
+
+	LOG_DBG("polling stop");
+}
+
 static uint8_t gpio_qdec_get_step(const struct device *dev)
 {
 	const struct gpio_qdec_config *cfg = dev->config;
 	uint8_t step = 0x00;
+
+	if (gpio_qdec_idle_polling_mode(dev)) {
+		for (int i = 0; i < cfg->led_gpio_count; i++) {
+			gpio_pin_set_dt(&cfg->led_gpio[i], 1);
+		}
+
+		k_busy_wait(cfg->led_pre_us);
+	}
 
 	if (gpio_pin_get_dt(&cfg->ab_gpio[0])) {
 		step |= 0x01;
 	}
 	if (gpio_pin_get_dt(&cfg->ab_gpio[1])) {
 		step |= 0x02;
+	}
+
+	if (gpio_qdec_idle_polling_mode(dev)) {
+		for (int i = 0; i < cfg->led_gpio_count; i++) {
+			gpio_pin_set_dt(&cfg->led_gpio[i], 0);
+		}
 	}
 
 	return step;
@@ -77,6 +161,11 @@ static void gpio_qdec_sample_timer_timeout(struct k_timer *timer)
 
 	if (data->prev_step == step) {
 		return;
+	}
+
+	if (gpio_qdec_idle_polling_mode(dev) &&
+	    atomic_get(&data->polling) == 0) {
+		gpio_qdec_poll_mode(dev);
 	}
 
 	switch ((data->prev_step << 4U) | step) {
@@ -128,23 +217,6 @@ static void gpio_qdec_event_worker(struct k_work *work)
 	}
 }
 
-static void gpio_qdec_irq_setup(const struct device *dev, bool enable)
-{
-	const struct gpio_qdec_config *cfg = dev->config;
-	gpio_flags_t flags = enable ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
-	int ret;
-
-	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
-		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
-
-		ret = gpio_pin_interrupt_configure_dt(gpio, flags);
-		if (ret != 0) {
-			LOG_ERR("Pin %d interrupt configuration failed: %d", i, ret);
-			return;
-		}
-	}
-}
-
 static void gpio_qdec_idle_worker(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -152,11 +224,7 @@ static void gpio_qdec_idle_worker(struct k_work *work)
 			dwork, struct gpio_qdec_data, idle_work);
 	const struct device *dev = data->dev;
 
-	k_timer_stop(&data->sample_timer);
-
-	gpio_qdec_irq_setup(dev, true);
-
-	LOG_DBG("polling stop");
+	gpio_qdec_idle_mode(dev);
 }
 
 static void gpio_qdec_cb(const struct device *gpio_dev, struct gpio_callback *cb,
@@ -165,14 +233,8 @@ static void gpio_qdec_cb(const struct device *gpio_dev, struct gpio_callback *cb
 	struct gpio_qdec_data *data = CONTAINER_OF(
 			cb, struct gpio_qdec_data, gpio_cb);
 	const struct device *dev = data->dev;
-	const struct gpio_qdec_config *cfg = dev->config;
 
-	gpio_qdec_irq_setup(dev, false);
-
-	k_timer_start(&data->sample_timer, K_NO_WAIT,
-		      K_USEC(cfg->sample_time_us));
-
-	LOG_DBG("polling start");
+	gpio_qdec_poll_mode(dev);
 }
 
 static int gpio_qdec_init(const struct device *dev)
@@ -205,6 +267,10 @@ static int gpio_qdec_init(const struct device *dev)
 			return ret;
 		}
 
+		if (gpio_qdec_idle_polling_mode(dev)) {
+			continue;
+		}
+
 		ret = gpio_add_callback_dt(gpio, &data->gpio_cb);
 		if (ret < 0) {
 			LOG_ERR("Could not set gpio callback");
@@ -212,9 +278,28 @@ static int gpio_qdec_init(const struct device *dev)
 		}
 	}
 
+	for (int i = 0; i < cfg->led_gpio_count; i++) {
+		const struct gpio_dt_spec *gpio = &cfg->led_gpio[i];
+		gpio_flags_t mode;
+
+		if (!gpio_is_ready_dt(gpio)) {
+			LOG_ERR("%s is not ready", gpio->port->name);
+			return -ENODEV;
+		}
+
+		mode = gpio_qdec_idle_polling_mode(dev) ?
+			GPIO_OUTPUT_INACTIVE : GPIO_OUTPUT_ACTIVE;
+
+		ret = gpio_pin_configure_dt(gpio, mode);
+		if (ret != 0) {
+			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			return ret;
+		}
+	}
+
 	data->prev_step = gpio_qdec_get_step(dev);
 
-	gpio_qdec_irq_setup(dev, true);
+	gpio_qdec_idle_mode(dev);
 
 	LOG_DBG("Device %s initialized", dev->name);
 
@@ -225,12 +310,31 @@ static int gpio_qdec_init(const struct device *dev)
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, gpios) == GPIO_QDEC_GPIO_NUM,		\
 		     "input_gpio_qdec: gpios must have exactly two entries");	\
 										\
+	BUILD_ASSERT(!(DT_INST_NODE_HAS_PROP(n, led_gpios) &&			\
+		       DT_INST_NODE_HAS_PROP(n, idle_poll_time_us)) ||		\
+		     DT_INST_NODE_HAS_PROP(n, led_pre_us),			\
+		     "led-pre-us must be specified when setting led-gpios and "	\
+		     "idle-poll-time-us");					\
+										\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, led_gpios), (			\
+	static const struct gpio_dt_spec gpio_qdec_led_gpio_##n[] = {		\
+		DT_INST_FOREACH_PROP_ELEM_SEP(n, led_gpios,			\
+					      GPIO_DT_SPEC_GET_BY_IDX, (,))	\
+	};									\
+	))									\
+										\
 	static const struct gpio_qdec_config gpio_qdec_cfg_##n = {		\
 		.ab_gpio = {							\
 			GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 0),		\
 			GPIO_DT_SPEC_INST_GET_BY_IDX(n, gpios, 1),		\
 		},								\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, led_gpios), (		\
+		.led_gpio = gpio_qdec_led_gpio_##n,				\
+		.led_gpio_count = ARRAY_SIZE(gpio_qdec_led_gpio_##n),		\
+		.led_pre_us = DT_INST_PROP_OR(n, led_pre_us, 0),		\
+		))								\
 		.sample_time_us = DT_INST_PROP(n, sample_time_us),		\
+		.idle_poll_time_us = DT_INST_PROP_OR(n, idle_poll_time_us, 0),	\
 		.idle_timeout_ms = DT_INST_PROP(n, idle_timeout_ms),		\
 		.steps_per_period = DT_INST_PROP(n, steps_per_period),		\
 		.axis = DT_INST_PROP(n, zephyr_axis),				\
