@@ -82,6 +82,13 @@ config COAP_MAX_RETRANSMIT
 	default 4
 	range 1 10
 
+config COAP_BACKOFF_PERCENT
+	int "Retransmission backoff factor for ACK timeout described as percentage"
+	default 200
+	help
+	  Factor described as percentage to extend CoAP ACK timeout for retransmissions.
+	  A value of 200 means a factor of 2.0.
+
 config COAP_URI_WILDCARD
 	bool "Wildcards in CoAP resource path"
 	default y

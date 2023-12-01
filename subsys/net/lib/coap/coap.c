@@ -54,6 +54,12 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 /* The CoAP message ID that is incremented each time coap_next_id() is called. */
 static uint16_t message_id;
 
+static struct coap_transmission_parameters coap_transmission_params = {
+	.max_retransmission = CONFIG_COAP_MAX_RETRANSMIT,
+	.ack_timeout = CONFIG_COAP_INIT_ACK_TIMEOUT_MS,
+	.coap_backoff_percent = CONFIG_COAP_BACKOFF_PERCENT
+};
+
 static int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 			 uint16_t len);
 
@@ -1673,9 +1679,9 @@ struct coap_pending *coap_pending_next_to_expire(
 static uint32_t init_ack_timeout(void)
 {
 #if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
-	const uint32_t max_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS *
+	const uint32_t max_ack = coap_transmission_params.ack_timeout *
 				 CONFIG_COAP_ACK_RANDOM_PERCENT / 100;
-	const uint32_t min_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
+	const uint32_t min_ack = coap_transmission_params.ack_timeout;
 
 	/* Randomly generated initial ACK timeout
 	 * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
@@ -1683,7 +1689,7 @@ static uint32_t init_ack_timeout(void)
 	 */
 	return min_ack + (sys_rand32_get() % (max_ack - min_ack));
 #else
-	return CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
+	return coap_transmission_params.ack_timeout;
 #endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 }
 
@@ -1701,7 +1707,7 @@ bool coap_pending_cycle(struct coap_pending *pending)
 	}
 
 	pending->t0 += pending->timeout;
-	pending->timeout = pending->timeout << 1;
+	pending->timeout = pending->timeout * coap_transmission_params.coap_backoff_percent / 100;
 	pending->retries--;
 
 	return true;
@@ -2005,4 +2011,14 @@ void net_coap_init(void)
 uint16_t coap_next_id(void)
 {
 	return message_id++;
+}
+
+struct coap_transmission_parameters coap_get_transmission_parameters(void)
+{
+	return coap_transmission_params;
+}
+
+void coap_set_transmission_parameters(const struct coap_transmission_parameters *params)
+{
+	coap_transmission_params = *params;
 }
