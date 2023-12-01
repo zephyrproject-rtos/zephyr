@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/pinctrl/ambiq-apollo4-pinctrl.h>
+#include "apollo4p_evb_connector.dtsi"
 
 &pinctrl {
 	uart0_default: uart0_default {
