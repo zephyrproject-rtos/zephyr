@@ -239,29 +239,6 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
 			      struct coap_observer *observer);
 
 /**
- * @brief Event types for observer event callbacks.
- */
-enum coap_observer_event {
-	/** An observer was added. */
-	COAP_OBSERVER_ADDED = 0,
-	/** An observer was removed. */
-	COAP_OBSERVER_REMOVED,
-};
-
-/**
- * @typedef coap_observer_event_handler_t
- * @brief Type of the handler being called when a resource's observers has been modified.
- * Either an observer was added or removed.
- *
- * @param resource A pointer to a CoAP resource for which the event occurred
- * @param observer The observer being added/removed
- * @param event The event type
- */
-typedef void (*coap_observer_event_handler_t)(struct coap_resource *resource,
-					      struct coap_observer *observer,
-					      enum coap_observer_event event);
-
-/**
  * @brief Description of CoAP resource.
  *
  * CoAP servers often want to register resources, so that clients can act on
@@ -275,13 +252,6 @@ struct coap_resource {
 	void *user_data;
 	sys_slist_t observers;
 	int age;
-#if defined(CONFIG_COAP_OBSERVER_EVENTS) || defined(DOXYGEN)
-	/**
-	 * Optional observer event callback function
-	 * Only available when @kconfig{CONFIG_COAP_OBSERVER_EVENTS} is enabled.
-	 */
-	coap_observer_event_handler_t observer_event_handler;
-#endif
 };
 
 /**
