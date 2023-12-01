@@ -1275,10 +1275,10 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if_index", optional_argument, 0, 'i'},
+	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"sta", no_argument, 0, 's'},
 					       {"monitor", no_argument, 0, 'm'},
-					       {"TX-injection", no_argument, 0, 't'},
+					       {"tx-injection", no_argument, 0, 't'},
 					       {"promiscuous", no_argument, 0, 'p'},
 					       {"ap", no_argument, 0, 'a'},
 					       {"softap", no_argument, 0, 'k'},
@@ -1385,7 +1385,7 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if_index", optional_argument, 0, 'i'},
+	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
 					       {"channel", required_argument, 0, 'c'},
 					       {"get", no_argument, 0, 'g'},
 					       {"help", no_argument, 0, 'h'},
@@ -1491,8 +1491,8 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 	int opt;
 	int option_index = 0;
 
-	static struct option long_options[] = {{"if_index", optional_argument, 0, 'i'},
-					       {"capture_len", optional_argument, 0, 'b'},
+	static struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
+					       {"capture-len", optional_argument, 0, 'b'},
 					       {"all", no_argument, 0, 'a'},
 					       {"mgmt", no_argument, 0, 'm'},
 					       {"ctrl", no_argument, 0, 'c'},
@@ -1683,15 +1683,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD_ARG(mode, NULL, "mode operational setting\n"
 		"This command may be used to set the Wi-Fi device into a specific mode of operation\n"
 		"parameters:"
-		"[-i] : Interface index - optional argument\n"
-		"[-s] : Station mode.\n"
-		"[-m] : Monitor mode.\n"
-		"[-p] : Promiscuous mode.\n"
-		"[-t] : TX-Injection mode.\n"
-		"[-a] : AP mode.\n"
-		"[-k] : Softap mode.\n"
-		"[-h] : Help.\n"
-		"[-g] : Get current mode for a specific interface index.\n"
+		"[-i, --if-index <idx>] : Interface index.\n"
+		"[-s, --sta] : Station mode.\n"
+		"[-m, --monitor] : Monitor mode.\n"
+		"[-p, --promiscuous] : Promiscuous mode.\n"
+		"[-t, --tx-injection] : TX-Injection mode.\n"
+		"[-a, --ap] : AP mode.\n"
+		"[-k, --softap] : Softap mode.\n"
+		"[-h, --help] : Help.\n"
+		"[-g, --get] : Get current mode for a specific interface index.\n"
 		"Usage: Get operation example for interface index 1\n"
 		"wifi mode -g -i1\n"
 		"Set operation example for interface index 1 - set station+promiscuous\n"
@@ -1703,14 +1703,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"monitor, TX-Injection and promiscuous mode is enabled.\n"
 		"The different packet filter modes are control, management, data and enable all filters\n"
 		"parameters:"
-		"[-i] : Interface index - optional argument.\n"
-		"[-a] : Enable all packet filter modes\n"
-		"[-m] : Enable management packets to allowed up the stack.\n"
-		"[-c] : Enable control packets to be allowed up the stack.\n"
-		"[-d] : Enable Data packets to be allowed up the stack.\n"
-		"[-g] : Get current filter settings for a specific interface index.\n"
-		"<-b> : Capture length buffer size for each packet to be captured - optional argument.\n"
-		"<-h> : Help.\n"
+		"[-i, --if-index <idx>] : Interface index.\n"
+		"[-a, --all] : Enable all packet filter modes\n"
+		"[-m, --mgmt] : Enable management packets to allowed up the stack.\n"
+		"[-c, --ctrl] : Enable control packets to be allowed up the stack.\n"
+		"[-d, --data] : Enable Data packets to be allowed up the stack.\n"
+		"[-g, --get] : Get current filter settings for a specific interface index.\n"
+		"[-b, --capture-len <len>] : Capture length buffer size for each packet to be captured\n"
+		"[-h, --help] : Help.\n"
 		"Usage: Get operation example for interface index 1\n"
 		"wifi packet_filter -g -i1\n"
 		"Set operation example for interface index 1 - set data+management frame filter\n"
@@ -1722,10 +1722,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"monitor or TX-Injection mode is enabled.\n"
 		"Currently 20 MHz is only supported and no BW parameter is provided\n"
 		"parameters:"
-		"[-i] : Interface index - optional argument.\n"
-		"[-c] : Set a specific channel number to the lower layer.\n"
-		"[-g] : Get current set channel number from the lower layer.\n"
-		"[-h] : Help.\n"
+		"[-i, --if-index <idx>] : Interface index.\n"
+		"[-c, --channel <chan>] : Set a specific channel number to the lower layer.\n"
+		"[-g, --get] : Get current set channel number from the lower layer.\n"
+		"[-h, --help] : Help.\n"
 		"Usage: Get operation example for interface index 1\n"
 		"wifi channel -g -i1\n"
 		"Set operation example for interface index 1 (setting channel 5)\n"
