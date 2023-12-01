@@ -52,7 +52,7 @@ struct sensing_context {
 int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn);
 int close_sensor(struct sensing_connection **conn);
 int sensing_register_callback(struct sensing_connection *conn,
-			      const struct sensing_callback_list *cb_list);
+			      struct sensing_callback_list *cb_list);
 int set_interval(struct sensing_connection *conn, uint32_t interval);
 int get_interval(struct sensing_connection *con, uint32_t *sensitivity);
 int set_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t interval);
