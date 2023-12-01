@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <../../subsys/bluetooth/audio/mpl_internal.h>
+#include <../../subsys/bluetooth/audio/mcc_internal.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
@@ -37,6 +38,47 @@ static uint64_t next_track_obj_id;
 static uint8_t media_player_state;
 static uint64_t current_id;
 static uint64_t parent_id;
+struct service_handles {
+	struct {
+		uint16_t player_name;
+		uint16_t icon_obj_id;
+		uint16_t icon_url;
+		uint16_t track_changed;
+		uint16_t track_title;
+		uint16_t track_duration;
+		uint16_t track_position;
+		uint16_t playback_speed;
+		uint16_t seeking_speed;
+		uint16_t segments_obj_id;
+		uint16_t current_track_obj_id;
+		uint16_t next_track_obj_id;
+		uint16_t current_group_obj_id;
+		uint16_t parent_group_obj_id;
+		uint16_t playing_order;
+		uint16_t playing_orders_supported;
+		uint16_t media_state;
+		uint16_t cp;
+		uint16_t opcodes_supported;
+		uint16_t search_results_obj_id;
+		uint16_t scp;
+		uint16_t content_control_id;
+	} gmcs_handles;
+
+	struct {
+		uint16_t feature;
+		uint16_t obj_name;
+		uint16_t obj_type;
+		uint16_t obj_size;
+		uint16_t obj_properties;
+		uint16_t obj_created;
+		uint16_t obj_modified;
+		uint16_t obj_id;
+		uint16_t oacp;
+		uint16_t olcp;
+	} ots_handles;
+};
+
+struct service_handles svc_chrc_handles;
 
 #define SEARCH_LEN_MAX 64
 
@@ -44,13 +86,62 @@ static struct net_buf_simple *rx_ev_buf = NET_BUF_SIMPLE(SEARCH_LEN_MAX +
 							 sizeof(struct btp_mcp_search_cp_ev));
 
 /* Media Control Profile */
-static void btp_send_mcp_found_ev(struct bt_conn *conn, uint8_t status)
+static void btp_send_mcp_found_ev(struct bt_conn *conn, uint8_t status,
+				  const struct service_handles svc_chrc_handles)
 {
 	struct btp_mcp_discovered_ev ev;
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
 	ev.status = status;
+	ev.gmcs_handles.player_name = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.player_name);
+	ev.gmcs_handles.icon_obj_id = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.icon_obj_id);
+	ev.gmcs_handles.icon_url = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.icon_url);
+	ev.gmcs_handles.track_changed =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_changed);
+	ev.gmcs_handles.track_title = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_title);
+	ev.gmcs_handles.track_duration =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_duration);
+	ev.gmcs_handles.track_position =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.track_position);
+	ev.gmcs_handles.playback_speed =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.playback_speed);
+	ev.gmcs_handles.seeking_speed =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.seeking_speed);
+	ev.gmcs_handles.segments_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.segments_obj_id);
+	ev.gmcs_handles.current_track_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.current_track_obj_id);
+	ev.gmcs_handles.next_track_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.next_track_obj_id);
+	ev.gmcs_handles.current_group_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.current_group_obj_id);
+	ev.gmcs_handles.parent_group_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.parent_group_obj_id);
+	ev.gmcs_handles.playing_order =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.playing_order);
+	ev.gmcs_handles.playing_orders_supported =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.playing_orders_supported);
+	ev.gmcs_handles.media_state = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.media_state);
+	ev.gmcs_handles.cp = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.cp);
+	ev.gmcs_handles.opcodes_supported =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.opcodes_supported);
+	ev.gmcs_handles.search_results_obj_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.search_results_obj_id);
+	ev.gmcs_handles.scp = sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.scp);
+	ev.gmcs_handles.content_control_id =
+		sys_cpu_to_le16(svc_chrc_handles.gmcs_handles.content_control_id);
+	ev.ots_handles.feature = sys_cpu_to_le16(svc_chrc_handles.ots_handles.feature);
+	ev.ots_handles.obj_name = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_name);
+	ev.ots_handles.obj_type = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_type);
+	ev.ots_handles.obj_size = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_size);
+	ev.ots_handles.obj_properties =
+		sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_properties);
+	ev.ots_handles.obj_created = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_created);
+	ev.ots_handles.obj_modified = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_modified);
+	ev.ots_handles.obj_id = sys_cpu_to_le16(svc_chrc_handles.ots_handles.obj_id);
+	ev.ots_handles.oacp = sys_cpu_to_le16(svc_chrc_handles.ots_handles.oacp);
+	ev.ots_handles.olcp = sys_cpu_to_le16(svc_chrc_handles.ots_handles.olcp);
 
 	tester_event(BTP_SERVICE_ID_MCP, BTP_MCP_DISCOVERED_EV, &ev, sizeof(ev));
 }
@@ -309,12 +400,51 @@ static void btp_send_search_notifications_ev(struct bt_conn *conn, uint8_t statu
 
 static void mcc_discover_cb(struct bt_conn *conn, int err)
 {
+	struct mcs_instance_t *mcc_inst;
+
 	if (err) {
 		LOG_DBG("Discovery failed (%d)", err);
 		return;
 	}
 
-	btp_send_mcp_found_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+	mcc_inst = lookup_inst_by_conn(conn);
+
+	svc_chrc_handles.gmcs_handles.player_name = mcc_inst->player_name_handle;
+	svc_chrc_handles.gmcs_handles.icon_obj_id = mcc_inst->icon_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.icon_url = mcc_inst->icon_url_handle;
+	svc_chrc_handles.gmcs_handles.track_changed = mcc_inst->track_changed_handle;
+	svc_chrc_handles.gmcs_handles.track_title = mcc_inst->track_title_handle;
+	svc_chrc_handles.gmcs_handles.track_duration = mcc_inst->track_duration_handle;
+	svc_chrc_handles.gmcs_handles.track_position = mcc_inst->track_position_handle;
+	svc_chrc_handles.gmcs_handles.playback_speed = mcc_inst->playback_speed_handle;
+	svc_chrc_handles.gmcs_handles.seeking_speed = mcc_inst->seeking_speed_handle;
+	svc_chrc_handles.gmcs_handles.segments_obj_id = mcc_inst->segments_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.current_track_obj_id = mcc_inst->current_track_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.next_track_obj_id = mcc_inst->next_track_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.current_group_obj_id = mcc_inst->current_group_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.parent_group_obj_id = mcc_inst->parent_group_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.playing_order = mcc_inst->playing_order_handle;
+	svc_chrc_handles.gmcs_handles.playing_orders_supported =
+		mcc_inst->playing_orders_supported_handle;
+	svc_chrc_handles.gmcs_handles.media_state = mcc_inst->media_state_handle;
+	svc_chrc_handles.gmcs_handles.cp = mcc_inst->cp_handle;
+	svc_chrc_handles.gmcs_handles.opcodes_supported = mcc_inst->opcodes_supported_handle;
+	svc_chrc_handles.gmcs_handles.search_results_obj_id =
+		mcc_inst->search_results_obj_id_handle;
+	svc_chrc_handles.gmcs_handles.scp = mcc_inst->scp_handle;
+	svc_chrc_handles.gmcs_handles.content_control_id = mcc_inst->content_control_id_handle;
+	svc_chrc_handles.ots_handles.feature = mcc_inst->otc.feature_handle;
+	svc_chrc_handles.ots_handles.obj_name = mcc_inst->otc.obj_name_handle;
+	svc_chrc_handles.ots_handles.obj_type = mcc_inst->otc.obj_type_handle;
+	svc_chrc_handles.ots_handles.obj_size = mcc_inst->otc.obj_size_handle;
+	svc_chrc_handles.ots_handles.obj_id = mcc_inst->otc.obj_id_handle;
+	svc_chrc_handles.ots_handles.obj_properties = mcc_inst->otc.obj_properties_handle;
+	svc_chrc_handles.ots_handles.obj_created = mcc_inst->otc.obj_created_handle;
+	svc_chrc_handles.ots_handles.obj_modified = mcc_inst->otc.obj_modified_handle;
+	svc_chrc_handles.ots_handles.oacp = mcc_inst->otc.oacp_handle;
+	svc_chrc_handles.ots_handles.olcp = mcc_inst->otc.olcp_handle;
+
+	btp_send_mcp_found_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, svc_chrc_handles);
 }
 
 static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
