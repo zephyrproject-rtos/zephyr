@@ -48,6 +48,7 @@ class TestInstance:
         self.reason = "Unknown"
         self.metrics = dict()
         self.handler = None
+        self.recording = None
         self.outdir = outdir
         self.execution_time = 0
         self.build_time = 0
