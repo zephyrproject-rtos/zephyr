@@ -17,8 +17,14 @@ Required changes
 Boards
 ======
 
-  * The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
-    applications that use this should switch to using the :ref:`boot_mode_api` instead.
+* The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
+  applications that use this should switch to using the :ref:`boot_mode_api` instead.
+
+Build System
+============
+
+* The deprecated ``prj_<board>.conf`` Kconfig file support has been removed, projects that use
+  this should switch to using board Kconfig fragments instead (``boards/<board>.conf``).
 
 Kernel
 ======
