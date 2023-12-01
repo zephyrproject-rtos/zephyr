@@ -89,12 +89,6 @@ config COAP_URI_WILDCARD
 	  This option enables MQTT-style wildcards in path. Disable it if
 	  resource path may contain plus or hash symbol.
 
-config COAP_OBSERVER_EVENTS
-	bool "CoAP resource observer events"
-	help
-	  This option enables to register a callback function to CoAP resources
-	  that will be called when adding/removing observers.
-
 config COAP_KEEP_USER_DATA
 	bool "Keeping user data in the CoAP packet"
 	help
