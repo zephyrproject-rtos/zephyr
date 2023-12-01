@@ -205,7 +205,7 @@ Shell
 Examples of pytest tests in the Zephyr project
 **********************************************
 
-* Shell demo - :zephyr_file:`samples/subsys/testsuite/pytest/shell`
+* :zephyr:code-sample:`pytest_shell`
 * MCUmgr tests - :zephyr_file:`tests/boot/with_mcumgr`
 * LwM2M tests - :zephyr_file:`tests/net/lib/lwm2m/interop`
 * GDB stub tests - :zephyr_file:`tests/subsys/debug/gdbstub`
