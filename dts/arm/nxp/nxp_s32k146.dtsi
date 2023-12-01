@@ -51,3 +51,11 @@
 &lpuart2 {
 	clocks = <&clock NXP_S32_LPUART2_CLK>;
 };
+
+&lpspi1 {
+	clocks = <&clock NXP_S32_LPSPI1_CLK>;
+};
+
+&lpspi2 {
+	clocks = <&clock NXP_S32_LPSPI2_CLK>;
+};
