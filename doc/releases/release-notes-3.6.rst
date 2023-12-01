@@ -206,6 +206,8 @@ Networking
 
 * CoAP:
 
+  * Emit observer/service network events using the Network Event subsystem.
+
 * Connection Manager:
 
 * DHCP:
