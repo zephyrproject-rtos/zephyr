@@ -98,3 +98,9 @@
 	sda-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
+
+&lpspi0 {
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
