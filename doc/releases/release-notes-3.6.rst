@@ -222,6 +222,10 @@ Networking
 
 * Misc:
 
+  * It is now possible to have separate IPv4 TTL value and IPv6 hop limit value for
+    unicast and multicast packets. This can be controlled in each socket via
+    :c:func:`setsockopt` API.
+
 * MQTT-SN:
 
 * OpenThread:
