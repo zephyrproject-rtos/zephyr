@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
-#include <st/wba/stm32wba52.dtsi>
+#include <st/wba/stm32wba55.dtsi>
 
 / {
 	sram0: memory@20000000 {
