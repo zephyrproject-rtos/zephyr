@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #endif
 
 #include <zephyr/net/igmp.h>
+#include "../../ip/ipv6.h"
 
 #include "../../ip/net_stats.h"
 
@@ -2700,6 +2701,58 @@ static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 	return 0;
 }
 
+static int ipv6_multicast_group(struct net_context *ctx, const void *optval,
+				socklen_t optlen, bool do_join)
+{
+	struct ipv6_mreq *mreq;
+	struct net_if *iface;
+	int ret;
+
+	if (optval == NULL || optlen != sizeof(struct ipv6_mreq)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	mreq = (struct ipv6_mreq *)optval;
+
+	if (memcmp(&mreq->ipv6mr_multiaddr,
+		   net_ipv6_unspecified_address(),
+		   sizeof(mreq->ipv6mr_multiaddr)) == 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	iface = net_if_get_by_index(mreq->ipv6mr_ifindex);
+	if (iface == NULL) {
+		/* Check if ctx has already an interface and if not,
+		 * then select the default interface.
+		 */
+		if (ctx->iface <= 0) {
+			iface = net_if_get_default();
+		} else {
+			iface = net_if_get_by_index(ctx->iface);
+		}
+
+		if (iface == NULL) {
+			errno = ENOENT;
+			return -1;
+		}
+	}
+
+	if (do_join) {
+		ret = net_ipv6_mld_join(iface, &mreq->ipv6mr_multiaddr);
+	} else {
+		ret = net_ipv6_mld_leave(iface, &mreq->ipv6mr_multiaddr);
+	}
+
+	if (ret < 0) {
+		errno  = -ret;
+		return -1;
+	}
+
+	return 0;
+}
+
 int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 const void *optval, socklen_t optlen)
 {
@@ -3095,6 +3148,22 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			return 0;
+
+		case IPV6_ADD_MEMBERSHIP:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				return ipv6_multicast_group(ctx, optval,
+							    optlen, true);
+			}
+
+			break;
+
+		case IPV6_DROP_MEMBERSHIP:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				return ipv6_multicast_group(ctx, optval,
+							    optlen, false);
+			}
+
+			break;
 		}
 
 		break;
