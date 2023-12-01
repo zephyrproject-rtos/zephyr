@@ -647,7 +647,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 				wifi_mode_txt(status.iface_mode));
 		shell_fprintf(sh, SHELL_NORMAL, "Link Mode: %s\n",
 				wifi_link_mode_txt(status.link_mode));
-		shell_fprintf(sh, SHELL_NORMAL, "SSID: %-32s\n", status.ssid);
+		shell_fprintf(sh, SHELL_NORMAL, "SSID: %.32s\n", status.ssid);
 		shell_fprintf(sh, SHELL_NORMAL, "BSSID: %s\n",
 					  net_sprint_ll_addr_buf(status.bssid,
 					  WIFI_MAC_ADDR_LEN, mac_string_buf,
