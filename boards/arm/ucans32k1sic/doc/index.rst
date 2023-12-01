@@ -47,6 +47,7 @@ SYSMPU        on-chip     mpu
 PORT          on-chip     pinctrl
 GPIO          on-chip     gpio
 LPUART        on-chip     serial
+LPI2C         on-chip     i2c
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
