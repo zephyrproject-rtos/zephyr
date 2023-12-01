@@ -27,6 +27,7 @@
 		led1 = &led1_green;
 		led2 = &led1_blue;
 		sw0 = &button_3;
+		i2c-0 = &lpi2c0;
 	};
 
 	leds {
@@ -87,5 +88,13 @@
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpi2c0 {
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
