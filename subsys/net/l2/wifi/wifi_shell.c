@@ -1631,11 +1631,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
 		  "\"<SSID>\"\n"
-		  "<channel number (optional), 0 means all>\n"
-		  "<PSK (optional: valid only for secure SSIDs)>\n"
-		  "<Security type (optional: valid only for secure SSIDs)>\n"
+		  "[channel number: 0 means all]\n"
+		  "[PSK: valid only for secure SSIDs]\n"
+		  "[Security type: valid only for secure SSIDs]\n"
 		  "0:None, 1:PSK, 2:PSK-256, 3:SAE\n"
-		  "<MFP (optional: needs security type to be specified)>\n"
+		  "[MFP (optional: needs security type to be specified)]\n"
 		  ": 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from the Wi-Fi AP",
@@ -1667,7 +1667,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(reg_domain, NULL,
 		"Set or Get Wi-Fi regulatory domain\n"
 		"Usage: wifi reg_domain [ISO/IEC 3166-1 alpha2] [-f]\n"
-		"-f: Force to use this regulatory hint over any other regulatory hints\n"
+		"[-f]: Force to use this regulatory hint over any other regulatory hints\n"
 		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain),
 	SHELL_CMD(mode, NULL, "mode operational setting\n"
