@@ -1592,10 +1592,18 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 	struct bt_le_per_adv_sync_param create_params = {0};
 
 	bt_addr_le_copy(&create_params.addr, &cp->address);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
 	create_params.sid = cp->advertiser_sid;
 	create_params.skip = cp->skip;
 	create_params.timeout = cp->sync_timeout;
+
+	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_REPORTS_DISABLED) {
+		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
+	}
+
+	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_FILTER_DUPLICATES) {
+		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	}
 
 	err = tester_gap_padv_create_sync(&create_params);
 	if (err != 0) {
