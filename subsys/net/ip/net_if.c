@@ -4860,8 +4860,6 @@ void net_if_init(void)
 	net_tc_tx_init();
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		init_iface(iface);
-		if_count++;
 
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		memset(net_if_get_config(iface)->name, 0,
@@ -4869,6 +4867,9 @@ void net_if_init(void)
 
 		set_default_name(iface);
 #endif
+
+		init_iface(iface);
+		if_count++;
 	}
 
 	if (if_count == 0) {
