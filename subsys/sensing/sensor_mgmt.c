@@ -329,8 +329,9 @@ int open_sensor(struct sensing_sensor *sensor, struct sensing_connection **conn)
 {
 	struct sensing_connection *tmp_conn;
 
-	if (sensor->state != SENSING_SENSOR_STATE_READY)
+	if (sensor->state != SENSING_SENSOR_STATE_READY) {
 		return -EINVAL;
+	}
 
 	/* create connection from sensor to application(client = NULL) */
 	tmp_conn = malloc(sizeof(*tmp_conn));
@@ -497,5 +498,5 @@ int sensing_get_sensors(int *sensor_nums, const struct sensing_sensor_info **inf
 K_THREAD_DEFINE(sensing_runtime, CONFIG_SENSING_RUNTIME_THREAD_STACK_SIZE, sensing_runtime_thread,
 		&sensing_ctx, NULL, NULL, CONFIG_SENSING_RUNTIME_THREAD_PRIORITY, 0, 0);
 
-DEVICE_DT_INST_DEFINE(0, sensing_init, NULL, &sensing_ctx, NULL,		\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, sensing_init, NULL, &sensing_ctx, NULL, POST_KERNEL,
+		      CONFIG_SENSOR_INIT_PRIORITY, NULL);
