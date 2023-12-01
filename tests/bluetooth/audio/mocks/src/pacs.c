@@ -10,7 +10,9 @@
 #include "pacs.h"
 
 /* List of fakes used by this unit tester */
-#define PACS_FFF_FAKES_LIST(FAKE) FAKE(bt_pacs_cap_foreach)
+#define PACS_FFF_FAKES_LIST(FAKE) \
+	FAKE(bt_pacs_cap_foreach) \
+	FAKE(bt_pacs_get_available_contexts_for_conn) \
 
 static const struct bt_audio_codec_cap lc3_codec = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_10,
@@ -18,6 +20,8 @@ static const struct bt_audio_codec_cap lc3_codec = BT_AUDIO_CODEC_CAP_LC3(
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 DEFINE_FAKE_VOID_FUNC(bt_pacs_cap_foreach, enum bt_audio_dir, bt_pacs_cap_foreach_func_t, void *);
+DEFINE_FAKE_VALUE_FUNC(enum bt_audio_context, bt_pacs_get_available_contexts_for_conn,
+		       struct bt_conn *, enum bt_audio_dir);
 
 static void pacs_cap_foreach_custom_fake(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func,
 					 void *user_data)
