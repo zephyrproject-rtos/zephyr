@@ -15,5 +15,6 @@ config SOC_SERIES_S32K1XX
 	select CLOCK_CONTROL
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
 	help
 	  Enable support for NXP S32K1XX MCU series.
