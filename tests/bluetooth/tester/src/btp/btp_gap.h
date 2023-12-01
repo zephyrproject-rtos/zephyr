@@ -286,6 +286,9 @@ struct btp_gap_padv_set_data_cmd {
 	uint8_t data[];
 } __packed;
 
+#define BTP_GAP_PADV_CREATE_SYNC_FLAG_REPORTS_DISABLED	0x01
+#define BTP_GAP_PADV_CREATE_SYNC_FLAG_FILTER_DUPLICATES	0x02
+
 #define BTP_GAP_PADV_CREATE_SYNC		0x26
 struct btp_gap_padv_create_sync_cmd {
 	bt_addr_le_t address;
