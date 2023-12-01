@@ -6,6 +6,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(llext);
@@ -39,6 +40,6 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 
 		/* Relocate a local symbol: Xtensa specific */
 		*(elf_word *)(text + got_offset) = (elf_word)(text + ptr_offset -
-							      ldr->sects[LLEXT_SECT_TEXT].sh_addr);
+							      ldr->sects[LLEXT_MEM_TEXT].sh_addr);
 	}
 }
