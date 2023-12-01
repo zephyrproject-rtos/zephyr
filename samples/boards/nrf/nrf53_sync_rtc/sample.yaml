@@ -19,7 +19,7 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "main: Synchronization using mbox driver"
-        - "sync_rtc: Updated timestamp to synchronized RTC by .* ticks"
-        - "main: IPC send at .* ticks"
-        - "main: Local timestamp: .*, application core timestamp:"
+        - "Synchronization using mbox driver"
+        - "Updated timestamp to synchronized RTC by .* ticks"
+        - "IPC send at .* ticks"
+        - "Local timestamp: .*, application core timestamp:"

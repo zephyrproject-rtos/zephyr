@@ -81,6 +81,26 @@ choice LOG_MODE
 	default LOG_MODE_IMMEDIATE
 endchoice
 
+# Since flash & ram is "free", we can also include the function names
+# in all logging levels.
+config LOG_FUNC_NAME_PREFIX_ERR
+	default y
+
+config LOG_FUNC_NAME_PREFIX_WRN
+	default y
+
+config LOG_FUNC_NAME_PREFIX_INF
+	default y
+
+config LOG_FUNC_NAME_PREFIX_DBG
+	default y
+
+config LOG_THREAD_ID_PREFIX
+	default y
+
+config THREAD_NAME
+	default y
+
 endif # LOG
 
 if CONSOLE
