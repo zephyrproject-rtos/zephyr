@@ -41,28 +41,17 @@ LOG_MODULE_REGISTER(bt_pacs, CONFIG_BT_PACS_LOG_LEVEL);
 #if defined(CONFIG_BT_PAC_SRC)
 static uint32_t pacs_src_location;
 static sys_slist_t src_pacs_list = SYS_SLIST_STATIC_INIT(&src_pacs_list);
+static uint16_t src_supported_contexts;
 #endif /* CONFIG_BT_PAC_SRC */
 
 #if defined(CONFIG_BT_PAC_SNK)
 static uint32_t pacs_snk_location;
 static sys_slist_t snk_pacs_list = SYS_SLIST_STATIC_INIT(&snk_pacs_list);
+static uint16_t snk_supported_contexts;
 #endif /* CONFIG_BT_PAC_SNK */
 
-#if defined(CONFIG_BT_PAC_SNK)
-static uint16_t snk_available_contexts;
-static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
-#else
-static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static uint16_t snk_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-#endif /* CONFIG_BT_PAC_SNK */
-
-#if defined(CONFIG_BT_PAC_SRC)
-static uint16_t src_available_contexts;
-static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
-#else
 static uint16_t src_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-static uint16_t src_supported_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
-#endif /* CONFIG_BT_PAC_SRC */
+static uint16_t snk_available_contexts = BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
 
 enum {
 	FLAG_ACTIVE,
@@ -212,13 +201,31 @@ static void supported_context_cfg_changed(const struct bt_gatt_attr *attr,
 }
 #endif /* CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE */
 
+static uint16_t supported_context_get(enum bt_audio_dir dir)
+{
+	switch (dir) {
+#if defined(CONFIG_BT_PAC_SNK)
+	case BT_AUDIO_DIR_SINK:
+		return snk_supported_contexts | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+#endif /* CONFIG_BT_PAC_SNK */
+#if defined(CONFIG_BT_PAC_SRC)
+	case BT_AUDIO_DIR_SOURCE:
+		return src_supported_contexts | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+#endif /* CONFIG_BT_PAC_SRC */
+	default:
+		break;
+	}
+
+	return BT_AUDIO_CONTEXT_TYPE_PROHIBITED;
+}
+
 static ssize_t supported_context_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
 	struct bt_pacs_context context = {
-		.snk = sys_cpu_to_le16(snk_supported_contexts),
-		.src = sys_cpu_to_le16(src_supported_contexts),
+		.snk = sys_cpu_to_le16(supported_context_get(BT_AUDIO_DIR_SINK)),
+		.src = sys_cpu_to_le16(supported_context_get(BT_AUDIO_DIR_SOURCE)),
 	};
 
 	LOG_DBG("conn %p attr %p buf %p len %u offset %u", conn, attr, buf, len, offset);
@@ -321,19 +328,8 @@ static inline int set_snk_available_contexts(uint16_t contexts)
 	return set_available_contexts(contexts, &snk_available_contexts,
 				      snk_supported_contexts);
 }
-
-static inline int set_snk_supported_contexts(uint16_t contexts)
-{
-	return set_supported_contexts(contexts, &snk_supported_contexts,
-				      &snk_available_contexts);
-}
 #else
 static inline int set_snk_available_contexts(uint16_t contexts)
-{
-	return -ENOTSUP;
-}
-
-static inline int set_snk_supported_contexts(uint16_t contexts)
 {
 	return -ENOTSUP;
 }
@@ -448,19 +444,8 @@ static inline int set_src_available_contexts(uint16_t contexts)
 	return set_available_contexts(contexts, &src_available_contexts,
 				      src_supported_contexts);
 }
-
-static inline int set_src_supported_contexts(uint16_t contexts)
-{
-	return set_supported_contexts(contexts, &src_supported_contexts,
-				      &src_available_contexts);
-}
 #else
 static inline int set_src_available_contexts(uint16_t contexts)
-{
-	return -ENOTSUP;
-}
-
-static inline int set_src_supported_contexts(uint16_t contexts)
 {
 	return -ENOTSUP;
 }
@@ -749,8 +734,8 @@ static int available_contexts_notify(struct bt_conn *conn)
 static int supported_contexts_notify(struct bt_conn *conn)
 {
 	struct bt_pacs_context context = {
-		.snk = sys_cpu_to_le16(snk_supported_contexts),
-		.src = sys_cpu_to_le16(src_supported_contexts),
+		.snk = sys_cpu_to_le16(supported_context_get(BT_AUDIO_DIR_SINK)),
+		.src = sys_cpu_to_le16(supported_context_get(BT_AUDIO_DIR_SOURCE)),
 	};
 	int err;
 
@@ -1128,14 +1113,33 @@ int bt_pacs_set_available_contexts(enum bt_audio_dir dir, enum bt_audio_context 
 
 int bt_pacs_set_supported_contexts(enum bt_audio_dir dir, enum bt_audio_context contexts)
 {
+	uint16_t *supported_contexts = NULL;
+	uint16_t *available_contexts = NULL;
+
 	switch (dir) {
 	case BT_AUDIO_DIR_SINK:
-		return set_snk_supported_contexts(contexts);
+#if defined(CONFIG_BT_PAC_SNK)
+		supported_contexts = &snk_supported_contexts;
+		available_contexts = &snk_available_contexts;
+		break;
+#endif /* CONFIG_BT_PAC_SNK */
+		return -ENOTSUP;
 	case BT_AUDIO_DIR_SOURCE:
-		return set_src_supported_contexts(contexts);
+#if defined(CONFIG_BT_PAC_SRC)
+		supported_contexts = &src_supported_contexts;
+		available_contexts = &src_available_contexts;
+		break;
+#endif /* CONFIG_BT_PAC_SRC */
+		return -ENOTSUP;
+	default:
+		return -EINVAL;
 	}
 
-	return -EINVAL;
+	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE) || *supported_contexts == 0) {
+		return set_supported_contexts(contexts, supported_contexts, available_contexts);
+	}
+
+	return -EALREADY;
 }
 
 enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
