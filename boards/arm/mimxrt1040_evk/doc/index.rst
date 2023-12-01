@@ -291,6 +291,13 @@ should see the following message in the terminal:
 Troubleshooting
 ===============
 
+USER_LED D8
+-----------
+The MIMXRT1040-EVK board ships with the wireless module in the M.2 connector,
+and with jumper J80 shorted.  This causes a conflict with the USER_LED D8,
+and the LED will not turn off.  Samples and applications using USER_LED D8,
+like blinky, require removal of J80 jumper.
+
 Boot Header
 -----------
 
