@@ -55,8 +55,8 @@ class Harness:
         self.capture_coverage = False
         self.next_pattern = 0
         self.record = None
+        self.record_pattern = None
         self.recording = []
-        self.fieldnames = []
         self.ztest = False
         self.detected_suite_names = []
         self.run_id = None
@@ -80,6 +80,16 @@ class Harness:
             self.repeat = config.get('repeat', 1)
             self.ordered = config.get('ordered', True)
             self.record = config.get('record', {})
+            if self.record:
+                self.record_pattern = re.compile(self.record.get("regex", ""))
+
+
+    def get_testcase_name(self):
+        """
+        Get current TestCase name.
+        """
+        return self.id
+
 
     def process_test(self, line):
 
@@ -172,7 +182,7 @@ class Console(Harness):
         '''
         if self.instance and len(self.instance.testcases) == 1:
             return self.instance.testcases[0].name
-        return self.id
+        return super(Console, self).get_testcase_name()
 
     def configure(self, instance):
         super(Console, self).configure(instance)
@@ -240,19 +250,10 @@ class Console(Harness):
         elif self.GCOV_END in line:
             self.capture_coverage = False
 
-
-        if self.record:
-            pattern = re.compile(self.record.get("regex", ""))
-            match = pattern.search(line)
+        if self.record_pattern:
+            match = self.record_pattern.search(line)
             if match:
-                csv = []
-                if not self.fieldnames:
-                    for k,v in match.groupdict().items():
-                        self.fieldnames.append(k)
-
-                for k,v in match.groupdict().items():
-                    csv.append(v.strip())
-                self.recording.append(csv)
+                self.recording.append({ k:v.strip() for k,v in match.groupdict(default="").items() })
 
         self.process_test(line)
         # Reset the resulting test state to 'failed' when not all of the patterns were
