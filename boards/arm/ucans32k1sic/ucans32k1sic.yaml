@@ -16,3 +16,4 @@ supported:
   - uart
   - pinctrl
   - i2c
+  - spi
