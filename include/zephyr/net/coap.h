@@ -1134,6 +1134,32 @@ int coap_resource_notify(struct coap_resource *resource);
  */
 bool coap_request_is_observe(const struct coap_packet *request);
 
+/**
+ * @brief CoAP transmission parameters.
+ */
+struct coap_transmission_parameters {
+	/**  Initial AKC timeout. Value is used as a base value to retry pending CoAP packets. */
+	uint32_t ack_timeout;
+	/** Set CoAP retry backoff factor. A value of 200 means a factor of 2.0. */
+	uint16_t coap_backoff_percent;
+	/** Maximum number of retransmissions. */
+	uint8_t max_retransmission;
+};
+
+/**
+ * @brief Get currently active CoAP transmission parameters.
+ *
+ * @return CoAP transmission parameters structure.
+ */
+struct coap_transmission_parameters coap_get_transmission_parameters(void);
+
+/**
+ * @brief Set CoAP transmission parameters.
+ *
+ * @param params Pointer to the transmission parameters structure.
+ */
+void coap_set_transmission_parameters(const struct coap_transmission_parameters *params);
+
 #ifdef __cplusplus
 }
 #endif
