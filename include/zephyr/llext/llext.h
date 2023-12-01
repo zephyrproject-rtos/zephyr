@@ -121,7 +121,7 @@ struct llext_load_param {
  *
  * @param[in] loader An extension loader that provides input data and context
  * @param[in] name A string identifier for the extension
- * @param[out] ext A pointer to a statically allocated llext struct
+ * @param[out] ext This will hold the pointer to the llext struct
  * @param[in] ldr_parm Loader parameters
  *
  * @retval 0 Success
