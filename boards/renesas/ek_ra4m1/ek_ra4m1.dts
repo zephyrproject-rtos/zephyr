@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2024 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <renesas/ra/r7fa4m1ab3cfp.dtsi>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r7fa4m1xxxxxx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Renesas EK-RA4M1";
+	compatible = "renesas,r7fa4m1ab3cfp";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		ld1: led_1 {
+			gpios = <&ioport1 6 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&ioport1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Push Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &ld1;
+		sw0 = &button1;
+	};
+};
+
+&pinctrl {
+	sci1_default: sci1_default {
+		group1 {
+			pinmux = <P401_TXD1>, <P402_RXD1>;
+		};
+	};
+};
+
+&sci1 {
+	status = "okay";
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	uart1: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&fcu {
+	status = "okay";
+};
+
+&mosc {
+	status = "okay";
+	clock-frequency = <12000000>;
+};
+
+&cgc {
+	clock-source = <&mosc>;
+	iclk-div = <1>;
+	pclka-div = <1>;
+	pclkb-div = <2>;
+	pclkc-div = <1>;
+	pclkd-div = <1>;
+	fclk-div = <2>;
+};
