@@ -203,6 +203,11 @@ Networking
   a NULL pointer. IGMPv3 can be enabled using the Kconfig ``CONFIG_NET_IPV4_IGMPV3``.
   (:github:`65293`)
 
+* The network stack now uses a separate IPv4 TTL (time-to-live) value for multicast packets.
+  Before, the same TTL value was used for unicast and multicast packets.
+  The IPv6 hop limit value is also changed so that unicast and multicast packets can have a
+  different one. (:github:`65886`)
+
 Other Subsystems
 ================
 
