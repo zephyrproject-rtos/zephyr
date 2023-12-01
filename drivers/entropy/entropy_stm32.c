@@ -103,6 +103,50 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
+static int entropy_stm32_suspend(const struct device *dev)
+{
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+	RNG_TypeDef *rng = dev_data->rng;
+	int res;
+
+	LL_RNG_Disable(rng);
+
+#ifdef CONFIG_SOC_SERIES_STM32WBAX
+	uint32_t wait_cycles, rng_rate;
+
+	if (clock_control_get_rate(dev_data->clock,
+			(clock_control_subsys_t) &dev_cfg->pclken[0],
+			&rng_rate) < 0) {
+		return -EIO;
+	}
+
+	wait_cycles = SystemCoreClock / rng_rate * 2;
+
+	for (int i = wait_cycles; i >= 0; i--) {
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WBAX */
+
+	res = clock_control_off(dev_data->clock,
+			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+
+	return res;
+}
+
+static int entropy_stm32_resume(const struct device *dev)
+{
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+	RNG_TypeDef *rng = dev_data->rng;
+	int res;
+
+	res = clock_control_on(dev_data->clock,
+			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	LL_RNG_Enable(rng);
+
+	return res;
+}
+
 static void configure_rng(void)
 {
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
@@ -338,6 +382,7 @@ static int start_pool_filling(bool wait)
 {
 	unsigned int key;
 	bool already_filling;
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 	key = irq_lock();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
@@ -364,6 +409,7 @@ static int start_pool_filling(bool wait)
 	 */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
+	entropy_stm32_resume(dev);
 	acquire_rng();
 	irq_enable(IRQN);
 
@@ -474,6 +520,7 @@ static void rng_pool_init(struct rng_pool *rngp, uint16_t size,
 static void stm32_rng_isr(const void *arg)
 {
 	int byte, ret;
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 	ARG_UNUSED(arg);
 
@@ -491,6 +538,7 @@ static void stm32_rng_isr(const void *arg)
 		if (ret < 0) {
 			irq_disable(IRQN);
 			release_rng();
+			entropy_stm32_suspend(dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 			entropy_stm32_rng_data.filling_pools = false;
 		}
@@ -637,37 +685,17 @@ static int entropy_stm32_rng_init(const struct device *dev)
 static int entropy_stm32_rng_pm_action(const struct device *dev,
 				       enum pm_device_action action)
 {
-	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
-	RNG_TypeDef *rng = dev_data->rng;
 	int res = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		LL_RNG_Disable(rng);
-
-#ifdef CONFIG_SOC_SERIES_STM32WBAX
-		uint32_t wait_cycles, rng_rate;
-
-		if (clock_control_get_rate(dev_data->clock,
-				(clock_control_subsys_t) &dev_cfg->pclken[0],
-				&rng_rate) < 0) {
-			return -EIO;
-		}
-
-		wait_cycles = SystemCoreClock / rng_rate * 2;
-
-		for (int i = wait_cycles; i >= 0; i--) {
-		}
-#endif /* CONFIG_SOC_SERIES_STM32WBAX */
-
-		res = clock_control_off(dev_data->clock,
-				(clock_control_subsys_t)&dev_cfg->pclken[0]);
+		res = entropy_stm32_suspend(dev);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		res = clock_control_on(dev_data->clock,
-				(clock_control_subsys_t)&dev_cfg->pclken[0]);
-		LL_RNG_Enable(rng);
+		/* Resume RNG only if it was suspended during filling pool */
+		if (entropy_stm32_rng_data.filling_pools) {
+			res = entropy_stm32_resume(dev);
+		}
 		break;
 	default:
 		return -ENOTSUP;
