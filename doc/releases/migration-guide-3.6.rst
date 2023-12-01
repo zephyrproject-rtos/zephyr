@@ -202,6 +202,10 @@ Networking
   ``request`` argument for :c:func:`coap_well_known_core_get` is made ``const``.
   (:github:`64265`)
 
+* CoAP observer events have moved from a callback function in a CoAP resource to the Network Events
+  subsystem. The ``CONFIG_COAP_OBSERVER_EVENTS`` configuration option has been removed.
+  (:github:`65936`)
+
 * The IGMP multicast library now supports IGMPv3. This results in a minor change to the existing
   api. The :c:func:`net_ipv4_igmp_join` now takes an additional argument of the type
   ``const struct igmp_param *param``. This allows IGMPv3 to exclude/include certain groups of
