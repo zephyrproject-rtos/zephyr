@@ -226,3 +226,7 @@ Recommended Changes
 * New macros available for ST sensor DT properties setting. These macros have a self-explanatory
   name that helps in recognizing what the property setting means (e.g. LSM6DSV16X_DT_ODR_AT_60Hz).
   (:github:`65410`)
+
+* Users of :ref:`native_posix<native_posix>` are recommended to migrate to
+  :ref:`native_sim<native_sim>`. :ref:`native_sim<native_sim>` supports all its use cases,
+  and should be a drop-in replacement for most.
