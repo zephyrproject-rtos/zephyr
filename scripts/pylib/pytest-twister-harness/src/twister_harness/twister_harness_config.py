@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,29 +39,29 @@ class TwisterHarnessConfig:
     devices: list[DeviceConfig] = field(default_factory=list, repr=False)
 
     @classmethod
-    def create(cls, config: pytest.Config) -> TwisterHarnessConfig:
+    def create(cls, options: argparse.Namespace) -> TwisterHarnessConfig:
         """Create new instance from pytest.Config."""
 
         devices = []
 
         west_flash_extra_args: list[str] = []
-        if config.option.west_flash_extra_args:
-            west_flash_extra_args = [w.strip() for w in config.option.west_flash_extra_args.split(',')]
+        if options.west_flash_extra_args:
+            west_flash_extra_args = [w.strip() for w in options.west_flash_extra_args.split(',')]
         device_from_cli = DeviceConfig(
-            type=config.option.device_type,
-            build_dir=_cast_to_path(config.option.build_dir),
-            base_timeout=config.option.base_timeout,
-            platform=config.option.platform,
-            serial=config.option.device_serial,
-            baud=config.option.device_serial_baud,
-            runner=config.option.runner,
-            id=config.option.device_id,
-            product=config.option.device_product,
-            serial_pty=config.option.device_serial_pty,
+            type=options.device_type,
+            build_dir=_cast_to_path(options.build_dir),
+            base_timeout=options.base_timeout,
+            platform=options.platform,
+            serial=options.device_serial,
+            baud=options.device_serial_baud,
+            runner=options.runner,
+            id=options.device_id,
+            product=options.device_product,
+            serial_pty=options.device_serial_pty,
             west_flash_extra_args=west_flash_extra_args,
-            pre_script=_cast_to_path(config.option.pre_script),
-            post_script=_cast_to_path(config.option.post_script),
-            post_flash_script=_cast_to_path(config.option.post_flash_script),
+            pre_script=_cast_to_path(options.pre_script),
+            post_script=_cast_to_path(options.post_script),
+            post_flash_script=_cast_to_path(options.post_flash_script),
         )
 
         devices.append(device_from_cli)

@@ -38,9 +38,8 @@ def pytest_configure(config: pytest.Config):
     if not (config.getoption('twister_harness') or config.getini('twister_harness')):
         return
 
-    ArgumentHandler.sanitize_options(config.option)
+    options = config.option
 
-    config.twister_harness_config = TwisterHarnessConfig.create(config)  # type: ignore
+    ArgumentHandler.sanitize_options(options)
 
-
-
+    config.twister_harness_config = TwisterHarnessConfig.create(options)  # type: ignore
