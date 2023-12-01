@@ -27,6 +27,25 @@ BOOTSTRAP_COAPS_PORT: int = 5784
 
 logger = logging.getLogger(__name__)
 
+class Endpoint:
+    def __init__(self, name: str, shell: Shell, registered: bool = False, bootstrap: bool = False):
+        self.name = name
+        self.registered = registered
+        self.bootstrap = bootstrap
+        self.shell = shell
+        self.last_update = 0.0
+
+    def check_update(self):
+        if not self.registered:
+            return
+        if self.last_update < time.time() - 5:
+            self.shell.exec_command('lwm2m update')
+            self.last_update = time.time()
+
+    def __str__(self):
+        return self.name
+
+
 @pytest.fixture(scope='session')
 def leshan() -> Leshan:
     """
@@ -89,9 +108,8 @@ def endpoint_nosec(shell: Shell, dut: DeviceAdapter, leshan: Leshan) -> str:
     shell.exec_command('lwm2m write 1/0/0 -u16 1')
     shell.exec_command('lwm2m write 1/0/1 -u32 86400')
     shell.exec_command(f'lwm2m start {ep} -b 0')
-    dut.readlines_until(regex=f"RD Client started with endpoint '{ep}'", timeout=10.0)
 
-    yield ep
+    yield Endpoint(ep, shell)
 
     # All done
     shell.exec_command('lwm2m stop')
@@ -125,7 +143,7 @@ def endpoint_bootstrap(shell: Shell, dut: DeviceAdapter, leshan: Leshan, leshan_
         shell.exec_command(f'lwm2m write 0/0/5 -s {bs_passwd}')
         shell.exec_command(f'lwm2m start {ep} -b 1')
 
-        yield ep
+        yield Endpoint(ep, shell)
 
         shell.exec_command('lwm2m stop')
         dut.readlines_until(regex=r'.*Deregistration success', timeout=10.0)
@@ -137,12 +155,16 @@ def endpoint_bootstrap(shell: Shell, dut: DeviceAdapter, leshan: Leshan, leshan_
         leshan_bootstrap.delete_bs_device(ep)
 
 @pytest.fixture(scope='module')
-def endpoint_registered(endpoint_bootstrap, shell: Shell, dut: DeviceAdapter) -> str:
+def endpoint_registered(endpoint_bootstrap, dut: DeviceAdapter) -> str:
     """Fixture that returns an endpoint that is registered."""
-    dut.readlines_until(regex='.*Registration Done', timeout=5.0)
+    if not endpoint_bootstrap.registered:
+        dut.readlines_until(regex='.*Registration Done', timeout=5.0)
+        endpoint_bootstrap.bootstrap = True
+        endpoint_bootstrap.registered = True
     return endpoint_bootstrap
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def endpoint(endpoint_registered) -> str:
     """Fixture that returns an endpoint that is registered."""
+    endpoint_registered.check_update()
     return endpoint_registered
