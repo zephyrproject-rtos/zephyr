@@ -370,7 +370,7 @@ int close_sensor(struct sensing_connection **conn)
 }
 
 int sensing_register_callback(struct sensing_connection *conn,
-			      const struct sensing_callback_list *cb_list)
+			      struct sensing_callback_list *cb_list)
 {
 	if (conn == NULL) {
 		LOG_ERR("register sensing callback list, connection not be NULL");
@@ -383,7 +383,7 @@ int sensing_register_callback(struct sensing_connection *conn,
 		LOG_ERR("callback should not be NULL");
 		return -ENODEV;
 	}
-	conn->callback_list = *cb_list;
+	conn->callback_list = cb_list;
 
 	return 0;
 }

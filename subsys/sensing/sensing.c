@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(sensing, CONFIG_SENSING_LOG_LEVEL);
 
 /* sensing_open_sensor is normally called by applications: hid, chre, zephyr main, etc */
 int sensing_open_sensor(const struct sensing_sensor_info *sensor_info,
-			const struct sensing_callback_list *cb_list,
+			struct sensing_callback_list *cb_list,
 			sensing_sensor_handle_t *handle)
 {
 	int ret = 0;
@@ -37,7 +37,7 @@ int sensing_open_sensor(const struct sensing_sensor_info *sensor_info,
 }
 
 int sensing_open_sensor_by_dt(const struct device *dev,
-			      const struct sensing_callback_list *cb_list,
+			      struct sensing_callback_list *cb_list,
 			      sensing_sensor_handle_t *handle)
 {
 	int ret = 0;

@@ -196,7 +196,8 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  *
  * @param info The sensor info got from \ref sensing_get_sensors
  *
- * @param cb_list callback list to be registered to sensing.
+ * @param cb_list callback list to be registered to sensing, must have a static
+ *                lifetime.
  *
  * @param handle The opened instance handle, if failed will be set to NULL.
  *
@@ -204,7 +205,7 @@ int sensing_get_sensors(int *num_sensors, const struct sensing_sensor_info **inf
  */
 int sensing_open_sensor(
 		const struct sensing_sensor_info *info,
-		const struct sensing_callback_list *cb_list,
+		struct sensing_callback_list *cb_list,
 		sensing_sensor_handle_t *handle);
 
 /**
@@ -217,14 +218,15 @@ int sensing_open_sensor(
  *
  * @param dev pointer device get from device tree.
  *
- * @param cb_list callback list to be registered to sensing.
+ * @param cb_list callback list to be registered to sensing, must have a static
+ *                lifetime.
  *
  * @param handle The opened instance handle, if failed will be set to NULL.
  *
  * @return 0 on success or negative error value on failure.
  */
 int sensing_open_sensor_by_dt(
-		const struct device *dev, const struct sensing_callback_list *cb_list,
+		const struct device *dev, struct sensing_callback_list *cb_list,
 		sensing_sensor_handle_t *handle);
 
 /**

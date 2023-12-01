@@ -80,7 +80,7 @@ struct sensing_connection {
 	/* client(sink) next consume time */
 	uint64_t next_consume_time;
 	/* post data to application */
-	struct sensing_callback_list callback_list;
+	struct sensing_callback_list *callback_list;
 };
 
 /**
@@ -136,7 +136,7 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
 
 #define SENSING_CONNECTION_INITIALIZER(source_name, cb_list_ptr)	\
 {									\
-	.callback_list = *cb_list_ptr,					\
+	.callback_list = cb_list_ptr,					\
 	.source = &source_name,						\
 }
 

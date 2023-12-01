@@ -153,7 +153,7 @@ static void hinge_reporter_on_data_event(sensing_sensor_handle_t handle,
 #define DT_DRV_COMPAT zephyr_sensing_hinge_angle
 #define SENSING_HINGE_ANGLE_DT_DEFINE(_inst)					\
 	static struct hinge_angle_context _CONCAT(hinge_ctx, _inst);		\
-	static const struct sensing_callback_list _CONCAT(hinge_cb, _inst) = {	\
+	static struct sensing_callback_list _CONCAT(hinge_cb, _inst) = {	\
 		.on_data_event = hinge_reporter_on_data_event,			\
 		.context = &_CONCAT(hinge_ctx, _inst),				\
 	};									\
