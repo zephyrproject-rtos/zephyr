@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/net/socket.h>
 
 #include <zephyr/random/random.h>
 
@@ -45,6 +46,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 
 static struct in_addr my_addr = { { { 192, 0, 2, 1 } } };
 static struct in_addr mcast_addr = { { { 224, 0, 2, 63 } } };
+static struct in_addr any_addr = INADDR_ANY_INIT;
 
 static struct net_if *net_iface;
 static bool is_group_joined;
@@ -353,6 +355,157 @@ ZTEST(net_igmp, test_igmp_verify_catch_join)
 {
 	verify_join_group();
 	verify_leave_group();
+}
+
+static void socket_group_with_address(struct in_addr *local_addr, bool do_join)
+{
+	struct ip_mreqn mreqn = { 0 };
+	int option;
+	int ret, fd;
+
+	if (do_join) {
+		option = IP_ADD_MEMBERSHIP;
+	} else {
+		option = IP_DROP_MEMBERSHIP;
+	}
+
+	fd = zsock_socket(AF_INET, SOCK_DGRAM, 0);
+	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       NULL, sizeof(mreqn));
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, 1);
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	/* First try with empty mreqn */
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, sizeof(mreqn));
+	zassert_true(ret == -1 && errno == EINVAL,
+		     "Incorrect return value (%d)", -errno);
+
+	memcpy(&mreqn.imr_address, local_addr, sizeof(mreqn.imr_address));
+	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, sizeof(mreqn));
+
+	if (do_join) {
+		if (ignore_already) {
+			zassert_true(ret == 0 || ret == -EALREADY,
+				     "Cannot join IPv4 multicast group (%d)",
+				     -errno);
+		} else {
+			zassert_equal(ret, 0,
+				      "Cannot join IPv4 multicast group (%d) "
+				      "with local addr %s",
+				      -errno, net_sprint_ipv4_addr(local_addr));
+		}
+	} else {
+		zassert_equal(ret, 0, "Cannot leave IPv4 multicast group (%d)",
+			      -errno);
+
+		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+			/* Let the network stack to proceed */
+			k_msleep(THREAD_SLEEP);
+		} else {
+			k_yield();
+		}
+	}
+
+	zsock_close(fd);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+}
+
+static void socket_group_with_index(struct in_addr *local_addr, bool do_join)
+{
+	struct ip_mreqn mreqn = { 0 };
+	int option;
+	int ret, fd;
+
+	if (do_join) {
+		option = IP_ADD_MEMBERSHIP;
+	} else {
+		option = IP_DROP_MEMBERSHIP;
+	}
+
+	fd = zsock_socket(AF_INET, SOCK_DGRAM, 0);
+	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
+
+	mreqn.imr_ifindex = net_if_ipv4_addr_lookup_by_index(local_addr);
+	memcpy(&mreqn.imr_multiaddr, &mcast_addr, sizeof(mreqn.imr_multiaddr));
+
+	ret = zsock_setsockopt(fd, IPPROTO_IP, option,
+			       (void *)&mreqn, sizeof(mreqn));
+
+	if (do_join) {
+		if (ignore_already) {
+			zassert_true(ret == 0 || ret == -EALREADY,
+				     "Cannot join IPv4 multicast group (%d)",
+				     -errno);
+		} else {
+			zassert_equal(ret, 0,
+				      "Cannot join IPv4 multicast group (%d)",
+				      -errno);
+		}
+	} else {
+		zassert_equal(ret, 0, "Cannot leave IPv4 multicast group (%d)",
+			      -errno);
+
+		if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+			/* Let the network stack to proceed */
+			k_msleep(THREAD_SLEEP);
+		} else {
+			k_yield();
+		}
+	}
+
+	zsock_close(fd);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+}
+
+static void socket_join_group_with_address(struct in_addr *addr)
+{
+	socket_group_with_address(addr, true);
+}
+
+static void socket_leave_group_with_address(struct in_addr *addr)
+{
+	socket_group_with_address(addr, false);
+}
+
+static void socket_join_group_with_index(struct in_addr *addr)
+{
+	socket_group_with_index(addr, true);
+}
+
+static void socket_leave_group_with_index(struct in_addr *addr)
+{
+	socket_group_with_index(addr, false);
+}
+
+ZTEST_USER(net_igmp, test_socket_catch_join_with_address)
+{
+	socket_join_group_with_address(&any_addr);
+	socket_leave_group_with_address(&any_addr);
+	socket_join_group_with_address(&my_addr);
+	socket_leave_group_with_address(&my_addr);
+}
+
+ZTEST_USER(net_igmp, test_socket_catch_join_with_index)
+{
+	socket_join_group_with_index(&any_addr);
+	socket_leave_group_with_index(&any_addr);
+	socket_join_group_with_index(&my_addr);
+	socket_leave_group_with_index(&my_addr);
 }
 
 ZTEST_SUITE(net_igmp, NULL, igmp_setup, NULL, NULL, igmp_teardown);
