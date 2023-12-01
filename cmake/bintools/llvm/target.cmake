@@ -26,7 +26,11 @@ find_program(CMAKE_OBJCOPY NAMES
                            llvm-objcopy-${CLANGVER}
                            objcopy
                            ${find_program_binutils_args})
-find_program(CMAKE_READELF readelf      ${find_program_binutils_args})
+find_program(CMAKE_READELF NAMES
+                           llvm-readelf
+                           llvm-readelf-${CLANGVER}
+                           readelf
+                           ${find_program_binutils_args})
 
 # Use the gnu binutil abstraction
 include(${ZEPHYR_BASE}/cmake/bintools/llvm/target_bintools.cmake)
