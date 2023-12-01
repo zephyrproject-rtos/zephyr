@@ -38,14 +38,16 @@ static void hinge_angle_data_event_callback(sensing_sensor_handle_t handle, cons
 	LOG_INF("handle:%p, Sensor:%s data:(v:%d)", handle, info->name, sample->readings[0].v);
 }
 
+static struct sensing_callback_list base_acc_cb_list = {
+	.on_data_event = &acc_data_event_callback,
+};
+
+static struct sensing_callback_list hinge_angle_cb_list = {
+	.on_data_event = &hinge_angle_data_event_callback,
+};
+
 int main(void)
 {
-	const struct sensing_callback_list base_acc_cb_list = {
-		.on_data_event = &acc_data_event_callback,
-	};
-	const struct sensing_callback_list hinge_angle_cb_list = {
-		.on_data_event = &hinge_angle_data_event_callback,
-	};
 	const struct sensing_sensor_info *info;
 	sensing_sensor_handle_t base_acc;
 	sensing_sensor_handle_t hinge_angle;

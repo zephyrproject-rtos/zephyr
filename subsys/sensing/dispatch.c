@@ -59,13 +59,13 @@ static int send_data_to_clients(struct sensing_sensor *sensor,
 
 		update_client_consume_time(sensor, conn);
 
-		if (!conn->callback_list.on_data_event) {
+		if (!conn->callback_list->on_data_event) {
 			LOG_WRN("sensor:%s event callback not registered",
 					conn->source->dev->name);
 			continue;
 		}
-		conn->callback_list.on_data_event(conn, data,
-				conn->callback_list.context);
+		conn->callback_list->on_data_event(conn, data,
+				conn->callback_list->context);
 	}
 
 	return 0;
