@@ -465,10 +465,11 @@ int main(void)
 	usb_audio_register(hs_dev, &ops);
 
 	err = usb_enable(NULL);
-	if (err) {
-		printk("Failed to enable USB");
+	if (err && err != -EALREADY) {
+		printk("Failed to enable USB (%d)", err);
 		return 0;
 	}
+
 #endif /* defined(CONFIG_USB_DEVICE_AUDIO) */
 	k_thread_start(encoder);
 #endif /* defined(CONFIG_LIBLC3) */
