@@ -894,6 +894,8 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 	int ret;
 	elf_ehdr_t ehdr;
 
+	*ext = llext_by_name(name);
+
 	k_mutex_lock(&llext_lock, K_FOREVER);
 
 	if (*ext) {
