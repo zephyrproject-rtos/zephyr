@@ -760,6 +760,8 @@ The are following recommendations:
   format specifier and it points to a transient string.
 * It is recommended to cast character pointer to non character pointer
   (e.g., ``void *``) when it is used with ``%p`` format specifier.
+* It is recommended to not use strings with precision specifiers, e.g ``%.10s`` because
+  it is not supported by the cbprintf packaging.
 
 .. code-block:: c
 
