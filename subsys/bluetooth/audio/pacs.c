@@ -93,6 +93,20 @@ struct pac_records_build_data {
 	struct net_buf_simple *buf;
 };
 
+static struct pacs_client *client_lookup_conn(const struct bt_conn *conn)
+{
+	__ASSERT_NO_MSG(conn != NULL);
+
+	for (size_t i = 0; i < ARRAY_SIZE(clients); i++) {
+		if (atomic_test_bit(clients[i].flags, FLAG_ACTIVE) &&
+		    bt_addr_le_eq(&clients[i].addr, bt_conn_get_dst(conn))) {
+			return &clients[i];
+		}
+	}
+
+	return NULL;
+}
+
 static void pacs_set_notify_bit(int bit)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
@@ -789,7 +803,7 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 
 static void notify_cb(struct bt_conn *conn, void *data)
 {
-	struct pacs_client *client = &clients[bt_conn_index(conn)];
+	struct pacs_client *client;
 	struct bt_conn_info info;
 	int err = 0;
 
@@ -803,6 +817,11 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 	if (info.state != BT_CONN_STATE_CONNECTED) {
 		/* Not connected */
+		return;
+	}
+
+	client = client_lookup_conn(conn);
+	if (client == NULL) {
 		return;
 	}
 
