@@ -70,7 +70,7 @@ static int riscv_plic_is_edge_irq(uint32_t irq)
 	volatile uint32_t *trig = (volatile uint32_t *)PLIC_EDGE_TRIG_TYPE;
 
 	trig += (irq >> PLIC_EDGE_TRIG_SHIFT);
-	return *trig & BIT(irq);
+	return *trig & BIT(irq & BIT_MASK(PLIC_EDGE_TRIG_SHIFT));
 }
 
 /**
