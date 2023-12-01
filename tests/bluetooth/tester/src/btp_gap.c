@@ -1594,8 +1594,8 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 	bt_addr_le_copy(&create_params.addr, &cp->address);
 	create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
 	create_params.sid = cp->advertiser_sid;
-	create_params.skip = cp->skip;
-	create_params.timeout = cp->sync_timeout;
+	create_params.skip = sys_le16_to_cpu(cp->skip);
+	create_params.timeout = sys_le16_to_cpu(cp->sync_timeout);
 
 	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_REPORTS_DISABLED) {
 		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
