@@ -20,4 +20,11 @@
 			drive-strength = "low";
 		};
 	};
+
+	lpi2c0_default: lpi2c0_default {
+		group1 {
+			pinmux = <LPI2C0_SDA_PTA2>, <LPI2C0_SCL_PTA3>;
+			drive-strength = "low";
+		};
+	};
 };
