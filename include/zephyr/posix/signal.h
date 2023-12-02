@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_POSIX_SIGNAL
 #define SIGHUP    1  /**< Hangup */
 #define SIGINT    2  /**< Interrupt */
 #define SIGQUIT   3  /**< Quit */
@@ -45,23 +44,16 @@ extern "C" {
 /* 30 not used */
 #define SIGSYS    31 /**< Bad system call */
 
+#define RTSIG_MAX CONFIG_POSIX_RTSIG_MAX
 #define SIGRTMIN 32
-#define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
+#define SIGRTMAX (SIGRTMIN + RTSIG_MAX)
 #define _NSIG (SIGRTMAX + 1)
 
-BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
+BUILD_ASSERT(RTSIG_MAX >= 0);
 
 typedef struct {
 	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
 } sigset_t;
-
-char *strsignal(int signum);
-int sigemptyset(sigset_t *set);
-int sigfillset(sigset_t *set);
-int sigaddset(sigset_t *set, int signo);
-int sigdelset(sigset_t *set, int signo);
-int sigismember(const sigset_t *set, int signo);
-#endif /* CONFIG_POSIX_SIGNAL */
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1
@@ -89,6 +81,15 @@ struct sigevent {
 	void (*sigev_notify_function)(union sigval val);
 	pthread_attr_t *sigev_notify_attributes;
 };
+
+#ifdef CONFIG_POSIX_SIGNAL
+char *strsignal(int signum);
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signo);
+int sigdelset(sigset_t *set, int signo);
+int sigismember(const sigset_t *set, int signo);
+#endif /* CONFIG_POSIX_SIGNAL */
 
 #ifdef __cplusplus
 }
