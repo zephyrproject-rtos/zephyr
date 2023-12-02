@@ -17,6 +17,25 @@
 	};
 	aliases {
 		watchdog0 = &wdt0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio64_95 27 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
 	};
 
 };
