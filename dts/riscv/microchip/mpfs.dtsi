@@ -120,10 +120,13 @@
 			#address-cells = <1>;
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
-						&hlic1 11>;
+							&hlic1 11 &hlic1 9
+							&hlic2 11 &hlic2 9
+							&hlic3 11 &hlic3 9
+							&hlic4 11 &hlic4 9>;
 			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
-			riscv,ndev = <187>;
+			riscv,ndev = <186>;
 		};
 
 		uart0: uart@20000000 {
