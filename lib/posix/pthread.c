@@ -1073,6 +1073,49 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
 	return ENOSYS;
 }
 
+/* this should probably go into signal.c but we need access to the lock */
+int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
+{
+	struct posix_thread *t;
+
+	if (!(how == SIG_BLOCK || how == SIG_SETMASK || how == SIG_UNBLOCK)) {
+		return EINVAL;
+	}
+
+	t = to_posix_thread(pthread_self());
+	if (t == NULL) {
+		return ESRCH;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (oset != NULL) {
+			*oset = t->sigset;
+		}
+
+		if (set == NULL) {
+			K_SPINLOCK_BREAK;
+		}
+
+		switch (how) {
+		case SIG_BLOCK:
+			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
+				t->sigset.sig[i] |= set->sig[i];
+			}
+			break;
+		case SIG_SETMASK:
+			t->sigset = *set;
+			break;
+		case SIG_UNBLOCK:
+			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
+				t->sigset.sig[i] &= ~set->sig[i];
+			}
+			break;
+		}
+	}
+
+	return 0;
+}
+
 static int posix_thread_pool_init(void)
 {
 	size_t i;
