@@ -1228,10 +1228,11 @@ if(CONFIG_GEN_ISR_TABLES)
   # isr_tables.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
-    OUTPUT isr_tables.c
+    OUTPUT isr_tables.c isr_tables_vt.ld isr_tables_swi.ld
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_isr_tables.py
     --output-source isr_tables.c
+    --linker-output-files isr_tables_vt.ld isr_tables_swi.ld
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     --intlist-section .intList
     --intlist-section intList
