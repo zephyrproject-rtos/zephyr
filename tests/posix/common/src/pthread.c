@@ -10,10 +10,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-#ifndef min
-#define min(a, b) ((a) < (b)) ? (a) : (b)
-#endif
-
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
@@ -402,8 +398,7 @@ ZTEST(posix_apis, test_pthread_execution)
 	zassert_false(ret, "Get thread name failed!");
 
 	/* TESTPOINT: Thread names match */
-	ret = strncmp(thr_name, thr_name_buf, min(strlen(thr_name),
-						  strlen(thr_name_buf)));
+	ret = strncmp(thr_name, thr_name_buf, MIN(strlen(thr_name), strlen(thr_name_buf)));
 	zassert_false(ret, "Thread names don't match!");
 
 	while (!bounce_test_done()) {
