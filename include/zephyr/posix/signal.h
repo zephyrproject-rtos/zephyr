@@ -67,6 +67,16 @@ typedef struct {
 #define SIGEV_THREAD 3
 #endif
 
+#ifndef SIG_BLOCK
+#define SIG_BLOCK 0
+#endif
+#ifndef SIG_SETMASK
+#define SIG_SETMASK 1
+#endif
+#ifndef SIG_UNBLOCK
+#define SIG_UNBLOCK 2
+#endif
+
 typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
 
 union sigval {
@@ -89,6 +99,8 @@ int sigfillset(sigset_t *set);
 int sigaddset(sigset_t *set, int signo);
 int sigdelset(sigset_t *set, int signo);
 int sigismember(const sigset_t *set, int signo);
+
+int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 #endif /* CONFIG_POSIX_SIGNAL */
 
 #ifdef __cplusplus
