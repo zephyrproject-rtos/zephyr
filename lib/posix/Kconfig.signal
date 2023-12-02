@@ -23,7 +23,7 @@ endif
 config POSIX_RTSIG_MAX
 	int "Maximum number of realtime signals"
 	default 31 if POSIX_SIGNAL
-	default 0 if !POSIX_SIGNAL
+	default 0
 	help
 	  Define the maximum number of realtime signals (RTSIG_MAX).
 	  The range of realtime signals is [SIGRTMIN .. (SIGRTMIN+RTSIG_MAX)]
