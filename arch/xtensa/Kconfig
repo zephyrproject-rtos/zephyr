@@ -153,6 +153,12 @@ config XTENSA_MMU_DOUBLE_MAP
 	  This option specifies that the memory is mapped in two
 	  distinct region, cached and uncached.
 
+	config XTENSA_INVALIDATE_MEM_DOMAIN_TLB_ON_SWAP
+		bool
+		help
+		  This invalidates all TLBs referred by the incoming thread's
+		  memory domain when swapping page tables.
+
 endif # XTENSA_MMU
 
 config XTENSA_SYSCALL_USE_HELPER
