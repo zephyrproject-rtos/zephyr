@@ -15,6 +15,11 @@
 struct int_list_header {
 	uint32_t table_size;
 	uint32_t offset;
+#if IS_ENABLED(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+	uint32_t swi_table_entry_size;
+	uint32_t shared_isr_table_entry_size;
+	uint32_t shared_isr_client_num_offset;
+#endif /* IS_ENABLED(CONFIG_ISR_TABLES_LOCAL_DECLARATION) */
 };
 
 /* These values are not included in the resulting binary, but instead form the
@@ -24,6 +29,13 @@ struct int_list_header {
 Z_GENERIC_SECTION(.irq_info) __used struct int_list_header _iheader = {
 	.table_size = IRQ_TABLE_SIZE,
 	.offset = CONFIG_GEN_IRQ_START_VECTOR,
+#if IS_ENABLED(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+	.swi_table_entry_size = sizeof(struct _isr_table_entry),
+#if IS_ENABLED(CONFIG_SHARED_INTERRUPTS)
+	.shared_isr_table_entry_size = sizeof(struct z_shared_isr_table_entry),
+	.shared_isr_client_num_offset = offsetof(struct z_shared_isr_table_entry, client_num),
+#endif /* IS_ENABLED(CONFIG_SHARED_INTERRUPTS) */
+#endif /* IS_ENABLED(CONFIG_ISR_TABLES_LOCAL_DECLARATION) */
 };
 
 /* These are placeholder tables. They will be replaced by the real tables
