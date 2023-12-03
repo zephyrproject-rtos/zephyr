@@ -12,9 +12,6 @@ properties:
   phy-handle:
     required: true
 
-  phy-connection-type:
-    default: "rmii"
-
   ref-clk-output-gpios:
     type: phandle-array
     description: |
