@@ -236,19 +236,19 @@ out:
 static void esp_wifi_handle_connect_event(void)
 {
 	esp32_data.state = ESP32_STA_CONNECTED;
-	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
-		net_dhcpv4_start(esp32_wifi_iface);
-	} else {
-		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
-	}
+#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+	net_dhcpv4_start(esp32_wifi_iface);
+#else
+	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+#endif
 }
 
 static void esp_wifi_handle_disconnect_event(void)
 {
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
-		if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
-			net_dhcpv4_stop(esp32_wifi_iface);
-		}
+#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+		net_dhcpv4_stop(esp32_wifi_iface);
+#endif
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
 	} else {
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
