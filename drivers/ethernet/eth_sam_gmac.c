@@ -135,108 +135,110 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 
 BUILD_ASSERT(DT_INST_ENUM_IDX(0, phy_connection_type) <= 1, "Invalid PHY connection");
 
+#define MEM_SECTION __attribute__ ((__section__("RAM_NOCACHE")))
+
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #if GMAC_PRIORITY_QUEUE_NUM >= 1
 static struct gmac_desc rx_desc_que1[PRIORITY_QUEUE1_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 2
 static struct gmac_desc rx_desc_que2[PRIORITY_QUEUE2_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 3
 static struct gmac_desc rx_desc_que3[PRIORITY_QUEUE3_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 4
 static struct gmac_desc rx_desc_que4[PRIORITY_QUEUE4_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 5
 static struct gmac_desc rx_desc_que5[PRIORITY_QUEUE5_RX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 
 /* TX descriptors list */
 static struct gmac_desc tx_desc_que0[MAIN_QUEUE_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #if GMAC_PRIORITY_QUEUE_NUM >= 1
 static struct gmac_desc tx_desc_que1[PRIORITY_QUEUE1_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 2
 static struct gmac_desc tx_desc_que2[PRIORITY_QUEUE2_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 3
 static struct gmac_desc tx_desc_que3[PRIORITY_QUEUE3_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 4
 static struct gmac_desc tx_desc_que4[PRIORITY_QUEUE4_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 #if GMAC_PRIORITY_QUEUE_NUM >= 5
 static struct gmac_desc tx_desc_que5[PRIORITY_QUEUE5_TX_DESC_COUNT]
-	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+	MEM_SECTION __aligned(GMAC_DESC_ALIGNMENT);
 #endif
 
 /* RX buffer accounting list */
-static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT] MEM_SECTION;
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static struct net_buf *rx_frag_list_que1[PRIORITY_QUEUE1_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que1[PRIORITY_QUEUE1_RX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static struct net_buf *rx_frag_list_que2[PRIORITY_QUEUE2_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que2[PRIORITY_QUEUE2_RX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static struct net_buf *rx_frag_list_que3[PRIORITY_QUEUE3_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que3[PRIORITY_QUEUE3_RX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static struct net_buf *rx_frag_list_que4[PRIORITY_QUEUE4_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que4[PRIORITY_QUEUE4_RX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static struct net_buf *rx_frag_list_que5[PRIORITY_QUEUE5_RX_DESC_COUNT];
+static struct net_buf *rx_frag_list_que5[PRIORITY_QUEUE5_RX_DESC_COUNT] MEM_SECTION;
 #endif
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 /* TX buffer accounting list */
-static struct net_buf *tx_frag_list_que0[MAIN_QUEUE_TX_DESC_COUNT];
+static struct net_buf *tx_frag_list_que0[MAIN_QUEUE_TX_DESC_COUNT] MEM_SECTION;
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static struct net_buf *tx_frag_list_que1[PRIORITY_QUEUE1_TX_DESC_COUNT];
+static struct net_buf *tx_frag_list_que1[PRIORITY_QUEUE1_TX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static struct net_buf *tx_frag_list_que2[PRIORITY_QUEUE2_TX_DESC_COUNT];
+static struct net_buf *tx_frag_list_que2[PRIORITY_QUEUE2_TX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static struct net_buf *tx_frag_list_que3[PRIORITY_QUEUE3_TX_DESC_COUNT];
+static struct net_buf *tx_frag_list_que3[PRIORITY_QUEUE3_TX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static struct net_buf *tx_frag_list_que4[PRIORITY_QUEUE4_TX_DESC_COUNT];
+static struct net_buf *tx_frag_list_que4[PRIORITY_QUEUE4_TX_DESC_COUNT] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static struct net_buf *tx_frag_list_que5[PRIORITY_QUEUE5_TX_DESC_COUNT];
+static struct net_buf *tx_frag_list_que5[PRIORITY_QUEUE5_TX_DESC_COUNT] MEM_SECTION;
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 /* TX frames accounting list */
-static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1] MEM_SECTION;
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-static struct net_pkt *tx_frame_list_que1[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que1[CONFIG_NET_PKT_TX_COUNT + 1] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-static struct net_pkt *tx_frame_list_que2[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que2[CONFIG_NET_PKT_TX_COUNT + 1] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-static struct net_pkt *tx_frame_list_que3[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que3[CONFIG_NET_PKT_TX_COUNT + 1] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-static struct net_pkt *tx_frame_list_que4[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que4[CONFIG_NET_PKT_TX_COUNT + 1] MEM_SECTION;
 #endif
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1];
+static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1] MEM_SECTION;
 #endif
 #endif
 #endif
@@ -1118,8 +1120,10 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	switch (DT_INST_ENUM_IDX_OR(0, phy_connection_type, 1)) {
 	case 0: /* mii */
 		gmac->GMAC_UR = 0x1;
+		break;
 	case 1: /* rmii */
 		gmac->GMAC_UR = 0x0;
+		break;
 	default:
 		/* Build assert at top of file should catch this case */
 		return -EINVAL;
@@ -2414,7 +2418,7 @@ struct ptp_context {
 	const struct device *eth_dev;
 };
 
-static struct ptp_context ptp_gmac_0_context;
+static struct ptp_context ptp_gmac_0_context MEM_SECTION;
 
 static int ptp_clock_sam_gmac_set(const struct device *dev,
 				  struct net_ptp_time *tm)

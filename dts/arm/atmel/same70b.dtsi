@@ -1,10 +1,32 @@
 /*
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <atmel/same70.dtsi>
+
+/ {
+	itcm: memory@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	quadspi_memory: memory@80000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x80000000 DT_SIZE_M(512)>;
+		zephyr,memory-region = "QSPI";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
+	};
+};
 
 &gmac {
 	interrupts = <39 0>, <66 0>, <67 0>, <71 0>, <72 0>, <73 0>;

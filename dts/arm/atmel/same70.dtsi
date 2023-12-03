@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	aliases {
@@ -44,6 +46,12 @@
 	};
 
 	sram0: memory@20400000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x20400000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "RAM_NOCACHE";
+	};
+
+	sram1: memory@20402000 {
 		compatible = "mmio-sram";
 	};
 
