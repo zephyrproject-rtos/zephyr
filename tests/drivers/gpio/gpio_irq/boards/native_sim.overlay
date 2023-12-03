@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Bjarki Arge Andreasen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	/* Additional interrupt controller */
+	gpio1: gpio@900 {
+		status = "okay";
+		compatible = "zephyr,gpio-emul";
+		reg = <0x900 0x4>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	dut0: dut0 {
+		compatible = "vnd,interrupt-holder";
+		interrupt-parent = <&gpio0>;
+		interrupts = <4 (IRQ_TYPE_EDGE_BOTH)>,
+			     <5 (GPIO_PULL_UP | IRQ_TYPE_EDGE_FALLING)>;
+		interrupt-names = "err", "stat";
+	};
+
+	dut1: dut1 {
+		compatible = "vnd,interrupt-holder-extended";
+		interrupts-extended = <&gpio0 3 IRQ_TYPE_EDGE_RISING>,
+				      <&gpio1 6 (GPIO_PULL_DOWN | IRQ_TYPE_LEVEL_HIGH)>;
+		interrupt-names = "drdy", "int1";
+	};
+};
