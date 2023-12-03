@@ -1115,13 +1115,18 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	switch (DT_INST_ENUM_IDX_OR(0, phy_connection_type, 1)) {
+	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
+	switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
 	case 0: /* mii */
 		gmac->GMAC_UR = 0x1;
+		break;
 	case 1: /* rmii */
 		gmac->GMAC_UR = 0x0;
+		break;
 	default:
 		/* Build assert at top of file should catch this case */
+		LOG_ERR("The phy connection type is invalid");
+
 		return -EINVAL;
 	}
 
