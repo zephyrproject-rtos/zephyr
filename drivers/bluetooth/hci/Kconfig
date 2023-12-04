@@ -175,6 +175,9 @@ config BT_HCI_SET_PUBLIC_ADDR
 	  public identity through vendor-specific commands. They can then implement the
 	  setup() HCI driver API function and get the address to set from the public_addr field.
 
+	  From the application side, the public address is set using the first call to
+	  bt_id_create(), before calling bt_enable().
+
 config BT_HCI_SETUP
 	bool
 	help
