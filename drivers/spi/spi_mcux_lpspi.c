@@ -225,13 +225,18 @@ static int spi_mcux_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled */
-	LPSPI_Enable(base, false);
-	while ((base->CR & LPSPI_CR_MEN_MASK) != 0U) {
-		/* Wait until LPSPI is disabled. Datasheet:
-		 * After writing 0, MEN (Module Enable) remains set until the LPSPI has completed
-		 * the current transfer and is idle.
+	if (data->ctx.config != NULL) {
+		/* Setting the baud rate in LPSPI_MasterInit requires module to be disabled. Only
+		 * disable if already configured, otherwise the clock is not enabled and the
+		 * CR register cannot be written.
 		 */
+		LPSPI_Enable(base, false);
+		while ((base->CR & LPSPI_CR_MEN_MASK) != 0U) {
+			/* Wait until LPSPI is disabled. Datasheet:
+			 * After writing 0, MEN (Module Enable) remains set until the LPSPI has
+			 * completed the current transfer and is idle.
+			 */
+		}
 	}
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
