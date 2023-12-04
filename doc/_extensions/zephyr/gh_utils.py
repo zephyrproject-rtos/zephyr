@@ -53,7 +53,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from get_maintainer import Maintainers
 
-MAINTAINERS : Final[Maintainers] = Maintainers()
+MAINTAINERS : Final[Maintainers] = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
 
 
 __version__ = "0.1.0"
