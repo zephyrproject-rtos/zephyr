@@ -30,6 +30,11 @@ struct bt_testlib_att_read_closure {
 	bool long_read;
 };
 
+static bool bt_gatt_read_params_is_by_uuid(const struct bt_gatt_read_params *params)
+{
+	return params->handle_count == 0;
+}
+
 static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 			   struct bt_gatt_read_params *params, const void *read_data,
 			   uint16_t read_len)
@@ -42,6 +47,7 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 	ctx->att_err = att_err;
 
 	if (!att_err && ctx->result_handle) {
+		__ASSERT_NO_MSG(bt_gatt_read_params_is_by_uuid(params));
 		*ctx->result_handle = params->by_uuid.start_handle;
 	}
 
@@ -79,12 +85,18 @@ static int bt_testlib_sync_bt_gatt_read(struct bt_testlib_att_read_closure *ctx)
 {
 	int api_err;
 
+	/* `result_size` is initialized here so that it can be plussed on in
+	 * the callback. The result of a long read comes in multiple
+	 * callbacks and must be added up.
+	 */
 	if (ctx->result_size) {
 		*ctx->result_size = 0;
 	}
 
+	/* `att_read_cb` is smart and does the right thing based on `ctx`. */
 	ctx->params.func = att_read_cb;
 
+	/* Setup synchronization between the cb and the current function. */
 	k_mutex_init(&ctx->lock);
 	k_condvar_init(&ctx->done);
 
