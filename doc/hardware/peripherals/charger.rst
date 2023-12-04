@@ -8,6 +8,11 @@ The charger subsystem exposes an API to uniformly access battery charger devices
 Basic Operation
 ***************
 
+Initiating a Charge Cycle
+=========================
+
+A charge cycle is initiated or terminated using :c:func:`charger_charge_enable`.
+
 Properties
 ==========
 
