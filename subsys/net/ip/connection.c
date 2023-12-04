@@ -640,6 +640,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	bool raw_pkt_delivered = false;
 	bool raw_pkt_continue = false;
 	struct net_conn *conn;
+	net_conn_cb_t cb = NULL;
+	void *user_data = NULL;
 
 	if (IS_ENABLED(CONFIG_NET_IP)) {
 		/* If we receive a packet with multicast destination address, we might
@@ -656,6 +658,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			is_mcast_pkt = net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->ipv6->dst);
 		}
 	}
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
 		/* Is the candidate connection matching the packet's interface? */
@@ -731,6 +735,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				enum net_verdict ret = conn_raw_socket(pkt, conn, proto);
 
 				if (ret == NET_DROP) {
+					k_mutex_unlock(&conn_lock);
 					goto drop;
 				} else if (ret == NET_OK) {
 					raw_pkt_delivered = true;
@@ -805,6 +810,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 				mcast_pkt = net_pkt_clone(pkt, CLONE_TIMEOUT);
 				if (!mcast_pkt) {
+					k_mutex_unlock(&conn_lock);
 					goto drop;
 				}
 
@@ -822,6 +828,13 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			best_match = conn;
 		}
 	} /* loop end */
+
+	if (best_match) {
+		cb = best_match->cb;
+		user_data = best_match->user_data;
+	}
+
+	k_mutex_unlock(&conn_lock);
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && pkt_family == AF_PACKET) {
 		if (raw_pkt_continue) {
@@ -850,11 +863,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		return NET_OK;
 	}
 
-	if (best_match) {
-		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x", best_match, best_match->cb,
-			best_match->user_data, NET_CONN_RANK(best_match->flags));
+	if (cb) {
+		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x", best_match, cb,
+			user_data, NET_CONN_RANK(best_match->flags));
 
-		if (best_match->cb(best_match, pkt, ip_hdr, proto_hdr, best_match->user_data)
+		if (cb(best_match, pkt, ip_hdr, proto_hdr, user_data)
 				== NET_DROP) {
 			goto drop;
 		}
