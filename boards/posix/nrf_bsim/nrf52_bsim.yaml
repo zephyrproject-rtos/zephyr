@@ -13,3 +13,4 @@ testing:
     - uart
 supported:
   - gpio
+  - netif

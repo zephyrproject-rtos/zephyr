@@ -1,0 +1,34 @@
+common:
+  build_only: true
+  tags: bluetooth
+
+tests:
+  bluetooth.ll.bis:
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpunet
+    integration_platforms:
+      - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpunet
+  bluetooth.ll.bis_nrf5340_cpuapp:
+    sysbuild: true
+    platform_allow:
+      - nrf5340bsim_nrf5340_cpuapp
+    integration_platforms:
+      - nrf5340bsim_nrf5340_cpuapp
+  bluetooth.ll.bis_ticker_expire_info:
+    extra_args: OVERLAY_CONFIG=overlay-ticker_expire_info.conf
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpunet
+    integration_platforms:
+      - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpunet
+  bluetooth.ll.bis_vs_dp:
+    extra_args: CONF_FILE=prj_vs_dp.conf
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpunet
+    integration_platforms:
+      - nrf52_bsim
+      - nrf5340bsim_nrf5340_cpunet

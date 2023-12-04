@@ -10,12 +10,19 @@ simulation_id="broadcast_iso"
 verbosity_level=2
 EXECUTE_TIMEOUT=30
 
+if [[ "${BOARD}" == "nrf5340bsim_nrf5340_cpuapp" ]]
+then
+  app_exe="bs_${BOARD}_tests_bsim_bluetooth_ll_bis_bluetooth_ll_bis_nrf5340_cpuapp"
+else
+  app_exe="bs_${BOARD}_tests_bsim_bluetooth_ll_bis_bluetooth_ll_bis"
+fi
+
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_bis_prj_conf \
+Execute "./$app_exe" \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=receive
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_bis_prj_conf \
+Execute "./$app_exe" \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=broadcast
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

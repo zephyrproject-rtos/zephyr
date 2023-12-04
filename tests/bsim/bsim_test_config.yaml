@@ -1,0 +1,42 @@
+levels:
+  - name: bsim
+    description: >
+      A plan to be used for all bsim tests
+    inherits:
+      - bsim_bluetooth_eatt
+      - bsim_bluetooth_bis
+      - bsim_net
+
+  - name: bsim_bluetooth
+    description: >
+      A plan to be used for bsim bluetooth tests
+    inherits:
+      - bsim_bluetooth_eatt
+      - bsim_bluetooth_bis
+
+  - name: bsim_bluetooth_eatt
+    description: >
+      A plan to be used for bsim bluetooth eatt tests
+    adds:
+      - bluetooth.eatt.autoconnect
+      - bluetooth.eatt.collision
+      - bluetooth.eatt.lowres
+      - bluetooth.eatt.multiple_conn
+
+  - name: bsim_bluetooth_bis
+    description: >
+      A plan to be used for bsim bluetooth bis tests
+    adds:
+      - bluetooth.ll.bis
+      - bluetooth.ll.bis_nrf5340_cpuapp
+      - bluetooth.ll.bis_ticker_expire_info
+      - bluetooth.ll.bis_vs_dp
+
+  - name: bsim_net
+    description: >
+      A plan to be used for bsim net tests
+    adds:
+      - sample.net.sockets.echo_server.nrf_802154
+      - net.sockets.echo_test_802154_bsim
+      - sample.net.sockets.echo_server.bsim_openthread
+      - net.sockets.echo_test_ot_bsim

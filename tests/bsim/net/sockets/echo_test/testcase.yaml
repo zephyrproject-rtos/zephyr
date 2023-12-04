@@ -1,0 +1,13 @@
+common:
+  platform_allow:
+    - nrf52_bsim
+  integration_platforms:
+    - nrf52_bsim
+  build_only: true
+  tags: bluetooth
+
+tests:
+  net.sockets.echo_test_802154_bsim:
+    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+  net.sockets.echo_test_ot_bsim:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
