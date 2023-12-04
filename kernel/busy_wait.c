@@ -21,13 +21,7 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 	arch_busy_wait(usec_to_wait);
 #elif defined(CONFIG_SYS_CLOCK_EXISTS)
 	uint32_t start_cycles = k_cycle_get_32();
-
-	/* use 64-bit math to prevent overflow when multiplying */
-	uint32_t cycles_to_wait = (uint32_t)(
-		(uint64_t)usec_to_wait *
-		(uint64_t)sys_clock_hw_cycles_per_sec() /
-		(uint64_t)USEC_PER_SEC
-	);
+	uint32_t cycles_to_wait = k_us_to_cyc_ceil32(usec_to_wait);
 
 	for (;;) {
 		uint32_t current_cycles = k_cycle_get_32();
