@@ -300,6 +300,7 @@ __net_socket struct net_context {
 		uint8_t priority;
 #endif
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
+		/** When to send the packet out */
 		bool txtime;
 #endif
 #if defined(CONFIG_SOCKS)
@@ -310,30 +311,42 @@ __net_socket struct net_context {
 		} proxy;
 #endif
 #if defined(CONFIG_NET_CONTEXT_RCVTIMEO)
+		/** Receive timeout */
 		k_timeout_t rcvtimeo;
 #endif
 #if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
+		/** Send timeout */
 		k_timeout_t sndtimeo;
 #endif
 #if defined(CONFIG_NET_CONTEXT_RCVBUF)
+		/** Receive buffer maximum size */
 		uint16_t rcvbuf;
 #endif
 #if defined(CONFIG_NET_CONTEXT_SNDBUF)
+		/** Send buffer maximum size */
 		uint16_t sndbuf;
 #endif
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
+		/**
+		 * DSCP (Differentiated Services Code point) and
+		 * ECN (Explicit Congestion Notification) values.
+		 */
 		uint8_t dscp_ecn;
 #endif
 #if defined(CONFIG_NET_CONTEXT_REUSEADDR)
+		/** Re-use address (SO_REUSEADDR) flag on a socket. */
 		bool reuseaddr;
 #endif
 #if defined(CONFIG_NET_CONTEXT_REUSEPORT)
+		/** Re-use port (SO_REUSEPORT) flag on a socket. */
 		bool reuseport;
 #endif
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+		/** Support v4-mapped-on-v6 addresses */
 		bool ipv6_v6only;
 #endif
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
+		/** Receive network packet information in recvmsg() call */
 		bool recv_pktinfo;
 #endif
 	} options;
@@ -360,11 +373,19 @@ __net_socket struct net_context {
 	};
 
 #if defined(CONFIG_SOCKS)
+	/** Is socks proxy enabled */
 	bool proxy_enabled;
 #endif
 
 };
 
+/**
+ * @brief Is this context used or not.
+ *
+ * @param context Network context.
+ *
+ * @return True if the context is currently in use, False otherwise.
+ */
 static inline bool net_context_is_used(struct net_context *context)
 {
 	NET_ASSERT(context);
@@ -372,6 +393,13 @@ static inline bool net_context_is_used(struct net_context *context)
 	return context->flags & NET_CONTEXT_IN_USE;
 }
 
+/**
+ * @brief Is this context bound to a network interface.
+ *
+ * @param context Network context.
+ *
+ * @return True if the context is bound to network interface, False otherwise.
+ */
 static inline bool net_context_is_bound_to_iface(struct net_context *context)
 {
 	NET_ASSERT(context);
