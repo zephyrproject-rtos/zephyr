@@ -303,6 +303,7 @@ __net_socket struct net_context {
 		bool txtime;
 #endif
 #if defined(CONFIG_SOCKS)
+		/** Socks proxy address */
 		struct {
 			struct sockaddr addr;
 			socklen_t addrlen;
@@ -817,16 +818,20 @@ static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context *cont
 	context->ipv6_mcast_hop_limit = hop_limit;
 }
 
+/**
+ * @brief Enable or disable socks proxy support for this context.
+ *
+ * @details This function either enables or disables socks proxy support for
+ *          this context.
+ *
+ * @param context Network context.
+ * @param enable Enable socks proxy or disable it.
+ */
 #if defined(CONFIG_SOCKS)
 static inline void net_context_set_proxy_enabled(struct net_context *context,
 						 bool enable)
 {
 	context->proxy_enabled = enable;
-}
-
-static inline bool net_context_is_proxy_enabled(struct net_context *context)
-{
-	return context->proxy_enabled;
 }
 #else
 static inline void net_context_set_proxy_enabled(struct net_context *context,
@@ -835,7 +840,24 @@ static inline void net_context_set_proxy_enabled(struct net_context *context,
 	ARG_UNUSED(context);
 	ARG_UNUSED(enable);
 }
+#endif
 
+/**
+ * @brief Is socks proxy support enabled or disabled for this context.
+ *
+ * @details This function returns current socks proxy status for
+ *          this context.
+ *
+ * @param context Network context.
+ *
+ * @return True if socks proxy is enabled for this context, False otherwise
+ */
+#if defined(CONFIG_SOCKS)
+static inline bool net_context_is_proxy_enabled(struct net_context *context)
+{
+	return context->proxy_enabled;
+}
+#else
 static inline bool net_context_is_proxy_enabled(struct net_context *context)
 {
 	return false;
