@@ -165,12 +165,15 @@ config NRF_SPU_FLASH_REGION_SIZE
 	help
 	  FLASH region size for the NRF_SPU peripheral
 
-config NRF_SPU_FLASH_REGION_ALIGNMENT
+config  NRF_TRUSTZONE_FLASH_REGION_SIZE
 	hex
-	default 0x4000
+	default NRF_SPU_FLASH_REGION_SIZE
 	help
-	  FLASH regions must be aligned to this value due to SPU HW
-	  limitations.
+	  Define the flash region size from a TrustZone perspective.
+	  This is used when we set the security attributes(S/NSC/NS) of a region
+	  in TrustZone enabled devices.
+	  In practice this option defines the granularity of the security attributes,
+	  i.e. the smallest region that can be set to secure or non-secure.
 
 config NRF_SPU_RAM_REGION_SIZE
 	hex
@@ -178,12 +181,15 @@ config NRF_SPU_RAM_REGION_SIZE
 	help
 	  RAM region size for the NRF_SPU peripheral
 
-config NRF_SPU_RAM_REGION_ALIGNMENT
+config  NRF_TRUSTZONE_RAM_REGION_SIZE
 	hex
-	default 0x2000
+	default NRF_SPU_RAM_REGION_SIZE
 	help
-	  RAM regions must be aligned to this value due to SPU HW
-	  limitations.
+	  Define the RAM region size from a TrustZone perspective.
+	  This is used when we set the security attributes(S/NSC/NS) of a region
+	  in TrustZone enabled devices.
+	  In practice this option defines the granularity of the security attributes,
+	  i.e. the smallest region that can be set to secure or non-secure.
 
 config SOC_NRF_GPIO_FORWARDER_FOR_NRF5340
 	bool "Forward GPIO pins to network core"
