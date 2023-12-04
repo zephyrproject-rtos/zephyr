@@ -159,8 +159,10 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
    cap_commander --help
    cap_commander - Bluetooth CAP commander shell commands
    Subcommands:
-     discover       :Discover CAS
-     change_volume  :Change volume on all connections <volume>
+     discover              :Discover CAS
+     change_volume         :Change volume on all connections <volume>
+     change_volume_offset  :Change volume offset per connection <volume_offset
+                            [volume_offset [...]]>
 
 
 Before being able to perform any stream operation, the device must also perform the
@@ -193,3 +195,36 @@ Setting the volume on all connected devices:
    VCP flags 0x01
    VCP vol_set done
    Volume change completed
+
+
+Setting the volume offset on one or more connected devices. The offsets are set by connection index,
+so connection index 0 gets the first offset, and index 1 gets the second offset, etc.:
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ bt connect <device B>
+   Connected: <device B>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ cap_commander change_volume_offset 10
+   Setting volume offset on 1 connections
+   VOCS inst 0x200140a4 offset 10
+   Offset set for inst 0x200140a4
+   Volume offset change completed
+   uart:~$
+   uart:~$ cap_commander change_volume_offset 10 15
+   Setting volume offset on 2 connections
+   Offset set for inst 0x200140a4
+   VOCS inst 0x20014188 offset 15
+   Offset set for inst 0x20014188
+   Volume offset change completed
