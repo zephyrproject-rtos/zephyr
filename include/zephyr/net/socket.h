@@ -41,6 +41,10 @@ struct zsock_pollfd {
 	short revents;
 };
 
+/**
+ * @name Options for poll()
+ * @{
+ */
 /* ZSOCK_POLL* values are compatible with Linux */
 /** zsock_poll: Poll for readability */
 #define ZSOCK_POLLIN 1
@@ -54,7 +58,12 @@ struct zsock_pollfd {
 #define ZSOCK_POLLHUP 0x10
 /** zsock_poll: Invalid socket (output value only) */
 #define ZSOCK_POLLNVAL 0x20
+/** @} */
 
+/**
+ * @name Options for sending and receiving data
+ * @{
+ */
 /** zsock_recv: Read data without removing it from socket input queue */
 #define ZSOCK_MSG_PEEK 0x02
 /** zsock_recvmsg: Control data buffer too small.
@@ -68,7 +77,12 @@ struct zsock_pollfd {
 #define ZSOCK_MSG_DONTWAIT 0x40
 /** zsock_recv: block until the full amount of data can be returned */
 #define ZSOCK_MSG_WAITALL 0x100
+/** @} */
 
+/**
+ * @name Options for shutdown() function
+ * @{
+ */
 /* Well-known values, e.g. from Linux man 2 shutdown:
  * "The constants SHUT_RD, SHUT_WR, SHUT_RDWR have the value 0, 1, 2,
  * respectively". Some software uses numeric values.
@@ -79,6 +93,7 @@ struct zsock_pollfd {
 #define ZSOCK_SHUT_WR 1
 /** zsock_shutdown: Shut down for both reading and writing */
 #define ZSOCK_SHUT_RDWR 2
+/** @} */
 
 /** Protocol level for TLS.
  *  Here, the same socket protocol level for TLS as in Linux was used.
@@ -670,6 +685,10 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 
 /* Flags for getaddrinfo() hints. */
 
+/**
+ * @name Flags for getaddrinfo() hints
+ * @{
+ */
 /** Address for bind() (vs for connect()) */
 #define AI_PASSIVE 0x1
 /** Fill in ai_canonname */
@@ -684,6 +703,7 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define AI_NUMERICSERV 0x400
+/** @} */
 
 /**
  * @brief Resolve a domain name to one or more network addresses
@@ -729,6 +749,10 @@ void zsock_freeaddrinfo(struct zsock_addrinfo *ai);
  */
 const char *zsock_gai_strerror(int errcode);
 
+/**
+ * @name Flags for getnameinfo()
+ * @{
+ */
 /** zsock_getnameinfo(): Resolve to numeric address. */
 #define NI_NUMERICHOST 1
 /** zsock_getnameinfo(): Resolve to numeric port number. */
@@ -746,6 +770,7 @@ const char *zsock_gai_strerror(int errcode);
 #ifndef NI_MAXHOST
 #define NI_MAXHOST 64
 #endif
+/** @} */
 
 /**
  * @brief Resolve a network address to a domain name or ASCII address
@@ -1020,6 +1045,10 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_FAMILY DNS_EAI_FAMILY
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
+/**
+ * @name Network interface name description
+ * @{
+ */
 #if defined(CONFIG_NET_INTERFACE_NAME)
 #define IFNAMSIZ CONFIG_NET_INTERFACE_NAME_LEN
 #else
@@ -1030,7 +1059,12 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 struct ifreq {
 	char ifr_name[IFNAMSIZ]; /* Interface name */
 };
+/** @} */
 
+/**
+ * @name Socket level options
+ * @{
+ */
 /** sockopt: Socket-level option */
 #define SOL_SOCKET 1
 
@@ -1058,6 +1092,8 @@ struct ifreq {
 #define SO_KEEPALIVE 9
 /** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
 #define SO_OOBINLINE 10
+/** sockopt: Socket priority */
+#define SO_PRIORITY 12
 /** sockopt: Socket lingers on close (ignored, for compatibility) */
 #define SO_LINGER 13
 /** sockopt: Allow multiple sockets to reuse a single port */
@@ -1090,8 +1126,20 @@ struct ifreq {
 /** sockopt: Domain used with SOCKET (ignored, for compatibility) */
 #define SO_DOMAIN 39
 
-/** End Socket options for SOL_SOCKET level */
+/** sockopt: Enable SOCKS5 for Socket */
+#define SO_SOCKS5 60
 
+/** sockopt: Socket TX time (when the data should be sent) */
+#define SO_TXTIME 61
+#define SCM_TXTIME SO_TXTIME
+
+/** End Socket options for SOL_SOCKET level */
+/** @} */
+
+/**
+ * @name TCP level options
+ * @{
+ */
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
@@ -1102,6 +1150,12 @@ struct ifreq {
 /** Number of keepalives before dropping connection */
 #define TCP_KEEPCNT 4
 
+/** @} */
+
+/**
+ * @name IPv4 level options
+ * @{
+ */
 /* Socket options for IPPROTO_IP level */
 /** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */
 #define IP_TOS 1
@@ -1134,6 +1188,12 @@ struct ip_mreqn {
 	int            imr_ifindex;   /* interface index */
 };
 
+/** @} */
+
+/**
+ * @name IPv6 level options
+ * @{
+ */
 /* Socket options for IPPROTO_IPV6 level */
 /** sockopt: Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
@@ -1171,20 +1231,15 @@ struct in6_pktinfo {
 
 /** sockopt: Set or receive the traffic class value for an outgoing packet. */
 #define IPV6_TCLASS 67
+/** @} */
 
-/** sockopt: Socket priority */
-#define SO_PRIORITY 12
-
-/** sockopt: Socket TX time (when the data should be sent) */
-#define SO_TXTIME 61
-#define SCM_TXTIME SO_TXTIME
-
-/* Socket options for SOCKS5 proxy */
-/** sockopt: Enable SOCKS5 for Socket */
-#define SO_SOCKS5 60
-
+/**
+ * @name Backlog size for listen()
+ * @{
+ */
 /** listen: The maximum backlog queue length (ignored, for compatibility) */
 #define SOMAXCONN 128
+/** @} */
 
 /** @cond INTERNAL_HIDDEN */
 /**
