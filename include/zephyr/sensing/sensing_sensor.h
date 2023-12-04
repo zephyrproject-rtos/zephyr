@@ -124,8 +124,8 @@ struct sensing_sensor {
 		.minimal_interval = DT_PROP(node, minimal_interval),\
 	};
 
-#define SENSING_CONNECTIONS_NAME(node, idx)					\
-	_CONCAT(_CONCAT(__sensing_connections_, idx), DEVICE_DT_NAME_GET(node))
+#define SENSING_CONNECTIONS_NAME(node)					\
+	_CONCAT(__sensing_connections_, DEVICE_DT_NAME_GET(node))
 
 #define SENSING_SENSOR_SOURCE_NAME(idx, node)				\
 	SENSING_SENSOR_NAME(DT_PHANDLE_BY_IDX(node, reporters, idx),	\
@@ -144,11 +144,11 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
 	SENSING_CONNECTION_INITIALIZER(SENSING_SENSOR_SOURCE_NAME(idx, node), \
 				       cb_list_ptr)
 
-#define SENSING_CONNECTIONS_DEFINE(node, idx, num, cb_list_ptr)		\
+#define SENSING_CONNECTIONS_DEFINE(node, num, cb_list_ptr)		\
 	LISTIFY(num, SENSING_SENSOR_SOURCE_EXTERN,			\
 				(), node)				\
 	static struct sensing_connection				\
-			SENSING_CONNECTIONS_NAME(node, idx)[(num)] = {	\
+			SENSING_CONNECTIONS_NAME(node)[(num)] = {	\
 		LISTIFY(num, SENSING_CONNECTION_DEFINE,			\
 				(,), node, cb_list_ptr)			\
 	};
@@ -166,8 +166,6 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
 
 #define SENSING_SENSOR_DEFINE(node, prop, idx, reg_ptr, cb_list_ptr)	\
 	SENSING_SENSOR_INFO_DEFINE(node, idx)				\
-	SENSING_CONNECTIONS_DEFINE(node, idx,				\
-			DT_PROP_LEN_OR(node, reporters, 0), cb_list_ptr)\
 	SENSING_SENSOR_IODEV_DEFINE(node, idx)				\
 	STRUCT_SECTION_ITERABLE(sensing_sensor,				\
 				SENSING_SENSOR_NAME(node, idx)) = {	\
@@ -175,7 +173,7 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
 		.info = &SENSING_SENSOR_INFO_NAME(node, idx),		\
 		.register_info = reg_ptr,				\
 		.reporter_num = DT_PROP_LEN_OR(node, reporters, 0),	\
-		.conns = SENSING_CONNECTIONS_NAME(node, idx),		\
+		.conns = SENSING_CONNECTIONS_NAME(node),		\
 		.iodev = &SENSING_SENSOR_IODEV_NAME(node, idx),		\
 	};
 
@@ -189,7 +187,7 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
  * element in the sensing sensor iterable section used to enumerate all sensing
  * sensors.
  *
- * @param node_id The devicetree node identifier.
+ * @param node The devicetree node identifier.
  *
  * @param reg_ptr Pointer to the device's sensing_sensor_register_info.
  *
@@ -211,15 +209,17 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
  * @param api_ptr Provides an initial pointer to the API function struct used
  * by the driver. Can be NULL.
  */
-#define SENSING_SENSORS_DT_DEFINE(node_id, reg_ptr, cb_list_ptr,	\
+#define SENSING_SENSORS_DT_DEFINE(node, reg_ptr, cb_list_ptr,	\
 				init_fn, pm_device,			\
 				data_ptr, cfg_ptr, level, prio,		\
 				api_ptr, ...)				\
-	SENSOR_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
-			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, __VA_ARGS__);				\
-									\
-	SENSING_SENSORS_DEFINE(node_id, reg_ptr, cb_list_ptr);
+	SENSOR_DEVICE_DT_DEFINE(node, init_fn, pm_device,		\
+				data_ptr, cfg_ptr, level, prio,		\
+				api_ptr, __VA_ARGS__);			\
+	SENSING_CONNECTIONS_DEFINE(node,				\
+				   DT_PROP_LEN_OR(node, reporters, 0),	\
+				   cb_list_ptr);			\
+	SENSING_SENSORS_DEFINE(node, reg_ptr, cb_list_ptr);
 
 /**
  * @brief Like SENSING_SENSORS_DT_DEFINE() for an instance of a DT_DRV_COMPAT
