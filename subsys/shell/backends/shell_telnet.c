@@ -33,6 +33,8 @@ struct shell_telnet *sh_telnet;
 #define TELNET_MIN_COMMAND_LEN 2
 #define TELNET_WILL_DO_COMMAND_LEN 3
 
+#define TELNET_RETRY_SEND_SLEEP_MS 50
+
 /* Basic TELNET implementation. */
 
 static void telnet_end_client_connection(void)
@@ -64,17 +66,29 @@ static void telnet_sent_cb(struct net_context *client,
 
 static void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 {
-	int err;
-
 	if (sh_telnet->client_ctx == NULL) {
 		return;
 	}
 
-	err = net_context_send(sh_telnet->client_ctx, msg, len, telnet_sent_cb,
-			       K_FOREVER, NULL);
-	if (err < 0) {
-		LOG_ERR("Failed to send command %d, shutting down", err);
-		telnet_end_client_connection();
+	while (len > 0) {
+		int ret;
+
+		ret = net_context_send(sh_telnet->client_ctx, msg, len, telnet_sent_cb,
+				       K_FOREVER, NULL);
+
+		if (ret == -EAGAIN) {
+			k_sleep(K_MSEC(TELNET_RETRY_SEND_SLEEP_MS));
+			continue;
+		}
+
+		if (ret < 0) {
+			LOG_ERR("Failed to send command %d, shutting down", ret);
+			telnet_end_client_connection();
+			break;
+		}
+
+		msg += ret;
+		len -= ret;
 	}
 }
 
@@ -175,7 +189,9 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 
 static int telnet_send(void)
 {
-	int err;
+	int ret;
+	uint8_t *msg = sh_telnet->line_out.buf;
+	uint16_t len = sh_telnet->line_out.len;
 
 	if (sh_telnet->line_out.len == 0) {
 		return 0;
@@ -185,13 +201,24 @@ static int telnet_send(void)
 		return -ENOTCONN;
 	}
 
-	err = net_context_send(sh_telnet->client_ctx, sh_telnet->line_out.buf,
-			       sh_telnet->line_out.len, telnet_sent_cb,
-			       K_FOREVER, NULL);
-	if (err < 0) {
-		LOG_ERR("Failed to send %d, shutting down", err);
-		telnet_end_client_connection();
-		return err;
+	while (len > 0) {
+		ret = net_context_send(sh_telnet->client_ctx, msg,
+				       len, telnet_sent_cb,
+				       K_FOREVER, NULL);
+
+		if (ret == -EAGAIN) {
+			k_sleep(K_MSEC(TELNET_RETRY_SEND_SLEEP_MS));
+			continue;
+		}
+
+		if (ret < 0) {
+			LOG_ERR("Failed to send %d, shutting down", ret);
+			telnet_end_client_connection();
+			return ret;
+		}
+
+		msg += ret;
+		len -= ret;
 	}
 
 	/* We reinitialize the line buffer */
