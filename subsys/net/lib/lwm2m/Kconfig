@@ -392,6 +392,13 @@ config LWM2M_COMPOSITE_PATH_LIST_SIZE
 	help
 	  Define path list size for Composite Read and send operation.
 
+config LWM2M_DEVICE_ERROR_CODE_SETTINGS
+	bool "Use settings to store error codes across device resets"
+	depends on SETTINGS
+	help
+	  Store the device error code list in settings. Ensures error list can
+	  be transferred to LwM2M server even if the device is reset.
+
 config LWM2M_DEVICE_PWRSRC_MAX
 	int "Maximum # of device power source records"
 	default 5
