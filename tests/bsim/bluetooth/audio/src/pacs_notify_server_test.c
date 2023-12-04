@@ -142,6 +142,7 @@ static void trigger_notifications(void)
 static void test_main(void)
 {
 	int err;
+	enum bt_audio_context available, available_for_conn;
 	const struct bt_data ad[] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	};
@@ -191,6 +192,7 @@ static void test_main(void)
 	}
 	LOG_DBG("Subscribed");
 
+	LOG_INF("Trigger changes while device is connected");
 	trigger_notifications();
 
 	/* Now wait for client to disconnect, then stop adv so it does not reconnect */
@@ -204,7 +206,7 @@ static void test_main(void)
 		return;
 	}
 
-	/* Trigger changes while device is disconnected */
+	LOG_INF("Trigger changes while device is disconnected");
 	trigger_notifications();
 
 	LOG_DBG("Start Advertising");
@@ -215,6 +217,63 @@ static void test_main(void)
 	}
 
 	WAIT_FOR_FLAG(flag_connected);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	LOG_DBG("Client disconnected");
+
+	err = bt_le_adv_stop();
+	if (err != 0) {
+		FAIL("Advertising failed to stop (err %d)", err);
+		return;
+	}
+
+	LOG_DBG("Start Advertising");
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+	LOG_DBG("Connected");
+
+	available = bt_pacs_get_available_contexts(BT_AUDIO_DIR_SINK);
+	__ASSERT_NO_MSG(bt_pacs_get_available_contexts_for_conn(default_conn, BT_AUDIO_DIR_SINK) ==
+			available);
+
+	available_for_conn = BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
+
+	LOG_INF("Override available contexts");
+	err = bt_pacs_conn_set_available_contexts_for_conn(default_conn, BT_AUDIO_DIR_SINK,
+							   &available_for_conn);
+	__ASSERT_NO_MSG(err == 0);
+
+	__ASSERT_NO_MSG(bt_pacs_get_available_contexts(BT_AUDIO_DIR_SINK) == available);
+	__ASSERT_NO_MSG(bt_pacs_get_available_contexts_for_conn(default_conn, BT_AUDIO_DIR_SINK) ==
+			available_for_conn);
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	LOG_DBG("Client disconnected");
+
+	err = bt_le_adv_stop();
+	if (err != 0) {
+		FAIL("Advertising failed to stop (err %d)", err);
+		return;
+	}
+
+	LOG_DBG("Start Advertising");
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Advertising failed to start (err %d)", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+	LOG_DBG("Connected");
+
+	__ASSERT_NO_MSG(bt_pacs_get_available_contexts(BT_AUDIO_DIR_SINK) == available);
+	__ASSERT_NO_MSG(bt_pacs_get_available_contexts_for_conn(default_conn, BT_AUDIO_DIR_SINK) ==
+			available);
+
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	PASS("PACS Notify Server passed\n");
