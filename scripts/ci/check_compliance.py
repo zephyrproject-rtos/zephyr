@@ -657,6 +657,7 @@ flagged.
         "DESCRIPTION",
         "ERR",
         "ESP_DIF_LIBRARY",  # Referenced in CMake comment
+        "ESP_CONSOLE_UART_NONE", # Defined in HAL (hal_espressif)
         "EXPERIMENTAL",
         "FFT",  # Used as an example in cmake/extensions.cmake
         "FLAG",  # Used as an example
