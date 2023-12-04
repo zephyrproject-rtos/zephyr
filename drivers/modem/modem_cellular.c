@@ -114,6 +114,7 @@ struct modem_cellular_config {
 	const uint16_t reset_pulse_duration_ms;
 	const uint16_t startup_time_ms;
 	const uint16_t shutdown_time_ms;
+	const bool autostarts;
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
@@ -444,6 +445,11 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_RESUME:
+		if (config->autostarts) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_POWER_ON);
+			break;
+		}
+
 		if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
 			break;
@@ -1538,6 +1544,51 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_periodic_chat_script,
 			 modem_cellular_chat_callback_handler, 4);
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(u_blox_sara_r5)
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_init_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_init_chat_script, u_blox_sara_r5_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_dial_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
+							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
+							 ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_dial_chat_script, u_blox_sara_r5_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_periodic_chat_script,
+			 u_blox_sara_r5_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -1778,6 +1829,35 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
 			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99, NULL);
 
+#define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5(inst)                                                 \
+	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
+		.chat_delimiter = {'\r'},                                                          \
+		.chat_filter = {'\n'},                                                             \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
+		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
+		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
+		.autostarts = true,                                                                \
+		.power_pulse_duration_ms = 1500,                                                   \
+		.reset_pulse_duration_ms = 100,                                                    \
+		.startup_time_ms = 1500,                                                           \
+		.shutdown_time_ms = 13000,                                                         \
+		.init_chat_script = &u_blox_sara_r5_init_chat_script,                              \
+		.dial_chat_script = &u_blox_sara_r5_dial_chat_script,                              \
+		.periodic_chat_script = &u_blox_sara_r5_periodic_chat_script,                      \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
+			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
+			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99, NULL);
+
 #define MODEM_CELLULAR_DEVICE_SWIR_HL7800(inst)                                                    \
 	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
                                                                                                    \
@@ -1852,6 +1932,10 @@ DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SIMCOM_SIM7080)
 
 #define DT_DRV_COMPAT u_blox_sara_r4
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT u_blox_sara_r5
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT swir_hl7800
