@@ -349,12 +349,12 @@ __net_socket struct net_context {
 	/** IPv6 hop limit or IPv4 ttl for packets sent via this context. */
 	union {
 		struct {
-			uint8_t ipv6_hop_limit;
-			uint8_t ipv6_mcast_hop_limit;
+			uint8_t ipv6_hop_limit;       /**< IPv6 hop limit */
+			uint8_t ipv6_mcast_hop_limit; /**< IPv6 multicast hop limit */
 		};
 		struct {
-			uint8_t ipv4_ttl;
-			uint8_t ipv4_mcast_ttl;
+			uint8_t ipv4_ttl;       /**< IPv4 TTL */
+			uint8_t ipv4_mcast_ttl; /**< IPv4 multicast TTL */
 		};
 	};
 
@@ -698,44 +698,119 @@ static inline void net_context_bind_iface(struct net_context *context,
 	net_context_set_iface(context, iface);
 }
 
+/**
+ * @brief Get IPv4 TTL (time-to-live) value for this context.
+ *
+ * @details This function returns the IPv4 TTL (time-to-live) value that is
+ *          set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv4 TTL value
+ */
 static inline uint8_t net_context_get_ipv4_ttl(struct net_context *context)
 {
 	return context->ipv4_ttl;
 }
 
+/**
+ * @brief Set IPv4 TTL (time-to-live) value for this context.
+ *
+ * @details This function sets the IPv4 TTL (time-to-live) value for
+ *          this context.
+ *
+ * @param context Network context.
+ * @param ttl IPv4 time-to-live value.
+ */
 static inline void net_context_set_ipv4_ttl(struct net_context *context,
 					    uint8_t ttl)
 {
 	context->ipv4_ttl = ttl;
 }
 
+/**
+ * @brief Get IPv4 multicast TTL (time-to-live) value for this context.
+ *
+ * @details This function returns the IPv4 multicast TTL (time-to-live) value
+ *          that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv4 multicast TTL value
+ */
 static inline uint8_t net_context_get_ipv4_mcast_ttl(struct net_context *context)
 {
 	return context->ipv4_mcast_ttl;
 }
 
+/**
+ * @brief Set IPv4 multicast TTL (time-to-live) value for this context.
+ *
+ * @details This function sets the IPv4 multicast TTL (time-to-live) value for
+ *          this context.
+ *
+ * @param context Network context.
+ * @param ttl IPv4 multicast time-to-live value.
+ */
 static inline void net_context_set_ipv4_mcast_ttl(struct net_context *context,
 						  uint8_t ttl)
 {
 	context->ipv4_mcast_ttl = ttl;
 }
 
+/**
+ * @brief Get IPv6 hop limit value for this context.
+ *
+ * @details This function returns the IPv6 hop limit value that is set to this
+ *          context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv6 hop limit value
+ */
 static inline uint8_t net_context_get_ipv6_hop_limit(struct net_context *context)
 {
 	return context->ipv6_hop_limit;
 }
 
+/**
+ * @brief Set IPv6 hop limit value for this context.
+ *
+ * @details This function sets the IPv6 hop limit value for this context.
+ *
+ * @param context Network context.
+ * @param hop_limit IPv6 hop limit value.
+ */
 static inline void net_context_set_ipv6_hop_limit(struct net_context *context,
 						  uint8_t hop_limit)
 {
 	context->ipv6_hop_limit = hop_limit;
 }
 
+/**
+ * @brief Get IPv6 multicast hop limit value for this context.
+ *
+ * @details This function returns the IPv6 multicast hop limit value
+ *          that is set to this context.
+ *
+ * @param context Network context.
+ *
+ * @return IPv6 multicast hop limit value
+ */
 static inline uint8_t net_context_get_ipv6_mcast_hop_limit(struct net_context *context)
 {
 	return context->ipv6_mcast_hop_limit;
 }
 
+/**
+ * @brief Set IPv6 multicast hop limit value for this context.
+ *
+ * @details This function sets the IPv6 multicast hop limit value for
+ *          this context.
+ *
+ * @param context Network context.
+ * @param hop_limit IPv6 multicast hop limit value.
+ */
 static inline void net_context_set_ipv6_mcast_hop_limit(struct net_context *context,
 							uint8_t hop_limit)
 {
