@@ -8,8 +8,6 @@ import re
 import textwrap
 
 from sphinx.cmd.build import get_parser
-import sphinx_rtd_theme
-
 
 args = get_parser().parse_args()
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
@@ -69,6 +67,7 @@ release = version
 
 extensions = [
     "breathe",
+    "sphinx_rtd_theme",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
     "sphinx.ext.autodoc",
@@ -136,7 +135,6 @@ rst_epilog = """
 # -- Options for HTML output ----------------------------------------------
 
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme_options = {
     "logo_only": True,
     "prev_next_buttons_location": None
