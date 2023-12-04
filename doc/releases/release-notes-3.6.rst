@@ -234,6 +234,9 @@ Networking
 
 * Sockets:
 
+  * Added support for IPv4 multicast ``IP_ADD_MEMBERSHIP`` and ``IP_DROP_MEMBERSHIP`` socket options.
+  * Added support for IPv6 multicast ``IPV6_ADD_MEMBERSHIP`` and ``IPV6_DROP_MEMBERSHIP`` socket options.
+
 * TCP:
 
 * TFTP:
