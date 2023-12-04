@@ -537,14 +537,15 @@ static void tcp_conn_release(struct k_work *work)
 		}
 	}
 
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
 	if (conn->context->conn_handler) {
 		net_conn_unregister(conn->context->conn_handler);
 		conn->context->conn_handler = NULL;
 	}
 
 	conn->context->tcp = NULL;
-
-	net_context_unref(conn->context);
+	conn->state = TCP_UNUSED;
 
 	tcp_send_queue_flush(conn);
 
@@ -562,9 +563,12 @@ static void tcp_conn_release(struct k_work *work)
 	(void)k_work_cancel_delayable(&conn->send_timer);
 	(void)k_work_cancel_delayable(&conn->recv_queue_timer);
 
-	sys_slist_find_and_remove(&tcp_conns, &conn->next);
+	k_mutex_unlock(&conn->lock);
 
-	memset(conn, 0, sizeof(*conn));
+	net_context_unref(conn->context);
+	conn->context = NULL;
+
+	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 
 	k_mem_slab_free(&tcp_conns_slab, (void *)conn);
 
@@ -751,6 +755,7 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 	const char *s = NULL;
 #define _(_x) case _x: do { s = #_x; goto out; } while (0)
 	switch (state) {
+	_(TCP_UNUSED);
 	_(TCP_LISTEN);
 	_(TCP_SYN_SENT);
 	_(TCP_SYN_RECEIVED);
@@ -1869,6 +1874,8 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
 	conn = tcp_conn_search(pkt);
 	if (conn) {
 		goto in;
@@ -1887,7 +1894,9 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 		conn->accepted_conn = conn_old;
 	}
- in:
+in:
+	k_mutex_unlock(&tcp_lock);
+
 	if (conn) {
 		verdict = tcp_in(conn, pkt);
 	} else {
@@ -2427,6 +2436,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	/* Connection context was already freed. */
+	if (conn->state == TCP_UNUSED) {
+		k_mutex_unlock(&conn->lock);
+		return NET_DROP;
+	}
 
 	NET_DBG("%s", tcp_conn_state(conn, pkt));
 
@@ -3138,10 +3153,15 @@ out:
 		goto next_state;
 	}
 
-	/* If the conn->context is not set, then the connection was already
-	 * closed.
+	/* Make sure we close the connection only once by checking connection
+	 * state.
 	 */
-	if (conn->context) {
+	if (do_close && conn->state != TCP_UNUSED && conn->state != TCP_CLOSED) {
+		tcp_conn_close(conn, close_status);
+	} else if (conn->context) {
+		/* If the conn->context is not set, then the connection was
+		 * already closed.
+		 */
 		conn_handler = (struct net_conn *)conn->context->conn_handler;
 	}
 
@@ -3162,15 +3182,6 @@ out:
 			/* Application is no longer there, unref the pkt */
 			tcp_pkt_unref(recv_pkt);
 		}
-	}
-
-	/* We must not try to unref the connection while having a connection
-	 * lock because the unref will try to acquire net_context lock and the
-	 * application might have that lock held already, and that might lead
-	 * to a deadlock.
-	 */
-	if (do_close) {
-		tcp_conn_close(conn, close_status);
 	}
 
 	return verdict;
