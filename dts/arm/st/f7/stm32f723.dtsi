@@ -51,6 +51,11 @@
 		};
 	};
 
+	vref: vref {
+		compatible = "st,stm32-vref";
+		vrefint-cal-addr = <0x1FF07A2A>;
+	};
+
 	die_temp: dietemp {
 		ts-cal1-addr = <0x1FF07A2C>;
 		ts-cal2-addr = <0x1FF07A2E>;
