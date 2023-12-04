@@ -380,11 +380,11 @@ static int adxl345_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 	case SENSOR_ATTR_ACTIVE_THRESH: {
 		int16_t milli_g = sensor_ms2_to_ug(val) / 1000;
-		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, milli_g * 2 / 128);
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, milli_g * 2 / 125);
 	}
 	case SENSOR_ATTR_INACTIVE_THRESH: {
 		int16_t milli_g = sensor_ms2_to_ug(val) / 1000;
-		return adxl345_reg_write_byte(dev, ADXL345_THRESH_INACT_REG, milli_g * 2 / 128);
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_INACT_REG, milli_g * 2 / 125);
 	}
 	case SENSOR_ATTR_INACTIVE_TIME: {
 		uint16_t milli_seconds = (((int64_t)val->val1) * 1000) + (val->val2 / 1000);

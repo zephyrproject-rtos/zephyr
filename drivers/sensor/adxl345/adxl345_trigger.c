@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/errno.h>
 #define DT_DRV_COMPAT adi_adxl345
 
 #include <zephyr/device.h>
