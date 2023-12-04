@@ -22,6 +22,7 @@
 	chosen {
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash = &at25sf128a;
