@@ -809,37 +809,48 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 #endif /* CONFIG_SOC_INTEL_ACE20_LNL */
 }
 
-/* empty SSP transmit FIFO */
-static void dai_ssp_empty_tx_fifo(struct dai_intel_ssp *dp)
+/* Wait for TX DMA to be idle (should be called after SSCR1_TSRE is cleared */
+static void dai_ssp_wait_tx_dma_idle(struct dai_intel_ssp *dp)
 {
-	int ret;
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
+	uint64_t sample_ticks = ssp->params.fsync_rate ? 1000000 / ssp->params.fsync_rate : 0;
+	uint32_t retry = DAI_INTEL_SSP_FLUSH_RETRY_MAX;
+	uint32_t entries[2];
 	uint32_t sssr;
 
-	/*
-	 * SSSR_TNF is cleared when TX FIFO is empty or full,
-	 * so wait for set TNF then for TFL zero - order matter.
-	 */
-	ret = dai_ssp_poll_for_register_delay(dai_base(dp) + SSSR, SSSR_TNF, SSSR_TNF,
-					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
-	ret |= dai_ssp_poll_for_register_delay(dai_base(dp) + SSCR3, SSCR3_TFL_MASK, 0,
-					       DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE *
-					       (DAI_INTEL_SSP_FIFO_DEPTH - 1) / 2);
-
-	if (ret) {
-		LOG_WRN("%s warning: timeout", __func__);
-	}
-
+	entries[0] = SSCR3_TFL_VAL(sys_read32(dai_base(dp) + SSCR3));
 	sssr = sys_read32(dai_base(dp) + SSSR);
 
-	/* clear interrupt */
+	/* Unlikely: the TX FIFO is empty */
+	if (!entries[0] && (sssr & SSSR_TNF)) {
+		return;
+	}
+
+	while (retry--) {
+		/* Wait one sample time */
+		k_busy_wait(sample_ticks);
+
+		entries[1] = SSCR3_TFL_VAL(sys_read32(dai_base(dp) + SSCR3));
+
+		/*
+		 * If the TX FIFO has less entries or equal entries after one
+		 * sample time then DMA is not running to fill the FIFO and we
+		 * can break out from the loop
+		 */
+		if (entries[0] >= entries[1]) {
+			break;
+		}
+	}
+
+	/* clear the underflow status */
 	if (sssr & SSSR_TUR) {
-		sys_write32(sssr, dai_base(dp) + SSSR);
+		dai_ssp_update_bits(dp, SSSR, SSSR_TUR, SSSR_TUR);
 	}
 }
 
 static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 {
-	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
+	uint32_t retry = DAI_INTEL_SSP_FLUSH_RETRY_MAX;
 	uint32_t i, sssr;
 
 	sssr = sys_read32(dai_base(dp) + SSSR);
@@ -870,7 +881,7 @@ static void ssp_empty_rx_fifo_on_stop(struct dai_intel_ssp *dp)
 {
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	uint64_t sample_ticks = ssp->params.fsync_rate ? 1000000 / ssp->params.fsync_rate : 0;
-	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
+	uint32_t retry = DAI_INTEL_SSP_FLUSH_RETRY_MAX;
 	uint32_t entries[2];
 	uint32_t i, sssr;
 
@@ -1963,6 +1974,7 @@ static void dai_ssp_start(struct dai_intel_ssp *dp, int direction)
 
 	/* enable DMA */
 	if (direction == DAI_DIR_PLAYBACK) {
+		dai_ssp_update_bits(dp, SSSR, SSSR_TUR, SSSR_TUR);
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE, SSCR1_TSRE);
 		dai_ssp_update_bits(dp, SSTSA, SSTSA_TXEN, SSTSA_TXEN);
 	} else {
@@ -2026,7 +2038,7 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 	if (direction == DAI_DIR_PLAYBACK &&
 	    ssp->state[DAI_DIR_PLAYBACK] != DAI_STATE_PRE_RUNNING) {
 		dai_ssp_update_bits(dp, SSCR1, SSCR1_TSRE, 0);
-		dai_ssp_empty_tx_fifo(dp);
+		dai_ssp_wait_tx_dma_idle(dp);
 		dai_ssp_update_bits(dp, SSTSA, SSTSA_TXEN, 0);
 		ssp->state[DAI_DIR_PLAYBACK] = DAI_STATE_PRE_RUNNING;
 		LOG_INF("%sTX stop", __func__);
