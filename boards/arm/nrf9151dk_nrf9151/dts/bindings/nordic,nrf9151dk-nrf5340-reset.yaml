@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO used to reset nRF5340 on nRF9151 DK
+
+compatible: "nordic,nrf9151dk-nrf5340-reset"
+
+include: base.yaml
+
+properties:
+  status:
+    required: true
+
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO to use as nRF5340 reset line: output in nRF9151, input in nRF5340.
