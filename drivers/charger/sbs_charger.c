@@ -66,6 +66,20 @@ static int sbs_cmd_reg_update(const struct device *dev, uint8_t reg_addr, uint16
 	return sbs_cmd_reg_write(dev, reg_addr, new_val);
 }
 
+static int sbs_charger_charge_enable(const struct device *dev, const bool enable)
+{
+	uint16_t reg_val;
+
+	if (!enable) {
+		reg_val = SBS_CHARGER_MODE_INHIBIT_CHARGE;
+	} else {
+		reg_val = 0;
+	}
+
+	return sbs_cmd_reg_update(dev, SBS_CHARGER_REG_CHARGER_MODE,
+				  SBS_CHARGER_MODE_INHIBIT_CHARGE, reg_val);
+}
+
 static int sbs_charger_get_prop(const struct device *dev, const charger_prop_t prop,
 				union charger_propval *val)
 {
@@ -123,18 +137,7 @@ static int sbs_charger_get_prop(const struct device *dev, const charger_prop_t p
 static int sbs_charger_set_prop(const struct device *dev, const charger_prop_t prop,
 				const union charger_propval *val)
 {
-	uint16_t reg_val = 0;
-
-	switch (prop) {
-	case CHARGER_PROP_STATUS:
-		if (val->status != CHARGER_STATUS_CHARGING) {
-			reg_val = SBS_CHARGER_MODE_INHIBIT_CHARGE;
-		}
-		return sbs_cmd_reg_update(dev, SBS_CHARGER_REG_CHARGER_MODE,
-					  SBS_CHARGER_MODE_INHIBIT_CHARGE, reg_val);
-	default:
-		return -ENOTSUP;
-	}
+	return -ENOTSUP;
 }
 
 /**
@@ -157,6 +160,7 @@ static int sbs_charger_init(const struct device *dev)
 static const struct charger_driver_api sbs_charger_driver_api = {
 	.get_property = &sbs_charger_get_prop,
 	.set_property = &sbs_charger_set_prop,
+	.charge_enable = &sbs_charger_charge_enable,
 };
 
 #define SBS_CHARGER_INIT(inst)                                                                     \
