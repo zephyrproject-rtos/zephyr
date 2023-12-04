@@ -157,17 +157,25 @@ option. A network driver that wants to register a new socket implementation
 should use :c:macro:`NET_SOCKET_OFFLOAD_REGISTER` macro. The macro accepts the
 following parameters:
 
- * socket_name - an arbitrary name for the socket implementation.
- * prio - socket implementation priority, the higher priority is, the earlier
-          particular implementation is processed when creating a new socket.
-          Lower numeric value indicate higher priority.
- * _family - socket family implemented by the offloaded socket. ``AF_UNSPEC``
-             indicate any family.
- * _is_supported - a filtering function, used to verify whether particular
-                   socket family, type and protocol are supported by the
-                   offloaded socket implementation.
- * _handler - a function compatible with :c:func:`socket` API, used to create
-              an offloaded socket.
+ * ``socket_name``
+     An arbitrary name for the socket implementation.
+
+ * ``prio``
+     Socket implementation's priority. The higher the priority, the earlier this
+     particular implementation will be processed when creating a new socket.
+     Lower numeric value indicates higher priority.
+
+ * ``_family``
+     Socket family implemented by the offloaded socket. ``AF_UNSPEC`` indicates
+     any family.
+
+ * ``_is_supported``
+     A filtering function, used to verify whether a particular socket family,
+     type and protocol are supported by the offloaded socket implementation.
+
+ * ``_handler``
+     A function compatible with :c:func:`socket` API, used to create an
+     offloaded socket.
 
 Every offloaded socket implementation should also implement a set of socket
 APIs, specified in :c:struct:`socket_op_vtable` struct.
