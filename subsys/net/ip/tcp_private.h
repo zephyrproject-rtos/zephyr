@@ -197,7 +197,8 @@ struct tcp_mss_option {
 };
 
 enum tcp_state {
-	TCP_LISTEN = 1,
+	TCP_UNUSED = 0,
+	TCP_LISTEN,
 	TCP_SYN_SENT,
 	TCP_SYN_RECEIVED,
 	TCP_ESTABLISHED,
