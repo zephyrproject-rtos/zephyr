@@ -135,7 +135,7 @@ Tests are written from test spec;
 |LightweightM2M-1.1-int-9 - Bootstrap and Configuration Consistency     | |testcase not implemented |
 |LightweightM2M-1.1-int-101 - Initial Registration                      |:white_check_mark:| |
 |LightweightM2M-1.1-int-102 - Registration Update                       |:white_check_mark:| |
-|LightweightM2M-1.1-int-103 - Deregistration                            |:large_orange_diamond:|We don't have "disabled" functionality in server object|
+|LightweightM2M-1.1-int-103 - Deregistration                            |:white_check_mark:| |
 |LightweightM2M-1.1-int-104 - Registration Update Trigge                |:white_check_mark:| |
 |LightweightM2M-1.1-int-105 - Discarded Register Update                 |:white_check_mark:| |
 |LightweightM2M-1.1-int-107 - Extending the lifetime of a registration  |:white_check_mark:| |
