@@ -89,7 +89,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 				 DEVICE_EXT_DEV_INFO_MAX)
 
 /* resource state variables */
-static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX];
+static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX] = { LWM2M_DEVICE_ERROR_NONE };
 static time_t time_temp;
 static time_t time_offset;
 static uint8_t  binding_mode[DEVICE_STRING_SHORT];
@@ -138,7 +138,7 @@ static int reset_error_list_cb(uint16_t obj_inst_id,
 
 	/* "delete" error codes */
 	for (i = 0; i < DEVICE_ERROR_CODE_MAX; i++) {
-		error_code_list[i] = 0;
+		error_code_list[i] = LWM2M_DEVICE_ERROR_NONE;
 		error_code_ri[i].res_inst_id = RES_INSTANCE_NOT_CREATED;
 	}
 
@@ -188,7 +188,7 @@ int lwm2m_device_add_err(uint8_t error_code)
 	int i;
 
 	for (i = 0; i < DEVICE_ERROR_CODE_MAX; i++) {
-		if (error_code_list[i] == 0) {
+		if (error_code_list[i] == LWM2M_DEVICE_ERROR_NONE) {
 			break;
 		}
 
