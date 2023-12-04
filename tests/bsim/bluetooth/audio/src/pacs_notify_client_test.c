@@ -38,6 +38,7 @@ CREATE_FLAG(flag_src_loc_discovered);
 CREATE_FLAG(flag_available_contexts_discovered);
 CREATE_FLAG(flag_supported_contexts_discovered);
 CREATE_FLAG(flag_all_notifications_received);
+CREATE_FLAG(flag_available_contexts_received);
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
@@ -64,6 +65,7 @@ static uint8_t pacs_notify_handler(struct bt_conn *conn,
 	} else if (params == &pacs_instance.available_contexts_sub) {
 		LOG_DBG("Received available_contexts_sub notification");
 		pacs_instance.notify_received_mask |= BIT(4);
+		SET_FLAG(flag_available_contexts_received);
 	} else if (params == &pacs_instance.supported_contexts_sub) {
 		LOG_DBG("Received supported_contexts_sub notification");
 		pacs_instance.notify_received_mask |= BIT(5);
@@ -537,7 +539,8 @@ static void test_main(void)
 
 	/* Disconnect and wait for server to advertise again (after notifications are triggered) */
 	UNSET_FLAG(flag_all_notifications_received);
-	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	__ASSERT_NO_MSG(err == 0);
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	LOG_DBG("Starting scan");
@@ -559,7 +562,56 @@ static void test_main(void)
 	LOG_DBG("Waiting for all notifications to be received");
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 
-	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	__ASSERT_NO_MSG(err == 0);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	UNSET_FLAG(flag_available_contexts_received);
+
+	LOG_DBG("Starting scan");
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Could not start scanning (err %d)", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	LOG_DBG("Raising security");
+	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to ser security level %d (err %d)", BT_SECURITY_L2, err);
+		return;
+	}
+
+	LOG_DBG("Waiting for available contexts notification to be received");
+	WAIT_FOR_FLAG(flag_available_contexts_received);
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	__ASSERT_NO_MSG(err == 0);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	UNSET_FLAG(flag_available_contexts_received);
+
+	LOG_DBG("Starting scan");
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Could not start scanning (err %d)", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	LOG_DBG("Raising security");
+	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
+	if (err) {
+		FAIL("Failed to ser security level %d (err %d)", BT_SECURITY_L2, err);
+		return;
+	}
+
+	LOG_DBG("Waiting for available contexts notification to be received");
+	WAIT_FOR_FLAG(flag_available_contexts_received);
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	__ASSERT_NO_MSG(err == 0);
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	PASS("GATT client Passed\n");
