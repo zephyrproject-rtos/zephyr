@@ -572,7 +572,13 @@ ZTEST(threads_lifecycle, test_k_busy_wait)
 
 	/* execution_cycles increases correctly */
 	dt = test_stats.execution_cycles - cycles;
-	zassert_true(dt >= k_us_to_cyc_floor64(100));
+
+	/* execution cycles may not increase by the full 100µs as the
+	 * system may be doing something else during the busy
+	 * wait. Experimentally, we see at least 80% of the cycles
+	 * consumed in the busy wait loop on current test targets.
+	 */
+	zassert_true(dt >= k_us_to_cyc_floor64(80));
 }
 
 static void tp_entry(void *p1, void *p2, void *p3)
