@@ -618,14 +618,12 @@ static bool is_substring(const char *substr, const char *str)
 	}
 
 	for (size_t pos = 0; pos < str_len; pos++) {
-		if (tolower(substr[pos]) == tolower(str[pos])) {
-			if (pos + sub_str_len > str_len) {
-				return false;
-			}
+		if (pos + sub_str_len > str_len) {
+			return false;
+		}
 
-			if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
-				return true;
-			}
+		if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
+			return true;
 		}
 	}
 
