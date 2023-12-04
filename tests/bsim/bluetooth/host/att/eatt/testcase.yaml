@@ -1,0 +1,17 @@
+common:
+  platform_allow:
+    - nrf52_bsim
+  integration_platforms:
+    - nrf52_bsim
+  build_only: true
+  tags: bluetooth
+
+tests:
+  bluetooth.eatt.autoconnect:
+    extra_args: CONF_FILE=prj_autoconnect.conf
+  bluetooth.eatt.collision:
+    extra_args: CONF_FILE=prj_collision.conf
+  bluetooth.eatt.lowers:
+    extra_args: CONF_FILE=prj_lowres.conf
+  bluetooth.eatt.multiple_conn:
+    extra_args: CONF_FILE=prj_multiple_conn.conf
