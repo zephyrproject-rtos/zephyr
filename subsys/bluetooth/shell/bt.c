@@ -493,22 +493,31 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 		shell_info(ctx_shell, "%*s[SCAN DATA END]", strlen(scan_response_label), "");
 	}
 
-	/* Store address for later use */
 #if defined(CONFIG_BT_CENTRAL)
-	auto_connect.addr_set = true;
-	bt_addr_le_copy(&auto_connect.addr, info->addr);
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U) {
+		struct bt_conn *conn = bt_conn_lookup_addr_le(selected_id, info->addr);
 
-	/* Use the above auto_connect.addr address to automatically connect */
-	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U && auto_connect.connect_name) {
-		auto_connect.connect_name = false;
+		/* Only store auto-connect address for devices we are not already connected to */
+		if (conn == NULL) {
+			/* Store address for later use */
+			auto_connect.addr_set = true;
+			bt_addr_le_copy(&auto_connect.addr, info->addr);
 
-		cmd_scan_off(ctx_shell);
+			/* Use the above auto_connect.addr address to automatically connect */
+			if (auto_connect.connect_name) {
+				auto_connect.connect_name = false;
 
-		/* "name" is what would be in argv[0] normally */
-		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+				cmd_scan_off(ctx_shell);
 
-		/* "connect" is what would be in argv[0] normally */
-		cmd_connect_le(ctx_shell, 1, (char *[]){ "connect" });
+				/* "name" is what would be in argv[0] normally */
+				cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){"name"});
+
+				/* "connect" is what would be in argv[0] normally */
+				cmd_connect_le(ctx_shell, 1, (char *[]){"connect"});
+			}
+		} else {
+			bt_conn_unref(conn);
+		}
 	}
 #endif /* CONFIG_BT_CENTRAL */
 }
