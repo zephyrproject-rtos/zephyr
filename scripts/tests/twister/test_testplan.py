@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''
-This test file contains testsuites for Testsuite class of twister
+This test file contains testsuites for testsuite.py module of twister
 '''
 import sys
 import os
@@ -20,7 +20,7 @@ from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
 
 
-def test_testplan_add_testsuites(class_testplan):
+def test_testplan_add_testsuites_short(class_testplan):
     """ Testing add_testcase function of Testsuite class in twister """
     # Test 1: Check the list of testsuites after calling add testsuites function is as expected
     class_testplan.SAMPLE_FILENAME = 'test_sample_app.yaml'
@@ -49,7 +49,7 @@ def test_testplan_add_testsuites(class_testplan):
     assert all(isinstance(n, TestSuite) for n in class_testplan.testsuites.values())
 
 @pytest.mark.parametrize("board_root_dir", [("board_config_file_not_exist"), ("board_config")])
-def test_add_configurations(test_data, class_env, board_root_dir):
+def test_add_configurations_short(test_data, class_env, board_root_dir):
     """ Testing add_configurations function of TestPlan class in Twister
     Test : Asserting on default platforms list
     """
@@ -64,7 +64,7 @@ def test_add_configurations(test_data, class_env, board_root_dir):
         assert sorted(plan.default_platforms) != sorted(['demo_board_1'])
 
 
-def test_get_all_testsuites(class_testplan, all_testsuites_dict):
+def test_get_all_testsuites_short(class_testplan, all_testsuites_dict):
     """ Testing get_all_testsuites function of TestPlan class in Twister """
     plan = class_testplan
     plan.testsuites = all_testsuites_dict
@@ -81,11 +81,10 @@ def test_get_all_testsuites(class_testplan, all_testsuites_dict):
                       'test_d.check_1.unit_1b',
                       'test_e.check_1.1a', 'test_e.check_1.1b',
                       'test_config.main']
-    print(sorted(plan.get_all_tests()))
-    print(sorted(expected_tests))
+
     assert sorted(plan.get_all_tests()) == sorted(expected_tests)
 
-def test_get_platforms(class_testplan, platforms_list):
+def test_get_platforms_short(class_testplan, platforms_list):
     """ Testing get_platforms function of TestPlan class in Twister """
     plan = class_testplan
     plan.platforms = platforms_list
@@ -241,7 +240,7 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
     filtered_instances = list(filter(lambda item:  item.status == "filtered", class_testplan.instances.values()))
     assert not filtered_instances
 
-def test_add_instances(test_data, class_env, all_testsuites_dict, platforms_list):
+def test_add_instances_short(test_data, class_env, all_testsuites_dict, platforms_list):
     """ Testing add_instances() function of TestPlan class in Twister
     Test 1: instances dictionary keys have expected values (Platform Name + Testcase Name)
     Test 2: Values of 'instances' dictionary in Testsuite class are an
@@ -311,7 +310,7 @@ QUARANTINE_MULTIFILES = {
         'multifiles',
         'empty'
     ])
-def test_quarantine(class_testplan, platforms_list, test_data,
+def test_quarantine_short(class_testplan, platforms_list, test_data,
                     quarantine_files, quarantine_verify, expected_val):
     """ Testing quarantine feature in Twister
     """
@@ -336,72 +335,57 @@ def test_quarantine(class_testplan, platforms_list, test_data,
                 assert instance.status == 'filtered'
                 assert instance.reason == "Not under quarantine"
         else:
-            print(testname)
             if testname in expected_val:
                 assert instance.status == 'filtered'
                 assert instance.reason == "Quarantine: " + expected_val[testname]
             else:
                 assert not instance.status
 
-def test_required_snippets_app(class_testplan, all_testsuites_dict, platforms_list):
-    """ Testing required_snippets function of TestPlan class in Twister
-    Ensure that app snippets work and are only applied to boards that support the snippet
-    """
+
+TESTDATA_PART4 = [
+    (os.path.join('test_d', 'test_d.check_1'), ['dummy'],
+     None, 'Snippet not supported'),
+    (os.path.join('test_c', 'test_c.check_1'), ['cdc-acm-console'],
+     0, None),
+    (os.path.join('test_d', 'test_d.check_1'), ['dummy', 'cdc-acm-console'],
+     2, 'Snippet not supported'),
+]
+
+@pytest.mark.parametrize(
+    'testpath, required_snippets, expected_filtered_len, expected_filtered_reason',
+    TESTDATA_PART4,
+    ids=['app', 'global', 'multiple']
+)
+def test_required_snippets_short(
+    class_testplan,
+    all_testsuites_dict,
+    platforms_list,
+    testpath,
+    required_snippets,
+    expected_filtered_len,
+    expected_filtered_reason
+):
+    """ Testing required_snippets function of TestPlan class in Twister """
     plan = class_testplan
-    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1')
+    testpath = os.path.join('scripts', 'tests', 'twister', 'test_data',
+                            'testsuites', 'tests', testpath)
+    testsuite = class_testplan.testsuites.get(testpath)
     plan.platforms = platforms_list
     plan.platform_names = [p.name for p in platforms_list]
-    plan.testsuites = {'scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1': testsuite}
+    plan.testsuites = {testpath: testsuite}
 
     for _, testcase in plan.testsuites.items():
         testcase.exclude_platform = []
-        testcase.required_snippets = ['dummy']
+        testcase.required_snippets = required_snippets
         testcase.build_on_all = True
 
     plan.apply_filters()
 
-    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
-    for d in filtered_instances:
-        assert d.reason == "Snippet not supported"
-
-def test_required_snippets_global(class_testplan, all_testsuites_dict, platforms_list):
-    """ Testing required_snippets function of TestPlan class in Twister
-    Ensure that global snippets work and application does not fail
-    """
-    plan = class_testplan
-    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1')
-    plan.platforms = platforms_list
-    plan.platform_names = [p.name for p in platforms_list]
-    plan.testsuites = {'scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1': testsuite}
-
-    for _, testcase in plan.testsuites.items():
-        testcase.exclude_platform = []
-        testcase.required_snippets = ['cdc-acm-console']
-        testcase.build_on_all = True
-
-    plan.apply_filters()
-
-    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
-    assert len(filtered_instances) == 0
-
-def test_required_snippets_multiple(class_testplan, all_testsuites_dict, platforms_list):
-    """ Testing required_snippets function of TestPlan class in Twister
-    Ensure that multiple snippets can be used and are applied
-    """
-    plan = class_testplan
-    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1')
-    plan.platforms = platforms_list
-    plan.platform_names = [p.name for p in platforms_list]
-    plan.testsuites = {'scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1': testsuite}
-
-    for _, testcase in plan.testsuites.items():
-        testcase.exclude_platform = []
-        testcase.required_snippets = ['dummy', 'cdc-acm-console']
-        testcase.build_on_all = True
-
-    plan.apply_filters()
-
-    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
-    assert len(filtered_instances) == 2
-    for d in filtered_instances:
-        assert d.reason == "Snippet not supported"
+    filtered_instances = list(
+        filter(lambda item: item.status == "filtered", plan.instances.values())
+    )
+    if expected_filtered_len is not None:
+        assert len(filtered_instances) == expected_filtered_len
+    if expected_filtered_reason is not None:
+        for d in filtered_instances:
+            assert d.reason == expected_filtered_reason
