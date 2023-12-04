@@ -997,15 +997,18 @@ static void ssp_empty_rx_fifo_on_stop(struct dai_intel_ssp *dp)
 static int dai_ssp_mclk_prepare_enable(struct dai_intel_ssp *dp)
 {
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
-	int ret;
+	int ret = 0;
 
 	if (ssp_plat_data->clk_active & SSP_CLK_MCLK_ACTIVE) {
 		return 0;
 	}
 
 	/* MCLK config */
-	ret = dai_ssp_mn_set_mclk(dp, ssp_plat_data->params.mclk_id,
-					ssp_plat_data->params.mclk_rate);
+	if (ssp_plat_data->clk_active & SSP_CLK_MCLK_IS_NEEDED) {
+		ret = dai_ssp_mn_set_mclk(dp, ssp_plat_data->params.mclk_id,
+					  ssp_plat_data->params.mclk_rate);
+	}
+
 	if (ret < 0) {
 		LOG_ERR("invalid mclk_rate = %d for mclk_id = %d", ssp_plat_data->params.mclk_rate,
 			ssp_plat_data->params.mclk_id);
@@ -1024,7 +1027,9 @@ static void dai_ssp_mclk_disable_unprepare(struct dai_intel_ssp *dp)
 		return;
 	}
 
-	dai_ssp_mn_release_mclk(dp, ssp_plat_data->params.mclk_id);
+	if (ssp_plat_data->clk_active & SSP_CLK_MCLK_IS_NEEDED) {
+		dai_ssp_mn_release_mclk(dp, ssp_plat_data->params.mclk_id);
+	}
 
 	ssp_plat_data->clk_active &= ~SSP_CLK_MCLK_ACTIVE;
 }
@@ -1042,6 +1047,10 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 
 	if (ssp_plat_data->clk_active & SSP_CLK_BCLK_ACTIVE) {
 		return 0;
+	}
+
+	if (!(ssp_plat_data->clk_active & SSP_CLK_BCLK_IS_NEEDED)) {
+		goto out;
 	}
 
 	sscr0 = sys_read32(dai_base(dp) + SSCR0);
@@ -1103,7 +1112,9 @@ static void dai_ssp_bclk_disable_unprepare(struct dai_intel_ssp *dp)
 		return;
 	}
 #if CONFIG_INTEL_MN
-	dai_ssp_mn_release_bclk(dp, ssp_plat_data->ssp_index);
+	if (ssp_plat_data->clk_active & SSP_CLK_BCLK_IS_NEEDED) {
+		dai_ssp_mn_release_bclk(dp, ssp_plat_data->ssp_index);
+	}
 #endif
 	ssp_plat_data->clk_active &= ~SSP_CLK_BCLK_ACTIVE;
 }
@@ -1226,16 +1237,19 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sscr1 |= SSCR1_SCLKDIR | SSCR1_SFRMDIR;
 		break;
 	case DAI_INTEL_IPC3_SSP_FMT_CBC_CFC:
+		ssp_plat_data->clk_active |= SSP_CLK_MCLK_IS_NEEDED | SSP_CLK_BCLK_IS_NEEDED;
 		sscr1 |= SSCR1_SCFR;
 		cfs = true;
 		break;
 	case DAI_INTEL_IPC3_SSP_FMT_CBP_CFC:
+		ssp_plat_data->clk_active |= SSP_CLK_MCLK_IS_NEEDED;
 		sscr1 |= SSCR1_SCLKDIR;
 		/* FIXME: this mode has not been tested */
 
 		cfs = true;
 		break;
 	case DAI_INTEL_IPC3_SSP_FMT_CBC_CFP:
+		ssp_plat_data->clk_active |= SSP_CLK_MCLK_IS_NEEDED | SSP_CLK_BCLK_IS_NEEDED;
 		sscr1 |= SSCR1_SCFR | SSCR1_SFRMDIR;
 		/* FIXME: this mode has not been tested */
 		break;
@@ -1909,6 +1923,15 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	dp->ssp_plat_data->params.rx_slots = SSRSA_GET(ssrsa);
 	dp->ssp_plat_data->params.fsync_rate = cfg->rate;
 
+	/* MCLK is needed if SSP is FS and/or BCLK provider */
+	if (!(regs->ssc1 & (SSCR1_SCLKDIR | SSCR1_SFRMDIR))) {
+		dp->ssp_plat_data->clk_active |= SSP_CLK_MCLK_IS_NEEDED;
+		/* BCLK is only needed if SSP is BCLK provider */
+		if (!(regs->ssc1 & SSCR1_SCLKDIR)) {
+			dp->ssp_plat_data->clk_active |= SSP_CLK_BCLK_IS_NEEDED;
+		}
+	}
+
 	dp->state[DAI_DIR_PLAYBACK] = DAI_STATE_PRE_RUNNING;
 	dp->state[DAI_DIR_CAPTURE] = DAI_STATE_PRE_RUNNING;
 }
@@ -1933,14 +1956,19 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 		if (err)
 			return err;
 		dai_ssp_set_reg_config(dp, cfg, &blob15->i2s_ssp_config);
-		err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_mclk_control);
-		if (err)
-			return err;
+		if (ssp_plat_data->clk_active & SSP_CLK_MCLK_IS_NEEDED) {
+			err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_mclk_control);
+			if (err)
+				return err;
+		}
 	} else {
 		dai_ssp_set_reg_config(dp, cfg, &blob->i2s_driver_config.i2s_config);
-		err = dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
-		if (err)
-			return err;
+		if (ssp_plat_data->clk_active & SSP_CLK_MCLK_IS_NEEDED) {
+			err = dai_ssp_set_clock_control_ver_1(dp,
+							      &blob->i2s_driver_config.mclk_config);
+			if (err)
+				return err;
+		}
 	}
 
 	ssp_plat_data->clk_active |= SSP_CLK_MCLK_ES_REQ;
