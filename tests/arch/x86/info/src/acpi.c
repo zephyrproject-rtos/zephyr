@@ -130,7 +130,7 @@ void acpi(void)
 		for (int i = 0; i < nr_cpus; ++i) {
 			struct acpi_madt_local_apic *cpu = acpi_local_apic_get(i);
 
-			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu[i].Id);
+			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu->Id);
 		}
 	}
 
