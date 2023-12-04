@@ -95,15 +95,19 @@ struct zsock_pollfd {
 #define ZSOCK_SHUT_RDWR 2
 /** @} */
 
-/** Protocol level for TLS.
- *  Here, the same socket protocol level for TLS as in Linux was used.
- */
-#define SOL_TLS 282
-
 /**
  *  @defgroup secure_sockets_options Socket options for TLS
  *  @{
  */
+/**
+ * @name Socket options for TLS
+ * @{
+ */
+
+/** Protocol level for TLS.
+ *  Here, the same socket protocol level for TLS as in Linux was used.
+ */
+#define SOL_TLS 282
 
 /** Socket option to select TLS credentials to use. It accepts and returns an
  *  array of sec_tag_t that indicate which TLS credentials should be used with
@@ -152,11 +156,16 @@ struct zsock_pollfd {
  *  the TLS handshake.
  */
 #define TLS_ALPN_LIST 7
-/** Socket option to set DTLS handshake timeout. The timeout starts at min,
+/** Socket option to set DTLS min handshake timeout. The timeout starts at min,
  *  and upon retransmission the timeout is doubled util max is reached.
  *  Min and max arguments are separate options. The time unit is ms.
  */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
+
+/** Socket option to set DTLS max handshake timeout. The timeout starts at min,
+ *  and upon retransmission the timeout is doubled util max is reached.
+ *  Min and max arguments are separate options. The time unit is ms.
+ */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
 
 /** Socket option for preventing certificates from being copied to the mbedTLS
@@ -218,35 +227,36 @@ struct zsock_pollfd {
  *  connection ID, otherwise will contain the length of the CID value.
  */
 #define TLS_DTLS_PEER_CID_VALUE 17
-/** @} */
 
-/* Valid values for TLS_PEER_VERIFY option */
+/* Valid values for @ref TLS_PEER_VERIFY option */
 #define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
 #define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
 #define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
 
-/* Valid values for TLS_DTLS_ROLE option */
+/* Valid values for @ref TLS_DTLS_ROLE option */
 #define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
 #define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
 
-/* Valid values for TLS_CERT_NOCOPY option */
+/* Valid values for @ref TLS_CERT_NOCOPY option */
 #define TLS_CERT_NOCOPY_NONE 0     /**< Cert duplicated in heap */
 #define TLS_CERT_NOCOPY_OPTIONAL 1 /**< Cert not copied in heap if DER */
 
-/* Valid values for TLS_SESSION_CACHE option */
+/* Valid values for @ref TLS_SESSION_CACHE option */
 #define TLS_SESSION_CACHE_DISABLED 0 /**< Disable TLS session caching. */
 #define TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
 
-/* Valid values for TLS_DTLS_CID option */
-#define TLS_DTLS_CID_DISABLED		0
-#define TLS_DTLS_CID_SUPPORTED		1
-#define TLS_DTLS_CID_ENABLED		2
+/* Valid values for @ref TLS_DTLS_CID (Connection ID) option */
+#define TLS_DTLS_CID_DISABLED		0 /**< CID is disabled  */
+#define TLS_DTLS_CID_SUPPORTED		1 /**< CID is supported */
+#define TLS_DTLS_CID_ENABLED		2 /**< CID is enabled   */
 
-/* Valid values for TLS_DTLS_CID_STATUS option */
-#define TLS_DTLS_CID_STATUS_DISABLED		0
-#define TLS_DTLS_CID_STATUS_DOWNLINK		1
-#define TLS_DTLS_CID_STATUS_UPLINK		2
-#define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3
+/* Valid values for @ref TLS_DTLS_CID_STATUS option */
+#define TLS_DTLS_CID_STATUS_DISABLED		0 /**< CID is disabled */
+#define TLS_DTLS_CID_STATUS_DOWNLINK		1 /**< CID is in use by us */
+#define TLS_DTLS_CID_STATUS_UPLINK		2 /**< CID is in use by peer */
+#define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3 /**< CID is in use by us and peer */
+/** @} */ /* for @name */
+/** @} */ /* for @defgroup */
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
