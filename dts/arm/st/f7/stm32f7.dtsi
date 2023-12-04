@@ -860,7 +860,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1FFF7A2A>;
+		vrefint-cal-addr = <0x1FF0F44A>;
 		vrefint-cal-mv = <3300>;
 		io-channels = <&adc1 17>;
 		status = "disabled";
