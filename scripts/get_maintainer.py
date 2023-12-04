@@ -175,12 +175,12 @@ class Maintainers:
             the top-level directory of the Git repository is used, and must
             exist.
         """
-        self._toplevel = pathlib.Path(_git("rev-parse", "--show-toplevel"))
-
-        if filename is None:
-            self.filename = self._toplevel / "MAINTAINERS.yml"
-        else:
+        if (filename is not None) and (pathlib.Path(filename).exists()):
             self.filename = pathlib.Path(filename)
+            self._toplevel = self.filename.parent
+        else:
+            self._toplevel = pathlib.Path(_git("rev-parse", "--show-toplevel"))
+            self.filename = self._toplevel / "MAINTAINERS.yml"
 
         self.areas = {}
         for area_name, area_dict in _load_maintainers(self.filename).items():
