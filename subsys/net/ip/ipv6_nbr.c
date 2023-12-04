@@ -1818,7 +1818,12 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (!handle_na_neighbor(pkt, na_hdr, tllao_offset)) {
-		goto drop;
+		/* Update the statistics but silently drop NA msg if the sender
+		 * is not known or if there was an error in the message.
+		 * Returning <0 will cause error message to be printed which
+		 * is too much for this non error.
+		 */
+		net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 	}
 
 	return 0;
