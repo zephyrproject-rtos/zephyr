@@ -9,4 +9,14 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
+if(CONFIG_BT_STM32WBA)
+  zephyr_include_directories(hci_if)
+
+  zephyr_sources(hci_if/linklayer_plat.c)
+  zephyr_sources(hci_if/bleplat.c)
+  zephyr_sources(hci_if/host_stack_if.c)
+  zephyr_sources(hci_if/ll_sys_if.c)
+  zephyr_sources(hci_if/stm32_timer.c)
+endif()
+
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
