@@ -44,6 +44,17 @@ def test_LightweightM2M_1_1_int_102(shell: Shell, dut: DeviceAdapter, leshan: Le
     assert latest["lifetime"] == lifetime
     shell.exec_command('lwm2m write 1/0/1 -u32 86400')
 
+def test_LightweightM2M_1_1_int_103(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
+    """LightweightM2M-1.1-int-103 - Deregistration"""
+    leshan.execute(endpoint, '1/0/4')
+    dut.readlines_until(regex='LwM2M server disabled', timeout=5.0)
+    dut.readlines_until(regex='Deregistration success', timeout=5.0)
+    # Reset timers by restarting the client
+    shell.exec_command('lwm2m stop')
+    time.sleep(1)
+    shell.exec_command(f'lwm2m start {endpoint}')
+    dut.readlines_until(regex='.*Registration Done', timeout=5.0)
+
 def test_LightweightM2M_1_1_int_104(shell: Shell, dut: DeviceAdapter, leshan: Leshan, endpoint: str):
     """LightweightM2M-1.1-int-104 - Registration Update Trigger"""
     shell.exec_command('lwm2m update')
