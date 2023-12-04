@@ -192,20 +192,18 @@ uint32_t sys_clock_elapsed(void)
 
 #ifdef CONFIG_APIC_TIMER_TSC
 
-uint32_t sys_clock_cycle_get_32(void)
+uint64_t sys_clock_cycle_get_64(void)
 {
 	uint64_t tsc = z_tsc_read();
-	uint32_t cycles;
 
-	cycles = (tsc * CONFIG_APIC_TIMER_TSC_M) / CONFIG_APIC_TIMER_TSC_N;
-	return cycles;
+	return (tsc * CONFIG_APIC_TIMER_TSC_M) / CONFIG_APIC_TIMER_TSC_N;
 }
 
 #else
 
-uint32_t sys_clock_cycle_get_32(void)
+uint64_t sys_clock_cycle_get_64(void)
 {
-	uint32_t ret;
+	uint64_t ret;
 	uint32_t ccr;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -217,6 +215,11 @@ uint32_t sys_clock_cycle_get_32(void)
 }
 
 #endif
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return (uint32_t)sys_clock_cycle_get_64();
+}
 
 static int sys_clock_driver_init(void)
 {
