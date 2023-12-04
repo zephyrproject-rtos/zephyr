@@ -1052,7 +1052,33 @@ class ProjectBuilder(FilterBuilder):
         return self.run_cmake(args,filter_stages)
 
     def build(self):
-        return self.run_build(['--build', self.build_dir])
+        build_result = self.run_build(['--build', self.build_dir])
+        if 'BSIM_OUT_PATH' in self.platform.env:
+            self._copy_bsim_executable()
+        return build_result
+
+    def _copy_bsim_executable(self):
+        """
+        Copying application executable to BabbleSim bin directory is necessary
+        to run more complex tests which require simulate more than one device.
+        """
+        original_app_path: str = os.path.join(self.build_dir, 'zephyr', 'zephyr.exe')
+        if not os.path.exists(original_app_path):
+            logger.warning('Cannot copy bsim exe - cannot find original executable.')
+            return
+
+        bsim_out_path: str = os.getenv('BSIM_OUT_PATH', '')
+        if not bsim_out_path:
+            logger.warning('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
+            return
+
+        new_app_name: str = self.instance.name
+        new_app_name = new_app_name.replace(os.path.sep, '_').replace('.', '_')
+        new_app_name = f'bs_{new_app_name}'
+
+        new_app_path: str = os.path.join(bsim_out_path, 'bin', new_app_name)
+        logger.info(f'Copying executable from {original_app_path} to {new_app_path}')
+        shutil.copy(original_app_path, new_app_path)
 
     def run(self):
 
