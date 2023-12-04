@@ -151,6 +151,7 @@ struct adxl345_dev_data {
 	int16_t bufy[ADXL345_MAX_FIFO_SIZE];
 	int16_t bufz[ADXL345_MAX_FIFO_SIZE];
 
+	uint16_t odr_frequency;
 	enum adxl345_odr odr;
 	enum adxl345_range range;
 	enum adxl345_fifo fifo_mode;
@@ -203,9 +204,9 @@ struct adxl345_dev_config {
 #endif
 
 	bool low_power;
-	enum adxl345_odr odr;
-	enum adxl345_range range;
-	enum adxl345_fifo fifo_mode;
+	uint16_t odr;
+	uint8_t range;
+	uint8_t fifo_mode;
 };
 
 #ifdef CONFIG_ADXL345_TRIGGER

@@ -125,9 +125,9 @@ static int adxl345_read_sample(const struct device *dev, struct adxl345_sample *
 		return rc;
 	}
 
-	sample->x = axis_data[0] | (axis_data[1] << 8);
-	sample->y = axis_data[2] | (axis_data[3] << 8);
-	sample->z = axis_data[4] | (axis_data[5] << 8);
+	sample->x = axis_data[0] | (((int16_t)axis_data[1]) << 8);
+	sample->y = axis_data[2] | (((int16_t)axis_data[3]) << 8);
+	sample->z = axis_data[4] | (((int16_t)axis_data[5]) << 8);
 
 	return 0;
 }
@@ -338,6 +338,7 @@ static int adxl345_init(const struct device *dev)
 		return -EIO;
 	}
 
+	data->odr_frequency = cfg->odr;
 	data->odr = adxl345_map_odr(cfg->odr);
 	rc = adxl345_set_output_rate(dev, data->odr);
 	if (rc < 0) {
@@ -365,21 +366,38 @@ static int adxl345_attr_set(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (attr) {
-	case SENSOR_ATTR_WATERFALL_LEVEL:
+	case SENSOR_ATTR_BATCH_DURATION: {
+		if (0 > val->val1 || 0 > val->val2) {
+			return -ENOTSUP;
+		}
+		const struct adxl345_dev_config *config = dev->config;
+		uint32_t trigger_timeout_us = ((val->val1) * 1000000) + val->val2;
+		uint32_t sampling_speed_us = 1 * 1000000 / config->odr;
+		uint32_t sample_count = trigger_timeout_us / sampling_speed_us;
 		return adxl345_reg_write_mask(dev, ADXL345_FIFO_CTL_REG,
-					      ADXL345_FIFO_CTL_SAMPLE_MSK, 10);
-	case SENSOR_ATTR_ACTIVE_THRESH:
-		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, (val->val1) / 62.5);
-	case SENSOR_ATTR_INACTIVE_THRESH:
-		return adxl345_reg_write_byte(dev, ADXL345_THRESH_INACT_REG, (val->val1) / 62.5);
-	case SENSOR_ATTR_INACTIVE_TIME:
-		return adxl345_reg_write_byte(dev, ADXL345_TIME_INACT_REG, (val->val1) / 1000);
-	case SENSOR_ATTR_LINK_MOVEMENT:
+					      ADXL345_FIFO_CTL_SAMPLE_MSK,
+					      MIN(sample_count, ADXL345_MAX_FIFO_SIZE));
+	}
+	case SENSOR_ATTR_ACTIVE_THRESH: {
+		int16_t milli_g = sensor_ms2_to_ug(val) / 1000;
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, milli_g * 2 / 128);
+	}
+	case SENSOR_ATTR_INACTIVE_THRESH: {
+		int16_t milli_g = sensor_ms2_to_ug(val) / 1000;
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_INACT_REG, milli_g * 2 / 128);
+	}
+	case SENSOR_ATTR_INACTIVE_TIME: {
+		uint16_t milli_seconds = (((int64_t)val->val1) * 1000) + (val->val2 / 1000);
+		return adxl345_reg_write_byte(dev, ADXL345_TIME_INACT_REG, milli_seconds / 1000);
+	}
+	case SENSOR_ATTR_LINK_MOVEMENT: {
 		return adxl345_reg_write_mask(dev, ADXL345_POWER_CTL_REG,
 					      ADXL345_POWER_CTL_LINK_BIT,
 					      ADXL345_POWER_CTL_LINK_BIT);
-	default:
+	}
+	default: {
 		return -ENOTSUP;
+	}
 	}
 }
 
