@@ -16,6 +16,7 @@ from twister_harness.device.binary_adapter import (
     UnitSimulatorAdapter,
 )
 from twister_harness.exceptions import TwisterHarnessException
+from twister_harness.twister_harness_config import TwisterHarnessConfig, DeviceConfig
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,14 @@ class DeviceFactory:
         except KeyError as exc:
             logger.error('There is no device with name "%s"', name)
             raise TwisterHarnessException(f'There is no device with name "{name}"') from exc
+
+    @classmethod
+    def get_device_object(cls, twister_harness_config: TwisterHarnessConfig) -> DeviceAdapter:
+        device_config: DeviceConfig = twister_harness_config.devices[0]
+        device_type = device_config.type
+        device_class: Type[DeviceAdapter] = DeviceFactory.get_device(device_type)
+        device_object = device_class(device_config)
+        return device_object
 
 
 DeviceFactory.register_device_class('custom', CustomSimulatorAdapter)
