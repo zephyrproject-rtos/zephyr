@@ -13,4 +13,30 @@ config SOC_SERIES
 config STM32_LPTIM_TIMER
 	default y if PM
 
+choice BT_HCI_BUS_TYPE
+	default BT_STM32WBA
+	depends on BT
+endchoice
+
+config BT_STM32WBA
+	select DYNAMIC_INTERRUPTS
+	select DYNAMIC_DIRECT_INTERRUPTS
+	select ENTROPY_GENERATOR
+	select USE_STM32_HAL_RAMCFG
+
+if BT_STM32WBA
+
+choice LIBC_IMPLEMENTATION
+	default NEWLIB_LIBC
+endchoice
+
+choice LINKER_ORPHAN_CONFIGURATION
+	default LINKER_ORPHAN_SECTION_PLACE
+endchoice
+
+config ENTROPY_STM32_CLK_CHECK
+	default n
+
+endif
+
 endif # SOC_SERIES_STM32WBAX
