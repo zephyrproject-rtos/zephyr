@@ -9,9 +9,16 @@
 #include "zephyr/sys/byteorder.h"
 #include <stdint.h>
 
+#include <../../subsys/bluetooth/audio/tbs_internal.h>
+
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_ccp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
+
+struct btp_ccp_chrc_handles_ev tbs_handles;
+struct bt_tbs_instance *tbs_inst;
+static uint8_t inst_ccid;
+static bool send_ev;
 
 static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
@@ -25,6 +32,29 @@ static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_CCP_TERMINATE_CALL);
 	tester_set_bit(rp->data, BTP_CCP_ORIGINATE_CALL);
 	tester_set_bit(rp->data, BTP_CCP_READ_CALL_STATE);
+	tester_set_bit(rp->data, BTP_CCP_READ_BEARER_NAME);
+
+	/* octet 1 */
+	tester_set_bit(rp->data, BTP_CCP_READ_BEARER_UCI);
+	tester_set_bit(rp->data, BTP_CCP_READ_BEARER_TECH);
+	tester_set_bit(rp->data, BTP_CCP_READ_URI_LIST);
+	tester_set_bit(rp->data, BTP_CCP_READ_SIGNAL_STRENGTH);
+	tester_set_bit(rp->data, BTP_CCP_READ_SIGNAL_INTERVAL);
+	tester_set_bit(rp->data, BTP_CCP_READ_CURRENT_CALLS);
+	tester_set_bit(rp->data, BTP_CCP_READ_CCID);
+
+	/* octet 2 */
+	tester_set_bit(rp->data, BTP_CCP_READ_CALL_URI);
+	tester_set_bit(rp->data, BTP_CCP_READ_STATUS_FLAGS);
+	tester_set_bit(rp->data, BTP_CCP_READ_OPTIONAL_OPCODES);
+	tester_set_bit(rp->data, BTP_CCP_READ_FRIENDLY_NAME);
+	tester_set_bit(rp->data, BTP_CCP_READ_REMOTE_URI);
+	tester_set_bit(rp->data, BTP_CCP_SET_SIGNAL_INTERVAL);
+	tester_set_bit(rp->data, BTP_CCP_HOLD_CALL);
+
+	/* octet 3 */
+	tester_set_bit(rp->data, BTP_CCP_RETRIEVE_CALL);
+	tester_set_bit(rp->data, BTP_CCP_JOIN_CALLS);
 
 	*rsp_len = sizeof(*rp) + 1;
 
@@ -42,96 +72,100 @@ static void tbs_client_discovered_ev(int err, uint8_t tbs_count, bool gtbs_found
 	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_DISCOVERED, &ev, sizeof(ev));
 }
 
-/**
- * @brief Callback function for ccp_discover.
- *
- * @param conn          The connection that was used to discover CCP for a
- *                      device.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param tbs_count     Number of TBS instances on peer device.
- * @param gtbs_found    Whether or not the server has a Generic TBS instance.
- */
-static void tbs_client_discover_cb(struct bt_conn *conn,
-				   int err,
-				   uint8_t tbs_count,
+static void tbs_chrc_handles_ev(struct btp_ccp_chrc_handles_ev *tbs_handles)
+{
+	struct btp_ccp_chrc_handles_ev ev;
+
+	ev.provider_name = sys_cpu_to_le16(tbs_handles->provider_name);
+	ev.bearer_uci = sys_cpu_to_le16(tbs_handles->bearer_uci);
+	ev.bearer_technology = sys_cpu_to_le16(tbs_handles->bearer_technology);
+	ev.uri_list = sys_cpu_to_le16(tbs_handles->uri_list);
+	ev.signal_strength = sys_cpu_to_le16(tbs_handles->signal_strength);
+	ev.signal_interval = sys_cpu_to_le16(tbs_handles->signal_interval);
+	ev.current_calls = sys_cpu_to_le16(tbs_handles->current_calls);
+	ev.ccid = sys_cpu_to_le16(tbs_handles->ccid);
+	ev.status_flags = sys_cpu_to_le16(tbs_handles->status_flags);
+	ev.bearer_uri = sys_cpu_to_le16(tbs_handles->bearer_uri);
+	ev.call_state = sys_cpu_to_le16(tbs_handles->call_state);
+	ev.control_point = sys_cpu_to_le16(tbs_handles->control_point);
+	ev.optional_opcodes = sys_cpu_to_le16(tbs_handles->optional_opcodes);
+	ev.termination_reason = sys_cpu_to_le16(tbs_handles->termination_reason);
+	ev.incoming_call = sys_cpu_to_le16(tbs_handles->incoming_call);
+	ev.friendly_name = sys_cpu_to_le16(tbs_handles->friendly_name);
+
+	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CHRC_HANDLES, &ev, sizeof(ev));
+}
+
+static void tbs_client_chrc_val_ev(struct bt_conn *conn, uint8_t status, uint8_t inst_index,
+				   uint32_t value)
+{
+	struct btp_ccp_chrc_val_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+
+	ev.status = status;
+	ev.inst_index = inst_index;
+	ev.value = value;
+
+	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CHRC_VAL, &ev, sizeof(ev));
+}
+
+static void tbs_client_chrc_str_ev(struct bt_conn *conn, uint8_t status, uint8_t inst_index,
+				   uint8_t data_len, const char *data)
+{
+	struct btp_ccp_chrc_str_ev *ev;
+
+	tester_rsp_buffer_lock();
+	tester_rsp_buffer_allocate(sizeof(*ev) + data_len, (uint8_t **)&ev);
+	bt_addr_le_copy(&ev->address, bt_conn_get_dst(conn));
+	ev->status = status;
+	ev->inst_index = inst_index;
+	ev->data_len = data_len;
+	memcpy(ev->data, data, data_len);
+
+	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CHRC_STR, ev, sizeof(*ev) + data_len);
+
+	tester_rsp_buffer_free();
+	tester_rsp_buffer_unlock();
+}
+
+static void tbs_client_cp_ev(struct bt_conn *conn, uint8_t status)
+{
+	struct btp_ccp_cp_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+
+	ev.status = status;
+
+	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CP, &ev, sizeof(ev));
+}
+
+static void tbs_client_current_calls_ev(struct bt_conn *conn, uint8_t status)
+{
+	struct btp_ccp_current_calls_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+
+	ev.status = status;
+
+	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CURRENT_CALLS, &ev, sizeof(ev));
+}
+
+static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count,
 				   bool gtbs_found)
 {
+	if (err) {
+		LOG_DBG("Discovery Failed (%d)", err);
+		return;
+	}
+
 	LOG_DBG("Discovered TBS - err (%u) GTBS (%u)", err, gtbs_found);
 
+	bt_tbs_client_read_ccid(conn, 0xFF);
+
 	tbs_client_discovered_ev(err, tbs_count, gtbs_found);
-}
 
-/**
- * @brief Callback function for the CCP call control functions.
- *
- * @param conn          The connection used in the function.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param inst_index    The index of the TBS instance that was updated.
- * @param call_index    The call index. For #bt_tbs_client_originate_call this will
- *                      always be 0, and does not reflect the actual call index.
- */
-static void tbs_client_originate_call_cb(struct bt_conn *conn,
-					 int err,
-					 uint8_t inst_index,
-					 uint8_t call_index)
-{
-	LOG_DBG("Originate call - err (%u) Call Index (%u)", err, call_index);
-}
-
-/**
- * @brief Callback function for the CCP call control functions.
- *
- * @param conn          The connection used in the function.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param inst_index    The index of the TBS instance that was updated.
- * @param call_index    The call index. For #bt_tbs_client_originate_call this will
- *                      always be 0, and does not reflect the actual call index.
- */
-static void tbs_client_terminate_call_cb(struct bt_conn *conn,
-					 int err,
-					 uint8_t inst_index,
-					 uint8_t call_index)
-{
-	LOG_DBG("Terminate call - err (%u) Call Index (%u)", err, call_index);
-}
-
-/**
- * @brief Callback function for the CCP call control functions.
- *
- * @param conn          The connection used in the function.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param inst_index    The index of the TBS instance that was updated.
- * @param call_index    The call index. For #bt_tbs_client_originate_call this will
- *                      always be 0, and does not reflect the actual call index.
- */
-static void tbs_client_accept_call_cb(struct bt_conn *conn,
-				      int err,
-				      uint8_t inst_index,
-				      uint8_t call_index)
-{
-	LOG_DBG("Accept call - err (%u) Call Index (%u)", err, call_index);
-}
-
-/**
- * @brief Callback function for the CCP call control functions.
- *
- * @param conn          The connection used in the function.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param inst_index    The index of the TBS instance that was updated.
- * @param call_index    The call index. For #bt_tbs_client_originate_call this will
- *                      always be 0, and does not reflect the actual call index.
- */
-static void tbs_client_retrieve_call_cb(struct bt_conn *conn,
-					int err,
-					uint8_t inst_index,
-					uint8_t call_index)
-{
-	LOG_DBG("Retrieve call - err (%u) Call Index (%u)", err, call_index);
+	send_ev = true;
 }
 
 typedef struct bt_tbs_client_call_state bt_tbs_client_call_state_t;
@@ -160,17 +194,6 @@ static void tbs_client_call_states_ev(int err,
 	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_CALL_STATES, buf->data, buf->len);
 }
 
-/**
- * @brief Callback function for ccp_read_call_state.
- *
- * @param conn          The connection used in the function.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param inst_index    The index of the TBS instance that was updated.
- * @param call_count    Number of call states read.
- * @param call_states   Array of call states. The array is not kept by
- *                      the client, so must be copied to be saved.
- */
 static void tbs_client_call_states_cb(struct bt_conn *conn,
 				      int err,
 				      uint8_t inst_index,
@@ -182,16 +205,6 @@ static void tbs_client_call_states_cb(struct bt_conn *conn,
 	tbs_client_call_states_ev(err, inst_index, call_count, call_states);
 }
 
-/**
- * @brief Callback function for ccp_read_termination_reason.
- *
- * @param conn          The connection used in the function.
- * @param err           Error value. BT_TBS_CLIENT_RESULT_CODE_*,
- *                      GATT error or errno value.
- * @param inst_index    The index of the TBS instance that was updated.
- * @param call_index    The call index.
- * @param reason        The termination reason.
- */
 static void tbs_client_termination_reason_cb(struct bt_conn *conn,
 					     int err,
 					     uint8_t inst_index,
@@ -202,14 +215,90 @@ static void tbs_client_termination_reason_cb(struct bt_conn *conn,
 		err, call_index, reason);
 }
 
+static void tbs_client_read_string_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+				      const char *value)
+{
+	LOG_DBG("TBS Client read string characteristic value cb");
+
+	uint8_t data_len = strlen(value);
+
+	tbs_client_chrc_str_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, inst_index,
+			       data_len, value);
+}
+
+static void tbs_client_read_val_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+				   uint32_t value)
+{
+	LOG_DBG("TBS Client read characteristic value cb");
+
+	tbs_client_chrc_val_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, inst_index,
+			       value);
+
+	if (send_ev == true) {
+		inst_ccid = value;
+
+		tbs_inst = bt_tbs_client_get_by_ccid(conn, inst_ccid);
+
+		tbs_handles.provider_name = tbs_inst->name_sub_params.value_handle;
+		tbs_handles.bearer_uci = tbs_inst->bearer_uci_handle;
+		tbs_handles.bearer_technology = tbs_inst->technology_sub_params.value_handle;
+		tbs_handles.uri_list = tbs_inst->uri_list_handle;
+		tbs_handles.signal_strength = tbs_inst->signal_strength_sub_params.value_handle;
+		tbs_handles.signal_interval = tbs_inst->signal_interval_handle;
+		tbs_handles.current_calls = tbs_inst->current_calls_sub_params.value_handle;
+		tbs_handles.ccid = tbs_inst->ccid_handle;
+		tbs_handles.status_flags = tbs_inst->status_flags_sub_params.value_handle;
+		tbs_handles.bearer_uri = tbs_inst->in_target_uri_sub_params.value_handle;
+		tbs_handles.call_state = tbs_inst->call_state_sub_params.value_handle;
+		tbs_handles.control_point = tbs_inst->call_cp_sub_params.value_handle;
+		tbs_handles.optional_opcodes = tbs_inst->optional_opcodes_handle;
+		tbs_handles.termination_reason = tbs_inst->termination_reason_handle;
+		tbs_handles.incoming_call = tbs_inst->incoming_call_sub_params.value_handle;
+		tbs_handles.friendly_name = tbs_inst->friendly_name_sub_params.value_handle;
+
+		tbs_chrc_handles_ev(&tbs_handles);
+		send_ev = false;
+	}
+}
+
+static void tbs_client_current_calls_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+					uint8_t call_count, const struct bt_tbs_client_call *calls)
+{
+	LOG_DBG("");
+
+	tbs_client_current_calls_ev(conn, err);
+}
+
+static void tbs_client_cp_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint8_t call_index)
+{
+	LOG_DBG("");
+
+	tbs_client_cp_ev(conn, err);
+}
+
 static const struct bt_tbs_client_cb tbs_client_callbacks = {
 	.discover = tbs_client_discover_cb,
-	.originate_call = tbs_client_originate_call_cb,
-	.terminate_call = tbs_client_terminate_call_cb,
-	.accept_call = tbs_client_accept_call_cb,
-	.retrieve_call = tbs_client_retrieve_call_cb,
+	.originate_call = tbs_client_cp_cb,
+	.terminate_call = tbs_client_cp_cb,
 	.call_state = tbs_client_call_states_cb,
-	.termination_reason = tbs_client_termination_reason_cb
+	.termination_reason = tbs_client_termination_reason_cb,
+	.bearer_provider_name = tbs_client_read_string_cb,
+	.bearer_uci = tbs_client_read_string_cb,
+	.technology = tbs_client_read_val_cb,
+	.uri_list = tbs_client_read_string_cb,
+	.signal_strength = tbs_client_read_val_cb,
+	.signal_interval = tbs_client_read_val_cb,
+	.current_calls = tbs_client_current_calls_cb,
+	.ccid = tbs_client_read_val_cb,
+	.call_uri = tbs_client_read_string_cb,
+	.status_flags = tbs_client_read_val_cb,
+	.optional_opcodes = tbs_client_read_val_cb,
+	.friendly_name = tbs_client_read_string_cb,
+	.remote_uri = tbs_client_read_string_cb,
+	.accept_call = tbs_client_cp_cb,
+	.hold_call = tbs_client_cp_cb,
+	.retrieve_call = tbs_client_cp_cb,
+	.join_calls = tbs_client_cp_cb,
 };
 
 static uint8_t ccp_discover_tbs(const void *cmd, uint16_t cmd_len,
@@ -293,6 +382,362 @@ static uint8_t ccp_read_call_state(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_VAL(err);
 }
 
+static uint8_t ccp_read_bearer_name(const void *cmd, uint16_t cmd_len, void *rsp,
+				    uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_bearer_name_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_bearer_provider_name(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_bearer_uci(const void *cmd, uint16_t cmd_len, void *rsp,
+				    uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_bearer_uci_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_bearer_uci(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_bearer_tech(const void *cmd, uint16_t cmd_len, void *rsp,
+				    uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_bearer_technology_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_technology(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_uri_list(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_uri_list_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_uri_list(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_signal_strength(const void *cmd, uint16_t cmd_len, void *rsp,
+					uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_signal_strength_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_signal_strength(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_signal_interval(const void *cmd, uint16_t cmd_len, void *rsp,
+					uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_signal_interval_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_signal_interval(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_current_calls(const void *cmd, uint16_t cmd_len, void *rsp,
+				      uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_current_calls_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_current_calls(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_ccid(const void *cmd, uint16_t cmd_len, void *rsp,
+			     uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_ccid_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_ccid(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_call_uri(const void *cmd, uint16_t cmd_len, void *rsp,
+				 uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_call_uri_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_call_uri(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_status_flags(const void *cmd, uint16_t cmd_len, void *rsp,
+				     uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_status_flags_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_status_flags(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_optional_opcodes(const void *cmd, uint16_t cmd_len, void *rsp,
+					 uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_optional_opcodes_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_optional_opcodes(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_friendly_name(const void *cmd, uint16_t cmd_len, void *rsp,
+					 uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_friendly_name_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_friendly_name(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_read_remote_uri(const void *cmd, uint16_t cmd_len, void *rsp,
+				   uint16_t *rsp_len)
+{
+	const struct btp_ccp_read_remote_uri_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_read_remote_uri(conn, cp->inst_index);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_set_signal_interval(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_ccp_set_signal_interval_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_set_signal_strength_interval(conn, cp->inst_index, cp->interval);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_hold_call(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_ccp_hold_call_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_hold_call(conn, cp->inst_index, cp->call_id);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_retrieve_call(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_ccp_retrieve_call_cmd *cp = cmd;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_tbs_client_retrieve_call(conn, cp->inst_index, cp->call_id);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ccp_join_calls(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_ccp_join_calls_cmd *cp = cmd;
+	const uint8_t *call_index;
+	struct bt_conn *conn;
+	int err;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		LOG_ERR("Unknown connection");
+		return BTP_STATUS_FAILED;
+	}
+
+	call_index = cp->call_index;
+
+	err = bt_tbs_client_join_calls(conn, cp->inst_index, call_index, cp->count);
+	if (err) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static const struct btp_handler ccp_handlers[] = {
 	{
 		.opcode = BTP_CCP_READ_SUPPORTED_COMMANDS,
@@ -324,7 +769,92 @@ static const struct btp_handler ccp_handlers[] = {
 		.opcode = BTP_CCP_READ_CALL_STATE,
 		.expect_len = sizeof(struct btp_ccp_read_call_state_cmd),
 		.func = ccp_read_call_state
-	}
+	},
+	{
+		.opcode = BTP_CCP_READ_BEARER_NAME,
+		.expect_len = sizeof(struct btp_ccp_read_bearer_name_cmd),
+		.func = ccp_read_bearer_name
+	},
+	{
+		.opcode = BTP_CCP_READ_BEARER_UCI,
+		.expect_len = sizeof(struct btp_ccp_read_bearer_uci_cmd),
+		.func = ccp_read_bearer_uci
+	},
+	{
+		.opcode = BTP_CCP_READ_BEARER_TECH,
+		.expect_len = sizeof(struct btp_ccp_read_bearer_technology_cmd),
+		.func = ccp_read_bearer_tech
+	},
+	{
+		.opcode = BTP_CCP_READ_URI_LIST,
+		.expect_len = sizeof(struct btp_ccp_read_uri_list_cmd),
+		.func = ccp_read_uri_list
+	},
+	{
+		.opcode = BTP_CCP_READ_SIGNAL_STRENGTH,
+		.expect_len = sizeof(struct btp_ccp_read_signal_strength_cmd),
+		.func = ccp_read_signal_strength
+	},
+	{
+		.opcode = BTP_CCP_READ_SIGNAL_INTERVAL,
+		.expect_len = sizeof(struct btp_ccp_read_signal_interval_cmd),
+		.func = ccp_read_signal_interval
+	},
+	{
+		.opcode = BTP_CCP_READ_CURRENT_CALLS,
+		.expect_len = sizeof(struct btp_ccp_read_current_calls_cmd),
+		.func = ccp_read_current_calls
+	},
+	{
+		.opcode = BTP_CCP_READ_CCID,
+		.expect_len = sizeof(struct btp_ccp_read_ccid_cmd),
+		.func = ccp_read_ccid
+	},
+	{
+		.opcode = BTP_CCP_READ_CALL_URI,
+		.expect_len = sizeof(struct btp_ccp_read_call_uri_cmd),
+		.func = ccp_read_call_uri
+	},
+	{
+		.opcode = BTP_CCP_READ_STATUS_FLAGS,
+		.expect_len = sizeof(struct btp_ccp_read_status_flags_cmd),
+		.func = ccp_read_status_flags
+	},
+	{
+		.opcode = BTP_CCP_READ_OPTIONAL_OPCODES,
+		.expect_len = sizeof(struct btp_ccp_read_optional_opcodes_cmd),
+		.func = ccp_read_optional_opcodes
+	},
+	{
+		.opcode = BTP_CCP_READ_FRIENDLY_NAME,
+		.expect_len = sizeof(struct btp_ccp_read_friendly_name_cmd),
+		.func = ccp_read_friendly_name
+	},
+	{
+		.opcode = BTP_CCP_READ_REMOTE_URI,
+		.expect_len = sizeof(struct btp_ccp_read_remote_uri_cmd),
+		.func = ccp_read_remote_uri
+	},
+	{
+		.opcode = BTP_CCP_SET_SIGNAL_INTERVAL,
+		.expect_len = sizeof(struct btp_ccp_set_signal_interval_cmd),
+		.func = ccp_set_signal_interval
+	},
+	{
+		.opcode = BTP_CCP_HOLD_CALL,
+		.expect_len = sizeof(struct btp_ccp_hold_call_cmd),
+		.func = ccp_hold_call
+	},
+	{
+		.opcode = BTP_CCP_RETRIEVE_CALL,
+		.expect_len = sizeof(struct btp_ccp_retrieve_call_cmd),
+		.func = ccp_retrieve_call
+	},
+	{
+		.opcode = BTP_CCP_JOIN_CALLS,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = ccp_join_calls
+	},
 };
 
 uint8_t tester_init_ccp(void)
