@@ -83,6 +83,7 @@ extensions = [
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "zephyr.gh_utils",
+    "zephyr.glob_files",
     "zephyr.manifest_projects_table",
     "notfound.extension",
     "sphinx_copybutton",
