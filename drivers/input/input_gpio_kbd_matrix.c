@@ -143,6 +143,10 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 		return;
 	}
 
+	if (cfg->gpio_cb == NULL) {
+		return;
+	}
+
 	for (int i = 0; i < common->row_size; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->row_gpio[i];
 
