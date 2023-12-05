@@ -17,7 +17,8 @@ over any message-based transport. Originally, it was mainly created with ZigBee 
 but others like Bluetooth, UDP or even a UART can be used just as well.
 
 Zephyr provides an MQTT-SN client library built on top of BSD sockets API. The
-library is configurable at a per-client basis, with support for MQTT-SN version
+library can be enabled with :kconfig:option:`CONFIG_MQTT_SN_LIB` Kconfig option
+and is configurable at a per-client basis, with support for MQTT-SN version
 1.2. The Zephyr MQTT-SN implementation can be used with any message-based transport,
 but support for UDP is already built-in.
 

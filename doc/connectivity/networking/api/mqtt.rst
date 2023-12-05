@@ -16,7 +16,8 @@ publish/subscribe messaging transport for machine-to-machine communication.
 For more information about the protocol itself, see http://mqtt.org/.
 
 Zephyr provides an MQTT client library built on top of BSD sockets API. The
-library is configurable at a per-client basis, with support for MQTT versions
+library can be enabled with :kconfig:option:`CONFIG_MQTT_LIB` Kconfig option and
+is configurable at a per-client basis, with support for MQTT versions
 3.1.0 and 3.1.1. The Zephyr MQTT implementation can be used with either plain
 sockets communicating over TCP, or with secure sockets communicating over
 TLS. See :ref:`bsd_sockets_interface` for more information about Zephyr sockets.
