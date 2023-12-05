@@ -47,7 +47,7 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
 	struct gpio_kbd_matrix_data *data = dev->data;
-	int state;
+	uint32_t state;
 
 	if (col == INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE) {
 		state = 0;
@@ -92,7 +92,7 @@ static kbd_row_t gpio_kbd_matrix_read_row(const struct device *dev)
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
 	struct gpio_kbd_matrix_data *data = dev->data;
-	int val = 0;
+	kbd_row_t val = 0;
 
 	if (data->direct_read) {
 		const struct gpio_dt_spec *gpio0 = &cfg->row_gpio[0];
@@ -132,7 +132,7 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 {
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
-	unsigned int flags = enabled ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
+	gpio_flags_t flags = enabled ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
 	int ret;
 
 	if (cfg->idle_poll_dwork != NULL) {
