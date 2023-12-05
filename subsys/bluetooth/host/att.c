@@ -921,12 +921,12 @@ static void att_req_send_process(struct bt_att *att)
 }
 
 static uint8_t att_handle_rsp(struct bt_att_chan *chan, void *pdu, uint16_t len,
-			   uint8_t err)
+			      int err)
 {
 	bt_att_func_t func = NULL;
 	void *params;
 
-	LOG_DBG("chan %p err 0x%02x len %u: %s", chan, err, len, bt_hex(pdu, len));
+	LOG_DBG("chan %p err %d len %u: %s", chan, err, len, bt_hex(pdu, len));
 
 	/* Cancel timeout if ongoing */
 	k_work_cancel_delayable(&chan->timeout_work);
@@ -3012,7 +3012,7 @@ static void att_reset(struct bt_att *att)
 		node = sys_slist_get_not_empty(&att->reqs);
 		req = CONTAINER_OF(node, struct bt_att_req, node);
 		if (req->func) {
-			req->func(att->conn, BT_ATT_ERR_UNLIKELY, NULL, 0,
+			req->func(att->conn, -ECONNRESET, NULL, 0,
 				  req->user_data);
 		}
 
@@ -3042,7 +3042,7 @@ static void att_chan_detach(struct bt_att_chan *chan)
 
 	if (chan->req) {
 		/* Notify outstanding request */
-		att_handle_rsp(chan, NULL, 0, BT_ATT_ERR_UNLIKELY);
+		att_handle_rsp(chan, NULL, 0, -ECONNRESET);
 	}
 
 	chan->att = NULL;

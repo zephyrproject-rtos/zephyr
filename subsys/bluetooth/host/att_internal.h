@@ -270,7 +270,7 @@ struct bt_att_signed_write_cmd {
 	uint8_t  value[0];
 } __packed;
 
-typedef void (*bt_att_func_t)(struct bt_conn *conn, uint8_t err,
+typedef void (*bt_att_func_t)(struct bt_conn *conn, int err,
 			      const void *pdu, uint16_t length,
 			      void *user_data);
 
