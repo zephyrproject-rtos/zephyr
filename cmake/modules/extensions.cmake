@@ -2428,7 +2428,7 @@ endfunction()
 # Usage:
 #   zephyr_file(CONF_FILES <paths> [DTS <list>] [KCONF <list>]
 #               [BOARD <board> [BOARD_REVISION <revision>] | NAMES <name> ...]
-#               [BUILD <type>] [REQUIRED]
+#               [BUILD <type>] [SUFFIX <suffix>] [REQUIRED]
 #   )
 #
 # CONF_FILES <paths>: Find all configuration files in the list of paths and
@@ -2452,14 +2452,19 @@ endfunction()
 #                                                Only the first match found in <paths> will be
 #                                                returned in the <list>
 #
-#                     DTS <list>:   List to append DTS overlay files in <path> to
-#                     KCONF <list>: List to append Kconfig fragment files in <path> to
-#                     BUILD <type>: Build type to include for search.
-#                                   For example:
-#                                   BUILD debug, will look for <board>_debug.conf
-#                                   and <board>_debug.overlay, instead of <board>.conf
-#                     REQUIRED:     Option to indicate that the <list> specified by DTS or KCONF
-#                                   must contain at least one element, else an error will be raised.
+#                     DTS <list>:    List to append DTS overlay files in <path> to
+#                     KCONF <list>:  List to append Kconfig fragment files in <path> to
+#                     BUILD <type>:  Build type to include for search.
+#                                    For example:
+#                                    BUILD debug, will look for <board>_debug.conf
+#                                    and <board>_debug.overlay, instead of <board>.conf
+#                     SUFFIX <name>: Suffix name to check for instead of the default name
+#                                    but with a fallback to the default name if not found.
+#                                    For example:
+#                                    SUFFIX fish, will look for <file>_fish.conf and use
+#                                    if found but will use <file>.conf if not found
+#                     REQUIRED:      Option to indicate that the <list> specified by DTS or KCONF
+#                                    must contain at least one element, else an error will be raised.
 #
 function(zephyr_file)
   set(file_options APPLICATION_ROOT CONF_FILES)
@@ -2472,7 +2477,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options REQUIRED)
-    set(single_args BOARD BOARD_REVISION DTS KCONF BUILD)
+    set(single_args BOARD BOARD_REVISION DTS KCONF BUILD SUFFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -2480,7 +2485,6 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(FILE_UNPARSED_ARGUMENTS)
       message(FATAL_ERROR "zephyr_file(${ARGV0} <val> ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
   endif()
-
 
   if(FILE_APPLICATION_ROOT)
     # Note: user can do: `-D<var>=<relative-path>` and app can at same
@@ -2560,8 +2564,16 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     if(FILE_DTS)
       foreach(path ${FILE_CONF_FILES})
         foreach(filename ${dts_filename_list})
-          if(EXISTS ${path}/${filename})
-            list(APPEND ${FILE_DTS} ${path}/${filename})
+          if(NOT IS_ABSOLUTE ${filename})
+            set(test_file ${path}/${filename})
+          else()
+            set(test_file ${filename})
+          endif()
+          zephyr_file_suffix(test_file SUFFIX ${FILE_SUFFIX})
+
+          if(EXISTS ${test_file})
+            list(APPEND ${FILE_DTS} ${test_file})
+
             if(FILE_NAMES)
               break()
             endif()
@@ -2580,8 +2592,15 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
     if(FILE_KCONF)
       foreach(path ${FILE_CONF_FILES})
         foreach(filename ${kconf_filename_list})
-          if(EXISTS ${path}/${filename})
-            list(APPEND ${FILE_KCONF} ${path}/${filename})
+          if(NOT IS_ABSOLUTE ${filename})
+            set(test_file ${path}/${filename})
+          else()
+            set(test_file ${filename})
+          endif()
+          zephyr_file_suffix(test_file SUFFIX ${FILE_SUFFIX})
+
+          if(EXISTS ${test_file})
+            list(APPEND ${FILE_KCONF} ${test_file})
             if(FILE_NAMES)
               break()
             endif()
@@ -2639,6 +2658,56 @@ function(zephyr_file_copy oldname newname)
     execute_process(
       COMMAND ${CMAKE_COMMAND} -E ${copy_file_command} ${oldname} ${newname}
     )
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_file_suffix(<filename> SUFFIX <suffix>)
+#
+# Zephyr file add suffix extension.
+# This function will check the provied filename or list of filenames to see if they have a
+# `_<suffix>` extension to them and if so, updates the supplied variable/list with the new
+# path/paths.
+#
+# <filename>: Variable (singlular or list) of absolute path filename(s) which should be checked
+#             and updated if there is a filename which has the <suffix> present.
+# <suffix>: The suffix to test for and append to the end of the provided filename.
+#
+# Returns an updated variable of absolute path(s)
+#
+function(zephyr_file_suffix filename)
+  set(single_args SUFFIX)
+  cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
+
+  if(NOT DEFINED FILE_SUFFIX OR NOT DEFINED ${filename})
+    # If the file suffix variable is not known then there is nothing to do, return early
+    return()
+  endif()
+
+  set(tmp_new_list)
+
+  foreach(file ${${filename}})
+    if("${file}" STREQUAL "")
+      # Skip checking empty variables
+      continue()
+    endif()
+
+    # Search for the full stop so we know where to add the file suffix before the file extension
+    cmake_path(GET file EXTENSION file_ext)
+    cmake_path(REMOVE_EXTENSION file OUTPUT_VARIABLE new_filename)
+    cmake_path(APPEND_STRING new_filename "_${FILE_SUFFIX}${file_ext}")
+
+    # Use the filename with the suffix if it exists, if not then fall back to the default
+    if(EXISTS "${new_filename}")
+      list(APPEND tmp_new_list ${new_filename})
+    else()
+      list(APPEND tmp_new_list ${file})
+    endif()
+  endforeach()
+
+  # Update supplied variable if it differs
+  if(NOT "${${filename}}" STREQUAL "${tmp_new_list}")
+    set(${filename} "${tmp_new_list}" PARENT_SCOPE)
   endif()
 endfunction()
 
