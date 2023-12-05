@@ -268,14 +268,12 @@ function(ExternalZephyrProject_Add)
       )
     endif()
 
-     # Check for sysbuild related configuration fragments.
-     # The contents of these are appended to the image existing configuration
-     # when user is not specifying custom fragments.
-    if(NOT "${CONF_FILE_BUILD_TYPE}" STREQUAL "")
-      set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${CONF_FILE_BUILD_TYPE}.conf)
-    else()
-      set(sysbuild_image_conf_fragment ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.conf)
-    endif()
+    # Check for sysbuild related configuration fragments.
+    # The contents of these are appended to the image existing configuration
+    # when user is not specifying custom fragments.
+    zephyr_file(CONF_FILES ${sysbuild_image_conf_dir} KCONF sysbuild_image_conf_fragment
+                NAMES ${ZBUILD_APPLICATION}.conf SUFFIX ${FILE_SUFFIX}
+    )
 
     if (NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
         AND EXISTS ${sysbuild_image_conf_fragment}
