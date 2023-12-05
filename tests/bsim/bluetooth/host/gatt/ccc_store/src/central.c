@@ -37,57 +37,43 @@ static struct bt_conn *default_conn;
 
 static struct bt_conn_cb central_cb;
 
-CREATE_FLAG(gatt_write_flag);
-static uint8_t gatt_write_att_err;
+CREATE_FLAG(gatt_subscribe_flag);
 
-static void gatt_write_cb(struct bt_conn *conn, uint8_t att_err,
-			  struct bt_gatt_write_params *params)
+static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+			 const void *data, uint16_t length)
 {
-	gatt_write_att_err = att_err;
+	return BT_GATT_ITER_CONTINUE;
+}
 
-	if (att_err) {
+static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subscribe_params *params)
+{
+	if (err) {
 		return;
 	}
 
-	SET_FLAG(gatt_write_flag);
+	SET_FLAG(gatt_subscribe_flag);
 }
 
-static int gatt_write(struct bt_conn *conn, uint16_t handle, const uint8_t *write_buf,
-		      size_t write_size)
-{
-	int err;
-	struct bt_gatt_write_params params;
-
-	params.func = gatt_write_cb;
-	params.handle = handle;
-	params.offset = 0;
-	params.data = write_buf;
-	params.length = write_size;
-
-	UNSET_FLAG(gatt_write_flag);
-
-	/* `bt_gatt_write` is used instead of `bt_gatt_subscribe` and
-	 * `bt_gatt_unsubscribe` to bypass subscribtion checks of GATT client
-	 */
-	err = bt_gatt_write(conn, &params);
-	if (err) {
-		FAIL("GATT write failed (err %d)", err);
-	}
-
-	WAIT_FOR_FLAG(gatt_write_flag);
-
-	return gatt_write_att_err;
-}
+static struct bt_gatt_subscribe_params subscribe_params;
 
 static void ccc_subscribe(void)
 {
 	int err;
-	uint8_t buf = 1;
 
-	err = gatt_write(default_conn, CCC_HANDLE, &buf, sizeof(buf));
+	UNSET_FLAG(gatt_subscribe_flag);
+
+	subscribe_params.notify = notify_cb;
+	subscribe_params.subscribe = subscribe_cb;
+	subscribe_params.ccc_handle = CCC_HANDLE;
+	subscribe_params.value_handle = VAL_HANDLE;
+	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+
+	err = bt_gatt_subscribe(default_conn, &subscribe_params);
 	if (err) {
 		FAIL("Failed to subscribe (att err %d)", err);
 	}
+
+	WAIT_FOR_FLAG(gatt_subscribe_flag);
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
