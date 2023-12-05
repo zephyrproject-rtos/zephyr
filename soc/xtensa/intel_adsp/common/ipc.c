@@ -82,7 +82,6 @@ void z_intel_adsp_ipc_isr(const void *devarg)
 		}
 
 		regs->ida = INTEL_ADSP_IPC_DONE;
-		pm_device_busy_clear(dev);
 	}
 
 	k_spin_unlock(&devdata->lock, key);
@@ -163,6 +162,7 @@ int intel_adsp_ipc_send_message(const struct device *dev,
 	config->regs->idd = ext_data;
 	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
 	k_spin_unlock(&devdata->lock, key);
+	pm_device_busy_clear(dev);
 	return 0;
 }
 
