@@ -20,48 +20,36 @@ config SOC_S32K142
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 
 config SOC_S32K142W
 	bool "S32K142W"
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 
 config SOC_S32K144
 	bool "S32K144"
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 
 config SOC_S32K144W
 	bool "S32K144W"
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 
 config SOC_S32K146
 	bool "S32K146"
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 
 config SOC_S32K148
 	bool "S32K148"
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 
 endchoice
 
