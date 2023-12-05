@@ -3,12 +3,19 @@ common:
 tests:
   llext.simple.arm:
     filter: not CONFIG_CPU_HAS_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
+      and not CONFIG_SOC_FAMILY_STM32
     arch_allow: arm
     extra_configs:
       - CONFIG_ARM_MPU=n
     # Broken platforms
     platform_exclude:
       - nuvoton_pfm_m487 # See #63167
+  llext.simple.arm.stm32:
+    filter: not CONFIG_CPU_HAS_MMU and CONFIG_SOC_FAMILY_STM32
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_ARM_MPU=n
+      - CONFIG_CACHE_MANAGEMENT=y
   llext.simple.xtensa:
     arch_allow: xtensa
     extra_configs:
