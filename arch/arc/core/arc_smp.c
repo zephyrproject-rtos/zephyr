@@ -110,7 +110,7 @@ void z_arc_slave_start(int cpu_num)
 	arc_irq_offload_init_smp();
 
 	z_arc_connect_ici_clear();
-	z_irq_priority_set(DT_IRQN(DT_NODELABEL(ici)),
+	arch_irq_priority_set(DT_IRQN(DT_NODELABEL(ici)),
 			   DT_IRQ(DT_NODELABEL(ici), priority), 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 #endif

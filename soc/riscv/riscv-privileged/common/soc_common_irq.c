@@ -32,7 +32,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	return riscv_clic_irq_is_enabled(irq);
 }
 
-void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	riscv_clic_irq_priority_set(irq, prio, flags);
 }
@@ -97,7 +97,7 @@ int arch_irq_is_enabled(unsigned int irq)
 }
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
-void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	unsigned int level = irq_get_level(irq);
 
