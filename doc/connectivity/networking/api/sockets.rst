@@ -57,6 +57,10 @@ there is a table mapping file descriptors to internal object pointers.
 The file descriptor table is used by the BSD Sockets API even if the rest
 of the POSIX subsystem (filesystem, stdin/stdout) is not enabled.
 
+See :zephyr:code-sample:`sockets-echo-server` and :zephyr:code-sample:`sockets-echo-client`
+sample applications to learn how to create a simple server or client BSD socket based
+application.
+
 .. _secure_sockets_interface:
 
 Secure Sockets
