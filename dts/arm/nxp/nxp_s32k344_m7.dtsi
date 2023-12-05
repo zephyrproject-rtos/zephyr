@@ -827,6 +827,24 @@
 				status = "disabled";
 			};
 		};
+
+		lcu0: lcu@40098000 {
+			compatible = "nxp,s32-lcu";
+			reg = <0x40098000 0x4000>;
+			status = "disabled";
+		};
+
+		lcu1: lcu@4009c000 {
+			compatible = "nxp,s32-lcu";
+			reg = <0x4009c000 0x4000>;
+			status = "disabled";
+		};
+
+		trgmux: trgmux@40080000 {
+			compatible = "nxp,s32-trgmux";
+			reg = <0x40080000 0x4000>;
+			status = "disabled";
+		};
 	};
 };
 

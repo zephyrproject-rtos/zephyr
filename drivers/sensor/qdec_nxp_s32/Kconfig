@@ -1,0 +1,10 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config QDEC_NXP_S32
+	bool "NXP Quad Decoder S32 drivers"
+	default y
+	depends on DT_HAS_NXP_QDEC_S32_ENABLED
+	select NXP_S32_EMIOS
+	help
+	  Enable drivers for NXP S32 QUADRATURE DECODER
