@@ -102,7 +102,7 @@ static kbd_row_t npcx_kbd_read_row(const struct device *dev)
 	const struct npcx_kbd_config *config = dev->config;
 	const struct input_kbd_matrix_common_config *common = &config->common;
 	struct kbs_reg *const inst = config->base;
-	int val;
+	kbd_row_t val;
 
 	val = inst->KBSIN;
 

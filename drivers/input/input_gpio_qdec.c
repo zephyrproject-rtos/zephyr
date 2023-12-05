@@ -131,7 +131,7 @@ static void gpio_qdec_event_worker(struct k_work *work)
 static void gpio_qdec_irq_setup(const struct device *dev, bool enable)
 {
 	const struct gpio_qdec_config *cfg = dev->config;
-	unsigned int flags = enable ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
+	gpio_flags_t flags = enable ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
 	int ret;
 
 	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
