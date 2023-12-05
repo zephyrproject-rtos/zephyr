@@ -179,6 +179,10 @@ Build system and infrastructure
 * Added support for sysbuild setting a signing script (``SIGNING_SCRIPT``), see
   :ref:`west-extending-signing` for details.
 
+* Added support for ``FILE_SUFFIX`` in the build system which allows for adding suffixes to
+  application Kconfig fragment file names and devicetree overlay file names, see
+  :ref:`application-file-suffixes` and :ref:`sysbuild_file_suffixes` for details.
+
 Drivers and Sensors
 *******************
 
