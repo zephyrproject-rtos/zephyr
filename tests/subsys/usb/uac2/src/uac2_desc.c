@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <usbd_uac2_macros.h>
 
@@ -124,6 +125,18 @@ static const uint8_t reference_as_out_descriptors[] = {
 	0x10,			/* bBitResolution = 16 */
 };
 
+static const uint8_t reference_as_ep_descriptor[] = {
+	/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor
+	 */
+	0x08,			/* bLength = 8 */
+	0x25,			/* bDescriptorType = CS_ENDPOINT */
+	0x01,			/* bDescriptorSubtype = EP_GENERAL */
+	0x00,			/* bmAttributes = MaxPacketsOnly not set */
+	0x00,			/* bmControls = non present */
+	0x00,			/* bLockDelayUnits = 0 (Undefined) */
+	0x00, 0x00,		/* wLockDelay = 0 */
+};
+
 DT_FOREACH_CHILD(DT_NODELABEL(uac2_headset), VALIDATE_NODE)
 
 static const uint8_t generated_ac_descriptors[] = {
@@ -137,6 +150,10 @@ static const uint8_t generated_as_in_descriptors[] = {
 
 static const uint8_t generated_as_out_descriptors[] = {
 	AUDIO_STREAMING_INTERFACE_DESCRIPTORS(DT_NODELABEL(as_iso_out))
+};
+
+static const uint8_t generated_uac2_descriptors[] = {
+	UAC2_DESCRIPTORS(DT_NODELABEL(uac2_headset))
 };
 
 ZTEST(uac2_desc, test_audiocontrol_descriptors)
@@ -154,6 +171,148 @@ ZTEST(uac2_desc, test_audiostreaming_descriptors)
 	zassert_mem_equal(reference_as_out_descriptors,
 		generated_as_out_descriptors,
 		ARRAY_SIZE(reference_as_out_descriptors));
+}
+
+ZTEST(uac2_desc, test_uac2_descriptors)
+{
+	const uint8_t *ptr = generated_uac2_descriptors;
+	const struct usb_association_descriptor *iad;
+	const struct usb_if_descriptor *iface;
+	const struct usb_ep_descriptor *ep;
+
+	/* Headset has 3 interfaces: 1 AudioControl and 2 AudioStreaming */
+	iad = (const struct usb_association_descriptor *)ptr;
+	zassert_equal(iad->bLength, sizeof(struct usb_association_descriptor));
+	zassert_equal(iad->bDescriptorType, USB_DESC_INTERFACE_ASSOC);
+	zassert_equal(iad->bFirstInterface, FIRST_INTERFACE_NUMBER);
+	zassert_equal(iad->bInterfaceCount, 3);
+	zassert_equal(iad->bFunctionClass, AUDIO_FUNCTION);
+	zassert_equal(iad->bFunctionSubClass, FUNCTION_SUBCLASS_UNDEFINED);
+	zassert_equal(iad->bFunctionProtocol, AF_VERSION_02_00);
+	zassert_equal(iad->iFunction, 0);
+	ptr += sizeof(struct usb_association_descriptor);
+
+	/* AudioControl interface goes first */
+	iface = (const struct usb_if_descriptor *)ptr;
+	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
+	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
+	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER);
+	zassert_equal(iface->bAlternateSetting, 0);
+	zassert_equal(iface->bNumEndpoints, 0);
+	zassert_equal(iface->bInterfaceClass, AUDIO);
+	zassert_equal(iface->bInterfaceSubClass, AUDIOCONTROL);
+	zassert_equal(iface->bInterfaceProtocol, IP_VERSION_02_00);
+	zassert_equal(iface->iInterface, 0);
+	ptr += sizeof(struct usb_if_descriptor);
+
+	/* AudioControl class-specific descriptors */
+	zassert_mem_equal(reference_ac_descriptors, ptr,
+		ARRAY_SIZE(reference_ac_descriptors));
+	ptr += ARRAY_SIZE(reference_ac_descriptors);
+
+	/* AudioStreaming OUT interface Alt 0 without endpoints */
+	iface = (const struct usb_if_descriptor *)ptr;
+	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
+	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
+	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 1);
+	zassert_equal(iface->bAlternateSetting, 0);
+	zassert_equal(iface->bNumEndpoints, 0);
+	zassert_equal(iface->bInterfaceClass, AUDIO);
+	zassert_equal(iface->bInterfaceSubClass, AUDIOSTREAMING);
+	zassert_equal(iface->bInterfaceProtocol, IP_VERSION_02_00);
+	zassert_equal(iface->iInterface, 0);
+	ptr += sizeof(struct usb_if_descriptor);
+
+	/* AudioStreaming OUT interface Alt 1 with endpoint */
+	iface = (const struct usb_if_descriptor *)ptr;
+	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
+	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
+	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 1);
+	zassert_equal(iface->bAlternateSetting, 1);
+	zassert_equal(iface->bNumEndpoints, 1);
+	zassert_equal(iface->bInterfaceClass, AUDIO);
+	zassert_equal(iface->bInterfaceSubClass, AUDIOSTREAMING);
+	zassert_equal(iface->bInterfaceProtocol, IP_VERSION_02_00);
+	zassert_equal(iface->iInterface, 0);
+	ptr += sizeof(struct usb_if_descriptor);
+
+	/* AudioStreaming OUT class-specific descriptors */
+	zassert_mem_equal(reference_as_out_descriptors, ptr,
+		ARRAY_SIZE(reference_as_out_descriptors));
+	ptr += ARRAY_SIZE(reference_as_out_descriptors);
+
+	/* Isochronous OUT endpoint descriptor */
+	ep = (const struct usb_ep_descriptor *)ptr;
+	zassert_equal(ep->bLength, sizeof(struct usb_ep_descriptor));
+	zassert_equal(ep->bDescriptorType, USB_DESC_ENDPOINT);
+	zassert_equal(ep->bEndpointAddress, FIRST_OUT_EP_ADDR);
+	zassert_equal(&ep->bEndpointAddress - generated_uac2_descriptors,
+		UAC2_DESCRIPTOR_AS_DATA_EP_OFFSET(DT_NODELABEL(as_iso_out)));
+	zassert_equal(ep->Attributes.transfer, USB_EP_TYPE_ISO);
+	zassert_equal(ep->Attributes.synch, 1 /* Asynchronous */);
+	zassert_equal(ep->Attributes.usage, 0 /* Data Endpoint */);
+	zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 196);
+	zassert_equal(ep->bInterval, 1);
+	ptr += sizeof(struct usb_ep_descriptor);
+
+	/* AudioStreaming OUT endpoint descriptor */
+	zassert_mem_equal(reference_as_ep_descriptor, ptr,
+		ARRAY_SIZE(reference_as_ep_descriptor));
+	ptr += ARRAY_SIZE(reference_as_ep_descriptor);
+
+	/* AudioStreaming IN interface Alt 0 without endpoints */
+	iface = (const struct usb_if_descriptor *)ptr;
+	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
+	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
+	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 2);
+	zassert_equal(iface->bAlternateSetting, 0);
+	zassert_equal(iface->bNumEndpoints, 0);
+	zassert_equal(iface->bInterfaceClass, AUDIO);
+	zassert_equal(iface->bInterfaceSubClass, AUDIOSTREAMING);
+	zassert_equal(iface->bInterfaceProtocol, IP_VERSION_02_00);
+	zassert_equal(iface->iInterface, 0);
+	ptr += sizeof(struct usb_if_descriptor);
+
+	/* AudioStreaming IN interface Alt 1 with endpoint */
+	iface = (const struct usb_if_descriptor *)ptr;
+	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
+	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
+	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 2);
+	zassert_equal(iface->bAlternateSetting, 1);
+	zassert_equal(iface->bNumEndpoints, 1);
+	zassert_equal(iface->bInterfaceClass, AUDIO);
+	zassert_equal(iface->bInterfaceSubClass, AUDIOSTREAMING);
+	zassert_equal(iface->bInterfaceProtocol, IP_VERSION_02_00);
+	zassert_equal(iface->iInterface, 0);
+	ptr += sizeof(struct usb_if_descriptor);
+
+	/* AudioStreaming IN class-specific descriptors */
+	zassert_mem_equal(reference_as_in_descriptors, ptr,
+		ARRAY_SIZE(reference_as_in_descriptors));
+	ptr += ARRAY_SIZE(reference_as_in_descriptors);
+
+	/* Isochronous IN endpoint descriptor */
+	ep = (const struct usb_ep_descriptor *)ptr;
+	zassert_equal(ep->bLength, sizeof(struct usb_ep_descriptor));
+	zassert_equal(ep->bDescriptorType, USB_DESC_ENDPOINT);
+	zassert_equal(ep->bEndpointAddress, FIRST_IN_EP_ADDR);
+	zassert_equal(&ep->bEndpointAddress - generated_uac2_descriptors,
+		UAC2_DESCRIPTOR_AS_DATA_EP_OFFSET(DT_NODELABEL(as_iso_in)));
+	zassert_equal(ep->Attributes.transfer, USB_EP_TYPE_ISO);
+	zassert_equal(ep->Attributes.synch, 1 /* Asynchronous */);
+	zassert_equal(ep->Attributes.usage, 2 /* Implicit Feedback Data */);
+	zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 98);
+	zassert_equal(ep->bInterval, 1);
+	ptr += sizeof(struct usb_ep_descriptor);
+
+	/* AudioStreaming IN endpoint descriptor */
+	zassert_mem_equal(reference_as_ep_descriptor, ptr,
+		ARRAY_SIZE(reference_as_ep_descriptor));
+	ptr += ARRAY_SIZE(reference_as_ep_descriptor);
+
+	/* Confirm there are is no trailing data */
+	zassert_equal(ptr - generated_uac2_descriptors,
+		ARRAY_SIZE(generated_uac2_descriptors));
 }
 
 ZTEST_SUITE(uac2_desc, NULL, NULL, NULL, NULL, NULL);
