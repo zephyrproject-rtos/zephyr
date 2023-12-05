@@ -825,16 +825,6 @@ config CODE_DATA_RELOCATION
 	  the target regions should be specified in CMakeLists.txt using
 	  zephyr_code_relocate().
 
-config PLATFORM_HAS_CUSTOM_SYS_IO
-	bool
-	help
-	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
-	  platform-specific versions named platform_sysio_read*() and platform_sysio_write*().
-
-	  Enable this hidden option and specialize the platform_sysio_* functions when
-	  the platform needs to do something different and more than reading and
-	  writing the registers.
-
 menu "DSP Options"
 
 config DSP_SHARING
@@ -845,38 +835,6 @@ config DSP_SHARING
 	  across context switches to allow multiple threads to perform concurrent
 	  DSP operations.
 endmenu
-config PLATFORM_HAS_CUSTOM_IRQ_LOCK_OPS
-	bool
-	help
-	  Hidden option to allow platforms to overwrite arch_irq_lock(),
-	  arch_irq_unlock() and arch_irq_unlocked() functions with
-	  platform-specific versions named platform_irq_lock(), platform_irq_unlock()
-	  and platform_irq_unlocked().
-
-	  Enable this hidden option and specialize the platform_* functions when
-	  the platform needs to do something different and more than reading and
-	  writing the mstatus register to lock and unlock the IRQs.
-
-config PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER
-	bool
-	help
-	  This option indicates that the ARM CPU is connected to a custom (i.e.
-	  non-GIC or NVIC) interrupt controller.
-
-	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
-	  allow interfacing to a custom external interrupt controller and this
-	  option must be selected when such cores are connected to an interrupt
-	  controller that is not the ARM Generic Interrupt Controller (GIC) or
-	  the Cortex-M ARM Nested Vectored Interrupt Controller (NVIC).
-
-	  When this option is selected, the architecture interrupt control
-	  functions are mapped to the platform interrupt control interface, which is
-	  implemented at the platform level.
-
-	  N.B. Since all Cortex-M cores have a NVIC, if this option is selected it
-	  is assumed that the custom interrupt control interface implementation
-	  assumes responsibility for handling the NVIC.
-
 
 menu "Floating Point Options"
 
@@ -1004,6 +962,51 @@ config EXTERNAL_CACHE
 
 endchoice
 
+endmenu
+
+menu "Custom Platform Interfaces"
+config PLATFORM_HAS_CUSTOM_SYS_IO
+	bool
+	help
+	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
+	  platform-specific versions named platform_sysio_read*() and platform_sysio_write*().
+
+	  Enable this hidden option and specialize the platform_sysio_* functions when
+	  the platform needs to do something different and more than reading and
+	  writing the registers.
+
+config PLATFORM_HAS_CUSTOM_IRQ_LOCK_OPS
+	bool
+	help
+	  Hidden option to allow platforms to overwrite arch_irq_lock(),
+	  arch_irq_unlock() and arch_irq_unlocked() functions with
+	  platform-specific versions named platform_irq_lock(), platform_irq_unlock()
+	  and platform_irq_unlocked().
+
+	  Enable this hidden option and specialize the platform_* functions when
+	  the platform needs to do something different and more than reading and
+	  writing the mstatus register to lock and unlock the IRQs.
+
+config PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	help
+	  This option indicates that the CPU is connected to a custom interrupt
+	  controller.
+
+	  In the case of ARM, a number of Cortex-A and Cortex-R cores
+	  (Cortex-A5, Cortex-R4/5, ...) allow interfacing to a custom external
+	  interrupt controller and this option must be selected when such cores
+	  are connected to an interrupt controller that is not the ARM Generic
+	  Interrupt Controller (GIC) or the Cortex-M ARM Nested Vectored
+	  Interrupt Controller (NVIC).
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the platform interrupt control interface, which is
+	  implemented at the platform level.
+
+	  N.B. Since all Cortex-M cores have a NVIC, if this option is selected it
+	  is assumed that the custom interrupt control interface implementation
+	  assumes responsibility for handling the NVIC.
 endmenu
 
 config ARCH
