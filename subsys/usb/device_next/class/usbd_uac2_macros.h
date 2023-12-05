@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/sys/util.h>
+#include <zephyr/usb/usb_ch9.h>
 
 #ifndef ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_
 #define ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_
@@ -31,6 +32,33 @@
 		  DT_PROP_BY_IDX(node, prop, UTIL_INC(idx)))))
 #define IS_ARRAY_SORTED(node, prop)						\
 	DT_FOREACH_PROP_ELEM_SEP(node, prop, ARRAY_ELEMENT_LESS_THAN_NEXT, (&&))
+
+#define FIRST_INTERFACE_NUMBER			0x00
+#define FIRST_IN_EP_ADDR			0x81
+#define FIRST_OUT_EP_ADDR			0x01
+
+/* A.1 Audio Function Class Code */
+#define AUDIO_FUNCTION				AUDIO
+
+/* A.2 Audio Function Subclass Codes */
+#define FUNCTION_SUBCLASS_UNDEFINED		0x00
+
+/* A.3 Audio Function Protocol Codes */
+#define FUNCTION_PROTOCOL_UNDEFINED		0x00
+#define AF_VERSION_02_00			IP_VERSION_02_00
+
+/* A.4 Audio Interface Class Code */
+#define AUDIO					0x01
+
+/* A.5 Audio Interface Subclass Codes */
+#define INTERFACE_SUBCLASS_UNDEFINED		0x00
+#define AUDIOCONTROL				0x01
+#define AUDIOSTREAMING				0x02
+#define MIDISTREAMING				0x03
+
+/* A.6 Audio Interface Protocol Codes */
+#define INTERFACE_PROTOCOL_UNDEFINED		0x00
+#define IP_VERSION_02_00			0x20
 
 /* A.8 Audio Class-Specific Descriptor Types */
 #define CS_UNDEFINED		0x20
@@ -62,6 +90,10 @@
 #define AS_DESCRIPTOR_FORMAT_TYPE		0x02
 #define AS_DESCRIPTOR_ENCODER			0x03
 #define AS_DESCRIPTOR_DECODER			0x04
+
+/* A.13 Audio Class-Specific Endpoint Descriptor Subtypes */
+#define DESCRIPTOR_UNDEFINED			0x00
+#define EP_GENERAL				0x01
 
 /* Universal Serial Bus Device Class Definition for Audio Data Formats
  * Release 2.0, May 31, 2006. A.1 Format Type Codes
@@ -158,6 +190,11 @@
 	CONTROL_BITS(entity, overload_control, 4)	|			\
 	CONTROL_BITS(entity, underflow_control, 6)	|			\
 	CONTROL_BITS(entity, overflow_control, 8)
+
+#define AUDIO_STREAMING_DATA_ENDPOINT_CONTROLS(node)				\
+	CONTROL_BITS(node, pitch_control, 0)		|			\
+	CONTROL_BITS(node, data_overrun_control, 2)	|			\
+	CONTROL_BITS(node, data_underrun_control, 4)
 
 /* 4.1 Audio Channel Cluster Descriptor */
 #define SPATIAL_LOCATIONS_ARRAY(cluster)					\
@@ -338,6 +375,274 @@
 	U16_LE(9 + ENTITY_HEADERS_LENGTH(node)),	/* wTotalLength */	\
 	0x00,						/* bmControls */	\
 
+#define IS_AUDIOSTREAMING_INTERFACE(node)					\
+	DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming)
+
+#define UAC2_NUM_INTERFACES(node)						\
+	1 /* AudioControl interface */ +					\
+	DT_FOREACH_CHILD_SEP(node, IS_AUDIOSTREAMING_INTERFACE, (+))
+
+/* 4.6 Interface Association Descriptor */
+#define UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)				\
+	0x08,						/* bLength */		\
+	USB_DESC_INTERFACE_ASSOC,			/* bDescriptorType */	\
+	FIRST_INTERFACE_NUMBER,				/* bFirstInterface */	\
+	UAC2_NUM_INTERFACES(node),			/* bInterfaceCount */	\
+	AUDIO_FUNCTION,					/* bFunctionClass */	\
+	FUNCTION_SUBCLASS_UNDEFINED,			/* bFunctionSubclass */ \
+	AF_VERSION_02_00,				/* bFunctionProtocol */	\
+	0x00,						/* iFunction */
+
+/* 4.7.1 Standard AC Interface Descriptor */
+#define AC_INTERFACE_DESCRIPTOR(node)						\
+	0x09,						/* bLength */		\
+	USB_DESC_INTERFACE,				/* bDescriptorType */	\
+	FIRST_INTERFACE_NUMBER,				/* bInterfaceNumber */	\
+	0x00,						/* bAlternateSetting */ \
+	DT_PROP(node, interrupt_endpoint),		/* bNumEndpoints */	\
+	AUDIO,						/* bInterfaceClass */	\
+	AUDIOCONTROL,					/* bInterfaceSubClass */\
+	IP_VERSION_02_00,				/* bInterfaceProtocol */\
+	0x00,						/* iInterface */
+
+/* 4.8.2.1 Standard AC Interrupt Endpoint Descriptor */
+#define AC_ENDPOINT_DESCRIPTOR(node)						\
+	0x07,						/* bLength */		\
+	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
+	FIRST_IN_EP_ADDR,				/* bEndpointAddress */	\
+	USB_EP_TYPE_INTERRUPT,				/* bmAttributes */	\
+	0x06,						/* wMaxPacketSize */	\
+	0x01,						/* bInterval */		\
+
+#define FIND_AUDIOSTREAMING(node, fn, ...)					\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
+		fn(node, __VA_ARGS__)))
+
+#define FOR_EACH_AUDIOSTREAMING_INTERFACE(node, fn, ...)			\
+	DT_FOREACH_CHILD_VARGS(node, FIND_AUDIOSTREAMING, fn, __VA_ARGS__)
+
+#define COUNT_AS_INTERFACES_BEFORE_IDX(node, idx)				\
+	+ 1 * (DT_NODE_CHILD_IDX(node) < idx)
+
+#define AS_INTERFACE_NUMBER(node)						\
+	FIRST_INTERFACE_NUMBER + 1 /* AudioControl interface */	+		\
+	FOR_EACH_AUDIOSTREAMING_INTERFACE(DT_PARENT(node),			\
+		COUNT_AS_INTERFACES_BEFORE_IDX, DT_NODE_CHILD_IDX(node))
+
+#define AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node)					\
+	UTIL_NOT(DT_PROP(node, external_interface))
+
+#define AS_IS_USB_ISO_IN(node)							\
+	UTIL_AND(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node),			\
+		DT_NODE_HAS_COMPAT(DT_PROP(node, linked_terminal),		\
+			zephyr_uac2_output_terminal))
+
+#define AS_IS_USB_ISO_OUT(node)							\
+	UTIL_AND(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node),			\
+		DT_NODE_HAS_COMPAT(DT_PROP(node, linked_terminal),		\
+			zephyr_uac2_input_terminal))
+
+#define CLK_IS_SOF_SYNCHRONIZED(entity)						\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(entity, zephyr_uac2_clock_source), (	\
+		DT_PROP(entity, sof_synchronized)				\
+	))
+
+/* Sampling frequencies are sorted (asserted at compile time), so just grab
+ * last sampling frequency.
+ */
+#define CLK_MAX_FREQUENCY(entity)						\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(entity, zephyr_uac2_clock_source), (	\
+		DT_PROP_BY_IDX(entity, sampling_frequencies,			\
+			UTIL_DEC(DT_PROP_LEN(entity, sampling_frequencies)))	\
+	))
+
+#define AS_CLK_SOURCE(node)							\
+	DT_PROP(DT_PROP(node, linked_terminal), clock_source)
+
+#define AS_CLK_MAX_FREQUENCY(node)						\
+	CLK_MAX_FREQUENCY(AS_CLK_SOURCE(node))
+
+#define AS_IS_SOF_SYNCHRONIZED(node)						\
+	CLK_IS_SOF_SYNCHRONIZED(AS_CLK_SOURCE(node))
+
+#define AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node)					\
+	UTIL_AND(UTIL_AND(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node),		\
+			UTIL_NOT(DT_PROP(node, implicit_feedback))),		\
+		UTIL_AND(UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)),		\
+			AS_IS_USB_ISO_OUT(node)))
+
+#define AS_INTERFACE_NUM_ENDPOINTS(node)					\
+	(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) +				\
+	AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node))
+
+/* 4.9.1 Standard AS Interface Descriptor */
+#define AS_INTERFACE_DESCRIPTOR(node, alternate, numendpoints)			\
+	0x09,						/* bLength */		\
+	USB_DESC_INTERFACE,				/* bDescriptorType */	\
+	AS_INTERFACE_NUMBER(node),			/* bInterfaceNumber */	\
+	alternate,					/* bAlternateSetting */	\
+	numendpoints,					/* bNumEndpoints */	\
+	AUDIO,						/* bInterfaceClass */	\
+	AUDIOSTREAMING,					/* bInterfaceSubClass */\
+	IP_VERSION_02_00,				/* bInterfaceProtocol */\
+	0x00,						/* iInterface */
+
+#define COUNT_AS_OUT_ENDPOINTS_BEFORE_IDX(node, idx)				\
+	+ AS_IS_USB_ISO_OUT(node) * (DT_NODE_CHILD_IDX(node) < idx)
+
+#define COUNT_AS_IN_ENDPOINTS_BEFORE_IDX(node, idx)				\
+	+ (AS_IS_USB_ISO_IN(node) + AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node))	\
+		* (DT_NODE_CHILD_IDX(node) < idx)
+
+/* FIXME: Ensure that the explicit feedback endpoints assignments match
+ * numbering requirements from Universal Serial Bus Specification Revision 2.0
+ * 9.6.6 Endpoint. This FIXME is not limited to the macros here but also to
+ * actual USB stack endpoint fixup (so the fixup does not break the numbering).
+ *
+ * This FIXME does not affect nRF52 and nRF53 when implicit feedback is used
+ * because the endpoints after fixup will be 0x08 and 0x88 because there are
+ * only two isochronous endpoints on these devices (one IN, one OUT).
+ */
+#define AS_NEXT_OUT_EP_ADDR(node)						\
+	FIRST_OUT_EP_ADDR +							\
+	FOR_EACH_AUDIOSTREAMING_INTERFACE(DT_PARENT(node),			\
+		COUNT_AS_OUT_ENDPOINTS_BEFORE_IDX, DT_NODE_CHILD_IDX(node))
+
+#define AS_NEXT_IN_EP_ADDR(node)						\
+	FIRST_IN_EP_ADDR + DT_PROP(DT_PARENT(node), interrupt_endpoint) +	\
+	FOR_EACH_AUDIOSTREAMING_INTERFACE(DT_PARENT(node),			\
+		COUNT_AS_IN_ENDPOINTS_BEFORE_IDX, DT_NODE_CHILD_IDX(node))
+
+#define AS_DATA_EP_ADDR(node)							\
+	COND_CODE_1(AS_IS_USB_ISO_OUT(node),					\
+		(AS_NEXT_OUT_EP_ADDR(node)),					\
+		(AS_NEXT_IN_EP_ADDR(node)))
+
+#define AS_BYTES_PER_SAMPLE(node)						\
+	DT_PROP(node, subslot_size)
+
+/* Asynchronous endpoints needs space for 1 extra sample */
+#define AS_SAMPLES_PER_PACKET(node)						\
+	((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 1000) / 1000) +			\
+	  UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
+
+#define AS_DATA_EP_SYNC_TYPE(node)						\
+	COND_CODE_1(AS_IS_SOF_SYNCHRONIZED(node), (0x3 << 2), (0x1 << 2))
+
+#define AS_DATA_EP_USAGE_TYPE(node)						\
+	COND_CODE_1(UTIL_AND(DT_PROP(node, implicit_feedback),			\
+		UTIL_NOT(AS_IS_USB_ISO_OUT(node))), (0x2 << 4), (0x0 << 4))
+
+#define AS_DATA_EP_ATTR(node)							\
+	USB_EP_TYPE_ISO | AS_DATA_EP_SYNC_TYPE(node) |				\
+	AS_DATA_EP_USAGE_TYPE(node)
+
+#define AS_DATA_EP_MAX_PACKET_SIZE(node)					\
+	AUDIO_STREAMING_NUM_SPATIAL_LOCATIONS(node) *				\
+	AS_BYTES_PER_SAMPLE(node) * AS_SAMPLES_PER_PACKET(node)
+
+/* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
+#define STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)			\
+	0x07,						/* bLength */		\
+	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
+	AS_DATA_EP_ADDR(node),				/* bEndpointAddress */	\
+	AS_DATA_EP_ATTR(node),				/* bmAttributes */	\
+	U16_LE(AS_DATA_EP_MAX_PACKET_SIZE(node)),	/* wMaxPacketSize */	\
+	0x01,						/* bInterval */
+
+#define LOCK_DELAY_UNITS(node)							\
+	COND_CODE_1(DT_NODE_HAS_PROP(node, lock_delay_units),			\
+		(1 + DT_ENUM_IDX(node, lock_delay_units)),			\
+		(0 /* Undefined */))
+
+/* 4.10.1.2 Class-Specific AS Isochronous Audio Data Endpoint Descriptor */
+#define CLASS_SPECIFIC_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)		\
+	0x08,						/* bLength */		\
+	CS_ENDPOINT,					/* bDescriptorType */	\
+	EP_GENERAL,					/* bDescriptorSubtype */\
+	0x00,						/* bmAttributes */	\
+	AUDIO_STREAMING_DATA_ENDPOINT_CONTROLS(node),	/* bmControls */	\
+	LOCK_DELAY_UNITS(node),				/* bLockDelayUnits */	\
+	U16_LE(DT_PROP_OR(node, lock_delay, 0)),	/* wLockDelay */
+
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS(node)				\
+	STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)			\
+	CLASS_SPECIFIC_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)				\
+	0x07,						/* bLength */		\
+	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
+	AS_NEXT_IN_EP_ADDR(node),			/* bEndpointAddress */	\
+	0x11,						/* bmAttributes */	\
+	U16_LE(0x03), /* FIXME: 4 on High-Speed*/	/* wMaxPacketSize */	\
+	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
+
+#define AS_DESCRIPTORS(node)							\
+	AS_INTERFACE_DESCRIPTOR(node, 0, 0)					\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_INTERFACE_DESCRIPTOR(node, 1,				\
+			AS_INTERFACE_NUM_ENDPOINTS(node))))			\
+	AUDIO_STREAMING_INTERFACE_DESCRIPTORS(node)				\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS(node)			\
+		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)))	\
+	))
+
+#define AS_DESCRIPTORS_IF_AUDIOSTREAMING(node)					\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
+		AS_DESCRIPTORS(node)))
+
+#define UAC2_AUDIO_CONTROL_DESCRIPTORS(node)					\
+	AC_INTERFACE_DESCRIPTOR(node)						\
+	AC_INTERFACE_HEADER_DESCRIPTOR(node)					\
+	ENTITY_HEADERS(node)							\
+	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
+		AC_ENDPOINT_DESCRIPTOR(node)))
+
+#define UAC2_DESCRIPTORS(node)							\
+	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)				\
+	UAC2_AUDIO_CONTROL_DESCRIPTORS(node)					\
+	DT_FOREACH_CHILD(node, AS_DESCRIPTORS_IF_AUDIOSTREAMING)
+
+
+/* Helper macros to determine endpoint offset within complete UAC2 blob */
+#define COUNT_AS_DESCRIPTORS_BYTES_UP_TO_IDX(node, idx)				\
+	(sizeof((uint8_t []){AS_DESCRIPTORS_IF_AUDIOSTREAMING(node)}) *		\
+	(DT_NODE_CHILD_IDX(node) <= idx))
+
+#define UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
+	(sizeof((uint8_t []){							\
+		UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(DT_PARENT(node))		\
+		UAC2_AUDIO_CONTROL_DESCRIPTORS(DT_PARENT(node))			\
+	})) + DT_FOREACH_CHILD_SEP_VARGS(DT_PARENT(node),			\
+		COUNT_AS_DESCRIPTORS_BYTES_UP_TO_IDX, (+),			\
+		DT_NODE_CHILD_IDX(node))
+
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_SIZE(node)			\
+	(sizeof((uint8_t []) {AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS(node)}))
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
+	COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node),			\
+		(sizeof((uint8_t []) {						\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)		\
+		})), (0))
+
+/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) poiting to data
+ * endpoint address belonging to given AudioStreaming interface node.
+ *
+ * It is programmer error to call this macro with node other than AudioStreaming
+ * or when AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) is 0.
+ */
+#define UAC2_DESCRIPTOR_AS_DATA_EP_OFFSET(node)					\
+	UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
+	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
+	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_SIZE(node)			\
+	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
+
+/* Helper macros to validate USB Audio Class 2 devicetree entries.
+ * Macros above do rely on the assumptions checked below.
+ */
 #define VALIDATE_INPUT_TERMINAL_ASSOCIATION(entity)				\
 	UTIL_OR(UTIL_NOT(DT_NODE_HAS_PROP(entity, assoc_terminal)),		\
 		DT_NODE_HAS_COMPAT(DT_PROP(entity, assoc_terminal),		\
@@ -393,6 +698,9 @@
 		BUILD_ASSERT(!NEEDS_SUBSLOT_SIZE_AND_BIT_RESOLUTION(node) ||	\
 			VALIDATE_BIT_RESOLUTION(node),				\
 			"Bit Resolution must fit inside Subslot Size");		\
+		BUILD_ASSERT(!DT_PROP(node, implicit_feedback) ||		\
+			!AS_IS_SOF_SYNCHRONIZED(node),				\
+			"Implicit feedback on SOF synchronized clock");		\
 	))
 
 #endif /* ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_ */
