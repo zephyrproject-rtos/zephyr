@@ -231,8 +231,8 @@ static inline void dmic_parse_channel_map(uint32_t channel_map_lo,
 	channel_map = (channel < 8) ? channel_map_lo : channel_map_hi;
 	channel_map >>= ((channel & BIT_MASK(3)) * 4U);
 
-	*pdm = (channel >> 1) & BIT_MASK(3);
-	*lr = (enum pdm_lr) (channel & BIT(0));
+	*pdm = (channel_map >> 1) & BIT_MASK(3);
+	*lr = (enum pdm_lr) (channel_map & BIT(0));
 }
 
 /**
