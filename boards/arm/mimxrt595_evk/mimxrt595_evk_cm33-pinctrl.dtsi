@@ -46,6 +46,16 @@
 		};
 	};
 
+	pinmux_dmic0: pinmux_dmic0 {
+		group0 {
+			pinmux = <DMIC0_DATA23_PIO3_1>, <DMIC0_DATA01_PIO5_8>,
+			       <DMIC0_CLK01_PIO5_4>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
+
 	pinmux_flexcomm4_i2c: pinmux_flexcomm4_i2c {
 		group0 {
 			pinmux = <FC4_TXD_SCL_MISO_WS_PIO0_29>,
