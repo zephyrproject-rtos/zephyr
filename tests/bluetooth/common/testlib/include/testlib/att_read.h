@@ -24,8 +24,8 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 				       uint16_t offset);
 
 int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *result_size,
-			      struct bt_conn *conn, enum bt_att_chan_opt bearer, uint16_t handle,
-			      uint16_t offset);
+			      uint16_t *result_att_mtu, struct bt_conn *conn,
+			      enum bt_att_chan_opt bearer, uint16_t handle, uint16_t offset);
 
 int bt_testlib_gatt_discover_primary(uint16_t *result_handle, uint16_t *result_end_handle,
 				     struct bt_conn *conn, const struct bt_uuid *uuid,

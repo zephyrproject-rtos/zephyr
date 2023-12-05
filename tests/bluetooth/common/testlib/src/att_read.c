@@ -169,8 +169,8 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 }
 
 int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *result_size,
-			      struct bt_conn *conn, enum bt_att_chan_opt bearer, uint16_t handle,
-			      uint16_t offset)
+			      uint16_t *result_att_mtu, struct bt_conn *conn,
+			      enum bt_att_chan_opt bearer, uint16_t handle, uint16_t offset)
 {
 	int err;
 	uint16_t _result_data_size = 0;
