@@ -48,6 +48,7 @@ enum dmic_state {
 	DMIC_STATE_CONFIGURED,	/**< Configured */
 	DMIC_STATE_ACTIVE,	/**< Active */
 	DMIC_STATE_PAUSED,	/**< Paused */
+	DMIC_STATE_ERROR,	/**< Error */
 };
 
 /**
