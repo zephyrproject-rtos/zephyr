@@ -63,7 +63,7 @@ static int soc_init(void)
 	IP_MPU->CESR = tmp;
 #endif /* !CONFIG_ARM_MPU */
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_ICACHE)
+#if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_NXP_S32_ENABLE_CODE_CACHE)
 	/* Invalidate all ways */
 	IP_LMEM->PCCCR |= LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK;
 	IP_LMEM->PCCCR |= LMEM_PCCCR_GO_MASK;
