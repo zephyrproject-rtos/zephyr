@@ -11,6 +11,7 @@
 #include <freq.h>
 #include <dt-bindings/pwm/pwm.h>
 #include "mr_canhubk3-pinctrl.dtsi"
+#include <zephyr/dt-bindings/sensor/qdec_nxp_s32.h>
 
 / {
 	model = "NXP MR-CANHUBK3";
@@ -42,6 +43,7 @@
 		green-pwm-led = &user_led1_green_pwm;
 		blue-pwm-led = &user_led1_blue_pwm;
 		pwm-led0 = &user_led1_blue_pwm;
+		qdec0 = &qdec0;
 	};
 
 	leds {
@@ -75,6 +77,39 @@
 		user_led1_red_pwm: user_led1_red {
 			pwms = <&emios0_pwm 19 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+	};
+
+	qdec0: qdec0 {
+		compatible = "nxp,qdec-s32";
+		pinctrl-0 = <&qdec_s32>;
+		pinctrl-names = "default";
+		micro-ticks-per-rev = <685440000>;
+		status = "okay";
+		trgmux = <&trgmux>;
+		trgmux-io-config =
+		<0 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH6 TRGMUX_IP_INPUT_LCU1_LC0_OUT_I2>,
+		<1 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH7 TRGMUX_IP_INPUT_LCU1_LC0_OUT_I3>,
+		<2 TRGMUX_IP_OUTPUT_LCU1_0_INP_I0            TRGMUX_IP_INPUT_SIUL2_IN2>,
+		<3 TRGMUX_IP_OUTPUT_LCU1_0_INP_I1            TRGMUX_IP_INPUT_SIUL2_IN3>;
+		lcu = <&lcu1>;
+		lcu-input-idx =
+		<LCU_IP_IN_0 LCU_IP_IN_1
+		 LCU_IP_IN_2 LCU_IP_IN_3>;
+		lcu-mux-sel =
+		<LCU_IP_MUX_SEL_LU_IN_0 LCU_IP_MUX_SEL_LU_IN_1
+		 LCU_IP_MUX_SEL_LU_OUT_0 LCU_IP_MUX_SEL_LU_OUT_1>;
+		lcu-output-filter-config =
+			/* LCU Out HW ID, Rise Filter, Fall Filter */
+			<0 5 5>, /* LCU O0 */
+			<1 5 5>, /* LCU O1 */
+			<2 2 2>, /* LCU O2 */
+			<3 2 2>; /* LCU O3 */
+		emios = <&emios0>;
+		/*
+		 * eMios channel numbers for qdec should be beyond the channel numbers
+		 * used by the emios pwm
+		 */
+		emios-channels = <6 7>;
 	};
 
 	gpio_keys {
@@ -501,24 +536,6 @@
 			polarity = "ACTIVE_HIGH";
 		};
 
-		pwm_6 {
-			channel = <6>;
-			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
-			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
-		};
-
-		pwm_7 {
-			channel = <7>;
-			pwm-mode = "OPWFMB";
-			period = <65535>;
-			duty-cycle = <0>;
-			prescaler = <8>;
-			polarity = "ACTIVE_HIGH";
-		};
-
 		rgb_red {
 			channel = <19>;
 			master-bus = <&emios0_bus_a>;
@@ -574,6 +591,14 @@
 			polarity = "ACTIVE_LOW";
 		};
 	};
+};
+
+&lcu1 {
+	status = "okay";
+};
+
+&trgmux {
+	status = "okay";
 };
 
 &edma0 {
