@@ -73,8 +73,8 @@ static void smartbond_start_rc32k(void)
 {
 	if ((CRG_TOP->CLK_RC32K_REG & CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk) == 0) {
 		CRG_TOP->CLK_RC32K_REG |= CRG_TOP_CLK_RC32K_REG_RC32K_ENABLE_Msk;
-		lpc_clock_state.rc32k_started = true;
 	}
+	lpc_clock_state.rc32k_started = true;
 	if (!lpc_clock_state.rc32k_ready && (CALIBRATION_INTERVAL > 0)) {
 		if (!k_work_is_pending(&calibration_work.work)) {
 			k_work_schedule(&calibration_work,
