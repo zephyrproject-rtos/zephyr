@@ -277,7 +277,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
 	/* Init System Pll2 pfd3. */
-#ifdef CONFIG_ETH_MCUX
+#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
 #else
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
@@ -324,7 +324,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Configure BUS using SYS_PLL3_CLK */
-#ifdef CONFIG_ETH_MCUX
+#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
 	/* Configure root bus clock at 198M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
 	rootCfg.div = 2;
@@ -396,7 +396,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 
-#ifdef CONFIG_ETH_MCUX
+#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
