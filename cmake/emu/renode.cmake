@@ -39,6 +39,7 @@ set(RENODE_TEST_FLAGS
   --variable UART:${RENODE_UART}
   --variable KEYWORDS:${ZEPHYR_BASE}/tests/robot/common.robot
   --results-dir ${APPLICATION_BINARY_DIR}
+  $$RENODE_TEST_FLAGS
   )
 
 add_custom_target(run_renode_test

@@ -1306,6 +1306,15 @@ It's also possible to run it by `west` directly, with:
 
    $ ROBOT_FILES=shell_module.robot west build -p -b hifive1 -s samples/subsys/shell/shell_module -t run_renode_test
 
+It is possible to extend ``renode-test`` extra arguments passing the ``RENODE_TEST_FLAGS``. For
+instance, to select a tagged test to be excluded:
+
+.. code-block:: bash
+
+   $ RENODE_TEST_FLAGS="--exclude EXCLUDE" ROBOT_FILES=shell_module.robot west build -p -b hifive1 -s samples/subsys/shell/shell_module -t run_renode_test
+
+This can be used with twister in the same way.
+
 Writing Robot tests
 ===================
 
