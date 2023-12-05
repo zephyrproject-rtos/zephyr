@@ -119,16 +119,14 @@ void send_notification(void)
 	const uint8_t sample_dat = SAMPLE_DATA;
 	int err;
 
-	do {
-		err = bt_gatt_notify(g_conn, local_attr, &sample_dat, sizeof(sample_dat));
-		if (!err) {
-			return;
-		} else if (err != -ENOMEM) {
-			printk("GATT notify failed (err %d)\n", err);
-			return;
-		}
-		k_sleep(K_TICKS(1));
-	} while (err == -ENOMEM);
+	err = bt_gatt_notify(g_conn, local_attr, &sample_dat, sizeof(sample_dat));
+	if (!err) {
+		printk("GATT notify ok\n");
+		return;
+	} else {
+		FAIL("GATT notify failed (err %d)\n", err);
+		return;
+	}
 }
 
 static uint8_t discover_func(struct bt_conn *conn,

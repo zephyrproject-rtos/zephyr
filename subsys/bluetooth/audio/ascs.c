@@ -445,7 +445,7 @@ static void state_transition_work_handler(struct k_work *work)
 	/* Notify ASE state */
 	if (ase->conn != NULL) {
 		err = ase_state_notify(ase);
-		if (err == -ENOMEM) {
+		if (err == -EDEADLK) {
 			struct bt_conn_info info;
 			uint32_t retry_delay_ms;
 

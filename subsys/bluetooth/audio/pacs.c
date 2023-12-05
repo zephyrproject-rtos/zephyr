@@ -663,6 +663,7 @@ static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir)
 
 	err = pacs_gatt_notify(conn, uuid, pacs_svc.attrs, &location_le, sizeof(location_le));
 	if (err != 0 && err != -ENOTCONN) {
+		/* FIXME: EDEADLK here, what can we do about it? */
 		LOG_WRN("PACS notify_loc failed: %d", err);
 		return err;
 	}
@@ -748,6 +749,7 @@ static int supported_contexts_notify(struct bt_conn *conn)
 	err = pacs_gatt_notify(conn, BT_UUID_PACS_SUPPORTED_CONTEXT, pacs_svc.attrs,
 				  &context, sizeof(context));
 	if (err != 0 && err != -ENOTCONN) {
+		/* FIXME: EDEADLK here, what can we do about it? */
 		LOG_WRN("Supported Audio Contexts notify failed: %d", err);
 
 		return err;

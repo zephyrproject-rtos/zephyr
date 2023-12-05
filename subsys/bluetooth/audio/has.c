@@ -476,7 +476,7 @@ static void notify_work_handler(struct k_work *work)
 
 		err = bt_gatt_notify(client->conn, active_preset_index_attr,
 				     &active_index, sizeof(active_index));
-		if (err == -ENOMEM) {
+		if (err == -EDEADLK) {
 			atomic_set_bit(client->context->flags, FLAG_ACTIVE_INDEX_CHANGED);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {

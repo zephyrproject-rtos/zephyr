@@ -3742,6 +3742,17 @@ int bt_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
+bool bt_can_block(void)
+{
+	k_tid_t tid = k_current_get();
+
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	return (tid != &bt_workq.thread) && (tid != &k_sys_work_q.thread);
+#else
+	return (tid != &k_sys_work_q.thread);
+#endif
+}
+
 static const struct event_handler prio_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_CMD_COMPLETE, hci_cmd_complete,
 		      sizeof(struct bt_hci_evt_cmd_complete)),

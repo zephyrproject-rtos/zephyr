@@ -931,6 +931,7 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	int err = bt_gatt_notify_uuid(NULL, uuid, mcs.attrs, data, len);
 
+	/* FIXME: EDEADLK here, what can we do about it? */
 	if (err) {
 		if (err == -ENOTCONN) {
 			LOG_DBG("Notification error: ENOTCONN (%d)", err);

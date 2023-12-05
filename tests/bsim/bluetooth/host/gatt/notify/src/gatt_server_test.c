@@ -8,6 +8,7 @@
 
 extern enum bst_result_t bst_result;
 
+CREATE_FLAG(flag_mtu_updated);
 CREATE_FLAG(flag_is_connected);
 CREATE_FLAG(flag_short_subscribe);
 CREATE_FLAG(flag_long_subscribe);
@@ -168,6 +169,12 @@ static void long_notify(enum bt_att_chan_opt opt)
 	} while (err);
 }
 
+static void mtu_exchanged(struct bt_conn *conn, uint8_t err,
+			  struct bt_gatt_exchange_params *params)
+{
+	SET_FLAG(flag_mtu_updated);
+}
+
 static void setup(void)
 {
 	int err;
@@ -197,6 +204,14 @@ static void setup(void)
 		k_sleep(K_MSEC(100));
 	}
 	printk("EATT connected\n");
+
+	/* Update UATT MTU, else long notifications won't work if we set
+	 * UNENHANCED chan opt.
+	 */
+	struct bt_gatt_exchange_params params = {.func = mtu_exchanged};
+
+	bt_gatt_exchange_mtu(g_conn, &params);
+	WAIT_FOR_FLAG(flag_mtu_updated);
 
 	WAIT_FOR_FLAG(flag_short_subscribe);
 	WAIT_FOR_FLAG(flag_long_subscribe);
