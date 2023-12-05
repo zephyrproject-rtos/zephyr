@@ -27,6 +27,9 @@ include_guard(GLOBAL)
 
 include(extensions)
 
+# Merge in variables from other sources (e.g. sysbuild)
+zephyr_get(FILE_SUFFIX SYSBUILD GLOBAL)
+
 zephyr_get(APPLICATION_CONFIG_DIR)
 if(DEFINED APPLICATION_CONFIG_DIR)
   string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
@@ -41,7 +44,7 @@ endif()
 
 zephyr_get(CONF_FILE SYSBUILD LOCAL)
 if(NOT DEFINED CONF_FILE)
-  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF CONF_FILE NAMES "prj.conf" REQUIRED)
+  zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF CONF_FILE NAMES "prj.conf" SUFFIX ${FILE_SUFFIX} REQUIRED)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE)
 else()
   string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
@@ -70,12 +73,12 @@ To change CONF_FILE, use the CONF_FILE variable." ${CONF_FILE_FORCE_CACHE})
 # The CONF_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(CONF_FILE)
 
-zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS)
+zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS APP_BOARD_DTS SUFFIX ${FILE_SUFFIX})
 
 zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} DTS DTC_OVERLAY_FILE
-              NAMES "${APP_BOARD_DTS};${BOARD}.overlay;app.overlay")
+              NAMES "${APP_BOARD_DTS};${BOARD}.overlay;app.overlay" SUFFIX ${FILE_SUFFIX})
 endif()
 
 set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
@@ -86,6 +89,9 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
 # The DTC_OVERLAY_FILE variable is now set to its final value.
 zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
+
+# Watch the FILE_SUFFIX variable for changes too
+zephyr_boilerplate_watch(FILE_SUFFIX)
 
 zephyr_get(EXTRA_CONF_FILE SYSBUILD LOCAL VAR EXTRA_CONF_FILE OVERLAY_CONFIG MERGE REVERSE)
 zephyr_get(EXTRA_DTC_OVERLAY_FILE SYSBUILD LOCAL MERGE REVERSE)
