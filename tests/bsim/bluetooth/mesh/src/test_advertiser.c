@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/hci.h>
 #include "mesh_test.h"
-#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/mesh.h"
 #include "mesh/foundation.h"
@@ -78,25 +77,25 @@ static void adv_init(void)
 	ASSERT_OK_MSG(bt_mesh_adv_enable(), "Mesh adv init failed");
 }
 
-static void allocate_all_array(struct net_buf **buf, size_t num_buf, uint8_t xmit)
+static void allocate_all_array(struct bt_mesh_adv **adv, size_t num_adv, uint8_t xmit)
 {
-	for (int i = 0; i < num_buf; i++) {
-		*buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	for (int i = 0; i < num_adv; i++) {
+		*adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 					  xmit, K_NO_WAIT);
 
-		ASSERT_FALSE_MSG(!*buf, "Out of buffers\n");
-		buf++;
+		ASSERT_FALSE_MSG(!*adv, "Out of advs\n");
+		adv++;
 	}
 }
 
 static void verify_adv_queue_overflow(void)
 {
-	struct net_buf *dummy_buf;
+	struct bt_mesh_adv *dummy_adv;
 
 	/* Verity Queue overflow */
-	dummy_buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	dummy_adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				       BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
-	ASSERT_TRUE_MSG(!dummy_buf, "Unexpected extra buffer\n");
+	ASSERT_TRUE_MSG(!dummy_adv, "Unexpected extra adv\n");
 }
 
 static bool check_delta_time(uint8_t transmit, uint64_t interval)
@@ -157,12 +156,12 @@ static void single_end_cb(int err, void *cb_data)
 
 static void realloc_end_cb(int err, void *cb_data)
 {
-	struct net_buf *buf = (struct net_buf *)cb_data;
+	struct bt_mesh_adv *adv = (struct bt_mesh_adv *)cb_data;
 
 	ASSERT_EQUAL(0, err);
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
-	ASSERT_FALSE_MSG(!buf, "Out of buffers\n");
+	ASSERT_FALSE_MSG(!adv, "Out of advs\n");
 
 	k_sem_give(&observer_sem);
 }
@@ -305,13 +304,13 @@ static void rx_xmit_adv(void)
 
 static void send_order_start_cb(uint16_t duration, int err, void *user_data)
 {
-	struct net_buf *buf = (struct net_buf *)user_data;
+	struct bt_mesh_adv *adv = (struct bt_mesh_adv *)user_data;
 
 	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
-	ASSERT_EQUAL(2, buf->len);
+	ASSERT_EQUAL(2, adv->b.len);
 
-	uint8_t current = buf->data[0];
-	uint8_t previous = buf->data[1];
+	uint8_t current = adv->b.data[0];
+	uint8_t previous = adv->b.data[1];
 
 	LOG_INF("tx start: current(%d) previous(%d)", current, previous);
 
@@ -321,10 +320,7 @@ static void send_order_start_cb(uint16_t duration, int err, void *user_data)
 
 static void send_order_end_cb(int err, void *user_data)
 {
-	struct net_buf *buf = (struct net_buf *)user_data;
-
 	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
-	ASSERT_TRUE_MSG(!buf->data, "Data not cleared!\n");
 	seq_checker++;
 	LOG_INF("tx end: seq(%d)", seq_checker);
 
@@ -380,19 +376,19 @@ static void receive_order(int expect_adv)
 	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
-static void send_adv_buf(struct net_buf *buf, uint8_t curr, uint8_t prev)
+static void send_adv_buf(struct bt_mesh_adv *adv, uint8_t curr, uint8_t prev)
 {
 	send_cb.start = send_order_start_cb;
 	send_cb.end = send_order_end_cb;
 
-	(void)net_buf_add_u8(buf, curr);
-	(void)net_buf_add_u8(buf, prev);
+	(void)net_buf_simple_add_u8(&adv->b, curr);
+	(void)net_buf_simple_add_u8(&adv->b, prev);
 
-	bt_mesh_adv_send(buf, &send_cb, buf);
-	net_buf_unref(buf);
+	bt_mesh_adv_send(adv, &send_cb, adv);
+	bt_mesh_adv_unref(adv);
 }
 
-static void send_adv_array(struct net_buf **buf, size_t num_buf, bool reverse)
+static void send_adv_array(struct bt_mesh_adv **adv, size_t num_buf, bool reverse)
 {
 	uint8_t previous;
 	int i;
@@ -405,13 +401,13 @@ static void send_adv_array(struct net_buf **buf, size_t num_buf, bool reverse)
 		i = num_buf - 1;
 	}
 	while ((!reverse && i < num_buf) || (reverse && i >= 0)) {
-		send_adv_buf(*buf, (uint8_t)i, previous);
+		send_adv_buf(*adv, (uint8_t)i, previous);
 		previous = (uint8_t)i;
 		if (!reverse) {
-			buf++;
+			adv++;
 			i++;
 		} else {
-			buf--;
+			adv--;
 			i--;
 		}
 	}
@@ -419,24 +415,24 @@ static void send_adv_array(struct net_buf **buf, size_t num_buf, bool reverse)
 
 static void test_tx_cb_single(void)
 {
-	struct net_buf *buf;
+	struct bt_mesh_adv *adv;
 	int err;
 
 	bt_init();
 	adv_init();
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
-	ASSERT_FALSE_MSG(!buf, "Out of buffers\n");
+	ASSERT_FALSE_MSG(!adv, "Out of advs\n");
 
 	send_cb.start = single_start_cb;
 	send_cb.end = single_end_cb;
 
-	net_buf_add_mem(buf, txt_msg, sizeof(txt_msg));
+	net_buf_simple_add_mem(&adv->b, txt_msg, sizeof(txt_msg));
 	seq_checker = 0;
 	tx_timestamp = k_uptime_get();
-	bt_mesh_adv_send(buf, &send_cb, (void *)cb_msg);
-	net_buf_unref(buf);
+	bt_mesh_adv_send(adv, &send_cb, (void *)cb_msg);
+	bt_mesh_adv_unref(adv);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(1));
 	ASSERT_OK_MSG(err, "Didn't call end tx cb.");
@@ -457,37 +453,37 @@ static void test_rx_xmit(void)
 
 static void test_tx_cb_multi(void)
 {
-	struct net_buf *buf[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	struct bt_mesh_adv *adv[CONFIG_BT_MESH_ADV_BUF_COUNT];
 	int err;
 
 	bt_init();
 	adv_init();
 
-	/* Allocate all network buffers. */
-	allocate_all_array(buf, ARRAY_SIZE(buf), BT_MESH_TRANSMIT(2, 20));
+	/* Allocate all network advs. */
+	allocate_all_array(adv, ARRAY_SIZE(adv), BT_MESH_TRANSMIT(2, 20));
 
-	/* Start single adv to reallocate one network buffer in callback.
-	 * Check that the buffer is freed before cb is triggered.
+	/* Start single adv to reallocate one network adv in callback.
+	 * Check that the adv is freed before cb is triggered.
 	 */
 	send_cb.start = NULL;
 	send_cb.end = realloc_end_cb;
-	net_buf_add_mem(buf[0], txt_msg, sizeof(txt_msg));
+	net_buf_simple_add_mem(&(adv[0]->b), txt_msg, sizeof(txt_msg));
 
-	bt_mesh_adv_send(buf[0], &send_cb, buf[0]);
-	net_buf_unref(buf[0]);
+	bt_mesh_adv_send(adv[0], &send_cb, adv[0]);
+	bt_mesh_adv_unref(adv[0]);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(1));
-	ASSERT_OK_MSG(err, "Didn't call the end tx cb that reallocates buffer one more time.");
+	ASSERT_OK_MSG(err, "Didn't call the end tx cb that reallocates adv one more time.");
 
-	/* Start multi advs to check that all buffers are sent and cbs are triggered. */
+	/* Start multi advs to check that all advs are sent and cbs are triggered. */
 	send_cb.start = seq_start_cb;
 	send_cb.end = seq_end_cb;
 	seq_checker = 0;
 
 	for (int i = 0; i < CONFIG_BT_MESH_ADV_BUF_COUNT; i++) {
-		net_buf_add_le32(buf[i], i);
-		bt_mesh_adv_send(buf[i], &send_cb, (void *)(intptr_t)i);
-		net_buf_unref(buf[i]);
+		net_buf_simple_add_le32(&(adv[i]->b), i);
+		bt_mesh_adv_send(adv[i], &send_cb, (void *)(intptr_t)i);
+		bt_mesh_adv_unref(adv[i]);
 	}
 
 	err = k_sem_take(&observer_sem, K_SECONDS(10));
@@ -530,10 +526,10 @@ static void test_tx_proxy_mixin(void)
 	 * Advertising the proxy service should be resumed after
 	 * finishing advertising the message.
 	 */
-	struct net_buf *buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	struct bt_mesh_adv *adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(5, 20), K_NO_WAIT);
-	net_buf_add_mem(buf, txt_msg, sizeof(txt_msg));
-	bt_mesh_adv_send(buf, NULL, NULL);
+	net_buf_simple_add_mem(&adv->b, txt_msg, sizeof(txt_msg));
+	bt_mesh_adv_send(adv, NULL, NULL);
 	k_sleep(K_MSEC(150));
 
 	/* Let the tester to measure an interval between advertisements again. */
@@ -577,46 +573,46 @@ static void test_rx_proxy_mixin(void)
 
 static void test_tx_send_order(void)
 {
-	struct net_buf *buf[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	struct bt_mesh_adv *adv[CONFIG_BT_MESH_ADV_BUF_COUNT];
 	uint8_t xmit = BT_MESH_TRANSMIT(2, 20);
 
 	bt_init();
 	adv_init();
 
 	/* Verify sending order */
-	allocate_all_array(buf, ARRAY_SIZE(buf), xmit);
+	allocate_all_array(adv, ARRAY_SIZE(adv), xmit);
 	verify_adv_queue_overflow();
-	send_adv_array(&buf[0], ARRAY_SIZE(buf), false);
+	send_adv_array(&adv[0], ARRAY_SIZE(adv), false);
 
 	/* Wait for no message receive window to end. */
 	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
 		      "Didn't call the last end tx cb.");
 
-	/* Verify buffer allocation/deallocation after sending */
-	allocate_all_array(buf, ARRAY_SIZE(buf), xmit);
+	/* Verify adv allocation/deallocation after sending */
+	allocate_all_array(adv, ARRAY_SIZE(adv), xmit);
 	verify_adv_queue_overflow();
 	for (int i = 0; i < CONFIG_BT_MESH_ADV_BUF_COUNT; i++) {
-		net_buf_unref(buf[i]);
-		buf[i] = NULL;
+		bt_mesh_adv_unref(adv[i]);
+		adv[i] = NULL;
 	}
-	/* Check that it possible to add just one net buf. */
-	allocate_all_array(buf, 1, xmit);
+	/* Check that it possible to add just one net adv. */
+	allocate_all_array(adv, 1, xmit);
 
 	PASS();
 }
 
 static void test_tx_reverse_order(void)
 {
-	struct net_buf *buf[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	struct bt_mesh_adv *adv[CONFIG_BT_MESH_ADV_BUF_COUNT];
 	uint8_t xmit = BT_MESH_TRANSMIT(2, 20);
 
 	bt_init();
 	adv_init();
 
 	/* Verify reversed sending order */
-	allocate_all_array(buf, ARRAY_SIZE(buf), xmit);
+	allocate_all_array(adv, ARRAY_SIZE(adv), xmit);
 
-	send_adv_array(&buf[CONFIG_BT_MESH_ADV_BUF_COUNT - 1], ARRAY_SIZE(buf), true);
+	send_adv_array(&adv[CONFIG_BT_MESH_ADV_BUF_COUNT - 1], ARRAY_SIZE(adv), true);
 
 	/* Wait for no message receive window to end. */
 	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),
@@ -627,31 +623,31 @@ static void test_tx_reverse_order(void)
 
 static void test_tx_random_order(void)
 {
-	struct net_buf *buf[3];
+	struct bt_mesh_adv *adv[3];
 	uint8_t xmit = BT_MESH_TRANSMIT(0, 20);
 
 	bt_init();
 	adv_init();
 
 	/* Verify random order calls */
-	num_adv_sent = ARRAY_SIZE(buf);
+	num_adv_sent = ARRAY_SIZE(adv);
 	previous_checker = 0xff;
-	buf[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	adv[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE_MSG(!buf[0], "Out of buffers\n");
-	buf[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	ASSERT_FALSE_MSG(!adv[0], "Out of advs\n");
+	adv[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE_MSG(!buf[1], "Out of buffers\n");
+	ASSERT_FALSE_MSG(!adv[1], "Out of advs\n");
 
-	send_adv_buf(buf[0], 0, 0xff);
+	send_adv_buf(adv[0], 0, 0xff);
 
-	buf[2] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	adv[2] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE_MSG(!buf[2], "Out of buffers\n");
+	ASSERT_FALSE_MSG(!adv[2], "Out of advs\n");
 
-	send_adv_buf(buf[2], 2, 0);
+	send_adv_buf(adv[2], 2, 0);
 
-	send_adv_buf(buf[1], 1, 2);
+	send_adv_buf(adv[1], 1, 2);
 
 	/* Wait for no message receive window to end. */
 	ASSERT_OK_MSG(k_sem_take(&observer_sem, K_SECONDS(10)),

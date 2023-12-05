@@ -14,7 +14,6 @@
 #include "settings.h"
 #include "heartbeat.h"
 #include "friend.h"
-#include "adv.h"
 #include "cfg.h"
 #include "od_priv_proxy.h"
 #include "priv_beacon.h"
