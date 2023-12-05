@@ -1507,6 +1507,7 @@ def test_projectbuilder_process(
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb.options = mock.Mock()
+    pb.options.dyn_filter = ['dummy_arg1', 'dummy_arg2']
     pb.options.coverage = options_coverage
     pb.options.prep_artifacts_for_testing = options_prep_artifacts
     pb.options.runtime_artifact_cleanup = options_runtime_artifacts
