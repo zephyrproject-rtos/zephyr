@@ -224,5 +224,5 @@ asynchronous API:
         ...
 
         /* "put" device (decreases usage count, schedule suspend if no more users) */
-        return pm_device_runtime_put_async(dev);
+        return pm_device_runtime_put_async(dev, K_NO_WAIT);
     }

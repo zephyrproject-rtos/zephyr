@@ -42,7 +42,7 @@ void test_api_setup(void *data)
 	zassert_equal(ret, 0);
 	ret = pm_device_runtime_put(test_dev);
 	zassert_equal(ret, 0);
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
 	/* enable runtime PM */
@@ -138,7 +138,7 @@ ZTEST(device_runtime_api, test_api)
 	test_driver_pm_async(test_dev);
 
 	/* usage: 1, -1, suspend: yes (queued) */
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
 	(void)pm_device_state_get(test_dev, &state);
@@ -149,7 +149,7 @@ ZTEST(device_runtime_api, test_api)
 	zassert_equal(ret, -EALREADY);
 
 	/* usage: 0, -1, suspend: no (unbalanced call) */
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, -EALREADY);
 
 	/* unblock test driver and let it finish */
@@ -171,7 +171,7 @@ ZTEST(device_runtime_api, test_api)
 	test_driver_pm_async(test_dev);
 
 	/* usage: 1, -1, suspend: yes (queued) */
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
 	(void)pm_device_state_get(test_dev, &state);
