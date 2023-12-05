@@ -626,7 +626,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 #define BT_GATT_PRIMARY_SERVICE(_service)				\
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_PRIMARY, BT_GATT_PERM_READ,	\
-			 bt_gatt_attr_read_service, NULL, _service)
+			 bt_gatt_attr_read_service, NULL, (void *)_service)
 
 /**
  *  @brief Secondary Service Declaration Macro.
@@ -640,7 +640,7 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  */
 #define BT_GATT_SECONDARY_SERVICE(_service)				\
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_SECONDARY, BT_GATT_PERM_READ,	\
-			 bt_gatt_attr_read_service, NULL, _service)
+			 bt_gatt_attr_read_service, NULL, (void *)_service)
 
 /** @brief Read Include Attribute helper.
  *
