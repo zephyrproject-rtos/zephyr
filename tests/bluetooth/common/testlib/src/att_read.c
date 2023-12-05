@@ -176,7 +176,7 @@ int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *resu
 	uint16_t _result_data_size = 0;
 	struct bt_testlib_att_read_closure ctx = {};
 
-	ctx.att_mtu = result_att_mtu;
+	ctx.att_mtu = 0;
 	ctx.conn = conn;
 	ctx.long_read = true, ctx.params.handle_count = 1;
 	ctx.params.single.handle = handle;
