@@ -32,7 +32,7 @@ extern void z_arm_reserved(void);
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 
 void arch_irq_enable(unsigned int irq)
 {
@@ -92,7 +92,7 @@ void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-#endif /* !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) */
+#endif /* !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER) */
 
 void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 

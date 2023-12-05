@@ -176,11 +176,11 @@ _idle_state_cleared:
 #endif /* CONFIG_PM */
 
 	/* Get active IRQ number from the interrupt controller */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 	bl arm_gic_get_active
 #else
 	bl platform_irq_get_active
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 	lsl r0, r0, #3	/* table is 8-byte wide */
 
@@ -214,11 +214,11 @@ _idle_state_cleared:
 spurious_continue:
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 	bl arm_gic_eoi
 #else
 	bl platform_irq_eoi
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
@@ -288,11 +288,11 @@ _idle_state_cleared:
 #endif /* CONFIG_PM */
 
 	/* Get active IRQ number from the interrupt controller */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 	bl arm_gic_get_active
 #else
 	bl platform_irq_get_active
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
 	lsl r0, r0, #3	/* table is 8-byte wide */
@@ -320,11 +320,11 @@ _idle_state_cleared:
 spurious_continue:
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 	bl arm_gic_eoi
 #else
 	bl platform_irq_eoi
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit

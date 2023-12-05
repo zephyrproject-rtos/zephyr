@@ -114,7 +114,8 @@ void arm_isr_handler(const void *args)
 }
 
 /**
- * @brief Test custom interrupt controller handling with CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER.
+ * @brief Test custom interrupt controller handling with
+ * CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER.
  * @addtogroup kernel_interrupt_tests
  * @ingroup all_tests
  * @{

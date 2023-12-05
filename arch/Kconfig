@@ -857,6 +857,27 @@ config PLATFORM_HAS_CUSTOM_IRQ_LOCK_OPS
 	  the platform needs to do something different and more than reading and
 	  writing the mstatus register to lock and unlock the IRQs.
 
+config PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	help
+	  This option indicates that the ARM CPU is connected to a custom (i.e.
+	  non-GIC or NVIC) interrupt controller.
+
+	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
+	  allow interfacing to a custom external interrupt controller and this
+	  option must be selected when such cores are connected to an interrupt
+	  controller that is not the ARM Generic Interrupt Controller (GIC) or
+	  the Cortex-M ARM Nested Vectored Interrupt Controller (NVIC).
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the platform interrupt control interface, which is
+	  implemented at the platform level.
+
+	  N.B. Since all Cortex-M cores have a NVIC, if this option is selected it
+	  is assumed that the custom interrupt control interface implementation
+	  assumes responsibility for handling the NVIC.
+
+
 menu "Floating Point Options"
 
 config FPU

@@ -14,7 +14,7 @@ config CPU_CORTEX
 	help
 	  This option signifies the use of a CPU of the Cortex family.
 
-config ARM_CUSTOM_INTERRUPT_CONTROLLER
+config PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER
 	bool
 	help
 	  This option indicates that the ARM CPU is connected to a custom (i.e.

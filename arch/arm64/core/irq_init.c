@@ -24,7 +24,7 @@
  */
 void z_arm64_interrupt_init(void)
 {
-#ifdef CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER
+#ifdef CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER
 	/* Invoke SoC-specific interrupt controller initialisation */
 	platform_irq_init();
 #endif

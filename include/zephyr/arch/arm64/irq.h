@@ -27,13 +27,13 @@ extern "C" {
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
-#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(platform_irq_get_active)
 GTEXT(platform_irq_eoi)
-#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 #else
 
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
@@ -68,7 +68,7 @@ void platform_irq_eoi(unsigned int irq);
 #define z_arm64_irq_priority_set(irq, prio, flags)	\
 	platform_irq_priority_set(irq, prio, flags)
 
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 
 extern void z_arm64_interrupt_init(void);
 

@@ -4,7 +4,7 @@ Title: Test to verify custom interrupt controller handling with on
 Description:
 
 This test verifies customer interrupt controller handling on
-Cortex-M architectures using the CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER
+Cortex-M architectures using the CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER
 option. It will locate a unused interrupt to trigger via software and test
 all methods that are part of the SoC interrupt control interface.
 
