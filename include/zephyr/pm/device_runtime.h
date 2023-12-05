@@ -131,6 +131,7 @@ int pm_device_runtime_put(const struct device *dev);
  * @funcprops \pre_kernel_ok, \async, \isr_ok
  *
  * @param dev Device instance.
+ * @param delay Minimum amount of time before triggering the action.
  *
  * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
  * available this function will be a no-op and will also return 0.
@@ -140,7 +141,7 @@ int pm_device_runtime_put(const struct device *dev);
  *
  * @see pm_device_runtime_put()
  */
-int pm_device_runtime_put_async(const struct device *dev);
+int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
 
 /**
  * @brief Check if device runtime is enabled for a given device.
@@ -188,9 +189,11 @@ static inline int pm_device_runtime_put(const struct device *dev)
 	return 0;
 }
 
-static inline int pm_device_runtime_put_async(const struct device *dev)
+static inline int pm_device_runtime_put_async(const struct device *dev,
+		k_timeout_t delay)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(delay);
 	return 0;
 }
 

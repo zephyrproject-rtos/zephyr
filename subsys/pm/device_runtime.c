@@ -35,6 +35,7 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
  *
  * @param dev Device instance.
  * @param async Perform operation asynchronously.
+ * @param delay Period to delay the asynchronous operation.
  *
  * @retval 0 If device has been suspended or queued for suspend.
  * @retval -EALREADY If device is already suspended (can only happen if get/put
@@ -42,7 +43,8 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
  * @retval -EBUSY If the device is busy.
  * @retval -errno Other negative errno, result of the action callback.
  */
-static int runtime_suspend(const struct device *dev, bool async)
+static int runtime_suspend(const struct device *dev, bool async,
+			k_timeout_t delay)
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
@@ -77,7 +79,7 @@ static int runtime_suspend(const struct device *dev, bool async)
 	if (async && !k_is_pre_kernel()) {
 		/* queue suspend */
 		pm->state = PM_DEVICE_STATE_SUSPENDING;
-		(void)k_work_schedule(&pm->work, K_NO_WAIT);
+		(void)k_work_schedule(&pm->work, delay);
 	} else {
 		/* suspend now */
 		ret = pm->action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
@@ -233,7 +235,7 @@ int pm_device_runtime_put(const struct device *dev)
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
-	ret = runtime_suspend(dev, false);
+	ret = runtime_suspend(dev, false, K_NO_WAIT);
 
 	/*
 	 * Now put the domain
@@ -247,7 +249,7 @@ int pm_device_runtime_put(const struct device *dev)
 	return ret;
 }
 
-int pm_device_runtime_put_async(const struct device *dev)
+int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 {
 	int ret;
 
@@ -255,9 +257,9 @@ int pm_device_runtime_put_async(const struct device *dev)
 		return 0;
 	}
 
-	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev);
-	ret = runtime_suspend(dev, true);
-	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, ret);
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev, delay);
+	ret = runtime_suspend(dev, true, delay);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, delay, ret);
 
 	return ret;
 }
