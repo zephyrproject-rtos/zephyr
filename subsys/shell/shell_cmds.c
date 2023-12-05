@@ -231,7 +231,7 @@ static int cmd_backends(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "Active shell backends:");
 	STRUCT_SECTION_FOREACH(shell, obj) {
-		shell_print(sh, "  %2d. :%s (%s)", cnt++, obj->ctx->prompt, sh->name);
+		shell_print(sh, "  %2d. :%s (%s)", cnt++, obj->ctx->prompt, obj->name);
 	}
 
 	return 0;
