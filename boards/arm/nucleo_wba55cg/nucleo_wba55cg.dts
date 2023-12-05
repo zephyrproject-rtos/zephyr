@@ -58,24 +58,20 @@
 
 &clk_hse {
 	status = "okay";
+	hse-div2;
 };
 
-&pll1 {
-	div-m = <8>;
-	mul-n = <48>;
-	div-q = <2>;
-	div-r = <2>;
-	clocks = <&clk_hse>;
+&clk_hsi {
 	status = "okay";
 };
 
 &rcc {
-	clocks = <&pll1>;
-	clock-frequency = <DT_FREQ_M(96)>;
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(16)>;
 	ahb-prescaler = <1>;
-	ahb5-prescaler = <4>;
+	ahb5-prescaler = <2>;
 	apb1-prescaler = <1>;
-	apb2-prescaler = <1>;
+	apb2-prescaler = <2>;
 	apb7-prescaler = <1>;
 };
 
@@ -91,6 +87,8 @@
 };
 
 &usart1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		 <&rcc STM32_SRC_HSI16 USART1_SEL(2)>;
 	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
