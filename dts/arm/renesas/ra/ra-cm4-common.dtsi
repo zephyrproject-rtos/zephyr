@@ -247,7 +247,7 @@
 		};
 
 		sci0: sci@40070000 {
-			compatible = "renesas,ra-uart-sci";
+			compatible = "renesas,ra-sci";
 			reg = <0x40070000 0x20>;
 			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_RXI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_TXI>,
@@ -266,7 +266,7 @@
 		};
 
 		sci1: sci@40070020 {
-			compatible = "renesas,ra-uart-sci";
+			compatible = "renesas,ra-sci";
 			reg = <0x40070020 0x20>;
 			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_RXI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_TXI>,
@@ -284,7 +284,7 @@
 		};
 
 		sci9: sci@40070120 {
-			compatible = "renesas,ra-uart-sci";
+			compatible = "renesas,ra-sci";
 			reg = <0x40070120 0x20>;
 			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_RXI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_TXI>,
