@@ -448,11 +448,6 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 		}
 	}
 
-	/* enable and select network */
-	if (!wpa_cli_cmd_v("enable_network %d", resp.network_id)) {
-		goto out;
-	}
-
 	if (params->channel != WIFI_CHANNEL_ANY) {
 		int freq;
 
@@ -473,6 +468,11 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 
 		zephyr_wpa_cli_cmd_v("set_network %d scan_freq %d",
 				     resp.network_id, freq);
+	}
+
+	/* enable and select network */
+	if (!wpa_cli_cmd_v("enable_network %d", resp.network_id)) {
+		goto out;
 	}
 
 	if (!wpa_cli_cmd_v("select_network %d", resp.network_id)) {
