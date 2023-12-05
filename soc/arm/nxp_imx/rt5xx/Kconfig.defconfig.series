@@ -1,6 +1,6 @@
 # i.MX RT5XX series configuration options
 
-# Copyright (c) 2022-2023, NXP
+# Copyright (c) 2022-2024, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX_RT5XX
@@ -11,8 +11,10 @@ config SOC_SERIES
 config ROM_START_OFFSET
 	default 0x1200 if NXP_IMX_RT5XX_BOOT_HEADER
 
+# The PVT Sensor uses IRQ #75.  For more details, see
+# https://www.nxp.com/design/design-center/software/embedded-software/application-software-packs/application-software-pack-dynamic-voltage-scaling-using-pvt-sensor:APP-SW-PACK-DVS-PVT-SENSOR
 config NUM_IRQS
-	default 74
+	default 76
 
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
