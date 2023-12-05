@@ -1059,6 +1059,7 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
  * @name Network interface name description
  * @{
  */
+/** Network interface name length */
 #if defined(CONFIG_NET_INTERFACE_NAME)
 #define IFNAMSIZ CONFIG_NET_INTERFACE_NAME_LEN
 #else
@@ -1072,86 +1073,86 @@ struct ifreq {
 /** @} */
 
 /**
- * @name Socket level options
+ * @name Socket level options (SOL_SOCKET)
  * @{
  */
-/** sockopt: Socket-level option */
+/** Socket-level option */
 #define SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
 
-/** sockopt: Recording debugging information (ignored, for compatibility) */
+/** Recording debugging information (ignored, for compatibility) */
 #define SO_DEBUG 1
-/** sockopt: address reuse */
+/** address reuse */
 #define SO_REUSEADDR 2
-/** sockopt: Type of the socket */
+/** Type of the socket */
 #define SO_TYPE 3
-/** sockopt: Async error (ignored, for compatibility) */
+/** Async error (ignored, for compatibility) */
 #define SO_ERROR 4
-/** sockopt: Bypass normal routing and send directly to host (ignored, for compatibility) */
+/** Bypass normal routing and send directly to host (ignored, for compatibility) */
 #define SO_DONTROUTE 5
-/** sockopt: Transmission of broadcast messages is supported (ignored, for compatibility) */
+/** Transmission of broadcast messages is supported (ignored, for compatibility) */
 #define SO_BROADCAST 6
 
-/** sockopt: Size of socket send buffer */
+/** Size of socket send buffer */
 #define SO_SNDBUF 7
-/** sockopt: Size of socket recv buffer */
+/** Size of socket recv buffer */
 #define SO_RCVBUF 8
 
 /** Enable sending keep-alive messages on connections */
 #define SO_KEEPALIVE 9
-/** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
+/** Place out-of-band data into receive stream (ignored, for compatibility) */
 #define SO_OOBINLINE 10
-/** sockopt: Socket priority */
+/** Socket priority */
 #define SO_PRIORITY 12
-/** sockopt: Socket lingers on close (ignored, for compatibility) */
+/** Socket lingers on close (ignored, for compatibility) */
 #define SO_LINGER 13
-/** sockopt: Allow multiple sockets to reuse a single port */
+/** Allow multiple sockets to reuse a single port */
 #define SO_REUSEPORT 15
 
-/** sockopt: Receive low watermark (ignored, for compatibility) */
+/** Receive low watermark (ignored, for compatibility) */
 #define SO_RCVLOWAT 18
-/** sockopt: Send low watermark (ignored, for compatibility) */
+/** Send low watermark (ignored, for compatibility) */
 #define SO_SNDLOWAT 19
 
 /**
- * sockopt: Receive timeout
+ * Receive timeout
  * Applies to receive functions like recv(), but not to connect()
  */
 #define SO_RCVTIMEO 20
-/** sockopt: Send timeout */
+/** Send timeout */
 #define SO_SNDTIMEO 21
 
-/** sockopt: Bind a socket to an interface */
+/** Bind a socket to an interface */
 #define SO_BINDTODEVICE	25
 
-/** sockopt: Socket accepts incoming connections (ignored, for compatibility) */
+/** Socket accepts incoming connections (ignored, for compatibility) */
 #define SO_ACCEPTCONN 30
 
-/** sockopt: Timestamp TX packets */
+/** Timestamp TX packets */
 #define SO_TIMESTAMPING 37
-/** sockopt: Protocol used with the socket */
+/** Protocol used with the socket */
 #define SO_PROTOCOL 38
 
-/** sockopt: Domain used with SOCKET (ignored, for compatibility) */
+/** Domain used with SOCKET (ignored, for compatibility) */
 #define SO_DOMAIN 39
 
-/** sockopt: Enable SOCKS5 for Socket */
+/** Enable SOCKS5 for Socket */
 #define SO_SOCKS5 60
 
-/** sockopt: Socket TX time (when the data should be sent) */
+/** Socket TX time (when the data should be sent) */
 #define SO_TXTIME 61
+/** Socket TX time (same as SO_TXTIME) */
 #define SCM_TXTIME SO_TXTIME
 
-/** End Socket options for SOL_SOCKET level */
 /** @} */
 
 /**
- * @name TCP level options
+ * @name TCP level options (IPPROTO_TCP)
  * @{
  */
 /* Socket options for IPPROTO_TCP level */
-/** sockopt: Disable TCP buffering (ignored, for compatibility) */
+/** Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
 /** Start keepalives after this period (seconds) */
 #define TCP_KEEPIDLE 2
@@ -1163,17 +1164,17 @@ struct ifreq {
 /** @} */
 
 /**
- * @name IPv4 level options
+ * @name IPv4 level options (IPPROTO_IP)
  * @{
  */
 /* Socket options for IPPROTO_IP level */
-/** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */
+/** Set or receive the Type-Of-Service value for an outgoing packet. */
 #define IP_TOS 1
 
-/** sockopt: Set or receive the Time-To-Live value for an outgoing packet. */
+/** Set or receive the Time-To-Live value for an outgoing packet. */
 #define IP_TTL 2
 
-/** sockopt: Pass an IP_PKTINFO ancillary message that contains a
+/** Pass an IP_PKTINFO ancillary message that contains a
  *  pktinfo structure that supplies some information about the
  *  incoming packet.
  */
@@ -1185,11 +1186,11 @@ struct in_pktinfo {
 	struct in_addr ipi_addr;     /* Header Destination address */
 };
 
-/** sockopt: Set IPv4 multicast TTL value. */
+/** Set IPv4 multicast TTL value. */
 #define IP_MULTICAST_TTL 33
-/** sockopt: Join IPv4 multicast group. */
+/** Join IPv4 multicast group. */
 #define IP_ADD_MEMBERSHIP 35
-/** sockopt: Leave IPv4 multicast group. */
+/** Leave IPv4 multicast group. */
 #define IP_DROP_MEMBERSHIP 36
 
 struct ip_mreqn {
@@ -1201,20 +1202,20 @@ struct ip_mreqn {
 /** @} */
 
 /**
- * @name IPv6 level options
+ * @name IPv6 level options (IPPROTO_IPV6)
  * @{
  */
 /* Socket options for IPPROTO_IPV6 level */
-/** sockopt: Set the unicast hop limit for the socket. */
+/** Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
 
-/** sockopt: Set the multicast hop limit for the socket. */
+/** Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
 
-/** sockopt: Join IPv6 multicast group. */
+/** Join IPv6 multicast group. */
 #define IPV6_ADD_MEMBERSHIP 20
 
-/** sockopt: Leave IPv6 multicast group. */
+/** Leave IPv6 multicast group. */
 #define IPV6_DROP_MEMBERSHIP 21
 
 struct ipv6_mreq {
@@ -1225,10 +1226,10 @@ struct ipv6_mreq {
 	int ipv6mr_ifindex;
 };
 
-/** sockopt: Don't support IPv4 access */
+/** Don't support IPv4 access */
 #define IPV6_V6ONLY 26
 
-/** sockopt: Pass an IPV6_RECVPKTINFO ancillary message that contains a
+/** Pass an IPV6_RECVPKTINFO ancillary message that contains a
  *  in6_pktinfo structure that supplies some information about the
  *  incoming packet. See RFC 3542.
  */
@@ -1239,7 +1240,7 @@ struct in6_pktinfo {
 	unsigned int    ipi6_ifindex; /* send/recv interface index */
 };
 
-/** sockopt: Set or receive the traffic class value for an outgoing packet. */
+/** Set or receive the traffic class value for an outgoing packet. */
 #define IPV6_TCLASS 67
 /** @} */
 
