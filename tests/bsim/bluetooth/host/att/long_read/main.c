@@ -144,7 +144,7 @@ static void test_long_read(enum bt_att_chan_opt bearer, uint16_t chrc_value_hand
 		NET_BUF_SIMPLE_DEFINE(attr_value_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
 		/* Perform the whole long read operation. */
-		EXPECT_ZERO(bt_testlib_gatt_long_read(&attr_value_buf, NULL, conn, bearer,
+		EXPECT_ZERO(bt_testlib_gatt_long_read(&attr_value_buf, NULL, NULL, conn, bearer,
 						      chrc_value_handle, 0));
 
 		/* Parse the read attribute value to verify the
