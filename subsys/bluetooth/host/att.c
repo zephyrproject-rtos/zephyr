@@ -212,17 +212,25 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan);
 struct net_buf *bt_att_create_rsp_pdu(struct bt_att_chan *chan,
 				      uint8_t op, size_t len);
 
+static void bt_att_sent(struct bt_l2cap_chan *ch);
+
 void att_sent(struct bt_conn *conn, void *user_data)
 {
 	struct bt_att_tx_meta_data *data = user_data;
 	struct bt_att_chan *att_chan = data->att_chan;
 	struct bt_l2cap_chan *chan = &att_chan->chan.chan;
 
+	__ASSERT_NO_MSG(!bt_att_is_enhanced(att_chan));
+
 	LOG_DBG("conn %p chan %p", conn, chan);
 
-	if (chan->ops->sent) {
-		chan->ops->sent(chan);
-	}
+	/* For EATT, `bt_att_sent` is assigned to the `.sent` L2 callback.
+	 * L2CAP will then call it once the SDU has finished sending.
+	 *
+	 * For UATT, this won't happen, as static LE l2cap channels don't have
+	 * SDUs. Call it manually instead.
+	 */
+	bt_att_sent(chan);
 }
 
 static int att_chan_send_cb(struct bt_att_chan *att_chan,
