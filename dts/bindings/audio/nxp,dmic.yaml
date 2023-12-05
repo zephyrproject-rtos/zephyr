@@ -1,0 +1,97 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP DMIC
+
+compatible: "nxp,dmic"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  clocks:
+    required: true
+
+  use2fs:
+    type: boolean
+    description: |
+      Use 2FS output, and bypass final half band decimator. This will reduce
+      the required PDM bit clock frequency by a factor of two, and can reduce
+      power consumption.
+
+# Child binding definition, describes each channel of the DMIC
+child-binding:
+  description: |
+    NXP DMIC channel. Can be used to configure filtering and gain attributes
+    of each channel
+  include: base.yaml
+  compatible: "nxp,dmic-channel"
+  properties:
+    reg:
+      required: true
+    dmas:
+      required: true
+
+    gainshift:
+      type: int
+      default: 0
+      description: |
+        Decimator gain shift. Sets the number of bits to shift decimated PCM
+        data by, as a positive or negative number. Range of [-15,15]. Default
+        is reset value of register
+
+    compensation-2fs:
+      type: string
+      default: "zero"
+      enum:
+        - "zero"
+        - "-0.16"
+        - "-0.15"
+        - "-0.13"
+      description: |
+        2FS compensation filter. See SOC reference manual for filter response
+        of each value. Default value is reset value of register, and
+        recommended filter setting.
+
+    compensation-4fs:
+      type: string
+      default: "zero"
+      enum:
+        - "zero"
+        - "-0.16"
+        - "-0.15"
+        - "-0.13"
+      description: |
+        4FS compensation filter. See SOC reference manual for filter response
+        of each value. Default value is reset value of register, and
+        recommended filter setting.
+
+    dc-cutoff:
+      type: string
+      default: "flat"
+      enum:
+        - "flat"
+        - "155hz"
+        - "78hz"
+        - "39hz"
+      description: |
+        DC cutoff filter setting. Default is reset value of register. Note that
+        each cutoff frequency is based on a sample frequency of 16KHz, so
+        actual cutoff values will scale up or down based on your sampling
+        frequency
+
+    dc-gain:
+      type: int
+      default: 0
+      description: |
+        DC gain fine adjustment. Number of bits to downshift the final
+        conversion result. Max value of 15. Default is reset value of
+        register

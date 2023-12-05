@@ -1,0 +1,32 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_MCUX
+	bool "DMIC driver for MCUX"
+	default y
+	depends on DT_HAS_NXP_DMIC_ENABLED
+	select DMA
+	help
+	  Enable support for DMIC on NXP MCUX SoC's
+
+if AUDIO_DMIC_MCUX
+
+config DMIC_MCUX_DMA_BUFFERS
+	int "Number of buffers to reserve for DMIC DMA"
+	default 2
+	range 2 16
+	help
+	  This determines how many buffers the driver should allocate and
+	  reserve for the DMA engine. The memory slab used with the DMIC
+	  API should provide at least one more buffer than this value, since
+	  a buffer will always be in the RX queue.
+
+config DMIC_MCUX_QUEUE_SIZE
+	int "Size of DMIC buffer queue"
+	default 8
+	help
+	  This sets the size of the RX buffer queue for the DMIC. Up to this
+	  many buffers may be queued by the DMIC once it is triggered, before
+	  the application must read buffers to avoid data being dropped.
+
+endif # AUDIO_DMIC_MCUX
