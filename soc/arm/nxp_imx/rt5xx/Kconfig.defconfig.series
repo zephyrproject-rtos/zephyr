@@ -12,7 +12,7 @@ config ROM_START_OFFSET
 	default 0x1200 if NXP_IMX_RT5XX_BOOT_HEADER
 
 config NUM_IRQS
-	default 74
+	default 76
 
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
