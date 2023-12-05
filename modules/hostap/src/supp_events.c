@@ -9,8 +9,6 @@
 #include "includes.h"
 #include "common.h"
 
-#define MAC_STR_FORMAT "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx"
-
 static const char * const supplicant_event_map[] = {
 	"CTRL-EVENT-CONNECTED",
 	"CTRL-EVENT-DISCONNECTED",
@@ -36,7 +34,6 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	int ret = 1; /* For cases where parsing is not being done*/
 	int event = -1;
 	int i;
-	unsigned char *mac;
 	union supplicant_event_data *data;
 
 	data = (union supplicant_event_data *)event_data->data;
@@ -58,29 +55,25 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 
 	switch (event_data->event) {
 	case SUPPLICANT_EVENT_CONNECTED:
-		mac = data->connected.bssid;
 		ret = sscanf(supplicant_status +
 			     sizeof("CTRL-EVENT-CONNECTED - Connection to") - 1,
-			     MAC_STR_FORMAT,
-			     &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+			     MACSTR, MAC2STR(data->connected.bssid));
 		event_data->data_len = sizeof(data->connected);
 		break;
 	case SUPPLICANT_EVENT_DISCONNECTED:
-		mac = data->disconnected.bssid;
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-DISCONNECTED bssid=") - 1,
-			     MAC_STR_FORMAT" reason=%d", &mac[0], &mac[1], &mac[2],
-			     &mac[3], &mac[4], &mac[5], &data->disconnected.reason_code);
+			     MACSTR" reason=%d", MAC2STR(data->disconnected.bssid),
+			     &data->disconnected.reason_code);
 		event_data->data_len = sizeof(data->disconnected);
 		break;
 	case SUPPLICANT_EVENT_ASSOC_REJECT:
 		/* TODO */
 		break;
 	case SUPPLICANT_EVENT_AUTH_REJECT:
-		mac = data->auth_reject.bssid;
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-AUTH-REJECT ") - 1,
-			     MAC_STR_FORMAT
+			     MACSTR
 			     " auth_type=%u auth_transaction=%u status_code=%u",
-			     &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5],
+			     MAC2STR(data->auth_reject.bssid),
 			     &data->auth_reject.auth_type,
 			     &data->auth_reject.auth_transaction,
 			     &data->auth_reject.status_code);
@@ -104,17 +97,17 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	case SUPPLICANT_EVENT_BSS_ADDED:
 		mac = data->bss_added.bssid;
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-BSS-ADDED ") - 1,
-			     "%u "MAC_STR_FORMAT,
+			     "%u "MACSTR,
 			     &data->bss_added.id,
-			     &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+			     MAC2STR(data->bss_added.bssid));
 		event_data->data_len = sizeof(data->bss_added);
 		break;
 	case SUPPLICANT_EVENT_BSS_REMOVED:
 		mac = data->bss_removed.bssid;
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-BSS-REMOVED ") - 1,
-			     "%u "MAC_STR_FORMAT,
+			     "%u "MACSTR,
 			     &data->bss_removed.id,
-			     &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+			     MAC2STR(data->bss_removed.bssid));
 		event_data->data_len = sizeof(data->bss_removed);
 		break;
 	case SUPPLICANT_EVENT_TERMINATING:
