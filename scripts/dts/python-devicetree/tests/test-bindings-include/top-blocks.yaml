@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Test property-blocklist filters set by including bindings.
+
+compatible: "top-blocklist"
+
+include:
+  - name: inc-base.yaml
+    property-blocklist:
+      - x
