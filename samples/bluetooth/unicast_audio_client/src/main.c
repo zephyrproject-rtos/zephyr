@@ -402,7 +402,7 @@ static bool check_audio_support_and_connect(struct bt_data *data,
 	bt_addr_le_t *addr = user_data;
 	uint8_t announcement_type;
 	uint32_t audio_contexts;
-	struct bt_uuid *uuid;
+	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
 	uint8_t meta_len;
 	size_t min_size;

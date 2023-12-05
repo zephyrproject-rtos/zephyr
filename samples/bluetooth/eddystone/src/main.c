@@ -40,55 +40,55 @@ static const struct bt_data ad[] = {
 
 /* Eddystone Service Variables */
 /* Service UUID a3c87500-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87500, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87501-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_caps_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_caps_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87501, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87502-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_slot_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_slot_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87502, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87503-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_intv_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_intv_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87503, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87504-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_tx_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_tx_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87504, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87505-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_adv_tx_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_adv_tx_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87505, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87506-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_lock_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_lock_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87506, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87507-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_unlock_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_unlock_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87507, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87508-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_ecdh_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_ecdh_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87508, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c87509-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_eid_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_eid_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c87509, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c8750a-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_data_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_data_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c8750a, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c8750b-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_reset_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_reset_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c8750b, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 /* Characteristic UUID a3c8750c-8ed3-4bdf-8a39-a01bebede295 */
-static struct bt_uuid_128 eds_connectable_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 eds_connectable_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0xa3c8750c, 0x8ed3, 0x4bdf, 0x8a39, 0xa01bebede295));
 
 enum {
