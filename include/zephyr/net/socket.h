@@ -35,10 +35,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Definition of the monitored socket/file descriptor.
+ *
+ * An array of these descriptors is passed as an argument to poll().
+ */
 struct zsock_pollfd {
-	int fd;
-	short events;
-	short revents;
+	int fd;        /**< Socket descriptor */
+	short events;  /**< Requested events */
+	short revents; /**< Returned events */
 };
 
 /**
@@ -258,18 +263,26 @@ struct zsock_pollfd {
 /** @} */ /* for @name */
 /** @} */ /* for @defgroup */
 
+/**
+ * @brief Definition used when querying address information.
+ *
+ * A linked list of these descriptors is returned by getaddrinfo(). The struct
+ * is also passed as hints when calling the getaddrinfo() function.
+ */
 struct zsock_addrinfo {
-	struct zsock_addrinfo *ai_next;
-	int ai_flags;
-	int ai_family;
-	int ai_socktype;
-	int ai_protocol;
-	socklen_t ai_addrlen;
-	struct sockaddr *ai_addr;
-	char *ai_canonname;
+	struct zsock_addrinfo *ai_next; /**< Pointer to next address entry */
+	int ai_flags;             /**< Additional options */
+	int ai_family;            /**< Address family of the returned addresses */
+	int ai_socktype;          /**< Socket type, for example SOCK_STREAM or SOCK_DGRAM */
+	int ai_protocol;          /**< Protocol for addresses, 0 means any protocol */
+	socklen_t ai_addrlen;     /**< Length of the socket address */
+	struct sockaddr *ai_addr; /**< Pointer to the address */
+	char *ai_canonname;       /**< Optional official name of the host */
 
+/** @cond INTERNAL_HIDDEN */
 	struct sockaddr _ai_addr;
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
+/** @endcond */
 };
 
 /**
@@ -800,6 +813,12 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
+/**
+ * @name Socket APIs available if CONFIG_NET_SOCKETS_POSIX_NAMES is enabled
+ * @{
+ */
+
+/** POSIX wrapper for @ref zsock_pollfd */
 #define pollfd zsock_pollfd
 
 /** POSIX wrapper for @ref zsock_socket */
@@ -863,6 +882,7 @@ static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 	return zsock_recv(sock, buf, max_len, flags);
 }
 
+/** @cond INTERNAL_HIDDEN */
 /*
  * Need this wrapper because newer GCC versions got too smart and "typecheck"
  * even macros, so '#define fcntl zsock_fcntl' leads to error.
@@ -879,7 +899,9 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 }
 
 #define fcntl zsock_fcntl_wrapper
+/** @endcond */
 
+/** POSIX wrapper for @ref zsock_ioctl */
 static inline int ioctl(int sock, unsigned long request, ...)
 {
 	int ret;
@@ -983,6 +1005,7 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 				 serv, servlen, flags);
 }
 
+/** POSIX wrapper for @ref zsock_addrinfo */
 #define addrinfo zsock_addrinfo
 
 /** POSIX wrapper for @ref zsock_gethostname */
@@ -1053,6 +1076,7 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
 /** POSIX wrapper for @ref DNS_EAI_FAMILY */
 #define EAI_FAMILY DNS_EAI_FAMILY
+/** @} */
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
 /**
@@ -1068,7 +1092,7 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 
 /** Interface description structure */
 struct ifreq {
-	char ifr_name[IFNAMSIZ]; /* Interface name */
+	char ifr_name[IFNAMSIZ]; /**< Network interface name */
 };
 /** @} */
 
@@ -1180,10 +1204,16 @@ struct ifreq {
  */
 #define IP_PKTINFO 8
 
+/**
+ * @brief Incoming IPv4 packet information.
+ *
+ * Used as ancillary data when calling recvmsg() and IP_PKTINFO socket
+ * option is set.
+ */
 struct in_pktinfo {
-	unsigned int   ipi_ifindex;  /* Interface index */
-	struct in_addr ipi_spec_dst; /* Local address */
-	struct in_addr ipi_addr;     /* Header Destination address */
+	unsigned int   ipi_ifindex;  /**< Network interface index */
+	struct in_addr ipi_spec_dst; /**< Local address */
+	struct in_addr ipi_addr;     /**< Header Destination address */
 };
 
 /** Set IPv4 multicast TTL value. */
@@ -1193,10 +1223,13 @@ struct in_pktinfo {
 /** Leave IPv4 multicast group. */
 #define IP_DROP_MEMBERSHIP 36
 
+/**
+ * @brief Struct used when joining or leaving a IPv4 multicast group.
+ */
 struct ip_mreqn {
-	struct in_addr imr_multiaddr; /* IP multicast group address */
-	struct in_addr imr_address;   /* IP address of local interface */
-	int            imr_ifindex;   /* interface index */
+	struct in_addr imr_multiaddr; /**< IP multicast group address */
+	struct in_addr imr_address;   /**< IP address of local interface */
+	int            imr_ifindex;   /**< Network interface index */
 };
 
 /** @} */
@@ -1218,11 +1251,14 @@ struct ip_mreqn {
 /** Leave IPv6 multicast group. */
 #define IPV6_DROP_MEMBERSHIP 21
 
+/**
+ * @brief Struct used when joining or leaving a IPv6 multicast group.
+ */
 struct ipv6_mreq {
-	/* IPv6 multicast address of group */
+	/** IPv6 multicast address of group */
 	struct in6_addr ipv6mr_multiaddr;
 
-	/* Interface index of the local IPv6 address */
+	/** Network interface index of the local IPv6 address */
 	int ipv6mr_ifindex;
 };
 
@@ -1235,9 +1271,15 @@ struct ipv6_mreq {
  */
 #define IPV6_RECVPKTINFO 49
 
+/**
+ * @brief Incoming IPv6 packet information.
+ *
+ * Used as ancillary data when calling recvmsg() and IPV6_RECVPKTINFO socket
+ * option is set.
+ */
 struct in6_pktinfo {
-	struct in6_addr ipi6_addr;    /* src/dst IPv6 address */
-	unsigned int    ipi6_ifindex; /* send/recv interface index */
+	struct in6_addr ipi6_addr;    /**< Destination IPv6 address */
+	unsigned int    ipi6_ifindex; /**< Receive interface index */
 };
 
 /** Set or receive the traffic class value for an outgoing packet. */
