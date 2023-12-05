@@ -1590,7 +1590,7 @@ int32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	ticks = z_tick_sleep(ticks);
 
-	int32_t ret = k_ticks_to_ms_floor64(ticks);
+	int32_t ret = k_ticks_to_ms_ceil64(ticks);
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ret);
 
@@ -1614,9 +1614,11 @@ int32_t z_impl_k_usleep(int us)
 	ticks = k_us_to_ticks_ceil64(us);
 	ticks = z_tick_sleep(ticks);
 
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, usleep, us, k_ticks_to_us_floor64(ticks));
+	int32_t ret = k_ticks_to_us_ceil64(ticks);
 
-	return k_ticks_to_us_floor64(ticks);
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, usleep, us, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE

@@ -467,8 +467,9 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  *
  * @param timeout Desired duration of sleep.
  *
- * @return Zero if the requested time has elapsed or the number of milliseconds
- * left to sleep, if thread was woken up by \ref k_wakeup call.
+ * @return Zero if the requested time has elapsed or if the thread was woken up
+ * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
+ * millisecond.
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
@@ -479,8 +480,9 @@ __syscall int32_t k_sleep(k_timeout_t timeout);
  *
  * @param ms Number of milliseconds to sleep.
  *
- * @return Zero if the requested time has elapsed or the number of milliseconds
- * left to sleep, if thread was woken up by \ref k_wakeup call.
+ * @return Zero if the requested time has elapsed or if the thread was woken up
+ * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
+ * millisecond.
  */
 static inline int32_t k_msleep(int32_t ms)
 {
@@ -499,8 +501,9 @@ static inline int32_t k_msleep(int32_t ms)
  *
  * @param us Number of microseconds to sleep.
  *
- * @return Zero if the requested time has elapsed or the number of microseconds
- * left to sleep, if thread was woken up by \ref k_wakeup call.
+ * @return Zero if the requested time has elapsed or if the thread was woken up
+ * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
+ * microsecond.
  */
 __syscall int32_t k_usleep(int32_t us);
 
