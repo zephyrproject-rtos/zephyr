@@ -76,6 +76,7 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
  * @param dir      Direction of the endpoints to change location for.
  * @param location The location to be set.
  *
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_pacs_set_location(enum bt_audio_dir dir,
 			 enum bt_audio_location location);
@@ -84,6 +85,8 @@ int bt_pacs_set_location(enum bt_audio_dir dir,
  *
  * @param dir      Direction of the endpoints to change available contexts for.
  * @param contexts The contexts to be set.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_pacs_set_available_contexts(enum bt_audio_dir dir,
 				   enum bt_audio_context contexts);
@@ -131,6 +134,8 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *co
  *
  * @param dir      Direction of the endpoints to change available contexts for.
  * @param contexts The contexts to be set.
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_pacs_set_supported_contexts(enum bt_audio_dir dir,
 				   enum bt_audio_context contexts);
