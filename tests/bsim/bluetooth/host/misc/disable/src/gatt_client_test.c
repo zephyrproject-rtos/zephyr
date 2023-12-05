@@ -17,7 +17,7 @@ CREATE_FLAG(flag_read_complete);
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
 static uint16_t long_chrc_handle;
-static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
+static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 #define NUM_ITERATIONS 10
 

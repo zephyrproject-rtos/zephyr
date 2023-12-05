@@ -27,7 +27,7 @@ CREATE_FLAG(flag_is_encrypted);
 
 static struct bt_conn *g_conn;
 static const struct bt_gatt_attr *local_attr;
-static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
+static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 #define NUM_NOTIF 100
 #define SAMPLE_DATA 1

@@ -314,7 +314,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 		}
 
 		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
-			struct bt_uuid *uuid;
+			const struct bt_uuid *uuid;
 			struct bt_le_conn_param *param;
 			uint16_t u16;
 			int err;
