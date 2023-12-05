@@ -723,7 +723,7 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 
 	/* Check if powered on. */
 	ret = dai_ssp_poll_for_register_delay(dai_ip_base(dp) + I2SLCTL_OFFSET,
-					      I2SLCTL_CPA(index), 0,
+					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #elif CONFIG_SOC_INTEL_ACE20_LNL
 	sys_write32(sys_read32(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET) |
@@ -731,7 +731,7 @@ static void dai_ssp_pm_runtime_en_ssp_power(struct dai_intel_ssp *dp, uint32_t i
 			       dai_hdamlssp_base(dp) + I2SLCTL_OFFSET);
 	/* Check if powered on. */
 	ret = dai_ssp_poll_for_register_delay(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET,
-					      I2SLCTL_CPA(index), 0,
+					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #else
 #error need to define SOC
@@ -759,7 +759,7 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 
 	/* Check if powered off. */
 	ret = dai_ssp_poll_for_register_delay(dai_ip_base(dp) + I2SLCTL_OFFSET,
-					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
+					      I2SLCTL_CPA(index), 0,
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #elif CONFIG_SOC_INTEL_ACE20_LNL
 	sys_write32(sys_read32(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET) & (~I2SLCTL_SPA(index)),
@@ -767,7 +767,7 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 
 	/* Check if powered off. */
 	ret = dai_ssp_poll_for_register_delay(dai_hdamlssp_base(dp) + I2SLCTL_OFFSET,
-					      I2SLCTL_CPA(index), I2SLCTL_CPA(index),
+					      I2SLCTL_CPA(index), 0,
 					      DAI_INTEL_SSP_MAX_SEND_TIME_PER_SAMPLE);
 #else
 #error need to define SOC
