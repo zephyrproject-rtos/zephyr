@@ -3975,6 +3975,7 @@ zbus:
     - teburd
   collaborators:
     - lyakh
+    - pillo79
   files:
     - samples/subsys/llext/
     - include/zephyr/llext/
