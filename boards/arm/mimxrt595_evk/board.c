@@ -6,18 +6,44 @@
 #include <zephyr/init.h>
 #include "fsl_power.h"
 #include <zephyr/pm/policy.h>
+#include "board.h"
+
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+#include "flash_clock_setup.h"
+#endif
+
+/* OTP fuse index. */
+#define FRO_192MHZ_SC_TRIM 0x2C
+#define FRO_192MHZ_RD_TRIM 0x2B
+#define FRO_96MHZ_SC_TRIM  0x2E
+#define FRO_96MHZ_RD_TRIM  0x2D
+
+#define OTP_FUSE_READ_API ((void (*)(uint32_t addr, uint32_t *data))0x1300805D)
+
+#define PMIC_MODE_BOOT			0U
+#define PMIC_MODE_DEEP_SLEEP		1U
+#define PMIC_MODE_FRO192M_900MV		2U
+#define PMIC_MODE_FRO96M_800MV		3U
+
+#define PMIC_SETTLING_TIME		2000U	/* in micro-seconds */
+
+static uint32_t sc_trim_192, rd_trim_192, sc_trim_96, rd_trim_96;
 
 #if CONFIG_REGULATOR
 #include <zephyr/drivers/regulator.h>
 
+#define NODE_PCA9420	DT_NODELABEL(pca9420)
 #define NODE_SW1	DT_NODELABEL(pca9420_sw1)
 #define NODE_SW2	DT_NODELABEL(pca9420_sw2)
 #define NODE_LDO1	DT_NODELABEL(pca9420_ldo1)
 #define NODE_LDO2	DT_NODELABEL(pca9420_ldo2)
+static const struct device *pca9420 = DEVICE_DT_GET(NODE_PCA9420);
 static const struct device *sw1 = DEVICE_DT_GET(NODE_SW1);
 static const struct device *sw2 = DEVICE_DT_GET(NODE_SW2);
 static const struct device *ldo1 = DEVICE_DT_GET(NODE_LDO1);
 static const struct device *ldo2 = DEVICE_DT_GET(NODE_LDO2);
+
+static int current_power_profile;
 
 #define MEGA (1000000U)
 
@@ -93,7 +119,148 @@ static int board_config_pmic(void)
 
 	return ret;
 }
-#endif
+
+static int board_pmic_change_mode(uint8_t pmic_mode)
+{
+	int ret;
+
+	if (pmic_mode >= 4) {
+		return -ERANGE;
+	}
+
+	ret = regulator_parent_dvs_state_set(pca9420, pmic_mode);
+	if (ret != -EPERM) {
+		return ret;
+	}
+
+	POWER_SetPmicMode(pmic_mode, kCfg_Run);
+	k_busy_wait(PMIC_SETTLING_TIME);
+
+	return 0;
+}
+
+/* Changes power-related config to preset profiles, like clocks and VDDCORE voltage */
+__ramfunc int32_t power_manager_set_profile(uint32_t power_profile)
+{
+	bool voltage_changed = false;
+	int32_t current_uv, future_uv;
+	int ret;
+
+	if (power_profile == current_power_profile) {
+		return 0;
+	}
+
+	/* Confirm valid power_profile, and read the new VDDCORE voltage */
+	switch (power_profile) {
+	case POWER_PROFILE_AFTER_BOOT:
+		future_uv = DT_PROP(NODE_SW1, nxp_mode0_microvolt);
+		break;
+
+	case POWER_PROFILE_FRO192M_900MV:
+		future_uv = DT_PROP(NODE_SW1, nxp_mode2_microvolt);
+		break;
+
+	case POWER_PROFILE_FRO96M_800MV:
+		future_uv = DT_PROP(NODE_SW1, nxp_mode3_microvolt);
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	if (current_power_profile == POWER_PROFILE_AFTER_BOOT) {
+		/* One-Time optimization after boot */
+
+		POWER_DisableLVD();
+
+		CLOCK_AttachClk(kFRO_DIV1_to_MAIN_CLK);
+		/* Set SYSCPUAHBCLKDIV divider to value 1 */
+		CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 1U);
+
+		/* Other clock optimizations */
+	#ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
+		flexspi_setup_clock(FLEXSPI0, 0U, 1U);	/* main_clk div by 1 */
+	#endif
+		/* Disable the PFDs of SYSPLL */
+		CLKCTL0->SYSPLL0PFD |=	CLKCTL0_SYSPLL0PFD_PFD0_CLKGATE_MASK |
+					CLKCTL0_SYSPLL0PFD_PFD1_CLKGATE_MASK |
+					CLKCTL0_SYSPLL0PFD_PFD2_CLKGATE_MASK;
+
+		POWER_EnablePD(kPDRUNCFG_PD_SYSPLL_LDO);
+		POWER_EnablePD(kPDRUNCFG_PD_SYSPLL_ANA);
+		POWER_EnablePD(kPDRUNCFG_PD_AUDPLL_LDO);
+		POWER_EnablePD(kPDRUNCFG_PD_AUDPLL_ANA);
+		POWER_EnablePD(kPDRUNCFG_PD_SYSXTAL);
+
+		/* Configure MCU that PMIC supplies will be powered in all
+		 * PMIC modes
+		 */
+		PMC->PMICCFG = 0xFF;
+
+	}
+
+	/* Get current and future PMIC voltages to determine DVFS sequence */
+	ret = regulator_get_voltage(sw1, &current_uv);
+	if (ret) {
+		return ret;
+	}
+
+	if (power_profile == POWER_PROFILE_FRO192M_900MV) {
+		/* check if voltage or frequency change is first */
+		if (future_uv > current_uv) {
+			/* Increase voltage first before frequencies */
+			ret = board_pmic_change_mode(PMIC_MODE_FRO192M_900MV);
+			if (ret) {
+				return ret;
+			}
+
+			voltage_changed = true;
+		}
+
+		/* Trim FRO to 192MHz */
+		CLKCTL0->FRO_SCTRIM = sc_trim_192;
+		CLKCTL0->FRO_RDTRIM = rd_trim_192;
+		/* Reset the EXP_COUNT. */
+		CLKCTL0->FRO_CONTROL &= ~CLKCTL0_FRO_CONTROL_EXP_COUNT_MASK;
+
+		CLOCK_AttachClk(kFRO_DIV1_to_MAIN_CLK);
+		/* Set SYSCPUAHBCLKDIV divider to value 1 */
+		CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 1U);
+
+		if (voltage_changed == false) {
+			ret = board_pmic_change_mode(PMIC_MODE_FRO192M_900MV);
+			if (ret) {
+				return ret;
+			}
+		}
+
+	} else if (power_profile == POWER_PROFILE_FRO96M_800MV) {
+		/* This PMIC mode is the lowest voltage used for DVFS,
+		 * Reduce frequency first, and then reduce voltage
+		 */
+
+		/* Trim the FRO to 96MHz */
+		CLKCTL0->FRO_SCTRIM = sc_trim_96;
+		CLKCTL0->FRO_RDTRIM = rd_trim_96;
+		/* Reset the EXP_COUNT. */
+		CLKCTL0->FRO_CONTROL &= ~CLKCTL0_FRO_CONTROL_EXP_COUNT_MASK;
+
+		CLOCK_AttachClk(kFRO_DIV1_to_MAIN_CLK);
+		/* Set SYSCPUAHBCLKDIV divider to value 1 */
+		CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 1U);
+
+		ret = board_pmic_change_mode(PMIC_MODE_FRO96M_800MV);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	current_power_profile = power_profile;
+
+	return 0;
+}
+
+#endif /* CONFIG_REGULATOR */
 
 static int mimxrt595_evk_init(void)
 {
@@ -153,6 +320,28 @@ static int mimxrt595_evk_init(void)
 	 */
 	 OCOTP0->OTP_SHADOW[97] = 0x164000;
 #endif /* CONFIG_REBOOT */
+
+	/* Read 192M FRO clock Trim settings from fuses.
+	 * NOTE: Reading OTP fuses requires a VDDCORE voltage of at least 1.0V
+	 */
+	OTP_FUSE_READ_API(FRO_192MHZ_SC_TRIM, &sc_trim_192);
+	OTP_FUSE_READ_API(FRO_192MHZ_RD_TRIM, &rd_trim_192);
+
+	/* Read 96M FRO clock Trim settings from fuses. */
+	OTP_FUSE_READ_API(FRO_96MHZ_SC_TRIM, &sc_trim_96);
+	OTP_FUSE_READ_API(FRO_96MHZ_RD_TRIM, &rd_trim_96);
+
+	/* Check if the 96MHz fuses have been programmed.
+	 * Production devices have 96M trim values programmed in OTP fuses.
+	 * However, older EVKs may have pre-production silicon.
+	 */
+	if ((rd_trim_96 == 0) && (sc_trim_96 == 0)) {
+		/* If not programmed then use software to calculate the trim values */
+		CLOCK_FroTuneToFreq(96000000u);
+		rd_trim_96 = CLKCTL0->FRO_RDTRIM;
+		sc_trim_96 = sc_trim_192;
+	}
+
 	return 0;
 }
 
