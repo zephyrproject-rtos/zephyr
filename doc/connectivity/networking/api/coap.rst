@@ -17,7 +17,8 @@ that support CoAP's features. For more information about the protocol
 itself, see `IETF RFC7252 The Constrained Application Protocol <https://tools.ietf.org/html/rfc7252>`_.
 
 Zephyr provides a CoAP library which supports client and server roles.
-The library is configurable as per user needs. The Zephyr CoAP library
+The library can be enabled with :kconfig:option:`CONFIG_COAP` Kconfig option and
+is configurable as per user needs. The Zephyr CoAP library
 is implemented using plain buffers. Users of the API create sockets
 for communication and pass the buffer to the library for parsing and other
 purposes. The library itself doesn't create any sockets for users.

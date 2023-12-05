@@ -25,6 +25,8 @@ REST API to manage various interfaces with the client.
 LwM2M uses a simple resource model with the core set of objects and resources
 defined in the specification.
 
+The LwM2M library can be enabled with :kconfig:option:`CONFIG_LWM2M` Kconfig option.
+
 Example LwM2M object and resources: Device
 ******************************************
 
