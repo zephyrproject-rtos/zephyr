@@ -14,7 +14,6 @@
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
 #include <zephyr/bluetooth/mesh/keys.h>
 #include "access.h"
-#include "adv.h"
 #include "prov.h"
 #include "crypto.h"
 #include "rpr.h"

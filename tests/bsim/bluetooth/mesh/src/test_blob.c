@@ -6,9 +6,9 @@
 #include "mesh_test.h"
 #include "dfu_blob_common.h"
 #include "friendship_common.h"
+#include "mesh/adv.h"
 #include "mesh/blob.h"
 #include "argparse.h"
-#include "mesh/adv.h"
 
 #define LOG_MODULE_NAME test_blob
 

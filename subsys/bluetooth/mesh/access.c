@@ -19,7 +19,6 @@
 #include "host/testing.h"
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "lpn.h"
 #include "transport.h"
