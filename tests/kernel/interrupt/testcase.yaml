@@ -37,10 +37,14 @@ tests:
       - CONFIG_QEMU_ICOUNT=y
       - CONFIG_MINIMAL_LIBC=y
   arch.shared_interrupt:
-    # excluded because of failures during test_prevent_interruption
-    platform_exclude: qemu_cortex_m0
+    platform_exclude:
+      # excluded because of failures during test_prevent_interruption
+      - qemu_cortex_m0
+      # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
+      # does not trigger interrupts
+      - it8xxx2_evb
     arch_exclude:
-      # same as above, #22956
+      # same as for qemu_cortex_m0, #22956
       - nios2
       # test needs 2 working interrupt lines
       - xtensa
