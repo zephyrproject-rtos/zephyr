@@ -1622,18 +1622,20 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
 endif()
 
 if(CONFIG_BUILD_OUTPUT_META)
+  set(KERNEL_META_PATH  ${PROJECT_BINARY_DIR}/${KERNEL_META_NAME} CACHE INTERNAL "")
+
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
             ${WEST_ARG}
             ${ZEPHYR_MODULES_ARG}
             ${EXTRA_ZEPHYR_MODULES_ARG}
-            --meta-out ${KERNEL_META_NAME}
+            --meta-out ${KERNEL_META_PATH}
             $<$<BOOL:${CONFIG_BUILD_OUTPUT_META_STATE_PROPAGATE}>:--meta-state-propagate>
   )
   list(APPEND
     post_build_byproducts
-    ${KERNEL_META_NAME}
+    ${KERNEL_META_PATH}
   )
 endif()
 
