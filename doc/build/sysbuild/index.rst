@@ -651,6 +651,74 @@ configuration files for ``my_sample`` will be ignored.
 This give you full control on how images are configured when integrating those
 with ``application``.
 
+.. _sysbuild_file_suffixes:
+
+Sysbuild file suffix support
+----------------------------
+
+File suffix support through the makevar:`FILE_SUFFIX` is supported in sysbuild
+(see :ref:`application-file-suffixes` for details on this feature in applications). For sysbuild,
+a globally provided option will be passed down to all images. In addition, the image configuration
+file will have this value applied and used (instead of the build type) if the file exists.
+
+Given the example project:
+
+.. code-block:: none
+
+   <home>/application
+   ├── CMakeLists.txt
+   ├── prj.conf
+   ├── sysbuild.conf
+   ├── sysbuild_test_key.conf
+   └── sysbuild
+       ├── mcuboot.conf
+       ├── mcuboot_max_log.conf
+       └── my_sample.conf
+
+* If ``FILE_SUFFIX`` is not defined and both ``mcuboot`` and ``my_sample`` images are included,
+  ``mcuboot`` will use the ``mcuboot.conf`` Kconfig fragment file and ``my_sample`` will use the
+  ``my_sample.conf`` Kconfig fragment file. Sysbuild itself will use the ``sysbuild.conf``
+  Kconfig fragment file.
+
+* If ``FILE_SUFFIX`` is set to ``max_log`` and both ``mcuboot`` and ``my_sample`` images are
+  included, ``mcuboot`` will use the ``mcuboot_max_log.conf`` Kconfig fragment file and
+  ``my_sample`` will use the ``my_sample.conf`` Kconfig fragment file (as it will fallback to the
+  file without the suffix). Sysbuild itself will use the ``sysbuild.conf`` Kconfig fragment file
+  (as it will fallback to the file without the suffix).
+
+* If ``FILE_SUFFIX`` is set to ``test_key`` and both ``mcuboot`` and ``my_sample`` images are
+  included, ``mcuboot`` will use the ``mcuboot.conf`` Kconfig fragment file and
+  ``my_sample`` will use the ``my_sample.conf`` Kconfig fragment file (as it will fallback to the
+  files without the suffix). Sysbuild itself will use the ``sysbuild_test_key.conf`` Kconfig
+  fragment file. This can be used to apply a different sysbuild configuration, for example to use
+  a different signing key in MCUboot and when signing the main application.
+
+The ``FILE_SUFFIX`` can also be applied only to single images by prefixing the variable with the
+image name:
+
+.. tabs::
+
+   .. group-tab:: ``west build``
+
+      .. zephyr-app-commands::
+         :tool: west
+         :app: file_suffix_example
+         :board: reel_board
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -Dmcuboot_FILE_SUFFIX="max_log"
+         :compact:
+
+   .. group-tab:: ``cmake``
+
+      .. zephyr-app-commands::
+         :tool: cmake
+         :app: share/sysbuild
+         :board: reel_board
+         :goals: build
+         :gen-args: -DAPP_DIR=<app_dir> -DSB_CONFIG_BOOTLOADER_MCUBOOT=y -Dmcuboot_FILE_SUFFIX="max_log"
+         :compact:
+
 .. _sysbuild_zephyr_application_dependencies:
 
 Adding dependencies among Zephyr applications
