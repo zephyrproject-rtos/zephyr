@@ -161,6 +161,21 @@ static bool is_peer_subscribed(struct bt_conn *conn)
 
 /* Test steps */
 
+static void send_value_notification(void)
+{
+	const struct bt_gatt_attr *attr = bt_gatt_find_by_uuid(NULL, 0,
+							       &notify_characteristic_uuid.uuid);
+	static uint8_t value;
+	int err;
+
+	err = bt_gatt_notify(default_conn, attr, &value, sizeof(value));
+	if (err != 0) {
+		FAIL("Failed to send notification (err %d)\n", err);
+	}
+
+	value++;
+}
+
 static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
 {
 	start_adv(adv);
@@ -182,6 +197,8 @@ static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
 
 	/* confirm to client that the subscribtion has been well registered */
 	backchannel_sync_send(CLIENT_CHAN, CLIENT_ID);
+
+	send_value_notification();
 }
 
 static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
@@ -205,6 +222,8 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 
 	/* confirm to good client that the subscribtion has been well restored */
 	backchannel_sync_send(CLIENT_CHAN, CLIENT_ID);
+
+	send_value_notification();
 }
 
 /* Util functions */
@@ -251,7 +270,7 @@ static void check_ccc_handle(void)
 
 /* Main function */
 
-void run_peripheral(void)
+void run_peripheral(int times)
 {
 	int err;
 	struct bt_le_ext_adv *adv = NULL;
@@ -288,8 +307,10 @@ void run_peripheral(void)
 	connect_pair_check_subscribtion(adv);
 	WAIT_FOR_FLAG(disconnected_flag);
 
-	connect_restore_sec_check_subscribtion(adv);
-	WAIT_FOR_FLAG(disconnected_flag);
+	for (int i = 0; i < times; i++) {
+		connect_restore_sec_check_subscribtion(adv);
+		WAIT_FOR_FLAG(disconnected_flag);
+	}
 
 	PASS("Peripheral test passed\n");
 }
