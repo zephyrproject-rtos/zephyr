@@ -287,7 +287,6 @@
 			pinmux = <PTB12_EMIOS_0_CH0_X_O>, <PTB13_EMIOS_0_CH1_G_O>,
 				<PTB14_EMIOS_0_CH2_G_O>, <PTB15_EMIOS_0_CH3_G_O>,
 				<PTB16_EMIOS_0_CH4_G_O>, <PTB17_EMIOS_0_CH5_G_O>,
-				<PTA17_EMIOS_0_CH6_G_O>, <PTE7_EMIOS_0_CH7_G_O>,
 				<PTE14_EMIOS_0_CH19_Y_O>;
 			output-enable;
 		};
@@ -298,6 +297,16 @@
 			pinmux = <PTA27_EMIOS_1_CH10_H_O>,
 					<PTE12_EMIOS_1_CH5_H_O>;
 			output-enable;
+		};
+	};
+
+	qdec_s32: qdec_s32 {
+		group1 {
+			pinmux = <PTB2_TRGMUX_IN3>,
+				<PTB3_TRGMUX_IN2>,
+				<TRGMUX_INT_OUT37_EMIOS_0_CH6_G>,
+				<TRGMUX_INT_OUT38_EMIOS_0_CH7_G>;
+			input-enable;
 		};
 	};
 };
