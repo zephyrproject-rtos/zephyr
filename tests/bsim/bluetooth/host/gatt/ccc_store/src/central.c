@@ -29,6 +29,7 @@
 CREATE_FLAG(connected_flag);
 CREATE_FLAG(disconnected_flag);
 CREATE_FLAG(security_updated_flag);
+CREATE_FLAG(notification_received_flag);
 
 #define BT_UUID_DUMMY_SERVICE BT_UUID_DECLARE_128(DUMMY_SERVICE_TYPE)
 #define BT_UUID_DUMMY_SERVICE_NOTIFY BT_UUID_DECLARE_128(DUMMY_SERVICE_NOTIFY_TYPE)
@@ -37,11 +38,28 @@ static struct bt_conn *default_conn;
 
 static struct bt_conn_cb central_cb;
 
-CREATE_FLAG(gatt_subscribe_flag);
+CREATE_FLAG(gatt_subscribed_flag);
 
 static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 			 const void *data, uint16_t length)
 {
+	uint8_t value;
+
+	if (conn == NULL || data == NULL) {
+		/* Peer unpaired or subscription was removed */
+		UNSET_FLAG(gatt_subscribed_flag);
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	__ASSERT_NO_MSG(length == sizeof(value));
+
+	value = *(uint8_t *)data;
+
+	LOG_DBG("#%d notification received", value);
+
+	SET_FLAG(notification_received_flag);
+
 	return BT_GATT_ITER_CONTINUE;
 }
 
@@ -51,7 +69,7 @@ static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subsc
 		return;
 	}
 
-	SET_FLAG(gatt_subscribe_flag);
+	SET_FLAG(gatt_subscribed_flag);
 }
 
 static struct bt_gatt_subscribe_params subscribe_params;
@@ -60,7 +78,7 @@ static void ccc_subscribe(void)
 {
 	int err;
 
-	UNSET_FLAG(gatt_subscribe_flag);
+	UNSET_FLAG(gatt_subscribed_flag);
 
 	subscribe_params.notify = notify_cb;
 	subscribe_params.subscribe = subscribe_cb;
@@ -73,7 +91,7 @@ static void ccc_subscribe(void)
 		FAIL("Failed to subscribe (att err %d)", err);
 	}
 
-	WAIT_FOR_FLAG(gatt_subscribe_flag);
+	WAIT_FOR_FLAG(gatt_subscribed_flag);
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -200,6 +218,9 @@ static void connect_pair_subscribe(void)
 	backchannel_sync_send(SERVER_CHAN, SERVER_ID);
 	/* wait for server to check that the subscribtion is well registered */
 	backchannel_sync_wait(SERVER_CHAN, SERVER_ID);
+
+	WAIT_FOR_FLAG(notification_received_flag);
+	UNSET_FLAG(notification_received_flag);
 }
 
 static void connect_restore_sec(void)
@@ -219,10 +240,18 @@ static void connect_restore_sec(void)
 	WAIT_FOR_FLAG(security_updated_flag);
 	UNSET_FLAG(security_updated_flag);
 
+	/* check local subscription state */
+	if (GET_FLAG(gatt_subscribed_flag) == false) {
+		FAIL("Not subscribed\n");
+	}
+
 	/* notify the end of security update to server */
 	backchannel_sync_send(SERVER_CHAN, SERVER_ID);
 	/* wait for server to check that the subscribtion has been restored */
 	backchannel_sync_wait(SERVER_CHAN, SERVER_ID);
+
+	WAIT_FOR_FLAG(notification_received_flag);
+	UNSET_FLAG(notification_received_flag);
 }
 
 /* Util functions */
@@ -256,7 +285,7 @@ static void set_public_addr(void)
 
 /* Main functions */
 
-void run_central(void)
+void run_central(int times)
 {
 	int err;
 
@@ -289,8 +318,10 @@ void run_central(void)
 	connect_pair_subscribe();
 	disconnect();
 
-	connect_restore_sec();
-	disconnect();
+	for (int i = 0; i < times; i++) {
+		connect_restore_sec();
+		disconnect();
+	}
 
 	PASS("Central test passed\n");
 }
