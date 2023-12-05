@@ -6,7 +6,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/hci.h>
 #include "mesh_test.h"
-#include "mesh/adv.h"
 #include "mesh/net.h"
 #include "mesh/beacon.h"
 #include "mesh/mesh.h"

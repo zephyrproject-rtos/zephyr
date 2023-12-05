@@ -28,7 +28,6 @@
 #define LOG_MODULE_NAME mesh_prov
 
 #include <zephyr/logging/log.h>
-#include "mesh/adv.h"
 #include "mesh/rpr.h"
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

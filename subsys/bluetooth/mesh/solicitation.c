@@ -12,7 +12,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/uuid.h>
 #include "access.h"
-#include "adv.h"
 #include "cfg.h"
 #include "crypto.h"
 #include "mesh.h"

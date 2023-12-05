@@ -22,7 +22,6 @@
 #include "common/bt_str.h"
 
 #include "crypto.h"
-#include "adv.h"
 #include "mesh.h"
 #include "net.h"
 #include "lpn.h"
