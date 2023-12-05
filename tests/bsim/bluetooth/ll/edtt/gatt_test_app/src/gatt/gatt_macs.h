@@ -83,7 +83,7 @@ extern "C" {
 				BT_GATT_PERM_READ, \
 				bt_gatt_attr_read_service, \
 				NULL, \
-				_service, \
+				(void *)_service, \
 				_handle)
 
 /**
@@ -99,7 +99,7 @@ extern "C" {
 				BT_GATT_PERM_READ, \
 				bt_gatt_attr_read_service, \
 				NULL, \
-				_service, \
+				(void *)_service, \
 				_handle)
 
 /**

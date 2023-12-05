@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(bt_micp_mic_ctlr, CONFIG_BT_MICP_MIC_CTLR_LOG_LEVEL);
 static struct bt_micp_mic_ctlr_cb *micp_mic_ctlr_cb;
 
 static struct bt_micp_mic_ctlr mic_ctlrs[CONFIG_BT_MAX_CONN];
-static struct bt_uuid *mics_uuid = BT_UUID_MICS;
+static const struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
 static uint8_t mute_notify_handler(struct bt_conn *conn,
 				   struct bt_gatt_subscribe_params *params,

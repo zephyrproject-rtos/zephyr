@@ -110,7 +110,7 @@ struct bt_uuid_128 {
  *  @return Pointer to a generic UUID.
  */
 #define BT_UUID_DECLARE_16(value) \
-	((struct bt_uuid *) ((struct bt_uuid_16[]) {BT_UUID_INIT_16(value)}))
+	((const struct bt_uuid *) ((const struct bt_uuid_16[]) {BT_UUID_INIT_16(value)}))
 
 /** @brief Helper to declare a 32-bit UUID inline.
  *
@@ -119,7 +119,7 @@ struct bt_uuid_128 {
  *  @return Pointer to a generic UUID.
  */
 #define BT_UUID_DECLARE_32(value) \
-	((struct bt_uuid *) ((struct bt_uuid_32[]) {BT_UUID_INIT_32(value)}))
+	((const struct bt_uuid *) ((const struct bt_uuid_32[]) {BT_UUID_INIT_32(value)}))
 
 /** @brief Helper to declare a 128-bit UUID inline.
  *
@@ -130,7 +130,7 @@ struct bt_uuid_128 {
  *  @return Pointer to a generic UUID.
  */
 #define BT_UUID_DECLARE_128(value...) \
-	((struct bt_uuid *) ((struct bt_uuid_128[]) {BT_UUID_INIT_128(value)}))
+	((const struct bt_uuid *) ((const struct bt_uuid_128[]) {BT_UUID_INIT_128(value)}))
 
 /** Helper macro to access the 16-bit UUID from a generic UUID. */
 #define BT_UUID_16(__u) CONTAINER_OF(__u, struct bt_uuid_16, uuid)
