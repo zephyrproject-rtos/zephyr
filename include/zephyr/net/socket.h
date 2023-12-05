@@ -53,7 +53,7 @@ struct zsock_pollfd {
 /* ZSOCK_POLL* values are compatible with Linux */
 /** zsock_poll: Poll for readability */
 #define ZSOCK_POLLIN 1
-/** zsock_poll: Compatibility value, ignored */
+/** zsock_poll: Poll for exceptional condition */
 #define ZSOCK_POLLPRI 2
 /** zsock_poll: Poll for writability */
 #define ZSOCK_POLLOUT 4
@@ -1111,7 +1111,7 @@ struct ifreq {
 #define SO_REUSEADDR 2
 /** Type of the socket */
 #define SO_TYPE 3
-/** Async error (ignored, for compatibility) */
+/** Async error */
 #define SO_ERROR 4
 /** Bypass normal routing and send directly to host (ignored, for compatibility) */
 #define SO_DONTROUTE 5
@@ -1290,7 +1290,7 @@ struct in6_pktinfo {
  * @name Backlog size for listen()
  * @{
  */
-/** listen: The maximum backlog queue length (ignored, for compatibility) */
+/** listen: The maximum backlog queue length */
 #define SOMAXCONN 128
 /** @} */
 
