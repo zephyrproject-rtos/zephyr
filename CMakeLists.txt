@@ -1885,12 +1885,11 @@ endif()
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Generating files from ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME} for board: ${BOARD}"
   ${post_build_commands}
   BYPRODUCTS
   ${post_build_byproducts}
-  COMMENT "Generating files from ${KERNEL_ELF_NAME} for board: ${BOARD}"
   COMMAND_EXPAND_LISTS
-  # NB: COMMENT only works for some CMake-Generators
   )
 
 # To populate with hex files to merge, do the following:
