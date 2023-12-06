@@ -12,8 +12,8 @@
 #include <zephyr/bluetooth/iso.h>
 
 struct iso_data {
-	/** BT_BUF_ISO_IN */
-	uint8_t  type;
+	/* Extend the bt_buf user data */
+	struct bt_buf_data buf_data;
 
 	/* Index into the bt_conn storage array */
 	uint8_t  index;
