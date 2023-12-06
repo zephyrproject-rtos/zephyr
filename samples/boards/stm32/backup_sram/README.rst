@@ -13,6 +13,12 @@ This example shows how to define a variable on the Backup SRAM. Each time the
 application runs the current value is displayed and then incremented by one. If
 VBAT is preserved, the incremented value will be shown on the next power-cycle.
 
+On stm32F2x or stm32F446 or stm32F7x or stm32F405-based
+(STM32F405/415, STM32F407/417, STM32F427/437, STM32F429/439)
+the BackUp SRAM is not cleared when the VBAT is off but when the protection level
+changes from 1 to 0. However there is a flag BACKUP_RESET_AT_POWER_ON to force
+resetting the content of the BackUp SRAM at power ON (whatever the Vbat).
+
 .. note::
 
     On most boards VBAT is typically connected to VDD thanks to a jumper.
