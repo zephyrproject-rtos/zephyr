@@ -25,7 +25,7 @@
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
  */
-#define BROADCAST_ENQUEUE_COUNT 2U
+#define BROADCAST_ENQUEUE_COUNT 3U
 #define TOTAL_BUF_NEEDED (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
 
 BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
@@ -145,7 +145,7 @@ static int frame_duration_us;
 static int frames_per_sdu;
 static int octets_per_frame;
 
-static K_SEM_DEFINE(lc3_encoder_sem, 0U, ARRAY_SIZE(streams));
+static K_SEM_DEFINE(lc3_encoder_sem, 0U, TOTAL_BUF_NEEDED);
 #endif
 
 static void send_data(struct broadcast_source_stream *source_stream)
