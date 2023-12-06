@@ -222,6 +222,10 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_psi) == 1, "Only one PSI enabl
 		.NumberOfTxBDR = 1,						\
 		.SIVlanControl = (NETC_F3_PSICFGR0_SIVC_CVLAN_BIT		\
 				| NETC_F3_PSICFGR0_SIVC_SVLAN_BIT),		\
+		.changeMACAllowed = true,					\
+		.hashFilterUpdateAllowed = true,				\
+		IF_ENABLED(CONFIG_NET_PROMISCUOUS_MODE,				\
+			(.multicastPromiscuousChangeAllowed = true,))		\
 	}
 
 #define NETC_VSI_RX_MSG_BUF(node, prop, idx, n)							\
@@ -325,6 +329,10 @@ nxp_s32_eth##n##_psi_cfg[FEATURE_NETC_ETH_NUMBER_OF_CTRLS] = {				\
 		.NumberOfTxBDR = 2,							\
 		.SIVlanControl = (NETC_F3_PSICFGR0_SIVC_CVLAN_BIT			\
 				| NETC_F3_PSICFGR0_SIVC_SVLAN_BIT),			\
+		.changeMACAllowed = true,						\
+		.hashFilterUpdateAllowed = true,					\
+		IF_ENABLED(CONFIG_NET_PROMISCUOUS_MODE,					\
+			(.multicastPromiscuousChangeAllowed = true,))			\
 	},										\
 	COND_CODE_1(INIT_VSIS(n),							\
 		(DT_INST_FOREACH_PROP_ELEM_SEP(n, vsis, NETC_VSI_GENERAL_CFG, (,))),	\
