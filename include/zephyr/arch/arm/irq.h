@@ -61,10 +61,11 @@ void platform_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int
 unsigned int platform_irq_get_active(void);
 void platform_irq_eoi(unsigned int irq);
 
+#define arch_irq_init()			platform_irq_init()
 #define arch_irq_enable(irq)		platform_irq_enable(irq)
 #define arch_irq_disable(irq)		platform_irq_disable(irq)
 #define arch_irq_is_enabled(irq)	platform_irq_is_enabled(irq)
-
+#define arch_irq_eoi(irq)		platform_arch_eoi(irq)
 #define arch_irq_priority_set(irq, prio, flags)	\
 	platform_irq_priority_set(irq, prio, flags)
 
