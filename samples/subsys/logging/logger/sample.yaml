@@ -32,6 +32,12 @@ tests:
   sample.logger.usermode:
     integration_platforms:
       - mps2_an385
+    platform_exclude:
+      - ip_k66f
+      - bl652_dvk
+      - bl654_dvk
+      - decawave_dwm1001_dev
+      - segger_trb_stm32f407
     arch_exclude:
       - posix
     tags:
