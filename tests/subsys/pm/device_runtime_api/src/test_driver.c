@@ -10,6 +10,7 @@
 #include <zephyr/pm/device.h>
 
 struct test_driver_data {
+	size_t count;
 	bool ongoing;
 	bool async;
 	struct k_sem sync;
@@ -28,6 +29,8 @@ static int test_driver_action(const struct device *dev,
 	}
 
 	data->ongoing = false;
+
+	data->count++;
 
 	return 0;
 }
@@ -51,6 +54,13 @@ bool test_driver_pm_ongoing(const struct device *dev)
 	struct test_driver_data *data = dev->data;
 
 	return data->ongoing;
+}
+
+size_t test_driver_pm_count(const struct device *dev)
+{
+	struct test_driver_data *data = dev->data;
+
+	return data->count;
 }
 
 int test_driver_init(const struct device *dev)
