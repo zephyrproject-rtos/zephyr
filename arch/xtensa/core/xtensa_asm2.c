@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include <xtensa-asm2-context.h>
+#include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/kernel_structs.h>

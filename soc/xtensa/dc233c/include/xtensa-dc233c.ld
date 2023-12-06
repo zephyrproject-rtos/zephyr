@@ -304,14 +304,14 @@ SECTIONS
      *       TLB multi-hit exception.
      */
 
-    *libarch__xtensa__core.a:xtensa-asm2-util.S.obj(.literal .text)
-    *libarch__xtensa__core.a:xtensa-asm2-util.S.obj(.iram.text .iram0.text)
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.literal .text)
+    *libarch__xtensa__core.a:xtensa_asm2_util.S.obj(.iram.text .iram0.text)
 
     *libarch__xtensa__core.a:window_vectors.S.obj(.iram.text)
 
     *libarch__xtensa__core.a:crt1.S.obj(.literal .text)
 
-    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,xtensa-asm2.c.obj,*)
+    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,xtensa_asm2.c.obj,*)
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,fatal.c.obj,*)
     LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,cpu_idle.c.obj,*)
 

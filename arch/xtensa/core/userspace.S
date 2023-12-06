@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa-asm2-s.h>
+#include <xtensa_asm2_s.h>
 #include <offsets.h>
 #include <offsets_short.h>
 #include <zephyr/syscall.h>
