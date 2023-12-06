@@ -90,6 +90,15 @@
 			status = "disabled";
 		};
 
+		usart11: serial@40006c00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40006c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x08000000>;
+			resets = <&rctl STM32_RESET(APB1L, 27U)>;
+			interrupts = <87 0>;
+			status = "disabled";
+		};
+
 		uart12: serial@40008400 {
 			compatible = "st,stm32-uart";
 			reg = <0x40008400 0x400>;
