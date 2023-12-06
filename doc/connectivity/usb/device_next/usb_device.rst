@@ -55,6 +55,8 @@ Samples
 
 * :zephyr:code-sample:`uac2-explicit-feedback`
 
+* :zephyr:code-sample:`uac2-implicit-feedback`
+
 Samples ported to new USB device support
 ----------------------------------------
 
