@@ -186,8 +186,7 @@ static void store_pending(struct k_work *work)
 {
 	LOG_DBG("");
 
-	if (IS_ENABLED(CONFIG_BT_MESH_RPL_STORAGE_MODE_SETTINGS) &&
-	    atomic_test_and_clear_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING)) {
+	if (atomic_test_and_clear_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING)) {
 		bt_mesh_rpl_pending_store(BT_MESH_ADDR_ALL_NODES);
 	}
 
