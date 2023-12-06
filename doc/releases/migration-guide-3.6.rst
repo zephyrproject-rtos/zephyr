@@ -259,6 +259,12 @@ Other Subsystems
   zbus options are renamed. Instead, the new :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC`
   and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
 
+Xtensa
+======
+
+* :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer has a default in
+  the architecture layer. Instead, SoCs or boards will need to define it.
+
 Recommended Changes
 *******************
 
