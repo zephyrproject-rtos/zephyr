@@ -1031,7 +1031,15 @@ static int imx_usdhc_init(const struct device *dev)
 	}
 	data->dev = dev;
 	k_mutex_init(&data->access_mutex);
-	memset(&data->host_io, 0, sizeof(data->host_io));
+	/* Setup initial host IO values */
+	data->host_io.clock = 0;
+	data->host_io.bus_mode = SDHC_BUSMODE_PUSHPULL;
+	data->host_io.power_mode = SDHC_POWER_OFF;
+	data->host_io.bus_width = SDHC_BUS_WIDTH1BIT;
+	data->host_io.timing = SDHC_TIMING_LEGACY;
+	data->host_io.driver_type = SD_DRIVER_TYPE_B;
+	data->host_io.signal_voltage = SD_VOL_3_3_V;
+
 	return k_sem_init(&data->transfer_sem, 0, 1);
 }
 
