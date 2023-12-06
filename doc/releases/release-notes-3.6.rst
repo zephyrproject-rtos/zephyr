@@ -37,6 +37,8 @@ Architectures
 
 * Xtensa
 
+  * Removed the unused Kconfig option ``CONFIG_XTENSA_NO_IPC``.
+
 * x86
 
 * POSIX

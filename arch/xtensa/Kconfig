@@ -14,13 +14,6 @@ config SIMULATOR_XTENSA
 	help
 	  Specify if the board configuration should be treated as a simulator.
 
-config XTENSA_NO_IPC
-	bool "Core has no IPC support"
-	select ATOMIC_OPERATIONS_C
-	help
-	  Uncheck this if your core does not implement "SCOMPARE1" register and "s32c1i"
-	  instruction.
-
 config XTENSA_RESET_VECTOR
 	bool "Build reset vector code"
 	default y
