@@ -30,19 +30,6 @@ static const struct z_exc_handle exceptions[] = {
 };
 #endif /* CONFIG_USERSPACE */
 
-void z_irq_spurious(const void *arg)
-{
-	int irqs, ie;
-
-	ARG_UNUSED(arg);
-
-	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));
-	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
-	LOG_ERR(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p",
-		(void *)irqs, (void *)ie);
-	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
-}
-
 void z_xtensa_dump_stack(const z_arch_esf_t *stack)
 {
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)stack;
@@ -398,12 +385,3 @@ void *xtensa_debugint_c(int *interrupted_stack)
 	return return_to(interrupted_stack);
 }
 #endif
-
-int z_xtensa_irq_is_enabled(unsigned int irq)
-{
-	uint32_t ie;
-
-	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
-
-	return (ie & (1 << irq)) != 0U;
-}
