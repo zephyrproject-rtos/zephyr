@@ -183,6 +183,11 @@ Bluetooth
 * The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
   The ``elem->addr`` field has been changed to the new runtime structure, replaced by
   ``elem->rt->addr``. (:github:`65388`)
+* The Bluetooth UUID has been modified to rodata in ``BT_UUID_DECLARE_16``, ``BT_UUID_DECLARE_32`
+  and ``BT_UUID_DECLARE_128`` as the return value has been changed to `const`.
+  Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
+  For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
+  ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
 
 LoRaWAN
 =======
