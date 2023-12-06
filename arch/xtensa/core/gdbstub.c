@@ -9,7 +9,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/debug/gdbstub.h>
 
-#include <xtensa-asm2-context.h>
+#include <xtensa_asm2_context.h>
 #include <xtensa/corebits.h>
 
 static bool not_first_break;
