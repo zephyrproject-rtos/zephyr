@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include <xtensa-asm2.h>
+#include <xtensa-asm2-context.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/kernel_structs.h>
@@ -38,7 +38,15 @@ __thread uint32_t is_user_mode;
 
 #endif /* CONFIG_USERSPACE */
 
-void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
+/**
+ * Initializes a stack area such that it can be "restored" later and
+ * begin running with the specified function and three arguments.  The
+ * entry function takes three arguments to match the signature of
+ * Zephyr's k_thread_entry_t.  Thread will start with EXCM clear and
+ * INTLEVEL set to zero (i.e. it's a user thread, we don't start with
+ * anything masked, so don't assume that!).
+ */
+static void *init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
@@ -120,9 +128,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
-	thread->switch_handle = xtensa_init_stack(thread,
-						  (int *)stack_ptr, entry,
-						  p1, p2, p3);
+	thread->switch_handle = init_stack(thread, (int *)stack_ptr, entry,
+					   p1, p2, p3);
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
 	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
