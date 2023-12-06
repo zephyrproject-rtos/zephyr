@@ -26,33 +26,6 @@ struct framebuf_dev_data {
 	uint32_t pitch;
 };
 
-static int framebuf_blanking_on(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
-static int framebuf_blanking_off(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
-static void *framebuf_get_framebuffer(const struct device *dev)
-{
-	return NULL;
-}
-
-static int framebuf_set_brightness(const struct device *dev,
-				   const uint8_t brightness)
-{
-	return -ENOTSUP;
-}
-
-static int framebuf_set_contrast(const struct device *dev,
-				 const uint8_t contrast)
-{
-	return -ENOTSUP;
-}
-
 static int framebuf_set_pixel_format(const struct device *dev,
 				     const enum display_pixel_format format)
 {
@@ -133,13 +106,8 @@ static int framebuf_read(const struct device *dev, const uint16_t x,
 }
 
 const struct display_driver_api framebuf_display_api = {
-	.blanking_on = framebuf_blanking_on,
-	.blanking_off = framebuf_blanking_off,
 	.write = framebuf_write,
 	.read = framebuf_read,
-	.get_framebuffer = framebuf_get_framebuffer,
-	.set_brightness = framebuf_set_brightness,
-	.set_contrast = framebuf_set_contrast,
 	.get_capabilities = framebuf_get_capabilities,
 	.set_pixel_format = framebuf_set_pixel_format,
 	.set_orientation = framebuf_set_orientation

@@ -269,11 +269,6 @@ static int sdl_display_read(const struct device *dev, const uint16_t x,
 				       disp_data->renderer, buf, desc->pitch);
 }
 
-static void *sdl_display_get_framebuffer(const struct device *dev)
-{
-	return NULL;
-}
-
 static int sdl_display_blanking_off(const struct device *dev)
 {
 	struct sdl_display_data *disp_data = dev->data;
@@ -297,18 +292,6 @@ static int sdl_display_blanking_on(const struct device *dev)
 
 	sdl_display_blanking_on_bottom(disp_data->renderer);
 	return 0;
-}
-
-static int sdl_display_set_brightness(const struct device *dev,
-		const uint8_t brightness)
-{
-	return -ENOTSUP;
-}
-
-static int sdl_display_set_contrast(const struct device *dev,
-		const uint8_t contrast)
-{
-	return -ENOTSUP;
 }
 
 static void sdl_display_get_capabilities(
@@ -361,9 +344,6 @@ static const struct display_driver_api sdl_display_api = {
 	.blanking_off = sdl_display_blanking_off,
 	.write = sdl_display_write,
 	.read = sdl_display_read,
-	.get_framebuffer = sdl_display_get_framebuffer,
-	.set_brightness = sdl_display_set_brightness,
-	.set_contrast = sdl_display_set_contrast,
 	.get_capabilities = sdl_display_get_capabilities,
 	.set_pixel_format = sdl_display_set_pixel_format,
 };

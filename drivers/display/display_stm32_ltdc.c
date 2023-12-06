@@ -86,33 +86,11 @@ struct display_stm32_ltdc_config {
 	const struct pinctrl_dev_config *pctrl;
 };
 
-static int stm32_ltdc_blanking_on(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
-static int stm32_ltdc_blanking_off(const struct device *dev)
-{
-	return -ENOTSUP;
-}
-
 static void *stm32_ltdc_get_framebuffer(const struct device *dev)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 
 	return (void *) data->frame_buffer;
-}
-
-static int stm32_ltdc_set_brightness(const struct device *dev,
-				const uint8_t brightness)
-{
-	return -ENOTSUP;
-}
-
-static int stm32_ltdc_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	return -ENOTSUP;
 }
 
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
@@ -379,13 +357,9 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct display_driver_api stm32_ltdc_display_api = {
-	.blanking_on = stm32_ltdc_blanking_on,
-	.blanking_off = stm32_ltdc_blanking_off,
 	.write = stm32_ltdc_write,
 	.read = stm32_ltdc_read,
 	.get_framebuffer = stm32_ltdc_get_framebuffer,
-	.set_brightness = stm32_ltdc_set_brightness,
-	.set_contrast = stm32_ltdc_set_contrast,
 	.get_capabilities = stm32_ltdc_get_capabilities,
 	.set_pixel_format = stm32_ltdc_set_pixel_format,
 	.set_orientation = stm32_ltdc_set_orientation

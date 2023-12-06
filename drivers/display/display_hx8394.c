@@ -415,21 +415,6 @@ static int hx8394_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static int hx8394_read(const struct device *dev, const uint16_t x,
-			const uint16_t y,
-			const struct display_buffer_descriptor *desc,
-			void *buf)
-{
-	LOG_WRN("Read not implemented");
-	return -ENOTSUP;
-}
-
-static void *hx8394_get_framebuffer(const struct device *dev)
-{
-	LOG_WRN("Direct framebuffer access not implemented");
-	return NULL;
-}
-
 static int hx8394_blanking_off(const struct device *dev)
 {
 	const struct hx8394_config *config = dev->config;
@@ -450,20 +435,6 @@ static int hx8394_blanking_on(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
-}
-
-static int hx8394_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_WRN("Set brightness not implemented");
-	return -ENOTSUP;
-}
-
-static int hx8394_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	LOG_WRN("Set contrast not implemented");
-	return -ENOTSUP;
 }
 
 static int hx8394_set_pixel_format(const struct device *dev,
@@ -526,10 +497,6 @@ static const struct display_driver_api hx8394_api = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
 	.write = hx8394_write,
-	.read = hx8394_read,
-	.get_framebuffer = hx8394_get_framebuffer,
-	.set_brightness = hx8394_set_brightness,
-	.set_contrast = hx8394_set_contrast,
 	.get_capabilities = hx8394_get_capabilities,
 	.set_pixel_format = hx8394_set_pixel_format,
 	.set_orientation = hx8394_set_orientation,
