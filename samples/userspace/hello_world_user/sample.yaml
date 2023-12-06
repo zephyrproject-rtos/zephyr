@@ -16,4 +16,6 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
+    platform_exclude:
+      - qemu_xtensa_mmu
     tags: introduction
