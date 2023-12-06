@@ -51,6 +51,18 @@ void arch_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	arm_gic_irq_set_priority(irq, prio, flags);
 }
+
+unsigned int arch_irq_get_active(void)
+{
+	return arm_gic_get_active();
+}
+
+void arch_irq_eoi(unsigned int intid)
+{
+	return arm_gic_eoi(intid);
+}
+
+
 #endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

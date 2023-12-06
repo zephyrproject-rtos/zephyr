@@ -177,7 +177,7 @@ _idle_state_cleared:
 
 	/* Get active IRQ number from the interrupt controller */
 #if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_get_active
+	bl arch_irq_get_active
 #else
 	bl platform_irq_get_active
 #endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
@@ -289,7 +289,7 @@ _idle_state_cleared:
 
 	/* Get active IRQ number from the interrupt controller */
 #if !defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_get_active
+	bl arch_irq_get_active
 #else
 	bl platform_irq_get_active
 #endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */

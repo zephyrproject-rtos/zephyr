@@ -27,6 +27,8 @@ extern "C" {
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
+GTEXT(arch_irq_get_active)
+GTEXT(arch_irq_eoi)
 #if defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(platform_irq_get_active)
 GTEXT(platform_irq_eoi)
@@ -40,7 +42,8 @@ extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 extern void arch_irq_priority_set(unsigned int irq, unsigned int prio,
 				     uint32_t flags);
-
+unsigned int arch_irq_get_active(void);
+void arch_irq_eoi(unsigned int intid);
 #else
 
 /*

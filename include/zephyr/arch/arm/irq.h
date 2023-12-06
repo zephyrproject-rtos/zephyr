@@ -28,6 +28,8 @@ GTEXT(z_arm_int_exit);
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
+GTEXT(arch_irq_get_active)
+GTEXT(arch_irq_eoi)
 #if defined(CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(platform_irq_get_active)
 GTEXT(platform_irq_eoi)
@@ -39,8 +41,10 @@ GTEXT(platform_irq_eoi)
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+unsigned int arch_irq_get_active(void);
+void arch_irq_eoi(unsigned int intid);
 
-/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
+/* needed by IRQ_CONNECT() macro */
 extern void arch_irq_priority_set(unsigned int irq, unsigned int prio,
 				   uint32_t flags);
 
@@ -55,9 +59,7 @@ void platform_irq_init(void);
 void platform_irq_enable(unsigned int irq);
 void platform_irq_disable(unsigned int irq);
 int platform_irq_is_enabled(unsigned int irq);
-
 void platform_irq_priority_set(unsigned int irq, unsigned int prio, unsigned int flags);
-
 unsigned int platform_irq_get_active(void);
 void platform_irq_eoi(unsigned int irq);
 
@@ -68,6 +70,8 @@ void platform_irq_eoi(unsigned int irq);
 #define arch_irq_eoi(irq)		platform_arch_eoi(irq)
 #define arch_irq_priority_set(irq, prio, flags)	\
 	platform_irq_priority_set(irq, prio, flags)
+
+#define arch_irq_get_active()		platform_irq_get_active()
 
 #endif /* !CONFIG_PLATFORM_HAS_CUSTOM_INTERRUPT_CONTROLLER */
 

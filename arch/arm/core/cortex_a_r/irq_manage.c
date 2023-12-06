@@ -55,6 +55,16 @@ int arch_irq_is_enabled(unsigned int irq)
 	return arm_gic_irq_is_enabled(irq);
 }
 
+unsigned int arch_irq_get_active(void)
+{
+	return arm_gic_get_active();
+}
+
+void arch_irq_eoi(unsigned int intid)
+{
+	return arm_gic_eoi(intid);
+}
+
 /**
  * @internal
  *
