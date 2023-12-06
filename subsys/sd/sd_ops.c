@@ -63,21 +63,28 @@ int sdmmc_read_status(struct sd_card *card)
 int sdmmc_wait_ready(struct sd_card *card)
 {
 	int ret, timeout = CONFIG_SD_DATA_TIMEOUT * 1000;
-	bool busy = true;
 
 	do {
-		busy = sdhc_card_busy(card->sdhc);
-		if (!busy) {
+		if (!sdhc_card_busy(card->sdhc)) {
 			/* Check card status */
 			ret = sd_retry(sdmmc_read_status, card, CONFIG_SD_RETRY_COUNT);
-			busy = (ret != 0);
-		} else {
-			/* Delay 125us before polling again */
-			k_busy_wait(125);
-			timeout -= 125;
+			if (ret == 0) {
+				return 0;
+			}
+			if (ret == -ETIMEDOUT) {
+				/* If this check timed out, then the total
+				 * time elapsed in microseconds is
+				 * SD_CMD_TIMEOUT * SD_RETRY_COUNT * 1000
+				 */
+				timeout -= (CONFIG_SD_CMD_TIMEOUT *
+					    CONFIG_SD_RETRY_COUNT) * 1000;
+			}
 		}
-	} while (busy && (timeout > 0));
-	return busy;
+		/* Delay 125us before polling again */
+		k_busy_wait(125);
+		timeout -= 125;
+	} while (timeout > 0);
+	return -EBUSY;
 }
 
 static inline void sdmmc_decode_csd(struct sd_csd *csd, uint32_t *raw_csd, uint32_t *blk_count,
