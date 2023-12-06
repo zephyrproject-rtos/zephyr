@@ -8,7 +8,7 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/hal.h>
-#include <xtensa-asm2-context.h>
+#include <xtensa_asm2_context.h>
 
 #include <offsets.h>
 
