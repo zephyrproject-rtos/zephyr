@@ -21,6 +21,16 @@ extern "C" {
  * @{
  */
 
+/** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
+struct sntp_time {
+	uint64_t seconds;
+	uint32_t fraction;
+#if defined(CONFIG_SNTP_UNCERTAINTY)
+	uint64_t uptime_us;
+	uint32_t uncertainty_us;
+#endif
+};
+
 /** SNTP context */
 struct sntp_ctx {
 	struct {
@@ -33,13 +43,7 @@ struct sntp_ctx {
 	 *  This is used to check if the originated timestamp in the server
 	 *  reply matches the one in client request.
 	 */
-	uint32_t expected_orig_ts;
-};
-
-/** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
-struct sntp_time {
-	uint64_t seconds;
-	uint32_t fraction;
+	struct sntp_time expected_orig_ts;
 };
 
 /**
