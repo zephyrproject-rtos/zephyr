@@ -9,27 +9,19 @@
 
 #include <zephyr/types.h>
 
-#define SNTP_LI_MASK   0xC0
-#define SNTP_VN_MASK   0x38
-#define SNTP_MODE_MASK 0x07
-
-#define SNTP_LI_SHIFT   6
-#define SNTP_VN_SHIFT   3
-#define SNTP_MODE_SHIFT 0
-
-#define SNTP_GET_LI(x)    ((x & SNTP_LI_MASK) >> SNTP_LI_SHIFT)
-#define SNTP_GET_VN(x)    ((x & SNTP_VN_MASK) >> SNTP_VN_SHIFT)
-#define SNTP_GET_MODE(x)  ((x & SNTP_MODE_MASK) >> SNTP_MODE_SHIFT)
-
-#define SNTP_SET_LI(x, v)   (x = x | (v << SNTP_LI_SHIFT))
-#define SNTP_SET_VN(x, v)   (x = x | (v << SNTP_VN_SHIFT))
-#define SNTP_SET_MODE(x, v) (x = x | (v << SNTP_MODE_SHIFT))
-
 struct sntp_pkt {
-	uint8_t lvm;		/* li, vn, and mode in big endian fashion */
+#if defined(CONFIG_LITTLE_ENDIAN)
+	uint8_t mode: 3;
+	uint8_t vn: 3;
+	uint8_t li: 2;
+#else
+	uint8_t li: 2;
+	uint8_t vn: 3;
+	uint8_t mode: 3;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t stratum;
 	uint8_t poll;
-	uint8_t precision;
+	int8_t precision;
 	uint32_t root_delay;
 	uint32_t root_dispersion;
 	uint32_t ref_id;
