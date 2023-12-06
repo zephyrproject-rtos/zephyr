@@ -3563,6 +3563,17 @@ STM32 Platforms:
     STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
     boards.
 
+Enclustra Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - tgorochowik
+  files:
+    - boards/enclustra/
+  labels:
+    - "platform: Enclustra"
+
 Espressif Platforms:
   status: maintained
   maintainers:
