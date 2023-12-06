@@ -287,7 +287,7 @@ class TestInstance:
         if content:
             os.makedirs(subdir, exist_ok=True)
             file = os.path.join(subdir, "testsuite_extra.conf")
-            with open(file, "w") as f:
+            with open(file, "w", encoding='utf-8') as f:
                 f.write(content)
 
         return content
