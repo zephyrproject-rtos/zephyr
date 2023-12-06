@@ -6,7 +6,7 @@
 
 #include <string.h>
 #include <zephyr/debug/coredump.h>
-#include <xtensa-asm2.h>
+#include <xtensa-asm2-context.h>
 #include <offsets.h>
 
 #define ARCH_HDR_VER			1
