@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+
+/ {
+	aliases {
+		led0 = &gpio_led_blue;
+	};
+	leds {
+		compatible = "gpio-leds";
+		gpio_led_blue: led_0 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
