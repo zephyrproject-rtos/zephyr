@@ -55,7 +55,6 @@ class TestInstance:
         self.retries = 0
 
         self.name = os.path.join(platform.name, testsuite.name)
-        self.run_id = self._get_run_id()
         self.dut = None
         if testsuite.detailed_test_id:
             self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
@@ -64,6 +63,7 @@ class TestInstance:
             source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
             self.build_dir = os.path.join(outdir, platform.name, source_dir_rel, testsuite.name)
 
+        self.run_id = self._get_run_id()
         self.domains = None
 
         self.run = False
@@ -85,12 +85,22 @@ class TestInstance:
 
     def _get_run_id(self):
         """ generate run id from instance unique identifier and a random
-        number"""
-
-        hash_object = hashlib.md5(self.name.encode())
-        random_str = f"{random.getrandbits(64)}".encode()
-        hash_object.update(random_str)
-        return hash_object.hexdigest()
+        number
+        If exist, get cached run id from previous run."""
+        run_id = ""
+        run_id_file = os.path.join(self.build_dir, "run_id.txt")
+        if os.path.exists(run_id_file):
+            with open(run_id_file, "r") as fp:
+                run_id = fp.read()
+        else:
+            hash_object = hashlib.md5(self.name.encode())
+            random_str = f"{random.getrandbits(64)}".encode()
+            hash_object.update(random_str)
+            run_id = hash_object.hexdigest()
+            os.makedirs(self.build_dir, exist_ok=True)
+            with open(run_id_file, 'w+') as fp:
+                fp.write(run_id)
+        return run_id
 
     def add_missing_case_status(self, status, reason=None):
         for case in self.testcases:
