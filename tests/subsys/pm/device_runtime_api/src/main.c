@@ -200,6 +200,28 @@ ZTEST(device_runtime_api, test_api)
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
+	/*
+	 * test if async put with a delay respects the given time.
+	 */
+	ret = pm_device_runtime_put_async(test_dev, K_MSEC(100));
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	k_sleep(K_MSEC(80));
+
+	/* It should still be suspending since we have waited less than
+	 * the delay we've set.
+	 */
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	k_sleep(K_MSEC(30));
+
+	/* Now it should be already suspended */
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+
 	/* Put operation should fail due the state be locked. */
 	ret = pm_device_runtime_disable(test_dev);
 	zassert_equal(ret, 0);
