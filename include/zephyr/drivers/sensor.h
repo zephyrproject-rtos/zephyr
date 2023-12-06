@@ -337,6 +337,10 @@ enum sensor_attribute {
 
 	/** Hardware batch duration in ticks */
 	SENSOR_ATTR_BATCH_DURATION,
+	/** Control a sensor's self-test feature. */
+	SENSOR_ATTR_SELF_TEST,
+	/** Control a sensor's bandwidth and/or filtering settings. */
+	SENSOR_ATTR_BANDWIDTH,
 
 	/**
 	 * Number of all common sensor attributes.
