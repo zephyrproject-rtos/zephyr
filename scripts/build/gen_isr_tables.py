@@ -274,6 +274,12 @@ def update_masks():
     INTERRUPT_LVL_BITMASK[1] = bit_mask(INTERRUPT_BITS[1]) << INTERRUPT_BITS[0]
     INTERRUPT_LVL_BITMASK[2] = bit_mask(INTERRUPT_BITS[2]) << INTERRUPT_BITS[0] + INTERRUPT_BITS[1]
 
+    debug("Level    Bits        Bitmask")
+    debug("----------------------------")
+    for i in range(3):
+        bitmask_str = "0x" + format(INTERRUPT_LVL_BITMASK[i], '08X')
+        debug(f"{i + 1:>5} {INTERRUPT_BITS[i]:>7} {bitmask_str:>14}")
+
 def main():
     parse_args()
 
