@@ -8,7 +8,7 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
 
 #include <zsr.h>
-#include "xtensa-asm2-context.h"
+#include "xtensa_asm2_context.h"
 
 #include <offsets.h>
 

@@ -8,8 +8,8 @@ zephyr_library_sources(
   cpu_idle.c
   fatal.c
   window_vectors.S
-  xtensa-asm2-util.S
-  xtensa-asm2.c
+  xtensa_asm2_util.S
+  xtensa_asm2.c
   irq_manage.c
   )
 
