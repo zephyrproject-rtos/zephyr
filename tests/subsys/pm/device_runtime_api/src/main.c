@@ -200,6 +200,25 @@ ZTEST(device_runtime_api, test_api)
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
+	/* Test if getting a device before an async operation starts does
+	 * not trigger any device pm action.
+	 */
+	size_t count = test_driver_pm_count(test_dev);
+
+	ret = pm_device_runtime_put_async(test_dev, K_MSEC(10));
+	zassert_equal(ret, 0);
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+
+	/* Now lets check if the calls above have triggered a device
+	 * pm action
+	 */
+	zassert_equal(count, test_driver_pm_count(test_dev));
+
 	/*
 	 * test if async put with a delay respects the given time.
 	 */
