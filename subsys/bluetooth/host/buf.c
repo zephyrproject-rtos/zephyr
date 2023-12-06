@@ -33,12 +33,13 @@
  * Having a dedicated pool for it ensures that exhaustion of the RX pool
  * cannot block the delivery of this priority event.
  */
-NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE,
+			  sizeof(struct bt_buf_data), NULL);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_ISO */
 
 NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
-			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE), 8,
-			  NULL);
+			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE),
+			  sizeof(struct bt_buf_data), NULL);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_BUF_ACL_RX_COUNT,
@@ -46,11 +47,11 @@ NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_BUF_ACL_RX_COUNT,
 		    sizeof(struct acl_data), bt_hci_host_num_completed_packets);
 
 NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT,
-			  BT_BUF_EVT_RX_SIZE, 8,
+			  BT_BUF_EVT_RX_SIZE, sizeof(struct bt_buf_data),
 			  NULL);
 #else
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT,
-			  BT_BUF_RX_SIZE, 8,
+			  BT_BUF_RX_SIZE, sizeof(struct bt_buf_data),
 			  NULL);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
