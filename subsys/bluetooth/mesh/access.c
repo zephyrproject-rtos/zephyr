@@ -1424,7 +1424,7 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 
 	op = find_op(elem, opcode, &model);
 	if (!op) {
-		LOG_ERR("No OpCode 0x%08x for elem 0x%02x", opcode, elem->rt->addr);
+		LOG_DBG("No OpCode 0x%08x for elem 0x%02x", opcode, elem->rt->addr);
 		return ACCESS_STATUS_WRONG_OPCODE;
 	}
 
