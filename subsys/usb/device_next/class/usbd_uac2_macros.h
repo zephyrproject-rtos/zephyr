@@ -640,6 +640,17 @@
 	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_SIZE(node)			\
 	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
 
+/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) poiting to feedback
+ * endpoint address belonging to given AudioStreaming interface node.
+ *
+ * It is programmer error to call this macro with node other than AudioStreaming
+ * or when AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node) is 0.
+ */
+#define UAC2_DESCRIPTOR_AS_FEEDBACK_EP_OFFSET(node)				\
+	UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
+	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
+	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
+
 /* Helper macros to validate USB Audio Class 2 devicetree entries.
  * Macros above do rely on the assumptions checked below.
  */
