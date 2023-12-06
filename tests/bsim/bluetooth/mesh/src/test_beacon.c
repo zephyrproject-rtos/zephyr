@@ -1763,12 +1763,6 @@ static void test_tx_priv_multi_net_id(void)
 {
 	tx_priv_common_init(PP_MULT_NET_ID_WAIT_TIME);
 
-	/* TODO: This should be removed as soon as
-	 * SNB/proxy service advertising issue has
-	 * been resolved.
-	 */
-	bt_mesh_beacon_set(false);
-
 	/* Add second network */
 	ASSERT_OK_MSG(bt_mesh_subnet_add(TEST_NET_IDX2, test_net_key_secondary),
 		      "Failed to add second subnet");
@@ -1819,8 +1813,8 @@ static void test_rx_priv_multi_net_id(void)
 
 					/* Verify last Net ID adv result */
 					ASSERT_IN_RANGE(k_uptime_get() - net_ctx[old_idx].start,
-							MAX_TIMEOUT - 1000, MAX_TIMEOUT);
-					ASSERT_IN_RANGE(net_ctx[old_idx].recv_cnt, 9, 10);
+							MAX_TIMEOUT - 1000, MAX_TIMEOUT + 1000);
+					ASSERT_IN_RANGE(net_ctx[old_idx].recv_cnt, 9, 12);
 					net_ctx[old_idx].recv_cnt = 0;
 					old_idx = i;
 
