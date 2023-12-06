@@ -37,8 +37,6 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
   zephyr_library_sources(xcc_stubs.c)
 endif()
 
-zephyr_library_include_directories(include)
-
 add_subdirectory(startup)
 
 # This produces a preprocessed and regenerated (in the sense of gcc
