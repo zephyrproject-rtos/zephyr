@@ -217,10 +217,13 @@ static int usb_dc_stm32_clock_enable(void)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_SOC_SERIES_STM32U5X
-	/* VDDUSB independent USB supply (PWR clock is on) */
+#ifdef PWR_USBSCR_USB33SV
+	/*
+	 * VDDUSB independent USB supply (PWR clock is on)
+	 * with LL_PWR_EnableVDDUSB function (higher case)
+	 */
 	LL_PWR_EnableVDDUSB();
-#endif /* CONFIG_SOC_SERIES_STM32U5X */
+#endif /* PWR_USBSCR_USB33SV */
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		if (clock_control_configure(clk, (clock_control_subsys_t)&pclken[1],
@@ -508,7 +511,7 @@ int usb_dc_attach(void)
 
 	/*
 	 * Required for at least STM32L4 devices as they electrically
-	 * isolate USB features from VDDUSB. It must be enabled before
+	 * isolate USB features from VddUSB. It must be enabled before
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
 	 * DM00310109.
 	 */
