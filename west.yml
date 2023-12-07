@@ -210,6 +210,10 @@ manifest:
     - name: open-amp
       revision: 233fb29c52ffa7733ba132a2b5987a8201ba8ec6
       path: modules/lib/open-amp
+    - name: openthread_telink_lib
+      url: https://github.com/telink-semi/openthread_telink_lib
+      revision: 2de24251c7e037d6386f05a772df5a35b9f378d3
+      path: modules/lib/openthread_telink_lib
     - name: openthread
       url: https://github.com/telink-semi/openthread
       revision: aabbee49c8c9721ed1ca22a7b326ae3a23aaae09
