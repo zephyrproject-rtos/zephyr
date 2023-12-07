@@ -197,17 +197,6 @@ bool pm_system_suspend(int32_t ticks)
 		return false;
 	}
 
-	if (ticks != K_TICKS_FOREVER) {
-		/*
-		 * We need to set the timer to interrupt a little bit early to
-		 * accommodate the time required by the CPU to fully wake up.
-		 */
-		sys_clock_set_timeout(ticks -
-		     k_us_to_ticks_ceil32(
-			     z_cpus_pm_state[id].exit_latency_us),
-				     true);
-	}
-
 #if defined(CONFIG_PM_DEVICE) && !defined(CONFIG_PM_DEVICE_RUNTIME_EXCLUSIVE)
 	if (atomic_sub(&_cpus_active, 1) == 1) {
 		if (z_cpus_pm_state[id].state != PM_STATE_RUNTIME_IDLE) {
@@ -222,6 +211,18 @@ bool pm_system_suspend(int32_t ticks)
 		}
 	}
 #endif
+
+	if (ticks != K_TICKS_FOREVER) {
+		/*
+		 * We need to set the timer to interrupt a little bit early to
+		 * accommodate the time required by the CPU to fully wake up.
+		 */
+		sys_clock_set_timeout(ticks -
+		     k_us_to_ticks_ceil32(
+			     z_cpus_pm_state[id].exit_latency_us),
+				     true);
+	}
+
 	/*
 	 * This function runs with interruptions locked but it is
 	 * expected the SoC to unlock them in
