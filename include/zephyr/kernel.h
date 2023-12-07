@@ -5965,6 +5965,12 @@ __syscall void k_str_out(char *c, size_t n);
 #endif
 
 /**
+ * @defgroup float_apis Floating Point APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
  * @brief Disable preservation of floating point context information.
  *
  * This routine informs the kernel that the specified thread
@@ -6025,6 +6031,10 @@ __syscall int k_float_disable(struct k_thread *thread);
  *         -EINVAL  If the floating point enabling could not be performed.
  */
 __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
+
+/**
+ * @}
+ */
 
 /**
  * @brief Get the runtime statistics of a thread
