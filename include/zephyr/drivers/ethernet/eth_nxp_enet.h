@@ -44,9 +44,13 @@ extern void nxp_enet_mdio_callback(const struct device *mdio_dev,
 		enum nxp_enet_callback_reason event,
 		void *data);
 
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
 extern void nxp_enet_ptp_clock_callback(const struct device *dev,
 		enum nxp_enet_callback_reason event,
 		void *data);
+#else
+#define nxp_enet_ptp_clock_callback(...)
+#endif
 
 /*
  * Internal implementation, inter-driver communication function
