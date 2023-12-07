@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <adsp_shim.h>
 #include <adsp_memory.h>
+#include <adsp_shim.h>
 
 /**
  * @brief HDA stream functionality for Intel ADSP
@@ -439,6 +440,20 @@ static inline void intel_adsp_hda_disable_buffer_interrupt(uint32_t base, uint32
 							   uint32_t sid)
 {
 	*DGCS(base, regblock_size, sid) &= ~DGCS_BSCIE;
+}
+
+static inline void intel_adsp_force_dmi_l0_state(void)
+{
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	ACE_DfPMCCH.svcfg |= ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT;
+#endif
+}
+
+static inline void intel_adsp_allow_dmi_l1_state(void)
+{
+#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+	ACE_DfPMCCH.svcfg &= ~(ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT);
+#endif
 }
 
 /**
