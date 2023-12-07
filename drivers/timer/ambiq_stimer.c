@@ -142,7 +142,10 @@ static int stimer_init(void)
 	irq_enable(TIMER_IRQ);
 
 	am_hal_stimer_int_enable(AM_HAL_STIMER_INT_COMPAREA);
-
+	/* Start timer with period CYC_PER_TICK if tickless is not enabled */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		am_hal_stimer_compare_delta_set(0, CYC_PER_TICK);
+	}
 	return 0;
 }
 
