@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 
 #include "uart_pl011_registers.h"
+#include <am_mcu_apollo.h>
 
 #define PWRCTRL_MAX_WAIT_US 5
 
@@ -61,7 +62,7 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
 		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
 				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
 		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
-		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
+		am_hal_delay_us(PWRCTRL_MAX_WAIT_US);                                              \
 		return 0;                                                                          \
 	}
 
