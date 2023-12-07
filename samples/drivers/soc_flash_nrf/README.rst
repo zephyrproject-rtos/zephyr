@@ -130,3 +130,5 @@ Sample Output
 
    Test 8: Write block size API
       write-block-size = 1
+
+   Finished!
