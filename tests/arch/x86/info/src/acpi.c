@@ -6,10 +6,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/acpi/acpi.h>
 
-static const uint32_t dmar_scope[] = {ACPI_DMAR_SCOPE_TYPE_ENDPOINT, ACPI_DMAR_SCOPE_TYPE_BRIDGE,
-				      ACPI_DMAR_SCOPE_TYPE_IOAPIC, ACPI_DMAR_SCOPE_TYPE_HPET,
-				      ACPI_DMAR_SCOPE_TYPE_NAMESPACE};
-
 static const char *get_dmar_scope_type(int type)
 {
 	switch (type) {
@@ -28,25 +24,34 @@ static const char *get_dmar_scope_type(int type)
 	}
 }
 
-static void vtd_dev_scope_info(struct acpi_dmar_device_scope *dev_scope,
-			       union acpi_dmar_id *dmar_id, int num_inst)
+static void dmar_devsope_handler(ACPI_DMAR_DEVICE_SCOPE *devscope, void *arg)
 {
-	int i = 0;
+	ARG_UNUSED(arg);
 
-	printk("\t\t\t. Enumeration ID %u\n", dev_scope->EnumerationId);
+	printk("\t\t\t. Scope type %s\n", get_dmar_scope_type(devscope->EntryType));
+	printk("\t\t\t. Enumeration ID %u\n", devscope->EnumerationId);
 
-	for (; num_inst > 0; num_inst--, i++) {
-		printk("\t\t\t. BDF 0x%x:0x%x:0x%x\n",
-		       dmar_id[i].bits.bus, dmar_id[i].bits.device,
-		       dmar_id[i].bits.function);
+	if (devscope->EntryType < ACPI_DMAR_SCOPE_TYPE_RESERVED) {
+		ACPI_DMAR_PCI_PATH *devpath;
+		int num_path = (devscope->Length - 6u) / 2u;
+		int i = 0;
+
+		devpath = ACPI_ADD_PTR(ACPI_DMAR_PCI_PATH, devscope,
+				       sizeof(ACPI_DMAR_DEVICE_SCOPE));
+
+		while (num_path--) {
+			printk("\t\t\t. PCI Path %02x:%02x.%02x\n", devscope->Bus,
+			       devpath[i].Device, devpath[i].Function);
+		}
 	}
 }
 
-static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
+static void vtd_drhd_info(ACPI_DMAR_HEADER *subtable)
 {
-	struct acpi_dmar_device_scope dev_scope;
-	union acpi_dmar_id dmar_id[4];
-	int num_inst, i;
+	struct acpi_dmar_hardware_unit *drhd = (void *)subtable;
+	static int unit;
+
+	printk("\t\t[ Hardware Unit Definition %d ]\n", unit++);
 
 	if (drhd->Flags & ACPI_DRHD_FLAG_INCLUDE_PCI_ALL) {
 		printk("\t\t- Includes all PCI devices");
@@ -60,25 +65,24 @@ static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
 	printk("\t\t- Base Address 0x%llx\n", drhd->Address);
 
 	printk("\t\t- Device Scopes:\n");
-	for (i = 0; i < ARRAY_SIZE(dmar_scope); i++) {
-		if (acpi_drhd_get(dmar_scope[i], &dev_scope, dmar_id, &num_inst, 4u)) {
-			printk("\t\tNo DRHD type: %s\n",
-			       get_dmar_scope_type(dmar_scope[i]));
-			continue;
-		}
 
-		printk("\t\tDRHD type %s\n", get_dmar_scope_type(dmar_scope[i]));
+	acpi_dmar_foreach_devscope(drhd, dmar_devsope_handler, NULL);
+}
 
-		vtd_dev_scope_info(&dev_scope, dmar_id, num_inst);
+static void dmar_subtable_handler(ACPI_DMAR_HEADER *subtable, void *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (subtable->Type != ACPI_DMAR_TYPE_HARDWARE_UNIT) {
+		return;
 	}
 
-	printk("\n");
+	vtd_drhd_info(subtable);
 }
 
 static void vtd_info(void)
 {
 	struct acpi_table_dmar *dmar;
-	struct acpi_dmar_hardware_unit *drhd;
 
 	dmar = acpi_table_get("DMAR", 0);
 	if (dmar == NULL) {
@@ -96,15 +100,8 @@ static void vtd_info(void)
 	}
 
 	if (dmar->Flags & ACPI_DMAR_FLAG_INTR_REMAP) {
-
 		printk("\t-> Interrupt remapping supported\n");
-
-		if (acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
-					(struct acpi_subtable_header **)&drhd)) {
-			printk("\tError in retrieving DHRD!!\n");
-			return;
-		}
-		vtd_drhd_info(drhd);
+		acpi_dmar_foreach_subtable(dmar, dmar_subtable_handler, NULL);
 	} else {
 		printk("\t-> Interrupt remapping not supported\n");
 	}
