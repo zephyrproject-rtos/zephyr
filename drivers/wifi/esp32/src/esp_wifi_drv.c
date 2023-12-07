@@ -243,8 +243,10 @@ static void esp_wifi_handle_connect_event(void)
 #endif
 }
 
-static void esp_wifi_handle_disconnect_event(void)
+static void esp_wifi_handle_disconnect_event(void *event_data)
 {
+	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
@@ -254,7 +256,24 @@ static void esp_wifi_handle_disconnect_event(void)
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
 	}
 
-	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT)) {
+	LOG_DBG("Disconnect reason: %d", event->reason);
+	switch (event->reason) {
+	case WIFI_REASON_AUTH_EXPIRE:
+	case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+	case WIFI_REASON_AUTH_FAIL:
+	case WIFI_REASON_HANDSHAKE_TIMEOUT:
+	case WIFI_REASON_MIC_FAILURE:
+		LOG_DBG("STA Auth Error");
+		break;
+	case WIFI_REASON_NO_AP_FOUND:
+		LOG_DBG("AP Not found");
+		break;
+	default:
+		break;
+	}
+
+	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
+	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
 		esp32_data.state = ESP32_STA_CONNECTING;
 		esp_wifi_connect();
 	} else {
@@ -286,7 +305,7 @@ static void esp_wifi_event_task(void *p1, void *p2, void *p3)
 			esp_wifi_handle_connect_event();
 			break;
 		case ESP32_WIFI_EVENT_STA_DISCONNECTED:
-			esp_wifi_handle_disconnect_event();
+			esp_wifi_handle_disconnect_event(&evt.event_info);
 			break;
 		case ESP32_WIFI_EVENT_SCAN_DONE:
 			scan_done_handler();
