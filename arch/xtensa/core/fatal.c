@@ -21,17 +21,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #include <xtensa/simcall.h>
 #endif
 
-/* Need to do this as a macro since regnum must be an immediate value */
-#define get_sreg(regnum_p) ({ \
-	unsigned int retval; \
-	__asm__ volatile( \
-	    "rsr %[retval], %[regnum]\n\t" \
-	    : [retval] "=r" (retval) \
-	    : [regnum] "i" (regnum_p)); \
-	retval; \
-	})
-
-
 char *z_xtensa_exccause(unsigned int cause_code)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
