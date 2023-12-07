@@ -8,6 +8,9 @@
 
 #include "includes.h"
 #include "common.h"
+#include "common/ieee802_11_defs.h"
+
+#include <zephyr/net/wifi_mgmt.h>
 
 /* Re-defines MAC2STR with address of the element */
 #define MACADDR2STR(a) &(a)[0], &(a)[1], &(a)[2], &(a)[3], &(a)[4], &(a)[5]
@@ -37,6 +40,18 @@ static void copy_mac_addr(const unsigned int *src, uint8_t *dst)
 
 	for (i = 0; i < ETH_ALEN; i++) {
 		dst[i] = src[i];
+	}
+}
+
+static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
+{
+	switch (status) {
+	case WLAN_STATUS_SUCCESS:
+		return WIFI_STATUS_CONN_SUCCESS;
+	case WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT:
+		return WIFI_STATUS_CONN_WRONG_PASSWORD;
+	default:
+		return WIFI_STATUS_CONN_FAIL;
 	}
 }
 
@@ -166,7 +181,9 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 
 	switch (event) {
 	case NET_EVENT_WIFI_CMD_CONNECT_RESULT:
-		wifi_mgmt_raise_connect_result_event(iface, *(int *)supplicant_status);
+		wifi_mgmt_raise_connect_result_event(
+			iface,
+			wpas_to_wifi_mgmt_conn_status(*(int *)supplicant_status));
 		break;
 	case NET_EVENT_WIFI_CMD_DISCONNECT_RESULT:
 		wifi_mgmt_raise_disconnect_result_event(iface, *(int *)supplicant_status);
