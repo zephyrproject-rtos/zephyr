@@ -13,11 +13,7 @@
 #include <stdio.h>
 
 
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define TEST_PARTITION	slot1_ns_partition
-#else
-#define TEST_PARTITION	slot1_partition
-#endif
+#define TEST_PARTITION	storage_partition
 
 #define TEST_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(TEST_PARTITION)
 #define TEST_PARTITION_DEVICE	FIXED_PARTITION_DEVICE(TEST_PARTITION)
