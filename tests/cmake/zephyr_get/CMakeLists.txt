@@ -31,6 +31,9 @@ macro(run_suite)
         SYSBUILD_MAIN_APP                "${SYSBUILD_MAIN_APP}"
         TESTCASE_VARIABLE                "sysbuild.main"
         zephyr_get_2nd_TESTCASE_VARIABLE "sysbuild.2nd"
+        ALL_PREFIX_TEST                  "sysbuild.main"
+        zephyr_get_2nd_ALL_PREFIX_TEST   "sysbuild.2nd"
+        all_ALL_PREFIX_TEST              "sysbuild.all"
       )
     endif()
 
@@ -598,6 +601,56 @@ function(test_snippets_scope)
   endforeach()
 endfunction()
 
+
+function(test_all_prefix)
+  set(ALL_PREFIX_TEST "cmake cache" CACHE INTERNAL "")
+
+  zephyr_get(ALL_PREFIX_TEST SYSBUILD GLOBAL)
+  assert_equal(ALL_PREFIX_TEST
+    IMAGE no_sysbuild    "cmake cache"
+    # Provided -DALL_PREFIX_TEST=<...> serves as the
+    # LOCAL sysbuild-defined value for this primary image.
+    IMAGE zephyr_get     "sysbuild.main"
+    # Provided -Dzephyr_get_2nd_ALL_PREFIX_TEST=<...> serves as
+    # the LOCAL sysbuild-defined value for this secondary image.
+    IMAGE zephyr_get_2nd "sysbuild.2nd"
+    # Provided -Dall_ALL_PREFIX_TEST=<...> serves as the
+    # GLOBAL sysbuild-defined value for this tertiary image;
+    # it has no LOCAL value of its own.
+    IMAGE zephyr_get_3rd "sysbuild.all"
+  )
+
+  # Both SYSBUILD GLOBAL AND SYSBUILD LOCAL recognize the 'all_' prefix.
+  # Compare this part with 'test_precedence_with_sysbuild'.
+
+  zephyr_get(ALL_PREFIX_TEST SYSBUILD LOCAL)
+  assert_equal(ALL_PREFIX_TEST
+    IMAGE no_sysbuild    "cmake cache"
+    IMAGE zephyr_get     "sysbuild.main"
+    IMAGE zephyr_get_2nd "sysbuild.2nd"
+    # Provided -Dall_ALL_PREFIX_TEST=<...> still applies here.
+    IMAGE zephyr_get_3rd "sysbuild.all"
+  )
+
+  # ALL_PREFIX_TEST unconditionally belongs in the sysbuild global scope.
+  # (unlike TESTCASE_VARIABLE)
+
+  zephyr_get(ALL_PREFIX_TEST MERGE REVERSE SYSBUILD LOCAL)
+  assert_equal(ALL_PREFIX_TEST
+    IMAGE no_sysbuild    "cmake cache"
+    IMAGE zephyr_get     "cmake cache;sysbuild.all;sysbuild.main"
+    IMAGE zephyr_get_2nd "cmake cache;sysbuild.all;sysbuild.2nd"
+    IMAGE zephyr_get_3rd "cmake cache;sysbuild.all"
+  )
+  zephyr_get(RESULT MERGE VAR ALL_PREFIX_TEST)
+  assert_equal(RESULT
+    IMAGE no_sysbuild    "cmake cache"
+    IMAGE zephyr_get     "sysbuild.main;sysbuild.all;cmake cache"
+    IMAGE zephyr_get_2nd "sysbuild.2nd;sysbuild.all;cmake cache"
+    IMAGE zephyr_get_3rd "sysbuild.all;cmake cache"
+  )
+endfunction()
+
 run_suite(
   test_precedence
   test_precedence_with_sysbuild
@@ -605,4 +658,5 @@ run_suite(
   test_multivar
   test_merge_reverse
   test_snippets_scope
+  test_all_prefix
 )

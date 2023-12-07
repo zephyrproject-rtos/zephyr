@@ -2627,12 +2627,19 @@ endfunction()
 # - Sysbuild defined when sysbuild is used.
 #   Sysbuild variables can be defined as global or local to specific image.
 #   Examples:
-#   - BOARD is considered a global sysbuild cache variable
-#   - blinky_BOARD is considered a local sysbuild cache variable only for the
-#     blinky image.
-#   If no sysbuild scope is specified, GLOBAL is assumed.
-#   If using MERGE then SYSBUILD GLOBAL will get both the local and global
-#   sysbuild scope variables (in that order, if both exist).
+#   - `blinky_VAR` is considered a local sysbuild cache variable, i.e.,
+#     its value applies only to the `blinky` image.
+#   - `all_VAR` is considered a global sysbuild cache variable, i.e.,
+#     its value applies to all images.
+#   - `VAR` (no namespace) functions by default as both local and global:
+#     - In the local sysbuild scope, `VAR` applies to the main app image,
+#       but only when `<main_app>_VAR` is not set.
+#     - In the global sysbuild scope, `VAR` applies to all images,
+#       but only when `all_VAR` is not set.
+#     This behavior depends on the SYSBUILD argument, which defaults to GLOBAL.
+#     Passing SYSBUILD LOCAL will exclude `VAR` from the global sysbuild scope.
+#   Local sysbuild cache variables always precede global ones.
+#   If using MERGE, then both a local and a global variable can be returned.
 # - CMake cache, set by `-D<var>=<value>` or `set(<var> <val> CACHE ...)
 # - Environment
 # - Locally in CMakeLists.txt before 'find_package(Zephyr)'
@@ -2670,15 +2677,17 @@ function(zephyr_get variable)
     set(${var})
 
     if(SYSBUILD)
-      get_property(sysbuild_name TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
-      get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
-      get_property(sysbuild_local_${var} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
-      get_property(sysbuild_global_${var} TARGET sysbuild_cache PROPERTY ${var})
+      get_property(sysbuild_name          TARGET sysbuild_cache PROPERTY SYSBUILD_NAME)
+      get_property(sysbuild_main_app      TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
+      get_property(sysbuild_local_${var}  TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
+      get_property(sysbuild_global_${var} TARGET sysbuild_cache PROPERTY all_${var})
+      get_property(sysbuild_fallback      TARGET sysbuild_cache PROPERTY ${var})
+
       if(NOT DEFINED sysbuild_local_${var} AND sysbuild_main_app)
-        set(sysbuild_local_${var} ${sysbuild_global_${var}})
+        set(sysbuild_local_${var} ${sysbuild_fallback})
       endif()
-      if(NOT "${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL")
-        set(sysbuild_global_${var})
+      if(NOT DEFINED sysbuild_global_${var} AND "${GET_VAR_SYSBUILD}" STREQUAL "GLOBAL")
+        set(sysbuild_global_${var} ${sysbuild_fallback})
       endif()
     else()
       set(sysbuild_local_${var})
