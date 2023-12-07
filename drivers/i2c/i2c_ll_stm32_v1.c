@@ -48,13 +48,17 @@ static void stm32_i2c_generate_start_condition(I2C_TypeDef *i2c)
 static void stm32_i2c_disable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_DisableIT_TX(i2c);
 	LL_I2C_DisableIT_RX(i2c);
 	LL_I2C_DisableIT_EVT(i2c);
 	LL_I2C_DisableIT_BUF(i2c);
-	LL_I2C_DisableIT_ERR(i2c);
+
+	if (!data->smbalert_active) {
+		LL_I2C_DisableIT_ERR(i2c);
+	}
 }
 
 static void stm32_i2c_enable_transfer_interrupts(const struct device *dev)
@@ -118,6 +122,7 @@ static void stm32_i2c_reset(const struct device *dev)
 static void stm32_i2c_master_finish(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
@@ -125,16 +130,17 @@ static void stm32_i2c_master_finish(const struct device *dev)
 #endif
 
 #if defined(CONFIG_I2C_TARGET)
-	struct i2c_stm32_data *data = dev->data;
 	data->master_active = false;
-	if (!data->slave_attached) {
+	if (!data->slave_attached && !data->smbalert_active) {
 		LL_I2C_Disable(i2c);
 	} else {
 		stm32_i2c_enable_transfer_interrupts(dev);
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 	}
 #else
-	LL_I2C_Disable(i2c);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 #endif
 }
 
@@ -538,7 +544,9 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 	LL_I2C_ClearFlag_STOP(i2c);
 	LL_I2C_ClearFlag_ADDR(i2c);
 
-	LL_I2C_Disable(i2c);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 
 	data->slave_attached = false;
 
@@ -608,6 +616,16 @@ void stm32_i2c_error_isr(void *arg)
 		data->current.is_err = 1U;
 		goto end;
 	}
+
+#if defined(CONFIG_SMBUS_STM32_SMBALERT)
+	if (LL_I2C_IsActiveSMBusFlag_ALERT(i2c)) {
+		LL_I2C_ClearSMBusFlag_ALERT(i2c);
+		if (data->smbalert_cb_func != NULL) {
+			data->smbalert_cb_func(data->smbalert_cb_dev);
+		}
+		goto end;
+	}
+#endif
 	return;
 end:
 	stm32_i2c_master_mode_end(dev);
