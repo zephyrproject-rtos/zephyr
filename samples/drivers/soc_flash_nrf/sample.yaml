@@ -29,3 +29,4 @@ tests:
         - "Data read matches data written. Good!"
         - "SoC flash consists of \\d+ pages."
         - "write-block-size = 1"
+        - "Finished!"
