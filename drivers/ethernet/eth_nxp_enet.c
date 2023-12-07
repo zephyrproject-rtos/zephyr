@@ -598,6 +598,8 @@ static void nxp_enet_phy_cb(const struct device *phy,
 	} else {
 		net_eth_carrier_on(data->iface);
 	}
+
+	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 }
 
 
