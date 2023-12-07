@@ -55,6 +55,20 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 	}
 }
 
+static enum wifi_disconn_reason wpas_to_wifi_mgmt_diconn_status(int status)
+{
+	switch (status) {
+	case WLAN_REASON_DEAUTH_LEAVING:
+		return WIFI_REASON_DISCONN_AP_LEAVING;
+	case WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY:
+		return WIFI_REASON_DISCONN_INACTIVITY;
+	case WLAN_REASON_UNSPECIFIED:
+	/* fall through */
+	default:
+		return WIFI_REASON_DISCONN_UNSPECIFIED;
+	}
+}
+
 static int supplicant_process_status(struct supplicant_int_event_data *event_data,
 				     char *supplicant_status)
 {
@@ -186,7 +200,9 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 			wpas_to_wifi_mgmt_conn_status(*(int *)supplicant_status));
 		break;
 	case NET_EVENT_WIFI_CMD_DISCONNECT_RESULT:
-		wifi_mgmt_raise_disconnect_result_event(iface, *(int *)supplicant_status);
+		wifi_mgmt_raise_disconnect_result_event(
+			iface,
+			wpas_to_wifi_mgmt_diconn_status(*(int *)supplicant_status));
 		break;
 	case NET_EVENT_SUPPLICANT_CMD_INT_EVENT:
 		event_data.data = &data;
