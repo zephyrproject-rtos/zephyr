@@ -412,14 +412,15 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 
 int bt_bap_stream_disconnect(struct bt_bap_stream *stream)
 {
-	struct bt_iso_chan *iso_chan = bt_bap_stream_iso_chan_get(stream);
+	struct bt_iso_chan *iso_chan;
 
-	LOG_DBG("stream %p iso %p", stream, iso_chan);
+	LOG_DBG("stream %p", stream);
 
 	if (stream == NULL) {
 		return -EINVAL;
 	}
 
+	iso_chan = bt_bap_stream_iso_chan_get(stream);
 	if (iso_chan == NULL || iso_chan->iso == NULL) {
 		return -ENOTCONN;
 	}
