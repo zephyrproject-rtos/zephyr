@@ -96,5 +96,15 @@ static inline void smbus_init_callback(struct smbus_callback *callback,
 	callback->addr = addr;
 }
 
+/**
+ * @brief Helper for handling an SMB alert
+ *
+ * This loops through all devices which triggered the SMB alert and
+ * fires the callbacks.
+ *
+ * @param dev SMBus device
+ * @param callbacks list of SMB alert callbacks
+ */
+void smbus_loop_alert_devices(const struct device *dev, sys_slist_t *callbacks);
 
 #endif /*  ZEPHYR_DRIVERS_SMBUS_SMBUS_UTILS_H_ */
