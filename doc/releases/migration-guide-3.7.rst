@@ -22,6 +22,39 @@ Build System
   out-of-tree SoCs and boards to be ported to the new model. See the
   :ref:`hw_model_v2` for more detailed information. (:github:`69607`)
 
+* The following build-time generated headers:
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Affected header files
+     * - ``app_version.h``
+     * - ``cmake_intdef.h``
+     * - ``core-isa-dM.h``
+     * - ``devicetree_generated.h``
+     * - ``driver-validation.h``
+     * - ``kobj-types-enum.h``
+     * - ``linker-kobject-prebuilt-data.h``
+     * - ``linker-kobject-prebuilt-priv-stacks.h``
+     * - ``linker-kobject-prebuilt-rodata.h``
+     * - ``mcuboot_version.h``
+     * - ``offsets.h``
+     * - ``otype-to-size.h``
+     * - ``otype-to-str.h``
+     * - ``strerror_table.h``
+     * - ``strsignal_table.h``
+     * - ``syscall_list.h``
+     * - ``version.h``
+     * - ``zsr.h``
+
+  and syscall headers are now namespaced into the ``zephyr/`` folder. The change is largely
+  automated, and the script can be found in :github:`63973`.
+  For the time being, the compatibility Kconfig (:kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH`)
+  is enabled by default so that downstream applications will continue to compile, a warning message
+  will be generated during CMake configuration time.
+  This Kconfig will be deprecated and eventually removed in the future, developers are advised to
+  update the include paths of these affected headers as soon as possible.
+
 Kernel
 ******
 
