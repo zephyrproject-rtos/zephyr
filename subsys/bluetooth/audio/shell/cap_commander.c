@@ -40,6 +40,15 @@ static void cap_volume_changed_cb(struct bt_conn *conn, int err)
 	shell_print(ctx_shell, "Volume change completed");
 }
 
+static void cap_volume_mute_changed_cb(struct bt_conn *conn, int err)
+{
+	if (err != 0) {
+		shell_error(ctx_shell, "Volume mute change failed (%d)", err);
+		return;
+	}
+
+	shell_print(ctx_shell, "Volume mute change completed");
+}
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 static void cap_volume_offset_changed_cb(struct bt_conn *conn, int err)
 {
@@ -57,6 +66,7 @@ static struct bt_cap_commander_cb cbs = {
 	.discovery_complete = cap_discover_cb,
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 	.volume_changed = cap_volume_changed_cb,
+	.volume_mute_changed = cap_volume_mute_changed_cb,
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	.volume_offset_changed = cap_volume_offset_changed_cb,
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
@@ -163,6 +173,56 @@ static int cmd_cap_commander_change_volume(const struct shell *sh, size_t argc, 
 	return 0;
 }
 
+static int cmd_cap_commander_change_volume_mute(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
+	union bt_cap_set_member members[CONFIG_BT_MAX_CONN] = {0};
+	struct bt_cap_commander_change_volume_mute_state_param param = {
+		.members = members,
+		.type = BT_CAP_SET_TYPE_AD_HOC, /* TODO: Add support for coordinated sets */
+	};
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	param.mute = shell_strtobool(argv[1], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Failed to parse volume mute from %s", argv[1]);
+
+		return -ENOEXEC;
+	}
+
+	/* Populate the array of connected connections */
+	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
+
+	param.count = 0U;
+	param.members = members;
+	for (size_t i = 0; i < ARRAY_SIZE(connected_conns); i++) {
+		struct bt_conn *conn = connected_conns[i];
+
+		if (conn == NULL) {
+			break;
+		}
+
+		param.members[i].member = conn;
+		param.count++;
+	}
+
+	shell_print(sh, "Setting volume mute to %d on %zu connections", param.mute, param.count);
+
+	err = bt_cap_commander_change_volume_mute_state(&param);
+	if (err != 0) {
+		shell_print(sh, "Failed to change volume mute: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 static int cmd_cap_commander_change_volume_offset(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -254,6 +314,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_VCP_VOL_CTLR)
 	SHELL_CMD_ARG(change_volume, NULL, "Change volume on all connections <volume>",
 		      cmd_cap_commander_change_volume, 2, 0),
+	SHELL_CMD_ARG(change_volume_mute, NULL,
+		      "Change volume mute state on all connections <mute>",
+		      cmd_cap_commander_change_volume_mute, 2, 0),
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	SHELL_CMD_ARG(change_volume_offset, NULL,
 		      "Change volume offset per connection <volume_offset [volume_offset [...]]>",
