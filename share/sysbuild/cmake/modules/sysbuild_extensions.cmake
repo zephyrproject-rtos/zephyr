@@ -199,7 +199,9 @@ endfunction()
 # build system
 #
 # APPLICATION: <name>:       Name of the application, name will also be used for build
-#                            folder of the application
+#                            folder of the application.
+#                            The following names are not allowed: "SB", "all".
+#                            They are reserved for configuration namespacing.
 # SOURCE_DIR <dir>:          Source directory of the application
 # BOARD <board>:             Use <board> for application build instead user defined BOARD.
 # BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
@@ -217,12 +219,20 @@ endfunction()
 #
 function(ExternalZephyrProject_Add)
   set(app_types MAIN BOOTLOADER)
+  set(reserved_app_names SB all)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
 
   if(ZBUILD_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "ExternalZephyrProject_Add(${ARGV0} <val> ...) given unknown arguments:"
       " ${ZBUILD_UNPARSED_ARGUMENTS}"
+    )
+  endif()
+
+  if(ZBUILD_APPLICATION IN_LIST reserved_app_names)
+    message(FATAL_ERROR
+      "ExternalZephyrProject_Add(APPLICATION ${ZBUILD_APPLICATION} ...) "
+      "given application name is reserved by sysbuild."
     )
   endif()
 
