@@ -17,6 +17,8 @@
 #include <zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
+#include <xtensa_internal.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];

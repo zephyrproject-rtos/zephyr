@@ -27,9 +27,6 @@ extern "C" {
  */
 typedef int z_arch_esf_t;
 
-void z_xtensa_dump_stack(const z_arch_esf_t *stack);
-char *z_xtensa_exccause(unsigned int cause_code);
-
 #endif
 
 #ifdef __cplusplus
