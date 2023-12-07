@@ -497,6 +497,7 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 				    elf_rela_t *rel, size_t got_offset)
 {
+	__ASSERT(false, "arch_elf_relocate_local() not implemented");
 }
 
 static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
@@ -601,6 +602,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 
 __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 {
+	__ASSERT(false, "arch_elf_relocate() not implemented");
 }
 
 static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
