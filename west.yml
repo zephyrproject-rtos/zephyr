@@ -277,7 +277,7 @@ manifest:
       revision: 7c61a4cec26402d20c845c95dcad0e39dcd319f8
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 7053083b0cff8462464e3cbb826e87852fc03da6
+      revision: 66ed2279d6222056af172c188eaf4dcfed481032
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -322,7 +322,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-m
-      revision: 33c0f47bcb19721a5c33e6fe1eee9225d00bb5bc
+      revision: 58d0b5367f0fada9dbaddad1e08e302aeb044863
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

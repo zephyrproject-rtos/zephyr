@@ -28,7 +28,7 @@ manifest:
       groups:
         - optional
     - name: psa-arch-tests
-      revision: 6a17330e0dfb5f319730f974d5b05f7b7f04757b
+      revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
       path: modules/tee/tf-m/psa-arch-tests
       remote: upstream
       groups:
@@ -40,7 +40,7 @@ manifest:
       groups:
         - optional
     - name: tf-m-tests
-      revision: a878426da78fbd1486dfc29d6c6b82be4ee79e72
+      revision: 08a3158f0623a4205608a52d880b17ae394e31d2
       path: modules/tee/tf-m/tf-m-tests
       remote: upstream
       groups:
