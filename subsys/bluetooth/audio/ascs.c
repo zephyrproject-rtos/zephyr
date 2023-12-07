@@ -1765,23 +1765,15 @@ void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_
 	}
 }
 
-static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qos *qos,
-			  struct bt_conn *conn, uint8_t cig_id, uint8_t cis_id,
-			  struct bt_bap_ascs_rsp *rsp)
+static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
+		    struct bt_audio_codec_qos *qos, struct bt_bap_ascs_rsp *rsp)
 {
-	struct bt_bap_ep *ep;
-	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+	struct bt_bap_ep *ep = &ase->ep;
+	struct bt_bap_stream *stream;
 
-	CHECKIF(stream == NULL || stream->ep == NULL || qos == NULL) {
-		LOG_DBG("Invalid input stream, ep or qos pointers");
-		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
-				       BT_BAP_ASCS_REASON_NONE);
-		return -EINVAL;
-	}
-
-	LOG_DBG("stream %p ep %p qos %p", stream, stream->ep, qos);
-
-	ep = stream->ep;
+	LOG_DBG("ase %p cig 0x%02x cis 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u "
+		"latency %u pd %u", ase, cig_id, cis_id, qos->interval, qos->framing, qos->phy,
+		qos->sdu, qos->rtn, qos->latency, qos->pd);
 
 	switch (ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
@@ -1793,19 +1785,32 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->status.state));
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				       BT_BAP_ASCS_REASON_NONE);
-		return -EBADMSG;
+		return;
+	}
+
+	stream = ep->stream;
+	if (stream == NULL) {
+		LOG_ERR("NULL stream");
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		return;
+	}
+
+	if (stream->ep == NULL) {
+		LOG_ERR("NULL stream->ep");
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		return;
 	}
 
 	rsp->reason = bt_audio_verify_qos(qos);
 	if (rsp->reason != BT_BAP_ASCS_REASON_NONE) {
 		rsp->code = BT_BAP_ASCS_RSP_CODE_CONF_INVALID;
-		return -EINVAL;
+		return;
 	}
 
 	rsp->reason = bt_bap_stream_verify_qos(stream, qos);
 	if (rsp->reason != BT_BAP_ASCS_REASON_NONE) {
 		rsp->code = BT_BAP_ASCS_RSP_CODE_CONF_INVALID;
-		return -EINVAL;
+		return;
 	}
 
 	if (unicast_server_cb != NULL && unicast_server_cb->qos != NULL) {
@@ -1819,7 +1824,7 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 
 			LOG_DBG("Application returned error: err %d status %u reason %u",
 				err, rsp->code, rsp->reason);
-			return err;
+			return;
 		}
 	}
 
@@ -1831,12 +1836,12 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 	if (ep->iso == NULL) {
 		struct bt_bap_iso *iso;
 
-		iso = bap_iso_get_or_new(conn, cig_id, cis_id);
+		iso = bap_iso_get_or_new(ase->conn, cig_id, cis_id);
 		if (iso == NULL) {
 			LOG_ERR("Could not allocate bap_iso");
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM,
 					       BT_BAP_ASCS_REASON_NONE);
-			return -ENOMEM;
+			return;
 		}
 
 		if (bt_bap_iso_get_ep(false, iso, ep->dir) != NULL) {
@@ -1845,7 +1850,7 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 			bt_bap_iso_unref(iso);
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 					       BT_BAP_ASCS_REASON_CIS);
-			return -EALREADY;
+			return;
 		}
 
 		bt_bap_iso_bind_ep(iso, ep);
@@ -1870,32 +1875,6 @@ static int ase_stream_qos(struct bt_bap_stream *stream, struct bt_audio_codec_qo
 	ep->cis_id = cis_id;
 
 	ascs_ep_set_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
-
-	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
-	return 0;
-}
-
-static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
-		    struct bt_audio_codec_qos *cqos, struct bt_bap_ascs_rsp *rsp)
-{
-	struct bt_bap_ep *ep = &ase->ep;
-	struct bt_bap_stream *stream = ep->stream;
-	int err;
-
-	LOG_DBG("ase %p cig 0x%02x cis 0x%02x interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u "
-		"latency %u pd %u", ase, cig_id, cis_id, cqos->interval, cqos->framing, cqos->phy,
-		cqos->sdu, cqos->rtn, cqos->latency, cqos->pd);
-
-	err = ase_stream_qos(stream, cqos, ase->conn, cig_id, cis_id, rsp);
-	if (err) {
-		if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
-					       BT_BAP_ASCS_REASON_NONE);
-		}
-
-		LOG_ERR("QoS failed: err %d, code %u, reason %u", err, rsp->code, rsp->reason);
-		return;
-	}
 
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
 }
