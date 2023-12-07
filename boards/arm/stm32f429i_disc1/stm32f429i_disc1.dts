@@ -20,7 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
-		zephyr,display = &ili9341;
+		zephyr,display = &ltdc;
 	};
 
 	sdram2: sdram@d0000000 {
