@@ -651,6 +651,37 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables)
 	return -ENODEV;
 }
 
+void acpi_dmar_foreach_subtable(ACPI_TABLE_DMAR *dmar,
+				dmar_foreach_subtable_func_t func, void *arg)
+{
+	uint16_t length = dmar->Header.Length;
+	uintptr_t offset = sizeof(ACPI_TABLE_DMAR);
+
+	while (offset < length) {
+		ACPI_DMAR_HEADER *subtable = ACPI_ADD_PTR(ACPI_DMAR_HEADER, dmar, offset);
+
+		func(subtable, arg);
+
+		offset += subtable->Length;
+	}
+}
+
+void acpi_dmar_foreach_devscope(ACPI_DMAR_HARDWARE_UNIT *hu,
+				dmar_foreach_devscope_func_t func, void *arg)
+{
+	uint16_t length = hu->Header.Length;
+	uintptr_t offset = sizeof(ACPI_DMAR_HARDWARE_UNIT);
+
+	while (offset < length) {
+		ACPI_DMAR_DEVICE_SCOPE *devscope = ACPI_ADD_PTR(ACPI_DMAR_DEVICE_SCOPE,
+								hu, offset);
+
+		func(devscope, arg);
+
+		offset += devscope->Length;
+	}
+}
+
 int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scope,
 		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
 {

@@ -173,6 +173,14 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables);
 int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scope,
 		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst);
 
+typedef void (*dmar_foreach_subtable_func_t)(ACPI_DMAR_HEADER *subtable, void *arg);
+typedef void (*dmar_foreach_devscope_func_t)(ACPI_DMAR_DEVICE_SCOPE *devscope, void *arg);
+
+void acpi_dmar_foreach_subtable(ACPI_TABLE_DMAR *dmar, dmar_foreach_subtable_func_t func,
+				void *arg);
+void acpi_dmar_foreach_devscope(ACPI_DMAR_HARDWARE_UNIT *hu,
+				dmar_foreach_devscope_func_t func, void *arg);
+
 /**
  * @brief Retrieve the 'n'th enabled local apic info.
  *
