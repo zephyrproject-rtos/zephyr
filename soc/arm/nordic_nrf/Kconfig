@@ -45,6 +45,10 @@ config TFM_LOG_LEVEL_SILENCE
 	  Disable TF-M secure output if the uart1 node has not assigned GPIO
 	  pins using pinctrl.
 
+config TFM_NRF_NS_STORAGE
+	bool "TF-M non-secure storage partition"
+	default y
+
 endif # BUILD_WITH_TFM
 
 
