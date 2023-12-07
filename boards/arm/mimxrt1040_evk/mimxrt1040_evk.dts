@@ -21,12 +21,14 @@
 	};
 
 	chosen {
-		zephyr,flash = &w25q64jvssiq;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,flash = &w25q64jvssiq;
+		zephyr,flash-controller = &w25q64jvssiq;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	sdram0: memory@80000000 {
@@ -95,6 +97,27 @@
 		jedec-id = [ef 40 17];
 		erase-block-size = <4096>;
 		write-block-size = <1>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+			};
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 DT_SIZE_M(3)>;
+			};
+			slot1_partition: partition@310000 {
+				label = "image-1";
+				reg = <0x00310000 DT_SIZE_M(3)>;
+			};
+			storage_partition: partition@610000 {
+				label = "storage";
+				reg = <0x00610000 DT_SIZE_K(1984)>;
+			};
+		};
 	};
 };
 
