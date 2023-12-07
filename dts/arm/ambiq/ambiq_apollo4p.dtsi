@@ -44,6 +44,8 @@
 	};
 
 	soc {
+		compatible = "ambiq,apollo4p", "ambiq,apollo4x", "simple-bus";
+
 		pwrcfg: pwrcfg@40021000 {
 			compatible = "ambiq,pwrctrl";
 			reg = <0x40021000 0x400>;
