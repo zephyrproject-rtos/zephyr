@@ -122,6 +122,7 @@ static bool active_proc_is_commander(void)
 	switch (active_proc.proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE:
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE:
+	case BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE:
 		return true;
 	default:
 		return false;
