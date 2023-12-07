@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS) || defined(__DOXYGEN__)
 /**
  * @brief Return IRQ level
  * This routine returns the interrupt level number of the provided interrupt.
@@ -165,6 +166,7 @@ static inline unsigned int irq_parent_level_3(unsigned int irq)
 		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
 }
 
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 #ifdef __cplusplus
 }
 #endif
