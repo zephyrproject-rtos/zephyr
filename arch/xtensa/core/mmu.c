@@ -26,22 +26,22 @@ static void compute_regs(uint32_t user_asid, uint32_t *l1_page, struct tlb_regs 
 
 	__ASSERT_NO_MSG((((uint32_t)l1_page) & 0xfff) == 0);
 	__ASSERT_NO_MSG((user_asid == 0) || ((user_asid > 2) &&
-				(user_asid < Z_XTENSA_MMU_SHARED_ASID)));
+				(user_asid < XTENSA_MMU_SHARED_ASID)));
 
 	/* We don't use ring 1, ring 0 ASID must be 1 */
-	regs->rasid = (Z_XTENSA_MMU_SHARED_ASID << 24) |
+	regs->rasid = (XTENSA_MMU_SHARED_ASID << 24) |
 		      (user_asid << 16) | 0x000201;
 
 	/* Derive PTEVADDR from ASID so each domain gets its own PTE area */
 	regs->ptevaddr = CONFIG_XTENSA_MMU_PTEVADDR + user_asid * 0x400000;
 
 	/* The ptables code doesn't add the mapping for the l1 page itself */
-	l1_page[Z_XTENSA_L1_POS(regs->ptevaddr)] =
-		(uint32_t)l1_page | Z_XTENSA_PAGE_TABLE_ATTR;
+	l1_page[XTENSA_MMU_L1_POS(regs->ptevaddr)] =
+		(uint32_t)l1_page | XTENSA_MMU_PAGE_TABLE_ATTR;
 
 	regs->ptepin_at = (uint32_t)l1_page;
-	regs->ptepin_as = Z_XTENSA_PTE_ENTRY_VADDR(regs->ptevaddr, regs->ptevaddr)
-			  | Z_XTENSA_MMU_PTE_WAY;
+	regs->ptepin_as = XTENSA_MMU_PTE_ENTRY_VADDR(regs->ptevaddr, regs->ptevaddr)
+			  | XTENSA_MMU_PTE_WAY;
 
 	/* Pin mapping for refilling the vector address into the ITLB
 	 * (for handling TLB miss exceptions). Note: this is NOT an
@@ -51,11 +51,11 @@ static void compute_regs(uint32_t user_asid, uint32_t *l1_page, struct tlb_regs 
 	 * hardware doesn't have a 4k pinnable instruction TLB way,
 	 * frustratingly.
 	 */
-	uint32_t vb_pte = l1_page[Z_XTENSA_L1_POS(vecbase)];
+	uint32_t vb_pte = l1_page[XTENSA_MMU_L1_POS(vecbase)];
 
 	regs->vecpin_at = vb_pte;
-	regs->vecpin_as = Z_XTENSA_PTE_ENTRY_VADDR(regs->ptevaddr, vecbase)
-			  | Z_XTENSA_MMU_VECBASE_WAY;
+	regs->vecpin_as = XTENSA_MMU_PTE_ENTRY_VADDR(regs->ptevaddr, vecbase)
+			  | XTENSA_MMU_VECBASE_WAY;
 }
 
 /* Switch to a new page table.  There are four items we have to set in
