@@ -181,7 +181,7 @@ typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 
 /**
  * @typedef lora_api_time_on_air()
- * @brief Callback API for calculating time on air
+ * @brief Callback API for calculation time on air for specified amount of data
  *
  * @see lora_time_on_air() for argument descriptions.
  */
@@ -330,6 +330,13 @@ static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
 	return api->test_cw(dev, frequency, tx_power, duration);
 }
 
+/**
+ * @brief Calculate time on air for specified amount of data
+ *
+ * @param dev       LoRa device
+ * @param data_len  Length of the data to be sent
+ * @return Time on air in milliseconds for LoRa transmission, negative on error
+ */
 static inline int lora_time_on_air(const struct device *dev, size_t len)
 {
 	const struct lora_driver_api *api =
