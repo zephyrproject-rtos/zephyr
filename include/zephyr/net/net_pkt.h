@@ -1399,7 +1399,7 @@ static inline bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
  * buffer usage.
  */
 
-struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
+struct net_buf *net_pkt_get_reserve_data_debug(const struct net_buf_pool *pool,
 					       size_t min_len,
 					       k_timeout_t timeout,
 					       const char *caller,
@@ -1633,8 +1633,8 @@ void net_pkt_compact(struct net_pkt *pkt);
  */
 void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct k_mem_slab **tx,
-		      struct net_buf_pool **rx_data,
-		      struct net_buf_pool **tx_data);
+		      const struct net_buf_pool **rx_data,
+		      const struct net_buf_pool **tx_data);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -1656,7 +1656,7 @@ typedef void (*net_pkt_allocs_cb_t)(struct net_pkt *pkt,
 void net_pkt_allocs_foreach(net_pkt_allocs_cb_t cb, void *user_data);
 
 const char *net_pkt_slab2str(struct k_mem_slab *slab);
-const char *net_pkt_pool2str(struct net_buf_pool *pool);
+const char *net_pkt_pool2str(const struct net_buf_pool *pool);
 
 #else
 #define net_pkt_print(...)

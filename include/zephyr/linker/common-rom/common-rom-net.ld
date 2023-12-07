@@ -2,6 +2,8 @@
 
 #include <zephyr/linker/iterable_sections.h>
 
+	ITERABLE_SECTION_ROM(net_buf_pool, 4)
+
 #if defined(CONFIG_NET_SOCKETS)
 	ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif

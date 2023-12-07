@@ -20,7 +20,7 @@ NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_
 			 sizeof(struct zbus_channel *), NULL);
 BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE > 0, "MSG_SUBSCRIBER feature requires heap memory pool.");
 
-static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
+static inline struct net_buf *_zbus_create_net_buf(const struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
 {
 	return net_buf_alloc_len(&_zbus_msg_subscribers_pool, size, timeout);
@@ -33,7 +33,7 @@ NET_BUF_POOL_FIXED_DEFINE(_zbus_msg_subscribers_pool,
 			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE),
 			  sizeof(struct zbus_channel *), NULL);
 
-static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
+static inline struct net_buf *_zbus_create_net_buf(const struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
 {
 	__ASSERT(size <= CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE,

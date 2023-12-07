@@ -26,6 +26,7 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 	.unref = fixed_data_unref,
 };
 
-DEFINE_FAKE_VALUE_FUNC(struct net_buf *, net_buf_alloc_fixed, struct net_buf_pool *, k_timeout_t);
+DEFINE_FAKE_VALUE_FUNC(struct net_buf *, net_buf_alloc_fixed, const struct net_buf_pool *,
+		       k_timeout_t);
 DEFINE_FAKE_VOID_FUNC(net_buf_simple_reserve, struct net_buf_simple *, size_t);
 DEFINE_FAKE_VALUE_FUNC(struct net_buf *, net_buf_ref, struct net_buf *);

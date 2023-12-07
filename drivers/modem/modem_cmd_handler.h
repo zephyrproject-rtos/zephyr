@@ -112,7 +112,7 @@ struct modem_cmd_handler_data {
 	struct net_buf *rx_buf;
 
 	/* allocation info */
-	struct net_buf_pool *buf_pool;
+	const struct net_buf_pool *buf_pool;
 	k_timeout_t alloc_timeout;
 
 	/* locks */
@@ -287,7 +287,7 @@ int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 struct modem_cmd_handler_config {
 	char *match_buf;
 	size_t match_buf_len;
-	struct net_buf_pool *buf_pool;
+	const struct net_buf_pool *buf_pool;
 	k_timeout_t alloc_timeout;
 	const char *eol;
 	void *user_data;

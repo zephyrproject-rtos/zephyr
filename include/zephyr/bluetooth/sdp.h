@@ -531,7 +531,7 @@ struct bt_sdp_discover_params {
 	/** Discover callback to be called on resolved SDP record */
 	bt_sdp_discover_func_t  func;
 	/** Memory buffer enabled by user for SDP query results  */
-	struct net_buf_pool    *pool;
+	const struct net_buf_pool    *pool;
 };
 
 /** @brief Allows user to start SDP discovery session.

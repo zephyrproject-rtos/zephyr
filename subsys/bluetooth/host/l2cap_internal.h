@@ -293,7 +293,7 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status);
 
 /* Prepare an L2CAP PDU to be sent over a connection */
-struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
+struct net_buf *bt_l2cap_create_pdu_timeout(const struct net_buf_pool *pool,
 					    size_t reserve,
 					    k_timeout_t timeout);
 

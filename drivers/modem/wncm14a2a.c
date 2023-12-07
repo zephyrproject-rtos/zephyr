@@ -1012,7 +1012,7 @@ static int net_buf_ncmp(struct net_buf *buf, const uint8_t *s2, size_t n)
 static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 						void *user_data)
 {
-	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
+	return net_buf_alloc((const struct net_buf_pool *)user_data, timeout);
 }
 
 static void wncm14a2a_read_rx(struct net_buf **buf)
@@ -1048,7 +1048,7 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 		rx_len = net_buf_append_bytes(*buf, bytes_read, uart_buffer,
 					      BUF_ALLOC_TIMEOUT,
 					      read_rx_allocator,
-					      &mdm_recv_pool);
+					      (void *)&mdm_recv_pool);
 		if (rx_len < bytes_read) {
 			LOG_ERR("Data was lost! read %u of %zu!",
 				    rx_len, bytes_read);

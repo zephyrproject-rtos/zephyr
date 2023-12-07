@@ -103,7 +103,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			      const void *data, size_t size)
 {
-	struct net_buf_pool *pool;
+	const struct net_buf_pool *pool;
 	struct net_buf *buf;
 
 	switch (type) {

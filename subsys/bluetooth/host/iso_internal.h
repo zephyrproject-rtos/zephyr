@@ -107,7 +107,7 @@ void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status);
 
 /* Allocate ISO PDU */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_iso_create_pdu_timeout_debug(struct net_buf_pool *pool,
+struct net_buf *bt_iso_create_pdu_timeout_debug(const struct net_buf_pool *pool,
 						size_t reserve,
 						k_timeout_t timeout,
 						const char *func, int line);
@@ -119,7 +119,7 @@ struct net_buf *bt_iso_create_pdu_timeout_debug(struct net_buf_pool *pool,
 	bt_iso_create_pdu_timeout_debug(_pool, _reserve, K_FOREVER, \
 					__func__, __line__)
 #else
-struct net_buf *bt_iso_create_pdu_timeout(struct net_buf_pool *pool,
+struct net_buf *bt_iso_create_pdu_timeout(const struct net_buf_pool *pool,
 					  size_t reserve, k_timeout_t timeout);
 
 #define bt_iso_create_pdu(_pool, _reserve) \

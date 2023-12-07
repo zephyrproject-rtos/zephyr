@@ -102,7 +102,7 @@ NET_BUF_POOL_DEFINE(friend_buf_pool, CONFIG_BT_MESH_FRIEND_LPN_COUNT,
 static struct bt_mesh_adv adv_friend_pool[CONFIG_BT_MESH_FRIEND_LPN_COUNT];
 #endif
 
-static struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *buf_pool,
+static struct net_buf *bt_mesh_adv_create_from_pool(const struct net_buf_pool *buf_pool,
 						    struct bt_mesh_adv *adv_pool,
 						    enum bt_mesh_adv_type type,
 						    enum bt_mesh_adv_tag tag,

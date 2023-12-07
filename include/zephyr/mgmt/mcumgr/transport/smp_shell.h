@@ -21,7 +21,7 @@ extern "C" {
 
 /** @brief Data used by SMP shell */
 struct smp_shell_data {
-	struct net_buf_pool *buf_pool;
+	const struct net_buf_pool *buf_pool;
 	struct k_fifo buf_ready;
 	struct net_buf *buf;
 	atomic_t esc_state;

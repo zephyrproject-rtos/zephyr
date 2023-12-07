@@ -9,7 +9,7 @@
 #include "mocks/net_buf.h"
 #include "mocks/net_buf_expects.h"
 
-void expect_single_call_net_buf_alloc(struct net_buf_pool *pool, k_timeout_t *timeout)
+void expect_single_call_net_buf_alloc(const struct net_buf_pool *pool, k_timeout_t *timeout)
 {
 	const char *func_name = "net_buf_alloc_fixed";
 

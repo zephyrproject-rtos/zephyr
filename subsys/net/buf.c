@@ -45,23 +45,23 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Linker-defined symbol bound to the static pool structs */
 STRUCT_SECTION_START_EXTERN(net_buf_pool);
 
-struct net_buf_pool *net_buf_pool_get(int id)
+const struct net_buf_pool *net_buf_pool_get(int id)
 {
-	struct net_buf_pool *pool;
+	const struct net_buf_pool *pool;
 
 	STRUCT_SECTION_GET(net_buf_pool, id, &pool);
 
 	return pool;
 }
 
-static int pool_id(struct net_buf_pool *pool)
+static int pool_id(const struct net_buf_pool *pool)
 {
 	return pool - TYPE_SECTION_START(net_buf_pool);
 }
 
 int net_buf_id(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	size_t struct_size = ROUND_UP(sizeof(struct net_buf) + pool->user_data_size,
 				__alignof__(struct net_buf));
 	ptrdiff_t offset = (uint8_t *)buf - (uint8_t *)pool->__bufs;
@@ -69,7 +69,7 @@ int net_buf_id(struct net_buf *buf)
 	return offset / struct_size;
 }
 
-static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
+static inline struct net_buf *pool_get_uninit(const struct net_buf_pool *pool,
 					      uint16_t uninit_count)
 {
 	size_t struct_size = ROUND_UP(sizeof(struct net_buf) + pool->user_data_size,
@@ -106,7 +106,7 @@ static uint8_t *generic_data_ref(struct net_buf *buf, uint8_t *data)
 static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 				 k_timeout_t timeout)
 {
-	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
@@ -126,7 +126,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 
 static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 {
-	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
 	uint8_t *ref_count;
 
@@ -148,7 +148,7 @@ const struct net_buf_data_cb net_buf_var_cb = {
 static uint8_t *fixed_data_alloc(struct net_buf *buf, size_t *size,
 			      k_timeout_t timeout)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
 
 	*size = MIN(fixed->data_size, *size);
@@ -209,24 +209,24 @@ const struct net_buf_data_alloc net_buf_heap_alloc = {
 
 static uint8_t *data_alloc(struct net_buf *buf, size_t *size, k_timeout_t timeout)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	return pool->alloc->cb->alloc(buf, size, timeout);
 }
 
 static uint8_t *data_ref(struct net_buf *buf, uint8_t *data)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	return pool->alloc->cb->ref(buf, data);
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
+struct net_buf *net_buf_alloc_len_debug(const struct net_buf_pool *pool, size_t size,
 					k_timeout_t timeout, const char *func,
 					int line)
 #else
-struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
+struct net_buf *net_buf_alloc_len(const struct net_buf_pool *pool, size_t size,
 				  k_timeout_t timeout)
 #endif
 {
@@ -239,41 +239,41 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 	NET_BUF_DBG("%s():%d: pool %p size %zu", func, line, pool, size);
 
 	/* We need to prevent race conditions
-	 * when accessing pool->uninit_count.
+	 * when accessing NET_BUF_POOL_RT(pool)->uninit_count.
 	 */
-	key = k_spin_lock(&pool->lock);
+	key = k_spin_lock(&NET_BUF_POOL_RT(pool)->lock);
 
 	/* If there are uninitialized buffers we're guaranteed to succeed
 	 * with the allocation one way or another.
 	 */
-	if (pool->uninit_count) {
+	if (NET_BUF_POOL_RT(pool)->uninit_count) {
 		uint16_t uninit_count;
 
 		/* If this is not the first access to the pool, we can
 		 * be opportunistic and try to fetch a previously used
 		 * buffer from the LIFO with K_NO_WAIT.
 		 */
-		if (pool->uninit_count < pool->buf_count) {
-			buf = k_lifo_get(&pool->free, K_NO_WAIT);
+		if (NET_BUF_POOL_RT(pool)->uninit_count < pool->buf_count) {
+			buf = k_lifo_get(&NET_BUF_POOL_RT(pool)->free, K_NO_WAIT);
 			if (buf) {
-				k_spin_unlock(&pool->lock, key);
+				k_spin_unlock(&NET_BUF_POOL_RT(pool)->lock, key);
 				goto success;
 			}
 		}
 
-		uninit_count = pool->uninit_count--;
-		k_spin_unlock(&pool->lock, key);
+		uninit_count = NET_BUF_POOL_RT(pool)->uninit_count--;
+		k_spin_unlock(&NET_BUF_POOL_RT(pool)->lock, key);
 
 		buf = pool_get_uninit(pool, uninit_count);
 		goto success;
 	}
 
-	k_spin_unlock(&pool->lock, key);
+	k_spin_unlock(&NET_BUF_POOL_RT(pool)->lock, key);
 
 #if defined(CONFIG_NET_BUF_LOG) && (CONFIG_NET_BUF_LOG_LEVEL >= LOG_LEVEL_WRN)
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		uint32_t ref = k_uptime_get_32();
-		buf = k_lifo_get(&pool->free, K_NO_WAIT);
+		buf = k_lifo_get(&NET_BUF_POOL_RT(pool)->free, K_NO_WAIT);
 		while (!buf) {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 			NET_BUF_WARN("%s():%d: Pool %s low on buffers.",
@@ -282,7 +282,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 			NET_BUF_WARN("%s():%d: Pool %p low on buffers.",
 				     func, line, pool);
 #endif
-			buf = k_lifo_get(&pool->free, WARN_ALLOC_INTERVAL);
+			buf = k_lifo_get(&NET_BUF_POOL_RT(pool)->free, WARN_ALLOC_INTERVAL);
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 			NET_BUF_WARN("%s():%d: Pool %s blocked for %u secs",
 				     func, line, pool->name,
@@ -294,10 +294,10 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 #endif
 		}
 	} else {
-		buf = k_lifo_get(&pool->free, timeout);
+		buf = k_lifo_get(&NET_BUF_POOL_RT(pool)->free, timeout);
 	}
 #else
-	buf = k_lifo_get(&pool->free, timeout);
+	buf = k_lifo_get(&NET_BUF_POOL_RT(pool)->free, timeout);
 #endif
 	if (!buf) {
 		NET_BUF_ERR("%s():%d: Failed to get free buffer", func, line);
@@ -334,14 +334,14 @@ success:
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	atomic_dec(&pool->avail_count);
-	__ASSERT_NO_MSG(atomic_get(&pool->avail_count) >= 0);
+	atomic_dec(&NET_BUF_POOL_RT(pool)->avail_count);
+	__ASSERT_NO_MSG(atomic_get(&NET_BUF_POOL_RT(pool)->avail_count) >= 0);
 #endif
 	return buf;
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
+struct net_buf *net_buf_alloc_fixed_debug(const struct net_buf_pool *pool,
 					  k_timeout_t timeout, const char *func,
 					  int line)
 {
@@ -351,7 +351,7 @@ struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
 				       line);
 }
 #else
-struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool,
+struct net_buf *net_buf_alloc_fixed(const struct net_buf_pool *pool,
 				    k_timeout_t timeout)
 {
 	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
@@ -361,12 +361,12 @@ struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool,
 #endif
 
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_with_data_debug(struct net_buf_pool *pool,
+struct net_buf *net_buf_alloc_with_data_debug(const struct net_buf_pool *pool,
 					      void *data, size_t size,
 					      k_timeout_t timeout,
 					      const char *func, int line)
 #else
-struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
+struct net_buf *net_buf_alloc_with_data(const struct net_buf_pool *pool,
 					void *data, size_t size,
 					k_timeout_t timeout)
 #endif
@@ -457,7 +457,7 @@ void net_buf_unref(struct net_buf *buf)
 
 	while (buf) {
 		struct net_buf *frags = buf->frags;
-		struct net_buf_pool *pool;
+		const struct net_buf_pool *pool;
 
 #if defined(CONFIG_NET_BUF_LOG)
 		if (!buf->ref) {
@@ -479,8 +479,8 @@ void net_buf_unref(struct net_buf *buf)
 		pool = net_buf_pool_get(buf->pool_id);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-		atomic_inc(&pool->avail_count);
-		__ASSERT_NO_MSG(atomic_get(&pool->avail_count) <= pool->buf_count);
+		atomic_inc(&NET_BUF_POOL_RT(pool)->avail_count);
+		__ASSERT_NO_MSG(atomic_get(&NET_BUF_POOL_RT(pool)->avail_count) <= pool->buf_count);
 #endif
 
 		if (pool->destroy) {
@@ -506,7 +506,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
-	struct net_buf_pool *pool;
+	const struct net_buf_pool *pool;
 	struct net_buf *clone;
 
 	__ASSERT_NO_MSG(buf);
@@ -675,7 +675,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 		if (allocate_cb) {
 			frag = allocate_cb(timeout, user_data);
 		} else {
-			struct net_buf_pool *pool;
+			const struct net_buf_pool *pool;
 
 			/* Allocate from the original pool if no callback has
 			 * been provided.

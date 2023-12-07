@@ -50,7 +50,7 @@ static struct k_mem_slab *get_tx_slab(void)
 	return &syslog_tx_pkts;
 }
 
-struct net_buf_pool *get_data_pool(void)
+const struct net_buf_pool *get_data_pool(void)
 {
 	return &syslog_tx_bufs;
 }

@@ -4318,7 +4318,7 @@ static bool on_cmd_device_service_ind(struct net_buf **buf, uint16_t len)
 static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 						void *user_data)
 {
-	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
+	return net_buf_alloc((const struct net_buf_pool *)user_data, timeout);
 }
 
 static size_t hl7800_read_rx(struct net_buf **buf)
@@ -4356,7 +4356,7 @@ static size_t hl7800_read_rx(struct net_buf **buf)
 		rx_len =
 			net_buf_append_bytes(*buf, bytes_read, uart_buffer,
 					     BUF_ALLOC_TIMEOUT,
-					     read_rx_allocator, &mdm_recv_pool);
+					     read_rx_allocator, (void *)&mdm_recv_pool);
 		if (rx_len < bytes_read) {
 			LOG_ERR("Data was lost! read %u of %zu!", rx_len,
 				bytes_read);

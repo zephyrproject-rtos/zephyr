@@ -387,7 +387,7 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
+struct net_buf *bt_conn_create_pdu_timeout_debug(const struct net_buf_pool *pool,
 						 size_t reserve,
 						 k_timeout_t timeout,
 						 const char *func, int line);
@@ -399,7 +399,7 @@ struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
 	bt_conn_create_pdu_timeout_debug(_pool, _reserve, K_FOREVER, \
 					 __func__, __line__)
 #else
-struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
+struct net_buf *bt_conn_create_pdu_timeout(const struct net_buf_pool *pool,
 					   size_t reserve, k_timeout_t timeout);
 
 #define bt_conn_create_pdu(_pool, _reserve) \

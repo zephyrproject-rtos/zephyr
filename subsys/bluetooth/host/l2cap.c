@@ -445,7 +445,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 					       uint16_t len)
 {
 	struct bt_l2cap_sig_hdr *hdr;
-	struct net_buf_pool *pool = NULL;
+	const struct net_buf_pool *pool = NULL;
 	struct net_buf *buf;
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
@@ -652,7 +652,7 @@ void bt_l2cap_security_changed(struct bt_conn *conn, uint8_t hci_status)
 	}
 }
 
-struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
+struct net_buf *bt_l2cap_create_pdu_timeout(const struct net_buf_pool *pool,
 					    size_t reserve,
 					    k_timeout_t timeout)
 {
@@ -1816,7 +1816,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_chan *ch)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg;
 
 	/* Use the dedicated segment callback if registered */

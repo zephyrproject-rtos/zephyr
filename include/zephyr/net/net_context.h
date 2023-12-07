@@ -186,7 +186,7 @@ typedef struct k_mem_slab *(*net_pkt_get_slab_func_t)(void);
  *
  * @return Pointer to valid struct net_buf_pool instance.
  */
-typedef struct net_buf_pool *(*net_pkt_get_pool_func_t)(void);
+typedef const struct net_buf_pool *(*net_pkt_get_pool_func_t)(void);
 
 struct net_tcp;
 

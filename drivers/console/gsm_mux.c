@@ -1323,7 +1323,7 @@ static void gsm_mux_process_data(struct gsm_mux *mux, uint8_t recv_byte)
 						   (void *)&recv_byte,
 						   BUF_ALLOC_TIMEOUT,
 						   gsm_mux_alloc_buf,
-						   &gsm_mux_pool);
+						   (void *)&gsm_mux_pool);
 		if (bytes_added != 1) {
 			gsm_mux_change_state(mux, GSM_MUX_SOF);
 		} else if (++mux->received == mux->msg_len) {

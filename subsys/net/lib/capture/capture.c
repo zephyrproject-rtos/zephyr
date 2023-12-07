@@ -101,7 +101,7 @@ static struct k_mem_slab *get_net_pkt(void)
 	return &capture_pkts;
 }
 
-static struct net_buf_pool *get_net_buf(void)
+static const struct net_buf_pool *get_net_buf(void)
 {
 	return &capture_bufs;
 }

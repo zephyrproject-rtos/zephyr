@@ -42,7 +42,7 @@ struct usb_audio_dev_data {
 
 	struct usb_dev_data common;
 
-	struct net_buf_pool *pool;
+	const struct net_buf_pool *pool;
 
 	/* Not applicable for Headphones, left with 0 */
 	uint16_t in_frame_size;

@@ -28,7 +28,7 @@ struct net_buf *bt_iso_get_rx(k_timeout_t timeout)
 	return buf;
 }
 
-struct net_buf_pool *bt_buf_get_iso_rx_pool(void)
+const struct net_buf_pool *bt_buf_get_iso_rx_pool(void)
 {
 	return &iso_rx_pool;
 }

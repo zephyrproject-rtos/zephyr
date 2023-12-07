@@ -1156,7 +1156,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_noleak_buf)
 	const int bufs_to_allocate = 3;
 	const size_t pkt_size = CONFIG_NET_BUF_DATA_SIZE * bufs_to_allocate;
 	struct net_pkt *pkt, *shallow_pkt;
-	struct net_buf_pool *tx_data;
+	const struct net_buf_pool *tx_data;
 
 	pkt = net_pkt_alloc_with_buffer(NULL, pkt_size,
 					AF_UNSPEC, 0, K_NO_WAIT);
@@ -1164,20 +1164,24 @@ ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_noleak_buf)
 	zassert_true(pkt != NULL, "Pkt not allocated");
 
 	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count - bufs_to_allocate,
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count - bufs_to_allocate,
 		      "Incorrect net buf allocation");
 
 	shallow_pkt = net_pkt_shallow_clone(pkt, K_NO_WAIT);
 	zassert_true(shallow_pkt != NULL, "Pkt not allocated");
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count - bufs_to_allocate,
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count - bufs_to_allocate,
 		      "Incorrect available net buf count");
 
 	net_pkt_unref(pkt);
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count - bufs_to_allocate,
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count - bufs_to_allocate,
 		      "Incorrect available net buf count");
 
 	net_pkt_unref(shallow_pkt);
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count,
 		      "Leak detected");
 
 }
@@ -1195,14 +1199,15 @@ void test_net_pkt_shallow_clone_append_buf(int extra_frag_refcounts)
 	struct net_pkt *pkt, *shallow_pkt;
 	struct net_buf *frag_head;
 	struct net_buf *frag;
-	struct net_buf_pool *tx_data;
+	const struct net_buf_pool *tx_data;
 
 	pkt = net_pkt_alloc_with_buffer(NULL, pkt_size, AF_UNSPEC, 0, K_NO_WAIT);
 	zassert_true(pkt != NULL, "Pkt not allocated");
 
 	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count
-		      - bufs_to_allocate, "Incorrect net buf allocation");
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count - bufs_to_allocate,
+		      "Incorrect net buf allocation");
 
 	shallow_pkt = net_pkt_shallow_clone(pkt, K_NO_WAIT);
 	zassert_true(shallow_pkt != NULL, "Pkt not allocated");
@@ -1217,8 +1222,9 @@ void test_net_pkt_shallow_clone_append_buf(int extra_frag_refcounts)
 		}
 	}
 
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count
-		      - bufs_to_allocate - bufs_frag, "Incorrect net buf allocation");
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count - bufs_to_allocate - bufs_frag,
+		      "Incorrect net buf allocation");
 
 	/* Note: if the frag is appended to a net buf, then the nut buf */
 	/* takes ownership of one ref count. Otherwise net_buf_unref() must */
@@ -1231,8 +1237,8 @@ void test_net_pkt_shallow_clone_append_buf(int extra_frag_refcounts)
 	net_pkt_unref(pkt);
 
 	/* we shouldn't have freed any buffers yet */
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count
-		      - bufs_to_allocate - bufs_frag,
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+		      tx_data->buf_count - bufs_to_allocate - bufs_frag,
 		      "Incorrect net buf allocation");
 
 	net_pkt_unref(shallow_pkt);
@@ -1240,12 +1246,13 @@ void test_net_pkt_shallow_clone_append_buf(int extra_frag_refcounts)
 	if (extra_frag_refcounts == 0) {
 		/* if no extra ref counts to frag were added then we should free */
 		/* all the buffers at this point */
-		zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,
+		zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
+			      tx_data->buf_count,
 			      "Leak detected");
 	} else {
 		/* otherwise only bufs_frag should be available, and frag could */
 		/* still used at this point */
-		zassert_equal(atomic_get(&tx_data->avail_count),
+		zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count),
 			      tx_data->buf_count - bufs_frag, "Leak detected");
 	}
 
@@ -1254,7 +1261,7 @@ void test_net_pkt_shallow_clone_append_buf(int extra_frag_refcounts)
 	}
 
 	/* all the buffers should be freed now */
-	zassert_equal(atomic_get(&tx_data->avail_count), tx_data->buf_count,
+	zassert_equal(atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count), tx_data->buf_count,
 		      "Leak detected");
 }
 

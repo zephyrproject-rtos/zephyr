@@ -155,12 +155,12 @@ static struct bt_conn *iso_new(void)
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_iso_create_pdu_timeout_debug(struct net_buf_pool *pool,
+struct net_buf *bt_iso_create_pdu_timeout_debug(const struct net_buf_pool *pool,
 						size_t reserve,
 						k_timeout_t timeout,
 						const char *func, int line)
 #else
-struct net_buf *bt_iso_create_pdu_timeout(struct net_buf_pool *pool,
+struct net_buf *bt_iso_create_pdu_timeout(const struct net_buf_pool *pool,
 					  size_t reserve, k_timeout_t timeout)
 #endif
 {
@@ -186,7 +186,7 @@ struct net_buf *bt_iso_create_frag_timeout_debug(size_t reserve,
 struct net_buf *bt_iso_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 #endif
 {
-	struct net_buf_pool *pool = NULL;
+	const struct net_buf_pool *pool = NULL;
 
 #if CONFIG_BT_ISO_TX_FRAG_COUNT > 0
 	pool = &iso_frag_pool;

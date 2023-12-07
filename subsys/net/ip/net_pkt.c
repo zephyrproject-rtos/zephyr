@@ -276,7 +276,7 @@ const char *net_pkt_slab2str(struct k_mem_slab *slab)
 	return "EXT";
 }
 
-const char *net_pkt_pool2str(struct net_buf_pool *pool)
+const char *net_pkt_pool2str(const struct net_buf_pool *pool)
 {
 	if (pool == &rx_bufs) {
 		return "RDATA";
@@ -287,10 +287,10 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool)
 	return "EDATA";
 }
 
-static inline int16_t get_frees(struct net_buf_pool *pool)
+static inline int16_t get_frees(const struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-	return atomic_get(&pool->avail_count);
+	return atomic_get(&NET_BUF_POOL_RT(pool)->avail_count);
 #else
 	return 0;
 #endif
@@ -333,7 +333,7 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 #endif
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-static inline const char *get_name(struct net_buf_pool *pool)
+static inline const char *get_name(const struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	return pool->name;
@@ -342,7 +342,7 @@ static inline const char *get_name(struct net_buf_pool *pool)
 #endif
 }
 
-static inline int16_t get_size(struct net_buf_pool *pool)
+static inline int16_t get_size(const struct net_buf_pool *pool)
 {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 	return pool->pool_size;
@@ -356,20 +356,20 @@ static inline const char *slab2str(struct k_mem_slab *slab)
 	return net_pkt_slab2str(slab);
 }
 
-static inline const char *pool2str(struct net_buf_pool *pool)
+static inline const char *pool2str(const struct net_buf_pool *pool)
 {
 	return net_pkt_pool2str(pool);
 }
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
+struct net_buf *net_pkt_get_reserve_data_debug(const struct net_buf_pool *pool,
 					       size_t min_len,
 					       k_timeout_t timeout,
 					       const char *caller,
 					       int line)
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
-struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
+struct net_buf *net_pkt_get_reserve_data(const struct net_buf_pool *pool,
 					 size_t min_len, k_timeout_t timeout)
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 {
@@ -491,7 +491,7 @@ static inline struct k_mem_slab *get_tx_slab(struct net_context *context)
 	return NULL;
 }
 
-static inline struct net_buf_pool *get_data_pool(struct net_context *context)
+static inline const struct net_buf_pool *get_data_pool(struct net_context *context)
 {
 	if (context->data_pool) {
 		return context->data_pool();
@@ -823,8 +823,8 @@ void net_pkt_compact(struct net_pkt *pkt)
 
 void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct k_mem_slab **tx,
-		      struct net_buf_pool **rx_data,
-		      struct net_buf_pool **tx_data)
+		      const struct net_buf_pool **rx_data,
+		      const struct net_buf_pool **tx_data)
 {
 	if (rx) {
 		*rx = &rx_pkts;
@@ -858,11 +858,11 @@ void net_pkt_print(void)
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(const struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout,
 					const char *caller, int line)
 #else
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(const struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout)
 #endif
 {
@@ -916,11 +916,11 @@ error:
 #else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(const struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout,
 					const char *caller, int line)
 #else
-static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
+static struct net_buf *pkt_alloc_buffer(const struct net_buf_pool *pool,
 					size_t size, k_timeout_t timeout)
 #endif
 {
@@ -1138,7 +1138,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 k_timeout_t timeout)
 #endif
 {
-	struct net_buf_pool *pool = NULL;
+	const struct net_buf_pool *pool = NULL;
 	size_t alloc_len = 0;
 	size_t hdr_len = 0;
 	struct net_buf *buf;
@@ -1207,7 +1207,7 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
 			     k_timeout_t timeout)
 #endif
 {
-	struct net_buf_pool *pool = NULL;
+	const struct net_buf_pool *pool = NULL;
 	struct net_buf *buf;
 
 	if (size == 0) {

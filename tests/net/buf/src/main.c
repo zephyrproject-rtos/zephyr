@@ -73,7 +73,7 @@ NET_BUF_POOL_VAR_DEFINE(var_pool, 10, 1024, USER_DATA_VAR, var_destroy);
 
 static void buf_destroy(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
 	zassert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
@@ -82,7 +82,7 @@ static void buf_destroy(struct net_buf *buf)
 
 static void fixed_destroy(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
 	zassert_equal(pool, &fixed_pool, "Invalid free pointer in buffer");
@@ -91,7 +91,7 @@ static void fixed_destroy(struct net_buf *buf)
 
 static void var_destroy(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
 	zassert_equal(pool, &var_pool, "Invalid free pointer in buffer");
