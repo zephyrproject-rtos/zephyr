@@ -14,8 +14,6 @@
 
 #include "emul.h"
 
-#define CONFIG_SMBUS_LOG_LEVEL LOG_LEVEL_DBG
-
 #define PERIPH_ADDR	0x10
 
 static uint8_t mock_sys_in8(io_port_t port)
