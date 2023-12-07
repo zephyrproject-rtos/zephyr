@@ -161,9 +161,13 @@ void soc_mp_startup(uint32_t cpu)
 	/* Must have this enabled always */
 	z_xtensa_irq_enable(ACE_INTC_IRQ);
 
-	/* Prevent idle from powering us off */
-	DSPCS.bootctl[cpu].bctl |=
-		DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
+#if CONFIG_ADSP_IDLE_CLOCK_GATING
+	/* Disable idle power gating */
+	DSPCS.bootctl[cpu].bctl |= DSPBR_BCTL_WAITIPPG;
+#else
+	/* Disable idle power and clock gating */
+	DSPCS.bootctl[cpu].bctl |= DSPBR_BCTL_WAITIPCG | DSPBR_BCTL_WAITIPPG;
+#endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
 }
 
 void arch_sched_ipi(void)
