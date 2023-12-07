@@ -29,6 +29,15 @@ choice LV_Z_MEMORY_POOL
 		help
 		  Use a dedicated memory pool from a private sys heap.
 
+config LV_Z_MEMORY_POOL_CUSTOM_SECTION
+	bool "Link lvgl memory pool to custom section"
+	depends on LV_Z_MEM_POOL_SYS_HEAP
+	help
+	  Place LVGL memory pool in custom section, with tag ".lvgl_heap".
+	  This can be used by custom linker scripts to relocate the LVGL
+	  memory pool to a custom location, such as tightly coupled or
+	  external memory.
+
 endchoice
 
 config LV_Z_MEM_POOL_SIZE
