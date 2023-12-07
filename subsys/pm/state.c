@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/pm/state.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/toolchain.h>
 
 BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
@@ -65,4 +66,36 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
 	*states = cpus_states[cpu];
 
 	return states_per_cpu[cpu];
+}
+
+void pm_state_custom_data_set(enum pm_state state, uint8_t substate_id,
+			      const void *data)
+{
+#ifdef CONFIG_PM_STATE_CUSTOM_DATA
+	for (int16_t i = 0; i < ARRAY_SIZE(cpus_states); i++) {
+		struct pm_state_info *state_info = cpus_states[i];
+
+		if ((state_info->state == state) &&
+		    ((state_info->substate_id == substate_id)) ||
+		    (substate_id == PM_ALL_SUBSTATES)) {
+			state_info->custom_data = data;
+		}
+	}
+#endif
+}
+
+void *pm_state_custom_data_get(enum pm_state state, uint8_t substate_id)
+{
+#ifdef CONFIG_PM_STATE_CUSTOM_DATA
+	for (int16_t i = 0; i < ARRAY_SIZE(cpus_states); i++) {
+		struct pm_state_info *state_info = cpus_states[i];
+
+		if ((state_info->state == state) &&
+		    (state_info->substate_id == substate_id)) {
+			return state_info->custom_data;
+		}
+	}
+#endif
+
+	return NULL;
 }
