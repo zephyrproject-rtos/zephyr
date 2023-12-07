@@ -84,9 +84,9 @@ int main(void)
 		}
 	}
 
-	offset = TEST_PARTITION_OFFSET - FLASH_PAGE_SIZE * 2;
-	printf("\nTest 3: Flash erase (4 pages at 0x%x)\n", offset);
-	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 4) != 0) {
+	offset = TEST_PARTITION_OFFSET;
+	printf("\nTest 3: Flash erase (2 pages at 0x%x)\n", offset);
+	if (flash_erase(flash_dev, offset, FLASH_PAGE_SIZE * 2) != 0) {
 		printf("   Flash erase failed!\n");
 	} else {
 		printf("   Flash erase succeeded!\n");
