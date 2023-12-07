@@ -5,5 +5,6 @@ config NUCLEI_ECLIC
 	bool "Enhanced Core Local Interrupt Controller (ECLIC)"
 	default y
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
 	help
 	  Interrupt controller for Nuclei SoC core.
