@@ -337,6 +337,20 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
 };
 
+/** Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
+ * in the disconnect result event for detailed reason.
+ */
+enum wifi_disconn_reason {
+	/** Unspecified reason */
+	WIFI_REASON_DISCONN_UNSPECIFIED = 0,
+	/** Disconnected due to user request */
+	WIFI_REASON_DISCONN_USER_REQUEST,
+	/** Disconnected due to AP leaving */
+	WIFI_REASON_DISCONN_AP_LEAVING,
+	/** Disconnected due to inactivity */
+	WIFI_REASON_DISCONN_INACTIVITY,
+};
+
 /** Generic Wi-Fi status for commands and events */
 struct wifi_status {
 	int status;
