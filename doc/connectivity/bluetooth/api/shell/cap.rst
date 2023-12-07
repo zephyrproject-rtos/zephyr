@@ -173,7 +173,8 @@ command also needs to be called.
 When connected
 --------------
 
-Discovering CAS and CSIS on a device:
+Discovering CAS and CSIS on a device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
@@ -181,7 +182,8 @@ Discovering CAS and CSIS on a device:
    discovery completed with CSIS
 
 
-Setting the volume on all connected devices:
+Setting the volume on all connected devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: console
 
@@ -197,9 +199,10 @@ Setting the volume on all connected devices:
    VCP vol_set done
    Volume change completed
 
-
-Setting the volume offset on one or more connected devices. The offsets are set by connection index,
-so connection index 0 gets the first offset, and index 1 gets the second offset, etc.:
+Setting the volume offset on one or more devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The offsets are set by connection index, so connection index 0 gets the first offset,
+and index 1 gets the second offset, etc.:
 
 .. code-block:: console
 
@@ -229,3 +232,37 @@ so connection index 0 gets the first offset, and index 1 gets the second offset,
    VOCS inst 0x20014188 offset 15
    Offset set for inst 0x20014188
    Volume offset change completed
+
+Setting the volume mute on all connected devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ bt connect <device B>
+   Connected: <device B>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ vcp_vol_ctlr discover
+   VCP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ cap_commander change_volume_mute 1
+   Setting volume mute to 1 on 2 connections
+   VCP volume 100, mute 1
+   VCP mute done
+   VCP volume 100, mute 1
+   VCP mute done
+   Volume mute change completed
+   uart:~$ cap_commander change_volume_mute 0
+   Setting volume mute to 0 on 2 connections
+   VCP volume 100, mute 0
+   VCP unmute done
+   VCP volume 100, mute 0
+   VCP unmute done
+   Volume mute change completed
