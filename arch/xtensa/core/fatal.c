@@ -11,6 +11,9 @@
 #include <xtensa_backtrace.h>
 #include <zephyr/debug/coredump.h>
 #include <zephyr/arch/common/exc_handle.h>
+
+#include <xtensa_internal.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
