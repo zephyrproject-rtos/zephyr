@@ -7,11 +7,11 @@
 Tests for testinstance class
 """
 
+from contextlib import nullcontext
 import os
 import sys
 import pytest
-
-from unittest import mock
+import mock
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 from twisterlib.testinstance import TestInstance
 from twisterlib.error import BuildError
 from twisterlib.runner import TwisterRunner
+from twisterlib.handlers import QEMUHandler
 from expr_parser import reserved
 
 
@@ -175,3 +176,420 @@ def test_which_filter_stages(filter_expr, expected_stages):
     logic_keys = reserved.keys()
     stages = TwisterRunner.get_cmake_filter_stages(filter_expr, logic_keys)
     assert sorted(stages) == sorted(expected_stages)
+
+
+@pytest.fixture(name='testinstance')
+def sample_testinstance(all_testsuites_dict, class_testplan, platforms_list, request):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites'
+    if request.param['testsuite_kind']  == 'sample':
+        testsuite_path += '/samples/test_app/sample_test.app'
+    elif request.param['testsuite_kind'] == 'tests':
+        testsuite_path += '/tests/test_a/test_a.check_1'
+
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform(request.param.get('board_name', 'demo_board_2'))
+
+    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    return testinstance
+
+
+TESTDATA_1 = [
+    (False),
+    (True),
+]
+
+@pytest.mark.parametrize('detailed_test_id', TESTDATA_1)
+def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, detailed_test_id):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite.detailed_test_id = detailed_test_id
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+
+    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+
+    if detailed_test_id:
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.name, testsuite_path)
+    else:
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.name, testsuite.source_dir_rel, testsuite.name)
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
+def test_testinstance_add_filter(testinstance):
+    reason = 'dummy reason'
+    filter_type = 'dummy type'
+
+    testinstance.add_filter(reason, filter_type)
+
+    assert {'type': filter_type, 'reason': reason} in testinstance.filters
+    assert testinstance.status == 'filtered'
+    assert testinstance.reason == reason
+    assert testinstance.filter_type == filter_type
+
+
+def test_testinstance_init_cases(all_testsuites_dict, class_testplan, platforms_list):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+
+    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+
+    testinstance.init_cases()
+
+    assert all(
+        [
+            any(
+                [
+                    tcc.name == tc.name and tcc.freeform == tc.freeform \
+                        for tcc in testinstance.testsuite.testcases
+                ]
+            ) for tc in testsuite.testcases
+        ]
+    )
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'sample'}], indirect=True)
+def test_testinstance_get_run_id(testinstance):
+    res = testinstance._get_run_id()
+
+    assert isinstance(res, str)
+
+
+TESTDATA_2 = [
+    ('another reason', 'another reason'),
+    (None, 'dummy reason'),
+]
+
+@pytest.mark.parametrize('reason, expected_reason', TESTDATA_2)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_add_missing_case_status(testinstance, reason, expected_reason):
+    testinstance.reason = 'dummy reason'
+
+    status = 'passed'
+
+    assert len(testinstance.testcases) > 1, 'Selected testsuite does not have enough testcases.'
+
+    testinstance.testcases[0].status = 'started'
+    testinstance.testcases[-1].status = None
+
+    testinstance.add_missing_case_status(status, reason)
+
+    assert testinstance.testcases[0].status == 'failed'
+    assert testinstance.testcases[-1].status == 'passed'
+    assert testinstance.testcases[-1].reason == expected_reason
+
+
+def test_testinstance_dunders(all_testsuites_dict, class_testplan, platforms_list):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+
+    testinstance = TestInstance(testsuite, platform, class_testplan.env.outdir)
+    testinstance_copy = TestInstance(testsuite, platform, class_testplan.env.outdir)
+
+    d = testinstance.__getstate__()
+
+    d['name'] = 'dummy name'
+    testinstance_copy.__setstate__(d)
+
+    d['name'] = 'another name'
+    testinstance.__setstate__(d)
+
+    assert testinstance < testinstance_copy
+
+    testinstance_copy.__setstate__(d)
+
+    assert not testinstance < testinstance_copy
+    assert not testinstance_copy < testinstance
+
+    assert testinstance.__repr__() == f'<TestSuite {testsuite_path} on demo_board_2>'
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_set_case_status_by_name(testinstance):
+    name = 'test_a.check_1.2a'
+    status = 'dummy status'
+    reason = 'dummy reason'
+
+    tc = testinstance.set_case_status_by_name(name, status, reason)
+
+    assert tc.name == name
+    assert tc.status == status
+    assert tc.reason == reason
+
+    tc = testinstance.set_case_status_by_name(name, status, None)
+
+    assert tc.reason == reason
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_add_testcase(testinstance):
+    name = 'test_a.check_1.3a'
+    freeform = True
+
+    tc = testinstance.add_testcase(name, freeform)
+
+    assert tc in testinstance.testcases
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_get_case_by_name(testinstance):
+    name = 'test_a.check_1.2a'
+
+    tc = testinstance.get_case_by_name(name)
+
+    assert tc.name == name
+
+    name = 'test_a.check_1.3a'
+
+    tc = testinstance.get_case_by_name(name)
+
+    assert tc is None
+
+
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_get_case_or_create(caplog, testinstance):
+    name = 'test_a.check_1.2a'
+
+    tc = testinstance.get_case_or_create(name)
+
+    assert tc.name == name
+
+    name = 'test_a.check_1.3a'
+
+    tc = testinstance.get_case_or_create(name)
+
+    assert tc.name == name
+    assert 'Could not find a matching testcase for test_a.check_1.3a' in caplog.text
+
+
+TESTDATA_3 = [
+    (None, 'nonexistent harness', False),
+    ('nonexistent fixture', 'console', False),
+    (None, 'console', True),
+    ('dummy fixture', 'console', True),
+]
+
+@pytest.mark.parametrize(
+    'fixture, harness, expected_can_run',
+    TESTDATA_3,
+    ids=['improper harness', 'fixture not in list', 'no fixture specified', 'fixture in list']
+)
+def test_testinstance_testsuite_runnable(
+    all_testsuites_dict,
+    class_testplan,
+    fixture,
+    harness,
+    expected_can_run
+):
+    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get(testsuite_path)
+
+    testsuite.harness = harness
+    testsuite.harness_config['fixture'] = fixture
+
+    fixtures = ['dummy fixture']
+
+    can_run = TestInstance.testsuite_runnable(testsuite, fixtures)\
+
+    assert can_run == expected_can_run
+
+
+TESTDATA_4 = [
+    (True, mock.ANY, mock.ANY, mock.ANY, None, [], False),
+    (False, True, mock.ANY, mock.ANY, 'device', [], True),
+    (False, False, 'qemu', mock.ANY, 'qemu', ['QEMU_PIPE=1'], True),
+    (False, False, 'dummy sim', mock.ANY, 'dummy sim', [], True),
+    (False, False, 'na', 'unit', 'unit', ['COVERAGE=1'], True),
+    (False, False, 'na', 'dummy type', '', [], False),
+]
+
+@pytest.mark.parametrize(
+    'preexisting_handler, device_testing, platform_sim, testsuite_type,' \
+    ' expected_handler_type, expected_handler_args, expected_handler_ready',
+    TESTDATA_4,
+    ids=['preexisting handler', 'device testing', 'qemu simulation',
+         'non-qemu simulation with exec', 'unit teting', 'no handler']
+)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_setup_handler(
+    testinstance,
+    preexisting_handler,
+    device_testing,
+    platform_sim,
+    testsuite_type,
+    expected_handler_type,
+    expected_handler_args,
+    expected_handler_ready
+):
+    testinstance.handler = mock.Mock() if preexisting_handler else None
+    testinstance.platform.simulation = platform_sim
+    testinstance.platform.simulation_exec = 'dummy exec'
+    testinstance.testsuite.type = testsuite_type
+    env = mock.Mock(
+        options=mock.Mock(
+            device_testing=device_testing,
+            enable_coverage=True
+        )
+    )
+
+    with mock.patch.object(QEMUHandler, 'get_fifo', return_value=1), \
+         mock.patch('shutil.which', return_value=True):
+        testinstance.setup_handler(env)
+
+    if expected_handler_type:
+        assert testinstance.handler.type_str == expected_handler_type
+        assert testinstance.handler.ready == expected_handler_ready
+    assert all([arg in testinstance.handler.args for arg in expected_handler_args])
+
+
+TESTDATA_5 = [
+    ('nt', 'renode', mock.ANY, mock.ANY,
+     mock.ANY, mock.ANY, mock.ANY,
+     mock.ANY, mock.ANY, mock.ANY, mock.ANY, False),
+    ('linux', mock.ANY, mock.ANY, mock.ANY,
+     True, mock.ANY, mock.ANY,
+     mock.ANY, mock.ANY, mock.ANY, mock.ANY, False),
+    ('linux', mock.ANY, mock.ANY, mock.ANY,
+     False, True, mock.ANY,
+     False, mock.ANY, mock.ANY, mock.ANY, False),
+    ('linux', 'qemu', mock.ANY, mock.ANY,
+     False, mock.ANY, 'pytest',
+     mock.ANY, 'not runnable', mock.ANY, None, True),
+    ('linux', 'renode', 'renode', True,
+     False, mock.ANY, 'console',
+     mock.ANY, 'not runnable', [], None, True),
+    ('linux', 'renode', 'renode', False,
+     False, mock.ANY, 'not pytest',
+     mock.ANY, 'not runnable', mock.ANY, None, False),
+    ('linux', 'qemu', mock.ANY, mock.ANY,
+     False, mock.ANY, 'console',
+     mock.ANY, 'not runnable', ['?'], mock.Mock(duts=[mock.Mock(platform='demo_board_2', fixtures=[])]), True),
+]
+
+@pytest.mark.parametrize(
+    'os_name, platform_sim, platform_sim_exec, exec_exists,' \
+    ' testsuite_build_only, testsuite_slow, testsuite_harness,' \
+    ' enable_slow, filter, fixtures, hardware_map, expected',
+    TESTDATA_5,
+    ids=['windows', 'build only', 'skip slow', 'pytest harness', 'sim', 'no sim', 'hardware map']
+)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_check_runnable(
+    testinstance,
+    os_name,
+    platform_sim,
+    platform_sim_exec,
+    exec_exists,
+    testsuite_build_only,
+    testsuite_slow,
+    testsuite_harness,
+    enable_slow,
+    filter,
+    fixtures,
+    hardware_map,
+    expected
+):
+    testinstance.platform.simulation = platform_sim
+    testinstance.platform.simulation_exec = platform_sim_exec
+    testinstance.testsuite.build_only = testsuite_build_only
+    testinstance.testsuite.slow = testsuite_slow
+    testinstance.testsuite.harness = testsuite_harness
+
+    with mock.patch('os.name', os_name), \
+         mock.patch('shutil.which', return_value=exec_exists):
+        res = testinstance.check_runnable(enable_slow, filter, fixtures, hardware_map)
+
+    assert res == expected
+
+
+TESTDATA_6 = [
+    (True, 'build.log'),
+    (False, ''),
+]
+
+@pytest.mark.parametrize('from_buildlog, expected_buildlog_filepath', TESTDATA_6)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_calculate_sizes(testinstance, from_buildlog, expected_buildlog_filepath):
+    expected_elf_filepath = 'dummy.elf'
+    expected_extra_sections = []
+    expected_warning = True
+    testinstance.get_elf_file = mock.Mock(return_value='dummy.elf')
+    testinstance.get_buildlog_file = mock.Mock(return_value='build.log')
+
+    sc_mock = mock.Mock()
+    mock_sc = mock.Mock(return_value=sc_mock)
+
+    with mock.patch('twisterlib.testinstance.SizeCalculator', mock_sc):
+        res = testinstance.calculate_sizes(from_buildlog, expected_warning)
+
+    assert res == sc_mock
+    mock_sc.assert_called_once_with(
+        elf_filename=expected_elf_filepath,
+        extra_sections=expected_extra_sections,
+        buildlog_filepath=expected_buildlog_filepath,
+        generate_warning=expected_warning
+    )
+
+
+TESTDATA_7 = [
+    (True, None),
+    (False, BuildError),
+]
+
+@pytest.mark.parametrize('sysbuild, expected_error', TESTDATA_7)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_get_elf_file(caplog, tmp_path, testinstance, sysbuild, expected_error):
+    sysbuild_dir = tmp_path / 'sysbuild'
+    sysbuild_dir.mkdir()
+    zephyr_dir = sysbuild_dir / 'zephyr'
+    zephyr_dir.mkdir()
+    sysbuild_elf = zephyr_dir / 'dummy.elf'
+    sysbuild_elf.write_bytes(b'0')
+    sysbuild_elf2 = zephyr_dir / 'dummy2.elf'
+    sysbuild_elf2.write_bytes(b'0')
+
+    testinstance.testsuite.sysbuild = sysbuild
+    testinstance.domains = mock.Mock(
+        get_default_domain=mock.Mock(
+            return_value=mock.Mock(
+                build_dir=sysbuild_dir
+            )
+        )
+    )
+
+    with pytest.raises(expected_error) if expected_error else nullcontext():
+        testinstance.get_elf_file()
+
+    if expected_error is None:
+        assert 'multiple ELF files detected: ' in caplog.text
+
+
+TESTDATA_8 = [
+    (True, None),
+    (False, BuildError),
+]
+
+@pytest.mark.parametrize('create_build_log, expected_error', TESTDATA_8)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_get_buildlog_file(tmp_path, testinstance, create_build_log, expected_error):
+    if create_build_log:
+        build_dir = tmp_path / 'build'
+        build_dir.mkdir()
+        build_log = build_dir / 'build.log'
+        build_log.write_text('')
+        testinstance.build_dir = build_dir
+
+    with pytest.raises(expected_error) if expected_error else nullcontext():
+        res = testinstance.get_buildlog_file()
+
+    if expected_error is None:
+        assert res == str(build_log)
