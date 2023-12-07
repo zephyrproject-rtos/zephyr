@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h750Xb.dtsi>
+#include <st/h7/stm32h750xbhx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
+	compatible = "st,stm32h750b-dk";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpioi 13 GPIO_ACTIVE_LOW>;
+			label = "USER1 LD6";
+		};
+		green_led: led_2 {
+			gpios = <&gpioj 2 GPIO_ACTIVE_LOW>;
+			label = "USER2 LD7";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass;
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
