@@ -154,6 +154,14 @@ struct pm_state_info {
 	 * @note 0 means that this property is not available for this state.
 	 */
 	uint32_t exit_latency_us;
+
+#ifdef CONFIG_PM_STATE_CUSTOM_DATA
+	/**
+	 * Target specific custom data. Support for runtime customization of
+	 * a particular idle state.
+	 */
+	const void *custom_data;
+#endif
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -341,6 +349,39 @@ struct pm_state_info {
 uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
 
 /**
+ * @brief Set state's custom data.
+ *
+ * This routine sets the custom data for @a state thread to @ value.
+ *
+ * Custom data is not used by the subsystem itself, and is freely available
+ * for a SoC to use as it sees fit. It can be used to SoCs expose a way to
+ * applications customize a state behavior.
+ *
+ * @note @kconfig{CONFIG_PM_STATE_CUSTOM_DATA} must be set for this function
+ * to be effective.
+ *
+ * @param state Power state.
+ * @param substate_id Substate id. It can be @c PM_ALL_SUBSTATES.
+ * @param data New custom data value.
+ */
+void pm_state_custom_data_set(enum pm_state state, uint8_t substate_id, const void *data);
+
+/**
+ * @brief Get current state's custom data.
+ *
+ * This routine returns the custom data for the given state.
+ *
+ * @note @kconfig{CONFIG_PM_STATE_CUSTOM_DATA} must be set for this function
+ * to be effective.
+ *
+ * @param state Power state.
+ * @param substate_id Substate id.
+ *
+ * @return Current custom data value.
+ */
+void *pm_state_custom_data_get(enum pm_state state, uint8_t substate_id);
+
+/**
  * @}
  */
 
@@ -352,6 +393,22 @@ static inline uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_in
 	ARG_UNUSED(states);
 
 	return 0;
+}
+
+static inline void pm_state_custom_data_set(enum pm_state state,
+				    uint8_t substate_id, const void *data)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+	ARG_UNUSED(data);
+}
+
+static inline void *pm_state_custom_data_get(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return NULL;
 }
 
 #endif /* CONFIG_PM */
