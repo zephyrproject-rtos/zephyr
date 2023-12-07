@@ -176,9 +176,7 @@ int intel_adsp_hda_dma_host_reload(const struct device *dev, uint32_t channel,
 	__ASSERT(channel < cfg->dma_channels, "Channel does not exist");
 
 #if CONFIG_DMA_INTEL_ADSP_HDA_TIMING_L1_EXIT
-#if CONFIG_SOC_SERIES_INTEL_ACE
-	ACE_DfPMCCH.svcfg |= ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT;
-#endif
+	intel_adsp_force_dmi_l0_state();
 	switch (cfg->direction) {
 	case HOST_TO_MEMORY:
 		; /* Only statements can be labeled in C, a declaration is not valid */
@@ -458,9 +456,7 @@ void intel_adsp_hda_dma_isr(void)
 	}
 
 	if (clear_l1_exit) {
-#if CONFIG_SOC_SERIES_INTEL_ACE
-		ACE_DfPMCCH.svcfg &= ~(ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT);
-#endif
+		intel_adsp_allow_dmi_l1_state();
 	}
 #endif
 }
