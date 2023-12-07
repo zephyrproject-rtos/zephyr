@@ -50,6 +50,9 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 		return WIFI_STATUS_CONN_SUCCESS;
 	case WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT:
 		return WIFI_STATUS_CONN_WRONG_PASSWORD;
+	/* Handle non-supplicant errors */
+	case -ETIMEDOUT:
+		return WIFI_STATUS_CONN_TIMEOUT;
 	default:
 		return WIFI_STATUS_CONN_FAIL;
 	}
