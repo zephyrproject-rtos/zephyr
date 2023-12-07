@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 
+#include <zephyr/drivers/i2c/stm32.h>
+
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
@@ -79,6 +81,12 @@ struct i2c_stm32_data {
 	bool slave_attached;
 #endif
 	bool is_configured;
+	bool smbalert_active;
+	enum i2c_stm32_mode mode;
+#ifdef CONFIG_SMBUS_STM32_SMBALERT
+	i2c_stm32_smbalert_cb_func_t smbalert_cb_func;
+	const struct device *smbalert_cb_dev;
+#endif
 };
 
 int32_t stm32_i2c_transaction(const struct device *dev,
