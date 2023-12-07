@@ -97,4 +97,20 @@
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 	};
+
+	smbus5: smbus5 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c5>;
+		status = "disabled";
+	};
+
+	smbus6: smbus6 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c6>;
+		status = "disabled";
+	};
 };

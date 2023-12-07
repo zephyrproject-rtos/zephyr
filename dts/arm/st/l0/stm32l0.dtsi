@@ -351,6 +351,14 @@
 		io-channels = <&adc1 17>;
 		status = "disabled";
 	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
 };
 
 &nvic {
