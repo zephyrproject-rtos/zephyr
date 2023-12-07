@@ -7,6 +7,11 @@
 #ifndef ZEPHYR_DRIVERS_SMBUS_SMBUS_UTILS_H_
 #define ZEPHYR_DRIVERS_SMBUS_SMBUS_UTILS_H_
 
+#include <stdint.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/smbus.h>
+#include <zephyr/sys/slist.h>
+
 /**
  * @brief Generic function to insert a callback to a callback list
  *
