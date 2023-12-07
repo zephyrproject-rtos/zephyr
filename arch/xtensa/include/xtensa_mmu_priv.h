@@ -15,115 +15,152 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util_macro.h>
 
-#define Z_XTENSA_PTE_VPN_MASK 0xFFFFF000U
-#define Z_XTENSA_PTE_PPN_MASK 0xFFFFF000U
-#define Z_XTENSA_PTE_ATTR_MASK 0x0000000FU
-#define Z_XTENSA_PTE_ATTR_CACHED_MASK 0x0000000CU
-#define Z_XTENSA_L1_MASK 0x3FF00000U
-#define Z_XTENSA_L2_MASK 0x3FFFFFU
+/**
+ * @defgroup xtensa_mmu_internal_apis Xtensa Memory Management Unit (MMU) Internal APIs
+ * @ingroup xtensa_mmu_apis
+ * @{
+ */
 
-#define Z_XTENSA_PPN_SHIFT 12U
+/** Mask for VPN in PTE */
+#define XTENSA_MMU_PTE_VPN_MASK			0xFFFFF000U
 
-#define Z_XTENSA_PTE_RING_MASK 0x00000030U
-#define Z_XTENSA_PTE_RING_SHIFT 4U
+/** Mask for PPN in PTE */
+#define XTENSA_MMU_PTE_PPN_MASK			0xFFFFF000U
 
-#define Z_XTENSA_PTEBASE_MASK 0xFFC00000
+/** Mask for attributes in PTE */
+#define XTENSA_MMU_PTE_ATTR_MASK		0x0000000FU
 
-#define Z_XTENSA_PTE(paddr, ring, attr) \
-	(((paddr) & Z_XTENSA_PTE_PPN_MASK) | \
-	(((ring) << Z_XTENSA_PTE_RING_SHIFT) & Z_XTENSA_PTE_RING_MASK) | \
-	((attr) & Z_XTENSA_PTE_ATTR_MASK))
+/** Mask for cache mode in PTE */
+#define XTENSA_MMU_PTE_ATTR_CACHED_MASK		0x0000000CU
 
-#define Z_XTENSA_PTE_ATTR_GET(pte) \
-	(pte) & Z_XTENSA_PTE_ATTR_MASK
+/** Mask used to figure out which L1 page table to use */
+#define XTENSA_MMU_L1_MASK			0x3FF00000U
 
-#define Z_XTENSA_PTE_ATTR_SET(pte, attr) \
-	(((pte) & ~Z_XTENSA_PTE_ATTR_MASK) | (attr))
+/** Mask used to figure out which L2 page table to use */
+#define XTENSA_MMU_L2_MASK			0x3FFFFFU
 
-#define Z_XTENSA_PTE_RING_SET(pte, ring) \
-	(((pte) & ~Z_XTENSA_PTE_RING_MASK) | \
-	((ring) << Z_XTENSA_PTE_RING_SHIFT))
+#define XTENSA_MMU_PTEBASE_MASK 0xFFC00000
 
-#define Z_XTENSA_PTE_RING_GET(pte) \
-	(((pte) & ~Z_XTENSA_PTE_RING_MASK) >> Z_XTENSA_PTE_RING_SHIFT)
+#define XTENSA_MMU_PTE(paddr, ring, attr) \
+	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
+	(((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
+	((attr) & XTENSA_MMU_PTE_ATTR_MASK))
 
-#define Z_XTENSA_PTE_ASID_GET(pte, rasid) \
-	(((rasid) >> ((((pte) & Z_XTENSA_PTE_RING_MASK) \
-		       >> Z_XTENSA_PTE_RING_SHIFT) * 8)) & 0xFF)
+/** Number of bits to shift for PPN in PTE */
+#define XTENSA_MMU_PTE_PPN_SHIFT		12U
 
-#define Z_XTENSA_TLB_ENTRY(vaddr, way) \
-	(((vaddr) & Z_XTENSA_PTE_PPN_MASK) | (way))
+/** Mask for ring in PTE */
+#define XTENSA_MMU_PTE_RING_MASK		0x00000030U
 
-#define Z_XTENSA_AUTOFILL_TLB_ENTRY(vaddr) \
-	(((vaddr) & Z_XTENSA_PTE_PPN_MASK) | \
-	 (((vaddr) >> Z_XTENSA_PPN_SHIFT) & 0x03U))
+/** Number of bits to shift for ring in PTE */
+#define XTENSA_MMU_PTE_RING_SHIFT		4U
 
-#define Z_XTENSA_L2_POS(vaddr) \
-	(((vaddr) & Z_XTENSA_L2_MASK) >> 12U)
+/** Construct a page table entry (PTE) */
+#define XTENSA_MMU_PTE(paddr, ring, attr) \
+	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
+	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
+	 ((attr) & XTENSA_MMU_PTE_ATTR_MASK))
 
-#define Z_XTENSA_L1_POS(vaddr) \
+/** Get the attributes from a PTE */
+#define XTENSA_MMU_PTE_ATTR_GET(pte) \
+	((pte) & XTENSA_MMU_PTE_ATTR_MASK)
+
+/** Set the attributes in a PTE */
+#define XTENSA_MMU_PTE_ATTR_SET(pte, attr) \
+	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr))
+
+/** Set the ring in a PTE */
+#define XTENSA_MMU_PTE_RING_SET(pte, ring) \
+	(((pte) & ~XTENSA_MMU_PTE_RING_MASK) | \
+	((ring) << XTENSA_MMU_PTE_RING_SHIFT))
+
+/** Get the ring from a PTE */
+#define XTENSA_MMU_PTE_RING_GET(pte) \
+	(((pte) & ~XTENSA_MMU_PTE_RING_MASK) >> XTENSA_MMU_PTE_RING_SHIFT)
+
+/** Get the ASID from the RASID register corresponding to the ring in a PTE */
+#define XTENSA_MMU_PTE_ASID_GET(pte, rasid) \
+	(((rasid) >> ((((pte) & XTENSA_MMU_PTE_RING_MASK) \
+		       >> XTENSA_MMU_PTE_RING_SHIFT) * 8)) & 0xFF)
+
+/** Calculate the L2 page table position from a virtual address */
+#define XTENSA_MMU_L2_POS(vaddr) \
+	(((vaddr) & XTENSA_MMU_L2_MASK) >> 12U)
+
+/** Calculate the L1 page table position from a virtual address */
+#define XTENSA_MMU_L1_POS(vaddr) \
 	((vaddr) >> 22U)
 
-/* PTE attributes for entries in the L1 page table.  Should never be
+/**
+ * @def XTENSA_MMU_PAGE_TABLE_ATTR
+ *
+ * PTE attributes for entries in the L1 page table.  Should never be
  * writable, may be cached in non-SMP contexts only
  */
 #if CONFIG_MP_MAX_NUM_CPUS == 1
-#define Z_XTENSA_PAGE_TABLE_ATTR Z_XTENSA_MMU_CACHED_WB
+#define XTENSA_MMU_PAGE_TABLE_ATTR		XTENSA_MMU_CACHED_WB
 #else
-#define Z_XTENSA_PAGE_TABLE_ATTR 0
+#define XTENSA_MMU_PAGE_TABLE_ATTR		0
 #endif
 
-/* This ASID is shared between all domains and kernel. */
-#define Z_XTENSA_MMU_SHARED_ASID 255
+/** This ASID is shared between all domains and kernel. */
+#define XTENSA_MMU_SHARED_ASID			255
 
-/* Fixed data TLB way to map the page table */
-#define Z_XTENSA_MMU_PTE_WAY 7
+/** Fixed data TLB way to map the page table */
+#define XTENSA_MMU_PTE_WAY			7
 
-/* Fixed data TLB way to map the vecbase */
-#define Z_XTENSA_MMU_VECBASE_WAY 8
+/** Fixed data TLB way to map the vecbase */
+#define XTENSA_MMU_VECBASE_WAY			8
 
-/* Kernel specific ASID. Ring field in the PTE */
-#define Z_XTENSA_KERNEL_RING 0
+/** Kernel specific ASID. Ring field in the PTE */
+#define XTENSA_MMU_KERNEL_RING			0
 
-/* User specific ASID. Ring field in the PTE */
-#define Z_XTENSA_USER_RING 2
+/** User specific ASID. Ring field in the PTE */
+#define XTENSA_MMU_USER_RING			2
 
-/* Ring value for MMU_SHARED_ASID */
-#define Z_XTENSA_SHARED_RING 3
+/** Ring value for MMU_SHARED_ASID */
+#define XTENSA_MMU_SHARED_RING			3
 
-/* Number of data TLB ways [0-9] */
-#define Z_XTENSA_DTLB_WAYS 10
+/** Number of data TLB ways [0-9] */
+#define XTENSA_MMU_NUM_DTLB_WAYS		10
 
-/* Number of instruction TLB ways [0-6] */
-#define Z_XTENSA_ITLB_WAYS 7
+/** Number of instruction TLB ways [0-6] */
+#define XTENSA_MMU_NUM_ITLB_WAYS		7
 
-/* Number of auto-refill ways */
-#define Z_XTENSA_TLB_AUTOREFILL_WAYS 4
+/** Number of auto-refill ways */
+#define XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS	4
 
+/** Indicate PTE is illegal. */
+#define XTENSA_MMU_PTE_ILLEGAL			(BIT(3) | BIT(2))
 
-/* PITLB HIT bit. For more information see
+/**
+ * PITLB HIT bit.
+ *
+ * For more information see
  * Xtensa Instruction Set Architecture (ISA) Reference Manual
  * 4.6.5.7 Formats for Probing MMU Option TLB Entries
  */
-#define Z_XTENSA_PITLB_HIT BIT(3)
+#define XTENSA_MMU_PITLB_HIT			BIT(3)
 
-/* PDTLB HIT bit. For more information see
+/**
+ * PDTLB HIT bit.
+ *
+ * For more information see
  * Xtensa Instruction Set Architecture (ISA) Reference Manual
  * 4.6.5.7 Formats for Probing MMU Option TLB Entries
  */
-#define Z_XTENSA_PDTLB_HIT BIT(4)
+#define XTENSA_MMU_PDTLB_HIT			BIT(4)
 
-/*
+/**
  * Virtual address where the page table is mapped
  */
-#define Z_XTENSA_PTEVADDR CONFIG_XTENSA_MMU_PTEVADDR
+#define XTENSA_MMU_PTEVADDR			CONFIG_XTENSA_MMU_PTEVADDR
 
-/*
- * Find the pte entry address of a given vaddr.
+/**
+ * Find the PTE entry address of a given vaddr.
  *
  * For example, assuming PTEVADDR in 0xE0000000,
  * the page spans from 0xE0000000 - 0xE03FFFFF
-
  *
  * address 0x00 is in 0xE0000000
  * address 0x1000 is in 0xE0000004
@@ -134,23 +171,33 @@
  *
  * PTE_ENTRY_ADDRESS = PTEVADDR + ((VADDR / 4096) * 4)
  */
-#define Z_XTENSA_PTE_ENTRY_VADDR(base, vaddr) \
+#define XTENSA_MMU_PTE_ENTRY_VADDR(base, vaddr) \
 	((base) + (((vaddr) / KB(4)) * 4))
 
-/*
- * Get asid for a given ring from rasid register.
- * rasid contains four asid, one per ring.
+/**
+ * Get ASID for a given ring from RASID register.
+ *
+ * RASID contains four 8-bit ASIDs, one per ring.
  */
-
-#define Z_XTENSA_RASID_ASID_GET(rasid, ring) \
+#define XTENSA_MMU_RASID_ASID_GET(rasid, ring) \
 	(((rasid) >> ((ring) * 8)) & 0xff)
 
+/**
+ * @brief Set RASID register.
+ *
+ * @param rasid Value to be set.
+ */
 static ALWAYS_INLINE void xtensa_rasid_set(uint32_t rasid)
 {
 	__asm__ volatile("wsr %0, rasid\n\t"
 			"isync\n" : : "a"(rasid));
 }
 
+/**
+ * @brief Get RASID register.
+ *
+ * @return Register value.
+ */
 static ALWAYS_INLINE uint32_t xtensa_rasid_get(void)
 {
 	uint32_t rasid;
@@ -159,22 +206,37 @@ static ALWAYS_INLINE uint32_t xtensa_rasid_get(void)
 	return rasid;
 }
 
-static ALWAYS_INLINE void xtensa_rasid_asid_set(uint8_t asid, uint8_t pos)
+/**
+ * @brief Set a ring in RASID register to be particular value.
+ *
+ * @param asid ASID to be set.
+ * @param ring ASID of which ring to be manipulated.
+ */
+static ALWAYS_INLINE void xtensa_rasid_asid_set(uint8_t asid, uint8_t ring)
 {
 	uint32_t rasid = xtensa_rasid_get();
 
-	rasid = (rasid & ~(0xff << (pos * 8))) | ((uint32_t)asid << (pos * 8));
+	rasid = (rasid & ~(0xff << (ring * 8))) | ((uint32_t)asid << (ring * 8));
 
 	xtensa_rasid_set(rasid);
 }
 
-
+/**
+ * @brief Invalidate a particular instruction TLB entry.
+ *
+ * @param entry Entry to be invalidated.
+ */
 static ALWAYS_INLINE void xtensa_itlb_entry_invalidate(uint32_t entry)
 {
 	__asm__ volatile("iitlb %0\n\t"
 			: : "a" (entry));
 }
 
+/**
+ * @brief Synchronously invalidate of a particular instruction TLB entry.
+ *
+ * @param entry Entry to be invalidated.
+ */
 static ALWAYS_INLINE void xtensa_itlb_entry_invalidate_sync(uint32_t entry)
 {
 	__asm__ volatile("iitlb %0\n\t"
@@ -182,6 +244,11 @@ static ALWAYS_INLINE void xtensa_itlb_entry_invalidate_sync(uint32_t entry)
 			: : "a" (entry));
 }
 
+/**
+ * @brief Synchronously invalidate of a particular data TLB entry.
+ *
+ * @param entry Entry to be invalidated.
+ */
 static ALWAYS_INLINE void xtensa_dtlb_entry_invalidate_sync(uint32_t entry)
 {
 	__asm__ volatile("idtlb %0\n\t"
@@ -189,12 +256,23 @@ static ALWAYS_INLINE void xtensa_dtlb_entry_invalidate_sync(uint32_t entry)
 			: : "a" (entry));
 }
 
+/**
+ * @brief Invalidate a particular data TLB entry.
+ *
+ * @param entry Entry to be invalidated.
+ */
 static ALWAYS_INLINE void xtensa_dtlb_entry_invalidate(uint32_t entry)
 {
 	__asm__ volatile("idtlb %0\n\t"
 			: : "a" (entry));
 }
 
+/**
+ * @brief Synchronously write to a particular data TLB entry.
+ *
+ * @param pte Value to be written.
+ * @param entry Entry to be written.
+ */
 static ALWAYS_INLINE void xtensa_dtlb_entry_write_sync(uint32_t pte, uint32_t entry)
 {
 	__asm__ volatile("wdtlb %0, %1\n\t"
@@ -202,18 +280,36 @@ static ALWAYS_INLINE void xtensa_dtlb_entry_write_sync(uint32_t pte, uint32_t en
 			: : "a" (pte), "a"(entry));
 }
 
+/**
+ * @brief Write to a particular data TLB entry.
+ *
+ * @param pte Value to be written.
+ * @param entry Entry to be written.
+ */
 static ALWAYS_INLINE void xtensa_dtlb_entry_write(uint32_t pte, uint32_t entry)
 {
 	__asm__ volatile("wdtlb %0, %1\n\t"
 			: : "a" (pte), "a"(entry));
 }
 
+/**
+ * @brief Synchronously write to a particular instruction TLB entry.
+ *
+ * @param pte Value to be written.
+ * @param entry Entry to be written.
+ */
 static ALWAYS_INLINE void xtensa_itlb_entry_write(uint32_t pte, uint32_t entry)
 {
 	__asm__ volatile("witlb %0, %1\n\t"
 			: : "a" (pte), "a"(entry));
 }
 
+/**
+ * @brief Synchronously write to a particular instruction TLB entry.
+ *
+ * @param pte Value to be written.
+ * @param entry Entry to be written.
+ */
 static ALWAYS_INLINE void xtensa_itlb_entry_write_sync(uint32_t pte, uint32_t entry)
 {
 	__asm__ volatile("witlb %0, %1\n\t"
@@ -239,9 +335,10 @@ static inline void xtensa_tlb_autorefill_invalidate(void)
 	entries = BIT(MAX(XCHAL_ITLB_ARF_ENTRIES_LOG2,
 			   XCHAL_DTLB_ARF_ENTRIES_LOG2));
 
-	for (way = 0; way < Z_XTENSA_TLB_AUTOREFILL_WAYS; way++) {
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
 		for (i = 0; i < entries; i++) {
-			uint32_t entry = way + (i << Z_XTENSA_PPN_SHIFT);
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+
 			xtensa_dtlb_entry_invalidate_sync(entry);
 			xtensa_itlb_entry_invalidate_sync(entry);
 		}
@@ -273,43 +370,68 @@ static ALWAYS_INLINE void *xtensa_ptevaddr_get(void)
 
 	__asm__ volatile("rsr.ptevaddr %0" : "=a" (ptables));
 
-	return (void *)(ptables & Z_XTENSA_PTEBASE_MASK);
+	return (void *)(ptables & XTENSA_MMU_PTEBASE_MASK);
 }
-/*
- * The following functions are helpful when debugging.
+
+/**
+ * @brief Get the virtual address associated with a particular data TLB entry.
+ *
+ * @param entry TLB entry to be queried.
  */
 static ALWAYS_INLINE void *xtensa_dtlb_vaddr_read(uint32_t entry)
 {
 	uint32_t vaddr;
 
 	__asm__ volatile("rdtlb0  %0, %1\n\t" : "=a" (vaddr) : "a" (entry));
-	return (void *)(vaddr & Z_XTENSA_PTE_VPN_MASK);
+	return (void *)(vaddr & XTENSA_MMU_PTE_VPN_MASK);
 }
 
+/**
+ * @brief Get the physical address associated with a particular data TLB entry.
+ *
+ * @param entry TLB entry to be queried.
+ */
 static ALWAYS_INLINE uint32_t xtensa_dtlb_paddr_read(uint32_t entry)
 {
 	uint32_t paddr;
 
 	__asm__ volatile("rdtlb1  %0, %1\n\t" : "=a" (paddr) : "a" (entry));
-	return (paddr & Z_XTENSA_PTE_PPN_MASK);
+	return (paddr & XTENSA_MMU_PTE_PPN_MASK);
 }
 
+/**
+ * @brief Get the virtual address associated with a particular instruction TLB entry.
+ *
+ * @param entry TLB entry to be queried.
+ */
 static ALWAYS_INLINE void *xtensa_itlb_vaddr_read(uint32_t entry)
 {
 	uint32_t vaddr;
 
 	__asm__ volatile("ritlb0  %0, %1\n\t" : "=a" (vaddr), "+a" (entry));
-	return (void *)(vaddr & Z_XTENSA_PTE_VPN_MASK);
+	return (void *)(vaddr & XTENSA_MMU_PTE_VPN_MASK);
 }
 
+/**
+ * @brief Get the physical address associated with a particular instruction TLB entry.
+ *
+ * @param entry TLB entry to be queried.
+ */
 static ALWAYS_INLINE uint32_t xtensa_itlb_paddr_read(uint32_t entry)
 {
 	uint32_t paddr;
 
 	__asm__ volatile("ritlb1  %0, %1\n\t" : "=a" (paddr), "+a" (entry));
-	return (paddr & Z_XTENSA_PTE_PPN_MASK);
+	return (paddr & XTENSA_MMU_PTE_PPN_MASK);
 }
 
+/**
+ * @brief Probe for instruction TLB entry from a virtual address.
+ *
+ * @param vaddr Virtual address.
+ *
+ * @return Return of the PITLB instruction.
+ */
 static ALWAYS_INLINE uint32_t xtensa_itlb_probe(void *vaddr)
 {
 	uint32_t ret;
@@ -318,6 +440,13 @@ static ALWAYS_INLINE uint32_t xtensa_itlb_probe(void *vaddr)
 	return ret;
 }
 
+/**
+ * @brief Probe for data TLB entry from a virtual address.
+ *
+ * @param vaddr Virtual address.
+ *
+ * @return Return of the PDTLB instruction.
+ */
 static ALWAYS_INLINE uint32_t xtensa_dtlb_probe(void *vaddr)
 {
 	uint32_t ret;
@@ -326,26 +455,57 @@ static ALWAYS_INLINE uint32_t xtensa_dtlb_probe(void *vaddr)
 	return ret;
 }
 
+/**
+ * @brief Invalidate an instruction TLB entry associated with a virtual address.
+ *
+ * This invalidated an instruction TLB entry associated with a virtual address
+ * if such TLB entry exists. Otherwise, do nothing.
+ *
+ * @param vaddr Virtual address.
+ */
 static inline void xtensa_itlb_vaddr_invalidate(void *vaddr)
 {
 	uint32_t entry = xtensa_itlb_probe(vaddr);
 
-	if (entry & Z_XTENSA_PITLB_HIT) {
+	if (entry & XTENSA_MMU_PITLB_HIT) {
 		xtensa_itlb_entry_invalidate_sync(entry);
 	}
 }
 
+/**
+ * @brief Invalidate a data TLB entry associated with a virtual address.
+ *
+ * This invalidated a data TLB entry associated with a virtual address
+ * if such TLB entry exists. Otherwise, do nothing.
+ *
+ * @param vaddr Virtual address.
+ */
 static inline void xtensa_dtlb_vaddr_invalidate(void *vaddr)
 {
 	uint32_t entry = xtensa_dtlb_probe(vaddr);
 
-	if (entry & Z_XTENSA_PDTLB_HIT) {
+	if (entry & XTENSA_MMU_PDTLB_HIT) {
 		xtensa_dtlb_entry_invalidate_sync(entry);
 	}
 }
 
+/**
+ * @brief Tell hardware to use a page table very first time after boot.
+ *
+ * @param l1_page Pointer to the page table to be used.
+ */
 void xtensa_init_paging(uint32_t *l1_page);
 
+/**
+ * @brief Switch to a new page table.
+ *
+ * @param asid The ASID of the memory domain associated with the incoming page table.
+ * @param l1_page Page table to be switched to.
+ */
 void xtensa_set_paging(uint32_t asid, uint32_t *l1_page);
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_ARCH_XTENSA_XTENSA_MMU_PRIV_H_ */

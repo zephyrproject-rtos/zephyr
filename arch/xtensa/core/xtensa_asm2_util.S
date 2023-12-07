@@ -434,7 +434,7 @@ _KernelExceptionVector:
 	j _Level1Vector
 #ifdef CONFIG_XTENSA_MMU
 _handle_tlb_miss_kernel:
-	/* The TLB miss handling is used only during z_xtensa_mmu_init()
+	/* The TLB miss handling is used only during xtensa_mmu_init()
 	 * where vecbase is at a different address, as the offset used
 	 * in the jump ('j') instruction will not jump to correct
 	 * address (... remember the vecbase is moved).
