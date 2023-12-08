@@ -12,8 +12,8 @@
  * arch/xtensa/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_XTENSA_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_EXCEPTION_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +37,4 @@ char *z_xtensa_exccause(unsigned int cause_code);
 #endif
 
 
-#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_EXCEPTION_H_ */
