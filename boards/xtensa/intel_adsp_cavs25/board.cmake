@@ -17,4 +17,4 @@ if(CONFIG_BOARD_INTEL_ADSP_CAVS25_TGPH)
 board_set_rimage_target(tgl-h)
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/intel_adsp.board.cmake)
+board_finalize_runner_args(intel_adsp)
