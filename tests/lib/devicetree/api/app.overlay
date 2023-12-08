@@ -203,6 +203,16 @@
 			status = "okay";
 		};
 
+		test_gpio_4: gpio@1234abcd {
+			compatible = "vnd,gpio-intc-device";
+			reg = <0x1234abcd 0x500>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			interrupt-controller;
+			#interrupt-cells = <0x2>;
+			status = "okay";
+		};
+
 		test_i2c: i2c@11112222 {
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
@@ -429,6 +439,15 @@
 			interrupts = <30 3 40 5 60 7>;
 			interrupt-parent = <&test_intc>;
 			interrupt-names = "err", "stat", "done";
+		};
+
+		/* there should only be one of these */
+		test_irq_extended: interrupt-holder-extended {
+			compatible = "vnd,interrupt-holder-extended";
+			status = "okay";
+			interrupts-extended = <&test_intc 70 7>,
+					      <&test_gpio_4 30 3>;
+			interrupt-names = "int1", "int2";
 		};
 
 		test_fixed_clk: test-fixed-clock {
