@@ -16,7 +16,7 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_
 
 #include <zephyr/arch/arm/syscall.h>
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
