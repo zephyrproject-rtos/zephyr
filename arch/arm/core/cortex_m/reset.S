@@ -53,7 +53,7 @@ GTEXT(arch_pm_s2ram_resume)
  * MSP is to be set up to point to the one-and-only interrupt stack during
  * later boot. That would not be possible if in use for running C code.
  *
- * When these steps are completed, jump to z_arm_prep_c(), which will finish
+ * When these steps are completed, jump to z_prep_c(), which will finish
  * setting up the system for running C code.
  *
  */
@@ -163,7 +163,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
     /*
      * 'bl' jumps the furthest of the branch instructions that are
-     * supported on all platforms. So it is used when jumping to z_arm_prep_c
+     * supported on all platforms. So it is used when jumping to z_prep_c
      * (even though we do not intend to return).
      */
-    bl z_arm_prep_c
+    bl z_prep_c
