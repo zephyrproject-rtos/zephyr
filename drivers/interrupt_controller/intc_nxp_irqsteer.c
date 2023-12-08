@@ -324,9 +324,9 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
 		if (enable) {
-			z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+			xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 		} else {
-			z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+			xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 		}
 		return;
 	}
@@ -375,7 +375,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
-		return z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		return xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
 	}
 
 	parent_irq = irq_parent_level_2(irq);
@@ -449,7 +449,7 @@ static void irqsteer_enable_dispatchers(const struct device *dev)
 		IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(cfg->regmap_phys),
 					       dispatcher->irq);
 
-		z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(dispatcher->irq));
+		xtensa_irq_enable(XTENSA_IRQ_NUMBER(dispatcher->irq));
 	}
 }
 

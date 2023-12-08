@@ -75,7 +75,7 @@ void z_irq_spurious(const void *arg)
 	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
-int z_xtensa_irq_is_enabled(unsigned int irq)
+int xtensa_irq_is_enabled(unsigned int irq)
 {
 	uint32_t ie;
 

@@ -25,7 +25,7 @@ void z_soc_irq_enable(uint32_t irq)
 	/*
 	 * enable core interrupt
 	 */
-	z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+	xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 }
 
 void z_soc_irq_disable(uint32_t irq)
@@ -33,7 +33,7 @@ void z_soc_irq_disable(uint32_t irq)
 	/*
 	 * disable the interrupt in interrupt controller
 	 */
-	z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+	xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 }
 
 int z_soc_irq_is_enabled(unsigned int irq)
@@ -41,7 +41,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	int ret = 0;
 
 	/* regular interrupt */
-	ret = z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+	ret = xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
 
 	return ret;
 }
