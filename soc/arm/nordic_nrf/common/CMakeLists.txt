@@ -8,6 +8,6 @@ zephyr_include_directories(.)
 if (CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_sources(soc_secure.c)
   zephyr_library_include_directories(
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )
 endif()
