@@ -141,22 +141,14 @@ static ALWAYS_INLINE void usage_stop(void)
 #endif
 }
 
-#ifdef CONFIG_MULTITHREADING
-void *z_arch_get_next_switch_handle(struct k_thread *interrupted)
-{
-	return _current_cpu->nested <= 1 ?
-		z_get_next_switch_handle(interrupted) : interrupted;
-}
-#else
-void *z_arch_get_next_switch_handle(struct k_thread *interrupted)
-{
-	return interrupted;
-}
-#endif /* CONFIG_MULTITHREADING */
-
 static inline void *return_to(void *interrupted)
 {
-	return z_arch_get_next_switch_handle(interrupted);
+#ifdef CONFIG_MULTITHREADING
+	return _current_cpu->nested <= 1 ?
+		z_get_next_switch_handle(interrupted) : interrupted;
+#else
+	return interrupted;
+#endif /* CONFIG_MULTITHREADING */
 }
 
 /* The wrapper code lives here instead of in the python script that
