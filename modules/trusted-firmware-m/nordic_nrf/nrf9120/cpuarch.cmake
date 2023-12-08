@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-include(platform/ext/target/nordic_nrf/common/nrf9120/preload.cmake)
+include(platform/ext/target/nordic_nrf/common/nrf9120/cpuarch.cmake)
