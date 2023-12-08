@@ -346,14 +346,14 @@ can be generated using ``b_u585i_iot02a_ns`` as build target.
 
    $ west build -b b_u585i_iot02a_ns path/to/source/directory
 
-Note: When building the ``*_ns`` image with TF-M, ``build/tfm/postbuild.sh`` bash script
+Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
 is run automatically in a post-build step to make some required flash layout changes.
 
 Once the build is completed, run the following script to initialize the option bytes.
 
 .. code-block:: bash
 
-   $ build/tfm/regression.sh
+   $ build/tfm/api_ns/regression.sh
 
 Finally, to flash the board, run:
 
