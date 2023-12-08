@@ -291,8 +291,8 @@
 
 		sha0: sha@13c {
 			compatible = "nuvoton,npcx-sha";
-			reg = <0x13c 0x3c>;
-			context-buffer-size = <228>;
+			reg = <0x148 0x4c>;
+			context-buffer-size = <240>;
 			status = "disabled";
 		};
 
