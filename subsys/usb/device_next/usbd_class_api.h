@@ -190,6 +190,22 @@ static inline void usbd_class_resumed(struct usbd_class_node *const node)
 }
 
 /**
+ * @brief USB Start of Frame handler
+ *
+ * @note The execution of the handler must not block.
+ *
+ * @param[in] node Pointer to USB device class node
+ */
+static inline void usbd_class_sof(struct usbd_class_node *const node)
+{
+	const struct usbd_class_api *api = node->api;
+
+	if (api->sof != NULL) {
+		api->sof(node);
+	}
+}
+
+/**
  * @brief Class associated configuration active handler
  *
  * @note The execution of the handler must not block.
