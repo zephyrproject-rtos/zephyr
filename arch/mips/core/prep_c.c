@@ -42,7 +42,7 @@ static void interrupt_init(void)
  * @return N/A
  */
 
-void _PrepC(void)
+void z_prep_c(void)
 {
 	z_bss_zero();
 
