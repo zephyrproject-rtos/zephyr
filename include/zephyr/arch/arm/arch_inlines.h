@@ -8,14 +8,24 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ARCH_INLINES_H
 
 #include <zephyr/kernel_structs.h>
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/arch/arm/cortex_a_r/tpidruro.h>
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
-	/* Dummy implementation always return the first cpu */
 	return (_cpu_t *)(read_tpidruro() & TPIDRURO_CURR_CPU);
 }
+#else
+
+#ifndef CONFIG_SMP
+static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
+{
+	/* Dummy implementation always return the first cpu */
+	return &_kernel.cpus[0];
+}
+#endif
+#endif
 
 static ALWAYS_INLINE uint32_t arch_proc_id(void)
 {
