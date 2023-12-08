@@ -92,7 +92,7 @@ void dw_ace_irq_enable(const struct device *dev, uint32_t irq)
 			ACE_INTC[i].irq_intmask_l &= ~BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 		}
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
-		z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -108,7 +108,7 @@ void dw_ace_irq_disable(const struct device *dev, uint32_t irq)
 			ACE_INTC[i].irq_intmask_l |= BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 		}
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
-		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -119,7 +119,7 @@ int dw_ace_irq_is_enabled(const struct device *dev, unsigned int irq)
 	if (is_dw_irq(irq)) {
 		return ACE_INTC[0].irq_inten_l & BIT(ACE_IRQ_FROM_ZEPHYR(irq));
 	} else if ((irq & ~XTENSA_IRQ_NUM_MASK) == 0U) {
-		return z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		return xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
 	}
 
 	return false;
@@ -161,7 +161,7 @@ static int dw_ace_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(ACE_INTC_IRQ, 0, dwint_isr, 0, 0);
-	z_xtensa_irq_enable(ACE_INTC_IRQ);
+	xtensa_irq_enable(ACE_INTC_IRQ);
 
 	return 0;
 }
