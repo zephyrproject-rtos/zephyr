@@ -1,0 +1,29 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test GPIO with INTC node
+
+compatible: "vnd,gpio-intc-device"
+
+include:
+  - gpio-controller.yaml
+  - interrupt-controller.yaml
+  - base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  "#interrupt-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
+
+interrupt-cells:
+  - pin
+  - flags
