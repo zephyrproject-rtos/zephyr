@@ -377,9 +377,9 @@ static size_t pipe_write(struct k_pipe *pipe, sys_dlist_t *src_list,
 	return num_bytes_written;
 }
 
-int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
+int z_impl_k_pipe_put(struct k_pipe *pipe, const void *data,
+		      size_t bytes_to_write, size_t *bytes_written,
+		      size_t min_xfer, k_timeout_t timeout)
 {
 	struct _pipe_desc  pipe_desc[2];
 	struct _pipe_desc  isr_desc;
@@ -445,7 +445,7 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 
 	src_desc = k_is_in_isr() ? &isr_desc : &_current->pipe_desc;
 
-	src_desc->buffer        = data;
+	src_desc->buffer        = (unsigned char *)data;
 	src_desc->bytes_to_xfer = bytes_to_write;
 	src_desc->thread        = _current;
 	sys_dlist_append(&src_list, &src_desc->node);
@@ -513,17 +513,17 @@ int z_impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 }
 
 #ifdef CONFIG_USERSPACE
-int z_vrfy_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-		     size_t *bytes_written, size_t min_xfer,
-		      k_timeout_t timeout)
+int z_vrfy_k_pipe_put(struct k_pipe *pipe, const void *data,
+		      size_t bytes_to_write, size_t *bytes_written,
+		      size_t min_xfer, k_timeout_t timeout)
 {
 	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
 	K_OOPS(K_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
 
-	return z_impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
-				bytes_to_write, bytes_written, min_xfer,
-				timeout);
+	return z_impl_k_pipe_put((struct k_pipe *)pipe, data,
+				 bytes_to_write, bytes_written, min_xfer,
+				 timeout);
 }
 #include <syscalls/k_pipe_put_mrsh.c>
 #endif
