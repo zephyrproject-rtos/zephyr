@@ -53,13 +53,13 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecdh.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecdsa.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecjpake.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp_curves_new.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp_curves.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy_poll.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/error.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/gcm.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/hash_info.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/hkdf.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/hmac_drbg.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/lmots.c
