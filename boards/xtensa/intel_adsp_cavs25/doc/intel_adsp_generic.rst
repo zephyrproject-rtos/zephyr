@@ -64,9 +64,10 @@ you will also need to set up the SOF rimage signing tool and key.
 
 .. code-block:: shell
 
-   cd zephyrproject/modules/audio/sof/
-   git clone https://github.com/thesofproject/rimage --recurse-submodules
-   cd rimage
+   cd zephyrproject
+   west config manifest.project-filter -- +sof
+   west update
+   cd modules/audio/sof/tools/rimage
 
 Follow the instructions in the rimage :file:`README.md` to build the tool on
 your system. You can either copy the executable to a directory in your PATH or
@@ -74,21 +75,9 @@ use ``west config rimage.path /path/to/rimage-build/rimage``; see more details
 in the output of ``west sign -h``. Running directly from the build directory
 makes you less likely to use an obsolete rimage version by mistake.
 
-Until https://github.com/zephyrproject-rtos/zephyr/issues/58212 gets
-implemented, you must manually and regularly update and rebuild rimage.
-
-The SOF project does not require this manual step because its west manifest
-automatically downloads and builds a specific rimage version validated with
-matching SOF sources. An indirect Zephyr -> SOF -> rimage dependency chain is
-unfortunately not appropriate because unlike rimage, SOF is *not* required to
-run Zephyr on cAVS/ACE hardware.
-
-Until https://github.com/thesofproject/sof/issues/7270 is implemented,
-platform-specific configuration files are also located in the rimage
-repository, more specifically in the ``rimage/config/`` subdirectory; this is
-another reason to update rimage regularly. If you cloned rimage in a location
-different from above (not recommended) then you must also run ``west config
-build.cmake-args -- -DRIMAGE_CONFIG_PATH=/path/to/source/rimage/config``.
+Platform-specific configuration files are located in the ``rimage/config/``
+subdirectory. For a different configuration directory you can use:
+``west config build.cmake-args -- -DRIMAGE_CONFIG_PATH=/path/to/my/rimage/config``.
 
 
 Xtensa Toolchain (Optional)
