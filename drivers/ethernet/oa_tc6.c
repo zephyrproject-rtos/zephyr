@@ -254,12 +254,19 @@ int oa_tc6_check_status(struct oa_tc6 *tc6)
 	return 0;
 }
 
-static void oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
+static int oa_tc6_update_status(struct oa_tc6 *tc6, uint32_t ftr)
 {
+	if (oa_tc6_get_parity(ftr)) {
+		LOG_DBG("OA Status Update: Footer parity error!");
+		return -EIO;
+	}
+
 	tc6->exst = FIELD_GET(OA_DATA_FTR_EXST, ftr);
 	tc6->sync = FIELD_GET(OA_DATA_FTR_SYNC, ftr);
 	tc6->rca = FIELD_GET(OA_DATA_FTR_RCA, ftr);
 	tc6->txc = FIELD_GET(OA_DATA_FTR_TXC, ftr);
+
+	return 0;
 }
 
 int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_tx,
@@ -295,9 +302,8 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 		return ret;
 	}
 	*ftr = sys_be32_to_cpu(*ftr);
-	oa_tc6_update_status(tc6, *ftr);
 
-	return 0;
+	return oa_tc6_update_status(tc6, *ftr);
 }
 
 int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
