@@ -127,9 +127,6 @@ static uint16_t ioapic_id;
 
 static bool get_vtd(void)
 {
-	union acpi_dmar_id dmar_id;
-	int inst_cnt;
-
 	if (!device_is_ready(vtd)) {
 		return false;
 	}
@@ -138,14 +135,7 @@ static bool get_vtd(void)
 		return true;
 	}
 
-	/* Assume only one PCH in system (say client platform). */
-	if (!acpi_drhd_get(ACPI_DMAR_SCOPE_TYPE_IOAPIC, NULL, &dmar_id, &inst_cnt, 1u)) {
-		return false;
-	}
-
-	ioapic_id = dmar_id.raw;
-
-	return true;
+	return acpi_dmar_ioapic_get(&ioapic_id) == 0;
 }
 #endif /* CONFIG_INTEL_VTD_ICTL && !INTEL_VTD_ICTL_XAPIC_PASSTHROUGH */
 
