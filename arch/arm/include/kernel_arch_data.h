@@ -29,7 +29,7 @@
 #include <cortex_m/exc.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <cortex_a_r/stack.h>
-#include <cortex_a_r/exc.h>
+#include <cortex_a_r/exception.h>
 #endif
 
 #ifndef _ASMLANGUAGE

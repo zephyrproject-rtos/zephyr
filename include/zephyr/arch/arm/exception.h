@@ -18,7 +18,7 @@
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/cortex_m/exc.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
-#include <zephyr/arch/arm/cortex_a_r/exc.h>
+#include <zephyr/arch/arm/cortex_a_r/exception.h>
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M */
