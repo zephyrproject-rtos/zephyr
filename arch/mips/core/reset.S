@@ -11,7 +11,7 @@
 
 GTEXT(__initialize)
 GTEXT(__stack)
-GTEXT(_PrepC)
+GTEXT(z_prep_c)
 
 /*
  * Remainder of asm-land initialization code before we can jump into
@@ -52,6 +52,6 @@ aa_loop:
 	/*
 	 * Jump into C domain.
 	 */
-	la v0, _PrepC
+	la v0, z_prep_c
 	jal v0
 	nop /* delay slot */
