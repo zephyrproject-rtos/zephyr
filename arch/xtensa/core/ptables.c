@@ -928,8 +928,9 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				uint32_t partition_id)
 {
-	uint32_t ring = domain->arch.asid == 0 ? Z_XTENSA_KERNEL_RING : Z_XTENSA_USER_RING;
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
+	uint32_t ring = K_MEM_PARTITION_IS_USER(partition->attr) ? Z_XTENSA_USER_RING :
+			Z_XTENSA_KERNEL_RING;
 
 	return update_region(domain->arch.ptables, partition->start,
 			     partition->size, ring, partition->attr, 0);
