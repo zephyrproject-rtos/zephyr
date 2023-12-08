@@ -78,4 +78,5 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 #endif
 
 	z_cstart();
+	CODE_UNREACHABLE;
 }
