@@ -24,8 +24,13 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 #define CHIP_SELECT_COUNT	4
 #define MAX_DATA_WIDTH		4096
 
+/* Required by DEVICE_MMIO_NAMED_* macros */
+#define DEV_CFG(_dev) \
+	((const struct spi_mcux_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
+
 struct spi_mcux_config {
-	LPSPI_Type *base;
+	DEVICE_MMIO_NAMED_ROM(reg_base);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
@@ -52,6 +57,7 @@ struct stream {
 #endif
 
 struct spi_mcux_data {
+	DEVICE_MMIO_NAMED_RAM(reg_base);
 	const struct device *dev;
 	lpspi_master_handle_t handle;
 	struct spi_context ctx;
@@ -69,9 +75,9 @@ struct spi_mcux_data {
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config;
+	//const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = config->base;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_context *ctx = &data->ctx;
 	lpspi_transfer_t transfer;
 	status_t status;
@@ -136,9 +142,9 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 
 static void spi_mcux_isr(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config;
+	//const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = config->base;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
@@ -159,7 +165,7 @@ static int spi_mcux_configure(const struct device *dev,
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = config->base;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
 	uint32_t word_size;
@@ -306,7 +312,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, si
 	const struct spi_mcux_config *cfg = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
-	LPSPI_Type *base = cfg->base;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	/* remember active TX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_tx;
@@ -349,7 +355,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 	const struct spi_mcux_config *cfg = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
-	LPSPI_Type *base = cfg->base;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	/* retrieve active RX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_rx;
@@ -457,7 +463,7 @@ static int transceive_dma(const struct device *dev,
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = config->base;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	int ret;
 	size_t dma_size;
 
@@ -617,6 +623,8 @@ static int spi_mcux_init(const struct device *dev)
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 
+	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
 	config->irq_config_func(dev);
 
 	err = spi_context_cs_configure_all(&data->ctx);
@@ -704,7 +712,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static void spi_mcux_config_func_##n(const struct device *dev);	\
 									\
 	static const struct spi_mcux_config spi_mcux_config_##n = {	\
-		.base = (LPSPI_Type *) DT_INST_REG_ADDR(n),		\
+    	DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys =						\
 		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
