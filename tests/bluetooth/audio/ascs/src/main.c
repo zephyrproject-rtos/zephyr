@@ -308,7 +308,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_pair_on_acl_disconnection)
 	/* Expected to notify the upper layers */
 	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
 
-	expect_bt_bap_stream_ops_released_called_twice(streams);
+	expect_bt_bap_stream_ops_released_called(streams, 2);
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
