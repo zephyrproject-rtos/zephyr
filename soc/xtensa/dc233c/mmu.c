@@ -12,8 +12,6 @@
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 #include <zephyr/sys/util.h>
 
-#include <xtensa_mmu_priv.h>
-
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	{
 		.start = (uint32_t)XCHAL_VECBASE_RESET_VADDR,
