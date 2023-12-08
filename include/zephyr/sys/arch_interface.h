@@ -800,7 +800,7 @@ int arch_buffer_validate(void *addr, size_t size, int write);
 size_t arch_virt_region_align(uintptr_t phys, size_t size);
 
 /**
- * Perform a one-way transition from supervisor to kernel mode.
+ * Perform a one-way transition from supervisor to user mode.
  *
  * Implementations of this function must do the following:
  *
