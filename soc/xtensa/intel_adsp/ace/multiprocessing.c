@@ -159,7 +159,7 @@ void soc_start_core(int cpu_num)
 void soc_mp_startup(uint32_t cpu)
 {
 	/* Must have this enabled always */
-	z_xtensa_irq_enable(ACE_INTC_IRQ);
+	xtensa_irq_enable(ACE_INTC_IRQ);
 
 #if CONFIG_ADSP_IDLE_CLOCK_GATING
 	/* Disable idle power gating */
