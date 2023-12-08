@@ -36,14 +36,6 @@ target_include_directories(platform_s
         ${board_includes}
 )
 
-target_include_directories(platform_ns
-    PUBLIC
-        include
-        include/util
-        ${partition_includes}
-        ${board_includes}
-)
-
 if(BL2)
     target_include_directories(platform_bl2
         PUBLIC
