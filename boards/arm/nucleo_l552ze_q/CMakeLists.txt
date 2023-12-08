@@ -10,6 +10,6 @@ endif()
 if (CONFIG_BUILD_WITH_TFM)
 	set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 		#Execute post build script postbuild.sh
-		COMMAND $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/postbuild.sh ${COMPILER_FULL_PATH}
+		COMMAND $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/postbuild.sh ${COMPILER_FULL_PATH}
 	)
 endif()
