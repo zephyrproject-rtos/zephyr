@@ -9,9 +9,9 @@ zephyr_library_sources(
   fatal.c
   window_vectors.S
   xtensa_asm2_util.S
-  xtensa_asm2.c
   irq_manage.c
   thread.c
+  vector_handlers.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_XTENSA_USE_CORE_CRT1 crt1.S)
