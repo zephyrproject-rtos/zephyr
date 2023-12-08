@@ -333,6 +333,43 @@ ZTEST_F(test_ase_state_transition_invalid, test_sink_client_state_streaming)
 	test_client_receiver_stop_ready_expect_ase_direction_error(conn, ase_id, ase_cp);
 }
 
+static void expect_ase_state_releasing(struct bt_conn *conn, const struct bt_gatt_attr *ase)
+{
+	struct test_ase_chrc_value_hdr hdr = { 0xff };
+	ssize_t ret;
+
+	zexpect_not_null(conn);
+	zexpect_not_null(ase);
+
+	ret = ase->read(conn, ase, &hdr, sizeof(hdr), 0);
+	zassert_false(ret < 0, "attr->read returned unexpected (err 0x%02x)", BT_GATT_ERR(ret));
+	zassert_equal(BT_BAP_EP_STATE_RELEASING, hdr.ase_state,
+		      "unexpected ASE_State 0x%02x", hdr.ase_state);
+}
+
+ZTEST_F(test_ase_state_transition_invalid, test_client_sink_state_releasing)
+{
+	const struct bt_gatt_attr *ase_cp = fixture->ase_cp;
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	ase_id = test_ase_id_get(fixture->ase_snk);
+	test_preamble_state_releasing(conn, ase_id, stream, &chan, false);
+	expect_ase_state_releasing(conn, fixture->ase_snk);
+
+	test_client_config_codec_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_config_qos_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_enable_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_receiver_start_ready_expect_ase_direction_error(conn, ase_id, ase_cp);
+	test_client_receiver_stop_ready_expect_ase_direction_error(conn, ase_id, ase_cp);
+	test_client_disable_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_update_metadata_expect_transition_error(conn, ase_id, ase_cp);
+}
+
 ZTEST_F(test_ase_state_transition_invalid, test_client_source_state_idle)
 {
 	const struct bt_gatt_attr *ase_cp = fixture->ase_cp;
@@ -444,6 +481,29 @@ ZTEST_F(test_ase_state_transition_invalid, test_client_source_state_disabling)
 	test_client_config_qos_expect_transition_error(conn, ase_id, ase_cp);
 	test_client_enable_expect_transition_error(conn, ase_id, ase_cp);
 	test_client_receiver_start_ready_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_disable_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_update_metadata_expect_transition_error(conn, ase_id, ase_cp);
+}
+
+ZTEST_F(test_ase_state_transition_invalid, test_client_source_state_releasing)
+{
+	const struct bt_gatt_attr *ase_cp = fixture->ase_cp;
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+
+	ase_id = test_ase_id_get(fixture->ase_src);
+	test_preamble_state_releasing(conn, ase_id, stream, &chan, true);
+	expect_ase_state_releasing(conn, fixture->ase_src);
+
+	test_client_config_codec_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_config_qos_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_enable_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_receiver_start_ready_expect_transition_error(conn, ase_id, ase_cp);
+	test_client_receiver_stop_ready_expect_transition_error(conn, ase_id, ase_cp);
 	test_client_disable_expect_transition_error(conn, ase_id, ase_cp);
 	test_client_update_metadata_expect_transition_error(conn, ase_id, ase_cp);
 }
@@ -600,6 +660,28 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_streaming)
 	test_server_receiver_stop_ready_expect_error(stream);
 }
 
+ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_releasing)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SNK);
+
+	ase_id = test_ase_id_get(fixture->ase_snk);
+	test_preamble_state_releasing(conn, ase_id, stream, &chan, false);
+	expect_ase_state_releasing(conn, fixture->ase_snk);
+
+	test_server_config_codec_expect_error(stream);
+	test_server_config_qos_expect_error(stream);
+	test_server_enable_expect_error(stream);
+	test_server_receiver_start_ready_expect_error(stream);
+	test_server_disable_expect_error(stream);
+	test_server_receiver_stop_ready_expect_error(stream);
+	test_server_update_metadata_expect_error(stream);
+}
+
 ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_codec_configured)
 {
 	struct bt_bap_stream *stream = &fixture->stream;
@@ -685,6 +767,28 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_disabling)
 
 	ase_id = test_ase_id_get(fixture->ase_src);
 	test_preamble_state_disabling(conn, ase_id, stream, &chan);
+
+	test_server_config_codec_expect_error(stream);
+	test_server_config_qos_expect_error(stream);
+	test_server_enable_expect_error(stream);
+	test_server_receiver_start_ready_expect_error(stream);
+	test_server_disable_expect_error(stream);
+	test_server_receiver_stop_ready_expect_error(stream);
+	test_server_update_metadata_expect_error(stream);
+}
+
+ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_releasing)
+{
+	struct bt_bap_stream *stream = &fixture->stream;
+	struct bt_conn *conn = &fixture->conn;
+	struct bt_iso_chan *chan;
+	uint8_t ase_id;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
+
+	ase_id = test_ase_id_get(fixture->ase_src);
+	test_preamble_state_releasing(conn, ase_id, stream, &chan, true);
+	expect_ase_state_releasing(conn, fixture->ase_src);
 
 	test_server_config_codec_expect_error(stream);
 	test_server_config_qos_expect_error(stream);
