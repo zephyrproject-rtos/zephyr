@@ -295,6 +295,8 @@ static struct obj_t obj = {
 
 static void set_track_position(int32_t position);
 static void set_relative_track_position(int32_t rel_pos);
+static void do_track_change_notifications(struct mpl_mediaplayer *pl);
+static void do_group_change_notifications(struct mpl_mediaplayer *pl);
 
 /* Set up content buffer for the icon object */
 static int setup_icon_object(void)
@@ -925,7 +927,7 @@ void do_last_segment(struct mpl_mediaplayer *pl)
 	LOG_DBG("Segment name after: %s", pl->group->track->segment->name);
 }
 
-void do_goto_segment(struct mpl_mediaplayer *pl, int32_t segnum)
+static void do_goto_segment(struct mpl_mediaplayer *pl, int32_t segnum)
 {
 	int32_t k;
 
@@ -962,47 +964,48 @@ void do_goto_segment(struct mpl_mediaplayer *pl, int32_t segnum)
 	}
 
 	LOG_DBG("Segment name after: %s", pl->group->track->segment->name);
+
+	set_track_position(pl->group->track->segment->pos);
 }
 
-static bool do_prev_track(struct mpl_mediaplayer *pl)
+static void do_prev_track(struct mpl_mediaplayer *pl)
 {
-	bool track_changed = false;
-
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->prev != NULL) {
 		pl->group->track = pl->group->track->prev;
-		track_changed = true;
+		pl->track_pos = 0;
+		do_track_change_notifications(pl);
+	} else {
+		/* For previous track, the position is reset to 0 */
+		/* even if we stay at the same track (goto start of */
+		/* track) */
+		set_track_position(0);
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return track_changed;
 }
 
 /* Change to next track according to the current track's next track */
-static bool do_next_track_normal_order(struct mpl_mediaplayer *pl)
+static void do_next_track_normal_order(struct mpl_mediaplayer *pl)
 {
-	bool track_changed = false;
-
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
 		pl->group->track = pl->group->track->next;
-		track_changed = true;
+		pl->track_pos = 0;
+		do_track_change_notifications(pl);
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return track_changed;
 }
 
 /* Change to next track when the next track has been explicitly set
@@ -1012,13 +1015,11 @@ static bool do_next_track_normal_order(struct mpl_mediaplayer *pl)
  *
  * Returns true if the _group_ has been changed, otherwise false
  */
-static bool do_next_track_next_track_set(struct mpl_mediaplayer *pl)
+static void do_next_track_next_track_set(struct mpl_mediaplayer *pl)
 {
-	bool group_changed = false;
-
 	if (pl->next.group != pl->group) {
 		pl->group = pl->next.group;
-		group_changed = true;
+		do_group_change_notifications(pl);
 	}
 
 	pl->group->track = pl->next.track;
@@ -1026,22 +1027,36 @@ static bool do_next_track_next_track_set(struct mpl_mediaplayer *pl)
 	pl->next.track = NULL;
 	pl->next.group = NULL;
 	pl->next_track_set = false;
-
-	return group_changed;
+	pl->track_pos = 0;
+	do_track_change_notifications(pl);
 }
 
-static bool do_first_track(struct mpl_mediaplayer *pl)
+static void do_next_track(struct mpl_mediaplayer *pl)
 {
-	bool track_changed = false;
+	if (pl->next_track_set) {
+		LOG_DBG("Next track set");
+		do_next_track_next_track_set(pl);
+	} else {
+		do_next_track_normal_order(pl);
+	}
+}
 
+static void do_first_track(struct mpl_mediaplayer *pl)
+{
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->prev != NULL) {
 		pl->group->track = pl->group->track->prev;
-		track_changed = true;
+		media_player.track_pos = 0;
+		do_track_change_notifications(&media_player);
+	} else {
+		/* For first track, the position is reset to 0 even */
+		/* if we stay at the same track (goto start of track) */
+		set_track_position(0);
 	}
+
 	while (pl->group->track->prev != NULL) {
 		pl->group->track = pl->group->track->prev;
 	}
@@ -1049,22 +1064,25 @@ static bool do_first_track(struct mpl_mediaplayer *pl)
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return track_changed;
 }
 
-static bool do_last_track(struct mpl_mediaplayer *pl)
+static void do_last_track(struct mpl_mediaplayer *pl)
 {
-	bool track_changed = false;
-
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
 		pl->group->track = pl->group->track->next;
-		track_changed = true;
+		media_player.track_pos = 0;
+		do_track_change_notifications(&media_player);
+	} else {
+
+		/* For last track, the position is reset to 0 even */
+		/* if we stay at the same track (goto start of track) */
+		set_track_position(0);
 	}
+
 	while (pl->group->track->next != NULL) {
 		pl->group->track = pl->group->track->next;
 	}
@@ -1072,11 +1090,9 @@ static bool do_last_track(struct mpl_mediaplayer *pl)
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return track_changed;
 }
 
-static bool do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
+static void do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
 {
 	int32_t count = 0;
 	int32_t k;
@@ -1121,33 +1137,35 @@ static bool do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
 
 	/* The track has changed if we have moved more in one direction */
 	/* than in the other */
-	return (count != 0);
+	if (count != 0) {
+		media_player.track_pos = 0;
+		do_track_change_notifications(&media_player);
+	} else {
+		/* For goto track, the position is reset to 0 */
+		/* even if we stay at the same track (goto */
+		/* start of track) */
+		set_track_position(0);
+	}
 }
 
-
-static bool do_prev_group(struct mpl_mediaplayer *pl)
+static void do_prev_group(struct mpl_mediaplayer *pl)
 {
-	bool group_changed = false;
-
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->prev != NULL) {
 		pl->group = pl->group->prev;
-		group_changed = true;
+		do_group_change_notifications(pl);
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return group_changed;
 }
 
-static bool do_next_group(struct mpl_mediaplayer *pl)
+static void do_next_group(struct mpl_mediaplayer *pl)
 {
-	bool group_changed = false;
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
@@ -1155,28 +1173,25 @@ static bool do_next_group(struct mpl_mediaplayer *pl)
 
 	if (pl->group->next != NULL) {
 		pl->group = pl->group->next;
-		group_changed = true;
+		do_group_change_notifications(pl);
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return group_changed;
 }
 
-static bool do_first_group(struct mpl_mediaplayer *pl)
+static void do_first_group(struct mpl_mediaplayer *pl)
 {
-	bool group_changed = false;
-
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->prev != NULL) {
 		pl->group = pl->group->prev;
-		group_changed = true;
+		do_group_change_notifications(pl);
 	}
+
 	while (pl->group->prev != NULL) {
 		pl->group = pl->group->prev;
 	}
@@ -1184,22 +1199,19 @@ static bool do_first_group(struct mpl_mediaplayer *pl)
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return group_changed;
 }
 
-static bool do_last_group(struct mpl_mediaplayer *pl)
+static void do_last_group(struct mpl_mediaplayer *pl)
 {
-	bool group_changed = false;
-
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->next != NULL) {
 		pl->group = pl->group->next;
-		group_changed = true;
+		do_group_change_notifications(pl);
 	}
+
 	while (pl->group->next != NULL) {
 		pl->group = pl->group->next;
 	}
@@ -1207,11 +1219,9 @@ static bool do_last_group(struct mpl_mediaplayer *pl)
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
-
-	return group_changed;
 }
 
-static bool  do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
+static void do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 {
 	int32_t count = 0;
 	int32_t k;
@@ -1256,10 +1266,12 @@ static bool  do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 
 	/* The group has changed if we have moved more in one direction */
 	/* than in the other */
-	return (count != 0);
+	if (count != 0) {
+		do_group_change_notifications(pl);
+	}
 }
 
-void do_track_change_notifications(struct mpl_mediaplayer *pl)
+static void do_track_change_notifications(struct mpl_mediaplayer *pl)
 {
 	media_proxy_pl_track_changed_cb();
 	media_proxy_pl_track_title_cb(pl->group->track->title);
@@ -1276,121 +1288,56 @@ void do_track_change_notifications(struct mpl_mediaplayer *pl)
 #endif /* CONFIG_BT_MPL_OBJECTS */
 }
 
-void do_group_change_notifications(struct mpl_mediaplayer *pl)
+static void do_group_change_notifications(struct mpl_mediaplayer *pl)
 {
 #ifdef CONFIG_BT_MPL_OBJECTS
 	media_proxy_pl_current_group_id_cb(pl->group->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 }
 
-void do_full_prev_group(struct mpl_mediaplayer *pl)
+static void do_full_prev_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on first group) */
-	if (do_prev_group(pl)) {
-		do_group_change_notifications(pl);
-		/* If group change, also go to first track in group. */
-		/* Notify the track info in all cases - it is a track */
-		/* change for the player even if the group was set to */
-		/* this track already. */
-		(void) do_first_track(pl);
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no group change, still switch to first track, if needed */
-	} else if (do_first_track(pl)) {
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no track change, still reset track position, if needed */
-	} else if (pl->track_pos != 0) {
-		set_track_position(0);
-	}
+	do_prev_group(pl);
+
+	/* Whether there is a group change or not, we always go to the first track */
+	do_first_track(pl);
 }
 
-void do_full_next_group(struct mpl_mediaplayer *pl)
+static void do_full_next_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on last group) */
-	if (do_next_group(pl)) {
-		do_group_change_notifications(pl);
-		/* If group change, also go to first track in group. */
-		/* Notify the track info in all cases - it is a track */
-		/* change for the player even if the group was set to */
-		/* this track already. */
-		(void) do_first_track(pl);
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no group change, still switch to first track, if needed */
-	} else if (do_first_track(pl)) {
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no track change, still reset track position, if needed */
-	} else if (pl->track_pos != 0) {
-		set_track_position(0);
-	}
+	do_next_group(pl);
+
+	/* Whether there is a group change or not, we always go to the first track */
+	do_first_track(pl);
 }
 
-void do_full_first_group(struct mpl_mediaplayer *pl)
+static void do_full_first_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on first group) */
-	if (do_first_group(pl)) {
-		do_group_change_notifications(pl);
-		/* If group change, also go to first track in group. */
-		/* Notify the track info in all cases - it is a track */
-		/* change for the player even if the group was set to */
-		/* this track already. */
-		(void) do_first_track(pl);
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no group change, still switch to first track, if needed */
-	} else if (do_first_track(pl)) {
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no track change, still reset track position, if needed */
-	} else if (pl->track_pos != 0) {
-		set_track_position(0);
-	}
+	do_first_group(pl);
+
+	/* Whether there is a group change or not, we always go to the first track */
+	do_first_track(pl);
 }
 
-void do_full_last_group(struct mpl_mediaplayer *pl)
+static void do_full_last_group(struct mpl_mediaplayer *pl)
 {
 	/* Change the group (if not already on last group) */
-	if (do_last_group(pl)) {
-		do_group_change_notifications(pl);
-		/* If group change, also go to first track in group. */
-		/* Notify the track info in all cases - it is a track */
-		/* change for the player even if the group was set to */
-		/* this track already. */
-		(void) do_first_track(pl);
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no group change, still switch to first track, if needed */
-	} else if (do_first_track(pl)) {
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-	/* If no track change, still reset track position, if needed */
-	} else if (pl->track_pos != 0) {
-		set_track_position(0);
-	}
+	do_last_group(pl);
+
+	/* Whether there is a group change or not, we always go to the first track */
+	do_first_track(pl);
 }
 
-void do_full_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
+static void do_full_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 {
 	/* Change the group (if not already on given group) */
-	if (do_goto_group(pl, groupnum)) {
-		do_group_change_notifications(pl);
-		/* If group change, also go to first track in group. */
-		/* Notify the track info in all cases - it is a track */
-		/* change for the player even if the group was set to */
-		/* this track already. */
-		(void) do_first_track(pl);
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-		/* If no group change, still switch to first track, if needed */
-	} else if (do_first_track(pl)) {
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
-		/* If no track change, still reset track position, if needed */
-	} else if (pl->track_pos != 0) {
-		set_track_position(0);
-	}
+	do_goto_group(pl, groupnum);
+
+	/* Whether there is a group change or not, we always go to the first track */
+	do_first_track(pl);
 }
 
 static void mpl_set_state(uint8_t state)
@@ -1435,16 +1382,7 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For previous track, the position is reset to 0 */
-			/* even if we stay at the same track (goto start of */
-			/* track) */
-			set_track_position(0);
-		}
-
+		do_prev_track(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
@@ -1454,17 +1392,7 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		 * The case where the next track has been set explicitly breaks somewhat
 		 * with the "next" order hardcoded into the group and track structure
 		 */
-		if (media_player.next_track_set) {
-			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&media_player)) {
-				do_group_change_notifications(&media_player);
-			}
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else if (do_next_track_normal_order(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		}
+		do_next_track(&media_player);
 
 		/* For next track, the position is kept if the track */
 		/* does not change */
@@ -1473,45 +1401,20 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For first track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
-
+		do_first_track(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For last track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
-
+		do_last_track(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&media_player, command->param)) {
-				media_player.track_pos = 0;
-				do_track_change_notifications(&media_player);
-			} else {
-				/* For goto track, the position is reset to 0 */
-				/* even if we stay at the same track (goto */
-				/* start of track) */
-				set_track_position(0);
-			}
-
+			do_goto_track(&media_player, command->param);
 			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
@@ -1645,7 +1548,6 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		if (command->use_param) {
 			if (command->param != 0) {
 				do_goto_segment(&media_player, command->param);
-				set_track_position(media_player.group->track->segment->pos);
 			}
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
@@ -1657,70 +1559,30 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For previous track, the position is reset to 0 */
-			/* even if we stay at the same track (goto start of */
-			/* track) */
-			set_track_position(0);
-		}
+		do_prev_track(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
-		if (media_player.next_track_set) {
-			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&media_player)) {
-				do_group_change_notifications(&media_player);
-			}
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else if (do_next_track_normal_order(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		}
+		do_next_track(&media_player);
 		/* For next track, the position is kept if the track */
 		/* does not change */
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For first track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
+		do_first_track(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For last track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
+		do_last_track(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&media_player, command->param)) {
-				media_player.track_pos = 0;
-				do_track_change_notifications(&media_player);
-			} else {
-				/* For goto track, the position is reset to 0 */
-				/* even if we stay at the same track (goto */
-				/* start of track) */
-				set_track_position(0);
-			}
+			do_goto_track(&media_player, command->param);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -1869,7 +1731,6 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		if (command->use_param && media_player.group->track->segment != NULL) {
 			if (command->param != 0) {
 				do_goto_segment(&media_player, command->param);
-				set_track_position(media_player.group->track->segment->pos);
 			}
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
@@ -1881,70 +1742,30 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For previous track, the position is reset to 0 */
-			/* even if we stay at the same track (goto start of */
-			/* track) */
-			set_track_position(0);
-		}
+		do_prev_track(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
-		if (media_player.next_track_set) {
-			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&media_player)) {
-				do_group_change_notifications(&media_player);
-			}
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else if (do_next_track_normal_order(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		}
+		do_next_track(&media_player);
 		/* For next track, the position is kept if the track */
 		/* does not change */
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For first track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
+		do_first_track(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For last track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
+		do_last_track(&media_player);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&media_player, command->param)) {
-				media_player.track_pos = 0;
-				do_track_change_notifications(&media_player);
-			} else {
-				/* For goto track, the position is reset to 0 */
-				/* even if we stay at the same track (goto */
-				/* start of track) */
-				set_track_position(0);
-			}
+			do_goto_track(&media_player, command->param);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
 			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
@@ -2088,7 +1909,6 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		if (command->use_param) {
 			if (command->param != 0) {
 				do_goto_segment(&media_player, command->param);
-				set_track_position(media_player.group->track->segment->pos);
 			}
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
@@ -2100,32 +1920,14 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
-		if (do_prev_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For previous track, the position is reset to 0 */
-			/* even if we stay at the same track (goto start of */
-			/* track) */
-			set_track_position(0);
-		}
+		do_prev_track(&media_player);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
-		if (media_player.next_track_set) {
-			LOG_DBG("Next track set");
-			if (do_next_track_next_track_set(&media_player)) {
-				do_group_change_notifications(&media_player);
-			}
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else if (do_next_track_normal_order(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		}
+		do_next_track(&media_player);
 		/* For next track, the position is kept if the track */
 		/* does not change */
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
@@ -2134,28 +1936,14 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		if (do_first_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For first track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
+		do_first_track(&media_player);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
-		if (do_last_track(&media_player)) {
-			media_player.track_pos = 0;
-			do_track_change_notifications(&media_player);
-		} else {
-			/* For last track, the position is reset to 0 even */
-			/* if we stay at the same track (goto start of track) */
-			set_track_position(0);
-		}
+		do_last_track(&media_player);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
@@ -2163,15 +1951,7 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
-			if (do_goto_track(&media_player, command->param)) {
-				media_player.track_pos = 0;
-				do_track_change_notifications(&media_player);
-			} else {
-				/* For goto track, the position is reset to 0 */
-				/* even if we stay at the same track (goto */
-				/* start of track) */
-				set_track_position(0);
-			}
+			do_goto_track(&media_player, command->param);
 			media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
@@ -2490,7 +2270,6 @@ uint64_t get_current_group_id(void)
 void set_current_group_id(uint64_t id)
 {
 	struct mpl_group *group;
-	bool track_change;
 
 	LOG_DBG_OBJ_ID("Group ID to set: ", id);
 
@@ -2502,10 +2281,7 @@ void set_current_group_id(uint64_t id)
 			do_group_change_notifications(&media_player);
 
 			/* And change to first track in group */
-			track_change = do_first_track(&media_player);
-			if (track_change) {
-				do_track_change_notifications(&media_player);
-			}
+			do_first_track(&media_player);
 		}
 		return;
 	}
