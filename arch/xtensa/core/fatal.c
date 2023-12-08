@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #include <xtensa/simcall.h>
 #endif
 
-char *z_xtensa_exccause(unsigned int cause_code)
+char *xtensa_exccause(unsigned int cause_code)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	switch (cause_code) {
@@ -85,7 +85,7 @@ char *z_xtensa_exccause(unsigned int cause_code)
 #endif
 }
 
-void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
 	if (esf) {
 		/* Don't want to get elbowed by xtensa_switch
@@ -94,13 +94,13 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		 */
 		unsigned int key = arch_irq_lock();
 
-		z_xtensa_dump_stack(esf);
+		xtensa_dump_stack(esf);
 
 		coredump(reason, esf, IS_ENABLED(CONFIG_MULTITHREADING) ? k_current_get() : NULL);
 
 #if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
 #if XCHAL_HAVE_WINDOWED
-		z_xtensa_backtrace_print(100, (int *)esf);
+		xtensa_backtrace_print(100, (int *)esf);
 #endif
 #endif
 		arch_irq_unlock(key);
