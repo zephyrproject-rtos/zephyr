@@ -226,6 +226,9 @@ struct usbd_class_api {
 	/** USB power management handler resumed */
 	void (*resumed)(struct usbd_class_node *const node);
 
+	/** Start of Frame */
+	void (*sof)(struct usbd_class_node *const node);
+
 	/** Class associated configuration is selected */
 	void (*enable)(struct usbd_class_node *const node);
 
