@@ -1357,9 +1357,10 @@ static void mpl_set_state(uint8_t state)
 }
 
 /* Command handlers (state machines) */
-void inactive_state_command_handler(const struct mpl_cmd *command,
-				    struct mpl_cmd_ntf *ntf)
+static uint8_t inactive_state_command_handler(const struct mpl_cmd *command)
 {
+	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MPL_LOG_LEVEL_DBG)) {
 		if (command->use_param) {
@@ -1378,14 +1379,11 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
-		ntf->result_code = MEDIA_PROXY_CMD_PLAYER_INACTIVE;
-		media_proxy_pl_command_cb(ntf);
+		result_code = MEDIA_PROXY_CMD_PLAYER_INACTIVE;
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
 		do_prev_track(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
 		/* TODO:
@@ -1397,123 +1395,98 @@ void inactive_state_command_handler(const struct mpl_cmd *command,
 		/* For next track, the position is kept if the track */
 		/* does not change */
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
 		do_first_track(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
 		do_last_track(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
 			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
 		do_full_prev_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
 		do_full_next_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
 		do_full_first_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
 		do_full_last_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
 			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		ntf->result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
-		media_proxy_pl_command_cb(ntf);
+		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
 		break;
 	}
+
+	return result_code;
 }
 
-void playing_state_command_handler(const struct mpl_cmd *command,
-				   struct mpl_cmd_ntf *ntf)
+static uint8_t playing_state_command_handler(const struct mpl_cmd *command)
 {
+	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MPL_LOG_LEVEL_DBG)) {
 		if (command->use_param) {
 			LOG_DBG("Command parameter: %d", command->param);
 		}
 	}
+
 	switch (command->opcode) {
 	case MEDIA_PROXY_OP_PLAY:
 		/* Continue playing - i.e. do nothing */
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PAUSE:
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_REWIND:
 		/* We're in playing state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* We're in playing state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_STOP:
 		set_track_position(0);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than <margin> */
@@ -1523,26 +1496,18 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 			do_prev_segment(&media_player);
 		}
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
 		do_next_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 		do_first_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 		do_last_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		if (command->use_param) {
@@ -1552,130 +1517,100 @@ void playing_state_command_handler(const struct mpl_cmd *command,
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
 		do_prev_track(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
 		do_next_track(&media_player);
-		/* For next track, the position is kept if the track */
-		/* does not change */
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
 		do_first_track(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
 		do_last_track(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
 		do_full_prev_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
 		do_full_next_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
 		do_full_first_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
 		do_full_last_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		ntf->result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
-		media_proxy_pl_command_cb(ntf);
+		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
 		break;
 	}
+
+	return result_code;
 }
 
-void paused_state_command_handler(const struct mpl_cmd *command,
-				  struct mpl_cmd_ntf *ntf)
+static uint8_t paused_state_command_handler(const struct mpl_cmd *command)
 {
+	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MPL_LOG_LEVEL_DBG)) {
 		if (command->use_param) {
 			LOG_DBG("Command parameter: %d", command->param);
 		}
 	}
+
 	switch (command->opcode) {
 	case MEDIA_PROXY_OP_PLAY:
 		mpl_set_state(MEDIA_PROXY_STATE_PLAYING);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PAUSE:
 		/* No change */
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_REWIND:
 		/* We're in paused state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* We're in paused state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_STOP:
 		set_track_position(0);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
@@ -1687,45 +1622,37 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 			}
 
 			set_track_position(media_player.group->track->segment->pos);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
 
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
 		if (media_player.group->track->segment != NULL) {
 			do_next_segment(&media_player);
 			set_track_position(media_player.group->track->segment->pos);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
 
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 		if (media_player.group->track->segment != NULL) {
 			do_first_segment(&media_player);
 			set_track_position(media_player.group->track->segment->pos);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
 
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 		if (media_player.group->track->segment != NULL) {
 			do_last_segment(&media_player);
 			set_track_position(media_player.group->track->segment->pos);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
 
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		if (command->use_param && media_player.group->track->segment != NULL) {
@@ -1735,104 +1662,84 @@ void paused_state_command_handler(const struct mpl_cmd *command,
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
 		do_prev_track(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
 		do_next_track(&media_player);
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
 		do_first_track(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
 		do_last_track(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
 		do_full_prev_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
 		do_full_next_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
 		do_full_first_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
 		do_full_last_group(&media_player);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		ntf->result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
-		media_proxy_pl_command_cb(ntf);
+		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
 		break;
 	}
+
+	return result_code;
 }
 
-void seeking_state_command_handler(const struct mpl_cmd *command,
-				   struct mpl_cmd_ntf *ntf)
+static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 {
+	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MPL_LOG_LEVEL_DBG)) {
 		if (command->use_param) {
 			LOG_DBG("Command parameter: %d", command->param);
 		}
 	}
+
 	switch (command->opcode) {
 	case MEDIA_PROXY_OP_PLAY:
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PLAYING);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PAUSE:
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		/* TODO: Set track and track position */
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_REWIND:
 		/* TODO: Here, and for FAST_FORWARD */
@@ -1846,8 +1753,6 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 			media_player.seeking_speed_factor -= MPL_SEEKING_SPEED_FACTOR_STEP;
 			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		}
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* Highest value allowed by spec is 64, notify on change only */
@@ -1856,25 +1761,20 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 			media_player.seeking_speed_factor += MPL_SEEKING_SPEED_FACTOR_STEP;
 			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		}
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_STOP:
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		set_track_position(0);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
+
 		break;
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
@@ -1884,26 +1784,18 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 			do_prev_segment(&media_player);
 		}
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
 		do_next_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 		do_first_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 		do_last_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		if (command->use_param) {
@@ -1913,18 +1805,14 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_TRACK:
 		do_prev_track(&media_player);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_TRACK:
 		do_next_track(&media_player);
@@ -1932,82 +1820,64 @@ void seeking_state_command_handler(const struct mpl_cmd *command,
 		/* does not change */
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
 		do_first_track(&media_player);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
 		do_last_track(&media_player);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
 			media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_PREV_GROUP:
 		do_full_prev_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_NEXT_GROUP:
 		do_full_next_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_FIRST_GROUP:
 		do_full_first_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_LAST_GROUP:
 		do_full_last_group(&media_player);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
-		media_proxy_pl_command_cb(ntf);
 		break;
 	case MEDIA_PROXY_OP_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
 			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-			ntf->result_code = MEDIA_PROXY_CMD_SUCCESS;
 		} else {
-			ntf->result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
-		media_proxy_pl_command_cb(ntf);
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		ntf->result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
-		media_proxy_pl_command_cb(ntf);
+		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
 		break;
 	}
+
+	return result_code;
 }
 
-void (*command_handlers[MEDIA_PROXY_STATE_LAST])(const struct mpl_cmd *command,
-						  struct mpl_cmd_ntf *ntf) = {
+static uint8_t (*command_handlers[MEDIA_PROXY_STATE_LAST])(const struct mpl_cmd *command) = {
 	inactive_state_command_handler,
 	playing_state_command_handler,
 	paused_state_command_handler,
-	seeking_state_command_handler
+	seeking_state_command_handler,
 };
 
 #ifdef CONFIG_BT_MPL_OBJECTS
@@ -2327,7 +2197,9 @@ void send_command(const struct mpl_cmd *command)
 
 	if (media_player.state < MEDIA_PROXY_STATE_LAST) {
 		ntf.requested_opcode = command->opcode;
-		command_handlers[media_player.state](command, &ntf);
+		ntf.result_code = command_handlers[media_player.state](command);
+
+		media_proxy_pl_command_cb(&ntf);
 	} else {
 		LOG_DBG("INVALID STATE");
 	}
