@@ -53,6 +53,7 @@
 #include <reg/reg_def.h>
 #include <soc_dt.h>
 #include <soc_clock.h>
+#include <soc_espi_taf.h>
 #include <soc_pins.h>
 #include <soc_power.h>
 
