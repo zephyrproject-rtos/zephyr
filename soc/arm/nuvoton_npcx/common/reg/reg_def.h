@@ -625,14 +625,35 @@ struct espi_reg {
 	volatile uint32_t reserved8[11];
 	/* 0x3FC: OOB Channel Control used in 'direct' mode */
 	volatile uint32_t OOBCTL_DIRECT;
-	/* 0x400 - 443: Flash Receive Buffer 0-16 */
-	volatile uint32_t FLASHRXBUF[17];
-	volatile uint32_t reserved9[15];
-	/* 0x480 - 497: Flash Transmit Buffer 0-5 */
-	volatile uint32_t FLASHTXBUF[6];
-	volatile uint32_t reserved10[25];
+	/* 0x400 - 443: Flash Receive Buffer 0-17 */
+	volatile uint32_t FLASHRXBUF[18];
+	volatile uint32_t reserved9[14];
+	/* 0x480 - 497: Flash Transmit Buffer 0-16 */
+	volatile uint32_t FLASHTXBUF[17];
+	volatile uint32_t reserved10[14];
 	/* 0x4FC: Flash Channel Control used in 'direct' mode */
 	volatile uint32_t FLASHCTL_DIRECT;
+	volatile uint32_t reserved12[64];
+	/* 0x600 - 63F */
+	volatile uint32_t FLASH_PRTR_BADDR[16];
+	/* 0x640 - 67F */
+	volatile uint32_t FLASH_PRTR_HADDR[16];
+	/* 0x680 - 6BF */
+	volatile uint32_t FLASH_RGN_TAG_OVR[16];
+	volatile uint32_t reserved13[80];
+	/* 0x800 */
+	volatile uint32_t FLASH_RPMC_CFG_1;
+	/* 0x804 */
+	volatile uint32_t FLASH_RPMC_CFG_2;
+	/* 0x808 */
+	volatile uint32_t RMAP_FLASH_OFFS;
+	/* 0x80C */
+	volatile uint32_t RMAP_DST_BASE;
+	/* 0x810 */
+	volatile uint32_t RMAP_WIN_SIZE;
+	/* 0x814 */
+	volatile uint32_t FLASHBASE;
+	volatile uint32_t reserved14[58];
 };
 
 /* eSPI register fields */
@@ -648,6 +669,7 @@ struct espi_reg {
 #define NPCX_ESPICFG_HCHANS_FIELD        FIELD(4, 4)
 #define NPCX_ESPICFG_IOMODE_FIELD        FIELD(8, 2)
 #define NPCX_ESPICFG_MAXFREQ_FIELD       FIELD(10, 3)
+#define NPCX_ESPICFG_FLCHANMODE          16
 #define NPCX_ESPICFG_PCCHN_SUPP          24
 #define NPCX_ESPICFG_VWCHN_SUPP          25
 #define NPCX_ESPICFG_OOBCHN_SUPP         26
@@ -657,7 +679,7 @@ struct espi_reg {
 #define NPCX_ESPIIE_BERRIE               2
 #define NPCX_ESPIIE_OOBRXIE              3
 #define NPCX_ESPIIE_FLASHRXIE            4
-#define NPCX_ESPIIE_SFLASHRDIE           5
+#define NPCX_ESPIIE_FLNACSIE             5
 #define NPCX_ESPIIE_PERACCIE             6
 #define NPCX_ESPIIE_DFRDIE               7
 #define NPCX_ESPIIE_VWUPDIE              8
@@ -675,6 +697,7 @@ struct espi_reg {
 #define NPCX_ESPIWE_BERRWE               2
 #define NPCX_ESPIWE_OOBRXWE              3
 #define NPCX_ESPIWE_FLASHRXWE            4
+#define NPCX_ESPIWE_FLNACSWE             5
 #define NPCX_ESPIWE_PERACCWE             6
 #define NPCX_ESPIWE_DFRDWE               7
 #define NPCX_ESPIWE_VWUPDWE              8
@@ -686,6 +709,7 @@ struct espi_reg {
 #define NPCX_ESPISTS_BERR                2
 #define NPCX_ESPISTS_OOBRX               3
 #define NPCX_ESPISTS_FLASHRX             4
+#define NPCX_ESPISTS_FLNACS              5
 #define NPCX_ESPISTS_PERACC              6
 #define NPCX_ESPISTS_DFRD                7
 #define NPCX_ESPISTS_VWUPD               8
@@ -700,6 +724,14 @@ struct espi_reg {
 #define NPCX_ESPISTS_BMBURSTERR          22
 #define NPCX_ESPISTS_BMBURSTDONE         23
 #define NPCX_ESPISTS_ESPIRST_LVL         24
+#define NPCX_VWSWIRQ_IRQ_NUM             FIELD(0, 7)
+#define NPCX_VWSWIRQ_IRQ_LVL             7
+#define NPCX_VWSWIRQ_INDEX               FIELD(8, 7)
+#define NPCX_VWSWIRQ_INDEX_EN            15
+#define NPCX_VWSWIRQ_DIRTY               16
+#define NPCX_VWSWIRQ_ENPLTRST            17
+#define NPCX_VWSWIRQ_ENCDRST             19
+#define NPCX_VWSWIRQ_EDGE_IRQ            28
 #define NPCX_VWEVMS_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVMS_VALID                FIELD(4, 4)
 #define NPCX_VWEVMS_IE                   18
@@ -716,6 +748,9 @@ struct espi_reg {
 #define NPCX_FLASHCFG_FLASHBLERSSIZE     FIELD(7, 3)
 #define NPCX_FLASHCFG_FLASHPLSIZE        FIELD(10, 3)
 #define NPCX_FLASHCFG_FLASHREQSIZE       FIELD(13, 3)
+#define NPCX_FLASHCFG_FLCAPA             FIELD(24, 2)
+#define NPCX_FLASHCFG_TRGFLEBLKSIZE      FIELD(16, 8)
+#define NPCX_FLASHCFG_FLREQSUP           FIELD(0, 3)
 #define NPCX_FLASHCTL_FLASH_NP_FREE      0
 #define NPCX_FLASHCTL_FLASH_TX_AVAIL     1
 #define NPCX_FLASHCTL_STRPHDR            2
@@ -725,10 +760,21 @@ struct espi_reg {
 #define NPCX_FLASHCTL_CRCEN              14
 #define NPCX_FLASHCTL_CHKSUMSEL          15
 #define NPCX_FLASHCTL_AMTEN              16
-
+#define NPCX_FLASHCTL_SAF_AUTO_READ      18
+#define NPCX_FLASHCTL_AUTO_RD_DIS_CTL    19
+#define NPCX_FLASHCTL_BLK_FLASH_NP_FREE  20
+#define NPCX_FLASHBASE_FLBASE_ADDR       FIELD(12, 15)
+#define NPCX_FLASH_PRTR_BADDR            FIELD(12, 15)
+#define NPCX_FRGN_WPR                    29
+#define SAF_PROT_LCK                     31
+#define NPCX_FRGN_RPR                    30
+#define NPCX_FLASH_PRTR_HADDR            FIELD(12, 15)
+#define NPCX_FLASH_TAG_OVR_RPR           FIELD(16, 16)
+#define NPCX_FLASH_TAG_OVR_WPR           FIELD(0, 16)
 #define NPCX_ONLY_ESPI_REG1_UNLOCK_REG2         0x55
 #define NPCX_ONLY_ESPI_REG1_LOCK_REG2           0
 #define NPCX_ONLY_ESPI_REG2_TRANS_END_CONFIG    4
+
 /*
  * Mobile System Wake-Up Control (MSWC) device registers
  */
