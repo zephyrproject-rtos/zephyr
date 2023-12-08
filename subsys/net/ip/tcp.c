@@ -507,6 +507,194 @@ static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len) { }
 
 #endif
 
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+
+static void tcp_send_keepalive_probe(struct k_work *work);
+
+static void keep_alive_timer_init(struct tcp *conn)
+{
+	conn->keep_alive = false;
+	conn->keep_idle = CONFIG_NET_TCP_KEEPIDLE_DEFAULT;
+	conn->keep_intvl = CONFIG_NET_TCP_KEEPINTVL_DEFAULT;
+	conn->keep_cnt = CONFIG_NET_TCP_KEEPCNT_DEFAULT;
+	NET_DBG("keepalive timer init idle = %d, interval = %d, cnt = %d",
+		conn->keep_idle, conn->keep_intvl, conn->keep_cnt);
+	k_work_init_delayable(&conn->keepalive_timer, tcp_send_keepalive_probe);
+}
+
+static void keep_alive_param_copy(struct tcp *to, struct tcp *from)
+{
+	to->keep_alive = from->keep_alive;
+	to->keep_idle = from->keep_idle;
+	to->keep_intvl = from->keep_intvl;
+	to->keep_cnt = from->keep_cnt;
+}
+
+static void keep_alive_timer_restart(struct tcp *conn)
+{
+	if (!conn->keep_alive || conn->state != TCP_ESTABLISHED) {
+		return;
+	}
+
+	conn->keep_cur = 0;
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->keepalive_timer,
+				    K_SECONDS(conn->keep_idle));
+}
+
+static void keep_alive_timer_stop(struct tcp *conn)
+{
+	k_work_cancel_delayable(&conn->keepalive_timer);
+}
+
+static int set_tcp_keep_alive(struct tcp *conn, const void *value, size_t len)
+{
+	int keep_alive;
+
+	if (conn == NULL || value == NULL || len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	keep_alive = *(int *)value;
+	if ((keep_alive < 0) || (keep_alive > 1)) {
+		return -EINVAL;
+	}
+
+	conn->keep_alive = (bool)keep_alive;
+
+	if (keep_alive) {
+		keep_alive_timer_restart(conn);
+	} else {
+		keep_alive_timer_stop(conn);
+	}
+
+	return 0;
+}
+
+static int set_tcp_keep_idle(struct tcp *conn, const void *value, size_t len)
+{
+	int keep_idle;
+
+	if (conn == NULL || value == NULL || len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	keep_idle = *(int *)value;
+	if (keep_idle < 1) {
+		return -EINVAL;
+	}
+
+	conn->keep_idle = keep_idle;
+
+	keep_alive_timer_restart(conn);
+
+	return 0;
+}
+
+static int set_tcp_keep_intvl(struct tcp *conn, const void *value, size_t len)
+{
+	int keep_intvl;
+
+	if (conn == NULL || value == NULL || len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	keep_intvl = *(int *)value;
+	if (keep_intvl < 1) {
+		return -EINVAL;
+	}
+
+	conn->keep_intvl = keep_intvl;
+
+	keep_alive_timer_restart(conn);
+
+	return 0;
+}
+
+static int set_tcp_keep_cnt(struct tcp *conn, const void *value, size_t len)
+{
+	int keep_cnt;
+
+	if (conn == NULL || value == NULL || len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	keep_cnt = *(int *)value;
+	if (keep_cnt < 1) {
+		return -EINVAL;
+	}
+
+	conn->keep_cnt = keep_cnt;
+
+	keep_alive_timer_restart(conn);
+
+	return 0;
+}
+
+static int get_tcp_keep_alive(struct tcp *conn, void *value, size_t *len)
+{
+	if (conn == NULL || value == NULL || len == NULL ||
+	    *len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*((int *)value) = (int)conn->keep_alive;
+
+	return 0;
+}
+
+static int get_tcp_keep_idle(struct tcp *conn, void *value, size_t *len)
+{
+	if (conn == NULL || value == NULL || len == NULL ||
+	    *len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*((int *)value) = (int)conn->keep_idle;
+
+	return 0;
+}
+
+static int get_tcp_keep_intvl(struct tcp *conn, void *value, size_t *len)
+{
+	if (conn == NULL || value == NULL || len == NULL ||
+	    *len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*((int *)value) = (int)conn->keep_intvl;
+
+	return 0;
+}
+
+static int get_tcp_keep_cnt(struct tcp *conn, void *value, size_t *len)
+{
+	if (conn == NULL || value == NULL || len == NULL ||
+	    *len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*((int *)value) = (int)conn->keep_cnt;
+
+	return 0;
+}
+
+#else /* CONFIG_NET_TCP_KEEPALIVE */
+
+#define keep_alive_timer_init(...)
+#define keep_alive_param_copy(...)
+#define keep_alive_timer_restart(...)
+#define keep_alive_timer_stop(...)
+#define set_tcp_keep_alive(...) (-ENOPROTOOPT)
+#define set_tcp_keep_idle(...) (-ENOPROTOOPT)
+#define set_tcp_keep_intvl(...) (-ENOPROTOOPT)
+#define set_tcp_keep_cnt(...) (-ENOPROTOOPT)
+#define get_tcp_keep_alive(...) (-ENOPROTOOPT)
+#define get_tcp_keep_idle(...) (-ENOPROTOOPT)
+#define get_tcp_keep_intvl(...) (-ENOPROTOOPT)
+#define get_tcp_keep_cnt(...) (-ENOPROTOOPT)
+
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
+
 static void tcp_send_queue_flush(struct tcp *conn)
 {
 	struct net_pkt *pkt;
@@ -562,6 +750,7 @@ static void tcp_conn_release(struct k_work *work)
 	(void)k_work_cancel_delayable(&conn->ack_timer);
 	(void)k_work_cancel_delayable(&conn->send_timer);
 	(void)k_work_cancel_delayable(&conn->recv_queue_timer);
+	keep_alive_timer_stop(conn);
 
 	k_mutex_unlock(&conn->lock);
 
@@ -623,6 +812,7 @@ static int tcp_conn_close(struct tcp *conn, int status)
 #endif
 	k_mutex_lock(&conn->lock, K_FOREVER);
 	conn_state(conn, TCP_CLOSED);
+	keep_alive_timer_stop(conn);
 	k_mutex_unlock(&conn->lock);
 
 	if (conn->in_connect) {
@@ -1603,6 +1793,8 @@ static void tcp_resend_data(struct k_work *work)
 				conn_seq(conn, + 1);
 			}
 
+			keep_alive_timer_stop(conn);
+
 			goto out;
 		}
 	} else if (ret == -ENODATA) {
@@ -1668,6 +1860,39 @@ static void tcp_fin_timeout(struct k_work *work)
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
+
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+static void tcp_send_keepalive_probe(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, keepalive_timer);
+
+	if (conn->state != TCP_ESTABLISHED) {
+		NET_DBG("conn: %p TCP connection not established", conn);
+		return;
+	}
+
+	if (!conn->keep_alive) {
+		NET_DBG("conn: %p keepalive is not enabled", conn);
+		return;
+	}
+
+	conn->keep_cur++;
+	if (conn->keep_cur > conn->keep_cnt) {
+		NET_DBG("conn: %p keepalive probe failed multiple times",
+			conn);
+		tcp_conn_close(conn, -ETIMEDOUT);
+		return;
+	}
+
+	NET_DBG("conn: %p keepalive probe", conn);
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->keepalive_timer,
+				    K_SECONDS(conn->keep_intvl));
+
+
+	(void)tcp_out_ext(conn, ACK, NULL, conn->seq - 1);
+}
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 
 static void tcp_send_zwp(struct k_work *work)
 {
@@ -1784,6 +2009,7 @@ static struct tcp *tcp_conn_alloc(void)
 	k_work_init_delayable(&conn->persist_timer, tcp_send_zwp);
 	k_work_init_delayable(&conn->ack_timer, tcp_send_ack);
 	k_work_init(&conn->conn_release, tcp_conn_release);
+	keep_alive_timer_init(conn);
 
 	tcp_conn_ref(conn);
 
@@ -2569,6 +2795,7 @@ next_state:
 			if (conn->accepted_conn != NULL) {
 				accept_cb = conn->accepted_conn->accept_cb;
 				context = conn->accepted_conn->context;
+				keep_alive_param_copy(conn, conn->accepted_conn);
 			}
 
 			k_work_cancel_delayable(&conn->establish_timer);
@@ -2590,6 +2817,8 @@ next_state:
 				net_tcp_put(conn->context);
 				break;
 			}
+
+			keep_alive_timer_restart(conn);
 
 			net_ipaddr_copy(&conn->context->remote, &conn->dst.sa);
 
@@ -2669,6 +2898,7 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 			tcp_ca_init(conn);
 			tcp_out(conn, ACK);
+			keep_alive_timer_restart(conn);
 
 			/* The connection semaphore is released *after*
 			 * we have changed the connection state. This way
@@ -2695,12 +2925,14 @@ next_state:
 			tcp_out(conn, FIN | ACK);
 			next = TCP_LAST_ACK;
 			verdict = NET_OK;
+			keep_alive_timer_stop(conn);
 			break;
 		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_CLOSE_WAIT;
 			verdict = NET_OK;
+			keep_alive_timer_stop(conn);
 			break;
 		} else if (th && FL(&fl, ==, (FIN | ACK | PSH),
 				    th_seq(th) == conn->ack)) {
@@ -2717,8 +2949,14 @@ next_state:
 			conn_ack(conn, + len + 1);
 			tcp_out(conn, FIN | ACK);
 			next = TCP_LAST_ACK;
+			keep_alive_timer_stop(conn);
 			break;
 		}
+
+		/* Whatever we've received, we know that peer is alive, so reset
+		 * the keepalive timer.
+		 */
+		keep_alive_timer_restart(conn);
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 		if (th && (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0)) {
@@ -2821,6 +3059,7 @@ next_state:
 				tcp_out(conn, FIN | ACK);
 				conn_seq(conn, + 1);
 				verdict = NET_OK;
+				keep_alive_timer_stop(conn);
 				break;
 			}
 
@@ -3232,6 +3471,8 @@ int net_tcp_put(struct net_context *context)
 			}
 
 			conn_state(conn, TCP_FIN_WAIT_1);
+
+			keep_alive_timer_stop(conn);
 		}
 	} else if (conn && conn->in_connect) {
 		conn->in_connect = false;
@@ -3998,6 +4239,18 @@ int net_tcp_set_option(struct net_context *context,
 	case TCP_OPT_NODELAY:
 		ret = set_tcp_nodelay(conn, value, len);
 		break;
+	case TCP_OPT_KEEPALIVE:
+		ret = set_tcp_keep_alive(conn, value, len);
+		break;
+	case TCP_OPT_KEEPIDLE:
+		ret = set_tcp_keep_idle(conn, value, len);
+		break;
+	case TCP_OPT_KEEPINTVL:
+		ret = set_tcp_keep_intvl(conn, value, len);
+		break;
+	case TCP_OPT_KEEPCNT:
+		ret = set_tcp_keep_cnt(conn, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -4022,6 +4275,18 @@ int net_tcp_get_option(struct net_context *context,
 	switch (option) {
 	case TCP_OPT_NODELAY:
 		ret = get_tcp_nodelay(conn, value, len);
+		break;
+	case TCP_OPT_KEEPALIVE:
+		ret = get_tcp_keep_alive(conn, value, len);
+		break;
+	case TCP_OPT_KEEPIDLE:
+		ret = get_tcp_keep_idle(conn, value, len);
+		break;
+	case TCP_OPT_KEEPINTVL:
+		ret = get_tcp_keep_intvl(conn, value, len);
+		break;
+	case TCP_OPT_KEEPCNT:
+		ret = get_tcp_keep_cnt(conn, value, len);
 		break;
 	}
 
