@@ -9,6 +9,9 @@
 #include "includes.h"
 #include "common.h"
 
+/* Re-defines MAC2STR with address of the element */
+#define MACADDR2STR(a) &(a)[0], &(a)[1], &(a)[2], &(a)[3], &(a)[4], &(a)[5]
+
 static const char * const supplicant_event_map[] = {
 	"CTRL-EVENT-CONNECTED",
 	"CTRL-EVENT-DISCONNECTED",
@@ -28,6 +31,15 @@ static const char * const supplicant_event_map[] = {
 	"CTRL-EVENT-DSCP-POLICY",
 };
 
+static void copy_mac_addr(const unsigned int *src, uint8_t *dst)
+{
+	int i;
+
+	for (i = 0; i < ETH_ALEN; i++) {
+		dst[i] = src[i];
+	}
+}
+
 static int supplicant_process_status(struct supplicant_int_event_data *event_data,
 				     char *supplicant_status)
 {
@@ -35,6 +47,7 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	int event = -1;
 	int i;
 	union supplicant_event_data *data;
+	unsigned int tmp_mac_addr[ETH_ALEN];
 
 	data = (union supplicant_event_data *)event_data->data;
 
@@ -57,14 +70,16 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	case SUPPLICANT_EVENT_CONNECTED:
 		ret = sscanf(supplicant_status +
 			     sizeof("CTRL-EVENT-CONNECTED - Connection to") - 1,
-			     MACSTR, MAC2STR(data->connected.bssid));
+			     MACSTR, MACADDR2STR(tmp_mac_addr));
 		event_data->data_len = sizeof(data->connected);
+		copy_mac_addr(tmp_mac_addr, data->connected.bssid);
 		break;
 	case SUPPLICANT_EVENT_DISCONNECTED:
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-DISCONNECTED bssid=") - 1,
-			     MACSTR" reason=%d", MAC2STR(data->disconnected.bssid),
+			     MACSTR" reason=%d", MACADDR2STR(tmp_mac_addr),
 			     &data->disconnected.reason_code);
 		event_data->data_len = sizeof(data->disconnected);
+		copy_mac_addr(tmp_mac_addr, data->disconnected.bssid);
 		break;
 	case SUPPLICANT_EVENT_ASSOC_REJECT:
 		/* TODO */
@@ -73,11 +88,12 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-AUTH-REJECT ") - 1,
 			     MACSTR
 			     " auth_type=%u auth_transaction=%u status_code=%u",
-			     MAC2STR(data->auth_reject.bssid),
+			     MACADDR2STR(tmp_mac_addr),
 			     &data->auth_reject.auth_type,
 			     &data->auth_reject.auth_transaction,
 			     &data->auth_reject.status_code);
 		event_data->data_len = sizeof(data->auth_reject);
+		copy_mac_addr(tmp_mac_addr, data->auth_reject.bssid);
 		break;
 	case SUPPLICANT_EVENT_SSID_TEMP_DISABLED:
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-SSID-TEMP-DISABLED ") - 1,
@@ -99,7 +115,8 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-BSS-ADDED ") - 1,
 			     "%u "MACSTR,
 			     &data->bss_added.id,
-			     MAC2STR(data->bss_added.bssid));
+			     MACADDR2STR(tmp_mac_addr));
+		copy_mac_addr(tmp_mac_addr, data->bss_added.bssid);
 		event_data->data_len = sizeof(data->bss_added);
 		break;
 	case SUPPLICANT_EVENT_BSS_REMOVED:
@@ -107,8 +124,9 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-BSS-REMOVED ") - 1,
 			     "%u "MACSTR,
 			     &data->bss_removed.id,
-			     MAC2STR(data->bss_removed.bssid));
+			     MACADDR2STR(tmp_mac_addr));
 		event_data->data_len = sizeof(data->bss_removed);
+		copy_mac_addr(tmp_mac_addr, data->bss_removed.bssid);
 		break;
 	case SUPPLICANT_EVENT_TERMINATING:
 	case SUPPLICANT_EVENT_SCAN_STARTED:
