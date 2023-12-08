@@ -835,8 +835,7 @@ if KERNEL_MEM_POOL
 
 config HEAP_MEM_POOL_SIZE
 	int "Heap memory pool size (in bytes)"
-	default 0 if !POSIX_MQUEUE
-	default 1024 if POSIX_MQUEUE
+	default 0
 	help
 	  This option specifies the size of the heap memory pool used when
 	  dynamically allocating memory using k_malloc(). The maximum size of

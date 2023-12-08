@@ -30,4 +30,7 @@ config MQUEUE_NAMELEN_MAX
 	help
 	  Mention length of message queue name in number of characters.
 
+config HEAP_MEM_POOL_ADD_SIZE_MQUEUE
+	def_int 1024
+
 endif
