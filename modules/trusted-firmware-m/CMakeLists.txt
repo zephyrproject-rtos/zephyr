@@ -181,11 +181,12 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_TEST_REPO_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../tf-m-tests)
   set(PSA_ARCH_TESTS_PATH ${ZEPHYR_CURRENT_MODULE_DIR}/../psa-arch-tests)
 
-  set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
+  set(TFM_INTERFACE_SOURCE_DIR   ${TFM_BINARY_DIR}/api_ns/interface/src)
+  set(TFM_INTERFACE_INCLUDE_DIR  ${TFM_BINARY_DIR}/api_ns/interface/include)
+  set(TFM_INTERFACE_LIB_DIR      ${TFM_BINARY_DIR}/api_ns/interface/lib)
+
   set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
   set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/ns/libplatform_ns.a)
-  set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
-  set(TFM_INTERFACE_SOURCE_DIR ${TFM_BINARY_DIR}/install/interface/src)
 
   if (TFM_PSA_TEST_SUITE)
     set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
@@ -213,9 +214,7 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_S_NS_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s_ns_signed.bin)
 
   set(BUILD_BYPRODUCTS
-    ${VENEERS_FILE}
     ${TFM_API_NS_PATH}
-    ${TFM_GENERATED_INCLUDES}/psa_manifest/sid.h
     ${PSA_TEST_VAL_FILE}
     ${PSA_TEST_PAL_FILE}
     ${PSA_TEST_COMBINE_FILE}
@@ -232,13 +231,15 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_NS_SIGNED_BIN_FILE}
     ${TFM_S_NS_SIGNED_BIN_FILE}
 
+    ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
+
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c
+    ${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c
 
     # Specific to nordic_nrf platform
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
@@ -434,7 +435,7 @@ if (CONFIG_BUILD_WITH_TFM)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
 
-    zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_psa_ns_api.c)
+    zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
 
     if(CONFIG_SOC_FAMILY_NRF)
       zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
@@ -447,17 +448,13 @@ if (CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
-  zephyr_include_directories(
-    ${TFM_GENERATED_INCLUDES}
-    )
-
   target_include_directories(tfm_api PRIVATE
-    ${TFM_BINARY_DIR}/install/interface/include
-    ${TFM_BINARY_DIR}/install/interface/include/crypto_keys
+    ${TFM_INTERFACE_INCLUDE_DIR}
+    ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
     )
 
   zephyr_library_link_libraries(
-    ${VENEERS_FILE}
+    ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
     )
 
   # To ensure that generated include files are created before they are used.

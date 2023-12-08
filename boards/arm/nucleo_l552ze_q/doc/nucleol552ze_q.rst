@@ -338,7 +338,7 @@ can be generated using ``nucleo_l552ze_q_ns`` as build target.
 
    $ west build -b nucleo_l552ze_q_ns path/to/source/directory
 
-Note: When building the ``*_ns`` image with TF-M, ``build/tfm/postbuild.sh`` bash script
+Note: When building the ``*_ns`` image with TF-M, ``build/tfm/api_ns/postbuild.sh`` bash script
 is run automatically in a post-build step to make some required flash layout changes.
 
 Once the build is completed, run the following script to initialize the option bytes.
