@@ -28,30 +28,24 @@ zephyr_interface_library_named(mbedTLS)
 
     # Base mbed TLS files
     list(APPEND mbedtls_base_src
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1parse.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1write.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/base64.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/nist_kw.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/oid.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/padlock.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform_util.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/constant_time.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/aes.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/aesni.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/aria.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1parse.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1write.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/base64.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/camellia.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ccm.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chacha20.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chachapoly.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher_wrap.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cmac.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/constant_time.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ctr_drbg.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/debug.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/des.c
@@ -59,10 +53,10 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecdh.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecdsa.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecjpake.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp_curves.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy_poll.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/error.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/gcm.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/hash_info.c
@@ -70,11 +64,16 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/hmac_drbg.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/lmots.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/lms.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/md5.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/md.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/md5.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/memory_buffer_alloc.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_reader.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_trace.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/nist_kw.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/oid.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/padlock.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform_util.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/poly1305.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ripemd160.c
@@ -86,6 +85,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/threading.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/timing.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
       zephyr_init.c
     )
 
