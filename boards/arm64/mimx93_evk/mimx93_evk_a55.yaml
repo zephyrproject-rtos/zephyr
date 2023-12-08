@@ -9,6 +9,7 @@ ram: 1024
 supported:
   - uart
   - i2c
+  - spi
 testing:
   ignore_tags:
     - net
