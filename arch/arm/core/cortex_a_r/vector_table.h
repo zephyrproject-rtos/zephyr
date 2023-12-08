@@ -40,7 +40,7 @@ GTEXT(z_arm_data_abort)
 GTEXT(z_arm_pendsv)
 GTEXT(z_arm_reserved)
 
-GTEXT(z_arm_prep_c)
+GTEXT(z_prep_c)
 GTEXT(_isr_wrapper)
 
 #else /* _ASMLANGUAGE */
