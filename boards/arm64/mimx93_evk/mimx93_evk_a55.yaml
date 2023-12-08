@@ -6,6 +6,9 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 1024
+supported:
+  - uart
+  - i2c
 testing:
   ignore_tags:
     - net
