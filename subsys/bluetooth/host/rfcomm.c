@@ -302,7 +302,7 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 	session->dlcs = NULL;
 }
 
-struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)
+struct net_buf *bt_rfcomm_create_pdu(const struct net_buf_pool *pool)
 {
 	/* Length in RFCOMM header can be 2 bytes depending on length of user
 	 * data

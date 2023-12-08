@@ -50,7 +50,7 @@ static struct k_mem_slab *tx_tcp_pool(void)
 	return &echo_tx_tcp;
 }
 
-static struct net_buf_pool *data_tcp_pool(void)
+static const struct net_buf_pool *data_tcp_pool(void)
 {
 	return &echo_data_tcp;
 }

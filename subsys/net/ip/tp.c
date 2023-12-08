@@ -143,7 +143,7 @@ void tp_mem_stat(void)
 	}
 }
 
-struct net_buf *tp_nbuf_alloc(struct net_buf_pool *pool, size_t len,
+struct net_buf *tp_nbuf_alloc(const struct net_buf_pool *pool, size_t len,
 				const char *file, int line, const char *func)
 {
 	struct net_buf *nbuf = net_buf_alloc_len(pool, len, K_NO_WAIT);

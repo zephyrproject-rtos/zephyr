@@ -102,7 +102,7 @@ static bool starts_with(struct net_buf *buf, const char *str)
 static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
 						void *user_data)
 {
-	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
+	return net_buf_alloc((const struct net_buf_pool *)user_data, timeout);
 }
 
 /* return scanned length for params */

@@ -14,14 +14,14 @@ struct ctx_info {
 	int pos;
 	bool are_external_pools;
 	struct k_mem_slab *tx_slabs[CONFIG_NET_MAX_CONTEXTS];
-	struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
+	const struct net_buf_pool *data_pools[CONFIG_NET_MAX_CONTEXTS];
 };
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static bool slab_pool_found_already(struct ctx_info *info,
 				    struct k_mem_slab *slab,
-				    struct net_buf_pool *pool)
+				    const struct net_buf_pool *pool)
 {
 	int i;
 
@@ -48,7 +48,7 @@ static void context_info(struct net_context *context, void *user_data)
 	const struct shell *sh = data->sh;
 	struct ctx_info *info = data->user_data;
 	struct k_mem_slab *slab;
-	struct net_buf_pool *pool;
+	const struct net_buf_pool *pool;
 
 	if (!net_context_is_used(context)) {
 		return;
@@ -80,7 +80,7 @@ static void context_info(struct net_context *context, void *user_data)
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 		PR("%p\t%d\t%ld\tEDATA (%s)\n", pool, pool->buf_count,
-		   atomic_get(&pool->avail_count), pool->name);
+		   atomic_get(&NET_BUF_POOL_RT(pool)->avail_count), pool->name);
 #else
 		PR("%p\t%d\tEDATA\n", pool, pool->buf_count);
 #endif
@@ -100,7 +100,7 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_OFFLOAD) || defined(CONFIG_NET_NATIVE)
 	struct k_mem_slab *rx, *tx;
-	struct net_buf_pool *rx_data, *tx_data;
+	const struct net_buf_pool *rx_data, *tx_data;
 
 	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 
@@ -122,10 +122,10 @@ static int cmd_net_mem(const struct shell *sh, size_t argc, char *argv[])
 	       tx, tx->info.num_blocks, k_mem_slab_num_free_get(tx));
 
 	PR("%p\t%d\t%ld\tRX DATA (%s)\n", rx_data, rx_data->buf_count,
-	   atomic_get(&rx_data->avail_count), rx_data->name);
+	   atomic_get(&NET_BUF_POOL_RT(rx_data)->avail_count), rx_data->name);
 
 	PR("%p\t%d\t%ld\tTX DATA (%s)\n", tx_data, tx_data->buf_count,
-	   atomic_get(&tx_data->avail_count), tx_data->name);
+	   atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count), tx_data->name);
 #else
 	PR("Address\t\tTotal\tName\n");
 

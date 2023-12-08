@@ -88,6 +88,8 @@ zephyr_linker_section_configure(
   KEEP SORT NAME
 )
 
+zephyr_iterable_section(NAME net_buf_pool KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+
 if(CONFIG_NET_SOCKETS)
   zephyr_iterable_section(NAME net_socket_register KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()

@@ -42,7 +42,7 @@ ZTEST(test_bt_buf_get_rx_returns_null, test_returns_null_type_bt_buf_evt)
 	struct net_buf *returned_buf;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_evt_pool();
@@ -82,7 +82,7 @@ ZTEST(test_bt_buf_get_rx_returns_null, test_returns_null_type_bt_buf_acl_in)
 	struct net_buf *returned_buf;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_acl_in_pool();
@@ -122,7 +122,7 @@ ZTEST(test_bt_buf_get_rx_returns_null, test_returns_null_type_bt_buf_iso_in)
 	struct net_buf *returned_buf;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_ISO_UNICAST) || IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER))) {
 		memory_pool = bt_buf_get_iso_rx_pool();
@@ -167,7 +167,7 @@ ZTEST(test_bt_buf_get_rx_returns_not_null, test_returns_not_null_type_bt_buf_evt
 	uint8_t returned_buffer_type;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_evt_pool();
@@ -213,7 +213,7 @@ ZTEST(test_bt_buf_get_rx_returns_not_null, test_returns_not_null_type_bt_buf_acl
 	uint8_t returned_buffer_type;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_acl_in_pool();
@@ -259,7 +259,7 @@ ZTEST(test_bt_buf_get_rx_returns_not_null, test_returns_not_null_type_bt_buf_iso
 	uint8_t returned_buffer_type;
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(1000);
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_ISO_UNICAST) || IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER))) {
 		memory_pool = bt_buf_get_iso_rx_pool();

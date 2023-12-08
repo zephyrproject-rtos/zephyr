@@ -96,7 +96,7 @@ struct net_buf *alloc_seg_cb(struct bt_l2cap_chan *chan)
 {
 	struct net_buf *buf = net_buf_alloc(&segment_pool, K_NO_WAIT);
 
-	if ((NUM_SEGMENTS - segment_pool.avail_count) > max_seg_allocated) {
+	if ((NUM_SEGMENTS - segment_pool.rt->avail_count) > max_seg_allocated) {
 		max_seg_allocated++;
 	}
 

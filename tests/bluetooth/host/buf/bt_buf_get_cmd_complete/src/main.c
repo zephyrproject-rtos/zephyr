@@ -47,7 +47,7 @@ ZTEST(bt_buf_get_cmd_complete_returns_null, test_returns_null_sent_cmd_is_null)
 
 	bt_dev.sent_cmd = NULL;
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_evt_pool();
@@ -94,7 +94,7 @@ ZTEST(bt_buf_get_cmd_complete_returns_not_null, test_returns_not_null_sent_cmd_i
 
 	bt_dev.sent_cmd = NULL;
 
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_evt_pool();

@@ -45,8 +45,6 @@ zephyr_iterable_section(NAME k_queue GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} S
 zephyr_iterable_section(NAME k_condvar GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 zephyr_iterable_section(NAME k_event GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 
-zephyr_iterable_section(NAME net_buf_pool GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
-
 if(CONFIG_NETWORKING)
   zephyr_iterable_section(NAME net_if     GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
   zephyr_iterable_section(NAME net_if_dev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)

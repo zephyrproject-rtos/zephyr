@@ -60,9 +60,9 @@ ZTEST_SUITE(bt_buf_get_evt_default_events_returns_null, NULL, NULL, NULL, NULL, 
 /* Return the memory pool used for event memory allocation
  * based on compilation flags
  */
-static struct net_buf_pool *get_memory_pool(bool discardable)
+static const struct net_buf_pool *get_memory_pool(bool discardable)
 {
-	struct net_buf_pool *memory_pool;
+	const struct net_buf_pool *memory_pool;
 
 	if ((IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL))) {
 		memory_pool = bt_buf_get_evt_pool();

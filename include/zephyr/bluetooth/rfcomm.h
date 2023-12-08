@@ -175,7 +175,7 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
  *
  *  @return New buffer.
  */
-struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool);
+struct net_buf *bt_rfcomm_create_pdu(const struct net_buf_pool *pool);
 
 #ifdef __cplusplus
 }

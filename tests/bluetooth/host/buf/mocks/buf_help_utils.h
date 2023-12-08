@@ -6,14 +6,14 @@
 
 #include <zephyr/kernel.h>
 
-struct net_buf_pool *bt_buf_get_evt_pool(void);
-struct net_buf_pool *bt_buf_get_acl_in_pool(void);
-struct net_buf_pool *bt_buf_get_hci_rx_pool(void);
-struct net_buf_pool *bt_buf_get_discardable_pool(void);
-struct net_buf_pool *bt_buf_get_num_complete_pool(void);
-struct net_buf_pool *bt_buf_get_discardable_pool(void);
-struct net_buf_pool *bt_buf_get_num_complete_pool(void);
-struct net_buf_pool *bt_buf_get_iso_rx_pool(void);
+const struct net_buf_pool *bt_buf_get_evt_pool(void);
+const struct net_buf_pool *bt_buf_get_acl_in_pool(void);
+const struct net_buf_pool *bt_buf_get_hci_rx_pool(void);
+const struct net_buf_pool *bt_buf_get_discardable_pool(void);
+const struct net_buf_pool *bt_buf_get_num_complete_pool(void);
+const struct net_buf_pool *bt_buf_get_discardable_pool(void);
+const struct net_buf_pool *bt_buf_get_num_complete_pool(void);
+const struct net_buf_pool *bt_buf_get_iso_rx_pool(void);
 
 /* LUT testing parameter item */
 struct testing_params {

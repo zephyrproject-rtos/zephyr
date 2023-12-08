@@ -55,7 +55,7 @@ static void allocs_cb(struct net_pkt *pkt,
 	return;
 buf:
 	if (func_alloc) {
-		struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+		const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 		if (in_use) {
 			PR("%p/%d\t%5s\t%5s\t%s():%d\n",

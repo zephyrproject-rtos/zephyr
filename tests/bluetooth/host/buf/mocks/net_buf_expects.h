@@ -14,7 +14,7 @@
  *       - correct memory allocation pool
  *       - same timeout value passed to bt_buf_get_cmd_complete()
  */
-void expect_single_call_net_buf_alloc(struct net_buf_pool *pool, k_timeout_t *timeout);
+void expect_single_call_net_buf_alloc(const struct net_buf_pool *pool, k_timeout_t *timeout);
 
 /*
  *  Validate expected behaviour when net_buf_alloc() isn't called

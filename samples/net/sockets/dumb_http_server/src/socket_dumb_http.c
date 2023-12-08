@@ -137,11 +137,12 @@ close_client:
 
 #if defined(__ZEPHYR__) && defined(CONFIG_NET_BUF_POOL_USAGE)
 		struct k_mem_slab *rx, *tx;
-		struct net_buf_pool *rx_data, *tx_data;
+		const struct net_buf_pool *rx_data, *tx_data;
 
 		net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
 		printf("rx buf: %d, tx buf: %d\n",
-		       atomic_get(&rx_data->avail_count), atomic_get(&tx_data->avail_count));
+		       atomic_get(&NET_BUF_POOL_RT(rx_data)->avail_count),
+		       atomic_get(&NET_BUF_POOL_RT(tx_data)->avail_count));
 #endif
 
 	}
