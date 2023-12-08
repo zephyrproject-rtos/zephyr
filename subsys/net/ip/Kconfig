@@ -547,6 +547,38 @@ config NET_TCP_PKT_ALLOC_TIMEOUT
 	  This value indicates how long the stack should wait for the packet to
 	  be allocated, before returning an internal error and trying again.
 
+config NET_TCP_KEEPALIVE
+	bool "TCP keep-alive support"
+	depends on NET_TCP
+	help
+	  Enabling this option allows the TCP stack to send periodic TCP
+	  keep-alive probes. Enables SO_KEEPALIVE, TCP_KEEPIDLE, TCP_KEEPINTVL
+	  and TCP_KEEPCNT options processing.
+
+config NET_TCP_KEEPIDLE_DEFAULT
+	int "TCP_KEEPIDLE default value"
+	depends on NET_TCP_KEEPALIVE
+	default 7200
+	help
+	  The time (in seconds) the connection needs to remain idle before TCP
+	  starts sending keepalive probes, if the socket option SO_KEEPALIVE has
+	  been set on this socket.
+
+config NET_TCP_KEEPINTVL_DEFAULT
+	int "TCP_KEEPINTVL default value"
+	depends on NET_TCP_KEEPALIVE
+	default 75
+	help
+	  The time (in seconds) between individual keepalive probes.
+
+config NET_TCP_KEEPCNT_DEFAULT
+	int "TCP_KEEPCNT default value"
+	depends on NET_TCP_KEEPALIVE
+	default 9
+	help
+	  The maximum number of keepalive probes TCP should send before dropping
+	  the connection.
+
 config NET_TCP_WORKQ_STACK_SIZE
 	int "TCP work queue thread stack size"
 	default 1200 if X86
