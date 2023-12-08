@@ -5,5 +5,6 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(socket_tls)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/ip)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/sockets)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
