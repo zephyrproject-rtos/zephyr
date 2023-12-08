@@ -12,8 +12,8 @@
  * arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_EXCEPTION_H_
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/cortex_m/exception.h>
@@ -23,4 +23,4 @@
 #error Unknown ARM architecture
 #endif /* CONFIG_CPU_CORTEX_M */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_EXCEPTION_H_ */

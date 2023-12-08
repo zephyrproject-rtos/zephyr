@@ -12,8 +12,8 @@
  * RISCV-specific kernel exception handling interface.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_EXP_H_
-#define ZEPHYR_INCLUDE_ARCH_RISCV_EXP_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV_EXCEPTION_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -98,4 +98,4 @@ typedef struct soc_esf soc_esf_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_EXP_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_EXCEPTION_H_ */

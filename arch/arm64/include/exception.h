@@ -11,8 +11,8 @@
  * Exception/interrupt context helpers.
  */
 
-#ifndef ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_
-#define ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_
+#ifndef ZEPHYR_ARCH_ARM64_INCLUDE_EXCEPTION_H_
+#define ZEPHYR_ARCH_ARM64_INCLUDE_EXCEPTION_H_
 
 #include <zephyr/arch/cpu.h>
 
@@ -37,4 +37,4 @@ static ALWAYS_INLINE bool arch_is_in_isr(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_ARM64_INCLUDE_EXC_H_ */
+#endif /* ZEPHYR_ARCH_ARM64_INCLUDE_EXCEPTION_H_ */

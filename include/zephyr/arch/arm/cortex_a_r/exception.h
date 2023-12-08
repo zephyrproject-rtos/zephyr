@@ -9,8 +9,8 @@
  * @brief ARM AArch32 Cortex-A and Cortex-R public exception handling
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_EXCEPTION_H_
 
 #ifdef _ASMLANGUAGE
 GTEXT(z_arm_exc_exit);
@@ -85,4 +85,4 @@ extern void z_arm_exc_exit(bool fatal);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_EXCEPTION_H_ */
