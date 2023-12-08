@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2021 Antony Pavlov <antonynpavlov@gmail.com>
  *
- * based on include/arch/riscv/exp.h
+ * based on include/arch/riscv/exception.h
  *
  * SPDX-License-Identifier: Apache-2.0
  */
