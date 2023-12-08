@@ -179,7 +179,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_arm_prep_c(void)
+void z_prep_c(void)
 {
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
