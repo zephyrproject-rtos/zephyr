@@ -229,7 +229,7 @@ void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id)
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x08,                   /* Opcode = Disable */
+		0x08,                   /* Opcode = Release */
 		0x01,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
