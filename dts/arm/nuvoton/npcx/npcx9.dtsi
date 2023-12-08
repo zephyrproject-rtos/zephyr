@@ -283,6 +283,11 @@
 			buffer-tx-size = <128>;
 			shi-cs-wui =<&wui_io53>;
 		};
+
+		espi0: espi@4000a000 {
+			rx-plsize = <64>;
+			tx-plsize = <16>;
+		};
 	};
 
 	soc-id {
