@@ -42,7 +42,7 @@ void z_soc_irq_enable(uint32_t irq)
 		break;
 	default:
 		/* regular interrupt */
-		z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 		return;
 	}
 
@@ -55,7 +55,7 @@ void z_soc_irq_enable(uint32_t irq)
 	 * The specified interrupt is in CAVS interrupt controller.
 	 * So enable core interrupt first.
 	 */
-	z_xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
+	xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq));
 
 	/* Then enable the interrupt in CAVS interrupt controller */
 	irq_enable_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
@@ -80,7 +80,7 @@ void z_soc_irq_disable(uint32_t irq)
 		break;
 	default:
 		/* regular interrupt */
-		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 		return;
 	}
 
@@ -97,7 +97,7 @@ void z_soc_irq_disable(uint32_t irq)
 
 	/* Then disable the parent IRQ if all children are disabled */
 	if (!irq_is_enabled_next_level(dev_cavs)) {
-		z_xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
+		xtensa_irq_disable(XTENSA_IRQ_NUMBER(irq));
 	}
 }
 
@@ -121,7 +121,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 		break;
 	default:
 		/* regular interrupt */
-		ret = z_xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
+		ret = xtensa_irq_is_enabled(XTENSA_IRQ_NUMBER(irq));
 		goto out;
 	}
 
