@@ -246,6 +246,11 @@ static struct mpl_mediaplayer media_player = {
 	.next_track_set           = false
 };
 
+static void set_track_position(int32_t position);
+static void set_relative_track_position(int32_t rel_pos);
+static void do_track_change_notifications(struct mpl_mediaplayer *pl);
+static void do_group_change_notifications(struct mpl_mediaplayer *pl);
+
 #ifdef CONFIG_BT_MPL_OBJECTS
 
 /* The types of objects we keep in the Object Transfer Service */
@@ -292,11 +297,6 @@ static struct obj_t obj = {
 	.add_group = NULL,
 	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE)
 };
-
-static void set_track_position(int32_t position);
-static void set_relative_track_position(int32_t rel_pos);
-static void do_track_change_notifications(struct mpl_mediaplayer *pl);
-static void do_group_change_notifications(struct mpl_mediaplayer *pl);
 
 /* Set up content buffer for the icon object */
 static int setup_icon_object(void)
@@ -883,7 +883,7 @@ static struct bt_ots_cb ots_cbs = {
 /* and do_prev_group() with a generic do_prev() command that can be used at */
 /* all levels.	Similarly for do_next, do_prev, and so on. */
 
-void do_prev_segment(struct mpl_mediaplayer *pl)
+static void do_prev_segment(struct mpl_mediaplayer *pl)
 {
 	LOG_DBG("Segment name before: %s", pl->group->track->segment->name);
 
@@ -894,7 +894,7 @@ void do_prev_segment(struct mpl_mediaplayer *pl)
 	LOG_DBG("Segment name after: %s", pl->group->track->segment->name);
 }
 
-void do_next_segment(struct mpl_mediaplayer *pl)
+static void do_next_segment(struct mpl_mediaplayer *pl)
 {
 	LOG_DBG("Segment name before: %s", pl->group->track->segment->name);
 
@@ -905,7 +905,7 @@ void do_next_segment(struct mpl_mediaplayer *pl)
 	LOG_DBG("Segment name after: %s", pl->group->track->segment->name);
 }
 
-void do_first_segment(struct mpl_mediaplayer *pl)
+static void do_first_segment(struct mpl_mediaplayer *pl)
 {
 	LOG_DBG("Segment name before: %s", pl->group->track->segment->name);
 
@@ -916,7 +916,7 @@ void do_first_segment(struct mpl_mediaplayer *pl)
 	LOG_DBG("Segment name after: %s", pl->group->track->segment->name);
 }
 
-void do_last_segment(struct mpl_mediaplayer *pl)
+static void do_last_segment(struct mpl_mediaplayer *pl)
 {
 	LOG_DBG("Segment name before: %s", pl->group->track->segment->name);
 
@@ -1956,34 +1956,34 @@ static bool find_group_by_id(const struct mpl_mediaplayer *pl, uint64_t id,
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-const char *get_player_name(void)
+static const char *get_player_name(void)
 {
 	return media_player.name;
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-uint64_t get_icon_id(void)
+static uint64_t get_icon_id(void)
 {
 	return media_player.icon_id;
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-const char *get_icon_url(void)
+static const char *get_icon_url(void)
 {
 	return media_player.icon_url;
 }
 
-const char *get_track_title(void)
+static const char *get_track_title(void)
 {
 	return media_player.group->track->title;
 }
 
-int32_t get_track_duration(void)
+static int32_t get_track_duration(void)
 {
 	return media_player.group->track->duration;
 }
 
-int32_t get_track_position(void)
+static int32_t get_track_position(void)
 {
 	return media_player.track_pos;
 }
@@ -2032,12 +2032,12 @@ static void set_relative_track_position(int32_t rel_pos)
 	set_track_position((int32_t)pos);
 }
 
-int8_t get_playback_speed(void)
+static int8_t get_playback_speed(void)
 {
 	return media_player.playback_speed_param;
 }
 
-void set_playback_speed(int8_t speed)
+static void set_playback_speed(int8_t speed)
 {
 	/* Set new speed parameter and notify, if different from current */
 	if (speed != media_player.playback_speed_param) {
@@ -2046,23 +2046,23 @@ void set_playback_speed(int8_t speed)
 	}
 }
 
-int8_t get_seeking_speed(void)
+static int8_t get_seeking_speed(void)
 {
 	return media_player.seeking_speed_factor;
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
-uint64_t get_track_segments_id(void)
+static uint64_t get_track_segments_id(void)
 {
 	return media_player.group->track->segments_id;
 }
 
-uint64_t get_current_track_id(void)
+static uint64_t get_current_track_id(void)
 {
 	return media_player.group->track->id;
 }
 
-void set_current_track_id(uint64_t id)
+static void set_current_track_id(uint64_t id)
 {
 	struct mpl_group *group;
 	struct mpl_track *track;
@@ -2092,7 +2092,7 @@ void set_current_track_id(uint64_t id)
 	 */
 }
 
-uint64_t get_next_track_id(void)
+static uint64_t get_next_track_id(void)
 {
 	/* If the next track has been set explicitly */
 	if (media_player.next_track_set) {
@@ -2108,7 +2108,7 @@ uint64_t get_next_track_id(void)
 	return MPL_NO_TRACK_ID;
 }
 
-void set_next_track_id(uint64_t id)
+static void set_next_track_id(uint64_t id)
 {
 	struct mpl_group *group;
 	struct mpl_track *track;
@@ -2127,17 +2127,17 @@ void set_next_track_id(uint64_t id)
 	LOG_DBG("Track not found");
 }
 
-uint64_t get_parent_group_id(void)
+static uint64_t get_parent_group_id(void)
 {
 	return media_player.group->parent->id;
 }
 
-uint64_t get_current_group_id(void)
+static uint64_t get_current_group_id(void)
 {
 	return media_player.group->id;
 }
 
-void set_current_group_id(uint64_t id)
+static void set_current_group_id(uint64_t id)
 {
 	struct mpl_group *group;
 
@@ -2160,12 +2160,12 @@ void set_current_group_id(uint64_t id)
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-uint8_t get_playing_order(void)
+static uint8_t get_playing_order(void)
 {
 	return media_player.playing_order;
 }
 
-void set_playing_order(uint8_t order)
+static void set_playing_order(uint8_t order)
 {
 	if (order != media_player.playing_order) {
 		if (BIT(order - 1) & media_player.playing_orders_supported) {
@@ -2175,17 +2175,17 @@ void set_playing_order(uint8_t order)
 	}
 }
 
-uint16_t get_playing_orders_supported(void)
+static uint16_t get_playing_orders_supported(void)
 {
 	return media_player.playing_orders_supported;
 }
 
-uint8_t get_media_state(void)
+static uint8_t get_media_state(void)
 {
 	return media_player.state;
 }
 
-void send_command(const struct mpl_cmd *command)
+static void send_command(const struct mpl_cmd *command)
 {
 	struct mpl_cmd_ntf ntf;
 
@@ -2205,7 +2205,7 @@ void send_command(const struct mpl_cmd *command)
 	}
 }
 
-uint32_t get_commands_supported(void)
+static uint32_t get_commands_supported(void)
 {
 	return media_player.opcodes_supported;
 }
@@ -2264,7 +2264,7 @@ static void parse_search(const struct mpl_search *search)
 	media_proxy_pl_search_results_id_cb(media_player.search_results_id);
 }
 
-void send_search(const struct mpl_search *search)
+static void send_search(const struct mpl_search *search)
 {
 	if (search->len > SEARCH_LEN_MAX) {
 		LOG_WRN("Search too long: %d", search->len);
@@ -2275,13 +2275,13 @@ void send_search(const struct mpl_search *search)
 	parse_search(search);
 }
 
-uint64_t get_search_results_id(void)
+static uint64_t get_search_results_id(void)
 {
 	return media_player.search_results_id;
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-uint8_t get_content_ctrl_id(void)
+static uint8_t get_content_ctrl_id(void)
 {
 	return media_player.content_ctrl_id;
 }
