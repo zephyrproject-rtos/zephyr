@@ -28,6 +28,6 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG     entropy_psa_crypt
 
 if (CONFIG_BUILD_WITH_TFM)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )
 endif()
