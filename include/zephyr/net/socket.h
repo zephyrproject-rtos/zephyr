@@ -1054,7 +1054,7 @@ struct ifreq {
 /** sockopt: Size of socket recv buffer */
 #define SO_RCVBUF 8
 
-/** sockopt: Enable sending keep-alive messages on connections (ignored, for compatibility) */
+/** Enable sending keep-alive messages on connections */
 #define SO_KEEPALIVE 9
 /** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
 #define SO_OOBINLINE 10
@@ -1095,6 +1095,12 @@ struct ifreq {
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
+/** Start keepalives after this period (seconds) */
+#define TCP_KEEPIDLE 2
+/** Interval between keepalives (seconds) */
+#define TCP_KEEPINTVL 3
+/** Number of keepalives before dropping connection */
+#define TCP_KEEPCNT 4
 
 /* Socket options for IPPROTO_IP level */
 /** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */

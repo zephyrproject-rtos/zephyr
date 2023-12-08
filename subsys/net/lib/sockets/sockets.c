@@ -2375,6 +2375,20 @@ static inline int z_vrfy_zsock_inet_pton(sa_family_t family,
 #include <syscalls/zsock_inet_pton_mrsh.c>
 #endif
 
+static enum tcp_conn_option get_tcp_option(int optname)
+{
+	switch (optname) {
+	case TCP_KEEPIDLE:
+		return TCP_OPT_KEEPIDLE;
+	case TCP_KEEPINTVL:
+		return TCP_OPT_KEEPINTVL;
+	case TCP_KEEPCNT:
+		return TCP_OPT_KEEPCNT;
+	}
+
+	return -EINVAL;
+}
+
 int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 void *optval, socklen_t *optlen)
 {
@@ -2490,6 +2504,22 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				return 0;
 			}
 			break;
+
+		case SO_KEEPALIVE:
+			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE) &&
+			    net_context_get_proto(ctx) == IPPROTO_TCP) {
+				ret = net_tcp_get_option(ctx,
+							 TCP_OPT_KEEPALIVE,
+							 optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
 
 		break;
@@ -2499,6 +2529,25 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
 			return ret;
+
+		case TCP_KEEPIDLE:
+			__fallthrough;
+		case TCP_KEEPINTVL:
+			__fallthrough;
+		case TCP_KEEPCNT:
+			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)) {
+				ret = net_tcp_get_option(ctx,
+							 get_tcp_option(optname),
+							 optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
 
 		break;
@@ -2991,6 +3040,22 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case SO_LINGER:
 			/* ignored. for compatibility purposes only */
 			return 0;
+
+		case SO_KEEPALIVE:
+			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE) &&
+			    net_context_get_proto(ctx) == IPPROTO_TCP) {
+				ret = net_tcp_set_option(ctx,
+							 TCP_OPT_KEEPALIVE,
+							 optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
 
 		break;
@@ -3001,6 +3066,25 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			ret = net_tcp_set_option(ctx,
 						 TCP_OPT_NODELAY, optval, optlen);
 			return ret;
+
+		case TCP_KEEPIDLE:
+			__fallthrough;
+		case TCP_KEEPINTVL:
+			__fallthrough;
+		case TCP_KEEPCNT:
+			if (IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)) {
+				ret = net_tcp_set_option(ctx,
+							 get_tcp_option(optname),
+							 optval, optlen);
+				if (ret < 0) {
+					errno = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
 		}
 		break;
 
