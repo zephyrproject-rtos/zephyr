@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/loopback.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+#include <mbedtls/ssl.h>
 
 #include "../../socket_helpers.h"
 
@@ -170,12 +171,12 @@ static void test_eof(int sock)
 	zassert_equal(recved, 0, "");
 
 	/* Calling again should be OK. */
-	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
+	recved = recv(sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(recved, 0, "");
 
 	/* Calling when TCP connection is fully torn down should be still OK. */
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
-	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
+	recved = recv(sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(recved, 0, "");
 }
 
@@ -269,6 +270,18 @@ static void client_connect_work_handler(struct k_work *work)
 		     sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
 }
 
+static void dtls_client_connect_send_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct connect_data *data =
+		CONTAINER_OF(dwork, struct connect_data, work);
+	uint8_t tx_buf = 0;
+
+	test_connect(data->sock, data->addr, data->addr->sa_family == AF_INET ?
+		     sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
+	test_send(data->sock, &tx_buf, sizeof(tx_buf), 0);
+}
+
 static void test_prepare_tls_connection(sa_family_t family, int *c_sock,
 					int *s_sock, int *new_sock)
 {
@@ -312,6 +325,66 @@ static void test_prepare_tls_connection(sa_family_t family, int *c_sock,
 
 	test_accept(*s_sock, new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, exp_addrlen, "Wrong addrlen");
+
+	test_work_wait(&test_data.work);
+}
+
+static void test_prepare_dtls_connection(sa_family_t family, int *c_sock,
+					 int *s_sock)
+{
+	struct sockaddr c_saddr;
+	struct sockaddr s_saddr;
+	socklen_t exp_addrlen = family == AF_INET6 ?
+				sizeof(struct sockaddr_in6) :
+				sizeof(struct sockaddr_in);
+	struct connect_data test_data;
+	int role = TLS_DTLS_ROLE_SERVER;
+	struct pollfd fds[1];
+	uint8_t rx_buf;
+	int ret;
+
+
+	if (family == AF_INET6) {
+		prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, c_sock,
+				     (struct sockaddr_in6 *)&c_saddr,
+				     IPPROTO_DTLS_1_2);
+		prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, s_sock,
+				     (struct sockaddr_in6 *)&s_saddr,
+				     IPPROTO_DTLS_1_2);
+	} else {
+		prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, c_sock,
+				     (struct sockaddr_in *)&c_saddr,
+				     IPPROTO_DTLS_1_2);
+		prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, s_sock,
+				     (struct sockaddr_in *)&s_saddr,
+				     IPPROTO_DTLS_1_2);
+	}
+
+	test_config_psk(*s_sock, *c_sock);
+
+	zassert_equal(setsockopt(*s_sock, SOL_TLS, TLS_DTLS_ROLE,
+				 &role, sizeof(role)),
+		      0, "setsockopt() failed");
+
+	test_bind(*s_sock, &s_saddr, exp_addrlen);
+
+	test_data.sock = *c_sock;
+	test_data.addr = &s_saddr;
+	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	/* DTLS has no separate call like accept() to know when the handshake
+	 * is complete, therefore send a dummy byte once handshake is done to
+	 * unblock poll().
+	 */
+	fds[0].fd = *s_sock;
+	fds[0].events = POLLIN;
+	ret = poll(fds, 1, 1000);
+	zassert_equal(ret, 1, "poll() did not report data ready");
+
+	/* Flush the dummy byte. */
+	ret = recv(*s_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, sizeof(rx_buf), "recv() failed");
 
 	test_work_wait(&test_data.work);
 }
@@ -454,31 +527,17 @@ static void send_work_handler(struct k_work *work)
 	test_send(test_data->sock, test_data->data, test_data->datalen, 0);
 }
 
-void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
-		    socklen_t addrlen_c, struct sockaddr *addr_s,
-		    socklen_t addrlen_s)
+void test_msg_trunc(sa_family_t family)
 {
 	int rv;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
-	int role = TLS_DTLS_ROLE_SERVER;
 	struct send_data test_data = {
 		.data = TEST_STR_SMALL,
 		.datalen = sizeof(TEST_STR_SMALL) - 1
 	};
+	int sock_c, sock_s;
 
-	test_config_psk(sock_s, sock_c);
-
-	rv = setsockopt(sock_s, SOL_TLS, TLS_DTLS_ROLE, &role, sizeof(role));
-	zassert_equal(rv, 0, "failed to set DTLS server role");
-
-	rv = bind(sock_s, addr_s, addrlen_s);
-	zassert_equal(rv, 0, "server bind failed");
-
-	rv = bind(sock_c, addr_c, addrlen_c);
-	zassert_equal(rv, 0, "client bind failed");
-
-	rv = connect(sock_c, addr_s, addrlen_s);
-	zassert_equal(rv, 0, "connect failed");
+	test_prepare_dtls_connection(family, &sock_c, &sock_s);
 
 	/* MSG_TRUNC */
 
@@ -505,36 +564,19 @@ void test_msg_trunc(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 
 	test_work_wait(&test_data.tx_work);
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
 }
 
 ZTEST(net_socket_tls, test_v4_msg_trunc)
 {
-	int client_sock;
-	int server_sock;
-	struct sockaddr_in client_addr;
-	struct sockaddr_in server_addr;
-
-	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
-
-	test_msg_trunc(client_sock, server_sock,
-		       (struct sockaddr *)&client_addr, sizeof(client_addr),
-		       (struct sockaddr *)&server_addr, sizeof(server_addr));
+	test_msg_trunc(AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_msg_trunc)
 {
-	int client_sock;
-	int server_sock;
-	struct sockaddr_in6 client_addr;
-	struct sockaddr_in6 server_addr;
-
-	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
-
-	test_msg_trunc(client_sock, server_sock,
-		       (struct sockaddr *)&client_addr, sizeof(client_addr),
-		       (struct sockaddr *)&server_addr, sizeof(server_addr));
+	test_msg_trunc(AF_INET6);
 }
 
 struct test_sendmsg_data {
@@ -552,13 +594,10 @@ static void test_sendmsg_tx_work_handler(struct k_work *work)
 	test_sendmsg(test_data->sock, test_data->msg, 0);
 }
 
-static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
-			      socklen_t addrlen_c, struct sockaddr *addr_s,
-			      socklen_t addrlen_s)
+static void test_dtls_sendmsg(sa_family_t family)
 {
 	int rv;
 	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
-	int role = TLS_DTLS_ROLE_SERVER;
 	struct iovec iov[3] = {
 		{},
 		{
@@ -571,20 +610,9 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 	struct test_sendmsg_data test_data = {
 		.msg = &msg,
 	};
+	int sock_c, sock_s;
 
-	test_config_psk(sock_s, sock_c);
-
-	rv = setsockopt(sock_s, SOL_TLS, TLS_DTLS_ROLE, &role, sizeof(role));
-	zassert_equal(rv, 0, "failed to set DTLS server role");
-
-	rv = bind(sock_s, addr_s, addrlen_s);
-	zassert_equal(rv, 0, "server bind failed");
-
-	rv = bind(sock_c, addr_c, addrlen_c);
-	zassert_equal(rv, 0, "client bind failed");
-
-	rv = connect(sock_c, addr_s, addrlen_s);
-	zassert_equal(rv, 0, "connect failed");
+	test_prepare_dtls_connection(family, &sock_c, &sock_s);
 
 	test_data.sock = sock_c;
 	k_work_init_delayable(&test_data.tx_work, test_sendmsg_tx_work_handler);
@@ -630,36 +658,19 @@ static void test_dtls_sendmsg(int sock_c, int sock_s, struct sockaddr *addr_c,
 	zassert_equal(rv, 0, "close failed");
 	rv = close(sock_s);
 	zassert_equal(rv, 0, "close failed");
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
 }
 
 ZTEST(net_socket_tls, test_v4_dtls_sendmsg)
 {
-	int client_sock;
-	int server_sock;
-	struct sockaddr_in client_addr;
-	struct sockaddr_in server_addr;
-
-	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
-
-	test_dtls_sendmsg(client_sock, server_sock,
-			  (struct sockaddr *)&client_addr, sizeof(client_addr),
-			  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	test_dtls_sendmsg(AF_INET);
 }
 
 ZTEST(net_socket_tls, test_v6_dtls_sendmsg)
 {
-	int client_sock;
-	int server_sock;
-	struct sockaddr_in6 client_addr;
-	struct sockaddr_in6 server_addr;
-
-	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr, IPPROTO_DTLS_1_2);
-	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &server_sock, &server_addr, IPPROTO_DTLS_1_2);
-
-	test_dtls_sendmsg(client_sock, server_sock,
-			  (struct sockaddr *)&client_addr, sizeof(client_addr),
-			  (struct sockaddr *)&server_addr, sizeof(server_addr));
+	test_dtls_sendmsg(AF_INET6);
 }
 
 struct close_data {
@@ -1015,6 +1026,22 @@ ZTEST(net_socket_tls, test_recv_block)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+ZTEST(net_socket_tls, test_recv_eof_on_close)
+{
+	int c_sock, s_sock, new_sock;
+
+	test_prepare_tls_connection(AF_INET6, &c_sock, &s_sock, &new_sock);
+	test_close(c_sock);
+
+	/* Verify recv() reports EOF */
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 #define TLS_RECORD_OVERHEAD 81
 
 ZTEST(net_socket_tls, test_send_non_block)
@@ -1358,6 +1385,286 @@ ZTEST(net_socket_tls, test_send_while_recv)
 	test_close(s_sock);
 
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_poll_tls_pollin)
+{
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
+	int c_sock, s_sock, new_sock, ret;
+	struct pollfd fds[1];
+
+	test_prepare_tls_connection(AF_INET6, &c_sock, &s_sock, &new_sock);
+
+	fds[0].fd = new_sock;
+	fds[0].events = POLLIN;
+
+	ret = poll(fds, 1, 0);
+	zassert_equal(ret, 0, "Unexpected poll() event");
+
+	ret = send(c_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
+	zassert_equal(ret, strlen(TEST_STR_SMALL), "send() failed");
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, POLLIN, "No POLLIN event");
+
+	/* Check that data is really available */
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_poll_dtls_pollin)
+{
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
+	struct send_data test_data = {
+		.data = TEST_STR_SMALL,
+		.datalen = sizeof(TEST_STR_SMALL) - 1
+	};
+	int c_sock, s_sock, ret;
+	struct pollfd fds[1];
+
+	test_prepare_dtls_connection(AF_INET6, &c_sock, &s_sock);
+
+	fds[0].fd = s_sock;
+	fds[0].events = POLLIN;
+
+	ret = poll(fds, 1, 0);
+	zassert_equal(ret, 0, "Unexpected poll() event");
+
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work, send_work_handler);
+	test_work_reschedule(&test_data.tx_work, K_NO_WAIT);
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, POLLIN, "No POLLIN event");
+
+	/* Check that data is really available */
+	ret = recv(s_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+	test_close(c_sock);
+	test_close(s_sock);
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
+}
+
+ZTEST(net_socket_tls, test_poll_tls_pollout)
+{
+	int buf_optval = TLS_RECORD_OVERHEAD + sizeof(TEST_STR_SMALL) - 1;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
+	int c_sock, s_sock, new_sock, ret;
+	struct pollfd fds[1];
+
+	test_prepare_tls_connection(AF_INET6, &c_sock, &s_sock, &new_sock);
+
+	fds[0].fd = c_sock;
+	fds[0].events = POLLOUT;
+
+	ret = poll(fds, 1, 0);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, POLLOUT, "No POLLOUT event");
+
+	/* Simulate window full scenario with SO_RCVBUF option. */
+	ret = setsockopt(new_sock, SOL_SOCKET, SO_RCVBUF, &buf_optval,
+			 sizeof(buf_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	/* Fill out the window */
+	ret = send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	zassert_equal(ret, strlen(TEST_STR_SMALL), "send() failed");
+
+	/* Wait for ACK (empty window, min. 100 ms due to silly window
+	 * protection).
+	 */
+	k_sleep(K_MSEC(150));
+
+	/* poll() shouldn't report POLLOUT now */
+	ret = poll(fds, 1, 0);
+	zassert_equal(ret, 0, "Unexpected poll() event");
+
+	/* Consume the data, and check if the client sock is writeable again */
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "recv() failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, POLLOUT, "No POLLOUT event");
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_poll_dtls_pollout)
+{
+	struct pollfd fds[1];
+	int c_sock, s_sock, ret;
+
+	test_prepare_dtls_connection(AF_INET6, &c_sock, &s_sock);
+
+	fds[0].fd = c_sock;
+	fds[0].events = POLLOUT;
+
+	/* DTLS socket should always be writeable. */
+	ret = poll(fds, 1, 0);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, POLLOUT, "No POLLOUT event");
+
+	test_close(c_sock);
+	test_close(s_sock);
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
+}
+
+ZTEST(net_socket_tls, test_poll_tls_pollhup)
+{
+	struct pollfd fds[1];
+	uint8_t rx_buf;
+	int c_sock, s_sock, new_sock, ret;
+
+	test_prepare_tls_connection(AF_INET6, &c_sock, &s_sock, &new_sock);
+
+	fds[0].fd = new_sock;
+	fds[0].events = POLLIN;
+
+	test_close(c_sock);
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_true(fds[0].revents & POLLIN, "No POLLIN event");
+	zassert_true(fds[0].revents & POLLHUP, "No POLLHUP event");
+
+	/* Check that connection was indeed closed */
+	ret = recv(new_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, 0, "recv() did not report connection close");
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_poll_dtls_pollhup)
+{
+	struct pollfd fds[1];
+	uint8_t rx_buf;
+	int c_sock, s_sock, ret;
+
+	test_prepare_dtls_connection(AF_INET6, &c_sock, &s_sock);
+
+	fds[0].fd = s_sock;
+	fds[0].events = POLLIN;
+
+	test_close(c_sock);
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, POLLHUP, "No POLLHUP event");
+
+	/* Check that connection was indeed closed */
+	ret = recv(s_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "recv() should report EAGAIN");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+
+	test_close(s_sock);
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
+}
+
+mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd);
+
+ZTEST(net_socket_tls, test_poll_tls_pollerr)
+{
+	uint8_t rx_buf;
+	int c_sock, s_sock, new_sock, ret;
+	struct pollfd fds[1];
+	int optval;
+	socklen_t optlen = sizeof(optval);
+	mbedtls_ssl_context *ssl_ctx;
+
+	test_prepare_tls_connection(AF_INET6, &c_sock, &s_sock, &new_sock);
+
+	fds[0].fd = new_sock;
+	fds[0].events = POLLIN;
+
+	/* Get access to the underlying ssl context, and send alert. */
+	ssl_ctx = ztls_get_mbedtls_ssl_context(c_sock);
+	mbedtls_ssl_send_alert_message(ssl_ctx, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+				       MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR);
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_true(fds[0].revents & POLLERR, "No POLLERR event");
+
+	ret = getsockopt(new_sock, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, ECONNABORTED, "getsockopt got invalid error %d",
+		      optval);
+
+	ret = recv(new_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "recv() did not report error");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_poll_dtls_pollerr)
+{
+	uint8_t rx_buf;
+	int c_sock, s_sock, ret;
+	struct pollfd fds[1];
+	int optval;
+	socklen_t optlen = sizeof(optval);
+	mbedtls_ssl_context *ssl_ctx;
+
+	test_prepare_dtls_connection(AF_INET6, &c_sock, &s_sock);
+
+	fds[0].fd = s_sock;
+	fds[0].events = POLLIN;
+
+	/* Get access to the underlying ssl context, and send alert. */
+	ssl_ctx = ztls_get_mbedtls_ssl_context(c_sock);
+	mbedtls_ssl_send_alert_message(ssl_ctx, MBEDTLS_SSL_ALERT_LEVEL_FATAL,
+				       MBEDTLS_SSL_ALERT_MSG_INTERNAL_ERROR);
+
+	ret = poll(fds, 1, 100);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_true(fds[0].revents & POLLERR, "No POLLERR event");
+
+	ret = getsockopt(s_sock, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, ECONNABORTED, "getsockopt got invalid error %d",
+		      optval);
+
+	/* DTLS server socket should recover and be ready to accept new session. */
+	ret = recv(s_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "recv() did not report error");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+
+	test_close(c_sock);
+	test_close(s_sock);
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
 }
 
 static void *tls_tests_setup(void)
