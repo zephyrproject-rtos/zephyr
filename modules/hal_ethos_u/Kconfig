@@ -9,10 +9,10 @@ config ARM_ETHOS_U
 	help
 	  This option enables the Arm Ethos-U core driver.
 
+if ARM_ETHOS_U
 menu "Arm Ethos-U NPU configuration"
 choice  ARM_ETHOS_U_NPU_CONFIG
 	prompt "Arm Ethos-U NPU configuration"
-	depends on ARM_ETHOS_U
 	default ARM_ETHOS_U55_128
 config ARM_ETHOS_U55_64
 	bool "using Ethos-U55 with 64 macs"
@@ -69,3 +69,5 @@ config ARM_ETHOS_U_LOG_LEVEL
 	default 2 if ARM_ETHOS_U_LOG_LEVEL_WRN
 	default 3 if ARM_ETHOS_U_LOG_LEVEL_INF
 	default 4 if ARM_ETHOS_U_LOG_LEVEL_DBG
+
+endif
