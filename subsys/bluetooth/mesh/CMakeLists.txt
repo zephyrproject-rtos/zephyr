@@ -134,6 +134,6 @@ zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
 if (CONFIG_BUILD_WITH_TFM)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE
-    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+    $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
   )
 endif()
