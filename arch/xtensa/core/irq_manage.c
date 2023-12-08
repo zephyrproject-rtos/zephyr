@@ -10,6 +10,8 @@
 
 #include <kernel_arch_func.h>
 
+#include <xtensa_internal.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -72,7 +74,7 @@ void z_irq_spurious(const void *arg)
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 	LOG_ERR(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p",
 		(void *)irqs, (void *)ie);
-	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+	xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 int xtensa_irq_is_enabled(unsigned int irq)

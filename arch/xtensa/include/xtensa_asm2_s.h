@@ -539,7 +539,7 @@ _do_call_\@:
 	rsr a6, ZSR_CPU
 	l32i a6, a6, ___cpu_t_current_OFFSET
 
-	call4 z_xtensa_swap_update_page_tables
+	call4 xtensa_swap_update_page_tables
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF

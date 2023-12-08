@@ -16,12 +16,17 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-/*
+/**
+ * @ingroup xtensa_internal_apis
+ * @{
+ */
+
+/**
  * @brief   Structure used for backtracing
  *
  * This structure stores the backtrace information of a particular stack frame
  * (i.e. the PC and SP). This structure is used iteratively with the
- * z_xtensa_cpu_get_next_backtrace_frame() function to traverse each frame
+ * xtensa_cpu_get_next_backtrace_frame() function to traverse each frame
  * within a single stack. The next_pc represents the PC of the current
  * frame's caller, thus a next_pc of 0 indicates that the current frame
  * is the last frame on the stack.
@@ -29,7 +34,7 @@ extern "C" {
  * @note    Call esp_backtrace_get_start() to obtain initialization values for
  *          this structure
  */
-struct z_xtensa_backtrace_frame_t {
+struct xtensa_backtrace_frame_t {
 	uint32_t pc;       /* PC of the current frame */
 	uint32_t sp;       /* SP of the current frame */
 	uint32_t next_pc;  /* PC of the current frame's caller */
@@ -52,13 +57,13 @@ struct z_xtensa_backtrace_frame_t {
  * @param[out] next_pc  PC of the first frame's caller
  * @param[in] interrupted_stack Pointer to interrupted stack
  */
-void z_xtensa_backtrace_get_start(uint32_t *pc,
+void xtensa_backtrace_get_start(uint32_t *pc,
 				uint32_t *sp,
 				uint32_t *next_pc,
 				int *interrupted_stack);
 
 /**
- * Get the next frame on a stack for backtracing
+ * @brief Get the next frame on a stack for backtracing
  *
  * Given a stack frame(i), this function will obtain the next
  * stack frame(i-1) on the same call stack (i.e. the caller of frame(i)).
@@ -77,7 +82,7 @@ void z_xtensa_backtrace_get_start(uint32_t *pc,
  *  - True if the SP and PC of the next frame(i-1) are sane
  *  - False otherwise
  */
-bool z_xtensa_backtrace_get_next_frame(struct z_xtensa_backtrace_frame_t *frame);
+bool xtensa_backtrace_get_next_frame(struct xtensa_backtrace_frame_t *frame);
 
 /**
  * @brief Print the backtrace of the current stack
@@ -89,7 +94,11 @@ bool z_xtensa_backtrace_get_next_frame(struct z_xtensa_backtrace_frame_t *frame)
  *      - 0    Backtrace successfully printed to completion or to depth limit
  *      - -1   Backtrace is corrupted
  */
-int z_xtensa_backtrace_print(int depth, int *interrupted_stack);
+int xtensa_backtrace_print(int depth, int *interrupted_stack);
+
+/**
+ * @}
+ */
 
 #endif
 #ifdef __cplusplus
