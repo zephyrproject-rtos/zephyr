@@ -45,3 +45,18 @@
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
 };
+
+
+&lpi2c1{
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&lpi2c2{
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-names = "default";
+};
