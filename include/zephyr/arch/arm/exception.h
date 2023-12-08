@@ -16,7 +16,7 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_EXC_H_
 
 #if defined(CONFIG_CPU_CORTEX_M)
-#include <zephyr/arch/arm/cortex_m/exc.h>
+#include <zephyr/arch/arm/cortex_m/exception.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #include <zephyr/arch/arm/cortex_a_r/exception.h>
 #else
