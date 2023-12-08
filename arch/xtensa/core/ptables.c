@@ -60,7 +60,7 @@ static uint32_t l1_page_table[CONFIG_XTENSA_MMU_NUM_L1_TABLES][XTENSA_L1_PAGE_TA
 /*
  * That is an alias for the page tables set used by the kernel.
  */
-uint32_t *z_xtensa_kernel_ptables = (uint32_t *)l1_page_table[0];
+uint32_t *xtensa_kernel_ptables = (uint32_t *)l1_page_table[0];
 
 /*
  * Each table in the level 2 maps a 4Mb memory range. It consists of 1024 entries each one
@@ -170,7 +170,7 @@ static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
 	}
 #endif
 
-	return z_xtensa_kernel_ptables;
+	return xtensa_kernel_ptables;
 }
 
 /**
@@ -231,7 +231,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 
-		if (is_pte_illegal(z_xtensa_kernel_ptables[l1_pos])) {
+		if (is_pte_illegal(xtensa_kernel_ptables[l1_pos])) {
 			table  = alloc_l2_table();
 
 			__ASSERT(table != NULL, "There is no l2 page table available to "
@@ -239,12 +239,12 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 
 			init_page_table(table, XTENSA_L2_PAGE_TABLE_ENTRIES);
 
-			z_xtensa_kernel_ptables[l1_pos] =
+			xtensa_kernel_ptables[l1_pos] =
 				XTENSA_MMU_PTE((uint32_t)table, XTENSA_MMU_KERNEL_RING,
 					       XTENSA_MMU_PAGE_TABLE_ATTR);
 		}
 
-		table = (uint32_t *)(z_xtensa_kernel_ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+		table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 		table[l2_pos] = pte;
 	}
 }
@@ -270,7 +270,7 @@ static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
 
-	init_page_table(z_xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES);
+	init_page_table(xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES);
 	atomic_set_bit(l1_page_table_track, 0);
 
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
@@ -342,7 +342,7 @@ void xtensa_mmu_init(void)
 		xtensa_init_page_tables();
 	}
 
-	xtensa_init_paging(z_xtensa_kernel_ptables);
+	xtensa_init_paging(xtensa_kernel_ptables);
 
 	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }
@@ -437,12 +437,12 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t xtensa_flags,
 		flags = xtensa_flags;
 	}
 
-	ret = l2_page_table_map(z_xtensa_kernel_ptables, (void *)vaddr, paddr,
+	ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr, paddr,
 				flags, is_user);
 	__ASSERT(ret, "Virtual address (%p) already mapped", va);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-		ret = l2_page_table_map(z_xtensa_kernel_ptables, (void *)vaddr_uc, paddr_uc,
+		ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr_uc, paddr_uc,
 					flags_uc, is_user);
 		__ASSERT(ret, "Virtual address (%p) already mapped", vaddr_uc);
 	}
@@ -599,10 +599,10 @@ static inline void __arch_mem_unmap(void *va)
 		vaddr = va;
 	}
 
-	is_exec = l2_page_table_unmap(z_xtensa_kernel_ptables, (void *)vaddr);
+	is_exec = l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-		(void)l2_page_table_unmap(z_xtensa_kernel_ptables, (void *)vaddr_uc);
+		(void)l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr_uc);
 	}
 
 #ifdef CONFIG_USERSPACE
@@ -803,7 +803,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	__ASSERT(asid_count < (XTENSA_MMU_SHARED_ASID), "Reached maximum of ASID available");
 
 	key = k_spin_lock(&xtensa_mmu_lock);
-	ptables = dup_table(z_xtensa_kernel_ptables);
+	ptables = dup_table(xtensa_kernel_ptables);
 
 	if (ptables == NULL) {
 		ret = -ENOMEM;
@@ -1088,7 +1088,7 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 	return ret;
 }
 
-void z_xtensa_swap_update_page_tables(struct k_thread *incoming)
+void xtensa_swap_update_page_tables(struct k_thread *incoming)
 {
 	uint32_t *ptables = incoming->arch.ptables;
 	struct arch_mem_domain *domain =

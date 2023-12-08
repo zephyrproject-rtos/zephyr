@@ -14,9 +14,9 @@
 
 	.section    .iram1, "ax"
 	.align      4
-	.global     z_xtensa_backtrace_get_start
-	.type       z_xtensa_backtrace_get_start, @function
-z_xtensa_backtrace_get_start:
+	.global     xtensa_backtrace_get_start
+	.type       xtensa_backtrace_get_start, @function
+xtensa_backtrace_get_start:
 	entry   a1, 32
 	/* Spill registers onto stack (excluding this function) */
 	call8   xthal_window_spill

@@ -25,14 +25,14 @@ extern char xtensa_arch_except_epc[];
 extern char xtensa_arch_kernel_oops_epc[];
 
 #ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(z_xtensa_user_string_nlen);
+Z_EXC_DECLARE(xtensa_user_string_nlen);
 
 static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(z_xtensa_user_string_nlen)
+	Z_EXC_HANDLE(xtensa_user_string_nlen)
 };
 #endif /* CONFIG_USERSPACE */
 
-void z_xtensa_dump_stack(const z_arch_esf_t *stack)
+void xtensa_dump_stack(const z_arch_esf_t *stack)
 {
 	_xtensa_irq_stack_frame_raw_t *frame = (void *)stack;
 	_xtensa_irq_bsa_t *bsa = frame->ptr_to_bsa;
@@ -115,7 +115,7 @@ static void print_fatal_exception(void *print_stack, int cause,
 	LOG_ERR(" ** FATAL EXCEPTION%s", (is_dblexc ? " (DOUBLE)" : ""));
 	LOG_ERR(" ** CPU %d EXCCAUSE %d (%s)",
 		arch_curr_cpu()->id, cause,
-		z_xtensa_exccause(cause));
+		xtensa_exccause(cause));
 	LOG_ERR(" **  PC %p VADDR %p", pc, (void *)vaddr);
 
 	if (is_dblexc) {
@@ -244,7 +244,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		/* Just report it to the console for now */
 		LOG_ERR(" ** SYSCALL PS %p PC %p",
 			(void *)bsa->ps, (void *)bsa->pc);
-		z_xtensa_dump_stack(interrupted_stack);
+		xtensa_dump_stack(interrupted_stack);
 
 		/* Xtensa exceptions don't automatically advance PC,
 		 * have to skip the SYSCALL instruction manually or
@@ -279,7 +279,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		/* We need to distinguish between an ill in xtensa_arch_except,
 		 * e.g for k_panic, and any other ill. For exceptions caused by
 		 * xtensa_arch_except calls, we also need to pass the reason_p
-		 * to z_xtensa_fatal_error. Since the ARCH_EXCEPT frame is in the
+		 * to xtensa_fatal_error. Since the ARCH_EXCEPT frame is in the
 		 * BSA, the first arg reason_p is stored at the A2 offset.
 		 * We assign EXCCAUSE the unused, reserved code 63; this may be
 		 * problematic if the app or new boards also decide to repurpose
@@ -316,8 +316,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * as these are software errors.  Should clean this
 		 * up.
 		 */
-		z_xtensa_fatal_error(reason,
-				     (void *)print_stack);
+		xtensa_fatal_error(reason, (void *)print_stack);
 		break;
 	}
 
@@ -341,7 +340,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		/* We are going to manipulate _current_cpu->nested manually.
 		 * Since the error is fatal, for recoverable errors, code
 		 * execution must not return back to the current thread as
-		 * it is being terminated (via above z_xtensa_fatal_error()).
+		 * it is being terminated (via above xtensa_fatal_error()).
 		 * So we need to prevent more interrupts coming in which
 		 * will affect the nested value as we are going outside of
 		 * normal interrupt handling procedure.

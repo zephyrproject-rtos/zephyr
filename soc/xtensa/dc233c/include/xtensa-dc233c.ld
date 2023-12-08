@@ -323,8 +323,8 @@ SECTIONS
     *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1.literal .iram1)
 
     /* Userspace related stuff */
-    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,userspace.S.obj,z_xtensa_do_syscall)
-    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,ptables.c.obj,z_xtensa_swap_update_page_tables)
+    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,userspace.S.obj,xtensa_do_syscall)
+    LIB_OBJ_FUNC_IN_SECT(libarch__xtensa__core.a,ptables.c.obj,xtensa_swap_update_page_tables)
 
     /* Below are to speed up execution by avoiding TLB misses
      * on frequently used functions.

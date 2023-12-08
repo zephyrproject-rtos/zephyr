@@ -277,7 +277,7 @@ noflush:
 	/* Switch page tables */
 	rsr a6, ZSR_CPU
 	l32i a6, a6, ___cpu_t_current_OFFSET
-	call4 z_xtensa_swap_update_page_tables
+	call4 xtensa_swap_update_page_tables
 
 	l32i a2, a3, 0
 	l32i a2, a2, 0
@@ -407,7 +407,7 @@ _handle_tlb_miss_user:
 #ifdef CONFIG_USERSPACE
 _syscall:
 	rsr a0, ZSR_A0SAVE
-	j z_xtensa_do_syscall
+	j xtensa_do_syscall
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_XTENSA_MMU */
 .popsection

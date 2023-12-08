@@ -10,6 +10,7 @@
 #include <kernel_internal.h>
 
 #include <xtensa_asm2_context.h>
+#include <xtensa_internal.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -40,8 +41,8 @@ static void *init_stack(struct k_thread *thread, int *stack_top,
 	void *ret;
 	_xtensa_irq_stack_frame_a11_t *frame;
 #ifdef CONFIG_USERSPACE
-	struct z_xtensa_thread_stack_header *header =
-		(struct z_xtensa_thread_stack_header *)thread->stack_obj;
+	struct xtensa_thread_stack_header *header =
+		(struct xtensa_thread_stack_header *)thread->stack_obj;
 
 	thread->arch.psp = header->privilege_stack +
 		sizeof(header->privilege_stack);
@@ -152,8 +153,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 				      current->stack_info.size -
 				      current->stack_info.delta);
 
-	z_xtensa_userspace_enter(user_entry, p1, p2, p3,
-				 stack_end, current->stack_info.start);
+	xtensa_userspace_enter(user_entry, p1, p2, p3,
+			       stack_end, current->stack_info.start);
 
 	CODE_UNREACHABLE;
 }

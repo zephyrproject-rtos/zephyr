@@ -18,11 +18,11 @@
 
 
 #if CONFIG_USERSPACE
-#define Z_XTENSA_STACK_BASE_ALIGN		CONFIG_MMU_PAGE_SIZE
-#define Z_XTENSA_STACK_SIZE_ALIGN		CONFIG_MMU_PAGE_SIZE
+#define XTENSA_STACK_BASE_ALIGN		CONFIG_MMU_PAGE_SIZE
+#define XTENSA_STACK_SIZE_ALIGN		CONFIG_MMU_PAGE_SIZE
 #else
-#define Z_XTENSA_STACK_BASE_ALIGN		ARCH_STACK_PTR_ALIGN
-#define Z_XTENSA_STACK_SIZE_ALIGN		ARCH_STACK_PTR_ALIGN
+#define XTENSA_STACK_BASE_ALIGN		ARCH_STACK_PTR_ALIGN
+#define XTENSA_STACK_SIZE_ALIGN		ARCH_STACK_PTR_ALIGN
 #endif
 
 /*
@@ -46,17 +46,17 @@
 
 /* thread stack */
 #ifdef CONFIG_XTENSA_MMU
-struct z_xtensa_thread_stack_header {
+struct xtensa_thread_stack_header {
 	char privilege_stack[CONFIG_MMU_PAGE_SIZE];
-} __packed __aligned(Z_XTENSA_STACK_BASE_ALIGN);
+} __packed __aligned(XTENSA_STACK_BASE_ALIGN);
 
 #define ARCH_THREAD_STACK_RESERVED		\
-	sizeof(struct z_xtensa_thread_stack_header)
+	sizeof(struct xtensa_thread_stack_header)
 #endif /* CONFIG_XTENSA_MMU */
 
-#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_XTENSA_STACK_BASE_ALIGN
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	XTENSA_STACK_BASE_ALIGN
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size)	\
-	ROUND_UP((size), Z_XTENSA_STACK_SIZE_ALIGN)
+	ROUND_UP((size), XTENSA_STACK_SIZE_ALIGN)
 
 /* kernel stack */
 #define ARCH_KERNEL_STACK_RESERVED		0
