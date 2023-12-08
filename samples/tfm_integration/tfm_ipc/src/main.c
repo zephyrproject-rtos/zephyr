@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-#include "tfm_api.h"
 #include "tfm_ns_interface.h"
 #ifdef TFM_PSA_API
 #include "psa_manifest/sid.h"
