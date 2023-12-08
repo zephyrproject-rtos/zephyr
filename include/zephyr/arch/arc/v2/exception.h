@@ -11,8 +11,8 @@
  * ARC-specific kernel exception handling interface. Included by arc/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARC_V2_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_EXCEPTION_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,4 +44,4 @@ typedef struct  _irq_stack_frame z_arch_esf_t;
 #define ARC_EV_MISALIGNED		0xD
 #define ARC_EV_VEC_UNIT			0xE
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_EXCEPTION_H_ */
