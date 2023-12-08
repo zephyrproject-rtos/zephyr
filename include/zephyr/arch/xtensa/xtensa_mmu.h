@@ -14,16 +14,22 @@
 #define Z_XTENSA_MMU_CACHED_WB BIT(2)
 #define Z_XTENSA_MMU_CACHED_WT BIT(3)
 
+/* This bit is used in the HW. We just use it to know
+ * which ring pte entries should use.
+ */
+#define Z_XTENSA_MMU_USER BIT(4)
+
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr)	(((attr) & Z_XTENSA_MMU_X) != 0)
 #define K_MEM_PARTITION_IS_WRITABLE(attr)	(((attr) & Z_XENSA_MMU_W) != 0)
+#define K_MEM_PARTITION_IS_USER(attr)	(((attr) & Z_XTENSA_MMU_USER) != 0)
 
 /* Read-Write access permission attributes */
 #define K_MEM_PARTITION_P_RW_U_RW ((k_mem_partition_attr_t) \
-			{Z_XTENSA_MMU_W})
+			{Z_XTENSA_MMU_W | Z_XTENSA_MMU_USER})
 #define K_MEM_PARTITION_P_RW_U_NA ((k_mem_partition_attr_t) \
 			{0})
 #define K_MEM_PARTITION_P_RO_U_RO ((k_mem_partition_attr_t) \
-			{0})
+			{Z_XTENSA_MMU_USER})
 #define K_MEM_PARTITION_P_RO_U_NA ((k_mem_partition_attr_t) \
 			{0})
 #define K_MEM_PARTITION_P_NA_U_NA ((k_mem_partition_attr_t) \
