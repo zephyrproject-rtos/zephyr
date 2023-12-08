@@ -972,7 +972,7 @@ static inline int i2c_transfer_signal(const struct device *dev,
  */
 static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
-	const struct i2c_dt_spec *dt_spec = iodev_sqe->sqe->iodev->data;
+	const struct i2c_dt_spec *dt_spec = (const struct i2c_dt_spec *)iodev_sqe->sqe.iodev->data;
 	const struct device *dev = dt_spec->bus;
 	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
 
