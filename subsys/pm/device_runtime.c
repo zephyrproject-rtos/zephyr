@@ -214,8 +214,6 @@ int pm_device_runtime_put(const struct device *dev)
 {
 	int ret;
 
-	__ASSERT(!k_is_in_isr(), "use pm_device_runtime_put_async() in ISR");
-
 	if (dev->pm == NULL) {
 		return 0;
 	}
