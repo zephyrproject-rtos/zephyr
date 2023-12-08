@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2023 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <telink/telink_w91.dtsi>
+#include "tlsr9118bdk40d-pinctrl.dtsi"
+
+/ {
+	model = "telink,w91";
+	compatible = "telink,tlsr9118bdk40d";
+
+	aliases {
+		led0 = &led_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led_0 {
+			gpios = <&gpio0 20 0>;
+			label = "LED Red";
+		};
+	};
+
+	chosen {
+		zephyr,sram = &ram_dlm;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &flash_mspi;
+		zephyr,entropy = &trng0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <160000000>;
+};
+
+&flash {
+	reg = <0x80000000 0x300000>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x20000>;
+		};
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 0x68000>;
+		};
+		slot1_partition: partition@88000 {
+			label = "image-1";
+			reg = <0x88000 0x68000>;
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0xf0000 0x4000>;
+		};
+		storage_partition: partition@f4000 {
+			label = "storage";
+			reg = <0xf4000 0x0000a000>;
+		};
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};

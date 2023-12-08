@@ -1,0 +1,97 @@
+# Copyright (c) 2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "CPU Architecture of SoC"
+depends on SOC_SERIES_RISCV_TELINK_W91
+
+config W91CPU_RISCV32
+	bool "RISCV32 CPU Architecture"
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+endchoice
+
+config TELINK_W91_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on SOC_SERIES_RISCV_TELINK_W91
+
+config TELINK_W91_MBEDTLS_HW_ACCELERATION
+	bool "Use Telink W91 platform mbedtls HW acceleration"
+	depends on SOC_SERIES_RISCV_TELINK_W91 && MBEDTLS
+	default y
+	help
+		This option enables Telink W91 hardware accelerated mbedtls version.
+
+config TELINK_W91_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on SOC_SERIES_RISCV_TELINK_W91
+
+choice
+prompt "Telink W91 SoCs implementation"
+depends on SOC_SERIES_RISCV_TELINK_W91
+
+config SOC_RISCV_TELINK_W91
+	bool "Telink W91 SoC implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+
+endchoice
+
+config TELINK_W91_REBOOT_ON_FAULT
+	bool "Reboot system when fault happened"
+	depends on SOC_SERIES_RISCV_TELINK_W91
+	default n
+	help
+		This option enables Telink W91 chip reboot after fault.
+
+config TELINK_W91_REBOOT_ON_FAULT_DELAY
+	int "Reboot system delay in mS"
+	depends on SOC_SERIES_RISCV_TELINK_W91 && TELINK_W91_REBOOT_ON_FAULT
+	default 1000
+	range 0 30000
+	help
+		This option sets Telink W91 chip reboot on fault delay in mS.
+
+config TELINK_W91_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	depends on SOC_SERIES_RISCV_TELINK_W91
+	default n
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_W91_MALLOC_FAILED_HOOK
+	bool "Stop SW execution when system heap allocation failed"
+	depends on SOC_SERIES_RISCV_TELINK_W91
+	default y
+	help
+		This option stops SW execution when system heap allocation failed.
+
+config TELINK_W91_DEBUG_ENABLE
+	bool "Telink W91 debug enable"
+	default y
+	help
+		This option enables Telink W91 debug feature.
+
+config TELINK_W91_DEBUG_PORT
+	int "Telink W91 debug port"
+	range 0 1
+	default 0
+	depends on TELINK_W91_DEBUG_ENABLE
+	help
+		This option sets Telink W91 debug port.
+
+config TELINK_W91_DEBUG_BAUDRATE
+	int "Telink W91 debug baudrate"
+	default 115200
+	depends on TELINK_W91_DEBUG_ENABLE
+	help
+		This option sets Telink W91 debug baudrate, bps.

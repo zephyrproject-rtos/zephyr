@@ -1,0 +1,55 @@
+name: Telink W91 build examples
+
+on: pull_request
+
+jobs:
+  telink_build_examples:
+    runs-on: ubuntu-20.04
+    name: Telink build examples
+    env:
+      ZEPHYR_SDK_VERSION: 0.15.2
+    steps:
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y --no-install-recommends libdigest-sha-perl cmake python3 ninja-build
+
+    - name: Setup Zephyr toolchain
+      run: |
+        mkdir ~/zephyr_sdk
+        wget -q -P ~/zephyr_sdk https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz
+        (cd ~/zephyr_sdk && wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v"${ZEPHYR_SDK_VERSION}"/sha256.sum | shasum --check --ignore-missing)
+        tar xf ~/zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}"_linux-x86_64.tar.gz -C ~/zephyr_sdk
+        (cd ~/zephyr_sdk/zephyr-sdk-"${ZEPHYR_SDK_VERSION}" && ./setup.sh -t riscv64-zephyr-elf -c)
+
+    - name: Checkout Zephyr
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: West setup
+      run: |
+        pip install west
+        cd ..
+        west init -l zephyr
+        west update
+        west zephyr-export
+        pip install -r zephyr/scripts/requirements.txt
+
+    - name: Build W91 basic/blinky
+      run: |
+        cd ..
+        west build -b tlsr9118bdk40d             -d build_blinky_w91                    zephyr/samples/basic/blinky
+
+    - name: Collect artifacts
+      run: |
+        mkdir telink_build_artifacts
+        cp ../build_blinky_w91/zephyr/zephyr.bin                    telink_build_artifacts/w91_blinky.bin
+
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        path: |
+          telink_build_artifacts/*

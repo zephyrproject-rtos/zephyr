@@ -1,0 +1,15 @@
+identifier: tlsr9118bdk40d
+name: Telink TLSR9118BDK40D
+type: mcu
+arch: riscv32
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 256
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - netif:openthread

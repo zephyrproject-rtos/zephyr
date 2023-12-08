@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV_TELINK_W91
+	bool "Telink W91 SoCs Implementation"
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Enable support for Telink W91 SoC
