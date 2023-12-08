@@ -2193,6 +2193,8 @@ static void test_ioctl_fionread_common(int af)
 	close(fd[SERVER]);
 	close(fd[CLIENT]);
 	close(fd[ACCEPT]);
+
+	test_context_cleanup();
 }
 
 ZTEST(net_socket_tcp, test_ioctl_fionread_v4)
@@ -2334,6 +2336,159 @@ ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
 
 	ret = close(fd);
 	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+ZTEST(net_socket_tcp, test_so_keepalive)
+{
+	struct sockaddr_in bind_addr4;
+	int sock, ret;
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &sock, &bind_addr4);
+
+	/* Keep-alive should be disabled by default. */
+	ret = getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, 0, "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	/* Enable keep-alive. */
+	optval = 1;
+	ret = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	ret = getsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, 1, "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	/* Check keep-alive parameters defaults. */
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, CONFIG_NET_TCP_KEEPIDLE_DEFAULT,
+		      "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, CONFIG_NET_TCP_KEEPINTVL_DEFAULT,
+		      "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, CONFIG_NET_TCP_KEEPCNT_DEFAULT,
+		      "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	/* Check keep-alive parameters update. */
+	optval = 123;
+	ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 10;
+	ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 2;
+	ret = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, 123, "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, 10, "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	ret = getsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, 2, "getsockopt got invalid value");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	test_close(sock);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_keepalive_timeout)
+{
+	struct sockaddr_in c_saddr, s_saddr;
+	int c_sock, s_sock, new_sock;
+	uint8_t rx_buf;
+	int optval;
+	int ret;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	/* Enable keep-alive on both ends and set timeouts/retries to minimum */
+	optval = 1;
+	ret = setsockopt(c_sock, SOL_SOCKET, SO_KEEPALIVE,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	ret = setsockopt(s_sock, SOL_SOCKET, SO_KEEPALIVE,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 1;
+	ret = setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPIDLE,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	ret = setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPIDLE,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 1;
+	ret = setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	ret = setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPINTVL,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	optval = 1;
+	ret = setsockopt(c_sock, IPPROTO_TCP, TCP_KEEPCNT,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+	ret = setsockopt(s_sock, IPPROTO_TCP, TCP_KEEPCNT,
+			 &optval, sizeof(optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	/* Establish connection */
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	/* Kill communication - expect that connection will be closed after
+	 * a timeout period.
+	 */
+	loopback_set_packet_drop_ratio(1.0f);
+
+	ret = recv(c_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "recv() should've failed");
+	zassert_equal(errno, ETIMEDOUT, "wrong errno value, %d", errno);
+
+	/* Same on the other end. */
+	ret = recv(new_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "recv() should've failed");
+	zassert_equal(errno, ETIMEDOUT, "wrong errno value, %d", errno);
+
+	test_close(c_sock);
+	test_close(new_sock);
+	test_close(s_sock);
+
+	loopback_set_packet_drop_ratio(0.0f);
+	test_context_cleanup();
 }
 
 static void after(void *arg)
