@@ -4968,7 +4968,7 @@ __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were written.
  */
-__syscall int k_pipe_put(struct k_pipe *pipe, void *data,
+__syscall int k_pipe_put(struct k_pipe *pipe, const void *data,
 			 size_t bytes_to_write, size_t *bytes_written,
 			 size_t min_xfer, k_timeout_t timeout);
 
