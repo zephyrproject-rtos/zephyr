@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ERROR_H_
 
 #include <zephyr/arch/riscv/syscall.h>
-#include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/riscv/exception.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
