@@ -353,7 +353,11 @@ enum wifi_disconn_reason {
 
 /** Generic Wi-Fi status for commands and events */
 struct wifi_status {
-	int status;
+	union {
+		int status;
+		enum wifi_conn_status conn_status;
+		enum wifi_disconn_reason disconn_reason;
+	};
 };
 
 /** Wi-Fi interface status */
