@@ -11,8 +11,8 @@
  * ARM-specific kernel exception handling interface. Included by arm64/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_EXC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM64_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_EXCEPTION_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_EXCEPTION_H_
 
 /* for assembler, only works with constants */
 
@@ -63,4 +63,4 @@ typedef struct __esf z_arch_esf_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_EXCEPTION_H_ */
