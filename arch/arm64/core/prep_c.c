@@ -64,8 +64,8 @@ void z_prep_c(void)
 #endif
 	z_arm64_mm_init(true);
 	z_arm64_interrupt_init();
-	z_cstart();
 
+	z_cstart();
 	CODE_UNREACHABLE;
 }
 
