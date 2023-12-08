@@ -36,8 +36,8 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/core/lv_theme.c
 
     ${LVGL_DIR}/src/draw/arm2d/lv_gpu_arm2d.c
-    ${LVGL_DIR}/src/draw/lv_draw.c
     ${LVGL_DIR}/src/draw/lv_draw_arc.c
+    ${LVGL_DIR}/src/draw/lv_draw.c
     ${LVGL_DIR}/src/draw/lv_draw_img.c
     ${LVGL_DIR}/src/draw/lv_draw_label.c
     ${LVGL_DIR}/src/draw/lv_draw_layer.c
@@ -50,15 +50,21 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/lv_img_cache.c
     ${LVGL_DIR}/src/draw/lv_img_decoder.c
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_draw_pxp_blend.c
+    ${LVGL_DIR}/src/draw/nxp/pxp/lv_draw_pxp.c
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_gpu_nxp_pxp.c
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_gpu_nxp_pxp_osa.c
     ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_arc.c
     ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_blend.c
-    ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_rect.c
     ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite.c
-    ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl.c
+    ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_line.c
+    ${LVGL_DIR}/src/draw/nxp/vglite/lv_draw_vglite_rect.c
+    ${LVGL_DIR}/src/draw/nxp/vglite/lv_vglite_buf.c
+    ${LVGL_DIR}/src/draw/nxp/vglite/lv_vglite_utils.c
+    ${LVGL_DIR}/src/draw/renesas/lv_gpu_d2_draw_label.c
+    ${LVGL_DIR}/src/draw/renesas/lv_gpu_d2_ra6m3.c
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_arc.c
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_bg.c
+    ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl.c
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_composite.c
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_img.c
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_label.c
@@ -71,9 +77,9 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_texture_cache.c
     ${LVGL_DIR}/src/draw/sdl/lv_draw_sdl_utils.c
     ${LVGL_DIR}/src/draw/stm32_dma2d/lv_gpu_stm32_dma2d.c
-    ${LVGL_DIR}/src/draw/sw/lv_draw_sw.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_arc.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_blend.c
+    ${LVGL_DIR}/src/draw/sw/lv_draw_sw.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_dither.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_gradient.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_img.c
@@ -91,6 +97,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/extra/libs/ffmpeg/lv_ffmpeg.c
     ${LVGL_DIR}/src/extra/libs/freetype/lv_freetype.c
     ${LVGL_DIR}/src/extra/libs/fsdrv/lv_fs_fatfs.c
+    ${LVGL_DIR}/src/extra/libs/fsdrv/lv_fs_littlefs.c
     ${LVGL_DIR}/src/extra/libs/fsdrv/lv_fs_posix.c
     ${LVGL_DIR}/src/extra/libs/fsdrv/lv_fs_stdio.c
     ${LVGL_DIR}/src/extra/libs/fsdrv/lv_fs_win32.c
@@ -103,6 +110,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/extra/libs/rlottie/lv_rlottie.c
     ${LVGL_DIR}/src/extra/libs/sjpg/lv_sjpg.c
     ${LVGL_DIR}/src/extra/libs/sjpg/tjpgd.c
+    ${LVGL_DIR}/src/extra/libs/tiny_ttf/lv_tiny_ttf.c
     ${LVGL_DIR}/src/extra/lv_extra.c
     ${LVGL_DIR}/src/extra/others/fragment/lv_fragment.c
     ${LVGL_DIR}/src/extra/others/fragment/lv_fragment_manager.c
@@ -189,8 +197,8 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/misc/lv_templ.c
     ${LVGL_DIR}/src/misc/lv_timer.c
     ${LVGL_DIR}/src/misc/lv_tlsf.c
-    ${LVGL_DIR}/src/misc/lv_txt.c
     ${LVGL_DIR}/src/misc/lv_txt_ap.c
+    ${LVGL_DIR}/src/misc/lv_txt.c
     ${LVGL_DIR}/src/misc/lv_utils.c
 
     ${LVGL_DIR}/src/widgets/lv_arc.c
