@@ -10,6 +10,7 @@ Hardware Support
    barriers/index.rst
    cache/index.rst
    emulator/index.rst
+   gpio_irq/index.rst
    peripherals/index.rst
    pinctrl/index.rst
    porting/index
