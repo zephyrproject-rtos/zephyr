@@ -64,6 +64,27 @@ void *mem_attr_heap_alloc(uint32_t attr, size_t bytes);
 void *mem_attr_heap_aligned_alloc(uint32_t attr, size_t align, size_t bytes);
 
 /**
+ * @brief Expand the size of an existing allocation.
+ *
+ * Returns a pointer to a new memory region with the same contents, but different
+ * allocated size. If the existing allocation can be expanded in place,
+ * the returned pointer will be identical.
+ *
+ * @note The return of a NULL on failure is a different behavior than
+ * POSIX realloc(), which specifies that the original pointer will be
+ * returned (i.e. it is not possible to safely detect realloc()
+ * failure in POSIX, but it is here).
+ *
+ * @param block block to reallocate, must be a pointer to a block allocated by
+ *	  @ref mem_attr_heap_alloc.
+ * @param bytes requested size of the allocation in bytes.
+ *
+ * @retval ptr a valid pointer to the allocated memory.
+ * @retval NULL if no memory block with that size is available.
+ */
+void *mem_attr_heap_realloc(void *block, size_t bytes);
+
+/**
  * @brief Free the allocated memory
  *
  * Used to free the passed block of memory that must be the return value of a
