@@ -690,19 +690,21 @@ void z_xtensa_mmu_tlb_shootdown(void)
 	 * is different from the currently used one.
 	 */
 	if ((thread->base.user_options & K_USER) == K_USER) {
-		uint32_t ptevaddr_entry, ptevaddr, thread_ptables;
+		uint32_t ptevaddr_entry, ptevaddr,
+			thread_ptables, current_ptables;
 
 		/* Need to read the currently used L1 page table.
 		 * We know that L1 page table is always mapped at way
 		 * MMU_PTE_WAY, so we can skip the probing step by
 		 * generating the query entry directly.
 		 */
-		ptevaddr_entry = (uint32_t)xtensa_ptevaddr_get() | Z_XTENSA_MMU_PTE_WAY;
-		ptevaddr = xtensa_dtlb_paddr_read(ptevaddr_entry);
-
+		ptevaddr = (uint32_t)xtensa_ptevaddr_get();
+		ptevaddr_entry = Z_XTENSA_PTE_ENTRY_VADDR(ptevaddr, ptevaddr)
+				 | Z_XTENSA_MMU_PTE_WAY;
+		current_ptables = xtensa_dtlb_paddr_read(ptevaddr_entry);
 		thread_ptables = (uint32_t)thread->arch.ptables;
 
-		if (thread_ptables != ptevaddr) {
+		if (thread_ptables != current_ptables) {
 			/* Need to remap the thread page tables if the ones
 			 * indicated by the current thread are different
 			 * than the current mapped page table.
