@@ -145,6 +145,14 @@ GPIO
   now left as a placeholder and mapper.
   The labels have also been changed along, so no changes are necessary for regular use.
 
+Sensors
+=======
+
+* ``ltr`` vendor prefix has been renamed to ``liteon``, and with it the
+  :dtcompatible:`ltr,f216a` name has been replaced by :dtcompatible:`liteon,ltrf216a`.
+  The choice :kconfig:option:`DT_HAS_LTR_F216A_ENABLED` has been replaced with
+  :kconfig:option:`DT_HAS_LITEON_LTRF216A_ENABLED` (:github:`85453`)
+
 Serial
 =======
 

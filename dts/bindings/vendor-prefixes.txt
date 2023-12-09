@@ -380,6 +380,7 @@ linksys	Belkin International, Inc. (Linksys)
 linutronix	Linutronix GmbH
 linux	Linux-specific binding
 linx	Linx Technologies
+liteon	LiteOn OptoElectronics
 litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
@@ -389,7 +390,6 @@ lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
-ltr	LiteOn OptoElectronics
 luatos	LuatOS Team
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
