@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018-2024 Intel Corporation
+# Copyright (c) 2018-2025 Intel Corporation
 # Copyright 2022 NXP
 # Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
@@ -380,7 +380,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                          "Default to what was selected with --platform.")
 
     coverage_group.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='gcovr',
-                    help="Tool to use to generate coverage report (%(default)s - default).")
+                    help="Tool to use to generate coverage reports (%(default)s - default).")
 
     coverage_group.add_argument("--coverage-formats", action="store", default=None,
                     help="Output formats to use for generated coverage reports " +
@@ -389,6 +389,19 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                          ','.join(supported_coverage_formats['gcovr']) + " (html - default)." +
                          " Valid options for 'lcov' tool are: " +
                          ','.join(supported_coverage_formats['lcov']) + " (html,lcov - default).")
+
+    coverage_group.add_argument("--coverage-per-instance", action="store_true", default=False,
+                help="""Compose individual coverage reports for each test suite
+                        when coverage reporting is enabled; it might run in addition to
+                        the default aggregation mode which produces one coverage report for
+                        all executed test suites. Default: %(default)s""")
+
+    coverage_group.add_argument("--disable-coverage-aggregation",
+                action="store_true", default=False,
+                help="""Don't aggregate coverage report statistics for all the test suites
+                        selected to run with enabled coverage. Requires another reporting mode to be
+                        active (`--coverage-split`) to have at least one of these reporting modes.
+                        Default: %(default)s""")
 
     parser.add_argument(
         "--test-config",
@@ -907,6 +920,21 @@ def parse_arguments(
 
     if options.enable_coverage and not options.coverage_platform:
         options.coverage_platform = options.platform
+
+    if (
+        (not options.coverage)
+        and (options.disable_coverage_aggregation or options.coverage_per_instance)
+    ):
+        logger.error("Enable coverage reporting to set its aggregation mode.")
+        sys.exit(1)
+
+    if (
+        options.coverage
+        and options.disable_coverage_aggregation and (not options.coverage_per_instance)
+    ):
+        logger.error("At least one coverage reporting mode should be enabled: "
+                     "either aggregation, or per-instance, or both.")
+        sys.exit(1)
 
     if options.coverage_formats:
         for coverage_format in options.coverage_formats.split(','):

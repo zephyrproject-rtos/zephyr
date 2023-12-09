@@ -13,8 +13,7 @@ import pytest
 import sys
 import json
 
-# pylint: disable=duplicate-code
-# pylint: disable=no-name-in-module
+# pylint: disable=duplicate-code, disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -123,7 +122,7 @@ class TestCoverage:
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
             ['qemu_x86'],
             'gcovr',
-            'Running gcovr -r'
+            'Running: gcovr '
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
@@ -136,7 +135,7 @@ class TestCoverage:
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2'),
             ['qemu_x86'],
-            ['The specified file does not exist.', r'\[Errno 13\] Permission denied:'],
+            ['GCOVR failed with '],
         )
     ]
     TESTDATA_7 = [
