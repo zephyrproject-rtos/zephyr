@@ -87,7 +87,7 @@ extern "C" {
  *
  * @param num_bits Number of bits.
  */
-#define ATOMIC_BITMAP_SIZE(num_bits) (1 + ((num_bits) - 1) / ATOMIC_BITS)
+#define ATOMIC_BITMAP_SIZE(num_bits) (ROUND_UP(num_bits, ATOMIC_BITS) / ATOMIC_BITS)
 
 /**
  * @brief Define an array of atomic variables.
