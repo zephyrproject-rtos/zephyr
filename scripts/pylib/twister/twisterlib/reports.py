@@ -51,6 +51,7 @@ class Reporting:
         self.outdir = os.path.abspath(env.options.outdir)
         self.instance_fail_count = plan.instance_fail_count
         self.footprint = None
+        self.coverage_status = None
 
 
     @staticmethod
