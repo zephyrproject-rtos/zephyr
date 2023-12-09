@@ -27,6 +27,8 @@
 #define Z_XTENSA_PTE_RING_MASK 0x00000030U
 #define Z_XTENSA_PTE_RING_SHIFT 4U
 
+#define Z_XTENSA_PTEBASE_MASK 0xFFC00000
+
 #define Z_XTENSA_PTE(paddr, ring, attr) \
 	(((paddr) & Z_XTENSA_PTE_PPN_MASK) | \
 	(((ring) << Z_XTENSA_PTE_RING_SHIFT) & Z_XTENSA_PTE_RING_MASK) | \
@@ -271,7 +273,7 @@ static ALWAYS_INLINE void *xtensa_ptevaddr_get(void)
 
 	__asm__ volatile("rsr.ptevaddr %0" : "=a" (ptables));
 
-	return (void *)ptables;
+	return (void *)(ptables & Z_XTENSA_PTEBASE_MASK);
 }
 /*
  * The following functions are helpful when debugging.
