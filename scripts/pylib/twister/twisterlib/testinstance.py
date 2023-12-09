@@ -49,6 +49,8 @@ class TestInstance:
         self.metrics = dict()
         self.handler = None
         self.recording = None
+        self.coverage = None
+        self.coverage_status = None
         self.outdir = outdir
         self.execution_time = 0
         self.build_time = 0

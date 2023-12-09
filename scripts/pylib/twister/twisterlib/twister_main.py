@@ -200,9 +200,9 @@ def main(options):
     report.summary(runner.results, options.disable_unrecognized_section_test, duration)
 
     coverage_completed = True
-    if options.coverage:
+    if options.coverage and not options.disable_coverage_aggregation:
         if not options.build_only:
-            coverage_completed = run_coverage(tplan, options)
+            report.coverage_status, report.coverage = run_coverage(options, tplan)
         else:
             logger.info("Skipping coverage report generation due to --build-only.")
 

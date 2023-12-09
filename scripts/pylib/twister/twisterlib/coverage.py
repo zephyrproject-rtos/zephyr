@@ -1,6 +1,6 @@
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018-2022 Intel Corporation
+# Copyright (c) 2018-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 import sys
@@ -29,6 +29,7 @@ class CoverageTool:
         self.gcov_tool = None
         self.base_dir = None
         self.output_formats = None
+        self.capture = True
 
     @staticmethod
     def factory(tool):
@@ -102,7 +103,7 @@ class CoverageTool:
                 gcda_created = False
         return gcda_created
 
-    def generate(self, outdir):
+    def capture_data(self, outdir):
         coverage_completed = True
         for filename in glob.glob("%s/**/handler.log" % outdir, recursive=True):
             gcov_data = self.__class__.retrieve_gcov_data(filename)
@@ -118,9 +119,13 @@ class CoverageTool:
             else:
                 logger.error("Gcov data capture incomplete: {}".format(filename))
                 coverage_completed = False
+        return coverage_completed
 
+    def generate(self, outdir):
+        coverage_completed = self.capture_data(outdir) if self.capture else True
+        reports = {}
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
-            ret = self._generate(outdir, coveragelog)
+            ret, reports = self._generate(outdir, coveragelog)
             if ret == 0:
                 report_log = {
                     "html": "HTML report generated: {}".format(os.path.join(outdir, "coverage", "index.html")),
@@ -136,7 +141,7 @@ class CoverageTool:
             else:
                 coverage_completed = False
         logger.debug("All coverage data processed: {}".format(coverage_completed))
-        return coverage_completed
+        return coverage_completed, reports
 
 
 class Lcov(CoverageTool):
@@ -206,6 +211,7 @@ class Lcov(CoverageTool):
         cmd = cmd + ignore_errors
         self.run_command(cmd, coveragelog)
 
+        files = []
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             cmd = ["lcov", "--gcov-tool", self.gcov_tool, "--remove",
                              ztestfile,
@@ -228,7 +234,7 @@ class Lcov(CoverageTool):
             self.run_command(cmd, coveragelog)
 
         if 'html' not in self.output_formats.split(','):
-            return 0
+            return 0, {}
 
         # The --ignore-errors source option is added to avoid it exiting due to
         # samples/application_development/external_lib/
@@ -237,7 +243,10 @@ class Lcov(CoverageTool):
                                 "-output-directory",
                                 os.path.join(outdir, "coverage")] + files
         cmd = cmd + ignore_errors
-        return self.run_command(cmd, coveragelog)
+        ret = self.run_command(cmd, coveragelog)
+
+        # TODO: Add support to include LCOV .info files into JSON data.
+        return ret, {}
 
 
 class Gcovr(CoverageTool):
@@ -281,8 +290,9 @@ class Gcovr(CoverageTool):
         return [a for b in list for a in b]
 
     def _generate(self, outdir, coveragelog):
-        coveragefile = os.path.join(outdir, "coverage.json")
-        ztestfile = os.path.join(outdir, "ztest.json")
+        coverage_file = os.path.join(outdir, "coverage.json")
+        coverage_summary = os.path.join(outdir, "coverage_summary.json")
+        ztest_file = os.path.join(outdir, "ztest.json")
 
         excludes = Gcovr._interleave_list("-e", self.ignores)
 
@@ -291,24 +301,37 @@ class Gcovr(CoverageTool):
         mode_options = ["--merge-mode-functions=separate"]
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        cmd = ["gcovr", "-r", self.base_dir,
+        cmd = ["gcovr", "-v", "-r", self.base_dir,
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
-        cmd += excludes + mode_options + ["--json", "-o", coveragefile, outdir]
+        cmd += excludes + mode_options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
-        logger.debug(f"Running {cmd_str}...")
-        subprocess.call(cmd, stdout=coveragelog)
+        logger.debug(f"Running: {cmd_str}")
+        coveragelog.write(f"Running: {cmd_str}\n")
+        coveragelog.flush()
+        ret = subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
+        if ret:
+            logger.error(f"GCOVR failed with {ret}")
+            return ret, {}
 
-        subprocess.call(["gcovr", "-r", self.base_dir, "--gcov-executable",
-                         self.gcov_tool, "-f", "tests/ztest", "-e",
-                         "tests/ztest/test/*", "--json", "-o", ztestfile,
-                         outdir] + mode_options, stdout=coveragelog)
+        cmd = ["gcovr", "-v", "-r", self.base_dir] + mode_options
+        cmd += ["--gcov-executable", self.gcov_tool,
+                "-f", "tests/ztest", "-e", "tests/ztest/test/*",
+                "--json", "-o", ztest_file, outdir]
+        cmd_str = " ".join(cmd)
+        logger.debug(f"Running: {cmd_str}")
+        coveragelog.write(f"Running: {cmd_str}\n")
+        coveragelog.flush()
+        ret = subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
+        if ret:
+            logger.error(f"GCOVR ztest stage failed with {ret}")
+            return ret, {}
 
-        if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
-            files = [coveragefile, ztestfile]
+        if os.path.exists(ztest_file) and os.path.getsize(ztest_file) > 0:
+            files = [coverage_file, ztest_file]
         else:
-            files = [coveragefile]
+            files = [coverage_file]
 
         subdir = os.path.join(outdir, "coverage")
         os.makedirs(subdir, exist_ok=True)
@@ -326,19 +349,21 @@ class Gcovr(CoverageTool):
         }
         gcovr_options = self._flatten_list([report_options[r] for r in self.output_formats.split(',')])
 
-        return subprocess.call(["gcovr", "-r", self.base_dir] + mode_options + gcovr_options + tracefiles,
-                               stdout=coveragelog)
+        cmd = ["gcovr", "-v", "-r", self.base_dir] + mode_options + gcovr_options + tracefiles
+        cmd += ["--json-summary-pretty", "--json-summary", coverage_summary]
+        cmd_str = " ".join(cmd)
+        logger.debug(f"Running: {cmd_str}")
+        coveragelog.write(f"Running: {cmd_str}\n")
+        coveragelog.flush()
+        ret = subprocess.call(cmd, stdout=coveragelog, stderr=coveragelog)
+        if ret:
+            logger.error(f"GCOVR merge report stage failed with {ret}")
+
+        return ret, { 'report': coverage_file, 'ztest': ztest_file, 'summary': coverage_summary }
 
 
-
-def run_coverage(testplan, options):
-    use_system_gcov = False
+def choose_gcov_tool(options, is_system_gcov):
     gcov_tool = None
-
-    for plat in options.coverage_platform:
-        _plat = testplan.get_platform(plat)
-        if _plat and (_plat.type in {"native", "unit"}):
-            use_system_gcov = True
     if not options.gcov_tool:
         zephyr_sdk_gcov_tool = os.path.join(
             os.environ.get("ZEPHYR_SDK_INSTALL_DIR", default=""),
@@ -355,7 +380,7 @@ def run_coverage(testplan, options):
             except OSError:
                 shutil.copy(llvm_cov, gcov_lnk)
             gcov_tool = gcov_lnk
-        elif use_system_gcov:
+        elif is_system_gcov:
             gcov_tool = "gcov"
         elif os.path.exists(zephyr_sdk_gcov_tool):
             gcov_tool = zephyr_sdk_gcov_tool
@@ -365,10 +390,16 @@ def run_coverage(testplan, options):
     else:
         gcov_tool = str(options.gcov_tool)
 
-    logger.info("Generating coverage files...")
-    logger.info(f"Using gcov tool: {gcov_tool}")
+    return gcov_tool
+
+
+def run_coverage_tool(options, outdir, is_system_gcov, capture):
     coverage_tool = CoverageTool.factory(options.coverage_tool)
-    coverage_tool.gcov_tool = gcov_tool
+
+    coverage_tool.gcov_tool = str(choose_gcov_tool(options, is_system_gcov))
+    logger.info(f"Using gcov tool: {coverage_tool.gcov_tool}")
+
+    coverage_tool.capture = capture
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
     # Apply output format default
     if options.coverage_formats is not None:
@@ -376,5 +407,26 @@ def run_coverage(testplan, options):
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
-    coverage_completed = coverage_tool.generate(options.outdir)
-    return coverage_completed
+
+    logger.info("Generating coverage files...")
+    return coverage_tool.generate(outdir)
+
+
+def has_system_gcov(platform):
+    return platform and (platform.type in {"native", "unit"})
+
+
+def run_coverage(options, testplan):
+    is_system_gcov = False
+
+    for plat in options.coverage_platform:
+        if has_system_gcov(testplan.get_platform(plat)):
+            is_system_gcov = True
+            break
+
+    return run_coverage_tool(options, options.outdir, is_system_gcov, capture=not options.coverage_split)
+
+
+def run_coverage_instance(options, instance):
+    is_system_gcov = has_system_gcov(instance.platform)
+    return run_coverage_tool(options, instance.build_dir, is_system_gcov, capture=True)
