@@ -132,6 +132,27 @@ void *sys_multi_heap_alloc(struct sys_multi_heap *mheap, void *cfg, size_t bytes
 void *sys_multi_heap_aligned_alloc(struct sys_multi_heap *mheap,
 				   void *cfg, size_t align, size_t bytes);
 
+
+/**
+ * @brief Expand the size of an existing allocation
+ *
+ * Returns a pointer to a new memory region with the same contents, but different
+ * allocated size. If the existing allocation can be expanded in place,
+ * the returned pointer will be identical.
+ *
+ * @note It should not be assumed that the returned block is located in the
+ * same sys_heap as the original allocation. If allocation within the same
+ * sys_heap fails, allocation in another sys_heap matching the configuration
+ * pointer is attempted.
+ *
+ * @param mheap Multi heap pointer
+ * @param cfg Opaque configuration parameter, as for sys_multi_heap_fn_t
+ * @param block Block to reallocate, must be a pointer to a block allocated by sys_multi_heap_alloc
+ * @param bytes Requested size of the allocation, in bytes
+ * @return A valid pointer to heap memory, or NULL if no memory is available
+ */
+void *sys_multi_heap_realloc(struct sys_multi_heap *mheap, void *cfg, void *block, size_t bytes);
+
 /**
  * @brief Get a specific heap for provided address
  *
