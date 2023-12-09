@@ -1,6 +1,6 @@
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018-2024 Intel Corporation
+# Copyright (c) 2018-2025 Intel Corporation
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
@@ -42,6 +42,7 @@ from twisterlib.environment import ZEPHYR_BASE
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
+from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Ctest, HarnessImporter, Pytest
 from twisterlib.log_helper import log_command
@@ -1130,7 +1131,7 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.handler.thread = None
                 self.instance.handler.duts = None
 
-                next_op = 'report'
+                next_op = "coverage" if self.options.coverage else "report"
                 additionals = {
                     "status": self.instance.status,
                     "reason": self.instance.reason
@@ -1139,6 +1140,28 @@ class ProjectBuilder(FilterBuilder):
                 logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
                 reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+                additionals = {}
+            finally:
+                self._add_to_pipeline(pipeline, next_op, additionals)
+
+        # Run per-instance code coverage
+        elif op == "coverage":
+            try:
+                logger.debug(f"Run coverage for '{self.instance.name}'")
+                self.instance.coverage_status, self.instance.coverage = \
+                        run_coverage_instance(self.options, self.instance)
+                next_op = 'report'
+                additionals = {
+                    "status": self.instance.status,
+                    "reason": self.instance.reason
+                }
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = f"Incorrect status assignment on {op}"
                 self.instance.reason = reason
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'

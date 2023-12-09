@@ -1245,7 +1245,7 @@ TESTDATA_6 = [
         mock.ANY,
         ['run test: dummy instance name',
          'run status: dummy instance name success'],
-        {'op': 'report', 'test': mock.ANY, 'status': 'success', 'reason': 'OK'},
+        {'op': 'coverage', 'test': mock.ANY, 'status': 'success', 'reason': 'OK'},
         'success',
         'OK',
         0,
