@@ -49,6 +49,19 @@ ZTEST(mem_attr_heap, test_mem_attr_heap)
 		      "Memory allocated from the wrong region");
 
 	/*
+	 * Try to reallocate slightly larger.
+	 */
+	block = mem_attr_heap_realloc(block, 0x200);
+	zassert_not_null(block, "Failed to reallocate memory");
+
+	/*
+	 * Check that the reallocated memory has the same attributes.
+	 */
+	region = mem_attr_heap_get_region(block);
+	zassert_equal(region->dt_addr, ADDR_MEM_CACHE_SW,
+		      "Memory reallocated should have the same attribute");
+
+	/*
 	 * Allocate 0x100 bytes of non-cacheable memory.
 	 */
 	block = mem_attr_heap_alloc(DT_MEM_SW_ALLOC_NON_CACHE, 0x100);
