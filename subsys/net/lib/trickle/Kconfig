@@ -1,0 +1,18 @@
+# Trickle Library for Zephyr
+
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_TRICKLE
+	bool "Trickle library"
+	help
+	  Normally this is enabled automatically if needed,
+	  so say 'n' if unsure.
+
+if NET_TRICKLE
+module = NET_TRICKLE
+module-dep = NET_LOG
+module-str = Log level for Trickle algorithm
+module-help = Enables Trickle library output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_TRICKLE

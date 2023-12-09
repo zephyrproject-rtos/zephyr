@@ -563,20 +563,6 @@ config NET_SLIP_TAP
 	  communicate via the SLIP driver. See net-tools project at
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
 
-config NET_TRICKLE
-	bool "Trickle library"
-	help
-	  Normally this is enabled automatically if needed,
-	  so say 'n' if unsure.
-
-if NET_TRICKLE
-module = NET_TRICKLE
-module-dep = NET_LOG
-module-str = Log level for Trickle algorithm
-module-help = Enables Trickle library output debug messages
-source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_TRICKLE
-
 endif # NET_RAW_MODE
 
 config NET_PKT_RX_COUNT
