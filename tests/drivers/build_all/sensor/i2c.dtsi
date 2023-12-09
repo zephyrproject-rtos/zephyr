@@ -871,6 +871,6 @@ test_i2c_lps28dfw: lps28dfw@7b {
 };
 
 test_i2c_ltr329: ltr329@7c {
-	compatible = "ltr,329";
-	reg = <0x7b>;
+	compatible = "liteon,ltr-329";
+	reg = <0x7c>;
 };

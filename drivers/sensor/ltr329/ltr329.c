@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ltr_329
+#define DT_DRV_COMPAT liteon_ltr_329
 
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
@@ -182,19 +182,21 @@ static int ltr329_init(const struct device *dev)
 	return 0;
 }
 
-static int ltr329_wait_for_data_ready(const struct i2c_dt_spec *bus)
+static int ltr329_check_data_ready(const struct i2c_dt_spec *bus)
 {
-	uint8_t status;
+	uint8_t status_reg;
 	int rc;
 
-	do {
-		rc = ltr329_read_register(bus, LTR329_ALS_STATUS, &status);
-		if (rc < 0) {
-			LOG_ERR("Failed to get LTR329 ALS_STATUS");
-			return rc;
-		}
-		k_sleep(K_MSEC(3));
-	} while (!(LTR329_REG_GET(LTR329_ALS_STATUS, DATA_READY, status)));
+	rc = ltr329_read_register(bus, LTR329_ALS_STATUS, &status_reg);
+	if (rc < 0) {
+		LOG_ERR("Failed to get LTR329 ALS_STATUS");
+		return rc;
+	}
+
+	if (!(LTR329_REG_GET(LTR329_ALS_STATUS, DATA_READY, status_reg))) {
+		LOG_WRN("LTR329 data is not ready");
+		return -EBUSY;
+	}
 
 	return 0;
 }
@@ -203,29 +205,15 @@ static int ltr329_read_als_data(const struct i2c_dt_spec *bus, struct ltr329_dat
 {
 	uint8_t buff[4];
 	int rc;
+	const uint8_t data_regs[] = {LTR329_ALS_DATA_CH1_0, LTR329_ALS_DATA_CH1_1,
+				     LTR329_ALS_DATA_CH0_0, LTR329_ALS_DATA_CH0_1};
 
-	rc = ltr329_read_register(bus, LTR329_ALS_DATA_CH1_0, &buff[0]);
-	if (rc < 0) {
-		LOG_ERR("Failed to read LTR329 ALS_DATA_CH1_0");
-		return rc;
-	}
-
-	rc = ltr329_read_register(bus, LTR329_ALS_DATA_CH1_1, &buff[1]);
-	if (rc < 0) {
-		LOG_ERR("Failed to read LTR329 ALS_DATA_CH1_1");
-		return rc;
-	}
-
-	rc = ltr329_read_register(bus, LTR329_ALS_DATA_CH0_0, &buff[2]);
-	if (rc < 0) {
-		LOG_ERR("Failed to read LTR329 ALS_DATA_CH0_0");
-		return rc;
-	}
-
-	rc = ltr329_read_register(bus, LTR329_ALS_DATA_CH0_1, &buff[3]);
-	if (rc < 0) {
-		LOG_ERR("Failed to read LTR329 ALS_DATA_CH0_1");
-		return rc;
+	for (uint8_t i = 0; i < ARRAY_SIZE(data_regs); i++) {
+		rc = ltr329_read_register(bus, data_regs[i], &buff[i]);
+		if (rc < 0) {
+			LOG_ERR("Failed to read LTR329 ALS_DATA");
+			return rc;
+		}
 	}
 
 	data->ch1 = buff[0] | (buff[1] << 8);
@@ -244,7 +232,7 @@ static int ltr329_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return -ENOTSUP;
 	}
 
-	rc = ltr329_wait_for_data_ready(&cfg->bus);
+	rc = ltr329_check_data_ready(&cfg->bus);
 	if (rc < 0) {
 		return rc;
 	}

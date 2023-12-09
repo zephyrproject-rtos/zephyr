@@ -1,9 +1,9 @@
 # Copyright (c) 2023 Konrad Sikora
 # SPDX-License-Identifier: Apache-2.0
 
-description: Lite-on LTR329 Digital Ambient Light Sensor
+description: LiteOn LTR-329 Digital Ambient Light Sensor
 
-compatible: "ltr,329"
+compatible: "liteon,ltr-329"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
@@ -12,8 +12,12 @@ properties:
     type: int
     default: 0
     description: |
-      ADC gain factor. There are 6 possible values,
-      which correspond to different gain factors:
+      This parameter adjusts the ADC gain factor, impacting the sensor's
+      light sensitivity range. The default setting, corresponding to the
+      register reset value, is 1X gain. Various gain settings enable
+      the sensor to operate effectively in different lighting conditions,
+      ranging from very dim to very bright environments.
+      Possible values are:
       - 0 # Gain 1X (1 lux to 64k lux)
       - 1 # Gain 2X (0.5 lux to 32k lux)
       - 2 # Gain 4X (0.25 lux to 16k lux)
@@ -27,6 +31,7 @@ properties:
     default: 0
     description: |
       ALS Integration Time is the measurement time for each ALS cycle.
+      Default value is a register reset value (100ms).
       Possible values are:
       - 0 # 100ms
       - 1 # 50ms
@@ -48,7 +53,8 @@ properties:
       must be set to be equal or larger than the Integration Time.
       If ALS Measurement Repeat Rate  is set to be smaller than
       ALS Integration Time, it will automatically be reset to be
-      equal to ALS Integration Time by the IC internally.
+      equal to ALS Integration Time by the IC internally. Default value
+      is a register reset value (500ms).
       Possible values are:
       - 0 # 50ms
       - 1 # 100ms
