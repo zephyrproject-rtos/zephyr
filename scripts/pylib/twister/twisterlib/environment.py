@@ -345,6 +345,17 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                                      to be active (`--coverage-split`) to set at least one reporting mode.
                                      Default: %(default)s""")
 
+    coverage_group.add_argument("--coverage-sections", nargs="+", default=None,
+                        choices=['all','report','ztest','summary'],
+                        help="""Selects coverage data to include into the `twister.json` report as 'coverage'
+                                object and its properties either as the sections chosen, or all of them.
+                                With `--coverage-split` each test suite will have its own 'coverage' object
+                                with these sections as properties.
+                                The aggregated coverage of all executed test suites will be a top-level object.
+                                Each 'coverage' object will also have its execution 'status' property.
+                                Currently this mode is fully supported for the default 'gcovr' tool only.
+                                Default: %(default)s""")
+
     parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
         help="Path to file with plans and test configurations.")
 
