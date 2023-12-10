@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT zephyr_native_posix_linux_can
+#define DT_DRV_COMPAT zephyr_native_linux_can
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -17,9 +17,9 @@
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
 
-#include "can_native_posix_linux_socketcan.h"
+#include "can_native_linux_adapt.h"
 
-LOG_MODULE_REGISTER(can_npl, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_native_linux, CONFIG_CAN_LOG_LEVEL);
 
 struct can_filter_context {
 	can_rx_callback_t rx_cb;
@@ -27,7 +27,7 @@ struct can_filter_context {
 	struct can_filter filter;
 };
 
-struct can_npl_data {
+struct can_native_linux_data {
 	struct can_filter_context filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex filter_mutex;
 	struct k_sem tx_idle;
@@ -42,13 +42,13 @@ struct can_npl_data {
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 };
 
-struct can_npl_config {
+struct can_native_linux_config {
 	const char *if_name;
 };
 
 static void dispatch_frame(const struct device *dev, struct can_frame *frame)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 	can_rx_callback_t callback;
 	struct can_frame tmp_frame;
 
@@ -76,7 +76,7 @@ static void dispatch_frame(const struct device *dev, struct can_frame *frame)
 static void rx_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 	struct socketcan_frame sframe;
 	struct can_frame frame;
 	bool msg_confirm;
@@ -113,15 +113,15 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 			dispatch_frame(dev, &frame);
 		}
 
-		/* short sleep required to avoid blocking the whole native_posix process */
+		/* short sleep required to avoid blocking the whole native process */
 		k_sleep(K_MSEC(1));
 	}
 }
 
-static int can_npl_send(const struct device *dev, const struct can_frame *frame,
-			k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
+static int can_native_linux_send(const struct device *dev, const struct can_frame *frame,
+				 k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 	struct socketcan_frame sframe;
 	uint8_t max_dlc = CAN_MAX_DLC;
 	size_t mtu = CAN_MTU;
@@ -187,10 +187,10 @@ static int can_npl_send(const struct device *dev, const struct can_frame *frame,
 	return 0;
 }
 
-static int can_npl_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
-				 void *cb_arg, const struct can_filter *filter)
+static int can_native_linux_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
+					  void *cb_arg, const struct can_filter *filter)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 	struct can_filter_context *filter_ctx;
 	int filter_id = -ENOSPC;
 
@@ -234,9 +234,9 @@ static int can_npl_add_rx_filter(const struct device *dev, can_rx_callback_t cb,
 	return filter_id;
 }
 
-static void can_npl_remove_rx_filter(const struct device *dev, int filter_id)
+static void can_native_linux_remove_rx_filter(const struct device *dev, int filter_id)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= ARRAY_SIZE(data->filters)) {
 		LOG_ERR("filter ID %d out of bounds");
@@ -250,7 +250,7 @@ static void can_npl_remove_rx_filter(const struct device *dev, int filter_id)
 	LOG_DBG("Filter removed. ID: %d", filter_id);
 }
 
-static int can_npl_get_capabilities(const struct device *dev, can_mode_t *cap)
+static int can_native_linux_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
 	ARG_UNUSED(dev);
 
@@ -263,9 +263,9 @@ static int can_npl_get_capabilities(const struct device *dev, can_mode_t *cap)
 	return 0;
 }
 
-static int can_npl_start(const struct device *dev)
+static int can_native_linux_start(const struct device *dev)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	if (data->started) {
 		return -EALREADY;
@@ -276,9 +276,9 @@ static int can_npl_start(const struct device *dev)
 	return 0;
 }
 
-static int can_npl_stop(const struct device *dev)
+static int can_native_linux_stop(const struct device *dev)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	if (!data->started) {
 		return -EALREADY;
@@ -289,9 +289,9 @@ static int can_npl_stop(const struct device *dev)
 	return 0;
 }
 
-static int can_npl_set_mode(const struct device *dev, can_mode_t mode)
+static int can_native_linux_set_mode(const struct device *dev, can_mode_t mode)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 #ifdef CONFIG_CAN_FD_MODE
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_FD)) != 0) {
@@ -318,9 +318,9 @@ static int can_npl_set_mode(const struct device *dev, can_mode_t mode)
 	return 0;
 }
 
-static int can_npl_set_timing(const struct device *dev, const struct can_timing *timing)
+static int can_native_linux_set_timing(const struct device *dev, const struct can_timing *timing)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	ARG_UNUSED(timing);
 
@@ -332,9 +332,10 @@ static int can_npl_set_timing(const struct device *dev, const struct can_timing 
 }
 
 #ifdef CONFIG_CAN_FD_MODE
-static int can_npl_set_timing_data(const struct device *dev, const struct can_timing *timing)
+static int can_native_linux_set_timing_data(const struct device *dev,
+					    const struct can_timing *timing)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	ARG_UNUSED(timing);
 
@@ -346,10 +347,10 @@ static int can_npl_set_timing_data(const struct device *dev, const struct can_ti
 }
 #endif /* CONFIG_CAN_FD_MODE */
 
-static int can_npl_get_state(const struct device *dev, enum can_state *state,
-			     struct can_bus_err_cnt *err_cnt)
+static int can_native_linux_get_state(const struct device *dev, enum can_state *state,
+				      struct can_bus_err_cnt *err_cnt)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	if (state != NULL) {
 		if (!data->started) {
@@ -369,9 +370,9 @@ static int can_npl_get_state(const struct device *dev, enum can_state *state,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static int can_npl_recover(const struct device *dev, k_timeout_t timeout)
+static int can_native_linux_recover(const struct device *dev, k_timeout_t timeout)
 {
-	struct can_npl_data *data = dev->data;
+	struct can_native_linux_data *data = dev->data;
 
 	ARG_UNUSED(timeout);
 
@@ -383,16 +384,16 @@ static int can_npl_recover(const struct device *dev, k_timeout_t timeout)
 }
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 
-static void can_npl_set_state_change_callback(const struct device *dev,
-					      can_state_change_callback_t cb,
-					      void *user_data)
+static void can_native_linux_set_state_change_callback(const struct device *dev,
+						       can_state_change_callback_t cb,
+						       void *user_data)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
 }
 
-static int can_npl_get_core_clock(const struct device *dev, uint32_t *rate)
+static int can_native_linux_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	/* Return 16MHz as an realistic value for the testcases */
 	*rate = 16000000;
@@ -400,29 +401,29 @@ static int can_npl_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-static int can_npl_get_max_filters(const struct device *dev, bool ide)
+static int can_native_linux_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static const struct can_driver_api can_npl_driver_api = {
-	.start = can_npl_start,
-	.stop = can_npl_stop,
-	.get_capabilities = can_npl_get_capabilities,
-	.set_mode = can_npl_set_mode,
-	.set_timing = can_npl_set_timing,
-	.send = can_npl_send,
-	.add_rx_filter = can_npl_add_rx_filter,
-	.remove_rx_filter = can_npl_remove_rx_filter,
-	.get_state = can_npl_get_state,
+static const struct can_driver_api can_native_linux_driver_api = {
+	.start = can_native_linux_start,
+	.stop = can_native_linux_stop,
+	.get_capabilities = can_native_linux_get_capabilities,
+	.set_mode = can_native_linux_set_mode,
+	.set_timing = can_native_linux_set_timing,
+	.send = can_native_linux_send,
+	.add_rx_filter = can_native_linux_add_rx_filter,
+	.remove_rx_filter = can_native_linux_remove_rx_filter,
+	.get_state = can_native_linux_get_state,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-	.recover = can_npl_recover,
+	.recover = can_native_linux_recover,
 #endif
-	.set_state_change_callback = can_npl_set_state_change_callback,
-	.get_core_clock = can_npl_get_core_clock,
-	.get_max_filters = can_npl_get_max_filters,
+	.set_state_change_callback = can_native_linux_set_state_change_callback,
+	.get_core_clock = can_native_linux_get_core_clock,
+	.get_max_filters = can_native_linux_get_max_filters,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
@@ -438,7 +439,7 @@ static const struct can_driver_api can_npl_driver_api = {
 		.prescaler = 0xFFFF
 	},
 #ifdef CONFIG_CAN_FD_MODE
-	.set_timing_data = can_npl_set_timing_data,
+	.set_timing_data = can_native_linux_set_timing_data,
 	.timing_data_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x01,
@@ -456,10 +457,10 @@ static const struct can_driver_api can_npl_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-static int can_npl_init(const struct device *dev)
+static int can_native_linux_init(const struct device *dev)
 {
-	const struct can_npl_config *cfg = dev->config;
-	struct can_npl_data *data = dev->data;
+	const struct can_native_linux_config *cfg = dev->config;
+	struct can_native_linux_data *data = dev->data;
 
 	k_mutex_init(&data->filter_mutex);
 	k_sem_init(&data->tx_idle, 1, 1);
@@ -473,7 +474,7 @@ static int can_npl_init(const struct device *dev)
 	k_thread_create(&data->rx_thread, data->rx_thread_stack,
 			K_KERNEL_STACK_SIZEOF(data->rx_thread_stack),
 			rx_thread, (void *)dev, NULL, NULL,
-			CONFIG_CAN_NATIVE_POSIX_LINUX_RX_THREAD_PRIORITY,
+			CONFIG_CAN_NATIVE_LINUX_RX_THREAD_PRIORITY,
 			0, K_NO_WAIT);
 
 	LOG_DBG("Init of %s done", dev->name);
@@ -481,17 +482,18 @@ static int can_npl_init(const struct device *dev)
 	return 0;
 }
 
-#define CAN_NATIVE_POSIX_LINUX_INIT(inst)					\
+#define CAN_NATIVE_LINUX_INIT(inst)						\
 										\
-static const struct can_npl_config can_npl_cfg_##inst = {			\
+static const struct can_native_linux_config can_native_linux_cfg_##inst = {	\
 	.if_name = DT_INST_PROP(inst, host_interface),				\
 };										\
 										\
-static struct can_npl_data can_npl_data_##inst;					\
+static struct can_native_linux_data can_native_linux_data_##inst;		\
 										\
-CAN_DEVICE_DT_INST_DEFINE(inst, can_npl_init, NULL,				\
-			  &can_npl_data_##inst, &can_npl_cfg_##inst,		\
+CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,			\
+			  &can_native_linux_data_##inst,			\
+			  &can_native_linux_cfg_##inst,				\
 			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,		\
-			  &can_npl_driver_api);
+			  &can_native_linux_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_POSIX_LINUX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)
