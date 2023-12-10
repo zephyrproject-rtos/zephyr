@@ -251,6 +251,9 @@ struct mgmt_evt_op_cmd_arg {
 	uint8_t id;
 
 	union {
+		/** #mcumgr_op_t used in #MGMT_EVT_OP_CMD_RECV */
+		uint8_t op;
+
 		/** #mcumgr_err_t, used in #MGMT_EVT_OP_CMD_DONE */
 		int err;
 
