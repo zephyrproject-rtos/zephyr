@@ -213,7 +213,7 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 #if defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 		cmd_recv.group = req_hdr->nh_group;
 		cmd_recv.id = req_hdr->nh_id;
-		cmd_recv.err = MGMT_ERR_EOK;
+		cmd_recv.op = req_hdr->nh_op;
 
 		/* Send request to application to check if handler should run or not. */
 		status = mgmt_callback_notify(MGMT_EVT_OP_CMD_RECV, &cmd_recv, sizeof(cmd_recv),
