@@ -449,6 +449,23 @@ The following peripherals are currently provided with this board:
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
 
+**Input events**
+  A driver is provided to read input events from a Linux evdev input device and
+  inject them back into the Zephyr input subsystem.
+
+  The driver is automatically enabled when :kconfig:option:`CONFIG_INPUT` is
+  enabled and the devicetree contains a node such as:
+
+  .. code-block:: dts
+
+     evdev {
+       compatible = "zephyr,native-linux-evdev";
+     };
+
+  The application then has to be run with a command line option to specify
+  which evdev device node has to be used, for example
+  ``zephyr.exe --evdev=/dev/input/event0``.
+
 .. _native_ptty_uart:
 
 PTTY UART
@@ -652,6 +669,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      gpio, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, all
      i2c, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, all
      input, input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, all
+     input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, all
      log backend, :ref:`native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, all
      rtc, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, all
      serial, :ref:`uart native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, all
