@@ -19,7 +19,7 @@ tests:
   drivers.can.build_all.mcp251xfd:
     extra_args: SHIELD=mikroe_mcp2518fd_click
     platform_allow: lpcxpresso55s28
-  drivers.can.build_all.native_posix_linux:
+  drivers.can.build_all.native_linux:
     platform_allow:
       - native_posix
       - native_posix_64
