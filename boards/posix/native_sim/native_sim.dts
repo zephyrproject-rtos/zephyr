@@ -195,7 +195,7 @@
 
 	can0: can {
 		status = "disabled";
-		compatible = "zephyr,native-posix-linux-can";
+		compatible = "zephyr,native-linux-can";
 		/* adjust zcan0 to desired host interface or create an alternative
 		 * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
 		 */

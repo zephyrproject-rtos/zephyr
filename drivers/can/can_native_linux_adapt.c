@@ -34,7 +34,7 @@
 #error "This driver can only be built on Linux systems"
 #endif
 
-#include "can_native_posix_linux_socketcan.h"
+#include "can_native_linux_adapt.h"
 
 #ifndef CANFD_FDF
 /* Linux kernels before v5.14 do not define CANFD_FDF */

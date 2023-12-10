@@ -1166,7 +1166,7 @@ Devicetree
     * :dtcompatible:`zephyr,coredump`
     * :dtcompatible:`zephyr,ieee802154-uart-pipe`
     * :dtcompatible:`zephyr,native-posix-counter`
-    * :dtcompatible:`zephyr,native-posix-linux-can`
+    * ``zephyr,native-posix-linux-can``
     * :dtcompatible:`zephyr,sdl-kscan`
     * :dtcompatible:`zephyr,sdmmc-disk`
     * :dtcompatible:`zephyr,w1-serial`

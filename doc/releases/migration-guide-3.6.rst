@@ -128,6 +128,15 @@ Device Drivers and Device Tree
             status = "okay";
     };
 
+* The native Linux SocketCAN driver, which can now be used in both :ref:`native_posix<native_posix>`
+  and :ref:`native_sim<native_sim>` with or without an embedded C-library, has been renamed to
+  reflect this:
+
+  * The devicetree compatible was renamed from ``zephyr,native-posix-linux-can`` to
+    :dtcompatible:`zephyr,native-linux-can`.
+  * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
+    :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
+
 Power Management
 ================
 

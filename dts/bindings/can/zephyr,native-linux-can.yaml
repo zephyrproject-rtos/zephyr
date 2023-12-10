@@ -3,7 +3,7 @@
 
 description: Zephyr CAN driver using Linux SocketCAN
 
-compatible: "zephyr,native-posix-linux-can"
+compatible: "zephyr,native-linux-can"
 
 include: can-controller.yaml
 

@@ -28,21 +28,21 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE        can_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SHELL        can_shell.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_NXP_S32_CANXL    can_nxp_s32_canxl.c)
 
-if(CONFIG_CAN_NATIVE_POSIX_LINUX)
+if(CONFIG_CAN_NATIVE_LINUX)
   if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
     zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
-    zephyr_library_sources(can_native_posix_linux.c)
+    zephyr_library_sources(can_native_linux.c)
 
     if (CONFIG_NATIVE_APPLICATION)
-      set_source_files_properties(can_native_posix_linux_socketcan.c
+      set_source_files_properties(can_native_linux_adapt.c
         PROPERTIES COMPILE_DEFINITIONS
         "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE")
-      zephyr_library_sources(can_native_posix_linux_socketcan.c)
+      zephyr_library_sources(can_native_linux_adapt.c)
     else()
-      target_sources(native_simulator INTERFACE can_native_posix_linux_socketcan.c)
+      target_sources(native_simulator INTERFACE can_native_linux_adapt.c)
     endif()
   else()
-    message(FATAL_ERROR "CONFIG_CAN_NATIVE_POSIX_LINUX only available on Linux")
+    message(FATAL_ERROR "CONFIG_CAN_NATIVE_LINUX is only available on Linux")
   endif()
 endif()
 
