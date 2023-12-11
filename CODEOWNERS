@@ -133,6 +133,7 @@
 /boards/shields/inventek_eswifi/          @nandojve
 /boards/xtensa/odroid_go/                 @ydamigos
 /boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
+/boards/xtensa/kincony_kc868_a32/         @bbilas
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
 /boards/arm64/mimx8mm_evk/                @MrVan @JiafeiPan
