@@ -15,23 +15,25 @@
 /* Re-defines MAC2STR with address of the element */
 #define MACADDR2STR(a) &(a)[0], &(a)[1], &(a)[2], &(a)[3], &(a)[4], &(a)[5]
 
-static const char * const supplicant_event_map[] = {
-	"CTRL-EVENT-CONNECTED",
-	"CTRL-EVENT-DISCONNECTED",
-	"CTRL-EVENT-ASSOC-REJECT",
-	"CTRL-EVENT-AUTH-REJECT",
-	"CTRL-EVENT-TERMINATING",
-	"CTRL-EVENT-SSID-TEMP-DISABLED",
-	"CTRL-EVENT-SSID-REENABLED",
-	"CTRL-EVENT-SCAN-STARTED",
-	"CTRL-EVENT-SCAN-RESULTS",
-	"CTRL-EVENT-SCAN-FAILED",
-	"CTRL-EVENT-BSS-ADDED",
-	"CTRL-EVENT-BSS-REMOVED",
-	"CTRL-EVENT-NETWORK-NOT-FOUND",
-	"CTRL-EVENT-NETWORK-ADDED",
-	"CTRL-EVENT-NETWORK-REMOVED",
-	"CTRL-EVENT-DSCP-POLICY",
+static const struct wpa_supp_event_info {
+	const char *event_str;
+	enum supplicant_event_num event;
+} wpa_supp_event_info[] = {
+	{ "CTRL-EVENT-CONNECTED", SUPPLICANT_EVENT_CONNECTED },
+	{ "CTRL-EVENT-DISCONNECTED", SUPPLICANT_EVENT_DISCONNECTED },
+	{ "CTRL-EVENT-ASSOC-REJECT", SUPPLICANT_EVENT_ASSOC_REJECT },
+	{ "CTRL-EVENT-AUTH-REJECT", SUPPLICANT_EVENT_AUTH_REJECT },
+	{ "CTRL-EVENT-SSID-TEMP-DISABLED", SUPPLICANT_EVENT_SSID_TEMP_DISABLED },
+	{ "CTRL-EVENT-SSID-REENABLED", SUPPLICANT_EVENT_SSID_REENABLED },
+	{ "CTRL-EVENT-BSS-ADDED", SUPPLICANT_EVENT_BSS_ADDED },
+	{ "CTRL-EVENT-BSS-REMOVED", SUPPLICANT_EVENT_BSS_REMOVED },
+	{ "CTRL-EVENT-TERMINATING", SUPPLICANT_EVENT_TERMINATING },
+	{ "CTRL-EVENT-SCAN-STARTED", SUPPLICANT_EVENT_SCAN_STARTED },
+	{ "CTRL-EVENT-SCAN-FAILED", SUPPLICANT_EVENT_SCAN_FAILED },
+	{ "CTRL-EVENT-NETWORK-NOT-FOUND", SUPPLICANT_EVENT_NETWORK_NOT_FOUND },
+	{ "CTRL-EVENT-NETWORK-ADDED", SUPPLICANT_EVENT_NETWORK_ADDED },
+	{ "CTRL-EVENT-NETWORK-REMOVED", SUPPLICANT_EVENT_NETWORK_REMOVED },
+	{ "CTRL-EVENT-DSCP-POLICY", SUPPLICANT_EVENT_DSCP_POLICY },
 };
 
 static void copy_mac_addr(const unsigned int *src, uint8_t *dst)
@@ -76,41 +78,45 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 				     char *supplicant_status)
 {
 	int ret = 1; /* For cases where parsing is not being done*/
-	int event = -1;
 	int i;
 	union supplicant_event_data *data;
 	unsigned int tmp_mac_addr[ETH_ALEN];
+	unsigned int event_prefix_len;
+	char *event_no_prefix;
+	struct wpa_supp_event_info event_info;
 
 	data = (union supplicant_event_data *)event_data->data;
 
-	for (i = 0; i < ARRAY_SIZE(supplicant_event_map); i++) {
-		if (strncmp(supplicant_status, supplicant_event_map[i],
-		    strlen(supplicant_event_map[i])) == 0) {
-			event = i;
+	for (i = 0; i < ARRAY_SIZE(wpa_supp_event_info); i++) {
+		if (strncmp(supplicant_status, wpa_supp_event_info[i].event_str,
+		    strlen(wpa_supp_event_info[i].event_str)) == 0) {
+			event_info = wpa_supp_event_info[i];
 			break;
 		}
 	}
 
-	if (i >= ARRAY_SIZE(supplicant_event_map)) {
+	if (i >= ARRAY_SIZE(wpa_supp_event_info)) {
 		/* This is not a bug but rather implementation gap (intentional or not) */
 		wpa_printf(MSG_DEBUG, "Event not supported: %s", supplicant_status);
 		return -ENOTSUP;
 	}
 
-	event_data->event = event;
+	/* Skip the event prefix and a space */
+	event_prefix_len = strlen(event_info.event_str) + 1;
+	event_no_prefix = supplicant_status + event_prefix_len;
+	event_data->event = event_info.event;
 
 	switch (event_data->event) {
 	case SUPPLICANT_EVENT_CONNECTED:
-		ret = sscanf(supplicant_status +
-			     sizeof("CTRL-EVENT-CONNECTED - Connection to") - 1,
-			     MACSTR, MACADDR2STR(tmp_mac_addr));
+		ret = sscanf(event_no_prefix, "- Connection to"
+			MACSTR, MACADDR2STR(tmp_mac_addr));
 		event_data->data_len = sizeof(data->connected);
 		copy_mac_addr(tmp_mac_addr, data->connected.bssid);
 		break;
 	case SUPPLICANT_EVENT_DISCONNECTED:
-		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-DISCONNECTED bssid=") - 1,
-			     MACSTR" reason=%d", MACADDR2STR(tmp_mac_addr),
-			     &data->disconnected.reason_code);
+		ret = sscanf(event_no_prefix,
+			MACSTR" reason=%d", MACADDR2STR(tmp_mac_addr),
+			&data->disconnected.reason_code);
 		event_data->data_len = sizeof(data->disconnected);
 		copy_mac_addr(tmp_mac_addr, data->disconnected.bssid);
 		break;
@@ -118,46 +124,42 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 		/* TODO */
 		break;
 	case SUPPLICANT_EVENT_AUTH_REJECT:
-		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-AUTH-REJECT ") - 1,
-			     MACSTR
-			     " auth_type=%u auth_transaction=%u status_code=%u",
-			     MACADDR2STR(tmp_mac_addr),
-			     &data->auth_reject.auth_type,
-			     &data->auth_reject.auth_transaction,
-			     &data->auth_reject.status_code);
+		ret = sscanf(event_no_prefix, MACSTR
+			" auth_type=%u auth_transaction=%u status_code=%u",
+			MACADDR2STR(tmp_mac_addr),
+			&data->auth_reject.auth_type,
+			&data->auth_reject.auth_transaction,
+			&data->auth_reject.status_code);
 		event_data->data_len = sizeof(data->auth_reject);
 		copy_mac_addr(tmp_mac_addr, data->auth_reject.bssid);
 		break;
 	case SUPPLICANT_EVENT_SSID_TEMP_DISABLED:
-		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-SSID-TEMP-DISABLED ") - 1,
-			     "id=%d ssid=%s auth_failures=%u duration=%d reason=%s",
-			     &data->temp_disabled.id, data->temp_disabled.ssid,
-			     &data->temp_disabled.auth_failures,
-			     &data->temp_disabled.duration,
-			     data->temp_disabled.reason_code);
+		ret = sscanf(event_no_prefix,
+			"id=%d ssid=%s auth_failures=%u duration=%d reason=%s",
+			&data->temp_disabled.id, data->temp_disabled.ssid,
+			&data->temp_disabled.auth_failures,
+			&data->temp_disabled.duration,
+			data->temp_disabled.reason_code);
 		event_data->data_len = sizeof(data->temp_disabled);
 		break;
 	case SUPPLICANT_EVENT_SSID_REENABLED:
-		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-SSID-REENABLED ") - 1,
-			     "id=%d ssid=%s", &data->reenabled.id,
-			     data->reenabled.ssid);
+		ret = sscanf(event_no_prefix,
+			"id=%d ssid=%s", &data->reenabled.id,
+			data->reenabled.ssid);
 		event_data->data_len = sizeof(data->reenabled);
 		break;
 	case SUPPLICANT_EVENT_BSS_ADDED:
-		mac = data->bss_added.bssid;
-		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-BSS-ADDED ") - 1,
-			     "%u "MACSTR,
-			     &data->bss_added.id,
-			     MACADDR2STR(tmp_mac_addr));
+		ret = sscanf(event_no_prefix, "%u "MACSTR,
+			&data->bss_added.id,
+			MACADDR2STR(tmp_mac_addr));
 		copy_mac_addr(tmp_mac_addr, data->bss_added.bssid);
 		event_data->data_len = sizeof(data->bss_added);
 		break;
 	case SUPPLICANT_EVENT_BSS_REMOVED:
-		mac = data->bss_removed.bssid;
-		ret = sscanf(supplicant_status + sizeof("CTRL-EVENT-BSS-REMOVED ") - 1,
-			     "%u "MACSTR,
-			     &data->bss_removed.id,
-			     MACADDR2STR(tmp_mac_addr));
+		ret = sscanf(event_no_prefix,
+			"%u "MACSTR,
+			&data->bss_removed.id,
+			MACADDR2STR(tmp_mac_addr));
 		event_data->data_len = sizeof(data->bss_removed);
 		copy_mac_addr(tmp_mac_addr, data->bss_removed.bssid);
 		break;
@@ -167,7 +169,7 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	case SUPPLICANT_EVENT_NETWORK_NOT_FOUND:
 	case SUPPLICANT_EVENT_NETWORK_ADDED:
 	case SUPPLICANT_EVENT_NETWORK_REMOVED:
-		strncpy(data->supplicant_event_str, supplicant_event_map[event],
+		strncpy(data->supplicant_event_str, event_info.event_str,
 			sizeof(data->supplicant_event_str));
 		event_data->data_len = strlen(data->supplicant_event_str) + 1;
 	case SUPPLICANT_EVENT_DSCP_POLICY:
@@ -179,7 +181,7 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 
 	if (ret <= 0) {
 		wpa_printf(MSG_ERROR, "%s Parse failed: %s",
-			   supplicant_event_map[event_data->event], strerror(errno));
+			   event_info.event_str, strerror(errno));
 	}
 
 	return ret;
