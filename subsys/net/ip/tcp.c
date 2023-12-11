@@ -714,15 +714,11 @@ static void tcp_conn_release(struct k_work *work)
 
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
-	/* If there is any pending data, pass that to application */
+	/* Application is no longer there, unref any remaining packets on the
+	 * fifo (although there shouldn't be any at this point.)
+	 */
 	while ((pkt = k_fifo_get(&conn->recv_data, K_NO_WAIT)) != NULL) {
-		if (net_context_packet_received(
-			    (struct net_conn *)conn->context->conn_handler,
-			    pkt, NULL, NULL, conn->recv_user_data) ==
-		    NET_DROP) {
-			/* Application is no longer there, unref the pkt */
-			tcp_pkt_unref(pkt);
-		}
+		tcp_pkt_unref(pkt);
 	}
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
