@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(net_echo_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/dhcpv6.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 
 #include "common.h"
@@ -119,6 +122,22 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
+static void dhcp_init_cb(struct net_if *iface, void *user_data)
+{
+	if (IS_ENABLED(CONFIG_NET_DHCPV4)) {
+		net_dhcpv4_start(iface);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_DHCPV6)) {
+		struct net_dhcpv6_params params = {
+			.request_addr = IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_REQUEST_ADDR),
+			.request_prefix = IS_ENABLED(CONFIG_NET_CONFIG_DHCPV6_REQUEST_PREFIX),
+		};
+
+		net_dhcpv6_start(iface, &params);
+	}
+}
+
 static void init_app(void)
 {
 #if defined(CONFIG_USERSPACE)
@@ -198,6 +217,10 @@ static void init_app(void)
 	init_tunnel();
 
 	init_usb();
+
+	if (!IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS)) {
+		net_if_foreach(dhcp_init_cb, NULL);
+	}
 }
 
 static int cmd_sample_quit(const struct shell *sh,
