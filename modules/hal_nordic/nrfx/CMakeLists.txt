@@ -71,6 +71,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_NRF52833       ${MDK_DIR}/system_nrf5283
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52840       ${MDK_DIR}/system_nrf52840.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUAPP ${MDK_DIR}/system_nrf5340_application.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF5340_CPUNET ${MDK_DIR}/system_nrf5340_network.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF54LX ${MDK_DIR}/system_nrf54l.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91X  ${MDK_DIR}/system_nrf91.c)
 
 zephyr_library_sources(nrfx_glue.c)
@@ -139,4 +140,16 @@ if(DEFINED uicr_path)
   if(${gpio_as_nreset})
     zephyr_library_compile_definitions(CONFIG_GPIO_AS_PINRESET)
   endif()
+endif()
+
+if(CONFIG_SOC_NRF54L15)
+	dt_prop(clock_frequency PATH "/cpus/cpu@0" PROPERTY "clock-frequency")
+	math(EXPR clock_frequency_mhz "${clock_frequency} / 1000000")
+	zephyr_compile_definitions("NRF_CONFIG_CPU_FREQ_MHZ=${clock_frequency_mhz}")
+endif()
+
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
+
+if(CONFIG_SOC_SERIES_NRF54LX AND CONFIG_NRFX_DPPI)
+  zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
 endif()
