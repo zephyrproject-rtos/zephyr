@@ -535,7 +535,8 @@ class RimageSigner(Signer):
 
         sign_base = [tool_path]
 
-        # Sub-command arg '-q' takes precedence over west '-v'
+        # Align rimage verbosity.
+        # Sub-command arg 'west sign -q' takes precedence over west '-v'
         if not args.quiet and args.verbose:
             sign_base += ['-v'] * args.verbose
 
@@ -562,8 +563,7 @@ class RimageSigner(Signer):
         sign_base += (['-o', out_bin] + sign_config_extra_args +
                       extra_ri_args + args.tool_args + components)
 
-        if not args.quiet:
-            log.inf(quote_sh_list(sign_base))
+        command.inf(quote_sh_list(sign_base))
         subprocess.check_call(sign_base)
 
         if no_manifest:
