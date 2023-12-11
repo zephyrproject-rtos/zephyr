@@ -281,3 +281,4 @@ API Reference
 *************
 
 .. doxygengroup:: coap_service
+.. doxygengroup:: coap_mgmt
