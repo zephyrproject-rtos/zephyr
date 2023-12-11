@@ -111,7 +111,7 @@ zephyr_interface_library_named(mbedTLS)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
-        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_driver_wrappers.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_driver_wrappers_no_static.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_ecp.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_hash.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_mac.c
