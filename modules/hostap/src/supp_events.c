@@ -92,7 +92,8 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 	}
 
 	if (i >= ARRAY_SIZE(supplicant_event_map)) {
-		wpa_printf(MSG_ERROR, "Event not supported: %s\n", supplicant_status);
+		/* This is not a bug but rather implementation gap (intentional or not) */
+		wpa_printf(MSG_DEBUG, "Event not supported: %s", supplicant_status);
 		return -ENOTSUP;
 	}
 
