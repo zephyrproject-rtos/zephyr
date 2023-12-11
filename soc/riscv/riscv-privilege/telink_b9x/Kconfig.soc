@@ -16,6 +16,13 @@ config B9xCPU_RISCV32
 
 endchoice
 
+config TELINK_B92_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_B92
+	select RISCV_PMP
+	help
+		This option enables Telink B92 PMP(memory protection) module.
+
 config TELINK_B9x_HWDSP
 	bool "Support Hardware DSP"
 	select RISCV_SOC_CONTEXT_SAVE
@@ -51,6 +58,9 @@ config SOC_RISCV_TELINK_B92
 	select INCLUDE_RESET_VECTOR
 
 endchoice
+
+config PMP_SLOTS
+	default 16
 
 config PM_DEVICE
 	default y if PM
