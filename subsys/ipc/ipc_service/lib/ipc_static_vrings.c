@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,7 +169,6 @@ int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 
 	vr->shm_device.name = SHM_DEVICE_NAME;
 	vr->shm_device.num_regions = 1;
-	vr->shm_physmap[0] = vr->shm_addr;
 
 	metal_io_init(vr->shm_device.regions, (void *) vr->shm_addr,
 		      vr->shm_physmap, vr->shm_size, -1, 0, NULL);
