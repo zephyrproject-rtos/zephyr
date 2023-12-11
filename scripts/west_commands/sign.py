@@ -34,9 +34,11 @@ In the simplest usage, run this from your build directory:
 
    west sign -t your_tool -- ARGS_FOR_YOUR_TOOL
 
-The "ARGS_FOR_YOUR_TOOL" value can be any additional
-arguments you want to pass to the tool, such as the location of a
-signing key etc.
+The "ARGS_FOR_YOUR_TOOL" value can be any additional arguments you want to
+pass to the tool, such as the location of a signing key etc. Depending on
+which sort of ARGS_FOR_YOUR_TOOLS you use, the `--` separator/sentinel may
+not always be required. To avoid ambiguity and having to find and
+understand POSIX 12.2 Guideline 10, always use `--`.
 
 See tool-specific help below for details.'''
 
