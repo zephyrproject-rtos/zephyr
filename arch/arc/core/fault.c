@@ -104,7 +104,7 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 }
 #endif
 
-#ifdef CONFIG_ARC_EXCEPTION_DEBUG
+#ifdef CONFIG_EXCEPTION_DEBUG
 /* For EV_ProtV, the numbering/semantics of the parameter are consistent across
  * several codes, although not all combination will be reported.
  *
@@ -335,7 +335,7 @@ static void dump_exception_info(uint32_t vector, uint32_t cause, uint32_t parame
 		break;
 	}
 }
-#endif /* CONFIG_ARC_EXCEPTION_DEBUG */
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 /*
  * @brief Fault handler
@@ -387,7 +387,7 @@ void _Fault(z_arch_esf_t *esf, uint32_t old_sp)
 	LOG_ERR("***** Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x",
 		vector, cause, parameter);
 	LOG_ERR("Address 0x%x", exc_addr);
-#ifdef CONFIG_ARC_EXCEPTION_DEBUG
+#ifdef CONFIG_EXCEPTION_DEBUG
 	dump_exception_info(vector, cause, parameter);
 #endif
 
