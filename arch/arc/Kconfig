@@ -376,15 +376,6 @@ config ARC_EXCEPTION_STACK_SIZE
 
 endmenu
 
-config ARC_EXCEPTION_DEBUG
-	bool "Unhandled exception debugging information"
-	default n
-	depends on PRINTK || LOG
-	help
-	  Print human-readable information about exception vectors, cause codes,
-	  and parameters, at a cost of code/data size for the human-readable
-	  strings.
-
 config ARC_EARLY_SOC_INIT
 	bool "Make early stage SoC-specific initialization"
 	help
