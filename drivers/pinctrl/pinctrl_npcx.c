@@ -139,11 +139,24 @@ static void npcx_psl_input_detection_configure(const pinctrl_soc_pin_t *pin)
 	}
 
 	/* Configure detection mode of PSL input pads */
+#if defined(CONFIG_PINCTRL_NPCX_EX)
+	if (pin->flags.psl_in_mode == NPCX_PSL_IN_MODE_EDGE) {
+		inst_glue->PSL_CTS3 |= BIT(psl_in->port);
+	} else {
+		inst_glue->PSL_CTS3 &= ~BIT(psl_in->port);
+	}
+
+	/* Clear event bits */
+	inst_glue->PSL_CTS |= BIT(psl_in->port);
+	inst_glue->PSL_IN_POS |= BIT(psl_in->port);
+	inst_glue->PSL_IN_NEG |= BIT(psl_in->port);
+#else
 	if (pin->flags.psl_in_mode == NPCX_PSL_IN_MODE_EDGE) {
 		inst_glue->PSL_CTS |= NPCX_PSL_CTS_MODE_BIT(psl_in->port);
 	} else {
 		inst_glue->PSL_CTS &= ~NPCX_PSL_CTS_MODE_BIT(psl_in->port);
 	}
+#endif /* CONFIG_PINCTRL_NPCX_EX */
 }
 
 static void npcx_device_control_configure(const pinctrl_soc_pin_t *pin)
