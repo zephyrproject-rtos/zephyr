@@ -19,7 +19,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = < 0x0 >;
-			riscv,isa = "rv64imac_zicsr_zfencei";
+			riscv,isa = "rv64imac_zicsr_zifencei";
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
