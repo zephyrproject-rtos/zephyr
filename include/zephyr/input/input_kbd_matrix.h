@@ -38,7 +38,7 @@ typedef uint8_t kbd_row_t;
 #define PRIkbdrow "%02x"
 #endif
 
-#if CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
+#if defined(CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC) || defined(__DOXYGEN__)
 #define INPUT_KBD_ACTUAL_KEY_MASK_CONST
 /**
  * @brief Enables or disables a specific row, column combination in the actual
@@ -47,7 +47,8 @@ typedef uint8_t kbd_row_t;
  * This allows enabling or disabling spcific row, column combination in the
  * actual key mask in runtime. It can be useful if some of the keys are not
  * present in some configuration, and the specific configuration is determined
- * in runtime. Requires CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC=y.
+ * in runtime. Requires @kconfig{CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC} to
+ * be enabled.
  *
  * @param dev Pointer to the keyboard matrix device.
  * @param row The matrix row to enable or disable.
@@ -276,12 +277,13 @@ struct input_kbd_matrix_common_data {
  */
 void input_kbd_matrix_poll_start(const struct device *dev);
 
-#ifdef CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK
+#if defined(CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK) || defined(__DOXYGEN__)
 /**
  * @brief Drive column hook
  *
  * This can be implemented by the application to handle column selection
- * quirks. Called after the driver specific drive_column function.
+ * quirks. Called after the driver specific drive_column function. Requires
+ * @kconfig{CONFIG_INPUT_KBD_DRIVE_COLUMN_HOOK} to be enabled.
  *
  * @param dev Keyboard matrix device instance.
  * @param col The column to drive, or
