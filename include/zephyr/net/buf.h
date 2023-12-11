@@ -28,7 +28,11 @@ extern "C" {
  */
 
 /* Alignment needed for various parts of the buffer definition */
+#if CONFIG_NET_BUF_ALIGNMENT == 0
 #define __net_buf_align __aligned(sizeof(void *))
+#else
+#define __net_buf_align __aligned(CONFIG_NET_BUF_ALIGNMENT)
+#endif
 
 /**
  *  @brief Define a net_buf_simple stack variable.
