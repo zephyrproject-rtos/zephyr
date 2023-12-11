@@ -136,4 +136,23 @@ int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter)
  */
 int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
 
+#ifdef CONFIG_AP
+/**
+ * @brief Set Wi-Fi AP configuration
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param params AP configuration parameters to set
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_enable(const struct device *dev,
+			 struct wifi_connect_req_params *params);
+
+/**
+ * @brief Disable Wi-Fi AP
+ * @param dev Wi-Fi interface name to use
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_disable(const struct device *dev);
+
+#endif /* CONFIG_AP */
 #endif /* ZEPHYR_SUPP_MGMT_H */
