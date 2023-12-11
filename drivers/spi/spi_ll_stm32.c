@@ -471,7 +471,6 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_int_errors(spi);
 #endif
 
-	spi_stm32_cs_control(dev, false);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -484,7 +483,10 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
+
+		spi_stm32_cs_control(dev, false);
 	}
+
 	/* BSY flag is cleared when MODF flag is raised */
 	if (LL_SPI_IsActiveFlag_MODF(spi)) {
 		LL_SPI_ClearFlag_MODF(spi);
