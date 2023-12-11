@@ -19,5 +19,6 @@ source "subsys/logging/Kconfig.template.log_config"
 comment "Device Drivers"
 
 source "drivers/cache/Kconfig.aspeed"
+source "drivers/cache/Kconfig.nrf"
 
 endif # CACHE
