@@ -292,16 +292,6 @@ config MULTIBOOT_MEMMAP
 
 endif # MULTIBOOT
 
-config EXCEPTION_DEBUG
-	bool "Unhandled exception debugging"
-	default y
-	depends on LOG
-	help
-	  Install handlers for various CPU exception/trap vectors to
-	  make debugging them easier, at a small expense in code size.
-	  This prints out the specific exception vector and any associated
-	  error codes.
-
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
 	depends on PRINTK
