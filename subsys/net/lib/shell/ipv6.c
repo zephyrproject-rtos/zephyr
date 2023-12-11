@@ -258,7 +258,7 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 	iface = net_if_get_by_index(idx);
 	if (!iface) {
 		PR_WARNING("No such interface in index %d\n", idx);
-		return -ENOEXEC;
+		return -ENOENT;
 	}
 
 	if (net_addr_pton(AF_INET6, argv[2], &addr)) {
