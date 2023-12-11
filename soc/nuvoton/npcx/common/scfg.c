@@ -98,6 +98,7 @@ void npcx_pinctrl_i2c_port_sel(int controller, int port)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();
 
+	/* Set SMB_SEL bit to select port 1, otherwise select port 0 */
 	if (port != 0) {
 		inst_glue->SMB_SEL |= BIT(controller);
 	} else {
@@ -138,10 +139,17 @@ int npcx_pinctrl_flash_write_protect_set(void)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
+#if defined(CONFIG_PINCTRL_NPCX_EX)
+	inst_scfg->DEV_CTL3 |= BIT(NPCX_DEV_CTL3_WP_IF);
+	if (!IS_BIT_SET(inst_scfg->DEV_CTL3, NPCX_DEV_CTL3_WP_IF)) {
+		return -EIO;
+	}
+#else
 	inst_scfg->DEV_CTL4 |= BIT(NPCX_DEV_CTL4_WP_IF);
 	if (!IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF)) {
 		return -EIO;
 	}
+#endif
 
 	return 0;
 }
@@ -150,7 +158,11 @@ bool npcx_pinctrl_flash_write_protect_is_set(void)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
+#if defined(CONFIG_PINCTRL_NPCX_EX)
+	return IS_BIT_SET(inst_scfg->DEV_CTL3, NPCX_DEV_CTL3_WP_IF);
+#else
 	return IS_BIT_SET(inst_scfg->DEV_CTL4, NPCX_DEV_CTL4_WP_IF);
+#endif
 }
 
 void npcx_host_interface_sel(enum npcx_hif_type hif_type)

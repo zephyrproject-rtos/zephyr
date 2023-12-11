@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton npcx pinctrl for npckn variant
+
+compatible: "nuvoton,npcx-pinctrl-npckn"
+
+include: nuvoton,npcx-pinctrl.yaml
