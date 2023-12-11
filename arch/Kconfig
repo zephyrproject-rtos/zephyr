@@ -514,6 +514,16 @@ config IRQ_OFFLOAD_NESTED
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
 
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on PRINTK || LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
+
 config EXTRA_EXCEPTION_INFO
 	bool "Collect extra exception info"
 	depends on ARCH_HAS_EXTRA_EXCEPTION_INFO
