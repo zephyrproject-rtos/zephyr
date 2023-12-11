@@ -223,6 +223,12 @@ Artificially long but functional example:
         will override the pytest_args from the harness_config in YAML file.
         """)
 
+    parser.add_argument(
+        "--robot-args", action="append",
+        help="""Pass additional arguments to the robot subprocess. This parameter
+        will override the robot_args from the harness_config in YAML file.
+        """)
+
     valgrind_asan_group.add_argument(
         "--enable-valgrind", action="store_true",
         help="""Run binary through valgrind and check for several memory access

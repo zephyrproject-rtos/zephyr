@@ -454,7 +454,7 @@ class TwisterLibraryHarness(Harness, abc.ABC):
     def _parse_report_file(self, report):
         tree = ET.parse(report)
         root = tree.getroot()
-        if elem_ts := root.find('testsuite'):
+        if elem_ts := root if root.tag == 'testsuite' else root.find('testsuite'):
             if elem_ts.get('failures') != '0':
                 self.state = 'failed'
                 self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} {self.tool_name} scenario(s) failed"
@@ -492,11 +492,53 @@ class Robotframework(TwisterLibraryHarness):
     def configure(self, instance: TestInstance):
         super(Robotframework, self)._configure(instance, "robot", 'robot_report.xml', 'robot.html')
 
+    def robot_run(self, timeout):
+        self._run(timeout)
+
     def _get_base_command(self):
-        assert False, "Implement me"
+        command = [
+            sys.executable,
+            "-m",
+            "twister_harness.robot_framework.robot_wrapper",
+            "--log",
+            self.log_file_path,
+            "--xunit",
+            self.report_file,
+            f'--outputdir={self.running_dir}/robot',
+             f'--build-dir={self.running_dir}',
+        ]
+        return command
 
     def _add_toolspecific_flags(self, handler: Handler, command: list[str]) -> None:
-        assert False, "Implement me"
+        config = self.instance.testsuite.harness_config
+        robot_test_path = config.get('robot_test_path', 'robot') if config else 'robot'
+        robot_args_yaml = config.get('robot_args', []) if config else []
+
+        if handler.options.robot_args:
+            for extra_args in handler.options.robot_args:
+                command.extend(shlex.split(extra_args))
+
+            if robot_args_yaml:
+                logger.warning(f'The robot_args ({handler.options.robot_args}) specified '
+                               'in the command line will override the robot_args defined '
+                               f'in the YAML file {robot_args_yaml}')
+        else:
+            command.extend(robot_args_yaml)
+
+        if handler.options.verbose > 1:
+            command.extend([
+                '--loglevel', 'DEBUG',
+            ])
+
+        if not PYTEST_PLUGIN_INSTALLED:
+            pytest_plugin_path = os.path.join(ZEPHYR_BASE, 'scripts', 'pylib',
+                                              'pytest-twister-harness',
+                                              'src')
+
+            command.extend(['--pythonpath', pytest_plugin_path])
+
+        command.append(os.path.normpath(os.path.join(self.source_dir, os.path.expanduser(os.path.expandvars(robot_test_path)))))
+
 
 class PytestHarnessException(TwisterLibraryHarnessException):
     """General exception for pytest."""

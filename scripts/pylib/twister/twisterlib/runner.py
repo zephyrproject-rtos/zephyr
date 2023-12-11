@@ -44,7 +44,7 @@ from twisterlib.environment import TwisterEnv
 from twisterlib.testsuite import TestSuite
 from twisterlib.platform import Platform
 from twisterlib.testplan import change_skip_to_error_if_integration
-from twisterlib.harness import HarnessImporter, Pytest
+from twisterlib.harness import HarnessImporter, Pytest, Robotframework
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -1096,6 +1096,8 @@ class ProjectBuilder(FilterBuilder):
             #
             if isinstance(harness, Pytest):
                 harness.pytest_run(instance.handler.get_test_timeout())
+            elif isinstance(harness, Robotframework):
+                harness.robot_run(instance.handler.get_test_timeout())
             else:
                 instance.handler.handle(harness)
 
