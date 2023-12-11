@@ -698,6 +698,8 @@
     #include <nrfx_config_nrf5340_network.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
     #include <nrfx_config_nrf91.h>
+#elif defined(NRF54L15_ENGA_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf54l15_enga_application.h>
 #else
     #error "Unknown device."
 #endif
