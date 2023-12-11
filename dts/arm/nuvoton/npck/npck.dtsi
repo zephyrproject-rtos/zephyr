@@ -376,7 +376,7 @@
 		};
 
 		twd0: watchdog@400d8000 {
-			compatible = "nuvoton,npcx-watchdog";
+			compatible = "nuvoton,npcx-watchdog", "nuvoton,npcx-watchdog-npckn-v1";
 			reg = <0x400d8000 0x2000>;
 			t0-out = <&wui_t0out>;
 		};
