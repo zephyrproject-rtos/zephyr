@@ -46,7 +46,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         # Translate the op
 
         families = {'NRF51_FAMILY': 'NRF51', 'NRF52_FAMILY': 'NRF52',
-                    'NRF53_FAMILY': 'NRF53', 'NRF91_FAMILY': 'NRF91'}
+                    'NRF53_FAMILY': 'NRF53', 'NRF54L_FAMILY': 'NRF54L', 'NRF91_FAMILY': 'NRF91'}
         cores = {'NRFDL_DEVICE_CORE_APPLICATION': 'CP_APPLICATION',
                  'NRFDL_DEVICE_CORE_NETWORK': 'CP_NETWORK'}
 

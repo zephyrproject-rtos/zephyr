@@ -59,7 +59,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--nrf-family',
-                            choices=['NRF51', 'NRF52', 'NRF53', 'NRF91'],
+                            choices=['NRF51', 'NRF52', 'NRF53', 'NRF54L', 'NRF91'],
                             help='''MCU family; still accepted for
                             compatibility only''')
         parser.add_argument('--softreset', required=False,
@@ -161,6 +161,8 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             self.family = 'NRF52_FAMILY'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53X'):
             self.family = 'NRF53_FAMILY'
+        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54LX'):
+            self.family = 'NRF54L_FAMILY'
         elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91X'):
             self.family = 'NRF91_FAMILY'
         else:
