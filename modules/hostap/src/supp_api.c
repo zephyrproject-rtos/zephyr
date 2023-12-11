@@ -314,29 +314,15 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 	}
 }
 
-/* Public API */
-int supplicant_connect(const struct device *dev, struct wifi_connect_req_params *params)
+static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
+				       struct wifi_connect_req_params *params,
+				       bool mode_ap)
 {
+	int ret;
 	struct add_network_resp resp = {0};
 	char *chan_list = NULL;
 	struct wpa_supplicant *wpa_s;
 	int ret = 0;
-
-	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
-		wpa_printf(MSG_ERROR,
-			   "Interface %s is down, dropping connect",
-			   dev->name);
-		return -1;
-	}
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(dev);
-	if (!wpa_s) {
-		ret = -1;
-		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
-		goto out;
-	}
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		goto out;
@@ -348,7 +334,7 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 		goto out;
 	}
 
-	wpa_printf(MSG_DEBUG, "NET added: %d\n", resp.network_id);
+	wpa_printf(MSG_DEBUG, "NET added: %d", resp.network_id);
 
 	if (!wpa_cli_cmd_v("set_network %d ssid \"%s\"",
 			   resp.network_id, params->ssid)) {
@@ -475,22 +461,48 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 		goto out;
 	}
 
-	if (!wpa_cli_cmd_v("select_network %d", resp.network_id)) {
-		goto out;
-	}
-
-	zephyr_wpa_cli_cmd_v("select_network %d", resp.network_id);
-
-	wpas_api_ctrl.dev = dev;
-	wpas_api_ctrl.requested_op = CONNECT;
-	wpas_api_ctrl.connection_timeout = params->timeout;
-
-	goto out;
+	return 0;
 
 rem_net:
 	if (!wpa_cli_cmd_v("remove_network %d", resp.network_id)) {
 		goto out;
 	}
+
+out:
+	return ret;
+}
+
+/* Public API */
+int supplicant_connect(const struct device *dev, struct wifi_connect_req_params *params)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = 0;
+
+	if (!net_if_is_admin_up(net_if_lookup_by_dev(dev))) {
+		wpa_printf(MSG_ERROR,
+			   "Interface %s is down, dropping connect",
+			   dev->name);
+		return -1;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
+		goto out;
+	}
+
+	ret = wpas_add_and_config_network(wpa_s, params, false);
+	if (ret) {
+		wpa_printf(MSG_ERROR, "Failed to add and configure network for STA mode: %d", ret);
+		goto out;
+	}
+
+	wpas_api_ctrl.dev = dev;
+	wpas_api_ctrl.requested_op = CONNECT;
+	wpas_api_ctrl.connection_timeout = params->timeout;
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
