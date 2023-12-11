@@ -278,5 +278,19 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 
 const struct pm_state_info *pm_state_next_get(uint8_t cpu)
 {
-	return &z_cpus_pm_state[cpu];
+	k_spinlock_key_t key;
+	const struct pm_state_info *state_info;
+
+	__ASSERT(cpu < CONFIG_MP_MAX_NUM_CPUS,
+		 "Invalid cpu %d!", cpu);
+
+	key = k_spin_lock(&pm_forced_state_lock);
+	if (z_cpus_pm_forced_state[cpu].state != PM_STATE_ACTIVE) {
+		state_info = &z_cpus_pm_forced_state[cpu];
+	} else {
+		state_info = &z_cpus_pm_state[cpu];
+	}
+	k_spin_unlock(&pm_forced_state_lock, key);
+
+	return state_info;
 }
