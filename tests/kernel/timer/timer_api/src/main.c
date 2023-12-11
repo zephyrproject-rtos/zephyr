@@ -45,8 +45,8 @@ struct timer_data {
  * between the two clocks.  Produce a maximum error for a given
  * duration in microseconds.
  */
-#define BUSY_SLEW_THRESHOLD_TICKS(_us)				\
-	k_us_to_ticks_ceil32((_us) * BUSY_TICK_SLEW_PPM		\
+#define BUSY_SLEW_THRESHOLD_TICKS(_us)					\
+	k_us_to_ticks_ceil32((_us) * (uint64_t)BUSY_TICK_SLEW_PPM	\
 			     / PPM_DIVISOR)
 
 static void duration_expire(struct k_timer *timer);
