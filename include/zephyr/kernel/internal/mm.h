@@ -168,10 +168,10 @@ extern "C" {
  * This API is part of infrastructure still under development and may
  * change.
  *
- * @param virt [out] Output virtual address storage location
- * @param phys Physical address base of the memory region
- * @param size Size of the memory region
- * @param flags Caching mode and access flags, see K_MAP_* macros
+ * @param[out] virt Output virtual address storage location
+ * @param[in]  phys Physical address base of the memory region
+ * @param[in]  size Size of the memory region
+ * @param[in]  flags Caching mode and access flags, see K_MAP_* macros
  */
 void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size,
 		uint32_t flags);
