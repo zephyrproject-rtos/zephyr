@@ -56,6 +56,13 @@ enum charger_property {
 	CHARGER_PROP_CHARGE_TERM_CURRENT_UA,
 	/** Configuration of charge voltage regulation target in µV */
 	CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV,
+	/**
+	 * Configuration of the input current regulation target in µA
+	 *
+	 * This value is a rising current threshold that is regulated by reducing the charge
+	 * current output
+	 */
+	CHARGER_PROP_INPUT_REGULATION_CURRENT_UA,
 	/** Reserved to demark end of common charger properties */
 	CHARGER_PROP_COMMON_COUNT,
 	/**
@@ -200,6 +207,8 @@ union charger_propval {
 	uint32_t charge_term_current_ua;
 	/** CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV */
 	uint32_t const_charge_voltage_uv;
+	/** CHARGER_PROP_INPUT_REGULATION_CURRENT_UA */
+	uint32_t input_current_regulation_current_ua;
 };
 
 /**
