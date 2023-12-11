@@ -723,9 +723,11 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 * than expected on systems where the requested microsecond
 	 * delay cannot be exactly represented as an integer number of
 	 * ticks.
+	 * As above, use higher tolerance on platforms where the clock used
+	 * by the kernel timer and the one used for busy-waiting may be skewed.
 	 */
-	zassert_true(((int64_t)exp_ticks - (int64_t)now) <= (dur_ticks / 2) + 1,
-		     NULL);
+	zassert_true(((int64_t)exp_ticks - (int64_t)now)
+		     <= (dur_ticks / 2) + 1 + slew_ticks, NULL);
 }
 
 ZTEST_USER(timer_api, test_timeout_abs)
