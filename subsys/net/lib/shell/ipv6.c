@@ -219,6 +219,10 @@ static int cmd_net_ip6_add(const struct shell *sh, size_t argc, char *argv[])
 		if (ret < 0) {
 			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
 				 "join", net_sprint_ipv6_addr(&addr), idx, ret);
+			if (ret == -ENOTSUP) {
+				PR_INFO("Enable CONFIG_NET_IPV6_MLD for %s multicast "
+					"group\n", "joining");
+			}
 			return ret;
 		}
 	} else {
@@ -269,6 +273,10 @@ static int cmd_net_ip6_del(const struct shell *sh, size_t argc, char *argv[])
 		if (ret < 0) {
 			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
 				 "leave", net_sprint_ipv6_addr(&addr), idx, ret);
+			if (ret == -ENOTSUP) {
+				PR_INFO("Enable CONFIG_NET_IPV6_MLD for %s multicast "
+					"group\n", "leaving");
+			}
 			return ret;
 		}
 	} else {
