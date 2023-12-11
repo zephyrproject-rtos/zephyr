@@ -374,6 +374,45 @@ ZTEST(kbd_scan, test_kbd_actual_keymap)
 	kbd_scan_wait_for_idle();
 	assert_no_new_events();
 }
+
+ZTEST(kbd_scan, test_kbd_actual_key_map_set)
+{
+#if CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
+	kbd_row_t mask[4] = {0x00, 0xff, 0x00, 0x00};
+	const struct input_kbd_matrix_common_config cfg = {
+		.row_size = 3,
+		.col_size = 4,
+		.actual_key_mask = mask,
+	};
+	const struct device fake_dev = {
+		.config = &cfg,
+	};
+	int ret;
+
+	ret = input_kbd_matrix_actual_key_mask_set(&fake_dev, 0, 0, true);
+	zassert_equal(ret, 0);
+	zassert_equal(mask[0], 0x01);
+
+	ret = input_kbd_matrix_actual_key_mask_set(&fake_dev, 2, 1, false);
+	zassert_equal(ret, 0);
+	zassert_equal(mask[1], 0xfb);
+
+	ret = input_kbd_matrix_actual_key_mask_set(&fake_dev, 2, 3, true);
+	zassert_equal(ret, 0);
+	zassert_equal(mask[3], 0x04);
+
+	ret = input_kbd_matrix_actual_key_mask_set(&fake_dev, 3, 0, true);
+	zassert_equal(ret, -EINVAL);
+
+	ret = input_kbd_matrix_actual_key_mask_set(&fake_dev, 0, 4, true);
+	zassert_equal(ret, -EINVAL);
+
+	zassert_equal(memcmp(mask, (uint8_t[]){0x01, 0xfb, 0x00, 0x04}, 4), 0);
+#else
+	ztest_test_skip();
+#endif
+}
+
 static void *kbd_scan_setup(void)
 {
 	const struct input_kbd_matrix_common_config *cfg = test_dev->config;
