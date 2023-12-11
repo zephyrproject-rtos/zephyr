@@ -672,6 +672,15 @@ config BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_COUNT
 
 endif # BT_MESH_ACCESS_DELAYABLE_MSG
 
+config BT_MESH_DELAYABLE_PUBLICATION
+	bool "Delayable publication"
+	default y
+	help
+	  When enabled, the periodic publications are randomly delayed by 20 to 50ms. Publications
+	  triggered at the start of the stack or by the bt_mesh_model_publish() call are delayed by
+	  20 to 500ms. This option reduces the probability of collisions when multiple nodes publish
+	  at the same time.
+
 endmenu # Access layer
 
 menu "Models"

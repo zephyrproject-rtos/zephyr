@@ -255,6 +255,21 @@ message, it will send messages with delay close to expiration to free memory.
 When the mesh stack is suspended or reset, messages not yet sent are removed and
 the :c:member:`bt_mesh_send_cb.start` callback is raised with an error code.
 
+Delayable publications
+======================
+
+The delayable publication functionality implements the specification recommendations for message
+publication delays in the following cases:
+
+* Between 20 to 500 milliseconds when the Bluetooth Mesh stack starts or when the publication is
+  triggered by the :c:func:`bt_mesh_model_publish` function
+* Between 20 to 50 milliseconds for periodically published messages
+
+This feature is optional and enabled with the :kconfig:option:`CONFIG_BT_MESH_DELAYABLE_PUBLICATION`
+Kconfig option. When enabled, each model can enable or disable the delayable publication by setting
+the :c:member:`bt_mesh_model_pub.delayable` bit field to ``1`` or ``0`` correspondingly. This bit
+field can be changed at any time.
+
 API reference
 *************
 
