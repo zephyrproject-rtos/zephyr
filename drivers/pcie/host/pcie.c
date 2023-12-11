@@ -126,6 +126,8 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 			 bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
+	uint32_t cmd_reg = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	bool ret = false;
 #ifdef CONFIG_PCIE_CONTROLLER
 	const struct device *dev;
 #endif
@@ -156,6 +158,9 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
+	/* IO/memory decode should be disabled before sizing/update BAR. */
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg & (~0x3));
+
 	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 	size = pcie_conf_read(bdf, reg);
 	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
@@ -167,7 +172,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64 ||
 		    PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
 			/* Discard on invalid address */
-			return false;
+			goto err_exit;
 		}
 
 		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
@@ -176,20 +181,20 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 	} else if (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL ||
 		   PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE) {
 		/* Discard on invalid address */
-		return false;
+		goto err_exit;
 	}
 
 	if (PCIE_CONF_BAR_IO(phys_addr)) {
 		size = PCIE_CONF_BAR_IO_ADDR(size);
 		if (size == 0) {
 			/* Discard on invalid size */
-			return false;
+			goto err_exit;
 		}
 	} else {
 		size = PCIE_CONF_BAR_ADDR(size);
 		if (size == 0) {
 			/* Discard on invalid size */
-			return false;
+			goto err_exit;
 		}
 	}
 
@@ -201,14 +206,18 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 						PCIE_CONF_BAR_ADDR(phys_addr)
 						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
 					&bar->phys_addr)) {
-		return false;
+		goto err_exit;
 	}
 #else
 	bar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
 #endif /* CONFIG_PCIE_CONTROLLER */
 	bar->size = size & ~(size-1);
 
-	return true;
+	ret = true;
+err_exit:
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg);
+
+	return ret;
 }
 
 /**
