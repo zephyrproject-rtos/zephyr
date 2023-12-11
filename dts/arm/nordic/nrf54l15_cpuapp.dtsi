@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <nordic/nrf_common.dtsi>
+#include <nordic/nrf54l_common.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			clock-frequency = <DT_FREQ_M(128)>;
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			itm: itm@e0000000 {
+				compatible = "arm,armv8m-itm";
+				reg = <0xe0000000 0x1000>;
+				swo-ref-frequency = <DT_FREQ_M(128)>;
+			};
+		};
+	};
+
+	clocks {
+		lfxo: lfxo {
+			compatible = "nordic,nrf-lfxo";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+
+		hfxo: hfxo {
+			compatible = "nordic,nrf-hfxo";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
+	soc {
+		uicr: uicr@ffd000 {
+			compatible = "nordic,nrf-uicr";
+			reg = <0xffd000 0x1000>;
+		};
+
+		ficr: ficr@ffc000 {
+			compatible = "nordic,nrf-ficr";
+			reg = <0xffc000 0x1000>;
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			/* Common nRF54L15 peripheral description */
+			#include "nrf54l15_cpuapp_peripherals.dtsi"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&rram_controller {
+	rram0: rram@0 {
+		/*
+		 * "1524 KB non-volatile memory (RRAM) and 256 KB RAM"
+		 *    -- Product Specification
+		 * NB: 1524 = 1.5 * 1024 - 12
+		 */
+		reg = <0x0 DT_SIZE_K(1524)>;
+	};
+};
+
+/* Disable by default to use GRTC */
+&systick {
+	status = "disabled";
+};

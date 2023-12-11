@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include "nrf_common.dtsi"
+
+/ {
+	soc {
+		rram_controller: rram-controller@5004b000 {
+			compatible = "nordic,rram-controller";
+			reg = <0x5004b000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <75 NRF_DEFAULT_IRQ_PRIORITY>;
+			rram0: rram@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <1>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,flash-controller = &rram_controller;
+	};
+
+	sw_pwm: sw-pwm {
+		generator = <&timer21>;
+	};
+};
