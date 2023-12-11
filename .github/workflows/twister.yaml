@@ -22,12 +22,11 @@ concurrency:
 jobs:
   twister-build-prep:
     if: github.repository_owner == 'zephyrproject-rtos'
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.9.20240223
       options: '--entrypoint /bin/bash'
-      volumes:
-        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
       size: ${{ steps.output-services.outputs.size }}
@@ -54,7 +53,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         continue-on-error: true
         run: |
-          git clone --shared /github/cache/zephyrproject/zephyr .
+          git clone --shared /repo-cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -76,7 +75,7 @@ jobs:
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
-          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
 
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
@@ -119,14 +118,13 @@ jobs:
           echo "fullrun=${TWISTER_FULL}" >> $GITHUB_OUTPUT
 
   twister-build:
-    runs-on: zephyr-runner-linux-x64-4xlarge
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.7
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.9.20240223
       options: '--entrypoint /bin/bash'
-      volumes:
-        - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
@@ -152,7 +150,7 @@ jobs:
       - name: Clone cached Zephyr repository
         continue-on-error: true
         run: |
-          git clone --shared /github/cache/zephyrproject/zephyr .
+          git clone --shared /repo-cache/zephyrproject/zephyr .
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
@@ -176,14 +174,8 @@ jobs:
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
-          west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
-
-          # Hotfix until we have kitware ninja in the docker image.
-          # Needed for full functionality of the job server functionality in twister which only works with
-          # kitware supplied ninja version.
-          wget -c    https://github.com/Kitware/ninja/releases/download/v1.11.1.g95dee.kitware.jobserver-1/ninja-1.11.1.g95dee.kitware.jobserver-1_x86_64-linux-gnu.tar.gz -O - | tar xz --strip-components=1
-          sudo cp ninja /usr/local/bin
 
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
