@@ -189,6 +189,9 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${HOSTAP_SRC_BASE}/eap_server/eap_server_identity.c
 	${HOSTAP_SRC_BASE}/eap_server/eap_server_methods.c
 	${HOSTAP_SRC_BASE}/eapol_auth/eapol_auth_sm.c
+	${HOSTAP_SRC_BASE}/ap/mbo_ap.c
+	${HOSTAP_SRC_BASE}/ap/ctrl_iface_ap.c
+	${HOSTAP_SRC_BASE}/utils/crc32.c
 )
 
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
