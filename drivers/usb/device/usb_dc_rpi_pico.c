@@ -637,9 +637,9 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x (id: %d) -> type %d", ep, USB_EP_GET_IDX(ep), ep_state->type);
 
-	/* clear buffer state (EP0 starts with PID=1 for setup phase) */
-
-	*ep_state->buf_ctl = (USB_EP_GET_IDX(ep) == 0 ? USB_BUF_CTRL_DATA1_PID : 0);
+	/* clear buffer state */
+	*ep_state->buf_ctl = USB_BUF_CTRL_DATA0_PID;
+	ep_state->next_pid = 0;
 
 	/* EP0 doesn't have an ep_ctl */
 	if (ep_state->ep_ctl) {
@@ -652,7 +652,9 @@ int usb_dc_ep_enable(const uint8_t ep)
 		*ep_state->ep_ctl = val;
 	}
 
-	if (USB_EP_DIR_IS_OUT(ep) && ep != USB_CONTROL_EP_OUT) {
+	if (USB_EP_DIR_IS_OUT(ep) && ep != USB_CONTROL_EP_OUT &&
+	    ep_state->cb != usb_transfer_ep_callback) {
+		/* Start reading now, except for transfer managed eps */
 		return usb_dc_ep_start_read(ep, DATA_BUFFER_SIZE);
 	}
 
