@@ -41,6 +41,8 @@ struct channel_data {
 	void *user_data;
 	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
+	uint8_t src_inc;
+	uint8_t dst_inc;
 	dma_descriptor_t *curr_descriptor;
 	uint8_t num_of_descriptors;
 	bool descriptors_queued;
@@ -283,6 +285,8 @@ static void dma_mcux_lpc_clear_channel_data(struct channel_data *data)
 {
 	data->dma_callback = NULL;
 	data->dir = 0;
+	data->src_inc = 0;
+	data->dst_inc = 0;
 	data->descriptors_queued = false;
 	data->num_of_descriptors = 0;
 	data->curr_descriptor = NULL;
@@ -301,7 +305,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block_config;
 	uint32_t virtual_channel;
 	uint8_t otrig_index;
-	uint8_t src_inc, dst_inc;
+	uint8_t src_inc = 1, dst_inc = 1;
 	bool is_periph = true;
 	uint8_t width;
 	uint32_t max_xfer_bytes;
@@ -322,6 +326,15 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	 */
 	assert(config->dest_data_size == config->source_data_size);
 	width = config->dest_data_size;
+
+	/* If skip is set on both source and destination
+	 * then skip by the same amount on both sides
+	 */
+	if (block_config->source_gather_en && block_config->dest_scatter_en) {
+		assert(block_config->source_gather_interval ==
+		       block_config->dest_scatter_interval);
+	}
+
 	max_xfer_bytes = NXP_LPC_DMA_MAX_XFER * width;
 
 	/*
@@ -361,16 +374,53 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	switch (config->channel_direction) {
 	case MEMORY_TO_MEMORY:
 		is_periph = false;
-		src_inc = 1;
-		dst_inc = 1;
+		if (block_config->source_gather_en) {
+			src_inc = block_config->source_gather_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((src_inc > 4) || (src_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+
+		if (block_config->dest_scatter_en) {
+			dst_inc = block_config->dest_scatter_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((dst_inc > 4) || (dst_inc == 3)) {
+				return -EINVAL;
+			}
+		}
 		break;
 	case MEMORY_TO_PERIPHERAL:
-		src_inc = 1;
+		/* Set the source increment value */
+		if (block_config->source_gather_en) {
+			src_inc = block_config->source_gather_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((src_inc > 4) || (src_inc == 3)) {
+				return -EINVAL;
+			}
+		}
+
 		dst_inc = 0;
 		break;
 	case PERIPHERAL_TO_MEMORY:
 		src_inc = 0;
-		dst_inc = 1;
+
+		/* Set the destination increment value */
+		if (block_config->dest_scatter_en) {
+			dst_inc = block_config->dest_scatter_interval / width;
+			/* The current controller only supports incrementing the
+			 * source and destination up to 4 time transfer width
+			 */
+			if ((dst_inc > 4) || (dst_inc == 3)) {
+				return -EINVAL;
+			}
+		}
 		break;
 	default:
 		LOG_ERR("not support transfer direction");
@@ -409,6 +459,9 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	dma_mcux_lpc_clear_channel_data(data);
 
 	data->dir = config->channel_direction;
+	/* Save the increment values for the reload function */
+	data->src_inc = src_inc;
+	data->dst_inc = dst_inc;
 
 	if (data->busy) {
 		DMA_AbortTransfer(p_handle);
@@ -677,26 +730,11 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 	struct dma_mcux_lpc_dma_data *dev_data = dev->data;
 	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
-	uint8_t src_inc, dst_inc;
 	uint32_t xfer_config = 0U;
 
-	switch (data->dir) {
-	case MEMORY_TO_MEMORY:
-		src_inc = 1;
-		dst_inc = 1;
-		break;
-	case MEMORY_TO_PERIPHERAL:
-		src_inc = 1;
-		dst_inc = 0;
-		break;
-	case PERIPHERAL_TO_MEMORY:
-		src_inc = 0;
-		dst_inc = 1;
-		break;
-	default:
-		LOG_ERR("not support transfer direction");
-		return -EINVAL;
-	}
+	/* DMA controller requires that the address be aligned to transfer size */
+	assert(src == ROUND_UP(src, data->width));
+	assert(dst == ROUND_UP(dst, data->width));
 
 	if (!data->descriptors_queued) {
 		dma_handle_t *p_handle;
@@ -706,8 +744,8 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 		/* Only one buffer, enable interrupt */
 		xfer_config = DMA_CHANNEL_XFER(0UL, 0UL, 1UL, 0UL,
 					data->width,
-					src_inc,
-					dst_inc,
+					data->src_inc,
+					data->dst_inc,
 					size);
 		DMA_SubmitChannelTransferParameter(p_handle,
 						xfer_config,
@@ -721,7 +759,8 @@ static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
 		local_block.dest_address = dst;
 		local_block.block_size = size;
 		local_block.source_reload_en = 1;
-		dma_mcux_lpc_queue_descriptors(data, &local_block, src_inc, dst_inc, true);
+		dma_mcux_lpc_queue_descriptors(data, &local_block,
+					       data->src_inc, data->dst_inc, true);
 	}
 
 	return 0;
