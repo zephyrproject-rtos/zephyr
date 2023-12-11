@@ -16,6 +16,13 @@ zephyr_interface_library_named(mbedTLS)
         MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
+    # Prioritize TF-M PSA API in the include order.
+    if(CONFIG_BUILD_WITH_TFM)
+      target_include_directories(app PRIVATE
+        $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+      )
+    endif()
+
     # Add regular includes
     target_include_directories(mbedTLS INTERFACE
         ${ZEPHYR_CURRENT_MODULE_DIR}/include
@@ -76,7 +83,6 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_reader.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_trace.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/poly1305.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ripemd160.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/rsa_alt_helpers.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/rsa.c
@@ -107,7 +113,21 @@ zephyr_interface_library_named(mbedTLS)
 
     zephyr_library_named(mbedTLSCrypto)
 
-    if (CONFIG_MBEDTLS_PSA_CRYPTO_C)
+    zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/library)
+
+    if (CONFIG_BUILD_WITH_TFM)
+      # Workaround for issues it psa_util.c when compiled with library/psa_util.c
+      # - Include of PSA internal header psa_crypto_core.h
+      # - Missing helper function mbedtls_ecc_group_of_psa or mbedtls_ecc_group_to_psa
+      list(APPEND crypto_source
+        psa_util_tfm.c)
+    else()
+      list(APPEND crypto_source
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c)
+
+    endif()
+
+    if (CONFIG_MBEDTLS_PSA_CRYPTO_C AND NOT CONFIG_BUILD_WITH_TFM)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
@@ -119,11 +139,6 @@ zephyr_interface_library_named(mbedTLS)
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_se.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_storage.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_its_file.c
-      )
-    endif()
-
-    if (NOT CONFIG_BUILD_WITH_TFM)
-      list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_client.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
