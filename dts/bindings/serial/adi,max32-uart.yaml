@@ -49,3 +49,19 @@ properties:
     description: |
       Sets the number of data bits. Defaults to standard of 8 if not specified.
     default: 8
+
+  dmas:
+    description: |
+      DMA configuration used by asynchronous UART. Consists of a DMA instance,
+      channel number and a matching DMA slot.
+
+      For example dmas for TX, RX on UART2
+         dmas = <&dma0 1 MAX32_DMA_SLOT_UART2_TX>, <&dma0 2 MAX32_DMA_SLOT_UART2_RX>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.  This should be "tx" and "rx"
+      to match the dmas property.
+
+      For example
+         dma-names = "tx", "rx";
