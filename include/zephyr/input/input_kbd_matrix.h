@@ -38,6 +38,31 @@ typedef uint8_t kbd_row_t;
 #define PRIkbdrow "%02x"
 #endif
 
+#if CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
+#define INPUT_KBD_ACTUAL_KEY_MASK_CONST
+/**
+ * @brief Enables or disables a specific row, column combination in the actual
+ * key mask.
+ *
+ * This allows enabling or disabling spcific row, column combination in the
+ * actual key mask in runtime. It can be useful if some of the keys are not
+ * present in some configuration, and the specific configuration is determined
+ * in runtime. Requires CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC=y.
+ *
+ * @param dev Pointer to the keyboard matrix device.
+ * @param row The matrix row to enable or disable.
+ * @param col The matrix column to enable or disable.
+ * @param enabled Whether the specificied row, col has to be enabled or disabled.
+ *
+ * @retval 0 If the change is successful.
+ * @retval -errno Negative errno if row or col are out of range for the device.
+ */
+int input_kbd_matrix_actual_key_mask_set(const struct device *dev,
+					  uint8_t row, uint8_t col, bool enabled);
+#else
+#define INPUT_KBD_ACTUAL_KEY_MASK_CONST const
+#endif
+
 /** Maximum number of rows */
 #define INPUT_KBD_MATRIX_ROW_BITS NUM_BITS(kbd_row_t)
 
@@ -90,7 +115,7 @@ struct input_kbd_matrix_common_config {
 	uint32_t debounce_up_us;
 	uint32_t settle_time_us;
 	bool ghostkey_check;
-	const kbd_row_t *actual_key_mask;
+	INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t *actual_key_mask;
 
 	/* extra data pointers */
 	kbd_row_t *matrix_stable_state;
@@ -114,8 +139,9 @@ struct input_kbd_matrix_common_config {
 	IF_ENABLED(DT_NODE_HAS_PROP(node_id, actual_key_mask), ( \
 	BUILD_ASSERT(DT_PROP_LEN(node_id, actual_key_mask) == _col_size, \
 		     "actual-key-mask size does not match the number of columns"); \
-	static const kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask)[_col_size] = \
-		DT_PROP(node_id, actual_key_mask); \
+	static INPUT_KBD_ACTUAL_KEY_MASK_CONST kbd_row_t \
+		INPUT_KBD_MATRIX_DATA_NAME(node_id, actual_key_mask)[_col_size] = \
+			DT_PROP(node_id, actual_key_mask); \
 	)) \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, stable_state)[_col_size]; \
 	static kbd_row_t INPUT_KBD_MATRIX_DATA_NAME(node_id, unstable_state)[_col_size]; \
