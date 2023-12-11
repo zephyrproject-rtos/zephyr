@@ -323,3 +323,19 @@ int input_kbd_matrix_common_init(const struct device *dev)
 
 	return 0;
 }
+
+#if CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
+int input_kbd_matrix_actual_key_mask_set(const struct device *dev,
+					  uint8_t row, uint8_t col, bool enabled)
+{
+	const struct input_kbd_matrix_common_config *cfg = dev->config;
+
+	if (row >= cfg->row_size || col >= cfg->col_size) {
+		return -EINVAL;
+	}
+
+	WRITE_BIT(cfg->actual_key_mask[col], row, enabled);
+
+	return 0;
+}
+#endif
