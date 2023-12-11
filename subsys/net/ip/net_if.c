@@ -1001,6 +1001,10 @@ void net_if_mcast_monitor(struct net_if *iface,
 
 	k_mutex_unlock(&lock);
 }
+#else
+#define net_if_mcast_mon_register(...)
+#define net_if_mcast_mon_unregister(...)
+#define net_if_mcast_monitor(...)
 #endif
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
