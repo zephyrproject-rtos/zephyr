@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Google LLC
+ * Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -24,12 +28,16 @@ struct gpio_keys_pin_config {
 	struct gpio_dt_spec spec;
 	/** Zephyr code from devicetree */
 	uint32_t zephyr_code;
+	bool wakeup;
 };
 struct gpio_keys_config {
 	/** Debounce interval in milliseconds from devicetree */
 	uint32_t debounce_interval_ms;
 	const int num_keys;
 	const struct gpio_keys_pin_config *pin_cfg;
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pinctrl_cfg;
+#endif
 };
 
 struct gpio_keys_pin_data {
@@ -110,6 +118,7 @@ static int gpio_keys_init(const struct device *dev)
 {
 	struct gpio_keys_pin_data *pin_data = dev->data;
 	const struct gpio_keys_config *cfg = dev->config;
+	int flags;
 	int ret;
 
 	for (int i = 0; i < cfg->num_keys; i++) {
@@ -120,7 +129,11 @@ static int gpio_keys_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		flags = GPIO_INPUT;
+		if (cfg->pin_cfg[i].wakeup) {
+			flags |= GPIO_WAKEUP_SOURCE;
+		}
+		ret = gpio_pin_configure_dt(gpio, flags);
 		if (ret != 0) {
 			LOG_ERR("Pin %d configuration failed: %d", i, ret);
 			return ret;
@@ -138,6 +151,13 @@ static int gpio_keys_init(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_PINCTRL
+	ret = pinctrl_apply_state(cfg->pinctrl_cfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+#endif
+
 	return 0;
 }
 
@@ -149,9 +169,11 @@ static int gpio_keys_init(const struct device *dev)
 	{                                                                                          \
 		.spec = GPIO_DT_SPEC_GET(node_id, gpios),                                          \
 		.zephyr_code = DT_PROP(node_id, zephyr_code),                                      \
+		.wakeup = DT_PROP(node_id, wakeup_source),                                         \
 	}
 
 #define GPIO_KEYS_INIT(i)                                                                          \
+	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(i);))                                   \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(i, GPIO_KEYS_CFG_CHECK);                                 \
 	static const struct gpio_keys_pin_config gpio_keys_pin_config_##i[] = {                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(i, GPIO_KEYS_CFG_DEF, (,))};                 \
@@ -159,6 +181,7 @@ static int gpio_keys_init(const struct device *dev)
 		.debounce_interval_ms = DT_INST_PROP(i, debounce_interval_ms),                     \
 		.num_keys = ARRAY_SIZE(gpio_keys_pin_config_##i),                                  \
 		.pin_cfg = gpio_keys_pin_config_##i,                                               \
+		IF_ENABLED(CONFIG_PINCTRL, (.pinctrl_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),))    \
 	};                                                                                         \
 	static struct gpio_keys_pin_data                                                           \
 		gpio_keys_pin_data_##i[ARRAY_SIZE(gpio_keys_pin_config_##i)];                      \
