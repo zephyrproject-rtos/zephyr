@@ -444,6 +444,19 @@ ZTEST(power_management_1cpu, test_device_state_lock)
 	testing_device_lock = false;
 }
 
+ZTEST(power_management_1cpu, test_state_next_get)
+{
+	const struct pm_state_info *next_state_info;
+	const struct pm_state_info state_info = {
+		.state = PM_STATE_RUNTIME_IDLE,
+	};
+
+	zassert_true(pm_state_force(0U, &state_info));
+
+	next_state_info = pm_state_next_get(0U);
+	zassert_equal(next_state_info->state, state_info.state);
+}
+
 void power_management_1cpu_teardown(void *data)
 {
 	pm_notifier_unregister(&notifier);
