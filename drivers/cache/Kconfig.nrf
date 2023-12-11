@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_NRF_CACHE
+	bool "nRF cache driver"
+	select CACHE_HAS_DRIVER
+	depends on HAS_NRFX && CACHE_MANAGEMENT
+	help
+	  Enable support for the nRF cache driver.
