@@ -29,6 +29,20 @@ RTIO_DEFINE_WITH_MEMPOOL(sensing_rtio_ctx, CONFIG_SENSING_RTIO_SQE_NUM,
 		CONFIG_SENSING_RTIO_BLOCK_COUNT,
 		CONFIG_SENSING_RTIO_BLOCK_SIZE, 4);
 
+static enum sensor_channel sensing_sensor_type_to_chan(const int32_t type)
+{
+	switch (type) {
+	case SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D:
+		return SENSOR_CHAN_ACCEL_XYZ;
+	case SENSING_SENSOR_TYPE_MOTION_GYROMETER_3D:
+		return SENSOR_CHAN_GYRO_XYZ;
+	default:
+		break;
+	}
+
+	return SENSOR_CHAN_PRIV_START;
+}
+
 /* sensor_later_config including arbitrate/set interval/sensitivity
  */
 static uint32_t arbitrate_interval(struct sensing_sensor *sensor)
@@ -61,7 +75,7 @@ static uint32_t arbitrate_interval(struct sensing_sensor *sensor)
 
 static int set_arbitrate_interval(struct sensing_sensor *sensor, uint32_t interval)
 {
-	struct sensor_read_config *config = sensor->iodev->data;
+	struct sensing_submit_config *config = sensor->iodev->data;
 	struct sensor_value odr = {0};
 	int ret;
 
@@ -75,8 +89,7 @@ static int set_arbitrate_interval(struct sensing_sensor *sensor, uint32_t interv
 		odr.val2 = (uint64_t)USEC_PER_SEC * 1000000 / interval % 1000000;
 	}
 
-	/* The SENSOR_CHAN_MAX should be overridden by sensing sensor driver */
-	ret = sensor_attr_set(sensor->dev, SENSOR_CHAN_MAX,
+	ret = sensor_attr_set(sensor->dev, config->chan,
 			SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
 	if (ret) {
 		LOG_ERR("%s set attr freq failed:%d", sensor->dev->name, ret);
@@ -143,16 +156,18 @@ static uint32_t arbitrate_sensitivity(struct sensing_sensor *sensor, int index)
 
 static int set_arbitrate_sensitivity(struct sensing_sensor *sensor, int index, uint32_t sensitivity)
 {
+	struct sensing_submit_config *config = (struct sensing_submit_config *)sensor->iodev->data;
 	struct sensor_value threshold = {.val1 = sensitivity};
+	int i;
 
 	/* update sensor sensitivity */
 	sensor->sensitivity[index] = sensitivity;
 
-	/* The SENSOR_CHAN_PRIV_START should be overridden by sensing sensor
-	 * driver, SENSOR_ATTR_HYSTERESIS can be overridden for different
-	 * sensora type.
-	 */
-	return sensor_attr_set(sensor->dev, SENSOR_CHAN_PRIV_START + index,
+	for (i = 0; i < sensor->sensitivity_count; i++) {
+		threshold.val1 = MIN(sensor->sensitivity[i], threshold.val1);
+	}
+
+	return sensor_attr_set(sensor->dev, config->chan,
 			SENSOR_ATTR_HYSTERESIS, &threshold);
 }
 
@@ -275,6 +290,7 @@ static void sensing_sensor_polling_timer(struct k_timer *timer_id)
 
 static int init_sensor(struct sensing_sensor *sensor)
 {
+	struct sensing_submit_config *config;
 	struct sensing_connection *conn;
 	int i;
 
@@ -292,6 +308,9 @@ static int init_sensor(struct sensing_sensor *sensor)
 		LOG_INF("init sensor, reporter:%s, client:%s, connection:%d(%p)",
 			conn->source->dev->name, sensor->dev->name, i, conn);
 	}
+
+	config = sensor->iodev->data;
+	config->chan = sensing_sensor_type_to_chan(sensor->info->type);
 
 	return 0;
 }

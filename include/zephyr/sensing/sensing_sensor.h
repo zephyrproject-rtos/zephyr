@@ -153,13 +153,28 @@ extern struct sensing_sensor SENSING_SENSOR_SOURCE_NAME(idx, node);	\
 				(,), node, cb_list_ptr)			\
 	};
 
-#define SENSING_SENSOR_IODEV_NAME(node, idx)				\
+struct sensing_submit_config {
+	enum sensor_channel chan;
+	const int info_index;
+	const bool is_streaming;
+};
+
+extern const struct rtio_iodev_api __sensing_iodev_api;
+
+#define SENSING_SUBMIT_CFG_NAME(node, idx)						\
+	_CONCAT(_CONCAT(__sensing_submit_cfg_, idx), DEVICE_DT_NAME_GET(node))
+
+#define SENSING_SENSOR_IODEV_NAME(node, idx)						\
 	_CONCAT(_CONCAT(__sensing_iodev_, idx), DEVICE_DT_NAME_GET(node))
 
 #define SENSING_SENSOR_IODEV_DEFINE(node, idx)						\
-	COND_CODE_1(DT_PROP(node, stream_mode),						\
-		(SENSOR_DT_STREAM_IODEV(SENSING_SENSOR_IODEV_NAME(node, idx), node)),	\
-		(SENSOR_DT_READ_IODEV(SENSING_SENSOR_IODEV_NAME(node, idx), node)));
+	static struct sensing_submit_config SENSING_SUBMIT_CFG_NAME(node, idx) = {	\
+		.is_streaming = DT_PROP(node, stream_mode),				\
+		.info_index = idx,							\
+	};										\
+	RTIO_IODEV_DEFINE(SENSING_SENSOR_IODEV_NAME(node, idx),				\
+			  &__sensing_iodev_api,						\
+			  &SENSING_SUBMIT_CFG_NAME(node, idx));
 
 #define SENSING_SENSOR_NAME(node, idx)					\
 	_CONCAT(_CONCAT(__sensing_sensor_, idx), DEVICE_DT_NAME_GET(node))

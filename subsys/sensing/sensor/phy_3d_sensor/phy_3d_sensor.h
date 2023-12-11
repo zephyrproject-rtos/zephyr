@@ -20,13 +20,15 @@ struct phy_3d_sensor_custom {
 };
 
 struct phy_3d_sensor_data {
-	const struct phy_3d_sensor_custom *custom;
 	struct sensor_value sensitivities[PHY_3D_SENSOR_CHANNEL_NUM];
+	const struct phy_3d_sensor_custom **customs;
+	struct rtio_iodev_sqe *sqes;
 };
 
 struct phy_3d_sensor_config {
 	const struct device *hw_dev;
-	const int32_t sensor_type;
+	const int sensor_num;
+	const int32_t sensor_types[];
 };
 
 #endif

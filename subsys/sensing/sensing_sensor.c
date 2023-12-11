@@ -13,6 +13,23 @@
 
 LOG_MODULE_DECLARE(sensing, CONFIG_SENSING_LOG_LEVEL);
 
+static void sensing_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct sensing_sensor *sensor = (struct sensing_sensor *)iodev_sqe->sqe.userdata;
+	const struct device *dev = sensor->dev;
+	const struct sensor_driver_api *api = dev->api;
+
+	if (api->submit != NULL) {
+		api->submit(dev, iodev_sqe);
+	} else {
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
+}
+
+const struct rtio_iodev_api __sensing_iodev_api = {
+	.submit = sensing_iodev_submit,
+};
+
 int sensing_sensor_get_reporters(const struct device *dev, int type,
 		sensing_sensor_handle_t *reporter_handles,
 		int max_handles)
