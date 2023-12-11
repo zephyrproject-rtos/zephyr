@@ -150,6 +150,43 @@ struct btp_mcp_search_cmd {
 struct btp_mcp_discovered_ev {
 	bt_addr_le_t address;
 	uint8_t status;
+	struct {
+		uint16_t player_name;
+		uint16_t icon_obj_id;
+		uint16_t icon_url;
+		uint16_t track_changed;
+		uint16_t track_title;
+		uint16_t track_duration;
+		uint16_t track_position;
+		uint16_t playback_speed;
+		uint16_t seeking_speed;
+		uint16_t segments_obj_id;
+		uint16_t current_track_obj_id;
+		uint16_t next_track_obj_id;
+		uint16_t current_group_obj_id;
+		uint16_t parent_group_obj_id;
+		uint16_t playing_order;
+		uint16_t playing_orders_supported;
+		uint16_t media_state;
+		uint16_t cp;
+		uint16_t opcodes_supported;
+		uint16_t search_results_obj_id;
+		uint16_t scp;
+		uint16_t content_control_id;
+	} gmcs_handles;
+
+	struct {
+		uint16_t feature;
+		uint16_t obj_name;
+		uint16_t obj_type;
+		uint16_t obj_size;
+		uint16_t obj_id;
+		uint16_t obj_created;
+		uint16_t obj_modified;
+		uint16_t obj_properties;
+		uint16_t oacp;
+		uint16_t olcp;
+	} ots_handles;
 } __packed;
 
 #define BTP_MCP_TRACK_DURATION_EV		0x81

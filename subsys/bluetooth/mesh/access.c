@@ -19,7 +19,6 @@
 #include "host/testing.h"
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "lpn.h"
 #include "transport.h"
@@ -28,6 +27,7 @@
 #include "op_agg.h"
 #include "settings.h"
 #include "va.h"
+#include "delayable_msg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ACCESS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1424,7 +1424,7 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 
 	op = find_op(elem, opcode, &model);
 	if (!op) {
-		LOG_ERR("No OpCode 0x%08x for elem 0x%02x", opcode, elem->rt->addr);
+		LOG_DBG("No OpCode 0x%08x for elem 0x%02x", opcode, elem->rt->addr);
 		return ACCESS_STATUS_WRONG_OPCODE;
 	}
 
@@ -1518,6 +1518,13 @@ int bt_mesh_model_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 		LOG_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
 	}
+
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	if (ctx->rnd_delay) {
+		return bt_mesh_delayable_msg_manage(ctx, msg, bt_mesh_model_elem(model)->rt->addr,
+						    cb, cb_data);
+	}
+#endif
 
 	return bt_mesh_access_send(ctx, msg, bt_mesh_model_elem(model)->rt->addr, cb, cb_data);
 }
@@ -2613,4 +2620,25 @@ uint8_t bt_mesh_comp_parse_page(struct net_buf_simple *buf)
 	}
 
 	return page;
+}
+
+void bt_mesh_access_init(void)
+{
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	bt_mesh_delayable_msg_init();
+#endif
+}
+
+void bt_mesh_access_suspend(void)
+{
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	bt_mesh_delayable_msg_stop();
+#endif
+}
+
+void bt_mesh_access_reset(void)
+{
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	bt_mesh_delayable_msg_stop();
+#endif
 }

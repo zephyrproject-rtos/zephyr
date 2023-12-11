@@ -38,7 +38,7 @@ extern "C" {
  *   function which will be used to obtain voltage on emulated ADC input
  *
  * An example of an appropriate Device Tree overlay file is in
- * tests/drivers/adc/adc_api/boards/native_posix.overlay
+ * tests/drivers/adc/adc_api/boards/native_sim.overlay
  *
  * An example of using emulated ADC backend API is in the file
  * tests/drivers/adc/adc_emul/src/main.c

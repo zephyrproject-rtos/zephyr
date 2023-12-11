@@ -91,8 +91,9 @@ int pm_device_action_run(const struct device *dev,
 	}
 
 	pm->state = action_target_state[action];
-	/* Power up failure flag is no longer relevant */
+	/* Power up flags are no longer relevant */
 	if (action == PM_DEVICE_ACTION_TURN_OFF) {
+		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_PD_CLAIMED);
 		atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
 	}
 

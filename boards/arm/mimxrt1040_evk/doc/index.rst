@@ -291,6 +291,13 @@ should see the following message in the terminal:
 Troubleshooting
 ===============
 
+USER_LED D8
+-----------
+The MIMXRT1040-EVK board ships with the wireless module in the M.2 connector,
+and with jumper J80 shorted.  This causes a conflict with the USER_LED D8,
+and the LED will not turn off.  Samples and applications using USER_LED D8,
+like blinky, require removal of J80 jumper.
+
 Boot Header
 -----------
 
@@ -347,7 +354,7 @@ flashing or debugging it, or remove jumper J80.
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1040-evaluation-kit:MIMXRT1040-EVK
 
 .. _MIMXRT1040-EVK User Guide:
-   https://www.nxp.com/docs/en/user-manual/MIMXRT1040-EVKUM.pdf
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1040-EVKUM
 
 .. _MIMXRT1040-EVK Design Files:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1040-EVK-DESIGNFILES
@@ -356,7 +363,7 @@ flashing or debugging it, or remove jumper J80.
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt1040-crossover-mcu-with-arm-cortex-m7-core:i.MX-RT1040
 
 .. _i.MX RT1040 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/IMXRT1040CECDS.pdf
+   https://www.nxp.com/docs/en/data-sheet/IMXRT1040CEC.pdf
 
 .. _i.MX RT1040 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT1040RM

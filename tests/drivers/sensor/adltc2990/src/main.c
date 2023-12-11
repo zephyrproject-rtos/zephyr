@@ -18,36 +18,39 @@
 	zassert_ok(sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_VOLTAGE));                   \
 	zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_VOLTAGE, sensor_val));             \
 	zassert_between_inclusive(                                                                 \
-		sensor_val[index].val1 + (double)sensor_val[index].val2 / 1000000,                 \
+		sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000,                  \
 		(pin_voltage - 0.01f) * ((r1 + r2) / (float)r2),                                   \
 		(pin_voltage + 0.01f) * ((r1 + r2) / (float)r2),                                   \
 		"%f Out of Range [%f,%f] input %f, [%dmΩ, %dmΩ] "                                \
 		"\nCheck if the sensor node is configured correctly",                              \
-		sensor_val[index].val1 + (double)sensor_val[index].val2 / 1000000,                 \
-		(pin_voltage - 0.01f) * ((r1 + r2) / (float)r2),                                   \
-		(pin_voltage + 0.01f) * ((r1 + r2) / (float)r2), pin_voltage, r1, r2);
+		(double)(sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000),        \
+		(double)((pin_voltage - 0.01f) * ((r1 + r2) / (float)r2)),                         \
+		(double)((pin_voltage + 0.01f) * ((r1 + r2) / (float)r2)), (double)pin_voltage,    \
+		r1, r2);
 
 #define CHECK_CURRENT(sensor_val, index, pin_voltage, r_microohms)                                 \
 	zassert_ok(sensor_sample_fetch_chan(fixture->dev, SENSOR_CHAN_CURRENT));                   \
 	zassert_ok(sensor_channel_get(fixture->dev, SENSOR_CHAN_CURRENT, sensor_val));             \
 	zassert_between_inclusive(                                                                 \
-		sensor_val[index].val1 + (double)sensor_val[index].val2 / 1000000,                 \
+		sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000,                  \
 		(pin_voltage - 0.01f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR / r_microohms,        \
 		(pin_voltage + 0.01f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR / r_microohms,        \
 		"%f Out of Range [%f,%f] input %f, current-resistor: %dµΩ\nCheck if the sensor " \
 		"node is configured correctly",                                                    \
-		sensor_val[index].val1 + (double)sensor_val[index].val2 / 1000000,                 \
-		(pin_voltage - 0.001f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR / r_microohms,       \
-		(pin_voltage + 0.001f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR / r_microohms,       \
-		pin_voltage, r_microohms);
+		(double)(sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000),        \
+		(double)((pin_voltage - 0.001f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR /           \
+			 r_microohms),                                                             \
+		(double)((pin_voltage + 0.001f) * ADLTC2990_MICROOHM_CONVERSION_FACTOR /           \
+			 r_microohms),                                                             \
+		(double)pin_voltage, r_microohms);
 
 #define CHECK_TEMPERATURE(sensor_val, index, expected_temperature, temperature_type)               \
 	zassert_ok(sensor_sample_fetch_chan(fixture->dev, temperature_type));                      \
 	zassert_ok(sensor_channel_get(fixture->dev, temperature_type, sensor_val));                \
 	zassert_equal(expected_temperature,                                                        \
 		      sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000,            \
-		      "expected %f, got %f", expected_temperature,                                 \
-		      sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000);
+		      "expected %f, got %f", (double)expected_temperature,                         \
+		      (double)(sensor_val[index].val1 + (float)sensor_val[index].val2 / 1000000));
 
 /*** TEST-SUITE: ADLTC2990 Measurement Mode 0 0***/
 
@@ -165,7 +168,7 @@ ZTEST_F(adltc2990_1_3, test_die_temperature)
 
 	struct sensor_value temp_value[1];
 
-	CHECK_TEMPERATURE(temp_value, 0, 125.00, SENSOR_CHAN_DIE_TEMP);
+	CHECK_TEMPERATURE(temp_value, 0, 125.00f, SENSOR_CHAN_DIE_TEMP);
 
 	/*0b00011101 0b10000000 –40.0000*/
 	msb = 0b00011101;
@@ -174,7 +177,7 @@ ZTEST_F(adltc2990_1_3, test_die_temperature)
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_INTERNAL_TEMP_MSB, &msb);
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_INTERNAL_TEMP_LSB, &lsb);
 
-	CHECK_TEMPERATURE(temp_value, 0, -40.00, SENSOR_CHAN_DIE_TEMP);
+	CHECK_TEMPERATURE(temp_value, 0, -40.00f, SENSOR_CHAN_DIE_TEMP);
 }
 
 ZTEST_F(adltc2990_1_3, test_ambient_temperature)
@@ -186,7 +189,7 @@ ZTEST_F(adltc2990_1_3, test_ambient_temperature)
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V3_MSB, &msb);
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V3_LSB, &lsb);
 
-	CHECK_TEMPERATURE(temp_ambient, 0, 25.06250, SENSOR_CHAN_AMBIENT_TEMP);
+	CHECK_TEMPERATURE(temp_ambient, 0, 25.06250f, SENSOR_CHAN_AMBIENT_TEMP);
 }
 
 ZTEST_F(adltc2990_1_3, test_current)
@@ -200,13 +203,13 @@ ZTEST_F(adltc2990_1_3, test_current)
 	struct sensor_value current_values[1];
 	const struct adltc2990_config *dev_config = fixture->target->dev->config;
 
-	CHECK_CURRENT(current_values, 0, 0.3, dev_config->pins_v1_v2.pins_current_resistor);
+	CHECK_CURRENT(current_values, 0, 0.3f, dev_config->pins_v1_v2.pins_current_resistor);
 
 	/* 0b00100000 0b00000000 +0.159 */
 	msb_reg_value = 0b00100000, lsb_reg_value = 0b00000000;
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V1_MSB, &msb_reg_value);
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V1_LSB, &lsb_reg_value);
-	CHECK_CURRENT(current_values, 0, 0.159, dev_config->pins_v1_v2.pins_current_resistor);
+	CHECK_CURRENT(current_values, 0, 0.159f, dev_config->pins_v1_v2.pins_current_resistor);
 }
 
 ZTEST_F(adltc2990_1_3, test_V1_MINUS_V2_VCC)
@@ -229,12 +232,12 @@ ZTEST_F(adltc2990_1_3, test_V1_MINUS_V2_VCC)
 
 	float test_value = voltage_values[0].val1 + (float)voltage_values[0].val2 / 1000000;
 
-	zassert_between_inclusive(test_value, -0.16, -0.159, "Out of Range [-0.16,-0.159]%.6f",
-				  test_value);
+	zassert_between_inclusive(test_value, -0.16f, -0.159f, "Out of Range [-0.16,-0.159]%.6f",
+				  (double)test_value);
 
-	test_value = voltage_values[1].val1 + (double)voltage_values[1].val2 / 1000000;
-	zassert_between_inclusive(test_value, 2.69, 2.7, "Out of Range [2.69, 2.7]%.6f",
-				  test_value);
+	test_value = voltage_values[1].val1 + (float)voltage_values[1].val2 / 1000000;
+	zassert_between_inclusive(test_value, 2.69f, 2.7f, "Out of Range [2.69, 2.7]%.6f",
+				  (double)test_value);
 }
 
 /*** TEST-SUITE: ADLTC2990 Measurement Mode 5 3***/
@@ -275,14 +278,14 @@ ZTEST_F(adltc2990_5_3, test_ambient_temperature)
 
 	struct sensor_value temp_value[2];
 
-	CHECK_TEMPERATURE(temp_value, 0, 273.1250, SENSOR_CHAN_AMBIENT_TEMP);
+	CHECK_TEMPERATURE(temp_value, 0, 273.1250f, SENSOR_CHAN_AMBIENT_TEMP);
 
 	/*Kelvin 0b00001110 0b10010010 233.125*/
 	msb = 0b00001110;
 	lsb = 0b10010010;
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V3_MSB, &msb);
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V3_LSB, &lsb);
-	CHECK_TEMPERATURE(temp_value, 1, 233.1250, SENSOR_CHAN_AMBIENT_TEMP);
+	CHECK_TEMPERATURE(temp_value, 1, 233.1250f, SENSOR_CHAN_AMBIENT_TEMP);
 }
 
 ZTEST_F(adltc2990_5_3, test_die_temperature)
@@ -295,7 +298,7 @@ ZTEST_F(adltc2990_5_3, test_die_temperature)
 
 	struct sensor_value temp_value[1];
 
-	CHECK_TEMPERATURE(temp_value, 0, 398.1250, SENSOR_CHAN_DIE_TEMP);
+	CHECK_TEMPERATURE(temp_value, 0, 398.1250f, SENSOR_CHAN_DIE_TEMP);
 }
 
 /*** TEST-SUITE: ADLTC2990 Measurement Mode 7 3***/
@@ -337,13 +340,13 @@ ZTEST_F(adltc2990_6_3, test_current)
 	struct sensor_value current_values[2];
 	const struct adltc2990_config *dev_config = fixture->target->dev->config;
 
-	CHECK_CURRENT(current_values, 0, 0.3, dev_config->pins_v1_v2.pins_current_resistor);
+	CHECK_CURRENT(current_values, 0, 0.3f, dev_config->pins_v1_v2.pins_current_resistor);
 
 	/* 0b00100000 0b00000000 +0.159 */
 	msb_reg_value = 0b00100000, lsb_reg_value = 0b00000000;
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V3_MSB, &msb_reg_value);
 	adltc2990_emul_set_reg(fixture->target, ADLTC2990_REG_V3_LSB, &lsb_reg_value);
-	CHECK_CURRENT(current_values, 1, 0.159, dev_config->pins_v3_v4.pins_current_resistor);
+	CHECK_CURRENT(current_values, 1, 0.159f, dev_config->pins_v3_v4.pins_current_resistor);
 }
 
 /*** TEST-SUITE: ADLTC2990 Measurement Mode 7 3***/
@@ -406,7 +409,7 @@ ZTEST_F(adltc2990_7_3, test_die_temperature)
 
 	struct sensor_value die_temp_value[1];
 
-	CHECK_TEMPERATURE(die_temp_value, 0, 398.1250, SENSOR_CHAN_DIE_TEMP);
+	CHECK_TEMPERATURE(die_temp_value, 0, 398.1250f, SENSOR_CHAN_DIE_TEMP);
 }
 
 ZTEST_F(adltc2990_7_3, test_V1_V2_V3_V4_VCC)
@@ -445,25 +448,26 @@ ZTEST_F(adltc2990_7_3, test_V1_V2_V3_V4_VCC)
 
 	const struct adltc2990_config *dev_config = fixture->dev->config;
 
-	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 0, 5.0,
+	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 0, 5.0f,
 				   dev_config->pins_v1_v2.voltage_divider_resistors.v1_r1_r2[0],
 				   dev_config->pins_v1_v2.voltage_divider_resistors.v1_r1_r2[1]);
 
-	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 1, 3.5,
+	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 1, 3.5f,
 				   dev_config->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[0],
 				   dev_config->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[1]);
 
-	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 2, 2.5,
+	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 2, 2.5f,
 				   dev_config->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[0],
 				   dev_config->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[1]);
 
-	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 3, -0.3,
+	CHECK_SINGLE_ENDED_VOLTAGE(voltage_values, 3, -0.3f,
 				   dev_config->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[0],
 				   dev_config->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[1]);
 
-	float test_value = voltage_values[4].val1 + (double)voltage_values[4].val2 / 1000000;
+	double test_value = voltage_values[4].val1 + (double)voltage_values[4].val2 / 1000000;
 
-	zassert_between_inclusive(test_value, 6.0, 6.1, "Out of Range [6.0,6.1] %.6f", test_value);
+	zassert_between_inclusive(test_value, 6.0, 6.1, "Out of Range [6.0,6.1] %.6f",
+				  (double)test_value);
 
 	zassert_equal(6, voltage_values[4].val1);
 }

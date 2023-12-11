@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
@@ -13,7 +13,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
@@ -26,17 +26,6 @@
 
 #define CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED)
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
-
-struct unicast_stream {
-	struct bt_cap_stream stream;
-	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
-};
-
-struct named_lc3_preset {
-	const char *name;
-	struct bt_bap_lc3_preset preset;
-};
 
 struct cap_initiator_ac_param {
 	char *name;
@@ -64,8 +53,8 @@ static struct bt_bap_ep
 static struct unicast_stream unicast_streams[CAP_AC_MAX_STREAM];
 static struct bt_conn *connected_conns[CAP_AC_MAX_CONN];
 static size_t connected_conn_cnt;
-const struct named_lc3_preset *snk_named_preset;
-const struct named_lc3_preset *src_named_preset;
+static const struct named_lc3_preset *snk_named_preset;
+static const struct named_lc3_preset *src_named_preset;
 
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_codec_found);
@@ -940,15 +929,6 @@ const struct named_lc3_preset *cap_get_named_preset(const char *preset_arg)
 	return NULL;
 }
 
-static inline void copy_unicast_stream_preset(struct unicast_stream *stream,
-					      const struct named_lc3_preset *named_preset)
-{
-	printk("stream %p\n", stream);
-	printk("named_preset %p\n", named_preset);
-	memcpy(&stream->qos, &named_preset->preset.qos, sizeof(stream->qos));
-	memcpy(&stream->codec_cfg, &named_preset->preset.codec_cfg, sizeof(stream->codec_cfg));
-}
-
 static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_param *param,
 						 struct unicast_stream *snk_uni_streams[],
 						 size_t snk_cnt,
@@ -1741,11 +1721,11 @@ struct bst_test_list *test_cap_initiator_unicast_install(struct bst_test_list *t
 	return bst_add_tests(tests, test_cap_initiator_unicast);
 }
 
-#else /* !(defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_UNICAST_CLIENT)) */
+#else /* !CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 struct bst_test_list *test_cap_initiator_unicast_install(struct bst_test_list *tests)
 {
 	return tests;
 }
 
-#endif /* defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_UNICAST_CLIENT) */
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */

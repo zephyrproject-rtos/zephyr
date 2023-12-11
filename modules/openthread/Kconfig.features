@@ -39,6 +39,10 @@ config OPENTHREAD_BACKBONE_ROUTER_DUA_NDPROXYING
 config OPENTHREAD_BACKBONE_ROUTER_MULTICAST_ROUTING
 	bool "BBR MR support"
 
+config OPENTHREAD_BLE_TCAT
+	bool "BLE TCAT support"
+	select EXPERIMENTAL
+
 config OPENTHREAD_BORDER_AGENT
 	bool "Border Agent support"
 
@@ -213,6 +217,9 @@ config OPENTHREAD_MLR
 	bool "Multicast Listener Registration support"
 	help
 	  Enable Multicast Listener Registration support for Thread 1.2
+
+config OPENTHREAD_MULTIPAN_RCP
+	bool "OpenThread multipan rcp"
 
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "OpenThread multiple instances"

@@ -12,13 +12,15 @@
  */
 
 #include <stdint.h>
+#include <zephyr/llext/symbol.h>
 
 extern void printk(char *fmt, ...);
 
 static const uint32_t number = 42;
 
-extern void hello_world(void)
+void hello_world(void)
 {
 	printk("hello world\n");
 	printk("A number is %lu\n", number);
 }
+LL_EXTENSION_SYMBOL(hello_world);

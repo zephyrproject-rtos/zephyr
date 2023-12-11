@@ -177,7 +177,7 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
 
-		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync);
+		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync >> 1);
 		(void)net_buf_simple_add_u8(&read_buf, subgroup->metadata_len);
 		(void)net_buf_simple_add_mem(&read_buf, subgroup->metadata,
 					     subgroup->metadata_len);
@@ -514,6 +514,10 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		}
 
 		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
+		if (internal_state->requested_bis_sync[i] != BT_BAP_BIS_SYNC_NO_PREF) {
+			/* Received BIS Index bitfield uses BIT(0) for BIS Index 1 */
+			internal_state->requested_bis_sync[i] <<= 1;
+		}
 
 		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
@@ -670,6 +674,11 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		old_bis_sync_req = internal_state->requested_bis_sync[i];
 
 		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
+		if (internal_state->requested_bis_sync[i] != BT_BAP_BIS_SYNC_NO_PREF) {
+			/* Received BIS Index bitfield uses BIT(0) for BIS Index 1 */
+			internal_state->requested_bis_sync[i] <<= 1;
+		}
+
 		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
 			LOG_DBG("Cannot sync to BIS without PA");

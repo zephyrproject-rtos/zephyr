@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth mesh Protocol APIs.
+ *  @brief Bluetooth Mesh Protocol APIs.
  */
 
 /*
@@ -550,8 +550,8 @@ bool bt_mesh_is_provisioned(void);
  */
 
 /**
- * @brief Bluetooth mesh
- * @defgroup bt_mesh Bluetooth mesh
+ * @brief Bluetooth Mesh
+ * @defgroup bt_mesh Bluetooth Mesh
  * @ingroup bluetooth
  * @{
  */
@@ -606,6 +606,10 @@ void bt_mesh_reset(void);
  *  may cause it to become permanently disconnected from the Mesh network.
  *  If at all possible, the Friendship feature should be used instead, to
  *  make the node into a Low Power Node.
+ *
+ * @note Should not be called from work queue due to undefined behavior.
+ * This is due to k_work_flush_delayable() being used in disabling of the
+ * extended advertising.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 TiaC Systems
- * Copyright (c) 2019, NXP
+ * Copyright 2019,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,9 +23,12 @@
 	chosen {
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,flash = &at25sf128a;
+		zephyr,flash-controller = &at25sf128a;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -93,6 +96,30 @@ arduino_serial: &lpuart1 {};
 		spi-max-frequency = <133000000>;
 		status = "okay";
 		jedec-id = [1f 89 01];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+			};
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 DT_SIZE_M(7)>;
+			};
+			slot1_partition: partition@710000 {
+				label = "image-1";
+				reg = <0x00710000 DT_SIZE_M(7)>;
+			};
+			storage_partition: partition@E10000 {
+				label = "storage";
+				reg = <0x00E10000 DT_SIZE_K(1984)>;
+			};
+		};
 	};
 };
 

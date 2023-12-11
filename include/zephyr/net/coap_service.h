@@ -57,7 +57,9 @@ struct coap_service {
 };
 
 #define __z_coap_service_define(_name, _host, _port, _flags, _res_begin, _res_end)		\
-	static struct coap_service_data coap_service_data_##_name;				\
+	static struct coap_service_data coap_service_data_##_name = {				\
+		.sock_fd = -1,									\
+	};											\
 	const STRUCT_SECTION_ITERABLE(coap_service, _name) = {					\
 		.name = STRINGIFY(_name),							\
 		.host = _host,									\
@@ -197,7 +199,7 @@ struct coap_service {
  * @param service Pointer to CoAP service
  * @retval 0 in case of success.
  * @retval -EALREADY in case of an already running service.
- * @retval -ENOMEM in case the server has no available context.
+ * @retval -ENOTSUP in case the server has no valid host and port configuration.
  */
 int coap_service_start(const struct coap_service *service);
 
@@ -211,6 +213,18 @@ int coap_service_start(const struct coap_service *service);
  * @retval -EALREADY in case the service isn't running.
  */
 int coap_service_stop(const struct coap_service *service);
+
+/**
+ * @brief Query the provided @p service running state.
+ *
+ * @note This function is suitable for a @p service defined with @ref COAP_SERVICE_DEFINE.
+ *
+ * @param service Pointer to CoAP service
+ * @retval 1 if the service is running
+ * @retval 0 if the service is stopped
+ * @retval negative in case of an error.
+ */
+int coap_service_is_running(const struct coap_service *service);
 
 /**
  * @brief Send a CoAP message from the provided @p service .

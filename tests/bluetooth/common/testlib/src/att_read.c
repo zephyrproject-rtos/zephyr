@@ -30,6 +30,11 @@ struct bt_testlib_att_read_closure {
 	bool long_read;
 };
 
+static bool bt_gatt_read_params_is_by_uuid(const struct bt_gatt_read_params *params)
+{
+	return params->handle_count == 0;
+}
+
 static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 			   struct bt_gatt_read_params *params, const void *read_data,
 			   uint16_t read_len)
@@ -39,16 +44,10 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
-	if (read_data == NULL) {
-		__ASSERT_NO_MSG(ctx->long_read);
-		k_condvar_signal(&ctx->done);
-		k_mutex_unlock(&ctx->lock);
-		return BT_GATT_ITER_STOP;
-	}
-
 	ctx->att_err = att_err;
 
 	if (!att_err && ctx->result_handle) {
+		__ASSERT_NO_MSG(bt_gatt_read_params_is_by_uuid(params));
 		*ctx->result_handle = params->by_uuid.start_handle;
 	}
 
@@ -60,7 +59,7 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 		}
 	}
 
-	if (!att_err && ctx->result_data) {
+	if (read_data && ctx->result_data) {
 		uint16_t result_data_size =
 			MIN(read_len, net_buf_simple_tailroom(ctx->result_data));
 
@@ -71,7 +70,7 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 		*ctx->att_mtu = params->_att_mtu;
 	}
 
-	if (ctx->long_read) {
+	if (ctx->long_read && read_data) {
 		/* Don't signal `&ctx->done` */
 		k_mutex_unlock(&ctx->lock);
 		return BT_GATT_ITER_CONTINUE;
@@ -86,8 +85,18 @@ static int bt_testlib_sync_bt_gatt_read(struct bt_testlib_att_read_closure *ctx)
 {
 	int api_err;
 
+	/* `result_size` is initialized here so that it can be plussed on in
+	 * the callback. The result of a long read comes in multiple
+	 * callbacks and must be added up.
+	 */
+	if (ctx->result_size) {
+		*ctx->result_size = 0;
+	}
+
+	/* `att_read_cb` is smart and does the right thing based on `ctx`. */
 	ctx->params.func = att_read_cb;
 
+	/* Setup synchronization between the cb and the current function. */
 	k_mutex_init(&ctx->lock);
 	k_condvar_init(&ctx->done);
 
@@ -141,43 +150,40 @@ int bt_testlib_att_read_by_handle_sync(struct net_buf_simple *result_data, uint1
 				       enum bt_att_chan_opt bearer, uint16_t handle,
 				       uint16_t offset)
 {
-	struct bt_testlib_att_read_closure ctx = {
-		.result_size = result_size,
-		.conn = conn,
-		.att_mtu = result_att_mtu,
-		.result_data = result_data,
-		.params = {
-			.handle_count = 1,
-			.single = {.handle = handle, .offset = offset},
-			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer,))
-		}};
+	struct bt_testlib_att_read_closure ctx = {};
+
+	ctx.att_mtu = result_att_mtu;
+	ctx.conn = conn;
+	ctx.params.handle_count = 1;
+	ctx.params.single.handle = handle;
+	ctx.params.single.offset = offset;
+	ctx.result_data = result_data;
+	ctx.result_size = result_size;
+	IF_ENABLED(CONFIG_BT_EATT, (ctx.params.chan_opt = bearer));
 
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
 		__ASSERT(IS_ENABLED(CONFIG_BT_EATT), "EATT not complied in");
 	}
 
-	*result_size = 0;
-
 	return bt_testlib_sync_bt_gatt_read(&ctx);
 }
 
 int bt_testlib_gatt_long_read(struct net_buf_simple *result_data, uint16_t *result_size,
-			      struct bt_conn *conn, enum bt_att_chan_opt bearer, uint16_t handle,
-			      uint16_t offset)
+			      uint16_t *result_att_mtu, struct bt_conn *conn,
+			      enum bt_att_chan_opt bearer, uint16_t handle, uint16_t offset)
 {
 	int err;
 	uint16_t _result_data_size = 0;
+	struct bt_testlib_att_read_closure ctx = {};
 
-	struct bt_testlib_att_read_closure ctx = {
-		.long_read = true,
-		.result_size = &_result_data_size,
-		.conn = conn,
-		.result_data = result_data,
-		.params = {
-			.handle_count = 1,
-			.single = {.handle = handle, .offset = offset},
-			IF_ENABLED(CONFIG_BT_EATT, (.chan_opt = bearer,))
-		}};
+	ctx.att_mtu = result_att_mtu;
+	ctx.conn = conn;
+	ctx.long_read = true, ctx.params.handle_count = 1;
+	ctx.params.single.handle = handle;
+	ctx.params.single.offset = offset;
+	ctx.result_data = result_data;
+	ctx.result_size = &_result_data_size;
+	IF_ENABLED(CONFIG_BT_EATT, (ctx.params.chan_opt = bearer));
 
 	if (bearer == BT_ATT_CHAN_OPT_ENHANCED_ONLY) {
 		__ASSERT(IS_ENABLED(CONFIG_BT_EATT), "EATT not complied in");

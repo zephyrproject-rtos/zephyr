@@ -93,7 +93,9 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 
 	data->busy = DMA_ChannelIsBusy(data->dma_handle.base, channel);
 
-	data->dma_callback(data->dev, data->user_data, channel, ret);
+	if (data->dma_callback) {
+		data->dma_callback(data->dev, data->user_data, channel, ret);
+	}
 }
 
 /* Handles DMA interrupts and dispatches to the individual channel */
@@ -257,6 +259,15 @@ static int dma_mcux_lpc_queue_descriptors(struct channel_data *data,
 	return 0;
 }
 
+static void dma_mcux_lpc_clear_channel_data(struct channel_data *data)
+{
+	data->dma_callback = NULL;
+	data->dir = 0;
+	data->descriptors_queued = false;
+	data->num_of_descriptors = 0;
+	data->curr_descriptor = NULL;
+	data->width = 0;
+}
 
 /* Configure a channel */
 static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
@@ -374,6 +385,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 		data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	}
 
+	dma_mcux_lpc_clear_channel_data(data);
+
 	data->dir = config->channel_direction;
 
 	if (data->busy) {
@@ -384,10 +397,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	k_spinlock_key_t otrigs_key = k_spin_lock(&configuring_otrigs);
 
-	data->descriptors_queued = false;
-	data->num_of_descriptors = 0;
 	data->width = width;
-	data->curr_descriptor = NULL;
+
 	if (config->source_chaining_en || config->dest_chaining_en) {
 		/* Chaining is enabled */
 		if (!dev_config->otrig_base_address || !dev_config->itrig_base_address) {

@@ -321,9 +321,43 @@ struct wifi_connect_req_params {
 	int timeout;
 };
 
+/** Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
+ * in the connect result event for detailed status.
+ */
+enum wifi_conn_status {
+	/** Connection successful */
+	WIFI_STATUS_CONN_SUCCESS = 0,
+	/** Connection failed - generic failure */
+	WIFI_STATUS_CONN_FAIL,
+	/** Connection failed - wrong password */
+	WIFI_STATUS_CONN_WRONG_PASSWORD,
+	/** Connection timed out */
+	WIFI_STATUS_CONN_TIMEOUT,
+	/** Connection failed - AP not found */
+	WIFI_STATUS_CONN_AP_NOT_FOUND,
+};
+
+/** Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
+ * in the disconnect result event for detailed reason.
+ */
+enum wifi_disconn_reason {
+	/** Unspecified reason */
+	WIFI_REASON_DISCONN_UNSPECIFIED = 0,
+	/** Disconnected due to user request */
+	WIFI_REASON_DISCONN_USER_REQUEST,
+	/** Disconnected due to AP leaving */
+	WIFI_REASON_DISCONN_AP_LEAVING,
+	/** Disconnected due to inactivity */
+	WIFI_REASON_DISCONN_INACTIVITY,
+};
+
 /** Generic Wi-Fi status for commands and events */
 struct wifi_status {
-	int status;
+	union {
+		int status;
+		enum wifi_conn_status conn_status;
+		enum wifi_disconn_reason disconn_reason;
+	};
 };
 
 /** Wi-Fi interface status */

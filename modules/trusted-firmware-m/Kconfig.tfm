@@ -17,7 +17,6 @@ config TFM_BOARD
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "arm/musca_b1" if BOARD_MUSCA_B1
 	default "arm/musca_s1" if BOARD_MUSCA_S1
-	default "lairdconnectivity/bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPP_NS
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9160" if SOC_NRF9160
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf9120" if SOC_NRF9120
 	default "${ZEPHYR_BASE}/modules/trusted-firmware-m/nordic_nrf/nrf5340_cpuapp" if SOC_NRF5340_CPUAPP
@@ -45,7 +44,7 @@ menuconfig BUILD_WITH_TFM
 
 	  Notes:
 	    Building with the "_ns" BOARD variant (e.g. "mps2_an521_ns")
-		ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
+	    ensures that CONFIG_TRUSTED_EXECUTION_NONSECURE is enabled.
 
 	    By default we allow Zephyr preemptible threads be preempted
 	    while performing a secure function call.
@@ -75,6 +74,7 @@ config TFM_PROFILE
 	depends on BUILD_WITH_TFM
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
 	default "profile_medium" if TFM_PROFILE_TYPE_MEDIUM
+	default "profile_medium_arotless" if TFM_PROFILE_TYPE_AROTLESS
 	default "profile_large" if TFM_PROFILE_TYPE_LARGE
 	help
 	  Build profile used to build tfm_s image. The available values are
@@ -92,13 +92,16 @@ choice TFM_PROFILE_TYPE
 	  isolation level.
 
 config TFM_PROFILE_TYPE_NOT_SET
-	bool "TF-M build profile is not set"
+	bool "TF-M build profile: not set (base)"
 
 config TFM_PROFILE_TYPE_SMALL
 	bool "TF-M build profile: small"
 
 config TFM_PROFILE_TYPE_MEDIUM
 	bool "TF-M build profile: medium"
+
+config TFM_PROFILE_TYPE_AROTLESS
+	bool "TF-M build profile: ARoT-less"
 
 config TFM_PROFILE_TYPE_LARGE
 	bool "TF-M build profile: large"

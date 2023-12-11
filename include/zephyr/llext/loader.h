@@ -35,6 +35,8 @@ enum llext_section {
 	LLEXT_SECT_REL_RODATA,
 	LLEXT_SECT_REL_BSS,
 
+	LLEXT_SECT_EXPORT,
+
 	LLEXT_SECT_SYMTAB,
 	LLEXT_SECT_STRTAB,
 	LLEXT_SECT_SHSTRTAB,
@@ -96,6 +98,25 @@ struct llext_loader {
 	uint32_t sect_cnt;
 	/** @endcond */
 };
+
+static inline int llext_read(struct llext_loader *l, void *buf, size_t len)
+{
+	return l->read(l, buf, len);
+}
+
+static inline int llext_seek(struct llext_loader *l, size_t pos)
+{
+	return l->seek(l, pos);
+}
+
+static inline void *llext_peek(struct llext_loader *l, size_t pos)
+{
+	if (l->peek) {
+		return l->peek(l, pos);
+	}
+
+	return NULL;
+}
 
 /**
  * @}

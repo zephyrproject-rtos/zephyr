@@ -1176,7 +1176,7 @@ This has been fixed in main for v3.0.0
 CVE-2022-1041
 --------------
 
-Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+Out-of-bound write vulnerability in the Bluetooth Mesh core stack can be triggered during provisioning
 
 This has been fixed in main for v3.1.0
 
@@ -1195,7 +1195,7 @@ This has been fixed in main for v3.1.0
 CVE-2022-1042
 --------------
 
-Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+Out-of-bound write vulnerability in the Bluetooth Mesh core stack can be triggered during provisioning
 
 This has been fixed in main for v3.1.0
 
@@ -1501,7 +1501,25 @@ This has been fixed in main for v3.4.0
 CVE-2023-4424
 -------------
 
-Under embargo until 2023/11/01
+bt: hci: DoS and possible RCE
+
+- `Zephyr project bug tracker GHSA-j4qm-xgpf-qjw3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j4qm-xgpf-qjw3>`_
+
+This has been fixed in main for v3.5.0
+
+- `PR 61651 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61651>`_
+
+- `PR 61696 fix for 3.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61696>`_
+
+- `PR 61695 fix for 3.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61695>`_
+
+- `PR 61694 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/61694>`_
+
 
 CVE-2023-5055
 -------------

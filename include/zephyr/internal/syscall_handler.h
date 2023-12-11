@@ -413,8 +413,9 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *       functionality in the Zephyr tree.
  */
 #define K_SYSCALL_MEMORY(ptr, size, write) \
-	K_SYSCALL_VERIFY_MSG(arch_buffer_validate((void *)ptr, size, write) \
-			     == 0, \
+	K_SYSCALL_VERIFY_MSG((size >= 0) && !Z_DETECT_POINTER_OVERFLOW(ptr, size) \
+			     && (arch_buffer_validate((void *)ptr, size, write) \
+			     == 0), \
 			     "Memory region %p (size %zu) %s access denied", \
 			     (void *)(ptr), (size_t)(size), \
 			     write ? "write" : "read")

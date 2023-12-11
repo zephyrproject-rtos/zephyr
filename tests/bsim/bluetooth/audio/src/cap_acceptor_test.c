@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/sys/byteorder.h>
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 extern enum bst_result_t bst_result;
 
@@ -62,44 +62,6 @@ static struct bt_cap_stream unicast_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT +
 
 CREATE_FLAG(flag_unicast_stream_configured);
 
-static bool valid_metadata_type(uint8_t type, uint8_t len)
-{
-	switch (type) {
-	case BT_AUDIO_METADATA_TYPE_PREF_CONTEXT:
-	case BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT:
-		if (len != 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_STREAM_LANG:
-		if (len != 3) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (len != 1) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_EXTENDED: /* 2 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_VENDOR:   /* 2 - 255 octets */
-		if (len < 2) {
-			return false;
-		}
-
-		return true;
-	case BT_AUDIO_METADATA_TYPE_CCID_LIST:
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO:     /* 0 - 255 octets */
-	case BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI: /* 0 - 255 octets */
-		return true;
-	default:
-		return false;
-	}
-}
-
 static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 {
 	bool *stream_context_found = (bool *)user_data;
@@ -122,16 +84,20 @@ static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static bool valid_subgroup_metadata(const struct bt_bap_base_subgroup *subgroup)
+static bool valid_subgroup_metadata_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	bool stream_context_found = false;
-	int err;
+	uint8_t *meta;
+	int ret;
 
-	printk("meta %p len %zu", subgroup->codec_cfg.meta, subgroup->codec_cfg.meta_len);
+	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
+	if (ret < 0) {
+		FAIL("Could not get subgroup meta: %d\n", ret);
+		return false;
+	}
 
-	err = bt_audio_data_parse(subgroup->codec_cfg.meta, subgroup->codec_cfg.meta_len,
-				  subgroup_data_func_cb, &stream_context_found);
-	if (err != 0 && err != -ECANCELED) {
+	ret = bt_audio_data_parse(meta, (size_t)ret, subgroup_data_func_cb, &stream_context_found);
+	if (ret != 0 && ret != -ECANCELED) {
 		return false;
 	}
 
@@ -139,39 +105,43 @@ static bool valid_subgroup_metadata(const struct bt_bap_base_subgroup *subgroup)
 		printk("Subgroup did not have streaming context\n");
 	}
 
+	/* if this is false, the iterater will return early with an error */
 	return stream_context_found;
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+			 size_t base_size)
 {
 	uint32_t base_bis_index_bitfield = 0U;
+	int ret;
 
 	if (TEST_FLAG(flag_base_received)) {
 		return;
 	}
 
-	printk("Received BASE with %u subgroups from broadcast sink %p\n",
-	       base->subgroup_count, sink);
-
-	if (base->subgroup_count == 0) {
-		FAIL("base->subgroup_count was 0");
+	ret = bt_bap_base_get_subgroup_count(base);
+	if (ret < 0) {
+		FAIL("Failed to get subgroup count: %d\n", ret);
 		return;
 	}
 
+	printk("Received BASE with %d subgroups from broadcast sink %p\n", ret, sink);
 
-	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		const struct bt_bap_base_subgroup *subgroup = &base->subgroups[i];
+	if (ret == 0) {
+		FAIL("subgroup_count was 0");
+		return;
+	}
 
-		for (size_t j = 0U; j < subgroup->bis_count; j++) {
-			const uint8_t index = subgroup->bis_data[j].index;
+	ret = bt_bap_base_foreach_subgroup(base, valid_subgroup_metadata_cb, NULL);
+	if (ret != 0) {
+		FAIL("Failed to parse subgroups: %d\n", ret);
+		return;
+	}
 
-			base_bis_index_bitfield |= BIT(index);
-		}
-
-		if (!valid_subgroup_metadata(subgroup)) {
-			FAIL("Subgroup[%zu] has invalid metadata\n", i);
-			return;
-		}
+	ret = bt_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
+	if (ret != 0) {
+		FAIL("Failed to BIS indexes: %d\n", ret);
+		return;
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;

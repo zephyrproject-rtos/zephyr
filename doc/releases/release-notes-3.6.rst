@@ -52,12 +52,19 @@ Bluetooth
 
 * Mesh
 
+  * Added the delayable messages functionality to apply random delays for
+    the transmitted responses on the Access layer.
+    The functionality is enabled by the :kconfig:option:`CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG`
+    Kconfig option.
+
 * Controller
 
 Boards & SoC Support
 ********************
 
 * Added support for these SoC series:
+
+  * Added support for Renesas R-Car Gen4 series
 
 * Removed support for these SoC series:
 
@@ -69,6 +76,8 @@ Boards & SoC Support
 * Added support for these ARC boards:
 
 * Added support for these ARM boards:
+
+  * Added support for Renesas R-Car Spider board CR52: ``rcar_spider_cr52``
 
 * Added support for these ARM64 boards:
 
@@ -126,6 +135,8 @@ Drivers and Sensors
 
 * Clock control
 
+  * Renesas R-Car clock control driver now supports Gen4 SoCs
+
 * Counter
 
 * DAC
@@ -146,11 +157,16 @@ Drivers and Sensors
 
 * GPIO
 
+  * Renesas R-Car GPIO driver now supports Gen4 SoCs
+
 * I2C
 
 * I2S
 
 * I3C
+
+  * The Legacy Virtual Register defines have been renamed from ``I3C_DCR_I2C_*``
+    to ``I3C_LVR_I2C_*``.
 
 * IEEE 802.15.4
 
@@ -163,6 +179,8 @@ Drivers and Sensors
 * ACPI
 
 * Pin control
+
+  * Renesas R-Car pinctrl driver now supports Gen4 SoCs
 
 * PWM
 
@@ -193,6 +211,8 @@ Networking
 
 * CoAP:
 
+  * Emit observer/service network events using the Network Event subsystem.
+
 * Connection Manager:
 
 * DHCP:
@@ -209,6 +229,16 @@ Networking
 
 * Misc:
 
+  * It is now possible to have separate IPv4 TTL value and IPv6 hop limit value for
+    unicast and multicast packets. This can be controlled in each socket via
+    :c:func:`setsockopt` API.
+
+  * Added support for compile time network event handlers using the macro
+    :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER`.
+
+  * The :kconfig:option:`CONFIG_NET_MGMT_EVENT_WORKER` choice is added to
+    allow emitting network events using the system work queue or synchronously.
+
 * MQTT-SN:
 
 * OpenThread:
@@ -216,6 +246,9 @@ Networking
 * PPP:
 
 * Sockets:
+
+  * Added support for IPv4 multicast ``IP_ADD_MEMBERSHIP`` and ``IP_DROP_MEMBERSHIP`` socket options.
+  * Added support for IPv6 multicast ``IPV6_ADD_MEMBERSHIP`` and ``IPV6_DROP_MEMBERSHIP`` socket options.
 
 * TCP:
 
@@ -255,8 +288,11 @@ Libraries / Subsystems
   * Implemented datetime functionality in MCUmgr OS management group, this makes use of the RTC
     driver API.
 
-  * Fixes an issue in MCUmgr console UART input whereby the FIFO would be read outside of an ISR,
+  * Fixed an issue in MCUmgr console UART input whereby the FIFO would be read outside of an ISR,
     which is not supported in the next USB stack.
+
+  * Fixed an issue whereby the ``mcuboot erase`` DFU shell command could be used to erase the
+    MCUboot or currently running application slot.
 
 * File systems
 
@@ -305,6 +341,11 @@ Documentation
 
 Tests and Samples
 *****************
+
+* :ref:`native_sim<native_sim>` has replaced :ref:`native_posix<native_posix>` as the default
+  test platform.
+  :ref:`native_posix<native_posix>` remains supported and used in testing but will be deprecated
+  in a future release.
 
 * Fixed an issue in :zephyr:code-sample:`smp-svr` sample whereby if USB was already initialised,
   application would fail to boot properly.

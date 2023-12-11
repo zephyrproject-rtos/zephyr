@@ -10,10 +10,6 @@
  */
 static inline uint8_t get_num_regions(void)
 {
-#if defined(NUM_MPU_REGIONS)
-	/* Retrieve the number of regions from DTS configuration. */
-	return NUM_MPU_REGIONS;
-#else
 	uint32_t type;
 
 	__asm__ volatile("mrc p15, 0, %0, c0, c0, 4" : "=r" (type) ::);
@@ -21,7 +17,6 @@ static inline uint8_t get_num_regions(void)
 	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
 
 	return (uint8_t)type;
-#endif /* NUM_MPU_REGIONS */
 }
 
 static inline uint32_t get_region_attributes(void)

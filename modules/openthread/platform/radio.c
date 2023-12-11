@@ -361,6 +361,10 @@ void platformRadioInit(void)
 
 	cfg.event_handler = handle_radio_event;
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_EVENT_HANDLER, &cfg);
+
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
+	otLinkMetricsInit(otPlatRadioGetReceiveSensitivity());
+#endif
 }
 
 void transmit_message(struct k_work *tx_job)

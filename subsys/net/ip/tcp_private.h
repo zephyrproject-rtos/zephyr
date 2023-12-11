@@ -197,7 +197,8 @@ struct tcp_mss_option {
 };
 
 enum tcp_state {
-	TCP_LISTEN = 1,
+	TCP_UNUSED = 0,
+	TCP_LISTEN,
 	TCP_SYN_SENT,
 	TCP_SYN_RECEIVED,
 	TCP_ESTABLISHED,
@@ -274,6 +275,10 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
 	struct k_work_delayable ack_timer;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	struct k_work_delayable keepalive_timer;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
+	struct k_work conn_release;
 
 	union {
 		/* Because FIN and establish timers are never happening
@@ -293,6 +298,12 @@ struct tcp { /* TCP connection */
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
 	uint32_t ack;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	uint32_t keep_idle;
+	uint32_t keep_intvl;
+	uint32_t keep_cnt;
+	uint32_t keep_cur;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 	uint16_t recv_win_max;
 	uint16_t recv_win;
 	uint16_t send_win_max;
@@ -311,6 +322,9 @@ struct tcp { /* TCP connection */
 	bool in_retransmission : 1;
 	bool in_connect : 1;
 	bool in_close : 1;
+#if defined(CONFIG_NET_TCP_KEEPALIVE)
+	bool keep_alive : 1;
+#endif /* CONFIG_NET_TCP_KEEPALIVE */
 	bool tcp_nodelay : 1;
 };
 

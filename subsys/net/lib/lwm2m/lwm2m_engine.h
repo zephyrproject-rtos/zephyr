@@ -30,6 +30,7 @@
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
+
 /**
  * @brief Validates that writing is a legal operation on the field given by the object in
  * @p obj_inst and the resource id in @p msg. Returns the field to obj_field (if it exists).
@@ -134,6 +135,14 @@ int lwm2m_engine_call_now(k_work_handler_t service);
 int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id);
 
 /**
+ * @brief Returns the object instance id of the security having ssid given by @p short_id.
+ *
+ * @param[in] short_id ssid of the security object
+ * @return Object instance id or negative in case not found
+ */
+int lwm2m_security_short_id_to_inst(uint16_t short_id);
+
+/**
  * @brief Returns the object instance id of the security object instance at @p index
  * in the security object list.
  *
@@ -141,45 +150,6 @@ int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id);
  * @return Object instance id of the security instance or negative in case of error
  */
 int lwm2m_security_index_to_inst_id(int index);
-
-/**
- * @brief Returns the default minimum period for an observation set for the server
- * with object instance id given by @p obj_inst_id.
- *
- * @param[in] obj_inst_id Object instance id of the server object instance
- * @return int32_t pmin value
- */
-int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id);
-
-/**
- * @brief Returns the default maximum period for an observation set for the server
- * with object instance id given by @p obj_inst_id.
- *
- * @param[in] obj_inst_id Object instance id of the server object instance
- * @return int32_t pmax value
- */
-int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
-
-/**
- * @brief Returns the Short Server ID of the server object instance with
- * object instance id given by @p obj_inst_id.
- *
- * @param[in] obj_inst_id Object instance id of the server object
- * @return SSID or negative in case not found
- */
-int lwm2m_server_get_ssid(uint16_t obj_inst_id);
-
-/**
- * @brief Returns the object instance id of the server having ssid given by @p short_id.
- *
- * @param[in] short_id ssid of the server object
- * @return Object instance id or negative in case not found
- */
-int lwm2m_server_short_id_to_inst(uint16_t short_id);
-
-#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
-bool lwm2m_server_get_mute_send(uint16_t obj_inst_id);
-#endif
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 /**

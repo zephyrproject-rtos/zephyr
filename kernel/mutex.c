@@ -37,6 +37,7 @@
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/llext/symbol.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We use a global spinlock here because some of the synchronization
@@ -195,6 +196,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	return -EAGAIN;
 }
+EXPORT_SYSCALL(k_mutex_lock);
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
@@ -280,6 +282,7 @@ k_mutex_unlock_return:
 
 	return 0;
 }
+EXPORT_SYSCALL(k_mutex_unlock);
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)

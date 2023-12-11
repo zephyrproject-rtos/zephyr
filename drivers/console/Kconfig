@@ -222,6 +222,7 @@ endif # UART_MCUMGR
 config XTENSA_SIM_CONSOLE
 	bool "Use Xtensa simulator console"
 	depends on SIMULATOR_XTENSA
+	depends on !WINSTREAM_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	default y
 	help
@@ -340,6 +341,7 @@ config EFI_CONSOLE
 config WINSTREAM_CONSOLE
 	bool "Use Winstream console"
 	depends on WINSTREAM
+	select CONSOLE_HAS_DRIVER
 	help
 	  Use winstream as a console.
 

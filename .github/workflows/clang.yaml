@@ -11,16 +11,16 @@ jobs:
     if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.6
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
     strategy:
       fail-fast: false
       matrix:
-        platform: ["native_posix"]
+        platform: ["native_sim"]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}

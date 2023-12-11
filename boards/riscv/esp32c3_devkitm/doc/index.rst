@@ -18,7 +18,7 @@ The features include the following:
 - 32-bit core RISC-V microcontroller with a maximum clock speed of 160 MHz
 - 400 KB of internal RAM
 - 802.11b/g/n/e/i
-- A Bluetooth LE subsystem that supports features of Bluetooth 5 and Bluetooth mesh
+- A Bluetooth LE subsystem that supports features of Bluetooth 5 and Bluetooth Mesh
 - Various peripherals:
 
   - 12-bit ADC with up to 6 channels

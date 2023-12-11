@@ -339,6 +339,8 @@ static void ase_exit_state_streaming(struct bt_ascs_ase *ase)
 {
 	struct bt_bap_stream *stream = ase->ep.stream;
 	struct bt_bap_stream_ops *ops;
+	const enum bt_bap_ep_state next_state = ascs_ep_get_state(&ase->ep);
+
 	uint8_t reason = ase->ep.reason;
 
 	__ASSERT_NO_MSG(stream != NULL);
@@ -353,6 +355,42 @@ static void ase_exit_state_streaming(struct bt_ascs_ase *ase)
 		ops->stopped(stream, reason);
 	} else {
 		LOG_WRN("No callback for stopped set");
+	}
+
+	/*
+	 * On link-loss we go from streaming state to QOS configured state,
+	 * and it makes sense to do the disabled callback before entering the
+	 * QOS configured state
+	 */
+	if (next_state == BT_BAP_EP_STATE_QOS_CONFIGURED) {
+		if (ops != NULL && ops->disabled != NULL) {
+			ops->disabled(stream);
+		} else {
+			LOG_WRN("No callback for disabled set");
+		}
+	}
+}
+
+static void ase_exit_state_enabling(struct bt_ascs_ase *ase)
+{
+	struct bt_bap_stream *stream = ase->ep.stream;
+	struct bt_bap_stream_ops *ops;
+	const enum bt_bap_ep_state next_state = ascs_ep_get_state(&ase->ep);
+
+	ops = stream->ops;
+
+	/*
+	 * When the EP direction is BT_AUDIO_DIR_SOURCE the state machine goes from
+	 * enabled to disabled where the disabled calback will be called,
+	 * for BT_AUDIO_DIR_SINK we go from enabled to qos_configured,
+	 * and logically we have to do the disabled callback first
+	 */
+	if (next_state == BT_BAP_EP_STATE_QOS_CONFIGURED && ase->ep.dir == BT_AUDIO_DIR_SINK) {
+		if (ops != NULL && ops->disabled != NULL) {
+			ops->disabled(stream);
+		} else {
+			LOG_WRN("No callback for disabled set");
+		}
 	}
 }
 
@@ -451,6 +489,9 @@ static void state_transition_work_handler(struct k_work *work)
 	switch (old_state) {
 	case BT_BAP_EP_STATE_STREAMING:
 		ase_exit_state_streaming(ase);
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		ase_exit_state_enabling(ase);
 		break;
 	default:
 		break;
@@ -1951,9 +1992,15 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 
 struct ascs_parse_result {
 	int err;
+	struct bt_conn *conn;
 	struct bt_bap_ascs_rsp *rsp;
 	const struct bt_bap_ep *ep;
 };
+
+static bool is_context_available(struct bt_conn *conn, enum bt_audio_dir dir, uint16_t context)
+{
+	return (context & bt_pacs_get_available_contexts_for_conn(conn, dir)) == context;
+}
 
 static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 {
@@ -1994,7 +2041,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		/* The CAP acceptor shall not accept metadata with unsupported stream context. */
 		if (IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) &&
 		    data_type == BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT) {
-			if (!bt_pacs_context_available(ep->dir, context)) {
+			if (!is_context_available(result->conn, ep->dir, context)) {
 				LOG_WRN("Context 0x%04x is unavailable", context);
 				*result->rsp = BT_BAP_ASCS_RSP(
 					BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data_type);
@@ -2079,7 +2126,9 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 static int ascs_verify_metadata(struct bt_bap_ep *ep, const struct bt_ascs_metadata *meta,
 				struct bt_bap_ascs_rsp *rsp)
 {
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	struct ascs_parse_result result = {
+		.conn = ase->conn,
 		.rsp = rsp,
 		.err = 0,
 		.ep = ep,

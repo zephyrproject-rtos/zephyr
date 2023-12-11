@@ -108,7 +108,7 @@ struct bt_mesh_blob_srv_cb {
 
 	/** @brief Transfer recovery callback.
 	 *
-	 *  Called when the Bluetooth mesh subsystem is started if the device is rebooted
+	 *  Called when the Bluetooth Mesh subsystem is started if the device is rebooted
 	 *  in the middle of a transfer.
 	 *
 	 *  Transfers will not be resumed after a reboot if this callback is not

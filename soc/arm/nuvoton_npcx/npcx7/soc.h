@@ -7,9 +7,7 @@
 #ifndef _NUVOTON_NPCX_SOC_H_
 #define _NUVOTON_NPCX_SOC_H_
 
-/* CMSIS required definitions */
-#define __FPU_PRESENT  CONFIG_CPU_HAS_FPU
-#define __MPU_PRESENT  CONFIG_CPU_HAS_ARM_MPU
+#include <cmsis_core_m_defaults.h>
 
 /* NPCX7 SCFG multi-registers offset */
 #define NPCX_DEVALT_OFFSET(n)		(0x010 + n)

@@ -9,7 +9,7 @@
  * @defgroup bt_mesh_dfu_cli Firmware Uppdate Client model
  * @ingroup bt_mesh_dfu
  * @{
- * @brief API for the Bluetooth mesh Firmware Update Client model
+ * @brief API for the Bluetooth Mesh Firmware Update Client model
  */
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_CLI_H__

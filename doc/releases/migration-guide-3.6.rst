@@ -17,8 +17,14 @@ Required changes
 Boards
 ======
 
-  * The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
-    applications that use this should switch to using the :ref:`boot_mode_api` instead.
+* The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
+  applications that use this should switch to using the :ref:`boot_mode_api` instead.
+
+Build System
+============
+
+* The deprecated ``prj_<board>.conf`` Kconfig file support has been removed, projects that use
+  this should switch to using board Kconfig fragments instead (``boards/<board>.conf``).
 
 Kernel
 ======
@@ -65,6 +71,52 @@ Device Drivers and Device Tree
   identity address, which will then be passed in the ``public_addr`` field.
 
   (:github:`62994`)
+
+* Various deprecated macros related to the deprecated devicetree label property
+  were removed. These are listed in the following table. The table also
+  provides replacements.
+
+  However, if you are still using code like
+  ``device_get_binding(DT_LABEL(node_id))``, consider replacing it with
+  something like ``DEVICE_DT_GET(node_id)`` instead. The ``DEVICE_DT_GET()``
+  macro avoids run-time string comparisons, and is also safer because it will
+  fail the build if the device does not exist.
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Removed macro
+       - Replacement
+
+     * - ``DT_GPIO_LABEL(node_id, gpio_pha)``
+       - ``DT_PROP(DT_GPIO_CTLR(node_id, gpio_pha), label)``
+
+     * - ``DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx)``
+       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx), label)``
+
+     * - ``DT_INST_GPIO_LABEL(inst, gpio_pha)``
+       - ``DT_PROP(DT_GPIO_CTLR(DT_DRV_INST(inst), gpio_pha), label)``
+
+     * - ``DT_INST_GPIO_LABEL_BY_IDX(inst, gpio_pha, idx)``
+       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(DT_DRV_INST(inst), gpio_pha, idx), label)``
+
+     * - ``DT_SPI_DEV_CS_GPIOS_LABEL(spi_dev)``
+       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev), label)``
+
+     * - ``DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)``
+       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst)), label)``
+
+     * - ``DT_LABEL(node_id)``
+       - ``DT_PROP(node_id, label)``
+
+     * - ``DT_BUS_LABEL(node_id)``
+       - ``DT_PROP(DT_BUS(node_id), label)``
+
+     * - ``DT_INST_LABEL(inst)``
+       - ``DT_INST_PROP(inst, label)``
+
+     * - ``DT_INST_BUS_LABEL(inst)``
+       - ``DT_PROP(DT_BUS(DT_DRV_INST(inst)), label)``
 
 Power Management
 ================
@@ -131,6 +183,11 @@ Bluetooth
 * The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
   The ``elem->addr`` field has been changed to the new runtime structure, replaced by
   ``elem->rt->addr``. (:github:`65388`)
+* The Bluetooth UUID has been modified to rodata in ``BT_UUID_DECLARE_16``, ``BT_UUID_DECLARE_32`
+  and ``BT_UUID_DECLARE_128`` as the return value has been changed to `const`.
+  Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
+  For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
+  ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
 
 LoRaWAN
 =======
@@ -150,12 +207,21 @@ Networking
   ``request`` argument for :c:func:`coap_well_known_core_get` is made ``const``.
   (:github:`64265`)
 
+* CoAP observer events have moved from a callback function in a CoAP resource to the Network Events
+  subsystem. The ``CONFIG_COAP_OBSERVER_EVENTS`` configuration option has been removed.
+  (:github:`65936`)
+
 * The IGMP multicast library now supports IGMPv3. This results in a minor change to the existing
   api. The :c:func:`net_ipv4_igmp_join` now takes an additional argument of the type
   ``const struct igmp_param *param``. This allows IGMPv3 to exclude/include certain groups of
   addresses. If this functionality is not used or available (when using IGMPv2), you can safely pass
   a NULL pointer. IGMPv3 can be enabled using the Kconfig ``CONFIG_NET_IPV4_IGMPV3``.
   (:github:`65293`)
+
+* The network stack now uses a separate IPv4 TTL (time-to-live) value for multicast packets.
+  Before, the same TTL value was used for unicast and multicast packets.
+  The IPv6 hop limit value is also changed so that unicast and multicast packets can have a
+  different one. (:github:`65886`)
 
 Other Subsystems
 ================
@@ -180,3 +246,7 @@ Recommended Changes
 * New macros available for ST sensor DT properties setting. These macros have a self-explanatory
   name that helps in recognizing what the property setting means (e.g. LSM6DSV16X_DT_ODR_AT_60Hz).
   (:github:`65410`)
+
+* Users of :ref:`native_posix<native_posix>` are recommended to migrate to
+  :ref:`native_sim<native_sim>`. :ref:`native_sim<native_sim>` supports all its use cases,
+  and should be a drop-in replacement for most.

@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(gpio_keys, CONFIG_INPUT_LOG_LEVEL);
 
 struct gpio_keys_callback {
 	struct gpio_callback gpio_cb;
-	uint32_t zephyr_code;
 	int8_t pin_state;
 };
 
@@ -66,55 +65,45 @@ static void gpio_keys_change_deferred(struct k_work *work)
 	}
 }
 
-static void gpio_keys_change_call_deferred(struct gpio_keys_pin_data *data, uint32_t msec)
-{
-	int __maybe_unused rv = k_work_reschedule(&data->work, K_MSEC(msec));
-
-	__ASSERT(rv >= 0, "Set wake mask work queue error");
-}
-
 static void gpio_keys_interrupt(const struct device *dev, struct gpio_callback *cbdata,
 				uint32_t pins)
 {
-	ARG_UNUSED(dev); /* This is a pointer to GPIO device, use dev pointer in
-			  * cbdata for pointer to gpio_debounce device node
-			  */
 	struct gpio_keys_callback *keys_cb = CONTAINER_OF(
 			cbdata, struct gpio_keys_callback, gpio_cb);
 	struct gpio_keys_pin_data *pin_data = CONTAINER_OF(
 			keys_cb, struct gpio_keys_pin_data, cb_data);
 	const struct gpio_keys_config *cfg = pin_data->dev->config;
 
-	for (int i = 0; i < cfg->num_keys; i++) {
-		if (pins & BIT(cfg->pin_cfg[i].spec.pin)) {
-			gpio_keys_change_call_deferred(pin_data, cfg->debounce_interval_ms);
-		}
-	}
+	ARG_UNUSED(dev); /* GPIO device pointer. */
+	ARG_UNUSED(pins);
+
+	k_work_reschedule(&pin_data->work, K_MSEC(cfg->debounce_interval_ms));
 }
 
 static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 					 struct gpio_keys_callback *cb, uint32_t zephyr_code)
 {
-	int retval;
-	gpio_flags_t flags;
+	int ret;
 
 	gpio_init_callback(&cb->gpio_cb, gpio_keys_interrupt, BIT(gpio_spec->pin));
 
-	retval = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
-	if (retval < 0) {
+	ret = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
+	if (ret < 0) {
 		LOG_ERR("Could not set gpio callback");
-		return retval;
+		return ret;
 	}
 
-	cb->zephyr_code = zephyr_code;
 	cb->pin_state = -1;
-	flags = GPIO_INT_EDGE_BOTH & ~GPIO_INT_MODE_DISABLED;
 
 	LOG_DBG("%s [0x%p, %d]", __func__, gpio_spec->port, gpio_spec->pin);
 
-	retval = z_impl_gpio_pin_interrupt_configure(gpio_spec->port, gpio_spec->pin, flags);
+	ret = gpio_pin_interrupt_configure_dt(gpio_spec, GPIO_INT_EDGE_BOTH);
+	if (ret < 0) {
+		LOG_ERR("interrupt configuration failed: %d", ret);
+		return ret;
+	}
 
-	return retval;
+	return 0;
 }
 
 static int gpio_keys_init(const struct device *dev)

@@ -11,7 +11,7 @@ The Private Beacon Client model is introduced in the Bluetooth Mesh Protocol
 Specification version 1.1, and provides functionality for configuring the
 :ref:`bluetooth_mesh_models_priv_beacon_srv` models.
 
-The Private Beacons feature adds privacy to the different Bluetooth mesh
+The Private Beacons feature adds privacy to the different Bluetooth Mesh
 beacons by periodically randomizing the beacon input data. This protects the
 mesh node from being tracked by devices outside the mesh network, and hides the
 network's IV index, IV update and the Key Refresh state.

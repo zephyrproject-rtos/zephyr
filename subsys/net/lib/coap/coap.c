@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/coap.h>
+#include <zephyr/net/coap_mgmt.h>
 
 #define COAP_PATH_ELEM_DELIM '/'
 #define COAP_PATH_ELEM_QUERY '?'
@@ -1844,6 +1845,25 @@ void coap_observer_init(struct coap_observer *observer,
 	net_ipaddr_copy(&observer->addr, addr);
 }
 
+static inline void coap_observer_raise_event(struct coap_resource *resource,
+					     struct coap_observer *observer,
+					     uint32_t mgmt_event)
+{
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	const struct net_event_coap_observer net_event = {
+		.resource = resource,
+		.observer = observer,
+	};
+
+	net_mgmt_event_notify_with_info(mgmt_event, NULL, (void *)&net_event, sizeof(net_event));
+#else
+	ARG_UNUSED(resource);
+	ARG_UNUSED(observer);
+
+	net_mgmt_event_notify(mgmt_event, NULL);
+#endif
+}
+
 bool coap_register_observer(struct coap_resource *resource,
 			    struct coap_observer *observer)
 {
@@ -1856,11 +1876,7 @@ bool coap_register_observer(struct coap_resource *resource,
 		resource->age = 2;
 	}
 
-#ifdef CONFIG_COAP_OBSERVER_EVENTS
-	if (resource->observer_event_handler) {
-		resource->observer_event_handler(resource, observer, COAP_OBSERVER_ADDED);
-	}
-#endif
+	coap_observer_raise_event(resource, observer, NET_EVENT_COAP_OBSERVER_ADDED);
 
 	return first;
 }
@@ -1872,11 +1888,8 @@ bool coap_remove_observer(struct coap_resource *resource,
 		return false;
 	}
 
-#ifdef CONFIG_COAP_OBSERVER_EVENTS
-	if (resource->observer_event_handler) {
-		resource->observer_event_handler(resource, observer, COAP_OBSERVER_REMOVED);
-	}
-#endif
+	coap_observer_raise_event(resource, observer, NET_EVENT_COAP_OBSERVER_REMOVED);
+
 	return true;
 }
 

@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <net/if.h>
+#include <linux/if.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #else
@@ -147,18 +148,6 @@ ssize_t linux_socketcan_read_data(int fd, void *buf, size_t buf_len, bool *msg_c
 ssize_t linux_socketcan_write_data(int fd, void *buf, size_t buf_len)
 {
 	return write(fd, buf, buf_len);
-}
-
-int linux_socketcan_setsockopt(int fd, int level, int optname,
-			       const void *optval, socklen_t optlen)
-{
-	return setsockopt(fd, level, optname, optval, optlen);
-}
-
-int linux_socketcan_getsockopt(int fd, int level, int optname,
-			       void *optval, socklen_t *optlen)
-{
-	return getsockopt(fd, level, optname, optval, optlen);
 }
 
 int linux_socketcan_set_mode_fd(int fd, bool mode_fd)

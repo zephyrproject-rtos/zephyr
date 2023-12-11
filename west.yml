@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: ca3be152414bb269647806c4d3091e04168d1add
+      revision: eb7e415dc115e57afe96f552493b19d49dfc8c0e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 56e0b052dff311c2f8eb08c6804e60fc79feb56f
+      revision: b9633ecea67bf52925d4c61455046223b46402b1
       path: modules/hal/nordic
       groups:
         - hal
@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 1ed023da7f5541b78099b5a030507a2839ce554f
+      revision: 2a294b540c09b36f7cddece44d25628bfde5970e
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: af2d314b6f7f87cfa8365009497132468ca3a686
+      revision: 39903791f413a944b3ec926276557757ea47a691
       path: modules/hal/stm32
       groups:
         - hal
@@ -263,7 +263,7 @@ manifest:
       groups:
         - hal
     - name: liblc3
-      revision: 448f3de31f49a838988a162ef1e23a89ddf2d2ed
+      revision: 1a5938ebaca4f13fe79ce074f5dee079783aa29f
       path: modules/lib/liblc3
     - name: littlefs
       path: modules/fs/littlefs
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 05d11942774fc15b90af101232ec5305051216ec
+      revision: 212997395ed34ff1721f5f4461b800e81abeb68d
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -290,18 +290,18 @@ manifest:
         - debug
       revision: a819419603a2dfcb47f7f39092e1bc112e45d1ef
     - name: net-tools
-      revision: d68ee9d17648a1bb3729c2023abfcb735dfe92fa
+      revision: 3a677d355cc7f73e444801a6280d0ccec80a1957
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: a715dcc179f1a71f51c574165958b72fe932ae3f
+      revision: 9b985ea6bc237b6ae06f48eb228f2ac7f6e3b96b
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: 214f9fc1539f8e5937c0474cb6ee29b6dcb2d4b8
       path: modules/lib/open-amp
     - name: openthread
-      revision: 75694d2860282d216d7286f3956388e957c7cfb5
+      revision: 4ed44bc7d58d9a98c6cca13a50d38129045ab3df
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio

@@ -130,7 +130,7 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
  */
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
-			  CMD_BUF_SIZE, 8, NULL);
+			  CMD_BUF_SIZE, sizeof(struct bt_buf_data), NULL);
 
 struct event_handler {
 	uint8_t event;
@@ -4320,7 +4320,7 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 	struct bt_hci_cp_le_set_host_chan_classif *cp;
 	struct net_buf *buf;
 
-	if (!IS_ENABLED(CONFIG_BT_CENTRAL)) {
+	if (!(IS_ENABLED(CONFIG_BT_CENTRAL) || IS_ENABLED(CONFIG_BT_BROADCASTER))) {
 		return -ENOTSUP;
 	}
 
