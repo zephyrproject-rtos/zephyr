@@ -64,6 +64,18 @@
 		#size-cells = <0>;
 		controller = <&i2c0>;
 		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+
+		light: opt3001-light@44 {
+			status = "okay";
+			compatible = "ti,opt3001";
+			reg = <0x44>;
+		};
+
+		humidity: hdc2010-humidity@41 {
+			status = "okay";
+			compatible = "ti,hdc2010";
+			reg = <0x41>;
+		};
 	};
 };
 
@@ -125,18 +137,6 @@
 	mcu: msp430-usbbridge@4 {
 		compatible = "beagle,usbbridge";
 		reg = <0x4>;
-	};
-
-	light: opt3001-light@44 {
-		status = "okay";
-		compatible = "ti,opt3001";
-		reg = <0x44>;
-	};
-
-	humidity: hdc2010-humidity@41 {
-		status = "okay";
-		compatible = "ti,hdc2010";
-		reg = <0x41>;
 	};
 };
 
