@@ -1,0 +1,59 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Ambiq Apollo4p EVB headers
+
+    The Ambiq Apollo4p EVB layout provides 5x16 and 1x20 pin headers.
+
+    The binding provides a nexus mapping for these pins as depicted below.
+
+            J7                              J12
+
+    VDD_MCU - VDD_MCU -             GPIO22 22 GND     -
+    VDD_EXT - VDD_EXT -             GPIO23 23 GPIO24 24
+    nRST    - GND     -             VDD_MCU - GND     -
+    VDD_EXT - VDD_EXT -             GND     - GPIO64 64
+    VDD_5V  - VDD_5V  -             GPIO61 61 GPIO65 65
+    GND     - GND     -             GPIO63 63 GPIO66 66
+    GND     - GPIO100 100           GPIO62 62 GPIO67 67
+    VDDH2   - GPIO97  97            GPIO47 47 GPIO68 68
+                                    GPIO49 49 GPIO69 69
+            J9                      GPIO48 48 GPIO70 70
+
+    GPIO19 19 GPIO96  96                    J11
+    GPIO18 18 GPIO95  95
+    GPIO17 17 GPIO98  98            GPIO53 53 GPIO71 71
+    GPIO16 16 GPIO99  99            GPIO52 52 GPIO72 72
+    GPIO15 15 GPIO102 102           GPIO91 91 GPIO73 73
+    GPIO14 14 GPIO34  34            GPIO90 90 GPIO93 93
+    GPIO13 13 GPIO35  35            GPIO11 11 GPIO92 92
+    GPIO12 12 GPIO36  36            GPIO10 10 GPIO33 33
+                                    GPIO8  8  GPIO32 32
+                                    GPIO9  9  GPIO31 31
+
+                                            J10
+
+                                    GPIO28 28 GPIO60 60
+                                    GPIO30 30 GPIO59 59
+                                    GPIO94 94 GPIO58 58
+                                    GPIO55 55 GPIO7  7
+                                    GPIO0  0  GPIO54 54
+                                    GPIO51 51 GPIO1  1
+                                    GPIO2  2  GPIO50 50
+                                    GPIO3  3  GPIO4  4
+
+                                      Voltage Header
+
+                                    VDD_EXT - VDD_5V -
+                                    GND     - GND    -
+                                    BIAS    - BIAS   -
+                                    GND     - AUDA   -
+                                    GND     - GND    -
+                                    D1P     - DON    -
+                                    D1N     - DOP    -
+                                    GND     - GND    -
+
+compatible: "ambiq-header"
+
+include: [gpio-nexus.yaml, base.yaml]
