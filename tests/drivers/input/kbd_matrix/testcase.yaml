@@ -17,6 +17,10 @@ tests:
   input.input_kbd_matrix.actual_key_mask:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=actual-key-mask.overlay
+  input.input_kbd_matrix.actual_key_mask_dynamic:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=actual-key-mask.overlay
+      - CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC=y
   input.input_kbd_matrix.row_16_bit:
     extra_args:
       - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
