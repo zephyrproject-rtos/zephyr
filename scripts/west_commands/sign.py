@@ -420,11 +420,26 @@ class ImgtoolSigner(Signer):
 
 class RimageSigner(Signer):
 
+    def rimage_config_dir(self):
+        'Returns the rimage/config/ directory with the highest precedence'
+        args = self.command.args
+        if args.tool_data:
+            conf_dir = pathlib.Path(args.tool_data)
+        elif self.cmake_cache.get('RIMAGE_CONFIG_PATH'):
+            conf_dir = pathlib.Path(self.cmake_cache['RIMAGE_CONFIG_PATH'])
+        else:
+            conf_dir = self.sof_src_dir / 'tools' / 'rimage' / 'config'
+        self.command.dbg(f'rimage config directory={conf_dir}')
+        return conf_dir
+
     def sign(self, command, build_dir, build_conf, formats):
+        self.command = command
         args = command.args
 
         b = pathlib.Path(build_dir)
+        self.build_dir = b
         cache = CMakeCache.from_build_dir(build_dir)
+        self.cmake_cache = cache
 
         # Warning: RIMAGE_TARGET in Zephyr is a duplicate of
         # CONFIG_RIMAGE_SIGNING_SCHEMA in SOF.
@@ -481,8 +496,6 @@ class RimageSigner(Signer):
 
         #### -c sof/rimage/config/signing_schema.toml  ####
 
-        cmake_toml = target + '.toml'
-
         if not args.quiet:
             log.inf('Signing with tool {}'.format(tool_path))
 
@@ -492,19 +505,8 @@ class RimageSigner(Signer):
         except ValueError: # sof is the manifest
             sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
 
-        if '-c' in args.tool_args:
-            # Precedence to the arguments passed after '--': west sign ...  -- -c ...
-            if args.tool_data:
-                log.wrn('--tool-data ' + args.tool_data + ' ignored, overridden by: -- -c ... ')
-            conf_dir = None
-        elif args.tool_data:
-            conf_dir = pathlib.Path(args.tool_data)
-        elif cache.get('RIMAGE_CONFIG_PATH'):
-            conf_dir = pathlib.Path(cache['RIMAGE_CONFIG_PATH'])
-        else:
-            conf_dir = sof_src_dir / 'tools' / 'rimage' / 'config'
+        self.sof_src_dir = sof_src_dir
 
-        conf_path_cmd = ['-c', str(conf_dir / cmake_toml)] if conf_dir else []
 
         log.inf('Signing for SOC target ' + target)
 
@@ -545,8 +547,12 @@ class RimageSigner(Signer):
             cmake_default_key = cache.get('RIMAGE_SIGN_KEY', 'key placeholder from sign.py')
             extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
 
+        if args.tool_data and '-c' in args.tool_args:
+            log.wrn('--tool-data ' + args.tool_data + ' ignored! Overridden by: -- -c ... ')
+
         if '-c' not in sign_config_extra_args + args.tool_args:
-            extra_ri_args += conf_path_cmd
+            conf_dir = self.rimage_config_dir()
+            extra_ri_args += ['-c', str(conf_dir / (target + '.toml'))]
 
         # Warning: while not officially supported (yet?), the rimage --option that is last
         # on the command line currently wins in case of duplicate options. So pay
