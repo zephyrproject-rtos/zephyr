@@ -10,17 +10,18 @@ common:
   build_only: true
 tests:
   sensors.build.sensorhub:
-    extra_args: OVERLAY_CONFIG=sensors_shub.conf
+    extra_args: OVERLAY_CONFIG=sensors_shub.conf;sensors_die_temp.conf
   sensors.build.trigger.own:
-    extra_args: OVERLAY_CONFIG=sensors_trigger_own.conf
+    extra_args: OVERLAY_CONFIG=sensors_trigger_own.conf;sensors_die_temp.conf
   sensors.build.trigger.global:
-    extra_args: OVERLAY_CONFIG=sensors_trigger_global.conf
+    extra_args: OVERLAY_CONFIG=sensors_trigger_global.conf;sensors_die_temp.conf
   sensors.build.trigger.none:
-    extra_args: OVERLAY_CONFIG=sensors_trigger_none.conf
+    extra_args: OVERLAY_CONFIG=sensors_trigger_none.conf;sensors_die_temp.conf
   sensors.build.no_default:
     extra_args: OVERLAY_CONFIG=sensors_no_default.conf
   sensors.build:
     tags: sensors
+    extra_args: OVERLAY_CONFIG=sensors_die_temp.conf
   sensors.build.pm:
     extra_configs:
       - CONFIG_PM=y
