@@ -71,17 +71,6 @@ static inline struct sensing_sensor *get_sensor_by_dev(const struct device *dev)
 	return NULL;
 }
 
-static inline uint16_t get_reporter_sample_size(const struct sensing_sensor *sensor, int i)
-{
-	const struct sensing_sensor *reporter;
-
-	__ASSERT(i < sensor->reporter_num, "dt index should less than reporter num");
-
-	reporter = sensor->conns[i].source;
-
-	return reporter->register_info->sample_size;
-}
-
 static inline struct sensing_sensor *get_reporter_sensor(struct sensing_sensor *sensor, int index)
 {
 	if (!sensor || index >= sensor->reporter_num) {
