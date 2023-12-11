@@ -191,11 +191,11 @@ void k_mem_unmap(void *addr, size_t size);
  * The returned region will have both its base address and size aligned
  * to the provided alignment value.
  *
- * @param aligned_addr [out] Aligned address
- * @param aligned_size [out] Aligned region size
- * @param addr Region base address
- * @param size Region size
- * @param align What to align the address and size to
+ * @param[out] aligned_addr Aligned address
+ * @param[out] aligned_size Aligned region size
+ * @param[in]  addr Region base address
+ * @param[in]  size Region size
+ * @param[in]  align What to align the address and size to
  * @retval offset between aligned_addr and addr
  */
 size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
