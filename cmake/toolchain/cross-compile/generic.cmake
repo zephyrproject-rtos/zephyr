@@ -29,3 +29,5 @@ set(LINKER ld)
 set(BINTOOLS gnu)
 
 message(STATUS "Found toolchain: cross-compile (${CROSS_COMPILE})")
+
+set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
