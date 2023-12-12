@@ -150,6 +150,28 @@ Networking
   ``request`` argument for :c:func:`coap_well_known_core_get` is made ``const``.
   (:github:`64265`)
 
+* CoAP observer events have moved from a callback function in a CoAP resource to the Network Events
+  subsystem. The ``CONFIG_COAP_OBSERVER_EVENTS`` configuration option has been removed.
+  (:github:`65936`)
+
+* The CoAP public API function :c:func:`coap_pending_init` has changed. The parameter
+  ``retries`` is replaced with a pointer to :c:struct:`coap_transmission_parameters`. This allows to
+  specify retransmission parameters of the confirmable message. It is safe to pass a NULL pointer to
+  use default values.
+  (:github:`66482`)
+
+* The IGMP multicast library now supports IGMPv3. This results in a minor change to the existing
+  api. The :c:func:`net_ipv4_igmp_join` now takes an additional argument of the type
+  ``const struct igmp_param *param``. This allows IGMPv3 to exclude/include certain groups of
+  addresses. If this functionality is not used or available (when using IGMPv2), you can safely pass
+  a NULL pointer. IGMPv3 can be enabled using the Kconfig ``CONFIG_NET_IPV4_IGMPV3``.
+  (:github:`65293`)
+
+* The network stack now uses a separate IPv4 TTL (time-to-live) value for multicast packets.
+  Before, the same TTL value was used for unicast and multicast packets.
+  The IPv6 hop limit value is also changed so that unicast and multicast packets can have a
+  different one. (:github:`65886`)
+
 Other Subsystems
 ================
 

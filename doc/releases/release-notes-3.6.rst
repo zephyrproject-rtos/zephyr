@@ -195,6 +195,11 @@ Networking
 
 * CoAP:
 
+  * Added new API functions:
+
+    * :c:func:`coap_get_transmission_parameters`
+    * :c:func:`coap_set_transmission_parameters`
+
 * Connection Manager:
 
 * DHCP:
