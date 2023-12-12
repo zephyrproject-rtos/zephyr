@@ -236,6 +236,12 @@ Networking
   subsystem. The ``CONFIG_COAP_OBSERVER_EVENTS`` configuration option has been removed.
   (:github:`65936`)
 
+* The CoAP public API function :c:func:`coap_pending_init` has changed. The parameter
+  ``retries`` is replaced with a pointer to :c:struct:`coap_transmission_parameters`. This allows to
+  specify retransmission parameters of the confirmable message. It is safe to pass a NULL pointer to
+  use default values.
+  (:github:`66482`)
+
 * The IGMP multicast library now supports IGMPv3. This results in a minor change to the existing
   api. The :c:func:`net_ipv4_igmp_join` now takes an additional argument of the type
   ``const struct igmp_param *param``. This allows IGMPv3 to exclude/include certain groups of
