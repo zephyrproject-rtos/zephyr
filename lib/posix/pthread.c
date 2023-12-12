@@ -708,12 +708,16 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
 	__unused int ret;
 
+	if (init_func == NULL) {
+		return EINVAL;
+	}
+
 	ret = k_mutex_lock(&pthread_once_lock, K_FOREVER);
 	__ASSERT_NO_MSG(ret == 0);
 
-	if (once->is_initialized != 0 && once->init_executed == 0) {
+	if (once->flag == 0) {
 		init_func();
-		once->init_executed = 1;
+		once->flag = 1;
 	}
 
 	ret = k_mutex_unlock(&pthread_once_lock);

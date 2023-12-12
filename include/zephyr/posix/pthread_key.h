@@ -19,8 +19,7 @@ extern "C" {
 #ifdef CONFIG_PTHREAD_IPC
 
 typedef struct {
-	int is_initialized;
-	int init_executed;
+	char flag;
 } pthread_once_t;
 #endif
 
