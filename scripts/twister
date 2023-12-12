@@ -90,6 +90,9 @@ pairs:
   platform_exclude: <list of platforms>
     Set of platforms that this test case should not run on.
 
+  simulation_exclude: <list of simulators>
+    Set of simulators that this test case should not run on.
+
   extra_sections: <list of extra binary sections>
     When computing sizes, twister will report errors if it finds
     extra, unexpected sections in the Zephyr binary unless they are named
