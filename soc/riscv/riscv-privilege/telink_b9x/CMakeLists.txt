@@ -17,11 +17,9 @@ zephyr_sources(
 	sys_heap_alloc_wrap.c
 )
 
-if(CONFIG_SOC_RISCV_TELINK_B92)
 zephyr_sources(
 	idle.c
 )
-endif()
 
 zephyr_sources_ifdef(CONFIG_PM
 	power.c
