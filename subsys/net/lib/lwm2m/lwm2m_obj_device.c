@@ -261,7 +261,7 @@ static int lwm2m_obj_device_settings_set(const char *name, size_t len,
 
 	if (settings_name_steq(name, ERROR_LIST_KEY, &next) && !next) {
 		if (len > sizeof(error_code_list)) {
-			LOG_ERR("Error code list too large: %u", len);
+			LOG_ERR("Error code list too large: %zu", len);
 			return -EINVAL;
 		}
 
