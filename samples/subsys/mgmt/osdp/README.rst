@@ -12,7 +12,7 @@ OSDP describes the communication protocol for interfacing one or more Peripheral
 Devices (PD) to a Control Panel (CP) over a two-wire RS-485 multi-drop serial
 communication channel. Nevertheless, this protocol can be used to transfer
 secure data over any stream based physical channel. Read more about `OSDP here
-<https://libosdp.gotomain.io/>`_..
+<https://github.com/goToMain/libosdp/>`_..
 
 Although OSDP is steered towards the Access and Security industries, it can be
 used as a general communication protocol for devices in a secure way without
