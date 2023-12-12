@@ -340,6 +340,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			return -ECONNREFUSED;
 		case BT_HCI_ERR_INSUFFICIENT_RESOURCES:
 			return -ENOMEM;
+		case BT_HCI_ERR_INVALID_PARAM:
+			return -EINVAL;
 		default:
 			return -EIO;
 		}
