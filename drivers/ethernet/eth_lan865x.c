@@ -547,6 +547,12 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 
 	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 	ret = oa_tc6_send_chunks(tc6, pkt);
+
+	/* Check if rca > 0 during half-duplex TX transmission */
+	if (tc6->rca > 0) {
+		k_sem_give(&ctx->int_sem);
+	}
+
 	k_sem_give(&ctx->tx_rx_sem);
 	if (ret < 0) {
 		LOG_ERR("TX transmission error, %d", ret);
