@@ -58,7 +58,6 @@ static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 static struct k_spinlock pthread_pool_lock;
 static int pthread_concurrency;
-static K_MUTEX_DEFINE(pthread_once_lock);
 
 static const struct pthread_attr init_pthread_attrs = {
 	.priority = 0,
@@ -707,17 +706,23 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
 	__unused int ret;
+	bool run_init_func = false;
+	struct pthread_once *const _once = (struct pthread_once *)once;
 
-	ret = k_mutex_lock(&pthread_once_lock, K_FOREVER);
-	__ASSERT_NO_MSG(ret == 0);
-
-	if (once->is_initialized != 0 && once->init_executed == 0) {
-		init_func();
-		once->init_executed = 1;
+	if (init_func == NULL) {
+		return EINVAL;
 	}
 
-	ret = k_mutex_unlock(&pthread_once_lock);
-	__ASSERT_NO_MSG(ret == 0);
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (!_once->flag) {
+			run_init_func = true;
+			_once->flag = true;
+		}
+	}
+
+	if (run_init_func) {
+		init_func();
+	}
 
 	return 0;
 }
