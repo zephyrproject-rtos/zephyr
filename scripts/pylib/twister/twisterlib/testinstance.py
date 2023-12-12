@@ -219,7 +219,8 @@ class TestInstance:
 
         target_ready = bool(self.testsuite.type == "unit" or \
                         self.platform.type == "native" or \
-                        self.platform.simulation in SUPPORTED_SIMS or \
+                        (self.platform.simulation in SUPPORTED_SIMS and \
+                         self.platform.simulation not in self.testsuite.simulation_exclude) or \
                         filter == 'runnable')
 
         # check if test is runnable in pytest

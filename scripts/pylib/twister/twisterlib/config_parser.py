@@ -70,6 +70,7 @@ class TwisterConfigParser:
                        "platform_exclude": {"type": "set"},
                        "platform_allow": {"type": "set"},
                        "platform_key": {"type": "list", "default": []},
+                       "simulation_exclude": {"type": "list", "default": []},
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
