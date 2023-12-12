@@ -664,6 +664,7 @@ flagged.
         "FOO_LOG_LEVEL",
         "FOO_SETTING_1",
         "FOO_SETTING_2",
+        "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "LSM6DSO_INT_PIN",
         "LIBGCC_RTLIB",
         "LLVM_USE_LD",   # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
