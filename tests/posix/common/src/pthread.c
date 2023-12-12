@@ -473,7 +473,7 @@ ZTEST(posix_apis, test_pthread_errors_errno)
 		      "cancel NULL error");
 	zassert_equal(pthread_join(PTHREAD_INVALID, NULL), ESRCH,
 		      "join with NULL has error");
-	zassert_false(pthread_once(&key, NULL),
+	zassert_equal(pthread_once(&key, NULL), EINVAL,
 		      "pthread dynamic package initialization error");
 	zassert_equal(pthread_getschedparam(PTHREAD_INVALID, &policy, &param), ESRCH,
 		      "get schedparam with NULL error");
