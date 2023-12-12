@@ -182,6 +182,14 @@ void acpi_dmar_foreach_devscope(ACPI_DMAR_HARDWARE_UNIT *hu,
 				dmar_foreach_devscope_func_t func, void *arg);
 
 /**
+ * @brief Retrieve IOAPIC id
+ *
+ * @param ioapic_id IOAPIC id
+ * @return return 0 on success or error code
+ */
+int acpi_dmar_ioapic_get(uint16_t *ioapic_id);
+
+/**
  * @brief Retrieve the 'n'th enabled local apic info.
  *
  * @param cpu_num the cpu number

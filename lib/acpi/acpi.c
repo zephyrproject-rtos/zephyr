@@ -682,6 +682,58 @@ void acpi_dmar_foreach_devscope(ACPI_DMAR_HARDWARE_UNIT *hu,
 	}
 }
 
+static void devscope_handler(ACPI_DMAR_DEVICE_SCOPE *devscope, void *arg)
+{
+	ACPI_DMAR_PCI_PATH *dev_path;
+	union acpi_dmar_id pci_path;
+
+	ARG_UNUSED(arg); /* may be unused */
+
+	if (devscope->EntryType == ACPI_DMAR_SCOPE_TYPE_IOAPIC) {
+		uint16_t *ioapic_id = arg;
+
+		dev_path = ACPI_ADD_PTR(ACPI_DMAR_PCI_PATH, devscope,
+					sizeof(ACPI_DMAR_DEVICE_SCOPE));
+
+		/* Get first entry */
+		pci_path.bits.bus = devscope->Bus;
+		pci_path.bits.device = dev_path->Device;
+		pci_path.bits.function = dev_path->Function;
+
+		*ioapic_id = pci_path.raw;
+	}
+}
+
+static void subtable_handler(ACPI_DMAR_HEADER *subtable, void *arg)
+{
+	ARG_UNUSED(arg); /* may be unused */
+
+	if (subtable->Type == ACPI_DMAR_TYPE_HARDWARE_UNIT) {
+		ACPI_DMAR_HARDWARE_UNIT *hu;
+
+		hu = CONTAINER_OF(subtable, ACPI_DMAR_HARDWARE_UNIT, Header);
+		acpi_dmar_foreach_devscope(hu, devscope_handler, arg);
+	}
+}
+
+int acpi_dmar_ioapic_get(uint16_t *ioapic_id)
+{
+	ACPI_TABLE_DMAR *dmar = acpi_table_get("DMAR", 0);
+	uint16_t found_ioapic = USHRT_MAX;
+
+	if (dmar == NULL) {
+		return -ENODEV;
+	}
+
+	acpi_dmar_foreach_subtable(dmar, subtable_handler, &found_ioapic);
+	if (found_ioapic != USHRT_MAX) {
+		*ioapic_id = found_ioapic;
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
 int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scope,
 		  union acpi_dmar_id *dmar_id, int *num_inst, int max_inst)
 {
