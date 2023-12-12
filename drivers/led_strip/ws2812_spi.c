@@ -111,6 +111,10 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 		return -ENOMEM;
 	}
 
+	/* Add start frame to ensure MOSI is low before starting transfer */
+	*px_buf = 0x00;
+	px_buf++;
+
 	/*
 	 * Convert pixel data into SPI frames. Each frame has pixel data
 	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
@@ -142,6 +146,10 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 			px_buf += 8;
 		}
 	}
+
+	/* Add stop frame to ensure MOSI stays low after transfer */
+	*px_buf = 0x00;
+	px_buf++;
 
 	/*
 	 * Display the pixel data.
@@ -202,7 +210,7 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 #define WS2812_SPI_ZERO_FRAME(idx) \
 	(DT_INST_PROP(idx, spi_zero_frame))
 #define WS2812_SPI_BUFSZ(idx) \
-	(WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx))
+	((WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx)) + 2)
 
 /*
  * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
