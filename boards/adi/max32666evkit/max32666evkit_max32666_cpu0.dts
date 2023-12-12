@@ -105,3 +105,8 @@
 &wdt0 {
 	status = "okay";
 };
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_4 &owm_pe_p0_5>;
+	pinctrl-names = "default";
+};
