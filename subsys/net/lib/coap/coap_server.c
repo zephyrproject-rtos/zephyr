@@ -542,6 +542,8 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 	 * try to send.
 	 */
 	if (coap_header_get_type(cpkt) == COAP_TYPE_CON) {
+		struct coap_transmission_parameters params;
+
 		struct coap_pending *pending = coap_pending_next_unused(service->data->pending,
 									MAX_PENDINGS);
 
@@ -550,8 +552,9 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 			goto send;
 		}
 
-		ret = coap_pending_init(pending, cpkt, addr,
-					CONFIG_COAP_SERVICE_PENDING_RETRANSMITS);
+		params = coap_get_transmission_parameters();
+		params.max_retransmission = CONFIG_COAP_SERVICE_PENDING_RETRANSMITS;
+		ret = coap_pending_init(pending, cpkt, addr, &params);
 		if (ret < 0) {
 			LOG_WRN("Failed to init pending message for %s (%d)", service->name, ret);
 			goto send;

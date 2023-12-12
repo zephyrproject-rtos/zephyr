@@ -83,7 +83,6 @@ struct coap_client_internal_request {
 	uint32_t offset;
 	uint32_t last_id;
 	uint8_t request_tkl;
-	uint8_t retry_count;
 	bool request_ongoing;
 	struct coap_block_context recv_blk_ctx;
 	struct coap_block_context send_blk_ctx;
@@ -131,12 +130,12 @@ int coap_client_init(struct coap_client *client, const char *info);
  * @param sock Open socket file descriptor.
  * @param addr the destination address of the request, NULL if socket is already connected.
  * @param req CoAP request structure
- * @param retries How many times to retry or -1 to use default.
+ * @param params Pointer to transmission parameters structure or NULL to use default values.
  * @return zero when operation started successfully or negative error code otherwise.
  */
 
 int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
-		    struct coap_client_request *req, int retries);
+		    struct coap_client_request *req, struct coap_transmission_parameters *params);
 
 /**
  * @}

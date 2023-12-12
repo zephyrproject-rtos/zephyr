@@ -378,7 +378,7 @@ ZTEST(coap_client, test_get_request)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -409,7 +409,7 @@ ZTEST(coap_client, test_resend_request)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	k_sleep(K_MSEC(300));
 	set_socket_events(ZSOCK_POLLIN);
@@ -441,7 +441,7 @@ ZTEST(coap_client, test_echo_option)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -472,7 +472,7 @@ ZTEST(coap_client, test_echo_option_next_req)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -487,7 +487,7 @@ ZTEST(coap_client, test_echo_option_next_req)
 	client_request.len = strlen(payload);
 
 	LOG_INF("Send next request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -516,7 +516,7 @@ ZTEST(coap_client, test_get_no_path)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 
 	zassert_equal(ret, -EINVAL, "Get request without path");
 }
@@ -541,7 +541,7 @@ ZTEST(coap_client, test_send_large_data)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -563,6 +563,11 @@ ZTEST(coap_client, test_no_response)
 		.payload = NULL,
 		.len = 0
 	};
+	struct coap_transmission_parameters params = {
+		.ack_timeout = 200,
+		.coap_backoff_percent = 200,
+		.max_retransmission = 0
+	};
 
 	client_request.payload = short_payload;
 	client_request.len = strlen(short_payload);
@@ -571,7 +576,7 @@ ZTEST(coap_client, test_no_response)
 
 	LOG_INF("Send request");
 	clear_socket_events();
-	ret = coap_client_req(&client, 0, &address, &client_request, 0);
+	ret = coap_client_req(&client, 0, &address, &client_request, &params);
 
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	k_sleep(K_MSEC(300));
@@ -601,7 +606,7 @@ ZTEST(coap_client, test_separate_response)
 	k_sleep(K_MSEC(1));
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -632,10 +637,10 @@ ZTEST(coap_client, test_multiple_requests)
 	set_socket_events(ZSOCK_POLLIN);
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 
-	ret = coap_client_req(&client, 0, &address, &client_request, -1);
+	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 
 	k_sleep(K_MSEC(5));
@@ -660,6 +665,11 @@ ZTEST(coap_client, test_unmatching_tokens)
 		.payload = NULL,
 		.len = 0
 	};
+	struct coap_transmission_parameters params = {
+		.ack_timeout = 200,
+		.coap_backoff_percent = 200,
+		.max_retransmission = 0
+	};
 
 	client_request.payload = short_payload;
 	client_request.len = strlen(short_payload);
@@ -667,7 +677,7 @@ ZTEST(coap_client, test_unmatching_tokens)
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_unmatching;
 
 	LOG_INF("Send request");
-	ret = coap_client_req(&client, 0, &address, &client_request, 0);
+	ret = coap_client_req(&client, 0, &address, &client_request, &params);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
@@ -675,4 +685,5 @@ ZTEST(coap_client, test_unmatching_tokens)
 	k_sleep(K_MSEC(1));
 	clear_socket_events();
 	k_sleep(K_MSEC(500));
+	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
 }
