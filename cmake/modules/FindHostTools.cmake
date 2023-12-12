@@ -48,7 +48,7 @@ if(HostTools_FOUND)
   return()
 endif()
 
-find_package(Deprecated COMPONENTS XCC_USE_CLANG CROSS_COMPILE)
+find_package(Deprecated COMPONENTS CROSS_COMPILE)
 
 find_package(Zephyr-sdk 0.16)
 
