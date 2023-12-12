@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MPU_NXP_MPU_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MPU_NXP_MPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_MPU_NXP_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_MPU_NXP_MPU_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -266,4 +266,4 @@ extern const struct nxp_mpu_config mpu_config;
 		"start address of the partition must align with minimum MPU \
 		 region size.")
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MPU_NXP_MPU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_MPU_NXP_MPU_H_ */
