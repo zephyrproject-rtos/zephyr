@@ -40,7 +40,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_FRIEND friend.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROV prov.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROV_DEVICE prov_device.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROVISIONEE provisionee.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROVISIONER provisioner.c)
 
