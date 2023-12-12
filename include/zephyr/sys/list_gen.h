@@ -234,6 +234,25 @@
 		return false;						 \
 	}
 
+#define Z_GENLIST_FIND(__lname, __nname)			 \
+	static inline bool						 \
+	sys_ ## __lname ## _find(sys_ ## __lname ## _t *list, \
+					    sys_ ## __nname ## _t *node) \
+	{								 \
+		sys_ ## __nname ## _t *prev = NULL;			 \
+		sys_ ## __nname ## _t *test;				 \
+									 \
+		Z_GENLIST_FOR_EACH_NODE(__lname, list, test) {		 \
+			if (test == node) {				 \
+				return true;				 \
+			}						 \
+									 \
+			prev = test;					 \
+		}							 \
+									 \
+		return false;						 \
+	}
+
 #define Z_GENLIST_LEN(__lname, __nname)                                                            \
 	static inline size_t sys_##__lname##_len(sys_##__lname##_t * list)                         \
 	{                                                                                          \

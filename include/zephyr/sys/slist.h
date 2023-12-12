@@ -420,6 +420,10 @@ Z_GENLIST_REMOVE(slist, snode)
 static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 					     sys_snode_t *node);
 
+static inline bool sys_slist_find(sys_slist_t *list,
+					     sys_snode_t *node);
+
+Z_GENLIST_FIND(slist, snode)
 /**
  * @brief Compute the size of the given list in O(n) time
  *
