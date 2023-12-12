@@ -434,6 +434,18 @@ class RimageSigner(Signer):
         self.command.dbg(f'rimage config directory={conf_dir}')
         return conf_dir
 
+    def preprocess_toml(self, config_dir, toml_basename, subdir):
+        'Runs the C pre-processor on config_dir/toml_basename.h'
+
+        compiler_path = self.cmake_cache.get("CMAKE_C_COMPILER")
+        preproc_cmd = [compiler_path, '-P', '-E', str(config_dir / (toml_basename + '.h'))]
+        preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
+        preproc_cmd += ['-imacros',
+                        str(pathlib.Path('zephyr') / 'include' / 'generated' / 'autoconf.h')]
+        preproc_cmd += ['-o', str(subdir / toml_basename)]
+        self.command.inf(quote_sh_list(preproc_cmd))
+        subprocess.run(preproc_cmd, check=True, cwd=self.build_dir)
+
     def sign(self, command, build_dir, build_conf, formats):
         self.command = command
         args = command.args
@@ -555,7 +567,19 @@ class RimageSigner(Signer):
 
         if '-c' not in sign_config_extra_args + args.tool_args:
             conf_dir = self.rimage_config_dir()
-            extra_ri_args += ['-c', str(conf_dir / (target + '.toml'))]
+            toml_basename = target + '.toml'
+            if ((conf_dir / toml_basename).exists() and
+               (conf_dir / (toml_basename + '.h')).exists()):
+                command.die(f"Cannot have both {toml_basename + '.h'} and {toml_basename} in {conf_dir}")
+
+            if (conf_dir / (toml_basename + '.h')).exists():
+                toml_subdir = pathlib.Path('zephyr') / 'misc' / 'generated'
+                self.preprocess_toml(conf_dir, toml_basename, toml_subdir)
+                toml_dir = b / toml_subdir
+            else:
+                toml_dir = conf_dir
+
+            extra_ri_args += ['-c', str(toml_dir / toml_basename)]
 
         # Warning: while not officially supported (yet?), the rimage --option that is last
         # on the command line currently wins in case of duplicate options. So pay
