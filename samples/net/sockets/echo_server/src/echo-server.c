@@ -138,8 +138,70 @@ static void dhcp_init_cb(struct net_if *iface, void *user_data)
 	}
 }
 
+static int online_checker_setup_tls(struct net_if *iface,
+				    const sec_tag_t **sec_tag_list,
+				    size_t *sec_tag_size,
+				    const char **tls_hostname,
+				    const char *url,
+				    const char *host,
+				    const char *port,
+				    struct sockaddr *dst,
+				    void *user_data)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(url);
+	ARG_UNUSED(host);
+	ARG_UNUSED(port);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(user_data);
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#define CA_CERTIFICATE_TAG 3
+
+	/* We can re-use the echo-server certificates */
+	static const sec_tag_t sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	static bool setup_done;
+	int ret;
+
+	if (setup_done == false) {
+		ret = tls_credential_add(CA_CERTIFICATE_TAG,
+					 TLS_CREDENTIAL_CA_CERTIFICATE,
+					 server_certificate,
+					 sizeof(server_certificate));
+		if (ret < 0) {
+			LOG_ERR("Failed to register public certificate: %d", ret);
+		}
+
+		setup_done = true;
+	}
+
+	LOG_DBG("Returning %d security tag%s", ARRAY_SIZE(sec_tags),
+		ARRAY_SIZE(sec_tags) > 1 ? "s" : "");
+
+	*sec_tag_list = sec_tags;
+	*sec_tag_size = sizeof(sec_tags);
+
+	/* This works only for this sample and not to be used in real life
+	 * environment.
+	 */
+	*tls_hostname = "localhost";
+
+	return 0;
+#else
+	ARG_UNUSED(sec_tag_list);
+	ARG_UNUSED(sec_tag_size);
+	ARG_UNUSED(tls_hostname);
+
+	return -ENOTSUP;
+#endif
+}
+
 static void init_app(void)
 {
+	int ret;
+
 #if defined(CONFIG_USERSPACE)
 	struct k_mem_partition *parts[] = {
 #if Z_LIBC_PARTITION_EXISTS
@@ -148,7 +210,7 @@ static void init_app(void)
 		&app_partition
 	};
 
-	int ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
+	ret = k_mem_domain_init(&app_domain, ARRAY_SIZE(parts), parts);
 
 	__ASSERT(ret == 0, "k_mem_domain_init() failed %d", ret);
 	ARG_UNUSED(ret);
@@ -218,8 +280,19 @@ static void init_app(void)
 
 	init_usb();
 
+	/* If network settings library is disabled, then start DHCP
+	 * for all available network interfaces.
+	 */
 	if (!IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS)) {
 		net_if_foreach(dhcp_init_cb, NULL);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)) {
+		ret = conn_mgr_register_online_checker_cb(online_checker_setup_tls,
+							  NULL);
+		if (ret < 0) {
+			LOG_WRN("Cannot setup online checker TLS support (%d)", ret);
+		}
 	}
 }
 
