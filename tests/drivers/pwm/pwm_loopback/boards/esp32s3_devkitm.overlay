@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
 	pwm_loopback_0 {
