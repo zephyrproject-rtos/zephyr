@@ -94,6 +94,7 @@ char *z_xtensa_exccause(unsigned int cause_code)
 
 void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf) {
 		/* Don't want to get elbowed by xtensa_switch
 		 * in between printing registers and dumping them;
@@ -111,6 +112,7 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 #endif
 		arch_irq_unlock(key);
 	}
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
 }
