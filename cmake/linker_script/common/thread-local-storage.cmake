@@ -35,9 +35,5 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
 #	PROVIDE(__tbss_size = SIZEOF(tbss));
 #	PROVIDE(__tbss_end = __tbss_start + __tbss_size);
 #	PROVIDE(__tbss_align = ALIGNOF(tbss));
-#
-#	PROVIDE(__tls_start = __tdata_start);
-#	PROVIDE(__tls_end = __tbss_end);
-#	PROVIDE(__tls_size = __tbss_end - __tdata_start);
 
 endif()
