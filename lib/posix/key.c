@@ -9,7 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
-#include <zephyr/posix/pthread_key.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/__assert.h>
 
