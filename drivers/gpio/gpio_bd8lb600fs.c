@@ -230,6 +230,11 @@ static int bd8lb600fs_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (!gpio_is_ready_dt(&config->gpio_reset)) {
+		LOG_ERR("%s: reset GPIO is not ready", dev->name);
+		return -ENODEV;
+	}
+
 	int result = k_mutex_init(&drv_data->lock);
 
 	if (result != 0) {
