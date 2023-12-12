@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 FUNC_NORETURN void z_mips_fatal_error(unsigned int reason,
 					  const z_arch_esf_t *esf)
 {
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		printk("$ 0   :         (ze) %08lx(at) %08lx(v0) %08lx(v1)\n",
 			esf->at, esf->v0, esf->v1);
@@ -33,7 +34,7 @@ FUNC_NORETURN void z_mips_fatal_error(unsigned int reason,
 		printk("Cause : %08lx\n", esf->cause);
 		printk("BadVA : %08lx\n", esf->badvaddr);
 	}
-
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
