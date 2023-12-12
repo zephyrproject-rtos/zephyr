@@ -717,9 +717,15 @@ int http_client_req(int sock, struct http_request *req,
 	total_recv = http_wait_data(sock, req, timeout);
 	if (total_recv < 0) {
 		NET_DBG("Wait data failure (%d)", total_recv);
-	} else {
-		NET_DBG("Received %d bytes", total_recv);
+		ret = total_recv;
+		goto out;
+	} else if (total_recv == 0) {
+		NET_DBG("Timeout while waiting data");
+		ret = -ETIMEDOUT;
+		goto out;
 	}
+
+	NET_DBG("Received %d bytes", total_recv);
 
 	return total_sent;
 
