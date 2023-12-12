@@ -962,6 +962,20 @@ config EXTERNAL_CACHE
 
 endchoice
 
+config DCACHE_AUTO_ENABLE
+	bool "Automatically enable data cache during startup"
+	default y
+	depends on DCACHE
+	help
+	  Automatically enable the data cache during startup
+
+config ICACHE_AUTO_ENABLE
+	bool "Automatically enable instruction cache during startup"
+	default y
+	depends on ICACHE
+	help
+	  Automatically enable the instruction cache during startup
+
 endmenu
 
 config ARCH
