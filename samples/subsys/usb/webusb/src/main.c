@@ -40,6 +40,9 @@ LOG_MODULE_REGISTER(main);
 
 static struct msosv2_descriptor_t {
 	struct msosv2_descriptor_set_header header;
+#if defined(CONFIG_USB_CDC_ACM)
+	struct msosv2_function_subset_header subset_header;
+#endif
 	struct msosv2_compatible_id webusb_compatible_id;
 	struct msosv2_guids_property webusb_guids_property;
 } __packed msosv2_descriptor = {
@@ -52,6 +55,23 @@ static struct msosv2_descriptor_t {
 		.dwWindowsVersion = 0x06030000,
 		.wTotalLength = sizeof(struct msosv2_descriptor_t),
 	},
+#if defined(CONFIG_USB_CDC_ACM)
+	/* If CONFIG_USB_CDC_ACM is selected, extra interfaces will be added on build time,
+	 * making the target a composite device, which requires an extra Function
+	 * Subset Header.
+	 */
+	.subset_header = {
+		.wLength = sizeof(struct msosv2_function_subset_header),
+		.wDescriptorType = MS_OS_20_SUBSET_HEADER_FUNCTION,
+		/* The WebUSB interface number becomes the first when CDC_ACM is enabled by
+		 * configuration.  Beware that if this sample is used as as inspiration for
+		 * applications, where the WebUSB interface is no longer the first,
+		 * remember to adjust bFirstInterface.
+		 */
+		.bFirstInterface = 0,
+		.wSubsetLength = 160
+	},
+#endif
 	.webusb_compatible_id = {
 		.wLength = sizeof(struct msosv2_compatible_id),
 		.wDescriptorType = MS_OS_20_FEATURE_COMPATIBLE_ID,
