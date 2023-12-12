@@ -58,7 +58,7 @@ class Filters:
     TESTSUITE = 'testsuite filter'
     # filters in the testplan yaml definition
     TESTPLAN = 'testplan filter'
-    # filters realted to platform definition
+    # filters related to platform definition
     PLATFORM = 'Platform related filter'
     # in case a test suite was quarantined.
     QUARANTINE = 'Quarantine filter'
