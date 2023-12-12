@@ -9,7 +9,6 @@
 #include <inttypes.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa_backtrace.h>
-#include <zephyr/debug/coredump.h>
 #include <zephyr/arch/common/exc_handle.h>
 
 #include <xtensa_internal.h>
@@ -96,7 +95,6 @@ void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 
 		xtensa_dump_stack(esf);
 
-		coredump(reason, esf, IS_ENABLED(CONFIG_MULTITHREADING) ? k_current_get() : NULL);
 
 #if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
 #if XCHAL_HAVE_WINDOWED
