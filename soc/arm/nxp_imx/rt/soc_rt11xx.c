@@ -680,15 +680,15 @@ static int imxrt_init(void)
 	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
 	 * enable it here.
 	 */
-	SCB_EnableICache();
+	if (IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
+		SCB_EnableICache();
+	}
 #endif
 
-	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
+	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE) && IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
 		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
 			SCB_EnableDCache();
 		}
-	} else {
-		SCB_DisableDCache();
 	}
 #endif
 

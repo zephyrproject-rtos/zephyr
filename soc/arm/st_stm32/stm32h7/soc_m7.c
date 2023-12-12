@@ -54,11 +54,11 @@ static int stm32h7_m4_wakeup(void)
  */
 static int stm32h7_init(void)
 {
-	if (IS_ENABLED(CONFIG_ICACHE)) {
+	if (IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
 		SCB_EnableICache();
 	}
 
-	if (IS_ENABLED(CONFIG_DCACHE)) {
+	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
 		SCB_EnableDCache();
 	}
 

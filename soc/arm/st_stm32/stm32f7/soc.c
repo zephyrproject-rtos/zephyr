@@ -30,11 +30,11 @@ static int st_stm32f7_init(void)
 	/* Enable ART Flash cache accelerator */
 	LL_FLASH_EnableART();
 
-	if (IS_ENABLED(CONFIG_ICACHE)) {
+	if (IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
 		SCB_EnableICache();
 	}
 
-	if (IS_ENABLED(CONFIG_DCACHE)) {
+	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
 		SCB_EnableDCache();
 	}
 

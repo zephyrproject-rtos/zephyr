@@ -50,9 +50,11 @@ const struct ivt ivt_header __attribute__((section(".ivt_header"))) = {
 
 static int soc_init(void)
 {
-	SCB_EnableICache();
+	if (IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
+		SCB_EnableICache();
+	}
 
-	if (IS_ENABLED(CONFIG_DCACHE)) {
+	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
 		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
 			SCB_EnableDCache();
 		}
