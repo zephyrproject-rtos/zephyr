@@ -1012,7 +1012,7 @@ legacy-debug-sym = BT_MESH_DEBUG_PROVISIONER
 module-str = "Provisioner"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
-module = BT_MESH_PROV_DEVICE
+module = BT_MESH_PROVISIONEE
 legacy-debug-sym = BT_MESH_DEBUG_PROV_DEVICE
 module-str = "Provisioning device"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
