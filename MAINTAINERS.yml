@@ -244,6 +244,7 @@ Ambiq Platforms:
   status: odd fixes
   collaborators:
     - aaronyegx
+    - HaoLuo
     - RichardSWheatley
   files:
     - soc/ambiq/
