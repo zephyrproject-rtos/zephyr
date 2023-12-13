@@ -673,19 +673,14 @@ static int imxrt_init(void)
 
 
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
-#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
-	/* SystemInit enables code cache, disable it here */
-	SCB_DisableICache();
-#else
-	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
-	 * enable it here.
-	 */
 	if (IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
 		SCB_EnableICache();
+	} else {
+		/* SystemInit enables code cache, disable it here */
+		SCB_DisableICache();
 	}
-#endif
 
-	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE) && IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
+	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
 		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
 			SCB_EnableDCache();
 		}

@@ -90,14 +90,15 @@ static int kv5x_init(void)
 	/* Initialize system clocks and PLL */
 	clk_init();
 
-#ifndef CONFIG_KINETIS_KV5X_ENABLE_CODE_CACHE
-	/* SystemInit will have enabled the code cache. Disable it here */
-	SCB_DisableICache();
-#endif
-#ifndef CONFIG_KINETIS_KV5X_ENABLE_DATA_CACHE
-	/* SystemInit will have enabled the data cache. Disable it here */
-	SCB_DisableDCache();
-#endif
+	if (!IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
+		/* SystemInit will have enabled the code cache. Disable it here */
+		SCB_DisableICache();
+	}
+
+	if (!IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
+		/* SystemInit will have enabled the data cache. Disable it here */
+		SCB_DisableDCache();
+	}
 
 	return 0;
 }

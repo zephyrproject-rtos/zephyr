@@ -318,19 +318,14 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 
 static int imxrt_init(void)
 {
-#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
-	/* SystemInit enables code cache, disable it here */
-	SCB_DisableICache();
-#else
-	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
-	 * enable it here.
-	 */
 	if (IS_ENABLED(CONFIG_ICACHE_AUTO_ENABLE)) {
 		SCB_EnableICache();
+	} else {
+		/* SystemInit enables code cache, disable it here */
+		SCB_DisableICache();
 	}
-#endif
 
-	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE) && IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
+	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
 		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
 			SCB_EnableDCache();
 		}
