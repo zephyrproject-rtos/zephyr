@@ -2804,10 +2804,16 @@ struct net_if_api {
 			    IS_ENABLED(CONFIG_NET_NATIVE_IPV4)),	\
 		   (.dhcpv4.state = NET_DHCPV4_DISABLED,))
 
+#define NET_IF_DHCPV6_INIT						\
+	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_NET_DHCPV6),		\
+			    IS_ENABLED(CONFIG_NET_NATIVE_IPV6)),	\
+		   (.dhcpv6.state = NET_DHCPV6_DISABLED,))
+
 #define NET_IF_CONFIG_INIT				\
 	.config = {					\
 		IF_ENABLED(CONFIG_NET_IP, (.ip = {},))  \
 		NET_IF_DHCPV4_INIT			\
+		NET_IF_DHCPV6_INIT			\
 	}
 
 #define NET_IF_GET_NAME(dev_id, sfx) __net_if_##dev_id##_##sfx
