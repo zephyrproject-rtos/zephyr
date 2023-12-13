@@ -207,6 +207,45 @@ struct arm_mmu_ptables {
 #define MMU_REGION_FLAT_ENTRY(name, adr, sz, attrs) \
 	MMU_REGION_ENTRY(name, adr, adr, sz, attrs)
 
+/*
+ * @brief Auto generate mmu region entry for node_id
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *      DT_FOREACH_STATUS_OKAY_VARGS(nxp_imx_gpio,
+ *				  MMU_REGION_DT_FLAT_ENTRY,
+ *				 (MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
+ * @endcode
+ *
+ * @note  Since devicetree_generated.h does not include
+ *        node_id##_P_reg_FOREACH_PROP_ELEM* definitions,
+ *        we can't automate dts node with multiple reg
+ *        entries.
+ */
+#define MMU_REGION_DT_FLAT_ENTRY(node_id, attrs)  \
+	MMU_REGION_FLAT_ENTRY(DT_NODE_FULL_NAME(node_id), \
+				  DT_REG_ADDR(node_id), \
+				  DT_REG_SIZE(node_id), \
+				  attrs),
+
+/*
+ * @brief Auto generate mmu region entry for status = "okay"
+ *        nodes compatible to a driver
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *      MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_imx_gpio,
+ *				 (MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
+ * @endcode
+ *
+ * @note  This is a wrapper of @ref MMU_REGION_DT_FLAT_ENTRY
+ */
+#define MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(compat, attr) \
+	DT_FOREACH_STATUS_OKAY_VARGS(compat, \
+	MMU_REGION_DT_FLAT_ENTRY, attr)
+
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
  *
