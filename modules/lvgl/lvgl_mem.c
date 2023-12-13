@@ -10,7 +10,12 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/sys_heap.h>
 
-static char lvgl_heap_mem[CONFIG_LV_Z_MEM_POOL_SIZE] __aligned(8);
+static char lvgl_heap_mem[CONFIG_LV_Z_MEM_POOL_SIZE]
+#ifdef CONFIG_LV_Z_MEMORY_POOL_CUSTOM_SECTION
+	Z_GENERIC_SECTION(.lvgl_heap)
+#endif
+		__aligned(8);
+
 static struct sys_heap lvgl_heap;
 static struct k_spinlock lvgl_heap_lock;
 
