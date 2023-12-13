@@ -69,6 +69,7 @@ void z_prep_c(void)
 	CODE_UNREACHABLE;
 }
 
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 extern FUNC_NORETURN void z_arm64_secondary_start(void);
 void z_arm64_secondary_prep_c(void)
