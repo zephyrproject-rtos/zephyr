@@ -166,7 +166,13 @@ class Node:
         return prop
 
     def _del(self) -> None:
-        # Removes the node from the tree
+        # Removes the node from the tree. When called on the root node,
+        # this method will leave it empty but still part of the tree.
+
+        if self.parent is None:
+            self.nodes.clear()
+            self.props.clear()
+            return
         self.parent.nodes.pop(self.name)  # type: ignore
 
     def __str__(self):

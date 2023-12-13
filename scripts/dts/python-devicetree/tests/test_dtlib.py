@@ -912,6 +912,15 @@ def test_deletion():
 /dts-v1/;
 
 / {
+	x = "foo";
+	sub0 {
+		x = "bar";
+	};
+};
+
+/delete-node/ &{/};
+
+/ {
 	sub1 {
 		x = < 1 >;
 		sub2 {
@@ -939,6 +948,29 @@ def test_deletion():
 	sub1 {
 		x = < 0x1 >;
 	};
+};
+""")
+
+    verify_parse("""
+/dts-v1/;
+
+/ {
+	x: x = < &sub >, &sub;
+
+	sub1 {
+		x = < &sub >, &sub;
+	};
+	sub2: sub2 {
+		x = < &sub >, &sub;
+	};
+};
+
+/delete-node/ &{/};
+""",
+"""
+/dts-v1/;
+
+/ {
 };
 """)
 
