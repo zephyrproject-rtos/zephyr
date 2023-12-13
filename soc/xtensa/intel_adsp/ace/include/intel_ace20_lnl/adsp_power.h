@@ -88,4 +88,14 @@ static ALWAYS_INLINE bool soc_cpu_is_powered(int cpu_num)
 	return (ACE_PWRSTS->dsphpxpgs & BIT(cpu_num)) == BIT(cpu_num);
 }
 
+/**
+ * @brief Retrieve node identifier for Intel ADSP HOST power domain.
+ */
+#define INTEL_ADSP_HST_DOMAIN_DTNODE DT_NODELABEL(hst_domain)
+
+/**
+ * @brief Intel ADSP HOST power domain pointer.
+ */
+#define INTEL_ADSP_HST_DOMAIN_DEV DEVICE_DT_GET(INTEL_ADSP_HST_DOMAIN_DTNODE)
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_POWER_H_ */
