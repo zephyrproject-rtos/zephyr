@@ -143,6 +143,7 @@ config NET_IPV6_NBR_CACHE
 config NET_IPV6_ND
 	bool "Activate neighbor discovery"
 	depends on NET_IPV6_NBR_CACHE
+	select NET_IPV6_MLD if !NET_TEST
 	default y
 	help
 	  The value depends on your network needs. ND should normally
