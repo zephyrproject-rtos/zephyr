@@ -326,9 +326,7 @@ static int imxrt_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
-		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
-			SCB_EnableDCache();
-		}
+		SCB_EnableDCache();
 	}
 
 	/* Initialize system clock */

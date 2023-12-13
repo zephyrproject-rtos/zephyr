@@ -55,9 +55,7 @@ static int soc_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_DCACHE_AUTO_ENABLE)) {
-		if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-			SCB_EnableDCache();
-		}
+		SCB_EnableDCache();
 	}
 
 	OsIf_Init(NULL);
