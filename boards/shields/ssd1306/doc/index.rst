@@ -41,7 +41,7 @@ Programming
 Set ``-DSHIELD=ssd1306_128x64`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/input_devices
    :board: frdm_k64f
    :shield: ssd1306_128x64
    :goals: build

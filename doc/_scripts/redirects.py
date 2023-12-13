@@ -166,6 +166,7 @@ REDIRECTS = [
     ('reference/util/index', 'kernel/util/index'),
     ('samples/drivers/kscan_touch', 'samples/subsys/input/input'),
     ('samples/net/cloud/google_iot_mqtt', 'samples/net/cloud'),
+    ('samples/subsys/display/lvgl', 'samples/modules/lvgl/input_devices'),
     ('services/portability/posix', 'services/portability/posix/index'),
     # zephyr-keep-sorted-stop
 ]

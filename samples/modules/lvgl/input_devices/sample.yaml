@@ -1,8 +1,8 @@
 sample:
-  description: LVGL sample application
-  name: lvgl
+  description: LVGL input application
+  name: input_devices
 tests:
-  sample.display.lvgl.gui:
+  sample.modules.lvgl.input_devices.gui:
     filter: dt_chosen_enabled("zephyr,display")
     # flash usage varies depending on the platform, but ~200K are the bare
     # minimum, give some room by adding 50K more. RAM usage depends largerly on
@@ -20,7 +20,7 @@ tests:
       - lvgl
     integration_platforms:
       - native_sim_64
-  sample.display.lvgl.rk055hdmipi4m:
+  sample.modules.lvgl.input_devices.rk055hdmipi4m:
     # This sample is intended to test the RT1170 and RT595, which require
     # a display shield to work with LVGL
     min_flash: 250

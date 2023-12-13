@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: lvgl
-   :name: LVGL basic sample
+.. zephyr:code-sample:: lvgl-input-devices
+   :name: LVGL input devices
    :relevant-api: display_interface input_interface
 
    Display a "Hello World" and react to user input using LVGL.
@@ -67,7 +67,7 @@ Building and Running
 Example building for :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/input_devices
    :board: nrf52840dk_nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
@@ -75,7 +75,7 @@ Example building for :ref:`nrf52840dk_nrf52840`:
 Example building for :ref:`native_sim <native_sim>`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/input_devices
    :board: native_sim
    :goals: build run
 

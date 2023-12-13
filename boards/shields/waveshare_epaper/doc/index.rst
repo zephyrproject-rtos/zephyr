@@ -82,7 +82,7 @@ be entered when you invoke ``west build``.
 For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/input_devices
    :board: nrf52840dk_nrf52840
    :shield: waveshare_epaper_gdeh0213b1
    :goals: build

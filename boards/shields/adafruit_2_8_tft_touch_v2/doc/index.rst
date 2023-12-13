@@ -60,7 +60,7 @@ Programming
 Set ``-DSHIELD=adafruit_2_8_tft_touch_v2`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/input_devices
    :board: nrf52840dk_nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build
@@ -69,7 +69,7 @@ If the shield is connected to a board which has Arduino Nano connector,
 set ``-DSHIELD=adafruit_2_8_tft_touch_v2_nano`` when you invoke ``west build``.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/display/lvgl
+   :zephyr-app: samples/modules/lvgl/input_devices
    :board: arduino_nano_33_ble
    :shield: adafruit_2_8_tft_touch_v2_nano
    :goals: build
