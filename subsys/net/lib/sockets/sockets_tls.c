@@ -3352,6 +3352,21 @@ out:
 	return 0;
 }
 
+#if defined(CONFIG_NET_TEST)
+mbedtls_ssl_context *ztls_get_mbedtls_ssl_context(int fd)
+{
+	struct tls_context *ctx;
+
+	ctx = z_get_fd_obj(fd, (const struct fd_op_vtable *)
+					&tls_sock_fd_op_vtable, EBADF);
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	return &ctx->ssl;
+}
+#endif /* CONFIG_NET_TEST */
+
 static ssize_t tls_sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return ztls_recvfrom_ctx(obj, buffer, count, 0, NULL, 0);
