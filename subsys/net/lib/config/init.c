@@ -298,9 +298,6 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	struct net_if_addr *ifaddr;
 	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
-	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
-	net_mgmt_add_event_callback(&mgmt6_cb);
-
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
 		goto exit;
@@ -315,6 +312,9 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	if (flags & NET_CONFIG_NEED_ROUTER) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
+
+	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
+	net_mgmt_add_event_callback(&mgmt6_cb);
 
 	/*
 	 * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is
