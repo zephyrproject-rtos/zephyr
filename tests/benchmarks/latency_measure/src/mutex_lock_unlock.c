@@ -91,7 +91,6 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 	k_thread_start(&start_thread);
 
 	cycles = timestamp.cycles;
-	cycles -= timestamp_overhead_adjustment(options, options);
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
@@ -101,7 +100,6 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 			false, "");
 
 	cycles = timestamp.cycles;
-	cycles -= timestamp_overhead_adjustment(options, options);
 
 	snprintf(description, sizeof(description),
 		 "Unlock a mutex from %s thread",
