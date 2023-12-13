@@ -399,7 +399,7 @@ being invoked each time interrupt 24 is triggered.
 If :kconfig:option:`CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS` is set to a value lower than 2
 (current number of clients), a build error will be generated.
 
-If dynamic interrupts are enabled, c:func:`irq_connect_dynamic` will allow sharing interrupts
+If dynamic interrupts are enabled, :c:func:`irq_connect_dynamic` will allow sharing interrupts
 during runtime. Exceeding the configured maximum number of allowed clients will result in
 a failed assertion.
 
