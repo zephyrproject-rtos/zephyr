@@ -245,7 +245,7 @@ void arch_sched_ipi(void)
 	broadcast_ipi(SGI_SCHED_IPI);
 }
 
-static int arm_smp_init(void)
+int arch_smp_init(void)
 {
 	cpu_map[0] = MPIDR_TO_CORE(GET_MPIDR());
 
@@ -259,6 +259,6 @@ static int arm_smp_init(void)
 	return 0;
 }
 
-SYS_INIT(arm_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif
