@@ -1,0 +1,65 @@
+# Copyright (c) 2023, iCNC Precision Metal
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  XLNX Zynq SDHC Controller
+  Here is an example for sdhc0:
+
+  sdhc0: sdhc@e0100000 {
+     status = "disabled";
+     compatible = "xlnx,zynq-sdhc";
+     reg = <0xe0100000 0x1000>;
+     clock-frequency = <50000000>;
+     max-bus-freq = <50000000>;
+     min-bus-freq = <400000>;
+     power-delay-ms = <500>;
+     bus-width = <4>;
+     interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+     interrupt-names = "irq_0";
+     slot-type = <1>;
+     no-1-8-v; 
+  };
+
+  See the Xilinx Zynq-7000 SoC Technical Reference Manual (UG585) for further details
+ 
+compatible: "xlnx,zynq-sdhc"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    default: 50000000
+    description: |
+      The clock frequency of the SDHC controller. If not specified, the default
+      value is 50000000.
+  
+  bus-width:
+    type: int
+    enum:
+      - 4
+      - 8
+    description: |
+      The bus width of the SDHC controller. 4 for 4-bit bus, 8 for 8-bit bus.
+      If not specified, the default value is 4.
+  slot-type:
+    type: int
+    enum:
+      - 1 # SD
+      - 2 # mmc
+      - 3 # SDIO
+      - 4 # SDCOMBO
+      - 5 # emmc
+    description: |
+      The slot type of the SDHC controller. 1 for SD, 2 for mmc, 3 for SDIO,
+      4 for SDCOMBO, 5 for emmc. If not specified, the default value is 1.
+
+  no-1-8-v:
+    type: boolean
+    description: |
+      When the external SD card circuit does not support 1.8V, add this
+      property to disable 1.8v card voltage of SD card controller.
