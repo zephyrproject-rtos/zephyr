@@ -104,7 +104,7 @@ void z_riscv_flush_fpu_ipi(unsigned int cpu)
 }
 #endif
 
-static void ipi_handler(const void *unused)
+static void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -154,7 +154,7 @@ void arch_spin_relax(void)
 int arch_smp_init(void)
 {
 
-	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, ipi_handler, NULL, 0);
+	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, sched_ipi_handler, NULL, 0);
 	irq_enable(RISCV_MACHINE_SOFT_IRQ);
 
 	return 0;
