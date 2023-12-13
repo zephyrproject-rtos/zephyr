@@ -9,6 +9,7 @@ common:
     - nrf52840dk/nrf52840
     - max32655evkit/max32655/m4
     - max32680evkit/max32680/m4
+    - max32690evkit/max32690/m4
   integration_platforms:
     - nrf52840dk/nrf52840
 
