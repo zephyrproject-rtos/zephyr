@@ -89,7 +89,7 @@ static void arc_connect_debug_mask_update(int cpu_num)
 void arc_core_private_intc_init(void);
 
 /* the C entry of slave cores */
-void z_arc_slave_start(int cpu_num)
+void arch_secondary_cpu_init(int cpu_num)
 {
 	arch_cpustart_t fn;
 

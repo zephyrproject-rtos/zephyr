@@ -148,7 +148,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	 *  \todo Support PSCI
 	 */
 
-	/* Wait secondary cores up, see z_arm64_secondary_start */
+	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
 		wfe();
 	}
@@ -159,7 +159,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 }
 
 /* the C entry of secondary cores */
-void z_arm_secondary_start(void)
+void arch_secondary_cpu_init(void)
 {
 	int cpu_num = arm_cpu_boot_params.cpu_num;
 	arch_cpustart_t fn;

@@ -43,7 +43,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	}
 }
 
-void z_riscv_secondary_cpu_init(int hartid)
+void arch_secondary_cpu_init(int hartid)
 {
 	unsigned int i;
 	unsigned int cpu_num = 0;
