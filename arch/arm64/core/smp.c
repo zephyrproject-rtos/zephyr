@@ -242,11 +242,11 @@ void flush_fpu_ipi_handler(const void *unused)
 	ARG_UNUSED(unused);
 
 	disable_irq();
-	z_arm64_flush_local_fpu();
+	arch_flush_local_fpu();
 	/* no need to re-enable IRQs here */
 }
 
-void z_arm64_flush_fpu_ipi(unsigned int cpu)
+void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	const uint64_t mpidr = cpu_map[cpu];
 	uint8_t aff0;
@@ -272,7 +272,7 @@ void arch_spin_relax(void)
 		arm_gic_irq_clear_pending(SGI_FPU_IPI);
 		/*
 		 * We may not be in IRQ context here hence cannot use
-		 * z_arm64_flush_local_fpu() directly.
+		 * arch_flush_local_fpu() directly.
 		 */
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
