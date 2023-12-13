@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <stdlib.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #include <zephyr/net/capture.h>
 

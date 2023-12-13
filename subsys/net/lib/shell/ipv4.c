@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/igmp.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 #include "../ip/ipv4.h"
 
 #if defined(CONFIG_NET_NATIVE_IPV4)

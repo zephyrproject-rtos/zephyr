@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "ethernet/gptp/gptp_private.h"
 #endif
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_GPTP)
 static const char *selected_role_str(int port);

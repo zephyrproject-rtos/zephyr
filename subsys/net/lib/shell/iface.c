@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/virtual.h>
 #endif
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
 struct ethernet_capabilities {
