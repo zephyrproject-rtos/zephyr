@@ -495,6 +495,9 @@ static inline uint32_t arch_proc_id(void);
  */
 void arch_sched_ipi(void);
 
+
+int arch_smp_init(void);
+
 #endif /* CONFIG_SMP */
 
 /**
