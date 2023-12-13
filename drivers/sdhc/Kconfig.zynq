@@ -1,0 +1,52 @@
+config XLNX_ZYNQ_SDHC
+    bool "XLNX Zynq SDHC Driver"
+    select SDHC_SUPPORTS_NATIVE_MODE
+    depends on DT_HAS_XLNX_ZYNQ_SDHC_ENABLED
+    help
+	    Enable the XLNX Zynq SDHC Host Controller Driver.
+
+if XLNX_ZYNQ_SDHC
+config XLNX_ZYNQ_SDHC_HOST_INTR
+	bool "Xlnx Zynq SDHC host controller interrupt mode"
+	default y
+    select EVENTS
+	help
+	  Xlnx Zynq SDHC host controller interrupt mode support.
+
+config XLNX_ZYNQ_SDHC_HOST_DMA
+	bool "Xlnx Zynq SDHC host controller DMA mode"
+	help
+	  Xlnx Zynq SDHC host controller DMA mode support.
+
+config XLNX_ZYNQ_SDHC_HOST_ADMA
+	bool "Xlnx Zynq SDHC host controller ADMA mode"
+	depends on XLNX_ZYNQ_SDHC_HOST_DMA
+	help
+	  Xlnx Zynq SDHC host controller ADMA mode support.
+
+config XLNX_ZYNQ_SDHC_HOST_ADMA_DESC_SIZE
+	int "Xlnx Zynq SDHC host controller ADMA Descriptor size"
+	depends on XLNX_ZYNQ_SDHC_HOST_ADMA
+	default 32 
+	help
+	  Xlnx Zynq SDHC host controller ADMA Descriptor size.
+
+config XLNX_ZYNQ_SDHC_HOST_BLOCK_GAP
+	bool "Block gap mode"
+	depends on XLNX_ZYNQ_SDHC_HOST_DMA
+	default y
+	help
+	  Block gap mode support.
+
+config XLNX_ZYNQ_SDHC_HOST_AUTO_STOP
+	bool "auto stop command mode"
+	default y
+	help
+	  Auto stop command mode support.
+
+config XLNX_ZYNQ_SDHC_HOST_TUNING
+	bool "Host tuning"
+	help
+	  Host tuning support.
+
+endif
