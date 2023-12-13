@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "common.h"
+#include "net_shell_private.h"
 
 static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 {

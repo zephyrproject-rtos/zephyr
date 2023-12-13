@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
 #define EVENT_MON_STACK_SIZE 1024
