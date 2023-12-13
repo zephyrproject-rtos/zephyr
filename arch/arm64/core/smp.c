@@ -122,7 +122,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		k_panic();
 	}
 
-	/* Wait secondary cores up, see z_arm64_secondary_start */
+	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
@@ -133,9 +133,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 }
 
 /* the C entry of secondary cores */
-void z_arm64_secondary_start(void)
+void arch_secondary_cpu_init(int cpu_num)
 {
-	int cpu_num = arm64_cpu_boot_params.cpu_num;
+	cpu_num = arm64_cpu_boot_params.cpu_num;
 	arch_cpustart_t fn;
 	void *arg;
 
