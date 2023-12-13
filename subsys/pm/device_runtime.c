@@ -347,8 +347,14 @@ int pm_device_runtime_disable(const struct device *dev)
 		goto unlock;
 	}
 
-	/* wait until possible async suspend is completed */
 	if (!k_is_pre_kernel()) {
+		if ((pm->state == PM_DEVICE_STATE_SUSPENDING) &&
+			((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
+			pm->state = PM_DEVICE_STATE_ACTIVE;
+			goto clear_bit;
+		}
+
+		/* wait until possible async suspend is completed */
 		while (pm->state == PM_DEVICE_STATE_SUSPENDING) {
 			k_sem_give(&pm->lock);
 
@@ -368,6 +374,7 @@ int pm_device_runtime_disable(const struct device *dev)
 		pm->state = PM_DEVICE_STATE_ACTIVE;
 	}
 
+clear_bit:
 	atomic_clear_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED);
 
 unlock:
