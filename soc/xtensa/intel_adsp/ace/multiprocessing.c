@@ -9,6 +9,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <soc.h>
 #include <adsp_boot.h>
@@ -78,6 +79,11 @@ void soc_mp_init(void)
 		/* Agent A should signal only BUSY interrupts */
 		IDC[i].agents[0].ipc.ctl = BIT(0); /* IPCTBIE */
 	}
+
+	int ret = pm_device_runtime_get(INTEL_ADSP_HST_DOMAIN_DEV);
+
+	ARG_UNUSED(ret);
+	__ASSERT_NO_MSG(ret == 0);
 
 	/* Set the core 0 active */
 	soc_cpus_active[0] = true;
