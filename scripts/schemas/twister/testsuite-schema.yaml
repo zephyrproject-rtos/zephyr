@@ -145,6 +145,7 @@ mapping:
         required: false
         sequence:
           - type: str
+            enum: ["mcu", "qemu", "sim", "unit", "native"]
       "platform_key":
         required: false
         type: seq
