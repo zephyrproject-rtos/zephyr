@@ -1793,7 +1793,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			 * address.
 			 */
 			/* The allnodes multicast group is only joined once as
-			 * net_ipv6_mcast_join() checks if we have already
+			 * net_ipv6_mld_join() checks if we have already
 			 * joined.
 			 */
 			join_mcast_nodes(iface,
