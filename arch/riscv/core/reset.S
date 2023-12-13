@@ -19,7 +19,7 @@ GTEXT(__reset)
 GTEXT(z_prep_c)
 GTEXT(riscv_cpu_wake_flag)
 GTEXT(riscv_cpu_sp)
-GTEXT(z_riscv_secondary_cpu_init)
+GTEXT(arch_secondary_cpu_init)
 
 #if CONFIG_INCLUDE_RESET_VECTOR
 SECTION_FUNC(reset, __reset)
@@ -111,7 +111,7 @@ wait_secondary_wake_flag:
 	la t0, riscv_cpu_boot_flag
 	li t1, 1
 	sr t1, 0(t0)
-	j z_riscv_secondary_cpu_init
+	j arch_secondary_cpu_init
 #else
 	j loop_unconfigured_cores
 #endif
