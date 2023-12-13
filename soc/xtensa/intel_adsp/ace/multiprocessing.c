@@ -26,6 +26,11 @@
 
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
+#if CONFIG_ACE_VERSION_1_5
+__aligned(CONFIG_DCACHE_LINE_SIZE) uint32_t g_key_read_holder;
+__aligned(CONFIG_DCACHE_LINE_SIZE) unsigned int alignment_dummy[0];
+#endif /* CONFIG_ACE_VERSION_1_5 */
+
 static void ipc_isr(void *arg)
 {
 	uint32_t cpu_id = arch_proc_id();
@@ -87,6 +92,10 @@ void soc_mp_init(void)
 
 	/* Set the core 0 active */
 	soc_cpus_active[0] = true;
+#if CONFIG_ACE_VERSION_1_5
+	g_key_read_holder = INTEL_ADSP_ACE15_MAGIC_KEY;
+	sys_cache_data_flush_range(&g_key_read_holder, sizeof(g_key_read_holder));
+#endif /* CONFIG_ACE_VERSION_1_5 */
 }
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE

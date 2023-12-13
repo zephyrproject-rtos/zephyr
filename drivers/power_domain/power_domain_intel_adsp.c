@@ -9,6 +9,10 @@
 #include <zephyr/pm/device_runtime.h>
 #include <adsp_shim.h>
 
+#if CONFIG_ACE_VERSION_1_5
+#include <adsp_power.h>
+#endif /* CONFIG_ACE_VERSION_1_5 */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(power_domain_intel_adsp, LOG_LEVEL_INF);
 
@@ -31,6 +35,17 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 			return -1;
 		}
 	} else {
+#if CONFIG_ACE_VERSION_1_5
+		extern uint32_t g_key_read_holder;
+
+		if (bits->SPA_bit == INTEL_ADSP_HST_DOMAIN_BIT) {
+			volatile uint32_t *key_read_ptr = z_soc_uncached_ptr(&g_key_read_holder);
+			uint32_t key_value = *key_read_ptr;
+
+			if (key_value != INTEL_ADSP_ACE15_MAGIC_KEY)
+				return -1;
+		}
+#endif
 		sys_write16(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrctl) & ~(SPA_bit_mask),
 			    (mem_addr_t)&ACE_DfPMCCU.dfpwrctl);
 	}
