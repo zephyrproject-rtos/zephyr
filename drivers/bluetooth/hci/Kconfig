@@ -110,6 +110,16 @@ config BT_NO_DRIVER
 	  This is intended for unit tests where no internal driver
 	  should be selected.
 
+config BT_AMBIQ_HCI
+	bool "AMBIQ BT HCI driver"
+	select SPI
+	select GPIO
+	select CLOCK_CONTROL
+	select BT_HCI_SETUP
+	help
+	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers.
+
 endchoice
 
 if BT_SPI
@@ -126,6 +136,17 @@ config BT_BLUENRG_ACI
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
 endif # BT_SPI
+
+if BT_AMBIQ_HCI
+
+config BT_HCI_INIT_PRIORITY
+	int "BT HCI init priority"
+	default 75
+	help
+	  The priority of BT HCI driver initialization needs to be lower than
+	  the SPI, GPIO, clock controller drivers initialization priorities.
+
+endif # BT_AMBIQ_HCI
 
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
@@ -193,7 +214,7 @@ config BT_DRV_TX_STACK_SIZE
 
 config BT_DRV_RX_STACK_SIZE
 	int
-	default 640 if BT_SPI
+	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default 256
