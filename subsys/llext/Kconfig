@@ -3,6 +3,7 @@
 
 menuconfig LLEXT
 	bool "Linkable loadable extensions"
+	select CACHE_MANAGEMENT if DCACHE
 	help
 	  Enable the linkable loadable extension subsystem
 
