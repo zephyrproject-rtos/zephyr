@@ -2843,10 +2843,8 @@ static int cmd_connect_le(const struct shell *sh, size_t argc, char *argv[])
 					BT_GAP_SCAN_FAST_INTERVAL,
 					BT_GAP_SCAN_FAST_INTERVAL);
 
-	err = bt_conn_le_create(
-		&addr, create_params,
-		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400),
-		&conn);
+	err = bt_conn_le_create(&addr, create_params, BT_LE_CONN_PARAM_DEFAULT,
+				&conn);
 	if (err) {
 		shell_error(sh, "Connection failed (%d)", err);
 		return -ENOEXEC;
