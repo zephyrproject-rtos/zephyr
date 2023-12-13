@@ -781,7 +781,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 	/* Make sure changes to ext sections are flushed to RAM */
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
-			arch_dcache_flush_range(ext->mem[i], ext->mem_size[i]);
+			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
 		}
 	}
 #endif
