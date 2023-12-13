@@ -95,8 +95,8 @@ int z_irq_do_offload(void);
 #endif
 
 #ifdef CONFIG_FPU_SHARING
-void z_riscv_flush_local_fpu(void);
-void z_riscv_flush_fpu_ipi(unsigned int cpu);
+void arch_flush_local_fpu(void);
+void arch_flush_fpu_ipi(unsigned int cpu);
 #endif
 
 #ifndef CONFIG_MULTITHREADING

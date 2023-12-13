@@ -97,7 +97,7 @@ void arch_sched_ipi(void)
 }
 
 #ifdef CONFIG_FPU_SHARING
-void z_riscv_flush_fpu_ipi(unsigned int cpu)
+void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
 	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
@@ -120,7 +120,7 @@ static void sched_ipi_handler(const void *unused)
 		/* disable IRQs */
 		csr_clear(mstatus, MSTATUS_IEN);
 		/* perform the flush */
-		z_riscv_flush_local_fpu();
+		arch_flush_local_fpu();
 		/*
 		 * No need to re-enable IRQs here as long as
 		 * this remains the last case.
@@ -144,7 +144,7 @@ void arch_spin_relax(void)
 	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
 		/*
 		 * We may not be in IRQ context here hence cannot use
-		 * z_riscv_flush_local_fpu() directly.
+		 * arch_flush_local_fpu() directly.
 		 */
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
