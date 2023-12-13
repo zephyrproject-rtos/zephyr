@@ -10,6 +10,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef __NET_PRIVATE_H
+#define __NET_PRIVATE_H
+
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/net_context.h>
@@ -337,3 +340,5 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
 
 	printk("\n");
 }
+
+#endif /* __NET_PRIVATE_H */

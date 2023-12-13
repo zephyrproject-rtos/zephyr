@@ -10,6 +10,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef __6LO_PRIVATE_H
+#define __6LO_PRIVATE_H
+
 #include <stdio.h>
 
 /* 6lopan dispatches */
@@ -122,3 +125,5 @@
  * incoming data and we cannot get process the packet in 6lo side.
  */
 #define NET_6LO_RX_PKT_TIMEOUT K_MSEC(100) /* in ms */
+
+#endif /* __6LO_PRIVATE_H */

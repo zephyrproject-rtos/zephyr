@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef __TCP_PRIVATE_H
+#define __TCP_PRIVATE_H
+
 #include "tp.h"
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
@@ -345,3 +348,5 @@ struct tcp { /* TCP connection */
 	_flags(_fl, _op, _mask, sizeof(#_args) > 1 ? _args : true)
 
 typedef void (*net_tcp_cb_t)(struct tcp *conn, void *user_data);
+
+#endif /* __TCP_PRIVATE_H */
