@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <zephyr/net/ethernet.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 #include "net_shell.h"
 
 int get_iface_idx(const struct shell *sh, char *index_str)

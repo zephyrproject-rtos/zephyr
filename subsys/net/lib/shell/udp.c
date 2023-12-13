@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <stdlib.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_NATIVE_UDP)
 static struct net_context *udp_ctx;
