@@ -151,7 +151,7 @@ void arch_spin_relax(void)
 }
 #endif
 
-static int riscv_smp_init(void)
+int arch_smp_init(void)
 {
 
 	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, ipi_handler, NULL, 0);
@@ -159,6 +159,5 @@ static int riscv_smp_init(void)
 
 	return 0;
 }
-
-SYS_INIT(riscv_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arch_smp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_SMP */
