@@ -12,6 +12,7 @@
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
 
 #include <fsl_inputmux.h>
+#include <fsl_power.h>
 
 #define DT_DRV_COMPAT nxp_pint
 
@@ -23,6 +24,7 @@ struct pint_irq_slot {
 	void *user_data;
 	uint8_t pin: 6;
 	uint8_t used: 1;
+	uint8_t irq;
 };
 
 #define NO_PINT_ID 0xFF
@@ -58,9 +60,10 @@ static void attach_pin_to_pint(uint8_t pin, uint8_t pint_slot)
  * @param pin: pin to use as interrupt source
  *     0-64, corresponding to GPIO0 pin 1 - GPIO1 pin 31)
  * @param trigger: one of nxp_pint_trigger flags
+ * @param wake: indicates if the pin should wakeup the system
  * @return 0 on success, or negative value on error
  */
-int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger)
+int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger, bool wake)
 {
 	uint8_t slot = 0U;
 
@@ -91,6 +94,13 @@ int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger)
 	 * driver handles the IRQ
 	 */
 	PINT_PinInterruptConfig(pint_base, slot, trigger, NULL);
+#if !(defined(FSL_FEATURE_POWERLIB_EXTEND) && (FSL_FEATURE_POWERLIB_EXTEND != 0))
+	if (wake) {
+		EnableDeepSleepIRQ(pint_irq_cfg[slot].irq);
+	} else {
+		DisableDeepSleepIRQ(pint_irq_cfg[slot].irq);
+	}
+#endif
 	return 0;
 }
 
@@ -184,6 +194,7 @@ static void nxp_pint_isr(uint8_t *slot)
 			    DT_IRQ_BY_IDX(node_id, idx, priority),		\
 			    nxp_pint_isr, &nxp_pint_idx_##idx, 0);		\
 		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));			\
+		pint_irq_cfg[idx].irq = DT_IRQ_BY_IDX(node_id, idx, irq);	\
 	} while (false)))
 
 static int intc_nxp_pint_init(const struct device *dev)
