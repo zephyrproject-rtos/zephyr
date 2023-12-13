@@ -181,8 +181,9 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * cons
 	sys_snode_t *prev = NULL;
 	struct net_mgmt_event_callback *cb, *tmp;
 
+	/* Readable layer code is starting from 1, thus the increment */
 	NET_DBG("Event layer %u code %u cmd %u",
-		NET_MGMT_GET_LAYER(mgmt_event->event),
+		NET_MGMT_GET_LAYER(mgmt_event->event) + 1,
 		NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
@@ -361,8 +362,9 @@ void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
 				     const void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
+		/* Readable layer code is starting from 1, thus the increment */
 		NET_DBG("Notifying Event layer %u code %u type %u",
-			NET_MGMT_GET_LAYER(mgmt_event),
+			NET_MGMT_GET_LAYER(mgmt_event) + 1,
 			NET_MGMT_GET_LAYER_CODE(mgmt_event),
 			NET_MGMT_GET_COMMAND(mgmt_event));
 
