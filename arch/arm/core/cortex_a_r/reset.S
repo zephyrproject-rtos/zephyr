@@ -217,7 +217,7 @@ EL1_Reset_Handler:
     bne 1b
 
     /* we can now move on */
-    ldr r4, =z_arm_secondary_start
+    ldr r4, =arch_secondary_cpu_init
     ldr r5, [r0, #BOOT_PARAM_FIQ_SP_OFFSET]
     ldr r6, [r0, #BOOT_PARAM_IRQ_SP_OFFSET]
     ldr r7, [r0, #BOOT_PARAM_ABT_SP_OFFSET]
