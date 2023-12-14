@@ -1049,6 +1049,54 @@ config BT_MESH_DFD_SRV_OOB_UPLOAD
 
 endif
 
+config BT_MESH_RPR_SRV
+	bool "Support for Remote Provisioning Server model"
+	help
+	  The Remote Provisioning Server is the proxy for a provisioning
+	  process, allowing provisioners to tunnel their provisioning
+	  messages through the mesh to the Remote Provisioning Server, which
+	  communicates directly with the unprovisioned node.
+
+config BT_MESH_RPR_CLI
+	bool "Support for Remote Provisioning Client model"
+	depends on BT_MESH_PROVISIONER
+	help
+	  The Remote Provisioning Client is instantiated on the provisioner
+	  node, and allows provisioning of new devices through the mesh network
+	  by tunnelling provisioning messages to a Remote Provisioning Server.
+
+menu "Remote Provisioning configuration"
+	visible if BT_MESH_RPR_SRV || BT_MESH_RPR_CLI
+
+config BT_MESH_RPR_AD_TYPES_MAX
+	int "Max AD types in extended scanning"
+	default 1
+	range 1 16
+	help
+	  During extended scanning, the Remote Provisioning Server can include
+	  a set of AD types in the scan reports, collected from the
+	  unprovisioned device's advertisement data. This option controls
+	  the highest number of AD types a single server can scan for, and a
+	  Client can request.
+
+config BT_MESH_RPR_SRV_SCANNED_ITEMS_MAX
+	int "Max scannable unprovisioned devices for Remote Provisioning Server"
+	default 4
+	range 4 255
+	help
+	  Max number of unique unprovisioned devices a single Remote
+	  Provisioning Server can hold.
+
+config BT_MESH_RPR_SRV_AD_DATA_MAX
+	int "Max additional advertisement data to report"
+	default 31
+	range 3 255
+	help
+	  Buffer size for the additional advertisement data reported during
+	  extended scanning.
+
+endmenu # Remote Provisioning configuration
+
 endmenu # Models
 
 menu "Proxy"
@@ -1430,53 +1478,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-config BT_MESH_RPR_SRV
-	bool "Support for Remote Provisioning Server model"
-	help
-	  The Remote Provisioning Server is the proxy for a provisioning
-	  process, allowing provisioners to tunnel their provisioning
-	  messages through the mesh to the Remote Provisioning Server, which
-	  communicates directly with the unprovisioned node.
-
-config BT_MESH_RPR_CLI
-	bool "Support for Remote Provisioning Client model"
-	depends on BT_MESH_PROVISIONER
-	help
-	  The Remote Provisioning Client is instantiated on the provisioner
-	  node, and allows provisioning of new devices through the mesh network
-	  by tunnelling provisioning messages to a Remote Provisioning Server.
-
-menu "Remote Provisioning configuration"
-	visible if BT_MESH_RPR_SRV || BT_MESH_RPR_CLI
-
-config BT_MESH_RPR_AD_TYPES_MAX
-	int "Max AD types in extended scanning"
-	default 1
-	range 1 16
-	help
-	  During extended scanning, the Remote Provisioning Server can include
-	  a set of AD types in the scan reports, collected from the
-	  unprovisioned device's advertisement data. This option controls
-	  the highest number of AD types a single server can scan for, and a
-	  Client can request.
-
-config BT_MESH_RPR_SRV_SCANNED_ITEMS_MAX
-	int "Max scannable unprovisioned devices for Remote Provisioning Server"
-	default 4
-	range 4 255
-	help
-	  Max number of unique unprovisioned devices a single Remote
-	  Provisioning Server can hold.
-
-config BT_MESH_RPR_SRV_AD_DATA_MAX
-	int "Max additional advertisement data to report"
-	default 31
-	range 3 255
-	help
-	  Buffer size for the additional advertisement data reported during
-	  extended scanning.
-endmenu
 
 config BT_MESH_SAR_CFG
 	bool
