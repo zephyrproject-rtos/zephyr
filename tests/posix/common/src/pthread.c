@@ -17,6 +17,9 @@
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
 
+/* arbitrary number that is also a legal stack size */
+#define OKAY_STACK_SIZE (STACKS + 42)
+
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
 #define SCHED_INVALID -1
@@ -572,7 +575,7 @@ ZTEST(posix_apis, test_pthread_attr_stacksize)
 {
 	size_t act_size;
 	pthread_attr_t attr;
-	const size_t exp_size = 0xB105F00D;
+	const size_t exp_size = OKAY_STACK_SIZE;
 
 	/* TESTPOINT: specify a custom stack size via pthread_attr_t */
 	zassert_equal(0, pthread_attr_init(&attr), "pthread_attr_init() failed");
@@ -930,4 +933,46 @@ ZTEST(posix_apis, test_pthread_cleanup)
 
 	zassert_ok(pthread_create(&th, NULL, test_pthread_cleanup_entry, NULL));
 	zassert_ok(pthread_join(th, NULL));
+}
+
+ZTEST(posix_apis, test_pthread_attr_getguardsize)
+{
+	size_t size_after;
+	pthread_attr_t attr;
+	const size_t size_before = OKAY_STACK_SIZE;
+
+	attr = (pthread_attr_t){0};
+	zassert_equal(pthread_attr_getguardsize(&attr, &size_after), EINVAL);
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_equal(pthread_attr_getguardsize(NULL, NULL), EINVAL);
+	zassert_equal(pthread_attr_getguardsize(NULL, &size_after), EINVAL);
+	zassert_equal(pthread_attr_getguardsize(&attr, NULL), EINVAL);
+	size_after = size_before;
+	zassert_ok(pthread_attr_getguardsize(&attr, &size_after));
+	zassert_not_equal(size_before, size_after);
+	zassert_equal(size_after, CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT);
+	zassert_ok(pthread_attr_destroy(&attr));
+}
+
+ZTEST(posix_apis, test_pthread_attr_setguardsize)
+{
+	size_t size_after;
+	size_t size_before;
+	pthread_attr_t attr;
+	size_t sizes[] = {0, OKAY_STACK_SIZE, UINT16_MAX};
+
+	attr = (pthread_attr_t){0};
+	zassert_equal(pthread_attr_setguardsize(&attr, 0), EINVAL);
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_equal(pthread_attr_setguardsize(NULL, SIZE_MAX), EINVAL);
+	zassert_equal(pthread_attr_setguardsize(NULL, 0), EINVAL);
+	zassert_equal(pthread_attr_setguardsize(&attr, SIZE_MAX), EINVAL);
+	for (size_t i = 0; i < ARRAY_SIZE(sizes); ++i) {
+		size_after = ~sizes[i];
+		size_before = sizes[i];
+		zassert_ok(pthread_attr_setguardsize(&attr, size_before));
+		zassert_ok(pthread_attr_getguardsize(&attr, &size_after));
+		zassert_equal(size_before, size_after);
+	}
+	zassert_ok(pthread_attr_destroy(&attr));
 }
