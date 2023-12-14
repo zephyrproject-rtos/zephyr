@@ -21,9 +21,18 @@ LOG_MODULE_REGISTER(memc_stm32, CONFIG_MEMC_LOG_LEVEL);
 #error "No compatible FMC devicetree node found"
 #endif
 
+/* This symbol takes the value 1 if one of the device instances */
+/* is configured in dts with a domain clock */
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32_FMC_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32_FMC_DOMAIN_CLOCK_SUPPORT 0
+#endif
+
 struct memc_stm32_config {
 	uint32_t fmc;
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -49,10 +58,19 @@ static int memc_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken);
+	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 	if (r < 0) {
 		LOG_ERR("Could not initialize FMC clock (%d)", r);
 		return r;
+	}
+
+	if (IS_ENABLED(STM32_FMC_DOMAIN_CLOCK_SUPPORT) && (config->pclk_len > 1)) {
+		/* Enable FMC clock source */
+		r = clock_control_configure(clk, (clock_control_subsys_t)&config->pclken[1], NULL);
+		if (r < 0) {
+			LOG_ERR("Could not select FMC clock (%d)", r);
+			return r;
+		}
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_fmc)
@@ -70,10 +88,12 @@ static int memc_stm32_init(const struct device *dev)
 
 PINCTRL_DT_INST_DEFINE(0);
 
+static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
+
 static const struct memc_stm32_config config = {
 	.fmc = DT_INST_REG_ADDR(0),
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
+	.pclken = pclken,
+	.pclk_len = DT_INST_NUM_CLOCKS(0),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
