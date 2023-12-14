@@ -184,13 +184,23 @@ config NET_SHELL_DYN_CMD_COMPLETION
 	  length) by default. Other dynamic completion commands in
 	  net-shell require also some smaller amount of memory.
 
+config NET_SHELL_REQUIRE_TX_THREAD
+	bool
+	depends on NET_SHELL && (SHELL_BACKEND_TELNET || SHELL_BACKEND_MQTT)
+	default y if NET_ARP
+	help
+	  Hidden symbol indicating that network shell requires separate TX
+	  thread due to possible deadlocks during shell/net stack operations.
+
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
-	default 1 if USERSPACE || USB_DEVICE_NETWORK
+	default 1 if USERSPACE || USB_DEVICE_NETWORK || \
+		     NET_SHELL_REQUIRE_TX_THREAD
 	default 0
-	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && \
+		(USERSPACE || NET_SHELL_REQUIRE_TX_THREAD)
 	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
-	range 1 8 if USERSPACE
+	range 1 8 if USERSPACE || NET_SHELL_REQUIRE_TX_THREAD
 	range 0 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
