@@ -145,6 +145,7 @@ static int entropy_stm32_resume(void)
 	res = clock_control_on(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	LL_RNG_Enable(rng);
+	LL_RNG_EnableIT(rng);
 
 	return res;
 }
