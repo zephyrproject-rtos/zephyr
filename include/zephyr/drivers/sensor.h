@@ -418,7 +418,7 @@ typedef int (*sensor_channel_get_t)(const struct device *dev,
  * @brief Decodes a single raw data buffer
  *
  * Data buffers are provided on the @ref rtio context that's supplied to
- * c:func:`sensor_read`.
+ * @ref sensor_read.
  */
 struct sensor_decoder_api {
 	/**

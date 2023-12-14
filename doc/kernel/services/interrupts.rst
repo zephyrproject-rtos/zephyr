@@ -554,7 +554,7 @@ This is an array of struct z_shared_isr_table_entry:
     };
 
 This table keeps track of the registered clients for each of the interrupt
-lines. Whenever an interrupt line becomes shared, c:func:`z_shared_isr` will
+lines. Whenever an interrupt line becomes shared, :c:func:`z_shared_isr` will
 replace the currently registered ISR in _sw_isr_table. This special ISR will
 iterate through the list of registered clients and invoke the ISRs.
 
