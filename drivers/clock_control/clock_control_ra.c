@@ -299,7 +299,7 @@ static int clock_control_ra_init(const struct device *dev)
 	}
 
 	SYSTEM_write8(MEMWAIT_OFFSET, 1);
-	SYSTEM_write16(PRCR_OFFSET, PRCR_KEY | PRCR_CLOCKS | PRCR_LOW_POWER);
+	SYSTEM_write16(PRCR_OFFSET, PRCR_KEY);
 
 	return 0;
 }
