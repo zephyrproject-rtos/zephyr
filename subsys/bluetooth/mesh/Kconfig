@@ -1180,6 +1180,61 @@ config BT_MESH_PRIV_BEACON_CLI
 
 endif # BT_MESH_PRIV_BEACONS
 
+config BT_MESH_OD_PRIV_PROXY_CLI
+	bool "Support for On-Demand Private Proxy Client model"
+	help
+	  On-Demand Private Proxy Client allows to configure and check the state
+	  of On-Demand Private Proxy Servers. The state determines if the peers will
+	  advertise the Private Network Identity type after receiving a Solicitation PDU.
+
+
+config BT_MESH_OD_PRIV_PROXY_CLI_TIMEOUT
+	int "Solicitation PDU RPL Configuration Client model timeout in milliseconds"
+	default 5000
+	depends on BT_MESH_OD_PRIV_PROXY_CLI
+	help
+	  This timeout controls how long the On-Demand Private Proxy Client waits
+	  for a response message to arrive. This value can be changed at runtime
+	  using @ref bt_mesh_od_priv_proxy_cli_timeout_set.
+
+config BT_MESH_OD_PRIV_PROXY_SRV
+	bool "Support for On-Demand Private Proxy Server model"
+	depends on BT_MESH_PRIV_BEACON_SRV
+	select BT_MESH_SOLICITATION
+	help
+	  The On-Demand Private Proxy Server is used to support configuration of
+	  advertising with Private Network Identity type of a node.
+	  When enabled, the Solicitation PDU RPL Configuration Server model is also enabled.
+
+config BT_MESH_PROXY_SRPL_SIZE
+	int "Size of solicitation replay protection list (SRPL)"
+	depends on BT_MESH_OD_PRIV_PROXY_SRV
+	default 10
+	range 1 255
+	help
+	  Size of SRPL. The list is used to determine if a received Solicitation PDU
+	  is valid. It is valid when the SSRC field value of the received Solicitation PDU
+	  is stored in the SRPL and the SSEQ field value is bigger than the corresponding
+	  stored SSEQ value, or if the SSRC was not stored in the RPL and the SRPL still has
+	  space for new entries.
+
+config BT_MESH_SOL_PDU_RPL_CLI
+	bool "Support for Solicitation PDU RPL Configuration Client model"
+	help
+	  The Solicitation PDU RPL Configuration Client is used to support the
+	  functionality of removing addresses from the solicitation replay
+	  protection list (SRPL) of a node that supports the Solicitation
+	  PDU RPL Configuration Server model.
+
+config BT_MESH_SOL_PDU_RPL_CLI_TIMEOUT
+	int "Solicitation PDU RPL Configuration Client model timeout in milliseconds"
+	default 5000
+	depends on BT_MESH_SOL_PDU_RPL_CLI
+	help
+	  This timeout controls how long Solicitation PDU RPL Configuration Client waits
+	  for a response message to arrive. This value can be changed at runtime
+	  using @ref bt_mesh_sol_pdu_rpl_cli_timeout_set.
+
 endmenu # Models
 
 menu "Proxy"
@@ -1579,61 +1634,6 @@ config BT_MESH_SOL_ADV_XMIT
 	help
 	  How many times Solicitation PDU advertisements will be repeated. 0 means that there will be
 	  1 transmission without retransmissions.
-
-config BT_MESH_OD_PRIV_PROXY_CLI
-	bool "Support for On-Demand Private Proxy Client model"
-	help
-	  On-Demand Private Proxy Client allows to configure and check the state
-	  of On-Demand Private Proxy Servers. The state determines if the peers will
-	  advertise the Private Network Identity type after receiving a Solicitation PDU.
-
-
-config BT_MESH_OD_PRIV_PROXY_CLI_TIMEOUT
-	int "Solicitation PDU RPL Configuration Client model timeout in milliseconds"
-	default 5000
-	depends on BT_MESH_OD_PRIV_PROXY_CLI
-	help
-	  This timeout controls how long the On-Demand Private Proxy Client waits
-	  for a response message to arrive. This value can be changed at runtime
-	  using @ref bt_mesh_od_priv_proxy_cli_timeout_set.
-
-config BT_MESH_OD_PRIV_PROXY_SRV
-	bool "Support for On-Demand Private Proxy Server model"
-	depends on BT_MESH_PRIV_BEACON_SRV
-	select BT_MESH_SOLICITATION
-	help
-	  The On-Demand Private Proxy Server is used to support configuration of
-	  advertising with Private Network Identity type of a node.
-	  When enabled, the Solicitation PDU RPL Configuration Server model is also enabled.
-
-config BT_MESH_PROXY_SRPL_SIZE
-	int "Size of solicitation replay protection list (SRPL)"
-	depends on BT_MESH_OD_PRIV_PROXY_SRV
-	default 10
-	range 1 255
-	help
-	  Size of SRPL. The list is used to determine if a received Solicitation PDU
-	  is valid. It is valid when the SSRC field value of the received Solicitation PDU
-	  is stored in the SRPL and the SSEQ field value is bigger than the corresponding
-	  stored SSEQ value, or if the SSRC was not stored in the RPL and the SRPL still has
-	  space for new entries.
-
-config BT_MESH_SOL_PDU_RPL_CLI
-	bool "Support for Solicitation PDU RPL Configuration Client model"
-	help
-	  The Solicitation PDU RPL Configuration Client is used to support the
-	  functionality of removing addresses from the solicitation replay
-	  protection list (SRPL) of a node that supports the Solicitation
-	  PDU RPL Configuration Server model.
-
-config BT_MESH_SOL_PDU_RPL_CLI_TIMEOUT
-	int "Solicitation PDU RPL Configuration Client model timeout in milliseconds"
-	default 5000
-	depends on BT_MESH_SOL_PDU_RPL_CLI
-	help
-	  This timeout controls how long Solicitation PDU RPL Configuration Client waits
-	  for a response message to arrive. This value can be changed at runtime
-	  using @ref bt_mesh_sol_pdu_rpl_cli_timeout_set.
 
 menu "Capabilities"
 
