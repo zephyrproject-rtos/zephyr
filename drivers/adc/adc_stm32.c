@@ -567,7 +567,8 @@ static int adc_stm32_calibrate(const struct device *dev)
 	adc_stm32_calibration_start(dev);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
-#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && \
+	defined(CONFIG_CPU_CORTEX_M7)
 	/*
 	 * To ensure linearity the factory calibration values
 	 * should be loaded on initialization.
