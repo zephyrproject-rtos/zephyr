@@ -255,3 +255,12 @@
   - "subsys/task_wdt/**/*"
   - "subsys/usb/**/*"
   - "subsys/zbus/**/*"
+
+"CI-pmic-samples-test":
+  - "/samples/shields/npm1300_ek/**/*"
+  - "/boards/shields/npm1300_ek/**/*"
+  - "**/**npm1300**/**"
+  - "/drivers/regulator/regulator_common.c"
+  - "/drivers/regulator/regulator_shell.c"
+  - "/drivers/gpio/gpio_shell.c"
+  - "/drivers/sensor/sensor_shell.c"
