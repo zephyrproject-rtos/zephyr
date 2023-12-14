@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(online_checker, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/http/client.h>
+#include <zephyr/net/trickle.h>
 #include "conn_mgr_private.h"
 #include "net_private.h"
 
@@ -38,20 +39,213 @@ LOG_MODULE_REGISTER(online_checker, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #define WAIT_TIMEOUT CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_TIMEOUT
 #define MAX_HOSTNAME_LEN CONFIG_NET_CONNECTION_MANAGER_ONLINE_CHECK_MAX_HOSTNAME_LEN
 
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)
+#define TRICKLE_IMIN CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY_IMIN
+#define TRICKLE_IMAX CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY_IMAX
+#define TRICKLE_K CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY_K
+#define VERIFY_PERIOD CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY_PERIOD
+#define PRIVATE_ADDR_CHECK IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY_PRIV_ADDR_CHECK)
+#else
+#define TRICKLE_IMIN 0
+#define TRICKLE_IMAX 0
+#define TRICKLE_K 0
+#define VERIFY_PERIOD 0
+#define PRIVATE_ADDR_CHECK 0
+#endif
+
 struct online_check_data {
 	net_conn_mgr_online_checker_t cb;
 	void *user_data;
 	char *host; /* This points to hostname_port */
 	char *port; /* and same for this */
 	struct sockaddr hostaddr;
+	struct net_trickle verifier;
+	struct {
+		/* Trickle algorithm options */
+		uint32_t Imin;
+		uint8_t Imax;
+		uint8_t k;
+	} trickle;
+	struct k_work_delayable verifier_work;
 	char hostname_port[MAX_HOSTNAME_LEN];
 	uint8_t http_recv_buf[MAX_RECV_BUF_LEN];
 	bool hostaddr_valid : 1;
 	bool is_tls : 1;
+	bool pkts_received : 1;
 };
 
 static struct online_check_data online_check_data_storage;
 static struct online_check_data *online_check = &online_check_data_storage;
+
+static void stop_online_check(void);
+
+static uint16_t *states;
+
+bool conn_mgr_trigger_online_checks;
+
+/* Enabling this can cause lot of prints so do it if really needed */
+static bool debug_rx_src;
+
+void conn_mgr_online_checker_update(struct net_pkt *pkt,
+				    void *pkt_hdr,
+				    sa_family_t family,
+				    bool is_loopback)
+{
+	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)) {
+		return;
+	}
+
+	/* We cannot verify online connectivity from loopback interface */
+	if (is_loopback) {
+		return;
+	}
+
+	if (states == NULL || states[conn_mgr_get_index_for_if(net_pkt_iface(pkt))] == 0) {
+		/* We are not interested in this interface */
+		return;
+	}
+
+	/* Check if the source address of the packet is not local */
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		struct net_ipv6_hdr *hdr = pkt_hdr;
+
+		if (net_ipv6_is_ll_addr((struct in6_addr *)hdr->src)) {
+			return;
+		}
+
+		if (PRIVATE_ADDR_CHECK) {
+			if (net_ipv6_is_ula_addr((struct in6_addr *)hdr->src)) {
+				return;
+			}
+
+			if (net_ipv6_is_private_addr((struct in6_addr *)hdr->src)) {
+				return;
+			}
+		}
+
+		if (debug_rx_src) {
+			NET_DBG("Recv src addr %s", net_sprint_ipv6_addr(hdr->src));
+		}
+
+		online_check->pkts_received = true;
+		net_trickle_consistency(&online_check->verifier);
+
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		struct net_ipv4_hdr *hdr = pkt_hdr;
+
+		if (net_ipv4_is_ll_addr((struct in_addr *)hdr->src)) {
+			return;
+		}
+
+		if (PRIVATE_ADDR_CHECK) {
+			if (net_ipv4_is_private_addr((struct in_addr *)hdr->src)) {
+				return;
+			}
+		}
+
+		if (debug_rx_src) {
+			NET_DBG("Recv src addr %s", net_sprint_ipv4_addr(hdr->src));
+		}
+
+		online_check->pkts_received = true;
+		net_trickle_consistency(&online_check->verifier);
+
+		return;
+	}
+}
+
+void conn_mgr_refresh_online_connectivity_check(void)
+{
+	/* All interfaces are down. Disable Trickle timer and
+	 * generate offline event.
+	 */
+	net_mgmt_event_notify(NET_EVENT_CONNECTIVITY_OFFLINE, NULL);
+
+	stop_online_check();
+
+	conn_mgr_trigger_online_connectivity_check();
+}
+
+static void verifier_cb(struct net_trickle *trickle, bool do_suppress,
+			void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	NET_DBG("Verifier %p callback called (suppress %d)", trickle,
+		do_suppress);
+
+	/* Check if we have received any data between calls to this cb. */
+	if (do_suppress) {
+		NET_DBG("No data transfer seen, not considered online.");
+		conn_mgr_refresh_online_connectivity_check();
+	} else {
+		NET_DBG("Data transfer seen, considering still online.");
+	}
+}
+
+static void verifier_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct online_check_data *online_data =
+		CONTAINER_OF(dwork, struct online_check_data, verifier_work);
+	bool is_consistent = online_data->pkts_received;
+
+	online_data->pkts_received = false;
+
+	if (!is_consistent) {
+		net_trickle_inconsistency(&online_data->verifier);
+	}
+}
+
+/* We are now online but we also want to know if we lost online connectivity.
+ * Start to monitor network traffic and if we do not see proper traffic,
+ * then re-trigger the online check.
+ */
+static int enable_online_state_verifier(void)
+{
+	k_timeout_t timeout;
+	k_timepoint_t next;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)) {
+		return -ENOTSUP;
+	}
+
+	if (net_trickle_is_running(&online_check->verifier)) {
+		NET_WARN("Online connectivity timer already running.");
+		return -EALREADY;
+	}
+
+	ret = net_trickle_create(&online_check->verifier,
+				 online_check->trickle.Imin,
+				 online_check->trickle.Imax,
+				 online_check->trickle.k);
+	if (ret < 0) {
+		NET_WARN("Cannot %s verifier (%d)", "create", ret);
+		return ret;
+	}
+
+	ret = net_trickle_start(&online_check->verifier,
+				verifier_cb, online_check);
+	if (ret < 0) {
+		NET_WARN("Cannot %s verifier (%d)", "activate", ret);
+		return ret;
+	}
+
+	k_work_init_delayable(&online_check->verifier_work, verifier_timeout);
+
+	next = sys_timepoint_calc(K_MINUTES(VERIFY_PERIOD));
+	timeout = sys_timepoint_timeout(next);
+
+	k_work_reschedule(&online_check->verifier_work, timeout);
+
+	/* The timer is disabled if we are dropped from online state */
+
+	return 0;
+}
 
 static enum dns_resolve_status resolve_host(const char *host,
 					    const char *service,
@@ -166,6 +360,8 @@ static int ping_check(struct net_if *iface,
 	NET_DBG("Sending Online Connectivity event for interface %d",
 		net_if_get_by_iface(iface));
 	net_mgmt_event_notify(NET_EVENT_CONNECTIVITY_ONLINE, iface);
+
+	enable_online_state_verifier();
 
 	ret = 0;
 out:
@@ -378,6 +574,8 @@ static int exec_http_query(struct net_if *iface, int sock)
 		NET_DBG("Sending Online Connectivity event for interface %d",
 			net_if_get_by_iface(iface));
 		net_mgmt_event_notify(NET_EVENT_CONNECTIVITY_ONLINE, iface);
+
+		enable_online_state_verifier();
 	} else {
 		NET_DBG("Received HTTP status %d, not considering online.",
 			status);
@@ -449,7 +647,7 @@ static int do_online_http_check(struct net_if *iface, const char *host)
 		ret = zsock_setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
 				       tags, tags_size);
 		if (ret < 0) {
-			LOG_ERR("setsockopt: %d", errno);
+			LOG_ERR("TLS setsockopt: %d", errno);
 			ret = -errno;
 			goto out;
 		}
@@ -521,9 +719,30 @@ static void do_online_check(struct net_if *iface)
 	}
 }
 
+static void stop_online_check(void)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)) {
+		return;
+	}
+
+	if (net_trickle_is_running(&online_check->verifier)) {
+		ret = net_trickle_stop(&online_check->verifier);
+		if (ret < 0) {
+			NET_DBG("Cannot stop Trickle timer (%d)", ret);
+		}
+
+		k_work_cancel_delayable(&online_check->verifier_work);
+	}
+
+	/* If there is a check currently ongoing, it will eventually stop
+	 * and the new check will be done using the new strategy.
+	 */
+}
+
 void conn_mgr_online_connectivity_check(void)
 {
-	uint16_t *states;
 	int i, state_count;
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
@@ -547,6 +766,18 @@ void conn_mgr_online_connectivity_check(void)
 			do_online_check(conn_mgr_mon_get_if_by_index(i));
 		}
 	}
+}
+
+void conn_mgr_trigger_online_connectivity_check(void)
+{
+	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_VERIFY)) {
+		online_check->trickle.Imin = TRICKLE_IMIN * MSEC_PER_SEC * SEC_PER_MIN;
+		online_check->trickle.Imax = TRICKLE_IMAX;
+		online_check->trickle.k = TRICKLE_K;
+	}
+
+	conn_mgr_trigger_online_checks = true;
+	k_sem_give(&conn_mgr_mon_updated);
 }
 
 int conn_mgr_register_online_checker_cb(net_conn_mgr_online_checker_t cb,

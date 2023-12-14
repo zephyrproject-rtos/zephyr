@@ -124,4 +124,65 @@ config NET_CONNECTION_MANAGER_ONLINE_CHECK_TIMEOUT
 	help
 	  How long to wait for a HTTP GET or ping response in milliseconds.
 
+config NET_CONNECTION_MANAGER_ONLINE_VERIFY
+	bool "Check periodically whether we are online or not [EXPERIMENTAL]"
+	default y
+	depends on NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK
+	select NET_TRICKLE
+	select EXPERIMENTAL
+	help
+	  Check incoming data packets and notice if we have received
+	  data that could be considered originating from Internet (no private
+	  address space, no link local address etc). Then use the Trickle
+	  algorithm https://www.rfc-editor.org/rfc/rfc6206 to drive the
+	  logic that determines when to re-do the online check.
+
+config NET_CONNECTION_MANAGER_ONLINE_VERIFY_PERIOD
+	int "How often to trigger Trickle unconsistency check (minutes)"
+	default 60
+	range 1 525600
+	depends on NET_CONNECTION_MANAGER_ONLINE_VERIFY
+	help
+	  How often to check whether we are unconsistent, the value is
+	  in minutes. If we receive data from online sources, we mark the
+	  Trickle status as consistent for each packet. This value is
+	  used to periodically check whether we received online packets or not.
+	  If we did not receive packets, then we mark the link unconsistent
+	  and tell Trickle about it. The Trickle algorithm then can decide
+	  when we do the actual online check. Default value is every 60 min.
+
+config NET_CONNECTION_MANAGER_ONLINE_VERIFY_PRIV_ADDR_CHECK
+	bool "Check if the incoming data is from private address space"
+	default y
+	depends on NET_CONNECTION_MANAGER_ONLINE_VERIFY
+	help
+	  Check if the incoming network traffic from private address space
+	  range is considered when determining if the device is online or not.
+	  The default (y) is to ignore packets from private address range.
+	  Turning this off is mainly useful in testing where it might be
+	  difficult to send test packets from non private addresses.
+
+config NET_CONNECTION_MANAGER_ONLINE_VERIFY_IMIN
+	int "Trickle min interval size in minutes (Imin)"
+	default 1440
+	depends on NET_CONNECTION_MANAGER_ONLINE_VERIFY
+	help
+	  How often do the online verification if we cannot verify
+	  the online status in other way. Default is once / day.
+	  See RFC 6206 for details how the Trickle algorithm works.
+
+config NET_CONNECTION_MANAGER_ONLINE_VERIFY_IMAX
+	int "Trickle max number of doublings (Imax)"
+	default 5
+	depends on NET_CONNECTION_MANAGER_ONLINE_VERIFY
+	help
+	  See RFC 6206 for details how the Trickle algorithm works.
+
+config NET_CONNECTION_MANAGER_ONLINE_VERIFY_K
+	int "Trickle redundancy constant (K)"
+	default 20
+	depends on NET_CONNECTION_MANAGER_ONLINE_VERIFY
+	help
+	  See RFC 6206 for details how the Trickle algorithm works.
+
 endif # NET_CONNECTION_MANAGER

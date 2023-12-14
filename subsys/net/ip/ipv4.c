@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -436,6 +437,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 
 	verdict = net_conn_input(pkt, &ip, hdr->proto, &proto_hdr);
 	if (verdict != NET_DROP) {
+		conn_mgr_online_checker_update(pkt, hdr, AF_INET, is_loopback);
 		return verdict;
 	}
 
