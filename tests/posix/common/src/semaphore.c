@@ -8,9 +8,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-#define STACK_SIZE 1024
+#define STACK_SIZE (MAX(1024, PTHREAD_STACK_MIN) + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 sem_t sema;
 void *dummy_sem;
