@@ -202,12 +202,6 @@ config COAP_SERVICE_PENDING_MESSAGES
 	help
 	  Maximum number of pending CoAP messages to retransmit per active service.
 
-config COAP_SERVICE_PENDING_RETRANSMITS
-	int "CoAP retransmit count"
-	default 2
-	help
-	  Maximum number of retries to send a pending message.
-
 config COAP_SERVICE_OBSERVERS
 	int "CoAP service observers"
 	default 3
