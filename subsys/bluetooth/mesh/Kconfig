@@ -954,6 +954,101 @@ config BT_MESH_DFU_CLI
 	help
 	  Enable the Firmware Update Client model.
 
+menu "Firmware Update model configuration"
+	visible if BT_MESH_DFU_SRV || BT_MESH_DFU_CLI
+
+config BT_MESH_DFU_FWID_MAXLEN
+	int "DFU FWID max length"
+	default 16
+	range 0 106
+	help
+	  This value defines the maximum length of an image's firmware ID.
+
+config BT_MESH_DFU_METADATA_MAXLEN
+	int "DFU metadata max length"
+	default 32
+	range 18 255 if BT_MESH_DFU_METADATA
+	range 0 255
+	help
+	  This value defines the maximum length of an image's metadata.
+
+config BT_MESH_DFU_METADATA
+	bool "Support for the default metadata format"
+	help
+	  This option adds a set of functions that can be used to encode and decode a firmware
+	  metadata using the format defined in the Bluetooth Mesh DFU subsystem.
+
+config BT_MESH_DFU_URI_MAXLEN
+	int "DFU URI max length"
+	default 32
+	range 0 255
+	help
+	  This value defines the maximum length of an image's URI, not including
+	  a string terminator.
+
+endmenu # Firmware Update model configuration
+
+menuconfig BT_MESH_DFU_SLOTS
+	bool "Firmware image slot manager"
+	default y if BT_MESH_DFU_CLI
+	help
+	  Enable the DFU image slot manager, for managing firmware distribution slots
+	  for the Firmware Update Client model.
+
+if BT_MESH_DFU_SLOTS
+
+config BT_MESH_DFU_SLOT_CNT
+	int "Number of firmware image slots"
+	default 1
+	range 1 32767
+	help
+	  This value defines the number of firmware slots the DFU image slot manager
+	  can keep simultaneously.
+
+endif
+
+menuconfig BT_MESH_DFD_SRV
+	bool "Support for Firmware Distribution Server model"
+	depends on BT_MESH_BLOB_SRV
+	depends on BT_MESH_DFU_CLI
+	help
+	  Enable the Firmware Distribution Server model.
+
+if BT_MESH_DFD_SRV
+
+config BT_MESH_DFD_SRV_SLOT_MAX_SIZE
+	int "Largest DFU image that can be stored"
+	default BT_MESH_BLOB_SIZE_MAX
+	range 0 BT_MESH_BLOB_SIZE_MAX
+	help
+	  This value defines the largest DFU image a single slot can store.
+
+config BT_MESH_DFD_SRV_SLOT_SPACE
+	int "Total DFU image storage space"
+	default BT_MESH_DFD_SRV_SLOT_MAX_SIZE
+	range 0 4294967295
+	help
+	  This value defines the total storage space dedicated to storing DFU
+	  images on the Firmware Distribution Server.
+
+config BT_MESH_DFD_SRV_TARGETS_MAX
+	int "Maximum Target node count"
+	default 8
+	range 1 65535
+	help
+	  This value defines the maximum number of Target nodes the Firmware
+	  Distribution Server can target simultaneously.
+
+config BT_MESH_DFD_SRV_OOB_UPLOAD
+	bool "Support for DFU image OOB upload"
+	help
+	  This enables support for OOB upload of firmware images for
+	  distribution. This makes several callbacks and use of the init
+	  macro BT_MESH_DFD_SRV_INIT_OOB mandatory. See the API documentation
+	  for bt_mesh_dfd_srv_cb for details about the mandatory callbacks.
+
+endif
+
 endmenu # Models
 
 menu "Proxy"
@@ -1335,101 +1430,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-menu "Firmware Update model configuration"
-	visible if BT_MESH_DFU_SRV || BT_MESH_DFU_CLI
-
-config BT_MESH_DFU_FWID_MAXLEN
-	int "DFU FWID max length"
-	default 16
-	range 0 106
-	help
-	  This value defines the maximum length of an image's firmware ID.
-
-config BT_MESH_DFU_METADATA_MAXLEN
-	int "DFU metadata max length"
-	default 32
-	range 18 255 if BT_MESH_DFU_METADATA
-	range 0 255
-	help
-	  This value defines the maximum length of an image's metadata.
-
-config BT_MESH_DFU_METADATA
-	bool "Support for the default metadata format"
-	help
-	  This option adds a set of functions that can be used to encode and decode a firmware
-	  metadata using the format defined in the Bluetooth Mesh DFU subsystem.
-
-config BT_MESH_DFU_URI_MAXLEN
-	int "DFU URI max length"
-	default 32
-	range 0 255
-	help
-	  This value defines the maximum length of an image's URI, not including
-	  a string terminator.
-
-endmenu
-
-menuconfig BT_MESH_DFU_SLOTS
-	bool "Firmware image slot manager"
-	default y if BT_MESH_DFU_CLI
-	help
-	  Enable the DFU image slot manager, for managing firmware distribution slots
-	  for the Firmware Update Client model.
-
-if BT_MESH_DFU_SLOTS
-
-config BT_MESH_DFU_SLOT_CNT
-	int "Number of firmware image slots"
-	default 1
-	range 1 32767
-	help
-	  This value defines the number of firmware slots the DFU image slot manager
-	  can keep simultaneously.
-
-endif
-
-menuconfig BT_MESH_DFD_SRV
-	bool "Support for Firmware Distribution Server model"
-	depends on BT_MESH_BLOB_SRV
-	depends on BT_MESH_DFU_CLI
-	help
-	  Enable the Firmware Distribution Server model.
-
-if BT_MESH_DFD_SRV
-
-config BT_MESH_DFD_SRV_SLOT_MAX_SIZE
-	int "Largest DFU image that can be stored"
-	default BT_MESH_BLOB_SIZE_MAX
-	range 0 BT_MESH_BLOB_SIZE_MAX
-	help
-	  This value defines the largest DFU image a single slot can store.
-
-config BT_MESH_DFD_SRV_SLOT_SPACE
-	int "Total DFU image storage space"
-	default BT_MESH_DFD_SRV_SLOT_MAX_SIZE
-	range 0 4294967295
-	help
-	  This value defines the total storage space dedicated to storing DFU
-	  images on the Firmware Distribution Server.
-
-config BT_MESH_DFD_SRV_TARGETS_MAX
-	int "Maximum Target node count"
-	default 8
-	range 1 65535
-	help
-	  This value defines the maximum number of Target nodes the Firmware
-	  Distribution Server can target simultaneously.
-
-config BT_MESH_DFD_SRV_OOB_UPLOAD
-	bool "Support for DFU image OOB upload"
-	help
-	  This enables support for OOB upload of firmware images for
-	  distribution. This makes several callbacks and use of the init
-	  macro BT_MESH_DFD_SRV_INIT_OOB mandatory. See the API documentation
-	  for bt_mesh_dfd_srv_cb for details about the mandatory callbacks.
-
-endif
 
 config BT_MESH_RPR_SRV
 	bool "Support for Remote Provisioning Server model"
