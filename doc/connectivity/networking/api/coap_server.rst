@@ -97,7 +97,7 @@ The following is an example of a CoAP resource registered with our service:
         coap_packet_append_payload(&response, (uint8_t *)msg, sizeof(msg));
 
         /* Send to response back to the client */
-        return coap_resource_send(resource, &response, addr, addr_len);
+        return coap_resource_send(resource, &response, addr, addr_len, NULL);
     }
 
     static int my_put(struct coap_resource *resource, struct coap_packet *request,
@@ -189,7 +189,7 @@ and send state updates. An example using a temperature sensor can look like:
         coap_packet_append_payload_marker(&response);
         coap_packet_append_payload(&response, (uint8_t *)payload, strlen(payload));
 
-        return coap_resource_send(resource, &response, addr, addr_len);
+        return coap_resource_send(resource, &response, addr, addr_len, NULL);
     }
 
     static int temp_get(struct coap_resource *resource, struct coap_packet *request,
