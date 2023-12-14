@@ -65,20 +65,6 @@ if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_PROFILE)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PROFILE=${CONFIG_TFM_PROFILE})
   endif()
-  if (CONFIG_TFM_PSA_TEST_CRYPTO)
-    set(TFM_PSA_TEST_SUITE CRYPTO)
-  elseif (CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
-    set(TFM_PSA_TEST_SUITE PROTECTED_STORAGE)
-  elseif (CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE)
-    set(TFM_PSA_TEST_SUITE INTERNAL_TRUSTED_STORAGE)
-  elseif (CONFIG_TFM_PSA_TEST_STORAGE)
-    set(TFM_PSA_TEST_SUITE STORAGE)
-  elseif (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
-    set(TFM_PSA_TEST_SUITE INITIAL_ATTESTATION)
-  endif()
-  if (DEFINED TFM_PSA_TEST_SUITE)
-    list(APPEND TFM_CMAKE_ARGS -DTEST_PSA_API=${TFM_PSA_TEST_SUITE})
-  endif()
   if (CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
     set(TFM_CMAKE_BUILD_TYPE "Release")
   elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_MINSIZEREL)
@@ -182,17 +168,6 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_INTERFACE_INCLUDE_DIR  ${TFM_BINARY_DIR}/api_ns/interface/include)
   set(TFM_INTERFACE_LIB_DIR      ${TFM_BINARY_DIR}/api_ns/interface/lib)
 
-  if (TFM_PSA_TEST_SUITE)
-    set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
-    set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/platform/pal_nspe.a)
-    set(COMBINE_DIR_STORAGE storage)
-    set(COMBINE_DIR_PROTECTED_STORAGE storage)
-    set(COMBINE_DIR_INTERNAL_TRUSTED_STORAGE storage)
-    set(COMBINE_DIR_CRYPTO crypto)
-    set(COMBINE_DIR_INITIAL_ATTESTATION initial_attestation)
-    set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
-  endif()
-
   if(CONFIG_TFM_BL2)
     set(BL2_ELF_FILE ${TFM_BINARY_DIR}/bin/bl2.elf)
     set(BL2_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2.bin)
@@ -253,26 +228,6 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
-  if (CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
-    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
-    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
-    # been manually downloaded by the user before starting the build.
-    message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
-      "with TF-M 1.7.0 due to licensing issues with a dependent library. This "
-      "restriction will be removed once licensing issues have been resolved."
-      )
-  endif()
-
-  if (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
-    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
-    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
-    # been manually downloaded by the user before starting the build.
-    message(FATAL_ERROR "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION is not available "
-      "with TF-M 1.7.0 due to licensing issues with a dependent library. This "
-      "restriction will be removed once licensing issues have been resolved."
-      )
-  endif()
-
   if (CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
     # Change CMake cache type to string to avoid QCBOR_PATH=/absolute/path/DOWNLOAD being set.
     set(QCBOR_PATH_TYPE ":STRING")
@@ -294,13 +249,6 @@ if (CONFIG_BUILD_WITH_TFM)
 
   if(CONFIG_TFM_MCUBOOT_DATA_SHARING)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_DATA_SHARING=ON)
-  endif()
-
-  if(TFM_PSA_TEST_SUITE)
-    list(APPEND TFM_CMAKE_ARGS
-      -DPSA_TOOLCHAIN_FILE=${CMAKE_CURRENT_LIST_DIR}/psa/GNUARM.cmake
-      -DTOOLCHAIN=INHERIT
-      )
   endif()
 
   if(CONFIG_FPU AND CONFIG_FP_HARDABI)
@@ -405,15 +353,6 @@ if (CONFIG_BUILD_WITH_TFM)
   # Non-Secure interface to request system reboot
   if (CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
     zephyr_library_sources(src/reboot.c)
-  endif()
-  zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
-
-  if (TFM_PSA_TEST_SUITE)
-    zephyr_library_link_libraries(
-      ${PSA_TEST_VAL_FILE}
-      ${PSA_TEST_PAL_FILE}
-      ${PSA_TEST_COMBINE_FILE}
-      )
   endif()
 
   zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
