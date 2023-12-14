@@ -67,6 +67,9 @@ if(DEFINED BOARD_REVISION)
   set(BOARD_REVISION_CONFIG "${CMAKE_CURRENT_BINARY_DIR}/empty.conf")
 endif()
 
+# Unset shield configuration files if set to prevent including in sysbuild
+set(shield_conf_files)
+
 list(APPEND ZEPHYR_KCONFIG_MODULES_DIR BOARD=${BOARD})
 set(KCONFIG_NAMESPACE SB_CONFIG)
 
