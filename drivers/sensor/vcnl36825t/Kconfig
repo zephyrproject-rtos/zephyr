@@ -1,0 +1,12 @@
+# VCNL36825T Proximity Sensor configuration options
+
+# Copyright (c) 2024 Juliane Schulze, deveritec Gmbh
+# SPDX-License-Identifier: Apache-2.0
+
+config VCNL36825T
+	bool "VCNL36825T Proximity Sensor"
+	default y
+	depends on DT_HAS_VISHAY_VCNL36825T_ENABLED
+	select I2C
+	help
+	  Enable driver for VCNL36825T sensors.
