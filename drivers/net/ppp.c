@@ -126,9 +126,29 @@ static void uart_callback(const struct device *dev,
 		break;
 
 	case UART_TX_ABORTED:
-		LOG_DBG("Tx aborted");
+	{
 		k_sem_give(&uarte_tx_finished);
+		if (CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT == 0) {
+			LOG_WRN("UART TX aborted.");
+			break;
+		}
+		struct uart_config uart_conf;
+
+		err = uart_config_get(dev, &uart_conf);
+		if (err) {
+			LOG_ERR("uart_config_get() err: %d", err);
+		} else if (uart_conf.baudrate / 10 * CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
+			  / MSEC_PER_SEC > evt->data.tx.len * 2) {
+			/* The abort likely did not happen because of missing bandwidth. */
+			LOG_DBG("UART_TX_ABORTED");
+		} else {
+			LOG_WRN("UART TX aborted: Only %zu bytes were sent. You may want"
+				" to change either CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT"
+				" (%d ms) or the UART baud rate (%u).", evt->data.tx.len,
+				CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT, uart_conf.baudrate);
+		}
 		break;
+	}
 
 	case UART_RX_RDY:
 		len = evt->data.rx.len;
@@ -368,11 +388,13 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 	} else if (IS_ENABLED(CONFIG_NET_PPP_ASYNC_UART)) {
 #if defined(CONFIG_NET_PPP_ASYNC_UART)
 		int ret;
+		const int32_t timeout = CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
+					? CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC
+					: SYS_FOREVER_US;
 
 		k_sem_take(&uarte_tx_finished, K_FOREVER);
 
-		ret = uart_tx(ppp->dev, buf, off,
-			      CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT * USEC_PER_MSEC);
+		ret = uart_tx(ppp->dev, buf, off, timeout);
 		if (ret) {
 			LOG_ERR("uart_tx() failed, err %d", ret);
 			k_sem_give(&uarte_tx_finished);
