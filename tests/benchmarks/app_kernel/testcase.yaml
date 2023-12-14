@@ -32,3 +32,17 @@ tests:
     extra_configs:
       - CONFIG_OBJ_CORE=y
       - CONFIG_OBJ_CORE_STATS=y
+  benchmark.kernel.application.timeslicing:
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+  benchmark.kernel.application.user.timeslicing:
+    extra_args: CONF_FILE=prj_user.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - mps2_an385
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TIMESLICING=y
