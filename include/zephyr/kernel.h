@@ -4685,8 +4685,6 @@ static inline uint32_t z_impl_k_msgq_num_used_get(struct k_msgq *msgq)
  *
  */
 struct k_mbox_msg {
-	/** internal use only - needed for legacy API support */
-	uint32_t _mailbox;
 	/** size of message (in bytes) */
 	size_t size;
 	/** application-defined information value */
