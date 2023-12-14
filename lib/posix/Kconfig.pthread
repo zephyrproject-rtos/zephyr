@@ -27,4 +27,17 @@ config PTHREAD_RECYCLER_DELAY_MS
 	  Note: this option should be considered temporary and will likely be
 	  removed once a more synchronous solution is available.
 
+config POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT
+	int "Default size of stack guard area"
+	range 0 65536
+	default 0
+	help
+	  This is the default amount of space to reserve at the overflow end of a
+	  pthread stack. Since Zephyr already supports both software-based stack
+	  protection (canaries) and hardware-based stack protection (MMU or MPU),
+	  this is set to 0 by default. However, a conforming application would be
+	  required to set this to PAGESIZE. Eventually, this option might
+	  facilitate a more dynamic approach to guard areas (via software or
+	  hardware) but for now it simply increases the size of thread stacks.
+
 endif
