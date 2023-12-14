@@ -905,3 +905,13 @@ test_i2c_lis2de12: lis2de12@80 {
 	accel-range = <LIS2DE12_DT_FS_16G>;
 	accel-odr = <LIS2DE12_DT_ODR_AT_100Hz>;
 };
+
+test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
+	compatible = "vishay,vcnl36825t";
+	reg = <0x81>;
+
+	proximity-it = "3.5";
+	multi-pulse = <8>;
+
+	low-power;
+};
