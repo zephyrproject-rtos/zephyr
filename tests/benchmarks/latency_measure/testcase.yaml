@@ -95,3 +95,41 @@ tests:
         regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Obtain the various kernel benchmark results with time slicing enabled
+  benchmark.kernel.latency.timeslicing:
+    # FIXME: no DWT and no RTC_TIMER for qemu_cortex_m0
+    platform_exclude:
+      - qemu_cortex_m0
+      - m2gl025_miv
+    filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_arc_em
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Obtain the various userspace benchmark results with timeslicing enabled
+  benchmark.user.latency.timeslicing:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    timeout: 300
+    extra_args: CONF_FILE=prj_user.conf
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
