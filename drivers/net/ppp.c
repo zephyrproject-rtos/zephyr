@@ -121,7 +121,7 @@ static void uart_callback(const struct device *dev,
 
 	switch (evt->type) {
 	case UART_TX_DONE:
-		LOG_DBG("UART_TX_DONE: sent %d bytes", evt->data.tx.len);
+		LOG_DBG("UART_TX_DONE: sent %zu bytes", evt->data.tx.len);
 		k_sem_give(&uarte_tx_finished);
 		break;
 
@@ -171,7 +171,7 @@ static void uart_callback(const struct device *dev,
 
 	case UART_RX_BUF_REQUEST:
 	{
-		LOG_DBG("UART_RX_BUF_REQUEST: buf %p", next_buf);
+		LOG_DBG("UART_RX_BUF_REQUEST: buf %p", (void *)next_buf);
 
 		if (next_buf) {
 			err = uart_rx_buf_rsp(dev, next_buf, sizeof(context->buf));
@@ -185,7 +185,7 @@ static void uart_callback(const struct device *dev,
 
 	case UART_RX_BUF_RELEASED:
 		next_buf = evt->data.rx_buf.buf;
-		LOG_DBG("UART_RX_BUF_RELEASED: buf %p", next_buf);
+		LOG_DBG("UART_RX_BUF_RELEASED: buf %p", (void *)next_buf);
 		break;
 
 	case UART_RX_DISABLED:
@@ -243,7 +243,7 @@ static void uart_recovery(struct k_work *work)
 		if (ret) {
 			LOG_ERR("ppp_async_uart_rx_enable() failed, err %d", ret);
 		} else {
-			LOG_WRN("UART RX recovered");
+			LOG_DBG("UART RX recovered.");
 		}
 		uart_recovery_pending = false;
 	} else {
@@ -1027,7 +1027,7 @@ static int ppp_start(const struct device *dev)
 		/* dts chosen zephyr,ppp-uart case */
 		context->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ppp_uart));
 #endif
-		LOG_INF("Initializing PPP to use %s", context->dev->name);
+		LOG_DBG("Initializing PPP to use %s", context->dev->name);
 
 		if (!device_is_ready(context->dev)) {
 			LOG_ERR("Device %s is not ready", context->dev->name);
@@ -1056,6 +1056,9 @@ static int ppp_stop(const struct device *dev)
 	struct ppp_driver_context *context = dev->data;
 
 	net_if_carrier_off(context->iface);
+#if defined(CONFIG_NET_PPP_ASYNC_UART)
+	uart_rx_disable(context->dev);
+#endif
 	context->modem_init_done = false;
 	return 0;
 }
