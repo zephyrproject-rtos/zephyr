@@ -710,6 +710,37 @@ config BT_MESH_MODEL_EXTENSIONS
 	  Enable support for the model extension concept, allowing the Access
 	  layer to know about mesh model relationships.
 
+config BT_MESH_COMP_PAGE_1
+	bool "Support for Composition Data Page 1"
+	depends on BT_MESH_MODEL_EXTENSIONS
+	help
+	  Enable support for Composition Data Page 1.
+
+config BT_MESH_MODEL_EXTENSION_LIST_SIZE
+	int "Model extensions list size"
+	depends on BT_MESH_COMP_PAGE_1
+	range 0 255
+	default 10
+	help
+	  This option specifies how many models relations can be saved.
+	  Equals to the number of `bt_mesh_model_extend` and `bt_mesh_model_correspond` calls.
+	  This information is used to construct Composition Data Page 1.
+
+config BT_MESH_COMP_PAGE_2
+	bool "Support for Composition Data Page 2"
+	help
+	  Enable support for Composition Data Page 2.
+
+config BT_MESH_COMP_PST_BUF_SIZE
+	int "Composition Data Page persistence buffer size"
+	default 100
+	help
+	  Stack allocated buffer used to temporarily hold Composition
+	  Data Pages during flash operations. Should reflect the size
+	  of the largest Composition Data Page present in the application.
+	  Note that this buffer should still be large enough to restore previously stored
+	  pages after a performed device firmware update.
+
 config BT_MESH_LABEL_NO_RECOVER
 	bool "[DEPRECATED] Don't recover Label UUIDs from groups address subscription list"
 	select DEPRECATED
@@ -1529,37 +1560,6 @@ config BT_MESH_PRIV_BEACON_CLI
 	  Enable support for the Private Beacon Client model.
 
 endif # BT_MESH_PRIV_BEACONS
-
-config BT_MESH_COMP_PST_BUF_SIZE
-	int "Composition Data Page persistence buffer size"
-	default 100
-	help
-	  Stack allocated buffer used to temporarily hold Composition
-	  Data Pages during flash operations. Should reflect the size
-	  of the largest Composition Data Page present in the application.
-	  Note that this buffer should still be large enough to restore previously stored
-	  pages after a performed device firmware update.
-
-config BT_MESH_COMP_PAGE_1
-	bool "Support for Composition Data Page 1"
-	depends on BT_MESH_MODEL_EXTENSIONS
-	help
-	  Enable support for Composition Data Page 1.
-
-config BT_MESH_COMP_PAGE_2
-	bool "Support for Composition Data Page 2"
-	help
-	  Enable support for Composition Data Page 2.
-
-config BT_MESH_MODEL_EXTENSION_LIST_SIZE
-	int "Model extensions list size"
-	depends on BT_MESH_COMP_PAGE_1
-	range 0 255
-	default 10
-	help
-	  This option specifies how many models relations can be saved.
-	  Equals to the number of `bt_mesh_model_extend` and `bt_mesh_model_correspond` calls.
-	  This information is used to construct Composition Data Page 1.
 
 config BT_MESH_SOLICITATION
 	bool
