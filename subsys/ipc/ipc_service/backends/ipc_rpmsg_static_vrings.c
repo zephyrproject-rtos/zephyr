@@ -555,6 +555,7 @@ static int open(const struct device *instance)
 
 	data->vr.notify_cb = virtio_notify_cb;
 	data->vr.priv = (void *) conf;
+	data->vr.shm_device.name = instance->name;
 
 	err = ipc_static_vrings_init(&data->vr, conf->role);
 	if (err != 0) {
