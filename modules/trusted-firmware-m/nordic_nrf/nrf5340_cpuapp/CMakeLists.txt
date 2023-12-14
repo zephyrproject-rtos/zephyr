@@ -16,3 +16,8 @@ install(FILES       ${CMAKE_CURRENT_LIST_DIR}/ns/cpuarch_ns.cmake
 
 install(FILES       config.cmake
         DESTINATION ${INSTALL_PLATFORM_NS_DIR})
+
+install(DIRECTORY   ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/nordic_nrf/nrf5340dk_nrf5340_cpuapp/tests
+
+        DESTINATION ${INSTALL_PLATFORM_NS_DIR}
+)
