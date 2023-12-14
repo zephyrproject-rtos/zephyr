@@ -170,4 +170,6 @@ struct ace_dfpmccu {
 #define GENO_MDIVOSEL           BIT(1)
 #define GENO_DIOPTOSEL          BIT(2)
 
+#define ADSP_FORCE_DECOUPLED_HDMA_L1_EXIT_BIT BIT(1)
+
 #endif /* ZEPHYR_SOC_INTEL_ADSP_SHIM_H_ */
