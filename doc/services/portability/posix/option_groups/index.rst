@@ -77,8 +77,8 @@ This table lists service support status in Zephyr:
    :header: API, Supported
    :widths: 50,10
 
-    pthread_attr_getguardsize(),
-    pthread_attr_setguardsize(),
+    pthread_attr_getguardsize(),yes
+    pthread_attr_setguardsize(),yes
     pthread_mutexattr_gettype(),yes
     pthread_mutexattr_settype(),yes
 
