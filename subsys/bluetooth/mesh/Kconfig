@@ -1112,6 +1112,38 @@ config BT_MESH_SAR_CFG_CLI
 	help
 	  Enable support for the SAR configuration client model.
 
+config BT_MESH_OP_AGG
+	bool
+
+config BT_MESH_OP_AGG_SRV
+	bool "Support for Opcode Aggregator Server Model"
+	select BT_MESH_OP_AGG
+	help
+	  Enable support for the Opcode Aggregator Server model.
+
+config BT_MESH_OP_AGG_CLI
+	bool "Support for Opcode Aggregator Client Model"
+	select BT_MESH_OP_AGG
+	help
+	  Enable support for the Opcode Aggregator Client model.
+
+if BT_MESH_OP_AGG_CLI
+
+config BT_MESH_OP_AGG_CLI_TIMEOUT
+	int "Opcodes Aggregator Client model timeout in milliseconds"
+	default 10000
+	help
+	  This timeout controls how long Opcodes Aggregator Client waits
+	  for a response message to arrive. This value can be changed at
+	  runtime using @ref bt_mesh_op_agg_cli_timeout_set.
+
+endif # BT_MESH_OP_AGG_CLI
+
+config BT_MESH_LARGE_COMP_DATA_SRV
+	bool "Support for Large Composition Data Server Model"
+	help
+	  Enable support for the Large Composition Data Server model.
+
 endmenu # Models
 
 menu "Proxy"
@@ -1493,38 +1525,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-config BT_MESH_OP_AGG
-	bool
-
-config BT_MESH_OP_AGG_SRV
-	bool "Support for Opcode Aggregator Server Model"
-	select BT_MESH_OP_AGG
-	help
-	  Enable support for the Opcode Aggregator Server model.
-
-config BT_MESH_OP_AGG_CLI
-	bool "Support for Opcode Aggregator Client Model"
-	select BT_MESH_OP_AGG
-	help
-	  Enable support for the Opcode Aggregator Client model.
-
-if BT_MESH_OP_AGG_CLI
-
-config BT_MESH_OP_AGG_CLI_TIMEOUT
-	int "Opcodes Aggregator Client model timeout in milliseconds"
-	default 10000
-	help
-	  This timeout controls how long Opcodes Aggregator Client waits
-	  for a response message to arrive. This value can be changed at
-	  runtime using @ref bt_mesh_op_agg_cli_timeout_set.
-
-endif # BT_MESH_OP_AGG_CLI
-
-config BT_MESH_LARGE_COMP_DATA_SRV
-	bool "Support for Large Composition Data Server Model"
-	help
-	  Enable support for the Large Composition Data Server model.
 
 if BT_MESH_LARGE_COMP_DATA_SRV
 
