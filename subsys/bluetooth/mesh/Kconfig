@@ -1299,6 +1299,24 @@ config BT_MESH_PROXY_CLIENT
 	  i.e. the ability to act as a proxy between a Mesh GATT Service
 	  and a Mesh network.
 
+config BT_MESH_SOLICITATION
+	bool
+
+config BT_MESH_PROXY_SOLICITATION
+	bool "Proxy solicitation feature"
+	select BT_MESH_SOLICITATION
+	help
+	  This option enables support for sending Solicitation PDUs.
+
+config BT_MESH_SOL_ADV_XMIT
+	int "Solicitation PDU retransmission count"
+	depends on BT_MESH_PROXY_SOLICITATION
+	range 0 10
+	default 2
+	help
+	  How many times Solicitation PDU advertisements will be repeated. 0 means that there will be
+	  1 transmission without retransmissions.
+
 endmenu # Proxy
 
 choice BT_MESH_CRYPTO_LIB
@@ -1616,24 +1634,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-config BT_MESH_SOLICITATION
-	bool
-
-config BT_MESH_PROXY_SOLICITATION
-	bool "Proxy solicitation feature"
-	select BT_MESH_SOLICITATION
-	help
-	  This option enables support for sending Solicitation PDUs.
-
-config BT_MESH_SOL_ADV_XMIT
-	int "Solicitation PDU retransmission count"
-	depends on BT_MESH_PROXY_SOLICITATION
-	range 0 10
-	default 2
-	help
-	  How many times Solicitation PDU advertisements will be repeated. 0 means that there will be
-	  1 transmission without retransmissions.
 
 menu "Capabilities"
 
