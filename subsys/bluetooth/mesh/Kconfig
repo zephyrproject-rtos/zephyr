@@ -289,6 +289,24 @@ config BT_MESH_PROV_OOB_PUBLIC_KEY
 	help
 	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.
 
+config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
+	bool "Support CMAC AES128 for OOB authentication"
+	depends on BT_MESH_PROV
+	default y
+	help
+	  Enable this option to support CMAC AES128 for OOB authentication.
+
+config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
+	bool "Support HMAC SHA256 for OOB authentication"
+	depends on BT_MESH_PROV
+	default y
+	help
+	  Enable this option to support HMAC SHA256 for OOB authentication.
+
+config BT_MESH_OOB_AUTH_REQUIRED
+	bool "OOB authentication mandates to use HMAC SHA256"
+	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
+
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
 	depends on BT_MESH_CDB
@@ -1181,24 +1199,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
-	bool "Support CMAC AES128 for OOB authentication"
-	depends on BT_MESH_PROV
-	default y
-	help
-	  Enable this option to support CMAC AES128 for OOB authentication.
-
-config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
-	bool "Support HMAC SHA256 for OOB authentication"
-	depends on BT_MESH_PROV
-	default y
-	help
-	  Enable this option to support HMAC SHA256 for OOB authentication.
-
-config BT_MESH_OOB_AUTH_REQUIRED
-	bool "OOB authentication mandates to use HMAC SHA256"
-	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 
 menuconfig BT_MESH_BLOB_SRV
 	bool "Support for BLOB Transfer Server model"
