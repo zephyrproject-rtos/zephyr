@@ -80,7 +80,7 @@ static int send_notification_packet(struct coap_resource *resource,
 
 	k_work_reschedule(&obs_work, K_SECONDS(5));
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }

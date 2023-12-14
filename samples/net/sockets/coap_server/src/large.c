@@ -87,7 +87,7 @@ static int large_get(struct coap_resource *resource,
 		memset(&ctx, 0, sizeof(ctx));
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }
@@ -167,7 +167,7 @@ static int large_update_put(struct coap_resource *resource,
 		return r;
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }
@@ -239,7 +239,7 @@ static int large_create_post(struct coap_resource *resource,
 		return r;
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }
