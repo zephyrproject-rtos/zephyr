@@ -1160,12 +1160,6 @@ config BT_MESH_LARGE_COMP_DATA_CLI
 	help
 	  Enable support for the Large Composition Data Client model.
 
-config BT_MESH_PRIV_BEACONS
-	bool "Support for private beacons"
-	default y
-	help
-	  Enable support for private beacons.
-
 if BT_MESH_PRIV_BEACONS
 
 config BT_MESH_PRIV_BEACON_SRV
@@ -1388,12 +1382,22 @@ config BT_MESH_PSA_KEY_ID_USER_MIN_OFFSET
 
 endif # BT_MESH_USES_MBEDTLS_PSA || BT_MESH_USES_TFM_PSA
 
+menu "Beacons"
+
 config BT_MESH_BEACON_ENABLED
 	bool "Secure network beacon enabled"
 	default y
 	help
 	  Controls whether the Secure network beacon feature is enabled by
 	  default. Can be changed through runtime configuration.
+
+config BT_MESH_PRIV_BEACONS
+	bool "Support for private beacons"
+	default y
+	help
+	  Enable support for private beacons.
+
+endmenu # Beacons
 
 menu "IV Index & Sequence number"
 
