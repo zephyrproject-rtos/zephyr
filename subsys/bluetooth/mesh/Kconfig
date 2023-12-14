@@ -1097,6 +1097,21 @@ config BT_MESH_RPR_SRV_AD_DATA_MAX
 
 endmenu # Remote Provisioning configuration
 
+config BT_MESH_SAR_CFG
+	bool
+
+config BT_MESH_SAR_CFG_SRV
+	bool "Support for SAR Configuration Server model"
+	select BT_MESH_SAR_CFG
+	help
+	  Enable support for the SAR configuration server model.
+
+config BT_MESH_SAR_CFG_CLI
+	bool "Support for SAR Configuration Client Model"
+	select BT_MESH_SAR_CFG
+	help
+	  Enable support for the SAR configuration client model.
+
 endmenu # Models
 
 menu "Proxy"
@@ -1478,21 +1493,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-config BT_MESH_SAR_CFG
-	bool
-
-config BT_MESH_SAR_CFG_SRV
-	bool "Support for SAR Configuration Server model"
-	select BT_MESH_SAR_CFG
-	help
-	  Enable support for the SAR configuration server model.
-
-config BT_MESH_SAR_CFG_CLI
-	bool "Support for SAR Configuration Client Model"
-	select BT_MESH_SAR_CFG
-	help
-	  Enable support for the SAR configuration client model.
 
 config BT_MESH_OP_AGG
 	bool
