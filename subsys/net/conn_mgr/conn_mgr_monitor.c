@@ -30,8 +30,6 @@ static K_THREAD_STACK_DEFINE(conn_mgr_mon_stack,
 			     CONFIG_NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE);
 static struct k_thread conn_mgr_mon_thread;
 
-static bool trigger_online_checks;
-
 /* Internal state array tracking readiness, flags, and other state information for all available
  * ifaces. Note that indexing starts at 0, whereas Zephyr iface indices start at 1.
  * conn_mgr_mon_get_if_by_index and conn_mgr_get_index_for_if are used to go back and forth between
@@ -103,16 +101,6 @@ static void conn_mgr_mon_set_ready(int idx, bool readiness)
 	}
 }
 
-static void trigger_online_connectivity_check(void)
-{
-	if (!IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)) {
-		return;
-	}
-
-	trigger_online_checks = true;
-	k_sem_give(&conn_mgr_mon_updated);
-}
-
 static void conn_mgr_mon_handle_update(void)
 {
 	int idx;
@@ -163,11 +151,13 @@ static void conn_mgr_mon_handle_update(void)
 		if (ready_count == 0) {
 			/* We just lost connectivity */
 			net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_iface_down);
+
+			conn_mgr_refresh_online_connectivity_check();
 		} else if (original_ready_count == 0) {
 			/* We just gained connectivity */
 			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_iface_up);
 
-			trigger_online_connectivity_check();
+			conn_mgr_trigger_online_connectivity_check();
 		}
 	}
 
@@ -243,8 +233,8 @@ static void conn_mgr_mon_thread_fn(void *p1, void *p2, void *p3)
 		conn_mgr_mon_handle_update();
 
 #if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
-		if (trigger_online_checks) {
-			trigger_online_checks = false;
+		if (conn_mgr_trigger_online_checks) {
+			conn_mgr_trigger_online_checks = false;
 			conn_mgr_online_connectivity_check();
 		}
 #endif
@@ -261,7 +251,7 @@ void conn_mgr_mon_resend_status(void)
 		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_iface_up);
 	}
 
-	trigger_online_connectivity_check();
+	conn_mgr_trigger_online_connectivity_check();
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
 }

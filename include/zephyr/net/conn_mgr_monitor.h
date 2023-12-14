@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_CONN_MGR_H_
 
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/net_pkt.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,6 +151,29 @@ int conn_mgr_register_online_checker_cb(net_conn_mgr_online_checker_t cb,
 #define conn_mgr_register_online_checker_cb(...)
 
 #endif /* CONFIG_NET_CONNECTION_MANAGER */
+
+/** @cond INTERNAL_HIDDEN */
+#if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+/* Let online checker to decide if this network packet can be considered
+ * when deciding if we are online or not.
+ */
+void conn_mgr_online_checker_update(struct net_pkt *pkt,
+				    void *hdr,
+				    sa_family_t family,
+				    bool is_loopback);
+#else
+static inline void conn_mgr_online_checker_update(struct net_pkt *pkt,
+						  void *hdr,
+						  sa_family_t family,
+						  bool is_loopback)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	ARG_UNUSED(family);
+	ARG_UNUSED(is_loopback);
+}
+#endif
+/** @endcond */
 
 #ifdef __cplusplus
 }

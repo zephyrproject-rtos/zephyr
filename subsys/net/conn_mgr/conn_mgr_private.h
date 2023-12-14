@@ -64,9 +64,22 @@ int conn_mgr_get_iface_states(uint16_t **states);
 void conn_mgr_conn_init(void);
 
 #if defined(CONFIG_NET_CONNECTION_MANAGER_ONLINE_CONNECTIVITY_CHECK)
+extern bool conn_mgr_trigger_online_checks;
+void conn_mgr_trigger_online_connectivity_check(void);
 void conn_mgr_online_connectivity_check(void);
+void conn_mgr_refresh_online_connectivity_check(void);
 #else
+static inline void conn_mgr_trigger_online_connectivity_check(void)
+{
+	return;
+}
+
 static inline void conn_mgr_online_connectivity_check(void)
+{
+	return;
+}
+
+static inline void conn_mgr_refresh_online_connectivity_check(void)
 {
 	return;
 }
