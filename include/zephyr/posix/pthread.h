@@ -19,9 +19,14 @@
 extern "C" {
 #endif
 
-/* Pthread detach/joinable */
-#define PTHREAD_CREATE_DETACHED 0
-#define PTHREAD_CREATE_JOINABLE 1
+/*
+ * Pthread detach/joinable
+ * Undefine possibly predefined values by external toolchain headers
+ */
+#undef PTHREAD_CREATE_DETACHED
+#define PTHREAD_CREATE_DETACHED 1
+#undef PTHREAD_CREATE_JOINABLE
+#define PTHREAD_CREATE_JOINABLE 0
 
 /* Pthread resource visibility */
 #define PTHREAD_PROCESS_PRIVATE 0
