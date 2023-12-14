@@ -51,11 +51,6 @@ if (CONFIG_BUILD_WITH_TFM)
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
   endif()
-  if (CONFIG_TFM_BUILD_NS)
-    list(APPEND TFM_CMAKE_ARGS -DNS=TRUE)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DNS=FALSE)
-  endif()
   if (CONFIG_TFM_ISOLATION_LEVEL)
     list(APPEND TFM_CMAKE_ARGS -DTFM_ISOLATION_LEVEL=${CONFIG_TFM_ISOLATION_LEVEL})
   endif()
@@ -185,9 +180,6 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_INTERFACE_INCLUDE_DIR  ${TFM_BINARY_DIR}/api_ns/interface/include)
   set(TFM_INTERFACE_LIB_DIR      ${TFM_BINARY_DIR}/api_ns/interface/lib)
 
-  set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/tf-m-tests/app/libtfm_api_ns.a)
-  set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/ns/libplatform_ns.a)
-
   if (TFM_PSA_TEST_SUITE)
     set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/val/val_nspe.a)
     set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/tf-m-tests/app/psa_api_tests/platform/pal_nspe.a)
@@ -208,27 +200,22 @@ if (CONFIG_BUILD_WITH_TFM)
   set(TFM_S_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s.bin)
   set(TFM_S_HEX_FILE ${TFM_BINARY_DIR}/bin/tfm_s.hex)
   set(TFM_NS_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns.bin)
-  set(TFM_NS_HEX_FILE ${TFM_BINARY_DIR}/bin/tfm_ns.hex)
+  set(TFM_NS_HEX_FILE ${CMAKE_BINARY_DIR}/tfm_ns/bin/tfm_ns.hex)
   set(TFM_S_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s_signed.bin)
   set(TFM_NS_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_ns_signed.bin)
   set(TFM_S_NS_SIGNED_BIN_FILE ${TFM_BINARY_DIR}/bin/tfm_s_ns_signed.bin)
 
   set(BUILD_BYPRODUCTS
-    ${TFM_API_NS_PATH}
     ${PSA_TEST_VAL_FILE}
     ${PSA_TEST_PAL_FILE}
     ${PSA_TEST_COMBINE_FILE}
-    ${PLATFORM_NS_FILE}
     ${BL2_ELF_FILE}
     ${BL2_BIN_FILE}
     ${BL2_HEX_FILE}
     ${TFM_S_ELF_FILE}
     ${TFM_S_BIN_FILE}
     ${TFM_S_HEX_FILE}
-    ${TFM_NS_BIN_FILE}
-    ${TFM_NS_HEX_FILE}
     ${TFM_S_SIGNED_BIN_FILE}
-    ${TFM_NS_SIGNED_BIN_FILE}
     ${TFM_S_NS_SIGNED_BIN_FILE}
 
     ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
@@ -427,25 +414,17 @@ if (CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
-  if(NOT CONFIG_TFM_BUILD_NS)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
+  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
 
-    zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
+  zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
 
-    if(CONFIG_SOC_FAMILY_NRF)
-      zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
-    endif()
-
-  else()
-    zephyr_library_link_libraries(
-      ${PLATFORM_NS_FILE}
-      ${TFM_API_NS_PATH}
-      )
+  if(CONFIG_SOC_FAMILY_NRF)
+    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
   endif()
 
   target_include_directories(tfm_api PRIVATE
