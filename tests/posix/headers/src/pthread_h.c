@@ -64,7 +64,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_atfork);
 		zassert_not_null(pthread_attr_destroy);
 		zassert_not_null(pthread_attr_getdetachstate);
-		/* zassert_not_null(pthread_attr_getguardsize); */ /* not implemented */
+		zassert_not_null(pthread_attr_getguardsize);
 		/* zassert_not_null(pthread_attr_getinheritsched); */ /* not implemented */
 		zassert_not_null(pthread_attr_getschedparam);
 		zassert_not_null(pthread_attr_getschedpolicy);
@@ -73,7 +73,7 @@ ZTEST(posix_headers, test_pthread_h)
 		zassert_not_null(pthread_attr_getstacksize);
 		zassert_not_null(pthread_attr_init);
 		zassert_not_null(pthread_attr_setdetachstate);
-		/* zassert_not_null(pthread_attr_setguardsize); */ /* not implemented */
+		zassert_not_null(pthread_attr_setguardsize);
 		/* zassert_not_null(pthread_attr_setinheritsched); */ /* not implemented */
 		zassert_not_null(pthread_attr_setschedparam);
 		zassert_not_null(pthread_attr_setschedpolicy);
