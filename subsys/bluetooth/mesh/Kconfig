@@ -849,6 +849,111 @@ config BT_MESH_HEALTH_CLI_TIMEOUT
 
 endif # BT_MESH_HEALTH_CLI
 
+menuconfig BT_MESH_BLOB_SRV
+	bool "Support for BLOB Transfer Server model"
+	help
+	  Enable the Binary Large Object (BLOB) Transfer Server model.
+
+if BT_MESH_BLOB_SRV
+
+config BT_MESH_BLOB_SRV_PULL_REQ_COUNT
+	int "Number of chunks to request for each pull"
+	default 4
+	range 1 16
+	help
+	  In Pull mode (Pull BLOB Transfer Mode), the BLOB Transfer Server
+	  requests a fixed number of chunks from the Client. Use this option to
+	  control the chunk count in the request. If the BLOB Transfer Server
+	  is instantiated on a Low Power node, the pull request count will be
+	  trimmed to not overflow the Friend queue.
+
+config BT_MESH_BLOB_SIZE_MAX
+	int "Largest BLOB size in bytes"
+	default 524288
+	range 1 3257617792
+	help
+	  The maximum object size a BLOB Transfer Server can receive.
+
+config BT_MESH_BLOB_BLOCK_SIZE_MIN
+	int "Minimum block size"
+	default 4096
+	range 64 1048576 # 2^6 - 2^20
+	help
+	  Minimum acceptable block size in a BLOB transfer. The transfer block
+	  size will be some number that is a power of two, and is between block
+	  size min and block size max. If no such number exists, a compile
+	  time warning will be issued.
+
+config BT_MESH_BLOB_BLOCK_SIZE_MAX
+	int "Maximum block size"
+	default 4096
+	range BT_MESH_BLOB_BLOCK_SIZE_MIN 1048576
+	help
+	  Maximum acceptable block size in a BLOB transfer. The transfer block
+	  size will be some number that is a power of two, and is between block
+	  size min and block size max. If no such number exists, a compile
+	  time warning will be issued.
+
+config BT_MESH_BLOB_REPORT_TIMEOUT
+	int "Partial Block Report interval in Pull mode"
+	default 10
+	range 1 31
+	help
+	  The timer value that Pull BLOB Transfer Server uses to report missed chunks.
+
+endif # BT_MESH_BLOB_SRV
+
+menuconfig BT_MESH_BLOB_CLI
+	bool "Support for BLOB Transfer Client model"
+	help
+	  Enable the Binary Large Object (BLOB) Transfer Client model.
+
+if BT_MESH_BLOB_CLI
+
+config BT_MESH_BLOB_CLI_BLOCK_RETRIES
+	int "Number of retries per block"
+	default 5
+	help
+	  Controls the number of times the client will attempt to resend missing
+	  chunks to the BLOB receivers for every block.
+
+endif
+
+menu "BLOB models common configuration"
+	visible if BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
+
+config BT_MESH_BLOB_CHUNK_COUNT_MAX
+	int "Maximum chunk count per block"
+	default 256
+	range 1 2992
+	help
+	  A BLOB transfer contains several blocks. Each block is made up of
+	  several chunks. This option controls the maximum chunk count per
+	  block.
+
+endmenu
+
+config BT_MESH_BLOB_IO_FLASH
+	bool "BLOB flash stream"
+	default y
+	depends on BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
+	depends on FLASH_MAP
+	help
+	  Enable the BLOB flash stream for reading and writing BLOBs directly to
+	  and from flash.
+
+config BT_MESH_DFU_SRV
+	bool "Support for Firmware Update Server model"
+	depends on BT_MESH_BLOB_SRV
+	help
+	  Enable the Firmware Update Server model.
+
+config BT_MESH_DFU_CLI
+	bool "Support for Firmware Update Client model"
+	depends on BT_MESH_BLOB_CLI
+	help
+	  Enable the Firmware Update Client model.
+
 endmenu # Models
 
 menu "Proxy"
@@ -1230,111 +1335,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-menuconfig BT_MESH_BLOB_SRV
-	bool "Support for BLOB Transfer Server model"
-	help
-	  Enable the Binary Large Object (BLOB) Transfer Server model.
-
-if BT_MESH_BLOB_SRV
-
-config BT_MESH_BLOB_SRV_PULL_REQ_COUNT
-	int "Number of chunks to request for each pull"
-	default 4
-	range 1 16
-	help
-	  In Pull mode (Pull BLOB Transfer Mode), the BLOB Transfer Server
-	  requests a fixed number of chunks from the Client. Use this option to
-	  control the chunk count in the request. If the BLOB Transfer Server
-	  is instantiated on a Low Power node, the pull request count will be
-	  trimmed to not overflow the Friend queue.
-
-config BT_MESH_BLOB_SIZE_MAX
-	int "Largest BLOB size in bytes"
-	default 524288
-	range 1 3257617792
-	help
-	  The maximum object size a BLOB Transfer Server can receive.
-
-config BT_MESH_BLOB_BLOCK_SIZE_MIN
-	int "Minimum block size"
-	default 4096
-	range 64 1048576 # 2^6 - 2^20
-	help
-	  Minimum acceptable block size in a BLOB transfer. The transfer block
-	  size will be some number that is a power of two, and is between block
-	  size min and block size max. If no such number exists, a compile
-	  time warning will be issued.
-
-config BT_MESH_BLOB_BLOCK_SIZE_MAX
-	int "Maximum block size"
-	default 4096
-	range BT_MESH_BLOB_BLOCK_SIZE_MIN 1048576
-	help
-	  Maximum acceptable block size in a BLOB transfer. The transfer block
-	  size will be some number that is a power of two, and is between block
-	  size min and block size max. If no such number exists, a compile
-	  time warning will be issued.
-
-config BT_MESH_BLOB_REPORT_TIMEOUT
-	int "Partial Block Report interval in Pull mode"
-	default 10
-	range 1 31
-	help
-	  The timer value that Pull BLOB Transfer Server uses to report missed chunks.
-
-endif # BT_MESH_BLOB_SRV
-
-menuconfig BT_MESH_BLOB_CLI
-	bool "Support for BLOB Transfer Client model"
-	help
-	  Enable the Binary Large Object (BLOB) Transfer Client model.
-
-if BT_MESH_BLOB_CLI
-
-config BT_MESH_BLOB_CLI_BLOCK_RETRIES
-	int "Number of retries per block"
-	default 5
-	help
-	  Controls the number of times the client will attempt to resend missing
-	  chunks to the BLOB receivers for every block.
-
-endif
-
-menu "BLOB models common configuration"
-	visible if BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
-
-config BT_MESH_BLOB_CHUNK_COUNT_MAX
-	int "Maximum chunk count per block"
-	default 256
-	range 1 2992
-	help
-	  A BLOB transfer contains several blocks. Each block is made up of
-	  several chunks. This option controls the maximum chunk count per
-	  block.
-
-endmenu
-
-config BT_MESH_BLOB_IO_FLASH
-	bool "BLOB flash stream"
-	default y
-	depends on BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
-	depends on FLASH_MAP
-	help
-	  Enable the BLOB flash stream for reading and writing BLOBs directly to
-	  and from flash.
-
-config BT_MESH_DFU_SRV
-	bool "Support for Firmware Update Server model"
-	depends on BT_MESH_BLOB_SRV
-	help
-	  Enable the Firmware Update Server model.
-
-config BT_MESH_DFU_CLI
-	bool "Support for Firmware Update Client model"
-	depends on BT_MESH_BLOB_CLI
-	help
-	  Enable the Firmware Update Client model.
 
 menu "Firmware Update model configuration"
 	visible if BT_MESH_DFU_SRV || BT_MESH_DFU_CLI
