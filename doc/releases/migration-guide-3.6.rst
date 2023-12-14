@@ -245,6 +245,10 @@ Networking
   use default values.
   (:github:`66482`)
 
+* The CoAP public API functions :c:func:`coap_service_send` and :c:func:`coap_resource_send` have
+  changed. An additional parameter pointer to :c:struct:`coap_transmission_parameters` has been
+  added. It is safe to pass a NULL pointer to use default values. (:github:`66540`)
+
 * The IGMP multicast library now supports IGMPv3. This results in a minor change to the existing
   api. The :c:func:`net_ipv4_igmp_join` now takes an additional argument of the type
   ``const struct igmp_param *param``. This allows IGMPv3 to exclude/include certain groups of
