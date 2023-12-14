@@ -2697,15 +2697,15 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			shell_print(sh, "Started transmitting on broadcast stream %p", bap_stream);
 		}
 	} else {
-		if (stream_start_sine_verify(default_stream)) {
-			shell_error(sh, "Invalid stream %p", default_stream);
-			return -ENOEXEC;
-		}
-
 		err = init_lc3(default_stream);
 		if (err != 0) {
 			shell_error(sh, "Failed to init LC3 %d", err);
 
+			return -ENOEXEC;
+		}
+
+		if (!stream_start_sine_verify(default_stream)) {
+			shell_error(sh, "Invalid stream %p", default_stream);
 			return -ENOEXEC;
 		}
 
