@@ -3,5 +3,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+set(PLATFORM_PATH platform/ext/target/nordic_nrf)
 
-include(platform/ext/target/nordic_nrf/common/nrf9120/cpuarch.cmake)
+include(${PLATFORM_PATH}/common/nrf9120/cpuarch.cmake)
