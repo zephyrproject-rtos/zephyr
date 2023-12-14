@@ -1160,6 +1160,26 @@ config BT_MESH_LARGE_COMP_DATA_CLI
 	help
 	  Enable support for the Large Composition Data Client model.
 
+config BT_MESH_PRIV_BEACONS
+	bool "Support for private beacons"
+	default y
+	help
+	  Enable support for private beacons.
+
+if BT_MESH_PRIV_BEACONS
+
+config BT_MESH_PRIV_BEACON_SRV
+	bool "Support for Private Beacon Server Model"
+	help
+	  Enable support for the Private Beacon Server model.
+
+config BT_MESH_PRIV_BEACON_CLI
+	bool "Support for Private Beacon Client Model"
+	help
+	  Enable support for the Private Beacon Client model.
+
+endif # BT_MESH_PRIV_BEACONS
+
 endmenu # Models
 
 menu "Proxy"
@@ -1541,26 +1561,6 @@ config BT_MESH_FRIEND_ADV_LATENCY
 	  start.
 
 endif # BT_MESH_FRIEND
-
-config BT_MESH_PRIV_BEACONS
-	bool "Support for private beacons"
-	default y
-	help
-	  Enable support for private beacons.
-
-if BT_MESH_PRIV_BEACONS
-
-config BT_MESH_PRIV_BEACON_SRV
-	bool "Support for Private Beacon Server Model"
-	help
-	  Enable support for the Private Beacon Server model.
-
-config BT_MESH_PRIV_BEACON_CLI
-	bool "Support for Private Beacon Client Model"
-	help
-	  Enable support for the Private Beacon Client model.
-
-endif # BT_MESH_PRIV_BEACONS
 
 config BT_MESH_SOLICITATION
 	bool
