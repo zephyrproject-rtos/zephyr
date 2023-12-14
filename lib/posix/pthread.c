@@ -50,6 +50,17 @@ static inline void __set_attr_stacksize(struct pthread_attr *attr, size_t size)
 	attr->stacksize = size - 1;
 }
 
+static inline size_t __get_attr_guardsize(const struct pthread_attr *attr)
+{
+	return (attr->guardsize_msbit * BIT(16)) | attr->guardsize;
+}
+
+static inline void __set_attr_guardsize(struct pthread_attr *attr, size_t size)
+{
+	attr->guardsize_msbit = size == PTHREAD_STACK_MAX;
+	attr->guardsize = size & BIT_MASK(16);
+}
+
 struct __pthread_cleanup {
 	void (*routine)(void *arg);
 	void *arg;
@@ -85,8 +96,10 @@ static int pthread_concurrency;
 static const struct pthread_attr init_pthread_attrs = {
 	.stack = NULL,
 	.stacksize = 0,
+	.guardsize = (BIT_MASK(16) & CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT),
 	.priority = DEFAULT_PTHREAD_PRIORITY,
 	.schedpolicy = DEFAULT_PTHREAD_POLICY,
+	.guardsize_msbit = (BIT(16) & CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT),
 	.initialized = true,
 	.cancelstate = PTHREAD_CANCEL_ENABLE,
 	.detachstate = PTHREAD_CREATE_JOINABLE,
@@ -253,7 +266,7 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
 	int priority = schedparam->sched_priority;
 
 	if (attr == NULL || !attr->initialized ||
-	    is_posix_policy_prio_valid(priority, attr->schedpolicy == false)) {
+	    !is_posix_policy_prio_valid(priority, attr->schedpolicy)) {
 		LOG_ERR("Invalid pthread_attr_t or sched_param");
 		return EINVAL;
 	}
@@ -436,7 +449,8 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		attr = &attr_storage;
 		BUILD_ASSERT(DYNAMIC_STACK_SIZE <= PTHREAD_STACK_MAX);
 		__set_attr_stacksize(attr, DYNAMIC_STACK_SIZE);
-		attr->stack = k_thread_stack_alloc(__get_attr_stacksize(attr),
+		attr->stack = k_thread_stack_alloc(__get_attr_stacksize(attr) +
+							   __get_attr_guardsize(attr),
 						   k_is_user_context() ? K_USER : 0);
 		if (attr->stack == NULL) {
 			LOG_ERR("Unable to allocate stack of size %u", DYNAMIC_STACK_SIZE);
@@ -985,6 +999,32 @@ int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t 
 
 	*stackaddr = attr->stack;
 	*stacksize = __get_attr_stacksize(attr);
+	return 0;
+}
+
+int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT _attr, size_t *ZRESTRICT guardsize)
+{
+	struct pthread_attr *const attr = (struct pthread_attr *)_attr;
+
+	if (attr == NULL || guardsize == NULL || !attr->initialized) {
+		return EINVAL;
+	}
+
+	*guardsize = __get_attr_guardsize(attr);
+
+	return 0;
+}
+
+int pthread_attr_setguardsize(pthread_attr_t *_attr, size_t guardsize)
+{
+	struct pthread_attr *const attr = (struct pthread_attr *)_attr;
+
+	if (attr == NULL || !attr->initialized || guardsize > PTHREAD_STACK_MAX) {
+		return EINVAL;
+	}
+
+	__set_attr_guardsize(attr, guardsize);
+
 	return 0;
 }
 

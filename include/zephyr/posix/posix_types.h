@@ -39,8 +39,10 @@ typedef unsigned long timer_t;
 struct pthread_attr {
 	void *stack;
 	uint16_t stacksize;
+	uint16_t guardsize;
 	int8_t priority;
 	uint8_t schedpolicy: 2;
+	uint8_t guardsize_msbit: 1;
 	bool initialized: 1;
 	bool cancelstate: 1;
 	bool detachstate: 1;
