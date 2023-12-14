@@ -316,6 +316,9 @@ Libraries / Subsystems
 
 * Retention
 
+  * Fixed issue whereby :kconfig:option:`CONFIG_RETENTION_BUFFER_SIZE` values over 256 would cause
+    an infinite loop due to use of 8-bit variables.
+
 * Binary descriptors
 
 * POSIX API
