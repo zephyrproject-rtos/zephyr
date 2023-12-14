@@ -512,6 +512,126 @@ config BT_MESH_TX_SEG_MAX
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
 
+config BT_MESH_SAR_TX_SEG_INT_STEP
+	hex "Interval between sending two consecutive segments"
+	range 0x00 0x0F
+	default 0x05
+	help
+	  This value controls the interval between sending two consecutive
+	  segments in a segmented message. The interval is measured in
+	  milliseconds and calculated using the following formula:
+	  (CONFIG_BT_MESH_SAR_TX_SEG_INT_STEP + 1) * 10 ms.
+
+config BT_MESH_SAR_TX_UNICAST_RETRANS_COUNT
+	hex "Maximum number of retransmissions to unicast address"
+	range 0x00 0x0F
+	default 0x02
+	help
+	  This value controls the maximum number of retransmissions of a
+	  segmented message to a unicast address before giving up the transfer.
+
+config BT_MESH_SAR_TX_UNICAST_RETRANS_WITHOUT_PROG_COUNT
+	hex "Maximum number of retransmissions without progress to a unicast address"
+	range 0x00 0x0F
+	default 0x02
+	help
+	  This value defines the maximum number of retransmissions of a
+	  segmented message to a unicast address that the stack will send if no
+	  acknowledgment was received during timeout, or if an
+	  acknowledgment with already confirmed segments was received.
+
+config BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP
+	hex "Retransmissions interval step of missing segments to unicast address"
+	range 0x00 0x0F
+	default 0x07
+	help
+	  This value controls the interval step used for delaying the
+	  retransmissions of unacknowledged segments of a segmented message to
+	  a unicast address. The interval step is measured in milliseconds and
+	  calculated using the following formula:
+	  (CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP + 1) * 25 ms.
+
+config BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC
+	hex "Retransmissions interval increment of missing segments to unicast address"
+	range 0x00 0x0F
+	default 0x01
+	help
+	  This value controls the interval increment used for delaying the
+	  retransmissions of unacknowledged segments of a segmented message to
+	  a unicast address. The increment is measured in milliseconds and
+	  calculated using the following formula:
+	  (CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC + 1) * 25 ms.
+
+config BT_MESH_SAR_TX_MULTICAST_RETRANS_COUNT
+	hex "Total number of retransmissions to multicast address"
+	range 0x00 0x0F
+	default 0x02
+	help
+	  This value controls the total number of retransmissions of a segmented
+	  message to a multicast address.
+
+config BT_MESH_SAR_TX_MULTICAST_RETRANS_INT
+	hex "Interval between retransmissions to multicast address"
+	range 0x00 0x0F
+	default 0x09
+	help
+	  This value controls the interval between retransmissions of all
+	  segments in a segmented message to a multicast address. The
+	  interval is measured in milliseconds and calculated using the
+	  following formula:
+	  (CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_INT + 1) * 25 ms.
+
+config BT_MESH_SAR_RX_SEG_THRESHOLD
+	hex "Acknowledgments retransmission threshold"
+	range 0x00 0x1F
+	default 0x03
+	help
+	  This value defines a threshold in number of segments of a segmented
+	  message for acknowledgment retransmissions. When the number of
+	  segments of a segmented message is above this threshold, the stack
+	  will additionally retransmit every acknowledgment message the
+	  number of times given by value of CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT.
+
+config BT_MESH_SAR_RX_ACK_DELAY_INC
+	hex "Acknowledgment delay increment"
+	range 0x00 0x07
+	default 0x01
+	help
+	  This value controls the delay increment of an interval used for
+	  delaying the transmission of an acknowledgment message after
+	  receiving a new segment. The increment is measured in segments
+	  and calculated using the following formula:
+	  CONFIG_BT_MESH_SAR_RX_ACK_DELAY_INC + 1.5.
+
+config BT_MESH_SAR_RX_SEG_INT_STEP
+	hex "Segments reception interval step"
+	range 0x00 0x0F
+	default 0x05
+	help
+	  This value defines the segments reception interval step used for
+	  delaying the transmission of an acknowledgment message after
+	  receiving a new segmnet. The interval is measured in milliseconds
+	  and calculated using the following formula:
+	  (CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP + 1) * 10 ms
+
+config BT_MESH_SAR_RX_DISCARD_TIMEOUT
+	hex "Discard timeout for reception of a segmented message"
+	range 0x00 0x0F
+	default 0x01
+	help
+	  This value defines the time since the last successfully received
+	  segment before giving up the reception of a segmented message.
+
+config BT_MESH_SAR_RX_ACK_RETRANS_COUNT
+	hex "Total number of acknowledgment message retransmission"
+	range 0x00 0x03
+	default 0x00
+	help
+	  This value defines the total number of retranmissions of an
+	  acknowledgment message that the stack will additionally send when the
+	  size of segments in a segmented message is above the
+	  CONFIG_BT_MESH_SAR_RX_SEG_THRESHOLD value.
+
 endmenu # Transport SAR configuration
 
 config BT_MESH_DEFAULT_TTL
@@ -1513,130 +1633,6 @@ config BT_MESH_SOL_PDU_RPL_CLI_TIMEOUT
 	  This timeout controls how long Solicitation PDU RPL Configuration Client waits
 	  for a response message to arrive. This value can be changed at runtime
 	  using @ref bt_mesh_sol_pdu_rpl_cli_timeout_set.
-
-menu "Transport SAR configuration"
-
-config BT_MESH_SAR_TX_SEG_INT_STEP
-	hex "Interval between sending two consecutive segments"
-	range 0x00 0x0F
-	default 0x05
-	help
-	  This value controls the interval between sending two consecutive
-	  segments in a segmented message. The interval is measured in
-	  milliseconds and calculated using the following formula:
-	  (CONFIG_BT_MESH_SAR_TX_SEG_INT_STEP + 1) * 10 ms.
-
-config BT_MESH_SAR_TX_UNICAST_RETRANS_COUNT
-	hex "Maximum number of retransmissions to unicast address"
-	range 0x00 0x0F
-	default 0x02
-	help
-	  This value controls the maximum number of retransmissions of a
-	  segmented message to a unicast address before giving up the transfer.
-
-config BT_MESH_SAR_TX_UNICAST_RETRANS_WITHOUT_PROG_COUNT
-	hex "Maximum number of retransmissions without progress to a unicast address"
-	range 0x00 0x0F
-	default 0x02
-	help
-	  This value defines the maximum number of retransmissions of a
-	  segmented message to a unicast address that the stack will send if no
-	  acknowledgment was received during timeout, or if an
-	  acknowledgment with already confirmed segments was received.
-
-config BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP
-	hex "Retransmissions interval step of missing segments to unicast address"
-	range 0x00 0x0F
-	default 0x07
-	help
-	  This value controls the interval step used for delaying the
-	  retransmissions of unacknowledged segments of a segmented message to
-	  a unicast address. The interval step is measured in milliseconds and
-	  calculated using the following formula:
-	  (CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_STEP + 1) * 25 ms.
-
-config BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC
-	hex "Retransmissions interval increment of missing segments to unicast address"
-	range 0x00 0x0F
-	default 0x01
-	help
-	  This value controls the interval increment used for delaying the
-	  retransmissions of unacknowledged segments of a segmented message to
-	  a unicast address. The increment is measured in milliseconds and
-	  calculated using the following formula:
-	  (CONFIG_BT_MESH_SAR_TX_UNICAST_RETRANS_INT_INC + 1) * 25 ms.
-
-config BT_MESH_SAR_TX_MULTICAST_RETRANS_COUNT
-	hex "Total number of retransmissions to multicast address"
-	range 0x00 0x0F
-	default 0x02
-	help
-	  This value controls the total number of retransmissions of a segmented
-	  message to a multicast address.
-
-config BT_MESH_SAR_TX_MULTICAST_RETRANS_INT
-	hex "Interval between retransmissions to multicast address"
-	range 0x00 0x0F
-	default 0x09
-	help
-	  This value controls the interval between retransmissions of all
-	  segments in a segmented message to a multicast address. The
-	  interval is measured in milliseconds and calculated using the
-	  following formula:
-	  (CONFIG_BT_MESH_SAR_TX_MULTICAST_RETRANS_INT + 1) * 25 ms.
-
-config BT_MESH_SAR_RX_SEG_THRESHOLD
-	hex "Acknowledgments retransmission threshold"
-	range 0x00 0x1F
-	default 0x03
-	help
-	  This value defines a threshold in number of segments of a segmented
-	  message for acknowledgment retransmissions. When the number of
-	  segments of a segmented message is above this threshold, the stack
-	  will additionally retransmit every acknowledgment message the
-	  number of times given by value of CONFIG_BT_MESH_SAR_RX_ACK_RETRANS_COUNT.
-
-config BT_MESH_SAR_RX_ACK_DELAY_INC
-	hex "Acknowledgment delay increment"
-	range 0x00 0x07
-	default 0x01
-	help
-	  This value controls the delay increment of an interval used for
-	  delaying the transmission of an acknowledgment message after
-	  receiving a new segment. The increment is measured in segments
-	  and calculated using the following formula:
-	  CONFIG_BT_MESH_SAR_RX_ACK_DELAY_INC + 1.5.
-
-config BT_MESH_SAR_RX_SEG_INT_STEP
-	hex "Segments reception interval step"
-	range 0x00 0x0F
-	default 0x05
-	help
-	  This value defines the segments reception interval step used for
-	  delaying the transmission of an acknowledgment message after
-	  receiving a new segmnet. The interval is measured in milliseconds
-	  and calculated using the following formula:
-	  (CONFIG_BT_MESH_SAR_RX_SEG_INT_STEP + 1) * 10 ms
-
-config BT_MESH_SAR_RX_DISCARD_TIMEOUT
-	hex "Discard timeout for reception of a segmented message"
-	range 0x00 0x0F
-	default 0x01
-	help
-	  This value defines the time since the last successfully received
-	  segment before giving up the reception of a segmented message.
-
-config BT_MESH_SAR_RX_ACK_RETRANS_COUNT
-	hex "Total number of acknowledgment message retransmission"
-	range 0x00 0x03
-	default 0x00
-	help
-	  This value defines the total number of retranmissions of an
-	  acknowledgment message that the stack will additionally send when the
-	  size of segments in a segmented message is above the
-	  CONFIG_BT_MESH_SAR_RX_SEG_THRESHOLD value.
-
-endmenu
 
 menu "Capabilities"
 
