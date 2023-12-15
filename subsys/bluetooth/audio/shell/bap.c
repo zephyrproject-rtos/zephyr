@@ -1923,6 +1923,66 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 }
 
+static void stream_configured_cb(struct bt_bap_stream *stream,
+				      const struct bt_audio_codec_qos_pref *pref)
+{
+	struct bt_audio_codec_qos _qos;
+	struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
+
+	/* Since the preferred QoS dont hold all values, copy over all initial values*/
+	memcpy(&_qos, &sh_stream->qos, sizeof(_qos));
+
+
+	_qos.framing = !pref->unframed_supported;
+
+	if (pref->rtn > BT_ISO_CONNECTED_RTN_MAX) {
+		shell_print(ctx_shell, "Invalid Retranmission Number (value = %u)", pref->rtn);
+		return;
+	}
+	_qos.rtn = pref->rtn;
+
+	if (!IN_RANGE(pref->latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
+		shell_print(ctx_shell, "Invalid Latency (value = %u)", pref->latency);
+		return;
+	}
+	_qos.latency = pref->latency;
+
+	if (pref->pd_max > BT_AUDIO_PD_MAX) {
+		shell_print(ctx_shell, "Invalid Presentation delay Max (value = %u)", pref->pd_max);
+		return;
+	}
+
+	if (pref->pd_min > pref->pd_max) {
+		shell_print(ctx_shell, "Min Presentation Delay is larger than Max (%u > %u)", pref->pd_min, pref->pd_max);
+		return;
+	}
+
+	if (pref->pref_pd_max > BT_AUDIO_PD_MAX) {
+		shell_print(ctx_shell, "Invalid Preferred Presentation delay Max (value = %u)", pref->pref_pd_max);
+		return;
+	}
+
+	if (pref->pref_pd_min > pref->pref_pd_max) {
+		shell_print(ctx_shell, "Preferred Min Presentation Delay is larger than Max (%u > %u)", pref->pref_pd_min, pref->pref_pd_max);
+		return;
+	}
+
+	if (pref->pd_min > pref->pref_pd_min) {
+		shell_print(ctx_shell, "Preferred Min Presentation Delay is lower then supported Min (%u > %u)", pref->pd_min, pref->pref_pd_min);
+		return;
+	}
+
+	if (pref->pref_pd_max > pref->pd_max) {
+		shell_print(ctx_shell, "Preferred Max Presentation Delay is larger then supported Max (%u > %u)", pref->pref_pd_max, pref->pd_max);
+		return;
+	}
+
+	/* Just choose the largest preferred PD, since our presets are defaulted to high values */
+	_qos.pd = pref->pd_max;
+
+	memcpy(&sh_stream->qos, &_qos, sizeof(_qos));
+}
+
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void stream_released_cb(struct bt_bap_stream *stream)
 {
@@ -1984,6 +2044,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.stopped = stream_stopped_cb,
 #if defined(CONFIG_LIBLC3) && defined(CONFIG_BT_AUDIO_TX)
 	.sent = sdu_sent_cb,
+	.configured = stream_configured_cb,
 #endif
 };
 
