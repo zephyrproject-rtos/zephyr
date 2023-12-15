@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #include <string.h>
 
+/** How an ELF symbol should be handled by the llext subsystem */
+enum sym_op {
+	SYM_OP_IGNORE,  /**< The symbol is not interesting */
+	SYM_OP_DEFINE,  /**< The symbol is defined and may be used at link time */
+};
+
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
@@ -327,6 +333,22 @@ static int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
+/* Determine how an ELF symbol should be handled in the llext subsystem */
+static enum sym_op llext_elf_sym_operation(struct llext_loader *ldr, const elf_sym_t *sym)
+{
+	uint32_t stt = ELF_ST_TYPE(sym->st_info);
+	uint32_t stb = ELF_ST_BIND(sym->st_info);
+	uint32_t shndx = sym->st_shndx;
+
+	if (stt == STT_FUNC && stb == STB_GLOBAL && shndx != SHN_UNDEF) {
+		/* global function symbol */
+		return SYM_OP_DEFINE;
+	}
+
+	/* anything else is not interesting */
+	return SYM_OP_IGNORE;
+}
+
 static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 {
 	const elf_sym_t *elf_syms = (const elf_sym_t *) ext->mem[LLEXT_MEM_SYMTAB];
@@ -345,16 +367,20 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		uint32_t sect = sym.st_shndx;
-
 		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-		if (stt == STT_FUNC && stb == STB_GLOBAL) {
+		enum sym_op op = llext_elf_sym_operation(ldr, &sym);
+
+		switch (op) {
+		case SYM_OP_DEFINE:
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
 			ext->sym_tab.sym_cnt++;
-		} else {
+			break;
+		default:
 			LOG_DBG("unhandled symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
+			break;
 		}
 	}
 
@@ -422,25 +448,25 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 	for (int i = 1; i < sym_cnt; ++i) {
 
 		elf_sym_t sym = elf_syms[i];
-		uint32_t stt = ELF_ST_TYPE(sym.st_info);
-		uint32_t stb = ELF_ST_BIND(sym.st_info);
-		unsigned int sect = sym.st_shndx;
+		uint32_t sect = sym.st_shndx;
+		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+		enum llext_mem mem_idx = ldr->sect_map[sect];
 
-		if (stt == STT_FUNC && stb == STB_GLOBAL && sect != SHN_UNDEF) {
-			enum llext_mem mem_idx = ldr->sect_map[sect];
-			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+		enum sym_op op = llext_elf_sym_operation(ldr, &sym);
 
-			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
-
-			sym_tab->syms[j].name = name;
-			sym_tab->syms[j].addr = (void *)((uintptr_t)ext->mem[mem_idx] +
-							 sym.st_value -
-							 (ldr->hdr.e_type == ET_REL ? 0 :
-							  ldr->sects[mem_idx].sh_addr));
-			LOG_DBG("function symbol %d name %s addr %p",
-				j, name, sym_tab->syms[j].addr);
-			j++;
+		if (op != SYM_OP_DEFINE) {
+			/* only interested in symbols defined by the extension */
+			continue;
 		}
+
+		sym_tab->syms[j].name = name;
+		sym_tab->syms[j].addr = (void *)((uintptr_t)ext->mem[mem_idx] +
+						 sym.st_value -
+						 (ldr->hdr.e_type == ET_REL ? 0 :
+						  ldr->sects[mem_idx].sh_addr));
+		LOG_DBG("function symbol %d name %s addr %p",
+			j, name, sym_tab->syms[j].addr);
+		j++;
 	}
 
 	return 0;
