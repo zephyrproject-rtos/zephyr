@@ -440,6 +440,7 @@ class RimageSigner(Signer):
         compiler_path = self.cmake_cache.get("CMAKE_C_COMPILER")
         preproc_cmd = [compiler_path, '-P', '-E', str(config_dir / (toml_basename + '.h'))]
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
+        preproc_cmd += ['-I', str(self.sof_src_dir)]
         preproc_cmd += ['-imacros',
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'autoconf.h')]
         preproc_cmd += ['-o', str(subdir / toml_basename)]
@@ -467,7 +468,14 @@ class RimageSigner(Signer):
             else:
                 log.die(msg)
 
-        kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+        sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
+
+        is_llext = '-r' in sign_config_extra_args + args.tool_args
+
+        if is_llext:
+            kernel_name = 'llext'
+        else:
+            kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         # TODO: make this a new sign.py --bootloader option.
         if target in ('imx8', 'imx8m', 'imx8ulp'):
@@ -552,10 +560,11 @@ class RimageSigner(Signer):
         if not args.quiet and args.verbose:
             sign_base += ['-v'] * args.verbose
 
-        components = [ ] if bootloader is None else [ bootloader ]
-        components += [ kernel ]
-
-        sign_config_extra_args = config_get_words(command.config, 'rimage.extra-args', [])
+        components = [ ]
+        if not is_llext:
+            if bootloader is not None:
+                components += [ bootloader ]
+            components += [ kernel ]
 
         if '-k' not in sign_config_extra_args + args.tool_args:
             # rimage requires a key argument even when it does not sign
@@ -567,7 +576,10 @@ class RimageSigner(Signer):
 
         if '-c' not in sign_config_extra_args + args.tool_args:
             conf_dir = self.rimage_config_dir()
-            toml_basename = target + '.toml'
+            if is_llext:
+                toml_basename = 'llext.toml'
+            else:
+                toml_basename = target + '.toml'
             if ((conf_dir / toml_basename).exists() and
                (conf_dir / (toml_basename + '.h')).exists()):
                 command.die(f"Cannot have both {toml_basename + '.h'} and {toml_basename} in {conf_dir}")
