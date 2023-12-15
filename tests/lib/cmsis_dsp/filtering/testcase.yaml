@@ -26,7 +26,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
-      - mps3_an547
+      - mps3/an547
     tags:
       - cmsis_dsp
       - fpu
@@ -55,7 +55,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
-      - mps3_an547
+      - mps3/an547
     tags:
       - cmsis_dsp
       - fpu
@@ -84,7 +84,7 @@ tests:
       and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
-      - mps3_an547
+      - mps3/an547
     tags:
       - cmsis_dsp
       - fpu
@@ -114,7 +114,7 @@ tests:
     integration_platforms:
       - mps2_an521_remote
     platform_exclude:
-      - mps3_an547
+      - mps3/an547
     tags:
       - cmsis_dsp
       - fpu
