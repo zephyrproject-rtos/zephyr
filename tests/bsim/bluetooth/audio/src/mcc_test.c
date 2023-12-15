@@ -784,10 +784,13 @@ static void test_cp_pause(void)
 
 static void test_cp_fast_rewind(void)
 {
+	const int32_t tmp_pos = g_pos;
 	struct mpl_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FAST_REWIND;
 	cmd.use_param = false;
+
+	UNSET_FLAG(track_position_read);
 
 	test_send_cmd_wait_flags(&cmd);
 
@@ -799,14 +802,24 @@ static void test_cp_fast_rewind(void)
 	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_SEEKING)) {
 		printk("FAST REWIND command succeeded\n");
 	}
+
+	/* Wait for the track position to change during rewinding */
+	WAIT_FOR_FLAG(track_position_read);
+	if (tmp_pos <= g_pos) {
+		FAIL("Position did not change during rewinding");
+		return;
+	}
 }
 
 static void test_cp_fast_forward(void)
 {
+	const int32_t tmp_pos = g_pos;
 	struct mpl_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FAST_FORWARD;
 	cmd.use_param = false;
+
+	UNSET_FLAG(track_position_read);
 
 	test_send_cmd_wait_flags(&cmd);
 
@@ -817,6 +830,13 @@ static void test_cp_fast_forward(void)
 
 	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_SEEKING)) {
 		printk("FAST FORWARD command succeeded\n");
+	}
+
+	/* Wait for the track position to change during forwarding */
+	WAIT_FOR_FLAG(track_position_read);
+	if (tmp_pos >= g_pos) {
+		FAIL("Position did not change during forwarding");
+		return;
 	}
 }
 
