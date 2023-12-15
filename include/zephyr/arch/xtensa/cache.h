@@ -121,17 +121,14 @@ static ALWAYS_INLINE void arch_dcache_disable(void)
 
 #if defined(CONFIG_ICACHE)
 
-static size_t arch_icache_line_size_get(void)
+static ALWAYS_INLINE size_t arch_icache_line_size_get(void)
 {
 	return -ENOTSUP;
 }
 
 static ALWAYS_INLINE int arch_icache_flush_all(void)
 {
-#if XCHAL_ICACHE_SIZE
-	xthal_icache_all_writeback();
-#endif
-	return 0;
+	return -ENOTSUP;
 }
 
 static ALWAYS_INLINE int arch_icache_invd_all(void)
@@ -170,7 +167,7 @@ static ALWAYS_INLINE void arch_icache_enable(void)
 	/* nothing */
 }
 
-static ALWAYS_INLINE vid arch_icache_disable(void)
+static ALWAYS_INLINE void arch_icache_disable(void)
 {
 	/* nothing */
 }
