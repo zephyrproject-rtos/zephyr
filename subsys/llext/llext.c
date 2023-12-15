@@ -131,10 +131,6 @@ static int llext_find_tables(struct llext_loader *ldr)
 	size_t pos;
 	elf_shdr_t shdr;
 
-	ldr->sects[LLEXT_MEM_SHSTRTAB] =
-		ldr->sects[LLEXT_MEM_STRTAB] =
-		ldr->sects[LLEXT_MEM_SYMTAB] = (elf_shdr_t){0};
-
 	/* Find symbol and string tables */
 	for (i = 0, sect_cnt = 0, pos = ldr->hdr.e_shoff;
 	     i < ldr->hdr.e_shnum && sect_cnt < 3;
@@ -608,6 +604,7 @@ __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval
 static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 {
 	uintptr_t loc = 0;
+	enum llext_mem target_mem;
 	elf_shdr_t shdr;
 	elf_rela_t rel;
 	elf_sym_t sym;
@@ -638,25 +635,20 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
-		if (strcmp(name, ".rel.text") == 0 ||
-		    strcmp(name, ".rela.text") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_TEXT];
-		} else if (strcmp(name, ".rel.bss") == 0 ||
-			   strcmp(name, ".rela.bss") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_BSS];
-		} else if (strcmp(name, ".rel.rodata") == 0 ||
-			   strcmp(name, ".rela.rodata") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_RODATA];
-		} else if (strcmp(name, ".rel.data") == 0 ||
-			   strcmp(name, ".rela.data") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_DATA];
-		} else if (strcmp(name, ".rel.exported_sym") == 0) {
-			loc = (uintptr_t)ext->mem[LLEXT_MEM_EXPORT];
-		} else if (strcmp(name, ".rela.plt") == 0 ||
-			   strcmp(name, ".rela.dyn") == 0) {
+		if (strcmp(name, ".rela.plt") == 0 ||
+		   strcmp(name, ".rela.dyn") == 0) {
 			llext_link_plt(ldr, ext, &shdr, do_local);
 			continue;
 		}
+
+		target_mem = ldr->sect_map[shdr.sh_info];
+		if (!shdr.sh_info || (target_mem == LLEXT_MEM_COUNT)) {
+			LOG_WRN("Reloc section %d on unmapped section %d ignored",
+				i, shdr.sh_info);
+			continue;
+		}
+
+		loc = (uintptr_t)ext->mem[target_mem];
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",
 			name, i, shdr.sh_link, rel_cnt);
@@ -767,7 +759,9 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		ret = -ENOMEM;
 		goto out;
 	}
-	memset(ldr->sect_map, 0, sect_map_sz);
+	for (int i = 0; i < ldr->hdr.e_shnum; i++) {
+		ldr->sect_map[i] = LLEXT_MEM_COUNT; /* invalid */
+	}
 
 	ldr->sect_cnt = ldr->hdr.e_shnum;
 	ext->alloc_size += sect_map_sz;
