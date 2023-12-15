@@ -224,6 +224,7 @@ class Lcov(CoverageTool):
         # The --ignore-errors source option is added to avoid it exiting due to
         # samples/application_development/external_lib/
         cmd = ["genhtml", "--legend", "--branch-coverage",
+                                "--prefix", self.base_dir,
                                 "-output-directory",
                                 os.path.join(outdir, "coverage")] + files
         cmd = cmd + ignore_errors
