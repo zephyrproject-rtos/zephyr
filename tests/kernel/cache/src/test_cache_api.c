@@ -15,6 +15,16 @@ ZTEST(cache_api, test_instr_cache_api)
 {
 	int ret;
 
+#ifdef CONFIG_XTENSA_MMU
+	/* With MMU enabled, user_buffer is not marked as executable.
+	 * Invalidating the i-cache by region will cause an instruction
+	 * fetch prohibited exception. So skip all i-cache tests,
+	 * instead of just the range ones to avoid confusions of
+	 * only running the test partially.
+	 */
+	ztest_test_skip();
+#endif
+
 	ret = sys_cache_instr_flush_all();
 	zassert_true((ret == 0) || (ret == -ENOTSUP));
 
