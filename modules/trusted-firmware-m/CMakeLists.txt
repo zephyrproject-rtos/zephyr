@@ -228,6 +228,8 @@ if (CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
+  string(REPLACE "toolchain" "toolchain_ns" TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_FILE})
+
   if (CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
     # Change CMake cache type to string to avoid QCBOR_PATH=/absolute/path/DOWNLOAD being set.
     set(QCBOR_PATH_TYPE ":STRING")
@@ -317,6 +319,11 @@ if (CONFIG_BUILD_WITH_TFM)
   # Set TFM binary directory as target property on 'tfm'
   # This is the root of all TFM build artifacts.
   set_target_properties(tfm PROPERTIES TFM_BINARY_DIR ${TFM_BINARY_DIR})
+
+  # Set TFM toolchain properties on 'tfm'
+  set_target_properties(tfm PROPERTIES TFM_TOOLCHAIN_NS_FILE ${TFM_TOOLCHAIN_NS_FILE})
+  set_target_properties(tfm PROPERTIES TFM_TOOLCHAIN_PREFIX  ${TFM_TOOLCHAIN_PREFIX})
+  set_target_properties(tfm PROPERTIES TFM_TOOLCHAIN_PATH    ${TFM_TOOLCHAIN_PATH})
 
   # Set BL2 (MCUboot) executable file paths as target properties on 'tfm'
   # These files are produced by the TFM build system.
