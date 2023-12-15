@@ -150,6 +150,9 @@ __net_socket struct tls_context {
 	/** Socket flags passed to a socket call. */
 	int flags;
 
+	/* Indicates whether socket is in error state at TLS/DTLS level. */
+	int error;
+
 	/** Information whether TLS handshake is complete or not. */
 	struct k_sem tls_established;
 
@@ -1235,6 +1238,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
 				NET_ERR("TLS handshake timeout");
+				context->error = ETIMEDOUT;
 				ret = -ETIMEDOUT;
 				break;
 			}
@@ -1245,6 +1249,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 			NET_ERR("TLS handshake error: -0x%x", -ret);
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
+				context->error = ECONNABORTED;
 				ret = -ECONNABORTED;
 				break;
 			}
@@ -1252,6 +1257,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 
 		/* Avoid constant loop if tls_mbedtls_reset fails */
 		NET_ERR("TLS reset error: -0x%x", -ret);
+		context->error = ECONNABORTED;
 		ret = -ECONNABORTED;
 		break;
 	}
@@ -2205,6 +2211,11 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 	k_timepoint_t end;
 	int ret;
 
+	if (ctx->error != 0) {
+		errno = ctx->error;
+		return -1;
+	}
+
 	if (ctx->session_closed) {
 		return 0;
 	}
@@ -2249,8 +2260,18 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 				break;
 			}
 		} else {
-			(void)tls_mbedtls_reset(ctx);
-			errno = EIO;
+			/* MbedTLS API documentation requires session to
+			 * be reset in other error cases
+			 */
+			ret = tls_mbedtls_reset(ctx);
+			if (ret != 0) {
+				ctx->error = ENOMEM;
+				errno = ENOMEM;
+			} else {
+				ctx->error = ECONNABORTED;
+				errno = ECONNABORTED;
+			}
+
 			break;
 		}
 	} while (true);
@@ -2301,6 +2322,9 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 		if (ret < 0) {
 			goto error;
 		}
+
+		/* Client socket ready to use again. */
+		ctx->error = 0;
 
 		tls_session_store(ctx, &ctx->dtls_peer_addr,
 				  ctx->dtls_peer_addrlen);
@@ -2420,6 +2444,11 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 	k_timepoint_t end;
 	int ret;
 
+	if (ctx->error != 0) {
+		errno = ctx->error;
+		return -1;
+	}
+
 	if (ctx->session_closed) {
 		return 0;
 	}
@@ -2513,6 +2542,11 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 	bool is_block = is_blocking(ctx->sock, flags);
 	k_timeout_t timeout;
 	k_timepoint_t end;
+
+	if (ctx->error != 0) {
+		errno = ctx->error;
+		return -1;
+	}
 
 	if (!is_block) {
 		timeout = K_NO_WAIT;
@@ -2628,14 +2662,17 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 		/* Peer notified that it's closing the connection. */
 		ret = tls_mbedtls_reset(ctx);
 		if (ret == 0) {
+			ctx->error = ENOTCONN;
 			ret = -ENOTCONN;
 		} else {
+			ctx->error = ENOMEM;
 			ret = -ENOMEM;
 		}
 		break;
 
 	case MBEDTLS_ERR_SSL_TIMEOUT:
 		(void)mbedtls_ssl_close_notify(&ctx->ssl);
+		ctx->error = ETIMEDOUT;
 		ret = -ETIMEDOUT;
 		break;
 
@@ -2647,7 +2684,18 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 		break;
 
 	default:
-		ret = -EIO;
+		/* MbedTLS API documentation requires session to
+		 * be reset in other error cases
+		 */
+		ret = tls_mbedtls_reset(ctx);
+		if (ret != 0) {
+			ctx->error = ENOMEM;
+			errno = ENOMEM;
+		} else {
+			ctx->error = ECONNABORTED;
+			ret = -ECONNABORTED;
+		}
+
 		break;
 	}
 
@@ -2701,6 +2749,9 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 
 				continue;
 			}
+
+			/* Server socket ready to use again. */
+			ctx->error = 0;
 		}
 
 		ret = recvfrom_dtls_common(ctx, buf, max_len, flags,
@@ -2721,6 +2772,7 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 			if (ret == 0) {
 				repeat = true;
 			} else {
+				ctx->error = ENOMEM;
 				ret = -ENOMEM;
 			}
 			break;
@@ -2733,7 +2785,15 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 			break;
 
 		default:
-			ret = -EIO;
+			ret = tls_mbedtls_reset(ctx);
+			if (ret != 0) {
+				ctx->error = ENOMEM;
+				errno = ENOMEM;
+			} else {
+				ctx->error = ECONNABORTED;
+				ret = -ECONNABORTED;
+			}
+
 			break;
 		}
 	} while (repeat);
@@ -2881,8 +2941,15 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 			return 0;
 		}
 
-		/* Treat any other error as fatal. */
-		return -EIO;
+		/* MbedTLS API documentation requires session to
+		 * be reset in other error cases
+		 */
+		ret = tls_mbedtls_reset(ctx);
+		if (ret != 0) {
+			return -ENOMEM;
+		}
+
+		return -ECONNABORTED;
 	}
 
 	return mbedtls_ssl_get_bytes_avail(&ctx->ssl);
@@ -2921,6 +2988,7 @@ static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
 		pfd->revents |= ZSOCK_POLLHUP;
 		goto next;
 	} else if (ret < 0) {
+		ctx->error = -ret;
 		pfd->revents |= ZSOCK_POLLERR;
 		goto next;
 	} else if (ret == 0) {
@@ -3182,7 +3250,25 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 			return -1;
 		}
 		return err;
-	} else if (level != SOL_TLS) {
+	}
+
+	/* In case error was set on a socket at the TLS layer (for example due
+	 * to receiving TLS alert), handle SO_ERROR here, and report that error.
+	 * Otherwise, forward the SO_ERROR option request to the underlying
+	 * TCP/UDP socket to handle.
+	 */
+	if ((level == SOL_SOCKET) && (optname == SO_ERROR) && ctx->error != 0) {
+		if (*optlen != sizeof(int)) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		*(int *)optval = ctx->error;
+
+		return 0;
+	}
+
+	if (level != SOL_TLS) {
 		return zsock_getsockopt(ctx->sock, level, optname,
 					optval, optlen);
 	}
