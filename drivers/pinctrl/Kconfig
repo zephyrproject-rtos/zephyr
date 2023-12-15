@@ -66,5 +66,6 @@ source "drivers/pinctrl/Kconfig.numaker"
 source "drivers/pinctrl/Kconfig.eos_s3"
 source "drivers/pinctrl/Kconfig.ra"
 source "drivers/pinctrl/Kconfig.rzt2m"
+source "drivers/pinctrl/Kconfig.zynqmp"
 
 endif # PINCTRL
