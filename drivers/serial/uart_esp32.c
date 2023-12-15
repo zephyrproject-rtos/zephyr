@@ -973,6 +973,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 	.tx_dma_channel = ESP32_DT_INST_DMA_CELL(n, tx, channel),                                  \
 	.rx_dma_channel = ESP32_DT_INST_DMA_CELL(n, rx, channel),                                  \
 	.uart_id = (DEVICE_DT_GET(DT_NODELABEL(uart0)) != DEVICE_DT_INST_GET(n)),
+    /* ^ -Wtautological-compare warning: self-comparison always evaluates to ... */
 
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
@@ -1020,4 +1021,9 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 			      &uart_esp32_cfg_port_##idx, PRE_KERNEL_1,                            \
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtautological-compare"
+
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
+
+#pragma GCC diagnostic pop
