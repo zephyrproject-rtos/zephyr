@@ -123,11 +123,23 @@ struct tls_dtls_cid {
 
 /** TLS context information. */
 __net_socket struct tls_context {
-	/** Information whether TLS context is used. */
-	bool is_used;
-
 	/** Underlying TCP/UDP socket. */
 	int sock;
+
+	/** Information whether TLS context is used. */
+	bool is_used : 1;
+
+	/** Information whether TLS context was initialized. */
+	bool is_initialized : 1;
+
+	/** Information whether underlying socket is listening. */
+	bool is_listening : 1;
+
+	/** Information whether TLS handshake is currently in progress. */
+	bool handshake_in_progress : 1;
+
+	/** Session ended at the TLS/DTLS level. */
+	bool session_closed : 1;
 
 	/** Socket type. */
 	enum net_sock_type type;
@@ -137,15 +149,6 @@ __net_socket struct tls_context {
 
 	/** Socket flags passed to a socket call. */
 	int flags;
-
-	/** Information whether TLS context was initialized. */
-	bool is_initialized;
-
-	/** Information whether underlying socket is listening. */
-	bool is_listening;
-
-	/** Information whether TLS handshake is currently in progress. */
-	bool handshake_in_progress;
 
 	/** Information whether TLS handshake is complete or not. */
 	struct k_sem tls_established;
@@ -2202,6 +2205,10 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 	k_timepoint_t end;
 	int ret;
 
+	if (ctx->session_closed) {
+		return 0;
+	}
+
 	if (!is_block) {
 		timeout = K_NO_WAIT;
 	} else {
@@ -2413,6 +2420,10 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 	k_timepoint_t end;
 	int ret;
 
+	if (ctx->session_closed) {
+		return 0;
+	}
+
 	if (!is_block) {
 		timeout = K_NO_WAIT;
 	} else {
@@ -2431,6 +2442,7 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 				/* Peer notified that it's closing the
 				 * connection.
 				 */
+				ctx->session_closed = true;
 				break;
 			}
 
@@ -2439,6 +2451,7 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 				 * supported. See mbedtls_ssl_read API
 				 * documentation.
 				 */
+				ctx->session_closed = true;
 				break;
 			}
 
@@ -2856,6 +2869,8 @@ static int ztls_socket_data_check(struct tls_context *ctx)
 				if (ret != 0) {
 					return -ENOMEM;
 				}
+			} else {
+				ctx->session_closed = true;
 			}
 
 			return -ENOTCONN;
