@@ -11,6 +11,8 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 LOG_MODULE_REGISTER(gpio_keys, CONFIG_INPUT_LOG_LEVEL);
 
@@ -138,8 +140,56 @@ static int gpio_keys_init(const struct device *dev)
 		}
 	}
 
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable runtime power management");
+		return ret;
+	}
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int gpio_keys_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct gpio_keys_config *cfg = dev->config;
+	gpio_flags_t gpio_flags;
+	gpio_flags_t int_flags;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		gpio_flags = GPIO_DISCONNECTED;
+		int_flags = GPIO_INT_DISABLE;
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		gpio_flags = GPIO_INPUT;
+		int_flags = GPIO_INT_EDGE_BOTH;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	for (int i = 0; i < cfg->num_keys; i++) {
+		const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
+
+		ret = gpio_pin_configure_dt(gpio, gpio_flags);
+		if (ret != 0) {
+			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			return ret;
+		}
+
+		ret = gpio_pin_interrupt_configure_dt(gpio, int_flags);
+		if (ret < 0) {
+			LOG_ERR("interrupt configuration failed: %d", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#endif
 
 #define GPIO_KEYS_CFG_CHECK(node_id)                                                               \
 	BUILD_ASSERT(DT_NODE_HAS_PROP(node_id, zephyr_code),                                       \
@@ -153,17 +203,23 @@ static int gpio_keys_init(const struct device *dev)
 
 #define GPIO_KEYS_INIT(i)                                                                          \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(i, GPIO_KEYS_CFG_CHECK);                                 \
+												   \
 	static const struct gpio_keys_pin_config gpio_keys_pin_config_##i[] = {                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(i, GPIO_KEYS_CFG_DEF, (,))};                 \
+												   \
 	static const struct gpio_keys_config gpio_keys_config_##i = {                              \
 		.debounce_interval_ms = DT_INST_PROP(i, debounce_interval_ms),                     \
 		.num_keys = ARRAY_SIZE(gpio_keys_pin_config_##i),                                  \
 		.pin_cfg = gpio_keys_pin_config_##i,                                               \
 	};                                                                                         \
+												   \
 	static struct gpio_keys_pin_data                                                           \
 		gpio_keys_pin_data_##i[ARRAY_SIZE(gpio_keys_pin_config_##i)];                      \
-	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, NULL, gpio_keys_pin_data_##i,                    \
-			      &gpio_keys_config_##i, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,      \
-			      NULL);
+												   \
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_keys_pm_action);                                          \
+												   \
+	DEVICE_DT_INST_DEFINE(i, &gpio_keys_init, PM_DEVICE_DT_INST_GET(n),                        \
+			      gpio_keys_pin_data_##i, &gpio_keys_config_##i,                       \
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_KEYS_INIT)
