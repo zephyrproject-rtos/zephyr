@@ -279,6 +279,8 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 			 * ERR008: GPIO: Dual-edge interrupts are not vectoring
 			 */
 			return -ENOTSUP;
+		default:
+			return -EINVAL;
 		}
 		ret = am_hal_gpio_pinconfig(gpio_pin, pincfg);
 
