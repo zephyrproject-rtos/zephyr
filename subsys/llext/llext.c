@@ -496,106 +496,6 @@ __weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 	__ASSERT(false, "arch_elf_relocate_local() not implemented");
 }
 
-static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
-			   elf_shdr_t *shdr, bool do_local)
-{
-	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
-	/*
-	 * CPU address where the .text section is stored, we use .text just as a
-	 * reference point
-	 */
-	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
-
-	LOG_DBG("Found %p in PLT %u size %u cnt %u text %p",
-		(void *)llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name),
-		shdr->sh_type, shdr->sh_entsize, sh_cnt, (void *)text);
-
-	const elf_shdr_t *sym_shdr = ldr->sects + LLEXT_MEM_SYMTAB;
-	unsigned int sym_cnt = sym_shdr->sh_size / sym_shdr->sh_entsize;
-
-	for (unsigned int i = 0; i < sh_cnt; i++) {
-		elf_rela_t rela;
-
-		int ret = llext_seek(ldr, shdr->sh_offset + i * shdr->sh_entsize);
-
-		if (!ret) {
-			ret = llext_read(ldr, &rela, sizeof(rela));
-		}
-
-		if (ret < 0) {
-			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
-			continue;
-		}
-
-		/* Index in the symbol table */
-		unsigned int j = ELF32_R_SYM(rela.r_info);
-
-		if (j >= sym_cnt) {
-			LOG_WRN("PLT: idx %u >= %u", j, sym_cnt);
-			continue;
-		}
-
-		elf_sym_t sym_tbl;
-
-		ret = llext_seek(ldr, sym_shdr->sh_offset + j * sizeof(elf_sym_t));
-		if (!ret) {
-			ret = llext_read(ldr, &sym_tbl, sizeof(sym_tbl));
-		}
-
-		if (ret < 0) {
-			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
-				j, i);
-			continue;
-		}
-
-		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
-		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
-
-		if (stt != STT_FUNC && (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)) {
-			continue;
-		}
-
-		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym_tbl.st_name);
-		/*
-		 * Both r_offset and sh_addr are addresses for which the extension
-		 * has been built.
-		 */
-		size_t got_offset = llext_file_offset(ldr, rela.r_offset) -
-			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
-
-		const void *link_addr;
-
-		switch (stb) {
-		case STB_GLOBAL:
-			link_addr = llext_find_sym(NULL, name);
-			if (!link_addr)
-				link_addr = llext_find_sym(&ext->sym_tab, name);
-
-			if (!link_addr) {
-				LOG_WRN("PLT: cannot find idx %u name %s", j, name);
-				continue;
-			}
-
-			if (!rela.r_offset) {
-				LOG_WRN("PLT: zero offset idx %u name %s", j, name);
-				continue;
-			}
-
-			/* Resolve the symbol */
-			*(const void **)(text + got_offset) = link_addr;
-			break;
-		case  STB_LOCAL:
-			if (do_local) {
-				arch_elf_relocate_local(ldr, ext, &rela, got_offset);
-			}
-		}
-
-		LOG_DBG("symbol %s offset %#x r-offset %#x .text offset %#x stb %u",
-			name, got_offset,
-			rela.r_offset, ldr->sects[LLEXT_MEM_TEXT].sh_offset, stb);
-	}
-}
-
 __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 {
 	__ASSERT(false, "arch_elf_relocate() not implemented");
@@ -635,20 +535,23 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
+		int is_plt_section = 0;
+
 		if (strcmp(name, ".rela.plt") == 0 ||
 		   strcmp(name, ".rela.dyn") == 0) {
-			llext_link_plt(ldr, ext, &shdr, do_local);
-			continue;
-		}
+			is_plt_section = 1;
+		} else {
+			/* this is used for static linking only at this stage */
+			target_mem = ldr->sect_map[shdr.sh_info];
+			if ((!shdr.sh_info || (target_mem == LLEXT_MEM_COUNT))
+			    && !is_plt_section) {
+				LOG_WRN("Reloc section %d on unmapped section %d ignored",
+					i, shdr.sh_info);
+				continue;
+			}
 
-		target_mem = ldr->sect_map[shdr.sh_info];
-		if (!shdr.sh_info || (target_mem == LLEXT_MEM_COUNT)) {
-			LOG_WRN("Reloc section %d on unmapped section %d ignored",
-				i, shdr.sh_info);
-			continue;
+			loc = (uintptr_t)ext->mem[target_mem];
 		}
-
-		loc = (uintptr_t)ext->mem[target_mem];
 
 		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",
 			name, i, shdr.sh_link, rel_cnt);
@@ -685,45 +588,90 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 				rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
 				ELF_ST_BIND(sym.st_info), sym.st_shndx);
 
-			uintptr_t link_addr, op_loc;
+			if (is_plt_section) {
 
-			op_loc = loc + rel.r_offset;
+				/* dynamic linking using GOT */
 
-			/* If symbol is undefined, then we need to look it up */
-			if (sym.st_shndx == SHN_UNDEF) {
-				link_addr = (uintptr_t)llext_find_sym(NULL, name);
+				size_t got_offset = llext_file_offset(ldr, rel.r_offset) -
+					ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 
-				if (link_addr == 0) {
-					LOG_ERR("Undefined symbol with no entry in "
-						"symbol table %s, offset %d, link section %d",
-						name, rel.r_offset, shdr.sh_link);
-					return -ENODATA;
+				const void *link_addr;
+				uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
+				uint32_t stb = ELF_ST_BIND(sym.st_info);
+
+				switch (stb) {
+				case STB_GLOBAL:
+					link_addr = llext_find_sym(NULL, name);
+					if (!link_addr)
+						link_addr = llext_find_sym(&ext->sym_tab, name);
+
+					if (!link_addr) {
+						LOG_WRN("PLT: cannot find idx %u name %s", j, name);
+						continue;
+					}
+
+					if (!rel.r_offset) {
+						LOG_WRN("PLT: zero offset idx %u name %s", j, name);
+						continue;
+					}
+
+					/* Resolve the symbol */
+					*(const void **)(text + got_offset) = link_addr;
+					break;
+				case  STB_LOCAL:
+					if (do_local) {
+						arch_elf_relocate_local(ldr, ext, &rel, got_offset);
+					}
 				}
-			} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
-				   ELF_ST_TYPE(sym.st_info) == STT_FUNC) {
-				/* Current relocation location holds an offset into the section */
-				link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
-					+ sym.st_value
-					+ *((uintptr_t *)op_loc);
 
-				LOG_INF("found section symbol %s addr 0x%lx", name, link_addr);
 			} else {
-				/* Nothing to relocate here */
-				continue;
+
+				/* static linking */
+
+				uintptr_t link_addr, op_loc;
+
+				op_loc = loc + rel.r_offset;
+
+				/* If symbol is undefined, then we need to look it up */
+				if (sym.st_shndx == SHN_UNDEF) {
+					link_addr = (uintptr_t)llext_find_sym(NULL, name);
+
+					if (link_addr == 0) {
+						LOG_ERR("Undefined symbol with no entry in "
+							"symbol table %s, offset %d, "
+							"link section %d",
+							name, rel.r_offset, shdr.sh_link);
+						return -ENODATA;
+					}
+				} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
+					   ELF_ST_TYPE(sym.st_info) == STT_FUNC) {
+					/* Current relocation location holds an offset into
+					 * the section
+					 */
+					link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
+						+ sym.st_value
+						+ *((uintptr_t *)op_loc);
+
+					LOG_INF("found section symbol %s addr 0x%lx",
+						name, link_addr);
+				} else {
+					/* Nothing to relocate here */
+					continue;
+				}
+
+				LOG_INF("relocating (linking) symbol %s type %d "
+					"binding %d ndx %d offset %d link section %d",
+					name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
+					sym.st_shndx, rel.r_offset, shdr.sh_link);
+
+				LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx "
+					"addr 0x%lx",
+					name, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
+					op_loc, link_addr);
+
+				/* relocation */
+				arch_elf_relocate(&rel, op_loc, link_addr);
 			}
-
-			LOG_INF("relocating (linking) symbol %s type %d binding %d ndx %d offset "
-				"%d link section %d",
-				name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
-				sym.st_shndx, rel.r_offset, shdr.sh_link);
-
-			LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx "
-				"addr 0x%lx",
-				name, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
-				op_loc, link_addr);
-
-			/* relocation */
-			arch_elf_relocate(&rel, op_loc, link_addr);
 		}
 	}
 
