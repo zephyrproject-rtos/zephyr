@@ -28,14 +28,14 @@ static inline void pinctrl_ra_write_PmnFPS(size_t port, size_t pin, uint32_t val
 	sys_write32(value, DT_INST_REG_ADDR_BY_NAME(0, pfs) + (port * PIN_NUM + pin) * 4);
 }
 
-static inline uint32_t pinctrl_ra_read_PMISC_PWPR(size_t port, size_t pin)
+static inline uint8_t pinctrl_ra_read_PMISC_PWPR(size_t port, size_t pin)
 {
-	return sys_read32(DT_INST_REG_ADDR_BY_NAME(0, pmisc_pwpr));
+	return sys_read8(DT_INST_REG_ADDR_BY_NAME(0, pmisc_pwpr));
 }
 
-static inline void pinctrl_ra_write_PMISC_PWPR(uint32_t value)
+static inline void pinctrl_ra_write_PMISC_PWPR(uint8_t value)
 {
-	sys_write32(value, DT_INST_REG_ADDR_BY_NAME(0, pmisc_pwpr));
+	sys_write8(value, DT_INST_REG_ADDR_BY_NAME(0, pmisc_pwpr));
 }
 
 static void pinctrl_ra_configure_pfs(const pinctrl_soc_pin_t *pinc)
