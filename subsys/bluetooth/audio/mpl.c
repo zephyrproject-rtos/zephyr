@@ -8,7 +8,9 @@
 
 #include <stdlib.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/time_units.h>
 
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
@@ -25,6 +27,9 @@ LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
 #define TRACK_STATUS_INVALID 0x00
 #define TRACK_STATUS_VALID 0x01
+
+#define TRACK_POS_WORK_DELAY_MS 1000
+#define TRACK_POS_WORK_DELAY    K_MSEC(TRACK_POS_WORK_DELAY_MS)
 
 #define PLAYBACK_SPEED_PARAM_DEFAULT MEDIA_PROXY_PLAYBACK_SPEED_UNITY
 
@@ -1346,7 +1351,10 @@ static void mpl_set_state(uint8_t state)
 	case MEDIA_PROXY_STATE_INACTIVE:
 	case MEDIA_PROXY_STATE_PLAYING:
 	case MEDIA_PROXY_STATE_PAUSED:
+		(void)k_work_cancel_delayable(&media_player.pos_work);
+		break;
 	case MEDIA_PROXY_STATE_SEEKING:
+		(void)k_work_schedule(&media_player.pos_work, TRACK_POS_WORK_DELAY);
 		break;
 	default:
 		__ASSERT(false, "Invalid state: %u", state);
@@ -2286,6 +2294,24 @@ static uint8_t get_content_ctrl_id(void)
 	return media_player.content_ctrl_id;
 }
 
+static void pos_work_cb(struct k_work *work)
+{
+	if (media_player.state == MEDIA_PROXY_STATE_SEEKING) {
+		const int32_t pos_diff_cs =
+			TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
+
+		/* When seeking, apply the seeking speed factor */
+		set_relative_track_position(pos_diff_cs * media_player.seeking_speed_factor);
+
+		if (media_player.track_pos == media_player.group->track->duration) {
+			/* Go to next track */
+			do_next_track(&media_player);
+		}
+
+		(void)k_work_schedule(&media_player.pos_work, TRACK_POS_WORK_DELAY);
+	}
+}
+
 int media_proxy_pl_init(void)
 {
 	static bool initialized;
@@ -2386,6 +2412,8 @@ int media_proxy_pl_init(void)
 		LOG_ERR("Unable to register player");
 		return ret;
 	}
+
+	k_work_init_delayable(&media_player.pos_work, pos_work_cb);
 
 	initialized = true;
 	return 0;
