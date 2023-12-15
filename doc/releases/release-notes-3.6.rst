@@ -144,6 +144,8 @@ Build system and infrastructure
 * Fixed an issue whereby shields were processed in order of the root they resided in rather than
   the order they were supplied to cmake in.
 
+* Fixed an issue whereby using some shields with sysbuild would cause a cmake Kconfig error.
+
 Drivers and Sensors
 *******************
 
