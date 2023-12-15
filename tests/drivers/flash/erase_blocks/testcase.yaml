@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  sysbuild: true
+  tags:
+    - drivers
+    - flash
+tests:
+  flash.erase_blocks.build_only:
+    harness: ztest
+    build_only: true
+    platform_allow:
+      - sam_v71_xult
+      - b_u585i_iot02a
+      - nrf9160dk_nrf9160
+      - nrf5340dk_nrf5340_cpuapp
