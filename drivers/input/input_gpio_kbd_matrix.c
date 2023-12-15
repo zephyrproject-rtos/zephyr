@@ -132,7 +132,6 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 {
 	const struct gpio_kbd_matrix_config *cfg = dev->config;
 	const struct input_kbd_matrix_common_config *common = &cfg->common;
-	gpio_flags_t flags = enabled ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
 	int ret;
 
 	if (cfg->idle_poll_dwork != NULL) {
@@ -149,6 +148,7 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 
 	for (int i = 0; i < common->row_size; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->row_gpio[i];
+		gpio_flags_t flags = enabled ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
 
 		ret = gpio_pin_interrupt_configure_dt(gpio, flags);
 		if (ret != 0) {
