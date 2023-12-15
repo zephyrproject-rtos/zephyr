@@ -17,6 +17,10 @@ get_target_property(TFM_NS_BIN_FILE          tfm TFM_NS_BIN_FILE)
 get_target_property(TFM_NS_HEX_FILE          tfm TFM_NS_HEX_FILE)
 get_target_property(TFM_NS_SIGNED_BIN_FILE   tfm TFM_NS_SIGNED_BIN_FILE)
 
+get_target_property(TFM_TOOLCHAIN_PATH       tfm TFM_TOOLCHAIN_PATH)
+get_target_property(TFM_TOOLCHAIN_PREFIX     tfm TFM_TOOLCHAIN_PREFIX)
+get_target_property(TFM_TOOLCHAIN_NS_FILE    tfm TFM_TOOLCHAIN_NS_FILE)
+
 set(TFM_TEST_REPO_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tf-m-tests)
 
 set(TFM_TEST_DIR         "${TFM_TEST_REPO_PATH}/tests_reg/test/secure_regression")
@@ -43,7 +47,8 @@ ExternalProject_Add(tfm_regression_test_app
                 -S ${TFM_TEST_REPO_PATH}/tests_reg
                 -B ${PROJECT_BINARY_DIR}/tfm_ns
                 -DCONFIG_SPE_PATH=${TFM_BINARY_DIR}/api_ns
-                -DTFM_TOOLCHAIN_FILE=cmake/toolchain_ns_GNUARM.cmake
+                -DTFM_TOOLCHAIN_FILE=cmake/${TFM_TOOLCHAIN_NS_FILE}
+                -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
                 -DQCBOR_PATH${QCBOR_PATH_TYPE}=${CONFIG_TFM_QCBOR_PATH}
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
