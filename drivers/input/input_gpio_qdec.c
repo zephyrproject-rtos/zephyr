@@ -13,6 +13,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
@@ -42,6 +44,9 @@ struct gpio_qdec_data {
 	struct k_work_delayable idle_work;
 	struct gpio_callback gpio_cb;
 	atomic_t polling;
+#ifdef CONFIG_PM_DEVICE
+	atomic_t suspended;
+#endif
 };
 
 /* Positive transitions */
@@ -156,6 +161,12 @@ static void gpio_qdec_sample_timer_timeout(struct k_timer *timer)
 	int8_t delta = 0;
 	unsigned int key;
 	uint8_t step;
+
+#ifdef CONFIG_PM_DEVICE
+	if (atomic_get(&data->suspended) == 1) {
+		return;
+	}
+#endif
 
 	step = gpio_qdec_get_step(dev);
 
@@ -301,10 +312,83 @@ static int gpio_qdec_init(const struct device *dev)
 
 	gpio_qdec_idle_mode(dev);
 
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable runtime power management");
+		return ret;
+	}
+
 	LOG_DBG("Device %s initialized", dev->name);
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static void gpio_qdec_pin_suspend(const struct device *dev, bool suspend)
+{
+	const struct gpio_qdec_config *cfg = dev->config;
+	gpio_flags_t mode = suspend ? GPIO_DISCONNECTED : GPIO_INPUT;
+	int ret;
+
+	for (int i = 0; i < GPIO_QDEC_GPIO_NUM; i++) {
+		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
+
+		ret = gpio_pin_configure_dt(gpio, mode);
+		if (ret != 0) {
+			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			return;
+		}
+	}
+
+	for (int i = 0; i < cfg->led_gpio_count; i++) {
+		if (suspend) {
+			gpio_pin_set_dt(&cfg->led_gpio[i], 0);
+		} else if (!gpio_qdec_idle_polling_mode(dev)) {
+			gpio_pin_set_dt(&cfg->led_gpio[i], 1);
+		}
+	}
+}
+
+static int gpio_qdec_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	struct gpio_qdec_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		struct k_work_sync sync;
+
+		atomic_set(&data->suspended, 1);
+
+		k_work_cancel_delayable_sync(&data->idle_work, &sync);
+
+		if (!gpio_qdec_idle_polling_mode(dev)) {
+			gpio_qdec_irq_setup(dev, false);
+		}
+
+		k_timer_stop(&data->sample_timer);
+
+		gpio_qdec_pin_suspend(dev, true);
+
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		atomic_set(&data->suspended, 0);
+
+		gpio_qdec_pin_suspend(dev, false);
+
+		data->prev_step = gpio_qdec_get_step(dev);
+		data->acc = 0;
+
+		gpio_qdec_idle_mode(dev);
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 #define QDEC_GPIO_INIT(n)							\
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, gpios) == GPIO_QDEC_GPIO_NUM,		\
@@ -342,7 +426,9 @@ static int gpio_qdec_init(const struct device *dev)
 										\
 	static struct gpio_qdec_data gpio_qdec_data_##n;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, gpio_qdec_init, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_qdec_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(n, gpio_qdec_init, PM_DEVICE_DT_INST_GET(n),	\
 			      &gpio_qdec_data_##n,				\
 			      &gpio_qdec_cfg_##n,				\
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
