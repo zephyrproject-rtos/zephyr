@@ -291,6 +291,13 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 		input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL);
 		api->set_detect_mode(dev, true);
 
+		/* Check the rows again after enabling the interrupt to catch
+		 * any potential press since the last read.
+		 */
+		if (api->read_row(dev) != 0) {
+			input_kbd_matrix_poll_start(dev);
+		}
+
 		k_sem_take(&data->poll_lock, K_FOREVER);
 		LOG_DBG("scan start");
 
