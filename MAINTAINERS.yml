@@ -3005,7 +3005,7 @@ TF-M Integration:
   maintainers:
     - d3zd3z
   collaborators:
-    - joerchan
+    - SebastianBoe
   files:
     - samples/tfm_integration/
     - modules/trusted-firmware-m/
@@ -3757,7 +3757,6 @@ West:
   maintainers:
     - d3zd3z
   collaborators:
-    - joerchan
     - SebastianBoe
   files:
     - modules/trusted-firmware-m/
@@ -3769,7 +3768,6 @@ West:
   maintainers:
     - d3zd3z
   collaborators:
-    - joerchan
     - SebastianBoe
   files: []
   labels:
@@ -3792,7 +3790,6 @@ West:
   maintainers:
     - d3zd3z
   collaborators:
-    - joerchan
     - SebastianBoe
   files: []
   labels:
