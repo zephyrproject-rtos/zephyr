@@ -37,4 +37,11 @@ config FLASH_LOAD_SIZE
 	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
 	depends on BOARD_LPCXPRESSO55S28 && TRUSTED_EXECUTION_SECURE
 
+if BOOTLOADER_MCUBOOT
+choice MCUBOOT_BOOTLOADER_MODE
+	# Board only supports MCUBoot via "upgrade only" method:
+	default MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+endchoice
+endif #BOOTLOADER_MCUBOOT
+
 endif # BOARD_LPCXPRESSO55S28
