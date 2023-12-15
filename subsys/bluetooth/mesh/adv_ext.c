@@ -60,8 +60,8 @@ struct bt_mesh_ext_adv {
 	ATOMIC_DEFINE(flags, ADV_FLAGS_NUM);
 	struct bt_le_ext_adv *instance;
 	struct bt_mesh_adv *adv;
-	uint64_t timestamp;
-	struct k_work_delayable work;
+	uint32_t timestamp;
+	struct k_work work;
 	struct bt_le_adv_param adv_param;
 };
 
@@ -85,7 +85,7 @@ static struct bt_mesh_ext_adv advs[] = {
 #endif /* CONFIG_BT_MESH_PB_ADV */
 			BT_MESH_ADV_TAG_BIT_LOCAL
 		),
-		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+		.work = Z_WORK_INITIALIZER(send_pending_adv),
 	},
 #if CONFIG_BT_MESH_RELAY_ADV_SETS
 	[1 ... CONFIG_BT_MESH_RELAY_ADV_SETS] = {
@@ -97,19 +97,19 @@ static struct bt_mesh_ext_adv advs[] = {
 			BT_MESH_ADV_TAG_BIT_PROV |
 #endif /* CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS */
 		0),
-		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+		.work = Z_WORK_INITIALIZER(send_pending_adv),
 	},
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
 #if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
 	{
 		.tags = BT_MESH_ADV_TAG_BIT_FRIEND,
-		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+		.work = Z_WORK_INITIALIZER(send_pending_adv),
 	},
 #endif /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
 #if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
 	{
 		.tags = BT_MESH_ADV_TAG_BIT_PROXY,
-		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+		.work = Z_WORK_INITIALIZER(send_pending_adv),
 	},
 #endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 };
@@ -172,7 +172,7 @@ static int adv_start(struct bt_mesh_ext_adv *ext_adv,
 		return err;
 	}
 
-	ext_adv->timestamp = k_uptime_get();
+	ext_adv->timestamp = k_uptime_get_32();
 
 	err = bt_le_ext_adv_start(ext_adv->instance, start);
 	if (err) {
@@ -246,18 +246,13 @@ static void send_pending_adv(struct k_work *work)
 	struct bt_mesh_adv *adv;
 	int err;
 
-	ext_adv = CONTAINER_OF(work, struct bt_mesh_ext_adv, work.work);
+	ext_adv = CONTAINER_OF(work, struct bt_mesh_ext_adv, work);
 
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_SENT)) {
-		/* Calling k_uptime_delta on a timestamp moves it to the current time.
-		 * This is essential here, as schedule_send() uses the end of the event
-		 * as a reference to avoid sending the next advertisement too soon.
-		 */
-		int64_t duration = k_uptime_delta(&ext_adv->timestamp);
-
-		LOG_DBG("Advertising stopped after %u ms for %s", (uint32_t)duration,
-		       ext_adv->adv ? adv_tag_to_str[ext_adv->adv->ctx.tag] :
-				  adv_tag_to_str[BT_MESH_ADV_TAG_PROXY]);
+		LOG_DBG("Advertising stopped after %u ms for %s",
+			k_uptime_get_32() - ext_adv->timestamp,
+			ext_adv->adv ? adv_tag_to_str[ext_adv->adv->ctx.tag]
+				     : adv_tag_to_str[BT_MESH_ADV_TAG_PROXY]);
 
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY);
@@ -315,11 +310,6 @@ static void send_pending_adv(struct k_work *work)
 
 static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 {
-	uint64_t timestamp;
-	int64_t delta;
-
-	timestamp = ext_adv->timestamp;
-
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY_START);
 		(void)bt_le_ext_adv_stop(ext_adv->instance);
@@ -335,19 +325,7 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 	}
 
 	atomic_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
-
-	if ((IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
-	     ext_adv->tags & BT_MESH_ADV_TAG_BIT_FRIEND) ||
-	    (CONFIG_BT_MESH_RELAY_ADV_SETS > 0 && ext_adv->tags & BT_MESH_ADV_TAG_BIT_RELAY)) {
-		k_work_reschedule(&ext_adv->work, K_NO_WAIT);
-	} else {
-		/* The controller will send the next advertisement immediately.
-		 * Introduce a delay here to avoid sending the next mesh packet closer
-		 * to the previous packet than what's permitted by the specification.
-		 */
-		delta = k_uptime_delta(&timestamp);
-		k_work_reschedule(&ext_adv->work, K_MSEC(ADV_INT_FAST_MS - delta));
-	}
+	k_work_submit(&ext_adv->work);
 
 	return true;
 }
@@ -413,7 +391,7 @@ void bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
 
 		atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
 
-		k_work_submit(&ext_adv->work.work);
+		k_work_submit(&ext_adv->work);
 
 		return;
 	}
@@ -462,7 +440,7 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 
 	atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
 
-	k_work_submit(&ext_adv->work.work);
+	k_work_submit(&ext_adv->work);
 }
 
 #if defined(CONFIG_BT_MESH_GATT_SERVER)
@@ -511,7 +489,7 @@ int bt_mesh_adv_disable(void)
 	struct k_work_sync sync;
 
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
-		k_work_flush_delayable(&advs[i].work, &sync);
+		k_work_flush(&advs[i].work, &sync);
 
 		err = bt_le_ext_adv_stop(advs[i].instance);
 		if (err) {
