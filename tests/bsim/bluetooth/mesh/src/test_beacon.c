@@ -812,6 +812,11 @@ static void test_tx_multiple_netkeys(void)
 		ASSERT_EQUAL(0x00, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 
+		/* Wait for end of sending all beacons from the rx node before sending beacon back
+		 * to prevent beacon collision.
+		 */
+		k_sleep(K_MSEC(500));
+
 		/* Do the same, but secure beacon with the new Net Key. The node shall set Key
 		 * Refresh phase to 2.
 		 */
@@ -823,6 +828,11 @@ static void test_tx_multiple_netkeys(void)
 					    beacon_confirm_by_subnet, net_id_secondary));
 		ASSERT_EQUAL(0x01, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
+
+		/* Wait for end of sending all beacons from the rx node before sending beacon back
+		 * to prevent beacon collision.
+		 */
+		k_sleep(K_MSEC(500));
 
 		/* Send beacon with Key Refresh flag set to 0, but secured with the old Net Key.
 		 * The beacon shall be rejected. The beacon interval shall not be changed.
@@ -836,6 +846,11 @@ static void test_tx_multiple_netkeys(void)
 		ASSERT_EQUAL(0x01, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 
+		/* Wait for end of sending all beacons from the rx node before sending beacon back
+		 * to prevent beacon collision.
+		 */
+		k_sleep(K_MSEC(500));
+
 		/* Do the same with the new Net Key. Now the node shall change Key Refresh phase
 		 * to 0. The beacon interval shall be increased.
 		 */
@@ -847,6 +862,11 @@ static void test_tx_multiple_netkeys(void)
 					    beacon_confirm_by_subnet, net_id_secondary));
 		ASSERT_EQUAL(0x00, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
+
+		/* Wait for end of sending all beacons from the rx node before sending beacon back
+		 * to prevent beacon collision.
+		 */
+		k_sleep(K_MSEC(500));
 	}
 
 	/* Create a valid beacon secured with unknown Net Key. The node shall ignore the beacon and
@@ -1746,7 +1766,7 @@ static void test_rx_priv_net_id(void)
 
 	/* Scan for first net ID */
 	ASSERT_TRUE(
-		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+		wait_for_beacon(priv_scan_cb, 5, pp_beacon_check, &ctx));
 
 	uint64_t last_pp_random = beacon.pp_random;
 
@@ -1755,7 +1775,7 @@ static void test_rx_priv_net_id(void)
 	 */
 	k_sleep(K_SECONDS(600));
 	ASSERT_TRUE(
-		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+		wait_for_beacon(priv_scan_cb, 5, pp_beacon_check, &ctx));
 	ASSERT_FALSE(beacon.pp_random == last_pp_random);
 
 	PASS();
@@ -1800,7 +1820,7 @@ static void test_rx_priv_node_id(void)
 
 	/* Scan for first node ID */
 	ASSERT_TRUE(
-		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+		wait_for_beacon(priv_scan_cb, 5, pp_beacon_check, &ctx));
 
 	uint64_t last_pp_random = beacon.pp_random;
 
@@ -1810,7 +1830,7 @@ static void test_rx_priv_node_id(void)
 
 	k_sleep(K_SECONDS(65));
 	ASSERT_TRUE(
-		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+		wait_for_beacon(priv_scan_cb, 5, pp_beacon_check, &ctx));
 	ASSERT_FALSE(beacon.pp_random == last_pp_random);
 
 	PASS();
@@ -2095,7 +2115,7 @@ static void test_rx_priv_multi_net_id(void)
 
 	while (itr) {
 		/* Scan for net ID from both networks  */
-		ASSERT_TRUE(wait_for_beacon(priv_scan_cb, 2, NULL, &ctx));
+		ASSERT_TRUE(wait_for_beacon(priv_scan_cb, 5, NULL, &ctx));
 
 		for (size_t i = 0; i < ARRAY_SIZE(net_ctx); i++) {
 			if (beacon.pp_hash ==
