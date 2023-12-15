@@ -95,14 +95,6 @@ static inline void socketcan_to_can_filter(const struct socketcan_filter *sfilte
 	zfilter->flags |= (sfilter->can_id & BIT(31)) != 0 ? CAN_FILTER_IDE : 0;
 	zfilter->id = sfilter->can_id & BIT_MASK(29);
 	zfilter->mask = sfilter->can_mask & BIT_MASK(29);
-
-	if ((sfilter->can_mask & BIT(30)) == 0) {
-		zfilter->flags |= CAN_FILTER_DATA | CAN_FILTER_RTR;
-	} else if ((sfilter->can_id & BIT(30)) == 0) {
-		zfilter->flags |= CAN_FILTER_DATA;
-	} else {
-		zfilter->flags |= CAN_FILTER_RTR;
-	}
 }
 
 /**
@@ -118,13 +110,11 @@ static inline void socketcan_from_can_filter(const struct can_filter *zfilter,
 
 	sfilter->can_id = zfilter->id;
 	sfilter->can_id |= (zfilter->flags & CAN_FILTER_IDE) != 0 ? BIT(31) : 0;
-	sfilter->can_id |= (zfilter->flags & CAN_FILTER_RTR) != 0 ? BIT(30) : 0;
 
 	sfilter->can_mask = zfilter->mask;
 	sfilter->can_mask |= (zfilter->flags & CAN_FILTER_IDE) != 0 ? BIT(31) : 0;
 
-	if ((zfilter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
-		(CAN_FILTER_DATA | CAN_FILTER_RTR)) {
+	if (!IS_ENABLED(CONFIG_CAN_ACCEPT_RTR)) {
 		sfilter->can_mask |= BIT(30);
 	}
 }

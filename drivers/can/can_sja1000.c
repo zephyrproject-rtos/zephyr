@@ -427,7 +427,7 @@ int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callba
 	int filter_id = -ENOSPC;
 	int i;
 
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -569,18 +569,24 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	do {
 		can_sja1000_read_frame(dev, &frame);
 
-		for (i = 0; i < ARRAY_SIZE(data->filters); i++) {
-			if (!atomic_test_bit(data->rx_allocs, i)) {
-				continue;
-			}
+#ifndef CONFIG_CAN_ACCEPT_RTR
+		if ((frame.flags & CAN_FRAME_RTR) == 0U) {
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
+			for (i = 0; i < ARRAY_SIZE(data->filters); i++) {
+				if (!atomic_test_bit(data->rx_allocs, i)) {
+					continue;
+				}
 
-			if (can_frame_matches_filter(&frame, &data->filters[i].filter)) {
-				callback = data->filters[i].callback;
-				if (callback != NULL) {
-					callback(dev, &frame, data->filters[i].user_data);
+				if (can_frame_matches_filter(&frame, &data->filters[i].filter)) {
+					callback = data->filters[i].callback;
+					if (callback != NULL) {
+						callback(dev, &frame, data->filters[i].user_data);
+					}
 				}
 			}
+#ifndef CONFIG_CAN_ACCEPT_RTR
 		}
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
 		sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);

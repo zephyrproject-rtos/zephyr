@@ -101,10 +101,10 @@ ZTEST(socket_can, test_socketcan_filter_to_can_filter)
 	struct can_filter expected = { 0 };
 	struct can_filter zfilter = { 0 };
 
-	sfilter.can_id = BIT(31) | BIT(30) | 1234;
-	sfilter.can_mask = BIT(31) | BIT(30) | 1234;
+	sfilter.can_id = BIT(31) | 1234;
+	sfilter.can_mask = BIT(31) | 1234;
 
-	expected.flags = CAN_FILTER_IDE | CAN_FILTER_RTR;
+	expected.flags = CAN_FILTER_IDE;
 	expected.id = 1234U;
 	expected.mask = 1234U;
 
@@ -128,10 +128,13 @@ ZTEST(socket_can, test_can_filter_to_socketcan_filter)
 	struct socketcan_filter expected = { 0 };
 	struct can_filter zfilter = { 0 };
 
-	expected.can_id = BIT(31) | BIT(30) | 1234;
-	expected.can_mask = BIT(31) | BIT(30) | 1234;
+	expected.can_id = BIT(31) | 1234;
+	expected.can_mask = BIT(31) | 1234;
+#ifndef CONFIG_CAN_ACCEPT_RTR
+	expected.can_mask |= BIT(30);
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
-	zfilter.flags = CAN_FILTER_IDE | CAN_FILTER_RTR;
+	zfilter.flags = CAN_FILTER_IDE;
 	zfilter.id = 1234U;
 	zfilter.mask = 1234U;
 

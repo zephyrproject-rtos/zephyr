@@ -145,18 +145,6 @@ extern const struct can_filter test_ext_masked_filter_1;
 extern const struct can_filter test_ext_masked_filter_2;
 
 /**
- * @brief Standard (11-bit) CAN ID RTR filter 1. This filter matches
- * ``test_std_rtr_frame_1``.
- */
-extern const struct can_filter test_std_rtr_filter_1;
-
-/**
- * @brief Extended (29-bit) CAN ID RTR filter 1. This filter matches
- * ``test_ext_rtr_frame_1``.
- */
-extern const struct can_filter test_ext_rtr_filter_1;
-
-/**
  * @brief Standard (11-bit) CAN ID filter. This filter matches
  * ``TEST_CAN_SOME_STD_ID``.
  */

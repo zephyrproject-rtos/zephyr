@@ -576,11 +576,6 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 		goto done;
 	}
 
-	if ((filter->flags & CAN_FILTER_RTR) != 0) {
-		filter_idx = -ENOTSUP;
-		goto done;
-	}
-
 	reg = mcp251xfd_get_spi_buf_ptr(dev);
 
 	if ((filter->flags & CAN_FILTER_IDE) != 0) {
@@ -1266,6 +1261,12 @@ static void mcp251xfd_rx_fifo_handler(const struct device *dev, void *data)
 	uint32_t filhit;
 
 	mcp251xfd_rxobj_to_canframe(rxobj, &dst);
+
+#ifndef CONFIG_CAN_ACCEPT_RTR
+	if ((dst.flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 	filhit = FIELD_GET(MCP251XFD_OBJ_FILHIT_MASK, rxobj->flags);
 	if ((dev_data->filter_usage & BIT(filhit)) != 0) {

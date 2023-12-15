@@ -886,8 +886,7 @@ static void can_stm32_set_filter_bank(int filter_id, CAN_FilterRegister_TypeDef 
 
 static inline uint32_t can_stm32_filter_to_std_mask(const struct can_filter *filter)
 {
-	uint32_t rtr_mask = (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
-		(CAN_FILTER_DATA | CAN_FILTER_RTR) ? 1U : 0U;
+	uint32_t rtr_mask = !IS_ENABLED(CONFIG_CAN_ACCEPT_RTR);
 
 	return  (filter->mask << CAN_STM32_FIRX_STD_ID_POS) |
 		(rtr_mask << CAN_STM32_FIRX_STD_RTR_POS) |
@@ -896,8 +895,7 @@ static inline uint32_t can_stm32_filter_to_std_mask(const struct can_filter *fil
 
 static inline uint32_t can_stm32_filter_to_ext_mask(const struct can_filter *filter)
 {
-	uint32_t rtr_mask = (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
-		(CAN_FILTER_DATA | CAN_FILTER_RTR) ? 1U : 0U;
+	uint32_t rtr_mask = !IS_ENABLED(CONFIG_CAN_ACCEPT_RTR);
 
 	return  (filter->mask << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
 		(rtr_mask << CAN_STM32_FIRX_EXT_RTR_POS) |
@@ -906,15 +904,12 @@ static inline uint32_t can_stm32_filter_to_ext_mask(const struct can_filter *fil
 
 static inline uint32_t can_stm32_filter_to_std_id(const struct can_filter *filter)
 {
-	return  (filter->id  << CAN_STM32_FIRX_STD_ID_POS) |
-		(((filter->flags & CAN_FILTER_RTR) != 0) ? (1U << CAN_STM32_FIRX_STD_RTR_POS) : 0U);
+	return  (filter->id  << CAN_STM32_FIRX_STD_ID_POS);
 }
 
 static inline uint32_t can_stm32_filter_to_ext_id(const struct can_filter *filter)
 {
 	return  (filter->id << CAN_STM32_FIRX_EXT_EXT_ID_POS) |
-		(((filter->flags & CAN_FILTER_RTR) != 0) ?
-		(1U << CAN_STM32_FIRX_EXT_RTR_POS) : 0U) |
 		(1U << CAN_STM32_FIRX_EXT_IDE_POS);
 }
 
@@ -995,7 +990,7 @@ static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 	struct can_stm32_data *data = dev->data;
 	int filter_id;
 
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}

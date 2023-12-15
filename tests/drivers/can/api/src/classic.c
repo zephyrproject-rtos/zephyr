@@ -314,6 +314,8 @@ static void send_receive(const struct can_filter *filter1,
 	int err;
 
 	filter_id_1 = add_rx_msgq(can_dev, filter1);
+	zassert_not_equal(filter_id_1, -ENOSPC, "no filters available");
+	zassert_true(filter_id_1 >= 0, "negative filter number");
 	send_test_frame(can_dev, frame1);
 
 	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
@@ -360,6 +362,12 @@ static void send_receive(const struct can_filter *filter1,
 		}
 	}
 
+	zassert_not_equal(filter_id_1, -ENOSPC, "no filters available");
+	zassert_true(filter_id_1 >= 0, "negative filter number");
+
+	zassert_not_equal(filter_id_2, -ENOSPC, "no filters available");
+	zassert_true(filter_id_2 >= 0, "negative filter number");
+
 	err = k_sem_take(&rx_callback_sem, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(err, 0, "receive timeout");
 
@@ -385,8 +393,7 @@ static void send_receive(const struct can_filter *filter1,
  * @param data_frame  CAN data frame
  * @param rtr_frame   CAN RTR frame
  */
-void send_receive_rtr(const struct can_filter *data_filter,
-		      const struct can_filter *rtr_filter,
+void send_receive_rtr(const struct can_filter *filter,
 		      const struct can_frame *data_frame,
 		      const struct can_frame *rtr_frame)
 {
@@ -394,36 +401,24 @@ void send_receive_rtr(const struct can_filter *data_filter,
 	int filter_id;
 	int err;
 
-	filter_id = can_add_rx_filter_msgq(can_dev, &can_msgq, rtr_filter);
-	if (filter_id == -ENOTSUP) {
-		/* Not all CAN controller drivers support remote transmission requests */
-		ztest_test_skip();
-	}
-
+	filter_id = can_add_rx_filter_msgq(can_dev, &can_msgq, filter);
 	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
 	zassert_true(filter_id >= 0, "negative filter number");
 
-	/* Verify that RTR filter does not match data frame */
-	send_test_frame(can_dev, data_frame);
-	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(err, -EAGAIN, "Data frame passed RTR filter");
+	/* Verify that filter matches RTR frame */
+	err = can_send(can_dev, rtr_frame, TEST_SEND_TIMEOUT, NULL, NULL);
+	if (err == -ENOTSUP) {
+		/* Not all drivers support transmission of RTR frames */
+		can_remove_rx_filter(can_dev, filter_id);
+		ztest_test_skip();
+	}
+	zassert_equal(err, 0, "failed to send RTR frame (err %d)", err);
 
-	/* Verify that RTR filter matches RTR frame */
-	send_test_frame(can_dev, rtr_frame);
 	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(err, 0, "receive timeout");
 	assert_frame_equal(&frame, rtr_frame, 0);
 
-	can_remove_rx_filter(can_dev, filter_id);
-
-	filter_id = add_rx_msgq(can_dev, data_filter);
-
-	/* Verify that data filter does not match RTR frame */
-	send_test_frame(can_dev, rtr_frame);
-	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(err, -EAGAIN, "RTR frame passed data filter");
-
-	/* Verify that data filter matches data frame */
+	/* Verify that filter matches data frame */
 	send_test_frame(can_dev, data_frame);
 	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(err, 0, "receive timeout");
@@ -573,7 +568,7 @@ static void add_remove_max_filters(bool ide)
 {
 	uint32_t id_mask = ide ? CAN_EXT_ID_MASK : CAN_STD_ID_MASK;
 	struct can_filter filter = {
-		.flags = CAN_FILTER_DATA | (ide ? CAN_FILTER_IDE : 0),
+		.flags = (ide ? CAN_FILTER_IDE : 0),
 		.id = 0,
 		.mask = id_mask,
 	};
@@ -737,8 +732,9 @@ ZTEST_USER(can_classic, test_send_receive_msgq)
  */
 ZTEST_USER(can_classic, test_send_receive_std_id_rtr)
 {
-	send_receive_rtr(&test_std_filter_1, &test_std_rtr_filter_1,
-			 &test_std_frame_1, &test_std_rtr_frame_1);
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_ACCEPT_RTR);
+
+	send_receive_rtr(&test_std_filter_1, &test_std_frame_1, &test_std_rtr_frame_1);
 }
 
 /**
@@ -746,8 +742,63 @@ ZTEST_USER(can_classic, test_send_receive_std_id_rtr)
  */
 ZTEST_USER(can_classic, test_send_receive_ext_id_rtr)
 {
-	send_receive_rtr(&test_ext_filter_1, &test_ext_rtr_filter_1,
-			 &test_ext_frame_1, &test_ext_rtr_frame_1);
+	Z_TEST_SKIP_IFNDEF(CONFIG_CAN_ACCEPT_RTR);
+
+	send_receive_rtr(&test_ext_filter_1, &test_ext_frame_1, &test_ext_rtr_frame_1);
+}
+
+/**
+ * @brief Test rejection of standard (11-bit) CAN IDs and remote transmission request (RTR).
+ */
+ZTEST_USER(can_classic, test_reject_std_id_rtr)
+{
+	struct can_frame frame_buffer;
+	int filter_id;
+	int err;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_CAN_ACCEPT_RTR);
+
+	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+
+	err = can_send(can_dev, &test_std_rtr_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
+	if (err == -ENOTSUP) {
+		/* Not all drivers support transmission of RTR frames */
+		can_remove_rx_filter(can_dev, filter_id);
+		ztest_test_skip();
+	}
+	zassert_equal(err, 0, "failed to send RTR frame (err %d)", err);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "received a frame that should be rejected");
+
+	can_remove_rx_filter(can_dev, filter_id);
+}
+
+/**
+ * @brief Test rejection of extended (29-bit) CAN IDs and remote transmission request (RTR).
+ */
+ZTEST_USER(can_classic, test_reject_ext_id_rtr)
+{
+	struct can_frame frame_buffer;
+	int filter_id;
+	int err;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_CAN_ACCEPT_RTR);
+
+	filter_id = add_rx_msgq(can_dev, &test_ext_filter_1);
+
+	err = can_send(can_dev, &test_ext_rtr_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
+	if (err == -ENOTSUP) {
+		/* Not all drivers support transmission of RTR frames */
+		can_remove_rx_filter(can_dev, filter_id);
+		ztest_test_skip();
+	}
+	zassert_equal(err, 0, "failed to send RTR frame (err %d)", err);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "received a frame that should be rejected");
+
+	can_remove_rx_filter(can_dev, filter_id);
 }
 
 /**
@@ -764,7 +815,7 @@ ZTEST(can_classic, test_send_receive_wrong_id)
 	send_test_frame(can_dev, &test_std_frame_2);
 
 	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(err, -EAGAIN, "recevied a frame that should not pass the filter");
+	zassert_equal(err, -EAGAIN, "received a frame that should not pass the filter");
 
 	can_remove_rx_filter(can_dev, filter_id);
 }

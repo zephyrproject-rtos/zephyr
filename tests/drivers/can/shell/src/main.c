@@ -487,7 +487,7 @@ static void can_shell_test_filter_add(const char *cmd, const struct can_filter *
 ZTEST(can_shell, test_can_filter_add_std_id)
 {
 	struct can_filter expected = {
-		.flags = CAN_FILTER_DATA,
+		.flags = 0U,
 		.id = 0x010,
 		.mask = CAN_STD_ID_MASK,
 	};
@@ -498,7 +498,7 @@ ZTEST(can_shell, test_can_filter_add_std_id)
 ZTEST(can_shell, test_can_filter_add_std_id_mask)
 {
 	struct can_filter expected = {
-		.flags = CAN_FILTER_DATA,
+		.flags = 0U,
 		.id = 0x010,
 		.mask = 0x020,
 	};
@@ -509,7 +509,7 @@ ZTEST(can_shell, test_can_filter_add_std_id_mask)
 ZTEST(can_shell, test_can_filter_add_ext_id)
 {
 	struct can_filter expected = {
-		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+		.flags = CAN_FILTER_IDE,
 		.id = 0x1024,
 		.mask = CAN_EXT_ID_MASK,
 	};
@@ -520,7 +520,7 @@ ZTEST(can_shell, test_can_filter_add_ext_id)
 ZTEST(can_shell, test_can_filter_add_ext_id_mask)
 {
 	struct can_filter expected = {
-		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+		.flags = CAN_FILTER_IDE,
 		.id = 0x1024,
 		.mask = 0x2048,
 	};
@@ -528,37 +528,15 @@ ZTEST(can_shell, test_can_filter_add_ext_id_mask)
 	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -e 1024 2048", &expected);
 }
 
-ZTEST(can_shell, test_can_filter_add_rtr)
-{
-	struct can_filter expected = {
-		.flags = CAN_FILTER_DATA | CAN_FILTER_RTR,
-		.id = 0x022,
-		.mask = CAN_STD_ID_MASK,
-	};
-
-	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -r 022", &expected);
-}
-
-ZTEST(can_shell, test_can_filter_add_rtr_only)
-{
-	struct can_filter expected = {
-		.flags = CAN_FILTER_RTR,
-		.id = 0x322,
-		.mask = CAN_STD_ID_MASK,
-	};
-
-	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -R 322", &expected);
-}
-
 ZTEST(can_shell, test_can_filter_add_all_options)
 {
 	struct can_filter expected = {
-		.flags = CAN_FILTER_RTR | CAN_FILTER_IDE,
+		.flags = CAN_FILTER_IDE,
 		.id = 0x2048,
 		.mask = 0x4096,
 	};
 
-	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -e -r -R 2048 4096", &expected);
+	can_shell_test_filter_add("can filter add " FAKE_CAN_NAME " -e 2048 4096", &expected);
 }
 
 ZTEST(can_shell, test_can_filter_remove_missing_value)

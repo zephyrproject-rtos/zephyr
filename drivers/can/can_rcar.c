@@ -362,6 +362,12 @@ static void can_rcar_rx_filter_isr(const struct device *dev,
 	struct can_frame tmp_frame;
 	uint8_t i;
 
+#ifndef CONFIG_CAN_ACCEPT_RTR
+	if ((frame->flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
+
 	for (i = 0; i < CONFIG_CAN_RCAR_MAX_FILTER; i++) {
 		if (data->rx_callback[i] == NULL) {
 			continue;
@@ -957,7 +963,7 @@ static int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb
 	struct can_rcar_data *data = dev->data;
 	int filter_id;
 
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA)) != 0) {
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}

@@ -801,7 +801,7 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 
 	/* Defaults */
 	max_id = CAN_MAX_STD_ID;
-	filter.flags = CAN_FILTER_DATA;
+	filter.flags = 0U;
 
 	/* Parse options */
 	while (argidx < argc && strncmp(argv[argidx], "-", 1) == 0) {
@@ -811,13 +811,6 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		} else if (strcmp(argv[argidx], "-e") == 0) {
 			filter.flags |= CAN_FILTER_IDE;
 			max_id = CAN_MAX_EXT_ID;
-			argidx++;
-		} else if (strcmp(argv[argidx], "-r") == 0) {
-			filter.flags |= CAN_FILTER_RTR;
-			argidx++;
-		} else if (strcmp(argv[argidx], "-R") == 0) {
-			filter.flags &= ~(CAN_FILTER_DATA);
-			filter.flags |= CAN_FILTER_RTR;
 			argidx++;
 		} else {
 			shell_error(sh, "unsupported argument %s", argv[argidx]);
@@ -874,14 +867,11 @@ static int cmd_can_filter_add(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "adding filter with %s (%d-bit) CAN ID 0x%0*x, "
-		    "CAN ID mask 0x%0*x, data frames %d, RTR frames %d",
+	shell_print(sh, "adding filter with %s (%d-bit) CAN ID 0x%0*x, CAN ID mask 0x%0*x",
 		    (filter.flags & CAN_FILTER_IDE) != 0 ? "extended" : "standard",
 		    (filter.flags & CAN_FILTER_IDE) != 0 ? 29 : 11,
 		    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter.id,
-		    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter.mask,
-		    (filter.flags & CAN_FILTER_DATA) != 0 ? 1 : 0,
-		    (filter.flags & CAN_FILTER_RTR) != 0 ? 1 : 0);
+		    (filter.flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter.mask);
 
 	err = can_add_rx_filter_msgq(dev, &can_shell_rx_msgq, &filter);
 	if (err < 0) {
@@ -999,11 +989,9 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_can_device_name_mode, cmd_can_device_name_mode);
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_filter_cmds,
 	SHELL_CMD_ARG(add, &dsub_can_device_name,
 		"Add rx filter\n"
-		"Usage: can filter add <device> [-e] [-r] [-R] <CAN ID> [CAN ID mask]\n"
-		"-e  use extended (29-bit) CAN ID/CAN ID mask\n"
-		"-r  also match Remote Transmission Request (RTR) frames\n"
-		"-R  only match Remote Transmission Request (RTR) frames",
-		cmd_can_filter_add, 3, 4),
+		"Usage: can filter add <device> [-e] <CAN ID> [CAN ID mask]\n"
+		"-e  use extended (29-bit) CAN ID/CAN ID mask\n",
+		cmd_can_filter_add, 3, 2),
 	SHELL_CMD_ARG(remove, &dsub_can_device_name,
 		"Remove rx filter\n"
 		"Usage: can filter remove <device> <filter_id>",
