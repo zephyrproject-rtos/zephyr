@@ -615,7 +615,6 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 	struct can_frame frame = {0};
 	can_rx_callback_t cb;
 	void *user_data;
-	uint8_t flags;
 	uint32_t get_idx;
 	uint32_t filt_idx;
 	int data_length;
@@ -666,20 +665,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 		if (hdr.xtd != 0) {
 			frame.id = hdr.ext_id;
 			frame.flags |= CAN_FRAME_IDE;
-			flags = cbs->ext[filt_idx].flags;
 		} else {
 			frame.id = hdr.std_id;
-			flags = cbs->std[filt_idx].flags;
-		}
-
-		if (((frame.flags & CAN_FRAME_RTR) == 0U && (flags & CAN_FILTER_DATA) == 0U) ||
-		    ((frame.flags & CAN_FRAME_RTR) != 0U && (flags & CAN_FILTER_RTR) == 0U)) {
-			/* RTR bit does not match filter, drop frame */
-			err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
-			if (err != 0) {
-				return;
-			}
-			goto ack;
 		}
 
 		data_length = can_dlc_to_bytes(frame.dlc);
@@ -718,7 +705,6 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			LOG_ERR("Frame is too big");
 		}
 
-ack:
 		err = can_mcan_write_reg(dev, fifo_ack_reg, get_idx);
 		if (err != 0) {
 			return;
@@ -1042,7 +1028,6 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 	__ASSERT_NO_MSG(filter_id <= cbs->num_std);
 	cbs->std[filter_id].function = callback;
 	cbs->std[filter_id].user_data = user_data;
-	cbs->std[filter_id].flags = filter->flags;
 
 	return filter_id;
 }
@@ -1095,7 +1080,6 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 	__ASSERT_NO_MSG(filter_id <= cbs->num_ext);
 	cbs->ext[filter_id].function = callback;
 	cbs->ext[filter_id].user_data = user_data;
-	cbs->ext[filter_id].flags = filter->flags;
 
 	return filter_id;
 }
@@ -1111,7 +1095,7 @@ int can_mcan_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		return -EINVAL;
 	}
 
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0U) {
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0U) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -1430,6 +1414,9 @@ int can_mcan_init(const struct device *dev)
 	}
 
 	reg |= FIELD_PREP(CAN_MCAN_GFC_ANFE, 0x2) | FIELD_PREP(CAN_MCAN_GFC_ANFS, 0x2);
+	if (!IS_ENABLED(CONFIG_CAN_ACCEPT_RTR)) {
+		reg |= CAN_MCAN_GFC_RRFS | CAN_MCAN_GFC_RRFE;
+	}
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_GFC, reg);
 	if (err != 0) {

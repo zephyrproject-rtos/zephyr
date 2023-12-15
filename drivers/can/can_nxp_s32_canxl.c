@@ -506,7 +506,8 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	uint32_t mask;
 
 	__ASSERT_NO_MSG(callback != NULL);
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA)) != 0) {
+
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -537,6 +538,10 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	} else {
 		mask = (filter->mask << CANXL_IP_ID_STD_SHIFT) & CANXL_IP_ID_STD_MASK;
 	}
+
+#ifndef CONFIG_CAN_ACCEPT_RTR
+	mask |= CANXL_MSG_DESCRIPTORS_MDFLT1FD_RTRMSK_MASK;
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 	Canexcel_Ip_EnterFreezeMode(config->instance);
 

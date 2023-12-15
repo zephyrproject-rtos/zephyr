@@ -67,7 +67,7 @@ ZTEST(can_utilities, test_can_bytes_to_dlc)
 ZTEST(can_utilities, test_can_frame_matches_filter)
 {
 	const struct can_filter test_ext_filter_std_id_1 = {
-		.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+		.flags = CAN_FILTER_IDE,
 		.id = TEST_CAN_STD_ID_1,
 		.mask = CAN_EXT_ID_MASK
 	};
@@ -105,19 +105,9 @@ ZTEST(can_utilities, test_can_frame_matches_filter)
 	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_std_masked_filter_1));
 	zassert_false(can_frame_matches_filter(&test_ext_frame_2, &test_std_masked_filter_2));
 
-	/* Remote transmission request (RTR) frames and filters */
-	zassert_true(can_frame_matches_filter(&test_std_rtr_frame_1, &test_std_rtr_filter_1));
-	zassert_true(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_ext_rtr_filter_1));
-	zassert_false(can_frame_matches_filter(&test_std_rtr_frame_1, &test_ext_rtr_filter_1));
-	zassert_false(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_std_rtr_filter_1));
-
-	/* Remote transmission request (RTR) frames and non-RTR filters */
-	zassert_false(can_frame_matches_filter(&test_std_rtr_frame_1, &test_std_filter_1));
-	zassert_false(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_ext_filter_1));
-
-	/* Non-RTR frames and Remote transmission request (RTR) filters */
-	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_rtr_filter_1));
-	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_ext_rtr_filter_1));
+	/* Remote transmission request (RTR) frames */
+	zassert_true(can_frame_matches_filter(&test_std_rtr_frame_1, &test_std_filter_1));
+	zassert_true(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_ext_filter_1));
 
 	/* CAN FD format frames and filters */
 	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_filter_1));
