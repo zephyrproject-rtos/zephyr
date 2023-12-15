@@ -329,39 +329,24 @@ static int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 
 static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 {
-	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
+	const elf_sym_t *elf_syms = (const elf_sym_t *) ext->mem[LLEXT_MEM_SYMTAB];
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
-	const char *name;
-	elf_sym_t sym;
-	int i, ret;
-	size_t pos;
+
+	__ASSERT(ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize == sizeof(elf_sym_t),
+		 "Symbol table entry size mismatch");
 
 	LOG_DBG("symbol count %u", sym_cnt);
 
-	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset;
-	     i < sym_cnt;
-	     i++, pos += ent_size) {
-		if (!i) {
-			/* A dummy entry */
-			continue;
-		}
+	/* skip index 0, a dummy entry */
+	for (int i = 1; i < sym_cnt; ++i) {
 
-		ret = llext_seek(ldr, pos);
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = llext_read(ldr, &sym, ent_size);
-		if (ret != 0) {
-			return ret;
-		}
-
+		elf_sym_t sym = elf_syms[i];
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		uint32_t sect = sym.st_shndx;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 		if (stt == STT_FUNC && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
@@ -424,32 +409,19 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 
 static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 {
-	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
+	const elf_sym_t *elf_syms = ext->mem[LLEXT_MEM_SYMTAB];
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
 	struct llext_symtable *sym_tab = &ext->sym_tab;
-	elf_sym_t sym;
-	int i, j, ret;
-	size_t pos;
+	int j = 0;
 
-	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset, j = 0;
-	     i < sym_cnt;
-	     i++, pos += ent_size) {
-		if (!i) {
-			/* A dummy entry */
-			continue;
-		}
+	__ASSERT(ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize == sizeof(elf_sym_t),
+		 "Symbol table entry size mismatch");
 
-		ret = llext_seek(ldr, pos);
-		if (ret != 0) {
-			return ret;
-		}
+	/* skip index 0, a dummy entry */
+	for (int i = 1; i < sym_cnt; ++i) {
 
-		ret = llext_read(ldr, &sym, ent_size);
-		if (ret != 0) {
-			return ret;
-		}
-
+		elf_sym_t sym = elf_syms[i];
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		unsigned int sect = sym.st_shndx;
@@ -509,9 +481,12 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 	elf_rela_t rel;
 	elf_sym_t sym;
 	elf_word rel_cnt = 0;
-	const char *name;
 	int i, ret;
 	size_t pos;
+
+	const elf_sym_t *elf_syms = ext->mem[LLEXT_MEM_SYMTAB];
+	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
+	int sym_cnt = syms_size / sizeof(elf_sym_t);
 
 	for (i = 0, pos = ldr->hdr.e_shoff;
 	     i < ldr->hdr.e_shnum - 1;
@@ -533,7 +508,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 		rel_cnt = shdr.sh_size / shdr.sh_entsize;
 
-		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
+		const char *name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
 		int is_plt_section = 0;
 
@@ -569,16 +544,12 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 			}
 
 			/* get corresponding symbol */
-			ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset
-				    + ELF_R_SYM(rel.r_info) * sizeof(elf_sym_t));
-			if (ret != 0) {
-				return ret;
+			if (ELF_R_SYM(rel.r_info) >= sym_cnt) {
+				LOG_ERR("Relocation symbol index %d out of bounds",
+					ELF_R_SYM(rel.r_info));
+				return -EINVAL;
 			}
-
-			ret = llext_read(ldr, &sym, sizeof(elf_sym_t));
-			if (ret != 0) {
-				return ret;
-			}
+			sym = elf_syms[ELF_R_SYM(rel.r_info)];
 
 			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
