@@ -13,7 +13,7 @@ tests:
     filter: (CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
     integration_platforms:
       - mps2_an521_remote
-      - mps3_an547
+      - mps3/an547
     tags:
       - zdsp
       - fpu
