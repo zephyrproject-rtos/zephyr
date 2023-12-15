@@ -3244,7 +3244,7 @@ static int cmd_conn_phy_update(const struct shell *sh, size_t argc,
 }
 #endif
 
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_BROADCASTER)
 static int cmd_chan_map(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint8_t chan_map[5] = {};
