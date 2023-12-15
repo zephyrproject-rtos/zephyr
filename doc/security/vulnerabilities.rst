@@ -1596,3 +1596,19 @@ This has been fixed in main for v3.5.0
 
 - `PR 63605 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/63605>`_
+
+
+CVE-2023-5779
+-------------
+
+Under embargo until 2024-01-23
+
+CVE-2023-6249
+-------------
+
+Under embargo until 2024-02-18
+
+CVE-2023-6749
+-------------
+
+Under embargo until 2024-02-18
