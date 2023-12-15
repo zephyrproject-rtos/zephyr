@@ -11,6 +11,10 @@
 
 / {
 	soc {
+		pinctrl: pinctrl@ff180000 {
+			reg = <0xff180000 0xc80>;
+			compatible = "xlnx,pinctrl-zynqmp";
+		};
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_M(32)>;
@@ -271,4 +275,5 @@
 			};
 		};
 	};
+
 };
