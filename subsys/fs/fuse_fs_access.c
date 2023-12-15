@@ -65,8 +65,15 @@ static void release_file_handle(size_t handle)
 static bool is_mount_point(const char *path)
 {
 	char dir_path[PATH_MAX];
+	size_t len;
 
-	sprintf(dir_path, "%s", path);
+	len = strlen(path);
+	if (len >=  sizeof(dir_path)) {
+		return false;
+	}
+
+	memcpy(dir_path, path, len);
+	dir_path[len] = '\0';
 	return strcmp(dirname(dir_path), "/") == 0;
 }
 
