@@ -98,7 +98,7 @@ function(zephyr_mcuboot_tasks)
 
   # Use overwrite-only instead of swap upgrades.
   if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
-    set(imgtool_extra --overwrite-only ${imgtool_extra})
+    set(imgtool_extra --overwrite-only --align 1 ${imgtool_extra})
   endif()
 
   set(imgtool_args -- ${imgtool_extra})
