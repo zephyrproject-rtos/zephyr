@@ -631,7 +631,7 @@ static int mcp2515_add_rx_filter(const struct device *dev,
 
 	__ASSERT(rx_cb != NULL, "response_ptr can not be null");
 
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
@@ -692,6 +692,12 @@ static void mcp2515_rx_filter(const struct device *dev,
 	uint8_t filter_id = 0U;
 	can_rx_callback_t callback;
 	struct can_frame tmp_frame;
+
+#ifndef CONFIG_CAN_ACCEPT_RTR
+	if ((frame->flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
