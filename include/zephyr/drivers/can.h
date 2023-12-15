@@ -203,11 +203,6 @@ struct can_frame {
 /** Filter matches frames with extended (29-bit) CAN IDs */
 #define CAN_FILTER_IDE  BIT(0)
 
-/** Filter matches Remote Transmission Request (RTR) frames */
-#define CAN_FILTER_RTR  BIT(1)
-
-/** Filter matches data frames */
-#define CAN_FILTER_DATA BIT(2)
 
 /** @} */
 
@@ -1259,7 +1254,7 @@ static inline int can_add_rx_filter(const struct device *dev, can_rx_callback_t 
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	if (filter == NULL || (filter->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) == 0) {
+	if (filter == NULL) {
 		return -EINVAL;
 	}
 
@@ -1680,16 +1675,6 @@ static inline bool can_frame_matches_filter(const struct can_frame *frame,
 
 	if ((frame->flags & CAN_FRAME_IDE) == 0 && (filter->flags & CAN_FILTER_IDE) != 0) {
 		/* Standard (11-bit) ID frame, extended (29-bit) filter */
-		return false;
-	}
-
-	if ((frame->flags & CAN_FRAME_RTR) == 0 && (filter->flags & CAN_FILTER_DATA) == 0) {
-		/* non-RTR frame, remote transmission request (RTR) filter */
-		return false;
-	}
-
-	if ((frame->flags & CAN_FRAME_RTR) != 0 && (filter->flags & CAN_FILTER_RTR) == 0) {
-		/* Remote transmission request (RTR) frame, non-RTR filter */
 		return false;
 	}
 

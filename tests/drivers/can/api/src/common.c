@@ -74,7 +74,7 @@ const struct can_frame test_std_rtr_frame_1 = {
  * @brief Extended (29-bit) CAN ID RTR frame 1.
  */
 const struct can_frame test_ext_rtr_frame_1 = {
-	.flags   = CAN_FRAME_IDE | CAN_FILTER_RTR,
+	.flags   = CAN_FRAME_IDE | CAN_FRAME_RTR,
 	.id      = TEST_CAN_EXT_ID_1,
 	.dlc     = 0,
 	.data    = {0}
@@ -113,7 +113,7 @@ const struct can_frame test_std_fdf_frame_2 = {
  * ``test_std_frame_1``.
  */
 const struct can_filter test_std_filter_1 = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = TEST_CAN_STD_ID_1,
 	.mask = CAN_STD_ID_MASK
 };
@@ -123,7 +123,7 @@ const struct can_filter test_std_filter_1 = {
  * ``test_std_frame_2``.
  */
 const struct can_filter test_std_filter_2 = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = TEST_CAN_STD_ID_2,
 	.mask = CAN_STD_ID_MASK
 };
@@ -133,7 +133,7 @@ const struct can_filter test_std_filter_2 = {
  * ``test_std_frame_1``.
  */
 const struct can_filter test_std_masked_filter_1 = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = TEST_CAN_STD_MASK_ID_1,
 	.mask = TEST_CAN_STD_MASK
 };
@@ -143,7 +143,7 @@ const struct can_filter test_std_masked_filter_1 = {
  * ``test_std_frame_2``.
  */
 const struct can_filter test_std_masked_filter_2 = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = TEST_CAN_STD_MASK_ID_2,
 	.mask = TEST_CAN_STD_MASK
 };
@@ -153,7 +153,7 @@ const struct can_filter test_std_masked_filter_2 = {
  * ``test_ext_frame_1``.
  */
 const struct can_filter test_ext_filter_1 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_ID_1,
 	.mask = CAN_EXT_ID_MASK
 };
@@ -163,7 +163,7 @@ const struct can_filter test_ext_filter_1 = {
  * ``test_ext_frame_2``.
  */
 const struct can_filter test_ext_filter_2 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_ID_2,
 	.mask = CAN_EXT_ID_MASK
 };
@@ -173,7 +173,7 @@ const struct can_filter test_ext_filter_2 = {
  * ``test_ext_frame_1``.
  */
 const struct can_filter test_ext_masked_filter_1 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_MASK_ID_1,
 	.mask = TEST_CAN_EXT_MASK
 };
@@ -183,29 +183,9 @@ const struct can_filter test_ext_masked_filter_1 = {
  * ``test_ext_frame_2``.
  */
 const struct can_filter test_ext_masked_filter_2 = {
-	.flags = CAN_FILTER_DATA | CAN_FILTER_IDE,
+	.flags = CAN_FILTER_IDE,
 	.id = TEST_CAN_EXT_MASK_ID_2,
 	.mask = TEST_CAN_EXT_MASK
-};
-
-/**
- * @brief Standard (11-bit) CAN ID RTR filter 1. This filter matches
- * ``test_std_rtr_frame_1``.
- */
-const struct can_filter test_std_rtr_filter_1 = {
-	.flags = CAN_FILTER_RTR,
-	.id = TEST_CAN_STD_ID_1,
-	.mask = CAN_STD_ID_MASK
-};
-
-/**
- * @brief Extended (29-bit) CAN ID RTR filter 1. This filter matches
- * ``test_ext_rtr_frame_1``.
- */
-const struct can_filter test_ext_rtr_filter_1 = {
-	.flags = CAN_FILTER_RTR | CAN_FILTER_IDE,
-	.id = TEST_CAN_EXT_ID_1,
-	.mask = CAN_EXT_ID_MASK
 };
 
 /**
@@ -213,7 +193,7 @@ const struct can_filter test_ext_rtr_filter_1 = {
  * ``TEST_CAN_SOME_STD_ID``.
  */
 const struct can_filter test_std_some_filter = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = TEST_CAN_SOME_STD_ID,
 	.mask = CAN_STD_ID_MASK
 };

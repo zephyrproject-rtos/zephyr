@@ -625,8 +625,7 @@ static void mcux_flexcan_can_filter_to_mbconfig(const struct can_filter *src,
 						uint32_t *mask)
 {
 	static const uint32_t ide_mask = 1U;
-	uint32_t rtr_mask = (src->flags & (CAN_FILTER_DATA | CAN_FILTER_RTR)) !=
-		(CAN_FILTER_DATA | CAN_FILTER_RTR) ? 1U : 0U;
+	static const uint32_t rtr_mask = !IS_ENABLED(CONFIG_CAN_ACCEPT_RTR);
 
 	if ((src->flags & CAN_FILTER_IDE) != 0) {
 		dest->format = kFLEXCAN_FrameFormatExtend;
@@ -638,11 +637,7 @@ static void mcux_flexcan_can_filter_to_mbconfig(const struct can_filter *src,
 		*mask = FLEXCAN_RX_MB_STD_MASK(src->mask, rtr_mask, ide_mask);
 	}
 
-	if ((src->flags & CAN_FILTER_RTR) != 0) {
-		dest->type = kFLEXCAN_FrameTypeRemote;
-	} else {
-		dest->type = kFLEXCAN_FrameTypeData;
-	}
+	dest->type = kFLEXCAN_FrameTypeData;
 }
 
 static int mcux_flexcan_get_state(const struct device *dev, enum can_state *state,
@@ -786,7 +781,6 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 				      void *user_data,
 				      const struct can_filter *filter)
 {
-	const uint8_t supported = CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR;
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	status_t status;
@@ -796,7 +790,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 
 	__ASSERT_NO_MSG(callback);
 
-	if ((filter->flags & ~(supported)) != 0) {
+	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}

@@ -54,7 +54,7 @@ static inline void prepare_filter(struct can_filter *filter, struct isotp_msg_id
 {
 	filter->id = addr->ext_id;
 	filter->mask = mask;
-	filter->flags = CAN_FILTER_DATA | ((addr->flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0);
+	filter->flags = (addr->flags & ISOTP_MSG_IDE) != 0 ? CAN_FILTER_IDE : 0;
 }
 
 /*
@@ -557,6 +557,10 @@ static void receive_can_rx(const struct device *dev, struct can_frame *frame, vo
 
 	ARG_UNUSED(dev);
 
+	if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame->flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
+
 	switch (rctx->state) {
 	case ISOTP_RX_STATE_WAIT_FF_SF:
 		__ASSERT_NO_MSG(rctx->buf);
@@ -846,6 +850,10 @@ static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, vo
 	struct isotp_send_ctx *sctx = (struct isotp_send_ctx *)arg;
 
 	ARG_UNUSED(dev);
+
+	if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame->flags & CAN_FRAME_RTR) != 0U) {
+		return;
+	}
 
 	if (sctx->state == ISOTP_TX_WAIT_FC) {
 		k_timer_stop(&sctx->timer);

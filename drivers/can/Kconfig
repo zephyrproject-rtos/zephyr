@@ -54,6 +54,13 @@ config CAN_STATS
 	help
 	  Enable CAN controller device statistics.
 
+config CAN_ACCEPT_RTR
+	bool "Accept Remote Transmission Requests (RTR) frames"
+	help
+	  Accept incoming Remote Transmission Request (RTR) frames matching CAN RX filters. Unless
+	  enabled, all incoming Remote Transmission Request (RTR) frames are rejected at the driver
+	  level.
+
 config CAN_FD_MODE
 	bool "CAN FD"
 	help
