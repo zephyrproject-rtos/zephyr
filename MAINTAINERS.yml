@@ -168,6 +168,7 @@ ARM arch:
     - doc/hardware/arch/arm_cortex_m.rst
     - boards/arm/qemu_cortex_m3/
     - boards/arm/qemu_cortex_m0/
+    - soc/arm/*
   labels:
     - "area: ARM"
   tests:
@@ -199,8 +200,19 @@ ARM Platforms:
     - boards/arm/mps*/
     - soc/arm/arm/
     - boards/arm/v2m_*/
+    - dts/arm/armv*.dtsi
   labels:
     - "platform: ARM"
+
+ASPEED Platforms:
+  status: odd fixes
+  files:
+    - soc/arm/aspeed/
+    - dts/arm/aspeed/
+    - drivers/*/*_ast10x0.c
+    - drivers/*/Kconfig.aspeed
+  labels:
+    - "platform: ASPEED"
 
 ARM SiP SVC:
   status: odd fixes
@@ -409,6 +421,15 @@ Bluetooth Audio:
   tests:
     - bluetooth.audio
 
+Bootloaders:
+  status: odd fixes
+  files:
+    - tests/boot/
+  labels:
+    - "area: Bootloader"
+  tests:
+    - bootloader
+
 Build system:
   status: maintained
   maintainers:
@@ -427,6 +448,10 @@ Build system:
     - doc/develop/modules.rst
     - scripts/build/
     - tests/cmake/
+    - misc/empty_file.c
+    - misc/generated/
+    - snippets/
+    - modules/Kconfig.sysbuild
   labels:
     - "area: Build System"
   tests:
@@ -664,6 +689,7 @@ Device Driver Model:
     - include/zephyr/init.h
     - tests/kernel/device/
     - doc/kernel/drivers/
+    - tests/misc/check_init_priorities/
   labels:
     - "area: Device Model"
   tests:
@@ -708,6 +734,7 @@ Devicetree Bindings:
   files:
     - dts/bindings/
     - include/zephyr/dt-bindings/
+    - dts/binding-template.yaml
   labels:
     - "area: Devicetree Binding"
 
@@ -745,6 +772,7 @@ Display drivers:
     - subsys/fb/
     - samples/subsys/display/
     - doc/hardware/peripherals/display/
+    - tests/drivers/*/display/
   labels:
     - "area: Display"
 
@@ -756,6 +784,9 @@ Documentation:
   collaborators:
     - nashif
   files:
+    - CODE_OF_CONDUCT.md
+    - CONTRIBUTING.rst
+    - doc/glossary.rst
     - doc/contribute/
     - doc/develop/
     - doc/introduction/
@@ -771,6 +802,7 @@ Documentation:
     - doc/known-warnings.txt
     - doc/templates/sample.tmpl
     - doc/templates/board.tmpl
+    - boards/index.rst
   files-exclude:
     - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
@@ -920,6 +952,7 @@ Release Notes:
     - include/zephyr/drivers/charger.h
     - tests/drivers/charger/
     - doc/hardware/peripherals/charger.rst
+    - tests/drivers/build_all/charger/
   labels:
     - "area: Charger"
   tests:
@@ -1030,6 +1063,19 @@ Release Notes:
   labels:
     - "area: DAI"
 
+"Drivers: Devmux":
+  status: maintained
+  maintainers:
+    - cfriedt
+  files:
+    - drivers/misc/devmux/
+    - include/zephyr/drivers/misc/devmux/
+    - tests/drivers/console_switching/
+  labels:
+    - "area: Devmux"
+  tests:
+    - drivers.devmux
+
 "Drivers: DMA":
   status: maintained
   maintainers:
@@ -1068,10 +1114,12 @@ Release Notes:
     - henrikbrixandersen
   files:
     - drivers/eeprom/
+    - include/zephyr/drivers/eeprom/eeprom_fake.h
     - dts/bindings/mtd/*eeprom*
     - include/zephyr/drivers/eeprom.h
     - samples/drivers/eeprom/
     - tests/drivers/eeprom/
+    - tests/drivers/*/eeprom/
     - doc/hardware/peripherals/eeprom.rst
   labels:
     - "area: EEPROM"
@@ -1122,6 +1170,7 @@ Release Notes:
     - tests/drivers/build_all/ethernet/
     - dts/bindings/ethernet/
     - tests/drivers/ethernet/
+    - include/zephyr/drivers/ethernet/
   labels:
     - "area: Ethernet"
   tests:
@@ -1139,6 +1188,8 @@ Release Notes:
     - samples/drivers/soc_flash_nrf/
     - tests/drivers/flash/
     - doc/hardware/peripherals/flash.rst
+    - include/zephyr/drivers/flash/
+    - tests/drivers/flash_simulator/
   labels:
     - "area: Flash"
   tests:
@@ -1228,6 +1279,15 @@ Release Notes:
   tests:
     - drivers.hwinfo
 
+"Drivers: Hardware Spinlock":
+  status: odd fixes
+  files:
+    - drivers/hwspinlock/
+    - dts/bindings/hwspinlock/
+    - include/zephyr/drivers/hwspinlock.h
+  labels:
+    - "area: Hardware Spinlock"
+
 "Drivers: I2C":
   status: maintained
   maintainers:
@@ -1240,7 +1300,8 @@ Release Notes:
     - tests/drivers/i2c/
     - doc/hardware/peripherals/i2c.rst
     - include/zephyr/dt-bindings/i2c/
-    - tests/boards/frdm_k64f/i2c/
+    - tests/boards/*/i2c/
+    - tests/drivers/*/i2c/
   labels:
     - "area: I2C"
   tests:
@@ -1291,19 +1352,90 @@ Release Notes:
     - jukkar
   files:
     - drivers/ieee802154/
+    - include/zephyr/drivers/ieee802154/
     - include/zephyr/net/ieee802154_radio.h
+    - tests/drivers/build_all/ieee802154/
   labels:
     - "area: IEEE 802.15.4"
+  tests:
+    - drivers.ieee802154
 
-"Drivers: Interrupt controllers":
+"Drivers: Mbox":
+  status: maintained
+  maintainers:
+    - carlocaione
+  files:
+    - include/zephyr/drivers/mbox.h
+    - drivers/mbox/
+    - samples/drivers/mbox/
+    - dts/bindings/mbox/
+    - doc/hardware/peripherals/mbox.rst
+  labels:
+    - "area: mbox"
+  tests:
+    - sample.drivers.mbox
+
+"Drivers: MEMC":
+  status: odd fixes
+  files:
+    - drivers/memc/
+    - samples/drivers/memc/
+    - tests/drivers/memc/
+  labels:
+    - "area: MEMC"
+  tests:
+    - samples.drivers.memc
+    - drivers.memc
+
+"Drivers: MDIO":
+  status: odd fixes
+  files:
+    - doc/hardware/peripherals/mdio.rst
+    - drivers/mdio/
+    - include/zephyr/drivers/mdio.h
+    - tests/drivers/build_all/mdio/
+  labels:
+    - "area: MDIO"
+  tests:
+    - drivers.mdio
+
+"Drivers: MIPI-DSI":
+  status: odd fixes
+  files:
+    - drivers/mipi_dsi/
+    - doc/hardware/peripherals/mipi_dsi.rst
+    - include/zephyr/drivers/mipi_dsi.h
+    - include/zephyr/drivers/mipi_dsi/
+    - tests/drivers/mipi_dsi/
+    - include/zephyr/dt-bindings/mipi_dsi/
+    - dts/bindings/mipi-dsi/
+  labels:
+    - "area: MIPI-DSI"
+  tests:
+    - drivers.mipi_dsi
+
+"Drivers: Reset":
+  status: odd fixes
+  files:
+    - drivers/reset/
+    - include/zephyr/drivers/reset.h
+
+"Interrupt Handling":
   status: odd fixes
   files:
     - drivers/interrupt_controller/
     - dts/bindings/interrupt-controller/
     - include/zephyr/drivers/interrupt_controller/
     - include/zephyr/dt-bindings/interrupt-controller/
+    - include/zephyr/irq*
+    - include/zephyr/sw_isr_table.h
+    - include/zephyr/shared_irq.h
+    - tests/drivers/interrupt_controller/
+    - tests/drivers/build_all/interrupt_controller/
   labels:
     - "area: Interrupt Controller"
+  tests:
+    - drivers.interrupt_controller
 
 "Drivers: IPM":
   status: odd fixes
@@ -1355,6 +1487,7 @@ Release Notes:
     - samples/drivers/led_*/
     - tests/drivers/led/
     - doc/hardware/peripherals/led.rst
+    - tests/drivers/build_all/led/
   labels:
     - "area: LED"
   tests:
@@ -1370,6 +1503,7 @@ Release Notes:
     - dts/bindings/led_strip/
     - include/zephyr/drivers/led_strip.h
     - tests/drivers/build_all/led_strip/
+    - include/zephyr/drivers/led_strip/
   labels:
     - "area: LED"
   tests:
@@ -1449,6 +1583,7 @@ Release Notes:
     - tests/drivers/rtc/
     - doc/hardware/peripherals/rtc.rst
     - include/zephyr/drivers/rtc.h
+    - tests/drivers/build_all/rtc/
   labels:
     - "area: RTC"
   tests:
@@ -1502,6 +1637,19 @@ Release Notes:
   tests:
     - drivers.pinctrl
 
+"Drivers: PS2":
+  status: odd fixes
+  files:
+    - drivers/ps2/
+    - doc/hardware/peripherals/ps2.rst
+    - include/zephyr/drivers/ps2.h
+    - samples/drivers/ps2/
+    - dts/bindings/ps2/
+  labels:
+    - "area: PS2"
+  tests:
+    - sample.drivers.espi.ps2
+
 "Drivers: PTP Clock":
   status: maintained
   maintainers:
@@ -1541,6 +1689,7 @@ Release Notes:
     - doc/hardware/peripherals/pwm.rst
     - tests/drivers/build_all/pwm/
     - include/zephyr/drivers/pwm.h
+    - include/zephyr/drivers/pwm/
   labels:
     - "area: PWM"
   tests:
@@ -1574,6 +1723,8 @@ Release Notes:
     - tests/drivers/uart/
     - tests/drivers/build_all/uart/
     - doc/hardware/peripherals/uart.rst
+    - include/zephyr/drivers/serial/
+    - include/zephyr/drivers/uart_pipe.h
   labels:
     - "area: UART"
   tests:
@@ -1657,8 +1808,11 @@ Release Notes:
     - include/zephyr/drivers/video.h
     - include/zephyr/drivers/video-controls.h
     - doc/hardware/peripherals/video.rst
+    - tests/drivers/*/video/
   labels:
     - "area: Video"
+  tests:
+    - drivers.video
 
 "Drivers: W1":
   status: maintained
@@ -1691,6 +1845,7 @@ Release Notes:
     - include/zephyr/drivers/watchdog.h
     - samples/drivers/watchdog/
     - tests/drivers/watchdog/
+    - tests/drivers/build_all/watchdog/
   labels:
     - "area: Watchdog"
   tests:
@@ -1893,6 +2048,7 @@ IPC:
     - samples/subsys/ipc/
     - subsys/ipc/
     - tests/subsys/ipc/
+    - doc/services/ipc/
   description: >-
     Inter-Processor Communication
   labels:
@@ -1952,6 +2108,8 @@ Kernel:
   files:
     - doc/kernel/
     - include/zephyr/kernel*.h
+    - include/zephyr/spinlock.h
+    - include/zephyr/fatal.h
     - kernel/
     - tests/kernel/
     - include/zephyr/sys_clock.h
@@ -1964,6 +2122,31 @@ Kernel:
     - "area: Kernel"
   tests:
     - kernel
+
+Utilities:
+  status: maintained
+  files:
+    - lib/crc/
+    - tests/unit/timeutil/
+    - tests/unit/time_units/
+    - tests/unit/rbtree/
+    - tests/unit/math_extras/
+    - tests/unit/crc/
+    - tests/unit/base64/
+    - tests/unit/math_extras/
+    - tests/unit/list/
+    - tests/unit/intmath/
+    - tests/misc/print_format/
+    - tests/unit/pot/
+    - tests/lib/time/
+    - tests/lib/onoff/
+    - tests/lib/sys_util/
+    - tests/lib/sprintf/
+    - tests/lib/ringbuffer/
+    - tests/lib/notify/
+    - tests/lib/linear_range/
+  labels:
+    - "area: Utilities"
 
 Base OS:
   status: maintained
@@ -1989,6 +2172,36 @@ Base OS:
   labels:
     - "area: Base OS"
 
+Heap Management:
+  status: maintained
+  maintainers:
+    - npitre
+    - andyross
+  files:
+    - tests/lib/shared_multi_heap/
+    - lib/heap/
+    - tests/lib/heap/
+    - tests/lib/heap_align/
+    - tests/lib/multi_heap/
+    - include/zephyr/multi_heap/
+
+Memory Management:
+  status: maintained
+  maintainers:
+    - carlocaione
+    - dcpleung
+  files:
+    - subsys/mem_mgmt/
+    - lib/mem_blocks/
+    - tests/subsys/mem_mgmt/
+    - include/zephyr/mem_mgmt/mem_attr_heap.h
+    - tests/lib/mem_alloc/
+    - tests/lib/mem_blocks/
+    - doc/services/mem_mgmt/
+    - include/zephyr/mem_mgmt/mem_attr.h
+    - tests/lib/mem_blocks_stats/
+    - tests/drivers/mm/
+
 Laird Connectivity platforms:
   status: maintained
   maintainers:
@@ -2004,6 +2217,19 @@ Laird Connectivity platforms:
     - boards/arm/mg100/
   labels:
     - "platform: Laird Connectivity"
+
+Linker Scripts:
+  status: maintained
+  maintainers:
+    - nashif
+  files:
+    - include/zephyr/linker/
+    - tests/misc/iterable_sections/
+    - tests/application_development/code_relocation/
+  labels:
+    - "area: Linker Scripts"
+  tests:
+    - linker
 
 Little FS:
   status: odd fixes
@@ -2106,6 +2332,7 @@ MCU Manager:
     - samples/subsys/mgmt/mcumgr/
     - tests/subsys/mgmt/mcumgr/
     - doc/services/device_mgmt/
+    - scripts/utils/migrate_mcumgr_kconfigs.py
   labels:
     - "area: mcumgr"
   tests:
@@ -2136,6 +2363,7 @@ Modem:
     - tests/subsys/modem/
     - doc/services/modem/
     - samples/net/cellular_modem/
+    - include/zephyr/drivers/cellular.h
   labels:
     - "area: Modem"
   tests:
@@ -2176,6 +2404,7 @@ hawkBit:
     - nandojve
   files:
     - subsys/mgmt/updatehub/
+    - include/zephyr/mgmt/updatehub.h
     - samples/subsys/mgmt/updatehub/
   labels:
     - "area: updatehub"
@@ -2209,7 +2438,7 @@ Native POSIX/Sim and POSIX arch:
   description: >-
     POSIX architecture and SOC, native_posix & native_sim boards, and related drivers
   tests:
-    - boards.native_posix
+    - boards.native_sim
 
 Networking:
   status: maintained
@@ -2220,12 +2449,14 @@ Networking:
     - tbursztyka
     - ssharks
   files:
+    - scripts/net/
     - drivers/net/
     - include/zephyr/net/
     - samples/net/
     - subsys/net/
     - doc/connectivity/networking/
     - tests/net/
+    - tests/unit/net_timeout/
   files-exclude:
     - doc/connectivity/networking/api/gptp.rst
     - doc/connectivity/networking/api/ieee802154.rst
@@ -2442,12 +2673,14 @@ NIOS-2 arch:
     - nashif
   files:
     - arch/nios2/
+    - dts/nios2/intel/
     - boards/common/nios2.board.cmake
     - boards/nios2/
     - soc/nios2/
     - include/zephyr/arch/nios2/
     - tests/boards/altera_max10/
     - boards/nios2/qemu_nios2/
+    - scripts/support/quartus-flash.py
   labels:
     - "area: NIOS2"
   tests:
@@ -2467,6 +2700,14 @@ nRF BSIM:
     - "platform: nRF BSIM"
   tests:
     - boards.nrf52_bsim
+
+Open AMP:
+  status: maintained
+  maintainers:
+    - carlocaione
+  files:
+    - lib/open-amp/
+
 
 POSIX API layer:
   status: maintained
@@ -2505,6 +2746,14 @@ Power management:
     - "area: Power Management"
   tests:
     - pm
+
+"Quicklogic Platform":
+  status: odd fixes
+  files:
+    - soc/arm/quicklogic_eos_s3/
+    - dts/arm/quicklogic/
+  labels:
+    - "platform: Quicklogic"
 
 RISCV arch:
   status: maintained
@@ -2605,6 +2854,8 @@ Twister:
     - scripts/pylib/pytest-twister-harness/
     - doc/develop/test/pytest.rst
     - tests/test_config.yaml
+    - scripts/utils/twister_to_list.py
+    - tests/robot/common.robot
   labels:
     - "area: Twister"
 
@@ -2705,6 +2956,13 @@ ADI Platforms:
     - dts/bindings/*/maxim,*
   labels:
     - "platform: ADI"
+
+Broadcom Platforms:
+  status: odd fixes
+  files:
+    - dts/arm/broadcom/
+    - soc/arm/bcm_vk/
+    - boards/arm/bcm95840*/
 
 GD32 Platforms:
   status: maintained
@@ -2890,6 +3148,7 @@ Intel Platforms (Agilex):
     - soc/arm64/intel_*/
     - dts/arm64/intel/
     - dts/bindings/*/intel,agilex*
+    - dts/arm/intel_socfpga_std/
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
@@ -3004,6 +3263,15 @@ Renesas SmartBond Platforms:
     Renesas SmartBond SOCs, dts files, and related drivers. Renesas boards based
     on SmartBond SoCs.
 
+Renesas Platforms:
+  status: odd fixes
+  files:
+    - soc/arm/renesas_ra/
+    - dts/arm/renesas/ra/
+    - soc/arm/renesas_rzt2m/
+  labels:
+    - "platforms: Renesas"
+
 Renesas R-Car Platforms:
   status: maintained
   maintainers:
@@ -3012,6 +3280,7 @@ Renesas R-Car Platforms:
   collaborators:
     - xakep-amatop
   files:
+    - dts/arm/renesas/rcar/
     - boards/arm/rcar_*/
     - boards/arm64/rcar_*/
     - drivers/*/*rcar*
@@ -3021,6 +3290,7 @@ Renesas R-Car Platforms:
     - dts/bindings/*/*rcar*
     - soc/arm/renesas_rcar/
     - soc/arm64/renesas_rcar/
+    - dts/arm/renesas/rzt2m.dtsi
   labels:
     - "platform: Renesas R-Car"
   description: >-
@@ -3122,6 +3392,7 @@ TI SimpleLink Platforms:
     - dts/bindings/*/ti,*
     - soc/arm/ti_simplelink/
     - dts/bindings/*/ti,*
+    - modules/Kconfig.simplelink
   labels:
     - "platform: TI SimpleLink"
 
@@ -3139,6 +3410,14 @@ TI K3 Platforms:
     - soc/*/ti_k3/
   labels:
     - "platform: TI K3"
+
+TI Platforms:
+  status: odd fixes
+  files:
+    - soc/arm/ti_lm3s6965/
+    - dts/arm/ti/lm3s6965.dtsi
+  labels:
+    - "platform: TI"
 
 Xilinx Platforms:
   status: odd fixes
@@ -3170,6 +3449,8 @@ Infineon Platforms:
     - drivers/*/*xmc*.c
     - drivers/*/*/*xmc*
     - dts/arm/infineon/
+    - dts/arm/cypress/
+    - soc/arm/cypress/
     - dts/bindings/*/*infineon*
     - soc/arm/infineon_*/
   labels:
@@ -3236,6 +3517,17 @@ Task Watchdog:
     - "area: Task Watchdog"
   tests:
     - sample.task_wdt
+
+"Drivers: Syscon":
+  status: maintained
+  maintainers:
+    - carlocaione
+  files:
+    - include/zephyr/drivers/syscon.h
+    - drivers/syscon/
+    - tests/drivers/syscon/
+  tests:
+    - drivers.syscon
 
 "Drivers: Time Aware GPIO":
   status: maintained
@@ -3350,6 +3642,7 @@ USB:
     - samples/subsys/usb/
     - subsys/usb/
     - tests/subsys/usb/
+    - tests/drivers/usb/
     - tests/drivers/udc/
     - doc/connectivity/usb/
     - scripts/generate_usb_vif/
@@ -4114,6 +4407,7 @@ Xtensa arch:
     - boards/xtensa/xt-sim/
     - soc/xtensa/dc233c/
     - soc/xtensa/sample_controller/
+    - soc/xtensa/CMakeLists.txt
   labels:
     - "area: Xtensa"
 
@@ -4154,7 +4448,7 @@ Continuous Integration:
   labels:
     - "area: Continuous Integration"
 
-ZTest:
+Test Framework (Ztest):
   status: maintained
   maintainers:
     - nashif
@@ -4185,6 +4479,7 @@ Emulation:
     - tristan-google
   files:
     - subsys/emul/
+    - include/zephyr/drivers/emul_*
     - include/zephyr/drivers/emul.h
     - include/zephyr/drivers/espi_emul.h
     - include/zephyr/drivers/i2c_emul.h
