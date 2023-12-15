@@ -310,7 +310,7 @@ int input_kbd_matrix_common_init(const struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_INPUT_KBD_MATRIX_THREAD_STACK_SIZE,
 			input_kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(4), 0, K_NO_WAIT);
+			CONFIG_INPUT_KBD_MATRIX_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	k_thread_name_set(&data->thread, dev->name);
 
