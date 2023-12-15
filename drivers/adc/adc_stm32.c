@@ -676,7 +676,7 @@ static void adc_stm32_oversampling_ratioshift(ADC_TypeDef *adc, uint32_t ratio, 
 }
 
 /*
- * Function to configure the oversampling ratio and shit using stm32 LL
+ * Function to configure the oversampling ratio and shift using stm32 LL
  * ratio is directly the sequence->oversampling (a 2^n value)
  * shift is the corresponding LL_ADC_OVS_SHIFT_RIGHT_x constant
  */
@@ -760,6 +760,10 @@ static void dma_callback(const struct device *dev, void *user_data,
 			adc_context_on_sampling_done(&data->ctx, dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
 						 PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM,
+							 PM_ALL_SUBSTATES);
+			}
 		} else if (status < 0) {
 			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
@@ -1062,6 +1066,10 @@ static void adc_stm32_isr(const struct device *dev)
 			adc_context_on_sampling_done(&data->ctx, dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
 						 PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM,
+							 PM_ALL_SUBSTATES);
+			}
 		}
 	}
 
@@ -1098,6 +1106,9 @@ static int adc_stm32_read(const struct device *dev,
 
 	adc_context_lock(&data->ctx, false, NULL);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
@@ -1114,6 +1125,9 @@ static int adc_stm32_read_async(const struct device *dev,
 
 	adc_context_lock(&data->ctx, true, async);
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
 	error = start_read(dev, sequence);
 	adc_context_release(&data->ctx, error);
 
