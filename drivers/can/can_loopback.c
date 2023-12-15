@@ -81,6 +81,12 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
+#ifndef CONFIG_CAN_ACCEPT_RTR
+		if ((frame.frame.flags & CAN_FRAME_RTR) != 0U) {
+			continue;
+		}
+#endif /* !CONFIG_CAN_ACCEPT_RTR */
+
 		k_mutex_lock(&data->mtx, K_FOREVER);
 
 		for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
@@ -177,10 +183,9 @@ static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_
 	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id, filter->mask);
 
 #ifdef CONFIG_CAN_FD_MODE
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA |
-							CAN_FILTER_RTR | CAN_FILTER_FDF)) != 0) {
+	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_FDF)) != 0) {
 #else
-	if ((filter->flags & ~(CAN_FILTER_IDE | CAN_FILTER_DATA | CAN_FILTER_RTR)) != 0) {
+	if ((filter->flags & ~CAN_FILTER_IDE) != 0) {
 #endif
 		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;

@@ -32,7 +32,7 @@ static struct k_thread rx_data;
 #define CLOSE_PERIOD 15
 
 static const struct can_filter zfilter = {
-	.flags = CAN_FILTER_DATA,
+	.flags = 0U,
 	.id = 0x1,
 	.mask = CAN_STD_ID_MASK
 };
