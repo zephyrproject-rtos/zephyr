@@ -95,12 +95,12 @@ class Filters:
         self.git_repo = None
 
     def init(self):
+        commits = None
         if self.commits:
-            self.git_repo = Repo(self.repository_path)
-            commit = self.git_repo.git.diff("--name-only", self.commits)
-            self.modified_files = commit.split("\n")
-        else:
-            sys.exit(1)
+            commits = self.commits
+        self.git_repo = Repo(self.repository_path)
+        commit = self.git_repo.git.diff("--name-only", commits)
+        self.modified_files = commit.split("\n")
 
         if self.modified_files:
             logging.info("Changed files:")
