@@ -270,6 +270,13 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
 #endif
 
+#if CONFIG_AUDIO_CODEC_WM8904
+	/* attach AUDIO PLL clock to MCLK */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
+	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
+#endif
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay))
 	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
 #else
