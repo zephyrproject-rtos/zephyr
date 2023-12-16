@@ -8,9 +8,10 @@ zephyr_library_sources(
   cpu_idle.c
   fatal.c
   window_vectors.S
-  xtensa-asm2-util.S
-  xtensa-asm2.c
+  xtensa_asm2_util.S
   irq_manage.c
+  thread.c
+  vector_handlers.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_XTENSA_USE_CORE_CRT1 crt1.S)
@@ -25,6 +26,7 @@ zephyr_library_sources_ifdef(CONFIG_XTENSA_MMU ptables.c mmu.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_SYSCALL_USE_HELPER syscall_helper.c)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
+zephyr_library_sources_ifdef(CONFIG_SMP smp.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
@@ -34,8 +36,6 @@ zephyr_library_sources_ifdef(
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
   zephyr_library_sources(xcc_stubs.c)
 endif()
-
-zephyr_library_include_directories(include)
 
 add_subdirectory(startup)
 

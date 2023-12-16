@@ -182,6 +182,11 @@ static int cmd_write(const struct shell *shell_ptr, size_t argc, char *argv[])
 		break;
 	case SETTINGS_VALUE_STRING:
 		buffer_len = strlen(argv[argc - 1]) + 1;
+		if (buffer_len > sizeof(buffer)) {
+			shell_error(shell_ptr, "%s is bigger than shell's buffer", argv[argc - 1]);
+			return -EINVAL;
+		}
+
 		memcpy(buffer, argv[argc - 1], buffer_len);
 		break;
 	}

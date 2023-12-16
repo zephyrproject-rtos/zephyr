@@ -9,8 +9,10 @@
 #include <inttypes.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa_backtrace.h>
-#include <zephyr/debug/coredump.h>
 #include <zephyr/arch/common/exc_handle.h>
+
+#include <xtensa_internal.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -18,18 +20,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #include <xtensa/simcall.h>
 #endif
 
-/* Need to do this as a macro since regnum must be an immediate value */
-#define get_sreg(regnum_p) ({ \
-	unsigned int retval; \
-	__asm__ volatile( \
-	    "rsr %[retval], %[regnum]\n\t" \
-	    : [retval] "=r" (retval) \
-	    : [regnum] "i" (regnum_p)); \
-	retval; \
-	})
-
-
-char *z_xtensa_exccause(unsigned int cause_code)
+char *xtensa_exccause(unsigned int cause_code)
 {
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 	switch (cause_code) {
@@ -93,8 +84,9 @@ char *z_xtensa_exccause(unsigned int cause_code)
 #endif
 }
 
-void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+void xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf) {
 		/* Don't want to get elbowed by xtensa_switch
 		 * in between printing registers and dumping them;
@@ -102,17 +94,17 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 		 */
 		unsigned int key = arch_irq_lock();
 
-		z_xtensa_dump_stack(esf);
+		xtensa_dump_stack(esf);
 
-		coredump(reason, esf, IS_ENABLED(CONFIG_MULTITHREADING) ? k_current_get() : NULL);
 
 #if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
 #if XCHAL_HAVE_WINDOWED
-		z_xtensa_backtrace_print(100, (int *)esf);
+		xtensa_backtrace_print(100, (int *)esf);
 #endif
 #endif
 		arch_irq_unlock(key);
 	}
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
 }

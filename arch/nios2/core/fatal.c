@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
 {
+#if CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		/* Subtract 4 from EA since we added 4 earlier so that the
 		 * faulting instruction isn't retried.
@@ -33,6 +34,7 @@ FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 			esf->r13, esf->r14, esf->r15, esf->ra);
 		LOG_ERR("estatus: %08x", esf->estatus);
 	}
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;

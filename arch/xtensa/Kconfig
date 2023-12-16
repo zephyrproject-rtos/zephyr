@@ -10,23 +10,9 @@ config ARCH
 	default "xtensa"
 
 config SIMULATOR_XTENSA
-	bool "Simulator Configuration"
+	bool "Simulator Target"
 	help
-	  Specify if the board configuration should be treated as a simulator.
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	prompt "Hardware clock cycles per second, 2000000 for ISS"
-	default 2000000
-	range 1000000 1000000000
-	help
-	  This option specifies hardware clock.
-
-config XTENSA_NO_IPC
-	bool "Core has no IPC support"
-	select ATOMIC_OPERATIONS_C
-	help
-	  Uncheck this if your core does not implement "SCOMPARE1" register and "s32c1i"
-	  instruction.
+	  Enable if building to run on simulator.
 
 config XTENSA_RESET_VECTOR
 	bool "Build reset vector code"
@@ -111,7 +97,6 @@ if CPU_HAS_MMU
 
 config XTENSA_MMU
 	bool "Xtensa MMU Support"
-	default n
 	select MMU
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
@@ -122,52 +107,51 @@ config XTENSA_MMU
 
 if XTENSA_MMU
 
-	choice
-		prompt "PageTable virtual adddress"
-		default XTENSA_MMU_PTEVADDR_20000000
-		help
-		  The virtual address for Xtensa page table (PTEVADDR).
+choice
+	prompt "PageTable virtual address"
+	default XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The virtual address for Xtensa page table (PTEVADDR).
 
-	config XTENSA_MMU_PTEVADDR_20000000
-		bool "0x20000000"
+config XTENSA_MMU_PTEVADDR_20000000
+	bool "0x20000000"
 
-	endchoice
+endchoice
 
-	config XTENSA_MMU_PTEVADDR
-		hex
-		default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
-		help
-		  The virtual address for Xtensa page table (PTEVADDR).
+config XTENSA_MMU_PTEVADDR
+	hex
+	default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The virtual address for Xtensa page table (PTEVADDR).
 
-	config XTENSA_MMU_PTEVADDR_SHIFT
-		int
-		default 29 if XTENSA_MMU_PTEVADDR_20000000
-		help
-		  The bit shift number for the virtual address for Xtensa
-		  page table (PTEVADDR).
+config XTENSA_MMU_PTEVADDR_SHIFT
+	int
+	default 29 if XTENSA_MMU_PTEVADDR_20000000
+	help
+	  The bit shift number for the virtual address for Xtensa
+	  page table (PTEVADDR).
 
-	config XTENSA_MMU_NUM_L1_TABLES
-		int "Number of L1 page tables"
-		default 1 if !USERSPACE
-		default 4
-		help
-		  This option specifies the maximum number of traslation tables.
-		  Translation tables are directly related to the number of
-		  memory domains in the target, considering the kernel itself requires one.
+config XTENSA_MMU_NUM_L1_TABLES
+	int "Number of L1 page tables"
+	default 1 if !USERSPACE
+	default 4
+	help
+	  This option specifies the maximum number of traslation tables.
+	  Translation tables are directly related to the number of
+	  memory domains in the target, considering the kernel itself requires one.
 
-	config XTENSA_MMU_NUM_L2_TABLES
-		int "Number of L2 page tables"
-		default 20 if USERSPACE
-		default 10
-		help
-		  Each table can address up to 4MB memory address.
+config XTENSA_MMU_NUM_L2_TABLES
+	int "Number of L2 page tables"
+	default 20 if USERSPACE
+	default 10
+	help
+	  Each table can address up to 4MB memory address.
 
-	config XTENSA_MMU_DOUBLE_MAP
-		bool "Map memory in cached and uncached region"
-		default n
-		help
-			This option specifies that the memory is mapped in two
-			distinct region, cached and uncached.
+config XTENSA_MMU_DOUBLE_MAP
+	bool "Map memory in cached and uncached region"
+	help
+	  This option specifies that the memory is mapped in two
+	  distinct region, cached and uncached.
 
 endif # XTENSA_MMU
 

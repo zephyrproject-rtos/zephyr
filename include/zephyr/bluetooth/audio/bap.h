@@ -569,8 +569,10 @@ struct bt_bap_stream_ops {
 	/**
 	 * @brief Stream audio HCI sent callback
 	 *
-	 * If this callback is provided it will be called whenever a SDU has been completely sent,
-	 * or otherwise flushed due to transmission issues.
+	 * This callback will be called once the controller marks the SDU
+	 * as completed. When the controller does so is implementation
+	 * dependent. It could be after the SDU is enqueued for transmission,
+	 * or after it is sent on air or flushed.
 	 *
 	 * This callback is only used if the ISO data path is HCI.
 	 *

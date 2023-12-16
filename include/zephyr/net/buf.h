@@ -28,7 +28,11 @@ extern "C" {
  */
 
 /* Alignment needed for various parts of the buffer definition */
+#if CONFIG_NET_BUF_ALIGNMENT == 0
 #define __net_buf_align __aligned(sizeof(void *))
+#else
+#define __net_buf_align __aligned(CONFIG_NET_BUF_ALIGNMENT)
+#endif
 
 /**
  *  @brief Define a net_buf_simple stack variable.
@@ -1006,7 +1010,10 @@ struct net_buf_pool {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_NET_BUF_POOL_USAGE)
+#define NET_BUF_POOL_USAGE_INIT(_pool, _count) \
+	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.avail_count = ATOMIC_INIT(_count),)) \
+	IF_ENABLED(CONFIG_NET_BUF_POOL_USAGE, (.name = STRINGIFY(_pool),))
+
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
 	{                                                                          \
 		.free = Z_LIFO_INITIALIZER(_pool.free),                            \
@@ -1014,25 +1021,11 @@ struct net_buf_pool {
 		.buf_count = _count,                                               \
 		.uninit_count = _count,                                            \
 		.user_data_size = _ud_size,                                        \
-		.avail_count = ATOMIC_INIT(_count),                                \
-		.name = STRINGIFY(_pool),                                          \
+		NET_BUF_POOL_USAGE_INIT(_pool, _count)                             \
 		.destroy = _destroy,                                               \
 		.alloc = _alloc,                                                   \
 		.__bufs = (struct net_buf *)_bufs,                                 \
 	}
-#else
-#define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _ud_size, _destroy) \
-	{                                                                          \
-		.free = Z_LIFO_INITIALIZER(_pool.free),                            \
-		.lock = { },                                                       \
-		.buf_count = _count,                                               \
-		.uninit_count = _count,                                            \
-		.user_data_size = _ud_size,                                        \
-		.destroy = _destroy,                                               \
-		.alloc = _alloc,                                                   \
-		.__bufs = (struct net_buf *)_bufs,                                 \
-	}
-#endif /* CONFIG_NET_BUF_POOL_USAGE */
 
 #define _NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size)					       \
 	struct _net_buf_##_name { uint8_t b[sizeof(struct net_buf)];			       \

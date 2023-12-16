@@ -399,7 +399,7 @@ being invoked each time interrupt 24 is triggered.
 If :kconfig:option:`CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS` is set to a value lower than 2
 (current number of clients), a build error will be generated.
 
-If dynamic interrupts are enabled, c:func:`irq_connect_dynamic` will allow sharing interrupts
+If dynamic interrupts are enabled, :c:func:`irq_connect_dynamic` will allow sharing interrupts
 during runtime. Exceeding the configured maximum number of allowed clients will result in
 a failed assertion.
 
@@ -554,7 +554,7 @@ This is an array of struct z_shared_isr_table_entry:
     };
 
 This table keeps track of the registered clients for each of the interrupt
-lines. Whenever an interrupt line becomes shared, c:func:`z_shared_isr` will
+lines. Whenever an interrupt line becomes shared, :c:func:`z_shared_isr` will
 replace the currently registered ISR in _sw_isr_table. This special ISR will
 iterate through the list of registered clients and invoke the ISRs.
 

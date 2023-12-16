@@ -37,6 +37,8 @@ Architectures
 
 * Xtensa
 
+  * Removed the unused Kconfig option ``CONFIG_XTENSA_NO_IPC``.
+
 * x86
 
 * POSIX
@@ -223,6 +225,11 @@ Networking
 
   * Emit observer/service network events using the Network Event subsystem.
 
+  * Added new API functions:
+
+    * :c:func:`coap_get_transmission_parameters`
+    * :c:func:`coap_set_transmission_parameters`
+
 * Connection Manager:
 
 * DHCP:
@@ -313,6 +320,9 @@ Libraries / Subsystems
 * Random
 
 * Retention
+
+  * Fixed issue whereby :kconfig:option:`CONFIG_RETENTION_BUFFER_SIZE` values over 256 would cause
+    an infinite loop due to use of 8-bit variables.
 
 * Binary descriptors
 

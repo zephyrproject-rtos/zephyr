@@ -103,8 +103,9 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-static int entropy_stm32_suspend(const struct device *dev)
+static int entropy_stm32_suspend(void)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_data->rng;
@@ -133,8 +134,9 @@ static int entropy_stm32_suspend(const struct device *dev)
 	return res;
 }
 
-static int entropy_stm32_resume(const struct device *dev)
+static int entropy_stm32_resume(void)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_data->rng;
@@ -143,6 +145,7 @@ static int entropy_stm32_resume(const struct device *dev)
 	res = clock_control_on(dev_data->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	LL_RNG_Enable(rng);
+	LL_RNG_EnableIT(rng);
 
 	return res;
 }
@@ -201,6 +204,7 @@ static void configure_rng(void)
 
 static void acquire_rng(void)
 {
+	entropy_stm32_resume();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* Lock the RNG to prevent concurrent access */
 	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
@@ -211,6 +215,7 @@ static void acquire_rng(void)
 
 static void release_rng(void)
 {
+	entropy_stm32_suspend();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
@@ -382,7 +387,6 @@ static int start_pool_filling(bool wait)
 {
 	unsigned int key;
 	bool already_filling;
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 	key = irq_lock();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
@@ -409,7 +413,6 @@ static int start_pool_filling(bool wait)
 	 */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	entropy_stm32_resume(dev);
 	acquire_rng();
 	irq_enable(IRQN);
 
@@ -520,7 +523,6 @@ static void rng_pool_init(struct rng_pool *rngp, uint16_t size,
 static void stm32_rng_isr(const void *arg)
 {
 	int byte, ret;
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 	ARG_UNUSED(arg);
 
@@ -538,7 +540,6 @@ static void stm32_rng_isr(const void *arg)
 		if (ret < 0) {
 			irq_disable(IRQN);
 			release_rng();
-			entropy_stm32_suspend(dev);
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 			entropy_stm32_rng_data.filling_pools = false;
 		}
@@ -602,7 +603,11 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		irq_disable(IRQN);
 		irq_unlock(key);
 
-		rng_already_acquired = z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID);
+		/* Do not release if IRQ is enabled. RNG will be released in ISR
+		 * when the pools are full.
+		 */
+		rng_already_acquired = z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID) ||
+				       irq_enabled;
 		acquire_rng();
 
 		cnt = generate_from_isr(buf, len);
@@ -689,12 +694,12 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		res = entropy_stm32_suspend(dev);
+		res = entropy_stm32_suspend();
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		/* Resume RNG only if it was suspended during filling pool */
 		if (entropy_stm32_rng_data.filling_pools) {
-			res = entropy_stm32_resume(dev);
+			res = entropy_stm32_resume();
 		}
 		break;
 	default:

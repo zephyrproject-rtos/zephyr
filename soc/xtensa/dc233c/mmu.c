@@ -12,13 +12,11 @@
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 #include <zephyr/sys/util.h>
 
-#include "../../arch/xtensa/core/include/xtensa_mmu_priv.h"
-
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	{
 		.start = (uint32_t)XCHAL_VECBASE_RESET_VADDR,
 		.end   = (uint32_t)CONFIG_SRAM_OFFSET,
-		.attrs = Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WB | Z_XTENSA_MMU_MAP_SHARED,
+		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_CACHED_WB | XTENSA_MMU_MAP_SHARED,
 		.name = "vecbase",
 	},
 	{
@@ -29,7 +27,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.start = (uint32_t)DT_REG_ADDR(DT_NODELABEL(rom0)),
 		.end   = (uint32_t)DT_REG_ADDR(DT_NODELABEL(rom0)) +
 			 (uint32_t)DT_REG_SIZE(DT_NODELABEL(rom0)),
-		.attrs = Z_XTENSA_MMU_X | Z_XTENSA_MMU_CACHED_WB,
+		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_CACHED_WB,
 		.name = "rom",
 	},
 };

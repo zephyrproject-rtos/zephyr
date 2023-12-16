@@ -35,6 +35,17 @@
 
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 
+/**
+ * @defgroup xtensa_apis Xtensa APIs
+ * @{
+ * @}
+ *
+ * @defgroup xtensa_internal_apis Xtensa Internal APIs
+ * @ingroup xtensa_apis
+ * @{
+ * @}
+ */
+
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
 

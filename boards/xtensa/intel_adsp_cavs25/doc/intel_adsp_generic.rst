@@ -143,12 +143,10 @@ undocumented rimage precedence rules it's best to use only one way at a time.
   ``boards/my/board/board.cmake``, see example in
   ``soc/xtensa/intel_adsp/common/CMakeLists.txt``
 
-For backwards compatibility reasons, you can also pass rimage parameters like
-the path to the tool binary as arguments to
-``west flash`` if the flash target exists for your board. To see a list
-of all arguments to the Intel ADSP runner, run the following after you have
-built the binary. There are multiple arguments related to signing, including a
-key argument.
+Starting with Zephyr 3.6.0, ``west flash`` does not invoke ``west sign``
+anymore and you cannot pass rimage parameters to ``west flash`` anymore. To
+see an up-to-date list of all arguments to the Intel ADSP runner, run the
+following after you have built the binary:
 
 .. code-block:: console
 

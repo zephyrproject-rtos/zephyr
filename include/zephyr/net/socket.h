@@ -35,16 +35,25 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Definition of the monitored socket/file descriptor.
+ *
+ * An array of these descriptors is passed as an argument to poll().
+ */
 struct zsock_pollfd {
-	int fd;
-	short events;
-	short revents;
+	int fd;        /**< Socket descriptor */
+	short events;  /**< Requested events */
+	short revents; /**< Returned events */
 };
 
+/**
+ * @name Options for poll()
+ * @{
+ */
 /* ZSOCK_POLL* values are compatible with Linux */
 /** zsock_poll: Poll for readability */
 #define ZSOCK_POLLIN 1
-/** zsock_poll: Compatibility value, ignored */
+/** zsock_poll: Poll for exceptional condition */
 #define ZSOCK_POLLPRI 2
 /** zsock_poll: Poll for writability */
 #define ZSOCK_POLLOUT 4
@@ -54,7 +63,12 @@ struct zsock_pollfd {
 #define ZSOCK_POLLHUP 0x10
 /** zsock_poll: Invalid socket (output value only) */
 #define ZSOCK_POLLNVAL 0x20
+/** @} */
 
+/**
+ * @name Options for sending and receiving data
+ * @{
+ */
 /** zsock_recv: Read data without removing it from socket input queue */
 #define ZSOCK_MSG_PEEK 0x02
 /** zsock_recvmsg: Control data buffer too small.
@@ -68,7 +82,12 @@ struct zsock_pollfd {
 #define ZSOCK_MSG_DONTWAIT 0x40
 /** zsock_recv: block until the full amount of data can be returned */
 #define ZSOCK_MSG_WAITALL 0x100
+/** @} */
 
+/**
+ * @name Options for shutdown() function
+ * @{
+ */
 /* Well-known values, e.g. from Linux man 2 shutdown:
  * "The constants SHUT_RD, SHUT_WR, SHUT_RDWR have the value 0, 1, 2,
  * respectively". Some software uses numeric values.
@@ -79,16 +98,21 @@ struct zsock_pollfd {
 #define ZSOCK_SHUT_WR 1
 /** zsock_shutdown: Shut down for both reading and writing */
 #define ZSOCK_SHUT_RDWR 2
-
-/** Protocol level for TLS.
- *  Here, the same socket protocol level for TLS as in Linux was used.
- */
-#define SOL_TLS 282
+/** @} */
 
 /**
  *  @defgroup secure_sockets_options Socket options for TLS
  *  @{
  */
+/**
+ * @name Socket options for TLS
+ * @{
+ */
+
+/** Protocol level for TLS.
+ *  Here, the same socket protocol level for TLS as in Linux was used.
+ */
+#define SOL_TLS 282
 
 /** Socket option to select TLS credentials to use. It accepts and returns an
  *  array of sec_tag_t that indicate which TLS credentials should be used with
@@ -137,11 +161,16 @@ struct zsock_pollfd {
  *  the TLS handshake.
  */
 #define TLS_ALPN_LIST 7
-/** Socket option to set DTLS handshake timeout. The timeout starts at min,
+/** Socket option to set DTLS min handshake timeout. The timeout starts at min,
  *  and upon retransmission the timeout is doubled util max is reached.
  *  Min and max arguments are separate options. The time unit is ms.
  */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
+
+/** Socket option to set DTLS max handshake timeout. The timeout starts at min,
+ *  and upon retransmission the timeout is doubled util max is reached.
+ *  Min and max arguments are separate options. The time unit is ms.
+ */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
 
 /** Socket option for preventing certificates from being copied to the mbedTLS
@@ -203,48 +232,57 @@ struct zsock_pollfd {
  *  connection ID, otherwise will contain the length of the CID value.
  */
 #define TLS_DTLS_PEER_CID_VALUE 17
-/** @} */
 
-/* Valid values for TLS_PEER_VERIFY option */
+/* Valid values for @ref TLS_PEER_VERIFY option */
 #define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
 #define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
 #define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
 
-/* Valid values for TLS_DTLS_ROLE option */
+/* Valid values for @ref TLS_DTLS_ROLE option */
 #define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
 #define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
 
-/* Valid values for TLS_CERT_NOCOPY option */
+/* Valid values for @ref TLS_CERT_NOCOPY option */
 #define TLS_CERT_NOCOPY_NONE 0     /**< Cert duplicated in heap */
 #define TLS_CERT_NOCOPY_OPTIONAL 1 /**< Cert not copied in heap if DER */
 
-/* Valid values for TLS_SESSION_CACHE option */
+/* Valid values for @ref TLS_SESSION_CACHE option */
 #define TLS_SESSION_CACHE_DISABLED 0 /**< Disable TLS session caching. */
 #define TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
 
-/* Valid values for TLS_DTLS_CID option */
-#define TLS_DTLS_CID_DISABLED		0
-#define TLS_DTLS_CID_SUPPORTED		1
-#define TLS_DTLS_CID_ENABLED		2
+/* Valid values for @ref TLS_DTLS_CID (Connection ID) option */
+#define TLS_DTLS_CID_DISABLED		0 /**< CID is disabled  */
+#define TLS_DTLS_CID_SUPPORTED		1 /**< CID is supported */
+#define TLS_DTLS_CID_ENABLED		2 /**< CID is enabled   */
 
-/* Valid values for TLS_DTLS_CID_STATUS option */
-#define TLS_DTLS_CID_STATUS_DISABLED		0
-#define TLS_DTLS_CID_STATUS_DOWNLINK		1
-#define TLS_DTLS_CID_STATUS_UPLINK		2
-#define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3
+/* Valid values for @ref TLS_DTLS_CID_STATUS option */
+#define TLS_DTLS_CID_STATUS_DISABLED		0 /**< CID is disabled */
+#define TLS_DTLS_CID_STATUS_DOWNLINK		1 /**< CID is in use by us */
+#define TLS_DTLS_CID_STATUS_UPLINK		2 /**< CID is in use by peer */
+#define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3 /**< CID is in use by us and peer */
+/** @} */ /* for @name */
+/** @} */ /* for @defgroup */
 
+/**
+ * @brief Definition used when querying address information.
+ *
+ * A linked list of these descriptors is returned by getaddrinfo(). The struct
+ * is also passed as hints when calling the getaddrinfo() function.
+ */
 struct zsock_addrinfo {
-	struct zsock_addrinfo *ai_next;
-	int ai_flags;
-	int ai_family;
-	int ai_socktype;
-	int ai_protocol;
-	socklen_t ai_addrlen;
-	struct sockaddr *ai_addr;
-	char *ai_canonname;
+	struct zsock_addrinfo *ai_next; /**< Pointer to next address entry */
+	int ai_flags;             /**< Additional options */
+	int ai_family;            /**< Address family of the returned addresses */
+	int ai_socktype;          /**< Socket type, for example SOCK_STREAM or SOCK_DGRAM */
+	int ai_protocol;          /**< Protocol for addresses, 0 means any protocol */
+	socklen_t ai_addrlen;     /**< Length of the socket address */
+	struct sockaddr *ai_addr; /**< Pointer to the address */
+	char *ai_canonname;       /**< Optional official name of the host */
 
+/** @cond INTERNAL_HIDDEN */
 	struct sockaddr _ai_addr;
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
+/** @endcond */
 };
 
 /**
@@ -670,6 +708,10 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 
 /* Flags for getaddrinfo() hints. */
 
+/**
+ * @name Flags for getaddrinfo() hints
+ * @{
+ */
 /** Address for bind() (vs for connect()) */
 #define AI_PASSIVE 0x1
 /** Fill in ai_canonname */
@@ -684,6 +726,7 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define AI_NUMERICSERV 0x400
+/** @} */
 
 /**
  * @brief Resolve a domain name to one or more network addresses
@@ -729,6 +772,10 @@ void zsock_freeaddrinfo(struct zsock_addrinfo *ai);
  */
 const char *zsock_gai_strerror(int errcode);
 
+/**
+ * @name Flags for getnameinfo()
+ * @{
+ */
 /** zsock_getnameinfo(): Resolve to numeric address. */
 #define NI_NUMERICHOST 1
 /** zsock_getnameinfo(): Resolve to numeric port number. */
@@ -746,6 +793,7 @@ const char *zsock_gai_strerror(int errcode);
 #ifndef NI_MAXHOST
 #define NI_MAXHOST 64
 #endif
+/** @} */
 
 /**
  * @brief Resolve a network address to a domain name or ASCII address
@@ -765,6 +813,12 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
+/**
+ * @name Socket APIs available if CONFIG_NET_SOCKETS_POSIX_NAMES is enabled
+ * @{
+ */
+
+/** POSIX wrapper for @ref zsock_pollfd */
 #define pollfd zsock_pollfd
 
 /** POSIX wrapper for @ref zsock_socket */
@@ -828,6 +882,7 @@ static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 	return zsock_recv(sock, buf, max_len, flags);
 }
 
+/** @cond INTERNAL_HIDDEN */
 /*
  * Need this wrapper because newer GCC versions got too smart and "typecheck"
  * even macros, so '#define fcntl zsock_fcntl' leads to error.
@@ -844,7 +899,9 @@ static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
 }
 
 #define fcntl zsock_fcntl_wrapper
+/** @endcond */
 
+/** POSIX wrapper for @ref zsock_ioctl */
 static inline int ioctl(int sock, unsigned long request, ...)
 {
 	int ret;
@@ -948,6 +1005,7 @@ static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 				 serv, servlen, flags);
 }
 
+/** POSIX wrapper for @ref zsock_addrinfo */
 #define addrinfo zsock_addrinfo
 
 /** POSIX wrapper for @ref zsock_gethostname */
@@ -1018,8 +1076,14 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
 /** POSIX wrapper for @ref DNS_EAI_FAMILY */
 #define EAI_FAMILY DNS_EAI_FAMILY
+/** @} */
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
+/**
+ * @name Network interface name description
+ * @{
+ */
+/** Network interface name length */
 #if defined(CONFIG_NET_INTERFACE_NAME)
 #define IFNAMSIZ CONFIG_NET_INTERFACE_NAME_LEN
 #else
@@ -1028,72 +1092,91 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 
 /** Interface description structure */
 struct ifreq {
-	char ifr_name[IFNAMSIZ]; /* Interface name */
+	char ifr_name[IFNAMSIZ]; /**< Network interface name */
 };
+/** @} */
 
-/** sockopt: Socket-level option */
+/**
+ * @name Socket level options (SOL_SOCKET)
+ * @{
+ */
+/** Socket-level option */
 #define SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
 
-/** sockopt: Recording debugging information (ignored, for compatibility) */
+/** Recording debugging information (ignored, for compatibility) */
 #define SO_DEBUG 1
-/** sockopt: address reuse */
+/** address reuse */
 #define SO_REUSEADDR 2
-/** sockopt: Type of the socket */
+/** Type of the socket */
 #define SO_TYPE 3
-/** sockopt: Async error (ignored, for compatibility) */
+/** Async error */
 #define SO_ERROR 4
-/** sockopt: Bypass normal routing and send directly to host (ignored, for compatibility) */
+/** Bypass normal routing and send directly to host (ignored, for compatibility) */
 #define SO_DONTROUTE 5
-/** sockopt: Transmission of broadcast messages is supported (ignored, for compatibility) */
+/** Transmission of broadcast messages is supported (ignored, for compatibility) */
 #define SO_BROADCAST 6
 
-/** sockopt: Size of socket send buffer */
+/** Size of socket send buffer */
 #define SO_SNDBUF 7
-/** sockopt: Size of socket recv buffer */
+/** Size of socket recv buffer */
 #define SO_RCVBUF 8
 
 /** Enable sending keep-alive messages on connections */
 #define SO_KEEPALIVE 9
-/** sockopt: Place out-of-band data into receive stream (ignored, for compatibility) */
+/** Place out-of-band data into receive stream (ignored, for compatibility) */
 #define SO_OOBINLINE 10
-/** sockopt: Socket lingers on close (ignored, for compatibility) */
+/** Socket priority */
+#define SO_PRIORITY 12
+/** Socket lingers on close (ignored, for compatibility) */
 #define SO_LINGER 13
-/** sockopt: Allow multiple sockets to reuse a single port */
+/** Allow multiple sockets to reuse a single port */
 #define SO_REUSEPORT 15
 
-/** sockopt: Receive low watermark (ignored, for compatibility) */
+/** Receive low watermark (ignored, for compatibility) */
 #define SO_RCVLOWAT 18
-/** sockopt: Send low watermark (ignored, for compatibility) */
+/** Send low watermark (ignored, for compatibility) */
 #define SO_SNDLOWAT 19
 
 /**
- * sockopt: Receive timeout
+ * Receive timeout
  * Applies to receive functions like recv(), but not to connect()
  */
 #define SO_RCVTIMEO 20
-/** sockopt: Send timeout */
+/** Send timeout */
 #define SO_SNDTIMEO 21
 
-/** sockopt: Bind a socket to an interface */
+/** Bind a socket to an interface */
 #define SO_BINDTODEVICE	25
 
-/** sockopt: Socket accepts incoming connections (ignored, for compatibility) */
+/** Socket accepts incoming connections (ignored, for compatibility) */
 #define SO_ACCEPTCONN 30
 
-/** sockopt: Timestamp TX packets */
+/** Timestamp TX packets */
 #define SO_TIMESTAMPING 37
-/** sockopt: Protocol used with the socket */
+/** Protocol used with the socket */
 #define SO_PROTOCOL 38
 
-/** sockopt: Domain used with SOCKET (ignored, for compatibility) */
+/** Domain used with SOCKET (ignored, for compatibility) */
 #define SO_DOMAIN 39
 
-/** End Socket options for SOL_SOCKET level */
+/** Enable SOCKS5 for Socket */
+#define SO_SOCKS5 60
 
+/** Socket TX time (when the data should be sent) */
+#define SO_TXTIME 61
+/** Socket TX time (same as SO_TXTIME) */
+#define SCM_TXTIME SO_TXTIME
+
+/** @} */
+
+/**
+ * @name TCP level options (IPPROTO_TCP)
+ * @{
+ */
 /* Socket options for IPPROTO_TCP level */
-/** sockopt: Disable TCP buffering (ignored, for compatibility) */
+/** Disable TCP buffering (ignored, for compatibility) */
 #define TCP_NODELAY 1
 /** Start keepalives after this period (seconds) */
 #define TCP_KEEPIDLE 2
@@ -1102,89 +1185,114 @@ struct ifreq {
 /** Number of keepalives before dropping connection */
 #define TCP_KEEPCNT 4
 
+/** @} */
+
+/**
+ * @name IPv4 level options (IPPROTO_IP)
+ * @{
+ */
 /* Socket options for IPPROTO_IP level */
-/** sockopt: Set or receive the Type-Of-Service value for an outgoing packet. */
+/** Set or receive the Type-Of-Service value for an outgoing packet. */
 #define IP_TOS 1
 
-/** sockopt: Set or receive the Time-To-Live value for an outgoing packet. */
+/** Set or receive the Time-To-Live value for an outgoing packet. */
 #define IP_TTL 2
 
-/** sockopt: Pass an IP_PKTINFO ancillary message that contains a
+/** Pass an IP_PKTINFO ancillary message that contains a
  *  pktinfo structure that supplies some information about the
  *  incoming packet.
  */
 #define IP_PKTINFO 8
 
+/**
+ * @brief Incoming IPv4 packet information.
+ *
+ * Used as ancillary data when calling recvmsg() and IP_PKTINFO socket
+ * option is set.
+ */
 struct in_pktinfo {
-	unsigned int   ipi_ifindex;  /* Interface index */
-	struct in_addr ipi_spec_dst; /* Local address */
-	struct in_addr ipi_addr;     /* Header Destination address */
+	unsigned int   ipi_ifindex;  /**< Network interface index */
+	struct in_addr ipi_spec_dst; /**< Local address */
+	struct in_addr ipi_addr;     /**< Header Destination address */
 };
 
-/** sockopt: Set IPv4 multicast TTL value. */
+/** Set IPv4 multicast TTL value. */
 #define IP_MULTICAST_TTL 33
-/** sockopt: Join IPv4 multicast group. */
+/** Join IPv4 multicast group. */
 #define IP_ADD_MEMBERSHIP 35
-/** sockopt: Leave IPv4 multicast group. */
+/** Leave IPv4 multicast group. */
 #define IP_DROP_MEMBERSHIP 36
 
+/**
+ * @brief Struct used when joining or leaving a IPv4 multicast group.
+ */
 struct ip_mreqn {
-	struct in_addr imr_multiaddr; /* IP multicast group address */
-	struct in_addr imr_address;   /* IP address of local interface */
-	int            imr_ifindex;   /* interface index */
+	struct in_addr imr_multiaddr; /**< IP multicast group address */
+	struct in_addr imr_address;   /**< IP address of local interface */
+	int            imr_ifindex;   /**< Network interface index */
 };
 
+/** @} */
+
+/**
+ * @name IPv6 level options (IPPROTO_IPV6)
+ * @{
+ */
 /* Socket options for IPPROTO_IPV6 level */
-/** sockopt: Set the unicast hop limit for the socket. */
+/** Set the unicast hop limit for the socket. */
 #define IPV6_UNICAST_HOPS	16
 
-/** sockopt: Set the multicast hop limit for the socket. */
+/** Set the multicast hop limit for the socket. */
 #define IPV6_MULTICAST_HOPS 18
 
-/** sockopt: Join IPv6 multicast group. */
+/** Join IPv6 multicast group. */
 #define IPV6_ADD_MEMBERSHIP 20
 
-/** sockopt: Leave IPv6 multicast group. */
+/** Leave IPv6 multicast group. */
 #define IPV6_DROP_MEMBERSHIP 21
 
+/**
+ * @brief Struct used when joining or leaving a IPv6 multicast group.
+ */
 struct ipv6_mreq {
-	/* IPv6 multicast address of group */
+	/** IPv6 multicast address of group */
 	struct in6_addr ipv6mr_multiaddr;
 
-	/* Interface index of the local IPv6 address */
+	/** Network interface index of the local IPv6 address */
 	int ipv6mr_ifindex;
 };
 
-/** sockopt: Don't support IPv4 access */
+/** Don't support IPv4 access */
 #define IPV6_V6ONLY 26
 
-/** sockopt: Pass an IPV6_RECVPKTINFO ancillary message that contains a
+/** Pass an IPV6_RECVPKTINFO ancillary message that contains a
  *  in6_pktinfo structure that supplies some information about the
  *  incoming packet. See RFC 3542.
  */
 #define IPV6_RECVPKTINFO 49
 
+/**
+ * @brief Incoming IPv6 packet information.
+ *
+ * Used as ancillary data when calling recvmsg() and IPV6_RECVPKTINFO socket
+ * option is set.
+ */
 struct in6_pktinfo {
-	struct in6_addr ipi6_addr;    /* src/dst IPv6 address */
-	unsigned int    ipi6_ifindex; /* send/recv interface index */
+	struct in6_addr ipi6_addr;    /**< Destination IPv6 address */
+	unsigned int    ipi6_ifindex; /**< Receive interface index */
 };
 
-/** sockopt: Set or receive the traffic class value for an outgoing packet. */
+/** Set or receive the traffic class value for an outgoing packet. */
 #define IPV6_TCLASS 67
+/** @} */
 
-/** sockopt: Socket priority */
-#define SO_PRIORITY 12
-
-/** sockopt: Socket TX time (when the data should be sent) */
-#define SO_TXTIME 61
-#define SCM_TXTIME SO_TXTIME
-
-/* Socket options for SOCKS5 proxy */
-/** sockopt: Enable SOCKS5 for Socket */
-#define SO_SOCKS5 60
-
-/** listen: The maximum backlog queue length (ignored, for compatibility) */
+/**
+ * @name Backlog size for listen()
+ * @{
+ */
+/** listen: The maximum backlog queue length */
 #define SOMAXCONN 128
+/** @} */
 
 /** @cond INTERNAL_HIDDEN */
 /**

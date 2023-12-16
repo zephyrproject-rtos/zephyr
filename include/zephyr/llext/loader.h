@@ -21,30 +21,7 @@ extern "C" {
  * @{
  */
 
-/**
- * @brief Enum of sections for lookup tables
- */
-enum llext_section {
-	LLEXT_SECT_TEXT,
-	LLEXT_SECT_DATA,
-	LLEXT_SECT_RODATA,
-	LLEXT_SECT_BSS,
-
-	LLEXT_SECT_REL_TEXT,
-	LLEXT_SECT_REL_DATA,
-	LLEXT_SECT_REL_RODATA,
-	LLEXT_SECT_REL_BSS,
-
-	LLEXT_SECT_EXPORT,
-
-	LLEXT_SECT_SYMTAB,
-	LLEXT_SECT_STRTAB,
-	LLEXT_SECT_SHSTRTAB,
-
-	LLEXT_SECT_COUNT,
-};
-
-enum llext_mem;
+#include <zephyr/llext/llext.h>
 
 /**
  * @brief Linkable loadable extension loader context
@@ -93,7 +70,7 @@ struct llext_loader {
 
 	/** @cond ignore */
 	elf_ehdr_t hdr;
-	elf_shdr_t sects[LLEXT_SECT_COUNT];
+	elf_shdr_t sects[LLEXT_MEM_COUNT];
 	enum llext_mem *sect_map;
 	uint32_t sect_cnt;
 	/** @endcond */

@@ -25,6 +25,9 @@ sys.path.insert(0, str(ZEPHYR_BASE / "doc" / "_scripts"))
 # for autodoc directives on runners.xyz.
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "west_commands"))
 
+# Add the directory which contains the pytest-twister-pytest
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "pytest-twister-harness" / "src"))
+
 import redirects
 
 try:
@@ -150,6 +153,9 @@ html_split_index = True
 html_show_sourcelink = False
 html_show_sphinx = False
 html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
+html_additional_pages = {
+    "gsearch": "gsearch.html"
+}
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
 reference_prefix = ""
@@ -173,7 +179,11 @@ html_context = {
         "Kconfig Options": f"{reference_prefix}/kconfig.html",
         "Devicetree Bindings": f"{reference_prefix}/build/dts/api/bindings.html",
         "West Projects": f"{reference_prefix}/develop/manifest/index.html",
-    }
+    },
+    # Set google_searchengine_id to your Search Engine ID to replace built-in search
+    # engine with Google's Programmable Search Engine.
+    # See https://programmablesearchengine.google.com/ for details.
+    "google_searchengine_id": "746031aa0d56d4912",
 }
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -336,4 +346,5 @@ linkcheck_anchors = False
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
+    app.add_js_file("js/custom.js")
     app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
