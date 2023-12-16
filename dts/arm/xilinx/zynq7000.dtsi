@@ -18,9 +18,9 @@
 			zephyr,memory-region = "OCM_LOW";
 		};
 
-		ocm_high: memory@ffff0000 {
+		ocm_high: memory@fffc0000 {
 			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
-			reg = <0xFFFF0000 DT_SIZE_K(64)>;
+			reg = <0xFFFC0000 DT_SIZE_K(256)>;
 			zephyr,memory-region = "OCM_HIGH";
 		};
 
