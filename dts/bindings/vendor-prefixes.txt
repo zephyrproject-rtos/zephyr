@@ -208,6 +208,7 @@ excito	Excito
 ezchip	EZchip Semiconductor
 facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
+fanke	FANKE Technology Co., Ltd.
 faraday	Faraday Technology Corporation
 fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
