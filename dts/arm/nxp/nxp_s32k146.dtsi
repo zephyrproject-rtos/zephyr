@@ -34,6 +34,8 @@
 };
 
 /delete-node/ &lpi2c1;
+/delete-node/ &ftm6;
+/delete-node/ &ftm7;
 
 &nvic {
 	arm,num-irq-priority-bits = <4>;
