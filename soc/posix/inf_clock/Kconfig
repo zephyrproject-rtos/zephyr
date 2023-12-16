@@ -35,7 +35,7 @@ config NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS
 	help
 	  This option can be used to provide the native simulator with other MCUs/Cores images which have
 	  been produced by either other Zephyr builds or different OS builds.
-	  So you can, for ex., use this application build produce one core image, and at the same time
+	  So you can, for ex., use this application build to produce one core image, and at the same time
 	  have it produce the final link with the native simulator runner and the other MCU images.
 
 config NATIVE_SIMULATOR_AUTOSTART_MCU
