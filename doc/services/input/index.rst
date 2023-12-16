@@ -96,3 +96,8 @@ Input Event Definitions
 ***********************
 
 .. doxygengroup:: input_events
+
+Analog Axis API Reference
+*************************
+
+.. doxygengroup:: input_analog_axis
