@@ -1,0 +1,51 @@
+# Copyright 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM series Real-Time Timer (RTT)
+
+  Example using slow clock as source:
+
+    rtt: rtt@400e1a30 {
+              compatible = "atmel,sam-rtt";
+              reg = <0x400e1a30 0x20>;
+              clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
+              interrupts = <3 0>;
+              prescaler = <8>;
+              source = <ATMEL_SAM_RTT_SOURCE_SCLK>;
+              status = "okay";
+    };
+
+  Example using RTC clock as source:
+
+    rtt: rtt@400e1a30 {
+              compatible = "atmel,sam-rtt";
+              reg = <0x400e1a30 0x20>;
+              clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
+              interrupts = <3 0>;
+              source = <ATMEL_SAM_RTT_SOURCE_RTC>;
+              status = "okay";
+    };
+
+compatible: "atmel,sam-rtt"
+
+include: base.yaml
+
+properties:
+  prescaler:
+    type: int
+    description: |
+      RTT prescaler value used if clock source is SCLK.
+        Min prescaler value 3
+        Max prescaler value 65536
+
+  source:
+    type: int
+    enum:
+      - 0
+      - 1
+    required: true
+    description: |
+      RTT clock source selection
+        - 0 (ATMEL_SAM_RTT_SOURCE_SCLK): RTT timer frequency = (SCLK frequency / prescaler)
+        - 1 (ATMEL_SAM_RTT_SOURCE_RTC):  RTT timer frequency = 1Hz

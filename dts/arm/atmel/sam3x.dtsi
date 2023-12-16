@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
+#include <zephyr/dt-bindings/counter/atmel-sam-rtt.h>
 
 / {
 	aliases {
@@ -260,6 +261,15 @@
 			interrupts = <2 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
 			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		rtt: rtt@400e1a30 {
+			compatible = "atmel,sam-rtt";
+			reg = <0x400e1a30 0x20>;
+			interrupts = <3 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
+			source = <ATMEL_SAM_RTT_SOURCE_RTC>;
 			status = "disabled";
 		};
 	};
