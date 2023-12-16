@@ -1,0 +1,7 @@
+# Copyright 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SAM_RTT
+	bool "Atmel SAM series Real-Time Timer (RTT) driver"
+	depends on DT_HAS_ATMEL_SAM_RTT_ENABLED
+	default y

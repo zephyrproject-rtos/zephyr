@@ -96,4 +96,6 @@ source "drivers/counter/Kconfig.rpi_pico"
 
 source "drivers/counter/Kconfig.nxp_mrt"
 
+source "drivers/counter/Kconfig.sam_rtt"
+
 endif # COUNTER
