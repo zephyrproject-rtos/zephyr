@@ -4,6 +4,8 @@ zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_INPUT_ANALOG_AXIS input_analog_axis.c)
+zephyr_library_sources_ifdef(CONFIG_INPUT_ANALOG_AXIS_SETTINGS input_analog_axis_settings.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_CAP1203 input_cap1203.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_CST816S input_cst816s.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_ESP32_TOUCH_SENSOR input_esp32_touch_sensor.c)

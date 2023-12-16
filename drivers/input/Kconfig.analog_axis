@@ -1,0 +1,43 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_ANALOG_AXIS
+	bool "ADC based analog axis input driver"
+	default y
+	depends on DT_HAS_ANALOG_AXIS_ENABLED
+	depends on ADC
+	depends on MULTITHREADING
+	help
+	  ADC based analog axis input driver
+
+if INPUT_ANALOG_AXIS
+
+config INPUT_ANALOG_AXIS_THREAD_STACK_SIZE
+	int "Stack size for the analog axis thread"
+	default 762
+	help
+	  Size of the stack used for the analog axis thread.
+
+config INPUT_ANALOG_AXIS_THREAD_PRIORITY
+	int "Priority for the analog axis thread"
+	default 0
+	help
+	  Priority level of the analog axis thread.
+
+config INPUT_ANALOG_AXIS_SETTINGS
+	bool "Analog axis settings support"
+	default y
+	depends on SETTINGS
+	help
+	  Settings support for the analog axis driver, exposes a
+	  analog_axis_calibration_save() function to save the calibration into
+	  settings and load them automatically on startup.
+
+config INPUT_ANALOG_AXIS_SETTINGS_MAX_AXES
+	int "Maximum number of axes supported in the settings."
+	default 8
+	help
+	  Maximum number of axes that can have calibration value saved in
+	  settings.
+
+endif
