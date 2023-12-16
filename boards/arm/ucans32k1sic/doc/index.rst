@@ -49,6 +49,7 @@ GPIO          on-chip     gpio
 LPUART        on-chip     serial
 LPI2C         on-chip     i2c
 LPSPI         on-chip     spi
+FTM           on-chip     pwm
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
@@ -67,15 +68,30 @@ children nodes with the desired pinmux configuration to the singleton node
 LEDs
 ----
 
-The UCANS32K1SIC board has one user RGB LED:
+The UCANS32K1SIC board has one user RGB LED that can be used either as a GPIO
+LED or as a PWM LED.
 
-=======================  ==============  =====
-Devicetree node          Label           Pin
-=======================  ==============  =====
-led0 / led1_red          LED1_RGB_RED    PTD15
-led1 / led1_green        LED1_RGB_GREEN  PTD16
-led2 / led1_blue         LED1_RGB_BLUE   PTD0
-=======================  ==============  =====
+.. table:: RGB LED as GPIO LED
+   :widths: auto
+
+   ===============  ================  ===============  =====
+   Devicetree node  Devicetree alias  Label            Pin
+   ===============  ================  ===============  =====
+   led1_red         led0              LED1_RGB_RED     PTD15
+   led1_green       led1              LED1_RGB_GREEN   PTD16
+   led1_blue        led2              LED1_RGB_BLUE    PTD0
+   ===============  ================  ===============  =====
+
+.. table:: RGB LED as PWM LED
+   :widths: auto
+
+   ===============  ========================  ==================  ================
+   Devicetree node  Devicetree alias          Label               Pin
+   ===============  ========================  ==================  ================
+   led1_red_pwm     pwm-led0 / red-pwm-led    LED1_RGB_RED_PWM    PTD15 / FTM0_CH0
+   led1_green_pwm   pwm-led1 / green-pwm-led  LED1_RGB_GREEN_PWM  PTD16 / FTM0_CH1
+   led1_blue_pwm    pwm-led2 / blue-pwm-led   LED1_RGB_BLUE_PWM   PTD0 / FTM0_CH2
+   ===============  ========================  ==================  ================
 
 The user can control the LEDs in any way. An output of ``0`` illuminates the LED.
 

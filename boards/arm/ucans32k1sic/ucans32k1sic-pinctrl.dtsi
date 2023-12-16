@@ -37,4 +37,27 @@
 			drive-strength = "low";
 		};
 	};
+
+	ftm0_default: ftm0_default {
+		group0 {
+			pinmux = <FTM0_CH0_PTD15>,
+				<FTM0_CH1_PTD16>,
+				<FTM0_CH2_PTD0>;
+			drive-strength = "low";
+		};
+	};
+
+	ftm1_default: ftm1_default {
+		group0 {
+			pinmux = <FTM1_CH1_PTA1>;
+			drive-strength = "low";
+		};
+	};
+
+	ftm2_default: ftm2_default {
+		group0 {
+			pinmux = <FTM2_CH1_PTA0>;
+			drive-strength = "low";
+		};
+	};
 };
