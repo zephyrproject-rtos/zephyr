@@ -391,6 +391,16 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 
 	status = "okay";
+
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a 0 0>;
+
+		clock-source = "MCLK";
+
+		clocks = <&clkctl0 MCUX_AUDIO_MCLK>;
+		clock-names = "mclk";
+	};
 };
 
 /* Disable this node if not using USB and need another MPU region */
