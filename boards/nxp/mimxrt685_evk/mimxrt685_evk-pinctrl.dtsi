@@ -231,6 +231,14 @@
 		};
 	};
 
+	pinmux_codec: pinmux_codec {
+		group0 {
+			pinmux = <MCLK_PIO1_10>;
+			slew-rate = "normal";
+			drive-strength = "high";
+		};
+	};
+
 	pinmux_ctimer2_pwm: pinmux_ctimer2_pwm {
 		group0 {
 			pinmux = <CTIMER2_MATCH0_PIO0_14>;
