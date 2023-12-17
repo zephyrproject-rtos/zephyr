@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Rohit Gujarathi
+# SPDX-License-Identifier: Apache-2.0
+
+config LPM0XX
+	bool "LPM0XX Memory in Pixel display"
+    default y
+    depends on DT_HAS_SHARP_LPM0XX_ENABLED
+	depends on SPI
+	help
+	  Enable driver for JDI Memory in Pixel display series LPM0XXMXXXX
