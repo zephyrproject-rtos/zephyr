@@ -2071,6 +2071,7 @@ def test_projectbuilder_cmake():
 
 def test_projectbuilder_build(mocked_jobserver):
     instance_mock = mock.Mock()
+    instance_mock.testsuite.harness = 'test'
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)

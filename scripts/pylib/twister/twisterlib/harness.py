@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 import logging
 import threading
 import time
+import shutil
 
 from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
@@ -83,6 +84,8 @@ class Harness:
             if self.record:
                 self.record_pattern = re.compile(self.record.get("regex", ""))
 
+    def build(self):
+        pass
 
     def get_testcase_name(self):
         """
@@ -649,6 +652,40 @@ class Test(Harness):
 
 class Ztest(Test):
     pass
+
+
+class Bsim(Harness):
+
+    def build(self):
+        """
+        Copying the application executable to BabbleSim's bin directory enables
+        running multidevice bsim tests after twister has built them.
+        """
+
+        if self.instance is None:
+            return
+
+        original_exe_path: str = os.path.join(self.instance.build_dir, 'zephyr', 'zephyr.exe')
+        if not os.path.exists(original_exe_path):
+            logger.warning('Cannot copy bsim exe - cannot find original executable.')
+            return
+
+        bsim_out_path: str = os.getenv('BSIM_OUT_PATH', '')
+        if not bsim_out_path:
+            logger.warning('Cannot copy bsim exe - BSIM_OUT_PATH not provided.')
+            return
+
+        new_exe_name: str = self.instance.testsuite.harness_config.get('bsim_exe_name', '')
+        if new_exe_name:
+            new_exe_name = f'bs_{self.instance.platform.name}_{new_exe_name}'
+        else:
+            new_exe_name = self.instance.name
+            new_exe_name = new_exe_name.replace(os.path.sep, '_').replace('.', '_')
+            new_exe_name = f'bs_{new_exe_name}'
+
+        new_exe_path: str = os.path.join(bsim_out_path, 'bin', new_exe_name)
+        logger.debug(f'Copying executable from {original_exe_path} to {new_exe_path}')
+        shutil.copy(original_exe_path, new_exe_path)
 
 
 class HarnessImporter:
