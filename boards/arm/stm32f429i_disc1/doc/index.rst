@@ -97,6 +97,8 @@ The Zephyr stm32f429i_disc1 board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | FMC       | on-chip    | memc (SDRAM)                        |
 +-----------+------------+-------------------------------------+
+| OTG_HS    | on-chip    | usbotg_hs                           |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -130,6 +132,9 @@ Default Zephyr Peripheral Mapping:
 - SPI_5_SCK : PF7
 - SPI_5_MISO : PF8
 - SPI_5_MOSI : PF9
+- OTG_HS_ID : PB12
+- OTG_HS_DM : PB14
+- OTG_HS_DP : PB15
 
 System Clock
 ============
@@ -144,6 +149,12 @@ Serial Port
 The STM32F429I-DISC1 Discovery kit has up to 8 UARTs. The Zephyr console output is assigned to UART1.
 The default communication settings are 115200 8N1.
 
+USB Port
+===========
+
+The STM32F429I-DISC1 Discovery kit has a USB FS capable Micro-B port. It is connected to the on-chip
+OTG_HS peripheral, but operates in FS mode only since no HS PHY is present. The board supports device
+and host OTG operation, but only device mode has been tested with Zephyr at this time.
 
 Programming and Debugging
 *************************
