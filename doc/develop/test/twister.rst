@@ -419,7 +419,7 @@ harness: <string>
     Twister to be able to evaluate if a test passes criteria. For example, a
     keyboard harness is set on tests that require keyboard interaction to reach
     verdict on whether a test has passed or failed, however, Twister lack this
-    harness implementation at the momemnt.
+    harness implementation at the moment.
 
     Supported harnesses:
 
@@ -445,6 +445,14 @@ harness: <string>
     - net
     - bluetooth
 
+    Harness ``bsim`` is implemented in limited way - it helps only to copy the
+    final executable (``zephyr.exe``) from build directory to BabbleSim's
+    ``bin`` directory (``${BSIM_OUT_PATH}/bin``). This action is useful to allow
+    BabbleSim's tests to directly run after. By default, the executable file
+    name is (with dots and slashes replaced by underscores):
+    ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
+    This name can be overridden with the ``bsim_exe_name`` option in
+    ``harness_config`` section.
 
 platform_key: <list of platform attributes>
     Often a test needs to only be built and run once to qualify as passing.
@@ -552,6 +560,11 @@ harness_config: <harness configuration options>
 
     robot_test_path: <robot file path> (default empty)
         Specify a path to a file containing a Robot Framework test suite to be run.
+
+    bsim_exe_name: <string>
+        If provided, the executable filename when copying to BabbleSim's bin
+        directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
+        default based on the test path and scenario name.
 
     The following is an example yaml file with a few harness_config options.
 
