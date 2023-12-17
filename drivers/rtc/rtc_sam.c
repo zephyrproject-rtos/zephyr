@@ -48,16 +48,6 @@ struct rtc_sam_data {
 	struct k_sem cr_upd_ack_sem;
 };
 
-static void rtc_sam_disable_wp(void)
-{
-	REG_RTC_WPMR = RTC_SAM_WPMR_DISABLE;
-}
-
-static void rtc_sam_enable_wp(void)
-{
-	REG_RTC_WPMR = RTC_SAM_WPMR_ENABLE;
-}
-
 static bool rtc_sam_validate_tm(const struct rtc_time *timeptr, uint32_t mask)
 {
 	if ((mask & RTC_ALARM_TIME_MASK_SECOND) &&
@@ -139,16 +129,12 @@ static int rtc_sam_set_time(const struct device *dev, const struct rtc_time *tim
 	/* Enable update acknowledge interrupt */
 	regs->RTC_IER = RTC_IER_ACKEN;
 
-	rtc_sam_disable_wp();
-
 	/* Request update */
 	regs->RTC_CR = (RTC_CR_UPDTIM | RTC_CR_UPDCAL);
 
 	/* Await update acknowledge */
 	if (k_sem_take(&data->cr_upd_ack_sem, K_MSEC(1100)) < 0) {
 		regs->RTC_CR = 0;
-
-		rtc_sam_enable_wp();
 
 		/* Disable update acknowledge interrupt */
 		regs->RTC_IDR = RTC_IDR_ACKDIS;
@@ -160,7 +146,6 @@ static int rtc_sam_set_time(const struct device *dev, const struct rtc_time *tim
 	regs->RTC_TIMR = rtc_sam_timr_from_tm(timeptr);
 	regs->RTC_CALR = rtc_sam_calr_from_tm(timeptr);
 	regs->RTC_CR = 0;
-	rtc_sam_enable_wp();
 	regs->RTC_IDR = RTC_IDR_ACKDIS;
 	k_spin_unlock(&data->lock, key);
 	return 0;
@@ -398,13 +383,10 @@ static int rtc_sam_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	irq_disable(config->irq_num);
-	rtc_sam_disable_wp();
 
 	/* Set RTC alarm time */
 	regs->RTC_TIMALR = timalr;
 	regs->RTC_CALALR = calalr;
-
-	rtc_sam_enable_wp();
 
 	/* Clear alarm pending status */
 	regs->RTC_SCCR = RTC_SCCR_ALRCLR;
@@ -584,8 +566,6 @@ static int rtc_sam_set_calibration(const struct device *dev, int32_t calibration
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	rtc_sam_disable_wp();
-
 	mr = regs->RTC_MR;
 
 	if (negative_calibration == true) {
@@ -604,8 +584,6 @@ static int rtc_sam_set_calibration(const struct device *dev, int32_t calibration
 	}
 
 	regs->RTC_MR = mr;
-
-	rtc_sam_enable_wp();
 
 	k_spin_unlock(&data->lock, key);
 
@@ -670,10 +648,9 @@ static int rtc_sam_init(const struct device *dev)
 	const struct rtc_sam_config *config = dev->config;
 	Rtc *regs = config->regs;
 
-	rtc_sam_disable_wp();
+	soc_sysc_disable_write_protection();
 	regs->RTC_MR &= ~(RTC_MR_HRMOD | RTC_MR_PERSIAN);
 	regs->RTC_CR = 0;
-	rtc_sam_enable_wp();
 	regs->RTC_IDR = (RTC_IDR_ACKDIS
 			       | RTC_IDR_ALRDIS
 			       | RTC_IDR_SECDIS
