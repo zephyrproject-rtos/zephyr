@@ -123,6 +123,9 @@ mapping:
               "regex":
                 type: str
                 required: true
+          "bsim_exe_name":
+            type: str
+            required: false
       "min_ram":
         type: int
         required: false
@@ -346,6 +349,9 @@ mapping:
                   "regex":
                     type: str
                     required: true
+              "bsim_exe_name":
+                type: str
+                required: false
           "min_ram":
             type: int
             required: false

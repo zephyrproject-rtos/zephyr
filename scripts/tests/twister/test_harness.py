@@ -14,7 +14,7 @@ import pytest
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
-from twisterlib.harness import Gtest
+from twisterlib.harness import Gtest, Bsim
 from twisterlib.testinstance import TestInstance
 
 GTEST_START_STATE = " RUN      "
@@ -250,3 +250,30 @@ def test_gtest_repeated_run(gtest):
                 ),
             ],
         )
+
+
+def test_bsim_build(monkeypatch, tmp_path):
+    mocked_instance = mock.Mock()
+    build_dir = tmp_path / 'build_dir'
+    os.makedirs(build_dir)
+    mocked_instance.build_dir = str(build_dir)
+    mocked_instance.name = 'platform_name/test/dummy.test'
+    mocked_instance.testsuite.harness_config = {}
+
+    harness = Bsim()
+    harness.instance = mocked_instance
+
+    monkeypatch.setenv('BSIM_OUT_PATH', str(tmp_path))
+    os.makedirs(os.path.join(tmp_path, 'bin'), exist_ok=True)
+    zephyr_exe_path = os.path.join(build_dir, 'zephyr', 'zephyr.exe')
+    os.makedirs(os.path.dirname(zephyr_exe_path), exist_ok=True)
+    with open(zephyr_exe_path, 'w') as file:
+        file.write('TEST_EXE')
+
+    harness.build()
+
+    new_exe_path = os.path.join(tmp_path, 'bin', 'bs_platform_name_test_dummy_test')
+    assert os.path.exists(new_exe_path)
+    with open(new_exe_path, 'r') as file:
+        exe_content = file.read()
+    assert 'TEST_EXE' in exe_content
