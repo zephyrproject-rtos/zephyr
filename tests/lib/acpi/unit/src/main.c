@@ -168,4 +168,58 @@ ZTEST(lib_acpi, test_dmar_foreach_devscope_invalid_devscope_size)
 	zassert_unreachable("Missed assert catch");
 }
 
-ZTEST_SUITE(lib_acpi, NULL, NULL, NULL, NULL, NULL);
+/**
+ * Redefine AcpiGetTable to provide our static table
+ */
+DECLARE_FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetTable, char *, UINT32,
+			struct acpi_table_header **);
+static ACPI_STATUS dmar_custom_get_table(char *Signature, UINT32 Instance,
+				  ACPI_TABLE_HEADER **OutTable)
+{
+	*OutTable = (ACPI_TABLE_HEADER *)&dmar0;
+
+	return AE_OK;
+}
+
+ZTEST(lib_acpi, test_dmar_ioapic_get)
+{
+	union acpi_dmar_id fake_path = {
+		.bits.bus = 0xab,
+		.bits.device = 0xc,
+		.bits.function = 0b101,
+	};
+	uint16_t ioapic;
+	int ret;
+
+	dmar_initialize(&dmar0);
+
+	/* Set IOAPIC device scope */
+	dmar0.unit1.ds1.header.EntryType = ACPI_DMAR_SCOPE_TYPE_IOAPIC;
+
+	/* Set some arbitrary Bus and PCI path */
+	dmar0.unit1.ds1.header.Bus = fake_path.bits.bus;
+	dmar0.unit1.ds1.path0.Device = fake_path.bits.device;
+	dmar0.unit1.ds1.path0.Function = fake_path.bits.function;
+
+	/* Return our dmar0 table */
+	AcpiGetTable_fake.custom_fake = dmar_custom_get_table;
+
+	zassert_equal(AcpiGetTable_fake.call_count, 0);
+
+	ret = acpi_dmar_ioapic_get(&ioapic);
+	zassert_ok(ret, "Failed getting ioapic");
+
+	/* Verify AcpiGetTable called */
+	zassert_equal(AcpiGetTable_fake.call_count, 1);
+
+	zassert_equal(ioapic, fake_path.raw, "Got wrong ioapic");
+
+	TC_PRINT("Found ioapic id 0x%x\n", ioapic);
+}
+
+static void test_before(void *data)
+{
+	ASSERT_FFF_FAKES_LIST(RESET_FAKE);
+}
+
+ZTEST_SUITE(lib_acpi, NULL, NULL, test_before, NULL, NULL);
