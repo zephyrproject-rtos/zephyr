@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Rohit Gujarathi
-  *
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -252,15 +252,13 @@ static void lpm0xx_get_capabilities(const struct device *dev,
 	caps->screen_info = SCREEN_INFO_X_ALIGNMENT_WIDTH;
 }
 
-static int lpm0xx_set_orientation(const struct device *dev,
-				 const enum display_orientation orientation)
+static int lpm0xx_set_orientation(const struct device *dev, const enum display_orientation orientation)
 {
 	LOG_ERR("Unsupported");
 	return -ENOTSUP;
 }
 
-static int lpm0xx_set_pixel_format(const struct device *dev,
-				  const enum display_pixel_format pf)
+static int lpm0xx_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
 	if (pf == PIXEL_FORMAT_RGBx_111) {
 		return 0;
@@ -356,7 +354,4 @@ static struct display_driver_api lpm0xx_driver_api = {
 	.set_orientation = lpm0xx_set_orientation,
 };
 
-DEVICE_DT_INST_DEFINE(0, lpm0xx_init, NULL,
-		      &lpm0xx_driver, NULL,
-		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
-		      &lpm0xx_driver_api);
+DEVICE_DT_INST_DEFINE(0, lpm0xx_init, NULL, &lpm0xx_driver, NULL, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &lpm0xx_driver_api);

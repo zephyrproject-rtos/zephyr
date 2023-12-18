@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config LPM0XX
-	bool "LPM0XX Memory in Pixel display"
+	bool "LPM0XX memory display controller driver"
     default y
     depends on DT_HAS_SHARP_LPM0XX_ENABLED
 	depends on SPI
 	help
-	  Enable driver for JDI Memory in Pixel display series LPM0XXMXXXX
+	  Enable driver for sharp memory display series LPM0XXMXXXX
