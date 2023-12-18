@@ -1734,6 +1734,19 @@ void coap_pendings_clear(struct coap_pending *pendings, size_t len)
 	}
 }
 
+size_t coap_pendings_count(struct coap_pending *pendings, size_t len)
+{
+	struct coap_pending *p = pendings;
+	size_t c = 0;
+
+	for (size_t i = 0; i < len && p; i++, p++) {
+		if (p->timeout) {
+			c++;
+		}
+	}
+	return c;
+}
+
 /* Reordering according to RFC7641 section 3.4 but without timestamp comparison */
 static inline bool is_newer(int v1, int v2)
 {

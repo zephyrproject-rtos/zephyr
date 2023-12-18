@@ -1113,6 +1113,15 @@ void coap_pending_clear(struct coap_pending *pending);
 void coap_pendings_clear(struct coap_pending *pendings, size_t len);
 
 /**
+ * @brief Count number of pending requests.
+ *
+ * @param len Number of elements in array.
+ * @param pendings Array of pending requests.
+ * @return count of elements where timeout is not zero.
+ */
+size_t coap_pendings_count(struct coap_pending *pendings, size_t len);
+
+/**
  * @brief Cancels awaiting for this reply, so it becomes available
  * again. User responsibility to free the memory associated with data.
  *
