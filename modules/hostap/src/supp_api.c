@@ -843,6 +843,9 @@ int supplicant_ap_enable(const struct device *dev,
 		goto out;
 	}
 
+	/* No need to check for existing network to join for SoftAP*/
+	wpa_s->conf->ap_scan = 2;
+
 	ret = wpas_add_and_config_network(wpa_s, params, true);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add and configure network for AP mode: %d", ret);
@@ -857,6 +860,29 @@ out:
 
 int supplicant_ap_disable(const struct device *dev)
 {
-	return wpas_disconnect_network(dev);
+	struct wpa_supplicant *wpa_s;
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	ret = wpas_disconnect_network(dev);
+	if (ret) {
+		wpa_printf(MSG_ERROR, "Failed to disconnect from network");
+		goto out;
+	}
+
+	/* Restore ap_scan to default value */
+	wpa_s->conf->ap_scan = 1;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
 }
 #endif /* CONFIG_AP */
