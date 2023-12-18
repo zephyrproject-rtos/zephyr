@@ -162,6 +162,9 @@ enum img_mgmt_err_code_t {
 
 	/** Setting test to active slot is not allowed */
 	IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED,
+
+	/** Current active slot for image cannot be determined */
+	IMG_MGMT_ERR_ACTIVE_SLOT_NOT_KNOWN,
 };
 
 /**
