@@ -124,7 +124,7 @@ config INIT_PLL0
 config INIT_PLL1
 	bool "Initialize PLL1"
 	default "y"
-	depends on !(SOC_LPC55S06 || FLASH)
+	depends on !(SOC_LPC55S06 || FLASH || BUILD_WITH_TFM)
 	help
 	  In the LPC55XXX Family, this is currently being used to set the
 	  core clock value at it's highest frequency which clocks at 150MHz.
