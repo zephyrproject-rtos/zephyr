@@ -165,6 +165,13 @@ jobs:
           cd ./coverage/reports
           lcov ${{ steps.get-coverage-files.outputs.mergefiles }} -o merged.info --rc lcov_branch_coverage=1
 
+      - name: Upload Merged Coverage Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Merged Coverage Data
+          path: merged.info
+
       - name: Upload coverage to Codecov
         if: always()
         uses: codecov/codecov-action@v3
