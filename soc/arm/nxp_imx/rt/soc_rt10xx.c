@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/cache.h>
 #include <fsl_clock.h>
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
@@ -318,23 +319,8 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 
 static int imxrt_init(void)
 {
-#ifndef CONFIG_IMXRT1XXX_CODE_CACHE
-	/* SystemInit enables code cache, disable it here */
-	SCB_DisableICache();
-#else
-	/* z_arm_init_arch_hw_at_boot() disables code cache if CONFIG_ARCH_CACHE is enabled,
-	 * enable it here.
-	 */
-	SCB_EnableICache();
-#endif
-
-	if (IS_ENABLED(CONFIG_IMXRT1XXX_DATA_CACHE)) {
-		if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
-			SCB_EnableDCache();
-		}
-	} else {
-		SCB_DisableDCache();
-	}
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	/* Initialize system clock */
 	clock_init();
