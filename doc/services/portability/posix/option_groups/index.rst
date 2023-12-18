@@ -164,13 +164,13 @@ process applications.
    :widths: 50,10
 
     confstr(),
-    environ,
+    environ,yes
     errno,yes
-    getenv(),
-    setenv(),
+    getenv(),yes
+    setenv(),yes
     sysconf(),yes
     uname(),yes
-    unsetenv()
+    unsetenv(),yes
 
 .. _posix_option_group_signals:
 
