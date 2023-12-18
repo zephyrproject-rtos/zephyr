@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/slist.h>
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
-
 #include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
 #include <zephyr/devicetree.h>
 
