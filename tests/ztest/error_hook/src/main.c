@@ -424,7 +424,7 @@ ZTEST(fail_assume_in_test, test_to_skip)
 
 void test_main(void)
 {
-	ztest_run_test_suites(NULL);
+	ztest_run_test_suites(NULL, false, 1, 1);
 	/* Can't run ztest_verify_all_test_suites_ran() since some tests are
 	 * skipped by design.
 	 */
