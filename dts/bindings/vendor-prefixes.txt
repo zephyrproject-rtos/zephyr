@@ -434,6 +434,7 @@ microsoft	Microsoft Corporation
 microsys	MicroSys Electronics GmbH
 mikroe	MikroElektronika d.o.o.
 mikrotik	MikroTik
+milkv	Shenzhen MilkV Technology Co., Ltd
 miniand	Miniand Tech
 minix	MINIX Technology Ltd.
 miramems	MiraMEMS Sensing Technology Co., Ltd.
