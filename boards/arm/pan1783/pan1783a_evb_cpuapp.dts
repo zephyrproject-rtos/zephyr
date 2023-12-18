@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpuapp_qkaa.dtsi>
-#include "pan1783_pan1783a_cpuapp_common.dtsi"
+#include "pan1783_cpuapp_common.dtsi"
 
 / {
-	model = "Panasonic PAN1783 EVB (NRF5340) Application";
-	compatible = "panasonic,pan1783-evb-cpuapp";
+	model = "Panasonic PAN1783A EVB (NRF5340) Application";
+	compatible = "panasonic,pan1783a-evb-cpuapp";
 
 	chosen {
 		zephyr,sram = &sram0_image;

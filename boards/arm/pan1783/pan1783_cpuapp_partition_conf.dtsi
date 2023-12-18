@@ -35,4 +35,4 @@
 };
 
 /* Include shared RAM configuration file */
-#include "pan1783_pan1783a_shared_sram_planning_conf.dtsi"
+#include "pan1783_shared_sram_planning_conf.dtsi"
