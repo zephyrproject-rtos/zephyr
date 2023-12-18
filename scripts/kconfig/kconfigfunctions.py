@@ -245,6 +245,33 @@ def _node_array_prop(node, prop, index=0, unit=None):
         return 0
     return node.props[prop].val[int(index)] >> _dt_units_to_scale(unit)
 
+def _node_ph_array_prop(node, prop, index, cell, unit=None):
+    """
+    This function takes a 'node', a property name ('prop'), index ('index') and
+    a cell ('cell') and it will look to see if that node has a property
+    called 'prop' and if that 'prop' is an phandle-array type.
+    Then it will check if that phandle array has a cell matching the given index
+    and then return the value of the cell named 'cell' in this array index.
+    If not found it will return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+    """
+    if not node:
+        return 0
+
+    if prop not in node.props:
+        return 0
+    if node.props[prop].type != "phandle-array":
+        return 0
+    if int(index) >= len(node.props[prop].val):
+        return 0
+    if cell not in node.props[prop].val[int(index)].data.keys():
+        return 0
+    return node.props[prop].val[int(index)].data[cell] >> _dt_units_to_scale(unit)
 
 def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
     """
@@ -559,6 +586,34 @@ def dt_node_array_prop(kconf, name, path, prop, index, unit=None):
         return hex(_node_array_prop(node, prop, index, unit))
 
 
+def dt_node_ph_array_prop(kconf, name, path, prop, index, cell, unit=None):
+    """
+    This function takes a 'path', property name ('prop'), index ('index') and
+    a cell ('cell') and looks for an EDT node at that path.
+    If it finds an EDT node, it will look to see if that node has a property
+    called 'prop' and if that 'prop' is an phandle-array type.
+    Then it will check if that phandle array has a cell matching the given index
+    and ten return the value of the cell named 'cell' in this array index as
+    either a string int or string hex value. If not found we return 0.
+
+    The function will divide the value based on 'unit':
+        None        No division
+        'k' or 'K'  divide by 1024 (1 << 10)
+        'm' or 'M'  divide by 1,048,576 (1 << 20)
+        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return "0"
+    if name == "dt_node_ph_array_prop_int":
+        return str(_node_ph_array_prop(node, prop, index, cell, unit))
+    if name == "dt_node_ph_array_prop_hex":
+        return hex(_node_ph_array_prop(node, prop, index, cell, unit))
+
 def dt_node_str_prop_equals(kconf, _, path, prop, val):
     """
     This function takes a 'path' and property name ('prop') looks for an EDT
@@ -799,6 +854,8 @@ functions = {
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 3),
         "dt_node_array_prop_int": (dt_node_array_prop, 3, 4),
         "dt_node_array_prop_hex": (dt_node_array_prop, 3, 4),
+        "dt_node_ph_array_prop_int": (dt_node_ph_array_prop, 4, 5),
+        "dt_node_ph_array_prop_hex": (dt_node_ph_array_prop, 4, 5),
         "dt_node_str_prop_equals": (dt_node_str_prop_equals, 3, 3),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "dt_node_has_compat": (dt_node_has_compat, 2, 2),
