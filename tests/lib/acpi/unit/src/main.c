@@ -27,42 +27,46 @@ struct DMAR {
 	struct {
 		ACPI_DMAR_HARDWARE_UNIT header;
 
-		ACPI_DMAR_DEVICE_SCOPE unit0_ds0;
-		ACPI_DMAR_PCI_PATH unit0_ds0_path0;
+		struct {
+			ACPI_DMAR_DEVICE_SCOPE header;
+			ACPI_DMAR_PCI_PATH path0;
+		} ds0;
 
-		ACPI_DMAR_DEVICE_SCOPE unit0_ds1;
-		ACPI_DMAR_PCI_PATH unit0_ds1_path0;
+		struct {
+			ACPI_DMAR_DEVICE_SCOPE header;
+			ACPI_DMAR_PCI_PATH path0;
+		} ds1;
 	} unit0;
 
 	/* Hardware Unit 1 */
 	struct {
 		ACPI_DMAR_HARDWARE_UNIT header;
 
-		ACPI_DMAR_DEVICE_SCOPE unit1_ds0;
-		ACPI_DMAR_PCI_PATH unit1_ds0_path0;
+		struct {
+			ACPI_DMAR_DEVICE_SCOPE header;
+			ACPI_DMAR_PCI_PATH path0;
+		} ds0;
 
-		ACPI_DMAR_DEVICE_SCOPE unit1_ds1;
-		ACPI_DMAR_PCI_PATH unit1_ds1_path0;
+		struct {
+			ACPI_DMAR_DEVICE_SCOPE header;
+			ACPI_DMAR_PCI_PATH path0;
+		} ds1;
 	} unit1;
 };
 
-static struct DMAR dmar0 = {
-	.header.Header.Length = sizeof(struct DMAR),
-
-	.unit0.header.Header.Length = sizeof(dmar0.unit0),
-	.unit1.header.Header.Length = sizeof(dmar0.unit1),
-};
+static struct DMAR dmar0;
 
 static void dmar_initialize(struct DMAR *dmar)
 {
-	dmar->unit0.header.Header.Length = sizeof(dmar->unit0);
-	dmar->unit1.header.Header.Length = sizeof(dmar->unit1);
-}
+	dmar->header.Header.Length = sizeof(struct DMAR);
 
-static void dmar_clear(struct DMAR *dmar)
-{
-	dmar->unit0.header.Header.Length = 0;
-	dmar->unit1.header.Header.Length = 0;
+	dmar->unit0.header.Header.Length = sizeof(dmar->unit0);
+	dmar->unit0.ds0.header.Length = sizeof(dmar->unit0.ds0);
+	dmar->unit0.ds1.header.Length = sizeof(dmar->unit0.ds1);
+
+	dmar->unit1.header.Header.Length = sizeof(dmar->unit1);
+	dmar->unit1.ds0.header.Length = sizeof(dmar->unit1.ds0);
+	dmar->unit1.ds1.header.Length = sizeof(dmar->unit1.ds1);
 }
 
 ZTEST(lib_acpi, test_nop)
@@ -76,7 +80,9 @@ static void count_subtables(ACPI_DMAR_HEADER *subtable, void *arg)
 	(*count)++;
 }
 
-ZTEST(lib_acpi, test_dmar_foreach)
+FAKE_VOID_FUNC(subtable_nop, ACPI_DMAR_HEADER *, void *);
+
+ZTEST(lib_acpi, test_dmar_foreach_subtable)
 {
 	uint8_t count = 0;
 
@@ -88,14 +94,21 @@ ZTEST(lib_acpi, test_dmar_foreach)
 	TC_PRINT("Counted %u hardware units\n", count);
 }
 
-ZTEST(lib_acpi, test_dmar_foreach_invalid_unit_size)
+ZTEST(lib_acpi, test_dmar_foreach_subtable_invalid_unit_size_zero)
 {
-	uint8_t count = 0;
+	ACPI_DMAR_HARDWARE_UNIT *hu = &dmar0.unit1.header;
 
-	dmar_clear(&dmar0);
+	dmar_initialize(&dmar0);
+
+	/* Set invalid hardware unit size */
+	hu->Header.Length = 0;
+
 	expect_assert();
 
-	acpi_dmar_foreach_subtable((void *)&dmar0, count_subtables, &count);
+	/* Expect assert, use fake void function as a callback */
+	acpi_dmar_foreach_subtable((void *)&dmar0, subtable_nop, NULL);
+
+	zassert_unreachable("Missed assert catch");
 }
 
 ZTEST_SUITE(lib_acpi, NULL, NULL, NULL, NULL, NULL);
