@@ -152,7 +152,6 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 				}
 			}
 
-			/* Set RX direction and hold CS to continue to receive data. */
 			trans.eDirection = AM_HAL_IOM_RX;
 			trans.bContinue = true;
 			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
@@ -167,14 +166,17 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
 		}
 	} else {
-		/* Set RX direction to receive data and release CS after transmission. */
-		trans.ui64Instr = 0;
-		trans.ui32InstrLen = 0;
-		trans.eDirection = AM_HAL_IOM_RX;
-		trans.bContinue = false;
-		trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
-		trans.ui32NumBytes = ctx->rx_len;
-		ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
+		do {
+			/* Set RX direction to receive data and release CS after transmission. */
+			trans.ui64Instr = 0;
+			trans.ui32InstrLen = 0;
+			trans.eDirection = AM_HAL_IOM_RX;
+			trans.bContinue = false;
+			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
+			trans.ui32NumBytes = ctx->rx_len;
+			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
+			spi_context_update_rx(ctx, 1, ctx->rx_len);
+		} while (ctx->rx_len > 0);
 	}
 
 	spi_context_complete(ctx, dev, 0);
