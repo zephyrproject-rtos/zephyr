@@ -684,6 +684,8 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 	if (rc < 0) {
 		LOG_ERR("Failed to send packet, err %d", errno);
 		rc = -errno;
+	} else {
+		engine_update_tx_time();
 	}
 
 	if (msg->type != COAP_TYPE_CON) {
