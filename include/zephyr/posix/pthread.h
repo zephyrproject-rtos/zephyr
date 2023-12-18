@@ -53,18 +53,6 @@ extern "C" {
 #define PTHREAD_COND_INITIALIZER (-1)
 
 /**
- * @brief Declare a pthread condition variable
- *
- * Declaration API for a pthread condition variable.  This is not a
- * POSIX API, it's provided to better conform with Zephyr's allocation
- * strategies for kernel objects.
- *
- * @param name Symbol name of the condition variable
- * @deprecated Use @c PTHREAD_COND_INITIALIZER instead.
- */
-#define PTHREAD_COND_DEFINE(name) pthread_cond_t name = PTHREAD_COND_INITIALIZER
-
-/**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
@@ -147,18 +135,6 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  * Initialize a mutex with the default mutex attributes.
  */
 #define PTHREAD_MUTEX_INITIALIZER (-1)
-
-/**
- * @brief Declare a pthread mutex
- *
- * Declaration API for a pthread mutex.  This is not a POSIX API, it's
- * provided to better conform with Zephyr's allocation strategies for
- * kernel objects.
- *
- * @param name Symbol name of the mutex
- * @deprecated Use @c PTHREAD_MUTEX_INITIALIZER instead.
- */
-#define PTHREAD_MUTEX_DEFINE(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER
 
 /*
  *  Mutex attributes - type
