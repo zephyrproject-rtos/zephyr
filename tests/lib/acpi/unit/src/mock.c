@@ -15,127 +15,53 @@
 #include <aclocal.h>
 #include <acstruct.h>
 
-void ACPI_INTERNAL_VAR_XFACE AcpiInfo(const char *Format, ...)
-{
-}
+#include <zephyr/fff.h>
 
-ACPI_STATUS AcpiInstallNotifyHandler(ACPI_HANDLE             Device,
-				     UINT32                  HandlerType,
-				     ACPI_NOTIFY_HANDLER     Handler,
-				     void                    *Context)
-{
-	return AE_OK;
-}
+FAKE_VOID_FUNC_VARARG(AcpiInfo, const char *, ...);
 
-void ACPI_INTERNAL_VAR_XFACE AcpiException(const char	          *ModuleName,
-					   UINT32                  LineNumber,
-					   ACPI_STATUS             Status,
-					   const char              *Format,
-					   ...)
-{
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiInstallNotifyHandler, ACPI_HANDLE,
+		UINT32, ACPI_NOTIFY_HANDLER, void *);
 
-ACPI_STATUS ACPI_INIT_FUNCTION AcpiInitializeSubsystem(void)
-{
-	return AE_OK;
-}
+FAKE_VOID_FUNC_VARARG(AcpiException, const char	*, UINT32, ACPI_STATUS,
+		      const char *, ...);
 
-ACPI_STATUS ACPI_INIT_FUNCTION AcpiInitializeTables(ACPI_TABLE_DESC         *InitialTableArray,
-						    UINT32                  InitialTableCount,
-						    BOOLEAN                 AllowResize)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiInitializeSubsystem);
 
-ACPI_STATUS ACPI_INIT_FUNCTION AcpiEnableSubsystem(UINT32                  Flags)
-{
-	return AE_OK;
-}
 
-ACPI_STATUS ACPI_INIT_FUNCTION AcpiInitializeObjects(UINT32                  Flags)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiInitializeTables, ACPI_TABLE_DESC *, UINT32,
+		BOOLEAN);
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiEnableSubsystem, UINT32);
 
-ACPI_STATUS ACPI_INIT_FUNCTION AcpiLoadTables(void)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiInitializeObjects, UINT32);
 
-ACPI_STATUS AcpiNsInternalizeName(const char              *ExternalName,
-				  char                    **ConvertedName)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiLoadTables);
 
-ACPI_STATUS AcpiNsLookup(ACPI_GENERIC_STATE      *ScopeInfo,
-			 char                    *Pathname,
-			 ACPI_OBJECT_TYPE        Type,
-			 ACPI_INTERPRETER_MODE   InterpreterMode,
-			 UINT32                  Flags,
-			 ACPI_WALK_STATE         *WalkState,
-			 ACPI_NAMESPACE_NODE     **ReturnNode)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiNsInternalizeName, const char *, char **);
 
-void AcpiOsFree(void                    *Mem)
-{
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiNsLookup, ACPI_GENERIC_STATE *, char *,
+		ACPI_OBJECT_TYPE, ACPI_INTERPRETER_MODE, UINT32,
+		ACPI_WALK_STATE *, struct acpi_namespace_node **);
 
-ACPI_STATUS AcpiGetHandle(ACPI_HANDLE             Parent,
-			  const char              *Pathname,
-			  ACPI_HANDLE             *RetHandle)
-{
-	return AE_OK;
-}
+FAKE_VOID_FUNC(AcpiOsFree, void *);
 
-ACPI_STATUS AcpiEvaluateObject(ACPI_HANDLE             Handle,
-			       ACPI_STRING             Pathname,
-			       ACPI_OBJECT_LIST        *ExternalParams,
-			       ACPI_BUFFER             *ReturnBuffer)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetHandle, ACPI_HANDLE, const char *,
+		ACPI_HANDLE *);
 
-ACPI_STATUS AcpiGetObjectInfo(ACPI_HANDLE             Handle,
-			      ACPI_DEVICE_INFO        **ReturnBuffer)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiEvaluateObject, ACPI_HANDLE, ACPI_STRING,
+		ACPI_OBJECT_LIST *, ACPI_BUFFER *);
 
-char *AcpiNsGetNormalizedPathname(ACPI_NAMESPACE_NODE     *Node,
-				  BOOLEAN                 NoTrailing)
-{
-	return NULL;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetObjectInfo, ACPI_HANDLE,
+		struct acpi_device_info **);
 
-ACPI_STATUS AcpiGetCurrentResources(ACPI_HANDLE             DeviceHandle,
-				    ACPI_BUFFER             *RetBuffer)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(char *, AcpiNsGetNormalizedPathname, ACPI_NAMESPACE_NODE *,
+		BOOLEAN);
 
-ACPI_STATUS AcpiWalkNamespace(ACPI_OBJECT_TYPE        Type,
-			      ACPI_HANDLE             StartObject,
-			      UINT32                  MaxDepth,
-			      ACPI_WALK_CALLBACK      DescendingCallback,
-			      ACPI_WALK_CALLBACK      AscendingCallback,
-			      void                    *Context,
-			      void                    **ReturnValue)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetCurrentResources, ACPI_HANDLE, ACPI_BUFFER *);
 
-ACPI_STATUS AcpiGetPossibleResources(ACPI_HANDLE             DeviceHandle,
-				     ACPI_BUFFER             *RetBuffer)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiWalkNamespace, ACPI_OBJECT_TYPE, ACPI_HANDLE,
+		UINT32, ACPI_WALK_CALLBACK, ACPI_WALK_CALLBACK, void *, void **);
 
-ACPI_STATUS AcpiGetTable(char                    *Signature,
-			 UINT32                  Instance,
-			 ACPI_TABLE_HEADER       **OutTable)
-{
-	return AE_OK;
-}
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetPossibleResources, ACPI_HANDLE, ACPI_BUFFER *);
+
+FAKE_VALUE_FUNC(ACPI_STATUS, AcpiGetTable, char *, UINT32,
+		struct acpi_table_header **);
