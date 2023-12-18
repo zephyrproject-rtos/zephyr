@@ -76,7 +76,7 @@ int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
 	struct dw_dma_chan_data *chan_data;
 	uint32_t ctrl_hi = 0;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		return -EINVAL;
 	}
 
