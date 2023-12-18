@@ -33,12 +33,9 @@ K_THREAD_STACK_ARRAY_DEFINE(stack_1, 1, 32);
 void *thread_top_exec(void *p1);
 void *thread_top_term(void *p1);
 
-PTHREAD_MUTEX_DEFINE(lock);
-
-PTHREAD_COND_DEFINE(cvar0);
-
-PTHREAD_COND_DEFINE(cvar1);
-
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t cvar0 = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t cvar1 = PTHREAD_COND_INITIALIZER;
 static pthread_barrier_t barrier;
 
 sem_t main_sem;
