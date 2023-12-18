@@ -258,12 +258,16 @@ class Gcovr(CoverageTool):
 
         excludes = Gcovr._interleave_list("-e", self.ignores)
 
+        # Different ifdef-ed implementations of the same function should not be
+        # in conflict treated by GCOVR as separate objects for coverage statistics.
+        mode_options = ["--merge-mode-functions=separate"]
+
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         cmd = ["gcovr", "-r", self.base_dir,
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", str(self.gcov_tool),
                "-e", "tests/*"]
-        cmd += excludes + ["--json", "-o", coveragefile, outdir]
+        cmd += excludes + mode_options + ["--json", "-o", coveragefile, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
         subprocess.call(cmd, stdout=coveragelog)
@@ -271,7 +275,7 @@ class Gcovr(CoverageTool):
         subprocess.call(["gcovr", "-r", self.base_dir, "--gcov-executable",
                          self.gcov_tool, "-f", "tests/ztest", "-e",
                          "tests/ztest/test/*", "--json", "-o", ztestfile,
-                         outdir], stdout=coveragelog)
+                         outdir] + mode_options, stdout=coveragelog)
 
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             files = [coveragefile, ztestfile]
@@ -294,7 +298,7 @@ class Gcovr(CoverageTool):
         }
         gcovr_options = self._flatten_list([report_options[r] for r in self.output_formats.split(',')])
 
-        return subprocess.call(["gcovr", "-r", self.base_dir] + gcovr_options + tracefiles,
+        return subprocess.call(["gcovr", "-r", self.base_dir] + mode_options + gcovr_options + tracefiles,
                                stdout=coveragelog)
 
 
