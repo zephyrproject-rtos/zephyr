@@ -1684,7 +1684,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"[-f]: Force to use this regulatory hint over any other regulatory hints\n"
 		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain,
-		2, 1),
+		1, 1),
 	SHELL_CMD_ARG(mode, NULL, "mode operational setting\n"
 		"This command may be used to set the Wi-Fi device into a specific mode of operation\n"
 		"parameters:"
