@@ -6,11 +6,11 @@
 
 /dts-v1/;
 #include <nordic/nrf5340_cpunet_qkaa.dtsi>
-#include "pan1783_pan1783a_cpunet_common.dtsi"
+#include "pan1783_cpunet_common.dtsi"
 
 / {
-	model = "Panasonic PAN1783A EVB (NRF5340) Network";
-	compatible = "panasonic,pan1783a-evb-cpunet";
+	model = "Panasonic PAN1783 EVB (NRF5340) Network";
+	compatible = "panasonic,pan1783-evb-cpunet";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -20,4 +20,4 @@
 };
 
 /* Include shared RAM configuration file */
-#include "pan1783_pan1783a_shared_sram_planning_conf.dtsi"
+#include "pan1783_shared_sram_planning_conf.dtsi"
