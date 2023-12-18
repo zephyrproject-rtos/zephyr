@@ -24,6 +24,10 @@ config HAS_SEMTECH_SX126X
 	bool
 	select HAS_SEMTECH_RADIO_DRIVERS
 
+config HAS_SEMTECH_LR11XX
+	bool
+	select HAS_SEMTECH_RADIO_DRIVERS
+
 config HAS_SEMTECH_LORAMAC
 	bool "Semtech LoRaMac Stack"
 	depends on HAS_SEMTECH_RADIO_DRIVERS
