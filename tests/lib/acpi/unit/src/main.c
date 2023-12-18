@@ -111,4 +111,61 @@ ZTEST(lib_acpi, test_dmar_foreach_subtable_invalid_unit_size_zero)
 	zassert_unreachable("Missed assert catch");
 }
 
+static void count_devscopes(ACPI_DMAR_DEVICE_SCOPE *devscope, void *arg)
+{
+	uint8_t *count = arg;
+
+	(*count)++;
+}
+
+FAKE_VOID_FUNC(devscope_nop, ACPI_DMAR_DEVICE_SCOPE *, void *);
+
+ZTEST(lib_acpi, test_dmar_foreach_devscope)
+{
+	ACPI_DMAR_HARDWARE_UNIT *hu = &dmar0.unit0.header;
+	uint8_t count = 0;
+
+	dmar_initialize(&dmar0);
+
+	acpi_dmar_foreach_devscope(hu, count_devscopes, &count);
+	zassert_equal(count, 2);
+
+	TC_PRINT("Counted %u device scopes\n", count);
+}
+
+ZTEST(lib_acpi, test_dmar_foreach_devscope_invalid_unit_size)
+{
+	ACPI_DMAR_HARDWARE_UNIT *hu = &dmar0.unit0.header;
+
+	dmar_initialize(&dmar0);
+
+	/* Set invalid hardware unit size */
+	hu->Header.Length = 0;
+
+	expect_assert();
+
+	/* Expect assert, use fake void function as a callback */
+	acpi_dmar_foreach_devscope(hu, devscope_nop, NULL);
+
+	zassert_unreachable("Missed assert catch");
+}
+
+ZTEST(lib_acpi, test_dmar_foreach_devscope_invalid_devscope_size)
+{
+	ACPI_DMAR_HARDWARE_UNIT *hu = &dmar0.unit0.header;
+	ACPI_DMAR_DEVICE_SCOPE *devscope = &dmar0.unit0.ds0.header;
+
+	dmar_initialize(&dmar0);
+
+	/* Set invalid device scope size */
+	devscope->Length = 0;
+
+	expect_assert();
+
+	/* Expect assert, use fake void function as a callback */
+	acpi_dmar_foreach_devscope(hu, devscope_nop, NULL);
+
+	zassert_unreachable("Missed assert catch");
+}
+
 ZTEST_SUITE(lib_acpi, NULL, NULL, NULL, NULL, NULL);
