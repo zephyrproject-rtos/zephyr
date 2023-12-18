@@ -216,27 +216,31 @@ DEVICE_DT_INST_DEFINE(1,
 	    &np_uart_driver_api_1);
 #endif /* CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE */
 
+#if defined(CONFIG_NATIVE_UART_0_ON_OWN_PTY)
 static void auto_attach_cmd_cb(char *argv, int offset)
 {
 	auto_attach_cmd = &argv[offset];
 	auto_attach = true;
 }
+#endif /* CONFIG_NATIVE_UART_0_ON_OWN_PTY */
 
 static void np_add_uart_options(void)
 {
-	if (!IS_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY)) {
+	if (!(IS_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY) ||
+	      IS_ENABLED(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE))) {
 		return;
 	}
 
 	static struct args_struct_t uart_options[] = {
-	{
+	IF_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY, (
+		{
 		.is_switch = true,
 		.option = "attach_uart",
 		.type = 'b',
 		.dest = (void *)&auto_attach,
 		.descript = "Automatically attach to the UART terminal"
-	},
-	{
+		},
+		{
 		.option = "attach_uart_cmd",
 		.name = "\"cmd\"",
 		.type = 's',
@@ -244,7 +248,8 @@ static void np_add_uart_options(void)
 		.descript = "Command used to automatically attach to the terminal (implies "
 			    "auto_attach), by default: "
 			    "'" CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD "'"
-	},
+		},
+	))
 	IF_ENABLED(CONFIG_UART_NATIVE_WAIT_PTS_READY_ENABLE, (
 		{
 		.is_switch = true,
