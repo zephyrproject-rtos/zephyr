@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
+#include <zephyr/arch/cache.h>
 #include <soc.h>
 #include <cmsis_core.h>
 #include <zephyr/logging/log.h>
@@ -226,16 +228,19 @@ static ALWAYS_INLINE void clock_init(void)
 
 void z_arm_platform_init(void)
 {
-	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT) && IS_ENABLED(CONFIG_ICACHE)) {
-		SCB_EnableICache();
-	} else {
-		SCB_DisableICache();
-	}
-	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT) && IS_ENABLED(CONFIG_DCACHE)) {
-		SCB_EnableDCache();
-	} else {
-		SCB_DisableDCache();
-	}
+	/*
+	 * DTCM is enabled by default at reset, therefore we have to disable
+	 * it first to get the caches into a state where then the
+	 * sys_cache*-functions can enable them, if requested by the
+	 * configuration.
+	 */
+	SCB_DisableDCache();
+
+	/*
+	 * Enable the caches only if configured to do so.
+	 */
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock

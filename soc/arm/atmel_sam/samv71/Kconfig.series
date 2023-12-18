@@ -14,6 +14,7 @@ config SOC_SERIES_SAMV71
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
 	select SOC_FAMILY_SAM
+	select INIT_ARCH_HW_AT_BOOT
 	select PLATFORM_SPECIFIC_INIT
 	select ASF
 	select HAS_SWO
