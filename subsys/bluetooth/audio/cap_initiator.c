@@ -13,6 +13,7 @@
 #include "ccid_internal.h"
 #include "csip_internal.h"
 #include "bap_endpoint.h"
+#include "bap_iso.h"
 
 #include <zephyr/logging/log.h>
 
@@ -868,6 +869,66 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	}
 }
 
+void bt_cap_initiator_almost_started(struct bt_cap_stream *cap_stream)
+{
+	int err;
+	struct bt_bap_ep *ep = cap_stream->bap_stream.ep;
+	struct bt_bap_ep *paired_ep = bt_bap_iso_get_paired_ep(ep);
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_cap_stream *next_cap_stream = NULL;
+
+	if (!bt_cap_common_stream_in_active_proc(cap_stream)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (ep->dir == BT_AUDIO_DIR_SINK && paired_ep != NULL) {
+		/* If there are 2 ASEs in the CIS, continue with the one directed to Source ASE,
+		 * in case there will be Write Long used at Receiver Start Ready operation.
+		 */
+
+		if (paired_ep->receiver_ready == false) {
+			/* If the Source ep was placed after the Sink ep in the bt_cap_unicast_audio_start_param,
+			 * let's start the Source ep here.
+			 */
+			bt_bap_stream_start(paired_ep->stream);
+		}
+
+		return;
+	}
+
+	for (size_t i = 0; i < active_proc->proc_cnt; i++) {
+		struct bt_cap_stream *stream = active_proc->proc_param.initiator[i].stream;
+		struct bt_iso_chan *iso_chan = bt_bap_stream_iso_chan_get(&stream->bap_stream);
+
+		if (iso_chan != NULL && iso_chan->state == BT_ISO_STATE_DISCONNECTED) {
+			next_cap_stream = stream;
+			break;
+		}
+	}
+
+	if (next_cap_stream == NULL) {
+		/* The CISes are set up and Receiver Start Ready operations have
+		 * been sent. All that's left is to wait for Streaming notifications
+		 * if they if they haven't arrived yet.
+		 */
+		return;
+	}
+
+	/* Not yet finished, start next */
+	err = bt_bap_stream_start(&next_cap_stream->bap_stream);
+	if (err != 0) {
+		LOG_DBG("Failed to start stream %p: %d", next_cap_stream, err);
+
+		/* End and mark procedure as aborted.
+		 * If we have sent any requests over air, we will abort
+		 * once all sent requests has completed
+		 */
+		bt_cap_common_abort_proc(next_cap_stream->bap_stream.conn, err);
+		cap_initiator_unicast_audio_proc_complete();
+	}
+}
+
 void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
@@ -891,25 +952,7 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 	 * only do this one by one due to a restriction in the ISO layer
 	 * (maximum 1 outstanding ISO connection request at any one time).
 	 */
-	if (!bt_cap_common_proc_is_done()) {
-		struct bt_cap_stream *next_cap_stream =
-			active_proc->proc_param.initiator[active_proc->proc_done_cnt].stream;
-		struct bt_bap_stream *bap_stream = &next_cap_stream->bap_stream;
-		int err;
-
-		/* Not yet finished, start next */
-		err = bt_bap_stream_start(bap_stream);
-		if (err != 0) {
-			LOG_DBG("Failed to start stream %p: %d", next_cap_stream, err);
-
-			/* End and mark procedure as aborted.
-			 * If we have sent any requests over air, we will abort
-			 * once all sent requests has completed
-			 */
-			bt_cap_common_abort_proc(bap_stream->conn, err);
-			cap_initiator_unicast_audio_proc_complete();
-		}
-	} else {
+	if (bt_cap_common_proc_is_done()) {
 		cap_initiator_unicast_audio_proc_complete();
 	}
 }

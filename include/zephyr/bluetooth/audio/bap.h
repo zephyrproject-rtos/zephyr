@@ -532,6 +532,17 @@ struct bt_bap_stream_ops {
 	/**
 	 * @brief Stream started callback
 	 *
+	 * Almost-started callback is called whenever an Audio Stream has been started
+	 * in terms of the CIS Establish and sending Receiver Start Ready to the remote
+	 * device, but the Streaming notification is still awaited.
+	 *
+	 * @param stream Stream object that has been started.
+	 */
+	void (*almost_started)(struct bt_bap_stream *stream);
+
+	/**
+	 * @brief Stream started callback
+	 *
 	 * Started callback is called whenever an Audio Stream has been started
 	 * and will be usable for streaming.
 	 *

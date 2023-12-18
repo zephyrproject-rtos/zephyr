@@ -69,6 +69,24 @@ static void cap_stream_enabled_cb(struct bt_bap_stream *bap_stream)
 	}
 }
 
+static void cap_stream_almost_started_cb(struct bt_bap_stream *bap_stream)
+{
+	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
+							struct bt_cap_stream,
+							bap_stream);
+	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	LOG_DBG("%p", cap_stream);
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR)) {
+		bt_cap_initiator_almost_started(cap_stream);
+	}
+
+	if (ops != NULL && ops->almost_started != NULL) {
+		ops->almost_started(bap_stream);
+	}
+}
+
 static void cap_stream_metadata_updated_cb(struct bt_bap_stream *bap_stream)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
@@ -191,6 +209,7 @@ static struct bt_bap_stream_ops bap_stream_ops = {
 	.disabled = cap_stream_disabled_cb,
 	.released = cap_stream_released_cb,
 #endif /* CONFIG_BT_BAP_UNICAST */
+	.almost_started = cap_stream_almost_started_cb,
 	.started = cap_stream_started_cb,
 	.stopped = cap_stream_stopped_cb,
 #if defined(CONFIG_BT_AUDIO_RX)

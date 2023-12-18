@@ -73,6 +73,11 @@ static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 static struct bt_bap_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 
+struct unicast_client_busy_cb {
+	void (*func)(void *user_data);
+	void *user_data;
+};
+
 static struct unicast_client {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	struct bt_bap_unicast_client_ep snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
@@ -98,6 +103,7 @@ static struct unicast_client {
 	/* Discovery parameters */
 	enum bt_audio_dir dir;
 	bool busy;
+	struct unicast_client_busy_cb busy_released_cb;
 	union {
 		struct bt_gatt_read_params read_params;
 		struct bt_gatt_discover_params disc_params;
@@ -139,6 +145,7 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 		return -EINVAL;
 	}
 
+	struct bt_bap_stream_ops *ops;
 	struct bt_ascs_start_op *req;
 	struct net_buf_simple *buf;
 	int err;
@@ -165,6 +172,19 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 		LOG_DBG("bt_bap_unicast_client_ep_send failed: %d", err);
 
 		return err;
+	}
+
+	ops = ep->stream->ops;
+	if (ops != NULL && ops->almost_started != NULL) {
+		struct unicast_client *client = &uni_cli_insts[bt_conn_index(ep->stream->conn)];
+
+		if (client->busy == false) {
+			ops->almost_started(ep->stream);
+		} else {
+			/* Write Long was used, wait for response */
+			client->busy_released_cb.func = (void (*)(void *))ops->almost_started;
+			client->busy_released_cb.user_data = ep->stream;
+		}
 	}
 
 	return 0;
@@ -322,6 +342,11 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 			/* TBD: Should we release the stream then? */
 			ep->receiver_ready = false;
 		}
+	}
+
+	if (ep->dir == BT_AUDIO_DIR_SINK && stream->ops != NULL &&
+	    stream->ops->almost_started != NULL) {
+		stream->ops->almost_started(stream);
 	}
 }
 
@@ -1977,6 +2002,13 @@ static void gatt_write_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_writ
 	memset(params, 0, sizeof(*params));
 	reset_att_buf(client);
 	client->busy = false;
+
+	if (client->busy_released_cb.func != NULL) {
+		struct unicast_client_busy_cb cb = client->busy_released_cb;
+
+		memset(&client->busy_released_cb, 0, sizeof(client->busy_released_cb));
+		cb.func(cb.user_data);
+	}
 
 	/* TBD: Should we do anything in case of error here? */
 }
