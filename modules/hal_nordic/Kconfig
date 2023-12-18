@@ -196,6 +196,12 @@ config NRF_802154_ENCRYPTION
 	bool "nRF 802.15.4 AES-CCM* authentication & encryption"
 	depends on !CRYPTO_NRF_ECB
 
+config NRF_802154_SECURITY_KEY_STORAGE_SIZE
+	int "nRF 802.15.4 security key storage size"
+	default 3
+	help
+	  Number of encryption keys that the nRF 802.15.4 Radio Driver can store simultaneously.
+
 config NRF_802154_CARRIER_FUNCTIONS
 	bool "nRF 802.15.4 carrier functions"
 	help
