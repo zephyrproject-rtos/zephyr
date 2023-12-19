@@ -387,22 +387,8 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 static bool wait_for_beacon(bt_le_scan_cb_t scan_cb, uint16_t wait,
 			    bool (*process_cb)(const uint8_t *net_id, void *ctx), void *ctx)
 {
-	struct bt_le_scan_param scan_param = {
-			.type       = BT_HCI_LE_SCAN_PASSIVE,
-			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = BT_MESH_ADV_SCAN_UNIT(1000),
-			.window     = BT_MESH_ADV_SCAN_UNIT(1000)
-	};
-	bool received = false;
-	int err;
-
 	beacon.process_cb = process_cb;
 	beacon.user_ctx = ctx;
-
-	err = bt_le_scan_start(&scan_param, scan_cb);
-	if (err && err != -EALREADY) {
-		FAIL("starting scan failed (err %d)", err);
-	}
 
 	/* Listen to beacons ONLY for one beacon interval.
 	 * Tests start quite often the waiting for the next beacon after
@@ -413,17 +399,7 @@ static bool wait_for_beacon(bt_le_scan_cb_t scan_cb, uint16_t wait,
 	 * waiting time (BEACON_INTERVAL + 1) to guarantee that beacon comes
 	 * before timer expiration.
 	 */
-	err = k_sem_take(&observer_sem, K_SECONDS(wait));
-	if (!err) {
-		received = true;
-	} else {
-		LOG_WRN("Didn't receive beacon in time (err: %d)", err);
-	}
-
-	err = bt_le_scan_stop();
-	if (err && err != -EALREADY) {
-		FAIL("stopping scan failed (err %d)", err);
-	}
+	bool received = !bt_mesh_test_wait_for_packet(scan_cb, &observer_sem, wait);
 
 	/* Sleep a little to get to the next beacon interval. Otherwise, calling this function
 	 * again will catch the old beacon. This happens due to a known bug in legacy advertiser,
