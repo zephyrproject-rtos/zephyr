@@ -151,6 +151,11 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x800>;
 		};
 
+		pinctrl: pin-controller@40010000 {
+			compatible = "ambiq,apollo3-pinctrl";
+			reg = <0x40010000 0x800>;
+		};
+
 		wdt0: watchdog@40024000 {
 			compatible = "ambiq,watchdog";
 			reg = <0x40024000 0x400>;
