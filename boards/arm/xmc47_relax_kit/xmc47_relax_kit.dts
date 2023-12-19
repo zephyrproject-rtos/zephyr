@@ -48,7 +48,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &psram1;
+		zephyr,sram = &dsram_joined;
 		zephyr,flash = &flash0;
 		zephyr,console = &usic0ch0;
 		zephyr,shell-uart = &usic0ch0;
@@ -58,14 +58,9 @@
 
 };
 
-&dsram1 {
+&psram1 {
 	compatible = "zephyr,memory-region", "mmio-sram";
-	zephyr,memory-region = "DSRAM1";
-};
-
-&dsram2 {
-	compatible = "zephyr,memory-region", "mmio-sram";
-	zephyr,memory-region = "DSRAM2";
+	zephyr,memory-region = "PSRAM1";
 };
 
 &cpu0 {
