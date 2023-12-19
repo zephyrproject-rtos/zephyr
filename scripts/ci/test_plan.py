@@ -95,7 +95,7 @@ class Tag:
 
 class Filters:
     def __init__(self, modified_files, ignore_path, alt_tags, testsuite_root,
-                 pull_request=False, platforms=[], detailed_test_id=True, tc_roots_th=20):
+                 pull_request=False, platforms=[], detailed_test_id=True, quarantine_list=None, tc_roots_th=20):
         self.modified_files = modified_files
         self.testsuite_root = testsuite_root
         self.resolved_files = []
@@ -108,6 +108,7 @@ class Filters:
         self.detailed_test_id = detailed_test_id
         self.ignore_path = ignore_path
         self.tag_cfg_file = alt_tags
+        self.quarantine_list = quarantine_list
         self.tc_roots_th = tc_roots_th
 
     def process(self):
@@ -129,6 +130,9 @@ class Filters:
                 cmd+=["-T", root]
         if integration:
             cmd.append("--integration")
+        if self.quarantine_list:
+            for q in self.quarantine_list:
+                cmd += ["--quarantine-list", q]
 
         logging.info(" ".join(cmd))
         _ = subprocess.call(cmd)
@@ -414,6 +418,12 @@ def parse_args():
                 "testcase.yaml files under here will be processed. May be "
                 "called multiple times. Defaults to the 'samples/' and "
                 "'tests/' directories at the base of the Zephyr tree.")
+    parser.add_argument(
+            "--quarantine-list", action="append", metavar="FILENAME",
+            help="Load list of test scenarios under quarantine. The entries in "
+                "the file need to correspond to the test scenarios names as in "
+                "corresponding tests .yaml files. These scenarios "
+                "will be skipped with quarantine as the reason.")
 
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
@@ -442,7 +452,7 @@ if __name__ == "__main__":
         print("=========")
 
     f = Filters(files, args.ignore_path, args.alt_tags, args.testsuite_root,
-                args.pull_request, args.platform, args.detailed_test_id,
+                args.pull_request, args.platform, args.detailed_test_id, args.quarantine_list,
                 args.testcase_roots_threshold)
     f.process()
 
