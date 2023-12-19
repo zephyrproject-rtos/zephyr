@@ -450,7 +450,7 @@ static void icmpv4_send_echo_req(void)
 		zassert_true(false, "EchoRequest packet prep failed");
 	}
 
-	if (net_ipv4_input(pkt)) {
+	if (net_ipv4_input(pkt, false)) {
 		net_pkt_unref(pkt);
 		zassert_true(false, "Failed to send");
 	}
@@ -467,7 +467,7 @@ static void icmpv4_send_echo_rep(void)
 		zassert_true(false, "EchoReply packet prep failed");
 	}
 
-	if (net_ipv4_input(pkt)) {
+	if (net_ipv4_input(pkt, false)) {
 		net_pkt_unref(pkt);
 		zassert_true(false, "Failed to send");
 	}
@@ -485,7 +485,7 @@ ZTEST(net_icmpv4, test_icmpv4_send_echo_req_opt)
 		zassert_true(false, "EchoRequest with opts packet prep failed");
 	}
 
-	if (net_ipv4_input(pkt)) {
+	if (net_ipv4_input(pkt, false)) {
 		net_pkt_unref(pkt);
 		zassert_true(false, "Failed to send");
 	}
@@ -501,7 +501,7 @@ ZTEST(net_icmpv4, test_send_echo_req_bad_opt)
 			     "EchoRequest with bad opts packet prep failed");
 	}
 
-	if (net_ipv4_input(pkt)) {
+	if (net_ipv4_input(pkt, false)) {
 		net_pkt_unref(pkt);
 	}
 }
