@@ -357,11 +357,31 @@ static int esp32_wifi_connect(const struct device *dev,
 			    struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
+	wifi_mode_t mode;
 	int ret;
 
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED) {
 		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, -1);
 		return -EALREADY;
+	}
+
+	ret = esp_wifi_get_mode(&mode);
+	if (ret) {
+		LOG_ERR("Failed to get Wi-Fi mode (%d)", ret);
+		return -EAGAIN;
+	}
+
+	if (mode != ESP32_WIFI_MODE_STA) {
+		ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+		if (ret) {
+			LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+			return -EAGAIN;
+		}
+		ret = esp_wifi_start();
+		if (ret) {
+			LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
+			return -EAGAIN;
+		}
 	}
 
 	if (data->state != ESP32_STA_STARTED) {
@@ -429,12 +449,6 @@ static int esp32_wifi_connect(const struct device *dev,
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
-		return -EINVAL;
-	}
-
-	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
-	if (ret) {
-		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
 		return -EINVAL;
 	}
 
@@ -544,11 +558,11 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 
 static int esp32_wifi_ap_disable(const struct device *dev)
 {
-	esp_err_t ret = esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
+	int err = 0;
 
-	ret |= esp_wifi_start();
-	if (ret != ESP_OK) {
-		LOG_ERR("Failed to disable Wi-Fi AP mode");
+	err = esp_wifi_stop();
+	if (err) {
+		LOG_ERR("Failed to disable Wi-Fi AP mode: (%d)", err);
 		return -EAGAIN;
 	}
 
