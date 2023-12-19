@@ -69,7 +69,7 @@ static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 			 * "guard" installed in this case, instead what's
 			 * happening is that the stack pointer is crashing
 			 * into the privilege mode stack buffer which
-			 * immediately precededs it.
+			 * immediately precedes it.
 			 */
 			guard_end = thread->stack_info.start;
 			guard_start = (uint32_t)thread->stack_obj;
