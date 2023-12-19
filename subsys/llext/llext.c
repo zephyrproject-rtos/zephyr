@@ -650,20 +650,16 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 							name, rel.r_offset, shdr.sh_link);
 						return -ENODATA;
 					}
-				} else if (ELF_ST_TYPE(sym.st_info) == STT_SECTION ||
-					   ELF_ST_TYPE(sym.st_info) == STT_FUNC) {
+				} else if (sym.st_shndx == SHN_ABS) {
+					/* symbol is absolute */
+					link_addr = sym.st_value + *((uintptr_t *)op_loc);
+				} else {
 					/* Current relocation location holds an offset into
 					 * the section
 					 */
 					link_addr = (uintptr_t)ext->mem[ldr->sect_map[sym.st_shndx]]
 						+ sym.st_value
 						+ *((uintptr_t *)op_loc);
-
-					LOG_INF("found section symbol %s addr 0x%lx",
-						name, link_addr);
-				} else {
-					/* Nothing to relocate here */
-					continue;
 				}
 
 				LOG_INF("relocating (linking) symbol %s type %d "
