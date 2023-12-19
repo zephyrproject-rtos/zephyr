@@ -1,0 +1,6 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MILKV_DUO
+	select SOC_CV1800B if BOARD_MILKV_DUO_CV1800B_C906_1
+	select SOC_SG2002 if BOARD_MILKV_DUO_SG2002_C906_1
