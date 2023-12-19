@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -64,7 +65,8 @@ static struct bt_bap_broadcast_assistant_cb *broadcast_assistant_cbs;
 static struct bap_broadcast_assistant_instance broadcast_assistant;
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
-NET_BUF_SIMPLE_DEFINE_STATIC(cp_buf, CONFIG_BT_L2CAP_TX_MTU);
+#define CP_BUF_SIZE MAX(CONFIG_BT_L2CAP_TX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN)
+NET_BUF_SIMPLE_DEFINE_STATIC(cp_buf, CP_BUF_SIZE);
 
 static int16_t lookup_index_by_handle(uint16_t handle)
 {
@@ -973,6 +975,7 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 	broadcast_assistant.read_params.single.handle =
 		broadcast_assistant.recv_state_handles[idx];
 
+	/* we do not need a semaphore for the read_params long read I think */
 	err = bt_gatt_read(conn, &broadcast_assistant.read_params);
 	if (err != 0) {
 		(void)memset(&broadcast_assistant.read_params, 0,
