@@ -1,0 +1,118 @@
+# Copyright (c) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+description: XMC 4XXX Ethernet
+
+compatible: "infineon,xmc4xxx-ethernet"
+
+include:
+  - name: ethernet-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  phy-connection-type:
+    required: true
+
+  rxd0-port-ctrl:
+    required: true
+    type: string
+    description: Receive bit 0 (rxd0) signal GPIO connection. Used for RMII and MII interfaces.
+    enum:
+      - "P2_2"
+      - "P0_2"
+      - "P14_8"
+      - "P5_0"
+
+  rxd1-port-ctrl:
+    required: true
+    type: string
+    description: Receive bit 1 (rxd1) signal GPIO connection. Used for RMII and MII interfaces.
+    enum:
+      - "P2_3"
+      - "P0_3"
+      - "P14_9"
+      - "P5_1"
+
+  rxd2-port-ctrl:
+    type: string
+    description: Receive bit 2 (rxd2) signal GPIO connection. Only used for MII interface.
+    enum:
+      - "P5_8"
+      - "P6_4"
+
+  rxd3-port-ctrl:
+    type: string
+    description: Receive bit 2 (rxd2) signal GPIO connection. Only used for MII interface.
+    enum:
+      - "P5_9"
+      - "P6_3"
+
+  rmii-rx-clk-port-ctrl:
+    required: true
+    description: |
+      If the RMII interface is used it connects GPIO to the rmii-clk signal.
+      Otherwise, if the MII interface is used, then it connects to the Receive clock (rx-clk)
+      signal.
+    type: string
+    enum:
+      - "P2_1"
+      - "P0_0"
+      - "P15_8"
+      - "P6_5"
+
+  crs-rx-dv-port-ctrl:
+    required: true
+    description: |
+      If the RMII interface is used it connects GPIO to the Carrier Sense Data Valid (crs-dv)
+      signal. Otherwise, if the MII interface is used, it connects to the
+      Receive Data Valid (rx-dv) signal.
+    type: string
+    enum:
+      - "P2_5"
+      - "P0_1"
+      - "P15_9"
+      - "P5_2"
+
+  crs-port-ctrl:
+    description: Carrier Sense (crs) signal GPIO connection. Only used for the MII interface.
+    type: string
+    enum:
+      - "P5_11"
+      - "unused1"
+      - "unused2"
+      - "P5_4"
+
+  rxer-port-ctrl:
+    required: true
+    description: Receive Error (rxer) signal GPIO connection. Used for MII and RMII interfaces.
+    type: string
+    enum:
+      - "P2_4"
+      - "P0_11"
+      - "unused1"
+      - "P5_3"
+
+  col-port-ctrl:
+    description: Collision (col) signal GPIO connection. Only used for MII interface.
+    type: string
+    enum:
+      - "P2_15"
+      - "unused1"
+      - "unused2"
+      - "P5_5"
+
+  tx-clk-port-ctrl:
+    description: Transmit clock (tx-clk) GPIO connection. Only used for MII interface.
+    type: string
+    enum:
+      - "P5_10"
+      - "P6_6"
