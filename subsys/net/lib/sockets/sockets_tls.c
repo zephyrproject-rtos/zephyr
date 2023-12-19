@@ -202,6 +202,8 @@ __net_socket struct tls_context {
 		uint32_t dtls_handshake_timeout_max;
 
 		struct tls_dtls_cid dtls_cid;
+
+		bool dtls_handshake_on_connect;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 	} options;
 
@@ -465,6 +467,7 @@ static struct tls_context *tls_alloc(void)
 			MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MAX;
 		tls->options.dtls_cid.cid_len = 0;
 		tls->options.dtls_cid.enabled = false;
+		tls->options.dtls_handshake_on_connect = true;
 #endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 		mbedtls_x509_crt_init(&tls->ca_chain);
@@ -1822,6 +1825,37 @@ static int tls_opt_dtls_connection_id_status_get(struct tls_context *context,
 #endif
 }
 
+static int tls_opt_dtls_handshake_on_connect_set(struct tls_context *context,
+						 const void *optval,
+						 socklen_t optlen)
+{
+	int *val = (int *)optval;
+
+	if (!optval) {
+		return -EINVAL;
+	}
+
+	if (sizeof(int) != optlen) {
+		return -EINVAL;
+	}
+
+	context->options.dtls_handshake_on_connect = (bool)*val;
+
+	return 0;
+}
+
+static int tls_opt_dtls_handshake_on_connect_get(struct tls_context *context,
+						 void *optval,
+						 socklen_t *optlen)
+{
+	if (*optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*(int *)optval = context->options.dtls_handshake_on_connect;
+
+	return 0;
+}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int tls_opt_alpn_list_get(struct tls_context *context,
@@ -2099,8 +2133,17 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		(void)zsock_fcntl(ctx->sock, F_SETFL, sock_flags);
 	}
 
-	if (ctx->type == SOCK_STREAM) {
-		/* Do the handshake for TLS, not DTLS. */
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (ctx->type == SOCK_DGRAM) {
+		dtls_peer_address_set(ctx, addr, addrlen);
+	}
+#endif
+
+	if (ctx->type == SOCK_STREAM
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	    || (ctx->type == SOCK_DGRAM && ctx->options.dtls_handshake_on_connect)
+#endif
+	    ) {
 		ret = tls_mbedtls_init(ctx, false);
 		if (ret < 0) {
 			goto error;
@@ -2120,14 +2163,6 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		}
 
 		tls_session_store(ctx, addr, addrlen);
-	} else {
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		/* Just store the address. */
-		dtls_peer_address_set(ctx, addr, addrlen);
-#else
-		ret = -ENOTSUP;
-		goto error;
-#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 	}
 
 	return 0;
@@ -3359,6 +3394,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_dtls_peer_connection_id_value_get(ctx, optval,
 								optlen);
 		break;
+
+	case TLS_DTLS_HANDSHAKE_ON_CONNECT:
+		err = tls_opt_dtls_handshake_on_connect_get(ctx, optval, optlen);
+		break;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 	default:
@@ -3470,6 +3509,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 
 	case TLS_DTLS_CID_VALUE:
 		err = tls_opt_dtls_connection_id_value_set(ctx, optval, optlen);
+		break;
+
+	case TLS_DTLS_HANDSHAKE_ON_CONNECT:
+		err = tls_opt_dtls_handshake_on_connect_set(ctx, optval, optlen);
 		break;
 
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
