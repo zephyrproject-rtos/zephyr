@@ -448,10 +448,13 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 	}
 
 	if (msg.data) {
-		if (msg.event == EVENT_AUTH) {
-			union wpa_event_data *data = msg.data;
+		union wpa_event_data *data = msg.data;
 
+		/* Free up deep copied data */
+		if (msg.event == EVENT_AUTH) {
 			os_free((char *)data->auth.ies);
+		} else if (msg.event == EVENT_RX_MGMT) {
+			os_free((char *)data->rx_mgmt.frame);
 		}
 
 		os_free(msg.data);
