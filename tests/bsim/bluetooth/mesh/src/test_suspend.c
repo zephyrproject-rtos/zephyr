@@ -6,10 +6,10 @@
  */
 
 #include "mesh_test.h"
+#include "gatt_common.h"
 
 #include <mesh/access.h>
 #include <mesh/net.h>
-#include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_suspend, LOG_LEVEL_INF);
@@ -42,7 +42,10 @@ static const struct bt_mesh_test_cfg tester_cfg = {
 	.dev_key = {0x02},
 };
 
-static struct bt_mesh_prov prov;
+static uint8_t test_prov_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0xaa };
+static struct bt_mesh_prov prov = {
+		.uuid = test_prov_uuid,
+	};
 static struct k_sem publish_sem;
 static enum dut_mesh_status dut_status;
 
@@ -186,6 +189,91 @@ struct bt_mesh_cfg_cli_mod_pub pub_params = {
 	.transmit = 0,
 };
 
+extern const struct bt_mesh_comp comp;
+/* For legacy adv, pb-gatt advs are sent with a 1000ms interval. For ext adv, they are sent
+ * with a 100ms interval.
+ */
+static struct bt_mesh_test_gatt gatt_param = {
+#if defined(CONFIG_BT_EXT_ADV)
+	/* (total transmit duration) / (transmit interval) */
+	.transmits = 1500 / 100,
+	.interval = 100,
+#else
+	.transmits = 2000 / 1000,
+	.interval = 1000,
+#endif
+	.service = MESH_SERVICE_PROVISIONING,
+};
+
+static bool gatt_check_rx_count(uint8_t transmit)
+{
+	static int cnt;
+
+	LOG_DBG("rx: cnt(%d)", cnt);
+	cnt++;
+
+	if (cnt >= transmit) {
+		cnt = 0;
+		return true;
+	}
+
+	return false;
+}
+
+static void gatt_scan_cb(const bt_addr_le_t *addr, int8_t rssi,
+			  uint8_t adv_type, struct net_buf_simple *buf)
+{
+	if (adv_type != BT_GAP_ADV_TYPE_ADV_IND) {
+		return;
+	}
+
+	/* Ensure that no message is received while Mesh is suspended or disabled. */
+	ASSERT_FALSE_MSG(dut_status == DUT_SUSPENDED, "Received adv while Mesh is suspended.");
+
+	bt_mesh_test_parse_mesh_gatt_preamble(buf);
+
+	if (gatt_param.service == MESH_SERVICE_PROVISIONING) {
+		LOG_DBG("Parsing pb_gatt adv");
+		bt_mesh_test_parse_mesh_pb_gatt_service(buf);
+	} else {
+		LOG_DBG("Parsing proxy adv");
+		bt_mesh_test_parse_mesh_proxy_service(buf);
+	}
+
+	if (gatt_check_rx_count(gatt_param.transmits)) {
+		LOG_DBG("rx completed, stopping scan...");
+		k_sem_give(&publish_sem);
+	}
+}
+
+static void suspend_state_change_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+			struct net_buf_simple *buf)
+{
+	uint8_t length;
+
+	if (adv_type != BT_GAP_ADV_TYPE_ADV_NONCONN_IND) {
+		return;
+	}
+
+	length = net_buf_simple_pull_u8(buf);
+	ASSERT_EQUAL(buf->len, length);
+	ASSERT_EQUAL(length, sizeof(uint8_t) + sizeof(enum dut_mesh_status));
+	ASSERT_EQUAL(BT_DATA_MESH_MESSAGE, net_buf_simple_pull_u8(buf));
+
+	enum dut_mesh_status *msg_status =
+		net_buf_simple_pull_mem(buf, sizeof(enum dut_mesh_status));
+
+	if ((*msg_status == DUT_RUNNING) || (*msg_status == DUT_SUSPENDED)) {
+		dut_status = *msg_status;
+	} else {
+		FAIL("Received unexpected data");
+	}
+
+	LOG_DBG("Received %d from DUT, setting status to %s",
+		*msg_status, (dut_status == DUT_SUSPENDED) ? "true" : "false");
+	k_sem_give(&publish_sem);
+}
+
 static void dut_pub_common(bool disable_bt)
 {
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
@@ -230,6 +318,49 @@ static void dut_pub_common(bool disable_bt)
 	ASSERT_OK(bt_mesh_suspend());
 }
 
+static void dut_gatt_common(bool disable_bt)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &comp);
+	ASSERT_OK_MSG(bt_mesh_prov_enable(BT_MESH_PROV_GATT), "Failed to enable GATT provisioner");
+	dut_status = DUT_RUNNING;
+	/* Let the Tester observe pb gatt advertisements before provisioning. The node should
+	 * advertise pb gatt service with 100 msec (ext adv) or 1000msec (legacy adv) interval.
+	 */
+	k_sleep(K_MSEC(1800));
+
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, dut_cfg.addr, dut_cfg.dev_key));
+
+	/* Let the Tester observe proxy advertisements */
+	k_sleep(K_MSEC(6500));
+
+	/* Send a mesh message to notify Tester that DUT is about to be suspended. */
+	dut_status = DUT_SUSPENDED;
+	bt_mesh_test_send_over_adv(&dut_status, sizeof(enum dut_mesh_status));
+	k_sleep(K_MSEC(150));
+
+	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
+
+	if (disable_bt) {
+		ASSERT_OK_MSG(bt_disable(), "Failed to disable Bluetooth.");
+	}
+
+	k_sleep(K_SECONDS(SUSPEND_DURATION));
+
+	if (disable_bt) {
+		ASSERT_OK_MSG(bt_enable(NULL), "Failed to enable Bluetooth.");
+	}
+
+	ASSERT_OK_MSG(bt_mesh_resume(), "Failed to resume Mesh.");
+
+	/* Send a mesh message to notify Tester that device is resumed */
+	dut_status = DUT_RUNNING;
+	bt_mesh_test_send_over_adv(&dut_status, sizeof(enum dut_mesh_status));
+
+	/* Let the Tester observe that proxy advertisement resumes */
+	k_sleep(K_MSEC(6000));
+}
+
 static void test_dut_suspend_resume(void)
 {
 	dut_pub_common(false);
@@ -260,6 +391,54 @@ static void test_tester_pub(void)
 	PASS();
 }
 
+static void test_dut_gatt_suspend_resume(void)
+{
+	dut_gatt_common(false);
+	PASS();
+}
+
+static void test_dut_gatt_suspend_disable_resume(void)
+{
+	dut_gatt_common(true);
+	PASS();
+}
+
+static void test_tester_gatt(void)
+{
+	k_sem_init(&publish_sem, 0, 1);
+	dut_status = DUT_RUNNING;
+	int err;
+
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
+
+	/* Scan pb gatt beacons. */
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
+
+	/* Delay to provision DUT */
+	k_sleep(K_MSEC(1000));
+
+	/* Scan gatt proxy beacons. */
+	/* (total transmit duration) / (transmit interval) */
+	gatt_param.transmits = 5000 / 1000;
+	gatt_param.interval = 1000;
+	gatt_param.service = MESH_SERVICE_PROXY;
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
+
+	/* Allow DUT to suspend before scanning for gatt proxy beacons */
+	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
+	ASSERT_EQUAL(dut_status, DUT_SUSPENDED);
+	k_sleep(K_MSEC(500));
+	err = bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10);
+	ASSERT_FALSE(err && err != -EAGAIN);
+
+	/* Wait for DUT to resume Mesh and notify Tester, then scan for gatt proxy beacons */
+	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 20));
+	ASSERT_EQUAL(dut_status, DUT_RUNNING);
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 10));
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                                                         \
 	{                                                                                          \
 		.test_id = "suspend_" #role "_" #name, .test_descr = description,                  \
@@ -268,11 +447,16 @@ static void test_tester_pub(void)
 
 static const struct bst_test_instance test_suspend[] = {
 	TEST_CASE(dut, suspend_resume,
-			 "Suspend and resume Mesh while publishing periodically"),
+			 "Suspend and resume Mesh with periodic pub"),
 	TEST_CASE(dut, suspend_disable_resume,
-			 "Suspend and resume Mesh (and disable/enable BT) while publishing periodically"),
+			 "Suspend and resume Mesh (and disable/enable BT) with periodic pub"),
+	TEST_CASE(dut, gatt_suspend_resume,
+			 "Suspend and resume Mesh with GATT proxy advs"),
+	TEST_CASE(dut, gatt_suspend_disable_resume,
+			 "Suspend and resume Mesh (and disable/enable BT) with GATT proxy advs"),
 
 	TEST_CASE(tester, pub, "Scan and verify behavior of periodic publishing adv"),
+	TEST_CASE(tester, gatt, "Scan and verify behavior of GATT proxy adv"),
 
 	BSTEST_END_MARKER};
 
