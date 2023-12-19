@@ -133,3 +133,18 @@ stm32_lp_tick_source: &lptim1 {
 &rng {
 	status = "okay";
 };
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Last 16K of flash: Min 2 sectors */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 DT_SIZE_K(16)>;
+		};
+
+	};
+};
