@@ -22,7 +22,7 @@ properties:
 
   range:
     type: int
-    default: 3
+    default: 16
     description: |
       Accelerometer sampling range in G
     enum:
