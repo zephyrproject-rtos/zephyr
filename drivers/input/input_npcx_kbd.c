@@ -132,7 +132,7 @@ static void npcx_kbd_init_ksi_wui_callback(const struct device *dev,
 	npcx_miwu_manage_callback(callback, 1);
 
 	/* Configure MIWU setting and enable its interrupt */
-	npcx_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_BOTH);
+	npcx_miwu_interrupt_configure(wui, NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
 	npcx_miwu_irq_enable(wui);
 }
 
