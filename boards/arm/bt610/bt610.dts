@@ -77,6 +77,7 @@
 		mcuboot-button0 = &button1;
 		mcuboot-led0 = &led1;
 		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r64;
 	};
 
 	mag1: mag_1 {

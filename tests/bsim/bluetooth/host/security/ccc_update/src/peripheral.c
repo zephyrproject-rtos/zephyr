@@ -31,9 +31,10 @@ CREATE_FLAG(security_updated_flag);
 
 CREATE_FLAG(ccc_cfg_changed_flag);
 
-static struct bt_uuid_128 dummy_service = BT_UUID_INIT_128(DUMMY_SERVICE_TYPE);
+static const struct bt_uuid_128 dummy_service = BT_UUID_INIT_128(DUMMY_SERVICE_TYPE);
 
-static struct bt_uuid_128 notify_characteristic_uuid = BT_UUID_INIT_128(DUMMY_SERVICE_NOTIFY_TYPE);
+static const struct bt_uuid_128 notify_characteristic_uuid =
+					BT_UUID_INIT_128(DUMMY_SERVICE_NOTIFY_TYPE);
 
 static struct bt_conn *default_conn;
 

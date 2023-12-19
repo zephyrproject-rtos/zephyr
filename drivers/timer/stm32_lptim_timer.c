@@ -61,11 +61,26 @@ static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_N
  *    0xFFFF / (LSE freq (32768Hz) / 128)
  */
 
-static uint32_t lptim_clock_freq = KHZ(32);
 static int32_t lptim_time_base;
-
+static uint32_t lptim_clock_freq = CONFIG_STM32_LPTIM_CLOCK;
 /* The prescaler given by the DTS and to apply to the lptim_clock_freq */
-#define LPTIM_CLOCK_RATIO DT_PROP(DT_DRV_INST(0), st_prescaler)
+static uint32_t lptim_clock_presc = DT_PROP(DT_DRV_INST(0), st_prescaler);
+
+#if (CONFIG_STM32_LPTIM_CLOCK_LSI)
+
+/* Kconfig defines the clock source as LSI : check coherency with DTS */
+#if (DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) != STM32_SRC_LSI)
+#warning CONFIG_STM32_LPTIM_CLOCK_LSI requires STM32_SRC_LSI defined as LPTIM domain clock
+#endif /* STM32_SRC_LSI */
+
+#elif (CONFIG_STM32_LPTIM_CLOCK_LSE)
+
+/* Kconfig defines the clock source as LSE : check coherency with DTS */
+#if (DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) != STM32_SRC_LSE)
+#warning CONFIG_STM32_LPTIM_CLOCK_LSE requires STM32_SRC_LSE defined as LPTIM domain clock
+#endif /* STM32_SRC_LSE */
+
+#endif /* CONFIG_STM32_LPTIM_CLOCK_LSI */
 
 /* Minimum nb of clock cycles to have to set autoreload register correctly */
 #define LPTIM_GUARD_VALUE 2
@@ -80,17 +95,6 @@ static uint32_t autoreload_next;
 static bool autoreload_ready = true;
 
 static struct k_spinlock lock;
-
-/* For tick accuracy, a specific tick to freq ratio is expected */
-/* This check assumes LSI@32KHz or LSE@32768Hz */
-#if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
-#if (((DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(0), 1, bus) == STM32_SRC_LSI) &&	\
-		(CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4000)) ||			\
-	((DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(0), 1, bus) == STM32_SRC_LSE) &&	\
-		(CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4096)))
-#warning Advised tick freq is 4096 for LSE / 4000 for LSI
-#endif
-#endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
 
 static inline bool arrm_state_get(void)
 {
@@ -387,8 +391,24 @@ static int sys_clock_driver_init(void)
 		return -EIO;
 	}
 
+#if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
+	/*
+	 * Check coherency between CONFIG_SYS_CLOCK_TICKS_PER_SEC
+	 * and the lptim_clock_freq which is the CONFIG_STM32_LPTIM_CLOCK reduced
+	 * by the lptim_clock_presc
+	 */
+	if (lptim_clock_presc <= 8) {
+		__ASSERT(CONFIG_STM32_LPTIM_CLOCK / 8 >= CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+		 "It is recommended to set SYS_CLOCK_TICKS_PER_SEC to CONFIG_STM32_LPTIM_CLOCK/8");
+	} else {
+		__ASSERT(CONFIG_STM32_LPTIM_CLOCK / lptim_clock_presc >=
+			CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+		 "Set SYS_CLOCK_TICKS_PER_SEC to CONFIG_STM32_LPTIM_CLOCK/lptim_clock_presc");
+	}
+#endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
+
 	/* Actual lptim clock freq when the clock source is reduced by the prescaler */
-	lptim_clock_freq = lptim_clock_freq / LPTIM_CLOCK_RATIO;
+	lptim_clock_freq = lptim_clock_freq / lptim_clock_presc;
 
 	/* Clear the event flag and possible pending interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -404,7 +424,8 @@ static int sys_clock_driver_init(void)
 	/* configure the LPTIM counter */
 	LL_LPTIM_SetClockSource(LPTIM, LL_LPTIM_CLK_SOURCE_INTERNAL);
 	/* the LPTIM clock freq is affected by the prescaler */
-	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(LPTIM_CLOCK_RATIO)) << LPTIM_CFGR_PRESC_Pos));
+	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
+
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,

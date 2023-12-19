@@ -62,6 +62,12 @@ config BT_STM32_IPM
 	help
 	  TODO
 
+config BT_STM32WBA
+	bool "STM32WBA HCI driver"
+	select HAS_STM32LIB
+	help
+	  ST STM32WBA HCI Bluetooth interface
+
 config BT_SILABS_HCI
 	bool "Silicon Labs Bluetooth interface"
 	depends on SOC_SERIES_EFR32BG22 || SOC_SERIES_EFR32MG24 || SOC_SERIES_EFR32BG27
@@ -110,6 +116,16 @@ config BT_NO_DRIVER
 	  This is intended for unit tests where no internal driver
 	  should be selected.
 
+config BT_AMBIQ_HCI
+	bool "AMBIQ BT HCI driver"
+	select SPI
+	select GPIO
+	select CLOCK_CONTROL
+	select BT_HCI_SETUP
+	help
+	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers.
+
 endchoice
 
 if BT_SPI
@@ -125,13 +141,18 @@ config BT_BLUENRG_ACI
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
-config BT_SPI_BLUENRG
-	bool "Compatibility with BlueNRG-based devices"
-	help
-	  Enable support for devices compatible with the BlueNRG Bluetooth
-	  Stack. Current driver supports: ST BLUENRG-MS.
-
 endif # BT_SPI
+
+if BT_AMBIQ_HCI
+
+config BT_HCI_INIT_PRIORITY
+	int "BT HCI init priority"
+	default 75
+	help
+	  The priority of BT HCI driver initialization needs to be lower than
+	  the SPI, GPIO, clock controller drivers initialization priorities.
+
+endif # BT_AMBIQ_HCI
 
 config BT_STM32_IPM_RX_STACK_SIZE
 	int "STM32 IPM stack size for RX thread"
@@ -175,6 +196,9 @@ config BT_HCI_SET_PUBLIC_ADDR
 	  public identity through vendor-specific commands. They can then implement the
 	  setup() HCI driver API function and get the address to set from the public_addr field.
 
+	  From the application side, the public address is set using the first call to
+	  bt_id_create(), before calling bt_enable().
+
 config BT_HCI_SETUP
 	bool
 	help
@@ -196,7 +220,7 @@ config BT_DRV_TX_STACK_SIZE
 
 config BT_DRV_RX_STACK_SIZE
 	int
-	default 640 if BT_SPI
+	default 640 if (BT_SPI || BT_AMBIQ_HCI)
 	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default 256

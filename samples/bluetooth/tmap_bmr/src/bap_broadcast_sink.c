@@ -215,27 +215,18 @@ static void broadcast_scan_timeout(void)
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	uint32_t base_bis_index_bitfield = 0U;
-	struct bt_bap_base base = { 0 };
+	int err;
 
-	if (data->type != BT_DATA_SVC_DATA16) {
+	/* Base is NULL if the data does not contain a valid BASE */
+	if (base == NULL) {
 		return true;
 	}
 
-	if (data->data_len < BT_BAP_BASE_MIN_SIZE) {
-		return true;
-	}
-
-	if (bt_bap_decode_base(data, &base) != 0) {
+	err = bt_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
+	if (err != 0) {
 		return false;
-	}
-
-	for (size_t i = 0U; i < base.subgroup_count; i++) {
-		for (size_t j = 0U; j < base.subgroups[i].bis_count; j++) {
-			const uint8_t index = base.subgroups[i].bis_data[j].index;
-
-			base_bis_index_bitfield |= BIT(index);
-		}
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
@@ -256,7 +247,8 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
 	k_sem_give(&sem_syncable);
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+			 size_t base_size)
 {
 	k_sem_give(&sem_base_received);
 }

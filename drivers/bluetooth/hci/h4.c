@@ -346,7 +346,8 @@ static inline void read_payload(void)
 		bt_recv_prio(buf);
 	}
 
-	if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
+	if ((evt_flags & BT_HCI_EVT_FLAG_RECV) ||
+	    !IS_ENABLED(CONFIG_BT_RECV_BLOCKING)) {
 		LOG_DBG("Putting buf %p to rx fifo", buf);
 		net_buf_put(&rx.fifo, buf);
 	}

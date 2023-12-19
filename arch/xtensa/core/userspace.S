@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa-asm2-s.h>
+#include <xtensa_asm2_s.h>
 #include <offsets.h>
 #include <offsets_short.h>
 #include <zephyr/syscall.h>
@@ -16,10 +16,10 @@
  *  a2                 a6,   a3,   a4,   a5,   a8,   a9
  *
  **/
-.pushsection .text.z_xtensa_do_syscall, "ax"
-.global	z_xtensa_do_syscall
+.pushsection .text.xtensa_do_syscall, "ax"
+.global	xtensa_do_syscall
 .align	4
-z_xtensa_do_syscall:
+xtensa_do_syscall:
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
 	l32i a0, a0, _thread_offset_to_psp
@@ -199,17 +199,17 @@ _bad_syscall:
 
 .popsection
 
-/* FUNC_NORETURN void z_xtensa_userspace_enter(k_thread_entry_t user_entry,
+/* FUNC_NORETURN void xtensa_userspace_enter(k_thread_entry_t user_entry,
  *					   void *p1, void *p2, void *p3,
  *					   uint32_t stack_end,
  *					   uint32_t stack_start)
  *
  * A one-way trip to userspace.
  */
-.global z_xtensa_userspace_enter
-.type z_xtensa_userspace_enter, @function
+.global xtensa_userspace_enter
+.type xtensa_userspace_enter, @function
 .align 4
-z_xtensa_userspace_enter:
+xtensa_userspace_enter:
 	/* Call entry to set a bit in the windowstart and
 	 * do the rotation, but we are going to set our own
 	 * stack.
@@ -240,7 +240,7 @@ z_xtensa_userspace_enter:
 	call4 xtensa_user_stack_perms
 
 	l32i a6, a1, 24
-	call4 z_xtensa_swap_update_page_tables
+	call4 xtensa_swap_update_page_tables
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	rur.threadptr a3
@@ -302,12 +302,12 @@ arch_user_string_nlen:
 
 	/* This code might page fault */
 strlen_loop:
-.global z_xtensa_user_string_nlen_fault_start
-z_xtensa_user_string_nlen_fault_start:
+.global xtensa_user_string_nlen_fault_start
+xtensa_user_string_nlen_fault_start:
 	l8ui a6, a2, 0 /* Current char */
 
-.global z_xtensa_user_string_nlen_fault_end
-z_xtensa_user_string_nlen_fault_end:
+.global xtensa_user_string_nlen_fault_end
+xtensa_user_string_nlen_fault_end:
 	beqz a6, strlen_done
 	addi a5, a5, 1
 	addi a2, a2, 1
@@ -322,6 +322,6 @@ strlen_done:
 	movi a5, 0x0
 	s32i a5, a4, 0
 
-.global z_xtensa_user_string_nlen_fixup
-z_xtensa_user_string_nlen_fixup:
+.global xtensa_user_string_nlen_fixup
+xtensa_user_string_nlen_fixup:
 	retw

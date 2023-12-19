@@ -71,7 +71,7 @@
 	apb2-prescaler = <1>;
 };
 
-&lptim1 {
+stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -115,7 +115,7 @@
 	status = "okay";
 
 	spbtle-rf@0 {
-		compatible = "zephyr,bt-hci-spi";
+		compatible = "zephyr,bt-hci-spi", "st,hci-spi-v1";
 		reg = <0>;
 		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;

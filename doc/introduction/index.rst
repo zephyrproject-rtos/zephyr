@@ -125,7 +125,7 @@ Zephyr offers a large and ever growing number of features including:
 
 **Bluetooth Low Energy 5.0 support**
    Bluetooth 5.0 compliant (ESR10) and Bluetooth Low Energy Controller support
-   (LE Link Layer). Includes Bluetooth mesh and a Bluetooth qualification-ready
+   (LE Link Layer). Includes Bluetooth Mesh and a Bluetooth qualification-ready
    Bluetooth controller.
 
    * Generic Access Profile (GAP) with all possible LE roles

@@ -20,7 +20,7 @@ set(nsi_config_content
   "NSI_EXTRA_LIBS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,RUNNER_LINK_LIBRARIES>,\ >"
   "NSI_PATH:=${NSI_DIR}/"
   "NSI_N_CPUS:=${CONFIG_NATIVE_SIMULATOR_NUMBER_MCUS}"
-  "NSI_LOCALIZE_OPTIONS:=--localize-symbol=CONFIG_*"
+  "NSI_LOCALIZE_OPTIONS:=--localize-symbol=CONFIG_* $<JOIN:$<TARGET_PROPERTY:native_simulator,LOCALIZE_EXTRA_OPTIONS>,\ >"
 )
 
 string(REPLACE ";" "\n" nsi_config_content "${nsi_config_content}")

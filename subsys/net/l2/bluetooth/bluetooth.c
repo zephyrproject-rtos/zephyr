@@ -419,7 +419,7 @@ static bool eir_found(uint8_t type, const uint8_t *data, uint8_t data_len,
 	}
 
 	for (i = 0; i < data_len; i += sizeof(uint16_t)) {
-		struct bt_uuid *uuid;
+		const struct bt_uuid *uuid;
 		uint16_t u16;
 
 		memcpy(&u16, &data[i], sizeof(u16));

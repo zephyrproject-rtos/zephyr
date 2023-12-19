@@ -94,6 +94,11 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 		k_busy_wait(cfg->settle_time_us);
 
 		row = api->read_row(dev);
+
+		if (cfg->actual_key_mask != NULL) {
+			row &= cfg->actual_key_mask[col];
+		}
+
 		cfg->matrix_new_state[col] = row;
 		key_event |= row;
 	}
@@ -163,18 +168,18 @@ static void input_kbd_matrix_update_state(const struct device *dev)
 
 			uint8_t cyc_idx = c * cfg->row_size + r;
 			uint8_t scan_cyc_idx = cfg->scan_cycle_idx[cyc_idx];
-			uint8_t scan_clk_cycle = data->scan_clk_cycle[scan_cyc_idx];
+			uint32_t scan_clk_cycle = data->scan_clk_cycle[scan_cyc_idx];
 
 			/* Convert the clock cycle differences to usec */
-			uint32_t debt = k_cyc_to_us_floor32(cycles_now - scan_clk_cycle);
+			uint32_t deb_t_us = k_cyc_to_us_floor32(cycles_now - scan_clk_cycle);
 
 			/* Does the key requires more time to be debounced? */
-			if (debt < (row_bit ? cfg->debounce_down_ms : cfg->debounce_up_ms)) {
+			if (deb_t_us < (row_bit ? cfg->debounce_down_us : cfg->debounce_up_us)) {
 				/* Need more time to debounce */
 				continue;
 			}
 
-			cfg->matrix_unstable_state[c] &= ~row_bit;
+			cfg->matrix_unstable_state[c] &= ~mask;
 
 			/* Check if there was a change in the stable state */
 			if ((cfg->matrix_stable_state[c] & mask) == row_bit) {
@@ -207,7 +212,7 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 	key_pressed = input_kbd_matrix_scan(dev);
 
 	for (int c = 0; c < cfg->col_size; c++) {
-		LOG_DBG("c=%2d u=%02x p=%02x n=%02x",
+		LOG_DBG("c=%2d u=" PRIkbdrow " p=" PRIkbdrow " n=" PRIkbdrow,
 			c,
 			cfg->matrix_unstable_state[c],
 			cfg->matrix_previous_state[c],
@@ -224,6 +229,17 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 	return key_pressed;
 }
 
+static k_timepoint_t input_kbd_matrix_poll_timeout(const struct device *dev)
+{
+	const struct input_kbd_matrix_common_config *cfg = dev->config;
+
+	if (cfg->poll_timeout_ms == 0) {
+		return sys_timepoint_calc(K_FOREVER);
+	}
+
+	return sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+}
+
 static void input_kbd_matrix_poll(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
@@ -232,13 +248,13 @@ static void input_kbd_matrix_poll(const struct device *dev)
 	uint32_t cycles_diff;
 	uint32_t wait_period_us;
 
-	poll_time_end = sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+	poll_time_end = input_kbd_matrix_poll_timeout(dev);
 
 	while (true) {
 		uint32_t start_period_cycles = k_cycle_get_32();
 
 		if (input_kbd_matrix_check_key_events(dev)) {
-			poll_time_end = sys_timepoint_calc(K_MSEC(cfg->poll_timeout_ms));
+			poll_time_end = input_kbd_matrix_poll_timeout(dev);
 		} else if (sys_timepoint_expired(poll_time_end)) {
 			break;
 		}
@@ -275,6 +291,13 @@ static void input_kbd_matrix_polling_thread(void *arg1, void *unused2, void *unu
 		input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_ALL);
 		api->set_detect_mode(dev, true);
 
+		/* Check the rows again after enabling the interrupt to catch
+		 * any potential press since the last read.
+		 */
+		if (api->read_row(dev) != 0) {
+			input_kbd_matrix_poll_start(dev);
+		}
+
 		k_sem_take(&data->poll_lock, K_FOREVER);
 		LOG_DBG("scan start");
 
@@ -294,7 +317,7 @@ int input_kbd_matrix_common_init(const struct device *dev)
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_INPUT_KBD_MATRIX_THREAD_STACK_SIZE,
 			input_kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(4), 0, K_NO_WAIT);
+			CONFIG_INPUT_KBD_MATRIX_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	k_thread_name_set(&data->thread, dev->name);
 

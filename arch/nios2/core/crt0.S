@@ -12,7 +12,7 @@ GTEXT(__start)
 GTEXT(__reset)
 
 /* imports */
-GTEXT(_PrepC)
+GTEXT(z_prep_c)
 GTEXT(z_interrupt_stacks)
 
 	/* Allow use of r1/at (the assembler temporary register) in this
@@ -140,7 +140,7 @@ SECTION_FUNC(TEXT, __start)
 	 * GH-1821
 	 */
 
-	/* Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
+	/* Jump into C domain. z_prep_c zeroes BSS, copies rw data into RAM,
 	 * and then enters z_cstart */
-	call _PrepC
+	call z_prep_c
 

@@ -88,7 +88,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  */
 
-void _PrepC(void)
+void z_prep_c(void)
 {
 	z_bss_zero();
 #ifdef __CCAC__

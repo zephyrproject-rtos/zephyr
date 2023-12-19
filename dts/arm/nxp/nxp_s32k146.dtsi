@@ -33,6 +33,8 @@
 	};
 };
 
+/delete-node/ &lpi2c1;
+
 &nvic {
 	arm,num-irq-priority-bits = <4>;
 };
@@ -48,4 +50,12 @@
 
 &lpuart2 {
 	clocks = <&clock NXP_S32_LPUART2_CLK>;
+};
+
+&lpspi1 {
+	clocks = <&clock NXP_S32_LPSPI1_CLK>;
+};
+
+&lpspi2 {
+	clocks = <&clock NXP_S32_LPSPI2_CLK>;
 };

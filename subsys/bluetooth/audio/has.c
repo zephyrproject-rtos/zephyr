@@ -205,6 +205,8 @@ static struct has_client {
 
 static struct client_context *context_find(const bt_addr_le_t *addr)
 {
+	__ASSERT_NO_MSG(addr != NULL);
+
 	for (size_t i = 0; i < ARRAY_SIZE(contexts); i++) {
 		if (bt_addr_le_eq(&contexts[i].addr, addr)) {
 			return &contexts[i];
@@ -217,6 +219,8 @@ static struct client_context *context_find(const bt_addr_le_t *addr)
 static struct client_context *context_alloc(const bt_addr_le_t *addr)
 {
 	struct client_context *context;
+
+	__ASSERT_NO_MSG(addr != NULL);
 
 	/* Free contexts has BT_ADDR_LE_ANY as the address */
 	context = context_find(BT_ADDR_LE_ANY);
@@ -262,6 +266,7 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 {
 	struct bt_conn_info info = { 0 };
 	struct has_client *client = NULL;
+	int err;
 
 	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
 		if (conn == has_client_list[i].conn) {
@@ -284,7 +289,12 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 	k_work_init_delayable(&client->notify_work, notify_work_handler);
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT || CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
 
-	bt_conn_get_info(conn, &info);
+	err = bt_conn_get_info(conn, &info);
+	if (err != 0) {
+		LOG_DBG("Could not get conn info: %d", err);
+
+		return NULL;
+	}
 
 	client->context = context_find(info.le.dst);
 	if (client->context == NULL) {
@@ -1386,6 +1396,8 @@ static uint8_t handle_control_point_op(struct bt_conn *conn, struct net_buf_simp
 	case BT_HAS_OP_WRITE_PRESET_NAME:
 		if (IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC)) {
 			return handle_write_preset_name(conn, buf);
+		} else {
+			return BT_HAS_ERR_WRITE_NAME_NOT_ALLOWED;
 		}
 		break;
 	case BT_HAS_OP_SET_ACTIVE_PRESET:
@@ -1489,6 +1501,12 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 	preset = preset_lookup_index(param->index);
 	if (preset != NULL) {
 		return -EALREADY;
+	}
+
+	CHECKIF(!IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC) &&
+		(param->properties & BT_HAS_PROP_WRITABLE) > 0) {
+		LOG_ERR("Writable presets are not supported");
+		return -ENOTSUP;
 	}
 
 	preset = preset_alloc(param->index, param->properties, param->name, param->ops);

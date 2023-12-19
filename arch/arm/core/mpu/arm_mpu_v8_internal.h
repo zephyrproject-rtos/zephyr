@@ -720,12 +720,7 @@ static int mpu_mark_areas_for_dynamic_regions(
  */
 static inline uint8_t get_num_regions(void)
 {
-#if defined(NUM_MPU_REGIONS)
-	/* Retrieve the number of regions from DTS configuration. */
-	return NUM_MPU_REGIONS;
-#else
 	return mpu_get_num_regions();
-#endif /* NUM_MPU_REGIONS */
 }
 
 /* This internal function programs the dynamic MPU regions.

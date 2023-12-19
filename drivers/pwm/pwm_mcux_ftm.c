@@ -78,6 +78,11 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
+	if (period_cycles > UINT16_MAX) {
+		LOG_ERR("Period cycles must be less or equal than %u", UINT16_MAX);
+		return -EINVAL;
+	}
+
 	if (channel >= config->channel_count) {
 		LOG_ERR("Invalid channel");
 		return -ENOTSUP;

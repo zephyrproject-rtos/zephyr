@@ -45,9 +45,31 @@ static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 	return ret;
 }
 
+static inline int dummy_enable(struct net_if *iface, bool state)
+{
+	int ret = 0;
+	const struct dummy_api *api = net_if_get_device(iface)->api;
+
+	if (!api) {
+		return -ENOENT;
+	}
+
+	if (!state) {
+		if (api->stop) {
+			ret = api->stop(net_if_get_device(iface));
+		}
+	} else {
+		if (api->start) {
+			ret = api->start(net_if_get_device(iface));
+		}
+	}
+
+	return ret;
+}
+
 static enum net_l2_flags dummy_flags(struct net_if *iface)
 {
 	return NET_L2_MULTICAST;
 }
 
-NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, NULL, dummy_flags);
+NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, dummy_enable, dummy_flags);

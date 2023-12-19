@@ -162,4 +162,20 @@
 			};
 		};
 	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus4: smbus4 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c4>;
+		status = "disabled";
+	};
 };

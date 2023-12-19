@@ -10,45 +10,36 @@ static const uint32_t dmar_scope[] = {ACPI_DMAR_SCOPE_TYPE_ENDPOINT, ACPI_DMAR_S
 				      ACPI_DMAR_SCOPE_TYPE_IOAPIC, ACPI_DMAR_SCOPE_TYPE_HPET,
 				      ACPI_DMAR_SCOPE_TYPE_NAMESPACE};
 
-static void vtd_dev_scope_info(int type, struct acpi_dmar_device_scope *dev_scope,
+static const char *get_dmar_scope_type(int type)
+{
+	switch (type) {
+	case ACPI_DMAR_SCOPE_TYPE_ENDPOINT:
+		return "PCI Endpoint";
+	case ACPI_DMAR_SCOPE_TYPE_BRIDGE:
+		return "PCI Sub-hierarchy";
+	case ACPI_DMAR_SCOPE_TYPE_IOAPIC:
+		return "IOAPIC";
+	case ACPI_DMAR_SCOPE_TYPE_HPET:
+		return "MSI Capable HPET";
+	case ACPI_DMAR_SCOPE_TYPE_NAMESPACE:
+		return "ACPI name-space enumerated";
+	default:
+		return "unknown";
+	}
+}
+
+static void vtd_dev_scope_info(struct acpi_dmar_device_scope *dev_scope,
 			       union acpi_dmar_id *dmar_id, int num_inst)
 {
 	int i = 0;
 
-	printk("\t\t\t. Type: ");
-
-	switch (type) {
-	case ACPI_DMAR_SCOPE_TYPE_ENDPOINT:
-		printk("PCI Endpoint");
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_BRIDGE:
-		printk("PCI Sub-hierarchy");
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_IOAPIC:
-
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_HPET:
-		printk("MSI Capable HPET");
-		break;
-	case ACPI_DMAR_SCOPE_TYPE_NAMESPACE:
-		printk("ACPI name-space enumerated");
-		break;
-	default:
-		printk("unknown\n");
-		return;
-	}
-
-	printk("\n");
-
 	printk("\t\t\t. Enumeration ID %u\n", dev_scope->EnumerationId);
-	printk("\t\t\t. PCI Bus %u\n", dev_scope->Bus);
 
 	for (; num_inst > 0; num_inst--, i++) {
-		printk("Info: Bus: %d, dev:%d, fun:%d\n", dmar_id[i].bits.bus,
-			dmar_id[i].bits.device, dmar_id[i].bits.function);
+		printk("\t\t\t. BDF 0x%x:0x%x:0x%x\n",
+		       dmar_id[i].bits.bus, dmar_id[i].bits.device,
+		       dmar_id[i].bits.function);
 	}
-
-	printk("\n");
 }
 
 static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
@@ -69,15 +60,16 @@ static void vtd_drhd_info(struct acpi_dmar_hardware_unit *drhd)
 	printk("\t\t- Base Address 0x%llx\n", drhd->Address);
 
 	printk("\t\t- Device Scopes:\n");
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < ARRAY_SIZE(dmar_scope); i++) {
 		if (acpi_drhd_get(dmar_scope[i], &dev_scope, dmar_id, &num_inst, 4u)) {
-			printk(" No DRHD entry found for scope type:%d\n", dmar_scope[i]);
+			printk("\t\tNo DRHD type: %s\n",
+			       get_dmar_scope_type(dmar_scope[i]));
 			continue;
 		}
 
-		printk("Found DRHD entry: %d\n", i);
+		printk("\t\tDRHD type %s\n", get_dmar_scope_type(dmar_scope[i]));
 
-		vtd_dev_scope_info(dmar_scope[i], &dev_scope, dmar_id, num_inst);
+		vtd_dev_scope_info(&dev_scope, dmar_id, num_inst);
 	}
 
 	printk("\n");
@@ -109,7 +101,7 @@ static void vtd_info(void)
 
 		if (acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
 					(struct acpi_subtable_header **)&drhd)) {
-			printk("error in retrieve DHRD!!\n");
+			printk("\tError in retrieving DHRD!!\n");
 			return;
 		}
 		vtd_drhd_info(drhd);
@@ -134,7 +126,7 @@ void acpi(void)
 		for (int i = 0; i < nr_cpus; ++i) {
 			struct acpi_madt_local_apic *cpu = acpi_local_apic_get(i);
 
-			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu[i].Id);
+			printk("\tCPU #%d: APIC ID 0x%02x\n", i, cpu->Id);
 		}
 	}
 

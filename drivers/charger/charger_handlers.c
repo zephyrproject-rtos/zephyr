@@ -36,3 +36,12 @@ static inline int z_vrfy_charger_set_prop(const struct device *dev, const charge
 }
 
 #include <syscalls/charger_set_prop_mrsh.c>
+
+static inline int z_vrfy_charger_charge_enable(const struct device *dev, const bool enable)
+{
+	K_OOPS(K_SYSCALL_DRIVER_CHARGER(dev, charge_enable));
+
+	return z_impl_charger_charge_enable(dev, enable);
+}
+
+#include <syscalls/charger_charge_enable_mrsh.c>

@@ -58,7 +58,6 @@ static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 static struct k_spinlock pthread_pool_lock;
 static int pthread_concurrency;
-static K_MUTEX_DEFINE(pthread_once_lock);
 
 static const struct pthread_attr init_pthread_attrs = {
 	.priority = 0,
@@ -707,17 +706,23 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
 	__unused int ret;
+	bool run_init_func = false;
+	struct pthread_once *const _once = (struct pthread_once *)once;
 
-	ret = k_mutex_lock(&pthread_once_lock, K_FOREVER);
-	__ASSERT_NO_MSG(ret == 0);
-
-	if (once->is_initialized != 0 && once->init_executed == 0) {
-		init_func();
-		once->init_executed = 1;
+	if (init_func == NULL) {
+		return EINVAL;
 	}
 
-	ret = k_mutex_unlock(&pthread_once_lock);
-	__ASSERT_NO_MSG(ret == 0);
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (!_once->flag) {
+			run_init_func = true;
+			_once->flag = true;
+		}
+	}
+
+	if (run_init_func) {
+		init_func();
+	}
 
 	return 0;
 }
@@ -1071,6 +1076,49 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
 	ARG_UNUSED(child);
 
 	return ENOSYS;
+}
+
+/* this should probably go into signal.c but we need access to the lock */
+int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
+{
+	struct posix_thread *t;
+
+	if (!(how == SIG_BLOCK || how == SIG_SETMASK || how == SIG_UNBLOCK)) {
+		return EINVAL;
+	}
+
+	t = to_posix_thread(pthread_self());
+	if (t == NULL) {
+		return ESRCH;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (oset != NULL) {
+			*oset = t->sigset;
+		}
+
+		if (set == NULL) {
+			K_SPINLOCK_BREAK;
+		}
+
+		switch (how) {
+		case SIG_BLOCK:
+			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
+				t->sigset.sig[i] |= set->sig[i];
+			}
+			break;
+		case SIG_SETMASK:
+			t->sigset = *set;
+			break;
+		case SIG_UNBLOCK:
+			for (size_t i = 0; i < ARRAY_SIZE(set->sig); ++i) {
+				t->sigset.sig[i] &= ~set->sig[i];
+			}
+			break;
+		}
+	}
+
+	return 0;
 }
 
 static int posix_thread_pool_init(void)

@@ -234,14 +234,12 @@ static bool is_substring(const char *substr, const char *str)
 	}
 
 	for (size_t pos = 0; pos < str_len; pos++) {
-		if (tolower(substr[pos]) == tolower(str[pos])) {
-			if (pos + sub_str_len > str_len) {
-				return false;
-			}
+		if (pos + sub_str_len > str_len) {
+			return false;
+		}
 
-			if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
-				return true;
-			}
+		if (strncasecmp(substr, &str[pos], sub_str_len) == 0) {
+			return true;
 		}
 	}
 
@@ -495,22 +493,31 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 		shell_info(ctx_shell, "%*s[SCAN DATA END]", strlen(scan_response_label), "");
 	}
 
-	/* Store address for later use */
 #if defined(CONFIG_BT_CENTRAL)
-	auto_connect.addr_set = true;
-	bt_addr_le_copy(&auto_connect.addr, info->addr);
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U) {
+		struct bt_conn *conn = bt_conn_lookup_addr_le(selected_id, info->addr);
 
-	/* Use the above auto_connect.addr address to automatically connect */
-	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0U && auto_connect.connect_name) {
-		auto_connect.connect_name = false;
+		/* Only store auto-connect address for devices we are not already connected to */
+		if (conn == NULL) {
+			/* Store address for later use */
+			auto_connect.addr_set = true;
+			bt_addr_le_copy(&auto_connect.addr, info->addr);
 
-		cmd_scan_off(ctx_shell);
+			/* Use the above auto_connect.addr address to automatically connect */
+			if (auto_connect.connect_name) {
+				auto_connect.connect_name = false;
 
-		/* "name" is what would be in argv[0] normally */
-		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+				cmd_scan_off(ctx_shell);
 
-		/* "connect" is what would be in argv[0] normally */
-		cmd_connect_le(ctx_shell, 1, (char *[]){ "connect" });
+				/* "name" is what would be in argv[0] normally */
+				cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){"name"});
+
+				/* "connect" is what would be in argv[0] normally */
+				cmd_connect_le(ctx_shell, 1, (char *[]){"connect"});
+			}
+		} else {
+			bt_conn_unref(conn);
+		}
 	}
 #endif /* CONFIG_BT_CENTRAL */
 }
@@ -1196,17 +1203,21 @@ static int cmd_appearance(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	uint16_t app;
-	int err;
+	int err = 0;
 	const char *val;
 
 	val = argv[1];
-	if (strlen(val) != 6 || strncmp(val, "0x", 2) ||
-	    !hex2bin(&val[2], strlen(&val[2]), ((uint8_t *)&app), sizeof(app))) {
+
+	if (strlen(val) != 6 || strncmp(val, "0x", 2)) {
 		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
 		return -EINVAL;
 	}
 
-	app = sys_be16_to_cpu(app);
+	app = shell_strtoul(val, 16, &err);
+	if (err) {
+		shell_error(sh, "Argument must be 0x followed by exactly 4 hex digits.");
+		return -EINVAL;
+	}
 
 	err = bt_set_appearance(app);
 	if (err) {
@@ -3233,7 +3244,7 @@ static int cmd_conn_phy_update(const struct shell *sh, size_t argc,
 }
 #endif
 
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_BROADCASTER)
 static int cmd_chan_map(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint8_t chan_map[5] = {};
@@ -4071,9 +4082,12 @@ static int cmd_auth_passkey_notify(const struct shell *sh,
 
 	err = 0;
 	type = shell_strtoul(argv[1], 0, &err);
-	if (err || !IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
-			     BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
-		shell_error(sh, "<type> must be a value in range of enum bt_conn_auth_keypress");
+	if (err ||
+	    (type != BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED &&
+	     type != BT_CONN_AUTH_KEYPRESS_DIGIT_ENTERED &&
+	     type != BT_CONN_AUTH_KEYPRESS_DIGIT_ERASED && type != BT_CONN_AUTH_KEYPRESS_CLEARED &&
+	     type != BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+		shell_error(sh, "<type> must be a value of enum bt_conn_auth_keypress");
 		return -EINVAL;
 	}
 
@@ -4286,7 +4300,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(phy-update, NULL, "<tx_phy> [rx_phy] [s2] [s8]",
 		      cmd_conn_phy_update, 2, 3),
 #endif
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
 		      cmd_chan_map, 2, 1),
 #endif /* CONFIG_BT_CENTRAL */

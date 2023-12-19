@@ -93,13 +93,20 @@ static enum adltc2990_monitoring_type adltc2990_get_v3_v4_measurement_modes(uint
 	return type;
 }
 
-static bool adltc2990_is_busy(const struct device *dev)
+static int adltc2990_is_busy(const struct device *dev, bool *is_busy)
 {
 	const struct adltc2990_config *cfg = dev->config;
 	uint8_t status_reg = 0;
+	int ret;
 
-	i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg);
-	return status_reg & BIT(0);
+	ret = i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_STATUS, &status_reg);
+	if (ret) {
+		return ret;
+	}
+
+	*is_busy = status_reg & BIT(0);
+
+	return 0;
 }
 
 static void adltc2990_get_v1_v2_val(const struct device *dev, struct sensor_value *val,
@@ -134,9 +141,10 @@ static int adltc2990_trigger_measurement(const struct device *dev)
 	return i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_TRIGGER, 0x1);
 }
 
-static int32_t adltc2990_fetch_property_value(const struct device *dev,
-					      enum adltc2990_monitoring_type type,
-					      enum adltc2990_monitor_pins pin)
+static int adltc2990_fetch_property_value(const struct device *dev,
+					  enum adltc2990_monitoring_type type,
+					  enum adltc2990_monitor_pins pin,
+					  int32_t *output)
 {
 	const struct adltc2990_config *cfg = dev->config;
 
@@ -179,9 +187,17 @@ static int32_t adltc2990_fetch_property_value(const struct device *dev,
 		return -EINVAL;
 	}
 	}
+	int ret;
 
-	i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value);
-	i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value);
+	ret = i2c_reg_read_byte_dt(&cfg->bus, msb_address, &msb_value);
+	if (ret) {
+		return ret;
+	}
+
+	ret = i2c_reg_read_byte_dt(&cfg->bus, lsb_address, &lsb_value);
+	if (ret) {
+		return ret;
+	}
 	uint16_t conversion_factor;
 	uint8_t negative_bit_index = 14U, sensor_val_divisor = 100U;
 
@@ -204,7 +220,9 @@ static int32_t adltc2990_fetch_property_value(const struct device *dev,
 
 	int32_t voltage_value = (value << (31 - negative_bit_index)) >> (31 - negative_bit_index);
 
-	return (voltage_value * conversion_factor) / sensor_val_divisor;
+	*output = (voltage_value * conversion_factor) / sensor_val_divisor;
+
+	return 0;
 }
 
 static int adltc2990_init(const struct device *dev)
@@ -240,11 +258,17 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 		cfg->measurement_mode[1], cfg->measurement_mode[0]);
 
 	float voltage_divider_ratio;
+	int ret;
+	int32_t value;
 
 	switch (chan) {
 	case SENSOR_CHAN_DIE_TEMP: {
-		data->internal_temperature =
-			adltc2990_fetch_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE);
+		ret = adltc2990_fetch_property_value(dev, TEMPERATURE, INTERNAL_TEMPERATURE,
+						     &value);
+		if (ret) {
+			return ret;
+		}
+		data->internal_temperature = value;
 		break;
 	}
 	case SENSOR_CHAN_CURRENT: {
@@ -253,68 +277,91 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 			return -EINVAL;
 		}
 		if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V1, &value);
+			if (ret) {
+				return ret;
+			}
 			data->pins_v1_v2_values[0] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V1) *
-				(ADLTC2990_MICROOHM_CONVERSION_FACTOR /
+				value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
 				 (float)cfg->pins_v1_v2.pins_current_resistor);
 		}
 		if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
-			data->pins_v3_v4_values[0] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3) *
-				(ADLTC2990_MICROOHM_CONVERSION_FACTOR /
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v3_v4_values[0] = value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
 				 (float)cfg->pins_v3_v4.pins_current_resistor);
 		}
 		break;
 	}
 	case SENSOR_CHAN_VOLTAGE: {
-		data->supply_voltage =
-			adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE) +
-			2500000;
+		ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, SUPPLY_VOLTAGE,
+						     &value);
+		if (ret) {
+			return ret;
+		}
+		data->supply_voltage = value + 2500000;
 
 		if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
-			data->pins_v1_v2_values[0] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V1);
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V1, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v1_v2_values[0] = value;
 		} else if (mode_v1_v2 == VOLTAGE_SINGLEENDED) {
 			uint32_t v1_r1 = cfg->pins_v1_v2.voltage_divider_resistors.v1_r1_r2[0];
 
 			uint32_t v1_r2 = cfg->pins_v1_v2.voltage_divider_resistors.v1_r1_r2[1];
 
 			voltage_divider_ratio = (v1_r1 + v1_r2) / (float)v1_r2;
-			data->pins_v1_v2_values[0] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V1) *
-				voltage_divider_ratio;
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V1, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v1_v2_values[0] = value * voltage_divider_ratio;
 
 			uint32_t v2_r1 = cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[0];
 
 			uint32_t v2_r2 = cfg->pins_v1_v2.voltage_divider_resistors.v2_r1_r2[1];
 
 			voltage_divider_ratio = (v2_r1 + v2_r2) / (float)v2_r2;
-			data->pins_v1_v2_values[1] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V2) *
-				voltage_divider_ratio;
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V2, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v1_v2_values[1] = value * voltage_divider_ratio;
 		}
 
 		if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
-			data->pins_v3_v4_values[0] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3);
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, V3, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v3_v4_values[0] = value;
 		} else if (mode_v3_v4 == VOLTAGE_SINGLEENDED) {
 			uint32_t v3_r1 = cfg->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[0];
 
 			uint32_t v3_r2 = cfg->pins_v3_v4.voltage_divider_resistors.v3_r1_r2[1];
 
 			voltage_divider_ratio = (v3_r1 + v3_r2) / (float)v3_r2;
-			data->pins_v3_v4_values[0] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V3) *
-				voltage_divider_ratio;
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V3, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v3_v4_values[0] = value * voltage_divider_ratio;
 
 			uint32_t v4_r1 = cfg->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[0];
 
 			uint32_t v4_r2 = cfg->pins_v3_v4.voltage_divider_resistors.v4_r1_r2[1];
 
 			voltage_divider_ratio = (v4_r1 + v4_r2) / (float)v4_r2;
-			data->pins_v3_v4_values[1] =
-				adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V4) *
-				voltage_divider_ratio;
+
+			ret = adltc2990_fetch_property_value(dev, VOLTAGE_SINGLEENDED, V4, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v3_v4_values[1] = value * voltage_divider_ratio;
 		}
 		break;
 	}
@@ -324,17 +371,30 @@ static int adltc2990_sample_fetch(const struct device *dev, enum sensor_channel 
 			return -EINVAL;
 		}
 		if (mode_v1_v2 == TEMPERATURE) {
-			data->pins_v1_v2_values[0] =
-				adltc2990_fetch_property_value(dev, TEMPERATURE, V1);
+			ret = adltc2990_fetch_property_value(dev, TEMPERATURE, V1, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v1_v2_values[0] = value;
 		}
 		if (mode_v3_v4 == TEMPERATURE) {
-			data->pins_v3_v4_values[0] =
-				adltc2990_fetch_property_value(dev, TEMPERATURE, V3);
+			ret = adltc2990_fetch_property_value(dev, TEMPERATURE, V3, &value);
+			if (ret) {
+				return ret;
+			}
+			data->pins_v3_v4_values[0] = value;
 		}
 		break;
 	}
 	case SENSOR_CHAN_ALL: {
-		if (adltc2990_is_busy(dev)) {
+		bool is_busy;
+
+		ret = adltc2990_is_busy(dev, &is_busy);
+		if (ret) {
+			return ret;
+		}
+
+		if (is_busy) {
 			LOG_INF("ADLTC2990 conversion ongoing");
 			return -EBUSY;
 		}

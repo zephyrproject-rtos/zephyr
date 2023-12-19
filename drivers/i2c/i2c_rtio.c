@@ -26,7 +26,7 @@ struct rtio_sqe *i2c_rtio_copy(struct rtio *r,
 		sqe = rtio_sqe_acquire(r);
 
 		if (sqe == NULL) {
-			rtio_spsc_drop_all(r->sq);
+			rtio_sqe_drop_all(r);
 			return NULL;
 		}
 

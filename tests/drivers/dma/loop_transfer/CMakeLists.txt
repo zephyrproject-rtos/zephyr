@@ -6,3 +6,5 @@ project(loop_transfer)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+zephyr_code_relocate(FILES src/test_dma_loop.c LOCATION ${CONFIG_DMA_LOOP_TRANSFER_RELOCATE_SECTION}_RODATA_BSS)

@@ -11,7 +11,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
-#include <exc.h>
+#include <exception.h>
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {

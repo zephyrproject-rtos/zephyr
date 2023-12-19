@@ -89,6 +89,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_ALTERA_PIO gpio_altera_pio.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_BCM2711    gpio_bcm2711.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_RA         gpio_ra.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_RZT2M    gpio_rzt2m.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_AMBIQ      gpio_ambiq.c)
 
 if (CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)

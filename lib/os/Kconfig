@@ -119,14 +119,6 @@ config SPSC_PBUF_UTILIZATION
 
 endif # SPSC_PBUF
 
-config SHARED_MULTI_HEAP
-	bool "Shared multi-heap manager"
-	help
-	  Enable support for a shared multi-heap manager that uses the
-	  multi-heap allocator to manage a set of reserved memory regions with
-	  different capabilities / attributes (cacheable, non-cacheable,
-	  etc...) defined in the DT.
-
 config WINSTREAM
 	bool "Lockless shared memory window byte stream"
 	help
@@ -176,7 +168,5 @@ config UTF8
 	  handle UTF-8 encoded strings.
 
 rsource "Kconfig.cbprintf"
-
-rsource "Kconfig.heap"
 
 endmenu

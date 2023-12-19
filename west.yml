@@ -142,7 +142,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 0c5ea5749245c8ff6ce7aefbf0aa9981943c2857
+      revision: 323048f916faa84cebcf6dfd73e606d8cf64107a
       path: modules/hal/ambiq
       groups:
         - hal
@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: ffbe58815808af98d1e3241defa552a0fcc6d28a
+      revision: eb7e415dc115e57afe96f552493b19d49dfc8c0e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 56e0b052dff311c2f8eb08c6804e60fc79feb56f
+      revision: b9633ecea67bf52925d4c61455046223b46402b1
       path: modules/hal/nordic
       groups:
         - hal
@@ -193,12 +193,12 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 2796169ee23dc838311b65758806eb94546a7bc2
+      revision: 2a294b540c09b36f7cddece44d25628bfde5970e
       path: modules/hal/nxp
       groups:
         - hal
     - name: hal_openisa
-      revision: d1e61c0c654d8ca9e73d27fca3a7eb3b7881cb6a
+      revision: eabd530a64d71de91d907bad257cd61aacf607bc
       path: modules/hal/openisa
       groups:
         - hal
@@ -219,7 +219,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: d191d981c4eb20c0c7445a4061fcdbcfa686113a
+      revision: 7a6ba7ce989c3c466b4cb450e44858a3bb0a949a
       path: modules/hal/silabs
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: af2d314b6f7f87cfa8365009497132468ca3a686
+      revision: d183c9c9f56dfed04da0b8e150424177ab9ce51e
       path: modules/hal/stm32
       groups:
         - hal
@@ -244,7 +244,7 @@ manifest:
       groups:
         - hal
     - name: hal_wurthelektronik
-      revision: 24ca9873c3d608fad1fea0431836bc8f144c132e
+      revision: e5bcb2eac1bb9639ce13b4dafc78eb254e014342
       path: modules/hal/wurthelektronik
       groups:
         - hal
@@ -258,12 +258,12 @@ manifest:
       path: modules/lib/hostap
       revision: 7adaff26baa48e26a32c576125e0a749a5239b12
     - name: libmetal
-      revision: 03140d7f4bd9ba474ebfbb6256e84a9089248e67
+      revision: cebd92d15c9759a9d49d508869081def927af4f0
       path: modules/hal/libmetal
       groups:
         - hal
     - name: liblc3
-      revision: 448f3de31f49a838988a162ef1e23a89ddf2d2ed
+      revision: 1a5938ebaca4f13fe79ce074f5dee079783aa29f
       path: modules/lib/liblc3
     - name: littlefs
       path: modules/fs/littlefs
@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 05d11942774fc15b90af101232ec5305051216ec
+      revision: e9131ee8b8ab9306d8f6ad410fd1e3d8a820ce10
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -295,13 +295,13 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: a715dcc179f1a71f51c574165958b72fe932ae3f
+      revision: 9b985ea6bc237b6ae06f48eb228f2ac7f6e3b96b
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 214f9fc1539f8e5937c0474cb6ee29b6dcb2d4b8
+      revision: da78aea63159771956fe0c9263f2e6985b66e9d5
       path: modules/lib/open-amp
     - name: openthread
-      revision: 75694d2860282d216d7286f3956388e957c7cfb5
+      revision: 4ed44bc7d58d9a98c6cca13a50d38129045ab3df
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio

@@ -38,7 +38,7 @@ tests:
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
-      and dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))
+      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
     integration_platforms:
       - nrf9161dk_nrf9161_ns
   drivers.flash.common.stm32:
@@ -92,3 +92,8 @@ tests:
       - atsamd20_xpro
       - atsamr21_xpro
       - atsame54_xpro
+  drivers.flash.common.gd32:
+    platform_allow:
+      - gd32vf103v_eval
+      - gd32a503v_eval
+      - gd32f470i_eval

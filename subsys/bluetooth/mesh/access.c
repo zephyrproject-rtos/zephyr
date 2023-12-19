@@ -19,7 +19,6 @@
 #include "host/testing.h"
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "lpn.h"
 #include "transport.h"
@@ -28,10 +27,16 @@
 #include "op_agg.h"
 #include "settings.h"
 #include "va.h"
+#include "delayable_msg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ACCESS_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_access);
+
+/* 20 - 50ms */
+#define RANDOM_DELAY_SHORT 30
+/* 20 - 500ms */
+#define RANDOM_DELAY_LONG 480
 
 /* Model publication information for persistent storage. */
 struct mod_pub_val {
@@ -761,8 +766,16 @@ static int32_t next_period(const struct bt_mesh_model *mod)
 
 		if (period && elapsed >= period) {
 			LOG_WRN("Retransmission interval is too short");
-			/* Return smallest positive number since 0 means disabled */
-			return 1;
+
+			if (!!pub->delayable) {
+				LOG_WRN("Publication period is too short for"
+					" retransmissions");
+			}
+
+			/* Keep retransmitting the message with the interval sacrificing the
+			 * next publication period start.
+			 */
+			return BT_MESH_PUB_TRANSMIT_INT(mod->pub->retransmit);
 		}
 	}
 
@@ -775,6 +788,11 @@ static int32_t next_period(const struct bt_mesh_model *mod)
 
 	if (elapsed >= period) {
 		LOG_WRN("Publication sending took longer than the period");
+
+		if (!!pub->delayable) {
+			LOG_WRN("Publication period is too short to be delayable");
+		}
+
 		/* Return smallest positive number since 0 means disabled */
 		return 1;
 	}
@@ -855,6 +873,39 @@ static int pub_period_start(struct bt_mesh_model_pub *pub)
 	return 0;
 }
 
+static uint16_t pub_delay_get(int random_delay_window)
+{
+	if (!IS_ENABLED(CONFIG_BT_MESH_DELAYABLE_PUBLICATION)) {
+		return 0;
+	}
+
+	uint16_t num = 0;
+
+	(void)bt_rand(&num, sizeof(num));
+
+	return 20 + (num % random_delay_window);
+}
+
+static int pub_delay_schedule(struct bt_mesh_model_pub *pub, int delay)
+{
+	uint16_t random;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_DELAYABLE_PUBLICATION)) {
+		return -ENOTSUP;
+	}
+
+	random = pub_delay_get(delay);
+	err = k_work_reschedule(&pub->timer, K_MSEC(random));
+	if (err < 0) {
+		LOG_ERR("Unable to delay publication (err %d)", err);
+		return err;
+	}
+
+	LOG_DBG("Publication delayed by %dms", random);
+	return 0;
+}
+
 static void mod_publish(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -888,6 +939,13 @@ static void mod_publish(struct k_work *work)
 		/* First publication in this period */
 		err = pub_period_start(pub);
 		if (err) {
+			return;
+		}
+
+		/* Delay the first publication in a period. */
+		if (!!pub->delayable && !pub_delay_schedule(pub, RANDOM_DELAY_SHORT)) {
+			/* Increment count as it would do BT_MESH_PUB_MSG_TOTAL */
+			pub->count++;
 			return;
 		}
 	}
@@ -1424,7 +1482,7 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 
 	op = find_op(elem, opcode, &model);
 	if (!op) {
-		LOG_ERR("No OpCode 0x%08x for elem 0x%02x", opcode, elem->rt->addr);
+		LOG_DBG("No OpCode 0x%08x for elem 0x%02x", opcode, elem->rt->addr);
 		return ACCESS_STATUS_WRONG_OPCODE;
 	}
 
@@ -1519,6 +1577,13 @@ int bt_mesh_model_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 		return -EINVAL;
 	}
 
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	if (ctx->rnd_delay) {
+		return bt_mesh_delayable_msg_manage(ctx, msg, bt_mesh_model_elem(model)->rt->addr,
+						    cb, cb_data);
+	}
+#endif
+
 	return bt_mesh_access_send(ctx, msg, bt_mesh_model_elem(model)->rt->addr, cb, cb_data);
 }
 
@@ -1556,6 +1621,18 @@ int bt_mesh_model_publish(const struct bt_mesh_model *model)
 
 	LOG_DBG("Publish Retransmit Count %u Interval %ums", pub->count,
 		BT_MESH_PUB_TRANSMIT_INT(pub->retransmit));
+
+	/* Delay the publication for longer time when the publication is triggered manually (section
+	 * 3.7.3.1):
+	 *
+	 * When the publication of a message is the result of a power-up, a state transition
+	 * progress update, or completion of a state transition, multiple nodes may be reporting the
+	 * state change at the same time. To reduce the probability of a message collision, these
+	 * messages should be sent with a random delay between 20 and 500 milliseconds.
+	 */
+	if (!!pub->delayable && !pub_delay_schedule(pub, RANDOM_DELAY_LONG)) {
+		return 0;
+	}
 
 	k_work_reschedule(&pub->timer, K_NO_WAIT);
 
@@ -2561,8 +2638,21 @@ static void commit_mod(const struct bt_mesh_model *mod, const struct bt_mesh_ele
 		int32_t ms = bt_mesh_model_pub_period_get(mod);
 
 		if (ms > 0) {
-			LOG_DBG("Starting publish timer (period %u ms)", ms);
-			k_work_schedule(&mod->pub->timer, K_MSEC(ms));
+			/* Delay the first publication after power-up for longer time (section
+			 * 3.7.3.1):
+			 *
+			 * When the publication of a message is the result of a power-up, a state
+			 * transition progress update, or completion of a state transition, multiple
+			 * nodes may be reporting the state change at the same time. To reduce the
+			 * probability of a message collision, these messages should be sent with a
+			 * random delay between 20 and 500 milliseconds.
+			 */
+			uint16_t random;
+
+			random = !!mod->pub->delayable ? pub_delay_get(RANDOM_DELAY_LONG) : 0;
+
+			LOG_DBG("Starting publish timer (period %u ms, delay %u ms)", ms, random);
+			k_work_schedule(&mod->pub->timer, K_MSEC(ms + random));
 		}
 	}
 
@@ -2613,4 +2703,25 @@ uint8_t bt_mesh_comp_parse_page(struct net_buf_simple *buf)
 	}
 
 	return page;
+}
+
+void bt_mesh_access_init(void)
+{
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	bt_mesh_delayable_msg_init();
+#endif
+}
+
+void bt_mesh_access_suspend(void)
+{
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	bt_mesh_delayable_msg_stop();
+#endif
+}
+
+void bt_mesh_access_reset(void)
+{
+#if defined CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG
+	bt_mesh_delayable_msg_stop();
+#endif
 }

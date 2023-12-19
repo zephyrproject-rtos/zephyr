@@ -512,20 +512,6 @@ static int rm67162_blanking_on(const struct device *dev)
 	}
 }
 
-static int rm67162_set_brightness(const struct device *dev,
-				  const uint8_t brightness)
-{
-	LOG_WRN("Set brightness not implemented");
-	return -ENOTSUP;
-}
-
-static int rm67162_set_contrast(const struct device *dev,
-				const uint8_t contrast)
-{
-	LOG_ERR("Set contrast not implemented");
-	return -ENOTSUP;
-}
-
 static int rm67162_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pixel_format)
 {
@@ -595,8 +581,6 @@ static const struct display_driver_api rm67162_api = {
 	.blanking_off = rm67162_blanking_off,
 	.get_capabilities = rm67162_get_capabilities,
 	.write = rm67162_write,
-	.set_brightness = rm67162_set_brightness,
-	.set_contrast = rm67162_set_contrast,
 	.set_pixel_format = rm67162_set_pixel_format,
 	.set_orientation = rm67162_set_orientation,
 };

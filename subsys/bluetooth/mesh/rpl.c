@@ -20,7 +20,6 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "settings.h"

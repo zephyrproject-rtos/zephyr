@@ -5,10 +5,11 @@
  */
 
 #include <errno.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 
-#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
 ZTEST(posix_apis, test_signal_emptyset)
@@ -216,4 +217,90 @@ ZTEST(posix_apis, test_signal_strsignal)
 	zassert_mem_equal(strsignal(SIGHUP), "Signal 1", sizeof("Signal 1"));
 	zassert_mem_equal(strsignal(SIGSYS), "Signal 31", sizeof("Signal 31"));
 #endif
+}
+
+static void *test_pthread_sigmask_entry(void *arg)
+{
+/* for clarity */
+#define SIG_GETMASK SIG_SETMASK
+
+	enum {
+		NEW,
+		OLD,
+	};
+	static sigset_t set[2];
+	const int invalid_how = 0x9a2ba9e;
+
+	ARG_UNUSED(arg);
+
+	/* invalid how results in EINVAL */
+	zassert_equal(pthread_sigmask(invalid_how, NULL, NULL), EINVAL);
+	zassert_equal(pthread_sigmask(invalid_how, &set[NEW], &set[OLD]), EINVAL);
+
+	/* verify setting / getting masks */
+	zassert_ok(sigemptyset(&set[NEW]));
+	zassert_ok(pthread_sigmask(SIG_SETMASK, &set[NEW], NULL));
+	zassert_ok(sigfillset(&set[OLD]));
+	zassert_ok(pthread_sigmask(SIG_GETMASK, NULL, &set[OLD]));
+	zassert_mem_equal(&set[OLD], &set[NEW], sizeof(set[OLD]));
+
+	zassert_ok(sigfillset(&set[NEW]));
+	zassert_ok(pthread_sigmask(SIG_SETMASK, &set[NEW], NULL));
+	zassert_ok(sigemptyset(&set[OLD]));
+	zassert_ok(pthread_sigmask(SIG_GETMASK, NULL, &set[OLD]));
+	zassert_mem_equal(&set[OLD], &set[NEW], sizeof(set[OLD]));
+
+	/* start with an empty mask */
+	zassert_ok(sigemptyset(&set[NEW]));
+	zassert_ok(pthread_sigmask(SIG_SETMASK, &set[NEW], NULL));
+
+	/* verify SIG_BLOCK: expect (SIGUSR1 | SIGUSR2 | SIGHUP) */
+	zassert_ok(sigemptyset(&set[NEW]));
+	zassert_ok(sigaddset(&set[NEW], SIGUSR1));
+	zassert_ok(pthread_sigmask(SIG_BLOCK, &set[NEW], NULL));
+
+	zassert_ok(sigemptyset(&set[NEW]));
+	zassert_ok(sigaddset(&set[NEW], SIGUSR2));
+	zassert_ok(sigaddset(&set[NEW], SIGHUP));
+	zassert_ok(pthread_sigmask(SIG_BLOCK, &set[NEW], NULL));
+
+	zassert_ok(sigemptyset(&set[OLD]));
+	zassert_ok(sigaddset(&set[OLD], SIGUSR1));
+	zassert_ok(sigaddset(&set[OLD], SIGUSR2));
+	zassert_ok(sigaddset(&set[OLD], SIGHUP));
+
+	zassert_ok(pthread_sigmask(SIG_GETMASK, NULL, &set[NEW]));
+	zassert_mem_equal(&set[NEW], &set[OLD], sizeof(set[NEW]));
+
+	/* start with full mask */
+	zassert_ok(sigfillset(&set[NEW]));
+	zassert_ok(pthread_sigmask(SIG_SETMASK, &set[NEW], NULL));
+
+	/* verify SIG_UNBLOCK: expect ~(SIGUSR1 | SIGUSR2 | SIGHUP) */
+	zassert_ok(sigemptyset(&set[NEW]));
+	zassert_ok(sigaddset(&set[NEW], SIGUSR1));
+	zassert_ok(pthread_sigmask(SIG_UNBLOCK, &set[NEW], NULL));
+
+	zassert_ok(sigemptyset(&set[NEW]));
+	zassert_ok(sigaddset(&set[NEW], SIGUSR2));
+	zassert_ok(sigaddset(&set[NEW], SIGHUP));
+	zassert_ok(pthread_sigmask(SIG_UNBLOCK, &set[NEW], NULL));
+
+	zassert_ok(sigfillset(&set[OLD]));
+	zassert_ok(sigdelset(&set[OLD], SIGUSR1));
+	zassert_ok(sigdelset(&set[OLD], SIGUSR2));
+	zassert_ok(sigdelset(&set[OLD], SIGHUP));
+
+	zassert_ok(pthread_sigmask(SIG_GETMASK, NULL, &set[NEW]));
+	zassert_mem_equal(&set[NEW], &set[OLD], sizeof(set[NEW]));
+
+	return NULL;
+}
+
+ZTEST(posix_apis, test_pthread_sigmask)
+{
+	pthread_t th;
+
+	zassert_ok(pthread_create(&th, NULL, test_pthread_sigmask_entry, NULL));
+	zassert_ok(pthread_join(th, NULL));
 }

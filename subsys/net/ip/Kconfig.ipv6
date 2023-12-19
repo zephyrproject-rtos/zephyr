@@ -40,10 +40,27 @@ config NET_IF_IPV6_PREFIX_COUNT
 if NET_NATIVE_IPV6
 
 config NET_INITIAL_HOP_LIMIT
-	int "Initial hop limit for a connection"
+	int "Initial IPv6 hop limit value for unicast packets"
 	default 64
+	range 0 255
 	help
-	  The value should be > 0
+	  The value should normally be > 0. The device receiving the IPv6
+	  packet will decrement the value and will drop the packet if the hop
+	  limit value is 0. When sending, the packet is dropped before
+	  transmitting to network if hop limit is 0.
+
+config NET_INITIAL_MCAST_HOP_LIMIT
+	int "Initial IPv6 hop limit value for multicast packets"
+	default 1
+	range 0 255
+	help
+	  The value should normally be > 0. The device receiving the IPv6
+	  packet will decrement the value and will drop the packet if the hop
+	  limit value is 0. When sending, the packet is dropped before
+	  transmitting to network if hop limit is 0.
+	  The default is 1 (same as in IPv4) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
 
 config NET_IPV6_MAX_NEIGHBORS
 	int "How many IPv6 neighbors are supported"

@@ -59,6 +59,7 @@ list(APPEND kernel_files
   mem_slab.c
   thread.c
   version.c
+  sched.c
   )
 
 if(CONFIG_MULTITHREADING)
@@ -72,7 +73,6 @@ list(APPEND kernel_files
   stack.c
   system_work_q.c
   work.c
-  sched.c
   condvar.c
   )
 

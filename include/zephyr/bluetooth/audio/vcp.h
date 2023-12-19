@@ -353,6 +353,9 @@ struct bt_vcp_vol_ctlr_cb {
 
 	/* Audio Input Control Service callbacks */
 	struct bt_aics_cb             aics_cb;
+
+	/** Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /**
@@ -360,9 +363,22 @@ struct bt_vcp_vol_ctlr_cb {
  *
  * @param cb   The callback structure.
  *
- * @return 0 if success, errno on failure.
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was already registered
  */
 int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
+
+/**
+ * @brief Unregisters the callbacks used by the Volume Controller.
+ *
+ * @param cb   The callback structure.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p cb is NULL
+ * @retval -EALREADY if @p cb was not registered
+ */
+int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb);
 
 /**
  * @brief Discover Volume Control Service and included services.
@@ -382,6 +398,20 @@ int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
  */
 int bt_vcp_vol_ctlr_discover(struct bt_conn *conn,
 			     struct bt_vcp_vol_ctlr **vol_ctlr);
+
+/**
+ * @brief Get the volume controller from a connection pointer
+ *
+ * Get the Volume Control Profile Volume Controller pointer from a connection pointer.
+ * Only volume controllers that have been initiated via bt_vcp_vol_ctlr_discover() can be
+ * retrieved.
+ *
+ * @param conn     Connection pointer.
+ *
+ * @retval Pointer to a Volume Control Profile Volume Controller instance
+ * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ */
+struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn);
 
 /**
  * @brief Get the connection pointer of a client instance

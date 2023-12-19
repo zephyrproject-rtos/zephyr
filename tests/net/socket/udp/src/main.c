@@ -14,6 +14,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
 
 #include "ipv6.h"
 #include "net_private.h"
@@ -44,6 +46,8 @@ static const char test_str_all_tx_bufs[] =
 
 #define MY_IPV4_ADDR "127.0.0.1"
 #define MY_IPV6_ADDR "::1"
+#define MY_MCAST_IPV4_ADDR "224.0.0.1"
+#define MY_MCAST_IPV6_ADDR "ff00::1"
 
 #define ANY_PORT 0
 #define SERVER_PORT 4242
@@ -935,10 +939,12 @@ static ZTEST_BMEM struct sockaddr_in6 udp_server_addr;
 static ZTEST_BMEM SYS_MUTEX_DEFINE(wait_data);
 
 static struct net_if *eth_iface;
+static struct net_if *lo0;
 static ZTEST_BMEM bool test_started;
 static ZTEST_BMEM bool test_failed;
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in_addr my_addr2 = { { { 192, 0, 2, 2 } } };
 static uint8_t server_lladdr[] = { 0x01, 0x02, 0x03, 0xff, 0xfe,
 				0x04, 0x05, 0x06 };
 static struct net_linkaddr server_link_addr = {
@@ -1004,9 +1010,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			*my_iface = iface;
 		}
 	}
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+		lo0 = iface;
+	}
 }
 
-ZTEST(net_socket_udp, test_17_setup_eth)
+ZTEST(net_socket_udp, test_17_setup_eth_for_ipv6)
 {
 	struct net_if_addr *ifaddr;
 	int ret;
@@ -1415,7 +1425,7 @@ ZTEST_USER(net_socket_udp, test_26_recvmsg_invalid)
 	msg.msg_control = &cmsgbuf.buf;
 
 	ret = recvmsg(0, &msg, 0);
-	zassert_true(ret < 0, "recvmsg() succeed");
+	zassert_true(ret < 0 && errno == ENOMEM, "Wrong errno (%d)", errno);
 
 	msg.msg_iov = io_vector;
 	msg.msg_iovlen = 1;
@@ -1462,6 +1472,11 @@ static void comm_sendmsg_recvmsg(int client_sock,
 
 	sent = sendmsg(client_sock, client_msg, 0);
 	zassert_true(sent > 0, "sendmsg failed, %s (%d)", strerror(errno), -errno);
+
+	/* One negative test with invalid msg_iov */
+	memset(msg, 0, sizeof(*msg));
+	recved = recvmsg(server_sock, msg, 0);
+	zassert_true(recved < 0 && errno == ENOMEM, "Wrong errno (%d)", errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
 		len += client_msg->msg_iov[i].iov_len;
@@ -1852,6 +1867,461 @@ ZTEST_USER(net_socket_udp, test_29_recvmsg_ancillary_ipv6_pktinfo_data_user)
 				   server_sock,
 				   (struct sockaddr *)&server_addr,
 				   sizeof(server_addr));
+}
+
+ZTEST(net_socket_udp, test_30_setup_eth_for_ipv4)
+{
+	struct net_if_addr *ifaddr;
+
+	net_if_foreach(iface_cb, &eth_iface);
+	zassert_not_null(eth_iface, "No ethernet interface found");
+
+	net_if_down(eth_iface);
+
+	ifaddr = net_if_ipv4_addr_add(eth_iface, &my_addr2,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		       net_sprint_ipv4_addr(&my_addr2));
+		zassert_not_null(ifaddr, "addr2");
+	}
+
+	net_if_up(eth_iface);
+}
+
+static int bind_socket(int sock, struct net_if *iface)
+{
+	struct sockaddr_ll addr;
+
+	memset(&addr, 0, sizeof(addr));
+
+	addr.sll_ifindex = net_if_get_by_iface(iface);
+	addr.sll_family = AF_PACKET;
+
+	return bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+}
+
+static void test_check_ttl(int sock_c, int sock_s, int sock_p,
+			   struct sockaddr *addr_c, socklen_t addrlen_c,
+			   struct sockaddr *addr_s, socklen_t addrlen_s,
+			   struct sockaddr *addr_sendto, socklen_t addrlen_sendto,
+			   sa_family_t family, uint8_t expected_ttl,
+			   uint8_t expected_mcast_ttl)
+{
+	uint8_t tx_buf = 0xab;
+	uint8_t rx_buf;
+	int ret, count = 10, opt;
+#define IPV4_HDR_SIZE sizeof(struct net_ipv4_hdr)
+#define IPV6_HDR_SIZE sizeof(struct net_ipv6_hdr)
+#define UDP_HDR_SIZE sizeof(struct net_udp_hdr)
+#define V4_HDR_SIZE (IPV4_HDR_SIZE + UDP_HDR_SIZE)
+#define V6_HDR_SIZE (IPV6_HDR_SIZE + UDP_HDR_SIZE)
+#define MAX_HDR_SIZE (IPV6_HDR_SIZE + UDP_HDR_SIZE)
+	uint8_t data_to_receive[sizeof(tx_buf) + MAX_HDR_SIZE];
+	struct sockaddr_ll src;
+	socklen_t addrlen;
+	char ifname[CONFIG_NET_INTERFACE_NAME_LEN];
+	struct ifreq ifreq = { 0 };
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 100000,
+	};
+#if defined(CONFIG_NET_STATISTICS)
+	struct net_stats_ip ipv4_stats_before, ipv4_stats_after;
+	struct net_stats_ip ipv6_stats_before, ipv6_stats_after;
+#endif
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_INTERFACE_NAME);
+
+	ret = bind(sock_c, addr_c, addrlen_c);
+	zassert_equal(ret, 0, "client bind failed");
+
+	ret = net_if_get_name(lo0, ifname, sizeof(ifname));
+	zassert_true(ret > 0, "cannot get interface name (%d)", ret);
+
+	strncpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name));
+	ret = setsockopt(sock_c, SOL_SOCKET, SO_BINDTODEVICE, &ifreq,
+			sizeof(ifreq));
+	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", -errno);
+
+	ret = connect(sock_c, addr_s, addrlen_s);
+	zassert_equal(ret, 0, "connect failed");
+
+	ret = setsockopt(sock_s, SOL_SOCKET, SO_RCVTIMEO,
+			&timeo_optval, sizeof(timeo_optval));
+	zassert_equal(ret, 0, "Cannot set receive timeout (%d)", -errno);
+
+	while (count > 0) {
+		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+			     addr_sendto, addrlen_sendto);
+		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
+
+		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT);
+		if (ret > 0) {
+			zassert_equal(ret, sizeof(rx_buf), "recv failed (%d)", ret);
+			zassert_equal(rx_buf, tx_buf, "wrong data");
+		}
+
+		ret = recvfrom(sock_p, data_to_receive, sizeof(data_to_receive), 0,
+			       (struct sockaddr *)&src, &addrlen);
+		if (ret > 0) {
+			int hdr_size = family == AF_INET ?
+				V4_HDR_SIZE : V6_HDR_SIZE;
+			zassert_equal(ret, sizeof(tx_buf) + hdr_size,
+				      "Cannot receive all data (%d vs %zd) (%d)",
+				      ret, sizeof(tx_buf), -errno);
+			zassert_mem_equal(&data_to_receive[hdr_size], &tx_buf,
+					  sizeof(tx_buf),
+					  "Sent and received buffers do not match");
+
+			if (family == AF_INET) {
+				struct net_ipv4_hdr *ipv4 =
+					(struct net_ipv4_hdr *)&data_to_receive[0];
+
+				if (expected_ttl > 0) {
+					zassert_equal(ipv4->ttl, expected_ttl,
+						      "Invalid ttl (%d vs %d)",
+						      ipv4->ttl, expected_ttl);
+				} else if (expected_mcast_ttl > 0) {
+					zassert_equal(ipv4->ttl, expected_mcast_ttl,
+						      "Invalid mcast ttl (%d vs %d)",
+						      ipv4->ttl, expected_mcast_ttl);
+				}
+			} else if (family == AF_INET6) {
+				struct net_ipv6_hdr *ipv6 =
+					(struct net_ipv6_hdr *)&data_to_receive[0];
+
+				if (expected_ttl > 0) {
+					zassert_equal(ipv6->hop_limit, expected_ttl,
+						      "Invalid hop limit (%d vs %d)",
+						      ipv6->hop_limit, expected_ttl);
+				} else if (expected_mcast_ttl > 0) {
+					zassert_equal(ipv6->hop_limit, expected_mcast_ttl,
+						      "Invalid mcast hop limit (%d vs %d)",
+						      ipv6->hop_limit, expected_mcast_ttl);
+				}
+			} else {
+				zassert_true(false, "Invalid address family (%d)",
+					     family);
+			}
+
+			break;
+		}
+
+		count--;
+	}
+
+	zassert_true(count > 0, "timeout while waiting data");
+
+	if (family == AF_INET) {
+		/* Set TTL to 0 and make sure the packet is dropped and not
+		 * received
+		 */
+		int option;
+
+		if (expected_ttl > 0) {
+			option = IP_TTL;
+		} else {
+			option = IP_MULTICAST_TTL;
+		}
+
+		opt = 0;
+		ret = setsockopt(sock_c, IPPROTO_IP, option, &opt, sizeof(opt));
+		zassert_equal(ret, 0, "Cannot set %s TTL (%d)",
+			      option == IP_TTL ? "unicast" : "multicast",
+			      -errno);
+
+#if defined(CONFIG_NET_STATISTICS)
+		/* Get IPv4 stats and verify they are updated for dropped
+		 * packets.
+		 */
+		net_mgmt(NET_REQUEST_STATS_GET_IPV4, lo0,
+			 &ipv4_stats_before, sizeof(ipv4_stats_before));
+#endif
+		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+			     addr_sendto, addrlen_sendto);
+		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
+
+#if defined(CONFIG_NET_STATISTICS)
+		net_mgmt(NET_REQUEST_STATS_GET_IPV4, lo0,
+			 &ipv4_stats_after, sizeof(ipv4_stats_after));
+
+		zassert_equal(ipv4_stats_before.drop + 1,
+			      ipv4_stats_after.drop,
+			      "Dropped statistics not updated (%d vs %d)",
+			      ipv4_stats_before.drop + 1,
+			      ipv4_stats_after.drop);
+#endif
+		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
+		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
+	}
+
+	if (family == AF_INET6) {
+		/* Set hoplimit to 0 and make sure the packet is dropped and not
+		 * received.
+		 */
+		int option;
+
+		if (expected_ttl > 0) {
+			option = IPV6_UNICAST_HOPS;
+		} else {
+			option = IPV6_MULTICAST_HOPS;
+		}
+
+		opt = 0;
+		ret = setsockopt(sock_c, IPPROTO_IPV6, option,
+				 &opt, sizeof(opt));
+		zassert_equal(ret, 0, "Cannot set %s hops (%d)",
+			      option == IPV6_UNICAST_HOPS ? "unicast" : "multicast",
+			      -errno);
+
+#if defined(CONFIG_NET_STATISTICS)
+		/* Get IPv6 stats and verify they are updated for dropped
+		 * packets.
+		 */
+		net_mgmt(NET_REQUEST_STATS_GET_IPV6, lo0,
+			 &ipv6_stats_before, sizeof(ipv6_stats_before));
+#endif
+		ret = sendto(sock_c, &tx_buf, sizeof(tx_buf), 0,
+			     addr_sendto, addrlen_sendto);
+		zassert_equal(ret, sizeof(tx_buf), "send failed (%d)", -errno);
+
+#if defined(CONFIG_NET_STATISTICS)
+		net_mgmt(NET_REQUEST_STATS_GET_IPV6, lo0,
+			 &ipv6_stats_after, sizeof(ipv6_stats_after));
+
+		zassert_equal(ipv6_stats_before.drop + 1,
+			      ipv6_stats_after.drop,
+			      "Dropped statistics not updated (%d vs %d)",
+			      ipv6_stats_before.drop + 1,
+			      ipv6_stats_after.drop);
+#endif
+		ret = recv(sock_s, &rx_buf, sizeof(rx_buf), 0);
+		zassert_true(ret < 0 && errno == EAGAIN, "recv succeed (%d)", -errno);
+
+	}
+
+	ret = close(sock_c);
+	zassert_equal(ret, 0, "close failed");
+	ret = close(sock_s);
+	zassert_equal(ret, 0, "close failed");
+	ret = close(sock_p);
+	zassert_equal(ret, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_31_v4_ttl)
+{
+	int ret;
+	int client_sock;
+	int server_sock;
+	int packet_sock;
+	int ttl, verify;
+	socklen_t optlen;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
+
+	ret = bind_socket(packet_sock, lo0);
+	zassert_equal(ret, 0, "packet socket bind failed");
+
+	zassert_not_null(lo0->config.ip.ipv4,
+			 "Interface %d (%p) no IPv4 configured",
+			 net_if_get_by_iface(lo0), lo0);
+
+	ttl = 16;
+	net_if_ipv4_set_ttl(lo0, ttl);
+	verify = net_if_ipv4_get_ttl(lo0);
+	zassert_equal(verify, ttl, "Different TTLs (%d vs %d)", ttl, verify);
+
+	ttl = 128;
+	ret = setsockopt(client_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+	zassert_equal(ret, 0, "Cannot set unicast TTL (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IP, IP_TTL, &verify, &optlen);
+	zassert_equal(ret, 0, "Cannot get unicast TTL (%d)", -errno);
+	zassert_equal(verify, ttl, "Different unicast TTL (%d vs %d)",
+		      ttl, verify);
+
+	test_check_ttl(client_sock, server_sock, packet_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       AF_INET, ttl, 0);
+}
+
+ZTEST(net_socket_udp, test_32_v4_mcast_ttl)
+{
+	int ret;
+	int client_sock;
+	int server_sock;
+	int packet_sock;
+	int mcast_ttl, verify;
+	socklen_t optlen;
+	struct sockaddr_in client_addr;
+	struct sockaddr_in server_addr;
+	struct sockaddr_in sendto_addr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
+
+	ret = bind_socket(packet_sock, lo0);
+	zassert_equal(ret, 0, "packet socket bind failed");
+
+	zassert_not_null(lo0->config.ip.ipv4,
+			 "Interface %d (%p) no IPv4 configured",
+			 net_if_get_by_iface(lo0), lo0);
+
+	mcast_ttl = 8;
+	ret = setsockopt(client_sock, IPPROTO_IP, IP_MULTICAST_TTL, &mcast_ttl,
+			sizeof(mcast_ttl));
+	zassert_equal(ret, 0, "Cannot set multicast ttl (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IP, IP_MULTICAST_TTL, &verify,
+			 &optlen);
+	zassert_equal(ret, 0, "Cannot get multicast ttl (%d)", -errno);
+	zassert_equal(verify, mcast_ttl, "Different multicast TTLs (%d vs %d)",
+		      mcast_ttl, verify);
+
+	ret = net_addr_pton(AF_INET, MY_MCAST_IPV4_ADDR, &sendto_addr.sin_addr);
+	zassert_equal(ret, 0, "Cannot get IPv4 address (%d)", ret);
+
+	test_check_ttl(client_sock, server_sock, packet_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       (struct sockaddr *)&sendto_addr, sizeof(sendto_addr),
+		       AF_INET, 0, mcast_ttl);
+}
+
+ZTEST(net_socket_udp, test_33_v6_mcast_hops)
+{
+	int ret;
+	int client_sock;
+	int server_sock;
+	int packet_sock;
+	int mcast_hops, if_mcast_hops;
+	int verify, opt;
+	socklen_t optlen;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+	struct sockaddr_in6 sendto_addr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
+
+	ret = bind_socket(packet_sock, lo0);
+	zassert_equal(ret, 0, "packet socket bind failed");
+
+	zassert_not_null(lo0->config.ip.ipv6,
+			 "Interface %d (%p) no IPv6 configured",
+			 net_if_get_by_iface(lo0), lo0);
+
+	/* First make sure setting hop limit to -1 works as expected (route default
+	 * value should be used).
+	 */
+	if_mcast_hops = net_if_ipv6_get_mcast_hop_limit(lo0);
+
+	opt = -1;
+	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &opt,
+			sizeof(opt));
+	zassert_equal(ret, 0, "Cannot set multicast hop limit (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
+			 &optlen);
+	zassert_equal(ret, 0, "Cannot get multicast hop limit (%d)", -errno);
+	zassert_equal(verify, if_mcast_hops, "Different multicast hop limit (%d vs %d)",
+		      if_mcast_hops, verify);
+
+	/* Then test the normal case where we set the value */
+	mcast_hops = 8;
+	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &mcast_hops,
+			sizeof(mcast_hops));
+	zassert_equal(ret, 0, "Cannot set multicast hop limit (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &verify,
+			 &optlen);
+	zassert_equal(ret, 0, "Cannot get multicast hop limit (%d)", -errno);
+	zassert_equal(verify, mcast_hops, "Different multicast hop limit (%d vs %d)",
+		      mcast_hops, verify);
+
+	ret = net_addr_pton(AF_INET6, MY_MCAST_IPV6_ADDR, &sendto_addr.sin6_addr);
+	zassert_equal(ret, 0, "Cannot get IPv6 address (%d)", ret);
+
+	test_check_ttl(client_sock, server_sock, packet_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       (struct sockaddr *)&sendto_addr, sizeof(sendto_addr),
+		       AF_INET6, 0, mcast_hops);
+}
+
+ZTEST(net_socket_udp, test_34_v6_hops)
+{
+	int ret;
+	int client_sock;
+	int server_sock;
+	int packet_sock;
+	int hops, verify;
+	socklen_t optlen;
+	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 server_addr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	packet_sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
+	zassert_true(packet_sock >= 0, "Cannot create packet socket (%d)", -errno);
+
+	ret = bind_socket(packet_sock, lo0);
+	zassert_equal(ret, 0, "packet socket bind failed");
+
+	zassert_not_null(lo0->config.ip.ipv6,
+			 "Interface %d (%p) no IPv6 configured",
+			 net_if_get_by_iface(lo0), lo0);
+
+	hops = 16;
+	net_if_ipv6_set_hop_limit(lo0, hops);
+	verify = net_if_ipv6_get_hop_limit(lo0);
+	zassert_equal(verify, hops, "Different hop limit (%d vs %d)", hops, verify);
+
+	hops = 8;
+	ret = setsockopt(client_sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &hops,
+			sizeof(hops));
+	zassert_equal(ret, 0, "Cannot set unicast hops (%d)", -errno);
+
+	optlen = sizeof(verify);
+	ret = getsockopt(client_sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &verify,
+			 &optlen);
+	zassert_equal(ret, 0, "Cannot get unicast hops (%d)", -errno);
+	zassert_equal(verify, hops, "Different unicast hops (%d vs %d)",
+		      hops, verify);
+
+	test_check_ttl(client_sock, server_sock, packet_sock,
+		       (struct sockaddr *)&client_addr, sizeof(client_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       (struct sockaddr *)&server_addr, sizeof(server_addr),
+		       AF_INET6, hops, 0);
 }
 
 static void after(void *arg)

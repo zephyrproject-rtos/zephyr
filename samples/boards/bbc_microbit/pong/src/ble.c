@@ -30,9 +30,9 @@
 #define PONG_CHR_UUID \
 	BT_UUID_128_ENCODE(0xabbf8f1c, 0xc56a, 0x82b5, 0xc640, 0x2ccdd7af94dd)
 
-static struct bt_uuid_128 pong_svc_uuid = BT_UUID_INIT_128(PONG_SVC_UUID);
-static struct bt_uuid_128 pong_chr_uuid = BT_UUID_INIT_128(PONG_CHR_UUID);
-static struct bt_uuid *gatt_ccc_uuid = BT_UUID_GATT_CCC;
+static const struct bt_uuid_128 pong_svc_uuid = BT_UUID_INIT_128(PONG_SVC_UUID);
+static const struct bt_uuid_128 pong_chr_uuid = BT_UUID_INIT_128(PONG_CHR_UUID);
+static const struct bt_uuid *gatt_ccc_uuid = BT_UUID_GATT_CCC;
 
 static struct bt_gatt_discover_params discov_param;
 static struct bt_gatt_subscribe_params subscribe_param;

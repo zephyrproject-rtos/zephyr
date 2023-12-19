@@ -606,6 +606,7 @@ tbs-biometrics	Touchless Biometric Systems AG
 tcg	Trusted Computing Group
 tcl	Toby Churchill Ltd.
 tcs	Shenzhen City Tang Cheng Technology Co., Ltd.
+tdk	TDK Corporation.
 tdo	Shangai Top Display Optoelectronics Co., Ltd
 technexion	TechNexion
 technologic	Technologic Systems

@@ -181,3 +181,15 @@ config OPENTHREAD_DEFAULT_TX_POWER
 	default 0
 	help
 	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.
+
+config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
+	int "Openthread default TCAT stack size"
+	default 4200
+	help
+	   Openthread default TCAT stack size.
+
+config OPENTHREAD_BLE_TCAT_RING_BUF_SIZE
+	int "Openthread BLE ringbuffer size"
+	default 512
+	help
+	   Openthread BLE TCAT ringbuffer size.

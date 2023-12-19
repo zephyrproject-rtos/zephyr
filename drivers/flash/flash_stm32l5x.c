@@ -26,8 +26,10 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #elif defined(CONFIG_SOC_SERIES_STM32L5X)
 #define STM32_SERIES_MAX_FLASH	512
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-/* at this time stm32u5 mcus have 1MB (stm32u575) or 2MB (stm32u585) */
-#define STM32_SERIES_MAX_FLASH	2048
+/* It is used to handle the 2 banks discontinuity case, the discontinuity is not happen on STM32U5,
+ *  so define it to flash size to avoid the unexptected check.
+ */
+#define STM32_SERIES_MAX_FLASH	(CONFIG_FLASH_SIZE)
 #endif
 
 #define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
@@ -397,7 +399,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	if (stm32_flash_has_2_banks(dev) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
-		 * For stm32l552xx with 256 kB flash or stm32u57x with 1MB flash
+		 * For stm32l552xx with 256 kB flash
 		 * which have space between banks 1 and 2.
 		 */
 
@@ -417,8 +419,8 @@ void flash_stm32_page_layout(const struct device *dev,
 		stm32_flash_layout_size = ARRAY_SIZE(stm32_flash_layout);
 	} else {
 		/*
-		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u58x
-		 * with 2MB flash which has no space between banks 1 and 2.
+		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u5x,
+		 * which has no space between banks 1 and 2.
 		 */
 
 		if (stm32_flash_has_2_banks(dev)) {

@@ -211,27 +211,6 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x,
 	return ret;
 }
 
-static int mcux_elcdif_read(const struct device *dev, const uint16_t x,
-			    const uint16_t y,
-			    const struct display_buffer_descriptor *desc,
-			    void *buf)
-{
-	LOG_ERR("Read not implemented");
-	return -ENOTSUP;
-}
-
-static void *mcux_elcdif_get_framebuffer(const struct device *dev)
-{
-	/*
-	 * Direct FB access is not available. If the user wants to set
-	 * the framebuffer directly, they must provide a buffer to
-	 * `display_write` equal in size to the connected display,
-	 * with coordinates [0,0]
-	 */
-	LOG_ERR("Direct framebuffer access not available");
-	return NULL;
-}
-
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
@@ -244,20 +223,6 @@ static int mcux_elcdif_display_blanking_on(const struct device *dev)
 	const struct mcux_elcdif_config *config = dev->config;
 
 	return gpio_pin_set_dt(&config->backlight_gpio, 0);
-}
-
-static int mcux_elcdif_set_brightness(const struct device *dev,
-				      const uint8_t brightness)
-{
-	LOG_WRN("Set brightness not implemented");
-	return -ENOTSUP;
-}
-
-static int mcux_elcdif_set_contrast(const struct device *dev,
-				    const uint8_t contrast)
-{
-	LOG_ERR("Set contrast not implemented");
-	return -ENOTSUP;
 }
 
 static int mcux_elcdif_set_pixel_format(const struct device *dev,
@@ -368,10 +333,6 @@ static const struct display_driver_api mcux_elcdif_api = {
 	.blanking_on = mcux_elcdif_display_blanking_on,
 	.blanking_off = mcux_elcdif_display_blanking_off,
 	.write = mcux_elcdif_write,
-	.read = mcux_elcdif_read,
-	.get_framebuffer = mcux_elcdif_get_framebuffer,
-	.set_brightness = mcux_elcdif_set_brightness,
-	.set_contrast = mcux_elcdif_set_contrast,
 	.get_capabilities = mcux_elcdif_get_capabilities,
 	.set_pixel_format = mcux_elcdif_set_pixel_format,
 	.set_orientation = mcux_elcdif_set_orientation,

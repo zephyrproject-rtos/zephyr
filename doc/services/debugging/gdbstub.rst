@@ -149,7 +149,7 @@ for its implementation as a Twister test.
          #1  0x00105068 in gdb_init (arg=0x0) at <ZEPHYR_BASE>/subsys/debug/gdbstub.c:833
          #2  0x00109d6f in z_sys_init_run_level (level=0x1) at <ZEPHYR_BASE>/kernel/device.c:72
          #3  0x0010a40b in z_cstart () at <ZEPHYR_BASE>/kernel/init.c:423
-         #4  0x00105383 in z_x86_prep_c (arg=0x9500) at <ZEPHYR_BASE>/arch/x86/core/prep_c.c:58
+         #4  0x00105383 in z_prep_c (arg=0x9500) at <ZEPHYR_BASE>/arch/x86/core/prep_c.c:58
          #5  0x001000a9 in __csSet () at <ZEPHYR_BASE>/arch/x86/core/ia32/crt0.S:273
 
    #. Use command ``list`` to show the source code and surroundings where

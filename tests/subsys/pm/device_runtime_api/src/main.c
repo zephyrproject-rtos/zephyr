@@ -42,7 +42,7 @@ void test_api_setup(void *data)
 	zassert_equal(ret, 0);
 	ret = pm_device_runtime_put(test_dev);
 	zassert_equal(ret, 0);
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
 	/* enable runtime PM */
@@ -138,7 +138,7 @@ ZTEST(device_runtime_api, test_api)
 	test_driver_pm_async(test_dev);
 
 	/* usage: 1, -1, suspend: yes (queued) */
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
 	(void)pm_device_state_get(test_dev, &state);
@@ -149,7 +149,7 @@ ZTEST(device_runtime_api, test_api)
 	zassert_equal(ret, -EALREADY);
 
 	/* usage: 0, -1, suspend: no (unbalanced call) */
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, -EALREADY);
 
 	/* unblock test driver and let it finish */
@@ -171,7 +171,7 @@ ZTEST(device_runtime_api, test_api)
 	test_driver_pm_async(test_dev);
 
 	/* usage: 1, -1, suspend: yes (queued) */
-	ret = pm_device_runtime_put_async(test_dev);
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
 	(void)pm_device_state_get(test_dev, &state);
@@ -199,6 +199,47 @@ ZTEST(device_runtime_api, test_api)
 
 	(void)pm_device_state_get(test_dev, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+
+	/* Test if getting a device before an async operation starts does
+	 * not trigger any device pm action.
+	 */
+	size_t count = test_driver_pm_count(test_dev);
+
+	ret = pm_device_runtime_put_async(test_dev, K_MSEC(10));
+	zassert_equal(ret, 0);
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+
+	/* Now lets check if the calls above have triggered a device
+	 * pm action
+	 */
+	zassert_equal(count, test_driver_pm_count(test_dev));
+
+	/*
+	 * test if async put with a delay respects the given time.
+	 */
+	ret = pm_device_runtime_put_async(test_dev, K_MSEC(100));
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	k_sleep(K_MSEC(80));
+
+	/* It should still be suspending since we have waited less than
+	 * the delay we've set.
+	 */
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+	k_sleep(K_MSEC(30));
+
+	/* Now it should be already suspended */
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
 	/* Put operation should fail due the state be locked. */
 	ret = pm_device_runtime_disable(test_dev);

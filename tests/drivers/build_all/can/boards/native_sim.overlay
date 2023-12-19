@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&can_loopback0 {
+	status = "disabled";
+};
+
+&can0 {
+	status = "okay";
+};

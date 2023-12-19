@@ -5,16 +5,14 @@
 
 menu "ATT and GATT Options"
 
-config BT_ATT_ENFORCE_FLOW
-	bool "Enforce strict flow control semantics for incoming PDUs"
-	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || ARCH_POSIX || BT_SPI_BLUENRG)
+config BT_ATT_TX_COUNT
+	int "Number of ATT buffers"
+	default BT_BUF_ACL_TX_COUNT
+	default 3
+	range 1 255
 	help
-	  Enforce flow control rules on incoming PDUs, preventing a peer
-	  from sending new requests until a previous one has been responded
-	  or sending a new indication until a previous one has been
-	  confirmed. This may need to be disabled to avoid potential race
-	  conditions arising from a USB based HCI transport that splits
-	  HCI events and ACL data to separate endpoints.
+	  These buffers are only used for sending anything over ATT.
+	  Requests, responses, indications, confirmations, notifications.
 
 config BT_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"

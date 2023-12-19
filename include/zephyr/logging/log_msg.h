@@ -241,7 +241,7 @@ enum z_log_msg_mode {
 #define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_0(fmt) 1
 #define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_1(fmt, arg) Z_CBPRINTF_IS_WORD_NUM(arg)
 #define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_2(fmt, arg0, arg1) \
-	Z_CBPRINTF_IS_WORD_NUM(arg0) || Z_CBPRINTF_IS_WORD_NUM(arg1)
+	Z_CBPRINTF_IS_WORD_NUM(arg0) && Z_CBPRINTF_IS_WORD_NUM(arg1)
 
 /** brief Determine if string arguments types allow to use simplified message creation mode.
  *

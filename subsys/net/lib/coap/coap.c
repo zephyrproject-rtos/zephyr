@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/coap.h>
+#include <zephyr/net/coap_mgmt.h>
 
 #define COAP_PATH_ELEM_DELIM '/'
 #define COAP_PATH_ELEM_QUERY '?'
@@ -52,6 +53,12 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 /* The CoAP message ID that is incremented each time coap_next_id() is called. */
 static uint16_t message_id;
+
+static struct coap_transmission_parameters coap_transmission_params = {
+	.max_retransmission = CONFIG_COAP_MAX_RETRANSMIT,
+	.ack_timeout = CONFIG_COAP_INIT_ACK_TIMEOUT_MS,
+	.coap_backoff_percent = CONFIG_COAP_BACKOFF_PERCENT
+};
 
 static int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 			 uint16_t len);
@@ -1546,7 +1553,7 @@ size_t coap_next_block(const struct coap_packet *cpkt,
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
 		      const struct sockaddr *addr,
-		      uint8_t retries)
+		      const struct coap_transmission_parameters *params)
 {
 	memset(pending, 0, sizeof(*pending));
 
@@ -1554,10 +1561,16 @@ int coap_pending_init(struct coap_pending *pending,
 
 	memcpy(&pending->addr, addr, sizeof(*addr));
 
+	if (params) {
+		pending->params = *params;
+	} else {
+		pending->params = coap_transmission_params;
+	}
+
 	pending->data = request->data;
 	pending->len = request->offset;
 	pending->t0 = k_uptime_get();
-	pending->retries = retries;
+	pending->retries = pending->params.max_retransmission;
 
 	return 0;
 }
@@ -1669,12 +1682,12 @@ struct coap_pending *coap_pending_next_to_expire(
 	return found;
 }
 
-static uint32_t init_ack_timeout(void)
+static uint32_t init_ack_timeout(const struct coap_transmission_parameters *params)
 {
 #if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT)
-	const uint32_t max_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS *
+	const uint32_t max_ack = params->ack_timeout *
 				 CONFIG_COAP_ACK_RANDOM_PERCENT / 100;
-	const uint32_t min_ack = CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
+	const uint32_t min_ack = params->ack_timeout;
 
 	/* Randomly generated initial ACK timeout
 	 * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
@@ -1682,7 +1695,7 @@ static uint32_t init_ack_timeout(void)
 	 */
 	return min_ack + (sys_rand32_get() % (max_ack - min_ack));
 #else
-	return CONFIG_COAP_INIT_ACK_TIMEOUT_MS;
+	return params->ack_timeout;
 #endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 }
 
@@ -1690,8 +1703,7 @@ bool coap_pending_cycle(struct coap_pending *pending)
 {
 	if (pending->timeout == 0) {
 		/* Initial transmission. */
-		pending->timeout = init_ack_timeout();
-
+		pending->timeout = init_ack_timeout(&pending->params);
 		return true;
 	}
 
@@ -1700,7 +1712,7 @@ bool coap_pending_cycle(struct coap_pending *pending)
 	}
 
 	pending->t0 += pending->timeout;
-	pending->timeout = pending->timeout << 1;
+	pending->timeout = pending->timeout * pending->params.coap_backoff_percent / 100;
 	pending->retries--;
 
 	return true;
@@ -1844,6 +1856,25 @@ void coap_observer_init(struct coap_observer *observer,
 	net_ipaddr_copy(&observer->addr, addr);
 }
 
+static inline void coap_observer_raise_event(struct coap_resource *resource,
+					     struct coap_observer *observer,
+					     uint32_t mgmt_event)
+{
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	const struct net_event_coap_observer net_event = {
+		.resource = resource,
+		.observer = observer,
+	};
+
+	net_mgmt_event_notify_with_info(mgmt_event, NULL, (void *)&net_event, sizeof(net_event));
+#else
+	ARG_UNUSED(resource);
+	ARG_UNUSED(observer);
+
+	net_mgmt_event_notify(mgmt_event, NULL);
+#endif
+}
+
 bool coap_register_observer(struct coap_resource *resource,
 			    struct coap_observer *observer)
 {
@@ -1856,11 +1887,7 @@ bool coap_register_observer(struct coap_resource *resource,
 		resource->age = 2;
 	}
 
-#ifdef CONFIG_COAP_OBSERVER_EVENTS
-	if (resource->observer_event_handler) {
-		resource->observer_event_handler(resource, observer, COAP_OBSERVER_ADDED);
-	}
-#endif
+	coap_observer_raise_event(resource, observer, NET_EVENT_COAP_OBSERVER_ADDED);
 
 	return first;
 }
@@ -1872,11 +1899,8 @@ bool coap_remove_observer(struct coap_resource *resource,
 		return false;
 	}
 
-#ifdef CONFIG_COAP_OBSERVER_EVENTS
-	if (resource->observer_event_handler) {
-		resource->observer_event_handler(resource, observer, COAP_OBSERVER_REMOVED);
-	}
-#endif
+	coap_observer_raise_event(resource, observer, NET_EVENT_COAP_OBSERVER_REMOVED);
+
 	return true;
 }
 
@@ -1992,4 +2016,14 @@ void net_coap_init(void)
 uint16_t coap_next_id(void)
 {
 	return message_id++;
+}
+
+struct coap_transmission_parameters coap_get_transmission_parameters(void)
+{
+	return coap_transmission_params;
+}
+
+void coap_set_transmission_parameters(const struct coap_transmission_parameters *params)
+{
+	coap_transmission_params = *params;
 }

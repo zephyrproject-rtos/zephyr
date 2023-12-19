@@ -23,9 +23,7 @@ ISR_FLAG_DIRECT = 1 << 0
 #              into 1 line which then goes into the 1st level)
 # 0x00FF0000 - represents the 3rd level (i.e. the interrupts funnel
 #              into 1 line which then goes into the 2nd level)
-FIRST_LVL_INTERRUPTS = 0x000000FF
-SECND_LVL_INTERRUPTS = 0x0000FF00
-THIRD_LVL_INTERRUPTS = 0x00FF0000
+INTERRUPT_LVL_BITMASK = [0x000000FF, 0x0000FF00, 0x00FF0000]
 
 INTERRUPT_BITS = [8, 8, 8]
 
@@ -278,16 +276,18 @@ def bit_mask(bits):
     return mask
 
 def update_masks():
-    global FIRST_LVL_INTERRUPTS
-    global SECND_LVL_INTERRUPTS
-    global THIRD_LVL_INTERRUPTS
-
     if sum(INTERRUPT_BITS) > 32:
         raise ValueError("Too many interrupt bits")
 
-    FIRST_LVL_INTERRUPTS = bit_mask(INTERRUPT_BITS[0])
-    SECND_LVL_INTERRUPTS = bit_mask(INTERRUPT_BITS[1]) << INTERRUPT_BITS[0]
-    THIRD_LVL_INTERRUPTS = bit_mask(INTERRUPT_BITS[2]) << INTERRUPT_BITS[0] + INTERRUPT_BITS[2]
+    INTERRUPT_LVL_BITMASK[0] = bit_mask(INTERRUPT_BITS[0])
+    INTERRUPT_LVL_BITMASK[1] = bit_mask(INTERRUPT_BITS[1]) << INTERRUPT_BITS[0]
+    INTERRUPT_LVL_BITMASK[2] = bit_mask(INTERRUPT_BITS[2]) << INTERRUPT_BITS[0] + INTERRUPT_BITS[1]
+
+    debug("Level    Bits        Bitmask")
+    debug("----------------------------")
+    for i in range(3):
+        bitmask_str = "0x" + format(INTERRUPT_LVL_BITMASK[i], '08X')
+        debug(f"{i + 1:>5} {INTERRUPT_BITS[i]:>7} {bitmask_str:>14}")
 
 def main():
     parse_args()
@@ -377,9 +377,9 @@ def main():
             else:
                 # Figure out third level interrupt position
                 debug('IRQ = ' + hex(irq))
-                irq3 = (irq & THIRD_LVL_INTERRUPTS) >> INTERRUPT_BITS[0] + INTERRUPT_BITS[1]
-                irq2 = (irq & SECND_LVL_INTERRUPTS) >> INTERRUPT_BITS[0]
-                irq1 = irq & FIRST_LVL_INTERRUPTS
+                irq3 = (irq & INTERRUPT_LVL_BITMASK[2]) >> INTERRUPT_BITS[0] + INTERRUPT_BITS[1]
+                irq2 = (irq & INTERRUPT_LVL_BITMASK[1]) >> INTERRUPT_BITS[0]
+                irq1 = irq & INTERRUPT_LVL_BITMASK[0]
 
                 if irq3:
                     irq_parent = irq2

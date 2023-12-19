@@ -469,56 +469,56 @@ config BT_MESH_DEBUG_NET
 	select DEPRECATED
 	help
 	  Use this option to enable Network layer debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_RPL
 	bool "[DEPRECATED] Replay protection list debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Replay protection list debug logs
-	  for the Bluetooth mesh functionality.
+	  for the Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_TRANS
 	bool "[DEPRECATED] Transport layer debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Transport layer debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_BEACON
 	bool "[DEPRECATED] Beacon debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Beacon-related debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_CRYPTO
 	bool "[DEPRECATED] Crypto debug"
 	select DEPRECATED
 	help
 	  Use this option to enable cryptographic debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_KEYS
 	bool "[DEPRECATED] Key management debug"
 	select DEPRECATED
 	help
 	  Use this option to enable key management debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROV
 	bool "[DEPRECATED] Provisioning debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Provisioning debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROVISIONER
 	bool "[DEPRECATED] Provisioner debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Provisioner debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROV_DEVICE
 	bool "[DEPRECATED] Provisioning device debug"
@@ -532,7 +532,7 @@ config BT_MESH_DEBUG_ACCESS
 	select DEPRECATED
 	help
 	  Use this option to enable Access layer and device composition
-	  related debug logs for Bluetooth mesh.
+	  related debug logs for Bluetooth Mesh.
 
 config BT_MESH_DEBUG_MODEL
 	bool "[DEPRECATED] Foundation model debug"
@@ -546,21 +546,21 @@ config BT_MESH_DEBUG_ADV
 	select DEPRECATED
 	help
 	  Use this option to enable advertising debug logs for
-	  the Bluetooth mesh functionality.
+	  the Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_LOW_POWER
 	bool "[DEPRECATED] Low Power debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Low Power debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_FRIEND
 	bool "[DEPRECATED] Friend debug"
 	select DEPRECATED
 	help
 	  Use this option to enable Friend debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 config BT_MESH_DEBUG_PROXY
 	bool "[DEPRECATED] Proxy debug"
@@ -588,7 +588,7 @@ config BT_MESH_DEBUG_CFG
 	select DEPRECATED
 	help
 	  Use this option to enable node configuration debug logs for the
-	  Bluetooth mesh functionality.
+	  Bluetooth Mesh functionality.
 
 endmenu # [DEPRECATED] Mesh
 
@@ -660,6 +660,11 @@ module-str = "Bluetooth Audio Stream"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
 parent-module = BT
+module = BT_BAP_BASE
+module-str = "Bluetooth Basic Audio Profile Broadcast Audio Source Endpoint"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+parent-module = BT
 module = BT_AUDIO_CODEC
 module-str = "Bluetooth Audio Codec"
 source "subsys/logging/Kconfig.template.log_config_inherit"
@@ -719,6 +724,11 @@ source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 parent-module = BT
 module = BT_CAP_COMMANDER
 module-str = "Common Audio Profile Commander"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+parent-module = BT
+module = BT_CAP_COMMON
+module-str = "Common Audio Profile Common"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
 parent-module = BT
@@ -1002,7 +1012,7 @@ legacy-debug-sym = BT_MESH_DEBUG_PROVISIONER
 module-str = "Provisioner"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
-module = BT_MESH_PROV_DEVICE
+module = BT_MESH_PROVISIONEE
 legacy-debug-sym = BT_MESH_DEBUG_PROV_DEVICE
 module-str = "Provisioning device"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"

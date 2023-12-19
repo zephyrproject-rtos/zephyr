@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(bt_driver);
 /* Offsets */
 #define STATUS_HEADER_READY	0
 #define STATUS_HEADER_TOREAD	3
+#define STATUS_HEADER_TOWRITE	1
 
 #define PACKET_TYPE		0
 #define EVT_HEADER_TYPE		0
@@ -84,14 +85,6 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
-
-#if defined(CONFIG_BT_SPI_BLUENRG)
-/* Define a limit when reading IRQ high */
-/* It can be required to be increased for */
-/* some particular cases. */
-#define IRQ_HIGH_MAX_READ 3
-static uint8_t attempts;
-#endif /* CONFIG_BT_SPI_BLUENRG */
 
 #if defined(CONFIG_BT_BLUENRG_ACI)
 #define BLUENRG_ACI_WRITE_CONFIG_DATA       BT_OP(BT_OGF_VS, 0x000C)
@@ -167,61 +160,174 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 	return handled;
 }
 
-#if defined(CONFIG_BT_SPI_BLUENRG)
-/* BlueNRG has a particuliar way to wake up from sleep and be ready.
- * All is done through its CS line:
- * If it is in sleep mode, the first transaction will not return ready
- * status. At this point, it's necessary to release the CS and retry
- * within 2ms the same transaction. And again when it's required to
- * know the amount of byte to read.
- * (See section 5.2 of BlueNRG-MS datasheet)
- */
-static void kick_cs(void)
+#define IS_IRQ_HIGH gpio_pin_get_dt(&irq_gpio)
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1)
+/* Define a limit when reading IRQ high */
+/* It can be required to be increased for */
+/* some particular cases. */
+#define IRQ_HIGH_MAX_READ 3
+/* On BlueNRG-MS, host is expected to read */
+/* as long as IRQ pin is high */
+#define READ_CONDITION IS_IRQ_HIGH
+/* We cannot retry write data without reading again the header */
+#define WRITE_DATA_CONDITION(...) true
+
+static void assert_cs(void)
 {
 	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
 	gpio_pin_set_dt(&bus.config.cs.gpio, 1);
 }
 
-static void release_cs(void)
+static void release_cs(bool data_transaction)
 {
+	ARG_UNUSED(data_transaction);
 	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
 }
 
-static bool irq_pin_high(void)
+static int bt_spi_get_header(uint8_t op, uint16_t *size)
 {
-	int pin_state;
+	uint8_t header_master[5] = {op, 0, 0, 0, 0};
+	uint8_t header_slave[5];
+	uint8_t size_offset, attempts;
+	int ret;
 
-	pin_state = gpio_pin_get_dt(&irq_gpio);
-
-	LOG_DBG("IRQ Pin: %d", pin_state);
-
-	return pin_state > 0;
-}
-
-static void init_irq_high_loop(void)
-{
+	if (op == SPI_READ) {
+		if (!IS_IRQ_HIGH) {
+			*size = 0;
+			return 0;
+		}
+		size_offset = STATUS_HEADER_TOREAD;
+	} else if (op == SPI_WRITE) {
+		size_offset = STATUS_HEADER_TOWRITE;
+	}
 	attempts = IRQ_HIGH_MAX_READ;
+	do {
+		if (op == SPI_READ) {
+			/* Keep checking that IRQ is still high, if we need to read */
+			if (!IS_IRQ_HIGH) {
+				*size = 0;
+				return 0;
+			}
+		}
+		assert_cs();
+		ret = bt_spi_transceive(header_master, 5, header_slave, 5);
+		if (ret) {
+			/* SPI transaction failed */
+			break;
+		}
+
+		*size = (header_slave[STATUS_HEADER_READY] == READY_NOW) ?
+				header_slave[size_offset] : 0;
+		attempts--;
+	} while ((*size == 0) && attempts);
+
+	return ret;
 }
 
-static bool exit_irq_high_loop(void)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
+
+#define READ_CONDITION false
+/* We cannot retry writing data without reading the header again */
+#define WRITE_DATA_CONDITION(...) true
+
+static void assert_cs(uint16_t delay)
 {
-	/* Limit attempts on BlueNRG-MS as we might */
-	/* enter this loop with nothing to read */
-
-	attempts--;
-
-	return attempts;
+	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
+	if (delay) {
+		k_sleep(K_USEC(delay));
+	}
+	gpio_pin_set_dt(&bus.config.cs.gpio, 1);
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
 }
 
+static void release_cs(bool data_transaction)
+{
+	/* Consume possible event signals */
+	while (k_sem_take(&sem_request, K_NO_WAIT) == 0) {
+	}
+	if (data_transaction) {
+		/* Wait for IRQ to become low only when data phase has been performed */
+		while (IS_IRQ_HIGH) {
+		}
+	}
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
+}
+
+static int bt_spi_get_header(uint8_t op, uint16_t *size)
+{
+	uint8_t header_master[5] = {op, 0, 0, 0, 0};
+	uint8_t header_slave[5];
+	uint16_t cs_delay;
+	uint8_t size_offset;
+	int ret;
+
+	if (op == SPI_READ) {
+		if (!IS_IRQ_HIGH) {
+			*size = 0;
+			return 0;
+		}
+		cs_delay = 0;
+		size_offset = STATUS_HEADER_TOREAD;
+	} else if (op == SPI_WRITE) {
+		/* To make sure we have a minimum delay from previous release cs */
+		cs_delay = 100;
+		size_offset = STATUS_HEADER_TOWRITE;
+	}
+
+	assert_cs(cs_delay);
+	/* Wait up to a maximum time of 100 ms */
+	if (!WAIT_FOR(IS_IRQ_HIGH, 100000, k_usleep(100))) {
+		LOG_ERR("IRQ pin did not raise");
+		return -EIO;
+	}
+
+	ret = bt_spi_transceive(header_master, 5, header_slave, 5);
+	*size = header_slave[size_offset] | (header_slave[size_offset + 1] << 8);
+	return ret;
+}
+/* Other Boards */
 #else
 
-#define kick_cs(...)
 #define release_cs(...)
-#define irq_pin_high(...) 0
-#define init_irq_high_loop(...)
-#define exit_irq_high_loop(...) 1
+#define READ_CONDITION false
+#define WRITE_DATA_CONDITION(ret, rx_first) (rx_first != 0U || ret)
 
-#endif /* CONFIG_BT_SPI_BLUENRG */
+static int bt_spi_get_header(uint8_t op, uint16_t *size)
+{
+	uint8_t header_master[5] = {op, 0, 0, 0, 0};
+	uint8_t header_slave[5];
+	bool reading = (op == SPI_READ);
+	bool loop_cond;
+	uint8_t size_offset;
+	int ret;
+
+	if (reading) {
+		size_offset = STATUS_HEADER_TOREAD;
+	}
+
+	do {
+		ret = bt_spi_transceive(header_master, 5, header_slave, 5);
+		if (ret) {
+			break;
+		}
+		if (reading) {
+			/* When reading, keep looping if read buffer is not valid */
+			loop_cond = ((header_slave[STATUS_HEADER_TOREAD] == 0U) ||
+					(header_slave[STATUS_HEADER_TOREAD] == 0xFF));
+		} else {
+			/* When writing, keep looping if all bytes are zero */
+			loop_cond = ((header_slave[1] | header_slave[2] | header_slave[3] |
+					header_slave[4]) == 0U);
+		}
+	} while ((header_slave[STATUS_HEADER_READY] != READY_NOW) || loop_cond);
+
+	*size = (reading ? header_slave[size_offset] : SPI_MAX_MSG_LEN);
+
+	return ret;
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
 
 #if defined(CONFIG_BT_BLUENRG_ACI)
 static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t value_len)
@@ -243,22 +349,20 @@ static int bt_spi_send_aci_config(uint8_t offset, const uint8_t *value, size_t v
 	return bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
 }
 
-int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
+static int bt_spi_bluenrg_setup(const struct bt_hci_setup_params *params)
 {
 	int ret;
-	const bt_addr_t addr = params->public_addr;
+	const bt_addr_t *addr = &params->public_addr;
 
-	if (bt_addr_eq(&addr, BT_ADDR_NONE) || bt_addr_eq(&addr, BT_ADDR_ANY)) {
-		return -EINVAL;
-	}
+	if (!bt_addr_eq(addr, BT_ADDR_NONE) && !bt_addr_eq(addr, BT_ADDR_ANY)) {
+		ret = bt_spi_send_aci_config(
+			BLUENRG_CONFIG_PUBADDR_OFFSET,
+			addr->val, sizeof(addr->val));
 
-	ret = bt_spi_send_aci_config(
-		BLUENRG_CONFIG_PUBADDR_OFFSET,
-		addr.val, sizeof(addr.val));
-
-	if (ret != 0) {
-		LOG_ERR("Failed to set BlueNRG public address (%d)", ret);
-		return ret;
+		if (ret != 0) {
+			LOG_ERR("Failed to set BlueNRG public address (%d)", ret);
+			return ret;
+		}
 	}
 
 	return 0;
@@ -330,10 +434,8 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
-	uint8_t header_slave[5];
 	struct net_buf *buf;
-	uint8_t size = 0U;
+	uint16_t size = 0U;
 	int ret;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
@@ -347,18 +449,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 		do {
 			/* Wait for SPI bus to be available */
 			k_sem_take(&sem_busy, K_FOREVER);
-			init_irq_high_loop();
-			do {
-				kick_cs();
-				ret = bt_spi_transceive(header_master, 5,
-							header_slave, 5);
-			} while ((((header_slave[STATUS_HEADER_TOREAD] == 0U ||
-				    header_slave[STATUS_HEADER_TOREAD] == 0xFF) &&
-				   !ret)) && exit_irq_high_loop());
+			ret = bt_spi_get_header(SPI_READ, &size);
 
 			/* Delay here is rounded up to next tick */
 			k_sleep(K_USEC(DATA_DELAY_US));
-			size = header_slave[STATUS_HEADER_TOREAD];
+			/* Read data */
 			if (ret == 0 && size != 0) {
 				do {
 					ret = bt_spi_transceive(&txmsg, size,
@@ -373,7 +468,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 				} while (rxmsg[0] == 0U && ret == 0);
 			}
 
-			release_cs();
+			release_cs(size > 0);
 
 			k_sem_give(&sem_busy);
 
@@ -392,17 +487,13 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 				/* Handle the received HCI data */
 				bt_recv(buf);
 			}
-
-		/* On BlueNRG-MS, host is expected to read */
-		/* as long as IRQ pin is high */
-		} while (irq_pin_high());
+		} while (READ_CONDITION);
 	}
 }
 
 static int bt_spi_send(struct net_buf *buf)
 {
-	uint8_t header_tx[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
-	uint8_t header_rx[5];
+	uint16_t size;
 	uint8_t rx_first[1];
 	int ret;
 
@@ -430,37 +521,33 @@ static int bt_spi_send(struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	/* Poll sanity values until device has woken-up */
-	do {
-		kick_cs();
-		ret = bt_spi_transceive(header_tx, 5, header_rx, 5);
+	ret = bt_spi_get_header(SPI_WRITE, &size);
+	size = MIN(buf->len, size);
 
-		/*
-		 * RX Header must contain a sanity check Byte and size
-		 * information.  If it does not contain BOTH then it is
-		 * sleeping or still in the initialisation stage (waking-up).
-		 */
-	} while ((header_rx[STATUS_HEADER_READY] != READY_NOW ||
-		  (header_rx[1] | header_rx[2] | header_rx[3] | header_rx[4]) == 0U) && !ret);
+	if (size < buf->len) {
+		LOG_WRN("Unable to write full data, skipping");
+		size = 0;
+		ret = -ECANCELED;
+	}
 
 	if (!ret) {
 		/* Delay here is rounded up to next tick */
 		k_sleep(K_USEC(DATA_DELAY_US));
 		/* Transmit the message */
 		while (true) {
-			ret = bt_spi_transceive(buf->data, buf->len,
+			ret = bt_spi_transceive(buf->data, size,
 						rx_first, 1);
-			if (rx_first[0] != 0U || ret) {
+			if (WRITE_DATA_CONDITION(ret, rx_first[0])) {
 				break;
 			}
 			/* Consider increasing controller-data-delay-us
 			 * if this message is extremely common.
 			 */
-			LOG_DBG("Controller not ready for SPI transaction of %d bytes", buf->len);
+			LOG_DBG("Controller not ready for SPI transaction of %d bytes", size);
 		}
 	}
 
-	release_cs();
+	release_cs(size > 0);
 
 	k_sem_give(&sem_busy);
 
@@ -471,7 +558,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "SPI TX");
 
-#if defined(CONFIG_BT_SPI_BLUENRG)
+#if (DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) || DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2))
 	/*
 	 * Since a RESET has been requested, the chip will now restart.
 	 * Unfortunately the BlueNRG will reply with "reset received" but
@@ -482,7 +569,7 @@ static int bt_spi_send(struct net_buf *buf)
 	if (bt_spi_get_cmd(buf->data) == BT_HCI_OP_RESET) {
 		k_sem_take(&sem_initialised, K_FOREVER);
 	}
-#endif /* CONFIG_BT_SPI_BLUENRG */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) || DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2) */
 out:
 	net_buf_unref(buf);
 

@@ -19,7 +19,7 @@ config EMUL_ICM42688
 	depends on EMUL
 	help
 	  Enable the hardware emulator for the ICM42688. Doing so allows exercising
-	  sensor APIs for this IMU in native_posix and qemu.
+	  sensor APIs for this IMU in native_sim and qemu.
 
 config ICM42688_DECODER
 	bool "ICM42688 decoder logic"

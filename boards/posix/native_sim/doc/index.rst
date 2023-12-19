@@ -38,11 +38,17 @@ Please check the
 
 .. _nativesim_important_limitations:
 
-Important limitations
-*********************
+Important limitations and unsupported features
+**********************************************
 
 ``native_sim`` is based on the :ref:`POSIX architecture<Posix arch>`, and therefore
 :ref:`its limitations <posix_arch_limitations>` and considerations apply to it.
+
+Similarly, it inherits the POSIX architecture
+:ref:`unsupported features set <posix_arch_unsupported>`.
+
+Note that some drivers may have limitations, or may not support their whole driver API optional
+functionality.
 
 .. _native_sim_how_to_use:
 
@@ -345,6 +351,10 @@ The following peripherals are currently provided with this board:
     execution speed of native_sim and the host load,
     it may return a value considerably ahead of the simulated time.
 
+  Note this device does not yet have an :ref:`RTC API compatible driver <rtc_api>`.
+
+.. _nsim_per_entr:
+
 **Entropy device**
   An entropy device based on the host :c:func:`random` API.
   This device will generate the same sequence of random numbers if initialized
@@ -352,6 +362,8 @@ The following peripherals are currently provided with this board:
   You can change this random seed value by using the command line option:
   :samp:`--seed={<random_seed>}` where the value specified is a 32-bit integer
   such as 97229 (decimal),  0x17BCD (hex), or 0275715 (octal).
+
+.. _nsim_per_ethe:
 
 **Ethernet driver**
   A simple TAP based ethernet driver is provided. The driver expects that the
@@ -367,6 +379,7 @@ The following peripherals are currently provided with this board:
 .. _net-tools:
    https://github.com/zephyrproject-rtos/net-tools
 
+.. _nsim_bt_host_cont:
 
 **Bluetooth controller**
   It's possible to use the host's Bluetooth adapter as a Bluetooth
@@ -387,10 +400,14 @@ The following peripherals are currently provided with this board:
   a virtual Bluetooth controller that does not depend on the Linux Bluetooth
   stack and its HCI interface.
 
+.. _nsim_per_usb:
+
 **USB controller**
   It's possible to use the Virtual USB controller working over USB/IP
   protocol. More information can be found in
   :ref:`Testing USB over USP/IP in native_sim <testing_USB_native_sim>`.
+
+.. _nsim_per_disp_sdl:
 
 **Display driver**
   A display driver is provided that creates a window on the host machine to
@@ -406,11 +423,15 @@ The following peripherals are currently provided with this board:
 
   .. code-block:: console
 
+     $ sudo dpkg --add-architecture i386
+     $ sudo apt update
      $ sudo apt-get install pkg-config libsdl2-dev:i386
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
 .. _SDL2:
    https://www.libsdl.org/download-2.0.php
+
+.. _nsim_per_flash_simu:
 
 **Flash driver**
   A flash driver is provided that accesses all flash data through a binary file
@@ -427,6 +448,23 @@ The following peripherals are currently provided with this board:
 
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
+
+**Input events**
+  A driver is provided to read input events from a Linux evdev input device and
+  inject them back into the Zephyr input subsystem.
+
+  The driver is automatically enabled when :kconfig:option:`CONFIG_INPUT` is
+  enabled and the devicetree contains a node such as:
+
+  .. code-block:: dts
+
+     evdev {
+       compatible = "zephyr,native-linux-evdev";
+     };
+
+  The application then has to be run with a command line option to specify
+  which evdev device node has to be used, for example
+  ``zephyr.exe --evdev=/dev/input/event0``.
 
 .. _native_ptty_uart:
 
@@ -522,6 +560,8 @@ Apart from its own peripherals, the native_sim board also has some dedicated
 backends for some of Zephyr's subsystems. These backends are designed to ease
 development by integrating more seamlessly with the host operating system:
 
+.. _nsim_back_console:
+
 **Console backend**:
   A console backend which by default is configured to
   redirect any :c:func:`printk` write to the native host application's
@@ -530,6 +570,8 @@ development by integrating more seamlessly with the host operating system:
   This driver is selected by default if the `PTTY UART`_ is not compiled in.
   Otherwise :kconfig:option:`CONFIG_UART_CONSOLE` will be set to select the UART as
   console backend.
+
+.. _nsim_back_logger:
 
 **Logger backend**:
   A backend which prints all logger output to the process ``stdout``.
@@ -547,10 +589,17 @@ development by integrating more seamlessly with the host operating system:
   In this later case, by default, the logger is set to output to the
   `PTTY UART`_.
 
+.. _nsim_back_trace:
+
 **Tracing**:
   A backend/"bottom" for Zephyr's CTF tracing subsystem which writes the tracing
   data to a file in the host filesystem.
   More information can be found in :ref:`Common Tracing Format <ctf>`
+
+Emulators
+*********
+
+All :ref:`available HW emulators <emulators>` can be used with native_sim.
 
 .. _native_fuse_flash:
 
@@ -589,6 +638,8 @@ these commands:
 
 .. code-block:: console
 
+   $ sudo dpkg --add-architecture i386
+   $ sudo apt update
    $ sudo apt-get install pkg-config libfuse-dev:i386
    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
@@ -604,24 +655,26 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
    :header: Driver class, driver name, driver kconfig, libC choices
 
      adc, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, all
-     bluetooth, userchan, :kconfig:option:`CONFIG_BT_USERCHAN`, host libC
-     can, can native posix, :kconfig:option:`CONFIG_CAN_NATIVE_POSIX_LINUX`, host libC
-     console backend, POSIX arch console, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, all
-     display, display SDL, :kconfig:option:`CONFIG_SDL_DISPLAY`, all
-     entropy, native posix entropy, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, all
-     eprom, eprom emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, host libC
-     ethernet, eth native_posix, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, all
-     flash, flash simulator, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, all
-     flash, host based flash access, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, host libC
+     bluetooth, :ref:`userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, host libC
+     can, can native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, all
+     console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, all
+     display, :ref:`display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, all
+     entropy, :ref:`native posix entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_POSIX`, all
+     eeprom, eeprom simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, host libC
+     eeprom, eeprom emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, all
+     ethernet, :ref:`eth native_posix <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_POSIX`, all
+     flash, :ref:`flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, all
+     flash, :ref:`host based flash access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, host libC
      gpio, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, all
      gpio, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, all
      i2c, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, all
      input, input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, all
-     log backend, native backend, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, all
+     input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, all
+     log backend, :ref:`native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, all
      rtc, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, all
-     serial, uart native posix/PTTY, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, all
-     serial, uart native TTY, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, all
+     serial, :ref:`uart native posix/PTTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_POSIX`, all
+     serial, :ref:`uart native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, all
      spi, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, all
      system tick, native_posix timer, :kconfig:option:`CONFIG_NATIVE_POSIX_TIMER`, all
-     tracing, Posix tracing backend, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, all
-     usb, USB native posix, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, host libC
+     tracing, :ref:`Posix tracing backend <nsim_back_trace>`, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, all
+     usb, :ref:`USB native posix <nsim_per_usb>`, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, host libC

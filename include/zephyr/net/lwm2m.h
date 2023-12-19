@@ -551,7 +551,6 @@ void lwm2m_firmware_set_cancel_cb_inst(uint16_t obj_inst_id, lwm2m_engine_user_c
  */
 lwm2m_engine_user_cb_t lwm2m_firmware_get_cancel_cb_inst(uint16_t obj_inst_id);
 
-#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT) || defined(__DOXYGEN__)
 /**
  * @brief Set data callback to handle firmware update execute events.
  *
@@ -588,8 +587,6 @@ void lwm2m_firmware_set_update_cb_inst(uint16_t obj_inst_id, lwm2m_engine_execut
  */
 lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id);
 #endif
-#endif
-
 
 #if defined(CONFIG_LWM2M_SWMGMT_OBJ_SUPPORT) || defined(__DOXYGEN__)
 
@@ -2075,6 +2072,7 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE,
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER,
+	LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED,
 };
 
 /**

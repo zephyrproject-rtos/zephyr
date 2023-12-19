@@ -12,6 +12,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
+#include <zephyr/posix/signal.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
 
@@ -38,6 +39,9 @@ struct posix_thread {
 
 	/* Exit status */
 	void *retval;
+
+	/* Signal mask */
+	sigset_t sigset;
 
 	/* Pthread cancellation */
 	uint8_t cancel_state;

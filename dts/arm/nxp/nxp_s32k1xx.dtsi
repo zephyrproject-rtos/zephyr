@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -40,6 +41,34 @@
 			interrupt-names = "command-complete", "read-collision", "double-bit";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		lpspi0: spi@4002c000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <26 0>;
+			clocks = <&clock NXP_S32_LPSPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@4002d000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <27 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpspi2: spi@4002e000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002e000 0x1000>;
+			interrupts = <28 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -78,6 +107,27 @@
 			reg = <0x40064000 0x1000>, <0x40065000 0x1000>;
 			#clock-cells = <1>;
 			status = "okay";
+		};
+
+		lpi2c0: i2c@40066000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40066000 0x1000>;
+			interrupts = <24 0>;
+			clocks = <&clock NXP_S32_LPI2C0_CLK>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@40067000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40067000 0x1000>;
+			interrupts = <25 0>;
+			status = "disabled";
 		};
 
 		lpuart0: uart@4006a000 {

@@ -19,41 +19,6 @@
 
 LOG_MODULE_DECLARE(LSM6DSV16X, CONFIG_SENSOR_LOG_LEVEL);
 
-#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
-/**
- * lsm6dsv16x_enable_t_int - TEMP enable selected int pin to generate interrupt
- */
-static int lsm6dsv16x_enable_t_int(const struct device *dev, int enable)
-{
-	const struct lsm6dsv16x_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
-	lsm6dsv16x_pin_int_route_t val;
-	int ret;
-
-	if (enable) {
-		int16_t buf;
-
-		/* dummy read: re-trigger interrupt */
-		lsm6dsv16x_temperature_raw_get(ctx, &buf);
-	}
-
-	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
-	if (cfg->drdy_pin == 1) {
-		return -EIO;
-	}
-
-	ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
-	if (ret < 0) {
-		LOG_ERR("pint_int2_route_get error");
-		return ret;
-	}
-
-	val.drdy_temp = 1;
-
-	return lsm6dsv16x_pin_int2_route_set(ctx, &val);
-}
-#endif
-
 /**
  * lsm6dsv16x_enable_xl_int - XL enable selected int pin to generate interrupt
  */
@@ -178,17 +143,6 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 			return lsm6dsv16x_enable_g_int(dev, LSM6DSV16X_DIS_BIT);
 		}
 	}
-#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
-	else if (trig->chan == SENSOR_CHAN_DIE_TEMP) {
-		lsm6dsv16x->handler_drdy_temp = handler;
-		lsm6dsv16x->trig_drdy_temp = trig;
-		if (handler) {
-			return lsm6dsv16x_enable_t_int(dev, LSM6DSV16X_EN_BIT);
-		} else {
-			return lsm6dsv16x_enable_t_int(dev, LSM6DSV16X_DIS_BIT);
-		}
-	}
-#endif
 
 	return -ENOTSUP;
 }
@@ -210,11 +164,7 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 			return;
 		}
 
-		if ((status.drdy_xl == 0) && (status.drdy_gy == 0)
-#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
-					&& (status.drdy_temp == 0)
-#endif
-					) {
+		if ((status.drdy_xl == 0) && (status.drdy_gy == 0)) {
 			break;
 		}
 
@@ -226,11 +176,6 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 			lsm6dsv16x->handler_drdy_gyr(dev, lsm6dsv16x->trig_drdy_gyr);
 		}
 
-#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
-		if ((status.drdy_temp) && (lsm6dsv16x->handler_drdy_temp != NULL)) {
-			lsm6dsv16x->handler_drdy_temp(dev, lsm6dsv16x->trig_drdy_temp);
-		}
-#endif
 	}
 
 	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,

@@ -96,7 +96,7 @@ static int retention_checksum(const struct device *dev, uint32_t *output)
 		*output = 0;
 
 		while (pos < end) {
-			uint8_t read_size = MIN((end - pos), sizeof(buffer));
+			uint16_t read_size = MIN((end - pos), sizeof(buffer));
 
 			rc = retained_mem_read(config->parent, pos, buffer, read_size);
 
@@ -188,7 +188,7 @@ int retention_is_valid(const struct device *dev)
 		off_t pos = 0;
 
 		while (pos < config->prefix_len) {
-			uint8_t read_size = MIN((config->prefix_len - pos), sizeof(buffer));
+			uint16_t read_size = MIN((config->prefix_len - pos), sizeof(buffer));
 
 			rc = retained_mem_read(config->parent, (config->offset + pos), buffer,
 					       read_size);

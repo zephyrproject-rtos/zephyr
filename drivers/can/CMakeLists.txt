@@ -20,22 +20,6 @@ zephyr_library_sources_ifdef(CONFIG_CAN_STM32H7_FDCAN can_stm32h7_fdcan.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_TCAN4X5X     can_tcan4x5x.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_RCAR         can_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_NUMAKER      can_numaker.c)
-
-if(CONFIG_CAN_NATIVE_POSIX_LINUX)
-  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
-    zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
-    zephyr_library_compile_definitions(NO_POSIX_CHEATS)
-    zephyr_library_compile_definitions(_BSD_SOURCE)
-    zephyr_library_compile_definitions(_DEFAULT_SOURCE)
-    zephyr_library_sources(
-      can_native_posix_linux.c
-      can_native_posix_linux_socketcan.c
-    )
-  else()
-    message(FATAL_ERROR "CONFIG_CAN_NATIVE_POSIX_LINUX only available on Linux")
-  endif()
-endif()
-
 zephyr_library_sources_ifdef(CONFIG_CAN_SJA1000      can_sja1000.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_ESP32_TWAI   can_esp32_twai.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_KVASER_PCI   can_kvaser_pci.c)
@@ -43,5 +27,23 @@ zephyr_library_sources_ifdef(CONFIG_CAN_KVASER_PCI   can_kvaser_pci.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE        can_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_SHELL        can_shell.c)
 zephyr_library_sources_ifdef(CONFIG_CAN_NXP_S32_CANXL    can_nxp_s32_canxl.c)
+
+if(CONFIG_CAN_NATIVE_LINUX)
+  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+    zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
+    zephyr_library_sources(can_native_linux.c)
+
+    if (CONFIG_NATIVE_APPLICATION)
+      set_source_files_properties(can_native_linux_adapt.c
+        PROPERTIES COMPILE_DEFINITIONS
+        "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE")
+      zephyr_library_sources(can_native_linux_adapt.c)
+    else()
+      target_sources(native_simulator INTERFACE can_native_linux_adapt.c)
+    endif()
+  else()
+    message(FATAL_ERROR "CONFIG_CAN_NATIVE_LINUX is only available on Linux")
+  endif()
+endif()
 
 add_subdirectory(transceiver)

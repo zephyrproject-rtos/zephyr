@@ -12,8 +12,9 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/shell/shell_uart.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/coap_mgmt.h>
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_MGMT_EVENT_MONITOR)
 #define EVENT_MON_STACK_SIZE 1024
@@ -250,6 +251,18 @@ static const char *get_l4_desc(uint32_t event)
 		break;
 	case NET_EVENT_DNS_SERVER_DEL:
 		desc = "DNS server del";
+		break;
+	case NET_EVENT_COAP_SERVICE_STARTED:
+		desc = "CoAP service started";
+		break;
+	case NET_EVENT_COAP_SERVICE_STOPPED:
+		desc = "CoAP service stopped";
+		break;
+	case NET_EVENT_COAP_OBSERVER_ADDED:
+		desc = "CoAP observer added";
+		break;
+	case NET_EVENT_COAP_OBSERVER_REMOVED:
+		desc = "CoAP observer removed";
 		break;
 	}
 

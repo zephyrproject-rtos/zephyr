@@ -1355,6 +1355,17 @@ static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			      struct bt_le_per_adv_sync_synced_info *info)
 {
 	LOG_DBG("");
+
+	if (sync == pa_sync) {
+		struct btp_gap_ev_periodic_sync_established_ev ev;
+
+		bt_addr_le_copy(&ev.address, info->addr);
+		ev.sync_handle = sys_cpu_to_le16(sync->handle);
+		ev.status = 0;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_ESTABLISHED,
+			     &ev, sizeof(ev));
+	}
 }
 
 static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
@@ -1363,8 +1374,16 @@ static void pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 	LOG_DBG("");
 
 	if (sync == pa_sync) {
+		struct btp_gap_ev_periodic_sync_lost_ev ev;
+
 		LOG_DBG("PA sync lost with reason %u", info->reason);
 		pa_sync = NULL;
+
+		ev.sync_handle = sys_cpu_to_le16(sync->handle);
+		ev.reason = info->reason;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PERIODIC_SYNC_LOST,
+			     &ev, sizeof(ev));
 	}
 }
 
@@ -1592,10 +1611,18 @@ static uint8_t padv_create_sync(const void *cmd, uint16_t cmd_len,
 	struct bt_le_per_adv_sync_param create_params = {0};
 
 	bt_addr_le_copy(&create_params.addr, &cp->address);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
 	create_params.sid = cp->advertiser_sid;
-	create_params.skip = cp->skip;
-	create_params.timeout = cp->sync_timeout;
+	create_params.skip = sys_le16_to_cpu(cp->skip);
+	create_params.timeout = sys_le16_to_cpu(cp->sync_timeout);
+
+	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_REPORTS_DISABLED) {
+		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED;
+	}
+
+	if (cp->flags & BTP_GAP_PADV_CREATE_SYNC_FLAG_FILTER_DUPLICATES) {
+		create_params.options |= BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	}
 
 	err = tester_gap_padv_create_sync(&create_params);
 	if (err != 0) {

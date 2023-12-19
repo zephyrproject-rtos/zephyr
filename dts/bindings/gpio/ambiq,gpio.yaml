@@ -1,0 +1,84 @@
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Ambiq GPIO provides the GPIO pin mapping for GPIO child nodes.
+
+    The Ambiq Apollo4x soc designs a single GPIO port with 128 pins.
+    It uses 128 continuous 32-bit registers to configure the GPIO pins.
+    This binding provides a pin mapping to solve the limitation of the maximum
+    32 pins handling in GPIO driver API.
+
+    The Ambiq Apollo4x soc should define one "ambiq,gpio" parent node in soc
+    devicetree and some child nodes which are compatible with "ambiq,gpio-bank"
+    under this parent node.
+
+    Here is an example of how a "ambiq,gpio" node can be used with the combined
+    gpio child nodes:
+
+    gpio: gpio@40010000 {
+      compatible = "ambiq,gpio";
+      gpio-map-mask = <0xffffffe0 0xffffffc0>;
+      gpio-map-pass-thru = <0x1f 0x3f>;
+      gpio-map = <
+        0x00 0x0 &gpio0_31 0x0 0x0
+        0x20 0x0 &gpio32_63 0x0 0x0
+        0x40 0x0 &gpio64_95 0x0 0x0
+        0x60 0x0 &gpio96_127 0x0 0x0
+      >;
+      reg = <0x40010000>;
+      #gpio-cells = <2>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+      ranges;
+
+      gpio0_31: gpio0_31@0 {
+        compatible = "ambiq,gpio-bank";
+        gpio-controller;
+        #gpio-cells = <2>;
+        reg = <0>;
+        interrupts = <56 0>;
+        status = "disabled";
+      };
+
+      gpio32_63: gpio32_63@80 {
+        compatible = "ambiq,gpio-bank";
+        gpio-controller;
+        #gpio-cells = <2>;
+        reg = <0x80>;
+        interrupts = <57 0>;
+        status = "disabled";
+      };
+
+      gpio64_95: gpio64_95@100 {
+        compatible = "ambiq,gpio-bank";
+        gpio-controller;
+        #gpio-cells = <2>;
+        reg = <0x100>;
+        interrupts = <58 0>;
+        status = "disabled";
+      };
+
+      gpio96_127: gpio96_127@180 {
+        compatible = "ambiq,gpio-bank";
+        gpio-controller;
+        #gpio-cells = <2>;
+        reg = <0x180>;
+        interrupts = <59 0>;
+        status = "disabled";
+      };
+    };
+
+    In the above example, the gpio@40010000 is a "ambiq,gpio" parent node which
+    provides the base register address 0x40010000. It has four "ambiq,gpio-bank"
+    child nodes. Each of them covers 32 pins (the default value of "ngpios"
+    property is 32). The "reg" property of child nodes defines the register
+    address offset. The register address of pin described in gpio-cells can be
+    obtained by: base address + child address offset + (pin << 2). For example:
+    the address of pin 20 of gpio32_63@80 node is (0x40010000 + 0x80 + (20 << 2))
+    = 0x400100D0 and the real GPIO pin number of this pin in soc is (20 + 32)
+    = 52.
+
+compatible: "ambiq,gpio"
+
+include: [gpio-nexus.yaml, base.yaml]

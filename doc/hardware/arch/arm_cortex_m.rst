@@ -262,7 +262,7 @@ interrupt. If the ZLI feature is enabled in Mainline Cortex-M builds (see
 * Regular HW interrupts are assigned priority levels lower than SVC.
 
 The priority level configuration in Cortex-M is implemented in
-:file:`include/arch/arm/exc.h`.
+:file:`include/arch/arm/exception.h`.
 
 Locking and unlocking IRQs
 --------------------------

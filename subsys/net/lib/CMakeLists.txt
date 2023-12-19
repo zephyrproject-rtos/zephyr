@@ -14,6 +14,7 @@ add_subdirectory_ifdef(CONFIG_TLS_CREDENTIALS        tls_credentials)
 add_subdirectory_ifdef(CONFIG_NET_CAPTURE            capture)
 add_subdirectory_ifdef(CONFIG_NET_ZPERF              zperf)
 add_subdirectory_ifdef(CONFIG_NET_SHELL              shell)
+add_subdirectory_ifdef(CONFIG_NET_TRICKLE            trickle)
 
 if (CONFIG_DNS_RESOLVER
     OR CONFIG_MDNS_RESPONDER

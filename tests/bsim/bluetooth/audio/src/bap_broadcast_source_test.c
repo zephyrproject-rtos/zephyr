@@ -306,6 +306,36 @@ static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 	}
 }
 
+static void test_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
+						  struct bt_le_ext_adv *adv)
+{
+	uint8_t new_metadata[] = BT_AUDIO_CODEC_CFG_LC3_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
+	struct bt_data per_ad;
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+
+	printk("Updating metadata\n");
+	err = bt_bap_broadcast_source_update_metadata(source, new_metadata,
+						      ARRAY_SIZE(new_metadata));
+	if (err != 0) {
+		FAIL("Failed to update metadata broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Get the new BASE */
+	test_broadcast_source_get_base(source, &base_buf);
+
+	/* Update the periodic advertising data with the new BASE */
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising data: %d\n", err);
+	}
+}
+
 static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 {
 	int err;
@@ -369,7 +399,6 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 
 static void test_main(void)
 {
-	uint8_t new_metadata[] = BT_AUDIO_CODEC_CFG_LC3_META(BT_AUDIO_CONTEXT_TYPE_ALERTS);
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
 	int err;
@@ -415,13 +444,7 @@ static void test_main(void)
 	backchannel_sync_wait_any();
 
 	/* Update metadata while streaming */
-	printk("Updating metadata\n");
-	err = bt_bap_broadcast_source_update_metadata(source, new_metadata,
-						      ARRAY_SIZE(new_metadata));
-	if (err != 0) {
-		FAIL("Failed to update metadata broadcast source: %d\n", err);
-		return;
-	}
+	test_broadcast_source_update_metadata(source, adv);
 
 	/* Wait for other devices to have received what they wanted */
 	backchannel_sync_wait_any();

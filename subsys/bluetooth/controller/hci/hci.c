@@ -4953,7 +4953,8 @@ static void vs_read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 
 #if defined(CONFIG_BT_HCI_VS_FATAL_ERROR)
 /* A memory pool for vandor specific events for fatal error reporting purposes. */
-NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE, 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(vs_err_tx_pool, 1, BT_BUF_EVT_RX_SIZE,
+			  sizeof(struct bt_buf_data), NULL);
 
 /* The alias for convenience of Controller HCI implementation. Controller is build for
  * a particular architecture hence the alias will allow to avoid conditional compilation.

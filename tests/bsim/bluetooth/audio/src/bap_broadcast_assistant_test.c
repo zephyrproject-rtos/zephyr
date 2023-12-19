@@ -527,6 +527,7 @@ static void test_main_client_sync(void)
 	test_bass_mod_source();
 	test_bass_broadcast_code();
 
+	printk("Waiting for receive state with BIS sync\n");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	test_bass_remove_source();
@@ -548,6 +549,7 @@ static void test_main_server_sync_client_rem(void)
 
 	test_bass_broadcast_code();
 
+	printk("Waiting for receive state with BIS sync\n");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	test_bass_remove_source();
@@ -569,6 +571,7 @@ static void test_main_server_sync_server_rem(void)
 
 	test_bass_broadcast_code();
 
+	printk("Waiting for receive state with BIS sync\n");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	WAIT_FOR_FLAG(flag_recv_state_removed);

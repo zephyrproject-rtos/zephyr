@@ -12,10 +12,27 @@ menuconfig NET_IPV4
 if NET_IPV4
 
 config NET_INITIAL_TTL
-	int "Initial time to live for a connection"
+	int "Initial IPv4 time to live value for unicast packets"
 	default 64
+	range 0 255
 	help
-	  The value should be > 0
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+
+config NET_INITIAL_MCAST_TTL
+	int "Initial IPv4 time to live value for multicast packets"
+	default 1
+	range 0 255
+	help
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+	  The default is 1 (same as in Linux) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
 
 config NET_IF_MAX_IPV4_COUNT
 	int "Max number of IPv4 network interfaces in the system"

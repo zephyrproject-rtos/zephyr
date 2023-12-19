@@ -63,7 +63,7 @@ multiple processes.
     pthread_setcancelstate(),yes
     pthread_setcanceltype(),yes
     pthread_setspecific(),yes
-    pthread_sigmask(),
+    pthread_sigmask(),yes
     pthread_testcancel(),
 
 .. _posix_option_group_posix_threads_ext:

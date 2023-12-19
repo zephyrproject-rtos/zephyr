@@ -43,6 +43,8 @@ def gtest():
     mock_testsuite.detailed_test_id = True
     mock_testsuite.id = "id"
     mock_testsuite.testcases = []
+    mock_testsuite.harness_config = {}
+
     instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
 
     harness = Gtest()

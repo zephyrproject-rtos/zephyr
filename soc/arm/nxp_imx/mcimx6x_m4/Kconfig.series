@@ -11,6 +11,7 @@ config SOC_SERIES_IMX_6X_M4
 	select HAS_IMX_HAL
 	select SOC_FAMILY_IMX
 	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	select CLOCK_CONTROL
 	help
 	  Enable support for M4 core of i.MX 6SoloX MCU series

@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_object.h"
 #include "lwm2m_obj_access_control.h"
+#include "lwm2m_obj_server.h"
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
@@ -653,8 +654,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-			      CONFIG_COAP_MAX_RETRANSMIT);
+	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
 	if (r < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -2593,8 +2593,7 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 		return -ENOMEM;
 	}
 
-	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr,
-				CONFIG_COAP_MAX_RETRANSMIT);
+	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",

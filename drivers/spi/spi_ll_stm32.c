@@ -273,7 +273,7 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 #define SPI_STM32_TX_NOP 0x00
 
 static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
-				      struct spi_stm32_data *data)
+		struct spi_stm32_data *data)
 {
 	const uint8_t frame_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
 	uint32_t tx_frame = SPI_STM32_TX_NOP;
@@ -338,52 +338,20 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-static bool spi_stm32_can_use_fifo(void)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	return true;
-#else
-	/*
-	 * TODO Test the FIFO usage in other FIFO-enabled STM32 SPI devices.
-	 */
-	return false;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
-}
-
-static void spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
-{
-	while (ll_func_rx_is_not_empty(spi)) {
-		spi_stm32_read_next_frame(spi, data);
-	}
-
-	while (ll_func_tx_is_not_full(spi) && spi_stm32_transfer_ongoing(data)) {
-		spi_stm32_send_next_frame(spi, data);
-
-		if (ll_func_rx_is_not_empty(spi)) {
-			/* Break as soon as a frame is ready to read to avoid overruns */
-			break;
-		}
-	}
-}
-
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	if (spi_stm32_can_use_fifo()) {
-		spi_stm32_shift_fifo(spi, data);
-	} else {
-		while (!ll_func_tx_is_not_full(spi)) {
-			/* NOP */
-		}
-
-		spi_stm32_send_next_frame(spi, data);
-
-		while (!ll_func_rx_is_not_empty(spi)) {
-			/* NOP */
-		}
-
-		spi_stm32_read_next_frame(spi, data);
+	while (!ll_func_tx_is_not_full(spi)) {
+		/* NOP */
 	}
+
+	spi_stm32_send_next_frame(spi, data);
+
+	while (!ll_func_rx_is_not_empty(spi)) {
+		/* NOP */
+	}
+
+	spi_stm32_read_next_frame(spi, data);
 }
 
 /* Shift a SPI frame as slave. */
@@ -471,7 +439,6 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	ll_func_disable_int_errors(spi);
 #endif
 
-	spi_stm32_cs_control(dev, false);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -484,7 +451,10 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
+
+		spi_stm32_cs_control(dev, false);
 	}
+
 	/* BSY flag is cleared when MODF flag is raised */
 	if (LL_SPI_IsActiveFlag_MODF(spi)) {
 		LL_SPI_ClearFlag_MODF(spi);
@@ -1171,14 +1141,6 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define SPI_DMA_STATUS_SEM(id)
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-#define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
-	.use_subghzspi_nss = DT_INST_PROP_OR(				\
-			id, use_subghzspi_nss, false),
-#else
-#define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)
-#endif
-
 
 
 #define STM32_SPI_INIT(id)						\
@@ -1195,7 +1157,9 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
-	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
+		(.use_subghzspi_nss =					\
+			DT_INST_PROP_OR(id, use_subghzspi_nss, false),))\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\

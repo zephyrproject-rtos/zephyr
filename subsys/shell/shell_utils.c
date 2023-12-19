@@ -428,7 +428,7 @@ void z_shell_spaces_trim(char *str)
 	uint16_t len = z_shell_strlen(str);
 	uint16_t shift = 0U;
 
-	if (!str) {
+	if (len == 0U) {
 		return;
 	}
 

@@ -20,5 +20,6 @@ tests:
       - twr_ke18f
       - cy8cproto_062_4343w
       - cy8cproto_063_ble
+      - ucans32k1sic
     extra_configs:
       - CONFIG_TEST_HW_STACK_PROTECTION=n

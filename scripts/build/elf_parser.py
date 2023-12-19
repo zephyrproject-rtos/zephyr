@@ -24,6 +24,9 @@ class _Symbol:
         self.sym = sym
         self.data = self.elf.symbol_data(sym)
 
+    def __lt__(self, other):
+        return self.sym.entry.st_value < other.sym.entry.st_value
+
     def _data_native_read(self, offset):
         (format, size) = self.elf.native_struct_format
         return struct.unpack(format, self.data[offset:offset + size])[0]
@@ -238,8 +241,8 @@ class ZephyrElf:
             self.devices.append(Device(self, sym))
         self._object_find_named('__device_', _on_device)
 
-        # Sort the device array by address for handle calculation
-        self.devices = sorted(self.devices, key = lambda k: k.sym.entry.st_value)
+        # Sort the device array by address (st_value) for handle calculation
+        self.devices = sorted(self.devices)
 
         # Assign handles to the devices
         for idx, dev in enumerate(self.devices):
@@ -280,6 +283,6 @@ class ZephyrElf:
                 )
             dot.node(str(dev.ordinal), text)
         for dev in self.devices:
-            for sup in dev.devs_supports:
+            for sup in sorted(dev.devs_supports):
                 dot.edge(str(dev.ordinal), str(sup.ordinal))
         return dot

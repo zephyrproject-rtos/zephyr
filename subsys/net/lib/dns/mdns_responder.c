@@ -110,11 +110,11 @@ int setup_dst_addr(struct net_context *ctx, sa_family_t family,
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		create_ipv4_addr(net_sin(dst));
 		*dst_len = sizeof(struct sockaddr_in);
-		net_context_set_ipv4_ttl(ctx, 255);
+		net_context_set_ipv4_mcast_ttl(ctx, 255);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		create_ipv6_addr(net_sin6(dst));
 		*dst_len = sizeof(struct sockaddr_in6);
-		net_context_set_ipv6_hop_limit(ctx, 255);
+		net_context_set_ipv6_mcast_hop_limit(ctx, 255);
 	} else {
 		return -EPFNOSUPPORT;
 	}

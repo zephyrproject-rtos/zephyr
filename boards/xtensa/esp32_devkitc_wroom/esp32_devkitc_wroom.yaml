@@ -17,6 +17,7 @@ supported:
   - spi
   - counter
   - entropy
+  - input
 testing:
   ignore_tags:
     - net

@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_ESP32_TOUCH_SENSOR
+	bool "Espressif Touch Sensor input driver"
+	default n
+	depends on DT_HAS_ESPRESSIF_ESP32_TOUCH_ENABLED
+	help
+	  Enable support for Espressif Touch Sensor input driver.

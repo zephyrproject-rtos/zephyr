@@ -1001,6 +1001,10 @@ void net_if_mcast_monitor(struct net_if *iface,
 
 	k_mutex_unlock(&lock);
 }
+#else
+#define net_if_mcast_mon_register(...)
+#define net_if_mcast_mon_unregister(...)
+#define net_if_mcast_monitor(...)
 #endif
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
@@ -2638,6 +2642,47 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 	return iface_router_rm(router);
 }
 
+uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv6->mcast_hop_limit;
+out:
+	net_if_unlock(iface);
+
+	return ret;
+#else
+	ARG_UNUSED(iface);
+
+	return 0;
+#endif
+}
+
+void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit)
+{
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv6) {
+		goto out;
+	}
+
+	iface->config.ip.ipv6->mcast_hop_limit = hop_limit;
+out:
+	net_if_unlock(iface);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(hop_limit);
+#endif
+}
+
 uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
@@ -2661,7 +2706,7 @@ out:
 #endif
 }
 
-void net_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
+void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit)
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	net_if_lock(iface);
@@ -2980,6 +3025,7 @@ static void iface_ipv6_init(int if_count)
 
 	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
 		ipv6_addresses[i].ipv6.hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
+		ipv6_addresses[i].ipv6.mcast_hop_limit = CONFIG_NET_INITIAL_MCAST_HOP_LIMIT;
 		ipv6_addresses[i].ipv6.base_reachable_time = REACHABLE_TIME;
 
 		net_if_ipv6_set_reachable_time(&ipv6_addresses[i].ipv6);
@@ -3143,6 +3189,47 @@ void net_if_ipv4_set_ttl(struct net_if *iface, uint8_t ttl)
 	}
 
 	iface->config.ip.ipv4->ttl = ttl;
+out:
+	net_if_unlock(iface);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ttl);
+#endif
+}
+
+uint8_t net_if_ipv4_get_mcast_ttl(struct net_if *iface)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	ret = iface->config.ip.ipv4->mcast_ttl;
+out:
+	net_if_unlock(iface);
+
+	return ret;
+#else
+	ARG_UNUSED(iface);
+
+	return 0;
+#endif
+}
+
+void net_if_ipv4_set_mcast_ttl(struct net_if *iface, uint8_t ttl)
+{
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	net_if_lock(iface);
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	iface->config.ip.ipv4->mcast_ttl = ttl;
 out:
 	net_if_unlock(iface);
 #else
@@ -4035,6 +4122,7 @@ static void iface_ipv4_init(int if_count)
 
 	for (i = 0; i < ARRAY_SIZE(ipv4_addresses); i++) {
 		ipv4_addresses[i].ipv4.ttl = CONFIG_NET_INITIAL_TTL;
+		ipv4_addresses[i].ipv4.mcast_ttl = CONFIG_NET_INITIAL_MCAST_TTL;
 	}
 }
 
@@ -4300,6 +4388,11 @@ static void update_operational_state(struct net_if *iface)
 		goto exit;
 	}
 
+	if (!device_is_ready(net_if_get_device(iface))) {
+		new_state = NET_IF_OPER_LOWERLAYERDOWN;
+		goto exit;
+	}
+
 	if (!net_if_is_carrier_ok(iface)) {
 #if defined(CONFIG_NET_L2_VIRTUAL)
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
@@ -4374,6 +4467,27 @@ int net_if_up(struct net_if *iface)
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
+	} else {
+		/* If the L2 does not implement enable(), then the network
+		 * device driver cannot implement start(), in which case
+		 * we can do simple check here and not try to bring interface
+		 * up as the device is not ready.
+		 *
+		 * If the network device driver does implement start(), then
+		 * it could bring the interface up when the enable() is called
+		 * few lines below.
+		 */
+		const struct device *dev;
+
+		dev = net_if_get_device(iface);
+		NET_ASSERT(dev);
+
+		/* If the device is not ready it is pointless trying to take it up. */
+		if (!device_is_ready(dev)) {
+			NET_DBG("Device %s (%p) is not ready", dev->name, dev);
+			status = -ENXIO;
+			goto out;
+		}
 	}
 
 	/* Notify L2 to enable the interface */
@@ -4860,8 +4974,6 @@ void net_if_init(void)
 	net_tc_tx_init();
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
-		init_iface(iface);
-		if_count++;
 
 #if defined(CONFIG_NET_INTERFACE_NAME)
 		memset(net_if_get_config(iface)->name, 0,
@@ -4869,6 +4981,9 @@ void net_if_init(void)
 
 		set_default_name(iface);
 #endif
+
+		init_iface(iface);
+		if_count++;
 	}
 
 	if (if_count == 0) {

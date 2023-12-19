@@ -242,7 +242,7 @@ static void virt_region_free(void *vaddr, size_t size)
 	}
 
 #ifndef CONFIG_KERNEL_DIRECT_MAP
-	/* Without the need to support K_DIRECT_MAP, the region must be
+	/* Without the need to support K_MEM_DIRECT_MAP, the region must be
 	 * able to be represented in the bitmap. So this case is
 	 * simple.
 	 */
@@ -259,7 +259,7 @@ static void virt_region_free(void *vaddr, size_t size)
 	num_bits = size / CONFIG_MMU_PAGE_SIZE;
 	(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
 #else /* !CONFIG_KERNEL_DIRECT_MAP */
-	/* With K_DIRECT_MAP, the region can be outside of the virtual
+	/* With K_MEM_DIRECT_MAP, the region can be outside of the virtual
 	 * memory space, wholly within it, or overlap partially.
 	 * So additional processing is needed to make sure we only
 	 * mark the pages within the bitmap.
@@ -381,8 +381,10 @@ static void *virt_region_alloc(size_t size, size_t align)
  */
 static sys_slist_t free_page_frame_list;
 
-/* Number of unused and available free page frames */
-size_t z_free_page_count;
+/* Number of unused and available free page frames.
+ * This information may go stale immediately.
+ */
+static size_t z_free_page_count;
 
 #define PF_ASSERT(pf, expr, fmt, ...) \
 	__ASSERT(expr, "page frame 0x%lx: " fmt, z_page_frame_to_phys(pf), \

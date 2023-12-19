@@ -11,10 +11,11 @@
 #include <soc.h>
 
 
-#define UART_IS_IOPORT_ACCESS \
-	DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_console), io_mapped)
+#if DT_PROP_OR(DT_CHOSEN(zephyr_console), io_mapped, 0) != 0
+#define UART_IS_IOPORT_ACCESS 1
+#endif
 
-#if UART_IS_IOPORT_ACCESS
+#if defined(UART_IS_IOPORT_ACCESS)
 /* Legacy I/O Port Access to a NS16550 UART */
 #define IN(reg)       sys_in8(reg + DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
 #define OUT(reg, val) sys_out8(val, reg + DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
@@ -89,7 +90,7 @@ int arch_printk_char_out(int c)
 
 void z_x86_early_serial_init(void)
 {
-#if defined(DEVICE_MMIO_IS_IN_RAM) && !UART_IS_IOPORT_ACCESS
+#if defined(DEVICE_MMIO_IS_IN_RAM) && !defined(UART_IS_IOPORT_ACCESS)
 #ifdef X86_SOC_EARLY_SERIAL_PCIDEV
 	struct pcie_bar mbar;
 	pcie_get_mbar(X86_SOC_EARLY_SERIAL_PCIDEV, 0, &mbar);

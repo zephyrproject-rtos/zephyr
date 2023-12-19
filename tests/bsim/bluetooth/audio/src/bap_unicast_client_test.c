@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 #define BAP_STREAM_RETRY_WAIT K_MSEC(100)
 

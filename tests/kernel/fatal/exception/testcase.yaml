@@ -3,7 +3,9 @@ common:
 tests:
   kernel.common.stack_protection:
     extra_args: CONF_FILE=prj.conf
-    platform_exclude: twr_ke18f
+    platform_exclude:
+      - twr_ke18f
+      - ucans32k1sic
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     arch_exclude:
       - posix
@@ -19,7 +21,9 @@ tests:
       - memory_protection
   kernel.common.stack_protection_arm_fpu_sharing:
     extra_args: CONF_FILE=prj_arm_fpu_sharing.conf
-    platform_exclude: twr_ke18f
+    platform_exclude:
+      - twr_ke18f
+      - ucans32k1sic
     arch_allow: arm
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION and CONFIG_ARMV7_M_ARMV8_M_FP
     tags:
@@ -39,8 +43,9 @@ tests:
       - mps2_an385
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
-    # FIXME: See issue #39948
-    platform_exclude: qemu_cortex_a9
+    platform_exclude:
+      - qemu_cortex_a9 # FIXME: See issue #39948
+      - hifive1        # FIXME: See issue #66070
     tags: kernel
     integration_platforms:
       - qemu_x86

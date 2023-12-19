@@ -84,7 +84,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
 #elif defined(CONFIG_NOCACHE_MEMORY)

@@ -21,3 +21,7 @@
 #if defined(CONFIG_COAP_SERVER)
 	ITERABLE_SECTION_ROM(coap_service, 4)
 #endif
+
+#if defined(CONFIG_NET_MGMT_EVENT)
+	ITERABLE_SECTION_ROM(net_mgmt_event_static_handler, 4)
+#endif

@@ -1,5 +1,5 @@
 /** @file
- *  @brief Common functionality for Bluetooth mesh BabbleSim tests.
+ *  @brief Common functionality for Bluetooth Mesh BabbleSim tests.
  */
 
 /*

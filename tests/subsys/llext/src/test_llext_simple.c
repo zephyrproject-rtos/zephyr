@@ -9,8 +9,11 @@
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/buf_loader.h>
 
-#ifdef CONFIG_ARM /* ARMV7 */
-const static uint8_t hello_world_elf[] __aligned(4) = {
+#if defined(CONFIG_ARM) /* ARMV7 */ || defined(CONFIG_XTENSA)
+#ifndef CONFIG_LLEXT_STORAGE_WRITABLE
+const
+#endif
+static uint8_t hello_world_elf[] __aligned(4) = {
 #include "hello_world.inc"
 };
 #endif
@@ -24,20 +27,21 @@ const static uint8_t hello_world_elf[] __aligned(4) = {
  */
 ZTEST(llext, test_llext_simple)
 {
-	const char name[16] = {'h', 'e', 'l', 'l', 'o', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	const char name[16] = "hello";
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(hello_world_elf, ARRAY_SIZE(hello_world_elf));
 	struct llext_loader *loader = &buf_loader.loader;
-	struct llext *ext;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
 	const void * const printk_fn = llext_find_sym(NULL, "printk");
 
 	zassert_equal(printk_fn, printk, "printk should be an exported symbol");
 
-	int res = llext_load(loader, name, &ext);
+	int res = llext_load(loader, name, &ext, &ldr_parm);
 
 	zassert_ok(res, "load should succeed");
 
-	const void * const hello_world_fn = llext_find_sym(&ext->sym_tab, "hello_world");
+	const void * const hello_world_fn = llext_find_sym(&ext->exp_tab, "hello_world");
 
 	zassert_not_null(hello_world_fn, "hello_world should be an exported symbol");
 
@@ -45,7 +49,7 @@ ZTEST(llext, test_llext_simple)
 
 	zassert_ok(res, "calling hello world should succeed");
 
-	llext_unload(ext);
+	llext_unload(&ext);
 }
 
 ZTEST_SUITE(llext, NULL, NULL, NULL, NULL, NULL);

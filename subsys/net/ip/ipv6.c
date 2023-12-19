@@ -74,11 +74,29 @@ int net_ipv6_create(struct net_pkt *pkt,
 	ipv6_hdr->len     = 0U;
 	ipv6_hdr->nexthdr = 0U;
 
-	/* User can tweak the default hop limit if needed */
+	/* Set the hop limit by default from net_pkt as that could
+	 * be set for example when sending NS. If the limit is 0,
+	 * then take the value from socket.
+	 */
 	ipv6_hdr->hop_limit = net_pkt_ipv6_hop_limit(pkt);
 	if (ipv6_hdr->hop_limit == 0U) {
-		ipv6_hdr->hop_limit =
-			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt));
+		if (net_ipv6_is_addr_mcast(dst)) {
+			if (net_pkt_context(pkt) != NULL) {
+				ipv6_hdr->hop_limit =
+					net_context_get_ipv6_mcast_hop_limit(net_pkt_context(pkt));
+			} else {
+				ipv6_hdr->hop_limit =
+					net_if_ipv6_get_mcast_hop_limit(net_pkt_iface(pkt));
+			}
+		} else {
+			if (net_pkt_context(pkt) != NULL) {
+				ipv6_hdr->hop_limit =
+					net_context_get_ipv6_hop_limit(net_pkt_context(pkt));
+			} else {
+				ipv6_hdr->hop_limit =
+					net_if_ipv6_get_hop_limit(net_pkt_iface(pkt));
+			}
+		}
 	}
 
 	net_ipv6_addr_copy_raw(ipv6_hdr->dst, (uint8_t *)dst);

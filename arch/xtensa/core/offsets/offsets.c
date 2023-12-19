@@ -7,7 +7,7 @@
 #include <kernel_offsets.h>
 #include <zephyr/arch/xtensa/thread.h>
 
-#include <xtensa-asm2-context.h>
+#include <xtensa_asm2_context.h>
 
 GEN_ABSOLUTE_SYM(___xtensa_irq_bsa_t_SIZEOF, sizeof(_xtensa_irq_bsa_t));
 GEN_ABSOLUTE_SYM(___xtensa_irq_stack_frame_raw_t_SIZEOF, sizeof(_xtensa_irq_stack_frame_raw_t));

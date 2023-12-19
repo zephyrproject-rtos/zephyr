@@ -235,15 +235,6 @@ static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 			     const union charger_propval *val)
 {
 	switch (prop) {
-	case CHARGER_PROP_STATUS:
-		switch (val->status) {
-		case CHARGER_STATUS_CHARGING:
-			return max20335_set_enabled(dev, true);
-		case CHARGER_STATUS_NOT_CHARGING:
-			return max20335_set_enabled(dev, false);
-		default:
-			return -ENOTSUP;
-		}
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		return max20335_set_constant_charge_current(dev,
 							    val->const_charge_current_ua);
@@ -253,7 +244,6 @@ static int max20335_set_prop(const struct device *dev, charger_prop_t prop,
 	default:
 		return -ENOTSUP;
 	}
-
 }
 
 static int max20335_init(const struct device *dev)
@@ -270,6 +260,7 @@ static int max20335_init(const struct device *dev)
 static const struct charger_driver_api max20335_driver_api = {
 	.get_property = max20335_get_prop,
 	.set_property = max20335_set_prop,
+	.charge_enable = max20335_set_enabled,
 };
 
 #define MAX20335_DEFINE(inst)									\

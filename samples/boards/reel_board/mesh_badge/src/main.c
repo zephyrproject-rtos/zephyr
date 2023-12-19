@@ -59,10 +59,10 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static struct bt_uuid_128 name_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 name_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef0));
 
-static struct bt_uuid_128 name_enc_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 name_enc_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef1));
 
 #define CPF_FORMAT_UTF8 0x19

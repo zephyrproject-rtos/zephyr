@@ -5,7 +5,7 @@ https://github.com/jothepro/doxygen-awesome-css
 
 MIT License
 
-Copyright (c) 2021 jothepro
+Copyright (c) 2021 - 2023 jothepro
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,10 +31,16 @@ html {
     /* side nav width. MUST be = `TREEVIEW_WIDTH`.
      * Make sure it is wide enough to contain the page title (logo + title + version)
      */
-    --side-nav-fixed-width: 340px;
+    --side-nav-fixed-width: 335px;
     --menu-display: none;
 
     --top-height: 120px;
+    --toc-sticky-top: -25px;
+    --toc-max-height: calc(100vh - 2 * var(--spacing-medium) - 25px);
+}
+
+#projectname {
+    white-space: nowrap;
 }
 
 
@@ -64,6 +70,7 @@ html {
         height: var(--top-height);
         margin-bottom: calc(0px - var(--top-height));
         max-width: var(--side-nav-fixed-width);
+        overflow: hidden;
         background: var(--side-nav-background);
     }
     #main-nav {
@@ -74,6 +81,7 @@ html {
     .ui-resizable-handle {
         cursor: default;
         width: 1px !important;
+        background: var(--separator-color);
         box-shadow: 0 calc(-2 * var(--top-height)) 0 0 var(--separator-color);
     }
 

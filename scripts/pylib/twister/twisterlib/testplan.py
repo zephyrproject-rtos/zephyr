@@ -56,10 +56,12 @@ class Filters:
     CMD_LINE = 'command line filter'
     # filters in the testsuite yaml definition
     TESTSUITE = 'testsuite filter'
+    # filters in the testplan yaml definition
+    TESTPLAN = 'testplan filter'
     # filters realted to platform definition
     PLATFORM = 'Platform related filter'
     # in case a test suite was quarantined.
-    QUARENTINE = 'Quarantine filter'
+    QUARANTINE = 'Quarantine filter'
     # in case a test suite is skipped intentionally .
     SKIP = 'Skip filter'
     # in case of incompatibility between selected and allowed toolchains.
@@ -717,7 +719,7 @@ class TestPlan:
                     tl = self.get_level(self.options.level)
                     planned_scenarios = tl.scenarios
                     if ts.id not in planned_scenarios and not set(ts.levels).intersection(set(tl.levels)):
-                        instance.add_filter("Not part of requested test plan", Filters.TESTSUITE)
+                        instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
 
                 if runnable and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.CMD_LINE)
@@ -847,39 +849,41 @@ class TestPlan:
                         instance.testsuite.id, plat.name, plat.arch, plat.simulation
                     )
                     if matched_quarantine and not self.options.quarantine_verify:
-                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARENTINE)
+                        instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
                     if not matched_quarantine and self.options.quarantine_verify:
-                        instance.add_filter("Not under quarantine", Filters.QUARENTINE)
+                        instance.add_filter("Not under quarantine", Filters.QUARANTINE)
 
 
                 # platform_key is a list of unique platform attributes that form a unique key a test
                 # will match against to determine if it should be scheduled to run. A key containing a
                 # field name that the platform does not have will filter the platform.
                 #
-                # A simple example is keying on arch and simulation to run a test once per unique (arch, simulation) platform.
+                # A simple example is keying on arch and simulation
+                # to run a test once per unique (arch, simulation) platform.
                 if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
-                    # form a key by sorting the key fields first, then fetching the key fields from plat if they exist
-                    # if a field does not exist the test is still scheduled on that platform as its undeterminable.
                     key_fields = sorted(set(ts.platform_key))
-                    key = [getattr(plat, key_field) for key_field in key_fields]
-                    has_all_fields = True
-                    for key_field in key_fields:
-                        if key_field is None or key_field == 'na':
-                            has_all_fields = False
-                    if has_all_fields:
-                        test_key = copy.deepcopy(key)
-                        test_key.append(ts.name)
-                        test_key = tuple(test_key)
-                        keyed_test = keyed_tests.get(test_key)
+                    keys = [getattr(plat, key_field) for key_field in key_fields]
+                    for key in keys:
+                        if key is None or key == 'na':
+                            instance.add_filter(
+                                f"Excluded platform missing key fields demanded by test {key_fields}",
+                                Filters.PLATFORM
+                            )
+                            break
+                    else:
+                        test_keys = copy.deepcopy(keys)
+                        test_keys.append(ts.name)
+                        test_keys = tuple(test_keys)
+                        keyed_test = keyed_tests.get(test_keys)
                         if keyed_test is not None:
                             plat_key = {key_field: getattr(keyed_test['plat'], key_field) for key_field in key_fields}
                             instance.add_filter(f"Already covered for key {tuple(key)} by platform {keyed_test['plat'].name} having key {plat_key}", Filters.PLATFORM_KEY)
                         else:
                             # do not add a platform to keyed tests if previously filtered
                             if not instance.filters:
-                                keyed_tests[test_key] = {'plat': plat, 'ts': ts}
-                    else:
-                        instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
+                                keyed_tests[test_keys] = {'plat': plat, 'ts': ts}
+                            else:
+                                instance.add_filter(f"Excluded platform missing key fields demanded by test {key_fields}", Filters.PLATFORM)
 
                 # if nothing stopped us until now, it means this configuration
                 # needs to be added.
@@ -1004,12 +1008,12 @@ class TestPlan:
 
 def change_skip_to_error_if_integration(options, instance):
     ''' All skips on integration_platforms are treated as errors.'''
-    if instance.platform.name in instance.testsuite.integration_platforms \
-        and "quarantine" not in instance.reason.lower():
-        # Do not treat this as error if filter type is command line
+    if instance.platform.name in instance.testsuite.integration_platforms:
+        # Do not treat this as error if filter type is among ignore_filters
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
-                         Filters.TOOLCHAIN, Filters.MODULE}
+                         Filters.TOOLCHAIN, Filters.MODULE, Filters.TESTPLAN,
+                         Filters.QUARANTINE}
         if filters.intersection(ignore_filters):
             return
         instance.status = "error"

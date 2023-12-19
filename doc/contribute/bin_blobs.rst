@@ -43,7 +43,7 @@ Fetching blobs
 ==============
 
 Blobs are fetched from official third-party sources by the :ref:`west blobs
-command <west-blobs>` command.
+<west-blobs>` command.
 
 The blobs themselves must be specified in the :ref:`module.yml
 <modules-bin-blobs>` files included in separate Zephyr :ref:`module repositories

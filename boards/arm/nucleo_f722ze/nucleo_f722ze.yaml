@@ -1,0 +1,25 @@
+identifier: nucleo_f722ze
+name: ST Nucleo F722ZE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - backup_sram
+  - can
+  - counter
+  - dac
+  - gpio
+  - i2c
+  - quadspi
+  - spi
+  - usb_device
+ram: 256
+flash: 512
+vendor: st

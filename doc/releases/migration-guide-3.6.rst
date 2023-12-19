@@ -17,8 +17,14 @@ Required changes
 Boards
 ======
 
-  * The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
-    applications that use this should switch to using the :ref:`boot_mode_api` instead.
+* The deprecated Nordic SoC Kconfig option ``NRF_STORE_REBOOT_TYPE_GPREGRET`` has been removed,
+  applications that use this should switch to using the :ref:`boot_mode_api` instead.
+
+Build System
+============
+
+* The deprecated ``prj_<board>.conf`` Kconfig file support has been removed, projects that use
+  this should switch to using board Kconfig fragments instead (``boards/<board>.conf``).
 
 Kernel
 ======
@@ -65,6 +71,71 @@ Device Drivers and Device Tree
   identity address, which will then be passed in the ``public_addr`` field.
 
   (:github:`62994`)
+
+* Various deprecated macros related to the deprecated devicetree label property
+  were removed. These are listed in the following table. The table also
+  provides replacements.
+
+  However, if you are still using code like
+  ``device_get_binding(DT_LABEL(node_id))``, consider replacing it with
+  something like ``DEVICE_DT_GET(node_id)`` instead. The ``DEVICE_DT_GET()``
+  macro avoids run-time string comparisons, and is also safer because it will
+  fail the build if the device does not exist.
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Removed macro
+       - Replacement
+
+     * - ``DT_GPIO_LABEL(node_id, gpio_pha)``
+       - ``DT_PROP(DT_GPIO_CTLR(node_id, gpio_pha), label)``
+
+     * - ``DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx)``
+       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx), label)``
+
+     * - ``DT_INST_GPIO_LABEL(inst, gpio_pha)``
+       - ``DT_PROP(DT_GPIO_CTLR(DT_DRV_INST(inst), gpio_pha), label)``
+
+     * - ``DT_INST_GPIO_LABEL_BY_IDX(inst, gpio_pha, idx)``
+       - ``DT_PROP(DT_GPIO_CTLR_BY_IDX(DT_DRV_INST(inst), gpio_pha, idx), label)``
+
+     * - ``DT_SPI_DEV_CS_GPIOS_LABEL(spi_dev)``
+       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev), label)``
+
+     * - ``DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)``
+       - ``DT_PROP(DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst)), label)``
+
+     * - ``DT_LABEL(node_id)``
+       - ``DT_PROP(node_id, label)``
+
+     * - ``DT_BUS_LABEL(node_id)``
+       - ``DT_PROP(DT_BUS(node_id), label)``
+
+     * - ``DT_INST_LABEL(inst)``
+       - ``DT_INST_PROP(inst, label)``
+
+     * - ``DT_INST_BUS_LABEL(inst)``
+       - ``DT_PROP(DT_BUS(DT_DRV_INST(inst)), label)``
+
+* The :dtcompatible:`st,stm32-lptim` lptim which is selected for counting ticks during
+  low power modes is identified by **stm32_lp_tick_source** in the device tree as follows.
+  The stm32_lptim_timer driver has been changed to support this.
+
+  .. code-block:: devicetree
+
+    stm32_lp_tick_source: &lptim1 {
+            status = "okay";
+    };
+
+* The native Linux SocketCAN driver, which can now be used in both :ref:`native_posix<native_posix>`
+  and :ref:`native_sim<native_sim>` with or without an embedded C-library, has been renamed to
+  reflect this:
+
+  * The devicetree compatible was renamed from ``zephyr,native-posix-linux-can`` to
+    :dtcompatible:`zephyr,native-linux-can`.
+  * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
+    :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
 
 Power Management
 ================
@@ -114,6 +185,9 @@ Bootloader
 Bluetooth
 =========
 
+* ATT now has its own TX buffer pool.
+  If extra ATT buffers were configured using :kconfig:option:`CONFIG_BT_L2CAP_TX_BUF_COUNT`,
+  they now instead should be configured through :kconfig:option:`CONFIG_BT_ATT_TX_COUNT`.
 * The HCI implementation for both the Host and the Controller sides has been
   renamed for the IPC transport. The ``CONFIG_BT_RPMSG`` Kconfig option is now
   :kconfig:option:`CONFIG_BT_HCI_IPC`, and the ``zephyr,bt-hci-rpmsg-ipc``
@@ -124,13 +198,24 @@ Bluetooth
   cleared on :c:func:`bt_enable`. Callbacks can now be registered before the initial
   call to :c:func:`bt_enable`, and should no longer be re-registered after a :c:func:`bt_disable`
   :c:func:`bt_enable` cycle. (:github:`63693`)
-* The Bluetooth Mesh ``model`` declaration has been changed to add prefix ``const``.
-  The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
-  the new runtime structure, replaced by ``model->rt->user_data``, ``model->rt->elem_idx`` and
-  ``model->rt->mod_idx`` separately. (:github:`65152`)
-* The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
-  The ``elem->addr`` field has been changed to the new runtime structure, replaced by
-  ``elem->rt->addr``. (:github:`65388`)
+* The Bluetooth UUID has been modified to rodata in ``BT_UUID_DECLARE_16``, ``BT_UUID_DECLARE_32`
+  and ``BT_UUID_DECLARE_128`` as the return value has been changed to `const`.
+  Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
+  For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
+  ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
+
+* Mesh
+
+  * The Bluetooth Mesh ``model`` declaration has been changed to add prefix ``const``.
+    The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
+    the new runtime structure, replaced by ``model->rt->user_data``, ``model->rt->elem_idx`` and
+    ``model->rt->mod_idx`` separately. (:github:`65152`)
+  * The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
+    The ``elem->addr`` field has been changed to the new runtime structure, replaced by
+    ``elem->rt->addr``. (:github:`65388`)
+  * Deprecated :kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE`. This option is
+    replaced by new option :kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` to
+    be aligned with Mesh Protocol Specification v1.1, section 5.4. (:github:`64252`)
 
 LoRaWAN
 =======
@@ -150,12 +235,31 @@ Networking
   ``request`` argument for :c:func:`coap_well_known_core_get` is made ``const``.
   (:github:`64265`)
 
+* CoAP observer events have moved from a callback function in a CoAP resource to the Network Events
+  subsystem. The ``CONFIG_COAP_OBSERVER_EVENTS`` configuration option has been removed.
+  (:github:`65936`)
+
+* The CoAP public API function :c:func:`coap_pending_init` has changed. The parameter
+  ``retries`` is replaced with a pointer to :c:struct:`coap_transmission_parameters`. This allows to
+  specify retransmission parameters of the confirmable message. It is safe to pass a NULL pointer to
+  use default values.
+  (:github:`66482`)
+
+* The CoAP public API functions :c:func:`coap_service_send` and :c:func:`coap_resource_send` have
+  changed. An additional parameter pointer to :c:struct:`coap_transmission_parameters` has been
+  added. It is safe to pass a NULL pointer to use default values. (:github:`66540`)
+
 * The IGMP multicast library now supports IGMPv3. This results in a minor change to the existing
   api. The :c:func:`net_ipv4_igmp_join` now takes an additional argument of the type
   ``const struct igmp_param *param``. This allows IGMPv3 to exclude/include certain groups of
   addresses. If this functionality is not used or available (when using IGMPv2), you can safely pass
   a NULL pointer. IGMPv3 can be enabled using the Kconfig ``CONFIG_NET_IPV4_IGMPV3``.
   (:github:`65293`)
+
+* The network stack now uses a separate IPv4 TTL (time-to-live) value for multicast packets.
+  Before, the same TTL value was used for unicast and multicast packets.
+  The IPv6 hop limit value is also changed so that unicast and multicast packets can have a
+  different one. (:github:`65886`)
 
 Other Subsystems
 ================
@@ -174,9 +278,19 @@ Other Subsystems
   zbus options are renamed. Instead, the new :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC`
   and :kconfig:option:`ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC` options should be used.
 
+Xtensa
+======
+
+* :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer has a default in
+  the architecture layer. Instead, SoCs or boards will need to define it.
+
 Recommended Changes
 *******************
 
 * New macros available for ST sensor DT properties setting. These macros have a self-explanatory
   name that helps in recognizing what the property setting means (e.g. LSM6DSV16X_DT_ODR_AT_60Hz).
   (:github:`65410`)
+
+* Users of :ref:`native_posix<native_posix>` are recommended to migrate to
+  :ref:`native_sim<native_sim>`. :ref:`native_sim<native_sim>` supports all its use cases,
+  and should be a drop-in replacement for most.

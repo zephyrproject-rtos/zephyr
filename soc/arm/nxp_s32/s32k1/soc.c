@@ -15,6 +15,10 @@
 #include <cmsis_core.h>
 #include <OsIf.h>
 
+#if defined(CONFIG_HAS_MCUX_CACHE)
+#include <fsl_cache.h>
+#endif
+
 #if defined(CONFIG_WDOG_INIT)
 #define WDOG_UPDATE_KEY    0xD928C520U
 
@@ -63,18 +67,8 @@ static int soc_init(void)
 	IP_MPU->CESR = tmp;
 #endif /* !CONFIG_ARM_MPU */
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_ICACHE)
-	/* Invalidate all ways */
-	IP_LMEM->PCCCR |= LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK;
-	IP_LMEM->PCCCR |= LMEM_PCCCR_GO_MASK;
-
-	/* Wait until the command completes */
-	while (IP_LMEM->PCCCR & LMEM_PCCCR_GO_MASK) {
-		;
-	}
-
-	/* Enable cache */
-	IP_LMEM->PCCCR |= (LMEM_PCCCR_ENCACHE_MASK);
+#if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_NXP_S32_ENABLE_CODE_CACHE)
+	L1CACHE_EnableCodeCache();
 	barrier_isync_fence_full();
 #endif
 

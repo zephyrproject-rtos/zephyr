@@ -15,3 +15,5 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
+    platform_exclude:
+      - ucans32k1sic

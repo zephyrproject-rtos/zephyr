@@ -17,6 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_EXCEPTION_DEBUG
 static void esf_dump(const z_arch_esf_t *esf)
 {
 	LOG_ERR("r0/a1:  0x%08x  r1/a2:  0x%08x  r2/a3:  0x%08x",
@@ -63,13 +64,15 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);
 }
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		esf_dump(esf);
 	}
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 }
 

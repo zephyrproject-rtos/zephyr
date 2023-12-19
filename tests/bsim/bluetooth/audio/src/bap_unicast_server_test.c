@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include "common.h"
-#include "bap_unicast_common.h"
+#include "bap_common.h"
 
 extern enum bst_result_t bst_result;
 

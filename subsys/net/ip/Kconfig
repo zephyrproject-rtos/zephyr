@@ -184,13 +184,23 @@ config NET_SHELL_DYN_CMD_COMPLETION
 	  length) by default. Other dynamic completion commands in
 	  net-shell require also some smaller amount of memory.
 
+config NET_SHELL_REQUIRE_TX_THREAD
+	bool
+	depends on NET_SHELL && (SHELL_BACKEND_TELNET || SHELL_BACKEND_MQTT)
+	default y if NET_ARP
+	help
+	  Hidden symbol indicating that network shell requires separate TX
+	  thread due to possible deadlocks during shell/net stack operations.
+
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
-	default 1 if USERSPACE || USB_DEVICE_NETWORK
+	default 1 if USERSPACE || USB_DEVICE_NETWORK || \
+		     NET_SHELL_REQUIRE_TX_THREAD
 	default 0
-	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && \
+		(USERSPACE || NET_SHELL_REQUIRE_TX_THREAD)
 	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
-	range 1 8 if USERSPACE
+	range 1 8 if USERSPACE || NET_SHELL_REQUIRE_TX_THREAD
 	range 0 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
@@ -385,210 +395,7 @@ config NET_MAX_MCAST_ROUTES
 	  This determines how many entries can be stored in multicast
 	  routing table.
 
-config NET_TCP
-	bool "TCP"
-	depends on NET_IP
-	help
-	  The value depends on your network needs.
-
-config NET_TCP_CHECKSUM
-	bool "Check TCP checksum"
-	default y
-	depends on NET_TCP
-	help
-	  Enables TCP handler to check TCP checksum. If the checksum is invalid,
-	  then the packet is discarded.
-
-if NET_TCP
-module = NET_TCP
-module-dep = NET_LOG
-module-str = Log level for TCP
-module-help = Enables TCP handler output debug messages
-source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_TCP
-
-config NET_TCP_TIME_WAIT_DELAY
-	int "How long to wait in TIME_WAIT state (in milliseconds)"
-	depends on NET_TCP
-	default 1500
-	help
-	  To avoid a (low-probability) issue when delayed packets from
-	  previous connection get delivered to next connection reusing
-	  the same local/remote ports, RFC 793 (TCP) suggests to keep
-	  an old, closed connection in a special "TIME_WAIT" state for
-	  the duration of 2*MSL (Maximum Segment Lifetime). The RFC
-	  suggests to use MSL of 2 minutes, but notes "This is an
-	  engineering choice, and may be changed if experience indicates
-	  it is desirable to do so." For low-resource systems, having
-	  large MSL may lead to quick resource exhaustion (and related
-	  DoS attacks). At the same time, the issue of packet misdelivery
-	  is largely alleviated in the modern TCP stacks by using random,
-	  non-repeating port numbers and initial sequence numbers. Due
-	  to this, Zephyr uses much lower value of 1500ms by default.
-	  Value of 0 disables TIME_WAIT state completely.
-
-config NET_TCP_ACK_TIMEOUT
-	int "How long to wait for ACK (in milliseconds)"
-	depends on NET_TCP
-	default 1000
-	range 1 2147483647
-	help
-	  This value affects the timeout when waiting ACK to arrive in
-	  various TCP states. The value is in milliseconds. Note that
-	  having a very low value here could prevent connectivity.
-
-config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
-	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
-	depends on NET_TCP
-	default 200
-	range 100 60000
-	help
-	  This value affects the timeout between initial retransmission
-	  of TCP data packets. The value is in milliseconds.
-
-config NET_TCP_RETRY_COUNT
-	int "Maximum number of TCP segment retransmissions"
-	depends on NET_TCP
-	default 9
-	help
-	  The following formula can be used to determine the time (in ms)
-	  that a segment will be be buffered awaiting retransmission:
-	  n=NET_TCP_RETRY_COUNT
-	  Sum((1<<n) * NET_TCP_INIT_RETRANSMISSION_TIMEOUT)
-	  n=0
-	  With the default value of 9, the IP stack will try to
-	  retransmit for up to 1:42 minutes.  This is as close as possible
-	  to the minimum value recommended by RFC1122 (1:40 minutes).
-	  Only 5 bits are dedicated for the retransmission count, so accepted
-	  values are in the 0-31 range.  It's highly recommended to not go
-	  below 9, though.
-	  Should a retransmission timeout occur, the receive callback is
-	  called with -ECONNRESET error code and the context is dereferenced.
-
-config NET_TCP_RANDOMIZED_RTO
-	bool "Use a randomized retransmission time"
-	default y
-	depends on NET_TCP
-	help
-	  It can happen that two similar stacks enter a retransmission cycle
-	  due to a packet collision. If the transmission timeout is the same
-	  both stacks will retry at the same moment resulting in another
-	  collision. By introducing a randomized retry timeout, the chance of
-	  a second collision is reduced and it reduces furter the more
-	  retransmissions occur.
-
-config NET_TCP_FAST_RETRANSMIT
-	bool "Fast-retry algorithm based on the number of duplicated ACKs"
-	depends on NET_TCP
-	default y
-	help
-	  When a packet is lost, the receiver will keep acknowledging the
-	  sequence number of the last correctly received byte. Upon reception
-	  of a sequence of acknowledgements for the same sequence number,
-	  this can be deduced as that the packet afterwards must have been lost.
-	  In that case a retransmission is triggerd to avoid having to wait for
-	  the retransmit timer to elapse.
-
-config NET_TCP_CONGESTION_AVOIDANCE
-	bool "Implement a congestion avoidance algorithm in TCP"
-	depends on NET_TCP
-	default y
-	help
-	  To avoid overstressing a link reduce the transmission rate as soon as
-	  packets are starting to drop.
-
-config NET_TCP_MAX_SEND_WINDOW_SIZE
-	int "Maximum sending window size to use"
-	depends on NET_TCP
-	default 0
-	range 0 65535
-	help
-	  This value affects how the TCP selects the maximum sending window
-	  size. The default value 0 lets the TCP stack select the value
-	  according to amount of network buffers configured in the system.
-
-config NET_TCP_MAX_RECV_WINDOW_SIZE
-	int "Maximum receive window size to use"
-	depends on NET_TCP
-	default 0
-	range 0 65535
-	help
-	  This value defines the maximum TCP receive window size. Increasing
-	  this value can improve connection throughput, but requires more
-	  receive buffers available in the system for efficient operation.
-	  The default value 0 lets the TCP stack select the value
-	  according to amount of network buffers configured in the system.
-
-config NET_TCP_RECV_QUEUE_TIMEOUT
-	int "How long to queue received data (in ms)"
-	depends on NET_TCP
-	default 2000
-	range 0 10000
-	help
-	  If we receive out-of-order TCP data, we queue it. This value tells
-	  how long the data is kept before it is discarded if we have not been
-	  able to pass the data to the application. If set to 0, then receive
-	  queueing is not enabled. The value is in milliseconds.
-	  Note that we only queue data sequentially in current version i.e.,
-	  there should be no holes in the queue. For example, if we receive
-	  SEQs 5,4,3,6 and are waiting SEQ 2, the data in segments 3,4,5,6 is
-	  queued (in this order), and then given to application when we receive
-	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
-	  because the list would not be sequential as number 6 is be missing.
-
-config NET_TCP_PKT_ALLOC_TIMEOUT
-	int "How long to wait for a TCP packet allocation (in ms)"
-	depends on NET_TCP
-	default 100
-	range 10 1000
-	help
-	  The TCP network stack allocates packets from the buffers and the
-	  allocation can take some time depending on the situation.
-	  This value indicates how long the stack should wait for the packet to
-	  be allocated, before returning an internal error and trying again.
-
-config NET_TCP_WORKQ_STACK_SIZE
-	int "TCP work queue thread stack size"
-	default 1200 if X86
-	default 1024
-	depends on NET_TCP
-	help
-	  Set the TCP work queue thread stack size in bytes.
-
-config NET_TCP_ISN_RFC6528
-	bool "Use ISN algorithm from RFC 6528"
-	default y
-	depends on NET_TCP
-	select MBEDTLS
-	select MBEDTLS_MD
-	select MBEDTLS_MAC_MD5_ENABLED
-	help
-	  Implement Initial Sequence Number calculation as described in
-	  RFC 6528 chapter 3. https://tools.ietf.org/html/rfc6528
-	  If this is not set, then sys_rand32_get() is used for ISN value.
-
-config NET_TCP_WORKER_PRIO
-	int "Priority of the TCP work queue"
-	default 2
-	depends on NET_TCP
-	help
-	  Set the priority of the the TCP worker queue, that handles all
-	  transmission and maintenance within the TCP stack.
-	  Value 0 = highest priortity.
-	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
-	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
-	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
-	  Make sure the priority is lower than lower layer TX threads to
-	  avoid the TCP stack consume all net_bufs before transferring
-	  execution to the lower layer network stack, with a high risk of
-	  running out of net_bufs.
-
-config NET_TCP_REJECT_CONN_WITH_RST
-	bool "Reject connection attempts on unbound TCP ports with RST"
-	default y
-	help
-	  If enabled, TCP stack will reject connection attempts on unbound ports
-	  with TCP RST packet.
+source "subsys/net/ip/Kconfig.tcp"
 
 config NET_TEST_PROTOCOL
 	bool "JSON based test protocol (UDP)"
@@ -765,20 +572,6 @@ config NET_SLIP_TAP
 	  needs to have tunslip6 with TAP support running in order to
 	  communicate via the SLIP driver. See net-tools project at
 	  https://github.com/zephyrproject-rtos/net-tools for more details.
-
-config NET_TRICKLE
-	bool "Trickle library"
-	help
-	  Normally this is enabled automatically if needed,
-	  so say 'n' if unsure.
-
-if NET_TRICKLE
-module = NET_TRICKLE
-module-dep = NET_LOG
-module-str = Log level for Trickle algorithm
-module-help = Enables Trickle library output debug messages
-source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_TRICKLE
 
 endif # NET_RAW_MODE
 

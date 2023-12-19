@@ -274,6 +274,7 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
 	    (params->ssid_length == 0U) ||
 	    ((params->security == WIFI_SECURITY_TYPE_PSK ||
+		  params->security == WIFI_SECURITY_TYPE_WPA_PSK ||
 		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
 	      (params->psk_length == 0U) || !params->psk)) ||

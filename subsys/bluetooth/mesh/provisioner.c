@@ -21,7 +21,6 @@
 #include "common/bt_str.h"
 
 #include "crypto.h"
-#include "adv.h"
 #include "mesh.h"
 #include "net.h"
 #include "rpl.h"
@@ -47,7 +46,7 @@ static struct {
 	uint8_t attention_duration;
 	uint8_t uuid[16];
 	uint8_t new_dev_key[16];
-} prov_device;
+} provisionee;
 
 static void send_pub_key(void);
 static void prov_dh_key_gen(void);
@@ -55,8 +54,8 @@ static void prov_dh_key_gen(void);
 static int reset_state(void)
 {
 	if (!atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION) &&
-	    prov_device.node != NULL) {
-		bt_mesh_cdb_node_del(prov_device.node, false);
+	    provisionee.node != NULL) {
+		bt_mesh_cdb_node_del(provisionee.node, false);
 	}
 
 	return bt_mesh_prov_reset_state();
@@ -87,9 +86,9 @@ static void send_invite(void)
 	LOG_DBG("");
 
 	bt_mesh_prov_buf_init(&inv, PROV_INVITE);
-	net_buf_simple_add_u8(&inv, prov_device.attention_duration);
+	net_buf_simple_add_u8(&inv, provisionee.attention_duration);
 
-	memcpy(bt_mesh_prov_link.conf_inputs.invite, &prov_device.attention_duration,
+	memcpy(bt_mesh_prov_link.conf_inputs.invite, &provisionee.attention_duration,
 	       PDU_LEN_INVITE);
 
 	if (bt_mesh_prov_send(&inv, NULL)) {
@@ -247,8 +246,8 @@ static void prov_capabilities(const uint8_t *data)
 	LOG_DBG("Input OOB Size:    %u", caps.input_size);
 	LOG_DBG("Input OOB Action:  0x%04x", caps.input_actions);
 
-	prov_device.elem_count = caps.elem_count;
-	if (prov_device.elem_count == 0) {
+	provisionee.elem_count = caps.elem_count;
+	if (provisionee.elem_count == 0) {
 		LOG_ERR("Invalid number of elements");
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
@@ -272,7 +271,7 @@ static void prov_capabilities(const uint8_t *data)
 	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
 		if (!bt_mesh_prov_link.addr) {
 			bt_mesh_prov_link.addr = bt_mesh_cdb_free_addr_get(
-				prov_device.elem_count);
+				provisionee.elem_count);
 			if (!bt_mesh_prov_link.addr) {
 				LOG_ERR("Failed allocating address for node");
 				prov_fail(PROV_ERR_ADDR);
@@ -280,19 +279,19 @@ static void prov_capabilities(const uint8_t *data)
 			}
 		}
 	} else {
-		prov_device.node =
-			bt_mesh_cdb_node_alloc(prov_device.uuid,
+		provisionee.node =
+			bt_mesh_cdb_node_alloc(provisionee.uuid,
 					       bt_mesh_prov_link.addr,
-					       prov_device.elem_count,
-					       prov_device.net_idx);
-		if (prov_device.node == NULL) {
+					       provisionee.elem_count,
+					       provisionee.net_idx);
+		if (provisionee.node == NULL) {
 			LOG_ERR("Failed allocating node 0x%04x", bt_mesh_prov_link.addr);
 			prov_fail(PROV_ERR_RESOURCES);
 			return;
 		}
 
 		/* Address might change in the alloc call */
-		bt_mesh_prov_link.addr = prov_device.node->addr;
+		bt_mesh_prov_link.addr = provisionee.node->addr;
 	}
 
 	memcpy(bt_mesh_prov_link.conf_inputs.capabilities, data, PDU_LEN_CAPABILITIES);
@@ -518,16 +517,16 @@ static void send_prov_data(void)
 	LOG_DBG("Nonce: %s", bt_hex(nonce, 13));
 
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
-			      bt_mesh_prov_link.prov_salt, prov_device.new_dev_key);
+			      bt_mesh_prov_link.prov_salt, provisionee.new_dev_key);
 	if (err) {
 		LOG_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
 
-	sub = bt_mesh_cdb_subnet_get(prov_device.node->net_idx);
+	sub = bt_mesh_cdb_subnet_get(provisionee.node->net_idx);
 	if (sub == NULL) {
-		LOG_ERR("No subnet with net_idx %u", prov_device.node->net_idx);
+		LOG_ERR("No subnet with net_idx %u", provisionee.node->net_idx);
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
@@ -541,14 +540,14 @@ static void send_prov_data(void)
 
 	bt_mesh_prov_buf_init(&pdu, PROV_DATA);
 	net_buf_simple_add_mem(&pdu, net_key, sizeof(net_key));
-	net_buf_simple_add_be16(&pdu, prov_device.node->net_idx);
+	net_buf_simple_add_be16(&pdu, provisionee.node->net_idx);
 	net_buf_simple_add_u8(&pdu, bt_mesh_cdb_subnet_flags(sub));
 	net_buf_simple_add_be32(&pdu, bt_mesh_cdb.iv_index);
 	net_buf_simple_add_be16(&pdu, bt_mesh_prov_link.addr);
 	net_buf_simple_add(&pdu, 8); /* For MIC */
 
 	LOG_DBG("net_idx %u, iv_index 0x%08x, addr 0x%04x",
-		prov_device.node->net_idx, bt_mesh.iv_index,
+		provisionee.node->net_idx, bt_mesh.iv_index,
 		bt_mesh_prov_link.addr);
 
 	err = bt_mesh_prov_encrypt(&session_key, nonce, &pdu.data[1],
@@ -572,10 +571,10 @@ session_key_destructor:
 
 static void prov_complete(const uint8_t *data)
 {
-	struct bt_mesh_cdb_node *node = prov_device.node;
+	struct bt_mesh_cdb_node *node = provisionee.node;
 
 	LOG_DBG("key %s, net_idx %u, num_elem %u, addr 0x%04x",
-		bt_hex(&prov_device.new_dev_key, 16), node->net_idx,
+		bt_hex(&provisionee.new_dev_key, 16), node->net_idx,
 		node->num_elem, node->addr);
 
 	bt_mesh_prov_link.expect = PROV_NO_PDU;
@@ -587,15 +586,15 @@ static void prov_complete(const uint8_t *data)
 static void prov_node_add(void)
 {
 	LOG_DBG("");
-	struct bt_mesh_cdb_node *node = prov_device.node;
+	struct bt_mesh_cdb_node *node = provisionee.node;
 	int err;
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, REPROVISION)) {
 		bt_mesh_cdb_node_update(node, bt_mesh_prov_link.addr,
-					prov_device.elem_count);
+					provisionee.elem_count);
 	}
 
-	err = bt_mesh_cdb_node_key_import(node, prov_device.new_dev_key);
+	err = bt_mesh_cdb_node_key_import(node, provisionee.new_dev_key);
 	if (err) {
 		LOG_ERR("Failed to import node device key");
 		return;
@@ -605,7 +604,7 @@ static void prov_node_add(void)
 		bt_mesh_cdb_node_store(node);
 	}
 
-	prov_device.node = NULL;
+	provisionee.node = NULL;
 
 	if (bt_mesh_prov->node_added) {
 		bt_mesh_prov->node_added(node->net_idx, node->uuid, node->addr,
@@ -808,7 +807,7 @@ static int link_open(const uint8_t *uuid, const struct prov_bearer *bearer,
 	}
 
 	if (uuid) {
-		memcpy(prov_device.uuid, uuid, 16);
+		memcpy(provisionee.uuid, uuid, 16);
 
 		struct bt_uuid_128 uuid_repr = { .uuid = { BT_UUID_TYPE_128 } };
 
@@ -824,8 +823,8 @@ static int link_open(const uint8_t *uuid, const struct prov_bearer *bearer,
 	bt_mesh_prov_link.addr = addr;
 	bt_mesh_prov_link.bearer = bearer;
 	bt_mesh_prov_link.role = &role_provisioner;
-	prov_device.net_idx = net_idx;
-	prov_device.attention_duration = attention_duration;
+	provisionee.net_idx = net_idx;
+	provisionee.attention_duration = attention_duration;
 
 	err = bt_mesh_prov_link.bearer->link_open(
 		uuid, timeout, bt_mesh_prov_bearer_cb_get(), bearer_cb_data);
@@ -878,15 +877,15 @@ static int reprovision_local_client_server(uint16_t addr)
 	}
 
 	LOG_DBG("net_idx %u iv_index 0x%08x, addr 0x%04x",
-		prov_device.node->net_idx, bt_mesh_cdb.iv_index, addr);
+		provisionee.node->net_idx, bt_mesh_cdb.iv_index, addr);
 
 	atomic_set_bit(bt_mesh_prov_link.flags, REPROVISION);
 	atomic_set_bit(bt_mesh_prov_link.flags, PROVISIONER);
 	bt_mesh_prov_link.addr = addr;
 	bt_mesh_prov_link.bearer = &pb_remote_cli;
 	bt_mesh_prov_link.role = &role_provisioner;
-	prov_device.net_idx = prov_device.node->net_idx;
-	prov_device.attention_duration = 0;
+	provisionee.net_idx = provisionee.node->net_idx;
+	provisionee.attention_duration = 0;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY) &&
 		       bt_mesh_prov->public_key_be && bt_mesh_prov->private_key_be) {
@@ -909,13 +908,13 @@ static int reprovision_local_client_server(uint16_t addr)
 	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, DH_KEY_SIZE));
 
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
-			      bt_mesh_prov_link.prov_salt, prov_device.new_dev_key);
+			      bt_mesh_prov_link.prov_salt, provisionee.new_dev_key);
 	if (err) {
 		LOG_ERR("Unable to generate device key");
 		return err;
 	}
 
-	bt_mesh_dev_key_cand(prov_device.new_dev_key);
+	bt_mesh_dev_key_cand(provisionee.new_dev_key);
 	/* Mark the link that was never opened as closed. */
 	atomic_set_bit(bt_mesh_prov_link.flags, COMPLETE);
 	bt_mesh_reprovision(addr);
@@ -944,8 +943,8 @@ int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
 		ctx.refresh = BT_MESH_RPR_NODE_REFRESH_DEVKEY;
 	}
 
-	prov_device.node = bt_mesh_cdb_node_get(srv->addr);
-	if (!prov_device.node) {
+	provisionee.node = bt_mesh_cdb_node_get(srv->addr);
+	if (!provisionee.node) {
 		LOG_ERR("No CDB node for 0x%04x", srv->addr);
 		return -ENOENT;
 	}
@@ -955,7 +954,7 @@ int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
 		return reprovision_local_client_server(addr);
 	}
 
-	return link_open(NULL, &pb_remote_cli, prov_device.node->net_idx, addr,
+	return link_open(NULL, &pb_remote_cli, provisionee.node->net_idx, addr,
 			 0, &ctx, 0);
 }
 #endif

@@ -30,12 +30,9 @@ config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 30
+	default 186
 
 config NUM_IRQS
-	default 187
-
-# config NO_OPTIMIZATIONS
-#	default y
+	default 186
 
 endif # SOC_SERIES_RISCV64_MIV

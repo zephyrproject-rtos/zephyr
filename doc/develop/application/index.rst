@@ -429,6 +429,11 @@ should know about.
   See :ref:`set-devicetree-overlays` for examples and :ref:`devicetree-intro`
   for information about devicetree and Zephyr.
 
+* :makevar:`EXTRA_DTC_OVERLAY_FILE`: Additional devicetree overlay files to use.
+  Multiple files can be separated with semicolons. This can be useful to leave
+  :makevar:`DTC_OVERLAY_FILE` at its default value, but "mix in" some additional
+  overlay files.
+
 * :makevar:`SHIELD`: see :ref:`shields`
 
 * :makevar:`ZEPHYR_MODULES`: A `CMake list`_ containing absolute paths of

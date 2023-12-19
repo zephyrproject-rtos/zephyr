@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <xtensa-asm2-context.h>
+#include <xtensa_asm2_context.h>
 #include <zephyr/debug/gdbstub.h>
 #include <offsets.h>
 

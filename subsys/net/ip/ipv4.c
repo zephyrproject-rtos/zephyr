@@ -37,8 +37,7 @@ int net_ipv4_create_full(struct net_pkt *pkt,
 			 uint8_t tos,
 			 uint16_t id,
 			 uint8_t flags,
-			 uint16_t offset,
-			 uint8_t ttl)
+			 uint16_t offset)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ipv4_hdr;
@@ -55,10 +54,24 @@ int net_ipv4_create_full(struct net_pkt *pkt,
 	ipv4_hdr->id[1]     = id;
 	ipv4_hdr->offset[0] = (offset >> 8) | (flags << 5);
 	ipv4_hdr->offset[1] = offset;
-	ipv4_hdr->ttl       = ttl;
 
-	if (ttl == 0U) {
-		ipv4_hdr->ttl = net_if_ipv4_get_ttl(net_pkt_iface(pkt));
+	ipv4_hdr->ttl = net_pkt_ipv4_ttl(pkt);
+	if (ipv4_hdr->ttl == 0U) {
+		if (net_ipv4_is_addr_mcast(dst)) {
+			if (net_pkt_context(pkt) != NULL) {
+				ipv4_hdr->ttl =
+					net_context_get_ipv4_mcast_ttl(net_pkt_context(pkt));
+			} else {
+				ipv4_hdr->ttl = net_if_ipv4_get_mcast_ttl(net_pkt_iface(pkt));
+			}
+		} else {
+			if (net_pkt_context(pkt) != NULL) {
+				ipv4_hdr->ttl =
+					net_context_get_ipv4_ttl(net_pkt_context(pkt));
+			} else {
+				ipv4_hdr->ttl = net_if_ipv4_get_ttl(net_pkt_iface(pkt));
+			}
+		}
 	}
 
 	ipv4_hdr->proto     = 0U;
@@ -83,8 +96,7 @@ int net_ipv4_create(struct net_pkt *pkt,
 		net_ipv4_set_ecn(&tos, net_pkt_ip_ecn(pkt));
 	}
 
-	return net_ipv4_create_full(pkt, src, dst, tos, 0U, 0U, 0U,
-				    net_pkt_ipv4_ttl(pkt));
+	return net_ipv4_create_full(pkt, src, dst, tos, 0U, 0U, 0U);
 }
 
 int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)

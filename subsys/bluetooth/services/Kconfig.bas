@@ -5,4 +5,3 @@
 
 config BT_BAS
 	bool "GATT Battery service"
-	select SENSOR

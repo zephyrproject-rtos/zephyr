@@ -4,21 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Override __DEPRECATED_MACRO so we don't get twister failures for
- * deprecated macros:
- * - DT_LABEL
- * - DT_BUS_LABEL
- * - DT_SPI_DEV_CS_GPIOS_LABEL
- * - DT_GPIO_LABEL
- * - DT_GPIO_LABEL_BY_IDX
- * - DT_INST_LABEL
- * - DT_INST_BUS_LABEL
- * - DT_INST_SPI_DEV_CS_GPIOS_LABEL
- * - DT_INST_GPIO_LABEL
- * - DT_INST_GPIO_LABEL_BY_IDX
- */
-#define __DEPRECATED_MACRO
-
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/device.h>
@@ -109,12 +94,11 @@
 
 ZTEST(devicetree_api, test_path_props)
 {
-	zassert_true(!strcmp(DT_LABEL(TEST_DEADBEEF), "TEST_GPIO_1"), "");
 	zassert_equal(DT_NUM_REGS(TEST_DEADBEEF), 1, "");
 	zassert_equal(DT_REG_ADDR(TEST_DEADBEEF), 0xdeadbeef, "");
 	zassert_equal(DT_REG_SIZE(TEST_DEADBEEF), 0x1000, "");
 	zassert_equal(DT_PROP(TEST_DEADBEEF, gpio_controller), 1, "");
-	zassert_equal(DT_PROP(TEST_DEADBEEF, ngpios), 32, "");
+	zassert_equal(DT_PROP(TEST_DEADBEEF, ngpios), 100, "");
 	zassert_true(!strcmp(DT_PROP(TEST_DEADBEEF, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_DEADBEEF, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_DEADBEEF, compatible, 0),
@@ -125,7 +109,7 @@ ZTEST(devicetree_api, test_path_props)
 	zassert_true(DT_SAME_NODE(TEST_ABCD1234, TEST_GPIO_2), "");
 	zassert_equal(DT_NUM_REGS(TEST_ABCD1234), 2, "");
 	zassert_equal(DT_PROP(TEST_ABCD1234, gpio_controller), 1, "");
-	zassert_equal(DT_PROP(TEST_ABCD1234, ngpios), 32, "");
+	zassert_equal(DT_PROP(TEST_ABCD1234, ngpios), 200, "");
 	zassert_true(!strcmp(DT_PROP(TEST_ABCD1234, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_ABCD1234, compatible), 1, "");
 	zassert_equal(DT_PROP_LEN_OR(TEST_ABCD1234, compatible, 4), 1, "");
@@ -141,7 +125,7 @@ ZTEST(devicetree_api, test_alias_props)
 	zassert_equal(DT_REG_SIZE(TEST_ALIAS), 0x1000, "");
 	zassert_true(DT_SAME_NODE(TEST_ALIAS, TEST_GPIO_1), "");
 	zassert_equal(DT_PROP(TEST_ALIAS, gpio_controller), 1, "");
-	zassert_equal(DT_PROP(TEST_ALIAS, ngpios), 32, "");
+	zassert_equal(DT_PROP(TEST_ALIAS, ngpios), 100, "");
 	zassert_true(!strcmp(DT_PROP(TEST_ALIAS, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_ALIAS, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_ALIAS, compatible, 0),
@@ -153,9 +137,8 @@ ZTEST(devicetree_api, test_nodelabel_props)
 	zassert_equal(DT_NUM_REGS(TEST_NODELABEL), 1, "");
 	zassert_equal(DT_REG_ADDR(TEST_NODELABEL), 0xdeadbeef, "");
 	zassert_equal(DT_REG_SIZE(TEST_NODELABEL), 0x1000, "");
-	zassert_true(!strcmp(DT_LABEL(TEST_NODELABEL), "TEST_GPIO_1"), "");
 	zassert_equal(DT_PROP(TEST_NODELABEL, gpio_controller), 1, "");
-	zassert_equal(DT_PROP(TEST_NODELABEL, ngpios), 32, "");
+	zassert_equal(DT_PROP(TEST_NODELABEL, ngpios), 100, "");
 	zassert_true(!strcmp(DT_PROP(TEST_NODELABEL, status), "okay"), "");
 	zassert_equal(DT_PROP_LEN(TEST_NODELABEL, compatible), 1, "");
 	zassert_true(!strcmp(DT_PROP_BY_IDX(TEST_NODELABEL, compatible, 0),
@@ -167,8 +150,6 @@ ZTEST(devicetree_api, test_nodelabel_props)
 #define DT_DRV_COMPAT vnd_gpio_device
 ZTEST(devicetree_api, test_inst_props)
 {
-	const char *label_startswith = "TEST_GPIO_";
-
 	/*
 	 * Careful:
 	 *
@@ -192,8 +173,6 @@ ZTEST(devicetree_api, test_inst_props)
 	zassert_equal(DT_INST_PROP_LEN(0, compatible), 1, "");
 	zassert_true(!strcmp(DT_INST_PROP_BY_IDX(0, compatible, 0),
 			     "vnd,gpio-device"), "");
-	zassert_true(!strncmp(label_startswith, DT_INST_LABEL(0),
-			      strlen(label_startswith)), "");
 }
 
 #undef DT_DRV_COMPAT
@@ -349,16 +328,6 @@ ZTEST(devicetree_api, test_has_status)
 
 ZTEST(devicetree_api, test_bus)
 {
-	/* common prefixes of expected labels: */
-	const char *i2c_bus = "TEST_I2C_CTLR";
-	const char *i2c_dev = "TEST_I2C_DEV";
-	const char *i3c_bus = "TEST_I3C_CTLR";
-	const char *i3c_dev = "TEST_I3C_DEV";
-	const char *i3c_i2c_bus = "TEST_I3C_CTLR";
-	const char *i3c_i2c_dev = "TEST_I3C_I2C_DEV";
-	const char *spi_bus = "TEST_SPI_CTLR";
-	const char *spi_dev = "TEST_SPI_DEV";
-	const char *gpio = "TEST_GPIO_";
 	int pin, flags;
 
 	zassert_true(DT_SAME_NODE(TEST_I3C_BUS, TEST_I3C), "");
@@ -396,9 +365,6 @@ ZTEST(devicetree_api, test_bus)
 		     DT_SAME_NODE(CTLR_NODE, DT_NODELABEL(test_gpio_2)), "");
 #undef CTLR_NODE
 
-	zassert_true(!strncmp(gpio, DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-			      strlen(gpio)), "");
-
 	pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	zassert_true((pin == 0x10) || (pin == 0x30), "");
 
@@ -413,8 +379,6 @@ ZTEST(devicetree_api, test_bus)
 	zassert_equal(DT_ON_BUS(TEST_I2C_DEV, i3c), 0, "");
 	zassert_equal(DT_ON_BUS(TEST_I2C_DEV, spi), 0, "");
 
-	zassert_true(!strcmp(DT_BUS_LABEL(TEST_I2C_DEV), "TEST_I2C_CTLR"), "");
-
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2, "");
@@ -426,10 +390,6 @@ ZTEST(devicetree_api, test_bus)
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 1, "");
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 0, "");
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c), 0, "");
-
-	zassert_true(!strncmp(spi_dev, DT_INST_LABEL(0), strlen(spi_dev)), "");
-	zassert_true(!strncmp(spi_bus, DT_INST_BUS_LABEL(0), strlen(spi_bus)),
-		     "");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_i2c_device
@@ -443,10 +403,6 @@ ZTEST(devicetree_api, test_bus)
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c), 0, "");
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 0, "");
 
-	zassert_true(!strncmp(i2c_dev, DT_INST_LABEL(0), strlen(i2c_dev)), "");
-	zassert_true(!strncmp(i2c_bus, DT_INST_BUS_LABEL(0), strlen(i2c_bus)),
-		     "");
-
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_i3c_device
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
@@ -459,10 +415,6 @@ ZTEST(devicetree_api, test_bus)
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c), 1, "");
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 0, "");
 
-	zassert_true(!strncmp(i3c_dev, DT_INST_LABEL(0), strlen(i3c_dev)), "");
-	zassert_true(!strncmp(i3c_bus, DT_INST_BUS_LABEL(0), strlen(i3c_bus)),
-		     "");
-
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_i3c_i2c_device
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
@@ -474,10 +426,6 @@ ZTEST(devicetree_api, test_bus)
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 1, "");
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c), 1, "");
 	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 0, "");
-
-	zassert_true(!strncmp(i3c_i2c_dev, DT_INST_LABEL(0), strlen(i3c_i2c_dev)), "");
-	zassert_true(!strncmp(i3c_i2c_bus, DT_INST_BUS_LABEL(0), strlen(i3c_i2c_bus)),
-		     "");
 
 #undef DT_DRV_COMPAT
 
@@ -799,27 +747,16 @@ ZTEST(devicetree_api, test_irq)
 }
 
 struct gpios_struct {
-	const char *name;
 	gpio_pin_t pin;
 	gpio_flags_t flags;
 };
 
-/* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
-#define DT_PROP_ELEM_BY_PHANDLE(idx, node_id, ph_prop, prop) \
-	DT_PROP_BY_PHANDLE_IDX(node_id, ph_prop, idx, prop)
-#define DT_PHANDLE_LISTIFY(node_id, ph_prop, prop) \
-	{ \
-	  LISTIFY(DT_PROP_LEN(node_id, ph_prop), \
-		  DT_PROP_ELEM_BY_PHANDLE, (,), \
-		  node_id, \
-		  ph_prop, \
-		  label) \
-	}
+#define CLOCK_FREQUENCY_AND_COMMA(node_id, prop, idx) \
+	DT_PROP_BY_PHANDLE_IDX(node_id, prop, idx, clock_frequency),
 
 /* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
 #define DT_GPIO_ELEM(idx, node_id, prop) \
 	{ \
-		DT_PROP(DT_PHANDLE_BY_IDX(node_id, prop, idx), label), \
 		DT_PHA_BY_IDX(node_id, prop, idx, pin),\
 		DT_PHA_BY_IDX(node_id, prop, idx, flags),\
 	}
@@ -831,8 +768,8 @@ struct gpios_struct {
 #define DT_DRV_COMPAT vnd_phandle_holder
 ZTEST(devicetree_api, test_phandles)
 {
-	const char *ph_label = DT_PROP_BY_PHANDLE(TEST_PH, ph, label);
-	const char *phs_labels[] = DT_PHANDLE_LISTIFY(TEST_PH, phs, label);
+	bool gpio_controller = DT_PROP_BY_PHANDLE(TEST_PH, ph, gpio_controller);
+	size_t phs_freqs[] = { DT_FOREACH_PROP_ELEM(TEST_PH, phs, CLOCK_FREQUENCY_AND_COMMA) };
 	struct gpios_struct gps[] = DT_GPIO_LISTIFY(TEST_PH, gpios);
 
 	/* phandle */
@@ -843,33 +780,34 @@ ZTEST(devicetree_api, test_phandles)
 	zassert_true(DT_SAME_NODE(DT_PROP_BY_IDX(TEST_PH, ph, 0),
 				  DT_NODELABEL(test_gpio_1)), "");
 	/* DT_PROP_BY_PHANDLE */
-	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "");
+	zassert_equal(gpio_controller, true, "");
 
 	/* phandles */
 	zassert_true(DT_NODE_HAS_PROP(TEST_PH, phs), "");
-	zassert_equal(ARRAY_SIZE(phs_labels), 3, "");
-	zassert_equal(DT_PROP_LEN(TEST_PH, phs), 3, "");
+	zassert_equal(ARRAY_SIZE(phs_freqs), 2, "");
+	zassert_equal(DT_PROP_LEN(TEST_PH, phs), 2, "");
 	zassert_true(DT_SAME_NODE(DT_PROP_BY_IDX(TEST_PH, phs, 1),
-				  DT_NODELABEL(test_gpio_2)), "");
+				  TEST_SPI), "");
 
-	/* DT_PROP_BY_PHANDLE_IDX */
-	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 0, label),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 1, label),
-			     "TEST_GPIO_2"), "");
-	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 2, label),
-			     "TEST_I2C_CTLR"), "");
-	zassert_true(!strcmp(phs_labels[0], "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(phs_labels[1], "TEST_GPIO_2"), "");
-	zassert_true(!strcmp(phs_labels[2], "TEST_I2C_CTLR"), "");
+	/* DT_FOREACH_PROP_ELEM on a phandles type property */
+	zassert_equal(phs_freqs[0], 100000, "");
+	zassert_equal(phs_freqs[1], 2000000, "");
+
+	/* DT_PROP_BY_PHANDLE_IDX on a phandles type property */
+	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 0, clock_frequency),
+		      100000, "");
+	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_PH, phs, 1, clock_frequency),
+		      2000000, "");
+
+	/* DT_PROP_BY_PHANDLE_IDX on a phandle-array type property */
 	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 0,
-					     gpio_controller), 1, "");
+					     ngpios), 100, "");
 	zassert_equal(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 1,
-					     gpio_controller), 1, "");
-	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 0, label),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 1, label),
-			     "TEST_GPIO_2"), "");
+					     ngpios), 200, "");
+	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 0, status),
+			     "okay"), "");
+	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX(TEST_PH, gpios, 1, status),
+			     "okay"), "");
 
 	/* DT_PROP_BY_PHANDLE_IDX_OR */
 	zassert_true(!strcmp(DT_PROP_BY_PHANDLE_IDX_OR(TEST_PH, phs_or, 0,
@@ -943,11 +881,9 @@ ZTEST(devicetree_api, test_phandles)
 	zassert_true(DT_SAME_NODE(DT_PHANDLE_BY_NAME(TEST_PH, foos, b_c), TEST_GPIO_2), "");
 
 	/* array initializers */
-	zassert_true(!strcmp(gps[0].name, "TEST_GPIO_1"), "");
 	zassert_equal(gps[0].pin, 10, "");
 	zassert_equal(gps[0].flags, 20, "");
 
-	zassert_true(!strcmp(gps[1].name, "TEST_GPIO_2"), "");
 	zassert_equal(gps[1].pin, 30, "");
 	zassert_equal(gps[1].flags, 40, "");
 
@@ -955,31 +891,23 @@ ZTEST(devicetree_api, test_phandles)
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
 	/* DT_INST_PROP_BY_PHANDLE */
-	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE(0, ph, label),
-			     "TEST_GPIO_1"), "");
-
-	zassert_true(!strcmp(ph_label, "TEST_GPIO_1"), "");
+	zassert_equal(DT_INST_PROP_BY_PHANDLE(0, ph, ngpios), 100, "");
 
 	/* DT_INST_PROP_BY_PHANDLE_IDX */
-	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 0, label),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 1, label),
-			     "TEST_GPIO_2"), "");
-	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 2, label),
-			     "TEST_I2C_CTLR"), "");
-	zassert_true(!strcmp(phs_labels[0], "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(phs_labels[1], "TEST_GPIO_2"), "");
-	zassert_true(!strcmp(phs_labels[2], "TEST_I2C_CTLR"), "");
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 0, clock_frequency),
+		      100000, "");
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, phs, 1, clock_frequency),
+		      2000000, "");
 	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 0,
 					     gpio_controller),
 		      1, "");
 	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 1,
 					     gpio_controller),
 		      1, "");
-	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 0, label),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 1, label),
-			     "TEST_GPIO_2"), "");
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 0, ngpios),
+		      100, "");
+	zassert_equal(DT_INST_PROP_BY_PHANDLE_IDX(0, gpios, 1, ngpios),
+		      200, "");
 
 	/* DT_INST_PROP_HAS_IDX */
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 0), "");
@@ -1054,15 +982,6 @@ ZTEST(devicetree_api, test_gpio)
 	zassert_true(!strcmp(TO_STRING(DT_GPIO_CTLR(TEST_PH, gpios)),
 			     TO_STRING(DT_NODELABEL(test_gpio_1))), "");
 
-	/* DT_GPIO_LABEL_BY_IDX */
-	zassert_true(!strcmp(DT_GPIO_LABEL_BY_IDX(TEST_PH, gpios, 0),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_GPIO_LABEL_BY_IDX(TEST_PH, gpios, 1),
-			     "TEST_GPIO_2"), "");
-
-	/* DT_GPIO_LABEL */
-	zassert_true(!strcmp(DT_GPIO_LABEL(TEST_PH, gpios), "TEST_GPIO_1"), "");
-
 	/* DT_GPIO_PIN_BY_IDX */
 	zassert_equal(DT_GPIO_PIN_BY_IDX(TEST_PH, gpios, 0), 10, "");
 	zassert_equal(DT_GPIO_PIN_BY_IDX(TEST_PH, gpios, 1), 30, "");
@@ -1096,15 +1015,6 @@ ZTEST(devicetree_api, test_gpio)
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
-
-	/* DT_INST_GPIO_LABEL_BY_IDX */
-	zassert_true(!strcmp(DT_INST_GPIO_LABEL_BY_IDX(0, gpios, 0),
-			     "TEST_GPIO_1"), "");
-	zassert_true(!strcmp(DT_INST_GPIO_LABEL_BY_IDX(0, gpios, 1),
-			     "TEST_GPIO_2"), "");
-
-	/* DT_INST_GPIO_LABEL */
-	zassert_true(!strcmp(DT_INST_GPIO_LABEL(0, gpios), "TEST_GPIO_1"), "");
 
 	/* DT_INST_GPIO_PIN_BY_IDX */
 	zassert_equal(DT_INST_GPIO_PIN_BY_IDX(0, gpios, 0), 10, "");
@@ -1633,10 +1543,9 @@ ZTEST(devicetree_api, test_foreach_prop_elem)
 		DT_FOREACH_PROP_ELEM(TEST_PH, phs, PATH_COMMA)
 	};
 
-	zassert_equal(ARRAY_SIZE(array_phs), 3, "");
-	zassert_true(!strcmp(array_phs[0], DT_NODE_PATH(TEST_GPIO_1)), "");
-	zassert_true(!strcmp(array_phs[1], DT_NODE_PATH(TEST_GPIO_2)), "");
-	zassert_true(!strcmp(array_phs[2], DT_NODE_PATH(TEST_I2C)), "");
+	zassert_equal(ARRAY_SIZE(array_phs), 2, "");
+	zassert_true(!strcmp(array_phs[0], DT_NODE_PATH(TEST_I2C)), "");
+	zassert_true(!strcmp(array_phs[1], DT_NODE_PATH(TEST_SPI)), "");
 
 #undef PATH_COMMA
 
@@ -1753,7 +1662,6 @@ static int test_gpio_init(const struct device *dev)
 	return 0;
 }
 
-#define INST(num) DT_INST(num, vnd_gpio_device)
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_gpio_device
 
@@ -1761,28 +1669,27 @@ static const struct gpio_driver_api test_api;
 
 #define TEST_GPIO_INIT(num)					\
 	static struct test_gpio_data gpio_data_##num = {	\
-		.is_gpio_ctlr = DT_PROP(INST(num),		\
-					gpio_controller),	\
+		.is_gpio_ctlr = DT_INST_PROP(num,		\
+					     gpio_controller),	\
 	};							\
 	static const struct test_gpio_info gpio_info_##num = {	\
-		.reg_addr = DT_REG_ADDR(INST(num)),		\
-		.reg_len = DT_REG_SIZE(INST(num)),		\
+		.reg_addr = DT_INST_REG_ADDR(num),		\
+		.reg_len = DT_INST_REG_SIZE(num),		\
 	};							\
-	DEVICE_DT_DEFINE(INST(num),				\
-			    test_gpio_init,			\
-			    NULL,				\
-			    &gpio_data_##num,			\
-			    &gpio_info_##num,			\
-			    POST_KERNEL,			\
-			    CONFIG_APPLICATION_INIT_PRIORITY,	\
-			    &test_api);
+	DEVICE_DT_INST_DEFINE(num,				\
+			      test_gpio_init,			\
+			      NULL,				\
+			      &gpio_data_##num,			\
+			      &gpio_info_##num,			\
+			      POST_KERNEL,			\
+			      CONFIG_APPLICATION_INIT_PRIORITY,	\
+			      &test_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_GPIO_INIT)
 
 ZTEST(devicetree_api, test_devices)
 {
-	const struct device *devs[3];
-	int i = 0;
+	const struct device *devs[2] = { DEVICE_DT_INST_GET(0), DEVICE_DT_INST_GET(1) };
 	const struct device *dev_abcd;
 	struct test_gpio_data *data_dev0;
 	struct test_gpio_data *data_dev1;
@@ -1790,25 +1697,11 @@ ZTEST(devicetree_api, test_devices)
 
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio_device), 2, "");
 
-	devs[i] = device_get_binding(DT_LABEL(INST(0)));
-	if (devs[i]) {
-		i++;
-	}
-	devs[i] = device_get_binding(DT_LABEL(INST(1)));
-	if (devs[i]) {
-		i++;
-	}
-	devs[i] = device_get_binding(DT_LABEL(INST(2)));
-	if (devs[i]) {
-		i++;
-	}
-
 	data_dev0 = devs[0]->data;
 	data_dev1 = devs[1]->data;
 
 	zassert_not_null(devs[0], "");
 	zassert_not_null(devs[1], "");
-	zassert_true(devs[2] == NULL, "");
 
 	zassert_true(data_dev0->is_gpio_ctlr, "");
 	zassert_true(data_dev1->is_gpio_ctlr, "");
@@ -1833,8 +1726,6 @@ ZTEST(devicetree_api, test_cs_gpios)
 	zassert_equal(DT_DEP_ORD(DT_SPI_DEV_CS_GPIOS_CTLR(TEST_SPI_DEV_0)),
 		      DT_DEP_ORD(DT_NODELABEL(test_gpio_1)),
 		     "dev 0 cs gpio controller");
-	zassert_true(!strcmp(DT_SPI_DEV_CS_GPIOS_LABEL(TEST_SPI_DEV_0),
-			     "TEST_GPIO_1"), "");
 	zassert_equal(DT_SPI_DEV_CS_GPIOS_PIN(TEST_SPI_DEV_0), 0x10, "");
 	zassert_equal(DT_SPI_DEV_CS_GPIOS_FLAGS(TEST_SPI_DEV_0), 0x20, "");
 }
@@ -2777,9 +2668,9 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	zassert_false(DT_HAS_FIXED_PARTITION_LABEL(test_partition_3));
 	zassert_false(DT_NODE_EXISTS(DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_3)));
 
-	/* There is a node with `label = "TEST_GPIO_0"`, but it is not a fixed partition. */
-	zassert_false(DT_HAS_FIXED_PARTITION_LABEL(TEST_GPIO_0));
-	zassert_false(DT_NODE_EXISTS(DT_NODE_BY_FIXED_PARTITION_LABEL(TEST_GPIO_0)));
+	/* There is a node with `label = "FOO"`, but it is not a fixed partition. */
+	zassert_false(DT_HAS_FIXED_PARTITION_LABEL(FOO));
+	zassert_false(DT_NODE_EXISTS(DT_NODE_BY_FIXED_PARTITION_LABEL(FOO)));
 
 	/* Test DT_MTD_FROM_FIXED_PARTITION. */
 	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_0)));

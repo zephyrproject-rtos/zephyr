@@ -31,6 +31,7 @@ static const struct z_exc_handle exceptions[] = {
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const z_arch_esf_t *esf)
 {
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
 		LOG_ERR("     a1: " PR_REG "    t1: " PR_REG, esf->a1, esf->t1);
@@ -54,7 +55,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
 		LOG_ERR("");
 	}
-
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }

@@ -21,4 +21,11 @@ config HAS_CMSIS_CORE_R
 config HAS_CMSIS_CORE_M
 	bool
 
+config CMSIS_M_CHECK_DEVICE_DEFINES
+	bool "Check device defines"
+	default n
+	depends on HAS_CMSIS_CORE_M
+	help
+	  This options enables the validation of CMSIS configuration flags.
+
 endif

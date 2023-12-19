@@ -45,7 +45,7 @@ int main(void)
 
 		val.status = CHARGER_STATUS_CHARGING;
 
-		ret = charger_set_prop(chgdev, CHARGER_PROP_STATUS, &val);
+		ret = charger_charge_enable(chgdev, true);
 		if (ret == -ENOTSUP) {
 			printk("Enabling charge not supported, assuming auto charge enable\n");
 			continue;

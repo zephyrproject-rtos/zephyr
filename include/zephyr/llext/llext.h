@@ -10,7 +10,6 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/symbol.h>
-#include <zephyr/llext/loader.h>
 #include <sys/types.h>
 #include <stdbool.h>
 
@@ -26,19 +25,22 @@ extern "C" {
  */
 
 /**
- * @brief Enum of memory regions for lookup tables
+ * @brief List of ELF regions that are stored or referenced in the llext
  */
 enum llext_mem {
 	LLEXT_MEM_TEXT,
 	LLEXT_MEM_DATA,
 	LLEXT_MEM_RODATA,
 	LLEXT_MEM_BSS,
+	LLEXT_MEM_EXPORT,
 	LLEXT_MEM_SYMTAB,
 	LLEXT_MEM_STRTAB,
 	LLEXT_MEM_SHSTRTAB,
 
 	LLEXT_MEM_COUNT,
 };
+
+struct llext_loader;
 
 /**
  * @brief Linkable loadable extension
@@ -54,20 +56,30 @@ struct llext {
 	/** Lookup table of llext memory regions */
 	void *mem[LLEXT_MEM_COUNT];
 
-	/** Memory allocated on heap */
+	/** Is the memory for this section allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
 
-	/** Total size of the llext memory usage */
-	size_t mem_size;
+	/** Size of each stored section */
+	size_t mem_size[LLEXT_MEM_COUNT];
+
+	/** Total llext allocation size */
+	size_t alloc_size;
+
+	/*
+	 * These are all global symbols in the extension, all of them don't
+	 * have to be exported to other extensions, but this table is needed for
+	 * faster internal linking, e.g. if the extension is built out of
+	 * several files, if any symbols are referenced between files, this
+	 * table will be used to link them.
+	 */
+	struct llext_symtable sym_tab;
 
 	/** Exported symbols from the llext, may be linked against by other llext */
-	struct llext_symtable sym_tab;
-};
+	struct llext_symtable exp_tab;
 
-/**
- * @brief List head of loaded extensions
- */
-sys_slist_t *llext_list(void);
+	/** Extension use counter, prevents unloading while in use */
+	unsigned int use_count;
+};
 
 /**
  * @brief Find an llext by name
@@ -79,6 +91,32 @@ sys_slist_t *llext_list(void);
 struct llext *llext_by_name(const char *name);
 
 /**
+ * @brief Iterate overall registered llext instances
+ *
+ * Calls a provided callback function for each registered extension or until the
+ * callback function returns a non-0 value.
+ *
+ * @param[in] fn callback function
+ * @param[in] arg a private argument to be provided to the callback function
+ * @retval 0 if no extensions are registered
+ * @retval value returned by the most recent callback invocation
+ */
+int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg);
+
+/**
+ * @brief llext loader parameters
+ *
+ * These are parameters, not saved in the permanent llext context, needed only
+ * for the loader
+ */
+struct llext_load_param {
+	/** Should local relocation be performed */
+	bool relocate_local;
+};
+
+#define LLEXT_LOAD_PARAM_DEFAULT {.relocate_local = true,}
+
+/**
  * @brief Load and link an extension
  *
  * Loads relevant ELF data into memory and provides a structure to work with it.
@@ -87,20 +125,22 @@ struct llext *llext_by_name(const char *name);
  *
  * @param[in] loader An extension loader that provides input data and context
  * @param[in] name A string identifier for the extension
- * @param[out] ext A pointer to a statically allocated llext struct
+ * @param[out] ext This will hold the pointer to the llext struct
+ * @param[in] ldr_parm Loader parameters
  *
  * @retval 0 Success
  * @retval -ENOMEM Not enough memory
  * @retval -EINVAL Invalid ELF stream
  */
-int llext_load(struct llext_loader *loader, const char *name, struct llext **ext);
+int llext_load(struct llext_loader *loader, const char *name, struct llext **ext,
+	       struct llext_load_param *ldr_parm);
 
 /**
  * @brief Unload an extension
  *
  * @param[in] ext Extension to unload
  */
-void llext_unload(struct llext *ext);
+int llext_unload(struct llext **ext);
 
 /**
  * @brief Find the address for an arbitrary symbol name.
@@ -141,6 +181,26 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
  * @param[in] opval Value of looked up symbol to relocate
  */
 void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval);
+
+/**
+ * @brief Find an ELF section
+ *
+ * @param loader Extension loader data and context
+ * @param search_name Section name to search for
+ * @retval Section offset or a negative error code
+ */
+ssize_t llext_find_section(struct llext_loader *loader, const char *search_name);
+
+/**
+ * @brief Architecture specific function for updating addresses via relocation table
+ *
+ * @param[in] loader Extension loader data and context
+ * @param[in] ext Extension to call function in
+ * @param[in] rel Relocation data provided by elf
+ * @param[in] got_offset Offset within a relocation table
+ */
+void arch_elf_relocate_local(struct llext_loader *loader, struct llext *ext,
+			     elf_rela_t *rel, size_t got_offset);
 
 /**
  * @}

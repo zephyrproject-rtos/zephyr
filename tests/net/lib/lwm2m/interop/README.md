@@ -125,9 +125,17 @@ Tests are written from test spec;
 |---------|------|-----|
 |LightweightM2M-1.1-int-0 - Client Initiated Bootstrap                  |:white_check_mark:| |
 |LightweightM2M-1.1-int-1 - Client Initiated Bootstrap Full (PSK)       |:white_check_mark:| |
+|LightweightM2M-1.1-int-2 - Client Initiated Bootstrap Full (Cert)      | |testcase not implemented |
+|LightweightM2M-1.1-int-3 – Simple Bootstrap from Smartcard             |:large_orange_diamond:|We don't have any smartcard support.|
+|LightweightM2M-1.1-int-4 - Bootstrap Delete                            |:white_check_mark:| |
+|LightweightM2M-1.1-int-5 - Server Initiated Bootstrap                  |:white_check_mark:| |
+|LightweightM2M-1.1-int-6 - Bootstrap Sequence                          |:white_check_mark:| |
+|LightweightM2M-1.1-int-7 - Fallback to bootstrap                       |:white_check_mark:| |
+|LightweightM2M-1.1-int-8 - Bootstrap Read | |Test cannot be implemented from client side.|
+|LightweightM2M-1.1-int-9 - Bootstrap and Configuration Consistency     | |testcase not implemented |
 |LightweightM2M-1.1-int-101 - Initial Registration                      |:white_check_mark:| |
 |LightweightM2M-1.1-int-102 - Registration Update                       |:white_check_mark:| |
-|LightweightM2M-1.1-int-103 - Deregistration                            |:large_orange_diamond:|We don't have "disabled" functionality in server object|
+|LightweightM2M-1.1-int-103 - Deregistration                            |:white_check_mark:| |
 |LightweightM2M-1.1-int-104 - Registration Update Trigge                |:white_check_mark:| |
 |LightweightM2M-1.1-int-105 - Discarded Register Update                 |:white_check_mark:| |
 |LightweightM2M-1.1-int-107 - Extending the lifetime of a registration  |:white_check_mark:| |

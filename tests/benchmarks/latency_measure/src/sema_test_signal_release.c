@@ -253,7 +253,6 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 	/* 5. Retrieve the number of cycles spent giving the semaphore */
 
 	cycles = timestamp.cycles;
-	cycles -= timestamp_overhead_adjustment(options, options);
 
 	snprintf(description, sizeof(description),
 		 "Give a semaphore (no waiters) from %s thread",
@@ -273,7 +272,6 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 	/* 9. Retrieve the number of cycles spent taking the semaphore */
 
 	cycles = timestamp.cycles;
-	cycles -= timestamp_overhead_adjustment(options, options);
 
 	snprintf(description, sizeof(description),
 		 "Take a semaphore (no blocking) from %s thread",

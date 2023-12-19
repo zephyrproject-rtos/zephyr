@@ -141,6 +141,17 @@ config ROM_START_OFFSET
 	  alignment requirements on most ARM targets, although some targets
 	  may require smaller or larger values.
 
+config ROM_END_OFFSET
+	hex "ROM end offset"
+	default 0
+	help
+	  If non-zero, this option reduces the maximum size that the Zephyr image is allowed to
+	  occupy, this is to allow for additional image storage which can be created and used by
+	  other systems such as bootloaders (for MCUboot, this would include the image swap
+	  fields and TLV storage at the end of the image).
+
+	  If unsure, leave at the default value 0.
+
 config LD_LINKER_SCRIPT_SUPPORTED
 	bool
 	default y

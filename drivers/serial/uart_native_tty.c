@@ -6,9 +6,9 @@
  * command line options or at runtime.
  *
  * To learn more see Native TTY section at:
- * https://docs.zephyrproject.org/latest/boards/posix/native_posix/doc/index.html
+ * https://docs.zephyrproject.org/latest/boards/posix/native_sim/doc/index.html
  * or
- * ${ZEPHYR_BASE}/boards/posix/native_posix/doc/index.rst
+ * ${ZEPHYR_BASE}/boards/posix/native_sim/doc/index.rst
  *
  * Copyright (c) 2023 Marko Sagadin
  * SPDX-License-Identifier: Apache-2.0

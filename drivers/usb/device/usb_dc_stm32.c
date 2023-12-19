@@ -639,20 +639,39 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	LOG_DBG("ep 0x%02x, previous ep_mps %u, ep_mps %u, ep_type %u",
 		ep_cfg->ep_addr, ep_state->ep_mps, ep_cfg->ep_mps,
 		ep_cfg->ep_type);
-
 #if defined(USB) || defined(USB_DRD_FS)
 	if (ep_cfg->ep_mps > ep_state->ep_pma_buf_len) {
-		if (USB_RAM_SIZE <=
-		    (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
+		if (ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) {
+			if (USB_RAM_SIZE <=
+			   (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps*2)) {
+				return -EINVAL;
+			}
+		} else if (USB_RAM_SIZE <=
+			  (usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps)) {
 			return -EINVAL;
 		}
-		HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_SNG_BUF,
-				    usb_dc_stm32_state.pma_offset);
-		ep_state->ep_pma_buf_len = ep_cfg->ep_mps;
-		usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps;
+
+		if (ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) {
+			HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_DBL_BUF,
+				usb_dc_stm32_state.pma_offset +
+				((usb_dc_stm32_state.pma_offset + ep_cfg->ep_mps) << 16));
+			ep_state->ep_pma_buf_len = ep_cfg->ep_mps*2;
+			usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps*2;
+		} else {
+			HAL_PCDEx_PMAConfig(&usb_dc_stm32_state.pcd, ep, PCD_SNG_BUF,
+				usb_dc_stm32_state.pma_offset);
+			ep_state->ep_pma_buf_len = ep_cfg->ep_mps;
+			usb_dc_stm32_state.pma_offset += ep_cfg->ep_mps;
+		}
 	}
-#endif
+	if (ep_cfg->ep_type == USB_DC_EP_ISOCHRONOUS) {
+		ep_state->ep_mps = ep_cfg->ep_mps*2;
+	} else {
+		ep_state->ep_mps = ep_cfg->ep_mps;
+	}
+#else
 	ep_state->ep_mps = ep_cfg->ep_mps;
+#endif
 
 	switch (ep_cfg->ep_type) {
 	case USB_DC_EP_CONTROL:

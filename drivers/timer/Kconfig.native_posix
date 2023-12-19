@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NATIVE_POSIX_TIMER
-	bool "(POSIX) native_posix timer driver"
+	bool "(POSIX) native_sim/posix timer driver"
 	default y
 	depends on BOARD_NATIVE_POSIX
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
-	  This module implements a kernel device driver for the native_posix HW timer
+	  This module implements a kernel device driver for the native_sim/posix HW timer
 	  model

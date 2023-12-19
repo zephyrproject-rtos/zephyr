@@ -17,16 +17,6 @@ static int obs_counter;
 static void update_counter(struct k_work *work);
 K_WORK_DELAYABLE_DEFINE(obs_work, update_counter);
 
-#ifdef CONFIG_COAP_OBSERVER_EVENTS
-
-static void observer_event(struct coap_resource *resource, struct coap_observer *observer,
-			   enum coap_observer_event event)
-{
-	LOG_INF("Observer %s", event == COAP_OBSERVER_ADDED ? "added" : "removed");
-}
-
-#endif
-
 static int send_notification_packet(struct coap_resource *resource,
 				    const struct sockaddr *addr,
 				    socklen_t addr_len,
@@ -90,7 +80,7 @@ static int send_notification_packet(struct coap_resource *resource,
 
 	k_work_reschedule(&obs_work, K_SECONDS(5));
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }
@@ -138,9 +128,6 @@ COAP_RESOURCE_DEFINE(obs, coap_server,
 	.get = obs_get,
 	.path = obs_path,
 	.notify = obs_notify,
-#ifdef CONFIG_COAP_OBSERVER_EVENTS
-	.observer_event_handler = observer_event,
-#endif
 });
 
 static void update_counter(struct k_work *work)

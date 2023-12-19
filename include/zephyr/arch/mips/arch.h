@@ -10,7 +10,7 @@
 #define ZEPHYR_INCLUDE_ARCH_MIPS_ARCH_H_
 
 #include <zephyr/arch/mips/thread.h>
-#include <zephyr/arch/mips/exp.h>
+#include <zephyr/arch/mips/exception.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>

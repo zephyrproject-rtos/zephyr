@@ -1,7 +1,7 @@
 .. _rzt2m_starterkit:
 
 Renesas Starter Kit+ for RZ/T2M
-===============================
+###############################
 
 Overview
 ********

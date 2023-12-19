@@ -11,5 +11,6 @@ config SOC_SERIES_IMX7_M4
 	select SOC_FAMILY_IMX
 	select CLOCK_CONTROL
 	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	help
 	  Enable support for i.MX7 M4 MCU series

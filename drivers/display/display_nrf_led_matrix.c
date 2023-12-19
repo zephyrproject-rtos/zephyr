@@ -188,12 +188,6 @@ static int api_set_brightness(const struct device *dev,
 	return 0;
 }
 
-static int api_set_contrast(const struct device *dev,
-			    const uint8_t contrast)
-{
-	return -ENOTSUP;
-}
-
 static int api_set_pixel_format(const struct device *dev,
 				const enum display_pixel_format format)
 {
@@ -279,22 +273,12 @@ static int api_write(const struct device *dev,
 	return 0;
 }
 
-static int api_read(const struct device *dev,
-		    const uint16_t x, const uint16_t y,
-		    const struct display_buffer_descriptor *desc,
-		    void *buf)
-{
-	return -ENOTSUP;
-}
-
 const struct display_driver_api driver_api = {
 	.blanking_on = api_blanking_on,
 	.blanking_off = api_blanking_off,
 	.write = api_write,
-	.read = api_read,
 	.get_framebuffer = api_get_framebuffer,
 	.set_brightness = api_set_brightness,
-	.set_contrast = api_set_contrast,
 	.get_capabilities = api_get_capabilities,
 	.set_pixel_format = api_set_pixel_format,
 	.set_orientation = api_set_orientation,

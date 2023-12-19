@@ -64,14 +64,11 @@ ZTEST_USER_F(sbs_charger, test_set_prop_failed_returns_negative)
 	zassert_equal(ret, -ENOTSUP, "Setting bad property %d has a good status.", prop);
 }
 
-ZTEST_USER_F(sbs_charger, test_set_prop_success_returns_zero)
+ZTEST_USER_F(sbs_charger, test_charge_enable_success_returns_zero)
 {
-	union charger_propval val = {.status = CHARGER_STATUS_NOT_CHARGING};
-	charger_prop_t prop = CHARGER_PROP_STATUS;
+	int ret = charger_charge_enable(fixture->dev, true);
 
-	int ret = charger_set_prop(fixture->dev, prop, &val);
-
-	zassert_equal(ret, 0, "Setting good property %d has a good status.", prop);
+	zassert_equal(ret, 0, "Enabling charge has a good status.");
 }
 
 ZTEST_SUITE(sbs_charger, NULL, sbs_charger_setup, NULL, NULL, NULL);

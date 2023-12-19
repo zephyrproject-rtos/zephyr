@@ -82,4 +82,12 @@
 	die_temp: dietemp {
 		ts-cal2-temp = <130>;
 	};
+
+	smbus4: smbus4 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c4>;
+		status = "disabled";
+	};
 };

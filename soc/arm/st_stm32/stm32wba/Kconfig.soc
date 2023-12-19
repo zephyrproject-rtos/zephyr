@@ -10,4 +10,7 @@ depends on SOC_SERIES_STM32WBAX
 config SOC_STM32WBA52XX
 	bool "STM32WBA52XX"
 
+config SOC_STM32WBA55XX
+	bool "STM32WBA55XX"
+
 endchoice

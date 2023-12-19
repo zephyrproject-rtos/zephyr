@@ -218,17 +218,41 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 
 static __used void z_gdb_debug_isr(z_arch_esf_t *esf)
 {
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:enter %s (IV_DEBUG)\n", __func__);
+#endif
+
 	z_gdb_interrupt(IV_DEBUG, esf);
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:exit %s (IV_DEBUG)\n", __func__);
+#endif
 }
 
 static __used void z_gdb_break_isr(z_arch_esf_t *esf)
 {
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:enter %s (IV_BREAKPOINT)\n", __func__);
+#endif
+
 	z_gdb_interrupt(IV_BREAKPOINT, esf);
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:exit %s (IV_BREAKPOINT)\n", __func__);
+#endif
 }
 
 void arch_gdb_init(void)
 {
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s awaits GDB connection\n", __func__);
+#endif
+
 	__asm__ volatile ("int3");
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s GDB is connected\n", __func__);
+#endif
 }
 
 /* Hook current IDT. */

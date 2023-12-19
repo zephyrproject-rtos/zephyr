@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2023 Microchip Technology Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/mpfs.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <mem.h>
+
+/ {
+	model = "BeagleV-Fire";
+	compatible = "beagle,beaglev-fire", "microchip,mpfs";
+	aliases {
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram1;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
+};
+
+&gpio2 {
+	status = "okay";
+};

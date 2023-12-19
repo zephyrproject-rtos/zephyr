@@ -42,6 +42,30 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "tcp.h"
 #endif
 
+#ifdef CONFIG_NET_INITIAL_MCAST_TTL
+#define INITIAL_MCAST_TTL CONFIG_NET_INITIAL_MCAST_TTL
+#else
+#define INITIAL_MCAST_TTL 1
+#endif
+
+#ifdef CONFIG_NET_INITIAL_TTL
+#define INITIAL_TTL CONFIG_NET_INITIAL_TTL
+#else
+#define INITIAL_TTL 1
+#endif
+
+#ifdef CONFIG_NET_INITIAL_MCAST_HOP_LIMIT
+#define INITIAL_MCAST_HOP_LIMIT CONFIG_NET_INITIAL_MCAST_HOP_LIMIT
+#else
+#define INITIAL_MCAST_HOP_LIMIT 1
+#endif
+
+#ifdef CONFIG_NET_INITIAL_HOP_LIMIT
+#define INITIAL_HOP_LIMIT CONFIG_NET_INITIAL_HOP_LIMIT
+#else
+#define INITIAL_HOP_LIMIT 1
+#endif
+
 #ifndef EPFNOSUPPORT
 /* Some old versions of newlib haven't got this defined in errno.h,
  * Just use EPROTONOSUPPORT in this case
@@ -468,6 +492,9 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 					ret = -EADDRINUSE;
 					break;
 				}
+
+				contexts[i].ipv6_hop_limit = INITIAL_HOP_LIMIT;
+				contexts[i].ipv6_mcast_hop_limit = INITIAL_MCAST_HOP_LIMIT;
 			}
 			if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 				struct sockaddr_in *addr = (struct sockaddr_in *)&contexts[i].local;
@@ -479,6 +506,9 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 					ret = -EADDRINUSE;
 					break;
 				}
+
+				contexts[i].ipv4_ttl = INITIAL_TTL;
+				contexts[i].ipv4_mcast_ttl = INITIAL_MCAST_TTL;
 			}
 		}
 
@@ -1074,7 +1104,6 @@ int net_context_create_ipv4_new(struct net_context *context,
 		}
 	}
 
-	net_pkt_set_ipv4_ttl(pkt, net_context_get_ipv4_ttl(context));
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv4_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv4_get_ecn(context->options.dscp_ecn));
@@ -1108,8 +1137,6 @@ int net_context_create_ipv6_new(struct net_context *context,
 						  (struct in6_addr *)dst);
 	}
 
-	net_pkt_set_ipv6_hop_limit(pkt,
-				   net_context_get_ipv6_hop_limit(context));
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	net_pkt_set_ip_dscp(pkt, net_ipv6_get_dscp(context->options.dscp_ecn));
 	net_pkt_set_ip_ecn(pkt, net_ipv6_get_ecn(context->options.dscp_ecn));
@@ -1535,6 +1562,86 @@ static int get_context_dscp_ecn(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_DSCP_ECN)
 	return get_uint8_option(context->options.dscp_ecn,
 				value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_ttl(struct net_context *context,
+				 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4)
+	*((int *)value) = context->ipv4_ttl;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_mcast_ttl(struct net_context *context,
+				 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV4)
+	*((int *)value) = context->ipv4_mcast_ttl;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_mcast_hop_limit(struct net_context *context,
+				       void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV6)
+	*((int *)value) = context->ipv6_mcast_hop_limit;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_unicast_hop_limit(struct net_context *context,
+					 void *value, size_t *len)
+{
+#if defined(CONFIG_NET_IPV6)
+	*((int *)value) = context->ipv6_hop_limit;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
 #else
 	ARG_UNUSED(context);
 	ARG_UNUSED(value);
@@ -2712,6 +2819,97 @@ static int set_context_dscp_ecn(struct net_context *context,
 #endif
 }
 
+static int set_context_ttl(struct net_context *context,
+			   const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4)
+	uint8_t ttl = *((int *)value);
+
+	len = sizeof(context->ipv4_ttl);
+
+	return set_uint8_option(&context->ipv4_ttl, &ttl, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_mcast_ttl(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV4)
+	uint8_t mcast_ttl = *((int *)value);
+
+	len = sizeof(context->ipv4_mcast_ttl);
+
+	return set_uint8_option(&context->ipv4_mcast_ttl, &mcast_ttl, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_mcast_hop_limit(struct net_context *context,
+				       const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	int mcast_hop_limit = *((int *)value);
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (mcast_hop_limit == -1) {
+		/* If value is -1 then use the system default.
+		 * This is done same way as in Linux.
+		 */
+		if (net_if_get_by_index(context->iface) == NULL) {
+			mcast_hop_limit = INITIAL_MCAST_HOP_LIMIT;
+		} else {
+			mcast_hop_limit = net_if_ipv6_get_mcast_hop_limit(
+				net_if_get_by_index(context->iface));
+		}
+	} else if (mcast_hop_limit < 0 || mcast_hop_limit > 255) {
+		return -EINVAL;
+	}
+
+	context->ipv6_mcast_hop_limit = mcast_hop_limit;
+
+	return 0;
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_unicast_hop_limit(struct net_context *context,
+					 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_IPV6)
+	uint8_t unicast_hop_limit = *((int *)value);
+
+	len = sizeof(context->ipv6_hop_limit);
+
+	return set_uint8_option(&context->ipv6_hop_limit,
+				&unicast_hop_limit, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_reuseaddr(struct net_context *context,
 				 const void *value, size_t len)
 {
@@ -2807,6 +3005,18 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_DSCP_ECN:
 		ret = set_context_dscp_ecn(context, value, len);
 		break;
+	case NET_OPT_TTL:
+		ret = set_context_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_TTL:
+		ret = set_context_mcast_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_HOP_LIMIT:
+		ret = set_context_mcast_hop_limit(context, value, len);
+		break;
+	case NET_OPT_UNICAST_HOP_LIMIT:
+		ret = set_context_unicast_hop_limit(context, value, len);
+		break;
 	case NET_OPT_REUSEADDR:
 		ret = set_context_reuseaddr(context, value, len);
 		break;
@@ -2864,6 +3074,18 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_DSCP_ECN:
 		ret = get_context_dscp_ecn(context, value, len);
+		break;
+	case NET_OPT_TTL:
+		ret = get_context_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_TTL:
+		ret = get_context_mcast_ttl(context, value, len);
+		break;
+	case NET_OPT_MCAST_HOP_LIMIT:
+		ret = get_context_mcast_hop_limit(context, value, len);
+		break;
+	case NET_OPT_UNICAST_HOP_LIMIT:
+		ret = get_context_unicast_hop_limit(context, value, len);
 		break;
 	case NET_OPT_REUSEADDR:
 		ret = get_context_reuseaddr(context, value, len);

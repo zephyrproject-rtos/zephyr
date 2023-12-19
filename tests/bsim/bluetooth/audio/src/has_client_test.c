@@ -10,6 +10,9 @@
 
 #include "common.h"
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(has_client_test, LOG_LEVEL_DBG);
+
 extern enum bst_result_t bst_result;
 
 extern const char *test_preset_name_1;
@@ -19,7 +22,6 @@ extern const uint8_t test_preset_index_3;
 extern const uint8_t test_preset_index_5;
 extern const enum bt_has_properties test_preset_properties;
 
-#ifdef CONFIG_BT_HAS_CLIENT
 CREATE_FLAG(g_service_discovered);
 CREATE_FLAG(g_preset_switched);
 CREATE_FLAG(g_preset_1_found);
@@ -37,7 +39,7 @@ static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 		return;
 	}
 
-	printk("HAS discovered type %d caps %d\n", type, caps);
+	LOG_DBG("HAS discovered type %d caps %d", type, caps);
 
 	g_has = has;
 	SET_FLAG(g_service_discovered);
@@ -49,7 +51,7 @@ static void preset_switch_cb(struct bt_has *has, int err, uint8_t index)
 		return;
 	}
 
-	printk("Active preset index %d\n", index);
+	LOG_DBG("Active preset index %d", index);
 
 	SET_FLAG(g_preset_switched);
 	g_active_index = index;
@@ -113,7 +115,7 @@ static bool test_preset_switch(uint8_t index)
 
 	err = bt_has_client_preset_set(g_has, index, false);
 	if (err < 0) {
-		printk("%s (err %d)\n", __func__, err);
+		LOG_DBG("%s (err %d)", __func__, err);
 		return false;
 	}
 
@@ -130,7 +132,7 @@ static bool test_preset_next(uint8_t active_index_expected)
 
 	err = bt_has_client_preset_next(g_has, false);
 	if (err < 0) {
-		printk("%s (err %d)\n", __func__, err);
+		LOG_DBG("%s (err %d)", __func__, err);
 		return false;
 	}
 
@@ -147,7 +149,7 @@ static bool test_preset_prev(uint8_t active_index_expected)
 
 	err = bt_has_client_preset_prev(g_has, false);
 	if (err < 0) {
-		printk("%s (err %d)\n", __func__, err);
+		LOG_DBG("%s (err %d)", __func__, err);
 		return false;
 	}
 
@@ -166,7 +168,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_DBG("Bluetooth initialized");
 
 	err = bt_has_client_cb_register(&has_cb);
 	if (err < 0) {
@@ -182,7 +184,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_DBG("Scanning successfully started");
 
 	WAIT_FOR_FLAG(flag_connected);
 
@@ -246,7 +248,6 @@ static void test_main(void)
 
 	PASS("HAS main PASS\n");
 }
-#endif /* CONFIG_BT_HAS_CLIENT */
 
 #define FEATURES_SUB_NTF        BIT(0)
 #define ACTIVE_INDEX_SUB_NTF    BIT(1)
@@ -294,29 +295,29 @@ static void preset_availability_changed(uint8_t index, bool available)
 static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 			      const void *data, uint16_t length)
 {
-	printk("conn %p params %p data %p length %u\n", (void *)conn, params, data, length);
+	LOG_DBG("conn %p params %p data %p length %u", (void *)conn, params, data, length);
 
 	if (params == &features_sub) {
 		if (data == NULL) {
-			printk("features_sub [UNSUBSCRIBED]\n");
+			LOG_DBG("features_sub [UNSUBSCRIBED]");
 			return BT_GATT_ITER_STOP;
 		}
 
-		printk("Received features_sub notification\n");
+		LOG_DBG("Received features_sub notification");
 		notify_received_mask |= FEATURES_SUB_NTF;
 	} else if (params == &active_preset_index_sub) {
 		if (data == NULL) {
-			printk("active_preset_index_sub_sub [UNSUBSCRIBED]\n");
+			LOG_DBG("active_preset_index_sub_sub [UNSUBSCRIBED]");
 			return BT_GATT_ITER_STOP;
 		}
 
-		printk("Received active_preset_index_sub_sub notification\n");
+		LOG_DBG("Received active_preset_index_sub_sub notification");
 		notify_received_mask |= ACTIVE_INDEX_SUB_NTF;
 	} else if (params == &control_point_sub) {
 		const struct bt_has_cp_hdr *hdr;
 
 		if (data == NULL) {
-			printk("control_point_sub [UNSUBSCRIBED]\n");
+			LOG_DBG("control_point_sub [UNSUBSCRIBED]");
 			return BT_GATT_ITER_STOP;
 		}
 
@@ -349,8 +350,8 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 
 				gu = (const void *)pc->additional_params;
 
-				printk("Received generic update index 0x%02x props 0x%02x\n",
-				       gu->index, gu->properties);
+				LOG_DBG("Received generic update index 0x%02x props 0x%02x",
+					gu->index, gu->properties);
 
 				is_available = (gu->properties & BT_HAS_PROP_AVAILABLE) != 0;
 
@@ -358,7 +359,7 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 				break;
 			}
 			default:
-				printk("Unexpected Change ID 0x%02x", pc->change_id);
+				LOG_DBG("Unexpected Change ID 0x%02x", pc->change_id);
 				return BT_GATT_ITER_STOP;
 			}
 
@@ -366,12 +367,12 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 				notify_received_mask |= PRESET_CHANGED_SUB_NTF;
 			}
 		} else {
-			printk("Unexpected opcode 0x%02x", hdr->opcode);
+			LOG_DBG("Unexpected opcode 0x%02x", hdr->opcode);
 			return BT_GATT_ITER_STOP;
 		}
 	}
 
-	printk("pacs_instance.notify_received_mask is %d\n", notify_received_mask);
+	LOG_DBG("pacs_instance.notify_received_mask is %d", notify_received_mask);
 
 	if (notify_received_mask == SUB_NTF_ALL) {
 		SET_FLAG(flag_all_notifications_received);
@@ -387,7 +388,7 @@ static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subsc
 		return;
 	}
 
-	printk("[SUBSCRIBED]\n");
+	LOG_DBG("[SUBSCRIBED]");
 
 	if (params == &features_sub) {
 		SET_FLAG(flag_features_discovered);
@@ -412,13 +413,13 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 	int err;
 
 	if (!attr) {
-		printk("Discover complete\n");
+		LOG_DBG("Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (!bt_uuid_cmp(params->uuid, BT_UUID_HAS_HEARING_AID_FEATURES)) {
-		printk("HAS Hearing Aid Features handle at %d\n", attr->handle);
+		LOG_DBG("HAS Hearing Aid Features handle at %d", attr->handle);
 		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.start_handle = attr->handle + 2;
@@ -428,10 +429,10 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
-			printk("Discover failed (err %d)\n", err);
+			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
-		printk("CCC handle at %d\n", attr->handle);
+		LOG_DBG("CCC handle at %d", attr->handle);
 		subscribe_params = &features_sub;
 		subscribe_params->notify = notify_handler;
 		subscribe_params->value = BT_GATT_CCC_NOTIFY;
@@ -440,10 +441,10 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
 		if (err && err != -EALREADY) {
-			printk("Subscribe failed (err %d)\n", err);
+			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
-		printk("Unknown handle at %d\n", attr->handle);
+		LOG_DBG("Unknown handle at %d", attr->handle);
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -454,7 +455,7 @@ static void discover_and_subscribe_features(void)
 {
 	int err = 0;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 
 	memcpy(&uuid, BT_UUID_HAS_HEARING_AID_FEATURES, sizeof(uuid));
 	discover_params.uuid = &uuid.uuid;
@@ -478,13 +479,13 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 	int err;
 
 	if (!attr) {
-		printk("Discover complete\n");
+		LOG_DBG("Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (!bt_uuid_cmp(params->uuid, BT_UUID_HAS_ACTIVE_PRESET_INDEX)) {
-		printk("HAS Hearing Aid Features handle at %d\n", attr->handle);
+		LOG_DBG("HAS Hearing Aid Features handle at %d", attr->handle);
 		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.start_handle = attr->handle + 2;
@@ -494,10 +495,10 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
-			printk("Discover failed (err %d)\n", err);
+			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
-		printk("CCC handle at %d\n", attr->handle);
+		LOG_DBG("CCC handle at %d", attr->handle);
 		subscribe_params = &active_preset_index_sub;
 		subscribe_params->notify = notify_handler;
 		subscribe_params->value = BT_GATT_CCC_NOTIFY;
@@ -506,10 +507,10 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
 		if (err && err != -EALREADY) {
-			printk("Subscribe failed (err %d)\n", err);
+			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
-		printk("Unknown handle at %d\n", attr->handle);
+		LOG_DBG("Unknown handle at %d", attr->handle);
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -520,7 +521,7 @@ static void discover_and_subscribe_active_preset_index(void)
 {
 	int err = 0;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 
 	memcpy(&uuid, BT_UUID_HAS_ACTIVE_PRESET_INDEX, sizeof(uuid));
 	discover_params.uuid = &uuid.uuid;
@@ -543,13 +544,13 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 	int err;
 
 	if (!attr) {
-		printk("Discover complete\n");
+		LOG_DBG("Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
 	if (!bt_uuid_cmp(params->uuid, BT_UUID_HAS_PRESET_CONTROL_POINT)) {
-		printk("HAS Control Point handle at %d\n", attr->handle);
+		LOG_DBG("HAS Control Point handle at %d", attr->handle);
 		memcpy(&uuid, BT_UUID_GATT_CCC, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;
 		discover_params.start_handle = attr->handle + 2;
@@ -559,10 +560,10 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 
 		err = bt_gatt_discover(conn, &discover_params);
 		if (err) {
-			printk("Discover failed (err %d)\n", err);
+			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
-		printk("CCC handle at %d\n", attr->handle);
+		LOG_DBG("CCC handle at %d", attr->handle);
 		subscribe_params = &control_point_sub;
 		subscribe_params->notify = notify_handler;
 		subscribe_params->value = BT_GATT_CCC_INDICATE;
@@ -571,10 +572,10 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
 		if (err && err != -EALREADY) {
-			printk("Subscribe failed (err %d)\n", err);
+			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
-		printk("Unknown handle at %d\n", attr->handle);
+		LOG_DBG("Unknown handle at %d", attr->handle);
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -585,7 +586,7 @@ static void discover_and_subscribe_control_point(void)
 {
 	int err = 0;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 
 	memcpy(&uuid, BT_UUID_HAS_PRESET_CONTROL_POINT, sizeof(uuid));
 	discover_params.uuid = &uuid.uuid;
@@ -611,7 +612,7 @@ static void test_gatt_client(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_DBG("Bluetooth initialized");
 
 	bt_le_scan_cb_register(&common_scan_cb);
 
@@ -621,13 +622,13 @@ static void test_gatt_client(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_DBG("Scanning successfully started");
 
 	WAIT_FOR_FLAG(flag_connected);
 
 	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
 	if (err) {
-		FAIL("Failed to set security level %d (err %d)\n", BT_SECURITY_L2, err);
+		FAIL("Failed to set security level %d (err %d)", BT_SECURITY_L2, err);
 		return;
 	}
 
@@ -654,7 +655,7 @@ static void test_gatt_client(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_DBG("Scanning successfully started");
 
 	WAIT_FOR_FLAG(flag_connected);
 
@@ -670,14 +671,12 @@ static void test_gatt_client(void)
 }
 
 static const struct bst_test_instance test_has[] = {
-#ifdef CONFIG_BT_HAS_CLIENT
 	{
 		.test_id = "has_client",
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},
-#endif /* CONFIG_BT_HAS_CLIENT */
 	{
 		.test_id = "has_client_offline_behavior",
 		.test_descr = "Test receiving notifications after reconnection",
@@ -690,5 +689,9 @@ static const struct bst_test_instance test_has[] = {
 
 struct bst_test_list *test_has_client_install(struct bst_test_list *tests)
 {
-	return bst_add_tests(tests, test_has);
+	if (IS_ENABLED(CONFIG_BT_HAS_CLIENT)) {
+		return bst_add_tests(tests, test_has);
+	} else {
+		return tests;
+	}
 }

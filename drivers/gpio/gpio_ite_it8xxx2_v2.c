@@ -18,9 +18,11 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
 /*
@@ -57,6 +59,7 @@ struct gpio_ite_data {
 	struct gpio_driver_data common;
 	sys_slist_t callbacks;
 	uint8_t volt_default_set;
+	struct k_spinlock lock;
 };
 
 /**
@@ -73,6 +76,7 @@ static int gpio_ite_configure(const struct device *dev,
 	volatile uint8_t *reg_gpcr = (uint8_t *)gpio_config->reg_gpcr + pin;
 	struct gpio_ite_data *data = dev->data;
 	uint8_t mask = BIT(pin);
+	int rc = 0;
 
 	/* Don't support "open source" mode */
 	if (((flags & GPIO_SINGLE_ENDED) != 0) &&
@@ -80,6 +84,7 @@ static int gpio_ite_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	if (flags == GPIO_DISCONNECTED) {
 		*reg_gpcr = GPCR_PORT_PIN_MODE_TRISTATE;
 		/*
@@ -91,13 +96,15 @@ static int gpio_ite_configure(const struct device *dev,
 			*reg_gpcr = GPCR_PORT_PIN_MODE_INPUT;
 			LOG_ERR("Cannot config the node-gpio@%x, pin=%d as tri-state",
 				(uint32_t)reg_gpdr, pin);
-			return -ENOTSUP;
+			rc = -ENOTSUP;
+			goto unlock_and_return;
 		}
 		/*
 		 * The following configuration isn't necessary because the pin
 		 * was configured as disconnected.
 		 */
-		return 0;
+		rc = 0;
+		goto unlock_and_return;
 	}
 
 	/*
@@ -131,7 +138,8 @@ static int gpio_ite_configure(const struct device *dev,
 			*reg_p18scr &= ~mask;
 			data->volt_default_set |= mask;
 		} else {
-			return -EINVAL;
+			rc = -EINVAL;
+			goto unlock_and_return;
 		}
 	}
 
@@ -166,7 +174,9 @@ static int gpio_ite_configure(const struct device *dev,
 				GPCR_PORT_PIN_MODE_PULLDOWN);
 	}
 
-	return 0;
+unlock_and_return:
+	k_spin_unlock(&data->lock, key);
+	return rc;
 }
 
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -183,6 +193,7 @@ static int gpio_ite_get_config(const struct device *dev,
 	uint8_t mask = BIT(pin);
 	gpio_flags_t flags = 0;
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	/* push-pull or open-drain */
 	if (*reg_gpotr & mask) {
 		flags |= GPIO_OPEN_DRAIN;
@@ -227,6 +238,7 @@ static int gpio_ite_get_config(const struct device *dev,
 	}
 
 	*out_flags = flags;
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -250,9 +262,13 @@ static int gpio_ite_port_set_masked_raw(const struct device *dev,
 {
 	const struct gpio_ite_cfg *gpio_config = dev->config;
 	volatile uint8_t *reg_gpdr = (uint8_t *)gpio_config->reg_gpdr;
+	uint8_t masked_value = value & mask;
+	struct gpio_ite_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	uint8_t out = *reg_gpdr;
 
-	*reg_gpdr = ((out & ~mask) | (value & mask));
+	*reg_gpdr = ((out & ~mask) | masked_value);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -262,9 +278,12 @@ static int gpio_ite_port_set_bits_raw(const struct device *dev,
 {
 	const struct gpio_ite_cfg *gpio_config = dev->config;
 	volatile uint8_t *reg_gpdr = (uint8_t *)gpio_config->reg_gpdr;
+	struct gpio_ite_data *data = dev->data;
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	/* Set raw bits of GPIO data register */
 	*reg_gpdr |= pins;
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -274,9 +293,12 @@ static int gpio_ite_port_clear_bits_raw(const struct device *dev,
 {
 	const struct gpio_ite_cfg *gpio_config = dev->config;
 	volatile uint8_t *reg_gpdr = (uint8_t *)gpio_config->reg_gpdr;
+	struct gpio_ite_data *data = dev->data;
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	/* Clear raw bits of GPIO data register */
 	*reg_gpdr &= ~pins;
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -286,9 +308,12 @@ static int gpio_ite_port_toggle_bits(const struct device *dev,
 {
 	const struct gpio_ite_cfg *gpio_config = dev->config;
 	volatile uint8_t *reg_gpdr = (uint8_t *)gpio_config->reg_gpdr;
+	struct gpio_ite_data *data = dev->data;
 
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 	/* Toggle raw bits of GPIO data register */
 	*reg_gpdr ^= pins;
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -299,7 +324,11 @@ static int gpio_ite_manage_callback(const struct device *dev,
 {
 	struct gpio_ite_data *data = dev->data;
 
-	return gpio_manage_callback(&data->callbacks, callback, set);
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	int rc = gpio_manage_callback(&data->callbacks, callback, set);
+
+	k_spin_unlock(&data->lock, key);
+	return rc;
 }
 
 static void gpio_ite_isr(const void *arg)
@@ -318,8 +347,12 @@ static void gpio_ite_isr(const void *arg)
 			volatile uint8_t *reg_wuesr = reg_base + 1;
 			uint8_t wuc_mask = gpio_config->wuc_mask[pin];
 
+			/* Should be safe even without spinlock. */
 			/* Clear the WUC status register. */
 			*reg_wuesr = wuc_mask;
+			/* The callbacks are user code, and therefore should
+			 * not hold the lock.
+			 */
 			gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
 
 			break;
@@ -334,6 +367,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_ite_cfg *gpio_config = dev->config;
 	uint8_t gpio_irq = gpio_config->gpio_irq[pin];
+	struct gpio_ite_data *data = dev->data;
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	if (mode == GPIO_INT_MODE_DISABLED || mode == GPIO_INT_MODE_DISABLE_ONLY) {
@@ -366,6 +400,8 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 		volatile uint8_t *reg_wubemr = reg_base + 3;
 		uint8_t wuc_mask = gpio_config->wuc_mask[pin];
 
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+
 		/* Set both edges interrupt. */
 		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH) {
 			*reg_wubemr |= wuc_mask;
@@ -383,6 +419,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 		 * modifying edge mode selection register (WUBEMR and WUEMR).
 		 */
 		*reg_wuesr = wuc_mask;
+		k_spin_unlock(&data->lock, key);
 	}
 
 	/* Enable GPIO interrupt */

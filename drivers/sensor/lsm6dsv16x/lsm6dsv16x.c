@@ -83,8 +83,9 @@ static int lsm6dsv16x_accel_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static const uint16_t lsm6dsv16x_gyro_fs_map[] = {250, 125, 500, 0, 1000, 0, 2000};
-static const uint16_t lsm6dsv16x_gyro_fs_sens[] = {2, 1, 4, 0, 8, 0, 16};
+static const uint16_t lsm6dsv16x_gyro_fs_map[] = {125, 250, 500, 1000, 2000, 0,   0,
+						  0,   0,   0,   0,    0,    4000};
+static const uint16_t lsm6dsv16x_gyro_fs_sens[] = {1, 2, 4, 8, 16, 0, 0, 0, 0, 0, 0, 0, 32};
 
 static int lsm6dsv16x_gyro_range_to_fs_val(int32_t range)
 {

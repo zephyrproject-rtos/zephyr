@@ -28,6 +28,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		k_fatal_halt(reason);
 	}
 
+	printk("Fatal error expected as part of test case.\n");
+
 	expected_reason = -1;
 }
 

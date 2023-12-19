@@ -39,23 +39,10 @@
 	spim3_default: spim3_default {
 		group1 {
 			pinmux = <SPIM3_MISO_GPIO38>,
-				 <SPIM3_SCLK_GPIO18>,
-				 <SPIM3_CSEL_GPIO5>;
+				 <SPIM3_SCLK_GPIO18>;
 		};
 		group2 {
 			pinmux = <SPIM3_MOSI_GPIO23>;
-			output-low;
-		};
-	};
-
-	spim2_default: spim2_default {
-		group1 {
-			pinmux = <SPIM2_SCLK_GPIO6>,
-				 <SPIM2_MISO_GPIO7>,
-				 <SPIM2_CSEL_GPIO11>;
-		};
-		group2 {
-			pinmux = <SPIM2_MOSI_GPIO8>;
 			output-low;
 		};
 	};

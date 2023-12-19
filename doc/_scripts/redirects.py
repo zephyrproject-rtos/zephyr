@@ -13,9 +13,11 @@ Notes:
 """
 
 REDIRECTS = [
+    # zephyr-keep-sorted-start
     ('application/index', 'develop/application/index'),
     ('boards/x86/ehl_crb/doc/index', 'boards/x86/intel_ehl/doc/index'),
     ('boards/x86/rpl_crb/doc/index', 'boards/x86/intel_rpl/doc/index'),
+    ('connectivity/networking/networking-api-usage', 'connectivity/networking/api/index'),
     ('development_process/code_flow', 'project/code_flow'),
     ('development_process/index', 'project/index'),
     ('development_process/issues', 'project/issues'),
@@ -165,4 +167,5 @@ REDIRECTS = [
     ('samples/drivers/kscan_touch', 'samples/subsys/input/input'),
     ('samples/net/cloud/google_iot_mqtt', 'samples/net/cloud'),
     ('services/portability/posix', 'services/portability/posix/index'),
+    # zephyr-keep-sorted-stop
 ]

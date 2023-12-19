@@ -1,0 +1,135 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Heap and Memory Allocation"
+
+config SYS_HEAP_VALIDATE
+	bool "Internal heap validity checking"
+	help
+	  The sys_heap implementation is instrumented for extensive
+	  internal validation.  Leave this off by default, unless
+	  modifying the heap code or (maybe) when running in
+	  environments that require sensitive detection of memory
+	  corruption.
+
+	  Use for testing and validation only.
+
+config SYS_HEAP_STRESS
+	bool "General purpose heap stress test"
+	help
+	  Stresses the heap.
+
+	  Use for testing and validation only.
+
+config SYS_HEAP_INFO
+	bool "Heap internal structure information"
+	help
+	  Enables support for printing heap internal structure
+	  information to the console.
+
+	  Use for debugging only.
+
+config SYS_HEAP_ALLOC_LOOPS
+	int "Number of tries in the inner heap allocation loop"
+	default 3
+	help
+	  The sys_heap allocator bounds the number of tries from the
+	  smallest chunk level (the one that might not fit the
+	  requested allocation) to maintain constant time performance.
+	  Setting this to a high level will cause the heap to return
+	  more successful allocations in situations of high
+	  fragmentation, at the cost of potentially significant
+	  (linear time) searching of the free list.  The default is
+	  three, which results in an allocator with good statistical
+	  properties ("most" allocations that fit will succeed) but
+	  keeps the maximum runtime at a tight bound so that the heap
+	  is useful in locked or ISR contexts.
+
+config SYS_HEAP_RUNTIME_STATS
+	bool "System heap runtime statistics"
+	help
+	  Gather system heap runtime statistics.
+
+config SYS_HEAP_LISTENER
+	bool "sys_heap event notifications"
+	select HEAP_LISTENER
+	help
+	  This allows application to listen for sys_heap events,
+	  such as memory allocation and de-allocation.
+
+config HEAP_LISTENER
+	bool
+	help
+	  Hidden option to enable API for registering and notifying
+	  listeners of certain events related to a heap usage,
+	  such as the heap resize.
+
+choice
+	prompt "Supported heap sizes"
+	depends on !64BIT
+	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256)
+	default SYS_HEAP_AUTO
+	help
+	  Heaps using reduced-size chunk headers can accommodate so called
+	  "small" heaps with a total size of 262136 bytes or less.
+
+	  Heaps using full-size chunk headers can have a total size up to
+	  16383 megabytes. The overhead is of course bigger.
+
+	  On 32-bit system the tradeoff is selectable between:
+
+	  - "small" heaps with low memory and runtime overhead;
+
+	  - "big" heaps with bigger memory overhead even for small heaps;
+
+	  - "auto" providing optimal memory overhead in all cases but with
+	    a higher runtime overhead and somewhat bigger code footprint.
+
+	  On 64-bit systems the "big" chunk header size conveniently provides
+	  the needed alignment on returned memory allocations. Small chunk
+	  headers would require alignment padding up to the big header size
+	  anyway so "big" heap is the only option in that case.
+
+config SYS_HEAP_SMALL_ONLY
+	bool "Support for small heaps only"
+	help
+	  Select this to optimize the code and memory usage if all your
+	  heaps are 262136 bytes or less.
+
+config SYS_HEAP_BIG_ONLY
+	bool "Support for big heaps only"
+	help
+	  Select this to optimize the code for big heaps only. This can
+	  accommodate any heap size but memory usage won't be as
+	  efficient with small sized heaps.
+
+config SYS_HEAP_AUTO
+	bool "Support for both small and big heaps at run time"
+	help
+	  This option optimizes memory usage for each heap according to
+	  their size albeit with some overhead in code size and execution.
+
+endchoice
+
+config MULTI_HEAP
+	bool "Multi-heap manager"
+	help
+	  Allows multiple sys_heap regions to be unified under a single
+	  allocation API.  Sometimes apps need the ability to share multiple
+	  discontiguous regions in a single "heap", or
+	  to have memory of different "types" be allocated heuristically based
+	  on usage (e.g. cacheability, latency, power...).  This allows a
+	  user-specified function to select the underlying memory to use for
+	  each application.
+
+config SHARED_MULTI_HEAP
+	bool "Shared multi-heap manager"
+	select MULTI_HEAP
+	help
+	  Enable support for a shared multi-heap manager that uses the
+	  multi-heap allocator to manage a set of reserved memory regions with
+	  different capabilities / attributes (cacheable, non-cacheable,
+	  etc...) defined in the DT.
+
+endmenu

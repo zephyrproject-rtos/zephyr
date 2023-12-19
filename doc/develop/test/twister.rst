@@ -478,21 +478,30 @@ harness_config: <harness configuration options>
     type: <one_line|multi_line> (required)
         Depends on the regex string to be matched
 
-
-    record: <recording options>
-      regex: <expression> (required)
-        Any string that the particular test case prints to record test
-        results.
-
-    regex: <expression> (required)
-        Any string that the particular test case prints to confirm test
-        runs as expected.
+    regex: <list of regular expressions> (required)
+        Strings with regular expressions to match with the test's output
+        to confirm the test runs as expected.
 
     ordered: <True|False> (default False)
         Check the regular expression strings in orderly or randomly fashion
 
     repeat: <integer>
         Number of times to validate the repeated regex expression
+
+    record: <recording options> (optional)
+      regex: <regular expression> (required)
+        The regular experssion with named subgroups to match data fields
+        at the test's output lines where the test provides some custom data
+        for further analysis. These records will be written into the build
+        directory 'recording.csv' file as well as 'recording' property
+        of the test suite object in 'twister.json'.
+
+        For example, to extract three data fields 'metric', 'cycles', 'nanoseconds':
+
+        .. code-block:: yaml
+
+          record:
+            regex: "(?P<metric>.*):(?P<cycles>.*) cycles, (?P<nanoseconds>.*) ns"
 
     fixture: <expression>
         Specify a test case dependency on an external device(e.g., sensor),
@@ -505,14 +514,36 @@ harness_config: <harness configuration options>
         Only one fixture can be defined per testcase and the fixture name has to
         be unique across all tests in the test suite.
 
+.. _pytest_root:
+
     pytest_root: <list of pytest testpaths> (default pytest)
-        Specify a list of pytest directories, files or subtests that need to be executed
-        when test case begin to running, default pytest directory is pytest.
-        After pytest finished, twister will check if this case pass or fail according
-        to the pytest report.
+        Specify a list of pytest directories, files or subtests that need to be
+        executed when a test case begins to run. The default pytest directory is
+        ``pytest``. After the pytest run is finished, Twister will check if
+        the test case passed or failed according to the pytest report.
+        As an example, a list of valid pytest roots is presented below:
+
+        .. code-block:: yaml
+
+            harness_config:
+              pytest_root:
+                - "pytest/test_shell_help.py"
+                - "../shell/pytest/test_shell.py"
+                - "/tmp/test_shell.py"
+                - "~/tmp/test_shell.py"
+                - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
+                - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
+                - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
+
+.. _pytest_args:
 
     pytest_args: <list of arguments> (default empty)
-        Specify a list of additional arguments to pass to ``pytest``.
+        Specify a list of additional arguments to pass to ``pytest`` e.g.:
+        ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
+        ``--pytest-args`` can be passed multiple times to pass several arguments
+        to the pytest.
+
+.. _pytest_dut_scope:
 
     pytest_dut_scope: <function|class|module|package|session> (default function)
         The scope for which ``dut`` and ``shell`` pytest fixtures are shared.

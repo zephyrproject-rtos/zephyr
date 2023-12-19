@@ -17,7 +17,7 @@
  * This routine prepares for the execution of and runs C code.
  */
 
-void _PrepC(void)
+void z_prep_c(void)
 {
 	z_data_copy();
 	z_cstart();

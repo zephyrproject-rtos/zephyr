@@ -95,6 +95,12 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_NUMBER=${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
+  if (CONFIG_TFM_DUMMY_PROVISIONING)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=ON)
+  else()
+    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=OFF)
+  endif()
+
   if (CONFIG_TFM_EXCEPTION_INFO_DUMP)
     list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=ON)
   else()
@@ -331,6 +337,7 @@ if (CONFIG_BUILD_WITH_TFM)
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON
       -DCONFIG_TFM_MEMORY_USAGE_QUIET=OFF
+      -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
@@ -579,4 +586,13 @@ if (CONFIG_BUILD_WITH_TFM)
       ${MERGED_FILE}
     )
   endif()
-endif()
+
+  if(CONFIG_TFM_DUMMY_PROVISIONING)
+    message(WARNING
+      "TFM_DUMMY_PROVISIONING is enabled:
+      The device will be provisioned using dummy keys and is NOT secure!
+      This is not suitable for production"
+      )
+  endif()
+
+endif() # CONFIG_BUILD_WITH_TFM

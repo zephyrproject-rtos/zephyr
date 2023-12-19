@@ -397,18 +397,6 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
  */
 #define NANO_SOFT_IRQ	((unsigned int) (-1))
 
-/**
- * @defgroup float_apis Floating Point APIs
- * @ingroup kernel_apis
- * @{
- */
-
-struct k_thread;
-
-/**
- * @}
- */
-
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
 #endif

@@ -129,6 +129,7 @@
 		sw2 = &button2;
 		sw3 = &button3;
 		watchdog0 = &wdt0;
+		spi-flash0 = &mx25r64;
 	};
 };
 

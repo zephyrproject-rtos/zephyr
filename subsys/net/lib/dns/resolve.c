@@ -906,10 +906,12 @@ static int dns_write(struct dns_resolve_context *ctx,
 			   dns_qname->len + 2);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(net_ctx) == AF_INET6) {
+	    net_context_get_family(net_ctx) == AF_INET6 &&
+	    hop_limit > 0) {
 		net_context_set_ipv6_hop_limit(net_ctx, hop_limit);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(net_ctx) == AF_INET) {
+		   net_context_get_family(net_ctx) == AF_INET &&
+		   hop_limit > 0) {
 		net_context_set_ipv4_ttl(net_ctx, hop_limit);
 	}
 

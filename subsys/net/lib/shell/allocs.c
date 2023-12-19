@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include "common.h"
+#include "net_shell_private.h"
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 static void allocs_cb(struct net_pkt *pkt,

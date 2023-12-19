@@ -59,7 +59,7 @@ static int location_query_post(struct coap_resource *resource,
 		}
 	}
 
-	r = coap_resource_send(resource, &response, addr, addr_len);
+	r = coap_resource_send(resource, &response, addr, addr_len, NULL);
 
 	return r;
 }
