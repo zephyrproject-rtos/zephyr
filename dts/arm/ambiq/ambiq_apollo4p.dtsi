@@ -2,6 +2,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -9,7 +10,7 @@
 	clocks {
 		uartclk: apb-pclk {
 			compatible = "fixed-clock";
-			clock-frequency = <24000000>;
+			clock-frequency = <DT_FREQ_M(24)>;
 			#clock-cells = <0>;
 		};
 	};

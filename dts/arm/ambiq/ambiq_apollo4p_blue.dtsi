@@ -10,7 +10,7 @@
 	clocks {
 		uartclk: apb-pclk {
 			compatible = "fixed-clock";
-			clock-frequency = <24000000>;
+			clock-frequency = <DT_FREQ_M(24)>;
 			#clock-cells = <0>;
 		};
 		xo32m: xo32m {
