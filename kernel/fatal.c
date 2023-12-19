@@ -42,7 +42,7 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 	LOG_PANIC();
 	LOG_ERR("Halting system");
 	arch_system_halt(reason);
-	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
+	CODE_UNREACHABLE;
 }
 /* LCOV_EXCL_STOP */
 
