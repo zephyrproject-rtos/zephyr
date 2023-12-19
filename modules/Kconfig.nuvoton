@@ -67,4 +67,8 @@ menu "Nuvoton NuMaker drivers"
 		bool "NuMaker CAN FD"
 		help
 		  Enable Nuvoton CAN FD HAL module driver
+	config HAS_NUMAKER_ADC
+		bool "NuMaker ADC"
+		help
+		  Enable Nuvoton ADC HAL module driver
 endmenu

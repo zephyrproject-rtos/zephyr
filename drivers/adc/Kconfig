@@ -119,4 +119,6 @@ source "drivers/adc/Kconfig.ad5592"
 
 source "drivers/adc/Kconfig.ltc2451"
 
+source "drivers/adc/Kconfig.numaker"
+
 endif # ADC
