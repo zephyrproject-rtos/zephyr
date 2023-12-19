@@ -20,3 +20,6 @@
 #define CONFIG_ACPI_MMIO_ENTRIES_MAX 32
 
 typedef uint32_t pcie_bdf_t;
+
+#define CONFIG_ACPI_DEV_MAX 1
+#define _AcpiModuleName ""
