@@ -46,6 +46,12 @@ The Apollo4P EVB board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
+| WDT       | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| SPI(M)    | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| I2C(M)    | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/apollo4p_evb/apollo4p_evb_defconfig``.
