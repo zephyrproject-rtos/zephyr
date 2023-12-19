@@ -22,6 +22,7 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rng.h>
+#include <stm32_ll_pka.h>
 #include <stm32_ll_system.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/pm/device.h>
@@ -115,6 +116,10 @@ static int entropy_stm32_suspend(void)
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
+
+	if (LL_PKA_IsEnabled(PKA)) {
+		return 0;
+	}
 
 	if (clock_control_get_rate(dev_data->clock,
 			(clock_control_subsys_t) &dev_cfg->pclken[0],
