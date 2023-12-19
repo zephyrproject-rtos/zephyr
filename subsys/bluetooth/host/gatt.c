@@ -4558,6 +4558,9 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
 
+	const uint16_t req_start_handle = params->by_uuid.start_handle;
+	const uint16_t req_end_handle = params->by_uuid.end_handle;
+
 	/* Parse values found */
 	for (length--, pdu = rsp->data; length;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4576,6 +4579,15 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 		len = rsp->len > length ? length - 2 : rsp->len - 2;
 
 		LOG_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);
+
+		if (!IN_RANGE(handle, req_start_handle, req_end_handle)) {
+			LOG_WRN("Bad peer: ATT read-by-uuid rsp: "
+				"Handle 0x%04x is outside requested range 0x%04x-0x%04x. "
+				"Aborting read.",
+				handle, req_start_handle, req_end_handle);
+			params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
+			return;
+		}
 
 		/* Update start_handle */
 		params->by_uuid.start_handle = handle;
