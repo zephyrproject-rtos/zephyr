@@ -59,6 +59,7 @@ struct esp32_wifi_runtime {
 	struct esp32_wifi_status status;
 	scan_result_cb_t scan_cb;
 	uint8_t state;
+	uint8_t ap_connection_cnt;
 };
 
 static struct net_mgmt_event_callback esp32_dhcp_cb;
@@ -283,6 +284,9 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	LOG_DBG("Station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
 	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
 
+	if (!(esp32_data.ap_connection_cnt++)) {
+		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, eth_esp32_rx);
+	}
 }
 
 static void esp_wifi_handle_ap_disconnect_event(void *event_data)
@@ -292,6 +296,9 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	LOG_DBG("station "MACSTR" leave, AID=%d", MAC2STR(event->mac), event->aid);
 	wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
 
+	if (!(--esp32_data.ap_connection_cnt)) {
+		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
+	}
 }
 
 void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *event_data,
@@ -322,12 +329,10 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
 		esp32_data.state = ESP32_AP_CONNECTED;
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, eth_esp32_rx);
 		esp_wifi_handle_ap_connect_event(event_data);
 		break;
 	case WIFI_EVENT_AP_STADISCONNECTED:
 		esp32_data.state = ESP32_AP_DISCONNECTED;
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
 		esp_wifi_handle_ap_disconnect_event(event_data);
 		break;
 	default:
