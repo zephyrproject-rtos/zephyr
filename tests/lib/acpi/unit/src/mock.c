@@ -4,15 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
-
 #include "mock.h"
+
 #include <zephyr/acpi/acpi.h>
 #include <acpi.h>
 #include <accommon.h>
-#include <acapps.h>
-#include <aclocal.h>
-#include <acstruct.h>
 
 #include <zephyr/fff.h>
 
@@ -25,7 +21,6 @@ FAKE_VOID_FUNC_VARARG(AcpiException, const char	*, UINT32, ACPI_STATUS,
 		      const char *, ...);
 
 FAKE_VALUE_FUNC(ACPI_STATUS, AcpiInitializeSubsystem);
-
 
 FAKE_VALUE_FUNC(ACPI_STATUS, AcpiInitializeTables, ACPI_TABLE_DESC *, UINT32,
 		BOOLEAN);
