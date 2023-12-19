@@ -111,6 +111,23 @@ ZTEST(lib_acpi, test_dmar_foreach_subtable_invalid_unit_size_zero)
 	zassert_unreachable("Missed assert catch");
 }
 
+ZTEST(lib_acpi, test_dmar_foreach_subtable_invalid_unit_size_big)
+{
+	ACPI_DMAR_HARDWARE_UNIT *hu = &dmar0.unit1.header;
+
+	dmar_initialize(&dmar0);
+
+	/* Set invalid hardware unit size */
+	hu->Header.Length = sizeof(dmar0.unit1) + 1;
+
+	expect_assert();
+
+	/* Expect assert, use fake void function as a callback */
+	acpi_dmar_foreach_subtable((void *)&dmar0, subtable_nop, NULL);
+
+	zassert_unreachable("Missed assert catch");
+}
+
 static void count_devscopes(ACPI_DMAR_DEVICE_SCOPE *devscope, void *arg)
 {
 	uint8_t *count = arg;
