@@ -10,9 +10,6 @@
 
 #include "mock.h"
 
-#define CONFIG_ACPI_DEV_MAX 1
-#define _AcpiModuleName ""
-
 #include <zephyr/acpi/acpi.h>
 #include <lib/acpi/acpi.c>
 #include "assert.h"

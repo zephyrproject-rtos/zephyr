@@ -17,3 +17,6 @@
 #define LOG_WRN(...)
 
 typedef uint32_t pcie_bdf_t;
+
+#define CONFIG_ACPI_DEV_MAX 1
+#define _AcpiModuleName ""
