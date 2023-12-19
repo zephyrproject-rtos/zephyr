@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_INTEL_SHA_PRIV_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include "crypto_intel_sha_registers.h"
 
 #define SHA_HASH_DATA_BLOCK_LEN (64)
@@ -30,7 +31,6 @@
 
 #define SHA_MAX_SESSIONS 8
 
-#define IS_ALIGNED(address, alignment) (((uintptr_t)(address)) % (alignment) == 0)
 #define BYTE_SWAP32(x)                                                                             \
 	(((x >> 24) & 0x000000FF) | ((x << 24) & 0xFF000000) | ((x >> 8) & 0x0000FF00) |           \
 	 ((x << 8) & 0x00FF0000))

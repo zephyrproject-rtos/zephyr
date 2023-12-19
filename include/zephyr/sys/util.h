@@ -283,6 +283,11 @@ extern "C" {
 	UTIL_CAT(_CONCAT_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
 
 /**
+ * @brief Check if @p ptr is aligned to @p align alignment
+ */
+#define IS_ALIGNED(ptr, align) (((uintptr_t)(ptr)) % (align) == 0)
+
+/**
  * @brief Value of @p x rounded up to the next multiple of @p align.
  */
 #define ROUND_UP(x, align)                                   \
