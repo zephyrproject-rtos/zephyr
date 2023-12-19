@@ -46,6 +46,7 @@ elseif(CONFIG_BT_MESH_GATT_PROXY)
 
  target_sources(app PRIVATE
   src/test_advertiser.c
+  src/test_suspend.c
  )
 
  if(CONFIG_BT_MESH_V1d1)
