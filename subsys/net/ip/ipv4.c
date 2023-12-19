@@ -299,6 +299,11 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 			NET_DBG("DROP: localhost packet");
 			goto drop;
 		}
+
+		if (net_ipv4_is_my_addr((struct in_addr *)hdr->src)) {
+			NET_DBG("DROP: src addr is %s", "mine");
+			goto drop;
+		}
 	}
 
 	if (net_ipv4_is_addr_mcast((struct in_addr *)hdr->src)) {
