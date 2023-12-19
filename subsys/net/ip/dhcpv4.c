@@ -1163,6 +1163,10 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 			iface->config.dhcpv4.state = NET_DHCPV4_RENEWING;
 			NET_DBG("enter state=%s", net_dhcpv4_state_name(
 					iface->config.dhcpv4.state));
+			/* Remove any bound address as interface is gone */
+			if (!net_if_ipv4_addr_rm(iface, &iface->config.dhcpv4.requested_ip)) {
+				NET_DBG("Failed to remove addr from iface");
+			}
 		}
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
