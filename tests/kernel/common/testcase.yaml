@@ -29,11 +29,15 @@ tests:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
   kernel.common.nano32:
+    tags:
+      - nano
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
   kernel.common.nano64:
+    tags:
+      - nano
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
