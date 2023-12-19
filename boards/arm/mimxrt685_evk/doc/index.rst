@@ -227,6 +227,20 @@ configured by default to use the LPC-Link2.
 
 .. tabs::
 
+    .. group-tab:: LinkServer CMSIS-DAP
+
+        1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your
+           search path.  LinkServer works with the default CMSIS-DAP firmware included in
+           the on-board debugger.
+        2. Make sure the jumpers JP17, JP18 and JP19 are installed.
+
+        linkserver is the default runner for this board
+
+        .. code-block:: console
+
+           west flash
+           west debug
+
     .. group-tab:: LPCLink2 JLink Onboard
 
 
@@ -235,6 +249,11 @@ configured by default to use the LPC-Link2.
            if not already done (these jumpers are installed by default).
         3. Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program the
            J-Link firmware. Please make sure you have the latest firmware for this board.
+
+        .. code-block:: console
+
+           west flash -r jlink
+           west debug -r jlink
 
     .. group-tab:: JLink External
 
@@ -247,6 +266,11 @@ configured by default to use the LPC-Link2.
         3. Connect the J-Link probe to J2 10-pin header.
 
         See :ref:`jlink-external-debug-probe` for more information.
+
+        .. code-block:: console
+
+           west flash -r jlink
+           west debug -r jlink
 
 Configuring a Console
 =====================
@@ -263,7 +287,7 @@ Flashing
 ========
 
 Here is an example for the :ref:`hello_world` application. This example uses the
-:ref:`jlink-debug-host-tools` as default.
+:ref:`linkserver-debug-host-tools` as default.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -282,7 +306,7 @@ Debugging
 =========
 
 Here is an example for the :ref:`hello_world` application. This example uses the
-:ref:`jlink-debug-host-tools` as default.
+:ref:`linkserver-debug-host-tools` as default.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
