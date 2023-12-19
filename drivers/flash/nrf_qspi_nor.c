@@ -1090,6 +1090,10 @@ static int qspi_nor_init(const struct device *dev)
 
 	qspi_clock_div_restore();
 
+	if (!IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_XIP) && nrfx_qspi_init_check()) {
+		(void)nrfx_qspi_deactivate();
+	}
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	int rc2 = pm_device_runtime_enable(dev);
 
