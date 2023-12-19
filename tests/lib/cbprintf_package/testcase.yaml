@@ -61,6 +61,8 @@ tests:
       - native_sim
 
   libraries.cbprintf.package_nano:
+    tags:
+      - nano
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
     integration_platforms:
@@ -129,6 +131,8 @@ tests:
       - native_sim
 
   libraries.cbprintf.package_nano_cpp:
+    tags:
+      - nano
     extra_configs:
       - CONFIG_CPP=y
       - CONFIG_CBPRINTF_NANO=y
