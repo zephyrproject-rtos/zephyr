@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(test, CONFIG_LOG_DEFAULT_LEVEL);
 
 #include <zephyr/drivers/edac.h>
-#include <ibecc.h>
+#include <edac_ibecc/ibecc.h>
 
 #define TEST_ADDRESS1		0x1000
 #define TEST_ADDRESS2		0x2000

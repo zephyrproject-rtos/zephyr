@@ -8,7 +8,7 @@
 #include <zephyr/tc_util.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
-#include <ibecc.h>
+#include <edac_ibecc/ibecc.h>
 
 #define CONFIG_EDAC_LOG_LEVEL LOG_LEVEL_DBG
 
@@ -93,7 +93,7 @@ static uint32_t mock_conf_read(pcie_bdf_t bdf, unsigned int reg)
 #define sys_write64(data, addr)		mock_sys_write64(data, addr)
 
 /* Include source code to test some static functions */
-#include "edac_ibecc.c"
+#include "edac_ibecc/edac_ibecc.c"
 
 ZTEST(ibecc_cov, test_static_functions)
 {
