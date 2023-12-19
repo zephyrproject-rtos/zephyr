@@ -3737,7 +3737,7 @@ static struct bt_att_chan *get_first_available_chan(struct bt_att *att, struct n
 	return NULL;
 }
 
-int bt_att_send_nonblocking(struct bt_conn *conn, struct net_buf *buf)
+int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_att *att;
 	struct bt_att_chan *avail_att_chan;
@@ -3764,17 +3764,7 @@ int bt_att_send_nonblocking(struct bt_conn *conn, struct net_buf *buf)
 	return bt_att_chan_send(avail_att_chan, buf);
 }
 
-/* TODO: kconfig this */
-#define SEND_RETRIES 100
-#define RETRY_TIMEOUT K_SECONDS(1)
-
-static bool should_retry(int err)
-{
-	/* Is this error going away if we wait a bit? */
-	return (err == -ENOMEM) || (err == -EAGAIN) || (err == -ENOBUFS);
-}
-
-static int wait_for_att_sent(struct bt_conn *conn)
+int bt_att_wait_for_att_sent(struct bt_conn *conn, k_timeout_t timeout)
 {
 	struct bt_att *att = att_get(conn);
 
@@ -3784,7 +3774,7 @@ static int wait_for_att_sent(struct bt_conn *conn)
 
 	LOG_DBG("waiting for att_sent");
 
-	uint32_t events = k_event_wait(&att->events, BIT(EVT_ATT_SENT), false, RETRY_TIMEOUT);
+	uint32_t events = k_event_wait(&att->events, BIT(EVT_ATT_SENT), false, timeout);
 
 	if (events) {
 		LOG_DBG("got att_sent event");
@@ -3795,78 +3785,6 @@ static int wait_for_att_sent(struct bt_conn *conn)
 	LOG_DBG("timed out waiting");
 
 	return -ETIMEDOUT;
-}
-
-int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
-{
-	int err;
-	int t;
-
-	__ASSERT_NO_MSG(buf->data);
-
-	/* Attempt to send right away */
-	err = bt_att_send_nonblocking(conn, buf);
-
-	/* Attempt was succesful. Buffer ownership has been transferred to lower
-	 * layers.
-	 */
-	if (!err) {
-		return 0;
-	}
-
-	/* If we can't block, skip the rest of the fn */
-	if (!bt_can_block()) {
-		/* TODO: we could probably still allow queuing but make GATT pay
-		 * for it: w/ a kconfig, GATT spins up a workqueue just for
-		 * TXing.
-		 *
-		 * It seems this will be necessary (at least temporarily) as a
-		 * bunch of apps/tests depend on being able to queue
-		 * notifications from the syswq.
-		 *
-		 * As an optimization, we could use the long_wq we already have
-		 * plus a k_sched_lock() around the ATT API.
-		 */
-		LOG_ERR("Failed to send: %d . This context cannot block", err);
-		err = -EDEADLK;
-		goto cleanup;
-	}
-
-	/* Blocking retries */
-	int64_t start_time = k_uptime_get();
-
-	for (t = 0; t < SEND_RETRIES; t++) {
-		err = bt_att_send_nonblocking(conn, buf);
-		LOG_DBG("att-send-complete: buf %p err %d", buf, err);
-
-		if (!err) {
-			return 0; /* buffer was sent */
-		}
-
-		if (should_retry(err)) {
-			__ASSERT_NO_MSG(buf->data);
-			wait_for_att_sent(conn);
-		} else {
-			goto cleanup; /* more explicit than `break` */
-		}
-	}
-
-	if (t >= SEND_RETRIES) {
-		LOG_ERR("Failed to send after %d tries (waited %dms)",
-			SEND_RETRIES, k_uptime_get() - start_time);
-		err = -ETIMEDOUT;
-	}
-
-cleanup:
-	/* We have to unref `buf` in case of error: lower layers only take
-	 * ownership if they return successfully.
-	 */
-	net_buf_unref(buf);
-
-	/* Give a chance to other threads to run */
-	k_yield();
-
-	return err;
 }
 
 int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)

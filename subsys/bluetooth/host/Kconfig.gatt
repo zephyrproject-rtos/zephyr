@@ -30,6 +30,20 @@ config BT_ATT_RETRY_ON_SEC_ERR
 	  If an ATT request fails due to insufficient security, the host will
 	  try to elevate the security level and retry the ATT request.
 
+config BT_GATT_TX_QUEUE
+	bool "Allow queuing of GATT operations"
+	default y if BT_GATT_CLIENT
+	select BT_LONG_WQ
+	help
+	  The ATT API is non-blocking. The GATT API is blocking.
+
+	  But in order to avoid deadlocks, the GATT API will not block when
+	  invoked from the system workqueue or the Bluetooth RX thread.
+
+	  This option makes GATT queue the operation and retry when resources
+	  are available. As this is done from the so-called "long workqueue",
+	  then it is safe to block.
+
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
 	depends on BT_L2CAP_ECRED
