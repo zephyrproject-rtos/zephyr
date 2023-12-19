@@ -3474,6 +3474,15 @@ Infineon Platforms:
     Infineon SOCs, dts files and related drivers. Infineon Proto, Pioneer, Eval and Relax
     boards.
 
+Panasonic Platforms:
+  status: maintained
+  maintainers:
+    - pideu-sj
+  files:
+    - boards/arm/pan17*/
+  labels:
+    - "platform: Panasonic"
+
 RTIO:
   status: maintained
   maintainers:
