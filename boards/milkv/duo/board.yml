@@ -1,0 +1,7 @@
+board:
+  name: milkv_duo
+  full_name: Duo
+  vendor: milkv
+  socs:
+  - name: cv1800b
+  - name: sg2002
