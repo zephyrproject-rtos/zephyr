@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(llext, CONFIG_LLEXT_LOG_LEVEL);
 enum sym_op {
 	SYM_OP_IGNORE,  /**< The symbol is not interesting */
 	SYM_OP_DEFINE,  /**< The symbol is defined and may be used at link time */
+	SYM_OP_RESOLVE, /**< The symbol is undefined and needs to be resolved */
 };
 
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
@@ -339,9 +340,18 @@ static enum sym_op llext_elf_sym_operation(struct llext_loader *ldr, const elf_s
 	uint32_t stt = ELF_ST_TYPE(sym->st_info);
 	uint32_t stb = ELF_ST_BIND(sym->st_info);
 	uint32_t shndx = sym->st_shndx;
+	enum llext_mem mem_idx = (shndx < ldr->sect_cnt) ? ldr->sect_map[shndx] : LLEXT_MEM_COUNT;
 
-	if (stt == STT_FUNC && stb == STB_GLOBAL && shndx != SHN_UNDEF) {
-		/* global function symbol */
+	if ((mem_idx == LLEXT_MEM_EXPORT) || (stt == STT_SECTION) || (stt == STT_FILE)) {
+		/* either a reserved or exported symbol, no need to handle it */
+		return SYM_OP_IGNORE;
+	}
+	if (shndx == SHN_UNDEF) {
+		/* undefined symbol, we need to resolve it somehow */
+		return SYM_OP_RESOLVE;
+	}
+	if (stb == STB_GLOBAL) {
+		/* defined global symbol, may be used at link time */
 		return SYM_OP_DEFINE;
 	}
 
