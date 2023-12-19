@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
+#include "bap_common.h"
 
 extern enum bst_result_t bst_result;
 
@@ -35,6 +36,8 @@ CREATE_FLAG(flag_recv_state_removed);
 static bt_addr_le_t g_broadcaster_addr;
 static struct bt_le_scan_recv_info g_broadcaster_info;
 static struct bt_le_per_adv_sync *g_pa_sync;
+
+static uint8_t metadata[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_VENDOR, LONG_META)};
 
 static const char *phy2str(uint8_t phy)
 {
@@ -424,6 +427,38 @@ static void test_bass_mod_source(void)
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
 	subgroup.bis_sync = BIT(1) | BIT(2); /* Indexes 1 and 2 */
 	subgroup.metadata_len = 0;
+
+	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
+	if (err != 0) {
+		FAIL("Could not modify source (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_cb_called);
+	WAIT_FOR_FLAG(flag_write_complete);
+	printk("Source added, waiting for server to PA sync\n");
+	WAIT_FOR_FLAG(flag_state_synced)
+	printk("Server PA synced\n");
+}
+
+static void test_bass_mod_source_long_meta(void)
+{
+	int err;
+	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
+	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+
+	printk("Long write\n");
+	UNSET_FLAG(flag_cb_called);
+	UNSET_FLAG(flag_write_complete);
+	mod_src_param.src_id = g_src_id;
+	mod_src_param.num_subgroups = 1;
+	mod_src_param.pa_sync = true;
+	mod_src_param.subgroups = &subgroup;
+	mod_src_param.pa_interval = g_broadcaster_info.interval;
+	subgroup.bis_sync = BIT(1) | BIT(2);
+
+	subgroup.metadata_len = sizeof(metadata);
+	memcpy(subgroup.metadata, metadata, sizeof(metadata));
 	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
 	if (err != 0) {
 		FAIL("Could not modify source (err %d)\n", err);
@@ -525,6 +560,7 @@ static void test_main_client_sync(void)
 	test_bass_create_pa_sync();
 	test_bass_add_source();
 	test_bass_mod_source();
+	test_bass_mod_source_long_meta();
 	test_bass_broadcast_code();
 
 	printk("Waiting for receive state with BIS sync\n");
