@@ -15,6 +15,7 @@ supported:
   - arduino_spi
   - arduino_serial
   - watchdog
+  - netif:eth
 ram: 352
 flash: 2048
 vendor: infineon
