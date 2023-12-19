@@ -6,6 +6,7 @@ config NATIVE_LINUX_EVDEV
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_EVDEV_ENABLED
 	depends on ARCH_POSIX
+	depends on MULTITHREADING
 	help
 	  Enable reading input from a Linux evdev device, requires specifying
 	  an evdev device path in the --evdev command line argument.

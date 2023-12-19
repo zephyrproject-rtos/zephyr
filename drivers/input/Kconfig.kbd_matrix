@@ -3,6 +3,7 @@
 
 config INPUT_KBD_MATRIX
 	bool
+	depends on MULTITHREADING
 	help
 	  Enable library used for keyboard matrix drivers.
 
