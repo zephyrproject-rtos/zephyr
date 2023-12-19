@@ -64,6 +64,7 @@ source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.numaker"
 source "drivers/ethernet/Kconfig.lan865x"
 source "drivers/ethernet/Kconfig.nxp_enet"
+source "drivers/ethernet/Kconfig.xmc4xxx"
 
 source "drivers/ethernet/phy/Kconfig"
 
