@@ -171,6 +171,7 @@ int z_nrf_grtc_timer_capture_prepare(int32_t chan);
  *
  * @retval 0 if the timestamp was successfully caught and read.
  * @retval -EBUSY if capturing has not been triggered.
+ * @retval -EPERM if either channel is unavailable or SYSCOUNTER is not running.
  */
 int z_nrf_grtc_timer_capture_read(int32_t chan, uint64_t *captured_time);
 
