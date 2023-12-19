@@ -220,7 +220,7 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 }
 #endif
 
-enum net_verdict net_ipv4_input(struct net_pkt *pkt)
+enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
@@ -279,6 +279,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	} else if (real_len > pkt_len) {
 		net_pkt_update_length(pkt, pkt_len);
+	}
+
+	if (!is_loopback) {
+		if (net_ipv4_is_addr_loopback((struct in_addr *)hdr->dst) ||
+		    net_ipv4_is_addr_loopback((struct in_addr *)hdr->src)) {
+			NET_DBG("DROP: localhost packet");
+			goto drop;
+		}
 	}
 
 	if (net_ipv4_is_addr_mcast((struct in_addr *)hdr->src)) {

@@ -97,12 +97,14 @@ static inline bool net_context_is_reuseport_set(struct net_context *context)
 #endif
 
 #if defined(CONFIG_NET_NATIVE)
-enum net_verdict net_ipv4_input(struct net_pkt *pkt);
+enum net_verdict net_ipv4_input(struct net_pkt *pkt, bool is_loopback);
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);
 #else
-static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt)
+static inline enum net_verdict net_ipv4_input(struct net_pkt *pkt,
+					      bool is_loopback)
 {
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_loopback);
 
 	return NET_CONTINUE;
 }
