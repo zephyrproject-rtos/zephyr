@@ -197,11 +197,12 @@ static int cmd_kernel_threads(const struct shell *sh,
 	shell_print(sh, "Scheduler: %u since last call", sys_clock_elapsed());
 	shell_print(sh, "Threads:");
 
-#ifdef CONFIG_SMP
+	/*
+	 * Use the unlocked version as the callback itself might call
+	 * arch_irq_unlock.
+	 */
 	k_thread_foreach_unlocked(shell_tdata_dump, (void *)sh);
-#else
-	k_thread_foreach(shell_tdata_dump, (void *)sh);
-#endif
+
 	return 0;
 }
 
@@ -245,11 +246,11 @@ static int cmd_kernel_stacks(const struct shell *sh,
 
 	memset(pad, ' ', MAX((THREAD_MAX_NAM_LEN - strlen("IRQ 00")), 1));
 
-#ifdef CONFIG_SMP
+	/*
+	 * Use the unlocked version as the callback itself might call
+	 * arch_irq_unlock.
+	 */
 	k_thread_foreach_unlocked(shell_stack_dump, (void *)sh);
-#else
-	k_thread_foreach(shell_stack_dump, (void *)sh);
-#endif
 
 	/* Placeholder logic for interrupt stack until we have better
 	 * kernel support, including dumping arch-specific exception-related
