@@ -123,7 +123,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		return net_ipv4_input(pkt);
+		return net_ipv4_input(pkt, is_loopback);
 #endif
 	}
 
