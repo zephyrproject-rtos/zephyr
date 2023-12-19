@@ -21,8 +21,7 @@
 #include "blestack.h"
 #include "app_conf.h"
 #include "ll_sys.h"
-/* TODO: Enable Flash Manager once available */
-/* #include "flash_driver.h" */
+#include "flash_driver.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -360,7 +359,9 @@ static int bt_hci_stm32wba_open(void)
 	ret = bt_ble_ctlr_init();
 
 	/* TODO. Enable Flash manager once available */
-	/* FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE); */
+	if (IS_ENABLED(CONFIG_FLASH)) {
+		FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_DISABLE);
+	}
 
 	return ret;
 }
