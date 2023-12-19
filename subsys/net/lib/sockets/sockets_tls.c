@@ -2910,9 +2910,50 @@ exit:
 	return ret;
 }
 
+#include <zephyr/net/net_core.h>
+
 static int ztls_socket_data_check(struct tls_context *ctx)
 {
 	int ret;
+
+	if (ctx->type == SOCK_STREAM) {
+		if (!ctx->is_initialized) {
+			return -ENOTCONN;
+		}
+	}
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	else {
+		if (!ctx->is_initialized) {
+			bool is_server = ctx->options.role == MBEDTLS_SSL_IS_SERVER;
+
+			ret = tls_mbedtls_init(ctx, is_server);
+			if (ret < 0) {
+				return -ENOMEM;
+			}
+		}
+
+		if (!is_handshake_complete(ctx)) {
+			ret = tls_mbedtls_handshake(ctx, K_NO_WAIT);
+			if (ret < 0) {
+				if (ret == -EAGAIN) {
+					return 0;
+				}
+
+				ret = tls_mbedtls_reset(ctx);
+				if (ret != 0) {
+					return -ENOMEM;
+				}
+
+				return 0;
+			}
+
+			/* Socket ready to use again. */
+			ctx->error = 0;
+
+			return 0;
+		}
+	}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 	ctx->flags = ZSOCK_MSG_DONTWAIT;
 
