@@ -26,4 +26,6 @@ source "lib/smf/Kconfig"
 source "lib/acpi/Kconfig"
 
 source "lib/runtime/Kconfig"
+
+source "lib/utils/Kconfig"
 endmenu
