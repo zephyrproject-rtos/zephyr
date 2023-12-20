@@ -938,6 +938,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		memset(subgroup->codec_cfg->meta, 0, sizeof(subgroup->codec_cfg->meta));
 		memcpy(subgroup->codec_cfg->meta, meta, meta_len);
+		subgroup->codec_cfg->meta_len = meta_len;
 	}
 
 	return 0;
