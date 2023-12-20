@@ -1,0 +1,45 @@
+/*
+ * Copyright 2023 The ChromiumOS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
+#include <zephyr/sys/util_macro.h>
+
+/ {
+        intc: interrupt-controller@f03f00 {
+                compatible = "vnd,intc";
+                #address-cells = <0>;
+                #interrupt-cells = <2>;
+                interrupt-controller;
+                reg = <0x00f03f00 0x0100>;
+        };
+
+        gpioa: gpio@f01601 {
+                compatible = "ite,it8xxx2-gpio-v2";
+                reg = <0x00f01601 1   /* GPDR (set) */
+                        0x00f01618 1   /* GPDMR (get) */
+                        0x00f01630 1   /* GPOTR */
+                        0x00f01648 1   /* P18SCR */
+                        0x00f01660 8>; /* GPCR */
+                ngpios = <8>;
+                gpio-controller;
+                interrupts = <9 IRQ_TYPE_LEVEL_HIGH
+                                2 IRQ_TYPE_LEVEL_HIGH
+                                3 IRQ_TYPE_LEVEL_HIGH
+                                4 IRQ_TYPE_LEVEL_HIGH
+                                5 IRQ_TYPE_LEVEL_HIGH
+                                6 IRQ_TYPE_LEVEL_HIGH
+                                7 IRQ_TYPE_LEVEL_HIGH
+                                8 IRQ_TYPE_LEVEL_HIGH>;
+                interrupt-parent = <&intc>;
+                wuc-base = <0xf01b20 0xf01b20 0xf01b20 0xf01b1c
+                                0xf01b1c 0xf01b1c 0xf01b1c 0xf01b24>;
+                wuc-mask = <BIT(3)   BIT(4)   BIT(5)   BIT(0)
+                                BIT(1)   BIT(2)   BIT(3)   BIT(4)  >;
+                has-volt-sel = <1 1 1 1 1 1 1 1>;
+                #gpio-cells = <2>;
+        };
+};
