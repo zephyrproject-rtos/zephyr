@@ -2081,7 +2081,7 @@ static void test_rx_proxy_adv_multi_subnet_coex(void)
 		/** Second and third subnet are disabled. Verify that the single
 		 *  subnet has exclusive access to the adv medium.
 		 */
-		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 0, .evt_cnt = 19,
+		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 0, .evt_cnt = 18,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_4,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_END}},
 	};
