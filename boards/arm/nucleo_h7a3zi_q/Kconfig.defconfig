@@ -8,4 +8,8 @@ if BOARD_NUCLEO_H7A3ZI_Q
 config BOARD
 	default "nucleo_h7a3zi_q"
 
+config USB_DC_HAS_HS_SUPPORT
+	default y
+	depends on USB_DC_STM32
+
 endif # BOARD_NUCLEO_H7A3ZI_Q
