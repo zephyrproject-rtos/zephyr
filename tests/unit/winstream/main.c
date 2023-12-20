@@ -8,7 +8,7 @@
 /* This, uh, seems to be the standard way to unit test library code.
  * Or so I gather from tests/unit/rbtree ...
  */
-#include "../../../lib/os/winstream.c"
+#include "../../../lib/utils/winstream.c"
 
 #define BUFLEN 64
 

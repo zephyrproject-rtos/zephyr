@@ -2066,7 +2066,7 @@ JSON Web Token:
   files:
     - subsys/jwt/
     - include/zephyr/data/
-    - lib/os/json.c
+    - lib/utils/json.c
     - tests/subsys/jwt/
     - tests/lib/json/
   labels:
@@ -2125,8 +2125,15 @@ Kernel:
 
 Utilities:
   status: maintained
+  maintainers:
+    - andyross
+    - nashif
+  collaborators:
+    - dcpleung
+    - peter-mitsis
   files:
     - lib/crc/
+    - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/
     - tests/unit/rbtree/
@@ -2136,7 +2143,6 @@ Utilities:
     - tests/unit/math_extras/
     - tests/unit/list/
     - tests/unit/intmath/
-    - tests/misc/print_format/
     - tests/unit/pot/
     - tests/lib/time/
     - tests/lib/onoff/
@@ -2147,6 +2153,10 @@ Utilities:
     - tests/lib/linear_range/
   labels:
     - "area: Utilities"
+  tests:
+    - utilities
+    - libraries.ring_buffer
+    - libraries.linear_range
 
 Base OS:
   status: maintained
@@ -2159,6 +2169,9 @@ Base OS:
   files:
     - include/zephyr/sys/
     - lib/os/
+    - tests/misc/print_format/
+    - tests/lib/p4workq/
+    - tests/lib/fdtable/
   files-exclude:
     - include/zephyr/sys/cbprintf*
     - tests/unit/cbprintf/
@@ -2171,6 +2184,8 @@ Base OS:
     - lib/os/mpsc_pbuf.c
   labels:
     - "area: Base OS"
+  tests:
+    - printk
 
 Heap Management:
   status: maintained
