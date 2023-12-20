@@ -171,12 +171,15 @@ extern "C" {
  * @param id Unique ID of the descriptor
  * @param value A string value for the descriptor
  */
-#define BINDESC_STR_DEFINE(name, id, value)	\
-	__BINDESC_ENTRY_DEFINE(name) = {	\
-		.tag = BINDESC_TAG(STR, id),	\
-		.len = (uint16_t)sizeof(value),	\
-		.data = value,			\
-	}
+#define BINDESC_STR_DEFINE(name, id, value)							\
+	__BINDESC_ENTRY_DEFINE(name) = {							\
+		.tag = BINDESC_TAG(STR, id),							\
+		.len = (uint16_t)sizeof(value),							\
+		.data = value,									\
+	};											\
+	BUILD_ASSERT(sizeof(value) <= CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE,			\
+		     "Bindesc " STRINGIFY(name) " exceeded maximum size, consider reducing the"	\
+		     " size or changing CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE. ")
 
 /**
  * @brief Define a binary descriptor of type uint.
@@ -217,12 +220,16 @@ extern "C" {
  * @param id Unique ID of the descriptor
  * @param value A uint8_t array as data for the descriptor
  */
-#define BINDESC_BYTES_DEFINE(name, id, value)				\
-	__BINDESC_ENTRY_DEFINE(name) = {				\
-		.tag = BINDESC_TAG(BYTES, id),				\
-		.len = (uint16_t)sizeof((uint8_t [])__DEBRACKET value),	\
-		.data = __DEBRACKET value,				\
-	}
+#define BINDESC_BYTES_DEFINE(name, id, value)							\
+	__BINDESC_ENTRY_DEFINE(name) = {							\
+		.tag = BINDESC_TAG(BYTES, id),							\
+		.len = (uint16_t)sizeof((uint8_t [])__DEBRACKET value),				\
+		.data = __DEBRACKET value,							\
+	};											\
+	BUILD_ASSERT(sizeof((uint8_t [])__DEBRACKET value) <=					\
+		     CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE,					\
+		     "Bindesc " STRINGIFY(name) " exceeded maximum size, consider reducing the"	\
+		     " size or changing CONFIG_BINDESC_DEFINE_MAX_DATA_SIZE. ")
 
 /**
  * @brief Get the value of a string binary descriptor
