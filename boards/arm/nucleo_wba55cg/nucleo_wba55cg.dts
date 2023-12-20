@@ -90,7 +90,8 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
 		 <&rcc STM32_SRC_HSI16 USART1_SEL(2)>;
 	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&analog_pb12 &analog_pa8>;
+	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	status = "okay";
 };
