@@ -478,18 +478,18 @@ DEVICE_DT_INST_DEFINE(inst,                                        \
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)
 
+#ifdef CONFIG_SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
 static int gpio_it8xxx2_init_set(void)
 {
-	if (IS_ENABLED(CONFIG_SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN)) {
-		const struct device *const gpiok = DEVICE_DT_GET(DT_NODELABEL(gpiok));
-		const struct device *const gpiol = DEVICE_DT_GET(DT_NODELABEL(gpiol));
+	const struct device *const gpiok = DEVICE_DT_GET(DT_NODELABEL(gpiok));
+	const struct device *const gpiol = DEVICE_DT_GET(DT_NODELABEL(gpiol));
 
-		for (int i = 0; i < 8; i++) {
-			gpio_pin_configure(gpiok, i, GPIO_INPUT | GPIO_PULL_DOWN);
-			gpio_pin_configure(gpiol, i, GPIO_INPUT | GPIO_PULL_DOWN);
-		}
+	for (int i = 0; i < 8; i++) {
+		gpio_pin_configure(gpiok, i, GPIO_INPUT | GPIO_PULL_DOWN);
+		gpio_pin_configure(gpiol, i, GPIO_INPUT | GPIO_PULL_DOWN);
 	}
 
 	return 0;
 }
 SYS_INIT(gpio_it8xxx2_init_set, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY);
+#endif /* CONFIG_SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN */
