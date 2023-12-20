@@ -60,9 +60,9 @@ struct bt_vcp_vol_ctlr {
 	struct bt_conn *conn;
 
 	uint8_t vocs_inst_cnt;
-	struct bt_vocs *vocs[CONFIG_BT_VOCS_CLIENT_MAX_INSTANCE_COUNT];
+	struct bt_vocs *vocs[CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST];
 	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_AICS_CLIENT_MAX_INSTANCE_COUNT];
+	struct bt_aics *aics[CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST];
 };
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_*/
