@@ -66,22 +66,6 @@ static uint32_t lptim_clock_freq = CONFIG_STM32_LPTIM_CLOCK;
 /* The prescaler given by the DTS and to apply to the lptim_clock_freq */
 static uint32_t lptim_clock_presc = DT_PROP(DT_DRV_INST(0), st_prescaler);
 
-#if (CONFIG_STM32_LPTIM_CLOCK_LSI)
-
-/* Kconfig defines the clock source as LSI : check coherency with DTS */
-#if (DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) != STM32_SRC_LSI)
-#warning CONFIG_STM32_LPTIM_CLOCK_LSI requires STM32_SRC_LSI defined as LPTIM domain clock
-#endif /* STM32_SRC_LSI */
-
-#elif (CONFIG_STM32_LPTIM_CLOCK_LSE)
-
-/* Kconfig defines the clock source as LSE : check coherency with DTS */
-#if (DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) != STM32_SRC_LSE)
-#warning CONFIG_STM32_LPTIM_CLOCK_LSE requires STM32_SRC_LSE defined as LPTIM domain clock
-#endif /* STM32_SRC_LSE */
-
-#endif /* CONFIG_STM32_LPTIM_CLOCK_LSI */
-
 /* Minimum nb of clock cycles to have to set autoreload register correctly */
 #define LPTIM_GUARD_VALUE 2
 
