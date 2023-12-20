@@ -324,7 +324,7 @@ static int otm8009a_configure(const struct device *dev)
 
 	/* not documented */
 	buf[0] = 0x00;
-	ret = otm8009a_mcs_write(dev, OTM8009A_MCS_NO_DOC2, buf, 3);
+	ret = otm8009a_mcs_write(dev, OTM8009A_MCS_NO_DOC2, buf, 1);
 	if (ret < 0) {
 		return ret;
 	}
