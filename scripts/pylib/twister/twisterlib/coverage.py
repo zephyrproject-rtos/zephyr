@@ -14,6 +14,12 @@ import re
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
+supported_coverage_formats = {
+    "gcovr": ["html", "xml", "csv", "txt", "coveralls", "sonarqube"],
+    "lcov":  ["html", "lcov"]
+}
+
+
 class CoverageTool:
     """ Base class for every supported coverage tool
     """
