@@ -16,6 +16,7 @@ import shutil
 import re
 import argparse
 from datetime import datetime, timezone
+from twisterlib.coverage import supported_coverage_formats
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -309,9 +310,11 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         help="Tool to use to generate coverage report.")
 
     parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in run_coverage
-                        help="Output formats to use for generated coverage reports, as a comma-separated list. "
-                             "Default to html. "
-                             "Valid options are html, xml, csv, txt, coveralls, sonarqube, lcov.")
+                        help="Output formats to use for generated coverage reports, as a comma-separated list. " +
+                             "Valid options for 'gcovr' tool are: " +
+                             ','.join(supported_coverage_formats['gcovr']) + " (html - default)." +
+                             " Valid options for 'lcov' tool are: " +
+                             ','.join(supported_coverage_formats['lcov']) + " (html,lcov - default).")
 
     parser.add_argument("--test-config", action="store", default=os.path.join(ZEPHYR_BASE, "tests", "test_config.yaml"),
         help="Path to file with plans and test configurations.")
@@ -758,6 +761,13 @@ def parse_arguments(parser, args, options = None):
 
     if not options.coverage_platform:
         options.coverage_platform = options.platform
+
+    if options.coverage_formats:
+        for coverage_format in options.coverage_formats.split(','):
+            if coverage_format not in supported_coverage_formats[options.coverage_tool]:
+                logger.error(f"Unsupported coverage report formats:'{options.coverage_formats}' "
+                             f"for {options.coverage_tool}")
+                sys.exit(1)
 
     if options.enable_valgrind and not shutil.which("valgrind"):
         logger.error("valgrind enabled but valgrind executable not found")
