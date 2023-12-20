@@ -89,7 +89,6 @@ ZTEST_USER(sleep, test_usleep)
 		}
 	}
 
-	printk("elapsed_ms = %" PRId64 "\n", elapsed_ms);
 	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
 	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }
