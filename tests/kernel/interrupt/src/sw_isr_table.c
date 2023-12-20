@@ -10,7 +10,7 @@
 
 extern const struct _irq_parent_entry _lvl2_irq_list[];
 
-#define PARENT_IRQ_FN(i, _) CONFIG_2ND_LVL_INTR_0##i##_OFFSET
+#define PARENT_IRQ_FN(i, _) CONFIG_LVL_2_INTR_0##i##_OFFSET
 #if DT_HAS_COMPAT_STATUS_OKAY(sifive_plic_1_0_0)
 #define PARENT_DEV_FN(i, _) DEVICE_DT_GET(DT_INST(i, sifive_plic_1_0_0))
 #define INTC_SUPPORTS_MULTI_INSTANCE 1
@@ -27,12 +27,12 @@ extern const struct _irq_parent_entry _lvl2_irq_list[];
 ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_idx)
 {
 	/* ground truths */
-	const unsigned int parent_irq[CONFIG_NUM_2ND_LEVEL_AGGREGATORS] = {
-		LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, PARENT_IRQ_FN, (,)),
+	const unsigned int parent_irq[CONFIG_NUM_LEVEL_2_AGGREGATORS] = {
+		LISTIFY(CONFIG_NUM_LEVEL_2_AGGREGATORS, PARENT_IRQ_FN, (,)),
 	};
-	const unsigned int l2_isr_offset = CONFIG_2ND_LVL_ISR_TBL_OFFSET;
+	const unsigned int l2_isr_offset = CONFIG_LVL_2_ISR_TBL_OFFSET;
 
-	for (size_t i = 0; i < CONFIG_NUM_2ND_LEVEL_AGGREGATORS; i++) {
+	for (size_t i = 0; i < CONFIG_NUM_LEVEL_2_AGGREGATORS; i++) {
 		for (unsigned int local_irq = 0;
 		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
 			unsigned int test_irq = irq_to_level_2(local_irq) | parent_irq[i];
@@ -61,14 +61,14 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_dev)
 	Z_TEST_SKIP_IFNDEF(INTC_SUPPORTS_MULTI_INSTANCE);
 
 	/* ground truths */
-	const struct device *parent_dev[CONFIG_NUM_2ND_LEVEL_AGGREGATORS] = {
-		LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, PARENT_DEV_FN, (,)),
+	const struct device *parent_dev[CONFIG_NUM_LEVEL_2_AGGREGATORS] = {
+		LISTIFY(CONFIG_NUM_LEVEL_2_AGGREGATORS, PARENT_DEV_FN, (,)),
 	};
-	const unsigned int parent_irq[CONFIG_NUM_2ND_LEVEL_AGGREGATORS] = {
-		LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, PARENT_IRQ_FN, (,)),
+	const unsigned int parent_irq[CONFIG_NUM_LEVEL_2_AGGREGATORS] = {
+		LISTIFY(CONFIG_NUM_LEVEL_2_AGGREGATORS, PARENT_IRQ_FN, (,)),
 	};
 
-	for (size_t i = 0; i < CONFIG_NUM_2ND_LEVEL_AGGREGATORS; i++) {
+	for (size_t i = 0; i < CONFIG_NUM_LEVEL_2_AGGREGATORS; i++) {
 		const struct device *test_dev;
 		unsigned int test_irq;
 

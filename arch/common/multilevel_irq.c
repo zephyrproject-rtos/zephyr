@@ -11,8 +11,8 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-BUILD_ASSERT((CONFIG_NUM_2ND_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
-		     BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
+BUILD_ASSERT((CONFIG_NUM_LEVEL_2_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
+		     BIT(CONFIG_LEVEL_2_INTERRUPT_BITS),
 	     "L2 bits not enough to cover the number of L2 IRQs");
 
 /*
@@ -53,28 +53,28 @@ BUILD_ASSERT((CONFIG_NUM_2ND_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) 
 
 #define IRQ_INDEX_TO_OFFSET(i, base) (base + i * CONFIG_MAX_IRQ_PER_AGGREGATOR)
 
-#define CAT_2ND_LVL_LIST(i, base) \
-	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_2ND_LVL_INTR_0##i##_OFFSET), \
-			       CONFIG_2ND_LVL_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
-const struct _irq_parent_entry _lvl2_irq_list[CONFIG_NUM_2ND_LEVEL_AGGREGATORS]
-	= { LISTIFY(CONFIG_NUM_2ND_LEVEL_AGGREGATORS, CAT_2ND_LVL_LIST, (,),
-		CONFIG_2ND_LVL_ISR_TBL_OFFSET) };
+#define CAT_LVL_2_LIST(i, base) \
+	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_LVL_2_INTR_0##i##_OFFSET), \
+			       CONFIG_LVL_2_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
+const struct _irq_parent_entry _lvl2_irq_list[CONFIG_NUM_LEVEL_2_AGGREGATORS]
+	= { LISTIFY(CONFIG_NUM_LEVEL_2_AGGREGATORS, CAT_LVL_2_LIST, (,),
+		CONFIG_LVL_2_ISR_TBL_OFFSET) };
 
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+#ifdef CONFIG_LEVEL_3_INTERRUPTS
 
-BUILD_ASSERT((CONFIG_NUM_3RD_LEVEL_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
-		     BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
+BUILD_ASSERT((CONFIG_NUM_LEVEL_3_AGGREGATORS * CONFIG_MAX_IRQ_PER_AGGREGATOR) <=
+		     BIT(CONFIG_LEVEL_3_INTERRUPT_BITS),
 	     "L3 bits not enough to cover the number of L3 IRQs");
 
-#define CAT_3RD_LVL_LIST(i, base) \
-	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_3RD_LVL_INTR_0##i##_OFFSET), \
-			       CONFIG_3RD_LVL_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
+#define CAT_LVL_3_LIST(i, base) \
+	INIT_IRQ_PARENT_OFFSET(INTC_DT_IRQN_GET(CONFIG_LVL_3_INTR_0##i##_OFFSET), \
+			       CONFIG_LVL_3_INTR_0##i##_OFFSET, IRQ_INDEX_TO_OFFSET(i, base))
 
-const struct _irq_parent_entry _lvl3_irq_list[CONFIG_NUM_3RD_LEVEL_AGGREGATORS]
-	 = { LISTIFY(CONFIG_NUM_3RD_LEVEL_AGGREGATORS, CAT_3RD_LVL_LIST, (,),
-		CONFIG_3RD_LVL_ISR_TBL_OFFSET) };
+const struct _irq_parent_entry _lvl3_irq_list[CONFIG_NUM_LEVEL_3_AGGREGATORS]
+	 = { LISTIFY(CONFIG_NUM_LEVEL_3_AGGREGATORS, CAT_LVL_3_LIST, (,),
+		CONFIG_LVL_3_ISR_TBL_OFFSET) };
 
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+#endif /* CONFIG_LEVEL_3_INTERRUPTS */
 
 static const struct _irq_parent_entry *get_parent_entry(unsigned int parent_irq,
 				      const struct _irq_parent_entry list[],
@@ -107,16 +107,16 @@ const struct device *z_get_sw_isr_device_from_irq(unsigned int irq)
 		parent_irq = irq_parent_level_2(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl2_irq_list,
-					 CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
+					 CONFIG_NUM_LEVEL_2_AGGREGATORS);
 	}
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+#ifdef CONFIG_LEVEL_3_INTERRUPTS
 	else if (level == 3U) {
 		parent_irq = irq_parent_level_3(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl3_irq_list,
-					 CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
+					 CONFIG_NUM_LEVEL_3_AGGREGATORS);
 	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+#endif /* CONFIG_LEVEL_3_INTERRUPTS */
 	dev = entry != NULL ? entry->dev : NULL;
 
 	return dev;
@@ -124,19 +124,19 @@ const struct device *z_get_sw_isr_device_from_irq(unsigned int irq)
 
 unsigned int z_get_sw_isr_irq_from_device(const struct device *dev)
 {
-	for (size_t i = 0U; i < CONFIG_NUM_2ND_LEVEL_AGGREGATORS; ++i) {
+	for (size_t i = 0U; i < CONFIG_NUM_LEVEL_2_AGGREGATORS; ++i) {
 		if (_lvl2_irq_list[i].dev == dev) {
 			return _lvl2_irq_list[i].irq;
 		}
 	}
 
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-	for (size_t i = 0U; i < CONFIG_NUM_3RD_LEVEL_AGGREGATORS; ++i) {
+#ifdef CONFIG_LEVEL_3_INTERRUPTS
+	for (size_t i = 0U; i < CONFIG_NUM_LEVEL_3_AGGREGATORS; ++i) {
 		if (_lvl3_irq_list[i].dev == dev) {
 			return _lvl3_irq_list[i].irq;
 		}
 	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+#endif /* CONFIG_LEVEL_3_INTERRUPTS */
 
 	return 0;
 }
@@ -154,22 +154,22 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 		parent_irq = irq_parent_level_2(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl2_irq_list,
-					 CONFIG_NUM_2ND_LEVEL_AGGREGATORS);
+					 CONFIG_NUM_LEVEL_2_AGGREGATORS);
 		parent_offset = entry != NULL ? entry->offset : 0U;
 		table_idx = parent_offset + local_irq;
 	}
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+#ifdef CONFIG_LEVEL_3_INTERRUPTS
 	else if (level == 3U) {
 		local_irq = irq_from_level_3(irq);
 		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
 		parent_irq = irq_parent_level_3(irq);
 		entry = get_parent_entry(parent_irq,
 					 _lvl3_irq_list,
-					 CONFIG_NUM_3RD_LEVEL_AGGREGATORS);
+					 CONFIG_NUM_LEVEL_3_AGGREGATORS);
 		parent_offset = entry != NULL ? entry->offset : 0U;
 		table_idx = parent_offset + local_irq;
 	}
-#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+#endif /* CONFIG_LEVEL_3_INTERRUPTS */
 	else {
 		table_idx = irq;
 	}

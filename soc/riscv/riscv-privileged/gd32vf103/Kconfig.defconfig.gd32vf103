@@ -33,7 +33,7 @@ config NUM_IRQS
 	default 87 if  NUCLEI_ECLIC
 	default 16 if !NUCLEI_ECLIC
 
-config 2ND_LEVEL_INTERRUPTS
+config LEVEL_2_INTERRUPTS
 	default y
 
 config PINCTRL

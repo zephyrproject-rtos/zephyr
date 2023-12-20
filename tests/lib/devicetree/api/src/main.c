@@ -659,7 +659,7 @@ ZTEST(devicetree_api, test_irq)
 		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)), 30, "");
 	#else
 		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)),
-			      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+			      ((30 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 	#endif
 
 	/* DT_IRQN_BY_IDX */
@@ -669,11 +669,11 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 2), 60, "");
 #else
 	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 0),
-		      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+		      ((30 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 1),
-		      ((40 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+		      ((40 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 	zassert_equal(DT_IRQN_BY_IDX(DT_INST(0, DT_DRV_COMPAT), 2),
-		      ((60 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+		      ((60 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 #endif
 
 	/* DT_INST */
@@ -709,7 +709,7 @@ ZTEST(devicetree_api, test_irq)
 #ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
 	zassert_equal(DT_INST_IRQN(0), 30, "");
 #else
-	zassert_equal(DT_INST_IRQN(0), ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_INST_IRQN(0), ((30 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 #endif
 
 	/* DT_INST_IRQN_BY_IDX */
@@ -719,11 +719,11 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_INST_IRQN_BY_IDX(0, 2), 60, "");
 #else
 	zassert_equal(DT_INST_IRQN_BY_IDX(0, 0),
-		      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+		      ((30 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 	zassert_equal(DT_INST_IRQN_BY_IDX(0, 1),
-		      ((40 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+		      ((40 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 	zassert_equal(DT_INST_IRQN_BY_IDX(0, 2),
-		      ((60 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+		      ((60 + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS) | 11, "");
 #endif
 
 	/* DT_INST_IRQ_HAS_CELL_AT_IDX */

@@ -68,8 +68,8 @@ hardware interrupts are combined into one line that is then routed to
 the parent controller.
 
 If nested interrupt controllers are supported, :kconfig:option:`CONFIG_MULTI_LEVEL_INTERRUPTS`
-should be set to 1, and :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
-:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPTS` configured as well, based on the
+should be set to 1, and :kconfig:option:`CONFIG_LEVEL_2_INTERRUPTS` and
+:kconfig:option:`CONFIG_LEVEL_3_INTERRUPTS` configured as well, based on the
 hardware architecture.
 
 A unique 32-bit interrupt number is assigned with information
@@ -615,9 +615,9 @@ aggregator. In this case it may be desirable to override these defaults and use 
 number of bits per level. Regardless of how many bits used for each level, the sum of
 the total bits used between all levels must sum to be less than or equal to 32-bits,
 fitting into a single 32-bit integer. To modify the bit total per level, override the
-default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
-for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second tier and
-:kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third tier. These masks control the
+default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_LEVEL_1_INTERRUPT_BITS`
+for the  first level, :kconfig:option:`CONFIG_LEVEL_2_INTERRUPT_BITS` for the second tier and
+:kconfig:option:`CONFIG_LEVEL_3_INTERRUPT_BITS` for the third tier. These masks control the
 length of the bit masks and shift to apply when generating interrupt values, when checking the
 interrupts level and converting interrupts to a different level. The logic controlling
 this can be found in `irq.h`

@@ -30,16 +30,16 @@ extern "C" {
  */
 static inline unsigned int irq_get_level(unsigned int irq)
 {
-	const uint32_t mask2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) <<
-		CONFIG_1ST_LEVEL_INTERRUPT_BITS;
-	const uint32_t mask3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) <<
-		(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	const uint32_t mask2 = BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS) <<
+		CONFIG_LEVEL_1_INTERRUPT_BITS;
+	const uint32_t mask3 = BIT_MASK(CONFIG_LEVEL_3_INTERRUPT_BITS) <<
+		(CONFIG_LEVEL_1_INTERRUPT_BITS + CONFIG_LEVEL_2_INTERRUPT_BITS);
 
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS) && (irq & mask3) != 0) {
+	if (IS_ENABLED(CONFIG_LEVEL_3_INTERRUPTS) && (irq & mask3) != 0) {
 		return 3;
 	}
 
-	if (IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS) && (irq & mask2) != 0) {
+	if (IS_ENABLED(CONFIG_LEVEL_2_INTERRUPTS) && (irq & mask2) != 0) {
 		return 2;
 	}
 
@@ -58,11 +58,11 @@ static inline unsigned int irq_get_level(unsigned int irq)
  */
 static inline unsigned int irq_from_level_2(unsigned int irq)
 {
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
-		return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-			BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
+	if (IS_ENABLED(CONFIG_LEVEL_3_INTERRUPTS)) {
+		return ((irq >> CONFIG_LEVEL_1_INTERRUPT_BITS) &
+			BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS)) - 1;
 	} else {
-		return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) - 1;
+		return (irq >> CONFIG_LEVEL_1_INTERRUPT_BITS) - 1;
 	}
 }
 
@@ -73,7 +73,7 @@ static inline unsigned int irq_from_level_2(unsigned int irq)
  *
  * @return 2nd level IRQ number
  */
-#define IRQ_TO_L2(irq) ((irq + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS)
+#define IRQ_TO_L2(irq) ((irq + 1) << CONFIG_LEVEL_1_INTERRUPT_BITS)
 
 /**
  * @brief Converts irq from level 1 to level 2 format
@@ -104,7 +104,7 @@ static inline unsigned int irq_to_level_2(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_2(unsigned int irq)
 {
-	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	return irq & BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS);
 }
 
 /**
@@ -120,7 +120,7 @@ static inline unsigned int irq_parent_level_2(unsigned int irq)
  */
 static inline unsigned int irq_from_level_3(unsigned int irq)
 {
-	return (irq >> (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
+	return (irq >> (CONFIG_LEVEL_1_INTERRUPT_BITS + CONFIG_LEVEL_2_INTERRUPT_BITS)) - 1;
 }
 
 /**
@@ -131,7 +131,7 @@ static inline unsigned int irq_from_level_3(unsigned int irq)
  * @return 3rd level IRQ number
  */
 #define IRQ_TO_L3(irq)                                                                             \
-	((irq + 1) << (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS))
+	((irq + 1) << (CONFIG_LEVEL_1_INTERRUPT_BITS + CONFIG_LEVEL_2_INTERRUPT_BITS))
 
 /**
  * @brief Converts irq from level 1 to level 3 format
@@ -162,8 +162,8 @@ static inline unsigned int irq_to_level_3(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_3(unsigned int irq)
 {
-	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	return (irq >> CONFIG_LEVEL_1_INTERRUPT_BITS) &
+		BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS);
 }
 
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */

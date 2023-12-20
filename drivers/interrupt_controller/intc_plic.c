@@ -371,7 +371,7 @@ static void plic_irq_handler(const struct device *dev)
 	const uint32_t irq = irq_to_level_2(local_irq) | parent_irq;
 	const unsigned int isr_offset =
 		COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS), (z_get_sw_isr_table_idx(irq)),
-			    (irq_from_level_2(irq) + CONFIG_2ND_LVL_ISR_TBL_OFFSET));
+			    (irq_from_level_2(irq) + CONFIG_LVL_2_ISR_TBL_OFFSET));
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = (struct _isr_table_entry *)&_sw_isr_table[isr_offset];

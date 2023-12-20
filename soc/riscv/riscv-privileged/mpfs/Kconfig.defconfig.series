@@ -23,10 +23,10 @@ config RISCV_HAS_PLIC
 config RISCV_GP
 	default y
 
-config 2ND_LVL_ISR_TBL_OFFSET
+config LVL_2_ISR_TBL_OFFSET
 	default 13
 
-config 2ND_LVL_INTR_00_OFFSET
+config LVL_2_INTR_00_OFFSET
 	default 11
 
 config MAX_IRQ_PER_AGGREGATOR

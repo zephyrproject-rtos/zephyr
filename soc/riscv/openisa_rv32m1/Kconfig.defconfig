@@ -46,13 +46,13 @@ if MULTI_LEVEL_INTERRUPTS
 config MAX_IRQ_PER_AGGREGATOR
 	default 32
 
-config 2ND_LEVEL_INTERRUPTS
+config LEVEL_2_INTERRUPTS
 	default y
 
-config 2ND_LVL_ISR_TBL_OFFSET
+config LVL_2_ISR_TBL_OFFSET
 	default 32
 
-config NUM_2ND_LEVEL_AGGREGATORS
+config NUM_LEVEL_2_AGGREGATORS
 	default 8 if RV32M1_INTMUX_CHANNEL_7
 	default 7 if RV32M1_INTMUX_CHANNEL_6
 	default 6 if RV32M1_INTMUX_CHANNEL_5
@@ -62,34 +62,34 @@ config NUM_2ND_LEVEL_AGGREGATORS
 	default 2 if RV32M1_INTMUX_CHANNEL_1
 	default 1		# just channel 0
 
-config 2ND_LVL_INTR_00_OFFSET
+config LVL_2_INTR_00_OFFSET
 	default 24
 
-config 2ND_LVL_INTR_01_OFFSET
+config LVL_2_INTR_01_OFFSET
 	int
 	default 25
 
-config 2ND_LVL_INTR_02_OFFSET
+config LVL_2_INTR_02_OFFSET
 	int
 	default 26
 
-config 2ND_LVL_INTR_03_OFFSET
+config LVL_2_INTR_03_OFFSET
 	int
 	default 27
 
-config 2ND_LVL_INTR_04_OFFSET
+config LVL_2_INTR_04_OFFSET
 	int
 	default 28
 
-config 2ND_LVL_INTR_05_OFFSET
+config LVL_2_INTR_05_OFFSET
 	int
 	default 29
 
-config 2ND_LVL_INTR_06_OFFSET
+config LVL_2_INTR_06_OFFSET
 	int
 	default 30
 
-config 2ND_LVL_INTR_07_OFFSET
+config LVL_2_INTR_07_OFFSET
 	int
 	default 31
 

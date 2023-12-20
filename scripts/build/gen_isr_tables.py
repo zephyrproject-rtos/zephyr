@@ -229,8 +229,8 @@ def write_source_file(fp, vt, swt, intlist, syms, shared):
     fp.write("struct _isr_table_entry __sw_isr_table _sw_isr_table[%d] = {\n"
             % nv)
 
-    level2_offset = syms.get("CONFIG_2ND_LVL_ISR_TBL_OFFSET")
-    level3_offset = syms.get("CONFIG_3RD_LVL_ISR_TBL_OFFSET")
+    level2_offset = syms.get("CONFIG_LVL_2_ISR_TBL_OFFSET")
+    level3_offset = syms.get("CONFIG_LVL_3_ISR_TBL_OFFSET")
 
     for i in range(nv):
         param = "{0:#x}".format(swt[i][0])
@@ -300,24 +300,24 @@ def main():
     if "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
         max_irq_per = syms["CONFIG_MAX_IRQ_PER_AGGREGATOR"]
 
-        INTERRUPT_BITS[0] = syms["CONFIG_1ST_LEVEL_INTERRUPT_BITS"]
-        INTERRUPT_BITS[1] = syms["CONFIG_2ND_LEVEL_INTERRUPT_BITS"]
-        INTERRUPT_BITS[2] = syms["CONFIG_3RD_LEVEL_INTERRUPT_BITS"]
+        INTERRUPT_BITS[0] = syms["CONFIG_LEVEL_1_INTERRUPT_BITS"]
+        INTERRUPT_BITS[1] = syms["CONFIG_LEVEL_2_INTERRUPT_BITS"]
+        INTERRUPT_BITS[2] = syms["CONFIG_LEVEL_3_INTERRUPT_BITS"]
         update_masks()
 
-        if "CONFIG_2ND_LEVEL_INTERRUPTS" in syms:
-            num_aggregators = syms["CONFIG_NUM_2ND_LEVEL_AGGREGATORS"]
-            irq2_baseoffset = syms["CONFIG_2ND_LVL_ISR_TBL_OFFSET"]
-            list_2nd_lvl_offsets = [syms['CONFIG_2ND_LVL_INTR_{}_OFFSET'.
+        if "CONFIG_LEVEL_2_INTERRUPTS" in syms:
+            num_aggregators = syms["CONFIG_NUM_LEVEL_2_AGGREGATORS"]
+            irq2_baseoffset = syms["CONFIG_LVL_2_ISR_TBL_OFFSET"]
+            list_2nd_lvl_offsets = [syms['CONFIG_LVL_2_INTR_{}_OFFSET'.
                                          format(str(i).zfill(2))] for i in
                                     range(num_aggregators)]
 
             debug('2nd level offsets: {}'.format(list_2nd_lvl_offsets))
 
-            if "CONFIG_3RD_LEVEL_INTERRUPTS" in syms:
-                num_aggregators = syms["CONFIG_NUM_3RD_LEVEL_AGGREGATORS"]
-                irq3_baseoffset = syms["CONFIG_3RD_LVL_ISR_TBL_OFFSET"]
-                list_3rd_lvl_offsets = [syms['CONFIG_3RD_LVL_INTR_{}_OFFSET'.
+            if "CONFIG_LEVEL_3_INTERRUPTS" in syms:
+                num_aggregators = syms["CONFIG_NUM_LEVEL_3_AGGREGATORS"]
+                irq3_baseoffset = syms["CONFIG_LVL_3_ISR_TBL_OFFSET"]
+                list_3rd_lvl_offsets = [syms['CONFIG_LVL_3_INTR_{}_OFFSET'.
                                              format(str(i).zfill(2))] for i in
                                         range(num_aggregators)]
 

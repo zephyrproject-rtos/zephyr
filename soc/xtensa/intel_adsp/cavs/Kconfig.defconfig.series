@@ -34,7 +34,7 @@ config KERNEL_ENTRY
 config MULTI_LEVEL_INTERRUPTS
 	default y
 
-config 2ND_LEVEL_INTERRUPTS
+config LEVEL_2_INTERRUPTS
 	default y
 
 config DYNAMIC_INTERRUPTS

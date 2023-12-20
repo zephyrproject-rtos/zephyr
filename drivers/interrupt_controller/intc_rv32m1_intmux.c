@@ -145,7 +145,7 @@ static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
 	.regs = (INTMUX_Type *)DT_INST_REG_ADDR(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = UINT_TO_POINTER(DT_INST_CLOCKS_CELL(0, name)),
-	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
+	.isr_base = &_sw_isr_table[CONFIG_LVL_2_ISR_TBL_OFFSET],
 };
 
 static int rv32m1_intmux_init(const struct device *dev)

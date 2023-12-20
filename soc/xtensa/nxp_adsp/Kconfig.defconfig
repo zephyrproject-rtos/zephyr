@@ -22,7 +22,7 @@ config KERNEL_ENTRY
 config MULTI_LEVEL_INTERRUPTS
 	default n
 
-config 2ND_LEVEL_INTERRUPTS
+config LEVEL_2_INTERRUPTS
 	default n
 
 # To prevent test uses TEST_LOGGING_MINIMAL

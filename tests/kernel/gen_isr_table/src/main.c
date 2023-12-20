@@ -385,8 +385,8 @@ static void *gen_isr_table_setup(void)
 #ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
 static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t irq3)
 {
-	const uint32_t l2_shift = CONFIG_1ST_LEVEL_INTERRUPT_BITS;
-	const uint32_t l3_shift = CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS;
+	const uint32_t l2_shift = CONFIG_LEVEL_1_INTERRUPT_BITS;
+	const uint32_t l3_shift = CONFIG_LEVEL_1_INTERRUPT_BITS + CONFIG_LEVEL_2_INTERRUPT_BITS;
 	const uint32_t hwirq1 = irq1;
 	const uint32_t hwirq2 = irq2 - 1;
 	const uint32_t hwirq3 = irq3 - 1;
@@ -419,17 +419,17 @@ ZTEST(gen_isr_table, test_multi_level_bit_masks_l1)
 	test_multi_level_bit_masks_fn(irq1, 0, 0);
 
 	/* Somewhere in-between */
-	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS) >> 1;
+	irq1 = BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS) >> 1;
 	test_multi_level_bit_masks_fn(irq1, 0, 0);
 
 	/* Last IRQ of level 1 */
-	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	irq1 = BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS);
 	test_multi_level_bit_masks_fn(irq1, 0, 0);
 }
 
 ZTEST(gen_isr_table, test_multi_level_bit_masks_l2)
 {
-	if (!IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS)) {
+	if (!IS_ENABLED(CONFIG_LEVEL_2_INTERRUPTS)) {
 		ztest_test_skip();
 	}
 
@@ -442,19 +442,19 @@ ZTEST(gen_isr_table, test_multi_level_bit_masks_l2)
 	test_multi_level_bit_masks_fn(irq1, irq2, 0);
 
 	/* Somewhere in-between */
-	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS) >> 1;
-	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) >> 1;
+	irq1 = BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS) >> 1;
+	irq2 = BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS) >> 1;
 	test_multi_level_bit_masks_fn(irq1, irq2, 0);
 
 	/* Last IRQ of level 2 */
-	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
-	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	irq1 = BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS);
+	irq2 = BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS);
 	test_multi_level_bit_masks_fn(irq1, irq2, 0);
 }
 
 ZTEST(gen_isr_table, test_multi_level_bit_masks_l3)
 {
-	if (!IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
+	if (!IS_ENABLED(CONFIG_LEVEL_3_INTERRUPTS)) {
 		ztest_test_skip();
 	}
 
@@ -468,15 +468,15 @@ ZTEST(gen_isr_table, test_multi_level_bit_masks_l3)
 	test_multi_level_bit_masks_fn(irq1, irq2, irq3);
 
 	/* Somewhere in-between */
-	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS) >> 1;
-	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) >> 1;
-	irq3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) >> 1;
+	irq1 = BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS) >> 1;
+	irq2 = BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS) >> 1;
+	irq3 = BIT_MASK(CONFIG_LEVEL_3_INTERRUPT_BITS) >> 1;
 	test_multi_level_bit_masks_fn(irq1, irq2, irq3);
 
 	/* Last IRQ of level 3 */
-	irq1 = BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
-	irq2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
-	irq3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS);
+	irq1 = BIT_MASK(CONFIG_LEVEL_1_INTERRUPT_BITS);
+	irq2 = BIT_MASK(CONFIG_LEVEL_2_INTERRUPT_BITS);
+	irq3 = BIT_MASK(CONFIG_LEVEL_3_INTERRUPT_BITS);
 	test_multi_level_bit_masks_fn(irq1, irq2, irq3);
 }
 

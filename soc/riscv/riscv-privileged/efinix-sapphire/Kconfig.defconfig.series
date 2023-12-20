@@ -25,7 +25,7 @@ config NUM_IRQS
 	int
 	default 36
 
-config 2ND_LVL_INTR_00_OFFSET
+config LVL_2_INTR_00_OFFSET
 	default 11
 
 endif # SOC_SERIES_EFINIX_SAPPHIRE

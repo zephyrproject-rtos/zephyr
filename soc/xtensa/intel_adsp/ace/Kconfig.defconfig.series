@@ -21,7 +21,7 @@ config XTENSA_UNCACHED_REGION
 
 # Parameters for gen_isr_tables.py:
 
-config 2ND_LVL_INTR_00_OFFSET
+config LVL_2_INTR_00_OFFSET
 	default 4
 
 config MULTI_LEVEL_INTERRUPTS
@@ -30,13 +30,13 @@ config MULTI_LEVEL_INTERRUPTS
 config MAX_IRQ_PER_AGGREGATOR
 	default 29
 
-config NUM_2ND_LEVEL_AGGREGATORS
+config NUM_LEVEL_2_AGGREGATORS
 	default 1
 
-config 2ND_LVL_ISR_TBL_OFFSET
+config LVL_2_ISR_TBL_OFFSET
 	default 9
 
-config 2ND_LEVEL_INTERRUPTS
+config LEVEL_2_INTERRUPTS
 	default y
 
 config XTENSA_TIMER

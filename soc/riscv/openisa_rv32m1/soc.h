@@ -72,12 +72,12 @@ static inline uint32_t rv32m1_intmux_channel(unsigned int irq)
 	 *   by channel in the event unit IRQ numbering assignment,
 	 *   starting from channel 0.
 	 *
-	 * - CONFIG_2ND_LVL_INTR_00_OFFSET is defined to
+	 * - CONFIG_LVL_2_INTR_00_OFFSET is defined to
 	 *   be the offset of the first level 2 aggregator in the parent
 	 *   interrupt controller's IRQ numbers, i.e. channel 0's
 	 *   IRQ number in the event unit.
 	 */
-	return (irq & 0xff) - CONFIG_2ND_LVL_INTR_00_OFFSET;
+	return (irq & 0xff) - CONFIG_LVL_2_INTR_00_OFFSET;
 }
 
 /**

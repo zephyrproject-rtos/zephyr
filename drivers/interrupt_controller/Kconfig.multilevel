@@ -19,7 +19,7 @@ config MULTI_LEVEL_INTERRUPTS
 	  controller".)
 
 if MULTI_LEVEL_INTERRUPTS
-config 1ST_LEVEL_INTERRUPT_BITS
+config LEVEL_1_INTERRUPT_BITS
 	int "Total number of first level interrupt bits"
 	range 1 32
 	default 8
@@ -35,32 +35,32 @@ config MAX_IRQ_PER_AGGREGATOR
 	  The maximum number of interrupt inputs to any aggregator in the
 	  system.
 
-config 2ND_LEVEL_INTERRUPTS
+config LEVEL_2_INTERRUPTS
 	bool "Second-level interrupt support"
 	help
 	  Second level interrupts are used to increase the number of
 	  addressable interrupts in a system.
 
-config 2ND_LVL_ISR_TBL_OFFSET
+config LVL_2_ISR_TBL_OFFSET
 	int "Offset in _sw_isr_table for level 2 interrupts"
 	default 0
-	depends on 2ND_LEVEL_INTERRUPTS
+	depends on LEVEL_2_INTERRUPTS
 	help
 	  This is the offset in _sw_isr_table, the generated ISR handler table,
 	  where storage for 2nd level interrupt ISRs begins. This is
 	  typically allocated after ISRs for level 1 interrupts.
 
-config NUM_2ND_LEVEL_AGGREGATORS
+config NUM_LEVEL_2_AGGREGATORS
 	int "Total number of second level interrupt aggregators"
 	range 1 8
 	default 1
-	depends on 2ND_LEVEL_INTERRUPTS
+	depends on LEVEL_2_INTERRUPTS
 	help
 	  The number of level 2 interrupt aggregators to support. Each
 	  aggregator can manage at most MAX_IRQ_PER_AGGREGATOR level 2
 	  interrupts.
 
-config 2ND_LEVEL_INTERRUPT_BITS
+config LEVEL_2_INTERRUPT_BITS
 	int "Total number of second level interrupt bits"
 	range 0 31
 	default 8
@@ -70,7 +70,7 @@ config 2ND_LEVEL_INTERRUPT_BITS
 
 prev-level-num = 1
 cur-level-num = 2
-cur-level = 2ND
+cur-level = 2
 aggregator = 0
 rsource "Kconfig.multilevel.aggregator_template"
 aggregator = 1
@@ -88,33 +88,33 @@ rsource "Kconfig.multilevel.aggregator_template"
 aggregator = 7
 rsource "Kconfig.multilevel.aggregator_template"
 
-config 3RD_LEVEL_INTERRUPTS
+config LEVEL_3_INTERRUPTS
 	bool "Third-level interrupt support"
-	depends on 2ND_LEVEL_INTERRUPTS
+	depends on LEVEL_2_INTERRUPTS
 	help
 	  Third level interrupts are used to increase the number of
 	  addressable interrupts in a system.
 
-config NUM_3RD_LEVEL_AGGREGATORS
+config NUM_LEVEL_3_AGGREGATORS
 	int "Total number of third level interrupt aggregators"
 	range 1 8
 	default 1
-	depends on 3RD_LEVEL_INTERRUPTS
+	depends on LEVEL_3_INTERRUPTS
 	help
 	  The number of level 3 interrupt aggregators to support. Each
 	  aggregator can manage at most MAX_IRQ_PER_AGGREGATOR level 3
 	  interrupts.
 
-config 3RD_LVL_ISR_TBL_OFFSET
+config LVL_3_ISR_TBL_OFFSET
 	int "Offset in _sw_isr_table for level 3 interrupts"
 	default 0
-	depends on 3RD_LEVEL_INTERRUPTS
+	depends on LEVEL_3_INTERRUPTS
 	help
 	  This is the offset in _sw_isr_table, the generated ISR handler table,
 	  where storage for 3rd level interrupt ISRs begins. This is
 	  typically allocated after ISRs for level 2 interrupts.
 
-config 3RD_LEVEL_INTERRUPT_BITS
+config LEVEL_3_INTERRUPT_BITS
 	int "Total number of third level interrupt bits"
 	range 0 30
 	default 8
@@ -124,7 +124,7 @@ config 3RD_LEVEL_INTERRUPT_BITS
 
 prev-level-num = 2
 cur-level-num = 3
-cur-level = 3RD
+cur-level = 3
 aggregator = 0
 rsource "Kconfig.multilevel.aggregator_template"
 aggregator = 1
