@@ -16,3 +16,4 @@ tests:
     # Broken platforms
     platform_exclude:
       - qemu_xtensa_mmu # ELF sections are read-only, and without peek() .text copy isn't executable
+      - esp32s3_devkitm_appcpu # default 64k RAM is too small
