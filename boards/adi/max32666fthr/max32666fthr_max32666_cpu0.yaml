@@ -11,5 +11,6 @@ supported:
   - gpio
   - serial
   - trng
+  - spi
 ram: 560
 flash: 1024
