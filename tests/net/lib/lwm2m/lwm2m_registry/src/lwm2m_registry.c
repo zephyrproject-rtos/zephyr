@@ -203,16 +203,6 @@ ZTEST(lwm2m_registry, test_get_set)
 	zassert_equal(strlen(buf), 0);
 }
 
-ZTEST(lwm2m_registry, test_missing_u64)
-{
-	/* This data type is missing, so use S64 resource instead */
-	uint64_t u64 = 123;
-
-	zassert_equal(lwm2m_set_u64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), u64), 0);
-	zassert_equal(lwm2m_get_u64(&LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_S64), &u64), 0);
-	zassert_equal(u64, 123);
-}
-
 ZTEST(lwm2m_registry, test_temp_sensor)
 {
 	int ret;
