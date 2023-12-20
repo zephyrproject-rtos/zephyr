@@ -1,12 +1,10 @@
-identifier: esp32_net
-name: ESP32_NET
+identifier: esp32_devkitc_wroom_appcpu
+name: ESP32 DEVKITC WROOM APPCPU
 type: mcu
 arch: xtensa
 toolchain:
   - zephyr
 supported:
-  - gpio
-  - i2c
   - uart
 testing:
   ignore_tags:
@@ -19,4 +17,11 @@ testing:
     - logging
     - kernel
     - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp
 vendor: espressif

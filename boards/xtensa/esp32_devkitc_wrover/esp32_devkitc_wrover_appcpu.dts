@@ -1,18 +1,20 @@
 /*
- * Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_net.dtsi>
+#include <espressif/esp32/esp32_appcpu.dtsi>
 
 / {
-	model = "esp32_net";
-	compatible = "espressif,esp32_net";
+	model = "esp32_wrover_appcpu";
+	compatible = "espressif,esp32_appcpu";
 
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
 	};
 };
 
