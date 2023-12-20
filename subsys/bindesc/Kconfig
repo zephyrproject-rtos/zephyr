@@ -20,6 +20,15 @@ source "subsys/bindesc/Kconfig.version"
 source "subsys/bindesc/Kconfig.build_time"
 source "subsys/bindesc/Kconfig.host_info"
 
+config BINDESC_DEFINE_MAX_DATA_SIZE
+	int "Bindesc max data size"
+	range 4 $(UINT16_MAX)
+	default 128
+	help
+	  Determines the maximum size of a binary descriptor's data. The theoretical
+	  limit to this value is the maximum value of a uint16_t (65535), in practice
+	  it's recommened to keep this value much smaller for easier handling of the data.
+
 endif # BINDESC_DEFINE
 
 endif # BINDESC
