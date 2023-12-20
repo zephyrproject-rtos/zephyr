@@ -1,0 +1,23 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags: bindesc
+tests:
+  bindesc.read:
+    platform_allow:
+      - native_posix
+      - native_sim
+  bindesc.read.c99:
+    extra_args: CSTD="c99"
+  bindesc.read.c11:
+    extra_args: CSTD="c11"
+  bindesc.read.c17:
+    extra_args: CSTD="c17"
+  bindesc.read.gnu99:
+    extra_args: CSTD="gnu99"
+  bindesc.read.gnu11:
+    extra_args: CSTD="gnu11"
+  bindesc.read.gnu17:
+    extra_args: CSTD="gnu17"
