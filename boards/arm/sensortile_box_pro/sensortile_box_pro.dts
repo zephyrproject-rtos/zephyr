@@ -158,10 +158,28 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &spi1 {
-	pinctrl-0 = <&spi1_nss_pe12 &spi1_sck_pe13
-		     &spi1_miso_pe14 &spi1_mosi_pe15>;
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
+	bluenrg-lp@0 {
+		compatible = "zephyr,bt-hci-spi", "st,hci-spi-v2";
+		reg = <0>;
+		irq-gpios = <&gpiod 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+		spi-cpol;
+		spi-cpha;
+		spi-hold-cs;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		controller-data-delay-us = <0>;
+		reset-assert-duration-ms = <6>;
+	};
+};
+
+&spi1_sck_pa5 {
+	/delete-property/ bias-pull-down;
+	bias-pull-up; /* Idle state for the clock pin is high-level due to SPI mode 3 */
 };
 
 &spi2 {
