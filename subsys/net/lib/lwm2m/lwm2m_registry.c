@@ -890,7 +890,7 @@ int lwm2m_engine_set_u64(const char *pathstr, uint64_t value)
 	if (ret < 0) {
 		return ret;
 	}
-	return lwm2m_set_u64(&path, value);
+	return lwm2m_set_s64(&path, (int64_t) value);
 }
 
 int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value)
@@ -1378,7 +1378,7 @@ int lwm2m_engine_get_u64(const char *pathstr, uint64_t *value)
 	if (ret < 0) {
 		return ret;
 	}
-	return lwm2m_get_u64(&path, value);
+	return lwm2m_get_s64(&path, (int64_t *) value);
 }
 
 int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value)

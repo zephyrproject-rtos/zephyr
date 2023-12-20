@@ -1009,11 +1009,16 @@ int lwm2m_engine_set_u64(const char *pathstr, uint64_t value);
 /**
  * @brief Set resource (instance) value (u64)
  *
+ * @deprecated Unsigned 64bit value type does not exits.
+ *             This is internally handled as a int64_t.
+ *             Use lwm2m_set_s64() instead.
+ *
  * @param[in] path LwM2M path as a struct
  * @param[in] value u64 value
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_set_u64(const struct lwm2m_obj_path *path, uint64_t value);
 
 /**
@@ -1335,11 +1340,16 @@ int lwm2m_engine_get_u64(const char *pathstr, uint64_t *value);
 /**
  * @brief Get resource (instance) value (u64)
  *
+ * @deprecated Unsigned 64bit value type does not exits.
+ *             This is internally handled as a int64_t.
+ *             Use lwm2m_get_s64() instead.
+
  * @param[in] path LwM2M path as a struct
  * @param[out] value u64 buffer to copy data into
  *
  * @return 0 for success or negative in case of error.
  */
+__deprecated
 int lwm2m_get_u64(const struct lwm2m_obj_path *path, uint64_t *value);
 
 /**
