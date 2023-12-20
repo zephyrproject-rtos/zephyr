@@ -34,7 +34,7 @@ config ZTEST_SHELL
 
 config ZTEST_CPU_HOLD_TIME_MS
 	int "Time in milliseconds to hold other CPUs for 1cpu type tests"
-	default 3000
+	default 5000
 	help
 	  This option is used to specify the maximum time in milliseconds for
 	  which a 1cpu type test may execute on a multicpu system. The default
