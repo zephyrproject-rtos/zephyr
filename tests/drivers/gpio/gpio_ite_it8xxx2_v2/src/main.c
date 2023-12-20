@@ -71,6 +71,11 @@ static void callback(const struct device *port, struct gpio_callback *cb, gpio_p
 {
 	callback_called++;
 	zexpect_equal(pins, BIT(TEST_PIN));
+
+	/* If the callback has been called 5 or more times, toggle the pin in the input register. */
+	if (callback_called >= 5) {
+		registers.gpdmr ^= pins;
+	}
 }
 
 static void before_test(void *fixture)
@@ -236,34 +241,60 @@ ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_edge_both)
 	zassert_equal(callback_called, 2, "callback_called=%d", callback_called);
 }
 
+/* Tests both the active level case and the interrupt not firing at configure case. */
 ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_level_active)
 {
 	zassert_true(device_is_ready(gpio_dev));
 	zassert_ok(gpio_pin_configure(gpio_dev, TEST_PIN, GPIO_INPUT | GPIO_ACTIVE_HIGH));
-	zassert_equal(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_LEVEL_ACTIVE),
-		      -ENOTSUP);
+
+	gpio_init_callback(&callback_struct, &callback, BIT(TEST_PIN));
+	zassert_ok(gpio_add_callback(gpio_dev, &callback_struct));
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_LEVEL_ACTIVE));
 	zexpect_equal(registers.gpotr, 0, "gpotr=%x", registers.gpotr);
 	zexpect_equal(registers.p18scr, 0);
 	zexpect_equal(registers.gpcr[TEST_PIN], GPCR_PORT_PIN_MODE_INPUT, "gpcr[%d]=%x", TEST_PIN,
 		      registers.gpcr[TEST_PIN]);
 	zexpect_equal(registers.wubemr, 0, "wubemr=%x", registers.wubemr);
 	zexpect_equal(registers.wuemr, 0, "wuemr=%x", registers.wuemr);
-	zexpect_equal(registers.wuesr, 0, "wuesr=%x", registers.wuesr);
+	zexpect_equal(registers.wuesr, TEST_MASK, "wuesr=%x", registers.wuesr);
+	registers.wuesr = 0;
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 0, "callback_called=%d", callback_called);
+
+	registers.gpdmr = BIT(TEST_PIN);
+	/* Mock the hardware interrupt. */
+	posix_sw_set_pending_IRQ(TEST_IRQ);
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
 }
 
+/* Tests both the inactive level case and the interrupt already firing at configure case. */
 ZTEST(gpio_ite_it8xxx2_v2, test_interrupt_level_inactive)
 {
 	zassert_true(device_is_ready(gpio_dev));
 	zassert_ok(gpio_pin_configure(gpio_dev, TEST_PIN, GPIO_INPUT | GPIO_ACTIVE_HIGH));
-	zassert_equal(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_LEVEL_INACTIVE),
-		      -ENOTSUP);
+
+	gpio_init_callback(&callback_struct, &callback, BIT(TEST_PIN));
+	zassert_ok(gpio_add_callback(gpio_dev, &callback_struct));
+	zassert_ok(gpio_pin_interrupt_configure(gpio_dev, TEST_PIN, GPIO_INT_LEVEL_INACTIVE));
 	zexpect_equal(registers.gpotr, 0, "gpotr=%x", registers.gpotr);
 	zexpect_equal(registers.p18scr, 0);
 	zexpect_equal(registers.gpcr[TEST_PIN], GPCR_PORT_PIN_MODE_INPUT, "gpcr[%d]=%x", TEST_PIN,
 		      registers.gpcr[TEST_PIN]);
 	zexpect_equal(registers.wubemr, 0, "wubemr=%x", registers.wubemr);
-	zexpect_equal(registers.wuemr, 0, "wuemr=%x", registers.wuemr);
-	zexpect_equal(registers.wuesr, 0, "wuesr=%x", registers.wuesr);
+	zexpect_equal(registers.wuemr, TEST_MASK, "wuemr=%x", registers.wuemr);
+	zexpect_equal(registers.wuesr, TEST_MASK, "wuesr=%x", registers.wuesr);
+	registers.wuesr = 0;
+	k_sleep(K_MSEC(100));
+	/* The interrupt was already active when we started. */
+	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
+
+	registers.gpdmr = 0;
+	callback_called = 0;
+	/* Mock the hardware interrupt. */
+	posix_sw_set_pending_IRQ(TEST_IRQ);
+	k_sleep(K_MSEC(100));
+	zexpect_equal(callback_called, 5, "callback_called=%d", callback_called);
 }
 
 ZTEST(gpio_ite_it8xxx2_v2, test_set_active_high)
