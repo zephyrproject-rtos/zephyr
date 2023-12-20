@@ -9,7 +9,7 @@
 
 #define CPU_RESET_REASON RTC_SW_CPU_RESET
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 #define DT_CPU_COMPAT cdns_tensilica_xtensa_lx6
 #undef CPU_RESET_REASON
 #define CPU_RESET_REASON SW_CPU_RESET
@@ -56,7 +56,6 @@ struct esp32_clock_config {
 
 static uint8_t const xtal_freq[] = {
 #if defined(CONFIG_SOC_SERIES_ESP32) || \
-	defined(CONFIG_SOC_SERIES_ESP32_NET) || \
 	defined(CONFIG_SOC_SERIES_ESP32S3)
 	[ESP32_CLK_XTAL_24M] = 24,
 	[ESP32_CLK_XTAL_26M] = 26,
@@ -126,7 +125,7 @@ static int clock_control_esp32_get_rate(const struct device *dev,
 	return 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32_NET)
+#if defined(CONFIG_SOC_SERIES_ESP32)
 static void esp32_clock_perip_init(void)
 {
 	uint32_t common_perip_clk;

@@ -17,7 +17,6 @@ tests:
     platform_exclude:
       - arduino_giga_r1_m4
       - arduino_portenta_h7_m4
-      - esp32_net
       - lpcxpresso51u68
       - nucleo_h745zi_q_m4
       - stm32h747i_disco_m4
@@ -27,7 +26,6 @@ tests:
     platform_exclude:
       - arduino_giga_r1_m4
       - arduino_portenta_h7_m4
-      - esp32_net
       - lpcxpresso51u68
       - nucleo_h745zi_q_m4
       - stm32h747i_disco_m4
@@ -37,7 +35,6 @@ tests:
     platform_exclude:
       - arduino_giga_r1_m4
       - arduino_portenta_h7_m4
-      - esp32_net
       - lpcxpresso51u68
       - nucleo_h745zi_q_m4
       - stm32h747i_disco_m4
