@@ -407,7 +407,9 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 	const bool has_l3 = irq3 > 0;
 	const bool has_l2 = irq2 > 0;
 	const uint32_t level = has_l3 ? 3 : has_l2 ? 2 : 1;
-	const uint32_t irqn = (irq3 << l3_shift) | (irq2 << l2_shift) | irq1;
+	const uint32_t irqn_l1 = irq1;
+	const uint32_t irqn_l2 = (irq2 << l2_shift) | irqn_l1;
+	const uint32_t irqn = (irq3 << l3_shift) | irqn_l2;
 
 	zassert_equal(level, irq_get_level(irqn));
 
@@ -421,6 +423,17 @@ static void test_multi_level_bit_masks_fn(uint32_t irq1, uint32_t irq2, uint32_t
 		zassert_equal(hwirq3, irq_from_level_3(irqn));
 		zassert_equal((hwirq3 + 1) << l3_shift, irq_to_level_3(hwirq3));
 		zassert_equal(hwirq2 + 1, irq_parent_level_3(irqn));
+	}
+
+	if (has_l3) {
+		zassert_equal(irqn_l2, irq_get_intc_irq(irqn));
+	} else if (has_l2) {
+		zassert_equal(irqn_l1, irq_get_intc_irq(irqn));
+	} else {
+		/* degenerate cases */
+		if (false) {
+			zassert_equal(irqn, irq_get_intc_irq(irqn));
+		}
 	}
 }
 
