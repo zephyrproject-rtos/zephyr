@@ -175,6 +175,9 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 			trans.ui32NumBytes = ctx->rx_len;
 			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
+			if (ret < 0) {
+				break;
+			}
 			spi_context_update_rx(ctx, 1, ctx->rx_len);
 		} while (ctx->rx_len > 0);
 	}
