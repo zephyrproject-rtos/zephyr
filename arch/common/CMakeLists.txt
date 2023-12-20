@@ -22,6 +22,10 @@ zephyr_library_sources_ifdef(
   multilevel_irq.c
   )
 
+if(CONFIG_MULTI_LEVEL_INTERRUPTS)
+  zephyr_library_sources_ifdef(CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION multilevel_irq_legacy.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)
 
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND

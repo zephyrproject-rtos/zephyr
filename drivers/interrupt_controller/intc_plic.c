@@ -20,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/shell/shell.h>
 
 #include <zephyr/sw_isr_table.h>
@@ -576,6 +577,10 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 	PLIC_INTC_IRQ_FUNC_DEFINE(n)
 
 #define PLIC_INTC_DEVICE_INIT(n)                                                                   \
+	IRQ_PARENT_ENTRY_DEFINE(                                                                   \
+		plic##n, DEVICE_DT_INST_GET(n), DT_INST_IRQN(n),                                   \
+		INTC_INST_ISR_TBL_OFFSET(n),                                                       \
+		DT_INST_INTC_GET_AGGREGATOR_LEVEL(n));                                             \
 	PLIC_INTC_CONFIG_INIT(n)                                                                   \
 	PLIC_INTC_DATA_INIT(n)                                                                     \
 	DEVICE_DT_INST_DEFINE(n, &plic_init, NULL,                                                 \
