@@ -33,6 +33,11 @@ static struct bt_micp_mic_ctlr_cb *micp_mic_ctlr_cb;
 static struct bt_micp_mic_ctlr mic_ctlrs[CONFIG_BT_MAX_CONN];
 static const struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
+static struct bt_micp_mic_ctlr *mic_ctlr_get_by_conn(const struct bt_conn *conn)
+{
+	return &mic_ctlrs[bt_conn_index(conn)];
+}
+
 static uint8_t mute_notify_handler(struct bt_conn *conn,
 				   struct bt_gatt_subscribe_params *params,
 				   const void *data, uint16_t length)
@@ -44,7 +49,7 @@ static uint8_t mute_notify_handler(struct bt_conn *conn,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	if (data != NULL) {
 		if (length == sizeof(*mute_val)) {
@@ -66,9 +71,9 @@ static uint8_t micp_mic_ctlr_read_mute_cb(struct bt_conn *conn, uint8_t err,
 					struct bt_gatt_read_params *params,
 					const void *data, uint16_t length)
 {
+	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 	uint8_t cb_err = err;
 	uint8_t mute_val = 0;
-	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
 
 	mic_ctlr->busy = false;
 
@@ -94,7 +99,7 @@ static uint8_t micp_mic_ctlr_read_mute_cb(struct bt_conn *conn, uint8_t err,
 static void micp_mic_ctlr_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 					   struct bt_gatt_write_params *params)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 	uint8_t mute_val = mic_ctlr->mute_val_buf[0];
 
 	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
@@ -155,7 +160,7 @@ static uint8_t micp_discover_include_func(
 	struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	struct bt_gatt_discover_params *params)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
 		LOG_DBG("Discover include complete for MICS: %u AICS", mic_ctlr->aics_inst_cnt);
@@ -218,7 +223,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  struct bt_gatt_discover_params *params)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
 		int err = 0;
@@ -290,7 +295,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     struct bt_gatt_discover_params *params)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
 		LOG_DBG("Could not find a MICS instance on the server");
@@ -359,7 +364,7 @@ static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	if (mic_ctlr->conn == conn) {
 		micp_mic_ctlr_reset(mic_ctlr);
@@ -390,7 +395,7 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 		return -EINVAL;
 	}
 
-	mic_ctlr = &mic_ctlrs[bt_conn_index(conn)];
+	mic_ctlr = mic_ctlr_get_by_conn(conn);
 
 	(void)memset(&mic_ctlr->discover_params, 0,
 		     sizeof(mic_ctlr->discover_params));
@@ -479,6 +484,25 @@ int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
 	included->aics = mic_ctlr->aics;
 
 	return 0;
+}
+
+struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn)
+{
+	struct bt_micp_mic_ctlr *mic_ctlr;
+
+	CHECKIF(conn == NULL) {
+		LOG_DBG("NULL conn pointer");
+		return NULL;
+	}
+
+	mic_ctlr = mic_ctlr_get_by_conn(conn);
+	if (mic_ctlr->conn == NULL) {
+		LOG_DBG("conn %p is not associated with microphone controller. Do discovery first",
+			(void *)conn);
+		return NULL;
+	}
+
+	return mic_ctlr;
 }
 
 int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr, struct bt_conn **conn)
