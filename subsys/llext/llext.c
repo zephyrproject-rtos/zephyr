@@ -517,26 +517,16 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
-/*
- * Find the section, containing the supplied offset and return file offset for
- * that value
- */
-static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
+static uintptr_t llext_dyn_ptr(struct llext_loader *ldr, struct llext *ext, size_t offset)
 {
 	unsigned int i;
 
 	for (i = 0; i < LLEXT_MEM_COUNT; i++)
 		if (ldr->sects[i].sh_addr <= offset &&
 		    ldr->sects[i].sh_addr + ldr->sects[i].sh_size > offset)
-			return offset - ldr->sects[i].sh_addr + ldr->sects[i].sh_offset;
+			return ((uintptr_t) ext->mem[i]) + (offset - ldr->sects[i].sh_addr);
 
-	return offset;
-}
-
-__weak void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-				    elf_rela_t *rel, size_t got_offset)
-{
-	__ASSERT(false, "arch_elf_relocate_local() not implemented");
+	return 0;
 }
 
 __weak void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
@@ -548,6 +538,7 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 {
 	uintptr_t loc = 0;
 	enum llext_mem target_mem;
+	uintptr_t link_addr = 0, op_loc = 0;
 	elf_shdr_t shdr;
 	elf_rela_t rel;
 	elf_sym_t sym;
@@ -644,54 +635,47 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 				/* dynamic linking using GOT */
 
-				size_t got_offset = llext_file_offset(ldr, rel.r_offset) -
-					ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+				op_loc = llext_dyn_ptr(ldr, ext, rel.r_offset);
+				if (!op_loc) {
+					LOG_ERR("llext_dyn_ptr() failed for op_loc 0x%x",
+						rel.r_offset);
+					return -EINVAL;
+				}
 
-				const void *link_addr;
-				uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
 				uint32_t stb = ELF_ST_BIND(sym.st_info);
 
 				switch (stb) {
 				case STB_GLOBAL:
-					link_addr = llext_find_sym(NULL, name);
+					link_addr = (uintptr_t)llext_find_sym(&ext->sym_tab, name);
 					if (!link_addr)
-						link_addr = llext_find_sym(&ext->sym_tab, name);
-
-					if (!link_addr) {
-						LOG_WRN("PLT: cannot find idx %u name %s", j, name);
-						continue;
-					}
-
-					if (!rel.r_offset) {
-						LOG_WRN("PLT: zero offset idx %u name %s", j, name);
-						continue;
-					}
-
-					/* Resolve the symbol */
-#ifdef CONFIG_LLEXT_DEBUG_STRINGS
-					LOG_DBG("writing at %s a relocation to %s",
-						llext_addr_str(ldr, ext,
-							       (uintptr_t)(text + got_offset)),
-						llext_addr_str(ldr, ext,
-							       (uintptr_t)link_addr));
-#else
-					LOG_DBG("writing at %p a relocation to %p",
-						text + got_offset, link_addr);
-#endif
-
-					*(const void **)(text + got_offset) = link_addr;
+						link_addr = (uintptr_t)llext_find_sym(NULL, name);
 					break;
 				case  STB_LOCAL:
-					if (do_local) {
-						arch_elf_relocate_local(ldr, ext, &rel, got_offset);
+					if (!do_local) {
+						continue;
 					}
+					link_addr = llext_dyn_ptr(ldr, ext, *(elf_word *)op_loc);
+					if (!link_addr) {
+						LOG_ERR("llext_dyn_ptr() failed for link_addr 0x%x",
+							*(elf_word *)op_loc);
+						return -EINVAL;
+					}
+					break;
+				}
+
+				if (!rel.r_offset) {
+					LOG_WRN("PLT: zero offset idx %u name %s", j, name);
+					continue;
+				}
+
+				if (!link_addr) {
+					LOG_WRN("PLT: cannot find idx %u name %s", j, name);
+					continue;
 				}
 
 			} else {
 
 				/* static linking */
-
-				uintptr_t link_addr, op_loc;
 
 				op_loc = loc + rel.r_offset;
 
@@ -717,19 +701,19 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 						+ sym.st_value
 						+ *((uintptr_t *)op_loc);
 				}
+			}
 
 #ifdef CONFIG_LLEXT_DEBUG_STRINGS
-				LOG_DBG("writing at %s a relocation to %s",
-					llext_addr_str(ldr, ext, op_loc),
-					llext_addr_str(ldr, ext, link_addr));
+			LOG_DBG("writing at %s a relocation to %s",
+				llext_addr_str(ldr, ext, op_loc),
+				llext_addr_str(ldr, ext, link_addr));
 #else
-				LOG_DBG("writing at 0x%lx a relocation to 0x%lx",
-					op_loc, link_addr);
+			LOG_DBG("writing at 0x%lx a relocation to 0x%lx",
+				op_loc, link_addr);
 #endif
 
-				/* relocation */
-				arch_elf_relocate(&rel, op_loc, link_addr);
-			}
+			/* relocation */
+			arch_elf_relocate(&rel, op_loc, link_addr);
 		}
 	}
 

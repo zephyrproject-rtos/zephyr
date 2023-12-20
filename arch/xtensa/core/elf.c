@@ -29,34 +29,21 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
  * These relocation instructions are architecture specific and each architecture
  * supporting modules must implement this.
  */
-void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
-			     elf_rela_t *rel, size_t got_offset)
+void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 {
-	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
 	int type = ELF32_R_TYPE(rel->r_info);
 
-	if (type == R_XTENSA_RELATIVE) {
-		elf_word ptr_offset = *(elf_word *)(text + got_offset);
-
-		LOG_DBG("relocation type %u offset %#x value %#x",
-			type, got_offset, ptr_offset);
-
-#ifdef CONFIG_LLEXT_DEBUG_STRINGS
-		LOG_DBG("writing at %s a relocation to addr %s",
-			llext_addr_str(ldr, ext, (uintptr_t) (text + got_offset)),
-			llext_addr_str(ldr, ext, (uintptr_t) (text + ptr_offset -
-							      ldr->sects[LLEXT_MEM_TEXT].sh_addr)));
-#else
-		LOG_DBG("writing at %p a relocation to addr %p",
-			text + got_offset,
-			text + ptr_offset - ldr->sects[LLEXT_MEM_TEXT].sh_addr);
-#endif
-
-		/* Relocate a local symbol: Xtensa specific */
-		*(elf_word *)(text + got_offset) = (elf_word)(text + ptr_offset -
-							      ldr->sects[LLEXT_MEM_TEXT].sh_addr);
-	} else {
+	switch(type) {
+		case R_XTENSA_GLOB_DAT:
+		case R_XTENSA_JMP_SLOT:
+		case R_XTENSA_RELATIVE: {
+			/* Update the absolute address */
+			*((elf_word *)opaddr) = opval;
+		}
+		break;
+	default:
 		LOG_DBG("relocation type %u not implemented", type);
+		break;
 	}
 }
 
