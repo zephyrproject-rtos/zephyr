@@ -305,7 +305,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                              "This option may be used multiple times. "
                              "Default to what was selected with --platform.")
 
-    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='lcov',
+    parser.add_argument("--coverage-tool", choices=['lcov', 'gcovr'], default='gcovr',
                         help="Tool to use to generate coverage report.")
 
     parser.add_argument("--coverage-formats", action="store", default=None, # default behavior is set in run_coverage
