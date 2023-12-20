@@ -27,7 +27,7 @@
 	test {
 		#address-cells = < 0x1 >;
 		#size-cells = < 0x1 >;
-		interrupt-parent = <&test_intc>;
+		interrupt-parent = <&test_intc1>;
 
 		test_pinctrl: pin-controller {
 			compatible = "vnd,pinctrl";
@@ -414,7 +414,7 @@
 			status = "okay";
 		};
 
-		test_intc: interrupt-controller@bbbbcccc  {
+		test_intc1: interrupt-controller@bbbbcccc  {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
 			interrupt-controller;
@@ -422,13 +422,26 @@
 			interrupts = <11 0>;
 		};
 
+		test_intc2: interrupt-controller@bbbbdccc  {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdccc 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>;
+		};
+
 		/* there should only be one of these */
 		test_irq: interrupt-holder {
 			compatible = "vnd,interrupt-holder";
 			status = "okay";
 			interrupts = <30 3 40 5 60 7>;
-			interrupt-parent = <&test_intc>;
+			interrupt-parent = <&test_intc1>;
 			interrupt-names = "err", "stat", "done";
+			interrupts-extended = <
+				&test_intc1 30 3
+				&test_intc2 40 5
+				&test_intc1 60 7
+			>;
 		};
 
 		test_fixed_clk: test-fixed-clock {

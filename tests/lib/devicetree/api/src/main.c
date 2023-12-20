@@ -20,6 +20,8 @@
 #define TEST_INST	DT_INST(0, vnd_gpio_device)
 #define TEST_ARRAYS	DT_NODELABEL(test_arrays)
 #define TEST_PH	DT_NODELABEL(test_phandles)
+#define TEST_INTC1	DT_NODELABEL(test_intc1)
+#define TEST_INTC2	DT_NODELABEL(test_intc2)
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
 #define TEST_REG	DT_NODELABEL(test_reg)
@@ -633,14 +635,17 @@ ZTEST(devicetree_api, test_irq)
 	/* DT_IRQ_HAS_CELL_AT_IDX */
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, irq), "");
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, priority), "");
+	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, parent), "");
 	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 0, foo), 0, "");
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, irq), "");
 	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, priority), "");
+	zassert_true(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, parent), "");
 	zassert_false(DT_IRQ_HAS_CELL_AT_IDX(TEST_IRQ, 2, foo), "");
 
 	/* DT_IRQ_HAS_CELL */
 	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, irq), "");
 	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, priority), "");
+	zassert_true(DT_IRQ_HAS_CELL(TEST_IRQ, parent), "");
 	zassert_false(DT_IRQ_HAS_CELL(TEST_IRQ, foo), "");
 
 	/* DT_IRQ_HAS_NAME */
@@ -692,6 +697,12 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_INST_IRQ_BY_IDX(0, 0, priority), 3, "");
 	zassert_equal(DT_INST_IRQ_BY_IDX(0, 1, priority), 5, "");
 	zassert_equal(DT_INST_IRQ_BY_IDX(0, 2, priority), 7, "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ_BY_IDX(0, 0, parent)),
+			  DEVICE_DT_GET(TEST_INTC1), "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ_BY_IDX(0, 1, parent)),
+			  DEVICE_DT_GET(TEST_INTC2), "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ_BY_IDX(0, 2, parent)),
+			  DEVICE_DT_GET(TEST_INTC1), "");
 
 	/* DT_INST_IRQ_BY_NAME */
 	zassert_equal(DT_INST_IRQ_BY_NAME(0, err, irq), 30, "");
@@ -700,10 +711,17 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_INST_IRQ_BY_NAME(0, err, priority), 3, "");
 	zassert_equal(DT_INST_IRQ_BY_NAME(0, stat, priority), 5, "");
 	zassert_equal(DT_INST_IRQ_BY_NAME(0, done, priority), 7, "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ_BY_NAME(0, err, parent)),
+			  DEVICE_DT_GET(TEST_INTC1), "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ_BY_NAME(0, stat, parent)),
+			  DEVICE_DT_GET(TEST_INTC2), "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ_BY_NAME(0, done, parent)),
+			  DEVICE_DT_GET(TEST_INTC1), "");
 
 	/* DT_INST_IRQ */
 	zassert_equal(DT_INST_IRQ(0, irq), 30, "");
 	zassert_equal(DT_INST_IRQ(0, priority), 3, "");
+	zassert_equal_ptr(DEVICE_DT_GET(DT_INST_IRQ(0, parent)), DEVICE_DT_GET(TEST_INTC1), "");
 
 	/* DT_INST_IRQN */
 #ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
@@ -729,14 +747,17 @@ ZTEST(devicetree_api, test_irq)
 	/* DT_INST_IRQ_HAS_CELL_AT_IDX */
 	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, irq), "");
 	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, priority), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, parent), "");
 	zassert_false(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 0, foo), "");
 	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, irq), "");
 	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, priority), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, parent), "");
 	zassert_false(DT_INST_IRQ_HAS_CELL_AT_IDX(0, 2, foo), "");
 
 	/* DT_INST_IRQ_HAS_CELL */
 	zassert_true(DT_INST_IRQ_HAS_CELL(0, irq), "");
 	zassert_true(DT_INST_IRQ_HAS_CELL(0, priority), "");
+	zassert_true(DT_INST_IRQ_HAS_CELL(0, parent), "");
 	zassert_false(DT_INST_IRQ_HAS_CELL(0, foo), "");
 
 	/* DT_INST_IRQ_HAS_NAME */
@@ -2305,7 +2326,7 @@ ZTEST(devicetree_api, test_dep_ord)
 	zassert_true(DT_DEP_ORD(DT_NODELABEL(test_child_a)) >
 		     DT_DEP_ORD(DT_NODELABEL(test_children)), "");
 	zassert_true(DT_DEP_ORD(DT_NODELABEL(test_irq)) >
-		     DT_DEP_ORD(DT_NODELABEL(test_intc)), "");
+		     DT_DEP_ORD(DT_NODELABEL(test_intc1)), "");
 	zassert_true(DT_DEP_ORD(DT_NODELABEL(test_phandles)) >
 		     DT_DEP_ORD(DT_NODELABEL(test_gpio_1)), "");
 

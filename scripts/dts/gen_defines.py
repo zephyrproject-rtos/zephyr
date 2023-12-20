@@ -452,6 +452,7 @@ def write_interrupts(node):
             return irq_num + 16
         err(f"Invalid interrupt type specified for {irq!r}")
 
+    parent_vals = []
     idx_vals = []
     name_vals = []
     path_id = node.z_path_id
@@ -460,6 +461,16 @@ def write_interrupts(node):
         idx_vals.append((f"{path_id}_IRQ_NUM", len(node.interrupts)))
 
     for i, irq in enumerate(node.interrupts):
+        idx_vals.append((f"{path_id}_IRQ_IDX_{i}_EXISTS", 1))
+        if irq.controller.z_path_id:
+            parent_macro = f"{path_id}_IRQ_IDX_{i}_VAL_parent"
+            parent_vals.append((parent_macro, f"DT_{irq.controller.z_path_id}"))
+            parent_vals.append((parent_macro + "_EXISTS", 1))
+            if irq.name:
+                name_macro = \
+                    f"{path_id}_IRQ_NAME_{str2ident(irq.name)}_VAL_parent"
+                name_vals.append((name_macro, f"DT_{parent_macro}"))
+                name_vals.append((name_macro + "_EXISTS", 1))
         for cell_name, cell_value in irq.data.items():
             name = str2ident(cell_name)
 
@@ -467,7 +478,6 @@ def write_interrupts(node):
                 if "arm,gic" in irq.controller.compats:
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
 
-            idx_vals.append((f"{path_id}_IRQ_IDX_{i}_EXISTS", 1))
             idx_macro = f"{path_id}_IRQ_IDX_{i}_VAL_{name}"
             idx_vals.append((idx_macro, cell_value))
             idx_vals.append((idx_macro + "_EXISTS", 1))
@@ -477,6 +487,8 @@ def write_interrupts(node):
                 name_vals.append((name_macro, f"DT_{idx_macro}"))
                 name_vals.append((name_macro + "_EXISTS", 1))
 
+    for macro, val in parent_vals:
+        out_dt_define(macro, val)
     for macro, val in idx_vals:
         out_dt_define(macro, val)
     for macro, val in name_vals:
