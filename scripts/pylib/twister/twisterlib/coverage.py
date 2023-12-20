@@ -3,6 +3,7 @@
 # Copyright (c) 2018-2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import sys
 import os
 import logging
 import pathlib
@@ -149,9 +150,11 @@ class Lcov(CoverageTool):
             version_output = result.stdout.strip().replace('lcov: LCOV version ', '')
             return version_output
         except subprocess.CalledProcessError as e:
-            logger.error(f"Unsable to determine lcov version: {e}")
-
-        return ""
+            logger.error(f"Unable to determine lcov version: {e}")
+            sys.exit(1)
+        except FileNotFoundError as e:
+            logger.error(f"Unable to to find lcov tool: {e}")
+            sys.exit(1)
 
     def add_ignore_file(self, pattern):
         self.ignores.append('*' + pattern + '*')
@@ -237,6 +240,24 @@ class Gcovr(CoverageTool):
         super().__init__()
         self.ignores = []
         self.output_formats = "html"
+        self.version = self.get_version()
+
+    def get_version(self):
+        try:
+            result = subprocess.run(['gcovr', '--version'],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    text=True, check=True)
+            version_lines = result.stdout.strip().split('\n')
+            if version_lines:
+                version_output = version_lines[0].replace('gcovr ', '')
+                return version_output
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Unable to determine gcovr version: {e}")
+            sys.exit(1)
+        except FileNotFoundError as e:
+            logger.error(f"Unable to to find gcovr tool: {e}")
+            sys.exit(1)
 
     def add_ignore_file(self, pattern):
         self.ignores.append('.*' + pattern + '.*')
@@ -331,8 +352,12 @@ def run_coverage(testplan, options):
             options.gcov_tool = "gcov"
         elif os.path.exists(zephyr_sdk_gcov_tool):
             options.gcov_tool = zephyr_sdk_gcov_tool
+        else:
+            logger.error(f"Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR.")
+            sys.exit(1)
 
     logger.info("Generating coverage files...")
+    logger.info(f"Using gcov tool: {options.gcov_tool}")
     coverage_tool = CoverageTool.factory(options.coverage_tool)
     coverage_tool.gcov_tool = options.gcov_tool
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
