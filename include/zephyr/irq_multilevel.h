@@ -166,6 +166,23 @@ static inline unsigned int irq_parent_level_3(unsigned int irq)
 		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
 }
 
+/**
+ * @brief Returns the parent interrupt controller IRQ of the given IRQ number
+ *
+ * @param irq IRQ number in its zephyr format
+ *
+ * @return IRQ of the interrupt controller
+ */
+static inline unsigned int irq_get_intc_irq(unsigned int irq)
+{
+	const unsigned int level = irq_get_level(irq);
+
+	__ASSERT_NO_MSG(level > 1 && level <= 3);
+
+	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS +
+			      (level == 3 ? CONFIG_2ND_LEVEL_INTERRUPT_BITS : 0));
+}
+
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 #ifdef __cplusplus
 }
