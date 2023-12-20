@@ -62,8 +62,8 @@ Putting it all together, here is what the example above would look like in memor
 
 .. code-block::
 
-    46 60 a4 7e 5a 3e 86 b9 02 10  0d 00  48 65 6c 6c 6f 20 77 6f 72 6c 64 21 00 00 00 00 ff ff
-   |         magic         | tag |length| H  e  l  l  o     w  o  r  l  d  !    |   pad  | end |
+    46 60 a4 7e 5a 3e 86 b9 02 10  0d 00  48 65 6c 6c 6f 20 77 6f 72 6c 64 21 00 00 00 00 ff ff 00 00
+   |         magic         | tag |length| H  e  l  l  o     w  o  r  l  d  !    |   pad  |    end    |
 
 Usage
 *****
