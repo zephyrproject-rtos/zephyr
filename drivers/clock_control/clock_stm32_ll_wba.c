@@ -551,6 +551,9 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
+	/* Set voltage regulator to comply with targeted system frequency */
+	set_regu_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	/* Set bus prescalers prescaler */
