@@ -8,7 +8,7 @@ common:
   harness_config:
     type: one_line
     regex:
-      - "Your lucky number was 13!"
+      - "Your lucky number was 14!"
 tests:
   sample.modules.nanopb:
     tags:
