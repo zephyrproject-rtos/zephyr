@@ -19,6 +19,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -61,6 +62,10 @@ struct gpio_ite_data {
 	sys_slist_t callbacks;
 	uint8_t volt_default_set;
 	struct k_spinlock lock;
+	uint8_t level_isr_high;
+	uint8_t level_isr_low;
+	const struct device *instance;
+	struct k_work interrupt_worker;
 };
 
 /**
@@ -359,6 +364,30 @@ static void gpio_ite_isr(const void *arg)
 			break;
 		}
 	}
+	/* Reschedule worker */
+	k_work_submit(&data->interrupt_worker);
+}
+
+static void gpio_ite_interrupt_worker(struct k_work *work)
+{
+	struct gpio_ite_data * const data = CONTAINER_OF(
+		work, struct gpio_ite_data, interrupt_worker);
+	gpio_port_value_t value;
+	gpio_port_value_t triggered_int;
+
+	gpio_ite_port_get_raw(data->instance, &value);
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	triggered_int = (value & data->level_isr_high) | (~value & data->level_isr_low);
+	k_spin_unlock(&data->lock, key);
+
+	if (triggered_int != 0) {
+		gpio_fire_callbacks(&data->callbacks, data->instance,
+				    triggered_int);
+		/* Reschedule worker */
+		k_work_submit(&data->interrupt_worker);
+	}
 }
 
 static int gpio_ite_pin_interrupt_configure(const struct device *dev,
@@ -386,11 +415,6 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 	}
 
-	if (mode == GPIO_INT_MODE_LEVEL) {
-		LOG_ERR("Level trigger mode not supported");
-		return -ENOTSUP;
-	}
-
 	/* Disable irq before configuring it */
 	irq_disable(gpio_irq);
 
@@ -415,6 +439,19 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 		} else {
 			ECREG(reg_wuemr) &= ~wuc_mask;
 		}
+
+		if (mode == GPIO_INT_MODE_LEVEL) {
+			if (trig & GPIO_INT_TRIG_LOW) {
+				data->level_isr_low |= BIT(pin);
+				data->level_isr_high &= ~BIT(pin);
+			} else {
+				data->level_isr_low &= ~BIT(pin);
+				data->level_isr_high |= BIT(pin);
+			}
+		} else {
+			data->level_isr_low &= ~BIT(pin);
+			data->level_isr_high &= ~BIT(pin);
+		}
 		/*
 		 * Always write 1 to clear the WUC status register after
 		 * modifying edge mode selection register (WUBEMR and WUEMR).
@@ -426,6 +463,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	/* Enable GPIO interrupt */
 	irq_connect_dynamic(gpio_irq, 0, gpio_ite_isr, dev, 0);
 	irq_enable(gpio_irq);
+	k_work_submit(&data->interrupt_worker);
 
 	return 0;
 }
@@ -446,6 +484,14 @@ static const struct gpio_driver_api gpio_ite_driver_api = {
 
 static int gpio_ite_init(const struct device *dev)
 {
+	struct gpio_ite_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	data->instance = dev;
+	k_work_init(&data->interrupt_worker,
+		gpio_ite_interrupt_worker);
+	k_spin_unlock(&data->lock, key);
+
 	return 0;
 }
 
