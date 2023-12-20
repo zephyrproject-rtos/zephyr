@@ -537,6 +537,8 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`wpan-usb`                     | 0x000D |
 +----------------------------------------------------+--------+
+| :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
++----------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
 the Zephyr kernel major and minor versions as a binary coded decimal value.
