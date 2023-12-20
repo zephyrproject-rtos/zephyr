@@ -52,6 +52,10 @@ config LV_Z_LOG_LEVEL
 	default 3 if LV_LOG_LEVEL_USER
 	default 4 if LV_LOG_LEVEL_TRACE
 
+config LV_Z_USE_ROUNDER_CB
+	bool
+	default y if LV_Z_AREA_X_ALIGNMENT_WIDTH != 1 || LV_Z_AREA_Y_ALIGNMENT_WIDTH != 1
+
 config APP_LINK_WITH_LVGL
 	bool "Link 'app' with LVGL"
 	default y
@@ -106,6 +110,22 @@ config LV_Z_FLUSH_THREAD_PRIO
 	  Cooperative priority of LVGL flush thread.
 
 endif # LV_Z_FLUSH_THREAD
+
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	int "Frame X alignment size"
+	default 1
+	help
+	  Number of pixels, X axis should be rounded to. Should be used to override
+	  the current frame dimensions to meet display and/or LCD host
+	  controller requirements. The value must be power of 2.
+
+config LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	int "Frame Y alignment size"
+	default 1
+	help
+	  Number of pixels, Y axis should be rounded to. Should be used to override
+	  the current frame dimensions to meet display and/or LCD host
+	  controller requirements. The value must be power of 2.
 
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
