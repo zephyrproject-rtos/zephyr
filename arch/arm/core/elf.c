@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
+
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
-#include <zephyr/logging/log.h>
+#include <zephyr/llext/debug_str.h>
 
-LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 /**
  * @brief Architecture specific function for relocating partially linked (static) elf
@@ -35,3 +38,25 @@ void arch_elf_relocate(elf_rela_t *rel, uintptr_t opaddr, uintptr_t opval)
 		break;
 	}
 }
+
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+
+/**
+ * @brief Architecture specific function for printing relocation type
+ */
+
+const char *arch_r_type_str(unsigned int r_type)
+{
+	static char num_buf[12];
+
+	switch (r_type) {
+	case R_ARM_ABS32:
+		return "R_ARM_ABS32";
+	default:
+		/* not found, return the number */
+		sprintf(num_buf, "%d", r_type);
+		return num_buf;
+	}
+}
+
+#endif

@@ -34,6 +34,13 @@ config LLEXT_STORAGE_WRITABLE
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
 
+config LLEXT_DEBUG_STRINGS
+	bool "Show human-readable debug output"
+	default y
+	help
+	  Translate codes associated with symbols and relocations to their
+	  string representation.
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"

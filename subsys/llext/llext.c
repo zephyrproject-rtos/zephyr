@@ -10,6 +10,7 @@
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/debug_str.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 
@@ -24,6 +25,35 @@ enum sym_op {
 	SYM_OP_DEFINE,  /**< The symbol is defined and may be used at link time */
 	SYM_OP_RESOLVE, /**< The symbol is undefined and needs to be resolved */
 };
+
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+
+/* Display information about a symbol in a human-readable format */
+#define LOG_ELF_SYM(ldr, ext, hdr, sym)						\
+	LOG_DBG(hdr " %-7s %-7s in %-8s \"%s\": 0x%x",				\
+		elf_st_bind_str(ELF_ST_BIND((sym)->st_info)),			\
+		elf_st_type_str(ELF_ST_TYPE((sym)->st_info)),			\
+		elf_sect_str(ldr, (sym)->st_shndx),				\
+		llext_string(ldr, ext, LLEXT_MEM_STRTAB, (sym)->st_name),	\
+		(sym)->st_value)
+
+#else
+
+/* Display numeric versions of the symbol information */
+#define LOG_ELF_SYM(ldr, ext, hdr, sym)						\
+	LOG_DBG(hdr " bind %d type %d shndx %d \"%s\": 0x%x",			\
+		ELF_ST_BIND((sym)->st_info),					\
+		ELF_ST_TYPE((sym)->st_info),					\
+		(sym)->st_shndx,						\
+		llext_string(ldr, ext, LLEXT_MEM_STRTAB, (sym)->st_name),	\
+		(sym)->st_value)
+
+#endif
+
+#define LOG_LLEXT_SYM(ldr, ext, hdr, sym)					\
+		LOG_DBG(hdr " llext_sym \"%s\" at %p",			        \
+		(sym)->name,							\
+		(sym)->addr);
 
 K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * 1024);
 
@@ -166,18 +196,18 @@ static int llext_find_tables(struct llext_loader *ldr)
 		switch (shdr.sh_type) {
 		case SHT_SYMTAB:
 		case SHT_DYNSYM:
-			LOG_DBG("symtab at %d", i);
+			LOG_DBG(">>> found symtab at %d", i);
 			ldr->sects[LLEXT_MEM_SYMTAB] = shdr;
 			ldr->sect_map[i] = LLEXT_MEM_SYMTAB;
 			sect_cnt++;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
-				LOG_DBG("shstrtab at %d", i);
+				LOG_DBG(">>> found shstrtab at %d", i);
 				ldr->sects[LLEXT_MEM_SHSTRTAB] = shdr;
 				ldr->sect_map[i] = LLEXT_MEM_SHSTRTAB;
 			} else {
-				LOG_DBG("strtab at %d", i);
+				LOG_DBG(">>> found strtab at %d", i);
 				ldr->sects[LLEXT_MEM_STRTAB] = shdr;
 				ldr->sect_map[i] = LLEXT_MEM_STRTAB;
 			}
@@ -229,8 +259,6 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr.sh_name);
 
-		LOG_DBG("section %d name %s", i, name);
-
 		enum llext_mem mem_idx;
 
 		if (strcmp(name, ".text") == 0) {
@@ -244,7 +272,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		} else if (strcmp(name, ".exported_sym") == 0) {
 			mem_idx = LLEXT_MEM_EXPORT;
 		} else {
-			LOG_DBG("Not copied section %s", name);
+			/* ignore other sections */
 			continue;
 		}
 
@@ -325,12 +353,23 @@ static int llext_copy_sections(struct llext_loader *ldr, struct llext *ext)
 		}
 
 		int ret = llext_copy_section(ldr, ext, mem_idx);
-
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+		LOG_DBG("section %s %s at %p, len 0x%x",
+			llext_mem_str(mem_idx),
+#else
+		LOG_DBG("section %d %s at %p, len 0x%x",
+			mem_idx,
+#endif
+			ext->mem_on_heap[mem_idx] ? "copied" : "linked",
+			ext->mem[mem_idx],
+			ext->mem_size[mem_idx]);
+	}
 	return 0;
 }
 
@@ -374,22 +413,19 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	for (int i = 1; i < sym_cnt; ++i) {
 
 		elf_sym_t sym = elf_syms[i];
-		uint32_t stt = ELF_ST_TYPE(sym.st_info);
-		uint32_t stb = ELF_ST_BIND(sym.st_info);
-		uint32_t sect = sym.st_shndx;
-		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 		enum sym_op op = llext_elf_sym_operation(ldr, &sym);
 
 		switch (op) {
-		case SYM_OP_DEFINE:
-			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
-				i, name, stt, stb, sect);
-			ext->sym_tab.sym_cnt++;
+		case SYM_OP_IGNORE:
+			LOG_ELF_SYM(ldr, ext, " ignore", &sym);
 			break;
-		default:
-			LOG_DBG("unhandled symbol %d, name %s, type tag %d, bind %d, sect %d",
-				i, name, stt, stb, sect);
+		case SYM_OP_RESOLVE:
+			LOG_ELF_SYM(ldr, ext, "RESOLVE", &sym);
+			break;
+		case SYM_OP_DEFINE:
+			LOG_ELF_SYM(ldr, ext, " DEFINE", &sym);
+			ext->sym_tab.sym_cnt++;
 			break;
 		}
 	}
@@ -437,7 +473,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 	     i++, sym++) {
 		exp_tab->syms[i].name = sym->name;
 		exp_tab->syms[i].addr = sym->addr;
-		LOG_DBG("sym %p name %s in %p", sym->addr, sym->name, exp_tab->syms + i);
+		LOG_LLEXT_SYM(ldr, ext, "export", &exp_tab->syms[i]);
 	}
 
 	return 0;
@@ -474,8 +510,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext)
 						 sym.st_value -
 						 (ldr->hdr.e_type == ET_REL ? 0 :
 						  ldr->sects[mem_idx].sh_addr));
-		LOG_DBG("function symbol %d name %s addr %p",
-			j, name, sym_tab->syms[j].addr);
+		LOG_LLEXT_SYM(ldr, ext, "define", &sym_tab->syms[j]);
 		j++;
 	}
 
@@ -564,8 +599,13 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 			loc = (uintptr_t)ext->mem[target_mem];
 		}
 
-		LOG_DBG("relocation section %s (%d) linked to section %d has %d relocations",
-			name, i, shdr.sh_link, rel_cnt);
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+		LOG_DBG("relocation section %s (%d) for section %s has %d relocations",
+			name, i, elf_sect_str(ldr, shdr.sh_info), rel_cnt);
+#else
+		LOG_DBG("relocation section %s (%d) for section %d has %d relocations",
+			name, i, shdr.sh_info, rel_cnt);
+#endif
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
@@ -589,11 +629,16 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 
 			name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
-			LOG_DBG("relocation %d:%d info %x (type %d, sym %d) offset %d sym_name "
-				"%s sym_type %d sym_bind %d sym_ndx %d",
-				i, j, rel.r_info, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
-				rel.r_offset, name, ELF_ST_TYPE(sym.st_info),
-				ELF_ST_BIND(sym.st_info), sym.st_shndx);
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+			LOG_DBG(">>> Relocation %d:%d type %s sym %d @ 0x%x:",
+				i, j, arch_r_type_str(ELF_R_TYPE(rel.r_info)),
+				ELF_R_SYM(rel.r_info), rel.r_offset);
+#else
+			LOG_DBG(">>> Relocation %d:%d type %d sym %d @ 0x%x:",
+				i, j, ELF_R_TYPE(rel.r_info),
+				ELF_R_SYM(rel.r_info), rel.r_offset);
+#endif
+			LOG_ELF_SYM(ldr, ext, "target", &sym);
 
 			if (is_plt_section) {
 
@@ -623,6 +668,17 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 					}
 
 					/* Resolve the symbol */
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+					LOG_DBG("writing at %s a relocation to %s",
+						llext_addr_str(ldr, ext,
+							       (uintptr_t)(text + got_offset)),
+						llext_addr_str(ldr, ext,
+							       (uintptr_t)link_addr));
+#else
+					LOG_DBG("writing at %p a relocation to %p",
+						text + got_offset, link_addr);
+#endif
+
 					*(const void **)(text + got_offset) = link_addr;
 					break;
 				case  STB_LOCAL:
@@ -662,15 +718,14 @@ static int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local
 						+ *((uintptr_t *)op_loc);
 				}
 
-				LOG_INF("relocating (linking) symbol %s type %d "
-					"binding %d ndx %d offset %d link section %d",
-					name, ELF_ST_TYPE(sym.st_info), ELF_ST_BIND(sym.st_info),
-					sym.st_shndx, rel.r_offset, shdr.sh_link);
-
-				LOG_INF("writing relocation symbol %s type %d sym %d at addr 0x%lx "
-					"addr 0x%lx",
-					name, ELF_R_TYPE(rel.r_info), ELF_R_SYM(rel.r_info),
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+				LOG_DBG("writing at %s a relocation to %s",
+					llext_addr_str(ldr, ext, op_loc),
+					llext_addr_str(ldr, ext, link_addr));
+#else
+				LOG_DBG("writing at 0x%lx a relocation to 0x%lx",
 					op_loc, link_addr);
+#endif
 
 				/* relocation */
 				arch_elf_relocate(&rel, op_loc, link_addr);
@@ -773,6 +828,7 @@ static int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
+	LOG_DBG("Exporting symbols...");
 	ret = llext_export_symbols(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to export, ret %d", ret);
@@ -898,7 +954,12 @@ int llext_unload(struct llext **ext)
 
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 		if (tmp->mem_on_heap[i]) {
+#ifdef CONFIG_LLEXT_DEBUG_STRINGS
+			LOG_DBG("freeing memory region %s", llext_mem_str(i));
+#else
 			LOG_DBG("freeing memory region %d", i);
+#endif
+
 			k_heap_free(&llext_heap, tmp->mem[i]);
 			tmp->mem[i] = NULL;
 		}
