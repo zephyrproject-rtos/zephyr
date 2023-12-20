@@ -753,6 +753,7 @@ void acpi_dmar_foreach_subtable(ACPI_TABLE_DMAR *dmar,
 		ACPI_DMAR_HEADER *subtable = ACPI_ADD_PTR(ACPI_DMAR_HEADER, dmar, offset);
 
 		__ASSERT_NO_MSG(subtable->Length >= sizeof(*subtable));
+		__ASSERT_NO_MSG(subtable->Length <= length - offset);
 
 		func(subtable, arg);
 
@@ -773,6 +774,7 @@ void acpi_dmar_foreach_devscope(ACPI_DMAR_HARDWARE_UNIT *hu,
 								hu, offset);
 
 		__ASSERT_NO_MSG(devscope->Length >= sizeof(*devscope));
+		__ASSERT_NO_MSG(devscope->Length <= length - offset);
 
 		func(devscope, arg);
 
