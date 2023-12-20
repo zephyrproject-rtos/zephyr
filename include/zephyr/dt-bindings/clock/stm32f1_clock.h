@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_
 
+#include "stm32_common_clocks.h"
+
 /** Domain clocks */
 
 /** Bus clocks */
@@ -16,13 +18,13 @@
 #define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB1
 
-/** Fixed clocks  */
-#define STM32_SRC_HSI		0x001
-#define STM32_SRC_HSE		0x002
-#define STM32_SRC_LSE		0x003
-#define STM32_SRC_LSI		0x004
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+/* defined in stm32_common_clocks.h */
+
+/** Fixed clocks  */
+/* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSE		(STM32_SRC_HSI + 1)
 
 
 #define STM32_CLOCK_REG_MASK    0xFFU
@@ -65,7 +67,5 @@
 #define I2S3_SEL(val)		STM32_CLOCK(val, 1, 18, CFGR2_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
-/** Dummy: Add a specificier when no selection is possible */
-#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */
