@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 

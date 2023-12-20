@@ -5,9 +5,9 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include "soc/dport_reg.h"
-#include "soc/gpio_periph.h"
-#include "soc/rtc_periph.h"
+#include <soc/dport_reg.h>
+#include <soc/gpio_periph.h>
+#include <soc/rtc_periph.h>
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc.h>
@@ -62,7 +62,7 @@ static struct k_spinlock loglock;
  */
 void smp_log(const char *msg)
 {
-#ifndef CONFIG_ESP32_NETWORK_CORE
+#ifndef CONFIG_SOC_ESP32_PROCPU
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
