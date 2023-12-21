@@ -646,16 +646,14 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_AP) && status->iface_mode == WIFI_MODE_INFRA) {
+		status->rssi = -WPA_INVALID_NOISE;
+		if (status->iface_mode == WIFI_MODE_INFRA) {
 			ret = z_wpa_ctrl_signal_poll(&signal_poll);
 			if (!ret) {
 				status->rssi = signal_poll.rssi;
 			} else {
 				wpa_printf(MSG_WARNING, "%s:Failed to read RSSI", __func__);
-				status->rssi = -WPA_INVALID_NOISE;
 			}
-		} else {
-			status->rssi = -WPA_INVALID_NOISE;
 		}
 
 		conn_info = os_zalloc(sizeof(struct wpa_conn_info));
