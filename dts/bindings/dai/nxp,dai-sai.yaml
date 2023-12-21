@@ -58,3 +58,29 @@ properties:
       associated with the DAI whose index Linux passes to SOF
       through an IPC. If this property is not specified, the DAI
       index will be considered 0.
+  tx-sync-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Use this property to specify which synchronization mode to use
+      for the transmitter. At the moment, the only supported modes are:
+        1) The transmitter is ASYNC (0)
+        2) The transmitter is in SYNC with the receiver (1)
+      If this property is not specified, the transmitter will be set to ASYNC.
+      If one side is SYNC then the other MUST be ASYNC. Failing to meet this
+      condition will result in a failed BUILD_ASSERT().
+  rx-sync-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Use this property to specify which synchronization mode to use
+      for the receiver. At the moment, the only supported modes are:
+        1) The receiver is ASYNC (0)
+        2) The receiver is in SYNC with the transmitter (1)
+      If this property is not specified, the receiver will be set to ASYNC.
+      If one side is SYNC then the other MUST be ASYNC. Failing to meet this
+      condition will result in a failed BUILD_ASSERT().

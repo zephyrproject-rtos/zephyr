@@ -711,6 +711,10 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SAI_HAS_MCLK_CONFIG_OPTION) ||			\
 	     !DT_INST_PROP(inst, mclk_is_output),				\
 	     "SAI doesn't support MCLK config but mclk_is_output is specified");\
 										\
+BUILD_ASSERT(SAI_TX_SYNC_MODE(inst) != SAI_RX_SYNC_MODE(inst) ||		\
+	     SAI_TX_SYNC_MODE(inst) != kSAI_ModeSync,				\
+	     "transmitter and receiver can't be both SYNC with each other");	\
+										\
 static const struct dai_properties sai_tx_props_##inst = {			\
 	.fifo_address = SAI_TX_FIFO_BASE(inst),					\
 	.fifo_depth = SAI_FIFO_DEPTH(inst) * CONFIG_SAI_FIFO_WORD_SIZE,		\
@@ -743,6 +747,8 @@ static struct sai_config sai_config_##inst = {					\
 	.tx_props = &sai_tx_props_##inst,					\
 	.rx_props = &sai_rx_props_##inst,					\
 	.irq_config = irq_config_##inst,					\
+	.tx_sync_mode = SAI_TX_SYNC_MODE(inst),					\
+	.rx_sync_mode = SAI_RX_SYNC_MODE(inst),					\
 };										\
 										\
 static struct sai_data sai_data_##inst = {					\
