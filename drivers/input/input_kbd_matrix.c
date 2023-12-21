@@ -315,7 +315,7 @@ int input_kbd_matrix_common_init(const struct device *dev)
 	k_sem_init(&data->poll_lock, 0, 1);
 
 	k_thread_create(&data->thread, data->thread_stack,
-			CONFIG_INPUT_KBD_MATRIX_THREAD_STACK_SIZE,
+			K_KERNEL_STACK_SIZEOF(data->thread_stack),
 			input_kbd_matrix_polling_thread, (void *)dev, NULL, NULL,
 			CONFIG_INPUT_KBD_MATRIX_THREAD_PRIORITY, 0, K_NO_WAIT);
 
