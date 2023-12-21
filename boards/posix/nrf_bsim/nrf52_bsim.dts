@@ -9,6 +9,8 @@
 
 #include <mem.h>
 #include <arm/nordic/nrf52833.dtsi>
+/* We resuse the pinctrl definitions directly from the real board : */
+#include <../boards/arm/nrf52833dk_nrf52833/nrf52833dk_nrf52833-pinctrl.dtsi>
 
 / {
 	model = "nrf52 bsim";
@@ -34,6 +36,10 @@
 	chosen {
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,flash = &flash0;
+		/* UART used by the BT controller UART HCI driver by default: */
+		zephyr,bt-c2h-uart = &uart1;
+		/* UART used by the BT host UART HCI driver by default: */
+		zephyr,bt-uart = &uart1;
 	};
 
 	soc {
@@ -93,4 +99,23 @@
 			reg = <0x00000000 DT_SIZE_K(512)>;
 		};
 	};
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
 };
