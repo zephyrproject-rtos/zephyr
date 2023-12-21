@@ -435,6 +435,9 @@ int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr,
  * Volume Offset Control Service (Volume Offset Control Service) or
  * Audio Input Control Service (AICS) instances.
  *
+ * Requires that @kconfig{CONFIG_BT_VCP_VOL_CTLR_VOCS} or @kconfig{CONFIG_BT_VCP_VOL_CTLR_AICS} is
+ * enabled.
+ *
  * @param      vol_ctlr Volume Controller instance pointer.
  * @param[out] included Pointer to store the result in.
  *
