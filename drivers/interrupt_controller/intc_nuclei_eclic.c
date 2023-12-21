@@ -88,10 +88,8 @@ struct CLICCTRL {
 /** ECLIC Mode mask for MTVT CSR Register */
 #define ECLIC_MODE_MTVEC_Msk   3U
 
-/** CLIC INTATTR: TRIG Position */
-#define CLIC_INTATTR_TRIG_Pos  1U
 /** CLIC INTATTR: TRIG Mask */
-#define CLIC_INTATTR_TRIG_Msk  (0x3UL << CLIC_INTATTR_TRIG_Pos)
+#define CLIC_INTATTR_TRIG_Msk  0x3U
 
 #define ECLIC_CFG       (*((volatile union CLICCFG  *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 0))))
 #define ECLIC_INFO      (*((volatile union CLICINFO *)(DT_REG_ADDR_BY_IDX(DT_NODELABEL(eclic), 1))))
