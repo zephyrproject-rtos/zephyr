@@ -628,6 +628,8 @@ enum {
 	 *
 	 * @note Enabling this option requires extended advertising support in
 	 *       the peer devices scanning for advertisement packets.
+	 *
+	 * @note This cannot be used with bt_le_adv_start().
 	 */
 	BT_LE_ADV_OPT_EXT_ADV = BIT(10),
 
@@ -1054,6 +1056,9 @@ struct bt_le_per_adv_param {
  * will be directed to the peer. In this case advertisement data and scan
  * response data parameters are ignored. If the mode is high duty cycle
  * the timeout will be @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
+ *
+ * This function cannot be used with @ref BT_LE_ADV_OPT_EXT_ADV in the @p param.options.
+ * For extended advertising, the bt_le_ext_adv_* functions must be used.
  *
  * @param param Advertising parameters.
  * @param ad Data to be used in advertisement packets.
