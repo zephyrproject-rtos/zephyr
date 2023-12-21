@@ -27,4 +27,15 @@ config SAI_FIFO_WORD_SIZE
 		Use this to set the size (in bytes) of a SAI
 		FIFO word.
 
+config SAI_IMX93_ERRATA_051421
+	bool "Set if your SAI IP version is affected by i.MX93's ERRATA 051421"
+	default n
+	help
+		Select this if your SAI ip version is affected by
+		i.MX93's ERRATA 051421. The errata states that if
+		the SAI is FSYNC/BCLK master, one of the directions
+		is SYNC with the other, and the ASYNC direction has
+		the BYP bit toggled, the SYNC direction's BCLK won't
+		be generated properly.
+
 endif # DAI_NXP_SAI
