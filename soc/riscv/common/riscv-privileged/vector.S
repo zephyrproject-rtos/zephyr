@@ -76,6 +76,14 @@ SECTION_FUNC(vectors, __start)
 
 #else /* !CONFIG_RISCV_VECTORED_MODE */
 
+#if defined(CONFIG_RISCV_HAS_CLIC) && !defined(CONFIG_LEGACY_CLIC)
+
+	la t0, _isr_wrapper
+	addi t0, t0, 0x03 /* Set mode bits to 3, signifying CLIC. Everything else is reserved. */
+	csrw mtvec, t0
+
+#else /* !CONFIG_RISCV_HAS_CLIC || CONFIG_LEGACY_CLIC */
+
 	/*
 	 * CLINT direct mode
 	 *
@@ -84,6 +92,8 @@ SECTION_FUNC(vectors, __start)
 	 */
 	la t0, _isr_wrapper
 	csrw mtvec, t0
+
+#endif /* CONFIG_RISCV_HAS_CLIC&& !CONFIG_LEGACY_CLIC */
 
 #endif /* CONFIG_RISCV_VECTORED_MODE */
 
