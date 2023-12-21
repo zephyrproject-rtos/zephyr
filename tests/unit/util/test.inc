@@ -162,6 +162,28 @@ skipped:
 	#undef test_IF_ENABLED_FLAG_B
 }
 
+void run_IF_DISABLED(void)
+{
+	#define test_IF_DISABLED_FLAG_A 0
+	#define test_IF_DISABLED_FLAG_B 1
+
+	IF_DISABLED(test_IF_DISABLED_FLAG_A, (goto skipped_a;))
+	/* location should be skipped if IF_DISABLED macro is correct. */
+	zassert_false(true, "location A should be skipped");
+skipped_a:
+	IF_DISABLED(test_IF_DISABLED_FLAG_B, (zassert_false(true, "");))
+
+	IF_DISABLED(test_IF_DISABLED_FLAG_C, (goto skipped_c;))
+	/* location should be skipped if IF_DISABLED macro is correct. */
+	zassert_false(true, "location C should be skipped");
+skipped_c:
+
+	zassert_true(true, "");
+
+	#undef test_IF_DISABLED_FLAG_A
+	#undef test_IF_DISABLED_FLAG_B
+}
+
 void run_LISTIFY(void)
 {
 	int ab0 = 1;
