@@ -367,7 +367,7 @@ class DeviceHandler(Handler):
 
     def get_test_timeout(self):
         timeout = super().get_test_timeout()
-        if self.options.coverage:
+        if self.options.enable_coverage:
             # wait more for gcov data to be dumped on console
             timeout += 120
         return timeout
@@ -375,7 +375,7 @@ class DeviceHandler(Handler):
     def monitor_serial(self, ser, halt_event, harness):
         log_out_fp = open(self.log, "wb")
 
-        if self.options.coverage:
+        if self.options.enable_coverage:
             # Set capture_coverage to True to indicate that right after
             # test results we should get coverage data, otherwise we exit
             # from the test.

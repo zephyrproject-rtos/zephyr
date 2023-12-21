@@ -747,7 +747,7 @@ def test_devicehandler_monitor_serial(
     type(harness).state=mock.PropertyMock(side_effect=state_iter)
 
     handler = DeviceHandler(mocked_instance, 'build')
-    handler.options = mock.Mock(coverage=not end_by_state)
+    handler.options = mock.Mock(enable_coverage=not end_by_state)
 
     with mock.patch('builtins.open', mock.mock_open(read_data='')):
         handler.monitor_serial(ser, halt_event, harness)
