@@ -96,6 +96,8 @@ static struct conn_info conn_infos[CONFIG_BT_MAX_CONN] = {0};
 static uint32_t conn_interval_max, notification_size;
 static uint8_t vnd_value[CHARACTERISTIC_DATA_MAX_LEN];
 
+static const struct bt_uuid_16 ccc_uuid = BT_UUID_INIT_16(BT_UUID_GATT_CCC_VAL);
+
 void clear_info(struct conn_info *info)
 {
 	/* clear everything except the address + sub params + uuid (lifetime > connection) */
@@ -250,8 +252,8 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 	} else if (conn_info_ref->discover_params.type == BT_GATT_DISCOVER_CHARACTERISTIC) {
 		LOG_DBG("Service Characteristic Found");
-		memcpy(&conn_info_ref->uuid, BT_UUID_GATT_CCC, sizeof(conn_info_ref->uuid));
-		conn_info_ref->discover_params.uuid = &conn_info_ref->uuid.uuid;
+
+		conn_info_ref->discover_params.uuid = &ccc_uuid.uuid;
 		conn_info_ref->discover_params.start_handle = attr->handle + 2;
 		conn_info_ref->discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		conn_info_ref->subscribe_params.value_handle = bt_gatt_attr_value_handle(attr);
