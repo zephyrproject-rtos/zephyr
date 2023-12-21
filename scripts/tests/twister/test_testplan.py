@@ -244,14 +244,14 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
     filtered_instances = list(filter(lambda item:  item.status == "filtered", class_testplan.instances.values()))
     assert not filtered_instances
 
-def test_add_instances_short(test_data, class_env, all_testsuites_dict, platforms_list):
+def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms_list):
     """ Testing add_instances() function of TestPlan class in Twister
     Test 1: instances dictionary keys have expected values (Platform Name + Testcase Name)
     Test 2: Values of 'instances' dictionary in Testsuite class are an
 	        instance of 'TestInstance' class
     Test 3: Values of 'instances' dictionary have expected values.
     """
-    class_env.outdir = test_data
+    class_env.outdir = tmp_path
     plan = TestPlan(class_env)
     plan.platforms = platforms_list
     platform = plan.get_platform("demo_board_2")
