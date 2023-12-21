@@ -104,6 +104,10 @@ struct i2c_dw_rom_config {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 	struct pcie_dev *pcie;
 #endif /* I2C_DW_PCIE_ENABLED */
+
+#ifdef CONFIG_I2C_DW_LPSS_DMA
+	const struct device *dma_dev;
+#endif
 };
 
 struct i2c_dw_dev_config {
@@ -124,7 +128,6 @@ struct i2c_dw_dev_config {
 	uint8_t			xfr_flags;
 	bool			support_hs_mode;
 #ifdef CONFIG_I2C_DW_LPSS_DMA
-	const struct device *dma_dev;
 	uintptr_t phy_addr;
 	uintptr_t base_addr;
 	/* For dma transfer */
