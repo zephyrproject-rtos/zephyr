@@ -390,16 +390,15 @@ static void ns16550_outbyte(const struct uart_ns16550_device_config *cfg,
 		} else {
 			sys_out8(val, port);
 		}
-	} else {
-#else
-	{
+
+		return;
+	}
 #endif
-		/* MMIO mapped */
-		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
-			sys_write32(val, port);
-		} else {
-			sys_write8(val, port);
-		}
+	/* MMIO mapped */
+	if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
+		sys_write32(val, port);
+	} else {
+		sys_write8(val, port);
 	}
 }
 
@@ -413,17 +412,17 @@ static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 		} else {
 			return sys_in8(port);
 		}
-	} else {
-#else
-	{
-#endif
-		/* MMIO mapped */
-		if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
-			return sys_read32(port);
-		} else {
-			return sys_read8(port);
-		}
+
+		return 0;
 	}
+#endif
+	/* MMIO mapped */
+	if (IS_ENABLED(CONFIG_UART_NS16550_ACCESS_WORD_ONLY)) {
+		return sys_read32(port);
+	} else {
+		return sys_read8(port);
+	}
+
 	return 0;
 }
 
@@ -435,13 +434,12 @@ static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 #if UART_NS16550_IOPORT_ENABLED
 	if (cfg->io_map) {
 		sys_out32(val, port);
-	} else {
-#else
-	{
-#endif
-		/* MMIO mapped */
-		sys_write32(val, port);
+
+		return;
 	}
+#endif
+	/* MMIO mapped */
+	sys_write32(val, port);
 }
 
 static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
@@ -455,7 +453,7 @@ static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 	/* MMIO mapped */
 	return sys_read32(port);
 }
-#endif
+#endif /* (UART_NS16550_INTEL_LPSS_DMA & UART_ASYNC_API) | CONFIG_UART_ASYNC_API */
 
 static inline uint8_t reg_interval(const struct device *dev)
 {
@@ -466,20 +464,14 @@ static inline uint8_t reg_interval(const struct device *dev)
 
 static inline uintptr_t get_port(const struct device *dev)
 {
-	uintptr_t port;
 #if UART_NS16550_IOPORT_ENABLED
 	const struct uart_ns16550_device_config *config = dev->config;
 
 	if (config->io_map) {
-		port = config->port;
-	} else {
-#else
-	{
-#endif
-		port = DEVICE_MMIO_GET(dev);
+		return config->port;
 	}
-
-	return port;
+#endif
+	return DEVICE_MMIO_GET(dev);
 }
 
 static uint32_t get_uart_burdrate_divisor(const struct device *dev,
