@@ -151,8 +151,16 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 
 	flags = esp_socket_flags(sock);
 
+#ifdef CONFIG_WIFI_ESP_AT_PASSIVE_MODE
+	/* In Passive Receive mode, ESP modem will buffer rx data and make it still
+	 * available even though the peer has closed the connection.
+	 */
+	if (!(flags & ESP_SOCK_CONNECTED) &&
+	    !(flags & ESP_SOCK_CLOSE_PENDING)) {
+#else
 	if (!(flags & ESP_SOCK_CONNECTED) ||
 	    (flags & ESP_SOCK_CLOSE_PENDING)) {
+#endif
 		LOG_DBG("Received data on closed link %d", sock->link_id);
 		return;
 	}
