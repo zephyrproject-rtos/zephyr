@@ -1744,6 +1744,7 @@ static int context_write_data(struct net_pkt *pkt, const void *buf,
 }
 
 static int context_setup_udp_packet(struct net_context *context,
+				    sa_family_t family,
 				    struct net_pkt *pkt,
 				    const void *buf,
 				    size_t len,
@@ -1754,16 +1755,14 @@ static int context_setup_udp_packet(struct net_context *context,
 	int ret = -EINVAL;
 	uint16_t dst_port = 0U;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		dst_port = addr6->sin6_port;
 
 		ret = net_context_create_ipv6_new(context, pkt,
 						  NULL, &addr6->sin6_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(context) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
 		dst_port = addr4->sin_port;
@@ -1798,6 +1797,7 @@ static int context_setup_udp_packet(struct net_context *context,
 }
 
 static void context_finalize_packet(struct net_context *context,
+				    sa_family_t family,
 				    struct net_pkt *pkt)
 {
 	/* This function is meant to be temporary: once all moved to new
@@ -1806,16 +1806,15 @@ static void context_finalize_packet(struct net_context *context,
 
 	net_pkt_cursor_init(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		net_ipv6_finalize(pkt, net_context_get_proto(context));
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(context) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		net_ipv4_finalize(pkt, net_context_get_proto(context));
 	}
 }
 
 static struct net_pkt *context_alloc_pkt(struct net_context *context,
+					 sa_family_t family,
 					 size_t len, k_timeout_t timeout)
 {
 	struct net_pkt *pkt;
@@ -1828,13 +1827,14 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 		}
 
 		net_pkt_set_iface(pkt, net_context_get_iface(context));
-		net_pkt_set_family(pkt, net_context_get_family(context));
+		net_pkt_set_family(pkt, family);
 		net_pkt_set_context(pkt, context);
 
 		if (net_pkt_alloc_buffer(pkt, len,
 					 net_context_get_proto(context),
 					 timeout)) {
 			net_pkt_unref(pkt);
+
 			return NULL;
 		}
 
@@ -1842,7 +1842,7 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 	}
 #endif
 	pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context), len,
-					net_context_get_family(context),
+					family,
 					net_context_get_proto(context),
 					timeout);
 	if (pkt) {
@@ -1880,6 +1880,7 @@ static int context_sendto(struct net_context *context,
 	const struct msghdr *msghdr = NULL;
 	struct net_if *iface;
 	struct net_pkt *pkt = NULL;
+	sa_family_t family;
 	size_t tmp_len;
 	int ret;
 
@@ -1898,8 +1899,20 @@ static int context_sendto(struct net_context *context,
 		return -EDESTADDRREQ;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) &&
-	    net_context_get_family(context) == AF_INET6) {
+	/* Are we trying to send IPv4 packet to mapped V6 address, in that case
+	 * we need to set the family to AF_INET so that various checks below
+	 * are done to the packet correctly and we actually send an IPv4 pkt.
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+	    IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6 &&
+	    dst_addr->sa_family == AF_INET) {
+		family = AF_INET;
+	} else {
+		family = net_context_get_family(context);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		const struct sockaddr_in6 *addr6 =
 			(const struct sockaddr_in6 *)dst_addr;
 
@@ -1939,8 +1952,7 @@ static int context_sendto(struct net_context *context,
 			net_context_set_iface(context, iface);
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   net_context_get_family(context) == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		const struct sockaddr_in *addr4 = (const struct sockaddr_in *)dst_addr;
 		struct sockaddr_in mapped;
 
@@ -1992,8 +2004,7 @@ static int context_sendto(struct net_context *context,
 			net_context_set_iface(context, iface);
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   net_context_get_family(context) == AF_PACKET) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == AF_PACKET) {
 		struct sockaddr_ll *ll_addr = (struct sockaddr_ll *)dst_addr;
 
 		if (msghdr) {
@@ -2043,8 +2054,7 @@ static int context_sendto(struct net_context *context,
 			}
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   net_context_get_family(context) == AF_CAN) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
 		struct sockaddr_can *can_addr = (struct sockaddr_can *)dst_addr;
 
 		if (msghdr) {
@@ -2083,8 +2093,7 @@ static int context_sendto(struct net_context *context,
 			return -EDESTADDRREQ;
 		}
 	} else {
-		NET_DBG("Invalid protocol family %d",
-			net_context_get_family(context));
+		NET_DBG("Invalid protocol family %d", family);
 		return -EINVAL;
 	}
 
@@ -2110,7 +2119,7 @@ static int context_sendto(struct net_context *context,
 		goto skip_alloc;
 	}
 
-	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
+	pkt = context_alloc_pkt(context, family, len, PKT_WAIT_TIME);
 	if (!pkt) {
 		NET_ERR("Failed to allocate net_pkt");
 		return -ENOBUFS;
@@ -2169,13 +2178,13 @@ skip_alloc:
 		}
 	} else if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    net_context_get_proto(context) == IPPROTO_UDP) {
-		ret = context_setup_udp_packet(context, pkt, buf, len, msghdr,
+		ret = context_setup_udp_packet(context, family, pkt, buf, len, msghdr,
 					       dst_addr, addrlen);
 		if (ret < 0) {
 			goto fail;
 		}
 
-		context_finalize_packet(context, pkt);
+		context_finalize_packet(context, family, pkt);
 
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
@@ -2189,8 +2198,7 @@ skip_alloc:
 		len = ret;
 
 		ret = net_tcp_send_data(context, cb, user_data);
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-		   net_context_get_family(context) == AF_PACKET) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == AF_PACKET) {
 		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
@@ -2219,8 +2227,7 @@ skip_alloc:
 		} else {
 			net_if_queue_tx(net_pkt_iface(pkt), pkt);
 		}
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-		   net_context_get_family(context) == AF_CAN &&
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN &&
 		   net_context_get_proto(context) == CAN_RAW) {
 		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
