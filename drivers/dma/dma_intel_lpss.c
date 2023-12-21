@@ -44,8 +44,13 @@ void dma_intel_lpss_set_base(const struct device *dev, uintptr_t base)
 	dev_cfg->dw_cfg.base = base;
 }
 
+#ifdef CONFIG_DMA_64BIT
 int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
 			      uint64_t src, uint64_t dst, size_t size)
+#else
+int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
+			      uint32_t src, uint32_t dst, size_t size)
+#endif
 {
 	struct dw_dma_dev_data *const dev_data = dev->data;
 	struct dma_intel_lpss_cfg *lpss_dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
