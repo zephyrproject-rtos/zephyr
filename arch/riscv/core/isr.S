@@ -73,6 +73,10 @@ GTEXT(sys_trace_isr_exit)
 GDATA(_k_syscall_table)
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+GTEXT(__soc_handle_all_irqs)
+#endif
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -522,6 +526,10 @@ is_interrupt:
 
 on_irq_stack:
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	call __soc_handle_all_irqs
+#else
+
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif
@@ -556,6 +564,8 @@ on_irq_stack:
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit
+#endif
+
 #endif
 
 irq_done:
