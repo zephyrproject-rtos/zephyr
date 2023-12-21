@@ -2415,6 +2415,22 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 			    net_buf_allocator_cb allocate_cb, void *user_data);
 
 /**
+ * @brief Match data with a net_buf's content
+ *
+ * @details Compare data with a content of a net_buf. Provide information about
+ * the number of bytes matching between both. If needed, traverse
+ * through multiple buffer fragments.
+ *
+ * @param buf Network buffer
+ * @param offset Starting offset to compare from
+ * @param data Data buffer for comparison
+ * @param len Number of bytes to compare
+ *
+ * @return The number of bytes compared before the first difference.
+ */
+size_t net_buf_data_match(const struct net_buf *buf, size_t offset, const void *data, size_t len);
+
+/**
  * @brief Skip N number of bytes in a net_buf
  *
  * @details Skip N number of bytes starting from fragment's offset. If the total
