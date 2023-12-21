@@ -655,9 +655,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 		*ep_state->ep_ctl = val;
 	}
 
-	if (USB_EP_DIR_IS_OUT(ep) && ep != USB_CONTROL_EP_OUT &&
-	    ep_state->cb != usb_transfer_ep_callback) {
-		/* Start reading now, except for transfer managed eps */
+	if (USB_EP_DIR_IS_OUT(ep) && ep != USB_CONTROL_EP_OUT) {
 		return usb_dc_ep_start_read(ep, DATA_BUFFER_SIZE);
 	}
 
