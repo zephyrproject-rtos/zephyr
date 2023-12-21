@@ -1,0 +1,8 @@
+# Copyright (c) 2023, Xudong Zheng
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi RP2040 RNG/Entropy
+
+compatible: "raspberrypi,rp2040-rng"
+
+include: base.yaml

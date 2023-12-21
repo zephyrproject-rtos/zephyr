@@ -115,6 +115,27 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_CLAIM
           ${rp2_common_dir}/hardware_claim/include)
 
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_RAND
+    ${rp2_common_dir}/pico_rand/rand.c
+    ${rp2_common_dir}/pico_unique_id/unique_id.c
+    ${common_dir}/pico_time/time.c
+    ${common_dir}/pico_util/pheap.c
+  )
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_RAND
+    ${rp2_common_dir}/pico_rand/include
+    ${rp2_common_dir}/pico_unique_id/include
+    ${common_dir}/pico_time/include
+    ${common_dir}/pico_util/include
+    ${common_dir}/pico_sync/include
+  )
+
+  # Alarm pool must be disabled to avoid assert on startup.
+  set_source_files_properties(
+    ${common_dir}/pico_time/time.c
+    PROPERTIES
+	COMPILE_FLAGS -DPICO_TIME_DEFAULT_ALARM_POOL_DISABLED=1
+  )
+
   # Some flash driver functions must be executed from the RAM.
   # Originally pico-sdk places them in the RW data section, so this
   # implementation does the same.

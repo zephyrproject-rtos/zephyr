@@ -18,6 +18,10 @@
 		die-temp0 = &die_temp;
 	};
 
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -240,6 +244,11 @@
 			clocks = <&system_clk>;
 			resets = <&reset RPI_PICO_RESETS_RESET_PIO1>;
 			status = "disabled";
+		};
+
+		rng: rng {
+			status = "okay";
+			compatible = "raspberrypi,rp2040-rng";
 		};
 	};
 

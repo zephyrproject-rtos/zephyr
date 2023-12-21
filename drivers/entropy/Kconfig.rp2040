@@ -1,0 +1,16 @@
+# RP2040 entropy generator driver configuration
+
+# Copyright (c) 2023 Xudong Zheng
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_RP2040_RNG
+	bool "RP2040 entropy number generator driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_RP2040_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	select PICOSDK_USE_CLAIM
+	select PICOSDK_USE_FLASH
+	select PICOSDK_USE_RAND
+	select PICOSDK_USE_TIMER
+	help
+	  This option enables the entropy number generator for the RP2040 SOC.
