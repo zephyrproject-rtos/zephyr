@@ -308,11 +308,9 @@ static int sai_config_set(const struct device *dev,
 	LOG_DBG("RX watermark: %d", sai_cfg->rx_fifo_watermark);
 	LOG_DBG("TX watermark: %d", sai_cfg->tx_fifo_watermark);
 
-	/* TODO: for now, the only supported operation mode is RX sync with TX.
-	 * Is there a need to support other modes?
-	 */
-	tx_config->syncMode = kSAI_ModeAsync;
-	rx_config->syncMode = kSAI_ModeSync;
+	/* set the synchronization mode based on data passed from the DTS */
+	tx_config->syncMode = sai_cfg->tx_sync_mode;
+	rx_config->syncMode = sai_cfg->rx_sync_mode;
 
 	/* commit configuration */
 	SAI_RxSetConfig(UINT_TO_I2S(data->regmap), rx_config);
@@ -383,8 +381,33 @@ static int sai_config_set(const struct device *dev,
  * rid of the busy waiting, the STOP operation may have to be split into
  * 2 operations: TRIG_STOP and TRIG_POST_STOP.
  */
-static int sai_tx_rx_disable(struct sai_data *data, enum dai_dir dir)
+static bool sai_dir_disable(struct sai_data *data, enum dai_dir dir)
 {
+	/* VERY IMPORTANT: DO NOT use SAI_TxEnable/SAI_RxEnable
+	 * here as they do not disable the ASYNC direction.
+	 * Since the software logic assures that the ASYNC direction
+	 * is not disabled before the SYNC direction, we can force
+	 * the disablement of the given direction.
+	 */
+	sai_tx_rx_force_disable(dir, data->regmap);
+
+	/* please note the difference between the transmitter/receiver's
+	 * hardware states and their software states. The software
+	 * states can be obtained by reading data->tx/rx_enabled, while
+	 * the hardware states can be obtained by reading TCSR/RCSR. The
+	 * hardware state can actually differ from the software state.
+	 * Here, we're interested in reading the hardware state which
+	 * indicates if the transmitter/receiver was actually disabled
+	 * or not.
+	 */
+	return WAIT_FOR(!SAI_TX_RX_IS_HW_ENABLED(dir, data->regmap),
+			SAI_TX_RX_HW_DISABLE_TIMEOUT, k_busy_wait(1));
+}
+
+static int sai_tx_rx_disable(struct sai_data *data,
+			     const struct sai_config *cfg, enum dai_dir dir)
+{
+	enum dai_dir sync_dir, async_dir;
 	bool ret;
 
 	/* sai_disable() should never be called from ISR context
@@ -395,44 +418,42 @@ static int sai_tx_rx_disable(struct sai_data *data, enum dai_dir dir)
 		return -EINVAL;
 	}
 
-	if ((dir == DAI_DIR_TX && !data->rx_enabled) || dir == DAI_DIR_RX) {
-		/* VERY IMPORTANT: DO NOT use SAI_TxEnable/SAI_RxEnable
-		 * here as they do not disable the ASYNC direction.
-		 * Since the software logic assures that the ASYNC direction
-		 * is not disabled before the SYNC direction, we can force
-		 * the disablement of the given direction.
-		 */
-		sai_tx_rx_force_disable(dir, data->regmap);
-
-		/* please note the difference between the transmitter/receiver's
-		 * hardware states and their software states. The software
-		 * states can be obtained by reading data->tx/rx_enabled, while
-		 * the hardware states can be obtained by reading TCSR/RCSR. The
-		 * hadrware state can actually differ from the software state.
-		 * Here, we're interested in reading the hardware state which
-		 * indicates if the transmitter/receiver was actually disabled
-		 * or not.
-		 */
-		ret = WAIT_FOR(!SAI_TX_RX_IS_HW_ENABLED(dir, data->regmap),
-			       SAI_TX_RX_HW_DISABLE_TIMEOUT, k_busy_wait(1));
+	if (cfg->tx_sync_mode == kSAI_ModeAsync &&
+	    cfg->rx_sync_mode == kSAI_ModeAsync) {
+		ret = sai_dir_disable(data, dir);
 		if (!ret) {
 			LOG_ERR("timed out while waiting for dir %d disable", dir);
 			return -ETIMEDOUT;
 		}
-	}
+	} else {
+		sync_dir = SAI_TX_RX_GET_SYNC_DIR(cfg);
+		async_dir = SAI_TX_RX_GET_ASYNC_DIR(cfg);
 
-	/* if TX wasn't explicitly enabled (via sai_trigger_start(TX))
-	 * then that means it was enabled by a sai_trigger_start(RX). As
-	 * such, data->tx_enabled will be false.
-	 */
-	if (dir == DAI_DIR_RX && !data->tx_enabled) {
-		sai_tx_rx_force_disable(DAI_DIR_TX, data->regmap);
+		if (dir == sync_dir) {
+			ret = sai_dir_disable(data, sync_dir);
+			if (!ret) {
+				LOG_ERR("timed out while waiting for dir %d disable",
+					sync_dir);
+				return -ETIMEDOUT;
+			}
 
-		ret = WAIT_FOR(!SAI_TX_RX_IS_HW_ENABLED(DAI_DIR_TX, data->regmap),
-			       SAI_TX_RX_HW_DISABLE_TIMEOUT, k_busy_wait(1));
-		if (!ret) {
-			LOG_ERR("timed out while waiting for dir TX disable");
-			return -ETIMEDOUT;
+			if (!SAI_TX_RX_DIR_IS_SW_ENABLED(async_dir, data)) {
+				ret = sai_dir_disable(data, async_dir);
+				if (!ret) {
+					LOG_ERR("timed out while waiting for dir %d disable",
+						async_dir);
+					return -ETIMEDOUT;
+				}
+			}
+		} else {
+			if (!SAI_TX_RX_DIR_IS_SW_ENABLED(sync_dir, data)) {
+				ret = sai_dir_disable(data, async_dir);
+				if (!ret) {
+					LOG_ERR("timed out while waiting for dir %d disable",
+						async_dir);
+					return -ETIMEDOUT;
+				}
+			}
 		}
 	}
 
@@ -443,9 +464,11 @@ static int sai_trigger_pause(const struct device *dev,
 			     enum dai_dir dir)
 {
 	struct sai_data *data;
+	const struct sai_config *cfg;
 	int ret;
 
 	data = dev->data;
+	cfg = dev->config;
 
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
 		LOG_ERR("invalid direction: %d", dir);
@@ -462,7 +485,7 @@ static int sai_trigger_pause(const struct device *dev,
 
 	LOG_DBG("pause on direction %d", dir);
 
-	ret = sai_tx_rx_disable(data, dir);
+	ret = sai_tx_rx_disable(data, cfg, dir);
 	if (ret < 0) {
 		return ret;
 	}
@@ -477,10 +500,12 @@ static int sai_trigger_stop(const struct device *dev,
 			    enum dai_dir dir)
 {
 	struct sai_data *data;
+	const struct sai_config *cfg;
 	int ret;
 	uint32_t old_state;
 
 	data = dev->data;
+	cfg = dev->config;
 	old_state = sai_get_state(dir, data);
 
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
@@ -506,7 +531,7 @@ static int sai_trigger_stop(const struct device *dev,
 		goto out_dline_disable;
 	}
 
-	ret = sai_tx_rx_disable(data, dir);
+	ret = sai_tx_rx_disable(data, cfg, dir);
 	if (ret < 0) {
 		return ret;
 	}
@@ -528,14 +553,77 @@ out_dline_disable:
 	return 0;
 }
 
+/* notes:
+ *	1) The "rx_sync_mode" and "tx_sync_mode" properties force the user to pick from
+ *	SYNC and ASYNC for each direction. As such, there are 4 possible combinations
+ *	that need to be covered here:
+ *		a) TX ASYNC, RX ASYNC
+ *		b) TX SYNC, RX ASYNC
+ *		c) TX ASYNC, RX SYNC
+ *		d) TX SYNC, RX SYNC
+ *
+ *	Combination d) is not valid and is covered by a BUILD_ASSERT(). As such, there are 3 valid
+ *	combinations that need to be supported. Since the main branch of the IF statement covers
+ *	combination a), there's only combinations b) and c) to be covered here.
+ *
+ *	2) We can distinguish between 3 types of directions:
+ *		a) The target direction. This is the direction on which we want to perform the
+ *		software reset.
+ *		b) The SYNC direction. This is, well, the direction that's in SYNC with the other
+ *		direction.
+ *		c) The ASYNC direction.
+ *
+ *	Of course, the target direction may differ from the SYNC or ASYNC directions, but it
+ *	can't differ from both of them at the same time (i.e: TARGET != SYNC AND TARGET != ASYNC).
+ *
+ *	If the target direction is the same as the SYNC direction then we can safely perform the
+ *	software reset on the target direction as there's nothing depending on it. We also want
+ *	to do a software reset on the ASYNC direction. We can only do this if the ASYNC direction
+ *	wasn't software enabled (i.e: through an explicit trigger_start() call).
+ *
+ *	If the target direction is the same as the ASYNC direction then we can only perform a
+ *	software reset on it only if the SYNC direction wasn't software enabled (i.e: through an
+ *	explicit trigger_start() call).
+ */
+static void sai_tx_rx_sw_reset(struct sai_data *data,
+			       const struct sai_config *cfg, enum dai_dir dir)
+{
+	enum dai_dir sync_dir, async_dir;
+
+	if (cfg->tx_sync_mode == kSAI_ModeAsync &&
+	    cfg->rx_sync_mode == kSAI_ModeAsync) {
+		/* both directions are ASYNC w.r.t each other. As such, do
+		 * software reset only on the targeted direction.
+		 */
+		SAI_TX_RX_SW_RESET(dir, data->regmap);
+	} else {
+		sync_dir = SAI_TX_RX_GET_SYNC_DIR(cfg);
+		async_dir = SAI_TX_RX_GET_ASYNC_DIR(cfg);
+
+		if (dir == sync_dir) {
+			SAI_TX_RX_SW_RESET(sync_dir, data->regmap);
+
+			if (!SAI_TX_RX_DIR_IS_SW_ENABLED(async_dir, data)) {
+				SAI_TX_RX_SW_RESET(async_dir, data->regmap);
+			}
+		} else {
+			if (!SAI_TX_RX_DIR_IS_SW_ENABLED(sync_dir, data)) {
+				SAI_TX_RX_SW_RESET(async_dir, data->regmap);
+			}
+		}
+	}
+}
+
 static int sai_trigger_start(const struct device *dev,
 			     enum dai_dir dir)
 {
 	struct sai_data *data;
+	const struct sai_config *cfg;
 	uint32_t old_state;
 	int ret;
 
 	data = dev->data;
+	cfg = dev->config;
 	old_state = sai_get_state(dir, data);
 
 	/* TX and RX should be triggered independently */
@@ -563,24 +651,7 @@ static int sai_trigger_start(const struct device *dev,
 
 	LOG_DBG("start on direction %d", dir);
 
-	if (dir == DAI_DIR_RX) {
-		/* this is fine because TX is async so it won't be
-		 * affected by an RX software reset.
-		 */
-		SAI_TX_RX_SW_RESET(dir, data->regmap);
-
-		/* do a TX software reset only if not already enabled */
-		if (!data->tx_enabled) {
-			SAI_TX_RX_SW_RESET(DAI_DIR_TX, data->regmap);
-		}
-	} else {
-		/* a software reset should be issued for TX
-		 * only if RX was not already enabled.
-		 */
-		if (!data->rx_enabled) {
-			SAI_TX_RX_SW_RESET(dir, data->regmap);
-		}
-	}
+	sai_tx_rx_sw_reset(data, cfg, dir);
 
 	/* enable error interrupt */
 	SAI_TX_RX_ENABLE_DISABLE_IRQ(dir, data->regmap,
