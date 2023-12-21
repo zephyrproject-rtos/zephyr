@@ -38,8 +38,8 @@ enable_language(C ASM)
 target_sources(app PRIVATE src/main.c)
 
 if("${BOARD}" STREQUAL "esp32_devkitc_wrover" OR "${BOARD}" STREQUAL "esp32s3_devkitm")
-  set_source_files_properties(${REMOTE_ZEPHYR_DIR}/esp32_net_firmware.c PROPERTIES GENERATED TRUE)
-  target_sources(app PRIVATE src/main.c ${REMOTE_ZEPHYR_DIR}/esp32_net_firmware.c)
+  set_source_files_properties(${REMOTE_ZEPHYR_DIR}/esp32_appcpu_firmware.c PROPERTIES GENERATED TRUE)
+  target_sources(app PRIVATE src/main.c ${REMOTE_ZEPHYR_DIR}/esp32_appcpu_firmware.c)
 endif()
 
 include(ExternalProject)
