@@ -39,6 +39,8 @@ enum bt_cap_common_proc_type {
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_OFFSET_CHANGE,
 	BT_CAP_COMMON_PROC_TYPE_VOLUME_MUTE_CHANGE,
+	BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE,
+	BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE,
 };
 
 enum bt_cap_common_subproc_type {
@@ -85,8 +87,14 @@ struct bt_cap_commander_proc_param {
 			struct bt_vocs *vocs;
 		} change_offset;
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
-
-		/* TODO Add other procedures */
+#if defined(CONFIG_BT_MICP_MIC_CTLR)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+		struct {
+			int8_t gain;
+			struct bt_aics *aics;
+		} change_gain;
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
+#endif /* CONFIG_BT_MICP_MIC_CTLR */
 	};
 };
 
