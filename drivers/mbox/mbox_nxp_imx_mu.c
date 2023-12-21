@@ -38,7 +38,7 @@ static int nxp_imx_mu_send(const struct device *dev, uint32_t channel,
 	/* Signalling mode. */
 	if (msg == NULL) {
 		return MU_TriggerInterrupts(
-			cfg->base, kMU_GenInt0InterruptTrigger);
+			cfg->base, kMU_GenInt0InterruptTrigger >> channel);
 	}
 
 	/* Data transfer mode. */
@@ -149,27 +149,31 @@ static const struct mbox_driver_api nxp_imx_mu_driver_api = {
 		const struct device *dev = DEVICE_DT_INST_GET(idx);		\
 		const struct nxp_imx_mu_data *data = dev->data;			\
 		const struct nxp_imx_mu_config *config = dev->config;		\
-		int channel = 0;						\
 		struct mbox_msg msg;						\
 		struct mbox_msg *callback_msg_ptr = NULL;			\
 		uint32_t flag = MU_GetStatusFlags(config->base);		\
 										\
-		if ((flag & kMU_Rx0FullFlag) == kMU_Rx0FullFlag) {		\
-			mu_##idx##_received_data =				\
-				MU_ReceiveMsgNonBlocking(config->base, 0);	\
-			msg.data = (const void *)&mu_##idx##_received_data;	\
-			msg.size = MU_MBOX_SIZE;				\
-			callback_msg_ptr = &msg;				\
-		} else if ((flag & kMU_GenInt0Flag) == kMU_GenInt0Flag) {	\
-			MU_ClearStatusFlags(config->base, kMU_GenInt0Flag);	\
-			callback_msg_ptr = NULL;				\
-		}								\
-										\
-		if (data->cb[channel]) {					\
-			data->cb[channel](dev, channel,				\
-					data->user_data[channel],		\
-					callback_msg_ptr);			\
-		}								\
+		for (int i_channel = 0; i_channel < MU_MAX_CHANNELS; i_channel++) { \
+			if ((flag & (kMU_Rx0FullFlag >> i_channel)) == \
+				(kMU_Rx0FullFlag >> i_channel)) { \
+				mu_##idx##_received_data =				\
+					MU_ReceiveMsgNonBlocking(config->base, 0);	\
+				msg.data = (const void *)&mu_##idx##_received_data;	\
+				msg.size = MU_MBOX_SIZE;				\
+				callback_msg_ptr = &msg;				\
+			} else if ((flag & (kMU_GenInt0Flag >> i_channel)) == \
+						(kMU_GenInt0Flag >> i_channel)) {	\
+				MU_ClearStatusFlags(config->base, \
+					(kMU_GenInt0Flag >> i_channel)); \
+				callback_msg_ptr = NULL;				\
+			}								\
+											\
+			if (data->cb[i_channel]) {					\
+				data->cb[i_channel](dev, i_channel,				\
+						data->user_data[i_channel],		\
+						callback_msg_ptr);			\
+			} \
+		} \
 	}
 
 #define MU_INST(idx)								\
