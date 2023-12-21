@@ -546,6 +546,13 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 		goto out;
 	}
 
+	/* Allow connect in STA mode only even if we are connected already */
+	if  (wpa_s->current_ssid && wpa_s->current_ssid->mode != WPAS_MODE_INFRA) {
+		ret = -EBUSY;
+		wpa_printf(MSG_ERROR, "Interface %s is not in STA mode", dev->name);
+		goto out;
+	}
+
 	ret = wpas_add_and_config_network(wpa_s, params, false);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add and configure network for STA mode: %d", ret);
@@ -838,6 +845,12 @@ int supplicant_ap_enable(const struct device *dev,
 	if (!wpa_s) {
 		ret = -1;
 		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (wpa_s->wpa_state != WPA_DISCONNECTED) {
+		ret = -EBUSY;
+		wpa_printf(MSG_ERROR, "Interface %s is not in disconnected state", dev->name);
 		goto out;
 	}
 
