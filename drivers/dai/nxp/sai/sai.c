@@ -142,6 +142,73 @@ static const struct dai_properties
 	CODE_UNREACHABLE;
 }
 
+#ifdef CONFIG_SAI_IMX93_ERRATA_051421
+/* notes:
+ *	1) TX and RX operate in the same mode: master/slave. As such,
+ *	there's no need to check the mode for both directions.
+ *
+ *	2) Only one of the directions can operate in SYNC mode at a
+ *	time.
+ *
+ *	3) What this piece of code does is it makes the SYNC direction
+ *	use the ASYNC direction's BCLK that comes from its input pad.
+ *	Logically speaking, this would look like:
+ *
+ *                      +--------+     +--------+
+ *                      |   TX   |     |   RX   |
+ *                      | module |     | module |
+ *                      +--------+     +--------+
+ *                         |   ^            |
+ *                         |   |            |
+ *                 TX_BCLK |   |____________| RX_BCLK
+ *                         |                |
+ *                         V                V
+ *                     +---------+    +---------+
+ *                     | TX BCLK |    | RX BCLK |
+ *                     |   pad   |    |   pad   |
+ *                     +---------+    +---------+
+ *                          |              |
+ *                          | TX_BCLK      | RX_BCLK
+ *                          V              V
+ *
+ *	Without BCI enabled, the TX module would use an RX_BCLK
+ *	that's divided instead of the one that's obtained from
+ *	bypassing the MCLK (i.e: TX_BCLK would have the value of
+ *	MCLK / ((RX_DIV + 1) * 2)). If BCI is 1, then TX_BCLK will
+ *	be the same as the RX_BCLK that's obtained from bypassing
+ *	the MCLK on RX's side.
+ *
+ *	4) The check for BCLK == MCLK is there to see if the ASYNC
+ *	direction will have the BYP bit toggled.
+ *
+ *	IMPORTANT1: in the above diagram and information, RX is SYNC
+ *	with TX. The same applies if RX is SYNC with TX. Also, this
+ *	applies to i.MX93. For other SoCs, things may be different
+ *	so use this information with caution.
+ *
+ *	IMPORTANT2: for this to work, you also need to enable the
+ *	pad's input path. For i.MX93, this can be achieved by setting
+ *	the pad's SION bit.
+ */
+static void sai_config_set_err_051421(I2S_Type *base,
+				      const struct sai_config *cfg,
+				      const struct sai_bespoke_config *bespoke,
+				      sai_transceiver_t *rx_config,
+				      sai_transceiver_t *tx_config)
+{
+	if (tx_config->masterSlave == kSAI_Master &&
+	    bespoke->mclk_rate == bespoke->bclk_rate) {
+		if (cfg->tx_sync_mode == kSAI_ModeSync) {
+			base->TCR2 |= I2S_TCR2_BCI(1);
+		}
+
+		if (cfg->rx_sync_mode == kSAI_ModeSync) {
+			base->RCR2 |= I2S_RCR2_BCI(1);
+		}
+	}
+}
+#endif /* CONFIG_SAI_IMX93_ERRATA_051421 */
+
 static int sai_config_set(const struct device *dev,
 			  const struct dai_config *cfg,
 			  const void *bespoke_data)
@@ -340,6 +407,12 @@ static int sai_config_set(const struct device *dev,
 		return ret;
 	}
 #endif /* CONFIG_SAI_HAS_MCLK_CONFIG_OPTION */
+
+#ifdef CONFIG_SAI_IMX93_ERRATA_051421
+	sai_config_set_err_051421(UINT_TO_I2S(data->regmap),
+				  sai_cfg, bespoke,
+				  rx_config, tx_config);
+#endif /* CONFIG_SAI_IMX93_ERRATA_051421 */
 
 	/* this is needed so that rates different from FSYNC_RATE
 	 * will not be allowed.
