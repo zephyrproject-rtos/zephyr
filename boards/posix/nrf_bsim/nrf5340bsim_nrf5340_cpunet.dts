@@ -21,7 +21,6 @@
 		/delete-property/ wdt-0;
 		/delete-property/ i2c-0;
 		/delete-property/ spi-0;
-		/delete-property/ uart-0;
 		/delete-property/ gpio-0;
 		/delete-property/ gpio-1;
 	};
@@ -41,7 +40,6 @@
 		/delete-node/ watchdog@4100b000;
 		/delete-node/ i2c@41013000;
 		/delete-node/ spi@41013000;
-		/delete-node/ uart@41013000;
 		/delete-node/ acl@41080000;
 		/delete-node/ vmc@41081000;
 		/delete-node/ gpio@418c0500;
