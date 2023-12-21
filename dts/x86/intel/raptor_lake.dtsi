@@ -62,6 +62,12 @@
 			status = "okay";
 		};
 
+		i2c0_dma: i2c0_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
 		i2c0: i2c0 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -71,13 +77,13 @@
 			device-id = <0x7acc>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c0_dma 0>;
 
 			status = "okay";
 		};
 
-		i2c0_dma: i2c0_dma {
+		i2c1_dma: i2c1_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c0>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -91,13 +97,13 @@
 			device-id = <0x7acd>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c1_dma 0>;
 
 			status = "disabled";
 		};
 
-		i2c1_dma: i2c1_dma {
+		i2c2_dma: i2c2_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c1>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -113,13 +119,13 @@
 			device-id = <0x7ace>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c2_dma 0>;
 
 			status = "disabled";
 		};
 
-		i2c2_dma: i2c2_dma {
+		i2c3_dma: i2c3_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c2>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -133,13 +139,13 @@
 			device-id = <0x7acf>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c3_dma 0>;
 
 			status = "disabled";
 		};
 
-		i2c3_dma: i2c3_dma {
+		i2c4_dma: i2c4_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c3>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -153,13 +159,13 @@
 			device-id = <0x7afc>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c4_dma 0>;
 
 			status = "disabled";
 		};
 
-		i2c4_dma: i2c4_dma {
+		i2c5_dma: i2c5_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c4>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -173,13 +179,13 @@
 			device-id = <0x7afd>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c5_dma 0>;
 
 			status = "disabled";
 		};
 
-		i2c5_dma: i2c5_dma {
+		i2c6_dma: i2c6_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c5>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -193,13 +199,13 @@
 			device-id = <0x7ada>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c6_dma 0>;
 
 			status = "disabled";
 		};
 
-		i2c6_dma: i2c6_dma {
+		i2c7_dma: i2c7_dma {
 			compatible = "intel,lpss";
-			dma-parent = <&i2c6>;
 			#dma-cells = <1>;
 			status = "disabled";
 		};
@@ -213,14 +219,8 @@
 			device-id = <0x7adb>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&i2c7_dma 0>;
 
-			status = "disabled";
-		};
-
-		i2c7_dma: i2c7_dma {
-			compatible = "intel,lpss";
-			dma-parent = <&i2c7>;
-			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -237,7 +237,7 @@
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		spi1: spi1 {
