@@ -27,6 +27,7 @@ endif # POSIX_CLOCK
 rsource "Kconfig.barrier"
 rsource "Kconfig.clock"
 rsource "Kconfig.cond"
+rsource "Kconfig.env"
 rsource "Kconfig.eventfd"
 rsource "Kconfig.fdtable"
 rsource "Kconfig.fnmatch"
