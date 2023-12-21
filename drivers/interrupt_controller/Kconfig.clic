@@ -8,3 +8,10 @@ config NUCLEI_ECLIC
 	select MULTI_LEVEL_INTERRUPTS
 	help
 	  Interrupt controller for Nuclei SoC core.
+
+config LEGACY_CLIC
+	bool "Use the legacy clic specification"
+	depends on RISCV_HAS_CLIC
+	help
+	  Enables legacy clic, where smclicshv extension is not supported and
+	  hardware vectoring is set via mode bits of mtvec.
