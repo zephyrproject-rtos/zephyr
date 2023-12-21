@@ -190,6 +190,22 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 	((dir) == DAI_DIR_RX ? ((UINT_TO_I2S(regmap))->RCSR & (which)) : \
 	 ((UINT_TO_I2S(regmap))->TCSR & (which)))
 
+/* used to retrieve the SYNC direction. Use this macro when you know for sure
+ * you have 1 SYNC direction with 1 ASYNC direction.
+ */
+#define SAI_TX_RX_GET_SYNC_DIR(cfg)\
+	((cfg)->tx_sync_mode == kSAI_ModeSync ? DAI_DIR_TX : DAI_DIR_RX)
+
+/* used to retrieve the ASYNC direction. Use this macro when you know for sure
+ * you have 1 SYNC direction with 1 ASYNC direction.
+ */
+#define SAI_TX_RX_GET_ASYNC_DIR(cfg)\
+	((cfg)->tx_sync_mode == kSAI_ModeAsync ? DAI_DIR_TX : DAI_DIR_RX)
+
+/* used to check if transmitter/receiver is SW enabled */
+#define SAI_TX_RX_DIR_IS_SW_ENABLED(dir, data)\
+	((dir) == DAI_DIR_TX ? data->tx_enabled : data->rx_enabled)
+
 struct sai_clock_data {
 	uint32_t *clocks;
 	uint32_t clock_num;
