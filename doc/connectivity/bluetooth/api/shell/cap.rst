@@ -339,3 +339,37 @@ Setting the volume mute on all connected devices
    VCP volume 100, mute 0
    VCP unmute done
    Volume mute change completed
+
+Setting the microphone gain on one or more devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The gains are set by connection index, so connection index 0 gets the first offset,
+and index 1 gets the second offset, etc.:
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ micp_mic_ctlr discover
+   MICP discover done with 1 AICS
+   uart:~$
+   uart:~$ bt connect <device B>
+   Connected: <device B>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ micp_mic_ctlr discover
+   MICP discover done with 1 AICS
+   uart:~$
+   uart:~$ cap_commander change_microphone_gain 10
+   Setting microphone gain on 1 connections
+   AICS inst 0x200140a4 state gain 10, mute 0, mode 0
+   Gain set for inst 0x200140a4
+   Microphone gain change completed
+   uart:~$
+   uart:~$ cap_commander change_microphone_gain 10 15
+   Setting microphone gain on 2 connections
+   Gain set for inst 0x200140a4
+   AICS inst 0x20014188 state gain 15, mute 0, mode 0
+   Gain set for inst 0x20014188
+   Microphone gain change completed
