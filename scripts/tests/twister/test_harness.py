@@ -35,7 +35,7 @@ def process_logs(harness, logs):
 
 
 @pytest.fixture
-def gtest():
+def gtest(tmp_path):
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
     mock_testsuite = mock.Mock()
@@ -44,8 +44,10 @@ def gtest():
     mock_testsuite.id = "id"
     mock_testsuite.testcases = []
     mock_testsuite.harness_config = {}
+    outdir = tmp_path / 'gtest_out'
+    outdir.mkdir()
 
-    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir="")
+    instance = TestInstance(testsuite=mock_testsuite, platform=mock_platform, outdir=outdir)
 
     harness = Gtest()
     harness.configure(instance)
