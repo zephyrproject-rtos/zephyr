@@ -55,7 +55,7 @@ int linux_socketcan_iface_open(const char *if_name)
 	(void)memset(&ifr, 0, sizeof(ifr));
 	(void)memset(&addr, 0, sizeof(addr));
 
-	strncpy(ifr.ifr_name, if_name, IFNAMSIZ);
+	strncpy(ifr.ifr_name, if_name, IFNAMSIZ - 1);
 
 	ret = ioctl(fd, SIOCGIFINDEX, (void *)&ifr);
 	if (ret < 0) {
