@@ -1094,7 +1094,7 @@ void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 
 void z_reschedule_irqlock(uint32_t key)
 {
-	if (resched(key)) {
+	if (resched(key) && need_swap()) {
 		z_swap_irqlock(key);
 	} else {
 		irq_unlock(key);
