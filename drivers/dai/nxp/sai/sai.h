@@ -125,6 +125,18 @@ LOG_MODULE_REGISTER(nxp_dai_sai);
 #define SAI_RX_DMA_MUX(inst)\
 	FSL_FEATURE_SAI_RX_DMA_MUXn(UINT_TO_I2S(DT_INST_REG_ADDR(inst)))
 
+/* used to retrieve the synchronization mode of the transmitter. If this
+ * property is not specified, ASYNC mode will be used.
+ */
+#define SAI_TX_SYNC_MODE(inst)\
+	DT_INST_PROP_OR(inst, tx_sync_mode, kSAI_ModeAsync)
+
+/* used to retrieve the synchronization mode of the receiver. If this property
+ * is not specified, ASYNC mode will be used.
+ */
+#define SAI_RX_SYNC_MODE(inst)\
+	DT_INST_PROP_OR(inst, rx_sync_mode, kSAI_ModeAsync)
+
 /* utility macros */
 
 /* invert a clock's polarity. This works because a clock's polarity is expressed
@@ -211,6 +223,10 @@ struct sai_config {
 	const struct dai_properties *tx_props;
 	const struct dai_properties *rx_props;
 	uint32_t dai_index;
+	/* RX synchronization mode - may be SYNC or ASYNC */
+	sai_sync_mode_t rx_sync_mode;
+	/* TX synchronization mode - may be SYNC or ASYNC */
+	sai_sync_mode_t tx_sync_mode;
 	void (*irq_config)(void);
 };
 
