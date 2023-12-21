@@ -98,7 +98,7 @@ static int linux_evdev_init(const struct device *dev)
 	linux_evdev_fd = linux_evdev_open(linux_evdev_path);
 
 	k_thread_create(&linux_evdev_thread, linux_evdev_thread_stack,
-			CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
+			K_KERNEL_STACK_SIZEOF(linux_evdev_thread_stack),
 			linux_evdev_thread_fn, (void *)dev, NULL, NULL,
 			CONFIG_NATIVE_LINUX_EVDEV_THREAD_PRIORITY, 0, K_NO_WAIT);
 
