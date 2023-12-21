@@ -43,15 +43,12 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
 {
-	ARG_UNUSED(flags);
-
 	z_isr_install(irq, routine, parameter);
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
-	if (irq_get_level(irq) == 2) {
-		riscv_plic_set_priority(irq, priority);
-	}
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC)
+	z_riscv_irq_priority_set(irq, priority, flags);
 #else
+	ARG_UNUSED(flags);
 	ARG_UNUSED(priority);
 #endif
 	return irq;
