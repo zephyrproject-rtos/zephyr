@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(dma_intel_lpss, CONFIG_DMA_LOG_LEVEL);
 
 struct dma_intel_lpss_cfg {
 	struct dw_dma_dev_cfg dw_cfg;
-	const struct device *parent;
 };
 
 int dma_intel_lpss_setup(const struct device *dev)
@@ -43,28 +42,6 @@ void dma_intel_lpss_set_base(const struct device *dev, uintptr_t base)
 	struct dma_intel_lpss_cfg *dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
 
 	dev_cfg->dw_cfg.base = base;
-}
-
-static int dma_intel_lpss_init(const struct device *dev)
-{
-	struct dma_intel_lpss_cfg *dev_cfg = (struct dma_intel_lpss_cfg *)dev->config;
-	uint32_t base;
-	int ret;
-
-	if (device_is_ready(dev_cfg->parent)) {
-		base = DEVICE_MMIO_GET(dev_cfg->parent) + DMA_INTEL_LPSS_OFFSET;
-		dev_cfg->dw_cfg.base = base;
-	}
-
-	ret = dma_intel_lpss_setup(dev);
-
-	if (ret != 0) {
-		LOG_ERR("failed to initialize LPSS DMA %s", dev->name);
-		goto out;
-	}
-	ret = 0;
-out:
-	return ret;
 }
 
 int dma_intel_lpss_reload(const struct device *dev, uint32_t channel,
@@ -155,12 +132,6 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 	.stop = dw_dma_stop,
 };
 
-#define DMA_LPSS_INIT_VAL_0 49 /* When parent device depends on DMA */
-#define DMA_LPSS_INIT_VAL_1 80 /* When DMA device depends on parent */
-
-#define DMA_LPSS_INIT_VAL(n)\
-	_CONCAT(DMA_LPSS_INIT_VAL_, DT_INST_NODE_HAS_PROP(n, dma_parent))
-
 #define DMA_INTEL_LPSS_INIT(n)						\
 									\
 	static struct dw_drv_plat_data dma_intel_lpss##n = {		\
@@ -179,8 +150,6 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 		.dw_cfg = {						\
 			.base = 0,					\
 		},							\
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, dma_parent),	\
-		(.parent = DEVICE_DT_GET(DT_INST_PHANDLE(n, dma_parent)),))\
 	};								\
 									\
 	static struct dw_dma_dev_data dma_intel_lpss##n##_data = {	\
@@ -188,11 +157,11 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &dma_intel_lpss_init,			\
+			    NULL,					\
 			    NULL,					\
 			    &dma_intel_lpss##n##_data,			\
-			    &dma_intel_lpss##n##_config, POST_KERNEL,	\
-			    DMA_LPSS_INIT_VAL(n),				\
+			    &dma_intel_lpss##n##_config, PRE_KERNEL_1,	\
+			    CONFIG_DMA_INIT_PRIORITY,			\
 			    &dma_intel_lpss_driver_api);		\
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INTEL_LPSS_INIT)
