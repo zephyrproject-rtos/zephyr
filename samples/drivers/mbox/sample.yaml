@@ -9,9 +9,20 @@ tests:
       - nrf5340dk_nrf5340_cpuapp
       - adp_xc7k_ae350
       - mimxrt595_evk_cm33
+      - mimxrt1170_evkb_cm7
+      - mimxrt1170_evk_cm7
+      - mimxrt1160_evk_cm7
     integration_platforms:
       - nrf5340dk_nrf5340_cpuapp
-    harness: remote
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 0\\)"
+        - "Pong \\(on channel 0\\)"
+        - "Ping \\(on channel 1\\)"
+        - "Pong \\(on channel 1\\)"
   sample.drivers.mbox.simu:
     platform_allow:
       - nrf5340bsim_nrf5340_cpuapp
