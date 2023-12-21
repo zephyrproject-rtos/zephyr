@@ -129,4 +129,13 @@ config ADSP_IDLE_CLOCK_GATING
 	  (wait for interrupt) during idle, the clock can be gated (however, this
 	  does not mean that this will happen).
 
+config ADSP_DYNAMIC_CLOCK_SWITCHING
+	bool "DSP clock switching in Idle"
+	depends on PM_STATE_CUSTOM_DATA
+	help
+	  When true, the firmware will slow down the clock if all cores are in an idle
+	  state. This dynamic clock change aims to reduce energy consumption when the DSP
+	  is idle, with minimal impact on the time required to resume full operation. It
+	  ensures that power savings are maximized while maintaining responsiveness.
+
 endif # SOC_FAMILY_INTEL_ADSP
