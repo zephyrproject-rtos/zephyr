@@ -38,6 +38,10 @@ ZTEST(util_cxx, test_IF_ENABLED) {
 	run_IF_ENABLED();
 }
 
+ZTEST(util_cxx, test_IF_DISABLED) {
+	run_IF_DISABLED();
+}
+
 ZTEST(util_cxx, test_LISTIFY) {
 	run_LISTIFY();
 }
@@ -184,6 +188,10 @@ ZTEST(util_cc, test_UTIL_AND) {
 
 ZTEST(util_cc, test_IF_ENABLED) {
 	run_IF_ENABLED();
+}
+
+ZTEST(util_cc, test_IF_DISABLED) {
+	run_IF_DISABLED();
 }
 
 ZTEST(util_cc, test_LISTIFY) {
