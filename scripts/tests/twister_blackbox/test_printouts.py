@@ -92,7 +92,6 @@ class TestPrintOuts:
     def teardown_class(cls):
         pass
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, expected',
         TESTDATA_1,
@@ -101,8 +100,8 @@ class TestPrintOuts:
             'tests/dummy/device',
         ]
     )
-    def test_list_tags(self, capfd, test_path, expected):
-        args = ['-T', test_path, '--list-tags']
+    def test_list_tags(self, capfd, out_path, test_path, expected):
+        args = ['--outdir', out_path, '-T', test_path, '--list-tags']
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
                 pytest.raises(SystemExit) as sys_exit:
@@ -119,7 +118,6 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, expected',
         TESTDATA_2,
@@ -128,8 +126,8 @@ class TestPrintOuts:
             'tests/dummy/device',
         ]
     )
-    def test_list_tests(self, capfd, test_path, expected):
-        args = ['-T', test_path, '--list-tests']
+    def test_list_tests(self, capfd, out_path, test_path, expected):
+        args = ['--outdir', out_path, '-T', test_path, '--list-tests']
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
                 pytest.raises(SystemExit) as sys_exit:
@@ -147,7 +145,6 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, expected',
         TESTDATA_3,
@@ -156,8 +153,8 @@ class TestPrintOuts:
             'tests/dummy/device',
         ]
     )
-    def test_tree(self, capfd, test_path, expected):
-        args = ['-T', test_path, '--test-tree']
+    def test_tree(self, capfd, out_path, test_path, expected):
+        args = ['--outdir', out_path, '-T', test_path, '--test-tree']
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
                 pytest.raises(SystemExit) as sys_exit:
@@ -176,9 +173,9 @@ class TestPrintOuts:
         TESTDATA_4,
         ids=['tests']
     )
-    def test_timestamps(self, capfd, test_path, test_platforms):
+    def test_timestamps(self, capfd, out_path, test_path, test_platforms):
 
-        args = ['-i', '-T', test_path, '--timestamps', '-v'] + \
+        args = ['-i', '--outdir', out_path, '-T', test_path, '--timestamps', '-v'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -247,15 +244,14 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, test_platforms',
         TESTDATA_4,
         ids=['tests']
     )
-    def test_force_color(self, capfd, test_path, test_platforms):
+    def test_force_color(self, capfd, out_path, test_path, test_platforms):
 
-        args = ['-i', '-T', test_path, '--force-color'] + \
+        args = ['-i', '--outdir', out_path, '-T', test_path, '--force-color'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]

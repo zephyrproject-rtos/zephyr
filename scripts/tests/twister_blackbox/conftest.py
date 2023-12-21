@@ -6,6 +6,7 @@
 '''Common fixtures for use in testing the twister tool.'''
 
 import logging
+import shutil
 import mock
 import os
 import pytest
@@ -43,3 +44,28 @@ def clear_log():
         handlers = getattr(logger, 'handlers', [])
         for handler in handlers:
             logger.removeHandler(handler)
+
+# This fixture provides blackbox tests with an `out_path` parameter
+# It should be used as the `-O` (`--out_dir`) parameter in blackbox tests
+# APPRECIATED: method of using this out_path wholly outside of test code
+@pytest.fixture(name='out_path', autouse=True)
+def provide_out(tmp_path, request):
+    # As this fixture is autouse, one can use the pytest.mark.noclearout decorator
+    # in order to be sure that this fixture's code will not fire.
+    # Most of the time, just omitting the `out_path` parameter is sufficient.
+    if 'noclearout' in request.keywords:
+        yield
+        return
+
+    # Before
+    out_container_path = tmp_path / 'blackbox-out-container'
+    out_container_path.mkdir()
+    out_path = os.path.join(out_container_path, "blackbox-out")
+
+    # Test
+    yield out_path
+
+    # After
+    # We're operating in temp, so it is not strictly necessary
+    # but the files can get large quickly as we do not need them after the test.
+    shutil.rmtree(out_container_path)
