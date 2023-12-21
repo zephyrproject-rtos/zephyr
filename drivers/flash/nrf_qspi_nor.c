@@ -1382,6 +1382,7 @@ static const struct qspi_nor_config qspi_nor_dev_config = {
 		.sck_delay = DT_INST_PROP(0, sck_delay),
 		.spi_mode = INST_0_SPI_MODE,
 	},
+	.nrfx_cfg.timeout = CONFIG_NORDIC_QSPI_NOR_TIMEOUT_MS,
 
 	.size = INST_0_BYTES,
 	.id = DT_INST_PROP(0, jedec_id),

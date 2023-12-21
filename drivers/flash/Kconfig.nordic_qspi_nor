@@ -50,4 +50,13 @@ config NORDIC_QSPI_NOR_XIP
 	  QSPI NOR flash chip is executed until the driver has been setup.
 	  This will also disable power management for the QSPI NOR flash chip.
 
+config NORDIC_QSPI_NOR_TIMEOUT_MS
+	int "Timeout for QSPI operations (ms)"
+	default 500
+	help
+	  The QSPI peripheral operation timeout in milliseconds.
+	  Primarily intended for long running operations such as
+	  a flash sector erase. The 500 ms default allows for
+	  most typical NOR flash chips to erase a sector.
+
 endif # NORDIC_QSPI_NOR
