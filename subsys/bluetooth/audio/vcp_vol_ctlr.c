@@ -68,8 +68,21 @@ static void vcp_vol_ctlr_discover_complete(struct bt_vcp_vol_ctlr *vol_ctlr, int
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&vcp_vol_ctlr_cbs, listener, next, _node) {
 		if (listener->discover) {
-			listener->discover(vol_ctlr, err, err == 0 ? vol_ctlr->vocs_inst_cnt : 0,
-					   err == 0 ? vol_ctlr->aics_inst_cnt : 0);
+			uint8_t vocs_cnt = 0U;
+			uint8_t aics_cnt = 0U;
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+			if (err == 0) {
+				vocs_cnt = vol_ctlr->vocs_inst_cnt;
+			}
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
+			if (err == 0) {
+				aics_cnt = vol_ctlr->aics_inst_cnt;
+			}
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+
+			listener->discover(vol_ctlr, err, vocs_cnt, aics_cnt);
 		}
 	}
 }
@@ -303,7 +316,7 @@ static void vcp_vol_ctlr_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 	vcs_cp_notify_app(vol_ctlr, opcode, err);
 }
 
-#if (CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 || CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0)
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 struct bt_gatt_discover_params *params)
@@ -314,8 +327,19 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
 	if (attr == NULL) {
-		LOG_DBG("Discover include complete for vol_ctlr: %u AICS and %u VOCS",
-			vol_ctlr->aics_inst_cnt, vol_ctlr->vocs_inst_cnt);
+		uint8_t vocs_cnt = 0U;
+		uint8_t aics_cnt = 0U;
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+		vocs_cnt = vol_ctlr->vocs_inst_cnt;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
+		aics_cnt = vol_ctlr->aics_inst_cnt;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+
+		LOG_DBG("Discover include complete for vol_ctlr: %u AICS and %u VOCS", aics_cnt,
+			vocs_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
 		vcp_vol_ctlr_discover_complete(vol_ctlr, 0);
@@ -331,7 +355,7 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 		include = (struct bt_gatt_include *)attr->user_data;
 		LOG_DBG("Include UUID %s", bt_uuid_str(include->uuid));
 
-#if CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 		if (bt_uuid_cmp(include->uuid, BT_UUID_AICS) == 0 &&
 		    vol_ctlr->aics_inst_cnt < CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST) {
 			struct bt_aics_discover_param param = {
@@ -355,8 +379,8 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 
 			return BT_GATT_ITER_STOP;
 		}
-#endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST */
-#if CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0
+#endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 		if (bt_uuid_cmp(include->uuid, BT_UUID_VOCS) == 0 &&
 		    vol_ctlr->vocs_inst_cnt < CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST) {
 			struct bt_vocs_discover_param param = {
@@ -380,12 +404,12 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 
 			return BT_GATT_ITER_STOP;
 		}
-#endif /* CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST */
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
-#endif /* (CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 || CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0) */
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS || CONFIG_BT_VCP_VOL_CTLR_AICS */
 
 /**
  * @brief This will discover all characteristics on the server, retrieving the
@@ -404,7 +428,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 	if (attr == NULL) {
 		LOG_DBG("Setup complete for vol_ctlr");
 		(void)memset(params, 0, sizeof(*params));
-#if (CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 || CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0)
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 		/* Discover included services */
 		vol_ctlr->discover_params.start_handle = vol_ctlr->start_handle;
 		vol_ctlr->discover_params.end_handle = vol_ctlr->end_handle;
@@ -418,7 +442,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 		}
 #else
 		vcp_vol_ctlr_discover_complete(vol_ctlr, err);
-#endif /* (CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST > 0 || CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST > 0) */
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS || CONFIG_BT_VCP_VOL_CTLR_AICS */
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -811,8 +835,12 @@ static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 	vol_ctlr->state_handle = 0;
 	vol_ctlr->control_handle = 0;
 	vol_ctlr->flag_handle = 0;
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	vol_ctlr->vocs_inst_cnt = 0;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 	vol_ctlr->aics_inst_cnt = 0;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
 
 	memset(&vol_ctlr->discover_params, 0, sizeof(vol_ctlr->discover_params));
 
@@ -976,6 +1004,7 @@ int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb)
 	return 0;
 }
 
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 int bt_vcp_vol_ctlr_included_get(struct bt_vcp_vol_ctlr *vol_ctlr,
 			       struct bt_vcp_included *included)
 {
@@ -983,14 +1012,21 @@ int bt_vcp_vol_ctlr_included_get(struct bt_vcp_vol_ctlr *vol_ctlr,
 		return -EINVAL;
 	}
 
+	memset(included, 0, sizeof(*included));
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	included->vocs_cnt = vol_ctlr->vocs_inst_cnt;
 	included->vocs = vol_ctlr->vocs;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 	included->aics_cnt = vol_ctlr->aics_inst_cnt;
 	included->aics = vol_ctlr->aics;
+#endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
 
 	return 0;
 }
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS || CONFIG_BT_VCP_VOL_CTLR_AICS*/
 
 struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn)
 {

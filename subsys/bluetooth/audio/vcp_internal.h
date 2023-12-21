@@ -59,10 +59,14 @@ struct bt_vcp_vol_ctlr {
 	struct bt_uuid_16 uuid;
 	struct bt_conn *conn;
 
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	uint8_t vocs_inst_cnt;
 	struct bt_vocs *vocs[CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST];
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 	uint8_t aics_inst_cnt;
 	struct bt_aics *aics[CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST];
+#endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
 };
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_*/
