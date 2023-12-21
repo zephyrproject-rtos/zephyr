@@ -84,6 +84,13 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    saved on the stack by the hardware, and the registers saved by the
 	    software macros. The structure must be called '__esf'.
 
+config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	bool
+	help
+	  This allows the SoC to overwrite the irq handling. If enabled, the
+	  function __soc_handle_all_irqs has to be implemented. It shall service
+	  and clear all pending interrupts.
+
 config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	bool
 	help
