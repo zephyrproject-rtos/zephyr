@@ -338,6 +338,7 @@ static void eth_enc28j60_gpio_callback(const struct device *dev,
 static int eth_enc28j60_init_buffers(const struct device *dev)
 {
 	uint8_t data_estat;
+	const struct eth_enc28j60_config *config = dev->config;
 
 	/* Reception buffers initialization */
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXSTL);
@@ -372,7 +373,7 @@ static int eth_enc28j60_init_buffers(const struct device *dev)
 
 	eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXFCON);
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ERXFCON,
-			       ENC28J60_RECEIVE_FILTERS);
+			       config->hw_rx_filter);
 
 	/* Waiting for OST */
 	/* 32 bits for this timer should be fine, rollover not an issue with initialisation */
@@ -877,6 +878,7 @@ static int eth_enc28j60_init(const struct device *dev)
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.full_duplex = DT_INST_PROP(0, full_duplex),                                       \
 		.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,                                            \
+		.hw_rx_filter = DT_INST_PROP_OR(inst, hw_rx_filter, ENC28J60_RECEIVE_FILTERS),     \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_enc28j60_init, NULL, &eth_enc28j60_runtime_##inst, \
