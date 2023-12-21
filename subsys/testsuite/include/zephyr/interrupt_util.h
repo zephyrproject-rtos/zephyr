@@ -166,6 +166,13 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
+#if defined(CONFIG_NUCLEI_ECLIC)
+void riscv_clic_irq_set_pending(uint32_t irq);
+static inline void trigger_irq(int irq)
+{
+	riscv_clic_irq_set_pending(irq);
+}
+#else
 static inline void trigger_irq(int irq)
 {
 	uint32_t mip;
@@ -174,7 +181,7 @@ static inline void trigger_irq(int irq)
 			  : "=r" (mip)
 			  : "r" (1 << irq));
 }
-
+#endif
 #elif defined(CONFIG_XTENSA)
 static inline void trigger_irq(int irq)
 {

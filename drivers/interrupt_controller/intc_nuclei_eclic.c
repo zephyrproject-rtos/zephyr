@@ -171,6 +171,14 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 	ECLIC_CTRL[irq].INTATTR = intattr;
 }
 
+/**
+ * @brief Set pending bit of an interrupt
+ */
+void riscv_clic_irq_set_pending(uint32_t irq)
+{
+	ECLIC_CTRL[irq].INTIP.b.IP = 1;
+}
+
 static int nuclei_eclic_init(const struct device *dev)
 {
 	/* check hardware support required interrupt levels */
