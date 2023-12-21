@@ -292,6 +292,7 @@ static int can_native_linux_stop(const struct device *dev)
 static int can_native_linux_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_native_linux_data *data = dev->data;
+	int err;
 
 #ifdef CONFIG_CAN_FD_MODE
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_FD)) != 0) {
@@ -313,7 +314,11 @@ static int can_native_linux_set_mode(const struct device *dev, can_mode_t mode)
 	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0;
 
 	data->mode_fd = (mode & CAN_MODE_FD) != 0;
-	linux_socketcan_set_mode_fd(data->dev_fd, data->mode_fd);
+	err = linux_socketcan_set_mode_fd(data->dev_fd, data->mode_fd);
+	if (err != 0) {
+		LOG_ERR("failed to set mode");
+		return -EIO;
+	}
 
 	return 0;
 }
