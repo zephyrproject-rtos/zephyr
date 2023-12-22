@@ -159,7 +159,8 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 	}
 
 	/* IO/memory decode should be disabled before sizing/update BAR. */
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg & (~0x3));
+	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
+			cmd_reg & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
 
 	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
 	size = pcie_conf_read(bdf, reg);
