@@ -151,6 +151,16 @@ done_mpu_regions_reset:
 #endif
 #endif
 
+#ifdef CONFIG_ISA_ARCV3
+	/* Enable HW prefetcher if exist */
+	lr r0, [_ARC_HW_PF_BUILD]
+	breq r0, 0, hw_pf_setup_done
+	lr r1, [_ARC_HW_PF_CTRL]
+	or r1, r1, _ARC_HW_PF_CTRL_ENABLE
+	sr r1, [_ARC_HW_PF_CTRL]
+hw_pf_setup_done:
+#endif
+
 #if defined(CONFIG_SMP) || CONFIG_MP_MAX_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
