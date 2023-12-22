@@ -1,0 +1,8 @@
+# Copyright (c) 2023, Silicom Connectivity Solutions, Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC RPM2PWM Tach
+
+include: [base.yaml]
+
+compatible: "microchip,xec-rpm2pwm-tach"
