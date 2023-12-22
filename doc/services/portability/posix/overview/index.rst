@@ -59,7 +59,9 @@ as part of `IEEE 1003.13-2003`_ (also known as POSIX.13-2003).
 
 POSIX.13-2003 AEP were formalized in 2003 via "Units of Functionality" but the specification is now
 inactive (for reference only). Nevertheless, the intent is still captured as part of POSIX-1.2017
-via :ref:`Options<posix_options>` and :ref:`Option Groups<posix_option_groups>`, in Appendix E.
+via :ref:`Options<posix_options>` and :ref:`Option Groups<posix_option_groups>`.
+
+For more information, please see `IEEE 1003.1-2017, Section E, Subprofiling Considerations`_.
 
 .. _posix_apps:
 
@@ -133,3 +135,5 @@ Alternatively, users may enable one of the Kconfig options below as a shortcut t
 .. _IEEE Computer Society: https://www.computer.org/
 .. _IEEE 1003.1-2017: https://standards.ieee.org/ieee/1003.1/7101/
 .. _IEEE 1003.13-2003: https://standards.ieee.org/ieee/1003.13/3322/
+.. _IEEE 1003.1-2017, Section E, Subprofiling Considerations:
+    https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
