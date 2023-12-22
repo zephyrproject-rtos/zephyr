@@ -330,6 +330,22 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
 /**
+ * @brief Macro to check if size is negative
+ *
+ * Z_SYSCALL_MEMORY can be called with signed/unsigned types
+ * and because of that if we check if size is greater or equal to
+ * zero, many static analyzers complain about no effect expression.
+ *
+ * @param ptr Memory area to examine
+ * @param size Size of the memory area
+ * @return true if size is valid, false otherwise
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ */
+#define Z_SYSCALL_MEMORY_SIZE_CHECK(ptr, size) \
+	(((uintptr_t)ptr + size) >= (uintptr_t)ptr)
+
+/**
  * @brief Runtime check that a user thread has read and/or write permission to
  *        a memory area
  *
@@ -346,7 +362,8 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
  * @return 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG((size >= 0) && !Z_DETECT_POINTER_OVERFLOW(ptr, size) \
+	Z_SYSCALL_VERIFY_MSG(Z_SYSCALL_MEMORY_SIZE_CHECK(ptr, size) \
+			     && !Z_DETECT_POINTER_OVERFLOW(ptr, size) \
 			     && (arch_buffer_validate((void *)ptr, size, write) \
 			     == 0), \
 			     "Memory region %p (size %zu) %s access denied", \
