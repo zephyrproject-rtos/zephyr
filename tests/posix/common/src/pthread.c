@@ -18,7 +18,7 @@
 #define ONE_SECOND 1
 
 /* arbitrary number that is also a legal stack size */
-#define OKAY_STACK_SIZE (STACKS + 42)
+#define OKAY_STACK_SIZE (STACKS + 1)
 
 /* Macros to test invalid states */
 #define PTHREAD_CANCEL_INVALID -1
@@ -959,11 +959,14 @@ ZTEST(posix_apis, test_pthread_attr_setguardsize)
 	size_t size_after;
 	size_t size_before;
 	pthread_attr_t attr;
-	size_t sizes[] = {0, OKAY_STACK_SIZE, UINT16_MAX};
+	size_t sizes[] = {0, BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS / 2),
+			  BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS)};
 
 	attr = (pthread_attr_t){0};
 	zassert_equal(pthread_attr_setguardsize(&attr, 0), EINVAL);
 	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_getguardsize(&attr, &size_before));
+	zassert_equal(size_before, CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT);
 	zassert_equal(pthread_attr_setguardsize(NULL, SIZE_MAX), EINVAL);
 	zassert_equal(pthread_attr_setguardsize(NULL, 0), EINVAL);
 	zassert_equal(pthread_attr_setguardsize(&attr, SIZE_MAX), EINVAL);
@@ -974,5 +977,18 @@ ZTEST(posix_apis, test_pthread_attr_setguardsize)
 		zassert_ok(pthread_attr_getguardsize(&attr, &size_after));
 		zassert_equal(size_before, size_after);
 	}
+	zassert_ok(pthread_attr_destroy(&attr));
+}
+
+ZTEST(posix_apis, test_pthread_attr_large_stacksize)
+{
+	size_t actual_size;
+	const size_t expect_size = BIT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS);
+	pthread_attr_t attr;
+
+	zassert_ok(pthread_attr_init(&attr));
+	zassert_ok(pthread_attr_setstacksize(&attr, expect_size));
+	zassert_ok(pthread_attr_getstacksize(&attr, &actual_size));
+	zassert_equal(actual_size, expect_size);
 	zassert_ok(pthread_attr_destroy(&attr));
 }
