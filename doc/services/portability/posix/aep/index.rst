@@ -122,13 +122,13 @@ Realtime Controller System Profile (PSE52)
 Dedicated Realtime System Profile (PSE53)
 =========================================
 
-.. Conforming implementations shall define _POSIX_AEP_REALTIME_MINIMAL to the value 200312L
+.. Conforming implementations shall define _POSIX_AEP_REALTIME_DEDICATED to the value 200312L
 
 .. csv-table:: PSE53 System Interfaces
    :header: Symbol, Support, Remarks
    :widths: 50, 10, 50
 
-    _POSIX_AEP_REALTIME_CONTROLLER, -1,
+    _POSIX_AEP_REALTIME_DEDICATED, -1,
 
 .. csv-table:: PSE53 Option Groups
    :header: Symbol, Support, Remarks
