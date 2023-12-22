@@ -663,7 +663,7 @@ static int init_listener(void)
 	    (iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
 		NET_WARN("You have %d interfaces configured but there "
 			 "are %d network interfaces in the system.",
-			 MAX(MAX_IPV6_IFACE_COUNT,
+			 MAX(MAX_IPV4_IFACE_COUNT,
 			     MAX_IPV6_IFACE_COUNT), iface_count);
 	}
 
