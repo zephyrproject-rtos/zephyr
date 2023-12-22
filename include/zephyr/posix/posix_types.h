@@ -38,15 +38,9 @@ typedef unsigned long timer_t;
 /* Thread attributes */
 struct pthread_attr {
 	void *stack;
-	uint16_t stacksize;
-	uint16_t guardsize;
-	int8_t priority;
-	uint8_t schedpolicy: 2;
-	uint8_t guardsize_msbit: 1;
-	bool initialized: 1;
-	bool cancelstate: 1;
-	bool detachstate: 1;
+	uint32_t details[2];
 };
+
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
 	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef struct pthread_attr pthread_attr_t;

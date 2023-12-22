@@ -22,6 +22,18 @@
  */
 #define PTHREAD_OBJ_MASK_INIT 0x80000000
 
+struct posix_thread_attr {
+	void *stack;
+	/* the following two bitfields should combine to be 32-bits in size */
+	uint32_t stacksize : CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS;
+	uint16_t guardsize : CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS;
+	int8_t priority;
+	uint8_t schedpolicy: 2;
+	bool initialized: 1;
+	bool cancelstate: 1;
+	bool detachstate: 1;
+};
+
 struct posix_thread {
 	struct k_thread thread;
 

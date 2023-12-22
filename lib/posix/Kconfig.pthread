@@ -27,9 +27,28 @@ config PTHREAD_RECYCLER_DELAY_MS
 	  Note: this option should be considered temporary and will likely be
 	  removed once a more synchronous solution is available.
 
+config POSIX_PTHREAD_ATTR_STACKSIZE_BITS
+	int "Significant bits for pthread_attr_t stacksize"
+	range 8 31
+	default 23
+	help
+	  This value plays a part in determining the maximum supported
+	  pthread_attr_t stacksize. Valid stacksizes are in the range
+	  [1, N], where N = 1 << M, and M is this configuration value.
+
+config POSIX_PTHREAD_ATTR_GUARDSIZE_BITS
+	int "Significant bits for pthread_attr_t guardsize"
+	range 1 31
+	default 9
+	help
+	  This value plays a part in determining the maximum supported
+	  pthread_attr_t guardsize. Valid guardsizes are in the range
+	  [0, N-1], where N = 1 << M, and M is this configuration value.
+
+	  Actual guardsize values may be rounded-up.
+
 config POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT
 	int "Default size of stack guard area"
-	range 0 65536
 	default 0
 	help
 	  This is the default amount of space to reserve at the overflow end of a
