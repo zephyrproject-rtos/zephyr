@@ -9,7 +9,7 @@
 
 #define DT_DRAM_SIZE		DT_SIZE_M(2048)
 
-#include <intel/raptor_lake_p.dtsi>
+#include <intel/x86_64.dtsi>
 
 / {
 	model = "intel_rpl_p_crb";
@@ -25,4 +25,302 @@
 		watchdog0 = &tco_wdt;
 		rtc = &rtc;
 	};
+
+	soc {
+		pwm0: pwm0@fd6d0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0xfd6d0000 0x400>;
+			reg-offset = <0x204>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			#pwm-cells = <2>;
+
+			status = "okay";
+		};
+
+		gpio_0_b: gpio@fd6e0700 {
+			compatible = "intel,gpio";
+			reg = <0xfd6e0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_0_t: gpio@fd6e08a0 {
+			compatible = "intel,gpio";
+			reg = <0xfd6e08a0 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <4>;
+			pin-offset = <25>;
+
+			status = "okay";
+		};
+
+		gpio_0_a: gpio@fd6e09a0 {
+			compatible = "intel,gpio";
+			reg = <0xfd6e09a0 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			pin-offset = <41>;
+
+			status = "okay";
+		};
+
+		gpio_1_s: gpio@fd6d0700 {
+			compatible = "intel,gpio";
+			reg = <0xfd6d0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <8>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_1_h: gpio@fd6d0780 {
+			compatible = "intel,gpio";
+			reg = <0xfd6d0780 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			pin-offset = <8>;
+
+			status = "okay";
+		};
+
+
+		gpio_1_d: gpio@fd6d0900 {
+			compatible = "intel,gpio";
+			reg = <0xfd6d0900 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <20>;
+			pin-offset = <25>;
+
+			status = "okay";
+		};
+
+		gpio_2_gpd: gpio@fd6c0700 {
+			compatible = "intel,gpio";
+			reg = <0xfd6c0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <12>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_4_c: gpio@fd6a0700 {
+			compatible = "intel,gpio";
+			reg = <0xfd6a0700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+
+		gpio_4_f: gpio@fd6a0880 {
+			compatible = "intel,gpio";
+			reg = <0xfd6a0880 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			pin-offset = <24>;
+
+			status = "okay";
+		};
+
+		gpio_4_e: gpio@fd6a0a70 {
+			compatible = "intel,gpio";
+			reg = <0xfd6a0a70 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			pin-offset = <57>;
+
+			status = "okay";
+		};
+
+		gpio_5_r: gpio@fd690700 {
+			compatible = "intel,gpio";
+			reg = <0xfd690700 0x1000>;
+			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			group-index = <0x0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <8>;
+			pin-offset = <0>;
+
+			status = "okay";
+		};
+	};
+};
+
+&smbus0 {
+	vendor-id = <0x8086>;
+	device-id = <0x51a3>;
+
+	status = "okay";
+};
+
+&uart0 {
+	vendor-id = <0x8086>;
+	device-id = <0x51a8>;
+
+	status = "okay";
+};
+
+&uart1 {
+	vendor-id = <0x8086>;
+	device-id = <0x51A9>;
+
+	status = "disabled";
+};
+
+&spi0 {
+	vendor-id = <0x8086>;
+	device-id = <0x51aa>;
+
+	cs-gpios = <&gpio_4_e 10 GPIO_ACTIVE_LOW>;
+
+	status = "okay";
+};
+
+&spi1 {
+	vendor-id = <0x8086>;
+	device-id = <0x51ab>;
+
+	cs-gpios = <&gpio_4_f 16 GPIO_ACTIVE_LOW>;
+
+	status = "disabled";
+};
+
+&spi2 {
+	vendor-id = <0x8086>;
+	device-id = <0x51fb>;
+
+	cs-gpios = <&gpio_1_d 9 GPIO_ACTIVE_LOW>;
+
+	status = "disabled";
+};
+
+&i2c0 {
+	vendor-id = <0x8086>;
+	device-id = <0x51e8>;
+
+	status = "okay";
+};
+
+&i2c1 {
+	vendor-id = <0x8086>;
+	device-id = <0x51e9>;
+
+	status = "okay";
+};
+
+&i2c2 {
+	vendor-id = <0x8086>;
+	device-id = <0x51ea>;
+
+	status = "disabled";
+};
+
+&i2c3 {
+	vendor-id = <0x8086>;
+	device-id = <0x51eb>;
+
+	status = "disabled";
+};
+
+&i2c4 {
+	vendor-id = <0x8086>;
+	device-id = <0x51c5>;
+
+	status = "disabled";
+};
+
+&i2c5 {
+	vendor-id = <0x8086>;
+	device-id = <0x51c6>;
+
+	status = "disabled";
+};
+
+&i2c6 {
+	vendor-id = <0x8086>;
+	device-id = <0x51d8>;
+
+	status = "disabled";
+};
+
+&i2c7 {
+	vendor-id = <0x8086>;
+	device-id = <0x51d9>;
+
+	status = "disabled";
+};
+
+&tgpio {
+	status = "okay";
 };
