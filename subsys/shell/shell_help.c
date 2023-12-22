@@ -139,7 +139,7 @@ static void help_item_print(const struct shell *sh, const char *item_name,
 		z_cursor_next_line_move(sh);
 		return;
 	} else {
-		z_shell_fprintf(sh, SHELL_NORMAL, "%s:", tabulator);
+		z_shell_fprintf(sh, SHELL_NORMAL, "%s: ", tabulator);
 	}
 	/* print option help */
 	formatted_text_print(sh, item_help, offset, false);
