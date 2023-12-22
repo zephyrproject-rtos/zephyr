@@ -125,6 +125,11 @@ static void cap_commander_unicast_audio_proc_complete(void)
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
 #endif /* CONFIG_BT_VCP_VOL_CTLR */
 #if defined(CONFIG_BT_MICP_MIC_CTLR)
+	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE:
+		if (cap_cb->microphone_mute_changed != NULL) {
+			cap_cb->microphone_mute_changed(failed_conn, err);
+		}
+		break;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	case BT_CAP_COMMON_PROC_TYPE_MICROPHONE_GAIN_CHANGE:
 		if (cap_cb->microphone_gain_changed != NULL) {
@@ -441,7 +446,7 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
 		conn = proc_param->conn;
 		active_proc->proc_initiated_cnt++;
-		if (proc_param->change_mute.mute) {
+		if (proc_param->change_vol_mute.mute) {
 			err = bt_vcp_vol_ctlr_mute(bt_vcp_vol_ctlr_get_by_conn(conn));
 		} else {
 			err = bt_vcp_vol_ctlr_unmute(bt_vcp_vol_ctlr_get_by_conn(conn));
@@ -500,14 +505,14 @@ int bt_cap_commander_change_volume_mute_state(
 		 * are kept valid
 		 */
 		active_proc->proc_param.commander[i].conn = member_conn;
-		active_proc->proc_param.commander[i].change_mute.mute = param->mute;
+		active_proc->proc_param.commander[i].change_vol_mute.mute = param->mute;
 	}
 
 	proc_param = &active_proc->proc_param.commander[0];
 	conn = proc_param->conn;
 	active_proc->proc_initiated_cnt++;
 
-	if (proc_param->change_mute.mute) {
+	if (proc_param->change_vol_mute.mute) {
 		err = bt_vcp_vol_ctlr_mute(bt_vcp_vol_ctlr_get_by_conn(conn));
 	} else {
 		err = bt_vcp_vol_ctlr_unmute(bt_vcp_vol_ctlr_get_by_conn(conn));
@@ -754,16 +759,184 @@ static int cap_commander_register_micp_callbacks(void)
 	return 0;
 }
 
+static bool valid_change_microphone_mute_state_param(
+	const struct bt_cap_commander_change_microphone_mute_state_param *param)
+{
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count == 0) {
+		LOG_DBG("Invalid param->count: %u", param->count);
+		return false;
+	}
+
+	CHECKIF(param->members == NULL) {
+		LOG_DBG("param->members is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count > CONFIG_BT_MAX_CONN) {
+		LOG_DBG("param->count (%zu) is larger than CONFIG_BT_MAX_CONN (%d)", param->count,
+			CONFIG_BT_MAX_CONN);
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const union bt_cap_set_member *member = &param->members[i];
+		const struct bt_cap_common_client *client =
+			bt_cap_common_get_client(param->type, member);
+
+		CHECKIF(client == NULL) {
+			LOG_DBG("Invalid param->members[%zu]", i);
+			return false;
+		}
+
+		CHECKIF(bt_micp_mic_ctlr_get_by_conn(client->conn) == NULL) {
+			LOG_DBG("Microphone control not available for param->members[%zu]", i);
+			return false;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			const union bt_cap_set_member *other = &param->members[j];
+
+			CHECKIF(other == member) {
+				LOG_DBG("param->members[%zu] (%p) is duplicated by "
+					"param->members[%zu] (%p)",
+					j, other, i, member);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err)
+{
+	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
+	struct bt_conn *conn;
+	int micp_err;
+
+	LOG_DBG("mic_ctlr %p", (void *)mic_ctlr);
+
+	micp_err = bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
+	if (micp_err != 0) {
+		LOG_ERR("Failed to get conn by mic_ctlr: %d", micp_err);
+		return;
+	}
+
+	LOG_DBG("conn %p", (void *)conn);
+	if (!bt_cap_common_conn_in_active_proc(conn)) {
+		/* State change happened outside of a procedure; ignore */
+		return;
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed to change microphone mute: %d", err);
+		bt_cap_common_abort_proc(conn, err);
+	} else {
+		active_proc->proc_done_cnt++;
+
+		LOG_DBG("Conn %p mute updated (%zu/%zu streams done)", (void *)conn,
+			active_proc->proc_done_cnt, active_proc->proc_cnt);
+	}
+
+	if (bt_cap_common_proc_is_aborted()) {
+		LOG_DBG("Proc is aborted");
+		if (bt_cap_common_proc_all_handled()) {
+			LOG_DBG("All handled");
+			cap_commander_unicast_audio_proc_complete();
+		}
+
+		return;
+	}
+
+	if (!bt_cap_common_proc_is_done()) {
+		const struct bt_cap_commander_proc_param *proc_param;
+
+		proc_param = &active_proc->proc_param.commander[active_proc->proc_done_cnt];
+		conn = proc_param->conn;
+		active_proc->proc_initiated_cnt++;
+		if (proc_param->change_mic_mute.mute) {
+			err = bt_micp_mic_ctlr_mute(bt_micp_mic_ctlr_get_by_conn(conn));
+		} else {
+			err = bt_micp_mic_ctlr_unmute(bt_micp_mic_ctlr_get_by_conn(conn));
+		}
+
+		if (err != 0) {
+			LOG_DBG("Failed to change mute for conn %p: %d", (void *)conn, err);
+			bt_cap_common_abort_proc(conn, err);
+			cap_commander_unicast_audio_proc_complete();
+		}
+	} else {
+		cap_commander_unicast_audio_proc_complete();
+	}
+}
+
 int bt_cap_commander_change_microphone_mute_state(
 	const struct bt_cap_commander_change_microphone_mute_state_param *param)
 {
+	const struct bt_cap_commander_proc_param *proc_param;
+	struct bt_cap_common_proc *active_proc;
+	struct bt_conn *conn;
+	int err;
+
+	if (bt_cap_common_proc_is_active()) {
+		LOG_DBG("A CAP procedure is already in progress");
+
+		return -EBUSY;
+	}
+
+	if (!valid_change_microphone_mute_state_param(param)) {
+		return -EINVAL;
+	}
+
+	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_MICROPHONE_MUTE_CHANGE, param->count);
+
+	mic_ctlr_cb.mute_written = cap_commander_micp_mic_mute_cb;
+	mic_ctlr_cb.unmute_written = cap_commander_micp_mic_mute_cb;
 	if (!micp_callbacks_registered && cap_commander_register_micp_callbacks() != 0) {
 		LOG_DBG("Failed to register MICP callbacks");
 
 		return -ENOEXEC;
 	}
 
-	return -ENOSYS;
+	active_proc = bt_cap_common_get_active_proc();
+
+	for (size_t i = 0U; i < param->count; i++) {
+		struct bt_conn *member_conn =
+			bt_cap_common_get_member_conn(param->type, &param->members[i]);
+
+		CHECKIF(member_conn == NULL) {
+			LOG_DBG("Invalid param->members[%zu]", i);
+			return -EINVAL;
+		}
+
+		/* Store the necessary parameters as we cannot assume that the supplied parameters
+		 * are kept valid
+		 */
+		active_proc->proc_param.commander[i].conn = member_conn;
+		active_proc->proc_param.commander[i].change_mic_mute.mute = param->mute;
+	}
+
+	proc_param = &active_proc->proc_param.commander[0];
+	conn = proc_param->conn;
+	active_proc->proc_initiated_cnt++;
+
+	if (proc_param->change_mic_mute.mute) {
+		err = bt_micp_mic_ctlr_mute(bt_micp_mic_ctlr_get_by_conn(conn));
+	} else {
+		err = bt_micp_mic_ctlr_unmute(bt_micp_mic_ctlr_get_by_conn(conn));
+	}
+
+	if (err != 0) {
+		LOG_DBG("Failed to set microphone mute state for conn %p: %d", (void *)conn, err);
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
