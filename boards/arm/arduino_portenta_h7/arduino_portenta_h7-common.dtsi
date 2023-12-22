@@ -116,3 +116,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	status = "disabled";
 };
+
+&mailbox {
+	status = "okay";
+};
