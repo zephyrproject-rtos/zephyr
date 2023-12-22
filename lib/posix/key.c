@@ -248,11 +248,16 @@ out:
 void *pthread_getspecific(pthread_key_t key)
 {
 	pthread_key_obj *key_obj;
-	struct posix_thread *thread = to_posix_thread(pthread_self());
+	struct posix_thread *thread;
 	pthread_thread_data *thread_spec_data;
 	void *value = NULL;
 	sys_snode_t *node_l;
 	k_spinlock_key_t key_key;
+
+	thread = to_posix_thread(pthread_self());
+	if (thread == NULL) {
+		return NULL;
+	}
 
 	key_key = k_spin_lock(&pthread_key_lock);
 
@@ -261,8 +266,6 @@ void *pthread_getspecific(pthread_key_t key)
 		k_spin_unlock(&pthread_key_lock, key_key);
 		return NULL;
 	}
-
-	node_l = sys_slist_peek_head(&(thread->key_list));
 
 	/* Traverse the list of keys set by the thread, looking for key */
 
