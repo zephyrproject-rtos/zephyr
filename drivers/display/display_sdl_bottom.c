@@ -29,6 +29,8 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 		return -1;
 	}
 
+	SDL_RenderSetLogicalSize(*renderer, width, height);
+
 	*texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
 				     SDL_TEXTUREACCESS_STATIC, width, height);
 	if (*texture == NULL) {
