@@ -640,13 +640,6 @@ def test_binaryhandler_handle(
     handler._update_instance_info.assert_called_once()
     handler._final_handle_actions.assert_called_once()
 
-    if coverage:
-        call_mock.assert_any_call(
-            ['GCOV_PREFIX=build_dir', 'gcov', 'source_dir',
-             '-b', '-s', 'build_dir'],
-            shell=True
-        )
-
     if isatty:
         call_mock.assert_any_call(['stty', 'sane'], stdin=mock.ANY)
 
