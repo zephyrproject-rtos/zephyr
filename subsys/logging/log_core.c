@@ -65,9 +65,11 @@ LOG_MODULE_REGISTER(log);
 
 #ifndef CONFIG_LOG_ALWAYS_RUNTIME
 BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
-	     "Option must be enabled when CONFIG_NO_OPTIMIZATIONS is set");
+	     "CONFIG_LOG_ALWAYS_RUNTIME must be enabled when "
+	     "CONFIG_NO_OPTIMIZATIONS is set");
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
-	     "Option must be enabled when CONFIG_LOG_MODE_IMMEDIATE is set");
+	     "CONFIG_LOG_ALWAYS_RUNTIME must be enabled when "
+	     "CONFIG_LOG_MODE_IMMEDIATE is set");
 #endif
 
 static const log_format_func_t format_table[] = {
