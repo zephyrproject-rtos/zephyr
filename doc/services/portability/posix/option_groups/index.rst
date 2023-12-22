@@ -107,118 +107,17 @@ This table lists service support status in Zephyr:
 POSIX_C_LANG_SUPPORT
 ====================
 
-The POSIX_C_LANG_SUPPORT option group contains the general ISO C
-Library.
+The POSIX_C_LANG_SUPPORT option group contains the general ISO C Library.
 
-.. csv-table:: POSIX_C_LANG_SUPPORT
-   :header: API, Supported
-   :widths: 50,10
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the entire
+   ``POSIX_C_LANG_SUPPORT`` Option Group is considered supported.
 
-    abs(),yes
-    asctime(),
-    asctime_r(),
-    atof(),
-    atoi(),yes
-    atol(),
-    atoll(),
-    bsearch(),yes
-    calloc(),yes
-    ctime(),
-    ctime_r(),
-    difftime(),
-    div(),
-    feclearexcept(),
-    fegetenv(),
-    fegetexceptflag(),
-    fegetround(),
-    feholdexcept(),
-    feraiseexcept(),
-    fesetenv(),
-    fesetexceptflag(),
-    fesetround(),
-    fetestexcept(),
-    feupdateenv(),
-    free(),yes
-    gmtime(),yes
-    gmtime_r(),yes
-    imaxabs(),
-    imaxdiv(),
-    isalnum(),yes
-    isalpha(),yes
-    isblank(),
-    iscntrl(),yes
-    isdigit(),yes
-    isgraph(),yes
-    islower(),
-    isprint(),yes
-    ispunct(),
-    isspace(),yes
-    isupper(),yes
-    isxdigit(),yes
-    labs(),yes
-    ldiv(),
-    llabs(),yes
-    lldiv(),
-    localeconv(),
-    localtime(),yes
-    localtime_r(),
-    malloc(),yes
-    memchr(),yes
-    memcmp(),yes
-    memcpy(),yes
-    memmove(),yes
-    memset(),yes
-    mktime(),yes
-    qsort(),yes
-    rand(),yes
-    rand_r(),yes
-    realloc(),yes
-    setlocale(),
-    snprintf(),yes
-    sprintf(),yes
-    srand(),yes
-    sscanf(),
-    strcat(),yes
-    strchr(),yes
-    strcmp(),yes
-    strcoll(),
-    strcpy(),yes
-    strcspn(),yes
-    strerror(),yes
-    strerror_r(),yes
-    strftime(),
-    strlen(),yes
-    strncat(),yes
-    strncmp(),yes
-    strncpy(),yes
-    strpbrk(),
-    strrchr(),yes
-    strspn(),yes
-    strstr(),yes
-    strtod(),
-    strtof(),
-    strtoimax(),
-    strtok(),yes
-    strtok_r(),yes
-    strtol(),yes
-    strtold(),
-    strtoll(),yes
-    strtoul(),yes
-    strtoull(),yes
-    strtoumax(),
-    strxfrm(),
-    time(),yes
-    tolower(),yes
-    toupper(),yes
-    tzname(),
-    tzset(),
-    va_arg(),yes
-    va_copy(),yes
-    va_end(),yes
-    va_start(),yes
-    vsnprintf(),yes
-    vsprintf(),yes
-    vsscanf(),
+Please refer to `Subprofiling Considerations`_ for details on the ``POSIX_C_LANG_SUPPORT`` Option
+Group.
+
+For more information on developing Zephyr applications in the C programming language, please refer
+to :ref:`details<language_support>`.
 
 .. _posix_option_group_single_process:
 
