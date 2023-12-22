@@ -70,8 +70,73 @@
 
 		counter0: counter@40008000 {
 			compatible = "ambiq,counter";
-			reg = <0x40008000 0x80>;
+			reg = <0x40008000 0x20>;
 			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter1: counter@40008020 {
+			compatible = "ambiq,counter";
+			reg = <0x40008020 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter2: counter@40008040 {
+			compatible = "ambiq,counter";
+			reg = <0x40008040 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter3: counter@40008060 {
+			compatible = "ambiq,counter";
+			reg = <0x40008060 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter4: counter@40008080 {
+			compatible = "ambiq,counter";
+			reg = <0x40008080 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter5: counter@400080a0 {
+			compatible = "ambiq,counter";
+			reg = <0x400080A0 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter6: counter@400080c0 {
+			compatible = "ambiq,counter";
+			reg = <0x400080C0 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
+			status = "disabled";
+		};
+
+		counter7: counter@400080e0 {
+			compatible = "ambiq,counter";
+			reg = <0x400080E0 0x20>;
+			interrupts = <14 0>;
+			clock-frequency = <DT_FREQ_M(3)>;
+			clk-source = <2>;
 			status = "disabled";
 		};
 
