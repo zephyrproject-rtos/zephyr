@@ -5196,3 +5196,12 @@ zbus:
     - "area: llext"
   tests:
     - llext
+
+"West project: json-c":
+  status: maintained
+  maintainers:
+    - parthitce
+  files:
+    - modules/json-c/
+  labels:
+    - "area: JSON"
