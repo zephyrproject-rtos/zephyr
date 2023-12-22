@@ -126,7 +126,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 			 bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
-	uint32_t cmd_reg = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	uint32_t cmd_reg;
 	bool ret = false;
 #ifdef CONFIG_PCIE_CONTROLLER
 	const struct device *dev;
@@ -157,6 +157,8 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		/* Discard on invalid flags */
 		return false;
 	}
+
+	cmd_reg = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
 
 	/* IO/memory decode should be disabled before sizing/update BAR. */
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
