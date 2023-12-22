@@ -77,7 +77,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
  */
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
-	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	Z_ISR_DECLARE_DIRECT(irq_p, ISR_FLAG_DIRECT, isr_p); \
 	BUILD_ASSERT(priority_p || !IS_ENABLED(CONFIG_ARC_FIRQ) || \
 	(IS_ENABLED(CONFIG_ARC_FIRQ_STACK) && \
 	!IS_ENABLED(CONFIG_ARC_STACK_CHECKING)), \
