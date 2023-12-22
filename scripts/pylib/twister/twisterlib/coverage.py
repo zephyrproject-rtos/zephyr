@@ -365,7 +365,7 @@ def run_coverage(testplan, options):
     logger.info("Generating coverage files...")
     logger.info(f"Using gcov tool: {options.gcov_tool}")
     coverage_tool = CoverageTool.factory(options.coverage_tool)
-    coverage_tool.gcov_tool = options.gcov_tool
+    coverage_tool.gcov_tool = str(options.gcov_tool)
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
     # Apply output format default
     if options.coverage_formats is not None:
