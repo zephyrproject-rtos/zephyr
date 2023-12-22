@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/buf.h>
 
 #include <zephyr/logging/log.h>
@@ -32,6 +33,8 @@ LOG_MODULE_REGISTER(bt_bap_scan_delegator, CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVE
 
 #define PAST_TIMEOUT              K_SECONDS(10)
 
+#define SCAN_DELEGATOR_BUF_SEM_TIMEOUT K_MSEC(CONFIG_BT_BAP_SCAN_DELEGATOR_BUF_TIMEOUT)
+static K_SEM_DEFINE(read_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
 enum bass_recv_state_internal_flag {
@@ -137,20 +140,54 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal *recv
 	}
 }
 
-static void bass_notify_receive_state(const struct bass_recv_state_internal *internal_state)
+static void bass_notify_receive_state(struct bt_conn *conn,
+				      const struct bass_recv_state_internal *internal_state)
 {
-	int err = bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
+	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
+	uint16_t max_ntf_size;
+	uint16_t ntf_size;
+	int err;
+
+	if (conn != NULL) {
+		max_ntf_size = bt_gatt_get_mtu(conn) - att_ntf_header_size;
+	} else {
+		max_ntf_size = MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU);
+	}
+
+	err = k_sem_take(&read_buf_sem, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		return;
+	}
+
+	ntf_size = MIN(max_ntf_size, read_buf.len);
+	if (ntf_size < read_buf.len) {
+		LOG_DBG("Sending truncated notification (%u/%u)", ntf_size, read_buf.len);
+	}
+	LOG_DBG("Sending bytes %d", ntf_size);
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE,
 				      internal_state->attr, read_buf.data,
-				      read_buf.len);
+				      ntf_size);
 
 	if (err != 0 && err != -ENOTCONN) {
 		LOG_DBG("Could not notify receive state: %d", err);
 	}
+
+	k_sem_give(&read_buf_sem);
 }
 
 static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_state)
 {
 	const struct bt_bap_scan_delegator_recv_state *state = &recv_state->state;
+	int err;
+
+	err = k_sem_take(&read_buf_sem, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+		return;
+	}
 
 	net_buf_simple_reset(&read_buf);
 
@@ -158,6 +195,8 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 
 	if (!recv_state->active) {
 		/* Notify empty */
+		k_sem_give(&read_buf_sem);
+
 		return;
 	}
 
@@ -182,6 +221,8 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 		(void)net_buf_simple_add_mem(&read_buf, subgroup->metadata,
 					     subgroup->metadata_len);
 	}
+
+	k_sem_give(&read_buf_sem);
 }
 
 static void receive_state_updated(struct bt_conn *conn,
@@ -195,8 +236,7 @@ static void receive_state_updated(struct bt_conn *conn,
 
 	bt_debug_dump_recv_state(internal_state);
 	net_buf_put_recv_state(internal_state);
-	bass_notify_receive_state(internal_state);
-
+	bass_notify_receive_state(conn, internal_state);
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->recv_state_updated != NULL) {
 		scan_delegator_cbs->recv_state_updated(conn,
@@ -256,9 +296,19 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 
 		net_buf_put_recv_state(internal_state);
 
+		err = k_sem_take(&read_buf_sem, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+		if (err != 0) {
+			LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+			return;
+		}
+
 		gatt_err = bt_gatt_notify_uuid(conn, BT_UUID_BASS_RECV_STATE,
 					       internal_state->attr, read_buf.data,
 					       read_buf.len);
+
+		k_sem_give(&read_buf_sem);
+
 		if (gatt_err != 0) {
 			LOG_WRN("Could not notify receive state[%d] to reconnecting assistant: %d",
 				i, gatt_err);
@@ -419,11 +469,11 @@ static int pa_sync_request(struct bt_conn *conn,
 			   uint8_t pa_sync_val, uint16_t pa_interval)
 {
 	int err = -EACCES;
-
+	LOG_DBG("Doing PA sync request");
 	if (scan_delegator_cbs != NULL &&
 	    scan_delegator_cbs->pa_sync_req != NULL) {
 		const bool past_supported = supports_past(conn, pa_sync_val);
-
+		LOG_DBG("Doing callback");
 		err = scan_delegator_cbs->pa_sync_req(conn, state,
 						      past_supported,
 						      pa_interval);
@@ -1027,14 +1077,27 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 	struct bt_bap_scan_delegator_recv_state *state = &recv_state->state;
 
 	if (recv_state->active) {
+		ssize_t ret_val;
+		int err;
 		LOG_DBG("Index %u: Source ID 0x%02x", idx, state->src_id);
 
 		bt_debug_dump_recv_state(recv_state);
 
 		net_buf_put_recv_state(recv_state);
 
-		return bt_gatt_attr_read(conn, attr, buf, len, offset,
-					 read_buf.data, read_buf.len);
+		err = k_sem_take(&read_buf_sem, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
+		if (err != 0) {
+			LOG_DBG("Failed to take read_buf_sem: %d", err);
+
+			return err; /* is this what we want to return? */
+		}
+
+		ret_val = bt_gatt_attr_read(conn, attr, buf, len, offset,
+					    read_buf.data, read_buf.len);
+
+		k_sem_give(&read_buf_sem);
+
+		return ret_val;
 	} else {
 		LOG_DBG("Index %u: Not active", idx);
 
@@ -1088,6 +1151,7 @@ SYS_INIT(bt_bap_scan_delegator_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DE
 /****************************** PUBLIC API ******************************/
 void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb)
 {
+	LOG_DBG("Registering callbacks");
 	scan_delegator_cbs = cb;
 }
 
