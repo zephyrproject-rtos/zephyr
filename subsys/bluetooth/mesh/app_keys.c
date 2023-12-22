@@ -427,6 +427,17 @@ int bt_mesh_app_key_set(uint16_t app_idx, uint16_t net_idx,
 	return 0;
 }
 
+uint16_t bt_mesh_app_binding_net_key_get(uint16_t app_idx)
+{
+	for (int i = 0; i < ARRAY_SIZE(apps); i++) {
+		if (apps[i].app_idx == app_idx) {
+			return apps[i].net_idx;
+		}
+	}
+
+	return BT_MESH_KEY_UNUSED;
+}
+
 bool bt_mesh_app_key_exists(uint16_t app_idx)
 {
 	for (int i = 0; i < ARRAY_SIZE(apps); i++) {

@@ -24,6 +24,14 @@
 extern "C" {
 #endif
 
+/** Security material */
+enum bt_mesh_cred {
+	BT_MESH_CRED_FLOODING,	/* Managed flooding */
+	BT_MESH_CRED_FRIEND,	/* Friendship security */
+	BT_MESH_CRED_DIRECTED,	/* Directed security */
+	BT_MESH_CRED_IMMUTABLE,	/* Immutable-credentials */
+};
+
 struct bt_mesh_model;
 
 /** Length of a short Mesh MIC. */
@@ -95,11 +103,15 @@ struct bt_mesh_msg_ctx {
 	/** Received TTL value. Not used for sending. */
 	uint8_t  recv_ttl;
 
-	/** Force sending reliably by using segment acknowledgment */
-	bool  send_rel;
-
-	/** Send message with a random delay according to the Access layer transmitting rules. */
-	bool  rnd_delay;
+	uint8_t send_rel:1,	/*
+				 * Force sending reliably by using segment acknowledgment.
+				 */
+		rnd_delay:1,	/* Send message with a random delay according to the Access
+				 * layer transmitting rules.
+				 */
+		cred:2;		/* Credentials material @ref enum bt_mesh_cred.
+				 * Managed flooding is used by default if not specified.
+				 */
 
 	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
 	uint8_t  send_ttl;
@@ -154,6 +166,7 @@ struct bt_mesh_msg_ctx {
 		.addr = (pub)->addr, \
 		.send_ttl = (pub)->ttl, \
 		.uuid = (pub)->uuid, \
+		.cred = (pub)->cred, \
 	}
 
 /** @brief Initialize a model message.

@@ -49,6 +49,17 @@ struct bt_mesh_adv_ctx {
 		  tag:4;
 
 	uint8_t      xmit;
+
+#if defined(CONFIG_BT_MESH_DFW)
+	uint8_t      path_need:1,
+		     dependent:1;
+
+	uint8_t      dependent_range;
+	uint16_t     dependent_addr;
+
+	uint16_t     net_idx;
+	uint16_t     dest;
+#endif
 };
 
 struct bt_mesh_adv {

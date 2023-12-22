@@ -1116,6 +1116,335 @@ config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
 
 if BT_MESH_V1d1
 
+config BT_MESH_DFW
+	bool "Support Directed Forwarding"
+	help
+	  Enable this option to support Directed Forwarding.
+
+if BT_MESH_DFW
+
+config BT_MESH_DFW_STATE_MACHINE_COUNT
+	int "Max number of Path Origin state Machine"
+	default 20
+	help
+	  The maxinum number of Path Origing state Machine supported by the node.
+
+config BT_MESH_DFW_FORWARDING_COUNT
+	int "Max Forwarding Table Entries Count for a given subnet"
+	default 20
+	help
+	  The maximum number of Forwarding Table entries supported by the node in a given subnet.
+
+config BT_MESH_DFW_DEPENDENT_NODES_COUNT
+	int "Max number of dependent nodes of the Path Endpoints"
+	default 3
+	help
+	  The Maximum number of dependent nodes of the Path Origin or Path Target.
+
+menu "Directed Control"
+
+config BT_MESH_DFW_ENABLED
+	bool "Directed forwarding enable"
+	help
+	  Controls whether directed forwarding functionality is enabled or disabled for a subnet.
+
+config BT_MESH_DFW_RELAY_ENABLED
+	bool "Directed relay enable"
+	help
+	  Controls whether directed relay functionality is enabled or disabled for a subnet.
+
+config BT_MESH_DFW_FRIEND
+	bool "Directed friend support"
+	depends on BT_MESH_FRIEND
+	help
+	  Enable this option to support directed friend functionality.
+
+config BT_MESH_DFW_FRIEND_ENABLED
+	bool "Directed friend enable"
+	depends on BT_MESH_DFW_FRIEND
+	help
+	  Controls whether directed friend functionality is enabled or disabled for a subnet.
+
+endmenu
+
+menu "Path Metric"
+
+choice BT_MESH_DFW_PATH_LIFETIME
+	prompt "Path lifetime"
+	default BT_MESH_DFW_PATH_LIFETIME_24_HOURS
+
+config BT_MESH_DFW_PATH_LIFETIME_12_MINUTERS
+	bool "12 minutes"
+	help
+	  Path lifetime is 12 minutes.
+
+config BT_MESH_DFW_PATH_LIFETIME_2_HOURS
+	bool "2 hours"
+	help
+	  Path lifetime is 2 hours.
+
+config BT_MESH_DFW_PATH_LIFETIME_24_HOURS
+	bool "24 hours"
+	help
+	  Path lifetime is 24 hours.
+
+config BT_MESH_DFW_PATH_LIFETIME_10_DAYS
+	bool "10 days"
+	help
+	  Path lifetime is 10 days.
+
+endchoice
+
+endmenu
+
+menu "Discovery Table Capabilities"
+
+config BT_MESH_DFW_DISCOVERY_COUNT
+	int "Max Discovery Table Entries Count for a given subnet"
+	range 2 255
+	default 2
+	help
+	  Indicates the maximum number of Discovery Table entries supported by the node
+	  in a given subnet.
+
+config BT_MESH_DFW_DISCOVERY_MAX_CONCURR_INIT
+	int "Max number of concurrent Directed Forwarding Initialization procedures"
+	range 2 BT_MESH_DFW_DISCOVERY_COUNT
+	default 2
+	help
+	  The maximum number of concurrent Directed Forwarding Initialization procedures
+	  in a node in a given subnet.
+
+endmenu
+
+menu "Wanted Lanes"
+
+config BT_MESH_DFW_WANTED_LANES_COUNT
+	int "Number of lanes to be discovered for each path"
+	range 1 255
+	default 1
+	help
+	  The number of lanes to be discovered for each path in a subnet.
+
+endmenu
+
+menu "Two Way Path"
+
+config BT_MESH_DFW_TWO_WAY_PATH
+	bool "Whether the paths as one-way or two-way paths"
+	default y
+	help
+	  Whether a node that is the Path Target in a subnet considers the paths as
+	  one-way or two-way paths.
+
+endmenu
+
+menu "Path Echo Interval"
+
+config BT_MESH_DFW_UNICAST_ECHO_INTV
+	int "Unicast Echo Interval"
+	range 0 99
+	default 0
+	help
+	  The minimum interval that a Path Origin waits after it discovers a path towards a
+	  unicast address before executing a Directed Forwarding Echo procedure to validate
+	  the same path.
+
+config BT_MESH_DFW_MULTICAST_ECHO_INTV
+	int "Multicast Echo Interval"
+	range 0 99
+	default 0
+	help
+	  The minimum interval that a Path Origin waits after it discovers a path towards a
+	  group address or a virtual address before executing a Directed Forwarding Echo
+	  procedure to validate the same path.
+
+endmenu
+
+menu "Directed Network Transmit"
+
+config BT_MESH_DFW_NET_TRANS_COUNT
+	int "Directed Network Transmit Count"
+	range 0 7
+	default 1
+	help
+	  The number of transmissions of Network PDUs with CTL equal to 0 that originate
+	  from either a Path Origin or a Path Target and that are secured using directed
+	  security material.
+
+config BT_MESH_DFW_NET_TRANS_INTV
+	int "Directed Network Transmit Interval"
+	range 10 320
+	default 100
+	help
+	  Controls the interval(ms) between transmissions of Network PDUs with CTL equal
+	  to 0 that originates from either a Path Origin or a Path Target and that are secured
+	  using directed security material.
+
+endmenu
+
+menu "Directed Relay Retransmit"
+
+config BT_MESH_DFW_RELAY_RETRANS_COUNT
+	int "Directed Relay Retransmit Count"
+	range 0 7
+	default 2
+	help
+	  The number of retransmissions of Network PDUs with CTL equal to 0 relayed by a Directed
+	  Relay node and secured with directed security material.
+
+config BT_MESH_DFW_RELAY_RETRANS_INTV
+	int "Directed Relay Retransmit Interval"
+	range 10 320
+	default 100
+	help
+	  Controls the interval(ms) between retransmissions of Network PDUs with CTL equal to 0
+	  relayed by a Directed Relay node and secured with directed security material.
+
+endmenu
+
+menu "RSSI Threshold"
+
+config BT_MESH_DFW_DEFAULT_RSSI_THRESHOLD
+	int "Default RSSI Threshold"
+	default -97
+	range -128 127
+	help
+	  The Default RSSI Threshold in the range -128 to 127 representing the default RSSI
+	  threshold in dBm.
+
+config BT_MESH_DFW_RSSI_MARGEN
+	int "RSSI Margin"
+	range 0 50
+	default 20
+	help
+	  The RSSI Margin representing the margin (in dB) above the default RSSI threshold for
+	  which the link quality with a neighbor node is considerer acceptable.
+
+endmenu
+
+menu "Directed Publish Policy"
+
+choice BT_MESH_DFW_PUB_POLICY
+	prompt "Directed Publish Policy"
+	default BT_MESH_DFW_PUB_POLICY_MF
+
+config BT_MESH_DFW_PUB_POLICY_MF
+	bool "Managed Flooding"
+	help
+	  The policy is to use managed flooding when publishing.
+
+config BT_MESH_DFW_PUB_POLICY_DF
+	bool "Directed Forwarding"
+	help
+	  The policy is to use directed forwarding when publishing.
+
+endchoice
+
+endmenu
+
+menu "Path Discovery Timing Control"
+
+config BT_MESH_DFW_PATH_MON_INTV
+	int "Path Monitoring Interval"
+	default 120
+	help
+	  The Path Monitoring Interval controls the time interval (in seconds) during which the
+	  node collects information to determine whether or not to execute a Directed Forwarding
+	  Initialization procedure for a destination before a path to that destination expires.
+
+config BT_MESH_DFW_PATH_DISCOV_RETRY_INTV
+	int "Path Discovery Retry Interval"
+	default 300
+	help
+	  The Path Discovery Retry Interval controls the time interval (in seconds) after a
+	  Directed Forwarding Initialization procedure fails before starting a new Directed
+	  Forwarding Initialization procedure for the same destination.
+
+choice BT_MESH_DFW_PATH_DISCOV_INTV
+	prompt "Path Discovery Interval"
+	default BT_MESH_DFW_PATH_DISCOV_INTV_30_S
+	help
+	  The Path Discovery Interval represents the initial value of the Path Discovery timer.
+
+config BT_MESH_DFW_PATH_DISCOV_INTV_5_S
+	bool "5 seconds"
+	help
+	  Path discovery interval is 5 seconds
+
+config BT_MESH_DFW_PATH_DISCOV_INTV_30_S
+	bool "30 seconds"
+	help
+	  Path discovery interval is 30 seconds
+
+endchoice
+
+choice BT_MESH_DFW_LANE_DISCOV_GUARD_INTV
+	prompt "Lane Discovery Guard Interval"
+	default BT_MESH_DFW_LANE_DISCOV_GUARD_INTV_10_S
+	help
+	  The Lane Discovery Guard Interval represents the interval between the Path Discovery
+	  timer expiry and sending a PATH_REQUEST for a new lane discovery for the same path.
+
+config BT_MESH_DFW_LANE_DISCOV_GUARD_INTV_2_S
+	bool "2 seconds"
+	help
+	  Lane discovery guard interval is 2 seconds
+
+config BT_MESH_DFW_LANE_DISCOV_GUARD_INTV_10_S
+	bool "10 seconds"
+	help
+	  Lane discovery guard interval is 10 seconds
+
+endchoice
+
+endmenu
+
+menu "Directed Control Network Transmit"
+
+config BT_MESH_DFW_CTL_NET_TRANS_COUNT
+	int "Directed Control Network Transmit Count"
+	range 0 7
+	default 1
+	help
+	  The Directed Control Network Transmit Count controls the number of transmissions of
+	  Network PDUs with CTL field equal to 1 that originate from either a Path Origin or a
+	  Path Target and that are secured with directed security material.
+
+config BT_MESH_DFW_CTL_NET_TRANS_INTV
+	int "Directed Control Network Transmit Interval"
+	range 10 320
+	default 100
+	help
+	  Controls the interval(ms) between transmissions of Network PDUs with CTL field equal to 1
+	  that originate from either a Path Origin or a Path Target and that are secured with
+	  directed security material.
+
+endmenu
+
+menu "Directed Control Relay Retransmit"
+
+config BT_MESH_DFW_CTL_RELAY_RETRANS_COUNT
+	int "Directed Control Relay Retransmit Count"
+	range 0 7
+	default 2
+	help
+	  The Directed Control Relay Retransmit Count controls the number of retransmissions of
+	  Network PDUs with CTL field equal to 1 relayed by a Directed Relay node and secured
+	  with directed security material.
+
+config BT_MESH_DFW_CTL_RELAY_RERETANS_INTV
+	int "Directed Control Relay Retransmit Interval"
+	range 10 320
+	default 100
+	help
+	  Controls the interval(ms) between retransmissions of Network PDUs with CTL field equal
+	  to 1 relayed by a Directed Relay node and secured with directed security material.
+
+endmenu
+
+endif
+
 config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 	bool "Support HMAC SHA256 for OOB authentication"
 	depends on BT_MESH_PROV

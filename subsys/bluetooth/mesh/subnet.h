@@ -70,7 +70,7 @@ struct bt_mesh_subnet {
 	struct bt_mesh_subnet_keys {
 		bool valid;
 		struct bt_mesh_key net;         /* NetKey */
-		struct bt_mesh_net_cred msg;
+		struct bt_mesh_net_cred flooding; /* Flooding Security */
 		uint8_t net_id[8];              /* Network ID */
 	#if defined(CONFIG_BT_MESH_GATT_PROXY)
 		struct bt_mesh_key identity;    /* IdentityKey */
@@ -79,6 +79,9 @@ struct bt_mesh_subnet {
 #if defined(CONFIG_BT_MESH_V1d1)
 		struct bt_mesh_key priv_beacon; /* PrivateBeaconKey */
 #endif
+	#if defined(CONFIG_BT_MESH_DFW)
+		struct bt_mesh_net_cred directed; /* Directed Security */
+	#endif
 	} keys[2];
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
 	bool sol_tx;
@@ -88,6 +91,9 @@ struct bt_mesh_subnet {
 				    * started via Proxy Solicitation
 				    */
 	bool solicited;      /* Subnet received valid Solicitation PDU */
+#endif
+#if defined(CONFIG_BT_MESH_DFW)
+	struct bt_mesh_dfw_subnet *dfw;
 #endif
 };
 

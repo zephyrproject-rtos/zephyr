@@ -197,14 +197,18 @@ void bt_mesh_subnet_store(uint16_t net_idx)
 static void subnet_keys_destroy(struct bt_mesh_subnet_keys *key)
 {
 	bt_mesh_key_destroy(&key->net);
-	bt_mesh_key_destroy(&key->msg.enc);
-	bt_mesh_key_destroy(&key->msg.privacy);
+	bt_mesh_key_destroy(&key->flooding.enc);
+	bt_mesh_key_destroy(&key->flooding.privacy);
 	bt_mesh_key_destroy(&key->beacon);
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	bt_mesh_key_destroy(&key->identity);
 #endif
 #if defined(CONFIG_BT_MESH_V1d1)
 	bt_mesh_key_destroy(&key->priv_beacon);
+#endif
+#if defined(CONFIG_BT_MESH_DFW)
+	bt_mesh_key_destroy(&key->directed.enc);
+	bt_mesh_key_destroy(&key->directed.privacy);
 #endif
 }
 
@@ -309,11 +313,31 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 	uint8_t p = 0;
 	int err;
 
-	err = msg_cred_create(&keys->msg, &p, 1, key);
+	err = msg_cred_create(&keys->flooding, &p, 1, key);
 	if (err) {
-		LOG_ERR("Unable to generate NID, EncKey & PrivacyKey");
+		LOG_ERR("Unable to generate flooding NID, EncKey & PrivacyKey");
 		return err;
 	}
+
+	LOG_DBG("Flooding Security NID 0x%02x EncKey %s", keys->flooding.nid,
+		bt_hex(&keys->flooding.enc, sizeof(struct bt_mesh_key)));
+	LOG_DBG("Flooding Security PrivacyKey %s", bt_hex(&keys->flooding.privacy,
+		sizeof(struct bt_mesh_key)));
+
+#if defined(CONFIG_BT_MESH_DFW)
+	p = 0x02;
+
+	err = msg_cred_create(&keys->directed, &p, 1, key);
+	if (err) {
+		LOG_ERR("Unable to generate directed NID, EncKey & PrivacyKey");
+		return err;
+	}
+
+	LOG_DBG("Directed Security NID 0x%02x EncKey %s", keys->directed.nid,
+		bt_hex(&keys->directed.enc, sizeof(struct bt_mesh_key)));
+	LOG_DBG("Directed Security PrivacyKey %s", bt_hex(&keys->directed.privacy,
+		sizeof(struct bt_mesh_key)));
+#endif
 
 	if (import) {
 		err = bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, key, &keys->net);
@@ -322,10 +346,6 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 			return err;
 		}
 	}
-
-	LOG_DBG("NID 0x%02x EncKey %s", keys->msg.nid,
-		bt_hex(&keys->msg.enc, sizeof(struct bt_mesh_key)));
-	LOG_DBG("PrivacyKey %s", bt_hex(&keys->msg.privacy, sizeof(struct bt_mesh_key)));
 
 	err = bt_mesh_k3(key, keys->net_id);
 	if (err) {
@@ -803,6 +823,8 @@ int bt_mesh_subnet_set(uint16_t net_idx, uint8_t kr_phase, const struct bt_mesh_
 		sub->node_id = BT_MESH_NODE_IDENTITY_NOT_SUPPORTED;
 	}
 
+	subnet_evt(sub, BT_MESH_KEY_ADDED);
+
 	/* Make sure we have valid beacon data to be sent */
 	bt_mesh_beacon_update(sub);
 
@@ -901,7 +923,7 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 			if (cb(rx, in, out, &bt_mesh.lpn.cred[j])) {
 				rx->new_key = (j > 0);
-				rx->friend_cred = 1U;
+				rx->ctx.cred = BT_MESH_CRED_FRIEND;
 				rx->ctx.net_idx = rx->sub->net_idx;
 				return true;
 			}
@@ -932,7 +954,7 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 
 			if (cb(rx, in, out, &frnd->cred[j])) {
 				rx->new_key = (j > 0);
-				rx->friend_cred = 1U;
+				rx->ctx.cred = BT_MESH_CRED_FRIEND;
 				rx->ctx.net_idx = rx->sub->net_idx;
 				return true;
 			}
@@ -951,12 +973,21 @@ bool bt_mesh_net_cred_find(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 				continue;
 			}
 
-			if (cb(rx, in, out, &rx->sub->keys[j].msg)) {
+			if (cb(rx, in, out, &rx->sub->keys[j].flooding)) {
 				rx->new_key = (j > 0);
-				rx->friend_cred = 0U;
+				rx->ctx.cred = BT_MESH_CRED_FLOODING;
 				rx->ctx.net_idx = rx->sub->net_idx;
 				return true;
 			}
+
+#if defined(CONFIG_BT_MESH_DFW)
+			if (cb(rx, in, out, &rx->sub->keys[j].directed)) {
+				rx->new_key = (j > 0);
+				rx->ctx.cred = BT_MESH_CRED_DIRECTED;
+				rx->ctx.net_idx = rx->sub->net_idx;
+				return true;
+			}
+#endif
 		}
 	}
 

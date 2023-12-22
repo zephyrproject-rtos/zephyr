@@ -25,6 +25,7 @@
 #include "pb_gatt_srv.h"
 #include "solicitation.h"
 #include "statistic.h"
+#include "dfw.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ADV_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -81,6 +82,30 @@ static void bt_mesh_adv_send_end(int err, struct bt_mesh_adv_ctx const *ctx)
 	if (ctx->started && ctx->cb && ctx->cb->end) {
 		ctx->cb->end(err, ctx->cb_data);
 	}
+
+#if defined(CONFIG_BT_MESH_DFW)
+	if (ctx->path_need) {
+		if (ctx->dependent_addr != BT_MESH_ADDR_UNASSIGNED) {
+			struct bt_mesh_dfw_node dependent = {
+				.addr = ctx->dependent_addr,
+				.secondary_count = ctx->dependent_range - 1,
+			};
+
+			(void)bt_mesh_dfw_path_origin_state_machine_start(
+						ctx->net_idx, &dependent, ctx->dest, false);
+		} else {
+			(void)bt_mesh_dfw_path_origin_state_machine_start(
+						ctx->net_idx, NULL, ctx->dest, false);
+		}
+	} else if (ctx->dependent) {
+		struct bt_mesh_dfw_node dependent = {
+			.addr = ctx->dependent_addr,
+			.secondary_count = ctx->dependent_range - 1,
+		};
+
+		(void)bt_mesh_dfw_dependent_node_update_start(ctx->net_idx, &dependent, true);
+	}
+#endif /* CONFIG_BT_MESH_DFW */
 }
 
 static struct bt_mesh_adv *adv_create_from_pool(struct k_mem_slab *buf_pool,

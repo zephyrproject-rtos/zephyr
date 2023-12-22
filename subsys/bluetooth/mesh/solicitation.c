@@ -152,12 +152,12 @@ static bool sol_pdu_decrypt(struct bt_mesh_subnet *sub, void *data)
 		net_buf_simple_init(out, 0);
 		net_buf_simple_add_mem(out, in->data, in->len);
 
-		err = bt_mesh_net_obfuscate(out->data, 0, &sub->keys[i].msg.privacy);
+		err = bt_mesh_net_obfuscate(out->data, 0, &sub->keys[i].flooding.privacy);
 		if (err) {
 			LOG_DBG("obfuscation err %d", err);
 			continue;
 		}
-		err = bt_mesh_net_decrypt(&sub->keys[i].msg.enc, out,
+		err = bt_mesh_net_decrypt(&sub->keys[i].flooding.enc, out,
 					  0, BT_MESH_NONCE_SOLICITATION);
 		if (!err) {
 			LOG_DBG("Decrypted PDU %s", bt_hex(out->data, out->len));
@@ -299,7 +299,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 {
 	int err;
 
-	net_buf_simple_add_u8(pdu, sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.nid);
+	net_buf_simple_add_u8(pdu, sub->keys[SUBNET_KEY_TX_IDX(sub)].flooding.nid);
 	/* CTL = 1, TTL = 0 */
 	net_buf_simple_add_u8(pdu, 0x80);
 	net_buf_simple_add_le24(pdu, sys_cpu_to_be24(sseq_out));
@@ -307,7 +307,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 	/* DST = 0x0000 */
 	net_buf_simple_add_le16(pdu, 0x0000);
 
-	err = bt_mesh_net_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.enc,
+	err = bt_mesh_net_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].flooding.enc,
 				  pdu, 0, BT_MESH_NONCE_SOLICITATION);
 
 	if (err) {
@@ -316,7 +316,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 	}
 
 	err = bt_mesh_net_obfuscate(pdu->data, 0,
-				    &sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.privacy);
+				    &sub->keys[SUBNET_KEY_TX_IDX(sub)].flooding.privacy);
 	if (err) {
 		LOG_ERR("Obfuscation failed, err=%d", err);
 		return err;

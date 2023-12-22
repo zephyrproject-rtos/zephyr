@@ -97,7 +97,7 @@ static struct seg_tx {
 			      ctl:1,         /* Control packet */
 			      aszmic:1,      /* MIC size */
 			      started:1,     /* Start cb called */
-			      friend_cred:1, /* Using Friend credentials */
+			      cred:2,	     /* Credentials */
 			      seg_send_started:1; /* Used to check if seg_send_start cb is called */
 	const struct bt_mesh_send_cb *cb;
 	void                  *cb_data;
@@ -362,6 +362,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		.app_idx = (tx->ctl ? BT_MESH_KEY_UNUSED : 0),
 		.addr = tx->dst,
 		.send_rel = true,
+		.cred = tx->cred,
 		.send_ttl = tx->ttl,
 	};
 	struct bt_mesh_net_tx net_tx = {
@@ -369,7 +370,6 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		.ctx = &ctx,
 		.src = tx->src,
 		.xmit = tx->xmit,
-		.friend_cred = tx->friend_cred,
 		.aid = tx->hdr & AID_MASK,
 	};
 
@@ -491,7 +491,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->attempts = SEG_RETRANSMIT_ATTEMPTS;
 	tx->xmit = net_tx->xmit;
 	tx->aszmic = net_tx->aszmic;
-	tx->friend_cred = net_tx->friend_cred;
+	tx->cred = net_tx->ctx->cred;
 	tx->blocked = blocked;
 	tx->started = 0;
 	tx->seg_send_started = 0;
@@ -930,7 +930,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 			return bt_mesh_lpn_friend_clear_cfm(rx, buf);
 		}
 
-		if (!rx->friend_cred) {
+		if (rx->ctx.cred != BT_MESH_CRED_FRIEND) {
 			LOG_WRN("Message from friend with wrong credentials");
 			return -EINVAL;
 		}
@@ -1571,7 +1571,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() && rx->net_if == BT_MESH_NET_IF_ADV &&
-	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
+	    (!bt_mesh_lpn_waiting_update() || rx->ctx.cred != BT_MESH_CRED_FRIEND)) {
 		LOG_WRN("Ignoring unexpected message in Low Power mode");
 		return -EAGAIN;
 	}

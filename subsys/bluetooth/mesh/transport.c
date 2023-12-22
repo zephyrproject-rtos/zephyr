@@ -34,6 +34,7 @@
 #include "settings.h"
 #include "heartbeat.h"
 #include "transport.h"
+#include "dfw.h"
 #include "va.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_TRANS_LOG_LEVEL
@@ -87,9 +88,10 @@ static struct seg_tx {
 			      ctl:1,         /* Control packet */
 			      aszmic:1,      /* MIC size */
 			      started:1,     /* Start cb called */
-			      friend_cred:1, /* Using Friend credentials */
+			      cred:2,	     /* Credentials */
 			      seg_send_started:1, /* Used to check if seg_send_start cb is called */
 			      ack_received:1; /* Ack received during seg message transmission. */
+	uint8_t		      path_need:1;   /* Directed forwarding path need flag */
 	const struct bt_mesh_send_cb *cb;
 	void                  *cb_data;
 	struct k_work_delayable retransmit;    /* Retransmit timer */
@@ -267,7 +269,9 @@ static void seg_tx_reset(struct seg_tx *tx)
 
 static inline void seg_tx_complete(struct seg_tx *tx, int err)
 {
+	uint16_t net_idx = tx->sub->net_idx, dest = tx->dst;
 	const struct bt_mesh_send_cb *cb = tx->cb;
+	bool path_need = tx->path_need;
 	void *cb_data = tx->cb_data;
 
 	seg_tx_unblock_check(tx);
@@ -276,6 +280,10 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 
 	if (cb && cb->end) {
 		cb->end(err, cb_data);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW) && path_need) {
+		(void)bt_mesh_dfw_path_origin_state_machine_start(net_idx, NULL, dest, false);
 	}
 }
 
@@ -368,6 +376,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		.app_idx = (tx->ctl ? BT_MESH_KEY_UNUSED : 0),
 		.addr = tx->dst,
 		.send_rel = true,
+		.cred = tx->cred,
 		.send_ttl = tx->ttl,
 	};
 	struct bt_mesh_net_tx net_tx = {
@@ -375,7 +384,6 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 		.ctx = &ctx,
 		.src = tx->src,
 		.xmit = tx->xmit,
-		.friend_cred = tx->friend_cred,
 		.aid = tx->hdr & AID_MASK,
 	};
 
@@ -531,12 +539,13 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->attempts_left_without_progress = BT_MESH_SAR_TX_RETRANS_NO_PROGRESS;
 	tx->xmit = net_tx->xmit;
 	tx->aszmic = net_tx->aszmic;
-	tx->friend_cred = net_tx->friend_cred;
+	tx->cred = net_tx->ctx->cred;
 	tx->blocked = blocked;
 	tx->started = 0;
 	tx->seg_send_started = 0;
 	tx->ctl = !!ctl_op;
 	tx->ttl = net_tx->ctx->send_ttl;
+	tx->path_need = net_tx->path_need;
 
 	LOG_DBG("SeqZero 0x%04x (segs: %u)", (uint16_t)(tx->seq_auth & TRANS_SEQ_ZERO_MASK),
 		tx->nack_count);
@@ -692,7 +701,13 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		tx->ctx->addr);
 	LOG_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
-	tx->xmit = bt_mesh_net_transmit_get();
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW) &&
+	    tx->ctx->cred == BT_MESH_CRED_DIRECTED) {
+		tx->xmit = bt_mesh_dfw_net_transmit_get();
+	} else {
+		tx->xmit = bt_mesh_net_transmit_get();
+	}
+
 	tx->aid = aid;
 
 	if (!tx->ctx->send_rel || net_buf_simple_tailroom(msg) < 8) {
@@ -1001,19 +1016,56 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 			return bt_mesh_lpn_friend_clear_cfm(rx, buf);
 		}
 
-		if (!rx->friend_cred) {
-			LOG_WRN("Message from friend with wrong credentials");
-			return -EINVAL;
-		}
-
 		switch (ctl_op) {
 		case TRANS_CTL_OP_FRIEND_UPDATE:
+			if (rx->ctx.cred != BT_MESH_CRED_FRIEND) {
+				return -EINVAL;
+			}
+
 			return bt_mesh_lpn_friend_update(rx, buf);
 		case TRANS_CTL_OP_FRIEND_SUB_CFM:
+			if (rx->ctx.cred != BT_MESH_CRED_FRIEND) {
+				return -EINVAL;
+			}
+
 			return bt_mesh_lpn_friend_sub_cfm(rx, buf);
 		}
 	}
 #endif /* CONFIG_BT_MESH_LOW_POWER */
+
+#if defined(CONFIG_BT_MESH_DFW)
+	if (ctl_op <= TRANS_CTL_OP_PATH_REQ_SOLICITATION &&
+	    ctl_op >= TRANS_CTL_OP_PATH_REQUEST) {
+		enum bt_mesh_feat_state state = BT_MESH_FEATURE_DISABLED;
+
+		if (rx->ctx.cred != BT_MESH_CRED_DIRECTED &&
+		    ctl_op != TRANS_CTL_OP_PATH_ECHO_REPLY) {
+			return -EINVAL;
+		}
+
+		(void)bt_mesh_dfw_get(rx->ctx.net_idx, &state);
+		if (state != BT_MESH_FEATURE_ENABLED) {
+			return -EACCES;
+		}
+	}
+
+	switch (ctl_op) {
+	case TRANS_CTL_OP_PATH_REQUEST:
+		return bt_mesh_dfw_path_request(rx, buf);
+	case TRANS_CTL_OP_PATH_REPLY:
+		return bt_mesh_dfw_path_reply(rx, buf);
+	case TRANS_CTL_OP_PATH_CONFIRM:
+		return bt_mesh_dfw_path_confirm(rx, buf);
+	case TRANS_CTL_OP_PATH_ECHO_REQ:
+		return bt_mesh_dfw_path_echo_request(rx, buf);
+	case TRANS_CTL_OP_PATH_ECHO_REPLY:
+		return bt_mesh_dfw_path_echo_reply(rx, buf);
+	case TRANS_CTL_OP_DEPENDENT_NODE_UPDATE:
+		return bt_mesh_dfw_dependent_node_update(rx, buf);
+	case TRANS_CTL_OP_PATH_REQ_SOLICITATION:
+		return bt_mesh_dfw_path_request_solicitation(rx, buf);
+	}
+#endif
 
 	LOG_WRN("Unhandled TransOpCode 0x%02x", ctl_op);
 
@@ -1077,8 +1129,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 
 	tx->ctx->app_idx = BT_MESH_KEY_UNUSED;
 
-	if (tx->ctx->addr == BT_MESH_ADDR_UNASSIGNED ||
-	    BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
+	if (tx->ctx->addr == BT_MESH_ADDR_UNASSIGNED) {
 		LOG_ERR("Invalid destination address");
 		return -EINVAL;
 	}
@@ -1639,7 +1690,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() && rx->net_if == BT_MESH_NET_IF_ADV &&
-	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
+	    (!bt_mesh_lpn_waiting_update() || rx->ctx.cred != BT_MESH_CRED_FRIEND)) {
 		LOG_WRN("Ignoring unexpected message in Low Power mode");
 		return -EAGAIN;
 	}

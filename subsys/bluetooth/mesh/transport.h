@@ -29,6 +29,13 @@
 #define TRANS_CTL_OP_FRIEND_SUB_REM    0x08
 #define TRANS_CTL_OP_FRIEND_SUB_CFM    0x09
 #define TRANS_CTL_OP_HEARTBEAT         0x0a
+#define TRANS_CTL_OP_PATH_REQUEST      0x0b
+#define TRANS_CTL_OP_PATH_REPLY	       0x0c
+#define TRANS_CTL_OP_PATH_CONFIRM      0x0d
+#define TRANS_CTL_OP_PATH_ECHO_REQ     0x0e
+#define TRANS_CTL_OP_PATH_ECHO_REPLY   0x0f
+#define TRANS_CTL_OP_DEPENDENT_NODE_UPDATE   0x10
+#define TRANS_CTL_OP_PATH_REQ_SOLICITATION   0x11
 
 struct bt_mesh_ctl_friend_poll {
 	uint8_t  fsn;
@@ -77,6 +84,43 @@ struct bt_mesh_ctl_friend_sub_confirm {
 	uint8_t xact;
 } __packed;
 
+struct bt_mesh_ctl_path_request {
+	uint8_t  octer;
+	uint8_t  path_origin_forwarding_number;
+	uint8_t  path_origin_path_metric;
+	uint16_t dest;
+	uint16_t path_origin;
+	uint8_t  path_origin_addr_range;
+	uint16_t depend_origin;
+	uint8_t  dependent_origin_range;
+} __packed;
+
+struct bt_mesh_ctl_path_reply {
+	uint8_t  octer;
+	uint16_t path_origin;
+	uint8_t  path_origin_forwarding_number;
+	uint16_t path_target;
+	uint8_t  path_target_range;
+	uint16_t depend_target;
+	uint8_t  depend_target_range;
+} __packed;
+
+struct bt_mesh_ctl_path_comfirm {
+	uint16_t path_origin;
+	uint16_t path_target;
+} __packed;
+
+struct bt_mesh_ctl_depend_node_update {
+	uint8_t  octer;
+	uint16_t path_endpoint;
+	uint16_t dependent_addr;
+	uint8_t  dependent_range;
+} __packed;
+
+struct bt_mesh_ctl_path_req_solicitation {
+	uint16_t addr_list[5];
+} __packed;
+
 bool bt_mesh_tx_in_progress(void);
 
 void bt_mesh_rx_reset(void);
@@ -87,7 +131,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 
 /** @brief Send an access payload message.
  *
- *  @param tx      Network TX parameters. Only @c ctx, @c src and @c friend_cred
+ *  @param tx      Network TX parameters. Only @c ctx, @c src and @c cred
  *                 have to be filled.
  *  @param msg     Access payload to send.
  *  @param cb      Message callback.

@@ -977,6 +977,10 @@ legacy-debug-sym = BT_MESH_DEBUG_NET
 module-str = "Network layer"
 source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
 
+module = BT_MESH_DFW
+module-str = "Directed Forwarding"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
 module = BT_MESH_RPL
 legacy-debug-sym = BT_MESH_DEBUG_RPL
 module-str = "Replay protection list"

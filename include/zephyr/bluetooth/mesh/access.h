@@ -187,6 +187,8 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_REMOTE_PROV_SRV           0x0004
 /** Remote Provisioning Client */
 #define BT_MESH_MODEL_ID_REMOTE_PROV_CLI           0x0005
+/** Directed Forwarding Configuration Server */
+#define BT_MESH_MODEL_ID_DIRECTED_CFG_SRV	   0x0006
 /** Private Beacon Server */
 #define BT_MESH_MODEL_ID_PRIV_BEACON_SRV           0x000a
 /** Private Beacon Client */
@@ -702,7 +704,6 @@ struct bt_mesh_model_pub {
 	uint16_t addr;          /**< Publish Address. */
 	const uint8_t *uuid;    /**< Label UUID if Publish Address is Virtual Address. */
 	uint16_t key:12,        /**< Publish AppKey Index. */
-		 cred:1,        /**< Friendship Credentials Flag. */
 		 send_rel:1,    /**< Force reliable sending (segment acks) */
 		 fast_period:1, /**< Use FastPeriodDivisor */
 		 retr_update:1; /**< Call update callback on every retransmission. */
@@ -713,7 +714,8 @@ struct bt_mesh_model_pub {
 	uint8_t  period_div:4, /**< Divisor for the Period. */
 		 count:4;      /**< Transmissions left. */
 
-	uint8_t delayable:1;   /**< Use random delay for publishing. */
+	uint8_t delayable:1,   /**< Use random delay for publishing. */
+		cred:2;	       /**< Credentials Flags(flooding, friendship or directed). */
 
 	uint32_t period_start; /**< Start of the current period. */
 

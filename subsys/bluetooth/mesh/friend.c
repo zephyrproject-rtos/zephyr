@@ -20,6 +20,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "friend.h"
+#include "dfw.h"
 #include "va.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_FRIEND_LOG_LEVEL
@@ -189,6 +190,15 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 
 		purge_buffers(&seg->queue);
 		seg->seg_count = 0U;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW_FRIEND)) {
+		struct bt_mesh_dfw_node node = {
+			.addr = frnd->lpn,
+			.secondary_count = frnd->num_elem - 1,
+		};
+
+		(void)bt_mesh_dfw_dependent_node_update_start(frnd->subnet->net_idx, &node, false);
 	}
 
 	STRUCT_SECTION_FOREACH(bt_mesh_friend_cb, cb) {
@@ -496,7 +506,7 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
 	if (flooding_cred) {
 		cred = &frnd->subnet->keys[SUBNET_KEY_TX_IDX(frnd->subnet)]
-				.msg;
+				.flooding;
 	} else {
 		cred = &frnd->cred[SUBNET_KEY_TX_IDX(frnd->subnet)];
 	}
@@ -624,6 +634,7 @@ static void friend_recv_delay(struct bt_mesh_friend *frnd)
 int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 			   struct net_buf_simple *buf)
 {
+	uint16_t addr, addr_list[5], len = 0;
 	struct bt_mesh_friend *frnd;
 	uint8_t xact;
 
@@ -648,10 +659,21 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 	xact = net_buf_simple_pull_u8(buf);
 
 	while (buf->len >= 2U) {
-		friend_sub_add(frnd, net_buf_simple_pull_be16(buf));
+		addr = net_buf_simple_pull_be16(buf);
+
+		if (BT_MESH_ADDR_IS_GROUP(addr)) {
+			addr_list[len++] = addr;
+		}
+
+		friend_sub_add(frnd, addr);
 	}
 
 	enqueue_sub_cfm(frnd, xact);
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW_FRIEND)) {
+		return bt_mesh_dfw_path_request_solicitation_start(rx->sub->net_idx,
+								   addr_list, len);
+	}
 
 	return 0;
 }

@@ -21,6 +21,7 @@
 #include "beacon.h"
 #include "foundation.h"
 #include "lpn.h"
+#include "dfw.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_LOW_POWER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -303,11 +304,20 @@ static void clear_friendship(bool force, bool disable)
 		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 	}
 
-	if (was_established) {
-		STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
-			if (cb->terminated) {
-				cb->terminated(net_idx, frnd);
-			}
+	if (!was_established) {
+		return;
+	}
+
+	/* When that friendship is terminated, the Low Power node shall set the
+	 * Directed Forwarding state to the stored value.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+		(void)bt_mesh_dfw_set(net_idx, lpn->dfw_state);
+	}
+
+	STRUCT_SECTION_FOREACH(bt_mesh_lpn_cb, cb) {
+		if (cb->terminated) {
+			cb->terminated(net_idx, frnd);
 		}
 	}
 }
@@ -461,6 +471,7 @@ static int send_friend_poll(void)
 		.net_idx     = bt_mesh.lpn.sub->net_idx,
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = bt_mesh.lpn.frnd,
+		.cred        = BT_MESH_CRED_FRIEND,
 		.send_ttl    = 0,
 	};
 	struct bt_mesh_net_tx tx = {
@@ -468,7 +479,6 @@ static int send_friend_poll(void)
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
-		.friend_cred = true,
 	};
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	uint8_t fsn = lpn->fsn;
@@ -790,6 +800,7 @@ static bool sub_update(uint8_t op)
 		.net_idx     = lpn->sub->net_idx,
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = lpn->frnd,
+		.cred        = BT_MESH_CRED_FRIEND,
 		.send_ttl    = 0,
 	};
 	struct bt_mesh_net_tx tx = {
@@ -797,7 +808,6 @@ static bool sub_update(uint8_t op)
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
-		.friend_cred = true,
 	};
 	struct bt_mesh_ctl_friend_sub req;
 	size_t i, g;
@@ -1079,12 +1089,25 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 		 * credentials so we need to ensure the right ones (Friend
 		 * Credentials) were used for this message.
 		 */
-		if (!rx->friend_cred) {
+		if (rx->ctx.cred != BT_MESH_CRED_FRIEND) {
 			LOG_WRN("Friend Update with wrong credentials");
 			return -EINVAL;
 		}
 
 		lpn->established = 1U;
+
+		/* If the Low Power node supports directed forwarding functionality when the
+		 * friendship is established in a subnet, the Low Power node shall store the
+		 * current value of the Directed Forwarding state and shall set the state to
+		 * 0b0 (see Section 4.2.22.1) for that subnet.
+		 */
+		if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+			(void)bt_mesh_dfw_get(sub->net_idx, &lpn->dfw_state);
+
+			if (lpn->dfw_state == BT_MESH_FEATURE_ENABLED) {
+				(void)bt_mesh_dfw_set(sub->net_idx, BT_MESH_FEATURE_DISABLED);
+			}
+		}
 
 		LOG_INF("Friendship established with 0x%04x", lpn->frnd);
 

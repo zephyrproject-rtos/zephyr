@@ -39,6 +39,7 @@
 #include "solicitation.h"
 #include "gatt_cli.h"
 #include "crypto.h"
+#include "dfw.h"
 
 LOG_MODULE_REGISTER(bt_mesh_main, CONFIG_BT_MESH_LOG_LEVEL);
 

@@ -7,6 +7,7 @@
 #include "adv.h"
 #include "subnet.h"
 #include <zephyr/bluetooth/mesh/sar_cfg.h>
+#include <zephyr/bluetooth/mesh/cfg.h>
 
 #define BT_MESH_IV_UPDATE(flags)   ((flags >> 1) & 0x01)
 #define BT_MESH_KEY_REFRESH(flags) (flags & 0x01)
@@ -117,6 +118,9 @@ struct bt_mesh_lpn {
 	uint8_t xact_next;
 	uint8_t xact_pending;
 	uint8_t sent_req;
+
+	/* Directed forwarding state */
+	enum bt_mesh_feat_state dfw_state;
 
 	/* Address of our Friend when we're a LPN. Unassigned if we don't
 	 * have a friend yet.
@@ -244,10 +248,11 @@ struct bt_mesh_net {
 
 /* Network interface */
 enum bt_mesh_net_if {
-	BT_MESH_NET_IF_ADV,
-	BT_MESH_NET_IF_LOCAL,
-	BT_MESH_NET_IF_PROXY,
-	BT_MESH_NET_IF_PROXY_CFG,
+	BT_MESH_NET_IF_NONE	 = 0,
+	BT_MESH_NET_IF_ADV	 = BIT(0),
+	BT_MESH_NET_IF_PROXY     = BIT(1),
+	BT_MESH_NET_IF_PROXY_CFG = BIT(2),
+	BT_MESH_NET_IF_LOCAL     = BIT(3),
 };
 
 /* Decoding context for Network/Transport data */
@@ -257,11 +262,10 @@ struct bt_mesh_net_rx {
 	uint32_t  seq;            /* Sequence Number */
 	uint8_t   old_iv:1,       /* iv_index - 1 was used */
 	       new_key:1,      /* Data was encrypted with updated key */
-	       friend_cred:1,  /* Data was encrypted with friend cred */
 	       ctl:1,          /* Network Control */
-	       net_if:2,       /* Network interface */
 	       local_match:1,  /* Matched a local element */
 	       friend_match:1; /* Matched an LPN we're friends for */
+	uint8_t   net_if;      /* Network interface */
 };
 
 /* Encoding context for Network/Transport data */
@@ -270,9 +274,9 @@ struct bt_mesh_net_tx {
 	struct bt_mesh_msg_ctx *ctx;
 	uint16_t src;
 	uint8_t  xmit;
-	uint8_t  friend_cred:1,
-	      aszmic:1,
-	      aid:6;
+	uint8_t  aszmic:1,
+		aid:6,
+		path_need:1;
 };
 
 extern struct bt_mesh_net bt_mesh;

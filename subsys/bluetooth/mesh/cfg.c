@@ -17,6 +17,7 @@
 #include "cfg.h"
 #include "od_priv_proxy.h"
 #include "priv_beacon.h"
+#include "dfw.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_CFG_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -279,6 +280,11 @@ uint8_t bt_mesh_default_ttl_get(void)
 	return bt_mesh.default_ttl;
 }
 
+static void dfw_friend_disable(struct bt_mesh_subnet *sub)
+{
+	(void)bt_mesh_dfw_friend_set(sub->net_idx, BT_MESH_FEATURE_DISABLED);
+}
+
 int bt_mesh_friend_set(enum bt_mesh_feat_state friendship)
 {
 	int err;
@@ -301,6 +307,10 @@ int bt_mesh_friend_set(enum bt_mesh_feat_state friendship)
 
 	if (friendship == BT_MESH_FEATURE_DISABLED) {
 		bt_mesh_friends_clear();
+
+		if (IS_ENABLED(CONFIG_BT_MESH_DFW_FRIEND)) {
+			bt_mesh_subnet_foreach(dfw_friend_disable);
+		}
 	}
 
 	return 0;
@@ -376,7 +386,7 @@ uint8_t bt_mesh_relay_retransmit_get(void)
 	return bt_mesh.relay_xmit;
 }
 
-bool bt_mesh_fixed_group_match(uint16_t addr)
+bool bt_mesh_fixed_group_match(uint16_t net_idx, uint16_t addr)
 {
 	/* Check for fixed group addresses */
 	switch (addr) {
@@ -388,6 +398,15 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
 		return (bt_mesh_friend_get() == BT_MESH_FEATURE_ENABLED);
 	case BT_MESH_ADDR_RELAYS:
 		return (bt_mesh_relay_get() == BT_MESH_FEATURE_ENABLED);
+#if defined(CONFIG_BT_MESH_DFW)
+	case BT_MESH_ADDR_DFW_NODES: {
+		enum bt_mesh_feat_state state = BT_MESH_FEATURE_DISABLED;
+
+		(void)bt_mesh_dfw_get(net_idx, &state);
+
+		return state == BT_MESH_FEATURE_ENABLED;
+	}
+#endif
 	default:
 		return false;
 	}

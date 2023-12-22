@@ -35,6 +35,7 @@
 #include "settings.h"
 #include "cfg.h"
 #include "va.h"
+#include "dfw.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_MODEL_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -168,11 +169,22 @@ static uint8_t _mod_pub_set(const struct bt_mesh_model *model, uint16_t pub_addr
 
 	model->pub->addr = pub_addr;
 	model->pub->key = app_idx;
-	model->pub->cred = cred_flag;
 	model->pub->ttl = ttl;
 	model->pub->period = period;
 	model->pub->retransmit = retransmit;
 	model->pub->uuid = uuid;
+
+	if (cred_flag) {
+		model->pub->cred = BT_MESH_CRED_FRIEND;
+	} else if (IS_ENABLED(CONFIG_BT_MESH_DFW_PUB_POLICY_DF)) {
+		model->pub->cred = BT_MESH_CRED_DIRECTED;
+
+		(void)bt_mesh_dfw_path_origin_state_machine_start(
+					bt_mesh_app_binding_net_key_get(app_idx), NULL,
+					pub_addr, false);
+	} else {
+		model->pub->cred = BT_MESH_CRED_FLOODING;
+	}
 
 	if (model->pub->update) {
 		int32_t period_ms;
@@ -1006,6 +1018,10 @@ static int mod_sub_add(const struct bt_mesh_model *model,
 	*entry = sub_addr;
 	status = STATUS_SUCCESS;
 
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+		(void)bt_mesh_dfw_path_request_solicitation_start(ctx->net_idx, entry, 1);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_model_sub_store(mod);
 	}
@@ -1155,6 +1171,11 @@ static int mod_sub_overwrite(const struct bt_mesh_model *model,
 
 		mod->groups[0] = sub_addr;
 		status = STATUS_SUCCESS;
+
+		if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+			(void)bt_mesh_dfw_path_request_solicitation_start(
+							ctx->net_idx, &mod->groups[0], 1);
+		}
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 			bt_mesh_model_sub_store(mod);
@@ -1460,6 +1481,10 @@ static int mod_sub_va_add(const struct bt_mesh_model *model,
 	*group_entry = va->addr;
 	*label_entry = va->uuid;
 
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+		(void)bt_mesh_dfw_path_request_solicitation_start(ctx->net_idx, group_entry, 1);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && va->ref == 1 &&
 	    !bt_mesh_va_collision_check(va->addr)) {
 		bt_mesh_lpn_group_add(va->addr);
@@ -1620,6 +1645,11 @@ static int mod_sub_va_overwrite(const struct bt_mesh_model *model,
 	bt_mesh_model_extensions_walk(mod, mod_sub_clear_visitor, NULL);
 	mod->groups[0] = va->addr;
 	mod->uuids[0] = va->uuid;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+		(void)bt_mesh_dfw_path_request_solicitation_start(
+						ctx->net_idx, &mod->groups[0], 1);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_model_sub_store(mod);

@@ -48,6 +48,9 @@ static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&bt_mesh_shell_health_srv, &health_pub),
 	BT_MESH_MODEL_HEALTH_CLI(&bt_mesh_shell_health_cli),
+#if defined(CONFIG_BT_MESH_DFW)
+	BT_MESH_MODEL_DFW_CFG_SRV,
+#endif
 #if defined(CONFIG_BT_MESH_DFD_SRV)
 	BT_MESH_MODEL_DFD_SRV(&dfd_srv),
 #else

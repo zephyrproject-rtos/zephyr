@@ -31,6 +31,7 @@
 #include "cfg.h"
 #include "solicitation.h"
 #include "va.h"
+#include "dfw.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_SETTINGS_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -134,6 +135,7 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 			      BIT(BT_MESH_SETTINGS_VA_PENDING)       |      \
 			      BIT(BT_MESH_SETTINGS_SSEQ_PENDING)     |      \
 			      BIT(BT_MESH_SETTINGS_COMP_PENDING)     |      \
+			      BIT(BT_MESH_SETTINGS_DFW_PENDING)      |      \
 			      BIT(BT_MESH_SETTINGS_DEV_KEY_CAND_PENDING))
 
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
@@ -261,6 +263,12 @@ static void store_pending(struct k_work *work)
 		atomic_test_and_clear_bit(pending_flags,
 					  BT_MESH_SETTINGS_SSEQ_PENDING)) {
 		bt_mesh_sseq_pending_store();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW) &&
+		atomic_test_and_clear_bit(pending_flags,
+					  BT_MESH_SETTINGS_DFW_PENDING)) {
+		bt_mesh_dfw_pending_store();
 	}
 }
 

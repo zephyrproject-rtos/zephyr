@@ -587,6 +587,14 @@ uint8_t bt_mesh_app_key_del(uint16_t app_idx, uint16_t net_idx);
  */
 bool bt_mesh_app_key_exists(uint16_t app_idx);
 
+/** @brief Get the binding network key index of the application key.
+ *
+ *  @param app_idx Application index.
+ *
+ *  @return The binding network key index if Application is known, BT_MESH_KEY_UNUSED otherwise.
+ */
+uint16_t bt_mesh_app_binding_net_key_get(uint16_t app_idx);
+
 /** @brief Get a list of all known Application key indexes.
  *
  *  Builds a list of all Application indexes for the given network index in the

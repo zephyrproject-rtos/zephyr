@@ -7,4 +7,4 @@
 void bt_mesh_cfg_default_set(void);
 void bt_mesh_cfg_pending_store(void);
 
-bool bt_mesh_fixed_group_match(uint16_t addr);
+bool bt_mesh_fixed_group_match(uint16_t net_idx, uint16_t addr);

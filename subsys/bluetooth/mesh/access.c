@@ -27,6 +27,7 @@
 #include "op_agg.h"
 #include "settings.h"
 #include "va.h"
+#include "dfw.h"
 #include "delayable_msg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_ACCESS_LOG_LEVEL
@@ -47,7 +48,7 @@ struct mod_pub_val {
 		uint8_t  retransmit;
 		uint8_t  period;
 		uint8_t  period_div:4,
-			 cred:1;
+			 cred:2;
 	} base;
 	uint16_t uuidx;
 };
@@ -837,15 +838,21 @@ static int publish_transmit(const struct bt_mesh_model *mod)
 	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = mod->pub;
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_PUB(pub);
-	struct bt_mesh_net_tx tx = {
-		.ctx = &ctx,
-		.src = bt_mesh_model_elem(mod)->rt->addr,
-		.friend_cred = pub->cred,
-	};
+
+	/* If directed forwarding functionality is supported, and the Directed Publish Policy
+	 * state value for the publishing model is Managed Flooding, then the message shall be
+	 * tagged with the immutable-credentials tag.
+	 */
+	if (pub->cred == BT_MESH_CRED_FLOODING) {
+		ctx.cred = BT_MESH_CRED_IMMUTABLE;
+	}
+
+	ctx.net_idx = bt_mesh_app_binding_net_key_get(ctx.app_idx);
 
 	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
-	return bt_mesh_trans_send(&tx, &sdu, &pub_sent_cb, (void *)mod);
+	return bt_mesh_access_send(&ctx, &sdu, bt_mesh_model_elem(mod)->rt->addr,
+				   &pub_sent_cb, (void *)mod);
 }
 
 static int pub_period_start(struct bt_mesh_model_pub *pub)
@@ -1333,10 +1340,12 @@ void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
 int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
 			const struct bt_mesh_send_cb *cb, void *cb_data)
 {
+	enum bt_mesh_feat_state state = BT_MESH_FEATURE_DISABLED;
 	struct bt_mesh_net_tx tx = {
 		.ctx = ctx,
 		.src = src_addr,
 	};
+	bool path_not_exist;
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx.ctx->net_idx, tx.ctx->app_idx,
 		tx.ctx->addr);
@@ -1345,6 +1354,71 @@ int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf,
 	if (!bt_mesh_is_provisioned()) {
 		LOG_ERR("Local node is not yet provisioned");
 		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW)) {
+		(void)bt_mesh_dfw_get(ctx->net_idx, &state);
+	}
+
+	/*
+	 * The message is transmitted by a model in response to a message that it has received.
+	 */
+	if (ctx->recv_dst != BT_MESH_ADDR_UNASSIGNED) {
+		/* If the received message uses managed flooding security credentials, then the
+		 * response message shall be tagged with the immutable-credentials tag, and the
+		 * security credentials will not be changed by any lower layer
+		 * (see Section 3.4.6.4).
+		 */
+		if (ctx->cred == BT_MESH_CRED_FLOODING) {
+			ctx->cred = BT_MESH_CRED_IMMUTABLE;
+		}
+	} else {
+		/* If directed forwarding functionality is supported and enabled in the subnet
+		 * over which the message is transmitted, and the friendship security credentials
+		 * have not been selected, and the destination is different from the all-nodes and
+		 * all-relays fixed group addresses, and the TTL field has the value 2 or greater,
+		 * and the message is tagged with the use-directed tag, then the element checks
+		 * whether a Path Origin State Machine associated with the destination exists
+		 * (see Section 4.4.7.2).
+		 */
+		if (IS_ENABLED(CONFIG_BT_MESH_DFW) &&
+		    state == BT_MESH_FEATURE_ENABLED &&
+		    ctx->cred == BT_MESH_CRED_FLOODING &&
+		    ctx->send_ttl >= 2 &&
+		    ctx->addr != BT_MESH_ADDR_ALL_NODES &&
+		    ctx->addr != BT_MESH_ADDR_RELAYS) {
+			ctx->cred = BT_MESH_CRED_DIRECTED;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_DFW) && ctx->cred == BT_MESH_CRED_DIRECTED) {
+		if (state != BT_MESH_FEATURE_ENABLED) {
+			/* Rewind to use managed flooding */
+			ctx->cred = BT_MESH_CRED_FLOODING;
+			return bt_mesh_trans_send(&tx, buf, cb, cb_data);
+		}
+
+		path_not_exist = bt_mesh_dfw_path_existed(ctx->net_idx, bt_mesh_primary_addr(),
+							  ctx->addr) == BT_MESH_NET_IF_NONE;
+
+		if (path_not_exist) {
+			/* Rewind to use managed flooding */
+			ctx->cred = BT_MESH_CRED_FLOODING;
+
+			/* If there is no existing Path Origin State Machine and no
+			 * existing Forwarding Table entry for a path from the source
+			 * address to the destination address (see Section 3.6.8.5.1),
+			 * then the element shall instantiate a Path Origin State Machine
+			 * in the Initial state for that destination.
+			 */
+			if (!bt_mesh_dfw_path_origin_state_machine_existed(
+							ctx->net_idx, ctx->addr)) {
+				tx.path_need = true;
+			} else {
+				bt_mesh_dfw_path_origin_state_machine_msg_sent(
+								ctx->net_idx, ctx->addr);
+			}
+		}
 	}
 
 	return bt_mesh_trans_send(&tx, buf, cb, cb_data);
@@ -2633,11 +2707,16 @@ int bt_mesh_models_metadata_change_prepare(void)
 static void commit_mod(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 		       bool vnd, bool primary, void *user_data)
 {
-	if (mod->pub && mod->pub->update &&
-	    mod->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+	if (mod->pub && mod->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int32_t ms = bt_mesh_model_pub_period_get(mod);
 
-		if (ms > 0) {
+		if (IS_ENABLED(CONFIG_BT_MESH_DFW) && mod->pub->cred == BT_MESH_CRED_DIRECTED) {
+			(void)bt_mesh_dfw_path_origin_state_machine_start(
+						bt_mesh_app_binding_net_key_get(mod->pub->key),
+						NULL, mod->pub->addr, true);
+		}
+
+		if (mod->pub->update && ms > 0) {
 			/* Delay the first publication after power-up for longer time (section
 			 * 3.7.3.1):
 			 *
