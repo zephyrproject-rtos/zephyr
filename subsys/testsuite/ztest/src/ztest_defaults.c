@@ -53,6 +53,10 @@ bool z_ztest_should_suite_run(const void *state, struct ztest_suite_node *suite)
 	return run_suite;
 }
 
+#ifdef CONFIG_ZTEST_SHELL
+/* see ztest_shell.c */
+bool z_ztest_should_test_run(const char *suite, const char *test);
+#else
 /**
  * @brief Determines if the test case should run based on test cases listed
  *	  in the command line argument. Run all tests for non-posix builds
@@ -66,6 +70,7 @@ bool z_ztest_should_test_run(const char *suite, const char *test)
 {
 	return true;
 }
+#endif
 
 ZTEST_DMEM const struct ztest_arch_api ztest_api = {
 	.run_all = z_ztest_run_all,

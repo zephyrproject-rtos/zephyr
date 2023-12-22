@@ -1,0 +1,12 @@
+common:
+  tags:
+    - test_framework
+    - shell
+  arch_exclude:
+    - posix
+  platform_exclude:
+    - esp32s3_devkitm_appcpu
+  integration_platforms:
+    - qemu_x86_64
+tests:
+  testing.ztest.shell.filter: {}

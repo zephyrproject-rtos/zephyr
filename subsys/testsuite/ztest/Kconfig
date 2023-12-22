@@ -181,6 +181,58 @@ config TEST_LOGGING_FLUSH_AFTER_TEST
 	default y
 	depends on MULTITHREADING
 
+config ZTEST_MAIN
+	bool "Run ZTest test suites from main"
+	default y
+	help
+	  When disabled, ZTest test suites are not automatically run from main().
+
+config ZTEST_SHELL
+	bool "ZTest shell command"
+	select SHELL
+	select GETOPT
+	select FNMATCH
+	select GETOPT_LONG
+	select SHELL_GETOPT
+	# currently this is broken due to getopt_state / conflicting native definitions on POSIX arch
+	depends on !ARCH_POSIX
+	help
+	  Provide a shell command to run ZTests from the Zephyr shell. The arguments of the 'ztest'
+	  command are inspired by Google Test Framework.
+
+if ZTEST_SHELL
+
+config ZTEST_SHELL_PREFIX
+	string "Prefix for ztest shell options"
+	default ""
+	help
+	  This option is for compatibility with Google Test Framework, where each option specific to
+	  gtest is prefixed with 'gtest_' (e.g. '--gtest_shuffle'). This helps to separate options
+	  specific to the test runner from application options.
+
+config ZTEST_SHELL_NAME_SIZE_MAX
+	int "Max string length of suite.test concatenation"
+	default 64
+	help
+	  Currently the should_test_run() method of struct ztest_arch_api separates the suite name
+	  from the test name. The convention in gtest is to concatenate the two with a '.' separating
+	  the suite name from the test name. Ensure that this option is large enough to concatenate
+	  the largest suite.test string in desired testsuites.
+
+	  Note: this buffer is placed on the stack.
+
+config ZTEST_SHELL_PATTERN_MAX
+	int "Max string length of a ZTest filter"
+	default 32
+	help
+	  The ztest shell filter option takes an argument of the form
+	  POSITIVE_PATTERNS[-NEGATIVE_PATTERNS], where both the positive and negative components may
+	  include several sub-patterns separated by ':'. Due to implementation details, it is
+	  necessary to copy individual sub-patterns to a separate buffer before evaluation. This
+	  option specifies the maximum size of that separate buffer.
+
+endif
+
 endif # ZTEST
 
 config ZTEST_MOCKING
