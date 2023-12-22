@@ -12,6 +12,7 @@ config BOARD_NRF52_BSIM
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select NATIVE_LIBRARY
+	select PINCTRL_DYNAMIC if PINCTRL
 	help
 	  Will produce a console Linux process which can be executed natively.
 	  It needs the BabbleSim simulator both in compile time and to execute
