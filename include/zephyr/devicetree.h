@@ -2288,6 +2288,14 @@
 #define DT_NUM_IRQS(node_id) DT_CAT(node_id, _IRQ_NUM)
 
 /**
+ * @brief Get the interrupt level for the node
+ *
+ * @param node_id node identifier
+ * @return interrupt level
+ */
+#define DT_IRQ_LEVEL(node_id) DT_CAT(node_id, _IRQ_LEVEL)
+
+/**
  * @brief Is @p idx a valid interrupt index?
  *
  * If this returns 1, then DT_IRQ_BY_IDX(node_id, idx) is valid.
@@ -3968,6 +3976,14 @@
  * @return instance's register block size
  */
 #define DT_INST_REG_SIZE(inst) DT_INST_REG_SIZE_BY_IDX(inst, 0)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` interrupt level
+ *
+ * @param inst instance number
+ * @return interrupt level
+ */
+#define DT_INST_IRQ_LEVEL(inst) DT_IRQ_LEVEL(DT_DRV_INST(inst))
 
 /**
  * @brief Get a `DT_DRV_COMPAT` interrupt specifier value at an index
