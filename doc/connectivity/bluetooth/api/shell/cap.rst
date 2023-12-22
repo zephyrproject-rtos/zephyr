@@ -233,10 +233,14 @@ the optionally included CSIS instance by calling (:code:`cap_commander discover`
    cap_commander --help
    cap_commander - Bluetooth CAP commander shell commands
    Subcommands:
-     discover              :Discover CAS
-     change_volume         :Change volume on all connections <volume>
-     change_volume_offset  :Change volume offset per connection <volume_offset
-                            [volume_offset [...]]>
+     discover                :Discover CAS
+     change_volume           :Change volume on all connections <volume>
+     change_volume_mute      :Change volume mute state on all connections <mute>
+     change_volume_offset    :Change volume offset per connection <volume_offset
+                              [volume_offset [...]]>
+     change_microphone_mute  :Change microphone mute state on all connections <mute>
+     change_microphone_gain  :Change microphone gain per connection <gain
+                              [gain [...]]>
 
 
 Before being able to perform any stream operation, the device must also perform the
@@ -339,6 +343,40 @@ Setting the volume mute on all connected devices
    VCP volume 100, mute 0
    VCP unmute done
    Volume mute change completed
+
+Setting the microphone mute on all connected devices
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+   uart:~$ bt connect <device A>
+   Connected: <device A>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ micp_mic_ctlr discover
+   MICP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ bt connect <device B>
+   Connected: <device B>
+   uart:~$ cap_commander discover
+   discovery completed with CSIS
+   uart:~$ micp_mic_ctlr discover
+   MICP discover done with 1 VOCS and 1 AICS
+   uart:~$
+   uart:~$ cap_commander change_microphone_mute 1
+   Setting microphone mute to 1 on 2 connections
+   MICP microphone 100, mute 1
+   MICP mute done
+   MICP microphone 100, mute 1
+   MICP mute done
+   Microphone mute change completed
+   uart:~$ cap_commander change_microphone_mute 0
+   Setting microphone mute to 0 on 2 connections
+   MICP microphone 100, mute 0
+   MICP unmute done
+   MICP microphone 100, mute 0
+   MICP unmute done
+   Microphone mute change completed
 
 Setting the microphone gain on one or more devices
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
