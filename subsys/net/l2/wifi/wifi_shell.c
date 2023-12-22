@@ -1684,7 +1684,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows", NULL),
 	SHELL_CMD_ARG(reg_domain, NULL,
 		"Set or Get Wi-Fi regulatory domain\n"
-		"Usage: wifi reg_domain [ISO/IEC 3166-1 alpha2] [-f]\n"
+		"[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
 		"[-f]: Force to use this regulatory hint over any other regulatory hints\n"
 		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain,
