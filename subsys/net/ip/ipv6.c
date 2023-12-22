@@ -488,6 +488,11 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			NET_DBG("DROP: invalid scope multicast packet");
 			goto drop;
 		}
+
+		if (net_ipv6_is_my_addr(&hdr->src)) {
+			NET_DBG("DROP: src addr is %s", "mine");
+			goto drop;
+		}
 	}
 
 	/* Check extension headers */
