@@ -326,10 +326,6 @@ class BinaryHandler(Handler):
 
         handler_time = time.time() - start_time
 
-        if self.options.coverage:
-            subprocess.call(["GCOV_PREFIX=" + self.build_dir,
-                             "gcov", self.sourcedir, "-b", "-s", self.build_dir], shell=True)
-
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
         if sys.stdout.isatty():
