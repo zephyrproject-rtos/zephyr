@@ -29,6 +29,13 @@
 		#size-cells = < 0x1 >;
 		interrupt-parent = <&test_intc>;
 
+		test_cpu_intc: interrupt-controller  {
+			compatible = "vnd,cpu-intc";
+			#address-cells = <0>;
+			#interrupt-cells = < 0x01 >;
+			interrupt-controller;
+		};
+
 		test_pinctrl: pin-controller {
 			compatible = "vnd,pinctrl";
 			test_pincfg_a: pincfg-a {};
@@ -430,6 +437,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 			interrupts = <11 0>;
+			interrupt-parent = <&test_cpu_intc>;
 		};
 
 		/* there should only be one of these */

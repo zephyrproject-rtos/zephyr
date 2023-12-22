@@ -20,6 +20,7 @@
 #define TEST_INST	DT_INST(0, vnd_gpio_device)
 #define TEST_ARRAYS	DT_NODELABEL(test_arrays)
 #define TEST_PH	DT_NODELABEL(test_phandles)
+#define TEST_INTC	DT_NODELABEL(test_intc)
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_IRQ_EXT	DT_NODELABEL(test_irq_extended)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
@@ -657,10 +658,12 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_IRQ(TEST_I2C_BUS, priority), 2, "");
 
 	/* DT_IRQN */
-	zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "");
 	#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
+		zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "");
 		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)), 30, "");
 	#else
+		zassert_equal(DT_IRQN(TEST_I2C_BUS),
+			      ((6 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
 		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)),
 			      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
 	#endif
@@ -747,6 +750,27 @@ ZTEST(devicetree_api, test_irq)
 	zassert_true(DT_INST_IRQ_HAS_NAME(0, stat), "");
 	zassert_true(DT_INST_IRQ_HAS_NAME(0, done), "");
 	zassert_false(DT_INST_IRQ_HAS_NAME(0, alpha), "");
+}
+
+ZTEST(devicetree_api, test_irq_level)
+{
+	/* DT_IRQ_LEVEL */
+	zassert_equal(DT_IRQ_LEVEL(TEST_TEMP), 0, "");
+	zassert_equal(DT_IRQ_LEVEL(TEST_INTC), 1, "");
+	zassert_equal(DT_IRQ_LEVEL(TEST_SPI), 2, "");
+
+	/* DT_IRQ_LEVEL */
+	#undef DT_DRV_COMPAT
+	#define DT_DRV_COMPAT vnd_adc_temp_sensor
+	zassert_equal(DT_INST_IRQ_LEVEL(0), 0, "");
+
+	#undef DT_DRV_COMPAT
+	#define DT_DRV_COMPAT vnd_intc
+	zassert_equal(DT_INST_IRQ_LEVEL(1), 1, "");
+
+	#undef DT_DRV_COMPAT
+	#define DT_DRV_COMPAT vnd_spi
+	zassert_equal(DT_INST_IRQ_LEVEL(0), 2, "");
 }
 
 struct gpios_struct {
