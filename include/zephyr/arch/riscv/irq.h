@@ -69,8 +69,8 @@ extern void z_riscv_irq_priority_set(unsigned int irq,
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
-	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
-		      ISR_FLAG_DIRECT, isr_p, NULL); \
+	Z_ISR_DECLARE_DIRECT(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
+		      ISR_FLAG_DIRECT, isr_p); \
 	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 

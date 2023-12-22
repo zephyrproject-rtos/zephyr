@@ -127,7 +127,7 @@ extern void z_arm_interrupt_init(void);
 	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
 			"ZLI interrupt registered but feature is disabled"); \
 	_CHECK_PRIO(priority_p, flags_p) \
-	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	Z_ISR_DECLARE_DIRECT(irq_p, ISR_FLAG_DIRECT, isr_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
