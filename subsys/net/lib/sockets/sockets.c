@@ -1544,15 +1544,13 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct msghdr *m
 {
 	int res;
 	k_timepoint_t end;
-	size_t recv_len = 0, iovec, available_len, max_iovlen = 0;
+	size_t recv_len = 0, iovec = 0, available_len, max_iovlen = 0;
 	const bool waitall = (flags & ZSOCK_MSG_WAITALL) == ZSOCK_MSG_WAITALL;
 
 	if (msg != NULL && buf == NULL) {
 		if (msg->msg_iovlen < 1) {
 			return -EINVAL;
 		}
-
-		iovec = 0;
 
 		buf = msg->msg_iov[iovec].iov_base;
 		available_len = msg->msg_iov[iovec].iov_len;
