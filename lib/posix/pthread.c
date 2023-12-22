@@ -29,6 +29,9 @@
 	POSIX_TO_ZEPHYR_PRIORITY(K_LOWEST_APPLICATION_THREAD_PRIO, DEFAULT_PTHREAD_POLICY)
 #define DEFAULT_PTHREAD_POLICY (IS_ENABLED(CONFIG_PREEMPT_ENABLED) ? SCHED_RR : SCHED_FIFO)
 
+#define PTHREAD_STACK_MAX BIT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS)
+#define PTHREAD_GUARD_MAX BIT_MASK(CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS)
+
 LOG_MODULE_REGISTER(pthread, CONFIG_PTHREAD_LOG_LEVEL);
 
 #ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
@@ -37,28 +40,14 @@ LOG_MODULE_REGISTER(pthread, CONFIG_PTHREAD_LOG_LEVEL);
 #define DYNAMIC_STACK_SIZE 0
 #endif
 
-/* The maximum allowed stack size (for this implementation) */
-#define PTHREAD_STACK_MAX (UINT16_MAX + 1)
-
-static inline size_t __get_attr_stacksize(const struct pthread_attr *attr)
+static inline size_t __get_attr_stacksize(const struct posix_thread_attr *attr)
 {
 	return attr->stacksize + 1;
 }
 
-static inline void __set_attr_stacksize(struct pthread_attr *attr, size_t size)
+static inline void __set_attr_stacksize(struct posix_thread_attr *attr, size_t stacksize)
 {
-	attr->stacksize = size - 1;
-}
-
-static inline size_t __get_attr_guardsize(const struct pthread_attr *attr)
-{
-	return (attr->guardsize_msbit * BIT(16)) | attr->guardsize;
-}
-
-static inline void __set_attr_guardsize(struct pthread_attr *attr, size_t size)
-{
-	attr->guardsize_msbit = size == PTHREAD_STACK_MAX;
-	attr->guardsize = size & BIT_MASK(16);
+	attr->stacksize = stacksize - 1;
 }
 
 struct __pthread_cleanup {
@@ -76,7 +65,7 @@ enum posix_thread_qid {
 	POSIX_THREAD_DONE_Q,
 };
 
-/* only 2 bits in struct pthread_attr for schedpolicy */
+/* only 2 bits in struct posix_thread_attr for schedpolicy */
 BUILD_ASSERT(SCHED_OTHER < BIT(2) && SCHED_FIFO < BIT(2) && SCHED_RR < BIT(2));
 
 BUILD_ASSERT((PTHREAD_CREATE_DETACHED == 0 || PTHREAD_CREATE_JOINABLE == 0) &&
@@ -85,6 +74,9 @@ BUILD_ASSERT((PTHREAD_CREATE_DETACHED == 0 || PTHREAD_CREATE_JOINABLE == 0) &&
 BUILD_ASSERT((PTHREAD_CANCEL_ENABLE == 0 || PTHREAD_CANCEL_DISABLE == 0) &&
 	     (PTHREAD_CANCEL_ENABLE == 1 || PTHREAD_CANCEL_DISABLE == 1));
 
+BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS <=
+	     32);
+
 static void posix_thread_recycle(void);
 static sys_dlist_t ready_q = SYS_DLIST_STATIC_INIT(&ready_q);
 static sys_dlist_t run_q = SYS_DLIST_STATIC_INIT(&run_q);
@@ -92,18 +84,6 @@ static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 static struct k_spinlock pthread_pool_lock;
 static int pthread_concurrency;
-
-static const struct pthread_attr init_pthread_attrs = {
-	.stack = NULL,
-	.stacksize = 0,
-	.guardsize = (BIT_MASK(16) & CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT),
-	.priority = DEFAULT_PTHREAD_PRIORITY,
-	.schedpolicy = DEFAULT_PTHREAD_POLICY,
-	.guardsize_msbit = (BIT(16) & CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT),
-	.initialized = true,
-	.cancelstate = PTHREAD_CANCEL_ENABLE,
-	.detachstate = PTHREAD_CREATE_JOINABLE,
-};
 
 /*
  * We reserve the MSB to mark a pthread_t as initialized (from the
@@ -262,7 +242,7 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
  */
 int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *schedparam)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 	int priority = schedparam->sched_priority;
 
 	if (attr == NULL || !attr->initialized ||
@@ -282,7 +262,7 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
  */
 int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksize)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if (stackaddr == NULL) {
 		LOG_ERR("NULL stack address");
@@ -299,7 +279,7 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 	return 0;
 }
 
-static bool pthread_attr_is_valid(const struct pthread_attr *attr)
+static bool pthread_attr_is_valid(const struct posix_thread_attr *attr)
 {
 	/* auto-alloc thread stack */
 	if (attr == NULL) {
@@ -438,8 +418,8 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	k_spinlock_key_t key;
 	pthread_barrier_t barrier;
 	struct posix_thread *t = NULL;
-	struct pthread_attr attr_storage = init_pthread_attrs;
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr attr_storage;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if (!pthread_attr_is_valid(attr)) {
 		return EINVAL;
@@ -447,10 +427,10 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 
 	if (attr == NULL) {
 		attr = &attr_storage;
+		(void)pthread_attr_init((pthread_attr_t *)attr);
 		BUILD_ASSERT(DYNAMIC_STACK_SIZE <= PTHREAD_STACK_MAX);
 		__set_attr_stacksize(attr, DYNAMIC_STACK_SIZE);
-		attr->stack = k_thread_stack_alloc(__get_attr_stacksize(attr) +
-							   __get_attr_guardsize(attr),
+		attr->stack = k_thread_stack_alloc(__get_attr_stacksize(attr) + attr->guardsize,
 						   k_is_user_context() ? K_USER : 0);
 		if (attr->stack == NULL) {
 			LOG_ERR("Unable to allocate stack of size %u", DYNAMIC_STACK_SIZE);
@@ -505,7 +485,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	}
 
 	/* spawn the thread */
-	k_thread_create(&t->thread, attr->stack, attr->stacksize, zephyr_thread_wrapper,
+	k_thread_create(&t->thread, attr->stack, __get_attr_stacksize(attr), zephyr_thread_wrapper,
 			(void *)arg, threadroutine,
 			IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier) : NULL,
 			posix_to_zephyr_priority(attr->priority, attr->schedpolicy), 0, K_NO_WAIT);
@@ -680,14 +660,16 @@ int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_para
  */
 int pthread_attr_init(pthread_attr_t *_attr)
 {
-	struct pthread_attr *const attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *const attr = (struct posix_thread_attr *)_attr;
 
 	if (attr == NULL) {
 		LOG_ERR("Invalid attr pointer");
 		return ENOMEM;
 	}
 
-	(void)memcpy(attr, &init_pthread_attrs, sizeof(struct pthread_attr));
+	*attr = (struct posix_thread_attr){0};
+	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
+	attr->initialized = true;
 
 	return 0;
 }
@@ -883,7 +865,7 @@ int pthread_detach(pthread_t pthread)
  */
 int pthread_attr_getdetachstate(const pthread_attr_t *_attr, int *detachstate)
 {
-	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == false)) {
 		return EINVAL;
@@ -900,7 +882,7 @@ int pthread_attr_getdetachstate(const pthread_attr_t *_attr, int *detachstate)
  */
 int pthread_attr_setdetachstate(pthread_attr_t *_attr, int detachstate)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == false) ||
 	    ((detachstate != PTHREAD_CREATE_DETACHED) &&
@@ -919,7 +901,7 @@ int pthread_attr_setdetachstate(pthread_attr_t *_attr, int detachstate)
  */
 int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
 {
-	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
@@ -936,7 +918,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
  */
 int pthread_attr_setschedpolicy(pthread_attr_t *_attr, int policy)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == 0U) || !valid_posix_policy(policy)) {
 		return EINVAL;
@@ -953,7 +935,7 @@ int pthread_attr_setschedpolicy(pthread_attr_t *_attr, int policy)
  */
 int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 {
-	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == false)) {
 		return EINVAL;
@@ -970,7 +952,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
  */
 int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == 0U)) {
 		return EINVAL;
@@ -991,7 +973,7 @@ int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
  */
 int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t *stacksize)
 {
-	const struct pthread_attr *attr = (const struct pthread_attr *)_attr;
+	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == false)) {
 		return EINVAL;
@@ -1004,26 +986,26 @@ int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t 
 
 int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT _attr, size_t *ZRESTRICT guardsize)
 {
-	struct pthread_attr *const attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *const attr = (struct posix_thread_attr *)_attr;
 
 	if (attr == NULL || guardsize == NULL || !attr->initialized) {
 		return EINVAL;
 	}
 
-	*guardsize = __get_attr_guardsize(attr);
+	*guardsize = attr->guardsize;
 
 	return 0;
 }
 
 int pthread_attr_setguardsize(pthread_attr_t *_attr, size_t guardsize)
 {
-	struct pthread_attr *const attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *const attr = (struct posix_thread_attr *)_attr;
 
-	if (attr == NULL || !attr->initialized || guardsize > PTHREAD_STACK_MAX) {
+	if (attr == NULL || !attr->initialized || guardsize > PTHREAD_GUARD_MAX) {
 		return EINVAL;
 	}
 
-	__set_attr_guardsize(attr, guardsize);
+	attr->guardsize = guardsize;
 
 	return 0;
 }
@@ -1035,7 +1017,7 @@ int pthread_attr_setguardsize(pthread_attr_t *_attr, size_t guardsize)
  */
 int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *schedparam)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if ((attr == NULL) || (attr->initialized == false)) {
 		return EINVAL;
@@ -1052,7 +1034,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *
  */
 int pthread_attr_destroy(pthread_attr_t *_attr)
 {
-	struct pthread_attr *attr = (struct pthread_attr *)_attr;
+	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if ((attr != NULL) && (attr->initialized != 0U)) {
 		attr->initialized = false;
