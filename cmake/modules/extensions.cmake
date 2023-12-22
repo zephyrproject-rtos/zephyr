@@ -1159,6 +1159,8 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    copied/included verbatim into the given <location> in the global linker.ld.
 #    Preprocessor directives work inside <files>. Relative paths are resolved
 #    relative to the calling file, like zephyr_sources().
+#    Subsequent calls to zephyr_linker_sources with the same file(s) will remove
+#    these from the original location. Only the last call is considered.
 # <location> is one of
 #    NOINIT        Inside the noinit output section.
 #    RWDATA        Inside the data output section.
@@ -1318,6 +1320,16 @@ function(zephyr_linker_sources location)
 
     # Create strings to be written into the file
     set (include_str "/* Sort key: \"${SORT_KEY}\" */#include \"${relpath}\"")
+
+    # Remove line from other snippet file, if already used
+    get_property(old_path GLOBAL PROPERTY "snippet_files_used_${relpath}")
+    if (DEFINED old_path)
+      file(STRINGS ${old_path} lines)
+      list(FILTER lines EXCLUDE REGEX ${relpath})
+      string(REPLACE ";" "\n;" lines "${lines}") # Add newline to each line.
+      file(WRITE ${old_path} ${lines} "\n")
+    endif()
+    set_property(GLOBAL PROPERTY "snippet_files_used_${relpath}" ${snippet_path})
 
     # Add new line to existing lines, sort them, and write them back.
     file(STRINGS ${snippet_path} lines) # Get current lines (without newlines).
