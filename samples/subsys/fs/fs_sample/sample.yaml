@@ -43,6 +43,8 @@ tests:
     integration_platforms:
       - frdm_k64f
   sample.filesystem.ext2:
+    simulation_exclude:
+      - renode
     extra_args: CONF_FILE="prj_ext.conf"
     platform_allow: hifive_unmatched bl5340_dvk_cpuapp
   sample.filesystem.fat_fs.stm32h747i_disco_m7_sdmmc:
