@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_PM_DEVICE_RUNTIME_H_
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
