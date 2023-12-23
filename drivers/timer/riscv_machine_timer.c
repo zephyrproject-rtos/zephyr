@@ -14,13 +14,25 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(thead_c906_clint_timer)
+#define DT_DRV_COMPAT thead_c906_clint_timer
+
+#define TIMER_REQUIRES_32BIT_ACCESS
+#define TIMER_READ_TIME_CSR
+#define MTIMECMP_REG (DT_INST_REG_ADDR(0) + 0x4000U)
+#else
 #define DT_DRV_COMPAT riscv_machine_timer
 
 #define MTIME_REG    DT_INST_REG_ADDR_BY_IDX(0, 0)
 #define MTIMECMP_REG DT_INST_REG_ADDR_BY_IDX(0, 1)
+#endif
 #define TIMER_IRQN   DT_INST_IRQN(0)
 
 #define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+#if defined(CONFIG_64BIT) && !defined(TIMER_REQUIRES_32BIT_ACCESS)
+#define TIMER_64BIT
+#endif
 
 /* the unsigned long cast limits divisions to native CPU register width */
 #define cycle_diff_t   unsigned long
@@ -67,7 +79,7 @@ static uintptr_t get_hart_mtimecmp(void)
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
+#ifdef TIMER_64BIT
 	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
 	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
@@ -86,7 +98,9 @@ static void set_mtimecmp(uint64_t time)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if defined(TIMER_READ_TIME_CSR)
+	return csr_read(time);
+#elif defined(TIMER_64BIT)
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;
