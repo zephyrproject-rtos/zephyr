@@ -20,6 +20,21 @@ Unlike other multi-purpose POSIX operating systems
    numbers for each supported architecture, but instead generates system calls dynamically at
    build time. See `System Calls <syscalls>`_ for more information.
 
+History
+=======
+
+Zephyr's POSIX API was developed collaboratively by several companies since 2015. It was built
+using a bottom-up approach and has been extended on an as-needed basis. The timeline below
+provides an overview of when specific features were contributed and also which companies were
+responsible for maintaining the POSIX API.
+
+..  figure:: posix-history.jpg
+    :align: center
+    :alt: History of POSIX Support in Zephyr
+
+    History of POSIX support in Zephyr as of 2023-06-29
+    (`source <eoss2023_posix_roadmap_for_ltsv3>`_)
+
 Design
 ======
 
@@ -75,3 +90,6 @@ Some general design considerations:
 - POSIX API calls should be provided as regular callable C functions; if a Zephyr
   `System Call <syscalls>`_ is needed as part of the implementation, the declaration and the
   implementation of that system call should be hidden behind the POSIX API.
+
+.. _eoss2023_posix_roadmap_for_ltsv3:
+  https://eoss2023.sched.com/event/1LcPq/posix-roadmap-for-ltsv3-chris-friedt-meta
