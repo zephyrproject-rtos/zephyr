@@ -1,0 +1,33 @@
+// Copyright (c) 2023 Meta
+// SPDX-License-Identifier: Apache-2.0
+
+flash: Memory.MappedMemory @ sysbus 0x80000000
+    size: 0x400000
+
+ddr: Memory.MappedMemory @ sysbus 0x80400000
+    size: 0x400000
+
+uart0: UART.NS16550 @ sysbus 0x10000000
+    IRQ -> plic0@10
+
+uart1: UART.NS16550 @ sysbus 0x10000100
+    IRQ -> plic1@10
+
+cpu: CPU.RiscV32 @ sysbus
+    cpuType: "rv32imac_zicsr_zifencei"
+    privilegeArchitecture: PrivilegeArchitecture.Priv1_10
+    timeProvider: clint
+
+plic0: IRQControllers.PlatformLevelInterruptController @ sysbus 0x0C000000
+    0 -> cpu@11
+    numberOfSources: 1023
+    numberOfContexts: 1
+
+plic1: IRQControllers.PlatformLevelInterruptController @ sysbus 0x08000000
+    0 -> cpu@4
+    numberOfSources: 1023
+    numberOfContexts: 1
+
+clint: IRQControllers.CoreLevelInterruptor  @ sysbus 0x02000000
+    [0,1] -> cpu@[3,7]
+    frequency: 4000000
