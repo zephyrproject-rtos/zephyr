@@ -6,10 +6,10 @@ External Bus and Bus Connected Peripherals Emulators
 Overview
 ========
 
-Zephyr supports a simple emulator framework to support testing of drivers
+Zephyr supports a simple emulator framework to support testing of external peripheral drivers
 without requiring real hardware.
 
-Emulators are used to emulate hardware devices, to support testing of
+Emulators are used to emulate external hardware devices, to support testing of
 various subsystems. For example, it is possible to write an emulator
 for an I2C compass such that it appears on the I2C bus and can be used
 just like a real hardware device.
@@ -141,8 +141,6 @@ Available Emulators
 
 Zephyr includes the following emulators:
 
-* EEPROM, which uses a file as the EEPROM contents
-
 * I2C emulator driver, allowing drivers to be connected to an emulator so that
   tests can be performed without access to the real hardware
 
@@ -150,10 +148,6 @@ Zephyr includes the following emulators:
 
 * eSPI emulator driver, which does the same for eSPI. The emulator is being
   developed to support more functionalities.
-
-* CAN loopback driver
-
-A GPIO emulator is planned but is not yet complete.
 
 Samples
 =======
@@ -164,13 +158,6 @@ Here are some examples present in Zephyr:
 
    .. zephyr-app-commands::
       :app: tests/drivers/sensor/accel/
-      :board: native_sim
-      :goals: build
-
-#. Simple test of the EEPROM emulator:
-
-   .. zephyr-app-commands::
-      :app: tests/drivers/eeprom/api
       :board: native_sim
       :goals: build
 
