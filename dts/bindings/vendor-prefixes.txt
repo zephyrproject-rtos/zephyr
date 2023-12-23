@@ -512,6 +512,7 @@ rda	Unisoc Communications, Inc.
 realtek	Realtek Semiconductor Corp.
 remarkable	reMarkable AS
 renesas	Renesas Electronics Corporation
+renode	Antmicro's open source simulation and virtual development framework
 rex	iMX6 Rex Project
 rervision	Shenzhen Rervision Technology Co., Ltd.
 revotics	Revolution Robotics, Inc. (Revotics)
