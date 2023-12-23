@@ -190,7 +190,7 @@ class Lcov(CoverageTool):
             branch_coverage = "lcov_branch_coverage=1"
             ignore_errors = []
 
-        cmd = ["lcov", "--gcov-tool", str(self.gcov_tool),
+        cmd = ["lcov", "--gcov-tool", self.gcov_tool,
                          "--capture", "--directory", outdir,
                          "--rc", branch_coverage,
                          "--output-file", coveragefile]
@@ -293,7 +293,7 @@ class Gcovr(CoverageTool):
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         cmd = ["gcovr", "-r", self.base_dir,
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
-               "--gcov-executable", str(self.gcov_tool),
+               "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
         cmd += excludes + mode_options + ["--json", "-o", coveragefile, outdir]
         cmd_str = " ".join(cmd)
@@ -333,6 +333,7 @@ class Gcovr(CoverageTool):
 
 def run_coverage(testplan, options):
     use_system_gcov = False
+    gcov_tool = None
 
     for plat in options.coverage_platform:
         _plat = testplan.get_platform(plat)
@@ -353,19 +354,21 @@ def run_coverage(testplan, options):
                 os.symlink(llvm_cov, gcov_lnk)
             except OSError:
                 shutil.copy(llvm_cov, gcov_lnk)
-            options.gcov_tool = gcov_lnk
+            gcov_tool = gcov_lnk
         elif use_system_gcov:
-            options.gcov_tool = "gcov"
+            gcov_tool = "gcov"
         elif os.path.exists(zephyr_sdk_gcov_tool):
-            options.gcov_tool = zephyr_sdk_gcov_tool
+            gcov_tool = zephyr_sdk_gcov_tool
         else:
             logger.error(f"Can't find a suitable gcov tool. Use --gcov-tool or set ZEPHYR_SDK_INSTALL_DIR.")
             sys.exit(1)
+    else:
+        gcov_tool = str(options.gcov_tool)
 
     logger.info("Generating coverage files...")
-    logger.info(f"Using gcov tool: {options.gcov_tool}")
+    logger.info(f"Using gcov tool: {gcov_tool}")
     coverage_tool = CoverageTool.factory(options.coverage_tool)
-    coverage_tool.gcov_tool = str(options.gcov_tool)
+    coverage_tool.gcov_tool = gcov_tool
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
     # Apply output format default
     if options.coverage_formats is not None:
