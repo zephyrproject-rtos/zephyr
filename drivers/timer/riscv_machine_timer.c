@@ -16,9 +16,12 @@
 
 #define DT_DRV_COMPAT riscv_machine_timer
 
-#define MTIME_REG    DT_INST_REG_ADDR_BY_NAME(0, mtime)
-#define MTIMECMP_REG DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
-#define TIMER_IRQN   DT_INST_IRQN(0)
+#define MTIME_REG          DT_INST_REG_ADDR_BY_NAME(0, mtime)
+#define MTIME_IS_CSR       DT_INST_PROP(0, mtime_is_csr)
+#define MTIME_IS_32BITS    DT_INST_PROP(0, mtime_is_32bits)
+#define MTIMECMP_REG       DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
+#define MTIMECMP_IS_32BITS DT_INST_PROP(0, mtimecmp_is_32bits)
+#define TIMER_IRQN         DT_INST_IRQN(0)
 
 #define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -67,7 +70,7 @@ static uintptr_t get_hart_mtimecmp(void)
 
 static void set_mtimecmp(uint64_t time)
 {
-#ifdef CONFIG_64BIT
+#if defined(CONFIG_64BIT) && !defined(MTIMECMP_IS_32BITS)
 	*(volatile uint64_t *)get_hart_mtimecmp() = time;
 #else
 	volatile uint32_t *r = (uint32_t *)get_hart_mtimecmp();
@@ -86,7 +89,9 @@ static void set_mtimecmp(uint64_t time)
 
 static uint64_t mtime(void)
 {
-#ifdef CONFIG_64BIT
+#if defined(MTIME_IS_CSR)
+	return csr_read(time);
+#elif defined(CONFIG_64BIT) && !defined(MTIME_IS_32BITS)
 	return *(volatile uint64_t *)MTIME_REG;
 #else
 	volatile uint32_t *r = (uint32_t *)MTIME_REG;
