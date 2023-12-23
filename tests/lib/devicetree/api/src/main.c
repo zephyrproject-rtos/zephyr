@@ -658,15 +658,15 @@ ZTEST(devicetree_api, test_irq)
 	zassert_equal(DT_IRQ(TEST_I2C_BUS, priority), 2, "");
 
 	/* DT_IRQN */
-	#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
-		zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "");
-		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)), 30, "");
-	#else
-		zassert_equal(DT_IRQN(TEST_I2C_BUS),
-			      ((6 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
-		zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)),
-			      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
-	#endif
+#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
+	zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "");
+	zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)), 30, "");
+#else
+	zassert_equal(DT_IRQN(TEST_I2C_BUS),
+			((6 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_IRQN(DT_INST(0, DT_DRV_COMPAT)),
+			((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+#endif
 
 	/* DT_IRQN_BY_IDX */
 #ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
