@@ -174,12 +174,17 @@ int pthread_key_delete(pthread_key_t key)
 int pthread_setspecific(pthread_key_t key, const void *value)
 {
 	pthread_key_obj *key_obj;
-	struct posix_thread *thread = to_posix_thread(pthread_self());
+	struct posix_thread *thread;
 	struct pthread_key_data *key_data;
 	pthread_thread_data *thread_spec_data;
 	k_spinlock_key_t key_key;
 	sys_snode_t *node_l;
 	int retval = 0;
+
+	thread = to_posix_thread(pthread_self());
+	if (thread == NULL) {
+		return EINVAL;
+	}
 
 	/* Traverse the list of keys set by the thread, looking for key.
 	 * If the key is already in the list, re-assign its value.
