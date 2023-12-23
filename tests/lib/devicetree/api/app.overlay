@@ -669,7 +669,7 @@
 		};
 
 		test-mtd@ffeeddcc {
-			reg = < 0x0 0x1000 >;
+			reg = < 0xffeeddcc 0x1000 >;
 			#address-cells = < 1 >;
 			#size-cells = < 1 >;
 
