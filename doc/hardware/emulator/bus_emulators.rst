@@ -27,12 +27,12 @@ Concept
 The diagram below shows application code / high-level tests at the top.
 This is the ultimate application we want to run.
 
-.. figure:: img/arch.png
+.. figure:: img/arch.svg
    :align: center
    :alt: Emulator architecture showing tests, emulators and drivers
 
 Below that are peripheral drivers, such as the AT24 EEPROM driver. We can test
-peripheral drivers using an emulation driver connected via a native_sim I2C
+peripheral drivers using an emulation driver connected via a emulated I2C
 controller/emulator which passes I2C traffic from the AT24 driver to the AT24
 simulator.
 
@@ -46,15 +46,7 @@ works, we should expect the application and peripheral drivers to work on the
 real hardware also.
 
 Using the above framework we can test an entire application (e.g. Embedded
-Controller) on native_sim using emulators for all non-chip drivers:
-
-.. figure:: img/app.png
-   :align: center
-   :alt: Example system, using emulators to implement a PC EC
-
-The 'real' code is shown in green. The Zephyr emulation-framework code is shown
-in yellow. The blue boxes are the extra code we have to write to emulate the
-peripherals.
+Controller) on native_sim using emulators for all non-chip drivers.
 
 With this approach we can:
 
@@ -89,7 +81,7 @@ same ``compat`` value from the real driver.
   /* From drivers/sensor/bm160/bm160.c */
   #define DT_DRV_COMPAT bosch_bmi160
 
-  /* From subsys/emul/emul_bmi160.c */
+  /* From drivers/sensor/bmi160/emul_bmi160.c */
   #define DT_DRV_COMPAT bosch_bmi160
 
 The ``EMUL_DT_DEFINE()`` function accepts two API types:
@@ -104,7 +96,7 @@ The diagram below demonstrates the logical organization of the ``bus_api`` and
 ``_backend_api`` using the BC1.2 charging detector driver as the model
 device-class.
 
-.. figure:: img/device_class_emulator.png
+.. figure:: img/device_class_emulator.svg
    :align: center
    :alt: Device class example, demonstrating BC1.2 charging detectors.
 
