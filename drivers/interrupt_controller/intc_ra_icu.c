@@ -99,7 +99,6 @@ int ra_icu_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	z_isr_install(irqn, routine, parameter);
 	z_arm_irq_priority_set(irqn, priority, flags);
 	ra_icu_irq_configure(event, intcfg);
-	irq_enable(irqn);
 
 	return irqn;
 }
