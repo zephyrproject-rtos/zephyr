@@ -38,4 +38,23 @@ extern int main(void);
 }
 #endif
 
+/*
+ * Below are truly Zephyr-specific types that should never collide with
+ * any application/library that wants zephyr/types.h.
+ */
+
+/* sparse defines __CHECKER__; see doc/develop/sca/sparse.rst */
+#ifdef __CHECKER__
+#define __bitwise	__attribute__((bitwise))
+#else
+#define __bitwise
+#endif
+
+typedef uint16_t __bitwise __le16;
+typedef uint16_t __bitwise __be16;
+typedef uint32_t __bitwise __le32;
+typedef uint32_t __bitwise __be32;
+typedef uint64_t __bitwise __le64;
+typedef uint64_t __bitwise __be64;
+
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_TYPES_H_ */
