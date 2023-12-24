@@ -68,6 +68,22 @@ config COMMON_LIBC_STRNLEN
 	help
 	  common implementation of strnlen().
 
+config COMMON_LIBC_STRERROR
+	bool "Common C library strerror"
+	default y
+	help
+	  common implementation of strerror().
+
+config COMMON_LIBC_STRING_ERROR_TABLE
+	bool "String error table for strerror()"
+	depends on COMMON_LIBC_STRERROR
+	help
+	  Select this option to ensure that strerror() produces strings corresponding to the
+	  descriptions in errno.h.
+
+	  The string error table can add ~2kiB to ROM. As such, it is disabled by default. In this
+	  case, strerror() is still present but it produces an empty string.
+
 config COMMON_LIBC_THRD
 	bool "C11 <threads.h> API support"
 	depends on DYNAMIC_THREAD

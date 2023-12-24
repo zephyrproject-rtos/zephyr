@@ -17,8 +17,8 @@
  * @brief System error numbers
  */
 
-#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
-#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
+#ifndef ZEPHYR_LIB_LIBC_COMMON_INCLUDE_ERRNO_H_
+#define ZEPHYR_LIB_LIBC_COMMON_INCLUDE_ERRNO_H_
 
 /**
  * @brief System error numbers
@@ -127,4 +127,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_ */
+#endif /* ZEPHYR_LIB_LIBC_COMMON_INCLUDE_ERRNO_H_ */

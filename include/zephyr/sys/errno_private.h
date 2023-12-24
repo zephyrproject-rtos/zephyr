@@ -20,6 +20,8 @@ extern "C" {
 #ifdef CONFIG_LIBC_ERRNO
 #include <errno.h>
 
+extern int __thread errno;
+
 static inline int *z_errno(void)
 {
 	return &errno;

@@ -16,20 +16,7 @@
  * const char *const sys_errlist[sys_nerr];
  * const uint8_t sys_errlen[sys_nerr];
  */
-#include "libc/minimal/strerror_table.h"
-
-/*
- * See https://pubs.opengroup.org/onlinepubs/9699919799/functions/strerror.html
- */
-char *strerror(int errnum)
-{
-	if (IS_ENABLED(CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE) &&
-	    errnum >= 0 && errnum < sys_nerr) {
-		return (char *)sys_errlist[errnum];
-	}
-
-	return (char *) "";
-}
+#include "libc/common/strerror_table.h"
 
 /*
  * See
@@ -41,7 +28,7 @@ int strerror_r(int errnum, char *strerrbuf, size_t buflen)
 	size_t msg_len;
 
 	if (errnum >= 0 && errnum < sys_nerr) {
-		if (IS_ENABLED(CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE)) {
+		if (IS_ENABLED(CONFIG_COMMON_LIBC_STRING_ERROR_TABLE)) {
 			msg = sys_errlist[errnum];
 			msg_len = sys_errlen[errnum];
 		} else {

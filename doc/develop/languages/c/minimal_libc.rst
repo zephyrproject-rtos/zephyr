@@ -40,28 +40,3 @@ Dynamic Memory Management
 The minimal libc uses the malloc api family implementation provided by the
 :ref:`common C library <c_library_common>`, which itself is built upon the
 :ref:`kernel memory heap API <heap_v2>`.
-
-Error numbers
-*************
-
-Error numbers are used throughout Zephyr APIs to signal error conditions as
-return values from functions. They are typically returned as the negative value
-of the integer literals defined in this section, and are defined in the
-:file:`errno.h` header file.
-
-A subset of the error numbers defined in the `POSIX errno.h specification`_ and
-other de-facto standard sources have been added to the minimal libc.
-
-A conscious effort is made in Zephyr to keep the values of the minimal libc
-error numbers consistent with the different implementations of the C standard
-libraries supported by Zephyr. The minimal libc :file:`errno.h` is checked
-against that of the :ref:`Newlib <c_library_newlib>` to ensure that the error
-numbers are kept aligned.
-
-Below is a list of the error number definitions. For the actual numeric values
-please refer to `errno.h`_.
-
-.. doxygengroup:: system_errno
-
-.. _`POSIX errno.h specification`: https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
-.. _`errno.h`: https://github.com/zephyrproject-rtos/zephyr/blob/main/lib/libc/minimal/include/errno.h

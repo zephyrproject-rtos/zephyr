@@ -21,7 +21,25 @@ def front_matter(sys_nerr):
 
 #include <zephyr/sys/util.h>
 
-#define sys_nerr {sys_nerr}'''
+
+#define sys_nerr {sys_nerr}
+
+#ifndef __sys_errlist_declare
+
+extern const char *const sys_errlist[{sys_nerr}];
+extern const uint8_t sys_errlen[{sys_nerr}];
+
+#else
+
+const char *const sys_errlist[{sys_nerr}];
+const uint8_t sys_errlen[{sys_nerr}];
+'''
+
+def end_matter():
+    return f'''
+
+#endif /* __sys_errlist_declare */
+'''
 
 
 def gen_strerror_table(input, output):
@@ -61,7 +79,7 @@ def gen_strerror_table(input, output):
 
             # Generate string table
             print(
-                f'static const char *const sys_errlist[sys_nerr] = {{', file=outf)
+                f'const char *const sys_errlist[sys_nerr] = {{', file=outf)
             print('[0] = "Success",', file=outf)
             for symbol in symbols:
                 print(f'[{symbol}] = "{msgs[symbol]}",', file=outf)
@@ -70,12 +88,14 @@ def gen_strerror_table(input, output):
 
             # Generate string lengths (includes trailing '\0')
             print(
-                f'static const uint8_t sys_errlen[sys_nerr] = {{', file=outf)
+                f'const uint8_t sys_errlen[sys_nerr] = {{', file=outf)
             print('[0] = 8,', file=outf)
             for symbol in symbols:
                 print(f'[{symbol}] = {len(msgs[symbol]) + 1},', file=outf)
 
             print('};', file=outf)
+
+            print(end_matter(), file=outf)
 
 
 def parse_args():

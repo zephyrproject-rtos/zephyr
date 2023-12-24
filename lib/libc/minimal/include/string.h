@@ -18,7 +18,9 @@ extern "C" {
 
 extern char  *strcpy(char *ZRESTRICT d, const char *ZRESTRICT s);
 extern char  *strerror(int errnum);
+#if _POSIX_C_SOURCE >= 200112L
 extern int   strerror_r(int errnum, char *strerrbuf, size_t buflen);
+#endif
 extern char  *strncpy(char *ZRESTRICT d, const char *ZRESTRICT s,
 		      size_t n);
 extern char  *strchr(const char *s, int c);

@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# CX: Extension to the ISO C standard
+# See IEEE 1003.1-2017
+
+config POSIX_CX_STRERROR_R
+	bool "Get error message string"
+	default y if POSIX_API
+	select COMMON_LIBC_STRERROR
+	help
+	  Enable the strerror_r() POSIX C extension.
+
+	  This function is a thread-safe version of ISO C strerror().

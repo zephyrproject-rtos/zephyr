@@ -9,14 +9,14 @@ tests:
     tags: minimal_libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
-      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=y
+      - CONFIG_COMMON_LIBC_STRING_ERROR_TABLE=y
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
   libraries.libc.strerror.minimal.no_strerror_table:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags: minimal_libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
-      - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n
+      - CONFIG_COMMON_LIBC_STRING_ERROR_TABLE=n
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
   libraries.libc.strerror.newlib:
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED
