@@ -269,6 +269,7 @@ If you relocate the SDK directory, you need to re-run the setup script.
    * ``$HOME/.local/opt``
    * ``$HOME/bin``
    * ``/opt``
+   * ``/usr``
    * ``/usr/local``
 
    The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.4`` directory and, when

@@ -113,6 +113,7 @@ Zephyr SDK installation
             * ``$HOME/.local/opt``
             * ``$HOME/bin``
             * ``/opt``
+            * ``/usr``
             * ``/usr/local``
 
             The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.4`` directory and, when
@@ -170,6 +171,7 @@ Zephyr SDK installation
             * ``$HOME/.local/opt``
             * ``$HOME/bin``
             * ``/opt``
+            * ``/usr``
             * ``/usr/local``
 
             The Zephyr SDK bundle archive contains the ``zephyr-sdk-0.16.4`` directory and, when
