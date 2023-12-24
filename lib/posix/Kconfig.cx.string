@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_CX_STRING_STRTOK_R
+	bool "Split string into tokens"
+	help
+	  Enable the strtok_r() POSIX C extension.
+
+	  This function is a thread-safe version of ISO C strtok().

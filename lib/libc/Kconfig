@@ -73,7 +73,7 @@ config MINIMAL_LIBC
 	depends on MINIMAL_LIBC_SUPPORTED
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
-	select COMMON_LIBC_STRNLEN
+	select POSIX_CX_STRING_STRTOK_R
 	help
 	  Build with minimal C library.
 
@@ -86,6 +86,7 @@ config PICOLIBC
 	imply COMMON_LIBC_MALLOC
 	depends on !NATIVE_APPLICATION
 	depends on PICOLIBC_SUPPORTED
+	select POSIX_CX_STRING_STRTOK_R
 	help
 	  Build with picolibc library. The picolibc library is built as
 	  a module if PICOLIBC_MODULE is set, otherwise picolibc is
@@ -97,6 +98,7 @@ config NEWLIB_LIBC
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
+	select POSIX_CX_STRING_STRTOK_R
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
@@ -105,6 +107,7 @@ config ARCMWDT_LIBC
 	bool "ARC MWDT C library"
 	depends on !NATIVE_APPLICATION
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	select POSIX_CX_STRING_STRTOK_R
 	help
 	  C library provided by ARC MWDT toolchain.
 
