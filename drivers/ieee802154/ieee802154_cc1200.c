@@ -813,7 +813,7 @@ static const struct cc1200_config cc1200_config = {
 
 static struct cc1200_context cc1200_context_data;
 
-static struct ieee802154_radio_api cc1200_radio_api = {
+static const struct ieee802154_radio_api cc1200_radio_api = {
 	.iface_api.init	= cc1200_iface_init,
 
 	.get_capabilities	= cc1200_get_capabilities,
