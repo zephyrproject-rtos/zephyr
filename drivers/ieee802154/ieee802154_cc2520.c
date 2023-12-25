@@ -1057,7 +1057,7 @@ static const struct cc2520_config cc2520_config = {
 
 static struct cc2520_context cc2520_context_data;
 
-static struct ieee802154_radio_api cc2520_radio_api = {
+static const struct ieee802154_radio_api cc2520_radio_api = {
 	.iface_api.init	= cc2520_iface_init,
 
 	.get_capabilities	= cc2520_get_capabilities,
