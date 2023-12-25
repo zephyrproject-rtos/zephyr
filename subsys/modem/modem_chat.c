@@ -60,7 +60,7 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 
 static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result)
 {
-	if (!chat || !chat->script) {
+	if ((chat == NULL) || (chat->script == NULL)) {
 		return;
 	}
 
@@ -76,6 +76,14 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 	/* Call back with result */
 	if (chat->script->callback != NULL) {
 		chat->script->callback(chat, result, chat->user_data);
+	}
+
+	/* Clear parse_match in case it is stored in the script being stopped */
+	if ((chat->parse_match != NULL) &&
+	    ((chat->parse_match_type == MODEM_CHAT_MATCHES_INDEX_ABORT) ||
+	     (chat->parse_match_type == MODEM_CHAT_MATCHES_INDEX_RESPONSE))) {
+		chat->parse_match = NULL;
+		chat->parse_match_len = 0;
 	}
 
 	/* Clear reference to script */
@@ -822,4 +830,8 @@ void modem_chat_release(struct modem_chat *chat)
 	chat->parse_match = NULL;
 	chat->parse_match_len = 0;
 	chat->parse_arg_len = 0;
+	chat->matches[MODEM_CHAT_MATCHES_INDEX_ABORT] = NULL;
+	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_ABORT] = 0;
+	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = NULL;
+	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
 }
