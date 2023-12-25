@@ -8,6 +8,7 @@ source "lib/posix/Kconfig.template.with_logging"
 # This is mainly for TIMER currently.
 config $(TYPE)
 	bool "POSIX $(type) support"
+	select POSIX_ZEPHYR_SOURCE
 	help
 	  For more info, see
 	  $(posix-url-base)/$(type-function).html

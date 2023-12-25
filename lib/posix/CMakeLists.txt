@@ -1,5 +1,48 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Requirement of IEEE 1003.1-2017 (and earllier versions)
+# Volume 1, Base Definitions, Issue 7
+# Chapter 2 Conformance
+# Section 2.2: Application Conformance
+#
+# For the C Programming Language, [a strictly conforming posix application] shall define
+# _POSIX_C_SOURCE to be 200809L before any header is included.
+#
+# Rather than requiring every Zephyr app to be strictly conformant and specify
+# _POSIX_C_SOURCE=<version>, and since any source file is free to specify a different (and
+# possibly conflicting) value for _POSIX_C_SOURCE, require Zephyr apps to be non-strictly
+# conformant when they select POSIX Kconfig options.
+#
+# To that end, leverage separate, indirect, (and unfortunately non-standard) conventional
+# application conformance options specific to individual C libraries.
+#
+# This is explicitly used to allow Zephyr's Kconfig environment to signal to the C library that
+# POSIX declarations should me made visible to the application at the default conformance level.
+if(CONFIG_POSIX_ZEPHYR_SOURCE)
+  if(CONFIG_MINIMAL_LIBC)
+    zephyr_compile_definitions(_ZEPHYR_SOURCE)
+    zephyr_compile_options(-include "${ZEPHYR_BASE}/lib/posix/zephyr_source.h")
+  elseif(CONFIG_NEWLIB_LIBC)
+    # Newlib does not recognize _ZEPHYR_SOURCE (https://bit.ly/41K5DHe)
+    zephyr_compile_definitions(_DEFAULT_SOURCE)
+  elseif(CONFIG_PICOLIBC)
+    # Picolibc recognizes _ZEPHYR_SOURCE, but unfortunately hard-codes it (along with
+    # _POSIX_C_SOURCE=200809 in multiple locations) for all Zephyr builds, even those that do not
+    # use POSIX APIs. Additionally, it does not account for _ZEPHYR_SOURCE when defining
+    # _DEFAULT_SOURCE.
+    # https://bit.ly/48cR80Y
+    # https://bit.ly/3GWSAs7
+    # https://bit.ly/41zmwnX
+    # https://bit.ly/3vlNi6Y
+    zephyr_compile_definitions(_ZEPHYR_SOURCE)
+    # Remove the definition below once the issues above are fixed.
+    zephyr_compile_definitions(_DEFAULT_SOURCE)
+  elseif(NOT CONFIG_NATIVE_LIBC)
+    # external libc - cannot make assumptions, but need _POSIX_C_SOURCE visibility
+    zephyr_compile_definitions(_POSIX_C_SOURCE=200809L)
+  endif()
+endif()
+
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_syscall_header(
@@ -24,14 +67,6 @@ if(CONFIG_POSIX_SIGNAL)
     -o ${STRSIGNAL_TABLE_H}
     DEPENDS ${ZEPHYR_BASE}/include/zephyr/posix/signal.h
   )
-endif()
-
-if(CONFIG_POSIX_API OR CONFIG_PTHREAD_IPC OR CONFIG_POSIX_CLOCK OR
-  CONFIG_POSIX_MQUEUE OR CONFIG_POSIX_FS OR CONFIG_EVENTFD OR CONFIG_GETOPT)
-  # This is a temporary workaround so that Newlib declares the appropriate
-  # types for us. POSIX features to be formalized as part of #51211
-  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-D_POSIX_THREADS>)
-  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-D_POSIX_THREADS>)
 endif()
 
 zephyr_library()

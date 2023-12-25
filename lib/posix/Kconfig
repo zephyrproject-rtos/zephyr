@@ -3,6 +3,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config POSIX_ZEPHYR_SOURCE
+	bool
+	help
+	  This option is used to signal from Zephyr's Kconfig to the C library, that _POSIX_C_SOURCE
+	  should be declared with _DEFAULT_SOURCE and that POSIX API declarations should be made
+	  visible to the application. Users may still define _POSIX_C_SOURCE or _XOPEN_SOURCE via
+	  CMake.
+
+	  This option is not user-configurable.
+
 config POSIX_MAX_FDS
 	int "Maximum number of open file descriptors"
 	default 16 if WIFI_NM_WPA_SUPPLICANT

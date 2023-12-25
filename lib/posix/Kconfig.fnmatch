@@ -5,6 +5,7 @@
 config FNMATCH
 	bool "Support for fnmatch"
 	default y if POSIX_API
+	select POSIX_ZEPHYR_SOURCE
 	help
 	  Match filenames using the the fnmatch function. For example, the pattern
 	  "*.c" matches the filename "hello.c".

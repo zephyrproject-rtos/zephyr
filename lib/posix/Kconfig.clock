@@ -6,6 +6,7 @@ config POSIX_CLOCK
 	bool "POSIX clock, timer, and sleep APIs"
 	default y if POSIX_API
 	depends on !(ARCH_POSIX && EXTERNAL_LIBC)
+	select POSIX_ZEPHYR_SOURCE
 	help
 	  This enables POSIX clock\_\*(), timer\_\*(), and \*sleep()
 	  functions.

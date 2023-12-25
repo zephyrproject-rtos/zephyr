@@ -5,6 +5,7 @@
 config POSIX_SIGNAL
 	bool "Support for POSIX signal APIs"
 	default y if POSIX_API
+	select POSIX_ZEPHYR_SOURCE
 	help
 	  Enable support for POSIX signal APIs.
 

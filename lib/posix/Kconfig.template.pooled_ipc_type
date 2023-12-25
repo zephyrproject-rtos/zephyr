@@ -9,6 +9,7 @@ source "lib/posix/Kconfig.template.with_logging"
 config $(TYPE)
 	bool "POSIX $(type) support"
 	depends on PTHREAD_IPC
+	select POSIX_ZEPHYR_SOURCE
 	default y
 	help
 	  Support for $(TYPE)
