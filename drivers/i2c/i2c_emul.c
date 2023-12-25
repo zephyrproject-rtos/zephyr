@@ -134,7 +134,7 @@ int i2c_emul_register(const struct device *dev, struct i2c_emul *emul)
 
 /* Device instantiation */
 
-static struct i2c_driver_api i2c_emul_api = {
+static const struct i2c_driver_api i2c_emul_api = {
 	.configure = i2c_emul_configure,
 	.get_config = i2c_emul_get_config,
 	.transfer = i2c_emul_transfer,

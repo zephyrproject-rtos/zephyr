@@ -152,7 +152,7 @@ static int i2c_ambiq_init(const struct device *dev)
 	return ret;
 }
 
-static struct i2c_driver_api i2c_ambiq_driver_api = {
+static const struct i2c_driver_api i2c_ambiq_driver_api = {
 	.configure = i2c_ambiq_configure,
 	.transfer = i2c_ambiq_transfer,
 };
