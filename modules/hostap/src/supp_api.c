@@ -7,6 +7,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/wifi_mgmt.h>
 
 #include "includes.h"
 #include "common.h"
@@ -490,6 +491,8 @@ out:
 static int wpas_disconnect_network(const struct device *dev)
 {
 	struct net_if *iface = net_if_lookup_by_dev(dev);
+	struct wpa_supplicant *wpa_s;
+	bool is_ap = false;
 	int ret = 0;
 
 	if (!iface) {
@@ -498,7 +501,18 @@ static int wpas_disconnect_network(const struct device *dev)
 		return ret;
 	}
 
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	if (wpa_s->current_ssid && wpa_s->current_ssid->mode == WPAS_MODE_AP) {
+		is_ap = true;
+	}
 
 	wpas_api_ctrl.dev = dev;
 	wpas_api_ctrl.requested_op = DISCONNECT;
@@ -518,8 +532,17 @@ out:
 	wpa_supp_restart_status_work();
 
 	ret = wait_for_disconnect_complete(dev);
-
-	wifi_mgmt_raise_disconnect_complete_event(iface, ret);
+#ifdef CONFIG_AP
+	if (is_ap) {
+		supplicant_send_wifi_mgmt_ap_status(wpa_s,
+			NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT,
+			ret == 0 ? WIFI_STATUS_AP_SUCCESS : WIFI_STATUS_AP_FAIL);
+	} else {
+#else
+	{
+#endif /* CONFIG_AP */
+		wifi_mgmt_raise_disconnect_complete_event(iface, ret);
+	}
 
 	return ret;
 }

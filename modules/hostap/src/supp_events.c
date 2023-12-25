@@ -192,9 +192,20 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	int status = wpas_to_wifi_mgmt_conn_status(status_code);
+	enum net_event_wifi_cmd event;
+
+	if (!wpa_s || !wpa_s->current_ssid) {
+		return -EINVAL;
+	}
+
+	if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
+		event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
+	} else {
+		event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
+	}
 
 	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
-					       NET_EVENT_WIFI_CMD_CONNECT_RESULT,
+					       event,
 					       (void *)&status,
 					       sizeof(int));
 }
@@ -205,10 +216,22 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 	int status = wpas_to_wifi_mgmt_diconn_status(reason_code);
 	enum net_event_wifi_cmd event;
 
+	if (!wpa_s || !wpa_s->current_ssid) {
+		return -EINVAL;
+	}
+
 	if (wpa_s->wpa_state >= WPA_COMPLETED) {
-		event = NET_EVENT_WIFI_CMD_DISCONNECT_RESULT;
+		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
+			event = NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT;
+		} else {
+			event = NET_EVENT_WIFI_CMD_DISCONNECT_RESULT;
+		}
 	} else {
-		event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
+		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
+			event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
+		} else {
+			event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
+		}
 	}
 
 	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
@@ -216,6 +239,21 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 					       (void *)&status,
 					       sizeof(int));
 }
+
+#ifdef CONFIG_AP
+int supplicant_send_wifi_mgmt_ap_status(void *ctx,
+					enum net_event_wifi_cmd event,
+					enum wifi_ap_status ap_status)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	int status = ap_status;
+
+	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+					       event,
+					       (void *)&status,
+					       sizeof(int));
+}
+#endif /* CONFIG_AP */
 
 int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd event,
 				    void *supplicant_status, size_t len)
@@ -240,6 +278,16 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 			iface,
 			*(int *)supplicant_status);
 		break;
+#ifdef CONFIG_AP
+	case NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT:
+		wifi_mgmt_raise_ap_enable_result_event(iface,
+						       *(int *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT:
+		wifi_mgmt_raise_ap_disable_result_event(iface,
+							*(int *)supplicant_status);
+		break;
+#endif /* CONFIG_AP */
 	case NET_EVENT_SUPPLICANT_CMD_INT_EVENT:
 		event_data.data = &data;
 		if (supplicant_process_status(&event_data, (char *)supplicant_status) > 0) {
