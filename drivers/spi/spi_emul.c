@@ -109,7 +109,7 @@ int spi_emul_register(const struct device *dev, struct spi_emul *emul)
 
 /* Device instantiation */
 
-static struct spi_driver_api spi_emul_api = {
+static const struct spi_driver_api spi_emul_api = {
 	.transceive = spi_emul_io,
 };
 

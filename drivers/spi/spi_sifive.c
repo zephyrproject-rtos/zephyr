@@ -272,7 +272,7 @@ static int spi_sifive_release(const struct device *dev,
 
 /* Device Instantiation */
 
-static struct spi_driver_api spi_sifive_api = {
+static const struct spi_driver_api spi_sifive_api = {
 	.transceive = spi_sifive_transceive,
 	.release = spi_sifive_release,
 };
