@@ -330,7 +330,7 @@ int spi_pico_pio_release(const struct device *dev, const struct spi_config *spi_
 	return 0;
 }
 
-static struct spi_driver_api spi_pico_pio_api = {
+static const struct spi_driver_api spi_pico_pio_api = {
 	.transceive = spi_pico_pio_transceive,
 	.release = spi_pico_pio_release,
 };
