@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Alexander Kozhinov
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &arduino_can;
+	};
+};
+
+&arduino_serial {
+	status = "okay";
+	pinctrl-names = "default";
+};
+
+&arduino_can {
+	status = "okay";
+	pinctrl-names = "default";
+};

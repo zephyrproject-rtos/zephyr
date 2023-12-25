@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Alexander Kozhinov
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+	status = "disabled";
+};
+
+&arduino_serial {
+	status = "disabled";
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+};
+
+&arduino_can {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+};
