@@ -121,3 +121,19 @@
 &rng {
 	status = "okay";
 };
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <2000000>;
+	status = "disabled";
+};
+
+&fdcan2 {
+	pinctrl-0 = <&fdcan2_rx_pb12 &fdcan2_tx_pb13>;
+	pinctrl-names = "default";
+	bus-speed = <125000>;
+	bus-speed-data = <2000000>;
+	status = "disabled";
+};

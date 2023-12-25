@@ -16,5 +16,6 @@ supported:
   - counter
   - i2c
   - pwm
+  - can
   - netif:eth
 vendor: st
