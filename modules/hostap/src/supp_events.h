@@ -52,6 +52,8 @@ int supplicant_send_wifi_mgmt_event(const char *ifname,
 int supplicant_generate_state_event(const char *ifname,
 				    enum net_event_supplicant_cmd event,
 				    int status);
+int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code);
+int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code);
 
 #define REASON_CODE_LEN 18
 #define NM_WIFI_EVENT_STR_LEN 64
