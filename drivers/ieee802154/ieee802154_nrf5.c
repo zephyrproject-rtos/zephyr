@@ -1199,7 +1199,7 @@ static const struct nrf5_802154_config nrf5_radio_cfg = {
 	.irq_config_func = nrf5_irq_config,
 };
 
-static struct ieee802154_radio_api nrf5_radio_api = {
+static const struct ieee802154_radio_api nrf5_radio_api = {
 	.iface_api.init = nrf5_iface_init,
 
 	.get_capabilities = nrf5_get_capabilities,
