@@ -38,8 +38,8 @@ Benefits of POSIX support in Zephyr include:
 POSIX Subprofiles
 =================
 
-While Zephyr supports running multiple `threads <threads_v2>`_ (possibly in an `SMP <smp_arch>`_
-configuration), as well as `Virtual Memory and MMUs <memory_management_api>`_, Zephyr code and data
+While Zephyr supports running multiple `threads <threads_v2>` (possibly in an `SMP <smp_arch>`
+configuration), as well as `Virtual Memory and MMUs <memory_management_api>`, Zephyr code and data
 normally share a common address space. The Zephyr kernel executable code and the application
 executable code are typically compiled into the same binary artifact. From that perspective, Zephyr
 apps can be seen as running in the context of a single process.
