@@ -26,6 +26,28 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend>;
+		};
+
+		power-states {
+			/* Sleep Mode */
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				/* The value not mentioned in UG/DS, set it as 1us */
+				min-residency-us = <1>;
+				/* Typical value is 0.847us as per of Datasheet */
+				exit-latency-us = <1>;
+			};
+			/* Deep-sleep Mode */
+			suspend: suspend {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/* The value not mentioned in UG/DS, set it as 35us */
+				min-residency-us = <35>;
+				/* Typical value is 12.4us as per of Datasheet */
+				exit-latency-us = <25>;
+			};
 		};
 	};
 
