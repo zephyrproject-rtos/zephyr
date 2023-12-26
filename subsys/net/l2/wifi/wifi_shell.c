@@ -36,7 +36,9 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_TWT                |\
 				NET_EVENT_WIFI_RAW_SCAN_RESULT    |\
 				NET_EVENT_WIFI_AP_ENABLE_RESULT   |\
-				NET_EVENT_WIFI_AP_DISABLE_RESULT)
+				NET_EVENT_WIFI_AP_DISABLE_RESULT  |\
+				NET_EVENT_WIFI_AP_STA_CONNECTED   |\
+				NET_EVENT_WIFI_AP_STA_DISCONNECTED)
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 #define WIFI_SHELL_MGMT_EVENTS (WIFI_SHELL_MGMT_EVENTS_COMMON)
@@ -329,6 +331,28 @@ static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
 	}
 }
 
+static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_ap_sta_info *sta_info =
+		(const struct wifi_ap_sta_info *)cb->info;
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	print(context.sh, SHELL_NORMAL, "Station connected: %s\n",
+	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
+				     mac_string_buf, sizeof(mac_string_buf)));
+}
+
+static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_ap_sta_info *sta_info =
+		(const struct wifi_ap_sta_info *)cb->info;
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	print(context.sh, SHELL_NORMAL, "Station disconnected: %s\n",
+	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
+				     mac_string_buf, sizeof(mac_string_buf)));
+}
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint32_t mgmt_event, struct net_if *iface)
 {
@@ -358,6 +382,12 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		break;
 	case NET_EVENT_WIFI_AP_DISABLE_RESULT:
 		handle_wifi_ap_disable_result(cb);
+		break;
+	case NET_EVENT_WIFI_AP_STA_CONNECTED:
+		handle_wifi_ap_sta_connected(cb);
+		break;
+	case NET_EVENT_WIFI_AP_STA_DISCONNECTED:
+		handle_wifi_ap_sta_disconnected(cb);
 		break;
 	default:
 		break;
