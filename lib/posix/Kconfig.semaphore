@@ -8,3 +8,11 @@ config SEM_VALUE_MAX
 	range 1 32767
 	help
 	  Maximum semaphore count in POSIX compliant Application.
+
+config SEM_NAMELEN_MAX
+	int "Maximum name length"
+	default 16
+	range 2 255
+	help
+	  Maximum length of name for a named semaphore.
+	  The max value of 255 corresponds to {NAME_MAX}.
