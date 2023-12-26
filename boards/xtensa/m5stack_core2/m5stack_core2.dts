@@ -46,6 +46,7 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&ft5336_touch>;
+		swap-xy;
 	};
 };
 
