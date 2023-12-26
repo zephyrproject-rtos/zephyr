@@ -11,6 +11,12 @@
 #include "common/ieee802_11_defs.h"
 #include "wpa_supplicant_i.h"
 
+#ifdef CONFIG_AP
+#include "ap/sta_info.h"
+#include "ap/ieee802_11.h"
+#include "ap/hostapd.h"
+#endif /* CONFIG_AP */
+
 #include <zephyr/net/wifi_mgmt.h>
 
 /* Re-defines MAC2STR with address of the element */
@@ -241,6 +247,30 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 }
 
 #ifdef CONFIG_AP
+static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struct sta_info *sta)
+{
+	if (sta->flags & WLAN_STA_HE) {
+		return WIFI_6;
+	} else if (sta->flags & WLAN_STA_VHT) {
+		return WIFI_5;
+	} else if (sta->flags & WLAN_STA_HT) {
+		return WIFI_4;
+	} else if (sta->flags & WLAN_STA_NONERP) {
+		return WIFI_1;
+	} else if (wpa_s->assoc_freq > 4000) {
+		return WIFI_2;
+	} else if (wpa_s->assoc_freq > 2000) {
+		return WIFI_3;
+	} else {
+		return WIFI_LINK_MODE_UNKNOWN;
+	}
+}
+
+static bool is_twt_capable(struct wpa_supplicant *wpa_s, struct sta_info *sta)
+{
+	return hostapd_get_he_twt_responder(wpa_s->ap_iface->bss[0], IEEE80211_MODE_AP);
+}
+
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum net_event_wifi_cmd event,
 					enum wifi_ap_status ap_status)
@@ -252,6 +282,31 @@ int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					       event,
 					       (void *)&status,
 					       sizeof(int));
+}
+
+int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
+					   enum net_event_wifi_cmd event,
+					   void *data)
+{
+	struct sta_info *sta = data;
+	struct wpa_supplicant *wpa_s = ctx;
+	struct wifi_ap_sta_info sta_info = { 0 };
+
+	if (!wpa_s || !sta) {
+		return -EINVAL;
+	}
+
+	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
+
+	if (event == NET_EVENT_WIFI_CMD_AP_STA_CONNECTED) {
+		sta_info.link_mode = get_sta_link_mode(wpa_s, sta);
+		sta_info.twt_capable = is_twt_capable(wpa_s, sta);
+	}
+
+	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+					       event,
+					       (void *)&sta_info,
+					       sizeof(sta_info));
 }
 #endif /* CONFIG_AP */
 
@@ -286,6 +341,14 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 	case NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT:
 		wifi_mgmt_raise_ap_disable_result_event(iface,
 							*(int *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_AP_STA_CONNECTED:
+		wifi_mgmt_raise_ap_sta_connected_event(iface,
+				(struct wifi_ap_sta_info *)supplicant_status);
+		break;
+	case NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED:
+		wifi_mgmt_raise_ap_sta_disconnected_event(iface,
+				(struct wifi_ap_sta_info *)supplicant_status);
 		break;
 #endif /* CONFIG_AP */
 	case NET_EVENT_SUPPLICANT_CMD_INT_EVENT:
