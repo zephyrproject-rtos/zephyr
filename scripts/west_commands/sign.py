@@ -444,6 +444,16 @@ class RimageSigner(Signer):
         # unfortunately don't seem to make any difference here and they're
         # gcc-specific)
         preproc_cmd += ['-P']
+
+        # "REM" escapes _leading_ '#' characters from cpp and allows
+        # such comments to be preserved in generated/*.toml files:
+        #
+        #      REM # my comment...
+        #
+        # Note _trailing_ '#' characters and comments are ignored by cpp
+        # and don't need any REM trick.
+        preproc_cmd += ['-DREM=']
+
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
         preproc_cmd += ['-imacros',
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'autoconf.h')]
