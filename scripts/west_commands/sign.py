@@ -438,7 +438,12 @@ class RimageSigner(Signer):
         'Runs the C pre-processor on config_dir/toml_basename.h'
 
         compiler_path = self.cmake_cache.get("CMAKE_C_COMPILER")
-        preproc_cmd = [compiler_path, '-P', '-E', str(config_dir / (toml_basename + '.h'))]
+        preproc_cmd = [compiler_path, '-E', str(config_dir / (toml_basename + '.h'))]
+        # -P removes line markers to keep the .toml output reproducible.  To
+        # trace #includes, temporarily comment out '-P' (-f*-prefix-map
+        # unfortunately don't seem to make any difference here and they're
+        # gcc-specific)
+        preproc_cmd += ['-P']
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
         preproc_cmd += ['-imacros',
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'autoconf.h')]
