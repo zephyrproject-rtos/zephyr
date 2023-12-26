@@ -4,16 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
-#include "esp32c3_luatos_core.dtsi"
-
 / {
 	chosen {
-		zephyr,sram = &sram0;
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
-		zephyr,flash = &flash0;
 	};
 };
 

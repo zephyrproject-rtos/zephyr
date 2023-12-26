@@ -1,4 +1,4 @@
-identifier: esp32c3_luatos_core_usb
+identifier: esp32c3_luatos_core@usb
 name: ESP32C3 LuatOS Core USB
 type: mcu
 arch: riscv32
