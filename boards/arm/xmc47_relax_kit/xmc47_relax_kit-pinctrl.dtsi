@@ -125,3 +125,14 @@
 	drive-strength = "strong-medium-edge";
 	hwctrl = "disabled";
 };
+
+&can_tx_p1_12_node1 {
+	drive-strength = "strong-soft-edge";
+	drive-push-pull;
+	hwctrl = "disabled";
+};
+
+&can_rx_p1_13_node1 {
+	drive-strength = "strong-soft-edge";
+	hwctrl = "disabled";
+};
