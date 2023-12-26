@@ -573,4 +573,45 @@
 	/omit-if-no-ref/ eth_p6_6_clk_tx: eth_p6_6_clk_tx {
 		pinmux = <XMC4XXX_PINMUX_SET(6, 6, 0)>;
 	};
+
+	/omit-if-no-ref/ can_tx_p0_0_node0: can_tx_p0_0_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(0, 0, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_4_node0: can_tx_p1_4_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_5_node1: can_tx_p1_5_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 1)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_9_node2: can_tx_p1_9_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 9, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p1_12_node1: can_tx_p1_12_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 12, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p2_7_node1: can_tx_p2_7_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 7, 2)>;
+	};
+	/omit-if-no-ref/ can_tx_p3_2_node0: can_tx_p3_2_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(3, 2, 2)>;
+	};
+
+	/omit-if-no-ref/ can_rx_p1_5_node0: can_rx_p1_5_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 5, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p14_3_node0: can_rx_p14_3_node0 {
+		pinmux = <XMC4XXX_PINMUX_SET(14, 3, 0)>;	/* CAN input src = RXDB */
+	};
+	/omit-if-no-ref/ can_rx_p2_6_node1: can_rx_p2_6_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(2, 6, 0)>;	/* CAN input src = RXDA */
+	};
+	/omit-if-no-ref/ can_rx_p1_13_node1: can_rx_p1_13_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 13, 0)>;	/* CAN input src = RXDC */
+	};
+	/omit-if-no-ref/ can_rx_p1_4_node1: can_rx_p1_4_node1 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 4, 0)>;	/* CAN input src = RXDD */
+	};
+	/omit-if-no-ref/ can_rx_p1_8_node2: can_rx_p1_8_node2 {
+		pinmux = <XMC4XXX_PINMUX_SET(1, 8, 0)>;	/* CAN input src = RXDA */
+	};
 };
