@@ -2730,6 +2730,8 @@ POSIX API layer:
   status: maintained
   maintainers:
     - cfriedt
+  collaborators:
+    - ycsin
   files:
     - include/zephyr/posix/
     - lib/posix/
