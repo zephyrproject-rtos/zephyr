@@ -115,6 +115,8 @@ features:
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
+| FDCAN     | on-chip    | CAN-FD Control Area Network         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
