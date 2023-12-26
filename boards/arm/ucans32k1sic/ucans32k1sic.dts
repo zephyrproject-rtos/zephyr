@@ -21,6 +21,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,uart-pipe = &lpuart1;
+		zephyr,canbus = &flexcan0;
 	};
 
 	aliases {
@@ -80,6 +81,20 @@
 			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1463", "nxp,tja1443", "nxp,tja1153", "can-transceiver-gpio";
+		enable-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1463", "nxp,tja1443", "nxp,tja1153", "can-transceiver-gpio";
+		enable-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
 	};
 };
 
@@ -152,5 +167,27 @@
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
 	#pwm-cells = <3>;
+	status = "okay";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
+	status = "okay";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
+	bus-speed = <125000>;
+	sample-point = <875>;
+	bus-speed-data = <1000000>;
+	sample-point-data = <875>;
 	status = "okay";
 };
