@@ -60,4 +60,9 @@ config HAS_XMCLIB_ETH
 	help
 	  Enable XMCLIB Ethernet MAC
 
+config HAS_XMCLIB_CAN
+	bool
+	help
+	  Enable XMCLIB CAN
+
 endif # HAS_XMCLIB

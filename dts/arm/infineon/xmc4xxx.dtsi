@@ -253,6 +253,36 @@
 			      #size-cells = <0>;
 			};
 		};
+
+		can: can@48014000 {
+			compatible = "infineon,xmc4xxx-can";
+			reg = <0x48014000 0x4000>;
+			clock-prescaler = <1>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			can_node0: can_node0@48014200 {
+				      compatible = "infineon,xmc4xxx-can-node";
+				      reg = <0x48014200 0x100>;
+				      interrupts = <76 1>;
+				      status = "disabled";
+			};
+
+			can_node1: can_node1@48014300 {
+				      compatible = "infineon,xmc4xxx-can-node";
+				      reg = <0x48014300 0x100>;
+				      interrupts = <77 1>;
+				      status = "disabled";
+			};
+
+			can_node2: can_node2@48014400 {
+				      compatible = "infineon,xmc4xxx-can-node";
+				      reg = <0x48014400 0x100>;
+				      interrupts = <78 1>;
+				      status = "disabled";
+			};
+		};
 	};
 };
 
