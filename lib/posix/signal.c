@@ -100,3 +100,21 @@ char *strsignal(int signum)
 
 	return buf;
 }
+
+int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
+{
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return pthread_sigmask(how, set, oset);
+	}
+
+	/*
+	 * Until Zephyr supports processes and specifically querying the number of active threads in
+	 * a process For more information, see
+	 * https://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_sigmask.html
+	 */
+	__ASSERT(false, "In multi-threaded environments, please use pthread_sigmask() instead of "
+			"%s()", __func__);
+
+	errno = ENOSYS;
+	return -1;
+}
