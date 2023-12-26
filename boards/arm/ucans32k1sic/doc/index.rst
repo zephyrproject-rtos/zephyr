@@ -50,6 +50,7 @@ LPUART        on-chip     serial
 LPI2C         on-chip     i2c
 LPSPI         on-chip     spi
 FTM           on-chip     pwm
+FlexCAN       on-chip     can
 ============  ==========  ================================
 
 The default configuration can be found in the Kconfig file
