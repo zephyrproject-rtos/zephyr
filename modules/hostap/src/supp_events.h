@@ -59,6 +59,9 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code);
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum net_event_wifi_cmd event,
 					enum wifi_ap_status);
+int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
+					   enum net_event_wifi_cmd event,
+					   void *data);
 #endif /* CONFIG_AP */
 
 #define REASON_CODE_LEN 18
