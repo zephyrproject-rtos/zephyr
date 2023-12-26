@@ -1,0 +1,43 @@
+# Infineon XMC4xxx CAN configuration options
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_XMC4XXX
+	bool "Infineon XMC4xxx CAN Driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_CAN_NODE_ENABLED
+	help
+	  Enable Infineon XMC4xxx CAN Driver
+
+if CAN_XMC4XXX
+
+config CAN_XMC4XXX_MAX_TX_QUEUE
+	int "Maximum number of queued messages"
+	default 8
+	range 1 32
+	help
+	  Defines the array size of transmit callback pointers and semaphores,
+	  as well as the number of messages in the TX queue.
+
+config CAN_XMC4XXX_RX_FIFO_ITEMS
+	int "Number of CAN messages allocated to each RX FIFO"
+	default 8
+	range 1 32
+	help
+	  Defines the number of CAN messages in each RX FIFO. A separate RX FIFO
+	  is created for each RX filter.
+
+config CAN_XMC4XXX_INTERNAL_BUS_MODE
+	bool "Internal bus mode"
+	help
+	  Connects all XMC4XXX CAN devices to an internal bus. Enables
+	  message exchange between MCU CAN devices without any external connectors.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 4
+	range 1 32
+	help
+	  Maximum number of filters supported by the can_add_rx_callback() API call.
+
+endif # CAN_XMC4XXX
