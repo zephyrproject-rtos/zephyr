@@ -130,9 +130,9 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 	 * This differs from other posix object allocation strategies because they use
 	 * a bitarray to indicate whether an object has been allocated.
 	 */
-	actually_initialized =
-		!(t->qid == POSIX_THREAD_READY_Q ||
-		  (t->qid == POSIX_THREAD_DONE_Q && t->detachstate == PTHREAD_CREATE_DETACHED));
+	actually_initialized = !(
+		t->qid == POSIX_THREAD_READY_Q ||
+		(t->qid == POSIX_THREAD_DONE_Q && t->attr.detachstate == PTHREAD_CREATE_DETACHED));
 	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (!actually_initialized) {
@@ -253,9 +253,43 @@ int posix_to_zephyr_priority(int priority, int policy)
 	return POSIX_TO_ZEPHYR_PRIORITY(priority, policy);
 }
 
+static bool __attr_is_runnable(const struct posix_thread_attr *attr)
+{
+	size_t stacksize;
+
+	if (attr == NULL || attr->stack == NULL) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return false;
+	}
+
+	stacksize = __get_attr_stacksize(attr);
+	if (stacksize < PTHREAD_STACK_MIN) {
+		LOG_DBG("attr %p has stacksize %zu is smaller than PTHREAD_STACK_MIN (%zu)", attr,
+			stacksize, (size_t)PTHREAD_STACK_MIN);
+		return false;
+	}
+
+	/* require a valid scheduler policy */
+	if (!valid_posix_policy(attr->schedpolicy)) {
+		LOG_ERR("Invalid scheduler policy %d", attr->schedpolicy);
+		return false;
+	}
+
+	return true;
+}
+
 static bool __attr_is_initialized(const struct posix_thread_attr *attr)
 {
-	return attr != NULL && attr->initialized;
+	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
+		return __attr_is_runnable(attr);
+	}
+
+	if (attr == NULL || !attr->initialized) {
+		LOG_DBG("attr %p is not initialized", attr);
+		return false;
+	}
+
+	return true;
 }
 
 /**
@@ -284,6 +318,7 @@ int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *
  */
 int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksize)
 {
+	int ret;
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if (stackaddr == NULL) {
@@ -291,45 +326,27 @@ int pthread_attr_setstack(pthread_attr_t *_attr, void *stackaddr, size_t stacksi
 		return EACCES;
 	}
 
-	if (!__attr_is_initialized(attr) || stacksize < PTHREAD_STACK_MIN ||
+	if (!__attr_is_initialized(attr) || stacksize == 0 || stacksize < PTHREAD_STACK_MIN ||
 	    stacksize > PTHREAD_STACK_MAX) {
 		LOG_ERR("Invalid stacksize %zu", stacksize);
 		return EINVAL;
 	}
 
+	if (attr->stack != NULL) {
+		ret = k_thread_stack_free(attr->stack);
+		if (ret == 0) {
+			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
+				__get_attr_stacksize(attr), attr->stack);
+		}
+	}
+
 	attr->stack = stackaddr;
 	__set_attr_stacksize(attr, stacksize);
+
+	LOG_DBG("Assigned thread stack %zu@%p to attr %p", __get_attr_stacksize(attr), attr->stack,
+		_attr);
+
 	return 0;
-}
-
-static bool pthread_attr_is_valid(const struct posix_thread_attr *attr)
-{
-	size_t stacksize;
-
-	/* auto-alloc thread stack */
-	if (attr == NULL) {
-		return true;
-	}
-
-	if (!__attr_is_initialized(attr) || attr->stack == NULL) {
-		LOG_DBG("attr %p is not initialized", attr);
-		return false;
-	}
-
-	stacksize = __get_attr_stacksize(attr);
-	if (stacksize < PTHREAD_STACK_MIN) {
-		LOG_DBG("attr %p has stacksize %zu is smaller than PTHREAD_STACK_MIN (%zu)", attr,
-			stacksize, (size_t)PTHREAD_STACK_MIN);
-		return false;
-	}
-
-	/* require a valid scheduler policy */
-	if (!valid_posix_policy(attr->schedpolicy)) {
-		LOG_ERR("Invalid scheduler policy %d", attr->schedpolicy);
-		return false;
-	}
-
-	return true;
 }
 
 static void posix_thread_recycle_work_handler(struct k_work *work)
@@ -400,7 +417,7 @@ static void posix_thread_recycle(void)
 
 	key = k_spin_lock(&pthread_pool_lock);
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&done_q, t, safe_t, q_node) {
-		if (t->detachstate == PTHREAD_CREATE_JOINABLE) {
+		if (t->attr.detachstate == PTHREAD_CREATE_JOINABLE) {
 			/* thread has not been joined yet */
 			continue;
 		}
@@ -416,19 +433,19 @@ static void posix_thread_recycle(void)
 
 	LOG_DBG("Recycling %zu threads", sys_dlist_len(&recyclables));
 
-	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		SYS_DLIST_FOR_EACH_CONTAINER(&recyclables, t, q_node) {
-			if (t->dynamic_stack != NULL) {
-				LOG_DBG("Freeing thread stack %p", t->dynamic_stack);
-				(void)k_thread_stack_free(t->dynamic_stack);
-				t->dynamic_stack = NULL;
-			}
+	SYS_DLIST_FOR_EACH_CONTAINER(&recyclables, t, q_node) {
+		if (t->attr.caller_destroys) {
+			t->attr = (struct posix_thread_attr){0};
+		} else {
+			(void)pthread_attr_destroy((pthread_attr_t *)&t->attr);
 		}
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
 	while (!sys_dlist_is_empty(&recyclables)) {
-		sys_dlist_append(&ready_q, sys_dlist_get(&recyclables));
+		t = CONTAINER_OF(sys_dlist_get(&recyclables), struct posix_thread, q_node);
+		t->qid = POSIX_THREAD_READY_Q;
+		sys_dlist_append(&ready_q, &t->q_node);
 	}
 	k_spin_unlock(&pthread_pool_lock, key);
 }
@@ -445,50 +462,40 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		   void *arg)
 {
 	int err;
-	k_spinlock_key_t key;
 	pthread_barrier_t barrier;
 	struct posix_thread *t = NULL;
-	struct posix_thread_attr attr_storage;
-	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if (!pthread_attr_is_valid(attr)) {
+	if (!(_attr == NULL || __attr_is_runnable((struct posix_thread_attr *)_attr))) {
 		return EINVAL;
-	}
-
-	if (attr == NULL) {
-		attr = &attr_storage;
-		(void)pthread_attr_init((pthread_attr_t *)attr);
-		BUILD_ASSERT(DYNAMIC_STACK_SIZE <= PTHREAD_STACK_MAX);
-		__set_attr_stacksize(attr, DYNAMIC_STACK_SIZE);
-		attr->stack = k_thread_stack_alloc(__get_attr_stacksize(attr) + attr->guardsize,
-						   k_is_user_context() ? K_USER : 0);
-		if (attr->stack == NULL) {
-			LOG_ERR("Unable to allocate stack of size %u", DYNAMIC_STACK_SIZE);
-			return EAGAIN;
-		}
-		LOG_DBG("Allocated thread stack %p", attr->stack);
-	} else {
-		__ASSERT_NO_MSG(attr != &attr_storage);
 	}
 
 	/* reclaim resources greedily */
 	posix_thread_recycle();
 
-	key = k_spin_lock(&pthread_pool_lock);
-	if (!sys_dlist_is_empty(&ready_q)) {
-		t = CONTAINER_OF(sys_dlist_get(&ready_q), struct posix_thread, q_node);
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (!sys_dlist_is_empty(&ready_q)) {
+			t = CONTAINER_OF(sys_dlist_get(&ready_q), struct posix_thread, q_node);
 
-		/* initialize thread state */
-		sys_dlist_append(&run_q, &t->q_node);
-		t->qid = POSIX_THREAD_RUN_Q;
-		t->detachstate = attr->detachstate;
-		t->cancel_state = attr->cancelstate;
-		t->cancel_pending = false;
-		sys_slist_init(&t->key_list);
-		sys_slist_init(&t->cleanup_list);
-		t->dynamic_stack = _attr == NULL ? attr->stack : NULL;
+			/* initialize thread state */
+			sys_dlist_append(&run_q, &t->q_node);
+			t->qid = POSIX_THREAD_RUN_Q;
+			sys_slist_init(&t->key_list);
+			sys_slist_init(&t->cleanup_list);
+		}
 	}
-	k_spin_unlock(&pthread_pool_lock, key);
+
+	if (t != NULL && IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
+		err = pthread_barrier_init(&barrier, NULL, 2);
+		if (err != 0) {
+			/* cannot allocate barrier. move thread back to ready_q */
+			K_SPINLOCK(&pthread_pool_lock) {
+				sys_dlist_remove(&t->q_node);
+				sys_dlist_append(&ready_q, &t->q_node);
+				t->qid = POSIX_THREAD_READY_Q;
+			}
+			t = NULL;
+		}
+	}
 
 	if (t == NULL) {
 		/* no threads are ready */
@@ -496,29 +503,34 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 		return EAGAIN;
 	}
 
-	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
-		err = pthread_barrier_init(&barrier, NULL, 2);
-		if (err != 0) {
-			if (t->dynamic_stack != NULL) {
-				LOG_DBG("freeing thread stack at %p", attr->stack);
-				(void)k_thread_stack_free(attr->stack);
-			}
-
-			/* cannot allocate barrier. move thread back to ready_q */
-			key = k_spin_lock(&pthread_pool_lock);
-			sys_dlist_remove(&t->q_node);
-			sys_dlist_append(&ready_q, &t->q_node);
-			t->qid = POSIX_THREAD_READY_Q;
-			k_spin_unlock(&pthread_pool_lock, key);
-			t = NULL;
+	if (_attr == NULL) {
+		err = pthread_attr_init((pthread_attr_t *)&t->attr);
+		if (err == 0 && !__attr_is_runnable(&t->attr)) {
+			(void)pthread_attr_destroy((pthread_attr_t *)&t->attr);
+			err = EINVAL;
 		}
+		if (err != 0) {
+			/* cannot allocate pthread attributes (e.g. stack) */
+			K_SPINLOCK(&pthread_pool_lock) {
+				sys_dlist_remove(&t->q_node);
+				sys_dlist_append(&ready_q, &t->q_node);
+				t->qid = POSIX_THREAD_READY_Q;
+			}
+			return err;
+		}
+		/* caller not responsible for destroying attr */
+		t->attr.caller_destroys = false;
+	} else {
+		/* copy user-provided attr into thread, caller must destroy attr at a later time */
+		t->attr = *(struct posix_thread_attr *)_attr;
 	}
 
 	/* spawn the thread */
-	k_thread_create(&t->thread, attr->stack, __get_attr_stacksize(attr), zephyr_thread_wrapper,
-			(void *)arg, threadroutine,
-			IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier) : NULL,
-			posix_to_zephyr_priority(attr->priority, attr->schedpolicy), 0, K_NO_WAIT);
+	k_thread_create(
+		&t->thread, t->attr.stack, __get_attr_stacksize(&t->attr) + t->attr.guardsize,
+		zephyr_thread_wrapper, (void *)arg, threadroutine,
+		IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER) ? UINT_TO_POINTER(barrier) : NULL,
+		posix_to_zephyr_priority(t->attr.priority, t->attr.schedpolicy), 0, K_NO_WAIT);
 
 	if (IS_ENABLED(CONFIG_PTHREAD_CREATE_BARRIER)) {
 		/* wait for the spawned thread to cross our barrier */
@@ -571,8 +583,8 @@ int pthread_setconcurrency(int new_level)
  */
 int pthread_setcancelstate(int state, int *oldstate)
 {
+	bool cancel_type;
 	bool cancel_pending;
-	k_spinlock_key_t key;
 	struct posix_thread *t;
 
 	if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
@@ -585,15 +597,16 @@ int pthread_setcancelstate(int state, int *oldstate)
 		return EINVAL;
 	}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	if (oldstate != NULL) {
-		*oldstate = t->cancel_state;
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (oldstate != NULL) {
+			*oldstate = t->attr.cancelstate;
+		}
+		cancel_pending = t->attr.cancelpending;
+		cancel_type = t->attr.canceltype;
 	}
-	t->cancel_state = state;
-	cancel_pending = t->cancel_pending;
-	k_spin_unlock(&pthread_pool_lock, key);
 
-	if (state == PTHREAD_CANCEL_ENABLE && cancel_pending) {
+	if (state == PTHREAD_CANCEL_ENABLE && cancel_type == PTHREAD_CANCEL_ASYNCHRONOUS &&
+	    cancel_pending) {
 		posix_thread_finalize(t, PTHREAD_CANCELED);
 	}
 
@@ -607,7 +620,6 @@ int pthread_setcancelstate(int state, int *oldstate)
  */
 int pthread_setcanceltype(int type, int *oldtype)
 {
-	k_spinlock_key_t key;
 	struct posix_thread *t;
 
 	if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
@@ -620,12 +632,12 @@ int pthread_setcanceltype(int type, int *oldtype)
 		return EINVAL;
 	}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	if (oldtype != NULL) {
-		*oldtype = t->cancel_type;
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (oldtype != NULL) {
+			*oldtype = t->cancel_type;
+		}
+		t->attr.canceltype = type;
 	}
-	t->cancel_type = type;
-	k_spin_unlock(&pthread_pool_lock, key);
 
 	return 0;
 }
@@ -648,9 +660,9 @@ int pthread_cancel(pthread_t pthread)
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	t->cancel_pending = true;
-	cancel_state = t->cancel_state;
-	cancel_type = t->cancel_type;
+	t->attr.cancelpending = true;
+	cancel_state = t->attr.cancelstate;
+	cancel_type = t->attr.canceltype;
 	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (cancel_state == PTHREAD_CANCEL_ENABLE &&
@@ -704,9 +716,28 @@ int pthread_attr_init(pthread_attr_t *_attr)
 		return ENOMEM;
 	}
 
+	BUILD_ASSERT(DYNAMIC_STACK_SIZE <= PTHREAD_STACK_MAX);
+
 	*attr = (struct posix_thread_attr){0};
 	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
+
+	if (DYNAMIC_STACK_SIZE > 0) {
+		attr->stack = k_thread_stack_alloc(DYNAMIC_STACK_SIZE + attr->guardsize,
+						   k_is_user_context() ? K_USER : 0);
+		if (attr->stack == NULL) {
+			LOG_DBG("Did not auto-allocate thread stack");
+		} else {
+			__set_attr_stacksize(attr, DYNAMIC_STACK_SIZE);
+			__ASSERT_NO_MSG(__attr_is_initialized(attr));
+			LOG_DBG("Allocated thread stack %zu@%p", __get_attr_stacksize(attr),
+				attr->stack);
+		}
+	}
+
+	/* caller responsible for destroying attr */
 	attr->initialized = true;
+
+	LOG_DBG("Initialized attr %p", _attr);
 
 	return 0;
 }
@@ -718,18 +749,30 @@ int pthread_attr_init(pthread_attr_t *_attr)
  */
 int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *param)
 {
-	int priority;
+	int ret = 0;
+	uint32_t priority;
 	struct posix_thread *t;
+
+	if (policy == NULL || param == NULL) {
+		return EINVAL;
+	}
 
 	t = to_posix_thread(pthread);
 	if (t == NULL) {
 		return ESRCH;
 	}
 
-	priority = k_thread_priority_get(&t->thread);
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (__attr_is_initialized(&t->attr)) {
+			priority = k_thread_priority_get(&t->thread);
+			param->sched_priority = zephyr_to_posix_priority(priority, policy);
+			ret = 0;
+		} else {
+			ret = ESRCH;
+		}
+	}
 
-	param->sched_priority = zephyr_to_posix_priority(priority, policy);
-	return 0;
+	return ret;
 }
 
 /**
@@ -783,7 +826,7 @@ void pthread_exit(void *retval)
 
 	/* Mark a thread as cancellable before exiting */
 	key = k_spin_lock(&pthread_pool_lock);
-	self->cancel_state = PTHREAD_CANCEL_ENABLE;
+	self->attr.cancelstate = PTHREAD_CANCEL_ENABLE;
 	k_spin_unlock(&pthread_pool_lock, key);
 
 	posix_thread_finalize(self, retval);
@@ -813,9 +856,9 @@ int pthread_join(pthread_t pthread, void **status)
 	LOG_DBG("Pthread %p joining..", &t->thread);
 
 	ret = 0;
-	K_SPINLOCK(&pthread_pool_lock)
-	{
-		if (t->detachstate != PTHREAD_CREATE_JOINABLE) {
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
+			/* undefined behaviour */
 			ret = EINVAL;
 			K_SPINLOCK_BREAK;
 		}
@@ -830,7 +873,7 @@ int pthread_join(pthread_t pthread, void **status)
 		 * thread is joinable and is in run_q or done_q.
 		 * let's ensure that the thread cannot be joined again after this point.
 		 */
-		t->detachstate = PTHREAD_CREATE_DETACHED;
+		t->attr.detachstate = PTHREAD_CREATE_DETACHED;
 	}
 
 	switch (ret) {
@@ -879,12 +922,12 @@ int pthread_detach(pthread_t pthread)
 
 	key = k_spin_lock(&pthread_pool_lock);
 	qid = t->qid;
-	if (qid == POSIX_THREAD_READY_Q || t->detachstate != PTHREAD_CREATE_JOINABLE) {
+	if (qid == POSIX_THREAD_READY_Q || t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
 		LOG_ERR("Pthread %p cannot be detached", &t->thread);
 		ret = EINVAL;
 	} else {
 		ret = 0;
-		t->detachstate = PTHREAD_CREATE_DETACHED;
+		t->attr.detachstate = PTHREAD_CREATE_DETACHED;
 	}
 	k_spin_unlock(&pthread_pool_lock, key);
 
@@ -989,14 +1032,43 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 int pthread_attr_setstacksize(pthread_attr_t *_attr, size_t stacksize)
 {
 	int ret;
+	void *new_stack;
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if (!__attr_is_initialized(attr) || stacksize < PTHREAD_STACK_MIN ||
+	if (!__attr_is_initialized(attr) || stacksize == 0 || stacksize < PTHREAD_STACK_MIN ||
 	    stacksize > PTHREAD_STACK_MAX) {
 		return EINVAL;
 	}
 
+	if (__get_attr_stacksize(attr) == stacksize) {
+		return 0;
+	}
+
+	new_stack =
+		k_thread_stack_alloc(stacksize + attr->guardsize, k_is_user_context() ? K_USER : 0);
+	if (new_stack == NULL) {
+		if (stacksize < __get_attr_stacksize(attr)) {
+			__set_attr_stacksize(attr, stacksize);
+			return 0;
+		}
+
+		LOG_DBG("k_thread_stack_alloc(%zu) failed",
+			__get_attr_stacksize(attr) + attr->guardsize);
+		return ENOMEM;
+	}
+	LOG_DBG("Allocated thread stack %zu@%p", stacksize + attr->guardsize, attr->stack);
+
+	if (attr->stack != NULL) {
+		ret = k_thread_stack_free(attr->stack);
+		if (ret == 0) {
+			LOG_DBG("Freed attr %p thread stack %zu@%p", _attr,
+				__get_attr_stacksize(attr), attr->stack);
+		}
+	}
+
 	__set_attr_stacksize(attr, stacksize);
+	attr->stack = new_stack;
+
 	return 0;
 }
 
@@ -1068,11 +1140,21 @@ int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *
  */
 int pthread_attr_destroy(pthread_attr_t *_attr)
 {
+	int ret;
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
 	if (!__attr_is_initialized(attr)) {
 		return EINVAL;
 	}
+
+	ret = k_thread_stack_free(attr->stack);
+	if (ret == 0) {
+		LOG_DBG("Freed attr %p thread stack %zu@%p", _attr, __get_attr_stacksize(attr),
+			attr->stack);
+	}
+
+	*attr = (struct posix_thread_attr){0};
+	LOG_DBG("Destroyed attr %p", _attr);
 
 	return 0;
 }

@@ -29,8 +29,13 @@ struct posix_thread_attr {
 	uint16_t guardsize : CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS;
 	int8_t priority;
 	uint8_t schedpolicy: 2;
-	bool initialized: 1;
+	union {
+		bool caller_destroys: 1;
+		bool initialized: 1;
+	};
+	bool cancelpending: 1;
 	bool cancelstate: 1;
+	bool canceltype: 1;
 	bool detachstate: 1;
 };
 
@@ -46,22 +51,14 @@ struct posix_thread {
 	/* List of keys that thread has called pthread_setspecific() on */
 	sys_slist_t key_list;
 
-	/* Dynamic stack */
-	k_thread_stack_t *dynamic_stack;
+	/* pthread_attr_t */
+	struct posix_thread_attr attr;
 
 	/* Exit status */
 	void *retval;
 
 	/* Signal mask */
 	sigset_t sigset;
-
-	/* Pthread cancellation */
-	uint8_t cancel_state;
-	uint8_t cancel_type;
-	bool cancel_pending;
-
-	/* Detach state */
-	uint8_t detachstate;
 
 	/* Queue ID (internal-only) */
 	uint8_t qid;
