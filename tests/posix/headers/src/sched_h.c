@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Meta
+ * Copyright (c) 2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +25,7 @@ ZTEST(posix_headers, test_sched_h)
 	zassert_not_equal(-1, SCHED_FIFO);
 	zassert_not_equal(-1, SCHED_RR);
 	/* zassert_not_equal(-1, SCHED_SPORADIC); */ /* not implemented */
-	/* zassert_not_equal(-1, SCHED_OTHER); */ /* not implemented */
+	zassert_not_equal(-1, SCHED_OTHER);
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
 		zassert_not_null(sched_get_priority_max);

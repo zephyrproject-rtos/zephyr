@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2023 Intel Corporation
  * Copyright (c) 2023 Meta
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -198,11 +198,15 @@ void __z_pthread_cleanup_pop(int execute)
 	}
 }
 
-static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
+static bool is_posix_policy_prio_valid(int priority, int policy)
 {
-	if (priority >= sched_get_priority_min(policy) &&
-	    priority <= sched_get_priority_max(policy)) {
-		return true;
+	int priority_limit = sched_get_priority_min(policy);
+
+	if (priority_limit >= 0 && priority >= priority_limit) {
+		priority_limit = sched_get_priority_max(policy);
+		if (priority_limit >= 0 && priority <= priority_limit) {
+			return true;
+		}
 	}
 
 	LOG_ERR("Invalid piority %d and / or policy %d", priority, policy);
@@ -210,26 +214,43 @@ static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 	return false;
 }
 
-static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
+static int zephyr_to_posix_priority(int32_t z_prio, int *policy)
 {
 	if (z_prio < 0) {
-		__ASSERT_NO_MSG(z_prio < CONFIG_NUM_COOP_PRIORITIES);
+		/* COOP: highest [-CONFIG_NUM_COOP_PRIORITIES, -1] low */
+		__ASSERT_NO_MSG((CONFIG_NUM_COOP_PRIORITIES > 0) &&
+				(z_prio < -CONFIG_NUM_COOP_PRIORITIES));
 	} else {
-		__ASSERT_NO_MSG(z_prio < CONFIG_NUM_PREEMPT_PRIORITIES);
+		/* PREEMPT: high [0, CONFIG_NUM_PREEMPT_PRIORITIES -1] lowest */
+		__ASSERT_NO_MSG((CONFIG_NUM_PREEMPT_PRIORITIES > 0) &&
+				(z_prio < CONFIG_NUM_PREEMPT_PRIORITIES));
 	}
 
-	*policy = (z_prio < 0) ? SCHED_FIFO : SCHED_RR;
-	return ZEPHYR_TO_POSIX_PRIORITY(z_prio);
+	if (IS_ENABLED(CONFIG_PREEMPT_ENABLED) &&
+	    IS_ENABLED(CONFIG_COOP_ENABLED)) {
+		*policy = SCHED_OTHER;
+	} else {
+		*policy = (z_prio < 0) ? SCHED_FIFO : SCHED_RR;
+	}
+
+	return ZEPHYR_TO_POSIX_PRIORITY(z_prio) +
+		(IS_ENABLED(CONFIG_PREEMPT_ENABLED) ?
+			CONFIG_NUM_PREEMPT_PRIORITIES : 0);
 }
 
-static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
+static int32_t posix_to_zephyr_priority(int priority, int policy)
 {
-	if (policy == SCHED_FIFO) {
-		/* COOP: highest [CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
-		__ASSERT_NO_MSG(priority < CONFIG_NUM_COOP_PRIORITIES);
-	} else {
-		/* PREEMPT: lowest [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1] highest */
-		__ASSERT_NO_MSG(priority < CONFIG_NUM_PREEMPT_PRIORITIES);
+	if (policy == SCHED_FIFO || policy == SCHED_OTHER) {
+		__ASSERT_NO_MSG(priority < (CONFIG_NUM_PREEMPT_PRIORITIES +
+					    CONFIG_NUM_COOP_PRIORITIES));
+	} else if (policy == SCHED_RR) {
+		__ASSERT_NO_MSG(priority >= 0 &&
+				priority < CONFIG_NUM_PREEMPT_PRIORITIES);
+	}
+
+	if (priority >= CONFIG_NUM_PREEMPT_PRIORITIES &&
+	    (policy == SCHED_FIFO || policy == SCHED_OTHER)) {
+		priority -= CONFIG_NUM_PREEMPT_PRIORITIES;
 	}
 
 	return POSIX_TO_ZEPHYR_PRIORITY(priority, policy);
@@ -243,16 +264,17 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
 int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *schedparam)
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
-	int priority = schedparam->sched_priority;
 
-	if (attr == NULL || !attr->initialized ||
-	    !is_posix_policy_prio_valid(priority, attr->schedpolicy)) {
-		LOG_ERR("Invalid pthread_attr_t or sched_param");
-		return EINVAL;
+	if (NULL != attr && attr->initialized && NULL != schedparam) {
+		int priority = schedparam->sched_priority;
+
+		if (is_posix_policy_prio_valid(priority, attr->schedpolicy)) {
+			attr->priority = priority;
+			return 0;
+		}
 	}
-
-	attr->priority = priority;
-	return 0;
+	LOG_ERR("Invalid pthread_attr_t or sched_param");
+	return EINVAL;
 }
 
 /**
@@ -634,6 +656,10 @@ int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_para
 	struct posix_thread *t = to_posix_thread(pthread);
 	int new_prio;
 
+	if (param == NULL) {
+		return EINVAL;
+	}
+
 	if (t == NULL) {
 		return ESRCH;
 	}
@@ -683,6 +709,10 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
 {
 	uint32_t priority;
 	struct posix_thread *t;
+
+	if (NULL == policy || NULL == param) {
+		return EINVAL;
+	}
 
 	t = to_posix_thread(pthread);
 	if (t == NULL) {

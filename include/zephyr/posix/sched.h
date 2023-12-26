@@ -13,9 +13,9 @@ extern "C" {
 #endif
 
 /*
- * Other mandatory scheduling policy. Must be numerically distinct. May
- * execute identically to SCHED_RR or SCHED_FIFO. For Zephyr this is a
- * pseudonym for SCHED_RR.
+ * Other mandatory scheduling policy. Must be numerically distinct.
+ * For Zephyr this policy is active when both cooperative and preemptive
+ * thread classes are allowed.
  */
 #define SCHED_OTHER 0
 
