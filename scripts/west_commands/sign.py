@@ -442,7 +442,7 @@ class RimageSigner(Signer):
         preproc_cmd += ['-I', str(self.sof_src_dir / 'src')]
         preproc_cmd += ['-imacros',
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'autoconf.h')]
-        preproc_cmd += ['-o', str(subdir / toml_basename)]
+        preproc_cmd += ['-o', str(subdir / 'rimage_config.toml')]
         self.command.inf(quote_sh_list(preproc_cmd))
         subprocess.run(preproc_cmd, check=True, cwd=self.build_dir)
 
@@ -573,13 +573,12 @@ class RimageSigner(Signer):
                 command.die(f"Cannot have both {toml_basename + '.h'} and {toml_basename} in {conf_dir}")
 
             if (conf_dir / (toml_basename + '.h')).exists():
-                toml_subdir = pathlib.Path('zephyr') / 'misc' / 'generated'
-                self.preprocess_toml(conf_dir, toml_basename, toml_subdir)
-                toml_dir = b / toml_subdir
+                generated_subdir = pathlib.Path('zephyr') / 'misc' / 'generated'
+                self.preprocess_toml(conf_dir, toml_basename, generated_subdir)
+                extra_ri_args += ['-c', str(b / generated_subdir / 'rimage_config.toml')]
             else:
                 toml_dir = conf_dir
-
-            extra_ri_args += ['-c', str(toml_dir / toml_basename)]
+                extra_ri_args += ['-c', str(toml_dir / toml_basename)]
 
         # Warning: while not officially supported (yet?), the rimage --option that is last
         # on the command line currently wins in case of duplicate options. So pay
