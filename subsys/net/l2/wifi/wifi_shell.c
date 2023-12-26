@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
 #include <zephyr/posix/unistd.h>
+#include <zephyr/sys/slist.h>
 
 #include "net_private.h"
 
@@ -64,6 +65,13 @@ static struct {
 static uint32_t scan_result;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
+
+static K_MUTEX_DEFINE(wifi_ap_sta_list_lock);
+struct wifi_ap_sta_node {
+	bool valid;
+	struct wifi_ap_sta_info sta_info;
+};
+static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 
 #define print(sh, level, fmt, ...)					\
 	do {								\
@@ -329,6 +337,10 @@ static void handle_wifi_ap_disable_result(struct net_mgmt_event_callback *cb)
 	} else {
 		print(context.sh, SHELL_NORMAL, "AP disabled\n");
 	}
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	memset(&sta_list, 0, sizeof(sta_list));
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
 static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
@@ -336,10 +348,25 @@ static void handle_wifi_ap_sta_connected(struct net_mgmt_event_callback *cb)
 	const struct wifi_ap_sta_info *sta_info =
 		(const struct wifi_ap_sta_info *)cb->info;
 	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+	int i;
 
 	print(context.sh, SHELL_NORMAL, "Station connected: %s\n",
 	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
 				     mac_string_buf, sizeof(mac_string_buf)));
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	for (i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
+		if (!sta_list[i].valid) {
+			sta_list[i].sta_info = *sta_info;
+			sta_list[i].valid = true;
+			break;
+		}
+	}
+	if (i == CONFIG_WIFI_SHELL_MAX_AP_STA) {
+		print(context.sh, SHELL_WARNING, "No space to store station info: "
+			"Increase CONFIG_WIFI_SHELL_MAX_AP_STA\n");
+	}
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
 static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
@@ -351,6 +378,20 @@ static void handle_wifi_ap_sta_disconnected(struct net_mgmt_event_callback *cb)
 	print(context.sh, SHELL_NORMAL, "Station disconnected: %s\n",
 	      net_sprint_ll_addr_buf(sta_info->mac, WIFI_MAC_ADDR_LEN,
 				     mac_string_buf, sizeof(mac_string_buf)));
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	for (int i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
+		if (!sta_list[i].valid) {
+			continue;
+		}
+
+		if (!memcmp(sta_list[i].sta_info.mac, sta_info->mac,
+			    WIFI_MAC_ADDR_LEN)) {
+			sta_list[i].valid = false;
+			break;
+		}
+	}
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
 }
 
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
@@ -1170,6 +1211,8 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 
 	context.sh = sh;
 
+	k_mutex_init(&wifi_ap_sta_list_lock);
+
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
 		sizeof(struct wifi_connect_req_params));
 	if (ret) {
@@ -1195,6 +1238,49 @@ static int cmd_wifi_ap_disable(const struct shell *sh, size_t argc,
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "AP mode disable requested\n");
+	return 0;
+}
+
+static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	size_t id = 1;
+
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
+	shell_fprintf(sh, SHELL_NORMAL, "AP stations:\n");
+	shell_fprintf(sh, SHELL_NORMAL, "============\n");
+
+	k_mutex_lock(&wifi_ap_sta_list_lock, K_FOREVER);
+	for (int i = 0; i < CONFIG_WIFI_SHELL_MAX_AP_STA; i++) {
+		struct wifi_ap_sta_info *sta;
+		uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+		if (!sta_list[i].valid) {
+			continue;
+		}
+
+		sta = &sta_list[i].sta_info;
+
+		shell_fprintf(sh, SHELL_NORMAL, "Station %zu:\n", id++);
+		shell_fprintf(sh, SHELL_NORMAL, "==========\n");
+		shell_fprintf(sh, SHELL_NORMAL, "MAC: %s\n",
+			      net_sprint_ll_addr_buf(sta->mac,
+						     WIFI_MAC_ADDR_LEN,
+						     mac_string_buf,
+						     sizeof(mac_string_buf)));
+		shell_fprintf(sh, SHELL_NORMAL, "Link mode: %s\n",
+			      wifi_link_mode_txt(sta->link_mode));
+		shell_fprintf(sh, SHELL_NORMAL, "TWT: %s\n",
+			      sta->twt_capable ? "Supported" : "Not supported");
+	}
+
+	if (id == 1) {
+		shell_fprintf(sh, SHELL_NORMAL, "No stations connected\n");
+	}
+	k_mutex_unlock(&wifi_ap_sta_list_lock);
+
 	return 0;
 }
 
@@ -1676,6 +1762,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  ": 0:Disable, 1:Optional, 2:Required.\n",
 		  cmd_wifi_ap_enable,
 		  2, 4),
+	SHELL_CMD_ARG(stations, NULL,
+		  "List stations connected to the AP",
+		  cmd_wifi_ap_stations,
+		  1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
