@@ -71,6 +71,7 @@ struct i2c_enhance_config {
 	/* I2C alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t prescale_scl_low;
+	uint8_t data_hold_time;
 	uint32_t clock_gate_offset;
 	bool target_enable;
 	bool target_pio_mode;
@@ -1145,6 +1146,7 @@ static int i2c_enhance_init(const struct device *dev)
 	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
 	uint8_t *base = config->base;
+	uint8_t data_hold_time = config->data_hold_time;
 	uint32_t bitrate_cfg;
 	int error, status;
 
@@ -1195,6 +1197,10 @@ static int i2c_enhance_init(const struct device *dev)
 			IT8XXX2_SMB_SMB45CHS = (config->channel_switch_sel << 4) |
 				(IT8XXX2_SMB_SMB45CHS &= ~GENMASK(6, 4));
 		}
+
+		/* Set I2C data hold time. */
+		IT8XXX2_I2C_DHTR(base) = (IT8XXX2_I2C_DHTR(base) & ~GENMASK(2, 0)) |
+			(data_hold_time - 3);
 
 		/* Set clock frequency for I2C ports */
 		if (config->bitrate == I2C_BITRATE_STANDARD ||
@@ -1453,6 +1459,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0), \
+		.data_hold_time = DT_INST_PROP_OR(inst, data_hold_time, 0),     \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \

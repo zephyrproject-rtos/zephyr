@@ -18,6 +18,23 @@ properties:
       SCL cycle = 2 * (psr + prescale_tweak + 2) *
                   SMBus clock cycle
 
+  data-hold-time:
+    type: int
+    default: 3
+    enum:
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+    description: |
+      This option is used to configure the data hold time of the I2C.
+      The unit is number of SMB clock cycles.  The time calculation
+      is (data-hold-time / smb_clk) seconds.
+
   target-enable:
     type: boolean
     description: |
