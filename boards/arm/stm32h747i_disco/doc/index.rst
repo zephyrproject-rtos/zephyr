@@ -172,6 +172,10 @@ command, for example:
    :shield: st_b_lcd40_dsi1_mb1166
    :goals: build flash
 
+.. note::
+   Currently only the older version MB1166-A03 is supported by Zephyr.
+   The newer version MB1166-A09 does not get initialized correctly (see :github:`60888`).
+
 Resources sharing
 =================
 
