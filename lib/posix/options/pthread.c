@@ -680,6 +680,35 @@ int pthread_setcanceltype(int type, int *oldtype)
 }
 
 /**
+ * @brief Create a cancellation point in the calling thread.
+ *
+ * See IEEE 1003.1
+ */
+void pthread_testcancel(void)
+{
+	struct posix_thread *t;
+	bool cancel_pended = false;
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread_self());
+		if (t == NULL) {
+			K_SPINLOCK_BREAK;
+		}
+		if (t->attr.cancelstate != PTHREAD_CANCEL_ENABLE) {
+			K_SPINLOCK_BREAK;
+		}
+		if (t->attr.cancelpending) {
+			cancel_pended = true;
+			t->attr.cancelstate = PTHREAD_CANCEL_DISABLE;
+		}
+	}
+
+	if (cancel_pended) {
+		posix_thread_finalize(t, PTHREAD_CANCELED);
+	}
+}
+
+/**
  * @brief Cancel execution of a thread.
  *
  * See IEEE 1003.1
