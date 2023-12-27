@@ -44,6 +44,18 @@
 				width = <320>;
 				height = <240>;
 			};
+
+			test_spi_gc9x01x: gc9x01x@1 {
+				compatible = "galaxycore,gc9x01x";
+				reg = <1>;
+				spi-max-frequency = <100000000>;
+				cmd-data-gpios = <&test_gpio 1 0>;
+				reset-gpios = <&test_gpio 2 0>;
+				pixel-format = <16>;
+
+				width = <240>;
+				height = <240>;
+			};
 		};
 	};
 };

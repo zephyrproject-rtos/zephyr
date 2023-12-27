@@ -5,3 +5,5 @@ common:
 tests:
   drivers.display.ili9342c.build:
     extra_args: CONF_FILE=display_ili9342c.conf
+  drivers.display.gc9x01x.build:
+    extra_args: CONF_FILE=display_gc9x01x.conf
