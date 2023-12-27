@@ -41,6 +41,11 @@ struct pthread_attr {
 	uint32_t details[2];
 };
 
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
+typedef uint32_t pid_t;
+#endif
+
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
 	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef struct pthread_attr pthread_attr_t;
