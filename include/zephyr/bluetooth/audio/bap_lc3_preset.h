@@ -137,8 +137,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 97U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
-					     BT_AUDIO_CODEC_QOS_2M, 97u, 5u, 24u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(8163u, 97u, 5u, 24u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Unicast 441_2_1 codec configuration
@@ -150,8 +149,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 130U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
-					     BT_AUDIO_CODEC_QOS_2M, 130u, 5u, 31u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(10884u, 130u, 5u, 31u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Unicast 48_1_1 codec configuration
@@ -332,8 +330,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 97U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
-					     BT_AUDIO_CODEC_QOS_2M, 97u, 13u, 80u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(8163u, 97u, 13u, 80u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Unicast 441_2_2 codec configuration
@@ -345,8 +342,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 130U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
-					     BT_AUDIO_CODEC_QOS_2M, 130u, 13u, 85u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(10884u, 130u, 13u, 85u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Unicast 48_1_2 codec configuration
@@ -531,8 +527,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 97U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
-					     BT_AUDIO_CODEC_QOS_2M, 97u, 4u, 24u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(8163u, 97u, 4u, 24u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Broadcast 441_2_1 codec configuration
@@ -544,8 +539,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 130U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
-					     BT_AUDIO_CODEC_QOS_2M, 130u, 4u, 31u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(10884u, 130u, 4u, 31u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Broadcast 48_1_1 codec configuration
@@ -730,8 +724,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 97U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(8163u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,             \
-					     BT_AUDIO_CODEC_QOS_2M, 97u, 4u, 54u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(8163u, 97u, 4u, 54u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Broadcast 441_2_2 codec configuration
@@ -743,8 +736,7 @@ struct bt_bap_lc3_preset {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_44KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 130U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS(10884u, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED,            \
-					     BT_AUDIO_CODEC_QOS_2M, 130u, 4u, 60u, 40000u))
+			  BT_AUDIO_CODEC_QOS_FRAMED(10884u, 130u, 4u, 60u, 40000u))
 
 /**
  *  @brief Helper to declare LC3 Broadcast 48_1_2 codec configuration
