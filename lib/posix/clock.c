@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <zephyr/posix/time.h>
 #include <zephyr/posix/sys/time.h>
+#include <zephyr/posix/unistd.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/spinlock.h>
 
@@ -221,4 +222,16 @@ int gettimeofday(struct timeval *tv, void *tz)
 	tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
 
 	return res;
+}
+
+int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
+{
+	/* We don't allow any process ID but our own.  */
+	if (pid != 0 && pid != getpid()) {
+		return EPERM;
+	}
+
+	*clock_id = CLOCK_PROCESS_CPUTIME_ID;
+
+	return 0;
 }
