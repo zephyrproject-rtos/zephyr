@@ -6548,8 +6548,10 @@ sub process {
 # check for feature test macros that request C library API extensions, violating rules A.4 and A.5
 
 		if ($line =~ /#\s*define\s+$api_defines/) {
-			ERROR("API_DEFINE",
-			      "do not specify a non-Zephyr API for libc\n" . "$here$rawline\n");
+			if (!($realfile =~ m@^lib/posix/.*@ || $realfile =~ m@^include/zephyr/posix/.*@)) {
+				ERROR("API_DEFINE",
+					"do not specify a non-Zephyr API for libc\n" . "$here$rawline\n");
+			}
 		}
 
 # check for IS_ENABLED() without CONFIG_<FOO> ($rawline for comments too)
