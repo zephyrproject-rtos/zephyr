@@ -203,6 +203,24 @@ extern "C" {
 	})
 
 /**
+ * @brief Iterate over members of an array using an index variable
+ *
+ * @param array the array in question
+ * @param idx name of array index variable
+ */
+#define ARRAY_FOR_EACH(array, idx) for (size_t idx = 0; (idx) < ARRAY_SIZE(array); ++(idx))
+
+/**
+ * @brief Iterate over members of an array using a pointer
+ *
+ * @param array the array in question
+ * @param ptr pointer to an element of @p array
+ */
+#define ARRAY_FOR_EACH_PTR(array, ptr)                                                             \
+	for (__typeof__(*(array)) *ptr = (array); (size_t)((ptr) - (array)) < ARRAY_SIZE(array);   \
+	     ++(ptr))
+
+/**
  * @brief Validate if two entities have a compatible type
  *
  * @param a the first entity to be compared
