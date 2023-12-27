@@ -30,9 +30,9 @@ config INPUT_KBD_MATRIX_16_BIT_ROW
 config INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
 	bool "Allow runtime changes to the actual key mask"
 	help
-	  If enabled, the actual key mask data is stored in RAM, and a
-	  input_kbd_matrix_actual_key_mask_set() function is available to
-	  change the content at runtime.
+	  If enabled, the actual-key-mask devicetree property data is stored in
+	  RAM, and a input_kbd_matrix_actual_key_mask_set() function is
+	  available to change the content at runtime.
 
 config INPUT_SHELL_KBD_MATRIX_STATE
 	bool "Input kbd_matrix_state shell command"
