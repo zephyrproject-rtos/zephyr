@@ -224,6 +224,7 @@ fsl	Freescale Semiconductor
 ftdi	Future Technology Devices International Ltd.
 fujitsu	Fujitsu Ltd.
 gaisler	Gaisler
+galaxycore	Galaxycore, Inc.
 gardena	GARDENA GmbH
 gateworks	Gateworks Corporation
 gcw	Game Consoles Worldwide
