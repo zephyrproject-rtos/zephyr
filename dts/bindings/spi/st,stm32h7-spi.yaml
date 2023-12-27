@@ -27,3 +27,7 @@ properties:
     description: |
       (Master SS Idleness) minimum clock inserted between
       start and first data transaction.
+
+  fifo-enable:
+    type: boolean
+    description: Enable the SPI FIFO usage for performance improvement.
