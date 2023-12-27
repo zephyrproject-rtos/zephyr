@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+typedef int pid_t;
+
 #ifndef __useconds_t_defined
 typedef unsigned long useconds_t;
 #endif
