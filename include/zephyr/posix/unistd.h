@@ -51,6 +51,7 @@ extern char *optarg;
 extern int opterr, optind, optopt;
 #endif
 
+pid_t getpid(void);
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
 
