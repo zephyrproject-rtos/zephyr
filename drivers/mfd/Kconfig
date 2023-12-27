@@ -20,6 +20,7 @@ config MFD_INIT_PRIORITY
 
 source "drivers/mfd/Kconfig.ad5592"
 source "drivers/mfd/Kconfig.axp192"
+source "drivers/mfd/Kconfig.bd8lb600fs"
 source "drivers/mfd/Kconfig.max20335"
 source "drivers/mfd/Kconfig.nct38xx"
 source "drivers/mfd/Kconfig.npm1300"

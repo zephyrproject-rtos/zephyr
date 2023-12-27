@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2022 SILA Embedded Solutions GmbH
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -9,9 +10,11 @@ description: |
     Multiple instances may be daisy chained, which can be configured
     via the number of supported GPIOs.
 
-compatible: "rohm,bd8lb600fs"
+compatible: "rohm,bd8lb600fs-gpio"
 
-include: [gpio-controller.yaml, spi-device.yaml]
+include: gpio-controller.yaml
+
+on-bus: bd8lb600fs
 
 properties:
   "#gpio-cells":
@@ -20,15 +23,15 @@ properties:
   ngpios:
     type: int
     required: true
+    enum:
+      - 8
+      - 16
+      - 24
+      - 32
     description: |
       Number of pins for the expander. This must be a multiple of 8.
       The number of pins also defines how many devices are daisy chained.
       Set to 8 for one instance without daisy chaining.
-
-  reset-gpios:
-    type: phandle-array
-    required: true
-    description: GPIO for reset
 
 gpio-cells:
   - pin

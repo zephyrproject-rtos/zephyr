@@ -245,12 +245,19 @@
 
 			test_spi_bd8lb600fs: bd8lb600fs@2 {
 				compatible = "rohm,bd8lb600fs";
+				status = "okay";
 				spi-max-frequency = <0>;
 				reg = <0x02>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <8>;
 				reset-gpios = <&test_gpio 0 0>;
+				instance-count = <1>;
+
+				bd8lb600fs_gpio: bd8lb600fs_gpio {
+					compatible = "rohm,bd8lb600fs-gpio";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+				};
 			};
 
 			test_spi_ad5592: ad5592@3 {
