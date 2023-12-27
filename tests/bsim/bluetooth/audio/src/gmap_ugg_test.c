@@ -1168,11 +1168,11 @@ static void broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_sou
 static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *param)
 {
 	uint8_t stereo_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
-	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
-	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};

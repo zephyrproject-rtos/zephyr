@@ -28,7 +28,7 @@ static struct bt_cap_stream broadcast_source_stream;
 static struct bt_cap_stream *broadcast_stream;
 
 static uint8_t bis_codec_data[] = {BT_AUDIO_CODEC_DATA(
-	BT_AUDIO_CODEC_CONFIG_LC3_FREQ, BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_48KHZ))};
+	BT_AUDIO_CODEC_CFG_FREQ, BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_48KHZ))};
 
 static const uint8_t new_metadata[] = {
 	BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,

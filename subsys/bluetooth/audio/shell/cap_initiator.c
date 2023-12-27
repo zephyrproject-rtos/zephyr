@@ -1092,11 +1092,11 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	/* TODO: Use CAP API when the CAP shell has broadcast support */
 	struct bt_bap_broadcast_source_stream_param stream_params[BAP_UNICAST_AC_MAX_SRC] = {0};
 	uint8_t stereo_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
-	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
-	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param = {0};
 	struct bt_bap_broadcast_source_param create_param = {0};

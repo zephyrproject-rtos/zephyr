@@ -291,8 +291,8 @@ static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 
 static void test_broadcast_audio_create_inval(void)
 {
-	uint8_t bis_codec_data[] = {3, BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)};
+	uint8_t bis_codec_data[] = {3, BT_AUDIO_CODEC_CFG_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)};
 	struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
@@ -350,8 +350,8 @@ static void test_broadcast_audio_create_inval(void)
 
 static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadcast_source)
 {
-	uint8_t bis_codec_data[] = {3, BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)};
+	uint8_t bis_codec_data[] = {3, BT_AUDIO_CODEC_CFG_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)};
 	struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
@@ -677,11 +677,11 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 {
 	struct bt_cap_initiator_broadcast_stream_param stream_params[CAP_AC_MAX_STREAM] = {0};
 	uint8_t stereo_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
-	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
-	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 						   BT_AUDIO_LOCATION_FRONT_LEFT)};
 	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
 	struct bt_cap_initiator_broadcast_create_param create_param = {0};

@@ -233,19 +233,19 @@ static void btp_send_pac_codec_found_ev(struct bt_conn *conn,
 	ev.dir = dir;
 	ev.coding_format = codec_cap->id;
 
-	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_FREQ, &data)) {
+	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FREQ, &data)) {
 		memcpy(&ev.frequencies, data, sizeof(ev.frequencies));
 	}
 
-	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_DURATION, &data)) {
+	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_CAP_TYPE_DURATION, &data)) {
 		memcpy(&ev.frame_durations, data, sizeof(ev.frame_durations));
 	}
 
-	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_FRAME_LEN, &data)) {
+	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_CAP_TYPE_FRAME_LEN, &data)) {
 		memcpy(&ev.octets_per_frame, data, sizeof(ev.octets_per_frame));
 	}
 
-	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_LC3_CHAN_COUNT, &data)) {
+	if (codec_cap_get_val(codec_cap, BT_AUDIO_CODEC_CAP_TYPE_CHAN_COUNT, &data)) {
 		memcpy(&ev.channel_counts, data, sizeof(ev.channel_counts));
 	}
 
