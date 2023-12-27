@@ -54,7 +54,7 @@ zephyr_library_sources_ifdef(CONFIG_PTHREAD_KEY key.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_MUTEX mutex.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD pthread.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC rwlock.c)
-zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC sched.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_SCHED sched.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_IPC semaphore.c)
 zephyr_library_sources_ifdef(CONFIG_PTHREAD_SPINLOCK spinlock.c)
 

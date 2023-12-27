@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_SCHED
+	bool "_POSIX_PRIORITY_SCHEDULING API support"
+	default y if PTHREAD
+	depends on PTHREAD
+	help
+	  This enables POSIX scheduling APIs (_POSIX_PRIORITY_SCHEDULING).
