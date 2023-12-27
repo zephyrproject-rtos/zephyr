@@ -27,11 +27,6 @@ extern "C" {
 #endif
 
 /**
- *  @brief LC3 codec ID
- */
-#define BT_HCI_CODING_FORMAT_LC3 0x06
-
-/**
  * @brief Codec capability type id's
  *
  * Used to build and parse codec capabilities as specified in the PAC specification.
