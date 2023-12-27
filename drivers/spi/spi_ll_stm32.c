@@ -338,20 +338,36 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-/* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static void spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	while (!ll_func_tx_is_not_full(spi)) {
-		/* NOP */
+	if (ll_func_rx_is_not_empty(spi)) {
+		spi_stm32_read_next_frame(spi, data);
 	}
 
-	spi_stm32_send_next_frame(spi, data);
-
-	while (!ll_func_rx_is_not_empty(spi)) {
-		/* NOP */
+	if (ll_func_tx_is_not_full(spi)) {
+		spi_stm32_send_next_frame(spi, data);
 	}
+}
 
-	spi_stm32_read_next_frame(spi, data);
+/* Shift a SPI frame as master. */
+static void spi_stm32_shift_m(const struct spi_stm32_config *cfg,
+			      struct spi_stm32_data *data)
+{
+	if (cfg->fifo_enabled) {
+		spi_stm32_shift_fifo(cfg->spi, data);
+	} else {
+		while (!ll_func_tx_is_not_full(cfg->spi)) {
+			/* NOP */
+		}
+
+		spi_stm32_send_next_frame(cfg->spi, data);
+
+		while (!ll_func_rx_is_not_empty(cfg->spi)) {
+			/* NOP */
+		}
+
+		spi_stm32_read_next_frame(cfg->spi, data);
+	}
 }
 
 /* Shift a SPI frame as slave. */
@@ -395,17 +411,18 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
  *
  * TODO: support 16-bit data frames.
  */
-static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
+static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
+	struct spi_stm32_data *data)
 {
 	uint16_t operation = data->ctx.config->operation;
 
 	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
-		spi_stm32_shift_m(spi, data);
+		spi_stm32_shift_m(cfg, data);
 	} else {
-		spi_stm32_shift_s(spi, data);
+		spi_stm32_shift_s(cfg->spi, data);
 	}
 
-	return spi_stm32_get_err(spi);
+	return spi_stm32_get_err(cfg->spi);
 }
 
 static void spi_stm32_cs_control(const struct device *dev, bool on)
@@ -498,7 +515,7 @@ static void spi_stm32_isr(const struct device *dev)
 	}
 
 	if (spi_stm32_transfer_ongoing(data)) {
-		err = spi_stm32_shift_frames(spi, data);
+		err = spi_stm32_shift_frames(cfg, data);
 	}
 
 	if (err || !spi_stm32_transfer_ongoing(data)) {
@@ -669,7 +686,7 @@ static int spi_stm32_release(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
-	                                     const struct spi_buf_set *bufs)
+					     const struct spi_buf_set *bufs)
 {
 	if (bufs == NULL) {
 		return 0;
@@ -690,8 +707,8 @@ static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
 }
 
 static int32_t spi_stm32_count_total_frames(const struct spi_config *config,
-	                                    const struct spi_buf_set *tx_bufs,
-	                                    const struct spi_buf_set *rx_bufs)
+					    const struct spi_buf_set *tx_bufs,
+					    const struct spi_buf_set *rx_bufs)
 {
 	int tx_frames = spi_stm32_count_bufset_frames(config, tx_bufs);
 
@@ -816,7 +833,7 @@ static int transceive(const struct device *dev,
 	ret = spi_context_wait_for_completion(&data->ctx);
 #else
 	do {
-		ret = spi_stm32_shift_frames(spi, data);
+		ret = spi_stm32_shift_frames(cfg, data);
 	} while (!ret && spi_stm32_transfer_ongoing(data));
 
 	spi_stm32_complete(dev, ret);
