@@ -92,6 +92,11 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 		return -1;
 	}
 
+	if (tp->tv_nsec < 0 || tp->tv_nsec >= NSEC_PER_SEC) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	uint64_t elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
 	int64_t delta = (int64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
 		- elapsed_nsecs;
