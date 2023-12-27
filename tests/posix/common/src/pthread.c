@@ -28,6 +28,7 @@
 
 K_THREAD_STACK_ARRAY_DEFINE(stack_e, N_THR_E, STACKS);
 K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T, STACKS);
+K_THREAD_STACK_ARRAY_DEFINE(stack_s, 1, STACKS);
 K_THREAD_STACK_ARRAY_DEFINE(stack_1, 1, 32);
 
 void *thread_top_exec(void *p1);
@@ -645,6 +646,87 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 		k_msleep(100);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
+}
+
+static void *create_thread_sched(void *p1)
+{
+	struct sched_param param = { .sched_priority = -1 };
+	int err = 0;
+	int rc = 0;
+
+	/* Get scheduling params of the current process. */
+	rc = sched_getparam(0, &param);
+	err = errno;
+	zassert_ok(rc, "unable to get scheduling parameters: rc=%d, errno=%d",
+		   rc, err);
+
+	rc = sched_getscheduler(0);
+	err = errno;
+	zassert_not_equal(rc, -1, "unable to get scheduling policy: errno=%d",
+			  err);
+	zassert_equal(rc, SCHED_RR, "unexpected scheduling policy: %d", rc);
+
+	if (p1) {
+		zassert_equal(param.sched_priority,
+			      ((struct sched_param *)p1)->sched_priority,
+			      "unexpected sched_priority=%d expects=%d",
+			      param.sched_priority,
+			      ((struct sched_param *)p1)->sched_priority);
+	}
+
+	return NULL;
+}
+
+ZTEST(posix_apis, test_sched_getparam)
+{
+	struct sched_param param = { .sched_priority = -1 };
+	int err = 0;
+	int rc = 0;
+
+	/* TODO: Assuming non-existent PID is -1 */
+	rc = sched_getparam(-1, &param);
+	err = errno;
+	zassert_true((rc == -1 && err == ESRCH),
+		     "failed parameter check: rc=%d, errno=%d", rc, err);
+
+	rc = sched_getscheduler(-1);
+	err = errno;
+	zassert_true((rc == -1 && err == ESRCH),
+		     "failed parameter check: rc=%d, errno=%d", rc, err);
+
+	/* .. and it is safe to call with NULL as praram. */
+	rc = sched_getparam(-1, NULL);
+	err = errno;
+	zassert_true((rc == -1 && err == ESRCH),
+		     "failed parameter check: rc=%d, errno=%d", rc, err);
+
+	/* Try with the current PID as ztest execution thread - it fails. */
+	rc = sched_getparam(0, &param);
+	err = errno;
+	zassert_true((rc == -1 && err == ESRCH),
+		     "Unexpected result : rc=%d, errno=%d", rc, err);
+
+	rc = sched_getscheduler(0);
+	err = errno;
+	zassert_true((rc == -1 && err == ESRCH),
+		     "Unexpected result : rc=%d, errno=%d", rc, err);
+
+	/* Check with a test thread. */
+	pthread_t pthread1;
+	pthread_attr_t attr1 = (pthread_attr_t){0};
+
+	param.sched_priority = sched_get_priority_min(SCHED_RR);
+	err = errno;
+	zassert_not_equal(-1, param.sched_priority,
+			  "sched_get_priority_min(SCHED_RR) failed: errno=%d", err);
+	zassert_ok(pthread_attr_init(&attr1));
+	zassert_ok(pthread_attr_setschedparam(&attr1, &param),
+			   "pthread_attr_setschedparam() failed");
+	zassert_ok(pthread_attr_setstack(&attr1, &stack_s[0][0], STACKS));
+	zassert_ok(pthread_create(&pthread1, &attr1, create_thread_sched, (void *)&param),
+			   "unable to create a test thread");
+	k_msleep(100);
+	zassert_ok(pthread_join(pthread1, NULL), "unable to join the test thread");
 }
 
 ZTEST(posix_apis, test_sched_policy)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "pthread_sched.h"
 
 #include <zephyr/kernel.h>
+#include <zephyr/posix/pthread.h>
 #include <zephyr/posix/sched.h>
 
 /**
@@ -40,4 +41,58 @@ int sched_get_priority_max(int policy)
 
 	errno = EINVAL;
 	return -1;
+}
+
+/**
+ * @brief Get scheduling parameters
+ *
+ * See IEEE 1003.1
+ */
+int sched_getparam(pid_t pid, struct sched_param *param)
+{
+	/* TODO: Ensure the Zephyr POSIX process id (PID) value is assigned
+	 * with its first thread's id (TID).
+	 */
+	struct sched_param dummy_param = {0};
+	pthread_t tid = (pthread_t)pid;
+	int t_policy = -1;
+	int ret = -1;
+
+	if (param == NULL) {
+		param = &dummy_param;
+	}
+
+	if (tid == 0) {
+		tid = pthread_self();
+	}
+
+	ret = pthread_getschedparam(tid, &t_policy, param);
+	errno = ret;
+
+	return ((ret) ? -1 : 0);
+}
+
+/**
+ * @brief Get scheduling policy
+ *
+ * See IEEE 1003.1
+ */
+int sched_getscheduler(pid_t pid)
+{
+	/* TODO: Ensure the Zephyr POSIX process id (PID) value is assigned
+	 * with its first thread's id (TID).
+	 */
+	struct sched_param dummy_param = {0};
+	pthread_t tid = (pthread_t)pid;
+	int t_policy = -1;
+	int ret = -1;
+
+	if (tid == 0) {
+		tid = pthread_self();
+	}
+
+	ret = pthread_getschedparam(tid, &t_policy, &dummy_param);
+	errno = ret;
+
+	return (ret == 0) ? t_policy : -1;
 }
