@@ -384,9 +384,9 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		subgroup_param[CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT];
 	struct bt_bap_broadcast_source_param create_param;
 	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
-	uint8_t left[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t left[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 			  BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_LEFT))};
-	uint8_t right[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+	uint8_t right[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 			   BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_RIGHT))};
 	int err;
 

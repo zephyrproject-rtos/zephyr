@@ -97,8 +97,8 @@ static struct bt_bap_stream_ops stream_ops = {
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
 	uint8_t bis_codec_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)),
 	};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
@@ -248,8 +248,8 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *source)
 {
 	uint8_t bis_codec_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_FREQ,
-				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CONFIG_LC3_FREQ_16KHZ)),
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_FREQ,
+				    BT_BYTES_LIST_LE16(BT_AUDIO_CODEC_CFG_FREQ_16KHZ)),
 	};
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
