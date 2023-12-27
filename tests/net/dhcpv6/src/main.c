@@ -127,6 +127,7 @@ static struct net_pkt *test_dhcpv6_create_message(
 		test_dhcpv6_options_fn_t set_options_fn)
 {
 	struct in6_addr *local_addr;
+	struct in6_addr peer_addr;
 	struct net_pkt *pkt;
 
 	local_addr = net_if_ipv6_get_ll(iface, NET_ADDR_ANY_STATE);
@@ -134,13 +135,20 @@ static struct net_pkt *test_dhcpv6_create_message(
 		return NULL;
 	}
 
+	/* Create a peer address from my address but invert the last byte
+	 * so that the address is not the same. This is needed as we drop
+	 * the packet if source address is our own address.
+	 */
+	memcpy(&peer_addr, local_addr, sizeof(peer_addr));
+	peer_addr.s6_addr[15] = ~peer_addr.s6_addr[15];
+
 	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, AF_INET6,
 					IPPROTO_UDP, K_FOREVER);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
-	if (net_ipv6_create(pkt, local_addr, local_addr) < 0 ||
+	if (net_ipv6_create(pkt, &peer_addr, local_addr) < 0 ||
 	    net_udp_create(pkt, htons(DHCPV6_SERVER_PORT),
 			   htons(DHCPV6_CLIENT_PORT)) < 0) {
 		goto fail;
