@@ -87,7 +87,7 @@ POSIX System Interfaces
     :ref:`_POSIX_MESSAGE_PASSING<posix_option_message_passing>`, 200809L, :kconfig:option:`CONFIG_POSIX_MQUEUE`
     _POSIX_MONOTONIC_CLOCK, 200809L, :kconfig:option:`CONFIG_POSIX_CLOCK`
     _POSIX_PRIORITIZED_IO, -1,
-    :ref:`_POSIX_PRIORITY_SCHEDULING<posix_option_priority_scheduling>`, -1, :kconfig:option:`CONFIG_PTHREAD`
+    :ref:`_POSIX_PRIORITY_SCHEDULING<posix_option_priority_scheduling>`, -1, :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING` (will fail with ``ENOSYS``:ref:`†<posix_undefined_behaviour>`)
     _POSIX_RAW_SOCKETS, 200809L, :kconfig:option:`CONFIG_NET_SOCKETS`
     _POSIX_SHARED_MEMORY_OBJECTS, -1,
     _POSIX_SPAWN, -1,
