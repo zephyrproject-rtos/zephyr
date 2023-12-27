@@ -39,7 +39,8 @@ static float test_floats[] = {
 #define	NUM_TEST_DOUBLES	(sizeof(test_floats)/sizeof(float))
 
 #ifndef	isinf
-static int isinf(double x)
+__weak
+int isinf(double x)
 {
 	union { uint64_t u; double d; } ieee754;
 	ieee754.d = x;
@@ -50,7 +51,8 @@ static int isinf(double x)
 #endif
 
 #ifndef	isnan
-static int isnan(double x)
+__weak
+int isnan(double x)
 {
 	union { uint64_t u; double d; } ieee754;
 	ieee754.d = x;
@@ -61,7 +63,8 @@ static int isnan(double x)
 #endif
 
 #ifndef	isinff
-static int isinff(float x)
+__weak
+int isinff(float x)
 {
 	union { uint32_t u; float f; } ieee754;
 	ieee754.f = x;
@@ -72,7 +75,8 @@ static int isinff(float x)
 #endif
 
 #ifndef	isnanf
-static int isnanf(float x)
+__weak
+int isnanf(float x)
 {
 	union { uint32_t u; float f; } ieee754;
 	ieee754.f = x;
