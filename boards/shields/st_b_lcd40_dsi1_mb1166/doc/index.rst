@@ -9,6 +9,9 @@ Overview
 The B-LCD40-DSI1 shield provides a 4-inch WVGA TFT LCD with MIPI DSI interface
 and capacitive touch screen.
 
+.. note::
+   Currently only the older version MB1166-A03 is supported by Zephyr.
+   The newer version MB1166-A09 does not get initialized correctly (see :github:`60888`).
 
 .. figure:: image.jpg
    :alt: B-LCD40-DSI1 MB1166 Image
