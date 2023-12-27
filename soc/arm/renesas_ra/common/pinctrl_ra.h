@@ -56,7 +56,8 @@ struct pinctrl_ra_pin {
 			uint8_t pin: 4;
 			uint8_t port: 3;
 			uint32_t UNUSED24: 5;
-			uint8_t port4: 3;
+			uint8_t port4: 1;
+			uint32_t UNUSED30: 2;
 		};
 	};
 };
@@ -90,4 +91,4 @@ extern int pinctrl_ra_query_config(uint32_t port, uint32_t pin,
 				       Z_PINCTRL_STATE_PIN_INIT)                                   \
 	}
 
-#endif /* ZEPHYR_SOC_ARM_RENESAS_RA_RA6E1_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_ARM_RENESAS_RA_COMMON_RA_PINCTRL_SOC_H_ */
