@@ -126,27 +126,6 @@ extern "C" {
 		BT_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu),        \
 		BT_AUDIO_CODEC_CFG_LC3_META(_stream_context))
 
-/**
- *  @brief Helper to declare LC3 codec QoS for 7.5ms interval
- */
-#define BT_AUDIO_CODEC_LC3_QOS_7_5(_framing, _sdu, _rtn, _latency, _pd)                            \
-	BT_AUDIO_CODEC_QOS(7500u, _framing, BT_AUDIO_CODEC_QOS_2M, _sdu, _rtn, _latency, _pd)
-/**
- *  @brief Helper to declare LC3 codec QoS for 7.5ms interval unframed input
- */
-#define BT_AUDIO_CODEC_LC3_QOS_7_5_UNFRAMED(_sdu, _rtn, _latency, _pd)                             \
-	BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, _sdu, _rtn, _latency, _pd)
-/**
- *  @brief Helper to declare LC3 codec QoS for 10ms frame internal
- */
-#define BT_AUDIO_CODEC_LC3_QOS_10(_framing, _sdu, _rtn, _latency, _pd)                             \
-	BT_AUDIO_CODEC_QOS(10000u, _framing, BT_AUDIO_CODEC_QOS_2M, _sdu, _rtn, _latency, _pd)
-/**
- *  @brief Helper to declare LC3 codec QoS for 10ms interval unframed input
- */
-#define BT_AUDIO_CODEC_LC3_QOS_10_UNFRAMED(_sdu, _rtn, _latency, _pd)                              \
-	BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, _sdu, _rtn, _latency, _pd)
-
 #ifdef __cplusplus
 }
 #endif
