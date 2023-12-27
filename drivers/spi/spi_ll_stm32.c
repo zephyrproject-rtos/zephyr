@@ -1146,7 +1146,9 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define SPI_DMA_STATUS_SEM(id)
 #endif
 
-
+#define SPI_SUPPORTS_FIFO(id)	DT_INST_NODE_HAS_PROP(id, fifo_enable)
+#define SPI_GET_FIFO_PROP(id)	DT_INST_PROP(id, fifo_enable)
+#define SPI_FIFO_ENABLED(id)	COND_CODE_1(SPI_SUPPORTS_FIFO(id), (SPI_GET_FIFO_PROP(id)), (0))
 
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
@@ -1161,6 +1163,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pclken = pclken_##id,						\
 	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+	.fifo_enabled = SPI_FIFO_ENABLED(id),				\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
 		(.use_subghzspi_nss =					\
