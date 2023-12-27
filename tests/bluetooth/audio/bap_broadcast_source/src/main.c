@@ -43,7 +43,7 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	struct bap_broadcast_source_test_suite_fixture *fixture)
 {
 	const uint8_t bis_cfg_data[] = {
-		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
 				    BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT),
 	};
 	const size_t streams_per_subgroup = CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT /
