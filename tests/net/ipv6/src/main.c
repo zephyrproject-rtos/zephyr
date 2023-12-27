@@ -1293,7 +1293,7 @@ ZTEST(net_ipv6, test_src_localaddr_recv)
 	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&localaddr, &addr);
@@ -1306,7 +1306,7 @@ ZTEST(net_ipv6, test_dst_localaddr_recv)
 	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &localaddr);
@@ -1319,7 +1319,7 @@ ZTEST(net_ipv6, test_dst_iface_scope_mcast_recv)
 	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_iface);
@@ -1332,7 +1332,7 @@ ZTEST(net_ipv6, test_dst_zero_scope_mcast_recv)
 	struct in6_addr mcast_zero = { { { 0xff, 0x00, 0, 0, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_zero);
@@ -1345,7 +1345,7 @@ ZTEST(net_ipv6, test_dst_site_scope_mcast_recv_drop)
 	struct in6_addr mcast_site = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_site);
@@ -1432,7 +1432,7 @@ ZTEST(net_ipv6, test_dst_site_scope_mcast_recv_ok)
 	struct in6_addr mcast_all_dhcp = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
 					    0, 0, 0, 0x01, 0, 0, 0, 0x03 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 	struct net_context *ctx;
 
@@ -1461,7 +1461,7 @@ ZTEST(net_ipv6, test_dst_org_scope_mcast_recv)
 	struct in6_addr mcast_org = { { { 0xff, 0x08, 0, 0, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_org);
@@ -1474,7 +1474,7 @@ ZTEST(net_ipv6, test_dst_iface_scope_mcast_send)
 	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0 } } };
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0, 0x10 } } };
 	struct net_if_mcast_addr *maddr;
 	struct net_context *ctx;
 	int ret;
@@ -1516,7 +1516,7 @@ ZTEST(net_ipv6, test_dst_unknown_group_mcast_recv)
 	};
 	struct in6_addr in6_addr_any = IN6ADDR_ANY_INIT;
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0x10 } } };
 	struct net_context *ctx;
 	enum net_verdict verdict;
 
@@ -1546,7 +1546,7 @@ ZTEST(net_ipv6, test_y_dst_unjoined_group_mcast_recv)
 	};
 	struct in6_addr in6_addr_any = IN6ADDR_ANY_INIT;
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0x10 } } };
 	struct net_if_mcast_addr *maddr;
 	struct net_context *ctx;
 	enum net_verdict verdict;
@@ -1592,7 +1592,7 @@ ZTEST(net_ipv6, test_dst_is_other_iface_mcast_recv)
 					     0x08 } } };
 	struct in6_addr in6_addr_any = IN6ADDR_ANY_INIT;
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0x1 } } };
+				     0, 0, 0, 0, 0, 0x10 } } };
 	struct net_if *test_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	struct net_if_mcast_addr *maddr;
 	struct net_context *ctx;
@@ -1633,7 +1633,7 @@ ZTEST(net_ipv6, test_no_nd_flag)
 {
 	bool ret;
 	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0x99, 0x1 } } };
+				     0, 0, 0, 0, 0, 0, 0x99, 0x10 } } };
 	struct net_if *iface = TEST_NET_IF;
 	struct net_if_addr *ifaddr;
 
