@@ -9,10 +9,11 @@ zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
 
 if(NOT CONFIG_PICOLIBC_USE_MODULE)
 
-  # Use picolibc provided with the toolchain
+  # Use picolibc provided with the toolchain. This requires a new enough
+  # toolchain so that the version of picolibc supports auto-detecting a
+  # Zephyr build (via the __ZEPHYR__ macro) to expose the Zephyr C API
 
   zephyr_compile_options(--specs=picolibc.specs)
-  zephyr_compile_definitions(_POSIX_C_SOURCE=200809)
   zephyr_libc_link_libraries(--specs=picolibc.specs c -lgcc)
   if(CONFIG_PICOLIBC_IO_FLOAT)
     zephyr_compile_definitions(PICOLIBC_DOUBLE_PRINTF_SCANF)
