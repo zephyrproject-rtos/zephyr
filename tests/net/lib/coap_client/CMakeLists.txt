@@ -16,6 +16,8 @@ target_sources(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/coap/coap.c)
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/include/)
 
+target_compile_definitions(app PRIVATE _POSIX_C_SOURCE=200809L)
+
 add_compile_definitions(CONFIG_NET_SOCKETS_POLL_MAX=3)
 add_compile_definitions(CONFIG_COAP_CLIENT=y)
 add_compile_definitions(CONFIG_COAP_CLIENT_BLOCK_SIZE=256)
