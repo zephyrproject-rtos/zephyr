@@ -135,7 +135,7 @@ static inline void expect_bt_bap_stream_ops_released_called(const struct bt_bap_
 	}
 }
 
-static inline void expect_bt_bap_stream_ops_released_called_once(struct bt_bap_stream *stream)
+static inline void expect_bt_bap_stream_ops_released_called_once(const struct bt_bap_stream *stream)
 {
 	expect_bt_bap_stream_ops_released_called(&stream, 1);
 }
@@ -191,6 +191,45 @@ static inline void expect_bt_bap_stream_ops_stopped_not_called(void)
 	const char *func_name = "bt_bap_stream_ops.stopped";
 
 	zexpect_call_count(func_name, 0, mock_bap_stream_stopped_cb_fake.call_count);
+}
+
+static inline void
+expect_bt_bap_stream_ops_connected_called_once(const struct bt_bap_stream *stream)
+{
+	const char *func_name = "bt_bap_stream_ops.connected";
+
+	zexpect_call_count(func_name, 1, mock_bap_stream_connected_cb_fake.call_count);
+
+	if (mock_bap_stream_connected_cb_fake.call_count > 0) {
+		zexpect_equal_ptr(stream, mock_bap_stream_connected_cb_fake.arg0_val,
+				  "'%s()' was called with incorrect '%s'", func_name, "stream");
+	}
+}
+
+static inline void
+expect_bt_bap_stream_ops_connected_called_twice(const struct bt_bap_stream *stream)
+{
+	const char *func_name = "bt_bap_stream_ops.connected";
+
+	zexpect_call_count(func_name, 2, mock_bap_stream_connected_cb_fake.call_count);
+
+	if (mock_bap_stream_connected_cb_fake.call_count > 0) {
+		zexpect_equal_ptr(stream, mock_bap_stream_connected_cb_fake.arg0_val,
+				  "'%s()' was called with incorrect '%s'", func_name, "stream");
+	}
+}
+
+static inline void
+expect_bt_bap_stream_ops_disconnected_called_once(const struct bt_bap_stream *stream)
+{
+	const char *func_name = "bt_bap_stream_ops.disconnected";
+
+	zexpect_call_count(func_name, 1, mock_bap_stream_disconnected_cb_fake.call_count);
+
+	if (mock_bap_stream_disconnected_cb_fake.call_count > 0) {
+		zexpect_equal_ptr(stream, mock_bap_stream_disconnected_cb_fake.arg0_val,
+				  "'%s()' was called with incorrect '%s'", func_name, "stream");
+	}
 }
 
 static inline void expect_bt_bap_stream_ops_recv_called_once(struct bt_bap_stream *stream,
