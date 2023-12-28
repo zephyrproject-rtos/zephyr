@@ -1561,3 +1561,282 @@ static int espi_xec_init(const struct device *dev)
 
 	return ret;
 }
+
+#ifdef CONFIG_FLASH_HAS_DRIVER_ENABLED
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT microchip_xec_espi_maf_flash
+
+#include <zephyr/drivers/flash.h>
+
+#define MAX_FLASH_REQUEST 64U
+
+static const struct device *const espi_dev = DEVICE_DT_GET(DT_NODELABEL(espi0));
+
+struct flash_espi_data {
+	struct k_sem mutex;
+};
+
+static struct flash_espi_data flash_data;
+
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+static const struct flash_pages_layout espi_flash_layout[] = {
+	{
+	.pages_size = 4096,
+	.pages_count = 1024*512/4096-4096,
+	}
+};
+#endif
+
+bool flash_espi_valid_range(off_t offset, uint32_t len, bool write)
+{
+	return true;
+}
+
+static const struct flash_parameters flash_espi_parameters = {
+	.write_block_size = 1,
+	.erase_value = 0xff,
+};
+
+static int flash_espi_read(const struct device *dev, off_t offset,
+			   void *data, size_t len)
+{
+	uint32_t flash_addr = offset;
+	uint16_t transactions = len / MAX_FLASH_REQUEST;
+	uint16_t remaining = len;
+	uint8_t *mem = data;
+	struct espi_flash_packet pkt;
+	struct flash_espi_data *dev_data = dev->data;
+	int ret = 0;
+
+	LOG_DBG("%s: ", __func__);
+	LOG_DBG("offset: 0x%x len: 0x%x", (uint32_t)offset, (uint32_t)len);
+
+	if ((offset > KB(1024)) ||
+	    ((offset + len) > KB(1024))) {
+		LOG_DBG("%s: Error, out of range", __func__);
+		return -EINVAL;
+	}
+
+	if (len == 0U) {
+		LOG_DBG("%s: Error, len == 0", __func__);
+		return  0;
+	}
+
+	/*
+	 * create FLASH channel packets to read
+	 */
+	k_sem_take(&dev_data->mutex, K_FOREVER);
+	if ((flash_addr & 0x3F) && (ROUND_DOWN(offset, 4096) != ROUND_DOWN((offset + len), 4096))) {
+		pkt.buf = mem;
+		pkt.flash_addr = flash_addr;
+		pkt.len = ROUND_UP(flash_addr, 64) - flash_addr;
+
+		ret = espi_read_flash(espi_dev, &pkt);
+		if (ret) {
+			LOG_ERR("espi flash_read < 64B failed: %d", ret);
+			return ret;
+		}
+		mem += pkt.len;
+		flash_addr += pkt.len;
+		remaining -= pkt.len;
+	}
+
+	while (transactions > 1) {
+		pkt.buf = mem;
+		pkt.flash_addr = flash_addr;
+		pkt.len = MAX_FLASH_REQUEST;
+
+		ret = espi_read_flash(espi_dev, &pkt);
+		if (ret) {
+			LOG_ERR("espi flash read failed: %d", ret);
+			return ret;
+		}
+
+		mem += MAX_FLASH_REQUEST;
+		flash_addr += MAX_FLASH_REQUEST;
+		remaining -= MAX_FLASH_REQUEST;
+		transactions--;
+	}
+	if (remaining) {
+		LOG_DBG("%s: Remaining bytes = %d, offset = 0x%x", __func__, remaining, flash_addr);
+		pkt.buf = mem;
+		pkt.flash_addr = flash_addr;
+		pkt.len = remaining;
+
+		ret = espi_read_flash(espi_dev, &pkt);
+	}
+
+	k_sem_give(&dev_data->mutex);
+
+	if (ret) {
+		LOG_ERR("espi flash read failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int flash_espi_write(const struct device *dev, off_t offset,
+			    const void *data, size_t len)
+{
+	uint32_t flash_addr = offset;
+	uint16_t transactions = len / MAX_FLASH_REQUEST;
+	uint16_t remaining = len;
+	uint8_t *mem = (uint8_t *)data;
+	struct espi_flash_packet pkt;
+	struct flash_espi_data *dev_data = dev->data;
+	int ret = 0;
+
+	if (!flash_espi_valid_range(offset, len, true)) {
+		return -EINVAL;
+	}
+
+	if (len == 0U) {
+		return 0;
+	}
+
+	/*
+	 * create FLASH channel packets to write
+	 */
+	k_sem_take(&dev_data->mutex, K_FOREVER);
+	if ((flash_addr & 0x3F) && (ROUND_DOWN(offset, 4096) != ROUND_DOWN((offset + len), 4096))) {
+		pkt.buf = mem;
+		pkt.flash_addr = flash_addr;
+		pkt.len = ROUND_UP(flash_addr, 64) - flash_addr;
+
+		ret = espi_write_flash(espi_dev, &pkt);
+		if (ret) {
+			LOG_ERR("espi flash_read < 64B failed: %d", ret);
+			return ret;
+		}
+		mem += pkt.len;
+		flash_addr += pkt.len;
+		remaining -= pkt.len;
+	}
+
+	while (transactions > 1) {
+		pkt.buf = mem;
+		pkt.flash_addr = flash_addr;
+		pkt.len = MAX_FLASH_REQUEST;
+
+		ret = espi_write_flash(espi_dev, &pkt);
+		if (ret) {
+			LOG_ERR("espi flash read failed: %d", ret);
+			return ret;
+		}
+
+		mem += MAX_FLASH_REQUEST;
+		flash_addr += MAX_FLASH_REQUEST;
+		remaining -= MAX_FLASH_REQUEST;
+		transactions--;
+	}
+	if (remaining) {
+		pkt.buf = mem;
+		pkt.flash_addr = flash_addr;
+		pkt.len = remaining;
+
+		ret = espi_write_flash(espi_dev, &pkt);
+	}
+
+	k_sem_give(&dev_data->mutex);
+
+	if (ret) {
+		LOG_ERR("espi flash write failed: %d", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+static int flash_espi_erase(const struct device *dev, off_t offset, size_t size)
+{
+	uint32_t flash_addr = offset;
+	uint16_t transactions = size / 4096;
+	struct espi_flash_packet pkt;
+	struct flash_espi_data *dev_data = dev->data;
+	int ret = 0;
+
+	if (size == 0U) {
+		return 0;
+	}
+
+	if (!flash_espi_valid_range(offset, size, false)) {
+		return -EINVAL;
+	}
+
+	/*
+	 * create FLASH channel packets to erase
+	 */
+	k_sem_take(&dev_data->mutex, K_FOREVER);
+	while (transactions > 1) {
+		pkt.flash_addr = flash_addr;
+		pkt.len = 4096;
+
+		ret = espi_flash_erase(espi_dev, &pkt);
+		if (ret) {
+			LOG_ERR("espi flash read failed: %d", ret);
+			return ret;
+		}
+
+		flash_addr += 4096;
+		transactions--;
+	}
+	pkt.flash_addr = flash_addr;
+	pkt.len = 4096;
+
+	ret = espi_flash_erase(espi_dev, &pkt);
+
+	k_sem_give(&dev_data->mutex);
+
+	if (ret) {
+		LOG_ERR("espi flash erase failed: %d", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+static const struct flash_parameters*
+flash_espi_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_espi_parameters;
+}
+
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+void flash_espi_pages_layout(const struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size)
+{
+	ARG_UNUSED(dev);
+
+	*layout = espi_flash_layout;
+	*layout_size = ARRAY_SIZE(espi_flash_layout);
+
+}
+#endif
+
+static const struct flash_driver_api flash_espi_driver_api = {
+	.read = flash_espi_read,
+	.write = flash_espi_write,
+	.erase = flash_espi_erase,
+	.get_parameters = flash_espi_get_parameters,
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+	.page_layout = flash_espi_pages_layout,
+#endif
+};
+
+static int flash_espi_init(const struct device *dev)
+{
+	struct flash_espi_data *data = dev->data;
+
+	k_sem_init(&data->mutex, 1, 1);
+
+	return 0;
+}
+
+DEVICE_DT_INST_DEFINE(0, flash_espi_init, NULL,
+		      &flash_data, NULL, POST_KERNEL,
+		      CONFIG_FLASH_INIT_PRIORITY, &flash_espi_driver_api);
+#endif

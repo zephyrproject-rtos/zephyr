@@ -16,6 +16,15 @@ config NUM_IRQS
 
 source "soc/arm/microchip_mec/mec172x/Kconfig.defconfig.mec172x*"
 
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/flash@c0000,0)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/flash@c0000)
+
+config ROM_START_OFFSET
+	default 0 if BOOTLOADER_MCUBOOT
+
 if RTOS_TIMER
 
 config SOC_HAS_TIMING_FUNCTIONS
