@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2023 Meta
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +28,40 @@ static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size
 	__align = align | sizeof(heap_ref);
 
 	mem = k_heap_aligned_alloc(heap, __align, size, K_NO_WAIT);
+	if (mem == NULL) {
+		return NULL;
+	}
+
+	heap_ref = mem;
+	*heap_ref = heap;
+	mem = ++heap_ref;
+	__ASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
+		 "misaligned memory at %p (align = %zu)", mem, align);
+
+	return mem;
+}
+
+static void *z_heap_aligned_realloc(struct k_heap *heap, void *ptr, size_t align, size_t size)
+{
+	void *mem;
+	struct k_heap **heap_ref;
+	size_t __align = align | sizeof(heap_ref);
+
+	/* If we are resizing an existing allocation */
+	if (ptr != NULL) {
+		heap_ref = ptr;
+		ptr = --heap_ref;
+	}
+
+	if (size != 0) {
+		if (size_add_overflow(size, sizeof(heap_ref), &size)) {
+			return NULL;
+		}
+	} else {
+		/* size = 0 is a special case for the free() semantic */
+	}
+
+	mem = k_heap_aligned_realloc(heap, ptr, __align, size, K_NO_WAIT);
 	if (mem == NULL) {
 		return NULL;
 	}
@@ -79,6 +114,24 @@ void *k_aligned_alloc(size_t align, size_t size)
 	return ret;
 }
 
+void *k_aligned_realloc(void *ptr, size_t align, size_t size)
+{
+	__ASSERT(align / sizeof(void *) >= 1
+		&& (align % sizeof(void *)) == 0,
+		"align must be a multiple of sizeof(void *)");
+
+	__ASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_aligned_realloc, _SYSTEM_HEAP);
+
+	void *ret = z_heap_aligned_realloc(_SYSTEM_HEAP, ptr, align, size);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_aligned_realloc, _SYSTEM_HEAP, ret);
+
+	return ret;
+}
+
 void *k_malloc(size_t size)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_malloc, _SYSTEM_HEAP);
@@ -86,6 +139,17 @@ void *k_malloc(size_t size)
 	void *ret = k_aligned_alloc(sizeof(void *), size);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_malloc, _SYSTEM_HEAP, ret);
+
+	return ret;
+}
+
+void *k_realloc(void *ptr, size_t size)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_realloc, _SYSTEM_HEAP);
+
+	void *ret = k_aligned_realloc(ptr, sizeof(void *), size);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_realloc, _SYSTEM_HEAP, ret);
 
 	return ret;
 }

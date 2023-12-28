@@ -5510,6 +5510,17 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 void *k_aligned_alloc(size_t align, size_t size);
 
 /**
+ * @brief Resize an allocated memory from the heap with a specified alignment.
+ *
+ * @param ptr Address of the allocated memory
+ * @param align Alignment of memory requested (in bytes).
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Address of the allocated memory if successful; otherwise NULL.
+ */
+void *k_aligned_realloc(void *ptr, size_t align, size_t size);
+
+/**
  * @brief Allocate memory from the heap.
  *
  * This routine provides traditional malloc() semantics. Memory is
@@ -5521,6 +5532,20 @@ void *k_aligned_alloc(size_t align, size_t size);
  * @return Address of the allocated memory if successful; otherwise NULL.
  */
 void *k_malloc(size_t size);
+
+/**
+ * @brief Resize an allocated memory from the heap.
+ *
+ * This routine provides traditional realloc() semantics. Memory is
+ * allocated from the heap memory pool.
+ * Allocated memory is aligned on a multiple of pointer sizes.
+ *
+ * @param ptr Address of the allocated memory
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Address of the allocated memory if successful; otherwise NULL.
+ */
+void *k_realloc(void *ptr, size_t size);
 
 /**
  * @brief Free memory allocated from heap.
