@@ -96,3 +96,67 @@ int sched_getscheduler(pid_t pid)
 
 	return (ret == 0) ? t_policy : -1;
 }
+
+/**
+ * @brief Set scheduling parameters
+ *
+ * See IEEE 1003.1
+ */
+int sched_setparam(pid_t pid, const struct sched_param *param)
+{
+	struct sched_param dummy_param = {0};
+	pthread_t tid = (pthread_t)pid;
+	int t_policy = -1;
+	int ret = -1;
+	
+	if (param == NULL) {
+		param = &dummy_param;
+	}
+	
+	if (tid == 0) {
+		tid = pthread_self();
+	}
+	
+	if (param == NULL) {
+		ret = -1;
+	}else{
+		ret = pthread_getschedparam(tid, &t_policy, &dummy_param);
+		if(ret != -1){
+			ret = pthread_setschedparam(tid, t_policy, param);
+		}
+	}
+	
+	errno = ret;
+	return ret;
+}
+
+/**
+ * @brief Set scheduling policy
+ *
+ * See IEEE 1003.1
+ */
+int sched_setscheduler(pid_t pid, int policy,const struct sched_param *param)
+{
+	struct sched_param dummy_param = {0};
+	pthread_t tid = (pthread_t)pid;
+	int ret = -1;
+	
+	if (param == NULL) {
+		param = &dummy_param;
+	}
+	
+	if (tid == 0) {
+		tid = pthread_self();
+	}
+	
+	if (param == NULL) {
+		ret = -1;
+	}else{
+		if(ret != -1){
+			ret = pthread_setschedparam(tid, policy, param);
+		}
+	}
+	
+	errno = ret;
+	return ret;
+}	
