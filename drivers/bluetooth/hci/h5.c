@@ -768,10 +768,29 @@ static int h5_open(void)
 	return 0;
 }
 
+static void h5_deinit(void)
+{
+	k_work_cancel_delayable(&retx_work);
+	k_work_cancel_delayable(&ack_work);
+
+	k_thread_abort(&rx_thread_data);
+	k_thread_abort(&tx_thread_data);
+}
+
+static int h5_close(void)
+{
+	uart_irq_rx_disable(h5_dev);
+
+	h5_deinit();
+
+	return 0;
+}
+
 static const struct bt_hci_driver drv = {
 	.name		= "H:5",
 	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h5_open,
+	.close		= h5_close,
 	.send		= h5_queue,
 };
 

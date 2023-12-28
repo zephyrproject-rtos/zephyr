@@ -529,6 +529,13 @@ static int h4_open(void)
 	return 0;
 }
 
+static int h4_close(void)
+{
+	k_thread_abort(&rx_thread_data);
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_HCI_SETUP)
 static int h4_setup(const struct bt_hci_setup_params *params)
 {
@@ -550,6 +557,7 @@ static const struct bt_hci_driver drv = {
 	.name		= "H:4",
 	.bus		= BT_HCI_DRIVER_BUS_UART,
 	.open		= h4_open,
+	.close		= h4_close,
 	.send		= h4_send,
 #if defined(CONFIG_BT_HCI_SETUP)
 	.setup		= h4_setup
