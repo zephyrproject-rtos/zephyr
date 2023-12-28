@@ -18,6 +18,7 @@
 #include <zephyr/net/socketcan_utils.h>
 
 #include "can_native_linux_adapt.h"
+#include "nsi_host_trampolines.h"
 
 LOG_MODULE_REGISTER(can_native_linux, CONFIG_CAN_LOG_LEVEL);
 
@@ -179,7 +180,7 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 	data->tx_callback = callback;
 	data->tx_user_data = user_data;
 
-	ret = linux_socketcan_write_data(data->dev_fd, &sframe, mtu);
+	ret = nsi_host_write(data->dev_fd, &sframe, mtu);
 	if (ret < 0) {
 		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
 	}
