@@ -30,7 +30,7 @@
  */
 
 #include <string.h>
-#ifdef CONFIG_ARCH_POSIX
+#ifdef CONFIG_NATIVE_LIBC
 #include <unistd.h>
 #else
 #include <zephyr/posix/unistd.h>
