@@ -73,6 +73,9 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 endif()
 zephyr_link_libraries(c)
 
+# newlib needs this to expose the full Zephyr C Library API
+zephyr_compile_definitions(_POSIX_C_SOURCE=200809L)
+
 if(CONFIG_NEWLIB_LIBC_NANO)
   zephyr_link_libraries(
     -specs=nano.specs
