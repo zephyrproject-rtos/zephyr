@@ -224,10 +224,6 @@ int main(void)
 {
 	int ret;
 
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
-	srandom(time(NULL));
-#endif
-
 	ret = lwm2m_setup();
 	if (ret < 0) {
 		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
