@@ -6,15 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
-#include <zephyr/device.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/byteorder.h>
-#ifdef CONFIG_ARCH_POSIX
+#ifdef CONFIG_NATIVE_LIBC
 #include <unistd.h>
 #else
 #include <zephyr/posix/unistd.h>
 #endif
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/sys/byteorder.h>
 
 static inline bool is_ascii(uint8_t data)
 {
