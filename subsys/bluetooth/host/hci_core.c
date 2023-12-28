@@ -329,6 +329,10 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
 	BT_ASSERT_MSG(err == 0, "command opcode 0x%04x timeout with err %d", opcode, err);
+	if (err) {
+		net_buf_unref(buf);
+		return err;
+	}
 
 	status = cmd(buf)->status;
 	if (status) {
@@ -3940,6 +3944,19 @@ static void init_work(struct k_work *work)
 	int err;
 
 	err = bt_init();
+	if (err) {
+		if (bt_dev.drv->close) {
+			bt_dev.drv->close();
+		}
+
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+		/* Abort RX thread */
+		k_thread_abort(&bt_workq.thread);
+#endif
+
+		k_thread_abort(&tx_thread_data);
+	}
+
 	if (ready_cb) {
 		ready_cb(err);
 	}
@@ -4065,17 +4082,33 @@ int bt_enable(bt_ready_cb_t cb)
 	err = bt_dev.drv->open();
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
-		return err;
+		goto error;
 	}
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 
-	if (!cb) {
-		return bt_init();
+	if (cb) {
+		k_work_submit(&bt_dev.init);
+	} else {
+		err = bt_init();
+		if (err) {
+			if (bt_dev.drv->close) {
+				bt_dev.drv->close();
+			}
+			goto error;
+		}
 	}
 
-	k_work_submit(&bt_dev.init);
 	return 0;
+
+error:
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	/* Abort RX thread */
+	k_thread_abort(&bt_workq.thread);
+#endif
+
+	k_thread_abort(&tx_thread_data);
+	return err;
 }
 
 int bt_disable(void)
