@@ -45,7 +45,10 @@ static atomic_t flag_stream_qos_configured;
 CREATE_FLAG(flag_stream_enabled);
 CREATE_FLAG(flag_stream_metadata);
 CREATE_FLAG(flag_stream_started);
+CREATE_FLAG(flag_stream_connected);
+CREATE_FLAG(flag_stream_disconnected);
 CREATE_FLAG(flag_stream_disabled);
+CREATE_FLAG(flag_stream_stopped);
 CREATE_FLAG(flag_stream_released);
 CREATE_FLAG(flag_operation_success);
 
@@ -86,6 +89,20 @@ static void stream_started(struct bt_bap_stream *stream)
 	SET_FLAG(flag_stream_started);
 }
 
+static void stream_connected(struct bt_bap_stream *stream)
+{
+	printk("Connected stream %p\n", stream);
+
+	SET_FLAG(flag_stream_connected);
+}
+
+static void stream_disconnected(struct bt_bap_stream *stream, uint8_t reason)
+{
+	printk("Disconnected stream %p with reason %u\n", stream, reason);
+
+	SET_FLAG(flag_stream_disconnected);
+}
+
 static void stream_metadata_updated(struct bt_bap_stream *stream)
 {
 	printk("Metadata updated stream %p\n", stream);
@@ -107,6 +124,8 @@ static void stream_disabled(struct bt_bap_stream *stream)
 static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+
+	SET_FLAG(flag_stream_stopped);
 }
 
 static void stream_released(struct bt_bap_stream *stream)
@@ -198,6 +217,8 @@ static struct bt_bap_stream_ops stream_ops = {
 	.released = stream_released,
 	.recv = stream_recv_cb,
 	.sent = stream_sent_cb,
+	.connected = stream_connected,
+	.disconnected = stream_disconnected,
 };
 
 static void unicast_client_location_cb(struct bt_conn *conn,
@@ -764,6 +785,8 @@ static void start_streams(void)
 	source_stream = pair_params[0].rx_param == NULL ? NULL : pair_params[0].rx_param->stream;
 	sink_stream = pair_params[0].tx_param == NULL ? NULL : pair_params[0].tx_param->stream;
 
+	UNSET_FLAG(flag_stream_connected);
+
 	if (sink_stream != NULL) {
 		const int err = start_stream(sink_stream);
 
@@ -783,6 +806,8 @@ static void start_streams(void)
 			return;
 		}
 	}
+
+	WAIT_FOR_FLAG(flag_stream_connected);
 }
 
 static void transceive_streams(void)
@@ -841,6 +866,42 @@ static void disable_streams(size_t stream_cnt)
 		WAIT_FOR_FLAG(flag_operation_success);
 		WAIT_FOR_FLAG(flag_stream_disabled);
 	}
+}
+
+static void stop_streams(size_t stream_cnt)
+{
+	UNSET_FLAG(flag_stream_disconnected);
+
+	for (size_t i = 0; i < stream_cnt; i++) {
+		struct bt_bap_stream *source_stream;
+		int err;
+
+		/* We can only stop source streams */
+		source_stream =
+			pair_params[i].rx_param == NULL ? NULL : pair_params[i].rx_param->stream;
+
+		if (source_stream == NULL) {
+			continue;
+		}
+
+		UNSET_FLAG(flag_operation_success);
+		UNSET_FLAG(flag_stream_stopped);
+
+		do {
+			err = bt_bap_stream_stop(source_stream);
+			if (err == -EBUSY) {
+				k_sleep(BAP_STREAM_RETRY_WAIT);
+			} else if (err != 0) {
+				FAIL("Could not stop stream: %d\n", err);
+				return;
+			}
+		} while (err == -EBUSY);
+
+		WAIT_FOR_FLAG(flag_operation_success);
+		WAIT_FOR_FLAG(flag_stream_stopped);
+	}
+
+	WAIT_FOR_FLAG(flag_stream_disconnected);
 }
 
 static void release_streams(size_t stream_cnt)
@@ -994,8 +1055,11 @@ static void test_main(void)
 		printk("Starting transceiving\n");
 		transceive_streams();
 
-		printk("Stopping streams\n");
+		printk("Disabling streams\n");
 		disable_streams(stream_cnt);
+
+		printk("Stopping streams\n");
+		stop_streams(stream_cnt);
 
 		printk("Releasing streams\n");
 		release_streams(stream_cnt);

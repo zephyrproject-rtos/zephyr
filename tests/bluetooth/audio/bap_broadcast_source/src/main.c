@@ -218,6 +218,8 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 	err = bt_bap_broadcast_source_start(fixture->source, &ext_adv);
 	zassert_equal(0, err, "Unable to start broadcast source: err %d", err);
 
+	zexpect_call_count("bt_bap_stream_ops.connected", fixture->stream_cnt,
+			   mock_bap_stream_connected_cb_fake.call_count);
 	zexpect_call_count("bt_bap_stream_ops.started", fixture->stream_cnt,
 			   mock_bap_stream_started_cb_fake.call_count);
 
@@ -239,6 +241,8 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 	err = bt_bap_broadcast_source_stop(fixture->source);
 	zassert_equal(0, err, "Unable to stop broadcast source: err %d", err);
 
+	zexpect_call_count("bt_bap_stream_ops.disconnected", fixture->stream_cnt,
+			   mock_bap_stream_disconnected_cb_fake.call_count);
 	zexpect_call_count("bt_bap_stream_ops.stopped", fixture->stream_cnt,
 			   mock_bap_stream_stopped_cb_fake.call_count);
 
