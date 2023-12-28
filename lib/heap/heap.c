@@ -380,6 +380,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 			       size_t align, size_t bytes)
 {
 	struct z_heap *h = heap->heap;
+	size_t rew, __align = align;
 
 	/* special realloc semantics */
 	if (ptr == NULL) {
@@ -390,6 +391,10 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		return NULL;
 	}
 
+	rew = align & -align;
+	if (align != rew) {
+		align -= rew;
+	}
 	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
 	if (size_too_big(h, bytes)) {
@@ -471,7 +476,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	 * The calls to allocation and free functions generate
 	 * notification already, so there is no need to those here.
 	 */
-	void *ptr2 = sys_heap_aligned_alloc(heap, align, bytes);
+	void *ptr2 = sys_heap_aligned_alloc(heap, __align, bytes);
 
 	if (ptr2 != NULL) {
 		size_t prev_size = chunksz_to_bytes(h, chunk_size(h, c)) - align_gap;
