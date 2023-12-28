@@ -141,6 +141,43 @@
 			};
 		};
 
+
+		timer0: timer@40010000 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40010000 0x400>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer1: timer@40010400 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40010400 0x400>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer2: timer@40010800 {
+			compatible = "silabs,gecko-timers";
+			reg = <0x40010800 0x400>;
+			status = "disabled";
+
+			pwm {
+				compatible = "silabs,gecko-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
 		pinctrl: pin-controller {
 			/* Pin controller is a "virtual" device since SiLabs SoCs do pin
 			 * control in a distributed way (GPIO registers and PSEL
