@@ -15,10 +15,6 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#ifdef CONFIG_NEWLIB_LIBC
-#define _POSIX_C_SOURCE 200809L
-#endif
-
 #include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/ztest.h>
