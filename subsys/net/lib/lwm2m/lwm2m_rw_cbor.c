@@ -7,6 +7,9 @@
 #define LOG_MODULE_NAME net_lwm2m_cbor
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for gmtime_r */
+
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <stdio.h>
