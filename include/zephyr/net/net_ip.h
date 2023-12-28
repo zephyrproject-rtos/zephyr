@@ -907,6 +907,26 @@ static inline bool net_ipv6_is_global_addr(const struct in6_addr *addr)
 }
 
 /**
+ * @brief Check if the given IPv6 address is from a private/local address range.
+ *
+ * See https://en.wikipedia.org/wiki/Reserved_IP_addresses for details.
+ *
+ * @param addr A valid pointer on an IPv6 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv6_is_private_addr(const struct in6_addr *addr)
+{
+	uint32_t masked_32, masked_7;
+
+	masked_32 = ntohl(UNALIGNED_GET(&addr->s6_addr32[0]));
+	masked_7 = masked_32 & 0xfc000000;
+
+	return masked_32 == 0x20010db8 || /* 2001:db8::/32 */
+	       masked_7  == 0xfc000000;   /* fc00::/7      */
+}
+
+/**
  * @brief Return pointer to any (all bits zeros) IPv6 address.
  *
  * @return Any IPv6 address.
