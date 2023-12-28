@@ -3,7 +3,7 @@
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_syscall_header(
-  ${ZEPHYR_BASE}/include/zephyr/posix/time.h
+  posix_clock.h
 )
 
 zephyr_interface_library_named(posix_subsys)
