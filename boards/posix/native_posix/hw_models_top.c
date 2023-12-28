@@ -71,7 +71,7 @@ void hwm_signal_end_handler(int sig)
  * Therefore we set SA_RESETHAND: This way, the 2nd time the signal is received
  * the default handler would be called to terminate the program no matter what.
  *
- * Note that SA_RESETHAND requires either _POSIX_C_SOURCE>=200809 or
+ * Note that SA_RESETHAND requires either _POSIX_C_SOURCE>=200809L or
  * _XOPEN_SOURCE>=500
  */
 void hwm_set_sig_handler(void)
