@@ -133,8 +133,6 @@ if (CONFIG_GPROF)
   target_link_options(native_simulator INTERFACE "-pg")
 endif()
 
-zephyr_compile_definitions(_POSIX_C_SOURCE=200809L _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
-
 if (CONFIG_NATIVE_APPLICATION)
   zephyr_ld_options(
     -ldl
