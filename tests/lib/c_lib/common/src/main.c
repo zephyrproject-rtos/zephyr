@@ -15,7 +15,7 @@
  * it guarantee that ALL functionality provided is working correctly.
  */
 
-#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_NATIVE_LIBC)
+#if defined(CONFIG_NATIVE_LIBC)
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 #endif
