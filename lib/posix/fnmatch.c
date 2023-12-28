@@ -44,6 +44,7 @@
 #include <string.h>
 
 #include <zephyr/posix/fnmatch.h>
+#include <zephyr/toolchain.h>
 
 #define EOS '\0'
 
@@ -243,7 +244,7 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 					--pattern;
 				}
 			}
-			/* FALLTHROUGH */
+			__fallthrough;
 		default:
 			if (c != FOLDCASE(*string++, flags)) {
 				return FNM_NOMATCH;
@@ -252,7 +253,6 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 			break;
 		}
 	}
-	/* NOTREACHED */
 }
 
 int fnmatch(const char *pattern, const char *string, int flags)
