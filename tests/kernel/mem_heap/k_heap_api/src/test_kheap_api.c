@@ -145,6 +145,71 @@ ZTEST(k_heap_api, test_k_heap_alloc_fail)
 	k_heap_free(&k_heap_test, p);
 }
 
+/**
+ * @brief Test to demonstrate k_heap_realloc() API usage
+ *
+ * @ingroup kernel_kheap_api_tests
+ *
+ * @details The test initially allocates 1024 bytes using k_heap_realloc() with a NULL pointer,
+ * then expand and shrink the allocated buffer, before deallocating the buffer using
+ * k_heap_realloc() with size of 0.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p;
+
+	/* realloc with NULL is equivalent to k_heap_alloc() */
+	p = (char *)k_heap_realloc(&k_heap_test, NULL, ALLOC_SIZE_1, timeout);
+	zassert_not_null(p, "k_heap_realloc operation failed");
+	for (int i = 0; i < ALLOC_SIZE_1; i++) {
+		p[i] = '0';
+	}
+
+	/* Expand the buffer */
+	p = (char *)k_heap_realloc(&k_heap_test, p, ALLOC_SIZE_2, timeout);
+	zassert_not_null(p, "k_heap_realloc operation failed");
+	for (int i = 0; i < ALLOC_SIZE_2; i++) {
+		p[i] = '0';
+	}
+
+	/* Shrink the buffer */
+	p = (char *)k_heap_realloc(&k_heap_test, p, ALLOC_SIZE_1, timeout);
+	zassert_not_null(p, "k_heap_realloc operation failed");
+	for (int i = 0; i < ALLOC_SIZE_1; i++) {
+		p[i] = '0';
+	}
+
+	/* realloc with size of 0 is equivalent to k_heap_free() */
+	k_heap_realloc(&k_heap_test, p, 0, timeout);
+}
+
+/**
+ * @brief Test to demonstrate k_heap_alloc(), k_heap_realloc() and k_heap_free() API usage
+ *
+ * @ingroup kernel_kheap_api_tests
+ *
+ * @details The test allocates 1024 bytes, then tries to realloc that to 2049 bytes, which is
+ * greater than the heap size(2048 bytes), before deallocating the buffer with the old pointer
+ *
+ * @see k_heap_malloc(), k_heap_realloc() and k_heap_free()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_fail)
+{
+	k_timeout_t timeout = Z_TIMEOUT_US(TIMEOUT);
+	char *p, *old_p;
+
+	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_1, timeout);
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	old_p = p;
+	p = (char *)k_heap_realloc(&k_heap_test, old_p, ALLOC_SIZE_3, timeout);
+	zassert_is_null(p, NULL);
+
+	k_heap_free(&k_heap_test, old_p);
+}
 
 /**
  * @brief Test to demonstrate k_heap_free() API functionality.

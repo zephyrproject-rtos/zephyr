@@ -5331,6 +5331,28 @@ void k_heap_init(struct k_heap *h, void *mem,
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout) __attribute_nonnull(1);
 
+/** @brief Expand the size of an existing allocation into an aligned memory from a k_heap.
+ *
+ * Behaves in all ways like k_heap_realloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in
+ * bytes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param align Alignment in bytes, must be a power of two
+ * @param bytes Number of bytes requested
+ * @param timeout How long to wait, or K_NO_WAIT
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *k_heap_aligned_realloc(struct k_heap *h, void *ptr, size_t align, size_t bytes,
+			     k_timeout_t timeout) __attribute_nonnull(1);
+
 /**
  * @brief Allocate memory from a k_heap
  *
@@ -5354,6 +5376,29 @@ void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
  */
 void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
+
+/**
+ * @brief Expand the size of an existing allocation from a k_heap.
+ *
+ * Returns a pointer to a new memory region owned by the heap with the same contents, but a
+ * different allocated size. If the new allocation can be expanded in place, the pointer returned
+ * will be identical. Otherwise the data will be copies to a new block and the old one will be freed
+ * as per k_heap_free(). If the specified size is smaller than the original, the block will be
+ * truncated in place and the remaining memory returned to the heap. If the allocation of a new
+ * block fails, then NULL will be returned and the old block will not be freed or modified.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ * @return A pointer to valid heap memory, or NULL
+ */
+void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+	__attribute_nonnull(1);
 
 /**
  * @brief Free memory allocated by k_heap_alloc()
