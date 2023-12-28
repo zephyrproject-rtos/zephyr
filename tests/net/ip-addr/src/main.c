@@ -602,6 +602,43 @@ ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 		     "IPv6 removing address failed\n");
 }
 
+ZTEST(ip_addr_fn, test_private_ipv6_addresses)
+{
+	bool ret;
+	struct {
+		struct in6_addr addr;
+		bool is_private;
+	} addrs[] = {
+		{
+			.addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0x99, 0x1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0xfc, 0x01, 0, 0, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0xfc, 0, 0, 0, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0, 2 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 0x20, 0x01, 0x1d, 0xb8, 0, 0, 0, 0,
+				      0, 0, 0, 0, 0, 0, 0x99, 0x1 } } },
+			.is_private = false,
+		},
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(addrs); i++) {
+		ret = net_ipv6_is_private_addr(&addrs[i].addr);
+		zassert_equal(ret, addrs[i].is_private, "Address %s check failed",
+			      net_sprint_ipv6_addr(&addrs[i].addr));
+	}
+
+}
+
 ZTEST(ip_addr_fn, test_private_ipv4_addresses)
 {
 	bool ret;
