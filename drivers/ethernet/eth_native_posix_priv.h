@@ -14,8 +14,6 @@
 int eth_iface_create(const char *dev_name, const char *if_name, bool tun_only);
 int eth_iface_remove(int fd);
 int eth_wait_data(int fd);
-ssize_t eth_read_data(int fd, void *buf, size_t buf_len);
-ssize_t eth_write_data(int fd, void *buf, size_t buf_len);
 int eth_clock_gettime(uint64_t *second, uint32_t *nanosecond);
 int eth_promisc_mode(const char *if_name, bool enable);
 
