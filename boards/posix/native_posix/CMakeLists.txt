@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_compile_definitions(NO_POSIX_CHEATS)
+zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
 zephyr_library_sources(
 	hw_models_top.c
