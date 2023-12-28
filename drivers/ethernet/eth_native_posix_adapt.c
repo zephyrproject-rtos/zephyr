@@ -116,16 +116,6 @@ int eth_wait_data(int fd)
 	return -EAGAIN;
 }
 
-ssize_t eth_read_data(int fd, void *buf, size_t buf_len)
-{
-	return read(fd, buf, buf_len);
-}
-
-ssize_t eth_write_data(int fd, void *buf, size_t buf_len)
-{
-	return write(fd, buf, buf_len);
-}
-
 int eth_clock_gettime(uint64_t *second, uint32_t *nanosecond)
 {
 	struct timespec tp;
