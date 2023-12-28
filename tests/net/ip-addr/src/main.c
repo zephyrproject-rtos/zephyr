@@ -602,6 +602,67 @@ ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 		     "IPv6 removing address failed\n");
 }
 
+ZTEST(ip_addr_fn, test_private_ipv4_addresses)
+{
+	bool ret;
+	struct {
+		struct in_addr addr;
+		bool is_private;
+	} addrs[] = {
+		{
+			.addr = { { { 192, 0, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 10, 1, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 100, 124, 2, 1 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 172, 24, 100, 12 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 172, 15, 254, 255 } } },
+			.is_private = false,
+		},
+		{
+			.addr = { { { 172, 16, 0, 0 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 192, 168, 10, 122 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 192, 51, 100, 255 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 203, 0, 113, 122 } } },
+			.is_private = true,
+		},
+		{
+			.addr = { { { 1, 2, 3, 4 } } },
+			.is_private = false,
+		},
+		{
+			.addr = { { { 192, 1, 32, 4 } } },
+			.is_private = false,
+		},
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(addrs); i++) {
+		ret = net_ipv4_is_private_addr(&addrs[i].addr);
+		zassert_equal(ret, addrs[i].is_private, "Address %s check failed",
+			      net_sprint_ipv4_addr(&addrs[i].addr));
+	}
+
+}
+
 void *test_setup(void)
 {
 	default_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
