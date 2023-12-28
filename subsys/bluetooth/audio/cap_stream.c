@@ -182,6 +182,28 @@ static void cap_stream_sent_cb(struct bt_bap_stream *bap_stream)
 }
 #endif /* CONFIG_BT_AUDIO_TX */
 
+static void cap_stream_connected_cb(struct bt_bap_stream *bap_stream)
+{
+	struct bt_cap_stream *cap_stream =
+		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	if (ops != NULL && ops->connected != NULL) {
+		ops->connected(bap_stream);
+	}
+}
+
+static void cap_stream_disconnected_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
+{
+	struct bt_cap_stream *cap_stream =
+		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+	struct bt_bap_stream_ops *ops = cap_stream->ops;
+
+	if (ops != NULL && ops->disconnected != NULL) {
+		ops->disconnected(bap_stream, reason);
+	}
+}
+
 static struct bt_bap_stream_ops bap_stream_ops = {
 #if defined(CONFIG_BT_BAP_UNICAST)
 	.configured = cap_stream_configured_cb,
@@ -199,6 +221,8 @@ static struct bt_bap_stream_ops bap_stream_ops = {
 #if defined(CONFIG_BT_AUDIO_TX)
 	.sent = cap_stream_sent_cb,
 #endif /* CONFIG_BT_AUDIO_TX */
+	.connected = cap_stream_connected_cb,
+	.disconnected = cap_stream_disconnected_cb,
 };
 
 void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream)

@@ -288,6 +288,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_releasing)
 	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_streaming)
@@ -510,6 +511,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_enabling_to_streaming)
 	zassert_false(err < 0, "bt_bap_stream_start returned err %d", err);
 
 	/* Verification */
+	expect_bt_bap_stream_ops_connected_called_once(stream);
 	expect_bt_bap_stream_ops_started_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
 	/* XXX: unicast_server_cb->start is not called for Sink ASE */
@@ -585,6 +587,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_releasing)
 	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 }
 
 static void *test_source_ase_state_transition_setup(void)
@@ -711,6 +714,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_enabling_to_streaming)
 
 	/* Verification */
 	expect_bt_bap_unicast_server_cb_start_called_once(stream);
+	expect_bt_bap_stream_ops_connected_called_once(stream);
 	expect_bt_bap_stream_ops_started_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
 }
@@ -841,6 +845,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_releasing)
 	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_streaming)
@@ -1160,4 +1165,5 @@ ZTEST_F(test_source_ase_state_transition, test_server_streaming_to_releasing)
 	expect_bt_bap_stream_ops_stopped_called_once(stream, BT_HCI_ERR_LOCALHOST_TERM_CONN);
 	expect_bt_bap_stream_ops_released_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 }

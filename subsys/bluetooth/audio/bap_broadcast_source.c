@@ -166,9 +166,12 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
-	ops = stream->ops;
-
 	LOG_DBG("stream %p ep %p", stream, ep);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->connected != NULL) {
+		ops->connected(stream);
+	}
 
 	broadcast_source_set_ep_state(ep, BT_BAP_EP_STATE_STREAMING);
 
@@ -197,9 +200,12 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 		return;
 	}
 
-	ops = stream->ops;
-
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
+
+	ops = stream->ops;
+	if (ops != NULL && ops->disconnected != NULL) {
+		ops->disconnected(stream, reason);
+	}
 
 	broadcast_source_set_ep_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 

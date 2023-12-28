@@ -404,6 +404,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_called_once(stream);
 	expect_bt_bap_stream_ops_released_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
@@ -448,6 +449,7 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	expect_bt_bap_stream_ops_qos_set_called_once(stream);
 	expect_bt_bap_stream_ops_disabled_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 }
@@ -495,6 +497,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	/* Expected no change in ASE state */
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 
 	err = bt_bap_stream_disable(stream);
 	zassert_equal(0, err, "Failed to disable stream: err %d", err);
@@ -534,6 +537,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	test_preamble_state_enabling(conn, ase_id, stream);
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
+	expect_bt_bap_stream_ops_connected_called_once(stream);
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
@@ -541,6 +545,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	/* Expected to not notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
+	expect_bt_bap_stream_ops_disconnected_called_once(stream);
 
 	/* Client retries to establish CIS */
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
@@ -552,6 +557,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 		zassert_equal(0, err, "bt_bap_stream_start err %d", err);
 	}
 
+	expect_bt_bap_stream_ops_connected_called_twice(stream);
 	expect_bt_bap_stream_ops_started_called_once(stream);
 
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);

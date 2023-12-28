@@ -296,6 +296,7 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 
 static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 {
+	const struct bt_bap_stream_ops *stream_ops;
 	struct bt_bap_stream *stream;
 
 	if (ep->status.state != BT_BAP_EP_STATE_ENABLING) {
@@ -312,6 +313,11 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 
 	LOG_DBG("stream %p ep %p dir %s receiver_ready %u",
 		stream, ep, bt_audio_dir_str(ep->dir), ep->receiver_ready);
+
+	stream_ops = stream->ops;
+	if (stream_ops != NULL && stream_ops->connected != NULL) {
+		stream_ops->connected(stream);
+	}
 
 	if (ep->receiver_ready && ep->dir == BT_AUDIO_DIR_SOURCE) {
 		const int err = unicast_client_send_start(ep);
@@ -345,6 +351,7 @@ static void unicast_client_iso_connected(struct bt_iso_chan *chan)
 
 static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 {
+	const struct bt_bap_stream_ops *stream_ops;
 	struct bt_bap_stream *stream;
 
 	stream = ep->stream;
@@ -355,6 +362,11 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 
 	LOG_DBG("stream %p ep %p reason 0x%02x", stream, ep, reason);
 	ep->reason = reason;
+
+	stream_ops = stream->ops;
+	if (stream_ops != NULL && stream_ops->disconnected != NULL) {
+		stream_ops->disconnected(stream, reason);
+	}
 
 	/* If we were in the idle state when we started the ISO disconnection
 	 * then we need to call unicast_client_ep_idle_state again when
@@ -714,6 +726,7 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_simple *buf,
 					uint8_t old_state)
 {
+	const struct bt_bap_stream_ops *ops;
 	struct bt_ascs_ase_status_qos *qos;
 	struct bt_bap_stream *stream;
 
@@ -727,17 +740,36 @@ static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 		LOG_ERR("No stream active for endpoint");
 		return;
 	}
+	ops = stream->ops;
 
-	if (ep->dir == BT_AUDIO_DIR_SINK && stream->ops != NULL && stream->ops->disabled != NULL) {
-		/* If the old state was enabling or streaming, then the sink
-		 * ASE has been disabled. Since the sink ASE does not have a
-		 * disabling state, we can check if by comparing the old_state
-		 */
-		const bool disabled = old_state == BT_BAP_EP_STATE_ENABLING ||
-				      old_state == BT_BAP_EP_STATE_STREAMING;
+	if (ops != NULL) {
+		if (ep->dir == BT_AUDIO_DIR_SINK && ops->disabled != NULL) {
+			/* If the old state was enabling or streaming, then the sink
+			 * ASE has been disabled. Since the sink ASE does not have a
+			 * disabling state, we can check if by comparing the old_state
+			 */
+			const bool disabled = old_state == BT_BAP_EP_STATE_ENABLING ||
+					      old_state == BT_BAP_EP_STATE_STREAMING;
 
-		if (disabled) {
-			stream->ops->disabled(stream);
+			if (disabled) {
+				ops->disabled(stream);
+			}
+		} else if (ep->dir == BT_AUDIO_DIR_SOURCE &&
+			   old_state == BT_BAP_EP_STATE_DISABLING && ops->stopped != NULL) {
+			/* We left the disabling state, let the upper layers know that the stream is
+			 * stopped
+			 */
+			uint8_t reason = ep->reason;
+
+			if (reason == BT_HCI_ERR_SUCCESS) {
+				/* Default to BT_HCI_ERR_UNSPECIFIED if no other reason is set */
+				reason = BT_HCI_ERR_UNSPECIFIED;
+			} else {
+				/* Reset reason */
+				ep->reason = BT_HCI_ERR_SUCCESS;
+			}
+
+			ops->stopped(stream, reason);
 		}
 	}
 

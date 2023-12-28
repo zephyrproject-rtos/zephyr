@@ -581,10 +581,38 @@ struct bt_bap_stream_ops {
 	 *
 	 * This callback is only used if the ISO data path is HCI.
 	 *
-	 * @param chan The channel which has sent data.
+	 * @param stream Stream object.
 	 */
 	void (*sent)(struct bt_bap_stream *stream);
 #endif /* CONFIG_BT_AUDIO_TX */
+
+	/**
+	 * @brief Isochronous channel connected callback
+	 *
+	 * If this callback is provided it will be called whenever the isochronous channel for the
+	 * stream has been connected. This does not mean that the stream is ready to be used, which
+	 * is indicated by the @ref bt_bap_stream_ops.started callback.
+	 *
+	 * If the stream shares an isochronous channel with another stream, then this callback may
+	 * still be called, without the stream going into the started state.
+	 *
+	 * @param stream Stream object.
+	 */
+	void (*connected)(struct bt_bap_stream *stream);
+
+	/**
+	 * @brief Isochronous channel disconnected callback
+	 *
+	 * If this callback is provided it will be called whenever the isochronous channel is
+	 * disconnected, including when a connection gets rejected.
+	 *
+	 * If the stream shares an isochronous channel with another stream, then this callback may
+	 * not be called, even if the stream is leaving the streaming state.
+	 *
+	 * @param stream Stream object.
+	 * @param reason BT_HCI_ERR_* reason for the disconnection.
+	 */
+	void (*disconnected)(struct bt_bap_stream *stream, uint8_t reason);
 };
 
 /**
