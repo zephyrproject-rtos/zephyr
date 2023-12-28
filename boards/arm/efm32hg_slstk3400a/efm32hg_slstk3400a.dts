@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/efm32hg322f64.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "Silicon Labs EFM32HG SLSTK3400A board";
@@ -25,6 +26,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
@@ -36,6 +38,15 @@
 		led1: led_1 {
 			gpios = <&gpiof 5 0>;
 			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		status = "okay";
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -99,5 +110,14 @@
 			reg = <0x0000f000 0x00001000>;
 		};
 
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		status = "okay";
+		pin-location = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
 	};
 };
