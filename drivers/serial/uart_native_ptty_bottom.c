@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _XOPEN_SOURCE
+/* Note: This is used only for interaction with the host C library, and is therefore exempt of
+ * coding guidelines rule A.4&5 which applies to the embedded code using embedded libraries
+ */
+#define _XOPEN_SOURCE 600
+
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
