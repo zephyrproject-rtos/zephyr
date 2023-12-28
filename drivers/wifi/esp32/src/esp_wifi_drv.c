@@ -6,8 +6,6 @@
 
 #define DT_DRV_COMPAT espressif_esp32_wifi
 
-#define _POSIX_C_SOURCE 200809
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 
