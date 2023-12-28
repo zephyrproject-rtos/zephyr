@@ -737,6 +737,34 @@ static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 }
 
 /**
+ * @brief Check if the given IPv4 address is from a private address range.
+ *
+ * See https://en.wikipedia.org/wiki/Reserved_IP_addresses for details.
+ *
+ * @param addr A valid pointer on an IPv4 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv4_is_private_addr(const struct in_addr *addr)
+{
+	uint32_t masked_24, masked_16, masked_12, masked_10, masked_8;
+
+	masked_24 = ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xFFFFFF00;
+	masked_16 = masked_24 & 0xFFFF0000;
+	masked_12 = masked_24 & 0xFFF00000;
+	masked_10 = masked_24 & 0xFFC00000;
+	masked_8 = masked_24 & 0xFF000000;
+
+	return masked_8  == 0x0A000000 || /* 10.0.0.0/8      */
+	       masked_10 == 0x64400000 || /* 100.64.0.0/10   */
+	       masked_12 == 0xAC100000 || /* 172.16.0.0/12   */
+	       masked_16 == 0xC0A80000 || /* 192.168.0.0/16  */
+	       masked_24 == 0xC0000200 || /* 192.0.2.0/24    */
+	       masked_24 == 0xC0336400 || /* 192.51.100.0/24 */
+	       masked_24 == 0xCB007100;   /* 203.0.113.0/24  */
+}
+
+/**
  *  @brief Copy an IPv4 or IPv6 address
  *
  *  @param dest Destination IP address.
