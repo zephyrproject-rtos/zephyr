@@ -53,6 +53,7 @@ struct cellular_network {
 	uint16_t size;
 };
 
+/** Cellular signal type */
 enum cellular_signal_type {
 	CELLULAR_SIGNAL_RSSI,
 	CELLULAR_SIGNAL_RSRP,
@@ -73,6 +74,33 @@ enum cellular_modem_info_type {
 	CELLULAR_MODEM_INFO_SIM_IMSI,
 	/** Integrated Circuit Card Identification Number (SIM) */
 	CELLULAR_MODEM_INFO_SIM_ICCID,
+};
+
+/** API for configuring networks */
+typedef int (*cellular_api_configure_networks)(const struct device *dev,
+					       const struct cellular_network *networks,
+					       uint8_t size);
+
+/** API for getting supported networks */
+typedef int (*cellular_api_get_supported_networks)(const struct device *dev,
+						   const struct cellular_network **networks,
+						   uint8_t *size);
+
+/** API for getting network signal strength */
+typedef int (*cellular_api_get_signal)(const struct device *dev,
+				       const enum cellular_signal_type type, int16_t *value);
+
+/** API for getting modem information */
+typedef int (*cellular_api_get_modem_info)(const struct device *dev,
+					   const enum cellular_modem_info_type type,
+					   char *info, size_t size);
+
+/** Cellular driver API */
+__subsystem struct cellular_driver_api {
+	cellular_api_configure_networks configure_networks;
+	cellular_api_get_supported_networks get_supported_networks;
+	cellular_api_get_signal get_signal;
+	cellular_api_get_modem_info get_modem_info;
 };
 
 /**
@@ -96,8 +124,21 @@ enum cellular_modem_info_type {
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval Negative errno-code otherwise.
  */
-int cellular_configure_networks(const struct device *dev, const struct cellular_network *networks,
-				uint8_t size);
+__syscall int cellular_configure_networks(const struct device *dev,
+					  const struct cellular_network *networks, uint8_t size);
+
+static inline int z_impl_cellular_configure_networks(const struct device *dev,
+						     const struct cellular_network *networks,
+						     uint8_t size)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->configure_networks == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->configure_networks(dev, networks, size);
+}
 
 /**
  * @brief Get supported cellular networks for the device
@@ -110,8 +151,22 @@ int cellular_configure_networks(const struct device *dev, const struct cellular_
  * @retval -ENOTSUP if API is not supported by cellular network device.
  * @retval Negative errno-code otherwise.
  */
-int cellular_get_supported_networks(const struct device *dev,
-				    const struct cellular_network **networks, uint8_t *size);
+__syscall int cellular_get_supported_networks(const struct device *dev,
+					      const struct cellular_network **networks,
+					      uint8_t *size);
+
+static inline int z_impl_cellular_get_supported_networks(const struct device *dev,
+							 const struct cellular_network **networks,
+							 uint8_t *size)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->get_supported_networks == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->get_supported_networks(dev, networks, size);
+}
 
 /**
  * @brief Get signal for the device
@@ -125,8 +180,21 @@ int cellular_get_supported_networks(const struct device *dev,
  * @retval -ENODATA if device is not in a state where signal can be polled
  * @retval Negative errno-code otherwise.
  */
-int cellular_get_signal(const struct device *dev, const enum cellular_signal_type type,
-			int16_t *value);
+__syscall int cellular_get_signal(const struct device *dev, const enum cellular_signal_type type,
+				  int16_t *value);
+
+static inline int z_impl_cellular_get_signal(const struct device *dev,
+					     const enum cellular_signal_type type,
+					     int16_t *value)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->get_signal == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->get_signal(dev, type, value);
+}
 
 /**
  * @brief Get modem info for the device
@@ -141,8 +209,22 @@ int cellular_get_signal(const struct device *dev, const enum cellular_signal_typ
  * @retval -ENODATA if modem does not provide info requested
  * @retval Negative errno-code from chat module otherwise.
  */
-int cellular_get_modem_info(const struct device *dev, const enum cellular_modem_info_type type,
-			    char *info, size_t size);
+__syscall int cellular_get_modem_info(const struct device *dev,
+				      const enum cellular_modem_info_type type,
+				      char *info, size_t size);
+
+static inline int z_impl_cellular_get_modem_info(const struct device *dev,
+						 const enum cellular_modem_info_type type,
+						 char *info, size_t size)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->get_modem_info == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->get_modem_info(dev, type, info, size);
+}
 
 #ifdef __cplusplus
 }
@@ -151,5 +233,7 @@ int cellular_get_modem_info(const struct device *dev, const enum cellular_modem_
 /**
  * @}
  */
+
+#include <syscalls/cellular.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_ */
