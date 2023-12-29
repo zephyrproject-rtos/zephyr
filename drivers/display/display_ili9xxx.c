@@ -3,6 +3,7 @@
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2020 Teslabs Engineering S.L.
  * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
+ * Copyright (c) 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,40 +21,6 @@ struct ili9xxx_data {
 	enum display_pixel_format pixel_format;
 	enum display_orientation orientation;
 };
-
-int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
-		     size_t tx_len)
-{
-	const struct ili9xxx_config *config = dev->config;
-
-	int r;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1U };
-
-	/* send command */
-	tx_buf.buf = &cmd;
-	tx_buf.len = 1U;
-
-	gpio_pin_set_dt(&config->cmd_data, ILI9XXX_CMD);
-	r = spi_write_dt(&config->spi, &tx_bufs);
-	if (r < 0) {
-		return r;
-	}
-
-	/* send data (if any) */
-	if (tx_data != NULL) {
-		tx_buf.buf = (void *)tx_data;
-		tx_buf.len = tx_len;
-
-		gpio_pin_set_dt(&config->cmd_data, ILI9XXX_DATA);
-		r = spi_write_dt(&config->spi, &tx_bufs);
-		if (r < 0) {
-			return r;
-		}
-	}
-
-	return 0;
-}
 
 static int ili9xxx_exit_sleep(const struct device *dev)
 {
@@ -113,13 +80,10 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	const struct ili9xxx_config *config = dev->config;
 	struct ili9xxx_data *data = dev->data;
 
 	int r;
 	const uint8_t *write_data_start = (const uint8_t *)buf;
-	struct spi_buf tx_buf;
-	struct spi_buf_set tx_bufs;
 	uint16_t write_cnt;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
@@ -150,15 +114,11 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 		return r;
 	}
 
-	tx_bufs.buffers = &tx_buf;
-	tx_bufs.count = 1;
-
 	write_data_start += desc->pitch * data->bytes_per_pixel;
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
-		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * data->bytes_per_pixel * write_h;
 
-		r = spi_write_dt(&config->spi, &tx_bufs);
+		r = ili9xxx_transmit_data(dev, write_data_start,
+					  desc->width * data->bytes_per_pixel * write_h);
 		if (r < 0) {
 			return r;
 		}
@@ -363,9 +323,10 @@ static int ili9xxx_init(const struct device *dev)
 
 	int r;
 
-	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI device is not ready");
-		return -ENODEV;
+	r = ili9xxx_bus_init(config);
+	if (r < 0) {
+		LOG_ERR("Bus is not ready");
+		return r;
 	}
 
 	if (!gpio_is_ready_dt(&config->cmd_data)) {
@@ -458,35 +419,50 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
-#define ILI9XXX_INIT(n, t)                                                     \
-	ILI##t##_REGS_INIT(n);                                                 \
-									       \
-	static const struct ili9xxx_config ili9xxx_config_##n = {              \
-		.quirks = &ili##t##_quirks,                                    \
-		.spi = SPI_DT_SPEC_GET(INST_DT_ILI9XXX(n, t),                  \
-				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8),   \
-				       0),                                     \
-		.cmd_data = GPIO_DT_SPEC_GET(INST_DT_ILI9XXX(n, t),            \
-					     cmd_data_gpios),                  \
-		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI9XXX(n, t),            \
-					     reset_gpios, {0}),                \
-		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),  \
-		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
-		.x_resolution = ILI##t##_X_RES,                                \
-		.y_resolution = ILI##t##_Y_RES,                                \
-		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
-		.regs = &ili9xxx_regs_##n,                                     \
-		.regs_init_fn = ili##t##_regs_init,                            \
-	};                                                                     \
-									       \
-	static struct ili9xxx_data ili9xxx_data_##n;                           \
-									       \
-	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init,                  \
-			    NULL, &ili9xxx_data_##n,                           \
-			    &ili9xxx_config_##n, POST_KERNEL,                  \
-			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9xxx_api)
+#define ILI9XXX_CONFIG_SPI(n, t)                                                           \
+                                                                                           \
+	.spi = SPI_DT_SPEC_GET(INST_DT_ILI9XXX(n, t), SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0)
 
-#define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                 \
+#define ILI9XXX_CONFIG_PARALLEL(n, t)                                                      \
+                                                                                           \
+	.parallel_bus.rd = GPIO_DT_SPEC_GET_OR(INST_DT_ILI9XXX(n, t), rd_gpios, {}),           \
+	.parallel_bus.wr = GPIO_DT_SPEC_GET(INST_DT_ILI9XXX(n, t), wr_gpios),                  \
+	.parallel_bus.cs = GPIO_DT_SPEC_GET(INST_DT_ILI9XXX(n, t), cs_gpios),                  \
+	.parallel_bus.data[0] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 0), \
+	.parallel_bus.data[1] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 1), \
+	.parallel_bus.data[2] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 2), \
+	.parallel_bus.data[3] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 3), \
+	.parallel_bus.data[4] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 4), \
+	.parallel_bus.data[5] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 5), \
+	.parallel_bus.data[6] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 6), \
+	.parallel_bus.data[7] = GPIO_DT_SPEC_GET_BY_IDX(INST_DT_ILI9XXX(n, t), data_gpios, 7)
+
+
+#define ILI9XXX_INIT(n, t)                                                                 \
+	ILI##t##_REGS_INIT(n);                                                                 \
+                                                                                           \
+	static const struct ili9xxx_config ili9xxx_config_##n = {                              \
+		.quirks = &ili##t##_quirks,                                                        \
+		COND_CODE_1(CONFIG_ILI9XXX_SPI, (ILI9XXX_CONFIG_SPI(n, t)),                        \
+				(ILI9XXX_CONFIG_PARALLEL(n, t))),                                  \
+		.cmd_data = GPIO_DT_SPEC_GET(INST_DT_ILI9XXX(n, t), cmd_data_gpios),               \
+		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI9XXX(n, t), reset_gpios, {0}),             \
+		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),                      \
+		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                              \
+		.x_resolution = ILI##t##_X_RES,                                                    \
+		.y_resolution = ILI##t##_Y_RES,                                                    \
+		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),                    \
+		.regs = &ili9xxx_regs_##n,                                                         \
+		.regs_init_fn = ili##t##_regs_init,                                                \
+	};                                                                                     \
+                                                                                           \
+	static struct ili9xxx_data ili9xxx_data_##n;                                           \
+                                                                                           \
+	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init, NULL, &ili9xxx_data_##n,         \
+			&ili9xxx_config_##n, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,            \
+			&ili9xxx_api)
+
+#define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                             \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI9XXX_INIT, (;), t)
 
 #ifdef CONFIG_ILI9340
