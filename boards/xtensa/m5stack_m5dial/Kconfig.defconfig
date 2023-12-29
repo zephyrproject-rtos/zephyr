@@ -1,0 +1,35 @@
+# M5Stack M5Dial board configuration
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_M5DIAL
+
+config BOARD
+	default "m5stack_m5dial"
+	depends on BOARD_M5STACK_M5DIAL
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 98304 if WIFI
+	default 65536 if BT
+	default 4096
+
+config KERNEL_MEM_POOL
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32 if BT
+endchoice
+
+config INPUT_FT5336_INTERRUPT
+	default y if INPUT
+
+config INPUT
+	default y
+
+config LV_COLOR_16_SWAP
+	default y if LVGL
+
+endif # BOARD_M5STACK_M5DIAL
