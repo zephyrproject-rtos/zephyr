@@ -348,14 +348,6 @@ static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, ui
 	strncpy(data->imsi, (char *)argv[1], sizeof(data->imsi));
 }
 
-static void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
-					 void *user_data)
-{
-	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
-
-	strncpy(data->iccid, (char *)argv[1], sizeof(data->iccid));
-}
-
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 {
 	return (data->registration_status_gsm == 1)
@@ -407,7 +399,6 @@ MODEM_CHAT_MATCH_DEFINE(imei_match, "", "", modem_cellular_chat_on_imei);
 MODEM_CHAT_MATCH_DEFINE(cgmm_match, "", "", modem_cellular_chat_on_cgmm);
 MODEM_CHAT_MATCH_DEFINE(csq_match, "+CSQ: ", ",", modem_cellular_chat_on_csq);
 MODEM_CHAT_MATCH_DEFINE(cimi_match, "", "", modem_cellular_chat_on_imsi);
-MODEM_CHAT_MATCH_DEFINE(ccid_match, "+QCCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(cgmi_match, "", "", modem_cellular_chat_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(cgmr_match, "", "", modem_cellular_chat_on_cgmr);
 
@@ -1338,9 +1329,6 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 	case CELLULAR_MODEM_INFO_SIM_IMSI:
 		strncpy(info, &data->imsi[0], MIN(size, sizeof(data->imsi)));
 		break;
-	case CELLULAR_MODEM_INFO_SIM_ICCID:
-		strncpy(info, &data->iccid[0], MIN(size, sizeof(data->iccid)));
-		break;
 	case CELLULAR_MODEM_INFO_MANUFACTURER:
 		strncpy(info, &data->manufacturer[0], MIN(size, sizeof(data->manufacturer)));
 		break;
@@ -1522,8 +1510,6 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QCCID", ccid_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_init_chat_script, quectel_bg95_init_chat_script_cmds,
@@ -1570,8 +1556,6 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+QCCID", ccid_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127,10,3,30,10,2", 100));
 
