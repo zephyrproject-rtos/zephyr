@@ -232,7 +232,7 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 		byte = data_len << 1;
 		fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
 		ring_buf_put(&cmux->transmit_rb, &byte, 1);
-		byte = 0x01 | (data_len >> 7);
+		byte = data_len >> 7;
 		ring_buf_put(&cmux->transmit_rb, &byte, 1);
 	} else {
 		byte = 0x01 | (data_len << 1);
