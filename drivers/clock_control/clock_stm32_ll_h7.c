@@ -824,14 +824,13 @@ static int set_up_plls(void)
 	return 0;
 }
 
-#if defined(CONFIG_CPU_CORTEX_M7)
 int stm32_clock_control_init(const struct device *dev)
 {
+	int r = 0;
+
+#if defined(CONFIG_CPU_CORTEX_M7)
 	uint32_t old_hclk_freq = 0;
 	uint32_t new_hclk_freq = 0;
-	int r;
-
-	ARG_UNUSED(dev);
 
 	/* HW semaphore Clock enable */
 #if defined(CONFIG_SOC_STM32H7A3XX) || defined(CONFIG_SOC_STM32H7A3XXQ) || \
@@ -917,23 +916,15 @@ int stm32_clock_control_init(const struct device *dev)
 	optimize_regulator_voltage_scale(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif /* CONFIG_CPU_CORTEX_M7 */
+
+	ARG_UNUSED(dev);
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	return r;
 }
-#else
-int stm32_clock_control_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Update CMSIS variable */
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-
-	return 0;
-}
-#endif /* CONFIG_CPU_CORTEX_M7 */
 
 #if defined(STM32_HSE_CSS)
 void __weak stm32_hse_css_callback(void) {}
