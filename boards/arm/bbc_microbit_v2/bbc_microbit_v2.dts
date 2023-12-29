@@ -113,6 +113,14 @@
 	status = "okay";
 };
 
+&pwm1 {
+	/* buzzer */
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	status = "okay";
