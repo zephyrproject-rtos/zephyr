@@ -62,6 +62,9 @@ LOG_MODULE_REGISTER(bq274xx, CONFIG_SENSOR_LOG_LEVEL);
 #define BQ274XX_SUBCLASS_82 82
 #define BQ274XX_SUBCLASS_105 105
 
+/* For temperature conversion */
+#define KELVIN_OFFSET 273.15
+
 static const struct bq274xx_regs bq27421_regs = {
 	.dm_design_capacity = 10,
 	.dm_design_energy = 12,
@@ -485,7 +488,7 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 			       struct sensor_value *val)
 {
 	struct bq274xx_data *data = dev->data;
-	float int_temp;
+	int32_t int_temp;
 
 	switch (chan) {
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
@@ -509,10 +512,12 @@ static int bq274xx_channel_get(const struct device *dev, enum sensor_channel cha
 		break;
 
 	case SENSOR_CHAN_GAUGE_TEMP:
-		int_temp = (data->internal_temperature * 0.1f);
-		int_temp = int_temp - 273.15f;
-		val->val1 = (int32_t)int_temp;
-		val->val2 = (int_temp - (int32_t)int_temp) * 1000000;
+		/* Convert units from 0.1K to 0.01K */
+		int_temp = data->internal_temperature * 10;
+		/* Convert to 0.01C */
+		int_temp -= (int32_t)(100.0 * KELVIN_OFFSET);
+		val->val1 = int_temp / 100;
+		val->val2 = (int_temp % 100) * 10000;
 		break;
 
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
