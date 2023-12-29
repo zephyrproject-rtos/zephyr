@@ -38,17 +38,6 @@ static int receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
 			   k_timeout_t timeout);
 static void remove_mq(mqueue_object *msg_queue);
 
-#if defined(__sparc__)
-/*
- * mode_t is defined as "unsigned short" on SPARC newlib. This type is promoted
- * to "int" when passed through '...' so we should pass the promoted type to
- * va_arg().
- */
-#define PROMOTED_MODE_T int
-#else
-#define PROMOTED_MODE_T mode_t
-#endif
-
 /**
  * @brief Open a message queue.
  *
@@ -69,7 +58,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 	va_start(va, oflags);
 	if ((oflags & O_CREAT) != 0) {
-		mode = va_arg(va, PROMOTED_MODE_T);
+		BUILD_ASSERT(sizeof(mode_t) <= sizeof(int));
+		mode = va_arg(va, unsigned int);
 		attrs = va_arg(va, struct mq_attr*);
 	}
 	va_end(va);
