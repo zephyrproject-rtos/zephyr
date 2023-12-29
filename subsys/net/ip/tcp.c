@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 #define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
 #define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
+#define LAST_ACK_TIMEOUT_MS tcp_fin_timeout_ms
+#define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
 #define FIN_TIMEOUT K_MSEC(tcp_fin_timeout_ms)
 #define ACK_DELAY K_MSEC(100)
 #define ZWP_MAX_DELAY_MS 120000
@@ -1774,9 +1776,9 @@ static void tcp_resend_data(struct k_work *work)
 	conn->send_data_retries++;
 	if (ret == 0) {
 		if (conn->in_close && conn->send_data_total == 0) {
-			NET_DBG("TCP connection in active close, "
+			NET_DBG("TCP connection in %s close, "
 				"not disposing yet (waiting %dms)",
-				tcp_fin_timeout_ms);
+				"active", tcp_fin_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
@@ -1855,6 +1857,40 @@ static void tcp_fin_timeout(struct k_work *work)
 	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
+}
+
+static void tcp_last_ack_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, fin_timer);
+
+	NET_DBG("Did not receive %s in %dms", "last ACK", LAST_ACK_TIMEOUT_MS);
+	NET_DBG("conn: %p %s", conn, tcp_conn_state(conn, NULL));
+
+	(void)tcp_conn_close(conn, -ETIMEDOUT);
+}
+
+static void tcp_setup_last_ack_timer(struct tcp *conn)
+{
+	/* Just in case the last ack is lost, install a timer that will
+	 * close the connection in that case. Use the fin_timer for that
+	 * as the fin handling cannot be done in this passive close state.
+	 * Instead of default tcp_fin_timeout() function, have a separate
+	 * function to catch this last ack case.
+	 */
+	k_work_init_delayable(&conn->fin_timer, tcp_last_ack_timeout);
+
+	NET_DBG("TCP connection in %s close, "
+		"not disposing yet (waiting %dms)",
+		"passive", LAST_ACK_TIMEOUT_MS);
+	k_work_reschedule_for_queue(&tcp_work_q,
+				    &conn->fin_timer,
+				    LAST_ACK_TIMEOUT);
+}
+
+static void tcp_cancel_last_ack_timer(struct tcp *conn)
+{
+	k_work_cancel_delayable(&conn->fin_timer);
 }
 
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
@@ -2922,6 +2958,7 @@ next_state:
 			next = TCP_LAST_ACK;
 			verdict = NET_OK;
 			keep_alive_timer_stop(conn);
+			tcp_setup_last_ack_timer(conn);
 			break;
 		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
 			conn_ack(conn, + 1);
@@ -2946,6 +2983,7 @@ next_state:
 			tcp_out(conn, FIN | ACK);
 			next = TCP_LAST_ACK;
 			keep_alive_timer_stop(conn);
+			tcp_setup_last_ack_timer(conn);
 			break;
 		}
 
@@ -3126,6 +3164,7 @@ next_state:
 	case TCP_CLOSE_WAIT:
 		tcp_out(conn, FIN);
 		next = TCP_LAST_ACK;
+		tcp_setup_last_ack_timer(conn);
 		break;
 	case TCP_LAST_ACK:
 		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
@@ -3133,6 +3172,9 @@ next_state:
 			do_close = true;
 			verdict = NET_OK;
 			close_status = 0;
+
+			/* Remove the last ack timer if we received it in time */
+			tcp_cancel_last_ack_timer(conn);
 		}
 		break;
 	case TCP_CLOSED:
@@ -3456,8 +3498,9 @@ int net_tcp_put(struct net_context *context)
 		} else {
 			int ret;
 
-			NET_DBG("TCP connection in active close, not "
-				"disposing yet (waiting %dms)", tcp_fin_timeout_ms);
+			NET_DBG("TCP connection in %s close, "
+				"not disposing yet (waiting %dms)",
+				"active", tcp_fin_timeout_ms);
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->fin_timer,
 						    FIN_TIMEOUT);
