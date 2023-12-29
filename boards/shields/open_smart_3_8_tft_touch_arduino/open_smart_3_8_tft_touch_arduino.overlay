@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Kim Bøndergaard <kim@fam-boendergaard.dk>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/ili9xxx.h>
+
+/ {
+	chosen {
+		zephyr,display = &ili9488_open_smart_3_8_tft_touch_arduino;
+	};
+
+
+	ili9488_open_smart_3_8_tft_touch_arduino: ili9488 {
+		compatible = "ilitek,ili9488";
+		status = "okay";
+		rd-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>; /* A0 */
+		wr-gpios = <&arduino_header 1 GPIO_ACTIVE_LOW>; /* A1 */
+		cmd-data-gpios = <&arduino_header 2 GPIO_ACTIVE_LOW>; /* A2 */
+		cs-gpios = <&arduino_header 3 GPIO_ACTIVE_LOW>; /* A3 */
+	/* reset-gpios = <&arduino_header 34 GPIO_ACTIVE_LOW>; *//* reset */
+		data-gpios =
+			<&arduino_header 14 GPIO_ACTIVE_HIGH>,  /* D8 */
+			<&arduino_header 15 GPIO_ACTIVE_HIGH>, /* D9 */
+			<&arduino_header 16 GPIO_ACTIVE_HIGH>, /* D10 */
+			<&arduino_header 17 GPIO_ACTIVE_HIGH>, /* D11 */
+			<&arduino_header 10 GPIO_ACTIVE_HIGH>,  /* D4 */
+			<&arduino_header 19 GPIO_ACTIVE_HIGH>, /* D13 */
+			<&arduino_header 12 GPIO_ACTIVE_HIGH>,  /* D6 */
+			<&arduino_header 13 GPIO_ACTIVE_HIGH>;  /* D7 */
+
+		pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+		width = <320>;
+		height = <480>;
+		rotation = <0>;
+		frmctr1 = [a0 11];
+		pwctrl1 = [17 15];
+		pwctrl2 = [41];
+		pgamctrl = [00 03 09 08 16 0a 3f 78 4c 09 0a 08 16 1a 0f];
+		ngamctrl = [00 16 19 03 0f 05 32 45 46 04 0e 0d 35 37 0f];
+
+	};
+};
