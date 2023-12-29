@@ -94,7 +94,7 @@ struct modem_cellular_data {
 	uint8_t registration_status_gsm;
 	uint8_t registration_status_gprs;
 	uint8_t registration_status_lte;
-	int8_t rssi;
+	uint8_t rssi;
 	uint8_t imei[MODEM_CELLULAR_DATA_IMEI_LEN];
 	uint8_t model_id[MODEM_CELLULAR_DATA_MODEL_ID_LEN];
 	uint8_t imsi[MODEM_CELLULAR_DATA_IMSI_LEN];
@@ -131,7 +131,6 @@ struct modem_cellular_config {
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
-	const struct modem_chat_script *get_signal_chat_script;
 };
 
 static const char *modem_cellular_state_str(enum modem_cellular_state state)
@@ -332,28 +331,13 @@ static void modem_cellular_chat_on_cgmr(struct modem_chat *chat, char **argv, ui
 static void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
 				       void *user_data)
 {
-	uint8_t rssi;
-
-	/* AT+CSQ returns a response +CSQ: <rssi>,<ber> where:
-	 * - rssi is a integer from 0 to 31 whose values describes a signal strength
-	 *   between -113 dBm for 0 and -51dbM for 31 or unknown for 99
-	 * - ber is an integer from 0 to 7 that describes the error rate, it can also
-	 *   be 99 for an unknown error rate
-	 */
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
 	if (argc != 3) {
 		return;
 	}
 
-	/* Read rssi */
-	rssi = atoi(argv[1]);
-
-	if (rssi == 99) {
-		return;
-	}
-
-	data->rssi = (-113 + (2 * rssi));
+	data->rssi = (uint8_t)atoi(argv[1]);
 }
 
 static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -1263,36 +1247,78 @@ static void modem_cellular_cmux_handler(struct modem_cmux *cmux, enum modem_cmux
 	}
 }
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(get_signal_csq_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(get_signal_csq_chat_script, get_signal_csq_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 2);
+
+static inline int modem_cellular_csq_parse_rssi(uint8_t rssi, int16_t *value)
+{
+	/* AT+CSQ returns a response +CSQ: <rssi>,<ber> where:
+	 * - rssi is a integer from 0 to 31 whose values describes a signal strength
+	 *   between -113 dBm for 0 and -51dbM for 31 or unknown for 99
+	 * - ber is an integer from 0 to 7 that describes the error rate, it can also
+	 *   be 99 for an unknown error rate
+	 */
+	if (rssi == 99) {
+		return -EINVAL;
+	}
+
+	*value = (int16_t)(-113 + (2 * rssi));
+	return 0;
+}
+
 static int modem_cellular_get_signal(const struct device *dev,
 				     const enum cellular_signal_type type,
 				     int16_t *value)
 {
-	int ret;
+	int ret = -ENOTSUP;
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
-	const struct modem_cellular_config *config = (struct modem_cellular_config *)dev->config;
-
-	if (config->get_signal_chat_script == NULL) {
-		return -ENOTSUP;
-	}
 
 	if ((data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
 	    (data->state != MODEM_CELLULAR_STATE_CARRIER_ON)) {
 		return -ENODATA;
 	}
 
-	ret = modem_chat_run_script(&data->chat, config->get_signal_chat_script);
-	if (ret != 0) {
+	/* Run chat script */
+	switch (type) {
+	case CELLULAR_SIGNAL_RSSI:
+		ret = modem_chat_run_script(&data->chat, &get_signal_csq_chat_script);
+		break;
+
+	case CELLULAR_SIGNAL_RSRP:
+	case CELLULAR_SIGNAL_RSRQ:
+		/* TODO: Run CESQ script */
+		ret = -ENOTSUP;
+		break;
+
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	/* Verify chat script ran successfully */
+	if (ret < 0) {
 		return ret;
 	}
 
+	/* Parse received value */
 	switch (type) {
-	case CELLULAR_SIGNAL_RSSI: {
-		*value = data->rssi;
-	} break;
+	case CELLULAR_SIGNAL_RSSI:
+		ret = modem_cellular_csq_parse_rssi(data->rssi, value);
+		break;
+
 	case CELLULAR_SIGNAL_RSRP:
-		return -ENOTSUP;
 	case CELLULAR_SIGNAL_RSRQ:
-		return -ENOTSUP;
+		/* TODO: Validate and set values */
+		ret = -ENODATA;
+		break;
+
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
 	return ret;
@@ -1517,18 +1543,10 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_dial_chat_script, quectel_bg95_dial_chat_s
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_periodic_chat_script,
 			 quectel_bg95_periodic_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 4);
-
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg95_get_signal_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(quectel_bg95_get_signal_chat_script,
-			 quectel_bg95_get_signal_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 #endif
 
@@ -1579,13 +1597,6 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg25_g_periodic_chat_script_cmds,
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg25_g_periodic_chat_script,
 			 quectel_eg25_g_periodic_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 4);
-
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg25_g_get_signal_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
-
-MODEM_CHAT_SCRIPT_DEFINE(quectel_eg25_g_get_signal_chat_script,
-			 quectel_eg25_g_get_signal_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 #endif
 
@@ -1895,7 +1906,6 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 		.init_chat_script = &quectel_bg95_init_chat_script,                                \
 		.dial_chat_script = &quectel_bg95_dial_chat_script,                                \
 		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
-		.get_signal_chat_script = &_CONCAT(DT_DRV_COMPAT, _get_signal_chat_script),        \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
@@ -1925,7 +1935,6 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 		.init_chat_script = &quectel_eg25_g_init_chat_script,                              \
 		.dial_chat_script = &quectel_eg25_g_dial_chat_script,                              \
 		.periodic_chat_script = &_CONCAT(DT_DRV_COMPAT, _periodic_chat_script),            \
-		.get_signal_chat_script = &_CONCAT(DT_DRV_COMPAT, _get_signal_chat_script),        \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \
