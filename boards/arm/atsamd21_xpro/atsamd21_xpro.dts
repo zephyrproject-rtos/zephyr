@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Bryan O'Donoghue
+ * Copyright (c) 2024 Scott Barnes <scott@atomsmith.net>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +53,81 @@
 			label = "SW0";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &portb 0 0>,	/* AIN[8]       */
+				<1  0 &portb 1 0>,	/* AIN[9]           */
+				<2  0 &portb 6 0>,	/* GPIO             */
+				<3  0 &portb 7 0>,	/* GPIO             */
+				<4  0 &portb 2 0>,	/* TC6/WO[0]        */
+				<5  0 &portb 3 0>,	/* TC6/WO[1]        */
+				<6  0 &portb 4 0>,	/* EXTINT[4]        */
+				<7  0 &portb 5 0>,	/* GPIO             */
+				<8  0 &porta 8 0>,	/* I2C2 SDA    EXT2,EXT3,EDBG */
+				<9  0 &porta 9 0>,	/* I2C2 SDL    EXT2,EXT3,EDBG */
+				<10 0 &portb 9 0>,	/* RXD4             */
+				<11 0 &portb 8 0>,	/* TXD4             */
+				<12 0 &porta 5 0>,	/* SPI0(SS)         */
+				<13 0 &porta 6 0>,	/* SPI0(MOSI)       */
+				<14 0 &porta 4 0>,	/* SPI0(MISO)       */
+				<15 0 &porta 7 0>;	/* SPI0(SCK)        */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &porta 10 0>,	/* AIN[18]          */
+				<1  0 &porta 11 0>,	/* AIN[19]          */
+				<2  0 &porta 20 0>,	/* GPIO             */
+				<3  0 &porta 21 0>,	/* GPIO             */
+				<4  0 &portb 12 0>,	/* TC4/WO[0]        */
+				<5  0 &portb 13 0>,	/* TC4/WO[1]        */
+				<6  0 &portb 14 0>,	/* EXTINT[14]       */
+				<7  0 &portb 15 0>,	/* GPIO             */
+				<8  0 &porta 8 0>,	/* I2C2 SDA    EXT1,EXT3,EDBG */
+				<9  0 &porta 9 0>,	/* I2C2 SDL    EXT1,EXT3,EDBG */
+				<10 0 &portb 11 0>,	/* RXD4        EXT3 */
+				<11 0 &portb 10 0>,	/* TXD4        EXT3 */
+				<12 0 &porta 17 0>,	/* SPI1(SS)         */
+				<13 0 &porta 18 0>,	/* SPI1(MOSI)       */
+				<14 0 &porta 16 0>,	/* SPI1(MISO)       */
+				<15 0 &porta 19 0>;	/* SPI1(SCK)        */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	ext3_header: xplained-pro-connector3 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &porta 2 0>,	/* AIN[0]       */
+				<1  0 &porta 3 0>,	/* AIN[1]      USB ID*/
+				<2  0 &portb 30 0>,	/* GPIO        LED0  */
+				<3  0 &porta 15 0>,	/* GPIO        SW0   */
+				<4  0 &porta 12 0>,	/* TCC2/WO[0]        */
+				<5  0 &porta 13 0>,	/* TCC2/WO[1]  Serial Flash SS */
+				<6  0 &porta 28 0>,	/* EXTINT[8]         */
+				<7  0 &porta 27 0>,	/* GPIO              */
+				<8  0 &porta 8 0>,	/* I2C2 SDA    EXT1,EXT2,EDBG */
+				<9  0 &porta 9 0>,	/* I2C2 SDL    EXT1,EXT2,EDBG */
+				<10 0 &portb 11 0>,	/* RXD4        EXT2 */
+				<11 0 &portb 10 0>,	/* TXD4        EXT2 */
+				<12 0 &portb 17 0>,	/* SPI5(SS)         */
+				<13 0 &portb 22 0>,	/* SPI5(MOSI)  EDBG and Serial Flash*/
+				<14 0 &portb 16 0>,	/* SPI5(MISO)  EDBG and Serial Flash*/
+				<15 0 &portb 23 0>;	/* SPI5(SCK)   EDBG and Serial Flash*/
+							/* GND              */
+							/* +3.3V            */
 	};
 };
 
@@ -131,4 +207,37 @@ zephyr_udc0: &usb0 {
 
 	pinctrl-0 = <&usb_dc_default>;
 	pinctrl-names = "default";
+};
+
+/* The below Xplained Pro Extension Header labels are provided to
+ * assist shield setup. They do not reconfigure the SERCOM modules,
+ * select the correct driver, or adjust pin muxes. These changes
+ * must be made by overlays at the shield and application levels.
+ */
+
+ext1_spi: &sercom0 {
+};
+
+ext1_i2c: &sercom2 {
+};
+
+ext1_serial: &sercom4 {
+};
+
+ext2_spi: &sercom1 {
+};
+
+ext2_i2c: &sercom2 {
+};
+
+ext2_serial: &sercom4 {
+};
+
+ext3_spi: &sercom5 {
+};
+
+ext3_i2c: &sercom2 {
+};
+
+ext3_serial: &sercom4 {
 };
