@@ -843,7 +843,7 @@ endfunction()
 # This section provides a function for revision checking.
 
 # Usage:
-#   board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>
+#   board_check_revision(FORMAT <LETTER | STRING | NUMBER | MAJOR.MINOR.PATCH>
 #                        [EXACT]
 #                        [DEFAULT_REVISION <revision>]
 #                        [HIGHEST_REVISION <revision>]
@@ -859,7 +859,7 @@ endfunction()
 # When `EXACT` is not specified, this function will set the Zephyr build system
 # variable `ACTIVE_BOARD_REVISION` with the selected revision.
 #
-# FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
+# FORMAT <LETTER | STRING | NUMBER | MAJOR.MINOR.PATCH>: Specify the revision format.
 #         LETTER:             Revision format is a single letter from A - Z.
 #         NUMBER:             Revision format is a single integer number.
 #         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
@@ -934,10 +934,16 @@ function(board_check_revision)
               highest supported revision `${BOARD_REV_HIGHEST_REVISION}`. \
               Please specify a valid board revision.")
     endif()
+    if(BOARD_REV_FORMAT STREQUAL STRING)
+      message(FATAL_ERROR "String type revisions are not supported for \
+              revision comparison. Please check VALID_REVISIONS.")
+    endif()
   endif()
 
   if(BOARD_REV_FORMAT STREQUAL LETTER)
     set(revision_regex "([A-Z])")
+  elseif(BOARD_REV_FORMAT STREQUAL STRING)
+    set(revision_regex "([A-Za-z0-9\.]+)")
   elseif(BOARD_REV_FORMAT STREQUAL NUMBER)
     set(revision_regex "([0-9]+)")
   elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
@@ -956,7 +962,7 @@ function(board_check_revision)
     endif()
   else()
     message(FATAL_ERROR "Invalid format specified for \
-    `board_check_revision(FORMAT <LETTER | NUMBER | MAJOR.MINOR.PATCH>)`")
+    `board_check_revision(FORMAT <LETTER | STRING | NUMBER | MAJOR.MINOR.PATCH>)`")
   endif()
 
   if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
