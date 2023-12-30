@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Scott Barnes <scott@atomsmith.net>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ATMEL_OLED1_XPRO || \
+	SHIELD_ATMEL_OLED1_XPRO_EXT2 || \
+	SHIELD_ATMEL_OLED1_XPRO_EXT3
+
+if DISPLAY
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 64
+
+config LV_DPI_DEF
+	default 145
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif	# SHIELD_ATMEL_OLED1_XPRO || \
+	# SHIELD_ATMEL_OLED1_XPRO_EXT2 || \
+	# SHIELD_ATMEL_OLED1_XPRO_EXT3

@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2024 Scott Barnes <scott@atomsmith.net>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &atmel_oled1_xpro;
+	};
+
+	aliases {
+		atmel-oled1-xpro-led1 = &atmel_oled1_xpro_led1;
+		atmel-oled1-xpro-led2 = &atmel_oled1_xpro_led2;
+		atmel-oled1-xpro-led3 = &atmel_oled1_xpro_led3;
+		atmel-oled1-xpro-sw1 = &atmel_oled1_xpro_button1;
+		atmel-oled1-xpro-sw2 = &atmel_oled1_xpro_button2;
+		atmel-oled1-xpro-sw3 = &atmel_oled1_xpro_button3;
+	};
+
+	oled1_gpio_keys {
+		compatible = "gpio-keys";
+
+		atmel_oled1_xpro_button1: button1 {
+			label = "OLED Board Button 1";
+			gpios = <&ext2_header 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+		atmel_oled1_xpro_button2: button2 {
+			label = "OLED Board Button 2";
+			gpios = <&ext2_header 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+		atmel_oled1_xpro_button3: button3 {
+			label = "OLED Board Button 3";
+			gpios = <&ext2_header 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_4>;
+		};
+	};
+
+	atmel_oled1_xpro_leds {
+		compatible = "gpio-leds";
+		atmel_oled1_xpro_led1: led_1 {
+			gpios = <&ext2_header 4 GPIO_ACTIVE_LOW>;
+			label = "OLED Board LED 1";
+		};
+		atmel_oled1_xpro_led2: led_2 {
+			gpios = <&ext2_header 5 GPIO_ACTIVE_LOW>;
+			label = "OLED Board LED 2";
+		};
+		atmel_oled1_xpro_led3: led_3 {
+			gpios = <&ext2_header 3 GPIO_ACTIVE_LOW>;
+			label = "OLED Board LED 3";
+		};
+	};
+};
+
+&ext2_spi {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	atmel_oled1_xpro: ssd1306@1 {
+		compatible = "solomon,ssd1306fb";
+		reg = <0x1>;    /* Use second member of "cs-gpios" as chip select */
+		spi-max-frequency = <10000000>;
+		width = <128>;
+		height = <32>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <0x1F>;
+		segment-remap;
+		com-invdir;
+		com-sequential;
+		prechargep = <0xF1>;
+		data_cmd-gpios = <&ext2_header 2 0>;
+		reset-gpios = <&ext2_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

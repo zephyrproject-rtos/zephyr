@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Scott Barnes <scott@atomsmith.net>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ATMEL_OLED1_XPRO
+	def_bool $(shields_list_contains,atmel_oled1_xpro)
+
+config SHIELD_ATMEL_OLED1_XPRO_EXT2
+	def_bool $(shields_list_contains,atmel_oled1_xpro_ext2)
+
+config SHIELD_ATMEL_OLED1_XPRO_EXT3
+	def_bool $(shields_list_contains,atmel_oled1_xpro_ext3)

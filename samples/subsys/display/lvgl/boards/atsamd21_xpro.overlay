@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2024 Scott Barnes <scott@atomsmith.net>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ext1_spi: &sercom0 {
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;		/* PAD[0] is MISO */
+	dopo = <1>;		/* PAD[2] is MOSI, PAD[3] is SCK */
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&ext1_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&porta 5 GPIO_ACTIVE_LOW>;
+
+	/delete-property/ current-speed;
+	/delete-property/ rxpo;
+	/delete-property/ txpo;
+};
+
+ext2_spi: &sercom1 {
+	compatible = "atmel,sam0-spi";
+	dipo = <0>;		/* PAD[0] is MISO */
+	dopo = <1>;		/* PAD[2] is MOSI, PAD[3] is SCK */
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&ext2_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&porta 17 GPIO_ACTIVE_LOW>, <&porta 17 GPIO_ACTIVE_LOW>;
+	   /* Duplicate chip select provides shield compatibility with other Xplained Pro kits
+	    * where the same SPI bus with distinct chp selects is shared between the EXT1 and
+	    * EXT2 headers.
+	    */
+
+	/delete-property/ current-speed;
+	/delete-property/ rxpo;
+	/delete-property/ txpo;
+};
+
+ext3_spi: &sercom5 {
+	dipo = <0>;		/* PAD[0] is MISO */
+	dopo = <1>;		/* PAD[2] is MOSI, PAD[3] is SCK */
+
+	pinctrl-0 = <&ext3_spi_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&portb 17 GPIO_ACTIVE_LOW>;
+};
