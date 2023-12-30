@@ -121,5 +121,4 @@ int ra_icu_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		      NULL);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
