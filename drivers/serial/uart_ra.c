@@ -182,40 +182,35 @@ struct uart_ra_data {
 #define LSR_PNUM_POS (8)
 #define LSR_PNUM_LEN (5)
 
-static uint8_t uart_ra_read_8(const struct device *dev,
-			   uint32_t offs)
+static uint8_t uart_ra_read_8(const struct device *dev, uint32_t offs)
 {
 	const struct uart_ra_cfg *config = dev->config;
 
 	return sys_read8(config->regs + offs);
 }
 
-static void uart_ra_write_8(const struct device *dev,
-			    uint32_t offs, uint8_t value)
+static void uart_ra_write_8(const struct device *dev, uint32_t offs, uint8_t value)
 {
 	const struct uart_ra_cfg *config = dev->config;
 
 	sys_write8(value, config->regs + offs);
 }
 
-static uint16_t uart_ra_read_16(const struct device *dev,
-				uint32_t offs)
+static uint16_t uart_ra_read_16(const struct device *dev, uint32_t offs)
 {
 	const struct uart_ra_cfg *config = dev->config;
 
 	return sys_read16(config->regs + offs);
 }
 
-static void uart_ra_write_16(const struct device *dev,
-			     uint32_t offs, uint16_t value)
+static void uart_ra_write_16(const struct device *dev, uint32_t offs, uint16_t value)
 {
 	const struct uart_ra_cfg *config = dev->config;
 
 	sys_write16(value, config->regs + offs);
 }
 
-static void uart_ra_set_baudrate(const struct device *dev,
-				 uint32_t baud_rate)
+static void uart_ra_set_baudrate(const struct device *dev, uint32_t baud_rate)
 {
 	struct uart_ra_data *data = dev->data;
 	uint8_t reg_val;
@@ -310,8 +305,7 @@ static int uart_ra_err_check(const struct device *dev)
 	return errors;
 }
 
-static int uart_ra_configure(const struct device *dev,
-			     const struct uart_config *cfg)
+static int uart_ra_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	struct uart_ra_data *data = dev->data;
 
@@ -369,8 +363,7 @@ static int uart_ra_configure(const struct device *dev,
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int uart_ra_config_get(const struct device *dev,
-			      struct uart_config *cfg)
+static int uart_ra_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_ra_data *data = dev->data;
 
@@ -423,15 +416,12 @@ static int uart_ra_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static bool uart_ra_irq_is_enabled(const struct device *dev,
-				   uint32_t irq)
+static bool uart_ra_irq_is_enabled(const struct device *dev, uint32_t irq)
 {
 	return uart_ra_read_8(dev, SCR) & irq;
 }
 
-static int uart_ra_fifo_fill(const struct device *dev,
-			     const uint8_t *tx_data,
-			     int len)
+static int uart_ra_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
 {
 	struct uart_ra_data *data = dev->data;
 	uint8_t reg_val;
@@ -456,8 +446,7 @@ static int uart_ra_fifo_fill(const struct device *dev,
 	return 1;
 }
 
-static int uart_ra_fifo_read(const struct device *dev, uint8_t *rx_data,
-			     const int size)
+static int uart_ra_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	uint8_t data;
 
@@ -584,8 +573,7 @@ static int uart_ra_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_ra_irq_callback_set(const struct device *dev,
-				     uart_irq_callback_user_data_t cb,
+static void uart_ra_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				     void *cb_data)
 {
 	struct uart_ra_data *data = dev->data;
