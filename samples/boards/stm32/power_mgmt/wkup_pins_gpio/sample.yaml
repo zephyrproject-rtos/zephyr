@@ -1,0 +1,14 @@
+sample:
+  name: STM32 wake-up pins with gpio demo
+tests:
+  sample.boards.stm32.power_mgmt.wkup_pins_gpio:
+    build_only: true
+    platform_allow:
+      - nucleo_u5a5zj_q
+      - nucleo_l4r5zi
+      - nucleo_wl55jc
+    tags:
+      - power
+    filter: dt_enabled_alias_with_parent_compat("sw-wkup",
+      "gpio-keys") and dt_compat_enabled("st,stm32-pwr")
+    extra_args: "CONFIG_DEBUG=y"

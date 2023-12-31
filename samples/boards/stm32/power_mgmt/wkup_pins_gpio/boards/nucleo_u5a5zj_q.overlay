@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sw-wkup = &user_button;
+	};
+};
+
+&user_button {
+	wakeup-source;
+};
+
+&pwr {
+	status = "okay";
+};
