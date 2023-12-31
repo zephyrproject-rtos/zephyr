@@ -11,8 +11,24 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
 
+#ifdef CONFIG_WAKEUP_SOURCE
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwr)
+#define DT_DRV_COMPAT st_stm32_pwr
+#define PWR_STM32_WKUP_PINS_PULL_CFG DT_INST_PROP_OR(0, wkup_pins_pull, 0)
+#endif
+#endif /* CONFIG_WAKEUP_SOURCE */
+
 void z_sys_poweroff(void)
 {
+#ifdef CONFIG_WAKEUP_SOURCE
+#if PWR_STM32_WKUP_PINS_PULL_CFG
+	LL_PWR_EnablePUPDCfg();
+#else
+	LL_PWR_DisablePUPDCfg();
+#endif /* PWR_STM32_WKUP_PINS_PULL_CFG */
+	LL_PWR_ClearFlag_WU();
+#endif /* CONFIG_WAKEUP_SOURCE */
+
 	LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
 	LL_LPM_EnableDeepSleep();
 	LL_DBGMCU_DisableDBGStandbyMode();
