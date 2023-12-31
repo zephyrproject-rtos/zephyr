@@ -81,8 +81,8 @@ set_pid_exit:
 }
 
 int usbd_device_set_code_triple(struct usbd_contex *const uds_ctx,
-				const uint8_t class, const uint8_t subclass,
-				const uint8_t protocol)
+				const uint8_t base_class,
+				const uint8_t subclass, const uint8_t protocol)
 {
 	struct usb_device_descriptor *desc = uds_ctx->desc;
 	int ret = 0;
@@ -94,7 +94,7 @@ int usbd_device_set_code_triple(struct usbd_contex *const uds_ctx,
 		goto set_code_triple_exit;
 	}
 
-	desc->bDeviceClass = class;
+	desc->bDeviceClass = base_class;
 	desc->bDeviceSubClass = subclass;
 	desc->bDeviceProtocol = protocol;
 
