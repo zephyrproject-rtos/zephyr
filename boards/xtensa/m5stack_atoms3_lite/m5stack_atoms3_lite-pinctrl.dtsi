@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+ * Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		 group1 {
+			 pinmux = <UART0_TX_GPIO43>;
+			 output-high;
+		 };
+		 group2 {
+			 pinmux = <UART0_RX_GPIO44>;
+			 bias-pull-up;
+		 };
+	 };
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO38>,
+				 <I2C0_SCL_GPIO39>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO2>,
+				 <I2C1_SCL_GPIO1>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim3_ws2812_led: spim3_ws2812_led {
+		group1 {
+			pinmux = <SPIM3_MOSI_GPIO35>;
+			output-low;
+		};
+	};
+};
