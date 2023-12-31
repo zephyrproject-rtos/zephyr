@@ -32,10 +32,18 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 
 	switch (evt->code) {
 	case INPUT_ABS_X:
-		point->x = evt->value;
+		if (cfg->swap_xy) {
+			point->y = evt->value;
+		} else {
+			point->x = evt->value;
+		}
 		break;
 	case INPUT_ABS_Y:
-		point->y = evt->value;
+		if (cfg->swap_xy) {
+			point->x = evt->value;
+		} else {
+			point->y = evt->value;
+		}
 		break;
 	case INPUT_BTN_TOUCH:
 		data->pending_event.state = evt->value ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
@@ -44,15 +52,6 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 
 	if (!evt->sync) {
 		return;
-	}
-
-	/* adjust coordinates */
-	if (cfg->swap_xy) {
-		lv_coord_t tmp;
-
-		tmp = point->x;
-		point->x = point->y;
-		point->y = tmp;
 	}
 
 	if (cfg->invert_x) {
