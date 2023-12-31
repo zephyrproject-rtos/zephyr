@@ -16,6 +16,14 @@ additional widgets may be displayed and additional interactions enabled:
       If your board has a touch panel controller
       (:dtcompatible:`zephyr,lvgl-pointer-input`), a button widget is displayed
       in the center of the screen. Otherwise a label widget is displayed.
+
+      The demo also features drawing functionality, which can to be enabled
+      via menuconfig (``SAMPLE_LVGL_TOUCH_DRAWING``). When enabled, received touch
+      input will be drawn onto the surface of the screen. By clicking the button
+      widget at the center of the screen, the screen will be cleared again. This
+      feature can be generally helpful for testing proper functionality of the
+      touch interface.
+
 * Button
       The button pseudo device (:dtcompatible:`zephyr,lvgl-button-input`) maps
       a press/release action to a specific coordinate on screen. In the case
@@ -45,6 +53,7 @@ for Arduino connectors, for example:
 or a board with an integrated display:
 
 - :ref:`esp_wrover_kit`
+- :ref:`m5stack_core2`
 
 or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 
@@ -60,6 +69,10 @@ or
 
 - :ref:`mimxrt1060_evk`
 - `RK043FN02H-CT`_
+
+Memory requirements
+===================
+The sample application requires an LVGL memory pool of at least 32 kBytes.
 
 Building and Running
 ********************

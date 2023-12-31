@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Martn Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LVGL basic sample"
+
+	config SAMPLE_LVGL_TOUCH_DRAWING
+		bool "Enable touch drawing feature"
+		depends on LV_Z_POINTER_INPUT
+		help
+		This allows test of touch functionality by drawing all recognized touch events on the screen.
+endmenu
+
+source "Kconfig.zephyr"
