@@ -568,6 +568,28 @@ int pthread_setcancelstate(int state, int *oldstate)
 	return 0;
 }
 
+void pthread_testcancel(void)
+{
+	struct posix_thread *t;
+	bool cancel_pended = false;
+
+	t = to_posix_thread(pthread_self());
+	if (t == NULL) {
+		return;
+	}
+
+	K_SPINLOCK(&pthread_pool_lock) {
+		if (t->cancel_pending) {
+			cancel_pended = true;
+			t->cancel_state = PTHREAD_CANCEL_DISABLE;
+		}
+	}
+
+	if (cancel_pended) {
+		posix_thread_finalize(t, PTHREAD_CANCELED);
+	}
+}
+
 /**
  * @brief Set cancelability Type.
  *
