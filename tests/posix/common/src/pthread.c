@@ -985,3 +985,53 @@ ZTEST(posix_apis, test_pthread_attr_large_stacksize)
 	zassert_equal(actual_size, expect_size);
 	zassert_ok(pthread_attr_destroy(&attr));
 }
+
+static void *test_pthread_cancel_fn(void *arg)
+{
+	int oldtype = ~PTHREAD_CANCEL_DEFERRED;
+	int oldstate = ~PTHREAD_CANCEL_ENABLE;
+
+	zassert_ok(pthread_setcancelstate(PTHREAD_CANCEL_DEFERRED, &oldtype));
+	zassert_equal(oldtype, PTHREAD_CANCEL_DEFERRED);
+
+	zassert_ok(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate));
+	zassert_equal(oldstate, PTHREAD_CANCEL_ENABLE);
+
+	/* this should be ignored */
+	pthread_testcancel();
+
+	/* this will mark it pending */
+	pthread_cancel(pthread_self());
+
+	/* assume this completes well before 500ms */
+	zassert_ok(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate));
+
+	/* this should terminate the thread*/
+	pthread_testcancel();
+
+	/*
+	 * We use this large delay to indicate that the thread in fact did not exit via
+	 * pthread_testcancel(), as expected. I.e. it should not take > 1000 ms to join thread
+	 */
+	zassert_ok(k_msleep(500));
+
+	return NULL;
+}
+
+ZTEST(posix_apis, test_pthread_testcancel)
+{
+	uint32_t now;
+	uint32_t then;
+	pthread_t th;
+	void *retval;
+
+	then = k_uptime_get_32();
+	zassert_ok(pthread_create(&th, NULL, test_pthread_cancel_fn, NULL));
+	zassert_ok(k_msleep(500));
+	zassert_ok(pthread_cancel(th));
+	zassert_ok(pthread_join(th, &retval));
+	now = k_uptime_get_32();
+
+	/* should not take > 1000 ms to join thread */
+	zassert_true(now - then <= 1000);
+}
