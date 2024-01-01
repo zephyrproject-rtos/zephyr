@@ -11,14 +11,11 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-#define N_THR 2
-#define STACKSZ (MAX(1024, PTHREAD_STACK_MIN) + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define N_THR            2
 #define SENDER_THREAD 0
 #define RECEIVER_THREAD 1
 #define MESSAGE_SIZE 16
 #define MESG_COUNT_PERMQ 4
-
-K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
 
 char queue[16] = "server";
 
@@ -60,7 +57,8 @@ void *receiver_thread(void *p1)
 	clock_gettime(CLOCK_MONOTONIC, &curtime);
 	curtime.tv_sec += 1;
 	mq_timedreceive(mqd, rec_data, MESSAGE_SIZE, 0, &curtime);
-	zassert_false(strcmp(rec_data, send_data), "Error in data reception");
+	zassert_false(strcmp(rec_data, send_data), "Error in data reception. exp: %s act: %s",
+		      send_data, rec_data);
 	usleep(USEC_PER_MSEC);
 	zassert_false(mq_close(mqd),
 		      "unable to close message queue descriptor.");
@@ -72,9 +70,9 @@ ZTEST(posix_apis, test_mqueue)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
-	int32_t mode = 0777, flags = O_RDWR | O_CREAT, ret, i;
+	int32_t mode = 0777;
+	int flags = O_RDWR | O_CREAT;
 	void *retval;
-	pthread_attr_t attr[N_THR];
 	pthread_t newthread[N_THR];
 
 	attrs.mq_msgsize = MESSAGE_SIZE;
@@ -82,28 +80,15 @@ ZTEST(posix_apis, test_mqueue)
 
 	mqd = mq_open(queue, flags, mode, &attrs);
 
-	for (i = 0; i < N_THR; i++) {
+	for (int i = 0; i < N_THR; i++) {
 		/* Creating threads */
-		zassert_ok(pthread_attr_init(&attr[i]));
-		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
-
-		if (i % 2) {
-			ret = pthread_create(&newthread[i], &attr[i],
-					     sender_thread,
-					     INT_TO_POINTER(i));
-		} else {
-			ret = pthread_create(&newthread[i], &attr[i],
-					     receiver_thread,
-					     INT_TO_POINTER(i));
-		}
-
-		zassert_false(ret, "Not enough space to create new thread");
-		zassert_equal(pthread_attr_destroy(&attr[i]), 0);
+		zassert_ok(pthread_create(&newthread[i], NULL,
+					  (i % 2 == 0) ? receiver_thread : sender_thread, NULL));
 	}
 
 	usleep(USEC_PER_MSEC * 10U);
 
-	for (i = 0; i < N_THR; i++) {
+	for (int i = 0; i < N_THR; i++) {
 		pthread_join(newthread[i], &retval);
 	}
 
