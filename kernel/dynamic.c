@@ -156,7 +156,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 		k_free(stack);
 #endif
 	} else {
-		LOG_ERR("Invalid stack %p", stack);
+		LOG_DBG("Invalid stack %p", stack);
 		return -EINVAL;
 	}
 
