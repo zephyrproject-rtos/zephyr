@@ -210,8 +210,17 @@ int main(void)
 		rect_h = 1;
 	}
 
-	h_step = rect_h;
-	scale = (capabilities.x_resolution / 8) / rect_h;
+	if ((capabilities.x_resolution < 3 * rect_w) ||
+	    (capabilities.y_resolution < 3 * rect_h) ||
+	    (capabilities.x_resolution < 8 * rect_h)) {
+		rect_w = capabilities.x_resolution * 40 / 100;
+		rect_h = capabilities.y_resolution * 40 / 100;
+		h_step = capabilities.y_resolution * 20 / 100;
+		scale = 1;
+	} else {
+		h_step = rect_h;
+		scale = (capabilities.x_resolution / 8) / rect_h;
+	}
 
 	rect_w *= scale;
 	rect_h *= scale;
