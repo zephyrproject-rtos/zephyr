@@ -213,3 +213,15 @@ ZTEST(posix_apis, test_realtime)
 		CONFIG_TEST_CLOCK_RT_ERROR_MS, lo_wm, cma, hi_wm);
 	zassert_between_inclusive(cma, lo, hi);
 }
+
+ZTEST(posix_apis, test_clock_getcpuclockid)
+{
+	int ret = 0;
+	clockid_t clock_id;
+
+	ret = clock_getcpuclockid((pid_t)0, &clock_id);
+	zassert_equal(ret, 0, "POSIX clock_getcpuclock id failed");
+
+	ret = clock_getcpuclockid((pid_t)2482, &clock_id);
+	zassert_equal(ret, EPERM, "POSIX clock_getcpuclock id failed");
+}
