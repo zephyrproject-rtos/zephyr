@@ -7,10 +7,16 @@
 #include <freq.h>
 
 #include <sophgo/cv18xx-c906-common.dtsi>
+#include <zephyr/dt-bindings/pinctrl/sophgo-cv181x-pinctrl.h>
 
 / {
 	soc {
 		compatible = "sophgo,cv181x", "simple-bus";
+
+		pinctrl: pin-controller@3001000 {
+			compatible = "sophgo,cvi-pinctrl";
+			reg = <0x3001000 DT_SIZE_K(4)>;
+		};
 
 		gpioa: gpio@3020000 {
 			compatible = "snps,designware-gpio";
