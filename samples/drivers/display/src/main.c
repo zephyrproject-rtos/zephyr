@@ -234,7 +234,8 @@ int main(void)
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
 		fill_buffer_fnc = fill_buffer_mono;
-		buf_size /= 8;
+		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
+			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
 		break;
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting sample.");
