@@ -94,10 +94,23 @@ tests:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
+  logging.frontend.dbg.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
   logging.frontend:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_MODE_DEFERRED=y
+
+  logging.frontend.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.frontend.immediate:
     extra_configs:
@@ -134,6 +147,12 @@ tests:
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
+
+  logging.frontend.only.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.frontend.no_backends:
     extra_configs:
@@ -245,6 +264,13 @@ tests:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
       - CONFIG_CPP=y
+
+  logging.frontend.only_cpp.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.frontend.no_backends_cpp:
     extra_configs:
