@@ -31,9 +31,9 @@ class CoverageTool:
         self.output_formats = None
 
     @staticmethod
-    def factory(tool):
+    def factory(tool, jobs=None):
         if tool == 'lcov':
-            t =  Lcov()
+            t =  Lcov(jobs)
         elif tool == 'gcovr':
             t =  Gcovr()
         else:
@@ -141,11 +141,12 @@ class CoverageTool:
 
 class Lcov(CoverageTool):
 
-    def __init__(self):
+    def __init__(self, jobs=None):
         super().__init__()
         self.ignores = []
         self.output_formats = "lcov,html"
         self.version = self.get_version()
+        self.jobs = jobs
 
     def get_version(self):
         try:
@@ -192,13 +193,22 @@ class Lcov(CoverageTool):
     def run_lcov(self, args, coveragelog):
         if self.is_lcov_v2:
             branch_coverage = "branch_coverage=1"
+            if self.jobs is None:
+                # Default: --parallel=0 will autodetect appropriate parallelism
+                parallel = ["--parallel", "0"]
+            elif self.jobs == 1:
+                # Serial execution requested, don't parallelize at all
+                parallel = []
+            else:
+                parallel = ["--parallel", str(self.jobs)]
         else:
             branch_coverage = "lcov_branch_coverage=1"
+            parallel = []
 
         cmd = [
             "lcov", "--gcov-tool", self.gcov_tool,
             "--rc", branch_coverage,
-        ] + args
+        ] + parallel + args
         return self.run_command(cmd, coveragelog)
 
     def _generate(self, outdir, coveragelog):
@@ -364,7 +374,7 @@ def run_coverage(testplan, options):
 
     logger.info("Generating coverage files...")
     logger.info(f"Using gcov tool: {gcov_tool}")
-    coverage_tool = CoverageTool.factory(options.coverage_tool)
+    coverage_tool = CoverageTool.factory(options.coverage_tool, jobs=options.jobs)
     coverage_tool.gcov_tool = gcov_tool
     coverage_tool.base_dir = os.path.abspath(options.coverage_basedir)
     # Apply output format default
