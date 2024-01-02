@@ -733,6 +733,7 @@ flagged.
                               # toolchain Kconfig which is sourced based on
                               # Zephyr toolchain variant and therefore not
                               # visible to compliance.
+        "BOARD_", # Used as regex in scripts/utils/board_v1_to_v2.py
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
         "BINDESC_", # Used in documentation as a prefix
