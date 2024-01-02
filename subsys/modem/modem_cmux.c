@@ -205,57 +205,55 @@ static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 					  const struct modem_cmux_frame *frame)
 {
-	uint8_t byte;
+	uint8_t buf[MODEM_CMUX_FRAME_SIZE_MAX];
 	uint8_t fcs;
 	uint16_t space;
 	uint16_t data_len;
+	uint16_t buf_idx;
 
 	space = ring_buf_space_get(&cmux->transmit_rb) - MODEM_CMUX_FRAME_SIZE_MAX;
 	data_len = (space < frame->data_len) ? space : frame->data_len;
 
 	/* SOF */
-	byte = 0xF9;
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	buf[0] = 0xF9;
 
 	/* DLCI Address (Max 63) */
-	byte = 0x01 | (frame->cr << 1) | (frame->dlci_address << 2);
-	fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE, true);
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	buf[1] = 0x01 | (frame->cr << 1) | (frame->dlci_address << 2);
 
 	/* Frame type and poll/final */
-	byte = frame->type | (frame->pf << 4);
-	fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	buf[2] = frame->type | (frame->pf << 4);
 
 	/* Data length */
 	if (data_len > 127) {
-		byte = data_len << 1;
-		fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
-		ring_buf_put(&cmux->transmit_rb, &byte, 1);
-		byte = data_len >> 7;
-		ring_buf_put(&cmux->transmit_rb, &byte, 1);
+		buf[3] = data_len << 1;
+		buf[4] = data_len >> 7;
+		buf_idx = 5;
 	} else {
-		byte = 0x01 | (data_len << 1);
-		ring_buf_put(&cmux->transmit_rb, &byte, 1);
+		buf[3] = 0x01 | (data_len << 1);
+		buf_idx = 4;
 	}
+
+	/* Compute FCS for the header (exclude SOF) */
+	fcs = crc8(&buf[1], (buf_idx - 1), MODEM_CMUX_FCS_POLYNOMIAL, MODEM_CMUX_FCS_INIT_VALUE,
+		   true);
 
 	/* FCS final */
 	if (frame->type == MODEM_CMUX_FRAME_TYPE_UIH) {
-		fcs = 0xFF - crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
+		fcs = 0xFF - fcs;
 	} else {
-		fcs = crc8(&byte, 1, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
 		fcs = 0xFF - crc8(frame->data, data_len, MODEM_CMUX_FCS_POLYNOMIAL, fcs, true);
 	}
+
+	/* Frame header */
+	ring_buf_put(&cmux->transmit_rb, buf, buf_idx);
 
 	/* Data */
 	ring_buf_put(&cmux->transmit_rb, frame->data, data_len);
 
-	/* FCS */
-	ring_buf_put(&cmux->transmit_rb, &fcs, 1);
-
-	/* EOF */
-	byte = 0xF9;
-	ring_buf_put(&cmux->transmit_rb, &byte, 1);
+	/* FCS and EOF will be put on the same call */
+	buf[0] = fcs;
+	buf[1] = 0xF9;
+	ring_buf_put(&cmux->transmit_rb, buf, 2);
 	k_work_schedule(&cmux->transmit_work, K_NO_WAIT);
 	return data_len;
 }
