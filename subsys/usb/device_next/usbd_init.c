@@ -109,26 +109,48 @@ static int unassign_eps(struct usbd_contex *const uds_ctx,
  * USB device configuration.
  */
 static int init_configuration_inst(struct usbd_contex *const uds_ctx,
-				   struct usbd_class_data *const data,
+				   struct usbd_class_node *const c_nd,
 				   uint32_t *const config_ep_bm,
 				   uint8_t *const nif)
 {
-	struct usb_desc_header *dh = data->desc;
-	uint8_t *ptr = (uint8_t *)dh;
+	struct usbd_class_data *const data = c_nd->data;
+	struct usb_desc_header **dhp;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;
+	enum usbd_speed speed;
 	uint32_t class_ep_bm = 0;
 	uint8_t tmp_nif;
 	int ret;
+
+	/*
+	 * Read the highest speed supported by the controller and use it to get
+	 * the appropriate function descriptor from the instance. If the
+	 * controller only supports full speed, the code below will configure
+	 * the function descriptor for full speed only, and high speed will
+	 * never be used after the device instance is initialized. If the
+	 * controller supports high speed, the code will only configure the
+	 * function's high speed descriptor, and the function implementation
+	 * must update the full speed descriptor during the init callback
+	 * processing, which is required to properly respond to
+	 * other-speed-configuration descriptor requests and for the unlikely
+	 * case where the high speed controller is connected to a full speed bus.
+	 */
+
+	speed = usbd_caps_speed(uds_ctx);
+	LOG_DBG("Highest speed supported by the controller is %u", speed);
+	dhp = usbd_class_get_desc(c_nd, speed);
+	if (dhp == NULL) {
+		return -EINVAL;
+	}
 
 	tmp_nif = *nif;
 	data->iface_bm = 0U;
 	data->ep_active = 0U;
 
-	while (dh->bLength != 0) {
+	while ((*dhp)->bLength != 0) {
 
-		if (dh->bDescriptorType == USB_DESC_INTERFACE) {
-			ifd = (struct usb_if_descriptor *)ptr;
+		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
+			ifd = (struct usb_if_descriptor *)(*dhp);
 
 			data->ep_active |= class_ep_bm;
 
@@ -152,20 +174,19 @@ static int init_configuration_inst(struct usbd_contex *const uds_ctx,
 				ifd->bInterfaceNumber, ifd->bAlternateSetting);
 		}
 
-		if (dh->bDescriptorType == USB_DESC_ENDPOINT) {
-			ed = (struct usb_ep_descriptor *)ptr;
+		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT) {
+			ed = (struct usb_ep_descriptor *)(*dhp);
 			ret = assign_ep_addr(uds_ctx->dev, ed,
 					     config_ep_bm, &class_ep_bm);
 			if (ret) {
 				return ret;
 			}
 
-			LOG_INF("\tep 0x%02x interface ep-bm 0x%08x",
-				ed->bEndpointAddress, class_ep_bm);
+			LOG_INF("\tep 0x%02x mps %u interface ep-bm 0x%08x",
+				ed->bEndpointAddress, ed->wMaxPacketSize, class_ep_bm);
 		}
 
-		ptr += dh->bLength;
-		dh = (struct usb_desc_header *)ptr;
+		dhp++;
 	}
 
 	if (tmp_nif <= *nif) {
@@ -198,7 +219,7 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
 
-		ret = init_configuration_inst(uds_ctx, c_nd->data,
+		ret = init_configuration_inst(uds_ctx, c_nd,
 					      &config_ep_bm, &nif);
 		if (ret != 0) {
 			LOG_ERR("Failed to assign endpoint addresses");
@@ -212,8 +233,8 @@ static int init_configuration(struct usbd_contex *const uds_ctx,
 		}
 
 		LOG_INF("Init class node %p, descriptor length %zu",
-			c_nd, usbd_class_desc_len(c_nd));
-		cfg_len += usbd_class_desc_len(c_nd);
+			c_nd, usbd_class_desc_len(c_nd, usbd_caps_speed(uds_ctx)));
+		cfg_len += usbd_class_desc_len(c_nd, usbd_caps_speed(uds_ctx));
 	}
 
 	/* Update wTotalLength and bNumInterfaces of configuration descriptor */
