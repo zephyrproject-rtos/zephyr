@@ -22,7 +22,7 @@
  * This is the event handler for all endpoint accommodated
  * by a class instance.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  * @param[in] buf Control Request Data buffer
  * @param[in] err Result of the transfer. 0 if the transfer was successful.
  */
@@ -53,7 +53,7 @@ static inline int usbd_class_request(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  * @param[in] setup Pointer to USB Setup Packet
  * @param[in] buf Control Request Data buffer
  *
@@ -86,7 +86,7 @@ static inline int usbd_class_control_to_host(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  * @param[in] setup Pointer to USB Setup Packet
  * @param[in] buf Control Request Data buffer
  *
@@ -115,7 +115,7 @@ static inline int usbd_class_control_to_dev(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  * @param[in] ep Endpoint
  * @param[in] halted True if the endpoint has been halted and false if
  *                   the endpoint halt has been cleared by a Feature request.
@@ -140,8 +140,9 @@ static inline void usbd_class_feature_halt(struct usbd_class_node *const node,
  *
  * The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
- * @param[in] setup Pointer to USB setup packet
+ * @param[in] node Pointer to USB device class node
+ * @param[in] iface Interface
+ * @param[in] alternate Alternate setting
  */
 static inline void usbd_class_update(struct usbd_class_node *const node,
 				     const uint8_t iface,
@@ -157,10 +158,7 @@ static inline void usbd_class_update(struct usbd_class_node *const node,
 /**
  * @brief USB suspended handler
  *
- * @param[in] dev Pointer to device struct of the class instance
- * @param[in] event Power management event
- *
- * @return 0 on success, other values on fail.
+ * @param[in] node Pointer to USB device class node
  */
 static inline void usbd_class_suspended(struct usbd_class_node *const node)
 {
@@ -175,10 +173,7 @@ static inline void usbd_class_suspended(struct usbd_class_node *const node)
 /**
  * @brief USB resumed handler
  *
- * @param[in] dev Pointer to device struct of the class instance
- * @param[in] event Power management event
- *
- * @return 0 on success, other values on fail.
+ * @param[in] node Pointer to USB device class node
  */
 static inline void usbd_class_resumed(struct usbd_class_node *const node)
 {
@@ -210,7 +205,7 @@ static inline void usbd_class_sof(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  */
 static inline void usbd_class_enable(struct usbd_class_node *const node)
 {
@@ -226,7 +221,7 @@ static inline void usbd_class_enable(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  */
 static inline void usbd_class_disable(struct usbd_class_node *const node)
 {
@@ -248,7 +243,7 @@ static inline void usbd_class_disable(struct usbd_class_node *const node)
  *
  * @note If this call fails the core will terminate stack initialization.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  *
  * @return 0 on success, other values on fail.
  */
@@ -270,7 +265,7 @@ static inline int usbd_class_init(struct usbd_class_node *const node)
  *
  * @note The execution of the handler must not block.
  *
- * @param[in] dev Pointer to device struct of the class instance
+ * @param[in] node Pointer to USB device class node
  */
 static inline void usbd_class_shutdown(struct usbd_class_node *const node)
 {
