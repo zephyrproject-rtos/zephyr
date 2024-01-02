@@ -24,22 +24,20 @@
 #endif
 LOG_MODULE_REGISTER(usbd_class, CONFIG_USBD_LOG_LEVEL);
 
-size_t usbd_class_desc_len(struct usbd_class_node *const c_nd)
+size_t usbd_class_desc_len(struct usbd_class_node *const c_nd,
+			   const enum usbd_speed speed)
 {
-	struct usbd_class_data *data = c_nd->data;
-	struct usb_desc_header *dh;
-	uint8_t *ptr;
+	struct usb_desc_header **dhp;
 	size_t len = 0;
 
-	if (data->desc != NULL) {
-		dh = data->desc;
-		ptr = (uint8_t *)dh;
-
-		while (dh->bLength != 0) {
-			len += dh->bLength;
-			ptr += dh->bLength;
-			dh = (struct usb_desc_header *)ptr;
-		}
+	dhp = usbd_class_get_desc(c_nd, speed);
+	/*
+	 * If the desired descriptor is available, count to the last element,
+	 * which must be a pointer to a nil descriptor.
+	 */
+	while (dhp != NULL && (*dhp)->bLength != 0U) {
+		len += (*dhp)->bLength;
+		dhp++;
 	}
 
 	return len;
@@ -305,11 +303,6 @@ int usbd_register_class(struct usbd_contex *const uds_ctx,
 	}
 
 	data = c_nd->data;
-	if (data->desc == NULL) {
-		ret = -EINVAL;
-		goto register_class_error;
-	}
-
 
 	/* TODO: does it still need to be atomic ? */
 	if (atomic_test_bit(&data->state, USBD_CCTX_REGISTERED)) {

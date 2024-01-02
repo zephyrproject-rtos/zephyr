@@ -60,14 +60,6 @@ struct CSW {
 /* Single instance is likely enough because it can support multiple LUNs */
 #define MSC_NUM_INSTANCES CONFIG_USBD_MSC_INSTANCES_COUNT
 
-/* TODO: Bulk wMaxPacketSize is ultimately determined by connection speed
- * and can be 8/16/32/64 on Full-Speed and 512 on High-Speed. USBD handler
- * will update the value based on first connected speed which is wrong,
- * because it has to be set to valid value at connected speed on every
- * connection.
- */
-#define MSC_DEFAULT_BULK_EP_MPS 0
-
 /* Can be 64 if device is not High-Speed capable */
 #define MSC_BUF_SIZE 512
 
@@ -95,8 +87,10 @@ struct msc_bot_desc {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_out_ep;
+	struct usb_ep_descriptor if0_hs_in_ep;
+	struct usb_ep_descriptor if0_hs_out_ep;
 	struct usb_desc_header nil_desc;
-} __packed;
+};
 
 enum {
 	MSC_CLASS_ENABLED,
@@ -118,6 +112,9 @@ enum msc_bot_state {
 
 struct msc_bot_ctx {
 	struct usbd_class_node *class_node;
+	struct msc_bot_desc *const desc;
+	const struct usb_desc_header **const fs_desc;
+	const struct usb_desc_header **const hs_desc;
 	atomic_t bits;
 	enum msc_bot_state state;
 	uint8_t registered_luns;
@@ -149,14 +146,26 @@ static struct net_buf *msc_buf_alloc(const uint8_t ep)
 
 static uint8_t msc_get_bulk_in(struct usbd_class_node *const node)
 {
-	struct msc_bot_desc *desc = node->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
+	struct msc_bot_desc *desc = ctx->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_in_ep.bEndpointAddress;
+	}
 
 	return desc->if0_in_ep.bEndpointAddress;
 }
 
 static uint8_t msc_get_bulk_out(struct usbd_class_node *const node)
 {
-	struct msc_bot_desc *desc = node->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
+	struct msc_bot_desc *desc = ctx->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_out_ep.bEndpointAddress;
+	}
 
 	return desc->if0_out_ep.bEndpointAddress;
 }
@@ -742,10 +751,24 @@ static void msc_bot_disable(struct usbd_class_node *const node)
 	atomic_clear_bit(&ctx->bits, MSC_CLASS_ENABLED);
 }
 
+static void *msc_bot_get_desc(struct usbd_class_node *const node,
+			      const enum usbd_speed speed)
+{
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
+
+	if (speed == USBD_SPEED_HS) {
+		return ctx->hs_desc;
+	}
+
+	return ctx->fs_desc;
+}
+
 /* Initialization of the class implementation */
 static int msc_bot_init(struct usbd_class_node *const node)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
+	struct msc_bot_desc *desc = ctx->desc;
 
 	ctx->class_node = node;
 	ctx->state = MSC_BBB_EXPECT_CBW;
@@ -759,6 +782,12 @@ static int msc_bot_init(struct usbd_class_node *const node)
 
 		scsi_init(&ctx->luns[ctx->registered_luns++], lun->disk,
 			  lun->vendor, lun->product, lun->revision);
+	}
+
+	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
+		LOG_INF("FS endpoint descriptor needs to be updated");
+		desc->if0_in_ep.bEndpointAddress = desc->if0_hs_in_ep.bEndpointAddress;
+		desc->if0_out_ep.bEndpointAddress = desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
 	return 0;
@@ -782,7 +811,7 @@ static struct msc_bot_desc msc_bot_desc_##n = {					\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x81,					\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(MSC_DEFAULT_BULK_EP_MPS),	\
+		.wMaxPacketSize = sys_cpu_to_le16(64U),				\
 		.bInterval = 0,							\
 	},									\
 	.if0_out_ep = {								\
@@ -790,7 +819,23 @@ static struct msc_bot_desc msc_bot_desc_##n = {					\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x01,					\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(MSC_DEFAULT_BULK_EP_MPS),	\
+		.wMaxPacketSize = sys_cpu_to_le16(64U),				\
+		.bInterval = 0,							\
+	},									\
+	.if0_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512U),			\
+		.bInterval = 0,							\
+	},									\
+	.if0_hs_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x01,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512U),			\
 		.bInterval = 0,							\
 	},									\
 										\
@@ -798,7 +843,22 @@ static struct msc_bot_desc msc_bot_desc_##n = {					\
 		.bLength = 0,							\
 		.bDescriptorType = 0,						\
 	},									\
+};										\
+										\
+const static struct usb_desc_header *msc_bot_fs_desc_##n[] = {			\
+	(struct usb_desc_header *) &msc_bot_desc_##n.if0,			\
+	(struct usb_desc_header *) &msc_bot_desc_##n.if0_in_ep,			\
+	(struct usb_desc_header *) &msc_bot_desc_##n.if0_out_ep,		\
+	(struct usb_desc_header *) &msc_bot_desc_##n.nil_desc,			\
+};										\
+										\
+const static struct usb_desc_header *msc_bot_hs_desc_##n[] = {			\
+	(struct usb_desc_header *) &msc_bot_desc_##n.if0,			\
+	(struct usb_desc_header *) &msc_bot_desc_##n.if0_hs_in_ep,		\
+	(struct usb_desc_header *) &msc_bot_desc_##n.if0_hs_out_ep,		\
+	(struct usb_desc_header *) &msc_bot_desc_##n.nil_desc,			\
 };
+
 
 struct usbd_class_api msc_bot_api = {
 	.feature_halt = msc_bot_feature_halt,
@@ -807,13 +867,18 @@ struct usbd_class_api msc_bot_api = {
 	.request = msc_bot_request_handler,
 	.enable = msc_bot_enable,
 	.disable = msc_bot_disable,
+	.get_desc = msc_bot_get_desc,
 	.init = msc_bot_init,
 };
 
 #define DEFINE_MSC_BOT_CLASS_DATA(x, _)					\
-	static struct msc_bot_ctx msc_bot_ctx_##x;			\
+	static struct msc_bot_ctx msc_bot_ctx_##x = {			\
+		.desc = &msc_bot_desc_##x,				\
+		.fs_desc = msc_bot_fs_desc_##x,				\
+		.hs_desc = msc_bot_hs_desc_##x,				\
+	};								\
+									\
 	static struct usbd_class_data msc_bot_class_##x = {		\
-		.desc = (struct usb_desc_header *)&msc_bot_desc_##x,	\
 		.v_reqs = &msc_bot_vregs,				\
 		.priv = &msc_bot_ctx_##x,				\
 	};								\

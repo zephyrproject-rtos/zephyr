@@ -23,19 +23,19 @@ int usbd_class_handle_xfer(struct usbd_contex *const uds_ctx,
 			   const int err);
 
 /**
- * @brief Calculate the length of the class descriptor
+ * @brief Calculate the length of the class function descriptor
  *
- * Calculate the length of the class instance descriptor.
- * The descriptor must be terminated by a usb_desc_header structure
- * set to {bLength = 0, bDescriptorType = 0,}.
+ * Calculate the length of the class instance function descriptor.
  * Calculated length does not include any string descriptors that may be
  * used by the class instance.
  *
  * @param[in] node Pointer to a class node
+ * @param[in] speed Speed-dependent descriptor selector
  *
  * @return Length of the class descriptor
  */
-size_t usbd_class_desc_len(struct usbd_class_node *node);
+size_t usbd_class_desc_len(struct usbd_class_node *const c_nd,
+			   const enum usbd_speed speed);
 
 /**
  * @brief Get class context by bInterfaceNumber value
