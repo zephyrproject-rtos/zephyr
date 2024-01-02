@@ -714,6 +714,12 @@ static void tcp_conn_release(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, conn_release);
 	struct net_pkt *pkt;
 
+#if defined(CONFIG_NET_TEST)
+	if (conn->test_closed_cb != NULL) {
+		conn->test_closed_cb(conn, conn->test_user_data);
+	}
+#endif
+
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	/* Application is no longer there, unref any remaining packets on the
@@ -761,6 +767,18 @@ static void tcp_conn_release(struct k_work *work)
 
 	k_mutex_unlock(&tcp_lock);
 }
+
+#if defined(CONFIG_NET_TEST)
+void tcp_install_close_cb(struct net_context *ctx,
+			  net_tcp_closed_cb_t cb,
+			  void *user_data)
+{
+	NET_ASSERT(ctx->tcp != NULL);
+
+	((struct tcp *)ctx->tcp)->test_closed_cb = cb;
+	((struct tcp *)ctx->tcp)->test_user_data = user_data;
+}
+#endif
 
 static int tcp_conn_unref(struct tcp *conn)
 {
