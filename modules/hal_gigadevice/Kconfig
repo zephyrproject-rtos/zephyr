@@ -16,7 +16,7 @@ config GD32_HAS_AFIO_PINMUX
 
 config HAS_GD32_HAL
 	bool
-	select HAS_CMSIS_CORE if SOC_FAMILY_GD32_ARM
+	select HAS_CMSIS_CORE if ARM
 
 if HAS_GD32_HAL
 
