@@ -18,8 +18,10 @@ static inline float out_ev(struct sensor_value *val)
 static int print_samples;
 static int lsm6dsl_trig_cnt;
 
+#if CONFIG_LSM6DSL_TRIGGER_DEFAULT == 0
 static struct sensor_value accel_x_out, accel_y_out, accel_z_out;
 static struct sensor_value gyro_x_out, gyro_y_out, gyro_z_out;
+#endif
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
 static struct sensor_value magn_x_out, magn_y_out, magn_z_out;
 #endif
@@ -28,6 +30,7 @@ static struct sensor_value press_out, temp_out;
 #endif
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
+#if CONFIG_LSM6DSL_TRIGGER_DEFAULT == 0
 static void lsm6dsl_trigger_handler(const struct device *dev,
 				    const struct sensor_trigger *trig)
 {
@@ -93,12 +96,22 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	}
 
 }
+#elif CONFIG_LSM6DSL_TRIGGER_DEFAULT == 1
+static void lsm6dsl_trigger_handler(const struct device *dev,
+				    const struct sensor_trigger *trig)
+{
+	printk("Significant motion detected\n");
+	lsm6dsl_trig_cnt++;
+}
+#endif
 #endif
 
 int main(void)
 {
 	int cnt = 0;
+#if CONFIG_LSM6DSL_TRIGGER_DEFAULT == 0
 	char out_str[64];
+#endif
 	struct sensor_value odr_attr;
 	const struct device *const lsm6dsl_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
 
@@ -126,9 +139,12 @@ int main(void)
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	struct sensor_trigger trig;
 
+#if CONFIG_LSM6DSL_TRIGGER_DEFAULT == 0
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
-
+#elif CONFIG_LSM6DSL_TRIGGER_DEFAULT == 1
+	trig.type = SENSOR_TRIG_MOTION;
+#endif
 	if (sensor_trigger_set(lsm6dsl_dev, &trig, lsm6dsl_trigger_handler) != 0) {
 		printk("Could not set sensor type and channel\n");
 		return 0;
@@ -143,6 +159,7 @@ int main(void)
 	while (1) {
 		/* Erase previous */
 		printk("\0033\014");
+#if CONFIG_LSM6DSL_TRIGGER_DEFAULT == 0
 		printf("LSM6DSL sensor samples:\n\n");
 
 		/* lsm6dsl accel */
@@ -173,6 +190,7 @@ int main(void)
 		sprintf(out_str, "press: %f kPa - temp: %f deg",
 			out_ev(&press_out), out_ev(&temp_out));
 		printk("%s\n", out_str);
+#endif
 #endif
 
 		printk("loop:%d trig_cnt:%d\n\n", ++cnt, lsm6dsl_trig_cnt);
