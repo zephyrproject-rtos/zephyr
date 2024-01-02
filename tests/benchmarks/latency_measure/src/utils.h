@@ -15,6 +15,7 @@
 #include <zephyr/sys/printk.h>
 #include <stdio.h>
 #include <zephyr/timestamp.h>
+#include <zephyr/app_memory/app_memdomain.h>
 
 #define START_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define ALT_STACK_SIZE   (512 + CONFIG_TEST_EXTRA_STACK_SIZE)

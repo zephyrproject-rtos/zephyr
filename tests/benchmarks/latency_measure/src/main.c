@@ -12,7 +12,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/timestamp.h>
-#include <zephyr/app_memory/app_memdomain.h>
 #include "utils.h"
 #include "timing_sc.h"
 #include <zephyr/tc_util.h>
