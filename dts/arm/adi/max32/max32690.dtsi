@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32690_dma.h>
 
 &clk_ipo {
 	clock-frequency = <DT_FREQ_M(120)>;
@@ -168,6 +169,16 @@
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			interrupts = <88 0>;
 			status = "disabled";
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
+			dma-channels = <16>;
+			status = "disabled";
+			#dma-cells = <2>;
 		};
 	};
 };
