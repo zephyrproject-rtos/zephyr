@@ -224,6 +224,11 @@ static unsigned int regulator_max20335_count_current_limits(const struct device 
 {
 	const struct regulator_max20335_config *config = dev->config;
 
+	if (config->source != MAX20335_PMIC_SOURCE_BUCK1 &&
+	    config->source != MAX20335_PMIC_SOURCE_BUCK2) {
+		return -ENOTSUP;
+	}
+
 	return linear_range_values_count(config->desc->ua_range);
 }
 
@@ -231,6 +236,11 @@ static int regulator_max20335_list_current_limit(const struct device *dev, unsig
 						 int32_t *current_ua)
 {
 	const struct regulator_max20335_config *config = dev->config;
+
+	if (config->source != MAX20335_PMIC_SOURCE_BUCK1 &&
+	    config->source != MAX20335_PMIC_SOURCE_BUCK2) {
+		return -ENOTSUP;
+	}
 
 	return linear_range_get_value(config->desc->ua_range, idx, current_ua);
 }
@@ -243,6 +253,11 @@ static int regulator_max20335_set_current_limit(const struct device *dev,
 	uint8_t val;
 	uint16_t idx;
 	int ret;
+
+	if (config->source != MAX20335_PMIC_SOURCE_BUCK1 &&
+	    config->source != MAX20335_PMIC_SOURCE_BUCK2) {
+		return -ENOTSUP;
+	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, MAX20335_BUCK12_CSET, &val);
 	if (ret < 0) {
