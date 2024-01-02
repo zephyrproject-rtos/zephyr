@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-0 = &pwm0;
+	};
+};
+
+&tmr1b_ioa_p0_7 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&timer1 {
+	status = "okay";
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&tmr1b_ioa_p0_7>;
+		pinctrl-names = "default";
+	};
+};
