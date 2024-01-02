@@ -107,9 +107,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 		return (mqd_t)mqd;
 	}
 
-	mq_desc_ptr = k_malloc(sizeof(struct mqueue_desc));
+	mq_desc_ptr = k_calloc(1, sizeof(struct mqueue_desc));
 	if (mq_desc_ptr != NULL) {
-		(void)memset(mq_desc_ptr, 0, sizeof(struct mqueue_desc));
 		msg_queue_desc = (struct mqueue_desc *)mq_desc_ptr;
 		msg_queue_desc->mem_desc = mq_desc_ptr;
 	} else {
@@ -126,9 +125,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 			goto free_mq_desc;
 		}
 
-		mq_obj_ptr = k_malloc(sizeof(mqueue_object));
+		mq_obj_ptr = k_calloc(1, sizeof(mqueue_object));
 		if (mq_obj_ptr != NULL) {
-			(void)memset(mq_obj_ptr, 0, sizeof(mqueue_object));
 			msg_queue = (mqueue_object *)mq_obj_ptr;
 			msg_queue->mem_obj = mq_obj_ptr;
 
@@ -136,9 +134,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 			goto free_mq_object;
 		}
 
-		mq_name_ptr = k_malloc(strlen(name) + 1);
+		mq_name_ptr = k_calloc(1, strlen(name) + 1);
 		if (mq_name_ptr != NULL) {
-			(void)memset(mq_name_ptr, 0, strlen(name) + 1);
 			msg_queue->name = mq_name_ptr;
 
 		} else {
@@ -147,10 +144,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 		strcpy(msg_queue->name, name);
 
-		mq_buf_ptr = k_malloc(msg_size * max_msgs * sizeof(uint8_t));
+		mq_buf_ptr = k_calloc(1, msg_size * max_msgs * sizeof(uint8_t));
 		if (mq_buf_ptr != NULL) {
-			(void)memset(mq_buf_ptr, 0,
-				     msg_size * max_msgs * sizeof(uint8_t));
 			msg_queue->mem_buffer = mq_buf_ptr;
 		} else {
 			goto free_mq_buffer;
