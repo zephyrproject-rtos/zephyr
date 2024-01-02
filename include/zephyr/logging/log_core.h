@@ -378,6 +378,13 @@ static inline char z_log_minimal_level_to_char(int level)
 /** @brief Number of slots in one word. */
 #define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
 
+/** @brief Maximum number of backends supported when runtime filtering is enabled. */
+#define LOG_FILTERS_MAX_BACKENDS \
+	(LOG_FILTERS_NUM_OF_SLOTS - (1 + IS_ENABLED(CONFIG_LOG_FRONTEND)))
+
+/** @brief Slot reserved for the frontend. Last slot is used. */
+#define LOG_FRONTEND_SLOT_ID (LOG_FILTERS_NUM_OF_SLOTS - 1)
+
 /** @brief Slot mask. */
 #define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1U)
 

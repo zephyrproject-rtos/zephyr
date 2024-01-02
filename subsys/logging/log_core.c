@@ -241,6 +241,11 @@ void log_core_init(void)
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_init();
+
+		for (uint16_t s = 0; s < log_src_cnt_get(0); s++) {
+			log_frontend_filter_set(s, CONFIG_LOG_MAX_LEVEL);
+		}
+
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
 			return;
 		}
@@ -292,7 +297,7 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
+	__ASSERT_NO_MSG(log_backend_count_get() < LOG_FILTERS_MAX_BACKENDS);
 
 	if (atomic_inc(&initialized) != 0) {
 		return 0;
