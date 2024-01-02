@@ -3,3 +3,5 @@ board:
   vendor: lairdconnect
   socs:
   - name: nrf52840
+    variants:
+    - name: pa
