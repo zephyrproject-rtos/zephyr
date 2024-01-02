@@ -462,6 +462,34 @@ ZTEST(util, test_ARRAY_INDEX)
 	}
 }
 
+ZTEST(util, test_ARRAY_FOR_EACH)
+{
+	size_t j = -1;
+	size_t array[3];
+
+	ARRAY_FOR_EACH(array, i) {
+		j = i + 1;
+	}
+
+	zassert_equal(j, ARRAY_SIZE(array));
+}
+
+ZTEST(util, test_ARRAY_FOR_EACH_PTR)
+{
+	size_t j = 0;
+	size_t array[3];
+	size_t *ptr[3];
+
+	ARRAY_FOR_EACH_PTR(array, p) {
+		ptr[j] = p;
+		++j;
+	}
+
+	zassert_equal(ptr[0], &array[0]);
+	zassert_equal(ptr[1], &array[1]);
+	zassert_equal(ptr[2], &array[2]);
+}
+
 ZTEST(util, test_PART_OF_ARRAY)
 {
 	size_t i;
