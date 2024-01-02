@@ -6,7 +6,7 @@
 config COUNTER_TIMER_GD32
 	bool "GD32 timer counter driver"
 	default y
-	depends on DT_HAS_GD_GD32_TIMER_ENABLED && SOC_FAMILY_GD32_ARM
+	depends on DT_HAS_GD_GD32_TIMER_ENABLED && !SOC_SERIES_GD32VF103
 	select USE_GD32_TIMER
 	help
 	  Enable counter timer driver for GD32 series devices.
