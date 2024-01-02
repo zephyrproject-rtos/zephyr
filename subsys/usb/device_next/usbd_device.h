@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_USBD_DEVICE_H
 #define ZEPHYR_INCLUDE_USBD_DEVICE_H
 
+#include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/usbd.h>
 
 /**

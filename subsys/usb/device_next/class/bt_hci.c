@@ -53,7 +53,8 @@ LOG_MODULE_REGISTER(bt_hci, CONFIG_USBD_BT_HCI_LOG_LEVEL);
 #define BT_HCI_EP_VOICE_OUT		0x03
 
 #define BT_HCI_EP_MPS_EVENTS		16
-#define BT_HCI_EP_MPS_ACL_DATA		0	/* Get maximum supported */
+#define BT_HCI_EP_FS_MPS_ACL_DATA	64
+#define BT_HCI_EP_HS_MPS_ACL_DATA	512
 #define BT_HCI_EP_MPS_VOICE		9
 
 #define BT_HCI_EP_INTERVAL_EVENTS	1
@@ -81,20 +82,6 @@ static struct k_thread rx_thread_data;
 static K_KERNEL_STACK_DEFINE(tx_thread_stack, CONFIG_USBD_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 
-struct bt_hci_data {
-	struct net_buf *acl_buf;
-	uint16_t acl_len;
-	struct k_sem sync_sem;
-	atomic_t state;
-};
-
-/*
- * Make supported device request visible for the stack
- * bRequest 0x00 and bRequest 0xE0.
- */
-static const struct usbd_cctx_vendor_req bt_hci_vregs =
-	USBD_VENDOR_REQ(0x00, 0xe0);
-
 /*
  * We do not support voice channels and we do not implement
  * isochronous endpoints handling, these are only available to match
@@ -107,6 +94,8 @@ struct usbd_bt_hci_desc {
 	struct usb_ep_descriptor if0_int_ep;
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_out_ep;
+	struct usb_ep_descriptor if0_hs_in_ep;
+	struct usb_ep_descriptor if0_hs_out_ep;
 
 	struct usb_if_descriptor if1_0;
 	struct usb_ep_descriptor if1_0_iso_in_ep;
@@ -116,34 +105,57 @@ struct usbd_bt_hci_desc {
 	struct usb_ep_descriptor if1_1_iso_out_ep;
 
 	struct usb_desc_header nil_desc;
-} __packed;
+};
+
+struct bt_hci_data {
+	struct net_buf *acl_buf;
+	struct usbd_bt_hci_desc *const desc;
+	const struct usb_desc_header **const fs_desc;
+	const struct usb_desc_header **const hs_desc;
+	uint16_t acl_len;
+	struct k_sem sync_sem;
+	atomic_t state;
+};
+
+/*
+ * Make supported device request visible for the stack
+ * bRequest 0x00 and bRequest 0xE0.
+ */
+static const struct usbd_cctx_vendor_req bt_hci_vregs =
+	USBD_VENDOR_REQ(0x00, 0xe0);
 
 static uint8_t bt_hci_get_int_in(struct usbd_class_node *const c_nd)
 {
-	struct usbd_bt_hci_desc *desc = c_nd->data->desc;
+	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct usbd_bt_hci_desc *desc = data->desc;
 
 	return desc->if0_int_ep.bEndpointAddress;
 }
 
 static uint8_t bt_hci_get_bulk_in(struct usbd_class_node *const c_nd)
 {
-	struct usbd_bt_hci_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct usbd_bt_hci_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_in_ep.bEndpointAddress;
+	}
 
 	return desc->if0_in_ep.bEndpointAddress;
 }
 
 static uint8_t bt_hci_get_bulk_out(struct usbd_class_node *const c_nd)
 {
-	struct usbd_bt_hci_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct usbd_bt_hci_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_out_ep.bEndpointAddress;
+	}
 
 	return desc->if0_out_ep.bEndpointAddress;
-}
-
-static void bt_hci_update_iad(struct usbd_class_node *const c_nd)
-{
-	struct usbd_bt_hci_desc *desc = c_nd->data->desc;
-
-	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
 }
 
 struct net_buf *bt_hci_buf_alloc(const uint8_t ep)
@@ -433,10 +445,31 @@ static int bt_hci_ctd(struct usbd_class_node *const c_nd,
 	return 0;
 }
 
+static void *bt_hci_get_desc(struct usbd_class_node *const c_nd,
+			     const enum usbd_speed speed)
+{
+	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+
+	if (speed == USBD_SPEED_HS) {
+		return data->hs_desc;
+	}
+
+	return data->fs_desc;
+}
+
 static int bt_hci_init(struct usbd_class_node *const c_nd)
 {
 
-	bt_hci_update_iad(c_nd);
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct bt_hci_data *data = usbd_class_get_private(c_nd);
+	struct usbd_bt_hci_desc *desc = data->desc;
+
+	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
+	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
+		LOG_INF("FS endpoint descriptor needs to be updated");
+		desc->if0_in_ep.bEndpointAddress = desc->if0_hs_in_ep.bEndpointAddress;
+		desc->if0_out_ep.bEndpointAddress = desc->if0_hs_out_ep.bEndpointAddress;
+	}
 
 	return 0;
 }
@@ -447,6 +480,7 @@ static struct usbd_class_api bt_hci_api = {
 	.enable = bt_hci_enable,
 	.disable = bt_hci_disable,
 	.control_to_dev = bt_hci_ctd,
+	.get_desc = bt_hci_get_desc,
 	.init = bt_hci_init,
 };
 
@@ -489,7 +523,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = BT_HCI_EP_ACL_DATA_IN,			\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_MPS_ACL_DATA),	\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_FS_MPS_ACL_DATA),	\
 		.bInterval = 0,							\
 	},									\
 										\
@@ -498,10 +532,27 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = BT_HCI_EP_ACL_DATA_OUT,			\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_MPS_ACL_DATA),	\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_FS_MPS_ACL_DATA),	\
 		.bInterval = 0,							\
 	},									\
 										\
+	.if0_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = BT_HCI_EP_ACL_DATA_IN,			\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_HS_MPS_ACL_DATA),	\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if0_hs_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = BT_HCI_EP_ACL_DATA_OUT,			\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_HS_MPS_ACL_DATA),	\
+		.bInterval = 0,							\
+	},									\
 	.if1_0 = {								\
 		.bLength = sizeof(struct usb_if_descriptor),			\
 		.bDescriptorType = USB_DESC_INTERFACE,				\
@@ -566,15 +617,47 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.bLength = 0,							\
 		.bDescriptorType = 0,						\
 	},									\
+};										\
+										\
+const static struct usb_desc_header *bt_hci_fs_desc_##n[] = {			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.iad,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_in_ep,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_out_ep,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_out_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_1,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_1_iso_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_1_iso_out_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.nil_desc,			\
+};										\
+										\
+const static struct usb_desc_header *bt_hci_hs_desc_##n[] = {			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.iad,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_hs_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_hs_out_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_out_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_1,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_1_iso_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if1_1_iso_out_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.nil_desc,			\
 };
 
 #define BT_HCI_CLASS_DATA_DEFINE(n)						\
 	static struct bt_hci_data bt_hci_data_##n = {				\
 		.sync_sem = Z_SEM_INITIALIZER(bt_hci_data_##n.sync_sem, 0, 1),	\
+		.desc = &bt_hci_desc_##n,					\
+		.fs_desc = bt_hci_fs_desc_##n,					\
+		.hs_desc = bt_hci_hs_desc_##n,					\
 	};									\
 										\
 	static struct usbd_class_data bt_hci_class_##n = {			\
-		.desc = (struct usb_desc_header *)&bt_hci_desc_##n,		\
 		.priv = &bt_hci_data_##n,					\
 		.v_reqs = &bt_hci_vregs,					\
 	};									\

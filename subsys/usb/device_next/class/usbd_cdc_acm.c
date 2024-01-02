@@ -28,9 +28,10 @@ NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
 			  512, sizeof(struct udc_buf_info), NULL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
-#define CDC_ACM_DEFAULT_BULK_EP_MPS	0
 #define CDC_ACM_DEFAULT_INT_EP_MPS	16
-#define CDC_ACM_DEFAULT_INT_INTERVAL	0x0A
+#define CDC_ACM_INTERVAL_DEFAULT	10000UL
+#define CDC_ACM_FS_INT_EP_INTERVAL	USB_FS_INT_EP_INTERVAL(10000U)
+#define CDC_ACM_HS_INT_EP_INTERVAL	USB_HS_INT_EP_INTERVAL(10000U)
 
 #define CDC_ACM_CLASS_ENABLED		0
 #define CDC_ACM_CLASS_SUSPENDED		1
@@ -49,9 +50,32 @@ struct cdc_acm_uart_fifo {
 	bool altered;
 };
 
+struct usbd_cdc_acm_desc {
+	struct usb_association_descriptor iad;
+	struct usb_if_descriptor if0;
+	struct cdc_header_descriptor if0_header;
+	struct cdc_cm_descriptor if0_cm;
+	struct cdc_acm_descriptor if0_acm;
+	struct cdc_union_descriptor if0_union;
+	struct usb_ep_descriptor if0_int_ep;
+	struct usb_ep_descriptor if0_hs_int_ep;
+
+	struct usb_if_descriptor if1;
+	struct usb_ep_descriptor if1_in_ep;
+	struct usb_ep_descriptor if1_out_ep;
+	struct usb_ep_descriptor if1_hs_in_ep;
+	struct usb_ep_descriptor if1_hs_out_ep;
+
+	struct usb_desc_header nil_desc;
+};
+
 struct cdc_acm_uart_data {
 	/* Pointer to the associated USBD class node */
 	struct usbd_class_node *c_nd;
+	/* Pointer to the class interface descriptors */
+	struct usbd_cdc_acm_desc *const desc;
+	const struct usb_desc_header **const fs_desc;
+	const struct usb_desc_header **const hs_desc;
 	/* Line Coding Structure */
 	struct cdc_acm_line_coding line_coding;
 	/* SetControlLineState bitmap */
@@ -79,22 +103,6 @@ struct cdc_acm_uart_data {
 	atomic_t state;
 	struct k_sem notif_sem;
 };
-
-struct usbd_cdc_acm_desc {
-	struct usb_association_descriptor iad_cdc;
-	struct usb_if_descriptor if0;
-	struct cdc_header_descriptor if0_header;
-	struct cdc_cm_descriptor if0_cm;
-	struct cdc_acm_descriptor if0_acm;
-	struct cdc_union_descriptor if0_union;
-	struct usb_ep_descriptor if0_int_ep;
-
-	struct usb_if_descriptor if1;
-	struct usb_ep_descriptor if1_in_ep;
-	struct usb_ep_descriptor if1_out_ep;
-
-	struct usb_desc_header nil_desc;
-} __packed;
 
 static void cdc_acm_irq_rx_enable(const struct device *dev);
 
@@ -127,30 +135,55 @@ static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
 
 static uint8_t cdc_acm_get_int_in(struct usbd_class_node *const c_nd)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_int_ep.bEndpointAddress;
+	}
 
 	return desc->if0_int_ep.bEndpointAddress;
 }
 
 static uint8_t cdc_acm_get_bulk_in(struct usbd_class_node *const c_nd)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if1_hs_in_ep.bEndpointAddress;
+	}
 
 	return desc->if1_in_ep.bEndpointAddress;
 }
 
 static uint8_t cdc_acm_get_bulk_out(struct usbd_class_node *const c_nd)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if1_hs_out_ep.bEndpointAddress;
+	}
 
 	return desc->if1_out_ep.bEndpointAddress;
 }
 
 static size_t cdc_acm_get_bulk_mps(struct usbd_class_node *const c_nd)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
 
-	return desc->if1_out_ep.wMaxPacketSize;
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return 512U;
+	}
+
+	return 64U;
 }
 
 static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
@@ -256,6 +289,19 @@ static void usbd_cdc_acm_resumed(struct usbd_class_node *const c_nd)
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
+}
+
+static void *usbd_cdc_acm_get_desc(struct usbd_class_node *const c_nd,
+				   const enum usbd_speed speed)
+{
+	const struct device *dev = usbd_class_get_private(c_nd);
+	struct cdc_acm_uart_data *data = dev->data;
+
+	if (speed == USBD_SPEED_HS) {
+		return data->hs_desc;
+	}
+
+	return data->fs_desc;
 }
 
 static void cdc_acm_update_uart_cfg(struct cdc_acm_uart_data *const data)
@@ -398,11 +444,21 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 
 static int usbd_cdc_acm_init(struct usbd_class_node *const c_nd)
 {
-	struct usbd_cdc_acm_desc *desc = c_nd->data->desc;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
+	struct cdc_acm_uart_data *data = dev->data;
+	struct usbd_cdc_acm_desc *desc = data->desc;
 
-	desc->iad_cdc.bFirstInterface = desc->if0.bInterfaceNumber;
+	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+
+	if (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS) {
+		LOG_INF("FS endpoint descriptor needs to be updated");
+		desc->if0_int_ep.bEndpointAddress = desc->if0_hs_int_ep.bEndpointAddress;
+		desc->if1_in_ep.bEndpointAddress = desc->if1_hs_in_ep.bEndpointAddress;
+		desc->if1_out_ep.bEndpointAddress = desc->if1_hs_out_ep.bEndpointAddress;
+	}
 
 	return 0;
 }
@@ -996,11 +1052,12 @@ struct usbd_class_api usbd_cdc_acm_api = {
 	.control_to_host = usbd_cdc_acm_cth,
 	.control_to_dev = usbd_cdc_acm_ctd,
 	.init = usbd_cdc_acm_init,
+	.get_desc = usbd_cdc_acm_get_desc,
 };
 
 #define CDC_ACM_DEFINE_DESCRIPTOR(n)						\
 static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
-	.iad_cdc = {								\
+	.iad = {								\
 		.bLength = sizeof(struct usb_association_descriptor),		\
 		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,			\
 		.bFirstInterface = 0,						\
@@ -1060,7 +1117,16 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bEndpointAddress = 0x81,					\
 		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
 		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_INT_EP_MPS),	\
-		.bInterval = CDC_ACM_DEFAULT_INT_INTERVAL,			\
+		.bInterval = CDC_ACM_FS_INT_EP_INTERVAL,			\
+	},									\
+										\
+	.if0_hs_int_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
+		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_INT_EP_MPS),	\
+		.bInterval = CDC_ACM_HS_INT_EP_INTERVAL,			\
 	},									\
 										\
 	.if1 = {								\
@@ -1080,7 +1146,7 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x82,					\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_BULK_EP_MPS),	\
+		.wMaxPacketSize = sys_cpu_to_le16(64U),				\
 		.bInterval = 0,							\
 	},									\
 										\
@@ -1089,7 +1155,25 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x01,					\
 		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(CDC_ACM_DEFAULT_BULK_EP_MPS),	\
+		.wMaxPacketSize = sys_cpu_to_le16(64U),				\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if1_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x82,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512U),			\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if1_hs_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x01,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512U),			\
 		.bInterval = 0,							\
 	},									\
 										\
@@ -1097,6 +1181,34 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bLength = 0,							\
 		.bDescriptorType = 0,						\
 	},									\
+};										\
+										\
+const static struct usb_desc_header *cdc_acm_fs_desc_##n[] = {			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.iad,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_header,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_cm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_acm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_union,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_int_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_in_ep,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_out_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.nil_desc,			\
+};										\
+										\
+const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.iad,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_header,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_cm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_acm,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_union,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_hs_int_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1,			\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_hs_in_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_hs_out_ep,		\
+	(struct usb_desc_header *) &cdc_acm_desc_##n.nil_desc,			\
 }
 
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
@@ -1121,10 +1233,12 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
+		.desc = &cdc_acm_desc_##n,					\
+		.fs_desc = cdc_acm_fs_desc_##n,					\
+		.hs_desc = cdc_acm_hs_desc_##n,					\
 	};									\
 										\
 	static struct usbd_class_data usbd_cdc_acm_data_##n = {			\
-		.desc = (struct usb_desc_header *)&cdc_acm_desc_##n,		\
 		.priv = (void *)DEVICE_DT_GET(DT_DRV_INST(n)),			\
 	};									\
 										\
