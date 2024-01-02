@@ -710,7 +710,7 @@ ZTEST(posix_apis, test_sched_policy)
 		}
 
 		/* get pmin and pmax for policies[policy] */
-		for (int i = 0; i < 2; ++i) {
+		for (int i = 0; i < ARRAY_SIZE(prios); ++i) {
 			errno = 0;
 			if (i == 0) {
 				pmin = sched_get_priority_min(policies[policy]);
@@ -749,7 +749,7 @@ ZTEST(posix_apis, test_sched_policy)
 		zassert_equal(pmax, nprio[policy] - 1, "unexpected pmax for %s",
 			      policy_names[policy]); /* test happy paths */
 
-		for (int i = 0; i < 2; ++i) {
+		for (int i = 0; i < ARRAY_SIZE(prios); ++i) {
 			/* create threads with min and max priority levels */
 			zassert_ok(pthread_attr_init(&attr),
 				   "pthread_attr_init() failed for %s (%d) of %s", prios[i],
@@ -773,6 +773,10 @@ ZTEST(posix_apis, test_sched_policy)
 
 			zassert_ok(pthread_join(th, NULL),
 				   "pthread_join() failed for %s (%d) of %s", prios[i],
+				   param.sched_priority, policy_names[policy]);
+
+			zassert_ok(pthread_attr_destroy(&attr),
+				   "pthread_attr_destroy() failed for %s (%d) of %s", prios[i],
 				   param.sched_priority, policy_names[policy]);
 		}
 	}
@@ -845,12 +849,8 @@ ZTEST(posix_apis, test_pthread_return_val)
 {
 	pthread_t pth;
 	void *ret = NULL;
-	pthread_attr_t attr;
 
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
-
-	zassert_ok(pthread_create(&pth, &attr, non_null_retval, NULL));
+	zassert_ok(pthread_create(&pth, NULL, non_null_retval, NULL));
 	zassert_ok(pthread_join(pth, &ret));
 	zassert_equal(ret, (void *)BIOS_FOOD);
 }
@@ -865,12 +865,8 @@ static void *detached(void *arg)
 ZTEST(posix_apis, test_pthread_join_detached)
 {
 	pthread_t pth;
-	pthread_attr_t attr;
 
-	zassert_ok(pthread_attr_init(&attr));
-	zassert_ok(pthread_attr_setstack(&attr, &stack_e[0][0], STACKS));
-
-	zassert_ok(pthread_create(&pth, &attr, detached, NULL));
+	zassert_ok(pthread_create(&pth, NULL, detached, NULL));
 	zassert_ok(pthread_detach(pth));
 	/* note, this was required to be EINVAL previously but is now undefined behaviour */
 	zassert_not_equal(0, pthread_join(pth, NULL));
