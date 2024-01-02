@@ -444,12 +444,18 @@ static int gpio_pca953x_init(const struct device *dev)
 		rc = gpio_add_callback(cfg->gpio_int.port,
 					&drv_data->gpio_cb);
 
+		if (rc) {
+			goto out;
+		}
+
 		/* This may not present on all variants of device */
 		if (cfg->input_latch > -1) {
-			i2c_reg_write_byte_dt(&cfg->i2c, REG_INPUT_LATCH_PORT0, cfg->input_latch);
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INPUT_LATCH_PORT0,
+						   cfg->input_latch);
 		}
 		if (cfg->interrupt_mask > -1) {
-			i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK_PORT0, cfg->interrupt_mask);
+			rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK_PORT0,
+						   cfg->interrupt_mask);
 		}
 	}
 out:
