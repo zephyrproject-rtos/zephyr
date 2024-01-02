@@ -51,6 +51,27 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
 	z_log_msg_commit(msg);
 }
 
+static bool frontend_runtime_filtering(const void *source, uint32_t level)
+{
+	if (!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+		return true;
+	}
+
+	/* If only frontend is used and log got here it means that it was accepted. */
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND_ONLY)) {
+		return true;
+	}
+
+	if (level == LOG_LEVEL_NONE) {
+		return true;
+	}
+
+	struct log_source_dynamic_data *dynamic = (struct log_source_dynamic_data *)source;
+	uint32_t f_level = LOG_FILTER_SLOT_GET(&dynamic->filters, LOG_FRONTEND_SLOT_ID);
+
+	return level <= f_level;
+}
+
 /** @brief Create a log message using simplified method.
  *
  * Simple log message has 0-2 32 bit word arguments so creating cbprintf package
@@ -102,7 +123,7 @@ static void z_log_msg_simple_create(const void *source, uint32_t level, uint32_t
 void z_impl_z_log_msg_simple_create_0(const void *source, uint32_t level, const char *fmt)
 {
 
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, level)) {
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_OPT_API)) {
 			log_frontend_simple_0(source, level, fmt);
 		} else {
@@ -141,7 +162,7 @@ void z_impl_z_log_msg_simple_create_0(const void *source, uint32_t level, const 
 void z_impl_z_log_msg_simple_create_1(const void *source, uint32_t level,
 				      const char *fmt, uint32_t arg)
 {
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, level)) {
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_OPT_API)) {
 			log_frontend_simple_1(source, level, fmt, arg);
 		} else {
@@ -181,7 +202,7 @@ void z_impl_z_log_msg_simple_create_1(const void *source, uint32_t level,
 void z_impl_z_log_msg_simple_create_2(const void *source, uint32_t level,
 				      const char *fmt, uint32_t arg0, uint32_t arg1)
 {
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, level)) {
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_OPT_API)) {
 			log_frontend_simple_2(source, level, fmt, arg0, arg1);
 		} else {
@@ -223,7 +244,7 @@ void z_impl_z_log_msg_static_create(const void *source,
 			      const struct log_msg_desc desc,
 			      uint8_t *package, const void *data)
 {
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, desc.level)) {
 		log_frontend_msg(source, desc, package, data);
 	}
 
@@ -324,7 +345,7 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 
-	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
+	if (IS_ENABLED(CONFIG_LOG_FRONTEND) && frontend_runtime_filtering(source, desc.level)) {
 		log_frontend_msg(source, desc, pkg, data);
 	}
 
