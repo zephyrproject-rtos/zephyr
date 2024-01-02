@@ -67,7 +67,7 @@ static const struct linear_range buck12_current_limit_range =
 static const struct linear_range ldo1_range = LINEAR_RANGE_INIT(800000, 100000U, 0x0U, 0x1CU);
 static const struct linear_range ldo23_range = LINEAR_RANGE_INIT(900000, 100000U, 0x0U, 0x1FU);
 
-static const struct regulator_max20335_desc buck1_desc = {
+static const struct regulator_max20335_desc __maybe_unused buck1_desc = {
 	.vsel_reg = MAX20335_BUCK1_VSET,
 	.enable_mask = MAX20335_BUCK_EN_MASK,
 	.enable_val = MAX20335_BUCK_EN,
@@ -76,7 +76,7 @@ static const struct regulator_max20335_desc buck1_desc = {
 	.ua_range = &buck12_current_limit_range,
 };
 
-static const struct regulator_max20335_desc buck2_desc = {
+static const struct regulator_max20335_desc __maybe_unused buck2_desc = {
 	.vsel_reg = MAX20335_BUCK2_VSET,
 	.enable_mask = MAX20335_BUCK_EN_MASK,
 	.enable_val = MAX20335_BUCK_EN,
@@ -85,7 +85,7 @@ static const struct regulator_max20335_desc buck2_desc = {
 	.ua_range = &buck12_current_limit_range,
 };
 
-static const struct regulator_max20335_desc ldo1_desc = {
+static const struct regulator_max20335_desc __maybe_unused ldo1_desc = {
 	.vsel_reg = MAX20335_LDO1_VSET,
 	.enable_mask = MAX20335_LDO_EN_MASK,
 	.enable_val = MAX20335_LDO_EN,
@@ -93,7 +93,7 @@ static const struct regulator_max20335_desc ldo1_desc = {
 	.uv_range = &ldo1_range,
 };
 
-static const struct regulator_max20335_desc ldo2_desc = {
+static const struct regulator_max20335_desc __maybe_unused ldo2_desc = {
 	.vsel_reg = MAX20335_LDO2_VSET,
 	.enable_mask = MAX20335_LDO_EN_MASK,
 	.enable_val = MAX20335_LDO_EN,
@@ -101,7 +101,7 @@ static const struct regulator_max20335_desc ldo2_desc = {
 	.uv_range = &ldo23_range,
 };
 
-static const struct regulator_max20335_desc ldo3_desc = {
+static const struct regulator_max20335_desc __maybe_unused ldo3_desc = {
 	.vsel_reg = MAX20335_LDO3_VSET,
 	.enable_mask = MAX20335_LDO_EN_MASK,
 	.enable_val = MAX20335_LDO_EN,
