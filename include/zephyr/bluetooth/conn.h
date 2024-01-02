@@ -871,11 +871,12 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  the device has bond information or is already paired and the keys are too
  *  weak then the pairing procedure will be initiated.
  *
- *  This function may return error if required level of security is not possible
- *  to achieve due to local or remote device limitation (e.g., input output
- *  capabilities), or if the maximum number of paired devices has been reached.
+ *  This function may return an error if the required level of security defined using
+ *  @p sec is not possible to achieve due to local or remote device limitation
+ *  (e.g., input output capabilities), or if the maximum number of paired devices
+ *  has been reached.
  *
- *  This function may return error if the pairing procedure has already been
+ *  This function may return an error if the pairing procedure has already been
  *  initiated by the local device or the peer device.
  *
  *  @note When @kconfig{CONFIG_BT_SMP_SC_ONLY} is enabled then the security
@@ -888,7 +889,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *        procedure will always be initiated.
  *
  *  @param conn Connection object.
- *  @param sec Requested security level.
+ *  @param sec Requested minimum security level.
  *
  *  @return 0 on success or negative error
  */
