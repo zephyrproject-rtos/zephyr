@@ -65,7 +65,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 	long msg_size = 0U, max_msgs = 0U;
 	mqueue_object *msg_queue;
 	mqueue_desc *msg_queue_desc = NULL, *mqd = (mqueue_desc *)(-1);
-	char *mq_desc_ptr, *mq_obj_ptr, *mq_buf_ptr, *mq_name_ptr;
+	char *mq_desc_ptr, *mq_obj_ptr, *mq_buf_ptr;
 
 	va_start(va, oflags);
 	if ((oflags & O_CREAT) != 0) {
@@ -125,7 +125,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 			goto free_mq_desc;
 		}
 
-		mq_obj_ptr = k_calloc(1, sizeof(mqueue_object));
+		mq_obj_ptr = k_calloc(1, sizeof(mqueue_object) + strlen(name) + 1);
 		if (mq_obj_ptr != NULL) {
 			msg_queue = (mqueue_object *)mq_obj_ptr;
 			msg_queue->mem_obj = mq_obj_ptr;
@@ -134,14 +134,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 			goto free_mq_object;
 		}
 
-		mq_name_ptr = k_calloc(1, strlen(name) + 1);
-		if (mq_name_ptr != NULL) {
-			msg_queue->name = mq_name_ptr;
-
-		} else {
-			goto free_mq_name;
-		}
-
+		msg_queue->name = (char *)mq_obj_ptr + sizeof(mqueue_object);
 		strcpy(msg_queue->name, name);
 
 		mq_buf_ptr = k_calloc(1, msg_size * max_msgs * sizeof(uint8_t));
@@ -168,8 +161,6 @@ mqd_t mq_open(const char *name, int oflags, ...)
 	return (mqd_t)msg_queue_desc;
 
 free_mq_buffer:
-	k_free(mq_name_ptr);
-free_mq_name:
 	k_free(mq_obj_ptr);
 free_mq_object:
 	k_free(mq_desc_ptr);
@@ -221,8 +212,8 @@ int mq_unlink(const char *name)
 		return -1;
 	}
 
-	k_free(msg_queue->name);
 	msg_queue->name = NULL;
+	k_realloc(msg_queue, sizeof(mqueue_object));
 	k_sem_give(&mq_sem);
 	remove_mq(msg_queue);
 	return 0;
