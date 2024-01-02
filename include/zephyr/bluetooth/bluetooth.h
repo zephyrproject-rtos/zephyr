@@ -455,8 +455,8 @@ struct bt_data {
 #define BT_DATA(_type, _data, _data_len) \
 	{ \
 		.type = (_type), \
-		.data_len = (_data_len), \
 		.data = (const uint8_t *)(_data), \
+		.data_len = (_data_len), \
 	}
 
 /**
