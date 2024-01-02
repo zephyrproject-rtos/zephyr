@@ -101,6 +101,52 @@ NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, ASE_BUF_SIZE);
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
 static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 
+static void ascs_app_rsp_warn_valid(const struct bt_bap_ascs_rsp *rsp)
+{
+	/* Validate application error code */
+	switch (rsp->code) {
+	case BT_BAP_ASCS_RSP_CODE_SUCCESS:
+	case BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_NO_MEM:
+	case BT_BAP_ASCS_RSP_CODE_UNSPECIFIED:
+	case BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_CONF_REJECTED:
+	case BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED:
+		break;
+	default:
+		LOG_WRN("Invalid application error code: %u", rsp->code);
+		return;
+	}
+
+	/* Validate application error code and reason combinations */
+	switch (rsp->code) {
+	case BT_BAP_ASCS_RSP_CODE_SUCCESS:
+	case BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_NO_MEM:
+	case BT_BAP_ASCS_RSP_CODE_UNSPECIFIED:
+		if (rsp->reason != BT_BAP_ASCS_REASON_NONE) {
+			LOG_WRN("Invalid reason %u for code %u", rsp->reason, rsp->code);
+		}
+		break;
+	case BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_CONF_REJECTED:
+		if (!IN_RANGE(rsp->reason, BT_BAP_ASCS_REASON_NONE, BT_BAP_ASCS_REASON_CIS)) {
+			LOG_WRN("Invalid reason %u for code %u", rsp->reason, rsp->code);
+		}
+		break;
+	case BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED:
+	case BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED:
+		if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(rsp->metadata_type)) {
+			LOG_WRN("Invalid metadata type %u for code %u", rsp->metadata_type,
+				rsp->code);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static bool is_valid_ase_id(uint8_t ase_id)
 {
 	return IN_RANGE(ase_id, 1, ASE_COUNT);
@@ -1504,6 +1550,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 				sys_le16_to_cpu(cfg->codec.vid), (uint8_t *)cfg->cc, cfg->cc_len,
 				&rsp);
 	if (err) {
+		ascs_app_rsp_warn_valid(&rsp);
 		(void)memcpy(&ase->ep.codec_cfg, &codec_cfg, sizeof(codec_cfg));
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 		return err;
@@ -1522,6 +1569,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		}
 
 		if (err) {
+			ascs_app_rsp_warn_valid(&rsp);
+
 			if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 				rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 						      BT_BAP_ASCS_REASON_NONE);
@@ -1551,6 +1600,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		}
 
 		if (err || stream == NULL) {
+			ascs_app_rsp_warn_valid(&rsp);
+
 			if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 				rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 						      BT_BAP_ASCS_REASON_NONE);
@@ -2181,6 +2232,8 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 	}
 
 	if (err) {
+		ascs_app_rsp_warn_valid(&rsp);
+
 		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
@@ -2236,6 +2289,8 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 	}
 
 	if (err) {
+		ascs_app_rsp_warn_valid(&rsp);
+
 		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
@@ -2382,6 +2437,8 @@ static void ase_start(struct bt_ascs_ase *ase)
 	}
 
 	if (err) {
+		ascs_app_rsp_warn_valid(&rsp);
+
 		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
@@ -2584,6 +2641,8 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	}
 
 	if (err) {
+		ascs_app_rsp_warn_valid(&rsp);
+
 		if (rsp.code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
