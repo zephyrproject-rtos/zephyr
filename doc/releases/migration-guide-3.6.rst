@@ -146,6 +146,14 @@ Device Drivers and Device Tree
   * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
     :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
 
+* The ``CAN_FILTER_DATA`` and ``CAN_FILTER_RTR`` flags for filtering between Data and Remote
+  Transmission Request (RTR) frames were removed since not all CAN controllers implement support for
+  individual RX filtering based on the RTR bit. Applications can now use
+  :kconfig:option:`CONFIG_CAN_ACCEPT_RTR` to either accept incoming RTR frames matching CAN filters
+  or reject all incoming CAN RTR frames (the default). When :kconfig:option:`CONFIG_CAN_ACCEPT_RTR`
+  is enabled, applications can still filter between Data and RTR frames in their receive callback
+  functions as needed.
+
 Power Management
 ================
 
