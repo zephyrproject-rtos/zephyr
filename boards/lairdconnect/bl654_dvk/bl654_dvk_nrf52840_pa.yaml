@@ -1,0 +1,15 @@
+identifier: bl654_dvk/nrf52840/pa
+name: BL654_DVK_NRF52840_PA
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - pwm
+  - watchdog
+vendor: lairdconnect
