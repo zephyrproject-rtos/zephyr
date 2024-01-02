@@ -200,6 +200,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 		size_offset = STATUS_HEADER_TOREAD;
 	} else if (op == SPI_WRITE) {
 		size_offset = STATUS_HEADER_TOWRITE;
+	} else {
+		return -EINVAL;
 	}
 	attempts = IRQ_HIGH_MAX_READ;
 	do {
@@ -274,6 +276,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 		/* To make sure we have a minimum delay from previous release cs */
 		cs_delay = 100;
 		size_offset = STATUS_HEADER_TOWRITE;
+	} else {
+		return -EINVAL;
 	}
 
 	assert_cs(cs_delay);
@@ -303,6 +307,9 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 	uint8_t size_offset;
 	int ret;
 
+	if (!(op == SPI_READ || op == SPI_WRITE)) {
+		return -EINVAL;
+	}
 	if (reading) {
 		size_offset = STATUS_HEADER_TOREAD;
 	}
