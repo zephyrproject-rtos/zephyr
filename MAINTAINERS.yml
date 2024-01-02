@@ -2990,7 +2990,7 @@ GD32 Platforms:
     - gmarull
     - soburi
   files:
-    - boards/arm/gd32*/
+    - boards/v2/gd/
     - boards/riscv/gd32*/
     - boards/riscv/longan_nano/
     - drivers/*/*gd32*
