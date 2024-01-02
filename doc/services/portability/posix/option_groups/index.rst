@@ -367,14 +367,14 @@ POSIX_SEMAPHORES
    :header: API, Supported
    :widths: 50,10
 
-    sem_close(),
+    sem_close(),yes
     sem_destroy(),yes
     sem_getvalue(),yes
     sem_init(),yes
-    sem_open(),
+    sem_open(),yes
     sem_post(),yes
     sem_trywait(),yes
-    sem_unlink(),
+    sem_unlink(),yes
     sem_wait(),yes
 
 .. _posix_option_group_spin_locks:
