@@ -417,6 +417,9 @@ static int start_pool_filling(bool wait)
 	 * rng pool is filled.
 	 */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
 
 	acquire_rng();
 	irq_enable(IRQN);
@@ -546,6 +549,9 @@ static void stm32_rng_isr(const void *arg)
 			irq_disable(IRQN);
 			release_rng();
 			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			}
 			entropy_stm32_rng_data.filling_pools = false;
 		}
 
