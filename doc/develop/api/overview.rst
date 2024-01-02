@@ -290,7 +290,7 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - 3.1
 
    * - :ref:`retained_mem_api`
-     - Experimental
+     - Unstable
      - 3.4
 
    * - :ref:`retention_api`
