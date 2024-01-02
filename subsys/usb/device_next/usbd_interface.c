@@ -56,20 +56,21 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 				 const uint8_t iface,
 				 const uint8_t alt)
 {
-	struct usb_desc_header *dh;
+	struct usb_desc_header **dhp;
 	bool found_iface = false;
-	uint8_t *ptr;
 	int ret;
 
-	dh = node->data->desc;
-	ptr = (uint8_t *)dh;
+	dhp = usbd_class_get_desc(node, usbd_bus_speed(uds_ctx));
+	if (dhp == NULL) {
+		return -EINVAL;
+	}
 
-	while (dh->bLength != 0) {
+	while ((*dhp)->bLength != 0) {
 		struct usb_if_descriptor *ifd;
 		struct usb_ep_descriptor *ed;
 
-		if (dh->bDescriptorType == USB_DESC_INTERFACE) {
-			ifd = (struct usb_if_descriptor *)ptr;
+		if ((*dhp)->bDescriptorType == USB_DESC_INTERFACE) {
+			ifd = (struct usb_if_descriptor *)(*dhp);
 
 			if (found_iface) {
 				break;
@@ -86,8 +87,8 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 			}
 		}
 
-		if (dh->bDescriptorType == USB_DESC_ENDPOINT && found_iface) {
-			ed = (struct usb_ep_descriptor *)ptr;
+		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT && found_iface) {
+			ed = (struct usb_ep_descriptor *)(*dhp);
 			ret = handle_ep_op(uds_ctx, op, ed, &node->data->ep_active);
 			if (ret) {
 				return ret;
@@ -98,8 +99,7 @@ static int usbd_interface_modify(struct usbd_contex *const uds_ctx,
 				op, node->data->ep_active);
 		}
 
-		ptr += dh->bLength;
-		dh = (struct usb_desc_header *)ptr;
+		dhp++;
 	}
 
 	/* TODO: rollback ep_bm on error? */
