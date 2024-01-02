@@ -202,6 +202,10 @@ Drivers and Sensors
 
 * Retained memory
 
+  * Retained memory driver backend for registers has been added.
+
+  * Retained memory API status changed from experimental to unstable.
+
 * RTC
 
 * SDHC
