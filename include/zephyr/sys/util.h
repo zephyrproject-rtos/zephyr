@@ -639,6 +639,45 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
 	(((buflen) != 0) &&                        \
 	((UINTPTR_MAX - (uintptr_t)(addr)) <= ((uintptr_t)((buflen) - 1))))
 
+/**
+ * @brief XOR n bytes
+ *
+ * @param dst  Destination of where to store result. Shall be @p len bytes.
+ * @param src1 First source. Shall be @p len bytes.
+ * @param src2 Second source. Shall be @p len bytes.
+ * @param len  Number of bytes to XOR.
+ */
+static inline void mem_xor_n(uint8_t *dst, const uint8_t *src1, const uint8_t *src2, size_t len)
+{
+	while (len--) {
+		*dst++ = *src1++ ^ *src2++;
+	}
+}
+
+/**
+ * @brief XOR 32 bits
+ *
+ * @param dst  Destination of where to store result. Shall be 32 bits.
+ * @param src1 First source. Shall be 32 bits.
+ * @param src2 Second source. Shall be 32 bits.
+ */
+static inline void mem_xor_32(uint8_t dst[4], const uint8_t src1[4], const uint8_t src2[4])
+{
+	mem_xor_n(dst, src1, src2, 4U);
+}
+
+/**
+ * @brief XOR 128 bits
+ *
+ * @param dst  Destination of where to store result. Shall be 128 bits.
+ * @param src1 First source. Shall be 128 bits.
+ * @param src2 Second source. Shall be 128 bits.
+ */
+static inline void mem_xor_128(uint8_t dst[16], const uint8_t src1[16], const uint8_t src2[16])
+{
+	mem_xor_n(dst, src1, src2, 16);
+}
+
 #ifdef __cplusplus
 }
 #endif
