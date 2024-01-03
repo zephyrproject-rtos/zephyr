@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RISCV32_MIV
+if SOC_SERIES_MIV
 
 config SOC_SERIES
 	default "miv"
@@ -32,4 +32,4 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 42
 
-endif # SOC_SERIES_RISCV32_MIV
+endif # SOC_SERIES_MIV

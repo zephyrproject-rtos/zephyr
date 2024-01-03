@@ -5,9 +5,9 @@
 
 choice
 	prompt "Microchip Polarfire SOC implementation"
-	depends on SOC_SERIES_RISCV64_MIV
+	depends on SOC_SERIES_POLARFIRE
 
-config SOC_MPFS
+config SOC_POLARFIRE
 	bool "Microchip MPFS system implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select RISCV_GP
@@ -25,6 +25,6 @@ config SOC_MPFS
 endchoice
 
 config MPFS_HAL
-	depends on SOC_MPFS
+	depends on SOC_POLARFIRE
 	bool "Microchip Polarfire SOC hardware abstracton layer"
 	select HAS_MPFS_HAL
