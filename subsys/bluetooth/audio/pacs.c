@@ -86,9 +86,6 @@ static atomic_t notify_rdy;
 static K_SEM_DEFINE(read_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, BT_ATT_MAX_ATTRIBUTE_LEN);
 
-#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE) || defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
-static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir);
-#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE || CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE*/
 static int pacs_gatt_notify(struct bt_conn *conn,
 			    const struct bt_uuid *uuid,
 			    const struct bt_gatt_attr *attr,
@@ -634,6 +631,7 @@ BT_GATT_SERVICE_DEFINE(pacs_svc,
 	BT_PAC_SUPPORTED_CONTEXT(supported_context_read)
 );
 
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE) || defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
 static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir)
 {
 	uint32_t location_le;
@@ -641,21 +639,17 @@ static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir)
 	const struct bt_uuid *uuid;
 
 	switch (dir) {
-	case BT_AUDIO_DIR_SINK:
 #if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+	case BT_AUDIO_DIR_SINK:
 		location_le = sys_cpu_to_le32(pacs_snk_location);
 		uuid = pacs_snk_loc_uuid;
 		break;
-#else
-		return -ENOTSUP;
 #endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
-	case BT_AUDIO_DIR_SOURCE:
 #if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+	case BT_AUDIO_DIR_SOURCE:
 		location_le = sys_cpu_to_le32(pacs_src_location);
 		uuid = pacs_src_loc_uuid;
 		break;
-#else
-		return -ENOTSUP;
 #endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 	default:
 		return -EINVAL;
@@ -669,7 +663,9 @@ static int pac_notify_loc(struct bt_conn *conn, enum bt_audio_dir dir)
 
 	return 0;
 }
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE || CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE) || defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
 static int pac_notify(struct bt_conn *conn, enum bt_audio_dir dir)
 {
 	int err = 0;
@@ -716,6 +712,7 @@ static int pac_notify(struct bt_conn *conn, enum bt_audio_dir dir)
 		return 0;
 	}
 }
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE || CONFIG_BT_PAC_SRC_NOTIFIABLE */
 
 static int available_contexts_notify(struct bt_conn *conn)
 {
@@ -822,39 +819,45 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE) &&
-	    atomic_test_bit(client->flags, FLAG_SINK_PAC_CHANGED)) {
+#if defined(CONFIG_BT_PAC_SNK_NOTIFIABLE)
+	if (atomic_test_bit(client->flags, FLAG_SINK_PAC_CHANGED)) {
 		LOG_DBG("Notifying Sink PAC");
 		err = pac_notify(conn, BT_AUDIO_DIR_SINK);
 		if (!err) {
 			atomic_clear_bit(client->flags, FLAG_SINK_PAC_CHANGED);
 		}
 	}
+#endif /* CONFIG_BT_PAC_SNK_NOTIFIABLE */
 
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE) &&
-	    atomic_test_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED)) {
+#if defined(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE)
+	if (atomic_test_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED)) {
 		LOG_DBG("Notifying Sink Audio Location");
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SINK);
 		if (!err) {
 			atomic_clear_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED);
 		}
 	}
-	if (IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE) &&
-	    atomic_test_bit(client->flags, FLAG_SOURCE_PAC_CHANGED)) {
+#endif /* CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE */
+
+#if defined(CONFIG_BT_PAC_SRC_NOTIFIABLE)
+	if (atomic_test_bit(client->flags, FLAG_SOURCE_PAC_CHANGED)) {
 		LOG_DBG("Notifying Source PAC");
 		err = pac_notify(conn, BT_AUDIO_DIR_SOURCE);
 		if (!err) {
 			atomic_clear_bit(client->flags, FLAG_SOURCE_PAC_CHANGED);
 		}
 	}
-	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE) &&
-	    atomic_test_and_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED)) {
+#endif /* CONFIG_BT_PAC_SRC_NOTIFIABLE */
+
+#if defined(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE)
+	if (atomic_test_and_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED)) {
 		LOG_DBG("Notifying Source Audio Location");
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SOURCE);
 		if (!err) {
 			atomic_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED);
 		}
 	}
+#endif /* CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE */
 
 	if (atomic_test_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED)) {
 		LOG_DBG("Notifying Available Contexts");
