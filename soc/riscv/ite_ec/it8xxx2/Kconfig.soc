@@ -3,7 +3,7 @@
 
 choice
 prompt "ITE IT8XXX2 system implementation"
-depends on SOC_SERIES_RISCV32_IT8XXX2
+depends on SOC_SERIES_ITE_IT8XXX2
 
 config SOC_IT8XXX2
 	bool "ITE IT8XXX2 system implementation"
