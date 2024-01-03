@@ -1,10 +1,10 @@
 # Copyright (c) 2023 Efinix Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_EFINIX_SAPPHIRE
+if SOC_EFINIX_SAPPHIRE
 
-config SOC_SERIES
-	default "efinix-sapphire"
+config SOC
+	default "efinix_sapphire"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
@@ -28,4 +28,4 @@ config NUM_IRQS
 config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
-endif # SOC_SERIES_EFINIX_SAPPHIRE
+endif # SOC_EFINIX_SAPPHIRE
