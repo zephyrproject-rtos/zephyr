@@ -49,6 +49,13 @@ int regulator_common_init(const struct device *dev, bool is_enabled)
 		}
 	}
 
+	if (config->init_ua > INT32_MIN) {
+		ret = regulator_set_current_limit(dev, config->init_ua, config->init_ua);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* If we have valid range values, we try to match them before enabling */
 	if ((config->min_uv > INT32_MIN) || (config->max_uv < INT32_MAX)) {
 
