@@ -139,7 +139,7 @@ void sema_context_switch(uint32_t num_iterations,
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 
 	snprintf(description, sizeof(description),
-		 "Take a semaphore (context switch %c -> %c)",
+		 "SEMAPHORE take.blocking.(%c -> %c)",
 		 ((start_options & K_USER) == K_USER) ? 'U' : 'K',
 		 ((alt_options & K_USER) == K_USER) ? 'U' : 'K');
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
@@ -155,7 +155,7 @@ void sema_context_switch(uint32_t num_iterations,
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 
 	snprintf(description, sizeof(description),
-		 "Give a semaphore (context switch %c -> %c)",
+		 "SEMAPHORE give.wake+ctx.(%c -> %c)",
 		 ((alt_options & K_USER) == K_USER) ? 'U' : 'K',
 		 ((start_options & K_USER) == K_USER) ? 'U' : 'K');
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
@@ -255,7 +255,7 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 	cycles = timestamp.cycles;
 
 	snprintf(description, sizeof(description),
-		 "Give a semaphore (no waiters) from %s thread",
+		 "SEMAPHORE give.immediate.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
@@ -274,7 +274,7 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 	cycles = timestamp.cycles;
 
 	snprintf(description, sizeof(description),
-		 "Take a semaphore (no blocking) from %s thread",
+		 "SEMAPHORE take.immediate.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,

@@ -131,7 +131,7 @@ static void thread_switch_yield_common(const char *description,
 	sum -= timestamp_overhead_adjustment(start_options, alt_options);
 
 	snprintf(summary, sizeof(summary),
-		 "%s (%c -> %c)",
+		 "%s.(%c -> %c)",
 		 description,
 		 (start_options & K_USER) == K_USER ? 'U' : 'K',
 		 (alt_options & K_USER) == K_USER ? 'U' : 'K');
@@ -148,8 +148,8 @@ void thread_switch_yield(uint32_t num_iterations, bool is_cooperative)
 				  : k_thread_priority_get(k_current_get()) - 1;
 
 	snprintf(description, sizeof(description),
-		 "%s threads ctx switch via k_yield",
-		 is_cooperative ? "Cooperative" : "Preemptive");
+		 "THREAD yield.%s.ctx",
+		 is_cooperative ? "cooperative" : "preemptive");
 
 	/* Kernel -> Kernel */
 	thread_switch_yield_common(description, num_iterations, 0, 0,
