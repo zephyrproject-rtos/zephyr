@@ -4,7 +4,7 @@
 if SOC_SERIES_STARFIVE_JH71XX
 
 config SOC_SERIES
-	default "starfive_jh71xx"
+	default "jh71xx"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 6250000
@@ -29,5 +29,7 @@ config 2ND_LVL_INTR_00_OFFSET
 
 config NUM_IRQS
 	default 139
+
+source "soc/riscv/starfive_jh71xx/jh71xx/Kconfig.defconfig.jh71*"
 
 endif
