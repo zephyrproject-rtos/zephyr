@@ -7,7 +7,7 @@
 #ifndef __RISCV32_LITEX_VEXRISCV_SOC_H_
 #define __RISCV32_LITEX_VEXRISCV_SOC_H_
 
-#include "../riscv-privileged/common/soc_common.h"
+#include "../common/riscv-privileged/soc_common.h"
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/sys_io.h>
 
