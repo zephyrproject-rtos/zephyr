@@ -773,7 +773,7 @@ endmacro()
 #
 # Within application CMakeLists.txt files, ensure that all calls to
 # board_runner_args() are part of a macro named app_set_runner_args(),
-# like this, which is defined before including the boilerplate file:
+# like this, which is defined before calling 'find_package(Zephyr)':
 #   macro(app_set_runner_args)
 #     board_runner_args(runner "--some-app-setting=value")
 #   endmacro()
