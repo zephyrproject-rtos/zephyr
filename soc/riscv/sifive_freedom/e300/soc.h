@@ -8,29 +8,16 @@
  * @file SoC configuration macros for the SiFive Freedom processor
  */
 
-#ifndef __RISCV_SIFIVE_FREEDOM_SOC_H_
-#define __RISCV_SIFIVE_FREEDOM_SOC_H_
+#ifndef __RISCV_SIFIVE_FREEDOM_FE300_SOC_H_
+#define __RISCV_SIFIVE_FREEDOM_FE300_SOC_H_
 
 #include <soc_common.h>
 
-#if defined(CONFIG_SOC_RISCV_SIFIVE_FREEDOM)
 /* PINMUX MAX PINS */
 #define SIFIVE_PINMUX_PINS            32
 
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10008000
-
-#elif defined(CONFIG_SOC_RISCV_SIFIVE_FU540) || defined(CONFIG_SOC_RISCV_SIFIVE_FU740)
-
-/* Clock controller. */
-#define PRCI_BASE_ADDR               0x10000000
-
-/* PINMUX MAX PINS */
-#define SIFIVE_PINMUX_PINS           16
-
-#endif
-
-#if defined(CONFIG_SOC_RISCV_SIFIVE_FREEDOM) || defined(CONFIG_SOC_RISCV_SIFIVE_FU540)
 
 /*
  * On FE310 and FU540, peripherals such as SPI, UART, I2C and PWM are clocked
@@ -42,12 +29,4 @@
 #define SIFIVE_PERIPHERAL_CLOCK_FREQUENCY \
 	(SIFIVE_TLCLK_BASE_FREQUENCY / SIFIVE_TLCLK_DIVIDER)
 
-#elif defined(CONFIG_SOC_RISCV_SIFIVE_FU740)
-
-/* On FU740, peripherals are clocked by PCLK. */
-#define SIFIVE_PERIPHERAL_CLOCK_FREQUENCY \
-	DT_PROP(DT_NODELABEL(pclk), clock_frequency)
-
-#endif
-
-#endif /* __RISCV_SIFIVE_FREEDOM_SOC_H_ */
+#endif /* __RISCV_SIFIVE_FREEDOM_FE300_SOC_H_ */

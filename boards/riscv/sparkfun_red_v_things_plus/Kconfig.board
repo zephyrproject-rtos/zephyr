@@ -3,4 +3,4 @@
 
 config BOARD_SPARKFUN_RED_V_THINGS_PLUS
 	bool "SparkFun RED-V Things Plus board"
-	depends on SOC_RISCV_SIFIVE_FREEDOM
+	depends on SOC_SIFIVE_FREEDOM_E340
