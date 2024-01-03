@@ -406,7 +406,11 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 	stream->ep = NULL;
 
 	if (!is_broadcast) {
-		bt_bap_stream_disconnect(stream);
+		const int err = bt_bap_stream_disconnect(stream);
+
+		if (err != 0) {
+			LOG_DBG("Failed to disconnect stream %p: %d", stream, err);
+		}
 	}
 }
 
