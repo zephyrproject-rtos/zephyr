@@ -788,7 +788,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		for (size_t i = 0U; i < subgroup_param->params_count; i++) {
 			struct bt_bap_stream *subgroup_stream;
 			struct bt_bap_stream *param_stream;
-			bool stream_in_subgroup;
+			bool stream_in_subgroup = false;
 
 			param_stream = subgroup_param->params[i].stream;
 
