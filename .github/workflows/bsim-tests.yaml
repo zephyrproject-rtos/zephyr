@@ -80,7 +80,7 @@ jobs:
           west forall -c 'git reset --hard HEAD'
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@v35
+        uses: tj-actions/changed-files@v41
         id: check-common-files
         with:
           files: |
@@ -95,7 +95,7 @@ jobs:
             tests/bsim/*
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@v35
+        uses: tj-actions/changed-files@v41
         id: check-bluetooth-files
         with:
           files: |
@@ -104,7 +104,7 @@ jobs:
             subsys/bluetooth/**
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@v35
+        uses: tj-actions/changed-files@v41
         id: check-networking-files
         with:
           files: |
