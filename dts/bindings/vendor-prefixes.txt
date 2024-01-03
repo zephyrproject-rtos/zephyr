@@ -681,6 +681,7 @@ telit	Telit Cinterion
 tempo	Tempo Semiconductor
 terasic	Terasic Inc.
 tfc	Three Five Corp
+thead	T-Head Semiconductor Co., Ltd.
 thine	THine Electronics, Inc.
 thingyjp	thingy.jp
 ti	Texas Instruments
