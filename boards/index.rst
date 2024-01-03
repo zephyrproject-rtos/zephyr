@@ -27,3 +27,5 @@ available under :zephyr_file:`doc/templates/board.tmpl`.
    x86/index.rst
    xtensa/index.rst
    shields/index.rst
+
+   v2/gd/index.rst
