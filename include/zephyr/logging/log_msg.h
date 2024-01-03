@@ -499,9 +499,7 @@ do { \
  *
  * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
-#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || \
-	(!defined(CONFIG_LOG) && \
-		(!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
+#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || !defined(CONFIG_LOG)
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
@@ -514,7 +512,7 @@ do {\
 				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG_MODE_RUNTIME; \
 } while (false)
-#else /* CONFIG_LOG_ALWAYS_RUNTIME */
+#else /* CONFIG_LOG_ALWAYS_RUNTIME || !CONFIG_LOG */
 #define Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
@@ -579,9 +577,7 @@ do { \
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
 } while (false)
-#endif /* CONFIG_LOG_ALWAYS_RUNTIME ||
-	* (!LOG && (!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
-	*/
+#endif /* CONFIG_LOG_ALWAYS_RUNTIME || !CONFIG_LOG */
 
 
 #define Z_LOG_MSG_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
