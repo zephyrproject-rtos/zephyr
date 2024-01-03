@@ -21,4 +21,4 @@ config RISCV_GP
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-endif # SOC_SERIES_NIOSV
+endif # SOC_NIOSV
