@@ -248,7 +248,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 		/* Only report stats if <start_thread> created <alt_thread> */
 
 		snprintf(description, sizeof(description),
-			 "Create %s thread from %s thread",
+			 "THREAD create.%s.from.%s",
 			 (alt_options & K_USER) != 0 ? "user" : "kernel",
 			 (start_options & K_USER) != 0 ? "user" : "kernel");
 
@@ -261,7 +261,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
-		 "Start %s thread from %s thread",
+		 "THREAD start.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
 
@@ -273,7 +273,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
-		 "Suspend %s thread from %s thread",
+		 "THREAD suspend.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
 
@@ -285,7 +285,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
-		 "Resume %s thread from %s thread",
+		 "THREAD resume.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
 
@@ -297,7 +297,7 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
-		 "Abort %s thread from %s thread",
+		 "THREAD abort.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
 

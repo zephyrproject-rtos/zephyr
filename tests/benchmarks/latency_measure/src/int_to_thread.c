@@ -174,7 +174,7 @@ int int_to_thread(uint32_t num_iterations)
 
 	sum -= timestamp_overhead_adjustment(0, 0);
 
-	PRINT_STATS_AVG("Switch from ISR back to interrupted thread",
+	PRINT_STATS_AVG("ISR resume.interrupted.thread.kernel",
 			(uint32_t)sum, num_iterations, false, "");
 
 	/* ************** */
@@ -183,7 +183,7 @@ int int_to_thread(uint32_t num_iterations)
 
 	sum -= timestamp_overhead_adjustment(0, 0);
 
-	PRINT_STATS_AVG("Switch from ISR to another thread (kernel)",
+	PRINT_STATS_AVG("ISR resume.different.thread.kernel",
 			(uint32_t)sum, num_iterations, false, "");
 
 	/* ************** */
@@ -193,7 +193,7 @@ int int_to_thread(uint32_t num_iterations)
 
 	sum -= timestamp_overhead_adjustment(0, K_USER);
 
-	PRINT_STATS_AVG("Switch from ISR to another thread (user)",
+	PRINT_STATS_AVG("ISR resume.different.thread.user",
 			(uint32_t)sum, num_iterations, false, "");
 #endif
 
