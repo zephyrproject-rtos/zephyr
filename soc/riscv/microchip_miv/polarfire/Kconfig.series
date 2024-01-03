@@ -8,6 +8,5 @@ config SOC_SERIES_POLARFIRE
 	select SOC_FAMILY_MICROCHIP_MIV
 	select RISCV
 	select RISCV_PRIVILEGED
-	select RISCV_PRIVILEGED_STANDALONE
 	help
 	  Enable support for Microchip RISCV 64bit

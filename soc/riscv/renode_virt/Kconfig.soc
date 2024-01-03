@@ -5,7 +5,6 @@ config SOC_RISCV32_VIRTUAL_RENODE
 	bool "Renode RISCV32 Virtual system implementation"
 	select RISCV
 	select RISCV_PRIVILEGED
-	select RISCV_PRIVILEGED_STANDALONE
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
 	select RISCV_ISA_RV32I
