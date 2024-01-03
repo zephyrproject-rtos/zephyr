@@ -1378,8 +1378,9 @@ static void txstopped_isr(const struct device *dev)
 	user_callback(dev, &evt);
 }
 
-static void uarte_nrfx_isr_async(const struct device *dev)
+static void uarte_nrfx_isr_async(const void *arg)
 {
+	const struct device *dev = arg;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
 
