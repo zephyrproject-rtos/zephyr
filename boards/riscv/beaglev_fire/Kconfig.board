@@ -3,7 +3,7 @@
 
 config BOARD_BEAGLEV_FIRE
 	bool "Beagleboard BeagleV-Fire"
-	depends on SOC_MPFS
+	depends on SOC_POLARFIRE
 	select 64BIT
 	select SCHED_IPI_SUPPORTED
 	select CPU_HAS_FPU_DOUBLE_PRECISION

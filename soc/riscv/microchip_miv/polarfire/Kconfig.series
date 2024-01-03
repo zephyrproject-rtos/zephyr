@@ -3,9 +3,11 @@
 # Copyright (c) 2018 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_RISCV64_MIV
+config SOC_SERIES_POLARFIRE
 	bool "Microchip RV64 implementation"
+	select SOC_FAMILY_MICROCHIP_MIV
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_PRIVILEGED_STANDALONE
 	help
 	  Enable support for Microchip RISCV 64bit
