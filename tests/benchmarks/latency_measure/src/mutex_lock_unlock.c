@@ -94,7 +94,7 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 	k_sem_give(&pause_sem);
 
 	snprintf(description, sizeof(description),
-		 "Lock a mutex from %s thread",
+		 "MUTEX lock.immediate.recursive.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
 	PRINT_STATS_AVG(description, (uint32_t)cycles, num_iterations,
 			false, "");
@@ -102,7 +102,7 @@ int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 	cycles = timestamp.cycles;
 
 	snprintf(description, sizeof(description),
-		 "Unlock a mutex from %s thread",
+		 "MUTEX unlock.immediate.recursive.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
 	PRINT_STATS_AVG(description, (uint32_t)cycles, num_iterations,
 			false, "");
