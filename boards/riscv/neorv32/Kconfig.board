@@ -3,4 +3,4 @@
 
 config BOARD_NEORV32
 	bool "NEORV32 Processor (SoC)"
-	depends on SOC_SERIES_NEORV32
+	depends on SOC_NEORV32
