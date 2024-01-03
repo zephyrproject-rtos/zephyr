@@ -809,6 +809,10 @@ static void fake_tcp_server_work(struct k_work *work)
 	test_accept(data->sock, &new_sock, NULL, 0);
 
 	if (!data->reply) {
+		/* Add small delay to avoid race between incoming data and
+		 * sending FIN.
+		 */
+		k_msleep(10);
 		goto out;
 	}
 
