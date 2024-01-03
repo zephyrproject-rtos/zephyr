@@ -1829,15 +1829,6 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-static void xor_128(const uint8_t p[16], const uint8_t q[16], uint8_t r[16])
-{
-	size_t len = 16;
-
-	while (len--) {
-		*r++ = *p++ ^ *q++;
-	}
-}
-
 static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 		  const uint8_t preq[7], const uint8_t pres[7],
 		  const bt_addr_le_t *ia, const bt_addr_le_t *ra,
@@ -1864,7 +1855,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
 
 	/* Using enc_data as temporary output buffer */
-	xor_128(r, p1, enc_data);
+	mem_xor_128(enc_data, r, p1);
 
 	err = bt_encrypt_le(k, enc_data, enc_data);
 	if (err) {
@@ -1878,7 +1869,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 
 	LOG_DBG("p2 %s", bt_hex(p2, 16));
 
-	xor_128(enc_data, p2, enc_data);
+	mem_xor_128(enc_data, p2, enc_data);
 
 	return bt_encrypt_le(k, enc_data, enc_data);
 }
