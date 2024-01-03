@@ -31,6 +31,10 @@ properties:
     type: int
     description: Offset applied to voltages to compensate for voltage drops
 
+  regulator-init-microamp:
+    type: int
+    description: Current set during initialisation
+
   regulator-min-microamp:
     type: int
     description: smallest current consumers may set
