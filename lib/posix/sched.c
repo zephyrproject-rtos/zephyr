@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,5 +39,34 @@ int sched_get_priority_max(int policy)
 	}
 
 	errno = EINVAL;
+	return -1;
+}
+
+/**
+ * @brief Get scheduling parameters
+ *
+ * See IEEE 1003.1
+ */
+int sched_getparam(pid_t pid, struct sched_param *param)
+{
+	ARG_UNUSED(pid);
+	ARG_UNUSED(param);
+
+	errno = ENOSYS;
+
+	return -1;
+}
+
+/**
+ * @brief Get scheduling policy
+ *
+ * See IEEE 1003.1
+ */
+int sched_getscheduler(pid_t pid)
+{
+	ARG_UNUSED(pid);
+
+	errno = ENOSYS;
+
 	return -1;
 }
