@@ -16,6 +16,5 @@ config SOC_SERIES_GD32VF103
 	select HAS_GD32_HAL
 	select RISCV_HAS_CLIC
 	select SOC_FAMILY_GD32
-	select RISCV_PRIVILEGED_STANDALONE
 	help
 	  Enable support for GigaDevice GD32VF1 series SoC
