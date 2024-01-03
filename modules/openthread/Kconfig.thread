@@ -184,6 +184,7 @@ config OPENTHREAD_DEFAULT_TX_POWER
 
 config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
 	int "Openthread default TCAT stack size"
+	default 5120 if OPENTHREAD_CRYPTO_PSA
 	default 4200
 	help
 	   Openthread default TCAT stack size.
