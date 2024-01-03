@@ -585,10 +585,10 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		if (err != 0) {
 			(void)memset(state, 0, sizeof(*state));
 
-			LOG_DBG("PA sync %u from %p was reject with reason %d",
-				pa_sync, conn, err);
+			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
+				err);
 
-			return err;
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 	}
 
@@ -774,10 +774,10 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 			(void)memcpy(state, &backup_state,
 				     sizeof(backup_state));
 
-			LOG_DBG("PA sync %u from %p was reject with reason %d",
-				pa_sync, conn, err);
+			LOG_DBG("PA sync %u from %p was rejected with reason %d", pa_sync, conn,
+				err);
 
-			return err;
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 	} else if (pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC &&
 		   (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
@@ -786,10 +786,9 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		const int err = pa_sync_term_request(conn, &internal_state->state);
 
 		if (err != 0) {
-			LOG_DBG("PA sync term from %p was reject with reason %d",
-				conn, err);
+			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
 
-			return err;
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 
 		state_changed = true;
@@ -879,10 +878,9 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 		/* Terminate PA sync */
 		err = pa_sync_term_request(conn, &internal_state->state);
 		if (err != 0) {
-			LOG_DBG("PA sync term from %p was reject with reason %d",
-				conn, err);
+			LOG_DBG("PA sync term from %p was rejected with reason %d", conn, err);
 
-			return err;
+			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
 	}
 
