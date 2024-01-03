@@ -63,9 +63,9 @@ void heap_malloc_free(void)
 		notes = "Memory heap too small--increase it.";
 	}
 
-	PRINT_STATS_AVG("Average time for heap malloc", sum_malloc, count,
+	PRINT_STATS_AVG("HEAP malloc.immediate", sum_malloc, count,
 			failed, notes);
-	PRINT_STATS_AVG("Average time for heap free", sum_free, count,
+	PRINT_STATS_AVG("HEAP free.immediate", sum_free, count,
 			failed, notes);
 
 	timing_stop();
