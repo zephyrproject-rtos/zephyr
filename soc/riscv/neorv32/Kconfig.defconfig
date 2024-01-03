@@ -1,9 +1,9 @@
 # Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NEORV32
+if SOC_NEORV32
 
-config SOC_SERIES
+config SOC
 	default "neorv32"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -29,4 +29,4 @@ config ENTROPY_INIT_PRIORITY
 	default 55
 	depends on ENTROPY_GENERATOR
 
-endif # SOC_SERIES_NEORV32
+endif # SOC_NEORV32
