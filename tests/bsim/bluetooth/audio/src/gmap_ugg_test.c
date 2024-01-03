@@ -739,9 +739,17 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 			snk_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
-				bt_audio_codec_cfg_set_chan_allocation(
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
+				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
+
+				if (err < 0) {
+					FAIL("Failed to set channel allocation: %d\n", err);
+					return err;
+				}
 			}
 		}
 
@@ -757,9 +765,17 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 			src_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
-				bt_audio_codec_cfg_set_chan_allocation(
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
+				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
+
+				if (err < 0) {
+					FAIL("Failed to set channel allocation: %d\n", err);
+					return err;
+				}
 			}
 		}
 	}
