@@ -4194,6 +4194,272 @@ ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
+
+/*
+ * (A)
+ * Central-initiated Connection Parameters Request procedure.
+ * Central requests change in LE connection parameters, peripheral’s Host accepts.
+ *
+ * and
+ *
+ * (B)
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral requests change in LE connection parameters, central’s Host accepts.
+ *
+ * NOTE:
+ * Peripheral-initiated Connection Parameters Request procedure is paused.
+ * Central-initiated Connection Parameters Request procedure is finished.
+ * Peripheral-initiated Connection Parameters Request procedure is resumed.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           | (B)
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |<--------------------------| (A)
+ *    |                           |   LL_CONNECTION_PARAM_REQ |
+ *    |                           |-------------------------->| (B)
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |                           |                           |
+ *    |      LE Remote Connection |                           |
+ *    |         Parameter Request |                           |
+ *    |<--------------------------|                           | (A)
+ *    | LE Remote Connection      |                           |
+ *    | Parameter Request         |                           |
+ *    | Reply                     |                           |
+ *    |-------------------------->|                           | (A)
+ *    |                           |   LL_REJECT_EXT_IND       |
+ *    |                           |<--------------------------| (B)
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |      Complete (collision) |                           |
+ *    |<--------------------------|                           | (B)
+ *    |                           | LL_CONNECTION_PARAM_RSP   |
+ *    |                           |-------------------------->| (A)
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           | (B)
+ *    |                           |                           |
+ *    |               <------------------------>              |
+ *    |               < LOCAL PROCEDURE PAUSED >              |
+ *    |               <------------------------>              |
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------| (A)
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           | (A)
+ *    |                           |                           |
+ *    |              <------------------------->              |
+ *    |              < LOCAL PROCEDURE RESUMED >              |
+ *    |              <------------------------->              |
+ *    |                           |                           |
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->| (B)
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------| (B)
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           | (B)
+ *    |                           |                           |
+ */
+ZTEST(periph_rem, test_conn_update_periph_rem_late_collision)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	uint16_t instant;
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+	struct node_rx_pu cu1 = { .status = BT_HCI_ERR_LL_PROC_COLLISION };
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/*******************/
+
+	/* (B) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max, req_B->latency,
+				 req_B->timeout, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/*******************/
+
+	/* (A) Rx */
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should have one LL Control PDU */
+	req_B->reference_conn_event_count = event_counter(&conn) - 1;
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, req_B);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/*******************/
+	/* (A) There should be one host notification */
+	ut_rx_pdu(LL_CONNECTION_PARAM_REQ, &ntf, &conn_param_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	/*******************/
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* (A) */
+	ull_cp_conn_param_req_reply(&conn);
+
+	/*******************/
+
+	/* Prepare */
+	event_prepare(&conn);
+	conn_param_rsp.reference_conn_event_count = conn_param_req.reference_conn_event_count;
+
+	/* (A) Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* (A) There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu1);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	/* (B) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, req_B->interval_min, req_B->interval_max, req_B->latency,
+				 req_B->timeout, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+	/* Done */
+	event_done(&conn);
+
+
+	/* (A) Rx */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	instant = conn_update_ind.instant;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* (A) Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* (A) There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should have one LL Control PDU */
+	req_B->reference_conn_event_count = event_counter(&conn) - 1;
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, req_B);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* (A) There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* (B) Rx */
+	cu_ind_B->instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, cu_ind_B);
+
+	/* Done */
+	event_done(&conn);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* (B) Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* (B) There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (B) Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* (B) There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
 #else /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 /*

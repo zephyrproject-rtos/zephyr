@@ -621,6 +621,12 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 					ctx_local->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 				}
 
+				/*
+				 * Block/'hold back' future incompatible local procedures
+				 * in case we run a procedure with instant
+				 */
+				rr_set_collision(conn, with_instant);
+
 				/* Run remote procedure */
 				rr_act_run(conn);
 				rr_set_state(conn, RR_STATE_ACTIVE);
