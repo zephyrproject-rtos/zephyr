@@ -46,6 +46,9 @@ extern void sema_context_switch(uint32_t num_iterations,
 				uint32_t start_options, uint32_t alt_options);
 extern int thread_ops(uint32_t num_iterations, uint32_t start_options,
 		      uint32_t alt_options);
+extern int fifo_ops(uint32_t num_iterations, uint32_t options);
+extern int fifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
+			     uint32_t alt_options);
 extern int lifo_ops(uint32_t num_iterations, uint32_t options);
 extern int lifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 			     uint32_t alt_options);
@@ -91,6 +94,19 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	thread_ops(NUM_ITERATIONS, K_USER, K_USER);
 	thread_ops(NUM_ITERATIONS, K_USER, 0);
 #endif
+
+	fifo_ops(NUM_ITERATIONS, 0);
+#ifdef CONFIG_USERSPACE
+	fifo_ops(NUM_ITERATIONS, K_USER);
+#endif
+
+	fifo_blocking_ops(NUM_ITERATIONS, 0, 0);
+#ifdef CONFIG_USERSPACE
+	fifo_blocking_ops(NUM_ITERATIONS, 0, K_USER);
+	fifo_blocking_ops(NUM_ITERATIONS, K_USER, 0);
+	fifo_blocking_ops(NUM_ITERATIONS, K_USER, K_USER);
+#endif
+
 
 	lifo_ops(NUM_ITERATIONS, 0);
 #ifdef CONFIG_USERSPACE
