@@ -8,7 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 
-#include "fu740_prci.h"
+#include "prci.h"
 
 BUILD_ASSERT(MHZ(1000) == DT_PROP(DT_NODELABEL(coreclk), clock_frequency),
 	"Unsupported CORECLK frequency");

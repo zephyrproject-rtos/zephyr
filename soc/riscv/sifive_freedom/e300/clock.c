@@ -7,7 +7,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
-#include "fe310_prci.h"
+#include "prci.h"
 
 #define CORECLK_HZ (DT_PROP(DT_NODELABEL(coreclk), clock_frequency))
 BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 1,
