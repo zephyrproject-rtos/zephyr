@@ -122,7 +122,7 @@ jobs:
     - name: Build B92 net/openthread/cli
       run: |
         cd ..
-        west build -b tlsr9528a                  -d build_ot_cli_b92                    zephyr/samples/net/openthread/cli                        -- -DOVERLAY_CONFIG=overlay-telink-features.conf
+        west build -b tlsr9528a                  -d build_ot_cli_b92                    zephyr/samples/net/openthread/cli                        -- -DOVERLAY_CONFIG=overlay-telink-fixed-mac.conf
 
     - name: Collect artifacts
       run: |
