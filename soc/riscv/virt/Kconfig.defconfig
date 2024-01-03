@@ -1,9 +1,9 @@
 # Copyright (c) 2020 Cobham Gaisler AB
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RISCV_VIRT
+if SOC_RISCV_VIRT
 
-config SOC_SERIES
+config SOC
 	default "virt"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
