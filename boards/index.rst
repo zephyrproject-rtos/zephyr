@@ -30,3 +30,4 @@ available under :zephyr_file:`doc/templates/board.tmpl`.
 
    v2/arm/index.rst
    v2/gd/index.rst
+   v2/renesas/index.rst
