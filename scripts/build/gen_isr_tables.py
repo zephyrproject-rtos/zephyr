@@ -250,7 +250,7 @@ def write_source_file(fp, vt, swt, intlist, syms, shared):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        fp.write("\t{{(const void *){0}, (ISR){1}}},\n".format(param, func_as_string))
+        fp.write("\t{{(const void *){0}, (ISR){1}}}, /* {2} */\n".format(param, func_as_string, i))
     fp.write("};\n")
 
 def get_symbols(obj):
