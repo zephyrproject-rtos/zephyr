@@ -76,6 +76,7 @@ struct plic_config {
 	uint32_t max_prio;
 	uint32_t num_irqs;
 	riscv_plic_irq_config_func_t irq_config_func;
+	struct _isr_table_entry *isr_table;
 };
 
 struct plic_stats {
@@ -367,15 +368,8 @@ static void plic_irq_handler(const struct device *dev)
 	}
 #endif
 
-	const uint32_t parent_irq = COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
-						(z_get_sw_isr_irq_from_device(dev)), (0U));
-	const uint32_t irq = irq_to_level_2(local_irq) | parent_irq;
-	const unsigned int isr_offset =
-		COND_CODE_1(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS), (z_get_sw_isr_table_idx(irq)),
-			    (irq_from_level_2(irq) + CONFIG_2ND_LVL_ISR_TBL_OFFSET));
-
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = (struct _isr_table_entry *)&_sw_isr_table[isr_offset];
+	ite = &config->isr_table[local_irq];
 	ite->isr(ite->arg);
 
 	/*
@@ -573,6 +567,7 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
 		.num_irqs = DT_INST_PROP(n, riscv_ndev),                                           \
 		.irq_config_func = plic_irq_config_func_##n,                                       \
+		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(n)],                          \
 	};                                                                                         \
 	PLIC_INTC_IRQ_FUNC_DEFINE(n)
 
