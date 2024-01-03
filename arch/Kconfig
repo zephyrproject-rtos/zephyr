@@ -126,6 +126,7 @@ config XTENSA
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_HAS_LLEXT_SUPPORT if !SOC_SERIES_S32ZE_R52
 	imply ATOMIC_OPERATIONS_ARCH
 	help
 	  Xtensa architecture
@@ -629,6 +630,12 @@ config ARCH_HAS_SUSPEND_TO_RAM
 
 config ARCH_HAS_STACK_CANARIES_TLS
 	bool
+
+config ARCH_HAS_LLEXT_SUPPORT
+	bool
+	help
+	  When selected, the architecture supports dynamic extension loading
+	  via the llext subsystem.
 
 #
 # Other architecture related options

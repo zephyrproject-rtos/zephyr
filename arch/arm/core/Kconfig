@@ -24,6 +24,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_SUSPEND_TO_RAM
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_LLEXT_SUPPORT if !SOC_SERIES_M48X
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
@@ -40,6 +41,7 @@ config CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_SUPPORTS_ROM_START
 	select USE_SWITCH_SUPPORTED
+	select ARCH_HAS_LLEXT_SUPPORT
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 

@@ -3,6 +3,8 @@
 
 menuconfig LLEXT
 	bool "Linkable loadable extensions"
+	depends on ARCH_HAS_LLEXT_SUPPORT
+	depends on !MMU && !MPU
 	select CACHE_MANAGEMENT if DCACHE
 	help
 	  Enable the linkable loadable extension subsystem
