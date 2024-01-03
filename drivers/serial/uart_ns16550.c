@@ -841,7 +841,10 @@ static int uart_ns16550_init(const struct device *dev)
 		data->async.tx_dma_params.dma_cfg.head_block =
 			&data->async.tx_dma_params.active_dma_block;
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
-		if (!dev_cfg->io_map) {
+#if UART_NS16550_IOPORT_ENABLED
+		if (!dev_cfg->io_map)
+#endif
+		{
 			uintptr_t base;
 
 			base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;
