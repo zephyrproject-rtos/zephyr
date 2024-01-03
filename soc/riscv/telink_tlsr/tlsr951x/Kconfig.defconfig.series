@@ -1,11 +1,11 @@
 # Copyright (c) 2021 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RISCV_TELINK_B91
+if SOC_SERIES_TELINK_TLSR951X
 
 config SOC_SERIES
 	string
-	default "telink_b91"
+	default "tlsr951x"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
@@ -56,4 +56,6 @@ config 2ND_LVL_INTR_00_OFFSET
 config HAS_FLASH_LOAD_OFFSET
 	default y if BOOTLOADER_MCUBOOT
 
-endif # SOC_SERIES_RISCV_TELINK_B91
+source "soc/riscv/telink_tlsr/tlsr951x/Kconfig.defconfig.tlsr*"
+
+endif # SOC_SERIES_TELINK_TLSR951X
