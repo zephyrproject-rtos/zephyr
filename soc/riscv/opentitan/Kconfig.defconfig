@@ -1,9 +1,9 @@
 # Copyright (c) 2023 Rivos Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RISCV_OPENTITAN
+if SOC_OPENTITAN
 
-config SOC_SERIES
+config SOC
 	default "opentitan"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -30,4 +30,4 @@ config 2ND_LVL_INTR_00_OFFSET
 config NUM_IRQS
 	default 217
 
-endif # SOC_SERIES_RISCV_OPENTITAN
+endif # SOC_OPENTITAN
