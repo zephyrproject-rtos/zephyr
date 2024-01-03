@@ -10,7 +10,6 @@ config SOC_NEORV32
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI
 	select RISCV_PRIVILEGED
-	select RISCV_PRIVILEGED_STANDALONE
 	help
 	  Enable support for the NEORV32 Processor (SoC).
 
