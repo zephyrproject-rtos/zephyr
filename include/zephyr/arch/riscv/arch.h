@@ -300,7 +300,7 @@ static inline uint64_t arch_k_cycle_get_64(void)
 
 #endif /*_ASMLANGUAGE */
 
-#if defined(CONFIG_SOC_FAMILY_RISCV_PRIVILEGED)
+#if defined(CONFIG_RISCV_PRIVILEGED)
 #include <zephyr/arch/riscv/riscv-privileged/asm_inline.h>
 #endif
 

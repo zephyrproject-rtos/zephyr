@@ -47,6 +47,12 @@ config INCLUDE_RESET_VECTOR
 	  Include the reset vector stub, which initializes the stack and
 	  prepares for running C code.
 
+config RISCV_PRIVILEGED
+	bool
+	select ARCH_HAS_RAMFUNC_SUPPORT if XIP
+	help
+	  Option selected by SoCs implementing the RISC-V privileged ISA.
+
 config RISCV_SOC_HAS_ISR_STACKING
 	bool
 	depends on !USERSPACE
@@ -333,7 +339,7 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 	  The minimum alignment is 4 bytes according to the Spec.
 
 config GEN_IRQ_VECTOR_TABLE
-	select RISCV_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGED
+	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
