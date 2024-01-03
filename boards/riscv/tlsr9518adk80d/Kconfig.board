@@ -3,4 +3,4 @@
 
 config BOARD_TLSR9518ADK80D
 	bool "Telink B91 Platform"
-	depends on SOC_RISCV_TELINK_B91
+	depends on SOC_TELINK_TLSR9518
