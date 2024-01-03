@@ -17,4 +17,11 @@ config I2C_MAX32_INTERRUPT
 	  Enable interrupt support for MAX32 I2C controller mode
 	  transfers.
 
+config I2C_MAX32_DMA
+	bool "DMA support for MAX32 MCU I2C driver"
+	depends on I2C_MAX32_INTERRUPT
+	select DMA
+	help
+	  Use DMA for MAX32 MCU I2C controller mode transfers.
+
 endif # I2C_MAX32
