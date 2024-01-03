@@ -21,6 +21,14 @@
 		zephyr,flash-controller = &mt25ql512ab1;
 	};
 
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		red_led: led_1 {
@@ -119,5 +127,41 @@
 		qspi-max-frequency = <72000000>;
 		size = <DT_SIZE_M(512)>; /* 64 MBytes */
 		status = "okay";
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
+		&fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke1_ph7
+		&fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		&fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		&fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		&fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1
+		&fmc_a14_pg4 &fmc_a15_pg5 &fmc_d0_pd14 &fmc_d1_pd15
+		&fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
+		&fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
+		&fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
+		&fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdram {
+		status = "okay";
+		power-up-delay = <100>;
+		num-auto-refresh = <8>;
+		mode-register = <0x220>;
+		refresh-rate = <0x603>;
+		bank@1 {
+			reg = <1>;
+			st,sdram-control = <STM32_FMC_SDRAM_NC_8
+				STM32_FMC_SDRAM_NR_12
+				STM32_FMC_SDRAM_MWID_16
+				STM32_FMC_SDRAM_NB_4
+				STM32_FMC_SDRAM_CAS_3
+				STM32_FMC_SDRAM_SDCLK_PERIOD_2
+				STM32_FMC_SDRAM_RBURST_ENABLE
+				STM32_FMC_SDRAM_RPIPE_0>;
+			st,sdram-timing = <2 7 4 7 2 2 2>;
+		};
 	};
 };
