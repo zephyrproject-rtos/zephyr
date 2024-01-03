@@ -54,6 +54,38 @@
 			status = "disabled";
 		};
 
+		pwm0: pwm@3060000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3060000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@3061000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3061000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@3062000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3062000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@3063000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3063000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		uart0: uart@4140000 {
 			compatible = "ns16550";
 			reg = <0x4140000 DT_SIZE_K(64)>;
