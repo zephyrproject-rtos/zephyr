@@ -22,6 +22,7 @@ Hardware
 The board utilizes the SoC of part no. R9A07G075M24GBG, with 2MB of RAM.
 
 It has several on-board memory components:
+
 * SDRAM (256MBit),
 * NOR Flash (256MBit),
 * Octa Flash (512MBit),
@@ -30,6 +31,7 @@ It has several on-board memory components:
 * I2C EEPROM (32Kbit).
 
 The communication interfaces include:
+
 * Debug interfaces (J-Link, MIPI-10, MIPI-20),
 * Ethernet,
 * CAN,
@@ -62,6 +64,7 @@ Connections and IOs
 ===================
 
 By default, the board is configured for use with:
+
 * UART0 connected to the USB serial port (pins K18, K19),
 * UART3 connected to the PMOD Header (J25, pins H16, G20),
 * LEDs defined as `led0`, `led1`, `led2` and `led3`,
