@@ -1083,7 +1083,10 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 			snk_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
@@ -1106,7 +1109,10 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 			src_stream_cnt++;
 			stream_cnt++;
 
-			if (param->conn_cnt > 1) {
+			/* If we have more than 1 connection or stream in one direction, we set the
+			 * location bit accordingly
+			 */
+			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
 					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
 
