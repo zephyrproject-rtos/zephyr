@@ -19,4 +19,3 @@ config SOC_OPENTITAN
 	# OpenTitan Ibex core mtvec mode is read-only / forced to vectored mode.
 	select RISCV_VECTORED_MODE
 	select GEN_IRQ_VECTOR_TABLE
-	select RISCV_PRIVILEGED_STANDALONE
