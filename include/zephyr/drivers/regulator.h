@@ -140,6 +140,8 @@ struct regulator_common_config {
 	int32_t min_ua;
 	/** Maximum allowed current, in microamps. */
 	int32_t max_ua;
+	/** Initial current, in microamps. */
+	int32_t init_ua;
 	/** Startup delay, in microseconds. */
 	uint32_t startup_delay_us;
 	/** Off to on delay, in microseconds. */
@@ -171,6 +173,8 @@ struct regulator_common_config {
 				     INT32_MIN),                               \
 		.max_ua = DT_PROP_OR(node_id, regulator_max_microamp,          \
 				     INT32_MAX),                               \
+		.init_ua = DT_PROP_OR(node_id, regulator_init_microamp,       \
+				      INT32_MIN),			       \
 		.startup_delay_us = DT_PROP_OR(node_id, startup_delay_us, 0),  \
 		.off_on_delay_us = DT_PROP_OR(node_id, off_on_delay_us, 0),    \
 		.allowed_modes = (const regulator_mode_t [])                   \
