@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -642,6 +642,23 @@ ZTEST(posix_apis, test_pthread_descriptor_leak)
 		k_msleep(100);
 		zassert_ok(pthread_join(pthread1, NULL), "unable to join thread %zu", i);
 	}
+}
+
+ZTEST(posix_apis, test_sched_getparam)
+{
+	struct sched_param param;
+	int rc = sched_getparam(0, &param);
+	int err = errno;
+
+	zassert_true((rc == -1 && err == ENOSYS));
+}
+
+ZTEST(posix_apis, test_sched_getscheduler)
+{
+	int rc = sched_getscheduler(0);
+	int err = errno;
+
+	zassert_true((rc == -1 && err == ENOSYS));
 }
 
 ZTEST(posix_apis, test_sched_policy)
