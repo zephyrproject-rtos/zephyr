@@ -646,4 +646,75 @@ skipped_c:
 	#undef test_IF_DISABLED_FLAG_B
 }
 
+ZTEST(util, test_mem_xor_n)
+{
+	const size_t max_len = 128;
+	uint8_t expected_result[max_len];
+	uint8_t src1[max_len];
+	uint8_t src2[max_len];
+	uint8_t dst[max_len];
+
+	memset(expected_result, 0, sizeof(expected_result));
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+	memset(dst, 0, sizeof(dst));
+
+	for (size_t i = 0U; i < max_len; i++) {
+		const size_t len = i;
+
+		for (size_t j = 0U; j < len; j++) {
+			src1[j] = 0x33;
+			src2[j] = 0x0F;
+			expected_result[j] = 0x3C;
+		}
+
+		mem_xor_n(dst, src1, src2, len);
+		zassert_mem_equal(expected_result, dst, len);
+	}
+}
+
+ZTEST(util, test_mem_xor_32)
+{
+	uint8_t expected_result[4];
+	uint8_t src1[4];
+	uint8_t src2[4];
+	uint8_t dst[4];
+
+	memset(expected_result, 0, sizeof(expected_result));
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+	memset(dst, 0, sizeof(dst));
+
+	for (size_t i = 0U; i < 4; i++) {
+		src1[i] = 0x43;
+		src2[i] = 0x0F;
+		expected_result[i] = 0x4C;
+	}
+
+	mem_xor_32(dst, src1, src2);
+	zassert_mem_equal(expected_result, dst, 4);
+}
+
+ZTEST(util, test_mem_xor_128)
+{
+	uint8_t expected_result[16];
+	uint8_t src1[16];
+	uint8_t src2[16];
+	uint8_t dst[16];
+
+	memset(expected_result, 0, sizeof(expected_result));
+	memset(src1, 0, sizeof(src1));
+	memset(src2, 0, sizeof(src2));
+	memset(dst, 0, sizeof(dst));
+
+	for (size_t i = 0U; i < 16; i++) {
+		src1[i] = 0x53;
+		src2[i] = 0x0F;
+		expected_result[i] = 0x5C;
+	}
+
+	mem_xor_128(dst, src1, src2);
+	zassert_mem_equal(expected_result, dst, 16);
+}
+
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);

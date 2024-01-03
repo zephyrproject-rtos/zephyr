@@ -17,6 +17,7 @@
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/ccm_mode.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "common/bt_str.h"
 
@@ -49,16 +50,6 @@ static int aes_cmac(const uint8_t key[BT_CSIP_CRYPTO_KEY_SIZE],
 	}
 
 	return 0;
-}
-
-static void xor_128(const uint8_t a[16], const uint8_t b[16], uint8_t out[16])
-{
-	size_t len = 16;
-	/* TODO: Identical to the xor_128 from smp.c: Move to util */
-
-	while (len--) {
-		*out++ = *a++ ^ *b++;
-	}
 }
 
 int bt_csip_sih(const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_PRAND_SIZE],
@@ -229,7 +220,7 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE],
 		sys_mem_swap(k1_out, sizeof(k1_out));
 	}
 
-	xor_128(k1_out, sirk, out_sirk);
+	mem_xor_128(out_sirk, k1_out, sirk);
 	LOG_DBG("out %s", bt_hex(out_sirk, BT_CSIP_SET_SIRK_SIZE));
 
 	return 0;
