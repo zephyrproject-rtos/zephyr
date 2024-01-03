@@ -1132,7 +1132,7 @@ static void sm_registration_done(void)
 	if (sm_is_registered() &&
 	    (client.trigger_update ||
 	     now >= next_update())) {
-		set_sm_state(ENGINE_UPDATE_REGISTRATION);
+		set_sm_state_delayed(ENGINE_UPDATE_REGISTRATION, DELAY_FOR_ACK);
 	} else if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
 	    (client.engine_state != ENGINE_REGISTRATION_DONE_RX_OFF) &&
 	    (now >= next_rx_off())) {
