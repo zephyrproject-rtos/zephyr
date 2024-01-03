@@ -3,9 +3,9 @@
 
 choice
 prompt "Andes V5 SoC Selection"
-depends on SOC_SERIES_RISCV_ANDES_V5
+depends on SOC_SERIES_ANDES_AE350
 
-config SOC_RISCV_ANDES_AE350
+config SOC_ANDES_AE350
 	bool "Andes AE350 SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
 	select INCLUDE_RESET_VECTOR
@@ -18,7 +18,7 @@ config SOC_RISCV_ANDES_AE350
 
 endchoice
 
-if SOC_SERIES_RISCV_ANDES_V5
+if SOC_SERIES_ANDES_AE350
 
 choice
 prompt "Base CPU ISA options"
@@ -121,4 +121,4 @@ config SOC_ANDES_V5_IOCP
 		between cache and external non-caching master, such as DMA
 		controller.
 
-endif # SOC_SERIES_RISCV_ANDES_V5
+endif # SOC_SERIES_ANDES_AE350
