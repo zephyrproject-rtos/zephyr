@@ -130,4 +130,6 @@ source "drivers/pwm/Kconfig.neorv32"
 
 source "drivers/pwm/Kconfig.wch"
 
+source "drivers/pwm/Kconfig.sophgo"
+
 endif # PWM
