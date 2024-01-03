@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "nuclei_csr.h"
+
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/riscv/csr.h>
-#include <nuclei/nuclei_csr.h>
 
 GTEXT(__nuclei_start)
 SECTION_FUNC(vectors, __nuclei_start)
