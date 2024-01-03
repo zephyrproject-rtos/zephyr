@@ -1259,6 +1259,12 @@ int lwm2m_engine_pause(void)
 	suspend_engine_thread = true;
 	lwm2m_engine_wake_up();
 
+	/* Check if pause requested within a engine thread, a callback for example. */
+	if (engine_thread_id == k_current_get()) {
+		LOG_DBG("Pause requested");
+		return 0;
+	}
+
 	while (active_engine_thread) {
 		k_msleep(10);
 	}
@@ -1275,10 +1281,7 @@ int lwm2m_engine_resume(void)
 
 	k_thread_resume(engine_thread_id);
 	lwm2m_engine_wake_up();
-	while (!active_engine_thread) {
-		k_msleep(10);
-	}
-	LOG_INF("LWM2M engine thread resume");
+
 	return 0;
 }
 
