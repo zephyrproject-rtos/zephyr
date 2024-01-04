@@ -8,9 +8,14 @@ message(STATUS "Found CodeChecker: ${CODECHECKER_EXE}")
 # CodeChecker uses the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Create an output directory for our tool
-set(output_dir ${CMAKE_BINARY_DIR}/sca/codechecker)
-file(MAKE_DIRECTORY ${output_dir})
+if (DEFINED CODECHECKER_OUTPUT_DIR)
+  # Create an output directory for our tool
+  set(output_dir ${CODECHECKER_OUTPUT_DIR})
+else()
+  set(output_dir ${CMAKE_BINARY_DIR}/sca/codechecker)
+  file(MAKE_DIRECTORY ${output_dir})
+endif()
+
 
 # Use a dummy file to let CodeChecker know we can start analyzing
 set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
