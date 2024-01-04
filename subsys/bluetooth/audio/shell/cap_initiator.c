@@ -1134,9 +1134,9 @@ static int cmd_cap_ac_13(const struct shell *sh, size_t argc, char **argv)
 static int cmd_cap_ac_14(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct bap_broadcast_ac_param param = {
-		.name = "AC_13",
+		.name = "AC_14",
 		.stream_cnt = 2U,
-		.chan_cnt = 1U,
+		.chan_cnt = 2U,
 	};
 
 	return cap_ac_broadcast(sh, argc, argv, &param);
