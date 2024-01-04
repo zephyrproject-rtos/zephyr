@@ -17,8 +17,8 @@
 #include <zephyr/timestamp.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
-#define START_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
-#define ALT_STACK_SIZE   (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define START_STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define ALT_STACK_SIZE   (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #ifdef CONFIG_USERSPACE
 #define  BENCH_BMEM  K_APP_BMEM(bench_mem_partition)
