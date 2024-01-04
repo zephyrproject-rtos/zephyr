@@ -10,6 +10,12 @@ common:
     - plic
 tests:
   drivers.interrupt_controller.intc_plic.build: {}
+  drivers.interrupt_controller.intc_plic.plic_shell.build:
+    tags:
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_PLIC_SHELL=y
   drivers.interrupt_controller.intc_plic.multi_instance.build:
     extra_args:
       DTC_OVERLAY_FILE="./app.multi_instance.overlay"
