@@ -1,3 +1,5 @@
 board:
   name: rzt2m_starter_kit
   vendor: Renesas
+  socs:
+  - name: renesas_rzt2m
