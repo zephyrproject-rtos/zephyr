@@ -49,6 +49,18 @@ enum clock_control_status {
 };
 
 /**
+ * @brief Clock control setpoint definitions
+ */
+
+/** Run state (state used when the device is in operational state). */
+#define CLOCK_SETPOINT_RUN 0U
+/** Idle state (state used when the device is in low power mode). */
+#define CLOCK_SETPOINT_IDLE 1U
+
+/** This and higher values refer to custom private states. */
+#define CLOCK_SETPOINT_PRIV_START 8U
+
+/**
  * clock_control_subsys_t is a type to identify a clock controller sub-system.
  * Such data pointed is opaque and relevant only to the clock controller
  * driver instance being used.
@@ -97,6 +109,9 @@ typedef int (*clock_control_configure_fn)(const struct device *dev,
 					  clock_control_subsys_t sys,
 					  void *data);
 
+typedef int (*clock_control_setpoint_fn)(const struct device *dev,
+					 uint32_t setpoint);
+
 struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
@@ -105,6 +120,7 @@ struct clock_control_driver_api {
 	clock_control_get_status_fn	get_status;
 	clock_control_set		set_rate;
 	clock_control_configure_fn	configure;
+	clock_control_setpoint_fn	select_setpoint;
 };
 
 /**
@@ -291,6 +307,34 @@ static inline int clock_control_configure(const struct device *dev,
 	}
 
 	return api->configure(dev, sys, data);
+}
+
+/**
+ * @brief Select a clock setpoint
+ *
+ * This function selects a new clock setpoint. Each clock setpoint represents
+ * a valid clock tree configuration for the SOC. For example, one clock
+ * setpoint might switch all SOC clocks to a low power source, and power down
+ * any PLLs. This function can be called from any context. On success, the
+ * new setpoint will be applied.
+ *
+ * @param dev Devices structure whose driver controls the clock
+ * @param setpoint_id clock setpoint selection
+ * @retval 0 On success
+ * @retval -ENOSYS if the device driver does not implement this call
+ * @retval -errno Other negative errno on failure.
+ */
+static inline int clock_control_setpoint(const struct device *dev,
+					 uint32_t setpoint_id)
+{
+	const struct clock_control_driver_api *api =
+		(const struct clock_control_driver_api *)dev->api;
+
+	if (api->select_setpoint == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->select_setpoint(dev, setpoint_id);
 }
 
 #ifdef __cplusplus
