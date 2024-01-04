@@ -135,6 +135,7 @@ struct modem_cmux {
 	/* State */
 	enum modem_cmux_state state;
 	bool flow_control_on;
+	bool out_of_sync;
 
 	/* Receive state*/
 	enum modem_cmux_receive_state receive_state;
@@ -158,6 +159,7 @@ struct modem_cmux {
 	struct k_work_delayable transmit_work;
 	struct k_work_delayable connect_work;
 	struct k_work_delayable disconnect_work;
+	struct k_work_delayable resync_work;
 
 	/* Synchronize actions */
 	struct k_event event;

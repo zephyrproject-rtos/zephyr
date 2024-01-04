@@ -192,6 +192,22 @@ static void modem_cmux_raise_event(struct modem_cmux *cmux, enum modem_cmux_even
 	cmux->callback(cmux, event, cmux->user_data);
 }
 
+static void modem_cmux_start_resync(struct modem_cmux *cmux)
+{
+	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
+	cmux->out_of_sync = true;
+	k_mutex_unlock(&cmux->transmit_rb_lock);
+	k_work_schedule(&cmux->resync_work, K_NO_WAIT);
+}
+
+static void modem_cmux_stop_resync(struct modem_cmux *cmux)
+{
+	k_work_cancel_delayable(&cmux->resync_work);
+	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
+	cmux->out_of_sync = false;
+	k_mutex_unlock(&cmux->transmit_rb_lock);
+}
+
 static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_event event,
 				    void *user_data)
 {
@@ -292,7 +308,7 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux *cmux,
 
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 
-	if (cmux->flow_control_on == false) {
+	if ((cmux->flow_control_on == false) || (cmux->out_of_sync == true)) {
 		k_mutex_unlock(&cmux->transmit_rb_lock);
 		return 0;
 	}
@@ -656,7 +672,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			break;
 		}
 
-		modem_cmux_transmit_resync(cmux);
+		modem_cmux_start_resync(cmux);
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
 		break;
 
@@ -671,7 +687,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		if (byte == 0xF9) {
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_2;
 		} else {
-			modem_cmux_transmit_resync(cmux);
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
 		}
 
@@ -681,7 +696,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		if (byte == 0xF9) {
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_3;
 		} else {
-			modem_cmux_transmit_resync(cmux);
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
 		}
 
@@ -689,6 +703,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	case MODEM_CMUX_RECEIVE_STATE_RESYNC_3:
 		if (byte == 0xF9) {
+			modem_cmux_stop_resync(cmux);
 			break;
 		}
 
@@ -949,6 +964,17 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 	k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
 }
 
+static void modem_cmux_resync_handler(struct k_work *item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, resync_work);
+
+	if (cmux->out_of_sync) {
+		modem_cmux_transmit_resync(cmux);
+		k_work_schedule(&cmux->resync_work, MODEM_CMUX_T1_TIMEOUT);
+	}
+}
+
 static int modem_cmux_dlci_pipe_api_open(void *data)
 {
 	struct modem_cmux_dlci *dlci = (struct modem_cmux_dlci *)data;
@@ -1090,6 +1116,7 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	k_work_init_delayable(&cmux->transmit_work, modem_cmux_transmit_handler);
 	k_work_init_delayable(&cmux->connect_work, modem_cmux_connect_handler);
 	k_work_init_delayable(&cmux->disconnect_work, modem_cmux_disconnect_handler);
+	k_work_init_delayable(&cmux->resync_work, modem_cmux_resync_handler);
 	k_event_init(&cmux->event);
 	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
 	k_event_post(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
@@ -1123,6 +1150,7 @@ int modem_cmux_attach(struct modem_cmux *cmux, struct modem_pipe *pipe)
 	cmux->pipe = pipe;
 	ring_buf_reset(&cmux->transmit_rb);
 	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
+	cmux->out_of_sync = false;
 	modem_pipe_attach(cmux->pipe, modem_cmux_bus_callback, cmux);
 	return 0;
 }
@@ -1207,6 +1235,7 @@ void modem_cmux_release(struct modem_cmux *cmux)
 	k_work_cancel_delayable_sync(&cmux->disconnect_work, &sync);
 	k_work_cancel_delayable_sync(&cmux->transmit_work, &sync);
 	k_work_cancel_delayable_sync(&cmux->receive_work, &sync);
+	k_work_cancel_delayable_sync(&cmux->resync_work, &sync);
 
 	/* Unreference pipe */
 	cmux->pipe = NULL;
