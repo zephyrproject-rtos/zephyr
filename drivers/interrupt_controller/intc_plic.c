@@ -79,7 +79,8 @@ struct plic_config {
 };
 
 struct plic_stats {
-	uint16_t *irq_count;
+	uint16_t *const irq_count;
+	const int irq_count_len;
 };
 
 struct plic_data {
@@ -455,7 +456,6 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	const struct plic_config *config = dev->config;
 	const struct plic_data *data = dev->data;
 	struct plic_stats stat = data->stats;
 
@@ -466,7 +466,7 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "   IRQ\t      Hits");
 	shell_print(sh, "==================");
-	for (int i = 0; i < MIN(config->num_irqs, CONFIG_MAX_IRQ_PER_AGGREGATOR); i++) {
+	for (int i = 0; i < stat.irq_count_len; i++) {
 		if (stat.irq_count[i] > min_hit) {
 			shell_print(sh, "%6d\t%10d", i, stat.irq_count[i]);
 		}
@@ -485,12 +485,10 @@ static int cmd_clear_stats(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	const struct plic_config *config = dev->config;
 	const struct plic_data *data = dev->data;
 	struct plic_stats stat = data->stats;
 
-	memset(stat.irq_count, 0,
-	       MIN(config->num_irqs, CONFIG_MAX_IRQ_PER_AGGREGATOR) * sizeof(uint16_t));
+	memset(stat.irq_count, 0, stat.irq_count_len * sizeof(uint16_t));
 
 	shell_print(sh, "Cleared stats of %s.\n", dev->name);
 
@@ -536,15 +534,16 @@ static int cmd_plic(const struct shell *sh, size_t argc, char **argv)
 SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 		       cmd_plic, 2, 0);
 
+#define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
 #define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \
-	static uint16_t local_irq_count_##n[MIN(DT_INST_PROP(n, riscv_ndev),                       \
-					      CONFIG_MAX_IRQ_PER_AGGREGATOR)];
+	static uint16_t local_irq_count_##n[PLIC_MIN_IRQ_NUM(n)];
 
 #define PLIC_INTC_DATA_INIT(n)                                                                     \
 	PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n);                                                         \
 	static struct plic_data plic_data_##n = {                                                  \
 		.stats = {                                                                         \
 			.irq_count = local_irq_count_##n,                                          \
+			.irq_count_len = PLIC_MIN_IRQ_NUM(n),                                      \
 		},                                                                                 \
 	};
 
