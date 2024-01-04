@@ -20,6 +20,9 @@ tests:
     platform_allow: frdm_k22f
   drivers.adc.mcux.lpadc.build:
     platform_allow: lpcxpresso55s28
+  drivers.adc.mcp320x.build:
+    platform_allow: lpcxpresso55s16
+    extra_args: SHIELD=mikroe_adc_click
   drivers.adc.npcx.build:
     platform_allow: npcx7m6fb_evb
   drivers.adc.nrf.build:
