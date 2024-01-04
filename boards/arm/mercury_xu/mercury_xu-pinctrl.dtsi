@@ -15,4 +15,13 @@
 			pinmux = <UART0_TX_39>;
 		};
 	};
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_RX_21>;
+		};
+		group2 {
+			pinmux = <UART1_TX_20>;
+		};
+	};
+
 };
