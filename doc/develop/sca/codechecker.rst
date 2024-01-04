@@ -41,6 +41,8 @@ To configure CodeChecker or analyzers used, arguments can be passed using the
     west build -b mimxrt1064_evk samples/basic/blinky -- -DZEPHYR_SCA_VARIANT=codechecker \
     -DCODECHECKER_ANALYZE_OPTS="--config;$CODECHECKER_CONFIG_FILE;--timeout;60"
 
+The output directory can be changed using ``-DCODECHECKER_OUTPUT_DIR=<dir>``.
+
 
 Storing CodeChecker results
 ***************************

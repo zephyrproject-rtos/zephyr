@@ -8,8 +8,8 @@ message(STATUS "Found CodeChecker: ${CODECHECKER_EXE}")
 # CodeChecker uses the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Set the output directory
 if (DEFINED CODECHECKER_OUTPUT_DIR)
-  # Create an output directory for our tool
   set(output_dir ${CODECHECKER_OUTPUT_DIR})
 else()
   set(output_dir ${CMAKE_BINARY_DIR}/sca/codechecker)
