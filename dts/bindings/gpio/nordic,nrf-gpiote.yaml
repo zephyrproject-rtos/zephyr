@@ -13,3 +13,15 @@ properties:
 
   interrupts:
     required: true
+
+  instance:
+    type: int
+    required: true
+    description: |
+      The GPIOTE instance number. GPIOTE instance GPIOTE0 has:
+
+        instance = <0>;
+
+      And GPIOTE1 has:
+
+        instance = <1>;
