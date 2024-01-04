@@ -762,7 +762,7 @@ static int sdhc_spi_init(const struct device *dev)
 	return ret;
 }
 
-static struct sdhc_driver_api sdhc_spi_api = {
+static const struct sdhc_driver_api sdhc_spi_api = {
 	.request = sdhc_spi_request,
 	.set_io = sdhc_spi_set_io,
 	.get_host_props = sdhc_spi_get_host_props,
