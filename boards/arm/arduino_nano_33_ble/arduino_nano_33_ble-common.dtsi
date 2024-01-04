@@ -189,6 +189,10 @@ arduino_spi: &spi2 {
 	status = "okay";
 };
 
+&gpiote {
+	status = "okay";
+};
+
 &pwm0 {
 	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
