@@ -45,12 +45,17 @@
 			#include "nrf91_peripherals.dtsi"
 		};
 
-		/* Additional Non-Secure peripherals */
-		gpiote: gpiote@40031000 {
+		/*
+		 * GPIOTE1 is always accessible as a non-secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote1: gpiote@40031000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40031000 0x1000>;
 			interrupts = <49 5>;
 			status = "disabled";
+			instance = <1>;
 		};
 	};
 

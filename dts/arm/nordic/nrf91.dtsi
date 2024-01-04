@@ -59,11 +59,26 @@
 			status = "okay";
 		};
 
-		gpiote: gpiote@5000d000 {
+		/*
+		 * GPIOTE0 is always accessible as a secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		 gpiote: gpiote0: gpiote@5000d000 {
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x5000d000 0x1000>;
 			interrupts = <13 5>;
 			status = "disabled";
+			instance = <0>;
+		};
+
+		/* Additional Non-Secure GPIOTE instance */
+		gpiote1: gpiote@40031000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x40031000 0x1000>;
+			interrupts = <49 5>;
+			status = "disabled";
+			instance = <1>;
 		};
 
 		spu: spu@50003000 {
