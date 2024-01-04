@@ -16,6 +16,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <cortex_m/exception.h>
@@ -80,6 +81,17 @@ const pll_setup_t pll1Setup = {
 
 static ALWAYS_INLINE void clock_init(void)
 {
+#ifdef CONFIG_CLOCK_CONTROL
+	const struct device *syscon = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(syscon));
+
+	if (syscon != NULL) {
+		/* First try to set clock frequency via SYSCON */
+		if (clock_control_setpoint(syscon, CLOCK_SETPOINT_RUN) == 0) {
+			return;
+		}
+	}
+#endif
+
 	ExternalClockFrequency = 0;
 
 #if defined(CONFIG_SOC_LPC55S36)
