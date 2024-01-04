@@ -23,6 +23,7 @@
 #include <zephyr/sys_clock.h>
 
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
@@ -109,8 +110,8 @@ void backchannel_sync_wait_any(void);
 void backchannel_sync_clear(uint dev);
 void backchannel_sync_clear_all(void);
 
-struct bap_test_stream {
-	struct bt_bap_stream stream;
+struct audio_test_stream {
+	struct bt_cap_stream stream;
 
 	uint16_t seq_num;
 	bool tx_active;
@@ -120,5 +121,32 @@ struct bap_test_stream {
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
 };
+
+static inline struct audio_test_stream *
+audio_test_stream_from_cap_stream(struct bt_cap_stream *cap_stream)
+{
+	return CONTAINER_OF(cap_stream, struct audio_test_stream, stream);
+}
+
+static inline struct audio_test_stream *
+audio_test_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
+{
+	struct bt_cap_stream *cap_stream =
+		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+
+	return audio_test_stream_from_cap_stream(cap_stream);
+}
+
+static inline struct bt_cap_stream *
+cap_stream_from_audio_test_stream(struct audio_test_stream *test_stream)
+{
+	return &test_stream->stream;
+}
+
+static inline struct bt_bap_stream *
+bap_stream_from_audio_test_stream(struct audio_test_stream *test_stream)
+{
+	return &cap_stream_from_audio_test_stream(test_stream)->bap_stream;
+}
 
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_ */

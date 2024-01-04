@@ -31,7 +31,7 @@ static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
-static struct bap_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static uint32_t requested_bis_sync;
 static struct bt_le_ext_adv *ext_adv;
@@ -274,7 +274,7 @@ static void recv_cb(struct bt_bap_stream *stream,
 		    const struct bt_iso_recv_info *info,
 		    struct net_buf *buf)
 {
-	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
 	if ((test_stream->rx_cnt % 100U) == 0U) {
 		printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len,
@@ -363,7 +363,7 @@ static int init(void)
 	UNSET_FLAG(pa_synced);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i] = &broadcast_sink_streams[i].stream;
+		streams[i] = bap_stream_from_audio_test_stream(&broadcast_sink_streams[i]);
 		bt_bap_stream_cb_register(streams[i], &stream_ops);
 	}
 
