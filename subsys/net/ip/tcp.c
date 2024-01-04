@@ -3090,6 +3090,10 @@ next_state:
 				tcp_send_timer_cancel(conn);
 				next = TCP_FIN_WAIT_1;
 
+				k_work_reschedule_for_queue(&tcp_work_q,
+							    &conn->fin_timer,
+							    FIN_TIMEOUT);
+
 				tcp_out(conn, FIN | ACK);
 				conn_seq(conn, + 1);
 				verdict = NET_OK;
