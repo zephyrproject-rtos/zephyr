@@ -540,7 +540,7 @@ int card_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 		LOG_WRN("SDIO does not support MMC commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
@@ -704,7 +704,7 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 		LOG_WRN("SDIO does not support MMC commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&card->lock, K_NO_WAIT);
+	ret = k_mutex_lock(&card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
