@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 
+from queue import Queue, Empty
 from twisterlib.environment import ZEPHYR_BASE
 from twisterlib.error import TwisterException
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
@@ -1040,3 +1041,271 @@ class QEMUHandler(Handler):
 
     def get_fifo(self):
         return self.fifo_fn
+
+
+class QEMUWinHandler(Handler):
+    """Spawns a thread to monitor QEMU output on Windows OS
+
+    We redirect subprocess output to pipe and monitor the pipes for output.
+    We need to do this as once qemu starts, it runs forever until killed.
+    Test cases emit special messages to the console as they run, we check
+    for these to collect whether the test passed or failed.
+    The pipe includes also messages from ninja command which is used for
+    running QEMU.
+    """
+
+    def __init__(self, instance, type_str):
+        """Constructor
+
+        @param instance Test instance
+        """
+
+        super().__init__(instance, type_str)
+        self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
+        self.pid = 0
+        self.thread = None
+        self.stop_thread = False
+        self.results = {}
+
+        if instance.testsuite.ignore_qemu_crash:
+            self.ignore_qemu_crash = True
+            self.ignore_unexpected_eof = True
+        else:
+            self.ignore_qemu_crash = False
+            self.ignore_unexpected_eof = False
+
+    @staticmethod
+    def _get_cpu_time(pid):
+        """get process CPU time.
+
+        The guest virtual time in QEMU icount mode isn't host time and
+        it's maintained by counting guest instructions, so we use QEMU
+        process execution time to mostly simulate the time of guest OS.
+        """
+        proc = psutil.Process(pid)
+        cpu_time = proc.cpu_times()
+        return cpu_time.user + cpu_time.system
+
+    @staticmethod
+    def _open_log_file(logfile):
+        return open(logfile, "wt")
+
+    @staticmethod
+    def _close_log_file(log_file):
+        log_file.close()
+
+    @staticmethod
+    def _stop_qemu_process(pid):
+        if pid:
+            try:
+                if pid:
+                    os.kill(pid, signal.SIGTERM)
+            except (ProcessLookupError, psutil.NoSuchProcess):
+                # Oh well, as long as it's dead! User probably sent Ctrl-C
+                pass
+
+    @staticmethod
+    def _monitor_update_instance_info(handler, handler_time, out_state):
+        handler.instance.execution_time = handler_time
+        if out_state == "timeout":
+            handler.instance.status = "failed"
+            handler.instance.reason = "Timeout"
+        elif out_state == "failed":
+            handler.instance.status = "failed"
+            handler.instance.reason = "Failed"
+        elif out_state in ['unexpected eof', 'unexpected byte']:
+            handler.instance.status = "failed"
+            handler.instance.reason = out_state
+        else:
+            handler.instance.status = out_state
+            handler.instance.reason = "Unknown"
+
+    def _get_sysbuild_build_dir(self):
+        if self.instance.testsuite.sysbuild:
+            # Load domain yaml to get default domain build directory
+            # Note: for targets using QEMU, we assume that the target will
+            # have added any additional images to the run target manually
+            domain_path = os.path.join(self.build_dir, "domains.yaml")
+            domains = Domains.from_file(domain_path)
+            logger.debug("Loaded sysbuild domain data from %s" % domain_path)
+            build_dir = domains.get_default_domain().build_dir
+        else:
+            build_dir = self.build_dir
+
+        return build_dir
+
+    def _set_qemu_filenames(self, sysbuild_build_dir):
+        # PID file will be created in the main sysbuild app's build dir
+        self.pid_fn = os.path.join(sysbuild_build_dir, "qemu.pid")
+
+        if os.path.exists(self.pid_fn):
+            os.unlink(self.pid_fn)
+
+        self.log_fn = self.log
+
+    def _create_command(self, sysbuild_build_dir):
+        command = [self.generator_cmd]
+        command += ["-C", sysbuild_build_dir, "run"]
+
+        return command
+
+    def _update_instance_info(self, harness_state, is_timeout):
+        if (self.returncode != 0 and not self.ignore_qemu_crash) or not harness_state:
+            self.instance.status = "failed"
+            if is_timeout:
+                self.instance.reason = "Timeout"
+            else:
+                if not self.instance.reason:
+                    self.instance.reason = "Exited with {}".format(self.returncode)
+            self.instance.add_missing_case_status("blocked")
+
+    def _enqueue_char(self, stdout, queue):
+        while not self.stop_thread:
+            try:
+                c = stdout.read(1)
+            except ValueError:
+                # Reading on closed file exception can occur when subprocess is killed.
+                # Can be ignored.
+                pass
+            else:
+                queue.put(c)
+
+    def _monitor_output(self, queue, timeout, logfile, pid_fn, harness, ignore_unexpected_eof=False):
+        start_time = time.time()
+        timeout_time = start_time + timeout
+        out_state = None
+        line = ""
+        timeout_extended = False
+        self.pid = 0
+
+        log_out_fp = self._open_log_file(logfile)
+
+        while True:
+            this_timeout = int((timeout_time - time.time()) * 1000)
+            if this_timeout < 0:
+                try:
+                    if self.pid and this_timeout > 0:
+                        # there's possibility we polled nothing because
+                        # of not enough CPU time scheduled by host for
+                        # QEMU process during p.poll(this_timeout)
+                        cpu_time = self._get_cpu_time(self.pid)
+                        if cpu_time < timeout and not out_state:
+                            timeout_time = time.time() + (timeout - cpu_time)
+                            continue
+                except psutil.NoSuchProcess:
+                    pass
+                except ProcessLookupError:
+                    out_state = "failed"
+                    break
+
+                if not out_state:
+                    out_state = "timeout"
+                break
+
+            if self.pid == 0 and os.path.exists(pid_fn):
+                try:
+                    self.pid = int(open(pid_fn).read())
+                except ValueError:
+                    # pid file probably not contains pid yet, continue
+                    pass
+
+            try:
+                c = queue.get_nowait()
+            except Empty:
+                continue
+            try:
+                c = c.decode("utf-8")
+            except UnicodeDecodeError:
+                # Test is writing something weird, fail
+                out_state = "unexpected byte"
+                break
+
+            if c == "":
+                # EOF, this shouldn't happen unless QEMU crashes
+                if not ignore_unexpected_eof:
+                    out_state = "unexpected eof"
+                break
+            line = line + c
+            if c != "\n":
+                continue
+
+            # line contains a full line of data output from QEMU
+            log_out_fp.write(line)
+            log_out_fp.flush()
+            line = line.rstrip()
+            logger.debug(f"QEMU ({self.pid}): {line}")
+
+            harness.handle(line)
+            if harness.state:
+                # if we have registered a fail make sure the state is not
+                # overridden by a false success message coming from the
+                # testsuite
+                if out_state not in ['failed', 'unexpected eof', 'unexpected byte']:
+                    out_state = harness.state
+
+                # if we get some state, that means test is doing well, we reset
+                # the timeout and wait for 2 more seconds to catch anything
+                # printed late. We wait much longer if code
+                # coverage is enabled since dumping this information can
+                # take some time.
+                if not timeout_extended or harness.capture_coverage:
+                    timeout_extended = True
+                    if harness.capture_coverage:
+                        timeout_time = time.time() + 30
+                    else:
+                        timeout_time = time.time() + 2
+            line = ""
+
+        self.stop_thread = True
+
+        handler_time = time.time() - start_time
+        logger.debug(f"QEMU ({self.pid}) complete ({out_state}) after {handler_time} seconds")
+        self._monitor_update_instance_info(self, handler_time, out_state)
+        self._close_log_file(log_out_fp)
+        self._stop_qemu_process(self.pid)
+
+    def handle(self, harness):
+        self.results = {}
+        self.run = True
+
+        sysbuild_build_dir = self._get_sysbuild_build_dir()
+        command = self._create_command(sysbuild_build_dir)
+        self._set_qemu_filenames(sysbuild_build_dir)
+
+        logger.debug("Running %s (%s)" % (self.name, self.type_str))
+        is_timeout = False
+        self.stop_thread = False
+        queue = Queue()
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
+            logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
+
+            self.thread = threading.Thread(target=self._enqueue_char, args=(proc.stdout, queue))
+            self.thread.daemon = True
+            self.thread.start()
+
+            thread_max_time = time.time() + self.get_test_timeout()
+
+            self._monitor_output(queue, self.get_test_timeout(), self.log_fn, self.pid_fn, harness,
+                                 self.ignore_unexpected_eof)
+
+            if (thread_max_time - time.time()) < 0:
+                logger.debug("Timed out while monitoring QEMU output")
+                proc.terminate()
+                # sleep for a while before attempting to kill
+                time.sleep(0.5)
+                proc.kill()
+
+            if harness.state == "passed":
+                self.returncode = 0
+            else:
+                self.returncode = proc.returncode
+
+            if os.path.exists(self.pid_fn):
+                os.unlink(self.pid_fn)
+
+        logger.debug(f"return code from QEMU ({self.pid}): {self.returncode}")
+
+        self._update_instance_info(harness.state, is_timeout)
+
+        self._final_handle_actions(harness, 0)
