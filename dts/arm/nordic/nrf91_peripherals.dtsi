@@ -313,6 +313,7 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	status = "disabled";
 	port = <0>;
+	gpiote-instance = <&gpiote>;
 };
 
 rtc0: rtc@14000 {
