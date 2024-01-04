@@ -120,7 +120,7 @@ typedef enum bt_l2cap_chan_state {
 
 /** @brief Status of L2CAP channel. */
 typedef enum bt_l2cap_chan_status {
-	/** Channel output status */
+	/** Channel can send at least one PDU */
 	BT_L2CAP_STATUS_OUT,
 
 	/** @brief Channel shutdown status
