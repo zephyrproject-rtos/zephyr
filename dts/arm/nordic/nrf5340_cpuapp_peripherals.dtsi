@@ -526,6 +526,7 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	status = "disabled";
 	port = <0>;
+	gpiote-instance = <&gpiote>;
 };
 
 gpio1: gpio@842800 {
@@ -536,6 +537,7 @@ gpio1: gpio@842800 {
 	ngpios = <16>;
 	status = "disabled";
 	port = <1>;
+	gpiote-instance = <&gpiote>;
 };
 
 ieee802154: ieee802154 {

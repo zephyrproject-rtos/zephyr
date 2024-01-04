@@ -63,8 +63,37 @@ config NRFX_EGU5
 	select NRFX_EGU
 
 config NRFX_GPIOTE
-	bool "GPIOTE driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	bool
+
+config NRFX_GPIOTE0
+	bool "GPIOTE0 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote0,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE1
+	bool "GPIOTE1 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote1,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE20
+	bool "NRFX_GPIOTE20 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote20,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE30
+	bool "NRFX_GPIOTE30 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote30,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE130
+	bool "NRFX_GPIOTE130 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote130,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE131
+	bool "NRFX_GPIOTE131 driver instance"
+	depends on $(dt_nodelabel_has_compat,gpiote131,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
+	select NRFX_GPIOTE
 
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	int "Number of event handlers"
