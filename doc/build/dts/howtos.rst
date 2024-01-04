@@ -242,6 +242,8 @@ use as devicetree overlays:
    and :file:`boards/<BOARD>_<revision>.overlay` exists, it will be used.
    This file will be used in addition to :file:`boards/<BOARD>.overlay`
    if both exist.
+#. For each :ref:`shield <shields>`, if :file:`boards/<SHIELD>.overlay` exists,
+   it will be used.
 #. If one or more files have been found in the previous steps, the build system
    stops looking and just uses those files.
 #. Otherwise, if :file:`<BOARD>.overlay` exists, it will be used, and the build

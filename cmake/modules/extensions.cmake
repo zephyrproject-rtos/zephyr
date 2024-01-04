@@ -2322,7 +2322,7 @@ endfunction()
 #                     - DTS:       Overlay files (.overlay)
 #                     - Kconfig:   Config fragments (.conf)
 #                     The conf file search will return existing configuration
-#                     files for the current board.
+#                     files for the current board and shields.
 #                     CONF_FILES takes the following additional arguments:
 #                     BOARD <board>:             Find configuration files for specified board.
 #                     BOARD_REVISION <revision>: Find configuration files for specified board
@@ -2421,6 +2421,11 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
                         BUILD ${FILE_BUILD}
     )
     list(APPEND filename_list ${filename})
+
+    foreach(shield ${SHIELD_AS_LIST})
+      list(APPEND filename_list ${shield})
+    endforeach()
+
     list(REMOVE_DUPLICATES filename_list)
 
     if(FILE_DTS)
