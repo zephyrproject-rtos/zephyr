@@ -193,7 +193,7 @@ static void ipc1_ept_recv(const void *data, size_t len, void *priv)
 {
 	ipc1_received_data = *((uint8_t *) data);
 
-	k_sem_give(&ipc0B_data_sem);
+	k_sem_give(&ipc1_data_sem);
 }
 
 static struct ipc_ept_cfg ipc1_ept_cfg = {
