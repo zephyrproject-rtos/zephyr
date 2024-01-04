@@ -178,6 +178,7 @@ You may build and flash applications for M5Stack StampS3 as usual (see
 include this shield as an overlay.
 
 A good first example to test is :zephyr:code-sample:`lvgl`:
+
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl
    :board: m5stack_stamps3
