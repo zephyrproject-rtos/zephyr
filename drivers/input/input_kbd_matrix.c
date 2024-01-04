@@ -334,6 +334,11 @@ int input_kbd_matrix_actual_key_mask_set(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (cfg->actual_key_mask == NULL) {
+		LOG_WRN("actual-key-mask not defined for %s", dev->name);
+		return -EINVAL;
+	}
+
 	WRITE_BIT(cfg->actual_key_mask[col], row, enabled);
 
 	return 0;
