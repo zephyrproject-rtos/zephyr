@@ -48,7 +48,8 @@ static const struct bt_audio_codec_cap lc3_codec_cap = {
 		},
 };
 
-static struct bap_test_stream streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct audio_test_stream
+	test_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
 
 static const struct bt_audio_codec_qos_pref qos_pref =
 	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
@@ -80,8 +81,8 @@ static void print_ase_info(struct bt_bap_ep *ep, void *user_data)
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		struct bt_bap_stream *stream = &streams[i].stream;
+	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
+		struct bt_bap_stream *stream = bap_stream_from_audio_test_stream(&test_streams[i]);
 
 		if (!stream->conn) {
 			return stream;
@@ -101,7 +102,7 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 	*stream = stream_alloc();
 	if (*stream == NULL) {
-		printk("No streams available\n");
+		printk("No test_streams available\n");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 		return -ENOMEM;
 	}
@@ -133,7 +134,7 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
-	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
@@ -182,7 +183,7 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
 	printk("Disable: stream %p\n", stream);
 
@@ -251,7 +252,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			   struct net_buf *buf)
 {
-	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
 	printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len, info->ts);
 
@@ -284,7 +285,7 @@ static void stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
 {
-	struct bap_test_stream *test_stream = CONTAINER_OF(stream, struct bap_test_stream, stream);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct net_buf *buf;
 	int ret;
 
@@ -323,15 +324,15 @@ static struct bt_bap_stream_ops stream_ops = {
 	.sent = stream_sent_cb,
 };
 
-static void transceive_streams(void)
+static void transceive_test_streams(void)
 {
 	struct bt_bap_stream *source_stream = NULL;
 	struct bt_bap_stream *sink_stream = NULL;
 	struct bt_bap_ep_info info;
 	int err;
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		struct bt_bap_stream *stream = &streams[i].stream;
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
+		struct bt_bap_stream *stream = bap_stream_from_audio_test_stream(&test_streams[i]);
 
 		if (stream->ep == NULL) {
 			break;
@@ -345,7 +346,7 @@ static void transceive_streams(void)
 				return;
 			}
 
-			/* Ensure that all configured streams are in the streaming state before
+			/* Ensure that all configured test_streams are in the streaming state before
 			 * starting TX and RX
 			 */
 			if (info.state == BT_BAP_EP_STATE_STREAMING) {
@@ -363,8 +364,8 @@ static void transceive_streams(void)
 	}
 
 	if (source_stream != NULL) {
-		struct bap_test_stream *test_stream =
-			CONTAINER_OF(source_stream, struct bap_test_stream, stream);
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_bap_stream(source_stream);
 
 		test_stream->tx_active = true;
 		for (unsigned int i = 0U; i < ENQUEUE_COUNT; i++) {
@@ -378,8 +379,8 @@ static void transceive_streams(void)
 	}
 
 	if (sink_stream != NULL) {
-		const struct bap_test_stream *test_stream =
-			CONTAINER_OF(sink_stream, struct bap_test_stream, stream);
+		const struct audio_test_stream *test_stream =
+			audio_test_stream_from_bap_stream(sink_stream);
 
 		/* Keep receiving until we reach the minimum expected */
 		while (test_stream->rx_cnt < MIN_SEND_COUNT) {
@@ -481,8 +482,9 @@ static void init(void)
 	set_location();
 	set_available_contexts();
 
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-		bt_bap_stream_cb_register(&streams[i].stream, &stream_ops);
+	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
+		bt_bap_stream_cb_register(bap_stream_from_audio_test_stream(&test_streams[i]),
+					  &stream_ops);
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
@@ -518,7 +520,7 @@ static void test_main(void)
 
 
 	WAIT_FOR_FLAG(flag_stream_started);
-	transceive_streams();
+	transceive_test_streams();
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 	PASS("Unicast server passed\n");
 }
