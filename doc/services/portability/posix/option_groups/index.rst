@@ -448,6 +448,35 @@ _POSIX_THREAD_PRIORITY_SCHEDULING
     pthread_setschedparam(),yes
     pthread_setschedprio(),yes
 
+.. _posix_thread_safe_functions:
+
+_POSIX_THREAD_SAFE_FUNCTIONS
+++++++++++++++++++++++++++++
+
+.. csv-table:: _POSIX_THREAD_SAFE_FUNCTIONS
+    :header: API, Supported
+    :widths: 50,10
+
+    asctime_r(),
+    ctime_r(),
+    flockfile(),
+    ftrylockfile(),
+    funlockfile(),
+    getc_unlocked(), yes
+    getchar_unlocked(), yes
+    getgrgid_r(),
+    getgrnam_r(),
+    getpwnam_r(),
+    getpwuid_r(),
+    gmtime_r(), yes
+    localtime_r(),
+    putc_unlocked(), yes
+    putchar_unlocked(), yes
+    rand_r(), yes
+    readdir_r(),
+    strerror_r(), yes
+    strtok_r(), yes
+
 .. _posix_option_timeouts:
 
 _POSIX_TIMEOUTS
