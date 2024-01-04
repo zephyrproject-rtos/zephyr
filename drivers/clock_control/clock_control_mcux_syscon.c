@@ -10,10 +10,28 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <soc.h>
 #include <fsl_clock.h>
+#if defined(CONFIG_SOC_SERIES_LPC55XXX)
+#include <clock_control_soc.h>
+#else
+/* Provide dummy definitions for SOC clock setpoint macros */
+#define CLOCK_CONTROL_SETPOINT_DEFINE(node)
+#define CLOCK_CONTROL_SETPOINT_GET(node) NULL
+#endif
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
+
+struct mcux_lpc_syscon_setpoint {
+	/* Function to call to apply the setpoint */
+	int (*setpoint)(void);
+	uint8_t id;
+};
+
+struct mcux_lpc_syscon_config {
+	struct mcux_lpc_syscon_setpoint *setpoints;
+	uint32_t setpoint_count;
+};
 
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
@@ -189,18 +207,55 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 	return 0;
 }
 
+static int mcux_lpc_syscon_clock_control_select_setpoint(const struct device *dev,
+							 uint32_t setpoint_id)
+{
+	const struct mcux_lpc_syscon_config *config = dev->config;
+
+	if (setpoint_id >= config->setpoint_count) {
+		return -EINVAL;
+	}
+	for (uint8_t i = 0; i < config->setpoint_count; i++) {
+		if (config->setpoints[i].id == setpoint_id) {
+			return config->setpoints[i].setpoint();
+		}
+	}
+	/* Setpoint was not found */
+	return -ENOENT;
+}
+
 static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	.on = mcux_lpc_syscon_clock_control_on,
 	.off = mcux_lpc_syscon_clock_control_off,
 	.get_rate = mcux_lpc_syscon_clock_control_get_subsys_rate,
+	.select_setpoint = mcux_lpc_syscon_clock_control_select_setpoint,
 };
 
+#define LPC_CLOCK_DEFINE(node, prop, idx)	\
+	CLOCK_CONTROL_SETPOINT_DEFINE(DT_PHANDLE_BY_IDX(node, prop, idx))
+
+#define LPC_CLOCK_GET(node, prop, idx)		\
+{									\
+	.setpoint = CLOCK_CONTROL_SETPOINT_GET(DT_PHANDLE_BY_IDX(node, prop, idx)), \
+	.id = UTIL_CAT(CLOCK_SETPOINT_, DT_STRING_UPPER_TOKEN_BY_IDX(node, setpoint_names, idx)) \
+},
+
 #define LPC_CLOCK_INIT(n) \
-	\
-DEVICE_DT_INST_DEFINE(n, \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, setpoints),				\
+	(DT_INST_FOREACH_PROP_ELEM(n, setpoints, LPC_CLOCK_DEFINE)))		\
+	struct mcux_lpc_syscon_setpoint lpc_syscon_setpoints_##n[] = {		\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, setpoints),			\
+		(DT_INST_FOREACH_PROP_ELEM(n, setpoints, LPC_CLOCK_GET)))	\
+	};									\
+	struct mcux_lpc_syscon_config lpc_syscon_config_##n = {			\
+		.setpoints = lpc_syscon_setpoints_##n,				\
+		.setpoint_count = DT_INST_PROP_LEN_OR(n, setpoints, 0),		\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(n, \
 		    NULL, \
 		    NULL, \
-		    NULL, NULL, \
+		    NULL, &lpc_syscon_config_##n, \
 		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, \
 		    &mcux_lpc_syscon_api);
 

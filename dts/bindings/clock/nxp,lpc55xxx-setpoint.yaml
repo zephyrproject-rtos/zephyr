@@ -1,0 +1,226 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC55xxx SYSCON clock configuration
+
+include: [base.yaml]
+
+compatible: "nxp,lpc55xxx-setpoint"
+
+properties:
+  "#setpoint-cells":
+    type: int
+    const: 0
+  fro-12m-enable:
+    type: boolean
+    description: 12 MHz divided down from the currently selected on-chip FRO oscillator
+  pluglitch12mhzclk-enable:
+    type: boolean
+  xtal32m-freq:
+    type: int
+    description: External clock input
+  clk-in-en-enable:
+    type: boolean
+    description: 32M clock output to cpu system gate
+  clk-usb-en-enable:
+    type: boolean
+    description: 32M clock output to USB HS gate
+  fro-1m-enable:
+    type: boolean
+    description: 1 MHz divided down from the currently selected on-chip FRO oscillator
+  wdtclkdiv:
+    type: int
+    description: WDT clock divider
+  utickclk-enable:
+    type: boolean
+  pluglitch1mhzclk-enable:
+    type: boolean
+  fro-hf-enable:
+    type: boolean
+    description: 96 MHz divided down from the currently selected on-chip FRO oscillator
+  frohfdiv:
+    type: int
+    description: FRO HF clock divider
+  fro-32k-enable:
+    type: boolean
+    description: 32 KHz clock output on-chip FRO oscillator
+  xtal32k-freq:
+    type: int
+    description: RTC osc 32kHz output
+  mclk-in-freq:
+    type: int
+    description: Master clock input
+  plu-clkin-freq:
+    type: int
+    description: PLU clock input
+  mainclksela:
+    type: int
+    description: Main clock source select A
+  rtcosc32ksel:
+    type: int
+    description: RTC 32K clock source select
+  ostimer32khzclk-enable:
+    type: boolean
+  rtcclk1hzdiv:
+    type: int
+    description: RTC 1Hz clock divider
+  rtc-1hz-clk-enable:
+    type: boolean
+  rtcclk1khzdiv:
+    type: int
+    description: RTC 1KHz clock divider
+  rtc-1khz-clk-enable:
+    type: boolean
+  pll0clksel:
+    type: int
+    description: PLL0 clock source select
+  pll0:
+    type: array
+    description: PLL0
+  pll0-directo:
+    type: int
+    description: Selects between PLL output divided by PDEC or direct output.
+  pll0-bypass:
+    type: int
+    description: Selects between PLL output or bypass the PLL - input to the PLL is taken instead.
+  pll0div:
+    type: int
+    description: PLL0 clock divider
+  pll1clksel:
+    type: int
+    description: PLL1 clock source select
+  pll1:
+    type: array
+    description: PLL1
+  pll1-directo:
+    type: int
+    description: Selects between PLL output divided by PDEC or direct output.
+  pll1-bypass:
+    type: int
+    description: Selects between PLL output or bypass the PLL - input to the PLL is taken instead.
+  mainclkselb:
+    type: int
+    description: Main clock source select B
+  traceclkdiv:
+    type: int
+    description: Trace clock divider
+  systickclkdiv0:
+    type: int
+    description: Core0 SYSTICK clock divider
+  systickclkdiv1:
+    type: int
+    description: Core1 SYSTICK clock divider
+  ahbclkdiv:
+    type: int
+    description: System clock divider
+  traceclksel:
+    type: int
+    description: Trace clock source select
+  systickclksel0:
+    type: int
+    description: Core0 SYSTICK clock source select
+  systickclksel1:
+    type: int
+    description: Core1 SYSTICK clock source select
+  adcclksel:
+    type: int
+    description: ADC clock source select
+  adcclkdiv:
+    type: int
+    description: ADC clock divider
+  usb0clksel:
+    type: int
+    description: USB0 clock source select
+  usb0clkdiv:
+    type: int
+    description: USB0 clock divider
+  mclkclksel:
+    type: int
+    description: Master clock source select
+  mclkdiv:
+    type: int
+    description: Master clock divider
+  sctclksel:
+    type: int
+    description: SCT clock source select
+  sctclkdiv:
+    type: int
+    description: SCT clock divider
+  clkoutsel:
+    type: int
+    description: CLKOUT clock source select
+  clkoutdiv:
+    type: int
+    description: CLKOUT clock divider
+  sdioclksel:
+    type: int
+    description: SDIO clock source select
+  sdioclkdiv:
+    type: int
+    description: SDIO clock divider
+  ctimerclksel0:
+    type: int
+    description: CTIMER0 clock source select
+  ctimerclksel1:
+    type: int
+    description: CTIMER1 clock source select
+  ctimerclksel2:
+    type: int
+    description: CTIMER2 clock source select
+  ctimerclksel3:
+    type: int
+    description: CTIMER3 clock source select
+  ctimerclksel4:
+    type: int
+    description: CTIMER4 clock source select
+  fcclksel0:
+    type: int
+    description: Flexcom 0 clock source select
+  frgctrl0-div:
+    type: int
+    description: FRG0 division factor
+  fcclksel1:
+    type: int
+    description: Flexcom 1 clock source select
+  frgctrl1-div:
+    type: int
+    description: FRG1 division factor
+  fcclksel2:
+    type: int
+    description: Flexcom 2 clock source select
+  frgctrl2-div:
+    type: int
+    description: FRG2 division factor
+  fcclksel3:
+    type: int
+    description: Flexcom 3 clock source select
+  frgctrl3-div:
+    type: int
+    description: FRG3 division factor
+  fcclksel4:
+    type: int
+    description: Flexcom 4 clock source select
+  frgctrl4-div:
+    type: int
+    description: FRG4 division factor
+  fcclksel5:
+    type: int
+    description: Flexcom 5 clock source select
+  frgctrl5-div:
+    type: int
+    description: FRG5 division factor
+  fcclksel6:
+    type: int
+    description: Flexcom 6 clock source select
+  frgctrl6-div:
+    type: int
+    description: FRG6 division factor
+  fcclksel7:
+    type: int
+    description: Flexcom 7 clock source select
+  frgctrl7-div:
+    type: int
+    description: FRG7 division factor
+  hslspiclksel:
+    type: int
+    description: HSLSPI clock source select

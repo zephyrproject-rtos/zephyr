@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/nxp_lpc55xxx_clocks.h>
 
 / {
 	aliases {

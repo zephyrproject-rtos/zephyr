@@ -14,5 +14,13 @@ properties:
   "#clock-cells":
     const: 1
 
+  setpoints:
+    type: phandle-array
+    description: Run clock setpoints for this controller
+
+  setpoint-names:
+    type: string-array
+    description: Names for each clock setpoint
+
 clock-cells:
   - name
