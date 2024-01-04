@@ -153,7 +153,7 @@ if(NOT BOARD_DIR)
 
   set(format_str "{NAME}\;{DIR}\;{HWM}\;")
   set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
-  set(format_str "${format_str}{REVISIONS}\;{IDENTIFIERS}")
+  set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{IDENTIFIERS}")
 
   execute_process(${list_boards_commands} --board=${BOARD}
     --cmakeformat=${format_str}
@@ -166,7 +166,7 @@ if(NOT BOARD_DIR)
   endif()
   string(STRIP "${ret_board}" ret_board)
   set(single_val "NAME;DIR;HWM;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
-  set(multi_val  "REVISIONS;IDENTIFIERS")
+  set(multi_val  "REVISIONS;SOCS;IDENTIFIERS")
   cmake_parse_arguments(BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   set(BOARD_DIR ${BOARD_DIR} CACHE PATH "Board directory for board (${BOARD})" FORCE)
 
@@ -220,6 +220,14 @@ elseif(HWMv2)
   endif()
 
   if(BOARD_IDENTIFIERS)
+    # Allow users to omit the SoC when building for a board with a single SoC.
+    list(LENGTH BOARD_SOCS socs_length)
+    if(NOT DEFINED BOARD_IDENTIFIER AND socs_length EQUAL 1)
+      set(BOARD_IDENTIFIER "/${BOARD_SOCS}")
+    elseif("${BOARD_IDENTIFIER}" MATCHES "^//.*" AND socs_length EQUAL 1)
+      string(REGEX REPLACE "^//" "/${BOARD_SOCS}/" BOARD_IDENTIFIER "${BOARD_IDENTIFIER}")
+    endif()
+
     if(NOT ("${BOARD}${BOARD_IDENTIFIER}" IN_LIST BOARD_IDENTIFIERS))
       string(REPLACE ";" "\n" BOARD_IDENTIFIERS "${BOARD_IDENTIFIERS}")
       message(FATAL_ERROR "Board identifier `${BOARD_IDENTIFIER}` for board \
