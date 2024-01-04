@@ -17,7 +17,7 @@ the STM32H573I-DK Discovery board:
 - USB Type-C |trade| Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
-- Octo-SPI interface connected to 152Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
+- Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
 - 10/100-Mbit Ethernet,
 - microSD  |trade|
 - A Wi‑Fi® add-on board
