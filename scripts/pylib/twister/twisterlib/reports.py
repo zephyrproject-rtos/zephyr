@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -26,6 +26,8 @@ class Reporting:
         self.env = env
         self.timestamp = datetime.now().isoformat()
         self.outdir = os.path.abspath(env.options.outdir)
+        self.coverage_status = None
+        self.coverage = None
 
     @staticmethod
     def process_log(log_file):
@@ -351,9 +353,31 @@ class Reporting:
             if instance.recording is not None:
                 suite['recording'] = instance.recording
 
+            if self.env.options.coverage_sections and instance.coverage_status is not None:
+                suite['coverage'] = { 'status': instance.coverage_status,
+                                      'tool': self.env.options.coverage_tool }
+                do_all = 'all' in self.env.options.coverage_sections
+                for k,v in instance.coverage.items():
+                    if do_all or k in self.env.options.coverage_sections:
+                        logger.debug(f"Include '{instance.name}' coverage.{k} from '{v}'")
+                        with open(v, "rt") as json_file:
+                            suite['coverage'][k] = json.load(json_file)
+
             suites.append(suite)
 
         report["testsuites"] = suites
+
+        if self.env.options.coverage_sections and self.coverage_status is not None:
+            report['environment']['gcov_tool'] = self.env.options.gcov_tool
+            report['coverage'] = { 'status': self.coverage_status,
+                                   'tool': self.env.options.coverage_tool }
+            do_all = 'all' in self.env.options.coverage_sections
+            for k,v in self.coverage.items():
+                if do_all or k in self.env.options.coverage_sections:
+                    logger.debug(f"Include aggregated coverage.{k} from '{v}'")
+                    with open(v, "rt") as json_file:
+                        report['coverage'][k] = json.load(json_file)
+
         with open(filename, "wt") as json_file:
             json.dump(report, json_file, indent=4, separators=(',',':'))
 

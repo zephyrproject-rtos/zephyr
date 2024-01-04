@@ -1,6 +1,6 @@
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 20180-2022 Intel Corporation
+# Copyright (c) 2018-2023 Intel Corporation
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
@@ -45,6 +45,7 @@ from twisterlib.testsuite import TestSuite
 from twisterlib.platform import Platform
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.harness import HarnessImporter, Pytest
+from twisterlib.coverage import run_coverage_instance
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -674,7 +675,7 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.handler.thread = None
                 self.instance.handler.duts = None
                 pipeline.put({
-                    "op": "report",
+                    "op": "coverage" if self.options.coverage and self.options.coverage_split else "report",
                     "test": self.instance,
                     "status": self.instance.status,
                     "reason": self.instance.reason
@@ -683,6 +684,12 @@ class ProjectBuilder(FilterBuilder):
             except RuntimeError as e:
                 logger.error(f"RuntimeError: {e}")
                 traceback.print_exc()
+
+        # Run per-instance code coverage
+        elif op == "coverage":
+            logger.debug(f"Run coverage for '{self.instance.name}'")
+            self.instance.coverage_status, self.instance.coverage = run_coverage_instance(self.options, self.instance)
+            pipeline.put({"op": "report", "test": self.instance})
 
         # Report results and output progress to screen
         elif op == "report":
