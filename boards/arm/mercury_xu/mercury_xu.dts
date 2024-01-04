@@ -33,7 +33,16 @@
 	pinctrl-names = "default";
 };
 
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
 &ttc0 {
 	status = "okay";
 	clock-frequency = <5000000>;
+};
+
+&psgpio {
+	status = "okay";
 };
