@@ -202,6 +202,14 @@ static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 	}
 }
 
+/* Transmit is allowed if flow_control_on == true */
+static void modem_cmux_transmit_set_flow_control(struct modem_cmux *cmux, bool flow_control_on)
+{
+	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
+	cmux->flow_control_on = flow_control_on;
+	k_mutex_unlock(&cmux->transmit_rb_lock);
+}
+
 static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 					  const struct modem_cmux_frame *frame)
 {
@@ -349,17 +357,13 @@ static void modem_cmux_on_msc_command(struct modem_cmux *cmux, struct modem_cmux
 
 static void modem_cmux_on_fcon_command(struct modem_cmux *cmux)
 {
-	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-	cmux->flow_control_on = true;
-	k_mutex_unlock(&cmux->transmit_rb_lock);
+	modem_cmux_transmit_set_flow_control(cmux, true);
 	modem_cmux_acknowledge_received_frame(cmux);
 }
 
 static void modem_cmux_on_fcoff_command(struct modem_cmux *cmux)
 {
-	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-	cmux->flow_control_on = false;
-	k_mutex_unlock(&cmux->transmit_rb_lock);
+	modem_cmux_transmit_set_flow_control(cmux, false);
 	modem_cmux_acknowledge_received_frame(cmux);
 }
 
@@ -380,9 +384,7 @@ static void modem_cmux_on_cld_command(struct modem_cmux *cmux, struct modem_cmux
 	}
 
 	cmux->state = MODEM_CMUX_STATE_DISCONNECTED;
-	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-	cmux->flow_control_on = false;
-	k_mutex_unlock(&cmux->transmit_rb_lock);
+	modem_cmux_transmit_set_flow_control(cmux, false);
 
 	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
 	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
@@ -397,9 +399,7 @@ static void modem_cmux_on_control_frame_ua(struct modem_cmux *cmux)
 	}
 
 	cmux->state = MODEM_CMUX_STATE_CONNECTED;
-	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-	cmux->flow_control_on = true;
-	k_mutex_unlock(&cmux->transmit_rb_lock);
+	modem_cmux_transmit_set_flow_control(cmux, true);
 	k_work_cancel_delayable(&cmux->connect_work);
 	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_CONNECTED);
 	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
@@ -472,9 +472,7 @@ static void modem_cmux_on_control_frame_sabm(struct modem_cmux *cmux)
 	}
 
 	cmux->state = MODEM_CMUX_STATE_CONNECTED;
-	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
-	cmux->flow_control_on = true;
-	k_mutex_unlock(&cmux->transmit_rb_lock);
+	modem_cmux_transmit_set_flow_control(cmux, true);
 	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_CONNECTED);
 	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
 	k_event_post(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
@@ -656,6 +654,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			break;
 		}
 
+		modem_cmux_transmit_set_flow_control(cmux, false);
 		modem_cmux_transmit_resync(cmux);
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC_0;
 		break;
@@ -691,6 +690,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		if (byte == 0xF9) {
 			break;
 		}
+
+		modem_cmux_transmit_set_flow_control(cmux, true);
 
 	case MODEM_CMUX_RECEIVE_STATE_ADDRESS:
 		/* Initialize */
