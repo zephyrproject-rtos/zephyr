@@ -1,0 +1,7 @@
+tests:
+  drivers.clock.clock_control.nxp_external:
+    tags:
+      - drivers
+      - clock
+    platform_allow:
+      - lpcxpresso55s69/lpc55s69/cpu0

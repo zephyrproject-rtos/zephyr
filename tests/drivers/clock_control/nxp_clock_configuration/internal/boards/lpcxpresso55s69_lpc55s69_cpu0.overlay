@@ -1,0 +1,37 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	zephyr,user {
+		clocks = <&syscon MCUX_SYSTEM_CLK>;
+		core-freq = <96000000>;
+	};
+};
+
+&cpus {
+	clock-setpoints {
+		run_setpoint: run-setpoint {
+			compatible = "nxp,lpc55xxx-setpoint";
+			#setpoint-cells = <0>;
+			/* Enable FRO12M and FROHF clock sources */
+			fro-12m-enable;
+			fro-hf-enable;
+			/* Source main clock from fro-hf */
+			mainclksela = <MAINCLKSELA_FRO_HF>;
+			mainclkselb = <MAINCLKSELB_MAINCLKSELA>;
+			/* Source UART clock from FRO12M */
+			fcclksel0 = <FCCLKSEL0_FRO_12M>;
+			/* AHB clock divided by 1, final clock output will be 96MHz */
+			ahbclkdiv = <1>;
+		};
+	};
+};
+
+&syscon {
+	setpoints = <&run_setpoint>;
+	setpoint-names = "run";
+};
