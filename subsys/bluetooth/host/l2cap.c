@@ -973,9 +973,11 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 
 	atomic_add(&chan->tx.credits, credits);
 
-	if (!atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT) &&
-	    chan->chan.ops->status) {
-		chan->chan.ops->status(&chan->chan, chan->chan.status);
+	if (!atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT)) {
+		LOG_DBG("chan %p unpaused", chan);
+		if (chan->chan.ops->status) {
+			chan->chan.ops->status(&chan->chan, chan->chan.status);
+		}
 	}
 }
 
@@ -2045,11 +2047,11 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 		return err;
 	}
 
-	/* Check if there is no credits left clear output status and notify its
-	 * change.
-	 */
+	/* Notify channel user that it can't send anymore on this channel. */
 	if (!atomic_get(&ch->tx.credits)) {
+		LOG_DBG("chan %p paused", ch);
 		atomic_clear_bit(ch->chan.status, BT_L2CAP_STATUS_OUT);
+
 		if (ch->chan.ops->status) {
 			ch->chan.ops->status(&ch->chan, ch->chan.status);
 		}
