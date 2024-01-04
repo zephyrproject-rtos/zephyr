@@ -207,6 +207,9 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetDmicClkFreq();
 		break;
 #endif
+	case MCUX_SYSTEM_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
+		break;
 	}
 
 	return 0;
