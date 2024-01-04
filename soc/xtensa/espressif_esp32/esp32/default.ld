@@ -203,14 +203,8 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _thread_local_start = ABSOLUTE(.);
-    *(.tdata)
-    *(.tdata.*)
-    *(.tbss)
-    *(.tbss.*)
     *(.rodata_wlog)
     *(.rodata_wlog*)
-    _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
@@ -221,6 +215,7 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
+  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
