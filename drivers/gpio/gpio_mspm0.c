@@ -278,8 +278,29 @@ static int gpio_mspm0_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_CONFIG
+static int gpio_mspm0_pin_get_config(const struct device *port, gpio_pin_t pin,
+				     gpio_flags_t *out_flags)
+{
+	const struct gpio_mspm0_config *config = port->config;
+
+	/* Currently only returns current state and not actually all flags */
+	if (BIT(pin) & config->base->DOE31_0) {
+		*out_flags = BIT(pin) & config->base->DOUT31_0 ?
+			GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+	} else {
+		*out_flags = GPIO_INPUT;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 	.pin_configure = gpio_mspm0_pin_configure,
+#ifdef CONFIG_GPIO_GET_CONFIG
+	.pin_get_config = gpio_mspm0_pin_get_config,
+#endif
 	.port_get_raw = gpio_mspm0_port_get_raw,
 	.port_set_masked_raw = gpio_mspm0_port_set_masked_raw,
 	.port_set_bits_raw = gpio_mspm0_port_set_bits_raw,
