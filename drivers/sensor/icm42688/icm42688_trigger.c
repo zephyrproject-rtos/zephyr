@@ -99,7 +99,7 @@ int icm42688_trigger_set(const struct device *dev, const struct sensor_trigger *
 		data->data_ready_handler = handler;
 		data->data_ready_trigger = trig;
 
-		icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+		res = icm42688_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
 		break;
 	default:
 		res = -ENOTSUP;
