@@ -40,10 +40,10 @@ child-binding:
   include:
     - name: regulator.yaml
       property-allowlist:
-        - regulator-always-on
-        - regulator-boot-on
-        - regulator-max-microamp
         - regulator-min-microvolt
         - regulator-max-microvolt
-        - regulator-allowed-modes
+        - regulator-max-microamp
+        - regulator-always-on
+        - regulator-boot-on
         - regulator-initial-mode
+        - regulator-allowed-modes
