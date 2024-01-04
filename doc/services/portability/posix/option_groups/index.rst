@@ -102,6 +102,38 @@ This table lists service support status in Zephyr:
     pthread_getconcurrency(),yes
     pthread_setconcurrency(),yes
 
+.. _posix_option_group_c_lang_jump:
+
+POSIX_C_LANG_JUMP
+=================
+
+The ``POSIX_C_LANG_JUMP`` Option Group is included in the ISO C standard.
+
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
+   ``POSIX_C_LANG_JUMP`` Option Group is considered supported.
+
+.. csv-table:: POSIX_C_LANG_JUMP
+   :header: API, Supported
+   :widths: 50,10
+
+    setjmp(), yes
+    longjmp(), yes
+
+.. _posix_option_group_c_lang_math:
+
+POSIX_C_LANG_MATH
+=================
+
+The ``POSIX_C_LANG_MATH`` Option Group is included in the ISO C standard.
+
+.. note::
+   When using Newlib, Picolibc, or other C libraries conforming to the ISO C Standard, the
+   ``POSIX_C_LANG_MATH`` Option Group is considered supported.
+
+Please refer to `Subprofiling Considerations`_ for details on the ``POSIX_C_LANG_MATH`` Option
+Group.
+
 .. _posix_option_group_c_lang_support:
 
 POSIX_C_LANG_SUPPORT
@@ -450,3 +482,7 @@ _XOPEN_STREAMS
     isastream(),
     putmsg(),
     putpmsg(),
+
+
+.. _Subprofiling Considerations:
+    https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
