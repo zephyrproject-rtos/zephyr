@@ -297,6 +297,7 @@ def dump_v2_boards(args):
                 REVISION_EXACT='REVISION_EXACT;' + str(b.revision_exact),
                 REVISIONS='REVISIONS;' + ';'.join(
                           [x.name for x in b.revisions]),
+                SOCS='SOCS;' + ';'.join([s.name for s in b.socs]),
                 IDENTIFIERS='IDENTIFIERS;' + ';'.join(identifiers)
             )
             print(info)
@@ -321,6 +322,7 @@ def dump_boards(args):
                     REVISION_EXACT='REVISION_EXACT;NOTFOUND',
                     REVISIONS='REVISIONS;NOTFOUND',
                     VARIANT_DEFAULT='VARIANT_DEFAULT;NOTFOUND',
+                    SOCS='SOCS;',
                     IDENTIFIERS='IDENTIFIERS;'
                 )
                 print(info)
