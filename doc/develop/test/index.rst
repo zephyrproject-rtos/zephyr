@@ -9,6 +9,7 @@ Testing
    ztest
    twister
    pytest
+   robot
    coverage
    BabbleSim<bsim>
    ztest_deprecated
