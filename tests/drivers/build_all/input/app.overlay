@@ -26,6 +26,16 @@
 			};
 		};
 
+		gpio-keys-polled {
+			compatible = "gpio-keys";
+			debounce-interval-ms = <30>;
+			button_0 {
+				gpios = <&test_gpio 0 0>;
+				zephyr,code = <0>;
+			};
+			polling-mode;
+		};
+
 		evdev {
 			compatible = "zephyr,native-linux-evdev";
 		};
