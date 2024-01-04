@@ -55,6 +55,8 @@ int emul_init_for_bus(const struct device *dev)
 		case EMUL_BUS_TYPE_SPI:
 			emul->bus.spi->target = emul;
 			break;
+		case EMUL_BUS_TYPE_NONE:
+			break;
 		}
 		int rc = emul->init(emul, dev);
 
