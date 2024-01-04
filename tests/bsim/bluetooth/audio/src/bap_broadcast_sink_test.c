@@ -277,8 +277,8 @@ static void recv_cb(struct bt_bap_stream *stream,
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
 	if ((test_stream->rx_cnt % 100U) == 0U) {
-		printk("Incoming audio on stream %p len %u and ts %u\n", stream, buf->len,
-		       info->ts);
+		printk("[%zu]: Incoming audio on stream %p len %u and ts %u\n", test_stream->rx_cnt,
+		       stream, buf->len, info->ts);
 	}
 
 	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
@@ -313,7 +313,7 @@ static void recv_cb(struct bt_bap_stream *stream,
 			SET_FLAG(flag_received);
 		}
 	} else {
-		FAIL("Unexpected data received");
+		FAIL("Unexpected data received\n");
 	}
 }
 
