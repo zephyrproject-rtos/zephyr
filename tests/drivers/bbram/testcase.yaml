@@ -5,25 +5,45 @@ common:
   tags:
     - drivers
     - bbram
-  build_only: true
   harness: ztest
   arch_exclude: posix
 tests:
   drivers.bbram.it8xxx2:
+    build_only: true
     filter: dt_compat_enabled("ite,it8xxx2-bbram")
     integration_platforms:
       - it82xx2_evb
   drivers.bbram.npcx:
+    build_only: true
     filter: dt_compat_enabled("nuvoton,npcx-bbram")
     integration_platforms:
       - npcx9m6f_evb
   drivers.bbram.stm32:
     extra_args: OVERLAY_CONFIG="stm32.conf"
     filter: dt_compat_enabled("st,stm32-bbram")
+    platform_allow:
+      - stm32f746g_disco
+      - nucleo_f429zi
+      - nucleo_f207zg
+      - nucleo_f303re
+      - nucleo_f746zg
+      - nucleo_h743zi
+      - nucleo_l152re
+      - disco_l475_iot1
+      - nucleo_wb55rg
     integration_platforms:
       - stm32f746g_disco
   drivers.bbram.stm32_rtc:
     extra_args: OVERLAY_CONFIG="stm32_rtc.conf"
     filter: dt_compat_enabled("st,stm32-bbram")
+    platform_allow:
+      - stm32f746g_disco
+      - nucleo_f429zi
+      - nucleo_f303re
+      - nucleo_f746zg
+      - nucleo_h743zi
+      - nucleo_l152re
+      - disco_l475_iot1
+      - nucleo_wb55rg
     integration_platforms:
       - stm32f746g_disco

@@ -117,6 +117,10 @@ zephyr_udc0: &usbotg_fs {
 	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
 };
 
 &i2c1 {
