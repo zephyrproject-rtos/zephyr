@@ -466,7 +466,7 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_print(sh, "   IRQ\t      Hits");
 	shell_print(sh, "==================");
-	for (size_t i = 0; i < MIN(config->num_irqs, CONFIG_MAX_IRQ_PER_AGGREGATOR); i++) {
+	for (int i = 0; i < MIN(config->num_irqs, CONFIG_MAX_IRQ_PER_AGGREGATOR); i++) {
 		if (stat.irq_count[i] > min_hit) {
 			shell_print(sh, "%6d\t%10d", i, stat.irq_count[i]);
 		}
