@@ -14,6 +14,13 @@ As per `IEEE 1003.1-2017`, this section details Zephyr's POSIX conformance.
    Zephyr's current design, some features requiring multi-process capabilities may exhibit
    undefined behaviour, which we denote with the † (obelus) symbol.
 
+.. _posix_libc_provided:
+
+.. note::
+    Features listed in various POSIX Options or Option Groups may be provided in whole or in part
+    by a conformant C library implementation. This includes (but is not limited to) POSIX
+    Extensions to the ISO C Standard (`CX`_).
+
 .. _posix_system_interfaces:
 
 POSIX System Interfaces
@@ -143,3 +150,5 @@ XSI System Interfaces
     :ref:`_POSIX_THREAD_ATTR_STACKADDR<posix_option_thread_attr_stackaddr>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     :ref:`_POSIX_THREAD_ATTR_STACKSIZE<posix_option_thread_attr_stacksize>`, 200809L, :kconfig:option:`CONFIG_PTHREAD`
     _POSIX_THREAD_PROCESS_SHARED, -1,
+
+.. _CX: https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap01.html
