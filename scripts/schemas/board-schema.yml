@@ -59,7 +59,7 @@ schema;board-schema:
                   required: true
                   type: str
     socs:
-      required: false
+      required: true
       type: seq
       sequence:
         - type: map
@@ -69,8 +69,6 @@ schema;board-schema:
               type: str
             variants:
               include: variant-schema
-    variants:
-      include: variant-schema
 
 type: map
 mapping:
