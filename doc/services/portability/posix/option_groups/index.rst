@@ -267,7 +267,7 @@ required for error and event handling.
     signal(),
     sigpending(),
     sigprocmask(),yes
-    igsuspend(),
+    sigsuspend(),
     sigwait(),
     strsignal(),yes
 
