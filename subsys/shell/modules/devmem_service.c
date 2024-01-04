@@ -63,21 +63,13 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 				hex_data[data_offset] = value;
 				break;
 			case 16:
-				value = sys_read16(addr + data_offset);
-				if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
-					value = __bswap_16(value);
-				}
-
+				value = sys_le16_to_cpu(sys_read16(addr + data_offset));
 				hex_data[data_offset] = (uint8_t)value;
 				value >>= 8;
 				hex_data[data_offset + 1] = (uint8_t)value;
 				break;
 			case 32:
-				value = sys_read32(addr + data_offset);
-				if (IS_ENABLED(CONFIG_BIG_ENDIAN)) {
-					value = __bswap_32(value);
-				}
-
+				value = sys_le32_to_cpu(sys_read32(addr + data_offset));
 				hex_data[data_offset] = (uint8_t)value;
 				value >>= 8;
 				hex_data[data_offset + 1] = (uint8_t)value;
@@ -192,16 +184,16 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 
 		if (!littleendian) {
 			while (sum > 4) {
-				*data = __bswap_32(*data);
+				*data = BSWAP_32(*data);
 				data++;
 				sum = sum - 4;
 			}
 			if (sum % 4 == 0) {
-				*data = __bswap_32(*data);
+				*data = BSWAP_32(*data);
 			} else if (sum % 4 == 2) {
-				*data = __bswap_16(*data);
+				*data = BSWAP_16(*data);
 			} else if (sum % 4 == 3) {
-				*data = __bswap_24(*data);
+				*data = BSWAP_24(*data);
 			}
 		}
 		return;
