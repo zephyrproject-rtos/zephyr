@@ -1,0 +1,60 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	zephyr,user {
+		clocks = <&syscon MCUX_SYSTEM_CLK>;
+		run-freq = <150000000>;
+		idle-freq = <96000000>;
+	};
+};
+
+&cpus {
+	clock-setpoints {
+		run_setpoint: run-setpoint {
+			compatible = "nxp,lpc55xxx-setpoint";
+			#setpoint-cells = <0>;
+			/* Enable FRO12M and 16MHz crystal clock sources */
+			fro-12m-enable;
+			xtal32m-freq = <16000000>;
+			clk-in-en-enable;
+			/* Source main PLL from 16MHz crystal */
+			pll0clksel = <PLL0CLKSEL_CLK_IN_EN>;
+			pll0-directo = <PLL0_DIRECTO_PLL0_PDEC>;
+			pll0-bypass = <PLL0_BYPASS_PLL0_DIRECTO>;
+			/* Setup PLL0 for 150MHz operation ((16 * 150) / 8 / 2) */
+			pll0 = <LPC_CLOCK_PLL(8, 150, 2, 0, 53, 31)>;
+			/* Source main clock from PLL0 */
+			mainclkselb = <MAINCLKSELB_PLL0_BYPASS>;
+			/* Source UART clock from FROHFDIV */
+			fcclksel0 = <FCCLKSEL0_FROHFDIV>;
+			/* FROHF divided by 2, final clock output will be 48MHz */
+			frohfdiv = <2>;
+			/* AHB clock divided by 1, final clock output will be 150MHz */
+			ahbclkdiv = <1>;
+		};
+		idle_setpoint: idle-setpoint {
+			compatible = "nxp,lpc55xxx-setpoint";
+			#setpoint-cells = <0>;
+			/* Enable FRO12M and FROHF clock sources */
+			fro-12m-enable;
+			fro-hf-enable;
+			/* Source main clock from fro-hf */
+			mainclksela = <MAINCLKSELA_FRO_HF>;
+			mainclkselb = <MAINCLKSELB_MAINCLKSELA>;
+			/* Source UART clock from FRO12M */
+			fcclksel0 = <FCCLKSEL0_FRO_12M>;
+			/* AHB clock divided by 1, final clock output will be 96MHz */
+			ahbclkdiv = <1>;
+		};
+	};
+};
+
+&syscon {
+	setpoints = <&run_setpoint &idle_setpoint>;
+	setpoint-names = "run", "idle";
+};

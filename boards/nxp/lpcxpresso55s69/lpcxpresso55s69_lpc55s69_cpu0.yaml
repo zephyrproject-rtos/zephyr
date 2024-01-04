@@ -20,6 +20,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - counter
+  - clock
   - gpio
   - i2c
   - i2s

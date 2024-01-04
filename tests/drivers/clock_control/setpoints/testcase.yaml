@@ -1,0 +1,8 @@
+tests:
+  drivers.clock.clock_control.setpoints:
+    tags:
+      - drivers
+      - clock
+    depends_on: clock
+    integration_platforms:
+      - lpcxpresso55s69/lpc55s69/cpu0
