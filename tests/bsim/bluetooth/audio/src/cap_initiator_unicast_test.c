@@ -918,7 +918,7 @@ static void test_cap_initiator_unicast_timeout(void)
 	PASS("CAP initiator unicast timeout passed\n");
 }
 
-const struct named_lc3_preset *cap_get_named_preset(const char *preset_arg)
+static const struct named_lc3_preset *cap_get_named_preset(const char *preset_arg)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(lc3_unicast_presets); i++) {
 		if (strcmp(preset_arg, lc3_unicast_presets[i].name) == 0) {
