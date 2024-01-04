@@ -546,6 +546,7 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 {
 	struct modem_cmux *cmux = dlci->cmux;
+	uint32_t written;
 
 	if (dlci->state != MODEM_CMUX_DLCI_STATE_OPEN) {
 		LOG_DBG("Unexpected UIH frame");
@@ -553,8 +554,11 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	}
 
 	k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
-	ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
+	written = ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
 	k_mutex_unlock(&dlci->receive_rb_lock);
+	if (written != cmux->frame.data_len) {
+		LOG_WRN("DLCI %u receive buffer overrun", dlci->dlci_address);
+	}
 	modem_pipe_notify_receive_ready(&dlci->pipe);
 }
 
