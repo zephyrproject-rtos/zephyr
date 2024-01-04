@@ -150,6 +150,52 @@
 		    (default_value))
 
 /**
+ * @brief Convert a devicetree GPIO phandle+specifier to GPIOTE instance number.
+ *
+ * Some of nRF SoCs may have more instances of GPIOTE.
+ * To handle this, we use the "gpiote-instance" property of the GPIO node.
+ *
+ * This macro converts a devicetree GPIO phandle array value
+ * "<&gpioX pin ...>" to a GPIOTE instance number.
+ *
+ * Examples:
+ *
+ *     &gpiote0 {
+ *             instance = <0>;
+ *     };
+ *
+ *     &gpiote20 {
+ *             instance = <20>;
+ *     };
+ *
+ *     &gpio0 {
+ *             gpiote-instance = <&gpiote0>;
+ *     }
+ *
+ *     &gpio1 {
+ *             gpiote-instance = <&gpiote20>;
+ *     }
+ *
+ *     foo: my-node {
+ *             tx-gpios = <&gpio0 4 ...>;
+ *             rx-gpios = <&gpio0 5 ...>, <&gpio1 5 ...>;
+ *     };
+ *
+ *     NRF_DT_GPIOTE_INST_BY_IDX(DT_NODELABEL(foo), tx_gpios, 0) // = 0
+ *     NRF_DT_GPIOTE_INST_BY_IDX(DT_NODELABEL(foo), rx_gpios, 1) // = 20
+ */
+#define NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, idx)			\
+	DT_PROP(DT_PHANDLE(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx),	\
+			   gpiote_instance),				\
+		instance)
+
+/**
+ * @brief Equivalent to NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, 0)
+ */
+#define NRF_DT_GPIOTE_INST(node_id, prop)				\
+	NRF_DT_GPIOTE_INST_BY_IDX(node_id, prop, 0)
+
+/**
  * Error out the build if 'prop' is set on node 'node_id' and
  * DT_GPIO_CTLR(node_id, prop) is not an SoC GPIO controller,
  * i.e. a node with compatible "nordic,nrf-gpio".
