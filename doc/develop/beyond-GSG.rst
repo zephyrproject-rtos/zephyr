@@ -279,6 +279,13 @@ system using `QEMU <https://www.qemu.org/>`_ when targeting either
 the x86 or ARM Cortex-M3 architectures. (QEMU is included with the Zephyr
 SDK installation.)
 
+On Windows, you need to install QEMU manually from
+`Download QEMU <https://www.qemu.org/download/#windows>`_. After installation,
+add path to QEMU installation folder to PATH environment variable.
+To enable QEMU in Test Runner (Twister) on Windows,
+:ref:`set the environment variable <env_vars>`
+``QEMU_BIN_PATH`` to the path of QEMU installation folder.
+
 For example, you can build and run the :ref:`hello_world` sample using
 the x86 emulation board configuration (``qemu_x86``), with:
 

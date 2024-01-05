@@ -1060,10 +1060,13 @@ for additional information on how to flash your board.
 Running in an Emulator
 ======================
 
-The kernel has built-in emulator support for QEMU (on Linux/macOS only, this
-is not yet supported on Windows). It allows you to run and test an application
-virtually, before (or in lieu of) loading and running it on actual target
-hardware. Follow these instructions to run an application via QEMU:
+Zephyr has built-in emulator support for QEMU.
+It allows you to run and test an application virtually, before
+(or in lieu of) loading and running it on actual target hardware.
+
+Check out :ref:`beyond-GSG` for additional steps needed on Windows.
+
+Follow these instructions to run an application via QEMU:
 
 #. Build your application for one of the QEMU boards, as described in
    :ref:`build_an_application`.
