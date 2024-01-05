@@ -160,8 +160,6 @@ static void finish_transaction(const struct device *dev, int error)
 	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
 
-	spi_context_cs_control(ctx, false);
-
 	LOG_DBG("Transaction finished with status %d", error);
 
 	spi_context_complete(ctx, dev, error);
@@ -275,6 +273,8 @@ static int transceive(const struct device *dev,
 			/* Clean up the driver state. */
 			k_sem_reset(&dev_data->ctx.sync);
 		}
+
+		spi_context_cs_control(&dev_data->ctx, false);
 	}
 
 	spi_context_release(&dev_data->ctx, error);
