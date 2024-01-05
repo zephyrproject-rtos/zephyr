@@ -32,6 +32,7 @@ child-binding:
         - output-enable
         - power-source
         - drive-strength
+        - low-power-enable
 
   properties:
     pinmux:

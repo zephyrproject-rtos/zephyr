@@ -644,3 +644,800 @@
 		};
 	};
 };
+
+/* Low power modes pin state,
+ * user shall set related configurations like:
+ * pullup/pulldown, out/in...
+ * incase of their needs on the their target board
+ */
+&pinctrl {
+	/omit-if-no-ref/ spixf_ss0_p0_0_sleep: spixf_ss0_p0_0_sleep {
+		pinmux = <MAX32_PINMUX(0, 0, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_cts_p0_0_sleep: uart2_cts_p0_0_sleep {
+		pinmux = <MAX32_PINMUX(0, 0, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0_p0_0_sleep: tmr0_p0_0_sleep {
+		pinmux = <MAX32_PINMUX(0, 0, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixf_mosi_p0_1_sleep: spixf_mosi_p0_1_sleep {
+		pinmux = <MAX32_PINMUX(0, 1, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_tx_p0_1_sleep: uart2_tx_p0_1_sleep {
+		pinmux = <MAX32_PINMUX(0, 1, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1_p0_1_sleep: tmr1_p0_1_sleep {
+		pinmux = <MAX32_PINMUX(0, 1, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixf_miso_p0_2_sleep: spixf_miso_p0_2_sleep {
+		pinmux = <MAX32_PINMUX(0, 2, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_rx_p0_2_sleep: uart2_rx_p0_2_sleep {
+		pinmux = <MAX32_PINMUX(0, 2, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr2_p0_2_sleep: tmr2_p0_2_sleep {
+		pinmux = <MAX32_PINMUX(0, 2, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixf_sck_p0_3_sleep: spixf_sck_p0_3_sleep {
+		pinmux = <MAX32_PINMUX(0, 3, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_rts_p0_3_sleep: uart2_rts_p0_3_sleep {
+		pinmux = <MAX32_PINMUX(0, 3, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3_p0_3_sleep: tmr3_p0_3_sleep {
+		pinmux = <MAX32_PINMUX(0, 3, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixf_sdio2_p0_4_sleep: spixf_sdio2_p0_4_sleep {
+		pinmux = <MAX32_PINMUX(0, 4, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_io_p0_4_sleep: owm_io_p0_4_sleep {
+		pinmux = <MAX32_PINMUX(0, 4, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4_p0_4_sleep: tmr4_p0_4_sleep {
+		pinmux = <MAX32_PINMUX(0, 4, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixf_sdio3_p0_5_sleep: spixf_sdio3_p0_5_sleep {
+		pinmux = <MAX32_PINMUX(0, 5, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/owm_pe_p0_5_sleep: owm_pe_p0_5_sleep {
+		pinmux = <MAX32_PINMUX(0, 5, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5_p0_5_sleep: tmr5_p0_5_sleep {
+		pinmux = <MAX32_PINMUX(0, 5, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i2c0_scl_p0_6_sleep: i2c0_scl_p0_6_sleep {
+		pinmux = <MAX32_PINMUX(0, 6, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ swdio2_p0_6_sleep: swdio2_p0_6_sleep {
+		pinmux = <MAX32_PINMUX(0, 6, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0_p0_6_sleep: tmr0_p0_6_sleep {
+		pinmux = <MAX32_PINMUX(0, 6, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i2c0_sda_p0_7_sleep: i2c0_sda_p0_7_sleep {
+		pinmux = <MAX32_PINMUX(0, 7, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ swclk2_p0_7_sleep: swclck2_p0_7_sleep {
+		pinmux = <MAX32_PINMUX(0, 7, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1_p0_7_sleep: tmr1_p0_7_sleep {
+		pinmux = <MAX32_PINMUX(0, 7, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixr_ss0_p0_8_sleep: spixr_ss0_p0_8_sleep {
+		pinmux = <MAX32_PINMUX(0, 8, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss0_p0_8_sleep: spi0_ss0_p0_8_sleep {
+		pinmux = <MAX32_PINMUX(0, 8, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_cts_p0_8_sleep: uart0_cts_p0_8_sleep {
+		pinmux = <MAX32_PINMUX(0, 8, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr2_p0_8_sleep: tmr2_p0_8_sleep {
+		pinmux = <MAX32_PINMUX(0, 8, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixr_mosi_p0_9_sleep: spixr_mosi_p0_9_sleep {
+		pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_mosi_p0_9_sleep: spi0_mosi_p0_9_sleep {
+		pinmux = <MAX32_PINMUX(0, 9, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_tx_p0_9_sleep: uart0_tx_p0_9_sleep {
+		pinmux = <MAX32_PINMUX(0, 9, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3_p0_9_sleep: tmr3_p0_9_sleep {
+		pinmux = <MAX32_PINMUX(0, 9, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixr_miso_p0_10_sleep: spixr_miso_p0_10_sleep {
+		pinmux = <MAX32_PINMUX(0, 10, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_miso_p0_10_sleep: spi0_miso_p0_10_sleep {
+		pinmux = <MAX32_PINMUX(0, 10, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_rx_p0_10_sleep: uart0_rx_p0_10_sleep {
+		pinmux = <MAX32_PINMUX(0, 10, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4_p0_10_sleep: tmr4_p0_10_sleep {
+		pinmux = <MAX32_PINMUX(0, 10, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixr_sck_p0_11_sleep: spixr_sck_p0_11_sleep {
+		pinmux = <MAX32_PINMUX(0, 11, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sck_p0_11_sleep: spi0_sck_p0_11_sleep {
+		pinmux = <MAX32_PINMUX(0, 11, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_rts_p0_11_sleep: uart0_rts_p0_11_sleep {
+		pinmux = <MAX32_PINMUX(0, 11, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5_p0_11_sleep: tmr5_p0_11_sleep {
+		pinmux = <MAX32_PINMUX(0, 11, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixr_sdio2_p0_12_sleep: spixr_sdio2_p0_12_sleep {
+		pinmux = <MAX32_PINMUX(0, 12, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sdio2_p0_12_sleep: spi0_sdio2_p0_12_sleep {
+		pinmux = <MAX32_PINMUX(0, 12, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_io_p0_12_sleep: owm_io_p0_12_sleep {
+		pinmux = <MAX32_PINMUX(0, 12, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0_p0_12_sleep: tmr0_p0_12_sleep {
+		pinmux = <MAX32_PINMUX(0, 12, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spixr_sdio3_p0_13_sleep: spixr_sdio3_p0_13_sleep {
+		pinmux = <MAX32_PINMUX(0, 13, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sdio3_p0_13_sleep: spi0_sdio3_p0_13_sleep {
+		pinmux = <MAX32_PINMUX(0, 13, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_pe_p0_13_sleep: owm_pe_p0_13_sleep {
+		pinmux = <MAX32_PINMUX(0, 13, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1_p0_13_sleep: tmr1_p0_13_sleep {
+		pinmux = <MAX32_PINMUX(0, 13, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i2c1_scl_p0_14_sleep: i2c1_scl_p0_14_sleep {
+		pinmux = <MAX32_PINMUX(0, 14, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss1_p0_14_sleep: spi0_ss1_p0_14_sleep {
+		pinmux = <MAX32_PINMUX(0, 14, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr2_p0_14_sleep: tmr2_p0_14_sleep {
+		pinmux = <MAX32_PINMUX(0, 14, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i2c1_sda_p0_15_sleep: i2c1_sda_p0_15_sleep {
+		pinmux = <MAX32_PINMUX(0, 15, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss2_p0_15_sleep: spi0_ss2_p0_15_sleep {
+		pinmux = <MAX32_PINMUX(0, 15, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3_p0_15_sleep: tmr3_p0_15_sleep {
+		pinmux = <MAX32_PINMUX(0, 15, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain0n_p0_16_sleep: ain0n_p0_16_sleep {
+		pinmux = <MAX32_PINMUX(0, 16, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_ss0_p0_16_sleep: spi1_ss0_p0_16_sleep {
+		pinmux = <MAX32_PINMUX(0, 16, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_io_p0_16_sleep: owm_io_p0_16_sleep {
+		pinmux = <MAX32_PINMUX(0, 16, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4_p0_16_sleep: tmr4_p0_16_sleep {
+		pinmux = <MAX32_PINMUX(0, 16, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain0p_p0_17_sleep: ain0p_p0_17_sleep {
+		pinmux = <MAX32_PINMUX(0, 17, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_mosi_p0_17_sleep: spi1_mosi_p0_17_sleep {
+		pinmux = <MAX32_PINMUX(0, 17, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_pe_p0_17_sleep: owm_pe_p0_17_sleep {
+		pinmux = <MAX32_PINMUX(0, 17, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5_p0_17_sleep: tmr5_p0_17_sleep {
+		pinmux = <MAX32_PINMUX(0, 17, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain1n_p0_18_sleep: ain1n_p0_18_sleep {
+		pinmux = <MAX32_PINMUX(0, 18, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_miso_p0_18_sleep: spi1_miso_p0_18_sleep {
+		pinmux = <MAX32_PINMUX(0, 18, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0_p0_18_sleep: tmr0_p0_18_sleep {
+		pinmux = <MAX32_PINMUX(0, 18, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain1p_p0_19_sleep: ain1p_p0_19_sleep {
+		pinmux = <MAX32_PINMUX(0, 19, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_sck_p0_19_sleep: spi1_sck_p0_19_sleep {
+		pinmux = <MAX32_PINMUX(0, 19, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1_p0_19_sleep: tmr1_p0_19_sleep {
+		pinmux = <MAX32_PINMUX(0, 19, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain2n_p0_20_sleep: ain2n_p0_20_sleep {
+		pinmux = <MAX32_PINMUX(0, 20, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_sdio2_p0_20_sleep: spi1_sdio2_p0_20_sleep {
+		pinmux = <MAX32_PINMUX(0, 20, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_rx_p0_20_sleep: uart1_rx_p0_20_sleep {
+		pinmux = <MAX32_PINMUX(0, 20, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr2_p0_20_sleep: tmr2_p0_20_sleep {
+		pinmux = <MAX32_PINMUX(0, 20, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain2p_p0_21_sleep: ain2p_p0_21_sleep {
+		pinmux = <MAX32_PINMUX(0, 21, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_sdio3_p0_21_sleep: spi1_sdio3_p0_21_sleep {
+		pinmux = <MAX32_PINMUX(0, 21, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_tx_p0_21_sleep: uart1_tx_p0_21_sleep {
+		pinmux = <MAX32_PINMUX(0, 21, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3_p0_21_sleep: tmr3_p0_21_sleep {
+		pinmux = <MAX32_PINMUX(0, 21, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain3n_p0_22_sleep: ain3n_p0_22_sleep {
+		pinmux = <MAX32_PINMUX(0, 22, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_ss1_p0_22_sleep: spi1_ss1_p0_22_sleep {
+		pinmux = <MAX32_PINMUX(0, 22, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_cts_p0_22_sleep: uart1_cts_p0_22_sleep {
+		pinmux = <MAX32_PINMUX(0, 22, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4_p0_22_sleep: tmr4_p0_22_sleep {
+		pinmux = <MAX32_PINMUX(0, 22, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ ain3p_p0_23_sleep: ain3p_p0_23_sleep {
+		pinmux = <MAX32_PINMUX(0, 23, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi1_ss2_p0_23_sleep: spi1_ss2_p0_23_sleep {
+		pinmux = <MAX32_PINMUX(0, 23, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_rts_p0_23_sleep: uart1_rts_p0_23_sleep {
+		pinmux = <MAX32_PINMUX(0, 23, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5_p0_23_sleep: tmr5_p0_23_sleep {
+		pinmux = <MAX32_PINMUX(0, 23, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pcm_lrclk_p0_24_sleep: pcm_lrclk_p0_24_sleep {
+		pinmux = <MAX32_PINMUX(0, 24, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_ss0_p0_24_sleep: spi2_ss0_p0_24_sleep {
+		pinmux = <MAX32_PINMUX(0, 24, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_io_p0_24_sleep: owm_io_p0_24_sleep {
+		pinmux = <MAX32_PINMUX(0, 24, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0_p0_24_sleep: tmr0_p0_24_sleep {
+		pinmux = <MAX32_PINMUX(0, 24, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pcm_dout_p0_25_sleep: pcm_dout_p0_25_sleep {
+		pinmux = <MAX32_PINMUX(0, 25, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_mosi_p0_25_sleep: spi2_mosi_p0_25_sleep {
+		pinmux = <MAX32_PINMUX(0, 25, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ owm_pe_p0_25_sleep: owm_pe_p0_25_sleep {
+		pinmux = <MAX32_PINMUX(0, 25, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1_p0_25_sleep: tmr1_p0_25_sleep {
+		pinmux = <MAX32_PINMUX(0, 25, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pcm_din_p0_26_sleep: pcm_din_p0_26_sleep {
+		pinmux = <MAX32_PINMUX(0, 26, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_miso_p0_26_sleep: spi2_miso_p0_26_sleep {
+		pinmux = <MAX32_PINMUX(0, 26, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr2_p0_26_sleep: tmr2_p0_26_sleep {
+		pinmux = <MAX32_PINMUX(0, 26, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pcm_bclk_p0_27_sleep: pcm_bclk_p0_27_sleep {
+		pinmux = <MAX32_PINMUX(0, 27, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_sck_p0_27_sleep: spi2_sck_p0_27_sleep {
+		pinmux = <MAX32_PINMUX(0, 27, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr3_p0_27_sleep: tmr3_p0_27_sleep {
+		pinmux = <MAX32_PINMUX(0, 27, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pdm_data2_p0_28_sleep: pdm_data2_p0_28_sleep {
+		pinmux = <MAX32_PINMUX(0, 28, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_sdio2_p0_28_sleep: spi2_sdio2_p0_28_sleep {
+		pinmux = <MAX32_PINMUX(0, 28, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_rx_p0_28_sleep: uart2_rx_p0_28_sleep {
+		pinmux = <MAX32_PINMUX(0, 28, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr4_p0_28_sleep: tmr4_p0_28_sleep {
+		pinmux = <MAX32_PINMUX(0, 28, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pdm_data3_p0_29_sleep: pdm_data3_p0_29_sleep {
+		pinmux = <MAX32_PINMUX(0, 29, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_sdio3_p0_29_sleep: spi2_sdio3_p0_29_sleep {
+		pinmux = <MAX32_PINMUX(0, 29, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_tx_p0_29_sleep: uart2_tx_p0_29_sleep {
+		pinmux = <MAX32_PINMUX(0, 29, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr5_p0_29_sleep: tmr5_p0_29_sleep {
+		pinmux = <MAX32_PINMUX(0, 29, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pdm_rx_clk_p0_30_sleep: pdm_rx_clk_p0_30_sleep {
+		pinmux = <MAX32_PINMUX(0, 30, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_ss1_p0_30_sleep: spi2_ss1_p0_30_sleep {
+		pinmux = <MAX32_PINMUX(0, 30, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_cts_p0_30_sleep: uart2_cts_p0_30_sleep {
+		pinmux = <MAX32_PINMUX(0, 30, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr0_p0_30_sleep: tmr0_p0_30_sleep {
+		pinmux = <MAX32_PINMUX(0, 30, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pdm_mclk_p0_31_sleep: pdm_mclk_p0_31_sleep {
+		pinmux = <MAX32_PINMUX(0, 31, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi2_ss2_p0_31_sleep: spi2_ss2_p0_31_sleep {
+		pinmux = <MAX32_PINMUX(0, 31, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart2_rts_p0_31_sleep: uart2_rts_p0_31_sleep {
+		pinmux = <MAX32_PINMUX(0, 31, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ tmr1_p0_31_sleep: tmr1_p0_31_sleep {
+		pinmux = <MAX32_PINMUX(0, 31, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_dat3_p1_0_sleep: sdhc_dat3_p1_0_sleep {
+		pinmux = <MAX32_PINMUX(1, 0, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdma_tms_p1_0_sleep: sdma_tms_p1_0_sleep {
+		pinmux = <MAX32_PINMUX(1, 0, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt0_p1_0_sleep: pt0_p1_0_sleep {
+		pinmux = <MAX32_PINMUX(1, 0, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_cmd_p1_1_sleep: sdhc_cmd_p1_1_sleep {
+		pinmux = <MAX32_PINMUX(1, 1, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdma_tdo_p1_1_sleep: sdma_tdo_p1_1_sleep {
+		pinmux = <MAX32_PINMUX(1, 1, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt1_p1_1_sleep: pt1_p1_1_sleep {
+		pinmux = <MAX32_PINMUX(1, 1, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_dat0_p1_2_sleep: sdhc_dat0_p1_2_sleep {
+		pinmux = <MAX32_PINMUX(1, 2, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdma_tdi_p1_2_sleep: sdma_tdi_p1_2_sleep {
+		pinmux = <MAX32_PINMUX(1, 2, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt2_p1_2_sleep: pt2_p1_2_sleep {
+		pinmux = <MAX32_PINMUX(1, 2, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_clk_p1_3_sleep: sdhc_clk_p1_3_sleep {
+		pinmux = <MAX32_PINMUX(1, 3, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdma_tck_p1_3_sleep: sdma_tck_p1_3_sleep {
+		pinmux = <MAX32_PINMUX(1, 3, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt3_p1_3_sleep: pt3_p1_3_sleep {
+		pinmux = <MAX32_PINMUX(1, 3, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_dat1_p1_4_sleep: sdhc_dat1_p1_4_sleep {
+		pinmux = <MAX32_PINMUX(1, 4, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_rx_p1_4_sleep: uart0_rx_p1_4_sleep {
+		pinmux = <MAX32_PINMUX(1, 4, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt5_p1_4_sleep: pt5_p1_4_sleep {
+		pinmux = <MAX32_PINMUX(1, 4, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_dat2_p1_5_sleep: sdhc_dat2_p1_5_sleep {
+		pinmux = <MAX32_PINMUX(1, 5, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_tx_p1_5_sleep: uart0_tx_p1_5_sleep {
+		pinmux = <MAX32_PINMUX(1, 5, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt5_p1_5_sleep: pt5_p1_5_sleep {
+		pinmux = <MAX32_PINMUX(1, 5, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_wp_p1_6_sleep: sdhc_wp_p1_6_sleep {
+		pinmux = <MAX32_PINMUX(1, 6, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_cts_p1_6_sleep: uart0_cts_p1_6_sleep {
+		pinmux = <MAX32_PINMUX(1, 6, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt6_p1_6_sleep: pt6_p1_6_sleep {
+		pinmux = <MAX32_PINMUX(1, 6, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sdhc_cdn_p1_7_sleep: sdhc_cdn_p1_7_sleep {
+		pinmux = <MAX32_PINMUX(1, 7, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart0_rts_p1_7_sleep: uart0_rts_p1_7_sleep {
+		pinmux = <MAX32_PINMUX(1, 7, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt7_p1_7_sleep: pt7_p1_7_sleep {
+		pinmux = <MAX32_PINMUX(1, 7, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_ss0_p1_8_sleep: spi0_ss0_p1_8_sleep {
+		pinmux = <MAX32_PINMUX(1, 8, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt8_p1_8_sleep: pt8_p1_8_sleep {
+		pinmux = <MAX32_PINMUX(1, 8, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_mosi_p1_9_sleep: spi0_mosi_p1_9_sleep {
+		pinmux = <MAX32_PINMUX(1, 9, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt9_p1_9_sleep: pt9_p1_9_sleep {
+		pinmux = <MAX32_PINMUX(1, 9, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_miso_p1_10_sleep: spi0_miso_p1_10_sleep {
+		pinmux = <MAX32_PINMUX(1, 10, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt10_p1_10_sleep: pt10_p1_10_sleep {
+		pinmux = <MAX32_PINMUX(1, 10, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sck_p1_11_sleep: spi0_sck_p1_11_sleep {
+		pinmux = <MAX32_PINMUX(1, 11, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt11_p1_11_sleep: pt11_p1_11_sleep {
+		pinmux = <MAX32_PINMUX(1, 11, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sdio2_p1_12_sleep: spi0_sdio2_p1_12_sleep {
+		pinmux = <MAX32_PINMUX(1, 12, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_rx_p1_12_sleep: uart1_rx_p1_12_sleep {
+		pinmux = <MAX32_PINMUX(1, 12, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt12_p1_12_sleep: pt12_p1_12_sleep {
+		pinmux = <MAX32_PINMUX(1, 12, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ spi0_sdio3_p1_13_sleep: spi0_sdio3_p1_13_sleep {
+		pinmux = <MAX32_PINMUX(1, 13, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_tx_p1_13_sleep: uart1_tx_p1_13_sleep {
+		pinmux = <MAX32_PINMUX(1, 13, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt13_p1_13_sleep: pt13_p1_13_sleep {
+		pinmux = <MAX32_PINMUX(1, 13, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i2c2_scl_p1_14_sleep: i2c2_scl_p1_14_sleep {
+		pinmux = <MAX32_PINMUX(1, 14, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_cts_p1_14_sleep: uart1_cts_p1_14_sleep {
+		pinmux = <MAX32_PINMUX(1, 14, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt14_p1_14_sleep: pt14_p1_14_sleep {
+		pinmux = <MAX32_PINMUX(1, 14, AF4)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ i2c2_sda_p1_15_sleep: i2c2_sda_p1_15_sleep {
+		pinmux = <MAX32_PINMUX(1, 15, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ uart1_rts_p1_15_sleep: uart1_rts_p1_15_sleep {
+		pinmux = <MAX32_PINMUX(1, 15, AF3)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ pt15_p1_15_sleep: pt15_p1_15_sleep {
+		pinmux = <MAX32_PINMUX(1, 15, AF4)>;
+		low-power-enable;
+	};
+};
