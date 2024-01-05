@@ -137,6 +137,19 @@ Connections and IOs
 | DIO30 | REF_SW_CTRL2 | Antenna mux SubG enable             |
 +-------+--------------+-------------------------------------+
 
+System requirements
+===================
+
+Prerequisites
+-------------
+
+BeagleConnect Freedom requires `CC1352 Flasher <https://pypi.org/project/cc1352-flasher/>`_ for
+flashing Zephyr firmware using ``west flash``.
+
+.. code-block:: console
+
+   pip3 install cc1352-flasher
+
 References
 **********
 
