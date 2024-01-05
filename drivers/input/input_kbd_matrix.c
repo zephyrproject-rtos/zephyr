@@ -88,6 +88,11 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 	kbd_row_t key_event = 0U;
 
 	for (int col = 0; col < cfg->col_size; col++) {
+		if (cfg->actual_key_mask != NULL &&
+		    cfg->actual_key_mask[col] == 0) {
+			continue;
+		}
+
 		input_kbd_matrix_drive_column(dev, col);
 
 		/* Allow the matrix to stabilize before reading it */
