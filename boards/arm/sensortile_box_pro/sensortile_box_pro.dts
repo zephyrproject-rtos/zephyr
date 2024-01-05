@@ -164,7 +164,7 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 
 	bluenrg-lp@0 {
-		compatible = "zephyr,bt-hci-spi", "st,hci-spi-v2";
+		compatible = "st,hci-spi-v2";
 		reg = <0>;
 		irq-gpios = <&gpiod 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		reset-gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
