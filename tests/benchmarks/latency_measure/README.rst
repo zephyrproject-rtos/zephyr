@@ -20,6 +20,9 @@ including:
 * Time it takes to retrieve data from a FIFO/LIFO
 * Time it takes to wait on a FIFO/LIFO (and context switch)
 * Time it takes to wake and switch to a thread waiting on a FIFO/LIFO
+* Time it takes to send and receive events
+* Time it takes to wait for events (and context switch)
+* Time it takes to wake and switch to a thread waiting for events
 * Measure average time to alloc memory from heap then free that memory
 
 When userspace is enabled using the prj_user.conf configuration file, this benchmark will
@@ -59,6 +62,14 @@ Sample output of the benchmark (without userspace enabled)::
         LIFO put.wake+ctx.(K -> K)                          :     670 cycles ,     5584 ns :
         LIFO get.free.blocking.(K -> K)                     :     547 cycles ,     4558 ns :
         LIFO put.alloc.wake+ctx.(K -> K)                    :     670 cycles ,     5583 ns :
+        EVENTS post.immediate.kernel                        :     220 cycles ,     1833 ns :
+        EVENTS set.immediate.kernel                         :     225 cycles ,     1875 ns :
+        EVENTS wait.immediate.kernel                        :     125 cycles ,     1041 ns :
+        EVENTS wait_all.immediate.kernel                    :     145 cycles ,     1208 ns :
+        EVENTS wait.blocking.(K -> K)                       :     594 cycles ,     4958 ns :
+        EVENTS set.wake+ctx.(K -> K)                        :     774 cycles ,     6451 ns :
+        EVENTS wait_all.blocking.(K -> K)                   :     605 cycles ,     5042 ns :
+        EVENTS post.wake+ctx.(K -> K)                       :     785 cycles ,     6542 ns :
         SEMAPHORE give.immediate.kernel                     :     165 cycles ,     1375 ns :
         SEMAPHORE take.immediate.kernel                     :      69 cycles ,      575 ns :
         SEMAPHORE take.blocking.(K -> K)                    :     489 cycles ,     4075 ns :
@@ -135,6 +146,30 @@ Sample output of the benchmark (with userspace enabled)::
         LIFO put.alloc.wake+ctx.(U -> K)                    :    1855 cycles ,    15459 ns :
         LIFO get.free.blocking.(U -> U)                     :    2070 cycles ,    17251 ns :
         LIFO put.alloc.wake+ctx.(U -> U)                    :    2190 cycles ,    18251 ns :
+        EVENTS post.immediate.kernel                        :     285 cycles ,     2375 ns :
+        EVENTS set.immediate.kernel                         :     285 cycles ,     2375 ns :
+        EVENTS wait.immediate.kernel                        :     215 cycles ,     1791 ns :
+        EVENTS wait_all.immediate.kernel                    :     215 cycles ,     1791 ns :
+        EVENTS post.immediate.user                          :     775 cycles ,     6459 ns :
+        EVENTS set.immediate.user                           :     780 cycles ,     6500 ns :
+        EVENTS wait.immediate.user                          :     715 cycles ,     5959 ns :
+        EVENTS wait_all.immediate.user                      :     720 cycles ,     6000 ns :
+        EVENTS wait.blocking.(K -> K)                       :    1212 cycles ,    10108 ns :
+        EVENTS set.wake+ctx.(K -> K)                        :    1450 cycles ,    12084 ns :
+        EVENTS wait_all.blocking.(K -> K)                   :    1260 cycles ,    10500 ns :
+        EVENTS post.wake+ctx.(K -> K)                       :    1490 cycles ,    12417 ns :
+        EVENTS wait.blocking.(U -> K)                       :    1577 cycles ,    13145 ns :
+        EVENTS set.wake+ctx.(K -> U)                        :    1617 cycles ,    13479 ns :
+        EVENTS wait_all.blocking.(U -> K)                   :    1760 cycles ,    14667 ns :
+        EVENTS post.wake+ctx.(K -> U)                       :    1790 cycles ,    14917 ns :
+        EVENTS wait.blocking.(K -> U)                       :    1400 cycles ,    11671 ns :
+        EVENTS set.wake+ctx.(U -> K)                        :    1812 cycles ,    15104 ns :
+        EVENTS wait_all.blocking.(K -> U)                   :    1580 cycles ,    13167 ns :
+        EVENTS post.wake+ctx.(U -> K)                       :    1985 cycles ,    16542 ns :
+        EVENTS wait.blocking.(U -> U)                       :    1765 cycles ,    14709 ns :
+        EVENTS set.wake+ctx.(U -> U)                        :    1979 cycles ,    16499 ns :
+        EVENTS wait_all.blocking.(U -> U)                   :    2080 cycles ,    17334 ns :
+        EVENTS post.wake+ctx.(U -> U)                       :    2285 cycles ,    19043 ns :
         SEMAPHORE give.immediate.kernel                     :     210 cycles ,     1750 ns :
         SEMAPHORE take.immediate.kernel                     :     145 cycles ,     1208 ns :
         SEMAPHORE give.immediate.user                       :     715 cycles ,     5959 ns :
