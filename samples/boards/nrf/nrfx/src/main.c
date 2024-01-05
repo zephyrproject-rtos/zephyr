@@ -18,8 +18,8 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(nrfx_sample, LOG_LEVEL_INF);
 
-#define INPUT_PIN	DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
-#define OUTPUT_PIN	DT_GPIO_PIN(DT_ALIAS(led0), gpios)
+#define INPUT_PIN	NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(sw0), gpios)
+#define OUTPUT_PIN	NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(led0), gpios)
 
 static void button_handler(nrfx_gpiote_pin_t pin,
 			   nrfx_gpiote_trigger_t trigger,
