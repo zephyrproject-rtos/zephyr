@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: paddlelite
+      url-base: https://github.com/hnu-esnl
 
   group-filter: [-babblesim, -optional]
 
@@ -32,6 +34,10 @@ manifest:
     - name: acpica
       revision: 10ae1038e51eb9306f73c3bbcfc4fde954bb9625
       path: modules/lib/acpica
+    - name: paddlelite
+      path: modules/lib/paddlelite
+      revision: b466d11329f333e58248ed81d5a18ce709c2a713
+      remote: paddlelite
     - name: bsim
       repo-path: babblesim-manifest
       revision: 384a091445c57b44ac8cbd18ebd245b47c71db94

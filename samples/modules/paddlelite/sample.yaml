@@ -1,0 +1,13 @@
+sample:
+  description: CNN PaddleLite sample
+  name: paddlelite
+tests:
+  sample.paddlelite:
+    platform_allow: roc_rk3568_pc 
+    build_only: true
+    tags: paddlelite
+    integration_platforms:
+      - roc_rk3568_pc
+    modules:
+      - paddlelite
+ 
