@@ -178,7 +178,7 @@ team to ensure that static analysis defects opened during a release
 cycle are properly addressed. The team has the following rights and
 responsibilities:
 
-* Right to revert any change in a static analysis tool (e.g: Coverity)
+* Right to revert any triage in a static analysis tool (e.g: Coverity)
   that does not follow the project expectations.
 * Responsibility to inform code owners about improper classifications.
 * Responsibility to alert TSC if any issues are not adequately addressed by the
