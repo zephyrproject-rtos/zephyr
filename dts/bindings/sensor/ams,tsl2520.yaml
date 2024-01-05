@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TSL2520 series Highly Sensitive ambient light sensor.  See datasheet at
+    https://ams.com/documents/20143/4410897/TSL2520_DS001068_3-00.pdf
+
+compatible: "ams,tsl2520"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the interrupt pin
+
+  sample-time:
+    type: int
+    default: 179
+    description: |
+      ALS measurement time step. Sets the time in steps of 1.388889μs
+      modulator clock. The modulator clock can be divided with MOD_
+      DIVIDER_SELECT in register CFG7. Please observe that SAMPLE_
+      TIME needs to be set in register 0x83 and 0x84 (11-bit wide). It
+      counts from 0-2047 (2048 counts).
+      SAMPLE_TIME =(1/SamplingFreq/1.388889μs)-1
+      Default: 179+1 = 1/4000Hz / 1.388889μs
+      (180 counts as counted 0-179)
+      ALSIntegrationTimeStep = (SAMPLE_TIME+1) x 1.388889μs
+      Default: 250μs = (179+1) x 1.388889μs
+
+  als-nr-samples:
+    type: int
+    default: 38
+    description: |
+      ALS_NR_OF_SAMPLES defines the total measurement time 
+      for ALS atime = (ALS_NR_SAMPLES+1) x (SAMPLE_TIME+1) x 1.388889μs
+  
+  agc-nr-samples:
+    type: int
+    default: 19
+    description: |
+      AGC Number of Samples Sets the time for every AGC measurement
+      and is calculated as: agc_atime = (AGC_NR_SAMPLES+1) x
+      (SAMPLE_TIME+1) x 1.388889μs
+
+  als-gains:
+    type: int
+    default: 128
+    description: |
+      Defines the gain of modulator for the measurement
+      sequencer steps. 
+      The gain is also updated by the AGC, if activated
