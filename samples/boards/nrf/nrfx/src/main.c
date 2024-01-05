@@ -8,11 +8,6 @@
 
 #include <nrfx_gpiote.h>
 #include <helpers/nrfx_gppi.h>
-#if defined(DPPI_PRESENT)
-#include <nrfx_dppi.h>
-#else
-#include <nrfx_ppi.h>
-#endif
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
