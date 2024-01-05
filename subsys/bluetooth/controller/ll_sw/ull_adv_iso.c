@@ -469,7 +469,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
-					lll_adv_iso->nse;
+					    lll_adv_iso->num_bis;
 	} else {
 		/* Sequential Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
