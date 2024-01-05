@@ -8,8 +8,8 @@ identifier: mimx8mm_phyboard_polis
 name: Phyboard Polis i.MX8M Mini
 type: mcu
 arch: arm
-ram: 32
-flash: 32
+ram: 128
+flash: 128
 toolchain:
   - zephyr
   - gnuarmemb

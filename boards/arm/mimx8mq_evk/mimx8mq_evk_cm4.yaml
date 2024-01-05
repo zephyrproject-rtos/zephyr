@@ -8,8 +8,8 @@ identifier: mimx8mq_evk_cm4
 name: NXP i.MX8MQ EVK CM4
 type: mcu
 arch: arm
-ram: 32
-flash: 32
+ram: 128
+flash: 128
 toolchain:
   - zephyr
   - gnuarmemb
