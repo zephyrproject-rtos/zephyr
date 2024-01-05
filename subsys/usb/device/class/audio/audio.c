@@ -87,7 +87,7 @@ struct dev##_descriptor_##i dev##_desc_##i = {				      \
 	.as_interface_alt_0 = INIT_STD_IF(USB_AUDIO_AUDIOSTREAMING, 1, 0, 0), \
 	.as_interface_alt_1 = INIT_STD_IF(USB_AUDIO_AUDIOSTREAMING, 1, 1, 1), \
 	.as_cs_interface = INIT_AS_GENERAL(link),			      \
-	.format = INIT_AS_FORMAT_I(CH_CNT(dev, i), GET_RES(dev, i)),	      \
+	.format = INIT_AS_FORMAT_I(CH_CNT(dev, i), GET_RES(dev, i), GET_RATE(dev, i)), \
 	.std_ep = INIT_STD_AS_AD_EP(dev, i, addr),			      \
 	.cs_ep = INIT_CS_AS_AD_EP,					      \
 };									      \
@@ -133,7 +133,8 @@ struct dev##_descriptor_##i dev##_desc_##i = {				  \
 						1, 1, 1),		  \
 		.as_cs_interface_0 = INIT_AS_GENERAL(id+2),		  \
 		.format_0 = INIT_AS_FORMAT_I(CH_CNT(dev##_MIC, i),	  \
-					     GET_RES(dev##_MIC, i)),	  \
+					     GET_RES(dev##_MIC, i),	  \
+					     GET_RATE(dev##_MIC, i)),	  \
 		.std_ep_0 = INIT_STD_AS_AD_EP(dev##_MIC, i,		  \
 						   AUTO_EP_IN),		  \
 		.cs_ep_0 = INIT_CS_AS_AD_EP,				  \
@@ -143,7 +144,8 @@ struct dev##_descriptor_##i dev##_desc_##i = {				  \
 						2, 1, 1),		  \
 		.as_cs_interface_1 = INIT_AS_GENERAL(id+3),		  \
 		.format_1 = INIT_AS_FORMAT_I(CH_CNT(dev##_HP, i),	  \
-					     GET_RES(dev##_HP, i)),	  \
+					     GET_RES(dev##_HP, i),	  \
+					     GET_RATE(dev##_HP, i)),	  \
 		.std_ep_1 = INIT_STD_AS_AD_EP(dev##_HP, i,		  \
 						   AUTO_EP_OUT),	  \
 		.cs_ep_1 = INIT_CS_AS_AD_EP,				  \
