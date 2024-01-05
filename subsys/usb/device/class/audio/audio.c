@@ -919,6 +919,7 @@ size_t usb_audio_get_in_frame_size(const struct device *dev)
 	return audio_dev_data->in_frame_size;
 }
 
+#if (HEADPHONES_DEVICE_COUNT > 0 || HEADSET_DEVICE_COUNT > 0)
 static void audio_receive_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 {
 	struct usb_audio_dev_data *audio_dev_data;
@@ -970,6 +971,7 @@ static void audio_receive_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 						      buffer, ret_bytes);
 	}
 }
+#endif /* #if (HEADPHONES_DEVICE_COUNT > 0 || HEADSET_DEVICE_COUNT > 0) */
 
 void usb_audio_register(const struct device *dev,
 			const struct usb_audio_ops *ops)
