@@ -21,9 +21,8 @@ In Zephyr, each individual PPP link is modelled as a network interface. This
 is similar to how Linux implements PPP.
 
 PPP support must be enabled at compile time by setting option
-:kconfig:option:`CONFIG_NET_PPP` and :kconfig:option:`CONFIG_NET_L2_PPP`.
-The PPP support in Zephyr 2.0 is still experimental and the implementation
-supports only these protocols:
+:kconfig:option:`CONFIG_NET_L2_PPP`.
+The PPP implementation supports only these protocols:
 
 * LCP (Link Control Protocol,
   `RFC1661 <https://tools.ietf.org/html/rfc1661>`__)
@@ -34,9 +33,8 @@ supports only these protocols:
 * IPV6CP (IPv6 Control Protocol,
   `RFC5072 <https://tools.ietf.org/html/rfc5072>`__)
 
-See also the :zephyr_file:`samples/net/sockets/echo_server/overlay-ppp.conf`
-file for configuration option examples.
-For using PPP with GSM modem, see :ref:`gsm_modem` for additional information.
+For using PPP with a cellular modem, see :zephyr:code-sample:`cellular-modem` sample
+for additional information.
 
 Testing
 *******
