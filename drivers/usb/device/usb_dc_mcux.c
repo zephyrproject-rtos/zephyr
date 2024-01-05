@@ -910,6 +910,9 @@ static void usb_mcux_thread_main(void *arg1, void *arg2, void *arg3)
 		case kUSB_DeviceNotifyResume:
 			dev_state.status_cb(USB_DC_RESUME, NULL);
 			break;
+		case kUSB_DeviceNotifySOF:
+			dev_state.status_cb(USB_DC_SOF, NULL);
+			break;
 		default:
 			ep_abs_idx = EP_ABS_IDX(msg.code);
 
