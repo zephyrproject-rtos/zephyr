@@ -8,6 +8,7 @@
 #define ZEPHYR_LLEXT_SYMBOL_H
 
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/toolchain.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -78,8 +79,9 @@ struct llext_symtable {
 		.name = STRINGIFY(x), .addr = &x,				\
 	}
 
-#define LL_EXTENSION_SYMBOL(x) struct llext_symbol __attribute__((section(".exported_sym"), used)) \
-							symbol_##x = {STRINGIFY(x), &x}
+#define LL_EXTENSION_SYMBOL(x)							\
+	struct llext_symbol Z_GENERIC_SECTION(".exported_sym") __used		\
+		symbol_##x = {STRINGIFY(x), &x}
 
 /**
  * @brief Export a system call to a table of symbols
