@@ -756,11 +756,59 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	return z_device_is_ready(dev);
 }
 
+#ifdef CONFIG_DEVICE_DEFER_INIT
+/**
+ * @brief Initialize a device.
+ *
+ * A device whose initialization was deferred needs to be initialized manually
+ * via this call.
+ *
+ * @param dev device to be initialized.
+ *
+ * @retval -ENOENT If device was not found
+ * @retval -errno For other errors.
+ */
+__syscall int device_init(const struct device *dev);
+
+/**
+ * @brief Possible results for callback called before device initialization.
+ */
+enum device_before_init_result {
+	DEVICE_INIT,
+	DEVICE_DEFER_INIT
+};
+
+/**
+ * @brief Callback function of device_before_init_register_callback
+ */
+typedef enum device_before_init_result (*device_before_init_cb)(const struct device *dev);
+
+/**
+ * @brief Register a callback called before each device initialization.
+ *
+ *  The callback should return DEVICE_INIT to proceed with normal device
+ *  initialization or DEVICE_DEFER_INIT to not initialize it. Deferred
+ *  devices need to be manually initializad via device_init().
+ *
+ *  @param callback callback function to be called before each device
+ *  initialization
+ */
+#define DEVICE_BEFORE_INIT_CALLBACK(callback) \
+	STRUCT_SECTION_ITERABLE(z_device_before_init, _z_device_before_init##callback) = \
+				{.cb = callback}
+#endif /* CONFIG_DEVICE_DEFER_INIT */
+
 /**
  * @}
  */
 
 /** @cond INTERNAL_HIDDEN */
+
+#ifdef CONFIG_DEVICE_DEFER_INIT
+struct z_device_before_init {
+	device_before_init_cb cb;
+};
+#endif
 
 /**
  * @brief Synthesize a unique name for the device state associated with
@@ -1017,7 +1065,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 	Z_DEVICE_BASE_DEFINE(node_id, dev_id, name, pm, data, config, level,   \
 			     prio, api, state, Z_DEVICE_DEPS_NAME(dev_id));    \
                                                                                \
-	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio)
+	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, init_fn, level, prio);
 
 /**
  * @brief Declare a device for each status "okay" devicetree node.

@@ -22,6 +22,10 @@
 
 	ITERABLE_SECTION_ROM_NUMERIC(device, 4)
 
+#ifdef CONFIG_DEVICE_DEFER_INIT
+	ITERABLE_SECTION_ROM(z_device_before_init, 4)
+#endif
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SHARED_INTERRUPTS)
 	/* since z_shared_isr() is not referenced anywhere when
 	 * zephyr_pre0.elf is built, the linker will end up dropping it.
