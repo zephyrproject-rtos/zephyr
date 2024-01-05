@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,18 +23,20 @@
 #define CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_GAME)
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 
-#define GMAP_AC_MAX_CONN   2U
-#define GMAP_AC_MAX_SNK    (2U * GMAP_AC_MAX_CONN)
-#define GMAP_AC_MAX_SRC    (2U * GMAP_AC_MAX_CONN)
-#define GMAP_AC_MAX_PAIR   MAX(GMAP_AC_MAX_SNK, GMAP_AC_MAX_SRC)
-#define GMAP_AC_MAX_STREAM (GMAP_AC_MAX_SNK + GMAP_AC_MAX_SRC)
+#define GMAP_BROADCAST_AC_MAX_STREAM 2
+#define GMAP_UNICAST_AC_MAX_CONN     2U
+#define GMAP_UNICAST_AC_MAX_SNK      (2U * GMAP_UNICAST_AC_MAX_CONN)
+#define GMAP_UNICAST_AC_MAX_SRC      (2U * GMAP_UNICAST_AC_MAX_CONN)
+#define GMAP_UNICAST_AC_MAX_PAIR     MAX(GMAP_UNICAST_AC_MAX_SNK, GMAP_UNICAST_AC_MAX_SRC)
+#define GMAP_UNICAST_AC_MAX_STREAM   (GMAP_UNICAST_AC_MAX_SNK + GMAP_UNICAST_AC_MAX_SRC)
 
-#define MAX_CIS_COUNT     2U
+#define MAX_ISO_CHAN_COUNT 2U
 #define ISO_ENQUEUE_COUNT 2U
-#define TOTAL_BUF_NEEDED  (ISO_ENQUEUE_COUNT * MAX_CIS_COUNT)
+#define TOTAL_BUF_NEEDED       (ISO_ENQUEUE_COUNT * MAX_ISO_CHAN_COUNT)
 
-BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
-	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least ISO_ENQUEUE_COUNT * MAX_CIS_COUNT");
+BUILD_ASSERT(
+	CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
+	"CONFIG_BT_ISO_TX_BUF_COUNT should be at least ISO_ENQUEUE_COUNT * MAX_ISO_CHAN_COUNT");
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -42,15 +44,22 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_
 extern enum bst_result_t bst_result;
 static const struct named_lc3_preset *snk_named_preset;
 static const struct named_lc3_preset *src_named_preset;
+static const struct named_lc3_preset *broadcast_named_preset;
 
-struct gmap_ac_param {
+struct gmap_unicast_ac_param {
 	char *name;
 	size_t conn_cnt;
-	size_t snk_cnt[GMAP_AC_MAX_CONN];
-	size_t src_cnt[GMAP_AC_MAX_CONN];
+	size_t snk_cnt[GMAP_UNICAST_AC_MAX_CONN];
+	size_t src_cnt[GMAP_UNICAST_AC_MAX_CONN];
 	size_t snk_chan_cnt;
 	const struct named_lc3_preset *snk_named_preset;
 	const struct named_lc3_preset *src_named_preset;
+};
+struct gmap_broadcast_ac_param {
+	char *name;
+	size_t stream_cnt;
+	size_t chan_cnt;
+	const struct named_lc3_preset *named_preset;
 };
 
 static struct named_lc3_preset gmap_unicast_snk_presets[] = {
@@ -80,14 +89,19 @@ static struct named_lc3_preset gmap_broadcast_presets[] = {
 
 struct named_lc3_preset named_preset;
 
-static struct unicast_stream unicast_streams[GMAP_AC_MAX_STREAM];
-static struct bt_bap_ep *sink_eps[GMAP_AC_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct bt_bap_ep *source_eps[GMAP_AC_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
-static struct bt_conn *connected_conns[GMAP_AC_MAX_CONN];
+static struct audio_test_stream broadcast_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static struct unicast_stream unicast_streams[GMAP_UNICAST_AC_MAX_STREAM];
+static struct bt_bap_ep
+	*sink_eps[GMAP_UNICAST_AC_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+static struct bt_bap_ep
+	*source_eps[GMAP_UNICAST_AC_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+static struct bt_conn *connected_conns[GMAP_UNICAST_AC_MAX_CONN];
 static size_t connected_conn_cnt;
 
-static K_SEM_DEFINE(sem_stream_started, 0U, ARRAY_SIZE(unicast_streams));
-static K_SEM_DEFINE(sem_stream_stopped, 0U, ARRAY_SIZE(unicast_streams));
+static K_SEM_DEFINE(sem_stream_started, 0U,
+		    MAX(ARRAY_SIZE(unicast_streams), ARRAY_SIZE(broadcast_streams)));
+static K_SEM_DEFINE(sem_stream_stopped, 0U,
+		    MAX(ARRAY_SIZE(unicast_streams), ARRAY_SIZE(broadcast_streams)));
 
 CREATE_FLAG(flag_cas_discovered);
 CREATE_FLAG(flag_started);
@@ -96,7 +110,6 @@ CREATE_FLAG(flag_stopped);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_source_discovered);
-CREATE_FLAG(flag_stream_stopping);
 CREATE_FLAG(flag_gmap_discovered);
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
@@ -128,47 +141,50 @@ const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_au
 	return NULL;
 }
 
-static void stream_sent_cb(struct bt_bap_stream *stream)
+static void stream_sent_cb(struct bt_bap_stream *bap_stream)
 {
-	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
-	static bool mock_data_initialized;
-	static uint32_t seq_num;
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(bap_stream);
+	struct bt_cap_stream *cap_stream = cap_stream_from_audio_test_stream(test_stream);
 	struct net_buf *buf;
 	int ret;
 
-	if (named_preset.preset.qos.sdu > CONFIG_BT_ISO_TX_MTU) {
-		FAIL("Invalid SDU %u for the MTU: %d\n", named_preset.preset.qos.sdu,
+	if (!test_stream->tx_active) {
+		return;
+	}
+
+	if ((test_stream->tx_cnt % 100U) == 0U) {
+		printk("[%zu]: Stream %p sent with seq_num %u\n", test_stream->tx_cnt, cap_stream,
+		       test_stream->seq_num);
+	}
+
+	if (test_stream->tx_sdu_size > CONFIG_BT_ISO_TX_MTU) {
+		FAIL("Invalid SDU %u for the MTU: %d", test_stream->tx_sdu_size,
 		     CONFIG_BT_ISO_TX_MTU);
 		return;
 	}
 
-	if (TEST_FLAG(flag_stream_stopping)) {
-		return;
-	}
-
-	if (!mock_data_initialized) {
-		for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
-			/* Initialize mock data */
-			mock_data[i] = (uint8_t)i;
-		}
-		mock_data_initialized = true;
-	}
-
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
 	if (buf == NULL) {
-		printk("Could not allocate buffer when sending on %p\n", stream);
+		printk("Could not allocate buffer when sending on %p\n", bap_stream);
 		return;
 	}
 
 	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-	net_buf_add_mem(buf, mock_data, named_preset.preset.qos.sdu);
-	ret = bt_bap_stream_send(stream, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
+	net_buf_add_mem(buf, mock_iso_data, test_stream->tx_sdu_size);
+	ret = bt_cap_stream_send(cap_stream, buf, test_stream->seq_num++, BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
-		/* This will end send on this stream. */
-		printk("Unable to send data on %p: %d\n", stream, ret);
+		/* This will end broadcasting on this stream. */
 		net_buf_unref(buf);
+
+		/* Only fail if tx is active (may fail if we are disabling the stream) */
+		if (test_stream->tx_active) {
+			FAIL("Unable to broadcast data on %p: %d\n", cap_stream, ret);
+		}
+
 		return;
 	}
+
+	test_stream->tx_cnt++;
 }
 
 static void stream_configured_cb(struct bt_bap_stream *stream,
@@ -439,6 +455,11 @@ static void init(void)
 		bt_cap_stream_ops_register(&unicast_streams[i].stream, &stream_ops);
 	}
 
+	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+		bt_cap_stream_ops_register(cap_stream_from_audio_test_stream(&broadcast_streams[i]),
+					   &stream_ops);
+	}
+
 	err = bt_gmap_register(role, features);
 	if (err != 0) {
 		FAIL("Failed to register GMAS (err %d)\n", err);
@@ -574,14 +595,18 @@ static void discover_cas(struct bt_conn *conn)
 	WAIT_FOR_FLAG(flag_cas_discovered);
 }
 
-static int gmap_ac_create_unicast_group(const struct gmap_ac_param *param,
-					struct unicast_stream *snk_uni_streams[], size_t snk_cnt,
-					struct unicast_stream *src_uni_streams[], size_t src_cnt,
-					struct bt_bap_unicast_group **unicast_group)
+static int gmap_unicast_ac_create_unicast_group(const struct gmap_unicast_ac_param *param,
+						struct unicast_stream *snk_uni_streams[],
+						size_t snk_cnt,
+						struct unicast_stream *src_uni_streams[],
+						size_t src_cnt,
+						struct bt_bap_unicast_group **unicast_group)
 {
-	struct bt_bap_unicast_group_stream_param snk_group_stream_params[GMAP_AC_MAX_SNK] = {0};
-	struct bt_bap_unicast_group_stream_param src_group_stream_params[GMAP_AC_MAX_SRC] = {0};
-	struct bt_bap_unicast_group_stream_pair_param pair_params[GMAP_AC_MAX_PAIR] = {0};
+	struct bt_bap_unicast_group_stream_param
+		snk_group_stream_params[GMAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_bap_unicast_group_stream_param
+		src_group_stream_params[GMAP_UNICAST_AC_MAX_SRC] = {0};
+	struct bt_bap_unicast_group_stream_pair_param pair_params[GMAP_UNICAST_AC_MAX_PAIR] = {0};
 	struct bt_bap_unicast_group_param group_param = {0};
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
@@ -628,19 +653,20 @@ static int gmap_ac_create_unicast_group(const struct gmap_ac_param *param,
 	return bt_bap_unicast_group_create(&group_param, unicast_group);
 }
 
-static int gmap_ac_cap_unicast_start(const struct gmap_ac_param *param,
+static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 				     struct unicast_stream *snk_uni_streams[], size_t snk_cnt,
 				     struct unicast_stream *src_uni_streams[], size_t src_cnt,
 				     struct bt_bap_unicast_group *unicast_group)
 {
-	struct bt_cap_unicast_audio_start_stream_param stream_params[GMAP_AC_MAX_STREAM] = {0};
-	struct bt_audio_codec_cfg *snk_codec_cfgs[GMAP_AC_MAX_SNK] = {0};
-	struct bt_audio_codec_cfg *src_codec_cfgs[GMAP_AC_MAX_SRC] = {0};
-	struct bt_cap_stream *snk_cap_streams[GMAP_AC_MAX_SNK] = {0};
-	struct bt_cap_stream *src_cap_streams[GMAP_AC_MAX_SRC] = {0};
+	struct bt_cap_unicast_audio_start_stream_param stream_params[GMAP_UNICAST_AC_MAX_STREAM] = {
+		0};
+	struct bt_audio_codec_cfg *snk_codec_cfgs[GMAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_audio_codec_cfg *src_codec_cfgs[GMAP_UNICAST_AC_MAX_SRC] = {0};
+	struct bt_cap_stream *snk_cap_streams[GMAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_cap_stream *src_cap_streams[GMAP_UNICAST_AC_MAX_SRC] = {0};
 	struct bt_cap_unicast_audio_start_param start_param = {0};
-	struct bt_bap_ep *snk_eps[GMAP_AC_MAX_SNK] = {0};
-	struct bt_bap_ep *src_eps[GMAP_AC_MAX_SRC] = {0};
+	struct bt_bap_ep *snk_eps[GMAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_bap_ep *src_eps[GMAP_UNICAST_AC_MAX_SRC] = {0};
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t stream_cnt = 0U;
@@ -745,17 +771,17 @@ static int gmap_ac_cap_unicast_start(const struct gmap_ac_param *param,
 	return bt_cap_initiator_unicast_audio_start(&start_param, unicast_group);
 }
 
-static int gmap_ac_unicast(const struct gmap_ac_param *param,
+static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 			   struct bt_bap_unicast_group **unicast_group)
 {
 	/* Allocate params large enough for any params, but only use what is required */
-	struct unicast_stream *snk_uni_streams[GMAP_AC_MAX_SNK];
-	struct unicast_stream *src_uni_streams[GMAP_AC_MAX_SRC];
+	struct unicast_stream *snk_uni_streams[GMAP_UNICAST_AC_MAX_SNK];
+	struct unicast_stream *src_uni_streams[GMAP_UNICAST_AC_MAX_SRC];
 	size_t snk_cnt = 0;
 	size_t src_cnt = 0;
 	int err;
 
-	if (param->conn_cnt > GMAP_AC_MAX_CONN) {
+	if (param->conn_cnt > GMAP_UNICAST_AC_MAX_CONN) {
 		FAIL("Invalid conn_cnt: %zu\n", param->conn_cnt);
 
 		return -EINVAL;
@@ -763,13 +789,13 @@ static int gmap_ac_unicast(const struct gmap_ac_param *param,
 
 	for (size_t i = 0; i < param->conn_cnt; i++) {
 		/* Verify conn values */
-		if (param->snk_cnt[i] > GMAP_AC_MAX_SNK) {
+		if (param->snk_cnt[i] > GMAP_UNICAST_AC_MAX_SNK) {
 			FAIL("Invalid conn_snk_cnt[%zu]: %zu\n", i, param->snk_cnt[i]);
 
 			return -EINVAL;
 		}
 
-		if (param->src_cnt[i] > GMAP_AC_MAX_SRC) {
+		if (param->src_cnt[i] > GMAP_UNICAST_AC_MAX_SRC) {
 			FAIL("Invalid conn_src_cnt[%zu]: %zu\n", i, param->src_cnt[i]);
 
 			return -EINVAL;
@@ -806,8 +832,8 @@ static int gmap_ac_unicast(const struct gmap_ac_param *param,
 		copy_unicast_stream_preset(src_uni_streams[i], param->src_named_preset);
 	}
 
-	err = gmap_ac_create_unicast_group(param, snk_uni_streams, snk_cnt, src_uni_streams,
-					   src_cnt, unicast_group);
+	err = gmap_unicast_ac_create_unicast_group(param, snk_uni_streams, snk_cnt, src_uni_streams,
+						   src_cnt, unicast_group);
 	if (err != 0) {
 		FAIL("Failed to create group: %d\n", err);
 
@@ -856,7 +882,7 @@ static void unicast_group_delete(struct bt_bap_unicast_group *unicast_group)
 	}
 }
 
-static void test_ugg(const struct gmap_ac_param *param)
+static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 {
 	struct bt_bap_unicast_group *unicast_group;
 
@@ -864,7 +890,7 @@ static void test_ugg(const struct gmap_ac_param *param)
 	       param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
 	       param->src_named_preset != NULL ? param->src_named_preset->name : "None");
 
-	if (param->conn_cnt > GMAP_AC_MAX_CONN) {
+	if (param->conn_cnt > GMAP_UNICAST_AC_MAX_CONN) {
 		FAIL("Invalid conn_cnt: %zu\n", param->conn_cnt);
 		return;
 	}
@@ -926,9 +952,270 @@ static void test_ugg(const struct gmap_ac_param *param)
 	     param->src_named_preset != NULL ? param->src_named_preset->name : "None");
 }
 
+static void setup_extended_adv(struct bt_le_ext_adv **adv)
+{
+	int err;
+
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	if (err != 0) {
+		FAIL("Unable to create extended advertising set: %d\n", err);
+		return;
+	}
+
+	/* Set periodic advertising parameters */
+	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
+	if (err) {
+		FAIL("Failed to set periodic advertising parameters: %d\n", err);
+		return;
+	}
+}
+
+static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
+				    struct bt_le_ext_adv *adv)
+{
+	/* Broadcast Audio Streaming Endpoint advertising data */
+	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
+	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+	struct bt_data ext_ad;
+	struct bt_data per_ad;
+	uint32_t broadcast_id;
+	int err;
+
+	err = bt_cap_initiator_broadcast_get_id(source, &broadcast_id);
+	if (err != 0) {
+		FAIL("Unable to get broadcast ID: %d\n", err);
+		return;
+	}
+
+	/* Setup extended advertising data */
+	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
+	net_buf_simple_add_le24(&ad_buf, broadcast_id);
+	ext_ad.type = BT_DATA_SVC_DATA16;
+	ext_ad.data_len = ad_buf.len;
+	ext_ad.data = ad_buf.data;
+	err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
+	if (err != 0) {
+		FAIL("Failed to set extended advertising data: %d\n", err);
+		return;
+	}
+
+	/* Setup periodic advertising data */
+	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
+	if (err != 0) {
+		FAIL("Failed to get encoded BASE: %d\n", err);
+		return;
+	}
+
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising data: %d\n", err);
+		return;
+	}
+}
+
+static void start_extended_adv(struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	/* Start extended advertising */
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err) {
+		FAIL("Failed to start extended advertising: %d\n", err);
+		return;
+	}
+
+	/* Enable Periodic Advertising */
+	err = bt_le_per_adv_start(adv);
+	if (err) {
+		FAIL("Failed to enable periodic advertising: %d\n", err);
+		return;
+	}
+}
+
+static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	/* Stop extended advertising */
+	err = bt_le_per_adv_stop(adv);
+	if (err) {
+		FAIL("Failed to stop periodic advertising: %d\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_stop(adv);
+	if (err) {
+		FAIL("Failed to stop extended advertising: %d\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_delete(adv);
+	if (err) {
+		FAIL("Failed to delete extended advertising: %d\n", err);
+		return;
+	}
+}
+
+static void broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
+				  struct bt_le_ext_adv *adv)
+{
+	int err;
+
+	err = bt_cap_initiator_broadcast_audio_start(broadcast_source, adv);
+	if (err != 0) {
+		FAIL("Unable to start broadcast source: %d\n", err);
+		return;
+	}
+
+	printk("Broadcast source created\n");
+}
+
+static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source,
+				 size_t stream_count)
+{
+	int err;
+
+	printk("Stopping broadcast source\n");
+
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
+		broadcast_streams[i].tx_active = false;
+	}
+
+	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+
+	/* Wait for all to be stopped */
+	printk("Waiting for broadcast_streams to be stopped\n");
+	for (size_t i = 0U; i < stream_count; i++) {
+		k_sem_take(&sem_stream_stopped, K_FOREVER);
+	}
+
+	printk("Broadcast source stopped\n");
+}
+
+static void broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
+{
+	int err;
+
+	printk("Deleting broadcast source\n");
+
+	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to stop broadcast source: %d\n", err);
+		return;
+	}
+
+	printk("Broadcast source deleted\n");
+}
+
+static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *param)
+{
+	uint8_t stereo_data[] = {
+		BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+				    BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_LEFT)};
+	uint8_t right_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+						    BT_AUDIO_LOCATION_FRONT_RIGHT)};
+	uint8_t left_data[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CONFIG_LC3_CHAN_ALLOC,
+						   BT_AUDIO_LOCATION_FRONT_LEFT)};
+	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {0};
+	struct bt_cap_initiator_broadcast_create_param create_param = {0};
+	struct bt_cap_initiator_broadcast_stream_param
+		stream_params[GMAP_BROADCAST_AC_MAX_STREAM] = {0};
+	struct bt_cap_broadcast_source *broadcast_source;
+	struct bt_audio_codec_cfg codec_cfg;
+	struct bt_audio_codec_qos qos;
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	for (size_t i = 0U; i < param->stream_cnt; i++) {
+		stream_params[i].stream = cap_stream_from_audio_test_stream(&broadcast_streams[i]);
+
+		if (param->stream_cnt == 1U) {
+			stream_params[i].data_len = ARRAY_SIZE(stereo_data);
+			stream_params[i].data = stereo_data;
+		} else if (i == 0U) {
+			stream_params[i].data_len = ARRAY_SIZE(left_data);
+			stream_params[i].data = left_data;
+		} else if (i == 1U) {
+			stream_params[i].data_len = ARRAY_SIZE(right_data);
+			stream_params[i].data = right_data;
+		}
+	}
+
+	memcpy(&codec_cfg, &broadcast_named_preset->preset.codec_cfg, sizeof(codec_cfg));
+	memcpy(&qos, &broadcast_named_preset->preset.qos, sizeof(qos));
+	qos.sdu *= param->chan_cnt;
+
+	subgroup_param.stream_count = param->stream_cnt;
+	subgroup_param.stream_params = stream_params;
+	subgroup_param.codec_cfg = &codec_cfg;
+	create_param.subgroup_count = 1U;
+	create_param.subgroup_params = &subgroup_param;
+	create_param.qos = &qos;
+
+	init();
+	setup_extended_adv(&adv);
+
+	err = bt_cap_initiator_broadcast_audio_create(&create_param, &broadcast_source);
+	if (err != 0) {
+		FAIL("Failed to create broadcast source: %d\n", err);
+		return -ENOEXEC;
+	}
+
+	for (size_t i = 0U; i < param->stream_cnt; i++) {
+		struct audio_test_stream *test_stream = &broadcast_streams[i];
+
+		test_stream->tx_sdu_size = create_param.qos->sdu;
+	}
+
+	broadcast_audio_start(broadcast_source, adv);
+	setup_extended_adv_data(broadcast_source, adv);
+	start_extended_adv(adv);
+
+	/* Wait for all to be started */
+	printk("Waiting for broadcast_streams to be started\n");
+	for (size_t i = 0U; i < param->stream_cnt; i++) {
+		k_sem_take(&sem_stream_started, K_FOREVER);
+	}
+
+	/* Initialize sending */
+	printk("Starting sending\n");
+	for (size_t i = 0U; i < param->stream_cnt; i++) {
+		struct audio_test_stream *test_stream = &broadcast_streams[i];
+
+		test_stream->tx_active = true;
+
+		for (unsigned int j = 0U; j < ISO_ENQUEUE_COUNT; j++) {
+			stream_sent_cb(bap_stream_from_audio_test_stream(test_stream));
+		}
+	}
+
+	/* Wait for other devices to have received what they wanted */
+	backchannel_sync_wait_any();
+
+	broadcast_audio_stop(broadcast_source, param->stream_cnt);
+
+	broadcast_audio_delete(broadcast_source);
+	broadcast_source = NULL;
+
+	stop_and_delete_extended_adv(adv);
+	adv = NULL;
+
+	PASS("CAP initiator broadcast passed\n");
+
+	return 0;
+}
+
 static void test_gmap_ac_1(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_1",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -938,12 +1225,12 @@ static void test_gmap_ac_1(void)
 		.src_named_preset = NULL,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_2(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_2",
 		.conn_cnt = 1U,
 		.snk_cnt = {0U},
@@ -953,12 +1240,12 @@ static void test_gmap_ac_2(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_3(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_3",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -968,12 +1255,12 @@ static void test_gmap_ac_3(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_4(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_4",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -983,12 +1270,12 @@ static void test_gmap_ac_4(void)
 		.src_named_preset = NULL,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_5(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_5",
 		.conn_cnt = 1U,
 		.snk_cnt = {1U},
@@ -998,12 +1285,12 @@ static void test_gmap_ac_5(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_6_i(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_6_i",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -1013,12 +1300,12 @@ static void test_gmap_ac_6_i(void)
 		.src_named_preset = NULL,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_6_ii(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_6_ii",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -1028,12 +1315,12 @@ static void test_gmap_ac_6_ii(void)
 		.src_named_preset = NULL,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_7_ii(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_7_ii",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 0U},
@@ -1043,12 +1330,12 @@ static void test_gmap_ac_7_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_8_i(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_8_i",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -1058,12 +1345,12 @@ static void test_gmap_ac_8_i(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_8_ii(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_8_ii",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -1073,12 +1360,12 @@ static void test_gmap_ac_8_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_11_i(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_11_i",
 		.conn_cnt = 1U,
 		.snk_cnt = {2U},
@@ -1088,12 +1375,12 @@ static void test_gmap_ac_11_i(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
 }
 
 static void test_gmap_ac_11_ii(void)
 {
-	const struct gmap_ac_param param = {
+	const struct gmap_unicast_ac_param param = {
 		.name = "ac_11_ii",
 		.conn_cnt = 2U,
 		.snk_cnt = {1U, 1U},
@@ -1103,7 +1390,45 @@ static void test_gmap_ac_11_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_ugg(&param);
+	test_gmap_ugg_unicast_ac(&param);
+}
+
+static void test_gmap_ac_12(void)
+{
+	const struct gmap_broadcast_ac_param param = {
+		.name = "ac_12",
+		.stream_cnt = 1U,
+		.chan_cnt = 1U,
+		.named_preset = broadcast_named_preset,
+	};
+
+	test_gmap_ugg_broadcast_ac(&param);
+}
+
+#if CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT >= GMAP_BROADCAST_AC_MAX_STREAM
+static void test_gmap_ac_13(void)
+{
+	const struct gmap_broadcast_ac_param param = {
+		.name = "ac_13",
+		.stream_cnt = 2U,
+		.chan_cnt = 1U,
+		.named_preset = broadcast_named_preset,
+	};
+
+	test_gmap_ugg_broadcast_ac(&param);
+}
+#endif /* CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT >= GMAP_BROADCAST_AC_MAX_STREAM */
+
+static void test_gmap_ac_14(void)
+{
+	const struct gmap_broadcast_ac_param param = {
+		.name = "ac_14",
+		.stream_cnt = 1U,
+		.chan_cnt = 2U,
+		.named_preset = broadcast_named_preset,
+	};
+
+	test_gmap_ugg_broadcast_ac(&param);
 }
 
 static void test_args(int argc, char *argv[])
@@ -1112,11 +1437,29 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "sink_preset") == 0) {
+			const char *preset_arg = argv[++argn];
+
 			snk_named_preset =
-				gmap_get_named_preset(true, BT_AUDIO_DIR_SINK, argv[++argn]);
+				gmap_get_named_preset(true, BT_AUDIO_DIR_SINK, preset_arg);
+			if (snk_named_preset == NULL) {
+				FAIL("Failed to get sink preset from %s\n", preset_arg);
+			}
 		} else if (strcmp(arg, "source_preset") == 0) {
+			const char *preset_arg = argv[++argn];
+
 			src_named_preset =
-				gmap_get_named_preset(true, BT_AUDIO_DIR_SOURCE, argv[++argn]);
+				gmap_get_named_preset(true, BT_AUDIO_DIR_SOURCE, preset_arg);
+			if (src_named_preset == NULL) {
+				FAIL("Failed to get source preset from %s\n", preset_arg);
+			}
+		} else if (strcmp(arg, "broadcast_preset") == 0) {
+			const char *preset_arg = argv[++argn];
+
+			broadcast_named_preset = gmap_get_named_preset(
+				false, BT_AUDIO_DIR_SINK /* unused */, preset_arg);
+			if (broadcast_named_preset == NULL) {
+				FAIL("Failed to get broadcast preset from %s\n", preset_arg);
+			}
 		} else {
 			FAIL("Invalid arg: %s\n", arg);
 		}
@@ -1206,6 +1549,29 @@ static const struct bst_test_instance test_gmap_ugg[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_gmap_ac_11_ii,
+		.test_args_f = test_args,
+	},
+	{
+		.test_id = "gmap_ugg_ac_12",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_gmap_ac_12,
+		.test_args_f = test_args,
+	},
+#if CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT >= GMAP_BROADCAST_AC_MAX_STREAM
+	{
+		.test_id = "gmap_ugg_ac_13",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_gmap_ac_13,
+		.test_args_f = test_args,
+	},
+#endif /* CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT >= GMAP_BROADCAST_AC_MAX_STREAM */
+	{
+		.test_id = "gmap_ugg_ac_14",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_gmap_ac_14,
 		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER,
