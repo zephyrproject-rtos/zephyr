@@ -20,35 +20,50 @@ properties:
     default: 179
     description: |
       ALS measurement time step. Sets the time in steps of 1.388889μs
-      modulator clock. The modulator clock can be divided with MOD_
-      DIVIDER_SELECT in register CFG7. Please observe that SAMPLE_
-      TIME needs to be set in register 0x83 and 0x84 (11-bit wide). It
-      counts from 0-2047 (2048 counts).
+      modulator clock. The modulator clock can be divided with MOD_DIVIDER_SELECT
+      in register CFG7. Please observe that SAMPLE_TIME needs to be set in
+      register 0x83 and 0x84 (11-bit wide). It counts from 0-2047 (2048 counts).
       SAMPLE_TIME =(1/SamplingFreq/1.388889μs)-1
       Default: 179+1 = 1/4000Hz / 1.388889μs
       (180 counts as counted 0-179)
       ALSIntegrationTimeStep = (SAMPLE_TIME+1) x 1.388889μs
-      Default: 250μs = (179+1) x 1.388889μs
+      Default: 250μs = (179+1) x 1.388889μs.
 
   als-nr-samples:
     type: int
-    default: 38
+    default: 0
     description: |
-      ALS_NR_OF_SAMPLES defines the total measurement time 
-      for ALS atime = (ALS_NR_SAMPLES+1) x (SAMPLE_TIME+1) x 1.388889μs
-  
+      ALS_NR_OF_SAMPLES defines the total measurement time for ALS
+      atime = (ALS_NR_SAMPLES+1) x (SAMPLE_TIME+1) x 1.388889μs.
+
   agc-nr-samples:
     type: int
-    default: 19
+    default: 0
     description: |
       AGC Number of Samples Sets the time for every AGC measurement
       and is calculated as: agc_atime = (AGC_NR_SAMPLES+1) x
-      (SAMPLE_TIME+1) x 1.388889μs
+      (SAMPLE_TIME+1) x 1.388889μs.
 
   als-gains:
     type: int
-    default: 128
+    default: 0x88
     description: |
       Defines the gain of modulator for the measurement
-      sequencer steps. 
-      The gain is also updated by the AGC, if activated
+      sequencer steps.
+      Gain of modulator0 and modulator1 for sequencer
+      step1,step2,step3 and step4.
+      The gain is also updated by the AGC, if activated.
+      0x00: 1/2x
+      0x01: 1x
+      0x02: 2x
+      0x03: 4x
+      0x04: 8x
+      0x05: 16x
+      0x06: 32x
+      0x07: 64x
+      0x08: 128x
+      0x09: 256x
+      0x0A: 512x
+      0x0B:1024x
+      0x0C:2048x
+      0x0D:4096x

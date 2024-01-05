@@ -1,0 +1,12 @@
+# TSL2520 Highly Sensitive Ambient Light Sensor configuration options
+
+# Copyright(c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+config TSL2520
+	bool "TSL2520 Ambient Light Sensor"
+	default y
+	depends on DT_HAS_AMS_TSL2520_ENABLED
+	select I2C
+	help
+	  Enable driver for TSL2520 sensors.

@@ -889,3 +889,13 @@ test_i2c_ags10: ags10@7e {
 	compatible = "aosong,ags10";
 	reg = <0x7e>;
 };
+
+test_i2c_tsl2520: tsl2520@7f {
+	compatible = "ams,tsl2520";
+	reg = <0x7f>;
+	int-gpios = <&test_gpio 0 0>;
+	sample-time = <179>;
+	als-nr-samples = <38>;
+	agc-nr-samples = <19>;
+	als-gains = <128>;
+};
