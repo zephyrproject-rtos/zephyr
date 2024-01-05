@@ -141,6 +141,9 @@ Build system and infrastructure
 * Deprecated :kconfig:option:`CONFIG_BOOTLOADER_SRAM_SIZE`, users of this should transition to
   having RAM set up properly in their board devicetree files.
 
+* Fixed an issue whereby shields were processed in order of the root they resided in rather than
+  the order they were supplied to cmake in.
+
 Drivers and Sensors
 *******************
 
