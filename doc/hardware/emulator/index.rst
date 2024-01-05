@@ -76,7 +76,7 @@ Available Emulators
   * DT binding: :dtcompatible:`zephyr,i2c-emul-controller`
 
 **RTC emulator**
-  * Emulates an RTC with a timed work-queue item.
+  * Emulated RTC peripheral. See :ref:`RTC emulated device section <rtc_api_emul_dev>`
   * Main Kconfig option: :kconfig:option:`CONFIG_RTC_EMUL`
   * DT binding: :dtcompatible:`zephyr,rtc-emul`
 
