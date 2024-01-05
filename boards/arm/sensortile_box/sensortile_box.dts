@@ -165,16 +165,15 @@
 	pinctrl-0 = <&spi2_sck_pd1 &spi2_miso_pd3 &spi2_mosi_pc3>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&gpiod 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	cs-gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 	spbtle_1s_sensortile_box: spbtle-1s@0 {
-		compatible = "zephyr,bt-hci-spi", "st,hci-spi-v2";
+		compatible = "st,hci-spi-v2";
 		reg = <0>;
-		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-		spi-max-frequency = <1000000>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 		spi-cpha;
 		spi-hold-cs;
-		controller-data-delay-us = <0>;
 		reset-assert-duration-ms = <6>;
 	};
 };
