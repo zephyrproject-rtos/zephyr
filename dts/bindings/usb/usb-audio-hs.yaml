@@ -30,6 +30,12 @@ properties:
       - "Asynchronous"
       - "Adaptive"
       - "Synchronous"
+  mic-sample-rate-hz:
+    type: int
+    default: 48000
+  mic-polling-interval:
+    type: int
+    default: 1
   hp-resolution:
     type: int
     default: 16
@@ -38,6 +44,12 @@ properties:
       - 16
       - 24
       - 32
+  hp-sample-rate-hz:
+    type: int
+    default: 48000
+  hp-polling-interval:
+    type: int
+    default: 1
   # microphone channel configuration options
   mic-channel-l:
     type: boolean
