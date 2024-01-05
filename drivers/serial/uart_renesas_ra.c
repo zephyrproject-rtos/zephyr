@@ -216,11 +216,11 @@ static void uart_ra_set_baudrate(const struct device *dev, uint32_t baud_rate)
 	uint8_t reg_val;
 
 	reg_val = uart_ra_read_8(dev, SEMR);
-	reg_val |= REG_MASK(SEMR_BGDM);
-	reg_val &= ~(REG_MASK(SEMR_BRME) | REG_MASK(SEMR_ABCSE) | REG_MASK(SEMR_ABCS));
+	reg_val |= (REG_MASK(SEMR_BGDM) | REG_MASK(SEMR_ABCS));
+	reg_val &= ~(REG_MASK(SEMR_BRME) | REG_MASK(SEMR_ABCSE));
 	uart_ra_write_8(dev, SEMR, reg_val);
 
-	reg_val = (data->clk_rate / (16 * data->current_config.baudrate)) - 1;
+	reg_val = (data->clk_rate / (8 * data->current_config.baudrate)) - 1;
 	uart_ra_write_8(dev, BRR, reg_val);
 }
 
