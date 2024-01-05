@@ -12,30 +12,34 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
+#ifndef CONFIG_BBRAM_IT8XXX2_EMUL
 #include <chip_chipregs.h>
+#else
+/* Emulation register values */
+enum bram_indices {
+	BRAM_IDX_VALID_FLAGS0,
+	BRAM_IDX_VALID_FLAGS1,
+	BRAM_IDX_VALID_FLAGS2,
+	BRAM_IDX_VALID_FLAGS3,
+};
+#endif
 
-LOG_MODULE_REGISTER(bbram, CONFIG_BBRAM_LOG_LEVEL);
+#include "it8xxx2.h"
 
-#define BRAM_VALID_MAGIC        0x4252414D  /* "BRAM" */
+LOG_MODULE_REGISTER(it8xxx2_bbram, CONFIG_BBRAM_LOG_LEVEL);
+
+#define BRAM_VALID_MAGIC        0x4252414D /* "BRAM" */
 #define BRAM_VALID_MAGIC_FIELD0 (BRAM_VALID_MAGIC & 0xff)
 #define BRAM_VALID_MAGIC_FIELD1 ((BRAM_VALID_MAGIC >> 8) & 0xff)
 #define BRAM_VALID_MAGIC_FIELD2 ((BRAM_VALID_MAGIC >> 16) & 0xff)
 #define BRAM_VALID_MAGIC_FIELD3 ((BRAM_VALID_MAGIC >> 24) & 0xff)
-
-/** Device config */
-struct bbram_it8xxx2_config {
-	/** BBRAM base address */
-	uintptr_t base_addr;
-	/** BBRAM size (Unit:bytes) */
-	int size;
-};
 
 static int bbram_it8xxx2_read(const struct device *dev, size_t offset, size_t size, uint8_t *data)
 {
 	const struct bbram_it8xxx2_config *config = dev->config;
 
 	if (size < 1 || offset + size > config->size) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	bytecpy(data, ((uint8_t *)config->base_addr + offset), size);
@@ -48,16 +52,25 @@ static int bbram_it8xxx2_write(const struct device *dev, size_t offset, size_t s
 	const struct bbram_it8xxx2_config *config = dev->config;
 
 	if (size < 1 || offset + size > config->size) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	bytecpy(((uint8_t *)config->base_addr + offset), data, size);
 	return 0;
 }
 
+static int bbram_it8xxx2_size(const struct device *dev, size_t *size)
+{
+	const struct bbram_it8xxx2_config *config = dev->config;
+
+	*size = config->size;
+	return 0;
+}
+
 static const struct bbram_driver_api bbram_it8xxx2_driver_api = {
 	.read = bbram_it8xxx2_read,
 	.write = bbram_it8xxx2_write,
+	.get_size = bbram_it8xxx2_size,
 };
 
 static int bbram_it8xxx2_init(const struct device *dev)
@@ -91,10 +104,7 @@ static int bbram_it8xxx2_init(const struct device *dev)
 }
 
 #define BBRAM_INIT(inst)                                                                           \
-	static const struct bbram_it8xxx2_config bbram_cfg_##inst = {                              \
-		.base_addr = DT_INST_REG_ADDR(inst),                                               \
-		.size = DT_INST_REG_SIZE(inst),                                                    \
-	};                                                                                         \
+	BBRAM_IT8XXX2_DECL_CONFIG(inst);                                                           \
 	DEVICE_DT_INST_DEFINE(inst, bbram_it8xxx2_init, NULL, NULL, &bbram_cfg_##inst,             \
 			      PRE_KERNEL_1, CONFIG_BBRAM_INIT_PRIORITY,                            \
 			      &bbram_it8xxx2_driver_api);
