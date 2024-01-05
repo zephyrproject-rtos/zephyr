@@ -113,7 +113,7 @@ config NET_TCP_RETRY_COUNT
 	  values are in the 0-31 range.  It's highly recommended to not go
 	  below 9, though.
 	  Should a retransmission timeout occur, the receive callback is
-	  called with -ECONNRESET error code and the context is dereferenced.
+	  called with -ETIMEDOUT error code and the context is dereferenced.
 
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
