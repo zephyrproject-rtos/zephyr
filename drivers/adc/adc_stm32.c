@@ -1087,10 +1087,6 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	/* Reset acquisition time used for the sequence */
 	data->acq_time_index = -1;
 
-	/* Reset internal channels */
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-				       LL_ADC_PATH_INTERNAL_NONE);
-
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
 	/* Reset channel preselection register */
 	LL_ADC_SetChannelPreselection(adc, 0);
