@@ -3,7 +3,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Download cc2538-bsl.py from https://git.beagleboard.org/beagleconnect/zephyr/cc2538-bsl/-/tags/2.1-bcf
+# Download cc1352-flasher (https://pypi.org/project/cc1352-flasher/) using the following command:
+# pip3 install cc1352-flasher
 
+find_program(CC1352_FLASHER NAMES cc1352_flasher)
 board_set_flasher_ifnset(misc-flasher)
-board_finalize_runner_args(misc-flasher $ENV{ZEPHYR_BASE}/boards/arm/beagle_bcf/cc2538-bsl.py -w)
+board_finalize_runner_args(misc-flasher ${CC1352_FLASHER} --bcf)
