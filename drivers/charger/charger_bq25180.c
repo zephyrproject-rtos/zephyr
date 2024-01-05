@@ -188,13 +188,7 @@ static int bq25180_init(const struct device *dev)
 	}
 
 	if (cfg->initial_current_microamp > 0) {
-		ret = bq25180_ma_to_ichg(cfg->initial_current_microamp / 1000, &val);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_ICHG_CTRL,
-					     BQ25180_ICHG_MSK, val);
+		bq25180_set_charge_current(dev, cfg->initial_current_microamp);
 		if (ret < 0) {
 			return ret;
 		}
