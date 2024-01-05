@@ -112,6 +112,7 @@ Device Drivers and Device Tree
             drdy-pin = <2>;
         };
     };
+
 * The optional :c:func:`setup()` function in the Bluetooth HCI driver API (enabled through
   :kconfig:option:`CONFIG_BT_HCI_SETUP`) has gained a function parameter of type
   :c:struct:`bt_hci_setup_params`. By default, the struct is empty, but drivers can opt-in to
@@ -332,6 +333,13 @@ Device Drivers and Device Tree
   * ``CONFIG_GPIO_RA`` -> :kconfig:option:`CONFIG_GPIO_RENESAS_RA`
   * ``CONFIG_PINCTRL_RA`` -> :kconfig:option:`CONFIG_PINCTRL_RENESAS_RA`
   * ``CONFIG_UART_RA`` -> :kconfig:option:`CONFIG_UART_RENESAS_RA`
+
+* The function signature of the ``isr_t`` callback function passed to the ``shared_irq``
+  interrupt controller driver API via :c:func:`shared_irq_isr_register()` has changed.
+  The callback now takes an additional `irq_number` parameter. Out-of-tree users of
+  this API will need to be updated.
+
+  (:github:`66427`)
 
 Power Management
 ================
