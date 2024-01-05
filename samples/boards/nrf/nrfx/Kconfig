@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NRFX_DPPI
-	default HAS_HW_NRF_DPPIC
+	default $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 
 config NRFX_PPI
-	default HAS_HW_NRF_PPI
+	default $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PPI))
 
 config NRFX_GPIOTE0
 	default y if SOC_SERIES_NRF51X || \
