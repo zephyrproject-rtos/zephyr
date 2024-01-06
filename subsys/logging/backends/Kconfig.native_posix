@@ -4,7 +4,7 @@
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Native backend"
 	depends on ARCH_POSIX
-	default y if !SERIAL
+	default y
 	select LOG_OUTPUT
 	help
 	  Enable backend in native_posix
