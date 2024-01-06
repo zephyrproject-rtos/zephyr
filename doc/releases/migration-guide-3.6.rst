@@ -159,6 +159,10 @@ Device Drivers and Device Tree
   * :dtcompatible:`ti,lmp90099`
   * :dtcompatible:`ti,lmp90100`
 
+* The io-channel cells of the :dtcompatible:`microchip,mcp3204` and
+  :dtcompatible:`microchip,mcp3208` devicetree bindings were renamed from ``channel`` to the common
+  ``input``, making it possible to use the various ADC DT macros with Microchip MCP320x ADC devices.
+
 * The :dtcompatible:`st,stm32h7-fdcan` CAN controller driver now supports configuring the
   domain/kernel clock via devicetree. Previously, the driver only supported using the PLL1_Q clock
   for kernel clock, but now it defaults to the HSE clock, which is the chip default. Boards that
