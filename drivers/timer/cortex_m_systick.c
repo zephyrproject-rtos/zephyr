@@ -43,6 +43,13 @@ static uint32_t last_load;
 #define cycle_t uint32_t
 #endif
 
+/* Build time or runtime assert depending on
+ * CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME.
+ */
+#define TIMER_FREQUENCY_ASSERT(EXPR, MSG...) \
+	COND_CODE_1(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME, \
+		    (__ASSERT(EXPR, "" MSG)), (BUILD_ASSERT(EXPR, MSG)))
+
 /*
  * This local variable holds the amount of SysTick HW cycles elapsed
  * and it is updated in sys_clock_isr() and sys_clock_set_timeout().
@@ -432,6 +439,12 @@ void sys_clock_disable(void)
 
 static int sys_clock_driver_init(void)
 {
+	/* Assert that counter calculations do not overflow */
+#ifdef CONFIG_TICKLESS_KERNEL
+	TIMER_FREQUENCY_ASSERT(COUNTER_MAX / CYC_PER_TICK > 1);
+#else
+	TIMER_FREQUENCY_ASSERT(COUNTER_MAX / CYC_PER_TICK > 0);
+#endif
 
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 	last_load = CYC_PER_TICK;
