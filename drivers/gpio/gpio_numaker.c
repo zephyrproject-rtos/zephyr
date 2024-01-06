@@ -48,7 +48,7 @@ static int gpio_numaker_configure(const struct device *dev, gpio_pin_t pin, gpio
 	ARG_UNUSED(data);
 
 	/* Check for an invalid pin number */
-	if (pin >= 15) {
+	if (pin > 15) {
 		return -EINVAL;
 	}
 
