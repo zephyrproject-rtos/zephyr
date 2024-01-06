@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020 Seagate Technology LLC
  * Copyright (c) 2022 Grinn
+ * Copyright (c) 2023 Intercreate Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp50xx.h>
+#include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
@@ -76,6 +78,15 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 
 #define RESET_SW			0xFF
 
+/* Driver requires that lp50xx compatibles have 3 colors per LED.
+ * Driver requires that the LED_COLOR_ID enumeration, defined in
+ * include/zephyr/dt-bindings/led/led.h, has the following values:
+ */
+BUILD_ASSERT(LP50XX_COLORS_PER_LED == 3);
+BUILD_ASSERT(LED_COLOR_ID_RED == 1);
+BUILD_ASSERT(LED_COLOR_ID_GREEN == 2);
+BUILD_ASSERT(LED_COLOR_ID_BLUE == 3);
+
 struct lp50xx_config {
 	struct i2c_dt_spec bus;
 	const struct gpio_dt_spec gpio_enable;
@@ -84,7 +95,7 @@ struct lp50xx_config {
 	uint8_t num_leds;
 	bool log_scale_en;
 	bool max_curr_opt;
-	const struct led_info *leds_info;
+	const struct led_info *led_info;
 };
 
 struct lp50xx_data {
@@ -95,7 +106,7 @@ static const struct led_info *lp50xx_led_to_info(
 			const struct lp50xx_config *config, uint32_t led)
 {
 	if (led < config->num_leds) {
-		return &config->leds_info[led];
+		return &config->led_info[led];
 	}
 
 	return NULL;
@@ -158,7 +169,6 @@ static int lp50xx_set_color(const struct device *dev, uint32_t led,
 {
 	const struct lp50xx_config *config = dev->config;
 	const struct led_info *led_info = lp50xx_led_to_info(config, led);
-	uint8_t buf[4];
 
 	if (!led_info) {
 		return -ENODEV;
@@ -172,12 +182,15 @@ static int lp50xx_set_color(const struct device *dev, uint32_t led,
 		return -EINVAL;
 	}
 
-	buf[0] = LP50XX_OUT0_COLOR(config->num_modules);
-	buf[0] += LP50XX_COLORS_PER_LED * led_info->index;
-
-	buf[1] = color[0];
-	buf[2] = color[1];
-	buf[3] = color[2];
+	uint8_t const buf[4] = {
+		(
+			LP50XX_OUT0_COLOR(config->num_modules) +
+			LP50XX_COLORS_PER_LED * led_info->index
+		),
+		color[led_info->color_mapping[0] - 1],
+		color[led_info->color_mapping[1] - 1],
+		color[led_info->color_mapping[2] - 1],
+	};
 
 	return i2c_write_dt(&config->bus, buf, sizeof(buf));
 }
@@ -286,6 +299,44 @@ static int lp50xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	for (uint8_t led = 0; led < config->num_leds; led++) {
+		struct led_info const *led_info = &config->led_info[led];
+
+		/* assert that each LED has defined a valid array of colors */
+		if (led_info->num_colors > LP50XX_COLORS_PER_LED) {
+			LOG_ERR(
+				"%s: invalid number of colors for LED%d, \"%s\": %d (max %d)",
+				dev->name,
+				led,
+				led_info->label,
+				led_info->num_colors,
+				LP50XX_COLORS_PER_LED
+			);
+			return -EINVAL;
+		}
+
+		for (uint8_t color_index = 0; color_index < led_info->num_colors; ++color_index) {
+			/* assert that each LED is RGB */
+			if (
+				led_info->color_mapping[color_index] != LED_COLOR_ID_RED &&
+				led_info->color_mapping[color_index] != LED_COLOR_ID_GREEN &&
+				led_info->color_mapping[color_index] != LED_COLOR_ID_BLUE
+			) {
+				LOG_ERR(
+					"%s: invalid color mapping for LED%d, \"%s\", color index %d: %d"
+					" (must be LED_COLOR_ID_RED, LED_COLOR_ID_GREEN, or "
+					"LED_COLOR_ID_BLUE)",
+					dev->name,
+					led,
+					led_info->label,
+					color_index,
+					led_info->color_mapping[color_index]
+				);
+				return -EINVAL;
+			}
+		}
+	}
+
 	/* Configure GPIO if present */
 	if (config->gpio_enable.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_enable)) {
@@ -381,7 +432,7 @@ static const struct led_driver_api lp50xx_led_api = {
 		.num_leds		= ARRAY_SIZE(lp##id##_leds_##n),	\
 		.log_scale_en		= DT_INST_PROP(n, log_scale_en),	\
 		.max_curr_opt		= DT_INST_PROP(n, max_curr_opt),	\
-		.leds_info		= lp##id##_leds_##n,			\
+		.led_info		= lp##id##_leds_##n,			\
 	};									\
 										\
 	static uint8_t lp##id##_chan_buf_##n[LP50XX_MAX_CHANNELS(nmodules) + 1];\

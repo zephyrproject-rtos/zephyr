@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Seagate Technology LLC
+ * Copyright (c) 2023 Intercreate Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/led/lp50xx.h>
-#include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -40,36 +40,6 @@ static uint8_t colors[][3] = {
 	{ 0xF4, 0x79, 0x20 }, /* Orange */
 };
 
-/*
- * Prepare a color buffer for a single LED using its color mapping and the
- * desired color index.
- */
-static int prepare_color_buffer(const struct led_info *info, uint8_t *buf,
-				uint8_t color_idx)
-{
-	uint8_t color;
-
-	for (color = 0; color < info->num_colors; color++) {
-		switch (info->color_mapping[color]) {
-		case LED_COLOR_ID_RED:
-			buf[color] = colors[color_idx][0];
-			continue;
-		case LED_COLOR_ID_GREEN:
-			buf[color] = colors[color_idx][1];
-			continue;
-		case LED_COLOR_ID_BLUE:
-			buf[color] = colors[color_idx][2];
-			continue;
-		default:
-			LOG_ERR("Invalid color: %d",
-				info->color_mapping[color]);
-			return -EINVAL;
-		}
-	}
-
-	return 0;
-}
-
 /**
  * @brief Run tests on a single LED using the LED-based API syscalls.
  *
@@ -92,13 +62,7 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 
 	for (idx = 0; idx < ARRAY_SIZE(colors); idx++) {
 		uint16_t level;
-		uint8_t buf[3];
-
-		err = prepare_color_buffer(info, buf, idx);
-		if (err < 0) {
-			LOG_ERR("Failed to set color buffer, err=%d", err);
-			return err;
-		}
+		uint8_t const * const buf = colors[idx];
 
 		/* Update LED color. */
 		err = led_set_color(lp50xx_dev, led, 3, buf);
@@ -169,26 +133,6 @@ static int run_channel_test(const struct device *lp50xx_dev,
 	for (idx = 0; idx < ARRAY_SIZE(colors); idx++) {
 		uint8_t led;
 		uint16_t level;
-
-		/* Update LEDs colors. */
-		memset(buffer, 0, sizeof(buffer));
-		for (led = 0; led < max_leds; led++) {
-			const struct led_info *info;
-			uint8_t *col = &buffer[led * 3];
-
-			err = led_get_info(lp50xx_dev, led, &info);
-			if (err < 0) {
-				continue;
-			}
-
-			col = &buffer[info->index * 3];
-			err = prepare_color_buffer(info, col, idx);
-			if (err < 0) {
-				LOG_ERR("Failed to set color buffer, err=%d",
-					err);
-				return err;
-			}
-		}
 
 		err = led_write_channels(lp50xx_dev, color_chan,
 					 LP50XX_COLORS_PER_LED *
