@@ -1,0 +1,34 @@
+common:
+  tags:
+    - clib
+  integration_platforms:
+    - qemu_riscv64
+tests:
+  libraries.libc.mallinfo.minimal:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: minimal_libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  libraries.libc.mallinfo.picolibc:
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+  libraries.libc.mallinfo.picolibc.module:
+    filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
+  libraries.libc.mallinfo.picolibc.notls:
+    filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
+    tags: picolibc
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
+      - CONFIG_THREAD_LOCAL_STORAGE=n
+
+# CONFIG_NEWLIB_LIBC not supported at this time
