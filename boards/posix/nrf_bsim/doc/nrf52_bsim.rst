@@ -36,6 +36,7 @@ This board includes models of some of the nRF52 SOC peripherals:
 * RNG (Random Number Generator)
 * RTC (Real Time Counter)
 * TEMP (Temperature sensor)
+* UART & UARTE (UART with Easy DMA)
 * UICR (User Information Configuration Registers)
 
 and will use the same drivers as the nrf52 dk targets for these.
