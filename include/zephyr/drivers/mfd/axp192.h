@@ -40,23 +40,35 @@ enum axp192_gpio_func {
 /**
  * @brief Maximum number of GPIOs supported by AXP192 PMIC.
  */
-#define AXP192_GPIO_MAX_NUM 5U
+#define AXP192_GPIO_MAX_NUM 6U
 
 /**
  * @defgroup mdf_interface_axp192 MFD AXP192 interface
+ *
+ * Pins of AXP192 support several different functions. The mfd interface offers
+ * an API to configure and control these different functions.
+ *
+ * The 6 GPIOS are mapped as follows:
+ *  [0]: GPIO0
+ *  [1]: GPIO1
+ *  [2]: GPIO2
+ *  [3]: GPIO3
+ *  [4]: GPIO4
+ *  [5]: EXTEN
+ *
  * @ingroup mfd_interfaces
  * @{
  */
 
 /**
- * @brief Request a GPIO pin to be configured to a specific function. GPIO0..4
+ * @brief Request a GPIO pin to be configured to a specific function. GPIO0..5
  * of AXP192 feature various functions (see @ref axp192_gpio_func for details).
  * A GPIO can only be used by one driver instance. Subsequential calls on the
  * same GPIO will overwrite according function.
  *
  * @param dev axp192 mfd device
  * @param client_dev client device the gpio is used in
- * @param gpio GPIO to be configured (0..4)
+ * @param gpio GPIO to be configured (0..5)
  * @param func Function to be configured (see @ref axp192_gpio_func for details)
  * @retval 0 on success
  * @retval -EINVAL if an invalid GPIO number is passed
@@ -80,7 +92,7 @@ int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192
 
 /**
  * @brief Enable pull-down on specified GPIO pin. AXP192 only supports
- * pull-down on GPIO3..4. Pull-ups are not supprted.
+ * pull-down on GPIO3..5. Pull-ups are not supprted.
  *
  * @param dev axp192 mfd device
  * @param gpio GPIO to control pull-downs
