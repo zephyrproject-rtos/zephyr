@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2024 Nathan Olff
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Aosong DHT20 (Digital-output Humidity and Temperature Sensor)
+
+    The Asosong DHT20 sensor provides temperature and humidity
+    measurements through an I2C bus.
+
+compatible: "aosong,dht20"
+
+include: [sensor-device.yaml, i2c-device.yaml]
