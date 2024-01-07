@@ -90,6 +90,27 @@ of the M5Stack Core2 board.
 |                  | possibility to query current battery status.                             |           |
 +------------------+--------------------------------------------------------------------------+-----------+
 
+Power supply
+============
+M5Stack Core2 module is equipped with the feature-rich power management IC
+(:dtcompatible:`x-powers,axp192-regulator`).
+Following regulators are utilized on this module:
+
+- **vdd_mcu**:
+  Main power supply for the MCU.
+- **lcd_bg**:
+  Display backlight voltage.
+- **v_peri**:
+  Periphal supply. This regulator controls supply for the display, SD-Card.
+- **vib_motor**:
+  Vibration motor regulator.
+- **bus_5v**
+  BUS_5V supply for Grove port.
+  Note: This fixed regulator supply is disabled by default.
+
+
+These voltages can be controlled via regulator api.
+
 Supported Features
 ==================
 
