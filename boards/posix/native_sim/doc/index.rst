@@ -433,10 +433,17 @@ The following peripherals are currently provided with this board:
 
 .. _nsim_per_flash_simu:
 
-**Flash driver**
-  A flash driver is provided that accesses all flash data through a binary file
-  on the host file system. The behavior of the flash device can be configured
-  through the native_sim board devicetree or Kconfig settings under
+**EEPROM simulator**
+  The EEPROM simulator can also be used in the native targets. In these, you have the added feature
+  of keeping the EEPROM content on a file on the host filesystem.
+  By default this is kept in the file :file:`eeprom.bin` in the current working directory, but you
+  can select the location of this file and its name with the command line parameter ``--eeprom``.
+  Some more information can be found in :ref:`the emulators page <emul_eeprom_simu_brief>`.
+
+**Flash simulator**
+  The flash simulator can also be used in the native targets. In this you have the option to keep
+  the flash content in a binary file on the host file system or in RAM. The behavior of the flash
+  device can be configured through the native_sim board devicetree or Kconfig settings under
   :kconfig:option:`CONFIG_FLASH_SIMULATOR`.
 
   By default the binary data is located in the file :file:`flash.bin` in the current
@@ -445,6 +452,8 @@ The following peripherals are currently provided with this board:
   and the file will be truncated to match the size specified in the devicetree
   configuration. In case the file does not exists the driver will take care of
   creating the file, else the existing file is used.
+
+  Some more information can be found in :ref:`the emulators page <emul_flash_simu_brief>`.
 
   The flash content can be accessed from the host system, as explained in the
   `Host based flash access`_ section.
