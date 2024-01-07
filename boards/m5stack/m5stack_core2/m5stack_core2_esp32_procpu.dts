@@ -163,7 +163,7 @@
 			compatible = "x-powers,axp192-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			ngpios = <5>;
+			ngpios = <6>;
 			status = "okay";
 
 			pwr_led: axp192_gpio1 {
@@ -176,9 +176,16 @@
 			bus_pwr_en: axp192_gpio0 {
 				gpio-hog;
 				gpios = <0 0>;
-				input;
+				output-high;
+				line-name = "bus_pwr_en";
 			};
 		};
+	};
+
+	bus_5v: bus_5v {
+		compatible = "regulator-fixed";
+		regulator-name = "bus_5v";
+		enable-gpios = <&axp192_gpio 5 GPIO_ACTIVE_HIGH>;
 	};
 
 	ft5336_touch: ft5336@38 {
