@@ -993,3 +993,21 @@ test_i2c_stts22h: stts22h@86 {
 	int-gpios = <&test_gpio 0 0>;
 	sampling-rate = <STTS22H_100Hz>;
 };
+
+test_i2c_dht20: dht20@87 {
+	compatible = "aosong,dht20";
+	reg = <0x87>;
+	status = "okay";
+};
+
+test_i2c_aht20: aht20@88 {
+	compatible = "aosong,aht20";
+	reg = <0x88>;
+	status = "okay";
+};
+
+test_i2c_am2301b: am2301b@89 {
+	compatible = "aosong,am2301b";
+	reg = <0x89>;
+	status = "okay";
+};
