@@ -146,6 +146,19 @@ Device Drivers and Device Tree
   * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
     :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
 
+* The io-channel cells of the following devicetree bindings were reduced from 2 (``positive`` and
+  ``negative``) to the common ``input``, making it possible to use the various ADC DT macros with TI
+  LMP90xxx ADC devices:
+
+  * :dtcompatible:`ti,lmp90077`
+  * :dtcompatible:`ti,lmp90078`
+  * :dtcompatible:`ti,lmp90079`
+  * :dtcompatible:`ti,lmp90080`
+  * :dtcompatible:`ti,lmp90097`
+  * :dtcompatible:`ti,lmp90098`
+  * :dtcompatible:`ti,lmp90099`
+  * :dtcompatible:`ti,lmp90100`
+
 Power Management
 ================
 
