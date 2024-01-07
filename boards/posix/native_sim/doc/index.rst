@@ -459,21 +459,32 @@ The following peripherals are currently provided with this board:
   `Host based flash access`_ section.
 
 **Input events**
-  A driver is provided to read input events from a Linux evdev input device and
-  inject them back into the Zephyr input subsystem.
+  Two optional native input drivers are available:
 
-  The driver is automatically enabled when :kconfig:option:`CONFIG_INPUT` is
-  enabled and the devicetree contains a node such as:
+  **evdev driver**
+    A driver is provided to read input events from a Linux evdev input device and
+    inject them back into the Zephyr input subsystem.
 
-  .. code-block:: dts
+    The driver is automatically enabled when :kconfig:option:`CONFIG_INPUT` is
+    enabled and the devicetree contains a node such as:
 
-     evdev {
-       compatible = "zephyr,native-linux-evdev";
-     };
+    .. code-block:: dts
 
-  The application then has to be run with a command line option to specify
-  which evdev device node has to be used, for example
-  ``zephyr.exe --evdev=/dev/input/event0``.
+       evdev {
+         compatible = "zephyr,native-linux-evdev";
+       };
+
+    The application then has to be run with a command line option to specify
+    which evdev device node has to be used, for example
+    ``zephyr.exe --evdev=/dev/input/event0``.
+
+  **Input SDL touch**
+    This driver emulates a touch panel input using the SDL library. It can be enabled with
+    :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and configured with the device tree binding
+    :dtcompatible:`zephyr,input-sdl-touch`.
+
+    More information on using SDL and the Display driver can be found in
+    :ref:`its section <nsim_per_disp_sdl>`.
 
 .. _native_ptty_uart:
 
