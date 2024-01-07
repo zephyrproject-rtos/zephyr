@@ -1502,6 +1502,7 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 			}
 
 			irq_unlock(key);
+			Z_SPIN_DELAY(2);
 		}
 	} else {
 		key = wait_tx_ready(dev);
@@ -1924,6 +1925,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			       !nrf_uarte_event_check(uarte,
 						      NRF_UARTE_EVENT_ERROR)) {
 				/* Busy wait for event to register */
+				Z_SPIN_DELAY(2);
 			}
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
