@@ -486,6 +486,11 @@ The following peripherals are currently provided with this board:
     More information on using SDL and the Display driver can be found in
     :ref:`its section <nsim_per_disp_sdl>`.
 
+**CAN controller**
+  It is possible to use a host CAN controller with the native SockerCAN Linux driver. It can be
+  enabled with :kconfig:option:`CONFIG_CAN_NATIVE_LINUX` and configured with the device tree binding
+  :dtcompatible:`zephyr,native-linux-can`.
+
 .. _native_ptty_uart:
 
 PTTY UART
