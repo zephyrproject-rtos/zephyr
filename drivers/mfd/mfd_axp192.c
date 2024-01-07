@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_REG_CHIP_ID 0x03U
 
 /* AXP192 GPIO register addresses */
+#define AXP192_EXTEN_DCDC2_CONTROL_REG 0x10U
 #define AXP192_VBUS_CFG_REG            0x30U
 #define AXP192_GPIO0_FUNC_REG          0x90U
 #define AXP192_GPIO1_FUNC_REG          0x92U
@@ -30,6 +31,9 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO012_PINVAL_REG      0x94U
 #define AXP192_GPIO34_PINVAL_REG       0x96U
 #define AXP192_GPIO012_PULLDOWN_REG    0x97U
+
+/* VBUS control reg values */
+#define AXP192_VBUS_CFG_VAL_VBUSEN_DISABLE 0x80U
 
 /* GPIO function control parameters */
 #define AXP192_GPIO012_FUNC_VAL_OUTPUT_OD  0x00U
@@ -84,6 +88,7 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO2_OUTPUT_VAL 0x04U
 #define AXP192_GPIO012_OUTPUT_MASK                                                                 \
 	(AXP192_GPIO0_OUTPUT_VAL | AXP192_GPIO1_OUTPUT_VAL | AXP192_GPIO2_OUTPUT_VAL)
+
 #define AXP192_GPIO3_OUTPUT_VAL   0x01U
 #define AXP192_GPIO4_OUTPUT_VAL   0x02U
 #define AXP192_GPIO34_OUTPUT_MASK (AXP192_GPIO3_OUTPUT_VAL | AXP192_GPIO4_OUTPUT_VAL)
@@ -91,8 +96,10 @@ LOG_MODULE_REGISTER(mfd_axp192, CONFIG_MFD_LOG_LEVEL);
 #define AXP192_GPIO5_OUTPUT_MASK  0x04U
 #define AXP192_GPIO5_OUTPUT_VAL   0x04U
 #define AXP192_GPIO5_OUTPUT_SHIFT 3U
+
 struct mfd_axp192_config {
 	struct i2c_dt_spec i2c;
+	bool vbusen_disable;
 };
 
 struct mfd_axp192_data {
@@ -137,6 +144,7 @@ static int mfd_axp192_init(const struct device *dev)
 {
 	const struct mfd_axp192_config *config = dev->config;
 	uint8_t chip_id;
+	uint8_t vbus_val;
 	int ret;
 
 	LOG_DBG("Initializing instance");
@@ -154,6 +162,17 @@ static int mfd_axp192_init(const struct device *dev)
 	if (chip_id != AXP192_CHIP_ID) {
 		LOG_ERR("Invalid Chip detected (%d)", chip_id);
 		return -EINVAL;
+	}
+
+	/* Disable N_VBUSEN */
+	vbus_val = 0;
+	if (config->vbusen_disable) {
+		vbus_val = AXP192_VBUS_CFG_VAL_VBUSEN_DISABLE;
+	}
+	ret = i2c_reg_update_byte_dt(&config->i2c, AXP192_VBUS_CFG_REG,
+				     AXP192_VBUS_CFG_VAL_VBUSEN_DISABLE, vbus_val);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return 0;
@@ -590,6 +609,7 @@ int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t 
 #define MFD_AXP192_DEFINE(inst)                                                                    \
 	static const struct mfd_axp192_config config##inst = {                                     \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.vbusen_disable = DT_INST_PROP_OR(inst, vbusen_disable, false),                    \
 	};                                                                                         \
                                                                                                    \
 	static struct mfd_axp192_data data##inst;                                                  \
@@ -597,4 +617,4 @@ int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t 
 	DEVICE_DT_INST_DEFINE(inst, mfd_axp192_init, NULL, &data##inst, &config##inst,             \
 			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(MFD_AXP192_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(MFD_AXP192_DEFINE);
