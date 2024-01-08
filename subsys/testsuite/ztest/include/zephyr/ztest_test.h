@@ -554,6 +554,7 @@ __syscall void z_test_1cpu_start(void);
 __syscall void z_test_1cpu_stop(void);
 
 __syscall void sys_clock_tick_set(uint64_t tick);
+__syscall void set_log_last_failure_report_tick(uint64_t tick);
 
 #ifdef __cplusplus
 }

@@ -539,9 +539,10 @@ bool z_impl_log_process(void)
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
 		bool dropped_pend = z_log_dropped_pending();
 		bool unordered_pend = z_log_unordered_pending();
+		uint64_t now = k_uptime_get();
 
-		if ((dropped_pend || unordered_pend) &&
-		   (k_uptime_get() - last_failure_report) > CONFIG_LOG_FAILURE_REPORT_PERIOD) {
+		if ((dropped_pend || unordered_pend) && (now > last_failure_report) &&
+		   ((now - last_failure_report) > CONFIG_LOG_FAILURE_REPORT_PERIOD)) {
 			if (dropped_pend) {
 				dropped_notify();
 			}
@@ -549,9 +550,9 @@ bool z_impl_log_process(void)
 			if (unordered_pend) {
 				unordered_notify();
 			}
+			last_failure_report += CONFIG_LOG_FAILURE_REPORT_PERIOD;
 		}
 
-		last_failure_report += CONFIG_LOG_FAILURE_REPORT_PERIOD;
 	}
 
 	return z_log_msg_pending();
@@ -942,5 +943,14 @@ static int enable_logger(void)
 
 	return 0;
 }
-
+#ifdef CONFIG_ZTEST
+void z_impl_set_log_last_failure_report_tick(uint64_t tick)
+{
+	last_failure_report = tick;
+}
+void z_vrfy_set_log_last_failure_report_tick(uint64_t tick)
+{
+	z_impl_set_log_last_failure_report_tick(tick);
+}
+#endif
 SYS_INIT(enable_logger, POST_KERNEL, CONFIG_LOG_CORE_INIT_PRIORITY);

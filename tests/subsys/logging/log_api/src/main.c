@@ -16,6 +16,10 @@
 #define CONFIG_LOG_BUFFER_SIZE 4
 #endif
 
+#ifndef CONFIG_LOG_FAILURE_REPORT_PERIOD
+#define CONFIG_LOG_FAILURE_REPORT_PERIOD 1000
+#endif
+
 #ifndef NO_BACKENDS
 #define NO_BACKENDS 0
 #endif
@@ -80,6 +84,8 @@ static void flush_log(void)
 static void log_setup(bool backend2_enable)
 {
 	stamp = TIMESTAMP_INIT_VAL;
+	set_log_last_failure_report_tick(0);
+	sys_clock_tick_set(0);
 	zassert_false(in_panic, "Logger in panic state.");
 
 	log_core_init();
@@ -366,7 +372,7 @@ static uint8_t log_buf[CONFIG_LOG_BUFFER_SIZE];
 
 ZTEST(test_log_api, test_log_overflow)
 {
-	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+	log_timestamp_t exp_timestamp = CONFIG_LOG_FAILURE_REPORT_PERIOD + 1;
 
 	log_setup(false);
 
@@ -398,6 +404,8 @@ ZTEST(test_log_api, test_log_overflow)
 				Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp++, "test2");
 	mock_log_backend_drop_record(&backend1, 1);
+	stamp = CONFIG_LOG_FAILURE_REPORT_PERIOD + 1;
+	sys_clock_tick_set(stamp);
 
 	LOG_INF("test %d %d", 100, 100);
 	LOG_HEXDUMP_INF(log_buf, hexdump_len, "hexdump");
@@ -407,7 +415,7 @@ ZTEST(test_log_api, test_log_overflow)
 
 	log_setup(false);
 
-	exp_timestamp = TIMESTAMP_INIT_VAL;
+	exp_timestamp = CONFIG_LOG_FAILURE_REPORT_PERIOD + 1;
 	hexdump_len = get_max_hexdump();
 	mock_log_backend_reset(&backend1);
 	mock_log_frontend_reset();
@@ -422,6 +430,8 @@ ZTEST(test_log_api, test_log_overflow)
 					Z_LOG_LOCAL_DOMAIN_ID, LOG_LEVEL_INF,
 				exp_timestamp, "test");
 	mock_log_backend_drop_record(&backend1, 1);
+	stamp = CONFIG_LOG_FAILURE_REPORT_PERIOD + 1;
+	sys_clock_tick_set(stamp);
 
 	LOG_INF("test");
 	LOG_HEXDUMP_INF(log_buf, hexdump_len + 1, "test");
@@ -578,11 +588,11 @@ static size_t get_short_msg_capacity(void)
 static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 {
 	printk("ex dropped:%d\n", exp_dropped);
-	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
+	log_timestamp_t exp_timestamp = CONFIG_LOG_FAILURE_REPORT_PERIOD + 1;
 
 	log_setup(false);
 
-	stamp = TIMESTAMP_INIT_VAL;
+	stamp = CONFIG_LOG_FAILURE_REPORT_PERIOD + 1;
 
 	for (uint32_t i = 0; i < n_msg; i++) {
 		mock_log_frontend_record(LOG_CURRENT_MODULE_ID(), LOG_LEVEL_INF, "dummy");
@@ -596,6 +606,7 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 	}
 
 	mock_log_backend_drop_record(&backend1, exp_dropped);
+	sys_clock_tick_set(CONFIG_LOG_FAILURE_REPORT_PERIOD);
 
 	process_and_validate(false, false);
 	mock_log_backend_reset(&backend1);
