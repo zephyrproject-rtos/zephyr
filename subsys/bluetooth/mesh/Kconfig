@@ -210,7 +210,7 @@ config BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
 
 config BT_MESH_PB_ADV_TRANS_ACK_RETRANSMIT_COUNT
 	int "Link Ack and Transaction Ack retransmit count"
-	default 0
+	default 2
 	range 0 7
 	help
 	  Controls the number of retransmissions of original Link Open and Transaction Acknowledgment PDU,

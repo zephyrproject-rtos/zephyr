@@ -358,13 +358,6 @@ static void prov_dh_key_gen(void)
 	}
 }
 
-static void prov_dh_key_gen_handler(struct k_work *work)
-{
-	prov_dh_key_gen();
-}
-
-static K_WORK_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
-
 static void prov_pub_key(const uint8_t *data)
 {
 	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));
@@ -392,7 +385,7 @@ static void prov_pub_key(const uint8_t *data)
 		       PDU_LEN_PUB_KEY);
 	}
 
-	k_work_submit(&dh_gen_work);
+	prov_dh_key_gen();
 }
 
 static void notify_input_complete(void)
