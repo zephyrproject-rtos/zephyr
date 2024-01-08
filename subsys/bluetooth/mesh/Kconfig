@@ -1718,7 +1718,6 @@ config BT_MESH_SETTINGS_WORKQ_PRIO
 
 config BT_MESH_SETTINGS_WORKQ_STACK_SIZE
 	int "Stack size of the settings workq"
-	default 1200 if BT_MESH_RPR_SRV
 	default 880
 	help
 	  Size of the settings workqueue stack.
