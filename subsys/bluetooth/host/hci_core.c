@@ -3459,15 +3459,15 @@ static int set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 
-const char *bt_hci_get_ver_str(uint8_t core_version)
+static const char *ver_str(uint8_t ver)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
 		"5.0", "5.1", "5.2", "5.3", "5.4"
 	};
 
-	if (core_version < ARRAY_SIZE(str)) {
-		return str[core_version];
+	if (ver < ARRAY_SIZE(str)) {
+		return str[ver];
 	}
 
 	return "unknown";
@@ -3508,9 +3508,9 @@ static void bt_dev_show_info(void)
 	}
 
 	LOG_INF("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x",
-		bt_hci_get_ver_str(bt_dev.hci_version), bt_dev.hci_version, bt_dev.hci_revision,
+		ver_str(bt_dev.hci_version), bt_dev.hci_version, bt_dev.hci_revision,
 		bt_dev.manufacturer);
-	LOG_INF("LMP: version %s (0x%02x) subver 0x%04x", bt_hci_get_ver_str(bt_dev.lmp_version),
+	LOG_INF("LMP: version %s (0x%02x) subver 0x%04x", ver_str(bt_dev.lmp_version),
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
 
