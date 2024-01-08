@@ -252,8 +252,10 @@ Ambiq Platforms:
     - soc/arm/ambiq/
     - boards/arm/apollo*/
     - dts/arm/ambiq/
-    - dts/bindings/*/ambiq*
-    - drivers/*/*_ambiq*
+    - dts/bindings/*/ambiq,*
+    - drivers/*/*ambiq*
+    - drivers/*/*/*ambiq*
+    - drivers/*/*/*apollo*
   labels:
     - "platform: Ambiq"
 
