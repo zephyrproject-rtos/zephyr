@@ -1147,7 +1147,7 @@ void zperf_shell_init(void)
 {
 	int ret;
 
-	if (IS_ENABLED(MY_IP6ADDR_SET) && MY_IP6ADDR) {
+	if (IS_ENABLED(MY_IP4ADDR_SET) && MY_IP6ADDR) {
 		ret = net_addr_pton(AF_INET6, MY_IP6ADDR,
 				    &in6_addr_my.sin6_addr);
 		if (ret < 0) {
