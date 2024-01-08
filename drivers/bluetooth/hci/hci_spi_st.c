@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(bt_driver);
 #define HCI_ACL			0x02
 #define HCI_SCO			0x03
 #define HCI_EVT			0x04
+/* ST Proprietary extended event */
+#define HCI_EXT_EVT		0x82
 
 /* Special Values */
 #define SPI_WRITE		0x0A
@@ -107,6 +109,11 @@ static const struct spi_buf_set spi_rx = {
 	.buffers = &spi_rx_buf,
 	.count = 1
 };
+
+struct bt_hci_ext_evt_hdr {
+	uint8_t evt;
+	uint16_t len;
+} __packed;
 
 static inline int bt_spi_transceive(void *tx, uint32_t tx_len,
 				    void *rx, uint32_t rx_len)
@@ -336,6 +343,19 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 	int len;
 
 	switch (msg[PACKET_TYPE]) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
+	case HCI_EXT_EVT:
+		struct bt_hci_ext_evt_hdr *evt = (struct bt_hci_ext_evt_hdr *) (msg + 1);
+		struct bt_hci_evt_hdr *evt2 = (struct bt_hci_evt_hdr *) (msg + 1);
+
+		if (evt->len > 0xff) {
+			return NULL;
+		}
+		/* Use memmove instead of memcpy due to buffer overlapping */
+		memmove(msg + (1 + sizeof(*evt2)), msg + (1 + sizeof(*evt)), evt2->len);
+		/* Manage event as regular HCI_EVT */
+		__fallthrough;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2) */
 	case HCI_EVT:
 		switch (msg[EVT_HEADER_EVENT]) {
 		case BT_HCI_EVT_VENDOR:
