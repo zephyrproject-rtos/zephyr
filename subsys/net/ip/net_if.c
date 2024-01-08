@@ -265,9 +265,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 
-		net_if_tx_lock(iface);
 		status = net_if_l2(iface)->send(iface, pkt);
-		net_if_tx_unlock(iface);
 
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
 			uint32_t end_tick = k_cycle_get_32();
@@ -439,7 +437,6 @@ static inline void init_iface(struct net_if *iface)
 #endif
 
 	k_mutex_init(&iface->lock);
-	k_mutex_init(&iface->tx_lock);
 
 	api->init(iface);
 }
