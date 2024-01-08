@@ -93,7 +93,7 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, ignore_path, alt_tags, pull_request=False, platforms=[], detailed_test_id=True):
+    def __init__(self, modified_files, ignore_path, pull_request=False, platforms=[], detailed_test_id=True):
         self.modified_files = modified_files
         self.twister_options = []
         self.full_twister = False
@@ -104,7 +104,6 @@ class Filters:
         self.default_run = False
         self.detailed_test_id = detailed_test_id
         self.ignore_path = ignore_path
-        self.tag_cfg_file = alt_tags
 
     def process(self):
         self.find_modules()
@@ -281,7 +280,8 @@ class Filters:
 
     def find_tags(self):
 
-        with open(self.tag_cfg_file, 'r') as ymlfile:
+        tag_cfg_file = os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml')
+        with open(tag_cfg_file, 'r') as ymlfile:
             tags_config = yaml.safe_load(ymlfile)
 
         tags = {}
@@ -377,9 +377,6 @@ def parse_args():
     parser.add_argument('--ignore-path',
             default=os.path.join(zephyr_base, 'scripts', 'ci', 'twister_ignore.txt'),
             help="Path to a text file with patterns of files to be matched against changed files")
-    parser.add_argument('--alt-tags',
-            default=os.path.join(zephyr_base, 'scripts', 'ci', 'tags.yaml'),
-            help="Path to a file describing relations between directories and tags")
 
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
@@ -407,7 +404,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.ignore_path, args.alt_tags, args.pull_request, args.platform, args.detailed_test_id)
+    f = Filters(files, args.ignore_path, args.pull_request, args.platform, args.detailed_test_id)
     f.process()
 
     # remove dupes and filtered cases
