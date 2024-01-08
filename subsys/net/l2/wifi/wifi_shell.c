@@ -64,6 +64,7 @@ static struct {
 static uint32_t scan_result;
 
 static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
+static struct wifi_reg_chan_info chan_info[MAX_REG_CHAN_NUM];
 
 static K_MUTEX_DEFINE(wifi_ap_sta_list_lock);
 struct wifi_ap_sta_node {
@@ -134,7 +135,6 @@ static void handle_wifi_scan_result(struct net_mgmt_event_callback *cb)
 	      wifi_mfp_txt(entry->mfp));
 }
 
-#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static int wifi_freq_to_channel(int frequency)
 {
 	int channel = 0;
@@ -156,6 +156,7 @@ static int wifi_freq_to_channel(int frequency)
 	return channel;
 }
 
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 static enum wifi_frequency_bands wifi_freq_to_band(int frequency)
 {
 	enum wifi_frequency_bands band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -1289,9 +1290,10 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_reg_domain regd = {0};
-	int ret;
+	int ret, chan_idx = 0;
 
 	if (argc == 1) {
+		(&regd)->chan_info = &chan_info[0];
 		regd.oper = WIFI_MGMT_GET;
 	} else if (argc >= 2 && argc <= 3) {
 		regd.oper = WIFI_MGMT_SET;
@@ -1336,6 +1338,19 @@ static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 	if (regd.oper == WIFI_MGMT_GET) {
 		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain is: %c%c\n",
 			regd.country_code[0], regd.country_code[1]);
+		shell_fprintf(sh, SHELL_NORMAL,
+			"<channel>\t<center frequency>\t<supported(y/n)>\t"
+			"<max power(dBm)>\t<passive scan supported(y/n)>\t<dfs supported(y/n)>\n");
+		for (chan_idx = 0; chan_idx < regd.num_channels; chan_idx++) {
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "  %d\t\t\t\%d\t\t\t\%s\t\t\t%d\t\t\t%s\t\t\t\t%s\n",
+				      wifi_freq_to_channel(chan_info[chan_idx].center_frequency),
+				      chan_info[chan_idx].center_frequency,
+				      chan_info[chan_idx].supported ? "y" : "n",
+				      chan_info[chan_idx].max_power,
+				      chan_info[chan_idx].passive_only ? "y" : "n",
+				      chan_info[chan_idx].dfs ? "y" : "n");
+		}
 	} else {
 		shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Regulatory domain set to: %c%c\n",
 			regd.country_code[0], regd.country_code[1]);
