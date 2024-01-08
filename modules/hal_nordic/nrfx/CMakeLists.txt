@@ -116,7 +116,7 @@ endif()
 # doing the proper configuration sequence during system init
 
 dt_nodelabel(uicr_path NODELABEL "uicr")
-if(DEFINED uicr_path)
+if(${uicr_path})
   dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
   if(${nfct_pins_as_gpios})
     zephyr_library_compile_definitions(CONFIG_NFCT_PINS_AS_GPIOS)
