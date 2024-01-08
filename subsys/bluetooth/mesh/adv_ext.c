@@ -499,9 +499,7 @@ int bt_mesh_adv_enable(void)
 			return err;
 		}
 
-		if (IS_ENABLED(CONFIG_BT_LL_SOFTDEVICE) &&
-		    IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
-		    adv->tag == BT_MESH_FRIEND_ADV) {
+		if (IS_ENABLED(CONFIG_BT_LL_SOFTDEVICE) && adv->tag & BT_MESH_FRIEND_ADV) {
 			err = set_adv_randomness(adv->instance->handle, 0);
 			if (err) {
 				LOG_ERR("Failed to set zero randomness: %d", err);
