@@ -184,10 +184,6 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT,
 	/** AP mode disable result */
 	NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT,
-	/** STA connected to AP */
-	NET_EVENT_WIFI_CMD_AP_STA_CONNECTED,
-	/** STA disconnected from AP */
-	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED,
 };
 
 #define NET_EVENT_WIFI_SCAN_RESULT				\
@@ -222,12 +218,6 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_AP_DISABLE_RESULT			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT)
-
-#define NET_EVENT_WIFI_AP_STA_CONNECTED				\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_CONNECTED)
-
-#define NET_EVENT_WIFI_AP_STA_DISCONNECTED			\
-	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED)
 
 /**
  * @brief Wi-Fi structure to uniquely identify a band-channel pair
@@ -578,18 +568,6 @@ struct wifi_raw_scan_result {
 };
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 
-/** AP mode - connected STA details */
-struct wifi_ap_sta_info {
-	/** Link mode, see enum wifi_link_mode */
-	enum wifi_link_mode link_mode;
-	/** MAC address */
-	uint8_t mac[WIFI_MAC_ADDR_LEN];
-	/** MAC address length */
-	uint8_t mac_length;
-	/** is TWT capable ? */
-	bool twt_capable;
-};
-
 /* for use in max info size calculations */
 union wifi_mgmt_events {
 	struct wifi_scan_result scan_result;
@@ -599,7 +577,6 @@ union wifi_mgmt_events {
 	struct wifi_raw_scan_result raw_scan_result;
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 	struct wifi_twt_params twt_params;
-	struct wifi_ap_sta_info ap_sta_info;
 };
 
 /** Wi-Fi mode setup */
@@ -871,21 +848,6 @@ void wifi_mgmt_raise_ap_enable_result_event(struct net_if *iface, enum wifi_ap_s
  * @param status AP mode disable result status
  */
 void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface, enum wifi_ap_status status);
-
-/** Wi-Fi management AP mode STA connected event
- *
- * @param iface Network interface
- * @param sta_info STA information
- */
-void wifi_mgmt_raise_ap_sta_connected_event(struct net_if *iface,
-		struct wifi_ap_sta_info *sta_info);
-
-/** Wi-Fi management AP mode STA disconnected event
- * @param iface Network interface
- * @param sta_info STA information
- */
-void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
-		struct wifi_ap_sta_info *sta_info);
 
 /**
  * @}
