@@ -81,7 +81,13 @@ struct shell_uart_polling {
 #define SHELL_UART_STRUCT struct shell_uart_int_driven
 #endif
 
-#define SHELL_UART_DEFINE(_name)                                                                   \
+/**
+ * @brief Macro for creating shell UART transport instance named @p _name
+ *
+ * @note Additional arguments are accepted (but ignored) for compatibility with
+ * previous Zephyr version, it will be removed in future release.
+ */
+#define SHELL_UART_DEFINE(_name, ...)                                                              \
 	static SHELL_UART_STRUCT _name##_shell_uart;                                               \
 	struct shell_transport _name = {                                                           \
 		.api = &shell_uart_transport_api,                                                  \
