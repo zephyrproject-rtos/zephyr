@@ -392,5 +392,7 @@ ZTEST(coap_client, test_unmatching_tokens)
 	k_sleep(K_MSEC(1));
 	k_sleep(K_MSEC(1));
 	clear_socket_events();
-	k_sleep(K_MSEC(1000));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_NOT_FOUND, "Unexpected response %d",
+		      last_response_code);
+	k_sleep(K_MSEC(1));
 }
