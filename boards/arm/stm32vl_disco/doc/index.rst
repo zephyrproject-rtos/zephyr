@@ -119,7 +119,7 @@ Default Zephyr Peripheral Mapping:
 - I2C2_SCL : PB10
 - I2C2_SDA : PB11
 
-For mode details please refer to `STM32VLDISCOVERY board User Manual`_.
+For more details please refer to `STM32VLDISCOVERY board User Manual`_.
 
 Programming and Debugging
 *************************

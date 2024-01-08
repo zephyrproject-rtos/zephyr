@@ -107,7 +107,7 @@ Available pins:
    :align: center
    :alt: Nucleo F411RE Morpho connectors
 
-For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
+For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

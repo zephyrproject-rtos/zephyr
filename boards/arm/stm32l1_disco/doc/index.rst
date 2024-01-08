@@ -125,7 +125,7 @@ Default Zephyr Peripheral Mapping:
 - SPI2_MISO : PB14
 - SPI2_MOSI : PB15
 
-For mode details please refer to `STM32L1DISCOVERY board User Manual`_.
+For more details please refer to `STM32L1DISCOVERY board User Manual`_.
 
 Programming and Debugging
 *************************

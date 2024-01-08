@@ -113,7 +113,7 @@ Pin Mapping
 The STM32F429I-DISC1 Discovery kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `STM32F429I-DISC1 board User Manual`_.
+For more details please refer to `STM32F429I-DISC1 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

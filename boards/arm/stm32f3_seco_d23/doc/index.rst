@@ -96,7 +96,7 @@ Pin Mapping
 SECO-D23 has 6 GPIO controllers. These controllers are
 responsible for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `SECO JUNO SBC-D23 board User Manual`_.
+For more details please refer to `SECO JUNO SBC-D23 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

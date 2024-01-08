@@ -99,7 +99,7 @@ Pin Mapping
 The SAM R34 Xplained Pro evaluation kit has 3 GPIO controllers. These
 controllers are responsible for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `SAM R34 Family Datasheet`_ and the `SAM R34
+For more details please refer to `SAM R34 Family Datasheet`_ and the `SAM R34
 Xplained Pro Schematic`_.
 
 .. image:: img/atsamr34-xpro-pinout.jpg

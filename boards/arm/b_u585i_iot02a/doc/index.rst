@@ -245,7 +245,7 @@ Connections and IOs
 B_U585I_IOT02A Discovery kit has 9 GPIO controllers (from A to I). These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `B U585I IOT02A board User Manual`_.
+For more details please refer to `B U585I IOT02A board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

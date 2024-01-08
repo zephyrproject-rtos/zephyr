@@ -71,7 +71,7 @@ The default configuration can be found in the defconfig file:
 Pin Mapping
 ===========
 
-For mode details, please refer to `STM32L4R9I-DISCOVERY website`_.
+For more details, please refer to `STM32L4R9I-DISCOVERY website`_.
 
 System Clock
 ============

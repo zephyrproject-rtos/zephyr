@@ -81,7 +81,7 @@ Pin Mapping
 The SAM L21 Xplained Pro evaluation kit has 2 GPIO controllers. These
 controllers are responsible for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `SAM L21 Family Datasheet`_ and the `SAM L21
+For more details please refer to `SAM L21 Family Datasheet`_ and the `SAM L21
 Xplained Pro Schematic`_.
 
 .. image:: img/atsaml21-xpro-pinout.jpg

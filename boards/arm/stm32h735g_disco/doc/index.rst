@@ -75,7 +75,7 @@ The default configuration per core can be found in the defconfig file:
 Pin Mapping
 ===========
 
-For mode details please refer to `STM32H735G-DISCO website`_.
+For more details please refer to `STM32H735G-DISCO website`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

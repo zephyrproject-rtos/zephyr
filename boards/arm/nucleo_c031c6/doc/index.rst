@@ -110,7 +110,7 @@ Default Zephyr Peripheral Mapping:
 - UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
 - LD4       : PA5
 
-For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
+For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Programming and Debugging
 *************************

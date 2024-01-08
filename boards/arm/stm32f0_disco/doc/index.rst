@@ -89,7 +89,7 @@ Default Zephyr Peripheral Mapping:
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 
-For mode details please refer to `STM32F0DISCOVERY board User Manual`_.
+For more details please refer to `STM32F0DISCOVERY board User Manual`_.
 
 Programming and Debugging
 *************************
