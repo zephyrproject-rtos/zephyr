@@ -4279,7 +4279,6 @@ static struct ping_context {
 	uint32_t sequence;
 	uint16_t payload_size;
 	uint8_t tos;
-	int priority;
 } ping_ctx;
 
 static void ping_done(struct ping_context *ctx);
@@ -4505,7 +4504,6 @@ static void ping_work(struct k_work *work)
 						   sys_rand32_get(),
 						   ctx->sequence,
 						   ctx->tos,
-						   ctx->priority,
 						   NULL,
 						   ctx->payload_size);
 	} else {
@@ -4514,7 +4512,6 @@ static void ping_work(struct k_work *work)
 						   sys_rand32_get(),
 						   ctx->sequence,
 						   ctx->tos,
-						   ctx->priority,
 						   NULL,
 						   ctx->payload_size);
 	}
@@ -4615,7 +4612,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	int iface_idx = -1;
 	int tos = 0;
 	int payload_size = 4;
-	int priority = -1;
 
 	for (size_t i = 1; i < argc; ++i) {
 
@@ -4646,14 +4642,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 		case 'I':
 			iface_idx = parse_arg(&i, argc, argv);
 			if (iface_idx < 0 || !net_if_get_by_index(iface_idx)) {
-				PR_WARNING("Parse error: %s\n", argv[i]);
-				return -ENOEXEC;
-			}
-			break;
-
-		case 'p':
-			priority = parse_arg(&i, argc, argv);
-			if (priority < 0 || priority > UINT8_MAX) {
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
 			}
@@ -4695,7 +4683,6 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	ping_ctx.sh = sh;
 	ping_ctx.count = count;
 	ping_ctx.interval = interval;
-	ping_ctx.priority = priority;
 	ping_ctx.tos = tos;
 	ping_ctx.payload_size = payload_size;
 
@@ -6597,7 +6584,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 	SHELL_CMD(--help, NULL,
 		  "'net ping [-c count] [-i interval ms] [-I <iface index>] "
-		  "[-Q tos] [-s payload size] [-p priority] <host>' "
+		  "[-Q tos] [-s payload size] <host>' "
 		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END
