@@ -191,7 +191,7 @@ static bool spim_transfer(const uint8_t *tx_data, size_t tx_data_len,
 static void uarte_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 {
 	if (p_event->type == NRFX_UARTE_EVT_RX_DONE) {
-		received = p_event->data.rx.length;
+		received = p_event->data.rx.bytes;
 		k_sem_give(&transfer_finished);
 	} else if (p_event->type == NRFX_UARTE_EVT_ERROR) {
 		received = 0;
