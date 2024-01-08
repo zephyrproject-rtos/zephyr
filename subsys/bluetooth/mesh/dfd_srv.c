@@ -761,7 +761,7 @@ const struct bt_mesh_model_op _bt_mesh_dfd_srv_op[] = {
 	{ BT_MESH_DFD_OP_APPLY, BT_MESH_LEN_EXACT(0), handle_apply },
 	{ BT_MESH_DFD_OP_UPLOAD_GET, BT_MESH_LEN_EXACT(0), handle_upload_get },
 	{ BT_MESH_DFD_OP_UPLOAD_START, BT_MESH_LEN_MIN(16), handle_upload_start },
-	{ BT_MESH_DFD_OP_UPLOAD_START_OOB, BT_MESH_LEN_MIN(2), handle_upload_start_oob },
+	{ BT_MESH_DFD_OP_UPLOAD_START_OOB, BT_MESH_LEN_EXACT(2), handle_upload_start_oob },
 	{ BT_MESH_DFD_OP_UPLOAD_CANCEL, BT_MESH_LEN_EXACT(0), handle_upload_cancel },
 	{ BT_MESH_DFD_OP_FW_GET, BT_MESH_LEN_MIN(0), handle_fw_get },
 	{ BT_MESH_DFD_OP_FW_GET_BY_INDEX, BT_MESH_LEN_EXACT(2), handle_fw_get_by_index },
