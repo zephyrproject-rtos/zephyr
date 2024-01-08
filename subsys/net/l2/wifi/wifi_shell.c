@@ -341,10 +341,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		return -EINVAL;
 	}
 
-	/* Defaults */
 	params->band = WIFI_FREQ_BAND_UNKNOWN;
-	params->channel = WIFI_CHANNEL_ANY;
-	params->security = WIFI_SECURITY_TYPE_NONE;
 
 	/* SSID */
 	params->ssid = argv[0];
@@ -365,6 +362,8 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		}
 
 		idx++;
+	} else {
+		params->channel = WIFI_CHANNEL_ANY;
 	}
 
 	/* PSK (optional) */
@@ -403,6 +402,8 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		     params->psk_length > WIFI_SAE_PSWD_MAX_LEN)) {
 			return -EINVAL;
 		}
+	} else {
+		params->security = WIFI_SECURITY_TYPE_NONE;
 	}
 
 
