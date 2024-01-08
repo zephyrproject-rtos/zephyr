@@ -10,12 +10,6 @@
 #include <zephyr/devicetree.h>
 
 /*
- * NRFX API version 2.10 flag.
- * When the flag is set NRFX API is compatible with the newest NRFX release.
- */
-#define NRFX_CONFIG_API_VER_2_10 1
-
-/*
  * These are mappings of Kconfig options enabling nrfx drivers and particular
  * peripheral instances to the corresponding symbols used inside of nrfx.
  * Please note that only subsets of these entries are used for particular SoCs
