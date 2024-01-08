@@ -131,6 +131,17 @@
 "CI-rs-test":
   - "**/*"
 
+"CI-homekit-test":
+  - "modules/openthread/**/*"
+  - "samples/bluetooth/hci_rpmsg/**/*"
+  - "soc/arm/nordic_nrf/**/*"
+  - "subsys/net/**/*"
+  - "subsys/settings/**/*"
+  - any:
+      - "subsys/bluetooth/**/*"
+      - "!subsys/bluetooth/mesh/**/*"
+      - "!subsys/bluetooth/audio/**/*"
+
 "CI-thread-test":
   - "include/zephyr/net/**/*"
   - "modules/mbedtls/**/*"
