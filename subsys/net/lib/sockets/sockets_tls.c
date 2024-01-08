@@ -2230,9 +2230,10 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 			timeout_ms = timeout_to_ms(&timeout);
 			ret = wait_for_reason(ctx->sock, timeout_ms, ret);
 			if (ret != 0) {
-				errno = -ret;
+				/* Retry. */
 				break;
 			}
+
 		} else {
 			(void)tls_mbedtls_reset(ctx);
 			errno = EIO;
