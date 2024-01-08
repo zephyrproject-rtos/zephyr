@@ -1601,7 +1601,7 @@ static int cmd_wifi_packet_filter(const struct shell *sh, size_t argc, char *arg
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL,
-		  "Disable Access Point mode.\n",
+		  "Disable Access Point mode",
 		  cmd_wifi_ap_disable,
 		  1, 0),
 	SHELL_CMD_ARG(enable, NULL,
@@ -1611,7 +1611,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "[Security type: valid only for secure SSIDs]\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[MFP (optional: needs security type to be specified)]\n"
-		  ": 0:Disable, 1:Optional, 2:Required.\n",
+		  ": 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_ap_enable,
 		  2, 4),
 	SHELL_SUBCMD_SET_END
@@ -1619,30 +1619,30 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(quick_setup, NULL, " Start a TWT flow with defaults:\n"
-		"<twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>.\n",
+		"<twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>\n",
 		cmd_wifi_twt_setup_quick,
 		3, 0),
 	SHELL_CMD_ARG(setup, NULL, " Start a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
 		"<dialog_token: 1-255> <flow_id: 0-7> <responder: 0/1> <trigger: 0/1> <implicit:0/1> "
-		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>.\n",
+		"<announce: 0/1> <twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>\n",
 		cmd_wifi_twt_setup,
 		11, 0),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
-		"<dialog_token: 1-255> <flow_id: 0-7>.\n",
+		"<dialog_token: 1-255> <flow_id: 0-7>\n",
 		cmd_wifi_twt_teardown,
 		5, 0),
-	SHELL_CMD_ARG(teardown_all, NULL, " Teardown all TWT flows.\n",
+	SHELL_CMD_ARG(teardown_all, NULL, " Teardown all TWT flows\n",
 		cmd_wifi_twt_teardown_all,
 		1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
-	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands.\n", NULL),
+	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_CMD_ARG(connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
 		  "\"<SSID>\"\n"
@@ -1651,108 +1651,108 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[Security type: valid only for secure SSIDs]\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[MFP (optional: needs security type to be specified)]\n"
-		  ": 0:Disable, 1:Optional, 2:Required.\n",
+		  ": 0:Disable, 1:Optional, 2:Required",
 		  cmd_wifi_connect,
 		  2, 4),
-	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
+	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP",
 		  cmd_wifi_disconnect,
 		  1, 0),
 	SHELL_CMD_ARG(ps, NULL, "Configure or display Wi-Fi power save state\n"
-		  "[on/off].\n",
+		  "[on/off]\n",
 		  cmd_wifi_ps,
 		  1, 1),
 	SHELL_CMD_ARG(ps_mode,
 		      NULL,
-		      "<mode: legacy/WMM>.\n",
+		      "<mode: legacy/WMM>\n",
 		      cmd_wifi_ps_mode,
 		      2,
 		      0),
 	SHELL_CMD_ARG(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
-		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active\n"
-		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz\n"
-		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms\n"
-		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms\n"
-		    "[-s, --ssid : SSID to scan for. Can be provided multiple times\n"
-		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535\n"
+		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active.\n"
+		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz.\n"
+		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms.\n"
+		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms.\n"
+		    "[-s, --ssid : SSID to scan for. Can be provided multiple times.\n"
+		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535.\n"
 		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6-11,14_5:36,149-165,44\n"
-		    "[-h, --help] : Print out the help for the scan command.\n",
+		    "[-h, --help] : Print out the help for the scan command.",
 		  cmd_wifi_scan,
 		  1, 8),
-	SHELL_CMD_ARG(statistics, NULL, "Wi-Fi interface statistics.\n", cmd_wifi_stats, 1, 0),
-	SHELL_CMD_ARG(status, NULL, "Status of the Wi-Fi interface.\n", cmd_wifi_status, 1, 0),
-	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows.\n", NULL),
+	SHELL_CMD_ARG(statistics, NULL, "Wi-Fi interface statistics", cmd_wifi_stats, 1, 0),
+	SHELL_CMD_ARG(status, NULL, "Status of the Wi-Fi interface", cmd_wifi_status, 1, 0),
+	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows", NULL),
 	SHELL_CMD_ARG(reg_domain, NULL,
 		"Set or Get Wi-Fi regulatory domain\n"
 		"[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
 		"[-f]: Force to use this regulatory hint over any other regulatory hints\n"
-		"Note: This may cause regulatory compliance issues, use it at your own risk.\n",
+		"Note: This may cause regulatory compliance issues, use it at your own risk.",
 		cmd_wifi_reg_domain,
 		1, 2),
 	SHELL_CMD_ARG(mode, NULL, "mode operational setting\n"
 		"This command may be used to set the Wi-Fi device into a specific mode of operation\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-s, --sta] : Station mode\n"
-		"[-m, --monitor] : Monitor mode\n"
-		"[-p, --promiscuous] : Promiscuous mode\n"
-		"[-t, --tx-injection] : TX-Injection mode\n"
-		"[-a, --ap] : AP mode\n"
-		"[-k, --softap] : Softap mode\n"
-		"[-h, --help] : Help\n"
-		"[-g, --get] : Get current mode for a specific interface index\n"
+		"[-i, --if-index <idx>] : Interface index.\n"
+		"[-s, --sta] : Station mode.\n"
+		"[-m, --monitor] : Monitor mode.\n"
+		"[-p, --promiscuous] : Promiscuous mode.\n"
+		"[-t, --tx-injection] : TX-Injection mode.\n"
+		"[-a, --ap] : AP mode.\n"
+		"[-k, --softap] : Softap mode.\n"
+		"[-h, --help] : Help.\n"
+		"[-g, --get] : Get current mode for a specific interface index.\n"
 		"Usage: Get operation example for interface index 1\n"
 		"wifi mode -g -i1\n"
 		"Set operation example for interface index 1 - set station+promiscuous\n"
-		"wifi mode -i1 -sp.\n",
+		"wifi mode -i1 -sp\n",
 		cmd_wifi_mode,
 		1, 9),
 	SHELL_CMD_ARG(packet_filter, NULL, "mode filter setting\n"
 		"This command is used to set packet filter setting when\n"
-		"monitor, TX-Injection and promiscuous mode is enabled\n"
+		"monitor, TX-Injection and promiscuous mode is enabled.\n"
 		"The different packet filter modes are control, management, data and enable all filters\n"
-		"[-i, --if-index <idx>] : Interface index\n"
+		"[-i, --if-index <idx>] : Interface index.\n"
 		"[-a, --all] : Enable all packet filter modes\n"
-		"[-m, --mgmt] : Enable management packets to allowed up the stack\n"
-		"[-c, --ctrl] : Enable control packets to be allowed up the stack\n"
-		"[-d, --data] : Enable Data packets to be allowed up the stack\n"
-		"[-g, --get] : Get current filter settings for a specific interface index\n"
+		"[-m, --mgmt] : Enable management packets to allowed up the stack.\n"
+		"[-c, --ctrl] : Enable control packets to be allowed up the stack.\n"
+		"[-d, --data] : Enable Data packets to be allowed up the stack.\n"
+		"[-g, --get] : Get current filter settings for a specific interface index.\n"
 		"[-b, --capture-len <len>] : Capture length buffer size for each packet to be captured\n"
-		"[-h, --help] : Help\n"
+		"[-h, --help] : Help.\n"
 		"Usage: Get operation example for interface index 1\n"
 		"wifi packet_filter -g -i1\n"
 		"Set operation example for interface index 1 - set data+management frame filter\n"
-		"wifi packet_filter -i1 -md.\n",
+		"wifi packet_filter -i1 -md\n",
 		cmd_wifi_packet_filter,
 		1, 8),
 	SHELL_CMD_ARG(channel, NULL, "wifi channel setting\n"
 		"This command is used to set the channel when\n"
-		"monitor or TX-Injection mode is enabled\n"
+		"monitor or TX-Injection mode is enabled.\n"
 		"Currently 20 MHz is only supported and no BW parameter is provided\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-c, --channel <chan>] : Set a specific channel number to the lower layer\n"
-		"[-g, --get] : Get current set channel number from the lower layer\n"
-		"[-h, --help] : Help\n"
+		"[-i, --if-index <idx>] : Interface index.\n"
+		"[-c, --channel <chan>] : Set a specific channel number to the lower layer.\n"
+		"[-g, --get] : Get current set channel number from the lower layer.\n"
+		"[-h, --help] : Help.\n"
 		"Usage: Get operation example for interface index 1\n"
 		"wifi channel -g -i1\n"
 		"Set operation example for interface index 1 (setting channel 5)\n"
-		"wifi -i1 -c5.\n",
+		"wifi -i1 -c5\n",
 		cmd_wifi_channel,
 		1, 4),
 	SHELL_CMD_ARG(ps_timeout,
 		      NULL,
-		      "<val> - PS inactivity timer(in ms).\n",
+		      "<val> - PS inactivity timer(in ms)",
 		      cmd_wifi_ps_timeout,
 		      2,
 		      0),
 	SHELL_CMD_ARG(ps_listen_interval,
 		      NULL,
-		      "<val> - Listen interval in the range of <0-65535>.\n",
+		      "<val> - Listen interval in the range of <0-65535>",
 		      cmd_wifi_listen_interval,
 		      2,
 		      0),
 	SHELL_CMD_ARG(ps_wakeup_mode,
 		     NULL,
-		     "<wakeup_mode: DTIM/Listen Interval>.\n",
+		     "<wakeup_mode: DTIM/Listen Interval>\n",
 		     cmd_wifi_ps_wakeup_mode,
 		     2,
 		     0),
