@@ -553,9 +553,6 @@ See :ref:`FFF Extensions <fff-extensions>`.
 
 Customizing Test Output
 ***********************
-The way output is presented when running tests can be customized.
-An example can be found in :zephyr_file:`tests/ztest/custom_output`.
-
 Customization is enabled by setting :kconfig:option:`CONFIG_ZTEST_TC_UTIL_USER_OVERRIDE` to "y"
 and adding a file :file:`tc_util_user_override.h` with your overrides.
 
