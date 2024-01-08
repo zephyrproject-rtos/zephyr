@@ -13,4 +13,3 @@ zephyr_library_sources(
 )
 
 zephyr_library_include_directories(include)
-zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)
