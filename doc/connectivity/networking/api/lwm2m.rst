@@ -318,14 +318,6 @@ events, setup a callback function:
 			LOG_DBG("Disconnected");
 			break;
 
-		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE:
-			LOG_DBG("Registration update");
-			break;
-
-		case LWM2M_RD_CLIENT_EVENT_DEREGISTER:
-			LOG_DBG("Deregistration client");
-			break;
-
 		}
 	}
 
