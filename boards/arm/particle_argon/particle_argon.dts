@@ -32,10 +32,6 @@
 	};
 };
 
-&uicr {
-	gpio-as-nreset;
-};
-
 &uart1 { /* ESP32 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <921600>;

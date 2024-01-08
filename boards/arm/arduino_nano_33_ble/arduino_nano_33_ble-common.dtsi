@@ -177,10 +177,6 @@ arduino_spi: &spi2 {
 	pinctrl-names = "default", "sleep";
 };
 
-&uicr {
-	gpio-as-nreset;
-};
-
 &gpio0 {
 	status = "okay";
 };
