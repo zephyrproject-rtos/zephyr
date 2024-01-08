@@ -126,6 +126,7 @@ int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_a
  * @param dir      Direction of the endpoints to get contexts for.
  *
  * @return Bitmask of available contexts.
+ * @retval BT_AUDIO_CONTEXT_TYPE_PROHIBITED if @p conn or @p dir are invalid
  */
 enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
 							      enum bt_audio_dir dir);
