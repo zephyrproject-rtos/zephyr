@@ -242,6 +242,10 @@ Shell
   * :kconfig:option:`CONFIG_W1_SHELL`
   * :kconfig:option:`CONFIG_WDT_SHELL`
 
+* The ``SHELL_UART_DEFINE`` macro now only requires a ``_name`` argument. In the meantime, the
+  macro accepts additional arguments (ring buffer TX & RX size arguments) for compatibility with
+  previous Zephyr version, but they are ignored, and will be removed in future release.
+
 Bootloader
 ==========
 
