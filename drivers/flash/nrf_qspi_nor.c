@@ -599,10 +599,41 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 	return rc != 0 ? rc : rc2;
 }
 
-static int configure_chip(const struct device *dev)
+/* Configures QSPI memory for the transfer */
+static int qspi_nrfx_configure(const struct device *dev)
 {
+	struct qspi_nor_data *dev_data = dev->data;
 	const struct qspi_nor_config *dev_config = dev->config;
-	int rc = 0;
+	nrfx_err_t res;
+	int rc;
+
+	res = nrfx_qspi_init(&dev_config->nrfx_cfg, qspi_handler, dev_data);
+	rc = qspi_get_zephyr_ret_code(res);
+	if (rc < 0) {
+		return rc;
+	}
+
+#if DT_INST_NODE_HAS_PROP(0, rx_delay)
+	if (!nrf53_errata_121()) {
+		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
+	}
+#endif
+
+	/* It may happen that after the flash chip was previously put into
+	 * the DPD mode, the system was reset but the flash chip was not.
+	 * Consequently, the flash chip can be in the DPD mode at this point.
+	 * Some flash chips will just exit the DPD mode on the first CS pulse,
+	 * but some need to receive the dedicated command to do it, so send it.
+	 * This can be the case even if the current image does not have
+	 * CONFIG_PM_DEVICE set to enter DPD mode, as a previously executing image
+	 * (for example the main image if the currently executing image is the
+	 * bootloader) might have set DPD mode before reboot. As a result,
+	 * attempt to exit DPD mode regardless of whether CONFIG_PM_DEVICE is set.
+	 */
+	rc = exit_dpd(dev);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* Set QE to match transfer mode.  If not using quad
 	 * it's OK to leave QE set, but doing so prevents use
@@ -752,6 +783,33 @@ out:
 }
 
 #endif /* CONFIG_FLASH_JESD216_API */
+
+/**
+ * @brief Retrieve the Flash JEDEC ID and compare it with the one expected
+ *
+ * @param dev The device structure
+ * @return 0 on success, negative errno code otherwise
+ */
+static inline int qspi_nor_read_id(const struct device *dev)
+{
+	uint8_t id[SPI_NOR_MAX_ID_LEN];
+	int rc = qspi_rdid(dev, id);
+
+	if (rc != 0) {
+		return -EIO;
+	}
+
+	const struct qspi_nor_config *qnc = dev->config;
+
+	if (memcmp(qnc->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
+		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]",
+			id[0], id[1], id[2],
+			qnc->id[0], qnc->id[1], qnc->id[2]);
+		return -ENODEV;
+	}
+
+	return 0;
+}
 
 static inline nrfx_err_t read_non_aligned(const struct device *dev,
 					  off_t addr,
@@ -1019,58 +1077,35 @@ static int qspi_nor_write_protection_set(const struct device *dev,
 	return rc;
 }
 
-static int qspi_init(const struct device *dev)
+/**
+ * @brief Configure the flash
+ *
+ * @param dev The flash device structure
+ * @param info The flash info structure
+ * @return 0 on success, negative errno code otherwise
+ */
+static int qspi_nor_configure(const struct device *dev)
 {
-	const struct qspi_nor_config *dev_config = dev->config;
-	uint8_t id[SPI_NOR_MAX_ID_LEN];
-	nrfx_err_t res;
-	int rc;
+	int rc = qspi_nrfx_configure(dev);
 
-	res = nrfx_qspi_init(&dev_config->nrfx_cfg, qspi_handler, dev->data);
-	rc = qspi_get_zephyr_ret_code(res);
-	if (rc < 0) {
+	if (rc != 0) {
 		return rc;
 	}
 
-#if DT_INST_NODE_HAS_PROP(0, rx_delay)
-	if (!nrf53_errata_121()) {
-		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
-	}
-#endif
-
-	/* It may happen that after the flash chip was previously put into
-	 * the DPD mode, the system was reset but the flash chip was not.
-	 * Consequently, the flash chip can be in the DPD mode at this point.
-	 * Some flash chips will just exit the DPD mode on the first CS pulse,
-	 * but some need to receive the dedicated command to do it, so send it.
-	 * This can be the case even if the current image does not have
-	 * CONFIG_PM_DEVICE set to enter DPD mode, as a previously executing image
-	 * (for example the main image if the currently executing image is the
-	 * bootloader) might have set DPD mode before reboot. As a result,
-	 * attempt to exit DPD mode regardless of whether CONFIG_PM_DEVICE is set.
-	 */
-	rc = exit_dpd(dev);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Retrieve the Flash JEDEC ID and compare it with the one expected. */
-	rc = qspi_rdid(dev, id);
-	if (rc < 0) {
-		return rc;
-	}
-
-	if (memcmp(dev_config->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
-		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]",
-			id[0], id[1], id[2], dev_config->id[0],
-			dev_config->id[1], dev_config->id[2]);
+	/* now the spi bus is configured, we can verify the flash id */
+	if (qspi_nor_read_id(dev) != 0) {
 		return -ENODEV;
 	}
 
-	/* The chip is correct, it can be configured now. */
-	return configure_chip(dev);
+	return 0;
 }
 
+/**
+ * @brief Initialize and configure the flash
+ *
+ * @param name The flash name
+ * @return 0 on success, negative errno code otherwise
+ */
 static int qspi_nor_init(const struct device *dev)
 {
 	const struct qspi_nor_config *dev_config = dev->config;
@@ -1086,7 +1121,7 @@ static int qspi_nor_init(const struct device *dev)
 
 	qspi_clock_div_change();
 
-	rc = qspi_init(dev);
+	rc = qspi_nor_configure(dev);
 
 	qspi_clock_div_restore();
 
