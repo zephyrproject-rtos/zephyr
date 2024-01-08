@@ -13,7 +13,7 @@ The GD32E507ZE features a single-core ARM Cortex-M33 MCU which can run up
 to 180 MHz with flash accesses zero wait states, 512kiB of Flash, 128kiB of
 SRAM and 112 GPIOs.
 
-.. image:: img/gd32e507z_eval.jpg
+.. image:: img/gd32e507z_eval.webp
      :align: center
      :alt: gd32e507z_eval
 
