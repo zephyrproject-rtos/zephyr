@@ -572,10 +572,6 @@ static int handle_upload_start_oob(struct bt_mesh_model *mod, struct bt_mesh_msg
 	fwid_len = buf->len;
 	fwid = net_buf_simple_pull_mem(buf, fwid_len);
 
-	LOG_DBG("Upload OOB Start");
-	LOG_HEXDUMP_DBG(uri, uri_len, "URI");
-	LOG_HEXDUMP_DBG(fwid, fwid_len, "FWID");
-
 	if (upload_is_busy(srv)) {
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
 		if (srv->upload.is_oob &&
