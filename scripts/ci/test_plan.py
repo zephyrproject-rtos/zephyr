@@ -284,8 +284,6 @@ class Filters:
                             tests.add(os.path.dirname(yaml))
                         self.resolved_files.append(f)
                         scope_found = True
-                    else:
-                        d = os.path.dirname(d)
                 else:
                     d = os.path.dirname(d)
 
