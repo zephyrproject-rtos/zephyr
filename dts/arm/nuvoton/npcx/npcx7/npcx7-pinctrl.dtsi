@@ -404,4 +404,12 @@
 	/omit-if-no-ref/ uart2_sin_sout_gp75_86: periph-uart2 {
 		pinmux = <&alta_uart2_sl>;
 	};
+
+	/omit-if-no-ref/ spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_sl: periph-spip-sl {
+		pinmux = <&alt0_spip_sl>;
+	};
+
+	/omit-if-no-ref/ spip_sclk_mosi_miso_gp95_gpa1_gpa3_gpa5_no_spip_inv: periph-no-spip-inv {
+		pinmux = <&alt0_gpio_no_spip>;
+	};
 };
