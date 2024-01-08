@@ -233,14 +233,14 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 	static void stm32h7_mcan_irq_config_##n(void)			    \
 	{								    \
 		LOG_DBG("Enable CAN inst" #n " IRQ");			    \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, line_0, irq),	    \
-			DT_INST_IRQ_BY_NAME(n, line_0, priority),	    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),		    \
+			DT_INST_IRQ_BY_NAME(n, int0, priority),		    \
 			can_mcan_line_0_isr, DEVICE_DT_INST_GET(n), 0);	    \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, line_0, irq));	    \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, line_1, irq),	    \
-			DT_INST_IRQ_BY_NAME(n, line_1, priority),	    \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));		    \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),		    \
+			DT_INST_IRQ_BY_NAME(n, int1, priority),		    \
 			can_mcan_line_1_isr, DEVICE_DT_INST_GET(n), 0);	    \
-		irq_enable(DT_INST_IRQ_BY_NAME(n, line_1, irq));	    \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));		    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32H7_MCAN_INIT)
