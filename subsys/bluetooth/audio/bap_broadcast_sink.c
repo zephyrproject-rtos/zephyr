@@ -566,16 +566,6 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 	bt_data_parse(buf, pa_decode_base, (void *)sink);
 }
 
-static void pa_term_cb(struct bt_le_per_adv_sync *sync,
-		       const struct bt_le_per_adv_sync_term_info *info)
-{
-	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
-
-	if (sink != NULL) {
-		sink->pa_sync = NULL;
-	}
-}
-
 static void update_recv_state_encryption(const struct bt_bap_broadcast_sink *sink)
 {
 	struct bt_bap_scan_delegator_mod_src_param mod_src_param = { 0 };
@@ -1118,7 +1108,6 @@ static int broadcast_sink_init(void)
 	static struct bt_le_per_adv_sync_cb cb = {
 		.recv = pa_recv,
 		.biginfo = biginfo_recv,
-		.term = pa_term_cb,
 	};
 
 	bt_le_per_adv_sync_cb_register(&cb);
