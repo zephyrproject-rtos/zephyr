@@ -2337,7 +2337,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 	while (rescheduling) {
 		struct ticker_node *ticker_resched;
 		uint32_t ticks_to_expire_offset;
-		uint8_t ticker_id_resched_prev;
 		struct ticker_ext  *ext_data;
 		uint32_t ticks_start_offset;
 		uint32_t window_start_ticks;
@@ -2351,7 +2350,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 		rescheduling = 0U;
 
 		/* Find first pending re-schedule */
-		ticker_id_resched_prev = TICKER_NULL;
 		ticker_id_resched = instance->ticker_id_head;
 		while (ticker_id_resched != TICKER_NULL) {
 			ticker_resched = &nodes[ticker_id_resched];
@@ -2359,8 +2357,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 				/* Pending reschedule found */
 				break;
 			}
-
-			ticker_id_resched_prev = ticker_id_resched;
 			ticker_id_resched = ticker_resched->next;
 		}
 		if (ticker_id_resched == TICKER_NULL) {
@@ -2540,15 +2536,13 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance,
 
 		/* If the node moved in the list, insert it */
 		if (ticker_id_prev != TICKER_NULL) {
-			/* Remove node from its current position in list */
-			if (ticker_id_resched_prev != TICKER_NULL) {
-				/* Node was not at the head of the list */
-				nodes[ticker_id_resched_prev].next =
-					ticker_resched->next;
-			} else {
-				/* Node was at the head, move head forward */
-				instance->ticker_id_head = ticker_resched->next;
-			}
+			LL_ASSERT(instance->ticker_id_head ==
+				  ticker_id_resched);
+
+			/* Node did not become the first - update head and
+			 * insert node after 'previous'
+			 */
+			instance->ticker_id_head = ticker_resched->next;
 
 			/* Link inserted node */
 			ticker_resched->next = nodes[ticker_id_prev].next;
