@@ -60,19 +60,19 @@ static isoal_status_t custom_sink_sdu_alloc_test(const struct isoal_sink *sink_c
 #define ZASSERT_ISOAL_SDU_ALLOC_TEST(_typ, _sink, _pdu)                                            \
 	zassert_equal_ptr(_sink,                                                                   \
 			  sink_sdu_alloc_test_fake.arg0_##_typ,                                    \
-			  "\t\tExpected alloc sink at %p, got %p.",                                \
+			  "\t\t%p != %p",                                                          \
 			  _sink,                                                                   \
 			  sink_sdu_alloc_test_fake.arg0_##_typ);                                   \
 	zassert_equal_ptr(_pdu,                                                                    \
 			  sink_sdu_alloc_test_fake.arg1_##_typ,                                    \
-			  "\t\tExpected alloc PDU buffer at %p, got %p.",                          \
+			  "\t\t%p != %p",                                                          \
 			  _pdu,                                                                    \
 			  sink_sdu_alloc_test_fake.arg1_##_typ)
 
 #define ZASSERT_ISOAL_SDU_ALLOC_TEST_CALL_COUNT(_expected)                                         \
 	zassert_equal(_expected,                                                                   \
 		      sink_sdu_alloc_test_fake.call_count,                                         \
-		      "Expected alloc called %u times, actual %u.",                                \
+		      "Expected %u got %u",                                                        \
 		      _expected,                                                                   \
 		      sink_sdu_alloc_test_fake.call_count)
 
@@ -125,59 +125,59 @@ static isoal_status_t custom_sink_sdu_emit_test(const struct isoal_sink *sink_ct
 				    _sdu_status)                                                   \
 	zassert_equal_ptr(_sink,                                                                   \
 			  sink_sdu_emit_test_fake.arg0_##_typ,                                     \
-			  "\t\tExpected sink at %p, got %p.",                                      \
+			  "\t\t%p != %p",                                                          \
 			  _sink,                                                                   \
 			  sink_sdu_emit_test_fake.arg0_##_typ);                                    \
 	zassert_equal(_state,                                                                      \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu_state,                       \
-		      "\t\tExpected SDU state '%s', got '%s'.",                                    \
-		      STATE_TO_STR(_state),                                                        \
-		      STATE_TO_STR(sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu_state));        \
+		      "\t\t%d != %d",                                                              \
+		      _state,                                                                      \
+		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu_state);                      \
 	zassert_equal(_frag_sz,                                                                    \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu_frag_size,                   \
-		      "\t\tExpected SDU frag of size %u, got %u.",                                 \
+		      "\t\t%d != %d",                                                              \
 		      _frag_sz,                                                                    \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu_frag_size);                  \
 	zassert_equal(_frag_status,                                                                \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.status,                      \
-		      "\t\tExpected SDU with status '%s', got '%s'.",                              \
-		      DU_ERR_TO_STR(_frag_status),                                                 \
-		      DU_ERR_TO_STR(sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.status));      \
+		      "\t\t%d != %d",                                                              \
+		      _frag_status,                                                                \
+		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.status);                     \
 	zassert_equal(_timestamp,                                                                  \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.timestamp,                   \
-		      "\t\tExpected SDU with timestamp %u, got %u.",                               \
+		      "\t\t%d != %d",                                                              \
 		      _timestamp,                                                                  \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.timestamp);                  \
 	zassert_equal(_sn,                                                                         \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.sn,                          \
-		      "\t\tExpected SDU with sequence number %u, got  %u.",                        \
+		      "\t\t%d != %d",                                                              \
 		      _sn,                                                                         \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.sn);                         \
-	zassert_equal_ptr(_dbuf,                                                                   \
-			  sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.contents.dbuf,           \
-			  "\t\tExpected SDU data buffer at %p, got %p.",                           \
-			  _dbuf,                                                                   \
-			  sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.contents.dbuf);          \
+	zassert_equal(_dbuf,                                                                       \
+		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.contents.dbuf,               \
+		      "\t\t%p != %p",                                                              \
+		      _dbuf,                                                                       \
+		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.contents.dbuf);              \
 	zassert_equal(_dbuf_sz,                                                                    \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.contents.size,               \
-		      "\t\tExpected SDU data buffer of size %u, got %u.",                          \
+		      "\t\t%d != %d",                                                              \
 		      _dbuf_sz,                                                                    \
 		      sink_sdu_emit_test_handler_fake.arg1_##_typ.sdu.contents.size);              \
 	zassert_equal(_total_sz,                                                                   \
 		      sink_sdu_emit_test_handler_fake.arg2_##_typ.total_sdu_size,                  \
-		      "\t\tExpected total size of SDU %u,got %u.",                                 \
+		      "\t\t%d != %d",                                                              \
 		      _total_sz,                                                                   \
 		      sink_sdu_emit_test_handler_fake.arg2_##_typ.total_sdu_size);                 \
 	zassert_equal(_sdu_status,                                                                 \
 		      sink_sdu_emit_test_handler_fake.arg2_##_typ.collated_status,                 \
-		      "\t\tExpected SDU with status '%s', got '%s'.",                              \
-		      DU_ERR_TO_STR(_sdu_status),                                                  \
-		      DU_ERR_TO_STR(sink_sdu_emit_test_handler_fake.arg2_##_typ.collated_status))
+		      "\t\t%d != %d",                                                              \
+		      _sdu_status,                                                                 \
+		      sink_sdu_emit_test_handler_fake.arg2_##_typ.collated_status)
 
 #define ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(_expected)                                          \
 	zassert_equal(_expected,                                                                   \
 		      sink_sdu_emit_test_fake.call_count,                                          \
-		      "Expected emit called %u times,  actual %u.",                                \
+		      "Expected %u got %u",                                                        \
 		      _expected,                                                                   \
 		      sink_sdu_emit_test_fake.call_count)
 
@@ -212,24 +212,24 @@ custom_sink_sdu_write_test(void *dbuf, const uint8_t *pdu_payload, const size_t 
 #define ZASSERT_ISOAL_SDU_WRITE_TEST(_typ, _frag_buf, _payload_buf, _length)                       \
 	zassert_equal_ptr(_frag_buf,                                                               \
 			  sink_sdu_write_test_fake.arg0_##_typ,                                    \
-			  "\t\tExpected write buffer at %p, got %p.",                              \
+			  "\t\t%p != %p",                                                          \
 			  _frag_buf,                                                               \
 			  sink_sdu_write_test_fake.arg0_##_typ);                                   \
 	zassert_equal_ptr(_payload_buf,                                                            \
 			  sink_sdu_write_test_fake.arg1_##_typ,                                    \
-			  "\t\tExpected write source at %p, got %p.",                              \
+			  "\t\t%p != %p",                                                          \
 			  _payload_buf,                                                            \
 			  sink_sdu_write_test_fake.arg1_##_typ);                                   \
 	zassert_equal(_length,                                                                     \
 		      sink_sdu_write_test_fake.arg2_##_typ,                                        \
-		      "\t\tExpected write length of %u, got %u.",                                  \
+		      "\t\t%d != %d",                                                              \
 		      _length,                                                                     \
 		      sink_sdu_write_test_fake.arg2_##_typ)
 
 #define ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(_expected)                                         \
 	zassert_equal(_expected,                                                                   \
 		      sink_sdu_write_test_fake.call_count,                                         \
-		     "Expected write called %u times,  actual %u.",                                \
+		      "Expected %u got %u",                                                        \
 		      _expected,                                                                   \
 		      sink_sdu_write_test_fake.call_count)
 
@@ -2767,7 +2767,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 	seqn = 0;
 	testdata_indx = 0;
 	testdata_size = 13;
-	sdu_size = 0;
+	sdu_size = 13;
 	total_sdu_size = COLLATED_RX_SDU_INFO(sdu_size, sdu_size);
 	collated_status = COLLATED_RX_SDU_INFO(ISOAL_SDU_STATUS_ERRORS, ISOAL_SDU_STATUS_ERRORS);
 
@@ -2804,9 +2804,11 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 				     &isoal_global.sink_state[sink_hdl], /* Sink */
 				     &rx_pdu_meta_buf.pdu_meta);         /* PDU */
 
-	/* SDU payload should not be written */
-	ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(0);
-
+	/* SDU payload should be written */
+	ZASSERT_ISOAL_SDU_WRITE_TEST(val,
+				     &rx_sdu_frag_buf,                 /* SDU buffer */
+				     &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
+				     (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val,
 				    &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -2836,6 +2838,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 	sdu_timestamp = (uint32_t)((int64_t)pdu_timestamp + latency);
 	testdata_indx = testdata_size;
 	testdata_size += 10;
+	sdu_size = 10;
 	total_sdu_size = COLLATED_RX_SDU_INFO(sdu_size, sdu_size);
 	collated_status =
 		COLLATED_RX_SDU_INFO(ISOAL_SDU_STATUS_LOST_DATA, ISOAL_SDU_STATUS_LOST_DATA);
@@ -2863,9 +2866,11 @@ ZTEST(test_rx_unframed, test_rx_unframed_single_pdu_err)
 				     &isoal_global.sink_state[sink_hdl], /* Sink */
 				     &rx_pdu_meta_buf.pdu_meta);         /* PDU */
 
-	/* SDU payload should not be written */
-	ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(0);
-
+	/* SDU payload should be written */
+	ZASSERT_ISOAL_SDU_WRITE_TEST(val,
+				     &rx_sdu_frag_buf,                 /* SDU buffer */
+				     &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
+				     (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val,
 				    &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3234,6 +3239,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 	payload_number++;
 	testdata_indx = testdata_size;
 	testdata_size += 10;
+	sdu_size += 10;
 	total_sdu_size = COLLATED_RX_SDU_INFO(sdu_size, sdu_size);
 	collated_status =
 		COLLATED_RX_SDU_INFO(ISOAL_SDU_STATUS_LOST_DATA, ISOAL_SDU_STATUS_LOST_DATA);
@@ -3257,11 +3263,12 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err1)
 
 	/* Test recombine (Black Box) */
 	/* A new SDU should not be allocated */
-	ZASSERT_ISOAL_SDU_ALLOC_TEST_CALL_COUNT(1);
 
-	/* SDU payload should not be written */
-	ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(1);
-
+	/* SDU payload should be written */
+	ZASSERT_ISOAL_SDU_WRITE_TEST(val,
+				     &rx_sdu_frag_buf,                 /* SDU buffer */
+				     &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
+				     (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val,
 				    &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -3528,7 +3535,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 	payload_number++;
 	testdata_indx = testdata_size;
 	testdata_size += 10;
-	sdu_size = 0;
+	sdu_size = 10;
 	total_sdu_size = COLLATED_RX_SDU_INFO(sdu_size, 50);
 	collated_status =
 		COLLATED_RX_SDU_INFO(ISOAL_SDU_STATUS_LOST_DATA, ISOAL_SDU_STATUS_LOST_DATA);
@@ -3558,9 +3565,11 @@ ZTEST(test_rx_unframed, test_rx_unframed_seq_pdu_err2)
 				     &isoal_global.sink_state[sink_hdl], /* Sink */
 				     &rx_pdu_meta_buf.pdu_meta);         /* PDU */
 
-	/* SDU payload should not be written */
-	ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(1);
-
+	/* SDU payload should be written */
+	ZASSERT_ISOAL_SDU_WRITE_TEST(val,
+				     &rx_sdu_frag_buf,                 /* SDU buffer */
+				     &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
+				     (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val,
 				    &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -4560,7 +4569,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error1)
 	seqn = 0;
 	testdata_indx = 0;
 	testdata_size = 13;
-	sdu_size = 0;
+	sdu_size = 13;
 	total_sdu_size = COLLATED_RX_SDU_INFO(sdu_size, sdu_size);
 	collated_status = COLLATED_RX_SDU_INFO(ISOAL_SDU_STATUS_ERRORS, ISOAL_SDU_STATUS_ERRORS);
 
@@ -4598,9 +4607,11 @@ ZTEST(test_rx_unframed, test_rx_unframed_padding_error1)
 				     &isoal_global.sink_state[sink_hdl], /* Sink */
 				     &rx_pdu_meta_buf.pdu_meta);         /* PDU */
 
-	/* SDU payload should not be written */
-	ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(0);
-
+	/* SDU payload should be written */
+	ZASSERT_ISOAL_SDU_WRITE_TEST(val,
+				     &rx_sdu_frag_buf,                 /* SDU buffer */
+				     &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
+				     (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val,
 				    &isoal_global.sink_state[sink_hdl], /* Sink */
@@ -5924,6 +5935,7 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 	payload_number++;
 	testdata_indx = testdata_size;
 	testdata_size += 10;
+	sdu_size += 10;
 	total_sdu_size = COLLATED_RX_SDU_INFO(sdu_size, sdu_size);
 	collated_status = COLLATED_RX_SDU_INFO(ISOAL_SDU_STATUS_ERRORS, ISOAL_SDU_STATUS_ERRORS);
 
@@ -5946,11 +5958,12 @@ ZTEST(test_rx_unframed, test_rx_unframed_dbl_pdu_invalid_llid2_pdu_err)
 
 	/* Test recombine (Black Box) */
 	/* A new SDU should not be allocated */
-	ZASSERT_ISOAL_SDU_ALLOC_TEST_CALL_COUNT(1);
 
-	/* SDU payload should not be written */
-	ZASSERT_ISOAL_SDU_WRITE_TEST_CALL_COUNT(1);
-
+	/* SDU payload should be written */
+	ZASSERT_ISOAL_SDU_WRITE_TEST(val,
+				     &rx_sdu_frag_buf,                 /* SDU buffer */
+				     &rx_pdu_meta_buf.pdu[3],          /* PDU payload */
+				     (testdata_size - testdata_indx)); /* Size */
 	/* SDU should be emitted */
 	ZASSERT_ISOAL_SDU_EMIT_TEST(val,
 				    &isoal_global.sink_state[sink_hdl], /* Sink */
