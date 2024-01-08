@@ -736,6 +736,11 @@ struct bt_gatt_ccc_cfg {
 	uint8_t id;
 	/** Remote peer address. */
 	bt_addr_le_t peer;
+	/**
+	 * Separate storage for encrypted and unencrypted context. This
+	 * indicate that the link was encrypted when the CCC was written.
+	 */
+	bool link_encrypted;
 	/** Configuration value. */
 	uint16_t value;
 };
