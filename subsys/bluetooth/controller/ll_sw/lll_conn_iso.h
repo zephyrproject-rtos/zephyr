@@ -77,9 +77,6 @@ struct lll_conn_iso_group {
 	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
 	uint8_t  paused:1;    /* 1: CIG is paused */
 
-	/* ISO interval to calculate timestamp under FT > 1 */
-	uint32_t iso_interval_us;
-
 	/* Accumulates LLL prepare callback latencies */
 	uint16_t latency_prepare;
 	uint16_t latency_event;
