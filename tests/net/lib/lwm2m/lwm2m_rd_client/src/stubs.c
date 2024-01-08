@@ -117,12 +117,10 @@ uint16_t counter = RD_CLIENT_MAX_SERVICE_ITERATIONS;
 struct lwm2m_message *pending_message;
 void *(*pending_message_cb)();
 static bool running;
-K_SEM_DEFINE(srv_sem, 0, 1);
 
 static void service_work_fn(struct k_work *work)
 {
 	while (running) {
-		k_sleep(K_MSEC(10));
 		if (pending_message != NULL && pending_message_cb != NULL) {
 			pending_message_cb(pending_message);
 			pending_message = NULL;
@@ -131,9 +129,8 @@ static void service_work_fn(struct k_work *work)
 		if (next && next < k_uptime_get()) {
 			next = 0;
 			service(NULL);
-			k_sem_give(&srv_sem);
 		}
-
+		k_sleep(K_MSEC(10));
 		counter--;
 
 		/* avoid endless loop if rd client is stuck somewhere */
@@ -146,8 +143,10 @@ static void service_work_fn(struct k_work *work)
 
 void wait_for_service(uint16_t cycles)
 {
-	while (cycles--) {
-		k_sem_take(&srv_sem, K_MSEC(100));
+	uint16_t end = counter - cycles;
+
+	while (counter > end) {
+		k_sleep(K_MSEC(10));
 	}
 }
 
@@ -158,7 +157,6 @@ void test_lwm2m_engine_start_service(void)
 	running = true;
 	counter = RD_CLIENT_MAX_SERVICE_ITERATIONS;
 	k_work_submit(&service_work);
-	k_sem_reset(&srv_sem);
 }
 
 void test_lwm2m_engine_stop_service(void)
