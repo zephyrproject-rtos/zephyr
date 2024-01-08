@@ -1678,7 +1678,7 @@ int bt_mesh_model_extend(struct bt_mesh_model *extending_mod, struct bt_mesh_mod
 	/* Check if a's list contains b */
 	for (it = a; (it != NULL) && (it->next != a); it = it->next) {
 		if (it == b) {
-			goto register_extension;
+			return 0;
 		}
 	}
 
@@ -1695,7 +1695,7 @@ int bt_mesh_model_extend(struct bt_mesh_model *extending_mod, struct bt_mesh_mod
 		a->next = b;
 	}
 
-register_extension:
+
 	if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
 		return mod_rel_register(base_mod, extending_mod, RELATION_TYPE_EXT);
 	}
