@@ -14,7 +14,8 @@ from twister_harness.twister_harness_config import TwisterHarnessConfig
 logger = logging.getLogger(__name__)
 
 pytest_plugins = (
-    'twister_harness.fixtures'
+    'twister_harness.fixtures.dut',
+    'twister_harness.fixtures.mcumgr'
 )
 
 
