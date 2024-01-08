@@ -330,3 +330,10 @@ test_spi_lis2de12: lis2de12@29 {
 	int2-gpios = <&test_gpio 0 0>;
 	status = "okay";
 };
+
+test_spi_ens160: ens160@2a {
+	compatible = "sciosense,ens160";
+	reg = <0x2a>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
