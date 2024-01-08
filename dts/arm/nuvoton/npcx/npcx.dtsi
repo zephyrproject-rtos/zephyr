@@ -546,6 +546,17 @@
 				    &wui_io25 &wui_io24 &wui_io23 &wui_io22>;
 			status = "disabled";
 		};
+
+		spip0: spi@400d2000 {
+			compatible = "nuvoton,npcx-spip";
+			reg = <0x400d2000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <57 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL4 7>;
+			status = "disabled";
+
+		};
 	};
 
 	soc-if {
