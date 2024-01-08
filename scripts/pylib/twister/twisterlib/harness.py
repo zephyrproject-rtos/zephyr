@@ -400,10 +400,8 @@ class Pytest(Harness):
         if elem_ts := root.find('testsuite'):
             if elem_ts.get('failures') != '0':
                 self.state = 'failed'
-                self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"
             elif elem_ts.get('errors') != '0':
                 self.state = 'error'
-                self.instance.reason = 'Error during pytest execution'
             elif elem_ts.get('skipped') == elem_ts.get('tests'):
                 self.state = 'skipped'
             else:
