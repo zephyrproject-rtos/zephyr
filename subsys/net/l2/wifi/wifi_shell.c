@@ -656,9 +656,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 				wifi_security_txt(status.security));
 		shell_fprintf(sh, SHELL_NORMAL, "MFP: %s\n",
 				wifi_mfp_txt(status.mfp));
-		if (status.iface_mode == WIFI_MODE_INFRA) {
-			shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
-		}
+		shell_fprintf(sh, SHELL_NORMAL, "RSSI: %d\n", status.rssi);
 		shell_fprintf(sh, SHELL_NORMAL, "Beacon Interval: %d\n", status.beacon_interval);
 		shell_fprintf(sh, SHELL_NORMAL, "DTIM: %d\n", status.dtim_period);
 		shell_fprintf(sh, SHELL_NORMAL, "TWT: %s\n",
