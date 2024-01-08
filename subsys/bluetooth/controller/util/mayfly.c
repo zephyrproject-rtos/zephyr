@@ -6,13 +6,8 @@
  */
 
 #include <stddef.h>
-
-#include <soc.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/printk.h>
-
-#include "hal/cpu.h"
-
 #include "memq.h"
 #include "mayfly.h"
 
@@ -159,12 +154,10 @@ static void dequeue(uint8_t callee_id, uint8_t caller_id, memq_link_t *link,
 		m->_link = link;
 
 		/* reset mayfly state to idle */
-		cpu_dmb();
 		ack = m->_ack;
 		m->_ack = req;
 
 		/* re-insert, if re-pended by interrupt */
-		cpu_dmb();
 		if (((m->_req - ack) & 0x03) == 1U) {
 #if defined(MAYFLY_UT)
 			printk("%s: RACE\n", __func__);
