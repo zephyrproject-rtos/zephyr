@@ -844,7 +844,15 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	}
 
 	data->async->rx_timeout = timeout;
-	data->async->rx_timeout_slab = timeout / RX_TIMEOUT_DIV;
+	/* Set minimum interval to 3 RTC ticks. 3 is used due to RTC limitation
+	 * which cannot set timeout for next tick. Assuming delay in processing
+	 * 3 instead of 2 is used. Note that lower value would work in a similar
+	 * way but timeouts would always occur later than expected,  most likely
+	 * after ~3 ticks.
+	 */
+	data->async->rx_timeout_slab =
+		MAX(timeout / RX_TIMEOUT_DIV,
+		    NRFX_CEIL_DIV(3 * 1000000, CONFIG_SYS_CLOCK_TICKS_PER_SEC));
 
 	data->async->rx_buf = buf;
 	data->async->rx_buf_len = len;
