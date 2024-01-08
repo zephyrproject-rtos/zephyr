@@ -138,7 +138,7 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 				   uint8_t xmit, k_timeout_t timeout)
 {
 #if defined(CONFIG_BT_MESH_RELAY)
-	if (tag == BT_MESH_RELAY_ADV) {
+	if (tag & BT_MESH_RELAY_ADV) {
 		return bt_mesh_adv_create_from_pool(&relay_buf_pool,
 						    adv_relay_pool, type,
 						    tag, xmit, timeout);
@@ -146,7 +146,7 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type,
 #endif
 
 #if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-	if (tag == BT_MESH_FRIEND_ADV) {
+	if (tag & BT_MESH_FRIEND_ADV) {
 		return bt_mesh_adv_create_from_pool(&friend_buf_pool,
 						    adv_friend_pool, type,
 						    tag, xmit, timeout);
@@ -202,14 +202,14 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 	return process_events(events, ARRAY_SIZE(events));
 }
 
-struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tags tags, k_timeout_t timeout)
+struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
 {
-	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) && tags & BT_MESH_FRIEND_ADV_BIT) {
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) && tag & BT_MESH_FRIEND_ADV) {
 		return net_buf_get(&bt_mesh_friend_queue, timeout);
 	}
 
 #if CONFIG_BT_MESH_RELAY_ADV_SETS
-	if (tags & BT_MESH_RELAY_ADV_BIT) {
+	if (tag & BT_MESH_RELAY_ADV) {
 		return net_buf_get(&bt_mesh_relay_queue, timeout);
 	}
 #endif
@@ -222,9 +222,9 @@ struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout)
 	return net_buf_get(&bt_mesh_adv_queue, timeout);
 }
 
-struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tags tags, k_timeout_t timeout)
+struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout)
 {
-	ARG_UNUSED(tags);
+	ARG_UNUSED(tag);
 
 	return bt_mesh_adv_buf_get(timeout);
 }

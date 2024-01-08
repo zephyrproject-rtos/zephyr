@@ -26,17 +26,10 @@ enum bt_mesh_adv_type {
 };
 
 enum bt_mesh_adv_tag {
-	BT_MESH_LOCAL_ADV,
-	BT_MESH_RELAY_ADV,
-	BT_MESH_PROXY_ADV,
-	BT_MESH_FRIEND_ADV,
-};
-
-enum bt_mesh_adv_tags {
-	BT_MESH_LOCAL_ADV_BIT	= BIT(BT_MESH_LOCAL_ADV),
-	BT_MESH_RELAY_ADV_BIT	= BIT(BT_MESH_RELAY_ADV),
-	BT_MESH_PROXY_ADV_BIT	= BIT(BT_MESH_PROXY_ADV),
-	BT_MESH_FRIEND_ADV_BIT	= BIT(BT_MESH_FRIEND_ADV),
+	BT_MESH_LOCAL_ADV = BIT(0),
+	BT_MESH_RELAY_ADV = BIT(1),
+	BT_MESH_PROXY_ADV = BIT(2),
+	BT_MESH_FRIEND_ADV = BIT(3),
 };
 
 struct bt_mesh_adv {
@@ -64,7 +57,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 
 struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
 
-struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tags tags, k_timeout_t timeout);
+struct net_buf *bt_mesh_adv_buf_get_by_tag(uint8_t tag, k_timeout_t timeout);
 
 void bt_mesh_adv_gatt_update(void);
 
