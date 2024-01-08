@@ -774,8 +774,8 @@ static int backend_init(const struct device *instance)
 	return 0;
 }
 
-#define BACKEND_CONFIG_POPULATE(i)							\
-	{										\
+#define DEFINE_BACKEND_DEVICE(i)							\
+	static struct backend_config_t backend_config_##i = {				\
 		.role = DT_ENUM_IDX_OR(DT_DRV_INST(i), role, ROLE_HOST),		\
 		.shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region)),		\
 		.shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, memory_region)),		\
@@ -790,10 +790,8 @@ static int backend_init(const struct device *instance)
 		.buffer_size = DT_INST_PROP_OR(i, zephyr_buffer_size,			\
 					       RPMSG_BUFFER_SIZE),			\
 		.id = i,								\
-	}
-
-#define BACKEND_DEVICE_DEFINE(i)							\
-	static struct backend_config_t backend_config_##i = BACKEND_CONFIG_POPULATE(i);	\
+	};										\
+											\
 	static struct backend_data_t backend_data_##i;					\
 											\
 	DEVICE_DT_INST_DEFINE(i,							\
@@ -805,23 +803,20 @@ static int backend_init(const struct device *instance)
 			 CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY,			\
 			 &backend_ops);
 
-DT_INST_FOREACH_STATUS_OKAY(BACKEND_DEVICE_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)
 
-#define BACKEND_CONFIG_DEFINE(i) BACKEND_CONFIG_POPULATE(i),
+#define BACKEND_CONFIG_INIT(n) &backend_config_##n,
 
 #if defined(CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET)
 static int shared_memory_prepare(void)
 {
-	const struct backend_config_t *backend_config;
-	const struct backend_config_t backend_configs[] = {
-		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_DEFINE)
+	static const struct backend_config_t *config[] = {
+		DT_INST_FOREACH_STATUS_OKAY(BACKEND_CONFIG_INIT)
 	};
 
-	for (backend_config = backend_configs;
-	     backend_config < backend_configs + ARRAY_SIZE(backend_configs);
-	     backend_config++) {
-		if (backend_config->role == ROLE_HOST) {
-			memset((void *) backend_config->shm_addr, 0, VDEV_STATUS_SIZE);
+	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
+		if (config[i]->role == ROLE_HOST) {
+			memset((void *) config[i]->shm_addr, 0, VDEV_STATUS_SIZE);
 		}
 	}
 
