@@ -64,7 +64,6 @@ int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp);
 int bt_mesh_comp_store(void);
 int bt_mesh_comp_read(struct net_buf_simple *buf, uint8_t page);
-uint8_t bt_mesh_comp_parse_page(struct net_buf_simple *buf);
 
 int bt_mesh_models_metadata_store(void);
 int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset);
