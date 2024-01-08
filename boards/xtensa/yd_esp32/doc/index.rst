@@ -147,7 +147,7 @@ Sysbuild
 ========
 
 The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the EPS32 SoC.
+bootstrap the board with the ESP32 SoC.
 
 To build the sample application using sysbuild use the command:
 
@@ -233,7 +233,7 @@ RGB LED
 =======
 
 The board contains an addressable RGB LED (`XL-5050RGBC-WS2812B`_), driven by GPIO16.
-Here is an example of how to test it using the :ref:`led_ws2812_sample` application.
+Here is an example of how to test it using the :zephyr:code-sample:`led-ws2812` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_ws2812

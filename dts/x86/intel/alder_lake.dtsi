@@ -17,7 +17,7 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "intel,alder_lake";
+			compatible = "intel,alder-lake";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
@@ -57,7 +57,7 @@
 			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x54a3>;
-			interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
 			status = "okay";
@@ -228,6 +228,28 @@
 			interrupt-parent = <&intc>;
 			status = "disabled";
 		};
+
+		emmc: emmc0 {
+			compatible = "intel,emmc-host";
+			vendor-id = <0x8086>;
+			device-id = <0x54C4>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+
+			max-bus-freq = <200000000>;
+			min-bus-freq = <400000>;
+			power-delay-ms = <500>;
+			mmc-hs400-1_8v;
+			mmc-hs200-1_8v;
+
+			mmc {
+				compatible = "zephyr,mmc-disk";
+				bus-width = <8>;
+				status = "okay";
+			};
+
+			status = "okay";
+		};
 	};
 
 	soc {
@@ -239,6 +261,7 @@
 		uart0_legacy: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
+			io-mapped;
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
@@ -404,6 +427,14 @@
 			ngpios = <8>;
 			pin-offset = <0>;
 
+			status = "okay";
+		};
+
+		tgpio: tgpio@fe001200 {
+			compatible = "intel,timeaware-gpio";
+			reg = <0xfe001200 0x100>;
+			timer-clock = <19200000>;
+			max-pins = <2>;
 			status = "okay";
 		};
 

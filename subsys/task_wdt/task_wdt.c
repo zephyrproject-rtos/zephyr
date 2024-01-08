@@ -39,6 +39,7 @@ struct task_wdt_channel {
 
 /* array of all task watchdog channels */
 static struct task_wdt_channel channels[CONFIG_TASK_WDT_CHANNELS];
+static struct k_spinlock channels_lock;
 
 /* timer used for watchdog handling */
 static struct k_timer timer;
@@ -153,9 +154,17 @@ int task_wdt_init(const struct device *hw_wdt)
 int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 		 void *user_data)
 {
+	k_spinlock_key_t key;
+
 	if (reload_period == 0) {
 		return -EINVAL;
 	}
+
+	/*
+	 * k_spin_lock instead of k_sched_lock required here to avoid being interrupted by a
+	 * triggering other task watchdog channel (executed in ISR context).
+	 */
+	key = k_spin_lock(&channels_lock);
 
 	/* look for unused channel (reload_period set to 0) */
 	for (int id = 0; id < ARRAY_SIZE(channels); id++) {
@@ -176,20 +185,30 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 			/* must be called after hw wdt has been started */
 			task_wdt_feed(id);
 
+			k_spin_unlock(&channels_lock, key);
+
 			return id;
 		}
 	}
+
+	k_spin_unlock(&channels_lock, key);
 
 	return -ENOMEM;
 }
 
 int task_wdt_delete(int channel_id)
 {
+	k_spinlock_key_t key;
+
 	if (channel_id < 0 || channel_id >= ARRAY_SIZE(channels)) {
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&channels_lock);
+
 	channels[channel_id].reload_period = 0;
+
+	k_spin_unlock(&channels_lock, key);
 
 	return 0;
 }

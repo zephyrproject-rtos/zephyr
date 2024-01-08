@@ -95,7 +95,7 @@ Building Secure/Non-Secure Zephyr applications
 The process requires the following steps:
 
 1. Build the Secure Zephyr application using ``-DBOARD=nrf9160_innblue21`` and
-   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the the application project configuration file.
+   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application project configuration file.
 2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160_innblue21_ns``.
 3. Merge the two binaries together.
 
@@ -103,9 +103,6 @@ When building a Secure/Non-Secure application, the Secure application will
 have to set the IDAU (SPU) configuration to allow Non-Secure access to all
 CPU resources utilized by the Non-Secure application firmware. SPU
 configuration shall take place before jumping to the Non-Secure application.
-
-.. note::
-   Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
 
 Building a Secure only application
 ==================================

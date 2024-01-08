@@ -42,7 +42,7 @@ def endian_prefix():
     else:
         return "<"
 
-def read_intlist(intlist_path, syms):
+def read_intlist(elfobj, syms, snames):
     """read a binary file containing the contents of the kernel's .intList
     section. This is an instance of a header created by
     include/zephyr/linker/intlist.ld:
@@ -66,7 +66,7 @@ def read_intlist(intlist_path, syms):
         const void *param;
     };
     """
-
+    intList_sect = None
     intlist = {}
 
     prefix = endian_prefix()
@@ -77,8 +77,16 @@ def read_intlist(intlist_path, syms):
     else:
         intlist_entry_fmt = prefix + "iiII"
 
-    with open(intlist_path, "rb") as fp:
-        intdata = fp.read()
+    for sname in snames:
+        intList_sect = elfobj.get_section_by_name(sname)
+        if intList_sect is not None:
+            debug("Found intlist section: \"{}\"".format(sname))
+            break
+
+    if intList_sect is None:
+        error("Cannot find the intlist section!")
+
+    intdata = intList_sect.data()
 
     header_sz = struct.calcsize(intlist_header_fmt)
     header = struct.unpack_from(intlist_header_fmt, intdata, 0)
@@ -122,8 +130,9 @@ def parse_args():
             help="Generate SW ISR table")
     parser.add_argument("-V", "--vector-table", action="store_true",
             help="Generate vector table")
-    parser.add_argument("-i", "--intlist", required=True,
-            help="Zephyr intlist binary for intList extraction")
+    parser.add_argument("-i", "--intlist-section", action="append", required=True,
+            help="The name of the section to search for the interrupt data. "
+                 "This is accumulative argument. The first section found would be used.")
 
     args = parser.parse_args()
 
@@ -177,10 +186,36 @@ source_header = """
 typedef void (* ISR)(const void *);
 """
 
-def write_source_file(fp, vt, swt, intlist, syms):
+def write_shared_table(fp, shared, nv):
+    fp.write("struct z_shared_isr_table_entry __shared_sw_isr_table"
+            " z_shared_sw_isr_table[%d] = {\n" % nv)
+
+    for i in range(nv):
+        client_num = shared[i][1]
+        client_list = shared[i][0]
+
+        if not client_num:
+            fp.write("\t{ },\n")
+        else:
+            fp.write(f"\t{{ .client_num = {client_num}, .clients = {{ ")
+            for j in range(0, client_num):
+                routine = client_list[j][1]
+                arg = client_list[j][0]
+
+                fp.write(f"{{ .isr = (ISR){ hex(routine) if isinstance(routine, int) else routine }, "
+                        f".arg = (const void *){hex(arg)} }},")
+
+            fp.write(" },\n},\n")
+
+    fp.write("};\n")
+
+def write_source_file(fp, vt, swt, intlist, syms, shared):
     fp.write(source_header)
 
     nv = intlist["num_vectors"]
+
+    if "CONFIG_SHARED_INTERRUPTS" in syms:
+        write_shared_table(fp, shared, nv)
 
     if vt:
         if "CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS" in syms:
@@ -200,7 +235,11 @@ def write_source_file(fp, vt, swt, intlist, syms):
     level3_offset = syms.get("CONFIG_3RD_LVL_ISR_TBL_OFFSET")
 
     for i in range(nv):
-        param, func = swt[i]
+        param = "{0:#x}".format(swt[i][0])
+        func = swt[i][1]
+
+        if isinstance (func, str) and "z_shared_isr" in func:
+            param = "&z_shared_sw_isr_table[{0}]".format(i)
         if isinstance(func, int):
             func_as_string = "{0:#x}".format(func)
         else:
@@ -213,7 +252,7 @@ def write_source_file(fp, vt, swt, intlist, syms):
             fp.write("\t/* Level 3 interrupts start here (offset: {}) */\n".
                      format(level3_offset))
 
-        fp.write("\t{{(const void *){0:#x}, (ISR){1}}},\n".format(param, func_as_string))
+        fp.write("\t{{(const void *){0}, (ISR){1}}},\n".format(param, func_as_string))
     fp.write("};\n")
 
 def get_symbols(obj):
@@ -256,6 +295,7 @@ def main():
     with open(args.kernel, "rb") as fp:
         kernel = ELFFile(fp)
         syms = get_symbols(kernel)
+        intlist = read_intlist(kernel, syms, args.intlist_section)
 
     if "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
         max_irq_per = syms["CONFIG_MAX_IRQ_PER_AGGREGATOR"]
@@ -283,7 +323,6 @@ def main():
 
                 debug('3rd level offsets: {}'.format(list_3rd_lvl_offsets))
 
-    intlist = read_intlist(args.intlist, syms)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
 
@@ -291,6 +330,7 @@ def main():
         raise ValueError('nvec is too large, check endianness.')
 
     swt_spurious_handler = "((uintptr_t)&z_irq_spurious)"
+    swt_shared_handler = "((uintptr_t)&z_shared_isr)"
     vt_spurious_handler = "z_irq_spurious"
     vt_irq_handler = "_isr_wrapper"
 
@@ -308,6 +348,7 @@ def main():
         # Default to spurious interrupt handler. Configured interrupts
         # will replace these entries.
         swt = [(0, swt_spurious_handler) for i in range(nvec)]
+        shared = [([], 0) for i in range(nvec)]
     else:
         if args.vector_table:
             vt = [vt_spurious_handler for i in range(nvec)]
@@ -369,16 +410,37 @@ def main():
             if not 0 <= table_index < len(swt):
                 error("IRQ %d (offset=%d) exceeds the maximum of %d" %
                       (table_index, offset, len(swt) - 1))
-            if swt[table_index] != (0, swt_spurious_handler):
-                error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
-                      + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
-                      + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
-                )
-
-            swt[table_index] = (param, func)
+            if "CONFIG_SHARED_INTERRUPTS" in syms:
+                if swt[table_index] != (0, swt_spurious_handler):
+                    # check client limit
+                    if syms["CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS"] == shared[table_index][1]:
+                        error(f"Reached shared interrupt client limit. Maybe increase"
+                              + f" CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS?")
+                    lst = shared[table_index][0]
+                    delta_size = 1
+                    if not shared[table_index][1]:
+                        lst.append(swt[table_index])
+			# note: the argument will be fixed when writing the ISR table
+			# to isr_table.c
+                        swt[table_index] = (0, swt_shared_handler)
+                        delta_size += 1
+                    if (param, func) in lst:
+                        error("Attempting to register the same ISR/arg pair twice.")
+                    lst.append((param, func))
+                    shared[table_index] = (lst, shared[table_index][1] + delta_size)
+                else:
+                    swt[table_index] = (param, func)
+            else:
+                if swt[table_index] != (0, swt_spurious_handler):
+                    error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
+                          + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
+                          + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
+                    )
+                else:
+                    swt[table_index] = (param, func)
 
     with open(args.output_source, "w") as fp:
-        write_source_file(fp, vt, swt, intlist, syms)
+        write_source_file(fp, vt, swt, intlist, syms, shared)
 
 if __name__ == "__main__":
     main()

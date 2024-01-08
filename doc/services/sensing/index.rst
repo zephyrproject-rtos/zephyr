@@ -197,7 +197,7 @@ Sensor Sample Value
   The ``header`` defines a **base_timestamp**, and
   each element in the **readings[]** array defines **timestamp_delta**.
 
-  The **timestamp_delta** is is in relation to the previous **readings** (or the **base_timestamp**)
+  The **timestamp_delta** is in relation to the previous **readings** (or the **base_timestamp**)
 
   For example:
 
@@ -241,7 +241,7 @@ Device Tree Configuration
 Sensing subsystem using device tree to configuration all sensor instances and their properties,
 reporting relationships.
 
-See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_posix.overlay`
+See the example :zephyr_file:`samples/subsys/sensing/simple/boards/native_sim.overlay`
 
 API Reference
 *************

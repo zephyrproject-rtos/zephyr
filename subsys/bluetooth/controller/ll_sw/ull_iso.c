@@ -491,11 +491,11 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 					  pdu_release, &source_handle);
 
 		if (!err) {
-			if (cis) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && cis != NULL) {
 				cis->hdr.datapath_in = dp;
 			}
 
-			if (adv_stream) {
+			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && adv_stream != NULL) {
 				adv_stream->dp = dp;
 			}
 
@@ -1058,7 +1058,8 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 
 		/* Send all SDU fragments */
 		do {
-			sdu.time_stamp = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+			sdu.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticks_at_expire);
+			sdu.time_stamp = sdu.cntr_time_stamp;
 			sdu.size = MIN(remaining_tx, ISO_TEST_TX_BUFFER_SIZE);
 			memset(tx_buffer, 0, sdu.size);
 

@@ -91,9 +91,6 @@ Building an application
 In most cases you'll want to use the ``ns`` target with any of the Zephyr
 or Nordic based examples.
 
-.. note::
-   Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
-
 Some of the examples do not use secure mode, so they do not required the ``ns`` suffix.
 A great example of this is the `hello_world` below.
 
@@ -137,8 +134,8 @@ Testing the LEDs and buttons on the nRF9160 Thing Plus
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
 
-* :ref:`blinky-sample`
-* :ref:`button-sample`
+* :zephyr:code-sample:`blinky`
+* :zephyr:code-sample:`button`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in

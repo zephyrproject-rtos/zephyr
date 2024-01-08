@@ -19,8 +19,7 @@ element for the package ``id``.
 Convenience routines are provided for converting a key value to
 and from a string type.
 
-For an example of the settings subsystem refer to
-:ref:`the sample <settings_subsys_sample>`.
+For an example of the settings subsystem refer to :zephyr:code-sample:`settings` sample.
 
 .. note::
 

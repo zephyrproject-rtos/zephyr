@@ -1307,6 +1307,8 @@ static void kill_handler(const struct shell *sh)
 
 	sh->ctx->tid = NULL;
 	k_thread_abort(k_current_get());
+
+	CODE_UNREACHABLE;
 }
 
 void shell_thread(void *shell_handle, void *arg_log_backend,
@@ -1390,7 +1392,7 @@ int shell_init(const struct shell *sh, const void *transport_config,
 				  SHELL_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	sh->ctx->tid = tid;
-	k_thread_name_set(tid, sh->thread_name);
+	k_thread_name_set(tid, sh->name);
 
 	return 0;
 }
@@ -1484,6 +1486,17 @@ void shell_process(const struct shell *sh)
 
 	/* atomically clear the processing flag */
 	z_flag_processing_set(sh, false);
+}
+
+const struct shell *shell_backend_get_by_name(const char *backend_name)
+{
+	STRUCT_SECTION_FOREACH(shell, backend) {
+		if (strcmp(backend_name, backend->name) == 0) {
+			return backend;
+		}
+	}
+
+	return NULL;
 }
 
 /* This function mustn't be used from shell context to avoid deadlock.

@@ -9,7 +9,7 @@
 #define BOARDS_POSIX_COMMON_BOARD_IRQ_H
 
 #include <zephyr/sw_isr_table.h>
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {

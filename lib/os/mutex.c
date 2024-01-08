@@ -6,14 +6,14 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mutex.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/kernel_structs.h>
 
 static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 {
-	struct z_object *obj;
+	struct k_object *obj;
 
-	obj = z_object_find(mutex);
+	obj = k_object_find(mutex);
 	if (obj == NULL || obj->type != K_OBJ_SYS_MUTEX) {
 		return NULL;
 	}
@@ -27,7 +27,7 @@ static bool check_sys_mutex_addr(struct sys_mutex *addr)
 	 * underlying k_mutex, but we don't want threads using mutexes
 	 * that are outside their memory domain
 	 */
-	return Z_SYSCALL_MEMORY_WRITE(addr, sizeof(struct sys_mutex));
+	return K_SYSCALL_MEMORY_WRITE(addr, sizeof(struct sys_mutex));
 }
 
 int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, k_timeout_t timeout)

@@ -520,7 +520,9 @@ static int lis2dh_pm_action(const struct device *dev,
 	.gpio_int =								\
 	    COND_CODE_1(ANYM_ON_INT1(inst),		\
 		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 0)),	\
-		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1))),
+		(GPIO_DT_SPEC_INST_GET_BY_IDX_COND(inst, irq_gpios, 1))),	\
+	.int1_mode = DT_INST_PROP(inst, int1_gpio_config),			\
+	.int2_mode = DT_INST_PROP(inst, int2_gpio_config),
 #else
 #define LIS2DH_CFG_INT(inst)
 #endif /* CONFIG_LIS2DH_TRIGGER */

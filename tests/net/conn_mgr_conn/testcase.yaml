@@ -2,7 +2,7 @@ common:
   min_ram: 16
   depends_on: netif
 tests:
-  net.conn_mgr_conn:
+  net.conn_mgr.conn:
     tags:
       - net
       - iface

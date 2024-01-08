@@ -196,13 +196,13 @@ You can debug an application in the usual way.  Here is an example for the
 
 
 .. _32F469IDISCOVERY website:
-   http://www.st.com/en/evaluation-tools/32f469idiscovery.html
+   https://www.st.com/en/evaluation-tools/32f469idiscovery.html
 
 .. _32F469IDISCOVERY board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00218846.pdf
+   https://www.st.com/resource/en/user_manual/dm00218846.pdf
 
 .. _STM32F469NI on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f469ni.html
+   https://www.st.com/en/microcontrollers/stm32f469ni.html
 
 .. _STM32F469 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00127514.pdf
+   https://www.st.com/resource/en/reference_manual/dm00127514.pdf

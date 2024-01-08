@@ -19,7 +19,7 @@ tests for different boards and different configurations to help keep the
 complete code tree buildable.
 
 When using (at least) one ``-v`` option, twister's console output
-shows for every test how the test is run (qemu, native_posix, etc.) or
+shows for every test how the test is run (qemu, native_sim, etc.) or
 whether the binary was just built.  There are a few reasons why twister
 only builds a test and doesn't run it:
 
@@ -136,7 +136,9 @@ required for best test coverage for this specific board:
 identifier:
   A string that matches how the board is defined in the build system. This same
   string is used when building, for example when calling ``west build`` or
-  ``cmake``::
+  ``cmake``:
+
+  .. code-block:: console
 
      # with west
      west build -b reel_board
@@ -153,7 +155,7 @@ arch:
   Architecture of the board
 toolchain:
   The list of supported toolchains that can build this board. This should match
-  one of the values used for 'ZEPHYR_TOOLCHAIN_VARIANT' when building on the command line
+  one of the values used for :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` when building on the command line
 ram:
   Available RAM on the board (specified in KB). This is used to match testcase
   requirements.  If not specified we default to 128KB.
@@ -164,7 +166,7 @@ supported:
   A list of features this board supports. This can be specified as a single word
   feature or as a variant of a feature class. For example:
 
-  ::
+  .. code-block:: yaml
 
         supported:
           - pci
@@ -172,7 +174,7 @@ supported:
   This indicates the board does support PCI. You can make a testcase build or
   run only on such boards, or:
 
-  ::
+  .. code-block:: yaml
 
         supported:
           - netif:eth
@@ -195,10 +197,18 @@ testing:
   only_tags:
     Only execute tests with this list of tags on a specific platform.
 
+  .. _twister_board_timeout_multiplier:
+
+  timeout_multiplier: <float> (default 1)
+    Multiply each test case timeout by specified ratio. This option allows to tune timeouts only
+    for required platform. It can be useful in case naturally slow platform I.e.: HW board with
+    power-efficient but slow CPU or simulation platform which can perform instruction accurate
+    simulation but does it slowly.
+
 Test Cases
 **********
 
-Test cases are detected by the presence of a 'testcase.yaml' or a 'sample.yaml'
+Test cases are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
 files in the application's project directory. This file may contain one or more
 entries in the test section each identifying a test scenario.
 
@@ -236,7 +246,7 @@ samples. The following is an example test with a few options that are
 explained in this document.
 
 
-::
+  .. code-block:: yaml
 
         tests:
           bluetooth.gatt:
@@ -255,7 +265,7 @@ explained in this document.
 A sample with tests will have the same structure with additional information
 related to the sample and what is being demonstrated:
 
-::
+  .. code-block:: yaml
 
         sample:
           name: hello world
@@ -272,11 +282,7 @@ related to the sample and what is being demonstrated:
             tags: tests
             min_ram: 16
 
-The full canonical name for each test case is:
-
-::
-
-        <path to test case>/<test entry>
+The full canonical name for each test case is:``<path to test case>/<test entry>``
 
 Each test block in the testcase meta data can define the following key/value
 pairs:
@@ -290,7 +296,7 @@ skip: <True|False> (default False)
     skip testcase unconditionally. This can be used for broken tests.
 
 slow: <True|False> (default False)
-    Don't run this test case unless --enable-slow or --enable-slow-only was
+    Don't run this test case unless ``--enable-slow`` or ``--enable-slow-only`` was
     passed in on the command line. Intended for time-consuming test cases that
     are only run under certain circumstances, like daily builds. These test
     cases are still compiled.
@@ -301,7 +307,9 @@ extra_args: <list of extra arguments>
 
 extra_configs: <list of extra configurations>
     Extra configuration options to be merged with a master prj.conf
-    when building or running the test case. For example::
+    when building or running the test case. For example:
+
+    .. code-block:: yaml
 
         common:
           tags: drivers adc
@@ -313,7 +321,9 @@ extra_configs: <list of extra configurations>
               - CONFIG_ADC_ASYNC=y
 
     Using namespacing, it is possible to apply a configuration only to some
-    hardware. Currently both architectures and platforms are supported::
+    hardware. Currently both architectures and platforms are supported:
+
+    .. code-block:: yaml
 
         common:
           tags: drivers adc
@@ -347,7 +357,7 @@ depends_on: <list of features>
     A board or platform can announce what features it supports, this option
     will enable the test only those platforms that provide this feature.
 
-levels: <list of levels"
+levels: <list of levels>
     Test levels this test should be part of. If a level is present, this
     test will be selectable using the command line option ``--level <level name>``
 
@@ -358,6 +368,8 @@ min_ram: <integer>
 min_flash: <integer>
     minimum amount of ROM in KB needed for this test to build and run. This is
     compared with information provided by the board metadata.
+
+.. _twister_test_case_timeout:
 
 timeout: <number of seconds>
     Length of time to run test before automatically killing it.
@@ -377,7 +389,7 @@ platform_allow: <list of platforms>
 
 integration_platforms: <YML list of platforms/boards>
     This option limits the scope to the listed platforms when twister is
-    invoked with the --integration option. Use this instead of
+    invoked with the ``--integration`` option. Use this instead of
     platform_allow if the goal is to limit scope due to timing or
     resource constraints.
 
@@ -393,7 +405,7 @@ sysbuild: <True|False> (default False)
     Build the project using sysbuild infrastructure. Only the main project's
     generated devicetree and Kconfig will be used for filtering tests.
     on device testing must use the hardware map, or west flash to load
-    the images onto the target. The --erase option of west flash is
+    the images onto the target. The ``--erase`` option of west flash is
     not supported with this option. Usage of unsupported options will result
     in tests requiring sysbuild support being skipped.
 
@@ -442,7 +454,9 @@ platform_key: <list of platform attributes>
     that.
 
     For example to key on (arch, simulation) to ensure a test is run once
-    per arch and simulation (as would be most common)::
+    per arch and simulation (as would be most common):
+
+    .. code-block:: yaml
 
       platform_key:
         - arch
@@ -466,7 +480,6 @@ harness_config: <harness configuration options>
 
 
     record: <recording options>
-
       regex: <expression> (required)
         Any string that the particular test case prints to record test
         results.
@@ -486,26 +499,32 @@ harness_config: <harness configuration options>
         and identify setups that fulfill this dependency. It depends on
         specific test setup and board selection logic to pick the particular
         board(s) out of multiple boards that fulfill the dependency in an
-        automation setup based on "fixture" keyword. Some sample fixture names
+        automation setup based on ``fixture`` keyword. Some sample fixture names
         are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
 
         Only one fixture can be defined per testcase and the fixture name has to
         be unique across all tests in the test suite.
 
-    pytest_root: <pytest directory> (default pytest)
-        Specify a pytest directory which need to execute when test case begin to running,
-        default pytest directory name is pytest, after pytest finished, twister will
-        check if this case pass or fail according the pytest report.
+    pytest_root: <list of pytest testpaths> (default pytest)
+        Specify a list of pytest directories, files or subtests that need to be executed
+        when test case begin to running, default pytest directory is pytest.
+        After pytest finished, twister will check if this case pass or fail according
+        to the pytest report.
 
     pytest_args: <list of arguments> (default empty)
         Specify a list of additional arguments to pass to ``pytest``.
+
+    pytest_dut_scope: <function|class|module|package|session> (default function)
+        The scope for which ``dut`` and ``shell`` pytest fixtures are shared.
+        If the scope is set to ``function``, DUT is launched for every test case
+        in python script. For ``session`` scope, DUT is launched only once.
 
     robot_test_path: <robot file path> (default empty)
         Specify a path to a file containing a Robot Framework test suite to be run.
 
     The following is an example yaml file with a few harness_config options.
 
-    ::
+    .. code-block:: yaml
 
          sample:
            name: HTS221 Temperature and Humidity Monitor
@@ -526,19 +545,28 @@ harness_config: <harness configuration options>
 
     The following is an example yaml file with pytest harness_config options,
     default pytest_root name "pytest" will be used if pytest_root not specified.
-    please refer the example in samples/subsys/testsuite/pytest/.
+    please refer the examples in samples/subsys/testsuite/pytest/.
 
-    ::
+    .. code-block:: yaml
 
+        common:
+          harness: pytest
         tests:
-          pytest.example:
-            harness: pytest
+          pytest.example.directories:
             harness_config:
-              pytest_root: [pytest directory name]
+              pytest_root:
+                - pytest_dir1
+                - $ENV_VAR/samples/test/pytest_dir2
+          pytest.example.files_and_subtests:
+            harness_config:
+              pytest_root:
+                - pytest/test_file_1.py
+                - test_file_2.py::test_A
+                - test_file_2.py::test_B[param_a]
 
     The following is an example yaml file with robot harness_config options.
 
-    ::
+    .. code-block:: yaml
 
         tests:
           robot.example:
@@ -550,7 +578,7 @@ filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
     against an environment containing the following values:
 
-    ::
+    .. code-block:: none
 
             { ARCH : <architecture>,
               PLATFORM : <platform>,
@@ -566,78 +594,118 @@ filter: <expression>
 
     The grammar for the expression language is as follows:
 
-    expression ::= expression "and" expression
-                 | expression "or" expression
-                 | "not" expression
-                 | "(" expression ")"
-                 | symbol "==" constant
-                 | symbol "!=" constant
-                 | symbol "<" number
-                 | symbol ">" number
-                 | symbol ">=" number
-                 | symbol "<=" number
-                 | symbol "in" list
-                 | symbol ":" string
-                 | symbol
+    .. code-block:: antlr
 
-    list ::= "[" list_contents "]"
+        expression : expression 'and' expression
+                   | expression 'or' expression
+                   | 'not' expression
+                   | '(' expression ')'
+                   | symbol '==' constant
+                   | symbol '!=' constant
+                   | symbol '<' NUMBER
+                   | symbol '>' NUMBER
+                   | symbol '>=' NUMBER
+                   | symbol '<=' NUMBER
+                   | symbol 'in' list
+                   | symbol ':' STRING
+                   | symbol
+                   ;
 
-    list_contents ::= constant
-                    | list_contents "," constant
+        list : '[' list_contents ']';
 
-    constant ::= number
-               | string
+        list_contents : constant (',' constant)*;
 
+        constant : NUMBER | STRING;
 
-    For the case where expression ::= symbol, it evaluates to true
+    For the case where ``expression ::= symbol``, it evaluates to ``true``
     if the symbol is defined to a non-empty string.
 
     Operator precedence, starting from lowest to highest:
 
-        or (left associative)
-        and (left associative)
-        not (right associative)
-        all comparison operators (non-associative)
+       * or (left associative)
+       * and (left associative)
+       * not (right associative)
+       * all comparison operators (non-associative)
 
-    arch_allow, arch_exclude, platform_allow, platform_exclude
-    are all syntactic sugar for these expressions. For instance
+    ``arch_allow``, ``arch_exclude``, ``platform_allow``, ``platform_exclude``
+    are all syntactic sugar for these expressions. For instance:
+
+    .. code-block:: none
 
         arch_exclude = x86 arc
 
     Is the same as:
 
+    .. code-block:: none
+
         filter = not ARCH in ["x86", "arc"]
 
-    The ':' operator compiles the string argument as a regular expression,
+    The ``:`` operator compiles the string argument as a regular expression,
     and then returns a true value only if the symbol's value in the environment
-    matches. For example, if CONFIG_SOC="stm32f107xc" then
+    matches. For example, if ``CONFIG_SOC="stm32f107xc"`` then
+
+    .. code-block:: none
 
         filter = CONFIG_SOC : "stm.*"
 
     Would match it.
 
+required_snippets: <list of needed snippets>
+    :ref:`Snippets <snippets>` are supported in twister for test cases that
+    require them. As with normal applications, twister supports using the base
+    zephyr snippet directory and test application directory for finding
+    snippets. Listed snippets will filter supported tests for boards (snippets
+    must be compatible with a board for the test to run on them, they are not
+    optional).
+
+    The following is an example yaml file with 2 required snippets.
+
+    .. code-block:: yaml
+
+        tests:
+          snippet.example:
+            required_snippets:
+              - cdc-acm-console
+              - user-snippet-example
+
 The set of test cases that actually run depends on directives in the testcase
 filed and options passed in on the command line. If there is any confusion,
-running with -v or examining the discard report
+running with ``-v`` or examining the discard report
 (:file:`twister_discard.csv`) can help show why particular test cases were
 skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
-release are stored in scripts/release/twister_last_release.csv.
-To update this, pass the --all --release options.
+release are stored in ``scripts/release/twister_last_release.csv``.
+To update this, pass the ``--all --release`` options.
 
-To load arguments from a file, write '+' before the file name, e.g.,
-+file_name. File content must be one or more valid arguments separated by
+To load arguments from a file, add ``+`` before the file name, e.g.,
+``+file_name``. File content must be one or more valid arguments separated by
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+Managing tests timeouts
+***********************
+
+There are several parameters which control tests timeouts on various levels:
+
+* ``timeout`` option in each test case. See :ref:`here <twister_test_case_timeout>` for more
+  details.
+* ``timeout_multiplier`` option in board configuration. See
+  :ref:`here <twister_board_timeout_multiplier>` for more details.
+* ``--timeout-multiplier`` twister option which can be used to adjust timeouts in exact twister run.
+  It can be useful in case of simulation platform as simulation time may depend on the host
+  speed & load or we may select different simulation method (i.e. cycle accurate but slower
+  one), etc...
+
+Overall test case timeout is a multiplication of these three parameters.
 
 Running in Integration Mode
 ***************************
 
 This mode is used in continuous integration (CI) and other automated
 environments used to give developers fast feedback on changes. The mode can
-be activated using the --integration option of twister and narrows down
+be activated using the ``--integration`` option of twister and narrows down
 the scope of builds and tests if applicable to platforms defined under the
 integration keyword in the testcase definition file (testcase.yaml and
 sample.yaml).
@@ -651,7 +719,7 @@ supports running any out-of-tree custom emulator defined in the board's :file:`b
 To use this type of simulation, add the following properties to
 :file:`custom_board/custom_board.yaml`:
 
-::
+.. code-block:: yaml
 
    simulation: custom
    simulation_exec: <name_of_emu_binary>
@@ -661,14 +729,14 @@ make sure this binary exists in the PATH.
 
 Then, in :file:`custom_board/board.cmake`, set the supported emulation platforms to ``custom``:
 
-::
+.. code-block:: cmake
 
    set(SUPPORTED_EMU_PLATFORMS custom)
 
 Finally, implement the ``run_custom`` target in :file:`custom_board/board.cmake`.
 It should look something like this:
 
-::
+.. code-block:: cmake
 
    add_custom_target(run_custom
      COMMAND
@@ -775,40 +843,40 @@ devices, for example:
 
    .. group-tab:: Linux
 
-    ::
+      .. code-block:: yaml
 
-      - connected: true
-        id: OSHW000032254e4500128002ab98002784d1000097969900
-        platform: unknown
-        product: DAPLink CMSIS-DAP
-        runner: pyocd
-        serial: /dev/cu.usbmodem146114202
-      - connected: true
-        id: 000683759358
-        platform: unknown
-        product: J-Link
-        runner: unknown
-        serial: /dev/cu.usbmodem0006837593581
+         - connected: true
+           id: OSHW000032254e4500128002ab98002784d1000097969900
+           platform: unknown
+           product: DAPLink CMSIS-DAP
+           runner: pyocd
+           serial: /dev/cu.usbmodem146114202
+         - connected: true
+           id: 000683759358
+           platform: unknown
+           product: J-Link
+           runner: unknown
+           serial: /dev/cu.usbmodem0006837593581
 
    .. group-tab:: Windows
 
-    ::
+      .. code-block:: yaml
 
-      - connected: true
-        id: OSHW000032254e4500128002ab98002784d1000097969900
-        platform: unknown
-        product: unknown
-        runner: unknown
-        serial: COM1
-      - connected: true
-        id: 000683759358
-        platform: unknown
-        product: unknown
-        runner: unknown
-        serial: COM2
+         - connected: true
+           id: OSHW000032254e4500128002ab98002784d1000097969900
+           platform: unknown
+           product: unknown
+           runner: unknown
+           serial: COM1
+         - connected: true
+           id: 000683759358
+           platform: unknown
+           product: unknown
+           runner: unknown
+           serial: COM2
 
 
-Any options marked as 'unknown' need to be changed and set with the correct
+Any options marked as ``unknown`` need to be changed and set with the correct
 values, in the above example the platform names, the products and the runners need
 to be replaced with the correct values corresponding to the connected hardware.
 In this example we are using a reel_board and an nrf52840dk_nrf52840:
@@ -817,41 +885,41 @@ In this example we are using a reel_board and an nrf52840dk_nrf52840:
 
    .. group-tab:: Linux
 
-    ::
+      .. code-block:: yaml
 
-      - connected: true
-        id: OSHW000032254e4500128002ab98002784d1000097969900
-        platform: reel_board
-        product: DAPLink CMSIS-DAP
-        runner: pyocd
-        serial: /dev/cu.usbmodem146114202
-        baud: 9600
-      - connected: true
-        id: 000683759358
-        platform: nrf52840dk_nrf52840
-        product: J-Link
-        runner: nrfjprog
-        serial: /dev/cu.usbmodem0006837593581
-        baud: 9600
+         - connected: true
+           id: OSHW000032254e4500128002ab98002784d1000097969900
+           platform: reel_board
+           product: DAPLink CMSIS-DAP
+           runner: pyocd
+           serial: /dev/cu.usbmodem146114202
+           baud: 9600
+         - connected: true
+           id: 000683759358
+           platform: nrf52840dk_nrf52840
+           product: J-Link
+           runner: nrfjprog
+           serial: /dev/cu.usbmodem0006837593581
+           baud: 9600
 
    .. group-tab:: Windows
 
-    ::
+      .. code-block:: yaml
 
-      - connected: true
-        id: OSHW000032254e4500128002ab98002784d1000097969900
-        platform: reel_board
-        product: DAPLink CMSIS-DAP
-        runner: pyocd
-        serial: COM1
-        baud: 9600
-      - connected: true
-        id: 000683759358
-        platform: nrf52840dk_nrf52840
-        product: J-Link
-        runner: nrfjprog
-        serial: COM2
-        baud: 9600
+         - connected: true
+           id: OSHW000032254e4500128002ab98002784d1000097969900
+           platform: reel_board
+           product: DAPLink CMSIS-DAP
+           runner: pyocd
+           serial: COM1
+           baud: 9600
+         - connected: true
+           id: 000683759358
+           platform: nrf52840dk_nrf52840
+           product: J-Link
+           runner: nrfjprog
+           serial: COM2
+           baud: 9600
 
 The baud entry is only needed if not running at 115200.
 
@@ -890,17 +958,19 @@ command line options as ``flash-timeout`` and ``flash-with-test`` fields respect
 These hardware map values override command line options for the particular platform.
 
 Serial PTY support using ``--device-serial-pty``  can also be used in the
-hardware map::
+hardware map:
 
- - connected: true
-   id: None
-   platform: intel_adsp_cavs25
-   product: None
-   runner: intel_adsp
-   serial_pty: path/to/script.py
-   runner_params:
-     - --remote-host=remote_host_ip_addr
-     - --key=/path/to/key.pem
+.. code-block:: yaml
+
+   - connected: true
+     id: None
+     platform: intel_adsp_cavs25
+     product: None
+     runner: intel_adsp
+     serial_pty: path/to/script.py
+     runner_params:
+       - --remote-host=remote_host_ip_addr
+       - --key=/path/to/key.pem
 
 
 The runner_params field indicates the parameters you want to pass to the
@@ -940,7 +1010,9 @@ specify the fixture it needs which can then be matched with hardware capability
 of a board and the fixtures it supports via the command line or using the hardware
 map file.
 
-Fixtures are defined in the hardware map file as a list::
+Fixtures are defined in the hardware map file as a list:
+
+.. code-block:: yaml
 
       - connected: true
         fixtures:
@@ -967,8 +1039,10 @@ Notes
 +++++
 
 It may be useful to annotate board descriptions in the hardware map file
-with additional information.  Use the "notes" keyword to do this.  For
-example::
+with additional information.  Use the ``notes`` keyword to do this.  For
+example:
+
+.. code-block:: yaml
 
     - connected: false
       fixtures:
@@ -976,7 +1050,7 @@ example::
       id: 000683290670
       notes: An nrf5340dk_nrf5340 is detected as an nrf52840dk_nrf52840 with no serial
         port, and three serial ports with an unknown platform.  The board id of the serial
-        ports is not the same as the board id of the the development kit.  If you regenerate
+        ports is not the same as the board id of the development kit.  If you regenerate
         this file you will need to update serial to reference the third port, and platform
         to nrf5340dk_nrf5340_cpuapp or another supported board target.
       platform: nrf52840dk_nrf52840
@@ -987,11 +1061,13 @@ example::
 Overriding Board Identifier
 +++++++++++++++++++++++++++
 
-When (re-)generated the hardware map file will contain an "id" keyword
+When (re-)generated the hardware map file will contain an ``id`` keyword
 that serves as the argument to ``--board-id`` when flashing.  In some
 cases the detected ID is not the correct one to use, for example when
-using an external J-Link probe.  The "probe_id" keyword overrides the
-"id" keyword for this purpose.   For example::
+using an external J-Link probe.  The ``probe_id`` keyword overrides the
+``id`` keyword for this purpose.   For example:
+
+.. code-block:: yaml
 
     - connected: false
       id: 0229000005d9ebc600000000000000000000000097969905
@@ -1018,8 +1094,8 @@ The current status of tests on the quarantine list can also be verified by addin
 which are not on the given list.
 
 A quarantine yaml has to be a sequence of dictionaries. Each dictionary has to have
-"scenarios" and "platforms" entries listing combinations of scenarios and platforms
-to put under quarantine. In addition, an optional entry "comment" can be used, where
+``scenarios`` and ``platforms`` entries listing combinations of scenarios and platforms
+to put under quarantine. In addition, an optional entry ``comment`` can be used, where
 some more details can be given (e.g. link to a reported issue). These comments will also
 be added to the output reports.
 
@@ -1028,7 +1104,9 @@ when dealing with multiple issues within a subsystem, it is possible to use
 regular expressions, for example, **kernel.*** would quarantine
 all kernel tests.
 
-An example of entries in a quarantine yaml::
+An example of entries in a quarantine yaml:
+
+.. code-block:: yaml
 
     - scenarios:
         - sample.basic.helloworld
@@ -1040,9 +1118,11 @@ An example of entries in a quarantine yaml::
         - kernel.common.nano64
       platforms:
         - .*_cortex_.*
-        - native_posix
+        - native_sim
 
-To exclude a platform, use the following syntax::
+To exclude a platform, use the following syntax:
+
+.. code-block:: yaml
 
     - platforms:
       - qemu_x86
@@ -1103,7 +1183,9 @@ The following options control platform filtering in twister:
   can either be used to replace the existing default platforms or can extend it
   depending on the value of `override_default_platforms`.
 
-And example platforms configuration::
+And example platforms configuration:
+
+.. code-block:: yaml
 
 	platforms:
 	  override_default_platforms: true
@@ -1123,7 +1205,9 @@ In the configuration file you can include complete components using
 regular expressions and you can specify which test level to import from
 the same file, making management of levels simple.
 
-And example test level configuration::
+And example test level configuration:
+
+.. code-block:: yaml
 
 	levels:
 	  - name: my-test-level
@@ -1141,7 +1225,9 @@ Combined configuration
 
 To mix the Platform and level configuration, you can take an example as below:
 
-And example platforms plus level configuration::
+And example platforms plus level configuration:
+
+.. code-block:: yaml
 
 	platforms:
 	  override_default_platforms: true
@@ -1186,7 +1272,7 @@ Running in Tests in Random Order
 ********************************
 Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
 run your tests in random order.  This can be beneficial for identifying
-dependencies between test cases.  For native_posix platforms, you can provide
+dependencies between test cases. For native_sim platforms, you can provide
 the seed to the random number generator by providing ``-seed=value`` as an
 argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.

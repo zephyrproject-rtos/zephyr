@@ -9,6 +9,6 @@ common:
   harness: net
   arch_exclude: posix
   integration_platforms:
-    - mps2_an385
+    - qemu_x86
 tests:
   sample.net.sockets.socketpair: {}

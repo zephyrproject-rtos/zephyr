@@ -7,41 +7,47 @@ comment "Bluetooth HCI Driver Options"
 
 config BT_UART
 	bool
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+
 
 choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
 
 config BT_H4
 	bool "H:4 UART"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
-	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
 
 config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
 	select EXPERIMENTAL
-	depends on SERIAL
 	help
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+# Removed: Here only to give the user a warning about its removal
+# Remove after 3.7.0 is released
 config BT_RPMSG
-	bool "HCI using RPMsg"
+	bool "[REMOVED] HCI using RPMsg"
+	help
+	  Use BT_HCI_IPC instead
+
+config BT_HCI_IPC
+	bool "HCI using the IPC subsystem"
 	select BT_HAS_HCI_VS
 	select IPC_SERVICE
 	select MBOX
 	help
 	  Bluetooth HCI driver for communication with another CPU
-	  using RPMsg framework.
+	  using the IPC subsystem.
 
 config BT_SPI
 	bool "SPI HCI"
-	depends on SPI
+	select SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers,
@@ -99,6 +105,7 @@ config BT_PSOC6_BLESS
 
 config BT_NO_DRIVER
 	bool "No default HCI driver"
+	select BT_HAS_HCI_VS
 	help
 	  This is intended for unit tests where no internal driver
 	  should be selected.
@@ -130,10 +137,11 @@ config BT_STM32_IPM_RX_STACK_SIZE
 	depends on BT_STM32_IPM
 	default 512
 
-menuconfig BT_CYW43XXX
-	bool "CYW43XXX BT connectivity"
+menuconfig BT_AIROC
+	bool "AIROC BT connectivity"
 	default y
 	select BT_HCI_SETUP
+	select UART_USE_RUNTIME_CONFIGURE
 	depends on GPIO
 	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED
 	depends on BT_H4
@@ -146,7 +154,7 @@ source "drivers/bluetooth/hci/Kconfig.infineon"
 config BT_DRIVER_QUIRK_NO_AUTO_DLE
 	bool "Host auto-initiated Data Length Update quirk"
 	depends on BT_AUTO_DATA_LEN_UPDATE
-	default y if BT_RPMSG || BT_ESP32
+	default y if BT_HCI_IPC || BT_ESP32
 	help
 	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
 	  Update procedure for new connections for controllers that do not

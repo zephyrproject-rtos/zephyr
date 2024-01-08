@@ -14,8 +14,6 @@ tests:
       - mimxrt1050_evk
       - mimxrt1064_evk
   drivers.disk.ram:
-    extra_configs:
-      - CONFIG_DISK_DRIVER_RAM=y
     platform_allow: qemu_x86_64
   drivers.disk.nvme:
     extra_configs:

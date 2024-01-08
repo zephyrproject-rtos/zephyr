@@ -30,7 +30,7 @@ systems.
 The management subsystem is located in :zephyr_file:`subsys/mgmt/` inside of
 the Zephyr tree.
 
-Additionally, there is a :ref:`sample <smp_svr_sample>` that provides
+Additionally, there is a :zephyr:code-sample:`sample <smp-svr>` sample that provides
 management functionality over BLE and serial.
 
 .. _mcumgr_cli:

@@ -15,6 +15,8 @@ static struct sdhc_io io;
 
 #define SDHC_FREQUENCY_SLIP 10000000
 
+K_SEM_DEFINE(card_sem, 0, 1);
+
 /* Resets SD host controller, verifies API */
 ZTEST(sdhc, test_reset)
 {
@@ -73,9 +75,22 @@ ZTEST(sdhc, test_set_io)
 	zassert_not_equal(ret, 0, "Invalid io configuration should not succeed");
 }
 
+void sdhc_interrupt_cb(const struct device *dev, int source, const void *data)
+{
+	ARG_UNUSED(data);
 
-/* Verify that the driver can detect a present SD card */
-ZTEST(sdhc, test_card_presence)
+	/* Check that the device pointer is correct */
+	zassert_equal(dev, sdhc_dev, "Incorrect device pointer in interrupt callback");
+	zassert_equal(source, SDHC_INT_INSERTED, "Got unexpected SDHC interrupt");
+	k_sem_give(&card_sem);
+}
+
+
+/*
+ * Verify that the driver can detect a present SD card
+ * This test must run first, to ensure the card is present.
+ */
+ZTEST(sdhc, test_0_card_presence)
 {
 	int ret;
 
@@ -85,6 +100,19 @@ ZTEST(sdhc, test_card_presence)
 	k_msleep(props.power_delay);
 
 	ret = sdhc_card_present(sdhc_dev);
+	if (ret == 0) {
+		/* Card not in slot, test card insertion interrupt */
+		TC_PRINT("Waiting for card to be present in slot\n");
+		ret = sdhc_enable_interrupt(sdhc_dev, sdhc_interrupt_cb,
+					SDHC_INT_INSERTED, NULL);
+		zassert_equal(ret, 0, "Could not install card insertion interrupt");
+		/* Wait for card insertion */
+		ret = k_sem_take(&card_sem, K_FOREVER);
+		/* Delay now that card is in slot */
+		k_msleep(props.power_delay);
+		zassert_equal(ret, 0, "Card insertion interrupt did not fire");
+		ret = sdhc_card_present(sdhc_dev);
+	}
 	zassert_equal(ret, 1, "Card is not reported as present, is one connected?");
 }
 

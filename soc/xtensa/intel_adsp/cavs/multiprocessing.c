@@ -7,6 +7,7 @@
 #include <adsp_shim.h>
 #include <soc.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/pm.h>
 
 /* IDC power up message to the ROM firmware.  This isn't documented
  * anywhere, it's basically just a magic number (except the high bit,
@@ -71,7 +72,22 @@ void soc_start_core(int cpu_num)
 	};
 
 	memcpy(lpsram, tramp, ARRAY_SIZE(tramp));
+#if CONFIG_PM
+	extern void dsp_restore_vector(void);
+
+	/* We need to find out what type of booting is taking place here. Secondary cores
+	 * can be disabled and enabled multiple times during runtime. During kernel
+	 * initialization, the next pm state is set to ACTIVE. This way we can determine
+	 * whether the core is being turned on again or for the first time.
+	 */
+	if (pm_state_next_get(cpu_num)->state == PM_STATE_ACTIVE)
+		lpsram[1] = z_soc_mp_asm_entry;
+	else
+		lpsram[1] = dsp_restore_vector;
+#else
 	lpsram[1] = z_soc_mp_asm_entry;
+#endif
+
 
 	/* Disable automatic power and clock gating for that CPU, so
 	 * it won't just go back to sleep.  Note that after startup,
@@ -98,7 +114,7 @@ void soc_start_core(int cpu_num)
 	 * available, so it's sent shifted).  The write to ITC
 	 * triggers the interrupt, so that comes last.
 	 */
-	uint32_t ietc = ((long) z_soc_mp_asm_entry) >> 2;
+	uint32_t ietc = ((long)lpsram[1]) >> 2;
 
 	IDC[curr_cpu].core[cpu_num].ietc = ietc;
 	IDC[curr_cpu].core[cpu_num].itc = IDC_MSG_POWER_UP;

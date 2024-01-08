@@ -294,7 +294,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
  * @brief Test queue alloc append and prepend
  * @ingroup kernel_queue_tests
  * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
- * z_thread_heap_assign(), k_queue_is_empty(),
+ * k_thread_heap_assign(), k_queue_is_empty(),
  * k_queue_get(), k_queue_remove()
  */
 ZTEST(queue_api, test_queue_alloc)

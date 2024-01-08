@@ -476,6 +476,14 @@ static int lis2dw12_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+	ret = lis2dw12_wkup_dur_set(ctx, cfg->wakeup_duration);
+	if (ret < 0) {
+		LOG_ERR("wakeup duration config error %d", ret);
+		return ret;
+	}
+#endif /* CONFIG_LIS2DW12_THRESHOLD */
+
 	return 0;
 }
 
@@ -521,6 +529,13 @@ static int lis2dw12_init(const struct device *dev)
 #define LIS2DW12_CONFIG_FREEFALL(inst)
 #endif /* CONFIG_LIS2DW12_FREEFALL */
 
+#ifdef CONFIG_LIS2DW12_THRESHOLD
+#define LIS2DW12_CONFIG_THRESHOLD(inst)					\
+	.wakeup_duration = DT_INST_PROP(inst, wakeup_duration),
+#else
+#define LIS2DW12_CONFIG_THRESHOLD(inst)
+#endif
+
 #ifdef CONFIG_LIS2DW12_TRIGGER
 #define LIS2DW12_CFG_IRQ(inst) \
 	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
@@ -540,6 +555,7 @@ static int lis2dw12_init(const struct device *dev)
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),			\
 	LIS2DW12_CONFIG_TAP(inst)					\
 	LIS2DW12_CONFIG_FREEFALL(inst)					\
+	LIS2DW12_CONFIG_THRESHOLD(inst)					\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2DW12_CFG_IRQ(inst)), ())
 

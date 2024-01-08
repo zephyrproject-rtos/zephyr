@@ -12,6 +12,11 @@ config NET_IP
 	bool
 	default y if NET_IPV6 || NET_IPV4
 
+# Hidden option enabled whenever an IP fragmentation is enabled.
+config NET_IP_FRAGMENT
+	bool
+	default y if NET_IPV6_FRAGMENT || NET_IPV4_FRAGMENT
+
 # Hidden option selected by net connection based socket implementations
 # to draw in all code required for connection infrastructure.
 config NET_CONNECTION_SOCKETS
@@ -52,6 +57,14 @@ config NET_OFFLOAD
 	bool "Offload IP stack"
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
+
+config NET_OFFLOADING_SUPPORT
+	bool
+	default y if NET_OFFLOAD || NET_SOCKETS_OFFLOAD
+	help
+	  Hidden option that is set if either NET_OFFLOAD or
+	  NET_SOCKETS_OFFLOAD is set. This allows us to check
+	  only one option instead of two.
 
 if NET_OFFLOAD
 module = NET_OFFLOAD
@@ -135,9 +148,23 @@ source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
 
+config NET_IPV4_MAPPING_TO_IPV6
+	bool "Support IPv4 mapped on IPv6 addresses"
+	depends on NET_NATIVE_IPV6
+	help
+	  Support v4-mapped-on-v6 address type. This allows IPv4 and IPv6
+	  to share a local port space. When the application gets an IPv4
+	  connection or packet to an IPv6 socket, its source address will
+	  be mapped to IPv6. This is turned off by default which means
+	  that IPV6_V6ONLY socket option is always on. If you enable this
+	  option, then you can still control the behaviour of the socket
+	  via the IPV6_V6ONLY option at runtime.
+
 config NET_SHELL
 	bool "Network shell utilities"
 	select SHELL
+	select NET_IPV4_IGMP if NET_IPV4
+	select NET_IPV6_MLD if NET_IPV6
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
@@ -211,8 +238,8 @@ config NET_TC_RX_COUNT
 config NET_TC_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
 	help
-	  If this is set, then high priority (NET_PRIORITY_CA) net_pkt will be
-	  pushed directly to network driver and will skip the traffic class
+	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
+	  be pushed directly to network driver and will skip the traffic class
 	  queues. This is currently not enabled by default.
 
 choice NET_TC_THREAD_TYPE
@@ -289,6 +316,12 @@ config NET_RX_DEFAULT_PRIORITY
 	help
 	  What is the default network RX packet priority if user has not set
 	  one. The value 0 means lowest priority and 7 is the highest.
+
+config NET_ALLOW_ANY_PRIORITY
+	bool "Allow any network packet priority to be used"
+	help
+	  If this is set, then any user given network packet priority can be used. Otherwise
+	  the network packet priorities are limited to 0-7 range.
 
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
@@ -550,6 +583,13 @@ config NET_TCP_WORKER_PRIO
 	  execution to the lower layer network stack, with a high risk of
 	  running out of net_bufs.
 
+config NET_TCP_REJECT_CONN_WITH_RST
+	bool "Reject connection attempts on unbound TCP ports with RST"
+	default y
+	help
+	  If enabled, TCP stack will reject connection attempts on unbound ports
+	  with TCP RST packet.
+
 config NET_TEST_PROTOCOL
 	bool "JSON based test protocol (UDP)"
 	help
@@ -683,6 +723,20 @@ config NET_CONTEXT_DSCP_ECN
 	  Notification values on net_context. Those values are then used in
 	  IPv4/IPv6 header when sending packets over net_context.
 
+config NET_CONTEXT_REUSEADDR
+	bool "Add REUSEADDR support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEADDR flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address.
+
+config NET_CONTEXT_REUSEPORT
+	bool "Add REUSEPORT support to net_context"
+	default y if NET_TCP || NET_UDP
+	help
+	  Allow to set the SO_REUSEPORT flag on a socket. This enables multiple
+	  sockets to bind to the same local IP address and port combination.
+
 config NET_TEST
 	bool "Network Testing"
 	help
@@ -811,8 +865,12 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
-choice
+# If we are running network tests found in tests/net, then the NET_TEST is
+# set and in that case we default to Dummy L2 layer as typically the tests
+# use that by default.
+choice NET_DEFAULT_IF
 	prompt "Default Network Interface"
+	default NET_DEFAULT_IF_DUMMY if NET_TEST
 	default NET_DEFAULT_IF_FIRST
 	help
 	  If system has multiple interfaces enabled, then user shall be able

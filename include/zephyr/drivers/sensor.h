@@ -23,6 +23,7 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/sensor_data_types.h>
 #include <zephyr/dsp/types.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -250,6 +251,12 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when no motion has been detected for a while. */
 	SENSOR_TRIG_STATIONARY,
+
+	/** Trigger fires when the FIFO watermark has been reached. */
+	SENSOR_TRIG_FIFO_WATERMARK,
+
+	/** Trigger fires when the FIFO becomes full. */
+	SENSOR_TRIG_FIFO_FULL,
 	/**
 	 * Number of all common sensor triggers.
 	 */
@@ -327,6 +334,10 @@ enum sensor_attribute {
 	 *  to the new sampling frequency.
 	 */
 	SENSOR_ATTR_FF_DUR,
+
+	/** Hardware batch duration in ticks */
+	SENSOR_ATTR_BATCH_DURATION,
+
 	/**
 	 * Number of all common sensor attributes.
 	 */
@@ -404,46 +415,6 @@ typedef int (*sensor_channel_get_t)(const struct device *dev,
 				    struct sensor_value *val);
 
 /**
- * @typedef sensor_frame_iterator_t
- * @brief Used for iterating over the data frames via the sensor_decoder_api.
- *
- * Example usage:
- *
- * @code(.c)
- *     sensor_frame_iterator_t fit = {0}, fit_last;
- *     sensor_channel_iterator_t cit = {0}, cit_last;
- *
- *     while (true) {
- *       int num_decoded_channels;
- *       enum sensor_channel channel;
- *       q31_t value;
- *
- *       fit_last = fit;
- *       num_decoded_channels = decoder->decode(buffer, &fit, &cit, &channel, &value, 1);
- *
- *       if (num_decoded_channels <= 0) {
- *         printk("Done decoding buffer\n");
- *         break;
- *       }
- *
- *       printk("Decoded channel (%d) with value %s0.%06" PRIi64 "\n", q < 0 ? "-" : "",
- *              abs(q) * INT64_C(1000000) / (INT64_C(1) << 31));
- *
- *       if (fit_last != fit) {
- *         printk("Finished decoding frame\n");
- *       }
- *     }
- * @endcode
- */
-typedef uint32_t sensor_frame_iterator_t;
-
-/**
- * @typedef sensor_channel_iterator_t
- * @brief Used for iterating over data channels in the same frame via sensor_decoder_api
- */
-typedef uint32_t sensor_channel_iterator_t;
-
-/**
  * @brief Decodes a single raw data buffer
  *
  * Data buffers are provided on the @ref rtio context that's supplied to
@@ -454,59 +425,128 @@ struct sensor_decoder_api {
 	 * @brief Get the number of frames in the current buffer.
 	 *
 	 * @param[in]  buffer The buffer provided on the @ref rtio context.
+	 * @param[in]  channel The channel to get the count for
+	 * @param[in]  channel_idx The index of the channel
 	 * @param[out] frame_count The number of frames on the buffer (at least 1)
 	 * @return 0 on success
-	 * @return <0 on error
+	 * @return -ENOTSUP if the channel/channel_idx aren't found
 	 */
-	int (*get_frame_count)(const uint8_t *buffer, uint16_t *frame_count);
+	int (*get_frame_count)(const uint8_t *buffer, enum sensor_channel channel,
+			       size_t channel_idx, uint16_t *frame_count);
 
 	/**
-	 * @brief Get the timestamp associated with the first frame.
+	 * @brief Get the size required to decode a given channel
 	 *
-	 * @param[in]  buffer The buffer provided on the @ref rtio context.
-	 * @param[out] timestamp_ns The closest timestamp for when the first frame was generated
-	 *             as attained by k_uptime_ticks().
+	 * When decoding a single frame, use @p base_size. For every additional frame, add another
+	 * @p frame_size. As an example, to decode 3 frames use: 'base_size + 2 * frame_size'.
+	 *
+	 * @param[in]  channel The channel to query
+	 * @param[out] base_size The size of decoding the first frame
+	 * @param[out] frame_size The additional size of every additional frame
 	 * @return 0 on success
-	 * @return <0 on error
+	 * @return -ENOTSUP if the channel is not supported
 	 */
-	int (*get_timestamp)(const uint8_t *buffer, uint64_t *timestamp_ns);
+	int (*get_size_info)(enum sensor_channel channel, size_t *base_size, size_t *frame_size);
 
 	/**
-	 * @brief Get the shift count of a particular channel (multiplier)
+	 * @brief Decode up to @p max_count samples from the buffer
 	 *
-	 * This value can be used by shifting the q31_t value resulting in the SI unit of the
-	 * reading. It is guaranteed that the shift for a channel will not change between frames.
+	 * Decode samples of channel @ref sensor_channel across multiple frames. If there exist
+	 * multiple instances of the same channel, @p channel_index is used to differentiate them.
+	 * As an example, assume a sensor provides 2 distance measurements:
 	 *
-	 * @param[in]  buffer The buffer provided on the @ref rtio context.
-	 * @param[in]  channel_type The c:enum:`sensor_channel` to query
-	 * @param[out] shift The bit shift of the channel for this data buffer.
-	 * @return 0 on success
-	 * @return -EINVAL if the @p channel_type doesn't exist in the buffer
-	 * @return <0 on error
-	 */
-	int (*get_shift)(const uint8_t *buffer, enum sensor_channel channel_type, int8_t *shift);
-
-	/**
-	 * @brief Decode up to N samples from the buffer
+	 * @code{.c}
+	 * // Decode the first channel instance of 'distance'
+	 * decoder->decode(buffer, SENSOR_CHAN_DISTANCE, 0, &fit, 5, out);
+	 * ...
 	 *
-	 * This function will never wrap frames. If 1 channel is available in the current frame and
-	 * @p max_count is 2, only 1 channel will be decoded and the frame iterator will be modified
-	 * so that the next call to decode will begin at the next frame.
+	 * // Decode the second channel instance of 'distance'
+	 * decoder->decode(buffer, SENSOR_CHAN_DISTANCE, 1, &fit, 5, out);
+	 * @endcode
 	 *
 	 * @param[in]     buffer The buffer provided on the @ref rtio context
+	 * @param[in]     channel The channel to decode
+	 * @param[in]     channel_idx The index of the channel
 	 * @param[in,out] fit The current frame iterator
-	 * @param[in,out] cit The current channel iterator
-	 * @param[out]    channels The channels that were decoded
-	 * @param[out]    values The scaled data that was decoded
 	 * @param[in]     max_count The maximum number of channels to decode.
-	 * @retval        > 0 The number of decoded values
-	 * @retval        0 Nothing else to decode on the @p buffer
-	 * @retval        < 0 Error
+	 * @param[out]    data_out The decoded data
+	 * @return 0 no more samples to decode
+	 * @return >0 the number of decoded frames
+	 * @return <0 on error
 	 */
-	int (*decode)(const uint8_t *buffer, sensor_frame_iterator_t *fit,
-		      sensor_channel_iterator_t *cit, enum sensor_channel *channels, q31_t *values,
-		      uint8_t max_count);
+	int (*decode)(const uint8_t *buffer, enum sensor_channel channel, size_t channel_idx,
+		      uint32_t *fit, uint16_t max_count, void *data_out);
+
+	/**
+	 * @brief Check if the given trigger type is present
+	 *
+	 * @param[in] buffer The buffer provided on the @ref rtio context
+	 * @param[in] trigger The trigger type in question
+	 * @return Whether the trigger is present in the buffer
+	 */
+	bool (*has_trigger)(const uint8_t *buffer, enum sensor_trigger_type trigger);
 };
+
+/**
+ * @brief Used for iterating over the data frames via the sensor_decoder_api.
+ *
+ * Example usage:
+ *
+ * @code(.c)
+ *     struct sensor_decode_context ctx = SENSOR_DECODE_CONTEXT_INIT(
+ *         decoder, buffer, SENSOR_CHAN_ACCEL_XYZ, 0);
+ *
+ *     while (true) {
+ *       struct sensor_three_axis_data accel_out_data;
+ *
+ *       num_decoded_channels = sensor_decode(ctx, &accel_out_data, 1);
+ *
+ *       if (num_decoded_channels <= 0) {
+ *         printk("Done decoding buffer\n");
+ *         break;
+ *       }
+ *
+ *       printk("Decoded (%" PRId32 ", %" PRId32 ", %" PRId32 ")\n", accel_out_data.readings[0].x,
+ *           accel_out_data.readings[0].y, accel_out_data.readings[0].z);
+ *     }
+ * @endcode
+ */
+struct sensor_decode_context {
+	const struct sensor_decoder_api *decoder;
+	const uint8_t *buffer;
+	enum sensor_channel channel;
+	size_t channel_idx;
+	uint32_t fit;
+};
+
+/**
+ * @brief Initialize a sensor_decode_context
+ */
+#define SENSOR_DECODE_CONTEXT_INIT(decoder_, buffer_, channel_, channel_index_)                    \
+	{                                                                                          \
+		.decoder = (decoder_),                                                             \
+		.buffer = (buffer_),                                                               \
+		.channel = (channel_),                                                             \
+		.channel_idx = (channel_index_),                                                   \
+		.fit = 0,                                                                          \
+	}
+
+/**
+ * @brief Decode N frames using a sensor_decode_context
+ *
+ * @param[in,out] ctx The context to use for decoding
+ * @param[out]    out The output buffer
+ * @param[in]     max_count Maximum number of frames to decode
+ * @return The decode result from sensor_decoder_api's decode function
+ */
+static inline int sensor_decode(struct sensor_decode_context *ctx, void *out, uint16_t max_count)
+{
+	return ctx->decoder->decode(ctx->buffer, ctx->channel, ctx->channel_idx, &ctx->fit,
+				    max_count, out);
+}
+
+int sensor_natively_supported_channel_size_info(enum sensor_channel channel, size_t *base_size,
+						size_t *frame_size);
 
 /**
  * @typedef sensor_get_decoder_t
@@ -517,13 +557,38 @@ struct sensor_decoder_api {
 typedef int (*sensor_get_decoder_t)(const struct device *dev,
 				    const struct sensor_decoder_api **api);
 
+/**
+ * @brief Options for what to do with the associated data when a trigger is consumed
+ */
+enum sensor_stream_data_opt {
+	/** @brief Include whatever data is associated with the trigger */
+	SENSOR_STREAM_DATA_INCLUDE = 0,
+	/** @brief Do nothing with the associated trigger data, it may be consumed later */
+	SENSOR_STREAM_DATA_NOP = 1,
+	/** @brief Flush/clear whatever data is associated with the trigger */
+	SENSOR_STREAM_DATA_DROP = 2,
+};
+
+struct sensor_stream_trigger {
+	enum sensor_trigger_type trigger;
+	enum sensor_stream_data_opt opt;
+};
+
+#define SENSOR_STREAM_TRIGGER_PREP(_trigger, _opt)                                                 \
+	{                                                                                          \
+		.trigger = (_trigger), .opt = (_opt),                                              \
+	}
 /*
  * Internal data structure used to store information about the IODevice for async reading and
  * streaming sensor data.
  */
 struct sensor_read_config {
 	const struct device *sensor;
-	enum sensor_channel *const channels;
+	const bool is_streaming;
+	union {
+		enum sensor_channel *const channels;
+		struct sensor_stream_trigger *const triggers;
+	};
 	size_t count;
 	const size_t max;
 };
@@ -543,14 +608,45 @@ struct sensor_read_config {
  * @endcode
  */
 #define SENSOR_DT_READ_IODEV(name, dt_node, ...)                                                   \
-	static enum sensor_channel __channel_array_##name[] = {__VA_ARGS__};                       \
-	static struct sensor_read_config __sensor_read_config_##name = {                           \
+	static enum sensor_channel _CONCAT(__channel_array_, name)[] = {__VA_ARGS__};              \
+	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
-		.channels = __channel_array_##name,                                                \
-		.count = ARRAY_SIZE(__channel_array_##name),                                       \
-		.max = ARRAY_SIZE(__channel_array_##name),                                         \
+		.is_streaming = false,                                                             \
+		.channels = _CONCAT(__channel_array_, name),                                       \
+		.count = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                              \
+		.max = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                                \
 	};                                                                                         \
-	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &__sensor_read_config_##name)
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
+
+/**
+ * @brief Define a stream instance of a sensor
+ *
+ * Use this macro to generate a @ref rtio_iodev for starting a stream that's triggered by specific
+ * interrupts. Example:
+ *
+ * @code(.c)
+ * SENSOR_DT_STREAM_IODEV(imu_stream, DT_ALIAS(imu),
+ *     {SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE},
+ *     {SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP});
+ *
+ * int main(void) {
+ *   struct rtio_sqe *handle;
+ *   sensor_stream(&imu_stream, &rtio, NULL, &handle);
+ *   k_msleep(1000);
+ *   rtio_sqe_cancel(handle);
+ * }
+ * @endcode
+ */
+#define SENSOR_DT_STREAM_IODEV(name, dt_node, ...)                                                 \
+	static struct sensor_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};     \
+	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
+		.sensor = DEVICE_DT_GET(dt_node),                                                  \
+		.is_streaming = true,                                                              \
+		.triggers = _CONCAT(__trigger_array_, name),                                       \
+		.count = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                              \
+		.max = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                                \
+	};                                                                                         \
+	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
 
 /* Used to submit an RTIO sqe to the sensor's iodev */
 typedef int (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
@@ -780,10 +876,13 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 	 * The number of channels present in the frame. This will be the true number of elements in
 	 * channel_info and in the q31 values that follow the header.
 	 */
-	size_t num_channels;
+	uint32_t num_channels;
 
 	/* Shift value for all samples in the frame */
 	int8_t shift;
+
+	/* This padding is needed to make sure that the 'channels' field is aligned */
+	int8_t _padding[sizeof(enum sensor_channel) - 1];
 
 	/* Channels present in the frame */
 	enum sensor_channel channels[0];
@@ -856,7 +955,7 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 {
 	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev->data;
 
-	if (cfg->max < num_channels) {
+	if (cfg->max < num_channels || cfg->is_streaming) {
 		return -ENOMEM;
 	}
 
@@ -864,6 +963,28 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 	memcpy(cfg->channels, channels, num_channels * sizeof(enum sensor_channel));
 	cfg->count = num_channels;
 	return 0;
+}
+
+static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
+				struct rtio_sqe **handle)
+{
+	if (IS_ENABLED(CONFIG_USERSPACE)) {
+		struct rtio_sqe sqe;
+
+		rtio_sqe_prep_read_multishot(&sqe, iodev, RTIO_PRIO_NORM, userdata);
+		rtio_sqe_copy_in_get_handles(ctx, &sqe, handle, 1);
+	} else {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(ctx);
+
+		if (sqe == NULL) {
+			return -ENOMEM;
+		}
+		if (handle != NULL) {
+			*handle = sqe;
+		}
+		rtio_sqe_prep_read_multishot(sqe, iodev, RTIO_PRIO_NORM, userdata);
+	}
+	rtio_submit(ctx, 0);
 	return 0;
 }
 
@@ -1236,8 +1357,6 @@ static inline int64_t sensor_value_to_micro(const struct sensor_value *val)
  * @}
  */
 
-#if defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__)
-
 /**
  * @brief Get the decoder name for the current driver
  *
@@ -1285,7 +1404,6 @@ static inline int64_t sensor_value_to_micro(const struct sensor_value *val)
 		    ())
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL)
-#endif /* defined(CONFIG_HAS_DTS) || defined(__DOXYGEN__) */
 
 #ifdef __cplusplus
 }

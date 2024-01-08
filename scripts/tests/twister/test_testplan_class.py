@@ -342,3 +342,66 @@ def test_quarantine(class_testplan, platforms_list, test_data,
                 assert instance.reason == "Quarantine: " + expected_val[testname]
             else:
                 assert not instance.status
+
+def test_required_snippets_app(class_testplan, all_testsuites_dict, platforms_list):
+    """ Testing required_snippets function of TestPlan class in Twister
+    Ensure that app snippets work and are only applied to boards that support the snippet
+    """
+    plan = class_testplan
+    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1')
+    plan.platforms = platforms_list
+    plan.platform_names = [p.name for p in platforms_list]
+    plan.testsuites = {'scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1': testsuite}
+
+    for _, testcase in plan.testsuites.items():
+        testcase.exclude_platform = []
+        testcase.required_snippets = ['dummy']
+        testcase.build_on_all = True
+
+    plan.apply_filters()
+
+    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
+    for d in filtered_instances:
+        assert d.reason == "Snippet not supported"
+
+def test_required_snippets_global(class_testplan, all_testsuites_dict, platforms_list):
+    """ Testing required_snippets function of TestPlan class in Twister
+    Ensure that global snippets work and application does not fail
+    """
+    plan = class_testplan
+    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1')
+    plan.platforms = platforms_list
+    plan.platform_names = [p.name for p in platforms_list]
+    plan.testsuites = {'scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1': testsuite}
+
+    for _, testcase in plan.testsuites.items():
+        testcase.exclude_platform = []
+        testcase.required_snippets = ['cdc-acm-console']
+        testcase.build_on_all = True
+
+    plan.apply_filters()
+
+    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
+    assert len(filtered_instances) == 0
+
+def test_required_snippets_multiple(class_testplan, all_testsuites_dict, platforms_list):
+    """ Testing required_snippets function of TestPlan class in Twister
+    Ensure that multiple snippets can be used and are applied
+    """
+    plan = class_testplan
+    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1')
+    plan.platforms = platforms_list
+    plan.platform_names = [p.name for p in platforms_list]
+    plan.testsuites = {'scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1': testsuite}
+
+    for _, testcase in plan.testsuites.items():
+        testcase.exclude_platform = []
+        testcase.required_snippets = ['dummy', 'cdc-acm-console']
+        testcase.build_on_all = True
+
+    plan.apply_filters()
+
+    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
+    assert len(filtered_instances) == 2
+    for d in filtered_instances:
+        assert d.reason == "Snippet not supported"

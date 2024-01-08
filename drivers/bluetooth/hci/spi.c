@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define EVT_HEADER_TYPE		0
 #define EVT_HEADER_EVENT	1
 #define EVT_HEADER_SIZE		2
+#define EVT_LE_META_SUBEVENT	3
 #define EVT_VENDOR_CODE_LSB	3
 #define EVT_VENDOR_CODE_MSB	4
 
@@ -84,30 +85,6 @@ static K_SEM_DEFINE(sem_busy, 1, 1);
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
-#if defined(CONFIG_BT_HCI_DRIVER_LOG_LEVEL_DBG)
-#include <zephyr/sys/printk.h>
-static inline void spi_dump_message(const uint8_t *pre, uint8_t *buf,
-				    uint8_t size)
-{
-	uint8_t i, c;
-
-	printk("%s (%d): ", pre, size);
-	for (i = 0U; i < size; i++) {
-		c = buf[i];
-		printk("%x ", c);
-		if (c >= 31U && c <= 126U) {
-			printk("[%c] ", c);
-		} else {
-			printk("[.] ");
-		}
-	}
-	printk("\n");
-}
-#else
-static inline
-void spi_dump_message(const uint8_t *pre, uint8_t *buf, uint8_t size) {}
-#endif
-
 #if defined(CONFIG_BT_SPI_BLUENRG)
 /* Define a limit when reading IRQ high */
 /* It can be required to be increased for */
@@ -129,17 +106,8 @@ struct bluenrg_aci_cmd_ll_param {
 static int bt_spi_send_aci_config_data_controller_mode(void);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-#if defined(CONFIG_BT_SPI_BLUENRG)
-/* In case of BlueNRG-MS, it is necessary to prevent SPI driver to release CS,
- * and instead, let current driver manage CS release. see kick_cs()/release_cs()
- * So, add SPI_HOLD_ON_CS to operation field.
- */
-static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_HOLD_ON_CS, 0);
-#else
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0);
-#endif
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -208,12 +176,6 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
  * know the amount of byte to read.
  * (See section 5.2 of BlueNRG-MS datasheet)
  */
-static int configure_cs(void)
-{
-	/* Configure pin as output and set to inactive */
-	return gpio_pin_configure_dt(&bus.config.cs.gpio, GPIO_OUTPUT_INACTIVE);
-}
-
 static void kick_cs(void)
 {
 	gpio_pin_set_dt(&bus.config.cs.gpio, 0);
@@ -253,7 +215,6 @@ static bool exit_irq_high_loop(void)
 
 #else
 
-#define configure_cs(...) 0
 #define kick_cs(...)
 #define release_cs(...)
 #define irq_pin_high(...) 0
@@ -285,17 +246,76 @@ static int bt_spi_send_aci_config_data_controller_mode(void)
 }
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static void bt_spi_rx_thread(void)
+static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 {
 	bool discardable = false;
 	k_timeout_t timeout = K_FOREVER;
+	struct bt_hci_acl_hdr acl_hdr;
 	struct net_buf *buf;
+	int len;
+
+	switch (msg[PACKET_TYPE]) {
+	case HCI_EVT:
+		switch (msg[EVT_HEADER_EVENT]) {
+		case BT_HCI_EVT_VENDOR:
+			/* Run event through interface handler */
+			if (bt_spi_handle_vendor_evt(msg)) {
+				return NULL;
+			}
+			/* Event has not yet been handled */
+			__fallthrough;
+		default:
+			if (msg[EVT_HEADER_EVENT] == BT_HCI_EVT_LE_META_EVENT &&
+			    (msg[EVT_LE_META_SUBEVENT] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
+				discardable = true;
+				timeout = K_NO_WAIT;
+			}
+			buf = bt_buf_get_evt(msg[EVT_HEADER_EVENT],
+					     discardable, timeout);
+			if (!buf) {
+				LOG_DBG("Discard adv report due to insufficient buf");
+				return NULL;
+			}
+		}
+
+		len = sizeof(struct bt_hci_evt_hdr) + msg[EVT_HEADER_SIZE];
+		if (len > net_buf_tailroom(buf)) {
+			LOG_ERR("Event too long: %d", len);
+			net_buf_unref(buf);
+			return NULL;
+		}
+		net_buf_add_mem(buf, &msg[1], len);
+		break;
+	case HCI_ACL:
+		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
+		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
+		if (len > net_buf_tailroom(buf)) {
+			LOG_ERR("ACL too long: %d", len);
+			net_buf_unref(buf);
+			return NULL;
+		}
+		net_buf_add_mem(buf, &msg[1], len);
+		break;
+	default:
+		LOG_ERR("Unknown BT buf type %d", msg[0]);
+		return NULL;
+	}
+
+	return buf;
+}
+
+static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	uint8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	uint8_t header_slave[5];
-	struct bt_hci_acl_hdr acl_hdr;
+	struct net_buf *buf;
 	uint8_t size = 0U;
 	int ret;
-	int len;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 	while (true) {
@@ -345,59 +365,14 @@ static void bt_spi_rx_thread(void)
 				continue;
 			}
 
-			spi_dump_message("RX:ed", rxmsg, size);
+			LOG_HEXDUMP_DBG(rxmsg, size, "SPI RX");
 
-			switch (rxmsg[PACKET_TYPE]) {
-			case HCI_EVT:
-				switch (rxmsg[EVT_HEADER_EVENT]) {
-				case BT_HCI_EVT_VENDOR:
-					/* Run event through interface handler */
-					if (bt_spi_handle_vendor_evt(rxmsg)) {
-						continue;
-					};
-					/* Event has not yet been handled */
-					__fallthrough;
-				default:
-					if (rxmsg[1] == BT_HCI_EVT_LE_META_EVENT &&
-					    (rxmsg[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
-						discardable = true;
-						timeout = K_NO_WAIT;
-					}
-
-					buf = bt_buf_get_evt(rxmsg[EVT_HEADER_EVENT],
-							     discardable, timeout);
-					if (!buf) {
-						LOG_DBG("Discard adv report due to insufficient "
-							"buf");
-						continue;
-					}
-				}
-
-				len = sizeof(struct bt_hci_evt_hdr) + rxmsg[EVT_HEADER_SIZE];
-				if (len > net_buf_tailroom(buf)) {
-					LOG_ERR("Event too long: %d", len);
-					net_buf_unref(buf);
-					continue;
-				}
-				net_buf_add_mem(buf, &rxmsg[1], len);
-				break;
-			case HCI_ACL:
-				buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-				memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
-				len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
-				if (len > net_buf_tailroom(buf)) {
-					LOG_ERR("ACL too long: %d", len);
-					net_buf_unref(buf);
-					continue;
-				}
-				net_buf_add_mem(buf, &rxmsg[1], len);
-				break;
-			default:
-				LOG_ERR("Unknown BT buf type %d", rxmsg[0]);
-				continue;
+			/* Construct net_buf from SPI data */
+			buf = bt_spi_rx_buf_construct(rxmsg);
+			if (buf) {
+				/* Handle the received HCI data */
+				bt_recv(buf);
 			}
-
-			bt_recv(buf);
 
 		/* On BlueNRG-MS, host is expected to read */
 		/* as long as IRQ pin is high */
@@ -407,7 +382,9 @@ static void bt_spi_rx_thread(void)
 
 static int bt_spi_send(struct net_buf *buf)
 {
-	uint8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
+	uint8_t header_tx[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
+	uint8_t header_rx[5];
+	uint8_t rx_first[1];
 	int ret;
 
 	LOG_DBG("");
@@ -437,22 +414,31 @@ static int bt_spi_send(struct net_buf *buf)
 	/* Poll sanity values until device has woken-up */
 	do {
 		kick_cs();
-		ret = bt_spi_transceive(header, 5, rxmsg, 5);
+		ret = bt_spi_transceive(header_tx, 5, header_rx, 5);
 
 		/*
-		 * RX Header (rxmsg) must contain a sanity check Byte and size
+		 * RX Header must contain a sanity check Byte and size
 		 * information.  If it does not contain BOTH then it is
 		 * sleeping or still in the initialisation stage (waking-up).
 		 */
-	} while ((rxmsg[STATUS_HEADER_READY] != READY_NOW ||
-		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0U) && !ret);
+	} while ((header_rx[STATUS_HEADER_READY] != READY_NOW ||
+		  (header_rx[1] | header_rx[2] | header_rx[3] | header_rx[4]) == 0U) && !ret);
 
 	if (!ret) {
+		/* Delay here is rounded up to next tick */
+		k_sleep(K_USEC(DATA_DELAY_US));
 		/* Transmit the message */
-		do {
+		while (true) {
 			ret = bt_spi_transceive(buf->data, buf->len,
-						rxmsg, buf->len);
-		} while (rxmsg[0] == 0U && !ret);
+						rx_first, 1);
+			if (rx_first[0] != 0U || ret) {
+				break;
+			}
+			/* Consider increasing controller-data-delay-us
+			 * if this message is extremely common.
+			 */
+			LOG_DBG("Controller not ready for SPI transaction of %d bytes", buf->len);
+		}
 	}
 
 	release_cs();
@@ -464,7 +450,7 @@ static int bt_spi_send(struct net_buf *buf)
 		goto out;
 	}
 
-	spi_dump_message("TX:ed", buf->data, buf->len);
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "SPI TX");
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
 	/*
@@ -516,7 +502,7 @@ static int bt_spi_open(void)
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
 			K_KERNEL_STACK_SIZEOF(spi_rx_stack),
-			(k_thread_entry_t)bt_spi_rx_thread, NULL, NULL, NULL,
+			bt_spi_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
@@ -542,10 +528,6 @@ static int bt_spi_init(void)
 	if (!spi_is_ready_dt(&bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
-	}
-
-	if (configure_cs()) {
-		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&irq_gpio)) {

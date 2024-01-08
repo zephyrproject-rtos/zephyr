@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samr21.dtsi>
+#include <atmel/samx2xx18.dtsi>
 #include "atsamr21_xpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -205,4 +206,22 @@ ext2_spi: &sercom5 {
 };
 
 ext2_i2c: &sercom1 {
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+	};
 };

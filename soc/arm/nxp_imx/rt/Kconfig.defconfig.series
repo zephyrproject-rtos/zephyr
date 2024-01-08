@@ -92,6 +92,9 @@ config FLASH_SIZE
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
 		if $(DT_FLASH_HAS_SIZE_PROP)
 
+config MEMC
+	default y
+
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
@@ -113,7 +116,7 @@ endchoice
 #
 config MBEDTLS
 #config TINYCRYPT
-	default y if CSPRING_ENABLED
+	default y if CSPRNG_ENABLED
 	depends on ENTROPY_GENERATOR
 
 if MBEDTLS

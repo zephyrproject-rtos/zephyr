@@ -18,6 +18,10 @@
 #define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
 #define __sw_isr_table		Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
 
+#ifdef CONFIG_SHARED_INTERRUPTS
+#define __shared_sw_isr_table	Z_GENERIC_SECTION(_SHARED_SW_ISR_TABLE_SECTION_NAME)
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
 /* Attribute macros to place code and data into IMR memory */
 #define __imr __in_section_unique(imr)
 #define __imrdata __in_section_unique(imrdata)
@@ -45,8 +49,10 @@
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#define __nocache_noinit __nocache
 #else
 #define __nocache
+#define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 #if defined(CONFIG_KERNEL_COHERENCE)

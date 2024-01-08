@@ -322,7 +322,7 @@ def marshall_defs(func_name, func_type, args):
         mrsh += "\t(void) arg%d;\t/* unused */\n" % unused_arg
 
     if nmrsh > 6:
-        mrsh += ("\tZ_OOPS(Z_SYSCALL_MEMORY_READ(more, "
+        mrsh += ("\tK_OOPS(K_SYSCALL_MEMORY_READ(more, "
                  + str(nmrsh - 5) + " * sizeof(uintptr_t)));\n")
 
     argnum = 0
@@ -349,7 +349,7 @@ def marshall_defs(func_name, func_type, args):
 
         if need_split(func_type):
             ptr = "((uint64_t *)%s)" % mrsh_rval(nmrsh - 1, nmrsh)
-            mrsh += "\t" + "Z_OOPS(Z_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
+            mrsh += "\t" + "K_OOPS(K_SYSCALL_MEMORY_WRITE(%s, 8));\n" % ptr
             mrsh += "\t" + "*%s = ret;\n" % ptr
             mrsh += "\t" + "_current->syscall_frame = NULL;\n"
             mrsh += "\t" + "return 0;\n"

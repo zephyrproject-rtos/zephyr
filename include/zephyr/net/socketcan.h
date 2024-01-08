@@ -49,7 +49,7 @@ enum {
 #define CAN_MTU (sizeof(struct socketcan_frame))
 #endif /* !CONFIG_CAN_FD_MODE */
 
-/* CAN-FD specific flags from Linux Kernel (include/uapi/linux/can.h) */
+/* CAN FD specific flags from Linux Kernel (include/uapi/linux/can.h) */
 #define CANFD_BRS 0x01 /* bit rate switch (second bitrate for payload data) */
 #define CANFD_ESI 0x02 /* error state indicator of the transmitting node */
 #define CANFD_FDF 0x04 /* mark CAN FD for dual use of struct canfd_frame */

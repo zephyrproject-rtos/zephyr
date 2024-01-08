@@ -114,7 +114,7 @@ struct stat {
 #define st_mtime st_mtim.tv_sec
 #define st_ctime st_ctim.tv_sec
 #if defined(__linux) && defined(__x86_64__)
-	__uint64_t __glibc_reserved[3];
+	uint64_t __glibc_reserved[3];
 #endif
 #else
 #if defined(__rtems__)

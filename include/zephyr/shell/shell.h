@@ -350,8 +350,8 @@ struct shell_static_entry {
 			SHELL_EXPR_CMD_ARG(1, _syntax, _subcmd, _help, \
 					   _handler, _mand, _opt)\
 		), \
-		(static shell_cmd_handler dummy_##syntax##_handler __unused = _handler;\
-		 static const union shell_cmd_entry dummy_subcmd_##syntax __unused = { \
+		(static shell_cmd_handler dummy_handler_##_syntax __unused = _handler;\
+		 static const union shell_cmd_entry dummy_subcmd_##_syntax __unused = { \
 			.entry = (const struct shell_static_entry *)_subcmd\
 		 } \
 		) \
@@ -530,7 +530,7 @@ static int UTIL_CAT(UTIL_CAT(cmd_dict_, UTIL_CAT(_handler, _)),		\
  * @param[in] _name	Name of the dictionary subcommand set
  * @param[in] _handler	Command handler common for all dictionary commands.
  *			@see shell_dict_cmd_handler
- * @param[in] ...	Dictionary pairs: (command_syntax, value). Value will be
+ * @param[in] ...	Dictionary triplets: (command_syntax, value, helper). Value will be
  *			passed to the _handler as user data.
  *
  * Example usage:
@@ -863,7 +863,7 @@ struct shell {
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 
-	const char *thread_name;
+	const char *name;
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
 };
@@ -910,7 +910,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.stats = Z_SHELL_STATS_PTR(_name),			      \
 		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.thread_name = STRINGIFY(_name),			      \
+		.name = STRINGIFY(_name),				      \
 		.thread = &_name##_thread,				      \
 		.stack = _name##_stack					      \
 	}

@@ -527,6 +527,7 @@ static void coredump_flash_backend_buffer_output(uint8_t *buf, size_t buflen)
 					&backend_ctx.stream_ctx,
 					tmp_buf, copy_sz, false);
 		if (backend_ctx.error != 0) {
+			LOG_ERR("Flash write error: %d", backend_ctx.error);
 			break;
 		}
 

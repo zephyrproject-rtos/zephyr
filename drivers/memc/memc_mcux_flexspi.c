@@ -26,6 +26,8 @@
 	read-while-write hazards. This configuration is not recommended."
 #endif
 
+#define FLEXSPI_MAX_LUT 64U
+
 LOG_MODULE_REGISTER(memc_flexspi, CONFIG_MEMC_LOG_LEVEL);
 
 struct memc_flexspi_buf_cfg {
@@ -34,6 +36,12 @@ struct memc_flexspi_buf_cfg {
 	uint16_t master_id;
 	uint16_t buf_size;
 } __packed;
+
+/* Structure tracking LUT offset and usage per each port */
+struct port_lut {
+	uint8_t lut_offset;
+	uint8_t lut_used;
+};
 
 /* flexspi device data should be stored in RAM to avoid read-while-write hazards */
 struct memc_flexspi_data {
@@ -49,6 +57,7 @@ struct memc_flexspi_data {
 	flexspi_read_sample_clock_t rx_sample_clock;
 	const struct pinctrl_dev_config *pincfg;
 	size_t size[kFLEXSPI_PortCount];
+	struct port_lut port_luts[kFLEXSPI_PortCount];
 	struct memc_flexspi_buf_cfg *buf_cfg;
 	uint8_t buf_cfg_cnt;
 };
@@ -66,16 +75,6 @@ bool memc_flexspi_is_running_xip(const struct device *dev)
 	struct memc_flexspi_data *data = dev->data;
 
 	return data->xip;
-}
-
-int memc_flexspi_update_lut(const struct device *dev, uint32_t index,
-		const uint32_t *cmd, uint32_t count)
-{
-	struct memc_flexspi_data *data = dev->data;
-
-	FLEXSPI_UpdateLUT(data->base, index, cmd, count);
-
-	return 0;
 }
 
 int memc_flexspi_update_clock(const struct device *dev,
@@ -108,20 +107,65 @@ int memc_flexspi_update_clock(const struct device *dev,
 
 int memc_flexspi_set_device_config(const struct device *dev,
 		const flexspi_device_config_t *device_config,
+		const uint32_t *lut_array,
+		uint8_t lut_count,
 		flexspi_port_t port)
 {
+	flexspi_device_config_t tmp_config;
+	uint32_t tmp_lut[FLEXSPI_MAX_LUT];
 	struct memc_flexspi_data *data = dev->data;
+	const uint32_t *lut_ptr = lut_array;
+	uint8_t lut_used = 0U;
+	unsigned int key = 0;
 
 	if (port >= kFLEXSPI_PortCount) {
 		LOG_ERR("Invalid port number");
 		return -EINVAL;
 	}
 
+	if (data->port_luts[port].lut_used < lut_count) {
+		/* We cannot reuse the existing LUT slot,
+		 * Check if the LUT table will fit into the remaining LUT slots
+		 */
+		for (uint8_t i = 0; i < kFLEXSPI_PortCount; i++) {
+			lut_used += data->port_luts[i].lut_used;
+		}
+
+		if ((lut_used + lut_count) > FLEXSPI_MAX_LUT) {
+			return -ENOBUFS;
+		}
+	}
+
 	data->size[port] = device_config->flashSize * KB(1);
 
-	FLEXSPI_SetFlashConfig(data->base,
-			       (flexspi_device_config_t *) device_config,
-			       port);
+	if (memc_flexspi_is_running_xip(dev)) {
+		/* We need to avoid flash access while configuring the FlexSPI.
+		 * To do this, we will copy the LUT array into stack-allocated
+		 * temporary memory
+		 */
+		memcpy(tmp_lut, lut_array, lut_count * MEMC_FLEXSPI_CMD_SIZE);
+		lut_ptr = tmp_lut;
+	}
+
+	memcpy(&tmp_config, device_config, sizeof(tmp_config));
+	/* Update FlexSPI AWRSEQID and ARDSEQID values based on where the LUT
+	 * array will actually be loaded.
+	 */
+	if (data->port_luts[port].lut_used < lut_count) {
+		/* Update lut offset with new value */
+		data->port_luts[port].lut_offset = lut_used;
+	}
+	data->port_luts[port].lut_used = lut_count;
+	tmp_config.ARDSeqIndex += data->port_luts[port].lut_offset;
+	tmp_config.AWRSeqIndex += data->port_luts[port].lut_offset;
+
+	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
+	key = irq_lock();
+
+	FLEXSPI_SetFlashConfig(data->base, &tmp_config, port);
+	FLEXSPI_UpdateLUT(data->base, data->port_luts[port].lut_offset,
+			  lut_ptr, lut_count);
+	irq_unlock(key);
 
 	return 0;
 }
@@ -139,7 +183,11 @@ int memc_flexspi_transfer(const struct device *dev,
 		flexspi_transfer_t *transfer)
 {
 	struct memc_flexspi_data *data = dev->data;
-	status_t status = FLEXSPI_TransferBlocking(data->base, transfer);
+	status_t status;
+
+	/* Adjust transfer LUT index based on port */
+	transfer->seqIndex += data->port_luts[transfer->port].lut_offset;
+	status = FLEXSPI_TransferBlocking(data->base, transfer);
 
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer error: %d", status);
@@ -161,7 +209,7 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 	}
 
 	for (i = 0; i < port; i++) {
-		offset += data->size[port];
+		offset += data->size[i];
 	}
 
 	return data->ahb_base + offset;
@@ -252,12 +300,13 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif
 
-#if defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
-#elif defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI2)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi2))
-#elif defined(CONFIG_SOC_SERIES_IMX_RT6XX) || defined(CONFIG_SOC_SERIES_IMX_RT5XX)
-#define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
+#if defined(CONFIG_XIP) && defined(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+/* Checks if image flash base address is in the FlexSPI AHB base region */
+#define MEMC_FLEXSPI_CFG_XIP(node_id)						\
+	((CONFIG_FLASH_BASE_ADDRESS) >= DT_REG_ADDR_BY_IDX(node_id, 1)) &&	\
+	((CONFIG_FLASH_BASE_ADDRESS) < (DT_REG_ADDR_BY_IDX(node_id, 1) +	\
+					DT_REG_SIZE_BY_IDX(node_id, 1)))
+
 #else
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif

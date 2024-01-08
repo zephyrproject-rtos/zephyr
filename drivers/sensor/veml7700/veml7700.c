@@ -14,7 +14,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "zephyr/drivers/sensor/veml7700.h"
+#include <zephyr/drivers/sensor/veml7700.h>
 
 LOG_MODULE_REGISTER(VEML7700, CONFIG_SENSOR_LOG_LEVEL);
 

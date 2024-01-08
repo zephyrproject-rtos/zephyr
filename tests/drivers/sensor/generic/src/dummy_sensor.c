@@ -178,9 +178,9 @@ static const struct sensor_driver_api dummy_sensor_no_trig_api = {
 };
 
 DEVICE_DEFINE(dummy_sensor, DUMMY_SENSOR_NAME, &dummy_sensor_init,
-		    NULL, &dummy_data, &dummy_config, APPLICATION,
+		    NULL, &dummy_data, &dummy_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_api);
 
 DEVICE_DEFINE(dummy_sensor_no_trig, DUMMY_SENSOR_NAME_NO_TRIG, &dummy_sensor_init,
-		    NULL, &dummy_data, &dummy_config, APPLICATION,
+		    NULL, &dummy_data, &dummy_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_sensor_no_trig_api);

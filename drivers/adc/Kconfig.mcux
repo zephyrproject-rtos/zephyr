@@ -30,6 +30,7 @@ config ADC_MCUX_LPADC
 	bool "MCUX LPADC driver"
 	default y
 	select ADC_CONFIGURABLE_INPUTS
+	select REGULATOR
 	depends on DT_HAS_NXP_LPC_LPADC_ENABLED
 	help
 	  Enable the MCUX LPADC driver.

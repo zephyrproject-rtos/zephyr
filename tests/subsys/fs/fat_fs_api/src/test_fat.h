@@ -12,7 +12,7 @@
 #include <ff.h>
 
 #ifdef CONFIG_DISK_DRIVER_RAM
-#define DISK_NAME CONFIG_DISK_RAM_VOLUME_NAME
+#define DISK_NAME "RAM"
 #elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME DT_PROP(DT_NODELABEL(test_disk), disk_name)
 #elif defined(CONFIG_DISK_DRIVER_SDMMC)

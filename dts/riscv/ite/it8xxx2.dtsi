@@ -29,6 +29,7 @@
 		#size-cells = <0>;
 		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite";
+			riscv,isa = "rv32imafc_zifencei";
 			device_type = "cpu";
 			reg = <0>;
 			cpu-power-states = <&standby>;
@@ -106,7 +107,7 @@
 			reg = <0x00f02700 0x0020>;
 			status = "disabled";
 			current-speed = <115200>;
-			clock-frequency = <1804800>;
+			clock-frequency = <1843200>;
 			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
@@ -116,7 +117,7 @@
 			reg = <0x00f02800 0x0020>;
 			status = "disabled";
 			current-speed = <460800>;
-			clock-frequency = <1804800>;
+			clock-frequency = <1843200>;
 			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
@@ -690,8 +691,8 @@
 			status = "disabled";
 		};
 
-		kscan0: kscan@f01d00 {
-			compatible = "ite,it8xxx2-kscan";
+		kbd: kbd@f01d00 {
+			compatible = "ite,it8xxx2-kbd";
 			reg = <0x00f01d00 0x29>;
 			interrupt-parent = <&intc>;
 			interrupts = <IT8XXX2_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;

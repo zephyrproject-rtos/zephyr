@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#include <zephyr/arch/arm/aarch32/irq.h>
+#include <zephyr/arch/arm/irq.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/interrupt_controller/intc_vim.h>

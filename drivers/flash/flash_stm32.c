@@ -390,7 +390,7 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 	return 0;
 }
 
-#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+#if defined(CONFIG_FLASH_EX_OP_ENABLED) && defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
 static int flash_stm32_control_register_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);

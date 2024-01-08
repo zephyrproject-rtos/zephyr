@@ -285,6 +285,42 @@ ZTEST(lwm2m_registry, test_resource_instance_creation_and_deletion)
 	zassert_equal(ret, 0);
 }
 
+ZTEST(lwm2m_registry, test_resource_instance_strings)
+{
+	int ret;
+	char buf[256] = {0};
+	static const char string_a[] = "Hello";
+	static const char string_b[] = "World";
+	struct lwm2m_obj_path path_a = LWM2M_OBJ(16, 0, 0, 0);
+	struct lwm2m_obj_path path_b = LWM2M_OBJ(16, 0, 0, 1);
+
+	ret = lwm2m_create_object_inst(&LWM2M_OBJ(16, 0));
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_create_res_inst(&path_a);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_create_res_inst(&path_b);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_string(&path_a, string_a);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_set_string(&path_b, string_b);
+	zassert_equal(ret, 0);
+
+	ret = lwm2m_get_string(&path_a, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(0, memcmp(buf, string_a, sizeof(string_a)));
+
+	ret = lwm2m_get_string(&path_b, buf, sizeof(buf));
+	zassert_equal(ret, 0);
+	zassert_equal(0, memcmp(buf, string_b, sizeof(string_b)));
+
+	ret = lwm2m_delete_object_inst(&LWM2M_OBJ(16, 0));
+	zassert_equal(ret, 0);
+}
+
 ZTEST(lwm2m_registry, test_callbacks)
 {
 	int ret;

@@ -155,8 +155,14 @@ static inline int send_err(int sock, struct tftpc *client, int err_code, char *e
 
 	/* Copy the Error String. */
 	if (err_msg != NULL) {
-		strcpy(client->tftp_buf + req_size, err_msg);
-		req_size += strlen(err_msg);
+		size_t copy_len = strlen(err_msg);
+
+		if (copy_len > sizeof(client->tftp_buf) - req_size) {
+			copy_len = sizeof(client->tftp_buf) - req_size;
+		}
+
+		memcpy(client->tftp_buf + req_size, err_msg, copy_len);
+		req_size += copy_len;
 	}
 
 	/* Send Error to server. */
@@ -222,7 +228,11 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Limit communication to the specific address:port */
-		connect(sock, &from_addr, from_addr_len);
+		if (connect(sock, &from_addr, from_addr_len) < 0) {
+			ret = -errno;
+			LOG_ERR("connect failed, err %d", ret);
+			break;
+		}
 
 		break;
 
@@ -293,7 +303,10 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 
 			if (client->callback == NULL) {
 				LOG_ERR("No callback defined.");
-				send_err(sock, client, TFTP_ERROR_DISK_FULL, NULL);
+				if (send_err(sock, client, TFTP_ERROR_DISK_FULL, NULL) < 0) {
+					LOG_ERR("Failed to send error response, err: %d",
+						-errno);
+				}
 				ret = TFTPC_BUFFER_OVERFLOW;
 				goto get_end;
 			}

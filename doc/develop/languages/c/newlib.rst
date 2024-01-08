@@ -31,7 +31,7 @@ The Newlib full variant (:file:`libc.a` and :file:`libm.a`) is the most capable
 variant of the Newlib available in the Zephyr SDK, and supports almost all
 standard C library features. It is optimized for performance (prefers
 performance over code size) and its footprint is significantly larger than the
-the nano variant.
+nano variant.
 
 This variant can be enabled by selecting the
 :kconfig:option:`CONFIG_NEWLIB_LIBC` and de-selecting the

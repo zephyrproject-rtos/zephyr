@@ -82,6 +82,11 @@ config NRFX_I2S0
 	depends on $(dt_nodelabel_has_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
 	select NRFX_I2S
 
+config NRFX_I2S20
+	bool "I2S20 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2s20,$(DT_COMPAT_NORDIC_NRF_I2S))
+	select NRFX_I2S
+
 config NRFX_IPC
 	bool "IPC driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_IPC))
@@ -152,6 +157,26 @@ config NRFX_QDEC0
 config NRFX_QDEC1
 	bool "QDEC1 driver instance"
 	depends on $(dt_nodelabel_has_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC20
+	bool "QDEC20 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec20,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC21
+	bool "QDEC21 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec21,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC130
+	bool "QDEC130 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec130,$(DT_COMPAT_NORDIC_NRF_QDEC))
+	select NRFX_QDEC
+
+config NRFX_QDEC131
+	bool "QDEC131 driver instance"
+	depends on $(dt_nodelabel_has_compat,qdec131,$(DT_COMPAT_NORDIC_NRF_QDEC))
 	select NRFX_QDEC
 
 config NRFX_QSPI
@@ -228,6 +253,81 @@ config NRFX_SPIM3
 config NRFX_SPIM4
 	bool "SPIM4 driver instance"
 	depends on $(dt_nodelabel_has_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM00
+	bool "SPIM00 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi00,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM20
+	bool "SPIM20 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi20,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM21
+	bool "SPIM21 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi21,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM22
+	bool "SPIM22 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi22,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM30
+	bool "SPIM30 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi30,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM120
+	bool "SPIM120 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi120,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM121
+	bool "SPIM121 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi121,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM130
+	bool "SPIM130 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi130,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM131
+	bool "SPIM131 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi131,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM132
+	bool "SPIM132 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi132,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM133
+	bool "SPIM133 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi133,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM134
+	bool "SPIM134 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi134,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM135
+	bool "SPIM135 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi135,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM136
+	bool "SPIM136 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi136,$(DT_COMPAT_NORDIC_NRF_SPIM))
+	select NRFX_SPIM
+
+config NRFX_SPIM137
+	bool "SPIM137 driver instance"
+	depends on $(dt_nodelabel_has_compat,spi137,$(DT_COMPAT_NORDIC_NRF_SPIM))
 	select NRFX_SPIM
 
 config NRFX_SPIS
@@ -325,6 +425,71 @@ config NRFX_TWIM3
 	depends on $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	select NRFX_TWIM
 
+config NRFX_TWIM20
+	bool "TWIM20 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c20,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM21
+	bool "TWIM21 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c21,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM22
+	bool "TWIM22 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM30
+	bool "TWIM30 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM120
+	bool "TWIM120 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c120,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM130
+	bool "TWIM130 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c130,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM131
+	bool "TWIM131 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c131,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM132
+	bool "TWIM132 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c132,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM133
+	bool "TWIM133 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c133,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM134
+	bool "TWIM134 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c134,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM135
+	bool "TWIM135 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c135,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM136
+	bool "TWIM136 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c136,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
+config NRFX_TWIM137
+	bool "TWIM137 driver instance"
+	depends on $(dt_nodelabel_has_compat,i2c137,$(DT_COMPAT_NORDIC_NRF_TWIM))
+	select NRFX_TWIM
+
 config NRFX_TWIS
 	bool
 
@@ -378,19 +543,6 @@ config NRFX_UARTE3
 	bool "UARTE3 driver instance"
 	depends on $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
-
-config NRFX_USBD
-	bool "USBD driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
-
-config NRFX_USBD_ISO_IN_ZLP
-	bool "Send ZLP on ISO IN when not ready"
-	depends on NRFX_USBD
-	default y
-	help
-	  Controls the response of the ISO IN endpoint to an IN token when no
-	  data is ready to be sent. When enabled, ZLP is sent when no data is
-	  ready. When disabled, no response is sent (bus timeout occurs).
 
 config NRFX_USBREG
 	bool "USBREG driver"

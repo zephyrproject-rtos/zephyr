@@ -8,7 +8,7 @@
 #include <zephyr/bluetooth/services/ias.h>
 
 #include "btp/btp.h"
-#include "zephyr/sys/byteorder.h"
+#include <zephyr/sys/byteorder.h>
 #include <stdint.h>
 
 #include <zephyr/logging/log.h>

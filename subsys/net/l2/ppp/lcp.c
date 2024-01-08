@@ -179,6 +179,10 @@ static void lcp_down(struct ppp_fsm *fsm)
 
 	ppp_link_down(ctx);
 
+	if (!net_if_is_carrier_ok(ctx->iface)) {
+		return;
+	}
+
 	ppp_change_phase(ctx, PPP_ESTABLISH);
 }
 

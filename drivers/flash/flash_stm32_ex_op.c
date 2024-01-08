@@ -11,7 +11,7 @@
 
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #endif
 
 #include <soc.h>
@@ -36,7 +36,7 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 		struct flash_stm32_ex_op_sector_wp_in in_copy;
 
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&in_copy, request,
+			K_OOPS(k_usermode_from_copy(&in_copy, request,
 						sizeof(in_copy)));
 			request = &in_copy;
 		}
@@ -75,7 +75,7 @@ int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
 
 #ifdef CONFIG_USERSPACE
 		if (syscall_trap) {
-			Z_OOPS(z_user_to_copy(out, result, sizeof(out_copy)));
+			K_OOPS(k_usermode_to_copy(out, result, sizeof(out_copy)));
 		}
 #endif
 	}
@@ -102,7 +102,7 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 	if (request != NULL) {
 #ifdef CONFIG_USERSPACE
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&copy, request, sizeof(copy)));
+			K_OOPS(k_usermode_from_copy(&copy, request, sizeof(copy)));
 			request = &copy;
 		}
 #endif
@@ -132,7 +132,7 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 
 #ifdef CONFIG_USERSPACE
 		if (syscall_trap) {
-			Z_OOPS(z_user_to_copy(out, result, sizeof(copy)));
+			K_OOPS(k_usermode_to_copy(out, result, sizeof(copy)));
 		}
 #endif
 	}

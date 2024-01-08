@@ -87,12 +87,12 @@ extern const struct can_frame test_std_rtr_frame_1;
 extern const struct can_frame test_ext_rtr_frame_1;
 
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 extern const struct can_frame test_std_fdf_frame_1;
 
 /**
- * @brief Standard (11-bit) CAN ID frame 2 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 2 with CAN FD payload.
  */
 extern const struct can_frame test_std_fdf_frame_2;
 
@@ -163,13 +163,13 @@ extern const struct can_filter test_ext_rtr_filter_1;
 extern const struct can_filter test_std_some_filter;
 
 /**
- * @brief Standard (11-bit) CAN-FD ID filter 1. This filter matches
+ * @brief Standard (11-bit) CAN FD ID filter 1. This filter matches
  * ``test_std_fdf_frame_1``.
  */
 extern const struct can_filter test_std_fdf_filter_1;
 
 /**
- * @brief Standard (11-bit) CAN-FD ID filter 2. This filter matches
+ * @brief Standard (11-bit) CAN FD ID filter 2. This filter matches
  * ``test_std_fdf_frame_2``.
  */
 extern const struct can_filter test_std_fdf_filter_2;

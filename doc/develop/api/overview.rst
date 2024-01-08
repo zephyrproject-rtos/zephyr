@@ -37,6 +37,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.4
 
+   * - :ref:`blinfo_api`
+     - Experimental
+     - 3.5
+
    * - :ref:`bluetooth_api`
      - Stable
      - 1.0
@@ -49,13 +53,21 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.10
 
-   * - ``conn_mgr``
+   * - :ref:`conn_mgr_docs`
      - Experimental
      - 3.4.0
 
    * - :ref:`can_api`
      - Stable
      - 1.14
+
+   * - :ref:`can_transceiver_api`
+     - Experimental
+     - 3.1
+
+   * - :ref:`charger_api`
+     - Experimental
+     - 3.5
 
    * - :ref:`counter_api`
      - Unstable
@@ -129,9 +141,9 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Stable
      - 1.11
 
-   * - :ref:`gna_api`
+   * - :ref:`gnss_api`
      - Experimental
-     - 1.14
+     - 3.6
 
    * - :ref:`gpio_api`
      - Stable
@@ -161,6 +173,18 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Experimental
      - 3.2
 
+   * - :ref:`ieee802154_driver_api`
+     - Unstable
+     - 1.0
+
+   * - :ref:`ieee802154_l2_api`
+     - Unstable
+     - 1.0
+
+   * - :ref:`ieee802154_mgmt_api`
+     - Unstable
+     - 1.0
+
    * - :ref:`input`
      - Experimental
      - 3.4
@@ -185,6 +209,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
      - Unstable
      - 1.9
 
+   * - :ref:`llext`
+     - Experimental
+     - 3.5
+
    * - :ref:`logging_api`
      - Stable
      - 1.13
@@ -204,6 +232,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`mcu_mgr`
      - Stable
      - 1.11
+
+   * - :ref:`modem`
+     - Experimental
+     - 3.5
 
    * - :ref:`mqtt_socket_interface`
      - Unstable
@@ -308,6 +340,10 @@ between major releases are available in the :ref:`zephyr_release_notes`.
    * - :ref:`tcpc_api`
      - Experimental
      - 3.1
+
+   * - :ref:`tgpio_api`
+     - Experimental
+     - 3.5
 
    * - :ref:`uart_api`
      - Stable

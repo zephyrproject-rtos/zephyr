@@ -19,6 +19,7 @@ struct nrf5_802154_rx_frame {
 	uint8_t lqi; /* Last received frame LQI value. */
 	int8_t rssi; /* Last received frame RSSI value. */
 	bool ack_fpb; /* FPB value in ACK sent for the received frame. */
+	bool ack_seb; /* SEB value in ACK sent for the received frame. */
 };
 
 struct nrf5_802154_data {
@@ -44,6 +45,9 @@ struct nrf5_802154_data {
 
 	/* Frame pending bit value in ACK sent for the last received frame. */
 	bool last_frame_ack_fpb;
+
+	/* Security Enabled bit value in ACK sent for the last received frame. */
+	bool last_frame_ack_seb;
 
 	/* CCA complete semaphore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
@@ -92,6 +96,14 @@ struct nrf5_802154_data {
 	/* The maximum number of extra CCA attempts to be performed before transmission. */
 	uint8_t max_extra_cca_attempts;
 #endif
+
+#if defined(CONFIG_NRF_802154_SER_HOST) && defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+	/* The last configured value of CSL period in units of 10 symbols. */
+	uint32_t csl_period;
+
+	/* The last configured value of CSL phase time in nanoseconds. */
+	net_time_t csl_rx_time;
+#endif /* CONFIG_NRF_802154_SER_HOST && CONFIG_IEEE802154_CSL_ENDPOINT */
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */

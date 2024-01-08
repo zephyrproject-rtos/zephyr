@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(spi_loopback);
 #include <zephyr/sys/printk.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/drivers/spi.h>
@@ -25,34 +26,53 @@ LOG_MODULE_REGISTER(spi_loopback);
 #define MODE_LOOP 0
 #endif
 
-#define SPI_OP SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | \
-	       SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE
+#ifdef CONFIG_SPI_LOOPBACK_16BITS_FRAMES
+#define FRAME_SIZE (16)
+#define FRAME_SIZE_STR ", frame size = 16"
+#else
+#define FRAME_SIZE (8)
+#define FRAME_SIZE_STR ", frame size = 8"
+#endif /* CONFIG_SPI_LOOPBACK_16BITS_FRAMES */
 
+#ifdef CONFIG_DMA
 
-static struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP, 0);
-static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP, 0);
+#ifdef CONFIG_NOCACHE_MEMORY
+#define DMA_ENABLED_STR ", DMA enabled"
+#else /* CONFIG_NOCACHE_MEMORY */
+#define DMA_ENABLED_STR ", DMA enabled (without CONFIG_NOCACHE_MEMORY)"
+#endif
+
+#else /* CONFIG_DMA */
+
+#define DMA_ENABLED_STR
+#endif /* CONFIG_DMA */
+
+#define SPI_OP(frame_size) SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | \
+	       SPI_MODE_CPHA | SPI_WORD_SET(frame_size) | SPI_LINES_SINGLE
+
+static struct spi_dt_spec spi_fast = SPI_DT_SPEC_GET(SPI_FAST_DEV, SPI_OP(FRAME_SIZE), 0);
+static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_SIZE), 0);
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
 #define STACK_SIZE 512
-#define BUF_SIZE 17
+#define BUF_SIZE 18
 #define BUF2_SIZE 36
 
 #if CONFIG_NOCACHE_MEMORY
-static const char tx_data[BUF_SIZE] = "0123456789abcdef\0";
-static __aligned(32) char buffer_tx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
-static __aligned(32) char buffer_rx[BUF_SIZE] __used __attribute__((__section__(".nocache")));
-static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
-static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __attribute__((__section__(".nocache")));
-#else
-/* this src memory shall be in RAM to support using as a DMA source pointer.*/
-static uint8_t buffer_tx[] = "0123456789abcdef\0";
-static uint8_t buffer_rx[BUF_SIZE] = {};
+#define __NOCACHE	__attribute__((__section__(".nocache")))
+#elif defined(CONFIG_DT_DEFINED_NOCACHE)
+#define __NOCACHE	__attribute__((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
+#else /* CONFIG_NOCACHE_MEMORY */
+#define __NOCACHE
+#endif /* CONFIG_NOCACHE_MEMORY */
 
-static uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
-static uint8_t buffer2_rx[BUF2_SIZE] = {};
-#endif
+static const char tx_data[BUF_SIZE] = "0123456789abcdef-\0";
+static __aligned(32) char buffer_tx[BUF_SIZE] __used __NOCACHE;
+static __aligned(32) char buffer_rx[BUF_SIZE] __used __NOCACHE;
+static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __NOCACHE;
+static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __NOCACHE;
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -423,6 +443,80 @@ static int spi_rx_every_4(struct spi_dt_spec *spec)
 	return 0;
 }
 
+static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
+{
+	const uint32_t tx_buf_size = 8;
+
+	BUILD_ASSERT(tx_buf_size < BUF_SIZE,
+		"Transmit buffer is expected to be smaller than the receive buffer");
+
+	const struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_tx,
+			.len = tx_buf_size,
+		},
+	};
+	const struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = BUF_SIZE,
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+	int ret;
+
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip rx bigger than tx");
+		return 0;
+	}
+
+	LOG_INF("Start rx bigger than tx");
+
+	(void)memset(buffer_rx, 0xff, BUF_SIZE);
+
+	ret = spi_transceive_dt(spec, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return -1;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, tx_buf_size)) {
+		to_display_format(buffer_tx, tx_buf_size, buffer_print_tx);
+		to_display_format(buffer_rx, tx_buf_size, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	const uint8_t all_zeroes_buf[BUF_SIZE] = {0};
+
+	if (memcmp(all_zeroes_buf, buffer_rx + tx_buf_size, BUF_SIZE - tx_buf_size)) {
+		to_display_format(
+			buffer_rx + tx_buf_size,  BUF_SIZE - tx_buf_size, buffer_print_tx);
+
+		to_display_format(
+			all_zeroes_buf, BUF_SIZE - tx_buf_size, buffer_print_rx);
+
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -433,10 +527,16 @@ static K_SEM_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
-static void spi_async_call_cb(struct k_poll_event *evt,
-			      struct k_sem *caller_sem,
-			      void *unused)
+static void spi_async_call_cb(void *p1,
+			      void *p2,
+			      void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_poll_event *evt = p1;
+	struct k_sem *caller_sem = p2;
 	int ret;
 
 	LOG_DBG("Polling...");
@@ -461,11 +561,19 @@ static int spi_async_call(struct spi_dt_spec *spec)
 			.buf = buffer_tx,
 			.len = BUF_SIZE,
 		},
+		{
+			.buf = buffer2_tx,
+			.len = BUF2_SIZE,
+		},
 	};
 	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = BUF_SIZE,
+		},
+		{
+			.buf = buffer2_rx,
+			.len = BUF2_SIZE,
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -479,6 +587,8 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	int ret;
 
 	LOG_INF("Start async call");
+	memset(buffer_rx, 0, sizeof(buffer_rx));
+	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 
 	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -497,6 +607,24 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	if (result) {
 		LOG_ERR("Call code %d", ret);
 		zassert_false(result, "SPI transceive failed");
+		return -1;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
+		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
+		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
+		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
+		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
+		LOG_ERR("                             vs: %s", buffer_print_rx2);
+		zassert_false(1, "Buffer 2 contents are different");
 		return -1;
 	}
 
@@ -534,12 +662,15 @@ ZTEST(spi_loopback, test_spi_loopback)
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
 #endif
-	LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
+
+	LOG_INF("SPI test on buffers TX/RX %p/%p" FRAME_SIZE_STR DMA_ENABLED_STR,
+			buffer_tx,
+			buffer_rx);
 
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
-					  (k_thread_entry_t)spi_async_call_cb,
+					  spi_async_call_cb,
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
@@ -552,7 +683,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_null_tx_buf(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
-	    spi_rx_every_4(&spi_slow)
+	    spi_rx_every_4(&spi_slow) ||
+	    spi_rx_bigger_than_tx(&spi_slow)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_slow)
 #endif
@@ -569,7 +701,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_null_tx_buf(&spi_fast) ||
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
-	    spi_rx_every_4(&spi_fast)
+	    spi_rx_every_4(&spi_fast) ||
+	    spi_rx_bigger_than_tx(&spi_fast)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_fast)
 #endif
@@ -592,12 +725,10 @@ end:
 
 static void *spi_loopback_setup(void)
 {
-#if CONFIG_NOCACHE_MEMORY
 	memset(buffer_tx, 0, sizeof(buffer_tx));
 	memcpy(buffer_tx, tx_data, sizeof(tx_data));
 	memset(buffer2_tx, 0, sizeof(buffer2_tx));
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
-#endif
 	return NULL;
 }
 

@@ -157,13 +157,38 @@ struct bmm150_trim_regs {
 struct bmm150_config {
 	union bmm150_bus bus;
 	const struct bmm150_bus_io *bus_io;
+
+#ifdef CONFIG_BMM150_TRIGGER
+	struct gpio_dt_spec drdy_int;
+#endif
 };
 
 struct bmm150_data {
-	struct k_sem sem;
 	struct bmm150_trim_regs tregs;
 	int rep_xy, rep_z, odr, max_odr;
 	int sample_x, sample_y, sample_z;
+
+#if defined(CONFIG_BMM150_TRIGGER)
+	struct gpio_callback gpio_cb;
+#endif
+
+#ifdef CONFIG_BMM150_TRIGGER_OWN_THREAD
+	struct k_sem sem;
+#endif
+
+#ifdef CONFIG_BMM150_TRIGGER_GLOBAL_THREAD
+	struct k_work work;
+#endif
+
+#if defined(CONFIG_BMM150_TRIGGER_GLOBAL_THREAD) || \
+	defined(CONFIG_BMM150_TRIGGER_DIRECT)
+	const struct device *dev;
+#endif
+
+#ifdef CONFIG_BMM150_TRIGGER
+	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t drdy_handler;
+#endif /* CONFIG_BMM150_TRIGGER */
 };
 
 enum bmm150_axis {
@@ -197,6 +222,12 @@ enum bmm150_presets {
 
 /* Start-Up Time - from suspend to sleep (Max) */
 #define BMM150_START_UP_TIME K_MSEC(3)
+
+int bmm150_trigger_mode_init(const struct device *dev);
+
+int bmm150_trigger_set(const struct device *dev,
+		       const struct sensor_trigger *trig,
+		       sensor_trigger_handler_t handler);
 
 int bmm150_reg_update_byte(const struct device *dev, uint8_t reg,
 			   uint8_t mask, uint8_t value);

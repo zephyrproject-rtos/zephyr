@@ -1,7 +1,8 @@
-.. _mqtt-publisher-sample:
+.. zephyr:code-sample:: mqtt-publisher
+   :name: MQTT publisher
+   :relevant-api: mqtt_socket
 
-MQTT Publisher
-##############
+   Send MQTT PUBLISH messages to an MQTT server.
 
 Overview
 ********

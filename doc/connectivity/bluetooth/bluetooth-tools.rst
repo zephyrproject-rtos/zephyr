@@ -74,13 +74,13 @@ Finally, reload and restart the daemon:
    sudo systemctl daemon-reload
    sudo systemctl restart bluetooth
 
-.. _bluetooth_qemu_posix:
+.. _bluetooth_qemu_native:
 
-Running on QEMU and Native POSIX
-********************************
+Running on QEMU or native_sim
+*****************************
 
 It's possible to run Bluetooth applications using either the :ref:`QEMU
-emulator<application_run_qemu>` or :ref:`Native POSIX <native_posix>`.
+emulator<application_run_qemu>` or :ref:`native_sim <native_sim>`.
 In either case, a Bluetooth controller needs to be exported from
 the host OS (Linux) to the emulator. For this purpose you will need some tools
 described in the :ref:`bluetooth_bluez` section.
@@ -94,14 +94,14 @@ The host OS's Bluetooth controller is connected in the following manner:
   with the help of the QEMU option :literal:`-serial unix:/tmp/bt-server-bredr`.
   This option gets passed to QEMU through :makevar:`QEMU_EXTRA_FLAGS`
   automatically whenever an application has enabled Bluetooth support.
-* To a serial port in Native POSIX through the use of a command-line option
-  passed to the Native POSIX executable: ``--bt-dev=hci0``
+* To a serial port in :ref:`native_sim <native_sim>` through the use of a command-line option
+  passed to the native_sim executable: ``--bt-dev=hci0``
 
 On the host side, BlueZ allows you to export its Bluetooth controller
-through a so-called user channel for QEMU and Native POSIX to use.
+through a so-called user channel for QEMU and :ref:`native_sim <native_sim>` to use.
 
 .. note::
-   You only need to run ``btproxy`` when using QEMU. Native POSIX handles
+   You only need to run ``btproxy`` when using QEMU. native_sim handles
    the UNIX socket proxying automatically
 
 If you are using QEMU, in order to make the Controller available you will need
@@ -142,12 +142,12 @@ building and running a sample:
   the :literal:`bt-server-bredr` UNIX socket, letting the application
   access the Bluetooth controller.
 
-* To run a Bluetooth application in Native POSIX, first build it:
+* To run a Bluetooth application in :ref:`native_sim <native_sim>`, first build it:
 
   .. zephyr-app-commands::
      :zephyr-app: samples/bluetooth/<sample>
      :host-os: unix
-     :board: native_posix
+     :board: native_sim
      :goals: build
      :compact:
 
@@ -180,8 +180,8 @@ In order to see those logs, you can use the built-in ``btmon`` tool from BlueZ:
 
 .. _bluetooth_virtual_posix:
 
-Running on a Virtual Controller and Native POSIX
-*************************************************
+Running on a Virtual Controller and native_sim
+**********************************************
 
 An alternative to a Bluetooth physical controller is the use of a virtual
 controller. This controller can be connected over an HCI TCP server.
@@ -212,7 +212,7 @@ To connect your application to the Android Emulator follow the next steps:
 
     #. Build your Zephyr application and disable the HCI ACL flow
        control (i.e. ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n``) as the
-       the virtual controller from android does not support it at the moment.
+       virtual controller from android does not support it at the moment.
 
     #. Install Android Emulator version >= 33.1.4.0. The easiest way to do this is by installing
        the latest `Android Studio Preview`_ version.

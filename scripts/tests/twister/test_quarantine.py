@@ -104,10 +104,9 @@ def test_quarantinedata_post_init():
 
     quarantine_element = QuarantineElement(
         platforms=['dummy platform'],
-        architectures=[]
+        architectures=[],
+        simulations=['dummy simulation', 'another simulation']
     )
-    quarantine_element.scenarios = []
-    quarantine_element.simulations = ['dummy simulation', 'another simulation']
 
     quarantine_data_qlist = [quarantine_element, quarantine_element_dict]
 

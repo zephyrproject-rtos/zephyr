@@ -1,7 +1,8 @@
-.. _zbus-benchmark-sample:
+.. zephyr:code-sample:: zbus-benchmark
+   :name: Benchmarking
+   :relevant-api: zbus_apis
 
-Benchmark sample
-################
+   Measure the time for sending 256KB from a producer to X consumers.
 
 This sample implements an application to measure the time for sending 256KB from the producer to the consumers.
 

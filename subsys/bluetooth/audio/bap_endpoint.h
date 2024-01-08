@@ -83,6 +83,12 @@ struct bt_bap_broadcast_source {
 
 	struct bt_iso_big *big;
 	struct bt_audio_codec_qos *qos;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	/* Stored advanced parameters */
+	uint8_t irc;
+	uint8_t pto;
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	/* The codec specific configured data for each stream in the subgroup */
@@ -125,6 +131,7 @@ struct bt_bap_broadcast_sink {
 	uint16_t iso_interval;
 	uint16_t biginfo_num_bis;
 	uint32_t broadcast_id; /* 24 bit */
+	uint32_t indexes_bitfield;
 	struct bt_bap_base base;
 	struct bt_audio_codec_qos codec_qos;
 	struct bt_le_per_adv_sync *pa_sync;

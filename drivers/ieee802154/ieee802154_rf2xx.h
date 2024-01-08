@@ -74,12 +74,6 @@ enum rf2xx_trx_model_t {
 	RF2XX_TRX_MODEL_233     = 0x0B,
 };
 
-enum rf2xx_trx_channel_page_t {
-	RF2XX_TRX_CC_PAGE_0     = 0x00,
-	RF2XX_TRX_CC_PAGE_2     = 0x02,
-	RF2XX_TRX_CC_PAGE_5     = 0x05,
-};
-
 struct rf2xx_config {
 	struct gpio_dt_spec irq_gpio;
 	struct gpio_dt_spec reset_gpio;
@@ -112,7 +106,12 @@ struct rf2xx_context {
 	struct k_sem trx_tx_sync;
 
 	enum rf2xx_trx_model_t trx_model;
-	enum rf2xx_trx_channel_page_t cc_page;
+
+	/* PHY specific driver attributes */
+	enum ieee802154_phy_channel_page cc_page;
+	struct ieee802154_phy_channel_range cc_range;
+	struct ieee802154_phy_supported_channels cc_channels;
+
 	enum rf2xx_trx_state_trac_t trx_trac;
 
 	enum ieee802154_tx_mode tx_mode;
@@ -122,6 +121,7 @@ struct rf2xx_context {
 	int8_t trx_rssi_base;
 	uint8_t trx_version;
 	uint8_t rx_phr;
+	bool promiscuous;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_H_ */

@@ -15,7 +15,6 @@ if I2C
 
 config I2C_SHELL
 	bool "I2C Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable I2C Shell.
@@ -30,10 +29,25 @@ config I2C_STATS
 	  Enable I2C Stats.
 
 config I2C_DUMP_MESSAGES
-	bool "Log all I2C transactions"
+	bool "Log I2C transactions"
 	depends on LOG
+	depends on I2C_LOG_LEVEL_DBG
 	help
 	  Dump every I2C transaction to the system log as debug level log messages.
+
+config I2C_DUMP_MESSAGES_ALLOWLIST
+	bool "Use allowlist for logging of I2C transactions"
+	depends on I2C_DUMP_MESSAGES
+	depends on DT_HAS_ZEPHYR_I2C_DUMP_ALLOWLIST_ENABLED
+	help
+	  Use allowlist to specify which devices transactions should be logged.
+	  The allowlist is defined in the devicetree using the compatible string of
+	  "zephyr,i2c-dump-allowlist" and phandles to the devices that need to be traced.
+	  Example of devicetree node:
+	  i2c-dump-allowlist {
+	    compatible = "zephyr,i2c-dump-allowlist";
+	    devices = < &display0 >, < &sensor3 >;
+	  };
 
 config I2C_CALLBACK
 	bool "I2C asynchronous callback API"
@@ -179,5 +193,12 @@ config I2C_RV32M1_LPI2C
 	select PINCTRL
 	help
 	  Enable the RV32M1 LPI2C driver.
+
+config GPIO_I2C_SWITCH
+	bool "GPIO controlled I2C bus switch"
+	default y
+	depends on DT_HAS_GPIO_I2C_SWITCH_ENABLED
+	help
+	  Enable GPIO controlled I2C bus switch driver.
 
 endif # I2C

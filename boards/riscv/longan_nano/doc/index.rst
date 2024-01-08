@@ -71,6 +71,9 @@ The board configuration supports the following hardware features:
    * - DAC
      - :kconfig:option:`CONFIG_DAC`
      - :dtcompatible:`gd,gd32-dac`
+   * - ADC
+     - :kconfig:option:`CONFIG_ADC`
+     - :dtcompatible:`gd,gd32-adc`
 
 Serial Port
 ===========
@@ -84,7 +87,7 @@ Programming and debugging
 Building & Flashing
 ===================
 
-Here is an example for building the :ref:`blinky-sample` application.
+Here is an example for building the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -105,7 +108,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

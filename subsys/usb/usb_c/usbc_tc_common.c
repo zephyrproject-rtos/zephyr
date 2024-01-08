@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_tc_common_internal.h"
 
 static const struct smf_state tc_states[TC_STATE_COUNT];
-static void tc_init(const struct device *dev);
+static int tc_init(const struct device *dev);
 
 /**
  * @brief Initializes the state machine and enters the Disabled state
@@ -38,6 +38,7 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
 	struct tc_sm_t *tc = data->tc;
+	int ret;
 
 	/* These requests are implicitly set by the Device Policy Manager */
 	if (dpm_request == PRIV_PORT_REQUEST_START) {
@@ -55,7 +56,18 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 	/* fall through */
 	case SM_INIT:
 		/* Initialize the Type-C layer */
-		tc_init(dev);
+		ret = tc_init(dev);
+		if (ret != 0 && ret != -EAGAIN) {
+			/* Transition to Disabled State */
+			LOG_ERR("Disabling the Type-C Layer");
+			data->tc_enabled = false;
+			tc_set_state(dev, TC_DISABLED_STATE);
+		}
+
+		if (ret != 0) {
+			break;
+		}
+
 		data->tc_sm_state = SM_RUN;
 	/* fall through */
 	case SM_RUN:
@@ -66,7 +78,14 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 		}
 
 		/* Sample CC lines */
-		tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2);
+		if (tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2) != 0) {
+			/* If this function fails, it may mean that the TCPC is in sleep mode or
+			 * the communication with TCPC has failed, so we can assume that the CC
+			 * lines are open or existing connection is faulty.
+			 */
+			tc->cc1 = TC_CC_VOLT_OPEN;
+			tc->cc2 = TC_CC_VOLT_OPEN;
+		}
 
 		/* Detect polarity */
 		tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
@@ -100,11 +119,12 @@ bool tc_is_in_attached_state(const struct device *dev)
 /**
  * @brief Initializes the Type-C layer
  */
-static void tc_init(const struct device *dev)
+static int tc_init(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct tc_sm_t *tc = data->tc;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	/* Initialize the timers */
 	usbc_timer_init(&tc->tc_t_error_recovery, TC_T_ERROR_RECOVERY_SOURCE_MIN_MS);
@@ -118,14 +138,26 @@ static void tc_init(const struct device *dev)
 	tc->flags = ATOMIC_INIT(0);
 
 	/* Initialize the TCPC */
-	tcpc_init(tcpc);
+	ret = tcpc_init(tcpc);
+	if (ret != 0) {
+		LOG_ERR("TCPC initialization failed: %d", ret);
+		return ret;
+	}
 
 #ifdef CONFIG_USBC_CSM_SOURCE_ONLY
-	/* Stop sourcing VBUS */
-	data->policy_cb_src_en(dev, false);
+	/* Stop sourcing VBUS by policy callback and/or TCPC */
+	ret = data->policy_cb_src_en(dev, false);
+	if (ret != 0) {
+		LOG_ERR("Couldn't disable vbus sourcing: %d", ret);
+		return ret;
+	}
 
 	/* Stop sourcing VCONN */
-	tcpc_set_vconn(tcpc, false);
+	ret = tcpc_set_vconn(tcpc, false);
+	if (ret != 0 && ret != -ENOTSUP) {
+		LOG_ERR("Couldn't disable vconn: %d", ret);
+		return ret;
+	}
 #endif
 
 	/* Initialize the state machine */
@@ -134,6 +166,8 @@ static void tc_init(const struct device *dev)
 	 * short while if this is a system reset.
 	 */
 	tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+
+	return 0;
 }
 
 /**
@@ -179,12 +213,22 @@ void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp)
 {
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	/* Select Rp value */
-	tcpc_select_rp_value(tcpc, rp);
+	ret = tcpc_select_rp_value(tcpc, rp);
+	if (ret != 0 && ret != -ENOTSUP) {
+		LOG_ERR("Couldn't set Rp value to %d: %d", rp, ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
 
 	/* Place Rp on CC lines */
-	tcpc_set_cc(tcpc, TC_CC_RP);
+	ret = tcpc_set_cc(tcpc, TC_CC_RP);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC lines to Rp: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+	}
 }
 
 /**
@@ -196,14 +240,24 @@ static void tc_cc_open_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	tc->cc_voltage = TC_CC_VOLT_OPEN;
 
 	/* Disable VCONN */
-	tcpc_set_vconn(tcpc, false);
+	ret = tcpc_set_vconn(tcpc, false);
+	if (ret != 0 && ret != -ENOSYS) {
+		LOG_ERR("Couldn't disable vconn: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
 
 	/* Open CC lines */
-	tcpc_set_cc(tcpc, TC_CC_OPEN);
+	ret = tcpc_set_cc(tcpc, TC_CC_OPEN);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC lines to open: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+	}
 }
 
 /**

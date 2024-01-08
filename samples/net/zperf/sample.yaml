@@ -26,6 +26,7 @@ tests:
       - nucleo_h743zi
       - nucleo_f429zi
       - nucleo_f746zg
+      - stm32h573i_dk
   sample.net.zperf_no_shell:
     harness: net
     extra_configs:

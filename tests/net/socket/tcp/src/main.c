@@ -31,21 +31,21 @@ static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
 	zassert_equal(bind(sock, addr, addrlen),
 		      0,
-		      "bind failed");
+		      "bind failed with error %d", errno);
 }
 
 static void test_listen(int sock)
 {
 	zassert_equal(listen(sock, MAX_CONNS),
 		      0,
-		      "listen failed");
+		      "listen failed with error %d", errno);
 }
 
 static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
 	zassert_equal(connect(sock, addr, addrlen),
 		      0,
-		      "connect failed");
+		      "connect failed with error %d", errno);
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the connection proceed */
@@ -554,6 +554,8 @@ ZTEST(net_socket_tcp, test_v4_broken_link)
 	test_close(s_sock);
 
 	restore_packet_loss_ratio();
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
 ZTEST_USER(net_socket_tcp, test_v4_sendto_recvfrom)
@@ -931,11 +933,18 @@ ZTEST(net_socket_tcp, test_connect_timeout)
 
 	test_close(c_sock);
 
+	/* If we have preemptive option set, then sleep here in order to allow
+	 * other part of the system to run and update itself.
+	 */
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		k_sleep(K_MSEC(10));
+	}
+
 	/* After the client socket closing, the context count should be 0 */
 	net_context_foreach(calc_net_context, &count_after);
 
 	zassert_equal(count_after, 0,
-			    "net_context still in use");
+		      "net_context %d still in use", count_after);
 
 	restore_packet_loss_ratio();
 }
@@ -2064,6 +2073,138 @@ ZTEST(net_socket_tcp, test_ioctl_fionread_v4)
 ZTEST(net_socket_tcp, test_ioctl_fionread_v6)
 {
 	test_ioctl_fionread_common(AF_INET6);
+}
+
+/* Connect to peer which is not listening the test port and
+ * make sure select() returns proper error for the closed
+ * connection.
+ */
+ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_select)
+{
+	struct sockaddr_in addr = { 0 };
+	struct in_addr v4addr;
+	int fd, flags, ret, optval;
+	socklen_t optlen = sizeof(optval);
+
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+
+	flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	inet_pton(AF_INET, "127.0.0.1", (void *)&v4addr);
+
+	addr.sin_family = AF_INET;
+	net_ipaddr_copy(&addr.sin_addr, &v4addr);
+
+	/* There should be nobody serving this port */
+	addr.sin_port = htons(8088);
+
+	ret = connect(fd, (const struct sockaddr *)&addr, sizeof(addr));
+	zassert_equal(ret, -1, "connect succeed, %d", errno);
+	zassert_equal(errno, EINPROGRESS, "connect succeed, %d", errno);
+
+	/* Wait for the connection (this should fail eventually) */
+	while (1) {
+		fd_set wfds;
+		struct timeval tv = {
+			.tv_sec = 1,
+			.tv_usec = 0
+		};
+
+		FD_ZERO(&wfds);
+		FD_SET(fd, &wfds);
+
+		/* Check if the connection is there, this should timeout */
+		ret = select(fd + 1,  NULL, &wfds, NULL, &tv);
+		if (ret < 0) {
+			break;
+		}
+
+		if (ret > 0) {
+			if (FD_ISSET(fd, &wfds)) {
+				break;
+			}
+		}
+	}
+
+	zassert_true(ret > 0, "select failed, %d", errno);
+
+	/* Get the reason for the connect */
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
+
+	/* If SO_ERROR is 0, then it means that connect succeed. Any
+	 * other value (errno) means that it failed.
+	 */
+	zassert_equal(optval, ECONNREFUSED, "unexpected connect status, %d", optval);
+
+	ret = close(fd);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+/* Connect to peer which is not listening the test port and
+ * make sure poll() returns proper error for the closed
+ * connection.
+ */
+ZTEST(net_socket_tcp, test_connect_and_wait_for_v4_poll)
+{
+	struct sockaddr_in addr = { 0 };
+	struct pollfd fds[1];
+	struct in_addr v4addr;
+	int fd, flags, ret, optval;
+	bool closed = false;
+	socklen_t optlen = sizeof(optval);
+
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+
+	flags = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	inet_pton(AF_INET, "127.0.0.1", (void *)&v4addr);
+
+	addr.sin_family = AF_INET;
+	net_ipaddr_copy(&addr.sin_addr, &v4addr);
+
+	/* There should be nobody serving this port */
+	addr.sin_port = htons(8088);
+
+	ret = connect(fd, (const struct sockaddr *)&addr, sizeof(addr));
+	zassert_equal(ret, -1, "connect succeed, %d", errno);
+	zassert_equal(errno, EINPROGRESS, "connect succeed, %d", errno);
+
+	/* Wait for the connection (this should fail eventually) */
+	while (1) {
+		memset(fds, 0, sizeof(fds));
+		fds[0].fd = fd;
+		fds[0].events = POLLOUT;
+
+		/* Check if the connection is there, this should timeout */
+		ret = poll(fds, 1, 10);
+		if (ret < 0) {
+			break;
+		}
+
+		if (fds[0].revents > 0) {
+			if (fds[0].revents & POLLERR) {
+				closed = true;
+				break;
+			}
+		}
+	}
+
+	zassert_true(closed, "poll failed, %d", errno);
+
+	/* Get the reason for the connect */
+	ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
+
+	/* If SO_ERROR is 0, then it means that connect succeed. Any
+	 * other value (errno) means that it failed.
+	 */
+	zassert_equal(optval, ECONNREFUSED, "unexpected connect status, %d", optval);
+
+	ret = close(fd);
+	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
 static void after(void *arg)

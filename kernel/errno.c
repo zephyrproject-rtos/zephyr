@@ -13,7 +13,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is

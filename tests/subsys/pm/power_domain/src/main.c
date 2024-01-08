@@ -105,8 +105,7 @@ DEVICE_DT_DEFINE(TEST_DEVB, NULL, PM_DEVICE_DT_GET(TEST_DEVB),
 
 PM_DEVICE_DEFINE(devc, deva_pm_action);
 DEVICE_DEFINE(devc, "devc", NULL, PM_DEVICE_GET(devc),
-	      NULL, NULL,
-	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+	      NULL, NULL, POST_KERNEL, 40, NULL);
 
 /**
  * @brief Test the power domain behavior
@@ -278,6 +277,24 @@ ZTEST(power_domain_1cpu, test_power_domain_device_balanced)
 
 	pm_device_state_get(balanced_domain, &state);
 	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+}
+
+ZTEST(power_domain_1cpu, test_on_power_domain)
+{
+	zassert_true(device_is_ready(domain), "Device is not ready!");
+	zassert_true(device_is_ready(deva), "Device is not ready!");
+	devc = DEVICE_GET(devc);
+	zassert_true(device_is_ready(devc), "Device is not ready!");
+
+	pm_device_power_domain_remove(deva, domain);
+	zassert_false(pm_device_on_power_domain(deva), "deva is in the power domain.");
+	pm_device_power_domain_add(deva, domain);
+	zassert_true(pm_device_on_power_domain(deva), "deva is not in the power domain.");
+
+	pm_device_power_domain_add(devc, domain);
+	zassert_true(pm_device_on_power_domain(devc), "devc is not in the power domain.");
+	pm_device_power_domain_remove(devc, domain);
+	zassert_false(pm_device_on_power_domain(devc), "devc in in the power domain.");
 }
 
 ZTEST_SUITE(power_domain_1cpu, NULL, NULL, ztest_simple_1cpu_before,

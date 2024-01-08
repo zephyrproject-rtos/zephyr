@@ -1,7 +1,8 @@
-.. _sockets-socketpair-sample:
+.. zephyr:code-sample:: sockets-socketpair
+   :name: Socketpair
+   :relevant-api: bsd_sockets
 
-Socketpair Example
-##################
+   Implement communication between threads using socket pairs.
 
 Overview
 ********
@@ -61,11 +62,11 @@ Running application on POSIX Host
 The same application source code can be built for a POSIX system, e.g.
 Linux.
 
-To build for a host POSIX OS:
+To build:
 
 .. code-block:: console
 
-    $ make -f Makefile.posix
+    $ make -f Makefile.host
 
 To run:
 

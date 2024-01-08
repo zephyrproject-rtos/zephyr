@@ -18,3 +18,4 @@ supported:
   - uart
   - usb_device
   - watchdog
+vendor: seeed

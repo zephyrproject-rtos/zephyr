@@ -120,12 +120,12 @@ int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    next_header_proto == IPPROTO_UDP) {
-		return net_udp_finalize(pkt);
+		return net_udp_finalize(pkt, false);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   next_header_proto == IPPROTO_TCP) {
-		return net_tcp_finalize(pkt);
+		return net_tcp_finalize(pkt, false);
 	} else if (next_header_proto == IPPROTO_ICMPV6) {
-		return net_icmpv6_finalize(pkt);
+		return net_icmpv6_finalize(pkt, false);
 	}
 
 	return 0;

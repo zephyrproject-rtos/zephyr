@@ -157,6 +157,8 @@
 		reset-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-max-frequency = <2000000>;
+		controller-data-delay-us = <0>;  /* No need for extra delay for BlueNRG-MS */
+		spi-hold-cs;
 	};
 
 	wifi0: ism43362@1 {

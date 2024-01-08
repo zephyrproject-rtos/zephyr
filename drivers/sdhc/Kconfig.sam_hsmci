@@ -1,0 +1,38 @@
+# Copyright 2023 Nikhef
+# SPDX -License-Identifier: Apache-2.0
+
+config SAM_HSMCI
+	bool "ATMEL SAM HSMCI driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_HSMCI_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable the ATMEL SAM HSMCI MMC/SD card driver.
+
+if SAM_HSMCI
+
+config SAM_HSMCI_PDCMODE
+	bool "Use PDC if available"
+	default y if SOC_SERIES_SAM4E
+	help
+	  Use peripheral DMA controller, if supported
+
+config SAM_HSMCI_PWRSAVE
+	bool "Power save during card inactive"
+	default y
+	help
+	  Power-save mode reduces the clock-speed during SD card
+	  inactivity.
+
+if SAM_HSMCI_PWRSAVE
+
+config SAM_HSMCI_PWRSAVE_DIV
+	int "Divisor value of clock when in power-save mode"
+	default 7
+	help
+	  SD clock freqeuncy is divided by 2**(N+1) where N
+	  is the divisor value. Valid values are 0 to 7.
+
+endif # SAM_HSMCI_PWRSAVE
+
+endif # SAM_HSMCI

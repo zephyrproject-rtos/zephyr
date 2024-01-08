@@ -271,7 +271,7 @@ static bool net_beacon_send(struct bt_mesh_subnet *sub, struct bt_mesh_beacon *b
 		return false;
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_ADV_TAG_LOCAL,
 				 PROV_XMIT, K_NO_WAIT);
 	if (!buf) {
 		LOG_ERR("Unable to allocate beacon buffer");
@@ -335,7 +335,7 @@ static int unprovisioned_beacon_send(void)
 
 	LOG_DBG("");
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_ADV_TAG_LOCAL,
 				 UNPROV_XMIT, K_NO_WAIT);
 	if (!buf) {
 		LOG_ERR("Unable to allocate beacon buffer");
@@ -362,7 +362,7 @@ static int unprovisioned_beacon_send(void)
 	if (prov->uri) {
 		size_t len;
 
-		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, BT_MESH_LOCAL_ADV,
+		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, BT_MESH_ADV_TAG_LOCAL,
 					 UNPROV_XMIT, K_NO_WAIT);
 		if (!buf) {
 			LOG_ERR("Unable to allocate URI buffer");

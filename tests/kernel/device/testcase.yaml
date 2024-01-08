@@ -9,6 +9,7 @@ tests:
     tags:
       - kernel
       - device
+    platform_exclude: xenvm
   kernel.device.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
@@ -17,10 +18,11 @@ tests:
       - libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+    platform_exclude: xenvm
   kernel.device.pm:
     tags:
       - kernel
       - device
-    platform_exclude: mec15xxevb_assy6853
+    platform_exclude: mec15xxevb_assy6853 xenvm
     extra_configs:
       - CONFIG_PM_DEVICE=y

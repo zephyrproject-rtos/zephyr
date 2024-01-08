@@ -21,6 +21,7 @@
 		sw0 = &user_button;
 		wdog = &wdt;
 		watchdog0 = &wdt;
+		sdhc0 = &hsmci;
 	};
 
 	chosen {
@@ -197,10 +198,10 @@
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
 
-	phy: phy {
+	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		status = "okay";
-		address = <0>;
+		reg = <0>;
 	};
 };
 
@@ -209,6 +210,17 @@
 
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-names = "default";
+};
+
+&hsmci {
+	status = "okay";
+
+	pinctrl-0 = <&hsmci_default>;
+	pinctrl-names = "default";
+	mmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
 };
 
 &wdt {

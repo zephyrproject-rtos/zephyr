@@ -4,3 +4,5 @@ zephyr_sources(
   soc.c
   soc_config.c
   )
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

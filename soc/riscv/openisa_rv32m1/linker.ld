@@ -5,7 +5,7 @@
  *
  * This file is based on:
  *
- * - include/arch/arm/aarch32/cortex_m/scripts/linker.ld
+ * - include/arch/arm/cortex_m/scripts/linker.ld
  * - include/arch/riscv/common/linker.ld
  * - include/arch/riscv/pulpino/linker.ld
  *

@@ -99,6 +99,10 @@
 	clock-prescaler = <8>;
 };
 
+&uicr {
+	gpio-as-nreset;
+};
+
 &gpiote {
 	status = "okay";
 };

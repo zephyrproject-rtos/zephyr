@@ -19,3 +19,4 @@ supported:
   - pwm
   - spi
   - watchdog
+vendor: u-blox

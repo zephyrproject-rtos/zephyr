@@ -13,10 +13,14 @@
  * certificate in PEM format, you can enable support for it in Kconfig.
  */
 
-/* ISRG Root X1 for https://launchpad.net/ubuntu */
-static const unsigned char ca_certificate[] =
+/* ISRG Root X1 for https://launchpad.net/ubuntu
+ * DigiCert Global Root G2 for possible redirects
+ */
+static const unsigned char *ca_certificates[] = {
 #include "isrgrootx1.pem"
-;
+,
+#include "DigiCertGlobalRootG2.crt.pem"
+};
 
 
 #endif /* __CA_CERTIFICATE_H__ */

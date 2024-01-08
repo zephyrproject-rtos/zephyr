@@ -20,3 +20,4 @@ supported:
   - arduino_spi
   - gpio
   - spi
+vendor: cypress

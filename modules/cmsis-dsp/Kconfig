@@ -1,0 +1,79 @@
+# Copyright (c) 2023 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_CMSIS_DSP_MODULE
+	bool
+
+menuconfig CMSIS_DSP
+	bool "CMSIS-DSP Library Support"
+	help
+	  This option enables the CMSIS-DSP library.
+
+if CMSIS_DSP
+
+comment "Instruction Set"
+# NOTE: These configurations should eventually be derived from the arch ISA and
+#       FP support configurations.
+
+config CMSIS_DSP_NEON
+	bool "Neon Instruction Set"
+	default y
+	depends on CPU_CORTEX_A
+	help
+	  This option enables the NEON Advanced SIMD instruction set, which is
+	  available on most Cortex-A and some Cortex-R processors.
+
+config CMSIS_DSP_NEON_EXPERIMENTAL
+	bool "Neon Instruction Set"
+	depends on CPU_CORTEX_A
+	help
+	  This option enables the NEON Advanced SIMD instruction set, which is
+	  available on most Cortex-A and some Cortex-R processors.
+
+config CMSIS_DSP_HELIUM_EXPERIMENTAL
+	bool "Helium Instruction Set"
+	depends on FP_HARDABI && (ARMV8_1_M_MVEI || ARMV8_1_M_MVEF)
+	help
+	  This option enables the Helium Advanced SIMD instruction set, which is
+	  available on some Cortex-M processors.
+
+comment "Features"
+
+config CMSIS_DSP_LOOPUNROLL
+	bool "Loop Unrolling"
+	help
+	  This option enables manual loop unrolling in the DSP functions.
+
+config CMSIS_DSP_ROUNDING
+	bool "Rounding"
+	help
+	  This option enables rounding on the support functions.
+
+config CMSIS_DSP_MATRIXCHECK
+	bool "Matrix Check"
+	help
+	  This option enables validation of the input and output sizes of
+	  matrices.
+
+config CMSIS_DSP_AUTOVECTORIZE
+	bool "Auto Vectorize"
+	help
+	  This option prefers autovectorizable code to one using C intrinsics
+	  in the DSP functions.
+
+config CMSIS_DSP_FLOAT16
+	bool "Half-Precision (16-bit Float) Support"
+	default y
+	depends on FP16
+	help
+	  This option enables the half-precision (16-bit) floating-point
+	  operations support.
+
+config CMSIS_DSP_LAX_VECTOR_CONVERSIONS
+	bool "Lax Vector Conversions"
+	default y
+	depends on FP_HARDABI && (ARMV8_1_M_MVEI || ARMV8_1_M_MVEF)
+	help
+	  This option enables lax vector conversions
+
+endif #CMSIS_DSP

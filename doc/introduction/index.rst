@@ -9,6 +9,7 @@ sensors and LED wearables to sophisticated embedded controllers, smart
 watches, and IoT wireless applications.
 
 The Zephyr kernel supports multiple architectures, including:
+
  - ARCv2 (EM and HS) and ARCv3 (HS6X)
  - ARMv6-M, ARMv7-M, and ARMv8-M (Cortex-M)
  - ARMv7-A and ARMv8-A (Cortex-A, 32- and 64-bit)
@@ -143,13 +144,12 @@ Zephyr offers a large and ever growing number of features including:
 
 **Native Linux, macOS, and Windows Development**
    A command-line CMake build environment runs on popular developer OS
-   systems. A native POSIX port lets you build and run Zephyr as a native
-   application on Linux and other OSes, aiding development and testing.
+   systems. A native port (:ref:`native_sim <native_sim>`) lets you build and run Zephyr as a native
+   application on Linux, aiding development and testing.
 
-**Virtual File System Interface with LittleFS and FATFS Support**
-   LittleFS and FATFS Support,
-   FCB (Flash Circular Buffer) for memory constrained applications, and
-   file system enhancements for logging and configuration.
+**Virtual File System Interface with ext2, FatFs, and LittleFS Support**
+   ext2, LittleFS and FatFS support; FCB (Flash Circular Buffer) for memory constrained
+   applications.
 
 **Powerful multi-backend logging Framework**
    Support for log filtering, object dumping, panic mode, multiple backends
@@ -170,9 +170,9 @@ Zephyr offers a large and ever growing number of features including:
   NVS allows storage of binary blobs, strings, integers, longs, and any
   combination of these.
 
-**Native POSIX port**
-  Supports running Zephyr as a Linux application with support for various
-  subsystems and networking.
+**Native port**
+  :ref:`Native sim <native_sim>` allows running Zephyr as a Linux application with support
+  for various subsystems and networking.
 
 
 .. include:: ../../README.rst

@@ -1,0 +1,14 @@
+# Copyright 2023 NXP
+# SPDX -License-Identifier: Apache-2.0
+
+config REGULATOR_NXP_VREF
+	bool "NXP VREF peripheral driver"
+	default y if DT_HAS_NXP_VREF_ENABLED
+	help
+	  Enable the NXP VREF driver
+
+config REGULATOR_NXP_VREF_INIT_PRIORITY
+	int "NXP VREF peripheral driver init priority"
+	default 45
+	help
+	  Init priority for the NXP VREF peripheral.

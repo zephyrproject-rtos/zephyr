@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SPARC_CASA
-	default y
+	default y if SPARC
 
 config SOC_SPARC_LEON
 	bool

@@ -34,9 +34,8 @@ on QEMU as follows:
    :goals: run
    :compact:
 
-For comparison, a version for native POSIX operating systems (e.g. Linux)
-can be built using:
+For comparison, to build directly for your host OS if it is POSIX compliant (for ex. Linux):
 
 .. code-block:: console
 
-   make -f Makefile.posix
+   make -f Makefile.host

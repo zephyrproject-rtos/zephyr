@@ -242,37 +242,6 @@ followed by trial and error. If you want to understand details, you will need
 to read the rest of the devicetree documentation and the devicetree
 specification.
 
-Board extensions
-****************
-
-Board extensions are board fragments that can be present in a board root
-folder, under ``${BOARD_ROOT}/boards/extensions``. The extension folder must
-follow the naming structure of the original board to extend. The board extension
-directory may contain Kconfig fragments and/or devicetree overlays. Board
-extensions are, by default, automatically loaded and applied on top of board
-files, before anything else. There is no guarantee on which order extensions are
-applied, in case multiple exist. This feature shall be disabled by passing
-``-DBOARD_EXTENSIONS=OFF`` when building.
-
-Board extensions are designed for downstream users, for example,
-``example-application`` or vendor SDKs. In some situations, certain hardware
-description or `choices <devicetree-chosen-nodes>`_ can not be added in the
-upstream Zephyr repository, but they can be in a downstream project, where
-custom bindings or driver classes can also be created. This feature may also be
-useful in development phases, when the board skeleton lives upstream, but other
-features are developed in a downstream module.
-
-Note that board extensions need to follow the
-:ref:`same guidelines <porting-general-recommendations>` as regular boards. For
-example, it is wrong to enable extra peripherals or subsystems in a board
-extension.
-
-.. warning::
-
-   Board extensions are not allowed in any module referenced in Zephyr's
-   ``west.yml`` manifest file. Any board changes are required to be submitted to
-   the main Zephyr repository.
-
 .. _dt_k6x_example:
 
 Example: FRDM-K64F and Hexiwear K64
@@ -358,7 +327,7 @@ named ``plank``:
   This should at least contain a definition for a ``BOARD_PLANK`` option,
   which looks something like this:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      config BOARD_PLANK
      	bool "Plank board"
@@ -371,7 +340,7 @@ named ``plank``:
   The entire file should be inside an ``if BOARD_PLANK`` / ``endif`` pair of
   lines, like this:
 
-  .. code-block:: none
+  .. code-block:: kconfig
 
      if BOARD_PLANK
 
@@ -400,10 +369,10 @@ named ``plank``:
   your system clock, console, etc. The results are architecture-specific, but
   typically look something like this:
 
-  .. code-block:: none
+  .. code-block:: cfg
 
-     CONFIG_SOC_${VENDOR_XYZ3000}=y                      /* select your SoC */
-     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000   /* set up your clock, etc */
+     CONFIG_SOC_${VENDOR_XYZ3000}=y                # select your SoC
+     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000  # set up your clock, etc
      CONFIG_SERIAL=y
 
 :file:`plank_x_y_z.conf`
@@ -810,3 +779,44 @@ There are some extra things you'll need to do:
 
 #. Prepare a pull request adding your board which follows the
    :ref:`contribute_guidelines`.
+
+Board extensions
+****************
+
+Boards already supported by Zephyr can be extended by downstream users, such as
+``example-application`` or vendor SDKs. In some situations, certain hardware
+description or :ref:`choices <devicetree-chosen-nodes>` can not be added in the
+upstream Zephyr repository, but they can be in a downstream project, where
+custom bindings or driver classes can also be created. This feature may also be
+useful in development phases, when the board skeleton lives upstream, but other
+features are developed in a downstream module.
+
+Board extensions are board fragments that can be present in an out-of-tree board
+root folder, under ``${BOARD_ROOT}/boards/extensions``. Here is an example
+structure of an extension for the ``plank`` board and its revisions:
+
+.. code-block:: none
+
+   boards/extensions/plank
+   ├── plank.conf                # optional
+   ├── plank_<revision>.conf     # optional
+   ├── plank.overlay             # optional
+   └── plank_<revision>.overlay  # optional
+
+A board extension directory must follow the naming structure of the original
+board it extends. It may contain Kconfig fragments and/or devicetree overlays.
+Extensions are, by default, automatically loaded and applied on top of board
+files, before anything else. There is no guarantee on which order extensions are
+applied, in case multiple exist. This feature can be disabled by passing
+``-DBOARD_EXTENSIONS=OFF`` when building.
+
+Note that board extensions need to follow the
+:ref:`same guidelines <porting-general-recommendations>` as regular boards. For
+example, it is wrong to enable extra peripherals or subsystems in a board
+extension.
+
+.. warning::
+
+   Board extensions are not allowed in any module referenced in Zephyr's
+   ``west.yml`` manifest file. Any board changes are required to be submitted to
+   the main Zephyr repository.

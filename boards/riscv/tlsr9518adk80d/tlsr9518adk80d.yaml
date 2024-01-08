@@ -13,3 +13,4 @@ supported:
   - pwm
   - spi
   - netif:openthread
+vendor: telink

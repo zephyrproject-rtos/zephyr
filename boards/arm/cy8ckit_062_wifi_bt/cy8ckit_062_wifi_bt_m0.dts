@@ -12,7 +12,7 @@
 
 / {
 	model = "cy8ckit_062_wifi_bt_m0 with a Cypress PSoC6 SoC";
-	compatible = "cy8ckit_062_wifi_bt_m0", "PSoC6";
+	compatible = "cypress,cy8ckit_062_wifi_bt_m0", "cypress,PSoC6";
 
 	aliases {
 		sw0 = &user_bt;

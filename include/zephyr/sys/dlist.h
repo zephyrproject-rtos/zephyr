@@ -165,7 +165,7 @@ typedef struct _dnode sys_dnode_t;
  *     }
  *
  * @param __dl A pointer on a sys_dlist_t to iterate on
- * @param __cn A pointer to peek each entry of the list
+ * @param __cn A container struct type pointer to peek each entry of the list
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_FOR_EACH_CONTAINER(__dl, __cn, __n)			\
@@ -184,8 +184,8 @@ typedef struct _dnode sys_dnode_t;
  *     }
  *
  * @param __dl A pointer on a sys_dlist_t to iterate on
- * @param __cn A pointer to peek each entry of the list
- * @param __cns A pointer for the loop to run safely
+ * @param __cn A container struct type pointer to peek each entry of the list
+ * @param __cns A container struct type pointer for the loop to run safely
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_FOR_EACH_CONTAINER_SAFE(__dl, __cn, __cns, __n)	\
@@ -532,6 +532,24 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 	}
 
 	return node;
+}
+
+/**
+ * @brief Compute the size of the given list in O(n) time
+ *
+ * @param list A pointer on the list
+ *
+ * @return an integer equal to the size of the list, or 0 if empty
+ */
+static inline size_t sys_dlist_len(sys_dlist_t *list)
+{
+	size_t len = 0;
+	sys_dnode_t *node = NULL;
+
+	SYS_DLIST_FOR_EACH_NODE(list, node) {
+		len++;
+	}
+	return len;
 }
 
 /** @} */

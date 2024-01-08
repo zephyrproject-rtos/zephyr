@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 #include <zephyr/net/mqtt.h>
 
 #include <zephyr/sys/printk.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <string.h>
 #include <errno.h>
 
@@ -60,7 +60,7 @@ static K_SEM_DEFINE(mqtt_start, 0, 1);
 #define TLS_SNI_HOSTNAME CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME
 #define APP_CA_CERT_TAG 1
 
-static sec_tag_t m_sec_tags[] = {
+static const sec_tag_t m_sec_tags[] = {
 	APP_CA_CERT_TAG,
 };
 

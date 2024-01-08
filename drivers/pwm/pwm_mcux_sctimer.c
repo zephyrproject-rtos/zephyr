@@ -12,6 +12,7 @@
 #include <fsl_sctimer.h>
 #include <fsl_clock.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
 
 #include <zephyr/logging/log.h>
 
@@ -23,6 +24,8 @@ struct pwm_mcux_sctimer_config {
 	SCT_Type *base;
 	uint32_t prescale;
 	const struct pinctrl_dev_config *pincfg;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct pwm_mcux_sctimer_data {
@@ -79,11 +82,11 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 
 		data->period_cycles[channel] = period_cycles;
 
-		/*
-		 * Do not divide by the prescale factor as this is accounted for in
-		 * the SDK function
-		 */
-		clock_freq = CLOCK_GetFreq(kCLOCK_BusClk);
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					&clock_freq)) {
+			return -EINVAL;
+		}
+
 		pwm_freq = (clock_freq / config->prescale) / period_cycles;
 
 		if (pwm_freq == 0) {
@@ -117,8 +120,14 @@ static int mcux_sctimer_pwm_get_cycles_per_sec(const struct device *dev,
 					       uint64_t *cycles)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
+	uint32_t clock_freq;
 
-	*cycles = CLOCK_GetFreq(kCLOCK_BusClk) / config->prescale;
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				&clock_freq)) {
+		return -EINVAL;
+	}
+
+	*cycles = clock_freq / config->prescale;
 
 	return 0;
 }
@@ -138,7 +147,7 @@ static int mcux_sctimer_pwm_init(const struct device *dev)
 	}
 
 	SCTIMER_GetDefaultConfig(&pwm_config);
-	/* Divide the SCT clock by 8 */
+
 	pwm_config.prescale_l = config->prescale - 1;
 
 	status = SCTIMER_Init(config->base, &pwm_config);
@@ -170,6 +179,8 @@ static const struct pwm_driver_api pwm_mcux_sctimer_driver_api = {
 		.base = (SCT_Type *)DT_INST_REG_ADDR(n),				\
 		.prescale = DT_INST_PROP(n, prescaler),					\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(n,							\

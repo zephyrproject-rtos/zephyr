@@ -24,3 +24,9 @@ properties:
       This option is used when the I2C target is enabled. It is
       necessary to prevent the target port from being configured
       with I2C host related initialization.
+
+  target-pio-mode:
+    type: boolean
+    description: |
+      This option is used when the I2C target is enabled and it can
+      support PIO mode for I2C target transfer.

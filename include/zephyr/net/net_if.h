@@ -33,6 +33,9 @@
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <zephyr/net/dhcpv4.h>
 #endif
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+#include <zephyr/net/dhcpv6.h>
+#endif
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 #include <zephyr/net/ipv4_autoconf.h>
 #endif
@@ -103,7 +106,7 @@ struct net_if_mcast_addr {
 /**
  * @brief Network Interface IPv6 prefixes
  *
- * Stores the multicast IP addresses assigned to this network interface.
+ * Stores the IPV6 prefixes assigned to this network interface.
  */
 struct net_if_ipv6_prefix {
 	/** Prefix lifetime */
@@ -209,6 +212,9 @@ enum net_if_flag {
 	/** IPv6 Multicast Listener Discovery disabled. */
 	NET_IF_IPV6_NO_MLD,
 
+	/** Mutex locking on TX data path disabled on the interface. */
+	NET_IF_NO_TX_LOCK,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -274,6 +280,69 @@ struct net_if_ipv6 {
 	/** IPv6 hop limit */
 	uint8_t hop_limit;
 };
+
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+struct net_if_dhcpv6 {
+	/** Used for timer list. */
+	sys_snode_t node;
+
+	/** Generated Client ID. */
+	struct net_dhcpv6_duid_storage clientid;
+
+	/** Server ID of the selected server. */
+	struct net_dhcpv6_duid_storage serverid;
+
+	/** DHCPv6 client state. */
+	enum net_dhcpv6_state state;
+
+	/** DHCPv6 client configuration parameters. */
+	struct net_dhcpv6_params params;
+
+	/** Timeout for the next event, absolute time, milliseconds. */
+	uint64_t timeout;
+
+	/** Time of the current exchange start, absolute time, milliseconds */
+	uint64_t exchange_start;
+
+	/** Renewal time, absolute time, milliseconds. */
+	uint64_t t1;
+
+	/** Rebinding time, absolute time, milliseconds. */
+	uint64_t t2;
+
+	/** The time when the last lease expires (terminates rebinding,
+	 *  DHCPv6 RFC8415, ch. 18.2.5). Absolute time, milliseconds.
+	 */
+	uint64_t expire;
+
+	/** Generated IAID for IA_NA. */
+	uint32_t addr_iaid;
+
+	/** Generated IAID for IA_PD. */
+	uint32_t prefix_iaid;
+
+	/** Retransmit timeout for the current message, milliseconds. */
+	uint32_t retransmit_timeout;
+
+	/** Current best server preference received. */
+	int16_t server_preference;
+
+	/** Retransmission counter. */
+	uint8_t retransmissions;
+
+	/** Transaction ID for current exchange. */
+	uint8_t tid[DHCPV6_TID_SIZE];
+
+	/** Prefix length. */
+	uint8_t prefix_len;
+
+	/** Assigned IPv6 prefix. */
+	struct in6_addr prefix;
+
+	/** Assigned IPv6 address. */
+	struct in6_addr addr;
+};
+#endif /* defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6) */
 
 /** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_NATIVE_IPV4)
@@ -413,6 +482,10 @@ struct net_if_config {
 	struct net_if_dhcpv4 dhcpv4;
 #endif /* CONFIG_NET_DHCPV4 */
 
+#if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
+	struct net_if_dhcpv6 dhcpv6;
+#endif /* CONFIG_NET_DHCPV6 */
+
 #if defined(CONFIG_NET_IPV4_AUTO) && defined(CONFIG_NET_NATIVE_IPV4)
 	struct net_if_ipv4_autoconf ipv4auto;
 #endif /* CONFIG_NET_IPV4_AUTO */
@@ -543,6 +616,7 @@ struct net_if {
 #endif
 
 	struct k_mutex lock;
+	struct k_mutex tx_lock;
 };
 
 static inline void net_if_lock(struct net_if *iface)
@@ -557,6 +631,31 @@ static inline void net_if_unlock(struct net_if *iface)
 	NET_ASSERT(iface);
 
 	k_mutex_unlock(&iface->lock);
+}
+
+static inline bool net_if_flag_is_set(struct net_if *iface,
+				      enum net_if_flag value);
+
+static inline void net_if_tx_lock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
+		return;
+	}
+
+	(void)k_mutex_lock(&iface->tx_lock, K_FOREVER);
+}
+
+static inline void net_if_tx_unlock(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	if (net_if_flag_is_set(iface, NET_IF_NO_TX_LOCK)) {
+		return;
+	}
+
+	k_mutex_unlock(&iface->tx_lock);
 }
 
 /**
@@ -772,6 +871,15 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 	return false;
 #endif
 }
+
+/**
+ * @brief Return offload status of a given network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return True if IP or socket offloading is active, false otherwise.
+ */
+bool net_if_is_offloaded(struct net_if *iface);
 
 /**
  * @brief Return the IP offload plugin
@@ -2913,6 +3021,20 @@ struct net_if_api {
  */
 #define NET_DEVICE_DT_INST_OFFLOAD_DEFINE(inst, ...) \
 	NET_DEVICE_DT_OFFLOAD_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Count the number of network interfaces.
+ *
+ * @param[out] _dst Pointer to location where result is written.
+ */
+#define NET_IFACE_COUNT(_dst) \
+		do {							\
+			extern struct net_if _net_if_list_start[];	\
+			extern struct net_if _net_if_list_end[];	\
+			*(_dst) = ((uintptr_t)_net_if_list_end -	\
+				   (uintptr_t)_net_if_list_start) /	\
+				sizeof(struct net_if);			\
+		} while (0)
 
 #ifdef __cplusplus
 }

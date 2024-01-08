@@ -22,6 +22,7 @@ import shutil
 import signal
 import subprocess
 import re
+from dataclasses import dataclass, field
 from functools import partial
 from enum import Enum
 from inspect import isabstract
@@ -199,6 +200,9 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
+_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach'}
+
+@dataclass
 class RunnerCaps:
     '''This class represents a runner class's capabilities.
 
@@ -229,34 +233,29 @@ class RunnerCaps:
       erased by the underlying tool before flashing; UICR on nRF SoCs
       is one example.)
 
+    - reset: whether the runner supports a --reset option, which
+      resets the device after a flash operation is complete.
+
     - tool_opt: whether the runner supports a --tool-opt (-O) option, which
       can be given multiple times and is passed on to the underlying tool
       that the runner wraps.
+
+    - file: whether the runner supports a --file option, which specifies
+      exactly the file that should be used to flash, overriding any default
+      discovered in the build directory.
     '''
 
-    def __init__(self,
-                 commands: Set[str] = {'flash', 'debug',
-                                       'debugserver', 'attach'},
-                 dev_id: bool = False,
-                 flash_addr: bool = False,
-                 erase: bool = False,
-                 tool_opt: bool = False,
-                 file: bool = False):
-        self.commands = commands
-        self.dev_id = dev_id
-        self.flash_addr = bool(flash_addr)
-        self.erase = bool(erase)
-        self.tool_opt = bool(tool_opt)
-        self.file = bool(file)
+    commands: Set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
+    dev_id: bool = False
+    flash_addr: bool = False
+    erase: bool = False
+    reset: bool = False
+    tool_opt: bool = False
+    file: bool = False
 
-    def __str__(self):
-        return (f'RunnerCaps(commands={self.commands}, '
-                f'dev_id={self.dev_id}, '
-                f'flash_addr={self.flash_addr}, '
-                f'erase={self.erase}, '
-                f'tool_opt={self.tool_opt}, '
-                f'file={self.file}'
-                ')')
+    def __post_init__(self):
+        if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
+            raise ValueError(f'{self.commands=} contains invalid command')
 
 
 def _missing_cap(cls: Type['ZephyrBinaryRunner'], option: str) -> NoReturn:
@@ -284,6 +283,7 @@ class RunnerConfig(NamedTuple):
     build_dir: str                  # application build directory
     board_dir: str                  # board definition directory
     elf_file: Optional[str]         # zephyr.elf path, or None
+    exe_file: Optional[str]         # zephyr.exe path, or None
     hex_file: Optional[str]         # zephyr.hex path, or None
     bin_file: Optional[str]         # zephyr.bin path, or None
     uf2_file: Optional[str]         # zephyr.uf2 path, or None
@@ -521,8 +521,15 @@ class ZephyrBinaryRunner(abc.ABC):
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
                             action=_ToggleAction,
-                            help=("mass erase flash before loading, or don't"
+                            help=("mass erase flash before loading, or don't. "
+                                  "Default action depends on each specific runner."
                                   if caps.erase else argparse.SUPPRESS))
+
+        parser.add_argument('--reset', '--no-reset', nargs=0,
+                            action=_ToggleAction,
+                            help=("reset device after flashing, or don't. "
+                                  "Default action depends on each specific runner."
+                                  if caps.reset else argparse.SUPPRESS))
 
         parser.add_argument('-O', '--tool-opt', dest='tool_opt',
                             default=[], action='append',
@@ -552,6 +559,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--dt-flash')
         if args.erase and not caps.erase:
             _missing_cap(cls, '--erase')
+        if args.reset and not caps.reset:
+            _missing_cap(cls, '--reset')
         if args.tool_opt and not caps.tool_opt:
             _missing_cap(cls, '--tool-opt')
         if args.file and not caps.file:
@@ -564,6 +573,8 @@ class ZephyrBinaryRunner(abc.ABC):
         ret = cls.do_create(cfg, args)
         if args.erase:
             ret.logger.info('mass erase requested')
+        if args.reset:
+            ret.logger.info('reset after flashing requested')
         return ret
 
     @classmethod
@@ -647,24 +658,26 @@ class ZephyrBinaryRunner(abc.ABC):
                   in the order they appear on the command line.'''
 
     @staticmethod
-    def require(program: str) -> str:
+    def require(program: str, path: Optional[str] = None) -> str:
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
                         or path to a program binary.
+        :param path:    PATH where to search for the program binary.
+                        By default check on the system PATH.
 
         If ``program`` is an absolute path to an existing program
         binary, this call succeeds. Otherwise, try to find the program
-        by name on the system PATH.
+        by name on the system PATH or in the given PATH, if provided.
 
         If the program can be found, its path is returned.
         Otherwise, raises MissingProgram.'''
-        ret = shutil.which(program)
+        ret = shutil.which(program, path=path)
         if ret is None:
             raise MissingProgram(program)
         return ret
 
-    def run_server_and_client(self, server, client):
+    def run_server_and_client(self, server, client, **kwargs):
         '''Run a server that ignores SIGINT, and a client that handles it.
 
         This routine portably:
@@ -673,20 +686,22 @@ class ZephyrBinaryRunner(abc.ABC):
           SIGINT
         - runs ``client`` in a subprocess while temporarily ignoring SIGINT
         - cleans up the server after the client exits.
+        - the keyword arguments, if any, will be passed down to both server and
+          client subprocess calls
 
         It's useful to e.g. open a GDB server and client.'''
-        server_proc = self.popen_ignore_int(server)
+        server_proc = self.popen_ignore_int(server, **kwargs)
         try:
-            self.run_client(client)
+            self.run_client(client, **kwargs)
         finally:
             server_proc.terminate()
             server_proc.wait()
 
-    def run_client(self, client):
+    def run_client(self, client, **kwargs):
         '''Run a client that handles SIGINT.'''
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
-            self.check_call(client)
+            self.check_call(client, **kwargs)
         finally:
             signal.signal(signal.SIGINT, previous)
 

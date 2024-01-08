@@ -67,7 +67,7 @@
 #include <zephyr/test_utils.h>
 #include "test_ecc_utils.h"
 #include <zephyr/sys/util.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <stdio.h>
 #include <stdlib.h>

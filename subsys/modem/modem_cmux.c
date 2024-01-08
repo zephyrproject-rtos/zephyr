@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_MODULES_LOG_LEVEL);
+LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/crc.h>
@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #define MODEM_CMUX_DATA_FRAME_SIZE_MIN		(MODEM_CMUX_FRAME_SIZE_MAX + \
 						 MODEM_CMUX_DATA_SIZE_MIN)
 
-#define MODEM_CMUX_CMD_DATA_SIZE_MAX		(0x04)
+#define MODEM_CMUX_CMD_DATA_SIZE_MAX		(0x08)
 #define MODEM_CMUX_CMD_FRAME_SIZE_MAX		(MODEM_CMUX_FRAME_SIZE_MAX + \
 						 MODEM_CMUX_CMD_DATA_SIZE_MAX)
 
@@ -96,26 +96,91 @@ static int modem_cmux_wrap_command(struct modem_cmux_command **command, const ui
 	return 0;
 }
 
-static struct modem_cmux_command *modem_cmux_command_wrap(uint8_t *data)
+static struct modem_cmux_command *modem_cmux_command_wrap(const uint8_t *data)
 {
 	return (struct modem_cmux_command *)data;
 }
 
-static void modem_cmux_log_unknown_frame(struct modem_cmux *cmux)
+static const char *modem_cmux_frame_type_to_str(enum modem_cmux_frame_types frame_type)
 {
-	char data[24];
-	uint8_t data_cnt = (cmux->frame.data_len < 8) ? cmux->frame.data_len : 8;
-
-	for (uint8_t i = 0; i < data_cnt; i++) {
-		snprintk(&data[i * 3], sizeof(data) - (i * 3), "%02X,", cmux->frame.data[i]);
+	switch (frame_type) {
+	case MODEM_CMUX_FRAME_TYPE_RR:
+		return "RR";
+	case MODEM_CMUX_FRAME_TYPE_UI:
+		return "UI";
+	case MODEM_CMUX_FRAME_TYPE_RNR:
+		return "RNR";
+	case MODEM_CMUX_FRAME_TYPE_REJ:
+		return "REJ";
+	case MODEM_CMUX_FRAME_TYPE_DM:
+		return "DM";
+	case MODEM_CMUX_FRAME_TYPE_SABM:
+		return "SABM";
+	case MODEM_CMUX_FRAME_TYPE_DISC:
+		return "DISC";
+	case MODEM_CMUX_FRAME_TYPE_UA:
+		return "UA";
+	case MODEM_CMUX_FRAME_TYPE_UIH:
+		return "UIH";
 	}
+	return "";
+}
 
-	/* Remove trailing */
-	if (data_cnt > 0) {
-		data[(data_cnt * 3) - 1] = '\0';
+static void modem_cmux_log_transmit_frame(const struct modem_cmux_frame *frame)
+{
+	LOG_DBG("ch:%u,cr:%u,pf:%u,type:%s", frame->dlci_address, frame->cr, frame->pf,
+		modem_cmux_frame_type_to_str(frame->type));
+	LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
+}
+
+static void modem_cmux_log_received_frame(const struct modem_cmux_frame *frame)
+{
+	LOG_DBG("ch:%u,cr:%u,pf:%u,type:%s", frame->dlci_address, frame->cr, frame->pf,
+		modem_cmux_frame_type_to_str(frame->type));
+	LOG_HEXDUMP_DBG(frame->data, frame->data_len, "data:");
+}
+
+static const char *modem_cmux_command_type_to_str(enum modem_cmux_command_types command_type)
+{
+	switch (command_type) {
+	case MODEM_CMUX_COMMAND_NSC:
+		return "NSC";
+	case MODEM_CMUX_COMMAND_TEST:
+		return "TEST";
+	case MODEM_CMUX_COMMAND_PSC:
+		return "PSC";
+	case MODEM_CMUX_COMMAND_RLS:
+		return "RLS";
+	case MODEM_CMUX_COMMAND_FCOFF:
+		return "FCOFF";
+	case MODEM_CMUX_COMMAND_PN:
+		return "PN";
+	case MODEM_CMUX_COMMAND_RPN:
+		return "RPN";
+	case MODEM_CMUX_COMMAND_FCON:
+		return "FCON";
+	case MODEM_CMUX_COMMAND_CLD:
+		return "CLD";
+	case MODEM_CMUX_COMMAND_SNC:
+		return "SNC";
+	case MODEM_CMUX_COMMAND_MSC:
+		return "MSC";
 	}
+	return "";
+}
 
-	LOG_DBG("ch:%u, type:%u, data:%s", cmux->frame.dlci_address, cmux->frame.type, data);
+static void modem_cmux_log_transmit_command(const struct modem_cmux_command *command)
+{
+	LOG_DBG("ea:%u,cr:%u,type:%s", command->type.ea, command->type.cr,
+		modem_cmux_command_type_to_str(command->type.value));
+	LOG_HEXDUMP_DBG(command->value, command->length.value, "data:");
+}
+
+static void modem_cmux_log_received_command(const struct modem_cmux_command *command)
+{
+	LOG_DBG("ea:%u,cr:%u,type:%s", command->type.ea, command->type.cr,
+		modem_cmux_command_type_to_str(command->type.value));
+	LOG_HEXDUMP_DBG(command->value, command->length.value, "data:");
 }
 
 static void modem_cmux_raise_event(struct modem_cmux *cmux, enum modem_cmux_event event)
@@ -199,6 +264,7 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 					  const struct modem_cmux_frame *frame)
 {
 	uint16_t space;
+	struct modem_cmux_command *command;
 
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 	space = ring_buf_space_get(&cmux->transmit_rb);
@@ -206,6 +272,11 @@ static bool modem_cmux_transmit_cmd_frame(struct modem_cmux *cmux,
 	if (space < MODEM_CMUX_CMD_FRAME_SIZE_MAX) {
 		k_mutex_unlock(&cmux->transmit_rb_lock);
 		return false;
+	}
+
+	modem_cmux_log_transmit_frame(frame);
+	if (modem_cmux_wrap_command(&command, frame->data, frame->data_len) == 0) {
+		modem_cmux_log_transmit_command(command);
 	}
 
 	modem_cmux_transmit_frame(cmux, frame);
@@ -240,6 +311,7 @@ static int16_t modem_cmux_transmit_data_frame(struct modem_cmux *cmux,
 		return -ENOMEM;
 	}
 
+	modem_cmux_log_transmit_frame(frame);
 	ret = modem_cmux_transmit_frame(cmux, frame);
 	k_mutex_unlock(&cmux->transmit_rb_lock);
 	return ret;
@@ -338,6 +410,8 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 		return;
 	}
 
+	modem_cmux_log_received_command(command);
+
 	switch (command->type.value) {
 	case MODEM_CMUX_COMMAND_CLD:
 		modem_cmux_on_cld_command(cmux);
@@ -356,13 +430,15 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 		break;
 
 	default:
-		LOG_DBG("Unknown command");
+		LOG_DBG("Unknown control command");
 		break;
 	}
 }
 
 static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 {
+	modem_cmux_log_received_frame(&cmux->frame);
+
 	switch (cmux->frame.type) {
 	case MODEM_CMUX_FRAME_TYPE_UA:
 		modem_cmux_on_control_frame_ua(cmux);
@@ -373,7 +449,7 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		modem_cmux_log_unknown_frame(cmux);
+		LOG_WRN("Unknown %s frame type", "control");
 		break;
 	}
 }
@@ -401,6 +477,9 @@ static void modem_cmux_on_dlci_frame_ua(struct modem_cmux_dlci *dlci)
 		dlci->state = MODEM_CMUX_DLCI_STATE_OPEN;
 		modem_pipe_notify_opened(&dlci->pipe);
 		k_work_cancel_delayable(&dlci->open_work);
+		k_mutex_lock(&dlci->receive_rb_lock, K_FOREVER);
+		ring_buf_reset(&dlci->receive_rb);
+		k_mutex_unlock(&dlci->receive_rb_lock);
 		break;
 
 	case MODEM_CMUX_DLCI_STATE_CLOSING:
@@ -442,6 +521,8 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 		return;
 	}
 
+	modem_cmux_log_received_frame(&cmux->frame);
+
 	switch (cmux->frame.type) {
 	case MODEM_CMUX_FRAME_TYPE_UA:
 		modem_cmux_on_dlci_frame_ua(dlci);
@@ -452,7 +533,7 @@ static void modem_cmux_on_dlci_frame(struct modem_cmux *cmux)
 		break;
 
 	default:
-		modem_cmux_log_unknown_frame(cmux);
+		LOG_WRN("Unknown %s frame type", "DLCI");
 		break;
 	}
 }
@@ -602,7 +683,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 		/* Check if receive buffer overrun */
 		if (cmux->receive_buf_len == cmux->receive_buf_size) {
-			LOG_DBG("Receive buf overrun");
+			LOG_WRN("Receive buf overrun");
 
 			/* Drop frame */
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_EOF;
@@ -649,8 +730,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 			break;
 		}
-
-		LOG_DBG("Received frame");
 
 		/* Process frame */
 		cmux->frame.data = cmux->receive_buf;
@@ -726,6 +805,10 @@ static void modem_cmux_connect_handler(struct k_work *item)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, connect_work);
 
+	if (cmux == NULL) {
+		return;
+	}
+
 	cmux->state = MODEM_CMUX_STATE_CONNECTING;
 
 	struct modem_cmux_frame frame = {
@@ -790,7 +873,7 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = dlci->dlci_address,
-		.cr = false,
+		.cr = true,
 		.pf = false,
 		.type = MODEM_CMUX_FRAME_TYPE_UIH,
 		.data = buf,
@@ -835,6 +918,10 @@ static void modem_cmux_dlci_open_handler(struct k_work *item)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux_dlci *dlci = CONTAINER_OF(dwork, struct modem_cmux_dlci, open_work);
 
+	if (dlci == NULL) {
+		return;
+	}
+
 	dlci->state = MODEM_CMUX_DLCI_STATE_OPENING;
 
 	struct modem_cmux_frame frame = {
@@ -855,6 +942,10 @@ static void modem_cmux_dlci_close_handler(struct k_work *item)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux_dlci *dlci = CONTAINER_OF(dwork, struct modem_cmux_dlci, close_work);
 	struct modem_cmux *cmux = dlci->cmux;
+
+	if (cmux == NULL) {
+		return;
+	}
 
 	dlci->state = MODEM_CMUX_DLCI_STATE_CLOSING;
 
@@ -935,20 +1026,18 @@ int modem_cmux_attach(struct modem_cmux *cmux, struct modem_pipe *pipe)
 {
 	cmux->pipe = pipe;
 	ring_buf_reset(&cmux->transmit_rb);
+	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 	modem_pipe_attach(cmux->pipe, modem_cmux_bus_callback, cmux);
 	return 0;
 }
 
 int modem_cmux_connect(struct modem_cmux *cmux)
 {
-	__ASSERT_NO_MSG(cmux->pipe != NULL);
+	int ret;
 
-	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT, false, K_NO_WAIT)) {
-		return -EALREADY;
-	}
-
-	if (k_work_delayable_is_pending(&cmux->connect_work) == false) {
-		k_work_schedule(&cmux->connect_work, K_NO_WAIT);
+	ret = modem_cmux_connect_async(cmux);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT, false,
@@ -963,22 +1052,24 @@ int modem_cmux_connect_async(struct modem_cmux *cmux)
 {
 	__ASSERT_NO_MSG(cmux->pipe != NULL);
 
-	if (k_work_delayable_is_pending(&cmux->connect_work) == true) {
-		return -EBUSY;
+	if (k_event_test(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT)) {
+		return -EALREADY;
 	}
 
-	k_work_schedule(&cmux->connect_work, K_NO_WAIT);
+	if (k_work_delayable_is_pending(&cmux->connect_work) == false) {
+		k_work_schedule(&cmux->connect_work, K_NO_WAIT);
+	}
+
 	return 0;
 }
 
 int modem_cmux_disconnect(struct modem_cmux *cmux)
 {
-	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false, K_NO_WAIT)) {
-		return -EALREADY;
-	}
+	int ret;
 
-	if (k_work_delayable_is_pending(&cmux->disconnect_work) == false) {
-		k_work_schedule(&cmux->disconnect_work, K_NO_WAIT);
+	ret = modem_cmux_disconnect_async(cmux);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (k_event_wait(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT, false,
@@ -991,11 +1082,16 @@ int modem_cmux_disconnect(struct modem_cmux *cmux)
 
 int modem_cmux_disconnect_async(struct modem_cmux *cmux)
 {
-	if (k_work_delayable_is_pending(&cmux->disconnect_work) == true) {
-		return -EBUSY;
+	__ASSERT_NO_MSG(cmux->pipe != NULL);
+
+	if (k_event_test(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT)) {
+		return -EALREADY;
 	}
 
-	k_work_schedule(&cmux->disconnect_work, K_NO_WAIT);
+	if (k_work_delayable_is_pending(&cmux->disconnect_work) == false) {
+		k_work_schedule(&cmux->disconnect_work, K_NO_WAIT);
+	}
+
 	return 0;
 }
 
@@ -1019,4 +1115,8 @@ void modem_cmux_release(struct modem_cmux *cmux)
 
 	/* Unreference pipe */
 	cmux->pipe = NULL;
+
+	/* Reset events */
+	k_event_clear(&cmux->event, MODEM_CMUX_EVENT_CONNECTED_BIT);
+	k_event_post(&cmux->event, MODEM_CMUX_EVENT_DISCONNECTED_BIT);
 }

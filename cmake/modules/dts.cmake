@@ -9,9 +9,6 @@ include(pre_dt)
 find_package(HostTools)
 find_package(Dtc 1.4.6)
 
-# Zephyr code is usually configured using devicetree, but this is
-# still technically optional (see e.g. CONFIG_HAS_DTS).
-#
 # This module makes information from the devicetree available to
 # various build stages, as well as to other arbitrary Python scripts:
 #
@@ -125,12 +122,6 @@ set(DTS_CMAKE                   ${PROJECT_BINARY_DIR}/dts.cmake)
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
-#
-# Halt execution early if there is no devicetree.
-#
-
-# TODO: What to do about non-posix platforms where NOT CONFIG_HAS_DTS (xtensa)?
-# Drop support for NOT CONFIG_HAS_DTS perhaps?
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 if(EXISTS ${DTS_SOURCE})
   # We found a devicetree. Check for a board revision overlay.
@@ -138,10 +129,8 @@ if(EXISTS ${DTS_SOURCE})
     list(APPEND DTS_SOURCE ${BOARD_DIR}/${BOARD}_${BOARD_REVISION_STRING}.overlay)
   endif()
 else()
-  # If we don't have a devicetree after all, there's not much to do.
-  set(header_template ${ZEPHYR_BASE}/misc/generated/generated_header.template)
-  zephyr_file_copy(${header_template} ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-  return()
+  # If we don't have a devicetree, provide an empty stub
+  set(DTS_SOURCE ${ZEPHYR_BASE}/boards/common/stub.dts)
 endif()
 
 #

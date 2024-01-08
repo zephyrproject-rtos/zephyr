@@ -12,7 +12,7 @@ including the BLE stack, 802.15.4, and some of the networking stack.
 BabbleSim_ is a physical layer simulator, which in combination with the Zephyr
 :ref:`bsim boards<bsim boards>`
 can be used to simulate a network of BLE and 15.4 devices.
-When we build Zephyr targeting an :ref:`nrf52_bsim<nrf52_bsim>` board we produce a Linux
+When we build Zephyr targeting a :ref:`bsim board<bsim boards>` we produce a Linux
 executable, which includes the application, Zephyr OS, and models of the HW.
 
 When there is radio activity, this Linux executable will connect to the BabbleSim Phy simulation
@@ -21,8 +21,9 @@ to simulate the radio channel.
 In the BabbleSim documentation you can find more information on how to
 `get <https://babblesim.github.io/fetching.html>`_ and
 `build <https://babblesim.github.io/building.html>`_ the simulator.
-In the :ref:`nrf52_bsim<nrf52_bsim>` board documentation you can find more information about how
-to build Zephyr targeting that particular board, and a few examples.
+In the :ref:`nrf52_bsim<nrf52_bsim>` and :ref:`nrf5340bsim<nrf5340bsim>` boards documentation
+you can find more information about how to build Zephyr targeting thesee particular boards,
+and a few examples.
 
 Types of tests
 **************
@@ -31,8 +32,8 @@ Tests without radio activity: bsim tests with twister
 -----------------------------------------------------
 
 The :ref:`bsim boards<bsim boards>` can be used without radio activity, and in that case, it is not
-necessary to connect them to a phyisical layer simulation. Thanks to this, this target boards can
-be used just like :ref:`native_posix<native_posix>` with :ref:`twister <twister_script>`,
+necessary to connect them to a physical layer simulation. Thanks to this, these target boards can
+be used just like :ref:`native_sim<native_sim>` with :ref:`twister <twister_script>`,
 to run all standard Zephyr twister tests, but with models of a real SOC HW, and their drivers.
 
 Tests with radio activity
@@ -62,8 +63,8 @@ found in the :ref:`bsim boards tests section<bsim_boards_tests>`.
 Test coverage and BabbleSim
 ***************************
 
-As the :ref:`nrf52_bsim<nrf52_bsim>` is based on the POSIX architecture, you can easily collect test
-coverage information.
+As the :ref:`nrf52_bsim<nrf52_bsim>` and :ref:`nrf5340bsim<nrf5340bsim>` boards are based on the
+POSIX architecture, you can easily collect test coverage information.
 
 You can use the script :code:`tests/bsim/generate_coverage_report.sh` to generate an html
 coverage report from tests.

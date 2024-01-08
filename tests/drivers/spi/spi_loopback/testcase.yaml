@@ -13,6 +13,20 @@ tests:
   drivers.spi.loopback: {}
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
+  drivers.spi.loopback.lpspi.dma:
+    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    extra_configs:
+      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+  drivers.spi.loopback.lpspi.async.unset:
+    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    extra_configs:
+      - CONFIG_SPI_MCUX_LPSPI_DMA=n
+      - CONFIG_SPI_ASYNC=n
+  drivers.spi.loopback.lpspi.dma.async.unset:
+    filter: CONFIG_HAS_MCUX_LPSPI and CONFIG_HAS_MCUX_EDMA
+    extra_configs:
+      - CONFIG_SPI_MCUX_LPSPI_DMA=y
+      - CONFIG_SPI_ASYNC=n
   drivers.spi.loopback.rtio:
     extra_configs:
       - CONFIG_SPI_RTIO=y
@@ -32,6 +46,13 @@ tests:
       - tdk_robokit1
     integration_platforms:
       - sam_e70_xplained
+  drivers.spi.stm32_spi_16bits_frames.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits.conf"
+      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
@@ -44,9 +65,39 @@ tests:
       - nucleo_l152re
       - nucleo_wl55jc
       - nucleo_h743zi
+      - nucleo_h753zi
       - stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
+  drivers.spi.stm32_spi_dma_no_nocache.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-dma-no-nocache.conf"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+  drivers.spi.stm32_spi_16bits_frames_dma.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma.conf"
+      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+  drivers.spi.stm32_spi_16bits_frames_dma_no_nocache.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-no-nocache.conf"
+      - DTC_OVERLAY_FILE="overlay-stm32-spi-16bits.overlay"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+  drivers.spi.stm32_spi_interrupt.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
   drivers.spi.gd32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-gd32-spi-interrupt.conf"
     platform_allow:
@@ -73,31 +124,31 @@ tests:
       - gd32vf103v_eval
       - longan_nano
       - longan_nano_lite
-  drivers.pl022_spi_interrupt.loopback:
+  drivers.spi.pl022_spi_interrupt.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=n
     platform_allow: rpi_pico
-  drivers.pl022_spi_dma.loopback:
+  drivers.spi.pl022_spi_dma.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
-  drivers.pl022_spi_dma_and_interrupt.loopback:
+  drivers.spi.pl022_spi_dma_and_interrupt.loopback:
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
-  drivers.pl022_spi_dma_no_dma_props.loopback:
+  drivers.spi.pl022_spi_dma_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=n
       - CONFIG_SPI_PL022_DMA=y
       - CONFIG_DMA=y
     platform_allow: rpi_pico
-  drivers.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
+  drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_delete_dma_props.overlay"
     extra_configs:
       - CONFIG_SPI_PL022_INTERRUPT=y

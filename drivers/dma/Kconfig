@@ -61,4 +61,15 @@ source "drivers/dma/Kconfig.rpi_pico"
 source "drivers/dma/Kconfig.intel_lpss"
 
 source "drivers/dma/Kconfig.mcux_pxp"
+
+source "drivers/dma/Kconfig.mcux_smartdma"
+
+source "drivers/dma/Kconfig.andes_atcdmac300"
+
+source "drivers/dma/Kconfig.sedi"
+
+source "drivers/dma/Kconfig.smartbond"
+
+source "drivers/dma/Kconfig.nxp_sof_host_dma"
+
 endif # DMA

@@ -80,6 +80,8 @@
 void imxrt_pre_init_display_interface(void);
 
 void imxrt_post_init_display_interface(void);
+
+void imxrt_deinit_display_interface(void);
 #endif
 
 #endif

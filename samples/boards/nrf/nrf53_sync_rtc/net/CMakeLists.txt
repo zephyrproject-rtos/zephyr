@@ -5,13 +5,15 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-if("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpunet")
-	message(INFO " ${BOARD} compile as slave in this sample")
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+if(("${BOARD}" STREQUAL "nrf5340dk_nrf5340_cpunet") OR
+	("${BOARD}" STREQUAL "nrf5340bsim_nrf5340_cpunet"))
+	message(INFO " ${BOARD} used for Network Core")
 else()
 	message(FATAL_ERROR "${BOARD} is not supported for this sample")
 endif()
 
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sync_rtc_net)
 
 target_sources(app PRIVATE src/main.c)

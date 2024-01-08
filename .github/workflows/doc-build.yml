@@ -26,7 +26,7 @@ on:
 
 env:
   # NOTE: west docstrings will be extracted from the version listed here
-  WEST_VERSION: 1.0.0
+  WEST_VERSION: 1.2.0
   # The latest CMake available directly with apt is 3.18, but we need >=3.20
   # so we fetch that through pip.
   CMAKE_VERSION: 3.20.5
@@ -35,6 +35,7 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
+    if: github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
@@ -44,11 +45,26 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Rebase
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        PR_HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |
+        git config --global user.email "actions@zephyrproject.org"
+        git config --global user.name "Github Actions"
+        git rebase origin/${BASE_REF}
+        git log --graph --oneline HEAD...${PR_HEAD}
 
     - name: install-pkgs
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build graphviz
+        sudo apt-get install -y ninja-build graphviz lcov
         wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
         tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
         echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
@@ -65,6 +81,7 @@ jobs:
         pip3 install -r doc/requirements.txt
         pip3 install west==${WEST_VERSION}
         pip3 install cmake==${CMAKE_VERSION}
+        pip3 install coverxygen
 
     - name: west setup
       run: |
@@ -84,12 +101,19 @@ jobs:
         else
           DOC_TARGET="html"
         fi
-
         DOC_TAG=${DOC_TAG} SPHINXOPTS_EXTRA="-q -t publish" make -C doc ${DOC_TARGET}
+
+        # API documentation coverage
+        python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
+        # deprecated page causing issues
+        lcov --remove doc-coverage.info \*/deprecated > new.info
+        genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
 
     - name: compress-docs
       run: |
         tar cfJ html-output.tar.xz --directory=doc/_build html
+        tar cfJ api-output.tar.xz --directory=doc/_build html/doxygen/html
+        tar cfJ api-coverage.tar.xz coverage-report
 
     - name: upload-build
       uses: actions/upload-artifact@v3
@@ -97,15 +121,25 @@ jobs:
         name: html-output
         path: html-output.tar.xz
 
+    - name: upload-api-coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-coverage
+        path: api-coverage.tar.xz
+
     - name: process-pr
       if: github.event_name == 'pull_request'
       run: |
         REPO_NAME="${{ github.event.repository.name }}"
         PR_NUM="${{ github.event.pull_request.number }}"
         DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
+        API_DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/doxygen/html/"
+        API_COVERAGE_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/api-coverage/"
 
         echo "${PR_NUM}" > pr_num
         echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "API Documentation will be available shortly at: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
 
     - name: upload-pr-number
       uses: actions/upload-artifact@v3
@@ -116,7 +150,9 @@ jobs:
 
   doc-build-pdf:
     name: "Documentation Build (PDF)"
-    if: github.event_name != 'pull_request'
+    if: |
+      github.event_name != 'pull_request' &&
+      github.repository_owner == 'zephyrproject-rtos'
     runs-on: zephyr-runner-linux-x64-4xlarge
     container: texlive/texlive:latest
     timeout-minutes: 60
@@ -125,6 +161,10 @@ jobs:
       cancel-in-progress: true
 
     steps:
+    - name: Apply container owner mismatch workaround
+      run: |
+        git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
     - name: checkout
       uses: actions/checkout@v3
 

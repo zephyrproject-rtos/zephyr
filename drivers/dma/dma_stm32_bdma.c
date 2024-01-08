@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -813,7 +814,7 @@ static int bdma_stm32_init(const struct device *dev)
 	 *	};
 	 */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(sram4), zephyr_memory_attr)
-	if (strcmp(DT_PROP(DT_NODELABEL(sram4), zephyr_memory_attr), "RAM_NOCACHE") != 0) {
+	if ((DT_PROP(DT_NODELABEL(sram4), zephyr_memory_attr) & DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
 		LOG_ERR("SRAM4 is not set as non-cachable.");
 		return -EIO;
 	}

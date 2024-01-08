@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <mbedtls/entropy.h>
 
 #include <mbedtls/debug.h>

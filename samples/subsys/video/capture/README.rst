@@ -1,12 +1,13 @@
-.. _video_capture-sample:
+.. zephyr:code-sample:: video-capture
+   :name: Video capture
+   :relevant-api: video_interface
 
-Video Capture
-#############
+   Use the video API to retrieve video frames from a capture device.
 
 Description
 ***********
 
-This sample application uses the Video API to retrieve video frames from the
+This sample application uses the :ref:`Video API <video_api>` to retrieve video frames from the
 video capture device, writes a frame count message to the console, and then
 discards the video frame data.
 

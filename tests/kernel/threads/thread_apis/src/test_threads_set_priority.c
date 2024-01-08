@@ -18,8 +18,12 @@ K_SEM_DEFINE(sem_thread1, 0, 1);
  * @brief thread2 portion to test setting the priority
  *
  */
-void thread2_set_prio_test(void)
+void thread2_set_prio_test(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	/* lower thread2 priority by 5 */
 	k_sem_take(&sem_thread2, K_FOREVER);
 	thread2_data = k_thread_priority_get(k_current_get());
@@ -72,7 +76,7 @@ ZTEST(threads_lifecycle, test_threads_priority_set)
 	int thread2_prio = prio + 1;
 
 	k_tid_t thread2_id = k_thread_create(&tdata, tstack, STACK_SIZE,
-					     (k_thread_entry_t)thread2_set_prio_test,
+					     thread2_set_prio_test,
 					     NULL, NULL, NULL, thread2_prio, 0,
 					     K_NO_WAIT);
 

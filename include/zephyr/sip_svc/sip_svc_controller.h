@@ -13,11 +13,21 @@
 
 #ifdef CONFIG_ARM_SIP_SVC_SUBSYS
 
+#include <zephyr/sys/atomic.h>
+
 /**
  * @brief Length of SVC conduit name in sip svc subsystem.
  *
  */
-#define SIP_SVC_SUBSYS_CONDUIT_NAME_LENGTH (4)
+#define SIP_SVC_SUBSYS_CONDUIT_NAME_LENGTH (4U)
+
+/**
+ * @brief Open lock states in sip_svc atomic variable
+ */
+enum open_state {
+	SIP_SVC_OPEN_UNLOCKED = 0,
+	SIP_SVC_OPEN_LOCKED
+};
 
 /**
  *  @brief Arm SiP Service client data.
@@ -73,8 +83,8 @@ struct sip_svc_controller {
 	k_tid_t tid;
 
 #if CONFIG_ARM_SIP_SVC_SUBSYS_SINGLY_OPEN
-	/* Mutex to restrict one client access */
-	struct k_mutex open_mutex;
+	/* Atomic variable to restrict one client access */
+	atomic_t open_lock;
 #endif
 	/* Mutex for protecting database access */
 	struct k_mutex data_mutex;
@@ -93,6 +103,10 @@ struct sip_svc_controller {
  */
 #define SIP_SVC_CONTROLLER_DEFINE(inst, conduit_name, sip_dev, sip_num_clients,                    \
 				  sip_max_transactions, sip_resp_size)                             \
+	BUILD_ASSERT(                                                                              \
+		((sip_num_clients <= CONFIG_ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT) &&                \
+		 (sip_num_clients > 0)),                                                           \
+		"Number of client should be within 1 and ARM_SIP_SVC_SUBSYS_MAX_CLIENT_COUNT");    \
 	static STRUCT_SECTION_ITERABLE(sip_svc_controller, sip_svc_##inst) = {                     \
 		.method = conduit_name,                                                            \
 		.dev = sip_dev,                                                                    \

@@ -71,6 +71,13 @@ Security:
 - 4-Kbit OTP, up to 1792 bits for users
 - Cryptographic hardware acceleration: (AES-128/256, Hash, RSA, RNG, HMAC, Digital signature)
 
+Asymmetric Multiprocessing (AMP)
+********************************
+
+ESP32S3-DevKitM allows 2 different applications to be executed in ESP32-S3 SoC. Due to its dual-core
+architecture, each core can be enabled to execute customized tasks in stand-alone mode
+and/or exchanging data over OpenAMP framework. See :ref:`ipc_samples` folder as code reference.
+
 For more information, check the datasheet at `ESP32-S3 Datasheet`_.
 
 Supported Features
@@ -160,7 +167,7 @@ Sysbuild
 ========
 
 The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the EPS32 SoC.
+bootstrap the board with the ESP32 SoC.
 
 To build the sample application using sysbuild use the command:
 

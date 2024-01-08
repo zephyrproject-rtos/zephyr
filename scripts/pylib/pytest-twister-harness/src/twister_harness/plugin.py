@@ -14,8 +14,7 @@ from twister_harness.twister_harness_config import TwisterHarnessConfig
 logger = logging.getLogger(__name__)
 
 pytest_plugins = (
-    'twister_harness.fixtures.dut',
-    'twister_harness.fixtures.mcumgr'
+    'twister_harness.fixtures'
 )
 
 
@@ -100,6 +99,11 @@ def pytest_addoption(parser: pytest.Parser):
         '--post-script',
         metavar='PATH',
         help='Script executed after closing serial connection.'
+    )
+    twister_harness_group.addoption(
+        '--dut-scope',
+        choices=('function', 'class', 'module', 'package', 'session'),
+        help='The scope for which `dut` and `shell` fixtures are shared.'
     )
 
 

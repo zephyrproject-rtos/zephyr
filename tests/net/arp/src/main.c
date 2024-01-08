@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include "arp.h"
 

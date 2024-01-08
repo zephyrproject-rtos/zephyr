@@ -107,7 +107,7 @@ USB Device Port
 
 The SAMD51 MCU has a USB device port that can be used to communicate
 with a host PC.  See the :ref:`usb-samples` sample applications for
-more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
+more, such as the :zephyr:code-sample:`usb-cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
 
 Programming and Debugging
@@ -179,7 +179,8 @@ debugged using a SWD probe such as the Segger J-Link.
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
       :board: adafruit_itsybitsy_m4_express
-      :goals: flash -r openocd
+      :goals: flash
+      :flash-args: -r openocd
       :compact:
 
 #. Start debugging:

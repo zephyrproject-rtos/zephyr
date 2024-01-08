@@ -1653,7 +1653,7 @@ int do_composite_read_op_senml_json(struct lwm2m_message *msg)
 	/* Clear path which are part are part of recursive path /1 will include /1/0/1 */
 	lwm2m_engine_clear_duplicate_path(&path_list, &free_list);
 
-	return do_composite_read_op_for_parsed_list_senml_json(msg, &path_list);
+	return do_composite_read_op_for_parsed_list(msg, LWM2M_FORMAT_APP_SEML_JSON, &path_list);
 }
 
 int do_send_op_senml_json(struct lwm2m_message *msg, sys_slist_t *lwm2m_path_list)

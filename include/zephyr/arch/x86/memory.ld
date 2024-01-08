@@ -29,7 +29,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 
 /* Bounds of physical RAM from DTS */
 #define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))

@@ -14,10 +14,15 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <string.h>
-#include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/init.h>
+/* private kernel APIs */
+#include <ksched.h>
+#include <wait_q.h>
+
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+static struct k_obj_type  obj_type_mailbox;
+#endif
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
@@ -90,6 +95,10 @@ void k_mbox_init(struct k_mbox *mbox)
 	z_waitq_init(&mbox->rx_msg_queue);
 	mbox->lock = (struct k_spinlock) {};
 
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+	k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
+#endif
+
 	SYS_PORT_TRACING_OBJ_INIT(k_mbox, mbox);
 }
 
@@ -131,14 +140,6 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
 
 		/* update data location fields for receiver only */
 		rx_msg->tx_data = tx_msg->tx_data;
-		rx_msg->tx_block = tx_msg->tx_block;
-		if (rx_msg->tx_data != NULL) {
-			rx_msg->tx_block.data = NULL;
-		} else if (rx_msg->tx_block.data != NULL) {
-			rx_msg->tx_data = rx_msg->tx_block.data;
-		} else {
-			/* no data */
-		}
 
 		/* update syncing thread field for receiver only */
 		rx_msg->_syncing_thread = tx_msg->_syncing_thread;
@@ -152,8 +153,7 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
 /**
  * @brief Dispose of received message.
  *
- * Releases any memory pool block still associated with the message,
- * then notifies the sender that message processing is complete.
+ * Notifies the sender that message processing is complete.
  *
  * @param rx_msg Pointer to receive message descriptor.
  */
@@ -165,10 +165,6 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	/* do nothing if message was disposed of when it was received */
 	if (rx_msg->_syncing_thread == NULL) {
 		return;
-	}
-
-	if (rx_msg->tx_block.data != NULL) {
-		rx_msg->tx_block.data = NULL;
 	}
 
 	/* recover sender info */
@@ -446,3 +442,25 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	return result;
 }
+
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+
+static int init_mailbox_obj_core_list(void)
+{
+	/* Initialize mailbox object type */
+
+	z_obj_type_init(&obj_type_mailbox, K_OBJ_TYPE_MBOX_ID,
+			offsetof(struct k_mbox, obj_core));
+
+	/* Initialize and link satically defined mailboxes */
+
+	STRUCT_SECTION_FOREACH(k_mbox, mbox) {
+		k_obj_core_init_and_link(K_OBJ_CORE(mbox), &obj_type_mailbox);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_mailbox_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif

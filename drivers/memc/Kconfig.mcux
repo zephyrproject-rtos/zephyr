@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022 NXP
+# Copyright 2020-2023 NXP
 # Copyright (c) 2021 Basalte bv
 # Copyright (c) 2023, ithinx GmbH
 # Copyright (c) 2023, Tonies GmbH
@@ -28,4 +28,23 @@ config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL
 
-endif
+endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+
+if DT_HAS_NXP_FLEXRAM_ENABLED
+
+config MEMC_NXP_FLEXRAM
+	bool
+	default y
+
+config MEMC_NXP_FLEXRAM_MAGIC_ADDR_API
+	bool "NXP FlexRAM magic addr API"
+	help
+	  Enable API to use flexRAM magic address functionality
+
+config MEMC_NXP_FLEXRAM_ERROR_INTERRUPT
+	bool "NXP FlexRAM error interrupt"
+	help
+	  Allow flexram to generate error interrupts
+
+endif # DT_HAS_NXP_FLEXRAM_ENABLED

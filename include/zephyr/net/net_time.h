@@ -12,13 +12,17 @@
  * Inspired by
  * https://github.com/torvalds/linux/blob/master/include/linux/ktime.h and
  * https://github.com/torvalds/linux/blob/master/[tools/]include/linux/time64.h
+ *
+ * @defgroup net_time Network time representation.
+ * @ingroup networking
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_NET_TIME_H_
 #define ZEPHYR_INCLUDE_NET_NET_TIME_H_
 
 /* Include required for NSEC_PER_* constants. */
-#include "zephyr/sys_clock.h"
+#include <zephyr/sys_clock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,5 +115,9 @@ typedef int64_t net_time_t;
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_NET_NET_TIME_H_ */

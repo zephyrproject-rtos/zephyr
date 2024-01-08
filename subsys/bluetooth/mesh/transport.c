@@ -124,7 +124,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 {
 	struct net_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				 tx->xmit, BUF_TIMEOUT);
 	if (!buf) {
 		LOG_ERR("Out of network buffers");
@@ -414,7 +414,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 			continue;
 		}
 
-		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 					 tx->xmit, BUF_TIMEOUT);
 		if (!seg) {
 			LOG_DBG("Allocating segment failed");
@@ -934,12 +934,10 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 
 			uint32_t delta_ms = (uint32_t)(k_uptime_get() - tx->adv_start_timestamp);
 
-			/* According to the Bluetooth Mesh Profile specification,
-			 * section 3.5.3.3, we should reset the retransmit timer and
-			 * retransmit immediately when receiving a valid ack message
-			 * while Retransmisison timer is running. However, transport should
-			 * still keep segment transmission interval time between
-			 * transmission of each segment.
+			/* According to MshPRTv1.1: 3.5.3.3.2, we should reset the retransmit timer
+			 * and retransmit immediately when receiving a valid ack message while
+			 * Retransmisison timer is running. However, transport should still keep
+			 * segment transmission interval time between transmission of each segment.
 			 */
 			if (delta_ms < BT_MESH_SAR_TX_SEG_INT_MS) {
 				timeout = K_MSEC(BT_MESH_SAR_TX_SEG_INT_MS - delta_ms);
@@ -1370,7 +1368,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		return -EBADMSG;
 	}
 
-	/* According to Mesh 1.0 specification:
+	/* According to MshPRTv1.1:
 	 * "The SeqAuth is composed of the IV Index and the sequence number
 	 *  (SEQ) of the first segment"
 	 *
@@ -1466,7 +1464,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	/* Keep track of the received SeqAuth values received from this address
 	 * and discard segmented messages that are not newer, as described in
-	 * the Bluetooth Mesh specification section 3.5.3.4.
+	 * MshPRTv1.1: 3.5.3.4.
 	 *
 	 * The logic on the first segmented receive is a bit special, since the
 	 * initial value of rpl->seg is 0, which would normally fail the

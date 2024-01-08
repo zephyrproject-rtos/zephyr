@@ -375,11 +375,36 @@ static int sam_xdmac_initialize(const struct device *dev)
 	return 0;
 }
 
+static int sam_xdmac_get_status(const struct device *dev, uint32_t channel,
+				struct dma_status *status)
+{
+	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
+
+	Xdmac * const xdmac = dev_cfg->regs;
+	uint32_t chan_cfg = xdmac->XDMAC_CHID[channel].XDMAC_CC;
+	uint32_t ublen = xdmac->XDMAC_CHID[channel].XDMAC_CUBC;
+
+	/* we need to check some of the XDMAC_CC registers to determine the DMA direction */
+	if ((chan_cfg & XDMAC_CC_TYPE_Msk) == 0) {
+		status->dir = MEMORY_TO_MEMORY;
+	} else if ((chan_cfg & XDMAC_CC_DSYNC_Msk) == XDMAC_CC_DSYNC_MEM2PER) {
+		status->dir = MEMORY_TO_PERIPHERAL;
+	} else {
+		status->dir = PERIPHERAL_TO_MEMORY;
+	}
+
+	status->busy = ((chan_cfg & XDMAC_CC_INITD_Msk) != 0) || (ublen > 0);
+	status->pending_length = ublen;
+
+	return 0;
+}
+
 static const struct dma_driver_api sam_xdmac_driver_api = {
 	.config = sam_xdmac_config,
 	.reload = sam_xdmac_transfer_reload,
 	.start = sam_xdmac_transfer_start,
 	.stop = sam_xdmac_transfer_stop,
+	.get_status = sam_xdmac_get_status,
 };
 
 /* DMA0 */

@@ -18,7 +18,7 @@ STEVALMKI192-V1 connected to the I3C header on :ref:`mimxrt685_evk`.
 References
 **********
 
-- LPS22HH: http://www.st.com/en/mems-and-sensors/lps22hh.html
+- LPS22HH: https://www.st.com/en/mems-and-sensors/lps22hh.html
 
 Building and Running
 ********************

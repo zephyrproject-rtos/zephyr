@@ -13,14 +13,12 @@
 #include <intel/alder_lake.dtsi>
 
 / {
-	model = "Alder Lake";
-	compatible = "intel,alder_lake";
-
 	chosen {
 		zephyr,sram = &dram0;
 	};
 
 	aliases {
 		watchdog0 = &tco_wdt;
+		sdhc0 = &emmc;
 	};
 };

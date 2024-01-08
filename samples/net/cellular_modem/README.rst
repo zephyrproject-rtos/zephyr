@@ -1,7 +1,7 @@
-.. _cellular_modem_sample:
+.. zephyr:code-sample:: cellular-modem
+   :name: Cellular modem
 
-Cellular Modem Sample
-########################
+   Use a cellular modem to communicate with a UDP server.
 
 Overview
 ********

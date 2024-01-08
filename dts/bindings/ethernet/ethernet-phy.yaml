@@ -10,8 +10,7 @@ compatible: "ethernet-phy"
 include: phy.yaml
 
 properties:
-  address:
-    type: int
+  reg:
     required: true
     description: PHY address
   no-reset:

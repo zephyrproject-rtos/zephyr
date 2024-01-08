@@ -63,7 +63,9 @@ tests:
       - CONFIG_UART_MUX=y
   drivers.modem.esp_at.build:
     extra_args: CONF_FILE=modem_esp_at.conf
-    platform_exclude: ip_k66f
+    platform_exclude:
+      - ip_k66f
+      - cy8cproto_062_4343w
     filter: CONFIG_SERIAL
     min_ram: 36
   drivers.modem.esp_at.async.build:
@@ -74,10 +76,9 @@ tests:
       - CONFIG_MODEM_IFACE_UART_ASYNC=y
   drivers.modem.modem_cellular.build:
     extra_args: CONF_FILE=modem_cellular.conf
-    platform_exclude:
-      - serpente
-      - particle_boron
-      - rak5010_nrf52840
-      - litex_vexriscv
-      - ip_k66f
+    platform_allow:
+      - native_posix_64
+      - native_posix
+      - qemu_x86
+      - qemu_x86_64
     min_ram: 36

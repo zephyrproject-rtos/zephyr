@@ -1,7 +1,8 @@
-.. _packet-socket-sample:
+.. zephyr:code-sample:: packet-socket
+   :name: Packet socket
+   :relevant-api: bsd_sockets ethernet
 
-Packet socket sample
-####################
+   Use raw packet sockets over Ethernet.
 
 Overview
 ********
@@ -22,7 +23,7 @@ sent and received packets.
 
 See the `net-tools`_ project for more details.
 
-This sample can be built and executed on QEMU or native_posix board as
+This sample can be built and executed on QEMU or native_sim board as
 described in :ref:`networking_with_host`.
 
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

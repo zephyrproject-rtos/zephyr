@@ -16,7 +16,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/debug/stack.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "test_syscall.h"
 #include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
@@ -327,7 +327,7 @@ ZTEST_USER(userspace, test_write_kerntext)
 	/* Try to write to kernel text. */
 	set_fault(K_ERR_CPU_EXCEPTION);
 
-	memset(&z_is_thread_essential, 0, 4);
+	memset(&k_current_get, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
 }
 
@@ -451,8 +451,11 @@ ZTEST_USER(userspace, test_pass_noperms_object)
 }
 
 
-void thread_body(void)
+void thread_body(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 }
 
 /**
@@ -465,7 +468,7 @@ ZTEST_USER(userspace, test_start_kernel_thread)
 	/* Try to start a kernel thread from a usermode thread */
 	set_fault(K_ERR_KERNEL_OOPS);
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			thread_body, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
 			K_NO_WAIT);
 	zassert_unreachable("Create a kernel thread did not fault");
@@ -568,8 +571,12 @@ ZTEST_USER(userspace, test_access_after_revoke)
 	zassert_unreachable("Using revoked object did not fault");
 }
 
-static void umode_enter_func(void)
+static void umode_enter_func(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	zassert_true(k_is_user_context(),
 		     "Thread did not enter user mode");
 }
@@ -586,7 +593,7 @@ ZTEST(userspace, test_user_mode_enter)
 {
 	clear_fault();
 
-	k_thread_user_mode_enter((k_thread_entry_t)umode_enter_func,
+	k_thread_user_mode_enter(umode_enter_func,
 				 NULL, NULL, NULL);
 }
 
@@ -854,28 +861,28 @@ static struct k_sem recycle_sem;
  * @details Test recycle valid/invalid kernel object, see if
  * perms_count changes as expected.
  *
- * @see z_object_recycle(), z_object_find()
+ * @see k_object_recycle(), k_object_find()
  *
  * @ingroup kernel_memprotect_tests
  */
 ZTEST(userspace, test_object_recycle)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 	int perms_count = 0;
 	int dummy = 0;
 
 	/* Validate recycle invalid objects, after recycling this invalid
 	 * object, perms_count should finally still be 1.
 	 */
-	ko = z_object_find(&dummy);
+	ko = k_object_find(&dummy);
 	zassert_true(ko == NULL, "not an invalid object");
 
-	z_object_recycle(&dummy);
+	k_object_recycle(&dummy);
 
-	ko = z_object_find(&recycle_sem);
+	ko = k_object_find(&recycle_sem);
 	(void)memset(ko->perms, 0xFF, sizeof(ko->perms));
 
-	z_object_recycle(&recycle_sem);
+	k_object_recycle(&recycle_sem);
 	zassert_true(ko != NULL, "kernel object not found");
 	zassert_true(ko->flags & K_OBJ_FLAG_INITIALIZED,
 		     "object wasn't marked as initialized");

@@ -131,7 +131,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 {
 	struct net_buf *buf;
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				 tx->xmit, BUF_TIMEOUT);
 	if (!buf) {
 		LOG_ERR("Out of network buffers");
@@ -401,7 +401,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 			continue;
 		}
 
-		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 					 tx->xmit, BUF_TIMEOUT);
 		if (!seg) {
 			LOG_DBG("Allocating segment failed");
@@ -870,11 +870,9 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	}
 
 	if (tx->nack_count) {
-		/* According to the Bluetooth Mesh Profile specification,
-		 * section 3.5.3.3, we should reset the retransmit timer and
-		 * retransmit immediately when receiving a valid ack message.
-		 * Don't reset the retransmit timer if we didn't finish sending
-		 * segments.
+		/* According to MshPRFv1.0.1: 3.5.3.3, we should reset the retransmit timer and
+		 * retransmit immediately when receiving a valid ack message. Don't reset the
+		 * retransmit timer if we didn't finish sending segments.
 		 */
 		if (tx->seg_o == 0) {
 			k_work_reschedule(&tx->retransmit, K_NO_WAIT);
@@ -1314,7 +1312,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		return -EINVAL;
 	}
 
-	/* According to Mesh 1.0 specification:
+	/* According to MshPRFv1.0.1:
 	 * "The SeqAuth is composed of the IV Index and the sequence number
 	 *  (SEQ) of the first segment"
 	 *
@@ -1401,7 +1399,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	/* Keep track of the received SeqAuth values received from this address
 	 * and discard segmented messages that are not newer, as described in
-	 * the Bluetooth Mesh specification section 3.5.3.4.
+	 * MshPRFv1.0.1: 3.5.3.4.
 	 *
 	 * The logic on the first segmented receive is a bit special, since the
 	 * initial value of rpl->seg is 0, which would normally fail the

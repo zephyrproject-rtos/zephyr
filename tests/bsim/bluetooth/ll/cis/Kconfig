@@ -16,6 +16,38 @@ config TEST_MULTIPLE_PERIPERAL_CIS
 	help
 	  Multiple Peripheral CIS establishment.
 
+config TEST_FT_SKIP_SUBEVENTS
+	bool
+	help
+	  Skip central and/or peripheral subevent reception to test flush
+	  timeout implementation.
+
+config TEST_FT_PER_SKIP_SUBEVENTS
+	bool "Skip peripheral role subevents to test Flush Timeout"
+	select TEST_FT_SKIP_SUBEVENTS
+	help
+	  Skip peripheral role subevent reception to test flush timeout
+	  implementation.
+
+config TEST_FT_PER_SKIP_EVENTS_COUNT
+	int "Skip peripheral ISO events count, all subevents in them"
+	depends on TEST_FT_PER_SKIP_SUBEVENTS
+	help
+	  Skip peripheral ISO events count where all subevents are skipped.
+
+config TEST_FT_CEN_SKIP_SUBEVENTS
+	bool "Skip central role subevents to test Flush Timeout"
+	select TEST_FT_SKIP_SUBEVENTS
+	help
+	  Skip central role subevent reception to test flush timeout
+	  implementation.
+
+config TEST_FT_CEN_SKIP_EVENTS_COUNT
+	int "Skip central ISO events count, all subevents in them"
+	depends on TEST_FT_CEN_SKIP_SUBEVENTS
+	help
+	  Skip central ISO events count where all subevents are skipped.
+
 config BT_CTLR_SCAN_UNRESERVED
 	default y if TEST_CONNECT_ACL_FIRST
 	help

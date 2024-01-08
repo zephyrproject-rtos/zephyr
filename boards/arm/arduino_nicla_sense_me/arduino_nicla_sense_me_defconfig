@@ -18,8 +18,5 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# additional board options
-CONFIG_GPIO_AS_PINRESET=y
-
 # enable pin controller
 CONFIG_PINCTRL=y

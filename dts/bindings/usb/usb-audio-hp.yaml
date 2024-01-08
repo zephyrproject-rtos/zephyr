@@ -7,7 +7,7 @@ description: USB Audio headphones specific fields.
 
 compatible: "usb-audio-hp"
 
-include: usb-audio.yaml
+include: [usb-audio.yaml, usb-audio-feature-volume.yaml]
 
 properties:
   resolution:

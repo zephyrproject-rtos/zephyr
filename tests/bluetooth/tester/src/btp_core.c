@@ -80,6 +80,21 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CSIS);
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MICP);
+#endif /* CONFIG_BT_MICP_MIC_DEV */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CCP);
+#endif /* CONFIG_BT_TBS_CLIENT */
+#if defined(CONFIG_BT_VCP_VOL_CTLR)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_VCP);
+#endif /* CONFIG_BT_VCP_VOL_CTLR */
+#if defined(CONFIG_BT_CAP_ACCEPTOR)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_CAS);
+#endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_MCC)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MCP);
+#endif /* CONFIG_BT_MCC */
 
 	*rsp_len = sizeof(*rp) + 2;
 
@@ -118,8 +133,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 	case BTP_SERVICE_ID_MESH:
 		status = tester_init_mesh();
 		break;
+	case BTP_SERVICE_ID_MESH_MDL:
+		status = tester_init_mmdl();
+		break;
 #endif /* CONFIG_BT_MESH */
-#if defined(CONFIG_BT_VCP_VOL_REND)
+#if defined(CONFIG_BT_VCP_VOL_REND) || defined(CONFIG_BT_VCP_VOL_CTLR)
 	case BTP_SERVICE_ID_VCS:
 		status = tester_init_vcs();
 		break;
@@ -129,13 +147,17 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 	case BTP_SERVICE_ID_AICS:
 		status = tester_init_aics();
 		break;
+	case BTP_SERVICE_ID_VCP:
+		status = tester_init_vcp();
+		break;
 #endif /* CONFIG_BT_VCP_VOL_REND */
 #if defined(CONFIG_BT_IAS)
 	case BTP_SERVICE_ID_IAS:
 		status = tester_init_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER) || \
+	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	case BTP_SERVICE_ID_PACS:
 		status = tester_init_pacs();
 		break;
@@ -145,7 +167,17 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 	case BTP_SERVICE_ID_BAP:
 		status = tester_init_bap();
 		break;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT || CONFIG_BT_BAP_UNICAST_SERVER || \
+	* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_BROADCAST_SINK
+	*/
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	case BTP_SERVICE_ID_MICP:
+		status = tester_init_micp();
+		break;
+	case BTP_SERVICE_ID_MICS:
+		status = tester_init_mics();
+		break;
+#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_HAS)
 	case BTP_SERVICE_ID_HAS:
 		status = tester_init_has();
@@ -156,6 +188,21 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_csis();
 		break;
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	case BTP_SERVICE_ID_CCP:
+		status = tester_init_ccp();
+		break;
+#endif /* CONFIG_BT_TBS_CLIENT */
+#if defined(CONFIG_BT_CAP_ACCEPTOR)
+	case BTP_SERVICE_ID_CAS:
+		status = tester_init_cas();
+		break;
+#endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_MCC)
+	case BTP_SERVICE_ID_MCP:
+		status = tester_init_mcp();
+		break;
+#endif /* CONFIG_BT_MCC */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -201,6 +248,9 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 	case BTP_SERVICE_ID_MESH:
 		status = tester_unregister_mesh();
 		break;
+	case BTP_SERVICE_ID_MESH_MDL:
+		status = tester_unregister_mmdl();
+		break;
 #endif /* CONFIG_BT_MESH */
 #if defined(CONFIG_BT_VCP_VOL_REND)
 	case BTP_SERVICE_ID_VCS:
@@ -218,7 +268,8 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_ias();
 		break;
 #endif /* CONFIG_BT_IAS */
-#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER)
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_UNICAST_SERVER) || \
+	defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	case BTP_SERVICE_ID_PACS:
 		status = tester_unregister_pacs();
 		break;
@@ -228,7 +279,17 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 	case BTP_SERVICE_ID_BAP:
 		status = tester_unregister_bap();
 		break;
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT or CONFIG_BT_BAP_UNICAST_SERVER */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT || CONFIG_BT_BAP_UNICAST_SERVER || \
+	* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_BROADCAST_SINK
+	*/
+#if defined(CONFIG_BT_MICP_MIC_DEV) || defined(CONFIG_BT_MICP_MIC_CTLR)
+	case BTP_SERVICE_ID_MICP:
+		status = tester_unregister_micp();
+		break;
+	case BTP_SERVICE_ID_MICS:
+		status = tester_unregister_mics();
+		break;
+#endif /* CONFIG_BT_MICP_MIC_DEV or CONFIG_BT_MICP_MIC_CTLR */
 #if defined(CONFIG_BT_HAS)
 	case BTP_SERVICE_ID_HAS:
 		status = tester_unregister_has();
@@ -239,6 +300,21 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_csis();
 		break;
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
+#if defined(CONFIG_BT_TBS_CLIENT)
+	case BTP_SERVICE_ID_CCP:
+		status = tester_unregister_ccp();
+		break;
+#endif /* CONFIG_BT_TBS_CLIENT */
+#if defined(CONFIG_BT_CAP_ACCEPTOR)
+	case BTP_SERVICE_ID_CAS:
+		status = tester_unregister_cas();
+		break;
+#endif /* CONFIG_BT_CAP_ACCEPTOR */
+#if defined(CONFIG_BT_MCC)
+	case BTP_SERVICE_ID_MCP:
+		status = tester_unregister_mcp();
+		break;
+#endif /* CONFIG_BT_MCC */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;

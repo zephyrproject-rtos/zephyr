@@ -179,6 +179,8 @@ static bool qspi_initialized;
 
 static int qspi_device_init(const struct device *dev);
 static void qspi_device_uninit(const struct device *dev);
+void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable);
+void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable);
 
 #define WORD_SIZE 4
 
@@ -1229,6 +1231,7 @@ static int qspi_nor_configure(const struct device *dev)
  */
 static int qspi_nor_init(const struct device *dev)
 {
+	int rc;
 	const struct qspi_nor_config *dev_config = dev->config;
 	int ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
 
@@ -1238,7 +1241,19 @@ static int qspi_nor_init(const struct device *dev)
 
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
-	return qspi_nor_configure(dev);
+
+	rc = qspi_nor_configure(dev);
+
+#ifdef CONFIG_NORDIC_QSPI_NOR_XIP
+	if (!rc) {
+		/* Enable XIP mode for QSPI NOR flash, this will prevent the
+		 * flash from being powered down
+		 */
+		z_impl_nrf_qspi_nor_xip_enable(dev, true);
+	}
+#endif
+
+	return rc;
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -1369,6 +1384,10 @@ static int qspi_nor_pm_action(const struct device *dev,
 		}
 #endif
 
+		if (dev_data->xip_enabled) {
+			return -EBUSY;
+		}
+
 		if (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
 			return -EBUSY;
 		}
@@ -1438,6 +1457,9 @@ void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 	nrf_qspi_xip_set(NRF_QSPI, enable);
 #endif
 	qspi_lock(dev);
+	if (enable) {
+		(void)nrfx_qspi_activate(false);
+	}
 	dev_data->xip_enabled = enable;
 	qspi_unlock(dev);
 
@@ -1445,11 +1467,11 @@ void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 }
 
 #ifdef CONFIG_USERSPACE
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 void z_vrfy_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 {
-	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
+	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH,
 					 &qspi_nor_api));
 
 	z_impl_nrf_qspi_nor_xip_enable(dev, enable);

@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
 static int _stdout_hook_default(int c)
@@ -101,7 +101,7 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 					  FILE *ZRESTRICT stream)
 {
 
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
 	return z_impl_zephyr_fwrite((const void *ZRESTRICT)ptr, size,
 				    nitems, (FILE *ZRESTRICT)stream);
 }

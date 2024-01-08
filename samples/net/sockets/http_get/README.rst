@@ -1,7 +1,8 @@
-.. _sockets-http-get:
+.. zephyr:code-sample:: sockets-http-get
+   :name: HTTP GET using plain sockets
+   :relevant-api: bsd_sockets tls_credentials secure_sockets_options
 
-Socket HTTP GET Example
-#######################
+   Implement an HTTP(S) client using plain BSD sockets.
 
 Overview
 ********
@@ -75,11 +76,11 @@ The same application source code can be built for a POSIX system, e.g.
 Linux. (Note: if you look at the source, you will see that the code is
 the same except the header files are different for Zephyr vs POSIX.)
 
-To build for a host POSIX OS:
+To build:
 
 .. code-block:: console
 
-    $ make -f Makefile.posix
+    $ make -f Makefile.host
 
 To run:
 

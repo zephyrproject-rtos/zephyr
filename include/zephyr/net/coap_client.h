@@ -20,6 +20,7 @@
  */
 
 #include <zephyr/net/coap.h>
+#include <zephyr/kernel.h>
 
 
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
@@ -89,6 +90,7 @@ struct coap_client_internal_request {
 	struct coap_pending pending;
 	struct coap_client_request coap_request;
 	struct coap_packet request;
+	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
 };
 
 struct coap_client {
@@ -100,6 +102,8 @@ struct coap_client {
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
+	struct coap_option echo_option;
+	bool send_echo;
 };
 /** @endcond */
 

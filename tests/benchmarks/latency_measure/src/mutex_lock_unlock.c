@@ -1,18 +1,65 @@
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
- * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2020,2023 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * @file measure time for mutex lock and unlock
+ *
+ * This file contains the test that measures mutex lock and unlock times
+ * in the kernel. There is no contention on the mutex being tested.
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
 #include "utils.h"
+#include "timing_sc.h"
 
-/* the number of mutex lock/unlock cycles */
-#define N_TEST_MUTEX 1000
+static K_MUTEX_DEFINE(test_mutex);
 
-K_MUTEX_DEFINE(test_mutex);
+static void start_lock_unlock(void *p1, void *p2, void *p3)
+{
+	uint32_t  i;
+	uint32_t  num_iterations = (uint32_t)(uintptr_t)p1;
+	timing_t  start;
+	timing_t  finish;
+	uint64_t  lock_cycles;
+	uint64_t  unlock_cycles;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	start = timing_timestamp_get();
+
+	/* Recursively lock take the mutex */
+
+	for (i = 0; i < num_iterations; i++) {
+		k_mutex_lock(&test_mutex, K_NO_WAIT);
+	}
+
+	finish = timing_timestamp_get();
+
+	lock_cycles = timing_cycles_get(&start, &finish);
+
+	start = timing_timestamp_get();
+
+	/* Recursively unlock the mutex */
+
+	for (i = 0; i < num_iterations; i++) {
+		k_mutex_unlock(&test_mutex);
+	}
+
+	finish = timing_timestamp_get();
+
+	unlock_cycles = timing_cycles_get(&start, &finish);
+
+	timestamp.cycles = lock_cycles;
+	k_sem_take(&pause_sem, K_FOREVER);
+
+	timestamp.cycles = unlock_cycles;
+}
 
 
 /**
@@ -24,55 +71,43 @@ K_MUTEX_DEFINE(test_mutex);
  *
  * @return 0 on success
  */
-int mutex_lock_unlock(void)
+int mutex_lock_unlock(uint32_t num_iterations, uint32_t options)
 {
-	int i;
-	uint32_t diff;
-	timing_t timestamp_start;
-	timing_t timestamp_end;
-	const char *notes = "";
-	int  end;
+	char description[80];
+	int  priority;
+	uint64_t  cycles;
 
 	timing_start();
-	bench_test_start();
 
-	timestamp_start = timing_counter_get();
+	priority = k_thread_priority_get(k_current_get());
 
-	for (i = 0; i < N_TEST_MUTEX; i++) {
-		k_mutex_lock(&test_mutex, K_FOREVER);
-	}
+	k_thread_create(&start_thread, start_stack,
+			K_THREAD_STACK_SIZEOF(start_stack),
+			start_lock_unlock,
+			(void *)(uintptr_t)num_iterations, NULL, NULL,
+			priority - 1, options, K_FOREVER);
 
-	timestamp_end = timing_counter_get();
-	end = bench_test_end();
+	k_thread_access_grant(&start_thread, &test_mutex, &pause_sem);
+	k_thread_start(&start_thread);
 
-	diff = timing_cycles_get(&timestamp_start, &timestamp_end);
+	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(options, options);
+	k_sem_give(&pause_sem);
 
-	if (end != 0) {
-		notes = TICK_OCCURRENCE_ERROR;
-		error_count++;
-	}
+	snprintf(description, sizeof(description),
+		 "Lock a mutex from %s thread",
+		 (options & K_USER) == K_USER ? "user" : "kernel");
+	PRINT_STATS_AVG(description, (uint32_t)cycles, num_iterations,
+			false, "");
 
-	PRINT_STATS_AVG("Average time to lock a mutex", diff, N_TEST_MUTEX,
-			false, notes);
+	cycles = timestamp.cycles;
+	cycles -= timestamp_overhead_adjustment(options, options);
 
-	bench_test_start();
-	timestamp_start = timing_counter_get();
-
-	for (i = 0; i < N_TEST_MUTEX; i++) {
-		k_mutex_unlock(&test_mutex);
-	}
-
-	timestamp_end = timing_counter_get();
-	end = bench_test_end();
-	diff = timing_cycles_get(&timestamp_start, &timestamp_end);
-
-	if (end != 0) {
-		notes = TICK_OCCURRENCE_ERROR;
-		error_count++;
-	}
-
-	PRINT_STATS_AVG("Average time to unlock a mutex", diff, N_TEST_MUTEX,
-			false, notes);
+	snprintf(description, sizeof(description),
+		 "Unlock a mutex from %s thread",
+		 (options & K_USER) == K_USER ? "user" : "kernel");
+	PRINT_STATS_AVG(description, (uint32_t)cycles, num_iterations,
+			false, "");
 
 	timing_stop();
 	return 0;

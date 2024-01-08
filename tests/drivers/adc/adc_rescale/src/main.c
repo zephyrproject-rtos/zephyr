@@ -69,7 +69,7 @@ static int test_task_voltage_divider(void)
 	};
 	adc_sequence_init_dt(&adc_node_0.port, &sequence);
 
-	ret = adc_read(adc_node_0.port.dev, &sequence);
+	ret = adc_read_dt(&adc_node_0.port, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	ret = adc_raw_to_millivolts_dt(&adc_node_0.port, &calculated_voltage);
@@ -109,7 +109,7 @@ static int test_task_current_sense_shunt(void)
 	};
 	adc_sequence_init_dt(&adc_node_1.port, &sequence);
 
-	ret = adc_read(adc_node_1.port.dev, &sequence);
+	ret = adc_read_dt(&adc_node_1.port, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	ret = adc_raw_to_millivolts_dt(&adc_node_1.port, &calculated_current);
@@ -149,7 +149,7 @@ static int test_task_current_sense_amplifier(void)
 	};
 	adc_sequence_init_dt(&adc_node_2.port, &sequence);
 
-	ret = adc_read(adc_node_2.port.dev, &sequence);
+	ret = adc_read_dt(&adc_node_2.port, &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	ret = adc_raw_to_millivolts_dt(&adc_node_2.port, &calculated_current);

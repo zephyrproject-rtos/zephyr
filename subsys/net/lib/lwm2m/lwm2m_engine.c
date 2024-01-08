@@ -592,7 +592,7 @@ static void check_notifications(struct lwm2m_ctx *ctx, const int64_t timestamp)
 			continue;
 		}
 		/* Check That There is not pending process*/
-		if (obs->active_tx_operation) {
+		if (obs->active_notify != NULL) {
 			continue;
 		}
 
@@ -642,7 +642,7 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	}
 
 	in_buf[len] = 0U;
-	lwm2m_udp_receive(client_ctx, in_buf, len, &from_addr, handle_request);
+	lwm2m_udp_receive(client_ctx, in_buf, len, &from_addr);
 
 	return 0;
 }
@@ -675,7 +675,9 @@ static int socket_send_message(struct lwm2m_ctx *client_ctx)
 	}
 
 	if (msg->type != COAP_TYPE_CON) {
-		lwm2m_reset_message(msg, true);
+		if (!lwm2m_outgoing_is_part_of_blockwise(msg)) {
+			lwm2m_reset_message(msg, true);
+		}
 	}
 
 	return rc;
@@ -694,8 +696,12 @@ static void socket_reset_pollfd_events(void)
 }
 
 /* LwM2M main work loop */
-static void socket_loop(void)
+static void socket_loop(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int i, rc;
 	int64_t now, next;
 	int64_t timeout, next_retransmit;
@@ -981,6 +987,18 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 				return ret;
 			}
 		}
+		if (IS_ENABLED(CONFIG_LWM2M_DTLS_CID)) {
+			/* Enable CID */
+			int cid = TLS_DTLS_CID_ENABLED;
+
+			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_CID, &cid,
+					       sizeof(cid));
+			if (ret) {
+				ret = -errno;
+				LOG_ERR("Failed to enable TLS_DTLS_CID: %d", ret);
+				/* Not fatal, continue. */
+			}
+		}
 
 		if (ctx->hostname_verify && (ctx->desthostname != NULL)) {
 			/** store character at len position */
@@ -1055,13 +1073,15 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	int ret;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	if (client_ctx->load_credentials) {
-		ret = client_ctx->load_credentials(client_ctx);
-	} else {
-		ret = lwm2m_load_tls_credentials(client_ctx);
-	}
-	if (ret < 0) {
-		return ret;
+	if (client_ctx->use_dtls) {
+		if (client_ctx->load_credentials) {
+			ret = client_ctx->load_credentials(client_ctx);
+		} else {
+			ret = lwm2m_load_tls_credentials(client_ctx);
+		}
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
@@ -1243,7 +1263,7 @@ static int lwm2m_engine_init(void)
 
 	/* start sock receive thread */
 	engine_thread_id = k_thread_create(&engine_thread_data, &engine_thread_stack[0],
-			K_KERNEL_STACK_SIZEOF(engine_thread_stack), (k_thread_entry_t)socket_loop,
+			K_KERNEL_STACK_SIZEOF(engine_thread_stack), socket_loop,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
 	LOG_DBG("LWM2M engine socket receive thread started");

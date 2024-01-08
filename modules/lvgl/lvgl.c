@@ -8,14 +8,17 @@
 #include <zephyr/kernel.h>
 #include <lvgl.h>
 #include "lvgl_display.h"
+#include "lvgl_common_input.h"
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 #include "lvgl_fs.h"
 #endif
+#ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
+#include "lvgl_mem.h"
+#endif
 #include LV_MEM_CUSTOM_INCLUDE
 
-#define LOG_LEVEL CONFIG_LV_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(lvgl);
+LOG_MODULE_REGISTER(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 static lv_disp_drv_t disp_drv;
 struct lvgl_disp_data disp_data = {
@@ -57,7 +60,7 @@ static uint8_t buf1[BUFFER_SIZE]
 
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
 
-#if CONFIG_LV_LOG_LEVEL != 0
+#if CONFIG_LV_Z_LOG_LEVEL != 0
 /*
  * In LVGLv8 the signature of the logging callback has changes and it no longer
  * takes the log level as an integer argument. Instead, the log level is now
@@ -79,13 +82,16 @@ static void lvgl_log(const char *buf)
 		LOG_ERR("%s", buf + strlen("[Error] "));
 		break;
 	case 'W':
-		LOG_WRN("%s", buf + strlen("Warn] "));
+		LOG_WRN("%s", buf + strlen("[Warn] "));
 		break;
 	case 'I':
 		LOG_INF("%s", buf + strlen("[Info] "));
 		break;
 	case 'T':
 		LOG_DBG("%s", buf + strlen("[Trace] "));
+		break;
+	case 'U':
+		LOG_INF("%s", buf + strlen("[User] "));
 		break;
 	}
 }
@@ -190,7 +196,6 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_driver)
 
 static int lvgl_init(void)
 {
-
 	const struct device *display_dev = DEVICE_DT_GET(DISPLAY_NODE);
 
 	int err = 0;
@@ -200,7 +205,11 @@ static int lvgl_init(void)
 		return -ENODEV;
 	}
 
-#if CONFIG_LV_LOG_LEVEL != 0
+#ifdef CONFIG_LV_Z_MEM_POOL_SYS_HEAP
+	lvgl_heap_init();
+#endif
+
+#if CONFIG_LV_Z_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
 #endif
 
@@ -235,12 +244,13 @@ static int lvgl_init(void)
 		return -EPERM;
 	}
 
+	err = lvgl_init_input_devices();
+	if (err < 0) {
+		LOG_ERR("Failed to initialize input devices.");
+		return err;
+	}
+
 	return 0;
 }
-
-BUILD_ASSERT(CONFIG_APPLICATION_INIT_PRIORITY < CONFIG_LV_Z_INPUT_INIT_PRIORITY);
-#ifdef CONFIG_INPUT
-BUILD_ASSERT(CONFIG_INPUT_INIT_PRIORITY < CONFIG_LV_Z_INPUT_INIT_PRIORITY);
-#endif /* CONFIG_INPUT */
 
 SYS_INIT(lvgl_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

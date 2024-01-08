@@ -13,10 +13,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
-#define PORT1_NODE DT_NODELABEL(port1)
-#define PORT1_POWER_ROLE		DT_ENUM_IDX(DT_NODELABEL(port1), power_role)
+#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
+#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
 
-#if (PORT1_POWER_ROLE != TC_ROLE_SINK)
+#if (USBC_PORT0_POWER_ROLE != TC_ROLE_SINK)
 #error "Unsupported board: Only Sink device supported"
 #endif
 
@@ -26,9 +26,9 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 /**
  * @brief A structure that encapsulates Port data.
  */
-static struct port1_data_t {
+static struct port0_data_t {
 	/** Sink Capabilities */
-	uint32_t snk_caps[DT_PROP_LEN(DT_NODELABEL(port1), sink_pdos)];
+	uint32_t snk_caps[DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos)];
 	/** Number of Sink Capabilities */
 	int snk_cap_cnt;
 	/** Source Capabilities */
@@ -37,9 +37,9 @@ static struct port1_data_t {
 	int src_cap_cnt;
 	/* Power Supply Ready flag */
 	atomic_t ps_ready;
-} port1_data = {
-	.snk_caps = {DT_FOREACH_PROP_ELEM(DT_NODELABEL(port1), sink_pdos, SINK_PDO)},
-	.snk_cap_cnt = DT_PROP_LEN(DT_NODELABEL(port1), sink_pdos),
+} port0_data = {
+	.snk_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, sink_pdos, SINK_PDO)},
+	.snk_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos),
 	.src_caps = {0},
 	.src_cap_cnt = 0,
 	.ps_ready = 0
@@ -61,7 +61,7 @@ static struct port1_data_t {
  * @note Generally a sink application would build an RDO from the
  *	 Source Capabilities stored in the dpm_data object
  */
-static uint32_t build_rdo(const struct port1_data_t *dpm_data)
+static uint32_t build_rdo(const struct port0_data_t *dpm_data)
 {
 	union pd_rdo rdo;
 
@@ -161,7 +161,7 @@ static void display_pdo(const int idx,
 
 static void display_source_caps(const struct device *dev)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	LOG_INF("Source Caps:");
 	for (int i = 0; i < dpm_data->src_cap_cnt; i++) {
@@ -171,11 +171,11 @@ static void display_source_caps(const struct device *dev)
 }
 
 /* usbc.rst callbacks start */
-static int port1_policy_cb_get_snk_cap(const struct device *dev,
+static int port0_policy_cb_get_snk_cap(const struct device *dev,
 					    uint32_t **pdos,
 					    int *num_pdos)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	*pdos = dpm_data->snk_caps;
 	*num_pdos = dpm_data->snk_cap_cnt;
@@ -183,11 +183,11 @@ static int port1_policy_cb_get_snk_cap(const struct device *dev,
 	return 0;
 }
 
-static void port1_policy_cb_set_src_cap(const struct device *dev,
+static void port0_policy_cb_set_src_cap(const struct device *dev,
 					     const uint32_t *pdos,
 					     const int num_pdos)
 {
-	struct port1_data_t *dpm_data;
+	struct port0_data_t *dpm_data;
 	int num;
 	int i;
 
@@ -205,19 +205,19 @@ static void port1_policy_cb_set_src_cap(const struct device *dev,
 	dpm_data->src_cap_cnt = num;
 }
 
-static uint32_t port1_policy_cb_get_rdo(const struct device *dev)
+static uint32_t port0_policy_cb_get_rdo(const struct device *dev)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	return build_rdo(dpm_data);
 }
 /* usbc.rst callbacks end */
 
 /* usbc.rst notify start */
-static void port1_notify(const struct device *dev,
+static void port0_notify(const struct device *dev,
 			      const enum usbc_policy_notify_t policy_notify)
 {
-	struct port1_data_t *dpm_data = usbc_get_dpm_data(dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	switch (policy_notify) {
 	case PROTOCOL_ERROR:
@@ -269,7 +269,7 @@ static void port1_notify(const struct device *dev,
 /* usbc.rst notify end */
 
 /* usbc.rst check start */
-bool port1_policy_check(const struct device *dev,
+bool port0_policy_check(const struct device *dev,
 			const enum usbc_policy_check_t policy_check)
 {
 	switch (policy_check) {
@@ -295,12 +295,12 @@ bool port1_policy_check(const struct device *dev,
 
 int main(void)
 {
-	const struct device *usbc_port1;
+	const struct device *usbc_port0;
 
 	/* Get the device for this port */
-	usbc_port1 = DEVICE_DT_GET(PORT1_NODE);
-	if (!device_is_ready(usbc_port1)) {
-		LOG_ERR("PORT1 device not ready");
+	usbc_port0 = DEVICE_DT_GET(USBC_PORT0_NODE);
+	if (!device_is_ready(usbc_port0)) {
+		LOG_ERR("PORT0 device not ready");
 		return 0;
 	}
 
@@ -308,33 +308,33 @@ int main(void)
 	/* Register USB-C Callbacks */
 
 	/* Register Policy Check callback */
-	usbc_set_policy_cb_check(usbc_port1, port1_policy_check);
+	usbc_set_policy_cb_check(usbc_port0, port0_policy_check);
 	/* Register Policy Notify callback */
-	usbc_set_policy_cb_notify(usbc_port1, port1_notify);
+	usbc_set_policy_cb_notify(usbc_port0, port0_notify);
 	/* Register Policy Get Sink Capabilities callback */
-	usbc_set_policy_cb_get_snk_cap(usbc_port1, port1_policy_cb_get_snk_cap);
+	usbc_set_policy_cb_get_snk_cap(usbc_port0, port0_policy_cb_get_snk_cap);
 	/* Register Policy Set Source Capabilities callback */
-	usbc_set_policy_cb_set_src_cap(usbc_port1, port1_policy_cb_set_src_cap);
+	usbc_set_policy_cb_set_src_cap(usbc_port0, port0_policy_cb_set_src_cap);
 	/* Register Policy Get Request Data Object callback */
-	usbc_set_policy_cb_get_rdo(usbc_port1, port1_policy_cb_get_rdo);
+	usbc_set_policy_cb_get_rdo(usbc_port0, port0_policy_cb_get_rdo);
 	/* usbc.rst register end */
 
 	/* usbc.rst user data start */
 	/* Set Application port data object. This object is passed to the policy callbacks */
-	port1_data.ps_ready = ATOMIC_INIT(0);
-	usbc_set_dpm_data(usbc_port1, &port1_data);
+	port0_data.ps_ready = ATOMIC_INIT(0);
+	usbc_set_dpm_data(usbc_port0, &port0_data);
 	/* usbc.rst user data end */
 
 	/* usbc.rst usbc start */
 	/* Start the USB-C Subsystem */
-	usbc_start(usbc_port1);
+	usbc_start(usbc_port0);
 	/* usbc.rst usbc end */
 
 	while (1) {
 		/* Perform Application Specific functions */
-		if (atomic_test_and_clear_bit(&port1_data.ps_ready, 0)) {
+		if (atomic_test_and_clear_bit(&port0_data.ps_ready, 0)) {
 			/* Display the Source Capabilities */
-			display_source_caps(usbc_port1);
+			display_source_caps(usbc_port0);
 		}
 
 		/* Arbitrary delay */

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "zephyr/sys/util.h"
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -38,66 +39,27 @@ int main(void)
 
 	while (1) {
 
-		struct fuel_gauge_get_property props[] = {
-			{
-				.property_type = FUEL_GAUGE_RUNTIME_TO_EMPTY,
-			},
-			{
-				.property_type = FUEL_GAUGE_RUNTIME_TO_FULL,
-			},
-			{
-				.property_type = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-			},
-			{
-				.property_type = FUEL_GAUGE_VOLTAGE,
-			}
+		fuel_gauge_prop_t props[] = {
+			FUEL_GAUGE_RUNTIME_TO_EMPTY,
+			FUEL_GAUGE_RUNTIME_TO_FULL,
+			FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
+			FUEL_GAUGE_VOLTAGE,
 		};
 
-		ret = fuel_gauge_get_prop(dev, props, ARRAY_SIZE(props));
+		union fuel_gauge_prop_val vals[ARRAY_SIZE(props)];
+
+		ret = fuel_gauge_get_props(dev, props, vals, ARRAY_SIZE(props));
 		if (ret < 0) {
 			printk("Error: cannot get properties\n");
 		} else {
-			if (ret != 0) {
-				printk("Warning: Some properties failed\n");
-			}
+			printk("Time to empty %d\n", vals[0].runtime_to_empty);
 
-			if (props[0].status == 0) {
-				printk("Time to empty %d\n", props[0].value.runtime_to_empty);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_RUNTIME_TO_EMPTY failed with error %d\n",
-				props[0].status
-				);
-			}
+			printk("Time to full %d\n", vals[1].runtime_to_full);
 
-			if (props[1].status == 0) {
-				printk("Time to full %d\n", props[1].value.runtime_to_full);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_RUNTIME_TO_FULL failed with error %d\n",
-				props[1].status
-				);
-			}
+			printk("Charge %d%%\n", vals[2].relative_state_of_charge);
 
-			if (props[2].status == 0) {
-				printk("Charge %d%%\n", props[2].value.relative_state_of_charge);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_STATE_OF_CHARGE failed with error %d\n",
-				props[2].status
-				);
-			}
-
-			if (props[3].status == 0) {
-				printk("Voltage %d\n", props[3].value.voltage);
-			} else {
-				printk(
-				"Property FUEL_GAUGE_VOLTAGE failed with error %d\n",
-				props[3].status
-				);
-			}
+			printk("Voltage %d\n", vals[3].voltage);
 		}
-
 
 		k_sleep(K_MSEC(5000));
 	}

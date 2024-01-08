@@ -5,8 +5,9 @@
 
 config DMA_INTEL_LPSS
 	bool "INTEL LPSS DMA driver"
-	default n
+	default y
 	depends on DT_HAS_INTEL_LPSS_ENABLED
+	select DEVICE_DEPS
 	help
 	  INTEL LPSS DMA driver.
 

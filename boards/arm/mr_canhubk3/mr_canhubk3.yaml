@@ -18,3 +18,6 @@ supported:
   - spi
   - watchdog
   - netif:eth
+  - pwm
+  - dma
+vendor: nxp

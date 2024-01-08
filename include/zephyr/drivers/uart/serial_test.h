@@ -29,7 +29,7 @@ extern "C" {
  *
  * @retval Number of bytes written.
  */
-int serial_vnd_queue_in_data(const struct device *dev, unsigned char *data, uint32_t size);
+int serial_vnd_queue_in_data(const struct device *dev, const unsigned char *data, uint32_t size);
 
 /**
  * @brief Returns size of unread written data.

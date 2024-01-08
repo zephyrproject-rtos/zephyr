@@ -11,7 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <mmu.h>
-#include <zephyr/arch/arm/aarch32/mmu/arm_mmu.h>
+#include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "soc.h"
 
 #include <cmsis_core.h>

@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 include(ExternalProject)
 
-# Add the sources and set up the build for either unit testing or native_posix
+# Add the sources and set up the build for either unit testing or native_sim
 list(APPEND SOURCES src/main.cpp)
 if(BOARD STREQUAL unit_testing)
   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
@@ -17,7 +17,7 @@ else()
   set(target app)
   # Set the target binary for the 'core' external project. The path to this must match the one set
   # below in ExternalProject_Add's CMAKE_INSTALL_PREFIX
-  add_compile_definitions(FAIL_TARGET_BINARY="${CMAKE_BINARY_DIR}/core/bin/zephyr.elf")
+  add_compile_definitions(FAIL_TARGET_BINARY="${CMAKE_BINARY_DIR}/core/bin/zephyr.exe")
 endif()
 
 # Create the project and set the sources for the target

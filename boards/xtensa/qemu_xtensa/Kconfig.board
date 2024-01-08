@@ -5,10 +5,13 @@
 
 config BOARD_QEMU_XTENSA
 	bool "Xtensa emulation using QEMU"
-	depends on SOC_XTENSA_SAMPLE_CONTROLLER
-	select QEMU_TARGET
-
-config BOARD_QEMU_XTENSA_DC233C
-	bool "Xtensa emulation using QEMU (dc233c core)"
 	depends on SOC_XTENSA_DC233C
 	select QEMU_TARGET
+	select ARCH_SUPPORTS_COREDUMP
+
+config BOARD_QEMU_XTENSA_MMU
+	bool "Xtensa emulation using QEMU with MMU"
+	depends on SOC_XTENSA_DC233C
+	select QEMU_TARGET
+	select ARCH_SUPPORTS_COREDUMP
+	select XTENSA_MMU

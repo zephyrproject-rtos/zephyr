@@ -1,7 +1,8 @@
-.. _openAMP_sample:
+.. zephyr:code-sample:: openamp
+   :name: OpenAMP
+   :relevant-api: ipm_interface
 
-OpenAMP Sample Application
-##########################
+   Send messages between two cores using OpenAMP.
 
 Overview
 ********

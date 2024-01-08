@@ -20,6 +20,7 @@ ZTEST(framework_tests, test_assert_tests)
 	zassert_not_null("foo", NULL);
 	zassert_equal(1, 1);
 	zassert_equal_ptr(NULL, NULL, NULL);
+	zassert_not_ok(-EIO);
 }
 
 ZTEST(framework_tests, test_assert_mem_equal)

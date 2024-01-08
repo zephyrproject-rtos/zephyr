@@ -25,6 +25,29 @@ config NRF_SOC_SECURE_SUPPORTED
 	  For non-secure the functions must redirect to secure services exposed
 	  by the secure firmware.
 
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE
+	help
+	  By default, if we build for a Non-Secure version of the board,
+	  enable building with TF-M as the Secure Execution Environment.
+
+if BUILD_WITH_TFM
+
+config TFM_FLASH_MERGED_BINARY
+	default y
+	help
+	  By default, if we build with TF-M, instruct build system to
+	  flash the combined TF-M (Secure) & Zephyr (Non Secure) image
+
+config TFM_LOG_LEVEL_SILENCE
+	default y if !$(dt_nodelabel_has_prop,uart1,pinctrl-names)
+	help
+	  Disable TF-M secure output if the uart1 node has not assigned GPIO
+	  pins using pinctrl.
+
+endif # BUILD_WITH_TFM
+
+
 config NRF_MPU_FLASH_REGION_SIZE
 	hex
 	default 0x1000
@@ -47,8 +70,9 @@ config NRF_ACL_FLASH_REGION_SIZE
 	  FLASH region size for the NRF_ACL peripheral.
 
 config NFCT_PINS_AS_GPIOS
-	bool "NFCT pins as GPIOs"
+	bool "[DEPRECATED] NFCT pins as GPIOs"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
+	select DEPRECATED
 	help
 	  Two pins are usually reserved for NFC in SoCs that implement the
 	  NFCT peripheral. This option switches them to normal GPIO mode.
@@ -59,6 +83,13 @@ config NFCT_PINS_AS_GPIOS
 
 	  NFC pins in nRF52 series: P0.09 and P0.10
 	  NFC pins in nRF5340: P0.02 and P0.03
+
+	  This option is deprecated, please use devicetree to configure NFCT
+	  pins as GPIOS like this:
+
+	  &uicr {
+	      nfct-pins-as-gpios;
+	  };
 
 choice NRF_APPROTECT_HANDLING
 	bool "APPROTECT handling"

@@ -179,7 +179,7 @@ Pins Assignment of the Arduino Shield Modules
 MikroBus Shields
 ================
 
-MikroBus header is available available without advanced features.  It is
+MikroBus header is available without advanced features.  It is
 enabled selecting `atmel_rf2xx_mikrobus`_ variant option.
 
 Pins Assignment of the MikroBus Shield Modules
@@ -283,8 +283,8 @@ and Echo client samples, which provide out-of-the-box configuration for
 both IEEE 802.15.4 and OpenThread.  To enable IEEE 802.15.4 support in the
 samples, build them with ``overlay-802154.conf`` overlay config file.  Same
 way, to enable OpenThread support, build them with ``overlay-ot.conf`` overlay
-config file. See :ref:`sockets-echo-server-sample` and
-:ref:`sockets-echo-client-sample` for details.
+config file. See :zephyr:code-sample:`sockets-echo-server` and
+:zephyr:code-sample:`sockets-echo-client` samples for details.
 
 Build and Programming
 *********************

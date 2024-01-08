@@ -9,9 +9,6 @@ TF-M Integration Samples
 
    */*
 
-Trusted Firmware-M (TF-M)
-#########################
-
 Overview
 ********
 These TF-M integration examples can be used with a supported Armv8-M board, and

@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/ztest_assert.h"
+#include <zephyr/ztest_assert.h>
 
 #include <stdint.h>
 #include <string.h>

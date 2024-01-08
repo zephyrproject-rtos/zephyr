@@ -102,6 +102,10 @@ static struct rtio_mpsc mpsc_q;
 
 static void mpsc_consumer(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct rtio_mpsc_node *n;
 	struct mpsc_node *nn;
 
@@ -124,6 +128,10 @@ static void mpsc_consumer(void *p1, void *p2, void *p3)
 
 static void mpsc_producer(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct mpsc_node *n;
 	uint32_t id = (uint32_t)(uintptr_t)p1;
 
@@ -163,7 +171,7 @@ ZTEST(rtio_mpsc, test_mpsc_threaded)
 	TC_PRINT("starting consumer\n");
 	mpsc_tinfo[0].tid =
 		k_thread_create(&mpsc_thread[0], mpsc_stack[0], MPSC_STACK_SIZE,
-				(k_thread_entry_t)mpsc_consumer,
+				mpsc_consumer,
 				NULL, NULL, NULL,
 				K_PRIO_PREEMPT(5),
 				K_INHERIT_PERMS, K_NO_WAIT);
@@ -172,7 +180,7 @@ ZTEST(rtio_mpsc, test_mpsc_threaded)
 		TC_PRINT("starting producer %i\n", i);
 		mpsc_tinfo[i].tid =
 			k_thread_create(&mpsc_thread[i], mpsc_stack[i], MPSC_STACK_SIZE,
-					(k_thread_entry_t)mpsc_producer,
+					mpsc_producer,
 					(void *)(uintptr_t)i, NULL, NULL,
 					K_PRIO_PREEMPT(5),
 					K_INHERIT_PERMS, K_NO_WAIT);

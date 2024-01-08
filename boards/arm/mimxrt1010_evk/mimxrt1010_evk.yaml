@@ -26,3 +26,4 @@ supported:
   - usb_device
   - spi
   - adc
+vendor: nxp

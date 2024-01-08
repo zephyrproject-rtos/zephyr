@@ -66,6 +66,24 @@ The ``adp_xc7k_ae350`` board configuration supports the following hardware featu
 +----------------+------------+----------------------+
 | UART           | on-chip    | serial               |
 +----------------+------------+----------------------+
+| COUNTER        | on-chip    | counter              |
++----------------+------------+----------------------+
+| SPI            | on-chip    | spi                  |
++----------------+------------+----------------------+
+| I2C            | on-chip    | i2c                  |
++----------------+------------+----------------------+
+| EEPROM         | on-chip    | eeprom               |
++----------------+------------+----------------------+
+| FLASH          | on-chip    | flash                |
++----------------+------------+----------------------+
+| HWINFO         | on-chip    | syscon               |
++----------------+------------+----------------------+
+| MAILBOX        | on-chip    | mbox                 |
++----------------+------------+----------------------+
+| DMA            | on-chip    | dma                  |
++----------------+------------+----------------------+
+| WATCHDOG       | on-chip    | wdt                  |
++----------------+------------+----------------------+
 
 Other hardware features are not supported yet.
 
@@ -211,6 +229,7 @@ You can build applications in the usual way. Here is an example for
 the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
    :board: adp_xc7k_ae350
    :goals: build
 
@@ -246,7 +265,7 @@ and execute it.
 
    # Check the ICEman server is running
    # Load the program into RAM and execute it
-   riscv64-zephyr-elf-gdb zephyr/zephyr.elf
+   riscv64-zephyr-elf-gdb build/zephyr/zephyr.elf
    (gdb) target remote :1111
    (gdb) monitor reset halt
    (gdb) load
@@ -260,7 +279,7 @@ and execute it.
    # Check the ICEman server is running
    # Burn the program into flash and execute it
    <FLASH>/bin/target_burn_frontend \
-       -P 4444 --unlock --verify --image=zephyr/zephyr.bin \
+       -P 4444 --unlock --verify --image=build/zephyr/zephyr.bin \
        --algorithm-bin=<FLASH>/target_bin/target_SPI_v5_[32|64].bin
 
    # Note:
@@ -289,7 +308,7 @@ Debugging
 
    # Check the ICEman server is running
    # Load and debug program
-   ./riscv64-zephyr-elf-gdb zephyr/zephyr.elf
+   ./riscv64-zephyr-elf-gdb build/zephyr/zephyr.elf
    (gdb) target remote :1111
    (gdb) monitor reset halt
    (gdb) load

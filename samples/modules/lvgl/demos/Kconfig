@@ -1,0 +1,36 @@
+# Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice LV_Z_DEMO
+	prompt "LVGL demo to build"
+	default LV_Z_DEMO_MUSIC
+	help
+	  Demo application to build.
+
+config LV_Z_DEMO_MUSIC
+	bool "LVGL music demo"
+	select LV_USE_DEMO_MUSIC
+	help
+	  Build music player demo application.
+
+config LV_Z_DEMO_BENCHMARK
+	bool "LVGL benchmark demo"
+	select LV_USE_DEMO_BENCHMARK
+	help
+	  Build benchmarking demo application.
+
+config LV_Z_DEMO_STRESS
+	bool "LVGL stress demo"
+	select LV_USE_DEMO_STRESS
+	help
+	  Build stress testing demo application.
+
+config LV_Z_DEMO_WIDGETS
+	bool "LVGL widgets demo"
+	select LV_USE_DEMO_WIDGETS
+	help
+	  Build stress testing demo application.
+
+endchoice
+
+source "Kconfig.zephyr"

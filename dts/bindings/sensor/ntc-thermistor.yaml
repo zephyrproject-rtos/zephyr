@@ -11,11 +11,6 @@ properties:
     description: |
       ADC IO channel connected to this NTC thermistor.
 
-  r25-ohm:
-    type: int
-    description: |
-      The resistance value of the thermistor at 25 C.
-
   pullup-uv:
     type: int
     description: |

@@ -73,6 +73,8 @@ To enable secure sockets, set the :kconfig:option:`CONFIG_NET_SOCKETS_SOCKOPT_TL
 option. To enable DTLS support, use :kconfig:option:`CONFIG_NET_SOCKETS_ENABLE_DTLS`
 option.
 
+.. _sockets_tls_credentials_subsys:
+
 TLS credentials subsystem
 =========================
 
@@ -133,8 +135,8 @@ CA certificate and hostname can be set:
 Once configured, socket can be used just like a regular TCP socket.
 
 Several samples in Zephyr use secure sockets for communication. For a sample use
-see e.g. :ref:`echo-server sample application <sockets-echo-server-sample>` or
-:ref:`HTTP GET sample application <sockets-http-get>`.
+see e.g. :zephyr:code-sample:`echo-server sample application <sockets-echo-server>` or
+:zephyr:code-sample:`HTTP GET sample application <sockets-http-get>`.
 
 Secure Sockets options
 ======================

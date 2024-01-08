@@ -81,14 +81,14 @@ struct mcux_i3c_config {
 
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
+
+	/** Disable open drain high push pull */
+	bool disable_open_drain_high_pp;
 };
 
 struct mcux_i3c_data {
 	/** Common I3C Driver Data */
 	struct i3c_driver_data common;
-
-	/** Configuration parameter to be used with HAL. */
-	i3c_master_config_t ctrl_config_hal;
 
 	/** Semaphore to serialize access for applications. */
 	struct k_sem lock;
@@ -542,9 +542,6 @@ static inline void mcux_i3c_request_daa(I3C_Type *base)
 /**
  * @brief Tell controller to start auto IBI.
  *
- * This also waits for the controller to indicate auto IBI
- * has started before returning.
- *
  * @param base Pointer to controller registers.
  */
 static inline void mcux_i3c_request_auto_ibi(I3C_Type *base)
@@ -552,8 +549,6 @@ static inline void mcux_i3c_request_auto_ibi(I3C_Type *base)
 	reg32_update(&base->MCTRL,
 		     I3C_MCTRL_REQUEST_MASK | I3C_MCTRL_IBIRESP_MASK | I3C_MCTRL_RDTERM_MASK,
 		     I3C_MCTRL_REQUEST_AUTO_IBI | I3C_MCTRL_IBIRESP_ACK_AUTO);
-
-	mcux_i3c_status_wait_clear(base, I3C_MSTATUS_MCTRLDONE_MASK);
 }
 
 /**
@@ -882,9 +877,7 @@ static int mcux_i3c_recover_bus(const struct device *dev)
  */
 static int mcux_i3c_do_one_xfer_read(I3C_Type *base, uint8_t *buf, uint8_t buf_sz)
 {
-	int rx_count;
 	bool completed = false;
-	bool overflow = false;
 	int ret = 0;
 	int offset = 0;
 
@@ -911,28 +904,19 @@ static int mcux_i3c_do_one_xfer_read(I3C_Type *base, uint8_t *buf, uint8_t buf_s
 		}
 
 		/*
-		 * Transfer data from FIFO into buffer.
+		 * Transfer data from FIFO into buffer. Read
+		 * in a tight loop to reduce chance of losing
+		 * FIFO data when the i3c speed is high.
 		 */
-		rx_count = mcux_i3c_fifo_rx_count_get(base);
-		while (rx_count > 0) {
-			uint8_t data = (uint8_t)base->MRDATAB;
-
-			if (offset < buf_sz) {
-				buf[offset] = data;
-				offset += 1;
-			} else {
-				overflow = true;
+		while (offset < buf_sz) {
+			if (mcux_i3c_fifo_rx_count_get(base) == 0) {
+				break;
 			}
-
-			rx_count -= 1;
+			buf[offset++] = (uint8_t)base->MRDATAB;
 		}
 	}
 
-	if (overflow) {
-		ret = -EINVAL;
-	} else {
-		ret = offset;
-	}
+	ret = offset;
 
 one_xfer_read_out:
 	return ret;
@@ -1074,6 +1058,7 @@ static int mcux_i3c_transfer(const struct device *dev,
 	I3C_Type *base = config->base;
 	uint32_t intmask;
 	int ret;
+	bool send_broadcast = true;
 
 	if (target->dynamic_addr == 0U) {
 		ret = -EINVAL;
@@ -1124,11 +1109,31 @@ static int mcux_i3c_transfer(const struct device *dev,
 			}
 		}
 
+		/*
+		 * Send broadcast header on first transfer or after a STOP,
+		 * unless flag is set not to.
+		 */
+		if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
+			ret = mcux_i3c_request_emit_start(base, I3C_BROADCAST_ADDR,
+							  false, false, 0);
+			if (ret < 0) {
+				LOG_ERR("emit start of broadcast addr failed, error (%d)",
+					ret);
+				goto out_xfer_i3c_stop_unlock;
+			}
+			send_broadcast = false;
+		}
+
 		ret = mcux_i3c_do_one_xfer(base, dev_data, target->dynamic_addr, false,
 					   msgs[i].buf, msgs[i].len,
 					   is_read, emit_start, emit_stop, no_ending);
 		if (ret < 0) {
 			goto out_xfer_i3c_stop_unlock;
+		}
+
+		if (emit_stop) {
+			/* After a STOP, send broadcast header before next msg */
+			send_broadcast = true;
 		}
 	}
 
@@ -1806,7 +1811,7 @@ static int mcux_i3c_configure(const struct device *dev,
 	const struct mcux_i3c_config *dev_cfg = dev->config;
 	struct mcux_i3c_data *dev_data = dev->data;
 	I3C_Type *base = dev_cfg->base;
-	i3c_master_config_t *ctrl_config_hal = &dev_data->ctrl_config_hal;
+	i3c_master_config_t master_config;
 	struct i3c_config_controller *ctrl_cfg = config;
 	uint32_t clock_freq;
 	int ret = 0;
@@ -1835,11 +1840,24 @@ static int mcux_i3c_configure(const struct device *dev,
 		goto out_configure;
 	}
 
-	ctrl_config_hal->baudRate_Hz.i2cBaud = ctrl_cfg->scl.i2c;
-	ctrl_config_hal->baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
+	/*
+	 * Save requested config so next config_get() call returns the
+	 * correct values.
+	 */
+	(void)memcpy(&dev_data->common.ctrl_config, ctrl_cfg, sizeof(*ctrl_cfg));
+
+	I3C_MasterGetDefaultConfig(&master_config);
+
+	master_config.baudRate_Hz.i2cBaud = ctrl_cfg->scl.i2c;
+	master_config.baudRate_Hz.i3cPushPullBaud = ctrl_cfg->scl.i3c;
+	master_config.enableOpenDrainHigh = dev_cfg->disable_open_drain_high_pp ? false : true;
+
+	if (dev_data->clocks.i3c_od_scl_hz) {
+		master_config.baudRate_Hz.i3cOpenDrainBaud = dev_data->clocks.i3c_od_scl_hz;
+	}
 
 	/* Initialize hardware */
-	I3C_MasterInit(base, ctrl_config_hal, clock_freq);
+	I3C_MasterInit(base, &master_config, clock_freq);
 
 out_configure:
 	return ret;
@@ -1912,30 +1930,11 @@ static int mcux_i3c_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->ibi_lock, 1, 1);
 
-	/*
-	 * Default controller configuration to act as the primary
-	 * and active controller.
-	 */
-	I3C_MasterGetDefaultConfig(&data->ctrl_config_hal);
-
-	/* Set default SCL clock rate (in Hz) */
-	if (ctrl_config->scl.i2c == 0U) {
-		ctrl_config->scl.i2c = data->ctrl_config_hal.baudRate_Hz.i2cBaud;
-	}
-
-	if (ctrl_config->scl.i3c == 0U) {
-		ctrl_config->scl.i3c = data->ctrl_config_hal.baudRate_Hz.i3cPushPullBaud;
-	}
-
-	if (data->clocks.i3c_od_scl_hz != 0U) {
-		data->ctrl_config_hal.baudRate_Hz.i3cOpenDrainBaud = data->clocks.i3c_od_scl_hz;
-	}
-
 	/* Currently can only act as primary controller. */
-	data->common.ctrl_config.is_secondary = false;
+	ctrl_config->is_secondary = false;
 
 	/* HDR mode not supported at the moment. */
-	data->common.ctrl_config.supported_hdr = 0U;
+	ctrl_config->supported_hdr = 0U;
 
 	ret = mcux_i3c_configure(dev, I3C_CONFIG_CONTROLLER, ctrl_config);
 	if (ret != 0) {
@@ -2095,6 +2094,8 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
 		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+		.disable_open_drain_high_pp =					\
+			DT_INST_PROP_OR(id, disable_open_drain_high_pp, false), \
 	};									\
 	static struct mcux_i3c_data mcux_i3c_data_##id = {			\
 		.clocks.i3c_od_scl_hz = DT_INST_PROP_OR(id, i3c_od_scl_hz, 0),	\

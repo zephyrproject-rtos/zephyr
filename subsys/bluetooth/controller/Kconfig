@@ -241,15 +241,6 @@ config BT_CTLR_ISO_RX_SDU_BUFFERS
 	  maximum size of an SDU that can be accurately declared in the HCI ISO
 	  Data header.
 
-config BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN
-	int "Minimum number of playload data bytes in a new segment"
-	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	default 1
-	range 1 64
-	help
-	  Minimum number of payload bytes that would make inserting a new
-	  segment into a PDU worthwhile.
-
 config BT_CTLR_ISO_VENDOR_DATA_PATH
 	bool "Vendor-specific ISO data path"
 	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO

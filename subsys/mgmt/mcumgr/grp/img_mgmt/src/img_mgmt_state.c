@@ -55,6 +55,14 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define REPORT_SLOT_PENDING	BIT(1)
 #define REPORT_SLOT_CONFIRMED	BIT(2)
 #define REPORT_SLOT_PERMANENT	BIT(3)
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#define DIRECT_XIP_BOOT_UNSET		0
+#define DIRECT_XIP_BOOT_ONCE		1
+#define DIRECT_XIP_BOOT_REVERT		2
+#define DIRECT_XIP_BOOT_FOREVER		3
+#endif
+
 /**
  * Collects information about the specified image slot.
  */
@@ -139,7 +147,8 @@ img_mgmt_state_flags(int query_slot)
 }
 #endif
 
-#ifndef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
 	const int active_slot = img_mgmt_active_slot(image);
@@ -188,27 +197,115 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 	return slot;
 }
 #else
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+
+static int read_directxip_state(int slot)
+{
+	struct boot_swap_state bss;
+	int fa_id = img_mgmt_flash_area_id(slot);
+	const struct flash_area *fa;
+	int rc = 0;
+
+	__ASSERT(fa_id != -1, "Could not map slot to area ID");
+
+	rc = flash_area_open(fa_id, &fa);
+	if (rc < 0) {
+		return rc;
+	}
+	rc = boot_read_swap_state(fa, &bss);
+	flash_area_close(fa);
+	if (rc != 0) {
+		LOG_ERR("Failed to read state of slot %d with error %d", slot, rc);
+		return -1;
+	}
+
+	if (bss.magic == BOOT_MAGIC_GOOD) {
+		if (bss.image_ok == BOOT_FLAG_SET) {
+			return DIRECT_XIP_BOOT_FOREVER;
+		} else if (bss.copy_done == BOOT_FLAG_SET) {
+			return DIRECT_XIP_BOOT_REVERT;
+		}
+		return DIRECT_XIP_BOOT_ONCE;
+	}
+	return DIRECT_XIP_BOOT_UNSET;
+}
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
+
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
 	struct image_version aver;
 	struct image_version over;
 	int active_slot = img_mgmt_active_slot(image);
 	int other_slot = img_mgmt_get_opposite_slot(active_slot);
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	int active_slot_state;
+	int other_slot_state;
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
+	enum img_mgmt_next_boot_type lt = NEXT_BOOT_TYPE_NORMAL;
+	int return_slot = active_slot;
 
-	if (type != NULL) {
-		*type = NEXT_BOOT_TYPE_NORMAL;
-	}
 
 	int rcs = img_mgmt_read_info(other_slot, &over, NULL, NULL);
 	int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
-	if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &over) < 0) {
-		return other_slot;
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	active_slot_state = read_directxip_state(active_slot);
+	other_slot_state = read_directxip_state(other_slot);
+	if (rca != 0 ||
+	    (rcs != 0 && rcs != IMG_MGMT_ERR_NO_IMAGE)) {
+		/* We do not really know what will happen, as we can not
+		 * read states from bootloader.
+		 */
+		LOG_ERR("img_mgmt_read_info_failed rca = %d, rcs = %d",
+			rca, rcs);
+		goto out;
+	}
+	if (other_slot_state < 0 || active_slot_state < 0) {
+		LOG_ERR("Slot state read failed with status: active %d, other %d",
+			active_slot_state, other_slot_state);
+		/* We do not really know what will happen, as we can not
+		 * read states from bootloader.
+		 */
+		goto out;
 	}
 
-	return active_slot;
+	/* There is not other image, the active one will boot next time */
+	if (rcs == IMG_MGMT_ERR_NO_IMAGE) {
+		goto out;
+	}
+
+	if (active_slot_state == DIRECT_XIP_BOOT_REVERT) {
+		lt = NEXT_BOOT_TYPE_REVERT;
+		return_slot = other_slot;
+	} else if (other_slot_state == DIRECT_XIP_BOOT_UNSET) {
+		if (active_slot_state == DIRECT_XIP_BOOT_ONCE) {
+			lt = NEXT_BOOT_TYPE_TEST;
+		}
+	} else if (img_mgmt_vercmp(&aver, &over) < 0) {
+		if (other_slot_state == DIRECT_XIP_BOOT_FOREVER) {
+			return_slot = other_slot;
+		} else if (other_slot_state == DIRECT_XIP_BOOT_ONCE) {
+			lt = NEXT_BOOT_TYPE_TEST;
+			return_slot = other_slot;
+		}
+	}
+#else
+	if (rcs == 0 && rca == 0 && img_mgmt_vercmp(&aver, &over) < 0) {
+		return_slot = other_slot;
+	}
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
+
+out:
+	if (type != NULL) {
+		*type = lt;
+	}
+
+	return return_slot;
 }
-#endif
+#endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
+	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	*/
 
 
 /**
@@ -422,11 +519,53 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
 
-int img_mgmt_set_next_boot_slot(int slot, bool confirm)
+static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool confirm)
 {
 	const struct flash_area *fa;
 	int area_id = img_mgmt_flash_area_id(slot);
 	int rc = 0;
+
+	if (flash_area_open(area_id, &fa) != 0) {
+		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
+	}
+
+	rc = boot_set_next(fa, slot == active_slot, confirm);
+	if (rc != 0) {
+		/* Failed to set next slot for boot as desired */
+		LOG_ERR("Faled boot_set_next with code %d, for slot %d,"
+			" with active slot %d and confirm %d",
+			 rc, slot, active_slot, confirm);
+
+		/* Translate from boot util error code to IMG mgmt group error code */
+		if (rc == BOOT_EFLASH) {
+			rc = IMG_MGMT_ERR_FLASH_WRITE_FAILED;
+		} else if (rc == BOOT_EBADVECT) {
+			rc = IMG_MGMT_ERR_INVALID_IMAGE_VECTOR_TABLE;
+		} else if (rc == BOOT_EBADIMAGE) {
+			rc = IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
+		} else {
+			rc = IMG_MGMT_ERR_UNKNOWN;
+		}
+	}
+	flash_area_close(fa);
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
+	if (rc == 0 && slot == active_slot && confirm) {
+		int32_t err_rc;
+		uint16_t err_group;
+
+		/* Confirm event is only sent for active slot */
+		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
+					   &err_group);
+	}
+#endif
+
+	return rc;
+}
+
+#ifndef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+int img_mgmt_set_next_boot_slot(int slot, bool confirm)
+{
 	/* image the requested slot is defined within */
 	int image = img_mgmt_slot_to_image(slot);
 	/* active_slot is slot that is considered active/primary/executing
@@ -498,43 +637,25 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 		/* Allow confirming slot == active_slot */
 	}
 
-	if (flash_area_open(area_id, &fa) != 0) {
-		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
-	}
-
-	rc = boot_set_next(fa, slot == active_slot, confirm);
-	if (rc != 0) {
-		/* Failed to set next slot for boot as desired */
-		LOG_ERR("Faled boot_set_next with code %d, for slot %d,"
-			" with active slot %d and confirm %d",
-			 rc, slot, active_slot, confirm);
-
-		/* Translate from boot util error code to IMG mgmt group error code */
-		if (rc == BOOT_EFLASH) {
-			rc = IMG_MGMT_ERR_FLASH_WRITE_FAILED;
-		} else if (rc == BOOT_EBADVECT) {
-			rc = IMG_MGMT_ERR_INVALID_IMAGE_VECTOR_TABLE;
-		} else if (rc == BOOT_EBADIMAGE) {
-			rc = IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
-		} else {
-			rc = IMG_MGMT_ERR_UNKNOWN;
-		}
-	}
-	flash_area_close(fa);
-
-#if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
-	if (slot == active_slot && confirm) {
-		int32_t err_rc;
-		uint16_t err_group;
-
-		/* Confirm event is only sent for active slot */
-		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, NULL, 0, &err_rc,
-					   &err_group);
-	}
-#endif
-
-	return rc;
+	return img_mgmt_set_next_boot_slot_common(slot, active_slot, confirm);
 }
+#else
+int img_mgmt_set_next_boot_slot(int slot, bool confirm)
+{
+	int active_image = img_mgmt_active_image();
+	int active_slot = img_mgmt_active_slot(active_image);
+
+	LOG_DBG("(%d, %s)", slot, confirm ? "confirm" : "test");
+	LOG_DBG("aimg = %d, aslot = %d, slot = %d",
+		active_image, active_slot, slot);
+
+	if (slot == active_slot && !confirm) {
+		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
+	}
+
+	return img_mgmt_set_next_boot_slot_common(slot, active_slot, confirm);
+}
+#endif
 
 /**
  * Command handler: image state write

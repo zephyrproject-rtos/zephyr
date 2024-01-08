@@ -14,22 +14,6 @@ config NET_L2_IEEE802154_MGMT
 	select NET_MGMT
 	select NET_MGMT_EVENT
 
-# TODO: Selecting PHYs and frequency bands is abstracted by the concept
-#       of channel pages in recent versions of the standard (see
-#       IEEE 802.15.4-2020, 10.1.3).
-#       This option will be replaced by configuration options on driver
-#       instance level that allow selection of a channel page as well
-#       as other PHY-specific configuration options (frequency bands,
-#       operating modes, etc.).
-#       New and existing drivers should not introduce additional
-#       references to this option.
-config NET_L2_IEEE802154_SUB_GHZ
-	bool
-	help
-	  Enable support for Sub-GHz devices. This will add a tiny bit more
-	  logic in L2 code for channel management. This option is automatically
-	  selected when relevant device driver is enabled.
-
 module = NET_L2_IEEE802154
 module-dep = NET_LOG
 module-str = Log level for IEEE 802.15.4

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_linkaddr.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #ifdef CONFIG_NET_6LO
 #include "ieee802154_6lo.h"
@@ -360,7 +360,7 @@ out:
 static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
-	enum net_verdict verdict = NET_DROP;
+	enum net_verdict verdict = NET_CONTINUE;
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_mpdu mpdu;
 	bool is_broadcast;
@@ -387,8 +387,9 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
 		verdict = ieee802154_handle_beacon(iface, &mpdu, net_pkt_ieee802154_lqi(pkt));
-		if (verdict == NET_OK) {
+		if (verdict == NET_CONTINUE) {
 			net_pkt_unref(pkt);
+			return NET_OK;
 		}
 		/* Beacons must not be acknowledged, see section 6.7.4.1. */
 		return verdict;
@@ -400,7 +401,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		verdict = ieee802154_handle_mac_command(iface, &mpdu);
-		if (verdict != NET_OK) {
+		if (verdict == NET_DROP) {
 			return verdict;
 		}
 	}
@@ -427,7 +428,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	if (fs->fc.frame_type == IEEE802154_FRAME_TYPE_MAC_COMMAND) {
 		net_pkt_unref(pkt);
-		return verdict;
+		return NET_OK;
 	}
 
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
@@ -453,12 +454,13 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 #ifdef CONFIG_NET_6LO
 	verdict = ieee802154_6lo_decode_pkt(iface, pkt);
-
-	pkt_hexdump(RX_PKT_TITLE, pkt, true);
-	return verdict;
-#else
-	return NET_CONTINUE;
 #endif /* CONFIG_NET_6LO */
+
+	if (verdict == NET_CONTINUE) {
+		pkt_hexdump(RX_PKT_TITLE, pkt, true);
+	}
+
+	return verdict;
 
 	/* At this point the call amounts to (part of) an
 	 * MCPS-DATA.indication primitive, see section 8.3.3.
@@ -655,7 +657,8 @@ void ieee802154_init(struct net_if *iface)
 	memcpy(ctx->linkaddr.addr, eui64_be, IEEE802154_EXT_ADDR_LENGTH);
 	net_if_set_link_addr(iface, ctx->linkaddr.addr, ctx->linkaddr.len, ctx->linkaddr.type);
 
-	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START) ||
+	    IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS)) {
 		LOG_DBG("Interface auto start disabled.");
 		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	}

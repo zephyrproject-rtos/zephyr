@@ -233,7 +233,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 
 	__ASSERT_NO_MSG(msgs && num_msgs);
 
-	i2c_dump_msgs_rw("emul", msgs, num_msgs, addr, false);
+	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 	switch (num_msgs) {
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
@@ -342,9 +342,6 @@ static void emul_sbs_gauge_reset_rule_after(const struct ztest_unit_test *test, 
 	DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_EMUL_RESET_RULE_BEFORE)
 }
 ZTEST_RULE(emul_sbs_gauge_reset, NULL, emul_sbs_gauge_reset_rule_after);
-#else /* !CONFIG_ZTEST */
-/* Stub ZTEST_DMEM in case emulator is not used in a testing environment. */
-#define ZTEST_DMEM
 #endif /* CONFIG_ZTEST */
 
 /**

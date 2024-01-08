@@ -18,10 +18,10 @@
 #endif
 
 /* nRF53 Series IRQ mapping */
-#elif defined(CONFIG_SOC_SERIES_NRF53X)
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 
 /* nRF53 Series Engineering D and Revision 1 IRQ mapping */
-#if defined(CONFIG_SOC_NRF5340_CPUNET)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET)
 
 #define HAL_SWI_RADIO_IRQ  SWI2_IRQn
 #define HAL_SWI_WORKER_IRQ RTC0_IRQn
@@ -33,9 +33,9 @@
 #define HAL_SWI_JOB_IRQ    SWI3_IRQn
 #endif
 
-#endif /* CONFIG_SOC_NRF5340_CPUNET */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
 
-#endif /* CONFIG_SOC_SERIES_NRF53X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF53X */
 
 static inline void hal_swi_init(void)
 {

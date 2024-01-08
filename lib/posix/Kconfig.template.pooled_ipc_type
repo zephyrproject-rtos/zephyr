@@ -3,12 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "lib/posix/Kconfig.template.with_url"
+source "lib/posix/Kconfig.template.with_logging"
 
 # Not user configurable (i.e. private for now)
 config $(TYPE)
-	bool
-	default y
+	bool "POSIX $(type) support"
 	depends on PTHREAD_IPC
+	default y
 	help
 	  Support for $(TYPE)
 	  For more info, see

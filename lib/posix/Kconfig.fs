@@ -6,6 +6,7 @@ config POSIX_FS
 	bool "POSIX file system API support"
 	default y if POSIX_API
 	depends on FILE_SYSTEM
+	select FDTABLE
 	help
 	  This enables POSIX style file system related APIs.
 

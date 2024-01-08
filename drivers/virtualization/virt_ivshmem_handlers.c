@@ -5,14 +5,14 @@
  */
 
 #include <zephyr/drivers/virtualization/ivshmem.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
 static inline size_t z_vrfy_ivshmem_get_mem(const struct device *dev,
 					    uintptr_t *memmap)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_mem));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_mem));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
 
 	return z_impl_ivshmem_get_mem(dev, memmap);
 }
@@ -20,7 +20,7 @@ static inline size_t z_vrfy_ivshmem_get_mem(const struct device *dev,
 
 static inline uint32_t z_vrfy_ivshmem_get_id(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_id));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_id));
 
 	return z_impl_ivshmem_get_id(dev);
 }
@@ -28,7 +28,7 @@ static inline uint32_t z_vrfy_ivshmem_get_id(const struct device *dev)
 
 static inline uint16_t z_vrfy_ivshmem_get_vectors(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_vectors));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_vectors));
 
 	return z_impl_ivshmem_get_vectors(dev);
 }
@@ -37,7 +37,7 @@ static inline uint16_t z_vrfy_ivshmem_get_vectors(const struct device *dev)
 static inline int z_vrfy_ivshmem_int_peer(const struct device *dev,
 					  uint32_t peer_id, uint16_t vector)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, int_peer));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, int_peer));
 
 	return z_impl_ivshmem_int_peer(dev, peer_id, vector);
 }
@@ -47,8 +47,8 @@ static inline int z_vrfy_ivshmem_register_handler(const struct device *dev,
 						  struct k_poll_signal *signal,
 						  uint16_t vector)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, register_handler));
-	Z_OOPS(Z_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, register_handler));
+	K_OOPS(K_SYSCALL_OBJ(signal, K_OBJ_POLL_SIGNAL));
 
 	return z_impl_ivshmem_register_handler(dev, signal, vector);
 }
@@ -59,8 +59,8 @@ static inline int z_vrfy_ivshmem_register_handler(const struct device *dev,
 static inline size_t z_vrfy_ivshmem_get_rw_mem_section(const struct device *dev,
 						       uintptr_t *memmap)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_rw_mem_section));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_rw_mem_section));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
 
 	return z_impl_ivshmem_get_rw_mem_section(dev, memmap);
 }
@@ -70,8 +70,8 @@ static inline size_t z_vrfy_ivshmem_get_output_mem_section(const struct device *
 							   uint32_t peer_id,
 							   uintptr_t *memmap)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_output_mem_section));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_output_mem_section));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(memmap, sizeof(uintptr_t)));
 
 	return z_impl_ivshmem_get_output_mem_section(dev, peer_id, memmap);
 }
@@ -80,7 +80,7 @@ static inline size_t z_vrfy_ivshmem_get_output_mem_section(const struct device *
 static inline uint32_t z_vrfy_ivshmem_get_state(const struct device *dev,
 						uint32_t peer_id)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_state));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_state));
 
 	return z_impl_ivshmem_get_state(dev, peer_id);
 }
@@ -89,7 +89,7 @@ static inline uint32_t z_vrfy_ivshmem_get_state(const struct device *dev,
 static inline int z_vrfy_ivshmem_set_state(const struct device *dev,
 					   uint32_t state)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, set_state));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, set_state));
 
 	return z_impl_ivshmem_set_state(dev, state);
 }
@@ -97,7 +97,7 @@ static inline int z_vrfy_ivshmem_set_state(const struct device *dev,
 
 static inline uint32_t z_vrfy_ivshmem_get_max_peers(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_max_peers));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_max_peers));
 
 	return z_impl_ivshmem_get_max_peers(dev);
 }
@@ -105,7 +105,7 @@ static inline uint32_t z_vrfy_ivshmem_get_max_peers(const struct device *dev)
 
 static inline uint16_t z_vrfy_ivshmem_get_protocol(const struct device *dev)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, get_protocol));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, get_protocol));
 
 	return z_impl_ivshmem_get_protocol(dev);
 }
@@ -114,7 +114,7 @@ static inline uint16_t z_vrfy_ivshmem_get_protocol(const struct device *dev)
 static inline int z_vrfy_ivshmem_enable_interrupts(const struct device *dev,
 						   bool enable)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_IVSHMEM(dev, enable_interrupts));
+	K_OOPS(K_SYSCALL_DRIVER_IVSHMEM(dev, enable_interrupts));
 
 	return z_impl_ivshmem_enable_interrupts(dev, enable);
 }

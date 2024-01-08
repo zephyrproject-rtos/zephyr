@@ -1,12 +1,18 @@
-.. _coap-server-sample:
+.. zephyr:code-sample:: coap-server
+   :name: CoAP service
+   :relevant-api: coap coap_service udp
 
-CoAP Server
-###########
+   Use the CoAP server subsystem to register CoAP resources.
 
 Overview
 ********
 
-This sample is a simple CoAP server showing how to expose a simple resource.
+This sample shows how to register CoAP resources to a main CoAP service.
+The CoAP server implementation expects all services and resources to be
+available at compile time, as they are put into dedicated sections.
+
+The resource is placed into the correct linker section based on the owning
+service's name. A linker file is required, see ``sections-ram.ld`` for an example.
 
 This demo assumes that the platform of choice has networking support,
 some adjustments to the configuration may be needed.
@@ -38,7 +44,7 @@ or wireshark.
 
 See the `net-tools`_ project for more details
 
-This sample can be built and executed on QEMU or native_posix board as
+This sample can be built and executed on QEMU or native_sim board as
 described in :ref:`networking_with_host`.
 
 Use this command on the host to run the `libcoap`_ implementation of

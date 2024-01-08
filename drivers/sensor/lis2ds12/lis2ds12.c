@@ -18,6 +18,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/dt-bindings/sensor/lis2ds12.h>
 
 #include "lis2ds12.h"
 
@@ -40,8 +41,9 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 	 * 12,5Hz <= odr <= 800Hz are available in LP and HR mode only
 	 * odr == 1Hz is available in LP mode only
 	 */
-	if ((odr >= 9 && cfg->pm != 3) || (odr < 9 && cfg->pm == 3) ||
-	    (odr == 1 && cfg->pm != 1)) {
+	if ((odr >= LIS2DS12_DT_ODR_1600Hz && cfg->pm != LIS2DS12_DT_HIGH_FREQUENCY) ||
+	    (odr < LIS2DS12_DT_ODR_1600Hz && cfg->pm == LIS2DS12_DT_HIGH_FREQUENCY) ||
+	    (odr == LIS2DS12_DT_ODR_1Hz_LP && cfg->pm != LIS2DS12_DT_LOW_POWER)) {
 		LOG_ERR("%s: bad odr and pm combination", dev->name);
 		return -ENOTSUP;
 	}

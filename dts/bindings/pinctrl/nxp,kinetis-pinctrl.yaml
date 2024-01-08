@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NXP
+# Copyright (c) 2022-2023, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -63,7 +63,6 @@ child-binding:
           0 DSE_0- low drive strength when pin is configured as output
           1 DSE_1- high drive strength when pin is configured as output
       slew-rate:
-        required: true
         type: string
         enum:
           - "fast"

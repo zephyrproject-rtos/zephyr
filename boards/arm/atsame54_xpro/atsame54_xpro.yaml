@@ -12,6 +12,7 @@ toolchain:
   - xtools
 supported:
   - adc
+  - flash
   - gpio
   - pwm
   - spi
@@ -19,3 +20,4 @@ supported:
   - uart
   - usb_device
   - netif:eth
+vendor: atmel

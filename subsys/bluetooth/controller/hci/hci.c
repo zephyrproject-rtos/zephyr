@@ -4245,8 +4245,8 @@ static void le_cis_established(struct pdu_data *pdu_data,
 	sys_put_le24(cis->sync_delay, sep->cis_sync_delay);
 	sys_put_le24(cig->c_latency, sep->c_latency);
 	sys_put_le24(cig->p_latency, sep->p_latency);
-	sep->c_phy = lll_cis_c->phy;
-	sep->p_phy = lll_cis_p->phy;
+	sep->c_phy = find_lsb_set(lll_cis_c->phy);
+	sep->p_phy = find_lsb_set(lll_cis_p->phy);
 	sep->nse = lll_cis->nse;
 	sep->c_bn = lll_cis_c->bn;
 	sep->p_bn = lll_cis_p->bn;
@@ -5657,8 +5657,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_iso_data_hdr *iso_data_hdr;
 	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
-	struct ll_iso_datapath *dp_in;
-	struct ll_iso_stream_hdr *hdr;
 	uint32_t *time_stamp;
 	uint16_t handle;
 	uint8_t pb_flag;
@@ -5668,8 +5666,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 
 	iso_data_hdr = NULL;
 	*evt  = NULL;
-	hdr   = NULL;
-	dp_in = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
 		LOG_ERR("No HCI ISO header");
@@ -5700,17 +5696,21 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	 * -- A captured time stamp of the SDU
 	 * -- A time stamp provided by the higher layer
 	 * -- A computed time stamp based on a sequence counter provided by the
-	 *    higher layer (Not implemented)
-	 * -- Any other method of determining Time_Offset (Not implemented)
+	 *    higher layer
+	 * -- Any other method of determining Time_Offset
+	 *    (Uses a timestamp computed from the difference in provided
+	 *    timestamps, if the timestamp is deemed not based on the
+	 *    controller's clock)
 	 */
+	sdu_frag_tx.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	if (ts_flag) {
-		/* Overwrite time stamp with HCI provided time stamp */
+		/* Use HCI provided time stamp */
 		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
 		len -= sizeof(*time_stamp);
 		sdu_frag_tx.time_stamp = sys_le32_to_cpu(*time_stamp);
 	} else {
-		sdu_frag_tx.time_stamp =
-			HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
+		/* Use controller's capture time */
+		sdu_frag_tx.time_stamp = sdu_frag_tx.cntr_time_stamp;
 	}
 
 	/* Extract ISO data header if included (PB_Flag 0b00 or 0b10) */
@@ -5743,16 +5743,66 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	 * data path
 	 */
 	} else if (IS_CIS_HANDLE(handle)) {
-		struct ll_conn_iso_stream *cis =
-			ll_iso_stream_connected_get(handle);
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn_iso_group *cig;
+		struct ll_iso_stream_hdr *hdr;
+		struct ll_iso_datapath *dp_in;
+
+		cis = ll_iso_stream_connected_get(handle);
 		if (!cis) {
 			return -EINVAL;
 		}
 
-		struct ll_conn_iso_group *cig = cis->group;
-		uint8_t event_offset;
+		cig = cis->group;
 
-		hdr = &(cis->hdr);
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+		uint64_t event_count;
+		uint64_t pkt_seq_num;
+
+		/* Catch up local pkt_seq_num with internal pkt_seq_num */
+		event_count = cis->lll.event_count;
+		pkt_seq_num = event_count + 1U;
+		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
+		 * then we simply check that the pb_flag is an even value, and
+		 * then  pkt_seq_num is a future sequence number value compare
+		 * to last recorded number in cis->pkt_seq_num.
+		 *
+		 * When (pkt_seq_num - stream->pkt_seq_num) is negative then
+		 * BIT64(39) will be set (2's compliment value). The diff value
+		 * less than or equal to BIT64_MASK(38) means the diff value is
+		 * positive and hence pkt_seq_num is greater than
+		 * stream->pkt_seq_num. This calculation is valid for when value
+		 * rollover too.
+		 */
+		if (!(pb_flag & 0x01) &&
+		    (((pkt_seq_num - cis->pkt_seq_num) &
+		      BIT64_MASK(39)) <= BIT64_MASK(38))) {
+			cis->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = cis->pkt_seq_num;
+		}
+
+		/* Pre-increment, when pg_flag is BT_ISO_SINGLE (0b10) or
+		 * BT_ISO_END (0b11) then we simple check if pb_flag has bit 1
+		 * is set, for next ISO data packet seq num comparison.
+		 */
+		if (pb_flag & 0x10) {
+			cis->pkt_seq_num++;
+		}
+
+		/* Target next ISO event to avoid overlapping with, if any,
+		 * current ISO event
+		 */
+		pkt_seq_num++;
+		sdu_frag_tx.target_event = pkt_seq_num;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(cig->cig_ref_point,
+						  ((pkt_seq_num - event_count) *
+						   cig->iso_interval *
+						   ISO_INT_UNIT_US));
+
+#else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+		uint8_t event_offset;
 
 		/* We must ensure sufficient time for ISO-AL to fragment SDU and
 		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
@@ -5776,11 +5826,15 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		}
 
 		sdu_frag_tx.target_event = cis->lll.event_count + event_offset;
-		sdu_frag_tx.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
-						(event_offset * cig->iso_interval *
-							ISO_INT_UNIT_US));
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(cig->cig_ref_point,
+						  (event_offset *
+						   cig->iso_interval *
+						   ISO_INT_UNIT_US));
+#endif /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 
 		/* Get controller's input data path for CIS */
+		hdr = &cis->hdr;
 		dp_in = hdr->datapath_in;
 		if (!dp_in || dp_in->path_id != BT_HCI_DATAPATH_ID_HCI) {
 			LOG_ERR("Input data path not set for HCI");
@@ -5813,8 +5867,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct ll_adv_iso_set *adv_iso;
 		struct lll_adv_iso *lll_iso;
 		uint16_t stream_handle;
-		uint8_t target_event;
-		uint8_t event_offset;
 		uint16_t slen;
 
 		/* FIXME: Code only expects header present */
@@ -5840,6 +5892,70 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 			return -EINVAL;
 		}
 
+		lll_iso = &adv_iso->lll;
+
+#if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
+		uint64_t event_count;
+		uint64_t pkt_seq_num;
+
+		/* Catch up local pkt_seq_num with internal pkt_seq_num */
+		event_count = lll_iso->payload_count / lll_iso->bn;
+		pkt_seq_num = event_count;
+		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
+		 * then we simply check that the pb_flag is an even value, and
+		 * then  pkt_seq_num is a future sequence number value compare
+		 * to last recorded number in cis->pkt_seq_num.
+		 *
+		 * When (pkt_seq_num - stream->pkt_seq_num) is negative then
+		 * BIT64(39) will be set (2's compliment value). The diff value
+		 * less than or equal to BIT64_MASK(38) means the diff value is
+		 * positive and hence pkt_seq_num is greater than
+		 * stream->pkt_seq_num. This calculation is valid for when value
+		 * rollover too.
+		 */
+		if (!(pb_flag & 0x01) &&
+		    (((pkt_seq_num - stream->pkt_seq_num) &
+		      BIT64_MASK(39)) <= BIT64_MASK(38))) {
+			stream->pkt_seq_num = pkt_seq_num;
+		} else {
+			pkt_seq_num = stream->pkt_seq_num;
+		}
+
+		/* Pre-increment, when pg_flag is BT_ISO_SINGLE (0b10) or
+		 * BT_ISO_END (0b11) then we simple check if pb_flag has bit 1
+		 * is set, for next ISO data packet seq num comparison.
+		 */
+		if (pb_flag & 0x10) {
+			stream->pkt_seq_num++;
+		}
+
+		/* Target next ISO event to avoid overlapping with, if any,
+		 * current ISO event
+		 */
+		/* FIXME: Implement ISO Tx ack generation early in done compared
+		 *        to currently only in prepare. I.e. to ensure upper
+		 *        layer has the number of completed packet before the
+		 *        next BIG event, so as to supply new ISO data packets.
+		 *        Without which upper layers need extra buffers to
+		 *        buffer next ISO data packet.
+		 *
+		 *        Enable below increment once early Tx ack is
+		 *        implemented.
+		 *
+		 * pkt_seq_num++;
+		 */
+		sdu_frag_tx.target_event = pkt_seq_num;
+		sdu_frag_tx.grp_ref_point =
+			isoal_get_wrapped_time_us(adv_iso->big_ref_point,
+						  (((pkt_seq_num + 1U) -
+						    event_count) *
+						   lll_iso->iso_interval *
+						   ISO_INT_UNIT_US));
+
+#else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
+		uint8_t target_event;
+		uint8_t event_offset;
+
 		/* Determine the target event and the first event offset after
 		 * datapath setup.
 		 * event_offset mitigates the possibility of first SDU being
@@ -5857,7 +5973,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		 * BIG event by incrementing the previous elapsed big_ref_point
 		 * by one additional ISO interval.
 		 */
-		lll_iso = &adv_iso->lll;
 		target_event = lll_iso->payload_count / lll_iso->bn;
 		event_offset = ull_ref_get(&adv_iso->ull) ? 0U : 1U;
 		event_offset += lll_iso->latency_prepare;
@@ -5868,6 +5983,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						  ((event_offset + 1U) *
 						   lll_iso->iso_interval *
 						   ISO_INT_UNIT_US));
+#endif /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 
 		/* Start Fragmentation */
 		/* FIXME: need to ensure ISO-AL returns proper isoal_status.
@@ -6843,46 +6959,56 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 		ptr = h->data;
 
 		if (h->adv_addr) {
-			bt_addr_le_t addr;
+			/* AdvA is RFU in AUX_CHAIN_IND */
+			if (node_rx_curr == node_rx ||
+			    node_rx_curr == node_rx->hdr.rx_ftr.extra) {
+				bt_addr_le_t addr;
 
-			adv_addr_type_curr = adv->tx_addr;
-			adv_addr_curr = ptr;
+				adv_addr_type_curr = adv->tx_addr;
+				adv_addr_curr = ptr;
 
-			addr.type = adv->tx_addr;
-			(void)memcpy(addr.a.val, ptr, sizeof(bt_addr_t));
+				addr.type = adv->tx_addr;
+				(void)memcpy(addr.a.val, ptr, sizeof(bt_addr_t));
+
+				LOG_DBG("    AdvA: %s", bt_addr_le_str(&addr));
+			}
+
 			ptr += BDADDR_SIZE;
-
-			LOG_DBG("    AdvA: %s", bt_addr_le_str(&addr));
 		}
 
 		if (h->tgt_addr) {
-			struct lll_scan *lll;
-			bt_addr_le_t addr;
+			/* TargetA is RFU in AUX_CHAIN_IND */
+			if (node_rx_curr == node_rx ||
+			    node_rx_curr == node_rx->hdr.rx_ftr.extra) {
+				struct lll_scan *lll;
+				bt_addr_le_t addr;
 
-			lll = node_rx->hdr.rx_ftr.param;
+				lll = node_rx->hdr.rx_ftr.param;
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-			direct_addr_type_curr =
-				ext_adv_direct_addr_type(lll,
-							 direct_resolved_curr,
-							 direct_report_curr,
-							 adv->rx_addr, ptr);
+				direct_addr_type_curr =
+					ext_adv_direct_addr_type(lll,
+								 direct_resolved_curr,
+								 direct_report_curr,
+								 adv->rx_addr, ptr);
 #else /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
-			direct_addr_type_curr =
-				ext_adv_direct_addr_type(lll,
-							 direct_resolved_curr,
-							 false, adv->rx_addr,
-							 ptr);
+				direct_addr_type_curr =
+					ext_adv_direct_addr_type(lll,
+								 direct_resolved_curr,
+								 false, adv->rx_addr,
+								 ptr);
 #endif /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
 
-			direct_addr_curr = ptr;
+				direct_addr_curr = ptr;
+
+				addr.type = adv->rx_addr;
+				(void)memcpy(addr.a.val, direct_addr_curr,
+					     sizeof(bt_addr_t));
+
+				LOG_DBG("    TgtA: %s", bt_addr_le_str(&addr));
+			}
+
 			ptr += BDADDR_SIZE;
-
-			addr.type = adv->rx_addr;
-			(void)memcpy(addr.a.val, direct_addr_curr,
-				     sizeof(bt_addr_t));
-
-			LOG_DBG("    TgtA: %s", bt_addr_le_str(&addr));
 		}
 
 		if (h->adi) {
@@ -6896,34 +7022,42 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 
 		if (h->aux_ptr) {
 			struct pdu_adv_aux_ptr *aux_ptr;
-			uint8_t aux_phy;
 
-			aux_ptr = (void *)ptr;
+			/* AuxPtr is RFU for connectable or scannable AUX_ADV_IND */
+			if (node_rx_curr != node_rx->hdr.rx_ftr.extra ||
+			    evt_type_curr == 0U) {
+				uint8_t aux_phy;
 
-			/* Don't report if invalid phy or AUX_ADV_IND was not received
-			 * See BT Core 5.4, Vol 6, Part B, Section 4.4.3.5:
-			 * If the Controller does not listen for or does not receive the
-			 * AUX_ADV_IND PDU, no report shall be generated
-			 */
-			if ((node_rx_curr == node_rx && !node_rx_next) ||
-			    PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) {
-				struct node_rx_ftr *ftr;
+				aux_ptr = (void *)ptr;
 
-				ftr = &node_rx->hdr.rx_ftr;
-				node_rx_extra_list_release(ftr->extra);
-				return;
+				/* Don't report if invalid phy or AUX_ADV_IND was not received
+				 * See BT Core 5.4, Vol 6, Part B, Section 4.4.3.5:
+				 * If the Controller does not listen for or does not receive the
+				 * AUX_ADV_IND PDU, no report shall be generated
+				 */
+				if ((node_rx_curr == node_rx && !node_rx_next) ||
+				    PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) {
+					struct node_rx_ftr *ftr;
+
+					ftr = &node_rx->hdr.rx_ftr;
+					node_rx_extra_list_release(ftr->extra);
+					return;
+				}
+
+
+				sec_phy_curr = HCI_AUX_PHY_TO_HCI_PHY(
+					PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
+
+				aux_phy = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
+
+				LOG_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
+				       "= %u offs = 0x%x, phy = 0x%x",
+				       aux_ptr->chan_idx, aux_ptr->ca,
+				       aux_ptr->offs_units, PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr),
+				       aux_phy);
 			}
 
 			ptr += sizeof(*aux_ptr);
-
-			sec_phy_curr = HCI_AUX_PHY_TO_HCI_PHY(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
-
-			aux_phy = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
-
-			LOG_DBG("    AuxPtr chan_idx = %u, ca = %u, offs_units "
-			       "= %u offs = 0x%x, phy = 0x%x",
-			       aux_ptr->chan_idx, aux_ptr->ca,
-			       aux_ptr->offs_units, PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr), aux_phy);
 		}
 
 		if (h->sync_info) {
@@ -6937,10 +7071,10 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			LOG_DBG("    SyncInfo offs = %u, offs_unit = 0x%x, "
 			       "interval = 0x%x, sca = 0x%x, "
 			       "chan map = 0x%x 0x%x 0x%x 0x%x 0x%x, "
-			       "AA = 0x%x, CRC = 0x%x 0x%x 0x%x, "
+			       "AA = 0x%x%x%x%x, CRC = 0x%x 0x%x 0x%x, "
 			       "evt cntr = 0x%x",
-			       sys_le16_to_cpu(si->offs),
-			       si->offs_units,
+			       PDU_ADV_SYNC_INFO_OFFSET_GET(si),
+			       PDU_ADV_SYNC_INFO_OFFS_UNITS_GET(si),
 			       sys_le16_to_cpu(si->interval),
 			       ((si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
 				 PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
@@ -6949,7 +7083,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			       si->sca_chm[3],
 			       (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
 				~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK),
-			       sys_le32_to_cpu(si->aa),
+			       si->aa[3], si->aa[2], si->aa[1], si->aa[0],
 			       si->crc_init[0], si->crc_init[1],
 			       si->crc_init[2], sys_le16_to_cpu(si->evt_cntr));
 		}
@@ -7004,9 +7138,10 @@ no_ext_hdr:
 			adi = adi_curr;
 			sec_phy = sec_phy_curr;
 			node_rx_data = node_rx_curr;
-			data_len = data_len_curr;
-			data_len_total = data_len;
-			data = data_curr;
+			/* Adv data in ADV_EXT_IND is RFU */
+			data_len = 0U;
+			data_len_total = 0U;
+			data = NULL;
 			scan_data_len_total = 0U;
 			tx_pwr = tx_pwr_curr;
 

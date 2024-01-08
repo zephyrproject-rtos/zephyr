@@ -12,7 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
@@ -24,6 +24,7 @@
 #include <stm32_ll_rng.h>
 #include <stm32_ll_system.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
@@ -234,6 +235,8 @@ static int random_byte_get(void)
 	unsigned int key;
 	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
 
+	key = irq_lock();
+
 	if (IS_ENABLED(CONFIG_ENTROPY_STM32_CLK_CHECK) && !k_is_pre_kernel()) {
 		/* CECS bit signals that a clock configuration issue is detected,
 		 * which may lead to generation of non truly random data.
@@ -242,8 +245,6 @@ static int random_byte_get(void)
 			 "CECS = 1: RNG domain clock is too slow.\n"
 			 "\tSee ref man and update target clock configuration.");
 	}
-
-	key = irq_lock();
 
 	if (LL_RNG_IsActiveFlag_SEIS(rng) && (recover_seed_error(rng) < 0)) {
 		retval = -EIO;
@@ -377,13 +378,7 @@ static void pool_filling_work_handler(struct k_work *work)
 	}
 }
 
-#if defined(CONFIG_BT_CTLR_FAST_ENC)
-#define __fast __attribute__((optimize("Ofast")))
-#else
-#define __fast
-#endif
-
-__fast static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
+static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
 	uint16_t len)
 {
 	uint32_t last  = rngp->last;
@@ -448,7 +443,6 @@ __fast static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
 
 	return len;
 }
-#undef __fast
 
 static int rng_pool_put(struct rng_pool *rngp, uint8_t byte)
 {
@@ -639,13 +633,60 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int entropy_stm32_rng_pm_action(const struct device *dev,
+				       enum pm_device_action action)
+{
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+	RNG_TypeDef *rng = dev_data->rng;
+	int res = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		LL_RNG_Disable(rng);
+
+#ifdef CONFIG_SOC_SERIES_STM32WBAX
+		uint32_t wait_cycles, rng_rate;
+
+		if (clock_control_get_rate(dev_data->clock,
+				(clock_control_subsys_t) &dev_cfg->pclken[0],
+				&rng_rate) < 0) {
+			return -EIO;
+		}
+
+		wait_cycles = SystemCoreClock / rng_rate * 2;
+
+		for (int i = wait_cycles; i >= 0; i--) {
+		}
+#endif /* CONFIG_SOC_SERIES_STM32WBAX */
+
+		res = clock_control_off(dev_data->clock,
+				(clock_control_subsys_t)&dev_cfg->pclken[0]);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		res = clock_control_on(dev_data->clock,
+				(clock_control_subsys_t)&dev_cfg->pclken[0]);
+		LL_RNG_Enable(rng);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return res;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static const struct entropy_driver_api entropy_stm32_rng_api = {
 	.get_entropy = entropy_stm32_rng_get_entropy,
 	.get_entropy_isr = entropy_stm32_rng_get_entropy_isr
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, entropy_stm32_rng_pm_action);
+
 DEVICE_DT_INST_DEFINE(0,
-		    entropy_stm32_rng_init, NULL,
+		    entropy_stm32_rng_init,
+		    PM_DEVICE_DT_INST_GET(0),
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
 		    &entropy_stm32_rng_api);

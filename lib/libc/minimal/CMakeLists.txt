@@ -7,7 +7,7 @@ zephyr_library()
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 set(STRERROR_TABLE_H ${GEN_DIR}/libc/minimal/strerror_table.h)
 
-zephyr_library_cc_option(-fno-builtin)
+zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin>)
 
 zephyr_library_sources(
   source/stdlib/atoi.c

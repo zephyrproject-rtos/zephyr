@@ -9,9 +9,5 @@
 / {
 	soc {
 		compatible = "st,stm32wb55", "st,stm32wb", "simple-bus";
-
-		adc1: adc@50040000 {
-			temp-channel = <17>;
-		};
 	};
 };

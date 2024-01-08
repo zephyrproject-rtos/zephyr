@@ -18,3 +18,4 @@ supported:
   - xplained_serial
   - xplained_spi
   - hwinfo
+vendor: atmel

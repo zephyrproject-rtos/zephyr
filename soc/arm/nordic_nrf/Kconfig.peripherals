@@ -13,10 +13,10 @@ config HAS_HW_NRF_BPROT
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_BPROT))
 
 config HAS_HW_NRF_CC310
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_310))
 
 config HAS_HW_NRF_CC312
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_ARM_CRYPTOCELL_312))
 
 config HAS_HW_NRF_CCM
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CCM))
@@ -75,6 +75,9 @@ config HAS_HW_NRF_GPIOTE
 config HAS_HW_NRF_I2S0
 	def_bool $(dt_nodelabel_enabled_with_compat,i2s0,$(DT_COMPAT_NORDIC_NRF_I2S))
 
+config HAS_HW_NRF_I2S20
+	def_bool $(dt_nodelabel_enabled_with_compat,i2s20,$(DT_COMPAT_NORDIC_NRF_I2S))
+
 config HAS_HW_NRF_IPC
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_IPC))
 
@@ -128,6 +131,18 @@ config HAS_HW_NRF_QDEC0
 
 config HAS_HW_NRF_QDEC1
 	def_bool $(dt_nodelabel_enabled_with_compat,qdec1,$(DT_COMPAT_NORDIC_NRF_QDEC))
+
+config HAS_HW_NRF_QDEC20
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec20,$(DT_COMPAT_NORDIC_NRF_QDEC))
+
+config HAS_HW_NRF_QDEC21
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec21,$(DT_COMPAT_NORDIC_NRF_QDEC))
+
+config HAS_HW_NRF_QDEC130
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec130,$(DT_COMPAT_NORDIC_NRF_QDEC))
+
+config HAS_HW_NRF_QDEC131
+	def_bool $(dt_nodelabel_enabled_with_compat,qdec131,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
 config HAS_HW_NRF_QSPI
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_QSPI))
@@ -191,6 +206,51 @@ config HAS_HW_NRF_SPIM3
 
 config HAS_HW_NRF_SPIM4
 	def_bool $(dt_nodelabel_enabled_with_compat,spi4,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM00
+	def_bool $(dt_nodelabel_enabled_with_compat,spi00,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM20
+	def_bool $(dt_nodelabel_enabled_with_compat,spi20,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM21
+	def_bool $(dt_nodelabel_enabled_with_compat,spi21,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM22
+	def_bool $(dt_nodelabel_enabled_with_compat,spi22,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM30
+	def_bool $(dt_nodelabel_enabled_with_compat,spi30,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM120
+	def_bool $(dt_nodelabel_enabled_with_compat,spi120,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM121
+	def_bool $(dt_nodelabel_enabled_with_compat,spi121,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM130
+	def_bool $(dt_nodelabel_enabled_with_compat,spi130,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM131
+	def_bool $(dt_nodelabel_enabled_with_compat,spi131,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM132
+	def_bool $(dt_nodelabel_enabled_with_compat,spi132,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM133
+	def_bool $(dt_nodelabel_enabled_with_compat,spi133,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM134
+	def_bool $(dt_nodelabel_enabled_with_compat,spi134,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM135
+	def_bool $(dt_nodelabel_enabled_with_compat,spi135,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM136
+	def_bool $(dt_nodelabel_enabled_with_compat,spi136,$(DT_COMPAT_NORDIC_NRF_SPIM))
+
+config HAS_HW_NRF_SPIM137
+	def_bool $(dt_nodelabel_enabled_with_compat,spi137,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
 config HAS_HW_NRF_SPIS0
 	def_bool $(dt_nodelabel_enabled_with_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIS))
@@ -260,6 +320,45 @@ config HAS_HW_NRF_TWIM2
 
 config HAS_HW_NRF_TWIM3
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM20
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c20,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM21
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c21,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM22
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM30
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM120
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c120,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM130
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c130,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM131
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c131,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM132
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c132,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM133
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c133,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM134
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c134,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM135
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c135,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM136
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c136,$(DT_COMPAT_NORDIC_NRF_TWIM))
+
+config HAS_HW_NRF_TWIM137
+	def_bool $(dt_nodelabel_enabled_with_compat,i2c137,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
 config HAS_HW_NRF_TWIS0
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIS))

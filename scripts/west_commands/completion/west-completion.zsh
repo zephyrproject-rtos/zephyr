@@ -205,7 +205,7 @@ _west_help() {
 
 _west_completion() {
 
-  _arguments -S "1:shell:(bash zsh)"
+  _arguments -S "1:shell:(bash zsh fish)"
 }
 
 _west_boards() {
@@ -300,7 +300,7 @@ _west_spdx() {
   '(-i --init)'{-i,--init}'[initialize CMake file-based API]'
   '(-d --build-dir)'{-d,--build-dir}'[build directory to create or use]:build dir:_directories'
   '(-n --namespace-prefix)'{-n,--namespace-prefix}'[namespace prefix]:namespace prefix:'
-  '(-s --spdx-dir)'{-d,--spdx-dir}'[SPDX output directory]:spdx output dir:_directories'
+  '(-s --spdx-dir)'{-s,--spdx-dir}'[SPDX output directory]:spdx output dir:_directories'
   '--analyze-includes[also analyze included header files]'
   '--include-sdk[also generate SPDX document for SDK]'
   )

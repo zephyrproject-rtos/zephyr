@@ -6,6 +6,7 @@ config ZEPHYR_ZCBOR_MODULE
 
 config ZCBOR
 	bool "zcbor CBOR library"
+	depends on ZEPHYR_ZCBOR_MODULE
 	help
 	  zcbor CBOR encoder/decoder library
 

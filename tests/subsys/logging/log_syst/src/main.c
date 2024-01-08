@@ -152,7 +152,7 @@ static void after(void *unused)
 		if (backend == &log_backend_mock) {
 			log_backend_disable(backend);
 		} else {
-			log_backend_enable(backend, NULL, 4);
+			log_backend_enable(backend, backend->cb->ctx, 4);
 		}
 	}
 }

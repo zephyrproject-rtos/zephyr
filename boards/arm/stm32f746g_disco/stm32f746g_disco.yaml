@@ -20,3 +20,4 @@ supported:
   - usb_device
   - display
   - memc
+vendor: st

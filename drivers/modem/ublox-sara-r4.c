@@ -936,8 +936,12 @@ MODEM_CMD_DEFINE(on_cmd_socknotifycreg)
 }
 
 /* RX thread */
-static void modem_rx(void)
+static void modem_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 		/* wait for incoming data */
 		modem_iface_uart_rx_wait(&mctx.iface, K_FOREVER);
@@ -2220,7 +2224,7 @@ static int modem_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_create(&modem_rx_thread, modem_rx_stack,
 			K_KERNEL_STACK_SIZEOF(modem_rx_stack),
-			(k_thread_entry_t) modem_rx,
+			modem_rx,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)

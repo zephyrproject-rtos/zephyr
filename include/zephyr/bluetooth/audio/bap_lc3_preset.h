@@ -31,7 +31,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 8_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_8_1_1(_loc, _stream_context)                                     \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_8_1(_loc, _stream_context),                    \
@@ -41,7 +41,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 8_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_8_2_1(_loc, _stream_context)                                     \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_8_2(_loc, _stream_context),                    \
@@ -51,7 +51,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 16_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_16_1_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_1(_loc, _stream_context),                   \
@@ -63,7 +63,7 @@ struct bt_bap_lc3_preset {
  *  Mandatory to support as both unicast client and server
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_16_2_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_2(_loc, _stream_context),                   \
@@ -73,7 +73,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 24_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_24_1_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_1(_loc, _stream_context),                   \
@@ -85,7 +85,7 @@ struct bt_bap_lc3_preset {
  *  Mandatory to support as unicast server
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_24_2_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_2(_loc, _stream_context),                   \
@@ -95,7 +95,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 32_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_32_1_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_1(_loc, _stream_context),                   \
@@ -105,7 +105,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 32_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_32_2_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_2(_loc, _stream_context),                   \
@@ -115,7 +115,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 441_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_1_1(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
@@ -126,7 +126,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 441_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_2_1(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
@@ -137,7 +137,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_1_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_1(_loc, _stream_context),                   \
@@ -147,7 +147,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_2_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_2(_loc, _stream_context),                   \
@@ -157,7 +157,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_3_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_3_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_3(_loc, _stream_context),                   \
@@ -167,7 +167,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_4_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_4_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_4(_loc, _stream_context),                   \
@@ -177,7 +177,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 8_5_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_5_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_5(_loc, _stream_context),                   \
@@ -187,7 +187,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_6_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_6_1(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_6(_loc, _stream_context),                   \
@@ -197,7 +197,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 8_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 /* Following presets are for unicast high reliability audio data */
 #define BT_BAP_LC3_UNICAST_PRESET_8_1_2(_loc, _stream_context)                                     \
@@ -208,7 +208,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 8_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_8_2_2(_loc, _stream_context)                                     \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_8_2(_loc, _stream_context),                    \
@@ -218,7 +218,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 16_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_16_1_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_1(_loc, _stream_context),                   \
@@ -228,7 +228,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 16_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_16_2_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_2(_loc, _stream_context),                   \
@@ -238,7 +238,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 24_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_24_1_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_1(_loc, _stream_context),                   \
@@ -248,7 +248,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 24_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_24_2_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_2(_loc, _stream_context),                   \
@@ -258,7 +258,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 32_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_32_1_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_1(_loc, _stream_context),                   \
@@ -268,7 +268,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 32_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_32_2_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_2(_loc, _stream_context),                   \
@@ -278,7 +278,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 441_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_1_2(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
@@ -289,7 +289,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 441_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_441_2_2(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
@@ -300,7 +300,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_1_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_1(_loc, _stream_context),                   \
@@ -310,7 +310,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_2_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_2(_loc, _stream_context),                   \
@@ -320,7 +320,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_3_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_3_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_3(_loc, _stream_context),                   \
@@ -330,7 +330,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_4_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_4_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_4(_loc, _stream_context),                   \
@@ -340,7 +340,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_5_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_5_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_5(_loc, _stream_context),                   \
@@ -350,7 +350,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Unicast 48_6_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_UNICAST_PRESET_48_6_2(_loc, _stream_context)                                    \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_6(_loc, _stream_context),                   \
@@ -360,7 +360,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 8_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 /* LC3 Broadcast presets defined by table 6.4 in the BAP v1.0 specification */
 #define BT_BAP_LC3_BROADCAST_PRESET_8_1_1(_loc, _stream_context)                                   \
@@ -371,7 +371,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 8_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_8_2_1(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_8_2(_loc, _stream_context),                    \
@@ -381,7 +381,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 16_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_16_1_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_1(_loc, _stream_context),                   \
@@ -393,7 +393,7 @@ struct bt_bap_lc3_preset {
  *  Mandatory to support as both broadcast source and sink
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_16_2_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_2(_loc, _stream_context),                   \
@@ -403,7 +403,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 24_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_24_1_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_1(_loc, _stream_context),                   \
@@ -415,7 +415,7 @@ struct bt_bap_lc3_preset {
  *  Mandatory to support as broadcast sink
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_24_2_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_2(_loc, _stream_context),                   \
@@ -425,7 +425,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 32_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_32_1_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_1(_loc, _stream_context),                   \
@@ -435,7 +435,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 32_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_32_2_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_2(_loc, _stream_context),                   \
@@ -445,7 +445,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 441_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_1_1(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
@@ -456,7 +456,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 441_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_2_1(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
@@ -467,7 +467,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_1_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_1_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_1(_loc, _stream_context),                   \
@@ -477,7 +477,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_2_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_2_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_2(_loc, _stream_context),                   \
@@ -487,7 +487,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_3_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_3_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_3(_loc, _stream_context),                   \
@@ -497,7 +497,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_4_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_4_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_4(_loc, _stream_context),                   \
@@ -507,7 +507,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_5_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_5_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_5(_loc, _stream_context),                   \
@@ -517,7 +517,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_6_1 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_6_1(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_6(_loc, _stream_context),                   \
@@ -527,7 +527,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 8_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 /* Following presets are for broadcast high reliability audio data */
 #define BT_BAP_LC3_BROADCAST_PRESET_8_1_2(_loc, _stream_context)                                   \
@@ -538,7 +538,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 8_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_8_2_2(_loc, _stream_context)                                   \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_8_2(_loc, _stream_context),                    \
@@ -548,7 +548,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 16_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_16_1_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_1(_loc, _stream_context),                   \
@@ -560,7 +560,7 @@ struct bt_bap_lc3_preset {
  *  Mandatory to support as both broadcast source and sink
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_16_2_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_16_2(_loc, _stream_context),                   \
@@ -570,7 +570,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 24_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_24_1_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_1(_loc, _stream_context),                   \
@@ -582,7 +582,7 @@ struct bt_bap_lc3_preset {
  *  Mandatory to support as broadcast sink
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_24_2_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_24_2(_loc, _stream_context),                   \
@@ -592,7 +592,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 32_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_32_1_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_1(_loc, _stream_context),                   \
@@ -602,7 +602,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 32_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_32_2_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_32_2(_loc, _stream_context),                   \
@@ -612,7 +612,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 441_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_1_2(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_1(_loc, _stream_context),                  \
@@ -623,7 +623,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 441_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_441_2_2(_loc, _stream_context)                                 \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_441_2(_loc, _stream_context),                  \
@@ -634,7 +634,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_1_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_1_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_1(_loc, _stream_context),                   \
@@ -644,7 +644,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_2_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_2_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_2(_loc, _stream_context),                   \
@@ -654,7 +654,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_3_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_3_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_3(_loc, _stream_context),                   \
@@ -664,7 +664,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_4_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_4_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_4(_loc, _stream_context),                   \
@@ -674,7 +674,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_5_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_5_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_5(_loc, _stream_context),                   \
@@ -684,7 +684,7 @@ struct bt_bap_lc3_preset {
  *  @brief Helper to declare LC3 Broadcast 48_6_2 codec configuration
  *
  *  @param _loc             Audio channel location bitfield (@ref bt_audio_location)
- *  @param _stream_context  Stream context (BT_AUDIO_CONTEXT_*)
+ *  @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)
  */
 #define BT_BAP_LC3_BROADCAST_PRESET_48_6_2(_loc, _stream_context)                                  \
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG_48_6(_loc, _stream_context),                   \

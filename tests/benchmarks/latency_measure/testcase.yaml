@@ -36,3 +36,20 @@ tests:
         regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Obtain the benchmark results for various user thread / kernel thread
+  # configurations on platforms that support user space.
+  benchmark.user.latency:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    timeout: 300
+    extra_args: CONF_FILE=prj_user.conf
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"

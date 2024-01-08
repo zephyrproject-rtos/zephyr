@@ -83,6 +83,8 @@ config LWM2M_COAP_BLOCK_TRANSFER
 	help
 	  LwM2M messages with a big body that exceed the block size will be split
 	  into blocks for sending.
+	  To append CoAP ETag option into outgoing block transfers, CONFIG_SYS_HASH_FUNC32 should
+	  be enabled.
 
 config LWM2M_CANCEL_OBSERVE_BY_PATH
 	bool "Use path matching as fallback for cancel-observe"
@@ -112,6 +114,13 @@ config LWM2M_TLS_SESSION_CACHING
 	bool "TLS session caching"
 	help
 	  Enabling this only when feature is supported in TLS library.
+
+config LWM2M_DTLS_CID
+	bool "DTLS Connection Identifier support"
+	default y if MBEDTLS_SSL_DTLS_CONNECTION_ID
+	help
+	  Request TLS stack to enable DTLS Connection identifier. This requires stack that support it
+	  and actual effect depends on the target server as well.
 
 config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	bool "Bootstrap support"
@@ -469,9 +478,19 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	  This is also a minimum lifetime that client accepts. If server sets lifetime
 	  less than this value, client automatically raises it.
 
+config LWM2M_UPDATE_PERIOD
+	int "LwM2M engine update period"
+	default 0
+	range 0 4294967295
+	help
+	  Time period after the previous update or registration when to send the next update message.
+	  This allows modifying lifetime without affecting the update period.
+	  Set to zero, to allow LWM2M_SECONDS_TO_UPDATE_EARLY and lifetime to control when to
+	  send the update. When both values are set, smallest period will be used.
+
 config LWM2M_SECONDS_TO_UPDATE_EARLY
 	int "LWM2M Registration Update transmission time before timeout"
-	default 6
+	default 10
 	range 1 4294967295
 	help
 	  Time in seconds before the registration timeout, when the LWM2M

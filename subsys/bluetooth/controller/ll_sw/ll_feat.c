@@ -70,6 +70,11 @@ uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	return BT_HCI_ERR_SUCCESS;
 }
 
+void ll_feat_reset(void)
+{
+	host_features = 0U;
+}
+
 uint64_t ll_feat_get(void)
 {
 	return LL_FEAT | (host_features & LL_FEAT_HOST_BIT_MASK);

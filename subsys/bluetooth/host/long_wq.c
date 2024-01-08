@@ -40,4 +40,4 @@ static int long_wq_init(void)
 	return 0;
 }
 
-SYS_INIT(long_wq_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(long_wq_init, POST_KERNEL, CONFIG_BT_LONG_WQ_INIT_PRIO);

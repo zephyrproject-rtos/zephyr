@@ -46,21 +46,9 @@ config XTENSA_USE_CORE_CRT1
 config XTENSA_ENABLE_BACKTRACE
 	bool "Backtrace on panic exception"
 	default y
-	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP
+	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C
 	help
 	  Enable this config option to print backtrace on panic exception
-
-config XTENSA_CPU_IDLE_SPIN
-	bool "Use busy loop for k_cpu_idle"
-	help
-	  Use a spin loop instead of WAITI for the CPU idle state.
-
-config XTENSA_WAITI_BUG
-	bool "Workaround sequence for WAITI bug on LX6"
-	help
-	  SOF traditionally contains this workaround on its ADSP
-	  platforms which prefixes a WAITI entry with 128 NOP
-	  instructions followed by an ISYNC and EXTW.
 
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	bool "Workaround for small vector table entries"
@@ -126,6 +114,7 @@ config XTENSA_MMU
 	default n
 	select MMU
 	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK if XTENSA_RPO_CACHE
 	help
 	  Enable support for Xtensa Memory Management Unit.
 

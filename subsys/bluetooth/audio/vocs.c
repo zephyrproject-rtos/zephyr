@@ -19,7 +19,7 @@
 
 #include "audio_internal.h"
 #include "vocs_internal.h"
-#include "zephyr/bluetooth/audio/audio.h"
+#include <zephyr/bluetooth/audio/audio.h>
 
 #define LOG_LEVEL CONFIG_BT_VOCS_LOG_LEVEL
 #include <zephyr/logging/log.h>

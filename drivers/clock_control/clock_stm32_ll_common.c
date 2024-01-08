@@ -723,21 +723,6 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Some clocks would be activated by default */
 	config_enable_default_clocks();
 
-#if defined(STM32_PLL_ENABLED) && defined(CONFIG_SOC_SERIES_STM32F7X)
-	/* Assuming we stay on Power Scale default value: Power Scale 1 */
-	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
-		/* Set Overdrive if needed before configuring the Flash Latency */
-		LL_PWR_EnableOverDriveMode();
-		while (LL_PWR_IsActiveFlag_OD() != 1) {
-		/* Wait for OverDrive mode ready */
-		}
-		LL_PWR_EnableOverDriveSwitching();
-		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
-		/* Wait for OverDrive switch ready */
-		}
-	}
-#endif /* STM32_PLL_ENABLED && CONFIG_SOC_SERIES_STM32F7X */
-
 #if defined(FLASH_ACR_LATENCY)
 	uint32_t old_flash_freq;
 	uint32_t new_flash_freq;
@@ -748,9 +733,9 @@ int stm32_clock_control_init(const struct device *dev)
 	new_flash_freq = RCC_CALC_FLASH_FREQ(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				      STM32_FLASH_PRESCALER);
 
-	/* If freq increases, set flash latency before any clock setting */
-	if (old_flash_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	/* If HCLK increases, set flash latency before any clock setting */
+	if (old_flash_freq < new_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
@@ -794,9 +779,9 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 #if defined(FLASH_ACR_LATENCY)
-	/* If freq not increased, set flash latency after all clock setting */
-	if (old_flash_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	/* If HCLK not increased, set flash latency after all clock setting */
+	if (old_flash_freq >= new_flash_freq) {
+		LL_SetFlashLatency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 

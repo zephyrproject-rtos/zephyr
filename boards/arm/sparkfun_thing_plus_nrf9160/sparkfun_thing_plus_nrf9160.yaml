@@ -13,3 +13,4 @@ supported:
   - pwm
   - watchdog
   - counter
+vendor: sparkfun

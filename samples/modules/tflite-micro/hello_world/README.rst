@@ -94,7 +94,7 @@ TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`:
 .. code-block:: kconfig
 
     CONFIG_CPP=y
-    CONFIG_NEWLIB_LIBC=y
+    CONFIG_REQUIRES_FULL_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
 
 Note that the CMSIS-NN kernel sample demonstrates how to use CMSIS-NN optimized kernels with

@@ -34,5 +34,10 @@ if(CONFIG_FP16)
     list(APPEND ARM_C_FLAGS   -mfp16-format=alternative)
   endif()
 endif()
+
+if(CONFIG_THREAD_LOCAL_STORAGE)
+    list(APPEND ARM_C_FLAGS -mtp=soft)
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS ${ARM_C_FLAGS})
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT ${ARM_C_FLAGS})

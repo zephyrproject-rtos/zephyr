@@ -1,7 +1,8 @@
-.. _led_pwm:
+.. zephyr:code-sample:: led-pwm
+   :name: LED PWM
+   :relevant-api: led_interface
 
-LED PWM sample application
-##########################
+   Control PWM LEDs using the LED API.
 
 Overview
 ********

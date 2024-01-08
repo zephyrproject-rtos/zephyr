@@ -238,7 +238,7 @@ ZTEST(lwm2m_engine, test_check_notifications)
 	obs.last_timestamp = k_uptime_get();
 	obs.event_timestamp = k_uptime_get() + 1000U;
 	obs.resource_update = false;
-	obs.active_tx_operation = false;
+	obs.active_notify = NULL;
 
 	sys_slist_append(&ctx.observer, &obs.node);
 

@@ -13,3 +13,12 @@ config SPI_AMBIQ
 	select AMBIQ_HAL_USE_SPI
 	help
 	  Enable driver for Ambiq SPI.
+
+config MSPI_AMBIQ
+	bool "AMBIQ MSPI driver"
+	default y
+	depends on DT_HAS_AMBIQ_MSPI_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_MSPI
+	help
+	  Enable driver for Ambiq MSPI.

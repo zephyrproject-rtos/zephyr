@@ -34,7 +34,7 @@ enum ieee802154_openthread_tx_mode {
 	 * This mode is a non-standard experimental OpenThread feature. It allows transmission
 	 * of a packet within a certain time window.
 	 * The earliest transmission time is specified as in the other TXTIME modes:
-	 * When the first CCA reports an idle channel then the first symbol of the packet's SHR
+	 * When the first CCA reports an idle channel then the first symbol of the packet's PHR
 	 * SHALL be present at the local antenna at the time represented by the scheduled
 	 * TX timestamp (referred to as T_tx below).
 	 *
@@ -48,7 +48,7 @@ enum ieee802154_openthread_tx_mode {
 	 * (see @ref IEEE802154_OPENTHREAD_ATTR_T_RECCA and
 	 * @ref IEEE802154_OPENTHREAD_ATTR_T_CCATX). Based on these attributes the upper layer
 	 * can calculate the latest point in time (T_txmax) that the first symbol of the scheduled
-	 * packet's SHR SHALL be present at the local antenna:
+	 * packet's PHR SHALL be present at the local antenna:
 	 *
 	 * T_maxtxdelay = max_extra_cca_attempts * (aCcaTime + T_recca) - T_recca + T_ccatx
 	 * T_txmax = T_tx + T_maxtxdelay
@@ -78,6 +78,17 @@ enum ieee802154_openthread_config_type {
 	 */
 	IEEE802154_OPENTHREAD_CONFIG_MAX_EXTRA_CCA_ATTEMPTS  = IEEE802154_CONFIG_PRIV_START
 };
+
+/**
+ * Thread vendor OUI for vendor specific header or nested information elements,
+ * see IEEE 802.15.4-2020, sections 7.4.2.2 and 7.4.4.30.
+ *
+ * in little endian
+ */
+#define IEEE802154_OPENTHREAD_THREAD_IE_VENDOR_OUI { 0x9b, 0xb8, 0xea }
+
+/** length of IEEE 802.15.4-2020 vendor OUIs */
+#define IEEE802154_OPENTHREAD_VENDOR_OUI_LEN 3
 
 /** OpenThread specific configuration data of ieee802154 driver. */
 struct ieee802154_openthread_config {

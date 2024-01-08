@@ -10,9 +10,9 @@ tests:
     tags: flash_circural_buffer
     integration_platforms:
       - nrf52840dk_nrf52840
-  filesystem.native_posix.fcb_0x00:
+  filesystem.fcb.native_posix.fcb_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/native_posix_ev_0x00.overlay
     platform_allow: native_posix
-  filesystem.qemu_x86.fcb_0x00:
+  filesystem.fcb.qemu_x86.fcb_0x00:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_allow: qemu_x86

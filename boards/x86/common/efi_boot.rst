@@ -1,3 +1,7 @@
+:orphan:
+
+.. start_include_here
+
 Preparing the Boot Device
 -------------------------
 

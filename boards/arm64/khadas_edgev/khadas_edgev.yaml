@@ -6,3 +6,4 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 8192
+vendor: khadas

@@ -71,6 +71,7 @@ class CoverageTool:
 
     @staticmethod
     def create_gcda_files(extracted_coverage_info):
+        gcda_created = True
         logger.debug("Generating gcda files")
         for filename, hexdump_val in extracted_coverage_info.items():
             # if kobject_hash is given for coverage gcovr fails
@@ -83,19 +84,33 @@ class CoverageTool:
                     pass
                 continue
 
-            with open(filename, 'wb') as fp:
-                fp.write(bytes.fromhex(hexdump_val))
+            try:
+                with open(filename, 'wb') as fp:
+                    fp.write(bytes.fromhex(hexdump_val))
+            except ValueError:
+                logger.exception("Unable to convert hex data for file: {}".format(filename))
+                gcda_created = False
+            except FileNotFoundError:
+                logger.exception("Unable to create gcda file: {}".format(filename))
+                gcda_created = False
+        return gcda_created
 
     def generate(self, outdir):
+        coverage_completed = True
         for filename in glob.glob("%s/**/handler.log" % outdir, recursive=True):
             gcov_data = self.__class__.retrieve_gcov_data(filename)
             capture_complete = gcov_data['complete']
             extracted_coverage_info = gcov_data['data']
             if capture_complete:
-                self.__class__.create_gcda_files(extracted_coverage_info)
-                logger.debug("Gcov data captured: {}".format(filename))
+                gcda_created = self.__class__.create_gcda_files(extracted_coverage_info)
+                if gcda_created:
+                    logger.debug("Gcov data captured: {}".format(filename))
+                else:
+                    logger.error("Gcov data invalid for: {}".format(filename))
+                    coverage_completed = False
             else:
                 logger.error("Gcov data capture incomplete: {}".format(filename))
+                coverage_completed = False
 
         with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
             ret = self._generate(outdir, coveragelog)
@@ -111,6 +126,10 @@ class CoverageTool:
                 }
                 for r in self.output_formats.split(','):
                     logger.info(report_log[r])
+            else:
+                coverage_completed = False
+        logger.debug("All coverage data processed: {}".format(coverage_completed))
+        return coverage_completed
 
 
 class Lcov(CoverageTool):
@@ -202,11 +221,11 @@ class Gcovr(CoverageTool):
         excludes = Gcovr._interleave_list("-e", self.ignores)
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        cmd = ["gcovr", "-r", self.base_dir, "--gcov-executable",
-               str(self.gcov_tool), "-e", "tests/*"] + excludes + ["--json",
-                                                                   "-o",
-                                                                   coveragefile,
-                                                                   outdir]
+        cmd = ["gcovr", "-r", self.base_dir,
+               "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
+               "--gcov-executable", str(self.gcov_tool),
+               "-e", "tests/*"]
+        cmd += excludes + ["--json", "-o", coveragefile, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
         subprocess.call(cmd, stdout=coveragelog)
@@ -280,4 +299,5 @@ def run_coverage(testplan, options):
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
-    coverage_tool.generate(options.outdir)
+    coverage_completed = coverage_tool.generate(options.outdir)
+    return coverage_completed

@@ -8,6 +8,7 @@
 #include <kernel_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/irq_multilevel.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -24,8 +25,10 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (mcause == RISCV_MACHINE_EXT_IRQ) {
-		LOG_ERR("PLIC interrupt line causing the IRQ: %d",
-			riscv_plic_get_irq());
+		unsigned int save_irq = riscv_plic_get_irq();
+		const struct device *save_dev = riscv_plic_get_dev();
+
+		LOG_ERR("PLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
@@ -42,8 +45,6 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	if (irq_get_level(irq) == 2) {
-		irq = irq_from_level_2(irq);
-
 		riscv_plic_set_priority(irq, priority);
 	}
 #else

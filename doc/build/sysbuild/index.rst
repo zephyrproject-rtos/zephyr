@@ -104,21 +104,27 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
       .. tip::
 
          To configure ``west build`` to use ``--sysbuild`` by default from now on,
-         run::
+         run:
 
-           west config build.sysbuild True
+         .. code-block:: shell
+
+            west config build.sysbuild True
 
          Since sysbuild supports both single- and multi-image builds, this lets you
          use sysbuild all the time, without worrying about what type of build you are
          running.
 
-         To turn this off, run this before generating your build system::
+         To turn this off, run this before generating your build system:
 
-           west config build.sysbuild False
+         .. code-block:: shell
 
-         To turn this off for just one ``west build`` command, run::
+            west config build.sysbuild False
 
-           west build --no-sysbuild ...
+         To turn this off for just one ``west build`` command, run:
+
+         .. code-block:: shell
+
+            west build --no-sysbuild ...
 
    .. group-tab:: ``cmake``
 
@@ -206,15 +212,15 @@ build system to the value ``BAR``, run the following commands:
 
    .. group-tab:: ``west build``
 
-      ::
+      .. code-block:: shell
 
          west build --sysbuild ... -- -Dmy_sample_FOO=BAR
 
    .. group-tab:: ``cmake``
 
-      ::
+      .. code-block:: shell
 
-        cmake -Dmy_sample_FOO=BAR ...
+         cmake -Dmy_sample_FOO=BAR ...
 
 .. _sysbuild_kconfig_namespacing:
 
@@ -242,13 +248,13 @@ build system to the value ``BAR``, run the following commands:
 
    .. group-tab:: ``west build``
 
-      ::
+      .. code-block:: shell
 
          west build --sysbuild ... -- -Dmy_sample_CONFIG_FOO=BAR
 
    .. group-tab:: ``cmake``
 
-      ::
+      .. code-block:: shell
 
         cmake -Dmy_sample_CONFIG_FOO=BAR ...
 
@@ -263,13 +269,13 @@ build system to the value ``BAR``, run the following commands:
    the same syntax for setting Kconfig values at CMake time.
    For example, the following commands will work in the same way:
 
-   ::
+   .. code-block:: shell
 
-     west build -b <board> my_sample -- -DCONFIG_FOO=BAR
+      west build -b <board> my_sample -- -DCONFIG_FOO=BAR
 
-   ::
+   .. code-block:: shell
 
-     west build -b <board> --sysbuild my_sample -- -DCONFIG_FOO=BAR
+      west build -b <board> --sysbuild my_sample -- -DCONFIG_FOO=BAR
 
 Sysbuild flashing using ``west flash``
 **************************************
@@ -359,7 +365,7 @@ MCUboot whenever sysbuild is used:
    └── sysbuild.conf
 
 
-.. code-block:: none
+.. code-block:: cfg
 
    SB_CONFIG_BOOTLOADER_MCUBOOT=y
 
@@ -432,7 +438,7 @@ target to execute and it will run.
       location, the ``rom_report`` build target for ``mcuboot`` can be ran
       with:
 
-      .. code-block:: bash
+      .. code-block:: shell
 
          west build -d build/mcuboot -t rom_report
 
@@ -442,7 +448,7 @@ target to execute and it will run.
       using ``ninja`` using sysbuild with mcuboot enabled, the ``rom_report``
       build target for ``mcuboot`` can be ran with:
 
-      .. code-block:: bash
+      .. code-block:: shell
 
          ninja -C mcuboot rom_report
 
@@ -452,7 +458,7 @@ target to execute and it will run.
       using ``make`` using sysbuild with mcuboot enabled, the ``rom_report``
       build target for ``mcuboot`` can be ran with:
 
-      .. code-block:: bash
+      .. code-block:: shell
 
          make -C mcuboot rom_report
 
@@ -569,12 +575,18 @@ You can mark ``my_sample`` as a build-only application in this manner:
    )
 
 As a result, ``my_sample`` will be built as part of the sysbuild build invocation,
-but neither ``west flash`` nor ``west debug`` will be aware of this application.
+but it will be excluded from the default image sequence used by ``west flash``.
 Instead, you may use the outputs of this domain for other purposes - for example,
 to produce a secondary image for DFU, or to merge multiple images together.
 
 You can also replace ``TRUE`` with another boolean constant in CMake, such as
 a Kconfig option, which would make ``my_sample`` conditionally build-only.
+
+.. note::
+
+   Applications marked as build-only can still be flashed manually, using
+   ``west flash --domain my_sample``. As such, the ``BUILD_ONLY`` option only
+   controls the default behavior of ``west flash``.
 
 Zephyr application configuration
 ================================
@@ -601,7 +613,7 @@ file or a devicetree overlay :file:`sysbuild/my_sample.overlay`.
 
 A Kconfig fragment could look as:
 
-.. code-block:: none
+.. code-block:: cfg
 
    # sysbuild/my_sample.conf
    CONFIG_FOO=n

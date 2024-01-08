@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Inter-core messaging backend with dynamically allocated buffers
+
+compatible: "zephyr,ipc-icbmsg"
+
+include: zephyr,ipc-icmsg.yaml
+
+properties:
+  tx-blocks:
+    description: number of allocable TX blocks
+    required: true
+    type: int
+
+  rx-blocks:
+    description: number of allocable RX blocks
+    required: true
+    type: int

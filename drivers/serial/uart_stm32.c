@@ -51,8 +51,7 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define STM32_UART_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-#define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
-					 st_stm32_lpuart, okay))
+#define HAS_LPUART DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart)
 
 /* Available everywhere except l1, f1, f2, f4. */
 #ifdef USART_CR3_DEM
@@ -61,7 +60,7 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_DRIVER_ENABLE 0
 #endif
 
-#if HAS_LPUART_1
+#if HAS_LPUART
 #ifdef USART_PRESC_PRESCALER
 uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint16_t presc_idx,
 			const uint32_t baud_rate)
@@ -87,7 +86,7 @@ uint32_t lpuartdiv_calc(const uint64_t clock_rate, const uint32_t baud_rate)
 	return (uint32_t)lpuartdiv;
 }
 #endif /* USART_PRESC_PRESCALER */
-#endif /* HAS_LPUART_1 */
+#endif /* HAS_LPUART */
 
 #ifdef CONFIG_PM
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
@@ -135,7 +134,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 		}
 	}
 
-#if HAS_LPUART_1
+#if HAS_LPUART
 	if (IS_LPUART_INSTANCE(config->usart)) {
 		uint32_t lpuartdiv;
 #ifdef USART_PRESC_PRESCALER
@@ -178,7 +177,7 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 		__ASSERT(LL_LPUART_ReadReg(config->usart, BRR) < 0x000FFFFFU,
 			 "BaudRateReg < 0xFFFF");
 	} else {
-#endif /* HAS_LPUART_1 */
+#endif /* HAS_LPUART */
 #ifdef USART_CR1_OVER8
 		LL_USART_SetOverSampling(config->usart,
 					 LL_USART_OVERSAMPLING_16);
@@ -196,9 +195,9 @@ static inline void uart_stm32_set_baudrate(const struct device *dev, uint32_t ba
 		__ASSERT(LL_USART_ReadReg(config->usart, BRR) >= 16,
 			 "BaudRateReg >= 16");
 
-#if HAS_LPUART_1
+#if HAS_LPUART
 	}
-#endif /* HAS_LPUART_1 */
+#endif /* HAS_LPUART */
 }
 
 static inline void uart_stm32_set_parity(const struct device *dev,
@@ -315,12 +314,12 @@ static inline uint32_t uart_stm32_cfg2ll_stopbits(const struct uart_stm32_config
 /* Some MCU's don't support 0.5 stop bits */
 #ifdef LL_USART_STOPBITS_0_5
 	case UART_CFG_STOP_BITS_0_5:
-#if HAS_LPUART_1
+#if HAS_LPUART
 		if (IS_LPUART_INSTANCE(config->usart)) {
 			/* return the default */
 			return LL_USART_STOPBITS_1;
 		}
-#endif /* HAS_LPUART_1 */
+#endif /* HAS_LPUART */
 		return LL_USART_STOPBITS_0_5;
 #endif	/* LL_USART_STOPBITS_0_5 */
 	case UART_CFG_STOP_BITS_1:
@@ -328,7 +327,7 @@ static inline uint32_t uart_stm32_cfg2ll_stopbits(const struct uart_stm32_config
 /* Some MCU's don't support 1.5 stop bits */
 #ifdef LL_USART_STOPBITS_1_5
 	case UART_CFG_STOP_BITS_1_5:
-#if HAS_LPUART_1
+#if HAS_LPUART
 		if (IS_LPUART_INSTANCE(config->usart)) {
 			/* return the default */
 			return LL_USART_STOPBITS_2;
@@ -1579,6 +1578,13 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 		LOG_ERR("UART ERR: RX DMA start failed!");
 		return -EFAULT;
 	}
+
+	/* Flush RX data buffer */
+#ifdef USART_SR_RXNE
+	LL_USART_ClearFlag_RXNE(config->usart);
+#else
+	LL_USART_RequestRxDataFlush(config->usart);
+#endif /* USART_SR_RXNE */
 
 	/* Enable RX DMA requests */
 	uart_stm32_dma_rx_enable(dev);

@@ -468,7 +468,7 @@ Sysbuild
 ========
 
 The sysbuild makes possible to build and flash all necessary images needed to
-bootstrap the board with the EPS32 SoC.
+bootstrap the board with the ESP32 SoC.
 
 To build the sample application using sysbuild use the command:
 
@@ -581,7 +581,9 @@ You can debug an application in the usual way. Here is an example for the :ref:`
 Enabling Ethernet
 *****************
 
-Enable Ethernet MAC, PHY and MDIO; add these to your device tree overlay::
+Enable Ethernet MAC, PHY and MDIO; add these to your device tree overlay:
+
+.. code-block:: devicetree
 
     &eth {
         status = "okay";
@@ -595,7 +597,9 @@ Enable Ethernet MAC, PHY and MDIO; add these to your device tree overlay::
         status = "okay";
     };
 
-Enable Ethernet in KConfig::
+Enable Ethernet in KConfig:
+
+.. code-block:: cfg
 
     CONFIG_ETH_ESP32=y
     CONFIG_NETWORKING=y

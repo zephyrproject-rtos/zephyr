@@ -27,6 +27,12 @@ config USE_INFINEON_SDIO
 	  Enable Secure Digital Input/Output interface (SDIO) HAL module for Infineon devices
 	  driver
 
+config USE_INFINEON_SDHC
+	bool
+	help
+	  Enable SDHC HAL module for Infineon devices
+	  driver
+
 config USE_INFINEON_SPI
 	bool
 	help
@@ -66,9 +72,8 @@ config USE_INFINEON_WDT
 	  Enable WATCHDOG TIMER (WDT) HAL module
 	  driver for Infineon devices
 
-config ABSTRACTION_RTOS_COMPONENT_ZEPHYR
+config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"
-	default n
 	help
 	  Enable Abstraction RTOS component with Zephyr support
 

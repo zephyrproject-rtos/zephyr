@@ -8,7 +8,7 @@
 #include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
 #include <zephyr/syscall.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <x86_mmu.h>
 
 /* Exports */

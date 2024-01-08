@@ -57,6 +57,13 @@
 			status = "okay";
 		};
 
+		supc: supc@400e1810 {
+			compatible = "atmel,sam-supc";
+			reg = <0x400e1810 0x20>;
+			#wakeup-source-id-cells = <1>;
+			status = "okay";
+		};
+
 		eefc: flash-controller@400e0c00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0c00 0x200>;
@@ -333,7 +340,10 @@
 		mdio: mdio@40050000 {
 			compatible = "atmel,sam-mdio";
 			reg = <0x40050000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		tc0: tc@4000c000 {
@@ -417,9 +427,7 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
 			divider = <6>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};
@@ -432,9 +440,7 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
 			divider = <6>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};
@@ -444,6 +450,15 @@
 			reg = <0x400e1800 0x10>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
 			user-nrst;
+		};
+
+		rtc: rtc@400e1860 {
+			compatible = "atmel,sam-rtc";
+			reg = <0x400e1860 0x100>;
+			interrupts = <2 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
+			alarms-count = <1>;
+			status = "disabled";
 		};
 	};
 };

@@ -14,7 +14,7 @@
 #include <soc.h>
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #endif
 
 #include "flash_npcx_fiu_qspi.h"
@@ -453,7 +453,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		struct npcx_ex_ops_uma_out out_copy;
 
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&in_copy, op_in, sizeof(in_copy)));
+			K_OOPS(k_usermode_from_copy(&in_copy, op_in, sizeof(in_copy)));
 			op_in = &in_copy;
 			op_out = &out_copy;
 		}
@@ -462,7 +462,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		ret = flash_npcx_nor_ex_exec_uma(dev, op_in, op_out);
 #ifdef CONFIG_USERSPACE
 		if (ret == 0 && syscall_trap) {
-			Z_OOPS(z_user_to_copy(out, op_out, sizeof(out_copy)));
+			K_OOPS(k_usermode_to_copy(out, op_out, sizeof(out_copy)));
 		}
 #endif
 		break;
@@ -474,7 +474,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		struct npcx_ex_ops_qspi_oper_in in_copy;
 
 		if (syscall_trap) {
-			Z_OOPS(z_user_from_copy(&in_copy, op_in, sizeof(in_copy)));
+			K_OOPS(k_usermode_from_copy(&in_copy, op_in, sizeof(in_copy)));
 			op_in = &in_copy;
 		}
 #endif
@@ -495,7 +495,7 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 		ret = flash_npcx_nor_ex_get_spi_spec(dev, op_out);
 #ifdef CONFIG_USERSPACE
 		if (ret == 0 && syscall_trap) {
-			Z_OOPS(z_user_to_copy(out, op_out, sizeof(out_copy)));
+			K_OOPS(k_usermode_to_copy(out, op_out, sizeof(out_copy)));
 		}
 #endif
 		break;

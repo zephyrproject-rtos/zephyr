@@ -135,13 +135,6 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event, void *p_context)
 	unsigned int key;
 
 	switch (event.type) {
-	case NRF_QDEC_EVENT_SAMPLERDY:
-		/* The underlying HAL driver may improperly forward an samplerdy event even if it's
-		 * disabled in the configuration. Ignore the event to prevent error logs until the
-		 * issue is fixed in HAL.
-		 */
-		break;
-
 	case NRF_QDEC_EVENT_REPORTRDY:
 		accumulate(dev_data, event.data.report.acc);
 
@@ -305,4 +298,20 @@ SENSOR_NRFX_QDEC_DEVICE(0);
 
 #ifdef CONFIG_HAS_HW_NRF_QDEC1
 SENSOR_NRFX_QDEC_DEVICE(1);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_QDEC20
+SENSOR_NRFX_QDEC_DEVICE(20);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_QDEC21
+SENSOR_NRFX_QDEC_DEVICE(21);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_QDEC130
+SENSOR_NRFX_QDEC_DEVICE(130);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_QDEC131
+SENSOR_NRFX_QDEC_DEVICE(131);
 #endif

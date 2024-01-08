@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/posix/time.h>
 
 #ifdef CONFIG_POSIX_CLOCK

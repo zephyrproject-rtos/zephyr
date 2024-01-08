@@ -5,14 +5,14 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
 
 #include <openthread/platform/entropy.h>
 
 LOG_MODULE_REGISTER(net_otPlat_entropy, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
-#if !defined(CONFIG_ENTROPY_HAS_DRIVER)
+#if !defined(CONFIG_CSPRNG_ENABLED)
 #error OpenThread requires an entropy source for a TRNG
 #endif
 

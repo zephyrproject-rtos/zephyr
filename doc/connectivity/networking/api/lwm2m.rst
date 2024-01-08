@@ -227,7 +227,7 @@ The full list of registered objects and resource IDs can be found in the
 
 Zephyr's LwM2M library lives in the :zephyr_file:`subsys/net/lib/lwm2m`, with a
 client sample in :zephyr_file:`samples/net/lwm2m_client`.  For more information
-about the provided sample see: :ref:`lwm2m-client-sample`  The sample can be
+about the provided sample see: :zephyr:code-sample:`lwm2m-client`. The sample can be
 configured to use normal unsecure network sockets or sockets secured via DTLS.
 
 The Zephyr LwM2M library implements the following items:
@@ -318,6 +318,14 @@ events, setup a callback function:
 			LOG_DBG("Disconnected");
 			break;
 
+		case LWM2M_RD_CLIENT_EVENT_REG_UPDATE:
+			LOG_DBG("Registration update");
+			break;
+
+		case LWM2M_RD_CLIENT_EVENT_DEREGISTER:
+			LOG_DBG("Deregistration client");
+			break;
+
 		}
 	}
 
@@ -396,6 +404,11 @@ NoSec
 In all modes, Server URI resource (ID 0) must contain the full URI for the target server.
 When DNS names are used, the DNS resolver must be enabled.
 
+When DTLS is used, following options are recommended to reduce DTLS handshake traffic when connection is re-established:
+
+* :kconfig:option:`CONFIG_LWM2M_DTLS_CID` enables DTLS Connection Identifier support. When server supports it, this completely removes the handshake when device resumes operation after long idle period. Greatly helps when NAT mappings have timed out.
+* :kconfig:option:`CONFIG_LWM2M_TLS_SESSION_CACHING` uses session cache when before falling back to full DTLS handshake. Reduces few packets from handshake, when session is still cached on server side. Most significant effect is to avoid full registration.
+
 LwM2M stack provides callbacks in the :c:struct:`lwm2m_ctx` structure.
 They are used to feed keys from the LwM2M security object into the TLS credential subsystem.
 By default, these callbacks can be left as NULL pointers, in which case default callbacks are used.
@@ -444,7 +457,7 @@ value of 1 is ok here).
 	client.tls_tag = 1; /* <---- */
 	lwm2m_rd_client_start(&client, "endpoint-name", 0, rd_client_event);
 
-For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
+For a more detailed LwM2M client sample see: :zephyr:code-sample:`lwm2m-client`.
 
 Multi-thread usage
 ******************
@@ -470,7 +483,7 @@ Support for time series data
 LwM2M version 1.1 adds support for SenML CBOR and SenML JSON data formats. These data formats add
 support for time series data. Time series formats can be used for READ, NOTIFY and SEND operations.
 When data cache is enabled for a resource, each write will create a timestamped entry in a cache,
-and its content is then returned as a content in in READ, NOTIFY or SEND operation for a given
+and its content is then returned as a content in READ, NOTIFY or SEND operation for a given
 resource.
 
 Data cache is only supported for resources with a fixed data size.
@@ -617,6 +630,53 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        If the retry counter reaches its limits, this event will be triggered.
      - No actions needed, client will do a re-registrate automatically.
 
+
+Configuring lifetime and activity period
+****************************************
+
+In LwM2M engine, there are three Kconfig options and one runtime value that configures how often the
+client will send LwM2M Update message.
+
+.. list-table:: Update period variables
+   :widths: auto
+   :header-rows: 1
+
+   * - Variable
+     - Effect
+   * - LwM2M registration lifetime
+     - The lifetime parameter in LwM2M specifies how long a device's registration with an LwM2M server remains valid.
+       Device is expected to send LwM2M Update message before the lifetime exprires.
+   * - :kconfig:option:`CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME`
+     - Default lifetime value, unless set by the bootstrap server.
+       Also defines lower limit that client accepts as a lifetime.
+   * - :kconfig:option:`CONFIG_LWM2M_UPDATE_PERIOD`
+     - How long the client can stay idle before sending a next update.
+   * - :kconfig:option:`CONFIG_LWM2M_SECONDS_TO_UPDATE_EARLY`
+     - Minimum time margin to send the update message before the registration lifetime expires.
+
+.. figure:: images/lwm2m_lifetime_seconds_early.png
+    :alt: LwM2M seconds to update early
+
+    Default way of calculating when to update registration.
+
+By default, the client uses :kconfig:option:`CONFIG_LWM2M_SECONDS_TO_UPDATE_EARLY` to calculate how
+many seconds before the expiration of lifetime it is going to send the registration update.
+The problem with default mode is when the server changes the lifetime of the registration.
+This is then affecting the period of updates the client is doing.
+If this is used with the QUEUE mode, which is typical in IPv4 networks, it is also affecting the
+period of when the device is reachable from the server.
+
+.. figure:: images/lwm2m_lifetime_both.png
+    :alt: LwM2M update time when both values are set
+
+    Update time is controlled by UPDATE_PERIOD.
+
+When also the :kconfig:option:`CONFIG_LWM2M_UPDATE_PERIOD` is set, time to send the update message
+is the earliest when any of these values expire. This allows setting long lifetime for the
+registration and configure the period accurately, even if server changes the lifetime parameter.
+
+In runtime, the update frequency is limited to once in 15 seconds to avoid flooding.
+
 .. _lwm2m_shell:
 
 LwM2M shell
@@ -633,40 +693,61 @@ required actions from the server side.
 
 .. code-block:: console
 
-   uart:~$ lwm2m
-   lwm2m - LwM2M commands
-   Subcommands:
-   exec    :Execute a resource
-            exec PATH
+  uart:~$ lwm2m
+  lwm2m - LwM2M commands
+  Subcommands:
+    send    :send PATHS
+            LwM2M SEND operation
 
-   read    :Read value from LwM2M resource
-            read PATH [OPTIONS]
-            -s   Read value as string (default)
+    exec    :exec PATH [PARAM]
+            Execute a resource
+
+    read    :read PATH [OPTIONS]
+            Read value from LwM2M resource
+            -x   Read value as hex stream (default)
+            -s   Read value as string
             -b   Read value as bool (1/0)
             -uX  Read value as uintX_t
             -sX  Read value as intX_t
             -f   Read value as float
+            -t   Read value as time_t
 
-   write   :Write into LwM2M resource
-            write PATH [OPTIONS] VALUE
-            -s   Value as string (default)
-            -b   Value as bool
-            -uX  Value as uintX_t
-            -sX  Value as intX_t
-            -f   Value as float
+    write   :write PATH [OPTIONS] VALUE
+            Write into LwM2M resource
+            -s   Write value as string (default)
+            -b   Write value as bool
+            -uX  Write value as uintX_t
+            -sX  Write value as intX_t
+            -f   Write value as float
+            -t   Write value as time_t
 
-   start   :Start the LwM2M RD (Registration / Discovery) Client
-            start EP_NAME [BOOTSTRAP FLAG]
+    create  :create PATH
+            Create object or resource instance
+
+    delete  :delete PATH
+            Delete object or resource instance
+
+    cache   :cache PATH NUM
+            Enable data cache for resource
+            PATH is LwM2M path
+            NUM how many elements to cache
+
+    start   :start EP_NAME [BOOTSTRAP FLAG]
+            Start the LwM2M RD (Registration / Discovery) Client
             -b   Set the bootstrap flag (default 0)
 
-   stop    :Stop the LwM2M RD (De-register) Client
-            stop [OPTIONS]
+    stop    :stop [OPTIONS]
+            Stop the LwM2M RD (De-register) Client
             -f   Force close the connection
 
-   update  :Trigger Registration Update of the LwM2M RD Client
+    update  :Trigger Registration Update of the LwM2M RD Client
 
-   pause   :LwM2M engine thread pause
-   resume  :LwM2M engine thread resume
+    pause   :LwM2M engine thread pause
+    resume  :LwM2M engine thread resume
+    lock    :Lock the LwM2M registry
+    unlock  :Unlock the LwM2M registry
+
+
 
 
 .. _lwm2m_api_reference:

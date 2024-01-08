@@ -1,7 +1,8 @@
-.. _usb-c-source-sample:
+.. zephyr:code-sample:: usb-c-source
+   :name: Basic USB-C Source
+   :relevant-api: _usbc_device_api
 
-Basic USB-C SOURCE
-##################
+   Implement a USB-C Power Delivery application in the form of a USB-C Source.
 
 Overview
 ********

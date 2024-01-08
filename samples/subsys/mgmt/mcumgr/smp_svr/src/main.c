@@ -73,7 +73,9 @@ int main(void)
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_STACK)) {
 		rc = usb_enable(NULL);
-		if (rc) {
+
+		/* Ignore EALREADY error as USB CDC is likely already initialised */
+		if (rc != 0 && rc != -EALREADY) {
 			LOG_ERR("Failed to enable USB");
 			return 0;
 		}

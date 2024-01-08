@@ -1,7 +1,8 @@
-.. _lp3943:
+.. zephyr:code-sample:: lp3943
+   :name: LP3943 RGBW LED
+   :relevant-api: led_interface
 
-LP3943: 16-Channel RGB, White-LED Driver
-########################################
+   Control up to 16 RGBW LEDs connected to an LP3943 driver chip.
 
 Overview
 ********

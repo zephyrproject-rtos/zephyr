@@ -58,7 +58,7 @@ Programming and Debugging
 *************************
 
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
-emulated environment, for example, with the :ref:`synchronization_sample`:
+emulated environment, for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
@@ -90,7 +90,7 @@ Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 Big-Endian
 ==========
 
-Use this configuration to run :ref:`synchronization_sample` in big-endian mode:
+Use this configuration to run :zephyr:code-sample:`synchronization` sample in big-endian mode:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization

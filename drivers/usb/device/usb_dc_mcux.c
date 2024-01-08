@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_mcux_usbd
-
 #include <soc.h>
 #include <string.h>
 #include <zephyr/drivers/usb/usb_dc.h>
@@ -21,14 +19,19 @@
 #include "usb_device_dci.h"
 
 #ifdef CONFIG_USB_DC_NXP_EHCI
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_ehci
 #include "usb_device_ehci.h"
 #endif
 #ifdef CONFIG_USB_DC_NXP_LPCIP3511
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_lpcip3511
 #include "usb_device_lpcip3511.h"
 #endif
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
 #endif
+
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -68,7 +71,34 @@ static void usb_isr_handler(void);
 #define EP_ABS_IDX(ep)		(USB_EP_GET_IDX(ep) * 2 + \
 					(USB_EP_GET_DIR(ep) >> 7))
 #define NUM_OF_EP_MAX		(DT_INST_PROP(0, num_bidir_endpoints) * 2)
-#define CONTROLLER_ID		(DT_INST_ENUM_IDX(0, usb_controller_index))
+
+#define NUM_INSTS DT_NUM_INST_STATUS_OKAY(nxp_ehci) + DT_NUM_INST_STATUS_OKAY(nxp_lpcip3511)
+BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
+
+/* Controller ID is for HAL usage */
+#if defined(CONFIG_SOC_SERIES_IMX_RT5XX) || \
+	defined(CONFIG_SOC_SERIES_IMX_RT6XX) || \
+	defined(CONFIG_SOC_LPC55S28) || \
+	defined(CONFIG_SOC_LPC55S16)
+#define CONTROLLER_ID	kUSB_ControllerLpcIp3511Hs0
+#elif defined(CONFIG_SOC_LPC55S36)
+#define CONTROLLER_ID	kUSB_ControllerLpcIp3511Fs0
+#elif defined(CONFIG_SOC_LPC55S69_CPU0) || defined(CONFIG_SOC_LPC55S69_CPU1)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usbhs), okay)
+#define CONTROLLER_ID	kUSB_ControllerLpcIp3511Hs0
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(usbfs), okay)
+#define CONTROLLER_ID	kUSB_ControllerLpcIp3511Fs0
+#endif /* LPC55s69 */
+#elif defined(CONFIG_SOC_SERIES_IMX_RT)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay)
+#define CONTROLLER_ID kUSB_ControllerEhci0
+#elif DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay)
+#define CONTROLLER_ID kUSB_ControllerEhci1
+#endif /* IMX RT */
+#else
+/* If SOC has EHCI or LPCIP3511 then probably just need to add controller ID to this code */
+#error "USB driver does not yet support this SOC"
+#endif /* CONTROLLER ID */
 
 /* We do not need a buffer for the write side on platforms that have USB RAM.
  * The SDK driver will copy the data buffer to be sent to USB RAM.
@@ -89,7 +119,7 @@ K_HEAP_DEFINE(ep_buf_pool, 1024 * EP_BUF_NUMOF_BLOCKS);
 
 struct usb_ep_ctrl_data {
 	usb_device_callback_message_struct_t transfer_message;
-	struct k_mem_block block;
+	void *block;
 	usb_dc_ep_callback callback;
 	uint16_t ep_mps;
 	uint8_t ep_enabled : 1;
@@ -276,21 +306,21 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	/* Allocate buffers used during read operation */
 	if (USB_EP_DIR_IS_OUT(cfg->ep_addr)) {
 #endif
-		struct k_mem_block *block;
+		void **block;
 
 		block = &(eps->block);
-		if (block->data) {
-			k_heap_free(&ep_buf_pool, block->data);
-			block->data = NULL;
+		if (*block) {
+			k_heap_free(&ep_buf_pool, *block);
+			*block = NULL;
 		}
 
-		block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
-		if (block->data == NULL) {
+		*block = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
+		if (*block == NULL) {
 			LOG_ERR("Failed to allocate memory");
 			return -ENOMEM;
 		}
 
-		memset(block->data, 0, cfg->ep_mps);
+		memset(*block, 0, cfg->ep_mps);
 #ifdef CONFIG_USB_DC_NXP_LPCIP3511
 	}
 #endif
@@ -362,7 +392,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	    (USB_EP_DIR_IS_OUT(ep))) {
 		status = dev_state.dev_struct.controllerInterface->deviceRecv(
 				dev_state.dev_struct.controllerHandle, ep,
-				(uint8_t *)dev_state.eps[ep_abs_idx].block.data,
+				(uint8_t *)dev_state.eps[ep_abs_idx].block,
 				(uint32_t)dev_state.eps[ep_abs_idx].ep_mps);
 		if (kStatus_USB_Success != status) {
 			LOG_ERR("Failed to enable reception on 0x%02x", ep);
@@ -438,7 +468,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	    (USB_EP_DIR_IS_OUT(ep))) {
 		status = dev_state.dev_struct.controllerInterface->deviceRecv(
 				dev_state.dev_struct.controllerHandle, ep,
-				(uint8_t *)dev_state.eps[ep_abs_idx].block.data,
+				(uint8_t *)dev_state.eps[ep_abs_idx].block,
 				(uint32_t)dev_state.eps[ep_abs_idx].ep_mps);
 		if (kStatus_USB_Success != status) {
 			LOG_ERR("Failed to enable reception on 0x%02x", ep);
@@ -520,7 +550,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	 * if available.
 	 */
 #ifndef CONFIG_USB_DC_NXP_LPCIP3511
-	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block.data;
+	buffer = (uint8_t *)dev_state.eps[ep_abs_idx].block;
 
 	if (data_len > dev_state.eps[ep_abs_idx].ep_mps) {
 		len_to_send = dev_state.eps[ep_abs_idx].ep_mps;
@@ -674,7 +704,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 
 	status = dev_state.dev_struct.controllerInterface->deviceRecv(
 			    dev_state.dev_struct.controllerHandle, ep,
-			    (uint8_t *)dev_state.eps[ep_abs_idx].block.data,
+			    (uint8_t *)dev_state.eps[ep_abs_idx].block,
 			    dev_state.eps[ep_abs_idx].ep_mps);
 	if (kStatus_USB_Success != status) {
 		LOG_ERR("Failed to enable reception on ep 0x%02x", ep);

@@ -15,12 +15,12 @@
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/sys/heap_listener.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/mutex.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <sys/time.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
@@ -181,7 +181,7 @@ int z_impl_zephyr_read_stdin(char *buf, int nbytes)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_read_stdin(char *buf, int nbytes)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, nbytes));
 	return z_impl_zephyr_read_stdin((char *)buf, nbytes);
 }
 #include <syscalls/zephyr_read_stdin_mrsh.c>
@@ -204,7 +204,7 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
+	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
 }
 #include <syscalls/zephyr_write_stdout_mrsh.c>

@@ -25,3 +25,4 @@ supported:
   - adc
   - usb_device
   - pwm
+vendor: nxp

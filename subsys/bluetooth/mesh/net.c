@@ -95,9 +95,8 @@ struct bt_mesh_net bt_mesh = {
 #endif
 };
 
-/* Mesh Profile Specification 3.10.6
- * The node shall not execute more than one IV Index Recovery within a period of
- * 192 hours.
+/* MshPRTv1.1: 3.11.5:
+ * "A node shall not start an IV Update procedure more often than once every 192 hours."
  *
  * Mark that the IV Index Recovery has been done to prevent two recoveries to be
  * done before a normal IV Index update has been completed within 96h+96h.
@@ -293,7 +292,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 			return false;
 		}
 
-		/* The Mesh profile specification allows to initiate an
+		/* MshPRTv1.1 allows to initiate an
 		 * IV Index Recovery procedure if previous IV update has
 		 * been missed. This allows the node to remain
 		 * functional.
@@ -560,7 +559,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		}
 	}
 
-	/* Mesh spec 3.4.5.2: "The output filter of the interface connected to
+	/* MshPRTv1.1: 3.4.5.2: "The output filter of the interface connected to
 	 * advertising or GATT bearers shall drop all messages with TTL value
 	 * set to 1." If a TTL=1 packet wasn't for a local interface, it is
 	 * invalid.
@@ -712,7 +711,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		transmit = bt_mesh_net_transmit_get();
 	}
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_RELAY_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_RELAY,
 				 transmit, K_NO_WAIT);
 	if (!buf) {
 		LOG_DBG("Out of relay buffers");

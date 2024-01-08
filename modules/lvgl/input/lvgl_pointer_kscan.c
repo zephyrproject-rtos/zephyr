@@ -10,7 +10,7 @@
 #include "lvgl_display.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(lvgl);
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 static lv_indev_drv_t indev_drv;
 #define KSCAN_NODE DT_CHOSEN(zephyr_keyboard_scan)
@@ -146,4 +146,4 @@ static int lvgl_kscan_pointer_init(void)
 	return 0;
 }
 
-SYS_INIT(lvgl_kscan_pointer_init, APPLICATION, CONFIG_LV_Z_INPUT_INIT_PRIORITY);
+SYS_INIT(lvgl_kscan_pointer_init, APPLICATION, CONFIG_INPUT_INIT_PRIORITY);

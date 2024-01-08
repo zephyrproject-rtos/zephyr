@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <string.h>
 #include <errno.h>

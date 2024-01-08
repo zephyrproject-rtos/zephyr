@@ -56,7 +56,7 @@ void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
 	}
 }
 
-void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
+void bt_test_mesh_model_bound(uint16_t addr, const struct bt_mesh_model *model,
 			      uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
@@ -68,7 +68,7 @@ void bt_test_mesh_model_bound(uint16_t addr, struct bt_mesh_model *model,
 	}
 }
 
-void bt_test_mesh_model_unbound(uint16_t addr, struct bt_mesh_model *model,
+void bt_test_mesh_model_unbound(uint16_t addr, const struct bt_mesh_model *model,
 				uint16_t key_idx)
 {
 	struct bt_test_cb *cb;
@@ -102,6 +102,7 @@ void bt_test_mesh_trans_incomp_timer_exp(void)
 	}
 }
 
+#if defined(CONFIG_BT_MESH_LOW_POWER)
 int bt_test_mesh_lpn_group_add(uint16_t group)
 {
 	bt_mesh_lpn_group_add(group);
@@ -115,6 +116,7 @@ int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count)
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH_LOW_POWER */
 
 int bt_test_mesh_rpl_clear(void)
 {

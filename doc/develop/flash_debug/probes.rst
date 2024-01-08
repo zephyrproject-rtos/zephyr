@@ -33,21 +33,23 @@ host tools, or with J-Link firmware to communicate with J-Link debug host
 tools.
 
 
-+---------------------------------------+---------------------------------------------------------------+
-|| *Debug Probes & Host Tools*          |                          Host Tools                           |
-+| *Compatibility Chart*                +--------------------+--------------------+---------------------+
-|                                       |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |
-+----------------+----------------------+--------------------+--------------------+---------------------+
-|                | **LPC-Link2 J-Link** |           ✓        |                    |                     |
-|                +----------------------+--------------------+--------------------+---------------------+
-|                | **OpenSDA DAPLink**  |                    |          ✓         |          ✓          |
-|                +----------------------+--------------------+--------------------+---------------------+
-|  Debug Probes  | **OpenSDA J-Link**   |           ✓        |                    |                     |
-|                +----------------------+--------------------+--------------------+---------------------+
-|                | **J-Link External**  |           ✓        |          ✓         |                     |
-|                +----------------------+--------------------+--------------------+---------------------+
-|                | **ST-LINK/V2-1**     |           ✓        |          ✓         | *some STM32 boards* |
-+----------------+----------------------+--------------------+--------------------+---------------------+
++------------------------------------------+------------------------------------------------------------------------------------+
+|| *Debug Probes & Host Tools*             |                                     Host Tools                                     |
++| *Compatibility Chart*                   +--------------------+--------------------+---------------------+--------------------+
+|                                          |  **J-Link Debug**  |    **OpenOCD**     |      **pyOCD**      |   **NXP S32DS**    |
++----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **LPC-Link2 J-Link**    |           ✓        |                    |                     |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **OpenSDA DAPLink**     |                    |          ✓         |          ✓          |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|  Debug Probes  | **OpenSDA J-Link**      |           ✓        |                    |                     |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **J-Link External**     |           ✓        |          ✓         |                     |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **ST-LINK/V2-1**        |           ✓        |          ✓         | *some STM32 boards* |                    |
+|                +-------------------------+--------------------+--------------------+---------------------+--------------------+
+|                | **NXP S32 Debug Probe** |                    |                    |                     |          ✓         |
++----------------+-------------------------+--------------------+--------------------+---------------------+--------------------+
 
 
 Some supported boards in Zephyr do not include an onboard debug probe and
@@ -57,6 +59,64 @@ of an external debug probe instead. One reason this may be useful is that the
 onboard debug probe may have limitations, such as lack of support for advanced
 debuggers or high-speed tracing. You may need to adjust jumpers to prevent the
 onboard debug probe from interfering with the external debug probe.
+
+.. _mcu-link-cmsis-onboard-debug-probe:
+
+MCU-Link CMSIS-DAP Onboard Debug Probe
+***************************************
+
+The CMSIS-DAP debug probes allow debugging from any compatible toolchain,
+including IAR EWARM, Keil MDK, NXP’s MCUXpresso IDE and
+MCUXpresso extension for VS Code.  In addition to debug probe functionality, the
+MCU-Link probes may also provide:
+
+1. SWO trace end point: this virtual device is used by MCUXpresso to retrieve
+   SWO trace data. See the MCUXpresso IDE documentation for more information.
+#. Virtual COM (VCOM) port / UART bridge connected to the target processor
+#. USB to UART, SPI and/or I2C interfaces (depending on MCU-Link
+   type/implementation)
+#. Energy measurements of the target MCU
+
+This debug probe is compatible with the following debug host tools:
+
+- :ref:`linkserver-debug-host-tools`
+
+This probe is realized by programming the MCU-Link microcontroller with the
+CMSIS-DAP MCU-Link firmware, which is already installed by default. NXP
+recommends using NXP's `MCUXpresso Installer`_, which installs both the MCU-Link
+host tools plus the :ref:`linkserver-debug-host-tools`.
+
+1. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
+   jumper, then powering up the board.
+
+#. Run the ``program_CMSIS`` script, found in the installed MCU-Link ``scripts``
+   folder.
+
+#. Remove the DFU jumper and power cycle the board.
+
+.. _mcu-link-jlink-onboard-debug-probe:
+
+MCU-Link JLink Onboard Debug Probe
+************************************
+
+The MCU-Link J-Link is an onboard debug probe and usb-to-serial adapter
+supported on many NXP development boards.
+
+This debug probe is compatible with the following debug host tools:
+
+- :ref:`jlink-debug-host-tools`
+
+These probes do not have JLink firmware installed by default, and must be
+updated. NXP recommends using NXP's `MCUXpresso Installer`_, which installs both
+the :ref:`jlink-debug-host-tools` plus the MCU-Link host tools.
+
+1. Put the MCU-Link microcontroller into DFU boot mode by attaching the DFU
+   jumper, then powering up the board.
+
+#. Run the ``program_JLINK`` script, found in the installed MCU-Link ``scripts``
+   folder.
+
+#. Remove the DFU jumper and power cycle the board.
 
 .. _lpclink2-cmsis-onboard-debug-probe:
 
@@ -315,6 +375,20 @@ Where board_uid can be obtained using twister's generate-hardware-map
 option. For more information about twister and available options, see
 :ref:`twister_script`.
 
+.. _nxp-s32-debug-probe:
+
+NXP S32 Debug Probe
+*******************
+
+`NXP S32 Debug Probe`_ enables NXP S32 target system debugging via a standard
+debug port while connected to a developer's workstation via USB or remotely via
+Ethernet.
+
+NXP S32 Debug Probe is designed to work in conjunction with NXP S32 Design Studio
+(S32DS) and NXP Automotive microcontrollers and processors. Install the debug
+host tools as in indicated in :ref:`nxp-s32-debug-host-tools` before you program
+the firmware.
+
 .. _LPCScrypt:
    https://www.nxp.com/lpcscrypt
 
@@ -341,3 +415,9 @@ option. For more information about twister and available options, see
 
 .. _STM32CubeProgrammer Tool:
     https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _MCUXpresso Installer:
+	https://www.nxp.com/lgfiles/updates/mcuxpresso/MCUXpressoInstaller.exe
+
+.. _NXP S32 Debug Probe:
+   https://www.nxp.com/design/software/automotive-software-and-tools/s32-debug-probe:S32-DP

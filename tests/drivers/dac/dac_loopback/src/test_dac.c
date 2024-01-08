@@ -125,6 +125,22 @@
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_CHANNEL_ID		23
 
+#elif defined(CONFIG_BOARD_LPCXPRESSO55S36)
+
+/* DAC0 output is internally available on ADC0_SE4 */
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
+#define DAC_RESOLUTION		12
+#define DAC_CHANNEL_ID		0
+
+#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_EXTERNAL0
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_CHANNEL_ID		0
+#define ADC_1ST_CHANNEL_INPUT	4
+
 #elif defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK)  || \
@@ -168,7 +184,8 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 #if defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
-	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP)
+	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP) || \
+	defined(CONFIG_BOARD_LPCXPRESSO55S36)
 	.input_positive   = ADC_1ST_CHANNEL_INPUT,
 #endif
 };

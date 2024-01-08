@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define PUT_EXT_LEN \
 	((sizeof(union mpsc_pbuf_generic) + sizeof(void *)) / sizeof(uint32_t))

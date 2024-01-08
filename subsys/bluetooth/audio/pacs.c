@@ -795,11 +795,11 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 		atomic_clear(&notify_rdy);
 	}
 
-	if (err == -ENOTCONN) {
-		return 0;
-	} else {
-		return 0;
+	if (err && err != -ENOTCONN) {
+		return err;
 	}
+
+	return 0;
 }
 
 static void notify_cb(struct bt_conn *conn, void *data)

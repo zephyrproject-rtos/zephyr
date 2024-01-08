@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/ztest.h>
 #include <zephyr/linker/linker-defs.h>
 #include "test_syscalls.h"
@@ -25,8 +25,6 @@
 #define FAULTY_ADDRESS 0x0FFFFFFF
 #elif defined(CONFIG_BOARD_QEMU_CORTEX_R5)
 #define FAULTY_ADDRESS 0xBFFFFFFF
-#elif defined(CONFIG_SOC_SERIES_S32ZE_R52)
-#define FAULTY_ADDRESS ((uintptr_t)(&_image_ram_end))
 #elif CONFIG_MMU
 /* Just past the zephyr image mapping should be a non-present page */
 #define FAULTY_ADDRESS Z_FREE_VM_START
@@ -48,7 +46,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 
 size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {
-	return z_user_string_nlen(src, maxlen, err);
+	return k_usermode_string_nlen(src, maxlen, err);
 }
 
 static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
@@ -57,11 +55,11 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 	size_t ret;
 
 	ret = z_impl_string_nlen((char *)src, maxlen, &err_copy);
-	if (!err_copy && Z_SYSCALL_MEMORY_READ(src, ret + 1)) {
+	if (!err_copy && K_SYSCALL_MEMORY_READ(src, ret + 1)) {
 		err_copy = -1;
 	}
 
-	Z_OOPS(z_user_to_copy((int *)err, &err_copy, sizeof(err_copy)));
+	K_OOPS(k_usermode_to_copy((int *)err, &err_copy, sizeof(err_copy)));
 
 	return ret;
 }
@@ -81,7 +79,7 @@ static inline int z_vrfy_string_alloc_copy(char *src)
 	char *src_copy;
 	int ret;
 
-	src_copy = z_user_string_alloc_copy((char *)src, BUF_SIZE);
+	src_copy = k_usermode_string_alloc_copy((char *)src, BUF_SIZE);
 	if (!src_copy) {
 		return -1;
 	}
@@ -104,7 +102,7 @@ int z_impl_string_copy(char *src)
 
 static inline int z_vrfy_string_copy(char *src)
 {
-	int ret = z_user_string_copy(kernel_buf, (char *)src, BUF_SIZE);
+	int ret = k_usermode_string_copy(kernel_buf, (char *)src, BUF_SIZE);
 
 	if (ret) {
 		return ret;
@@ -125,7 +123,7 @@ int z_impl_to_copy(char *dest)
 
 static inline int z_vrfy_to_copy(char *dest)
 {
-	return z_user_to_copy((char *)dest, user_string, BUF_SIZE);
+	return k_usermode_to_copy((char *)dest, user_string, BUF_SIZE);
 }
 #include <syscalls/to_copy_mrsh.c>
 
@@ -195,14 +193,14 @@ static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
 #include <syscalls/more_args_mrsh.c>
 
 /**
- * @brief Test to demonstrate usage of z_user_string_nlen()
+ * @brief Test to demonstrate usage of k_usermode_string_nlen()
  *
  * @details The test will be called from user mode and kernel
- * mode to check the behavior of z_user_string_nlen()
+ * mode to check the behavior of k_usermode_string_nlen()
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_user_string_nlen()
+ * @see k_usermode_string_nlen()
  */
 ZTEST_USER(syscalls, test_string_nlen)
 {
@@ -250,7 +248,7 @@ ZTEST_USER(syscalls, test_string_nlen)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_user_string_alloc_copy(), strcmp()
+ * @see k_usermode_string_alloc_copy(), strcmp()
  */
 ZTEST_USER(syscalls, test_user_string_alloc_copy)
 {
@@ -275,7 +273,7 @@ ZTEST_USER(syscalls, test_user_string_alloc_copy)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see z_user_string_copy(), strcmp()
+ * @see k_usermode_string_copy(), strcmp()
  */
 ZTEST_USER(syscalls, test_user_string_copy)
 {
@@ -299,7 +297,7 @@ ZTEST_USER(syscalls, test_user_string_copy)
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see memcpy(), z_user_to_copy()
+ * @see memcpy(), k_usermode_to_copy()
  */
 ZTEST_USER(syscalls, test_to_copy)
 {
@@ -412,7 +410,7 @@ ZTEST(syscalls, test_syscall_torture)
 
 bool z_impl_syscall_context(void)
 {
-	return z_is_in_user_syscall();
+	return k_is_in_user_syscall();
 }
 
 static inline bool z_vrfy_syscall_context(void)
@@ -435,7 +433,7 @@ void test_syscall_context_user(void *p1, void *p2, void *p3)
 ZTEST(syscalls, test_syscall_context)
 {
 	/* We're a regular supervisor thread. */
-	zassert_false(z_is_in_user_syscall(),
+	zassert_false(k_is_in_user_syscall(),
 		      "reported in user syscall when in supv. thread ctx");
 
 	/* Make a system call from supervisor mode. The check in the

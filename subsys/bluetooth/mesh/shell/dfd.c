@@ -14,7 +14,7 @@
 #include "../dfd_srv_internal.h"
 #include "../access.h"
 
-static struct bt_mesh_model *mod;
+static const struct bt_mesh_model *mod;
 
 static void print_receivers_status(const struct shell *sh, struct bt_mesh_dfd_srv *srv,
 				   enum bt_mesh_dfd_status status)
@@ -29,7 +29,7 @@ static void print_dfd_status(const struct shell *sh, struct bt_mesh_dfd_srv *srv
 		      srv->phase);
 
 	if (srv->phase != BT_MESH_DFD_PHASE_IDLE && srv->dfu.xfer.slot) {
-		shell_fprintf(sh, SHELL_NORMAL, ", \"group\": 0x%04x, \"app_idx\": %d, "
+		shell_fprintf(sh, SHELL_NORMAL, ", \"group\": %d, \"app_idx\": %d, "
 			      "\"ttl\": %d, \"timeout_base\": %d, \"xfer_mode\": %d, "
 			      "\"apply\": %d, \"slot_idx\": %d", srv->inputs.group,
 			      srv->inputs.app_idx, srv->inputs.ttl, srv->inputs.timeout_base,
@@ -43,7 +43,7 @@ static void print_fw_status(const struct shell *sh, enum bt_mesh_dfd_status stat
 			    uint16_t idx, const uint8_t *fwid, size_t fwid_len)
 {
 	shell_fprintf(sh, SHELL_NORMAL, "{ \"status\": %d, \"slot_cnt\": %d, \"idx\": %d",
-		      status, bt_mesh_dfu_slot_foreach(NULL, NULL), idx);
+		      status, bt_mesh_dfu_slot_count(), idx);
 	if (fwid) {
 		shell_fprintf(sh, SHELL_NORMAL, ", \"fwid\": \"");
 		for (size_t i = 0; i < fwid_len; i++) {
@@ -70,7 +70,7 @@ static int cmd_dfd_receivers_add(const struct shell *sh, size_t argc, char *argv
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	if (bt_mesh_dfu_cli_is_busy(&dfd_srv->dfu)) {
 		print_receivers_status(sh, dfd_srv,
@@ -122,7 +122,7 @@ static int cmd_dfd_receivers_delete_all(const struct shell *sh, size_t argc, cha
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	enum bt_mesh_dfd_status status = bt_mesh_dfd_srv_receivers_delete_all(
 		dfd_srv);
@@ -142,7 +142,7 @@ static int cmd_dfd_receivers_get(const struct shell *sh, size_t argc, char *argv
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 	int err = 0;
 
 	uint16_t first = shell_strtoul(argv[1], 0, &err);
@@ -165,7 +165,7 @@ static int cmd_dfd_receivers_get(const struct shell *sh, size_t argc, char *argv
 	for (int i = 0; i < cnt; i++) {
 		const struct bt_mesh_dfu_target *t = &dfd_srv->targets[i + first];
 
-		shell_print(sh, "\t\t\"%d\": { \"blob_addr\": 0x%04x, \"phase\": %d, "
+		shell_print(sh, "\t\t\"%d\": { \"blob_addr\": %d, \"phase\": %d, "
 			    "\"status\": %d, \"blob_status\": %d, \"progress\": %d, "
 			    "\"img_idx\": %d }%s", i + first, t->blob.addr, t->phase, t->status,
 			    t->blob.status, progress, t->img_idx, (i == cnt - 1) ? "" : ",");
@@ -197,7 +197,7 @@ static int cmd_dfd_get(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	print_dfd_status(sh, dfd_srv, BT_MESH_DFD_SUCCESS);
 
@@ -210,7 +210,7 @@ static int cmd_dfd_start(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 	struct bt_mesh_dfd_start_params params;
 	int err = 0;
 
@@ -267,7 +267,7 @@ static int cmd_dfd_suspend(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	enum bt_mesh_dfd_status status = bt_mesh_dfd_srv_suspend(dfd_srv);
 
@@ -285,7 +285,7 @@ static int cmd_dfd_cancel(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	enum bt_mesh_dfd_status status = bt_mesh_dfd_srv_cancel(dfd_srv, NULL);
 
@@ -303,7 +303,7 @@ static int cmd_dfd_apply(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	enum bt_mesh_dfd_status status = bt_mesh_dfd_srv_apply(dfd_srv);
 
@@ -325,10 +325,9 @@ static int cmd_dfd_fw_get(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	const struct bt_mesh_dfu_slot *slot;
-	int idx = bt_mesh_dfu_slot_get(fwid, fwid_len, &slot);
+	int idx = bt_mesh_dfu_slot_get(fwid, fwid_len, NULL);
 
-	if (idx >= 0 && bt_mesh_dfu_slot_is_valid(slot)) {
+	if (idx >= 0) {
 		print_fw_status(sh, BT_MESH_DFD_SUCCESS, idx, fwid, fwid_len);
 	} else {
 		print_fw_status(sh, BT_MESH_DFD_ERR_FW_NOT_FOUND, 0xffff, fwid, fwid_len);
@@ -349,7 +348,7 @@ static int cmd_dfd_fw_get_by_idx(const struct shell *sh, size_t argc, char *argv
 		return err;
 	}
 
-	if (slot && bt_mesh_dfu_slot_is_valid(slot)) {
+	if (slot) {
 		print_fw_status(sh, BT_MESH_DFD_SUCCESS, idx, slot->fwid, slot->fwid_len);
 	} else {
 		print_fw_status(sh, BT_MESH_DFD_ERR_FW_NOT_FOUND, idx, NULL, 0);
@@ -365,7 +364,7 @@ static int cmd_dfd_fw_delete(const struct shell *sh, size_t argc, char *argv[])
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	uint8_t fwid_buf[CONFIG_BT_MESH_DFU_FWID_MAXLEN];
 	size_t hexlen = strlen(argv[1]);
@@ -395,7 +394,7 @@ static int cmd_dfd_fw_delete_all(const struct shell *sh, size_t argc, char *argv
 		return -ENODEV;
 	}
 
-	struct bt_mesh_dfd_srv *dfd_srv = mod->user_data;
+	struct bt_mesh_dfd_srv *dfd_srv = mod->rt->user_data;
 
 	enum bt_mesh_dfd_status status = bt_mesh_dfd_srv_fw_delete_all(dfd_srv);
 

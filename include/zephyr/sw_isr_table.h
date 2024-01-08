@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 
 #if !defined(_ASMLANGUAGE)
+#include <zephyr/device.h>
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
 
@@ -23,10 +24,10 @@ extern "C" {
 #endif
 
 /* Default vector for the IRQ vector table */
-extern void _isr_wrapper(void);
+void _isr_wrapper(void);
 
 /* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(const void *unused);
+void z_irq_spurious(const void *unused);
 
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
@@ -42,6 +43,12 @@ struct _isr_table_entry {
  * irq line
  */
 extern struct _isr_table_entry _sw_isr_table[];
+
+struct _irq_parent_entry {
+	const struct device *dev;
+	unsigned int irq;
+	unsigned int offset;
+};
 
 /*
  * Data structure created in a special binary .intlist section for each
@@ -60,6 +67,22 @@ struct _isr_list {
 	/** Parameter for non-direct IRQs */
 	const void *param;
 };
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+struct z_shared_isr_client {
+	void (*isr)(const void *arg);
+	const void *arg;
+};
+
+struct z_shared_isr_table_entry {
+	struct z_shared_isr_client clients[CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS];
+	size_t client_num;
+};
+
+void z_shared_isr(const void *data);
+
+extern struct z_shared_isr_table_entry z_shared_sw_isr_table[];
+#endif /* CONFIG_SHARED_INTERRUPTS */
 
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
@@ -81,6 +104,11 @@ struct _isr_list {
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 void z_isr_install(unsigned int irq, void (*routine)(const void *),
 		   const void *param);
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+int z_isr_uninstall(unsigned int irq, void (*routine)(const void *),
+		    const void *param);
+#endif /* CONFIG_SHARED_INTERRUPTS */
 #endif
 
 #ifdef __cplusplus

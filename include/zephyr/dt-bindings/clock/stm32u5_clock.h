@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Linaro Limited
+ * Copyright (c) 2023 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,8 +88,8 @@
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
 #define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR1_REG)
 #define USART3_SEL(val)		STM32_CLOCK(val, 3, 4, CCIPR1_REG)
-#define USART4_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR1_REG)
-#define USART5_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR1_REG)
+#define UART4_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR1_REG)
+#define UART5_SEL(val)		STM32_CLOCK(val, 3, 8, CCIPR1_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR1_REG)
 #define I2C2_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR1_REG)
 #define I2C4_SEL(val)		STM32_CLOCK(val, 3, 14, CCIPR1_REG)
@@ -106,7 +107,14 @@
 #define SAE_SEL(val)		STM32_CLOCK(val, 1, 11, CCIPR2_REG)
 #define RNG_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR2_REG)
 #define SDMMC_SEL(val)		STM32_CLOCK(val, 1, 14, CCIPR2_REG)
+#define DSIHOST_SEL(val)	STM32_CLOCK(val, 1, 15, CCIPR2_REG)
+#define USART6_SEL(val)		STM32_CLOCK(val, 1, 16, CCIPR2_REG)
+#define LTDC_SEL(val)		STM32_CLOCK(val, 1, 18, CCIPR2_REG)
 #define OCTOSPI_SEL(val)	STM32_CLOCK(val, 3, 20, CCIPR2_REG)
+#define HSPI_SEL(val)		STM32_CLOCK(val, 3, 22, CCIPR2_REG)
+#define I2C5_SEL(val)		STM32_CLOCK(val, 3, 24, CCIPR2_REG)
+#define I2C6_SEL(val)		STM32_CLOCK(val, 3, 26, CCIPR2_REG)
+#define USBPHYC_SEL(val)	STM32_CLOCK(val, 3, 30, CCIPR2_REG)
 /** CCIPR3 devices */
 #define LPUART1_SEL(val)	STM32_CLOCK(val, 7, 0, CCIPR3_REG)
 #define SPI3_SEL(val)		STM32_CLOCK(val, 3, 3, CCIPR3_REG)
@@ -118,5 +126,10 @@
 #define ADF1_SEL(val)		STM32_CLOCK(val, 7, 16, CCIPR3_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
+/**
+ * Dummy: Add a specifier when no selection is possible, value may not occur
+ * in used RCC regs
+ */
+#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U5_CLOCK_H_ */

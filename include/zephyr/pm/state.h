@@ -329,6 +329,7 @@ struct pm_state_info {
 	}
 
 
+#if defined(CONFIG_PM) || defined(__DOXYGEN__)
 /**
  * Obtain information about all supported states by a CPU.
  *
@@ -342,6 +343,18 @@ uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states);
 /**
  * @}
  */
+
+#else  /* CONFIG_PM */
+
+static inline uint8_t pm_state_cpu_get_all(uint8_t cpu, const struct pm_state_info **states)
+{
+	ARG_UNUSED(cpu);
+	ARG_UNUSED(states);
+
+	return 0;
+}
+
+#endif /* CONFIG_PM */
 
 #ifdef __cplusplus
 }

@@ -194,13 +194,13 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 
 .. _Nucleo F207ZG website:
-   http://www.st.com/en/evaluation-tools/nucleo-f207zg.html
+   https://www.st.com/en/evaluation-tools/nucleo-f207zg.html
 
 .. _STM32 Nucleo-144 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00244518.pdf
+   https://www.st.com/resource/en/user_manual/dm00244518.pdf
 
 .. _STM32F207ZG on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f207zg.html
+   https://www.st.com/en/microcontrollers/stm32f207zg.html
 
 .. _STM32F207 reference manual:
-   http://www.st.com/resource/en/reference_manual/cd00225773.pdf
+   https://www.st.com/resource/en/reference_manual/cd00225773.pdf

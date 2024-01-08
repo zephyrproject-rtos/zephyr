@@ -87,8 +87,9 @@ Using Serial Backend
 Example
 *******
 
-This is an example using ``samples/subsys/debug/gdbstub`` to demonstrate
-how GDB stub works.
+This is an example to demonstrate how GDB stub works.
+You can also refer to ``tests/subsys/debug/gdbstub``
+for its implementation as a Twister test.
 
 #. Open two terminal windows.
 

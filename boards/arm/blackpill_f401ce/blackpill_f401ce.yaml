@@ -14,3 +14,4 @@ supported:
   - uart
   - pwm
   - adc
+vendor: weact

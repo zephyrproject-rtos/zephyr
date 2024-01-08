@@ -14,7 +14,7 @@
  * provide a random number generator.
  */
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
@@ -35,7 +35,8 @@ static struct k_spinlock rand32_lock;
  */
 uint32_t z_impl_sys_rand32_get(void)
 {
-	static uint64_t state = 123456789UL;  /* initial seed value */
+	/* initial seed value */
+	static uint64_t state = (uint64_t)CONFIG_TIMER_RANDOM_INITIAL_STATE;
 	k_spinlock_key_t key = k_spin_lock(&rand32_lock);
 
 	state = state + k_cycle_get_32();

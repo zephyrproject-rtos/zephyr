@@ -18,3 +18,4 @@ supported:
   - pwm
   - spi
   - watchdog
+vendor: nxp

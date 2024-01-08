@@ -9,7 +9,7 @@
 #include <zephyr/sys/reboot.h>
 #include <zephyr/sys/barrier.h>
 #include <cmsis_core.h>
-#include <zephyr/arch/arm/aarch32/nmi.h>
+#include <zephyr/arch/arm/nmi.h>
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
 

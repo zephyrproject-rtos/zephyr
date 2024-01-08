@@ -3,7 +3,7 @@
 
 description: Telink B91 SPI
 
-include: spi-controller.yaml
+include: [spi-controller.yaml, pinctrl-device.yaml]
 
 compatible: "telink,b91-spi"
 
@@ -19,7 +19,6 @@ properties:
       - "HSPI_MODULE"
 
   pinctrl-0:
-    type: phandles
     required: true
 
   cs0-pin:

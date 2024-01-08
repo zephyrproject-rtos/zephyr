@@ -10,11 +10,21 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
 #include <dt-bindings/adc/adc.h>
+#include <freq.h>
 
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
 		zephyr,entropy = &se;
+	};
+
+	clocks {
+		clk_hfxo: clk-hfxo {
+			#clock-cells = <0>;
+			compatible = "silabs,hfxo";
+			clock-frequency = <DT_FREQ_M(39)>;
+			ctune = <140>;
+		};
 	};
 
 	cpus {

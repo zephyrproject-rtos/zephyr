@@ -192,6 +192,38 @@ config BT_MESH_UNPROV_BEACON_INT
 
 if BT_MESH_PB_ADV
 
+config BT_MESH_PB_ADV_USE_RELAY_SETS
+	bool "Use relay advertising sets to send provisioning PDUs"
+	depends on BT_MESH_RELAY_ADV_SETS > 0
+	help
+	  Use relay advertising sets to send provisioning PDUs
+
+config BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
+	int "Link Open and Transaction PDU retransmit count"
+	default 7 if BT_MESH_PB_ADV_USE_RELAY_SETS
+	default 0
+	range 0 7
+	help
+	  Controls the number of retransmissions of original Link Open and Transaction PDU,
+	  in addition to the first transmission.
+
+config BT_MESH_PB_ADV_TRANS_ACK_RETRANSMIT_COUNT
+	int "Link Ack and Transaction Ack retransmit count"
+	default 2
+	range 0 7
+	help
+	  Controls the number of retransmissions of original Link Ack and Transaction Acknowledgment PDU,
+	  in addition to the first transmission.
+
+config BT_MESH_PB_ADV_LINK_CLOSE_RETRANSMIT_COUNT
+	int "Link Close retransmit count"
+	default 7 if BT_MESH_PB_ADV_USE_RELAY_SETS
+	default 2
+	range 0 7
+	help
+	  Controls the number of retransmissions of original Link Close,
+	  in addition to the first transmission.
+
 config BT_MESH_PB_ADV_RETRANS_TIMEOUT
 	int "Timeout value of retransmit provisioning PDUs"
 	default 500
@@ -1017,13 +1049,10 @@ config BT_MESH_FRIEND_ADV_LATENCY
 endif # BT_MESH_FRIEND
 
 menuconfig BT_MESH_V1d1
-	bool "Bluetooth mesh v1.1 support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Bluetooth mesh v1.1 support"
 	help
 	  This option enables Bluetooth mesh v1.1 support. Bluetooth mesh v1.1
-	  is backward compatible with v1.0.1. The stack cannot be qualified
-	  with this option enabled because the Bluetooth mesh v1.1 specification
-	  is in a draft state.
+	  is backward compatible with v1.0.1.
 
 config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
 	bool "Support CMAC AES128 for OOB authentication" if BT_MESH_V1d1
@@ -1235,6 +1264,14 @@ config BT_MESH_DFD_SRV_TARGETS_MAX
 	  This value defines the maximum number of Target nodes the Firmware
 	  Distribution Server can target simultaneously.
 
+config BT_MESH_DFD_SRV_OOB_UPLOAD
+	bool "Support for DFU image OOB upload"
+	help
+	  This enables support for OOB upload of firmware images for
+	  distribution. This makes several callbacks and use of the init
+	  macro BT_MESH_DFD_SRV_INIT_OOB mandatory. See the API documentation
+	  for bt_mesh_dfd_srv_cb for details about the mandatory callbacks.
+
 endif
 
 config BT_MESH_RPR_SRV
@@ -1367,16 +1404,31 @@ config BT_MESH_PRIV_BEACON_CLI
 
 endif # BT_MESH_PRIV_BEACONS
 
+config BT_MESH_COMP_PST_BUF_SIZE
+	int "Composition Data Page persistence buffer size"
+	default 100
+	help
+	  Stack allocated buffer used to temporarily hold Composition
+	  Data Pages during flash operations. Should reflect the size
+	  of the largest Composition Data Page present in the application.
+	  Note that this buffer should still be large enough to restore previously stored
+	  pages after a performed device firmware update.
+
 config BT_MESH_COMP_PAGE_1
 	bool "Support for Composition Data Page 1"
 	depends on BT_MESH_MODEL_EXTENSIONS
 	help
 	  Enable support for Composition Data Page 1.
 
+config BT_MESH_COMP_PAGE_2
+	bool "Support for Composition Data Page 2"
+	help
+	  Enable support for Composition Data Page 2.
+
 config BT_MESH_MODEL_EXTENSION_LIST_SIZE
 	int "Model extensions list size"
 	depends on BT_MESH_COMP_PAGE_1
-	range 1 255
+	range 0 255
 	default 10
 	help
 	  This option specifies how many models relations can be saved.
@@ -1387,11 +1439,10 @@ config BT_MESH_SOLICITATION
 	bool
 
 config BT_MESH_PROXY_SOLICITATION
-	bool "Proxy solicitation feature for Proxy Client support"
-	depends on BT_MESH_PROXY_CLIENT
+	bool "Proxy solicitation feature"
 	select BT_MESH_SOLICITATION
 	help
-	  This option enables support for sending Solicitation PDUs for Proxy Client.
+	  This option enables support for sending Solicitation PDUs.
 
 config BT_MESH_SOL_ADV_XMIT
 	int "Solicitation PDU retransmission count"
@@ -1705,6 +1756,7 @@ config BT_MESH_SETTINGS_WORKQ_PRIO
 
 config BT_MESH_SETTINGS_WORKQ_STACK_SIZE
 	int "Stack size of the settings workq"
+	default 1200 if BT_MESH_RPR_SRV
 	default 880
 	help
 	  Size of the settings workqueue stack.

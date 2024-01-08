@@ -1,0 +1,18 @@
+# Raytac MDBT53-DB-40 NRF5340 board configuration
+
+# Copyright (c) 2019-2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_RAYTAC_MDBT53_DB_40_NRF5340_CPUAPP
+	bool "Raytac MDBT53-DB-40 nRF5340 Application MCU"
+
+config BOARD_RAYTAC_MDBT53_DB_40_NRF5340_CPUAPP_NS
+	bool "Raytac MDBT53-DB-40 nRF5340 Application MCU non-secure"
+
+endif # SOC_NRF5340_CPUAPP_QKAA
+
+config BOARD_RAYTAC_MDBT53_DB_40_NRF5340_CPUNET
+	bool "Raytac MDBT53-DB-40 NRF5340 Network MCU"
+	depends on SOC_NRF5340_CPUNET_QKAA

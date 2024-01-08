@@ -16,12 +16,19 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
+#include "sensor_shell.h"
+
 LOG_MODULE_REGISTER(sensor_shell);
 
 #define SENSOR_GET_HELP                                                                            \
 	"Get sensor data. Channel names are optional. All channels are read "                      \
 	"when no channels are provided. Syntax:\n"                                                 \
 	"<device_name> <channel name 0> .. <channel name N>"
+
+#define SENSOR_STREAM_HELP                                                                         \
+	"Start/stop streaming sensor data. Data ready trigger will be used if no triggers "        \
+	"are provided. Syntax:\n"                                                                  \
+	"<device_name> on|off <trigger name> incl|drop|nop"
 
 #define SENSOR_ATTR_GET_HELP                                                                       \
 	"Get the sensor's channel attribute. Syntax:\n"                                            \
@@ -38,7 +45,7 @@ LOG_MODULE_REGISTER(sensor_shell);
 	"Get or set the trigger type on a sensor. Currently only supports `data_ready`.\n"         \
 	"<device_name> <on/off> <trigger_name>"
 
-const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
+const char *sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_ACCEL_X] = "accel_x",
 	[SENSOR_CHAN_ACCEL_Y] = "accel_y",
 	[SENSOR_CHAN_ACCEL_Z] = "accel_z",
@@ -96,6 +103,7 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE] = "gauge_design_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE] = "gauge_desired_voltage",
 	[SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT] = "gauge_desired_charging_current",
+	[SENSOR_CHAN_ALL] = "all",
 };
 
 static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
@@ -114,6 +122,7 @@ static const char *sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_FEATURE_MASK] = "feature_mask",
 	[SENSOR_ATTR_ALERT] = "alert",
 	[SENSOR_ATTR_FF_DUR] = "ff_dur",
+	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 };
 
 /* Forward declaration */
@@ -146,12 +155,32 @@ static const struct {
 	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FREEFALL, freefall, NULL),
 	TRIGGER_DATA_ENTRY(SENSOR_TRIG_MOTION, motion, NULL),
 	TRIGGER_DATA_ENTRY(SENSOR_TRIG_STATIONARY, stationary, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FIFO_WATERMARK, fifo_wm, NULL),
+	TRIGGER_DATA_ENTRY(SENSOR_TRIG_FIFO_FULL, fifo_full, NULL),
 };
+
+/**
+ * Lookup the sensor trigger data by name
+ *
+ * @param name The name of the trigger
+ * @return < 0 on error
+ * @return >= 0 if found
+ */
+static int sensor_trigger_name_lookup(const char *name)
+{
+	for (int i = 0; i < ARRAY_SIZE(sensor_trigger_table); ++i) {
+		if (strcmp(name, sensor_trigger_table[i].name) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
 
 enum dynamic_command_context {
 	NONE,
 	CTX_GET,
 	CTX_ATTR_GET_SET,
+	CTX_STREAM_ON_OFF,
 };
 
 static enum dynamic_command_context current_cmd_ctx = NONE;
@@ -163,6 +192,7 @@ K_MUTEX_DEFINE(cmd_get_mutex);
 static enum sensor_channel iodev_sensor_shell_channels[SENSOR_CHAN_ALL];
 static struct sensor_read_config iodev_sensor_shell_read_config = {
 	.sensor = NULL,
+	.is_streaming = false,
 	.channels = iodev_sensor_shell_channels,
 	.count = 0,
 	.max = ARRAY_SIZE(iodev_sensor_shell_channels),
@@ -234,21 +264,18 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 	return 0;
 }
 
-struct sensor_shell_processing_context {
-	const struct device *dev;
-	const struct shell *sh;
-};
-
-static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len,
-					     void *userdata)
+void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len, void *userdata)
 {
 	struct sensor_shell_processing_context *ctx = userdata;
 	const struct sensor_decoder_api *decoder;
-	sensor_frame_iterator_t fit = {0};
-	sensor_channel_iterator_t cit = {0};
-	uint64_t timestamp;
-	enum sensor_channel channel;
-	q31_t q;
+	uint8_t decoded_buffer[128];
+	struct {
+		uint64_t base_timestamp_ns;
+		int count;
+		uint64_t timestamp_delta;
+		int64_t values[3];
+		int8_t shift;
+	} accumulator_buffer;
 	int rc;
 
 	ARG_UNUSED(buf_len);
@@ -264,51 +291,190 @@ static void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t 
 		return;
 	}
 
-	rc = decoder->get_timestamp(buf, &timestamp);
-	if (rc != 0) {
-		shell_error(ctx->sh, "Failed to get fetch timestamp for '%s'", ctx->dev->name);
-		return;
+	for (int trigger = 0; decoder->has_trigger != NULL && trigger < SENSOR_TRIG_COMMON_COUNT;
+	     ++trigger) {
+		if (!decoder->has_trigger(buf, trigger)) {
+			continue;
+		}
+		shell_info(ctx->sh, "Trigger (%d / %s) detected", trigger,
+			   (sensor_trigger_table[trigger].name == NULL
+				    ? "UNKNOWN"
+				    : sensor_trigger_table[trigger].name));
 	}
-	shell_print(ctx->sh, "Got samples at %" PRIu64 " ns", timestamp);
 
-	while (decoder->decode(buf, &fit, &cit, &channel, &q, 1) > 0) {
-		int8_t shift;
+	for (int channel = 0; channel < SENSOR_CHAN_ALL; ++channel) {
+		uint32_t fit = 0;
+		size_t base_size;
+		size_t frame_size;
+		size_t channel_idx = 0;
+		uint16_t frame_count;
 
-		rc = decoder->get_shift(buf, channel, &shift);
-		if (rc != 0) {
-			shell_error(ctx->sh, "Failed to get bitshift for channel %d", channel);
+		if (channel == SENSOR_CHAN_ACCEL_X || channel == SENSOR_CHAN_ACCEL_Y ||
+		    channel == SENSOR_CHAN_ACCEL_Z || channel == SENSOR_CHAN_GYRO_X ||
+		    channel == SENSOR_CHAN_GYRO_Y || channel == SENSOR_CHAN_GYRO_Z ||
+		    channel == SENSOR_CHAN_MAGN_X || channel == SENSOR_CHAN_MAGN_Y ||
+		    channel == SENSOR_CHAN_MAGN_Z || channel == SENSOR_CHAN_POS_DY ||
+		    channel == SENSOR_CHAN_POS_DZ) {
 			continue;
 		}
 
-		int64_t scaled_value = (int64_t)q << shift;
-		bool is_negative = scaled_value < 0;
-		int numerator;
-		int denominator;
-
-		scaled_value = llabs(scaled_value);
-		numerator = (int)FIELD_GET(GENMASK64(31 + shift, 31), scaled_value);
-		denominator = (int)DIV_ROUND_CLOSEST(
-				FIELD_GET(GENMASK64(30, 0), scaled_value) * 1000000,
-				INT32_MAX);
-
-		if (denominator == 1000000) {
-			numerator++;
-			denominator = 0;
+		rc = decoder->get_size_info(channel, &base_size, &frame_size);
+		if (rc != 0) {
+			/* Channel not supported, skipping */
+			continue;
 		}
 
-		if (channel >= ARRAY_SIZE(sensor_channel_name)) {
-			shell_print(ctx->sh, "channel idx=%d value=%s%d.%06d", channel,
-				    is_negative ? "-" : "", numerator, denominator);
-		} else {
-			shell_print(ctx->sh, "channel idx=%d %s value=%s%d.%06d", channel,
-				    sensor_channel_name[channel], is_negative ? "-" : "", numerator,
-				    denominator);
+		if (base_size > ARRAY_SIZE(decoded_buffer)) {
+			shell_error(ctx->sh,
+				    "Channel (%d) requires %zu bytes to decode, but only %zu are "
+				    "available",
+				    channel, base_size, ARRAY_SIZE(decoded_buffer));
+			continue;
+		}
+
+		while (decoder->get_frame_count(buf, channel, channel_idx, &frame_count) == 0) {
+			fit = 0;
+			memset(&accumulator_buffer, 0, sizeof(accumulator_buffer));
+			while (decoder->decode(buf, channel, channel_idx, &fit, 1, decoded_buffer) >
+			       0) {
+
+				switch (channel) {
+				case SENSOR_CHAN_ACCEL_XYZ:
+				case SENSOR_CHAN_GYRO_XYZ:
+				case SENSOR_CHAN_MAGN_XYZ:
+				case SENSOR_CHAN_POS_DX: {
+					struct sensor_three_axis_data *data =
+						(struct sensor_three_axis_data *)decoded_buffer;
+
+					if (accumulator_buffer.count == 0) {
+						accumulator_buffer.base_timestamp_ns =
+							data->header.base_timestamp_ns;
+					}
+					accumulator_buffer.count++;
+					accumulator_buffer.shift = data->shift;
+					accumulator_buffer.timestamp_delta +=
+						data->readings[0].timestamp_delta;
+					accumulator_buffer.values[0] += data->readings[0].values[0];
+					accumulator_buffer.values[1] += data->readings[0].values[1];
+					accumulator_buffer.values[2] += data->readings[0].values[2];
+					break;
+				}
+				case SENSOR_CHAN_PROX: {
+					struct sensor_byte_data *data =
+						(struct sensor_byte_data *)decoded_buffer;
+
+					if (accumulator_buffer.count == 0) {
+						accumulator_buffer.base_timestamp_ns =
+							data->header.base_timestamp_ns;
+					}
+					accumulator_buffer.count++;
+					accumulator_buffer.timestamp_delta +=
+						data->readings[0].timestamp_delta;
+					accumulator_buffer.values[0] += data->readings[0].is_near;
+					break;
+				}
+				default: {
+					struct sensor_q31_data *data =
+						(struct sensor_q31_data *)decoded_buffer;
+
+					if (accumulator_buffer.count == 0) {
+						accumulator_buffer.base_timestamp_ns =
+							data->header.base_timestamp_ns;
+					}
+					accumulator_buffer.count++;
+					accumulator_buffer.shift = data->shift;
+					accumulator_buffer.timestamp_delta +=
+						data->readings[0].timestamp_delta;
+					accumulator_buffer.values[0] += data->readings[0].value;
+					break;
+				}
+				}
+			}
+
+			/* Print the accumulated value average */
+			switch (channel) {
+			case SENSOR_CHAN_ACCEL_XYZ:
+			case SENSOR_CHAN_GYRO_XYZ:
+			case SENSOR_CHAN_MAGN_XYZ:
+			case SENSOR_CHAN_POS_DX: {
+				struct sensor_three_axis_data *data =
+					(struct sensor_three_axis_data *)decoded_buffer;
+
+				data->header.base_timestamp_ns =
+					accumulator_buffer.base_timestamp_ns;
+				data->header.reading_count = 1;
+				data->shift = accumulator_buffer.shift;
+				data->readings[0].timestamp_delta =
+					(uint32_t)(accumulator_buffer.timestamp_delta /
+						   accumulator_buffer.count);
+				data->readings[0].values[0] = (q31_t)(accumulator_buffer.values[0] /
+								      accumulator_buffer.count);
+				data->readings[0].values[1] = (q31_t)(accumulator_buffer.values[1] /
+								      accumulator_buffer.count);
+				data->readings[0].values[2] = (q31_t)(accumulator_buffer.values[2] /
+								      accumulator_buffer.count);
+				shell_info(ctx->sh,
+					   "channel idx=%d %s shift=%d num_samples=%d "
+					   "value=%" PRIsensor_three_axis_data,
+					   channel, sensor_channel_name[channel],
+					   data->shift, accumulator_buffer.count,
+					   PRIsensor_three_axis_data_arg(*data, 0));
+				break;
+			}
+			case SENSOR_CHAN_PROX: {
+				struct sensor_byte_data *data =
+					(struct sensor_byte_data *)decoded_buffer;
+
+				data->header.base_timestamp_ns =
+					accumulator_buffer.base_timestamp_ns;
+				data->header.reading_count = 1;
+				data->readings[0].timestamp_delta =
+					(uint32_t)(accumulator_buffer.timestamp_delta /
+						   accumulator_buffer.count);
+				data->readings[0].is_near =
+					accumulator_buffer.values[0] / accumulator_buffer.count;
+
+				shell_info(ctx->sh,
+					   "channel idx=%d %s num_samples=%d "
+					   "value=%" PRIsensor_byte_data(is_near),
+					   channel, sensor_channel_name[channel],
+					   accumulator_buffer.count,
+					   PRIsensor_byte_data_arg(*data, 0, is_near));
+				break;
+			}
+			default: {
+				struct sensor_q31_data *data =
+					(struct sensor_q31_data *)decoded_buffer;
+
+				data->header.base_timestamp_ns =
+					accumulator_buffer.base_timestamp_ns;
+				data->header.reading_count = 1;
+				data->shift = accumulator_buffer.shift;
+				data->readings[0].timestamp_delta =
+					(uint32_t)(accumulator_buffer.timestamp_delta /
+						   accumulator_buffer.count);
+				data->readings[0].value = (q31_t)(accumulator_buffer.values[0] /
+								  accumulator_buffer.count);
+
+				shell_info(ctx->sh,
+					   "channel idx=%d %s shift=%d num_samples=%d "
+					   "value=%" PRIsensor_q31_data,
+					   channel,
+					   (channel >= ARRAY_SIZE(sensor_channel_name))
+						   ? ""
+						   : sensor_channel_name[channel],
+					   data->shift, accumulator_buffer.count,
+					   PRIsensor_q31_data_arg(*data, 0));
+			}
+			}
+			++channel_idx;
 		}
 	}
 }
 
 static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 {
+	static struct sensor_shell_processing_context ctx;
 	const struct device *dev;
 	int count = 0;
 	int err;
@@ -356,20 +522,26 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	iodev_sensor_shell_read_config.sensor = dev;
 	iodev_sensor_shell_read_config.count = count;
 
-	struct sensor_shell_processing_context ctx = {
-		.dev = dev,
-		.sh = sh,
-	};
+	ctx.dev = dev;
+	ctx.sh = sh;
 	err = sensor_read(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
 	}
-	sensor_processing_with_callback(&sensor_read_rtio, sensor_shell_processing_callback);
+	if (!IS_ENABLED(CONFIG_SENSOR_SHELL_STREAM)) {
+		/*
+		 * Streaming enables a thread that polls the RTIO context, so if it's enabled, we
+		 * don't need a blocking read here.
+		 */
+		sensor_processing_with_callback(&sensor_read_rtio,
+						sensor_shell_processing_callback);
+	}
 
 	k_mutex_unlock(&cmd_get_mutex);
 
 	return 0;
 }
+
 
 static int cmd_sensor_attr_set(const struct shell *shell_ptr, size_t argc, char *argv[])
 {
@@ -481,28 +653,9 @@ static int cmd_sensor_attr_get(const struct shell *shell_ptr, size_t argc, char 
 }
 
 static void channel_name_get(size_t idx, struct shell_static_entry *entry);
-
 SHELL_DYNAMIC_CMD_CREATE(dsub_channel_name, channel_name_get);
 
-static void attribute_name_get(size_t idx, struct shell_static_entry *entry)
-{
-	int cnt = 0;
-
-	entry->syntax = NULL;
-	entry->handler = NULL;
-	entry->help = NULL;
-	entry->subcmd = &dsub_channel_name;
-
-	for (int i = 0; i < SENSOR_ATTR_COMMON_COUNT; i++) {
-		if (sensor_attribute_name[i] != NULL) {
-			if (cnt == idx) {
-				entry->syntax = sensor_attribute_name[i];
-				break;
-			}
-			cnt++;
-		}
-	}
-}
+static void attribute_name_get(size_t idx, struct shell_static_entry *entry);
 SHELL_DYNAMIC_CMD_CREATE(dsub_attribute_name, attribute_name_get);
 
 static void channel_name_get(size_t idx, struct shell_static_entry *entry)
@@ -520,7 +673,7 @@ static void channel_name_get(size_t idx, struct shell_static_entry *entry)
 		entry->subcmd = NULL;
 	}
 
-	for (int i = 0; i < SENSOR_CHAN_ALL; i++) {
+	for (int i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
 		if (sensor_channel_name[i] != NULL) {
 			if (cnt == idx) {
 				entry->syntax = sensor_channel_name[i];
@@ -530,6 +683,88 @@ static void channel_name_get(size_t idx, struct shell_static_entry *entry)
 		}
 	}
 }
+
+static void attribute_name_get(size_t idx, struct shell_static_entry *entry)
+{
+	int cnt = 0;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_channel_name;
+
+	for (int i = 0; i < ARRAY_SIZE(sensor_attribute_name); i++) {
+		if (sensor_attribute_name[i] != NULL) {
+			if (cnt == idx) {
+				entry->syntax = sensor_attribute_name[i];
+				break;
+			}
+			cnt++;
+		}
+	}
+}
+
+static void trigger_opt_get_for_stream(size_t idx, struct shell_static_entry *entry);
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_opt_get_for_stream, trigger_opt_get_for_stream);
+
+static void trigger_opt_get_for_stream(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	switch (idx) {
+	case SENSOR_STREAM_DATA_INCLUDE:
+		entry->syntax = "incl";
+		break;
+	case SENSOR_STREAM_DATA_DROP:
+		entry->syntax = "drop";
+		break;
+	case SENSOR_STREAM_DATA_NOP:
+		entry->syntax = "nop";
+		break;
+	}
+}
+
+static void trigger_name_get_for_stream(size_t idx, struct shell_static_entry *entry);
+SHELL_DYNAMIC_CMD_CREATE(dsub_trigger_name_for_stream, trigger_name_get_for_stream);
+
+static void trigger_name_get_for_stream(size_t idx, struct shell_static_entry *entry)
+{
+	int cnt = 0;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_trigger_opt_get_for_stream;
+
+	for (int i = 0; i < ARRAY_SIZE(sensor_trigger_table); i++) {
+		if (sensor_trigger_table[i].name != NULL) {
+			if (cnt == idx) {
+				entry->syntax = sensor_trigger_table[i].name;
+				break;
+			}
+			cnt++;
+		}
+	}
+}
+
+static void stream_on_off(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+
+	if (idx == 0) {
+		entry->syntax = "on";
+		entry->subcmd = &dsub_trigger_name_for_stream;
+	} else if (idx == 1) {
+		entry->syntax = "off";
+		entry->subcmd = NULL;
+	}
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_stream_on_off, stream_on_off);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
@@ -567,7 +802,7 @@ static void trigger_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
-	for (int i = 0; i < SENSOR_TRIG_COMMON_COUNT; i++) {
+	for (int i = 0; i < ARRAY_SIZE(sensor_trigger_table); i++) {
 		if (sensor_trigger_table[i].name != NULL) {
 			if (cnt == idx) {
 				entry->syntax = sensor_trigger_table[i].name;
@@ -613,6 +848,18 @@ static void device_name_get_for_trigger(size_t idx, struct shell_static_entry *e
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_trigger, device_name_get_for_trigger);
 
+static void device_name_get_for_stream(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev = shell_device_lookup(idx, NULL);
+
+	current_cmd_ctx = CTX_STREAM_ON_OFF;
+	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = &dsub_stream_on_off;
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_device_name_for_stream, device_name_get_for_stream);
+
 static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -621,8 +868,7 @@ static int cmd_get_sensor_info(const struct shell *sh, size_t argc, char **argv)
 #ifdef CONFIG_SENSOR_INFO
 	const char *null_str = "(null)";
 
-	STRUCT_SECTION_FOREACH(sensor_info, sensor)
-	{
+	STRUCT_SECTION_FOREACH(sensor_info, sensor) {
 		shell_print(sh,
 			    "device name: %s, vendor: %s, model: %s, "
 			    "friendly name: %s",
@@ -703,7 +949,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
-	enum sensor_trigger_type trigger;
+	int trigger;
 	int err;
 
 	if (argc < 4) {
@@ -719,12 +965,8 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* Map the trigger string to an enum value */
-	for (trigger = 0; trigger < ARRAY_SIZE(sensor_trigger_table); trigger++) {
-		if (strcmp(argv[3], sensor_trigger_table[trigger].name) == 0) {
-			break;
-		}
-	}
-	if (trigger >= SENSOR_TRIG_COMMON_COUNT || sensor_trigger_table[trigger].handler == NULL) {
+	trigger = sensor_trigger_name_lookup(argv[3]);
+	if (trigger < 0 || sensor_trigger_table[trigger].handler == NULL) {
 		shell_error(sh, "Unsupported trigger type (%s)", argv[3]);
 		return -ENOTSUP;
 	}
@@ -757,6 +999,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_sensor,
 			cmd_sensor_attr_set, 2, 255),
 	SHELL_CMD_ARG(attr_get, &dsub_device_name_for_attr, SENSOR_ATTR_GET_HELP,
 			cmd_sensor_attr_get, 2, 255),
+	SHELL_COND_CMD(CONFIG_SENSOR_SHELL_STREAM, stream, &dsub_device_name_for_stream,
+			SENSOR_STREAM_HELP, cmd_sensor_stream),
 	SHELL_COND_CMD(CONFIG_SENSOR_INFO, info, NULL, SENSOR_INFO_HELP,
 			cmd_get_sensor_info),
 	SHELL_CMD_ARG(trig, &dsub_trigger, SENSOR_TRIG_HELP, cmd_trig_sensor,

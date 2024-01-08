@@ -247,13 +247,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _STM32L496G Discovery website:
-   http://www.st.com/en/evaluation-tools/32l496gdiscovery.html
+   https://www.st.com/en/evaluation-tools/32l496gdiscovery.html
 
 .. _STM32L496G Discovery board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00353127.pdf
+   https://www.st.com/resource/en/user_manual/dm00353127.pdf
 
 .. _STM32L496AG on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32l496ag.html
+   https://www.st.com/en/microcontrollers/stm32l496ag.html
 
 .. _STM32L496 reference manual:
-   http://www.st.com/resource/en/reference_manual/DM00083560.pdf
+   https://www.st.com/resource/en/reference_manual/DM00083560.pdf

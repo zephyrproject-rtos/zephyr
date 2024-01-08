@@ -1063,8 +1063,12 @@ static int ads114s0x_read(const struct device *dev, const struct adc_sequence *s
 #endif
 
 #if CONFIG_ADC_ASYNC
-static void ads114s0x_acquisition_thread(struct device *dev)
+static void ads114s0x_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	while (true) {
 		ads114s0x_adc_perform_read(dev);
 	}
@@ -1076,7 +1080,7 @@ static int ads114s0x_gpio_write_config(const struct device *dev)
 {
 	struct ads114s0x_data *data = dev->data;
 	const struct ads114s0x_config *config = dev->config;
-	uint8_t register_addresses[2];
+	enum ads114s0x_register register_addresses[2];
 	uint8_t register_values[ARRAY_SIZE(register_addresses)];
 	uint8_t gpio_dat = 0;
 	uint8_t gpio_con = 0;
@@ -1352,9 +1356,9 @@ static int ads114s0x_init(const struct device *dev)
 	}
 
 #if CONFIG_ADC_ASYNC
-	const k_tid_t tid = k_thread_create(
+	k_tid_t tid = k_thread_create(
 		&data->thread, config->stack, CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE,
-		(k_thread_entry_t)ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
+		ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
 		CONFIG_ADC_ADS114S0X_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_ads114s0x");
 #endif

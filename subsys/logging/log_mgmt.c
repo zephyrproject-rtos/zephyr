@@ -5,7 +5,7 @@
  */
 #include <zephyr/logging/log_internal.h>
 #include <zephyr/logging/log_ctrl.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_link.h>
@@ -417,7 +417,7 @@ uint32_t z_impl_log_filter_set(struct log_backend const *const backend,
 			       uint32_t level)
 {
 	if (!IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		return level;
+		return log_compiled_level_get(domain_id, source_id);
 	}
 
 	__ASSERT_NO_MSG(source_id < log_src_cnt_get(domain_id));
@@ -449,13 +449,13 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 			    int16_t src_id,
 			    uint32_t level)
 {
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == NULL,
+	K_OOPS(K_SYSCALL_VERIFY_MSG(backend == NULL,
 		"Setting per-backend filters from user mode is not supported"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == Z_LOG_LOCAL_DOMAIN_ID,
+	K_OOPS(K_SYSCALL_VERIFY_MSG(domain_id == Z_LOG_LOCAL_DOMAIN_ID,
 		"Invalid log domain_id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < (int16_t)log_src_cnt_get(domain_id),
+	K_OOPS(K_SYSCALL_VERIFY_MSG(src_id < (int16_t)log_src_cnt_get(domain_id),
 		"Invalid log source id"));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
+	K_OOPS(K_SYSCALL_VERIFY_MSG(
 		(level <= LOG_LEVEL_DBG),
 		"Invalid log level"));
 

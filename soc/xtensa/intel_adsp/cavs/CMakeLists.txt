@@ -3,7 +3,8 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_include_directories(include)
+zephyr_include_directories(include)
+zephyr_include_directories(include/${SOC_NAME})
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 
 zephyr_library_sources(
@@ -17,3 +18,5 @@ if(CONFIG_SMP OR CONFIG_MP_MAX_NUM_CPUS GREATER 1)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq.c)
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/include/xtensa-cavs-linker.ld CACHE INTERNAL "")

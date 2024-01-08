@@ -218,7 +218,7 @@ ZTEST(device_runtime_api, test_api)
 }
 
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,
-	      APPLICATION, 0, NULL);
+	      POST_KERNEL, 0, NULL);
 
 ZTEST(device_runtime_api, test_unsupported)
 {

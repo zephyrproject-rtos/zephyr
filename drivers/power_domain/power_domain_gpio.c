@@ -125,17 +125,17 @@ static int pd_gpio_init(const struct device *dev)
 	return pm_device_driver_init(dev, pd_gpio_pm_action);
 }
 
-#define POWER_DOMAIN_DEVICE(id)						   \
-	static const struct pd_gpio_config pd_gpio_##id##_cfg = {	   \
-		.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios),	   \
-		.startup_delay_us = DT_INST_PROP(id, startup_delay_us),	   \
-		.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us),	   \
-	};								   \
-	static struct pd_gpio_data pd_gpio_##id##_data;			   \
-	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);		   \
-	DEVICE_DT_INST_DEFINE(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id), \
-			      &pd_gpio_##id##_data, &pd_gpio_##id##_cfg,   \
-			      POST_KERNEL, 75,				   \
+#define POWER_DOMAIN_DEVICE(id)							\
+	static const struct pd_gpio_config pd_gpio_##id##_cfg = {		\
+		.enable = GPIO_DT_SPEC_INST_GET(id, enable_gpios),		\
+		.startup_delay_us = DT_INST_PROP(id, startup_delay_us),		\
+		.off_on_delay_us = DT_INST_PROP(id, off_on_delay_us),		\
+	};									\
+	static struct pd_gpio_data pd_gpio_##id##_data;				\
+	PM_DEVICE_DT_INST_DEFINE(id, pd_gpio_pm_action);			\
+	DEVICE_DT_INST_DEFINE(id, pd_gpio_init, PM_DEVICE_DT_INST_GET(id),	\
+			      &pd_gpio_##id##_data, &pd_gpio_##id##_cfg,	\
+			      POST_KERNEL, CONFIG_POWER_DOMAIN_INIT_PRIORITY,	\
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

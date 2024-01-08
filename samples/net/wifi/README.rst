@@ -1,7 +1,8 @@
-.. _wifi_sample:
+.. zephyr:code-sample:: wifi-shell
+   :name: Wi-Fi shell
+   :relevant-api: net_stats
 
-Wi-Fi sample
-############
+   Test Wi-Fi functionality using the Wi-Fi shell module.
 
 Overview
 ********

@@ -28,5 +28,6 @@ class Flash(WestCommand):
 
     def do_run(self, my_args, runner_args):
         build_dir = get_build_dir(my_args)
-        domains = load_domains(build_dir).get_domains(my_args.domain)
+        domains = load_domains(build_dir).get_domains(my_args.domain,
+                                                      default_flash_order=True)
         do_run_common(self, my_args, runner_args, domains=domains)

@@ -7,11 +7,12 @@
 #define DT_DRV_COMPAT zephyr_lvgl_pointer_input
 
 #include "lvgl_common_input.h"
+#include "lvgl_pointer_input.h"
 
 #include <lvgl_display.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(lvgl);
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 struct lvgl_pointer_input_config {
 	struct lvgl_common_input_config common_config; /* Needs to be first member */
@@ -108,7 +109,7 @@ static void lvgl_pointer_process_event(const struct device *dev, struct input_ev
 	}
 }
 
-static int lvgl_pointer_input_init(const struct device *dev)
+int lvgl_pointer_input_init(const struct device *dev)
 {
 	return lvgl_input_register_driver(LV_INDEV_TYPE_POINTER, dev);
 }
@@ -123,8 +124,8 @@ static int lvgl_pointer_input_init(const struct device *dev)
 		.invert_y = DT_INST_PROP(inst, invert_y),                                          \
 	};                                                                                         \
 	static struct lvgl_common_input_data lvgl_common_input_data_##inst;                        \
-	DEVICE_DT_INST_DEFINE(inst, lvgl_pointer_input_init, NULL, &lvgl_common_input_data_##inst, \
-			      &lvgl_pointer_input_config_##inst, APPLICATION,                      \
-			      CONFIG_LV_Z_INPUT_INIT_PRIORITY, NULL);
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &lvgl_common_input_data_##inst,                    \
+			      &lvgl_pointer_input_config_##inst, POST_KERNEL,                      \
+			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(LVGL_POINTER_INPUT_DEFINE)

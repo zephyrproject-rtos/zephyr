@@ -10,7 +10,7 @@ tests:
       - native_posix
       - native_posix_64
 
-  libraries.ring_buffer_concurrent:
+  libraries.ring_buffer.concurrent:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000

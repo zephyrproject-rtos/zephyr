@@ -5,10 +5,11 @@
  */
 
 #include "bs_bt_utils.h"
-#include "zephyr/bluetooth/addr.h"
-#include "zephyr/bluetooth/conn.h"
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/conn.h>
 #include <stdint.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/settings/settings.h>
 
 #define EXPECTED_NUM_ROTATIONS 5
 
@@ -40,9 +41,20 @@ static void validate_rpa_addr_generated_for_adv_sets(void)
 			return;
 		}
 	}
-	/* First two adv sets have same address as they use same ID and third adv set use diff ID */
-	if (!bt_addr_le_eq(&adv_set_data[0].old_addr, &adv_set_data[1].old_addr)) {
-		FAIL("RPA not same for adv sets with same id\n");
+	if (bt_addr_le_eq(&adv_set_data[0].old_addr, &adv_set_data[1].old_addr)) {
+		/* With RPA sharing mode disabled, the first two adv sets should have
+		 * a different address even though they use the same Bluetooth ID.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_RPA_SHARING)) {
+			FAIL("RPA same for adv sets with same id and RPA sharing disabled\n");
+		}
+	} else {
+		/* In the RPA sharing mode, the first two adv sets should have
+		 * the same address as they use the same Bluetooth ID.
+		 */
+		if (IS_ENABLED(CONFIG_BT_RPA_SHARING)) {
+			FAIL("RPA not same for adv sets with same id and RPA sharing enabled\n");
+		}
 	}
 	if (bt_addr_le_eq(&adv_set_data[0].old_addr, &adv_set_data[3].old_addr)) {
 		FAIL("RPA same for adv sets with different id's\n");
@@ -58,6 +70,10 @@ static void validate_rpa_addr_generated_for_adv_sets(void)
 static void test_address(bt_addr_le_t *addr)
 {
 	int64_t diff_ms, rpa_timeout_ms;
+
+	if (!BT_ADDR_IS_RPA(&addr->a)) {
+		FAIL("Bluetooth address is not RPA\n");
+	}
 
 	/* Only save the address + time if this is the first scan */
 	if (bt_addr_le_eq(&adv_set_data[adv_index].old_addr, BT_ADDR_LE_ANY)) {
@@ -83,7 +99,7 @@ static void test_address(bt_addr_le_t *addr)
 	rpa_timeout_ms = CONFIG_BT_RPA_TIMEOUT * MSEC_PER_SEC;
 
 	if (abs(diff_ms - rpa_timeout_ms) > (rpa_timeout_ms / 10)) {
-		FAIL("RPA rotation did not occur within +-10% of CONFIG_BT_RPA_TIMEOUT\n");
+		FAIL("RPA rotation did not occur within +-10%% of CONFIG_BT_RPA_TIMEOUT\n");
 	}
 
 	bt_addr_le_copy(&adv_set_data[adv_index].old_addr, addr);
@@ -126,6 +142,11 @@ void tester_procedure(void)
 
 	if (err) {
 		FAIL("Failed to enable bluetooth (err %d\n)", err);
+	}
+
+	err = settings_load();
+	if (err) {
+		FAIL("Failed to enable settings (err %d\n)", err);
 	}
 
 	start_scanning();

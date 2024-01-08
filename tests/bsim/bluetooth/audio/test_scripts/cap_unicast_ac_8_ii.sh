@@ -17,15 +17,15 @@ function Execute_AC_8_II() {
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_initiator_ac_8_ii \
-        -RealEncryption=1 -rs=23 -argstest sink_preset $1 source_preset $2
+        -RealEncryption=1 -rs=23 -D=3 -argstest sink_preset $1 source_preset $2
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_acceptor_unicast \
-        -RealEncryption=1 -rs=46
+        -RealEncryption=1 -rs=46 -D=3
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=cap_acceptor_unicast \
-        -RealEncryption=1 -rs=69
+        -RealEncryption=1 -rs=69 -D=3
 
     # Simulation time should be larger than the WAIT_TIME in common.h
     Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

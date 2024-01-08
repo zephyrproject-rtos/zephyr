@@ -28,3 +28,4 @@ supported:
   - watchdog
   - adc
   - pwm
+vendor: nxp

@@ -16,3 +16,4 @@ testing:
     - bluetooth
     - pm
     - hwinfo
+vendor: silabs

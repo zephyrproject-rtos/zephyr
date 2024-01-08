@@ -3,11 +3,14 @@ name: NXP i.MX8M Plus EVK Audio DSP
 type: mcu
 arch: xtensa
 toolchain:
+  - xcc
+  - xt-clang
   - zephyr
-testing:
-  only_tags:
-    - kernel
-    - sof
-    - ipm
 supported:
   - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - mcumgr
+vendor: nxp

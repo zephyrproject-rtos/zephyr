@@ -6,8 +6,7 @@ MPU Stack Objects
 Thread Stack Creation
 *********************
 
-Thread stacks are declared statically with :c:macro:`K_THREAD_STACK_DEFINE()`
-or embedded within structures using :c:macro:`K_THREAD_STACK_MEMBER()`
+Thread stacks are declared statically with :c:macro:`K_THREAD_STACK_DEFINE()`.
 
 For architectures which utilize memory protection unit (MPU) hardware,
 stacks are physically contiguous allocations.  This contiguous allocation

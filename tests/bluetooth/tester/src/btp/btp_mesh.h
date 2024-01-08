@@ -30,9 +30,12 @@ struct btp_mesh_read_supported_commands_rp {
 
 #define BTP_MESH_CONFIG_PROVISIONING		0x02
 
+#define BTP_MESH_PROV_AUTH_MAX_LEN 32
+
 struct btp_mesh_config_provisioning_cmd {
 	uint8_t uuid[16];
-	uint8_t static_auth[16];
+	uint8_t static_auth[BTP_MESH_PROV_AUTH_MAX_LEN];
+	uint8_t static_auth_size;
 	uint8_t out_size;
 	uint16_t out_actions;
 	uint8_t in_size;
@@ -41,7 +44,8 @@ struct btp_mesh_config_provisioning_cmd {
 } __packed;
 struct btp_mesh_config_provisioning_cmd_v2 {
 	uint8_t uuid[16];
-	uint8_t static_auth[16];
+	uint8_t static_auth[BTP_MESH_PROV_AUTH_MAX_LEN];
+	uint8_t static_auth_size;
 	uint8_t out_size;
 	uint16_t out_actions;
 	uint8_t in_size;
@@ -73,6 +77,10 @@ struct btp_mesh_provision_node_cmd_v2 {
 } __packed;
 
 #define BTP_MESH_INIT				0x04
+struct btp_mesh_init_cmd {
+	uint8_t comp;
+} __packed;
+
 #define BTP_MESH_RESET				0x05
 #define BTP_MESH_INPUT_NUMBER			0x06
 struct btp_mesh_input_number_cmd {
@@ -121,6 +129,7 @@ struct btp_mesh_lpn_set_cmd {
 
 #define BTP_MESH_MODEL_SEND			0x0f
 struct btp_mesh_model_send_cmd {
+	uint8_t ttl;
 	uint16_t src;
 	uint16_t dst;
 	uint8_t payload_len;
@@ -766,6 +775,271 @@ struct btp_proxy_connect_cmd {
 	uint16_t net_idx;
 } __packed;
 
+struct sar_transmitter {
+	uint8_t seg_int_step;
+	uint8_t unicast_retrans_count;
+	uint8_t unicast_retrans_without_prog_count;
+	uint8_t unicast_retrans_int_step;
+	uint8_t unicast_retrans_int_inc;
+	uint8_t multicast_retrans_count;
+	uint8_t multicast_retrans_int;
+} __packed;
+
+struct sar_receiver {
+	uint8_t seg_thresh;
+	uint8_t ack_delay_inc;
+	uint8_t ack_retrans_count;
+	uint8_t discard_timeout;
+	uint8_t rx_seg_int_step;
+} __packed;
+
+#define BTP_MESH_SAR_TRANSMITTER_GET		0x4f
+struct btp_mesh_sar_transmitter_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_SAR_TRANSMITTER_SET		0x50
+struct btp_mesh_sar_transmitter_set_cmd {
+	uint16_t dst;
+	struct sar_transmitter tx;
+} __packed;
+
+#define BTP_MESH_SAR_RECEIVER_GET		0x51
+struct btp_mesh_sar_receiver_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_SAR_RECEIVER_SET		0x52
+struct btp_mesh_sar_receiver_set_cmd {
+	uint16_t dst;
+	struct sar_receiver rx;
+} __packed;
+
+#define BTP_MESH_LARGE_COMP_DATA_GET		0x53
+struct btp_mesh_large_comp_data_get_cmd {
+	uint16_t net_idx;
+	uint16_t addr;
+	uint8_t page;
+	uint16_t offset;
+} __packed;
+struct btp_mesh_large_comp_data_get_rp {
+	uint8_t data[0];
+} __packed;
+
+#define BTP_MESH_MODELS_METADATA_GET		0x54
+struct btp_mesh_models_metadata_get_cmd {
+	uint16_t net_idx;
+	uint16_t addr;
+	uint8_t page;
+	uint16_t offset;
+} __packed;
+struct btp_mesh_models_metadata_get_rp {
+	uint8_t data[0];
+} __packed;
+
+#define BTP_MESH_OPCODES_AGGREGATOR_INIT	0x55
+struct btp_mesh_opcodes_aggregator_init_cmd {
+	uint16_t net_idx;
+	uint16_t app_idx;
+	uint16_t dst;
+	uint16_t elem_addr;
+} __packed;
+
+#define BTP_MESH_OPCODES_AGGREGATOR_SEND	0x56
+
+#define BTP_MESH_COMP_CHANGE_PREPARE		0x57
+
+#define BTP_MESH_RPR_SCAN_START			0x59
+struct btp_rpr_scan_start_cmd {
+	uint16_t dst;
+	uint8_t timeout;
+	uint8_t uuid[16];
+} __packed;
+
+#define BTP_MESH_RPR_EXT_SCAN_START		0x5a
+struct btp_rpr_ext_scan_start_cmd {
+	uint16_t dst;
+	uint8_t timeout;
+	uint8_t uuid[16];
+	uint8_t ad_count;
+	uint8_t ad_types[];
+} __packed;
+
+#define BTP_MESH_RPR_SCAN_CAPS_GET		0x5b
+struct btp_rpr_scan_caps_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_SCAN_GET			0x5c
+struct btp_rpr_scan_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_SCAN_STOP			0x5d
+struct btp_rpr_scan_stop_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_LINK_GET			0x5e
+struct btp_rpr_link_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_LINK_CLOSE			0x5f
+struct btp_rpr_link_close_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_RPR_PROV_REMOTE		0x60
+struct btp_rpr_prov_remote_cmd {
+	uint16_t dst;
+	uint8_t uuid[16];
+	uint16_t net_idx;
+	uint16_t addr;
+} __packed;
+
+#define BTP_MESH_RPR_REPROV_REMOTE		0x61
+struct btp_rpr_reprov_remote_cmd {
+	uint16_t dst;
+	uint16_t addr;
+	bool comp_change;
+} __packed;
+
+#define BTP_MMDL_DFU_INFO_GET			0x5f
+struct btp_mmdl_dfu_info_get_cmd {
+	uint8_t limit;
+} __packed;
+
+#define BTP_MMDL_BLOB_INFO_GET			0x60
+struct btp_mmdl_blob_info_get_cmd {
+	uint8_t addr_cnt;
+	uint8_t addr[];
+} __packed;
+
+#define BTP_MMDL_DFU_UPDATE_METADATA_CHECK	0x61
+struct btp_mmdl_dfu_metadata_check_cmd {
+	uint8_t index;
+	uint8_t slot_idx;
+	uint8_t slot_size;
+	uint8_t fwid_len;
+	uint8_t metadata_len;
+	uint8_t data[];
+} __packed;
+
+struct btp_mmdl_dfu_metadata_check_rp {
+	uint8_t idx;
+	uint8_t status;
+	uint8_t effect;
+} __packed;
+
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_GET	0x62
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_CANCEL	0x63
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_START	0x64
+struct btp_mmdl_dfu_firmware_update_cmd {
+	uint8_t addr_cnt;
+	uint8_t slot_idx;
+	uint8_t slot_size;
+	uint8_t fwid_len;
+	uint8_t metadata_len;
+	uint8_t block_size;
+	uint16_t chunk_size;
+	uint8_t data[];
+} __packed;
+
+struct btp_mmdl_dfu_firmware_update_rp {
+	uint8_t status;
+} __packed;
+
+#define BTP_MMDL_BLOB_SRV_RECV			0x65
+struct btp_mmdl_blob_srv_recv_cmd {
+	uint64_t id;
+	uint16_t timeout;
+	uint8_t ttl;
+} __packed;
+
+#define BTP_MMDL_BLOB_TRANSFER_START		0x66
+struct btp_mmdl_blob_transfer_start_cmd {
+	uint64_t id;
+	uint16_t size;
+	uint8_t block_size;
+	uint16_t chunk_size;
+	uint16_t timeout;
+	uint8_t ttl;
+} __packed;
+
+#define BTP_MMDL_BLOB_TRANSFER_CANCEL		0x67
+#define BTP_MMDL_BLOB_TRANSFER_GET		0x68
+#define BTP_MMDL_BLOB_SRV_CANCEL		0x69
+#define BTP_MMDL_DFU_FIRMWARE_UPDATE_APPLY	0x6A
+#define BTP_MMDL_DFU_SRV_APPLY			0x6B
+
+#define BTP_MESH_PRIV_BEACON_GET		0x6c
+struct btp_priv_beacon_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_PRIV_BEACON_SET		0x6d
+struct btp_priv_beacon_set_cmd {
+	uint16_t dst;
+	uint8_t enabled;
+	uint8_t rand_interval;
+} __packed;
+
+#define BTP_MESH_PRIV_GATT_PROXY_GET		0x6e
+struct btp_priv_gatt_proxy_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_PRIV_GATT_PROXY_SET		0x6f
+struct btp_priv_gatt_proxy_set_cmd {
+	uint16_t dst;
+	uint8_t state;
+} __packed;
+
+#define BTP_MESH_PRIV_NODE_ID_GET		0x70
+struct btp_priv_node_id_get_cmd {
+	uint16_t dst;
+	uint16_t key_net_idx;
+} __packed;
+
+#define BTP_MESH_PRIV_NODE_ID_SET		0x71
+struct btp_priv_node_id_set_cmd {
+	uint16_t dst;
+	uint16_t net_idx;
+	uint8_t state;
+} __packed;
+
+#define BTP_MESH_PROXY_PRIVATE_IDENTITY		0x72
+
+#define BTP_MESH_OD_PRIV_PROXY_GET		0x73
+struct btp_od_priv_proxy_get_cmd {
+	uint16_t dst;
+} __packed;
+
+#define BTP_MESH_OD_PRIV_PROXY_SET		0x74
+
+struct btp_od_priv_proxy_set_cmd {
+	uint16_t dst;
+	uint8_t val;
+} __packed;
+
+#define BTP_MESH_SRPL_CLEAR			0x75
+
+struct btp_srpl_clear_cmd {
+	uint16_t dst;
+	uint16_t range_start;
+	uint8_t range_len;
+	uint8_t acked;
+} __packed;
+
+#define BTP_MESH_PROXY_SOLICIT			0x76
+
+struct btp_proxy_solicit_cmd {
+	uint16_t net_idx;
+} __packed;
+
+#define BTP_MESH_START				0x78
+
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
@@ -789,6 +1063,7 @@ struct btp_mesh_in_action_ev {
 
 #define BTP_MESH_PROV_BEARER_PB_ADV		0x00
 #define BTP_MESH_PROV_BEARER_PB_GATT		0x01
+#define BTP_MESH_PROV_BEARER_REMOTE		0x04
 #define BTP_MESH_EV_PROV_LINK_OPEN		0x84
 struct btp_mesh_prov_link_open_ev {
 	uint8_t bearer;
@@ -858,3 +1133,13 @@ struct btp_mesh_prov_node_added_ev {
 	uint8_t uuid[16];
 	uint8_t num_elems;
 } __packed;
+
+#define BTP_MESH_EV_MODEL_RECV			0x8f
+struct btp_mesh_model_recv_ev {
+	uint16_t src;
+	uint16_t dst;
+	uint8_t payload_len;
+	uint8_t payload[];
+} __packed;
+
+#define MESH_EV_BLOB_LOST_TARGET		0x90

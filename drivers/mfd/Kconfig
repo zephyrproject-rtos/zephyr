@@ -14,11 +14,14 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config MFD_INIT_PRIORITY
 	int "Initialization priority"
-	default 60
+	default 80
 	help
 	  Multi-function devices initialization priority.
 
+source "drivers/mfd/Kconfig.ad5592"
 source "drivers/mfd/Kconfig.axp192"
+source "drivers/mfd/Kconfig.max20335"
+source "drivers/mfd/Kconfig.nct38xx"
 source "drivers/mfd/Kconfig.npm1300"
 source "drivers/mfd/Kconfig.npm6001"
 

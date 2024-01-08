@@ -46,7 +46,6 @@
 	temp_sensor: ambient_temp_sensor {
 		compatible = "epcos,b57861s0103a039";
 		io-channels = <&spi_adc 0>;
-		r25-ohm = <10000>;
 		pullup-uv = <3300000>;
 		pullup-ohm = <0>;
 		pulldown-ohm = <10000>;

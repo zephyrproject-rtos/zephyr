@@ -37,7 +37,12 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		k_thread_suspend(port->port_thread);
 	}
 
-	k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
+	/* Check if there wasn't any request to do a one more iteration of USB-C state machines */
+	if (!port->bypass_next_sleep) {
+		k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
+	} else {
+		port->bypass_next_sleep = false;
+	}
 }
 
 #define USBC_SUBSYS_INIT(inst)                                                                     \
@@ -82,8 +87,8 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &usbc_subsys_init, NULL, &usbc_port_data_##inst,               \
-			      &usbc_port_config_##inst, APPLICATION,                               \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+			      &usbc_port_config_##inst, POST_KERNEL,                               \
+			      CONFIG_USBC_STACK_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(USBC_SUBSYS_INIT)
 
@@ -131,6 +136,13 @@ int usbc_request(const struct device *dev, const enum usbc_policy_request_t req)
 	k_fifo_put(&data->request_fifo, &data->request);
 
 	return 0;
+}
+
+void usbc_bypass_next_sleep(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->bypass_next_sleep = true;
 }
 
 /**

@@ -23,6 +23,13 @@ config BT_LONG_WQ_PRIO
 	int "Long workqueue priority. Should be pre-emptible."
 	default 10
 	range 0 NUM_PREEMPT_PRIORITIES
+
+config BT_LONG_WQ_INIT_PRIO
+	int "Long workqueue init priority"
+	default 50
+	help
+	  Init priority level to setup the long workqueue.
+
 endif # BT_LONG_WQ
 
 config BT_HCI_HOST
@@ -69,7 +76,7 @@ config BT_HCI_RESERVE
 	int
 	default 0 if BT_H4
 	default 1 if BT_H5
-	default 1 if BT_RPMSG
+	default 1 if BT_HCI_IPC
 	default 1 if BT_SPI
 	default 1 if BT_STM32_IPM
 	default 1 if BT_USERCHAN
@@ -156,12 +163,13 @@ rsource "../mesh/Kconfig"
 rsource "../audio/Kconfig"
 
 config BT_HOST_CRYPTO
-	# Hidden option that compiles in AES encryption support using TinyCrypt
-	# library if this is not provided by the controller implementation.
-	bool
+	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
 	select TINYCRYPT
 	select TINYCRYPT_AES
+	help
+	  The option adds the AES encryption support using TinyCrypt
+	  library if this is not provided by the controller implementation.
 
 config BT_HOST_CRYPTO_PRNG
 	bool "Use Tinycrypt library for random number generation"
@@ -196,6 +204,9 @@ config BT_SETTINGS
 	  that there may be other subsystems using the settings API, in
 	  which case it's more efficient to load all settings in one go,
 	  instead of each subsystem doing it independently.
+
+	  Warning: The Bluetooth host expects a settings backend that loads
+	  settings items in handle order.
 
 if BT_SETTINGS
 config BT_SETTINGS_CCC_LAZY_LOADING
@@ -457,6 +468,18 @@ config BT_RPA_TIMEOUT_DYNAMIC
 	help
 	  This option allows the user to override the default value of
 	  the Resolvable Private Address timeout using dedicated APIs.
+
+config BT_RPA_SHARING
+	bool "Share the Resolvable Private Address between advertising sets"
+	depends on BT_PRIVACY && BT_EXT_ADV
+	help
+	  This option configures the advertising sets linked with the same
+	  Bluetooth identity to use the same Resolvable Private Address in
+	  a given rotation period. After the RPA timeout, the new RPA is
+	  generated and shared between the advertising sets in the subsequent
+	  rotation period. When this option is disabled, the generated RPAs
+	  of the advertising sets differ from each other in a given rotation
+	  period.
 
 config BT_SIGNING
 	bool "Data signing support"

@@ -504,7 +504,6 @@
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning", "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
 			clk-source = <1>;
-			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
 		};
@@ -535,7 +534,7 @@
 			status = "disabled";
 			pit-channel = <0>;
 			pit-period = <1000000>;
-			clock-frequency = <60000000>;
+			max-load-value = <0xffffffff>;
 		};
 	};
 };

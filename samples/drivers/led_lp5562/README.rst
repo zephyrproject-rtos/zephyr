@@ -1,7 +1,8 @@
-.. _lp5562:
+.. zephyr:code-sample:: lp5562
+   :name: LP5562 RGB LED
+   :relevant-api: led_interface
 
-LP5562: 4-Channel RGB
-######################
+   Control 4 RGB LEDs connected to an LP5562 driver chip.
 
 Overview
 ********

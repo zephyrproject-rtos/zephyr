@@ -86,8 +86,13 @@ static void vcnl4040_handle_int(const struct device *dev)
 }
 
 #ifdef CONFIG_VCNL4040_TRIGGER_OWN_THREAD
-static void vcnl4040_thread_main(struct vcnl4040_data *data)
+static void vcnl4040_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct vcnl4040_data *data = p1;
+
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		vcnl4040_handle_int(data->dev);
@@ -266,7 +271,7 @@ int vcnl4040_trigger_init(const struct device *dev)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_VCNL4040_THREAD_STACK_SIZE,
-			(k_thread_entry_t)vcnl4040_thread_main,
+			vcnl4040_thread_main,
 			data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_VCNL4040_THREAD_PRIORITY),
 			0, K_NO_WAIT);

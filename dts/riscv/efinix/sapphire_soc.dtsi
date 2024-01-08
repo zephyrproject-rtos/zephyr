@@ -30,7 +30,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv32imac";
+			riscv,isa = "rv32ima_zicsr_zifencei";
 			status = "okay";
 			timebase-frequency = <100000000>;
 
@@ -55,10 +55,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = < 0xf8c00000 0x00001000
-					0xf8c02000 0x00000800
-					0xf8e00000 0x00010000 >;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0xf8c00000 0x04000000>;
 			riscv,max-priority = <3>;
 			riscv,ndev = <32>;
 		};

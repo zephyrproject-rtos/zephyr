@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+
+config BOARD_APOLLO4P_BLUE_KXR_EVB
+	bool "Ambiq Apollo4 Blue Plus KXR Evaluation Board"
+	depends on SOC_APOLLO4P_BLUE

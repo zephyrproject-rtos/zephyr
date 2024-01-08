@@ -82,6 +82,8 @@ zephyr_mipi_dsi: &mipi_dsi {
 };
 
 &lpspi1 {
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 

@@ -10,8 +10,8 @@ config BOARD
 
 if WIFI || BT
 
-# Select CYW43XXX part and module
-choice CYW43XXX_PART
+# Select AIROC part and module
+choice AIROC_PART
 	default CYW4343W
 endchoice
 
@@ -21,6 +21,16 @@ endchoice
 
 endif # WIFI || BT
 
+if WIFI
+
+config WIFI_AIROC
+	default y
+
+# Enable L2 Ethernet
+config NET_L2_ETHERNET
+	default y
+
+endif # WIFI
 
 if BT
 
@@ -37,5 +47,10 @@ choice BT_HCI_BUS_TYPE
 endchoice
 
 endif # BT
+
+# Heap Pool Size
+config HEAP_MEM_POOL_SIZE
+	default 15000 if WIFI
+	default 4096
 
 endif   # BOARD_CY8CPROTO_062_4343W

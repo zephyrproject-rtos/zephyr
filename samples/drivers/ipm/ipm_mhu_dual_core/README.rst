@@ -1,7 +1,8 @@
-.. _ipm_mhu_dual_core:
+.. zephyr:code-sample:: ipm-mhu-dual-core
+   :name: IPM with ARM MHU
+   :relevant-api: ipm_interface
 
-MHU Dual Core
-#############
+   Implement inter-processor mailbox (IPM) using an MHU (Message Handling Unit)
 
 Overview
 ********

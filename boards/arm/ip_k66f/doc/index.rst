@@ -118,7 +118,7 @@ The default flasher is ``jlink`` using the built-in SEGGER Jlink interface.
 Flashing
 ========
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -130,7 +130,7 @@ Red LED0 should blink at 1 second delay.
 Debugging
 =========
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

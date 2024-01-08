@@ -15,7 +15,6 @@ config LOG_CMDS
 	bool "Shell commands"
 	depends on SHELL
 	depends on !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
-	default y if SHELL
 
 config LOG_TEST_CLEAR_MESSAGE_SPACE
 	bool "Clear message after allocation"
@@ -32,6 +31,16 @@ config LOG_USE_VLA
 	  Using VLA slightly decreases stack usage in some cases it may not be
 	  supported. Note that VLA are used for arrays which size is resolved at
 	  compile time so at runtime arrays have fixed size.
+
+config LOG_SIMPLE_MSG_OPTIMIZE
+	bool "Optimize simple messages for size"
+	depends on !64BIT && !CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
+	default y
+	help
+	  Dedicated code for handling simple log messages (0-2 32 bit word arguments).
+	  Approximately, 70%-80% log messages in the application fit into that category.
+	  Depending on the architecture code size reduction is from 0-40% (highest seen on
+	  RISCV32) and execution time also up to 40%.
 
 config LOG_ALWAYS_RUNTIME
 	bool "Always use runtime message creation (v2)"
@@ -54,6 +63,13 @@ config LOG_FMT_SECTION
 	  When enabled, logs are kept in dedicated memory section. It allows
 	  removing strings from final binary and should be used for dictionary
 	  logging.
+
+config LOG_FMT_SECTION_STRIP
+	bool "Strip log strings from binary"
+	depends on !LOG_OUTPUT
+	depends on LOG_FMT_SECTION
+	depends on LINKER_DEVNULL_SUPPORT
+	imply LINKER_DEVNULL_MEMORY
 
 config LOG_USE_TAGGED_ARGUMENTS
 	bool "Using tagged arguments for packaging"

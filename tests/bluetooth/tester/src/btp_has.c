@@ -8,8 +8,8 @@
 #include <zephyr/bluetooth/audio/has.h>
 
 #include "btp/btp.h"
-#include "zephyr/sys/byteorder.h"
-#include "zephyr/arch/common/ffs.h"
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/arch/common/ffs.h>
 #include <stdint.h>
 
 #include <zephyr/logging/log.h>

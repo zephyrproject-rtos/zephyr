@@ -24,6 +24,7 @@ tests:
       - qemu_riscv32
       - qemu_riscv32e
       - qemu_riscv64
+      - qemu_leon3
     integration_platforms:
       - qemu_cortex_m3
     extra_configs:

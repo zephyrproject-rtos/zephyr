@@ -132,10 +132,6 @@ config NRFX_UARTE_LOG
 	bool "UARTE driver logging"
 	depends on NRFX_UARTE
 
-config NRFX_USBD_LOG
-	bool "USBD driver logging"
-	depends on NRFX_USBD
-
 config NRFX_USBREG_LOG
 	bool "USBREG driver logging"
 	depends on NRFX_USBREG

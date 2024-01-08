@@ -34,8 +34,6 @@ LOG_MODULE_REGISTER(ws2812_spi);
  *   isn't an EEPROM)
  */
 #define SPI_OPER(idx) (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-		  COND_CODE_1(DT_INST_PROP(idx, spi_cpol), (SPI_MODE_CPOL), (0)) | \
-		  COND_CODE_1(DT_INST_PROP(idx, spi_cpha), (SPI_MODE_CPHA), (0)) | \
 		  SPI_WORD_SET(SPI_FRAME_BITS))
 
 struct ws2812_spi_cfg {

@@ -17,6 +17,8 @@
 #include <zephyr/dt-bindings/reset/stm32h7_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <freq.h>
 
 / {
@@ -48,7 +50,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x90000000 DT_SIZE_M(256)>;
 		zephyr,memory-region = "QSPI";
-		zephyr,memory-attr = "EXTMEM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
 	};
 
 	clocks {
@@ -127,7 +129,7 @@
 
 	soc {
 		flash: flash-controller@52002000 {
-			compatible = "st,stm32h7-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32h7-flash-controller";
 			reg = <0x52002000 0x400>;
 			interrupts = <4 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>;
@@ -473,9 +475,7 @@
 			interrupts = <19 0>, <21 0>, <63 0>;
 			interrupt-names = "LINE_0", "LINE_1", "CALIB";
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};
@@ -488,9 +488,7 @@
 			interrupts = <20 0>, <22 0>, <63 0>;
 			interrupt-names = "LINE_0", "LINE_1", "CALIB";
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};
@@ -812,6 +810,7 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc2: adc@40022100 {
@@ -827,6 +826,7 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		/* dual mode: adc1 and adc2 coupled */
@@ -843,6 +843,7 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc3: adc@58026000 {
@@ -858,6 +859,7 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@40007400 {

@@ -111,5 +111,16 @@ if(NOT DEFINED MODULES)
   )
 endif()
 
+# Loading Zephyr CMake extension commands, which allows us to overload Zephyr
+# scoping rules.
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS extensions)
+
+# Zephyr scoping creates custom targets for handling of properties.
+# However, custom targets cannot be used in CMake script mode.
+# Therefore disable zephyr_set(... SCOPE ...) in package helper as it is not needed.
+function(zephyr_set variable)
+  # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
+endfunction()
+
 string(REPLACE ";" "," MODULES "${MODULES}")
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} COMPONENTS zephyr_default:${MODULES})

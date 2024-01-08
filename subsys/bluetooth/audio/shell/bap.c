@@ -228,34 +228,47 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	}
 }
 
-static void init_lc3(const struct bt_bap_stream *stream)
+static int init_lc3(const struct bt_bap_stream *stream)
 {
 	size_t num_samples;
+	int ret;
 
 	if (stream == NULL || stream->codec_cfg == NULL) {
 		shell_error(ctx_shell, "invalid stream to init LC3");
-		return;
+		return -EINVAL;
 	}
 
-	lc3_freq_hz = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
-	lc3_frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(stream->codec_cfg);
+	ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
+	if (ret > 0) {
+		lc3_freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	} else {
+		return ret;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
+	if (ret > 0) {
+		lc3_frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+	} else {
+		return ret;
+	}
+
 	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
 	lc3_frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
 	lc3_octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(stream->codec_cfg);
 
 	if (lc3_freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	if (lc3_frame_duration_us < 0) {
 		printk("Error: Frame duration not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	if (lc3_octets_per_frame < 0) {
 		printk("Error: Octets per frame not set, cannot start codec.");
-		return;
+		return -EINVAL;
 	}
 
 	lc3_frame_duration_100us = lc3_frame_duration_us / 100;
@@ -274,7 +287,10 @@ static void init_lc3(const struct bt_bap_stream *stream)
 
 	if (lc3_encoder == NULL) {
 		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		return -EINVAL;
 	}
+
+	return 0;
 }
 
 static void lc3_audio_send_data(struct k_work *work)
@@ -1147,7 +1163,7 @@ static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_codec_qos *qos;
 	unsigned long interval;
-	int err;
+	int err = 0;
 
 	if (default_stream == NULL) {
 		shell_print(sh, "No stream selected");
@@ -1726,7 +1742,7 @@ static void base_recv(struct bt_bap_broadcast_sink *sink, const struct bt_bap_ba
 			shell_print(ctx_shell, "%4sBIS[%d] index 0x%02x", "", i, bis_data->index);
 			bis_indexes[index_count++] = bis_data->index;
 
-			if (subgroup->codec_cfg.id == BT_AUDIO_CODEC_LC3_ID) {
+			if (subgroup->codec_cfg.id == BT_HCI_CODING_FORMAT_LC3) {
 				const int err =
 					bt_audio_data_parse(bis_data->data, bis_data->data_len,
 							    print_data_func_cb, NULL);
@@ -2052,7 +2068,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
 	struct bt_bap_broadcast_source_subgroup_param subgroup_param;
-	struct bt_bap_broadcast_source_create_param create_param = {0};
+	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	int err;
 
@@ -2266,7 +2282,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 	uint32_t bis_bitfield;
 	size_t stream_cnt;
-	int err;
+	int err = 0;
 
 	bis_bitfield = 0;
 	stream_cnt = 0U;
@@ -2601,9 +2617,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 {
-	int stream_frame_duration_us;
 	struct bt_bap_ep_info info;
-	int stream_freq_hz;
 	int err;
 
 	if (bap_stream == NULL || bap_stream->qos == NULL) {
@@ -2619,13 +2633,21 @@ static bool stream_start_sine_verify(const struct bt_bap_stream *bap_stream)
 		return false;
 	}
 
-	stream_freq_hz = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
-	if (stream_freq_hz != lc3_freq_hz) {
+	err = bt_audio_codec_cfg_get_freq(bap_stream->codec_cfg);
+	if (err > 0) {
+		if (bt_audio_codec_cfg_freq_to_freq_hz(err) != lc3_freq_hz) {
+			return false;
+		}
+	} else {
 		return false;
 	}
 
-	stream_frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(bap_stream->codec_cfg);
-	if (stream_frame_duration_us != lc3_frame_duration_us) {
+	err = bt_audio_codec_cfg_get_frame_dur(bap_stream->codec_cfg);
+	if (err > 0) {
+		if (bt_audio_codec_cfg_frame_dur_to_frame_dur_us(err) != lc3_frame_duration_us) {
+			return false;
+		}
+	} else {
 		return false;
 	}
 
@@ -2671,7 +2693,13 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			struct bt_bap_stream *bap_stream = &unicast_streams[i].stream.bap_stream;
 
 			if (!lc3_initialized) {
-				init_lc3(bap_stream);
+				err = init_lc3(bap_stream);
+				if (err != 0) {
+					shell_error(sh, "Failed to init LC3 %d", err);
+
+					return -ENOEXEC;
+				}
+
 				lc3_initialized = true;
 			}
 
@@ -2694,7 +2722,13 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 				&broadcast_source_streams[i].stream.bap_stream;
 
 			if (!lc3_initialized) {
-				init_lc3(bap_stream);
+				err = init_lc3(bap_stream);
+				if (err != 0) {
+					shell_error(sh, "Failed to init LC3 %d", err);
+
+					return -ENOEXEC;
+				}
+
 				lc3_initialized = true;
 			}
 
@@ -2717,7 +2751,12 @@ static int cmd_start_sine(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		init_lc3(default_stream);
+		err = init_lc3(default_stream);
+		if (err != 0) {
+			shell_error(sh, "Failed to init LC3 %d", err);
+
+			return -ENOEXEC;
+		}
 
 		err = stream_start_sine(default_stream);
 		if (err != 0) {

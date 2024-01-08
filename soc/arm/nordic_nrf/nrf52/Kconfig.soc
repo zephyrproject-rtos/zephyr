@@ -94,8 +94,15 @@ config SOC_DCDC_NRF52X_HV
 	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
 
 config GPIO_AS_PINRESET
-	bool "GPIO as pin reset (reset button)"
-	default y
+	bool "[DEPRECATED] GPIO as pin reset (reset button)"
+	select DEPRECATED
+	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &uicr {
+	      gpio-as-nreset;
+	  };
 
 config NRF_ENABLE_ICACHE
 	bool "The instruction cache (I-Cache)"
@@ -128,5 +135,16 @@ config NRF52_ANOMALY_198_WORKAROUND
 	help
 	  This anomaly applies to IC revisions "Engineering B" up to "3", the most
 	  recent one.
+
+config NRF52_ANOMALY_109_WORKAROUND
+	bool "Anomaly 109 workaround"
+	default y
+	depends on SOC_NRF52832
+	depends on NRFX_SPIS || NRFX_SPIM || NRFX_TWIM || NRFX_PWM
+	help
+	  Due to Anomaly 109 the first byte sent out by these peripherals is
+	  sometimes wrong. This occurs when the system enters IDLE and stops the
+	  64MHz clock at the same time as the peripheral that is using DMA is started.
+	  This anomaly applies to IC revisions up to "3", the most recent one.
 
 endif # SOC_SERIES_NRF52X

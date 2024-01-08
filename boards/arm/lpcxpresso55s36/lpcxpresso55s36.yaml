@@ -18,3 +18,5 @@ supported:
   - can
   - gpio
   - pwm
+  - dac
+vendor: nxp

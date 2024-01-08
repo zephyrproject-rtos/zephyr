@@ -40,12 +40,14 @@ void mock_bap_stream_init(void)
 {
 	FFF_FAKES_LIST(RESET_FAKE);
 
+#if defined(CONFIG_BT_BAP_UNICAST)
 	mock_bap_stream_ops.configured = mock_bap_stream_configured_cb;
 	mock_bap_stream_ops.qos_set = mock_bap_stream_qos_set_cb;
 	mock_bap_stream_ops.enabled = mock_bap_stream_enabled_cb;
 	mock_bap_stream_ops.metadata_updated = mock_bap_stream_metadata_updated_cb;
 	mock_bap_stream_ops.disabled = mock_bap_stream_disabled_cb;
 	mock_bap_stream_ops.released = mock_bap_stream_released_cb;
+#endif /* CONFIG_BT_BAP_UNICAST */
 	mock_bap_stream_ops.started = mock_bap_stream_started_cb;
 	mock_bap_stream_ops.stopped = mock_bap_stream_stopped_cb;
 #if defined(CONFIG_BT_AUDIO_RX)

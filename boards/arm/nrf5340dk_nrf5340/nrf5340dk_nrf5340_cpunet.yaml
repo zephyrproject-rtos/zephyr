@@ -11,3 +11,4 @@ flash: 256
 supported:
   - watchdog
   - gpio
+vendor: nordic

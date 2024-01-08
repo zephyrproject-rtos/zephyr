@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_if.h>
@@ -1762,9 +1763,9 @@ done:
  */
 static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 {
-	int ret;
 	char value[MDM_CCID_RESP_MAX_SIZE];
 	char *delim;
+	int iccid_len;
 	size_t out_len;
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
@@ -1783,9 +1784,13 @@ static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 		LOG_INF("EID: %s", delim + 1);
 	}
 
-	ret = snprintk(iface_ctx.mdm_iccid, sizeof(iface_ctx.mdm_iccid), "%s", value);
-	if (ret > MDM_HL7800_ICCID_MAX_STRLEN) {
-		LOG_WRN("ICCID too long: %d", ret);
+	iccid_len = strlen(value);
+	strncpy(iface_ctx.mdm_iccid, value, sizeof(iface_ctx.mdm_iccid));
+	len = MIN(iccid_len, sizeof(iface_ctx.mdm_iccid) - 1);
+	iface_ctx.mdm_iccid[len] = '\0';
+
+	if (iccid_len > len) {
+		LOG_WRN("ICCID too long: %d (max %d)", iccid_len, len);
 	}
 
 	LOG_INF("ICCID: %s", iface_ctx.mdm_iccid);
@@ -4477,8 +4482,12 @@ static void process_fw_update_rx(struct net_buf **rx_buf)
 #endif /* CONFIG_MODEM_HL7800_FW_UPDATE */
 
 /* RX thread */
-static void hl7800_rx(void)
+static void hl7800_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct net_buf *rx_buf = NULL;
 	struct net_buf *frag = NULL;
 	int i, cmp_res;
@@ -6421,7 +6430,7 @@ static int hl7800_init(const struct device *dev)
 	k_thread_name_set(
 		k_thread_create(&hl7800_rx_thread, hl7800_rx_stack,
 				K_THREAD_STACK_SIZEOF(hl7800_rx_stack),
-				(k_thread_entry_t)hl7800_rx, NULL, NULL, NULL,
+				hl7800_rx, NULL, NULL, NULL,
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT),
 		"hl7800 rx");
 

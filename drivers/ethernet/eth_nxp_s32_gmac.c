@@ -78,7 +78,7 @@ static inline struct net_if *get_iface(struct eth_nxp_s32_data *ctx, uint16_t vl
 #endif
 }
 
-#if defined(CONFIG_SOC_PART_NUMBER_S32K3)
+#if defined(CONFIG_SOC_SERIES_S32K3XX)
 static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 {
 	uint32_t regval;
@@ -105,7 +105,7 @@ static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 }
 #else
 #error "SoC not supported"
-#endif /* CONFIG_SOC_PART_NUMBER_S32K3 */
+#endif /* CONFIG_SOC_SERIES_S32K3XX */
 
 static int eth_nxp_s32_init(const struct device *dev)
 {
@@ -564,7 +564,7 @@ BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_
 
 #define ETH_NXP_S32_MAC_SPEED(n)							\
 	COND_CODE_1(ETH_NXP_S32_IS_FIXED_LINK(n),					\
-		(CONCAT(CONCAT(GMAC_SPEED_, ETH_NXP_S32_FIXED_LINK_SPEED(n)), M)),	\
+		(_CONCAT(_CONCAT(GMAC_SPEED_, ETH_NXP_S32_FIXED_LINK_SPEED(n)), M)),	\
 		(GMAC_SPEED_100M))
 
 #define ETH_NXP_S32_MAC_DUPLEX(n)							\
@@ -574,7 +574,7 @@ BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_
 		(GMAC_FULL_DUPLEX))
 
 #define ETH_NXP_S32_MAC_MII(n)								\
-	CONCAT(CONCAT(GMAC_, DT_INST_STRING_UPPER_TOKEN(n, phy_connection_type)), _MODE)
+	_CONCAT(_CONCAT(GMAC_, DT_INST_STRING_UPPER_TOKEN(n, phy_connection_type)), _MODE)
 
 #define ETH_NXP_S32_IRQ_INIT(n, name)							\
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, name, irq),					\

@@ -17,3 +17,4 @@ supported:
   - gpio
   - arduino_gpio
   - usb_device
+vendor: st

@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/irq.h>
@@ -61,12 +61,9 @@ static struct nrf5_802154_data nrf5_data;
 static const struct device *nrf5_dev;
 #endif
 
-#define ACK_REQUEST_BYTE 1
-#define ACK_REQUEST_BIT (1 << 5)
-#define FRAME_PENDING_BYTE 1
-#define FRAME_PENDING_BIT (1 << 4)
-
 #define DRX_SLOT_RX 0 /* Delayed reception window ID */
+
+#define NSEC_PER_TEN_SYMBOLS (10 * IEEE802154_PHY_OQPSK_780_TO_2450MHZ_SYMBOL_PERIOD_NS)
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
@@ -190,13 +187,11 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		net_pkt_set_ieee802154_ack_fpb(pkt, rx_frame->ack_fpb);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-		struct net_ptp_time timestamp = {
-			.second = rx_frame->time / USEC_PER_SEC,
-			.nanosecond =
-				(rx_frame->time % USEC_PER_SEC) * NSEC_PER_USEC
-		};
+		net_pkt_set_timestamp_ns(pkt, rx_frame->time * NSEC_PER_USEC);
+#endif
 
-		net_pkt_set_timestamp(pkt, &timestamp);
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+		net_pkt_set_ieee802154_ack_seb(pkt, rx_frame->ack_seb);
 #endif
 
 		LOG_DBG("Caught a packet (%u) (LQI: %u)",
@@ -235,7 +230,6 @@ static void nrf5_get_capabilities_at_boot(void)
 		IEEE802154_HW_PROMISC |
 		IEEE802154_HW_FILTER |
 		((caps & NRF_802154_CAPABILITY_CSMA) ? IEEE802154_HW_CSMA : 0UL) |
-		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_RX_TX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
@@ -282,7 +276,7 @@ static int nrf5_set_channel(const struct device *dev, uint16_t channel)
 	LOG_DBG("%u", channel);
 
 	if (channel < 11 || channel > 26) {
-		return -EINVAL;
+		return channel < 11 ? -ENOTSUP : -EINVAL;
 	}
 
 	nrf_802154_channel_set(channel);
@@ -420,12 +414,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	net_pkt_set_ieee802154_rssi_dbm(ack_pkt, nrf5_radio->ack_frame.rssi);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time timestamp = {
-		.second = nrf5_radio->ack_frame.time / USEC_PER_SEC,
-		.nanosecond = (nrf5_radio->ack_frame.time % USEC_PER_SEC) * NSEC_PER_USEC
-	};
-
-	net_pkt_set_timestamp(ack_pkt, &timestamp);
+	net_pkt_set_timestamp_ns(ack_pkt, nrf5_radio->ack_frame.time * NSEC_PER_USEC);
 #endif
 
 	net_pkt_cursor_init(ack_pkt);
@@ -544,7 +533,7 @@ static bool nrf5_tx_at(struct nrf5_802154_data *nrf5_radio, struct net_pkt *pkt,
 	 * expects a timestamp pointing to start of SHR.
 	 */
 	uint64_t tx_at = nrf_802154_timestamp_phr_to_shr_convert(
-		net_ptp_time_to_ns(net_pkt_timestamp(pkt)) / NSEC_PER_USEC);
+		net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC);
 
 	return nrf_802154_transmit_raw_at(payload, tx_at, &metadata);
 }
@@ -687,10 +676,11 @@ static int nrf5_stop(const struct device *dev)
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
 	if (nrf_802154_sleep_if_idle() != NRF_802154_SLEEP_ERROR_NONE) {
 		if (nrf5_data.event_handler) {
-			nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+			nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
 		} else {
 			LOG_WRN("Transition to radio sleep cannot be handled.");
 		}
+		Z_SPIN_DELAY(1);
 		return 0;
 	}
 #else
@@ -892,27 +882,46 @@ static int nrf5_configure(const struct device *dev,
 #endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
-		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
 		uint8_t ext_addr_le[EXTENDED_ADDRESS_SIZE];
+		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
+		uint8_t element_id;
+
+		if (config->ack_ie.short_addr == IEEE802154_BROADCAST_ADDRESS ||
+		    config->ack_ie.ext_addr == NULL) {
+			return -ENOTSUP;
+		}
+
+		element_id = ieee802154_header_ie_get_element_id(config->ack_ie.header_ie);
+
+		if (element_id != IEEE802154_HEADER_IE_ELEMENT_ID_CSL_IE &&
+		    (!IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) ||
+		     element_id != IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE)) {
+			return -ENOTSUP;
+		}
+
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+		uint8_t vendor_oui_le[IEEE802154_OPENTHREAD_VENDOR_OUI_LEN] =
+			IEEE802154_OPENTHREAD_THREAD_IE_VENDOR_OUI;
+
+		if (element_id == IEEE802154_HEADER_IE_ELEMENT_ID_VENDOR_SPECIFIC_IE &&
+		    memcmp(config->ack_ie.header_ie->content.vendor_specific.vendor_oui,
+			   vendor_oui_le, sizeof(vendor_oui_le))) {
+			return -ENOTSUP;
+		}
+#endif
 
 		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
-		/**
-		 * The extended address field passed to this function starts
-		 * with the most significant octet and ends with the least
-		 * significant octet (i.e. big endian byte order).
-		 * The IEEE 802.15.4 transmission order mandates this order to be
-		 * reversed (i.e. little endian byte order) in a transmitted frame.
-		 *
-		 * The nrf_802154_ack_data_set expects extended address in transmission
-		 * order.
-		 */
 		sys_memcpy_swap(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
 
-		if (config->ack_ie.data_len > 0) {
-			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.data,
-						config->ack_ie.data_len, NRF_802154_ACK_DATA_IE);
-			nrf_802154_ack_data_set(ext_addr_le, true, config->ack_ie.data,
-						config->ack_ie.data_len, NRF_802154_ACK_DATA_IE);
+		if (config->ack_ie.header_ie && config->ack_ie.header_ie->length > 0) {
+			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.header_ie,
+						config->ack_ie.header_ie->length +
+							IEEE802154_HEADER_IE_HEADER_LENGTH,
+						NRF_802154_ACK_DATA_IE);
+			nrf_802154_ack_data_set(ext_addr_le, true, config->ack_ie.header_ie,
+						config->ack_ie.header_ie->length +
+							IEEE802154_HEADER_IE_HEADER_LENGTH,
+						NRF_802154_ACK_DATA_IE);
 		} else {
 			nrf_802154_ack_data_clear(short_addr_le, false, NRF_802154_ACK_DATA_IE);
 			nrf_802154_ack_data_clear(ext_addr_le, true, NRF_802154_ACK_DATA_IE);
@@ -920,8 +929,21 @@ static int nrf5_configure(const struct device *dev,
 	} break;
 
 #if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
-	case IEEE802154_CONFIG_CSL_RX_TIME: {
-		nrf_802154_csl_writer_anchor_time_set(config->csl_rx_time / NSEC_PER_USEC);
+	case IEEE802154_CONFIG_EXPECTED_RX_TIME: {
+
+#if defined(CONFIG_NRF_802154_SER_HOST)
+		net_time_t period_ns = nrf5_data.csl_period * NSEC_PER_TEN_SYMBOLS;
+		bool changed = (config->csl_rx_time - nrf5_data.csl_rx_time) % period_ns;
+
+		nrf5_data.csl_rx_time = config->csl_rx_time;
+
+		if (changed)
+#endif /* CONFIG_NRF_802154_SER_HOST */
+		{
+			nrf_802154_csl_writer_anchor_time_set(
+				nrf_802154_timestamp_phr_to_mhr_convert(config->expected_rx_time /
+									NSEC_PER_USEC));
+		}
 	} break;
 
 	case IEEE802154_CONFIG_RX_SLOT: {
@@ -937,9 +959,12 @@ static int nrf5_configure(const struct device *dev,
 				      config->rx_slot.channel, DRX_SLOT_RX);
 	} break;
 
-	case IEEE802154_CONFIG_CSL_PERIOD:
+	case IEEE802154_CONFIG_CSL_PERIOD: {
 		nrf_802154_csl_writer_period_set(config->csl_period);
-		break;
+#if defined(CONFIG_NRF_802154_SER_HOST)
+		nrf5_data.csl_period = config->csl_period;
+#endif
+	} break;
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
@@ -957,12 +982,20 @@ static int nrf5_configure(const struct device *dev,
 	return 0;
 }
 
+/* driver-allocated attribute memory - constant across all driver instances */
+IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
+
 static int nrf5_attr_get(const struct device *dev,
 			 enum ieee802154_attr attr,
 			 struct ieee802154_attr_value *value)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(value);
+
+	if (ieee802154_attr_get_channel_page_and_range(
+		    attr, IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915,
+		    &drv_attr.phy_supported_channels, value) == 0) {
+		return 0;
+	}
 
 	switch ((uint32_t)attr) {
 #if defined(CONFIG_IEEE802154_NRF5_MULTIPLE_CCA)
@@ -1001,13 +1034,10 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 			nrf_802154_timestamp_end_to_phr_convert(time, data[0]);
 #endif
 
-		if (data[ACK_REQUEST_BYTE] & ACK_REQUEST_BIT) {
-			nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;
-		} else {
-			nrf5_data.rx_frames[i].ack_fpb = false;
-		}
-
+		nrf5_data.rx_frames[i].ack_fpb = nrf5_data.last_frame_ack_fpb;
+		nrf5_data.rx_frames[i].ack_seb = nrf5_data.last_frame_ack_seb;
 		nrf5_data.last_frame_ack_fpb = false;
+		nrf5_data.last_frame_ack_seb = false;
 
 		k_fifo_put(&nrf5_data.rx_fifo, &nrf5_data.rx_frames[i]);
 
@@ -1031,7 +1061,7 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 		 * As a side effect, regular failure notifications would be reported with the
 		 * incorrect ID.
 		 */
-		nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+		nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
 #endif
 		if (error == NRF_802154_RX_ERROR_DELAYED_TIMEOUT) {
 			return;
@@ -1067,6 +1097,8 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 	}
 
 	nrf5_data.last_frame_ack_fpb = false;
+	nrf5_data.last_frame_ack_seb = false;
+
 	if (nrf5_data.event_handler) {
 		nrf5_data.event_handler(dev, IEEE802154_EVENT_RX_FAILED, (void *)&reason);
 	}
@@ -1074,8 +1106,8 @@ void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 
 void nrf_802154_tx_ack_started(const uint8_t *data)
 {
-	nrf5_data.last_frame_ack_fpb =
-				data[FRAME_PENDING_BYTE] & FRAME_PENDING_BIT;
+	nrf5_data.last_frame_ack_fpb = data[FRAME_PENDING_OFFSET] & FRAME_PENDING_BIT;
+	nrf5_data.last_frame_ack_seb = data[SECURITY_ENABLED_OFFSET] & SECURITY_ENABLED_BIT;
 }
 
 void nrf_802154_transmitted_raw(uint8_t *frame,

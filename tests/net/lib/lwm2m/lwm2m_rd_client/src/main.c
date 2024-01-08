@@ -9,8 +9,8 @@
 #include <zephyr/fff.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/ztest.h>
-#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
-#include "timer_model.h"
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
+#include "nsi_timer_model.h"
 #endif
 #include <lwm2m_rd_client.h>
 
@@ -106,6 +106,9 @@ static void lwm2m_event_cb(struct lwm2m_ctx *client, enum lwm2m_rd_client_event 
 	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE:
 		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_REG_UPDATE");
 		break;
+	case LWM2M_RD_CLIENT_EVENT_DEREGISTER:
+		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_DEREGISTER");
+		break;
 	}
 
 	show_lwm2m_event(client_event);
@@ -138,7 +141,7 @@ static void lwm2m_observe_cb(enum lwm2m_observe_event event, struct lwm2m_obj_pa
 
 static void my_suite_before(void *data)
 {
-#if defined(CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
+#if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 	/* It is enough that some slow-down is happening on sleeps, it does not have to be
 	 * real time
 	 */
@@ -211,6 +214,7 @@ ZTEST(lwm2m_rd_client, test_start_registration_ok)
 
 	coap_header_get_code_fake.custom_fake = coap_header_get_code_fake_deleted;
 	zassert_true(lwm2m_rd_client_stop(&ctx, lwm2m_event_cb, true) == 0, NULL);
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DEREGISTER), NULL);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DISCONNECT), NULL);
 	zassert_true(!lwm2m_rd_client_is_registred(&ctx), NULL);
 }
@@ -425,6 +429,7 @@ ZTEST(lwm2m_rd_client, test_deregistration_timeout)
 
 	test_prepare_pending_message_cb(&message_reply_timeout_cb_default);
 	zassert_true(lwm2m_rd_client_stop(&ctx, lwm2m_event_cb, true) == 0, NULL);
+	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DEREGISTER), NULL);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE));
 }
 
@@ -529,6 +534,7 @@ ZTEST(lwm2m_rd_client, test_suspend_stop_resume)
 
 	zassert_equal(lwm2m_rd_client_stop(&ctx, lwm2m_event_cb, false), 0);
 	zassert_true(lwm2m_rd_client_resume() == 0, NULL);
+	zassert_false(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DEREGISTER), NULL);
 	zassert_true(expect_lwm2m_rd_client_event(LWM2M_RD_CLIENT_EVENT_DISCONNECT), NULL);
 }
 

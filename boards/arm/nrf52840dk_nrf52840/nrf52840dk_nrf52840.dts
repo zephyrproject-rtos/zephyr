@@ -139,16 +139,28 @@
 	status = "okay";
 };
 
+&uicr {
+	gpio-as-nreset;
+};
+
 &gpiote {
 	status = "okay";
 };
 
 &gpio0 {
 	status = "okay";
+	gpio-reserved-ranges = <0 11>, <17 7>, <26 6>;
+	gpio-line-names = "", "", "", "", "", "", "", "",
+		"", "", "", "BUTTON1", "BUTTON2", "LED1", "LED2", "LED3",
+		"LED4", "", "", "", "", "", "", "",
+		"BUTTON3", "BUTTON4", "", "", "", "", "", "";
 };
 
 &gpio1 {
 	status = "okay";
+	gpio-reserved-ranges = <0 1>, <9 1>, <12 4>;
+	gpio-line-names = "", "D0", "D1", "D2", "D3", "D4", "D5", "D6",
+		"D7", "", "D8", "D9", "", "", "", "";
 };
 
 &uart0 {

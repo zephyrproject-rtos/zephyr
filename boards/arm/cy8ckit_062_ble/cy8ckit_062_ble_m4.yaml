@@ -18,3 +18,4 @@ toolchain:
 supported:
   - arduino_gpio
   - gpio
+vendor: cypress

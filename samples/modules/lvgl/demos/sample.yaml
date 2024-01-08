@@ -1,0 +1,19 @@
+sample:
+  description: LVGL sample, containing all upstream demos
+  name: LVGL demos
+common:
+  modules:
+    - lvgl
+  harness: none
+  filter: dt_chosen_enabled("zephyr,display")
+  tags: samples lvgl display gui
+tests:
+  sample.modules.lvgl.demo_music:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_MUSIC=y
+  sample.modules.lvgl.demo_benchmark:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+  sample.modules.lvgl.demo_stress:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_STRESS=y

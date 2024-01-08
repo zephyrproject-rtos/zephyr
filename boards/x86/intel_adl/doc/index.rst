@@ -60,5 +60,6 @@ Booting the Alder Lake N CRB Board using UEFI
 =============================================
 
 .. include:: ../../common/efi_boot.rst
+   :start-after: start_include_here
 
 .. _INTEL_ADL: https://edc.intel.com/content/www/us/en/design/products/platforms/processor-and-core-i3-n-series-datasheet-volume-1-of-2/

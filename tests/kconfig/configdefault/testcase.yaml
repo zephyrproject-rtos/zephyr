@@ -1,0 +1,3 @@
+tests:
+  kconfig.configdefault:
+    tags: kconfig

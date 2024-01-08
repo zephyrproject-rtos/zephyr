@@ -10,9 +10,11 @@ toolchain:
   - llvm
 supported:
   - can
+  - counter
   - eeprom
   - netif:eth
   - usb_device
   - adc
   - gpio
   - rtc
+vendor: zephyr

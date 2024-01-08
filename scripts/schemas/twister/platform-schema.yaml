@@ -41,6 +41,10 @@ mapping:
     type: str
   "arch":
     type: str
+  "vendor":
+    type: str
+  "tier":
+    type: int
   "toolchain":
     type: seq
     seq:

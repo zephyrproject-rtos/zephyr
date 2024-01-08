@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
 
 choice
 	prompt "Ambiq Apollo4X Selection"
@@ -8,5 +9,8 @@ choice
 
 config SOC_APOLLO4P
 	bool "Apollo4P"
+
+config SOC_APOLLO4P_BLUE
+	bool "Apollo4 Blue Plus"
 
 endchoice

@@ -31,6 +31,12 @@ properties:
     required: true
     description: Battery Terminate Voltage in mV
 
+  chemistry-id:
+    type: int
+    description: |
+      The value of the Chem ID register. When zero, the driver will not check the register.
+      See the reference manual for the specific BQ274xx variant for values.
+
   int-gpios:
     type: phandle-array
     description: |

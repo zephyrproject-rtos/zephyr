@@ -11,7 +11,7 @@
 
 / {
 	model = "SAM R34 Xplained Pro";
-	compatible = "atsamr34,xpro", "atmel,samr34j18b", "atmel,samr34";
+	compatible = "atmel,atsamr34xpro", "atmel,samr34j18b", "atmel,samr34";
 
 	chosen {
 		zephyr,console = &sercom0;

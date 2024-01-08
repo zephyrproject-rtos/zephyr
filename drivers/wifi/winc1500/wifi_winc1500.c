@@ -158,11 +158,11 @@ struct winc1500_data {
 static struct winc1500_data w1500_data;
 
 #if LOG_LEVEL > LOG_LEVEL_OFF
-
 static void stack_stats(void)
 {
 	log_stack_usage(&winc1500_thread_data);
 }
+#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 
 static char *socket_error_string(int8_t err)
 {
@@ -284,8 +284,6 @@ static char *socket_message_to_string(uint8_t message)
 		return "UNKNOWN.";
 	}
 }
-
-#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 
 /**
  * This function is called when the socket is to be opened.
@@ -641,6 +639,7 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 		LOG_DBG("Connected (%u)", pstrWifiState->u8ErrCode);
 
 		w1500_data.connected = true;
+		w1500_data.connecting = false;
 		wifi_mgmt_raise_connect_result_event(w1500_data.iface, 0);
 
 		break;
@@ -773,8 +772,9 @@ static void winc1500_wifi_cb(uint8_t message_type, void *pvMsg)
 	default:
 		break;
 	}
-
+#if LOG_LEVEL > LOG_LEVEL_OFF
 	stack_stats();
+#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 }
 
 static void handle_socket_msg_connect(struct socket_data *sd, void *pvMsg)
@@ -962,12 +962,17 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 
 		break;
 	}
-
+#if LOG_LEVEL > LOG_LEVEL_OFF
 	stack_stats();
+#endif /* LOG_LEVEL > LOG_LEVEL_OFF */
 }
 
-static void winc1500_thread(void)
+static void winc1500_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (1) {
 		while (m2m_wifi_handle_events(NULL) != 0) {
 		}
@@ -1168,7 +1173,7 @@ static int winc1500_init(const struct device *dev)
 	/* monitoring thread for winc wifi callbacks */
 	k_thread_create(&winc1500_thread_data, winc1500_stack,
 			CONFIG_WIFI_WINC1500_THREAD_STACK_SIZE,
-			(k_thread_entry_t)winc1500_thread, NULL, NULL, NULL,
+			winc1500_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_WINC1500_THREAD_PRIO),
 			0, K_NO_WAIT);
 	k_thread_name_set(&winc1500_thread_data, "WINC1500");

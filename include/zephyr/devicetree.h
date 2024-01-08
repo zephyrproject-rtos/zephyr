@@ -17,6 +17,7 @@
 #define DEVICETREE_H
 
 #include <devicetree_generated.h>
+#include <zephyr/irq_multilevel.h>
 
 #if !defined(_LINKER) && !defined(_ASMLANGUAGE)
 #include <stdint.h>
@@ -2410,6 +2411,77 @@
 #define DT_IRQ(node_id, cell) DT_IRQ_BY_IDX(node_id, 0, cell)
 
 /**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/* DT helper macro to get interrupt-parent node  */
+#define DT_PARENT_INTC_INTERNAL(node_id) DT_PROP(node_id, interrupt_parent)
+/* DT helper macro to get the node's interrupt grandparent node  */
+#define DT_GPARENT_INTC_INTERNAL(node_id) DT_PARENT_INTC_INTERNAL(DT_PARENT_INTC_INTERNAL(node_id))
+/* DT helper macro to check if a node is an interrupt controller */
+#define DT_IS_INTC_INTERNAL(node_id) DT_NODE_HAS_PROP(node_id, interrupt_controller)
+/* DT helper macro to check if the node has a parent interrupt controller */
+#define DT_HAS_PARENT_INTC_INTERNAL(node_id)                                                       \
+	/* node has `interrupt-parent`? */                                                         \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, interrupt_parent),                                    \
+		   /* `interrupt-parent` node is an interrupt controller? */                       \
+		   (IF_ENABLED(DT_IS_INTC_INTERNAL(DT_PARENT_INTC_INTERNAL(node_id)),              \
+			       /* `interrupt-parent` node has interrupt cell(s) ? 1 : 0 */         \
+			       (COND_CODE_0(DT_NUM_IRQS(DT_PARENT_INTC_INTERNAL(node_id)), (0),    \
+					    (1))))))
+/* DT helper macro to check if the node has a grandparent interrupt controller */
+#define DT_HAS_GPARENT_INTC_INTERNAL(node_id)                                                      \
+	IF_ENABLED(DT_HAS_PARENT_INTC_INTERNAL(node_id),                                           \
+		   (DT_HAS_PARENT_INTC_INTERNAL(DT_PARENT_INTC_INTERNAL(node_id))))
+
+/**
+ * DT helper macro to get the as-seen interrupt number in devicetree,
+ * or ARM GIC IRQ encoded output from `gen_defines.py`
+ */
+#define DT_IRQN_BY_IDX_INTERNAL(node_id, idx) DT_IRQ_BY_IDX(node_id, idx, irq)
+
+/* DT helper macro to get the node's parent intc's (only) irq number */
+#define DT_PARENT_INTC_IRQN_INTERNAL(node_id) DT_IRQ(DT_PARENT_INTC_INTERNAL(node_id), irq)
+/* DT helper macro to get the node's grandparent intc's (only) irq number */
+#define DT_GPARENT_INTC_IRQN_INTERNAL(node_id) DT_IRQ(DT_GPARENT_INTC_INTERNAL(node_id), irq)
+
+/* DT helper macro to encode a node's IRQN to level 2 according to the multi-level scheme */
+#define DT_IRQN_L2_INTERNAL(node_id, idx)                                                          \
+	(IRQ_TO_L2(DT_IRQN_BY_IDX_INTERNAL(node_id, idx)) |                            \
+	 DT_PARENT_INTC_IRQN_INTERNAL(node_id))
+/* DT helper macro to encode a node's IRQN to level 3 according to the multi-level scheme */
+#define DT_IRQN_L3_INTERNAL(node_id, idx)                                                          \
+	(IRQ_TO_L3(DT_IRQN_BY_IDX_INTERNAL(node_id, idx)) |                            \
+	 IRQ_TO_L2(DT_PARENT_INTC_IRQN_INTERNAL(node_id)) |                            \
+	 DT_GPARENT_INTC_IRQN_INTERNAL(node_id))
+/**
+ * DT helper macro to encode a node's interrupt number according to the Zephyr's multi-level scheme
+ * See doc/kernel/services/interrupts.rst for details
+ */
+#define DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)                                                 \
+	COND_CODE_1(DT_HAS_GPARENT_INTC_INTERNAL(node_id), (DT_IRQN_L3_INTERNAL(node_id, idx)),    \
+		    (COND_CODE_1(DT_HAS_PARENT_INTC_INTERNAL(node_id),                             \
+				 (DT_IRQN_L2_INTERNAL(node_id, idx)),                              \
+				 (DT_IRQN_BY_IDX_INTERNAL(node_id, idx)))))
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Get the node's Zephyr interrupt number at index
+ * If @kconfig{CONFIG_MULTI_LEVEL_INTERRUPTS} is enabled, the interrupt number at index will be
+ * multi-level encoded
+ * @param node_id node identifier
+ * @param idx logical index into the interrupt specifier array
+ * @return the Zephyr interrupt number
+ */
+#define DT_IRQN_BY_IDX(node_id, idx)                                                               \
+	COND_CODE_1(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS),                                     \
+		    (DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)),                                  \
+		    (DT_IRQN_BY_IDX_INTERNAL(node_id, idx)))
+
+/**
  * @brief Get a node's (only) irq number
  *
  * Equivalent to DT_IRQ(node_id, irq). This is provided as a convenience
@@ -2419,7 +2491,7 @@
  * @param node_id node identifier
  * @return the interrupt number for the node's only interrupt
  */
-#define DT_IRQN(node_id) DT_IRQ(node_id, irq)
+#define DT_IRQN(node_id) DT_IRQN_BY_IDX(node_id, 0)
 
 /**
  * @}
@@ -2796,7 +2868,6 @@
  * This expands as a first step to:
  *
  * @code{.c}
- *     struct gpio_dt_spec specs[] = {
  *     struct gpio_dt_spec specs[] = {
  *             GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), my_gpios, 0),
  *             GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), my_gpios, 1)
@@ -3826,7 +3897,15 @@
  * @param inst instance number
  * @return the interrupt number for the node's only interrupt
  */
-#define DT_INST_IRQN(inst) DT_INST_IRQ(inst, irq)
+#define DT_INST_IRQN(inst) DT_IRQN(DT_DRV_INST(inst))
+
+/**
+ * @brief Get a `DT_DRV_COMPAT`'s irq number at index
+ * @param inst instance number
+ * @param idx logical index into the interrupt specifier array
+ * @return the interrupt number for the node's idx-th interrupt
+ */
+#define DT_INST_IRQN_BY_IDX(inst, idx) DT_IRQN_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s bus node identifier
@@ -3888,6 +3967,39 @@
 #define DT_INST_STRING_UNQUOTED_OR(inst, name, default_value) \
 	DT_STRING_UNQUOTED_OR(DT_DRV_INST(inst), name, default_value)
 
+/*
+ * @brief Test if any enabled node with the given compatible is on
+ *        the given bus type
+ *
+ * This is like DT_ANY_INST_ON_BUS_STATUS_OKAY(), except it can also
+ * be useful for handling multiple compatibles in single source file.
+ *
+ * Example devicetree overlay:
+ *
+ * @code{.dts}
+ *     &i2c0 {
+ *            temp: temperature-sensor@76 {
+ *                     compatible = "vnd,some-sensor";
+ *                     reg = <0x76>;
+ *            };
+ *     };
+ * @endcode
+ *
+ * Example usage, assuming `i2c0` is an I2C bus controller node, and
+ * therefore `temp` is on an I2C bus:
+ *
+ * @code{.c}
+ *     DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(vnd_some_sensor, i2c) // 1
+ * @endcode
+ *
+ * @param compat lowercase-and-underscores compatible, without quotes
+ * @param bus a binding's bus type as a C token, lowercased and without quotes
+ * @return 1 if any enabled node with that compatible is on that bus type,
+ *         0 otherwise
+ */
+#define DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(compat, bus) \
+	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
+
 /**
  * @brief Test if any `DT_DRV_COMPAT` node is on a bus of a given type
  *        and has status okay
@@ -3921,7 +4033,7 @@
  *         0 otherwise
  */
 #define DT_ANY_INST_ON_BUS_STATUS_OKAY(bus) \
-	DT_COMPAT_ON_BUS_INTERNAL(DT_DRV_COMPAT, bus)
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(DT_DRV_COMPAT, bus)
 
 /**
  * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
@@ -4253,9 +4365,6 @@
 /** @brief Helper for DT_NODE_HAS_STATUS */
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT3(node_id, _STATUS_, status))
-/** @brief Helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
-#define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
-	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
 /** @brief Helper macro to OR multiple has property checks in a loop macro */
 #define DT_INST_NODE_HAS_PROP_AND_OR(inst, prop) \
@@ -4286,6 +4395,5 @@
 #include <zephyr/devicetree/can.h>
 #include <zephyr/devicetree/reset.h>
 #include <zephyr/devicetree/mbox.h>
-#include <zephyr/devicetree/memory-attr.h>
 
 #endif /* DEVICETREE_H */

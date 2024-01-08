@@ -8,14 +8,15 @@ CONFIG_BOARD_RUUVI_RUUVITAG=y
 # Enable MPU
 CONFIG_ARM_MPU=y
 
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+
 # Enable RTT
 CONFIG_USE_SEGGER_RTT=y
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# additional board options
-# set y to disable R button
-CONFIG_GPIO_AS_PINRESET=n
 
 CONFIG_PINCTRL=y

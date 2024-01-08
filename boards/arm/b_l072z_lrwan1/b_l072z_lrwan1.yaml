@@ -20,3 +20,4 @@ supported:
   - eeprom
   - nvs
   - lora
+vendor: st

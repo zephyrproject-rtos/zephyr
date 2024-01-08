@@ -85,12 +85,56 @@ static void telnet_reply_ay_command(void)
 	telnet_command_send_reply((uint8_t *)alive, strlen(alive));
 }
 
+static int telnet_echo_set(const struct shell *sh, bool val)
+{
+	int ret = shell_echo_set(sh_telnet->shell_context, val);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to set echo to: %d, err: %d", val, ret);
+	}
+	return ret;
+}
+
+static void telnet_reply_dont_command(struct telnet_simple_command *cmd)
+{
+	switch (cmd->opt) {
+	case NVT_OPT_ECHO:
+	{
+		int ret = telnet_echo_set(sh_telnet->shell_context, false);
+
+		if (ret >= 0) {
+			cmd->op = NVT_CMD_WONT;
+		} else {
+			cmd->op = NVT_CMD_WILL;
+		}
+		break;
+	}
+	default:
+		cmd->op = NVT_CMD_WONT;
+		break;
+	}
+
+	telnet_command_send_reply((uint8_t *)cmd,
+				  sizeof(struct telnet_simple_command));
+}
+
 static void telnet_reply_do_command(struct telnet_simple_command *cmd)
 {
 	switch (cmd->opt) {
 	case NVT_OPT_SUPR_GA:
 		cmd->op = NVT_CMD_WILL;
 		break;
+	case NVT_OPT_ECHO:
+	{
+		int ret = telnet_echo_set(sh_telnet->shell_context, true);
+
+		if (ret >= 0) {
+			cmd->op = NVT_CMD_WILL;
+		} else {
+			cmd->op = NVT_CMD_WONT;
+		}
+		break;
+	}
 	default:
 		cmd->op = NVT_CMD_WONT;
 		break;
@@ -119,6 +163,9 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 		break;
 	case NVT_CMD_DO:
 		telnet_reply_do_command(cmd);
+		break;
+	case NVT_CMD_DONT:
+		telnet_reply_dont_command(cmd);
 		break;
 	default:
 		LOG_DBG("Operation %u not handled", cmd->op);
@@ -250,8 +297,6 @@ static void telnet_accept(struct net_context *client,
 			  int error,
 			  void *user_data)
 {
-	int ret;
-
 	if (error) {
 		LOG_ERR("Error %d", error);
 		goto error;
@@ -275,13 +320,10 @@ static void telnet_accept(struct net_context *client,
 
 	sh_telnet->client_ctx = client;
 
-	/* Disable echo - if command handling is enabled we reply that we don't
+	/* Disable echo - if command handling is enabled we reply that we
 	 * support echo.
 	 */
-	ret = shell_echo_set(sh_telnet->shell_context, false);
-	if (ret < 0) {
-		LOG_ERR("Failed to disable echo, err: %d", ret);
-	}
+	(void)telnet_echo_set(sh_telnet->shell_context, false);
 
 	return;
 error:

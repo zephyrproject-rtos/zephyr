@@ -1,9 +1,10 @@
-.. _testusb-app:
+.. zephyr:code-sample:: testusb-app
+   :name: USB testing application
+   :relevant-api: _usb_device_core_api
 
-Testusb application sample
-##########################
+   Test USB device drivers using a loopback function.
 
-The testusb sample implements a loopback function. This function can be used
+This sample implements a loopback function that can be used
 to test USB device drivers and the device stack connected to a Linux host
 and has a similar interface to "Gadget Zero" of the Linux kernel.
 The userspace tool ``testusb`` is needed to start the tests.

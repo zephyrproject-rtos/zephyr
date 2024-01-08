@@ -81,10 +81,10 @@ static void adv_init(void)
 static void allocate_all_array(struct net_buf **buf, size_t num_buf, uint8_t xmit)
 {
 	for (int i = 0; i < num_buf; i++) {
-		*buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+		*buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 					  xmit, K_NO_WAIT);
 
-		ASSERT_FALSE(!*buf, "Out of buffers");
+		ASSERT_FALSE_MSG(!*buf, "Out of buffers\n");
 		buf++;
 	}
 }
@@ -94,9 +94,9 @@ static void verify_adv_queue_overflow(void)
 	struct net_buf *dummy_buf;
 
 	/* Verity Queue overflow */
-	dummy_buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	dummy_buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				       BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
-	ASSERT_TRUE(!dummy_buf, "Unexpected extra buffer");
+	ASSERT_TRUE_MSG(!dummy_buf, "Unexpected extra buffer\n");
 }
 
 static bool check_delta_time(uint8_t transmit, uint64_t interval)
@@ -160,9 +160,9 @@ static void realloc_end_cb(int err, void *cb_data)
 	struct net_buf *buf = (struct net_buf *)cb_data;
 
 	ASSERT_EQUAL(0, err);
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
-	ASSERT_FALSE(!buf, "Out of buffers");
+	ASSERT_FALSE_MSG(!buf, "Out of buffers\n");
 
 	k_sem_give(&observer_sem);
 }
@@ -248,13 +248,13 @@ static void rx_gatt_beacons(void)
 	int err;
 
 	err = bt_le_scan_start(&scan_param, gatt_scan_cb);
-	ASSERT_FALSE(err && err != -EALREADY, "starting scan failed (err %d)", err);
+	ASSERT_FALSE_MSG(err && err != -EALREADY, "Starting scan failed (err %d)\n", err);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(20));
 	ASSERT_OK(err);
 
 	err = bt_le_scan_stop();
-	ASSERT_FALSE(err && err != -EALREADY, "stopping scan failed (err %d)", err);
+	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
 static void xmit_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
@@ -294,13 +294,13 @@ static void rx_xmit_adv(void)
 	int err;
 
 	err = bt_le_scan_start(&scan_param, xmit_scan_cb);
-	ASSERT_FALSE(err && err != -EALREADY, "starting scan failed (err %d)", err);
+	ASSERT_FALSE_MSG(err && err != -EALREADY, "Starting scan failed (err %d)\n", err);
 
 	err = k_sem_take(&observer_sem, K_SECONDS(20));
 	ASSERT_OK(err);
 
 	err = bt_le_scan_stop();
-	ASSERT_FALSE(err && err != -EALREADY, "stopping scan failed (err %d)", err);
+	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
 static void send_order_start_cb(uint16_t duration, int err, void *user_data)
@@ -324,7 +324,7 @@ static void send_order_end_cb(int err, void *user_data)
 	struct net_buf *buf = (struct net_buf *)user_data;
 
 	ASSERT_OK_MSG(err, "Failed adv start cb err (%d)", err);
-	ASSERT_TRUE(!buf->data, "Data not cleared!");
+	ASSERT_TRUE_MSG(!buf->data, "Data not cleared!\n");
 	seq_checker++;
 	LOG_INF("tx end: seq(%d)", seq_checker);
 
@@ -368,7 +368,7 @@ static void receive_order(int expect_adv)
 	int err;
 
 	err = bt_le_scan_start(&scan_param, receive_order_scan_cb);
-	ASSERT_FALSE(err && err != -EALREADY, "starting scan failed (err %d)", err);
+	ASSERT_FALSE_MSG(err && err != -EALREADY, "Starting scan failed (err %d)\n", err);
 
 	previous_checker = 0xff;
 	for (int i = 0; i < expect_adv; i++) {
@@ -377,7 +377,7 @@ static void receive_order(int expect_adv)
 	}
 
 	err = bt_le_scan_stop();
-	ASSERT_FALSE(err && err != -EALREADY, "stopping scan failed (err %d)", err);
+	ASSERT_FALSE_MSG(err && err != -EALREADY, "Stopping scan failed (err %d)\n", err);
 }
 
 static void send_adv_buf(struct net_buf *buf, uint8_t curr, uint8_t prev)
@@ -425,9 +425,9 @@ static void test_tx_cb_single(void)
 	bt_init();
 	adv_init();
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
-	ASSERT_FALSE(!buf, "Out of buffers");
+	ASSERT_FALSE_MSG(!buf, "Out of buffers\n");
 
 	send_cb.start = single_start_cb;
 	send_cb.end = single_end_cb;
@@ -530,7 +530,7 @@ static void test_tx_proxy_mixin(void)
 	 * Advertising the proxy service should be resumed after
 	 * finishing advertising the message.
 	 */
-	struct net_buf *buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	struct net_buf *buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 			BT_MESH_TRANSMIT(5, 20), K_NO_WAIT);
 	net_buf_add_mem(buf, txt_msg, sizeof(txt_msg));
 	bt_mesh_adv_send(buf, NULL, NULL);
@@ -636,18 +636,18 @@ static void test_tx_random_order(void)
 	/* Verify random order calls */
 	num_adv_sent = ARRAY_SIZE(buf);
 	previous_checker = 0xff;
-	buf[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE(!buf[0], "Out of buffers");
-	buf[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	ASSERT_FALSE_MSG(!buf[0], "Out of buffers\n");
+	buf[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE(!buf[1], "Out of buffers");
+	ASSERT_FALSE_MSG(!buf[1], "Out of buffers\n");
 
 	send_adv_buf(buf[0], 0, 0xff);
 
-	buf[2] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
+	buf[2] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE(!buf[2], "Out of buffers");
+	ASSERT_FALSE_MSG(!buf[2], "Out of buffers\n");
 
 	send_adv_buf(buf[2], 2, 0);
 

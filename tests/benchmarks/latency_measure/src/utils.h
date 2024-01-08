@@ -7,7 +7,7 @@
 #ifndef _LATENCY_MEASURE_UNIT_H
 #define _LATENCY_MEASURE_UNIT_H
 /*
- * @brief This file contains function declarations, macroses and inline functions
+ * @brief This file contains function declarations, macros and inline functions
  * used in latency measurement.
  */
 
@@ -16,8 +16,33 @@
 #include <stdio.h>
 #include <zephyr/timestamp.h>
 
-#define INT_IMM8_OFFSET   1
-#define IRQ_PRIORITY      3
+#define START_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define ALT_STACK_SIZE   (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+#ifdef CONFIG_USERSPACE
+#define  BENCH_BMEM  K_APP_BMEM(bench_mem_partition)
+#else
+#define  BENCH_BMEM
+#endif
+
+struct timestamp_data {
+	uint64_t  cycles;
+	timing_t  sample;
+};
+
+K_THREAD_STACK_DECLARE(start_stack, START_STACK_SIZE);
+K_THREAD_STACK_DECLARE(alt_stack, ALT_STACK_SIZE);
+
+extern struct k_thread start_thread;
+extern struct k_thread alt_thread;
+
+extern struct k_sem  pause_sem;
+
+extern struct timestamp_data  timestamp;
+#ifdef CONFIG_USERSPACE
+extern uint64_t user_timestamp_overhead;
+#endif
+extern uint64_t timestamp_overhead;
 
 extern int error_count;
 

@@ -153,12 +153,12 @@ static bool sol_pdu_decrypt(struct bt_mesh_subnet *sub, void *data)
 		net_buf_simple_init(out, 0);
 		net_buf_simple_add_mem(out, in->data, in->len);
 
-		err = bt_mesh_net_obfuscate(out->data, 0, sub->keys[i].msg.privacy);
+		err = bt_mesh_net_obfuscate(out->data, 0, &sub->keys[i].msg.privacy);
 		if (err) {
 			LOG_DBG("obfuscation err %d", err);
 			continue;
 		}
-		err = bt_mesh_net_decrypt(sub->keys[i].msg.enc, out,
+		err = bt_mesh_net_decrypt(&sub->keys[i].msg.enc, out,
 					  0, BT_MESH_NONCE_SOLICITATION);
 		if (!err) {
 			LOG_DBG("Decrypted PDU %s", bt_hex(out->data, out->len));
@@ -190,13 +190,14 @@ void bt_mesh_sol_recv(struct net_buf_simple *buf, uint8_t uuid_list_len)
 	if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
 	    bt_mesh_priv_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
 	    bt_mesh_od_priv_proxy_get() == 0) {
+		LOG_DBG("Not soliciting");
 		return;
 	}
 
 	/* Get rid of ad_type that was checked in bt_mesh_scan_cb */
 	type = net_buf_simple_pull_u8(buf);
 	if (type != BT_DATA_UUID16_SOME && type != BT_DATA_UUID16_ALL) {
-		LOG_ERR("Invalid type 0x%x, expected 0x%x or 0x%x",
+		LOG_DBG("Invalid type 0x%x, expected 0x%x or 0x%x",
 			type, BT_DATA_UUID16_SOME, BT_DATA_UUID16_ALL);
 		return;
 	}
@@ -215,6 +216,7 @@ void bt_mesh_sol_recv(struct net_buf_simple *buf, uint8_t uuid_list_len)
 	}
 
 	if (!sol_uuid_found) {
+		LOG_DBG("No solicitation UUID found");
 		return;
 	}
 
@@ -230,6 +232,7 @@ void bt_mesh_sol_recv(struct net_buf_simple *buf, uint8_t uuid_list_len)
 		}
 
 		if (buf->len <= reported_len - 3) {
+			LOG_DBG("Invalid length (%u) Solicitation PDU", buf->len);
 			return;
 		}
 
@@ -237,12 +240,13 @@ void bt_mesh_sol_recv(struct net_buf_simple *buf, uint8_t uuid_list_len)
 	}
 
 	if (!svc_data_found) {
+		LOG_DBG("No solicitation service data found");
 		return;
 	}
 
 	type = net_buf_simple_pull_u8(buf);
 	if (type != 0) {
-		LOG_ERR("Invalid type %d, expected 0x00", type);
+		LOG_DBG("Invalid type %d, expected 0x00", type);
 		return;
 	}
 
@@ -304,7 +308,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 	/* DST = 0x0000 */
 	net_buf_simple_add_le16(pdu, 0x0000);
 
-	err = bt_mesh_net_encrypt(sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.enc,
+	err = bt_mesh_net_encrypt(&sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.enc,
 				  pdu, 0, BT_MESH_NONCE_SOLICITATION);
 
 	if (err) {
@@ -313,7 +317,7 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 	}
 
 	err = bt_mesh_net_obfuscate(pdu->data, 0,
-				    sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.privacy);
+				    &sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.privacy);
 	if (err) {
 		LOG_ERR("Obfuscation failed, err=%d", err);
 		return err;

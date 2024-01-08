@@ -30,3 +30,8 @@ zephyr_library_sources_ifdef(
   CONFIG_I3C_CADENCE
   i3c_cdns.c
 )
+
+zephyr_library_sources_ifdef(
+  CONFIG_I3C_TEST
+  i3c_test.c
+)

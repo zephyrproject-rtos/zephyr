@@ -8,6 +8,7 @@ config SOC_FAMILY_EXX32
 	select BUILD_OUTPUT_HEX
 
 if SOC_FAMILY_EXX32
+
 config SOC_FAMILY
 	string
 	default "silabs_exx32"
@@ -21,11 +22,11 @@ config SOC_PART_NUMBER
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
-config SOC_GECKO_SERIES2
+config SOC_GECKO_SERIES0
 	bool
 	help
-	  Set if we're building for Gecko Series 2 SoC.
-	  This is equivalent of _SILICON_LABS_32B_SERIES_2 definition in HAL
+	  Set if we're building for Gecko Series 0 SoC.
+	  This is equivalent of _SILICON_LABS_32B_SERIES_0 definition in HAL
 	  code.
 
 config SOC_GECKO_SERIES1
@@ -33,6 +34,13 @@ config SOC_GECKO_SERIES1
 	help
 	  Set if we're building for Gecko Series 1 SoC.
 	  This is equivalent of _SILICON_LABS_32B_SERIES_1 definition in HAL
+	  code.
+
+config SOC_GECKO_SERIES2
+	bool
+	help
+	  Set if we're building for Gecko Series 2 SoC.
+	  This is equivalent of _SILICON_LABS_32B_SERIES_2 definition in HAL
 	  code.
 
 config SOC_GECKO_BURTC
@@ -319,8 +327,14 @@ config SOC_GECKO_HAS_HFRCO_FREQRANGE
 	  If disabled, indicates that configuration of HFRCO frequency for corresponding SOC
 	  is not supported via this field. This is the case for e.g. efm32hg, efm32wg series.
 
+config SOC_GECKO_HAS_RADIO
+	bool
+	help
+	  If enabled, indicates that the SoC has a Radio PHY.
+
 config SOC_GECKO_USE_RAIL
 	bool "Use RAIL (Radio Abstraction Interface Layer)"
+	depends on SOC_GECKO_HAS_RADIO
 	help
 	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
 	  hardware. This option enable the proper set of features to allow to properly compile

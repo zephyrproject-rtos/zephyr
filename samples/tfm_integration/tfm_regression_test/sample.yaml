@@ -1,7 +1,10 @@
 common:
-  tags: tfm
+  tags:
+    - trusted-firmware-m
+    - mcuboot
+  modules:
+    - psa-arch-tests
   platform_allow:
-
     - nrf5340dk_nrf5340_cpuapp_ns
     - nrf9160dk_nrf9160_ns
     - nrf9161dk_nrf9161_ns

@@ -32,7 +32,7 @@ This is the ultimate application we want to run.
    :alt: Emulator architecture showing tests, emulators and drivers
 
 Below that are peripheral drivers, such as the AT24 EEPROM driver. We can test
-peripheral drivers using an emulation driver connected via a native_posix I2C
+peripheral drivers using an emulation driver connected via a native_sim I2C
 controller/emulator which passes I2C traffic from the AT24 driver to the AT24
 simulator.
 
@@ -41,12 +41,12 @@ tests. These require some sort of device attached to the bus, but with this, we
 can validate much of the driver functionality.
 
 Putting the two together, we can test the application and peripheral code
-entirely on native_posix. Since we know that the I2C driver on the real hardware
+entirely on native_sim. Since we know that the I2C driver on the real hardware
 works, we should expect the application and peripheral drivers to work on the
 real hardware also.
 
 Using the above framework we can test an entire application (e.g. Embedded
-Controller) on native_posix using emulators for all non-chip drivers:
+Controller) on native_sim using emulators for all non-chip drivers:
 
 .. figure:: img/app.png
    :align: center
@@ -68,7 +68,7 @@ With this approach we can:
   All of this can work in the emulated environment or on real hardware.
 
 * Write a complex application that ties together all of these pieces and runs on
-  native_posix. We can develop on a host, use source-level debugging, etc.
+  native_sim. We can develop on a host, use source-level debugging, etc.
 
 * Transfer the application to any board which provides the required features
   (e.g. I2C, enough GPIOs), by adding Kconfig and devicetree fragments.
@@ -110,9 +110,9 @@ device-class.
 
 The real code is shown in green, while the emulator code is shown in yellow.
 
-The ``bus_api`` connects the BC1.2 emulators to the ``native_posix`` I2C
+The ``bus_api`` connects the BC1.2 emulators to the ``native_sim`` I2C
 controller. The real BC1.2 drivers are unchanged and operate exactly as if there
-was a physical I2C controller present in the system. The ``native_posix`` I2C
+was a physical I2C controller present in the system. The ``native_sim`` I2C
 controller uses the ``bus_api`` to initiate register reads and writes to the
 emulator.
 
@@ -164,23 +164,24 @@ Here are some examples present in Zephyr:
 
    .. zephyr-app-commands::
       :app: tests/drivers/sensor/accel/
-      :board: native_posix
+      :board: native_sim
       :goals: build
 
 #. Simple test of the EEPROM emulator:
 
    .. zephyr-app-commands::
-      :app: tests/drivers/eeprom
-      :board: native_posix
+      :app: tests/drivers/eeprom/api
+      :board: native_sim
       :goals: build
 
-#. The same test has a second EEPROM which is an Atmel AT24 EEPROM driver
+#. The same test can be built with a second EEPROM which is an Atmel AT24 EEPROM driver
    connected via I2C an emulator:
 
    .. zephyr-app-commands::
-      :app: tests/drivers/eeprom
-      :board: native_posix
+      :app: tests/drivers/eeprom/api
+      :board: native_sim
       :goals: build
+      :gen-args: -DDTC_OVERLAY_FILE=at2x_emul.overlay -DOVERLAY_CONFIG=at2x_emul.conf
 
 API Reference
 *************

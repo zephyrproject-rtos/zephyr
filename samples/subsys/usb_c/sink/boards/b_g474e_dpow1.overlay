@@ -8,6 +8,10 @@
 #include <dt-bindings/usb-c/pd.h>
 
 / {
+	aliases {
+		usbc-port0 = &port1;
+	};
+
 	/* usbc.rst vbus-voltage-divider-adc start */
 	vbus1: vbus {
 		compatible = "zephyr,usb-c-vbus-adc";

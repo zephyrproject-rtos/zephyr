@@ -126,7 +126,7 @@ CON1 pin header.
    :goals: build flash
 
 Run a serial terminal to connect with your board. By default, ``usart1`` is
-accessible via the the built-in USB to UART converter.
+accessible via the built-in USB to UART converter.
 
 .. code-block:: console
 
@@ -136,7 +136,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`blinky-sample` application.
+:zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

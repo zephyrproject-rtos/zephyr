@@ -17,11 +17,11 @@ function Execute_AC_7_I() {
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=cap_initiator_ac_7_i \
-        -RealEncryption=1 -rs=23 -argstest sink_preset $1 source_preset $2
+        -RealEncryption=1 -rs=23 -D=2 -argstest sink_preset $1 source_preset $2
 
     Execute ./bs_${BOARD}_tests_bsim_bluetooth_audio_prj_conf \
         -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=cap_acceptor_unicast \
-        -RealEncryption=1 -rs=46
+        -RealEncryption=1 -rs=46 -D=2
 
     # Simulation time should be larger than the WAIT_TIME in common.h
     Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
@@ -40,8 +40,8 @@ Execute_AC_7_I 24_1_1 24_1_1
 Execute_AC_7_I 24_2_1 24_2_1
 Execute_AC_7_I 32_1_1 32_1_1
 Execute_AC_7_I 32_2_1 32_2_1
-# Execute_AC_7_I 441_1_1 441_1_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
-# Execute_AC_7_I 441_2_1 441_2_1 # ASSERTION FAIL [iso_interval_us >= cig->c_sdu_interval]
+Execute_AC_7_I 441_1_1 441_1_1
+Execute_AC_7_I 441_2_1 441_2_1
 Execute_AC_7_I 48_1_1 48_1_1
 Execute_AC_7_I 48_2_1 48_2_1
 Execute_AC_7_I 48_3_1 48_3_1

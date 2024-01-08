@@ -11,7 +11,14 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_CONNECTION_MANAGER)
+#if defined(CONFIG_NET_CONNECTION_MANAGER) || defined(__DOXYGEN__)
+
+/**
+ * @brief Connection Manager API
+ * @defgroup conn_mgr Connection Manager API
+ * @ingroup networking
+ * @{
+ */
 
 struct net_if;
 struct net_l2;
@@ -31,7 +38,7 @@ void conn_mgr_mon_resend_status(void);
  * and if the iface was connected before being ignored, events will be fired as though it
  * disconnected at that moment.
  *
- * @param iface - iface to be ignored.
+ * @param iface iface to be ignored.
  */
 void conn_mgr_ignore_iface(struct net_if *iface);
 
@@ -44,14 +51,16 @@ void conn_mgr_ignore_iface(struct net_if *iface);
  * and if the iface was connected before being watched, events will be fired as though
  * it connected in that moment.
  *
- * @param iface - iface to no longer ignore.
+ * All ifaces default to watched at boot.
+ *
+ * @param iface iface to no longer ignore.
  */
 void conn_mgr_watch_iface(struct net_if *iface);
 
 /**
  * @brief Check whether the provided iface is currently ignored.
  *
- * @param iface - The iface to check.
+ * @param iface The iface to check.
  * @retval true if the iface is being ignored by conn_mgr.
  * @retval false if the iface is being watched by conn_mgr.
  */
@@ -62,7 +71,7 @@ bool conn_mgr_is_iface_ignored(struct net_if *iface);
  *
  * This is a wrapper for conn_mgr_ignore_iface that ignores all ifaces that use the L2.
  *
- * @param l2 - L2 to be ignored.
+ * @param l2 L2 to be ignored.
  */
 void conn_mgr_ignore_l2(const struct net_l2 *l2);
 
@@ -71,9 +80,13 @@ void conn_mgr_ignore_l2(const struct net_l2 *l2);
  *
  *  This is a wrapper for conn_mgr_watch_iface that watches all ifaces that use the L2.
  *
- * @param l2 - L2 to watch.
+ * @param l2 L2 to watch.
  */
 void conn_mgr_watch_l2(const struct net_l2 *l2);
+
+/**
+ * @}
+ */
 
 #else
 

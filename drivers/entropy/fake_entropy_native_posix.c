@@ -59,7 +59,9 @@ static int entropy_native_posix_get_entropy_isr(const struct device *dev,
 	 * entropy_native_posix_get_entropy() is also safe for ISRs
 	 * and always produces data.
 	 */
-	return entropy_native_posix_get_entropy(dev, buf, len);
+	entropy_native_posix_get_entropy(dev, buf, len);
+
+	return len;
 }
 
 static int entropy_native_posix_init(const struct device *dev)

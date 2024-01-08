@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/arm/aarch32/arch.h>
+#include <zephyr/arch/arm/arch.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/timing/timing.h>

@@ -56,4 +56,7 @@ extern struct k_mutex conn_mgr_mon_lock;
 
 void conn_mgr_init_events_handler(void);
 
+/* Cause conn_mgr_connectivity to Initialize all connectivity implementation bindings */
+void conn_mgr_conn_init(void);
+
 #endif /* __CONN_MGR_PRV_H__ */

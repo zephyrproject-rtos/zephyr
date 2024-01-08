@@ -6,7 +6,7 @@ config CRYPTO_MCUX_DCP
 	default y
 	depends on HAS_MCUX_CACHE
 	depends on DT_HAS_NXP_MCUX_DCP_ENABLED
-	select NOCACHE_MEMORY
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select CACHE_MANAGEMENT if DCACHE
 	help
 	  Enable NXP Data Co-Processor (DCP) driver.

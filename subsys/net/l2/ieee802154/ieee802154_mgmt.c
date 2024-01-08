@@ -68,7 +68,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 
 	k_sem_give(&ctx->scan_ctx_lock);
 
-	return NET_OK;
+	return NET_CONTINUE;
 }
 
 static int ieee802154_cancel_scan(uint32_t mgmt_request, struct net_if *iface,
@@ -94,10 +94,11 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_IEEE802154_CANCEL_SCAN,
 static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
+	const struct ieee802154_phy_supported_channels *supported_channels;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct ieee802154_attr_value attr_value;
 	struct ieee802154_req_params *scan;
 	struct net_pkt *pkt = NULL;
-	uint8_t channel;
 	int ret;
 
 	if (len != sizeof(struct ieee802154_req_params) || !data) {
@@ -127,6 +128,7 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		pkt = ieee802154_create_mac_cmd_frame(
 			iface, IEEE802154_CFI_BEACON_REQUEST, &params);
 		if (!pkt) {
+			k_sem_give(&ctx->scan_ctx_lock);
 			NET_DBG("Could not create Beacon Request");
 			ret = -ENOBUFS;
 			goto out;
@@ -151,44 +153,52 @@ static int ieee802154_scan(uint32_t mgmt_request, struct net_if *iface,
 		goto out;
 	}
 
-	/* TODO: For now, we assume we are on 2.4Ghz
-	 * (device will have to export current channel page)
-	 */
-	for (channel = 11U; channel <= 26U; channel++) {
-		if (IEEE802154_IS_CHAN_UNSCANNED(scan->channel_set, channel)) {
-			continue;
-		}
+	if (ieee802154_radio_attr_get(iface, IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES,
+				      &attr_value)) {
+		NET_DBG("Could not determine supported channels");
+		ret = -ENOENT;
+		goto out;
+	}
+	supported_channels = attr_value.phy_supported_channels;
 
-		scan->channel = channel;
-		NET_DBG("Scanning channel %u", channel);
-		ieee802154_radio_set_channel(iface, channel);
+	for (int channel_range = 0; channel_range < supported_channels->num_ranges;
+	     channel_range++) {
+		for (uint16_t channel = supported_channels->ranges[channel_range].from_channel;
+		     channel <= supported_channels->ranges[channel_range].to_channel; channel++) {
+			if (IEEE802154_IS_CHAN_UNSCANNED(scan->channel_set, channel)) {
+				continue;
+			}
 
-		/* Active scan sends a beacon request */
-		if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
-			net_pkt_ref(pkt);
-			net_pkt_frag_ref(pkt->buffer);
+			scan->channel = channel;
+			NET_DBG("Scanning channel %u", channel);
+			ieee802154_radio_set_channel(iface, channel);
 
-			ret = ieee802154_radio_send(iface, pkt, pkt->buffer);
-			if (ret) {
-				NET_DBG("Could not send Beacon Request (%d)",
-					ret);
-				net_pkt_unref(pkt);
+			/* Active scan sends a beacon request */
+			if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
+				net_pkt_ref(pkt);
+				net_pkt_frag_ref(pkt->buffer);
+
+				ret = ieee802154_radio_send(iface, pkt, pkt->buffer);
+				if (ret) {
+					NET_DBG("Could not send Beacon Request (%d)", ret);
+					net_pkt_unref(pkt);
+					goto out;
+				}
+			}
+
+			/* Context aware sleep */
+			k_sleep(K_MSEC(scan->duration));
+
+			k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
+
+			if (!ctx->scan_ctx) {
+				NET_DBG("Scan request cancelled");
+				ret = -ECANCELED;
 				goto out;
 			}
+
+			k_sem_give(&ctx->scan_ctx_lock);
 		}
-
-		/* Context aware sleep */
-		k_sleep(K_MSEC(scan->duration));
-
-		k_sem_take(&ctx->scan_ctx_lock, K_FOREVER);
-
-		if (!ctx->scan_ctx) {
-			NET_DBG("Scan request cancelled");
-			ret = -ECANCELED;
-			goto out;
-		}
-
-		k_sem_give(&ctx->scan_ctx_lock);
 	}
 
 out:
@@ -357,7 +367,7 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 
 		k_sem_give(&ctx->scan_ctx_lock);
 
-		return NET_OK;
+		return NET_CONTINUE;
 	}
 
 	if (mpdu->command->cfi == IEEE802154_CFI_DISASSOCIATION_NOTIFICATION) {

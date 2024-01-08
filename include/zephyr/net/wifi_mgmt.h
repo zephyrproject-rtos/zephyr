@@ -38,8 +38,16 @@ extern "C" {
 #ifdef CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
 #define WIFI_MGMT_SCAN_SSID_FILT_MAX CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX
 #else
-#define WIFI_MGMT_SCAN_SSID_FILT_MAX 0
+#define WIFI_MGMT_SCAN_SSID_FILT_MAX 1
 #endif /* CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX */
+
+#ifdef CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+#define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
+#else
+#define WIFI_MGMT_SCAN_CHAN_MAX_MANUAL 1
+#endif /* CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL */
+
+#define WIFI_MGMT_BAND_STR_SIZE_MAX 8
 
 /** Wi-Fi management commands */
 enum net_request_wifi_cmd {
@@ -67,6 +75,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_REG_DOMAIN,
 	/** Set power save timeout */
 	NET_REQUEST_WIFI_CMD_PS_TIMEOUT,
+	/** Set or get Mode of operation */
+	NET_REQUEST_WIFI_CMD_MODE,
+	/** Set or get packet filter setting for current mode */
+	NET_REQUEST_WIFI_CMD_PACKET_FILTER,
+	/** Set or get Wi-Fi channel for Monitor or TX-Injection mode */
+	NET_REQUEST_WIFI_CMD_CHANNEL,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -129,6 +143,21 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_TIMEOUT);
 
+#define NET_REQUEST_WIFI_MODE				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_MODE)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_MODE);
+
+#define NET_REQUEST_WIFI_PACKET_FILTER			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PACKET_FILTER)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER);
+
+#define NET_REQUEST_WIFI_CHANNEL			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CHANNEL)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL);
+
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
 	/** Scan results available */
@@ -181,6 +210,16 @@ enum net_event_wifi_cmd {
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
 
 /**
+ * @brief Wi-Fi structure to uniquely identify a band-channel pair
+ */
+struct wifi_band_channel {
+	/** Frequency band */
+	uint8_t band;
+	/** Channel */
+	uint8_t channel;
+};
+
+/**
  * @brief Wi-Fi scan parameters structure.
  * Used to specify parameters which can control how the Wi-Fi scan
  * is performed.
@@ -206,7 +245,7 @@ struct wifi_scan_params {
 	uint16_t dwell_time_passive;
 	/** Array of SSID strings to scan.
 	 */
-	char ssids[WIFI_MGMT_SCAN_SSID_FILT_MAX][WIFI_SSID_MAX_LEN + 1];
+	const char *ssids[WIFI_MGMT_SCAN_SSID_FILT_MAX];
 	/** Specifies the maximum number of scan results to return. These results would be the
 	 * BSSIDS with the best RSSI values, in all the scanned channels. This should only be
 	 * used to limit the number of returned scan results, and cannot be counted upon to limit
@@ -219,9 +258,9 @@ struct wifi_scan_params {
 	 * band.
 	 * E.g. to scan channel 6 and 11 on the 2.4 GHz band, channel 36 on the 5 GHz band:
 	 * @code{.c}
-	 *     chan[WIFI_FREQ_BAND_2_4_GHZ][0] = 6;
-	 *     chan[WIFI_FREQ_BAND_2_4_GHZ][1] = 11;
-	 *     chan[WIFI_FREQ_BAND_5_GHZ][0] = 36;
+	 *     chan[0] = {WIFI_FREQ_BAND_2_4_GHZ, 6};
+	 *     chan[1] = {WIFI_FREQ_BAND_2_4_GHZ, 11};
+	 *     chan[2] = {WIFI_FREQ_BAND_5_GHZ, 36};
 	 * @endcode
 	 *
 	 *  This list specifies the channels to be __considered for scan__. The underlying
@@ -229,7 +268,7 @@ struct wifi_scan_params {
 	 *  not conforming to regulatory restrictions etc. The invoker of the API should
 	 *  ensure that the channels specified follow regulatory rules.
 	 */
-	uint16_t chan[WIFI_FREQ_BAND_MAX + 1][WIFI_CHANNEL_MAX];
+	struct wifi_band_channel band_chan[WIFI_MGMT_SCAN_CHAN_MAX_MANUAL];
 };
 
 /** Wi-Fi scan result, each result is provided to the net_mgmt_event_callback
@@ -263,11 +302,11 @@ struct wifi_connect_req_params {
 	/** SSID length */
 	uint8_t ssid_length; /* Max 32 */
 	/** Pre-shared key */
-	uint8_t *psk;
+	const uint8_t *psk;
 	/** Pre-shared key length */
 	uint8_t psk_length; /* Min 8 - Max 64 */
 	/** SAE password (same as PSK but with no length restrictions), optional */
-	uint8_t *sae_password;
+	const uint8_t *sae_password;
 	/** SAE password length */
 	uint8_t sae_password_length; /* No length restrictions */
 	/** Frequency band */
@@ -507,6 +546,37 @@ union wifi_mgmt_events {
 	struct wifi_twt_params twt_params;
 };
 
+/** Wi-Fi mode setup */
+struct wifi_mode_info {
+	/** Mode setting for a specific mode of operation */
+	uint8_t mode;
+	/** Interface index */
+	uint8_t if_index;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
+
+/** Wi-Fi filter setting for monitor, prmoiscuous, TX-injection modes */
+struct wifi_filter_info {
+	/** Filter setting */
+	uint8_t filter;
+	/** Interface index */
+	uint8_t if_index;
+	/** Filter buffer size */
+	uint16_t buffer_size;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
+
+/** Wi-Fi channel setting for monitor and TX-injection modes */
+struct wifi_channel_info {
+	/** Channel value to set */
+	uint16_t channel;
+	/** Interface index */
+	uint8_t if_index;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
 
 #include <zephyr/net/net_if.h>
 
@@ -628,6 +698,30 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+	/** Set or get packet filter settings for monitor and promiscuous modes
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param packet filter settings
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*filter)(const struct device *dev, struct wifi_filter_info *filter);
+	/** Set or get mode of operation
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param mode settings
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*mode)(const struct device *dev, struct wifi_mode_info *mode);
+	/** Set or get current channel of operation
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param channel settings
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
 };
 
 /** Wi-Fi management offload API */

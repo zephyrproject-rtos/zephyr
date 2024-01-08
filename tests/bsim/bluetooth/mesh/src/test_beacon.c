@@ -13,6 +13,8 @@
 #include "mesh/foundation.h"
 #include "mesh/crypto.h"
 #include "argparse.h"
+#include "mesh/proxy_cli.h"
+#include "mesh/proxy.h"
 
 #define LOG_MODULE_NAME test_beacon
 
@@ -52,6 +54,22 @@ static const struct bt_mesh_test_cfg rx_cfg = {
 	.dev_key = { 0x02 },
 };
 
+typedef void (*snb_cb)(const struct bt_mesh_snb *snb);
+
+static snb_cb snb_cb_ptr;
+static struct k_sem beacon_sem;
+
+static void snb_received(const struct bt_mesh_snb *snb)
+{
+	if (snb_cb_ptr) {
+		snb_cb_ptr(snb);
+	}
+}
+
+BT_MESH_BEACON_CB_DEFINE(snb) = {
+	.snb_received = snb_received,
+};
+
 /* Setting for scanner defining what beacon is expected next, SNB as default */
 static uint8_t expected_beacon = BEACON_TYPE_SECURE;
 #if CONFIG_BT_MESH_V1d1
@@ -61,7 +79,7 @@ static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
 
 static const struct bt_mesh_comp prb_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -315,6 +333,8 @@ static struct {
 	uint32_t iv_index;
 #if CONFIG_BT_MESH_V1d1
 	uint8_t random[13];
+	uint64_t pp_hash;
+	uint64_t pp_random;
 	bt_addr_le_t adv_addr;
 #endif
 	bool (*process_cb)(const uint8_t *net_id, void *ctx);
@@ -363,8 +383,9 @@ static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_ty
 	}
 }
 
-/* Listens to beacons for one beacon interval (10 seconds). */
-static bool wait_for_beacon(bool (*process_cb)(const uint8_t *net_id, void *ctx), void *ctx)
+/* Listens to beacons */
+static bool wait_for_beacon(bt_le_scan_cb_t scan_cb, uint16_t wait,
+			    bool (*process_cb)(const uint8_t *net_id, void *ctx), void *ctx)
 {
 	struct bt_le_scan_param scan_param = {
 			.type       = BT_HCI_LE_SCAN_PASSIVE,
@@ -378,7 +399,7 @@ static bool wait_for_beacon(bool (*process_cb)(const uint8_t *net_id, void *ctx)
 	beacon.process_cb = process_cb;
 	beacon.user_ctx = ctx;
 
-	err = bt_le_scan_start(&scan_param, beacon_scan_cb);
+	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err && err != -EALREADY) {
 		FAIL("starting scan failed (err %d)", err);
 	}
@@ -392,7 +413,7 @@ static bool wait_for_beacon(bool (*process_cb)(const uint8_t *net_id, void *ctx)
 	 * waiting time (BEACON_INTERVAL + 1) to guarantee that beacon comes
 	 * before timer expiration.
 	 */
-	err = k_sem_take(&observer_sem, K_SECONDS(BEACON_INTERVAL + 1));
+	err = k_sem_take(&observer_sem, K_SECONDS(wait));
 	if (!err) {
 		received = true;
 	} else {
@@ -486,8 +507,8 @@ static void corrupted_beacon_test(const uint8_t *offsets,
 		send_beacon(buf);
 		buf->data[offsets[i]] ^= 0xFF;
 		/* Ensure that interval is not affected. */
-		ASSERT_TRUE(wait_for_beacon(NULL, NULL));
-		ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 		ASSERT_EQUAL(0x00, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 	}
@@ -500,8 +521,8 @@ static void corrupted_beacon_test(const uint8_t *offsets,
 	/* The beacon interval shall be changed and the node shall skip transmission of the next
 	 * beacon.
 	 */
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 }
@@ -588,16 +609,16 @@ static void test_tx_kr_old_key(void)
 	 */
 	beacon_create(&buf, test_net_key, 0x01, 0x0000);
 	send_beacon(&buf);
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x00, beacon.flags);
 	ASSERT_EQUAL(0x0000, beacon.iv_index);
 
 	/* The old Net Key can still initiate IV Index update. */
 	beacon_create(&buf, test_net_key, 0x02, 0x0001);
 	send_beacon(&buf);
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -607,8 +628,8 @@ static void test_tx_kr_old_key(void)
 	 */
 	beacon_create(&buf, test_net_key_secondary, 0x03, 0x0001);
 	send_beacon(&buf);
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x03, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -617,8 +638,8 @@ static void test_tx_kr_old_key(void)
 	 */
 	beacon_create(&buf, test_net_key, 0x01, 0x0001);
 	send_beacon(&buf);
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x03, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -627,8 +648,8 @@ static void test_tx_kr_old_key(void)
 	 */
 	beacon_create(&buf, test_net_key_secondary, 0x02, 0x0001);
 	send_beacon(&buf);
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -637,8 +658,8 @@ static void test_tx_kr_old_key(void)
 	 */
 	beacon_create(&buf, test_net_key, 0x00, 0x0001);
 	send_beacon(&buf);
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -647,8 +668,8 @@ static void test_tx_kr_old_key(void)
 	 */
 	beacon_create(&buf, test_net_key_secondary, 0x00, 0x0001);
 	send_beacon(&buf);
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x00, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -784,8 +805,10 @@ static void test_tx_multiple_netkeys(void)
 		 */
 		beacon_create(&buf, net_key_pairs[i].primary, 0x01, 0x0000);
 		send_beacon(&buf);
-		ASSERT_FALSE(wait_for_beacon(beacon_confirm_by_subnet, &buf.data[2]));
-		ASSERT_TRUE(wait_for_beacon(beacon_confirm_by_subnet, &buf.data[2]));
+		ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					     beacon_confirm_by_subnet, &buf.data[2]));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					    beacon_confirm_by_subnet, &buf.data[2]));
 		ASSERT_EQUAL(0x00, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 
@@ -794,8 +817,10 @@ static void test_tx_multiple_netkeys(void)
 		 */
 		beacon_create(&buf, net_key_pairs[i].secondary, 0x01, 0x0000);
 		send_beacon(&buf);
-		ASSERT_FALSE(wait_for_beacon(beacon_confirm_by_subnet, net_id_secondary));
-		ASSERT_TRUE(wait_for_beacon(beacon_confirm_by_subnet, net_id_secondary));
+		ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					     beacon_confirm_by_subnet, net_id_secondary));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					    beacon_confirm_by_subnet, net_id_secondary));
 		ASSERT_EQUAL(0x01, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 
@@ -804,8 +829,10 @@ static void test_tx_multiple_netkeys(void)
 		 */
 		beacon_create(&buf, net_key_pairs[i].primary, 0x00, 0x0000);
 		send_beacon(&buf);
-		ASSERT_TRUE(wait_for_beacon(beacon_confirm_by_subnet, net_id_secondary));
-		ASSERT_TRUE(wait_for_beacon(beacon_confirm_by_subnet, net_id_secondary));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					    beacon_confirm_by_subnet, net_id_secondary));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					    beacon_confirm_by_subnet, net_id_secondary));
 		ASSERT_EQUAL(0x01, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 
@@ -814,8 +841,10 @@ static void test_tx_multiple_netkeys(void)
 		 */
 		beacon_create(&buf, net_key_pairs[i].secondary, 0x00, 0x0000);
 		send_beacon(&buf);
-		ASSERT_FALSE(wait_for_beacon(beacon_confirm_by_subnet, net_id_secondary));
-		ASSERT_TRUE(wait_for_beacon(beacon_confirm_by_subnet, net_id_secondary));
+		ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					     beacon_confirm_by_subnet, net_id_secondary));
+		ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1,
+					    beacon_confirm_by_subnet, net_id_secondary));
 		ASSERT_EQUAL(0x00, beacon.flags);
 		ASSERT_EQUAL(0x0000, beacon.iv_index);
 	}
@@ -823,13 +852,15 @@ static void test_tx_multiple_netkeys(void)
 	/* Create a valid beacon secured with unknown Net Key. The node shall ignore the beacon and
 	 * continue sending beacons regularly.
 	 */
-	uint8_t unknown_net_key[16] = { 0xde, 0xad, 0xbe, 0xef };
+	uint8_t unknown_net_key[16] = {0xde, 0xad, 0xbe, 0xef};
 
 	beacon_create(&buf, unknown_net_key, 0x00, 0x0000);
 	send_beacon(&buf);
 	/* Ensure that interval is not affected. */
-	ASSERT_TRUE(wait_for_beacon(beacon_confirm_all_subnets, NULL));
-	ASSERT_TRUE(wait_for_beacon(beacon_confirm_all_subnets, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, beacon_confirm_all_subnets,
+				    NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, beacon_confirm_all_subnets,
+				    NULL));
 
 	PASS();
 }
@@ -930,7 +961,7 @@ static void test_rx_secure_beacon_interval(void)
 	beacon_create(&buf, test_net_key, 0, 0);
 	k_sleep(K_SECONDS(5));
 	/*wait provisioned tx node to send the first beacon*/
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	k_sleep(K_SECONDS(2));
 
 	/**
@@ -941,9 +972,11 @@ static void test_rx_secure_beacon_interval(void)
 	for (size_t i = 1; i < 5; i++) {
 		if (i % 2) {
 			send_beacon(&buf);
-			ASSERT_FALSE(wait_for_beacon(NULL, NULL));
+			ASSERT_FALSE(
+				wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 		} else {
-			ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+			ASSERT_TRUE(
+				wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 		}
 	}
 
@@ -951,9 +984,9 @@ static void test_rx_secure_beacon_interval(void)
 	 * Verify that tx node keeps the 20s SNB interval until adapts itself and
 	 * sends SNB in 10s again.
 	 */
-	ASSERT_FALSE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_FALSE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	beacon_recv_time = k_uptime_get();
 	/* Start sending SNB */
 	k_work_schedule(&beacon_timer, K_NO_WAIT);
@@ -965,7 +998,7 @@ static void test_rx_secure_beacon_interval(void)
 	 */
 	delta = 0;
 	for (size_t i = 0; i < 60; i++) {
-		if (wait_for_beacon(NULL, NULL)) {
+		if (wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL)) {
 			delta = k_uptime_delta(&beacon_recv_time);
 			break;
 		}
@@ -975,17 +1008,89 @@ static void test_rx_secure_beacon_interval(void)
 	PASS();
 }
 
+static uint8_t snb_cnt;
+
+static void snb_recv(const struct bt_mesh_snb *snb)
+{
+	/* IV idx of 2 marks end of test */
+	if (snb->iv_idx == 2) {
+		k_sem_give(&beacon_sem);
+		return;
+	}
+
+	ASSERT_EQUAL(snb->flags, 0x02);
+	ASSERT_EQUAL(snb->iv_idx, 1);
+	snb_cnt++;
+}
+
+static void test_rx_beacon_cache(void)
+{
+	k_sem_init(&beacon_sem, 0, 1);
+	snb_cb_ptr = snb_recv;
+
+	bt_mesh_test_cfg_set(&rx_cfg, WAIT_TIME);
+	bt_mesh_test_setup();
+
+	/* Wait for secondary SNB to end test. */
+	ASSERT_OK_MSG(k_sem_take(&beacon_sem, K_SECONDS(40)),
+		      "Didn't receive SNB in time");
+
+	/* Verify that only one SNB for IV_idx=1 was handled. */
+	ASSERT_EQUAL(snb_cnt, 1);
+	PASS();
+}
+
+static void test_tx_beacon_cache(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_crypto_init();
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
+
+	NET_BUF_SIMPLE_DEFINE(iv1, 22);
+	NET_BUF_SIMPLE_DEFINE(iv2, 22);
+	beacon_create(&iv1, test_net_key, 0x02, 0x0001);
+	beacon_create(&iv2, test_net_key, 0x02, 0x0002);
+
+	/* Send two copies of the same SNB. */
+	for (size_t i = 0; i < 2; i++) {
+		k_sleep(K_SECONDS(5));
+		send_beacon(&iv1);
+	}
+
+	/* Send secondary SNB to mark end of test. */
+	k_sleep(K_SECONDS(5));
+	send_beacon(&iv2);
+
+	PASS();
+}
+
 #if CONFIG_BT_MESH_V1d1
+
+typedef void (*priv_beacon_cb)(const struct bt_mesh_prb *prb);
+
+static priv_beacon_cb priv_beacon_cb_ptr;
+
+static void priv_received(const struct bt_mesh_prb *prb)
+{
+	if (priv_beacon_cb_ptr) {
+		priv_beacon_cb_ptr(prb);
+	}
+}
+
+BT_MESH_BEACON_CB_DEFINE(priv_beacon) = {
+	.priv_received = priv_received,
+};
+
 static bool private_beacon_check(const uint8_t *net_id, void *ctx)
 {
 	bool ret;
-	bool same_random = (bool *)ctx;
+	bool same_random = *(bool *)ctx;
 
-	if (memcmp(beacon.adv_addr.a.val, &last_beacon_adv_addr, BT_ADDR_SIZE) == 0) {
+	if (memcmp(beacon.adv_addr.a.val, last_beacon_adv_addr.a.val, BT_ADDR_SIZE) == 0) {
 		return false;
 	}
 
-	memcpy(&last_beacon_adv_addr, beacon.adv_addr.a.val, BT_ADDR_SIZE);
+	memcpy(&last_beacon_adv_addr.a.val, beacon.adv_addr.a.val, BT_ADDR_SIZE);
 
 	if (same_random) {
 		ret = memcmp(beacon.random, last_random, 13) == 0;
@@ -1026,7 +1131,7 @@ static void tx_priv_setup(void)
 		FAIL("Beacon set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1064,7 +1169,7 @@ static void test_tx_priv_adv(void)
 	val.enabled = 1;
 	val.rand_interval = 1;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1073,7 +1178,7 @@ static void test_tx_priv_adv(void)
 
 	val.rand_interval = 0;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1082,7 +1187,7 @@ static void test_tx_priv_adv(void)
 
 	val.rand_interval = 0;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1091,7 +1196,7 @@ static void test_tx_priv_adv(void)
 
 	val.rand_interval = 3;
 
-	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, tx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1119,7 +1224,8 @@ static void test_rx_priv_adv(void)
 	 * and with Random Interval = 0 for another 6
 	 */
 	for (i = 0; i < 12; i++) {
-		wait_for_beacon(private_beacon_check, &same_random);
+		wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, private_beacon_check,
+				&same_random);
 	}
 
 	/* TX device is advertising with Random Interval = 3 */
@@ -1127,14 +1233,16 @@ static void test_rx_priv_adv(void)
 		same_random = true;
 
 		for (int j = 0; j < 2; j++) {
-			wait_for_beacon(private_beacon_check, &same_random);
+			wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, private_beacon_check,
+					&same_random);
 		}
 
 		k_sleep(K_SECONDS(BEACON_INTERVAL));
 
 		/* Beacon random should change here */
 		same_random = true;
-		wait_for_beacon(private_beacon_check, &same_random);
+		wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, private_beacon_check,
+				&same_random);
 	}
 
 	PASS();
@@ -1160,7 +1268,7 @@ static void private_beacon_create(struct net_buf_simple *buf, const uint8_t *net
 	}
 
 	bt_rand(random_val, sizeof(random_val));
-	bt_mesh_beacon_encrypt(&priv_beacon_key, flags, bt_mesh.iv_index + 1,
+	bt_mesh_beacon_encrypt(&priv_beacon_key, flags, iv_index,
 			       random_val, data, auth);
 
 	net_buf_simple_reset(buf);
@@ -1220,7 +1328,7 @@ static void test_rx_priv_invalid(void)
 		FAIL("Beacon set failed (err %d, status %u)", err, status);
 	}
 
-	err = bt_mesh_priv_beacon_cli_set(0, rx_cfg.addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, rx_cfg.addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1253,7 +1361,7 @@ static void toggle_priv_beacon(uint16_t addr, uint8_t enabled)
 	val.enabled = enabled;
 	val.rand_interval = 1;
 
-	err = bt_mesh_priv_beacon_cli_set(0, addr, &val);
+	err = bt_mesh_priv_beacon_cli_set(0, addr, &val, &val);
 	if (err) {
 		FAIL("Failed to enable Private Beacon (err=%d)", err);
 	}
@@ -1322,6 +1430,7 @@ static void test_tx_priv_interleave(void)
 static void test_rx_priv_interleave(void)
 {
 	int err;
+	bool same_random = false;
 
 	bt_mesh_test_cfg_set(&rx_cfg, BEACON_INTERVAL_WAIT_TIME);
 	bt_mesh_crypto_init();
@@ -1338,25 +1447,27 @@ static void test_rx_priv_interleave(void)
 	}
 
 	expected_beacon = BEACON_TYPE_SECURE;
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 
 	expected_beacon = BEACON_TYPE_PRIVATE;
-	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, private_beacon_check,
+				    &same_random));
 
 	/* IVU was started here */
-	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, private_beacon_check,
+				    &same_random));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
 	memset(&beacon, 0, sizeof(beacon));
 	expected_beacon = BEACON_TYPE_SECURE;
 
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x02, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
 	/* KR was started here */
-	ASSERT_TRUE(wait_for_beacon(NULL, NULL));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, NULL, NULL));
 	ASSERT_EQUAL(0x03, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
@@ -1364,12 +1475,437 @@ static void test_rx_priv_interleave(void)
 
 	err = bt_mesh_private_beacon_key(net_key_new, &priv_beacon_key);
 
-	ASSERT_TRUE(wait_for_beacon(private_beacon_check, false));
+	ASSERT_TRUE(wait_for_beacon(beacon_scan_cb, BEACON_INTERVAL + 1, private_beacon_check,
+				    &same_random));
 	ASSERT_EQUAL(0x03, beacon.flags);
 	ASSERT_EQUAL(0x0001, beacon.iv_index);
 
 	PASS();
 }
+
+static uint8_t prb_cnt;
+
+static void priv_beacon_recv(const struct bt_mesh_prb *prb)
+{
+	/* IV idx of 2 marks end of test */
+	if (prb->iv_idx == 2) {
+		k_sem_give(&beacon_sem);
+		return;
+	}
+
+	ASSERT_EQUAL(prb->flags, 0x02);
+	ASSERT_EQUAL(prb->iv_idx, 1);
+	prb_cnt++;
+}
+
+static void test_rx_priv_beacon_cache(void)
+{
+	k_sem_init(&beacon_sem, 0, 1);
+	priv_beacon_cb_ptr = priv_beacon_recv;
+
+	bt_mesh_test_cfg_set(&rx_cfg, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &prb_comp);
+	provision(&rx_cfg);
+
+	/* Wait for secondary private beacon to end test. */
+	ASSERT_OK_MSG(k_sem_take(&beacon_sem, K_SECONDS(40)),
+		      "Didn't receive private beacon in time");
+
+	/* Verify that only one private beacon for IV_idx=1 was handled. */
+	ASSERT_EQUAL(prb_cnt, 1);
+	PASS();
+}
+
+static void test_tx_priv_beacon_cache(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_crypto_init();
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
+
+	NET_BUF_SIMPLE_DEFINE(iv1, 27);
+	NET_BUF_SIMPLE_DEFINE(iv2, 27);
+	private_beacon_create(&iv1, test_net_key, 0x02, 0x0001);
+	private_beacon_create(&iv2, test_net_key, 0x02, 0x0002);
+
+	/* Send two copies of the same private beacon. */
+	for (size_t i = 0; i < 2; i++) {
+		k_sleep(K_SECONDS(5));
+		send_beacon(&iv1);
+	}
+
+	/* Send secondary private beacon to mark end of test. */
+	k_sleep(K_SECONDS(5));
+	send_beacon(&iv2);
+
+	PASS();
+}
+
+#if IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)
+
+#define BEACON_TYPE_PRIVATE_NET_ID  2
+#define BEACON_TYPE_PRIVATE_NODE_ID 3
+#define BEACON_TYPE_PRIVATE_LEN     28
+#define TEST_NET_IDX1               0
+#define TEST_NET_IDX2               1
+#define MAX_TIMEOUT ((CONFIG_BT_MESH_NODE_ID_TIMEOUT * 1000) / 6)
+
+#define PP_NET_ID_WAIT_TIME 610 /*seconds*/
+#define PP_NODE_ID_WAIT_TIME 80 /*seconds*/
+#define PP_MULT_NET_ID_WAIT_TIME 50 /*seconds*/
+
+struct pp_netkey_ctx {
+	uint8_t *net_key;
+	uint8_t net_id[8];
+	struct bt_mesh_key id_key;
+};
+
+static struct pp_netkey_ctx pp_net0 = {.net_key = (uint8_t *)test_net_key};
+static struct pp_netkey_ctx pp_net1 = {.net_key = (uint8_t *)test_net_key_secondary};
+
+struct priv_test_ctx {
+	uint8_t beacon_type;
+	uint16_t *node_id_addr;
+};
+
+static void pp_netkey_ctx_init(struct pp_netkey_ctx *net)
+{
+	ASSERT_OK_MSG(bt_mesh_identity_key(net->net_key, &net->id_key),
+		      "Failed to generate ID key");
+	ASSERT_OK_MSG(bt_mesh_k3(net->net_key, net->net_id), "Failed to generate Net ID");
+}
+
+static bool pp_type_check(uint16_t expected_beacon, uint8_t adv_type, struct net_buf_simple *buf)
+{
+	if (adv_type != BT_GAP_ADV_TYPE_ADV_IND || buf->len != BEACON_TYPE_PRIVATE_LEN) {
+		return false;
+	}
+
+	/* Remove Header */
+	(void)net_buf_simple_pull_mem(buf, 11);
+
+	uint8_t beacon_type = net_buf_simple_pull_u8(buf);
+
+	if (beacon_type != expected_beacon) {
+		return false;
+	}
+
+	return true;
+}
+
+static uint64_t pp_hash_calc(struct pp_netkey_ctx *net, uint64_t random, uint16_t *addr)
+{
+	uint64_t hash;
+	uint8_t tmp[16] = {0, 0, 0, 0, 0, 3};
+
+	if (addr) {
+		memcpy(&tmp[6], &random, 8);
+		sys_put_be16(*addr, &tmp[14]);
+
+	} else {
+		memcpy(&tmp[0], net->net_id, 8);
+		memcpy(&tmp[8], &random, 8);
+	}
+
+	bt_mesh_encrypt(&net->id_key, tmp, tmp);
+	memcpy(&hash, &tmp[8], 8);
+
+	return hash;
+}
+
+static bool pp_beacon_check(const uint8_t *net_id, void *ctx)
+{
+	struct priv_test_ctx *test_ctx = (struct priv_test_ctx *)ctx;
+
+	ASSERT_EQUAL(beacon.pp_hash,
+		     pp_hash_calc(&pp_net0, beacon.pp_random, test_ctx->node_id_addr));
+
+	if (memcmp(beacon.adv_addr.a.val, last_beacon_adv_addr.a.val, BT_ADDR_SIZE) == 0) {
+		return false;
+	}
+
+	memcpy(&last_beacon_adv_addr.a.val, beacon.adv_addr.a.val, BT_ADDR_SIZE);
+
+	return true;
+}
+
+static void priv_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+				struct net_buf_simple *buf)
+{
+	struct priv_test_ctx *ctx = (struct priv_test_ctx *)beacon.user_ctx;
+
+	if (!pp_type_check(ctx->beacon_type, adv_type, buf)) {
+		/* Wrong message type */
+		return;
+	}
+
+	bt_addr_le_copy(&beacon.adv_addr, addr);
+
+	beacon.pp_hash = net_buf_simple_pull_le64(buf);
+	beacon.pp_random = net_buf_simple_pull_le64(buf);
+
+	if (!beacon.process_cb || beacon.process_cb(NULL, beacon.user_ctx)) {
+		k_sem_give(&observer_sem);
+	}
+}
+
+static void rx_priv_common_init(uint16_t wait)
+{
+	bt_mesh_test_cfg_set(&rx_cfg, wait);
+	bt_mesh_crypto_init();
+	pp_netkey_ctx_init(&pp_net0);
+	k_sem_init(&observer_sem, 0, 1);
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
+}
+
+static void tx_priv_common_init(uint16_t wait)
+{
+	bt_mesh_test_cfg_set(NULL, wait);
+	bt_mesh_device_setup(&prov, &prb_comp);
+	provision(&tx_cfg);
+
+	/* Disable GATT proxy */
+	ASSERT_OK_MSG(bt_mesh_gatt_proxy_set(BT_MESH_GATT_PROXY_DISABLED),
+		      "Failed to disable gatt proxy");
+}
+
+static void test_tx_priv_net_id(void)
+{
+	tx_priv_common_init(PP_NET_ID_WAIT_TIME);
+
+	/* Enable private GATT proxy */
+	ASSERT_OK_MSG(bt_mesh_priv_gatt_proxy_set(BT_MESH_GATT_PROXY_ENABLED),
+		      "Failed to set private gatt proxy");
+
+	PASS();
+}
+
+static void test_rx_priv_net_id(void)
+{
+	struct priv_test_ctx ctx = {
+		.beacon_type = BEACON_TYPE_PRIVATE_NET_ID,
+		.node_id_addr = NULL,
+	};
+
+	rx_priv_common_init(PP_NET_ID_WAIT_TIME);
+
+	/* Scan for first net ID */
+	ASSERT_TRUE(
+		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+
+	uint64_t last_pp_random = beacon.pp_random;
+
+	/* Wait for 10 minutes, then scan for another net
+	 * ID beacon and verify that random field has changed
+	 */
+	k_sleep(K_SECONDS(600));
+	ASSERT_TRUE(
+		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+	ASSERT_FALSE(beacon.pp_random == last_pp_random);
+
+	PASS();
+}
+
+static void test_tx_priv_node_id(void)
+{
+	enum bt_mesh_feat_state state;
+
+	tx_priv_common_init(PP_NODE_ID_WAIT_TIME);
+
+	/* Start first node advertisement */
+	ASSERT_OK_MSG(bt_mesh_subnet_priv_node_id_set(TEST_NET_IDX1, BT_MESH_NODE_IDENTITY_RUNNING),
+		      "Failed to set private node ID");
+
+	/* Wait for Node ID advertising to end */
+	k_sleep(K_SECONDS(65));
+
+	/* Check that advertisment has stopped */
+	ASSERT_OK_MSG(bt_mesh_subnet_priv_node_id_get(TEST_NET_IDX1, &state),
+		      "Failed to get private node ID");
+	ASSERT_EQUAL(state, BT_MESH_NODE_IDENTITY_STOPPED);
+
+	/* Start second node advertisement */
+	ASSERT_OK_MSG(bt_mesh_subnet_priv_node_id_set(TEST_NET_IDX1, BT_MESH_NODE_IDENTITY_RUNNING),
+		      "Failed to set private node ID");
+
+	/* Wait to let node ID advertise for a while */
+	k_sleep(K_SECONDS(5));
+
+	PASS();
+}
+
+static void test_rx_priv_node_id(void)
+{
+	struct priv_test_ctx ctx = {
+		.beacon_type = BEACON_TYPE_PRIVATE_NODE_ID,
+		.node_id_addr = (uint16_t *)&tx_cfg.addr,
+	};
+
+	rx_priv_common_init(PP_NODE_ID_WAIT_TIME);
+
+	/* Scan for first node ID */
+	ASSERT_TRUE(
+		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+
+	uint64_t last_pp_random = beacon.pp_random;
+
+	/* Wait for first node ID advertisment to finish, then scan for
+	 * second node ID and verify that random field has changed
+	 */
+
+	k_sleep(K_SECONDS(65));
+	ASSERT_TRUE(
+		wait_for_beacon(priv_scan_cb, 1, pp_beacon_check, &ctx));
+	ASSERT_FALSE(beacon.pp_random == last_pp_random);
+
+	PASS();
+}
+
+static void test_tx_priv_multi_net_id(void)
+{
+	tx_priv_common_init(PP_MULT_NET_ID_WAIT_TIME);
+
+	/* TODO: This should be removed as soon as
+	 * SNB/proxy service advertising issue has
+	 * been resolved.
+	 */
+	bt_mesh_beacon_set(false);
+
+	/* Add second network */
+	ASSERT_OK_MSG(bt_mesh_subnet_add(TEST_NET_IDX2, test_net_key_secondary),
+		      "Failed to add second subnet");
+
+	/* Enable private GATT proxy */
+	ASSERT_OK_MSG(bt_mesh_priv_gatt_proxy_set(BT_MESH_GATT_PROXY_ENABLED),
+		      "Failed to set private gatt proxy");
+
+	PASS();
+}
+
+static void test_rx_priv_multi_net_id(void)
+{
+	rx_priv_common_init(PP_MULT_NET_ID_WAIT_TIME);
+	pp_netkey_ctx_init(&pp_net1);
+
+	struct priv_test_ctx ctx = {
+		.beacon_type = BEACON_TYPE_PRIVATE_NET_ID,
+		.node_id_addr = NULL,
+	};
+
+	uint16_t itr = 4;
+	static uint8_t old_idx = 0xff;
+	static struct {
+		struct pp_netkey_ctx *net;
+		uint16_t recv_cnt;
+		int64_t start;
+	} net_ctx[2] = {
+		{.net = &pp_net0},
+
+		{.net = &pp_net1},
+	};
+
+	while (itr) {
+		/* Scan for net ID from both networks  */
+		ASSERT_TRUE(wait_for_beacon(priv_scan_cb, 2, NULL, &ctx));
+
+		for (size_t i = 0; i < ARRAY_SIZE(net_ctx); i++) {
+			if (beacon.pp_hash ==
+			    pp_hash_calc(net_ctx[i].net, beacon.pp_random, NULL)) {
+				if (old_idx == 0xff) {
+					/* Received first Net ID advertisment */
+					old_idx = i;
+					net_ctx[i].start = k_uptime_get();
+					net_ctx[i].recv_cnt++;
+				} else if (old_idx != i) {
+					/* Received Net ID adv for new subnet */
+
+					/* Verify last Net ID adv result */
+					ASSERT_IN_RANGE(k_uptime_get() - net_ctx[old_idx].start,
+							MAX_TIMEOUT - 1000, MAX_TIMEOUT);
+					ASSERT_IN_RANGE(net_ctx[old_idx].recv_cnt, 9, 10);
+					net_ctx[old_idx].recv_cnt = 0;
+					old_idx = i;
+
+					/* The test ends when all itterations are completed */
+					itr--;
+
+					net_ctx[i].start = k_uptime_get();
+					net_ctx[i].recv_cnt++;
+				} else {
+					/* Received another Net ID adv from same subnet*/
+					net_ctx[i].recv_cnt++;
+				}
+
+				break;
+			}
+		}
+	}
+
+	PASS();
+}
+
+static void test_tx_priv_gatt_proxy(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &prb_comp);
+	provision(&tx_cfg);
+	bt_mesh_iv_update_test(true);
+
+	ASSERT_TRUE(bt_mesh.iv_index == 0);
+
+	/* Disable SNB. */
+	bt_mesh_beacon_set(false);
+	ASSERT_OK_MSG(bt_mesh_scan_disable(), "Failed to disable scanner");
+	ASSERT_OK_MSG(bt_mesh_gatt_proxy_set(BT_MESH_GATT_PROXY_DISABLED),
+		      "Failed to disable gatt proxy");
+	ASSERT_OK_MSG(bt_mesh_priv_gatt_proxy_set(BT_MESH_PRIV_GATT_PROXY_ENABLED),
+		      "Failed to set private gatt proxy");
+
+	/* Wait for proxy connection to complete. */
+	WAIT_FOR_COND(bt_mesh_proxy_srv_connected_cnt() == 1, 10);
+
+	/* Wait a bit so RX device can disable scanner, then start IV update */
+	k_sleep(K_SECONDS(2));
+	ASSERT_TRUE(bt_mesh_iv_update());
+
+	/* Check that IV index has updated */
+	ASSERT_TRUE(bt_mesh.iv_index == 1);
+	PASS();
+}
+
+static void test_rx_priv_gatt_proxy(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &prb_comp);
+	provision(&rx_cfg);
+	bt_mesh_iv_update_test(true);
+
+	ASSERT_TRUE(bt_mesh.iv_index == 0);
+
+	/* Disable SNB. */
+	bt_mesh_beacon_set(false);
+	ASSERT_OK_MSG(bt_mesh_gatt_proxy_set(BT_MESH_GATT_PROXY_DISABLED),
+		      "Failed to disable gatt proxy");
+	ASSERT_OK_MSG(bt_mesh_priv_gatt_proxy_set(BT_MESH_PRIV_GATT_PROXY_ENABLED),
+		      "Failed to set private gatt proxy");
+	ASSERT_OK_MSG(bt_mesh_proxy_connect(TEST_NET_IDX1), "Failed to connect over proxy");
+
+	/* Wait for connection to complete, then disable scanner
+	 * to ensure that all RX communication arrives over GATT.
+	 */
+	WAIT_FOR_COND(bt_mesh_proxy_cli_is_connected(TEST_NET_IDX1), 10);
+	ASSERT_OK_MSG(bt_mesh_scan_disable(), "Failed to disable scanner");
+
+	/* Wait for the IV index to update.
+	 * Verifying that IV index has changed proves that a private
+	 * beacon arrived successfully over the GATT connection.
+	 */
+	WAIT_FOR_COND(bt_mesh.iv_index == 1, 10);
+
+	PASS();
+}
+
+#endif
+
 #endif /* CONFIG_BT_MESH_V1d1 */
 
 #define TEST_CASE(role, name, description)                     \
@@ -1389,12 +1925,20 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, kr_old_key, "Beacon: send old Net Key"),
 	TEST_CASE(tx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(tx, secure_beacon_interval, "Beacon: send secure beacons"),
+	TEST_CASE(tx, beacon_cache,   "Beacon: advertise duplicate SNBs"),
 #if CONFIG_BT_MESH_V1d1
 	TEST_CASE(tx, priv_on_iv_update,   "Private Beacon: send on IV update"),
 	TEST_CASE(tx, priv_on_key_refresh,   "Private Beacon: send on Key Refresh"),
 	TEST_CASE(tx, priv_adv,   "Private Beacon: advertise Private Beacons"),
 	TEST_CASE(tx, priv_invalid,   "Private Beacon: advertise invalid beacons"),
 	TEST_CASE(tx, priv_interleave,   "Private Beacon: advertise interleaved with SNB"),
+	TEST_CASE(tx, priv_beacon_cache,   "Private Beacon: advertise duplicate Private Beacons"),
+#if CONFIG_BT_MESH_GATT_PROXY
+	TEST_CASE(tx, priv_net_id,   "Private Proxy: advertise Net ID"),
+	TEST_CASE(tx, priv_node_id,   "Private Proxy: advertise Node ID"),
+	TEST_CASE(tx, priv_multi_net_id,   "Private Proxy: advertise multiple Net ID"),
+	TEST_CASE(tx, priv_gatt_proxy,   "Private Proxy: Send Private Beacons over GATT"),
+#endif
 #endif
 
 	TEST_CASE(rx, on_iv_update,   "Beacon: receive with IV update flag"),
@@ -1403,10 +1947,18 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, kr_old_key, "Beacon: receive old Net Key"),
 	TEST_CASE(rx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(rx, secure_beacon_interval, "Beacon: receive and send secure beacons"),
+	TEST_CASE(rx, beacon_cache,   "Beacon: receive duplicate SNBs"),
 #if CONFIG_BT_MESH_V1d1
 	TEST_CASE(rx, priv_adv,   "Private Beacon: verify random regeneration"),
 	TEST_CASE(rx, priv_invalid,   "Private Beacon: receive invalid beacons"),
 	TEST_CASE(rx, priv_interleave,   "Private Beacon: interleaved with SNB"),
+	TEST_CASE(rx, priv_beacon_cache,   "Private Beacon: receive duplicate Private Beacons"),
+#if CONFIG_BT_MESH_GATT_PROXY
+	TEST_CASE(rx, priv_net_id,   "Private Proxy: scan for Net ID"),
+	TEST_CASE(rx, priv_node_id,   "Private Proxy: scan for Node ID"),
+	TEST_CASE(rx, priv_multi_net_id,   "Private Proxy: scan for multiple Net ID"),
+	TEST_CASE(rx, priv_gatt_proxy,   "Private Proxy: Receive Private Beacons over GATT"),
+#endif
 #endif
 	BSTEST_END_MARKER
 };

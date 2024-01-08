@@ -1,0 +1,21 @@
+# ADLTC2990 Quad I2C Voltage, Current and Temperature sensor configuration options
+
+# Copyright(c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+config ADLTC2990
+	bool "ADLTC2990 Quad I2C Voltage, Current and Temperature Monitor"
+	default y
+	depends on DT_HAS_ADI_ADLTC2990_ENABLED
+	select I2C
+	help
+	  Enable the driver for Analog Devices LTC2990
+	  Quad I2C Voltage, Current and Temperature Monitor.
+
+config EMUL_ADLTC2990
+	bool "Emulator for ADLTC2990"
+	default y
+	depends on ADLTC2990
+	depends on EMUL
+	help
+	  Enable ADLTC2990 emulator.

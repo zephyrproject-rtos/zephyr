@@ -97,7 +97,7 @@ Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
 
 
 Use this configuration to run basic Zephyr applications and kernel tests,
-for example, with the :ref:`synchronization_sample`:
+for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
@@ -168,7 +168,7 @@ Firstly, we need to explain a few Jailhouse concepts that will be referred to la
   cell can utilize.
 
 * **Root cell**: refers to the cell in which Linux is running. This is the main cell which
-  will contain all the hardware resources that Linux will utilize and will be used used to assign
+  will contain all the hardware resources that Linux will utilize and will be used to assign
   resources to the inmates. The inmates CANNOT use resources such as the CPU that haven't been
   assigned to the root cell.
 

@@ -117,10 +117,10 @@ static void gpio_xmc4xxx_isr(const struct device *dev, int pin)
 }
 #endif
 
+#ifdef CONFIG_XMC4XXX_INTC
 static int gpio_xmc4xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 						enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-#if defined(CONFIG_XMC4XXX_INTC)
 	const struct gpio_xmc4xxx_config *config = dev->config;
 	int port_id = PORT_TO_PORT_ID(config->port);
 
@@ -132,15 +132,8 @@ static int gpio_xmc4xxx_pin_interrupt_configure(const struct device *dev, gpio_p
 	} else {
 		return -EINVAL;
 	}
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(mode);
-	ARG_UNUSED(trig);
-
-	return -ENOTSUP;
-#endif
 }
+#endif
 
 static int gpio_xmc4xxx_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
@@ -215,8 +208,10 @@ static const struct gpio_driver_api gpio_xmc4xxx_driver_api = {
 	.port_set_bits_raw = gpio_xmc4xxx_set_bits_raw,
 	.port_clear_bits_raw = gpio_xmc4xxx_clear_bits_raw,
 	.port_toggle_bits = gpio_xmc4xxx_toggle_bits,
+#ifdef CONFIG_XMC4XXX_INTC
 	.pin_interrupt_configure = gpio_xmc4xxx_pin_interrupt_configure,
-	.manage_callback = IS_ENABLED(CONFIG_XMC4XXX_INTC) ? gpio_xmc4xxx_manage_callback : NULL,
+	.manage_callback = gpio_xmc4xxx_manage_callback,
+#endif
 };
 
 #define GPIO_XMC4XXX_INIT(index)                                                                   \

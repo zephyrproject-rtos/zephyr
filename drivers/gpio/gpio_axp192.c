@@ -170,7 +170,7 @@ static int gpio_axp192_pin_interrupt_configure(const struct device *dev, gpio_pi
 	return -ENOTSUP;
 }
 
-#ifdef CONFIG_GPIO_GET_CONFIG
+#if defined(CONFIG_GPIO_GET_CONFIG) || defined(CONFIG_GPIO_GET_DIRECTION)
 static int gpio_axp192_get_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t *out_flags)
 {
 	const struct gpio_axp192_config *config = dev->config;

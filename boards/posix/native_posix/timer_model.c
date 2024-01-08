@@ -25,7 +25,7 @@
 #include "hw_models_top.h"
 #include "irq_ctrl.h"
 #include "board_soc.h"
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include <zephyr/arch/posix/posix_trace.h>
 #include <zephyr/sys/util.h>
 #include "cmdline.h"

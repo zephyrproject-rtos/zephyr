@@ -104,6 +104,7 @@ static int mpu6050_channel_get(const struct device *dev,
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		mpu6050_convert_temp(val, drv_data->temp);
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -160,7 +161,7 @@ int mpu6050_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (id != MPU6050_CHIP_ID && id != MPU9250_CHIP_ID) {
+	if ((id != MPU6050_CHIP_ID) && (id != MPU9250_CHIP_ID) && (id != MPU6880_CHIP_ID)) {
 		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}

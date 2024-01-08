@@ -60,7 +60,7 @@ int main(void)
 	if (IS_ENABLED(CONFIG_SAMPLE_CAN_BABBLING_FD_MODE)) {
 		err = can_set_mode(dev, CAN_MODE_FD);
 		if (err != 0) {
-			printk("Error setting CAN-FD mode (err %d)", err);
+			printk("Error setting CAN FD mode (err %d)", err);
 			return 0;
 		}
 	}
@@ -109,7 +109,7 @@ int main(void)
 
 	frame.id = CONFIG_SAMPLE_CAN_BABBLING_CAN_ID;
 
-	printk("babbling on %s with %s (%d-bit) CAN ID 0x%0*x, RTR %d, CAN-FD %d\n",
+	printk("babbling on %s with %s (%d-bit) CAN ID 0x%0*x, RTR %d, CAN FD %d\n",
 	       dev->name,
 	       (frame.flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
 	       (frame.flags & CAN_FRAME_IDE) != 0 ? 29 : 11,

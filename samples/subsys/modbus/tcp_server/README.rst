@@ -1,7 +1,8 @@
-.. _modbus-tcp-server-sample:
+.. zephyr:code-sample:: modbus-tcp-server
+   :name: Modbus TCP server
+   :relevant-api: modbus bsd_sockets
 
-Modbus TCP Server Sample
-########################
+   Implement a Modbus TCP server exposing Modbus commands to control LEDs.
 
 Overview
 ********

@@ -7,7 +7,7 @@
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/toolchain.h>
 #include <xtensa/corebits.h>
 #include <xtensa_mmu_priv.h>

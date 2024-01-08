@@ -22,7 +22,8 @@ config XTENSA_MMU_NUM_L2_TABLES
 # via TLB way 4 (which covers 1MB).
 config SRAM_OFFSET
 	hex
-	default 0x100000
+	default 0x100000 if XTENSA_MMU
+	default 0x2400
 
 config KERNEL_VM_OFFSET
 	hex

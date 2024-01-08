@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: AD5592 GPIO Controller
+
+compatible: "adi,ad5592-gpio"
+
+include: gpio-controller.yaml
+
+gpio-cells:
+  - pin
+  - flags

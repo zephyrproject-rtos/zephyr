@@ -14,3 +14,4 @@ supported:
 testing:
   ignore_tags:
     - isotp
+vendor: renesas

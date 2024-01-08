@@ -88,7 +88,7 @@ enum shared_multi_heap_attr {
  */
 struct shared_multi_heap_region {
 	/** Memory heap attribute */
-	unsigned int attr;
+	uint32_t attr;
 
 	/** Memory heap starting virtual address */
 	uintptr_t addr;

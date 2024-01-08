@@ -17,6 +17,7 @@ struct pg_bits {
 	uint32_t CPA_bit;
 };
 
+#ifdef CONFIG_PM_DEVICE
 static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enable)
 {
 	uint16_t SPA_bit_mask = BIT(bits->SPA_bit);
@@ -65,6 +66,8 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 
 	return ret;
 }
+#endif /* CONFIG_PM_DEVICE */
+
 static int pd_intel_adsp_init(const struct device *dev)
 {
 	pm_device_init_suspended(dev);
@@ -73,14 +76,14 @@ static int pd_intel_adsp_init(const struct device *dev)
 
 #define DT_DRV_COMPAT intel_adsp_power_domain
 
-#define POWER_DOMAIN_DEVICE(id)							\
-	static struct pg_bits pd_pg_reg##id = {					\
-		.SPA_bit = DT_INST_PROP(id, bit_position),			\
-		.CPA_bit = DT_INST_PROP(id, bit_position),			\
-	};									\
-	PM_DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_pm_action);			\
-	DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_init, PM_DEVICE_DT_INST_GET(id),\
-			      &pd_pg_reg##id, NULL, POST_KERNEL,                \
+#define POWER_DOMAIN_DEVICE(id)								\
+	static struct pg_bits pd_pg_reg##id = {						\
+		.SPA_bit = DT_INST_PROP(id, bit_position),				\
+		.CPA_bit = DT_INST_PROP(id, bit_position),				\
+	};										\
+	PM_DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_pm_action);				\
+	DEVICE_DT_INST_DEFINE(id, pd_intel_adsp_init, PM_DEVICE_DT_INST_GET(id),	\
+			      &pd_pg_reg##id, NULL, POST_KERNEL,			\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

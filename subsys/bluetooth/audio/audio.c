@@ -34,14 +34,16 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 	}
 
 	for (size_t i = 0; i < size;) {
-		const uint8_t len = ltv[i++];
+		const uint8_t len = ltv[i];
 		struct bt_data data;
 
 		if (i + len > size || len < sizeof(data.type)) {
-			LOG_DBG("Invalid len %u at i = %zu", len, i - 1);
+			LOG_DBG("Invalid len %u at i = %zu", len, i);
 
 			return -EINVAL;
 		}
+
+		i++; /* Increment as we have parsed the len field */
 
 		data.type = ltv[i++];
 		data.data_len = len - sizeof(data.type);

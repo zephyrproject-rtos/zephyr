@@ -11,9 +11,17 @@ config INPUT
 config INPUT_FT5336_INTERRUPT
 	default y
 
+if MIPI_DSI_MCUX_2L
+# Enable color swap in driver
+
+config MIPI_DSI_MCUX_2L_SWAP16
+	default y
+
+endif # MIPI_DSI_MCUX_2L
+
 # Swap 16 bit color setting for LVGL, to send high byte first
 config LV_COLOR_16_SWAP
-	default y
+	default y if !MIPI_DSI_MCUX_2L_SWAP16
 
 config LV_Z_VDB_SIZE
 	default 16

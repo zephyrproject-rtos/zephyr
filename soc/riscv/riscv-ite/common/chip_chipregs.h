@@ -1203,11 +1203,11 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_MSTFSTS1        ECREG(IT8XXX2_SMB_BASE + 0x0E)
 #define IT8XXX2_SMB_MSTFCTRL2       ECREG(IT8XXX2_SMB_BASE + 0x0F)
 #define IT8XXX2_SMB_MSTFSTS2        ECREG(IT8XXX2_SMB_BASE + 0x10)
-#define IT8XXX2_SMB_CHSEF           ECREG(IT8XXX2_SMB_BASE + 0x11)
+#define IT8XXX2_SMB_SMB45CHS        ECREG(IT8XXX2_SMB_BASE + 0x11)
 #define IT8XXX2_SMB_I2CW2RF         ECREG(IT8XXX2_SMB_BASE + 0x12)
 #define IT8XXX2_SMB_IWRFISTA        ECREG(IT8XXX2_SMB_BASE + 0x13)
-#define IT8XXX2_SMB_CHSAB           ECREG(IT8XXX2_SMB_BASE + 0x20)
-#define IT8XXX2_SMB_CHSCD           ECREG(IT8XXX2_SMB_BASE + 0x21)
+#define IT8XXX2_SMB_SMB01CHS        ECREG(IT8XXX2_SMB_BASE + 0x20)
+#define IT8XXX2_SMB_SMB23CHS        ECREG(IT8XXX2_SMB_BASE + 0x21)
 #define IT8XXX2_SMB_SFFCTL          ECREG(IT8XXX2_SMB_BASE + 0x55)
 #define IT8XXX2_SMB_HOSTA(base)     ECREG(base + 0x00)
 #define IT8XXX2_SMB_HOCTL(base)     ECREG(base + 0x01)
@@ -1223,7 +1223,7 @@ enum chip_pll_mode {
 #define IT8XXX2_SMB_SLVISEL         ECREG(IT8XXX2_SMB_BASE + 0x08)
 #define IT8XXX2_SMB_SMB01CHS        ECREG(IT8XXX2_SMB_BASE + 0x09)
 #define IT8XXX2_SMB_SMB23CHS        ECREG(IT8XXX2_SMB_BASE + 0x0A)
-#define IT8XXX2_SMB_SMB4CHS         ECREG(IT8XXX2_SMB_BASE + 0x0B)
+#define IT8XXX2_SMB_SMB45CHS        ECREG(IT8XXX2_SMB_BASE + 0x0B)
 #define IT8XXX2_SMB_SCLKTS_BRGS     ECREG(IT8XXX2_SMB_BASE + 0x80)
 #define IT8XXX2_SMB_SCLKTS_BRGM     ECREG(IT8XXX2_SMB_BASE + 0x81)
 #define IT8XXX2_SMB_CHSBRG          ECREG(IT8XXX2_SMB_BASE + 0x82)
@@ -1321,6 +1321,8 @@ enum chip_pll_mode {
 /* 0x55: Slave A FIFO Control */
 #define IT8XXX2_SMB_HSAPE             BIT(1)
 /* 0x03: Status Register */
+#define IT8XXX2_I2C_BYTE_DONE         BIT(7)
+#define IT8XXX2_I2C_RW                BIT(2)
 #define IT8XXX2_I2C_INT_PEND          BIT(1)
 /* 0x04: Data Hold Time */
 #define IT8XXX2_I2C_SOFT_RST          BIT(7)
@@ -1347,6 +1349,9 @@ enum chip_pll_mode {
 /* 0x13: Nack Status */
 #define IT8XXX2_I2C_NST_CNS           BIT(7)
 #define IT8XXX2_I2C_NST_ID_NACK       BIT(3)
+/* 0x18: Timeout and Arbiter Status */
+#define IT8XXX2_I2C_SCL_TIMEOUT_EN    BIT(7)
+#define IT8XXX2_I2C_SDA_TIMEOUT_EN    BIT(6)
 /* 0x19: Error Status */
 #define IT8XXX2_I2C_ERR_ST_DEV1_EIRQ  BIT(0)
 /* 0x1B: Finish Status */

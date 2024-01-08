@@ -434,7 +434,7 @@ bool dw_dma_is_enabled(const struct device *dev, uint32_t channel)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 
-	return dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN_MASK(channel);
+	return dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN(channel);
 }
 
 int dw_dma_start(const struct device *dev, uint32_t channel)
@@ -809,7 +809,7 @@ int dw_dma_get_status(const struct device *dev, uint32_t channel,
 	const struct dw_dma_dev_cfg *const dev_cfg = dev->config;
 	struct dw_dma_chan_data *chan_data;
 
-	if (channel >= DW_MAX_CHAN) {
+	if (channel >= DW_CHAN_COUNT) {
 		return -EINVAL;
 	}
 

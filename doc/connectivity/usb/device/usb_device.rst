@@ -39,7 +39,8 @@ Audio
 
 There is an experimental implementation of the Audio class. It follows specification
 version 1.00 (``bcdADC 0x0100``) and supports synchronous synchronisation type only.
-See :ref:`usb_audio_headphones_microphone` and :ref:`usb_audio_headset` for reference.
+See :zephyr:code-sample:`usb-audio-headphones-microphone` and
+:zephyr:code-sample:`usb-audio-headset` samples for reference.
 
 Bluetooth HCI USB transport layer
 =================================
@@ -81,6 +82,9 @@ But there are two important differences in behavior to a real UART controller:
   initialized and started, until then any data is discarded
 * If device is connected to the host, it still needs an application
   on the host side which requests the data
+* The CDC ACM poll out implementation follows the API and blocks when the TX
+  ring buffer is full only if the hw-flow-control property is enabled and
+  called from a non-ISR context.
 
 The devicetree compatible property for CDC ACM UART is
 :dtcompatible:`zephyr,cdc-acm-uart`.
@@ -106,7 +110,7 @@ and looks like this:
 		};
 	};
 
-Samples :ref:`usb_cdc-acm` and :ref:`usb_hid-cdc` have similar overlay files.
+Samples :zephyr:code-sample:`usb-cdc-acm` and :zephyr:code-sample:`usb-hid-cdc` have similar overlay files.
 And since no special properties are present, it may seem overkill to use
 devicetree to describe CDC ACM UART.  The motivation behind using devicetree
 is the easy interchangeability of a real UART controller and CDC ACM UART
@@ -117,7 +121,7 @@ Console over CDC ACM UART
 
 With the CDC ACM UART node from above and ``zephyr,console`` property of the
 chosen node, we can describe that CDC ACM UART is to be used with the console.
-A similar overlay file is used by :ref:`cdc-acm-console`.
+A similar overlay file is used by the :zephyr:code-sample:`usb-cdc-acm-console` sample.
 
 .. code-block:: devicetree
 
@@ -166,10 +170,41 @@ CDC ACM UART as backend for a subsystem or application:
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
   for example see :ref:`bluetooth-hci-uart-sample`
 * ``zephyr,ot-uart`` used in OpenThread,
-  for example see :ref:`coprocessor-sample`
+  for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
   for example see :zephyr_file:`samples/subsys/shell/shell_module`
-* ``zephyr,uart-mcumgr`` used by :ref:`smp_svr_sample`
+* ``zephyr,uart-mcumgr`` used by :zephyr:code-sample:`smp-svr` sample
+
+POSIX default tty ECHO mitigation
+---------------------------------
+
+POSIX systems, like Linux, default to enabling ECHO on tty devices. Host side
+application can disable ECHO by calling ``open()`` on the tty device and issuing
+``ioctl()`` (preferably via ``tcsetattr()``) to disable echo if it is not desired.
+Unfortunately, there is an inherent race between the ``open()`` and ``ioctl()``
+where the ECHO is enabled and any characters received (even if host application
+does not call ``read()``) will be echoed back. This issue is especially visible
+when the CDC ACM port is used without any real UART on the other side because
+there is no arbitrary delay due to baud rate.
+
+To mitigate the issue, Zephyr CDC ACM implementation arms IN endpoint with ZLP
+after device is configured. When the host reads the ZLP, which is pretty much
+the best indication that host application has opened the tty device, Zephyr will
+force :kconfig:option:`CONFIG_CDC_ACM_TX_DELAY_MS` millisecond delay before real
+payload is sent. This should allow sufficient time for first, and only first,
+application that opens the tty device to disable ECHO if ECHO is not desired.
+If ECHO is not desired at all from CDC ACM device it is best to set up udev rule
+to disable ECHO as soon as device is connected.
+
+ECHO is particurarly unwanted when CDC ACM instance is used for Zephyr shell,
+because the control characters to set color sent back to shell are interpreted
+as (invalid) command and user will see garbage as a result. While minicom does
+disable ECHO by default, on exit with reset it will restore the termios settings
+to whatever was set on entry. Therefore, if minicom is the first application to
+open the tty device, the exit with reset will enable ECHO back and thus set up
+a problem for the next application (which cannot be mitigated at Zephyr side).
+To prevent the issue it is recommended either to leave minicom without reset or
+to disable ECHO before minicom is started.
 
 DFU
 ===
@@ -177,7 +212,7 @@ DFU
 USB DFU class implementation is tightly coupled to :ref:`dfu` and :ref:`mcuboot_api`.
 This means that the target platform must support the :ref:`flash_img_api` API.
 
-See :ref:`usb_dfu` for reference.
+See :zephyr:code-sample:`usb-dfu` sample for reference.
 
 USB Human Interface Devices (HID) support
 =========================================
@@ -276,7 +311,7 @@ The disadvantage of this is that Kconfig options such as
 :kconfig:option:`CONFIG_HID_INTERRUPT_EP_MPS` apply to all instances. This design
 issue will be fixed in the HID class implementation for the new USB support.
 
-See :ref:`usb_hid` or :ref:`usb_hid-mouse` for reference.
+See :zephyr:code-sample:`usb-hid` or :zephyr:code-sample:`usb-hid-mouse` sample for reference.
 
 Mass Storage Class
 ==================
@@ -286,10 +321,11 @@ access and expose a RAM disk, emulated block device on a flash partition,
 or SD Card to the host. Only one disk instance can be exported at a time.
 
 The disc to be used by the implementation is set by the
-:kconfig:option:`CONFIG_MASS_STORAGE_DISK_NAME` and should be equal to one
-of the options used by the disc access driver that the application wants to expose to
-the host, :kconfig:option:`CONFIG_DISK_RAM_VOLUME_NAME`,
-:kconfig:option:`CONFIG_MMC_VOLUME_NAME`, or :kconfig:option:`CONFIG_SDMMC_VOLUME_NAME`.
+:kconfig:option:`CONFIG_MASS_STORAGE_DISK_NAME` and should be the same as the name
+used by the disc access driver that the application wants to expose to the host.
+SD card disk drivers use options :kconfig:option:`CONFIG_MMC_VOLUME_NAME` or
+:kconfig:option:`CONFIG_SDMMC_VOLUME_NAME`, and flash and RAM disk drivers use
+node property ``disk-name`` to set the disk name.
 
 For the emulated block device on a flash partition, the flash partition and
 flash disk to be used must be described in the devicetree. If a storage partition
@@ -326,7 +362,7 @@ should be the same as ``disk-name`` property.
 The ``disk-property`` "NAND" may be confusing, but it is simply how some file
 systems identifies the disc. Therefore, if the application also accesses the
 file system on the exposed disc, default names should be used, see
-:ref:`usb_mass` for reference.
+:zephyr:code-sample:`usb-mass` sample for reference.
 
 Networking
 ==========
@@ -338,7 +374,7 @@ Ethernet connection between the remote (USB host) and Zephyr network support.
 * CDC EEM class, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_EEM`
 * RNDIS support, enabled with :kconfig:option:`CONFIG_USB_DEVICE_NETWORK_RNDIS`
 
-See :ref:`zperf-sample` or :ref:`sockets-dumb-http-server-sample` for reference.
+See :zephyr:code-sample:`zperf` or :zephyr:code-sample:`socket-dumb-http-server` for reference.
 Typically, users will need to add a configuration file overlay to the build,
 such as :zephyr_file:`samples/net/zperf/overlay-netusb.conf`.
 
@@ -354,7 +390,7 @@ The application should register descriptors such as Capability Descriptor
 using :c:func:`usb_bos_register_cap`. Registered descriptors are added to the root
 BOS descriptor and handled by the stack.
 
-See :ref:`webusb-sample` for reference.
+See :zephyr:code-sample:`webusb` sample for reference.
 
 Implementing a non-standard USB class
 *************************************
@@ -409,14 +445,14 @@ the vendor requests:
 The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
 before transmitting any data.
 
-.. _testing_USB_native_posix:
+.. _testing_USB_native_sim:
 
-Testing over USPIP in native_posix
-***********************************
+Testing over USPIP in native_sim
+********************************
 
 A virtual USB controller implemented through USBIP might be used to test the USB
 device stack. Follow the general build procedure to build the USB sample for
-the native_posix configuration.
+the :ref:`native_sim <native_sim>` configuration.
 
 Run built sample with:
 
@@ -472,35 +508,35 @@ and documented requests.
 
 The following Product IDs are currently used:
 
-+-------------------------------------+--------+
-| Sample                              | PID    |
-+=====================================+========+
-| :ref:`usb_cdc-acm`                  | 0x0001 |
-+-------------------------------------+--------+
-| :ref:`usb_cdc-acm_composite`        | 0x0002 |
-+-------------------------------------+--------+
-| :ref:`usb_hid-cdc`                  | 0x0003 |
-+-------------------------------------+--------+
-| :ref:`cdc-acm-console`              | 0x0004 |
-+-------------------------------------+--------+
-| :ref:`usb_dfu`                      | 0x0005 |
-+-------------------------------------+--------+
-| :ref:`usb_hid`                      | 0x0006 |
-+-------------------------------------+--------+
-| :ref:`usb_hid-mouse`                | 0x0007 |
-+-------------------------------------+--------+
-| :ref:`usb_mass`                     | 0x0008 |
-+-------------------------------------+--------+
-| :ref:`testusb-app`                  | 0x0009 |
-+-------------------------------------+--------+
-| :ref:`webusb-sample`                | 0x000A |
-+-------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-sample`     | 0x000B |
-+-------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-h4-sample`  | 0x000C |
-+-------------------------------------+--------+
-| :ref:`wpanusb-sample`               | 0x000D |
-+-------------------------------------+--------+
++----------------------------------------------------+--------+
+| Sample                                             | PID    |
++====================================================+========+
+| :zephyr:code-sample:`usb-cdc-acm`                  | 0x0001 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid-cdc`                  | 0x0003 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-cdc-acm-console`          | 0x0004 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-dfu`                      | 0x0005 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid`                      | 0x0006 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-hid-mouse`                | 0x0007 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`usb-mass`                     | 0x0008 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`testusb-app`                  | 0x0009 |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`webusb`                       | 0x000A |
++----------------------------------------------------+--------+
+| :ref:`bluetooth-hci-usb-sample`                    | 0x000B |
++----------------------------------------------------+--------+
+| :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`wpan-usb`                     | 0x000D |
++----------------------------------------------------+--------+
 
 The USB device descriptor field ``bcdDevice`` (Device Release Number) represents
 the Zephyr kernel major and minor versions as a binary coded decimal value.

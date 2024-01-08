@@ -1,7 +1,8 @@
-.. _lldp-sample:
+.. zephyr:code-sample:: lldp
+   :name: Link Layer Discovery Protocol (LLDP)
+   :relevant-api: lldp net_l2
 
-LLDP Sample Application
-#######################
+   Enable LLDP support and setup VLANs.
 
 Overview
 ********

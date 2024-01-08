@@ -60,7 +60,7 @@ kHz).
 
 Note that because the test is fundamentally measuring thread
 preemption behavior, it does not run without modification on
-native_posix platforms.  In that emulation environment, threads will
+native_sim platforms. In that emulation environment, threads will
 not be preempted except at specific instrumentation points (e.g. in
 k_busy_wait()) where they will voluntarily release the CPU.
 

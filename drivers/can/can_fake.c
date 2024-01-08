@@ -9,9 +9,9 @@
 #include <zephyr/drivers/can/can_fake.h>
 #include <zephyr/fff.h>
 
-#ifdef CONFIG_ZTEST_NEW_API
+#ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>
-#endif /* CONFIG_ZTEST_NEW_API */
+#endif /* CONFIG_ZTEST */
 
 #define DT_DRV_COMPAT zephyr_fake_can
 
@@ -46,7 +46,7 @@ DEFINE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *,
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
-#ifdef CONFIG_ZTEST_NEW_API
+#ifdef CONFIG_ZTEST
 static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
 	ARG_UNUSED(test);
@@ -68,7 +68,7 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 }
 
 ZTEST_RULE(fake_can_reset_rule, fake_can_reset_rule_before, NULL);
-#endif /* CONFIG_ZTEST_NEW_API */
+#endif /* CONFIG_ZTEST */
 
 static int fake_can_get_core_clock(const struct device *dev, uint32_t *rate)
 {
@@ -138,9 +138,9 @@ static const struct can_driver_api fake_can_driver_api = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-#define FAKE_CAN_INIT(inst)						\
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,\
-			      CONFIG_CAN_INIT_PRIORITY,			\
-			      &fake_can_driver_api);
+#define FAKE_CAN_INIT(inst)						     \
+	CAN_DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL, \
+				  CONFIG_CAN_INIT_PRIORITY,                  \
+				  &fake_can_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_CAN_INIT)

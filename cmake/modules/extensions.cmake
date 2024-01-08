@@ -528,6 +528,10 @@ function(zephyr_library_cc_option)
   endforeach()
 endfunction()
 
+function(zephyr_library_add_dependencies)
+  add_dependencies(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+endfunction()
+
 # Add the existing CMake library 'library' to the global list of
 # Zephyr CMake libraries. This is done automatically by the
 # constructor but must be called explicitly on CMake libraries that do
@@ -1819,6 +1823,12 @@ function(zephyr_linker_sources_ifdef feature_toggle)
   endif()
 endfunction()
 
+function(zephyr_library_add_dependencies_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_library_add_dependencies(${ARGN})
+  endif()
+endfunction()
+
 macro(list_append_ifdef feature_toggle list)
   if(${${feature_toggle}})
     list(APPEND ${list} ${ARGN})
@@ -1962,6 +1972,12 @@ endfunction()
 function(zephyr_linker_sources_ifndef feature_toggle)
   if(NOT ${feature_toggle})
     zephyr_linker_sources(${ARGN})
+  endif()
+endfunction()
+
+function(zephyr_library_add_dependencies_ifndef feature_toggle)
+  if(NOT ${feature_toggle})
+    zephyr_library_add_dependencies(${ARGN})
   endif()
 endfunction()
 
@@ -3267,13 +3283,13 @@ function(dt_node_has_status var)
     return()
   endif()
 
-  dt_prop(${var} PATH ${canonical} PROPERTY status)
+  dt_prop(status PATH ${canonical} PROPERTY status)
 
-  if(NOT DEFINED ${var} OR "${${var}}" STREQUAL ok)
-    set(${var} okay)
+  if(NOT DEFINED status OR status STREQUAL "ok")
+    set(status "okay")
   endif()
 
-  if(${var} STREQUAL ${DT_NODE_STATUS})
+  if(status STREQUAL "${DT_NODE_STATUS}")
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
@@ -4049,8 +4065,8 @@ function(zephyr_linker_dts_section)
     )
   endif()
 
-  dt_node_exists(exists PATH ${DTS_SECTION_PATH})
-  if(NOT ${exists})
+  dt_node_has_status(okay PATH ${DTS_SECTION_PATH} STATUS okay)
+  if(NOT ${okay})
     return()
   endif()
 
@@ -4122,14 +4138,19 @@ function(zephyr_linker_dts_memory)
     return()
   endif()
 
-  dt_node_exists(exists PATH ${DTS_MEMORY_PATH})
-  if(NOT ${exists})
+  dt_node_has_status(okay PATH ${DTS_MEMORY_PATH} STATUS okay)
+  if(NOT ${okay})
     return()
   endif()
 
   dt_reg_addr(addr PATH ${DTS_MEMORY_PATH})
   dt_reg_size(size PATH ${DTS_MEMORY_PATH})
   dt_prop(name PATH ${DTS_MEMORY_PATH} PROPERTY "zephyr,memory-region")
+  if(NOT DEFINED name)
+    message(FATAL_ERROR "zephyr_linker_dts_memory(${ARGV0} ...) missing "
+                        "\"zephyr,memory-region\" property"
+    )
+  endif()
   zephyr_string(SANITIZE name ${name})
 
   zephyr_linker_memory(

@@ -189,8 +189,12 @@ static inline void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt
 #endif
 }
 
-static void mgmt_thread(void)
+static void mgmt_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct mgmt_event_entry mgmt_event;
 
 	while (1) {
@@ -236,29 +240,32 @@ static int mgmt_event_wait_call(struct net_if *iface,
 	net_mgmt_add_event_callback(&sync);
 
 	ret = k_sem_take(sync.sync_call, timeout);
-	if (ret == -EAGAIN) {
-		ret = -ETIMEDOUT;
-	} else {
-		if (!ret) {
-			if (raised_event) {
-				*raised_event = sync.raised_event;
-			}
+	if (ret < 0) {
+		if (ret == -EAGAIN) {
+			ret = -ETIMEDOUT;
+		}
 
-			if (event_iface) {
-				*event_iface = sync_data.iface;
-			}
+		net_mgmt_del_event_callback(&sync);
+		return ret;
+	}
+
+	if (raised_event) {
+		*raised_event = sync.raised_event;
+	}
+
+	if (event_iface) {
+		*event_iface = sync_data.iface;
+	}
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-			if (info) {
-				*info = sync.info;
+	if (info) {
+		*info = sync.info;
 
-				if (info_length) {
-					*info_length = sync.info_length;
-				}
-			}
-#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+		if (info_length) {
+			*info_length = sync.info_length;
 		}
 	}
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
 	return ret;
 }
@@ -340,7 +347,7 @@ void net_mgmt_event_init(void)
 
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
 			K_KERNEL_STACK_SIZEOF(mgmt_stack),
-			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
+			mgmt_thread, NULL, NULL, NULL,
 			THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&mgmt_thread_data, "net_mgmt");
 

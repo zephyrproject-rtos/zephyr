@@ -1,7 +1,8 @@
-.. _usb-c-sink-sample:
+.. zephyr:code-sample:: usb-c-sink
+   :name: Basic USB-C Sink
+   :relevant-api: _usbc_device_api
 
-Basic USB-C SINK
-################
+   Implement a USB-C Power Delivery application in the form of a USB-C Sink.
 
 Overview
 ********

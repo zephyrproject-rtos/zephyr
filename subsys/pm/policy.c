@@ -14,6 +14,7 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/pm/device.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 
@@ -135,6 +136,12 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 	int64_t cyc = -1;
 	uint8_t num_cpu_states;
 	const struct pm_state_info *cpu_states;
+
+#ifdef CONFIG_PM_NEED_ALL_DEVICES_IDLE
+	if (pm_device_is_any_busy()) {
+		return NULL;
+	}
+#endif
 
 	if (ticks != K_TICKS_FOREVER) {
 		cyc = k_ticks_to_cyc_ceil32(ticks);

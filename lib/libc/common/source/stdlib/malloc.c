@@ -11,12 +11,14 @@
 #include <zephyr/sys/math_extras.h>
 #include <string.h>
 #include <zephyr/app_memory/app_memdomain.h>
+#ifdef CONFIG_MULTITHREADING
 #include <zephyr/sys/mutex.h>
+#endif
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/types.h>
 #ifdef CONFIG_MMU
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #endif
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
@@ -31,10 +33,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 # if Z_MALLOC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #  define POOL_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
-#  define MALLOC_SECTION Z_GENERIC_SECTION(K_APP_DMEM_SECTION(z_malloc_partition))
 # else
 #  define POOL_SECTION __noinit
-#  define MALLOC_SECTION
 # endif /* CONFIG_USERSPACE */
 
 # if defined(CONFIG_MMU) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE < 0
@@ -75,6 +75,8 @@ K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 
 #  if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 0
 
+#  define HEAP_STATIC
+
 /* Static allocation of heap in BSS */
 
 #   define HEAP_SIZE	ROUND_UP(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE, HEAP_ALIGN)
@@ -112,15 +114,32 @@ extern char _heap_sentry[];
 
 # endif /* else ALLOCATE_HEAP_AT_STARTUP */
 
-POOL_SECTION static struct sys_heap z_malloc_heap;
-MALLOC_SECTION SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
+Z_LIBC_DATA static struct sys_heap z_malloc_heap;
 
-void *malloc(size_t size)
-{
+#ifdef CONFIG_MULTITHREADING
+Z_LIBC_DATA SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
+
+static inline void
+malloc_lock(void) {
 	int lock_ret;
 
 	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
 	__ASSERT_NO_MSG(lock_ret == 0);
+}
+
+static inline void
+malloc_unlock(void)
+{
+	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
+}
+#else
+#define malloc_lock()
+#define malloc_unlock()
+#endif
+
+void *malloc(size_t size)
+{
+	malloc_lock();
 
 	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
 					   __alignof__(z_max_align_t),
@@ -129,17 +148,14 @@ void *malloc(size_t size)
 		errno = ENOMEM;
 	}
 
-	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
+	malloc_unlock();
 
 	return ret;
 }
 
 void *aligned_alloc(size_t alignment, size_t size)
 {
-	int lock_ret;
-
-	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
-	__ASSERT_NO_MSG(lock_ret == 0);
+	malloc_lock();
 
 	void *ret = sys_heap_aligned_alloc(&z_malloc_heap,
 					   alignment,
@@ -148,7 +164,7 @@ void *aligned_alloc(size_t alignment, size_t size)
 		errno = ENOMEM;
 	}
 
-	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
+	malloc_unlock();
 
 	return ret;
 }
@@ -209,7 +225,7 @@ static int malloc_prepare(void)
 	heap_size = HEAP_SIZE;
 #endif
 
-#if Z_MALLOC_PARTITION_EXISTS
+#if Z_MALLOC_PARTITION_EXISTS && !defined(HEAP_STATIC)
 	z_malloc_partition.start = POINTER_TO_UINT(heap_base);
 	z_malloc_partition.size = heap_size;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
@@ -222,10 +238,7 @@ static int malloc_prepare(void)
 
 void *realloc(void *ptr, size_t requested_size)
 {
-	int lock_ret;
-
-	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
-	__ASSERT_NO_MSG(lock_ret == 0);
+	malloc_lock();
 
 	void *ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr,
 					     __alignof__(z_max_align_t),
@@ -235,19 +248,16 @@ void *realloc(void *ptr, size_t requested_size)
 		errno = ENOMEM;
 	}
 
-	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
+	malloc_unlock();
 
 	return ret;
 }
 
 void free(void *ptr)
 {
-	int lock_ret;
-
-	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
-	__ASSERT_NO_MSG(lock_ret == 0);
+	malloc_lock();
 	sys_heap_free(&z_malloc_heap, ptr);
-	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
+	malloc_unlock();
 }
 
 SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

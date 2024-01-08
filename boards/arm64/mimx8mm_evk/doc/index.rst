@@ -92,7 +92,7 @@ Or kick SMP zephyr.bin:
 
 
 Use this configuration to run basic Zephyr applications and kernel tests,
-for example, with the :ref:`synchronization_sample`:
+for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization

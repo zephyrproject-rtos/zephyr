@@ -10,7 +10,7 @@ jobs:
   clang-build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.26.4
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.5
       options: '--entrypoint /bin/bash'
       volumes:
         - /repo-cache/zephyrproject:/github/cache/zephyrproject
@@ -20,7 +20,7 @@ jobs:
         platform: ["native_posix"]
         subset: [1, 2, 3, 4, 5]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.1
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.3
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-16
       COMMIT_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.base_ref }}
@@ -59,6 +59,7 @@ jobs:
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config --global update.narrow true
+          west config manifest.group-filter -- +ci,+optional
           # In some cases modules are left in a state where they can't be
           # updated (i.e. when we cancel a job and the builder is killed),
           # So first retry to update, if that does not work, remove all modules

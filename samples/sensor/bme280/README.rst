@@ -73,6 +73,34 @@ The devicetree overlay :zephyr_file:`samples/sensor/bme280/arduino_i2c.overlay`
 works on any board with a properly configured Arduino pin-compatible I2C
 peripheral.
 
+BME280 via Raspberry Pi Pico
+============================
+
+The default assignment of the built-in spi0 device on the :ref:`rpi_pico` is
+to GPIO16 through GPIO19.  With the sensor wired to those lines, build and
+flash with:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/bme280
+   :goals: build flash
+   :board: rpi_pico
+
+An alternative is to use PIO serving as an SPI device.  The devicetree
+overlay :zephyr_file:`samples/sensor/bme280/rpi_pico_spi_pio.overlay`
+demonstrates using PIO SPI with the sensor wired to arbitrary GPIO pins.
+Build and flash with:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/bme280
+   :goals: build flash
+   :board: rpi_pico
+   :gen-args: -DDTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay
+
+Note that miso-gpios, mosi-gpios, and clk-gpios need to be assigned to the
+selected PIO device in pinctrl, while cs-gpios should not;  chip select is
+controlled by the SPI context and must operate as a conventional GPIO pin,
+not under control of PIO.
+
 Board-specific overlays
 =======================
 

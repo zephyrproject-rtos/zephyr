@@ -200,7 +200,7 @@ struct bt_iso_chan_io_qos {
 	 */
 	struct bt_iso_chan_path		*path;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Maximum PDU size
 	 *
 	 *  Maximum size, in octets, of the payload from link layer to link
@@ -219,7 +219,7 @@ struct bt_iso_chan_io_qos {
 	 *  Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
 	 */
 	uint8_t burst_number;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** @brief ISO Channel QoS structure. */
@@ -241,7 +241,7 @@ struct bt_iso_chan_qos {
 	 */
 	struct bt_iso_chan_io_qos	*tx;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Number of subevents
 	 *
 	 *  Maximum number of subevents in each CIS or BIS event.
@@ -249,7 +249,7 @@ struct bt_iso_chan_qos {
 	 *  Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
 	 */
 	uint8_t num_subevents;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** @brief ISO Channel Data Path structure. */
@@ -335,19 +335,33 @@ struct bt_iso_cig_param {
 	 */
 	uint8_t num_cis;
 
-	/** @brief Channel interval in us.
+	/** @brief Channel interval in us for SDUs sent from Central to Peripheral.
 	 *
 	 *  Value range BT_ISO_SDU_INTERVAL_MIN - BT_ISO_SDU_INTERVAL_MAX.
 	 */
-	uint32_t interval;
+	uint32_t c_to_p_interval;
 
-	/** @brief Channel Latency in ms.
+	/** @brief Channel interval in us for SDUs sent from Peripheral to Central.
+	 *
+	 *  Value range BT_ISO_SDU_INTERVAL_MIN - BT_ISO_SDU_INTERVAL_MAX.
+	 */
+	uint32_t p_to_c_interval;
+
+	/** @brief Channel Latency in ms for SDUs sent from Central to Peripheral
 	 *
 	 *  Value range BT_ISO_LATENCY_MIN - BT_ISO_LATENCY_MAX.
 	 *
 	 *  This value is ignored if any advanced ISO parameters are set.
 	 */
-	uint16_t latency;
+	uint16_t c_to_p_latency;
+
+	/** @brief Channel Latency in ms for SDUs sent from Peripheral to Central
+	 *
+	 *  Value range BT_ISO_LATENCY_MIN - BT_ISO_LATENCY_MAX.
+	 *
+	 *  This value is ignored if any advanced ISO parameters are set.
+	 */
+	uint16_t p_to_c_latency;
 
 	/** @brief Channel peripherals sleep clock accuracy Only for CIS
 	 *
@@ -371,7 +385,7 @@ struct bt_iso_cig_param {
 	 */
 	uint8_t framing;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Central to Peripheral flush timeout
 	 *
 	 *  The flush timeout in multiples of ISO_Interval for each payload sent
@@ -398,8 +412,7 @@ struct bt_iso_cig_param {
 	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
 	 */
 	uint16_t iso_interval;
-#endif /* CONFIG_BT_ISO_ADVANCED */
-
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** ISO connection parameters structure */
@@ -470,7 +483,7 @@ struct bt_iso_big_create_param {
 	 */
 	uint8_t bcode[BT_ISO_BROADCAST_CODE_SIZE];
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/** @brief Immediate Repetition Count
 	 *
 	 *  The number of times the scheduled payloads are transmitted in a
@@ -496,7 +509,7 @@ struct bt_iso_big_create_param {
 	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
 	 */
 	uint16_t iso_interval;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /** @brief Broadcast Isochronous Group (BIG) Sync Parameters */
@@ -808,10 +821,17 @@ int bt_iso_cig_terminate(struct bt_iso_cig *cig);
  */
 int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
 
-/** @brief Disconnect ISO channel
+/** @brief Disconnect connected ISO channel
  *
- *  Disconnect ISO channel, if the connection is pending it will be
- *  canceled and as a result the channel disconnected() callback is called.
+ *  Disconnect connected ISO channel.
+ *
+ *  If the device is a central and the connection is pending it will be
+ *  canceled and as a result the channel bt_iso_chan_ops.disconnected() callback is called.
+ *
+ *  If the device is a peripheral and the connection is pending it will be rejected, as a peripheral
+ *  shall wait for a CIS Established event (which may trigger a bt_iso_chan_ops.disconnected()
+ *  callback in case of an error).
+ *
  *  Regarding to input parameter, to get details see reference description
  *  to bt_iso_chan_connect() API above.
  *

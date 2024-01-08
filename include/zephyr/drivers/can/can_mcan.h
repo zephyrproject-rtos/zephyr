@@ -127,6 +127,17 @@
 #define CAN_MCAN_PSR_ACT  GENMASK(4, 3)
 #define CAN_MCAN_PSR_LEC  GENMASK(2, 0)
 
+enum can_mcan_psr_lec {
+	CAN_MCAN_PSR_LEC_NO_ERROR    = 0,
+	CAN_MCAN_PSR_LEC_STUFF_ERROR = 1,
+	CAN_MCAN_PSR_LEC_FORM_ERROR  = 2,
+	CAN_MCAN_PSR_LEC_ACK_ERROR   = 3,
+	CAN_MCAN_PSR_LEC_BIT1_ERROR  = 4,
+	CAN_MCAN_PSR_LEC_BIT0_ERROR  = 5,
+	CAN_MCAN_PSR_LEC_CRC_ERROR   = 6,
+	CAN_MCAN_PSR_LEC_NO_CHANGE   = 7
+};
+
 /* Transmitter Delay Compensation register */
 #define CAN_MCAN_TDCR      0x048
 #define CAN_MCAN_TDCR_TDCO GENMASK(14, 8)
@@ -629,7 +640,7 @@
  */
 #define CAN_MCAN_DT_MRAM_DEFINE(node_id, _name)                                                    \
 	BUILD_ASSERT(CAN_MCAN_DT_MRAM_OFFSET(node_id) == 0, "offset must be 0");                   \
-	static char __noinit __nocache __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
+	static char __nocache_noinit __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
 
 /**
  * @brief Assert that the Message RAM configuration meets the Bosch M_CAN IP core restrictions

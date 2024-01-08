@@ -14,7 +14,7 @@ start_docker \
 	"/usr/local/sbin/ptp4l -2 -f /etc/gptp.cfg -m -q -l 6 -S -i eth0" \
 	|| return $?
 
-# For native_posix gPTP run, the delay threshold needs to be huge
+# For native_sim gPTP run, the delay threshold needs to be huge
 start_zephyr "$overlay" "-DCONFIG_NET_SAMPLE_RUN_DURATION=10" \
 	         "-DCONFIG_NET_GPTP_NEIGHBOR_PROP_DELAY_THR=12000000"
 

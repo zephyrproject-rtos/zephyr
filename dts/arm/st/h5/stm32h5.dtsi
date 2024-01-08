@@ -263,14 +263,12 @@
 			status = "disabled";
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
-			vbat-channel = <2>;
-			temp-channel = <16>;
-			vref-channel = <17>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		rtc: rtc@44007800 {
@@ -444,9 +442,7 @@
 			interrupt-names = "LINE_0", "LINE_1";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};

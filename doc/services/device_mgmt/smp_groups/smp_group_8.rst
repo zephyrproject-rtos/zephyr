@@ -112,32 +112,49 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"           : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+--------------------------------------------------+
-    | "off"                 | offset the response is for                       |
-    +-----------------------+--------------------------------------------------+
-    | "data"                | chunk of data read from file; it is CBOR encoded |
-    |                       | stream of bytes with embedded size;              |
-    |                       | "data" appears only in responses where "rc" is 0 |
-    +-----------------------+--------------------------------------------------+
-    | "len"                 | length of file, this field is only mandatory     |
-    |                       | when "off" is 0                                  |
-    +-----------------------+--------------------------------------------------+
-    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
-    |                       | only appears if non-zero (error condition).      |
-    +-----------------------+--------------------------------------------------+
-
-In case when "rc" is not 0, success, the other fields will not appear.
+    +------------------+-------------------------------------------------------------------------+
+    | "off"            | offset the response is for.                                             |
+    +------------------+-------------------------------------------------------------------------+
+    | "data"           | chunk of data read from file; it is CBOR encoded stream of bytes with   |
+    |                  | embedded size; "data" appears only in responses where "rc" is 0.        |
+    +------------------+-------------------------------------------------------------------------+
+    | "len"            | length of file, this field is only mandatory when "off" is 0.           |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 File upload
 ***********
@@ -204,15 +221,15 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "off"                 | offset to start/continue upload at                |
+    | "off"                 | offset to start/continue upload at.               |
     +-----------------------+---------------------------------------------------+
     | "data"                | chunk of data to write to the file;               |
-    |                       | it is CBOR encoded with length embedded           |
+    |                       | it is CBOR encoded with length embedded.          |
     +-----------------------+---------------------------------------------------+
-    | "name"                | absolute path to a file                           |
+    | "name"                | absolute path to a file.                          |
     +-----------------------+---------------------------------------------------+
     | "len"                 | length of file, this field is only mandatory      |
-    |                       | when "off" is 0                                   |
+    |                       | when "off" is 0.                                  |
     +-----------------------+---------------------------------------------------+
 
 File upload response
@@ -239,23 +256,44 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. .. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------+
-    | "off"                 | offset of last successfully written data.   |
-    +-----------------------+---------------------------------------------+
-    | "rc"                  | :c:enum:`mcumgr_err_t`                      |
-    |                       | only appears if non-zero (error condition). |
-    +-----------------------+---------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "off"            | offset of last successfully written data.                               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 File status
 ***********
@@ -291,7 +329,7 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "name"                | absolute path to a file                           |
+    | "name"                | absolute path to a file.                          |
     +-----------------------+---------------------------------------------------+
 
 File status response
@@ -318,25 +356,44 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------+
-    | "len"                 | length of file (in bytes)                   |
-    +-----------------------+---------------------------------------------+
-    | "rc"                  | :c:enum:`mcumgr_err_t`                      |
-    |                       | only appears if non-zero (error condition). |
-    +-----------------------+---------------------------------------------+
-
-In case when "rc" is not 0, success, the other fields will not appear.
+    +------------------+-------------------------------------------------------------------------+
+    | "len"            | length of file (in bytes).                                              |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 File hash/checksum
 ******************
@@ -381,18 +438,18 @@ where:
     :align: center
 
     +-----------------------+---------------------------------------------------+
-    | "name"                | absolute path to a file                           |
+    | "name"                | absolute path to a file.                          |
     +-----------------------+---------------------------------------------------+
     | "type"                | type of hash/checksum to perform                  |
     |                       | :ref:`mcumgr_group_8_hash_checksum_types` or omit |
-    |                       | to use default                                    |
+    |                       | to use default.                                   |
     +-----------------------+---------------------------------------------------+
     | "off"                 | offset to start hash/checksum calculation at      |
-    |                       | (optional, 0 if not provided)                     |
+    |                       | (optional, 0 if not provided).                    |
     +-----------------------+---------------------------------------------------+
     | "len"                 | maximum length of data to read from file to       |
     |                       | generate hash/checksum with (optional, full file  |
-    |                       | size if not provided)                             |
+    |                       | size if not provided).                            |
     +-----------------------+---------------------------------------------------+
 
 .. _mcumgr_group_8_hash_checksum_types:
@@ -441,34 +498,52 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+--------------------------------------------------+
-    | "rc"                  | :c:enum:`mcumgr_err_t`                           |
-    |                       | only appears if non-zero (error condition).      |
-    +-----------------------+--------------------------------------------------+
-    | "type"                | type of hash/checksum that was performed         |
-    |                       | :ref:`mcumgr_group_8_hash_checksum_types`        |
-    +-----------------------+--------------------------------------------------+
-    | "off"                 | offset that hash/checksum calculation started at |
-    |                       | (only present if off is not 0)                   |
-    +-----------------------+--------------------------------------------------+
-    | "len"                 | length of input data used for hash/checksum      |
-    |                       | generation (in bytes)                            |
-    +-----------------------+--------------------------------------------------+
-    | "output"              | output hash/checksum                             |
-    +-----------------------+--------------------------------------------------+
-
-In case when "rc" is not 0, success, the other fields will not appear.
+    +------------------+-------------------------------------------------------------------------+
+    | "type"           | type of hash/checksum that was performed                                |
+    |                  | :ref:`mcumgr_group_8_hash_checksum_types`.                              |
+    +------------------+-------------------------------------------------------------------------+
+    | "off"            | offset that hash/checksum calculation started at (only present if not   |
+    |                  | 0).                                                                     |
+    +------------------+-------------------------------------------------------------------------+
+    | "len"            | length of input data used for hash/checksum generation (in bytes).      |
+    +------------------+-------------------------------------------------------------------------+
+    | "output"         | output hash/checksum.                                                   |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+
 
 Supported file hash/checksum types
 **********************************
@@ -523,28 +598,50 @@ CBOR data of successful response:
 
 In case of error the CBOR data takes form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"       : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+---------------------------------------------------+
-    | <hash_checksum_name>  | name of the hash/checksum type                    |
-    |                       | :ref:`mcumgr_group_8_hash_checksum_types`         |
-    +-----------------------+---------------------------------------------------+
-    | "format"              | format that the hash/checksum returns where 0 is  |
-    |                       | for numerical and 1 is for byte array.            |
-    +-----------------------+---------------------------------------------------+
-    | "size"                | size (in bytes) of output hash/checksum response. |
-    +-----------------------+---------------------------------------------------+
-
-In case when "rc" is not 0, success, the other fields will not appear.
+    +----------------------+-------------------------------------------------------------------------+
+    | <hash_checksum_name> | name of the hash/checksum type                                          |
+    |                      | :ref:`mcumgr_group_8_hash_checksum_types`.                              |
+    +----------------------+-------------------------------------------------------------------------+
+    | "format"             | format that the hash/checksum returns where 0 is for numerical and 1 is |
+    |                      | for byte array.                                                         |
+    +----------------------+-------------------------------------------------------------------------+
+    | "size"               | size (in bytes) of output hash/checksum response.                       |
+    +----------------------+-------------------------------------------------------------------------+
+    | "err" -> "group"     | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                      | appears if an error is returned when using SMP version 2.               |
+    +----------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"        | contains the index of the group-based error code. Only appears if       |
+    |                      | non-zero (error condition) when using SMP version 2.                    |
+    +----------------------+-------------------------------------------------------------------------+
+    | "rc"                 | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                      | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +----------------------+-------------------------------------------------------------------------+
 
 File close
 **********
@@ -585,18 +682,39 @@ File close response header:
 The command sends an empty CBOR map as data if successful.
 In case of error the CBOR data takes the form:
 
-.. code-block:: none
+.. tabs::
 
-    {
-        (str)"rc"           : (int)
-    }
+   .. group-tab:: SMP version 2
+
+      .. code-block:: none
+
+          {
+              (str)"err" : {
+                  (str)"group"    : (uint)
+                  (str)"rc"       : (uint)
+              }
+          }
+
+   .. group-tab:: SMP version 1 (and non-group SMP version 2)
+
+      .. code-block:: none
+
+          {
+              (str)"rc"       : (int)
+          }
 
 where:
 
 .. table::
     :align: center
 
-    +-----------------------+------------------------------------------------+
-    | "rc"                  | :c:enum:`mcumgr_err_t`                         |
-    |                       | only appears if non-zero (error condition).    |
-    +-----------------------+------------------------------------------------+
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "group" | :c:enum:`mcumgr_group_t` group of the group-based error code. Only      |
+    |                  | appears if an error is returned when using SMP version 2.               |
+    +------------------+-------------------------------------------------------------------------+
+    | "err" -> "rc"    | contains the index of the group-based error code. Only appears if       |
+    |                  | non-zero (error condition) when using SMP version 2.                    |
+    +------------------+-------------------------------------------------------------------------+
+    | "rc"             | :c:enum:`mcumgr_err_t` only appears if non-zero (error condition) when  |
+    |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
+    +------------------+-------------------------------------------------------------------------+

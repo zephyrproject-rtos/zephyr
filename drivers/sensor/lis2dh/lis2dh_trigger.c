@@ -18,6 +18,14 @@
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 #include "lis2dh.h"
 
+static const gpio_flags_t gpio_int_cfg[5] = {
+			GPIO_INT_EDGE,
+			GPIO_INT_EDGE_RISING,
+			GPIO_INT_EDGE_FALLING,
+			GPIO_INT_LEVEL_HIGH,
+			GPIO_INT_LEVEL_LOW,
+			};
+
 static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
@@ -25,7 +33,7 @@ static inline void setup_int1(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					enable
-					? GPIO_INT_LEVEL_ACTIVE
+					? gpio_int_cfg[cfg->int1_mode]
 					: GPIO_INT_DISABLE);
 }
 
@@ -123,13 +131,14 @@ static inline void setup_int2(const struct device *dev,
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					enable
-					? GPIO_INT_LEVEL_ACTIVE
+					? gpio_int_cfg[cfg->int2_mode]
 					: GPIO_INT_DISABLE);
 }
 
-static int lis2dh_trigger_anym_set(const struct device *dev,
-				   sensor_trigger_handler_t handler,
-				   const struct sensor_trigger *trig)
+/* common handler for any motion and tap triggers */
+static int lis2dh_trigger_anym_tap_set(const struct device *dev,
+				       sensor_trigger_handler_t handler,
+				       const struct sensor_trigger *trig)
 {
 	const struct lis2dh_config *cfg = dev->config;
 	struct lis2dh_data *lis2dh = dev->data;
@@ -152,19 +161,34 @@ static int lis2dh_trigger_anym_set(const struct device *dev,
 	}
 
 	/* disable any movement interrupt events */
-	status = lis2dh->hw_tf->write_reg(
-		dev,
-		cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_CFG : LIS2DH_REG_INT2_CFG,
-		0);
+	status = lis2dh->hw_tf->write_reg(dev,
+					  cfg->hw.anym_on_int1 ?
+						LIS2DH_REG_INT1_CFG :
+						LIS2DH_REG_INT2_CFG,
+					  0);
+	/* disable any click interrupt events */
+	status = lis2dh->hw_tf->write_reg(dev,
+					  LIS2DH_REG_CFG_CLICK,
+					  0);
 
 	/* make sure any pending interrupt is cleared */
-	status = lis2dh->hw_tf->read_reg(
-		dev,
-		cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_SRC : LIS2DH_REG_INT2_SRC,
-		&reg_val);
+	status = lis2dh->hw_tf->read_reg(dev,
+					 cfg->hw.anym_on_int1 ?
+						LIS2DH_REG_INT1_SRC :
+						LIS2DH_REG_INT2_SRC,
+					 &reg_val);
+	status = lis2dh->hw_tf->read_reg(dev,
+					 LIS2DH_REG_CLICK_SRC,
+					 &reg_val);
 
-	lis2dh->handler_anymotion = handler;
-	lis2dh->trig_anymotion = trig;
+	if (trig->type == SENSOR_TRIG_DELTA) {
+		lis2dh->handler_anymotion = handler;
+		lis2dh->trig_anymotion = trig;
+	} else if (trig->type == SENSOR_TRIG_TAP) {
+		lis2dh->handler_tap = handler;
+		lis2dh->trig_tap = trig;
+	}
+
 	if ((handler == NULL) || (status < 0)) {
 		return status;
 	}
@@ -181,17 +205,71 @@ static int lis2dh_trigger_anym_set(const struct device *dev,
 	return 0;
 }
 
+static int lis2dh_trigger_anym_set(const struct device *dev,
+				   sensor_trigger_handler_t handler,
+				   const struct sensor_trigger *trig)
+{
+	return lis2dh_trigger_anym_tap_set(dev, handler, trig);
+}
+
+static int lis2dh_trigger_tap_set(const struct device *dev,
+				  sensor_trigger_handler_t handler,
+				  const struct sensor_trigger *trig)
+{
+	return lis2dh_trigger_anym_tap_set(dev, handler, trig);
+}
+
 static int lis2dh_start_trigger_int2(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
+	int status = 0;
+	uint8_t reg = 0, mask = 0, val = 0;
 
 	setup_int2(dev, true);
 
-	return lis2dh->hw_tf->write_reg(
-		dev,
-		cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_CFG : LIS2DH_REG_INT2_CFG,
-		(cfg->hw.anym_mode << LIS2DH_INT_CFG_MODE_SHIFT) | LIS2DH_ANYM_CFG);
+	bool has_anyt = (lis2dh->handler_tap != NULL);
+	bool has_anym = (lis2dh->handler_anymotion != NULL);
+
+	/* configure any motion interrupt */
+	reg  = cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_CFG : LIS2DH_REG_INT2_CFG;
+	val  = (cfg->hw.anym_mode << LIS2DH_INT_CFG_MODE_SHIFT) | LIS2DH_ANYM_CFG;
+	status = lis2dh->hw_tf->write_reg(dev, reg, val);
+	if (status < 0) {
+		LOG_ERR("Failed to configure any motion interrupt");
+		return status;
+	}
+
+	/* enable any motion detection on int line */
+	reg  = cfg->hw.anym_on_int1 ? LIS2DH_REG_CTRL3 : LIS2DH_REG_CTRL6;
+	mask = cfg->hw.anym_on_int1 ? LIS2DH_EN_IA_INT1 : LIS2DH_EN_IA_INT2;
+	val  = has_anym ? mask : 0;
+	status = lis2dh->hw_tf->update_reg(dev, reg, mask, val);
+	if (status < 0) {
+		LOG_ERR("Failed to enable any motion detection on int line");
+		return status;
+	}
+
+	/* configure tap interrupt on all axes */
+	reg  = LIS2DH_REG_CFG_CLICK;
+	mask = LIS2DH_EN_CLICK_XS | LIS2DH_EN_CLICK_YS | LIS2DH_EN_CLICK_ZS;
+	val  = has_anyt ? mask : 0;
+	status = lis2dh->hw_tf->update_reg(dev, reg, mask, val);
+	if (status < 0) {
+		LOG_ERR("Failed to configure tap interrupt");
+		return status;
+	}
+
+	/* set click detection on int line */
+	reg  = cfg->hw.anym_on_int1 ? LIS2DH_REG_CTRL3 : LIS2DH_REG_CTRL6;
+	mask = cfg->hw.anym_on_int1 ? LIS2DH_EN_CLICK_INT1 : LIS2DH_EN_CLICK_INT2;
+	val  = has_anyt ? mask : 0;
+	status = lis2dh->hw_tf->update_reg(dev, reg, mask, val);
+	if (status < 0) {
+		LOG_ERR("Failed to enable click detection on int line");
+		return status;
+	}
+	return 0;
 }
 
 int lis2dh_trigger_set(const struct device *dev,
@@ -203,6 +281,8 @@ int lis2dh_trigger_set(const struct device *dev,
 		return lis2dh_trigger_drdy_set(dev, trig->chan, handler, trig);
 	} else if (trig->type == SENSOR_TRIG_DELTA) {
 		return lis2dh_trigger_anym_set(dev, handler, trig);
+	} else if (trig->type == SENSOR_TRIG_TAP) {
+		return lis2dh_trigger_tap_set(dev, handler, trig);
 	}
 
 	return -ENOTSUP;
@@ -243,11 +323,17 @@ int lis2dh_acc_slope_config(const struct device *dev,
 		LOG_INF("int2_ths=0x%x range_g=%d ums2=%u", reg_val,
 			    range_g, slope_th_ums2 - 1);
 
+		/* Configure threshold for the any motion recognition */
 		status = lis2dh->hw_tf->write_reg(dev,
 						  cfg->hw.anym_on_int1 ?
-								LIS2DH_REG_INT1_THS :
-								LIS2DH_REG_INT2_THS,
+							LIS2DH_REG_INT1_THS :
+							LIS2DH_REG_INT2_THS,
 						  reg_val);
+
+		/* Configure threshold for the Click recognition */
+		status = lis2dh->hw_tf->write_reg(dev,
+						  LIS2DH_REG_CFG_CLICK_THS,
+						  LIS2DH_CLICK_LIR | reg_val);
 	} else { /* SENSOR_ATTR_SLOPE_DUR */
 		/*
 		 * slope duration is measured in number of samples:
@@ -259,10 +345,16 @@ int lis2dh_acc_slope_config(const struct device *dev,
 
 		LOG_INF("int2_dur=0x%x", val->val1);
 
+		/* Configure time limit for the any motion recognition */
 		status = lis2dh->hw_tf->write_reg(dev,
 						  cfg->hw.anym_on_int1 ?
-								LIS2DH_REG_INT1_DUR :
-								LIS2DH_REG_INT2_DUR,
+							LIS2DH_REG_INT1_DUR :
+							LIS2DH_REG_INT2_DUR,
+						  val->val1);
+
+		/* Configure time limit for the Click recognition */
+		status = lis2dh->hw_tf->write_reg(dev,
+						  LIS2DH_REG_TIME_LIMIT,
 						  val->val1);
 	}
 
@@ -358,7 +450,6 @@ static void lis2dh_thread_cb(const struct device *dev)
 			TRIGGED_INT1)) {
 		if (likely(lis2dh->handler_drdy != NULL)) {
 			lis2dh->handler_drdy(dev, lis2dh->trig_drdy);
-
 		}
 
 		/* Reactivate level triggered interrupt if handler did not
@@ -374,7 +465,7 @@ static void lis2dh_thread_cb(const struct device *dev)
 	if (cfg->gpio_int.port &&
 			atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			TRIGGED_INT2)) {
-		uint8_t reg_val;
+		uint8_t reg_val = 0;
 
 		if (cfg->hw.anym_latch) {
 			/* clear interrupt to de-assert int line */
@@ -387,18 +478,34 @@ static void lis2dh_thread_cb(const struct device *dev)
 				LOG_ERR("clearing interrupt 2 failed: %d", status);
 				return;
 			}
+		}
+
+		if (likely(lis2dh->handler_anymotion != NULL) &&
+				(reg_val >> LIS2DH_INT_CFG_MODE_SHIFT)) {
+			lis2dh->handler_anymotion(dev, lis2dh->trig_anymotion);
 
 			LOG_DBG("@tick=%u int2_src=0x%x", k_cycle_get_32(), reg_val);
 		}
 
-		if (likely(lis2dh->handler_anymotion != NULL)) {
-			lis2dh->handler_anymotion(dev, lis2dh->trig_anymotion);
+		/* read click interrupt */
+		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CLICK_SRC,
+						 &reg_val);
+		if (status < 0) {
+			LOG_ERR("clearing interrupt 2 failed: %d", status);
+			return;
+		}
+
+		if (likely(lis2dh->handler_tap != NULL) &&
+				(reg_val & LIS2DH_CLICK_SRC_SCLICK)) {
+			lis2dh->handler_tap(dev, lis2dh->trig_tap);
+
+			LOG_DBG("@tick=%u click_src=0x%x", k_cycle_get_32(), reg_val);
 		}
 
 		/* Reactivate level triggered interrupt if handler did not
 		 * disable itself
 		 */
-		if (lis2dh->handler_anymotion != NULL) {
+		if (lis2dh->handler_anymotion || lis2dh->handler_tap) {
 			setup_int2(dev, true);
 		}
 
@@ -407,8 +514,13 @@ static void lis2dh_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER_OWN_THREAD
-static void lis2dh_thread(struct lis2dh_data *lis2dh)
+static void lis2dh_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct lis2dh_data *lis2dh = p1;
+
 	while (1) {
 		k_sem_take(&lis2dh->gpio_sem, K_FOREVER);
 		lis2dh_thread_cb(lis2dh->dev);
@@ -439,7 +551,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	k_sem_init(&lis2dh->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lis2dh->thread, lis2dh->thread_stack, CONFIG_LIS2DH_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis2dh_thread, lis2dh, NULL, NULL,
+			lis2dh_thread, lis2dh, NULL, NULL,
 			K_PRIO_COOP(CONFIG_LIS2DH_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	lis2dh->work.handler = lis2dh_work_cb;
@@ -522,49 +634,45 @@ check_gpio_int:
 	}
 
 	LOG_INF("%s: int2 on %s.%02u", dev->name,
-				       cfg->gpio_int.port->name,
-				       cfg->gpio_int.pin);
+	   cfg->gpio_int.port->name,
+	   cfg->gpio_int.pin);
 
 	/* disable interrupt in case of warm (re)boot */
-	status = lis2dh->hw_tf->write_reg(
-		dev,
-		cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_CFG : LIS2DH_REG_INT2_CFG,
-		0);
+	status = lis2dh->hw_tf->write_reg(dev,
+					  cfg->hw.anym_on_int1 ?
+						LIS2DH_REG_INT1_CFG :
+						LIS2DH_REG_INT2_CFG,
+					  0);
+	if (status < 0) {
+		LOG_ERR("Interrupt disable reg write failed (%d)", status);
+		return status;
+	}
+	status = lis2dh->hw_tf->write_reg(dev,
+					  LIS2DH_REG_CFG_CLICK,
+					  0);
 	if (status < 0) {
 		LOG_ERR("Interrupt disable reg write failed (%d)", status);
 		return status;
 	}
 
 	(void)memset(raw, 0, sizeof(raw));
-	status = lis2dh->hw_tf->write_data(
-		dev,
-		cfg->hw.anym_on_int1 ? LIS2DH_REG_INT1_THS : LIS2DH_REG_INT2_THS,
-		raw, sizeof(raw));
+	status = lis2dh->hw_tf->write_data(dev,
+					   cfg->hw.anym_on_int1 ?
+						LIS2DH_REG_INT1_THS :
+						LIS2DH_REG_INT2_THS,
+					   raw, sizeof(raw));
 	if (status < 0) {
 		LOG_ERR("Burst write to THS failed (%d)", status);
 		return status;
 	}
 
-	if (cfg->hw.anym_on_int1) {
-		/* enable interrupt 1 on int1 line */
-		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL3,
-						   LIS2DH_EN_INT1_INT1,
-						   LIS2DH_EN_INT1_INT1);
-		if (cfg->hw.anym_latch) {
-			/* latch int1 line interrupt */
-			status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
-							  LIS2DH_EN_LIR_INT1);
-		}
-	} else {
-		/* enable interrupt 2 on int2 line */
-		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL6,
-						   LIS2DH_EN_INT2_INT2,
-						   LIS2DH_EN_INT2_INT2);
-		if (cfg->hw.anym_latch) {
-			/* latch int2 line interrupt */
-			status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL5,
-							  LIS2DH_EN_LIR_INT2);
-		}
+	if (cfg->hw.anym_latch) {
+		/* latch line interrupt */
+		status = lis2dh->hw_tf->write_reg(dev,
+						  LIS2DH_REG_CTRL5,
+						  cfg->hw.anym_on_int1 ?
+							LIS2DH_EN_LIR_INT1 :
+							LIS2DH_EN_LIR_INT2);
 	}
 
 	if (status < 0) {

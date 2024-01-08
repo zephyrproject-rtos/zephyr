@@ -222,7 +222,7 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Nucleo L433RC-P website:
-   http://www.st.com/en/evaluation-tools/nucleo-l433rc-p.html
+   https://www.st.com/en/evaluation-tools/nucleo-l433rc-p.html
 
 .. _ST Nucleo L433RC-P User Manual:
    https://www.st.com/resource/en/user_manual/dm00387966.pdf

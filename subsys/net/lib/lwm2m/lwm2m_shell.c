@@ -22,10 +22,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <lwm2m_util.h>
 
 #define LWM2M_HELP_CMD "LwM2M commands"
-#define LWM2M_HELP_SEND "LwM2M SEND operation\nsend [OPTION]... [PATH]...\n" \
-	"Root-level operation is unsupported"
-#define LWM2M_HELP_EXEC "Execute a resource\nexec PATH [PARAM]\n"
-#define LWM2M_HELP_READ "Read value from LwM2M resource\nread PATH [OPTIONS]\n" \
+#define LWM2M_HELP_SEND "send PATHS\nLwM2M SEND operation\n"
+#define LWM2M_HELP_EXEC "exec PATH [PARAM]\nExecute a resource\n"
+#define LWM2M_HELP_READ "read PATH [OPTIONS]\nRead value from LwM2M resource\n" \
 	"-x \tRead value as hex stream (default)\n" \
 	"-s \tRead value as string\n" \
 	"-b \tRead value as bool (1/0)\n" \
@@ -33,27 +32,33 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"-sX\tRead value as intX_t\n" \
 	"-f \tRead value as float\n" \
 	"-t \tRead value as time_t\n"
-#define LWM2M_HELP_WRITE "Write into LwM2M resource\nwrite PATH [OPTIONS] VALUE\n" \
+#define LWM2M_HELP_WRITE "write PATH [OPTIONS] VALUE\nWrite into LwM2M resource\n" \
 	"-s \tWrite value as string (default)\n" \
 	"-b \tWrite value as bool\n" \
 	"-uX\tWrite value as uintX_t\n" \
 	"-sX\tWrite value as intX_t\n" \
 	"-f \tWrite value as float\n" \
 	"-t \tWrite value as time_t\n"
-#define LWM2M_HELP_START "Start the LwM2M RD (Registration / Discovery) Client\n" \
-	"start EP_NAME [BOOTSTRAP FLAG]\n" \
+#define LWM2M_HELP_CREATE "create PATH\nCreate object or resource instance\n"
+#define LWM2M_HELP_DELETE "delete PATH\nDelete object or resource instance\n"
+#define LWM2M_HELP_START "start EP_NAME [BOOTSTRAP FLAG]\n" \
+	"Start the LwM2M RD (Registration / Discovery) Client\n" \
 	"-b \tSet the bootstrap flag (default 0)\n"
-#define LWM2M_HELP_STOP "Stop the LwM2M RD (De-register) Client\nstop [OPTIONS]\n" \
+#define LWM2M_HELP_STOP "stop [OPTIONS]\nStop the LwM2M RD (De-register) Client\n" \
 	"-f \tForce close the connection\n"
 #define LWM2M_HELP_UPDATE "Trigger Registration Update of the LwM2M RD Client\n"
 #define LWM2M_HELP_PAUSE "LwM2M engine thread pause"
 #define LWM2M_HELP_RESUME "LwM2M engine thread resume"
 #define LWM2M_HELP_LOCK "Lock the LwM2M registry"
 #define LWM2M_HELP_UNLOCK "Unlock the LwM2M registry"
-#define LWM2M_HELP_CACHE "Enable data cache for resource\n" \
-	"cache PATH NUM\n" \
+#define LWM2M_HELP_CACHE "cache PATH NUM\nEnable data cache for resource\n" \
 	"PATH is LwM2M path\n" \
 	"NUM how many elements to cache\n" \
+
+static void send_cb(enum lwm2m_send_status status)
+{
+	LOG_INF("SEND status: %d\n", status);
+}
 
 static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 {
@@ -86,7 +91,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
-	ret = lwm2m_send_cb(ctx, lwm2m_path_list, path_cnt, NULL);
+	ret = lwm2m_send_cb(ctx, lwm2m_path_list, path_cnt, send_cb);
 
 	if (ret < 0) {
 		shell_error(sh, "can't do send operation, request failed (%d)\n", ret);
@@ -323,8 +328,10 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	} else if (strcmp(dtype, "-f") == 0) {
 		double new = 0;
 
-		lwm2m_atof(value, &new); /* Convert string -> float */
-		ret = lwm2m_set_f64(&path, new);
+		ret = lwm2m_atof(value, &new); /* Convert string -> float */
+		if (ret == 0) {
+			ret = lwm2m_set_f64(&path, new);
+		}
 	} else { /* All the types using stdlib funcs*/
 		char *e;
 
@@ -370,6 +377,65 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	return 0;
+}
+
+static int cmd_create_or_delete(const struct shell *sh, bool delete, size_t argc, char **argv)
+{
+	struct lwm2m_obj_path path;
+	int ret;
+
+	if (argc < 2) {
+		shell_error(sh, "No object ID given\n");
+		shell_help(sh);
+		return -EINVAL;
+	}
+
+	ret = lwm2m_string_to_path(argv[1], &path, '/');
+	if (ret < 0) {
+		shell_error(sh, "failed to read path (%d)\n", ret);
+		return -ENOEXEC;
+	}
+
+	if (delete) {
+		switch (path.level) {
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			ret = lwm2m_delete_res_inst(&path);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			ret = lwm2m_delete_object_inst(&path);
+			break;
+		default:
+			return -ENOEXEC;
+		}
+	} else {
+		switch (path.level) {
+		case LWM2M_PATH_LEVEL_RESOURCE_INST:
+			ret = lwm2m_create_res_inst(&path);
+			break;
+		case LWM2M_PATH_LEVEL_OBJECT_INST:
+			ret = lwm2m_create_object_inst(&path);
+			break;
+		default:
+			return -ENOEXEC;
+		}
+	}
+
+	if (ret < 0) {
+		shell_error(sh, "operation failed, %d\n", ret);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_create(const struct shell *sh, size_t argc, char **argv)
+{
+	return cmd_create_or_delete(sh, false, argc, argv);
+}
+
+static int cmd_delete(const struct shell *sh, size_t argc, char **argv)
+{
+	return cmd_create_or_delete(sh, true, argc, argv);
 }
 
 static int cmd_start(const struct shell *sh, size_t argc, char **argv)
@@ -561,6 +627,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(exec, NULL, LWM2M_HELP_EXEC, cmd_exec, 2, 1),
 	SHELL_CMD_ARG(read, NULL, LWM2M_HELP_READ, cmd_read, 2, 1),
 	SHELL_CMD_ARG(write, NULL, LWM2M_HELP_WRITE, cmd_write, 3, 1),
+	SHELL_CMD_ARG(create, NULL, LWM2M_HELP_CREATE, cmd_create, 2, 0),
+	SHELL_CMD_ARG(delete, NULL, LWM2M_HELP_DELETE, cmd_delete, 2, 0),
+	SHELL_CMD_ARG(cache, NULL, LWM2M_HELP_CACHE, cmd_cache, 3, 0),
 	SHELL_CMD_ARG(start, NULL, LWM2M_HELP_START, cmd_start, 2, 2),
 	SHELL_CMD_ARG(stop, NULL, LWM2M_HELP_STOP, cmd_stop, 1, 1),
 	SHELL_CMD_ARG(update, NULL, LWM2M_HELP_UPDATE, cmd_update, 1, 0),
@@ -568,7 +637,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(resume, NULL, LWM2M_HELP_RESUME, cmd_resume, 1, 0),
 	SHELL_CMD_ARG(lock, NULL, LWM2M_HELP_LOCK, cmd_lock, 1, 0),
 	SHELL_CMD_ARG(unlock, NULL, LWM2M_HELP_UNLOCK, cmd_unlock, 1, 0),
-	SHELL_CMD_ARG(cache, NULL, LWM2M_HELP_CACHE, cmd_cache, 3, 0),
 
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,

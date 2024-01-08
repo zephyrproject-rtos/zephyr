@@ -14,11 +14,13 @@
  */
 
 #include <errno.h>
+#include <string.h>
+
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/speculation.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
 
 struct fd_entry {
@@ -41,17 +43,23 @@ static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 	{
 		/* STDIN */
 		.vtable = &stdinout_fd_op_vtable,
-		.refcount = ATOMIC_INIT(1)
+		.refcount = ATOMIC_INIT(1),
+		.lock = Z_MUTEX_INITIALIZER(fdtable[0].lock),
+		.cond = Z_CONDVAR_INITIALIZER(fdtable[0].cond),
 	},
 	{
 		/* STDOUT */
 		.vtable = &stdinout_fd_op_vtable,
-		.refcount = ATOMIC_INIT(1)
+		.refcount = ATOMIC_INIT(1),
+		.lock = Z_MUTEX_INITIALIZER(fdtable[1].lock),
+		.cond = Z_CONDVAR_INITIALIZER(fdtable[1].cond),
 	},
 	{
 		/* STDERR */
 		.vtable = &stdinout_fd_op_vtable,
-		.refcount = ATOMIC_INIT(1)
+		.refcount = ATOMIC_INIT(1),
+		.lock = Z_MUTEX_INITIALIZER(fdtable[2].lock),
+		.cond = Z_CONDVAR_INITIALIZER(fdtable[2].cond),
 	},
 #else
 	{
@@ -123,6 +131,30 @@ static int _check_fd(int fd)
 
 	return 0;
 }
+
+#ifdef CONFIG_ZTEST
+bool fdtable_fd_is_initialized(int fd)
+{
+	struct k_mutex ref_lock;
+	struct k_condvar ref_cond;
+
+	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
+		return false;
+	}
+
+	ref_lock = (struct k_mutex)Z_MUTEX_INITIALIZER(fdtable[fd].lock);
+	if (memcmp(&ref_lock, &fdtable[fd].lock, sizeof(ref_lock)) != 0) {
+		return false;
+	}
+
+	ref_cond = (struct k_condvar)Z_CONDVAR_INITIALIZER(fdtable[fd].cond);
+	if (memcmp(&ref_cond, &fdtable[fd].cond, sizeof(ref_cond)) != 0) {
+		return false;
+	}
+
+	return true;
+}
+#endif /* CONFIG_ZTEST */
 
 void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
@@ -231,7 +263,7 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 	 * This call is a no-op if obj is invalid or points to something
 	 * not a kernel object.
 	 */
-	z_object_recycle(obj);
+	k_object_recycle(obj);
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;

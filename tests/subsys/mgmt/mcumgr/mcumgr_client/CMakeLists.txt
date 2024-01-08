@@ -14,4 +14,4 @@ FILE(GLOB app_sources
 
 target_sources(app PRIVATE ${app_sources})
 
-add_compile_definitions(CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER=1)
+zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)

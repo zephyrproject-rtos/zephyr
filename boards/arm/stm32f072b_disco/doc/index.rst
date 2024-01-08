@@ -203,17 +203,17 @@ References
 .. target-notes::
 
 .. _STM32F072B-DISCO website:
-   http://www.st.com/en/evaluation-tools/32f072bdiscovery.html
+   https://www.st.com/en/evaluation-tools/32f072bdiscovery.html
 
 
 .. _STM32F072B-DISCO board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00099401.pdf
+   https://www.st.com/resource/en/user_manual/dm00099401.pdf
 
 .. _STM32F072RB on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f072rb.html
+   https://www.st.com/en/microcontrollers/stm32f072rb.html
 
 .. _STM32F072xB reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00031936.pdf
+   https://www.st.com/resource/en/reference_manual/dm00031936.pdf
 
 .. _SK Pang CAN breakout board:
    https://www.skpang.co.uk/products/can-bus-can-fd-breakout-board-5v-supply-and-5v-logic

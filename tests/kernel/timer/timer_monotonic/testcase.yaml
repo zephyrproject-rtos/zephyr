@@ -15,3 +15,11 @@ tests:
     extra_configs:
       - CONFIG_APIC_TSC_DEADLINE_TIMER=y
       - CONFIG_HPET_TIMER=n
+  kernel.timer.monotonic.icount_off:
+    # Extra test for GH-48608
+    tags:
+      - kernel
+      - timer
+    platform_allow: mps2_an385
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n

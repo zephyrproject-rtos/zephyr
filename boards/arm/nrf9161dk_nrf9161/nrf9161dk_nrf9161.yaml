@@ -19,3 +19,4 @@ supported:
   - spi
   - watchdog
   - counter
+vendor: nordic

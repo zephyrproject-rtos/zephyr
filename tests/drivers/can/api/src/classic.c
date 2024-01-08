@@ -785,7 +785,7 @@ ZTEST_USER(can_classic, test_send_invalid_dlc)
 }
 
 /**
- * @brief Test that CAN-FD format frames are rejected in non-FD mode.
+ * @brief Test that CAN FD format frames are rejected in non-FD mode.
  */
 ZTEST_USER(can_classic, test_send_fd_format)
 {
@@ -797,7 +797,7 @@ ZTEST_USER(can_classic, test_send_fd_format)
 	frame.flags = CAN_FRAME_FDF;
 
 	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
-	zassert_equal(err, -ENOTSUP, "sent a CAN-FD format frame in non-FD mode");
+	zassert_equal(err, -ENOTSUP, "sent a CAN FD format frame in non-FD mode");
 }
 
 /**
@@ -1031,10 +1031,8 @@ ZTEST_USER(can_classic, test_set_bitrate_while_started)
  */
 ZTEST_USER(can_classic, test_set_timing_while_started)
 {
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
 	int err;
-
-	timing.sjw = CAN_SJW_NO_CHANGE;
 
 	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, TEST_SAMPLE_POINT);
 	zassert_ok(err, "failed to calculate timing (err %d)", err);

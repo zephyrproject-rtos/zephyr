@@ -100,8 +100,12 @@ static int sleep_time_valid(uint32_t start, uint32_t end, uint32_t dur)
 	return dt >= dur && dt <= (dur + TICK_MARGIN);
 }
 
-static void test_thread(int arg1, int arg2)
+static void test_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	uint32_t start_tick;
 	uint32_t end_tick;
 
@@ -171,8 +175,11 @@ static void irq_offload_isr(const void *arg)
 	k_wakeup((k_tid_t) arg);
 }
 
-static void helper_thread(int arg1, int arg2)
+static void helper_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 	/* Wake the test thread */
@@ -205,7 +212,7 @@ ZTEST(sleep, test_sleep)
 
 	test_thread_id = k_thread_create(&test_thread_data, test_thread_stack,
 					 THREAD_STACK,
-					 (k_thread_entry_t) test_thread,
+					 test_thread,
 					 0, 0, NULL, TEST_THREAD_PRIORITY,
 					 0, K_NO_WAIT);
 
@@ -213,7 +220,7 @@ ZTEST(sleep, test_sleep)
 
 	helper_thread_id = k_thread_create(&helper_thread_data,
 					   helper_thread_stack, THREAD_STACK,
-					   (k_thread_entry_t) helper_thread,
+					   helper_thread,
 					   0, 0, NULL, HELPER_THREAD_PRIORITY,
 					   0, K_NO_WAIT);
 

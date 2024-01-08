@@ -15,3 +15,4 @@ supported:
   - usb_device
 ram: 96
 flash: 512
+vendor: seeed

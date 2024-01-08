@@ -19,7 +19,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = < 0x0 >;
-			riscv,isa = "rv64imac";
+			riscv,isa = "rv64imac_zicsr_zfencei";
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -33,7 +33,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = < 0x1 >;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -47,7 +47,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = < 0x2 >;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -61,7 +61,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = < 0x3 >;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -75,7 +75,7 @@
 			compatible = "riscv";
 			device_type = "cpu";
 			reg = < 0x4 >;
-			riscv,isa = "rv64imafdc";
+			riscv,isa = "rv64gc";
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -121,10 +121,7 @@
 			interrupt-controller;
 			interrupts-extended = <&hlic0 11
 						&hlic1 11>;
-			reg = <0x0c000000 0x00002000
-					0x0c002000 0x001fe000
-					0x0c200000 0x3e000000>;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <187>;
 		};

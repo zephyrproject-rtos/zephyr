@@ -32,3 +32,4 @@ supported:
   - can
   - watchdog
   - adc
+vendor: nxp

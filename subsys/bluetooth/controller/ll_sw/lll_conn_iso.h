@@ -15,9 +15,10 @@ struct lll_conn_iso_stream_rxtx {
 	uint64_t ft:8;             /* Flush timeout (FT) */
 	uint64_t bn:4;             /* Burst number (BN) */
 	uint64_t phy:3;            /* PHY */
-	uint64_t rfu:1;
-	uint8_t bn_curr:4;        /* Current burst number */
+	uint64_t rfu0:1;
 
+	uint8_t bn_curr:4;        /* Current burst number */
+	uint8_t rfu1:4;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct ccm ccm;
@@ -74,16 +75,25 @@ struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
 	uint16_t handle;      /* CIG handle (internal) */
-	uint8_t  num_cis:5;   /* Number of CISes in this CIG */
-	uint8_t  role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
-	uint8_t  paused:1;    /* 1: CIG is paused */
+
+	/* Resumption information */
+	uint16_t resume_cis;  /* CIS handle to schedule at resume */
+
+	/* ISO group information */
+	uint32_t num_cis:5;   /* Number of CISes in this CIG */
+	uint32_t role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
+	uint32_t paused:1;    /* 1: CIG is paused */
+	uint32_t rfu0:1;
+
+	/* ISO interval to calculate timestamp under FT > 1,
+	 * maximum ISO interval of 4 seconds can be represented in 22-bits.
+	 */
+	uint32_t iso_interval_us:22;
+	uint32_t rfu1:2;
 
 	/* Accumulates LLL prepare callback latencies */
 	uint16_t latency_prepare;
 	uint16_t latency_event;
-
-	/* Resumption information */
-	uint16_t resume_cis;  /* CIS handle to schedule at resume */
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	/* Window widening. Relies on vendor specific conversion macros, e.g.

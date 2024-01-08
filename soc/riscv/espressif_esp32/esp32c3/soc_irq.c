@@ -18,7 +18,7 @@
 
 #include <zephyr/kernel_structs.h>
 #include <string.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 #include <soc.h>
 #include <zephyr/arch/riscv/arch.h>
 

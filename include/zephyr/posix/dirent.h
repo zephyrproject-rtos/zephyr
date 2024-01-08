@@ -24,9 +24,9 @@ struct dirent {
 };
 
 /* Directory related operations */
-extern DIR *opendir(const char *dirname);
-extern int closedir(DIR *dirp);
-extern struct dirent *readdir(DIR *dirp);
+DIR *opendir(const char *dirname);
+int closedir(DIR *dirp);
+struct dirent *readdir(DIR *dirp);
 
 #ifdef __cplusplus
 }

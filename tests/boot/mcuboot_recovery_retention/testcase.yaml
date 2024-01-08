@@ -21,13 +21,13 @@ common:
       - "Secondary image: magic"
       - "Boot source: none"
 tests:
-  mcuboot.recovery.retention:
+  bootloader.mcuboot.recovery.retention:
     platform_allow: nrf52840dk_nrf52840
     tags:
       - mcuboot
       - sysbuild
       - recovery
-  mcuboot.recovery.retention.mem:
+  bootloader.mcuboot.recovery.retention.mem:
     platform_allow: nrf52840dk_nrf52840
     extra_args:
       - OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_mem.conf"

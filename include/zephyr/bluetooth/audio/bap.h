@@ -20,6 +20,12 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
 #define BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_METADATA_LEN
 #define BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS    CONFIG_BT_BAP_SCAN_DELEGATOR_MAX_SUBGROUPS
@@ -400,7 +406,9 @@ struct bt_bap_scan_delegator_cb {
 	 *                           requested for the sync.
 	 * @param[in]  bis_sync_req  Array of bitfields of which BIS indexes
 	 *                           that is requested to sync for each subgroup
-	 *                           by the Broadcast Assistant.
+	 *                           by the Broadcast Assistant. A value of 0
+	 *                           indicates a request to terminate the BIG
+	 *                           sync.
 	 *
 	 * @return 0 in case of accept, or other value to reject.
 	 */
@@ -477,6 +485,10 @@ struct bt_bap_stream {
 
 	/** Stream user data */
 	void *user_data;
+
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	uint16_t _prev_seq_num;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
 	/* Internally used list node */
 	sys_snode_t _node;
@@ -1043,6 +1055,35 @@ struct bt_bap_unicast_group_param {
 	 *  @note This is a recommendation to the controller, which the controller may ignore.
 	 */
 	uint8_t packing;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	/** @brief Central to Peripheral flush timeout
+	 *
+	 *  The flush timeout in multiples of ISO_Interval for each payload sent
+	 *  from the Central to Peripheral.
+	 *
+	 *  Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX
+	 */
+	uint8_t c_to_p_ft;
+
+	/** @brief Peripheral to Central flush timeout
+	 *
+	 *  The flush timeout in multiples of ISO_Interval for each payload sent
+	 *  from the Peripheral to Central.
+	 *
+	 *  Value range from @ref BT_ISO_FT_MIN to @ref BT_ISO_FT_MAX.
+	 */
+	uint8_t p_to_c_ft;
+
+	/** @brief ISO interval
+	 *
+	 *  Time between consecutive CIS anchor points.
+	 *
+	 *  Value range from @ref BT_ISO_ISO_INTERVAL_MIN to
+	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /**
@@ -1400,7 +1441,7 @@ struct bt_bap_broadcast_source_subgroup_param {
 };
 
 /** Broadcast Source create parameters */
-struct bt_bap_broadcast_source_create_param {
+struct bt_bap_broadcast_source_param {
 	/** The number of parameters in @p subgroup_params */
 	size_t params_count;
 
@@ -1433,6 +1474,34 @@ struct bt_bap_broadcast_source_create_param {
 	 *   [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
 	 */
 	uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	/** @brief Immediate Repetition Count
+	 *
+	 *  The number of times the scheduled payloads are transmitted in a
+	 *  given event.
+	 *
+	 *  Value range from @ref BT_ISO_MIN_IRC to @ref BT_ISO_MAX_IRC.
+	 */
+	uint8_t irc;
+
+	/** @brief Pre-transmission offset
+	 *
+	 *  Offset used for pre-transmissions.
+	 *
+	 *  Value range from @ref BT_ISO_MIN_PTO to @ref BT_ISO_MAX_PTO.
+	 */
+	uint8_t pto;
+
+	/** @brief ISO interval
+	 *
+	 *  Time between consecutive BIS anchor points.
+	 *
+	 *  Value range from @ref BT_ISO_ISO_INTERVAL_MIN to
+	 *  @ref BT_ISO_ISO_INTERVAL_MAX.
+	 */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /**
@@ -1451,7 +1520,7 @@ struct bt_bap_broadcast_source_create_param {
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *param,
+int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **source);
 
 /**
@@ -1460,15 +1529,21 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_create_param *
  * Reconfigure an audio broadcast source with a new codec and codec quality of
  * service parameters. This can only be done when the source is stopped.
  *
+ * Since this may modify the Broadcast Audio Source Endpoint (BASE),
+ * bt_bap_broadcast_source_get_base() should be called after this to get the new BASE information.
+ *
+ * If the @p param.params_count is smaller than the number of subgroups that have been created in
+ * the Broadcast Source, only the first @p param.params_count subgroups are updated. If a stream
+ * exist in a subgroup not part of @p param, then that stream is left as is (i.e. it is not removed;
+ * the only way to remove a stream from a Broadcast Source is to recreate the Broadcast Source).
+ *
  * @param source      Pointer to the broadcast source
- * @param codec_cfg   Codec configuration.
- * @param qos         Quality of Service configuration
+ * @param param       Pointer to parameters used to reconfigure the broadcast source.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
-				     struct bt_audio_codec_cfg *codec_cfg,
-				     struct bt_audio_codec_qos *qos);
+				     struct bt_bap_broadcast_source_param *param);
 
 /**
  * @brief Modify the metadata of an audio broadcast source.
@@ -1536,7 +1611,7 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
  *
  * @return Zero on success or (negative) error code otherwise.
  */
-int bt_bap_broadcast_source_get_id(const struct bt_bap_broadcast_source *source,
+int bt_bap_broadcast_source_get_id(struct bt_bap_broadcast_source *source,
 				   uint32_t *const broadcast_id);
 
 /**
@@ -2072,5 +2147,9 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 					       uint8_t idx);
 
 /** @} */ /* end of bt_bap */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_ */

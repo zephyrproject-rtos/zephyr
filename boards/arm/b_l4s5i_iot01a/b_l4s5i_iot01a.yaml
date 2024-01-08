@@ -21,3 +21,4 @@ supported:
   - spi
   - vl53l0x
   - watchdog
+vendor: st

@@ -8,6 +8,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE          hwinfo_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO             hwinfo_weak_impl.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_SHELL       hwinfo_shell.c)
 
+zephyr_library_sources_ifdef(CONFIG_HWINFO_CC13XX_CC26XX hwinfo_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_ESP32       hwinfo_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_GECKO       hwinfo_gecko.c)
 zephyr_library_sources_ifdef(CONFIG_HWINFO_IMXRT       hwinfo_imxrt.c)

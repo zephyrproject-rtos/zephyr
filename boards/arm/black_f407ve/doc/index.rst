@@ -202,7 +202,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to BLACK_F407VE
 ---------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 Run a serial host program to connect with your board:
 
@@ -235,7 +235,7 @@ You can debug an application in the usual way.  Here is an example for the
    https://stm32-base.org/boards/STM32F407VET6-STM32-F4VE-V2.0.html
 
 .. _STM32F407VE on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32f407ve.html
+   https://www.st.com/en/microcontrollers/stm32f407ve.html
 
 .. _STM32F407VET6 black board:
    https://os.mbed.com/users/hudakz/code/STM32F407VET6_Hello/

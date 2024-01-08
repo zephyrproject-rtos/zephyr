@@ -10,6 +10,7 @@
 #
 # <vendor-prefix><TAB><Full name of vendor>
 
+aaeon	AAEON Technology Inc.
 abb	ABB
 abilis	Abilis Systems
 abracon	Abracon Corporation
@@ -213,6 +214,7 @@ fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
 fii	Foxconn Industrial Internet
+fintek	Feature Integration Technology Inc.
 firefly	Firefly
 focaltech	FocalTech Systems Co.,Ltd
 frida	Shenzhen Frida LCD Co., Ltd.
@@ -242,6 +244,7 @@ google	Google, Inc.
 greeled	GreeLed Electronic Ltd.
 grinn	Grinn
 grmn	Garmin Limited
+gss	Gas Sensing Solutions Ltd.
 gumstix	Gumstix, Inc.
 hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
@@ -351,6 +354,7 @@ lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
+ltr	LiteOn OptoElectronics
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
 m5stack	M5Stack
@@ -562,6 +566,7 @@ simcom	SIMCom Wireless Solutions Co., LTD
 simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
+sinowealth	Sino Wealth Electronic Ltd
 sipeed	Shenzhen Sipeed Technology Co., Ltd.
 sirf	SiRF Technology, Inc.
 sis	Silicon Integrated Systems Corp.
@@ -579,6 +584,7 @@ sony	Sony Corporation
 spansion	Spansion Inc.
 sparkfun	SparkFun Electronics
 sprd	Spreadtrum Communications Inc.
+sqn	Sequans Communications
 sst	Silicon Storage Technology, Inc.
 sstar	Xiamen Xingchen(SigmaStar) Technology Co., Ltd. (formerly part of MStar Semiconductor, Inc.)
 st	STMicroelectronics
@@ -604,6 +610,7 @@ tdo	Shangai Top Display Optoelectronics Co., Ltd
 technexion	TechNexion
 technologic	Technologic Systems
 telink	Telink Semiconductor
+telit	Telit Cinterion
 tempo	Tempo Semiconductor
 techstar	Shenzhen Techstar Electronics Co., Ltd.
 terasic	Terasic Inc.

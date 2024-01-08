@@ -627,6 +627,20 @@ def test_dependencies():
     assert edt.get_node("/") in edt.get_node("/in-dir-1").depends_on
     assert edt.get_node("/in-dir-1") in edt.get_node("/").required_by
 
+def test_child_dependencies():
+    '''Test dependencies relashionship with child nodes propagated to parent'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    dep_node = edt.get_node("/child-binding-dep")
+
+    assert dep_node in edt.get_node("/child-binding").depends_on
+    assert dep_node in edt.get_node("/child-binding/child-1/grandchild").depends_on
+    assert dep_node in edt.get_node("/child-binding/child-2").depends_on
+    assert edt.get_node("/child-binding") in dep_node.required_by
+    assert edt.get_node("/child-binding/child-1/grandchild") in dep_node.required_by
+    assert edt.get_node("/child-binding/child-2") in dep_node.required_by
+
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''
 

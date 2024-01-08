@@ -1,7 +1,8 @@
-.. _zbus-remote-mock-sample:
+.. zephyr:code-sample:: zbus-remote-mock
+   :name: Remote mock sample
+   :relevant-api: zbus_apis
 
-Remote mock sample
-##################
+   Publish to a zbus instance using UART as a bridge.
 
 Overview
 ********
@@ -15,12 +16,12 @@ Building and Running
 ********************
 
 This project outputs to the console. It can be built and executed
-on native_posix as follows:
+on :ref:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/remote_mock
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
 
 Sample Output
@@ -62,7 +63,11 @@ The :file:`remote_mock.py` script can be executed using the following command:
     python3.8 samples/subsys/zbus/remote_mock/remote_mock.py /dev/pts/2
 
 
-Note the run command above prints the value of pts port because it is running in ``native_posix``. Look at the line indicating ``uart_1 connected to pseudotty: /dev/pts/2``. It can be different in your case. If you are using a board, read the documentation to get the correct port destination (in Linux is something like ``/dev/tty...`` or in Windows ``COM...``).
+Note the run command above prints the value of pts port because it is running in
+:ref:`native_sim <native_sim>`.
+Look at the line indicating ``uart_1 connected to pseudotty: /dev/pts/2``.
+It can be different in your case. If you are using a board, read the documentation to get the
+correct port destination (in Linux is something like ``/dev/tty...`` or in Windows ``COM...``).
 
 From the remote mock (Python script), you would see something like this:
 

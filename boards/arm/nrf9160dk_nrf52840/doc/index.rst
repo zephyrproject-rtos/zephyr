@@ -228,7 +228,7 @@ P0.17, P0.18, and P0.19 so that they are routed to nRF52840 pins P0.17, P0.20,
 and P0.15, respectively, add the following in the devicetree overlay in your
 application:
 
-.. code-block:: none
+.. code-block:: devicetree
 
    &nrf_interface_pins_0_2_routing {
            status = "okay";
@@ -237,7 +237,7 @@ application:
 And if you want to, for example, disable routing for the VCOM2 pins, add the
 following:
 
-.. code-block:: none
+.. code-block:: devicetree
 
    &vcom2_pins_routing {
            status = "disabled";
@@ -252,7 +252,7 @@ configure the signal routing between nRF9160 and nRF52840 on the nRF9160 DK.
 For example, to use ``uart1`` on both these chips for communication between
 them, add the following line in the overlays for applications on both sides:
 
-.. code-block:: none
+.. code-block:: devicetree
 
    #include <nrf9160dk_uart1_on_if0_3.dtsi>
 

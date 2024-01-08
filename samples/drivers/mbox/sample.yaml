@@ -1,9 +1,26 @@
 sample:
   name: MBOX IPC sample
+common:
+  sysbuild: true
+  tags: mbox
 tests:
-  sample.drivers.mbox:
-    platform_allow: nrf5340dk_nrf5340_cpuapp adp_xc7k_ae350
+  sample.drivers.mbox.real_hw:
+    platform_allow:
+      - nrf5340dk_nrf5340_cpuapp
+      - adp_xc7k_ae350
+      - mimxrt595_evk_cm33
     integration_platforms:
       - nrf5340dk_nrf5340_cpuapp
-    tags: mbox
     harness: remote
+  sample.drivers.mbox.simu:
+    platform_allow:
+      - nrf5340bsim_nrf5340_cpuapp
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping \\(on channel 0\\)"
+        - "Pong \\(on channel 0\\)"
+        - "Ping \\(on channel 1\\)"
+        - "Pong \\(on channel 1\\)"

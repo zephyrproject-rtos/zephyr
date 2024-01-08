@@ -1214,7 +1214,8 @@ static void csip_set_coordinator_lock_state_read_cb(int err, bool locked)
 
 	if (err || locked) {
 		cur_member = active.members[active.members_handled];
-	} else if (!active.oap_cb(info, active.members, active.members_count)) {
+	} else if (active.oap_cb == NULL || !active.oap_cb(info, active.members,
+		   active.members_count)) {
 		err = -ECANCELED;
 	}
 
@@ -1575,8 +1576,8 @@ static int bt_csip_set_coordinator_get_lock_state(
 		 * so we can just initiate the ordered access procedure (oap) callback directly
 		 * here.
 		 */
-
-		if (!active.oap_cb(active.info, active.members, active.members_count)) {
+		if (active.oap_cb == NULL ||
+		    !active.oap_cb(active.info, active.members, active.members_count)) {
 			err = -ECANCELED;
 		}
 

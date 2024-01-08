@@ -1,0 +1,15 @@
+name: xen_dom0
+append:
+  EXTRA_DTC_OVERLAY_FILE: xen_dom0.overlay
+  EXTRA_CONF_FILE: xen_dom0.conf
+
+boards:
+  qemu_cortex_a53:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/qemu_cortex_a53.overlay
+  rcar_h3ulcb_ca57:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/rcar_h3ulcb_ca57.overlay
+  rcar_salvator_xs_m3:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/rcar_salvator_xs_m3.overlay

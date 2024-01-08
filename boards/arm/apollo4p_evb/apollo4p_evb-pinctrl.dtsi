@@ -161,4 +161,43 @@
 			ambiq,iom-nce-module = <28>;
 		};
 	};
+	mspi0_default: mspi0_default{
+		group1 {
+			pinmux = <MSPI0_0_P64>,
+				 <MSPI0_1_P65>,
+				 <MSPI0_8_P72>;
+		};
+		group2 {
+			pinmux = <NCE57_P57>;
+			drive-push-pull;
+			drive-strength = "0.5";
+			ambiq,iom-nce-module = <32>;
+		};
+	};
+	mspi1_default: mspi1_default{
+		group1 {
+			pinmux = <MSPI1_0_P37>,
+				 <MSPI1_1_P38>,
+				 <MSPI1_8_P45>;
+		};
+		group2 {
+			pinmux = <NCE56_P56>;
+			drive-push-pull;
+			drive-strength = "0.5";
+			ambiq,iom-nce-module = <34>;
+		};
+	};
+	mspi2_default: mspi2_default{
+		group1 {
+			pinmux = <MSPI2_0_P74>,
+				 <MSPI2_1_P75>,
+				 <MSPI2_8_P82>;
+		};
+		group2 {
+			pinmux = <NCE0_P0>;
+			drive-push-pull;
+			drive-strength = "0.5";
+			ambiq,iom-nce-module = <36>;
+		};
+	};
 };

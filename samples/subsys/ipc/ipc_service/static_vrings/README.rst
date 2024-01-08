@@ -1,7 +1,8 @@
-.. _static_vrings_sample:
+.. zephyr:code-sample:: ipc-static-vrings
+   :name: IPC service: static vrings backend
+   :relevant-api: ipc
 
-IPC Service - static vrings - Sample Application
-################################################
+   Send messages between two cores using the IPC service and static vrings backend.
 
 Overview
 ********
@@ -17,6 +18,7 @@ Building the application for nrf5340dk_nrf5340_cpuapp
    :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
    :board: nrf5340dk_nrf5340_cpuapp
    :goals: debug
+   :west-args: --sysbuild
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:

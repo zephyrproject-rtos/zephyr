@@ -69,9 +69,10 @@
 
 	mdio: mdio {
 		compatible = "espressif,esp32-mdio";
-		protocol = "clause 22";
 		clocks = <&rtc ESP32_EMAC_MODULE>;
 		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 
 	pinctrl: pin-controller {
@@ -345,7 +346,6 @@
 			interrupts = <TWAI_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TWAI_MODULE>;
-			sjw = <1>;
 			sample-point = <875>;
 			status = "disabled";
 		};

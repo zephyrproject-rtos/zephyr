@@ -35,12 +35,6 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk
-    platform_allow:
-      - qemu_x86
-      - mimxrt1060_evk
-      - it8xxx2_evb
-      - mimxrt685_evk_cm33
-      - mimxrt595_evk_cm33
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
@@ -79,3 +73,18 @@ tests:
     platform_allow: mr_canhubk3
     extra_configs:
       - CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME=y
+  drivers.flash.common.spi_nor:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor.overlay
+  drivers.flash.common.spi_nor_wp_hold:
+    platform_allow: nrf52840dk_nrf52840
+    extra_args:
+      - OVERLAY_CONFIG=boards/nrf52840dk_flash_spi.conf
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_spi_nor_wp_hold.overlay
+  drivers.flash.common.sam0:
+    platform_allow:
+      - atsamd20_xpro
+      - atsamr21_xpro
+      - atsame54_xpro

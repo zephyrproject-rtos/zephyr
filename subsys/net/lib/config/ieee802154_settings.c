@@ -17,10 +17,12 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ieee802154_mgmt.h>
 
-int z_net_config_ieee802154_setup(void)
+int z_net_config_ieee802154_setup(struct net_if *iface)
 {
 	uint16_t channel = CONFIG_NET_CONFIG_IEEE802154_CHANNEL;
 	uint16_t pan_id = CONFIG_NET_CONFIG_IEEE802154_PAN_ID;
+	const struct device *const dev = iface == NULL ? DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154))
+						       : net_if_get_device(iface);
 	int16_t tx_power = CONFIG_NET_CONFIG_IEEE802154_RADIO_TX_POWER;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
@@ -32,16 +34,21 @@ int z_net_config_ieee802154_setup(void)
 	};
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-	struct net_if *iface;
-	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
-
 	if (!device_is_ready(dev)) {
 		return -ENODEV;
 	}
 
-	iface = net_if_lookup_by_dev(dev);
 	if (!iface) {
-		return -EINVAL;
+		iface = net_if_lookup_by_dev(dev);
+		if (!iface) {
+			return -ENOENT;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONFIG_IEEE802154_ACK_REQUIRED)) {
+		if (net_mgmt(NET_REQUEST_IEEE802154_SET_ACK, iface, NULL, 0)) {
+			return -EIO;
+		}
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID,
@@ -60,7 +67,14 @@ int z_net_config_ieee802154_setup(void)
 	}
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-	net_if_up(iface);
+	if (!IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+		/* The NET_IF_NO_AUTO_START flag was set by the driver, see
+		 * ieee802154_init() to allow for configuration before starting
+		 * up the interface.
+		 */
+		net_if_flag_clear(iface, NET_IF_NO_AUTO_START);
+		net_if_up(iface);
+	}
 
 	return 0;
 }

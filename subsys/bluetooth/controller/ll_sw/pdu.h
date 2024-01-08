@@ -225,6 +225,19 @@
 					     (((aux_ptr)->offs_phy_packed[1] & 0x1F) << 8))
 #define PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) (((aux_ptr)->offs_phy_packed[1] >> 5) & 0x07)
 
+/* Macros for getting/setting offset/offset_units/offset_adjust from pdu_adv_sync_info */
+#define PDU_ADV_SYNC_INFO_OFFSET_GET(si) ((si)->offs_packed[0] | \
+					 (((si)->offs_packed[1] & 0x1F) << 8))
+#define PDU_ADV_SYNC_INFO_OFFS_UNITS_GET(si) (((si)->offs_packed[1] >> 5) & 0x01)
+#define PDU_ADV_SYNC_INFO_OFFS_ADJUST_GET(si) (((si)->offs_packed[1] >> 6) & 0x01)
+#define PDU_ADV_SYNC_INFO_OFFS_SET(si, offs, offs_units, offs_adjust) \
+	do { \
+		(si)->offs_packed[0] = (offs) & 0xFF; \
+		(si)->offs_packed[1] = (((offs) >> 8) & 0x1F) + \
+				       (((offs_units) << 5) & 0x20) + \
+				       (((offs_adjust) << 6) & 0x40); \
+	} while (0)
+
 /* Advertiser's Sleep Clock Accuracy Value */
 #define SCA_500_PPM       500 /* 51 ppm to 500 ppm */
 #define SCA_50_PPM        50  /* 0 ppm to 50 ppm */
@@ -488,20 +501,17 @@ enum pdu_adv_aux_phy {
 };
 
 struct pdu_adv_sync_info {
-#ifdef CONFIG_LITTLE_ENDIAN
-	uint16_t offs:13;
-	uint16_t offs_units:1;
-	uint16_t offs_adjust:1;
-	uint16_t rfu:1;
-#else
-	uint16_t rfu:1;
-	uint16_t offs_adjust:1;
-	uint16_t offs_units:1;
-	uint16_t offs:13;
-#endif /* CONFIG_LITTLE_ENDIAN */
+	/* offs:13
+	 * offs_units:1
+	 * offs_adjust:1
+	 * rfu:1
+	 * NOTE: This layout as bitfields is not portable for BE using
+	 * endianness conversion macros.
+	 */
+	uint8_t  offs_packed[2];
 	uint16_t interval;
 	uint8_t  sca_chm[PDU_CHANNEL_MAP_SIZE];
-	uint32_t aa;
+	uint8_t  aa[4];
 	uint8_t  crc_init[3];
 	uint16_t evt_cntr;
 } __packed;
@@ -1018,8 +1028,8 @@ struct pdu_iso_sdu_sh {
 	uint8_t len;
 
 	/* Note, timeoffset only available in first segment of sdu */
-	uint32_t payload:8;
 	uint32_t timeoffset:24;
+	uint32_t payload:8;
 #endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 

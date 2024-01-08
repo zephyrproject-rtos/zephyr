@@ -12,6 +12,7 @@ config BUILD_OUTPUT_STRIPPED
 config MP_MAX_NUM_CPUS
 	default 2
 
+# TSC on this board is 1.9 GHz, HPET and APIC are 19.2 MHz
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1900000000 if APIC_TSC_DEADLINE_TIMER
 	default 1900000000 if APIC_TIMER_TSC
@@ -29,9 +30,27 @@ endif
 config ACPI
 	default y
 
+if ACPI
+config HEAP_MEM_POOL_SIZE
+	default 64000000
+config MAIN_STACK_SIZE
+	default 320000
+config ACPI_PRT_BUS_NAME
+	default "_SB.PC00"
+
 if SHELL
 config SHELL_STACK_SIZE
 	default 320000
+endif # SHELL
+endif # ACPI
+
+if DMA
+config DMA_64BIT
+	default y
+config DMA_DW_HW_LLI
+	default n
+config DMA_DW_CHANNEL_COUNT
+	default 2
 endif
 
 endif # BOARD_INTEL_RPL_S_CRB

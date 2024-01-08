@@ -47,6 +47,8 @@ extern "C" {
  * These values should be used with the @ref crc dispatch function.
  */
 enum crc_type {
+	CRC4,        /**< Use @ref crc4 */
+	CRC4_TI,     /**< Use @ref crc4_ti */
 	CRC7_BE,     /**< Use @ref crc7_be */
 	CRC8,	     /**< Use @ref crc8 */
 	CRC8_CCITT,  /**< Use @ref crc8_ccitt */
@@ -279,6 +281,41 @@ uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
 uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
 
 /**
+ * @brief Compute the CRC-4 checksum of a buffer.
+ *
+ * Used by the TMAG5170 sensor. Uses 0x03 as the
+ * polynomial with no reflection. 4 most significant
+ * bits of the CRC result will be set to zero.
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC4 value
+ */
+uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len);
+
+/**
+ * @brief Generic function for computing CRC 4
+ *
+ * Compute CRC 4 by passing in the address of the input, the input length
+ * and polynomial used in addition to the initial value. The input buffer
+ * must be aligned to a whole byte. It is guaranteed that 4 most significant
+ * bits of the result will be set to zero.
+ *
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ * @param polynomial The polynomial to use omitting the leading x^4
+ *        coefficient
+ * @param initial_value Initial value for the CRC computation
+ * @param reversed Should we use reflected/reversed values or not
+ *
+ * @return The computed CRC4 value
+ */
+uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
+	  bool reversed);
+
+/**
  * @brief Compute a CRC checksum, in a generic way.
  *
  * This is a dispatch function that calls the individual CRC routine
@@ -305,6 +342,10 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 				   bool last)
 {
 	switch (type) {
+	case CRC4:
+		return crc4(src, len, poly, seed, reflect);
+	case CRC4_TI:
+		return crc4_ti(seed, src, len);
 	case CRC7_BE:
 		return crc7_be(seed, src, len);
 	case CRC8:

@@ -1,0 +1,2 @@
+numpy
+logic2-automation

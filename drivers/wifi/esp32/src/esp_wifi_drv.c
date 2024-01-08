@@ -61,7 +61,7 @@ struct esp32_wifi_runtime {
 	uint8_t state;
 };
 
-static void esp_wifi_event_task(void);
+static void esp_wifi_event_task(void *, void *, void *);
 
 K_MSGQ_DEFINE(esp_wifi_msgq, sizeof(system_event_t), 10, 4);
 K_THREAD_STACK_DEFINE(esp_wifi_event_stack, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE);
@@ -262,8 +262,11 @@ static void esp_wifi_handle_disconnect_event(void)
 	}
 }
 
-static void esp_wifi_event_task(void)
+static void esp_wifi_event_task(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	system_event_t evt;
 	uint8_t s_con_cnt = 0;
 
@@ -615,7 +618,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 
 	k_tid_t tid = k_thread_create(&esp_wifi_event_thread, esp_wifi_event_stack,
 			CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
-			(k_thread_entry_t)esp_wifi_event_task, NULL, NULL, NULL,
+			esp_wifi_event_task, NULL, NULL, NULL,
 			CONFIG_ESP32_WIFI_EVENT_TASK_PRIO, K_INHERIT_PERMS,
 			K_NO_WAIT);
 

@@ -6,12 +6,14 @@ common:
     - compression
     - lz4
   min_ram: 64
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  filter: CONFIG_FULL_LIBC_SUPPORTED
   harness: console
   harness_config:
     type: one_line
     regex:
       - "Validation done. (.*)"
+  modules:
+    - lz4
 tests:
   sample.compression.lz4:
     integration_platforms:

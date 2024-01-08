@@ -111,7 +111,8 @@ enum test_state {
 	T_FIN_ACK,
 	T_FIN_1,
 	T_FIN_2,
-	T_CLOSING
+	T_CLOSING,
+	T_RST,
 };
 
 static enum test_state t_state;
@@ -124,11 +125,15 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt);
 static void handle_client_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_test(sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
+static void handle_syn_rst_ack(sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th);
 static void handle_client_closing_test(sa_family_t af, struct tcphdr *th);
 static void handle_data_fin1_test(sa_family_t af, struct tcphdr *th);
 static void handle_data_during_fin1_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_recv_out_of_order(struct net_pkt *pkt);
+static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th);
+static void handle_server_rst_on_listening_port(sa_family_t af, struct tcphdr *th);
+static void handle_syn_invalid_ack(sa_family_t af, struct tcphdr *th);
 
 static void verify_flags(struct tcphdr *th, uint8_t flags,
 			 const char *fun, int line)
@@ -333,6 +338,13 @@ static struct net_pkt *prepare_syn_ack_packet(sa_family_t af, uint16_t src_port,
 				      NULL, 0U);
 }
 
+static struct net_pkt *prepare_rst_ack_packet(sa_family_t af, uint16_t src_port,
+					      uint16_t dst_port)
+{
+	return tester_prepare_tcp_pkt(af, src_port, dst_port, RST | ACK,
+				      NULL, 0U);
+}
+
 static struct net_pkt *prepare_ack_packet(sa_family_t af, uint16_t src_port,
 					  uint16_t dst_port)
 {
@@ -367,6 +379,15 @@ static struct net_pkt *prepare_rst_packet(sa_family_t af, uint16_t src_port,
 	return tester_prepare_tcp_pkt(af, src_port, dst_port, RST, NULL, 0U);
 }
 
+static bool is_icmp_pkt(struct net_pkt *pkt)
+{
+	if (net_pkt_family(pkt) == AF_INET) {
+		return NET_IPV4_HDR(pkt)->proto == IPPROTO_ICMP;
+	} else {
+		return NET_IPV6_HDR(pkt)->nexthdr == IPPROTO_ICMPV6;
+	}
+}
+
 static int read_tcp_header(struct net_pkt *pkt, struct tcphdr *th)
 {
 	int ret;
@@ -396,6 +417,11 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct tcphdr th;
 	int ret;
+
+	/* Ignore ICMP explicitly */
+	if (is_icmp_pkt(pkt)) {
+		return 0;
+	}
 
 	ret = read_tcp_header(pkt, &th);
 	if (ret < 0) {
@@ -430,6 +456,19 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case 11:
 		handle_data_during_fin1_test(net_pkt_family(pkt), &th);
 		break;
+	case 12:
+		handle_syn_rst_ack(net_pkt_family(pkt), &th);
+		break;
+	case 13:
+		handle_server_rst_on_closed_port(net_pkt_family(pkt), &th);
+		break;
+	case 14:
+		handle_server_rst_on_listening_port(net_pkt_family(pkt), &th);
+		break;
+	case 15:
+		handle_syn_invalid_ack(net_pkt_family(pkt), &th);
+		break;
+
 	default:
 		zassert_true(false, "Undefined test case");
 	}
@@ -703,7 +742,8 @@ fail:
 
 static void test_server_timeout(struct k_work *work)
 {
-	if (test_case_no == 3 || test_case_no == 4) {
+	if (test_case_no == 3 || test_case_no == 4 || test_case_no == 13 ||
+	    test_case_no == 14) {
 		handle_server_test(AF_INET, NULL);
 	} else if (test_case_no == 5) {
 		handle_server_test(AF_INET6, NULL);
@@ -1002,6 +1042,68 @@ ZTEST(net_tcp, test_client_syn_resend)
 
 	net_context_put(ctx);
 }
+
+static void handle_syn_rst_ack(sa_family_t af, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+	int ret;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		seq = 0U;
+		ack = ntohl(th->th_seq) + 1U;
+		reply = prepare_rst_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		t_state = T_CLOSING;
+		break;
+	default:
+		return;
+	}
+
+	ret = net_recv_data(net_iface, reply);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	return;
+fail:
+	zassert_true(false, "%s failed", __func__);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   peer replies RST+ACK,
+ *   net_context_connect should report an error
+ */
+ZTEST(net_tcp, test_client_syn_rst_ack)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 12;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+				  sizeof(struct sockaddr_in),
+				  NULL,
+				  K_MSEC(1000), NULL);
+
+	zassert_true(ret < 0, "Connect successful on RST+ACK");
+	zassert_not_equal(net_context_get_state(ctx), NET_CONTEXT_CONNECTED,
+			  "Context should not be connected");
+
+	net_context_put(ctx);
+}
+
 
 static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th)
 {
@@ -1809,6 +1911,220 @@ ZTEST(net_tcp, test_server_out_of_order_data)
 {
 	test_server_recv_out_of_order_data();
 	test_server_timeout_out_of_order_data();
+}
+
+static void handle_server_rst_on_closed_port(sa_family_t af, struct tcphdr *th)
+{
+	switch (t_state) {
+	case T_SYN_ACK:
+		/* Port was closed so expect RST instead of SYN */
+		test_verify_flags(th, RST | ACK);
+		zassert_equal(ntohl(th->th_seq), 0, "Invalid SEQ value");
+		zassert_equal(ntohl(th->th_ack), seq, "Invalid ACK value");
+		t_state = T_CLOSING;
+		test_sem_give();
+		break;
+	default:
+		return;
+	}
+}
+
+/* Test case scenario
+ *   Send SYN
+ *   expect RST ACK (closed port)
+ *   any failures cause test case to fail.
+ */
+ZTEST(net_tcp, test_server_rst_on_closed_port)
+{
+	t_state = T_SYN;
+	test_case_no = 13;
+	seq = ack = 0;
+
+	k_sem_reset(&test_sem);
+
+	/* Trigger the peer to send SYN */
+	k_work_reschedule(&test_server, K_NO_WAIT);
+
+	/* Peer will release the semaphore after it receives RST */
+	test_sem_take(K_MSEC(100), __LINE__);
+}
+
+static void handle_server_rst_on_listening_port(sa_family_t af, struct tcphdr *th)
+{
+	switch (t_state) {
+	case T_DATA_ACK:
+		/* No active connection so expect RST instead of ACK */
+		test_verify_flags(th, RST);
+		zassert_equal(ntohl(th->th_seq), ack, "Invalid SEQ value");
+		t_state = T_CLOSING;
+		test_sem_give();
+		break;
+	default:
+		return;
+	}
+}
+
+static void dummy_accept_cb(struct net_context *ctx, struct sockaddr *addr,
+			    socklen_t addrlen, int status, void *user_data)
+{
+	/* Should not ever be called. */
+	zassert_unreachable("Should not have called dummy accept cb");
+}
+
+/* Test case scenario
+ *   Open listening port
+ *   Send DATA packet to the listening port
+ *   expect RST (no matching connection)
+ *   any failures cause test case to fail.
+ */
+ZTEST(net_tcp, test_server_rst_on_listening_port_no_active_connection)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_DATA;
+	test_case_no = 14;
+	seq = ack = 200;
+
+	k_sem_reset(&test_sem);
+
+	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_bind(ctx, (struct sockaddr *)&my_addr_s,
+			       sizeof(struct sockaddr_in));
+	if (ret < 0) {
+		zassert_true(false, "Failed to bind net_context");
+	}
+
+	ret = net_context_listen(ctx, 1);
+	if (ret < 0) {
+		zassert_true(false, "Failed to listen on net_context");
+	}
+
+	ret = net_context_accept(ctx, dummy_accept_cb, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to set accept on net_context");
+	}
+
+	/* Trigger the peer to send data to the listening port w/o active connection */
+	k_work_reschedule(&test_server, K_NO_WAIT);
+
+	/* Peer will release the semaphore after it receives RST */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	net_context_put(ctx);
+}
+
+/* Test case scenario
+ *   Expect SYN
+ *   Send ACK (wrong ACK number),
+ *   expect RST,
+ *   expect SYN (retransmission),
+ *   send SYN ACK,
+ *   expect ACK (handshake success),
+ *   expect FIN,
+ *   send FIN ACK,
+ *   expect ACK.
+ *   any failures cause test case to fail.
+ */
+static void handle_syn_invalid_ack(sa_family_t af, struct tcphdr *th)
+{
+	static bool invalid_ack = true;
+	struct net_pkt *reply;
+	int ret;
+
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		if (invalid_ack) {
+			ack = ntohl(th->th_seq) + 1000U;
+			reply = prepare_ack_packet(af, htons(MY_PORT),
+						   th->th_sport);
+			/* Expect RST now. */
+			t_state = T_RST;
+			invalid_ack = false;
+		} else {
+			ack = ntohl(th->th_seq) + 1U;
+			reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+						       th->th_sport);
+			/* Proceed with the handshake on second attempt. */
+			t_state = T_SYN_ACK;
+		}
+
+		break;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		/* connection is successful */
+		t_state = T_FIN;
+		return;
+	case T_FIN:
+		test_verify_flags(th, FIN | ACK);
+		seq++;
+		ack++;
+		t_state = T_FIN_ACK;
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		break;
+	case T_FIN_ACK:
+		test_verify_flags(th, ACK);
+		test_sem_give();
+		return;
+	case T_RST:
+		test_verify_flags(th, RST);
+		zassert_equal(ntohl(th->th_seq), ack, "Invalid SEQ value");
+
+		/* Wait for SYN retransmission. */
+		t_state = T_SYN;
+		return;
+	default:
+		return;
+	}
+
+	ret = net_recv_data(net_iface, reply);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	return;
+fail:
+	zassert_true(false, "%s failed", __func__);
+}
+
+ZTEST(net_tcp, test_client_rst_on_unexpected_ack_on_syn)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 15;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+				  sizeof(struct sockaddr_in),
+				  NULL, K_MSEC(1000), NULL);
+
+	zassert_equal(ret, 0, "Connect failed");
+	zassert_equal(net_context_get_state(ctx), NET_CONTEXT_CONNECTED,
+			  "Context should be connected");
+
+	/* Just wait for the connection teardown. */
+	net_context_put(ctx);
+
+	/* Peer will release the semaphore after it receives final ACK */
+	test_sem_take(K_MSEC(100), __LINE__);
 }
 
 ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);

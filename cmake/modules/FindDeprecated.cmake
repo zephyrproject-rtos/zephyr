@@ -131,5 +131,23 @@ if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
                  "${Deprecated_FIND_COMPONENTS}")
 endif()
 
+if("SEARCHED_LINKER_SCRIPT" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code was deprecated after Zephyr v3.5.0
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS SEARCHED_LINKER_SCRIPT)
+
+  # Try a board specific linker file
+  set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
+  if(NOT EXISTS ${LINKER_SCRIPT})
+    # If not available, try an SoC specific linker file
+    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
+  endif()
+  message(DEPRECATION
+      "Pre-defined `linker.ld` script is deprecated. Please set "
+      "BOARD_LINKER_SCRIPT or SOC_LINKER_SCRIPT to point to ${LINKER_SCRIPT} "
+      "or one of the Zephyr provided common linker scripts for the ${ARCH} "
+      "architecture."
+  )
+endif()
+
 set(Deprecated_FOUND True)
 set(DEPRECATED_FOUND True)

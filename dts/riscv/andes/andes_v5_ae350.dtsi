@@ -21,7 +21,7 @@
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -38,7 +38,7 @@
 			device_type = "cpu";
 			reg = <1>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -55,7 +55,7 @@
 			device_type = "cpu";
 			reg = <2>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -72,7 +72,7 @@
 			device_type = "cpu";
 			reg = <3>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -89,7 +89,7 @@
 			device_type = "cpu";
 			reg = <4>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -106,7 +106,7 @@
 			device_type = "cpu";
 			reg = <5>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -123,7 +123,7 @@
 			device_type = "cpu";
 			reg = <6>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -140,7 +140,7 @@
 			device_type = "cpu";
 			reg = <7>;
 			status = "okay";
-			riscv,isa = "rv32imafdcxandes";
+			riscv,isa = "rv32gc_xandes";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
@@ -171,10 +171,7 @@
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <	0xe4000000 0x00001000
-				0xe4002000 0x00000800
-				0xe4200000 0x00010000 >;
-			reg-names = "prio", "irq_en", "reg";
+			reg = <0xe4000000 0x04000000>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
 			interrupts-extended = <&CPU0_intc 11 &CPU1_intc 11
@@ -278,6 +275,9 @@
 			reg-names = "control", "mem";
 			interrupts = <4 1>;
 			interrupt-parent = <&plic0>;
+			dmas = <&dma0 0 0 0x009>,
+			       <&dma0 1 1 0x00A>;
+			dma-names = "tx", "rx";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-frequency = <66000000>;
@@ -290,6 +290,9 @@
 			reg-names = "control";
 			interrupts = <5 1>;
 			interrupt-parent = <&plic0>;
+			dmas = <&dma0 2 2 0x009>,
+			       <&dma0 3 3 0x00A>;
+			dma-names = "tx", "rx";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-frequency = <66000000>;
@@ -302,6 +305,10 @@
 			interrupts = <10 1>;
 			interrupt-parent = <&plic0>;
 			dma-channels = <8>;
+			dma-requests = <16>;
+			chain-transfer = <1>;
+			#dma-cells = <3>;
+			status = "disabled";
 		};
 
 		eth0: eth@e0100000 {

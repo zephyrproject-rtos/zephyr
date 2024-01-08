@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <stdlib.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <string.h>
@@ -150,9 +150,9 @@ static int net_value_to_udec(char *buf, uint32_t value, int precision)
 char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			   char *dst, size_t size)
 {
-	struct in_addr *addr;
-	struct in6_addr *addr6;
-	uint16_t *w;
+	struct in_addr *addr = NULL;
+	struct in6_addr *addr6 = NULL;
+	uint16_t *w = NULL;
 	uint8_t i, bl, bh, longest = 1U;
 	int8_t pos = -1;
 	char delim = ':';
@@ -161,11 +161,16 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	int len = -1;
 	uint16_t value;
 	bool needcolon = false;
+	bool mapped = false;
 
 	if (family == AF_INET6) {
 		addr6 = (struct in6_addr *)src;
 		w = (uint16_t *)addr6->s6_addr16;
 		len = 8;
+
+		if (net_ipv6_addr_is_v4_mapped(addr6)) {
+			mapped = true;
+		}
 
 		for (i = 0U; i < 8; i++) {
 			uint8_t j;
@@ -198,6 +203,7 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 		return NULL;
 	}
 
+print_mapped:
 	for (i = 0U; i < len; i++) {
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
@@ -218,6 +224,15 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 			*ptr++ = delim;
 
 			continue;
+		}
+
+		if (mapped && (i > 5)) {
+			delim = '.';
+			len = 4;
+			addr = (struct in_addr *)(&addr6->s6_addr32[3]);
+			*ptr++ = ':';
+			family = AF_INET;
+			goto print_mapped;
 		}
 
 		/* IPv6 address */
@@ -289,14 +304,14 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 	char *out;
 	const void *addr;
 
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, size));
 
 	if (family == AF_INET) {
-		Z_OOPS(z_user_from_copy(&addr4, (const void *)src,
+		K_OOPS(k_usermode_from_copy(&addr4, (const void *)src,
 					sizeof(addr4)));
 		addr = &addr4;
 	} else if (family == AF_INET6) {
-		Z_OOPS(z_user_from_copy(&addr6, (const void *)src,
+		K_OOPS(k_usermode_from_copy(&addr6, (const void *)src,
 					sizeof(addr6)));
 		addr = &addr6;
 	} else {
@@ -308,7 +323,7 @@ char *z_vrfy_net_addr_ntop(sa_family_t family, const void *src,
 		return 0;
 	}
 
-	Z_OOPS(z_user_to_copy((void *)dst, str, MIN(size, sizeof(str))));
+	K_OOPS(k_usermode_to_copy((void *)dst, str, MIN(size, sizeof(str))));
 
 	return dst;
 }
@@ -469,18 +484,18 @@ int z_vrfy_net_addr_pton(sa_family_t family, const char *src,
 		return -EINVAL;
 	}
 
-	if (z_user_string_copy(str, (char *)src, sizeof(str)) != 0) {
+	if (k_usermode_string_copy(str, (char *)src, sizeof(str)) != 0) {
 		return -EINVAL;
 	}
 
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(dst, size));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(dst, size));
 
 	err = z_impl_net_addr_pton(family, str, addr);
 	if (err) {
 		return err;
 	}
 
-	Z_OOPS(z_user_to_copy((void *)dst, addr, size));
+	K_OOPS(k_usermode_to_copy((void *)dst, addr, size));
 
 	return 0;
 }

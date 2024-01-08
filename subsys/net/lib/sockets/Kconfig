@@ -5,6 +5,7 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
+	select FDTABLE
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -41,6 +42,7 @@ config NET_SOCKETS_POSIX_NAMES
 
 config NET_SOCKETS_POLL_MAX
 	int "Max number of supported poll() entries"
+	default 6 if WIFI_NM_WPA_SUPPLICANT
 	default 3
 	help
 	  Maximum number of entries supported for poll() call.
@@ -260,6 +262,7 @@ if NET_SOCKETPAIR
 
 config NET_SOCKETPAIR_BUFFER_SIZE
 	int "Size of the intermediate buffer, in bytes"
+	default 4096 if WIFI_NM_WPA_SUPPLICANT
 	default 64
 	range 1 4096
 	help
@@ -309,5 +312,16 @@ module-dep = NET_LOG
 module-str = Log level for BSD sockets compatible API calls
 module-help = Enables logging for sockets code.
 source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_SOCKETS_OBJ_CORE
+	bool "Object core socket support [EXPERIMENTAL]"
+	depends on OBJ_CORE
+	select OBJ_CORE_STATS
+	select EXPERIMENTAL
+	help
+	  Select this if you want to use object core with socket API to get
+	  network socket information and statistics via object core.
+	  The net-shell "net sockets" command will use this functionality
+	  to show the socket information.
 
 endif # NET_SOCKETS

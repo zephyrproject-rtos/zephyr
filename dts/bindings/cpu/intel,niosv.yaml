@@ -5,4 +5,4 @@ description: INTEL FPGA NIOSV Softcore Processor
 
 compatible: "intel,niosv"
 
-include: cpu.yaml
+include: riscv,cpus.yaml

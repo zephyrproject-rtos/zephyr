@@ -1,12 +1,13 @@
-.. _system_hashmap:
+.. zephyr:code-sample:: system_hashmap
+   :name: System hashmap
+   :relevant-api: hashmap_apis
 
-System Hashmap
-##############
+   Insert, replace, and remove entries in a hashmap.
 
 Overview
 ********
 
-This is a simple example that repeatedly
+This is a simple example that repeatedly:
 
 * inserts up to ``CONFIG_TEST_LIB_HASH_MAP_MAX_ENTRIES``
 * replaces up to the same number that were previously inserted
@@ -15,16 +16,16 @@ This is a simple example that repeatedly
 Building
 ********
 
-This application can be built on native_posix as follows:
+This application can be built on :ref:`native_sim <native_sim>` as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/hash_map
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: build
    :compact:
 
-To build for another board, change "native_posix" above to that board's name.
+To build for another board, change "native_sim" above to that board's name.
 
 Additionally, it is possible to use one of the other Hashmap implementations by specifying
 

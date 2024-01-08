@@ -28,10 +28,26 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&stop>;
+		};
+
+		power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/* It is really hard to establish these numbers precisely.
+				 * We are basing on RTC as a wakeup source with 62,5us tick.
+				 * It requires a proper margin. Additionally, sys_clock_announce
+				 * works within system tick boundaries (100us by default),
+				 * which also introduces some shift.
+				 */
+				min-residency-us = <400>;
+				exit-latency-us = <300>;
+			};
 		};
 	};
 
@@ -513,16 +529,13 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			/* Temperature and VBAT sensor share channel 18 */
-			temp-channel = <18>;
-			vbat-channel = <18>;
-			vref-channel = <17>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dma1: dma@40026000 {

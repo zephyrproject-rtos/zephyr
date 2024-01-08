@@ -13,8 +13,8 @@
 #include <assert.h>
 
 #if defined(CONFIG_USERSPACE)
-#include <zephyr/sys/mem_manage.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/kernel/mm.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "test_syscalls.h"
 #endif
 

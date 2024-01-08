@@ -101,7 +101,7 @@ CMake command
 
 Alternatively, it could be set by default in a project's CMakeLists.txt:
 
-.. code-block:: none
+.. code-block:: cmake
 
 	set(SHIELD x_nucleo_iks01a1)
 
@@ -153,7 +153,7 @@ node`_ that looks like the following into the board devicetree file:
 .. _nexus node:
     https://github.com/devicetree-org/devicetree-specification/blob/4b1dac80eaca45b4babf5299452a951008a5d864/source/devicetree-basics.rst#nexus-nodes-and-specifier-mapping
 
-.. code-block:: none
+.. code-block:: devicetree
 
     arduino_header: connector {
             compatible = "arduino-header-r3";
@@ -193,7 +193,7 @@ bits of the flags correspond to features that can be configured in
 devicetree.  In some cases it's necessary to use a non-zero flag value
 to tell the driver how a particular pin behaves, as with:
 
-.. code-block:: none
+.. code-block:: devicetree
 
     drdy-gpios = <&arduino_header 11 GPIO_ACTIVE_LOW>;
 

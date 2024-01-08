@@ -1,7 +1,8 @@
-.. _cdc-acm-console:
+.. zephyr:code-sample:: usb-cdc-acm-console
+   :name: Console over USB CDC ACM
+   :relevant-api: _usb_device_core_api usbd_api uart_interface
 
-Console over CDC ACM UART Sample
-################################
+   Output "Hello World!" to the console over USB CDC ACM.
 
 Overview
 ********

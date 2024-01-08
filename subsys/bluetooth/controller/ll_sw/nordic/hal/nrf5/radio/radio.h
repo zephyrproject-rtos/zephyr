@@ -70,7 +70,7 @@ int8_t radio_tx_power_max_get(void);
 int8_t radio_tx_power_floor(int8_t power);
 void radio_freq_chan_set(uint32_t chan);
 void radio_whiten_iv_set(uint32_t iv);
-void radio_aa_set(uint8_t *aa);
+void radio_aa_set(const uint8_t *aa);
 void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags);
 void radio_pkt_rx_set(void *rx_packet);
 void radio_pkt_tx_set(void *tx_packet);
@@ -106,6 +106,8 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
 void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 				      uint8_t phy_next, uint8_t flags_next);
+void radio_switch_complete_and_b2b_tx_disable(void);
+void radio_switch_complete_and_b2b_rx_disable(void);
 void radio_switch_complete_and_disable(void);
 
 uint8_t radio_phy_flags_rx_get(void);

@@ -149,9 +149,10 @@ static int ncp5623_led_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		if (led_info->num_colors != 3 || led_info->num_colors != 1) {
-			LOG_ERR("%s: invalid number of colors %d (must be %d or 1)", dev->name,
-				led_info->num_colors, NCP5623_CHANNEL_COUNT);
+		if (led_info->num_colors != NCP5623_CHANNEL_COUNT) {
+			LOG_ERR("%s: invalid number of colors %d (must be %d with a single LED)",
+				dev->name, led_info->num_colors, NCP5623_CHANNEL_COUNT);
+			return -EINVAL;
 		}
 	} else if (config->num_leds <= 3) { /* three single-channel LEDs */
 		for (i = 0; i < config->num_leds; i++) {

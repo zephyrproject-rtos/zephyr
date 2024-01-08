@@ -10,7 +10,7 @@ Using the TMAP Shell
 ********************
 
 When the Bluetooth stack has been initialized (:code:`bt init`), the TMAS can be registered by
-by calling :code:`tmap init`.
+calling :code:`tmap init`.
 
 .. code-block:: console
 

@@ -206,7 +206,8 @@ struct test_ctx *alloc_test_context(void)
 	return NULL;
 }
 
-int server_accept_cb(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+int server_accept_cb(struct bt_conn *conn, struct bt_l2cap_server *server,
+		     struct bt_l2cap_chan **chan)
 {
 	struct test_ctx *ctx = NULL;
 

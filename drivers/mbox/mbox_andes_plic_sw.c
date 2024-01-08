@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(mbox_andes_plic_sw);
 static struct mbox_andes_data {
 	mbox_callback_t cb[IPI_NUM];
 	void *user_data[IPI_NUM];
-	uint32_t enabled_channel[CONFIG_MP_NUM_CPUS];
+	uint32_t enabled_channel[CONFIG_MP_MAX_NUM_CPUS];
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 	uint32_t reg_cb_channel;
 	uint32_t ipi_channel;

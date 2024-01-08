@@ -118,19 +118,7 @@ zephyr_include_directories(
 
 include(${ZEPHYR_BASE}/cmake/linker_script/${ARCH}/linker.cmake OPTIONAL)
 
-# Don't add non-existing include directories, it creates noise and
-# warnings in some tooling
-foreach(optional_include_dir
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include/${SOC_NAME}
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
-  )
-  if(EXISTS ${optional_include_dir})
-    zephyr_include_directories(${optional_include_dir})
-  endif()
-endforeach()
+zephyr_include_directories(${SOC_DIR}/${ARCH}/${SOC_PATH})
 
 # Don't inherit compiler flags from the environment
 foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
@@ -484,38 +472,12 @@ if(CONFIG_USERSPACE)
   set(KOBJECT_LINKER_DEP kobject_linker)
 endif()
 
-get_property(TOPT GLOBAL PROPERTY TOPT)
-get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
-set_ifndef(  TOPT "${COMPILER_TOPT}")
-set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
-
-if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
-  set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
-  if(NOT EXISTS ${LINKER_SCRIPT})
-    set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
-    assert_exists(CONFIG_CUSTOM_LINKER_SCRIPT)
-  endif()
-else()
-  # Try a board specific linker file
-  set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
-  if(NOT EXISTS ${LINKER_SCRIPT})
-    # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
-  endif()
-endif()
-
-if(NOT EXISTS ${LINKER_SCRIPT})
-  message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
-endif()
-
 if(DEFINED BUILD_VERSION)
   set(build_version_argument "-DBUILD_VERSION=${BUILD_VERSION}")
 elseif(NOT ZEPHYR_GIT_INDEX)
-  set(ZEPHYR_GIT_INDEX ZEPHYR_GIT_INDEX-NOTFOUND CACHE PATH
-    "Path to Zephyr git repository index file")
   if(EXISTS ${ZEPHYR_BASE}/.git/index)
-    set(ZEPHYR_GIT_DIR ${ZEPHYR_BASE}/.git/index CACHE PATH
-      "Path to Zephyr git repository index file" FORCE)
+    set(ZEPHYR_GIT_INDEX ${ZEPHYR_BASE}/.git/index CACHE PATH
+      "Path to Zephyr git repository index file")
   elseif(EXISTS ${ZEPHYR_BASE}/.git)
     # Likely a git-submodule. Let's ask git where the real database is located.
     find_package(Git QUIET)
@@ -535,7 +497,7 @@ elseif(NOT ZEPHYR_GIT_INDEX)
           message(WARNING "BUILD_VERSION: git rev-parse warned: ${stderr}")
         endif()
         set(ZEPHYR_GIT_INDEX ${zephyr_git_dir}/index CACHE PATH
-          "Path to Zephyr git repository index file" FORCE)
+          "Path to Zephyr git repository index file")
       endif()
     else()
       message(WARNING "Could not find git installation, "
@@ -557,10 +519,11 @@ add_custom_command(
     -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/version.h
     -DVERSION_TYPE=KERNEL
     -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
-    -DKERNEL_VERSION_CUSTOMIZATION="${KERNEL_VERSION_CUSTOMIZATION}"
+    -DKERNEL_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:version_h,KERNEL_VERSION_CUSTOMIZATION>"
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
+  COMMAND_EXPAND_LISTS
 )
 add_custom_target(version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
@@ -571,10 +534,11 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       -DOUT_FILE=${PROJECT_BINARY_DIR}/include/generated/app_version.h
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
-      -DAPP_VERSION_CUSTOMIZATION="${APP_VERSION_CUSTOMIZATION}"
+      -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
       ${build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
+    COMMAND_EXPAND_LISTS
   )
   add_custom_target(app_version_h DEPENDS ${PROJECT_BINARY_DIR}/include/generated/app_version.h)
   add_dependencies(zephyr_interface app_version_h)
@@ -976,6 +940,29 @@ set(CMAKE_C_COMPILE_FEATURES ${compile_features_${CSTD}} PARENT_SCOPE)
 # @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
 toolchain_ld_configure_files()
 
+get_property(TOPT GLOBAL PROPERTY TOPT)
+get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+set_ifndef(  TOPT "${COMPILER_TOPT}")
+set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
+
+if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
+  set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
+  if(NOT EXISTS ${LINKER_SCRIPT})
+    set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
+    assert_exists(CONFIG_CUSTOM_LINKER_SCRIPT)
+  endif()
+elseif(DEFINED BOARD_LINKER_SCRIPT)
+  set(LINKER_SCRIPT ${BOARD_LINKER_SCRIPT})
+elseif(DEFINED SOC_LINKER_SCRIPT)
+  set(LINKER_SCRIPT ${SOC_LINKER_SCRIPT})
+else()
+  find_package(Deprecated COMPONENTS SEARCHED_LINKER_SCRIPT)
+endif()
+
+if(NOT EXISTS ${LINKER_SCRIPT})
+  message(FATAL_ERROR "Could not find linker script: '${LINKER_SCRIPT}'. Corrupted configuration?")
+endif()
+
 if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
   set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld")
@@ -1125,7 +1112,7 @@ if(CONFIG_USERSPACE)
     ${PROCESS_GPERF}
     -i ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
     -o ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
-    -p "struct z_object"
+    -p "struct k_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS kobj_prebuilt_hash_output_src_pre ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -1239,20 +1226,13 @@ if(CONFIG_GEN_ISR_TABLES)
   # isr_tables.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
-    OUTPUT isr_tables.c isrList.bin
-    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>${OUTPUT_FORMAT}
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>binary
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_only>.intList
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>$<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>isrList.bin
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    OUTPUT isr_tables.c
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_isr_tables.py
     --output-source isr_tables.c
     --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --intlist isrList.bin
+    --intlist-section .intList
+    --intlist-section intList
     $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
@@ -1324,7 +1304,7 @@ if(CONFIG_USERSPACE)
     ${PROCESS_GPERF}
     -i ${KOBJECT_HASH_OUTPUT_SRC_PRE}
     -o ${KOBJECT_HASH_OUTPUT_SRC}
-    -p "struct z_object"
+    -p "struct k_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS kobj_hash_output_src_pre ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_HASH_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -1782,7 +1762,7 @@ if(CONFIG_BUILD_OUTPUT_EXE)
       COMMENT "Building native simulator runner, and linking final executable"
       COMMAND
       ${MAKE} -f ${ZEPHYR_BASE}/scripts/native_simulator/Makefile all --warn-undefined-variables
-        -r NSI_CONFIG_FILE=${CMAKE_BINARY_DIR}/zephyr/NSI/nsi_config
+        -r NSI_CONFIG_FILE=${APPLICATION_BINARY_DIR}/zephyr/NSI/nsi_config
       # nsi_config is created by the board cmake file
       DEPENDS ${logical_target_for_zephyr_elf}
       BYPRODUCTS ${KERNEL_EXE_NAME}
@@ -1805,16 +1785,22 @@ if(CONFIG_BUILD_OUTPUT_INFO_HEADER)
 endif()
 
 if(CONFIG_CHECK_INIT_PRIORITIES)
-  if(CONFIG_CHECK_INIT_PRIORITIES_FAIL_ON_WARNING)
-    set(fail_on_warning "--fail-on-warning")
-  endif()
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
-      --build-dir ${PROJECT_BINARY_DIR}/..
-      --edt-pickle ${EDT_PICKLE}
-      ${fail_on_warning}
+      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
     )
+endif()
+
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
+  add_custom_target(
+    initlevels
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/check_init_priorities.py
+      --elf-file=${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+      --initlevels
+    DEPENDS ${logical_target_for_zephyr_elf}
+    USES_TERMINAL
+  )
 endif()
 
 # Generate and use MCUboot related artifacts as needed.

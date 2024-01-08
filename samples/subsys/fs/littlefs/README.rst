@@ -1,7 +1,8 @@
-.. _littlefs-sample:
+.. zephyr:code-sample:: littlefs
+   :name: LittleFS filesystem
+   :relevant-api: file_system_api flash_area_api
 
-littlefs File System Sample Application
-#######################################
+   Use file system API over LittleFS.
 
 Overview
 ********

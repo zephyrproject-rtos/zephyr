@@ -154,10 +154,22 @@ else()
   set(OT_CSL_RECEIVER OFF CACHE BOOL "Enable CSL receiver feature for Thread 1.2" FORCE)
 endif()
 
+if(CONFIG_OPENTHREAD_CSL_RECEIVER_LOCAL_TIME_SYNC)
+  set(OT_CSL_RECEIVER_LOCAL_TIME_SYNC ON CACHE BOOL "Use local time for CSL sync" FORCE)
+else()
+  set(OT_CSL_RECEIVER_LOCAL_TIME_SYNC OFF CACHE BOOL "Use local time for CSL sync" FORCE)
+endif()
+
 if(CONFIG_OPENTHREAD_DATASET_UPDATER)
   set(OT_DATASET_UPDATER ON CACHE BOOL "Enable Dataset updater" FORCE)
 else()
   set(OT_DATASET_UPDATER OFF CACHE BOOL "Enable Dataset updater" FORCE)
+endif()
+
+if(CONFIG_OPENTHREAD_DEVICE_PROP_LEADER_WEIGHT)
+  set(OT_DEVICE_PROP_LEADER_WEIGHT ON CACHE BOOL "Enable device props for leader weight" FORCE)
+else()
+  set(OT_DEVICE_PROP_LEADER_WEIGHT OFF CACHE BOOL "Enable device props for leader weight" FORCE)
 endif()
 
 if(CONFIG_OPENTHREAD_DHCP6_CLIENT)
@@ -278,6 +290,12 @@ if(CONFIG_OPENTHREAD_LINK_METRICS_INITIATOR)
   set(OT_LINK_METRICS_INITIATOR ON CACHE BOOL "Enable Link Metrics initiator for Thread 1.2" FORCE)
 else()
   set(OT_LINK_METRICS_INITIATOR OFF CACHE BOOL "Enable Link Metrics initiator for Thread 1.2" FORCE)
+endif()
+
+if(CONFIG_OPENTHREAD_LINK_METRICS_MANAGER)
+  set(OT_LINK_METRICS_MANAGER ON CACHE BOOL "Enable Link Metrics manager for Thread 1.2" FORCE)
+else()
+  set(OT_LINK_METRICS_MANAGER OFF CACHE BOOL "Enable Link Metrics manager for Thread 1.2" FORCE)
 endif()
 
 if(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
@@ -535,7 +553,8 @@ target_compile_definitions(ot-config INTERFACE
 # libraries do not include this header. So we add the defines to all
 # OpenThread files through the gcc flag -imacros instead.
 target_compile_options(ot-config INTERFACE
-    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS> -fno-builtin
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
+    $<TARGET_PROPERTY:compiler,no_builtin>
     -imacros ${AUTOCONF_H}
 )
 
@@ -588,7 +607,8 @@ endif()
 
 if(CONFIG_OPENTHREAD_SETTINGS_RAM)
   target_compile_options(openthread-platform-utils PRIVATE
-    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS> -fno-builtin)
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
+    $<TARGET_PROPERTY:compiler,no_builtin>)
   add_dependencies(openthread-platform-utils syscall_list_h_target)
 
   list(APPEND ot_libs openthread-platform-utils-static)

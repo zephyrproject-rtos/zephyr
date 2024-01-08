@@ -19,6 +19,7 @@
  * the address space.
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/mm/rat.h>
 #include <zephyr/drivers/mm/system_mm.h>
 #include <zephyr/sys/__assert.h>

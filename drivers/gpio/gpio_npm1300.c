@@ -185,17 +185,6 @@ static int gpio_npm1300_port_toggle_bits(const struct device *dev, gpio_port_pin
 	return gpio_npm1300_port_set_masked_raw(dev, pins, ~value);
 }
 
-static int gpio_npm1300_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
-						enum gpio_int_mode mode, enum gpio_int_trig trig)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(pin);
-	ARG_UNUSED(mode);
-	ARG_UNUSED(trig);
-
-	return -ENOTSUP;
-}
-
 static const struct gpio_driver_api gpio_npm1300_api = {
 	.pin_configure = gpio_npm1300_configure,
 	.port_get_raw = gpio_npm1300_port_get_raw,
@@ -203,7 +192,6 @@ static const struct gpio_driver_api gpio_npm1300_api = {
 	.port_set_bits_raw = gpio_npm1300_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_npm1300_port_clear_bits_raw,
 	.port_toggle_bits = gpio_npm1300_port_toggle_bits,
-	.pin_interrupt_configure = gpio_npm1300_pin_interrupt_configure,
 };
 
 static int gpio_npm1300_init(const struct device *dev)

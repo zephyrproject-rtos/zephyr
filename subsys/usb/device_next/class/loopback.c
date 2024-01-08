@@ -216,8 +216,6 @@ static int lb_control_to_host(struct usbd_class_node *c_nd,
 			      const struct usb_setup_packet *const setup,
 			      struct net_buf *const buf)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
-
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
 		errno = -ENOTSUP;
 		return 0;
@@ -226,7 +224,6 @@ static int lb_control_to_host(struct usbd_class_node *c_nd,
 	if (setup->bRequest == LB_VENDOR_REQ_IN) {
 		net_buf_add_mem(buf, lb_buf,
 				MIN(sizeof(lb_buf), setup->wLength));
-		usbd_ep_ctrl_enqueue(uds_ctx, buf);
 
 		LOG_WRN("Device-to-Host, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), setup->wLength));

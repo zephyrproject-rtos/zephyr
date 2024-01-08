@@ -8,3 +8,7 @@ compatible: "atmel,sam-mdio"
 include:
   - name: mdio-controller.yaml
   - name: pinctrl-device.yaml
+
+properties:
+  clocks:
+    type: phandle-array

@@ -55,7 +55,12 @@ class TestInstance:
         self.name = os.path.join(platform.name, testsuite.name)
         self.run_id = self._get_run_id()
         self.dut = None
-        self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
+        if testsuite.detailed_test_id:
+            self.build_dir = os.path.join(outdir, platform.name, testsuite.name)
+        else:
+            # if suite is not in zephyr, keep only the part after ".." in reconstructed dir structure
+            source_dir_rel = testsuite.source_dir_rel.rsplit(os.pardir+os.path.sep, 1)[-1]
+            self.build_dir = os.path.join(outdir, platform.name, source_dir_rel, testsuite.name)
 
         self.domains = None
 
@@ -185,7 +190,7 @@ class TestInstance:
         self.handler = handler
 
     # Global testsuite parameters
-    def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[]):
+    def check_runnable(self, enable_slow=False, filter='buildable', fixtures=[], hardware_map=None):
 
         # running on simulators is currently not supported on Windows
         if os.name == 'nt' and self.platform.simulation != 'na':
@@ -217,6 +222,13 @@ class TestInstance:
                 target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
+
+        if hardware_map:
+            for h in hardware_map.duts:
+                if (h.platform == self.platform.name and
+                        self.testsuite_runnable(self.testsuite, h.fixtures)):
+                    testsuite_runnable = True
+                    break
 
         return testsuite_runnable and target_ready
 

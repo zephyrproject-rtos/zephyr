@@ -44,7 +44,7 @@ REST api to detect firmware updates. When a new update is detected, the binary
 is downloaded and installed. MCUboot can be used to verify the signature before
 upgrading the firmware.
 
-There is a :ref:`hawkbit-api-sample` included in the
+There is a :zephyr:code-sample:`hawkbit-api` sample included in the
 Zephyr :ref:`mgmt-samples` section.
 
 UpdateHub
@@ -55,7 +55,7 @@ be manually triggered or monitored via polling. When a new update is detected,
 the binary is downloaded and installed. MCUboot can be used to verify the
 signature before upgrading the firmware.
 
-There is an :ref:`updatehub_fota_sample` included in the Zephyr
+There is an :zephyr:code-sample:`updatehub-fota` sample included in the Zephyr
 :ref:`mgmt-samples` section.
 
 SMP Server
@@ -66,7 +66,7 @@ Bluetooth Low Energy (BLE) or UDP. :ref:`mcu_mgr` is used to send a signed
 firmware binary to the remote device where it is verified by MCUboot before the
 upgrade occurs.
 
-There is an :ref:`smp_svr_sample` included in the Zephyr :ref:`mgmt-samples`
+There is an :zephyr:code-sample:`smp-svr` sample included in the Zephyr :ref:`mgmt-samples`
 section.
 
 Lightweight M2M (LWM2M)
@@ -74,7 +74,7 @@ Lightweight M2M (LWM2M)
 
 The :ref:`lwm2m_interface` protocol includes support for firmware update via
 :kconfig:option:`CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT`. Devices securely
-connect to an LwM2M server using DTLS. An :ref:`lwm2m-client-sample` sample is
+connect to an LwM2M server using DTLS. A :zephyr:code-sample:`lwm2m-client` sample is
 available but it does not demonstrate the firmware update feature.
 
 .. _MCUboot bootloader: https://mcuboot.com/

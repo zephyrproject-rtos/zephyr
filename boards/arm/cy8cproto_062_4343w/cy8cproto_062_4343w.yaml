@@ -14,7 +14,12 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - bluetooth
+  - wifi
+  - airoc
+  - cyw4343w
   - counter
   - gpio
   - uart
   - i2c
+vendor: cypress

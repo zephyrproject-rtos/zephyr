@@ -177,7 +177,7 @@ int fifo_test(void)
 	fprintf(output_file, sz_description,
 			"\n\tk_fifo_init"
 			"\n\tk_fifo_get(K_FOREVER)"
-			"\n\tk_fifo_get(TICKS_NONE)"
+			"\n\tk_fifo_get(K_NO_WAIT)"
 			"\n\tk_fifo_put"
 			"\n\tk_yield");
 	printf(sz_test_start_fmt);

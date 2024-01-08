@@ -5,7 +5,7 @@
  * /dev/ttyACM0). Only polling Uart API is implemented. Driver can be configured via devicetree,
  * command line options or at runtime.
  *
- * To learn more see Native TYY section at:
+ * To learn more see Native TTY section at:
  * https://docs.zephyrproject.org/latest/boards/posix/native_posix/doc/index.html
  * or
  * ${ZEPHYR_BASE}/boards/posix/native_posix/doc/index.rst
@@ -18,18 +18,15 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
+#include <nsi_tracing.h>
 
 #include "cmdline.h"
 #include "posix_native_task.h"
+#include "uart_native_tty_bottom.h"
+#include "nsi_host_trampolines.h"
 
-#define WARN(msg, ...)  posix_print_warning(msg, ##__VA_ARGS__)
-#define ERROR(msg, ...) posix_print_error_and_exit(msg, ##__VA_ARGS__)
+#define WARN(...)  nsi_print_warning(__VA_ARGS__)
+#define ERROR(...) nsi_print_error_and_exit(__VA_ARGS__)
 
 #define DT_DRV_COMPAT zephyr_native_tty_uart
 
@@ -48,170 +45,68 @@ struct native_tty_config {
 	struct uart_config uart_config;
 };
 
-struct baudrate_termios_pair {
-	int baudrate;
-	speed_t termios_baudrate;
-};
-
 /**
- * @brief Lookup table for mapping the baud rate to the macro understood by termios.
- */
-static const struct baudrate_termios_pair baudrate_lut[] = {
-	{1200, B1200},       {1800, B1800},       {2400, B2400},       {4800, B4800},
-	{9600, B9600},       {19200, B19200},     {38400, B38400},     {57600, B57600},
-	{115200, B115200},   {230400, B230400},   {460800, B460800},   {500000, B500000},
-	{576000, B576000},   {921600, B921600},   {1000000, B1000000}, {1152000, B1152000},
-	{1500000, B1500000}, {2000000, B2000000}, {2500000, B2500000}, {3000000, B3000000},
-	{3500000, B3500000}, {4000000, B4000000},
-};
-
-/**
- * @brief Set given termios to defaults appropriate for communicating with serial port devices.
+ * @brief Convert from uart_config to native_tty_bottom_cfg eqvivalent struct
  *
- * @param ter
+ * @param bottom_cfg
+ * @param cfg
+ *
+ * @return 0 on success, negative errno otherwise.
  */
-static inline void native_tty_termios_defaults_set(struct termios *ter)
+static int native_tty_conv_to_bottom_cfg(struct native_tty_bottom_cfg *bottom_cfg,
+					 const struct uart_config *cfg)
 {
-	/* Set terminal in "serial" mode:
-	 *  - Not canonical (no line input)
-	 *  - No signal generation from Ctr+{C|Z..}
-	 *  - No echoing
-	 */
-	ter->c_lflag &= ~(ICANON | ISIG | ECHO);
+	bottom_cfg->baudrate = cfg->baudrate;
 
-	/* No special interpretation of output bytes.
-	 * No conversion of newline to carriage return/line feed.
-	 */
-	ter->c_oflag &= ~(OPOST | ONLCR);
-
-	/* No software flow control. */
-	ter->c_iflag &= ~(IXON | IXOFF | IXANY);
-
-	/* No blocking, return immediately with what is available. */
-	ter->c_cc[VMIN] = 0;
-	ter->c_cc[VTIME] = 0;
-
-	/* No special handling of bytes on receive. */
-	ter->c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
-
-	/* - Enable reading data and ignore control lines */
-	ter->c_cflag |= CREAD | CLOCAL;
-}
-
-/**
- * @brief Set the baud rate speed in the termios structure
- *
- * @param ter
- * @param baudrate
- *
- * @retval 0		If successful,
- * @retval -ENOTSUP	If requested baud rate is not supported.
- */
-static inline int native_tty_baud_speed_set(struct termios *ter, int baudrate)
-{
-	for (int i = 0; i < ARRAY_SIZE(baudrate_lut); i++) {
-		if (baudrate_lut[i].baudrate == baudrate) {
-			cfsetospeed(ter, baudrate_lut[i].termios_baudrate);
-			cfsetispeed(ter, baudrate_lut[i].termios_baudrate);
-			return 0;
-		}
-	}
-	return -ENOTSUP;
-}
-
-/**
- * @brief Set parity setting in the termios structure
- *
- * @param ter
- * @param parity
- *
- * @retval 0		If successful.
- * @retval -ENOTSUP	If requested parity is not supported.
- */
-static inline int native_tty_baud_parity_set(struct termios *ter, enum uart_config_parity parity)
-{
-	switch (parity) {
+	switch (cfg->parity) {
 	case UART_CFG_PARITY_NONE:
-		ter->c_cflag &= ~PARENB;
+		bottom_cfg->parity = NTB_PARITY_NONE;
 		break;
 	case UART_CFG_PARITY_ODD:
-		ter->c_cflag |= PARENB;
-		ter->c_cflag |= PARODD;
+		bottom_cfg->parity = NTB_PARITY_ODD;
 		break;
 	case UART_CFG_PARITY_EVEN:
-		ter->c_cflag |= PARENB;
-		ter->c_cflag &= ~PARODD;
+		bottom_cfg->parity = NTB_PARITY_EVEN;
 		break;
 	default:
-		/* Parity options mark and space (UART_CFG_PARITY_MARK and UART_CFG_PARITY_SPACE)
-		 * are not supported on this driver.
-		 */
 		return -ENOTSUP;
 	}
-	return 0;
-}
 
-/**
- * @brief Set the number of stop bits in the termios structure
- *
- * @param ter
- * @param stop_bits
- *
- * @retval 0		If successful.
- * @retval -ENOTSUP	If requested number of stop bits is not supported.
- */
-static inline int native_tty_stop_bits_set(struct termios *ter,
-					   enum uart_config_stop_bits stop_bits)
-{
-	switch (stop_bits) {
+	switch (cfg->data_bits) {
 	case UART_CFG_STOP_BITS_1:
-		ter->c_cflag &= ~CSTOPB;
+		bottom_cfg->stop_bits = NTB_STOP_BITS_1;
 		break;
 	case UART_CFG_STOP_BITS_2:
-		ter->c_cflag |= CSTOPB;
+		bottom_cfg->stop_bits = NTB_STOP_BITS_2;
 		break;
 	default:
-		/* Anything else is not supported in termios. */
 		return -ENOTSUP;
 	}
-	return 0;
-}
 
-/**
- * @brief Set the number of data bits in the termios structure
- *
- * @param ter
- * @param stop_bits
- *
- * @retval 0		If successful.
- * @retval -ENOTSUP	If requested number of data bits is not supported.
- */
-static inline int native_tty_data_bits_set(struct termios *ter,
-					   enum uart_config_data_bits data_bits)
-{
-	unsigned int data_bits_to_set;
-
-	switch (data_bits) {
+	switch (cfg->data_bits) {
 	case UART_CFG_DATA_BITS_5:
-		data_bits_to_set = CS5;
+		bottom_cfg->data_bits = NTB_DATA_BITS_5;
 		break;
 	case UART_CFG_DATA_BITS_6:
-		data_bits_to_set = CS6;
+		bottom_cfg->data_bits = NTB_DATA_BITS_6;
 		break;
 	case UART_CFG_DATA_BITS_7:
-		data_bits_to_set = CS7;
+		bottom_cfg->data_bits = NTB_DATA_BITS_7;
 		break;
 	case UART_CFG_DATA_BITS_8:
-		data_bits_to_set = CS8;
+		bottom_cfg->data_bits = NTB_DATA_BITS_8;
 		break;
 	default:
-		/* Anything else is not supported in termios */
 		return -ENOTSUP;
 	}
 
-	/* Clear all bits that set the data size */
-	ter->c_cflag &= ~CSIZE;
-	ter->c_cflag |= data_bits_to_set;
+	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		WARN("Could not set flow control, any kind of hw flow control is not supported.\n");
+		return -ENOTSUP;
+	}
+
+	bottom_cfg->flow_ctrl = NTB_FLOW_CTRL_NONE;
+
 	return 0;
 }
 
@@ -225,10 +120,10 @@ static void native_tty_uart_poll_out(const struct device *dev, unsigned char out
 {
 	struct native_tty_data *data = dev->data;
 
-	int ret = write(data->fd, &out_char, 1);
+	int ret = nsi_host_write(data->fd, &out_char, 1);
 
 	if (ret == -1) {
-		ERROR("Could not write to %s, reason: %s\n", data->serial_port, strerror(errno));
+		ERROR("Could not write to %s\n", data->serial_port);
 	}
 }
 
@@ -245,91 +140,21 @@ static int native_tty_uart_poll_in(const struct device *dev, unsigned char *p_ch
 {
 	struct native_tty_data *data = dev->data;
 
-	return read(data->fd, p_char, 1) > 0 ? 0 : -1;
+	return nsi_host_read(data->fd, p_char, 1) > 0 ? 0 : -1;
 }
 
 static int native_tty_configure(const struct device *dev, const struct uart_config *cfg)
 {
-	int rc, err;
 	int fd = ((struct native_tty_data *)dev->data)->fd;
+	struct native_tty_bottom_cfg bottom_cfg;
 
-	/* Structure used to control properties of a serial port */
-	struct termios ter;
-
-	/* Read current terminal driver settings */
-	rc = tcgetattr(fd, &ter);
+	int rc = native_tty_conv_to_bottom_cfg(&bottom_cfg, cfg);
 	if (rc) {
-		WARN("Could not read terminal driver settings\n");
+		WARN("Could not convert uart config to native tty bottom cfg\n");
 		return rc;
 	}
 
-	native_tty_termios_defaults_set(&ter);
-
-	rc = native_tty_baud_speed_set(&ter, cfg->baudrate);
-	if (rc) {
-		WARN("Could not set baudrate, as %d is not supported.\n", cfg->baudrate);
-		return rc;
-	}
-
-	rc = native_tty_baud_parity_set(&ter, cfg->parity);
-	if (rc) {
-		WARN("Could not set parity.\n");
-		return rc;
-	}
-
-	rc = native_tty_stop_bits_set(&ter, cfg->stop_bits);
-	if (rc) {
-		WARN("Could not set number of data bits.\n");
-		return rc;
-	}
-
-	rc = native_tty_data_bits_set(&ter, cfg->data_bits);
-	if (rc) {
-		WARN("Could not set number of data bits.\n");
-		return rc;
-	}
-
-	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-		WARN("Could not set flow control, any kind of hw flow control is not supported.\n");
-		return -ENOTSUP;
-	}
-
-	rc = tcsetattr(fd, TCSANOW, &ter);
-	if (rc) {
-		err = errno;
-		WARN("Could not set serial port settings, reason: %s\n", strerror(err));
-		return err;
-	}
-
-	/* tcsetattr returns success if ANY of the requested changes were successfully carried out,
-	 * not if ALL were. So we need to read back the settings and check if they are equal to the
-	 * requested ones.
-	 */
-	struct termios read_ter;
-
-	rc = tcgetattr(fd, &read_ter);
-	if (rc) {
-		err = errno;
-		WARN("Could not read serial port settings, reason: %s\n", strerror(err));
-		return err;
-	}
-
-	if (ter.c_cflag != read_ter.c_cflag || ter.c_iflag != read_ter.c_iflag ||
-	    ter.c_oflag != read_ter.c_oflag || ter.c_lflag != read_ter.c_lflag ||
-	    ter.c_line != read_ter.c_line || ter.c_ispeed != read_ter.c_ispeed ||
-	    ter.c_ospeed != read_ter.c_ospeed || 0 != memcmp(ter.c_cc, read_ter.c_cc, NCCS)) {
-		WARN("Read serial port settings do not match set ones.\n");
-		return -EBADE;
-	}
-
-	/* Flush both input and output */
-	rc = tcflush(fd, TCIOFLUSH);
-	if (rc) {
-		WARN("Could not flush serial port\n");
-		return rc;
-	}
-
-	return 0;
+	return native_tty_configure_bottom(fd, &bottom_cfg);
 }
 
 static int native_tty_serial_init(const struct device *dev)
@@ -337,22 +162,24 @@ static int native_tty_serial_init(const struct device *dev)
 	struct native_tty_data *data = dev->data;
 	struct uart_config uart_config = ((struct native_tty_config *)dev->config)->uart_config;
 
-	/* Default value for cmd_serial_port is NULL, this is due to the set 's' type in command
-	 * line opts. If it is anything else then it was configured via command line.
+	/* Default value for cmd_serial_port is NULL, this is due to the set 's' type in
+	 * command line opts. If it is anything else then it was configured via command
+	 * line.
 	 */
 	if (data->cmd_serial_port) {
 		data->serial_port = data->cmd_serial_port;
 	}
 
-	/* Default value for cmd_baudrate is UINT32_MAX, this is due to the set 'u' type in command
-	 * line opts. If it is anything else then it was configured via command line.
+	/* Default value for cmd_baudrate is UINT32_MAX, this is due to the set 'u' type in
+	 * command line opts. If it is anything else then it was configured via command
+	 * line.
 	 */
 	if (data->cmd_baudrate != UINT32_MAX) {
 		uart_config.baudrate = data->cmd_baudrate;
 	}
 
-	/* Serial port needs to be set either in the devicetree or provided via command line opts,
-	 * if that is not the case, then abort.
+	/* Serial port needs to be set either in the devicetree or provided via command line
+	 * opts, if that is not the case, then abort.
 	 */
 	if (!data->serial_port) {
 		ERROR("%s: path to the serial port was not set.\n", dev->name);
@@ -361,11 +188,8 @@ static int native_tty_serial_init(const struct device *dev)
 	/* Try to open a serial port as with read/write access, also prevent serial port
 	 * from becoming the controlling terminal.
 	 */
-	data->fd = open(data->serial_port, O_RDWR | O_NOCTTY);
-	if (data->fd < 0) {
-		ERROR("%s: failed to open serial port %s, reason: %s\n", dev->name,
-		      data->serial_port, strerror(errno));
-	}
+
+	data->fd = native_tty_open_tty_bottom(data->serial_port);
 
 	if (native_tty_configure(dev, &uart_config)) {
 		ERROR("%s: could not configure serial port %s\n", dev->name, data->serial_port);
@@ -408,7 +232,6 @@ DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 
 #define INST_NAME(inst) DEVICE_DT_NAME(DT_DRV_INST(inst))
 
-
 #define NATIVE_TTY_COMMAND_LINE_OPTS(inst)                                                         \
 	{                                                                                          \
 		.option = INST_NAME(inst) "_port",						   \
@@ -429,7 +252,8 @@ DT_INST_FOREACH_STATUS_OKAY(NATIVE_TTY_INSTANCE);
 	},
 
 /**
- * @brief Adds command line options for setting serial port and baud rate for each uart device.
+ * @brief Adds command line options for setting serial port and baud rate for each uart
+ * device.
  */
 static void native_tty_add_serial_options(void)
 {
@@ -441,7 +265,7 @@ static void native_tty_add_serial_options(void)
 
 #define NATIVE_TTY_CLEANUP(inst)                                                                   \
 	if (native_tty_##inst##_data.fd != 0) {                                                    \
-		close(native_tty_##inst##_data.fd);                                                \
+		nsi_host_close(native_tty_##inst##_data.fd);                                       \
 	}
 
 /**

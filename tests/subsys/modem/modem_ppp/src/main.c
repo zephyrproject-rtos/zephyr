@@ -11,8 +11,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
-#include "zephyr/net/net_l2.h"
-#include "zephyr/net/ppp.h"
+#include <zephyr/net/net_l2.h>
+#include <zephyr/net/ppp.h>
 #include <zephyr/sys/crc.h>
 #include <string.h>
 

@@ -70,18 +70,6 @@ properties:
     default: 3300
     description: Indicates the reference voltage of the ADC in mV (on the target board).
 
-  temp-channel:
-    type: int
-    description: Indicates the ADC channel of the internal temperature sensor.
-
-  vref-channel:
-    type: int
-    description: Indicates the ADC channel of the internal voltage reference.
-
-  vbat-channel:
-    type: int
-    description: Indicates the ADC channel of the internal vbat monitoring.
-
   resolutions:
     type: array
     required: true
@@ -108,6 +96,17 @@ properties:
     type: int
     description: |
       Number of sampling time common channels for this ADC instance, if any.
+
+  st,adc-sequencer:
+    type: int
+    required: true
+    enum:
+      - 0 # NOT_FULLY_CONFIGURABLE
+      - 1 # FULLY_CONFIGURABLE
+    description: |
+      Type of ADC sequencer:
+      - <NOT_FULLY_CONFIGURABLE>: Not fully configurable sequencer
+      - <FULLY_CONFIGURABLE>: Fully configurable sequencer
 
 io-channel-cells:
   - input

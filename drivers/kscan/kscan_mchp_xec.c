@@ -20,6 +20,8 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #define LOG_LEVEL CONFIG_KSCAN_LOG_LEVEL
 LOG_MODULE_REGISTER(kscan_mchp_xec);
@@ -42,13 +44,14 @@ LOG_MODULE_REGISTER(kscan_mchp_xec);
 
 struct kscan_xec_config {
 	struct kscan_regs *regs;
+	const struct pinctrl_dev_config *pcfg;
+	uint8_t rsvd[3];
 	uint8_t girq;
 	uint8_t girq_pos;
 	uint8_t irq_pri;
 	uint8_t pcr_idx;
 	uint8_t pcr_pos;
-	uint8_t rsvd[3];
-	const struct pinctrl_dev_config *pcfg;
+	bool wakeup_source;
 };
 
 struct kscan_xec_data {
@@ -370,7 +373,9 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 		drive_keyboard_column(dev, KEYBOARD_COLUMN_DRIVE_ALL);
 
 		k_sem_take(&data->poll_lock, K_FOREVER);
-
+#ifdef CONFIG_PM_DEVICE
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 		uint32_t start_poll_cycles = k_cycle_get_32();
 
 		while (atomic_get(&data->enable_scan) == 1U) {
@@ -411,6 +416,9 @@ void polling_task(const struct device *dev, void *dummy2, void *dummy3)
 			/* Allow other threads to run while we sleep */
 			k_usleep(wait_period);
 		}
+#ifdef CONFIG_PM_DEVICE
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+#endif
 	}
 }
 
@@ -448,6 +456,44 @@ static int kscan_xec_enable_interface(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int kscan_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct kscan_xec_config const *cfg = dev->config;
+	struct kscan_regs *regs = cfg->regs;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (!(cfg->wakeup_source)) {
+			ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+			if (ret != 0) {
+				LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
+				return ret;
+			}
+			regs->KSO_SEL &= ~BIT(MCHP_KSCAN_KSO_EN_POS);
+			/* Clea Status register */
+			regs->KSI_STS = MCHP_KSCAN_KSO_SEL_REG_MASK;
+			regs->KSI_IEN = MCHP_KSCAN_KSI_IEN_REG_MASK;
+		}
+	break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (!(cfg->wakeup_source)) {
+			regs->KSO_SEL |= BIT(MCHP_KSCAN_KSO_EN_POS);
+			regs->KSI_IEN = (~MCHP_KSCAN_KSI_IEN_REG_MASK);
+			ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+			if (ret == -ENOENT) { /* pinctrl-1 does not exist.  */
+				ret = 0;
+			}
+		}
+	break;
+	default:
+		ret = -ENOTSUP;
+	}
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct kscan_driver_api kscan_xec_driver_api = {
 	.config = kscan_xec_configure,
@@ -505,6 +551,12 @@ static struct kscan_xec_data kbd_data;
 
 PINCTRL_DT_INST_DEFINE(0);
 
+/* To enable wakeup on the KSCAN, the DTS needs to have entries defined
+ * in the KSCAN node in the DTS specifying it as a wake source;
+ * Example as below
+ *
+ *	wakeup-source;
+ */
 static struct kscan_xec_config kscan_xec_cfg_0 = {
 	.regs = (struct kscan_regs *)(DT_INST_REG_ADDR(0)),
 	.girq = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),
@@ -512,9 +564,12 @@ static struct kscan_xec_config kscan_xec_cfg_0 = {
 	.pcr_idx = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 0)),
 	.pcr_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 1)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.wakeup_source = DT_INST_PROP(0, wakeup_source)
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, kscan_xec_pm_action);
+
 DEVICE_DT_INST_DEFINE(0, kscan_xec_init,
-		      NULL, &kbd_data, &kscan_xec_cfg_0,
+		      PM_DEVICE_DT_INST_GET(0), &kbd_data, &kscan_xec_cfg_0,
 		      POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		      &kscan_xec_driver_api);

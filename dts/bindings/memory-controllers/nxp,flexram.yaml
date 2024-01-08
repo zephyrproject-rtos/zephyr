@@ -1,0 +1,52 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP FlexRAM on-chip ram controller
+
+include: base.yaml
+
+compatible: "nxp,flexram"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  flexram,has-magic-addr:
+    type: boolean
+    description: |
+      Whether or not the flexram on the SOC has the
+      magic address feature, which allows for an interrupt
+      on arbitrary address access in any on chip RAM region.
+
+  flexram,num-ram-banks:
+    type: int
+    required: true
+    description: |
+      Number of RAM banks in the SOC ram array
+
+  flexram,bank-size:
+    type: int
+    required: true
+    description: |
+      Size of each RAM bank in KB
+
+  flexram,bank-spec:
+    type: array
+    description: |
+      Custom mapping of runtime RAM bank partitions. If this
+      property is present, then it will be used. If this
+      property is not present, then the fusemap configuration
+      will be used.
+
+  flexram,tcm-read-wait-mode:
+    type: boolean
+    description: |
+      TCM RAM read will finish in 2 cycles instead of 1.
+
+  flexram,tcm-write-wait-mode:
+    type: boolean
+    description: |
+      TCM RAM write will finish in 2 cycles instead of 1.

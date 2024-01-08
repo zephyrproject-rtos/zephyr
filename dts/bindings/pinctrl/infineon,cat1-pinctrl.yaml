@@ -21,6 +21,7 @@ description: |
   Pin configuration can also specify the pin properties, for example the
   'bias-pull-up' property. Here is a list of the supported standard pin
   properties:
+    * bias-high-impedance
     * bias-pull-up
     * bias-pull-down
     * drive-open-drain
@@ -105,6 +106,7 @@ child-binding:
   include:
     - name: pincfg-node.yaml
       property-allowlist:
+        - bias-high-impedance
         - bias-pull-down
         - bias-pull-up
         - drive-push-pull

@@ -19,7 +19,7 @@
 	#define NUM_THREAD 10
 #endif
 #define BASE_PRIORITY 0
-#define ITRERATION_COUNT 5
+#define ITERATION_COUNT 5
 
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 /* slice size in millisecond */
@@ -113,7 +113,7 @@ ZTEST(threads_scheduling, test_slice_scheduling)
 	/* enable time slice */
 	k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(BASE_PRIORITY));
 
-	while (count < ITRERATION_COUNT) {
+	while (count < ITERATION_COUNT) {
 		k_uptime_delta(&elapsed_slice);
 
 		/* Keep the current thread busy for more than one slice,

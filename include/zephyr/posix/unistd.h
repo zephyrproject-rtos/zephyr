@@ -23,16 +23,16 @@ extern "C" {
 
 #ifdef CONFIG_POSIX_API
 /* File related operations */
-extern int close(int file);
-extern ssize_t write(int file, const void *buffer, size_t count);
-extern ssize_t read(int file, void *buffer, size_t count);
-extern off_t lseek(int file, off_t offset, int whence);
+int close(int file);
+ssize_t write(int file, const void *buffer, size_t count);
+ssize_t read(int file, void *buffer, size_t count);
+off_t lseek(int file, off_t offset, int whence);
 
 /* File System related operations */
-extern int rename(const char *old, const char *newp);
-extern int unlink(const char *path);
-extern int stat(const char *path, struct stat *buf);
-extern int mkdir(const char *path, mode_t mode);
+int rename(const char *old, const char *newp);
+int unlink(const char *path);
+int stat(const char *path, struct stat *buf);
+int mkdir(const char *path, mode_t mode);
 
 FUNC_NORETURN void _exit(int status);
 

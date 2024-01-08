@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #if defined(CONFIG_DNS_RESOLVER) || defined(CONFIG_NET_IP)
 #define ANY_RESOLVER
@@ -281,13 +281,13 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 	uint32_t ret;
 
 	if (hints) {
-		Z_OOPS(z_user_from_copy(&hints_copy, (void *)hints,
+		K_OOPS(k_usermode_from_copy(&hints_copy, (void *)hints,
 					sizeof(hints_copy)));
 	}
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX, sizeof(struct zsock_addrinfo)));
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX, sizeof(struct zsock_addrinfo)));
 
 	if (service) {
-		service_copy = z_user_string_alloc_copy((char *)service, 64);
+		service_copy = k_usermode_string_alloc_copy((char *)service, 64);
 		if (!service_copy) {
 			ret = DNS_EAI_MEMORY;
 			goto out;
@@ -295,7 +295,7 @@ static inline int z_vrfy_z_zsock_getaddrinfo_internal(const char *host,
 	}
 
 	if (host) {
-		host_copy = z_user_string_alloc_copy((char *)host, 64);
+		host_copy = k_usermode_string_alloc_copy((char *)host, 64);
 		if (!host_copy) {
 			ret = DNS_EAI_MEMORY;
 			goto out;

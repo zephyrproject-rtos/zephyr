@@ -1551,7 +1551,6 @@ class Node:
             # Allow a few special properties to not be declared in the binding
             if prop_name.endswith("-controller") or \
                prop_name.startswith("#") or \
-               prop_name.startswith("pinctrl-") or \
                prop_name in {
                    "compatible", "status", "ranges", "phandle",
                    "interrupt-parent", "interrupts-extended", "device_type"}:
@@ -2053,6 +2052,56 @@ class EDT:
         except Exception as e:
             raise EDTError(e)
 
+    def _process_properties_r(self, root_node, props_node):
+        """
+        Process props_node properties for dependencies, and add those as
+        dependencies of root_node. Then walk through all the props_node
+        children and do the same recursively, maintaining the same root_node.
+
+        This ensures that on a node with child nodes, the parent node includes
+        the dependencies of all the child nodes as well as its own.
+        """
+        # A Node depends on any Nodes present in 'phandle',
+        # 'phandles', or 'phandle-array' property values.
+        for prop in props_node.props.values():
+            if prop.type == 'phandle':
+                self._graph.add_edge(root_node, prop.val)
+            elif prop.type == 'phandles':
+                if TYPE_CHECKING:
+                    assert isinstance(prop.val, list)
+                for phandle_node in prop.val:
+                    self._graph.add_edge(root_node, phandle_node)
+            elif prop.type == 'phandle-array':
+                if TYPE_CHECKING:
+                    assert isinstance(prop.val, list)
+                for cd in prop.val:
+                    if cd is None:
+                        continue
+                    if TYPE_CHECKING:
+                        assert isinstance(cd, ControllerAndData)
+                    self._graph.add_edge(root_node, cd.controller)
+
+        # A Node depends on whatever supports the interrupts it
+        # generates.
+        for intr in props_node.interrupts:
+            self._graph.add_edge(root_node, intr.controller)
+
+        # If the binding defines child bindings, link the child properties to
+        # the root_node as well.
+        if props_node._binding and props_node._binding.child_binding:
+            for child in props_node.children.values():
+                if "compatible" in child.props:
+                    # Not a child node, normal node on a different binding.
+                    continue
+                self._process_properties_r(root_node, child)
+
+    def _process_properties(self, node):
+        """
+        Add node dependencies based on own as well as child node properties,
+        start from the node itself.
+        """
+        self._process_properties_r(node, node)
+
     def _init_graph(self) -> None:
         # Constructs a graph of dependencies between Node instances,
         # which is usable for computing a partial order over the dependencies.
@@ -2062,34 +2111,15 @@ class EDT:
         # first time the scc_order property is read.
 
         for node in self.nodes:
+            # Always insert root node
+            if not node.parent:
+                self._graph.add_node(node)
+
             # A Node always depends on its parent.
             for child in node.children.values():
                 self._graph.add_edge(child, node)
 
-            # A Node depends on any Nodes present in 'phandle',
-            # 'phandles', or 'phandle-array' property values.
-            for prop in node.props.values():
-                if prop.type == 'phandle':
-                    self._graph.add_edge(node, prop.val)
-                elif prop.type == 'phandles':
-                    if TYPE_CHECKING:
-                        assert isinstance(prop.val, list)
-                    for phandle_node in prop.val:
-                        self._graph.add_edge(node, phandle_node)
-                elif prop.type == 'phandle-array':
-                    if TYPE_CHECKING:
-                        assert isinstance(prop.val, list)
-                    for cd in prop.val:
-                        if cd is None:
-                            continue
-                        if TYPE_CHECKING:
-                            assert isinstance(cd, ControllerAndData)
-                        self._graph.add_edge(node, cd.controller)
-
-            # A Node depends on whatever supports the interrupts it
-            # generates.
-            for intr in node.interrupts:
-                self._graph.add_edge(node, intr.controller)
+            self._process_properties(node)
 
     def _init_compat2binding(self) -> None:
         # Creates self._compat2binding, a dictionary that maps

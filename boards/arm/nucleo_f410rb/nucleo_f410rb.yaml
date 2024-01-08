@@ -16,3 +16,4 @@ supported:
   - i2c
 ram: 32
 flash: 128
+vendor: st

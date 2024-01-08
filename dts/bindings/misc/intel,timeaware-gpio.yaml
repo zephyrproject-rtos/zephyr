@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel TGPIO node
+
+compatible: "intel,timeaware-gpio"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  timer-clock:
+    type: int
+    required: true
+    description: ART timer clock frequency
+
+  max-pins:
+    type: int
+    required: true
+    description: Total number of available pins

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021,2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -619,7 +619,7 @@
 			reg = <0x40194000 0x4000>;
 			interrupts =  <186 0>;
 
-			flexpwm3_pwm0: pwm0 {
+			flexpwm3_pwm0: flexpwm3_pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
 				interrupts = <182 0>;
@@ -749,24 +749,22 @@
 		};
 
 		usb1: usbd@40430000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x40430000 0x200>;
 			interrupts = <136 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
 		usb2: usbd@4042c000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x4042c000 0x200>;
 			interrupts = <135 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&xtal>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci1";
 			status = "disabled";
 		};
 
@@ -808,8 +806,6 @@
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
 			clk-source = <0>;
-			sjw = <1>;
-			sjw-data = <1>;
 			sample-point = <875>;
 			sample-point-data = <875>;
 			status = "disabled";
@@ -822,8 +818,6 @@
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 18>;
 			clk-source = <0>;
-			sjw = <1>;
-			sjw-data = <1>;
 			sample-point = <875>;
 			sample-point-data = <875>;
 			status = "disabled";
@@ -836,8 +830,6 @@
 			interrupt-names = "common", "error";
 			clocks = <&ccm IMX_CCM_CAN3_CLK 0x84 6>;
 			clk-source = <0>;
-			sjw = <1>;
-			sjw-data = <1>;
 			sample-point = <875>;
 			sample-point-data = <875>;
 			status = "disabled";
@@ -953,6 +945,7 @@
 				<8 0>, <9 0>, <10 0>, <11 0>,
 				<12 0>, <13 0>, <14 0>, <15 0>,
 				<16 0>;
+			irq-shared-offset = <16>;
 		};
 
 		edma_lpsr0: dma-controller@40c14000 {
@@ -971,6 +964,7 @@
 				<8 0>, <9 0>, <10 0>, <11 0>,
 				<12 0>, <13 0>, <14 0>, <15 0>,
 				<16 0>;
+			irq-shared-offset = <16>;
 		};
 
 		pxp: pxp@40814000 {
@@ -994,6 +988,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40404000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+			/* Source from audio PLL */
+			clock-mux = <4>;
 			pre-div = <0>;
 			podf = <4>;
 			pll-clocks = <&anatop 0 0 0>,
@@ -1015,6 +1011,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40408000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI2_CLK 0x2084 4>;
+			/* Source from audio PLL */
+			clock-mux = <4>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
@@ -1036,6 +1034,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x4040c000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x2104 4>;
+			/* Source from audio PLL */
+			clock-mux = <4>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,
@@ -1057,6 +1057,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x40c40000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI4_CLK 0x2184 6>;
+			/* Source from audio PLL */
+			clock-mux = <6>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0 0 0>,

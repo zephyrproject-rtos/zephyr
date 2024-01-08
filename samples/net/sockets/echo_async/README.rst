@@ -1,7 +1,8 @@
-.. _async-sockets-echo-sample:
+.. zephyr:code-sample:: async-sockets-echo
+   :name: Asynchronous echo server using poll()
+   :relevant-api: bsd_sockets
 
-Asynchronous Socket Echo Server
-###############################
+   Implement an asynchronous IPv4/IPv6 TCP echo server using BSD sockets and poll()
 
 Overview
 ********
@@ -9,7 +10,7 @@ Overview
 The sockets/echo-async sample application for Zephyr implements an
 asynchronous IPv4/IPv6 TCP echo server using a BSD Sockets compatible API
 with non-blocking sockets and a ``poll()`` call. This is an extension of
-the :ref:`sockets-echo-sample` sample. It's a more involved application,
+the :zephyr:code-sample:`sockets-echo` sample. It's a more involved application,
 supporting both IPv4 and IPv6 with concurrent connections, limiting
 maximum number of simultaneous connections, and basic error handling.
 
@@ -42,7 +43,7 @@ After the sample starts, it expects connections at 192.0.2.1 (IPv4), or
     $ telnet 2001:db8::1 4242   # or this for IPv6
 
 After a connection is made, the application will echo back any line sent to
-it. Unlike the above-mentioned :ref:`sockets-echo-sample`, this application
+it. Unlike the above-mentioned :zephyr:code-sample:`sockets-echo` sample, this application
 supports multiple concurrent client connections. You can open
 another terminal window and run the same telnet command as above.
 The sample supports up to three connected clients, but this can be adjusted
@@ -56,11 +57,11 @@ Linux. (Note: if you look at the source, you will see that the code is
 the same except the header files are different for Zephyr vs POSIX, and
 there's an additional option to set for Linux to make a socket IPv6-only).
 
-To build for a host POSIX OS:
+To build:
 
 .. code-block:: console
 
-    $ make -f Makefile.posix
+    $ make -f Makefile.host
 
 To run:
 

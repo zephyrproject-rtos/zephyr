@@ -15,7 +15,7 @@
 #include <mbedtls/pk.h>
 #include <mbedtls/rsa.h>
 #include <mbedtls/sha256.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #endif
 
 #ifdef CONFIG_JWT_SIGN_ECDSA
@@ -24,7 +24,7 @@
 #include <tinycrypt/ecc_dsa.h>
 #include <tinycrypt/constants.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #endif
 
 /*

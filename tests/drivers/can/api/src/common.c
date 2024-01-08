@@ -81,7 +81,7 @@ const struct can_frame test_ext_rtr_frame_1 = {
 };
 
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 const struct can_frame test_std_fdf_frame_1 = {
 	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
@@ -95,7 +95,7 @@ const struct can_frame test_std_fdf_frame_1 = {
 };
 
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 const struct can_frame test_std_fdf_frame_2 = {
 	.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
@@ -219,7 +219,7 @@ const struct can_filter test_std_some_filter = {
 };
 
 /**
- * @brief Standard (11-bit) CAN-FD ID filter 1. This filter matches
+ * @brief Standard (11-bit) CAN FD ID filter 1. This filter matches
  * ``test_std_fdf_frame_1``.
  */
 const struct can_filter test_std_fdf_filter_1 = {
@@ -229,7 +229,7 @@ const struct can_filter test_std_fdf_filter_1 = {
 };
 
 /**
- * @brief Standard (11-bit) CAN-FD ID filter 2. This filter matches
+ * @brief Standard (11-bit) CAN FD ID filter 2. This filter matches
  * ``test_std_fdf_frame_2``.
  */
 const struct can_filter test_std_fdf_filter_2 = {
@@ -252,5 +252,9 @@ void assert_frame_equal(const struct can_frame *frame1,
 	zassert_equal(frame1->flags, frame2->flags, "Flags do not match");
 	zassert_equal(frame1->id | id_mask, frame2->id | id_mask, "ID does not match");
 	zassert_equal(frame1->dlc, frame2->dlc, "DLC does not match");
-	zassert_mem_equal(frame1->data, frame2->data, frame1->dlc, "Received data differ");
+
+	if ((frame1->flags & CAN_FRAME_RTR) == 0U) {
+		zassert_mem_equal(frame1->data, frame2->data, can_dlc_to_bytes(frame1->dlc),
+				  "Received data differ");
+	}
 }

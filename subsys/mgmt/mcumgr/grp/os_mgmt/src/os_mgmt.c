@@ -33,10 +33,20 @@
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
 #endif
 
-#ifdef CONFIG_MCUMGR_GRP_OS_INFO
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME
+#include <stdlib.h>
+#include <zephyr/drivers/rtc.h>
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_OS_INFO) || defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
 #include <stdio.h>
 #include <version.h>
+#if defined(CONFIG_MCUMGR_GRP_OS_INFO)
 #include <os_mgmt_processor.h>
+#endif
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+#include <bootutil/boot_status.h>
+#endif
 #include <mgmt/mcumgr/util/zcbor_bulk.h>
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 #include <zephyr/net/hostname.h>
@@ -71,6 +81,52 @@ struct thread_iterator_info {
 	int thread_idx;
 	bool ok;
 };
+#endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME
+/* Iterator for extracting values from the provided datetime string, min and max values are
+ * checked against the provided value, then the offset is added after. If the value is not
+ * within the min and max values, the set operation will be aborted.
+ */
+struct datetime_parser {
+	int *value;
+	int min_value;
+	int max_value;
+	int offset;
+};
+
+/* RTC device alias to use for datetime functions, "rtc" */
+#define RTC_DEVICE DEVICE_DT_GET(DT_ALIAS(rtc))
+
+#define RTC_DATETIME_YEAR_OFFSET 1900
+#define RTC_DATETIME_MONTH_OFFSET 1
+#define RTC_DATETIME_NUMERIC_BASE 10
+#define RTC_DATETIME_MS_TO_NS 1000000
+#define RTC_DATETIME_YEAR_MIN 1900
+#define RTC_DATETIME_YEAR_MAX 11899
+#define RTC_DATETIME_MONTH_MIN 1
+#define RTC_DATETIME_MONTH_MAX 12
+#define RTC_DATETIME_DAY_MIN 1
+#define RTC_DATETIME_DAY_MAX 31
+#define RTC_DATETIME_HOUR_MIN 0
+#define RTC_DATETIME_HOUR_MAX 23
+#define RTC_DATETIME_MINUTE_MIN 0
+#define RTC_DATETIME_MINUTE_MAX 59
+#define RTC_DATETIME_SECOND_MIN 0
+#define RTC_DATETIME_SECOND_MAX 59
+#define RTC_DATETIME_MILLISECOND_MIN 0
+#define RTC_DATETIME_MILLISECOND_MAX 999
+
+/* Size used for datetime creation buffer */
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
+#define RTC_DATETIME_STRING_SIZE 32
+#else
+#define RTC_DATETIME_STRING_SIZE 26
+#endif
+
+/* Minimum/maximum size of a datetime string that a client can provide */
+#define RTC_DATETIME_MIN_STRING_SIZE 19
+#define RTC_DATETIME_MAX_STRING_SIZE 26
 #endif
 
 /* Specifies what the "all" ('a') of info parameter shows */
@@ -365,6 +421,64 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE)	&&
 	     zcbor_tstr_put_lit(zse, "buf_count")		&&
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT);
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO)
+
+#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SINGLE_SLOT
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_SCRATCH
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY)
+#define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
+#define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
+#elif IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+#else
+#define BOOTLOADER_MODE -1
+#endif
+
+static int
+os_mgmt_bootloader_info(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	struct zcbor_string query = { 0 };
+	size_t decoded;
+	bool ok;
+
+	struct zcbor_map_decode_key_val bootloader_info[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("query", zcbor_tstr_decode, &query),
+	};
+
+	if (zcbor_map_decode_bulk(zsd, bootloader_info, ARRAY_SIZE(bootloader_info), &decoded)) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	/* If no parameter is recognized then just introduce the bootloader. */
+	if (decoded == 0) {
+		ok = zcbor_tstr_put_lit(zse, "bootloader") &&
+		     zcbor_tstr_put_lit(zse, "MCUboot");
+	} else if (zcbor_map_decode_bulk_key_found(bootloader_info, ARRAY_SIZE(bootloader_info),
+		   "query") &&
+		   (sizeof("mode") - 1) == query.len &&
+		   memcmp("mode", query.value, query.len) == 0) {
+
+		ok = zcbor_tstr_put_lit(zse, "mode") &&
+		     zcbor_int32_put(zse, BOOTLOADER_MODE);
+#if IS_ENABLED(MCUBOOT_BOOTLOADER_NO_DOWNGRADE)
+		ok = zcbor_tstr_put_lit(zse, "no-downgrade") &&
+		     zcbor_bool_encode(zse, true);
+#endif
+	} else {
+		return OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER;
+	}
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }
@@ -681,6 +795,210 @@ fail:
 }
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME
+/**
+ * Command handler: os datetime get
+ */
+static int os_mgmt_datetime_read(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+	struct rtc_time current_time;
+	char date_string[RTC_DATETIME_STRING_SIZE];
+	int rc;
+	bool ok;
+
+#if defined(CONFIG_MCUMGR_GRP_OS_DATETIME_HOOK)
+	enum mgmt_cb_return status;
+	int32_t err_rc;
+	uint16_t err_group;
+
+	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_DATETIME_GET, NULL, 0, &err_rc,
+				      &err_group);
+
+	if (status != MGMT_CB_OK) {
+		if (status == MGMT_CB_ERROR_RC) {
+			return err_rc;
+		}
+
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	}
+#endif
+
+	rc = rtc_get_time(RTC_DEVICE, &current_time);
+
+	if (rc == -ENODATA) {
+		/* RTC not set */
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_RTC_NOT_SET);
+		goto finished;
+	} else if (rc != 0) {
+		/* Other RTC error */
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_RTC_COMMAND_FAILED);
+		goto finished;
+	}
+
+	sprintf(date_string, "%4d-%02d-%02dT%02d:%02d:%02d"
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
+		".%d"
+#endif
+		, (uint16_t)(current_time.tm_year + RTC_DATETIME_YEAR_OFFSET),
+		(uint8_t)(current_time.tm_mon + RTC_DATETIME_MONTH_OFFSET),
+		(uint8_t)current_time.tm_mday, (uint8_t)current_time.tm_hour,
+		(uint8_t)current_time.tm_min, (uint8_t)current_time.tm_sec
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
+		, (uint16_t)(current_time.tm_nsec / RTC_DATETIME_MS_TO_NS)
+#endif
+	);
+
+	ok = zcbor_tstr_put_lit(zse, "datetime")				&&
+	     zcbor_tstr_encode_ptr(zse, date_string, strlen(date_string));
+
+finished:
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+
+/**
+ * Command handler: os datetime set
+ */
+static int os_mgmt_datetime_write(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zsd = ctxt->reader->zs;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	size_t decoded;
+	struct zcbor_string datetime = { 0 };
+	int rc;
+	uint8_t i = 0;
+	bool ok = true;
+	char *pos;
+	char *new_pos;
+	char date_string[RTC_DATETIME_MAX_STRING_SIZE];
+	struct rtc_time new_time = {
+		.tm_wday = -1,
+		.tm_yday = -1,
+		.tm_isdst = -1,
+		.tm_nsec = 0,
+	};
+	struct datetime_parser parser[] = {
+		{
+			.value = &new_time.tm_year,
+			.min_value = RTC_DATETIME_YEAR_MIN,
+			.max_value = RTC_DATETIME_YEAR_MAX,
+			.offset = -RTC_DATETIME_YEAR_OFFSET,
+		},
+		{
+			.value = &new_time.tm_mon,
+			.min_value = RTC_DATETIME_MONTH_MIN,
+			.max_value = RTC_DATETIME_MONTH_MAX,
+			.offset = -RTC_DATETIME_MONTH_OFFSET,
+		},
+		{
+			.value = &new_time.tm_mday,
+			.min_value = RTC_DATETIME_DAY_MIN,
+			.max_value = RTC_DATETIME_DAY_MAX,
+		},
+		{
+			.value = &new_time.tm_hour,
+			.min_value = RTC_DATETIME_HOUR_MIN,
+			.max_value = RTC_DATETIME_HOUR_MAX,
+		},
+		{
+			.value = &new_time.tm_min,
+			.min_value = RTC_DATETIME_MINUTE_MIN,
+			.max_value = RTC_DATETIME_MINUTE_MAX,
+		},
+		{
+			.value = &new_time.tm_sec,
+			.min_value = RTC_DATETIME_SECOND_MIN,
+			.max_value = RTC_DATETIME_SECOND_MAX,
+		},
+	};
+
+#if defined(CONFIG_MCUMGR_GRP_OS_DATETIME_HOOK)
+	enum mgmt_cb_return status;
+	int32_t err_rc;
+	uint16_t err_group;
+#endif
+
+	struct zcbor_map_decode_key_val datetime_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("datetime", zcbor_tstr_decode, &datetime),
+	};
+
+	if (zcbor_map_decode_bulk(zsd, datetime_decode, ARRAY_SIZE(datetime_decode), &decoded)) {
+		return MGMT_ERR_EINVAL;
+	} else if (datetime.len < RTC_DATETIME_MIN_STRING_SIZE ||
+		   datetime.len >= RTC_DATETIME_MAX_STRING_SIZE) {
+		return MGMT_ERR_EINVAL;
+	}
+
+	memcpy(date_string, datetime.value, datetime.len);
+	date_string[datetime.len] = '\0';
+
+	pos = date_string;
+
+	while (i < ARRAY_SIZE(parser)) {
+		if (pos == (date_string + datetime.len)) {
+			/* Encountered end of string early, this is invalid */
+			return MGMT_ERR_EINVAL;
+		}
+
+		*parser[i].value = strtol(pos, &new_pos, RTC_DATETIME_NUMERIC_BASE);
+
+		if (pos == new_pos) {
+			/* Missing or unable to convert field */
+			return MGMT_ERR_EINVAL;
+		}
+
+		if (*parser[i].value < parser[i].min_value ||
+		    *parser[i].value > parser[i].max_value) {
+			/* Value is not within the allowed bounds of this field */
+			return MGMT_ERR_EINVAL;
+		}
+
+		*parser[i].value += parser[i].offset;
+
+		/* Skip a character as there is always a delimiter between the fields */
+		++i;
+		pos = new_pos + 1;
+	}
+
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
+	if (*(pos - 1) == '.' && *pos != '\0') {
+		/* Provided value has a ms value, extract it */
+		new_time.tm_nsec = strtol(pos, &new_pos, RTC_DATETIME_NUMERIC_BASE);
+
+		if (new_time.tm_nsec < RTC_DATETIME_MILLISECOND_MIN ||
+		    new_time.tm_nsec > RTC_DATETIME_MILLISECOND_MAX) {
+			return MGMT_ERR_EINVAL;
+		}
+
+		new_time.tm_nsec *= RTC_DATETIME_MS_TO_NS;
+	}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_OS_DATETIME_HOOK)
+	status = mgmt_callback_notify(MGMT_EVT_OP_OS_MGMT_DATETIME_SET, &new_time,
+				      sizeof(new_time), &err_rc, &err_group);
+
+	if (status != MGMT_CB_OK) {
+		if (status == MGMT_CB_ERROR_RC) {
+			return err_rc;
+		}
+
+		ok = smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+		return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+	}
+#endif
+
+	rc = rtc_set_time(RTC_DEVICE, &new_time);
+
+	if (rc != 0) {
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_RTC_COMMAND_FAILED);
+	}
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif
+
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 /*
  * @brief	Translate OS mgmt group error code into MCUmgr error code
@@ -698,7 +1016,13 @@ static int os_mgmt_translate_error_code(uint16_t err)
 		rc = MGMT_ERR_EINVAL;
 		break;
 
+	case OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER:
+	case OS_MGMT_ERR_RTC_NOT_SET:
+		rc = MGMT_ERR_ENOENT;
+		break;
+
 	case OS_MGMT_ERR_UNKNOWN:
+	case OS_MGMT_ERR_RTC_COMMAND_FAILED:
 	default:
 		rc = MGMT_ERR_EUNKNOWN;
 	}
@@ -718,6 +1042,13 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 		os_mgmt_taskstat_read, NULL
 	},
 #endif
+
+#ifdef CONFIG_MCUMGR_GRP_OS_DATETIME
+	[OS_MGMT_ID_DATETIME_STR] = {
+		os_mgmt_datetime_read, os_mgmt_datetime_write
+	},
+#endif
+
 #ifdef CONFIG_REBOOT
 	[OS_MGMT_ID_RESET] = {
 		NULL, os_mgmt_reset
@@ -731,6 +1062,11 @@ static const struct mgmt_handler os_mgmt_group_handlers[] = {
 #ifdef CONFIG_MCUMGR_GRP_OS_INFO
 	[OS_MGMT_ID_INFO] = {
 		os_mgmt_info, NULL
+	},
+#endif
+#ifdef CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO
+	[OS_MGMT_ID_BOOTLOADER_INFO] = {
+		os_mgmt_bootloader_info, NULL
 	},
 #endif
 };

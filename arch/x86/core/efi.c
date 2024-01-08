@@ -6,7 +6,7 @@
 
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/x86/efi.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include "../zefi/efi.h" /* ZEFI not on include path */
 #include <zephyr/kernel.h>
 #include <kernel_arch_func.h>

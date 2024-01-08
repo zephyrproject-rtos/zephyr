@@ -212,7 +212,8 @@ static int l2cap_accept_policy(struct bt_conn *conn)
 	return 0;
 }
 
-static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **chan)
 {
 	int err;
 

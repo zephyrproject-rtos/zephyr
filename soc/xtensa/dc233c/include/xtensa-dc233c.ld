@@ -322,6 +322,12 @@ SECTIONS
 
     *(.text.arch_is_in_isr)
 
+    /* To support backtracing */
+    *libarch__xtensa__core.a:xtensa_backtrace.c.obj(.literal.*)
+    *libarch__xtensa__core.a:xtensa_backtrace.c.obj(.text.*)
+    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1.literal)
+    *libarch__xtensa__core.a:debug_helpers_asm.S.obj(.iram1)
+
     *libkernel.a:fatal.c.obj(.literal.*)
     *libkernel.a:fatal.c.obj(.text.*)
 
@@ -340,6 +346,10 @@ SECTIONS
   } >vec_helpers :vec_helpers_phdr
 #endif /* CONFIG_XTENSA_MMU */
 
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate.ld>
+#endif
+
   .ResetVector.text : ALIGN(4)
   {
     __rom_region_start = ABSOLUTE(.);
@@ -357,6 +367,7 @@ SECTIONS
     *(.entry.text)
     *(.init.literal)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
+    *(.iram1.literal .iram1)
     KEEP(*(.init))
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.fini.literal)
@@ -396,6 +407,8 @@ SECTIONS
   } >RAM :sram0_phdr
 
 #include <zephyr/linker/common-rom.ld>
+
+#include <zephyr/linker/thread-local-storage.ld>
 
 #include <zephyr/linker/cplusplus-rom.ld>
 

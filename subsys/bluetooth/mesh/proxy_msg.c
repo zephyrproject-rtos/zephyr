@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(bt_mesh_proxy);
 
 #define PDU_SAR(data)      (data[0] >> 6)
 
-/* Mesh Profile 1.0 Section 6.6:
+/* MshPRTv1.1: 6.3.2.2:
  * "The timeout for the SAR transfer is 20 seconds. When the timeout
  *  expires, the Proxy Server shall disconnect."
  */

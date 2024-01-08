@@ -23,6 +23,13 @@
 			reg = <0>;
 			clock-frequency = <24000000>;
 			compatible ="telink,b91", "riscv";
+			riscv,isa = "rv32imac_zicsr_zifencei";
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
 		};
 	};
 
@@ -123,10 +130,9 @@
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = < 0xe4000000 0x00001000
-					0xe4002000 0x00000800
-					0xe4200000 0x00010000 >;
-			reg-names = "prio", "irq_en", "reg";
+			interrupts-extended = <&hlic 11>;
+			interrupt-parent = <&cpu0>;
+			reg = <0xe4000000 0x00210000>;
 			riscv,max-priority = <3>;
 			riscv,ndev = <63>;
 		};

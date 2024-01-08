@@ -24,6 +24,12 @@ static struct mcumgr_image_data image_dummy_info[2];
 static size_t test_offset;
 static uint8_t *image_hash_ptr;
 
+#ifdef CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
+#define IMG_UPDATABLE_IMAGE_COUNT CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
+#else
+#define IMG_UPDATABLE_IMAGE_COUNT 1
+#endif
+
 #define ZCBOR_ENCODE_FLAG(zse, label, value)                                                       \
 	(zcbor_tstr_put_lit(zse, label) && zcbor_bool_put(zse, value))
 
@@ -117,7 +123,7 @@ void img_read_response(int count)
 		     zcbor_tstr_put_term(zse, image_dummy_info[i].version) &&
 
 		     zcbor_tstr_put_term(zse, "hash") &&
-		     zcbor_bstr_encode_ptr(zse, image_dummy_info[i].hash, IMG_MGMT_HASH_LEN) &&
+		     zcbor_bstr_encode_ptr(zse, image_dummy_info[i].hash, IMG_MGMT_DATA_SHA_LEN) &&
 		     ZCBOR_ENCODE_FLAG(zse, "bootable", image_dummy_info[i].flags.bootable) &&
 		     ZCBOR_ENCODE_FLAG(zse, "pending", image_dummy_info[i].flags.pending) &&
 		     ZCBOR_ENCODE_FLAG(zse, "confirmed", image_dummy_info[i].flags.confirmed) &&
@@ -126,7 +132,7 @@ void img_read_response(int count)
 		     zcbor_map_end_encode(zse, 15);
 	}
 
-	ok = ok && zcbor_list_end_encode(zse, 2 * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER);
+	ok = ok && zcbor_list_end_encode(zse, 2 * IMG_UPDATABLE_IMAGE_COUNT);
 
 	ok = ok && zcbor_map_end_encode(zse, 15);
 

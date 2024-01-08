@@ -17,3 +17,4 @@ supported:
   - adc
 ram: 640
 flash: 2048
+vendor: blues

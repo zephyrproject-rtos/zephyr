@@ -183,7 +183,7 @@ static void iso_send(struct k_work *work)
 	iso_data_len = MAX(sizeof(seq_num), ((seq_num % CONFIG_BT_ISO_TX_MTU) + 1));
 	net_buf_add_mem(buf, iso_data, iso_data_len);
 
-	printk("ISO send: seq_num %u\n", seq_num);
+	bs_trace_info_time(4, "ISO send: seq_num %u\n", seq_num);
 	ret = bt_iso_chan_send(&bis_iso_chan, buf, seq_num++,
 			       BT_ISO_TIMESTAMP_NONE);
 	if (ret < 0) {
@@ -338,7 +338,7 @@ static void create_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 	printk("ISO connected\n");
 }
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 static void create_advanced_big(struct bt_le_ext_adv *adv, struct bt_iso_big **big)
 {
 	struct bt_iso_big_create_param big_create_param;
@@ -377,7 +377,7 @@ static void create_advanced_big(struct bt_le_ext_adv *adv, struct bt_iso_big **b
 	}
 	printk("ISO connected\n");
 }
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 static void terminate_big(struct bt_iso_big *big)
 {
@@ -441,7 +441,7 @@ static void test_iso_main(void)
 	k_sleep(K_MSEC(2500));
 
 	printk("Periodic Advertising and ISO Channel Map Update...");
-	err = ll_chm_update(chan_map);
+	err = bt_le_set_chan_map(chan_map);
 	if (err) {
 		FAIL("Channel Map Update failed.\n");
 	}
@@ -469,7 +469,7 @@ static void test_iso_main(void)
 	terminate_big(big);
 	big = NULL;
 
-#if defined(CONFIG_BT_ISO_ADVANCED)
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	/* Quick check to just verify that creating a BIG using advanced/test
 	 * parameters work
 	 */
@@ -477,7 +477,7 @@ static void test_iso_main(void)
 
 	terminate_big(big);
 	big = NULL;
-#endif /* CONFIG_BT_ISO_ADVANCED */
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	k_sleep(K_MSEC(10000));
 

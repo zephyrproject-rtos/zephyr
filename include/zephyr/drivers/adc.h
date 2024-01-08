@@ -682,6 +682,21 @@ static inline int z_impl_adc_read(const struct device *dev,
 }
 
 /**
+ * @brief Set a read request from a struct adc_dt_spec.
+ *
+ * @param spec ADC specification from Devicetree.
+ * @param sequence  Structure specifying requested sequence of samplings.
+ *
+ * @return A value from adc_read().
+ * @see adc_read()
+ */
+static inline int adc_read_dt(const struct adc_dt_spec *spec,
+			      const struct adc_sequence *sequence)
+{
+	return adc_read(spec->dev, sequence);
+}
+
+/**
  * @brief Set an asynchronous read request.
  *
  * @note This function is available only if @kconfig{CONFIG_ADC_ASYNC}

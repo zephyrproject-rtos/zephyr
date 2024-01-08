@@ -127,7 +127,7 @@ Nucleo C031C6 board includes an ST-LINK/V2-1 embedded debug tool interface.
 Flashing an application to Nucleo C031C6
 ----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -142,7 +142,7 @@ References
 .. target-notes::
 
 .. _Nucleo C031C6 website:
-   http://www.st.com/en/evaluation-tools/nucleo-c031c6.html
+   https://www.st.com/en/evaluation-tools/nucleo-c031c6.html
 
 .. _STM32C0x1 reference manual:
    https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-64bit-mcus-stmicroelectronics.pdf

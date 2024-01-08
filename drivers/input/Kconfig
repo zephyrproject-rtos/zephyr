@@ -5,15 +5,21 @@ if INPUT
 
 menu "Input drivers"
 
+# zephyr-keep-sorted-start
 source "drivers/input/Kconfig.cap1203"
 source "drivers/input/Kconfig.cst816s"
 source "drivers/input/Kconfig.ft5336"
+source "drivers/input/Kconfig.gpio_kbd_matrix"
 source "drivers/input/Kconfig.gpio_keys"
 source "drivers/input/Kconfig.gpio_qdec"
 source "drivers/input/Kconfig.gt911"
+source "drivers/input/Kconfig.it8xxx2"
+source "drivers/input/Kconfig.kbd_matrix"
 source "drivers/input/Kconfig.npcx"
 source "drivers/input/Kconfig.sdl"
+source "drivers/input/Kconfig.stmpe811"
 source "drivers/input/Kconfig.xpt2046"
+# zephyr-keep-sorted-stop
 
 endmenu # Input Drivers
 

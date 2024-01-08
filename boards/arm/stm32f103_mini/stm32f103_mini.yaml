@@ -16,3 +16,4 @@ supported:
   - watchdog
   - adc
   - counter
+vendor: st

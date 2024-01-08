@@ -51,7 +51,7 @@ struct z_arm64_fp_context {
 };
 
 struct _thread_arch {
-#if defined(CONFIG_USERSPACE)
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)
 #if defined(CONFIG_ARM_MMU)
 	struct arm_mmu_ptables *ptables;
 #endif

@@ -1,5 +1,11 @@
 /**
 
+@defgroup internal_api Internal and System API
+@brief Internal and System API
+@{
+
+@}
+
 @defgroup os_services Operating System Services
 @brief Operating System Services
 @{
@@ -36,12 +42,12 @@
 @brief Connectivity
 @defgroup connectivity Connectivity
 @{
+@}
 
 @brief USB
 @defgroup usb USB
+@ingroup connectivity
 @{
-@}
-
 @}
 
 @brief Utilities
@@ -57,6 +63,11 @@
 
 @brief APIs to interact with third-party services or applications
 @defgroup third_party Third-party
+@{
+@}
+
+@brief Modem APIs
+@defgroup modem Modem APIs
 @{
 @}
 

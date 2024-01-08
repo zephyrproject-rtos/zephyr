@@ -91,7 +91,7 @@ static void data_integrity_check(struct net_buf_simple *buf)
 	net_buf_simple_restore(buf, &state);
 }
 
-static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int get_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	data_integrity_check(buf);
@@ -104,7 +104,7 @@ static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return bt_mesh_model_send(model, ctx, &msg, NULL, NULL);
 }
 
-static int status_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int status_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
 	data_integrity_check(buf);
@@ -112,7 +112,7 @@ static int status_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *c
 	return 0;
 }
 
-static int dummy_vnd_mod_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int dummy_vnd_mod_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			     uint8_t msg[])
 {
 	BT_MESH_MODEL_BUF_DEFINE(buf, DUMMY_VND_MOD_GET_OP, MAX_SDU_MSG_LEN);
@@ -131,7 +131,7 @@ static const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 
 uint16_t dummy_keys[CONFIG_BT_MESH_MODEL_KEY_COUNT] = { 0 };
 
-static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
+static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 		   BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -185,7 +185,7 @@ static void array_random_fill(uint8_t array[], uint16_t len, int seed)
 static void cli_max_len_sdu_send(struct bt_mesh_sar_rx *sar_rx_config,
 				 struct bt_mesh_sar_tx *sar_tx_config)
 {
-	struct bt_mesh_model *dummy_vnd_mod = &elements[0].vnd_models[0];
+	const struct bt_mesh_model *dummy_vnd_mod = &elements[0].vnd_models[0];
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);

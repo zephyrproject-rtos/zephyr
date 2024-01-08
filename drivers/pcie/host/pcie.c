@@ -291,7 +291,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 	    irq >= CONFIG_MAX_IRQ_LINES ||
 	    arch_irq_is_used(irq)) {
 
-#ifdef CONFIG_ACPI
+#ifdef CONFIG_PCIE_PRT
 		irq = acpi_legacy_irq_get(bdf);
 #else
 		irq = arch_irq_allocate();

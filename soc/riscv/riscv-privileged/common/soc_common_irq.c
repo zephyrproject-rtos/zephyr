@@ -10,6 +10,7 @@
 	  privileged architecture specification
  */
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
@@ -46,7 +47,6 @@ void arch_irq_enable(unsigned int irq)
 	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = irq_from_level_2(irq);
 		riscv_plic_irq_enable(irq);
 		return;
 	}
@@ -67,7 +67,6 @@ void arch_irq_disable(unsigned int irq)
 	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = irq_from_level_2(irq);
 		riscv_plic_irq_disable(irq);
 		return;
 	}
@@ -88,7 +87,6 @@ int arch_irq_is_enabled(unsigned int irq)
 	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = irq_from_level_2(irq);
 		return riscv_plic_irq_is_enabled(irq);
 	}
 #endif
@@ -104,7 +102,6 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = irq_from_level_2(irq);
 		riscv_plic_set_priority(irq, prio);
 	}
 }

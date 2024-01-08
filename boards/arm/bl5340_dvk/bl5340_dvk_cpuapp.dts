@@ -10,7 +10,7 @@
 
 / {
 	model = "Laird Connectivity BL5340 (nRF5340) Application";
-	compatible = "lairdconnectivity,bl5340-dvk-cpuapp";
+	compatible = "lairdconnect,bl5340-dvk-cpuapp";
 
 	chosen {
 		zephyr,sram = &sram0_image;

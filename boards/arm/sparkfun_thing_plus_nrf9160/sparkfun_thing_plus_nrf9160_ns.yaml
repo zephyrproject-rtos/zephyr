@@ -7,8 +7,9 @@ toolchain:
   - xtools
   - zephyr
 ram: 128
-flash: 256
+flash: 192
 supported:
   - i2c
   - pwm
   - watchdog
+vendor: sparkfun

@@ -11,23 +11,23 @@
 
 #include <zephyr/kernel.h>
 
-int hvm_set_parameter(int idx, uint64_t value)
+int hvm_set_parameter(int idx, int domid, uint64_t value)
 {
 	struct xen_hvm_param xhv;
 
-	xhv.domid = DOMID_SELF;
+	xhv.domid = domid;
 	xhv.index = idx;
 	xhv.value = value;
 
 	return HYPERVISOR_hvm_op(HVMOP_set_param, &xhv);
 }
 
-int hvm_get_parameter(int idx, uint64_t *value)
+int hvm_get_parameter(int idx, int domid, uint64_t *value)
 {
 	int ret = 0;
 	struct xen_hvm_param xhv;
 
-	xhv.domid = DOMID_SELF;
+	xhv.domid = domid;
 	xhv.index = idx;
 
 	ret = HYPERVISOR_hvm_op(HVMOP_get_param, &xhv);

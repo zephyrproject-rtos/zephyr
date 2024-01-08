@@ -42,25 +42,27 @@ extern "C" {
  * Refer to RFC 7252, section 12.2 for more information.
  */
 enum coap_option_num {
-	COAP_OPTION_IF_MATCH = 1,
-	COAP_OPTION_URI_HOST = 3,
-	COAP_OPTION_ETAG = 4,
-	COAP_OPTION_IF_NONE_MATCH = 5,
-	COAP_OPTION_OBSERVE = 6,
-	COAP_OPTION_URI_PORT = 7,
-	COAP_OPTION_LOCATION_PATH = 8,
-	COAP_OPTION_URI_PATH = 11,
-	COAP_OPTION_CONTENT_FORMAT = 12,
-	COAP_OPTION_MAX_AGE = 14,
-	COAP_OPTION_URI_QUERY = 15,
-	COAP_OPTION_ACCEPT = 17,
-	COAP_OPTION_LOCATION_QUERY = 20,
-	COAP_OPTION_BLOCK2 = 23,
-	COAP_OPTION_BLOCK1 = 27,
-	COAP_OPTION_SIZE2 = 28,
-	COAP_OPTION_PROXY_URI = 35,
-	COAP_OPTION_PROXY_SCHEME = 39,
-	COAP_OPTION_SIZE1 = 60,
+	COAP_OPTION_IF_MATCH = 1,        /**< If-Match */
+	COAP_OPTION_URI_HOST = 3,        /**< Uri-Host */
+	COAP_OPTION_ETAG = 4,            /**< ETag */
+	COAP_OPTION_IF_NONE_MATCH = 5,   /**< If-None-Match */
+	COAP_OPTION_OBSERVE = 6,         /**< Observe (RFC 7641) */
+	COAP_OPTION_URI_PORT = 7,        /**< Uri-Port */
+	COAP_OPTION_LOCATION_PATH = 8,   /**< Location-Path */
+	COAP_OPTION_URI_PATH = 11,       /**< Uri-Path */
+	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
+	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */
+	COAP_OPTION_URI_QUERY = 15,      /**< Uri-Query */
+	COAP_OPTION_ACCEPT = 17,         /**< Accept */
+	COAP_OPTION_LOCATION_QUERY = 20, /**< Location-Query */
+	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (RFC 7959) */
+	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (RFC 7959) */
+	COAP_OPTION_SIZE2 = 28,          /**< Size2 (RFC 7959) */
+	COAP_OPTION_PROXY_URI = 35,      /**< Proxy-Uri */
+	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
+	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
+	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
+	COAP_OPTION_REQUEST_TAG = 292    /**< Request-Tag (RFC 9175) */
 };
 
 /**
@@ -69,13 +71,13 @@ enum coap_option_num {
  * To be used when creating a request or a response.
  */
 enum coap_method {
-	COAP_METHOD_GET = 1,
-	COAP_METHOD_POST = 2,
-	COAP_METHOD_PUT = 3,
-	COAP_METHOD_DELETE = 4,
-	COAP_METHOD_FETCH = 5,
-	COAP_METHOD_PATCH = 6,
-	COAP_METHOD_IPATCH = 7,
+	COAP_METHOD_GET = 1,     /**< GET */
+	COAP_METHOD_POST = 2,    /**< POST */
+	COAP_METHOD_PUT = 3,     /**< PUT */
+	COAP_METHOD_DELETE = 4,  /**< DELETE */
+	COAP_METHOD_FETCH = 5,   /**< FETCH */
+	COAP_METHOD_PATCH = 6,   /**< PATCH */
+	COAP_METHOD_IPATCH = 7,  /**< IPATCH */
 };
 
 #define COAP_REQUEST_MASK 0x07
@@ -115,7 +117,13 @@ enum coap_msgtype {
 	COAP_TYPE_RESET = 3
 };
 
-#define coap_make_response_code(class, det) ((class << 5) | (det))
+/**
+ * Utility macro to create a CoAP response code.
+ * @param class Class of the response code (ex. 2, 4, 5, ...)
+ * @param det Detail of the response code
+ * @return Response code literal
+ */
+#define COAP_MAKE_RESPONSE_CODE(class, det) ((class << 5) | (det))
 
 /**
  * @brief Set of response codes available for a response packet.
@@ -123,35 +131,62 @@ enum coap_msgtype {
  * To be used when creating a response.
  */
 enum coap_response_code {
-	COAP_RESPONSE_CODE_OK = coap_make_response_code(2, 0),
-	COAP_RESPONSE_CODE_CREATED = coap_make_response_code(2, 1),
-	COAP_RESPONSE_CODE_DELETED = coap_make_response_code(2, 2),
-	COAP_RESPONSE_CODE_VALID = coap_make_response_code(2, 3),
-	COAP_RESPONSE_CODE_CHANGED = coap_make_response_code(2, 4),
-	COAP_RESPONSE_CODE_CONTENT = coap_make_response_code(2, 5),
-	COAP_RESPONSE_CODE_CONTINUE = coap_make_response_code(2, 31),
-	COAP_RESPONSE_CODE_BAD_REQUEST = coap_make_response_code(4, 0),
-	COAP_RESPONSE_CODE_UNAUTHORIZED = coap_make_response_code(4, 1),
-	COAP_RESPONSE_CODE_BAD_OPTION = coap_make_response_code(4, 2),
-	COAP_RESPONSE_CODE_FORBIDDEN = coap_make_response_code(4, 3),
-	COAP_RESPONSE_CODE_NOT_FOUND = coap_make_response_code(4, 4),
-	COAP_RESPONSE_CODE_NOT_ALLOWED = coap_make_response_code(4, 5),
-	COAP_RESPONSE_CODE_NOT_ACCEPTABLE = coap_make_response_code(4, 6),
-	COAP_RESPONSE_CODE_INCOMPLETE = coap_make_response_code(4, 8),
-	COAP_RESPONSE_CODE_CONFLICT = coap_make_response_code(4, 9),
-	COAP_RESPONSE_CODE_PRECONDITION_FAILED = coap_make_response_code(4, 12),
-	COAP_RESPONSE_CODE_REQUEST_TOO_LARGE = coap_make_response_code(4, 13),
+	/** 2.00 - OK */
+	COAP_RESPONSE_CODE_OK = COAP_MAKE_RESPONSE_CODE(2, 0),
+	/** 2.01 - Created */
+	COAP_RESPONSE_CODE_CREATED = COAP_MAKE_RESPONSE_CODE(2, 1),
+	/** 2.02 - Deleted */
+	COAP_RESPONSE_CODE_DELETED = COAP_MAKE_RESPONSE_CODE(2, 2),
+	/** 2.03 - Valid */
+	COAP_RESPONSE_CODE_VALID = COAP_MAKE_RESPONSE_CODE(2, 3),
+	/** 2.04 - Changed */
+	COAP_RESPONSE_CODE_CHANGED = COAP_MAKE_RESPONSE_CODE(2, 4),
+	/** 2.05 - Content */
+	COAP_RESPONSE_CODE_CONTENT = COAP_MAKE_RESPONSE_CODE(2, 5),
+	/** 2.31 - Continue */
+	COAP_RESPONSE_CODE_CONTINUE = COAP_MAKE_RESPONSE_CODE(2, 31),
+	/** 4.00 - Bad Request */
+	COAP_RESPONSE_CODE_BAD_REQUEST = COAP_MAKE_RESPONSE_CODE(4, 0),
+	/** 4.01 - Unauthorized */
+	COAP_RESPONSE_CODE_UNAUTHORIZED = COAP_MAKE_RESPONSE_CODE(4, 1),
+	/** 4.02 - Bad Option */
+	COAP_RESPONSE_CODE_BAD_OPTION = COAP_MAKE_RESPONSE_CODE(4, 2),
+	/** 4.03 - Forbidden */
+	COAP_RESPONSE_CODE_FORBIDDEN = COAP_MAKE_RESPONSE_CODE(4, 3),
+	/** 4.04 - Not Found */
+	COAP_RESPONSE_CODE_NOT_FOUND = COAP_MAKE_RESPONSE_CODE(4, 4),
+	/** 4.05 - Method Not Allowed */
+	COAP_RESPONSE_CODE_NOT_ALLOWED = COAP_MAKE_RESPONSE_CODE(4, 5),
+	/** 4.06 - Not Acceptable */
+	COAP_RESPONSE_CODE_NOT_ACCEPTABLE = COAP_MAKE_RESPONSE_CODE(4, 6),
+	/** 4.08 - Request Entity Incomplete */
+	COAP_RESPONSE_CODE_INCOMPLETE = COAP_MAKE_RESPONSE_CODE(4, 8),
+	/** 4.12 - Precondition Failed */
+	COAP_RESPONSE_CODE_CONFLICT = COAP_MAKE_RESPONSE_CODE(4, 9),
+	/** 4.12 - Precondition Failed */
+	COAP_RESPONSE_CODE_PRECONDITION_FAILED = COAP_MAKE_RESPONSE_CODE(4, 12),
+	/** 4.13 - Request Entity Too Large */
+	COAP_RESPONSE_CODE_REQUEST_TOO_LARGE = COAP_MAKE_RESPONSE_CODE(4, 13),
+	/** 4.15 - Unsupported Content-Format */
 	COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT =
-						coap_make_response_code(4, 15),
-	COAP_RESPONSE_CODE_UNPROCESSABLE_ENTITY = coap_make_response_code(4, 22),
-	COAP_RESPONSE_CODE_TOO_MANY_REQUESTS = coap_make_response_code(4, 29),
-	COAP_RESPONSE_CODE_INTERNAL_ERROR = coap_make_response_code(5, 0),
-	COAP_RESPONSE_CODE_NOT_IMPLEMENTED = coap_make_response_code(5, 1),
-	COAP_RESPONSE_CODE_BAD_GATEWAY = coap_make_response_code(5, 2),
-	COAP_RESPONSE_CODE_SERVICE_UNAVAILABLE = coap_make_response_code(5, 3),
-	COAP_RESPONSE_CODE_GATEWAY_TIMEOUT = coap_make_response_code(5, 4),
+						COAP_MAKE_RESPONSE_CODE(4, 15),
+	/** 4.22 - Unprocessable Entity */
+	COAP_RESPONSE_CODE_UNPROCESSABLE_ENTITY = COAP_MAKE_RESPONSE_CODE(4, 22),
+	/** 4.29 - Too Many Requests */
+	COAP_RESPONSE_CODE_TOO_MANY_REQUESTS = COAP_MAKE_RESPONSE_CODE(4, 29),
+	/** 5.00 - Internal Server Error */
+	COAP_RESPONSE_CODE_INTERNAL_ERROR = COAP_MAKE_RESPONSE_CODE(5, 0),
+	/** 5.01 - Not Implemented */
+	COAP_RESPONSE_CODE_NOT_IMPLEMENTED = COAP_MAKE_RESPONSE_CODE(5, 1),
+	/** 5.02 - Bad Gateway */
+	COAP_RESPONSE_CODE_BAD_GATEWAY = COAP_MAKE_RESPONSE_CODE(5, 2),
+	/** 5.03 - Service Unavailable */
+	COAP_RESPONSE_CODE_SERVICE_UNAVAILABLE = COAP_MAKE_RESPONSE_CODE(5, 3),
+	/** 5.04 - Gateway Timeout */
+	COAP_RESPONSE_CODE_GATEWAY_TIMEOUT = COAP_MAKE_RESPONSE_CODE(5, 4),
+	/** 5.05 - Proxying Not Supported */
 	COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED =
-						coap_make_response_code(5, 5)
+						COAP_MAKE_RESPONSE_CODE(5, 5)
 };
 
 #define COAP_CODE_EMPTY (0)
@@ -164,15 +199,15 @@ enum coap_response_code {
  * To be used when encoding or decoding a Content-Format option.
  */
 enum coap_content_format {
-	COAP_CONTENT_FORMAT_TEXT_PLAIN = 0, /* charset=urf-8 */
-	COAP_CONTENT_FORMAT_APP_LINK_FORMAT = 40,
-	COAP_CONTENT_FORMAT_APP_XML = 41,
-	COAP_CONTENT_FORMAT_APP_OCTET_STREAM = 42,
-	COAP_CONTENT_FORMAT_APP_EXI = 47,
-	COAP_CONTENT_FORMAT_APP_JSON = 50,
-	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,
-	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,
-	COAP_CONTENT_FORMAT_APP_CBOR = 60,
+	COAP_CONTENT_FORMAT_TEXT_PLAIN = 0,             /**< text/plain;charset=utf-8 */
+	COAP_CONTENT_FORMAT_APP_LINK_FORMAT = 40,       /**< application/link-format */
+	COAP_CONTENT_FORMAT_APP_XML = 41,               /**< application/xml */
+	COAP_CONTENT_FORMAT_APP_OCTET_STREAM = 42,      /**< application/octet-stream */
+	COAP_CONTENT_FORMAT_APP_EXI = 47,               /**< application/exi */
+	COAP_CONTENT_FORMAT_APP_JSON = 50,              /**< application/json */
+	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,   /**< application/json-patch+json */
+	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,  /**< application/merge-patch+json */
+	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
 };
 
 /* block option helper */
@@ -204,6 +239,29 @@ typedef void (*coap_notify_t)(struct coap_resource *resource,
 			      struct coap_observer *observer);
 
 /**
+ * @brief Event types for observer event callbacks.
+ */
+enum coap_observer_event {
+	/** An observer was added. */
+	COAP_OBSERVER_ADDED = 0,
+	/** An observer was removed. */
+	COAP_OBSERVER_REMOVED,
+};
+
+/**
+ * @typedef coap_observer_event_handler_t
+ * @brief Type of the handler being called when a resource's observers has been modified.
+ * Either an observer was added or removed.
+ *
+ * @param resource A pointer to a CoAP resource for which the event occurred
+ * @param observer The observer being added/removed
+ * @param event The event type
+ */
+typedef void (*coap_observer_event_handler_t)(struct coap_resource *resource,
+					      struct coap_observer *observer,
+					      enum coap_observer_event event);
+
+/**
  * @brief Description of CoAP resource.
  *
  * CoAP servers often want to register resources, so that clients can act on
@@ -217,6 +275,13 @@ struct coap_resource {
 	void *user_data;
 	sys_slist_t observers;
 	int age;
+#if defined(CONFIG_COAP_OBSERVER_EVENTS) || defined(DOXYGEN)
+	/**
+	 * Optional observer event callback function
+	 * Only available when @kconfig{CONFIG_COAP_OBSERVER_EVENTS} is enabled.
+	 */
+	coap_observer_event_handler_t observer_event_handler;
+#endif
 };
 
 /**
@@ -233,25 +298,32 @@ struct coap_observer {
  * @brief Representation of a CoAP Packet.
  */
 struct coap_packet {
-	uint8_t *data; /* User allocated buffer */
-	uint16_t offset; /* CoAP lib maintains offset while adding data */
-	uint16_t max_len; /* Max CoAP packet data length */
-	uint8_t hdr_len; /* CoAP header length */
-	uint16_t opt_len; /* Total options length (delta + len + value) */
-	uint16_t delta; /* Used for delta calculation in CoAP packet */
-#if defined(CONFIG_COAP_KEEP_USER_DATA)
-	void *user_data; /* Application specific user data */
+	uint8_t *data;    /**< User allocated buffer */
+	uint16_t offset;  /**< CoAP lib maintains offset while adding data */
+	uint16_t max_len; /**< Max CoAP packet data length */
+	uint8_t hdr_len;  /**< CoAP header length */
+	uint16_t opt_len; /**< Total options length (delta + len + value) */
+	uint16_t delta;   /**< Used for delta calculation in CoAP packet */
+#if defined(CONFIG_COAP_KEEP_USER_DATA) || defined(DOXYGEN)
+	/**
+	 * Application specific user data.
+	 * Only available when @kconfig{CONFIG_COAP_KEEP_USER_DATA} is enabled.
+	 */
+	void *user_data;
 #endif
 };
 
+/**
+ * @brief Representation of a CoAP option.
+ */
 struct coap_option {
-	uint16_t delta;
+	uint16_t delta;     /**< Option delta */
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
 	uint16_t len;
 	uint8_t value[CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE];
 #else
-	uint8_t len;
-	uint8_t value[12];
+	uint8_t len;        /**< Option length */
+	uint8_t value[12];  /**< Option value */
 #endif
 };
 
@@ -271,13 +343,13 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct sockaddr addr;
-	int64_t t0;
-	uint32_t timeout;
-	uint16_t id;
-	uint8_t *data;
-	uint16_t len;
-	uint8_t retries;
+	struct sockaddr addr; /**< Remote address */
+	int64_t t0;           /**< Time when the request was sent */
+	uint32_t timeout;     /**< Timeout in ms */
+	uint16_t id;          /**< Message id */
+	uint8_t *data;        /**< User allocated buffer */
+	uint16_t len;         /**< Length of the CoAP packet */
+	uint8_t retries;      /**< Number of times the request has been sent */
 };
 
 /**
@@ -332,6 +404,15 @@ uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token);
 uint8_t coap_header_get_code(const struct coap_packet *cpkt);
 
 /**
+ * @brief Modifies the code of the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ * @param code CoAP code
+ * @return 0 on success, -EINVAL on failure
+ */
+int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code);
+
+/**
  * @brief Returns the message id associated with the CoAP packet.
  *
  * @param cpkt CoAP packet representation
@@ -351,6 +432,20 @@ uint16_t coap_header_get_id(const struct coap_packet *cpkt);
  */
 const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
 				       uint16_t *len);
+
+/**
+ * @brief Verify if CoAP URI path matches with provided options.
+ *
+ * @param path Null-terminated array of strings.
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ *
+ * @return true if the CoAP URI path matches,
+ *        false otherwise.
+ */
+bool coap_uri_path_match(const char * const *path,
+			 struct coap_option *options,
+			 uint8_t opt_num);
 
 /**
  * @brief Parses the CoAP packet in data, validating it and
@@ -527,17 +622,51 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 			       uint16_t payload_len);
 
 /**
+ * @brief Check if a CoAP packet is a CoAP request.
+ *
+ * @param cpkt Packet to be checked.
+ *
+ * @return true if the packet is a request,
+ *        false otherwise.
+ */
+bool coap_packet_is_request(const struct coap_packet *cpkt);
+
+/**
  * @brief When a request is received, call the appropriate methods of
  * the matching resources.
  *
  * @param cpkt Packet received
  * @param resources Array of known resources
+ * @param resources_len Number of resources in the array
  * @param options Parsed options from coap_packet_parse()
  * @param opt_num Number of options
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval 0 in case of success.
+ * @retval >= 0 in case of success.
+ * @retval -ENOTSUP in case of invalid request code.
+ * @retval -EPERM in case resource handler is not implemented.
+ * @retval -ENOENT in case the resource is not found.
+ */
+int coap_handle_request_len(struct coap_packet *cpkt,
+			    struct coap_resource *resources,
+			    size_t resources_len,
+			    struct coap_option *options,
+			    uint8_t opt_num,
+			    struct sockaddr *addr, socklen_t addr_len);
+
+/**
+ * @brief When a request is received, call the appropriate methods of
+ * the matching resources.
+ *
+ * @param cpkt Packet received
+ * @param resources Array of known resources (terminated with empty resource)
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ * @param addr Peer address
+ * @param addr_len Peer address length
+ *
+ * @retval >= 0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -557,13 +686,13 @@ int coap_handle_request(struct coap_packet *cpkt,
  * https://tools.ietf.org/html/rfc7959
  */
 enum coap_block_size {
-	COAP_BLOCK_16,
-	COAP_BLOCK_32,
-	COAP_BLOCK_64,
-	COAP_BLOCK_128,
-	COAP_BLOCK_256,
-	COAP_BLOCK_512,
-	COAP_BLOCK_1024,
+	COAP_BLOCK_16,   /**< 16-byte block size */
+	COAP_BLOCK_32,   /**< 32-byte block size */
+	COAP_BLOCK_64,   /**< 64-byte block size */
+	COAP_BLOCK_128,  /**< 128-byte block size */
+	COAP_BLOCK_256,  /**< 256-byte block size */
+	COAP_BLOCK_512,  /**< 512-byte block size */
+	COAP_BLOCK_1024, /**< 1024-byte block size */
 };
 
 /**
@@ -714,6 +843,20 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
 int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
 
 /**
+ * @brief Get values from CoAP block2 option.
+ *
+ * Decode block number and block size from option. Ignore the has_more flag
+ * as it should always be zero on queries.
+ *
+ * @param cpkt Packet to be inspected
+ * @param block_number Is set to the number of the block
+ *
+ * @return Integer value of the block size in case of success
+ * or negative in case of error.
+ */
+int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number);
+
+/**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
  * @a ctx accordingly.
  *
@@ -785,9 +928,29 @@ bool coap_register_observer(struct coap_resource *resource,
  *
  * @param resource Resource in which to remove the observer
  * @param observer Observer to be removed
+ *
+ * @return true if the observer was found and removed.
  */
-void coap_remove_observer(struct coap_resource *resource,
+bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer);
+
+/**
+ * @brief Returns the observer that matches address @a addr
+ * and has token @a token.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param addr Address of the endpoint observing a resource
+ * @param token Pointer to the token
+ * @param token_len Length of valid bytes in the token
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
+ */
+struct coap_observer *coap_find_observer(
+	struct coap_observer *observers, size_t len,
+	const struct sockaddr *addr,
+	const uint8_t *token, uint8_t token_len);
 
 /**
  * @brief Returns the observer that matches address @a addr.
@@ -796,12 +959,33 @@ void coap_remove_observer(struct coap_resource *resource,
  * @param len Size of the array of observers
  * @param addr Address of the endpoint observing a resource
  *
+ * @note The function coap_find_observer() should be preferred
+ * if both the observer's address and token are known.
+ *
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.
  */
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
 	const struct sockaddr *addr);
+
+/**
+ * @brief Returns the observer that has token @a token.
+ *
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param token Pointer to the token
+ * @param token_len Length of valid bytes in the token
+ *
+ * @note The function coap_find_observer() should be preferred
+ * if both the observer's address and token are known.
+ *
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
+ */
+struct coap_observer *coap_find_observer_by_token(
+	struct coap_observer *observers, size_t len,
+	const uint8_t *token, uint8_t token_len);
 
 /**
  * @brief Returns the next available observer representation.

@@ -19,9 +19,9 @@ get around this issue you can take two different approaches:
   ``path/to/folder`` is the path to the enclosing folder where the executables
   you want to run are located.
 
-* Open "System Preferences" -> "Security and Privacy" -> "Privacy" and then
-  scroll down to "Developer Tools". Then unlock the lock to be able to make
-  changes and check the checkbox corresponding to your terminal emulator of
+* Open :menuselection:`System Preferences --> Security and Privacy --> Privacy`
+  and then scroll down to "Developer Tools". Then unlock the lock to be able to
+  make changes and check the checkbox corresponding to your terminal emulator of
   choice. This will apply to any executable being launched from such terminal
   program.
 

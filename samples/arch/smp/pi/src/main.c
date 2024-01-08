@@ -17,7 +17,7 @@
 #define DIGITS_NUM	240
 
 #define LENGTH		((DIGITS_NUM / 4) * 14)
-#define STACK_SIZE	((LENGTH * sizeof(int) + 1024))
+#define STACK_SIZE	((LENGTH * sizeof(int) + 1280))
 
 #ifdef CONFIG_SMP
 #define CORES_NUM	arch_num_cpus()
@@ -90,7 +90,7 @@ int main(void)
 
 	for (i = 0; i < THREADS_NUM; i++) {
 		k_thread_create(&tthread[i], tstack[i], STACK_SIZE,
-			       (k_thread_entry_t)test_thread,
+			       test_thread,
 			       (void *)&th_counter, (void *)th_buffer[i], NULL,
 			       K_PRIO_COOP(10), 0, K_NO_WAIT);
 	}

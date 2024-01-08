@@ -12,6 +12,8 @@
 	};
 
 	soc {
+		compatible = "st,stm32wba52", "st,stm32wba", "simple-bus";
+
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				reg = <0x08000000 DT_SIZE_M(1)>;

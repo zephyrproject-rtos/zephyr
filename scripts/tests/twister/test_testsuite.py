@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'twister'))
 from twisterlib.testsuite import (
     _find_src_dir_path,
     _get_search_area_boundary,
+    find_c_files_in,
     scan_file,
     scan_testsuite_path,
     ScanPathResult,
@@ -426,10 +427,93 @@ def test_get_search_area_boundary(
 
 
 TESTDATA_7 = [
+    (True, [os.path.join('', 'home', 'user', 'dummy_path', 'dummy.c'),
+            os.path.join('', 'home', 'user', 'dummy_path', 'dummy.cpp')]),
+    (False, [])
+]
+
+@pytest.mark.parametrize(
+    'isdir, expected',
+    TESTDATA_7,
+    ids=['valid', 'not a directory']
+)
+def test_find_c_files_in(isdir, expected):
+    old_dir = os.path.join('', 'home', 'user', 'dummy_base_dir')
+    new_path = os.path.join('', 'home', 'user', 'dummy_path')
+    cur_dir = old_dir
+
+    def mock_chdir(path, *args, **kwargs):
+        nonlocal cur_dir
+        cur_dir = path
+
+    # We simulate such a structure:
+    # <new_path>
+    # ┣ dummy.c
+    # ┣ wrong_dummy.h
+    # ┗ dummy_dir
+    #   ┣ dummy.cpp
+    #   ┗ wrong_dummy.hpp
+    # <old_dir>
+    # ┗ wrong_dummy.c
+    new_path_base = ['dummy.c', 'wrong_dummy.h']
+    new_path_subs = ['dummy.cpp', 'wrong_dummy.hpp']
+    old_dir_base = ['wrong_dummy.c']
+
+    def format_tester(fmt):
+        formats = [
+            {'name': 'subdirs', 'fmt': '**/*.'},
+            {'name': 'base', 'fmt': '*.'}
+        ]
+
+        for format in formats:
+            if fmt.startswith(format['fmt']):
+                return format['name'], fmt[len(format['fmt']):]
+
+        raise ValueError('This test wasn\'t designed for those globs.'
+                         ' Please fix the test before PR!')
+
+    def mock_glob(fmt, *args, **kwargs):
+        from_where, extension = format_tester(fmt)
+
+        if cur_dir == old_dir:
+            if from_where == 'subdirs':
+                return []
+            elif from_where == 'base':
+                return list(filter(lambda fn: fn.endswith(extension),
+                                   old_dir_base))
+            else:
+                return []
+        if cur_dir == new_path:
+            if from_where == 'subdirs':
+                return list(filter(lambda fn: fn.endswith(extension),
+                                   new_path_subs))
+            elif from_where == 'base':
+                return list(filter(lambda fn: fn.endswith(extension),
+                                   new_path_base))
+            else:
+                return []
+
+        raise ValueError('This test wasn\'t designed for those dirs.'
+                         'Please fix the test before PR!')
+
+    with mock.patch('os.path.isdir', return_value=isdir), \
+         mock.patch('os.getcwd', return_value=cur_dir), \
+         mock.patch('glob.glob', mock_glob), \
+         mock.patch('os.chdir', side_effect=mock_chdir) as chdir_mock:
+        filenames = find_c_files_in(new_path)
+
+    assert sorted(filenames) == sorted(expected)
+
+    assert chdir_mock.call_args is None or \
+           chdir_mock.call_args == mock.call(old_dir)
+
+
+TESTDATA_8 = [
     (
         os.path.join('dummy', 'path'),
         ['testsuite_file_1', 'testsuite_file_2'],
-        ['src_dir_file_1', 'src_dir_file_2'],
+        ['src_dir_file_1', 'src_dir_file_2', 'src_dir_file_3'],
+        {'src_dir_file_1': 1000, 'src_dir_file_2': 2000, 'src_dir_file_3': 0},
         {
             'testsuite_file_1': ScanPathResult(
                 matches = ['test_a', 'b'],
@@ -449,11 +533,12 @@ TESTDATA_7 = [
                 ztest_suite_names = ['feature_b']
             ),
             'src_dir_file_2': ValueError,
+            'src_dir_file_3': ValueError,
         },
         [
             'testsuite_file_2: can\'t find: dummy exception',
             'testsuite_file_1: dummy warning',
-            'src_dir_file_2: can\'t find: dummy exception',
+            'src_dir_file_2: error parsing source file: dummy exception',
         ],
         None,
         (['a', 'b', 'test_a', 'test_b'], ['feature_a', 'feature_b'])
@@ -462,6 +547,7 @@ TESTDATA_7 = [
         os.path.join('dummy', 'path'),
         [],
         ['src_dir_file'],
+        {'src_dir_file': 1000},
         {
             'src_dir_file': ScanPathResult(
                 matches = ['test_b', 'a'],
@@ -486,6 +572,7 @@ TESTDATA_7 = [
         os.path.join('dummy', 'path'),
         [],
         ['src_dir_file'],
+        {'src_dir_file': 100},
         {
             'src_dir_file': ScanPathResult(
                 matches = ['test_b', 'a'],
@@ -504,13 +591,13 @@ TESTDATA_7 = [
 
 
 @pytest.mark.parametrize(
-    'testsuite_path, testsuite_glob, src_dir_glob, scanpathresults,' \
+    'testsuite_path, testsuite_glob, src_dir_glob, sizes, scanpathresults,' \
     ' expected_logs, expected_exception, expected',
-    TESTDATA_7,
+    TESTDATA_8,
     ids=[
         'valid',
         'warning in src dir',
-        'register with run error'
+        'register with run error',
     ]
 )
 def test_scan_testsuite_path(
@@ -518,18 +605,21 @@ def test_scan_testsuite_path(
     testsuite_path,
     testsuite_glob,
     src_dir_glob,
+    sizes,
     scanpathresults,
     expected_logs,
     expected_exception,
     expected
 ):
-    def mock_fsdp(path, *args, **kwargs):
-        return os.path.join(testsuite_path, 'src')
+    src_dir_path = os.path.join(testsuite_path, 'src')
 
-    def mock_glob(path, *args, **kwargs):
-        if path == os.path.join(testsuite_path, 'src', '*.c*'):
+    def mock_fsdp(path, *args, **kwargs):
+        return src_dir_path
+
+    def mock_find(path, *args, **kwargs):
+        if path == src_dir_path:
             return src_dir_glob
-        elif path == os.path.join(testsuite_path, '*.c*'):
+        elif path == testsuite_path:
             return testsuite_glob
         else:
             return []
@@ -540,9 +630,16 @@ def test_scan_testsuite_path(
             raise scanpathresults[filename]('dummy exception')
         return scanpathresults[filename]
 
+    def mock_stat(filename, *args, **kwargs):
+        result = mock.Mock()
+        type(result).st_size = sizes[filename]
+
+        return result
+
     with mock.patch('twisterlib.testsuite._find_src_dir_path', mock_fsdp), \
-         mock.patch('glob.glob', mock_glob), \
+         mock.patch('twisterlib.testsuite.find_c_files_in', mock_find), \
          mock.patch('twisterlib.testsuite.scan_file', mock_sf), \
+         mock.patch('os.stat', mock_stat), \
          pytest.raises(type(expected_exception)) if \
           expected_exception else nullcontext() as exception:
         result = scan_testsuite_path(testsuite_path)
@@ -566,7 +663,7 @@ def test_scan_testsuite_path(
     )
 
 
-TESTDATA_8 = [
+TESTDATA_9 = [
     ('dummy/path', 'dummy/path/src', 'dummy/path/src'),
     ('dummy/path', 'dummy/src', 'dummy/src'),
     ('dummy/path', 'another/path', '')
@@ -575,7 +672,7 @@ TESTDATA_8 = [
 
 @pytest.mark.parametrize(
     'test_dir_path, isdir_path, expected',
-    TESTDATA_8,
+    TESTDATA_9,
     ids=['src here', 'src in parent', 'no path']
 )
 def test_find_src_dir_path(test_dir_path, isdir_path, expected):
@@ -597,7 +694,7 @@ TEST_DATA_REL_PATH = os.path.join(
 )
 
 
-TESTDATA_9 = [
+TESTDATA_10 = [
     (
         ZEPHYR_BASE,
         ZEPHYR_BASE,
@@ -641,7 +738,7 @@ TESTDATA_9 = [
 @pytest.mark.parametrize(
     'testsuite_root, suite_path, name, data,' \
     ' parsed_subcases, suite_names, expected',
-    TESTDATA_9,
+    TESTDATA_10,
     ids=['data', 'subcases', 'empty']
 )
 def test_testsuite_add_subcases(
@@ -673,7 +770,7 @@ def test_testsuite_add_subcases(
             assert False
 
 
-TESTDATA_10 = [
+TESTDATA_11 = [
 #    (
 #        ZEPHYR_BASE,
 #        ZEPHYR_BASE,
@@ -711,7 +808,7 @@ TESTDATA_10 = [
 
 @pytest.mark.parametrize(
     'testsuite_root, suite_path, name, data, expected',
-    TESTDATA_10,
+    TESTDATA_11,
     ids=[
 #        'no harness',
         'proper harness',
@@ -749,3 +846,43 @@ def test_testcase_dunders():
     assert case_lesser < case_greater
     assert str(case_greater) == 'a greater name'
     assert repr(case_greater) == '<TestCase a greater name with success>'
+
+
+TESTDATA_11 = [
+        (
+            ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites',
+            ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites/tests/test_a',
+            'test_a.check_1',
+            'test_a.check_1'
+        ),
+        (
+            ZEPHYR_BASE,
+            ZEPHYR_BASE,
+            'test_a.check_1',
+            'test_a.check_1'
+        ),
+        (
+            ZEPHYR_BASE,
+            ZEPHYR_BASE + '/scripts/tests/twister/test_data/testsuites/test_b',
+            'test_b.check_1',
+            'test_b.check_1'
+        ),
+        (
+            os.path.join(ZEPHYR_BASE, 'scripts/tests'),
+            os.path.join(ZEPHYR_BASE, 'scripts/tests'),
+            'test_b.check_1',
+            'test_b.check_1'
+        ),
+        (
+            ZEPHYR_BASE,
+            ZEPHYR_BASE,
+            'test_a.check_1.check_2',
+            'test_a.check_1.check_2'
+        ),
+]
+@pytest.mark.parametrize("testsuite_root, suite_path, name, expected", TESTDATA_11)
+def test_get_no_detailed_test_id(testsuite_root, suite_path, name, expected):
+    '''Test to check if the name without path is given for each testsuite'''
+    suite = TestSuite(testsuite_root, suite_path, name, detailed_test_id=False)
+    print(suite.name)
+    assert suite.name == expected

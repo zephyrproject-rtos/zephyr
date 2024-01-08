@@ -8,10 +8,11 @@ config BOARD
 config MP_MAX_NUM_CPUS
 	default 2 if BOARD_UP_SQUARED
 
-config BUILD_OUTPUT_STRIPPED
-	default y
+config HEAP_MEM_POOL_SIZE
+	default 1048576 if ACPI
+	depends on KERNEL_MEM_POOL
 
-config APIC_TSC_DEADLINE_TIMER
+config BUILD_OUTPUT_STRIPPED
 	default y
 
 # TSC on this board is 1.5936 GHz, HPET and APIC are 19.2 MHz

@@ -12,6 +12,25 @@ config BT_CTLR_CONN_ISO_GROUPS
 	range 1 240
 	default 1
 
+config BT_CTLR_DEBUG_ISOAL
+	bool "[DEPRECATED] Bluetooth ISO-AL debug"
+	select DEPRECATED
+	depends on BT_CTLR_ISO
+	help
+	  This option enables debug support for the Bluetooth ISO-AL.
+
+module = BT_CTLR_ISOAL
+legacy-debug-sym = BT_CTLR_DEBUG_ISOAL
+module-str = "Bluetooth Controller ISO-AL"
+source "subsys/bluetooth/common/Kconfig.template.log_config_bt"
+
+config BT_CTLR_ISOAL_LOG_DBG_VERBOSE
+	bool "ISO-AL verbose debug logging"
+	depends on BT_CTLR_ISOAL_LOG_LEVEL = 4
+	default n
+	help
+	  Use this option to enable ISO-AL verbose debug logging.
+
 config BT_CTLR_ISOAL_SINKS
 	int "Number of Isochronous Adaptation Layer sinks (for unit tests)"
 

@@ -99,8 +99,13 @@ static void iis3dhhc_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD
-static void iis3dhhc_thread(struct iis3dhhc_data *iis3dhhc)
+static void iis3dhhc_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct iis3dhhc_data *iis3dhhc = p1;
+
 	while (1) {
 		k_sem_take(&iis3dhhc->gpio_sem, K_FOREVER);
 		iis3dhhc_handle_interrupt(iis3dhhc->dev);
@@ -136,7 +141,7 @@ int iis3dhhc_init_interrupt(const struct device *dev)
 
 	k_thread_create(&iis3dhhc->thread, iis3dhhc->thread_stack,
 		       CONFIG_IIS3DHHC_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)iis3dhhc_thread, iis3dhhc,
+		       iis3dhhc_thread, iis3dhhc,
 		       NULL, NULL, K_PRIO_COOP(CONFIG_IIS3DHHC_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS3DHHC_TRIGGER_GLOBAL_THREAD)

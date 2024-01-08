@@ -256,6 +256,28 @@ def _find_ztest_testcases(search_area, testcase_regex):
 
     return testcase_names, warnings
 
+def find_c_files_in(path: str, extensions: list = ['c', 'cpp', 'cxx', 'cc']) -> list:
+    """
+    Find C or C++ sources in the directory specified by "path"
+    """
+    if not os.path.isdir(path):
+        return []
+
+    # back up previous CWD
+    oldpwd = os.getcwd()
+    os.chdir(path)
+
+    filenames = []
+    for ext in extensions:
+        # glob.glob('**/*.c') does not pick up the base directory
+        filenames += [os.path.join(path, x) for x in glob.glob(f'*.{ext}')]
+        # glob matches in subdirectories too
+        filenames += [os.path.join(path, x) for x in glob.glob(f'**/*.{ext}')]
+
+    # restore previous CWD
+    os.chdir(oldpwd)
+
+    return filenames
 
 def scan_testsuite_path(testsuite_path):
     subcases = []
@@ -265,7 +287,7 @@ def scan_testsuite_path(testsuite_path):
     ztest_suite_names = []
 
     src_dir_path = _find_src_dir_path(testsuite_path)
-    for filename in glob.glob(os.path.join(src_dir_path, "*.c*")):
+    for filename in find_c_files_in(src_dir_path):
         if os.stat(filename).st_size == 0:
             continue
         try:
@@ -288,7 +310,7 @@ def scan_testsuite_path(testsuite_path):
         except ValueError as e:
             logger.error("%s: error parsing source file: %s" % (filename, e))
 
-    for filename in glob.glob(os.path.join(testsuite_path, "*.c*")):
+    for filename in find_c_files_in(testsuite_path):
         try:
             result: ScanPathResult = scan_file(filename)
             if result.warnings:
@@ -348,7 +370,7 @@ class TestSuite(DisablePyTestCollectionMixin):
     """Class representing a test application
     """
 
-    def __init__(self, suite_root, suite_path, name, data=None):
+    def __init__(self, suite_root, suite_path, name, data=None, detailed_test_id=True):
         """TestSuite constructor.
 
         This gets called by TestPlan as it finds and reads test yaml files.
@@ -369,10 +391,14 @@ class TestSuite(DisablePyTestCollectionMixin):
         """
 
         workdir = os.path.relpath(suite_path, suite_root)
-        self.name = self.get_unique(suite_root, workdir, name)
+
+        assert self.check_suite_name(name, suite_root, workdir)
+        self.detailed_test_id = detailed_test_id
+        self.name = self.get_unique(suite_root, workdir, name) if self.detailed_test_id else name
         self.id = name
 
         self.source_dir = suite_path
+        self.source_dir_rel = os.path.relpath(os.path.realpath(suite_path), start=canonical_zephyr_base)
         self.yamlfile = suite_path
         self.testcases = []
 
@@ -424,11 +450,15 @@ class TestSuite(DisablePyTestCollectionMixin):
             relative_ts_root = ""
 
         # workdir can be "."
-        unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name))
+        unique = os.path.normpath(os.path.join(relative_ts_root, workdir, name)).replace(os.sep, '/')
+        return unique
+
+    @staticmethod
+    def check_suite_name(name, testsuite_root, workdir):
         check = name.split(".")
         if len(check) < 2:
             raise TwisterException(f"""bad test name '{name}' in {testsuite_root}/{workdir}. \
 Tests should reference the category and subsystem with a dot as a separator.
                     """
                     )
-        return unique
+        return True

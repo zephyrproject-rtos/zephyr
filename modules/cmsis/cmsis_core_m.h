@@ -14,7 +14,7 @@
 #ifndef ZEPHYR_MODULES_CMSIS_CMSIS_M_H_
 #define ZEPHYR_MODULES_CMSIS_CMSIS_M_H_
 
-#include <zephyr/arch/arm/aarch32/cortex_m/nvic.h>
+#include <zephyr/arch/arm/cortex_m/nvic.h>
 
 #include <soc.h>
 

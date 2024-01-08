@@ -28,9 +28,9 @@ LOG_MODULE_REGISTER(VL53L0X, CONFIG_SENSOR_LOG_LEVEL);
 
 /* All the values used in this driver are coming from ST datasheet and examples.
  * It can be found here:
- *   http://www.st.com/en/embedded-software/stsw-img005.html
+ *   https://www.st.com/en/embedded-software/stsw-img005.html
  * There are also examples of use in the L4 cube FW:
- *   http://www.st.com/en/embedded-software/stm32cubel4.html
+ *   https://www.st.com/en/embedded-software/stm32cubel4.html
  */
 #define VL53L0X_INITIAL_ADDR                    0x29
 #define VL53L0X_REG_WHO_AM_I                    0xC0
@@ -300,36 +300,6 @@ static const struct sensor_driver_api vl53l0x_api_funcs = {
 	.channel_get = vl53l0x_channel_get,
 };
 
-#ifdef CONFIG_PM_DEVICE
-static int vl53l0x_pm_action(const struct device *dev,
-			     enum pm_device_action action)
-{
-	const struct vl53l0x_config *const config = dev->config;
-	int ret;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		ret = gpio_pin_set_dt(&config->xshut, 0);
-		if (ret < 0) {
-			LOG_ERR("[%s] XSHUT pin inactive", dev->name);
-			return ret;
-		}
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-		ret = gpio_pin_set_dt(&config->xshut, 1);
-		if (ret < 0) {
-			LOG_ERR("[%s] XSHUT pin active", dev->name);
-			return ret;
-		}
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-#endif
-
 static int vl53l0x_init(const struct device *dev)
 {
 	int r;
@@ -377,6 +347,36 @@ static int vl53l0x_init(const struct device *dev)
 	LOG_DBG("[%s] Initialized", dev->name);
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int vl53l0x_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	const struct vl53l0x_config *const config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = vl53l0x_init(dev);
+		if (ret != 0) {
+			LOG_ERR("resume init: %d", ret);
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* HW Standby */
+		ret = gpio_pin_set_dt(&config->xshut, 1);
+		if (ret < 0) {
+			LOG_ERR("[%s] XSHUT pin active", dev->name);
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif
 
 #define VL53L0X_INIT(inst)						 \
 	static struct vl53l0x_config vl53l0x_##inst##_config = {	 \

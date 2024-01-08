@@ -227,7 +227,7 @@ You can debug an application in the usual way.  Here is an example for the
    https://www.st.com/en/evaluation-tools/nucleo-f767zi.html
 
 .. _STM32 Nucleo-144 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00244518.pdf
+   https://www.st.com/resource/en/user_manual/dm00244518.pdf
 
 .. _STM32f767zi on www.st.com:
    https://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus/stm32-high-performance-mcus/stm32f7-series/stm32f7x&/stm32f767zi.html

@@ -8,12 +8,30 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/coredump.h>
 
+#ifdef CONFIG_COVERAGE_DUMP
+#include <zephyr/debug/gcov.h>
+#endif
+
+
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+{
+	ARG_UNUSED(pEsf);
+
+	printk("%s is expected; reason = %u; halting ...\n", __func__, reason);
+
+#ifdef CONFIG_COVERAGE_DUMP
+	gcov_coverage_dump();  /* LCOV_EXCL_LINE */
+#endif
+	k_fatal_halt(reason);
+}
+
 void func_3(uint32_t *addr)
 {
 #if defined(CONFIG_BOARD_M2GL025_MIV) || \
 	defined(CONFIG_BOARD_HIFIVE1) || \
 	defined(CONFIG_BOARD_LONGAN_NANO) || \
 	defined(CONFIG_BOARD_LONGAN_NANO_LITE) || \
+	defined(CONFIG_BOARD_QEMU_XTENSA) || \
 	defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.

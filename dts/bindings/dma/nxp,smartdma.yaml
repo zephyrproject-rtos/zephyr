@@ -1,0 +1,28 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SmartDMA controller
+
+compatible: "nxp,smartdma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  program-mem:
+    type: int
+    required: true
+    description: |
+      Program memory to load SMARTDMA routines into. Must be set to a RAM
+      region that the SMARTDMA can access on the chip.
+
+  # SmartDMA does not support channels, so no DMA cells should be provided.
+  # the driver or application using SMARTDMA can set the DMA program to run
+  # using the `dma_slot` parameter.
+  "#dma-cells":
+    const: 0

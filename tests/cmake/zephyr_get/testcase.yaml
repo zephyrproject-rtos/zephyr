@@ -3,9 +3,9 @@ common:
   build_only: true
   platform_allow: native_posix
 tests:
-  zephyr_get.no_sysbuild:
+  buildsystem.extensions.zephyr_get.no_sysbuild:
     sysbuild: false
-  zephyr_get.sysbuild:
+  buildsystem.extensions.zephyr_get.sysbuild:
     sysbuild: true
     extra_args: TESTCASE_VARIABLE="sysbuild.main"
       zephyr_get_2nd_TESTCASE_VARIABLE="sysbuild.2nd"

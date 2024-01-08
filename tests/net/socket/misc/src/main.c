@@ -14,6 +14,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dummy.h>
 
+#include "net_private.h"
+
 #include "../../socket_helpers.h"
 
 ZTEST_USER(socket_misc_test_suite, test_gethostname)
@@ -94,9 +96,8 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 	int ret;
 
 	ARG_UNUSED(dev);
-	ARG_UNUSED(pkt);
 
-	NET_DBG("Sending data (%zd bytes) to iface %d\n",
+	NET_DBG("Sending data (%zd bytes) to iface %d",
 		net_pkt_get_len(pkt), net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	current_dev = dev;
@@ -111,6 +112,8 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 
 	ret = net_recv_data(net_pkt_iface(recv_pkt), recv_pkt);
 	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
+
+	net_pkt_unref(pkt);
 
 	return 0;
 }
@@ -286,6 +289,8 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct sockaddr *peer_addr,
 	zassert_equal(ret, 0, "close failed, %d", errno);
 	ret = close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 void test_ipv4_so_bindtodevice(void)
@@ -423,7 +428,7 @@ void test_getpeername(int family)
 	ret = close(sock_s);
 	zassert_equal(ret, 0, "close failed, %d", errno);
 
-	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+	k_sleep(K_MSEC(2 * CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 
@@ -570,6 +575,265 @@ void test_getsockname_udp(int family)
 	zassert_equal(ret, 0, "close failed, %d", errno);
 }
 
+#define MAPPING_PORT 4244
+
+void test_ipv4_mapped_to_ipv6_disabled(void)
+{
+	int ret;
+	int sock_s4, sock_s6;
+	struct sockaddr srv_addr4 = { 0 };
+	struct sockaddr srv_addr6 = { 0 };
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+		return;
+	}
+
+	srv_addr4.sa_family = AF_INET;
+	net_sin(&srv_addr4)->sin_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET, TEST_MY_IPV4_ADDR,
+			&net_sin(&srv_addr4)->sin_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	srv_addr6.sa_family = AF_INET6;
+	net_sin6(&srv_addr6)->sin6_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET6, TEST_MY_IPV6_ADDR,
+			&net_sin6(&srv_addr6)->sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	sock_s4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s4 >= 0, "socket open failed");
+
+	ret = bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	ret = listen(sock_s4, 1);
+	zassert_equal(ret, 0, "listen failed, %d", errno);
+
+	sock_s6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s6 >= 0, "socket open failed");
+
+	ret = bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	ret = close(sock_s4);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = close(sock_s6);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+void test_ipv4_mapped_to_ipv6_enabled(void)
+{
+	socklen_t optlen = sizeof(int);
+	int off = 0;
+	int ret;
+	int sock_s4, sock_s6;
+	struct sockaddr srv_addr4 = { 0 };
+	struct sockaddr srv_addr6 = { 0 };
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+		return;
+	}
+
+	/* We must have bound to ANY address so that the
+	 * v4-mapping-to-v6 works as expected.
+	 */
+	srv_addr4.sa_family = AF_INET;
+	net_sin(&srv_addr4)->sin_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET, "0.0.0.0",
+			&net_sin(&srv_addr4)->sin_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	srv_addr6.sa_family = AF_INET6;
+	net_sin6(&srv_addr6)->sin6_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET6, "::",
+			&net_sin6(&srv_addr6)->sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	/* First create IPv6 socket */
+	sock_s6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s6 >= 0, "socket open failed");
+
+	ret = bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	ret = listen(sock_s6, 1);
+	zassert_equal(ret, 0, "listen failed, %d", errno);
+
+	/* Then try to create IPv4 socket to the same port */
+	sock_s4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s4 >= 0, "socket open failed");
+
+	/* Initially the IPV6_V6ONLY is set so the next bind is ok */
+	ret = bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	ret = close(sock_s4);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	/* Then we turn off IPV6_V6ONLY which means that IPv4 and IPv6
+	 * will have same port space and the next bind should fail.
+	 */
+	ret = setsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+	zassert_equal(ret, 0, "setsockopt failed, %d", errno);
+
+	ret = getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
+	zassert_equal(off, 0, "IPV6_V6ONLY option setting failed");
+
+	sock_s4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s4 >= 0, "socket open failed");
+
+	/* Now v4 bind should fail */
+	ret = bind(sock_s4, &srv_addr4, ADDR_SIZE(AF_INET));
+	zassert_equal(ret, -1, "bind failed, %d", errno);
+	zassert_equal(errno, EADDRINUSE, "bind failed");
+
+	ret = close(sock_s4);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = close(sock_s6);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+void test_ipv4_mapped_to_ipv6_server(void)
+{
+	socklen_t optlen = sizeof(int);
+	int off;
+	int ret, len;
+	int sock_c4, sock_c6, sock_s6, new_sock;
+	struct sockaddr srv_addr6 = { 0 };
+	struct sockaddr srv_addr = { 0 };
+	struct sockaddr connect_addr6 = { 0 };
+	struct sockaddr addr = { 0 };
+	socklen_t addrlen = sizeof(addr);
+	struct sockaddr_in6 mapped;
+
+#define MAX_BUF_SIZE 16
+	char buf[MAX_BUF_SIZE];
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+		return;
+	}
+
+	len = strlen("foobar");
+
+	/* Create a server socket and try to connect IPv4
+	 * socket to it. If v4-mapping-to-v6 is enabled,
+	 * this will work and we should be bound internally
+	 * to ::ffff:a.b.c.d IPv6 address.
+	 */
+	srv_addr.sa_family = AF_INET;
+	net_sin(&srv_addr)->sin_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET, "192.0.2.1",
+				&net_sin(&srv_addr)->sin_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	connect_addr6.sa_family = AF_INET6;
+	net_sin6(&connect_addr6)->sin6_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET6, TEST_PEER_IPV6_ADDR,
+				&net_sin6(&connect_addr6)->sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	net_ipv6_addr_create_v4_mapped(&net_sin(&srv_addr)->sin_addr,
+				       &mapped.sin6_addr);
+
+	/* We must have bound to ANY address so that the
+	 * v4-mapping-to-v6 works as expected.
+	 */
+	srv_addr6.sa_family = AF_INET6;
+	net_sin6(&srv_addr6)->sin6_port = htons(MAPPING_PORT);
+	ret = inet_pton(AF_INET6, "::",
+			&net_sin6(&srv_addr6)->sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	/* First create IPv6 socket */
+	sock_s6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_s6 >= 0, "socket open failed");
+
+	/* Verify that by default the IPV6_V6ONLY option is set */
+	ret = getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
+	zassert_not_equal(off, 0, "IPV6_V6ONLY option setting failed");
+
+	/* Then we turn off IPV6_V6ONLY which means that IPv4 and IPv6
+	 * will have same port space.
+	 */
+	off = 0;
+	ret = setsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+	zassert_equal(ret, 0, "setsockopt failed, %d", errno);
+
+	ret = getsockopt(sock_s6, IPPROTO_IPV6, IPV6_V6ONLY, &off, &optlen);
+	zassert_equal(ret, 0, "getsockopt failed, %d", errno);
+	zassert_equal(off, 0, "IPV6_V6ONLY option setting failed, %d", off);
+
+	ret = bind(sock_s6, &srv_addr6, ADDR_SIZE(AF_INET6));
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	ret = listen(sock_s6, 1);
+	zassert_equal(ret, 0, "listen failed, %d", errno);
+
+	/* Then create IPv4 socket and connect to the IPv6 port */
+	sock_c4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_c4 >= 0, "socket open failed");
+
+	ret = connect(sock_c4, &srv_addr, ADDR_SIZE(AF_INET));
+	zassert_equal(ret, 0, "connect failed");
+
+	new_sock = accept(sock_s6, &addr, &addrlen);
+	zassert_true(new_sock >= 0, "accept failed, %d", errno);
+
+	/* Note that we should get IPv6 address here (mapped from IPv4) */
+	zassert_equal(addr.sa_family, AF_INET6, "wrong family");
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6),
+		      "wrong addrlen (%d, expecting %d)", addrlen,
+		      sizeof(struct sockaddr_in6));
+	zassert_mem_equal(&mapped.sin6_addr, &net_sin6(&addr)->sin6_addr,
+			  sizeof(struct in6_addr),
+			  "wrong address (%s, expecting %s)",
+			  net_sprint_ipv6_addr(&mapped.sin6_addr),
+			  net_sprint_ipv6_addr(&net_sin6(&addr)->sin6_addr));
+
+	/* Send data back to IPv4 client from IPv6 socket */
+	ret = send(new_sock, "foobar", len, 0);
+	zassert_equal(ret, len, "cannot send (%d vs %d), errno %d", ret, len, errno);
+
+	addrlen = sizeof(struct sockaddr_in);
+	ret = recv(sock_c4, buf, sizeof(buf), 0);
+	zassert_equal(ret, strlen("foobar"), "cannot recv");
+
+	ret = close(sock_c4);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	(void)close(new_sock);
+
+	/* Let the system stabilize and cleanup itself */
+	k_sleep(K_MSEC(200));
+
+	/* Then create IPv6 socket and make sure it works ok too */
+	sock_c6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	zassert_true(sock_c6 >= 0, "socket open failed");
+
+	ret = connect(sock_c6, &connect_addr6, ADDR_SIZE(AF_INET6));
+	zassert_equal(ret, 0, "connect failed, %d", errno);
+
+	new_sock = accept(sock_s6, &addr, &addrlen);
+	zassert_true(new_sock >= 0, "accept failed, %d", errno);
+
+	ret = send(new_sock, "foobar", len, 0);
+	zassert_equal(ret, len, "cannot send (%d vs %d), errno %d", ret, len, errno);
+
+	addrlen = sizeof(struct sockaddr_in);
+	ret = recv(sock_c6, buf, sizeof(buf), 0);
+	zassert_equal(ret, strlen("foobar"), "cannot recv");
+
+	ret = close(sock_c6);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+
+	ret = close(sock_s6);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+	ret = close(new_sock);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
 ZTEST_USER(socket_misc_test_suite, test_ipv4_getsockname_tcp)
 {
 	test_getsockname_tcp(AF_INET);
@@ -606,6 +870,21 @@ ZTEST_USER(socket_misc_test_suite, test_ipv6)
 {
 	test_ipv6_so_bindtodevice();
 	test_ipv6_getpeername();
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv4_mapped_to_ipv6_disabled)
+{
+	test_ipv4_mapped_to_ipv6_disabled();
+}
+
+ZTEST_USER(socket_misc_test_suite, test_ipv4_mapped_to_ipv6_enabled)
+{
+	test_ipv4_mapped_to_ipv6_enabled();
+}
+
+ZTEST(socket_misc_test_suite, test_ipv4_mapped_to_ipv6_server)
+{
+	test_ipv4_mapped_to_ipv6_server();
 }
 
 ZTEST_SUITE(socket_misc_test_suite, NULL, setup, NULL, NULL, NULL);

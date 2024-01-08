@@ -12,6 +12,7 @@ config HAS_SEGGER_RTT
 config USE_SEGGER_RTT
 	bool "SEGGER RTT libraries."
 	depends on HAS_SEGGER_RTT
+	select STM32_ENABLE_DEBUG_SLEEP_STOP if SOC_FAMILY_STM32
 	help
 	  Enable Segger J-Link RTT libraries for platforms that support it.
 	  Selection of this option enables use of RTT for various subsystems.

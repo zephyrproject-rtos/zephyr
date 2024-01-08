@@ -12,5 +12,4 @@ properties:
     required: true
 
   pinctrl-0:
-    type: phandles
     required: true

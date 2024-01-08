@@ -937,6 +937,17 @@ struct bt_ots_client_cb {
  */
 int bt_ots_client_register(struct bt_ots_client *ots_inst);
 
+/** @brief Unregister an Object Transfer Service Instance.
+ *
+ *  Unregister an Object Transfer Service instance when disconnect from the peer.
+ *  Call this function when an ACL using OTS instance is disconnected.
+ *
+ *  @param[in]  index	      Index of OTS instance.
+ *
+ *  @return int               0 if success, ERRNO on failure.
+ */
+int bt_ots_client_unregister(uint8_t index);
+
 /** @brief OTS Indicate Handler function.
  *
  *  Set this function as callback for indicate handler when discovering OTS.

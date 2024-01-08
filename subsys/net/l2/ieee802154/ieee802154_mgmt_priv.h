@@ -33,8 +33,8 @@ static inline void ieee802154_mgmt_init(struct net_if *iface)
 /**
  * Handles the given Beacon frame.
  *
- * Returns NET_OK if successful. It's the caller's responsibility
- * to release the corresponding package in that case.
+ * @retval NET_CONTINUE if successful.
+ * @retval NET_DROP error while parsing the beacon
  */
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu,
@@ -43,8 +43,8 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 /**
  * Executes the given MAC command.
  *
- * Returns NET_OK if successful. It's the caller's responsibility
- * to release the corresponding package in that case.
+ * @retval NET_CONTINUE if successful.
+ * @retval NET_DROP error while parsing the mac command
  */
 enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 					       struct ieee802154_mpdu *mpdu);

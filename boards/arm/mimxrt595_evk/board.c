@@ -19,6 +19,22 @@ static const struct device *sw2 = DEVICE_DT_GET(NODE_SW2);
 static const struct device *ldo1 = DEVICE_DT_GET(NODE_LDO1);
 static const struct device *ldo2 = DEVICE_DT_GET(NODE_LDO2);
 
+#define MEGA (1000000U)
+
+/* Core frequency levels number. */
+#define POWER_FREQ_LEVELS_NUM (5U)
+
+/* Invalid voltage level. */
+#define POWER_INVALID_VOLT_LEVEL (0xFFFFFFFFU)
+
+static const uint32_t power_freq_level[POWER_FREQ_LEVELS_NUM] = {
+	275U * MEGA,
+	230U * MEGA,
+	192U * MEGA,
+	100U * MEGA,
+	60U * MEGA
+};
+
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
@@ -30,7 +46,7 @@ static int32_t board_calc_volt_level(void)
 	uint32_t volt;
 
 	for (i = 0U; i < POWER_FREQ_LEVELS_NUM; i++) {
-		if (SystemCoreClock > powerFreqLevel[i]) {
+		if (SystemCoreClock > power_freq_level[i]) {
 			break;
 		}
 	}

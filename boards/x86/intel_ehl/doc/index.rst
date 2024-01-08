@@ -56,11 +56,13 @@ Booting the Elkhart Lake CRB Board using UEFI
 =============================================
 
 .. include:: ../../common/efi_boot.rst
+   :start-after: start_include_here
 
 Booting the Elkhart Lake CRB Board over network
 ===============================================
 
 .. include:: ../../common/net_boot.rst
+   :start-after: start_include_here
 
 .. note::
    To enable PXE boot for Elkhart Lake CRB board do the following:

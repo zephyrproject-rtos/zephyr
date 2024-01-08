@@ -11,13 +11,13 @@
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_mailbox.h>
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_smc.h>
 #include <zephyr/drivers/sip_svc/sip_svc_driver.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(intel_agilex_socfpga_sip_smc, CONFIG_ARM_SIP_SVC_DRIVER_LOG_LEVEL);
+LOG_MODULE_REGISTER(intel_socfpga_agilex_sip_smc, CONFIG_ARM_SIP_SVC_DRIVER_LOG_LEVEL);
 
-#define DT_DRV_COMPAT intel_agilex_socfpga_sip_smc
+#define DT_DRV_COMPAT intel_socfpga_agilex_sip_smc
 
 #define DT_SIP_SMC DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT)
 
@@ -39,6 +39,7 @@ static bool intel_sip_smc_plat_func_id_valid(const struct device *dev, uint32_t 
 		case SMC_FUNC_ID_REG_WRITE:
 		case SMC_FUNC_ID_REG_UPDATE:
 		case SMC_FUNC_ID_SET_HPS_BRIDGES:
+		case SMC_FUNC_ID_RSU_UPDATE_ADDR:
 			valid = true;
 			break;
 		default:
@@ -66,7 +67,7 @@ static uint32_t intel_sip_smc_plat_format_trans_id(const struct device *dev, uin
 {
 	ARG_UNUSED(dev);
 
-	/*combine the transaction id and client id to get the job id*/
+	/* Combine the transaction id and client id to get the job id*/
 	return (((client_idx & 0xF) << 4) | (trans_idx & 0xF));
 }
 
@@ -171,8 +172,9 @@ static void intel_sip_secure_monitor_call(const struct device *dev, unsigned lon
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(res != NULL);
+	uint64_t start, end;
 
-	LOG_INF("Before %s call", DT_PROP(DT_SIP_SMC, method));
+	LOG_DBG("Before %s call", DT_PROP(DT_SIP_SMC, method));
 	LOG_DBG("\tfunction_id       %08lx", function_id);
 	LOG_DBG("\targ0              %08lx", arg0);
 	LOG_DBG("\targ1              %08lx", arg1);
@@ -182,9 +184,14 @@ static void intel_sip_secure_monitor_call(const struct device *dev, unsigned lon
 	LOG_DBG("\targ5              %08lx", arg5);
 	LOG_DBG("\targ6              %08lx", arg6);
 
+	start = k_cycle_get_64();
 	arm_smccc_smc(function_id, arg0, arg1, arg2, arg3, arg4, arg5, arg6, res);
+	end = k_cycle_get_64();
 
-	LOG_INF("After %s call", DT_PROP(DT_SIP_SMC, method));
+	LOG_INF("Time taken for %08lx is %08lld ns", function_id,
+		k_cyc_to_ns_ceil64(end - start));
+
+	LOG_DBG("After %s call", DT_PROP(DT_SIP_SMC, method));
 	LOG_DBG("\tres->a0           %08lx", res->a0);
 	LOG_DBG("\tres->a1           %08lx", res->a1);
 	LOG_DBG("\tres->a2           %08lx", res->a2);

@@ -120,7 +120,7 @@ The B-G474E-DPOW1 Discovery board includes an ST-LINK/V3E embedded debug tool in
 Flashing an application to the B_G474E_DPOW1
 --------------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky

@@ -10,6 +10,14 @@ config REQUIRES_FULL_LIBC
 	  Select a C library implementation that provides a complete C library
 	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
+config REQUIRES_FLOAT_PRINTF
+	bool "Requires floating point support in printf"
+	select CBPRINTF_FP_SUPPORT if MINIMAL_LIBC
+	select NEWLIB_LIBC_FLOAT_PRINTF if NEWLIB_LIBC
+	help
+	  Select a printf implementation that provides a complete
+	  implementation including floating point support.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
@@ -35,8 +43,8 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr") || (NATIVE_LIBRARY)
-	depends on !(CPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr")
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (NATIVE_LIBRARY)
+	depends on !REQUIRES_FULL_LIBCPP || ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y")
 	default y
 	select FULL_LIBC_SUPPORTED
 	help
@@ -53,7 +61,7 @@ menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD
+	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && POSIX_API)
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
@@ -72,8 +80,9 @@ config MINIMAL_LIBC
 config PICOLIBC
 	bool "Picolibc library"
 	select COMMON_LIBC_ABORT
-	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	imply THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
+	select NEED_LIBC_MEM_PARTITION
 	imply COMMON_LIBC_MALLOC
 	depends on !NATIVE_APPLICATION
 	depends on PICOLIBC_SUPPORTED
@@ -87,6 +96,7 @@ config NEWLIB_LIBC
 	select COMMON_LIBC_ABORT
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
+	select NEED_LIBC_MEM_PARTITION
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.

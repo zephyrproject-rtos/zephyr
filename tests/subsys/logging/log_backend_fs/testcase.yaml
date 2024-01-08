@@ -8,7 +8,7 @@ common:
     - fs
     - littlefs
 tests:
-  logging.log_backend_fs.automounted:
+  logging.backend.fs.automounted:
     platform_allow:
       - native_posix
       - native_posix_64
@@ -16,21 +16,21 @@ tests:
       - mr_canhubk3
     integration_platforms:
       - native_posix
-  logging.log_backend_fs.manualmounted.native_posix:
+  logging.backend.fs.manualmounted.native_posix:
     platform_allow: native_posix
     extra_args: DTC_OVERLAY_FILE="./boards/native_posix.overlay;./boards/automount.overlay"
     integration_platforms:
       - native_posix
-  logging.log_backend_fs.manualmounted.native_posix_64:
+  logging.backend.fs.manualmounted.native_posix_64:
     platform_allow: native_posix_64
     extra_args: DTC_OVERLAY_FILE="./boards/native_posix_64.overlay;./boards/automount.overlay"
     integration_platforms:
       - native_posix_64
-  logging.log_backend_fs.manualmounted.nrf5840dk:
+  logging.backend.fs.manualmounted.nrf5840dk:
     platform_allow: nrf52840dk_nrf52840
     extra_args: DTC_OVERLAY_FILE="./boards/nrf52840dk_nrf52840.overlay;./boards/automount.overlay"
     integration_platforms:
       - nrf52840dk_nrf52840
-  logging.log_backend_fs.manualmounted.mr_canhubk3:
+  logging.backend.fs.manualmounted.mr_canhubk3:
     platform_allow: mr_canhubk3
     extra_args: DTC_OVERLAY_FILE="./boards/mr_canhubk3.overlay;./boards/automount.overlay"

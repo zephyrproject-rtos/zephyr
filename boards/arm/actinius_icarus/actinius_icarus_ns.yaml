@@ -20,3 +20,4 @@ supported:
   - feather_spi
   - arduino_i2c
   - arduino_spi
+vendor: actinius

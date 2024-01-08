@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''Runner for flashing with the Intel ADSP CAVS boards.'''
+'''Runner for flashing with the Intel ADSP boards.'''
 
 import os
 import sys
@@ -16,7 +16,7 @@ from zephyr_ext_common import ZEPHYR_BASE
 DEFAULT_CAVSTOOL='soc/xtensa/intel_adsp/tools/cavstool_client.py'
 DEFAULT_SOF_MOD_DIR=os.path.join(ZEPHYR_BASE, '../modules/audio/sof')
 DEFAULT_RIMAGE_TOOL=shutil.which('rimage')
-DEFAULT_CONFIG_DIR=os.path.join(DEFAULT_SOF_MOD_DIR, 'rimage/config')
+DEFAULT_CONFIG_DIR=os.path.join(DEFAULT_SOF_MOD_DIR, 'tools/rimage/config')
 DEFAULT_KEY_DIR=os.path.join(DEFAULT_SOF_MOD_DIR, 'keys')
 
 
@@ -113,7 +113,7 @@ class IntelAdspBinaryRunner(ZephyrBinaryRunner):
         if self.do_sign:
             self.sign(**kwargs)
 
-        if re.search("intel_adsp_cavs", self.platform):
+        if re.search("intel_adsp", self.platform):
             self.require(self.cavstool)
             self.flash(**kwargs)
         else:

@@ -33,7 +33,7 @@ int meas_vbus_v(int32_t *v)
 	};
 	adc_sequence_init_dt(&adc_vbus_v.port, &sequence);
 
-	ret = adc_read(adc_vbus_v.port.dev, &sequence);
+	ret = adc_read_dt(&adc_vbus_v.port, &sequence);
 	if (ret != 0) {
 		return ret;
 	}

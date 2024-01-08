@@ -1,5 +1,7 @@
 tests:
-  # section.subsection
-  drivers.max17048:
+  drivers.fuel_gauge.max17048:
+    tags:
+      - fuel_gauge
     filter: dt_compat_enabled("maxim,max17048")
-    platform_allow: native_posix
+    platform_allow:
+      - native_sim

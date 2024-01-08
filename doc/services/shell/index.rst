@@ -43,6 +43,7 @@ interaction is required. This module is a Unix-like shell with these features:
 The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
+* MQTT
 * Segger RTT
 * SMP
 * Telnet
@@ -72,6 +73,29 @@ procedure:
 
 * Now you should have a network connection to RTT that will let you enter input
   to the shell.
+
+
+Telnet Backend
+==============
+
+Enabling :kconfig:option:`CONFIG_SHELL_BACKEND_TELNET` will allow users to use telnet
+as a shell backend. Connecting to it can be done using PuTTY or any ``telnet`` client.
+For example:
+
+.. code-block:: none
+
+  telnet <ip address> <port>
+
+By default the telnet client won't handle telnet commands and configuration. Although
+command support can be enabled with :kconfig:option:`CONFIG_SHELL_TELNET_SUPPORT_COMMAND`.
+This will give the telnet client access to a very limited set of supported commands but
+still can be turned on if needed. One of the command options it supports is the ``ECHO``
+option. This will allow the client to be in character mode (character at a time),
+similar to a UART backend in that regard. This will make the client send a character
+as soon as it is typed having the effect of increasing the network traffic
+considerably. For that cost, it will enable the line editing,
+`tab completion <tab-feature_>`_, and `history <history-feature_>`_
+features of the shell.
 
 
 Commands
@@ -427,6 +451,7 @@ These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``
           case of Bluetooth shell to limit the amount of transferred bytes.
 	* :command:`stats` - Shows shell statistics.
 
+.. _tab-feature:
 
 Tab Feature
 ***********
@@ -447,12 +472,14 @@ the shell will do one of 3 possible things:
       :align: center
       :alt: Tab Feature usage example
 
+.. _history-feature:
+
 History Feature
 ***************
 
 This feature enables commands history in the shell. It is activated by:
 :kconfig:option:`CONFIG_SHELL_HISTORY` set to ``y``. History can be accessed
-using keys: :kbd:`↑` :kbd:`↓` or :kbd:`Ctrl + n` and :kbd:`Ctrl + p`
+using keys: :kbd:`↑` :kbd:`↓` or :kbd:`Ctrl+n` and :kbd:`Ctrl+p`
 if meta keys are active.
 Number of commands that can be stored depends on size
 of :kconfig:option:`CONFIG_SHELL_HISTORY_BUFFER` parameter.
@@ -486,36 +513,36 @@ The shell module supports the following meta keys:
 
    * - Meta keys
      - Action
-   * - :kbd:`Ctrl + a`
+   * - :kbd:`Ctrl+a`
      - Moves the cursor to the beginning of the line.
-   * - :kbd:`Ctrl + b`
+   * - :kbd:`Ctrl+b`
      - Moves the cursor backward one character.
-   * - :kbd:`Ctrl + c`
+   * - :kbd:`Ctrl+c`
      - Preserves the last command on the screen and starts a new command in
        a new line.
-   * - :kbd:`Ctrl + d`
+   * - :kbd:`Ctrl+d`
      - Deletes the character under the cursor.
-   * - :kbd:`Ctrl + e`
+   * - :kbd:`Ctrl+e`
      - Moves the cursor to the end of the line.
-   * - :kbd:`Ctrl + f`
+   * - :kbd:`Ctrl+f`
      - Moves the cursor forward one character.
-   * - :kbd:`Ctrl + k`
+   * - :kbd:`Ctrl+k`
      - Deletes from the cursor to the end of the line.
-   * - :kbd:`Ctrl + l`
+   * - :kbd:`Ctrl+l`
      - Clears the screen and leaves the currently typed command at the top of
        the screen.
-   * - :kbd:`Ctrl + n`
+   * - :kbd:`Ctrl+n`
      - Moves in history to next entry.
-   * - :kbd:`Ctrl + p`
+   * - :kbd:`Ctrl+p`
      - Moves in history to previous entry.
-   * - :kbd:`Ctrl + u`
+   * - :kbd:`Ctrl+u`
      - Clears the currently typed command.
-   * - :kbd:`Ctrl + w`
+   * - :kbd:`Ctrl+w`
      - Removes the word or part of the word to the left of the cursor. Words
        separated by period instead of space are treated as one word.
-   * - :kbd:`Alt + b`
+   * - :kbd:`Alt+b`
      - Moves the cursor backward one word.
-   * - :kbd:`Alt + f`
+   * - :kbd:`Alt+f`
      - Moves the cursor forward one word.
 
 This feature is activated by :kconfig:option:`CONFIG_SHELL_METAKEYS` set to ``y``.
@@ -634,21 +661,21 @@ backend and the Log RTT backend does not work by default, because both default
 to channel ``0``. There are two options:
 
 1. The Shell buffer can use an alternate channel, for example using
-:kconfig:option:`SHELL_BACKEND_RTT_BUFFER` set to ``1``.
+:kconfig:option:`CONFIG_SHELL_BACKEND_RTT_BUFFER` set to ``1``.
 This allows monitoring the log using `JLinkRTTViewer
 <https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/#j-link-rtt-viewer>`_
 while a script interfaces over channel 1.
 
 2. The Log buffer can use an alternate channel, for example using
-:kconfig:option:`LOG_BACKEND_RTT_BUFFER` set to ``1``.
+:kconfig:option:`CONFIG_LOG_BACKEND_RTT_BUFFER` set to ``1``.
 This allows interactive use of the shell through JLinkRTTViewer, while the log
 is written to file.
 
 .. warning::
 	Regardless of the channel selection, the RTT log backend must be explicitly
-	enabled using :kconfig:option:`LOG_BACKEND_RTT` set to ``y``, because it
+	enabled using :kconfig:option:`CONFIG_LOG_BACKEND_RTT` set to ``y``, because it
 	defaults to ``n`` when the Shell RTT backend is also enabled using
-	:kconfig:option:`SHELL_BACKEND_RTT` being set to ``y``.
+	:kconfig:option:`CONFIG_SHELL_BACKEND_RTT` being set to ``y``.
 
 Usage
 *****

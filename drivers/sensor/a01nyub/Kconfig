@@ -6,5 +6,6 @@ config A01NYUB
 	default y
 	depends on DT_HAS_DFROBOT_A01NYUB_ENABLED
 	depends on UART_INTERRUPT_DRIVEN
+	select UART_USE_RUNTIME_CONFIGURE
 	help
 	  Enable driver for the DFRobot A01NYUB distance sensor.

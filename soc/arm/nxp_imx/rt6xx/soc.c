@@ -19,7 +19,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
-#include <aarch32/cortex_m/exc.h>
+#include <cortex_m/exc.h>
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
@@ -319,6 +319,10 @@ static ALWAYS_INLINE void clock_init(void)
 	 * for FlexSPI.
 	 */
 	flexspi_setup_clock(FLEXSPI, 1U, 9U);
+#endif
+
+#if CONFIG_COUNTER_NXP_MRT
+	RESET_PeripheralReset(kMRT0_RST_SHIFT_RSTn);
 #endif
 
 	/* Set SystemCoreClock variable. */

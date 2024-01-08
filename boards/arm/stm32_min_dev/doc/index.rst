@@ -161,7 +161,7 @@ built and flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -181,6 +181,6 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _STM32F103x8:
-        http://www.st.com/resource/en/datasheet/stm32f103c8.pdf
+        https://www.st.com/resource/en/datasheet/stm32f103c8.pdf
 .. _EmbedJournal:
         https://embedjournal.com/tag/stm32-min-dev/

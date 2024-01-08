@@ -36,3 +36,19 @@ tests:
     extra_configs:
       - CONFIG_QEMU_ICOUNT=y
       - CONFIG_MINIMAL_LIBC=y
+  arch.shared_interrupt:
+    # excluded because of failures during test_prevent_interruption
+    platform_exclude: qemu_cortex_m0
+    arch_exclude:
+      # same as above, #22956
+      - nios2
+      # test needs 2 working interrupt lines
+      - xtensa
+      # TODO: make test work on this arch
+      - mips
+    tags:
+      - kernel
+      - interrupt
+    extra_configs:
+      - CONFIG_SHARED_INTERRUPTS=y
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE

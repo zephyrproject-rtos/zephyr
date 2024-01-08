@@ -690,7 +690,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			lll_adv_data_reset(&adv->lll.scan_rsp);
 			err = lll_adv_aux_data_init(&adv->lll.scan_rsp);
 			if (err) {
-				return err;
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 			}
 
 			pdu = lll_adv_scan_rsp_peek(&adv->lll);
@@ -710,7 +710,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			lll_adv_data_reset(&adv->lll.scan_rsp);
 			err = lll_adv_data_init(&adv->lll.scan_rsp);
 			if (err) {
-				return err;
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 			}
 
 			pdu = lll_adv_scan_rsp_peek(&adv->lll);
@@ -926,7 +926,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		err = lll_adv_data_init(&adv->lll.scan_rsp);
 		if (err) {
-			return err;
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		pdu_scan = lll_adv_scan_rsp_peek(lll);
@@ -1251,7 +1251,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	adv->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
+	adv->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 	ticks_slot_offset = MAX(adv->ull.ticks_active_to_start,
 				adv->ull.ticks_prepare_to_start);
@@ -1873,7 +1873,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 		err = lll_adv_data_init(&adv->lll.scan_rsp);
 		if (err) {
-			return err;
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		prev = lll_adv_scan_rsp_peek(&adv->lll);
@@ -2145,7 +2145,7 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 	chan_map = lll->chan_map;
 	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
 	time_us = adv_time_get(pdu, pdu_scan, chan_cnt, phy, phy_flags);
-	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
+	time_ticks = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint32_t volatile ret_cb;

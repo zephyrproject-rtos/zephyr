@@ -137,6 +137,6 @@ static int longpress_init(const struct device *dev)
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, longpress_init, NULL,                                          \
 			      &longpress_data_##inst, &longpress_config_##inst,                    \
-			      APPLICATION, CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_LONGPRESS_DEFINE)

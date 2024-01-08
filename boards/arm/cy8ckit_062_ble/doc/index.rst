@@ -190,7 +190,7 @@ Cy_WDT_Disable().
 Running on Dual Core
 ********************
 
-#. Build the Zephyr kernel and the :ref:`button-sample` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`button` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/basic/button

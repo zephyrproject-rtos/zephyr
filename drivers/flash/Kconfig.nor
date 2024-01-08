@@ -8,6 +8,7 @@ menuconfig SPI_NOR
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_JESD216
+	select FLASH_HAS_EX_OP
 	select SPI
 
 if SPI_NOR
@@ -19,7 +20,8 @@ choice SPI_NOR_SFDP
 config SPI_NOR_SFDP_MINIMAL
 	bool "Fixed flash configuration"
 	help
-	  Synthesize a minimal configuration assuming 256 By page size and
+	  Synthesize a minimal configuration assuming 256 By page size (or as
+	  set by the page-size devicetree property) and
 	  standard 4 KiBy and 64 KiBy erase instructions.  Requires the size and
 	  jedec-id properties in the devicetree jedec,spi-nor node.
 

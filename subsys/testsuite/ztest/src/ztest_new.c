@@ -22,7 +22,7 @@ static bool failed_expectation;
 #include <stdlib.h>
 #include <time.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
 #define NUM_ITER_PER_TEST  CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
 #else
@@ -113,6 +113,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned int key = arch_irq_lock();
 	uint32_t dt, start_ms = k_uptime_get_32();
 
@@ -159,7 +160,7 @@ void z_impl_z_test_1cpu_start(void)
 	 */
 	for (int i = 0; i < num_cpus - 1; i++) {
 		k_thread_create(&cpuhold_threads[i], cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				(k_thread_entry_t)cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
+				cpu_hold, NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO,
 				0, K_NO_WAIT);
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", i);
@@ -439,7 +440,12 @@ static void test_finalize(void)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_thread_abort(&ztest_thread);
+		if (k_is_in_isr()) {
+			return;
+		}
+
 		k_thread_abort(k_current_get());
+		CODE_UNREACHABLE;
 	}
 }
 
@@ -553,7 +559,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 		get_start_time_cyc();
 		k_thread_create(&ztest_thread, ztest_thread_stack,
 				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
-				(k_thread_entry_t)test_cb, suite, test, data,
+				test_cb, suite, test, data,
 				CONFIG_ZTEST_THREAD_PRIORITY,
 				K_INHERIT_PERMS, K_FOREVER);
 
@@ -1079,7 +1085,18 @@ int main(void)
 	z_init_mock();
 	test_main();
 	end_report();
+#ifdef CONFIG_ZTEST_NO_YIELD
+	/*
+	 * Rather than yielding to idle thread, keep the part awake so debugger can
+	 * still access it, since some SOCs cannot be debugged in low power states.
+	 */
+	uint32_t key = irq_lock();
 
+	while (1) {
+		; /* Spin */
+	}
+	irq_unlock(key);
+#endif
 	return test_status;
 }
 #else
@@ -1124,6 +1141,18 @@ int main(void)
 			state.boots = 0;
 		}
 	}
+#ifdef CONFIG_ZTEST_NO_YIELD
+	/*
+	 * Rather than yielding to idle thread, keep the part awake so debugger can
+	 * still access it, since some SOCs cannot be debugged in low power states.
+	 */
+	uint32_t key = irq_lock();
+
+	while (1) {
+		; /* Spin */
+	}
+	irq_unlock(key);
+#endif
 	return 0;
 }
 #endif

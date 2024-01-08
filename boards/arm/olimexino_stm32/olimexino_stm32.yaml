@@ -16,3 +16,4 @@ supported:
   - usb_device
   - watchdog
   - can
+vendor: olimex

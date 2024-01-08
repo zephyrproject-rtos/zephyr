@@ -23,10 +23,10 @@
 #define HEXDUMP_BYTES_IN_LINE 16
 
 #define  DROPPED_COLOR_PREFIX \
-	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
+	COND_CODE_1(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
 
 #define DROPPED_COLOR_POSTFIX \
-	Z_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
+	COND_CODE_1(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
 
 static const char *const severity[] = {
 	NULL,
@@ -328,7 +328,7 @@ static int ids_print(const struct log_output *output,
 		     bool thread_on,
 		     const char *domain,
 		     const char *source,
-		     const k_tid_t tid,
+		     k_tid_t tid,
 		     uint32_t level)
 {
 	int total = 0;
@@ -441,7 +441,7 @@ static uint32_t prefix_print(const struct log_output *output,
 			     log_timestamp_t timestamp,
 			     const char *domain,
 			     const char *source,
-			     const k_tid_t tid,
+			     k_tid_t tid,
 			     uint8_t level)
 {
 	__ASSERT_NO_MSG(level <= LOG_LEVEL_DBG);
@@ -506,7 +506,7 @@ void log_output_process(const struct log_output *output,
 			log_timestamp_t timestamp,
 			const char *domain,
 			const char *source,
-			const k_tid_t tid,
+			k_tid_t tid,
 			uint8_t level,
 			const uint8_t *package,
 			const uint8_t *data,

@@ -21,3 +21,4 @@ supported:
   - adc
   - dac
   - dma
+vendor: st

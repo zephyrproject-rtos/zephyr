@@ -151,7 +151,6 @@ endmenu # "Zephyr optimizations"
 config OPENTHREAD_SHELL
 	bool "OpenThread shell"
 	depends on SHELL
-	default y
 
 config MBEDTLS_PROMPTLESS
 	bool
@@ -288,6 +287,14 @@ config OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
 	default 20
 	help
 	  The number of EID-to-RLOC cache entries.
+
+config OPENTHREAD_TMF_ADDRESS_CACHE_MAX_SNOOP_ENTRIES
+	int "The maximum number of EID-to-RLOC cache entries"
+	default 2
+	help
+	  The maximum number of EID-to-RLOC cache entries that can be used for
+	  "snoop optimization" where an entry is created by inspecting a received
+	  message.
 
 config OPENTHREAD_LOG_PREPEND_LEVEL_ENABLE
 	bool "Prepending the log level to all OpenThread log messages"

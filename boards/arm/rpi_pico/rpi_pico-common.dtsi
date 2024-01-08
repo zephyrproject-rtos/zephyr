@@ -119,6 +119,10 @@
 	pinctrl-names = "default";
 };
 
+&timer {
+	status = "okay";
+};
+
 &wdt0 {
 	status = "okay";
 };

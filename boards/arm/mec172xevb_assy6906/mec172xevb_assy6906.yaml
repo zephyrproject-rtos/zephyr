@@ -19,9 +19,11 @@ supported:
   - adc
   - pwm
   - counter
+  - spi
 testing:
   binaries:
     - spi_image.bin
   ignore_tags:
     - bluetooth
     - net
+vendor: microchip

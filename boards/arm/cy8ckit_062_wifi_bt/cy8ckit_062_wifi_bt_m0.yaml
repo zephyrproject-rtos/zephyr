@@ -16,3 +16,4 @@ toolchain:
   - xtools
 supported:
   - gpio
+vendor: cypress

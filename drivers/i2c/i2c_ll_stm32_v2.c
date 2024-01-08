@@ -17,6 +17,8 @@
 #include <stm32_ll_i2c.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -101,6 +103,10 @@ static void stm32_i2c_master_mode_end(const struct device *dev)
 
 	stm32_i2c_disable_transfer_interrupts(dev);
 
+	if (LL_I2C_IsEnabledReloadMode(i2c)) {
+		LL_I2C_DisableReloadMode(i2c);
+	}
+
 #if defined(CONFIG_I2C_TARGET)
 	data->master_active = false;
 	if (!data->slave_attached) {
@@ -120,18 +126,25 @@ static void stm32_i2c_slave_event(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 	const struct i2c_target_callbacks *slave_cb;
 	struct i2c_target_config *slave_cfg;
-	uint8_t slave_address;
 
-	/* Choose the right slave from the address match code */
-	slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
-	if (data->slave_cfg != NULL && slave_address == data->slave_cfg->address) {
-		slave_cfg = data->slave_cfg;
-	} else if (data->slave2_cfg != NULL && slave_address == data->slave2_cfg->address) {
-		slave_cfg = data->slave2_cfg;
-	} else {
-		__ASSERT_NO_MSG(0);
-		return;
+	if (data->slave_cfg->flags != I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		uint8_t slave_address;
+
+		/* Choose the right slave from the address match code */
+		slave_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
+		if (data->slave_cfg != NULL &&
+				slave_address == data->slave_cfg->address) {
+			slave_cfg = data->slave_cfg;
+		} else if (data->slave2_cfg != NULL &&
+				slave_address == data->slave2_cfg->address) {
+			slave_cfg = data->slave2_cfg;
+		} else {
+			__ASSERT_NO_MSG(0);
+			return;
+		}
 	}
+
+	slave_cfg = data->slave_cfg;
 	slave_cb = slave_cfg->callbacks;
 
 	if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
@@ -220,6 +233,16 @@ int i2c_stm32_target_register(const struct device *dev,
 		return ret;
 	}
 
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (pm_device_wakeup_is_capable(dev)) {
+		/* Mark device as active */
+		(void)pm_device_runtime_get(dev);
+		/* Enable wake-up from stop */
+		LOG_DBG("i2c: enabling wakeup from stop");
+		LL_I2C_EnableWakeUpFromStop(cfg->i2c);
+	}
+#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
+
 	LL_I2C_Enable(i2c);
 
 	if (!data->slave_cfg) {
@@ -298,6 +321,16 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	LL_I2C_ClearFlag_ADDR(i2c);
 
 	LL_I2C_Disable(i2c);
+
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	if (pm_device_wakeup_is_capable(dev)) {
+		/* Disable wake-up from STOP */
+		LOG_DBG("i2c: disabling wakeup from stop");
+		LL_I2C_DisableWakeUpFromStop(i2c);
+		/* Release the device */
+		(void)pm_device_runtime_put(dev);
+	}
+#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
 
 	data->slave_attached = false;
 
@@ -702,6 +735,8 @@ int stm32_i2c_configure_timing(const struct device *dev, uint32_t clock)
 		i2c_setup_time_min = 500U;
 		break;
 	default:
+		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
+				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 

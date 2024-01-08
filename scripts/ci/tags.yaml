@@ -50,6 +50,11 @@ net:
   files:
     - subsys/net/
     - include/zephyr/net/
+    - drivers/wifi/
+    - drivers/net/
+    - drivers/ethernet/
+    - drivers/ieee802154/
+    - drivers/ptp_clock/
 
 test_framework:
   files:
@@ -67,7 +72,7 @@ cmsis_dsp:
 
 mcumgr:
   files:
-    - subsys/mcumgr/
+    - subsys/mgmt/mcumgr/
     - tests/subsys/mgmt/mcumgr/
     - samples/subsys/mgmt/mcumgr/
     - include/zephyr/mgmt/mcumgr/

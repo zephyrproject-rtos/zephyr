@@ -1,12 +1,13 @@
-.. _lorawan_class_a_sample:
+.. zephyr:code-sample:: lorawan-class-a
+   :name: LoRaWAN class A device
+   :relevant-api: lorawan_api
 
-LoRaWAN Class A Sample
-######################
+   Join a LoRaWAN network and send a message periodically.
 
 Overview
 ********
 
-A simple application to demonstrate the LoRaWAN subsystem of Zephyr.
+A simple application to demonstrate the :ref:`LoRaWAN subsystem <lorawan_api>` of Zephyr.
 
 Building and Running
 ********************

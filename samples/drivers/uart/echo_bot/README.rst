@@ -1,7 +1,8 @@
-.. _uart_sample:
+.. zephyr:code-sample:: uart
+   :name: UART echo
+   :relevant-api: uart_interface
 
-UART Driver Sample
-##################
+   Read data from the console and echo it back.
 
 Overview
 ********

@@ -18,7 +18,7 @@ It has been tested on the :ref:`stm32l562e_dk_board`.
 References
 **********
 
-- LSM6DSO http://www.st.com/en/mems-and-sensors/lsm6dso.html
+- LSM6DSO https://www.st.com/en/mems-and-sensors/lsm6dso.html
 
 Building and Running
 ********************

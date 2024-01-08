@@ -154,51 +154,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
 /**
- * @brief Obtain an extern reference to a stack
- *
- * This macro properly brings the symbol of a thread stack defined
- * elsewhere into scope.
- *
- * @deprecated Use @c K_KERNEL_STACK_DECLARE() instead.
- *
- * @param sym Thread stack symbol name
- */
-#define K_KERNEL_STACK_EXTERN(sym) __DEPRECATED_MACRO \
-	extern k_thread_stack_t sym[]
-
-/**
- * @brief Obtain an extern reference to a stack array
- *
- * This macro properly brings the symbol of a stack array defined
- * elsewhere into scope.
- *
- * @deprecated Use @c K_KERNEL_STACK_ARRAY_DECLARE() instead.
- *
- * @param sym Thread stack symbol name
- * @param nmemb Number of stacks defined
- * @param size Size of the stack memory region
- */
-#define K_KERNEL_STACK_ARRAY_EXTERN(sym, nmemb, size) __DEPRECATED_MACRO \
-	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
-
-/**
- * @brief Obtain an extern reference to a pinned stack array
- *
- * This macro properly brings the symbol of a pinned stack array
- * defined elsewhere into scope.
- *
- * @deprecated Use @c K_KERNEL_PINNED_STACK_ARRAY_DECLARE() instead.
- *
- * @param sym Thread stack symbol name
- * @param nmemb Number of stacks defined
- * @param size Size of the stack memory region
- */
-#define K_KERNEL_PINNED_STACK_ARRAY_EXTERN(sym, nmemb, size) __DEPRECATED_MACRO \
-	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
-
-/**
  * @brief Define a toplevel kernel stack memory region in specified section
  *
  * This defines a region of memory for use as a thread stack in
@@ -342,8 +297,6 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
 #define K_THREAD_STACK_DECLARE		K_KERNEL_STACK_DECLARE
 #define K_THREAD_STACK_ARRAY_DECLARE	K_KERNEL_STACK_ARRAY_DECLARE
-#define K_THREAD_STACK_EXTERN		K_KERNEL_STACK_EXTERN
-#define K_THREAD_STACK_ARRAY_EXTERN	K_KERNEL_STACK_ARRAY_EXTERN
 #define K_THREAD_PINNED_STACK_DEFINE	K_KERNEL_PINNED_STACK_DEFINE
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE \
 					K_KERNEL_PINNED_STACK_ARRAY_DEFINE
@@ -464,35 +417,6 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DECLARE(sym, nmemb, size) \
-	extern struct z_thread_stack_element \
-		sym[nmemb][K_THREAD_STACK_LEN(size)]
-
-/**
- * @brief Obtain an extern reference to a stack
- *
- * This macro properly brings the symbol of a thread stack defined
- * elsewhere into scope.
- *
- * @deprecated Use @c K_THREAD_STACK_DECLARE() instead.
- *
- * @param sym Thread stack symbol name
- */
-#define K_THREAD_STACK_EXTERN(sym) __DEPRECATED_MACRO \
-	extern k_thread_stack_t sym[]
-
-/**
- * @brief Obtain an extern reference to a thread stack array
- *
- * This macro properly brings the symbol of a stack array defined
- * elsewhere into scope.
- *
- * @deprecated Use @c K_THREAD_STACK_ARRAY_DECLARE() instead.
- *
- * @param sym Thread stack symbol name
- * @param nmemb Number of stacks defined
- * @param size Size of the stack memory region
- */
-#define K_THREAD_STACK_ARRAY_EXTERN(sym, nmemb, size) __DEPRECATED_MACRO \
 	extern struct z_thread_stack_element \
 		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
@@ -701,13 +625,13 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * A user thread can only be started with a stack defined in this way if
  * the thread starting it is in supervisor mode.
  *
- * This is now deprecated, as stacks defined in this way are not usable from
- * user mode. Use K_KERNEL_STACK_MEMBER.
+ * @deprecated This is now deprecated, as stacks defined in this way are not
+ *             usable from user mode. Use K_KERNEL_STACK_MEMBER.
  *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  */
-#define K_THREAD_STACK_MEMBER(sym, size) \
+#define K_THREAD_STACK_MEMBER(sym, size) __DEPRECATED_MACRO \
 	Z_THREAD_STACK_DEFINE_IN(sym, size,)
 
 /** @} */

@@ -285,7 +285,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 	nrf_uart_txd_set(uart0_addr, (uint8_t)c);
 
 	/* Wait until the transmitter is ready, i.e. the character is sent. */
-	int res;
+	bool res;
 
 	NRFX_WAIT_FOR(event_txdrdy_check(), 1000, 1, res);
 

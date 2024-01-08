@@ -84,8 +84,6 @@ extern "C" {
 #define Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
-#define _LOG_ZZZZ0  _LOG_YYYY,
-#define _LOG_ZZZZ0U _LOG_YYYY,
 #define _LOG_ZZZZ1  _LOG_YYYY,
 #define _LOG_ZZZZ1U _LOG_YYYY,
 #define _LOG_ZZZZ2  _LOG_YYYY,
@@ -251,13 +249,15 @@ static inline char z_log_minimal_level_to_char(int level)
 #define Z_LOG(_level, ...) \
 	Z_LOG2(_level, 0, __log_current_const_data, __log_current_dynamic_data, __VA_ARGS__)
 
-#define Z_LOG_INSTANCE(_level, _inst, ...) \
+#define Z_LOG_INSTANCE(_level, _inst, ...) do { \
+	(void)_inst; \
 	Z_LOG2(_level, 1, \
 		COND_CODE_1(CONFIG_LOG_RUNTIME_FILTERING, (NULL), (Z_LOG_INST(_inst))), \
 		(struct log_source_dynamic_data *)COND_CODE_1( \
 						CONFIG_LOG_RUNTIME_FILTERING, \
 						(Z_LOG_INST(_inst)), (NULL)), \
-		__VA_ARGS__)
+		__VA_ARGS__); \
+} while (0)
 
 /*****************************************************************************/
 /****************** Macros for hexdump logging *******************************/
@@ -290,7 +290,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	/* For instance logging check instance specific static level */ \
-	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+	if (_inst && !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
 		if (_level > ((struct log_source_const_data *)_source)->level) { \
 			break; \
 		} \
@@ -413,7 +413,7 @@ TYPE_SECTION_END_EXTERN(struct log_source_const_data, log_const);
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
 	Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
-			  Z_LOG_LOCAL_DOMAIN_ID, (uintptr_t)_is_raw, \
+			  Z_LOG_LOCAL_DOMAIN_ID, (const void *)(uintptr_t)_is_raw, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
 

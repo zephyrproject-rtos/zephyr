@@ -1,5 +1,5 @@
 /** @file
- * @brief Advance Audio Distribution Profile header.
+ * @brief Advanced Audio Distribution Profile header.
  */
 
 /*

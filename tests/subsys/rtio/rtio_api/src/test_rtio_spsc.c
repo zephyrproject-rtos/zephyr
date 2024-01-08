@@ -141,6 +141,9 @@ RTIO_SPSC_DEFINE(spsc, uint32_t, 4);
 
 static void t1_consume(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct rtio_spsc_spsc *ezspsc = p1;
 	uint32_t retries = 0;
 	uint32_t *val = NULL;
@@ -162,6 +165,9 @@ static void t1_consume(void *p1, void *p2, void *p3)
 
 static void t2_produce(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct rtio_spsc_spsc *ezspsc = p1;
 	uint32_t retries = 0;
 	uint32_t *val = NULL;
@@ -201,13 +207,13 @@ ZTEST(rtio_spsc, test_spsc_threaded)
 
 	tinfo[0].tid =
 		k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
-				(k_thread_entry_t)t1_consume,
+				t1_consume,
 				&spsc, NULL, NULL,
 				K_PRIO_PREEMPT(5),
 				K_INHERIT_PERMS, K_NO_WAIT);
 	tinfo[1].tid =
 		k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
-				(k_thread_entry_t)t2_produce,
+				t2_produce,
 				&spsc, NULL, NULL,
 				K_PRIO_PREEMPT(5),
 				K_INHERIT_PERMS, K_NO_WAIT);

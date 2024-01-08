@@ -1,7 +1,8 @@
-.. _zbus-uart-bridge-sample:
+.. zephyr:code-sample:: zbus-uart-bridge
+   :name: UART bridge
+   :relevant-api: zbus_apis
 
-UART bridge sample
-##################
+   Redirect channel events to the host over UART.
 
 Overview
 ********
@@ -13,12 +14,12 @@ Building and Running
 ********************
 
 This project outputs to the console. It can be built and executed
-on native_posix as follows:
+on native_sim as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/zbus/uart_bridge
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :goals: run
 
 Sample Output
@@ -67,7 +68,11 @@ The :file:`decoder.py` script can be executed using the following command:
     python3.8 samples/subsys/zbus/uart_bridge/decoder.py /dev/pts/2
 
 
-Note the run command above prints the value of pts port because it is running in ``native_posix``. Look at the line indicating ``uart_1 connected to pseudotty: /dev/pts/2``. It can be different in your case. If you are using a board, read the documentation to get the correct port destination (in Linux is something like ``/dev/tty...`` or in Windows ``COM...``).
+Note the run command above prints the value of pts port because it is running in
+:ref:`native_sim <native_sim>`.
+Look at the line indicating ``uart_1 connected to pseudotty: /dev/pts/2``.
+It can be different in your case. If you are using a board, read the documentation to get the
+correct port destination (in Linux is something like ``/dev/tty...`` or in Windows ``COM...``).
 
 From the serial decoder (Python script), you would see something like this:
 

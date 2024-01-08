@@ -1,4 +1,4 @@
-description: Bosch M_CAN CAN-FD controller base
+description: Bosch M_CAN CAN FD controller base
 
 include: [can-fd-controller.yaml]
 

@@ -10,3 +10,4 @@ supported:
   - usb_device
   - ble
   - pwm
+vendor: makerdiary

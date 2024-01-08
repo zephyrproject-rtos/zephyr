@@ -20,36 +20,35 @@ enum {
 	BT_MESH_MOD_DATA_PENDING = BIT(5),
 };
 
-void bt_mesh_elem_register(struct bt_mesh_elem *elem, uint8_t count);
+void bt_mesh_elem_register(const struct bt_mesh_elem *elem, uint8_t count);
 
 uint8_t bt_mesh_elem_count(void);
-size_t bt_mesh_comp_page_0_size(void);
+size_t bt_mesh_comp_page_size(uint8_t page);
 int bt_mesh_comp_data_get_page_0(struct net_buf_simple *buf, size_t offset);
 size_t bt_mesh_metadata_page_0_size(void);
 int bt_mesh_metadata_get_page_0(struct net_buf_simple *buf, size_t offset);
-int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf);
 
 /* Find local element based on unicast address */
-struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
+const struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
 
 bool bt_mesh_has_addr(uint16_t addr);
-bool bt_mesh_model_has_key(struct bt_mesh_model *mod, uint16_t key);
+bool bt_mesh_model_has_key(const struct bt_mesh_model *mod, uint16_t key);
 
-void bt_mesh_model_extensions_walk(struct bt_mesh_model *root,
-				   enum bt_mesh_walk (*cb)(struct bt_mesh_model *mod,
+void bt_mesh_model_extensions_walk(const struct bt_mesh_model *root,
+				   enum bt_mesh_walk (*cb)(const struct bt_mesh_model *mod,
 							   void *user_data),
 				   void *user_data);
 
-uint16_t *bt_mesh_model_find_group(struct bt_mesh_model **mod, uint16_t addr);
-const uint8_t **bt_mesh_model_find_uuid(struct bt_mesh_model **mod, const uint8_t *uuid);
+uint16_t *bt_mesh_model_find_group(const struct bt_mesh_model **mod, uint16_t addr);
+const uint8_t **bt_mesh_model_find_uuid(const struct bt_mesh_model **mod, const uint8_t *uuid);
 
-void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
-					struct bt_mesh_elem *elem,
+void bt_mesh_model_foreach(void (*func)(const struct bt_mesh_model *mod,
+					const struct bt_mesh_elem *elem,
 					bool vnd, bool primary,
 					void *user_data),
 			   void *user_data);
 
-int32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod);
+int32_t bt_mesh_model_pub_period_get(const struct bt_mesh_model *mod);
 
 void bt_mesh_comp_provision(uint16_t addr);
 void bt_mesh_comp_unprovision(void);
@@ -58,13 +57,14 @@ uint16_t bt_mesh_primary_addr(void);
 
 const struct bt_mesh_comp *bt_mesh_comp_get(void);
 
-struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_idx);
+const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_t mod_idx);
 
 int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp);
 int bt_mesh_comp_store(void);
 int bt_mesh_comp_read(struct net_buf_simple *buf, uint8_t page);
+uint8_t bt_mesh_comp_parse_page(struct net_buf_simple *buf);
 
 int bt_mesh_models_metadata_store(void);
 int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset);
@@ -74,9 +74,9 @@ void bt_mesh_comp_data_clear(void);
 int bt_mesh_comp_data_get_page(struct net_buf_simple *buf, size_t page, size_t offset);
 
 void bt_mesh_model_pending_store(void);
-void bt_mesh_model_bind_store(struct bt_mesh_model *mod);
-void bt_mesh_model_sub_store(struct bt_mesh_model *mod);
-void bt_mesh_model_pub_store(struct bt_mesh_model *mod);
+void bt_mesh_model_bind_store(const struct bt_mesh_model *mod);
+void bt_mesh_model_sub_store(const struct bt_mesh_model *mod);
+void bt_mesh_model_pub_store(const struct bt_mesh_model *mod);
 void bt_mesh_model_settings_commit(void);
 
 /** @brief Register a callback function hook for mesh model messages.

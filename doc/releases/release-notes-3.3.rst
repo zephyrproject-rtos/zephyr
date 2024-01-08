@@ -811,7 +811,7 @@ Drivers and Sensors
 
   * Added new API :c:func:`pcie_scan` to scan for devices.
 
-    * This iterates through the the buses and devices which are expected to
+    * This iterates through the buses and devices which are expected to
       exist. The old method was to try all possible combination of buses
       and devices to determine if there is a device there.
       :c:func:`pci_init` and :c:func:`pcie_bdf_lookup` have been updated to
@@ -2496,13 +2496,13 @@ Libraries / Subsystems
     * Uses mutex to control channels access.
     * Added the following samples:
 
-      * :ref:`zbus-hello-world-sample`
-      * :ref:`zbus-work-queue-sample`
-      * :ref:`zbus-dyn-channel-sample`
-      * :ref:`zbus-uart-bridge-sample`
-      * :ref:`zbus-remote-mock-sample`
-      * :ref:`zbus-runtime-obs-registration-sample`
-      * :ref:`zbus-benchmark-sample`
+      * :zephyr:code-sample:`zbus-hello-world`
+      * :zephyr:code-sample:`zbus-work-queue`
+      * :zephyr:code-sample:`zbus-dyn-channel`
+      * :zephyr:code-sample:`zbus-uart-bridge`
+      * :zephyr:code-sample:`zbus-remote-mock`
+      * :zephyr:code-sample:`zbus-runtime-obs-registration`
+      * :zephyr:code-sample:`zbus-benchmark`
 
     * Added zbus channels APIs:
 

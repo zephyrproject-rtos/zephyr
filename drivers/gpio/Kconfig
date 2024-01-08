@@ -20,6 +20,24 @@ config GPIO_SHELL
 	help
 	  Enable GPIO Shell for testing.
 
+config GPIO_SHELL_INFO_CMD
+	bool "GPIO Shell info command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell information command.
+	  This command provides a shell user extra information about gpio
+	  controller reserved pins and line names.
+
+config GPIO_SHELL_BLINK_CMD
+	bool "GPIO Shell blink command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell blink command.
+	  This command provides a shell user the ability to 'blink' a pin
+	  at 1Hz.
+
 config GPIO_INIT_PRIORITY
 	int "GPIO init priority"
 	default KERNEL_INIT_PRIORITY_DEFAULT
@@ -68,6 +86,8 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  on/off the interrupt signal without changing other registers, such as
 	  pending register, etc. The driver must implement it to work.
 
+
+source "drivers/gpio/Kconfig.ad5592"
 
 source "drivers/gpio/Kconfig.axp192"
 
@@ -204,5 +224,16 @@ source "drivers/gpio/Kconfig.numaker"
 source "drivers/gpio/Kconfig.efinix_sapphire"
 
 source "drivers/gpio/Kconfig.davinci"
+source "drivers/gpio/Kconfig.sedi"
+
+source "drivers/gpio/Kconfig.tle9104"
+
+source "drivers/gpio/Kconfig.altera"
+
+source "drivers/gpio/Kconfig.bcm2711"
+
+source "drivers/gpio/Kconfig.ra"
+
+source "drivers/gpio/Kconfig.rzt2m"
 
 endif # GPIO

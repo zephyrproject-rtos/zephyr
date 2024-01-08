@@ -8,6 +8,7 @@
 
 #include <soc.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <zephyr/drivers/clock_control.h>
@@ -59,6 +60,35 @@ void config_pll_sysclock(void)
 				    pllm(STM32_PLL_M_DIVISOR),
 				    STM32_PLL_N_MULTIPLIER,
 				    pllp(STM32_PLL_P_DIVISOR));
+
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
+	/* Assuming we stay on Power Scale default value: Power Scale 1 */
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 180000000) {
+		/* Enable the PLL (PLLON) before setting overdrive. Skipping the PLL
+		 * locking phase since the system will be stalled during the switch
+		 * (ODSW) but the PLL clock system will be running during the locking
+		 * phase. See reference manual (RM0431) §4.1.4 Voltage regulator
+		 * Sub section: Entering Over-drive mode.
+		 */
+		LL_RCC_PLL_Enable();
+
+		/* Set Overdrive if needed before configuring the Flash Latency */
+		LL_PWR_EnableOverDriveMode();
+		while (LL_PWR_IsActiveFlag_OD() != 1) {
+			/* Wait for OverDrive mode ready */
+		}
+		LL_PWR_EnableOverDriveSwitching();
+		while (LL_PWR_IsActiveFlag_ODSW() != 1) {
+			/* Wait for OverDrive switch ready */
+		}
+
+		/* The PLL could still not be locked when returning to the caller
+		 * function. But the caller doesn't know we've turned on the PLL
+		 * for the overdrive function. The caller will try to turn on the PLL
+		 * And start waiting for the PLL locking phase to complete.
+		 */
+	}
+#endif /* CONFIG_SOC_SERIES_STM32F7X */
 }
 
 #endif /* defined(STM32_PLL_ENABLED) */

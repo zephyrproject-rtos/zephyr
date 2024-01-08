@@ -1,7 +1,8 @@
-.. _usb_audio_headset:
+.. zephyr:code-sample:: usb-audio-headset
+   :name: USB Audio headset
+   :relevant-api: _usb_device_core_api
 
-USB Audio Sample Application
-############################
+   Implement a USB Audio headset device with audio IN/OUT loopback.
 
 Overview
 ********

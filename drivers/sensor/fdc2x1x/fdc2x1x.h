@@ -159,7 +159,7 @@ struct fdc2x1x_data {
 	const struct device *dev;
 
 #ifdef CONFIG_FDC2X1X_TRIGGER_OWN_THREAD
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_FDC2X1X_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_FDC2X1X_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif CONFIG_FDC2X1X_TRIGGER_GLOBAL_THREAD

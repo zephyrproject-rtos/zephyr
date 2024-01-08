@@ -57,19 +57,18 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map);
 
 
 /**
- * @brief Convert a string containing a list of SSIDs to an array of SSID strings.
+ * @brief Append a string containing an SSID to an array of SSID strings.
  *
- * @details The function will parse a string which specifies Wi-Fi SSIDs
- * as a comma separated string and convert it to an array.
- *
- * @param scan_ssids_str List of SSIDs expressed as a comma separated list.
- * @param ssids Pointer to an array where the parsed SSIDs are to be stored.
+ * @param scan_ssids_str string to be appended in the list of scanned SSIDs.
+ * @param ssids Pointer to an array where the SSIDs pointers are to be stored.
+ * @param num_ssids Maximum number of SSIDs that can be stored.
  *
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
 int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
-				char ssids[][WIFI_SSID_MAX_LEN + 1]);
+				const char *ssids[],
+				uint8_t num_ssids);
 
 
 /**
@@ -95,12 +94,14 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
  *
  * @param scan_chan_str List of channels expressed in the format described above.
  * @param chan Pointer to an array where the parsed channels are to be stored.
+ * @param max_channels Maximum number of channels to store
  *
  * @retval 0 on success.
  * @retval -errno value in case of failure.
  */
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
-			       uint16_t chan[][WIFI_CHANNEL_MAX]);
+			       struct wifi_band_channel *chan,
+			       uint8_t max_channels);
 
 /**
  * @}

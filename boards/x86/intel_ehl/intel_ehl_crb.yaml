@@ -7,11 +7,14 @@ toolchain:
   - llvm
 ram: 2048
 supported:
+  - acpi
   - gpio
   - smbus
+  - smp
   - rtc
   - watchdog
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: intel

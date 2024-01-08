@@ -39,6 +39,10 @@ app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv_acl_first.conf c
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group_acl_first.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-peripheral_cis.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_per_skip_2_se.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_per_skip_4_se.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_cen_skip_2_se.conf compile
+app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_cen_skip_4_se.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile

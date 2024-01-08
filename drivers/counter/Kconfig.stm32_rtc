@@ -44,4 +44,13 @@ config COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
 	help
 	  Keep the counter value after each reset.
 
+config COUNTER_RTC_STM32_SUBSECONDS
+	bool "Use the subseconds as a basic tick."
+	depends on !SOC_SERIES_STM32F1X
+	help
+	  Use the subseconds as the basic time tick. It increases resolution
+	  of the counter. The frequency of the time is RTC Source Clock divided
+	  by 2. It is the clock after the first asynchronous prescaler.
+	  The config increases power consumption.
+
 endif # COUNTER_RTC_STM32

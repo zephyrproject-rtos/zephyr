@@ -1,7 +1,8 @@
-.. _ipm-mcux-sample:
+.. zephyr:code-sample:: ipm-mcux
+   :name: IPM on NXP LPC
+   :relevant-api: ipm_interface
 
-Sample mailbox application
-##########################
+   Implement inter-processor mailbox (IPM) on NXP LPC family.
 
 Overview
 ********

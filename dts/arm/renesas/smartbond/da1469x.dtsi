@@ -149,6 +149,14 @@
 			};
 		};
 
+		rtc: rtc@50000400 {
+			compatible = "renesas,smartbond-rtc";
+			reg = <0x50000400 0x98>;
+			interrupts = <18 0>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		wdog: watchdog@50000700 {
 			compatible = "renesas,smartbond-watchdog";
 			reg = <0x50000700 0x8>;
@@ -199,6 +207,22 @@
 			status = "disabled";
 		};
 
+		uart2: uart@50020100 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020100 0x100>;
+			periph-clock-config = <0x02>;
+			interrupts = <6 0>;
+			status = "disabled";
+		};
+
+		uart3: uart@50020200 {
+			compatible = "renesas,smartbond-uart";
+			reg = <0x50020200 0x100>;
+			periph-clock-config = <0x08>;
+			interrupts = <7 0>;
+			status = "disabled";
+		};
+
 		adc: adc@50030900 {
 			compatible = "renesas,smartbond-adc";
 			reg = <0x50030900 0x1C>;
@@ -207,7 +231,6 @@
 			#io-channel-cells = <1>;
 		};
 
-
 		sdadc: sdadc@50020800 {
 			compatible = "renesas,smartbond-sdadc";
 			reg = <0x50020800 0x1C>;
@@ -215,6 +238,13 @@
 			clock-freq = <2>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		crypto: crypto@30040000 {
+			compatible = "renesas,smartbond-crypto";
+			reg = <0x30040000 0x200>;
+			interrupts = <29 0>;
+			status = "disabled";
 		};
 
 		trng: trng@50040c00 {
@@ -272,6 +302,16 @@
 			ep-out-buf-size = <8 64 64 64>;
 			interrupts = <15 0>, <21 0>;
 			status = "disabled";
+		};
+
+		dma: dma@50040800 {
+			compatible = "renesas,smartbond-dma";
+			reg = <0x50040800 0x110>;
+			interrupts = <1 0>;
+			status = "disabled";
+			dma-channels = <8>;
+			block-count = <1>;
+			#dma-cells = <0>;
 		};
 	};
 };

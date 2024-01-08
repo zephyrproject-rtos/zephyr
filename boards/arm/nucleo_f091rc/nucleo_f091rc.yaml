@@ -22,7 +22,9 @@ supported:
   - dac
   - dma
   - pwm
+  - can
 testing:
   ignore_tags:
     - net
     - bluetooth
+vendor: st

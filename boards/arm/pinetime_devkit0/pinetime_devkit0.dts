@@ -83,8 +83,16 @@
 	status = "okay";
 };
 
+&uicr {
+	gpio-as-nreset;
+};
+
 &gpiote {
 	status = "okay";
+};
+
+&uicr {
+	nfct-pins-as-gpios;
 };
 
 &gpio0 {

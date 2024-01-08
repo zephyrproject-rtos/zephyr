@@ -11,6 +11,13 @@
 #include <zephyr/mgmt/mcumgr/grp/img_mgmt/img_mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 
+/**
+ * @brief MCUmgr Image management client API
+ * @defgroup mcumgr_img_mgmt_client MCUmgr img_mgmt_client API
+ * @ingroup mcumgr
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,7 +47,7 @@ struct mcumgr_image_data {
 	/** Image number */
 	uint32_t img_num;
 	/** Image SHA256 checksum */
-	char hash[IMG_MGMT_HASH_LEN];
+	char hash[IMG_MGMT_DATA_SHA_LEN];
 	/** Image Version */
 	char version[IMG_MGMT_VER_MAX_STR_LEN + 1];
 	/** Image Flags */
@@ -76,7 +83,7 @@ struct mcumgr_image_upload {
  */
 struct img_gr_upload {
 	/** Image 256-bit hash */
-	char sha256[IMG_MGMT_HASH_LEN];
+	char sha256[IMG_MGMT_DATA_SHA_LEN];
 	/** True when Hash is configured, false when not */
 	bool hash_initialized;
 	/** Image size */
@@ -185,6 +192,10 @@ int img_mgmt_client_state_read(struct img_mgmt_client *client, struct mcumgr_ima
  */
 
 int img_mgmt_client_erase(struct img_mgmt_client *client, uint32_t slot);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

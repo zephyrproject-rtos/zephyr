@@ -8,7 +8,6 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/device.h>
-#include <zephyr/timeout_q.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log_core.h>

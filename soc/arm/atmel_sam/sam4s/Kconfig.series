@@ -14,6 +14,7 @@ config SOC_SERIES_SAM4S
 	select SOC_FAMILY_SAM
 	select PLATFORM_SPECIFIC_INIT
 	select ASF
+	select HAS_POWEROFF
 	help
 	  Enable support for Atmel SAM4S Cortex-M4 microcontrollers.
 	  Part No.: SAM4S16C, SAM4S16B, SAM4S8C, SAM4S8B,

@@ -10,3 +10,4 @@ ram: 128
 flash: 1024
 supported:
   - counter
+vendor: olimex

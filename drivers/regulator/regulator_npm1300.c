@@ -48,6 +48,7 @@ enum npm1300_gpio_type {
 #define BUCK_OFFSET_SW_CTRL   0x0FU
 #define BUCK_OFFSET_VOUT_STAT 0x10U
 #define BUCK_OFFSET_CTRL0     0x15U
+#define BUCK_OFFSET_STATUS    0x34U
 
 /* nPM1300 ldsw register offsets */
 #define LDSW_OFFSET_EN_SET  0x00U
@@ -60,6 +61,17 @@ enum npm1300_gpio_type {
 
 /* nPM1300 ship register offsets */
 #define SHIP_OFFSET_SHIP 0x02U
+
+#define BUCK1_ON_MASK 0x04U
+#define BUCK2_ON_MASK 0x40U
+
+#define LDSW1_ON_MASK 0x03U
+#define LDSW2_ON_MASK 0x0CU
+
+#define LDSW1_SOFTSTART_MASK  0x0CU
+#define LDSW1_SOFTSTART_SHIFT 2U
+#define LDSW2_SOFTSTART_MASK  0x30U
+#define LDSW2_SOFTSTART_SHIFT 4U
 
 struct regulator_npm1300_pconfig {
 	const struct device *mfd;
@@ -74,6 +86,7 @@ struct regulator_npm1300_config {
 	struct gpio_dt_spec enable_gpios;
 	struct gpio_dt_spec retention_gpios;
 	struct gpio_dt_spec pwm_gpios;
+	uint8_t soft_start;
 };
 
 struct regulator_npm1300_data {
@@ -141,16 +154,46 @@ static int retention_set_voltage(const struct device *dev, int32_t retention_uv)
 				     idx);
 }
 
+static int buck_get_voltage_index(const struct device *dev, uint8_t chan, uint8_t *idx)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t sel;
+	int ret;
+
+	ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_SW_CTRL, &sel);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((sel >> chan) & 1U) {
+		/* SW control */
+		return mfd_npm1300_reg_read(config->mfd, BUCK_BASE,
+					    BUCK_OFFSET_VOUT_NORM + (chan * 2U), idx);
+	}
+
+	/* VSET pin control */
+	return mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_VOUT_STAT + chan, idx);
+}
+
 static int buck_set_voltage(const struct device *dev, uint8_t chan, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_npm1300_config *config = dev->config;
 	uint8_t mask;
+	uint8_t curr_idx;
 	uint16_t idx;
 	int ret;
 
 	ret = linear_range_get_win_index(&buckldo_range, min_uv, max_uv, &idx);
 
 	if (ret == -EINVAL) {
+		return ret;
+	}
+
+	/* Get current setting, and return if current and new index match */
+	ret = buck_get_voltage_index(dev, chan, &curr_idx);
+
+	if ((ret < 0) || (idx == curr_idx)) {
 		return ret;
 	}
 
@@ -201,26 +244,10 @@ int regulator_npm1300_set_voltage(const struct device *dev, int32_t min_uv, int3
 
 static int buck_get_voltage(const struct device *dev, uint8_t chan, int32_t *volt_uv)
 {
-	const struct regulator_npm1300_config *config = dev->config;
-	uint8_t sel;
 	uint8_t idx;
 	int ret;
 
-	ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_SW_CTRL, &sel);
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	if ((sel >> chan) & 1U) {
-		/* SW control */
-		ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE,
-					   BUCK_OFFSET_VOUT_NORM + (chan * 2U), &idx);
-	} else {
-		/* VSET pin control */
-		ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_VOUT_STAT + chan,
-					   &idx);
-	}
+	ret = buck_get_voltage_index(dev, chan, &idx);
 
 	if (ret < 0) {
 		return ret;
@@ -265,17 +292,34 @@ int regulator_npm1300_get_voltage(const struct device *dev, int32_t *volt_uv)
 static int set_buck_mode(const struct device *dev, uint8_t chan, regulator_mode_t mode)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t pfm_mask = BIT(chan);
+	uint8_t pfm_data;
+	uint8_t pwm_reg;
+	int ret;
 
 	switch (mode) {
 	case NPM1300_BUCK_MODE_PWM:
-		return mfd_npm1300_reg_write(config->mfd, BUCK_BASE,
-					     BUCK_OFFSET_PWM_SET + (chan * 2U), 1U);
+		pfm_data = 0U;
+		pwm_reg = BUCK_OFFSET_PWM_SET;
+		break;
 	case NPM1300_BUCK_MODE_AUTO:
-		return mfd_npm1300_reg_write(config->mfd, BUCK_BASE,
-					     BUCK_OFFSET_PWM_CLR + (chan * 2U), 1U);
+		pfm_data = 0U;
+		pwm_reg = BUCK_OFFSET_PWM_CLR;
+		break;
+	case NPM1300_BUCK_MODE_PFM:
+		pfm_data = pfm_mask;
+		pwm_reg = BUCK_OFFSET_PWM_CLR;
+		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	ret = mfd_npm1300_reg_update(config->mfd, BUCK_BASE, BUCK_OFFSET_CTRL0, pfm_data, pfm_mask);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return mfd_npm1300_reg_write(config->mfd, BUCK_BASE, pwm_reg + (chan * 2U), 1U);
 }
 
 static int set_ldsw_mode(const struct device *dev, uint8_t chan, regulator_mode_t mode)
@@ -395,7 +439,7 @@ static int regulator_npm1300_set_ldsw_pin_ctrl(const struct device *dev, uint8_t
 
 	ctrl = (pin + 1U) | (inv << 3U);
 
-	return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_GPISEL + chan, type);
+	return mfd_npm1300_reg_write(config->mfd, LDSW_BASE, LDSW_OFFSET_GPISEL + chan, ctrl);
 }
 
 int regulator_npm1300_set_pin_ctrl(const struct device *dev, const struct gpio_dt_spec *spec,
@@ -481,16 +525,75 @@ int regulator_npm1300_common_init(const struct device *dev)
 	return 0;
 }
 
+static int get_enabled_reg(const struct device *dev, uint8_t base, uint8_t offset, uint8_t mask,
+			   bool *enabled)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t data;
+
+	int ret = mfd_npm1300_reg_read(config->mfd, base, offset, &data);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	*enabled = (data & mask) != 0U;
+
+	return 0;
+}
+
+static int get_enabled(const struct device *dev, bool *enabled)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_BUCK1:
+		return get_enabled_reg(dev, BUCK_BASE, BUCK_OFFSET_STATUS, BUCK1_ON_MASK, enabled);
+	case NPM1300_SOURCE_BUCK2:
+		return get_enabled_reg(dev, BUCK_BASE, BUCK_OFFSET_STATUS, BUCK2_ON_MASK, enabled);
+	case NPM1300_SOURCE_LDO1:
+		return get_enabled_reg(dev, LDSW_BASE, LDSW_OFFSET_STATUS, LDSW1_ON_MASK, enabled);
+	case NPM1300_SOURCE_LDO2:
+		return get_enabled_reg(dev, LDSW_BASE, LDSW_OFFSET_STATUS, LDSW2_ON_MASK, enabled);
+	default:
+		return -ENODEV;
+	}
+}
+
+static int soft_start_set(const struct device *dev, uint8_t soft_start)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_LDO1:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      soft_start << LDSW1_SOFTSTART_SHIFT,
+					      LDSW1_SOFTSTART_MASK);
+	case NPM1300_SOURCE_LDO2:
+		return mfd_npm1300_reg_update(config->mfd, LDSW_BASE, LDSW_OFFSET_CONFIG,
+					      soft_start << LDSW2_SOFTSTART_SHIFT,
+					      LDSW2_SOFTSTART_MASK);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 int regulator_npm1300_init(const struct device *dev)
 {
 	const struct regulator_npm1300_config *config = dev->config;
+	bool enabled;
 	int ret = 0;
 
 	if (!device_is_ready(config->mfd)) {
 		return -ENODEV;
 	}
 
-	ret = regulator_common_init(dev, false);
+	ret = get_enabled(dev, &enabled);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = regulator_common_init(dev, enabled);
 	if (ret < 0) {
 		return ret;
 	}
@@ -498,6 +601,14 @@ int regulator_npm1300_init(const struct device *dev)
 	/* Configure retention voltage */
 	if (config->retention_uv != 0) {
 		ret = retention_set_voltage(dev, config->retention_uv);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	/* Configure soft start */
+	if (config->soft_start != UINT8_MAX) {
+		ret = soft_start_set(dev, config->soft_start);
 		if (ret != 0) {
 			return ret;
 		}
@@ -539,6 +650,7 @@ static const struct regulator_driver_api api = {.enable = regulator_npm1300_enab
 		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
 		.source = _source,                                                                 \
 		.retention_uv = DT_PROP_OR(node_id, retention_microvolt, 0),                       \
+		.soft_start = DT_ENUM_IDX_OR(node_id, soft_start_microamp, UINT8_MAX),             \
 		.enable_gpios = GPIO_DT_SPEC_GET_OR(node_id, enable_gpios, {0}),                   \
 		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
 		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0})};                        \

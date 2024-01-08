@@ -1,7 +1,8 @@
-.. _gpio-custom-dts-binding-sample:
+.. zephyr:code-sample:: gpio-custom-dts-binding
+   :name: GPIO with custom Devicetree binding
+   :relevant-api: gpio_interface devicetree-generic-id devicetree-generic-exist
 
-GPIO with custom devicetree binding
-###################################
+   Use custom Devicetree binding to control a GPIO.
 
 Overview
 ********

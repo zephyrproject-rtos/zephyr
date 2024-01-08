@@ -113,4 +113,16 @@ config ADSP_IMR_CONTEXT_SAVE
 	  entering D3 state. Later this context can be used to FW restore
 	  when Host power up DSP again.
 
+config XTENSA_CPU_IDLE_SPIN
+	bool "Use busy loop for k_cpu_idle"
+	help
+	  Use a spin loop instead of WAITI for the CPU idle state.
+
+config XTENSA_WAITI_BUG
+	bool "Workaround sequence for WAITI bug on LX6"
+	help
+	  SOF traditionally contains this workaround on its ADSP
+	  platforms which prefixes a WAITI entry with 128 NOP
+	  instructions followed by an ISYNC and EXTW.
+
 endif # SOC_FAMILY_INTEL_ADSP

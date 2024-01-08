@@ -836,12 +836,15 @@ static uint8_t parse_composite_read_paths(struct lwm2m_message *msg,
 	uint_fast8_t dret;
 	int len;
 	int ret;
+	char *payload;
+	uint16_t in_len;
 
 	setup_in_fmt_data(msg);
 
 	fd = engine_get_in_user_data(&msg->in);
+	payload = (char *)coap_packet_get_payload(msg->in.in_cpkt, &in_len);
 
-	dret = cbor_decode_lwm2m_senml(ICTX_BUF_R_REGION(&msg->in), &fd->dcd, &isize);
+	dret = cbor_decode_lwm2m_senml(payload, in_len, &fd->dcd, &isize);
 
 	if (dret != ZCBOR_SUCCESS) {
 		__ASSERT_NO_MSG(false);
@@ -937,9 +940,9 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 
 	lwm2m_engine_clear_duplicate_path(&lwm_path_list, &lwm_path_free_list);
 
-	return do_composite_read_op_for_parsed_path_senml_cbor(msg, &lwm_path_list);
+	return do_composite_read_op_for_parsed_list(msg, LWM2M_FORMAT_APP_SENML_CBOR,
+						    &lwm_path_list);
 }
-
 
 int do_write_op_senml_cbor(struct lwm2m_message *msg)
 {

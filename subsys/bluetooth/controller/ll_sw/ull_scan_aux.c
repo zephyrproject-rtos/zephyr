@@ -646,8 +646,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
-	lll_aux->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
-				    ((EVENT_JITTER_US + window_widening_us) << 1));
+	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
+				     window_widening_us) << 1);
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll_aux->phy,
 						      PHY_FLAGS_S8);
@@ -666,12 +666,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	aux->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE,
-						     lll_aux->phy) +
-				       EVENT_OVERHEAD_END_US);
+	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+		EVENT_OVERHEAD_START_US + ready_delay_us +
+		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll_aux->phy) +
+		EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
 				aux->ull.ticks_prepare_to_start);
@@ -683,6 +681,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
+
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* disable ticker job, in order to chain yield and start to reduce
+	 * CPU use by reducing successive calls to ticker_job().
+	 */
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 0);
+#endif
 
 	/* Yield the primary scan window or auxiliary or periodic sync event
 	 * in ticker.
@@ -715,6 +720,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		  (ticker_status == TICKER_STATUS_BUSY) ||
 		  ((ticker_status == TICKER_STATUS_FAILURE) &&
 		   IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT)));
+
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* enable ticker job, queued ticker operation will be handled
+	 * thereafter.
+	 */
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1);
+#endif
 
 	return;
 

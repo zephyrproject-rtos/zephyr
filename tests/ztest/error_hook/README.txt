@@ -80,7 +80,7 @@ test_catch_assert_in_isr
 
 test_catch_z_oops
   - Pass illegal address by syscall, then inside the syscall handler, the
-    Z_OOPS macro will trigger a fatal error that will get caught (as expected).
+    K_OOPS macro will trigger a fatal error that will get caught (as expected).
 
 
 

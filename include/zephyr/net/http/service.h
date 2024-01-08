@@ -135,7 +135,7 @@ struct http_service_desc {
 #define HTTP_SERVICE_FOREACH(_it) STRUCT_SECTION_FOREACH(http_service_desc, _it)
 
 /**
- * @brief Iterate over static HTTP reesources associated with a given @p _service.
+ * @brief Iterate over static HTTP resources associated with a given @p _service.
  *
  * @note This macro requires that @p _service is defined with @ref HTTP_SERVICE_DEFINE.
  *

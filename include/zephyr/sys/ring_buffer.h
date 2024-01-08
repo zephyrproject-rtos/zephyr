@@ -26,6 +26,16 @@ extern "C" {
 /** @endcond */
 
 /**
+ * @file
+ * @defgroup ring_buffer_apis Ring Buffer APIs
+ * @ingroup datastructure_apis
+ *
+ * @brief Simple ring buffer implementation.
+ *
+ * @{
+ */
+
+/**
  * @brief A structure to represent a ring buffer
  */
 struct ring_buf {
@@ -40,16 +50,6 @@ struct ring_buf {
 	uint32_t size;
 	/** @endcond */
 };
-
-/**
- * @file
- * @defgroup ring_buffer_apis Ring Buffer APIs
- * @ingroup datastructure_apis
- *
- * @brief Simple ring buffer implementation.
- *
- * @{
- */
 
 /**
  * @brief Function to force ring_buf internal states to given value

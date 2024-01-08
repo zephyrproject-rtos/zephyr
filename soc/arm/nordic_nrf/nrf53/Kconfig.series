@@ -6,11 +6,12 @@
 config SOC_SERIES_NRF53X
 	bool "Nordic Semiconductor nRF53 series MCU"
 	select ARM
+	select SOC_COMPATIBLE_NRF53X
 	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_NRF
-	select XIP
+	imply XIP
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE

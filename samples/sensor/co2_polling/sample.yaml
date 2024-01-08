@@ -1,0 +1,8 @@
+sample:
+  name: CO2 sensor sample
+tests:
+  sample.sensor.co2:
+    harness: sensor
+    tags: sensors
+    filter: dt_alias_exists("co2")
+    depends_on: serial uart_interrupt_driven

@@ -8,3 +8,4 @@ toolchain:
   - xtools
 ram: 160
 flash: 512
+vendor: nuvoton

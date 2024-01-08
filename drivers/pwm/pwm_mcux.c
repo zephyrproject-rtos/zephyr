@@ -199,7 +199,9 @@ static int pwm_mcux_init(const struct device *dev)
 	pwm_config.reloadLogic = config->reload;
 	pwm_config.clockSource = kPWM_BusClock;
 	pwm_config.enableDebugMode = config->run_debug;
+#if !defined(FSL_FEATURE_PWM_HAS_NO_WAITEN) || (!FSL_FEATURE_PWM_HAS_NO_WAITEN)
 	pwm_config.enableWait = config->run_wait;
+#endif
 
 	status = PWM_Init(config->base, config->index, &pwm_config);
 	if (status != kStatus_Success) {

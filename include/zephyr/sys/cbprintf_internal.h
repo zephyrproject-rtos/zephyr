@@ -113,6 +113,31 @@ extern "C" {
 			0)
 #endif
 
+/** @brief Check if argument fits in 32 bit word.
+ *
+ * @param x Input argument.
+ *
+ * @retval 1 if variable is of type that fits in 32 bit word.
+ * @retval 0 if variable is of different type.
+ */
+#ifdef __cplusplus
+#define Z_CBPRINTF_IS_WORD_NUM(x) \
+	z_cbprintf_cxx_is_word_num(x)
+#else
+#define Z_CBPRINTF_IS_WORD_NUM(x) \
+	_Generic(x, \
+		char : 1, \
+		unsigned char : 1, \
+		short : 1, \
+		unsigned short : 1, \
+		int : 1, \
+		unsigned int : 1, \
+		long : sizeof(long) <= 4, \
+		unsigned long : sizeof(long) <= 4, \
+		default : \
+			0)
+#endif
+
 /* @brief Check if argument is a certain type of char pointer. What exectly is checked
  * depends on @p flags. If flags is 0 then 1 is returned if @p x is a char pointer.
  *

@@ -56,5 +56,6 @@ Booting the Raptor Lake S CRB Board using UEFI
 ==============================================
 
 .. include:: ../../common/efi_boot.rst
+   :start-after: start_include_here
 
 .. _RPL: https://www.intel.com/content/www/us/en/newsroom/resources/13th-gen-core.html#gs.glf2fn

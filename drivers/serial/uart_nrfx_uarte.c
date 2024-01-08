@@ -65,6 +65,16 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_ASYNC 1
 #endif
 
+#if	defined(CONFIG_UART_0_NRF_HW_ASYNC) || defined(CONFIG_UART_1_NRF_HW_ASYNC) || \
+	defined(CONFIG_UART_2_NRF_HW_ASYNC) || defined(CONFIG_UART_3_NRF_HW_ASYNC)
+#define UARTE_HW_ASYNC 1
+#endif
+
+#if	defined(CONFIG_UART_0_ENHANCED_POLL_OUT) || defined(CONFIG_UART_1_ENHANCED_POLL_OUT) || \
+	defined(CONFIG_UART_2_ENHANCED_POLL_OUT) || defined(CONFIG_UART_3_ENHANCED_POLL_OUT)
+#define UARTE_ENHANCED_POLL_OUT 1
+#endif
+
 /*
  * RX timeout is divided into time slabs, this define tells how many divisions
  * should be made. More divisions - higher timeout accuracy and processor usage.
@@ -205,7 +215,7 @@ static void endtx_isr(const struct device *dev)
  *
  * @param arg Argument to ISR.
  */
-static void uarte_nrfx_isr_int(void *arg)
+static void uarte_nrfx_isr_int(const void *arg)
 {
 	const struct device *dev = arg;
 	const struct uarte_nrfx_config *config = dev->config;
@@ -498,7 +508,7 @@ static int wait_tx_ready(const struct device *dev)
  * where static inline fails on linking.
  */
 #define HW_RX_COUNTING_ENABLED(data) \
-	(IS_ENABLED(CONFIG_UARTE_NRF_HW_ASYNC) ? data->async->hw_rx_counting : false)
+	(IS_ENABLED(UARTE_HW_ASYNC) ? data->async->hw_rx_counting : false)
 
 #endif /* UARTE_ANY_ASYNC */
 
@@ -844,15 +854,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	}
 
 	data->async->rx_timeout = timeout;
-	/* Set minimum interval to 3 RTC ticks. 3 is used due to RTC limitation
-	 * which cannot set timeout for next tick. Assuming delay in processing
-	 * 3 instead of 2 is used. Note that lower value would work in a similar
-	 * way but timeouts would always occur later than expected,  most likely
-	 * after ~3 ticks.
-	 */
-	data->async->rx_timeout_slab =
-		MAX(timeout / RX_TIMEOUT_DIV,
-		    NRFX_CEIL_DIV(3 * 1000000, CONFIG_SYS_CLOCK_TICKS_PER_SEC));
+	data->async->rx_timeout_slab = timeout / RX_TIMEOUT_DIV;
 
 	data->async->rx_buf = buf;
 	data->async->rx_buf_len = len;
@@ -936,11 +938,6 @@ static int uarte_nrfx_callback_set(const struct device *dev,
 
 	data->async->user_callback = callback;
 	data->async->user_data = user_data;
-
-#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(UARTE_INTERRUPT_DRIVEN)
-	data->int_driven->cb = NULL;
-	data->int_driven->cb_data = NULL;
-#endif
 
 	return 0;
 }
@@ -1680,11 +1677,6 @@ static void uarte_nrfx_irq_callback_set(const struct device *dev,
 
 	data->int_driven->cb = cb;
 	data->int_driven->cb_data = cb_data;
-
-#if defined(UARTE_ANY_ASYNC) && defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
-	data->async->user_callback = NULL;
-	data->async->user_data = NULL;
-#endif
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
 
@@ -1763,7 +1755,7 @@ static int uarte_instance_init(const struct device *dev,
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_UART_ENHANCED_POLL_OUT) &&
+	if (IS_ENABLED(UARTE_ENHANCED_POLL_OUT) &&
 	    cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
 		err = endtx_stoptx_ppi_init(uarte, data);
 		if (err < 0) {

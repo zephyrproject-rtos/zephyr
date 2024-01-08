@@ -231,13 +231,13 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _Nucleo L4A6ZG website:
-   http://www.st.com/en/evaluation-tools/nucleo-l4a6zg.html
+   https://www.st.com/en/evaluation-tools/nucleo-l4a6zg.html
 
 .. _STM32 Nucleo-144 board User Manual:
-   http://www.st.com/resource/en/user_manual/dm00368330.pdf
+   https://www.st.com/resource/en/user_manual/dm00368330.pdf
 
 .. _STM32L4A6ZG on www.st.com:
-   http://www.st.com/en/microcontrollers-microprocessors/stm32l4a6zg.html
+   https://www.st.com/en/microcontrollers-microprocessors/stm32l4a6zg.html
 
 .. _STM32L4A6 reference manual:
-   http://www.st.com/resource/en/reference_manual/dm00083560.pdf
+   https://www.st.com/resource/en/reference_manual/dm00083560.pdf

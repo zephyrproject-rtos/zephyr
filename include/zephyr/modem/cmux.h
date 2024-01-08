@@ -33,14 +33,14 @@
 extern "C" {
 #endif
 
-struct modem_cmux;
+/**
+ * @brief Modem CMUX
+ * @defgroup modem_cmux Modem CMUX
+ * @ingroup modem
+ * @{
+ */
 
-enum modem_cmux_state {
-	MODEM_CMUX_STATE_DISCONNECTED = 0,
-	MODEM_CMUX_STATE_CONNECTING,
-	MODEM_CMUX_STATE_CONNECTED,
-	MODEM_CMUX_STATE_DISCONNECTING,
-};
+struct modem_cmux;
 
 enum modem_cmux_event {
 	MODEM_CMUX_EVENT_CONNECTED = 0,
@@ -49,6 +49,17 @@ enum modem_cmux_event {
 
 typedef void (*modem_cmux_callback)(struct modem_cmux *cmux, enum modem_cmux_event event,
 				    void *user_data);
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+enum modem_cmux_state {
+	MODEM_CMUX_STATE_DISCONNECTED = 0,
+	MODEM_CMUX_STATE_CONNECTING,
+	MODEM_CMUX_STATE_CONNECTED,
+	MODEM_CMUX_STATE_DISCONNECTING,
+};
 
 enum modem_cmux_receive_state {
 	MODEM_CMUX_RECEIVE_STATE_SOF = 0,
@@ -72,11 +83,6 @@ enum modem_cmux_dlci_state {
 	MODEM_CMUX_DLCI_STATE_OPENING,
 	MODEM_CMUX_DLCI_STATE_OPEN,
 	MODEM_CMUX_DLCI_STATE_CLOSING,
-};
-
-enum modem_cmux_dlci_event {
-	MODEM_CMUX_DLCI_EVENT_OPENED,
-	MODEM_CMUX_DLCI_EVENT_CLOSED,
 };
 
 struct modem_cmux_dlci {
@@ -158,6 +164,10 @@ struct modem_cmux {
 };
 
 /**
+ * @endcond
+ */
+
+/**
  * @brief Contains CMUX instance configuration data
  */
 struct modem_cmux_config {
@@ -205,7 +215,7 @@ struct modem_pipe *modem_cmux_dlci_init(struct modem_cmux *cmux, struct modem_cm
 					const struct modem_cmux_dlci_config *config);
 
 /**
- * @brief Initialize CMUX instance
+ * @brief Attach CMUX instance to pipe
  *
  * @param cmux CMUX instance
  * @param pipe Pipe instance to attach CMUX instance to
@@ -243,7 +253,8 @@ int modem_cmux_connect_async(struct modem_cmux *cmux);
  *
  * @param cmux CMUX instance
  *
- * @note When disconnected, the bus pipe can be used directly again
+ * @note The bus pipe must be released using modem_cmux_release() after disconnecting
+ * before being reused.
  */
 int modem_cmux_disconnect(struct modem_cmux *cmux);
 
@@ -254,11 +265,26 @@ int modem_cmux_disconnect(struct modem_cmux *cmux);
  *
  * @param cmux CMUX instance
  *
- * @note When disconnected, the bus pipe can be used directly again
+ * @note The bus pipe must be released using modem_cmux_release() after disconnecting
+ * before being reused.
  */
 int modem_cmux_disconnect_async(struct modem_cmux *cmux);
 
+/**
+ * @brief Release CMUX instance from pipe
+ *
+ * @details Releases the pipe and hard resets the CMUX instance internally. CMUX should
+ * be disconnected using modem_cmux_disconnect().
+ *
+ * @param cmux CMUX instance
+ *
+ * @note The bus pipe can be used directly again after CMUX instance is released.
+ */
 void modem_cmux_release(struct modem_cmux *cmux);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

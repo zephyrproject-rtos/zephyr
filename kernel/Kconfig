@@ -201,7 +201,7 @@ config THREAD_CUSTOM_DATA
 config THREAD_USERSPACE_LOCAL_DATA
 	bool
 	depends on USERSPACE
-	default y if ERRNO && !ERRNO_IN_TLS
+	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
 
 config DYNAMIC_THREAD
 	bool "Support for dynamic threads [EXPERIMENTAL]"
@@ -382,6 +382,16 @@ config INIT_STACKS
 	  water mark can be easily determined. This applies to the stack areas
 	  for threads, as well as to the interrupt stack.
 
+config SKIP_BSS_CLEAR
+	bool
+	help
+	  This option disables software .bss section zeroing during Zephyr
+	  initialization. Such boot-time optimization could be used for
+	  platforms where .bss section is zeroed-out externally.
+	  Please pay attention that when this option is enabled
+	  the responsibility for .bss zeroing in all possible scenarios
+	  (mind e.g. SW reset) is delegated to the external SW or HW.
+
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
@@ -494,10 +504,164 @@ endif # THREAD_RUNTIME_STATS
 
 endmenu
 
+menuconfig OBJ_CORE
+	bool "Object core framework"
+	default n
+	help
+	  This option enables the object core framework. This will link
+	  participating kernel objects and their respective types together
+	  in a way that allows them to both have common information stored
+	  together and for that information to be easily retrieved by
+	  automated means.
+
+if OBJ_CORE
+config OBJ_CORE_CONDVAR
+	bool "Integrate condition variables into object core framework"
+	default y
+	help
+	  When enabled, this option integrates condition variables into the
+	  object core framework.
+
+config OBJ_CORE_EVENT
+	bool "Integrate events into object core framework"
+	default y if EVENTS
+	help
+	  When enabled, this option integrate kernel events into the object
+	  core framework.
+
+config OBJ_CORE_FIFO
+	bool "Integrate FIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates FIFOs into the object core
+	  framework.
+
+config OBJ_CORE_LIFO
+	bool "Integrate LIFOs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates LIFOs into the object core
+	  framework.
+
+config OBJ_CORE_MAILBOX
+	bool "Integrate mailboxes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mailboxes into the object core
+	  framework.
+
+config OBJ_CORE_MEM_SLAB
+	bool "Integrate memory slabs into object core framework"
+	default y
+	help
+	  When enabled, this option integrates memory slabs into the object
+	  core framework.
+
+config OBJ_CORE_MUTEX
+	bool "Integrate mutexes into object core framework"
+	default y
+	help
+	  When enabled, this option integrates mutexes into the object core
+	  framework.
+
+config OBJ_CORE_MSGQ
+	bool "Integrate message queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates message queues into the object
+	  core framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_PIPE
+	bool "Integrate pipe into object core framework"
+	default y if PIPES
+	help
+	  When enabled, this option integrates pipes into the object core
+	  framework.
+
+config OBJ_CORE_SEM
+	bool "Integrate semaphores into object core framework"
+	default y
+	help
+	  When enabled, this option integrates semaphores into the object core
+	  framework.
+
+config OBJ_CORE_STACK
+	bool "Integrate stacks into object core framework"
+	default y
+	help
+	  When enabled, this option integrates stacks into the object core
+	  framework.
+
+config OBJ_CORE_THREAD
+	bool "Integrate threads into object core framework"
+	default y
+	help
+	  When enabled, this option integrates threads into the object core
+	  framework.
+
+config OBJ_CORE_TIMER
+	bool "Integrate timers into object core framework"
+	default y
+	help
+	  When enabled, this option integrates timers into the object core
+	  framework.
+
+config OBJ_CORE_SYSTEM
+	bool
+	default y
+	help
+	  When enabled, this option integrates the internal CPU and kernel
+	  system objects into the object core framework. As these are internal
+	  structures, this option is hidden by default and only available to
+	  advanced users.
+
+menuconfig OBJ_CORE_STATS
+	bool "Object core statistics"
+	default n
+	help
+	  This option integrates statistics gathering into the object core
+	  framework.
+
+if OBJ_CORE_STATS
+config OBJ_CORE_STATS_MEM_SLAB
+	bool "Object core statistics for memory slabs"
+	default y if OBJ_CORE_MEM_SLAB
+	help
+	  When enabled, this allows memory slab statistics to be integrated
+	  into kernel objects.
+
+config OBJ_CORE_STATS_THREAD
+	bool "Object core statistics for threads"
+	default y if OBJ_CORE_THREAD
+	select THREAD_RUNTIME_STATS
+	help
+	  When enabled, this integrates thread runtime statistics into the
+	  object core statistics framework.
+
+config OBJ_CORE_STATS_SYSTEM
+	bool "Object core statistics for system level objects"
+	default y if OBJ_CORE_SYSTEM
+	select SCHED_THREAD_USAGE_ALL
+	help
+	  When enabled, this integrates thread runtime statistics at the
+	  CPU and system level into the object core statistics framework.
+
+endif  # OBJ_CORE_STATS
+
+endif  # OBJ_CORE
+
 menu "Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
 	default 4096 if COVERAGE_GCOV
+	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
 
 config SYSTEM_WORKQUEUE_PRIORITY
@@ -822,6 +986,7 @@ menu "Security Options"
 config STACK_CANARIES
 	bool "Compiler stack canaries"
 	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
 	help
 	  This option enables compiler stack canaries.
 
@@ -987,17 +1152,16 @@ config SMP_BOOT_DELAY
 	  secondary CPUs at a later time.
 
 config MP_NUM_CPUS
-	int "Number of CPUs/cores"
+	int "Number of CPUs/cores [DEPRECATED]"
 	default MP_MAX_NUM_CPUS
-	range 1 5
+	range 1 12
 	help
-	  Number of multiprocessing-capable cores available to the
-	  multicpu API and SMP features.
+	  This is deprecated, please use MP_MAX_NUM_CPUS instead.
 
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
-	range 1 5
+	range 1 12
 	help
 	  Maximum number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
@@ -1020,12 +1184,12 @@ config TRACE_SCHED_IPI
 	  to check if schedule IPI has called or not, for testing
 	  purpose.
 	depends on SCHED_IPI_SUPPORTED
-	depends on MP_NUM_CPUS>1
+	depends on MP_MAX_NUM_CPUS>1
 
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
 	depends on ARCH_HAS_COHERENCE
-	default y if SMP && MP_NUM_CPUS > 1
+	default y if SMP && MP_MAX_NUM_CPUS > 1
 	select THREAD_STACK_INFO
 	help
 	  When available and selected, the kernel will build in a mode
@@ -1039,6 +1203,19 @@ config KERNEL_COHERENCE
 	  Code that creates kernel data structures in uncached regions
 	  may fail strangely.  Some assertions exist to catch these
 	  mistakes, but not all circumstances can be tested.
+
+config TICKET_SPINLOCKS
+	bool "Ticket spinlocks for lock acquisition fairness [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Basic spinlock implementation is based on single
+	  atomic variable and doesn't guarantee locking fairness
+	  across multiple CPUs. It's even possible that single CPU
+	  will win the contention every time which will result
+	  in a live-lock.
+	  Ticket spinlocks provide a FIFO order of lock acquisition
+	  which resolves such unfairness issue at the cost of slightly
+	  increased memory footprint.
 
 endmenu
 

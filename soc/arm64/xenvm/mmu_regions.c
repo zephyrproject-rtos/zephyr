@@ -18,11 +18,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1),
 			      DT_REG_SIZE_BY_IDX(DT_INST(0, arm_gic), 1),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_FLAT_ENTRY("HYPERVISOR",
-			      DT_REG_ADDR_BY_IDX(DT_INST(0, xen_xen), 0),
-			      DT_REG_SIZE_BY_IDX(DT_INST(0, xen_xen), 0),
-			      MT_NORMAL | MT_P_RW_U_NA | MT_NS),
 };
 
 const struct arm_mmu_config mmu_config = {

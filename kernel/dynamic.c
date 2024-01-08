@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/kobject.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -112,7 +112,8 @@ static void dyn_cb(const struct k_thread *thread, void *user_data)
 	struct dyn_cb_data *const data = (struct dyn_cb_data *)user_data;
 
 	if (data->stack == (k_thread_stack_t *)thread->stack_info.start) {
-		__ASSERT(data->tid == NULL, "stack %p is associated with more than one thread!");
+		__ASSERT(data->tid == NULL, "stack %p is associated with more than one thread!",
+			 (void *)thread->stack_info.start);
 		data->tid = (k_tid_t)thread;
 	}
 }
@@ -151,7 +152,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 
 	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
 #ifdef CONFIG_USERSPACE
-		if (z_object_find(stack)) {
+		if (k_object_find(stack)) {
 			k_object_free(stack);
 		} else {
 			k_free(stack);

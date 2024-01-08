@@ -1,0 +1,18 @@
+# Copyright (c) 2023 Grinn
+# SPDX -License-Identifier: Apache-2.0
+
+config REGULATOR_MAX20335
+	bool "MAX20335 PMIC regulator driver"
+	default y
+	depends on DT_HAS_MAXIM_MAX20335_REGULATOR_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the Maxim MAX20335 PMIC regulator driver
+
+config REGULATOR_MAXIM_MAX20335_INIT_PRIORITY
+	int "MAX20335 regulator driver init priority"
+	default 86
+	depends on REGULATOR_MAX20335
+	help
+	  Init priority for the Maxim MAX20335 regulator driver.

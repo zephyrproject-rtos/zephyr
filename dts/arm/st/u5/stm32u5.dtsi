@@ -443,7 +443,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
 			interrupts = <68 0>;
 			interrupt-names = "global";
 			st,static-prescaler;
@@ -728,6 +728,35 @@
 			status = "disabled";
 		};
 
+		/*
+		 * The SDMMC domain clock can be chosen between ICLK and PLL1P.
+		 * But ICLK is itself chosen among HSI48 (the default), PLL2Q,
+		 * PLL1Q and MSIK.
+		 *
+		 * Currently, configuring ICLK is unsupported. When support for
+		 * ICLK comes in the future, the clock source for sdmmc1 and
+		 * sdmmc2 will have to be replaced with STM32_SRC_ICLK.
+		 */
+		sdmmc1: sdmmc@420c8000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x08000000>,
+				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB2L, 27U)>;
+			interrupts = <78 0>;
+			status = "disabled";
+		};
+
+		sdmmc2: sdmmc@420c8c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x420c8c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x10000000>,
+				 <&rcc STM32_SRC_HSI48 SDMMC_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB2L, 28U)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+
 		dac1: dac@46021800 {
 			compatible = "st,stm32-dac";
 			reg = <0x46021800 0x400>;
@@ -743,15 +772,13 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <19>;
-			vref-channel = <0>;
-			vbat-channel = <18>;
 			resolutions = <STM32_ADC_RES(14, 0x00)
 				       STM32_ADC_RES(12, 0x01)
 				       STM32_ADC_RES(10, 0x02)
 				       STM32_ADC_RES(8, 0x03)>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
 			st,adc-clock-source = <ASYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc4: adc@46021000 {
@@ -761,9 +788,6 @@
 			interrupts = <113 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			temp-channel = <13>;
-			vref-channel = <0>;
-			vbat-channel = <14>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
@@ -771,6 +795,7 @@
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
 			st,adc-clock-source = <ASYNC>;
+			st,adc-sequencer = <NOT_FULLY_CONFIGURABLE>;
 		};
 
 		fdcan1: can@4000a400 {
@@ -781,9 +806,7 @@
 			interrupt-names = "LINE_0", "LINE_1";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};

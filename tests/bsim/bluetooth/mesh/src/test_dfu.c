@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define TARGET_ADDR 0x0100
 #define IMPOSTER_MODEL_ID 0xe000
 #define TEST_BLOB_ID 0xaabbccdd
+#define SEMAPHORE_TIMEOUT 250 /* seconds */
 
 struct bind_params {
 	uint16_t model_id;
@@ -289,7 +290,7 @@ static struct bt_mesh_dfu_srv dfu_srv = BT_MESH_DFU_SRV_INIT(&dfu_handlers, dfu_
 
 static const struct bt_mesh_comp dist_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -303,7 +304,7 @@ static const struct bt_mesh_comp dist_comp = {
 
 static const struct bt_mesh_comp dist_comp_self_update = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -324,7 +325,7 @@ static const struct bt_mesh_model_op model_dummy_op[] = {
 
 static const struct bt_mesh_comp target_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -434,25 +435,50 @@ static void target_prov_and_conf_default(void)
 	target_prov_and_conf(addr, bind_params, ARRAY_SIZE(bind_params));
 }
 
+static struct bt_mesh_dfu_slot *slot_reserve_and_set(size_t size, uint8_t *fwid, size_t fwid_len,
+						     uint8_t *metadata, size_t metadata_len)
+{
+	struct bt_mesh_dfu_slot *new_slot = bt_mesh_dfu_slot_reserve();
+
+	if (!new_slot) {
+		LOG_WRN("Reserving slot failed");
+		return NULL;
+	}
+
+	int err = bt_mesh_dfu_slot_fwid_set(new_slot, fwid, fwid_len);
+
+	if (err) {
+		return NULL;
+	}
+
+	err = bt_mesh_dfu_slot_info_set(new_slot, size, metadata, metadata_len);
+
+	if (err) {
+		return NULL;
+	}
+
+	return new_slot;
+}
+
 static bool slot_add(const struct bt_mesh_dfu_slot **slot)
 {
-	const struct bt_mesh_dfu_slot *new_slot;
+	struct bt_mesh_dfu_slot *new_slot;
 	size_t size = 100;
 	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	size_t fwid_len = 4;
 	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	size_t metadata_len = 4;
-	const char *uri = "";
 
 	ASSERT_EQUAL(sizeof(target_fw_ver_new), fwid_len);
 
-	new_slot = bt_mesh_dfu_slot_add(size, fwid, fwid_len, metadata, metadata_len, uri,
-					strlen(uri));
+	new_slot = slot_reserve_and_set(size, fwid, fwid_len, metadata, metadata_len);
 	if (!new_slot) {
 		return false;
 	}
 
-	bt_mesh_dfu_slot_valid_set(new_slot, true);
+	if (bt_mesh_dfu_slot_commit(new_slot) != 0) {
+		return false;
+	}
 
 	if (slot) {
 		*slot = new_slot;
@@ -568,52 +594,41 @@ static void test_dist_dfu_self_update(void)
 
 static void test_dist_dfu_slot_create(void)
 {
-	const struct bt_mesh_dfu_slot *slot[3];
+	struct bt_mesh_dfu_slot *slot[CONFIG_BT_MESH_DFU_SLOT_CNT];
 	size_t size = 100;
 	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0 };
 	size_t fwid_len = 4;
 	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0 };
 	size_t metadata_len = 4;
-	const char *uri = "test";
 	int err, i;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);
 	dist_prov_and_conf(DIST_ADDR);
 
-	for (i = CONFIG_BT_MESH_DFU_SLOT_CNT - 1; i >= 0; i--) {
+	for (i = 0; i < CONFIG_BT_MESH_DFU_SLOT_CNT; i++) {
 		fwid[0] = i;
 		metadata[0] = i;
-		slot[i] = bt_mesh_dfu_slot_add(size, fwid, fwid_len, metadata, metadata_len, uri,
-					       strlen(uri));
+		slot[i] = slot_reserve_and_set(size, fwid, fwid_len, metadata, metadata_len);
 
-		ASSERT_FALSE(slot[i] == NULL, "Failed to add slot");
+		ASSERT_FALSE_MSG(slot[i] == NULL, "Failed to add slot\n");
+
+		if (i > 0) {
+			/* All but first slot are committed */
+			err = bt_mesh_dfu_slot_commit(slot[i]);
+			if (err) {
+				FAIL("Committing slot failed (err %d)", err);
+			}
+		}
 	}
 
-	/* First slot is set as valid */
-	err = bt_mesh_dfu_slot_valid_set(slot[0], true);
-	if (err) {
-		FAIL("Setting slot to valid state failed (err %d)", err);
-		return;
-	}
-	ASSERT_TRUE(bt_mesh_dfu_slot_is_valid(slot[0]));
-
-	/* Second slot is set as invalid */
-	err = bt_mesh_dfu_slot_valid_set(slot[1], false);
-	if (err) {
-		FAIL("Setting slot to invalid state failed (err %d)", err);
-		return;
-	}
-	ASSERT_TRUE(!bt_mesh_dfu_slot_is_valid(slot[1]));
-
-	/* Last slot is deleted */
-	err = bt_mesh_dfu_slot_del(slot[CONFIG_BT_MESH_DFU_SLOT_CNT - 1]);
+	/* Second slot is deleted */
+	err = bt_mesh_dfu_slot_del(slot[1]);
 	if (err) {
 		FAIL("Slot delete failed (err %d)", err);
-		return;
 	}
 
 	PASS();
@@ -626,20 +641,17 @@ enum bt_mesh_dfu_iter check_slot(const struct bt_mesh_dfu_slot *slot, void *data
 	size_t fwid_len = 4;
 	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0 };
 	size_t metadata_len = 4;
-	const char *uri = "test";
-	int idx = bt_mesh_dfu_slot_idx_get(slot);
+	int idx = bt_mesh_dfu_slot_img_idx_get(slot);
+	int *i = data;
 
-	ASSERT_TRUE(idx >= 0, "Failed to retrieve slot index");
-
+	ASSERT_EQUAL(idx, (*i)++);
 	ASSERT_EQUAL(size, slot->size);
-	ASSERT_TRUE(strcmp(uri, slot->uri) == 0);
 
-	fwid[0] = idx;
-
+	fwid[0] = idx + 2;
 	ASSERT_EQUAL(fwid_len, slot->fwid_len);
 	ASSERT_TRUE(memcmp(fwid, slot->fwid, fwid_len) == 0);
 
-	metadata[0] = idx;
+	metadata[0] = idx + 2;
 	ASSERT_EQUAL(metadata_len, slot->metadata_len);
 	ASSERT_TRUE(memcmp(metadata, slot->metadata, metadata_len) == 0);
 
@@ -649,41 +661,31 @@ enum bt_mesh_dfu_iter check_slot(const struct bt_mesh_dfu_slot *slot, void *data
 static void test_dist_dfu_slot_create_recover(void)
 {
 	size_t slot_count;
-	const struct bt_mesh_dfu_slot *slot;
+	struct bt_mesh_dfu_slot *slot;
 	size_t size = 100;
 	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0 };
 	size_t fwid_len = 4;
 	uint8_t metadata[CONFIG_BT_MESH_DFU_METADATA_MAXLEN] = { 0 };
 	size_t metadata_len = 4;
-	const char *uri = "test";
 	int i, idx;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);
 
-	slot_count = bt_mesh_dfu_slot_foreach(check_slot, NULL);
-	ASSERT_EQUAL(CONFIG_BT_MESH_DFU_SLOT_CNT - 1, slot_count);
+	i = 0;
+	slot_count = bt_mesh_dfu_slot_foreach(check_slot, &i);
+	ASSERT_EQUAL(CONFIG_BT_MESH_DFU_SLOT_CNT - 2, slot_count);
 
-	slot = bt_mesh_dfu_slot_at(0);
-	ASSERT_EQUAL(true, bt_mesh_dfu_slot_is_valid(slot));
-
-	slot = bt_mesh_dfu_slot_at(1);
-	ASSERT_TRUE(slot != NULL);
-	ASSERT_EQUAL(false, bt_mesh_dfu_slot_is_valid(slot));
-
-	for (i = 0; i < (CONFIG_BT_MESH_DFU_SLOT_CNT - 1); i++) {
+	for (i = 2; i < CONFIG_BT_MESH_DFU_SLOT_CNT; i++) {
 		fwid[0] = i;
 		idx = bt_mesh_dfu_slot_get(fwid, fwid_len, &slot);
-		ASSERT_TRUE(idx >= 0);
-		ASSERT_EQUAL(idx, bt_mesh_dfu_slot_idx_get(slot));
-
+		ASSERT_EQUAL(idx, i - 2);
 		ASSERT_EQUAL(size, slot->size);
-		ASSERT_TRUE(strcmp(uri, slot->uri) == 0);
 
-		metadata[0] = idx;
+		metadata[0] = i;
 		ASSERT_EQUAL(metadata_len, slot->metadata_len);
 		ASSERT_TRUE(memcmp(metadata, slot->metadata, metadata_len) == 0);
 	}
@@ -693,12 +695,12 @@ static void test_dist_dfu_slot_create_recover(void)
 
 static void check_delete_all(void)
 {
-	int i, idx, err;
+	int i;
 	const struct bt_mesh_dfu_slot *slot;
 	size_t slot_count;
 
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	slot_count = bt_mesh_dfu_slot_foreach(NULL, NULL);
 	ASSERT_EQUAL(0, slot_count);
@@ -706,27 +708,18 @@ static void check_delete_all(void)
 	for (i = 0; i < CONFIG_BT_MESH_DFU_SLOT_CNT - 1; i++) {
 		slot = bt_mesh_dfu_slot_at(i);
 		ASSERT_TRUE(slot == NULL);
-
-		idx = bt_mesh_dfu_slot_idx_get(slot);
-		ASSERT_TRUE(idx < 0);
-
-		err = bt_mesh_dfu_slot_valid_set(slot, true);
-		ASSERT_EQUAL(err, -ENOENT);
-
-		ASSERT_TRUE(!bt_mesh_dfu_slot_is_valid(slot));
 	}
 }
 
 static void test_dist_dfu_slot_delete_all(void)
 {
-	ASSERT_TRUE(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
-		    "CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3");
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 3,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 3\n");
 
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &dist_comp);
 
 	bt_mesh_dfu_slot_del_all();
-
 	check_delete_all();
 
 	PASS();
@@ -738,6 +731,63 @@ static void test_dist_dfu_slot_check_delete_all(void)
 	bt_mesh_device_setup(&prov, &dist_comp);
 
 	check_delete_all();
+
+	PASS();
+}
+
+static void test_dist_dfu_slot_reservation(void)
+{
+	int i;
+	struct bt_mesh_dfu_slot *slots[CONFIG_BT_MESH_DFU_SLOT_CNT];
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+
+	for (i = 0; i < CONFIG_BT_MESH_DFU_SLOT_CNT; i++) {
+		slots[i] = bt_mesh_dfu_slot_reserve();
+		ASSERT_TRUE(slots[i] != NULL);
+	}
+
+	ASSERT_EQUAL(NULL, bt_mesh_dfu_slot_reserve());
+	bt_mesh_dfu_slot_release(slots[0]);
+	/* Release twice to check idempotency with empty pool */
+	bt_mesh_dfu_slot_release(slots[0]);
+	ASSERT_TRUE(bt_mesh_dfu_slot_reserve() != NULL);
+	ASSERT_EQUAL(NULL, bt_mesh_dfu_slot_reserve());
+
+	PASS();
+}
+
+static void test_dist_dfu_slot_idempotency(void)
+{
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0 };
+	size_t fwid_len = 4;
+	struct bt_mesh_dfu_slot *slot;
+
+	ASSERT_TRUE_MSG(CONFIG_BT_MESH_DFU_SLOT_CNT >= 1,
+			"CONFIG_BT_MESH_DFU_SLOT_CNT must be at least 1\n");
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &dist_comp);
+	dist_prov_and_conf(DIST_ADDR);
+
+	slot = bt_mesh_dfu_slot_reserve();
+	ASSERT_TRUE(slot != NULL);
+
+	bt_mesh_dfu_slot_release(slot);
+	bt_mesh_dfu_slot_release(slot);
+
+	slot = bt_mesh_dfu_slot_reserve();
+	ASSERT_TRUE(slot != NULL);
+
+	ASSERT_EQUAL(0, bt_mesh_dfu_slot_fwid_set(slot, fwid, fwid_len));
+	ASSERT_EQUAL(0, bt_mesh_dfu_slot_info_set(slot, 100, NULL, 0));
+
+	ASSERT_EQUAL(0, bt_mesh_dfu_slot_commit(slot));
+	ASSERT_EQUAL(-EINVAL, bt_mesh_dfu_slot_commit(slot));
+
+	ASSERT_EQUAL(0, bt_mesh_dfu_slot_del(slot));
+	ASSERT_EQUAL(-EINVAL, bt_mesh_dfu_slot_del(slot));
 
 	PASS();
 }
@@ -891,7 +941,7 @@ static struct bt_mesh_dfu_cli dfu_cli = BT_MESH_DFU_CLI_INIT(&dfu_cli_cb);
 
 static const struct bt_mesh_comp cli_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -921,12 +971,14 @@ static void cli_common_fail_on_init(void)
 
 static void cli_common_init_recover(void)
 {
-	const struct bt_mesh_dfu_slot *slot;
+	struct bt_mesh_dfu_slot *slot;
+	uint8_t fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = { 0xAA, 0xBB, 0xCC, 0xDD };
+	size_t fwid_len = 4;
 
 	bt_mesh_test_cfg_set(NULL, 300);
 	bt_mesh_device_setup(&prov, &cli_comp);
 
-	ASSERT_TRUE(slot_add(&slot));
+	ASSERT_TRUE(bt_mesh_dfu_slot_get(fwid, fwid_len, &slot) >= 0);
 
 	dfu_cli_inputs_prepare(0);
 	dfu_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
@@ -965,7 +1017,7 @@ static void test_cli_fail_on_persistency(void)
 		FAIL("DFU Client send failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware transfer failed");
 	}
 
@@ -999,7 +1051,7 @@ static void test_cli_fail_on_persistency(void)
 		FAIL("DFU Client apply failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Failed to apply firmware");
 	}
 
@@ -1012,7 +1064,7 @@ static void test_cli_fail_on_persistency(void)
 		FAIL("DFU Client confirm failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_cli_confirmed_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_cli_confirmed_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Failed to confirm firmware");
 	}
 
@@ -1045,7 +1097,7 @@ static void test_cli_all_targets_lost_common(void)
 		FAIL("DFU Client send failed (err: %d)", err);
 	}
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware transfer failed");
 	}
 }
@@ -1136,7 +1188,7 @@ static void test_cli_all_targets_lost_on_apply(void)
 		FAIL("DFU Client apply failed (err: %d)", err);
 	}
 
-	if (!k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+	if (!k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Apply should not be successful on any target");
 	}
 
@@ -1167,7 +1219,7 @@ static void test_cli_stop(void)
 			FAIL("DFU Client send failed (err: %d)", err);
 		}
 
-		if (k_sem_take(&dfu_started, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_started, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 
@@ -1183,7 +1235,7 @@ static void test_cli_stop(void)
 			FAIL("DFU Client resume failed (err: %d)", err);
 		}
 
-		if (k_sem_take(&dfu_verifying, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_verifying, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
@@ -1202,7 +1254,7 @@ static void test_cli_stop(void)
 			FAIL("DFU Client send failed (err: %d)", err);
 		}
 
-		if (k_sem_take(&dfu_verify_failed, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_verify_failed, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 
@@ -1218,12 +1270,12 @@ static void test_cli_stop(void)
 		if (err) {
 			FAIL("DFU Client send failed (err: %d)", err);
 		}
-		if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			FAIL("Firmware transfer failed");
 		}
 
 		bt_mesh_dfu_cli_apply(&dfu_cli);
-		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(200))) {
+		if (k_sem_take(&dfu_cli_applied_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 			/* This will time out as target will reboot before applying */
 		}
 		ASSERT_EQUAL(BT_MESH_DFU_ERR_INTERNAL, dfu_cli_xfer.targets[0].status);
@@ -1257,7 +1309,7 @@ static void test_cli_stop(void)
 
 static struct k_sem caps_get_sem;
 
-static int mock_handle_caps_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_caps_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting BLOB Information Get message");
@@ -1274,7 +1326,7 @@ static const struct bt_mesh_model_op model_caps_op1[] = {
 
 static const struct bt_mesh_comp srv_caps_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1288,7 +1340,7 @@ static const struct bt_mesh_comp srv_caps_broken_comp = {
 	.elem_count = 1,
 };
 
-static int mock_handle_chunks(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_chunks(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	LOG_WRN("Skipping receiving block");
@@ -1305,7 +1357,7 @@ static const struct bt_mesh_model_op model_caps_op2[] = {
 
 static const struct bt_mesh_comp broken_target_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1321,7 +1373,7 @@ static const struct bt_mesh_comp broken_target_comp = {
 
 static struct k_sem update_get_sem;
 
-static int mock_handle_update_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_update_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting Firmware Update Get message");
@@ -1337,7 +1389,7 @@ static const struct bt_mesh_model_op model_update_get_op1[] = {
 
 static const struct bt_mesh_comp srv_update_get_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1354,7 +1406,7 @@ static const struct bt_mesh_comp srv_update_get_broken_comp = {
 
 static struct k_sem update_apply_sem;
 
-static int mock_handle_update_apply(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_update_apply(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
 	LOG_WRN("Rejecting Firmware Update Apply message");
@@ -1370,7 +1422,7 @@ static const struct bt_mesh_model_op model_update_apply_op1[] = {
 
 static const struct bt_mesh_comp srv_update_apply_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1413,7 +1465,7 @@ static void test_target_fail_on_metadata(void)
 	common_fail_on_target_init(&target_comp);
 	target_prov_and_conf_default();
 
-	if (k_sem_take(&dfu_metadata_check_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_metadata_check_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Metadata check CB wasn't called");
 	}
 
@@ -1427,7 +1479,7 @@ static void test_target_fail_on_caps_get(void)
 	common_fail_on_target_init(&srv_caps_broken_comp);
 	target_prov_and_conf_with_imposer();
 
-	if (k_sem_take(&caps_get_sem, K_SECONDS(200))) {
+	if (k_sem_take(&caps_get_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("BLOB Info Get msg handler wasn't called");
 	}
 
@@ -1441,11 +1493,11 @@ static void test_target_fail_on_update_get(void)
 	common_fail_on_target_init(&srv_update_get_broken_comp);
 	target_prov_and_conf_with_imposer();
 
-	if (k_sem_take(&dfu_verify_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_verify_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Transfer end CB wasn't triggered");
 	}
 
-	if (k_sem_take(&update_get_sem, K_SECONDS(200))) {
+	if (k_sem_take(&update_get_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware Update Get msg handler wasn't called");
 	}
 
@@ -1460,7 +1512,7 @@ static void test_target_fail_on_verify(void)
 	common_fail_on_target_init(&target_comp);
 	target_prov_and_conf_default();
 
-	if (k_sem_take(&dfu_verify_sem, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_verify_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Transfer end CB wasn't triggered");
 	}
 
@@ -1474,7 +1526,7 @@ static void test_target_fail_on_apply(void)
 	common_fail_on_target_init(&srv_update_apply_broken_comp);
 	target_prov_and_conf_with_imposer();
 
-	if (k_sem_take(&update_apply_sem, K_SECONDS(200))) {
+	if (k_sem_take(&update_apply_sem, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("Firmware Update Apply msg handler wasn't called");
 	}
 
@@ -1486,7 +1538,7 @@ static void test_target_fail_on_nothing(void)
 	common_fail_on_target_init(&target_comp);
 	target_prov_and_conf_default();
 
-	if (k_sem_take(&dfu_ended, K_SECONDS(200))) {
+	if (k_sem_take(&dfu_ended, K_SECONDS(SEMAPHORE_TIMEOUT))) {
 		FAIL("DFU failed");
 	}
 
@@ -1595,6 +1647,10 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_slot_delete_all, "Distributor deletes all image slots"),
 	TEST_CASE(dist, dfu_slot_check_delete_all,
 		      "Distributor checks if all slots are removed from persistent storage"),
+	TEST_CASE(dist, dfu_slot_reservation,
+		      "Distributor checks that the correct number of slots can be reserved"),
+	TEST_CASE(dist, dfu_slot_idempotency,
+		      "Distributor checks that the the DFU slot APIs are idempotent"),
 	TEST_CASE(cli, stop, "DFU Client stops at configured point of Firmware Distribution"),
 	TEST_CASE(cli, fail_on_persistency, "DFU Client doesn't give up DFU Transfer"),
 	TEST_CASE(cli, all_targets_lost_on_metadata,

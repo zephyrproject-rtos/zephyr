@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/random/rand32.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/random/random.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 
 /* TODO: Remove all direct access to private fields.
@@ -272,7 +272,7 @@ static int tls_ctr_drbg_random(void *ctx, unsigned char *buf, size_t len)
 {
 	ARG_UNUSED(ctx);
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+#if defined(CONFIG_CSPRNG_ENABLED)
 	return sys_csrand_get(buf, len);
 #else
 	sys_rand_get(buf, len);
@@ -602,7 +602,7 @@ static int tls_session_save(const struct sockaddr *peer_addr,
 	ret = mbedtls_ssl_session_save(session, entry->session, session_len,
 				       &session_len);
 	if (ret < 0) {
-		NET_ERR("Failed to serialize session, err: 0x%x.", -ret);
+		NET_ERR("Failed to serialize session, err: -0x%x.", -ret);
 		mbedtls_free(entry->session);
 		entry->session = NULL;
 		return -ENOMEM;
@@ -1231,7 +1231,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 			/* MbedTLS API documentation requires session to
 			 * be reset in other error cases
 			 */
-			NET_ERR("TLS handshake error: -%x", -ret);
+			NET_ERR("TLS handshake error: -0x%x", -ret);
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
 				ret = -ECONNABORTED;
@@ -1240,7 +1240,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 		}
 
 		/* Avoid constant loop if tls_mbedtls_reset fails */
-		NET_ERR("TLS reset error: -%x", -ret);
+		NET_ERR("TLS reset error: -0x%x", -ret);
 		ret = -ECONNABORTED;
 		break;
 	}
@@ -1681,7 +1681,7 @@ static int tls_opt_dtls_connection_id_set(struct tls_context *context,
 		context->options.dtls_cid.enabled = true;
 		if (context->options.dtls_cid.cid_len == 0) {
 			/* generate random self cid */
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+#if defined(CONFIG_CSPRNG_ENABLED)
 			sys_csrand_get(context->options.dtls_cid.cid,
 				       MBEDTLS_SSL_CID_OUT_LEN_MAX);
 #else
@@ -2230,10 +2230,9 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 			timeout_ms = timeout_to_ms(&timeout);
 			ret = wait_for_reason(ctx->sock, timeout_ms, ret);
 			if (ret != 0) {
-				/* Retry. */
+				errno = -ret;
 				break;
 			}
-
 		} else {
 			(void)tls_mbedtls_reset(ctx);
 			errno = EIO;

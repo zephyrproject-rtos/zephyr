@@ -13,3 +13,4 @@ testing:
     - net
     - bluetooth
     - mcumgr
+vendor: intel

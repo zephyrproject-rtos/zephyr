@@ -32,6 +32,24 @@
 				zephyr,resolution = <12>;
 			};
 
+			channel@1 {
+				reg = <1>;
+				zephyr,gain = "ADC_GAIN_1_6";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,input-positive = <0>;
+				zephyr,resolution = <12>;
+			};
+
+			channel@2 {
+				reg = <2>;
+				zephyr,gain = "ADC_GAIN_1_6";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,input-positive = <0>;
+				zephyr,resolution = <12>;
+			};
+
 			#include "adc.dtsi"
 		};
 
@@ -101,7 +119,10 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>;	/* 0x24 */
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,	/* 0x25 */
+				   <&test_gpio 0 0>,	/* 0x26 */
+				   <&test_gpio 0 0>;	/* 0x27 */
 
 			#include "spi.dtsi"
 		};
@@ -124,12 +145,16 @@
 			#include "w1.dtsi"
 		};
 
-		dht22 {
-			compatible = "aosong,dht";
+		test_i3c: i3c@f0cacc1a {
+			#address-cells = <3>;
+			#size-cells = <0>;
+			compatible = "vnd,i3c";
+			reg = <0xf0cacc1a 0x1000>;
 			status = "okay";
-			dio-gpios = <&test_gpio 0 0>;
-			/* dht22; */
+
+			#include "i3c.dtsi"
 		};
+
 	};
 };
 

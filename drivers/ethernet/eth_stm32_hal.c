@@ -33,6 +33,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/lldp.h>
 #include <zephyr/drivers/hwinfo.h>
 
+#if defined(CONFIG_NET_DSA)
+#include <zephyr/net/dsa.h>
+#endif
+
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 #include <zephyr/drivers/ptp_clock.h>
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
@@ -489,10 +493,10 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* Check for MAC errors */
-		if (HAL_ETH_GetDMAError(heth)) {
-			LOG_ERR("%s: ETH DMA error: macerror:%x",
+		if (HAL_ETH_GetMACError(heth)) {
+			LOG_ERR("%s: ETH MAC error: macerror:%x",
 				__func__,
-				HAL_ETH_GetDMAError(heth));
+				HAL_ETH_GetMACError(heth));
 			/* MAC errors are putting in error state*/
 			/* TODO recover from this */
 		}
@@ -867,6 +871,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	int res;
 	uint32_t status;
@@ -892,7 +897,11 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 							     vlan_tag));
 			}
 			while ((pkt = eth_rx(dev, &vlan_tag)) != NULL) {
-				res = net_recv_data(net_pkt_iface(pkt), pkt);
+				iface = net_pkt_iface(pkt);
+#if defined(CONFIG_NET_DSA)
+				iface = dsa_net_recv(iface, &pkt);
+#endif
+				res = net_recv_data(iface, pkt);
 				if (res < 0) {
 					eth_stats_update_errors_rx(
 							net_pkt_iface(pkt));
@@ -1516,6 +1525,10 @@ static void eth_iface_init(struct net_if *iface)
 			     sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
 
+#if defined(CONFIG_NET_DSA)
+	dsa_register_master_tx(iface, &eth_tx);
+#endif
+
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
@@ -1559,6 +1572,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
 		| ETHERNET_HW_TX_CHKSUM_OFFLOAD
+#endif
+#if defined(CONFIG_NET_DSA)
+		| ETHERNET_DSA_MASTER_PORT
 #endif
 		;
 }
@@ -1638,7 +1654,11 @@ static const struct ethernet_api eth_api = {
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.set_config = eth_stm32_hal_set_config,
+#if defined(CONFIG_NET_DSA)
+	.send = dsa_tx,
+#else
 	.send = eth_tx,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_stm32_hal_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */

@@ -96,6 +96,14 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 #define EC_HOST_CMD_ST_STM32_FIFO
 #endif /* st_stm32_spi_fifo */
 
+/*
+ * Max data size for a version 3 request/response packet.  This is big enough
+ * to handle a request/response header, flash write offset/size, and 512 bytes
+ * of flash data.
+ */
+#define SPI_MAX_REQ_SIZE  0x220
+#define SPI_MAX_RESP_SIZE 0x220
+
 /* Enumeration to maintain different states of incoming request from
  * host
  */
@@ -136,8 +144,8 @@ struct dma_stream {
 struct ec_host_cmd_spi_cfg {
 	SPI_TypeDef *spi;
 	const struct pinctrl_dev_config *pcfg;
-	size_t pclk_len;
 	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 };
 
 struct ec_host_cmd_spi_ctx {
@@ -189,9 +197,9 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi);
                                                                                                    \
 	static struct ec_host_cmd_spi_cfg ec_host_cmd_spi_cfg = {                                  \
 		.spi = (SPI_TypeDef *)DT_REG_ADDR(id),                                             \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(id),                                             \
 		.pclken = pclken,                                                                  \
 		.pclk_len = DT_NUM_CLOCKS(id),                                                     \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(id),                                             \
 	};                                                                                         \
                                                                                                    \
 	static struct dma_stream dma_rx = {SPI_DMA_CHANNEL_INIT(id, rx, RX, PERIPHERAL, MEMORY)};  \
@@ -666,6 +674,14 @@ static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
 	/* Buffer for response from HC handler. Make space for preamble */
 	hc_spi->tx->buf = (uint8_t *)hc_spi->tx->buf + sizeof(out_preamble);
 	hc_spi->tx->len_max = hc_spi->tx->len_max - sizeof(out_preamble) - EC_SPI_PAST_END_LENGTH;
+
+	/* Limit the requset/response max sizes */
+	if (hc_spi->rx_ctx->len_max > SPI_MAX_REQ_SIZE) {
+		hc_spi->rx_ctx->len_max = SPI_MAX_REQ_SIZE;
+	}
+	if (hc_spi->tx->len_max > SPI_MAX_RESP_SIZE) {
+		hc_spi->tx->len_max = SPI_MAX_RESP_SIZE;
+	}
 
 	ret = spi_init(hc_spi);
 	if (ret) {

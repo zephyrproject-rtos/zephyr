@@ -78,8 +78,12 @@ void __attribute__((noinline)) check_input(const char *name, const char *input)
  * and will not set ret to TC_FAIL.
  *
  */
-void alternate_thread(void)
+void alternate_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	TC_PRINT("Starts %s\n", __func__);
 	check_input(__func__,
 		    "Input string is too long and stack overflowed!\n");
@@ -129,7 +133,7 @@ ZTEST(stackprot, test_create_alt_thread)
 {
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
-			(k_thread_entry_t)alternate_thread, NULL, NULL, NULL,
+			alternate_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(1), K_USER, K_NO_WAIT);
 
 	/* Note that this sleep is required on SMP platforms where
@@ -152,6 +156,9 @@ extern volatile uintptr_t __stack_chk_guard;
  */
 void alternate_thread_canary(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
 	TC_PRINT("Starts %s\n", __func__);
 
 #ifdef CONFIG_STACK_CANARIES_TLS
@@ -173,7 +180,7 @@ ZTEST(stackprot, test_canary_value)
 {
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
-			(k_thread_entry_t)alternate_thread_canary,
+			alternate_thread_canary,
 			(void *)__stack_chk_guard, NULL, NULL,
 			K_PRIO_COOP(1), K_USER, K_NO_WAIT);
 

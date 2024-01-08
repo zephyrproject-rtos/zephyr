@@ -24,12 +24,12 @@ ZTEST(can_utilities, test_can_dlc_to_bytes)
 {
 	uint8_t dlc;
 
-	/* CAN 2.0B/CAN-FD DLC, 0 to 8 data bytes */
+	/* CAN 2.0B/CAN FD DLC, 0 to 8 data bytes */
 	for (dlc = 0; dlc <= 8; dlc++) {
 		zassert_equal(can_dlc_to_bytes(dlc), dlc, "wrong number of bytes for DLC %u", dlc);
 	}
 
-	/* CAN-FD DLC, 12 to 64 data bytes in steps */
+	/* CAN FD DLC, 12 to 64 data bytes in steps */
 	zassert_equal(can_dlc_to_bytes(9),  12, "wrong number of bytes for DLC 9");
 	zassert_equal(can_dlc_to_bytes(10), 16, "wrong number of bytes for DLC 10");
 	zassert_equal(can_dlc_to_bytes(11), 20, "wrong number of bytes for DLC 11");
@@ -51,7 +51,7 @@ ZTEST(can_utilities, test_can_bytes_to_dlc)
 		zassert_equal(can_bytes_to_dlc(bytes), bytes, "wrong DLC for %u byte(s)", bytes);
 	}
 
-	/* CAN-FD DLC, 12 to 64 data bytes in steps */
+	/* CAN FD DLC, 12 to 64 data bytes in steps */
 	zassert_equal(can_bytes_to_dlc(12), 9,  "wrong DLC for 12 bytes");
 	zassert_equal(can_bytes_to_dlc(16), 10, "wrong DLC for 16 bytes");
 	zassert_equal(can_bytes_to_dlc(20), 11, "wrong DLC for 20 bytes");
@@ -119,17 +119,17 @@ ZTEST(can_utilities, test_can_frame_matches_filter)
 	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_rtr_filter_1));
 	zassert_false(can_frame_matches_filter(&test_ext_frame_1, &test_ext_rtr_filter_1));
 
-	/* CAN-FD format frames and filters */
+	/* CAN FD format frames and filters */
 	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_fdf_filter_1));
 	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_fdf_filter_2));
 	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_fdf_filter_2));
 	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_fdf_filter_1));
 
-	/* CAN-FD format frames and classic filters */
+	/* CAN FD format frames and classic filters */
 	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_filter_1));
 	zassert_false(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_filter_2));
 
-	/* Classic format frames and CAN-FD format filters */
+	/* Classic format frames and CAN FD format filters */
 	zassert_false(can_frame_matches_filter(&test_std_frame_1, &test_std_fdf_filter_1));
 	zassert_false(can_frame_matches_filter(&test_std_frame_2, &test_std_fdf_filter_2));
 }

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/aarch32/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("FLASH", CONFIG_FLASH_BASE_ADDRESS,
@@ -38,9 +38,6 @@ static const struct arm_mpu_region mpu_regions[] = {
 					 REGION_PPB_ATTR(REGION_256B)),
 #endif
 #endif
-
-	/* DT-defined regions */
-	DT_MEMORY_ATTR_APPLY(ARM_MPU_REGION_INIT)
 };
 
 const struct arm_mpu_config mpu_config = {

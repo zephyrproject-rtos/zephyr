@@ -111,16 +111,8 @@ struct cmd_data {
 
 static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
 
-#if defined(CONFIG_BT_CONN)
-struct acl_data {
-	uint16_t acl_handle;
-};
-
-static struct acl_data acl_data[CONFIG_BT_BUF_ACL_RX_COUNT];
-#endif
-
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
-#define acl(buf) (&acl_data[net_buf_id(buf)])
+#define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
@@ -209,9 +201,10 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 {
 
 	struct bt_hci_cp_host_num_completed_packets *cp;
-	uint16_t handle = acl(buf)->acl_handle;
+	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
 	struct bt_conn *conn;
+	uint8_t index = acl(buf)->index;
 
 	net_buf_destroy(buf);
 
@@ -220,9 +213,9 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
+	conn = bt_conn_lookup_index(index);
 	if (!conn) {
-		LOG_WRN("Unable to look up conn with ACL handle %u", handle);
+		LOG_WRN("Unable to look up conn with index 0x%02x", index);
 		return;
 	}
 
@@ -508,17 +501,21 @@ static void hci_acl(struct net_buf *buf)
 	uint8_t flags;
 
 	LOG_DBG("buf %p", buf);
-
-	BT_ASSERT(buf->len >= sizeof(*hdr));
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("Invalid HCI ACL packet size (%u)", buf->len);
+		net_buf_unref(buf);
+		return;
+	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	len = sys_le16_to_cpu(hdr->len);
 	handle = sys_le16_to_cpu(hdr->handle);
 	flags = bt_acl_flags(handle);
 
-	acl(buf)->acl_handle = bt_acl_handle(handle);
+	acl(buf)->handle = bt_acl_handle(handle);
+	acl(buf)->index = BT_CONN_INDEX_INVALID;
 
-	LOG_DBG("handle %u len %u flags %u", acl(buf)->acl_handle, len, flags);
+	LOG_DBG("handle %u len %u flags %u", acl(buf)->handle, len, flags);
 
 	if (buf->len != len) {
 		LOG_ERR("ACL data length mismatch (%u != %u)", buf->len, len);
@@ -526,12 +523,14 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_lookup_handle(acl(buf)->acl_handle, BT_CONN_TYPE_ALL);
+	conn = bt_conn_lookup_handle(acl(buf)->handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
-		LOG_ERR("Unable to find conn for handle %u", acl(buf)->acl_handle);
+		LOG_ERR("Unable to find conn for handle %u", acl(buf)->handle);
 		net_buf_unref(buf);
 		return;
 	}
+
+	acl(buf)->index = bt_conn_index(conn);
 
 	bt_conn_recv(conn, buf, flags);
 	bt_conn_unref(conn);
@@ -2334,6 +2333,14 @@ static void hci_cmd_complete(struct net_buf *buf)
 	 */
 	status = buf->data[0];
 
+	/* HOST_NUM_COMPLETED_PACKETS should not generate a response under normal operation.
+	 * The generation of this command ignores `ncmd_sem`, so should not be given here.
+	 */
+	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
+		LOG_WRN("Unexpected HOST_NUM_COMPLETED_PACKETS (status 0x%02x)", status);
+		return;
+	}
+
 	hci_cmd_done(opcode, status, buf);
 
 	/* Allow next command to be sent */
@@ -2681,7 +2688,11 @@ static void hci_event(struct net_buf *buf)
 {
 	struct bt_hci_evt_hdr *hdr;
 
-	BT_ASSERT(buf->len >= sizeof(*hdr));
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("Invalid HCI event size (%u)", buf->len);
+		net_buf_unref(buf);
+		return;
+	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	LOG_DBG("event 0x%02x", hdr->evt);
@@ -3459,15 +3470,15 @@ static int set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
 }
 
-static const char *ver_str(uint8_t ver)
+const char *bt_hci_get_ver_str(uint8_t core_version)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
 		"5.0", "5.1", "5.2", "5.3", "5.4"
 	};
 
-	if (ver < ARRAY_SIZE(str)) {
-		return str[ver];
+	if (core_version < ARRAY_SIZE(str)) {
+		return str[core_version];
 	}
 
 	return "unknown";
@@ -3508,9 +3519,9 @@ static void bt_dev_show_info(void)
 	}
 
 	LOG_INF("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x",
-		ver_str(bt_dev.hci_version), bt_dev.hci_version, bt_dev.hci_revision,
+		bt_hci_get_ver_str(bt_dev.hci_version), bt_dev.hci_version, bt_dev.hci_revision,
 		bt_dev.manufacturer);
-	LOG_INF("LMP: version %s (0x%02x) subver 0x%04x", ver_str(bt_dev.lmp_version),
+	LOG_INF("LMP: version %s (0x%02x) subver 0x%04x", bt_hci_get_ver_str(bt_dev.lmp_version),
 		bt_dev.lmp_version, bt_dev.lmp_subversion);
 }
 
@@ -3748,7 +3759,11 @@ void hci_event_prio(struct net_buf *buf)
 
 	net_buf_simple_save(&buf->b, &state);
 
-	BT_ASSERT(buf->len >= sizeof(*hdr));
+	if (buf->len < sizeof(*hdr)) {
+		LOG_ERR("Invalid HCI event size (%u)", buf->len);
+		net_buf_unref(buf);
+		return;
+	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	evt_flags = bt_hci_evt_get_flags(hdr->evt);
@@ -3972,6 +3987,13 @@ static void rx_work_handler(struct k_work *work)
 }
 #endif /* !CONFIG_BT_RECV_BLOCKING */
 
+#if defined(CONFIG_BT_TESTING)
+k_tid_t bt_testing_tx_tid_get(void)
+{
+	return &tx_thread_data;
+}
+#endif
+
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
@@ -4144,7 +4166,7 @@ int bt_set_name(const char *name)
 		return 0;
 	}
 
-	strncpy(bt_dev.name, name, len);
+	memcpy(bt_dev.name, name, len);
 	bt_dev.name[len] = '\0';
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {

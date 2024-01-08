@@ -60,7 +60,7 @@ enum {
 };
 
 struct bt_mesh_ext_adv {
-	uint8_t tag;
+	const enum bt_mesh_adv_tag_bit tags;
 	ATOMIC_DEFINE(flags, ADV_FLAGS_NUM);
 	struct bt_le_ext_adv *instance;
 	struct net_buf *buf;
@@ -72,72 +72,71 @@ struct bt_mesh_ext_adv {
 static void send_pending_adv(struct k_work *work);
 static bool schedule_send(struct bt_mesh_ext_adv *adv);
 
-static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_main) = {
-	.tag = (
+static struct bt_mesh_ext_adv advs[] = {
+	[0] = {
+		.tags = (
 #if !defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-		BT_MESH_FRIEND_ADV |
+			BT_MESH_ADV_TAG_BIT_FRIEND |
 #endif
 #if !defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-		BT_MESH_PROXY_ADV |
+			BT_MESH_ADV_TAG_BIT_PROXY |
 #endif /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
 #if defined(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)
-		BT_MESH_RELAY_ADV |
+			BT_MESH_ADV_TAG_BIT_RELAY |
 #endif /* CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET */
-		BT_MESH_LOCAL_ADV),
-
-	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
-};
-
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-static STRUCT_SECTION_ITERABLE_ARRAY(bt_mesh_ext_adv, adv_relay, CONFIG_BT_MESH_RELAY_ADV_SETS) = {
-	[0 ... CONFIG_BT_MESH_RELAY_ADV_SETS - 1] = {
-		.tag = BT_MESH_RELAY_ADV,
+#if defined(CONFIG_BT_MESH_PB_ADV)
+			BT_MESH_ADV_TAG_BIT_PROV |
+#endif /* CONFIG_BT_MESH_PB_ADV */
+			BT_MESH_ADV_TAG_BIT_LOCAL
+		),
 		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
-	}
-};
+	},
+#if CONFIG_BT_MESH_RELAY_ADV_SETS
+	[1 ... CONFIG_BT_MESH_RELAY_ADV_SETS] = {
+		.tags = (
+#if defined(CONFIG_BT_MESH_RELAY)
+			BT_MESH_ADV_TAG_BIT_RELAY |
+#endif /* CONFIG_BT_MESH_RELAY */
+#if defined(CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS)
+			BT_MESH_ADV_TAG_BIT_PROV |
+#endif /* CONFIG_BT_MESH_PB_ADV_USE_RELAY_SETS */
+		0),
+		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+	},
 #endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
-
 #if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-#define ADV_EXT_FRIEND 1
-static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_friend) = {
-	.tag = BT_MESH_FRIEND_ADV,
-	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
-};
-#else /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
-#define ADV_EXT_FRIEND 0
+	{
+		.tags = BT_MESH_ADV_TAG_BIT_FRIEND,
+		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+	},
 #endif /* CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE */
-
 #if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-#define ADV_EXT_GATT 1
-static STRUCT_SECTION_ITERABLE(bt_mesh_ext_adv, adv_gatt) = {
-	.tag = BT_MESH_PROXY_ADV,
-	.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
-};
-#else /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-#define ADV_EXT_GATT 0
+	{
+		.tags = BT_MESH_ADV_TAG_BIT_PROXY,
+		.work = Z_WORK_DELAYABLE_INITIALIZER(send_pending_adv),
+	},
 #endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
+};
 
-#define BT_MESH_ADV_COUNT (1 + CONFIG_BT_MESH_RELAY_ADV_SETS + ADV_EXT_FRIEND + ADV_EXT_GATT)
-
-BUILD_ASSERT(CONFIG_BT_EXT_ADV_MAX_ADV_SET >= BT_MESH_ADV_COUNT,
+BUILD_ASSERT(ARRAY_SIZE(advs) <= CONFIG_BT_EXT_ADV_MAX_ADV_SET,
 	     "Insufficient adv instances");
 
 static inline struct bt_mesh_ext_adv *relay_adv_get(void)
 {
-#if CONFIG_BT_MESH_RELAY_ADV_SETS
-	return adv_relay;
-#else /* !CONFIG_BT_MESH_RELAY_ADV_SETS */
-	return &adv_main;
-#endif /* CONFIG_BT_MESH_RELAY_ADV_SETS */
+	if (!!(CONFIG_BT_MESH_RELAY_ADV_SETS)) {
+		return &advs[1];
+	} else {
+		return &advs[0];
+	}
 }
 
 static inline struct bt_mesh_ext_adv *gatt_adv_get(void)
 {
-#if defined(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)
-	return &adv_gatt;
-#else /* !CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
-	return &adv_main;
-#endif /* CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE */
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_GATT_SEPARATE)) {
+		return &advs[ARRAY_SIZE(advs) - 1];
+	} else {
+		return &advs[0];
+	}
 }
 
 static int set_adv_randomness(uint8_t handle, int rand_us)
@@ -259,20 +258,13 @@ static int buf_send(struct bt_mesh_ext_adv *adv, struct net_buf *buf)
 	return err;
 }
 
-static const char *adv_tag_to_str(enum bt_mesh_adv_tag tag)
-{
-	if (tag & BT_MESH_LOCAL_ADV) {
-		return "local adv";
-	} else if (tag & BT_MESH_PROXY_ADV) {
-		return "proxy adv";
-	} else if (tag & BT_MESH_RELAY_ADV) {
-		return "relay adv";
-	} else if (tag & BT_MESH_FRIEND_ADV) {
-		return "friend adv";
-	} else {
-		return "(unknown tag)";
-	}
-}
+static const char * const adv_tag_to_str[] = {
+	[BT_MESH_ADV_TAG_LOCAL]  = "local adv",
+	[BT_MESH_ADV_TAG_RELAY]  = "relay adv",
+	[BT_MESH_ADV_TAG_PROXY]  = "proxy adv",
+	[BT_MESH_ADV_TAG_FRIEND] = "friend adv",
+	[BT_MESH_ADV_TAG_PROV]   = "prov adv",
+};
 
 static void send_pending_adv(struct k_work *work)
 {
@@ -289,8 +281,9 @@ static void send_pending_adv(struct k_work *work)
 		 */
 		int64_t duration = k_uptime_delta(&adv->timestamp);
 
-		LOG_DBG("Advertising stopped after %u ms for (%u) %s", (uint32_t)duration, adv->tag,
-		       adv_tag_to_str(adv->tag));
+		LOG_DBG("Advertising stopped after %u ms for %s", (uint32_t)duration,
+		       adv->buf ? adv_tag_to_str[BT_MESH_ADV(adv->buf)->tag] :
+				  adv_tag_to_str[BT_MESH_ADV_TAG_PROXY]);
 
 		atomic_clear_bit(adv->flags, ADV_FLAG_ACTIVE);
 		atomic_clear_bit(adv->flags, ADV_FLAG_PROXY);
@@ -308,7 +301,7 @@ static void send_pending_adv(struct k_work *work)
 
 	atomic_clear_bit(adv->flags, ADV_FLAG_SCHEDULED);
 
-	while ((buf = bt_mesh_adv_buf_get_by_tag(adv->tag, K_NO_WAIT))) {
+	while ((buf = bt_mesh_adv_buf_get_by_tag(adv->tags, K_NO_WAIT))) {
 		/* busy == 0 means this was canceled */
 		if (!BT_MESH_ADV(buf)->busy) {
 			net_buf_unref(buf);
@@ -326,7 +319,7 @@ static void send_pending_adv(struct k_work *work)
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER) ||
-	    !(adv->tag & BT_MESH_PROXY_ADV)) {
+	    !(adv->tags & BT_MESH_ADV_TAG_BIT_PROXY)) {
 		return;
 	}
 
@@ -369,8 +362,9 @@ static bool schedule_send(struct bt_mesh_ext_adv *adv)
 
 	atomic_clear_bit(adv->flags, ADV_FLAG_SCHEDULE_PENDING);
 
-	if ((IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) && adv->tag & BT_MESH_FRIEND_ADV) ||
-	    (CONFIG_BT_MESH_RELAY_ADV_SETS > 0 && adv->tag == BT_MESH_RELAY_ADV)) {
+	if ((IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE) &&
+	     adv->tags & BT_MESH_ADV_TAG_BIT_FRIEND) ||
+	    (CONFIG_BT_MESH_RELAY_ADV_SETS > 0 && adv->tags & BT_MESH_ADV_TAG_BIT_RELAY)) {
 		k_work_reschedule(&adv->work, K_NO_WAIT);
 	} else {
 		/* The controller will send the next advertisement immediately.
@@ -391,7 +385,7 @@ void bt_mesh_adv_gatt_update(void)
 
 void bt_mesh_adv_buf_local_ready(void)
 {
-	(void)schedule_send(&adv_main);
+	(void)schedule_send(advs);
 }
 
 void bt_mesh_adv_buf_relay_ready(void)
@@ -406,15 +400,49 @@ void bt_mesh_adv_buf_relay_ready(void)
 
 	/* Attempt to use the main adv set for the sending of relay messages. */
 	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)) {
-		(void)schedule_send(&adv_main);
+		(void)schedule_send(advs);
 	}
 }
 
 void bt_mesh_adv_buf_friend_ready(void)
 {
-#if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-	(void)schedule_send(&adv_friend);
-#endif
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)) {
+		schedule_send(&advs[1 + CONFIG_BT_MESH_RELAY_ADV_SETS]);
+	} else {
+		schedule_send(&advs[0]);
+	}
+}
+
+void bt_mesh_adv_buf_terminate(const struct net_buf *buf)
+{
+	int err;
+
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		struct bt_mesh_ext_adv *adv = &advs[i];
+
+		if (adv->buf != buf) {
+			continue;
+		}
+
+		if (!atomic_test_bit(adv->flags, ADV_FLAG_ACTIVE)) {
+			return;
+		}
+
+		err = bt_le_ext_adv_stop(adv->instance);
+		if (err) {
+			LOG_ERR("Failed to stop adv %d", err);
+			return;
+		}
+
+		/* Do not call `cb:end`, since this user action */
+		BT_MESH_ADV(adv->buf)->cb = NULL;
+
+		atomic_set_bit(adv->flags, ADV_FLAG_SENT);
+
+		k_work_submit(&adv->work.work);
+
+		return;
+	}
 }
 
 void bt_mesh_adv_init(void)
@@ -426,17 +454,18 @@ void bt_mesh_adv_init(void)
 #if defined(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)
 		.options = BT_LE_ADV_OPT_USE_IDENTITY,
 #endif
-};
-	STRUCT_SECTION_FOREACH(bt_mesh_ext_adv, adv) {
-		(void)memcpy(&adv->adv_param, &adv_param, sizeof(adv_param));
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		(void)memcpy(&advs[i].adv_param, &adv_param, sizeof(adv_param));
 	}
 }
 
 static struct bt_mesh_ext_adv *adv_instance_find(struct bt_le_ext_adv *instance)
 {
-	STRUCT_SECTION_FOREACH(bt_mesh_ext_adv, adv) {
-		if (adv->instance == instance) {
-			return adv;
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		if (advs[i].instance == instance) {
+			return &advs[i];
 		}
 	}
 
@@ -486,15 +515,14 @@ int bt_mesh_adv_enable(void)
 #endif /* CONFIG_BT_MESH_GATT_SERVER */
 	};
 
-	if (adv_main.instance) {
+	if (advs[0].instance) {
 		/* Already initialized */
 		return 0;
 	}
 
-
-	STRUCT_SECTION_FOREACH(bt_mesh_ext_adv, adv) {
-		err = bt_le_ext_adv_create(&adv->adv_param, &adv_cb,
-					   &adv->instance);
+	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
+		err = bt_le_ext_adv_create(&advs[i].adv_param, &adv_cb,
+					   &advs[i].instance);
 		if (err) {
 			return err;
 		}
@@ -531,5 +559,5 @@ int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param,
 int bt_mesh_adv_bt_data_send(uint8_t num_events, uint16_t adv_interval,
 			     const struct bt_data *ad, size_t ad_len)
 {
-	return bt_data_send(&adv_main, num_events, adv_interval, ad, ad_len);
+	return bt_data_send(advs, num_events, adv_interval, ad, ad_len);
 }

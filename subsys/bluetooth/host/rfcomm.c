@@ -1704,7 +1704,8 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 	return rfcomm_dlc_close(dlc);
 }
 
-static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
+			 struct bt_l2cap_chan **chan)
 {
 	struct bt_rfcomm_session *session;
 

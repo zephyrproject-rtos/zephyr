@@ -222,6 +222,7 @@ void tc_attached_src_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	LOG_INF("Attached.SRC");
 
@@ -229,7 +230,12 @@ void tc_attached_src_entry(void *obj)
 	tcpc_set_roles(tcpc, TC_ROLE_SOURCE, TC_ROLE_DFP);
 
 	/* Set cc polarity */
-	tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
+	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC polarity to %d: %d", tc->cc_polarity, ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
 
 	/* Start sourcing VBUS */
 	if (data->policy_cb_src_en(dev, true) == 0) {
@@ -287,6 +293,7 @@ void tc_attached_src_exit(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	__ASSERT(data->policy_cb_src_en != NULL,
 			"policy_cb_src_en must not be NULL");
@@ -298,7 +305,10 @@ void tc_attached_src_exit(void *obj)
 	data->policy_cb_src_en(dev, false);
 
 	/* Stop sourcing VCONN */
-	tcpc_set_vconn(tcpc, false);
+	ret = tcpc_set_vconn(tcpc, false);
+	if (ret != 0 && ret != -ENOSYS) {
+		LOG_ERR("Couldn't disable VCONN source");
+	}
 }
 
 /**
@@ -312,6 +322,7 @@ void tc_cc_rp_entry(void *obj)
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
 	enum tc_rp_value rp = TC_RP_USB;
+	int ret;
 
 	/*
 	 * Get initial Rp value from Device Policy Manager or use
@@ -322,8 +333,17 @@ void tc_cc_rp_entry(void *obj)
 	}
 
 	/* Select Rp value */
-	tcpc_select_rp_value(tcpc, rp);
+	ret = tcpc_select_rp_value(tcpc, rp);
+	if (ret != 0 && ret != -ENOTSUP) {
+		LOG_ERR("Couldn't set Rp value to %d: %d", rp, ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
 
 	/* Place Rp on CC lines */
-	tcpc_set_cc(tcpc, TC_CC_RP);
+	ret = tcpc_set_cc(tcpc, TC_CC_RP);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC lines to Rp: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+	}
 }

@@ -191,21 +191,21 @@ Memory mappings
 There are multiple memory configurations, they all start from the
 MCUboot partitioning which looks like the table below
 
-+---------+------------------+---------------------------------+
-| Name    | Address[Size]    | Comment                         |
-+=========+==================+=================================+
-| boot    | 0x00000000[32K]  | Bootloader                      |
-+---------+------------------+---------------------------------+
-| slot0   | 0x00008000[160k] | Image that runs after boot      |
-+---------+------------------+---------------------------------+
-| slot1   | 0x00030000[96k]  | Second image, core 1 or NS      |
-+---------+------------------+---------------------------------+
-| slot2   | 0x00048000[160k] | Updates slot0 image             |
-+---------+------------------+---------------------------------+
-| slot3   | 0x00070000[96k]  | Updates slot1 image             |
-+---------+------------------+---------------------------------+
-| storage | 0x00088000[50k]  | File system, persistent storage |
-+---------+------------------+---------------------------------+
++----------+------------------+---------------------------------+
+| Name     | Address[Size]    | Comment                         |
++==========+==================+=================================+
+| boot     | 0x00000000[32K]  | Bootloader                      |
++----------+------------------+---------------------------------+
+| slot0    | 0x00008000[160k] | Image that runs after boot      |
++----------+------------------+---------------------------------+
+| slot0_ns | 0x00030000[96k]  | Second image, core 1 or NS      |
++----------+------------------+---------------------------------+
+| slot1    | 0x00048000[160k] | Updates slot0 image             |
++----------+------------------+---------------------------------+
+| slot1_ns | 0x00070000[96k]  | Updates slot0_ns image          |
++----------+------------------+---------------------------------+
+| storage  | 0x00088000[50k]  | File system, persistent storage |
++----------+------------------+---------------------------------+
 
 See below examples of how this partitioning is used
 
@@ -256,9 +256,11 @@ Dual Core samples
 System Clock
 ============
 
-The LPC55S69 SoC is configured to use the internal FRO at 96MHz as a source for
-the system clock. Other sources for the system clock are provided in the SOC,
-depending on your system requirements.
+The LPC55S69 SoC is configured to use PLL1 clocked from the external 24MHz
+crystal, running at 144MHz as a source for the system clock. When the flash
+controller is enabled, the core clock will be reduced to 96MHz. The application
+may reconfigure clocks after initialization, provided that the core clock is
+always set to 96MHz when flash programming operations are performed.
 
 Serial Port
 ===========

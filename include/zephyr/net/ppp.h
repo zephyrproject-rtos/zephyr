@@ -483,9 +483,6 @@ struct ppp_context {
 	/** This tells how many network protocols are up */
 	int network_protos_up;
 
-	/** Is network carrier up */
-	uint16_t is_net_carrier_up : 1;
-
 	/** Is PPP ready to receive packets */
 	uint16_t is_ready_to_serve : 1;
 

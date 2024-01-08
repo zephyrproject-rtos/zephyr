@@ -5,7 +5,7 @@ common:
     - lwm2m
     - net
   platform_allow:
-    - native_posix
+    - native_sim
 tests:
   net.lwm2m.lwm2m_rd_client:
     extra_args: EXTRA_CFLAGS=""

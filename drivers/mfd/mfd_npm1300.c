@@ -64,6 +64,7 @@ static const struct event_reg_t event_reg[NPM1300_EVENT_MAX] = {
 	[NPM1300_EVENT_BATTERY_DETECTED] = {0x0EU, 0x01U},
 	[NPM1300_EVENT_BATTERY_REMOVED] = {0x0EU, 0x02U},
 	[NPM1300_EVENT_SHIPHOLD_PRESS] = {0x12U, 0x01U},
+	[NPM1300_EVENT_SHIPHOLD_RELEASE] = {0x12U, 0x02U},
 	[NPM1300_EVENT_WATCHDOG_WARN] = {0x12U, 0x08U},
 	[NPM1300_EVENT_VBUS_DETECTED] = {0x16U, 0x01U},
 	[NPM1300_EVENT_VBUS_REMOVED] = {0x16U, 0x02U}};
@@ -78,12 +79,14 @@ static void gpio_callback(const struct device *dev, struct gpio_callback *cb, ui
 static void work_callback(struct k_work *work)
 {
 	struct mfd_npm1300_data *data = CONTAINER_OF(work, struct mfd_npm1300_data, work);
+	const struct mfd_npm1300_config *config = data->dev->config;
 	uint8_t buf[MAIN_SIZE];
 	int ret;
 
 	/* Read all MAIN registers into temporary buffer */
 	ret = mfd_npm1300_reg_read_burst(data->dev, MAIN_BASE, 0U, buf, sizeof(buf));
 	if (ret < 0) {
+		k_work_submit(&data->work);
 		return;
 	}
 
@@ -96,9 +99,15 @@ static void work_callback(struct k_work *work)
 			ret = mfd_npm1300_reg_write(data->dev, MAIN_BASE, offset,
 						    event_reg[i].mask);
 			if (ret < 0) {
+				k_work_submit(&data->work);
 				return;
 			}
 		}
+	}
+
+	/* Resubmit handler to queue if interrupt is still active */
+	if (gpio_pin_get_dt(&config->host_int_gpios) != 0) {
+		k_work_submit(&data->work);
 	}
 }
 
@@ -288,6 +297,6 @@ int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst,           \
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
+			      POST_KERNEL, CONFIG_MFD_NPM1300_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM1300_DEFINE)

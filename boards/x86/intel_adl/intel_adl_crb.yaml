@@ -6,14 +6,17 @@ toolchain:
   - zephyr
 ram: 2048
 supported:
+  - acpi
   - watchdog
   - pwm
   - gpio
   - rtc
   - i2c
   - spi
+  - smp
 testing:
   timeout_multiplier: 4
   ignore_tags:
     - net
     - bluetooth
+vendor: intel

@@ -1,7 +1,8 @@
-.. _led_ws2812_sample:
+.. zephyr:code-sample:: led-ws2812
+   :name: WS2812 LED strip
+   :relevant-api: led_strip_interface
 
-WS2812 Sample Application
-#########################
+   Control an LED strip using a WS2812 (or compatible) driver chip.
 
 Overview
 ********
@@ -73,6 +74,9 @@ For example devicetree configurations for each compatible, see
 Some boards are already supported out of the box; see the :file:`boards`
 directory for this sample for details.
 
+The sample updates the LED strip periodically. The update frequency can be
+modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
+
 Then build and flash the application:
 
 .. zephyr-app-commands::
@@ -96,9 +100,13 @@ Supported drivers
 This sample uses different drivers depending on the selected board:
 
 I2S driver:
+
 - thingy52_nrf52832
+- nrf5340dk_nrf5340 (3.3V logic level, a logic level shifter may be required)
+    - should work for other boards featuring an nRF5340 host processor
 
 SPI driver:
+
 - mimxrt1050_evk
 - mimxrt1050_evk_qspi
 - nrf52dk_nrf52832
@@ -108,6 +116,7 @@ SPI driver:
 - nucleo_l476rg
 
 GPIO driver (cortex-M0 only):
+
 - bbc_microbit
 - nrf51dk_nrf51422
 

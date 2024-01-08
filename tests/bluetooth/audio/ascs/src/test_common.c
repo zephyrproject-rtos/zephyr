@@ -68,6 +68,7 @@ void test_conn_init(struct bt_conn *conn)
 	conn->info.security.level = BT_SECURITY_L2;
 	conn->info.security.enc_key_size = BT_ENC_KEY_SIZE_MAX;
 	conn->info.security.flags = BT_SECURITY_FLAG_OOB | BT_SECURITY_FLAG_SC;
+	conn->info.le.interval = BT_GAP_INIT_CONN_INT_MIN;
 }
 
 const struct bt_gatt_attr *test_ase_control_point_get(void)

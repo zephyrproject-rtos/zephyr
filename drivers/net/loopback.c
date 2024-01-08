@@ -42,12 +42,15 @@ static void loopback_init(struct net_if *iface)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct in_addr ipv4_loopback = INADDR_LOOPBACK_INIT;
+		struct in_addr netmask = { { { 255, 0, 0, 0 } } };
 
 		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback,
 					      NET_ADDR_AUTOCONF, 0);
 		if (!ifaddr) {
 			LOG_ERR("Failed to register IPv4 loopback address");
 		}
+
+		net_if_ipv4_set_netmask(iface, &netmask);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {

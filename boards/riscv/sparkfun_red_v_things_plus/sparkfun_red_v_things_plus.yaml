@@ -16,3 +16,4 @@ supported:
   - spi
   - pwm
   - watchdog
+vendor: sparkfun

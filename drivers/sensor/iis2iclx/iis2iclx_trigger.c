@@ -182,8 +182,13 @@ static void iis2iclx_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER_OWN_THREAD
-static void iis2iclx_thread(struct iis2iclx_data *iis2iclx)
+static void iis2iclx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct iis2iclx_data *iis2iclx = p1;
+
 	while (1) {
 		k_sem_take(&iis2iclx->gpio_sem, K_FOREVER);
 		iis2iclx_handle_interrupt(iis2iclx->dev);
@@ -218,7 +223,7 @@ int iis2iclx_init_interrupt(const struct device *dev)
 
 	k_thread_create(&iis2iclx->thread, iis2iclx->thread_stack,
 			CONFIG_IIS2ICLX_THREAD_STACK_SIZE,
-			(k_thread_entry_t)iis2iclx_thread,
+			iis2iclx_thread,
 			iis2iclx, NULL, NULL,
 			K_PRIO_COOP(CONFIG_IIS2ICLX_THREAD_PRIORITY),
 			0, K_NO_WAIT);

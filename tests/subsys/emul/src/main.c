@@ -11,7 +11,7 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/ztest.h>
 #include <zephyr/ztest_assert.h>
-#include <zephyr/ztest_test_new.h>
+#include <zephyr/ztest_test.h>
 
 #define TEST_ACCEL DT_NODELABEL(test_bmi)
 

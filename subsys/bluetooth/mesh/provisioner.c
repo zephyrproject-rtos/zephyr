@@ -72,7 +72,7 @@ static void prov_link_close(enum prov_bearer_link_status status)
 
 static void prov_fail(uint8_t reason)
 {
-	/* According to Bluetooth Mesh Specification v1.0.1, Section 5.4.4, the
+	/* According to MshPRTv1.1: 5.4.4, the
 	 * provisioner just closes the link when something fails, while the
 	 * provisionee sends the fail message, and waits for the provisioner to
 	 * close the link.
@@ -254,8 +254,7 @@ static void prov_capabilities(const uint8_t *data)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
-		(caps.oob_type & BT_MESH_OOB_AUTH_REQUIRED)) {
+	if (caps.oob_type & BT_MESH_OOB_AUTH_REQUIRED) {
 
 		bool oob_availability = caps.output_size > 0 || caps.input_size > 0 ||
 			(caps.oob_type & BT_MESH_STATIC_OOB_AVAILABLE);
@@ -451,6 +450,13 @@ static void prov_dh_key_gen(void)
 	send_confirm();
 }
 
+static void prov_dh_key_gen_handler(struct k_work *work)
+{
+	prov_dh_key_gen();
+}
+
+static K_WORK_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
+
 static void prov_pub_key(const uint8_t *data)
 {
 	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));
@@ -461,7 +467,7 @@ static void prov_pub_key(const uint8_t *data)
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, data, PUB_KEY_SIZE);
 	bt_mesh_prov_link.bearer->clear_tx();
 
-	prov_dh_key_gen();
+	k_work_submit(&dh_gen_work);
 }
 
 static void notify_input_complete(void)
@@ -752,18 +758,21 @@ int bt_mesh_auth_method_set_output(bt_mesh_output_action_t action, uint8_t size)
 
 int bt_mesh_auth_method_set_static(const uint8_t *static_val, uint8_t size)
 {
-	uint8_t auth_size = bt_mesh_prov_auth_size_get();
-
-	if (!size || !static_val || size > auth_size) {
+	if (!size || !static_val) {
 		return -EINVAL;
 	}
 
 	prov_set_method(AUTH_METHOD_STATIC, 0, 0);
 
-	memcpy(bt_mesh_prov_link.auth + auth_size - size, static_val, size);
-	if (size < auth_size) {
-		(void)memset(bt_mesh_prov_link.auth, 0, auth_size - size);
+	/* Trim the Auth if it is longer than required length */
+	memcpy(bt_mesh_prov_link.auth, static_val,
+	       size > PROV_AUTH_MAX_LEN ? PROV_AUTH_MAX_LEN : size);
+
+	/* Padd with zeros if the Auth is shorter the required length*/
+	if (size < PROV_AUTH_MAX_LEN) {
+		memset(bt_mesh_prov_link.auth + size, 0, PROV_AUTH_MAX_LEN - size);
 	}
+
 	return 0;
 }
 
@@ -855,6 +864,72 @@ int bt_mesh_pb_remote_open(struct bt_mesh_rpr_cli *cli,
 	return link_open(uuid, &pb_remote_cli, net_idx, addr, 0, &ctx, 0);
 }
 
+/* Remote Provision done where client and server is on same node, skip open link
+ * and sending of reprovision message, just execute reprovisioning on it self.
+ */
+static int reprovision_local_client_server(uint16_t addr)
+{
+	int err;
+	const uint8_t *pub_key;
+	const uint8_t *priv_key = NULL;
+
+	if (atomic_test_and_set_bit(bt_mesh_prov_link.flags, LINK_ACTIVE)) {
+		return -EBUSY;
+	}
+
+	LOG_DBG("net_idx %u iv_index 0x%08x, addr 0x%04x",
+		prov_device.node->net_idx, bt_mesh_cdb.iv_index, addr);
+
+	atomic_set_bit(bt_mesh_prov_link.flags, REPROVISION);
+	atomic_set_bit(bt_mesh_prov_link.flags, PROVISIONER);
+	bt_mesh_prov_link.addr = addr;
+	bt_mesh_prov_link.bearer = &pb_remote_cli;
+	bt_mesh_prov_link.role = &role_provisioner;
+	prov_device.net_idx = prov_device.node->net_idx;
+	prov_device.attention_duration = 0;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY) &&
+		       bt_mesh_prov->public_key_be && bt_mesh_prov->private_key_be) {
+		LOG_DBG("Use OOB Public and Private key");
+		pub_key = bt_mesh_prov->public_key_be;
+		priv_key = bt_mesh_prov->private_key_be;
+	} else {
+		pub_key = bt_mesh_pub_key_get();
+	}
+
+	if (!pub_key) {
+		LOG_ERR("No public key available");
+		return -ENOEXEC;
+	}
+
+	if (bt_mesh_dhkey_gen(pub_key, priv_key, bt_mesh_prov_link.dhkey)) {
+		LOG_ERR("Failed to generate DHKey");
+		return -ENOEXEC;
+	}
+	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, DH_KEY_SIZE));
+
+	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
+			      bt_mesh_prov_link.prov_salt, prov_device.new_dev_key);
+	if (err) {
+		LOG_ERR("Unable to generate device key");
+		return err;
+	}
+
+	bt_mesh_dev_key_cand(prov_device.new_dev_key);
+	/* Mark the link that was never opened as closed. */
+	atomic_set_bit(bt_mesh_prov_link.flags, COMPLETE);
+	bt_mesh_reprovision(addr);
+	bt_mesh_dev_key_cand_activate();
+
+	if (bt_mesh_prov->reprovisioned) {
+		LOG_DBG("Application reprovisioned callback 0x%04x", bt_mesh_primary_addr());
+		bt_mesh_prov->reprovisioned(bt_mesh_primary_addr());
+	}
+
+	prov_link_closed(PROV_BEARER_LINK_STATUS_SUCCESS);
+	return 0;
+}
+
 int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
 				struct bt_mesh_rpr_node *srv, uint16_t addr,
 				bool composition_change)
@@ -873,6 +948,11 @@ int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
 	if (!prov_device.node) {
 		LOG_ERR("No CDB node for 0x%04x", srv->addr);
 		return -ENOENT;
+	}
+
+	/* Check if server is on same device as client */
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV) && bt_mesh_has_addr(srv->addr)) {
+		return reprovision_local_client_server(addr);
 	}
 
 	return link_open(NULL, &pb_remote_cli, prov_device.node->net_idx, addr,

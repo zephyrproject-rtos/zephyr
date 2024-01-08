@@ -21,3 +21,4 @@ supported:
   - spi
   - usb_device
   - can
+vendor: st

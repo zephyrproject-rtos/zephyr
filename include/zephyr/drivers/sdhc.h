@@ -231,17 +231,44 @@ struct sdhc_host_props {
 	bool is_spi; /*!< Is the host using SPI mode */
 };
 
+/**
+ * @brief SD host controller interrupt sources
+ *
+ * Interrupt sources for SD host controller.
+ */
+enum sdhc_interrupt_source {
+	SDHC_INT_SDIO = BIT(0), /*!< Card interrupt, used by SDIO cards */
+	SDHC_INT_INSERTED = BIT(1), /*!< Card was inserted into slot */
+	SDHC_INT_REMOVED = BIT(2), /*!< Card was removed from slot */
+};
+
+/**
+ * @typedef sdhc_interrupt_cb_t
+ * @brief SDHC card interrupt callback prototype
+ *
+ * Function prototype for SDHC card interrupt callback.
+ * @param dev: SDHC device that produced interrupt
+ * @param reason: one of @ref sdhc_interrupt_source values.
+ * @param user_data: User data, set via @ref sdhc_enable_interrupt
+ */
+typedef void (*sdhc_interrupt_cb_t)(const struct device *dev, int reason,
+				    const void *user_data);
+
 __subsystem struct sdhc_driver_api {
 	int (*reset)(const struct device *dev);
 	int (*request)(const struct device *dev,
-			struct sdhc_command *cmd,
-			struct sdhc_data *data);
+		       struct sdhc_command *cmd,
+		       struct sdhc_data *data);
 	int (*set_io)(const struct device *dev, struct sdhc_io *ios);
 	int (*get_card_present)(const struct device *dev);
 	int (*execute_tuning)(const struct device *dev);
 	int (*card_busy)(const struct device *dev);
 	int (*get_host_props)(const struct device *dev,
-				struct sdhc_host_props *props);
+			      struct sdhc_host_props *props);
+	int (*enable_interrupt)(const struct device *dev,
+				sdhc_interrupt_cb_t callback,
+				int sources, void *user_data);
+	int (*disable_interrupt)(const struct device *dev, int sources);
 };
 
 /**
@@ -260,8 +287,7 @@ __syscall int sdhc_hw_reset(const struct device *dev);
 
 static inline int z_impl_sdhc_hw_reset(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->reset) {
 		return -ENOSYS;
@@ -285,13 +311,13 @@ static inline int z_impl_sdhc_hw_reset(const struct device *dev)
  * @retval -EIO: I/O error
  */
 __syscall int sdhc_request(const struct device *dev, struct sdhc_command *cmd,
-		struct sdhc_data *data);
+			   struct sdhc_data *data);
 
 static inline int z_impl_sdhc_request(const struct device *dev,
-		struct sdhc_command *cmd, struct sdhc_data *data)
+				      struct sdhc_command *cmd,
+				      struct sdhc_data *data)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->request) {
 		return -ENOSYS;
@@ -315,10 +341,9 @@ static inline int z_impl_sdhc_request(const struct device *dev,
 __syscall int sdhc_set_io(const struct device *dev, struct sdhc_io *io);
 
 static inline int z_impl_sdhc_set_io(const struct device *dev,
-	struct sdhc_io *io)
+				     struct sdhc_io *io)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->set_io) {
 		return -ENOSYS;
@@ -342,8 +367,7 @@ __syscall int sdhc_card_present(const struct device *dev);
 
 static inline int z_impl_sdhc_card_present(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->get_card_present) {
 		return -ENOSYS;
@@ -368,8 +392,7 @@ __syscall int sdhc_execute_tuning(const struct device *dev);
 
 static inline int z_impl_sdhc_execute_tuning(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->execute_tuning) {
 		return -ENOSYS;
@@ -393,8 +416,7 @@ __syscall int sdhc_card_busy(const struct device *dev);
 
 static inline int z_impl_sdhc_card_busy(const struct device *dev)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->card_busy) {
 		return -ENOSYS;
@@ -415,19 +437,76 @@ static inline int z_impl_sdhc_card_busy(const struct device *dev)
  * @retval -ENOTSUP host controller does not support this call
  */
 __syscall int sdhc_get_host_props(const struct device *dev,
-	struct sdhc_host_props *props);
+				  struct sdhc_host_props *props);
 
 static inline int z_impl_sdhc_get_host_props(const struct device *dev,
-	struct sdhc_host_props *props)
+					     struct sdhc_host_props *props)
 {
-	const struct sdhc_driver_api *api =
-		(const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
 
 	if (!api->get_host_props) {
 		return -ENOSYS;
 	}
 
 	return api->get_host_props(dev, props);
+}
+
+/**
+ * @brief Enable SDHC interrupt sources.
+ *
+ * Enables SDHC interrupt sources. Each subsequent call of this function
+ * should replace the previous callback set, and leave only the interrupts
+ * specified in the "sources" argument enabled.
+ * @param dev: SDHC device
+ * @param callback: Callback called when interrupt occurs
+ * @param sources: bitmask of @ref sdhc_interrupt_source values
+ *        indicating which interrupts should produce a callback
+ * @param user_data: parameter that will be passed to callback function
+ * @retval 0 interrupts were enabled, and callback was installed
+ * @retval -ENOTSUP: controller does not support this function
+ * @retval -EIO: I/O error
+ */
+__syscall int sdhc_enable_interrupt(const struct device *dev,
+				    sdhc_interrupt_cb_t callback,
+				    int sources, void *user_data);
+
+static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
+					       sdhc_interrupt_cb_t callback,
+					       int sources, void *user_data)
+{
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+
+	if (!api->enable_interrupt) {
+		return -ENOSYS;
+	}
+
+	return api->enable_interrupt(dev, callback, sources, user_data);
+}
+
+/**
+ * @brief Disable SDHC interrupt sources
+ *
+ * Disables SDHC interrupt sources. If multiple sources are enabled, only
+ * the ones specified in "sources" will be masked.
+ * @param dev: SDHC device
+ * @param sources: bitmask of @ref sdhc_interrupt_source values
+ *        indicating which interrupts should be disabled.
+ * @retval 0 interrupts were disabled
+ * @retval -ENOTSUP: controller does not support this function
+ * @retval -EIO: I/O error
+ */
+__syscall int sdhc_disable_interrupt(const struct device *dev, int sources);
+
+static inline int z_impl_sdhc_disable_interrupt(const struct device *dev,
+						int sources)
+{
+	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+
+	if (!api->disable_interrupt) {
+		return -ENOSYS;
+	}
+
+	return api->disable_interrupt(dev, sources);
 }
 
 /**

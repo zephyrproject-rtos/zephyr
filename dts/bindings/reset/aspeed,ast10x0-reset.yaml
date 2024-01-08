@@ -11,5 +11,5 @@ properties:
   "#reset-cells":
     const: 1
 
-clock-cells:
-  - reset_id
+reset-cells:
+  - id

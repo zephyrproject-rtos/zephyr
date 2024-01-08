@@ -818,6 +818,10 @@ static void thread_memory_write_done(void)
 	uint32_t size = defered_wr_sz;
 	size_t overflowed_len = (curr_offset + size) - BLOCK_SIZE;
 
+	if (BLOCK_SIZE > (curr_offset + size)) {
+		overflowed_len = 0;
+	}
+
 	if (overflowed_len > 0) {
 		memmove(page, &page[BLOCK_SIZE], overflowed_len);
 	}
@@ -968,10 +972,11 @@ USBD_DEFINE_CFG_DATA(mass_storage_config) = {
 	.endpoint = mass_ep_data
 };
 
-static void mass_thread_main(int arg1, int unused)
+static void mass_thread_main(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(unused);
-	ARG_UNUSED(arg1);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	while (1) {
 		k_sem_take(&disk_wait_sem, K_FOREVER);
@@ -1053,7 +1058,7 @@ static int mass_storage_init(void)
 	/* Start a thread to offload disk ops */
 	k_thread_create(&mass_thread_data, mass_thread_stack,
 			CONFIG_MASS_STORAGE_STACK_SIZE,
-			(k_thread_entry_t)mass_thread_main, NULL, NULL, NULL,
+			mass_thread_main, NULL, NULL, NULL,
 			DISK_THREAD_PRIO, 0, K_NO_WAIT);
 
 	k_thread_name_set(&mass_thread_data, "usb_mass");

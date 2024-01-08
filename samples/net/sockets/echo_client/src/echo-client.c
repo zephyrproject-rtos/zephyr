@@ -279,8 +279,12 @@ static void init_app(void)
 	init_udp();
 }
 
-static int start_client(void)
+static void start_client(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int iterations = CONFIG_NET_SAMPLE_SEND_ITERATIONS;
 	int i = 0;
 	int ret;
@@ -305,8 +309,6 @@ static int start_client(void)
 
 		stop_udp_and_tcp();
 	}
-
-	return ret;
 }
 
 int main(void)
@@ -318,6 +320,7 @@ int main(void)
 		 * app only after we have a connection, then we can start
 		 * it right away.
 		 */
+		connected = true;
 		k_sem_give(&run_app);
 	}
 
@@ -327,10 +330,9 @@ int main(void)
 	k_thread_access_grant(k_current_get(), &run_app);
 	k_mem_domain_add_thread(&app_domain, k_current_get());
 
-	k_thread_user_mode_enter((k_thread_entry_t)start_client, NULL, NULL,
-				 NULL);
+	k_thread_user_mode_enter(start_client, NULL, NULL, NULL);
 #else
-	exit(start_client());
+	start_client(NULL, NULL, NULL);
 #endif
 	return 0;
 }

@@ -138,17 +138,50 @@ The available configurations are:
    - &ocram_sys
    - &ocram_s_sys
 
-Load and run Zephyr on M4 from A53 using u-boot by copying the compiled
-``zephyr.bin`` to the first FAT partition of the SD card and plug the SD
-card into the board. Power it up and stop the u-boot execution at prompt.
+Load and run Zephyr on M4 from A53 using u-boot.
 
-Load the M4 binary onto the desired memory and start its execution using:
+.. tabs::
 
-.. code-block:: console
+   .. group-tab:: From an SD card
+      Copy the compiled ``zephyr.bin`` to the first FAT partition of the
+      SD card and plug the SD card into the board. Power it up and stop the u-boot
+      execution at prompt.
 
-   fatload mmc 0:1 0x40480000 zephyr.bin
-   cp.b 0x40480000 0x7e0000 0x8000
-   bootaux 0x7e0000
+      Load the M4 binary onto the desired memory and start its execution using:
+
+      .. code-block:: console
+
+         fatload mmc 0:1 0x40480000 zephyr.bin
+         cp.b 0x40480000 0x7e0000 0x8000
+         bootaux 0x7e0000
+
+   .. group-tab:: From serial
+      This procedure requires ``screen`` and ``lrzsz`` to be installed.
+
+      Start ``screen``, power up the board, and stop the u-boot execution at prompt:
+
+      .. code-block:: console
+
+         screen <tty-device> 115200
+
+      Start ``loadx`` with offset ``7e0000``:
+
+      .. code-block:: console
+
+         loadx 7e0000 115200
+
+      Send the compiled ``zephyr.bin`` with ``sx`` by pressing :kbd:`Ctrl-a` followed by :kbd:`:`
+      and write:
+
+      .. code-block:: console
+
+         exec !! sx </full/path/to/zephyr.bin>
+
+      Start execution:
+
+      .. code-block:: console
+
+         bootaux 0x7e0000
 
 Debugging
 =========

@@ -72,12 +72,18 @@
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
+#include <zephyr/linker/linker-devnull.h>
+
 MEMORY
 {
 #ifdef CONFIG_XIP
     ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
+
+#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
+    DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
+#endif
 
     LINKER_DT_REGIONS()
 
@@ -396,6 +402,10 @@ SECTION_PROLOGUE(.last_section,,)
   /* Fill last section with a word to ensure location counter and actual rom
    * region data usage match. */
   LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
+  /* __rom_region_size is used when configuring the PMP entry of the ROM region.
+   * Addresses (pmpaddr) in PMP registers need to be aligned to 4. Align
+   * __rom_region_size to 4 to meet that requirement. */
+  MPU_MIN_SIZE_ALIGN
 #endif
 } GROUP_LINK_IN(ROMABLE_REGION)
 

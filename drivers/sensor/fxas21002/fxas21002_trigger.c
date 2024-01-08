@@ -68,8 +68,13 @@ static void fxas21002_handle_int(const struct device *dev)
 }
 
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
-static void fxas21002_thread_main(struct fxas21002_data *data)
+static void fxas21002_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct fxas21002_data *data = p1;
+
 	while (true) {
 		k_sem_take(&data->trig_sem, K_FOREVER);
 		fxas21002_handle_int(data->dev);
@@ -173,7 +178,7 @@ int fxas21002_trigger_init(const struct device *dev)
 	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_FXAS21002_THREAD_STACK_SIZE,
-			(k_thread_entry_t)fxas21002_thread_main, data, 0, NULL,
+			fxas21002_thread_main, data, 0, NULL,
 			K_PRIO_COOP(CONFIG_FXAS21002_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD)

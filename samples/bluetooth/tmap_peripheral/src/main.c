@@ -24,20 +24,15 @@
 
 #include "tmap_peripheral.h"
 
-#define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
-				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
-				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
-				 BT_AUDIO_CONTEXT_TYPE_GAME | \
-				 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
-
 static struct bt_conn *default_conn;
 static struct k_work_delayable call_terminate_set_work;
 static struct k_work_delayable media_pause_set_work;
 
 static uint8_t unicast_server_addata[] = {
-	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
 	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
+	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
 	0x00, /* Metadata length */
 };
 
@@ -47,8 +42,8 @@ static const uint8_t cap_addata[] = {
 };
 
 static uint8_t tmap_addata[] = {
-	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL), /* TMAS UUID */
-	(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), 0x00, /* TMAP Role */
+	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL),                    /* TMAS UUID */
+	BT_BYTES_LIST_LE16(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), /* TMAP Role */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
@@ -57,7 +52,8 @@ static bool peer_is_ums;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE, 0x09, 0x41), /* Appearance - Earbud */
+	BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE,
+		      BT_BYTES_LIST_LE16(BT_APPEARANCE_WEARABLE_AUDIO_DEVICE_EARBUD)),
 	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
 		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL), BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL)),
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)

@@ -17,3 +17,4 @@ supported:
   - uart
   - watchdog
   - lora
+vendor: olimex

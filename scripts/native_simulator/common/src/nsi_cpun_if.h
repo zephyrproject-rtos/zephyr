@@ -21,6 +21,7 @@ void nsif_cpun_boot(int n);
 int nsif_cpun_cleanup(int n);
 void nsif_cpun_irq_raised(int n);
 void nsif_cpun_irq_raised_from_sw(int n);
+void nsif_cpun_test_hook(int n, void *p);
 
 #ifdef __cplusplus
 }

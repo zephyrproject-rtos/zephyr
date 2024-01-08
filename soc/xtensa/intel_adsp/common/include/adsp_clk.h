@@ -59,6 +59,8 @@ struct adsp_cpu_clock_info *adsp_cpu_clocks_get(void);
 #define ADSP_CPU_CLOCK_FREQ_WOVCRO	ADSP_CPU_CLOCK_FREQ(wovcro)
 #endif
 
+#define ADSP_CPU_CLOCK_FREQ_IPLL	ADSP_CPU_CLOCK_FREQ(ipll)
+
 
 /* Clock sources used by dai */
 #define ADSP_CLOCK_SOURCE_XTAL_OSC		0

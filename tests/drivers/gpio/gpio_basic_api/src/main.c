@@ -115,3 +115,9 @@ ZTEST_SUITE(gpio_port_cb_mgmt, NULL, gpio_basic_setup, NULL, NULL, NULL);
 
 /* Test GPIO callbacks */
 ZTEST_SUITE(gpio_port_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO port configuration influence on callbacks. Want to run just
+ * after flash, hence the name starting in 'a'
+ */
+ZTEST_SUITE(after_flash_gpio_config_trigger, NULL, gpio_basic_setup, NULL, NULL,
+	    NULL);

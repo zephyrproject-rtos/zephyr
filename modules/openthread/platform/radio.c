@@ -58,7 +58,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #define CHANNEL_COUNT OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX - OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN + 1
 
-#define PHY_SHR_DURATION 160 /* duration of SHR in us */
+/* PHY header duration in us (i.e. 2 symbol periods @ 62.5k symbol rate), see
+ * IEEE 802.15.4, sections 12.1.3.1, 12.2.5 and 12.3.3.
+ */
+#define PHR_DURATION_US 32U
 
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
@@ -186,11 +189,7 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 	ack_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi_dbm(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
-
-	/* OpenThread expects the timestamp to point to the end of SFD */
-	ack_frame.mInfo.mRxInfo.mTimestamp = pkt_time->second * USEC_PER_SEC +
-					     pkt_time->nanosecond / NSEC_PER_USEC;
+	ack_frame.mInfo.mRxInfo.mTimestamp = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
 #endif
 
 	return NET_OK;
@@ -230,7 +229,7 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 			set_pending_event(PENDING_EVENT_RX_FAILED);
 		}
 		break;
-	case IEEE802154_EVENT_SLEEP:
+	case IEEE802154_EVENT_RX_OFF:
 		set_pending_event(PENDING_EVENT_SLEEP);
 		break;
 	default:
@@ -397,10 +396,8 @@ void transmit_message(struct k_work *tx_job)
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 #if defined(CONFIG_NET_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
-				 sTransmitFrame.mInfo.mTxInfo.mTxDelay + PHY_SHR_DURATION;
-		struct net_ptp_time timestamp =
-			ns_to_net_ptp_time(convert_32bit_us_wrapped_to_64bit_ns(tx_at));
-		net_pkt_set_timestamp(tx_pkt, &timestamp);
+				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
+		net_pkt_set_timestamp_ns(tx_pkt, convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 #endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
@@ -478,21 +475,12 @@ static void openthread_handle_received_frame(otInstance *instance,
 	recv_frame.mInfo.mRxInfo.mAckedWithFramePending = net_pkt_ieee802154_ack_fpb(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
-
-	/* OpenThread expects the timestamp to point to the end of SFD */
-	recv_frame.mInfo.mRxInfo.mTimestamp =
-		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
+	recv_frame.mInfo.mRxInfo.mTimestamp = net_pkt_timestamp_ns(pkt) / NSEC_PER_USEC;
 #endif
 
-	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
-		recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck =
-			net_pkt_ieee802154_ack_seb(pkt);
-		recv_frame.mInfo.mRxInfo.mAckFrameCounter =
-			net_pkt_ieee802154_ack_fc(pkt);
-		recv_frame.mInfo.mRxInfo.mAckKeyId =
-			net_pkt_ieee802154_ack_keyid(pkt);
-	}
+	recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck = net_pkt_ieee802154_ack_seb(pkt);
+	recv_frame.mInfo.mRxInfo.mAckFrameCounter = net_pkt_ieee802154_ack_fc(pkt);
+	recv_frame.mInfo.mRxInfo.mAckKeyId = net_pkt_ieee802154_ack_keyid(pkt);
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance, &recv_frame, OT_ERROR_NONE);
@@ -902,7 +890,24 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_RECEIVE_TIMING;
 	}
 
+	if (radio_caps & IEEE802154_RX_ON_WHEN_IDLE) {
+		caps |= OT_RADIO_CAPS_RX_ON_WHEN_IDLE;
+	}
+
 	return caps;
+}
+
+void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aRxOnWhenIdle)
+{
+	struct ieee802154_config config = {
+		.rx_on_when_idle = aRxOnWhenIdle
+	};
+
+	ARG_UNUSED(aInstance);
+
+	LOG_DBG("RxOnWhenIdle=%d", aRxOnWhenIdle ? 1 : 0);
+
+	radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_ON_WHEN_IDLE, &config);
 }
 
 bool otPlatRadioGetPromiscuous(otInstance *aInstance)
@@ -1255,29 +1260,42 @@ void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacF
 otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShortAddress aShortAddr,
 			     const otExtAddress *aExtAddr)
 {
+	struct ieee802154_config config = {
+		.ack_ie.short_addr = aShortAddr,
+		.ack_ie.ext_addr = aExtAddr->m8,
+	};
 	int result;
-	uint8_t ie_header[OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE];
-	struct ieee802154_config config;
 
 	ARG_UNUSED(aInstance);
 
-	ie_header[0] = CSL_IE_HEADER_BYTES_LO;
-	ie_header[1] = CSL_IE_HEADER_BYTES_HI;
-	/* Leave CSL Phase empty intentionally */
-	sys_put_le16(aCslPeriod, &ie_header[OT_IE_HEADER_SIZE + 2]);
-	config.ack_ie.data = ie_header;
-	config.ack_ie.short_addr = aShortAddr;
-	config.ack_ie.ext_addr = aExtAddr->m8;
-
-	if (aCslPeriod > 0) {
-		config.ack_ie.data_len = OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE;
-	} else {
-		config.ack_ie.data_len = 0;
-	}
-	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
-
+	/* Configure the CSL period first to give drivers a chance to validate
+	 * the IE for consistency if they wish to.
+	 */
 	config.csl_period = aCslPeriod;
-	result += radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_PERIOD, &config);
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_PERIOD, &config);
+	if (result) {
+		return OT_ERROR_FAILED;
+	}
+
+	/* Configure the CSL IE. */
+	if (aCslPeriod > 0) {
+		uint8_t header_ie_buf[OT_IE_HEADER_SIZE + OT_CSL_IE_SIZE] = {
+			CSL_IE_HEADER_BYTES_LO,
+			CSL_IE_HEADER_BYTES_HI,
+		};
+		struct ieee802154_header_ie *header_ie =
+			(struct ieee802154_header_ie *)header_ie_buf;
+
+		/* Write CSL period and leave CSL phase empty as it will be
+		 * injected on-the-fly by the driver.
+		 */
+		header_ie->content.csl.reduced.csl_period = sys_cpu_to_le16(aCslPeriod);
+		config.ack_ie.header_ie = header_ie;
+	} else {
+		config.ack_ie.header_ie = NULL;
+	}
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
@@ -1286,10 +1304,15 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 {
 	ARG_UNUSED(aInstance);
 
+	/* CSL sample time points to "start of MAC" while the expected RX time
+	 * refers to "end of SFD".
+	 */
 	struct ieee802154_config config = {
-		.csl_rx_time = convert_32bit_us_wrapped_to_64bit_ns(aCslSampleTime)};
+		.expected_rx_time =
+			convert_32bit_us_wrapped_to_64bit_ns(aCslSampleTime - PHR_DURATION_US),
+	};
 
-	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME, &config);
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_EXPECTED_RX_TIME, &config);
 }
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVER */
 
@@ -1405,20 +1428,19 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 					  const otShortAddress aShortAddress,
 					  const otExtAddress *aExtAddress)
 {
-	int result;
-	uint8_t ie_header[OT_ACK_IE_MAX_SIZE];
-	uint16_t ie_header_len;
 	struct ieee802154_config config = {
 		.ack_ie.short_addr = aShortAddress,
 		.ack_ie.ext_addr = aExtAddress->m8,
 	};
+	uint8_t header_ie_buf[OT_ACK_IE_MAX_SIZE];
+	uint16_t header_ie_len;
+	int result;
 
 	ARG_UNUSED(aInstance);
 
-	ie_header_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
-						aLinkMetrics.mRssi, ie_header);
-	config.ack_ie.data = ie_header;
-	config.ack_ie.data_len = ie_header_len;
+	header_ie_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
+						aLinkMetrics.mRssi, header_ie_buf);
+	config.ack_ie.header_ie = (struct ieee802154_header_ie *)header_ie_buf;
 	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;

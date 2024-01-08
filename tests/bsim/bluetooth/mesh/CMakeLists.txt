@@ -30,6 +30,7 @@ if(CONFIG_SETTINGS)
    src/test_dfu.c
    src/test_blob.c
    src/test_sar.c
+   src/test_lcd.c
  )
  endif()
 
@@ -45,6 +46,12 @@ elseif(CONFIG_BT_MESH_GATT_PROXY)
  target_sources(app PRIVATE
   src/test_advertiser.c
  )
+
+ if(CONFIG_BT_MESH_V1d1)
+  target_sources(app PRIVATE
+  src/test_beacon.c
+  )
+  endif()
 
 elseif(CONFIG_BT_CTLR_LOW_LAT)
 
@@ -72,7 +79,7 @@ else()
    src/test_blob.c
    src/test_op_agg.c
    src/test_sar.c
-   src/test_lcd.c
+   src/test_cdp1.c
   )
  endif()
 

@@ -135,6 +135,24 @@ commands are documented in the pages for those commands.
        stdout is a terminal.
    * - ``commands.allow_extensions``
      - Boolean, default ``true``, disables :ref:`west-extensions` if ``false``
+   * - ``grep.color``
+     - String, default empty. Set this to ``never`` to disable ``west grep``
+       color output. If set, ``west grep`` passes the value to the grep tool's
+       ``--color`` option.
+   * - ``grep.tool``
+     - String, one of ``"git-grep"`` (default), ``"ripgrep"``, or ``"grep"``.
+       The grep tool that ``west grep`` should use.
+   * - ``grep.<TOOL>-args``
+     - String, default empty. The ``<TOOL>`` part is a pattern that can be any
+       ``grep.tool`` value, so ``grep.ripgrep-args`` is an example
+       configuration option. If set, arguments that ``west grep`` should pass
+       to the corresponding grep tool. Run ``west help grep`` for details.
+   * - ``grep.<TOOL>-path``
+     - String, default empty. The ``<TOOL>`` part is a pattern that can be any
+       ``grep.tool`` value, so ``grep.ripgrep-path`` is an example
+       configuration option. The path to the corresponding tool that ``west
+       grep`` should use instead of searching for the command. Run ``west help
+       grep`` for details.
    * - ``manifest.file``
      - String, default ``west.yml``. Relative path from the manifest repository
        root directory to the manifest file used by ``west init`` and other

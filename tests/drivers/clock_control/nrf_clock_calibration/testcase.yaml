@@ -2,7 +2,7 @@ tests:
   drivers.clock.nrf5_clock_calibration:
     tags:
       - drivers
-      - clock
+      - clock_control
     platform_allow:
       - nrf51dk_nrf51422
       - nrf52dk_nrf52832

@@ -39,7 +39,7 @@ static inline uint32_t _data(Trng * const trng)
 #endif
 }
 
-static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
+static int entropy_sam_wait_ready(Trng * const trng)
 {
 	/* According to the reference manual, the generator provides
 	 * one 32-bit random value every 84 peripheral clock cycles.
@@ -56,17 +56,6 @@ static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 		if (timeout-- == 0) {
 			return -ETIMEDOUT;
 		}
-
-		if ((flags & ENTROPY_BUSYWAIT) == 0U) {
-			/* This internal function is used by both get_entropy,
-			 * and get_entropy_isr APIs. The later may call this
-			 * function with the ENTROPY_BUSYWAIT flag set. In
-			 * that case make no assumption that the kernel is
-			 * initialized when the function is called; so, just
-			 * do busy-wait for the random data to be ready.
-			 */
-			k_yield();
-		}
 	}
 
 	return 0;
@@ -74,7 +63,7 @@ static int entropy_sam_wait_ready(Trng * const trng, uint32_t flags)
 
 static int entropy_sam_get_entropy_internal(const struct device *dev,
 					    uint8_t *buffer,
-					    uint16_t length, uint32_t flags)
+					    uint16_t length)
 {
 	const struct trng_sam_dev_cfg *config = dev->config;
 	Trng *const trng = config->regs;
@@ -84,7 +73,7 @@ static int entropy_sam_get_entropy_internal(const struct device *dev,
 		uint32_t value;
 		int res;
 
-		res = entropy_sam_wait_ready(trng, flags);
+		res = entropy_sam_wait_ready(trng);
 		if (res < 0) {
 			return res;
 		}
@@ -103,7 +92,7 @@ static int entropy_sam_get_entropy_internal(const struct device *dev,
 static int entropy_sam_get_entropy(const struct device *dev, uint8_t *buffer,
 				   uint16_t length)
 {
-	return entropy_sam_get_entropy_internal(dev, buffer, length, 0);
+	return entropy_sam_get_entropy_internal(dev, buffer, length);
 }
 
 static int entropy_sam_get_entropy_isr(const struct device *dev,
@@ -144,7 +133,7 @@ static int entropy_sam_get_entropy_isr(const struct device *dev,
 		/* Allowed to busy-wait */
 		int ret =
 			entropy_sam_get_entropy_internal(dev,
-				buffer, length, flags);
+				buffer, length);
 
 		if (ret == 0) {
 			/* Data retrieved successfully. */

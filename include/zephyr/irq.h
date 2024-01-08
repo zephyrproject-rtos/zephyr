@@ -71,6 +71,31 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 
 /**
+ * Disconnect a dynamic interrupt.
+ *
+ * Use this in conjunction with shared interrupts to remove a routine/parameter
+ * pair from the list of clients using the same interrupt line. If the interrupt
+ * is not being shared then the associated _sw_isr_table entry will be replaced
+ * by (NULL, z_irq_spurious) (default entry).
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
+ *
+ * @return 0 in case of success, negative value otherwise
+ */
+static inline int
+irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+		       void (*routine)(const void *parameter),
+		       const void *parameter, uint32_t flags)
+{
+	return arch_irq_disconnect_dynamic(irq, priority, routine,
+					   parameter, flags);
+}
+
+/**
  * @brief Initialize a 'direct' interrupt handler.
  *
  * This routine initializes an interrupt handler for an IRQ. The IRQ must be
@@ -253,137 +278,6 @@ void z_smp_global_unlock(unsigned int key);
 #define irq_unlock(key) z_smp_global_unlock(key)
 #else
 #define irq_unlock(key) arch_irq_unlock(key)
-#endif
-
-/**
- * @brief Return IRQ level
- * This routine returns the interrupt level number of the provided interrupt.
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 1 if IRQ level 1, 2 if IRQ level 2, 3 if IRQ level 3
- */
-static inline unsigned int irq_get_level(unsigned int irq)
-{
-	const uint32_t mask2 = BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS) <<
-		CONFIG_1ST_LEVEL_INTERRUPT_BITS;
-	const uint32_t mask3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) <<
-		(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
-
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS) && (irq & mask3) != 0) {
-		return 3;
-	}
-
-	if (IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS) && (irq & mask2) != 0) {
-		return 2;
-	}
-
-	return 1;
-}
-
-#if defined(CONFIG_2ND_LEVEL_INTERRUPTS)
-/**
- * @brief Return the 2nd level interrupt number
- *
- * This routine returns the second level irq number of the zephyr irq
- * number passed in
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 2nd level IRQ number
- */
-static inline unsigned int irq_from_level_2(unsigned int irq)
-{
-#if defined(CONFIG_3RD_LEVEL_INTERRUPTS)
-	return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
-#else
-	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) - 1;
-#endif
-}
-
-/**
- * @brief Converts irq from level 1 to level 2 format
- *
- *
- * This routine converts the input into the level 2 irq number format
- *
- * @note Values >= 0xFF are invalid
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 2nd level IRQ number
- */
-static inline unsigned int irq_to_level_2(unsigned int irq)
-{
-	return (irq + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS;
-}
-
-/**
- * @brief Returns the parent IRQ of the level 2 raw IRQ number
- *
- *
- * The parent of a 2nd level interrupt is in the 1st byte
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 2nd level IRQ parent
- */
-static inline unsigned int irq_parent_level_2(unsigned int irq)
-{
-	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
-}
-#endif
-
-#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-/**
- * @brief Return the 3rd level interrupt number
- *
- *
- * This routine returns the third level irq number of the zephyr irq
- * number passed in
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 3rd level IRQ number
- */
-static inline unsigned int irq_from_level_3(unsigned int irq)
-{
-	return (irq >> (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
-}
-
-/**
- * @brief Converts irq from level 1 to level 3 format
- *
- *
- * This routine converts the input into the level 3 irq number format
- *
- * @note Values >= 0xFF are invalid
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 3rd level IRQ number
- */
-static inline unsigned int irq_to_level_3(unsigned int irq)
-{
-	return (irq + 1) << (CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
-}
-
-/**
- * @brief Returns the parent IRQ of the level 3 raw IRQ number
- *
- *
- * The parent of a 3rd level interrupt is in the 2nd byte
- *
- * @param irq IRQ number in its zephyr format
- *
- * @return 3rd level IRQ parent
- */
-static inline unsigned int irq_parent_level_3(unsigned int irq)
-{
-	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
-}
 #endif
 
 /**

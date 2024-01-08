@@ -19,8 +19,8 @@
 			};
 		};
 
-		adc1: adc@40012400 {
-			temp-channel = <18>;
+		eeprom: eeprom@8080000{
+			reg = <0x08080000 512>;
 		};
 	};
 };

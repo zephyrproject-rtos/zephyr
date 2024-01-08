@@ -9,7 +9,7 @@ config BOARD
 
 if BT
 
-choice CYW43XXX_PART
+choice AIROC_PART
 	default CYW4343W
 endchoice
 

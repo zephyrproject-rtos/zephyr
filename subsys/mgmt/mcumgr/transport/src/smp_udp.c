@@ -42,6 +42,9 @@ BUILD_ASSERT(0, "Either IPv4 or IPv6 SMP must be enabled for the MCUmgr UDP SMP 
 		"CONFIG_MCUMGR_TRANSPORT_UDP_IPV4 or CONFIG_MCUMGR_TRANSPORT_UDP_IPV6");
 #endif
 
+BUILD_ASSERT(sizeof(struct sockaddr) <= CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE,
+	     "CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE must be >= sizeof(struct sockaddr)");
+
 #define IS_THREAD_RUNNING(thread)					\
 	(thread.base.thread_state & (_THREAD_PENDING |			\
 				     _THREAD_PRESTART |			\
@@ -78,20 +81,7 @@ struct configs {
 #endif
 };
 
-static struct configs configs = {
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	.ipv4 = {
-		.proto = PROTOCOL_IPV4,
-		.sock  = -1,
-	},
-#endif
-#ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	.ipv6 = {
-		.proto = PROTOCOL_IPV6,
-		.sock  = -1,
-	},
-#endif
-};
+static struct configs smp_udp_configs;
 
 static struct net_mgmt_event_callback smp_udp_mgmt_cb;
 
@@ -118,7 +108,7 @@ static int smp_udp4_tx(struct net_buf *nb)
 	int ret;
 	struct sockaddr *addr = net_buf_user_data(nb);
 
-	ret = sendto(configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+	ret = sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
 		ret = MGMT_ERR_EINVAL;
@@ -138,7 +128,7 @@ static int smp_udp6_tx(struct net_buf *nb)
 	int ret;
 	struct sockaddr *addr = net_buf_user_data(nb);
 
-	ret = sendto(configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+	ret = sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
 
 	if (ret < 0) {
 		ret = MGMT_ERR_EINVAL;
@@ -285,14 +275,14 @@ static void smp_udp_net_event_handler(struct net_mgmt_event_callback *cb, uint32
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
 		LOG_INF("Network connected");
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-		if (IS_THREAD_RUNNING(configs.ipv4.thread)) {
-			k_sem_give(&configs.ipv4.network_ready_sem);
+		if (IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+			k_sem_give(&smp_udp_configs.ipv4.network_ready_sem);
 		}
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-		if (IS_THREAD_RUNNING(configs.ipv6.thread)) {
-			k_sem_give(&configs.ipv6.network_ready_sem);
+		if (IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+			k_sem_give(&smp_udp_configs.ipv6.network_ready_sem);
 		}
 #endif
 	} else if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
@@ -316,9 +306,9 @@ int smp_udp_open(void)
 	bool started = false;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	if (!IS_THREAD_RUNNING(configs.ipv4.thread)) {
-		(void)k_sem_reset(&configs.ipv4.network_ready_sem);
-		create_thread(&configs.ipv4, "smp_udp4");
+	if (!IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+		(void)k_sem_reset(&smp_udp_configs.ipv4.network_ready_sem);
+		create_thread(&smp_udp_configs.ipv4, "smp_udp4");
 		started = true;
 	} else {
 		LOG_ERR("IPv4 UDP MCUmgr thread is already running");
@@ -326,9 +316,9 @@ int smp_udp_open(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	if (!IS_THREAD_RUNNING(configs.ipv6.thread)) {
-		(void)k_sem_reset(&configs.ipv6.network_ready_sem);
-		create_thread(&configs.ipv6, "smp_udp6");
+	if (!IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+		(void)k_sem_reset(&smp_udp_configs.ipv6.network_ready_sem);
+		create_thread(&smp_udp_configs.ipv6, "smp_udp6");
 		started = true;
 	} else {
 		LOG_ERR("IPv6 UDP MCUmgr thread is already running");
@@ -346,12 +336,12 @@ int smp_udp_open(void)
 int smp_udp_close(void)
 {
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	if (IS_THREAD_RUNNING(configs.ipv4.thread)) {
-		k_thread_abort(&(configs.ipv4.thread));
+	if (IS_THREAD_RUNNING(smp_udp_configs.ipv4.thread)) {
+		k_thread_abort(&(smp_udp_configs.ipv4.thread));
 
-		if (configs.ipv4.sock >= 0) {
-			close(configs.ipv4.sock);
-			configs.ipv4.sock = -1;
+		if (smp_udp_configs.ipv4.sock >= 0) {
+			close(smp_udp_configs.ipv4.sock);
+			smp_udp_configs.ipv4.sock = -1;
 		}
 	} else {
 		LOG_ERR("IPv4 UDP MCUmgr thread is not running");
@@ -359,12 +349,12 @@ int smp_udp_close(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	if (IS_THREAD_RUNNING(configs.ipv6.thread)) {
-		k_thread_abort(&(configs.ipv6.thread));
+	if (IS_THREAD_RUNNING(smp_udp_configs.ipv6.thread)) {
+		k_thread_abort(&(smp_udp_configs.ipv6.thread));
 
-		if (configs.ipv6.sock >= 0) {
-			close(configs.ipv6.sock);
-			configs.ipv6.sock = -1;
+		if (smp_udp_configs.ipv6.sock >= 0) {
+			close(smp_udp_configs.ipv6.sock);
+			smp_udp_configs.ipv6.sock = -1;
 		}
 	} else {
 		LOG_ERR("IPv6 UDP MCUmgr thread is not running");
@@ -379,17 +369,20 @@ static void smp_udp_start(void)
 	int rc;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV4
-	k_sem_init(&configs.ipv4.network_ready_sem, 0, 1);
-	configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
-	configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
-	configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+	smp_udp_configs.ipv4.proto = PROTOCOL_IPV4;
+	smp_udp_configs.ipv4.sock = -1;
 
-	rc = smp_transport_init(&configs.ipv4.smp_transport);
+	k_sem_init(&smp_udp_configs.ipv4.network_ready_sem, 0, 1);
+	smp_udp_configs.ipv4.smp_transport.functions.output = smp_udp4_tx;
+	smp_udp_configs.ipv4.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	smp_udp_configs.ipv4.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+
+	rc = smp_transport_init(&smp_udp_configs.ipv4.smp_transport);
 #ifdef CONFIG_SMP_CLIENT
 	if (rc == 0) {
-		configs.ipv4_transport.smpt = &configs.ipv4.smp_transport;
-		configs.ipv4_transport.smpt_type = SMP_UDP_IPV4_TRANSPORT;
-		smp_client_transport_register(&configs.ipv4_transport);
+		smp_udp_configs.ipv4_transport.smpt = &smp_udp_configs.ipv4.smp_transport;
+		smp_udp_configs.ipv4_transport.smpt_type = SMP_UDP_IPV4_TRANSPORT;
+		smp_client_transport_register(&smp_udp_configs.ipv4_transport);
 	}
 #endif
 	if (rc) {
@@ -398,17 +391,20 @@ static void smp_udp_start(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_UDP_IPV6
-	k_sem_init(&configs.ipv6.network_ready_sem, 0, 1);
-	configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
-	configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
-	configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+	smp_udp_configs.ipv6.proto = PROTOCOL_IPV6;
+	smp_udp_configs.ipv6.sock = -1;
 
-	rc = smp_transport_init(&configs.ipv6.smp_transport);
+	k_sem_init(&smp_udp_configs.ipv6.network_ready_sem, 0, 1);
+	smp_udp_configs.ipv6.smp_transport.functions.output = smp_udp6_tx;
+	smp_udp_configs.ipv6.smp_transport.functions.get_mtu = smp_udp_get_mtu;
+	smp_udp_configs.ipv6.smp_transport.functions.ud_copy = smp_udp_ud_copy;
+
+	rc = smp_transport_init(&smp_udp_configs.ipv6.smp_transport);
 #ifdef CONFIG_SMP_CLIENT
 	if (rc == 0) {
-		configs.ipv6_transport.smpt = &configs.ipv6.smp_transport;
-		configs.ipv6_transport.smpt_type = SMP_UDP_IPV6_TRANSPORT;
-		smp_client_transport_register(&configs.ipv6_transport);
+		smp_udp_configs.ipv6_transport.smpt = &smp_udp_configs.ipv6.smp_transport;
+		smp_udp_configs.ipv6_transport.smpt_type = SMP_UDP_IPV6_TRANSPORT;
+		smp_client_transport_register(&smp_udp_configs.ipv6_transport);
 	}
 #endif
 

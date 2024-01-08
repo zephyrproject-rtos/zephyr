@@ -12,3 +12,4 @@ testing:
 supported:
   - spi
   - memc
+vendor: sifive

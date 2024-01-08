@@ -428,6 +428,80 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		canfd0: canfd@40020000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40020000 0x200>, <0x40020200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <112 0>, <113 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			resets = <&rst NUMAKER_CANFD0_RST>;
+			clocks = <&pcc NUMAKER_CANFD0_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD0SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD0(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+			sample-point = <875>;
+			sample-point-data = <875>;
+		};
+
+		canfd1: canfd@40024000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40024000 0x200>, <0x40024200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <114 0>, <115 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			resets = <&rst NUMAKER_CANFD1_RST>;
+			clocks = <&pcc NUMAKER_CANFD1_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD1SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD1(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+			sample-point = <875>;
+			sample-point-data = <875>;
+		};
+
+		canfd2: canfd@40028000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x40028000 0x200>, <0x40028200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <120 0>, <121 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			resets = <&rst NUMAKER_CANFD2_RST>;
+			clocks = <&pcc NUMAKER_CANFD2_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD2SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD2(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+			sample-point = <875>;
+			sample-point-data = <875>;
+		};
+
+		canfd3: canfd@4002c000 {
+			compatible = "nuvoton,numaker-canfd";
+			reg = <0x4002c000 0x200>, <0x4002c200 0x1800>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <122 0>, <123 0>;
+			interrupt-names = "LINE_0", "LINE_1";
+			resets = <&rst NUMAKER_CANFD3_RST>;
+			clocks = <&pcc NUMAKER_CANFD3_MODULE
+				  NUMAKER_CLK_CLKSEL0_CANFD3SEL_HCLK
+				  NUMAKER_CLK_CLKDIV5_CANFD3(1)>;
+			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			status = "disabled";
+			sample-point = <875>;
+			sample-point-data = <875>;
+		};
+
+		emac: ethernet@40012000 {
+			compatible = "nuvoton,numaker-ethernet";
+			reg = <0x40012000 0x105C>;
+			interrupts = <66 0>;
+			resets = <&rst NUMAKER_EMAC0_RST>;
+			phy-addr = <1>;
+			clocks = <&pcc NUMAKER_EMAC0_MODULE 0 0>;
+			status = "disabled";
+		};
 	};
 };
 

@@ -350,6 +350,7 @@
 			reg = <0x400d1000 0x2000>;
 			interrupts = <10 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
+			vref-mv = <2816>;
 			status = "disabled";
 		};
 

@@ -173,6 +173,36 @@
 			ambiq,pwrcfg = <&pwrcfg 0x4 0x100>;
 		};
 
+		mspi0: spi@40060000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40060000 0x400>;
+			interrupts = <20 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x4000>;
+		};
+
+		mspi1: spi@40061000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40061000 0x400>;
+			interrupts = <21 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x8000>;
+		};
+
+		mspi2: spi@40062000 {
+			compatible = "ambiq,mspi";
+			reg = <0x40062000 0x400>;
+			interrupts = <22 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x4 0x10000>;
+		};
+
 		pinctrl: pin-controller@40010000 {
 			compatible = "ambiq,apollo4-pinctrl";
 			reg = <0x40010000 0x800>;

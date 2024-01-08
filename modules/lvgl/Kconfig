@@ -22,6 +22,36 @@ config LV_CONF_SKIP
 	bool
 	default n
 
+config LV_USE_LOG
+	bool
+
+config LV_LOG_LEVEL_NONE
+	bool
+
+config LV_LOG_LEVEL_ERROR
+	bool
+
+config LV_LOG_LEVEL_WARN
+	bool
+
+config LV_LOG_LEVEL_INFO
+	bool
+
+config LV_LOG_LEVEL_USER
+	bool
+
+config LV_LOG_LEVEL_TRACE
+	bool
+
+config LV_Z_LOG_LEVEL
+	int
+	default 0 if LV_LOG_LEVEL_NONE || !LV_USE_LOG
+	default 1 if LV_LOG_LEVEL_ERROR
+	default 2 if LV_LOG_LEVEL_WARN
+	default 3 if LV_LOG_LEVEL_INFO
+	default 3 if LV_LOG_LEVEL_USER
+	default 4 if LV_LOG_LEVEL_TRACE
+
 config APP_LINK_WITH_LVGL
 	bool "Link 'app' with LVGL"
 	default y

@@ -28,8 +28,6 @@ See :ref:`lwm2m_interface` for more information.
 
 Supported RFCs:
 
-Supported RFCs:
-
 - `RFC7252: The Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7252>`_
 - `RFC6690: Constrained RESTful Environments (CoRE) Link Format <https://tools.ietf.org/html/rfc6690>`_
 - `RFC7959: Block-Wise Transfers in the Constrained Application Protocol (CoAP) <https://tools.ietf.org/html/rfc7959>`_
@@ -42,6 +40,11 @@ Sample Usage
 
 CoAP Server
 ===========
+
+.. note::
+
+   A :ref:`coap_server_interface` subsystem is available, the following is for creating a custom
+   server implementation.
 
 To create a CoAP server, resources for the server need to be defined.
 The ``.well-known/core`` resource should be added before all other
@@ -97,6 +100,11 @@ with resource path like '/some_resource/+/#'.
 CoAP Client
 ===========
 
+.. note::
+
+   A :ref:`coap_client_interface` subsystem is available, the following is for creating a custom
+   client implementation.
+
 If the CoAP client knows about resources in the CoAP server, the client can start
 prepare CoAP requests and wait for responses. If the client doesn't know
 about resources in the CoAP server, it can request resources through
@@ -142,7 +150,7 @@ in Zephyr.
 
 See the `net-tools <https://github.com/zephyrproject-rtos/net-tools>`_ project for more details
 
-The :ref:`coap-server-sample` sample can be built and executed on QEMU as described
+The :zephyr:code-sample:`coap-server` sample can be built and executed on QEMU as described
 in :ref:`networking_with_qemu`.
 
 Use this command on the host to run the libcoap implementation of
@@ -172,16 +180,16 @@ Install eclipse-titan and set symbolic links for titan tools
 
     export TTCN3_DIR=/usr/share/titan
 
-    git clone https://github.com/eclipse/titan.misc.git
+    git clone https://gitlab.eclipse.org/eclipse/titan/titan.misc.git
 
     cd titan.misc
 
 Follow the instruction to setup CoAP test suite from here:
 
-- https://github.com/eclipse/titan.misc
-- https://github.com/eclipse/titan.misc/tree/master/CoAP_Conf
+- https://gitlab.eclipse.org/eclipse/titan/titan.misc
+- https://gitlab.eclipse.org/eclipse/titan/titan.misc/-/tree/master/CoAP_Conf
 
-After the build is complete, the :ref:`coap-server-sample` sample can be built
+After the build is complete, the :zephyr:code-sample:`coap-server` sample can be built
 and executed on QEMU as described in :ref:`networking_with_qemu`.
 
 Change the client (test suite) and server (Zephyr coap-server sample) addresses

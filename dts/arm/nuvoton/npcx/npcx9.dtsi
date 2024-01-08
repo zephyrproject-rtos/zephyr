@@ -58,6 +58,8 @@
 	};
 
 	soc {
+		compatible = "nuvoton,npcx9", "nuvoton,npcx", "simple-bus";
+
 		/* Specific soc devices in npcx9 series */
 		itims: timer@400b0000 {
 			compatible = "nuvoton,npcx-itim-timer";
@@ -256,7 +258,6 @@
 		/* ADC0 comparator configuration in npcx9 series */
 		adc0: adc@400d1000 {
 			channel-count = <12>;
-			threshold-reg-offset = <0x60>;
 			threshold-count = <6>;
 		};
 
@@ -268,6 +269,7 @@
 		sha0: sha@13c {
 			compatible = "nuvoton,npcx-sha";
 			reg = <0x13c 0x3c>;
+			context-buffer-size = <212>;
 			status = "disabled";
 		};
 	};

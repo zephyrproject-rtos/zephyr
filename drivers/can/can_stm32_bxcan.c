@@ -21,7 +21,7 @@
 
 LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
-#define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
+#define CAN_INIT_TIMEOUT  (10 * (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC))
 
 #define DT_DRV_COMPAT st_stm32_bxcan
 
@@ -126,11 +126,12 @@ static void can_stm32_rx_fifo_pop(CAN_FIFOMailBox_TypeDef *mbox, struct can_fram
 
 	if ((mbox->RIR & CAN_RI0R_RTR) != 0) {
 		frame->flags |= CAN_FRAME_RTR;
+	} else {
+		frame->data_32[0] = mbox->RDLR;
+		frame->data_32[1] = mbox->RDHR;
 	}
 
 	frame->dlc = mbox->RDTR & (CAN_RDT0R_DLC >> CAN_RDT0R_DLC_Pos);
-	frame->data_32[0] = mbox->RDLR;
-	frame->data_32[1] = mbox->RDHR;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	frame->timestamp = ((mbox->RDTR & CAN_RDT0R_TIME) >> CAN_RDT0R_TIME_Pos);
 #endif
@@ -555,15 +556,12 @@ static int can_stm32_set_timing(const struct device *dev,
 		return -EBUSY;
 	}
 
-	can->BTR = (can->BTR & ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
+	can->BTR = (can->BTR & ~(CAN_BTR_SJW_Msk | CAN_BTR_BRP_Msk |
+				 CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
+	     (((timing->sjw        - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk) |
 	     (((timing->phase_seg1 - 1) << CAN_BTR_TS1_Pos) & CAN_BTR_TS1_Msk) |
 	     (((timing->phase_seg2 - 1) << CAN_BTR_TS2_Pos) & CAN_BTR_TS2_Msk) |
 	     (((timing->prescaler  - 1) << CAN_BTR_BRP_Pos) & CAN_BTR_BRP_Msk);
-
-	if (timing->sjw != CAN_SJW_NO_CHANGE) {
-		can->BTR = (can->BTR & ~CAN_BTR_SJW_Msk) |
-			   (((timing->sjw - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk);
-	}
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -614,7 +612,7 @@ static int can_stm32_init(const struct device *dev)
 	const struct can_stm32_config *cfg = dev->config;
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
-	struct can_timing timing;
+	struct can_timing timing = { 0 };
 	const struct device *clock;
 	uint32_t bank_offset;
 	int ret;
@@ -675,7 +673,6 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
-	timing.sjw = cfg->sjw;
 	if (cfg->sample_point && USE_SP_ALGO) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
 				      cfg->sample_point);
@@ -687,6 +684,7 @@ static int can_stm32_init(const struct device *dev)
 			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
 		LOG_DBG("Sample-point err : %d", ret);
 	} else {
+		timing.sjw = cfg->sjw;
 		timing.prop_seg = 0;
 		timing.phase_seg1 = cfg->prop_ts1;
 		timing.phase_seg2 = cfg->ts2;
@@ -696,7 +694,7 @@ static int can_stm32_init(const struct device *dev)
 		}
 	}
 
-	ret = can_stm32_set_timing(dev, &timing);
+	ret = can_set_timing(dev, &timing);
 	if (ret) {
 		return ret;
 	}
@@ -860,13 +858,13 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 
 	if ((frame->flags & CAN_FRAME_RTR) != 0) {
 		mailbox->TIR |= CAN_TI1R_RTR;
+	} else {
+		mailbox->TDLR = frame->data_32[0];
+		mailbox->TDHR = frame->data_32[1];
 	}
 
 	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC) |
 			((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
-
-	mailbox->TDLR = frame->data_32[0];
-	mailbox->TDHR = frame->data_32[1];
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);
@@ -1037,7 +1035,10 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	int bank_num;
 	bool bank_unused;
 
-	__ASSERT_NO_MSG(filter_id >= 0 && filter_id < CAN_STM32_MAX_FILTER_ID);
+	if (filter_id < 0 || filter_id >= CAN_STM32_MAX_FILTER_ID) {
+		LOG_ERR("filter ID %d out of bounds", filter_id);
+		return;
+	}
 
 	k_mutex_lock(&filter_mutex, K_FOREVER);
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
@@ -1189,10 +1190,10 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 static struct can_stm32_data can_stm32_dev_data_##inst;
 
 #define CAN_STM32_DEFINE_INST(inst)                                      \
-DEVICE_DT_INST_DEFINE(inst, &can_stm32_init, NULL,                       \
-		      &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
-		      POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,             \
-		      &can_api_funcs);
+CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32_init, NULL,                    \
+			  &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
+			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,         \
+			  &can_api_funcs);
 
 #define CAN_STM32_INST(inst)      \
 CAN_STM32_IRQ_INST(inst)          \

@@ -77,8 +77,13 @@ static void mpu6050_thread_cb(const struct device *dev)
 }
 
 #ifdef CONFIG_MPU6050_TRIGGER_OWN_THREAD
-static void mpu6050_thread(struct mpu6050_data *drv_data)
+static void mpu6050_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct mpu6050_data *drv_data = p1;
+
 	while (1) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		mpu6050_thread_cb(drv_data->dev);
@@ -131,7 +136,7 @@ int mpu6050_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_MPU6050_THREAD_STACK_SIZE,
-			(k_thread_entry_t)mpu6050_thread, drv_data,
+			mpu6050_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_MPU6050_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_MPU6050_TRIGGER_GLOBAL_THREAD)

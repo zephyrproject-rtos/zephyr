@@ -21,11 +21,11 @@
 #include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
-#include <zephyr/wait_q.h>
+#include <wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
 
@@ -37,6 +37,10 @@
  * and not a spinlock per se.  Useful optimization for the future...
  */
 static struct k_spinlock lock;
+
+#ifdef CONFIG_OBJ_CORE_SEM
+static struct k_obj_type obj_type_sem;
+#endif
 
 int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
@@ -59,7 +63,11 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif
-	z_object_init(sem);
+	k_object_init(sem);
+
+#ifdef CONFIG_OBJ_CORE_SEM
+	k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
+#endif
 
 	return 0;
 }
@@ -68,7 +76,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
+	K_OOPS(K_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
 	return z_impl_k_sem_init(sem, initial_count, limit);
 }
 #include <syscalls/k_sem_init_mrsh.c>
@@ -115,7 +123,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	z_impl_k_sem_give(sem);
 }
 #include <syscalls/k_sem_give_mrsh.c>
@@ -180,23 +188,44 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	return z_impl_k_sem_take((struct k_sem *)sem, timeout);
 }
 #include <syscalls/k_sem_take_mrsh.c>
 
 static inline void z_vrfy_k_sem_reset(struct k_sem *sem)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	z_impl_k_sem_reset(sem);
 }
 #include <syscalls/k_sem_reset_mrsh.c>
 
 static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	return z_impl_k_sem_count_get(sem);
 }
 #include <syscalls/k_sem_count_get_mrsh.c>
 
+#endif
+
+#ifdef CONFIG_OBJ_CORE_SEM
+static int init_sem_obj_core_list(void)
+{
+	/* Initialize semaphore object type */
+
+	z_obj_type_init(&obj_type_sem, K_OBJ_TYPE_SEM_ID,
+			offsetof(struct k_sem, obj_core));
+
+	/* Initialize and link statically defined semaphores */
+
+	STRUCT_SECTION_FOREACH(k_sem, sem) {
+		k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_sem_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif

@@ -78,13 +78,23 @@ config COVERAGE_GCOV_HEAP_SIZE
 	default 16384
 	help
 	  This option configures the heap size allocated for gcov coverage
-	  data to be dumped over serial.
+	  data to be dumped over serial. If the value is 0, no buffer will be used,
+	  data will be dumped directly over serial.
 
 config COVERAGE_DUMP
 	bool "Dump coverage data on exit"
 	depends on COVERAGE_GCOV
 	help
 	  Dump collected coverage information to console on exit.
+
+config FORCE_COVERAGE
+	bool "Force coverage"
+	select HAS_COVERAGE_SUPPORT
+	help
+	  Regardless of platform support, it will enable coverage data production.
+	  If the platform does not support coverage by default, setting this config
+	  does not guarantee that coverage data will be gathered.
+	  Application may not fit memory or crash at runtime.
 
 config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"

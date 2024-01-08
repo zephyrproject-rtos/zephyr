@@ -99,7 +99,7 @@ using GPIO driver or configuring the pinmuxing for the device drivers.
 +-------------------+-------------+
 
 This board does not include user LED's or switches, which are needed for some
-of the samples such as :ref:`blinky-sample` or :ref:`button-sample`.
+of the samples such as :zephyr:code-sample:`blinky` or :zephyr:code-sample:`button`.
 Follow the steps described in the sample description to enable support for this
 board.
 
@@ -146,26 +146,21 @@ Applications for the ``s32z270dc2_rtu0_r52`` and ``s32z270dc2_rtu1_r52`` boards
 can be built in the usual way as documented in :ref:`build_an_application`.
 
 Currently is only possible to load and execute a Zephyr application binary on
-this board from the internal SRAM, using `Lauterbach TRACE32`_ development
-tools and debuggers.
+this board from the core internal SRAM.
 
-.. note::
-   Currently, the start-up scripts executed with ``west flash`` and
-   ``west debug`` commands perform the same steps to initialize the SoC and
-   load the application to SRAM. The difference is that ``west flash`` hide the
-   Lauterbach TRACE32 interface, executes the application and exits.
+This board supports West runners for the following debug tools:
 
-Install Lauterbach TRACE32 Software
-===================================
+- :ref:`NXP S32 Debug Probe <nxp-s32-debug-probe>` (default)
+- :ref:`Lauterbach TRACE32 <lauterbach-trace32-debug-host-tools>`
 
-Follow the steps described in :ref:`lauterbach-trace32-debug-host-tools` to
-install and set-up Lauterbach TRACE32 software.
+Follow the installation steps of the debug tool you plan to use before loading
+your firmware.
 
 Set-up the Board
 ================
 
-Connect the Lauterbach TRACE32 debugger to the board's JTAG connector (``J134``)
-and to the host computer.
+Connect the external debugger probe to the board's JTAG connector (``J134``)
+and to the host computer via USB or Ethernet, as supported by the probe.
 
 For visualizing the serial output, connect the board's USB/UART port (``J119``) to
 the host computer and run your favorite terminal program to listen for output.
@@ -178,16 +173,16 @@ For example, using the cross-platform `pySerial miniterm`_ terminal:
 Replace ``<port>`` with the port where the board can be found. For example,
 under Linux, ``/dev/ttyUSB0``.
 
-Flashing
-========
+Debugging
+=========
 
-For example, you can build and run the :ref:`hello_world` sample for the board
+You can build and debug the :ref:`hello_world` sample for the board
 ``s32z270dc2_rtu0_r52`` with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z270dc2_rtu0_r52
-   :goals: build flash
+   :goals: build debug
 
 In case you are using a newer PCB revision, you have to use an adapted board
 definition as the default PCB revision is B. For example, if using revision D:
@@ -195,30 +190,53 @@ definition as the default PCB revision is B. For example, if using revision D:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z270dc2_rtu0_r52@D
-   :goals: build flash
+   :goals: build debug
+   :compact:
 
-You should see the following message in the terminal:
+At this point you can do your normal debug session. Set breakpoints and then
+:kbd:`c` to continue into the program. You should see the following message in
+the terminal:
 
 .. code-block:: console
 
    Hello World! s32z270dc2_rtu0_r52
 
-Debugging
-=========
-
-To enable debugging using Lauterbach TRACE32 software, run instead:
+To debug with Lauterbach TRACE32 softare run instead:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: s32z270dc2_rtu0_r52
-   :goals: build debug
+   :goals: build debug -r trace32
+   :compact:
 
-Step through the application in your debugger, and you should see the following
-message in the terminal:
+Flashing
+========
 
-.. code-block:: console
+Follow these steps if you just want to download the application to the board
+SRAM and run.
 
-   Hello World! s32z270dc2_rtu0_r52
+``flash`` command is supported only by the Lauterbach TRACE32 runner:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: s32z270dc2_rtu0_r52
+   :goals: build flash -r trace32
+   :compact:
+
+.. note::
+   Currently, the Lauterbach start-up scripts executed with ``flash`` and
+   ``debug`` commands perform the same steps to initialize the SoC and
+   load the application to SRAM. The difference is that ``flash`` hides the
+   Lauterbach TRACE32 interface, executes the application and exits.
+
+To imitate a similar behavior using NXP S32 Debug Probe runner, you can run the
+``debug`` command with GDB in batch mode:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: s32z270dc2_rtu0_r52
+   :goals: build debug --tool-opt='--batch'
+   :compact:
 
 RTU and Core Configuration
 ==========================
@@ -231,26 +249,29 @@ configuration).
 To build for split-lock mode, the :kconfig:option:`CONFIG_DCLS` must be
 disabled from your application Kconfig file.
 
-Additionally, to run in a different core or with a different core
-configuration than the default, extra parameters must be provided to the runner
-as follows:
+By default the board configuration will set the runner arguments according to
+the build configuration. To debug for a core different than the default use:
 
-.. code-block:: console
+.. tabs::
 
-   west <command> --startup-args elfFile=<elf_path> rtu=<rtu_id> \
-      core=<core_id> lockstep=<yes/no>
+   .. group-tab:: lockstep configuration
+
+      .. code-block:: console
+
+         west debug --core-name='R52_<rtu_id>_<core_id>_LS'
+
+   .. group-tab:: split-lock configuration
+
+      .. code-block:: console
+
+         west debug --core-name='R52_<rtu_id>_<core_id>'
 
 Where:
 
-- ``<command>`` is ``flash`` or ``debug``
-- ``<elf_path>`` is the path to the Zephyr application ELF in the output
-  directory
 - ``<rtu_id>`` is the zero-based RTU index (0 for ``s32z270dc2_rtu0_r52``
   and 1 for ``s32z270dc2_rtu1_r52``)
 - ``<core_id>`` is the zero-based core index relative to the RTU on which to
   run the Zephyr application (0, 1, 2 or 3)
-- ``<yes/no>`` can be ``yes`` to run in lock-step, or ``no`` to run in
-  split-lock.
 
 For example, to build the :ref:`hello_world` sample for the board
 ``s32z270dc2_rtu0_r52`` with split-lock core configuration:
@@ -260,13 +281,23 @@ For example, to build the :ref:`hello_world` sample for the board
    :board: s32z270dc2_rtu0_r52
    :goals: build
    :gen-args: -DCONFIG_DCLS=n
+   :compact:
 
 To execute this sample in the second core of RTU0 in split-lock mode:
 
 .. code-block:: console
 
-   west flash --startup-args elfFile=build/zephyr/zephyr.elf \
-      rtu=0 core=1 lockstep=no
+   west debug --core-name='R52_0_1'
+
+If using Lauterbach TRACE32, all runner parameters must be overridden from command
+line:
+
+.. code-block:: console
+
+   west debug --startup-args elfFile=<elf_path> rtu=<rtu_id> core=<core_id> lockstep=<yes/no>
+
+Where ``<elf_path>`` is the path to the Zephyr application ELF in the output
+directory.
 
 References
 **********
@@ -275,9 +306,6 @@ References
 
 .. _NXP S32Z2 Real-Time Processors website:
    https://www.nxp.com/products/processors-and-microcontrollers/s32-automotive-platform/s32z-and-s32e-real-time-processors/s32z2-safe-and-secure-high-performance-real-time-processors:S32Z2
-
-.. _Lauterbach TRACE32:
-   https://www.lauterbach.com
 
 .. _pySerial miniterm:
    https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.miniterm

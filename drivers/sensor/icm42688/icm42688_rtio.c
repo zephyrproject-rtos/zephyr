@@ -8,6 +8,7 @@
 #include "icm42688.h"
 #include "icm42688_decoder.h"
 #include "icm42688_reg.h"
+#include "icm42688_rtio.h"
 #include "icm42688_spi.h"
 
 #include <zephyr/logging/log.h>
@@ -42,7 +43,7 @@ static int icm42688_rtio_sample_fetch(const struct device *dev, int16_t readings
 	return 0;
 }
 
-int icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+static int icm42688_submit_one_shot(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const enum sensor_channel *const channels = cfg->channels;
@@ -76,6 +77,19 @@ int icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 
 	return 0;
+}
+
+int icm42688_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+
+	if (!cfg->is_streaming) {
+		return icm42688_submit_one_shot(dev, iodev_sqe);
+	} else if (IS_ENABLED(CONFIG_ICM42688_STREAM)) {
+		return icm42688_submit_stream(dev, iodev_sqe);
+	} else {
+		return -ENOTSUP;
+	}
 }
 
 BUILD_ASSERT(sizeof(struct icm42688_decoder_header) == 9);

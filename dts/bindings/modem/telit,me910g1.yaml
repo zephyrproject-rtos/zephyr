@@ -1,0 +1,23 @@
+# Copyright(c) 2023 Jeff Welder (Ellenby Technologies, Inc.)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telit ME910G1 Modem
+
+compatible: "telit,me910g1"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-dtr-gpios:
+    type: phandle-array
+
+  mdm-ri-gpios:
+    type: phandle-array

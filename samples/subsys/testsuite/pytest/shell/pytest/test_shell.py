@@ -4,19 +4,9 @@
 
 import logging
 
-import pytest
-from twister_harness import DeviceAdapter, Shell
+from twister_harness import Shell
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture(scope='function')
-def shell(dut: DeviceAdapter) -> Shell:
-    """Return ready to use shell interface"""
-    shell = Shell(dut, timeout=20.0)
-    logger.info('wait for prompt')
-    assert shell.wait_for_prompt()
-    return shell
 
 
 def test_shell_print_help(shell: Shell):

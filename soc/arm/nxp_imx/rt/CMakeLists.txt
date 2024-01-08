@@ -50,6 +50,9 @@ zephyr_compile_definitions_ifdef(CONFIG_ENTROPY_MCUX_CAAM CACHE_MODE_WRITE_THROU
 
 zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER DATA_SECTION_IS_CACHEABLE=1)
 
+# flexram header
+zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/memc)
+
 zephyr_linker_section_configure(
   SECTION .rom_start
   INPUT ".boot_hdr.ivt"
@@ -59,3 +62,5 @@ zephyr_linker_section_configure(
   KEEP
   PRIO 11
 )
+
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

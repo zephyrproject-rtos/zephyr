@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,12 +64,16 @@
 		uart4: uart@30a60000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30a60000 0x10000>;
+			/* TODO: This INTID is just a dummy
+			 * until we can support UART interrupts
+			 */
+			interrupts = <29 0>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 			status = "disabled";
 		};
 
 		mailbox0: mailbox@30e70000 {
-			compatible = "nxp,imx-mu-rev2";
+			compatible = "nxp,imx-mu";
 			reg = <0x30e70000 0x10000>;
 			interrupts = <7 0>;
 			rdc = <0>;

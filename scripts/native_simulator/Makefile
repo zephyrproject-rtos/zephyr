@@ -27,12 +27,15 @@ NSI_BUILD_PATH?=$(abspath _build/)
 EXE_NAME?=native_simulator.exe
 #  Final executable path/file_name which will be produced
 NSI_EXE?=${NSI_BUILD_PATH}/${EXE_NAME}
-#  Path to the embedded SW which will be linked with the final executable
+# Number of embedded CPUs/MCUs
+NSI_N_CPUS?=1
+# Path to all CPUs embedded SW which will be linked with the final executable
 NSI_EMBEDDED_CPU_SW?=
 #  Host architecture configuration switch
 NSI_ARCH?=-m32
 #  Coverage switch (GCOV coverage is enabled by default)
 NSI_COVERAGE?=--coverage
+NSI_LOCALIZE_OPTIONS?=
 NSI_BUILD_OPTIONS?=${NSI_ARCH} ${NSI_COVERAGE}
 NSI_LINK_OPTIONS?=${NSI_ARCH} ${NSI_COVERAGE}
 #  Extra source files to be built in the runner context
@@ -61,7 +64,7 @@ NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTEN
 
 NO_PIE_CO:=-fno-pie -fno-pic
 DEPENDFLAGS:=-MMD -MP
-CFLAGS:=${NSI_DEBUG} ${NSI_WARNINGS} ${NSI_OPT} ${NO_PIE_CO} \
+CFLAGS:=${NSI_DEBUG} ${NSI_WARNINGS} ${NSI_OPT} ${NO_PIE_CO} -DNSI_N_CPUS=${NSI_N_CPUS} \
   -ffunction-sections -fdata-sections ${DEPENDFLAGS} -std=c11 ${NSI_BUILD_OPTIONS}
 FINALLINK_FLAGS:=${NO_PIE_CO} -no-pie  ${NSI_WARNINGS} \
   -Wl,--gc-sections -ldl -pthread \
@@ -93,6 +96,8 @@ DEPENDFILES:=$(addsuffix .d,$(basename ${OBJS}))
 
 -include ${DEPENDFILES}
 
+LOCALIZED_EMBSW:=$(abspath $(addprefix $(NSI_BUILD_PATH)/,$(addsuffix .loc_cpusw.o,${NSI_EMBEDDED_CPU_SW})))
+
 ${NSI_BUILD_PATH}:
 	@if [ ! -d ${NSI_BUILD_PATH} ]; then mkdir -p ${NSI_BUILD_PATH}; fi
 
@@ -112,16 +117,19 @@ ${NSI_BUILD_PATH}/${RUNNER_LIB}: ${OBJS}
 	if [ -f $@ ]; then rm $@ ; fi
 	${NSI_AR} -cr $@ ${OBJS}
 
-${NSI_EXE}: ${NSI_BUILD_PATH}/${RUNNER_LIB} ${NSI_EMBEDDED_CPU_SW} ${NSI_EXTRA_LIBS} \
- ${NSI_BUILD_PATH}/linker_script.ld
-	@if [ -z ${NSI_EMBEDDED_CPU_SW} ] || [ ! -f ${NSI_EMBEDDED_CPU_SW} ]; then \
-	  echo "Error: Input embedded CPU SW not found (NSI_EMBEDDED_CPU_SW=${NSI_EMBEDDED_CPU_SW} )"; \
+${NSI_BUILD_PATH}/%.loc_cpusw.o: /% ${NSI_CONFIG_FILE}
+	@if [ -z $< ] || [ ! -f $< ]; then \
+	  echo "Error: Input embedded CPU SW ($<) not found \
+(NSI_EMBEDDED_CPU_SW=${NSI_EMBEDDED_CPU_SW} )"; \
 	  false; \
 	fi
-	${NSI_OBJCOPY} --localize-hidden ${NSI_EMBEDDED_CPU_SW} ${NSI_BUILD_PATH}/cpu_0.sw.o \
-	  -w --localize-symbol=_*
-	${NSI_CC} -Wl,--whole-archive ${NSI_BUILD_PATH}/cpu_0.sw.o ${NSI_BUILD_PATH}/${RUNNER_LIB} \
-	${NSI_EXTRA_LIBS} -Wl,--no-whole-archive \
+	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
+	${NSI_OBJCOPY} --localize-hidden $< $@ -w --localize-symbol=_* ${NSI_LOCALIZE_OPTIONS}
+
+${NSI_EXE}: ${NSI_BUILD_PATH}/${RUNNER_LIB} ${LOCALIZED_EMBSW} ${NSI_EXTRA_LIBS} \
+ ${NSI_BUILD_PATH}/linker_script.ld
+	${NSI_CC} -Wl,--whole-archive ${LOCALIZED_EMBSW} ${NSI_BUILD_PATH}/${RUNNER_LIB} \
+	  ${NSI_EXTRA_LIBS} -Wl,--no-whole-archive \
 	  -o $@ ${FINALLINK_FLAGS} -T ${NSI_BUILD_PATH}/linker_script.ld
 
 Makefile: ;

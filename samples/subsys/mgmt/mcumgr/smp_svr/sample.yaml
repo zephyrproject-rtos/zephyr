@@ -43,6 +43,19 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk_nrf52840
+  # In mcuboot_flags test overlay-serial.conf is used for convenience as it is the simplest
+  # transport. Transport does not affect flags so it does not really matter which is selected,
+  # flags should affect any transport the same way.
+  sample.mcumgr.smp_svr.mcuboot_flags.direct_xip_withrevert:
+    extra_args: OVERLAY_CONFIG="overlay-serial.conf"
+    extra_configs:
+      - CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT=y
+    platform_allow:
+      - nrf52840dk_nrf52840
+      - pinnacle_100_dvk
+      - mg100
+    integration_platforms:
+      - nrf52840dk_nrf52840
   sample.mcumgr.smp_svr.serial-console:
     extra_args: OVERLAY_CONFIG="overlay-serial-console.conf"
     platform_allow:

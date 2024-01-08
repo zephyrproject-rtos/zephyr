@@ -575,6 +575,10 @@ ZTEST(smp, test_wakeup_threads)
 /* a thread for testing get current cpu */
 static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int bsp_id = *(int *)p1;
 	int cpu_id = -1;
 
@@ -660,7 +664,7 @@ ZTEST(smp, test_get_cpu)
 	_cpu_id = arch_curr_cpu()->id;
 
 	thread_id = k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
-				      (k_thread_entry_t)thread_get_cpu_entry,
+				      thread_get_cpu_entry,
 				      &_cpu_id, NULL, NULL,
 				      K_PRIO_COOP(2),
 				      K_INHERIT_PERMS, K_NO_WAIT);
@@ -849,6 +853,9 @@ ZTEST(smp, test_workq_on_smp)
 
 static void t1_mutex_lock(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	/* t1 will get mutex first */
 	k_mutex_lock((struct k_mutex *)p1, K_FOREVER);
 
@@ -859,6 +866,9 @@ static void t1_mutex_lock(void *p1, void *p2, void *p3)
 
 static void t2_mutex_lock(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	zassert_equal(_current->base.global_lock_count, 0,
 			"thread global lock cnt %d is incorrect",
 			_current->base.global_lock_count);
@@ -894,14 +904,14 @@ ZTEST(smp, test_smp_release_global_lock)
 
 	tinfo[0].tid =
 	k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
-			(k_thread_entry_t)t1_mutex_lock,
+			t1_mutex_lock,
 			&smutex, NULL, NULL,
 			K_PRIO_PREEMPT(5),
 			K_INHERIT_PERMS, K_NO_WAIT);
 
 	tinfo[1].tid =
 	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
-		(k_thread_entry_t)t2_mutex_lock,
+		t2_mutex_lock,
 			&smutex, NULL, NULL,
 			K_PRIO_PREEMPT(3),
 			K_INHERIT_PERMS, K_MSEC(1));
@@ -1004,8 +1014,12 @@ static void inc_global_cnt(void *a, void *b, void *c)
 	}
 }
 
-static int run_concurrency(int type, void *func)
+static int run_concurrency(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p3);
+
+	int type = POINTER_TO_INT(p1);
+	k_thread_entry_t func = p2;
 	uint32_t start_t, end_t;
 
 	sync_init(type);
@@ -1014,21 +1028,21 @@ static int run_concurrency(int type, void *func)
 
 	tinfo[0].tid =
 	k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
-			(k_thread_entry_t)func,
+			func,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1),
 			K_INHERIT_PERMS, K_NO_WAIT);
 
 	tinfo[1].tid =
 	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
-			(k_thread_entry_t)func,
+			func,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1),
 			K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_tid_t tid =
 	k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
-			(k_thread_entry_t)func,
+			func,
 			NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1),
 			K_INHERIT_PERMS, K_NO_WAIT);
@@ -1065,15 +1079,15 @@ static int run_concurrency(int type, void *func)
 ZTEST(smp, test_inc_concurrency)
 {
 	/* increasing global var with irq lock */
-	zassert_true(run_concurrency(LOCK_IRQ, inc_global_cnt),
+	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_IRQ), inc_global_cnt, NULL),
 			"total count %d is wrong(i)", global_cnt);
 
 	/* increasing global var with irq lock */
-	zassert_true(run_concurrency(LOCK_SEM, inc_global_cnt),
+	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_SEM), inc_global_cnt, NULL),
 			"total count %d is wrong(s)", global_cnt);
 
 	/* increasing global var with irq lock */
-	zassert_true(run_concurrency(LOCK_MUTEX, inc_global_cnt),
+	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_MUTEX), inc_global_cnt, NULL),
 			"total count %d is wrong(M)", global_cnt);
 }
 
@@ -1087,6 +1101,9 @@ ZTEST(smp, test_inc_concurrency)
  */
 static void process_events(void *arg0, void *arg1, void *arg2)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
 	uintptr_t id = (uintptr_t) arg0;
 
 	while (1) {
@@ -1137,7 +1154,7 @@ ZTEST(smp, test_smp_switch_torture)
 				  K_POLL_MODE_NOTIFY_ONLY, &tsignal[i]);
 
 		k_thread_create(&tthread[i], tstack[i], STACK_SIZE,
-				(k_thread_entry_t) process_events,
+				process_events,
 				(void *) i, NULL, NULL, K_PRIO_PREEMPT(i + 1),
 				K_INHERIT_PERMS, K_NO_WAIT);
 	}

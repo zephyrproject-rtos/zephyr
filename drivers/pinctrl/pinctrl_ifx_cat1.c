@@ -52,41 +52,44 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 
 	if (_flags & SOC_GPIO_OPENDRAIN) {
 		/* drive_open_drain */
-		drv_mode = CY_GPIO_DM_OD_DRIVESLOW_IN_OFF;
+		drv_mode = (_flags & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_OD_DRIVESLOW
+							   : CY_GPIO_DM_OD_DRIVESLOW_IN_OFF;
 
 	} else if (_flags & SOC_GPIO_OPENSOURCE) {
 		/* drive_open_source */
-		drv_mode = CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
+		drv_mode = (_flags & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_OD_DRIVESHIGH
+							   : CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
 
 	} else if (_flags & SOC_GPIO_PUSHPULL) {
 		/* drive_push_pull */
-		drv_mode = CY_GPIO_DM_STRONG_IN_OFF;
+		drv_mode = (_flags & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_STRONG
+							   : CY_GPIO_DM_STRONG_IN_OFF;
 
 	} else if ((_flags & SOC_GPIO_PULLUP) && (_flags & SOC_GPIO_PULLDOWN)) {
 		/* bias_pull_up and bias_pull_down */
-		drv_mode = CY_GPIO_DM_PULLUP_DOWN_IN_OFF;
+		drv_mode = (_flags & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_PULLUP_DOWN
+							   : CY_GPIO_DM_PULLUP_DOWN_IN_OFF;
 
 	} else if (_flags & SOC_GPIO_PULLUP) {
 		/* bias_pull_up */
-		drv_mode = CY_GPIO_DM_PULLUP_IN_OFF;
+		drv_mode = (_flags & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_PULLUP
+							   : CY_GPIO_DM_PULLUP_IN_OFF;
 
 	} else if (_flags & SOC_GPIO_PULLDOWN) {
 		/* bias_pull_down */
-		drv_mode = CY_GPIO_DM_PULLDOWN_IN_OFF;
+		drv_mode = (_flags & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_PULLDOWN
+							   : CY_GPIO_DM_PULLDOWN_IN_OFF;
+	} else if ((_flags & SOC_GPIO_HIGHZ) | (_flags & SOC_GPIO_INPUTENABLE)) {
+		/* bias_pull_down */
+		drv_mode = CY_GPIO_DM_HIGHZ;
 	} else {
 		/* nothing do here */
-	}
-
-	if (_flags & SOC_GPIO_INPUTENABLE) {
-		/* input_enable */
-		drv_mode |= CY_GPIO_DM_HIGHZ;
 	}
 
 	return drv_mode;
 }
 
-int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
-			   uintptr_t reg)
+int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	ARG_UNUSED(reg);
 

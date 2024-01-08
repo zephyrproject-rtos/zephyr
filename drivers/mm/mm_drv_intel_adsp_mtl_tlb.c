@@ -27,10 +27,12 @@
 #include <zephyr/debug/sparse.h>
 #include <zephyr/cache.h>
 
+#define SRAM_BANK_PAGE_NUM   (SRAM_BANK_SIZE / CONFIG_MM_DRV_PAGE_SIZE)
+
 static struct k_spinlock tlb_lock;
 extern struct k_spinlock sys_mm_drv_common_lock;
 
-static struct mem_drv_bank hpsram_bank[L2_SRAM_BANK_NUM];
+static struct sys_mm_drv_bank hpsram_bank[L2_SRAM_BANK_NUM];
 
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 #include <adsp_comm_widget.h>
@@ -625,7 +627,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 	uint32_t avalible_memory_size = ace_hpsram_get_bank_count() * SRAM_BANK_SIZE;
 
-	L2_PHYS_SRAM_REGION.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
+	L2_PHYS_SRAM_REGION.info.num_blocks = avalible_memory_size / CONFIG_MM_DRV_PAGE_SIZE;
 
 	ret = calculate_memory_regions(UNUSED_L2_START_ALIGNED);
 	CHECKIF(ret != 0) {
@@ -668,7 +670,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 
 		__ASSERT(false,
 			 "unused l2 pointer is outside of l2 sram range %p\n",
-			 UNUSED_L2_START_ALIGNED);
+			 (void *)UNUSED_L2_START_ALIGNED);
 		return -EFAULT;
 	}
 

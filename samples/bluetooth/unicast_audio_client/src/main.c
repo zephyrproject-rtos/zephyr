@@ -19,6 +19,8 @@
 
 static void start_scan(void);
 
+uint64_t unicast_audio_recv_ctr; /* This value is exposed to test code */
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 static struct bt_conn *default_conn;
 static struct k_work_delayable audio_send_work;
@@ -221,30 +223,41 @@ static void lc3_audio_timer_timeout(struct k_work *work)
 	}
 }
 
-static void init_lc3(void)
+static int init_lc3(void)
 {
 	const struct bt_audio_codec_cfg *codec_cfg = &codec_configuration.codec_cfg;
 	unsigned int num_samples;
+	int ret;
 
-	freq_hz = bt_audio_codec_cfg_get_freq(codec_cfg);
-	frame_duration_us = bt_audio_codec_cfg_get_frame_duration_us(codec_cfg);
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret > 0) {
+		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	} else {
+		return ret;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret > 0) {
+		frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+	}
+
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 	frames_per_sdu = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
 	octets_per_frame = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
 
 	if (freq_hz < 0) {
 		printk("Error: Codec frequency not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	if (frame_duration_us < 0) {
 		printk("Error: Frame duration not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	if (octets_per_frame < 0) {
 		printk("Error: Octets per frame not set, cannot start codec.");
-		return;
+		return -1;
 	}
 
 	frame_duration_100us = frame_duration_us / 100;
@@ -266,12 +279,14 @@ static void init_lc3(void)
 
 	if (lc3_encoder == NULL) {
 		printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
+		return -1;
 	}
+	return 0;
 }
 
 #else
 
-#define init_lc3(...)
+#define init_lc3(...) 0
 
 /**
  * @brief Send audio data on timeout
@@ -369,7 +384,7 @@ static void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
 	printk("codec id 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cap->id, codec_cap->cid,
 	       codec_cap->vid, codec_cap->data_len);
 
-	if (codec_cap->id == BT_AUDIO_CODEC_LC3_ID) {
+	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
 		bt_audio_data_parse(codec_cap->data, codec_cap->data_len, print_cb, "data");
 	} else { /* If not LC3, we cannot assume it's LTV */
 		printk("data: ");
@@ -551,7 +566,9 @@ static void stream_recv(struct bt_bap_stream *stream,
 			struct net_buf *buf)
 {
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+		unicast_audio_recv_ctr++;
+		printk("Incoming audio on stream %p len %u (%"PRIu64")\n", stream, buf->len,
+			unicast_audio_recv_ctr);
 	}
 }
 
@@ -979,7 +996,11 @@ static int set_stream_qos(void)
 static int enable_streams(void)
 {
 	if (IS_ENABLED(CONFIG_LIBLC3)) {
-		init_lc3();
+		int err = init_lc3();
+
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	for (size_t i = 0U; i < configured_stream_count; i++) {

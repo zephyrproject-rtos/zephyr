@@ -15,3 +15,4 @@ flash: 256
 testing:
   ignore_tags:
     - net
+vendor: ti

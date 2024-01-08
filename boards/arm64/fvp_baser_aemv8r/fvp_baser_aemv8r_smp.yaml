@@ -14,3 +14,4 @@ supported:
   - smp
 testing:
   timeout_multiplier: 20
+vendor: arm

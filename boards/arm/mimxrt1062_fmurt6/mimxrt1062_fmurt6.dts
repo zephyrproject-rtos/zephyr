@@ -51,8 +51,6 @@
 
 	/* This regulator controls VDD_3V3_SD_CARD onboard supply */
 	reg-3v3-sdcard {
-		pinctrl-0 = <&pinmux_sensor>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		regulator-name = "reg-3v3-sdcard";
 		enable-gpios = <&gpio4 13 GPIO_ACTIVE_HIGH>;
@@ -62,8 +60,6 @@
 
 	/* This regulator controls VDD_5V_PERIPH onboard supply */
 	reg-5v-periph {
-		pinctrl-0 = <&pinmux_sensor>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		regulator-name = "reg-5v-periph";
 		enable-gpios = <&gpio4 9 GPIO_ACTIVE_LOW>;
@@ -73,8 +69,6 @@
 
 	/* This regulator controls VDD_5V_HIPOWER onboard supply */
 	reg-5v-hipower {
-		pinctrl-0 = <&pinmux_sensor>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		regulator-name = "reg-5v-hipower";
 		enable-gpios = <&gpio4 6 GPIO_ACTIVE_LOW>;
@@ -84,8 +78,6 @@
 
 	/* This regulator controls the 3V3_S line, which powers sensors on-board. */
 	reg-3v3-sensor {
-		pinctrl-0 = <&pinmux_sensor>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		regulator-name = "reg-3v3-sensor";
 		enable-gpios = <&gpio3 27 GPIO_ACTIVE_HIGH>;
@@ -96,8 +88,6 @@
 
 	/* This regulator controls VDD_3V3_SPEKTRUM onboard supply */
 	reg-3v3-spektrum {
-		pinctrl-0 = <&pinmux_sensor>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		regulator-name = "reg-3v3-spektrum";
 		enable-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
@@ -107,8 +97,6 @@
 
 	/* This regulator controls ETH_VDD_3V3 supply to power up the TJA1103 PHY */
 	reg-eth-power {
-		pinctrl-0 = <&pinmux_sensor>;
-		pinctrl-names = "default";
 		compatible = "regulator-fixed";
 		regulator-name = "reg-eth-power";
 		enable-gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;

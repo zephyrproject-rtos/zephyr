@@ -7,6 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
 
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
+#error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
+#endif
+
 /**
  * @file
  * @brief GCC toolchain abstraction
@@ -29,6 +33,8 @@
 #if !defined(TOOLCHAIN_HAS_C_AUTO_TYPE) && (TOOLCHAIN_GCC_VERSION >= 40900)
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
+
+#define TOOLCHAIN_HAS_ZLA 1
 
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
@@ -194,8 +200,13 @@ do {                                                                    \
 #if !defined(CONFIG_XIP)
 #define __ramfunc
 #elif defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+#if defined(CONFIG_ARM)
 #define __ramfunc	__attribute__((noinline))			\
 			__attribute__((long_call, section(".ramfunc")))
+#else
+#define __ramfunc	__attribute__((noinline))			\
+			__attribute__((section(".ramfunc")))
+#endif
 #endif /* !CONFIG_XIP */
 
 #ifndef __fallthrough
@@ -261,6 +272,10 @@ do {                                                                    \
 
 #ifndef __weak
 #define __weak __attribute__((__weak__))
+#endif
+
+#ifndef __attribute_nonnull
+#define __attribute_nonnull(...) __attribute__((nonnull(__VA_ARGS__)))
 #endif
 
 /* Builtins with availability that depend on the compiler version. */

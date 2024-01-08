@@ -17,3 +17,7 @@
 #if defined(CONFIG_HTTP_SERVER)
 	ITERABLE_SECTION_ROM(http_service_desc, 4)
 #endif
+
+#if defined(CONFIG_COAP_SERVER)
+	ITERABLE_SECTION_ROM(coap_service, 4)
+#endif

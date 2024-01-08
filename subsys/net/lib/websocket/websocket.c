@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/websocket.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/base64.h>
 #include <mbedtls/sha1.h>

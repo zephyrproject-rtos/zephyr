@@ -583,6 +583,7 @@ static int i2s_nrfx_write(const struct device *dev,
 			  void *mem_block, size_t size)
 {
 	struct i2s_nrfx_drv_data *drv_data = dev->data;
+	int ret;
 
 	if (!drv_data->tx_configured) {
 		LOG_ERR("Device is not configured");
@@ -601,26 +602,41 @@ static int i2s_nrfx_write(const struct device *dev,
 		return -EIO;
 	}
 
+	ret = k_msgq_put(&drv_data->tx_queue,
+			 &mem_block,
+			 SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
+	if (ret < 0) {
+		return ret;
+	}
+
+	LOG_DBG("Queued TX %p", mem_block);
+
+	/* Check if interrupt wanted to get next TX buffer before current buffer
+	 * was queued. Do not move this check before queuing because doing so
+	 * opens the possibility for a race condition between this function and
+	 * data_handler() that is called in interrupt context.
+	 */
 	if (drv_data->state == I2S_STATE_RUNNING &&
 	    drv_data->next_tx_buffer_needed) {
-		nrfx_i2s_buffers_t next = { .p_tx_buffer = mem_block };
+		nrfx_i2s_buffers_t next = { 0 };
+
+		if (!get_next_tx_buffer(drv_data, &next)) {
+			/* Log error because this is definitely unexpected.
+			 * Do not return error because the caller is no longer
+			 * responsible for releasing the buffer.
+			 */
+			LOG_ERR("Cannot reacquire queued buffer");
+			return 0;
+		}
 
 		drv_data->next_tx_buffer_needed = false;
 
-		LOG_DBG("Next TX %p", mem_block);
+		LOG_DBG("Next TX %p", next.p_tx_buffer);
 
 		if (!supply_next_buffers(drv_data, &next)) {
 			return -EIO;
 		}
-	} else {
-		int ret = k_msgq_put(&drv_data->tx_queue,
-				     &mem_block,
-				     SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
-		if (ret < 0) {
-			return ret;
-		}
 
-		LOG_DBG("Queued TX %p", mem_block);
 	}
 
 	return 0;
@@ -939,5 +955,10 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		     \
 			 &i2s_nrf_drv_api);
 
-/* Existing SoCs only have one I2S instance. */
+#ifdef CONFIG_HAS_HW_NRF_I2S0
 I2S_NRFX_DEVICE(0);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_I2S20
+I2S_NRFX_DEVICE(20);
+#endif

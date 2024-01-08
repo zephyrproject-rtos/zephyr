@@ -7,6 +7,9 @@
 #include "intel_adl.dts"
 
 / {
+	model = "Intel Alder Lake RVP";
+	compatible = "intel,alder-lake-rvp";
+
 	chosen {
 		zephyr,console = &uart0_legacy;
 		zephyr,shell-uart = &uart0_legacy;

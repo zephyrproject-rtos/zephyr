@@ -13,7 +13,9 @@
 
 #include <errno.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/sys/util.h>
 #include <fsl_lpadc.h>
+#include <zephyr/drivers/regulator.h>
 
 #include <zephyr/drivers/pinctrl.h>
 
@@ -43,6 +45,7 @@ struct mcux_lpadc_config {
 	uint32_t offset_b;
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
+	const struct device **ref_supplies;
 };
 
 struct mcux_lpadc_data {
@@ -392,6 +395,16 @@ static int mcux_lpadc_init(const struct device *dev)
 		return err;
 	}
 
+	/* Enable necessary regulators */
+	const struct device **regulator = config->ref_supplies;
+
+	while (*regulator != NULL) {
+		err = regulator_enable(*(regulator++));
+		if (err) {
+			return err;
+		}
+	}
+
 	LPADC_GetDefaultConfig(&adc_config);
 
 	adc_config.enableAnalogPreliminary = true;
@@ -455,8 +468,18 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #endif
 };
 
+#define LPADC_REGULATOR_DEPENDENCY(node_id, prop, idx) \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
+
+#define LPADC_REGULATORS_DEFINE(inst)				\
+	static const struct device *mcux_lpadc_ref_supplies_##inst[] = {	\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, nxp_reference_supply),	\
+			(DT_INST_FOREACH_PROP_ELEM(inst, nxp_reference_supply,	\
+				LPADC_REGULATOR_DEPENDENCY)), ()) NULL};
 
 #define LPADC_MCUX_INIT(n)						\
+	LPADC_REGULATORS_DEFINE(n)						\
+									\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\
 									\
 	PINCTRL_DT_INST_DEFINE(n);						\
@@ -469,8 +492,8 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.ref_supplies = mcux_lpadc_ref_supplies_##n, \
 	};									\
-										\
 	static struct mcux_lpadc_data mcux_lpadc_data_##n = {	\
 		ADC_CONTEXT_INIT_TIMER(mcux_lpadc_data_##n, ctx),	\
 		ADC_CONTEXT_INIT_LOCK(mcux_lpadc_data_##n, ctx),	\

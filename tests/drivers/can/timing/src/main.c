@@ -70,7 +70,7 @@ static const struct can_timing_test can_timing_data_tests[] = {
 	{  500000, 800, false },
 	/** Valid bitrate, invalid sample point. */
 	{  500000, 1000, true },
-	/** Invalid CAN-FD bitrate, valid sample point. */
+	/** Invalid CAN FD bitrate, valid sample point. */
 	{ 8000000 + 1, 750, true },
 };
 #endif /* CONFIG_CAN_FD_MODE */
@@ -115,13 +115,13 @@ static void assert_timing_within_bounds(struct can_timing *timing,
 					const struct can_timing *min,
 					const struct can_timing *max)
 {
-	zassert_true(timing->sjw == CAN_SJW_NO_CHANGE, "sjw does not equal CAN_SJW_NO_CHANGE");
-
+	zassert_true(timing->sjw <= max->sjw, "sjw exceeds max");
 	zassert_true(timing->prop_seg <= max->prop_seg, "prop_seg exceeds max");
 	zassert_true(timing->phase_seg1 <= max->phase_seg1, "phase_seg1 exceeds max");
 	zassert_true(timing->phase_seg2 <= max->phase_seg2, "phase_seg2 exceeds max");
 	zassert_true(timing->prescaler <= max->prescaler, "prescaler exceeds max");
 
+	zassert_true(timing->sjw >= min->sjw, "sjw lower than min");
 	zassert_true(timing->prop_seg >= min->prop_seg, "prop_seg lower than min");
 	zassert_true(timing->phase_seg1 >= min->phase_seg1, "phase_seg1 lower than min");
 	zassert_true(timing->phase_seg2 >= min->phase_seg2, "phase_seg2 lower than min");
@@ -169,15 +169,13 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 	printk("testing bitrate %u, sample point %u.%u%% (%s): ",
 		test->bitrate, test->sp / 10, test->sp % 10, test->invalid ? "invalid" : "valid");
 
-	timing.sjw = CAN_SJW_NO_CHANGE;
-
 	if (data_phase) {
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
 			min = can_get_timing_data_min(dev);
 			max = can_get_timing_data_max(dev);
 			sp_err = can_calc_timing_data(dev, &timing, test->bitrate, test->sp);
 		} else {
-			zassert_unreachable("data phase timing test without CAN-FD support");
+			zassert_unreachable("data phase timing test without CAN FD support");
 		}
 	} else {
 		min = can_get_timing_min(dev);
@@ -193,8 +191,9 @@ static void test_timing_values(const struct device *dev, const struct can_timing
 		zassert_true(sp_err <= SAMPLE_POINT_MARGIN, "sample point error %d too large",
 			     sp_err);
 
-		printk("prop_seg = %u, phase_seg1 = %u, phase_seg2 = %u, prescaler = %u ",
-			timing.prop_seg, timing.phase_seg1, timing.phase_seg2, timing.prescaler);
+		printk("sjw = %u, prop_seg = %u, phase_seg1 = %u, phase_seg2 = %u, prescaler = %u ",
+			timing.sjw, timing.prop_seg, timing.phase_seg1, timing.phase_seg2,
+			timing.prescaler);
 
 		assert_bitrate_correct(dev, &timing, test->bitrate);
 		assert_timing_within_bounds(&timing, min, max);

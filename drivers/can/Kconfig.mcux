@@ -19,12 +19,19 @@ config CAN_MCUX_FLEXCAN_FD
 	default y
 	depends on DT_HAS_NXP_FLEXCAN_FD_ENABLED && CAN_FD_MODE
 	help
-	  Enable support for CAN-FD capable NXP FlexCAN devices.
+	  Enable support for CAN FD capable NXP FlexCAN devices.
+
+config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
+	int "Maximum number of wait loop iterations"
+	default 10000
+	help
+	  Maximum number of wait loop iterations for the MCUX FlexCAN HAL when entering/leaving
+	  freeze mode.
 
 config CAN_MAX_MB
 	int "Maximum number of message buffers for concurrent active instances"
 	default 16
-	depends on SOC_SERIES_S32K3_M7
+	depends on SOC_SERIES_S32K3XX
 	range 1 96
 	help
 	  Defines maximum number of message buffers for concurrent active instances.
@@ -35,7 +42,7 @@ config CAN_MAX_FILTER
 	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
 	range 1 13 if SOC_SERIES_IMX_RT && CAN_MCUX_FLEXCAN_FD
 	range 1 63 if SOC_SERIES_IMX_RT
-	range 1 96 if SOC_SERIES_S32K3_M7
+	range 1 96 if SOC_SERIES_S32K3XX
 	help
 	  Defines maximum number of concurrent active RX filters
 

@@ -57,9 +57,8 @@ static void prov_send_fail_msg(uint8_t err)
 
 static void prov_fail(uint8_t reason)
 {
-	/* According to Bluetooth Mesh Specification v1.0.1, Section 5.4.4, the
-	 * provisioner just closes the link when something fails, while the
-	 * provisionee sends the fail message, and waits for the provisioner to
+	/* According to MshPRTv1.1: 5.4.4, the provisioner just closes the link when something
+	 * fails, while the provisionee sends the fail message, and waits for the provisioner to
 	 * close the link.
 	 */
 	prov_send_fail_msg(reason);
@@ -94,15 +93,16 @@ static void prov_invite(const uint8_t *data)
 			bt_mesh_prov->input_size > 0 || bt_mesh_prov->static_val;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM)) {
-		algorithm_bm |= BIT(BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM);
+		WRITE_BIT(algorithm_bm, BT_MESH_PROV_AUTH_HMAC_SHA256_AES_CCM, 1);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM)) {
-		algorithm_bm |= BIT(BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM);
+		WRITE_BIT(algorithm_bm, BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM, 1);
 	}
 
 	if (oob_availability && IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED)) {
 		oob_type |= BT_MESH_OOB_AUTH_REQUIRED;
+		WRITE_BIT(algorithm_bm, BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM, 0);
 	}
 
 	/* Supported algorithms */
@@ -176,16 +176,31 @@ static void prov_start(const uint8_t *data)
 	bt_mesh_prov_link.oob_action = data[3];
 	bt_mesh_prov_link.oob_size = data[4];
 
+	if (IS_ENABLED(CONFIG_BT_MESH_OOB_AUTH_REQUIRED) &&
+	    (bt_mesh_prov_link.oob_method == AUTH_METHOD_NO_OOB ||
+	    bt_mesh_prov_link.algorithm == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM)) {
+		prov_fail(PROV_ERR_NVAL_FMT);
+		return;
+	}
+
 	if (bt_mesh_prov_auth(false, data[2], data[3], data[4]) < 0) {
 		LOG_ERR("Invalid authentication method: 0x%02x; "
 			"action: 0x%02x; size: 0x%02x", data[2], data[3], data[4]);
 		prov_fail(PROV_ERR_NVAL_FMT);
+		return;
 	}
 
 	if (atomic_test_bit(bt_mesh_prov_link.flags, OOB_STATIC_KEY)) {
-		memcpy(bt_mesh_prov_link.auth + auth_size - bt_mesh_prov->static_val_len,
-			bt_mesh_prov->static_val, bt_mesh_prov->static_val_len);
-		memset(bt_mesh_prov_link.auth, 0, auth_size - bt_mesh_prov->static_val_len);
+		/* Trim the Auth if it is longer than required length */
+		memcpy(bt_mesh_prov_link.auth, bt_mesh_prov->static_val,
+		       bt_mesh_prov->static_val_len > auth_size ? auth_size
+								: bt_mesh_prov->static_val_len);
+
+		/* Padd with zeros if the Auth is shorter the required length*/
+		if (bt_mesh_prov->static_val_len < auth_size) {
+			memset(bt_mesh_prov_link.auth + bt_mesh_prov->static_val_len, 0,
+			       auth_size - bt_mesh_prov->static_val_len);
+		}
 	}
 }
 
@@ -342,6 +357,13 @@ static void prov_dh_key_gen(void)
 	}
 }
 
+static void prov_dh_key_gen_handler(struct k_work *work)
+{
+	prov_dh_key_gen();
+}
+
+static K_WORK_DEFINE(dh_gen_work, prov_dh_key_gen_handler);
+
 static void prov_pub_key(const uint8_t *data)
 {
 	LOG_DBG("Remote Public Key: %s", bt_hex(data, PUB_KEY_SIZE));
@@ -369,7 +391,7 @@ static void prov_pub_key(const uint8_t *data)
 		       PDU_LEN_PUB_KEY);
 	}
 
-	prov_dh_key_gen();
+	k_work_submit(&dh_gen_work);
 }
 
 static void notify_input_complete(void)
@@ -675,7 +697,7 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 		return -EALREADY;
 	}
 
-#if IS_ENABLED(CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL)
+#if defined(CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL)
 	if (CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL > 2) {
 		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
 

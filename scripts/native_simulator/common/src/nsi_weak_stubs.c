@@ -12,33 +12,25 @@
  *   The CPU does not boot, and interrupts are just ignored
  * These are all defined as weak, so if an actual image is present for that CPU,
  * that will be linked against.
+ *
+ * This exists in case the total device image is assembled lacking some of the embedded CPU images
  */
 
-#define NSI_CPU_STUBBED_IMAGE(i)                                          \
-__attribute__((weak)) void nsif_cpu##i##_pre_cmdline_hooks(void) { }      \
-__attribute__((weak)) void nsif_cpu##i##_pre_hw_init_hooks(void) { }      \
-__attribute__((weak)) void nsif_cpu##i##_boot(void)                       \
-	{                                                                 \
-		nsi_print_trace("Attempted boot of CPU %i without image. "\
-				"CPU %i shut down permanently\n", i, i);  \
-	}                                                                 \
-__attribute__((weak)) int nsif_cpu##i##_cleanup(void) { return 0; }       \
-__attribute__((weak)) void nsif_cpu##i##_irq_raised(void) { }             \
-__attribute__((weak)) void nsif_cpu##i##_irq_raised_from_sw(void) { }
+static void nsi_boot_warning(const char *func)
+{
+	nsi_print_trace("%s: Attempted boot of CPU without image. "
+			"CPU shut down permanently\n", func);
+}
 
-NSI_CPU_STUBBED_IMAGE(0)
-NSI_CPU_STUBBED_IMAGE(1)
-NSI_CPU_STUBBED_IMAGE(2)
-NSI_CPU_STUBBED_IMAGE(3)
-NSI_CPU_STUBBED_IMAGE(4)
-NSI_CPU_STUBBED_IMAGE(5)
-NSI_CPU_STUBBED_IMAGE(6)
-NSI_CPU_STUBBED_IMAGE(7)
-NSI_CPU_STUBBED_IMAGE(8)
-NSI_CPU_STUBBED_IMAGE(9)
-NSI_CPU_STUBBED_IMAGE(10)
-NSI_CPU_STUBBED_IMAGE(11)
-NSI_CPU_STUBBED_IMAGE(12)
-NSI_CPU_STUBBED_IMAGE(13)
-NSI_CPU_STUBBED_IMAGE(14)
-NSI_CPU_STUBBED_IMAGE(15)
+/*
+ * These will define N functions like
+ * int nsif_cpu<n>_cleanup(void) { return 0; }
+ */
+F_TRAMP_BODY_LIST(__attribute__((weak)) void nsif_cpu, _pre_cmdline_hooks(void) { })
+F_TRAMP_BODY_LIST(__attribute__((weak)) void nsif_cpu, _pre_hw_init_hooks(void) { })
+F_TRAMP_BODY_LIST(__attribute__((weak)) void nsif_cpu,
+		  _boot(void) { nsi_boot_warning(__func__); })
+F_TRAMP_BODY_LIST(__attribute__((weak)) int nsif_cpu, _cleanup(void) { return 0; })
+F_TRAMP_BODY_LIST(__attribute__((weak)) void nsif_cpu, _irq_raised(void) { })
+F_TRAMP_BODY_LIST(__attribute__((weak)) void nsif_cpu, _irq_raised_from_sw(void) { })
+F_TRAMP_BODY_LIST(__attribute__((weak)) int nsif_cpu, _test_hook(void *p) { return 0; })

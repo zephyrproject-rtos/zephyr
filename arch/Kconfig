@@ -19,9 +19,9 @@ source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 config ARC
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_SUPPORTS_ROM_START
 	help
 	  ARC architecture
 
@@ -29,7 +29,6 @@ config ARM
 	bool
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
-	select HAS_DTS
 	# FIXME: current state of the code for all ARM requires this, but
 	# is really only necessary for Cortex-M with ARM MPU!
 	select GEN_PRIV_STACKS
@@ -42,7 +41,6 @@ config ARM64
 	bool
 	select ARCH_IS_SET
 	select 64BIT
-	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
@@ -57,14 +55,12 @@ config MIPS
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
-	select HAS_DTS
 	help
 	  MIPS architecture
 
 config SPARC
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select BIG_ENDIAN
@@ -79,8 +75,8 @@ config X86
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
-	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !X86_64
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
@@ -100,7 +96,6 @@ config NIOS2
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
-	select HAS_DTS
 	imply XIP
 	select ARCH_HAS_TIMING_FUNCTIONS
 	help
@@ -109,8 +104,8 @@ config NIOS2
 config RISCV
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !SOC_SERIES_ESP32C3
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
@@ -125,7 +120,6 @@ config RISCV
 config XTENSA
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
@@ -138,7 +132,6 @@ config XTENSA
 config ARCH_POSIX
 	bool
 	select ARCH_IS_SET
-	select HAS_DTS
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -146,6 +139,8 @@ config ARCH_POSIX
 	select NATIVE_BUILD
 	select HAS_COVERAGE_SUPPORT
 	select BARRIER_OPERATIONS_BUILTIN
+	# native_posix gets its memory cleared on entry by the host OS
+	select SKIP_BSS_CLEAR
 	help
 	  POSIX (native) architecture
 
@@ -403,6 +398,23 @@ config DYNAMIC_INTERRUPTS
 	  interrupt-related data structures to RAM instead of ROM, and
 	  on some architectures increase code size.
 
+config SHARED_INTERRUPTS
+	bool "Set this to enable support for shared interrupts"
+	depends on GEN_SW_ISR_TABLE
+	select EXPERIMENTAL
+	help
+	  Set this to enable support for shared interrupts. Use this with
+	  caution as enabling this will increase the image size by a
+	  non-negligible amount.
+
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	int "Maximum number of clients allowed per shared interrupt"
+	default 2
+	depends on SHARED_INTERRUPTS
+	help
+	  This option controls the maximum number of clients allowed
+	  per shared interrupt. Set this according to your needs.
+
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
 	help
@@ -578,6 +590,9 @@ config ARCH_SUPPORTS_COREDUMP
 	bool
 
 config ARCH_SUPPORTS_ARCH_HW_INIT
+	bool
+
+config ARCH_SUPPORTS_ROM_START
 	bool
 
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
@@ -963,3 +978,10 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	default y if !(64BIT && RISCV)
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
+
+config ARCH_CPU_IDLE_CUSTOM
+	bool "Custom arch_cpu_idle implementation"
+	default n
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.

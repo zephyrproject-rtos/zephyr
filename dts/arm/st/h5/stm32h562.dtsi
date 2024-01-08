@@ -178,6 +178,7 @@
 					STM32_ADC_RES(8, 0x02)
 					STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		timers4: timers@40000800 {
@@ -302,9 +303,7 @@
 			/* common clock FDCAN 1 & 2 */
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
-			sjw = <1>;
 			sample-point = <875>;
-			sjw-data = <1>;
 			sample-point-data = <875>;
 			status = "disabled";
 		};

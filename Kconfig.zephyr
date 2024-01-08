@@ -306,6 +306,24 @@ config LINKER_USE_RELAX
 
 endmenu # "Linker Sections"
 
+config LINKER_DEVNULL_SUPPORT
+	bool
+	default y if CPU_CORTEX_M || (RISCV && !64BIT)
+
+config LINKER_DEVNULL_MEMORY
+	bool "Devnull region"
+	depends on LINKER_DEVNULL_SUPPORT
+	help
+	  Devnull region is created. It is stripped from final binary but remains
+	  in byproduct elf file.
+
+config LINKER_DEVNULL_MEMORY_SIZE
+	int "Devnull region size"
+	depends on LINKER_DEVNULL_MEMORY
+	default 262144
+	help
+	  Size can be adjusted so it fits all data placed in that region.
+
 endmenu
 
 menu "Compiler Options"
@@ -316,10 +334,22 @@ config CODING_GUIDELINE_CHECK
 	  Use available compiler flags to check coding guideline rules during
 	  the build.
 
-config NATIVE_BUILD
+config NATIVE_LIBC
 	bool
 	select FULL_LIBC_SUPPORTED
-	select FULL_LIBCPP_SUPPORTED if CPP
+	help
+	  Zephyr will use the host system C library.
+
+config NATIVE_LIBCPP
+	bool
+	select FULL_LIBCPP_SUPPORTED
+	help
+	  Zephyr will use the host system C++ library
+
+config NATIVE_BUILD
+	bool
+	select NATIVE_LIBC if EXTERNAL_LIBC
+	select NATIVE_LIBCPP if EXTERNAL_LIBCPP
 	help
 	  Zephyr will be built targeting the host system for debug and
 	  development purposes.
@@ -747,22 +777,15 @@ config BUILD_OUTPUT_STRIP_PATHS
 config CHECK_INIT_PRIORITIES
 	bool "Build time initialization priorities check"
 	default y
+	depends on !NATIVE_LIBRARY
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "armclang"
 	help
 	  Check the build for initialization priority issues by comparing the
 	  initialization priority in the build with the device dependency
 	  derived from the devicetree definition.
 
 	  Fails the build on priority errors (dependent devices, inverted
-	  priority), see CHECK_INIT_PRIORITIES_FAIL_ON_WARNING to fail on
-	  warnings (dependent devices, same priority) as well.
-
-config CHECK_INIT_PRIORITIES_FAIL_ON_WARNING
-	bool "Fail the build on priority check warnings"
-	depends on CHECK_INIT_PRIORITIES
-	help
-	  Fail the build if the dependency check script identifies any pair of
-	  devices depending on each other but initialized with the same
-	  priority.
+	  priority).
 
 config EMIT_ALL_SYSCALLS
 	bool "Emit all possible syscalls in the tree"
@@ -896,16 +919,5 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
-
-endmenu
-
-menu "Compatibility"
-
-config COMPAT_INCLUDES
-	bool "Suppress warnings when using header shims"
-	default y
-	help
-	  Suppress any warnings from the pre-processor when including
-	  deprecated header files.
 
 endmenu

@@ -23,20 +23,25 @@ void handler(union sigval val)
 	       ++exp_count);
 }
 
-ZTEST(posix_apis, test_timer)
+void test_timer(int sigev_notify)
 {
 	int ret;
 	struct sigevent sig = { 0 };
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 	struct timespec ts, te;
-	int64_t nsecs_elapsed, secs_elapsed, total_secs_timer;
+	int64_t nsecs_elapsed, secs_elapsed;
 
-	sig.sigev_notify = SIGEV_SIGNAL;
+	exp_count = 0;
+	sig.sigev_notify = sigev_notify;
 	sig.sigev_notify_function = handler;
 	sig.sigev_value.sival_int = 20;
 
-	printk("POSIX timer test\n");
+	if (sigev_notify == SIGEV_SIGNAL)
+		printk("POSIX timer test SIGEV_SIGNAL\n");
+	else
+		printk("POSIX timer test SIGEV_THREAD\n");
+
 	ret = timer_create(CLOCK_MONOTONIC, &sig, &timerid);
 
 	/*TESTPOINT: Check if timer is created successfully*/
@@ -79,15 +84,21 @@ ZTEST(posix_apis, test_timer)
 		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
 	}
 
-	total_secs_timer = (value.it_value.tv_sec * NSEC_PER_SEC +
-			    value.it_value.tv_nsec + (uint64_t) exp_count *
-			    (value.it_interval.tv_sec * NSEC_PER_SEC +
-			     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
-
+	uint64_t elapsed = secs_elapsed*NSEC_PER_SEC + nsecs_elapsed;
+	uint64_t first_sig = value.it_value.tv_sec * NSEC_PER_SEC + value.it_value.tv_nsec;
+	uint64_t sig_interval = value.it_interval.tv_sec * NSEC_PER_SEC + value.it_interval.tv_nsec;
+	int expected_signal_count = (elapsed - first_sig) / sig_interval + 1;
 
 	/*TESTPOINT: Check if POSIX timer test passed*/
-	zassert_equal(total_secs_timer, secs_elapsed,
-		      "POSIX timer test has failed");
+	zassert_within(exp_count, expected_signal_count, 1,
+		       "POSIX timer test has failed %i != %i",
+		       exp_count, expected_signal_count);
+}
+
+ZTEST(posix_apis, test_timer)
+{
+	test_timer(SIGEV_SIGNAL);
+	test_timer(SIGEV_THREAD);
 }
 
 ZTEST(posix_apis, test_timer_overrun)

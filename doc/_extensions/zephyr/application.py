@@ -92,6 +92,9 @@ class ZephyrAppCommandsDirective(Directive):
     \:west-args:
       if set, additional arguments to the west invocation (ignored for CMake)
 
+    \:flash-args:
+      if set, additional arguments to the flash invocation
+
     '''
     has_content = False
     required_arguments = 0
@@ -114,6 +117,7 @@ class ZephyrAppCommandsDirective(Directive):
         'maybe-skip-config': directives.flag,
         'compact': directives.flag,
         'west-args': directives.unchanged,
+        'flash-args': directives.unchanged,
     }
 
     TOOLS = ['cmake', 'west', 'all']
@@ -143,6 +147,7 @@ class ZephyrAppCommandsDirective(Directive):
         skip_config = 'maybe-skip-config' in self.options
         compact = 'compact' in self.options
         west_args = self.options.get('west-args', None)
+        flash_args = self.options.get('flash-args', None)
 
         if tool not in self.TOOLS:
             raise self.error('Unknown tool {}; choose from: {}'.format(
@@ -194,7 +199,8 @@ class ZephyrAppCommandsDirective(Directive):
             'compact': compact,
             'skip_config': skip_config,
             'generator': generator,
-            'west_args': west_args
+            'west_args': west_args,
+            'flash_args': flash_args,
             }
 
         if 'west' in tools:
@@ -229,7 +235,7 @@ class ZephyrAppCommandsDirective(Directive):
         # Create the nodes.
         literal = nodes.literal_block(content, content)
         self.add_name(literal)
-        literal['language'] = 'console'
+        literal['language'] = 'shell'
         return literal
 
 
@@ -244,12 +250,14 @@ class ZephyrAppCommandsDirective(Directive):
         build_dir = kwargs['build_dir']
         compact = kwargs['compact']
         west_args = kwargs['west_args']
+        flash_args = kwargs['flash_args']
         kwargs['board'] = None
         # west always defaults to ninja
         gen_arg = ' -G\'Unix Makefiles\'' if generator == 'make' else ''
         cmake_args = gen_arg + self._cmake_args(**kwargs)
         cmake_args = ' --{}'.format(cmake_args) if cmake_args != '' else ''
         west_args = ' {}'.format(west_args) if west_args else ''
+        flash_args = ' {}'.format(flash_args) if flash_args else ''
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
         src = ' {}'.format(app) if app and not cd_into else ''
@@ -284,7 +292,7 @@ class ZephyrAppCommandsDirective(Directive):
             if goal in {'build', 'sign'}:
                 continue
             elif goal == 'flash':
-                content.append('west flash{}'.format(dst))
+                content.append('west flash{}{}'.format(flash_args, dst))
             elif goal == 'debug':
                 content.append('west debug{}'.format(dst))
             elif goal == 'debugserver':
@@ -407,7 +415,7 @@ class ZephyrAppCommandsDirective(Directive):
                                               cmake_args, source_dir))
         if not compact:
             content.extend(['',
-                            '# Now run ninja on the generated build system:'])
+                            '# Now run the build tool on the generated build system:'])
 
         if 'build' in goals:
             content.append('{}{}{}'.format(generator, tool_build_dir,

@@ -233,15 +233,17 @@ In case no Zephyr is found which satisfies the version required, as example, the
    find_package(Zephyr 2.z)
    project(app)
 
-then an error similar to below will be printed::
+then an error similar to below will be printed:
 
-  Could not find a configuration file for package "Zephyr" that is compatible
-  with requested version "2.z".
+.. code-block:: none
 
-  The following configuration files were considered but not accepted:
+   Could not find a configuration file for package "Zephyr" that is compatible
+   with requested version "2.z".
 
-    <projects>/zephyr-workspace-2.a/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake, version: 2.a.0
-    <projects>/zephyr-workspace-2.b/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake, version: 2.b.0
+   The following configuration files were considered but not accepted:
+
+     <projects>/zephyr-workspace-2.a/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake, version: 2.a.0
+     <projects>/zephyr-workspace-2.b/zephyr/share/zephyr-package/cmake/ZephyrConfig.cmake, version: 2.b.0
 
 
 .. note:: It can also be beneficial to specify a version number for Zephyr repository applications

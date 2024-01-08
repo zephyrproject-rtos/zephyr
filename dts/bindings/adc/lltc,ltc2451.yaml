@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Brill Power Ltd. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Linear Technology LTC2451 ADC
+
+compatible: "lltc,ltc2451"
+
+include: i2c-device.yaml
+
+properties:
+  conversion-speed:
+    type: int
+    enum:
+      - 30
+      - 60
+    description: Set conversion speed in Hz

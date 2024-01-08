@@ -1,0 +1,11 @@
+common:
+  min_ram: 16
+  tags:
+    - net
+    - coap
+    - server
+  integration_platforms:
+    - native_sim
+
+tests:
+  net.coap.server.common: {}

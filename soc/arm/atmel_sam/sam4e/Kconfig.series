@@ -15,6 +15,7 @@ config SOC_SERIES_SAM4E
 	select SOC_FAMILY_SAM
 	select PLATFORM_SPECIFIC_INIT
 	select ASF
+	select HAS_POWEROFF
 	help
 	  Enable support for Atmel SAM4E Cortex-M4 microcontrollers.
 	  Part No.: SAM4E16E, SAM4E16C, SAM4E8E, SAM4E8C

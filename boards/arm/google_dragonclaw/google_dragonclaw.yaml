@@ -8,3 +8,4 @@ toolchain:
   - xtools
 ram: 256
 flash: 1024
+vendor: google

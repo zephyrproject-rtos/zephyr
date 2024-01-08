@@ -257,7 +257,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Spinlock validation"
 	depends on MULTITHREADING
-	depends on MP_NUM_CPUS <= 4
+	depends on MP_MAX_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
 	help
 	  There's a spinlock validation framework available when asserts are
@@ -397,6 +397,7 @@ endmenu
 config GDBSTUB
 	bool "GDB remote serial protocol support [EXPERIMENTAL]"
 	depends on ARCH_HAS_GDBSTUB
+	select UART_USE_RUNTIME_CONFIGURE
 	select EXPERIMENTAL
 	help
 	  This option enable support the target using GDB, or any other

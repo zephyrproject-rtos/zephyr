@@ -7,7 +7,7 @@
 #include <stdint.h>
 #ifdef CONFIG_BT_IAS_CLIENT
 
-#include "zephyr/bluetooth/services/ias.h"
+#include <zephyr/bluetooth/services/ias.h>
 #include "common.h"
 
 extern enum bst_result_t bst_result;
@@ -83,7 +83,9 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	bt_le_scan_cb_register(&common_scan_cb);
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err < 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;

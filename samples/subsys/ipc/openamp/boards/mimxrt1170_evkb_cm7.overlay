@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
 / {
 	chosen {
 		zephyr,ipc_shm = &ocram2_overlay;
@@ -17,6 +19,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x202c0000 DT_SIZE_K(16)>;
 		zephyr,memory-region="OCRAM2_OVERLAY";
-		zephyr,memory-attr = "IO";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
 	};
 };

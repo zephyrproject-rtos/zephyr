@@ -26,6 +26,9 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SAM                 clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SMARTBOND           clock_control_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NUMAKER_SCC         clock_control_numaker_scc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NXP_S32             clock_control_nxp_s32.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RA                  clock_control_ra.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_control_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)
 
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)

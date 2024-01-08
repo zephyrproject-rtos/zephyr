@@ -177,8 +177,12 @@ it the value ``always``. For example, these commands are equivalent::
   west build -p -b reel_board samples/hello_world
   west build -p=always -b reel_board samples/hello_world
 
-By default, ``west build`` applies a heuristic to detect if the build directory
-needs to be made pristine. This is the same as using ``--pristine=auto``.
+By default, ``west build`` makes no attempt to detect if the build directory
+needs to be made pristine. This can lead to errors if you do something like
+try to re-use a build directory for a different ``--board``.
+
+Using ``--pristine=auto`` makes ``west build`` detect some of these situations
+and make the build directory pristine before trying the build.
 
 .. tip::
 
@@ -738,8 +742,6 @@ By default, these West commands rebuild binaries before flashing and
 debugging. This can of course also be accomplished using the usual
 targets provided by Zephyr's build system (in fact, that's how these
 commands do it).
-
-.. rubric:: Footnotes
 
 .. _cmake(1):
    https://cmake.org/cmake/help/latest/manual/cmake.1.html

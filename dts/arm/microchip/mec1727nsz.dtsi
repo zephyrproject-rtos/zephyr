@@ -11,14 +11,55 @@
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 
-#include "mec172xnsz.dtsi"
 #include "mec172x/mec172x-vw-routing.dtsi"
-#include "mec172x/mec172xnsz-pinctrl.dtsi"
+
+#include <mem.h>
+#include <freq.h>
 
 / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000000>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <2000000>;
+			};
+		};
+	};
+
+	flash0: flash@c0000 {
+		reg = <0x000C0000 0x58000>;
+	};
+
 	flash1: flash@60000000 {
 		reg = <0x60000000 0x80000>;
 	};
+
+	sram0: memory@118000 {
+		compatible = "mmio-sram";
+		reg = <0x00118000 0x10000>;
+	};
+
+	soc {
+		#include "mec172x_common.dtsi"
+	};
+
 };
 
 &spi0 {
@@ -43,6 +84,16 @@
 		jedec-id = [62 06 13];
 	};
 };
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "disabled";
+};
+
+#include "mec172x/mec172xnsz-pinctrl.dtsi"
 
 &gpspi_wp_n_gpio076 {
 	output-high;

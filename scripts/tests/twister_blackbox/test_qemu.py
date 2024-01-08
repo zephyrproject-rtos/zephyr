@@ -85,7 +85,7 @@ class TestQEMU:
         ]
     )
     def test_emulation_only(self, capfd, test_path, test_platforms, expected):
-        args = ['-T', test_path, '--emulation-only'] + \
+        args = ['-i', '-T', test_path, '--emulation-only'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]

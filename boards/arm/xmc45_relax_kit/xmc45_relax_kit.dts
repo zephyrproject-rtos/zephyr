@@ -22,6 +22,7 @@
 		led0 = &led1;
 		die-temp0 = &die_temp;
 		pwm-led0 = &pwm_led1;
+		watchdog0 = &wdt0;
 	};
 
 	leds {
@@ -55,6 +56,16 @@
 		zephyr,flash-controller = &flash_controller;
 		zephyr,code-partition = &code_partition;
 	};
+};
+
+&psram1 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "PSRAM1";
+};
+
+&dsram2 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "DSRAM2";
 };
 
 &flash_controller {

@@ -25,13 +25,14 @@
 #include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
-#include <zephyr/wait_q.h>
 #include <zephyr/sys/dlist.h>
-#include <ksched.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
+/* private kernel APIs */
+#include <wait_q.h>
+#include <ksched.h>
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
@@ -44,6 +45,10 @@ struct event_walk_data {
 	uint32_t events;
 };
 
+#ifdef CONFIG_OBJ_CORE_EVENT
+static struct k_obj_type obj_type_event;
+#endif
+
 void z_impl_k_event_init(struct k_event *event)
 {
 	event->events = 0;
@@ -53,13 +58,17 @@ void z_impl_k_event_init(struct k_event *event)
 
 	z_waitq_init(&event->wait_q);
 
-	z_object_init(event);
+	k_object_init(event);
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+	k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
 void z_vrfy_k_event_init(struct k_event *event)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(event, K_OBJ_EVENT));
 	z_impl_k_event_init(event);
 }
 #include <syscalls/k_event_init_mrsh.c>
@@ -178,7 +187,7 @@ uint32_t z_impl_k_event_post(struct k_event *event, uint32_t events)
 #ifdef CONFIG_USERSPACE
 uint32_t z_vrfy_k_event_post(struct k_event *event, uint32_t events)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_post(event, events);
 }
 #include <syscalls/k_event_post_mrsh.c>
@@ -192,7 +201,7 @@ uint32_t z_impl_k_event_set(struct k_event *event, uint32_t events)
 #ifdef CONFIG_USERSPACE
 uint32_t z_vrfy_k_event_set(struct k_event *event, uint32_t events)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_set(event, events);
 }
 #include <syscalls/k_event_set_mrsh.c>
@@ -208,7 +217,7 @@ uint32_t z_impl_k_event_set_masked(struct k_event *event, uint32_t events,
 uint32_t z_vrfy_k_event_set_masked(struct k_event *event, uint32_t events,
 			       uint32_t events_mask)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_set_masked(event, events, events_mask);
 }
 #include <syscalls/k_event_set_masked_mrsh.c>
@@ -222,7 +231,7 @@ uint32_t z_impl_k_event_clear(struct k_event *event, uint32_t events)
 #ifdef CONFIG_USERSPACE
 uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_clear(event, events);
 }
 #include <syscalls/k_event_clear_mrsh.c>
@@ -247,7 +256,7 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 	}
 
 	wait_condition = options & K_EVENT_WAIT_MASK;
-	thread = z_current_get();
+	thread = k_sched_current_thread_query();
 
 	k_spinlock_key_t  key = k_spin_lock(&event->lock);
 
@@ -308,7 +317,7 @@ uint32_t z_impl_k_event_wait(struct k_event *event, uint32_t events,
 uint32_t z_vrfy_k_event_wait(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_wait(event, events, reset, timeout);
 }
 #include <syscalls/k_event_wait_mrsh.c>
@@ -330,8 +339,29 @@ uint32_t z_impl_k_event_wait_all(struct k_event *event, uint32_t events,
 uint32_t z_vrfy_k_event_wait_all(struct k_event *event, uint32_t events,
 					bool reset, k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(event, K_OBJ_EVENT));
+	K_OOPS(K_SYSCALL_OBJ(event, K_OBJ_EVENT));
 	return z_impl_k_event_wait_all(event, events, reset, timeout);
 }
 #include <syscalls/k_event_wait_all_mrsh.c>
+#endif
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+static int init_event_obj_core_list(void)
+{
+	/* Initialize condvar object type */
+
+	z_obj_type_init(&obj_type_event, K_OBJ_TYPE_EVENT_ID,
+			offsetof(struct k_event, obj_core));
+
+	/* Initialize and link statically defined condvars */
+
+	STRUCT_SECTION_FOREACH(k_event, event) {
+		k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_event_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif

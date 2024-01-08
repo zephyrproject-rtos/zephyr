@@ -13,7 +13,7 @@ config WDT_NPM1300
 config WDT_NPM1300_INIT_PRIORITY
 	int "nPM1300 Watchdog driver initialization priority"
 	depends on WDT_NPM1300
-	default 75
+	default 85
 	help
 	  Initialization priority for the nPM1300 Watchdog driver.
 	  It must be greater than GPIO_NPM1300_INIT_PRIORITY.

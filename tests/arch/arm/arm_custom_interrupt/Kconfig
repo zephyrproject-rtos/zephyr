@@ -1,0 +1,13 @@
+# Private config options for test
+
+# Copyright Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Custom interrupt test"
+
+source "Kconfig.zephyr"
+
+config ENABLE_CUSTOM_INTERRUPTS
+	bool
+	default y
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER

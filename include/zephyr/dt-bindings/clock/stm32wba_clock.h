@@ -72,6 +72,8 @@
 #define CCIPR1_REG		0xE0
 #define CCIPR2_REG		0xE4
 #define CCIPR3_REG		0xE8
+/** @brief RCC_BCDR1 register offset (RM0493.pdf) */
+#define BCDR1_REG		0xF0
 
 /** @brief Device clk sources selection helpers */
 /** CCIPR1 devices */
@@ -90,5 +92,7 @@
 #define I2C3_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR3_REG)
 #define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR3_REG)
 #define ADC_SEL(val)		STM32_CLOCK(val, 7, 12, CCIPR3_REG)
+/** BCDR1 devices */
+#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BCDR1_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WBA_CLOCK_H_ */

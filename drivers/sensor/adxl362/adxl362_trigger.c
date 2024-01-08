@@ -62,8 +62,13 @@ static void adxl362_gpio_callback(const struct device *dev,
 }
 
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
-static void adxl362_thread(struct adxl362_data *drv_data)
+static void adxl362_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct adxl362_data *drv_data = p1;
+
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		adxl362_thread_cb(drv_data->dev);
@@ -171,7 +176,7 @@ int adxl362_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ADXL362_THREAD_STACK_SIZE,
-			(k_thread_entry_t)adxl362_thread, drv_data,
+			adxl362_thread, drv_data,
 			NULL, NULL, K_PRIO_COOP(CONFIG_ADXL362_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)

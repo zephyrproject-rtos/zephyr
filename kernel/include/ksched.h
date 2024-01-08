@@ -9,9 +9,11 @@
 
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
-#include <zephyr/timeout_q.h>
+#include <timeout_q.h>
 #include <zephyr/tracing/tracing.h>
 #include <stdbool.h>
+
+bool z_is_thread_essential(void);
 
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
@@ -266,15 +268,6 @@ static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 	compiler_barrier();
 
 	++_current->base.sched_locked;
-}
-
-static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
-{
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.dticks == _EXPIRED;
-#else
-	return 0;
-#endif
 }
 
 /*

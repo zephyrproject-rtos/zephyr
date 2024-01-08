@@ -45,7 +45,7 @@ ZTEST_USER(test_smbus_general, test_smbus_basic_api)
  * The test is run in userspace only if CONFIG_USERSPACE option is
  * enabled, otherwise it is the same as ZTEST()
  */
-ZTEST_USER(test_smbus_general, test_smbus_smbalert_api)
+ZTEST(test_smbus_general, test_smbus_smbalert_api)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(smbus0));
 	void *dummy; /* For the dummy function pointer use this */
@@ -90,7 +90,7 @@ ZTEST_USER(test_smbus_general, test_smbus_smbalert_api)
  * The test is run in userspace only if CONFIG_USERSPACE option is
  * enabled, otherwise it is the same as ZTEST()
  */
-ZTEST_USER(test_smbus_general, test_smbus_host_notify_api)
+ZTEST(test_smbus_general, test_smbus_host_notify_api)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(smbus0));
 	void *dummy; /* For the dummy function pointer use this */

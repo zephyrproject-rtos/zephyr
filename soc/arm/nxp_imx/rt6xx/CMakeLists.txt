@@ -32,3 +32,5 @@ zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   zephyr_code_relocate(FILES flash_clock_setup.c LOCATION RAM)
 endif()
+
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")

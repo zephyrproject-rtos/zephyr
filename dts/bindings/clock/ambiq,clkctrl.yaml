@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq Apollo Series SoC Clock Controller
+
+compatible: "ambiq,clkctrl"
+
+include: [clock-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    description: output clock frequency (Hz)
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#clock-cells":
+    const: 1

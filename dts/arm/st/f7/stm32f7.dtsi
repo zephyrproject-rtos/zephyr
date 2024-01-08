@@ -16,6 +16,8 @@
 #include <zephyr/dt-bindings/reset/stm32f2_4_7_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <freq.h>
 
 / {
@@ -47,7 +49,7 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x90000000 DT_SIZE_M(256)>;
 		zephyr,memory-region = "QSPI";
-		zephyr,memory-attr = "EXTMEM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_EXTMEM) )>;
 	};
 
 	clocks {
@@ -402,7 +404,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sjw = <1>;
 			sample-point = <875>;
 		};
 
@@ -741,16 +742,13 @@
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
-			/* Temperature and VBAT sensor share channel 18 */
-			temp-channel = <18>;
-			vbat-channel = <18>;
-			vref-channel = <17>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc2: adc@40012100 {
@@ -766,6 +764,7 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		adc3: adc@40012200 {
@@ -781,6 +780,7 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = <SYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
 		dac1: dac@40007400 {

@@ -6,6 +6,10 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <16>;
+};
+
 &sysclk {
 	clock-frequency = <500000000>;
 };

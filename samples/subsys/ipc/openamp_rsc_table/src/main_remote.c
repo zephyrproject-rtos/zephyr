@@ -276,6 +276,7 @@ void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned int msg_cnt = 0;
 	int ret = 0;
 
@@ -302,6 +303,7 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned char tx_buff[512];
 	int ret = 0;
 
@@ -335,6 +337,7 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
+
 	unsigned char *msg;
 	unsigned int len;
 	int ret = 0;
@@ -375,13 +378,13 @@ int main(void)
 {
 	printk("Starting application threads!\n");
 	k_thread_create(&thread_mng_data, thread_mng_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)rpmsg_mng_task,
+			rpmsg_mng_task,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 	k_thread_create(&thread_rp__client_data, thread_rp__client_stack, APP_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_rpmsg_client_sample,
+			app_rpmsg_client_sample,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_create(&thread_tty_data, thread_tty_stack, APP_TTY_TASK_STACK_SIZE,
-			(k_thread_entry_t)app_rpmsg_tty,
+			app_rpmsg_tty,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	return 0;
 }

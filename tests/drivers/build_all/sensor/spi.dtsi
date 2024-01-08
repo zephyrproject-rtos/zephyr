@@ -162,6 +162,7 @@ test_spi_bmi270: bmi270@15 {
 	compatible = "bosch,bmi270";
 	reg = <0x15>;
 	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_bmp388: bmp388@16 {
@@ -225,6 +226,7 @@ test_spi_bmm150: bmm150@1d {
 	compatible = "bosch,bmm150";
 	reg = <0x1d>;
 	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_hts221: hts221@1e {
@@ -259,7 +261,8 @@ test_spi_lsm6dsv16x: lsm6dsv16x@22 {
 	compatible = "st,lsm6dsv16x";
 	reg = <0x22>;
 	spi-max-frequency = <0>;
-	irq-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_bmi08x_accel: bmi08x@23 {
@@ -284,4 +287,28 @@ test_spi_bmi08x_gyro: bmi08x@24 {
 	int3-4-conf-io = <0x01>;
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
+};
+
+test_spi_tmag5170: tmag5170@25 {
+	compatible = "ti,tmag5170";
+	reg = <0x25>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	operating-mode = <1>;
+};
+
+test_spi_adxl367: adxl367@26 {
+	compatible = "adi,adxl367";
+	reg = <0x26>;
+	spi-max-frequency = <0>;
+	odr = <4>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lps22df: lps22df@27 {
+	compatible = "st,lps22df";
+	reg = <0x27>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+	status = "okay";
 };

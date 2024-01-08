@@ -59,6 +59,8 @@
 	};
 
 	soc {
+		compatible = "nuvoton,npcx4", "nuvoton,npcx", "simple-bus";
+
 		/* Specific soc devices in npcx4 series */
 		itims: timer@400b0000 {
 			compatible = "nuvoton,npcx-itim-timer";
@@ -257,8 +259,20 @@
 		/* ADC0 comparator configuration in npcx4 series */
 		adc0: adc@400d1000 {
 			channel-count = <26>;
-			threshold-reg-offset = <0x80>;
 			threshold-count = <6>;
+		};
+
+		/* ADC1 which reference voltage is AVCC */
+		adc1: adc@400d5000 {
+			compatible = "nuvoton,npcx-adc";
+			#io-channel-cells = <1>;
+			reg = <0x400d5000 0x2000>;
+			interrupts = <22 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 3>;
+			vref-mv = <3300>;
+			channel-count = <26>;
+			threshold-count = <6>;
+			status = "disabled";
 		};
 
 		/* FIU0 configuration in npcx4 series */
@@ -278,6 +292,7 @@
 		sha0: sha@13c {
 			compatible = "nuvoton,npcx-sha";
 			reg = <0x13c 0x3c>;
+			context-buffer-size = <228>;
 			status = "disabled";
 		};
 	};
@@ -303,6 +318,7 @@
 	};
 
 	soc-id {
+		family-id = <0x23>;
 		chip-id = <0x0a>;
 		revision-reg = <0x0000FFFC 4>;
 	};

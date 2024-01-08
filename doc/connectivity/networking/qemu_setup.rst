@@ -13,7 +13,7 @@ targets such as qemu_x86 and qemu_cortex_m3). Some virtual ARM boards (such as
 qemu_cortex_a53) only support a single UART, in this case QEMU Ethernet is
 preferred, see :ref:`networking_with_eth_qemu` for details.
 
-In this example, the :ref:`sockets-echo-server-sample` sample application from
+In this example, the :zephyr:code-sample:`sockets-echo-server` sample application from
 the Zephyr source distribution is run in QEMU. The QEMU instance is
 connected to a Linux host using a serial port, and SLIP is used to
 transfer data between the Zephyr application and Linux (over a chain of

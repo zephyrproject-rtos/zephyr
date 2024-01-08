@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/hash_map.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 LOG_MODULE_REGISTER(hashmap_sample);
 

@@ -8,14 +8,14 @@
 
 /*
  * This tests the following random number routines:
- * void z_early_boot_rand_get(uint8_t *buf, size_t length)
+ * void z_early_rand_get(uint8_t *buf, size_t length)
  * uint32_t sys_rand32_get(void);
  */
 
 
 #include <zephyr/ztest.h>
 #include <kernel_internal.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define N_VALUES 10
 
@@ -35,11 +35,11 @@ ZTEST(rand32_common, test_rand32)
 
 	/* Test early boot random number generation function */
 	/* Cover the case, where argument "length" is < size of "size_t" */
-	z_early_boot_rand_get((uint8_t *)&tmp, (size_t)1);
-	z_early_boot_rand_get((uint8_t *)&last_gen, sizeof(last_gen));
-	z_early_boot_rand_get((uint8_t *)&gen, sizeof(gen));
+	z_early_rand_get((uint8_t *)&tmp, (size_t)1);
+	z_early_rand_get((uint8_t *)&last_gen, sizeof(last_gen));
+	z_early_rand_get((uint8_t *)&gen, sizeof(gen));
 	zassert_true(last_gen != gen && last_gen != tmp && tmp != gen,
-			"z_early_boot_rand_get failed");
+			"z_early_rand_get failed");
 
 	/*
 	 * Test subsequently calls sys_rand32_get(), checking
@@ -85,7 +85,7 @@ ZTEST(rand32_common, test_rand32)
 		"random numbers returned same value with high probability");
 	}
 
-#if defined(CONFIG_CSPRING_ENABLED)
+#if defined(CONFIG_CSPRNG_ENABLED)
 
 	printk("Generating bulk fill cryptographically secure random numbers\n");
 
@@ -109,7 +109,7 @@ ZTEST(rand32_common, test_rand32)
 
 	printk("Cryptographically secure random number APIs not enabled\n");
 
-#endif /* CONFIG_CSPRING_ENABLED */
+#endif /* CONFIG_CSPRNG_ENABLED */
 }
 
 ZTEST_SUITE(rand32_common, NULL, NULL, NULL, NULL, NULL);

@@ -12,7 +12,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/settings/settings.h>
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 
 #include <stdint.h>
 #include <string.h>

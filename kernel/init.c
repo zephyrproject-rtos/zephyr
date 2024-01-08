@@ -15,7 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/stack.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>
@@ -36,7 +36,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device_runtime.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
-
 
 BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
 	     "CONFIG_MP_NUM_CPUS and CONFIG_MP_MAX_NUM_CPUS need to be set the same");
@@ -98,6 +97,32 @@ K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_interrupt_stacks,
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+static struct k_obj_type obj_type_cpu;
+static struct k_obj_type obj_type_kernel;
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+static struct k_obj_core_stats_desc  cpu_stats_desc = {
+	.raw_size = sizeof(struct k_cycle_stats),
+	.query_size = sizeof(struct k_thread_runtime_stats),
+	.raw   = z_cpu_stats_raw,
+	.query = z_cpu_stats_query,
+	.reset = NULL,
+	.disable = NULL,
+	.enable  = NULL,
+};
+
+static struct k_obj_core_stats_desc  kernel_stats_desc = {
+	.raw_size = sizeof(struct k_cycle_stats) * CONFIG_MP_MAX_NUM_CPUS,
+	.query_size = sizeof(struct k_thread_runtime_stats),
+	.raw   = z_kernel_stats_raw,
+	.query = z_kernel_stats_query,
+	.reset = NULL,
+	.disable = NULL,
+	.enable  = NULL,
+};
+#endif
+#endif
 
 /* LCOV_EXCL_START
  *
@@ -140,12 +165,7 @@ void __weak z_early_memcpy(void *dst, const void *src, size_t n)
 __boot_func
 void z_bss_zero(void)
 {
-	if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
-		/* native_posix gets its memory cleared on entry by
-		 * the host OS, and in any case the host clang/lld
-		 * doesn't emit the __bss_end symbol this code expects
-		 * to see
-		 */
+	if (IS_ENABLED(CONFIG_SKIP_BSS_CLEAR)) {
 		return;
 	}
 
@@ -399,7 +419,8 @@ void z_init_cpu(int id)
 		(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[id]) +
 		 K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[id]));
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
-	_kernel.cpus[id].usage.track_usage =
+	_kernel.cpus[id].usage = &_kernel.usage[id];
+	_kernel.cpus[id].usage->track_usage =
 		CONFIG_SCHED_THREAD_USAGE_AUTO_ENABLE;
 #endif
 
@@ -408,6 +429,15 @@ void z_init_cpu(int id)
 	 * will keep track of this from here.
 	 */
 	atomic_inc(&_cpus_active);
+
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel.cpus[id]), &obj_type_cpu);
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_core_stats_register(K_OBJ_CORE(&_kernel.cpus[id]),
+				  _kernel.cpus[id].usage,
+				  sizeof(struct k_cycle_stats));
+#endif
+#endif
 }
 
 /**
@@ -473,46 +503,38 @@ static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 }
 #endif /* CONFIG_MULTITHREADING */
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR)
 __boot_func
-void z_early_boot_rand_get(uint8_t *buf, size_t length)
+void __weak z_early_rand_get(uint8_t *buf, size_t length)
 {
-#ifdef CONFIG_ENTROPY_HAS_DRIVER
-	const struct device *const entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
+	static uint64_t state = (uint64_t)CONFIG_TIMER_RANDOM_INITIAL_STATE;
 	int rc;
 
-	if (!device_is_ready(entropy)) {
-		goto sys_rand_fallback;
+#ifdef CONFIG_ENTROPY_HAS_DRIVER
+	const struct device *const entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
+
+	if ((entropy != NULL) && device_is_ready(entropy)) {
+		/* Try to see if driver provides an ISR-specific API */
+		rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
+		if (rc > 0) {
+			length -= rc;
+			buf += rc;
+		}
 	}
-
-	/* Try to see if driver provides an ISR-specific API */
-	rc = entropy_get_entropy_isr(entropy, buf, length, ENTROPY_BUSYWAIT);
-	if (rc == -ENOTSUP) {
-		/* Driver does not provide an ISR-specific API, assume it can
-		 * be called from ISR context
-		 */
-		rc = entropy_get_entropy(entropy, buf, length);
-	}
-
-	if (rc >= 0) {
-		return;
-	}
-
-	/* Fall through to fallback */
-
-sys_rand_fallback:
 #endif
 
-	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
-	 * primitive, like semaphores or mutexes.  It's too early in the boot
-	 * process to use any of them.  Ideally, only the path where entropy
-	 * devices are available should be built, this is only a fallback for
-	 * those devices without a HWRNG entropy driver.
-	 */
-	sys_rand_get(buf, length);
+	while (length > 0) {
+		uint32_t val;
+
+		state = state + k_cycle_get_32();
+		state = state * 2862933555777941757ULL + 3037000493ULL;
+		val = (uint32_t)(state >> 32);
+		rc = MIN(length, sizeof(val));
+		z_early_memcpy((void *)buf, &val, rc);
+
+		length -= rc;
+		buf += rc;
+	}
 }
-/* defined(CONFIG_ENTROPY_HAS_DRIVER) || defined(CONFIG_TEST_RANDOM_GENERATOR) */
-#endif
 
 /**
  *
@@ -557,7 +579,7 @@ FUNC_NORETURN void z_cstart(void)
 #ifdef CONFIG_STACK_CANARIES
 	uintptr_t stack_guard;
 
-	z_early_boot_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
+	z_early_rand_get((uint8_t *)&stack_guard, sizeof(stack_guard));
 	__stack_chk_guard = stack_guard;
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES */
@@ -597,3 +619,45 @@ FUNC_NORETURN void z_cstart(void)
 
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
+
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+static int init_cpu_obj_core_list(void)
+{
+	/* Initialize CPU object type */
+
+	z_obj_type_init(&obj_type_cpu, K_OBJ_TYPE_CPU_ID,
+			offsetof(struct _cpu, obj_core));
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_type_stats_init(&obj_type_cpu, &cpu_stats_desc);
+#endif
+
+	return 0;
+}
+
+static int init_kernel_obj_core_list(void)
+{
+	/* Initialize kernel object type */
+
+	z_obj_type_init(&obj_type_kernel, K_OBJ_TYPE_KERNEL_ID,
+			offsetof(struct z_kernel, obj_core));
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_type_stats_init(&obj_type_kernel, &kernel_stats_desc);
+#endif
+
+	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel), &obj_type_kernel);
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_core_stats_register(K_OBJ_CORE(&_kernel), _kernel.usage,
+				  sizeof(_kernel.usage));
+#endif
+
+	return 0;
+}
+
+SYS_INIT(init_cpu_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+SYS_INIT(init_kernel_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif

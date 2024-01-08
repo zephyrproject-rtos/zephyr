@@ -113,11 +113,11 @@ accelerometer and magnetometer for sensor values
 (``CONFIG_FXOS8700_TRIGGER_NONE=y``).
 
 In order to support FXOS8700 triggers (interrupts) the 0 ohm resistors
-``R47`` and and ``R57`` must be mounted on the TWR-KE18F board. The
+``R47`` and ``R57`` must be mounted on the TWR-KE18F board. The
 devicetree must also be modified to describe the FXOS8700 interrupt
 GPIOs:
 
-.. code-block:: none
+.. code-block:: devicetree
 
   /dts-v1/;
 

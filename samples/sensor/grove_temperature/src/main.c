@@ -63,7 +63,7 @@ int main(void)
 
 		/* display temperature on LCD */
 		glcd_cursor_pos_set(glcd, 0, 0);
-#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
+#ifdef CONFIG_REQUIRES_FLOAT_PRINTF
 		sprintf(row, "T:%.2f%cC",
 			sensor_value_to_double(&temp),
 			223 /* degree symbol */);
@@ -75,7 +75,7 @@ int main(void)
 
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
+#ifdef CONFIG_REQUIRES_FLOAT_PRINTF
 		printf("Temperature: %.2f C\n", sensor_value_to_double(&temp));
 #else
 		printk("Temperature: %d\n", temp.val1);

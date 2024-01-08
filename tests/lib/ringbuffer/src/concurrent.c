@@ -7,7 +7,7 @@
 #include <zephyr/ztress.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/mutex.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <stdint.h>
 
 /**

@@ -1,0 +1,9 @@
+tests:
+  kernel.obj_core.stats:
+    tags: kernel
+    ignore_faults: true
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - qemu_x86_tiny
+      - qemu_x86_tiny@768

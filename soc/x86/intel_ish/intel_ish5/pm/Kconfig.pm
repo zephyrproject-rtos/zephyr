@@ -18,4 +18,7 @@ config GDT_RESERVED_NUM_ENTRIES
 config REBOOT
 	default y
 
+config PM_NEED_ALL_DEVICES_IDLE
+	default y
+
 endif

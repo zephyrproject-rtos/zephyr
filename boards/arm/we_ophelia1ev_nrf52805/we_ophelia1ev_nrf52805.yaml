@@ -16,3 +16,4 @@ supported:
   - i2c
   - spi
   - uart
+vendor: we

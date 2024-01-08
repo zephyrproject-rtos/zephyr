@@ -6,7 +6,9 @@
 
 /dts-v1/;
 #include <freq.h>
+#include <mem.h>
 #include <atmel/samd20.dtsi>
+#include <atmel/samx2xx16.dtsi>
 #include "ev11l78a-pinctrl.dtsi"
 
 / {
@@ -94,9 +96,9 @@
 		 * Storage partition will be used by FCB/LittleFS/NVS
 		 * if enabled.
 		 */
-		storage_partition: partition@3c000 {
+		storage_partition: partition@c000 {
 			label = "storage";
-			reg = <0x0003c000 0x00004000>;
+			reg = <DT_SIZE_K(64-16) DT_SIZE_K(16)>;
 		};
 	};
 };

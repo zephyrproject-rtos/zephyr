@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT raspberrypi_pico_adc
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 
 #include <hardware/adc.h>
@@ -31,6 +32,8 @@ LOG_MODULE_REGISTER(adc_rpi, CONFIG_ADC_LOG_LEVEL);
 struct adc_rpi_config {
 	/** Number of supported channels */
 	uint8_t num_channels;
+	/** pinctrl configs */
+	const struct pinctrl_dev_config *pcfg;
 	/** function pointer to irq setup */
 	void (*irq_configure)(void);
 };
@@ -289,6 +292,12 @@ static int adc_rpi_init(const struct device *dev)
 {
 	const struct adc_rpi_config *config = dev->config;
 	struct adc_rpi_data *data = dev->data;
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	config->irq_configure();
 
@@ -325,6 +334,7 @@ static int adc_rpi_init(const struct device *dev)
 
 #define ADC_RPI_INIT(idx)							   \
 	IRQ_CONFIGURE_FUNC(idx)							   \
+	PINCTRL_DT_INST_DEFINE(idx);						   \
 	static struct adc_driver_api adc_rpi_api_##idx = {			   \
 		.channel_setup = adc_rpi_channel_setup,				   \
 		.read = adc_rpi_read,						   \
@@ -333,6 +343,7 @@ static int adc_rpi_init(const struct device *dev)
 	};									   \
 	static const struct adc_rpi_config adc_rpi_config_##idx = {		   \
 		.num_channels = ADC_RPI_CHANNEL_NUM,				   \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),			   \
 		IRQ_CONFIGURE_DEFINE(idx),					   \
 	};									   \
 	static struct adc_rpi_data adc_rpi_data_##idx = {			   \

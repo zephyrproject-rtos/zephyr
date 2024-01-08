@@ -7,7 +7,7 @@ Networking with the host system
    :maxdepth: 1
    :hidden:
 
-   native_posix_setup.rst
+   native_sim_setup.rst
    qemu_eth_setup.rst
    qemu_setup.rst
    usbnet_setup.rst
@@ -53,14 +53,14 @@ possible:
     the host on which the model is running. See :ref:`networking_with_armfvp`
     for details.
 
-* native_posix board.
+* native_sim board.
 
   * The Zephyr instance can be executed as a user space process in the host
     system. This is the most convenient way to debug the Zephyr system as one
     can attach host debugger directly to the running Zephyr instance. This
     requires that there is an adaptation driver in Zephyr for interfacing
     with the host system. An Ethernet driver exists in Zephyr for this purpose.
-    See :ref:`networking_with_native_posix` for details.
+    See :ref:`networking_with_native_sim` for details.
 
 * USB device networking.
 
@@ -70,7 +70,7 @@ possible:
 
 * Connecting multiple Zephyr instances together.
 
-  * If you have multiple Zephyr instances, either QEMU or native_posix ones,
+  * If you have multiple Zephyr instances, either QEMU or native_sim ones,
     and want to create a connection between them, see
     :ref:`networking_with_multiple_instances` for details.
 

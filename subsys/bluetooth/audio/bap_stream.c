@@ -51,6 +51,10 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	io->sdu = codec_qos->sdu;
 	io->phy = codec_qos->phy;
 	io->rtn = codec_qos->rtn;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	io->burst_number = codec_qos->burst_number;
+	io->max_pdu = codec_qos->max_pdu;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT ||                                                          \
 	* CONFIG_BT_BAP_BROADCAST_SOURCE ||                                                        \
@@ -195,7 +199,27 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		return false;
 	}
 
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		if (codec_cfg->cid != 0U) {
+			LOG_DBG("codec_cfg->cid (%u) is invalid", codec_cfg->cid);
+			return false;
+		}
+
+		if (codec_cfg->vid != 0U) {
+			LOG_DBG("codec_cfg->vid (%u) is invalid", codec_cfg->vid);
+			return false;
+		}
+	}
+
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+	/* Verify that codec configuration length is 0 when using
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT as per the core spec, 5.4, Vol 4, Part E, 7.8.109
+	 */
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_TRANSPARENT && codec_cfg->data_len != 0) {
+		LOG_DBG("Invalid data_len %zu for codec_id %u", codec_cfg->data_len, codec_cfg->id);
+		return false;
+	}
+
 	if (codec_cfg->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
 		LOG_DBG("codec_cfg->data_len (%zu) is invalid", codec_cfg->data_len);
 		return false;
@@ -252,6 +276,16 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 			bt_bap_ep_state_str(ep->status.state));
 		return -EBADMSG;
 	}
+
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	if (stream->_prev_seq_num != 0U && seq_num != 0U &&
+	    (stream->_prev_seq_num + 1U) != seq_num) {
+		LOG_WRN("Unexpected seq_num diff between %u and %u for %p", stream->_prev_seq_num,
+			seq_num, stream);
+	}
+
+	stream->_prev_seq_num = seq_num;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
 
 	/* TODO: Add checks for broadcast sink */
 
@@ -769,7 +803,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	LOG_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		LOG_DBG("Invalid stream");
+		LOG_DBG("Invalid stream (ep %p, conn %p)", stream->ep, (void *)stream->conn);
 		return -EINVAL;
 	}
 

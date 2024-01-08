@@ -26,6 +26,15 @@
 			};
 		};
 
+		kbd-matrix {
+			compatible = "gpio-kbd-matrix";
+			row-gpios = <&test_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+				    <&test_gpio 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			col-gpios = <&test_gpio 2 GPIO_ACTIVE_LOW>,
+				    <&test_gpio 3 GPIO_ACTIVE_LOW>,
+				    <&test_gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
 		qdec-gpio {
 			compatible = "gpio-qdec";
 			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
@@ -61,22 +70,32 @@
 			gt911@1 {
 				compatible = "goodix,gt911";
 				reg = <0x1>;
-				irq-gpios = <&gpio0 0 0>;
-				reset-gpios = <&gpio0 0 0>;
+				irq-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
 			};
 
-			cst816s: cst816s@2 {
+			cst816s@2 {
 				compatible = "hynitron,cst816s";
 				reg = <0x2>;
-				irq-gpios = <&gpio0 0 0>;
-				rst-gpios = <&gpio0 0 0>;
+				irq-gpios = <&test_gpio 0 0>;
+				rst-gpios = <&test_gpio 1 0>;
 			};
 
 			cap1203@3 {
 				compatible = "microchip,cap1203";
 				reg = <0x3>;
-				int-gpios = <&gpio0 0 0>;
+				int-gpios = <&test_gpio 0 0>;
 				input-codes = <0 1 2>;
+			};
+
+			stmpe811@4 {
+				compatible = "st,stmpe811";
+				reg = <0x4>;
+				int-gpios = <&test_gpio 0 0>;
+				panel-driver-settling-time-us = <10>;
+				touch-detect-delay-us = <10>;
+				touch-average-control = <1>;
+				tracking-index = <0>;
 			};
 		};
 

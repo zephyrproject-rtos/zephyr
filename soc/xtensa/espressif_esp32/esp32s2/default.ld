@@ -53,6 +53,11 @@
 #define IROM_SEG_ALIGN 0x10000
 #endif
 
+/* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
+ * Executing directly from LMA is not possible. */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
+
 MEMORY
 {
   mcuboot_hdr (RX): org = 0x0, len = 0x20
@@ -130,6 +135,7 @@ SECTIONS
    */
   SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(4))
   {
+    _rodata_reserved_start = ABSOLUTE(.);
     __rodata_region_start = ABSOLUTE(.);
 
     . = ALIGN(4);
@@ -177,27 +183,22 @@ SECTIONS
     *(.rodata_wlog)
     *(.rodata_wlog*)
     _thread_local_end = ABSOLUTE(.);
-    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* Flash segments (rodata and text) should be mapped in virtual address space by providing VMA.
-   * Executing directly from LMA is not possible. */
-  #pragma push_macro("GROUP_ROM_LINK_IN")
-  #undef GROUP_ROM_LINK_IN
-  #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
   #include <zephyr/linker/common-rom/common-rom-cpp.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #pragma pop_macro("GROUP_ROM_LINK_IN")
+  #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
   SECTION_PROLOGUE(_RODATA_SECTION_END,,ALIGN(0x10))
   {
+    _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(4);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -363,8 +364,6 @@ SECTIONS
     *(.noinit.*)
     . = ALIGN(8);
   } GROUP_LINK_IN(RAMABLE_REGION)
-
-#include <snippets-sections.ld>
 
   .dram0.data :
   {

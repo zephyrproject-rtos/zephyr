@@ -3,8 +3,12 @@
 # Copyright (c) 2015 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_TINYCRYPT_MODULE
+	bool
+
 config TINYCRYPT
 	bool "TinyCrypt Support"
+	depends on ZEPHYR_TINYCRYPT_MODULE
 	help
 	  This option enables the TinyCrypt cryptography library.
 

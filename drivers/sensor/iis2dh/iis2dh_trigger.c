@@ -112,8 +112,13 @@ static void iis2dh_gpio_callback(const struct device *dev,
 }
 
 #ifdef CONFIG_IIS2DH_TRIGGER_OWN_THREAD
-static void iis2dh_thread(struct iis2dh_data *iis2dh)
+static void iis2dh_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct iis2dh_data *iis2dh = p1;
+
 	while (1) {
 		k_sem_take(&iis2dh->gpio_sem, K_FOREVER);
 		iis2dh_handle_interrupt(iis2dh->dev);
@@ -149,7 +154,7 @@ int iis2dh_init_interrupt(const struct device *dev)
 
 	k_thread_create(&iis2dh->thread, iis2dh->thread_stack,
 		       CONFIG_IIS2DH_THREAD_STACK_SIZE,
-		       (k_thread_entry_t)iis2dh_thread, iis2dh,
+		       iis2dh_thread, iis2dh,
 		       0, NULL, K_PRIO_COOP(CONFIG_IIS2DH_THREAD_PRIORITY),
 		       0, K_NO_WAIT);
 #elif defined(CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD)

@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +80,7 @@ struct gatt_sub {
  *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
  */
 static struct gatt_sub subscriptions[SUB_MAX];
-static sys_slist_t callback_list;
+static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
@@ -853,9 +854,7 @@ static void db_hash_gen(void)
 	atomic_set_bit(gatt_sc.flags, DB_HASH_VALID);
 }
 
-#if defined(CONFIG_BT_SETTINGS)
 static void sc_indicate(uint16_t start, uint16_t end);
-#endif
 
 static void do_db_hash(void)
 {
@@ -1318,7 +1317,6 @@ static void clear_ccc_cfg(struct bt_gatt_ccc_cfg *cfg)
 	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
 	cfg->id = 0U;
 	cfg->value = 0U;
-	cfg->link_encrypted = false;
 }
 
 static void gatt_store_ccc_cf(uint8_t id, const bt_addr_le_t *peer_addr);
@@ -1464,8 +1462,6 @@ void bt_gatt_init(void)
 
 	bt_gatt_service_init();
 
-	sys_slist_init(&callback_list);
-
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_work_init_delayable(&db_hash.work, db_hash_process);
 
@@ -1517,10 +1513,10 @@ void bt_gatt_init(void)
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
 }
 
-#if defined(CONFIG_BT_GATT_DYNAMIC_DB) || \
-    (defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
 static void sc_indicate(uint16_t start, uint16_t end)
 {
+#if defined(CONFIG_BT_GATT_DYNAMIC_DB) ||                                                          \
+	(defined(CONFIG_BT_GATT_CACHING) && defined(CONFIG_BT_SETTINGS))
 	LOG_DBG("start 0x%04x end 0x%04x", start, end);
 
 	if (!atomic_test_and_set_bit(gatt_sc.flags, SC_RANGE_CHANGED)) {
@@ -1541,8 +1537,8 @@ submit:
 
 	/* Reschedule since the range has changed */
 	sc_work_submit(SC_TIMEOUT);
-}
 #endif /* BT_GATT_DYNAMIC_DB || (BT_GATT_CACHING && BT_SETTINGS) */
+}
 
 void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 {
@@ -2050,34 +2046,6 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr)
 	return next;
 }
 
-static bool bt_gatt_ccc_cfg_is_matching_conn(const struct bt_conn *conn,
-					     const struct bt_gatt_ccc_cfg *cfg)
-{
-	bool conn_encrypted = bt_conn_get_security(conn) >= BT_SECURITY_L2;
-
-	if (cfg->link_encrypted && !conn_encrypted) {
-		return false;
-	}
-
-	return bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer);
-}
-
-static struct bt_conn *bt_gatt_ccc_cfg_conn_lookup(const struct bt_gatt_ccc_cfg *cfg)
-{
-	struct bt_conn *conn;
-
-	conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
-	if (conn) {
-		if (bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
-			return conn;
-		}
-
-		bt_conn_unref(conn);
-	}
-
-	return NULL;
-}
-
 static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 					    struct _bt_gatt_ccc *ccc)
 {
@@ -2085,7 +2053,8 @@ static struct bt_gatt_ccc_cfg *find_ccc_cfg(const struct bt_conn *conn,
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
 		if (conn) {
-			if (bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
+			if (bt_conn_is_peer_addr_le(conn, cfg->id,
+						    &cfg->peer)) {
 				return cfg;
 			}
 		} else if (bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
@@ -2179,7 +2148,6 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
 		cfg->id = conn->id;
-		cfg->link_encrypted = (bt_conn_get_security(conn) >= BT_SECURITY_L2);
 	}
 
 	/* Confirm write if cfg is managed by application */
@@ -3259,7 +3227,8 @@ static uint8_t update_ccc(const struct bt_gatt_attr *attr, uint16_t handle,
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
 		/* Ignore configuration for different peer or not active */
-		if (!cfg->value || !bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
+		if (!cfg->value ||
+		    !bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
 			continue;
 		}
 
@@ -3333,11 +3302,11 @@ static uint8_t disconnected_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 			continue;
 		}
 
-		if (!bt_gatt_ccc_cfg_is_matching_conn(conn, cfg)) {
+		if (!bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer)) {
 			struct bt_conn *tmp;
 
 			/* Skip if there is another peer connected */
-			tmp = bt_gatt_ccc_cfg_conn_lookup(cfg);
+			tmp = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
 			if (tmp) {
 				if (tmp->state == BT_CONN_CONNECTED) {
 					value_used = true;
@@ -3427,7 +3396,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 	for (size_t i = 0; i < BT_GATT_CCC_MAX; i++) {
 		const struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 
-		if (bt_gatt_ccc_cfg_is_matching_conn(conn, cfg) &&
+		if (bt_conn_is_peer_addr_le(conn, cfg->id, &cfg->peer) &&
 		    (ccc_type & ccc->cfg[i].value)) {
 			return true;
 		}
@@ -4649,8 +4618,11 @@ static void gatt_read_rsp(struct bt_conn *conn, uint8_t err, const void *pdu,
 	 * If the Characteristic Value is greater than (ATT_MTU - 1) octets
 	 * in length, the Read Long Characteristic Value procedure may be used
 	 * if the rest of the Characteristic Value is required.
+	 *
+	 * Note: Both BT_ATT_OP_READ_RSP and BT_ATT_OP_READ_BLOB_RSP
+	 * have an overhead of one octet.
 	 */
-	if (length < (bt_att_get_mtu(conn) - 1)) {
+	if (length < (params->_att_mtu - 1)) {
 		params->func(conn, 0, params, NULL, 0);
 		return;
 	}
@@ -5145,18 +5117,21 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, uint8_t err,
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
 		struct gatt_sub *sub;
-		sys_snode_t *node, *tmp;
+		sys_snode_t *node, *tmp, *prev;
 
 		sub = gatt_sub_find(conn);
 		if (!sub) {
 			return;
 		}
 
+		prev = NULL;
+
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&sub->list, node, tmp) {
 			if (node == &params->node) {
-				gatt_sub_remove(conn, sub, tmp, params);
+				gatt_sub_remove(conn, sub, prev, params);
 				break;
 			}
+			prev = node;
 		}
 	} else if (!params->value) {
 		/* Notify with NULL data to complete unsubscribe */
@@ -5578,7 +5553,6 @@ static uint8_t ccc_load(const struct bt_gatt_attr *attr, uint16_t handle,
 		}
 		bt_addr_le_copy(&cfg->peer, load->addr_with_id.addr);
 		cfg->id = load->addr_with_id.id;
-		cfg->link_encrypted = true;
 	}
 
 	cfg->value = load->entry->value;
@@ -5781,14 +5755,12 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 
-#if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_SERVICE_CHANGED)
 	if (!bt_gatt_change_aware(conn, false)) {
 		/* Send a Service Changed indication if the current peer is
 		 * marked as change-unaware.
 		 */
 		sc_indicate(0x0001, 0xffff);
 	}
-#endif	/* CONFIG_BT_SETTINGS && CONFIG_BT_GATT_SERVICE_CHANGED */
 }
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
@@ -6302,4 +6274,23 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CACHING)
 	remove_cf_cfg(conn);
 #endif
+}
+
+void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
+{
+	IF_ENABLED(CONFIG_BT_GATT_CLIENT, ({
+		if (req->func == gatt_read_rsp) {
+			struct bt_gatt_read_params *params = req->user_data;
+
+			__ASSERT_NO_MSG(params);
+			params->_att_mtu = mtu;
+			return;
+		}
+	}));
+
+	/* Otherwise: This request type does not have an `_att_mtu`
+	 * params field or any other method to get this value, so we can
+	 * just drop it here. Feel free to add this capability to other
+	 * request types if needed.
+	 */
 }

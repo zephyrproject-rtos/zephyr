@@ -1048,7 +1048,7 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	/* Request server to accept the new connection and allocate the
 	 * channel.
 	 */
-	err = server->accept(conn, chan);
+	err = server->accept(conn, server, chan);
 	if (err < 0) {
 		return le_err_to_result(err);
 	}
@@ -1360,6 +1360,12 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	if (mtu < L2CAP_ECRED_MIN_MTU) {
 		result = BT_L2CAP_RECONF_INVALID_MTU;
+		goto response;
+	}
+
+	/* The specification only allows up to 5 CIDs in this packet */
+	if (buf->len > (L2CAP_ECRED_CHAN_MAX_PER_REQ * sizeof(scid))) {
+		result = BT_L2CAP_RECONF_OTHER_UNACCEPT;
 		goto response;
 	}
 

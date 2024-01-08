@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/mesh/rpr_srv.h>
@@ -47,7 +47,7 @@ enum {
 
 /** Remote provisioning server instance. */
 static struct {
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 
 	ATOMIC_DEFINE(flags, RPR_SRV_NUM_FLAGS);
 
@@ -267,13 +267,15 @@ static void scan_ext_report_send(void)
 	bt_mesh_model_msg_init(&buf, RPR_OP_EXTENDED_SCAN_REPORT);
 	net_buf_simple_add_u8(&buf, BT_MESH_RPR_SUCCESS);
 	net_buf_simple_add_mem(&buf, srv.scan.dev->uuid, 16);
-	if (!(srv.scan.dev->flags & BT_MESH_RPR_UNPROV_FOUND)) {
+
+	if (srv.scan.dev->flags & BT_MESH_RPR_UNPROV_FOUND) {
+		net_buf_simple_add_le16(&buf, srv.scan.dev->oob);
+	} else {
 		LOG_DBG("not found");
 		goto send;
 	}
 
 	if (srv.scan.dev->flags & BT_MESH_RPR_UNPROV_EXT_ADV_RXD) {
-		net_buf_simple_add_le16(&buf, srv.scan.dev->oob);
 		net_buf_simple_add_mem(&buf, srv.scan.adv_data->data,
 				       srv.scan.adv_data->len);
 		LOG_DBG("adv data: %s",
@@ -421,7 +423,7 @@ static void subnet_evt_handler(struct bt_mesh_subnet *subnet,
 		link_close(BT_MESH_RPR_ERR_LINK_CLOSED_BY_SERVER,
 			   PROV_BEARER_LINK_STATUS_FAIL);
 		/* Skip the link closing stage, as specified in the Bluetooth
-		 * Mesh Profile specification, section 4.4.5.4.
+		 * MshPRTv1.1: 4.4.5.4.
 		 */
 		srv.link.state = BT_MESH_RPR_LINK_IDLE;
 	} else if (atomic_test_bit(srv.flags, SCANNING) &&
@@ -534,7 +536,7 @@ static const struct prov_bearer_cb prov_bearer_cb = {
  * Message handlers
  ******************************************************************************/
 
-static int handle_scan_caps_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_caps_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(rsp, RPR_OP_SCAN_CAPS_STATUS, 2);
@@ -547,7 +549,7 @@ static int handle_scan_caps_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ct
 	return 0;
 }
 
-static int handle_scan_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	scan_status_send(ctx, BT_MESH_RPR_SUCCESS);
@@ -555,7 +557,7 @@ static int handle_scan_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ct
 	return 0;
 }
 
-static int handle_scan_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node cli = RPR_NODE(ctx);
@@ -619,7 +621,7 @@ rsp:
 	return 0;
 }
 
-static int handle_extended_scan_start(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_extended_scan_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(rsp, RPR_OP_EXTENDED_SCAN_REPORT,
@@ -632,7 +634,7 @@ static int handle_extended_scan_start(struct bt_mesh_model *mod, struct bt_mesh_
 	uint8_t timeout;
 	int i;
 
-	/* According to the Bluetooth Mesh specification, section 4.4.5.5.1.7, scan reports shall be
+	/* According to MshPRTv1.1: 4.4.5.5.1.7, scan reports shall be
 	 * sent as segmented messages.
 	 */
 	ctx->send_rel = true;
@@ -782,7 +784,7 @@ rsp:
 	return 0;
 }
 
-static int handle_scan_stop(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_scan_stop(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
 	if (atomic_test_bit(srv.flags, SCANNING)) {
@@ -795,7 +797,7 @@ static int handle_scan_stop(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *c
 	return 0;
 }
 
-static int handle_link_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_link_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	LOG_DBG("");
@@ -805,7 +807,7 @@ static int handle_link_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ct
 	return 0;
 }
 
-static int handle_link_open(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_link_open(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
 	bool is_refresh_procedure = (buf->len == 1);
@@ -936,7 +938,7 @@ rsp:
 	return 0;
 }
 
-static int handle_link_close(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_link_close(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node cli = RPR_NODE(ctx);
@@ -973,7 +975,7 @@ static int handle_link_close(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *
 	return 0;
 }
 
-static int handle_pdu_send(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_pdu_send(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
 	struct bt_mesh_rpr_node cli = RPR_NODE(ctx);
@@ -1301,9 +1303,9 @@ static struct bt_le_scan_cb scan_cb = {
 	.recv = scan_packet_recv,
 };
 
-static int rpr_srv_init(struct bt_mesh_model *mod)
+static int rpr_srv_init(const struct bt_mesh_model *mod)
 {
-	if (mod->elem_idx || srv.mod) {
+	if (mod->rt->elem_idx || srv.mod) {
 		LOG_ERR("Remote provisioning server must be initialized "
 			"on first element");
 		return -EINVAL;
@@ -1318,12 +1320,12 @@ static int rpr_srv_init(struct bt_mesh_model *mod)
 	k_work_init(&srv.link.report, link_report_send_and_clear);
 	bt_le_scan_cb_register(&scan_cb);
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }
 
-static void rpr_srv_reset(struct bt_mesh_model *mod)
+static void rpr_srv_reset(const struct bt_mesh_model *mod)
 {
 	cli_link_clear();
 	cli_scan_clear();
@@ -1335,7 +1337,6 @@ static void rpr_srv_reset(struct bt_mesh_model *mod)
 	atomic_clear(srv.flags);
 	srv.link.dev = NULL;
 	srv.scan.dev = NULL;
-	srv.mod = NULL;
 }
 
 const struct bt_mesh_model_cb _bt_mesh_rpr_srv_cb = {

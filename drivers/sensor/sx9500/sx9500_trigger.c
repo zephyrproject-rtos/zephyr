@@ -98,8 +98,13 @@ static void sx9500_gpio_cb(const struct device *port,
 	k_sem_give(&data->sem);
 }
 
-static void sx9500_thread_main(struct sx9500_data *data)
+static void sx9500_thread_main(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct sx9500_data *data = p1;
+
 	while (1) {
 		k_sem_take(&data->sem, K_FOREVER);
 		sx9500_gpio_thread_cb(data->dev);
@@ -170,7 +175,7 @@ int sx9500_setup_interrupt(const struct device *dev)
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_thread_create(&sx9500_thread, sx9500_thread_stack,
 			CONFIG_SX9500_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sx9500_thread_main, data, 0, NULL,
+			sx9500_thread_main, data, 0, NULL,
 			K_PRIO_COOP(CONFIG_SX9500_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #endif

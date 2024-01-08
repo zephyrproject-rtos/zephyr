@@ -17,15 +17,18 @@
 #include <hal/nrf_rtc.h>
 #include <zephyr/irq.h>
 
+#define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
+		     IS_ENABLED(CONFIG_SOC_NRF5340_CPUNET))
+
 #define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
 #define CHAN_COUNT (EXT_CHAN_COUNT + 1)
 
 #define RTC NRF_RTC1
 #define RTC_IRQn NRFX_IRQ_NUMBER_GET(RTC)
 #define RTC_LABEL rtc1
-#define RTC_CH_COUNT RTC1_CC_NUM
+#define CHAN_COUNT_MAX (RTC1_CC_NUM - (RTC_PRETICK ? 1 : 0))
 
-BUILD_ASSERT(CHAN_COUNT <= RTC_CH_COUNT, "Not enough compare channels");
+BUILD_ASSERT(CHAN_COUNT <= CHAN_COUNT_MAX, "Not enough compare channels");
 /* Ensure that counter driver for RTC1 is not enabled. */
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
 	     "Counter for RTC1 must be disabled");
@@ -43,6 +46,8 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
 #define ANCHOR_RANGE_START (COUNTER_SPAN / 8)
 #define ANCHOR_RANGE_END (7 * COUNTER_SPAN / 8)
 #define TARGET_TIME_INVALID (UINT64_MAX)
+
+extern void rtc_pretick_rtc1_isr_hook(void);
 
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
@@ -558,6 +563,10 @@ static void process_channel(int32_t chan)
 void rtc_nrf_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+
+	if (RTC_PRETICK) {
+		rtc_pretick_rtc1_isr_hook();
+	}
 
 	if (nrf_rtc_int_enable_check(RTC, NRF_RTC_INT_OVERFLOW_MASK) &&
 	    nrf_rtc_event_check(RTC, NRF_RTC_EVENT_OVERFLOW)) {

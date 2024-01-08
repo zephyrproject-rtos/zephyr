@@ -490,8 +490,8 @@ int eswifi_mgmt_iface_status(const struct device *dev,
 	}
 
 	status->state = WIFI_STATE_COMPLETED;
-	strcpy(status->ssid, sta->ssid);
-	status->ssid_len = strlen(sta->ssid);
+	status->ssid_len = strnlen(sta->ssid, WIFI_SSID_MAX_LEN);
+	strncpy(status->ssid, sta->ssid, status->ssid_len);
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->channel = 0;
 

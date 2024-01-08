@@ -10,7 +10,7 @@
 
 / {
 	model = "QEMU ARC EM";
-	compatible = "qemu,arcem";
+	compatible = "snps,qemu-arcem";
 
 	cpus {
 		#address-cells = <1>;

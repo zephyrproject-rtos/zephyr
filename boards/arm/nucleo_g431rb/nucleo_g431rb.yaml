@@ -19,5 +19,7 @@ supported:
   - usb device
   - counter
   - spi
+  - rng
   - dac
   - watchdog
+vendor: st

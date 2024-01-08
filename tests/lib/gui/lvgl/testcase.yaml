@@ -5,13 +5,13 @@ tests:
       - gui
     platform_allow: native_posix_64
   libraries.gui.lvgl.dynamic.heap.libc:
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    filter: CONFIG_FULL_LIBC_SUPPORTED
     tags:
       - display
       - gui
     platform_allow: native_posix_64
     extra_configs:
-      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_REQUIRES_FULL_LIBC=y
       - CONFIG_LV_Z_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LV_Z_MEM_POOL_HEAP_LIB_C=y
   libraries.gui.lvgl.dynamic.pool.sys_heap:
@@ -22,8 +22,7 @@ tests:
     extra_configs:
       - CONFIG_LV_Z_BUFFER_ALLOC_DYNAMIC=y
       - CONFIG_LV_Z_MEM_POOL_SYS_HEAP=y
-      - CONFIG_LV_Z_MEM_POOL_NUMBER_BLOCKS=3
-      - CONFIG_LV_Z_MEM_POOL_MAX_SIZE=32768
+      - CONFIG_LV_Z_MEM_POOL_SIZE=98304
   libraries.gui.lvgl.16bit:
     tags:
       - display

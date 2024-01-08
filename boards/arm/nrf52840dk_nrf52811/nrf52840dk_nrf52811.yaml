@@ -13,3 +13,4 @@ supported:
   - pwm
   - netif:openthread
   - gpio
+vendor: nordic

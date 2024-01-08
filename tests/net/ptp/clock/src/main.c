@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_l2.h>
 
-#include <zephyr/random/rand32.h>
+#include <zephyr/random/random.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"

@@ -6,6 +6,15 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <4>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>;
+};
+
 &sysclk {
 	clock-frequency = <500000000>;
 };
@@ -234,13 +243,12 @@
 		/* Fixup USB it has different base addr and interrupt numbers on RT1010 */
 		/delete-node/ usbd@402e0000;
 		usb1: usbd@400e4000 {
-			compatible = "nxp,mcux-usbd";
+			compatible = "nxp,ehci";
 			reg = <0x400e4000 0x200>;
 			interrupts = <25 1>;
 			interrupt-names = "usb_otg";
 			clocks = <&usbclk>;
 			num-bidir-endpoints = <8>;
-			usb-controller-index = "Ehci0";
 			status = "disabled";
 		};
 
@@ -272,6 +280,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x401e0000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			/* Audio PLL Output Frequency is determined by:
 			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
 			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
@@ -310,6 +320,8 @@
 			#pinmux-cells = <2>;
 			reg = <0x401e8000 0x4000>;
 			clocks = <&ccm IMX_CCM_SAI3_CLK 0x7C 22>;
+			/* Source clock from Audio PLL */
+			clock-mux = <2>;
 			pre-div = <0>;
 			podf = <63>;
 			pll-clocks = <&anatop 0x70 0xC000 0>,

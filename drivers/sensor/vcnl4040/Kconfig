@@ -21,7 +21,7 @@ config VCNL4040_ENABLE_ALS
 config VCNL4040_TRIGGER
 	bool
 
-choice
+choice VCNL4040_TRIGGER
 	prompt "Trigger mode"
 	default VCNL4040_TRIGGER_NONE
 	help

@@ -10,6 +10,7 @@ tests:
       - frdm_k64f
       - pinnacle_100_dvk
       - mg100
+      - native_sim
     integration_platforms:
       - qemu_x86
     tags:
@@ -18,7 +19,9 @@ tests:
   sample.net.lwm2m_client.all_objects:
     harness: net
     depends_on: netif
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
+      - native_sim
     integration_platforms:
       - qemu_x86
     tags:
@@ -43,6 +46,7 @@ tests:
       - frdm_k64f
       - pinnacle_100_dvk
       - mg100
+      - native_sim
     integration_platforms:
       - qemu_x86
     tags:
@@ -63,7 +67,9 @@ tests:
     harness: net
     depends_on: netif
     extra_args: OVERLAY_CONFIG=overlay-queue.conf
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
+      - native_sim
     integration_platforms:
       - qemu_x86
     tags:

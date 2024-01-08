@@ -15,3 +15,7 @@ supported:
   - i2c
   - spi
   - usb_device
+  - rtc
+  - crypto
+  - dma
+vendor: renesas

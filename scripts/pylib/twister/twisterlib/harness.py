@@ -13,6 +13,7 @@ import logging
 import threading
 import time
 
+from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
 from twisterlib.handlers import Handler, terminate_process, SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.testinstance import TestInstance
@@ -143,10 +144,15 @@ class Robot(Harness):
 
             if cmake_proc.returncode == 0:
                 self.instance.status = "passed"
+                # all tests in one Robot file are treated as a single test case,
+                # so its status should be set accordingly to the instance status
+                # please note that there should be only one testcase in testcases list
+                self.instance.testcases[0].status = "passed"
             else:
                 logger.error("Robot test failure: %s for %s" %
                              (handler.sourcedir, self.instance.platform.name))
                 self.instance.status = "failed"
+                self.instance.testcases[0].status = "failed"
 
             if out:
                 with open(os.path.join(self.instance.build_dir, handler.log), "wt") as log:
@@ -155,22 +161,60 @@ class Robot(Harness):
 
 class Console(Harness):
 
+    def get_testcase_name(self):
+        '''
+        Get current TestCase name.
+
+        Console Harness id has only TestSuite id without TestCase name suffix.
+        Only the first TestCase name might be taken if available when a Ztest with
+        a single test case is configured to use this harness type for simplified
+        output parsing instead of the Ztest harness as Ztest suite should do.
+        '''
+        if self.instance and len(self.instance.testcases) == 1:
+            return self.instance.testcases[0].name
+        return self.id
+
     def configure(self, instance):
         super(Console, self).configure(instance)
+        if self.regex is None or len(self.regex) == 0:
+            self.state = "failed"
+            tc = self.instance.set_case_status_by_name(
+                self.get_testcase_name(),
+                "failed",
+                f"HARNESS:{self.__class__.__name__}:no regex patterns configured."
+            )
+            raise ConfigurationError(self.instance.name, tc.reason)
         if self.type == "one_line":
             self.pattern = re.compile(self.regex[0])
+            self.patterns_expected = 1
         elif self.type == "multi_line":
             self.patterns = []
             for r in self.regex:
                 self.patterns.append(re.compile(r))
+            self.patterns_expected = len(self.patterns)
+        else:
+            self.state = "failed"
+            tc = self.instance.set_case_status_by_name(
+                self.get_testcase_name(),
+                "failed",
+                f"HARNESS:{self.__class__.__name__}:incorrect type={self.type}"
+            )
+            raise ConfigurationError(self.instance.name, tc.reason)
+        #
 
     def handle(self, line):
         if self.type == "one_line":
             if self.pattern.search(line):
+                logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED:"
+                             f"'{self.pattern.pattern}'")
+                self.next_pattern += 1
                 self.state = "passed"
         elif self.type == "multi_line" and self.ordered:
             if (self.next_pattern < len(self.patterns) and
                 self.patterns[self.next_pattern].search(line)):
+                logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
+                             f"{self.next_pattern + 1}/{self.patterns_expected}):"
+                             f"'{self.patterns[self.next_pattern].pattern}'")
                 self.next_pattern += 1
                 if self.next_pattern >= len(self.patterns):
                     self.state = "passed"
@@ -179,6 +223,9 @@ class Console(Harness):
                 r = self.regex[i]
                 if pattern.search(line) and not r in self.matches:
                     self.matches[r] = line
+                    logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
+                                 f"{len(self.matches)}/{self.patterns_expected}):"
+                                 f"'{pattern.pattern}'")
             if len(self.matches) == len(self.regex):
                 self.state = "passed"
         else:
@@ -208,8 +255,25 @@ class Console(Harness):
                 self.recording.append(csv)
 
         self.process_test(line)
+        # Reset the resulting test state to 'failed' when not all of the patterns were
+        # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
+        # It might happen because of the pattern sequence diverged from the
+        # test code, the test platform has console issues, or even some other
+        # test image was executed.
+        # TODO: Introduce explicit match policy type to reject
+        # unexpected console output, allow missing patterns, deny duplicates.
+        if self.state == "passed" and self.ordered and self.next_pattern < self.patterns_expected:
+            logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
+                         f" {self.next_pattern} of {self.patterns_expected}"
+                         f" expected ordered patterns.")
+            self.state = "failed"
+        if self.state == "passed" and not self.ordered and len(self.matches) < self.patterns_expected:
+            logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
+                         f" {len(self.matches)} of {self.patterns_expected}"
+                         f" expected unordered patterns.")
+            self.state = "failed"
 
-        tc = self.instance.get_case_or_create(self.id)
+        tc = self.instance.get_case_or_create(self.get_testcase_name())
         if self.state == "passed":
             tc.status = "passed"
         else:
@@ -245,20 +309,24 @@ class Pytest(Harness):
 
     def generate_command(self):
         config = self.instance.testsuite.harness_config
-        pytest_root = config.get('pytest_root', 'pytest') if config else 'pytest'
+        pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
         pytest_args = config.get('pytest_args', []) if config else []
+        pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
         command = [
             'pytest',
             '--twister-harness',
             '-s', '-v',
-            os.path.join(self.source_dir, pytest_root),
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
             '--log-file-level=DEBUG',
             '--log-file-format=%(asctime)s.%(msecs)d:%(levelname)s:%(name)s: %(message)s',
             f'--log-file={self.pytest_log_file_path}'
         ]
+        command.extend([os.path.normpath(os.path.join(
+            self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
         command.extend(pytest_args)
+        if pytest_dut_scope:
+            command.append(f'--dut-scope={pytest_dut_scope}')
 
         handler: Handler = self.instance.handler
 
@@ -396,8 +464,10 @@ class Pytest(Harness):
         if elem_ts := root.find('testsuite'):
             if elem_ts.get('failures') != '0':
                 self.state = 'failed'
+                self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"
             elif elem_ts.get('errors') != '0':
                 self.state = 'error'
+                self.instance.reason = 'Error during pytest execution'
             elif elem_ts.get('skipped') == elem_ts.get('tests'):
                 self.state = 'skipped'
             else:
@@ -405,7 +475,7 @@ class Pytest(Harness):
             self.instance.execution_time = float(elem_ts.get('time'))
 
             for elem_tc in elem_ts.findall('testcase'):
-                tc = self.instance.get_case_or_create(f"{self.id}.{elem_tc.get('name')}")
+                tc = self.instance.add_testcase(f"{self.id}.{elem_tc.get('name')}")
                 tc.duration = float(elem_tc.get('time'))
                 elem = elem_tc.find('*')
                 if elem is None:
@@ -423,16 +493,22 @@ class Pytest(Harness):
 
 class Gtest(Harness):
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    TEST_START_PATTERN = r"\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_PASS_PATTERN = r"\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    TEST_FAIL_PATTERN = r"\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
-    FINISHED_PATTERN = r"\[==========\] Done running all tests\.$"
-    has_failures = False
-    tc = None
+    TEST_START_PATTERN = r".*\[ RUN      \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    TEST_PASS_PATTERN = r".*\[       OK \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    TEST_FAIL_PATTERN = r".*\[  FAILED  \] (?P<suite_name>.*)\.(?P<test_name>.*)$"
+    FINISHED_PATTERN = r".*\[==========\] Done running all tests\.$"
+
+    def __init__(self):
+        super().__init__()
+        self.tc = None
+        self.has_failures = False
 
     def handle(self, line):
         # Strip the ANSI characters, they mess up the patterns
         non_ansi_line = self.ANSI_ESCAPE.sub('', line)
+
+        if self.state:
+            return
 
         # Check if we started running a new test
         test_start_match = re.search(self.TEST_START_PATTERN, non_ansi_line)
