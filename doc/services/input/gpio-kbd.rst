@@ -160,10 +160,10 @@ The same is true for column GPIOs, but only if the matrix is configured for
 ``col-drive-inactive``, so that is only usable for matrixes with isolation
 diodes.
 
-16 bit row support
+16-bit row support
 ******************
 
-The driver uses an 8 bit datatype to store the row state by default, which
+The driver uses an 8-bit datatype to store the row state by default, which
 limits the matrix row size to 8. This can be increased to 16 by enabling the
 :kconfig:option:`CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW` option.
 
@@ -192,10 +192,10 @@ For example for a 3x3 matrix missing a key:
         actual-key-mask = <0x07 0x05 0x07>;
    };
 
-Would allow, for example, to detect pressing ``Sw0``, ``SW1`` and  ``SW3`` at
-the same time without triggering anti ghosting.
+This would allow, for example, to detect pressing ``Sw1``, ``SW2`` and  ``SW4``
+at the same time without triggering anti ghosting.
 
-The actual key mask can be changed in runtime by enabling
+The actual key mask can be changed at runtime by enabling
 :kconfig:option:`CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC` and the using the
 :c:func:`input_kbd_matrix_actual_key_mask_set` API.
 
