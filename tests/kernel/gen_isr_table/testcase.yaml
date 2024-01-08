@@ -4,12 +4,12 @@ common:
     - interrupt
     - isr_table
 tests:
-  arch.interrupt.gen_isr_table.arm_baseline:
+  arch.interrupt.gen_isr_table.arm_baseline: &arm-baseline
     platform_allow: qemu_cortex_m3
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
-  arch.interrupt.gen_isr_table.arm_baseline.linker_generator:
+  arch.interrupt.gen_isr_table.arm_baseline.linker_generator: &arm-baseline-linker-generator
     platform_allow: qemu_cortex_m3
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
     tags:
@@ -17,7 +17,7 @@ tests:
     extra_configs:
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
       - CONFIG_CMAKE_LINKER_GENERATOR=y
-  arch.interrupt.gen_isr_table.arm_mainline:
+  arch.interrupt.gen_isr_table.arm_mainline: &arm-mainline
     platform_allow: qemu_cortex_m3
     platform_exclude:
       - stmf103_mini
@@ -40,6 +40,27 @@ tests:
       - CONFIG_GEN_ISR_TABLES=n
       - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
     build_only: true
+
+  arch.interrupt.gen_isr_table_local.arm_baseline:
+    <<: *arm-baseline
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE and not CONFIG_USERSPACE
+    extra_configs:
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+  arch.interrupt.gen_isr_table_local.arm_baseline.linker_generator:
+    <<: *arm-baseline-linker-generator
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE and not CONFIG_USERSPACE
+    extra_configs:
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+  arch.interrupt.gen_isr_table_local.arm_mainline:
+    <<: *arm-mainline
+    filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE and not CONFIG_USERSPACE
+    extra_configs:
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+
   arch.interrupt.gen_isr_table.arc:
     arch_allow: arc
     filter: CONFIG_RGF_NUM_BANKS > 1
