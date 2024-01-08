@@ -7,7 +7,7 @@ toolchain:
   - xtools
   - zephyr
 ram: 128
-flash: 192
+flash: 256
 supported:
   - i2c
   - pwm
