@@ -263,9 +263,12 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 }
 
 int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
-				const char *ssids[],
-				uint8_t num_ssids)
+				char ssids[][WIFI_SSID_MAX_LEN + 1])
 {
+	char parse_str[(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)) + 1];
+	char *ssid = NULL;
+	char *ctx = NULL;
+	uint8_t i = 0;
 	int len;
 
 	if (!scan_ssids_str) {
@@ -273,23 +276,41 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 	}
 
 	len = strlen(scan_ssids_str);
-	if (len > WIFI_SSID_MAX_LEN) {
+
+	if (len > (WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1))) {
 		NET_ERR("SSID string (%s) size (%d) exceeds maximum allowed value (%d)",
 			scan_ssids_str,
 			len,
-			WIFI_SSID_MAX_LEN);
+			(WIFI_MGMT_SCAN_SSID_FILT_MAX * (WIFI_SSID_MAX_LEN + 1)));
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < num_ssids; i++) {
-		if (ssids[i] != NULL) {
-			continue;
+	strncpy(parse_str, scan_ssids_str, len);
+	parse_str[len] = '\0';
+
+	ssid = strtok_r(parse_str, ",", &ctx);
+
+	while (ssid) {
+		if (strlen(ssid) > WIFI_SSID_MAX_LEN) {
+			NET_ERR("SSID length (%zu) exceeds maximum value (%d) for SSID %s",
+				strlen(ssid),
+				WIFI_SSID_MAX_LEN,
+				ssid);
+			return -EINVAL;
 		}
-		ssids[i] = scan_ssids_str;
-		return 0;
+
+		if (i >= WIFI_MGMT_SCAN_SSID_FILT_MAX) {
+			NET_WARN("Exceeded maximum allowed (%d) SSIDs. Ignoring SSIDs %s onwards",
+				 WIFI_MGMT_SCAN_SSID_FILT_MAX,
+				 ssid);
+			break;
+		}
+
+		strcpy(&ssids[i++][0], ssid);
+
+		ssid = strtok_r(NULL, ",", &ctx);
 	}
 
-	NET_WARN("Exceeded maximum allowed SSIDs (%d)", num_ssids);
 	return 0;
 }
 
