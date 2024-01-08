@@ -135,7 +135,7 @@ Connections and IOs
 STM32L476G Discovery Board has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `STM32L476G Discovery board User Manual`_.
+For more details please refer to `STM32L476G Discovery board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
