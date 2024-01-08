@@ -36,7 +36,7 @@ manifest:
       path: modules/lib/acpica
     - name: paddlelite
       path: modules/lib/paddlelite
-      revision: b466d11329f333e58248ed81d5a18ce709c2a713
+      revision: 5ad6a1e4397229467ed0153a65e2a9d407870a12
       remote: paddlelite
     - name: bsim
       repo-path: babblesim-manifest
