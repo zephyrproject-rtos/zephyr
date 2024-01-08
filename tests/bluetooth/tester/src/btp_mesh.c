@@ -1103,22 +1103,6 @@ static const struct bt_mesh_comp comp_alt = {
 	.vid = 2,
 };
 
-#if defined(CONFIG_BT_MESH_COMP_PAGE_2)
-static const uint8_t cmp2_elem_offset[1] = {0};
-
-static const struct bt_mesh_comp2_record comp_rec = {
-	.id = 0x1600,
-	.version.x = 1,
-	.version.y = 0,
-	.version.z = 0,
-	.elem_offset_cnt = 1,
-	.elem_offset = cmp2_elem_offset,
-	.data_len = 0
-};
-
-static const struct bt_mesh_comp2 comp_p2 = {.record_cnt = 1, .record = &comp_rec};
-#endif
-
 static struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 	.static_val = static_auth,
@@ -5220,10 +5204,6 @@ uint8_t tester_init_mesh(void)
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
 		bt_test_cb_register(&bt_test_cb);
 	}
-
-#if defined(CONFIG_BT_MESH_COMP_PAGE_2)
-	bt_mesh_comp2_register(&comp_p2);
-#endif
 
 	tester_register_command_handlers(BTP_SERVICE_ID_MESH, handlers,
 					 ARRAY_SIZE(handlers));
