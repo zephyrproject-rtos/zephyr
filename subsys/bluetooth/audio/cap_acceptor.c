@@ -50,7 +50,15 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 
 	err = bt_gatt_service_register(&cas);
 	if (err) {
+		const int csip_err = bt_csip_set_member_unregister(*svc_inst);
+
+		if (csip_err) {
+			LOG_ERR("Failed to unregister CSIS: %d", csip_err);
+		}
+
+		cas.attrs[1].user_data = NULL;
 		LOG_DBG("Failed to register CAS");
+
 		return err;
 	}
 
