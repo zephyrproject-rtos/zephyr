@@ -247,7 +247,6 @@ class Pytest(Harness):
         config = self.instance.testsuite.harness_config
         pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
         pytest_args = config.get('pytest_args', []) if config else []
-        pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
         command = [
             'pytest',
             '--twister-harness',
@@ -261,8 +260,6 @@ class Pytest(Harness):
         command.extend([os.path.normpath(os.path.join(
             self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
         command.extend(pytest_args)
-        if pytest_dut_scope:
-            command.append(f'--dut-scope={pytest_dut_scope}')
 
         handler: Handler = self.instance.handler
 
@@ -409,7 +406,7 @@ class Pytest(Harness):
             self.instance.execution_time = float(elem_ts.get('time'))
 
             for elem_tc in elem_ts.findall('testcase'):
-                tc = self.instance.add_testcase(f"{self.id}.{elem_tc.get('name')}")
+                tc = self.instance.get_case_or_create(f"{self.id}.{elem_tc.get('name')}")
                 tc.duration = float(elem_tc.get('time'))
                 elem = elem_tc.find('*')
                 if elem is None:

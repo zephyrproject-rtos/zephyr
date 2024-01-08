@@ -69,9 +69,6 @@ DUT (initialize logging, flash device, connect serial etc).
 This fixture yields a device prepared according to the requested type
 (native posix, qemu, hardware, etc.). All types of devices share the same API.
 This allows for writing tests which are device-type-agnostic.
-Scope of this fixture is determined by the ``pytest_dut_scope``
-keyword placed under ``harness_config`` section.
-
 
 .. code-block:: python
 
@@ -84,10 +81,8 @@ shell
 -----
 
 Provide an object with methods used to interact with shell application.
-It calls ``wait_for_promt`` method, to not start scenario until DUT is ready.
-Note that it uses ``dut`` fixture, so ``dut`` can be skipped when ``shell`` is used.
-Scope of this fixture is determined by the ``pytest_dut_scope``
-keyword placed under ``harness_config`` section.
+It calls `wait_for_promt` method, to not start scenario until DUT is ready.
+Note that it uses `dut` fixture, so `dut` can be skipped when `shell` is used.
 
 .. code-block:: python
 
