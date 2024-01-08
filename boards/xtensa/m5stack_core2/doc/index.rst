@@ -190,8 +190,9 @@ M5Stack Core2 debugging is not supported due to pinout limitations.
 Related Documents
 *****************
 
-- `M5StickC PLUS schematic <https://static-cdn.m5stack.com/resource/docs/products/core/m5stickc_plus/m5stickc_plus_sch_03.webp>`_ (WEBP)
+- `M5Stack-Core2 schematic page 1 <https://static-cdn.m5stack.com/resource/docs/products/core/core2/core2_sch_01.webp>`_ (WEBP)
+- `M5Stack-Core2 schematic page 2 <https://static-cdn.m5stack.com/resource/docs/products/core/core2/core2_sch_02.webp>`_ (WEBP)
 - `ESP32-PICO-D4 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
-- `M5StickC PLUS docs <https://docs.m5stack.com/en/core/m5stickc_plus>`_
+- `M5Stack-Core2 docs <https://docs.m5stack.com/en/core/core2>`_
 - `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 - `ESP32 Hardware Reference <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html>`_
