@@ -22,17 +22,6 @@ struct bt_csip_set_member_register_param param = {
 		      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
 };
 
-static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
-{
-	printk("Disconnected (reason %u)\n", reason);
-
-	if (reason == BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
-		PASS("Client successfully disconnected\n");
-	} else {
-		FAIL("Client disconnected unexpectedly (0x%02x)\n", reason);
-	}
-}
-
 static void csip_lock_changed_cb(struct bt_conn *conn,
 				 struct bt_csip_set_member_svc_inst *svc_inst,
 				 bool locked)
@@ -87,10 +76,6 @@ static void bt_ready(int err)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
-	.disconnected = csip_disconnected,
-};
-
 static void test_main(void)
 {
 	int err;
@@ -102,7 +87,17 @@ static void test_main(void)
 		return;
 	}
 
-	bt_conn_cb_register(&conn_callbacks);
+	WAIT_FOR_FLAG(flag_connected);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_csip_set_member_unregister(svc_inst);
+	if (err != 0) {
+		FAIL("Could not unregister CSIP (err %d)\n", err);
+		return;
+	}
+	svc_inst = NULL;
+
+	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
 static void test_force_release(void)
@@ -116,11 +111,22 @@ static void test_force_release(void)
 		return;
 	}
 
-	bt_conn_cb_register(&conn_callbacks);
+	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_COND(g_locked);
 	printk("Force releasing set\n");
 	bt_csip_set_member_lock(svc_inst, false, true);
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	err = bt_csip_set_member_unregister(svc_inst);
+	if (err != 0) {
+		FAIL("Could not unregister CSIP (err %d)\n", err);
+		return;
+	}
+	svc_inst = NULL;
+
+	PASS("CSIP Set member passed: Client successfully disconnected\n");
 }
 
 static void test_csip_enc(void)
