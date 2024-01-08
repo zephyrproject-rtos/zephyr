@@ -845,6 +845,7 @@ isr_rx_next_subevent:
 		struct lll_conn_iso_group *cig_lll;
 		struct lll_conn *next_conn_lll;
 		uint8_t phy;
+		uint8_t bn;
 
 		/* Fetch next CIS */
 		/* TODO: Use a new ull_conn_iso_lll_stream_get_active_by_group()
@@ -858,6 +859,18 @@ isr_rx_next_subevent:
 
 		if (!next_cis_lll) {
 			goto isr_rx_done;
+		}
+
+		/* Adjust sn when flushing Tx */
+		/* FIXME: When Flush Timeout is implemented */
+		if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
+			lll_flush_tx(cis_lll);
+		}
+
+		/* Adjust nesn when flushing Rx */
+		/* FIXME: When Flush Timeout is implemented */
+		if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
+			lll_flush_rx(cis_lll);
 		}
 
 		/* Get reference to ACL context */
@@ -927,17 +940,45 @@ isr_rx_next_subevent:
 			cis_lll = old_cis_lll;
 		}
 
-		/* Adjust sn when flushing Tx */
-		/* FIXME: When Flush Timeout is implemented */
-		if (cis_lll->tx.bn_curr <= cis_lll->tx.bn) {
-			lll_flush_tx(cis_lll);
+		/* Generate ISO Data Invalid Status */
+		bn = cis_lll->rx.bn_curr;
+		while (bn <= cis_lll->rx.bn) {
+			struct node_rx_iso_meta *iso_meta;
+			struct node_rx_pdu *status_node_rx;
+
+			/* Ensure there is always one free for reception
+			 * of ISO PDU by the radio h/w DMA, hence peek
+			 * for two available ISO PDU when using one for
+			 * generating invalid ISO data.
+			 */
+			status_node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+			if (!status_node_rx) {
+				break;
+			}
+
+			status_node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+			status_node_rx->hdr.handle = cis_lll->handle;
+			iso_meta = &status_node_rx->hdr.rx_iso_meta;
+			iso_meta->payload_number = (cis_lll->event_count *
+						    cis_lll->rx.bn) + (bn - 1U);
+			iso_meta->timestamp =
+				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+				radio_tmr_ready_restore();
+			iso_meta->timestamp %=
+				HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+			iso_meta->status = 1U;
+
+			ull_iso_pdu_rx_alloc();
+			iso_rx_put(status_node_rx->hdr.link, status_node_rx);
+
+			bn++;
 		}
 
-		/* Adjust nesn when flushing Rx */
-		/* FIXME: When Flush Timeout is implemented */
-		if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
-			lll_flush_rx(cis_lll);
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+		if (bn != cis_lll->rx.bn_curr) {
+			iso_rx_sched();
 		}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 		/* Reset indices for the next CIS */
 		se_curr = 0U; /* isr_prepare_subevent() will increase se_curr */
@@ -1135,6 +1176,7 @@ static void isr_done(void *param)
 {
 	struct lll_conn_iso_stream *cis_lll;
 	struct event_done_extra *e;
+	uint8_t bn;
 
 	lll_isr_status_reset();
 
@@ -1152,6 +1194,45 @@ static void isr_done(void *param)
 	if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
 		lll_flush_rx(cis_lll);
 	}
+
+	/* Generate ISO Data Invalid Status */
+	bn = cis_lll->rx.bn_curr;
+	while (bn <= cis_lll->rx.bn) {
+		struct node_rx_iso_meta *iso_meta;
+		struct node_rx_pdu *node_rx;
+
+		/* Ensure there is always one free for reception of ISO PDU by
+		 * the radio h/w DMA, hence peek for two available ISO PDU when
+		 * using one for generating invalid ISO data.
+		 */
+		node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+		if (!node_rx) {
+			break;
+		}
+
+		node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+		node_rx->hdr.handle = cis_lll->handle;
+		iso_meta = &node_rx->hdr.rx_iso_meta;
+		iso_meta->payload_number = (cis_lll->event_count *
+					    cis_lll->rx.bn) + (bn - 1U);
+		iso_meta->timestamp =
+			HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+			radio_tmr_ready_restore();
+		iso_meta->timestamp %=
+			HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+		iso_meta->status = 1U;
+
+		ull_iso_pdu_rx_alloc();
+		iso_rx_put(node_rx->hdr.link, node_rx);
+
+		bn++;
+	}
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	if (bn != cis_lll->rx.bn_curr) {
+		iso_rx_sched();
+	}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);

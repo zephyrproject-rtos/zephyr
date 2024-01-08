@@ -1229,6 +1229,7 @@ static void isr_done(void *param)
 {
 	struct lll_conn_iso_stream *cis_lll;
 	struct event_done_extra *e;
+	uint8_t bn;
 
 	lll_isr_status_reset();
 
@@ -1240,6 +1241,48 @@ static void isr_done(void *param)
 	if (cis_lll->rx.bn_curr <= cis_lll->rx.bn) {
 		lll_flush_rx(cis_lll);
 	}
+
+	/* Generate ISO Data Invalid Status */
+	bn = cis_lll->rx.bn_curr;
+	while (bn <= cis_lll->rx.bn) {
+		struct node_rx_iso_meta *iso_meta;
+		struct node_rx_pdu *node_rx;
+
+		node_rx = ull_iso_pdu_rx_alloc_peek(2U);
+		if (!node_rx) {
+			break;
+		}
+
+		node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
+		node_rx->hdr.handle = cis_lll->handle;
+		iso_meta = &node_rx->hdr.rx_iso_meta;
+		iso_meta->payload_number = (cis_lll->event_count *
+					    cis_lll->rx.bn) + (bn - 1U);
+		if (trx_performed_bitmask) {
+			iso_meta->timestamp = cis_lll->offset +
+				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+				radio_tmr_aa_restore() - cis_offset_first -
+				addr_us_get(cis_lll->rx.phy);
+		} else {
+			iso_meta->timestamp = cis_lll->offset +
+				HAL_TICKER_TICKS_TO_US(radio_tmr_start_get()) +
+				radio_tmr_ready_restore() - cis_offset_first;
+		}
+		iso_meta->timestamp %=
+			HAL_TICKER_TICKS_TO_US(BIT(HAL_TICKER_CNTR_MSBIT + 1U));
+		iso_meta->status = 1U;
+
+		ull_iso_pdu_rx_alloc();
+		iso_rx_put(node_rx->hdr.link, node_rx);
+
+		bn++;
+	}
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+	if (bn != cis_lll->rx.bn_curr) {
+		iso_rx_sched();
+	}
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
