@@ -102,7 +102,6 @@ void bt_test_mesh_trans_incomp_timer_exp(void)
 	}
 }
 
-#if defined(CONFIG_BT_MESH_LOW_POWER)
 int bt_test_mesh_lpn_group_add(uint16_t group)
 {
 	bt_mesh_lpn_group_add(group);
@@ -116,7 +115,6 @@ int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count)
 
 	return 0;
 }
-#endif /* CONFIG_BT_MESH_LOW_POWER */
 
 int bt_test_mesh_rpl_clear(void)
 {
