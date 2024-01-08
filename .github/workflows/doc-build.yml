@@ -35,7 +35,7 @@ env:
 jobs:
   doc-build-html:
     name: "Documentation Build (HTML)"
-    runs-on: ubuntu-22.04
+    runs-on: zephyr-runner-linux-x64-4xlarge
     timeout-minutes: 45
     concurrency:
       group: doc-build-html-${{ github.ref }}
