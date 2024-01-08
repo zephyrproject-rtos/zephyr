@@ -17,7 +17,6 @@
 #include <va.h>
 #include <sar_cfg_internal.h>
 #include <string.h>
-#include "mesh/access.h"
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
@@ -113,19 +112,6 @@ static const struct bt_mesh_blob_io dummy_blob_io = {
 #endif
 
 #if defined(CONFIG_BT_MESH_DFD_SRV)
-static const struct bt_mesh_dfu_slot *dfu_self_update_slot;
-
-static bool is_self_update(struct bt_mesh_dfd_srv *srv)
-{
-	for (int i = 0; i < ARRAY_SIZE(srv->targets); i++) {
-		if (bt_mesh_has_addr(srv->targets[i].blob.addr)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 /* DFD Model data*/
 static int dfd_srv_recv(struct bt_mesh_dfd_srv *srv,
 			const struct bt_mesh_dfu_slot *slot,
@@ -151,13 +137,6 @@ static int dfd_srv_send(struct bt_mesh_dfd_srv *srv,
 	LOG_DBG("Starting the firmware distribution.");
 
 	*io = &dummy_blob_io;
-
-	dfu_self_update_slot = NULL;
-
-	if (is_self_update(srv)) {
-		LOG_DBG("DFD server starts self-update...");
-		dfu_self_update_slot = slot;
-	}
 
 	return 0;
 }
@@ -237,7 +216,7 @@ static struct bt_mesh_blob_cli blob_cli = { .cb = &blob_cli_handlers };
 #if defined(CONFIG_BT_MESH_DFU_SRV)
 const char *metadata_data = "1100000000000011";
 
-static uint8_t dfu_fwid[CONFIG_BT_MESH_DFU_FWID_MAXLEN] = {
+static uint8_t dfu_fwid[] = {
 	0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
@@ -304,16 +283,6 @@ static int dfu_apply(struct bt_mesh_dfu_srv *srv,
 	}
 
 	LOG_DBG("Applying DFU transfer...");
-
-#if defined(CONFIG_BT_MESH_DFD_SRV)
-	if (is_self_update(&dfd_srv) && dfu_self_update_slot != NULL) {
-		LOG_DBG("Swapping fwid for self-update");
-		/* Simulate self-update by swapping fwid. */
-		memcpy(&dfu_fwid[0], dfu_self_update_slot->fwid, dfu_self_update_slot->fwid_len);
-		dfu_imgs[0].fwid_len = dfu_self_update_slot->fwid_len;
-	}
-
-#endif
 
 	return 0;
 }
