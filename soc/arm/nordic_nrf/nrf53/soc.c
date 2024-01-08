@@ -554,13 +554,13 @@ static int nordicsemi_nrf53_init(void)
 #endif
 
 #if defined(CONFIG_SOC_DCDC_NRF53X_APP)
-	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
+	nrf_regulators_dcdcen_set(NRF_REGULATORS, true);
 #endif
 #if defined(CONFIG_SOC_DCDC_NRF53X_NET)
-	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_RADIO, true);
+	nrf_regulators_dcdcen_radio_set(NRF_REGULATORS, true);
 #endif
 #if defined(CONFIG_SOC_DCDC_NRF53X_HV)
-	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
+	nrf_regulators_dcdcen_vddh_set(NRF_REGULATORS, true);
 #endif
 
 #if defined(CONFIG_SOC_NRF_GPIO_FORWARDER_FOR_NRF5340)
