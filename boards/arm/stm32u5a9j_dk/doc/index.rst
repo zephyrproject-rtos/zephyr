@@ -92,7 +92,7 @@ The default configuration per core can be found in the defconfig file:
 Pin Mapping
 ===========
 
-For mode details please refer to `STM32U5A9J-DK board User Manual`_.
+For more details please refer to `STM32U5A9J-DK board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

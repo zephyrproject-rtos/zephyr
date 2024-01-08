@@ -144,7 +144,7 @@ Connections and IOs
 B_L4S5I_IOT01A Discovery kit has 9 GPIO controllers (from A to I). These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
-For mode details please refer to `B L47S5I IOT01A board User Manual`_.
+For more details please refer to `B L47S5I IOT01A board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

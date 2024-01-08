@@ -99,7 +99,7 @@ Default Zephyr Peripheral Mapping:
 - UCPD CC2           : PB4
 - UCPD CC1           : PB6
 
-For mode details please refer to `B-G474E-DPOW1 Discovery board User Manual`_.
+For more details please refer to `B-G474E-DPOW1 Discovery board User Manual`_.
 
 Programming and Debugging
 *************************
