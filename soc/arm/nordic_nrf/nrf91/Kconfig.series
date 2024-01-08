@@ -19,17 +19,3 @@ config SOC_SERIES_NRF91X
 	select HAS_POWEROFF
 	help
 	  Enable support for NRF91 MCU series
-
-if SOC_SERIES_NRF91X
-config NRF_SPU_FLASH_REGION_SIZE
-	hex
-	default 0x8000
-	help
-	  FLASH region size for the NRF_SPU peripheral
-
-config NRF_SPU_RAM_REGION_SIZE
-	hex
-	default 0x2000
-	help
-	  RAM region size for the NRF_SPU peripheral
-endif
