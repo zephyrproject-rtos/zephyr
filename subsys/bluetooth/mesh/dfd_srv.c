@@ -342,10 +342,9 @@ static int handle_apply(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static void upload_status_rsp_with_progress(struct bt_mesh_dfd_srv *srv,
-					    struct bt_mesh_msg_ctx *ctx,
-					    enum bt_mesh_dfd_status status,
-					    uint8_t progress)
+static void upload_status_rsp(struct bt_mesh_dfd_srv *srv,
+			      struct bt_mesh_msg_ctx *ctx,
+			      enum bt_mesh_dfd_status status)
 {
 	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_UPLOAD_STATUS,
 				 DFD_UPLOAD_STATUS_MSG_MAXLEN);
@@ -362,36 +361,19 @@ static void upload_status_rsp_with_progress(struct bt_mesh_dfd_srv *srv,
 
 #ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
 	if (srv->upload.is_oob) {
-		net_buf_simple_add_u8(&rsp, progress | BIT(7));
+		net_buf_simple_add_u8(&rsp,
+				      srv->cb->oob_progress_get(srv, srv->upload.slot) | BIT(7));
 		net_buf_simple_add_mem(&rsp, srv->upload.oob.current_fwid,
 				       srv->upload.oob.current_fwid_len);
 	} else
 #endif
 	{
-		net_buf_simple_add_u8(&rsp, progress);
+		net_buf_simple_add_u8(&rsp, bt_mesh_blob_srv_progress(&srv->upload.blob));
 		net_buf_simple_add_mem(&rsp, srv->upload.slot->fwid,
 				       srv->upload.slot->fwid_len);
 	}
 
 	bt_mesh_model_send(srv->mod, ctx, &rsp, NULL, NULL);
-}
-
-static void upload_status_rsp(struct bt_mesh_dfd_srv *srv,
-			      struct bt_mesh_msg_ctx *ctx,
-			      enum bt_mesh_dfd_status status)
-{
-	uint8_t progress;
-
-#ifdef CONFIG_BT_MESH_DFD_SRV_OOB_UPLOAD
-	if (srv->upload.is_oob) {
-		progress = srv->cb->oob_progress_get(srv, srv->upload.slot);
-	} else
-#endif
-	{
-		progress = bt_mesh_blob_srv_progress(&srv->upload.blob);
-	}
-
-	upload_status_rsp_with_progress(srv, ctx, status, progress);
 }
 
 static int handle_upload_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
@@ -418,7 +400,7 @@ static inline int set_upload_fwid(struct bt_mesh_dfd_srv *srv, struct bt_mesh_ms
 	case -EEXIST: /* Img with this fwid already is in list */
 		srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_SUCCESS;
 		bt_mesh_dfu_slot_release(srv->upload.slot);
-		upload_status_rsp_with_progress(srv, ctx, BT_MESH_DFD_SUCCESS, 100);
+		upload_status_rsp(srv, ctx, BT_MESH_DFD_SUCCESS);
 		break;
 	case 0:
 		srv->upload.phase = BT_MESH_DFD_UPLOAD_PHASE_TRANSFER_ACTIVE;
