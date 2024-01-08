@@ -37,7 +37,6 @@ struct zperf_upload_params {
 	struct {
 		uint8_t tos;
 		int tcp_nodelay;
-		int priority;
 	} options;
 };
 
