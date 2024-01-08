@@ -145,11 +145,6 @@ mapping:
         matching: "all"
         sequence:
           - type: str
-      "required_snippets":
-        type: seq
-        required: false
-        sequence:
-          - type: str
       "tags":
         type: any
         required: false
@@ -248,11 +243,6 @@ mapping:
           "extra_sections":
             type: any
             required: false
-          "required_snippets":
-            type: seq
-            required: false
-            sequence:
-              - type: str
           "filter":
             type: str
             required: false
