@@ -249,18 +249,18 @@ static const struct can_mcan_ops can_numaker_ops = {
 									          \
 	static void can_numaker_irq_config_func_##inst(const struct device *dev)  \
 	{                                                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, 0, irq),                     \
-				DT_INST_IRQ_BY_IDX(inst, 0, priority),            \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),                 \
+				DT_INST_IRQ_BY_NAME(inst, int0, priority),        \
 				can_mcan_line_0_isr,                              \
 				DEVICE_DT_INST_GET(inst),                         \
 				0);                                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(inst, 0, irq));                     \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, 1, irq),                     \
-				DT_INST_IRQ_BY_IDX(inst, 1, priority),            \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));                 \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int1, irq),                 \
+				DT_INST_IRQ_BY_NAME(inst, int1, priority),        \
 				can_mcan_line_1_isr,                              \
 				DEVICE_DT_INST_GET(inst),                         \
 				0);                                               \
-		irq_enable(DT_INST_IRQ_BY_IDX(inst, 1, irq));                     \
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, int1, irq));                 \
 	}                                                                         \
 										  \
 	static const struct can_numaker_config can_numaker_config_##inst = {      \
