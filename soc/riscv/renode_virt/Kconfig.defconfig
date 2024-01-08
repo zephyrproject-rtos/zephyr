@@ -1,9 +1,9 @@
 # Copyright (c) 2023 Meta
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RISCV32_VIRTUAL_RENODE
+if SOC_RISCV32_VIRTUAL_RENODE
 
-config SOC_SERIES
+config SOC
 	default "renode_virt"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -45,4 +45,4 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 2058
 
-endif # SOC_SERIES_RISCV32_VIRTUAL_RENODE
+endif # SOC_RISCV32_VIRTUAL_RENODE
