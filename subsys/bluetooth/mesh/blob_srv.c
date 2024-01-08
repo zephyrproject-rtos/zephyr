@@ -251,37 +251,6 @@ static void resume(struct bt_mesh_blob_srv *srv)
 	reset_timer(srv);
 }
 
-static void end(struct bt_mesh_blob_srv *srv)
-{
-	phase_set(srv, BT_MESH_BLOB_XFER_PHASE_COMPLETE);
-	k_work_cancel_delayable(&srv->rx_timeout);
-	k_work_cancel_delayable(&srv->pull.report);
-	io_close(srv);
-	erase_state(srv);
-
-	if (srv->cb && srv->cb->end) {
-		srv->cb->end(srv, srv->state.xfer.id, true);
-	}
-}
-
-static bool all_blocks_received(struct bt_mesh_blob_srv *srv)
-{
-	for (int i = 0; i < ARRAY_SIZE(srv->state.blocks); ++i) {
-		if (srv->state.blocks[i]) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-static bool pull_mode_xfer_complete(struct bt_mesh_blob_srv *srv)
-{
-	return srv->state.xfer.mode == BT_MESH_BLOB_XFER_MODE_PULL &&
-	       srv->phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK &&
-	       all_blocks_received(srv);
-}
-
 static void timeout(struct k_work *work)
 {
 	struct bt_mesh_blob_srv *srv =
@@ -291,8 +260,6 @@ static void timeout(struct k_work *work)
 
 	if (srv->phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START) {
 		cancel(srv);
-	} else if (pull_mode_xfer_complete(srv)) {
-		end(srv);
 	} else {
 		suspend(srv);
 	}
@@ -421,15 +388,6 @@ static int handle_xfer_get(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ct
 	struct bt_mesh_blob_srv *srv = mod->user_data;
 
 	LOG_DBG("");
-
-	if (pull_mode_xfer_complete(srv)) {
-		/* The client requested transfer. If we are in Pull mode and all blocks were
-		 * received, we should change the Transfer state here to Complete so that the client
-		 * receives the correct state.
-		 */
-		end(srv);
-	}
-
 	xfer_status_rsp(srv, ctx, BT_MESH_BLOB_SUCCESS);
 
 	return 0;
@@ -727,7 +685,7 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	struct bt_mesh_blob_chunk chunk;
 	size_t expected_size = 0;
 	uint16_t idx;
-	int err;
+	int i, err;
 
 	idx = net_buf_simple_pull_le16(buf);
 	chunk.size = buf->len;
@@ -787,26 +745,26 @@ static int handle_chunk(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 
 	atomic_clear_bit(srv->state.blocks, srv->block.number);
 
-	if (!all_blocks_received(srv)) {
+	for (i = 0; i < ARRAY_SIZE(srv->state.blocks); ++i) {
+		if (!srv->state.blocks[i]) {
+			continue;
+		}
+
 		phase_set(srv, BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK);
 		store_state(srv);
 		return 0;
 	}
 
-	if (srv->state.xfer.mode == BT_MESH_BLOB_XFER_MODE_PULL) {
-		/* By spec (section 5.2.4), the BLOB Server stops sending BLOB Partial Block Report
-		 * messages "If the current block is the last block, then the server determines that
-		 * the client knows the transfer is complete. For example, a higher-layer model may
-		 * indicate that the client considers the transfer complete."
-		 *
-		 * We don't have any way for higher-layer model to indicate that the transfer is
-		 * complete. Therefore we need to keep sending Partial Block Report messages until
-		 * the client sends BLOB Transfer Get message or the Block Timer expires.
-		 */
-		return 0;
+	phase_set(srv, BT_MESH_BLOB_XFER_PHASE_COMPLETE);
+	k_work_cancel_delayable(&srv->rx_timeout);
+	k_work_cancel_delayable(&srv->pull.report);
+	io_close(srv);
+	erase_state(srv);
+
+	if (srv->cb && srv->cb->end) {
+		srv->cb->end(srv, srv->state.xfer.id, true);
 	}
 
-	end(srv);
 	return 0;
 }
 
