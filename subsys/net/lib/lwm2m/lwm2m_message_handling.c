@@ -97,7 +97,6 @@ sys_slist_t *lwm2m_engine_obj_list(void);
 
 sys_slist_t *lwm2m_engine_obj_inst_list(void);
 
-static int handle_request(struct coap_packet *request, struct lwm2m_message *msg);
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 struct coap_block_context *lwm2m_output_block_context(void);
 #endif
@@ -2194,7 +2193,7 @@ static int lwm2m_exec_handler(struct lwm2m_message *msg)
 	return -ENOENT;
 }
 
-static int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
+int handle_request(struct coap_packet *request, struct lwm2m_message *msg)
 {
 	int r;
 	uint8_t code;
@@ -2558,7 +2557,7 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 }
 
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_len,
-		       struct sockaddr *from_addr)
+		       struct sockaddr *from_addr, udp_request_handler_cb_t udp_request_handler)
 {
 	struct lwm2m_message *msg = NULL;
 	struct coap_pending *pending;
@@ -2685,7 +2684,12 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		return;
 	}
 
-	if (coap_header_get_type(&response) == COAP_TYPE_CON) {
+	/*
+	 * If no normal response handler is found, then this is
+	 * a new request coming from the server.  Let's look
+	 * at registered objects to find a handler.
+	 */
+	if (udp_request_handler && coap_header_get_type(&response) == COAP_TYPE_CON) {
 		msg = lwm2m_get_message(client_ctx);
 		if (!msg) {
 			LOG_ERR("Unable to get a lwm2m message!");
@@ -2703,7 +2707,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 		lwm2m_registry_lock();
 		/* process the response to this request */
-		r = handle_request(&response, msg);
+		r = udp_request_handler(&response, msg);
 		lwm2m_registry_unlock();
 		if (r < 0) {
 			return;
