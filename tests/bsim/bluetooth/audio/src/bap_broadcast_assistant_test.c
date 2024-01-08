@@ -490,10 +490,9 @@ static int common_init(void)
 	bt_gatt_cb_register(&gatt_callbacks);
 	bt_bap_broadcast_assistant_register_cb(&broadcast_assistant_cbs);
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
-	bt_le_scan_cb_register(&common_scan_cb);
 
 	printk("Starting scan\n");
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return err;

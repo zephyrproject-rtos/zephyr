@@ -1153,10 +1153,9 @@ static void test_main(void)
 		return;
 	}
 
-	bt_le_scan_cb_register(&common_scan_cb);
 	test_cb_register();
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;

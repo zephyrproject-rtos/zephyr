@@ -320,7 +320,6 @@ static void init(void)
 		g_streams[i].ops = &stream_ops;
 	}
 
-	bt_le_scan_cb_register(&common_scan_cb);
 	bt_gatt_cb_register(&gatt_callbacks);
 
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
@@ -334,7 +333,7 @@ static void scan_and_connect(void)
 {
 	int err;
 
-	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
@@ -342,19 +341,6 @@ static void scan_and_connect(void)
 
 	printk("Scanning successfully started\n");
 	WAIT_FOR_FLAG(flag_connected);
-}
-
-static void disconnect_acl(void)
-{
-	int err;
-
-	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	if (err != 0) {
-		FAIL("Failed to disconnect (err %d)\n", err);
-		return;
-	}
-
-	WAIT_FOR_UNSET_FLAG(flag_connected);
 }
 
 static void exchange_mtu(void)
@@ -762,7 +748,6 @@ static void test_main(void)
 		unicast_group = NULL;
 	}
 
-	disconnect_acl();
 
 	PASS("Unicast client passed\n");
 }
