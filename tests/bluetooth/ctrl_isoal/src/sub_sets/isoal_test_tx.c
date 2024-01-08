@@ -195,14 +195,14 @@ static isoal_status_t custom_source_pdu_write_test(struct isoal_pdu_buffer *pdu_
 		      _consume_len,                                                                \
 		      source_pdu_write_test_fake.arg3_##_typ);                                     \
 	check_next_custom_source_pdu_write_test_sdu_payload((const uint8_t *)_sdu_payload,         \
-							    _consume_len, __LINE__)
+							    _consume_len, __LINE__);
 
 #define ZASSERT_PDU_WRITE_TEST_CALL_COUNT(_expected)                                               \
 	zassert_equal(_expected,                                                                   \
 		      source_pdu_write_test_fake.call_count,                                       \
 		      "Expected %u, got %u",                                                       \
 		      _expected,                                                                   \
-		      source_pdu_write_test_fake.call_count)
+		      source_pdu_write_test_fake.call_count);
 
 /*------------------ PDU Emit Callback --------------------------------------*/
 /**
@@ -480,7 +480,6 @@ static void isoal_test_create_sdu_fagment(uint8_t sdu_state,
 					  uint16_t sdu_total_length,
 					  uint16_t packet_number,
 					  uint32_t timestamp,
-					  uint32_t cntr_timestamp,
 					  uint32_t ref_point,
 					  uint64_t target_event,
 					  struct isoal_sdu_tx *sdu_tx)
@@ -489,7 +488,6 @@ static void isoal_test_create_sdu_fagment(uint8_t sdu_state,
 	sdu_tx->packet_sn = packet_number;
 	sdu_tx->iso_sdu_length = sdu_total_length;
 	sdu_tx->time_stamp = timestamp;
-	sdu_tx->cntr_time_stamp = cntr_timestamp;
 	sdu_tx->grp_ref_point = ref_point;
 	sdu_tx->target_event = target_event;
 	memcpy(sdu_tx->dbuf, dataptr, length);
@@ -794,7 +792,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_1_pdu_maxPDU)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -923,7 +920,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_1_pdu_bufSize)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -1038,7 +1034,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_3_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -1200,7 +1195,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_1_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -1247,7 +1241,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_1_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -1290,7 +1283,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_1_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -1411,7 +1403,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_2_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -1459,7 +1450,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_2_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -1526,7 +1516,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_3_frag_2_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -1745,7 +1734,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_1_frag_2_pdu_ts_wrap1)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -1798,7 +1786,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_1_frag_2_pdu_ts_wrap1)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -1929,7 +1916,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -1981,7 +1967,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2045,7 +2030,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -2101,7 +2085,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -2144,7 +2127,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2207,7 +2189,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2333,7 +2314,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -2389,7 +2369,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2452,7 +2431,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2549,7 +2527,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -2591,7 +2568,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2654,7 +2630,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -2817,7 +2792,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_zero_sdu_1_frag_1_pdu_maxPDU_padding)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -2978,7 +2952,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_pdu_alloc_err)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -3095,7 +3068,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_1_sdu_1_frag_pdu_emit_err)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -3227,7 +3199,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_4_sdu_1_frag_4_pdu_stream_loc)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -3298,7 +3269,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_4_sdu_1_frag_4_pdu_stream_loc)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -3364,7 +3334,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_4_sdu_1_frag_4_pdu_stream_loc)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -3435,7 +3404,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_4_sdu_1_frag_4_pdu_stream_loc)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -3481,470 +3449,6 @@ ZTEST(test_tx_unframed, test_tx_unframed_4_sdu_1_frag_4_pdu_stream_loc)
 	zassert_equal(tx_sync_seq, tx_sync_seq_expected, "%u != %u", tx_sync_seq, 2);
 	zassert_equal(tx_sync_timestamp, tx_sync_timestamp_expected, "%u != %u", tx_sync_seq, 2);
 	zassert_equal(tx_sync_offset, tx_sync_offset_expected, "%u != %u", tx_sync_seq, 0);
-}
-
-/**
- * Test Suite  :   TX framed SDU segmentation
- *
- * Tests framed event selection
- */
-#define RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT()                                  \
-	out_sdus_skipped = isoal_tx_framed_find_correct_tx_event(source,   \
-								 &tx_sdu_frag_buf.sdu_tx,  \
-								 &out_payload_number,  \
-								 &out_ref_point,  \
-								 &out_time_offset);  \
-										   \
-	zassert_equal(out_payload_number, expect_payload_number, "%llu != %llu",  \
-			out_payload_number, expect_payload_number);  \
-	zassert_equal(out_ref_point, expect_ref_point, "%u != %u",  \
-			out_ref_point, expect_ref_point);  \
-	zassert_equal(out_time_offset, expect_time_offset, "%u != %u",  \
-			out_time_offset, expect_time_offset);  \
-	zassert_equal(out_sdus_skipped, expect_sdus_skipped, "%u .!= %u",  \
-			out_sdus_skipped, expect_sdus_skipped)
-
-ZTEST(test_tx_framed, test_tx_framed_find_correct_tx_event)
-{
-	const uint8_t number_of_pdus = 1;
-	const uint8_t testdata_size_max = MAX_FRAMED_PDU_PAYLOAD(number_of_pdus);
-
-	struct tx_sdu_frag_buffer tx_sdu_frag_buf;
-	struct isoal_source_session *session;
-	uint8_t testdata[testdata_size_max];
-	isoal_sdu_len_t in_sdu_total_size;
-	isoal_source_handle_t source_hdl;
-	struct isoal_pdu_production *pp;
-	uint64_t expect_payload_number;
-	struct isoal_source *source;
-	uint64_t out_payload_number;
-	uint32_t expect_time_offset;
-	uint8_t expect_sdus_skipped;
-	uint32_t expected_timestamp;
-	uint32_t stream_sync_delay;
-	uint32_t in_cntr_timestamp;
-	uint32_t group_sync_delay;
-	uint64_t in_sdu_packet_sn;
-	uint32_t in_sdu_timestamp;
-	uint32_t expect_ref_point;
-	uint64_t in_target_event;
-	uint32_t iso_interval_us;
-	uint8_t iso_interval_int;
-	uint32_t out_time_offset;
-	uint8_t out_sdus_skipped;
-	uint16_t testdata_indx;
-	uint16_t testdata_size;
-	uint32_t out_ref_point;
-	uint32_t sdu_interval;
-	uint32_t in_ref_point;
-	uint8_t max_octets;
-	uint8_t role;
-	uint8_t BN;
-	uint8_t FT;
-
-	/* Settings */
-	role = BT_CONN_ROLE_PERIPHERAL;
-	iso_interval_int = 1;
-	iso_interval_us = iso_interval_int * ISO_INT_UNIT_US;
-	sdu_interval = iso_interval_us + 50;
-	max_octets = TEST_TX_PDU_PAYLOAD_MAX - 5;
-	BN = 2;
-	FT = 1;
-	stream_sync_delay = (iso_interval_int * ISO_INT_UNIT_US) - 200;
-	group_sync_delay = (iso_interval_int * ISO_INT_UNIT_US) - 50;
-
-	init_test_data_buffer(testdata, testdata_size_max);
-
-	/* Create source */
-	source_hdl = basic_tx_test_setup(0xADAD,            /* Handle */
-					 role,              /* Role */
-					 true,              /* Framed */
-					 BN,                /* BN */
-					 FT,                /* FT */
-					 max_octets,        /* max_octets */
-					 sdu_interval,      /* SDU Interval */
-					 iso_interval_int,  /* ISO Interval */
-					 stream_sync_delay, /* Stream Sync Delay */
-					 group_sync_delay); /* Group Sync Delay */
-
-	source      = &isoal_global.source_state[source_hdl];
-	session     = &source->session;
-	pp          = &source->pdu_production;
-
-	in_sdu_total_size = testdata_size_max;
-	testdata_indx = 0;
-	testdata_size = testdata_size_max;
-
-	/* Test    : Selection of event for first SDU where
-	 *           -- Last SDU packet number is uninitialized
-	 *           -- Last SDU time stamp is uninitialized
-	 *           -- Payload number is uninitialized
-	 *           -- Target event and reference point are one event ahead
-	 *           -- Time stamp is valid
-	 *           -- Time stamp indicates that target event is feasible
-	 * Expected:
-	 * -- Target event is used for transmission and calculations are based
-	 *    on that
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2000;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = in_sdu_timestamp + 200;
-	in_ref_point = in_sdu_timestamp + iso_interval_us - 50;
-
-	pp->initialized = 0U;
-	session->tx_time_stamp = 0;
-	session->tx_time_offset = 0;
-	session->last_input_sn = 0;
-	session->last_input_time_stamp = 0;
-	pp->payload_number = 0;
-
-	expect_sdus_skipped = 0;
-	expect_payload_number = in_target_event * BN;
-	expect_ref_point = in_ref_point;
-	expected_timestamp = in_sdu_timestamp;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for first SDU where
-	 *           -- Last SDU packet number is uninitialized
-	 *           -- Last SDU time stamp is uninitialized
-	 *           -- Payload number ahead of target event
-	 *           -- Target event and reference point are one event behind
-	 *              current payload
-	 *           -- Time stamp is valid
-	 *           -- Time stamp indicates that target event is feasible
-	 * Expected:
-	 * -- Target event + 1 is selected based on the payload being ahead and
-	 *    calculations are based on that reference
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2000;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = in_sdu_timestamp + 200;
-	in_ref_point = in_sdu_timestamp + iso_interval_us - 50;
-
-	pp->initialized = 0U;
-	session->tx_time_stamp = 0;
-	session->tx_time_offset = 0;
-	session->last_input_sn = 0;
-	session->last_input_time_stamp = 0;
-	pp->payload_number = (in_target_event + 1) * BN;
-
-	expect_sdus_skipped = 0;
-	expect_payload_number = (in_target_event + 1) * BN;
-	expect_ref_point = in_ref_point + iso_interval_us;
-	expected_timestamp = in_sdu_timestamp;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for first SDU where
-	 *           -- Last SDU packet number is uninitialized
-	 *           -- Last SDU time stamp is uninitialized
-	 *           -- Payload number ahead of target event
-	 *           -- Target event and reference point are one event behind
-	 *              current payload
-	 *           -- Time stamp is invalid
-	 *           -- Controller time stamp indicates that target event is
-	 *              feasible
-	 * Expected:
-	 * -- Target event + 1 is selected based on the payload being ahead and
-	 *    calculations are based on that reference
-	 * -- Time offset is based on the controller's capture time
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2000;
-	in_sdu_timestamp = 0;
-	in_cntr_timestamp = 9249 + 200;
-	in_ref_point = in_cntr_timestamp + iso_interval_us - 50;
-
-	pp->initialized = 0U;
-	session->tx_time_stamp = 0;
-	session->tx_time_offset = 0;
-	session->last_input_sn = 0;
-	session->last_input_time_stamp = 0;
-	pp->payload_number = (in_target_event + 1) * BN;
-
-	expect_sdus_skipped = 0;
-	expect_payload_number = (in_target_event + 1) * BN;
-	expect_ref_point = in_ref_point + iso_interval_us;
-	expected_timestamp = in_cntr_timestamp;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for a subsequent SDU where
-	 *           -- Last SDU packet number is in sequence
-	 *           -- Last SDU time stamp is in sequence
-	 *           -- Payload number is in sequence
-	 *           -- Target event and reference point are one event ahead of
-	 *              current payload
-	 *           -- Time stamp is valid
-	 *           -- Time stamp indicates that target event is feasible
-	 * Expected:
-	 * -- Target event is selected based on the time stamp and calculations
-	 *    are based on that reference
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2000;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = 9249 + 200;
-	in_ref_point = in_sdu_timestamp + iso_interval_us - 50;
-
-	pp->initialized = 1U;
-	session->tx_time_stamp = 0;
-	session->tx_time_offset = 0;
-	session->last_input_sn = in_sdu_packet_sn - 1;
-	session->last_input_time_stamp = in_sdu_timestamp - sdu_interval;
-	pp->payload_number = (in_target_event - 1) * BN;
-
-	expect_sdus_skipped = 0;
-	expect_payload_number = in_target_event * BN;
-	expect_ref_point = in_ref_point;
-	expected_timestamp = in_sdu_timestamp;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for a subsequent SDU where
-	 *           -- Last SDU packet number is not in sequence
-	 *           -- Last SDU time stamp is not in sequence
-	 *           -- Payload number is not in sequence
-	 *           -- Target event and reference point are two events ahead
-	 *           -- Time stamp is valid but at the border of the range
-	 *           -- Time stamp indicates that target event - 1 is feasible
-	 * Expected:
-	 * -- Target event - 1 is selected based on the time stamp and
-	 *    calculations are based on that reference
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2001;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = 9249 + sdu_interval + iso_interval_us;
-	in_ref_point = in_sdu_timestamp + (iso_interval_us * 2) - 50;
-
-	pp->initialized = 1U;
-	session->tx_time_stamp = 0;
-	session->tx_time_offset = 0;
-	session->last_input_sn = in_sdu_packet_sn - 3;
-	session->last_input_time_stamp = in_sdu_timestamp - (sdu_interval * 2);
-	pp->payload_number = (in_target_event - 2) * BN;
-
-	expect_sdus_skipped = in_sdu_packet_sn - session->last_input_sn - 1;
-	expect_payload_number = (in_target_event - 1) * BN;
-	expect_ref_point = in_ref_point - iso_interval_us;
-	expected_timestamp = in_sdu_timestamp;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for a subsequent SDU where
-	 *           -- Last SDU packet number is not in sequence
-	 *           -- Last SDU time stamp is not in sequence
-	 *           -- Payload number is not in sequence
-	 *           -- Target event and reference point are two events ahead
-	 *           -- Time stamp is invalid
-	 * Expected:
-	 * -- Target event is selected based on the time stamp calculated
-	 *    from the difference between time stamps and calculations are based
-	 *    on that reference
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2001;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = 9249 + sdu_interval + iso_interval_us + 1;
-	in_ref_point = in_sdu_timestamp + (iso_interval_us * 2) - 50;
-
-	pp->initialized = 1U;
-	session->tx_time_stamp = in_ref_point - iso_interval_us;
-	session->tx_time_offset = session->tx_time_stamp -
-					(in_sdu_timestamp - sdu_interval);
-	session->last_input_sn = in_sdu_packet_sn - 3;
-	session->last_input_time_stamp = in_sdu_timestamp - (sdu_interval * 2);
-	pp->payload_number = (in_target_event - 2) * BN;
-
-	expect_sdus_skipped = in_sdu_packet_sn - session->last_input_sn - 1;
-	expect_payload_number = in_target_event * BN;
-	expect_ref_point = in_ref_point;
-	expected_timestamp = session->tx_time_stamp - session->tx_time_offset +
-				(in_sdu_timestamp - session->last_input_time_stamp);
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for a subsequent SDU where
-	 *           -- Last SDU packet number is not in sequence
-	 *           -- Last SDU time stamp has been projected as part of a
-	 *              burst
-	 *           -- Payload number is not in sequence
-	 *           -- Target event and reference point are two events ahead
-	 *           -- Time stamp is invalid
-	 *           -- Time stamp delta is invalid
-	 * Expected:
-	 * -- Target event + 1 is selected based on the time stamp calculated
-	 *    from the difference in packet sn and calculations are based
-	 *    on that reference
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2001;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = 9249 + sdu_interval + iso_interval_us + 1;
-	in_ref_point = in_sdu_timestamp + (iso_interval_us * 2) - 50;
-
-	pp->initialized = 1U;
-	session->tx_time_stamp = in_ref_point - iso_interval_us;
-	session->tx_time_offset = session->tx_time_stamp -
-					(in_sdu_timestamp + sdu_interval);
-	session->last_input_sn = in_sdu_packet_sn - 1;
-	session->last_input_time_stamp = in_sdu_timestamp + (sdu_interval * 2);
-	pp->payload_number = (in_target_event - 2) * BN;
-
-	expect_sdus_skipped = in_sdu_packet_sn - session->last_input_sn - 1;
-	expect_payload_number = (in_target_event + 1) * BN;
-	expect_ref_point = in_ref_point + iso_interval_us;
-	expected_timestamp = session->tx_time_stamp - session->tx_time_offset + sdu_interval;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
-
-	/* Test    : Selection of event for a subsequent SDU where
-	 *           -- Last SDU packet number is in sequence
-	 *           -- Last SDU time stamp has been projected as part of a
-	 *              burst
-	 *           -- Payload number is ahead of selected event
-	 *           -- Target event and reference point are two events ahead
-	 *           -- Time stamp is valid
-	 *           -- Time stamp indicates that target event - 1 is feasible
-	 * Expected:
-	 * -- Target event -1 is selected based on the time stamp and
-	 *    calculations are based on that reference
-	 * -- Payload number continues from last
-	 * -- Time offset is based on the SDUs time stamp
-	 */
-	in_sdu_packet_sn = 2000;
-	in_target_event = 2001;
-	in_sdu_timestamp = 9249;
-	in_cntr_timestamp = 9249;
-	in_ref_point = in_sdu_timestamp + (iso_interval_us * 2) - 50;
-
-	pp->initialized = 1U;
-	session->tx_time_stamp = 0;
-	session->tx_time_offset = 0;
-	session->last_input_sn = in_sdu_packet_sn - 1;
-	session->last_input_time_stamp = in_sdu_timestamp - sdu_interval;
-	pp->payload_number = ((in_target_event - 1) * BN) + 1;
-
-	expect_sdus_skipped = in_sdu_packet_sn - session->last_input_sn - 1;
-	expect_payload_number = pp->payload_number;
-	expect_ref_point = in_ref_point - iso_interval_us;
-	expected_timestamp = in_sdu_timestamp;
-	expect_time_offset = expect_ref_point - expected_timestamp;
-
-	isoal_test_init_tx_sdu_buffer(&tx_sdu_frag_buf);
-	isoal_test_create_sdu_fagment(BT_ISO_SINGLE,
-				      &testdata[testdata_indx],
-				      (testdata_size - testdata_indx),
-				      in_sdu_total_size,
-				      in_sdu_packet_sn,
-				      in_sdu_timestamp,
-				      in_cntr_timestamp,
-				      in_ref_point,
-				      in_target_event,
-				      &tx_sdu_frag_buf.sdu_tx);
-
-	RUN_TX_FRAMED_FIND_CORRECT_TX_EVENT();
 }
 
 /**
@@ -4032,7 +3536,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_maxPDU)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -4189,7 +3692,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_bufSize)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -4333,7 +3835,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_3_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -4572,7 +4073,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -4644,7 +4144,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -4698,7 +4197,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_1_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -4837,7 +4335,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -4910,7 +4407,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -5003,7 +4499,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_3_frag_2_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -5142,7 +4637,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -5217,7 +4711,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -5311,7 +4804,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -5378,7 +4870,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -5444,7 +4935,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -5536,7 +5026,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -5675,7 +5164,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -5747,7 +5235,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -5840,7 +5327,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -5904,7 +5390,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -5965,7 +5450,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -6056,7 +5540,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_3_frag_4_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -6228,7 +5711,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -6308,7 +5790,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_refPoint2)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -6458,7 +5939,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_1_pdu_refPoint3)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -6616,7 +6096,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -6696,7 +6175,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_2_pdu_ts_wrap1)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -6837,7 +6315,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_zero_sdu_1_frag_1_pdu_maxPDU)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -6989,7 +6466,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_zero_sdu_1_frag_1_pdu_padding)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -7171,7 +6647,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_alloc_err)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -7299,7 +6774,6 @@ ZTEST(test_tx_framed, test_tx_framed_1_sdu_1_frag_pdu_emit_err)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -7447,7 +6921,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -7524,7 +6997,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -7598,7 +7070,6 @@ ZTEST(test_tx_framed, test_tx_framed_2_sdu_1_frag_pdu_timeout)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -7763,7 +7234,6 @@ ZTEST(test_tx_framed, test_tx_framed_event_utilization_1)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -7838,7 +7308,6 @@ ZTEST(test_tx_framed, test_tx_framed_event_utilization_1)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -7949,7 +7418,6 @@ ZTEST(test_tx_framed, test_tx_framed_event_utilization_1)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -8041,7 +7509,6 @@ ZTEST(test_tx_framed, test_tx_framed_event_utilization_1)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -8229,7 +7696,6 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 				      sdu_total_size,
 				      sdu_packet_number,
 				      sdu_timestamp,
-				      sdu_timestamp,
 				      ref_point,
 				      event_number,
 				      &tx_sdu_frag_buf.sdu_tx);
@@ -8300,7 +7766,6 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
@@ -8381,7 +7846,6 @@ ZTEST(test_tx_framed_ebq, test_tx_framed_cis_fra_per_bv07c)
 				      (testdata_size - testdata_indx),
 				      sdu_total_size,
 				      sdu_packet_number,
-				      sdu_timestamp,
 				      sdu_timestamp,
 				      ref_point,
 				      event_number,
