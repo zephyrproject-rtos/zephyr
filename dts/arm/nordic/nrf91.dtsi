@@ -28,7 +28,6 @@
 	};
 
 	chosen {
-		zephyr,entropy = &cryptocell;
 		zephyr,flash-controller = &flash_controller;
 	};
 
