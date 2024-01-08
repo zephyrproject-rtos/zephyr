@@ -36,5 +36,5 @@
 };
 
 arduino_i2c: &i2c1 {};
-
-arduino_serial: &uart8 {};
+arduino_can: &fdcan1 {};
+arduino_serial: &usart6 {};
