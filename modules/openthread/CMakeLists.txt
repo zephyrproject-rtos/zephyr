@@ -154,12 +154,6 @@ else()
   set(OT_CSL_RECEIVER OFF CACHE BOOL "Enable CSL receiver feature for Thread 1.2" FORCE)
 endif()
 
-if(CONFIG_OPENTHREAD_CSL_RECEIVER_LOCAL_TIME_SYNC)
-  set(OT_CSL_RECEIVER_LOCAL_TIME_SYNC ON CACHE BOOL "Use local time for CSL sync" FORCE)
-else()
-  set(OT_CSL_RECEIVER_LOCAL_TIME_SYNC OFF CACHE BOOL "Use local time for CSL sync" FORCE)
-endif()
-
 if(CONFIG_OPENTHREAD_DATASET_UPDATER)
   set(OT_DATASET_UPDATER ON CACHE BOOL "Enable Dataset updater" FORCE)
 else()
