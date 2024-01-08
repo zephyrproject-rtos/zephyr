@@ -47,7 +47,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rw_link_format.h"
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_rw_plain_text.h"
-#include "lwm2m_rw_opaque.h"
 #include "lwm2m_util.h"
 #include "lwm2m_rd_client.h"
 #if defined(CONFIG_LWM2M_RW_SENML_JSON_SUPPORT)
@@ -808,10 +807,6 @@ static int select_writer(struct lwm2m_output_context *out, uint16_t accept)
 		out->writer = &link_format_writer;
 		break;
 
-	case LWM2M_FORMAT_APP_OCTET_STREAM:
-		out->writer = &opaque_writer;
-		break;
-
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		out->writer = &plain_text_writer;
@@ -862,9 +857,6 @@ static int select_reader(struct lwm2m_input_context *in, uint16_t format)
 	switch (format) {
 
 	case LWM2M_FORMAT_APP_OCTET_STREAM:
-		in->reader = &opaque_reader;
-		break;
-
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		in->reader = &plain_text_reader;
@@ -1545,8 +1537,6 @@ static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	switch (content_format) {
 
 	case LWM2M_FORMAT_APP_OCTET_STREAM:
-		return do_read_op_opaque(msg, content_format);
-
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_read_op_plain_text(msg, content_format);
@@ -1929,8 +1919,6 @@ static int do_write_op(struct lwm2m_message *msg, uint16_t format)
 	switch (format) {
 
 	case LWM2M_FORMAT_APP_OCTET_STREAM:
-		return do_write_op_opaque(msg);
-
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_write_op_plain_text(msg);
