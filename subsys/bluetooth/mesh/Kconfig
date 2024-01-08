@@ -1375,16 +1375,6 @@ config BT_MESH_PRIV_BEACON_CLI
 
 endif # BT_MESH_PRIV_BEACONS
 
-config BT_MESH_COMP_PST_BUF_SIZE
-	int "Composition Data Page persistence buffer size"
-	default 100
-	help
-	  Stack allocated buffer used to temporarily hold Composition
-	  Data Pages during flash operations. Should reflect the size
-	  of the largest Composition Data Page present in the application.
-	  Note that this buffer should still be large enough to restore previously stored
-	  pages after a performed device firmware update.
-
 config BT_MESH_COMP_PAGE_1
 	bool "Support for Composition Data Page 1"
 	depends on BT_MESH_MODEL_EXTENSIONS
