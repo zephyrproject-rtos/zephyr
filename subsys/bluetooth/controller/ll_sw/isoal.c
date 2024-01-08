@@ -36,15 +36,15 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(bt_ctlr_isoal, CONFIG_BT_CTLR_ISOAL_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_ctlr_isoal, LOG_LEVEL_INF);
 
 #define ISOAL_LOG_DBG(...)     LOG_DBG(__VA_ARGS__)
 
-#if defined(CONFIG_BT_CTLR_ISOAL_LOG_DBG_VERBOSE)
+#if defined(ISOAL_DEBUG_VERBOSE)
 #define ISOAL_LOG_DBGV(...)    LOG_DBG(__VA_ARGS__)
 #else
 #define ISOAL_LOG_DBGV(...)    (void) 0
-#endif /* CONFIG_BT_CTLR_ISOAL_LOG_DBG_VERBOSE */
+#endif /* ISOAL_DEBUG_VERBOSE */
 
 #include "hal/debug.h"
 
