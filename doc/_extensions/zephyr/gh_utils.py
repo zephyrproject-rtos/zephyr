@@ -53,8 +53,6 @@ sys.path.insert(0, str(SCRIPTS))
 
 from get_maintainer import Maintainers
 
-MAINTAINERS : Final[Maintainers] = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
-
 
 __version__ = "0.1.0"
 
@@ -141,7 +139,9 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> Optiona
 
     title = quote(f"doc: Documentation issue in '{pagename}'")
     labels = quote("area: Documentation")
-    areas = MAINTAINERS.path2areas(rel_path)
+
+    maintainers = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
+    areas = maintainers.path2areas(rel_path)
     if areas:
         labels += "," + ",".join([label for area in areas for label in area.labels])
     body = quote(
