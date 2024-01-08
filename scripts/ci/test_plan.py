@@ -93,7 +93,7 @@ class Tag:
         return "<Tag {}>".format(self.name)
 
 class Filters:
-    def __init__(self, modified_files, ignore_path, pull_request=False, platforms=[], detailed_test_id=True):
+    def __init__(self, modified_files, pull_request=False, platforms=[], detailed_test_id=True):
         self.modified_files = modified_files
         self.twister_options = []
         self.full_twister = False
@@ -103,7 +103,6 @@ class Filters:
         self.platforms = platforms
         self.default_run = False
         self.detailed_test_id = detailed_test_id
-        self.ignore_path = ignore_path
 
     def process(self):
         self.find_modules()
@@ -318,7 +317,7 @@ class Filters:
             logging.info(f'Potential tag based filters: {exclude_tags}')
 
     def find_excludes(self, skip=[]):
-        with open(self.ignore_path, "r") as twister_ignore:
+        with open("scripts/ci/twister_ignore.txt", "r") as twister_ignore:
             ignores = twister_ignore.read().splitlines()
             ignores = filter(lambda x: not x.startswith("#"), ignores)
 
@@ -374,9 +373,6 @@ def parse_args():
             help="Don't put paths into tests' names.")
     parser.add_argument('-r', '--repo-to-scan', default=None,
             help="Repo to scan")
-    parser.add_argument('--ignore-path',
-            default=os.path.join(zephyr_base, 'scripts', 'ci', 'twister_ignore.txt'),
-            help="Path to a text file with patterns of files to be matched against changed files")
 
     # Include paths in names by default.
     parser.set_defaults(detailed_test_id=True)
@@ -404,7 +400,7 @@ if __name__ == "__main__":
         print("\n".join(files))
         print("=========")
 
-    f = Filters(files, args.ignore_path, args.pull_request, args.platform, args.detailed_test_id)
+    f = Filters(files, args.pull_request, args.platform, args.detailed_test_id)
     f.process()
 
     # remove dupes and filtered cases
