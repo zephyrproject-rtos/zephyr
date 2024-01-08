@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,11 @@
 #include "../radio/radio_nrf5_resources.h"
 #include "../radio/radio_nrf5_fem.h"
 
+/* NOTE: BT_CTLR_USED_PPI_CHANNELS is defined based on PPI defines being
+ *       defined in the below PPI/DPPI resources header file. Take care to
+ *       conditionally compile them based on feature Kconfig defines in those
+ *       resources header file.
+ */
 #ifdef DPPI_PRESENT
 #include "../radio/radio_nrf5_dppi_resources.h"
 #else
