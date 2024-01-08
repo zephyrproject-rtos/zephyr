@@ -195,7 +195,7 @@ void bt_mesh_adv_buf_local_ready(void)
 	/* Will be handled automatically */
 }
 
-void bt_mesh_adv_buf_simult_ready(void)
+void bt_mesh_adv_buf_relay_ready(void)
 {
 	/* Will be handled automatically */
 }
@@ -203,12 +203,6 @@ void bt_mesh_adv_buf_simult_ready(void)
 void bt_mesh_adv_gatt_update(void)
 {
 	bt_mesh_adv_buf_get_cancel();
-}
-
-void bt_mesh_adv_buf_terminate(struct net_buf *buf)
-{
-	/* todo */
-	ARG_UNUSED(buf);
 }
 
 void bt_mesh_adv_init(void)

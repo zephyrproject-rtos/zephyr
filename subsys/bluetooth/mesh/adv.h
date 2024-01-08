@@ -26,19 +26,17 @@ enum bt_mesh_adv_type {
 };
 
 enum bt_mesh_adv_tag {
-	BT_MESH_ADV_TAG_LOCAL,
-	BT_MESH_ADV_TAG_RELAY,
-	BT_MESH_ADV_TAG_PROXY,
-	BT_MESH_ADV_TAG_FRIEND,
-	BT_MESH_ADV_TAG_PROV,
+	BT_MESH_LOCAL_ADV,
+	BT_MESH_RELAY_ADV,
+	BT_MESH_PROXY_ADV,
+	BT_MESH_FRIEND_ADV,
 };
 
 enum bt_mesh_adv_tags {
-	BT_MESH_ADV_TAG_LOCAL_BIT	= BIT(BT_MESH_ADV_TAG_LOCAL),
-	BT_MESH_ADV_TAG_RELAY_BIT	= BIT(BT_MESH_ADV_TAG_RELAY),
-	BT_MESH_ADV_TAG_PROXY_BIT	= BIT(BT_MESH_ADV_TAG_PROXY),
-	BT_MESH_ADV_TAG_FRIEND_BIT	= BIT(BT_MESH_ADV_TAG_FRIEND),
-	BT_MESH_ADV_TAG_PROV_BIT	= BIT(BT_MESH_ADV_TAG_PROV),
+	BT_MESH_LOCAL_ADV_BIT	= BIT(BT_MESH_LOCAL_ADV),
+	BT_MESH_RELAY_ADV_BIT	= BIT(BT_MESH_RELAY_ADV),
+	BT_MESH_PROXY_ADV_BIT	= BIT(BT_MESH_PROXY_ADV),
+	BT_MESH_FRIEND_ADV_BIT	= BIT(BT_MESH_FRIEND_ADV),
 };
 
 struct bt_mesh_adv {
@@ -82,9 +80,7 @@ int bt_mesh_adv_enable(void);
 
 void bt_mesh_adv_buf_local_ready(void);
 
-void bt_mesh_adv_buf_simult_ready(void);
-
-void bt_mesh_adv_buf_terminate(struct net_buf *buf);
+void bt_mesh_adv_buf_relay_ready(void);
 
 void bt_mesh_adv_buf_friend_ready(void);
 

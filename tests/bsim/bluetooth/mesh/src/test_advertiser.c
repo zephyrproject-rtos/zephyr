@@ -81,7 +81,7 @@ static void adv_init(void)
 static void allocate_all_array(struct net_buf **buf, size_t num_buf, uint8_t xmit)
 {
 	for (int i = 0; i < num_buf; i++) {
-		*buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+		*buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 					  xmit, K_NO_WAIT);
 
 		ASSERT_FALSE(!*buf, "Out of buffers");
@@ -94,7 +94,7 @@ static void verify_adv_queue_overflow(void)
 	struct net_buf *dummy_buf;
 
 	/* Verity Queue overflow */
-	dummy_buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	dummy_buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 				       BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
 	ASSERT_TRUE(!dummy_buf, "Unexpected extra buffer");
 }
@@ -160,7 +160,7 @@ static void realloc_end_cb(int err, void *cb_data)
 	struct net_buf *buf = (struct net_buf *)cb_data;
 
 	ASSERT_EQUAL(0, err);
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 			BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
 	ASSERT_FALSE(!buf, "Out of buffers");
 
@@ -425,7 +425,7 @@ static void test_tx_cb_single(void)
 	bt_init();
 	adv_init();
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 			BT_MESH_TRANSMIT(2, 20), K_NO_WAIT);
 	ASSERT_FALSE(!buf, "Out of buffers");
 
@@ -530,7 +530,7 @@ static void test_tx_proxy_mixin(void)
 	 * Advertising the proxy service should be resumed after
 	 * finishing advertising the message.
 	 */
-	struct net_buf *buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	struct net_buf *buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 			BT_MESH_TRANSMIT(5, 20), K_NO_WAIT);
 	net_buf_add_mem(buf, txt_msg, sizeof(txt_msg));
 	bt_mesh_adv_send(buf, NULL, NULL);
@@ -636,16 +636,16 @@ static void test_tx_random_order(void)
 	/* Verify random order calls */
 	num_adv_sent = ARRAY_SIZE(buf);
 	previous_checker = 0xff;
-	buf[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	buf[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE(!buf[0], "Out of buffers\n");
-	buf[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	ASSERT_FALSE(!buf[0], "Out of buffers");
+	buf[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 				    xmit, K_NO_WAIT);
 	ASSERT_FALSE(!buf[1], "Out of buffers");
 
 	send_adv_buf(buf[0], 0, 0xff);
 
-	buf[2] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
+	buf[2] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_LOCAL_ADV,
 				    xmit, K_NO_WAIT);
 	ASSERT_FALSE(!buf[2], "Out of buffers");
 
