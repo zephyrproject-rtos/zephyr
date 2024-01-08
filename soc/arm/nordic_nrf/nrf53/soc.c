@@ -410,8 +410,6 @@ static void rtc_pretick_rtc_isr_hook(void)
 {
 	NRF_IPC->PUBLISH_RECEIVE[CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET] &=
 			~IPC_PUBLISH_RECEIVE_EN_Msk;
-
-	nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
 }
 
 void rtc_pretick_rtc0_isr_hook(void)
@@ -422,6 +420,10 @@ void rtc_pretick_rtc0_isr_hook(void)
 void rtc_pretick_rtc1_isr_hook(void)
 {
 	rtc_pretick_rtc_isr_hook();
+
+	if (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK)) {
+		nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_CHANNEL_EVENT_ADDR(RTC1_PRETICK_CC_CHAN));
+	}
 }
 
 static int rtc_pretick_cpunet_init(void)
