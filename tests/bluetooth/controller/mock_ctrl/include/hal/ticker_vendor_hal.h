@@ -37,8 +37,9 @@
  */
 #define HAL_TICKER_US_TO_TICKS_CEIL(x) \
 	( \
-		DIV_ROUND_UP(((uint64_t) (x) * HAL_TICKER_FSEC_PER_USEC), \
-			     HAL_TICKER_CNTR_CLK_UNIT_FSEC) & \
+		((uint32_t)(((((uint64_t) (x) * HAL_TICKER_FSEC_PER_USEC) + \
+			      HAL_TICKER_CNTR_CLK_UNIT_FSEC - 1U)) / \
+			    HAL_TICKER_CNTR_CLK_UNIT_FSEC)) & \
 		HAL_TICKER_CNTR_MASK \
 	)
 
