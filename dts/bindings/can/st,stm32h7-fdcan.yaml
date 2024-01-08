@@ -13,3 +13,6 @@ properties:
 
   interrupts:
     required: true
+
+  interrupt-names:
+    required: true
