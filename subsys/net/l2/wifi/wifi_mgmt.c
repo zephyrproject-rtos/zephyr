@@ -707,27 +707,3 @@ void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface,
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
-
-void wifi_mgmt_raise_ap_enable_result_event(struct net_if *iface,
-					    enum wifi_ap_status status)
-{
-	struct wifi_status cnx_status = {
-		.status = status,
-	};
-
-	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_ENABLE_RESULT,
-					iface, &cnx_status,
-					sizeof(enum wifi_ap_status));
-}
-
-void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface,
-					     enum wifi_ap_status status)
-{
-	struct wifi_status cnx_status = {
-		.status = status,
-	};
-
-	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_DISABLE_RESULT,
-					iface, &cnx_status,
-					sizeof(enum wifi_ap_status));
-}
