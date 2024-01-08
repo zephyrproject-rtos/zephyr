@@ -43,7 +43,6 @@ struct zperf_upload_params {
 
 struct zperf_download_params {
 	uint16_t port;
-	struct sockaddr addr;
 };
 
 struct zperf_results {
