@@ -209,6 +209,7 @@ enum bt_audio_metadata_type {
 	((struct bt_audio_codec_cfg){                                                              \
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.ctlr_transcode = false,                                                           \
 		.id = _id,                                                                         \
 		.cid = _cid,                                                                       \
 		.vid = _vid,                                                                       \
@@ -231,6 +232,7 @@ enum bt_audio_metadata_type {
 	((struct bt_audio_codec_cap){                                                              \
 		/* Use HCI data path as default, can be overwritten by application */              \
 		.path_id = BT_ISO_DATA_PATH_HCI,                                                   \
+		.ctlr_transcode = false,                                                           \
 		.id = (_id),                                                                       \
 		.cid = (_cid),                                                                     \
 		.vid = (_vid),                                                                     \
@@ -316,6 +318,12 @@ struct bt_audio_codec_cap {
 	 * vendor specific ID.
 	 */
 	uint8_t path_id;
+	/** Whether or not the local controller should transcode
+	 *
+	 * This effectively sets the coding format for the ISO data path to @ref
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
+	 */
+	bool ctlr_transcode;
 	/** Codec ID */
 	uint8_t id;
 	/** Codec Company ID */
@@ -344,6 +352,12 @@ struct bt_audio_codec_cfg {
 	 * vendor specific ID.
 	 */
 	uint8_t path_id;
+	/** Whether or not the local controller should transcode
+	 *
+	 * This effectively sets the coding format for the ISO data path to @ref
+	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
+	 */
+	bool ctlr_transcode;
 	/** Codec ID */
 	uint8_t  id;
 	/** Codec Company ID */
