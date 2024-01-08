@@ -18,7 +18,7 @@
 
 /** @brief Symbol specifying minor version of the nrfx API to be used. */
 #ifndef NRFX_CONFIG_API_VER_MINOR
-#define NRFX_CONFIG_API_VER_MINOR 0
+#define NRFX_CONFIG_API_VER_MINOR 2
 #endif
 
 /** @brief Symbol specifying micro version of the nrfx API to be used. */
