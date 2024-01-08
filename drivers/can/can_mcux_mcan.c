@@ -217,17 +217,17 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),		\
-			    DT_INST_IRQ_BY_IDX(n, 0, priority),		\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, int0, priority),	\
 			    can_mcan_line_0_isr,			\
 			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));		\
 									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq),		\
-			    DT_INST_IRQ_BY_IDX(n, 1, priority),		\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, int1, priority),	\
 			    can_mcan_line_1_isr,			\
 			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));		\
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));		\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MCAN_INIT)
