@@ -282,27 +282,21 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 #endif
 
 /**
- * @brief Enqueue data for transmission
+ * @brief Enqueue a single packet for transmission
  *
- * @param context	Network context
- * @param data		Pointer to the data
- * @param len		Number of bytes
- * @param msg		Data for a vector array operation
+ * @param context TCP context
+ * @param pkt Packet
  *
  * @return 0 if ok, < 0 if error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_queue(struct net_context *context, const void *data, size_t len,
-		  const struct msghdr *msg);
+int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
 #else
-static inline int net_tcp_queue(struct net_context *context, const void *data,
-				size_t len, const struct msghdr *msg)
+static inline int net_tcp_queue_data(struct net_context *context,
+				     struct net_pkt *pkt)
 {
 	ARG_UNUSED(context);
-	ARG_UNUSED(data);
-	ARG_UNUSED(len);
-	ARG_UNUSED(msg);
-
+	ARG_UNUSED(pkt);
 	return -EPROTONOSUPPORT;
 }
 #endif

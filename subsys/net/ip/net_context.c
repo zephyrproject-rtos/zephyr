@@ -1480,7 +1480,7 @@ static int context_sendto(struct net_context *context,
 {
 	const struct msghdr *msghdr = NULL;
 	struct net_if *iface;
-	struct net_pkt *pkt = NULL;
+	struct net_pkt *pkt;
 	size_t tmp_len;
 	int ret;
 
@@ -1689,15 +1689,6 @@ static int context_sendto(struct net_context *context,
 		return -ENETDOWN;
 	}
 
-	context->send_cb = cb;
-	context->user_data = user_data;
-
-	if (IS_ENABLED(CONFIG_NET_TCP) &&
-	    net_context_get_proto(context) == IPPROTO_TCP &&
-	    !net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		goto skip_alloc;
-	}
-
 	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
 		NET_ERR("Failed to allocate net_pkt");
@@ -1715,6 +1706,9 @@ static int context_sendto(struct net_context *context,
 		}
 		len = tmp_len;
 	}
+
+	context->send_cb = cb;
+	context->user_data = user_data;
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
 		uint8_t priority;
@@ -1737,7 +1731,6 @@ static int context_sendto(struct net_context *context,
 		}
 	}
 
-skip_alloc:
 	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
 	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
 		ret = context_write_data(pkt, buf, len, msghdr);
@@ -1769,12 +1762,16 @@ skip_alloc:
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_proto(context) == IPPROTO_TCP) {
 
-		ret = net_tcp_queue(context, buf, len, msghdr);
+		ret = context_write_data(pkt, buf, len, msghdr);
 		if (ret < 0) {
 			goto fail;
 		}
 
-		len = ret;
+		net_pkt_cursor_init(pkt);
+		ret = net_tcp_queue_data(context, pkt);
+		if (ret < 0) {
+			goto fail;
+		}
 
 		ret = net_tcp_send_data(context, cb, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
@@ -1830,9 +1827,7 @@ skip_alloc:
 
 	return len;
 fail:
-	if (pkt != NULL) {
-		net_pkt_unref(pkt);
-	}
+	net_pkt_unref(pkt);
 
 	return ret;
 }
