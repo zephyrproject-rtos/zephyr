@@ -131,56 +131,31 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 
 	am_hal_iom_transfer_t trans = {0};
 
-	if (ctx->tx_len) {
-		trans.ui64Instr = *ctx->tx_buf;
-		trans.ui32InstrLen = 1;
-		spi_context_update_tx(ctx, 1, 1);
+	do {
+		trans.pui32TxBuffer = trans.pui32RxBuffer = NULL;
+		trans.eDirection = AM_HAL_IOM_FULLDUPLEX;
 
-		if (ctx->rx_buf != NULL) {
-			if (ctx->tx_len > 0) {
-				/* The instruction length can only be 0~5. */
-				if (ctx->tx_len > 4) {
-					spi_context_complete(ctx, dev, 0);
-					return -ENOTSUP;
-				}
-
-				/* Put the remaining TX data in instruction. */
-				trans.ui32InstrLen += ctx->tx_len;
-				for (int i = 0; i < trans.ui32InstrLen - 1; i++) {
-					trans.ui64Instr = (trans.ui64Instr << 8) | (*ctx->tx_buf);
-					spi_context_update_tx(ctx, 1, 1);
-				}
-			}
-
-			trans.eDirection = AM_HAL_IOM_RX;
-			trans.bContinue = true;
-			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
-			trans.ui32NumBytes = ctx->rx_len;
-			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
-		} else if (ctx->tx_buf != NULL) {
-			/* Set TX direction to send data and release CS after transmission. */
-			trans.eDirection = AM_HAL_IOM_TX;
-			trans.bContinue = false;
-			trans.ui32NumBytes = ctx->tx_len;
+		if (ctx->tx_buf) {
 			trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
-			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
-		}
-	} else {
-		do {
-			/* Set RX direction to receive data and release CS after transmission. */
-			trans.ui64Instr = 0;
-			trans.ui32InstrLen = 0;
-			trans.eDirection = AM_HAL_IOM_RX;
+			trans.pui32RxBuffer = (uint32_t *)ctx->tx_buf;
+			trans.ui32NumBytes = ctx->tx_len;
+			spi_context_update_tx(ctx, 1, ctx->tx_len);
 			trans.bContinue = false;
+		}
+
+		if (ctx->rx_buf) {
 			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 			trans.ui32NumBytes = ctx->rx_len;
-			ret = am_hal_iom_blocking_transfer(data->IOMHandle, &trans);
-			if (ret < 0) {
-				break;
+			if (trans.pui32TxBuffer == NULL) {
+				trans.pui32TxBuffer = (uint32_t *)ctx->rx_buf;
 			}
 			spi_context_update_rx(ctx, 1, ctx->rx_len);
-		} while (ctx->rx_len > 0);
-	}
+			trans.bContinue = (ctx->rx_count) ? true : false;
+		}
+
+		ret = am_hal_iom_spi_blocking_fullduplex(data->IOMHandle, &trans);
+
+	} while (!ret && (spi_context_tx_buf_on(&data->ctx) || spi_context_rx_buf_on(&data->ctx)));
 
 	spi_context_complete(ctx, dev, 0);
 
