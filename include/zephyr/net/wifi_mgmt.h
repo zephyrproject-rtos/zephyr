@@ -548,6 +548,22 @@ enum wifi_mgmt_op {
 	WIFI_MGMT_SET = 1,
 };
 
+#define MAX_REG_CHAN_NUM  42
+
+/** Per-channel regulatory attributes */
+struct wifi_reg_chan_info {
+	/** Center frequency in MHz */
+	unsigned short center_frequency;
+	/** Maximum transmission power (in dBm) */
+	unsigned short max_power:8;
+	/** Is channel supported or not */
+	unsigned short supported:1;
+	/** Passive transmissions only */
+	unsigned short passive_only:1;
+	/** Is a DFS channel */
+	unsigned short dfs:1;
+} __packed;
+
 /** Regulatory domain information or configuration */
 struct wifi_reg_domain {
 	/* Regulatory domain operation */
@@ -556,6 +572,10 @@ struct wifi_reg_domain {
 	bool force;
 	/** Country code: ISO/IEC 3166-1 alpha-2 */
 	uint8_t country_code[WIFI_COUNTRY_CODE_LEN];
+	/** Number of channels supported */
+	unsigned int num_channels;
+	/** Channels information */
+	struct wifi_reg_chan_info *chan_info;
 };
 
 /** Wi-Fi TWT sleep states */
