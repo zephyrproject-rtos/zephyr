@@ -305,23 +305,6 @@ static void tx_end(int err, void *cb_data)
 	blob_cli_broadcast_tx_complete(&cli->blob);
 }
 
-static int tx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf,
-	      const struct bt_mesh_send_cb *cb, struct bt_mesh_dfu_cli *cli)
-{
-	int err;
-
-	err = bt_mesh_model_send(mod, ctx, buf, cb, cli);
-	if (err) {
-		LOG_ERR("Send err: %d", err);
-		if (cb) {
-			cb->end(err, cli);
-		}
-		return err;
-	}
-
-	return 0;
-}
-
 static int info_get(struct bt_mesh_dfu_cli *cli, struct bt_mesh_msg_ctx *ctx,
 		    uint8_t idx, uint8_t max_count,
 		    const struct bt_mesh_send_cb *cb)
@@ -331,7 +314,7 @@ static int info_get(struct bt_mesh_dfu_cli *cli, struct bt_mesh_msg_ctx *ctx,
 	net_buf_simple_add_u8(&buf, idx);
 	net_buf_simple_add_u8(&buf, max_count);
 
-	return tx(cli->mod, ctx, &buf, cb, cli);
+	return bt_mesh_model_send(cli->mod, ctx, &buf, cb, cli);
 }
 
 static void send_info_get(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -369,7 +352,7 @@ static void send_update_start(struct bt_mesh_blob_cli *b, uint16_t dst)
 	net_buf_simple_add_mem(&buf, cli->xfer.slot->metadata,
 			       cli->xfer.slot->metadata_len);
 
-	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
+	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 static void send_update_get(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -380,7 +363,7 @@ static void send_update_get(struct bt_mesh_blob_cli *b, uint16_t dst)
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_GET, 0);
 	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_GET);
 
-	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
+	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 static void send_update_cancel(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -391,7 +374,7 @@ static void send_update_cancel(struct bt_mesh_blob_cli *b, uint16_t dst)
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_CANCEL, 0);
 	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_CANCEL);
 
-	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
+	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 static void send_update_apply(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -402,7 +385,7 @@ static void send_update_apply(struct bt_mesh_blob_cli *b, uint16_t dst)
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_APPLY, 0);
 	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_APPLY);
 
-	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
+	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 /*******************************************************************************
