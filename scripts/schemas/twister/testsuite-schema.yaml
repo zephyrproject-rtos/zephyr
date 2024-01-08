@@ -95,10 +95,8 @@ mapping:
             type: int
             required: false
           "pytest_root":
-            type: seq
+            type: str
             required: false
-            sequence:
-              - type: str
           "pytest_args":
             type: seq
             required: false
@@ -295,10 +293,8 @@ mapping:
                 type: int
                 required: false
               "pytest_root":
-                type: seq
+                type: str
                 required: false
-                sequence:
-                  - type: str
               "pytest_args":
                 type: seq
                 required: false
