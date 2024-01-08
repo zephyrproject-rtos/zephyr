@@ -340,12 +340,6 @@ else()
   set(OT_MLR OFF CACHE BOOL "Enable Multicast Listener Registration feature for Thread 1.2" FORCE)
 endif()
 
-if(CONFIG_OPENTHREAD_MULTIPAN_RCP)
-  set(OT_MULTIPAN_RCP ON CACHE BOOL "Enable Multi-PAN RCP" FORCE)
-else()
-  set(OT_MULTIPAN_RCP OFF CACHE BOOL "Enable Multi-PAN RCP" FORCE)
-endif()
-
 if(CONFIG_OPENTHREAD_MULTIPLE_INSTANCE)
   set(OT_MULTIPLE_INSTANCE ON CACHE BOOL "Enable multiple instances" FORCE)
 else()

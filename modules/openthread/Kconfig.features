@@ -218,9 +218,6 @@ config OPENTHREAD_MLR
 	help
 	  Enable Multicast Listener Registration support for Thread 1.2
 
-config OPENTHREAD_MULTIPAN_RCP
-	bool "OpenThread multipan rcp"
-
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "OpenThread multiple instances"
 
