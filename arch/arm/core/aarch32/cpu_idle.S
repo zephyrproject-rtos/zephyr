@@ -85,24 +85,16 @@ _skip_\@:
 .endm
 
 SECTION_FUNC(TEXT, arch_cpu_idle)
-#if defined(CONFIG_TRACING) || \
-    defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK)
-	push	{r0, lr}
-
 #ifdef CONFIG_TRACING
+	push	{r0, lr}
 	bl	sys_trace_idle
-#endif
-#ifdef CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
-	bl	z_arm_on_enter_cpu_idle_prepare
-#endif
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	pop	{r0, r1}
 	mov	lr, r1
 #else
 	pop	{r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#endif
+#endif /* CONFIG_TRACING */
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/*
@@ -146,24 +138,17 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	bx	lr
 
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
-#if defined(CONFIG_TRACING) || \
-    defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK)
-	push	{r0, lr}
-
 #ifdef CONFIG_TRACING
+	push	{r0, lr}
 	bl	sys_trace_idle
-#endif
-#ifdef CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
-	bl	z_arm_on_enter_cpu_idle_prepare
-#endif
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	pop	{r0, r1}
 	mov	lr, r1
 #else
 	pop	{r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#endif
+#endif /* CONFIG_TRACING */
+
 	/*
 	 * Lock PRIMASK while sleeping: wfe will still get interrupted by
 	 * incoming interrupts but the CPU will not service them right away.
