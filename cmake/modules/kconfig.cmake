@@ -74,14 +74,23 @@ else()
   set(KCONFIG_ROOT ${ZEPHYR_BASE}/Kconfig)
 endif()
 
-zephyr_build_string(config_board_string BOARD ${BOARD} BOARD_IDENTIFIER ${BOARD_IDENTIFIER})
-
 if(NOT DEFINED BOARD_DEFCONFIG)
-  set(BOARD_DEFCONFIG ${BOARD_DIR}/${config_board_string}_defconfig)
+  zephyr_file(CONF_FILES ${BOARD_DIR} DEFCONFIG BOARD_DEFCONFIG)
 endif()
-if((DEFINED BOARD_REVISION) AND EXISTS ${BOARD_DIR}/${config_board_string}_${BOARD_REVISION_STRING}.conf)
-  set_ifndef(BOARD_REVISION_CONFIG ${BOARD_DIR}/${config_board_string}_${BOARD_REVISION_STRING}.conf)
+
+if(DEFINED BOARD_REVISION)
+  zephyr_build_string(config_board_string
+                      BOARD ${BOARD}
+                      BOARD_IDENTIFIER ${BOARD_IDENTIFIER}
+                      BOARD_REVISION ${BOARD_REVISION}
+  )
+  set(board_rev_file ${config_board_string})
+  if(EXISTS ${BOARD_DIR}/${board_rev_file}.conf)
+    message(DEPRECATION "Use of '${board_rev_file}.conf' is deprecated, please switch to '${board_rev_file}_defconfig'")
+    set_ifndef(BOARD_REVISION_CONFIG ${BOARD_DIR}/${board_rev_file}.conf)
+  endif()
 endif()
+
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 
