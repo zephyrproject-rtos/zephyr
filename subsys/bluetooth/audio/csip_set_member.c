@@ -235,6 +235,10 @@ static int sirk_encrypt(struct bt_conn *conn,
 		LOG_DBG("Encrypting test SIRK");
 		k = test_k;
 	} else {
+		if (conn == NULL) {
+			return -EINVAL;
+		}
+
 		k = conn->le.keys->ltk.val;
 	}
 
