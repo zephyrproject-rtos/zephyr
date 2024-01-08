@@ -133,7 +133,6 @@ static bool nrf53_anomaly_160_check(void)
 
 	return true;
 }
-#endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
 
 #if defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET)
 
@@ -338,8 +337,6 @@ void z_arm_on_enter_cpu_idle_prepare(void)
 }
 #endif /* CONFIG_SOC_NRF53_RTC_PRETICK && CONFIG_SOC_NRF5340_CPUNET */
 
-#if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND) || \
-	(defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET))
 bool z_arm_on_enter_cpu_idle(void)
 {
 	bool ok_to_sleep = true;
@@ -360,7 +357,6 @@ bool z_arm_on_enter_cpu_idle(void)
 	}
 #endif
 
-#if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND)
 	if (ok_to_sleep) {
 		ok_to_sleep = nrf53_anomaly_160_check();
 
@@ -375,7 +371,6 @@ bool z_arm_on_enter_cpu_idle(void)
 		}
 #endif
 	}
-#endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
 
 #if defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET)
 	if (!ok_to_sleep) {
@@ -387,9 +382,7 @@ bool z_arm_on_enter_cpu_idle(void)
 
 	return ok_to_sleep;
 }
-#endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND ||
-	* (CONFIG_SOC_NRF53_RTC_PRETICK && CONFIG_SOC_NRF5340_CPUNET)
-	*/
+#endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND */
 
 #if CONFIG_SOC_NRF53_RTC_PRETICK
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
