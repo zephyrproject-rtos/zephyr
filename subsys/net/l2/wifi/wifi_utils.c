@@ -105,7 +105,7 @@ static bool wifi_utils_validate_chan(uint8_t band,
 
 static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 		uint8_t chan_end,
-		struct wifi_band_channel *band_chan,
+		uint8_t chan[][WIFI_CHANNEL_MAX],
 		uint8_t band_idx,
 		uint8_t *chan_idx)
 {
@@ -136,9 +136,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 		idx = *chan_idx;
 
 		for (i = chan_start; i <= chan_end; i++) {
-			band_chan[idx].band = band_idx;
-			band_chan[idx].channel = i;
-			idx++;
+			chan[band_idx][idx++] = i;
 		}
 
 		*chan_idx = idx;
@@ -157,9 +155,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 			}
 
 			if (start) {
-				band_chan[idx].band = band_idx;
-				band_chan[idx].channel = valid_5g_chans_20mhz[i];
-				idx++;
+				chan[band_idx][idx++] = valid_5g_chans_20mhz[i];
 			}
 
 			if (end) {
@@ -175,9 +171,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 		i = chan_start;
 
 		while (i <= chan_end) {
-			band_chan[idx].band = band_idx;
-			band_chan[idx].channel = i;
-			idx++;
+			chan[band_idx][idx++] = i;
 
 			if (i == 1) {
 				i++;
@@ -316,8 +310,7 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 
 
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
-			       struct wifi_band_channel *band_chan,
-			       uint8_t max_channels)
+			       uint8_t chan[][WIFI_CHANNEL_MAX])
 {
 	char band_str[WIFI_UTILS_MAX_BAND_STR_LEN] = {0};
 	char chan_str[WIFI_UTILS_MAX_CHAN_STR_LEN] = {0};
@@ -356,6 +349,7 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 		}
 
 		i++;
+		chan_idx = 0;
 		chan_str_start_idx = i;
 		valid_band = true;
 
@@ -389,13 +383,9 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			memset(chan_str, 0, sizeof(chan_str));
 
 			if (chan_start) {
-				if ((chan_idx + (chan_val - chan_start)) >= max_channels) {
-					NET_ERR("Too many channels specified (%d)", max_channels);
-					return -EINVAL;
-				}
 				if (wifi_utils_get_all_chans_in_range(chan_start,
 								      chan_val,
-								      band_chan,
+								      chan,
 								      band,
 								      &chan_idx)) {
 					NET_ERR("Channel range invalid");
@@ -409,14 +399,8 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 					NET_ERR("Invalid channel %d", chan_val);
 					return -EINVAL;
 				}
-				if (chan_idx == max_channels) {
-					NET_ERR("Too many channels specified (%d)", max_channels);
-					return -EINVAL;
-				}
 
-				band_chan[chan_idx].band = band;
-				band_chan[chan_idx].channel = chan_val;
-				chan_idx++;
+				chan[band][chan_idx++] = chan_val;
 			}
 
 			valid_chan = true;

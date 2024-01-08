@@ -557,9 +557,7 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 			opt_num++;
 			break;
 		case 'c':
-			if (wifi_utils_parse_scan_chan(optarg,
-						       params->band_chan,
-						       ARRAY_SIZE(params->band_chan))) {
+			if (wifi_utils_parse_scan_chan(optarg, params->chan)) {
 				shell_fprintf(sh,
 					      SHELL_ERROR,
 					      "Invalid band or channel value(s)\n");
