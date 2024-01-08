@@ -95,12 +95,6 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_NUMBER=${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
-  if (CONFIG_TFM_DUMMY_PROVISIONING)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=ON)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=OFF)
-  endif()
-
   if (CONFIG_TFM_EXCEPTION_INFO_DUMP)
     list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=ON)
   else()
@@ -585,13 +579,4 @@ if (CONFIG_BUILD_WITH_TFM)
       ${MERGED_FILE}
     )
   endif()
-
-  if(CONFIG_TFM_DUMMY_PROVISIONING)
-    message(WARNING
-      "TFM_DUMMY_PROVISIONING is enabled:
-      The device will be provisioned using dummy keys and is NOT secure!
-      This is not suitable for production"
-      )
-  endif()
-
-endif() # CONFIG_BUILD_WITH_TFM
+endif()
