@@ -1651,11 +1651,11 @@ static uint8_t read_multiple(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	if (cp->handles_count == 0 || cp->handles_count > ARRAY_SIZE(handles)) {
+	if (cp->handles_count > ARRAY_SIZE(handles)) {
 		return BTP_STATUS_FAILED;
 	}
 
-	for (i = 0; i < cp->handles_count; i++) {
+	for (i = 0; i < ARRAY_SIZE(handles); i++) {
 		handles[i] = sys_le16_to_cpu(cp->handles[i]);
 	}
 
@@ -1670,7 +1670,7 @@ static uint8_t read_multiple(const void *cmd, uint16_t cmd_len,
 	}
 
 	read_params.func = read_cb;
-	read_params.handle_count = cp->handles_count;
+	read_params.handle_count = i;
 	read_params.multiple.handles = handles; /* not used in read func */
 	read_params.multiple.variable = false;
 	read_params.chan_opt = BT_ATT_CHAN_OPT_NONE;
