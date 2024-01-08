@@ -198,6 +198,24 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst);
 
 /**
+ * @brief Set the SIRK of a service instance
+ *
+ * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
+ * @param sirk      The new SIRK.
+ */
+int bt_csip_set_member_set_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+				const uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
+
+/**
+ * @brief Get the SIRK of a service instance
+ *
+ * @param[in]  svc_inst  Pointer to the registered Coordinated Set Identification Service.
+ * @param[out] sirk      Array to store the SIRK in.
+ */
+int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
+				uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
+
+/**
  * @brief Print the SIRK to the debug output
  *
  * @param svc_inst   Pointer to the Coordinated Set Identification Service.
@@ -324,6 +342,16 @@ typedef void (*bt_csip_set_coordinator_lock_changed_cb)(
 	struct bt_csip_set_coordinator_csis_inst *inst, bool locked);
 
 /**
+ * @typedef bt_csip_set_coordinator_sirk_changed_cb
+ * @brief Callback when the SIRK value of a set of a connected device changes.
+ *
+ * @param inst    The Coordinated Set Identification Service instance that was changed.
+ *                The new SIRK can be accessed via the @p inst.info.
+ */
+typedef void (*bt_csip_set_coordinator_sirk_changed_cb)(
+	struct bt_csip_set_coordinator_csis_inst *inst);
+
+/**
  * @typedef bt_csip_set_coordinator_ordered_access_cb_t
  * @brief Callback for bt_csip_set_coordinator_ordered_access()
  *
@@ -347,6 +375,7 @@ struct bt_csip_set_coordinator_cb {
 	bt_csip_set_coordinator_lock_set_cb             lock_set;
 	bt_csip_set_coordinator_lock_set_cb             release_set;
 	bt_csip_set_coordinator_lock_changed_cb         lock_changed;
+	bt_csip_set_coordinator_sirk_changed_cb         sirk_changed;
 
 	/* Device specific callbacks */
 	bt_csip_set_coordinator_discover_cb             discover;
@@ -454,7 +483,6 @@ int bt_csip_set_coordinator_lock(const struct bt_csip_set_coordinator_set_member
 int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_member **members,
 				    uint8_t count,
 				    const struct bt_csip_set_coordinator_set_info *set_info);
-
 
 #ifdef __cplusplus
 }

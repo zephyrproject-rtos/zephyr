@@ -47,6 +47,11 @@ config BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT
 	  Enabling BT_CAP_ACCEPTOR_SET_MEMBER will take one of the allocated
 	  instances.
 
+config BT_CSIP_SET_MEMBER_NOTIFIABLE
+	bool "SIRK notifiable Support"
+	help
+	  This option enables support for clients to be notified on SIRK changes.
+
 endif # BT_CSIP_SET_MEMBER
 
 #################### Coordinated Set Identification Client ####################

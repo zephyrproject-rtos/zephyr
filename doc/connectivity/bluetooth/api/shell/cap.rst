@@ -28,12 +28,38 @@ register callbacks.
      lock          :Lock the set
      release       :Release the set [force]
      print_sirk    :Print the currently used SIRK
+     set_sirk      :Set the currently used SIRK <sirk>
+     get_sirk      :Get the currently used SIRK
      set_sirk_rsp  :Set the response used in SIRK requests <accept, accept_enc,
                     reject, oob>
 
 Besides initializing the CAS and the CSIS, there are also commands to lock and release the CSIS
 instance, as well as printing and modifying access to the SIRK of the CSIS.
 
+Setting a new SIRK
+------------------
+
+This command can modify the currently used SIRK. To get the new RSI to advertise on air,
+:code:`bt adv-data`` or :code:`bt advertise` must be called again to set the new advertising data.
+If :code:`CONFIG_BT_CSIP_SET_MEMBER_NOTIFIABLE` is enabled, this will also notify connected
+clients.
+
+.. code-block:: console
+
+   uart:~$ cap_acceptor set_sirk 00112233445566778899aabbccddeeff
+   Set SIRK updated
+
+Getting the current SIRK
+------------------------
+
+This command can get the currently used SIRK.
+
+.. code-block:: console
+
+   uart:~$ cap_acceptor get_sirk
+   Set SIRK
+   36 04 9a dc 66 3a a1 a1 |6...f:..
+   1d 9a 2f 41 01 73 3e 01 |../A.s>.
 
 CAP Initiator
 *************
