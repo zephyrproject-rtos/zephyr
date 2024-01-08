@@ -187,6 +187,17 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 				struct bt_csip_set_member_svc_inst **svc_inst);
 
 /**
+ * @brief Unregister a Coordinated Set Identification Service instance.
+ *
+ * This will unregister and disable the service instance.
+ *
+ * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst);
+
+/**
  * @brief Print the SIRK to the debug output
  *
  * @param svc_inst   Pointer to the Coordinated Set Identification Service.
