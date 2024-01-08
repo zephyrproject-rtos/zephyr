@@ -8,8 +8,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <hal/nrf_rtc.h>
-
 #include <zephyr/toolchain.h>
 
 #include <soc.h>
@@ -108,7 +106,7 @@ static void rtc0_nrf5_isr(const void *arg)
 
 	/* On compare0 run ticker worker instance0 */
 	if (NRF_RTC0->EVENTS_COMPARE[0]) {
-		nrf_rtc_event_clear(NRF_RTC0, NRF_RTC_EVENT_COMPARE_0);
+		NRF_RTC0->EVENTS_COMPARE[0] = 0;
 
 		ticker_trigger(0);
 	}
