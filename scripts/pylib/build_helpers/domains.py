@@ -27,7 +27,7 @@ mapping:
     required: true
     type: str
   domains:
-    required: true
+    required: false
     type: seq
     sequence:
       - type: map
@@ -57,18 +57,19 @@ logger.addHandler(handler)
 class Domains:
 
     def __init__(self, data):
-        self._build_dir = data['build_dir']
+        self._build_dir = data.get('build_dir')
+        domain_list = data.get('domains') or []
+        if not domain_list:
+            logger.warning("no domains defined; this probably won't work")
+
         self._domains = {
             d['name']: Domain(d['name'], d['build_dir'])
-            for d in data['domains']
+            for d in domain_list
         }
+        self._default_domain = self._domains.get(data['default'])
 
-        # In the YAML data, the values for "default" and "flash_order"
-        # must not name any domains that aren't listed under "domains".
-        # Now that self._domains has been initialized, we can leverage
-        # the common checks in self.get_domain to verify this.
-        self._default_domain = self.get_domain(data['default'])
-        self._flash_order = self.get_domains(data['flash_order'] or [])
+        domains_flash_order = data.get('flash_order') or []
+        self._flash_order = list(map(self._domains.get, domains_flash_order))
 
     @staticmethod
     def from_file(domains_file):
@@ -100,19 +101,21 @@ class Domains:
         return Domains(domains_data)
 
     def get_domains(self, names=None, default_flash_order=False):
-        if names is None:
+        ret = []
+
+        if not names:
             if default_flash_order:
                 return self._flash_order
             return list(self._domains.values())
-        return list(map(self.get_domain, names))
 
-    def get_domain(self, name):
-        found = self._domains.get(name)
-        if not found:
-            logger.critical(f'domain "{name}" not found, '
-                    f'valid domains are: {", ".join(self._domains)}')
-            exit(1)
-        return found
+        for n in names:
+            found = self._domains.get(n)
+            if not found:
+                logger.critical(f'domain {n} not found, '
+                        f'valid domains are: {", ".join(self._domains)}')
+                exit(1)
+            ret.append(found)
+        return ret
 
     def get_default_domain(self):
         return self._default_domain
