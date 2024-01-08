@@ -338,7 +338,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 
 	if (flags & kLPI2C_SlaveRxReadyFlag) {
 		/* RX data is available, read it and issue callback */
-		i2c_data = (uint8_t)config->base->SRDR;
+		i2c_data = (uint8_t)base->SRDR;
 		if (data->first_tx) {
 			data->first_tx = false;
 			if (target_cb->write_requested) {
@@ -372,7 +372,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 					data->read_active = false;
 				} else {
 					/* Send I2C data */
-					config->base->STDR = i2c_data;
+					base->STDR = i2c_data;
 				}
 			}
 		} else if (data->read_active) {
@@ -384,7 +384,7 @@ static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 					data->read_active = false;
 				} else {
 					/* Send I2C data */
-					config->base->STDR = i2c_data;
+					base->STDR = i2c_data;
 				}
 			}
 		}
