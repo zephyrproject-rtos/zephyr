@@ -14,8 +14,7 @@ NUCLEO/XNUCLEO Arduino boards.
 
 .. note::
 
-   When using with Arduino UNO, Leonardo, the CAN function is unavailable due to
-   hardware limitation.
+   The Arduino-compatible board MUST be using 3.3V TTL logic levels for this shield to work.
 
 .. image:: img/waveshare_rs485_can.jpg
      :align: center
