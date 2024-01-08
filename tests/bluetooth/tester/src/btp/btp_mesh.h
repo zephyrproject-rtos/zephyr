@@ -1038,8 +1038,6 @@ struct btp_proxy_solicit_cmd {
 	uint16_t net_idx;
 } __packed;
 
-#define BTP_MESH_START				0x78
-
 /* events */
 #define BTP_MESH_EV_OUT_NUMBER_ACTION		0x80
 struct btp_mesh_out_number_action_ev {
