@@ -1691,6 +1691,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		1, 2),
 	SHELL_CMD_ARG(mode, NULL, "mode operational setting\n"
 		"This command may be used to set the Wi-Fi device into a specific mode of operation\n"
+		"parameters:"
 		"[-i, --if-index <idx>] : Interface index.\n"
 		"[-s, --sta] : Station mode.\n"
 		"[-m, --monitor] : Monitor mode.\n"
@@ -1710,6 +1711,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"This command is used to set packet filter setting when\n"
 		"monitor, TX-Injection and promiscuous mode is enabled.\n"
 		"The different packet filter modes are control, management, data and enable all filters\n"
+		"parameters:"
 		"[-i, --if-index <idx>] : Interface index.\n"
 		"[-a, --all] : Enable all packet filter modes\n"
 		"[-m, --mgmt] : Enable management packets to allowed up the stack.\n"
@@ -1728,6 +1730,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		"This command is used to set the channel when\n"
 		"monitor or TX-Injection mode is enabled.\n"
 		"Currently 20 MHz is only supported and no BW parameter is provided\n"
+		"parameters:"
 		"[-i, --if-index <idx>] : Interface index.\n"
 		"[-c, --channel <chan>] : Set a specific channel number to the lower layer.\n"
 		"[-g, --get] : Get current set channel number from the lower layer.\n"
