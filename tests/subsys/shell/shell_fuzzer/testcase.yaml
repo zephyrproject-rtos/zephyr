@@ -1,0 +1,6 @@
+tests:
+  shell.fuzzer:
+    tags: shell fuzzer
+    toolchain_allow: llvm
+    harness: fuzzer
+    platform_allow: native_posix_64
