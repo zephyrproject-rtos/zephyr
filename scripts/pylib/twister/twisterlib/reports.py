@@ -420,7 +420,6 @@ class Reporting:
     def synopsis(self):
         cnt = 0
         example_instance = None
-        detailed_test_id = self.env.options.detailed_test_id
         for instance in self.instances.values():
             if instance.status not in ["passed", "filtered", "skipped"]:
                 cnt = cnt + 1
@@ -436,14 +435,11 @@ class Reporting:
         if cnt and example_instance:
             logger.info("")
             logger.info("To rerun the tests, call twister using the following commandline:")
-            extra_parameters = '' if detailed_test_id else ' --no-detailed-test-id'
-            logger.info(f"west twister -p <PLATFORM> -s <TEST ID>{extra_parameters}, for example:")
+            logger.info("west twister -p <PLATFORM> -s <TEST ID>, for example:")
             logger.info("")
-            logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}"
-                        f"{extra_parameters}")
+            logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}")
             logger.info(f"or with west:")
-            logger.info(f"west build -p -b {example_instance.platform.name} "
-                        f"{example_instance.testsuite.source_dir_rel} -T {example_instance.testsuite.id}")
+            logger.info(f"west build -p -b {example_instance.platform.name} -T {example_instance.testsuite.name}")
             logger.info("-+" * 40)
 
     def summary(self, results, unrecognized_sections, duration):
