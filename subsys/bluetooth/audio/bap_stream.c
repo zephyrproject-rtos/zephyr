@@ -35,12 +35,22 @@ void bt_audio_codec_cfg_to_iso_path(struct bt_iso_chan_path *path,
 				    struct bt_audio_codec_cfg *codec_cfg)
 {
 	path->pid = codec_cfg->path_id;
-	path->format = codec_cfg->id;
-	path->cid = codec_cfg->cid;
-	path->vid = codec_cfg->vid;
-	path->delay = 0; /* TODO: Add to bt_audio_codec_cfg? Use presentation delay? */
-	path->cc_len = codec_cfg->data_len;
-	path->cc = codec_cfg->data;
+
+	if (codec_cfg->ctlr_transcode) {
+		path->format = codec_cfg->id;
+		path->cid = codec_cfg->cid;
+		path->vid = codec_cfg->vid;
+		path->delay = 0;
+		path->cc_len = codec_cfg->data_len;
+		path->cc = codec_cfg->data;
+	} else {
+		path->format = BT_HCI_CODING_FORMAT_TRANSPARENT;
+		path->cid = 0;
+		path->vid = 0;
+		path->delay = 0;
+		path->cc_len = 0;
+		path->cc = NULL;
+	}
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE) ||            \
