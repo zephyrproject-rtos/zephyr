@@ -37,6 +37,7 @@
 	mul-n = <192>; /* 16MHz * 192/8 = 384MHz VCO clock */
 	div-p = <4>; /* 96MHz PLL general clock output */
 	div-q = <8>; /* 48MHz PLL output for USB, SDIO, RNG */
+	div-r = <7>; /* I2S - lowest possible frequency to save power */
 	clocks = <&clk_hsi>;
 	status = "okay";
 };
