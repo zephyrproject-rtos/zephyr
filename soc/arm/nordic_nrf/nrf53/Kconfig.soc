@@ -58,11 +58,7 @@ config SOC_NRF53_RTC_PRETICK
 	select ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK if SOC_NRF5340_CPUNET
 	help
 	  Indicates that the pre-tick workaround for the anomaly 165 that affects
-	  the nRF5340 SoC should be applied. The workaround applies to wake ups caused
-	  by EVENTS_COMPARE and EVENTS_OVRFLW on RTC0 and RTC1 for which interrupts are
-	  enabled through INTENSET register. The case when these events are generated
-	  by EVTEN but without interrupts enabled through INTENSET is not handled.
-	  The EVENTS_TICK event is not handled.
+	  the nRF5340 SoC should be applied.
 
 if SOC_NRF53_RTC_PRETICK
 
