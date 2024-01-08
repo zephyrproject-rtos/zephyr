@@ -16,7 +16,6 @@ import sys
 import tempfile
 import traceback
 import shlex
-import shutil
 
 from yamllint import config, linter
 
@@ -370,8 +369,6 @@ class KconfigCheck(ComplianceTest):
         if not os.path.exists(kconfig_path):
             self.error(kconfig_path + " not found")
 
-        kconfiglib_dir = tempfile.mkdtemp(prefix="kconfiglib_")
-
         sys.path.insert(0, kconfig_path)
         # Import globally so that e.g. kconfiglib.Symbol can be referenced in
         # tests
@@ -386,7 +383,7 @@ class KconfigCheck(ComplianceTest):
         os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD_DIR"] = "boards/*/*"
         os.environ["ARCH"] = "*"
-        os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
+        os.environ["KCONFIG_BINARY_DIR"] = tempfile.gettempdir()
         os.environ['DEVICETREE_CONF'] = "dummy"
         os.environ['TOOLCHAIN_HAS_NEWLIB'] = "y"
 
@@ -395,9 +392,10 @@ class KconfigCheck(ComplianceTest):
         os.environ["GENERATED_DTS_BOARD_CONF"] = "dummy"
 
         # For multi repo support
-        self.get_modules(os.path.join(kconfiglib_dir, "Kconfig.modules"))
+        self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
+
         # For Kconfig.dts support
-        self.get_kconfig_dts(os.path.join(kconfiglib_dir, "Kconfig.dts"))
+        self.get_kconfig_dts(os.path.join(tempfile.gettempdir(), "Kconfig.dts"))
 
         # Tells Kconfiglib to generate warnings for all references to undefined
         # symbols within Kconfig files
@@ -412,9 +410,6 @@ class KconfigCheck(ComplianceTest):
         except kconfiglib.KconfigError as e:
             self.failure(str(e))
             raise EndTest
-        finally:
-            # Clean up the temporary directory
-            shutil.rmtree(kconfiglib_dir)
 
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
