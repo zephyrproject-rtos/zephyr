@@ -111,6 +111,9 @@ if(CONFIG_UVB)
   zephyr_iterable_section(NAME uvb_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
 endif()
 
+if(CONFIG_BT_MESH_ADV_EXT)
+  zephyr_iterable_section(NAME bt_mesh_ext_adv GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)
+endif()
 
 if(CONFIG_LOG)
   zephyr_iterable_section(NAME log_mpsc_pbuf GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT} SUBALIGN 4)

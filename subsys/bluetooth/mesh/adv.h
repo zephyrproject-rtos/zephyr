@@ -33,12 +33,12 @@ enum bt_mesh_adv_tag {
 	BT_MESH_ADV_TAG_PROV,
 };
 
-enum bt_mesh_adv_tag_bit {
-	BT_MESH_ADV_TAG_BIT_LOCAL	= BIT(BT_MESH_ADV_TAG_LOCAL),
-	BT_MESH_ADV_TAG_BIT_RELAY	= BIT(BT_MESH_ADV_TAG_RELAY),
-	BT_MESH_ADV_TAG_BIT_PROXY	= BIT(BT_MESH_ADV_TAG_PROXY),
-	BT_MESH_ADV_TAG_BIT_FRIEND	= BIT(BT_MESH_ADV_TAG_FRIEND),
-	BT_MESH_ADV_TAG_BIT_PROV	= BIT(BT_MESH_ADV_TAG_PROV),
+enum bt_mesh_adv_tags {
+	BT_MESH_ADV_TAG_LOCAL_BIT	= BIT(BT_MESH_ADV_TAG_LOCAL),
+	BT_MESH_ADV_TAG_RELAY_BIT	= BIT(BT_MESH_ADV_TAG_RELAY),
+	BT_MESH_ADV_TAG_PROXY_BIT	= BIT(BT_MESH_ADV_TAG_PROXY),
+	BT_MESH_ADV_TAG_FRIEND_BIT	= BIT(BT_MESH_ADV_TAG_FRIEND),
+	BT_MESH_ADV_TAG_PROV_BIT	= BIT(BT_MESH_ADV_TAG_PROV),
 };
 
 struct bt_mesh_adv {
@@ -66,7 +66,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 
 struct net_buf *bt_mesh_adv_buf_get(k_timeout_t timeout);
 
-struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tag_bit tags, k_timeout_t timeout);
+struct net_buf *bt_mesh_adv_buf_get_by_tag(enum bt_mesh_adv_tags tags, k_timeout_t timeout);
 
 void bt_mesh_adv_gatt_update(void);
 
@@ -82,9 +82,9 @@ int bt_mesh_adv_enable(void);
 
 void bt_mesh_adv_buf_local_ready(void);
 
-void bt_mesh_adv_buf_relay_ready(void);
+void bt_mesh_adv_buf_simult_ready(void);
 
-void bt_mesh_adv_buf_terminate(const struct net_buf *buf);
+void bt_mesh_adv_buf_terminate(struct net_buf *buf);
 
 void bt_mesh_adv_buf_friend_ready(void);
 

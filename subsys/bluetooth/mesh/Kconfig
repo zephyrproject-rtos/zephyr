@@ -103,22 +103,22 @@ menuconfig BT_MESH_ADV_EXT
 
 if BT_MESH_ADV_EXT
 
-config BT_MESH_RELAY_ADV_SETS
-	int "Maximum of simultaneous relay message support"
+config BT_MESH_SIMULT_ADV_SETS
+	int "Maximum number of parallel advertising sets that can be used by the Bluetooth Mesh stack"
 	default 0
 	range 0 BT_EXT_ADV_MAX_ADV_SET
-	depends on BT_MESH_RELAY
+	depends on BT_MESH_RELAY || BT_MESH_PB_ADV
 	help
-	  Maximum of simultaneous relay message support. Requires controller support
+	  Maximum of simultaneous message support. Requires controller support
 	  multiple advertising sets.
 
 config BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET
 	bool "Use the main advertising set to relay messages"
-	depends on BT_MESH_RELAY_ADV_SETS > 0
+	depends on BT_MESH_SIMULT_ADV_SETS > 0
 	help
 	  When this option is enabled, there is a message that needs to be
 	  relayed, all relay advertising sets defined by
-	  CONFIG_BT_MESH_RELAY_ADV_SETS are busy with relaying messages
+	  CONFIG_BT_MESH_SIMULT_ADV_SETS are busy with relaying messages
 	  and the main advertising set is not busy with sending local
 	  messages, the stack will use the main advertising set to relay
 	  the message. This maximizes the utilization efficiency of
@@ -192,15 +192,16 @@ config BT_MESH_UNPROV_BEACON_INT
 
 if BT_MESH_PB_ADV
 
-config BT_MESH_PB_ADV_USE_RELAY_SETS
-	bool "Use relay advertising sets to send provisioning PDUs"
-	depends on BT_MESH_RELAY_ADV_SETS > 0
+config BT_MESH_PB_ADV_RETRANS_TIMEOUT
+	int "Timeout value of retransmit provisioning PDUs"
+	default 500
+	range 100 800
 	help
-	  Use relay advertising sets to send provisioning PDUs
+	  Timeout value of retransmit provisioning PDUs.
 
 config BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
 	int "Link Open and Transaction PDU retransmit count"
-	default 7 if BT_MESH_PB_ADV_USE_RELAY_SETS
+	default 7 if BT_MESH_SIMULT_ADV_SETS > 0
 	default 0
 	range 0 7
 	help
@@ -209,27 +210,20 @@ config BT_MESH_PB_ADV_TRANS_PDU_RETRANSMIT_COUNT
 
 config BT_MESH_PB_ADV_TRANS_ACK_RETRANSMIT_COUNT
 	int "Link Ack and Transaction Ack retransmit count"
-	default 2
+	default 0
 	range 0 7
 	help
-	  Controls the number of retransmissions of original Link Ack and Transaction Acknowledgment PDU,
+	  Controls the number of retransmissions of original Link Open and Transaction Acknowledgment PDU,
 	  in addition to the first transmission.
 
 config BT_MESH_PB_ADV_LINK_CLOSE_RETRANSMIT_COUNT
 	int "Link Close retransmit count"
-	default 7 if BT_MESH_PB_ADV_USE_RELAY_SETS
+	default 7 if BT_MESH_SIMULT_ADV_SETS > 0
 	default 2
 	range 0 7
 	help
 	  Controls the number of retransmissions of original Link Close,
 	  in addition to the first transmission.
-
-config BT_MESH_PB_ADV_RETRANS_TIMEOUT
-	int "Timeout value of retransmit provisioning PDUs"
-	default 500
-	range 100 800
-	help
-	  Timeout value of retransmit provisioning PDUs.
 
 endif # BT_MESH_PB_ADV
 
@@ -407,7 +401,7 @@ config BT_MESH_RELAY_BUF_COUNT
 	  of packet drops. When considering the message latency, also consider
 	  the values of BT_MESH_RELAY_RETRANSMIT_COUNT and
 	  BT_MESH_RELAY_RETRANSMIT_INTERVAL. A higher number of
-	  BT_MESH_RELAY_ADV_SETS allows the increase in the number of buffers
+	  BT_MESH_SIMULT_ADV_SETS allows the increase in the number of buffers
 	  while maintaining the latency.
 
 endif # BT_MESH_RELAY

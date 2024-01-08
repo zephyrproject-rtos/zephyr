@@ -638,7 +638,7 @@ static void test_tx_random_order(void)
 	previous_checker = 0xff;
 	buf[0] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
-	ASSERT_FALSE_MSG(!buf[0], "Out of buffers\n");
+	ASSERT_FALSE(!buf[0], "Out of buffers\n");
 	buf[1] = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				    xmit, K_NO_WAIT);
 	ASSERT_FALSE(!buf[1], "Out of buffers");
