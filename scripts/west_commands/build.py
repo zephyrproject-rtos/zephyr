@@ -317,11 +317,7 @@ class Build(Forceable):
                     if data == 'extra_configs':
                         args = ["-D{}".format(arg.replace('"', '\"')) for arg in arg_list]
                     elif data == 'extra_args':
-                        # Retain quotes around config options
-                        config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
-                        non_config_options = [arg for arg in arg_list if not arg.startswith("CONFIG_")]
-                        args = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
-                        args.extend(["-D{}".format(arg.replace('"', '')) for arg in non_config_options])
+                        args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
                     elif data == 'extra_conf_files':
                         extra_conf_files.extend(arg_list)
                         continue
