@@ -318,7 +318,7 @@ static int serial_vnd_callback_set(const struct device *dev, uart_callback_t cal
 	}
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
-	data->irq_isr = NULL;
+	data->irq_isr = cb;
 #endif
 
 	if (callback == NULL && data->read_buf) {
