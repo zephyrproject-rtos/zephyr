@@ -25,7 +25,7 @@
 /* driver data structure */
 struct flash_b9x_data {
 	struct k_mutex flash_lock;
-	uint8_t sector[SECTOR_SIZE];
+	uint8_t *sector;
 };
 
 /* driver parameters structure */
@@ -272,8 +272,6 @@ static void flash_b9x_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static struct flash_b9x_data flash_data;
-
 static const struct flash_driver_api flash_b9x_api = {
 	.erase = flash_b9x_erase,
 	.write = flash_b9x_write,
@@ -285,6 +283,21 @@ static const struct flash_driver_api flash_b9x_api = {
 };
 
 /* Driver registration */
-DEVICE_DT_INST_DEFINE(0, flash_b9x_init,
-		      NULL, &flash_data, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_b9x_api);
+#define FLASH_B9X_INIT(n)						\
+										    \
+	__attribute__((section(".bss")))			    \
+	static uint8_t sector_##n[SECTOR_SIZE];			    \
+										    \
+	static struct flash_b9x_data flash_data_##n = {			    \
+		.sector = sector_##n			    \
+	};			    \
+										    \
+	DEVICE_DT_INST_DEFINE(n, flash_b9x_init,			\
+			      NULL,				    \
+			      &flash_data_##n,				    \
+			      NULL,				    \
+			      POST_KERNEL,				    \
+			      CONFIG_FLASH_INIT_PRIORITY,			    \
+			      &flash_b9x_api);
+
+DT_INST_FOREACH_STATUS_OKAY(FLASH_B9X_INIT)
