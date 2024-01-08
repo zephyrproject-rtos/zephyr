@@ -33,8 +33,6 @@ void peripheral(void)
 	wait_connected();
 	/* Central should bond here and trigger a disconnect. */
 	wait_disconnected();
-	TAKE_FLAG(flag_pairing_complete);
-	TAKE_FLAG(flag_bonded);
 	unpair(id_a);
 	clear_g_conn();
 
@@ -45,8 +43,6 @@ void peripheral(void)
 	wait_connected();
 	/* Central should bond here and trigger a disconnect. */
 	wait_disconnected();
-	TAKE_FLAG(flag_pairing_complete);
-	TAKE_FLAG(flag_bonded);
 	clear_g_conn();
 
 	printk("== Bonding id b - bond per-connection false ==\n");
@@ -55,8 +51,6 @@ void peripheral(void)
 	wait_connected();
 	/* Central should pair without bond here and trigger a disconnect. */
 	wait_disconnected();
-	TAKE_FLAG(flag_pairing_complete);
-	TAKE_FLAG(flag_not_bonded);
 
 	PASS("PASS\n");
 }
