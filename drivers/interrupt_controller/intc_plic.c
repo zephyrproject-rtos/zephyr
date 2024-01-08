@@ -43,8 +43,8 @@
  * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
  * in Linux's SiFive PLIC driver
  */
-#define PLIC_TRIG_LEVEL ((uint32_t)~BIT(0))
-#define PLIC_TRIG_EDGE ((uint32_t)BIT(0))
+#define PLIC_TRIG_LEVEL ((uint32_t)0)
+#define PLIC_TRIG_EDGE  ((uint32_t)1)
 #define PLIC_DRV_HAS_COMPAT(compat)                                                                \
 	DT_NODE_HAS_COMPAT(DT_COMPAT_GET_ANY_STATUS_OKAY(DT_DRV_COMPAT), compat)
 
