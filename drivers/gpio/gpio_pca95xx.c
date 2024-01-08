@@ -644,6 +644,7 @@ static void gpio_pca95xx_interrupt_callback(const struct device *dev,
 	/* Cannot read PCA95xx registers from ISR context, queue worker */
 	k_work_submit(&drv_data->interrupt_worker);
 }
+#endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
 
 static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 						  gpio_pin_t pin,
@@ -651,6 +652,13 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 						  enum gpio_int_trig trig)
 {
 	int ret = 0;
+
+	if (!IS_ENABLED(CONFIG_GPIO_PCA95XX_INTERRUPT)
+	    && (mode != GPIO_INT_MODE_DISABLED)) {
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
 	const struct gpio_pca95xx_config * const config = dev->config;
 	struct gpio_pca95xx_drv_data * const drv_data =
 		(struct gpio_pca95xx_drv_data * const)dev->data;
@@ -734,9 +742,11 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 
 err:
 	k_sem_give(&drv_data->lock);
+#endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
 	return ret;
 }
 
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
 static int gpio_pca95xx_manage_callback(const struct device *dev,
 					struct gpio_callback *callback,
 					bool set)
@@ -756,7 +766,7 @@ static int gpio_pca95xx_manage_callback(const struct device *dev,
 	k_sem_give(&drv_data->lock);
 	return 0;
 }
-#endif /* CONFIG_GPIO_PCA95XX_INTERRUPT */
+#endif
 
 static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
 	.pin_configure = gpio_pca95xx_config,
@@ -765,8 +775,8 @@ static const struct gpio_driver_api gpio_pca95xx_drv_api_funcs = {
 	.port_set_bits_raw = gpio_pca95xx_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_pca95xx_port_clear_bits_raw,
 	.port_toggle_bits = gpio_pca95xx_port_toggle_bits,
-#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
 	.pin_interrupt_configure = gpio_pca95xx_pin_interrupt_configure,
+#ifdef CONFIG_GPIO_PCA95XX_INTERRUPT
 	.manage_callback = gpio_pca95xx_manage_callback,
 #endif
 };

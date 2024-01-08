@@ -134,6 +134,16 @@ unlock:
 	return ret;
 }
 
+static int gpio_sn74hc595_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+						  enum gpio_int_mode mode, enum gpio_int_trig trig)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pin);
+	ARG_UNUSED(mode);
+	ARG_UNUSED(trig);
+	return -ENOTSUP;
+}
+
 static const struct gpio_driver_api gpio_sn74hc595_drv_api_funcs = {
 	.pin_configure = gpio_sn74hc595_config,
 	.port_get_raw = gpio_sn74hc595_port_get_raw,
@@ -141,6 +151,7 @@ static const struct gpio_driver_api gpio_sn74hc595_drv_api_funcs = {
 	.port_set_bits_raw = gpio_sn74hc595_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_sn74hc595_port_clear_bits_raw,
 	.port_toggle_bits = gpio_sn74hc595_port_toggle_bits,
+	.pin_interrupt_configure = gpio_sn74hc595_pin_interrupt_configure,
 };
 
 /**
