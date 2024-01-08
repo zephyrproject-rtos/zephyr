@@ -160,7 +160,7 @@ Available pins:
      :align: center
      :alt: Nucleo L4R5ZI Arduino connectors
 
-For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
+For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

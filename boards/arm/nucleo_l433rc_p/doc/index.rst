@@ -140,7 +140,7 @@ Available pins:
    :align: center
    :alt: Nucleo L433RC-P
 
-For mode details please refer to `ST Nucleo L433RC-P User Manual`_.
+For more details please refer to `ST Nucleo L433RC-P User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

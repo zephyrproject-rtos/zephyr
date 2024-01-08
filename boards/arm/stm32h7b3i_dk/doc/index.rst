@@ -74,7 +74,7 @@ The default configuration per core can be found in the defconfig file:
 Pin Mapping
 ===========
 
-For mode details please refer to `STM32H7B3I-DK website`_.
+For more details please refer to `STM32H7B3I-DK website`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------

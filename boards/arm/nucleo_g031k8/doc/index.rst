@@ -105,7 +105,7 @@ Default Zephyr Peripheral Mapping:
 - SPI1 SCK/MISO/MOSI : PB3/PB4/PB5 (Arduino SPI)
 - LD3       : PC6
 
-For mode details please refer to `STM32 Nucleo-32 board User Manual`_.
+For more details please refer to `STM32 Nucleo-32 board User Manual`_.
 
 Programming and Debugging
 *************************

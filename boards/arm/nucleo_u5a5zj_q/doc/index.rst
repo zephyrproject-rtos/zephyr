@@ -219,7 +219,7 @@ Connections and IOs
 Nucleo U5A5ZJ Q Board has 10 GPIO controllers. These controllers are responsible
 for pin muxing, input/output, pull-up, etc.
 
-For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
+For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
