@@ -625,53 +625,6 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        If the retry counter reaches its limits, this event will be triggered.
      - No actions needed, client will do a re-registrate automatically.
 
-
-Configuring lifetime and activity period
-****************************************
-
-In LwM2M engine, there are three Kconfig options and one runtime value that configures how often the
-client will send LwM2M Update message.
-
-.. list-table:: Update period variables
-   :widths: auto
-   :header-rows: 1
-
-   * - Variable
-     - Effect
-   * - LwM2M registration lifetime
-     - The lifetime parameter in LwM2M specifies how long a device's registration with an LwM2M server remains valid.
-       Device is expected to send LwM2M Update message before the lifetime exprires.
-   * - :kconfig:option:`CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME`
-     - Default lifetime value, unless set by the bootstrap server.
-       Also defines lower limit that client accepts as a lifetime.
-   * - :kconfig:option:`CONFIG_LWM2M_UPDATE_PERIOD`
-     - How long the client can stay idle before sending a next update.
-   * - :kconfig:option:`CONFIG_LWM2M_SECONDS_TO_UPDATE_EARLY`
-     - Minimum time margin to send the update message before the registration lifetime expires.
-
-.. figure:: images/lwm2m_lifetime_seconds_early.png
-    :alt: LwM2M seconds to update early
-
-    Default way of calculating when to update registration.
-
-By default, the client uses :kconfig:option:`CONFIG_LWM2M_SECONDS_TO_UPDATE_EARLY` to calculate how
-many seconds before the expiration of lifetime it is going to send the registration update.
-The problem with default mode is when the server changes the lifetime of the registration.
-This is then affecting the period of updates the client is doing.
-If this is used with the QUEUE mode, which is typical in IPv4 networks, it is also affecting the
-period of when the device is reachable from the server.
-
-.. figure:: images/lwm2m_lifetime_both.png
-    :alt: LwM2M update time when both values are set
-
-    Update time is controlled by UPDATE_PERIOD.
-
-When also the :kconfig:option:`CONFIG_LWM2M_UPDATE_PERIOD` is set, time to send the update message
-is the earliest when any of these values expire. This allows setting long lifetime for the
-registration and configure the period accurately, even if server changes the lifetime parameter.
-
-In runtime, the update frequency is limited to once in 15 seconds to avoid flooding.
-
 .. _lwm2m_shell:
 
 LwM2M shell
