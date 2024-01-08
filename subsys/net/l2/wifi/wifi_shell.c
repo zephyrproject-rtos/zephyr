@@ -341,8 +341,6 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		return -EINVAL;
 	}
 
-	params->band = WIFI_FREQ_BAND_UNKNOWN;
-
 	/* SSID */
 	params->ssid = argv[0];
 	params->ssid_length = strlen(params->ssid);
