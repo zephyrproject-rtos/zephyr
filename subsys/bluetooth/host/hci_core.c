@@ -4144,7 +4144,7 @@ int bt_set_name(const char *name)
 		return 0;
 	}
 
-	memcpy(bt_dev.name, name, len);
+	strncpy(bt_dev.name, name, len);
 	bt_dev.name[len] = '\0';
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
