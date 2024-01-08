@@ -56,15 +56,7 @@ logger.addHandler(handler)
 
 class Domains:
 
-    def __init__(self, domains_yaml):
-        try:
-            data = yaml.safe_load(domains_yaml)
-            pykwalify.core.Core(source_data=data,
-                                schema_data=schema).validate()
-        except (yaml.YAMLError, pykwalify.errors.SchemaError):
-            logger.critical(f'malformed domains.yaml')
-            exit(1)
-
+    def __init__(self, data):
         self._build_dir = data['build_dir']
         self._domains = {
             d['name']: Domain(d['name'], d['build_dir'])
@@ -80,22 +72,32 @@ class Domains:
 
     @staticmethod
     def from_file(domains_file):
-        '''Load domains from a domains.yaml file.
+        '''Load domains from domains.yaml.
+
+        Exception raised:
+           - ``FileNotFoundError`` if the domains file is not found.
         '''
         try:
             with open(domains_file, 'r') as f:
-                domains_yaml = f.read()
+                domains = yaml.safe_load(f.read())
         except FileNotFoundError:
             logger.critical(f'domains.yaml file not found: {domains_file}')
             exit(1)
 
-        return Domains(domains_yaml)
+        try:
+            pykwalify.core.Core(source_data=domains, schema_data=schema)\
+                .validate()
+        except pykwalify.errors.SchemaError:
+            logger.critical(f'ERROR: Malformed yaml in file: {domains_file}')
+            exit(1)
+
+        return Domains(domains)
 
     @staticmethod
-    def from_yaml(domains_yaml):
-        '''Load domains from a string with YAML contents.
+    def from_data(domains_data):
+        '''Load domains from domains dictionary.
         '''
-        return Domains(domains_yaml)
+        return Domains(domains_data)
 
     def get_domains(self, names=None, default_flash_order=False):
         if names is None:
