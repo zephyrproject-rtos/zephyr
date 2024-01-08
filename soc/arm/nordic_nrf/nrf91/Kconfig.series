@@ -27,23 +27,9 @@ config NRF_SPU_FLASH_REGION_SIZE
 	help
 	  FLASH region size for the NRF_SPU peripheral
 
-config NRF_SPU_FLASH_REGION_ALIGNMENT
-	hex
-	default 0x8000
-	help
-	  FLASH regions must be aligned to this value due to SPU HW
-	  limitations.
-
 config NRF_SPU_RAM_REGION_SIZE
 	hex
 	default 0x2000
 	help
 	  RAM region size for the NRF_SPU peripheral
-
-config NRF_SPU_RAM_REGION_ALIGNMENT
-	hex
-	default 0x2000
-	help
-	  RAM regions must be aligned to this value due to SPU HW
-	  limitations.
 endif
