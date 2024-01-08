@@ -185,10 +185,14 @@
 
 static inline void hal_radio_reset(void)
 {
+	/* TODO: Add any required setup for each radio event
+	 */
 }
 
 static inline void hal_radio_stop(void)
 {
+	/* TODO: Add any required cleanup of actions taken in hal_radio_reset()
+	 */
 }
 
 static inline void hal_radio_ram_prio_setup(void)
@@ -222,39 +226,25 @@ static inline uint32_t hal_radio_tx_power_min_get(void)
 
 static inline uint32_t hal_radio_tx_power_max_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_Pos8dBm;
+#if defined(RADIO_TXPOWER_TXPOWER_Pos4dBm)
+	return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+#else
+	return RADIO_TXPOWER_TXPOWER_0dBm;
+#endif
 }
 
 static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos8dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos8dBm;
-	}
-
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos7dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos7dBm;
-	}
-
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos6dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos6dBm;
-	}
-
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos5dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos5dBm;
-	}
-
+#if defined(RADIO_TXPOWER_TXPOWER_Pos4dBm)
 	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
 	}
-
+#endif
+#if defined(RADIO_TXPOWER_TXPOWER_Pos3dBm)
 	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
 		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
 	}
-
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos2dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos2dBm;
-	}
-
+#endif
 	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
 		return RADIO_TXPOWER_TXPOWER_0dBm;
 	}
@@ -279,7 +269,10 @@ static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
 	}
 
-	/* Note: The -30 dBm power level is deprecated so ignore it! */
+	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg30dBm) {
+		return RADIO_TXPOWER_TXPOWER_Neg30dBm;
+	}
+
 	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 }
 
