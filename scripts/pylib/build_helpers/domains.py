@@ -8,8 +8,6 @@ This provides parsing of domains yaml file and creation of objects of the
 Domain class.
 '''
 
-from dataclasses import dataclass
-
 import yaml
 import pykwalify.core
 import logging
@@ -121,8 +119,24 @@ class Domains:
         return self._build_dir
 
 
-@dataclass
 class Domain:
 
-    name: str
-    build_dir: str
+    def __init__(self, name, build_dir):
+        self.name = name
+        self.build_dir = build_dir
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def build_dir(self):
+        return self._build_dir
+
+    @build_dir.setter
+    def build_dir(self, value):
+        self._build_dir = value
