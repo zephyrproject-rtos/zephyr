@@ -887,8 +887,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	 */
 	rp->commands[38] |= BIT(3) | BIT(4) | BIT(5) | BIT(6);
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC_ADV_LIST */
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 	/* LE Set PA Receive Enable */
 	rp->commands[40] |= BIT(5);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	/* LE BIG Create Sync, LE BIG Terminate Sync */
 	rp->commands[43] |= BIT(0) | BIT(1);

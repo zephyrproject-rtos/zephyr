@@ -84,9 +84,15 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 	struct node_rx_hdr *node_rx;
 	struct ll_sync_set *sync;
 	struct lll_sync_iso *lll;
+	int8_t last_index;
 
 	sync = ull_sync_is_enabled_get(sync_handle);
-	if (!sync || sync->iso.sync_iso) {
+
+	if (!sync) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	if (sync->iso.sync_iso) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -105,11 +111,29 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO: Check parameters */
+	/* TODO: Check remaining parameters */
+
+	/* Check BIS indices */
+	last_index = -1;
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		/* Stream index must be in valid range and in ascending order */
+		if (!IN_RANGE(bis[i], 0x01, 0x1F) || (bis[i] <= last_index)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+
+		} else if (bis[i] > num_bis) {
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+		}
+		last_index = bis[i];
+	}
+
+	/* Check if requested encryption matches */
+	if (encryption != sync->enc) {
+		return BT_HCI_ERR_ENC_MODE_NOT_ACCEPTABLE;
+	}
 
 	/* Check if free BISes available */
 	if (mem_free_count_get(stream_free) < num_bis) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	link_sync_estab = ll_rx_link_alloc();
@@ -629,22 +653,24 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	struct node_rx_sync_iso *se;
 	struct node_rx_pdu *rx;
 
-	/* switch to normal prepare */
-	mfy_lll_prepare.fp = lll_sync_iso_prepare;
+	if (done->extra.trx_cnt) {
+		/* switch to normal prepare */
+		mfy_lll_prepare.fp = lll_sync_iso_prepare;
 
-	/* Get reference to ULL context */
-	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+		/* Get reference to ULL context */
+		sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
 
-	/* Prepare BIG Sync Established */
-	rx = (void *)sync_iso->sync->iso.node_rx_estab;
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
-	rx->hdr.handle = sync_iso_handle_get(sync_iso);
-	rx->hdr.rx_ftr.param = sync_iso;
+		/* Prepare BIG Sync Established */
+		rx = (void *)sync_iso->sync->iso.node_rx_estab;
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		rx->hdr.handle = sync_iso_handle_get(sync_iso);
+		rx->hdr.rx_ftr.param = sync_iso;
 
-	se = (void *)rx->pdu;
-	se->status = BT_HCI_ERR_SUCCESS;
+		se = (void *)rx->pdu;
+		se->status = BT_HCI_ERR_SUCCESS;
 
-	ll_rx_put_sched(rx->hdr.link, rx);
+		ll_rx_put_sched(rx->hdr.link, rx);
+	}
 
 	ull_sync_iso_done(done);
 }
@@ -774,16 +800,34 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 		  (ret == TICKER_STATUS_BUSY));
 }
 
+static void disable(uint8_t handle)
+{
+	struct ll_sync_iso_set *sync_iso;
+	int err;
+
+	sync_iso = sync_iso_get(handle);
+
+	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_SYNC_ISO_BASE + handle,
+					sync_iso, &sync_iso->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+}
+
 static int init_reset(void)
 {
-	/* Add initializations common to power up initialization and HCI reset
-	 * initializations.
-	 */
+	uint8_t handle;
+
+	/* Disable all active BIGs (uses blocking ull_ticker_stop_with_mark) */
+	for (handle = 0U; handle < CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET; handle++) {
+		disable(handle);
+	}
 
 	mem_init((void *)stream_pool, sizeof(struct lll_sync_iso_stream),
 		 CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT, &stream_free);
 
-	return 0;
+	memset(&ll_sync_iso, 0, sizeof(ll_sync_iso));
+
+	/* Initialize LLL */
+	return lll_sync_iso_init();
 }
 
 static struct ll_sync_iso_set *sync_iso_get(uint8_t handle)
@@ -819,9 +863,15 @@ static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
 	rx->hdr.handle = sync_iso_handle_get(sync_iso);
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->hdr.rx_ftr.param = sync_iso;
-	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+
+	if (mfy_lll_prepare.fp == lll_sync_iso_prepare) {
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+	} else {
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+	}
 
 	/* Stop Sync ISO Ticker */
 	handle = sync_iso_handle_get(sync_iso);

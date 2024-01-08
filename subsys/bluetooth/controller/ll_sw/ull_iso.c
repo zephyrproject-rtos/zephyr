@@ -189,6 +189,9 @@ uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
 		}
 
 		return BT_HCI_ERR_SUCCESS;
+
+	} else if (IS_SYNC_ISO_HANDLE(handle)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;

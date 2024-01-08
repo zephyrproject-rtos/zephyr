@@ -454,10 +454,22 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 		/* Periodic Advertising Channel Map Indication */
 		ull_sync_chm_update(rx->handle, ptr, acad_len);
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+		struct ll_sync_set *sync_set;
+		uint8_t bi_size;
+
+		sync_set = HDR_LLL2ULL(sync_lll);
+
+		/* Provide encryption information for BIG sync creation */
+		bi_size = ptr[PDU_ADV_DATA_HEADER_LEN_OFFSET] -
+			  PDU_ADV_DATA_HEADER_TYPE_SIZE;
+		sync_set->enc = (bi_size == PDU_BIG_INFO_ENCRYPTED_SIZE);
+
 		/* Broadcast ISO synchronize */
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO) && sync_iso) {
+		if (sync_iso) {
 			ull_sync_iso_setup(sync_iso, rx, ptr, acad_len);
 		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 	}
 
 	/* Do not ULL schedule auxiliary PDU reception if no aux pointer
