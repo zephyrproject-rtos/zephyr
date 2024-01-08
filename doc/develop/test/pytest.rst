@@ -67,8 +67,6 @@ For instance, one can use a command:
    --pytest-args='-k test_shell_print_version'
 
 
-Note that ``--pytest-args`` can be passed multiple times to pass several arguments to the pytest.
-
 Helpers & fixtures
 ==================
 
