@@ -419,7 +419,7 @@ int bt_mesh_net_decrypt(const struct bt_mesh_key *key, struct net_buf_simple *bu
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY) && type == BT_MESH_NONCE_PROXY) {
 		create_proxy_nonce(nonce, buf->data, iv_index);
-	} else if (IS_ENABLED(CONFIG_BT_MESH_SOLICITATION) &&
+	} else if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) &&
 		type == BT_MESH_NONCE_SOLICITATION) {
 		create_proxy_sol_nonce(nonce, buf->data);
 	} else {
