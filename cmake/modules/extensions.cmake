@@ -1468,6 +1468,22 @@ endfunction()
 #
 # This is a common function to ensure that build strings are always created
 # in a uniform way.
+# A single string is returned containing the full build string constructed from
+# all arguments.
+#
+# When MERGE is supplied a list of build strings will be returned with the full
+# build string as first item in the list.
+# The full order of build strings returned in the list will be:
+# - Full build string, including identifier and revision
+# - Build string with board variants removed in addition
+# - Build string with cpuset removed in addition
+# - Build string with soc removed in addition
+#
+# If BUILD is supplied, then build type will be appended to each entry in the
+# list above.
+# If REVISION is supplied or obtained as system wide setting a build string
+# with the sanitized revision string will be added in addition to the
+# non-revisioned entry for each entry.
 #
 # Usage:
 #   zephyr_build_string(<out-variable>
@@ -1475,12 +1491,15 @@ endfunction()
 #                       [BOARD_IDENTIFIER <identifier>]
 #                       [BOARD_REVISION <revision>]
 #                       [BUILD <type>]
+#                       [MERGE [REVERSE]]
 #   )
 #
 # <out-variable>:            Output variable where the build string will be returned.
 # BOARD <board>:             Board name to use when creating the build string.
 # BOARD_REVISION <revision>: Board revision to use when creating the build string.
 # BUILD <type>:              Build type to use when creating the build string.
+# MERGE:                     Return a list of build identifiers instead of a single build string.
+# REVERSE:                   Reverse the list before returning it.
 #
 # Examples
 # calling
@@ -1491,10 +1510,20 @@ endfunction()
 #   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BUILD debug)
 # will return the string `alpha_1_0_0_debug` in `build_string` parameter.
 #
+# calling
+#   zephyr_build_string(build_string BOARD alpha BOARD_IDENTIFIER /soc/bar)
+# will return the string `alpha_soc_bar` in `build_string` parameter.
+#
+# calling
+#   zephyr_build_string(build_string BOARD alpha BOARD_REVISION 1.0.0 BOARD_IDENTIFIER /soc/bar MERGE)
+# will return a list of the following strings
+# `alpha_soc_bar_1_0_0;alpha_soc_bar;alpha_soc_1_0_0;alpha_soc;alpha_1_0_0;alpha` in `build_string` parameter.
+#
 function(zephyr_build_string outvar)
+  set(options MERGE REVERSE)
   set(single_args BOARD BOARD_IDENTIFIER BOARD_REVISION BUILD)
 
-  cmake_parse_arguments(BUILD_STR "" "${single_args}" "" ${ARGN})
+  cmake_parse_arguments(BUILD_STR "${options}" "${single_args}" "" ${ARGN})
   if(BUILD_STR_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "zephyr_build_string(${ARGV0} <val> ...) given unknown arguments:"
@@ -1516,20 +1545,30 @@ function(zephyr_build_string outvar)
     )
   endif()
 
-  set(${outvar} ${BUILD_STR_BOARD})
+  string(REPLACE "/" ";" str_segment_list "${BUILD_STR_BOARD}${BUILD_STR_BOARD_IDENTIFIER}")
+  string(REPLACE "." "_" revision_string "${BUILD_STR_BOARD_REVISION}")
 
-  if(DEFINED BUILD_STR_BOARD_IDENTIFIER)
-    string(REPLACE "/" "_" variant_string ${BUILD_STR_BOARD_IDENTIFIER})
-    set(${outvar} "${${outvar}}${variant_string}")
+  string(JOIN "_" ${outvar} ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
+
+  if(BUILD_STR_MERGE)
+    if(DEFINED BUILD_STR_BOARD_REVISION)
+      string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+      list(APPEND ${outvar} "${variant_string}")
+    endif()
+    list(POP_BACK str_segment_list)
+    while(NOT str_segment_list STREQUAL "")
+      if(DEFINED BUILD_STR_BOARD_REVISION)
+        string(JOIN "_" variant_string ${str_segment_list} ${revision_string} ${BUILD_STR_BUILD})
+        list(APPEND ${outvar} "${variant_string}")
+      endif()
+      string(JOIN "_" variant_string ${str_segment_list} ${BUILD_STR_BUILD})
+      list(APPEND ${outvar} "${variant_string}")
+      list(POP_BACK str_segment_list)
+    endwhile()
   endif()
 
-  if(DEFINED BUILD_STR_BOARD_REVISION)
-    string(REPLACE "." "_" revision_string ${BUILD_STR_BOARD_REVISION})
-    set(${outvar} "${${outvar}}_${revision_string}")
-  endif()
-
-  if(BUILD_STR_BUILD)
-    set(${outvar} "${${outvar}}_${BUILD_STR_BUILD}")
+  if(BUILD_STR_REVERSE)
+    list(REVERSE ${outvar})
   endif()
 
   # This updates the provided outvar in parent scope (callers scope)
@@ -2334,6 +2373,7 @@ endfunction()
 #                     files are returned. Configuration files will be:
 #                     - DTS:       Overlay files (.overlay)
 #                     - Kconfig:   Config fragments (.conf)
+#                     - defconfig: defconfig files (_defconfig)
 #                     The conf file search will return existing configuration
 #                     files for the current board.
 #                     CONF_FILES takes the following additional arguments:
@@ -2344,12 +2384,13 @@ endfunction()
 #                                                If no board is given the current BOARD and
 #                                                BOARD_REVISION will be used.
 #
-#                     DTS <list>:   List to append DTS overlay files in <path> to
-#                     KCONF <list>: List to append Kconfig fragment files in <path> to
-#                     BUILD <type>: Build type to include for search.
-#                                   For example:
-#                                   BUILD debug, will look for <board>_debug.conf
-#                                   and <board>_debug.overlay, instead of <board>.conf
+#                     DTS <list>:     List to append DTS overlay files in <path> to
+#                     KCONF <list>:   List to append Kconfig fragment files in <path> to
+#                     DEFCONF <list>: List to append _defconfig files in <path> to
+#                     BUILD <type>:   Build type to include for search.
+#                                     For example:
+#                                     BUILD debug, will look for <board>_debug.conf
+#                                     and <board>_debug.overlay, instead of <board>.conf
 #
 function(zephyr_file)
   set(file_options APPLICATION_ROOT CONF_FILES)
@@ -2361,7 +2402,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
-    set(single_args BOARD BOARD_REVISION DTS KCONF BUILD)
+    set(single_args BOARD BOARD_REVISION BOARD_IDENTIFIER DTS KCONF DEFCONFIG BUILD)
     set(multi_args CONF_FILES)
   endif()
 
@@ -2420,21 +2461,19 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
       if(DEFINED BOARD_REVISION)
         set(FILE_BOARD_REVISION ${BOARD_REVISION})
       endif()
+
+      if(DEFINED BOARD_IDENTIFIER)
+        set(FILE_BOARD_IDENTIFIER ${BOARD_IDENTIFIER})
+      endif()
     endif()
 
-    zephyr_build_string(filename
-                        BOARD ${FILE_BOARD}
-                        BUILD ${FILE_BUILD}
-    )
-    set(filename_list ${filename})
-
-    zephyr_build_string(filename
+    zephyr_build_string(filename_list
                         BOARD ${FILE_BOARD}
                         BOARD_REVISION ${FILE_BOARD_REVISION}
+                        BOARD_IDENTIFIER ${FILE_BOARD_IDENTIFIER}
                         BUILD ${FILE_BUILD}
+                        MERGE REVERSE
     )
-    list(APPEND filename_list ${filename})
-    list(REMOVE_DUPLICATES filename_list)
 
     if(FILE_DTS)
       foreach(path ${FILE_CONF_FILES})
@@ -2460,6 +2499,19 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
 
       # This updates the provided list in parent scope (callers scope)
       set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
+    endif()
+
+    if(FILE_DEFCONFIG)
+      foreach(path ${FILE_CONF_FILES})
+        foreach(filename ${filename_list})
+          if(EXISTS ${path}/${filename}_defconfig)
+            list(APPEND ${FILE_DEFCONFIG} ${path}/${filename}_defconfig)
+          endif()
+        endforeach()
+      endforeach()
+
+      # This updates the provided list in parent scope (callers scope)
+      set(${FILE_DEFCONFIG} ${${FILE_DEFCONFIG}} PARENT_SCOPE)
     endif()
   endif()
 endfunction()
