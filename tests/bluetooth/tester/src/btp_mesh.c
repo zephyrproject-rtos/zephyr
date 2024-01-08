@@ -1761,12 +1761,7 @@ static uint8_t large_comp_data_get(const void *cmd, uint16_t cmd_len,
 	struct btp_mesh_large_comp_data_get_rp *rp = rsp;
 	int err;
 
-	NET_BUF_SIMPLE_DEFINE(data, 500);
-	net_buf_simple_init(&data, 0);
-
-	struct bt_mesh_large_comp_data_rsp comp = {
-		.data = &data,
-	};
+	struct bt_mesh_large_comp_data_rsp comp;
 
 	err = bt_mesh_large_comp_data_get(sys_le16_to_cpu(cp->net_idx),
 				    sys_le16_to_cpu(cp->addr), cp->page,
@@ -1790,12 +1785,7 @@ static uint8_t models_metadata_get(const void *cmd, uint16_t cmd_len,
 	struct btp_mesh_models_metadata_get_rp *rp = rsp;
 	int err;
 
-	NET_BUF_SIMPLE_DEFINE(data, 500);
-	net_buf_simple_init(&data, 0);
-
-	struct bt_mesh_large_comp_data_rsp metadata = {
-		.data = &data,
-	};
+	struct bt_mesh_large_comp_data_rsp metadata;
 
 	err = bt_mesh_models_metadata_get(sys_le16_to_cpu(cp->net_idx),
 					  sys_le16_to_cpu(cp->addr), cp->page,
