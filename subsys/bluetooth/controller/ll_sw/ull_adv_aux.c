@@ -117,7 +117,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 	uint8_t ad_len_overflow;
 	uint8_t ad_len_chain;
 	struct pdu_adv *pdu;
-	uint8_t ad_len = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 
 	/* Get the advertising set instance */
@@ -302,7 +301,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		struct pdu_adv *pdu_chain_prev;
 		struct pdu_adv *pdu_chain;
 		uint16_t ad_len_total;
-		uint8_t ad_len_prev = 0U;
+		uint8_t ad_len_prev;
 
 		/* Traverse to next set clear hdr data parameter */
 		val_ptr += sizeof(data);
@@ -318,22 +317,28 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		ad_len_total = 0U;
 		pdu_chain_prev = pdu_prev;
 		pdu_chain = pdu;
-		/* make a copy of the previous chain, until we reach the end */
 		do {
-			val_ptr = hdr_data;
-			*val_ptr++ = 0U;
-			(void)memset((void *)val_ptr, 0U,
-				     ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
+			/* Prepare for aux ptr field reference to be returned, hence
+			 * second parameter will be for AD data field.
+			 */
+			*val_ptr = 0U;
+			(void)memset((void *)&val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
+				     0U, ULL_ADV_HDR_DATA_DATA_PTR_SIZE);
 
 			pdu_prev = pdu_chain_prev;
 			pdu = pdu_chain;
 
+			/* Add Aux Ptr field if not already present */
 			err = ull_adv_aux_pdu_set_clear(adv, pdu_prev, pdu,
-							ULL_ADV_PDU_HDR_FIELD_AD_DATA,
-							0U, hdr_data);
-			ad_len_prev = hdr_data[ULL_ADV_HDR_DATA_LEN_OFFSET];
-
+						(ULL_ADV_PDU_HDR_FIELD_AD_DATA |
+						 ULL_ADV_PDU_HDR_FIELD_AUX_PTR),
+						0, hdr_data);
 			LL_ASSERT(!err || (err == BT_HCI_ERR_PACKET_TOO_LONG));
+
+			/* Get PDUs previous AD data length */
+			ad_len_prev =
+				hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
+					 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE];
 
 			/* Check of max supported AD data len */
 			ad_len_total += ad_len_prev;
@@ -360,10 +365,31 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				  (!pdu_chain_prev && !pdu_chain));
 		} while (pdu_chain_prev);
 
-		/* No AD data overflow */
-		ad_len_overflow = 0U;
-		/* No AD data in chain PDU */
-		ad_len_chain = 0U;
+		if (err == BT_HCI_ERR_PACKET_TOO_LONG) {
+			ad_len_overflow =
+				hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
+					 ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE +
+					 ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
+					 ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
+
+			/* Prepare for aux ptr field reference to be returned,
+			 * hence second parameter will be for AD data field.
+			 * Fill it with reduced AD data length.
+			 */
+			*val_ptr = ad_len_prev - ad_len_overflow;
+
+			/* AD data len in chain PDU */
+			ad_len_chain = len;
+
+			/* Proceed to add chain PDU */
+			err = 0U;
+		} else {
+			/* No AD data overflow */
+			ad_len_overflow = 0U;
+
+			/* No AD data in chain PDU */
+			ad_len_chain = 0U;
+		}
 	}
 #else /* !CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 	} else {
@@ -385,88 +411,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)
 	if ((op == BT_HCI_LE_EXT_ADV_OP_INTERM_FRAG) ||
-	    (op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG)) {
-		/* in the previous step we duplicated the chain
-		 * the next step is to append new data in the last existing pdu in the chain,
-		 */
-
-		uint8_t chain_err = 0U;
-
-		val_ptr = hdr_data;
-		*val_ptr++ = len;
-		(void)memcpy(val_ptr, &data, sizeof(data));
-
-		/* Append data to the last PDU */
-		chain_err = ull_adv_aux_pdu_set_clear(adv, pdu_prev, pdu,
-						      ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND,
-						      0U, hdr_data);
-
-		LL_ASSERT((!chain_err) || (chain_err == BT_HCI_ERR_PACKET_TOO_LONG));
-
-		/* FIXME: the code has become quite complex, an alternative and simpler
-		 * implementation would be to first fill an array with all data that
-		 * must be send, and create the chained PDUs from this array
-		 */
-		if (chain_err == BT_HCI_ERR_PACKET_TOO_LONG) {
-			/* We could not fit all the data, append as much as possible
-			 * ad_len_overflow is how much overflows with the AUX ptr
-			 */
-			uint8_t ad_len_overflow_first_try;
-			const uint16_t chain_add_fields = ULL_ADV_PDU_HDR_FIELD_AD_DATA_APPEND |
-							  ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
-
-			ad_len_overflow_first_try = hdr_data[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
-							     ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
-
-			val_ptr = hdr_data;
-			*val_ptr++ = len;
-			(void)memcpy(val_ptr, &data, sizeof(data));
-			val_ptr += sizeof(data);
-			*val_ptr++ = len;
-			(void)memcpy(val_ptr, &data, sizeof(data));
-			chain_err = ull_adv_aux_pdu_set_clear(adv, pdu_prev, pdu,
-							      chain_add_fields,
-							      0U, hdr_data);
-			ad_len_overflow = hdr_data[ULL_ADV_HDR_DATA_AUX_PTR_PTR_OFFSET +
-						   ULL_ADV_HDR_DATA_AUX_PTR_PTR_SIZE +
-						   ULL_ADV_HDR_DATA_DATA_PTR_OFFSET +
-						   ULL_ADV_HDR_DATA_DATA_PTR_SIZE];
-
-			/* ad_len_overflow - ad_len_overflow_first_try is the size of
-			 * the aux pointer
-			 * ad_len_prev is how much data is already present, ad_len is how
-			 * much data we can add to this PDU
-			 */
-			ad_len = PDU_AC_PAYLOAD_SIZE_MAX - ad_len_prev -
-				(ad_len_overflow - ad_len_overflow_first_try) - 4;
-
-			val_ptr = hdr_data;
-			*val_ptr++ =  ad_len;
-			(void)memcpy(val_ptr, &data, sizeof(data));
-			val_ptr += sizeof(data);
-			*val_ptr++ =  ad_len;
-			(void)memcpy(val_ptr, &data, sizeof(data));
-
-			/* we now know how much data we can add to the
-			 * last PDU without getting an overflow
-			 */
-			chain_err = ull_adv_aux_pdu_set_clear(adv, pdu_prev, pdu,
-							      chain_add_fields,
-							      0U, hdr_data);
-			LL_ASSERT(chain_err == 0U);
-			/*
-			 * in the next PDU we still need to add ad_len_chain bytes of data
-			 * but we do not have overflow, since we already added
-			 * the exact amount that would fit
-			 */
-			ad_len_chain = len - ad_len;
-			ad_len_overflow = 0U;
-		} else {
-			ad_len_overflow = 0U;
-		}
-	}
-
-	if (ad_len_chain || ad_len_overflow) {
+	    (op == BT_HCI_LE_EXT_ADV_OP_LAST_FRAG) ||
+	    ad_len_overflow) {
 		struct pdu_adv_com_ext_adv *com_hdr_chain;
 		struct pdu_adv_com_ext_adv *com_hdr;
 		struct pdu_adv_ext_hdr *hdr_chain;
@@ -479,7 +425,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		uint16_t sec_len;
 		uint8_t *dptr;
 
-		len = ad_len_chain;
 		/* Get reference to flags in superior PDU */
 		com_hdr = &pdu->adv_ext_ind;
 		if (com_hdr->ext_hdr_len) {
@@ -505,7 +450,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		hdr_chain = (void *)&com_hdr_chain->ext_hdr_adv_data[0];
 		dptr_chain = (void *)hdr_chain;
 
-		LL_ASSERT(dptr_chain);
 		/* Flags */
 		*dptr_chain = 0U;
 
@@ -554,7 +498,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		if (ad_len_overflow) {
 			uint8_t *ad_overflow;
 
-			val_ptr = hdr_data;
 			/* Copy overflowed AD data from previous PDU into this
 			 * new chain PDU
 			 */
@@ -562,7 +505,6 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				     &val_ptr[ULL_ADV_HDR_DATA_DATA_PTR_OFFSET],
 				     sizeof(ad_overflow));
 			ad_overflow += *val_ptr;
-
 			(void)memcpy(dptr_chain, ad_overflow, ad_len_overflow);
 			dptr_chain += ad_len_overflow;
 
@@ -587,6 +529,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				return err;
 			}
 
+			/* AD data len in chain PDU besides the overflow */
+			len = ad_len_chain;
 		}
 
 		/* Check AdvData overflow */
@@ -611,13 +555,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 		pdu_chain->len = sec_len + ad_len_overflow + len;
 
 		/* Fill AD Data in chain PDU */
-		if (ad_len_overflow != 0U) {
-			(void)memcpy(dptr_chain, data, ad_len_overflow);
-		}
-
-		if (ad_len_chain != 0U) {
-			(void)memcpy(dptr_chain, &data[ad_len + ad_len_overflow], ad_len_chain);
-		}
+		(void)memcpy(dptr_chain, data, len);
 
 		/* Get reference to aux ptr in superior PDU */
 		(void)memcpy(&aux_ptr,
