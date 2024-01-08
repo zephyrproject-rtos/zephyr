@@ -45,7 +45,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "ipv4.h"
 
 #include "dhcpv4.h"
-#include "dhcpv6_internal.h"
 
 #include "route.h"
 
@@ -473,11 +472,6 @@ static inline int services_init(void)
 
 	status = net_dhcpv4_init();
 	if (status) {
-		return status;
-	}
-
-	status = net_dhcpv6_init();
-	if (status != 0) {
 		return status;
 	}
 
