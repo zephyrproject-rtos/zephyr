@@ -59,6 +59,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][GATEWAY_MAX_ID];
 static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
+lwm2m_engine_gateway_msg_cb gateway_msg_cb[MAX_INSTANCE_COUNT];
 
 static int prefix_validation_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
 				uint8_t *data, uint16_t data_len, bool last_block,
@@ -144,6 +145,57 @@ static struct lwm2m_engine_obj_inst *lwm2m_gw_create(uint16_t obj_inst_id)
 	inst[index].resource_count = i;
 	LOG_DBG("Created LWM2M gateway instance: %d", obj_inst_id);
 	return &inst[index];
+}
+
+int lwm2m_gw_handle_req(struct lwm2m_message *msg)
+{
+	struct coap_option options[4];
+	int ret;
+
+	ret = coap_find_options(msg->in.in_cpkt, COAP_OPTION_URI_PATH, options,
+				ARRAY_SIZE(options));
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (int index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		/* Skip uninitialized objects */
+		if (!inst[index].obj) {
+			continue;
+		}
+
+		char *prefix = device_table[index].prefix;
+		size_t prefix_len = strlen(prefix);
+
+		if (prefix_len != options[0].len) {
+			continue;
+		}
+		if (strncmp(options[0].value, prefix, prefix_len) != 0) {
+			continue;
+		}
+
+		if (gateway_msg_cb[index] == NULL) {
+			return -ENOENT;
+		}
+		/* Delete prefix from path*/
+		ret = coap_options_to_path(&options[1], ret - 1, &msg->path);
+		if (ret < 0) {
+			return ret;
+		}
+		return gateway_msg_cb[index](msg);
+	}
+	return -ENOENT;
+}
+
+int lwm2m_register_gw_callback(uint16_t obj_inst_id, lwm2m_engine_gateway_msg_cb cb)
+{
+	for (int index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		if (inst[index].obj_inst_id == obj_inst_id) {
+			gateway_msg_cb[index] = cb;
+			return 0;
+		}
+	}
+	return -ENOENT;
 }
 
 static int lwm2m_gw_init(void)
