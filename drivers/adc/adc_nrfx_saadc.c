@@ -170,7 +170,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	if (!repeat) {
 		nrf_saadc_buffer_pointer_set(
 			NRF_SAADC,
-			nrf_saadc_buffer_pointer_get(NRF_SAADC) +
+			(uint16_t *)nrf_saadc_buffer_pointer_get(NRF_SAADC) +
 			nrf_saadc_amount_get(NRF_SAADC));
 	}
 }
@@ -256,7 +256,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 {
 	size_t needed_buffer_size;
 
-	needed_buffer_size = active_channels * sizeof(nrf_saadc_value_t);
+	needed_buffer_size = active_channels * sizeof(uint16_t);
 	if (sequence->options) {
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
 	}
