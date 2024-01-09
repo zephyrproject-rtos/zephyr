@@ -899,7 +899,7 @@ def test_devicehandler_run_custom_script(caplog, mock_process, raise_timeout):
         if raise_timeout and timeout != -1:
             raise subprocess.TimeoutExpired(None, timeout)
         else:
-            return mock.Mock(), mock.Mock()
+            return mock.Mock(decode=mock.Mock(return_value='dummy out')), mock.Mock()
 
     def assert_popen(command, *args, **kwargs):
         return mock.Mock(
@@ -1328,12 +1328,15 @@ def test_devicehandler_handle(
         return mock.Mock(is_alive=is_alive_mock)
 
     def mock_terminate(proc, *args, **kwargs):
-        proc.communicate = mock.Mock(return_value=(mock.Mock(), mock.Mock()))
+        proc.communicate = mock.Mock(return_value=(
+            mock.Mock(decode=mock.Mock(return_value='dummy terminate out')),
+            mock.Mock()
+        ))
 
     def mock_communicate(*args, **kwargs):
         if raise_timeout:
             raise TimeoutExpired('dummy cmd', 'dummyamount')
-        return mock.Mock(), mock.Mock()
+        return mock.Mock(decode=mock.Mock(return_value='dummy communicate out')), mock.Mock()
 
     def mock_popen(command, *args, **kwargs):
         if raise_popen:

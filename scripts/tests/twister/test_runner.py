@@ -1870,14 +1870,14 @@ def test_projectbuilder_sanitize_zephyr_base_from_files(
 TESTDATA_13 = [
     (
         'error', True, True, False,
-        ['INFO      20/25 dummy platform' \
+        ['INFO            twister: 20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                                ERROR dummy reason (cmake)'],
         None
     ),
     (
         'failed', False, False, False,
-        ['ERROR     dummy platform' \
+        ['ERROR           twister: dummy platform' \
          '            dummy.testsuite.name' \
          '                                FAILED : dummy reason'],
         'INFO    - Total complete:   20/  25  80%  skipped:    3,' \
@@ -1885,7 +1885,7 @@ TESTDATA_13 = [
     ),
     (
         'skipped', True, False, False,
-        ['INFO      20/25 dummy platform' \
+        ['INFO            twister: 20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               SKIPPED (dummy reason)'],
         None
@@ -1898,7 +1898,7 @@ TESTDATA_13 = [
     ),
     (
         'passed', True, False, True,
-        ['INFO      20/25 dummy platform' \
+        ['INFO            twister: 20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED' \
          ' (dummy handler type: dummy dut, 60.000s)'],
@@ -1906,7 +1906,7 @@ TESTDATA_13 = [
     ),
     (
         'passed', True, False, False,
-        ['INFO      20/25 dummy platform' \
+        ['INFO            twister: 20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               PASSED (build)'],
         None
@@ -1919,7 +1919,7 @@ TESTDATA_13 = [
     ),
     (
         'timeout', True, False, True,
-        ['INFO      20/25 dummy platform' \
+        ['INFO            twister: 20/25 dummy platform' \
          '            dummy.testsuite.name' \
          '                               UNKNOWN' \
          ' (dummy handler type: dummy dut, 60.000s/seed: 123)'],
@@ -1987,7 +1987,6 @@ def test_projectbuilder_report_out(
         '',
         caplog.text
     )
-    trim_actual_log = re.sub(r'twister:runner.py:\d+', '', trim_actual_log)
     assert all([log in trim_actual_log for log in expected_logs])
 
     if expected_out:
