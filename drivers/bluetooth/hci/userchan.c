@@ -46,13 +46,6 @@ struct sockaddr_hci {
 
 #define SOL_HCI          0
 
-/* Bluetooth spec v5.4 Vol 4, Part A Table 2.1 */
-#define H4_CMD           0x01
-#define H4_ACL           0x02
-#define H4_SCO           0x03
-#define H4_EVT           0x04
-#define H4_ISO           0x05
-
 static K_KERNEL_STACK_DEFINE(rx_thread_stack,
 			     CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 static struct k_thread rx_thread_data;
@@ -73,7 +66,7 @@ static struct net_buf *get_rx(const uint8_t *buf)
 	k_timeout_t timeout = K_FOREVER;
 
 	switch (buf[0]) {
-	case H4_EVT:
+	case BT_HCI_H4_EVT:
 		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
 		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT)) {
 			discardable = true;
@@ -81,9 +74,9 @@ static struct net_buf *get_rx(const uint8_t *buf)
 		}
 
 		return bt_buf_get_evt(buf[1], discardable, timeout);
-	case H4_ACL:
+	case BT_HCI_H4_ACL:
 		return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-	case H4_ISO:
+	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
 			return bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
 		}
@@ -109,7 +102,7 @@ static uint16_t packet_len(const uint8_t *buf)
 	const uint8_t *hdr = &buf[sizeof(type)];
 
 	switch (type) {
-	case H4_CMD: {
+	case BT_HCI_H4_CMD: {
 		const struct bt_hci_cmd_hdr *cmd = (const struct bt_hci_cmd_hdr *)hdr;
 
 		/* Parameter Total Length */
@@ -117,7 +110,7 @@ static uint16_t packet_len(const uint8_t *buf)
 		header_len = BT_HCI_CMD_HDR_SIZE;
 		break;
 	}
-	case H4_ACL: {
+	case BT_HCI_H4_ACL: {
 		const struct bt_hci_acl_hdr *acl = (const struct bt_hci_acl_hdr *)hdr;
 
 		/* Data Total Length */
@@ -125,7 +118,7 @@ static uint16_t packet_len(const uint8_t *buf)
 		header_len = BT_HCI_ACL_HDR_SIZE;
 		break;
 	}
-	case H4_SCO: {
+	case BT_HCI_H4_SCO: {
 		const struct bt_hci_sco_hdr *sco = (const struct bt_hci_sco_hdr *)hdr;
 
 		/* Data_Total_Length */
@@ -133,7 +126,7 @@ static uint16_t packet_len(const uint8_t *buf)
 		header_len = BT_HCI_SCO_HDR_SIZE;
 		break;
 	}
-	case H4_EVT: {
+	case BT_HCI_H4_EVT: {
 		const struct bt_hci_evt_hdr *evt = (const struct bt_hci_evt_hdr *)hdr;
 
 		/* Parameter Total Length */
@@ -141,7 +134,7 @@ static uint16_t packet_len(const uint8_t *buf)
 		header_len = BT_HCI_EVT_HDR_SIZE;
 		break;
 	}
-	case H4_ISO: {
+	case BT_HCI_H4_ISO: {
 		const struct bt_hci_iso_hdr *iso = (const struct bt_hci_iso_hdr *)hdr;
 
 		/* ISO_Data_Load_Length parameter */
@@ -258,14 +251,14 @@ static int uc_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, H4_ACL);
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
 		break;
 	case BT_BUF_CMD:
-		net_buf_push_u8(buf, H4_CMD);
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
 		break;
 	case BT_BUF_ISO_OUT:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			net_buf_push_u8(buf, H4_ISO);
+			net_buf_push_u8(buf, BT_HCI_H4_ISO);
 			break;
 		}
 		__fallthrough;
