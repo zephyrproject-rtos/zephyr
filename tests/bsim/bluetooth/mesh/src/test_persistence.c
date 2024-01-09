@@ -455,12 +455,6 @@ static void provisioner_setup(void)
 		FAIL("Failed to add test_netkey (err: %d, status: %d)", err, status);
 	}
 
-	err = bt_mesh_cfg_cli_net_transmit_set(test_netkey_idx, TEST_PROV_ADDR,
-					       BT_MESH_TRANSMIT(3, 50), &status);
-	if (err || status != BT_MESH_TRANSMIT(3, 50)) {
-		FAIL("Net transmit set failed (err %d, transmit %x)", err, status);
-	}
-
 	provisioner_ready = true;
 }
 
