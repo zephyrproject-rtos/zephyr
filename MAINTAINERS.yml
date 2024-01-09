@@ -3169,6 +3169,28 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
+NXP Platforms (S32):
+  status: maintained
+  maintainers:
+    - manuargue
+  collaborators:
+    - PetervdPerk-NXP
+    - bperseghetti
+    - Dat-NguyenDuy
+  files:
+    - boards/arm/s32*/
+    - boards/arm/mr_canhubk3/
+    - boards/arm/ucans32k1sic/
+    - soc/arm/nxp_s32/
+    - drivers/*/*nxp_s32*
+    - dts/bindings/*/nxp,s32*
+    - samples/boards/nxp_s32/
+    - include/zephyr/dt-bindings/*/nxp-s32*
+    - include/zephyr/dt-bindings/*/nxp_s32*
+    - include/zephyr/drivers/*/*nxp_s32*
+  labels:
+    - "platform: NXP S32"
+
 NXP Platforms:
   status: maintained
   maintainers:
@@ -3180,21 +3202,14 @@ NXP Platforms:
     - yvanderv
     - EmilioCBen
     - decsny
-    - manuargue
-    - PetervdPerk-NXP
-    - bperseghetti
-    - dbaluta
-    - iuliana-prodan
-    - Dat-NguyenDuy
   files:
     - boards/arm/mimx*/
     - boards/arm/frdm_k*/
     - boards/arm/lpcxpress*/
     - boards/arm/twr_*/
-    - boards/arm/s32*/
-    - boards/arm/mr_canhubk3/
-    - boards/arm/vmu_rt*/
-    - soc/arm/nxp_*/
+    - soc/arm/nxp_imx/
+    - soc/arm/nxp_kinetis/
+    - soc/arm/nxp_lpc/
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
     - drivers/*/*mcux*.c
@@ -3203,13 +3218,22 @@ NXP Platforms:
     - drivers/*/*nxp*
     - dts/arm/nxp/
     - dts/bindings/*/nxp*
-    - soc/xtensa/nxp_adsp/
-    - boards/xtensa/nxp_adsp_*/
     - samples/boards/nxp*/
     - include/zephyr/dt-bindings/*/nxp*
-    - include/zephyr/drivers/*/*nxp*
   labels:
     - "platform: NXP"
+
+NXP Platforms (Xtensa):
+  status: maintained
+  maintainers:
+    - dbaluta
+  collaborators:
+    - iuliana-prodan
+  files:
+    - soc/xtensa/nxp_adsp/
+    - boards/xtensa/nxp_adsp_*/
+  labels:
+    - "platform: NXP ADSP"
 
 Microchip MEC Platforms:
   status: maintained
