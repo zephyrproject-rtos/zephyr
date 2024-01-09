@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <arm/gigadevice/gd32e50x/gd32e507xe.dtsi>
+#include <arm/gd/gd32e50x/gd32e507xe.dtsi>
 #include "gd32e507z_eval-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

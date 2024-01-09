@@ -419,7 +419,7 @@
 /dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/cypress/                         @ifyall @npal-cy
-/dts/arm/gigadevice/                      @nandojve
+/dts/arm/gd/                              @nandojve
 /dts/arm/infineon/xmc4*                   @parthitce @ifyall @npal-cy
 /dts/arm/infineon/psoc6/                  @ifyall @npal-cy
 /dts/arm64/armv8-r.dtsi                   @povergoing
