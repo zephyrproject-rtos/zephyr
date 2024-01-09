@@ -96,7 +96,7 @@ static void free_tx_meta_data(struct l2cap_tx_meta_data *data)
 
 #define l2cap_tx_meta_data(buf) (((struct l2cap_tx_meta *)net_buf_user_data(buf))->data)
 
-static sys_slist_t servers;
+static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
 
 static void l2cap_tx_buf_destroy(struct bt_conn *conn, struct net_buf *buf, int err)
 {
