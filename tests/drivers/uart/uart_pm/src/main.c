@@ -169,6 +169,9 @@ ZTEST(uart_pm, test_uart_pm_in_idle)
 
 	action_run(dev, PM_DEVICE_ACTION_RESUME, 0);
 	communication_verify(dev, true);
+
+	/* Let's give enough time for the last byte to be transmitted out */
+	k_busy_wait(500);
 }
 
 ZTEST(uart_pm, test_uart_pm_poll_tx)
