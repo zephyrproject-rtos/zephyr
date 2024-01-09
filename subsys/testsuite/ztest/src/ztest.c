@@ -13,6 +13,8 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/reboot.h>
 
+#include <zephyr/llext/symbol.h>
+
 #ifdef KERNEL
 static struct k_thread ztest_thread;
 #endif
@@ -324,6 +326,7 @@ void ztest_test_fail(void)
 		longjmp(stack_fail, 1);
 	}
 }
+EXPORT_SYMBOL(ztest_test_fail);
 
 void ztest_test_pass(void)
 {
@@ -334,6 +337,7 @@ void ztest_test_pass(void)
 	      get_friendly_phase_name(cur_phase));
 	longjmp(stack_fail, 1);
 }
+EXPORT_SYMBOL(ztest_test_pass);
 
 void ztest_test_skip(void)
 {
@@ -348,6 +352,7 @@ void ztest_test_skip(void)
 		longjmp(stack_fail, 1);
 	}
 }
+EXPORT_SYMBOL(ztest_test_skip);
 
 void ztest_test_expect_fail(void)
 {
@@ -471,6 +476,7 @@ void ztest_test_fail(void)
 		break;
 	}
 }
+EXPORT_SYMBOL(ztest_test_fail);
 
 void ztest_test_pass(void)
 {
@@ -488,6 +494,7 @@ void ztest_test_pass(void)
 		}
 	}
 }
+EXPORT_SYMBOL(ztest_test_pass);
 
 void ztest_test_skip(void)
 {
@@ -507,6 +514,7 @@ void ztest_test_skip(void)
 		break;
 	}
 }
+EXPORT_SYMBOL(ztest_test_skip);
 
 void ztest_test_expect_fail(void)
 {
