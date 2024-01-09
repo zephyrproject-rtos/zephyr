@@ -2992,7 +2992,7 @@ GD32 Platforms:
     - boards/riscv/gd32*/
     - boards/riscv/longan_nano/
     - drivers/*/*gd32*
-    - dts/*/gigadevice/
+    - dts/*/gd/
     - dts/bindings/*/*gd32*
     - soc/*/gd_gd32/
     - scripts/west_commands/*/*gd32*
