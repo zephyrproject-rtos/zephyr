@@ -5868,16 +5868,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct ll_adv_iso_set *adv_iso;
 		struct lll_adv_iso *lll_iso;
 		uint16_t stream_handle;
-		uint16_t slen;
-
-		/* FIXME: Code only expects header present */
-		slen = iso_data_hdr ? iso_data_hdr->slen : 0;
-
-		/* Check invalid BIS PDU length */
-		if (slen > LL_BIS_OCTETS_TX_MAX) {
-			LOG_ERR("Invalid HCI ISO Data length");
-			return -EINVAL;
-		}
 
 		/* Get BIS stream handle and stream context */
 		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
