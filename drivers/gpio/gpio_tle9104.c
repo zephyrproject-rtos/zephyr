@@ -75,6 +75,8 @@ struct tle9104_data {
 	/* each bit defines if the output channel is configured, see state */
 	uint8_t configured;
 	struct k_mutex lock;
+	/* communication watchdog is getting ignored */
+	bool cwd_ignore;
 };
 
 static void tle9104_set_cfg_cwdtime(uint8_t *destination, uint8_t value)
@@ -116,6 +118,7 @@ static int tle9104_transceive_frame(const struct device *dev, bool write,
 				    enum tle9104_register *read_reg, uint8_t *read_data)
 {
 	const struct tle9104_config *config = dev->config;
+	struct tle9104_data *data = dev->data;
 	uint16_t write_frame;
 	uint16_t read_frame;
 	int result;
@@ -160,8 +163,10 @@ static int tle9104_transceive_frame(const struct device *dev, bool write,
 		return -EIO;
 	}
 
-	if ((TLE9104_SPIFRAME_FAULTCOMMUNICATION_BIT & read_frame) != 0) {
-		LOG_WRN("communication fault reported by TLE9104");
+	if (!data->cwd_ignore) {
+		if ((TLE9104_SPIFRAME_FAULTCOMMUNICATION_BIT & read_frame) != 0) {
+			LOG_WRN("%s: communication fault reported by TLE9104", dev->name);
+		}
 	}
 
 	*read_reg = FIELD_GET(GENMASK(TLE9104_FRAME_FAULTGLOBAL_POS - 1, TLE9104_FRAME_ADDRESS_POS),
@@ -385,6 +390,8 @@ static int tle9104_init(const struct device *dev)
 
 	LOG_DBG("initialize TLE9104 instance %s", dev->name);
 
+	data->cwd_ignore = true;
+
 	result = k_mutex_init(&data->lock);
 	if (result != 0) {
 		LOG_ERR("unable to initialize mutex");
@@ -497,6 +504,8 @@ static int tle9104_init(const struct device *dev)
 		LOG_ERR("unable to write global status");
 		return result;
 	}
+
+	data->cwd_ignore = false;
 
 	return 0;
 }
