@@ -105,6 +105,8 @@ source "drivers/gpio/Kconfig.mcux"
 
 source "drivers/gpio/Kconfig.mcux_igpio"
 
+source "drivers/gpio/Kconfig.mcux_rgpio"
+
 source "drivers/gpio/Kconfig.mcux_lpc"
 
 source "drivers/gpio/Kconfig.mmio32"
