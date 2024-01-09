@@ -27,6 +27,8 @@ struct rcar_pin_func {
 #define RCAR_PIN_FLAGS_PUD      BIT(2)
 /** Alternate function for the pin is requested */
 #define RCAR_PIN_FLAGS_FUNC_SET BIT(3)
+/** Ignore IPSR settings for alternate function pin */
+#define RCAR_PIN_FLAGS_FUNC_DUMMY BIT(4)
 
 #define RCAR_PIN_PULL_UP      (RCAR_PIN_FLAGS_PULL_SET | RCAR_PIN_FLAGS_PUEN | RCAR_PIN_FLAGS_PUD)
 #define RCAR_PIN_PULL_DOWN    (RCAR_PIN_FLAGS_PULL_SET | RCAR_PIN_FLAGS_PUEN)
@@ -52,11 +54,17 @@ typedef struct pinctrl_soc_pin {
 		((RCAR_IPSR(node_id) & 0xFU))	       \
 	}
 
+#define RCAR_PIN_IS_FUNC_DUMMY(node_id)					       \
+	((((RCAR_IPSR(node_id) >> 10U) & 0x1FU) == 0x1F) &&		       \
+	 (((RCAR_IPSR(node_id) >> 4U) & 0x1FU) == 0x1F) &&		       \
+	 ((RCAR_IPSR(node_id) & 0xFU) == 0xF))
+
 #define RCAR_PIN_FLAGS(node_id)						       \
 	DT_PROP(node_id, bias_pull_up)   * RCAR_PIN_PULL_UP |		       \
 	DT_PROP(node_id, bias_pull_down) * RCAR_PIN_PULL_DOWN |		       \
 	DT_PROP(node_id, bias_disable)   * RCAR_PIN_PULL_DISABLE |	       \
-	RCAR_HAS_IPSR(node_id) * RCAR_PIN_FLAGS_FUNC_SET
+	RCAR_HAS_IPSR(node_id) * RCAR_PIN_FLAGS_FUNC_SET |		       \
+	RCAR_PIN_IS_FUNC_DUMMY(node_id) * RCAR_PIN_FLAGS_FUNC_DUMMY
 
 #define RCAR_DT_PIN(node_id)						       \
 	{								       \
