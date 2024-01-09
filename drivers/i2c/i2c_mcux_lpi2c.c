@@ -310,7 +310,6 @@ restore:
 #ifdef CONFIG_I2C_TARGET
 static void mcux_lpi2c_slave_irq_handler(const struct device *dev)
 {
-	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = (LPI2C_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
@@ -454,7 +453,6 @@ static int mcux_lpi2c_target_register(const struct device *dev,
 static int mcux_lpi2c_target_unregister(const struct device *dev,
 					struct i2c_target_config *target_config)
 {
-	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = (LPI2C_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
