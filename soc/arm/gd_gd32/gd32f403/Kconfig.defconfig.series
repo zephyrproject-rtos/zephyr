@@ -3,7 +3,7 @@
 
 if SOC_SERIES_GD32F403
 
-source "soc/arm/gigadevice/gd32f403/Kconfig.defconfig.gd32f403"
+source "soc/arm/gd_gd32/gd32f403/Kconfig.defconfig.gd32f403"
 
 config SOC_SERIES
 	default "gd32f403"

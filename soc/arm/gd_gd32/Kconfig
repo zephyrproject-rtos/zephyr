@@ -9,7 +9,7 @@ config SOC_FAMILY_GD32
 
 config SOC_FAMILY
 	string
-	default "gigadevice"
+	default "gd_gd32"
 	depends on SOC_FAMILY_GD32
 
 config SOC_FAMILY_GD32_ARM
@@ -18,6 +18,6 @@ config SOC_FAMILY_GD32_ARM
 
 if SOC_FAMILY_GD32_ARM
 
-source "soc/arm/gigadevice/*/Kconfig.soc"
+source "soc/arm/gd_gd32/*/Kconfig.soc"
 
 endif # SOC_FAMILY_GD32_ARM
