@@ -104,6 +104,11 @@ struct uart_rcar_data {
 #define SCLSR_TO        BIT(2)  /* Timeout */
 #define SCLSR_ORER      BIT(0)  /* Overrun Error */
 
+static uint8_t uart_rcar_read_8(const struct device *dev, uint32_t offs)
+{
+	return sys_read8(DEVICE_MMIO_GET(dev) + offs);
+}
+
 static void uart_rcar_write_8(const struct device *dev,
 			      uint32_t offs, uint8_t value)
 {
@@ -146,7 +151,7 @@ static int uart_rcar_poll_in(const struct device *dev, unsigned char *p_char)
 		goto unlock;
 	}
 
-	*p_char = uart_rcar_read_16(dev, SCFRDR);
+	*p_char = uart_rcar_read_8(dev, SCFRDR);
 
 	reg_val = uart_rcar_read_16(dev, SCFSR);
 	reg_val &= ~SCFSR_RDF;
@@ -347,7 +352,7 @@ static int uart_rcar_fifo_read(const struct device *dev, uint8_t *rx_data,
 	while (((size - num_rx) > 0) &&
 	       (uart_rcar_read_16(dev, SCFSR) & SCFSR_RDF)) {
 		/* Receive current byte */
-		rx_data[num_rx++] = uart_rcar_read_16(dev, SCFRDR);
+		rx_data[num_rx++] = uart_rcar_read_8(dev, SCFRDR);
 
 		reg_val = uart_rcar_read_16(dev, SCFSR);
 		reg_val &= ~(SCFSR_RDF);
