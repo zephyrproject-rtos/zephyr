@@ -14,10 +14,19 @@
 #include <stm32_ll_rcc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(can_stm32h7, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32h7_fdcan
+
+/* This symbol takes the value 1 if one of the device instances */
+/* is configured in dts with a domain clock */
+#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
+#define STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT 1
+#else
+#define STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT 0
+#endif
 
 struct can_stm32h7_config {
 	mm_reg_t base;
@@ -25,7 +34,9 @@ struct can_stm32h7_config {
 	mem_addr_t mram;
 	void (*config_irq)(void);
 	const struct pinctrl_dev_config *pcfg;
-	struct stm32_pclken pclken;
+	size_t pclk_len;
+	const struct stm32_pclken *pclken;
+	uint8_t clock_divider;
 };
 
 static int can_stm32h7_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
@@ -72,6 +83,7 @@ static int can_stm32h7_clear_mram(const struct device *dev, uint16_t offset, siz
 static int can_stm32h7_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const uint32_t rate_tmp = LL_RCC_GetFDCANClockFreq(LL_RCC_FDCAN_CLKSOURCE);
+	uint32_t cdiv;
 
 	ARG_UNUSED(dev);
 
@@ -80,9 +92,12 @@ static int can_stm32h7_get_core_clock(const struct device *dev, uint32_t *rate)
 		return -EIO;
 	}
 
-	*rate = rate_tmp;
-
-	LOG_DBG("rate=%d", *rate);
+	cdiv = FIELD_GET(FDCANCCU_CCFG_CDIV, FDCAN_CCU->CCFG);
+	if (cdiv == 0U) {
+		*rate = rate_tmp;
+	} else {
+		*rate = rate_tmp / (cdiv << 1U);
+	}
 
 	return 0;
 }
@@ -94,22 +109,32 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int ret;
 
-	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PLL1Q);
-
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(clk, (clock_control_subsys_t)&stm32h7_cfg->pclken);
+	if (IS_ENABLED(STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT) && (stm32h7_cfg->pclk_len > 1)) {
+		ret = clock_control_configure(clk,
+				(clock_control_subsys_t)&stm32h7_cfg->pclken[1],
+				NULL);
+		if (ret < 0) {
+			LOG_ERR("Could not select can_stm32fd domain clock");
+			return ret;
+		}
+	}
+
+	ret = clock_control_on(clk, (clock_control_subsys_t)&stm32h7_cfg->pclken[0]);
 	if (ret != 0) {
 		LOG_ERR("failure enabling clock");
 		return ret;
 	}
 
-	if (!LL_RCC_PLL1Q_IsEnabled()) {
-		LOG_ERR("PLL1Q clock must be enabled!");
-		return -EIO;
+	if (stm32h7_cfg->clock_divider != 0U) {
+		can_mcan_enable_configuration_change(dev);
+
+		FDCAN_CCU->CCFG = FDCANCCU_CCFG_BCC |
+			FIELD_PREP(FDCANCCU_CCFG_CDIV, stm32h7_cfg->clock_divider >> 1U);
 	}
 
 	return 0;
@@ -204,16 +229,18 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 	PINCTRL_DT_INST_DEFINE(n);					    \
 	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, can_stm32h7_cbs_##n);	    \
 									    \
+	static const struct stm32_pclken can_stm32h7_pclken_##n[] =	    \
+					STM32_DT_INST_CLOCKS(n);	    \
+									    \
 	static const struct can_stm32h7_config can_stm32h7_cfg_##n = {	    \
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			    \
 		.mrba = CAN_MCAN_DT_INST_MRBA(n),			    \
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),			    \
 		.config_irq = stm32h7_mcan_irq_config_##n,		    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		    \
-		.pclken = {						    \
-			.enr = DT_INST_CLOCKS_CELL(n, bits),		    \
-			.bus = DT_INST_CLOCKS_CELL(n, bus),		    \
-		},							    \
+		.pclken = can_stm32h7_pclken_##n,			    \
+		.pclk_len = DT_INST_NUM_CLOCKS(n),			    \
+		.clock_divider = DT_INST_PROP_OR(n, clk_divider, 0)	    \
 	};								    \
 									    \
 	static const struct can_mcan_config can_mcan_cfg_##n =		    \
