@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_library()
+
 add_subdirectory(${SOC_SERIES})
 add_subdirectory(common)
 
-zephyr_sources(
+zephyr_library_sources(
   validate_base_addresses.c
   validate_enabled_instances.c
   )
