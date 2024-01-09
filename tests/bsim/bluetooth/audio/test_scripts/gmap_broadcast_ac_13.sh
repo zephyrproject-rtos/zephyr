@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="gmap_unicast_ac_13"
+SIMULATION_ID="gmap_broadcast_ac_13"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=60
 
@@ -33,7 +33,7 @@ function Execute_AC_13() {
 set -e # Exit on error
 
 # Low latency tests
-# Execute_AC_13 48_1_g # BT_ISO_FLAGS_ERROR
+Execute_AC_13 48_1_g
 Execute_AC_13 48_2_g
-# Execute_AC_13 48_3_g # BT_ISO_FLAGS_ERROR
+Execute_AC_13 48_3_g
 Execute_AC_13 48_4_g

@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="cap_unicast_ac_13"
+SIMULATION_ID="cap_broadcast_ac_13"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=60
 
@@ -32,22 +32,22 @@ function Execute_AC_13() {
 
 set -e # Exit on error
 
-# Execute_AC_13 8_1_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_13 8_1_1
 Execute_AC_13 8_2_1
-# Execute_AC_13 16_1_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_13 16_1_1
 Execute_AC_13 16_2_1
-# Execute_AC_13 24_1_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_13 24_1_1
 Execute_AC_13 24_2_1
-# Execute_AC_13 32_1_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_13 32_1_1
 Execute_AC_13 32_2_1
-# Execute_AC_13 441_1_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 441_2_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 48_1_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 48_2_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 48_3_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 48_4_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 48_5_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_13 48_6_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_13 441_1_1
+Execute_AC_13 441_2_1
+Execute_AC_13 48_1_1
+Execute_AC_13 48_2_1
+Execute_AC_13 48_3_1
+Execute_AC_13 48_4_1
+Execute_AC_13 48_5_1
+Execute_AC_13 48_6_1
 
 # High reliability
 # Execute_AC_13 8_1_2 # BT_ISO_FLAGS_ERROR
