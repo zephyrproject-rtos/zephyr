@@ -1211,7 +1211,6 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 	uint16_t pb_remote_server_addr;
 	uint8_t status;
 	struct bt_mesh_cdb_node *node;
-	int err;
 
 	provisioner_pb_remote_client_setup();
 
@@ -1224,15 +1223,6 @@ static void test_provisioner_pb_remote_client_nppi_robustness(void)
 		.net_idx = 0,
 		.ttl = 3,
 	};
-
-	/* Set Network Transmit Count state on the remote client greater than on the remote server
-	 * to increase probability of reception responses.
-	 */
-	err = bt_mesh_cfg_cli_net_transmit_set(0, current_dev_addr, BT_MESH_TRANSMIT(3, 50),
-					       &status);
-	if (err || status != BT_MESH_TRANSMIT(3, 50)) {
-		FAIL("Net transmit set failed (err %d, transmit %x)", err, status);
-	}
 
 	ASSERT_OK(provision_remote(&srv, 2, &srv.addr));
 
