@@ -946,7 +946,7 @@ Release Notes:
 "Drivers: Charger":
   status: maintained
   maintainers:
-    - aaronemassey
+    - GRobertZieba
     - rriveramcrus
   files:
     - drivers/charger/
