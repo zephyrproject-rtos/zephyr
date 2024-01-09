@@ -547,8 +547,8 @@ void ztest_simple_1cpu_after(void *data);
  *
  * @param suite Test suite to run.
  */
-#define ztest_run_test_suite(suite) z_ztest_run_test_suite(STRINGIFY(suite), \
-	int suite_iter, int case_iter)
+#define ztest_run_test_suite(suite, shuffle, suite_iter, case_iter) \
+	z_ztest_run_test_suite(STRINGIFY(suite), shuffle, suite_iter, case_iter)
 
 /**
  * @brief Structure for architecture specific APIs
