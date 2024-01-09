@@ -308,10 +308,16 @@ class CustomDoxygenGroupDirective(DoxygenGroupDirective):
 
     def run(self) -> List[Node]:
         nodes = super().run()
-        return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+
+        if self.config.zephyr_breathe_insert_related_samples:
+            return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+        else:
+            return nodes
 
 
 def setup(app):
+    app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
+
     app.add_domain(ZephyrDomain)
 
     app.add_transform(ConvertCodeSampleNode)
