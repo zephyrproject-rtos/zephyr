@@ -368,7 +368,7 @@ int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			memset(chan_str, 0, sizeof(chan_str));
 
 			if (chan_start) {
-				if ((chan_idx + (chan_val - chan_start)) >= max_channels) {
+				if ((chan_idx + (chan_val - chan_start)) > max_channels) {
 					NET_ERR("Too many channels specified (%d)", max_channels);
 					return -EINVAL;
 				}
