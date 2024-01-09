@@ -20,7 +20,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap_internal.h"
+#include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_AVDTP_LOG_LEVEL
