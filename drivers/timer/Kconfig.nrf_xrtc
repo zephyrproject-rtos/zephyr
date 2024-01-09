@@ -3,7 +3,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if NRF_RTC_TIMER
+if NRF_RTC_TIMER || NRF_GRTC_TIMER
 choice
 	prompt "Clock startup policy"
 	default SYSTEM_CLOCK_WAIT_FOR_STABILITY
@@ -35,4 +35,4 @@ config SYSTEM_CLOCK_WAIT_FOR_STABILITY
 	  driver initialization.
 
 endchoice
-endif # NRF_RTC_TIMER
+endif # NRF_RTC_TIMER || NRF_GRTC_TIMER
