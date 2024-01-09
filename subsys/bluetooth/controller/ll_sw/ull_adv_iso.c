@@ -202,8 +202,73 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
+	/* Check if aux context allocated before we are creating ISO */
+	if (adv->lll.aux) {
+		aux = HDR_LLL2ULL(adv->lll.aux);
+	} else {
+		aux = NULL;
+	}
+
+	/* Calculate overheads due to extended advertising. */
+	if (aux && aux->is_started) {
+		ticks_slot_aux = aux->ull.ticks_slot;
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+			ticks_slot_overhead =
+				MAX(aux->ull.ticks_active_to_start,
+				    aux->ull.ticks_prepare_to_start);
+		} else {
+			ticks_slot_overhead = 0U;
+		}
+	} else {
+		uint32_t time_us;
+
+		time_us = PDU_AC_US(PDU_AC_PAYLOAD_SIZE_MAX, adv->lll.phy_s,
+				    adv->lll.phy_flags) +
+			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+			/* Assume primary overheads may be inherited by aux */
+			ticks_slot_overhead =
+				MAX(adv->ull.ticks_active_to_start,
+				    adv->ull.ticks_prepare_to_start);
+		} else {
+			ticks_slot_overhead = 0U;
+		}
+	}
+	ticks_slot_aux += ticks_slot_overhead;
+
+	/* Calculate overheads due to periodic advertising. */
+	sync = HDR_LLL2ULL(lll_adv_sync);
+	if (sync->is_started) {
+		ticks_slot_sync = sync->ull.ticks_slot;
+	} else {
+		uint32_t time_us;
+
+		time_us = PDU_AC_US(PDU_AC_PAYLOAD_SIZE_MAX,
+				    sync->lll.adv->phy_s,
+				    sync->lll.adv->phy_flags) +
+			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		ticks_slot_sync = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
+					  sync->ull.ticks_prepare_to_start);
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+
+	ticks_slot_sync += ticks_slot_overhead;
+
+	/* Calculate total overheads due to extended and periodic advertising */
+	if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
+		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
+	} else {
+		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
+	}
+
 	/* Store parameters in LLL context */
-	/* TODO: parameters to ULL if only accessed by ULL */
+	/* TODO: Move parameters to ULL if only accessed by ULL */
 	lll_adv_iso = &adv_iso->lll;
 	lll_adv_iso->handle = big_handle;
 	lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
@@ -260,6 +325,15 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			   (bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
 	lll_adv_iso->iso_interval = iso_interval_us / PERIODIC_INT_UNIT_US;
 
+	/* Calculate max available ISO event spacing */
+	slot_overhead = HAL_TICKER_TICKS_TO_US(ticks_slot_overhead);
+	if (slot_overhead < iso_interval_us) {
+		event_spacing_max = iso_interval_us - slot_overhead;
+	} else {
+		event_spacing_max = 0U;
+	}
+
+ll_big_create_rtn_retry:
 	/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
 	lll_adv_iso->irc = rtn + 1U;
 
@@ -283,61 +357,18 @@ uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 	event_spacing = latency_packing + ctrl_spacing +
 			EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
-	/* Check if aux context allocated before we are creating ISO */
-	if (adv->lll.aux) {
-		aux = HDR_LLL2ULL(adv->lll.aux);
-	} else {
-		aux = NULL;
-	}
-
-	/* Calculate overheads due to extended advertising. */
-	if (aux && aux->is_started) {
-		ticks_slot_aux = aux->ull.ticks_slot;
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
-						  aux->ull.ticks_prepare_to_start);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
-		ticks_slot_aux += ticks_slot_overhead;
-	} else {
-		ticks_slot_aux = 0U;
-	}
-
-	/* Calculate overheads due to periodic advertising. */
-	sync = HDR_LLL2ULL(lll_adv_sync);
-	if (sync->is_started) {
-		ticks_slot_sync = sync->ull.ticks_slot;
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
-						  sync->ull.ticks_prepare_to_start);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
-		ticks_slot_sync += ticks_slot_overhead;
-	} else {
-		ticks_slot_sync = 0U;
-	}
-
-	/* Calculate total overheads due to extended and periodic advertising */
-	if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
-		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
-	} else {
-		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
-	}
-
-	/* Calculate max available ISO event spacing */
-	slot_overhead = HAL_TICKER_TICKS_TO_US(ticks_slot_overhead);
-	if (slot_overhead < iso_interval_us) {
-		event_spacing_max = iso_interval_us - slot_overhead;
-	} else {
-		event_spacing_max = 0U;
-	}
-
 	/* Check if ISO interval too small to fit the calculated BIG event
 	 * timing required for the supplied BIG create parameters.
 	 */
 	if (event_spacing > event_spacing_max) {
+
+		/* Check if we can reduce RTN to meet eventing spacing */
+		if (rtn) {
+			rtn--;
+
+			goto ll_big_create_rtn_retry;
+		}
+
 		/* Release allocated link buffers */
 		ll_rx_link_release(link_cmplt);
 		ll_rx_link_release(link_term);
