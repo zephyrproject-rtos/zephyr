@@ -19,6 +19,10 @@ class TEUDPReceiveSession():
         return self.address
 
     def on_packet_received(self, data):
+        if self._packet_limit_reached_():
+            print(f'udp receive exceeds 255 packets -> {self.address[0]}:{self.address[1]}')
+            return
+
         if self._validate_packet_(data):
             self.packets_received += 1
         else:
@@ -27,7 +31,7 @@ class TEUDPReceiveSession():
         self.last_packet_received_at = time.monotonic()
 
     def update(self):
-        if (time.monotonic() - self.last_packet_received_at) > self.timeout:
+        if self._packet_limit_reached_() or self._timeout_reached_():
             return (self.packets_received, self.packets_dropped)
         return None
 
@@ -39,9 +43,16 @@ class TEUDPReceiveSession():
                 return False
         return True
 
+    def _packet_limit_reached_(self) -> bool:
+        return (self.packets_received + self.packets_dropped) == 255
+
+    def _timeout_reached_(self) -> bool:
+        return (time.monotonic() - self.last_packet_received_at) > self.timeout
+
 class TEUDPReceive():
     def __init__(self):
         self.running = True
+        self.on_terminated = None
         self.thread = threading.Thread(target=self._target_)
         self.sessions = []
 
@@ -49,8 +60,13 @@ class TEUDPReceive():
         self.thread.start()
 
     def stop(self):
+        if self.thread == threading.current_thread():
+            return
         self.running = False
         self.thread.join(1)
+
+    def signal_terminated(self, on_terminated):
+        self.on_terminated = on_terminated
 
     def _target_(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -59,7 +75,7 @@ class TEUDPReceive():
 
         while self.running:
             try:
-                ready_to_read, _, _ = select.select([sock], [sock], [], 0.5)
+                ready_to_read, _, _ = select.select([sock], [], [], 0.5)
 
                 if not ready_to_read:
                     self._update_sessions_(sock)
@@ -74,6 +90,8 @@ class TEUDPReceive():
 
             except Exception as e:
                 print(e)
+                if self.on_terminated is not None:
+                    self.on_terminated()
                 break
 
         sock.close()
