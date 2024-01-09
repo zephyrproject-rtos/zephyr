@@ -471,8 +471,8 @@ static int bq24190_init(const struct device *dev)
 }
 
 static const struct charger_driver_api bq24190_driver_api = {
-	.get_property = &bq24190_get_prop,
-	.set_property = &bq24190_set_prop,
+	.get_property = bq24190_get_prop,
+	.set_property = bq24190_set_prop,
 };
 
 #define BQ24190_INIT(inst)                                                                         \
@@ -486,7 +486,7 @@ static const struct charger_driver_api bq24190_driver_api = {
 		.vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &bq24190_init, NULL, &bq24190_data_##inst,                     \
+	DEVICE_DT_INST_DEFINE(inst, bq24190_init, NULL, &bq24190_data_##inst,                      \
 			      &bq24190_config_##inst, POST_KERNEL, CONFIG_CHARGER_INIT_PRIORITY,   \
 			      &bq24190_driver_api);
 
