@@ -22,20 +22,31 @@
 extern "C" {
 #endif
 
+/* Bluetooth spec v5.4 Vol 4, Part A Table 2.1: HCI packet indicators
+ * The following definitions are intended for use with the UART Transport Layer and
+ * may be reused with other transport layers if desired.
+ */
+#define BT_HCI_H4_NONE                  0x00    /* None of the known packet types */
+#define BT_HCI_H4_CMD                   0x01    /* HCI Command packet */
+#define BT_HCI_H4_ACL                   0x02    /* HCI ACL Data packet */
+#define BT_HCI_H4_SCO                   0x03    /* HCI Synchronous Data packet */
+#define BT_HCI_H4_EVT                   0x04    /* HCI Event packet */
+#define BT_HCI_H4_ISO                   0x05    /* HCI ISO Data packet */
+
 /* Special own address types for LL privacy (used in adv & scan parameters) */
-#define BT_HCI_OWN_ADDR_RPA_OR_PUBLIC  0x02
-#define BT_HCI_OWN_ADDR_RPA_OR_RANDOM  0x03
-#define BT_HCI_OWN_ADDR_RPA_MASK       0x02
+#define BT_HCI_OWN_ADDR_RPA_OR_PUBLIC   0x02
+#define BT_HCI_OWN_ADDR_RPA_OR_RANDOM   0x03
+#define BT_HCI_OWN_ADDR_RPA_MASK        0x02
 
 #define BT_HCI_PEER_ADDR_RPA_UNRESOLVED 0xfe
 #define BT_HCI_PEER_ADDR_ANONYMOUS      0xff
 
-#define BT_ENC_KEY_SIZE_MIN                     0x07
-#define BT_ENC_KEY_SIZE_MAX                     0x10
+#define BT_ENC_KEY_SIZE_MIN             0x07
+#define BT_ENC_KEY_SIZE_MAX             0x10
 
-#define BT_HCI_ADV_HANDLE_INVALID 0xff
-#define BT_HCI_SYNC_HANDLE_INVALID 0xffff
-#define BT_HCI_PAWR_SUBEVENT_MAX 128
+#define BT_HCI_ADV_HANDLE_INVALID       0xff
+#define BT_HCI_SYNC_HANDLE_INVALID      0xffff
+#define BT_HCI_PAWR_SUBEVENT_MAX        128
 
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.3 HCI Synchronous Data Packets */
 struct bt_hci_sco_hdr {

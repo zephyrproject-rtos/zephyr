@@ -33,11 +33,6 @@ LOG_MODULE_REGISTER(psoc6_bless);
 
 #define DT_DRV_COMPAT infineon_cat1_bless_hci
 
-#define PACKET_TYPE_HCI_COMMAND     0X1
-#define PACKET_TYPE_HCI_ACL_DATA    0x2
-#define PACKET_TYPE_HCI_SYNCHRONOUS 0X3
-#define PACKET_TYPE_HCI_EVENT       0X4
-
 #define BLE_LOCK_TMOUT_MS       (1000)
 #define BLE_THREAD_SEM_TMOUT_MS (1000)
 
@@ -112,7 +107,7 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 	hci_rx = eventParam;
 
 	switch (hci_rx->packetType) {
-	case PACKET_TYPE_HCI_EVENT:
+	case BT_HCI_H4_EVT:
 		buf = bt_buf_get_evt(hci_rx->data[0], 0, K_NO_WAIT);
 		if (!buf) {
 			LOG_ERR("Failed to allocate the buffer for RX: EVENT ");
@@ -120,7 +115,7 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 		}
 
 		break;
-	case PACKET_TYPE_HCI_ACL_DATA:
+	case BT_HCI_H4_ACL:
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 		if (!buf) {
 			LOG_ERR("Failed to allocate the buffer for RX: ACL ");
@@ -168,10 +163,10 @@ static int psoc6_bless_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		hci_tx_pkt.packetType = PACKET_TYPE_HCI_ACL_DATA;
+		hci_tx_pkt.packetType = BT_HCI_H4_ACL;
 		break;
 	case BT_BUF_CMD:
-		hci_tx_pkt.packetType = PACKET_TYPE_HCI_COMMAND;
+		hci_tx_pkt.packetType = BT_HCI_H4_CMD;
 		break;
 	default:
 		net_buf_unref(buf);
