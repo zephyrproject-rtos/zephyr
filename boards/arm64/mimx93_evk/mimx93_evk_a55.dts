@@ -67,3 +67,19 @@
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-names = "default";
 };
+
+&gpio1{
+	status = "okay";
+};
+
+&gpio2{
+	status = "okay";
+};
+
+&gpio3{
+	status = "okay";
+};
+
+&gpio4{
+	status = "okay";
+};
