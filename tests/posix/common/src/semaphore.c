@@ -107,7 +107,7 @@ ZTEST(posix_apis, test_semaphore)
 	semaphore_test(&sema);
 }
 
-unsigned int nsem_get_ref_count(sem_t *sem);
+int nsem_get_ref_count(sem_t *sem);
 size_t nsem_get_list_len(void);
 #define N_LOOPS 999
 
