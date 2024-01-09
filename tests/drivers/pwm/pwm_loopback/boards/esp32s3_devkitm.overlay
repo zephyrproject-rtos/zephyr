@@ -19,10 +19,11 @@
 	mcpwm0_default: mcpwm0_default {
 		group1 {
 			pinmux = <MCPWM0_OUT0A_GPIO2>;
-			output-enable;
+			input-enable;
 		};
 		group2 {
-			pinmux = <MCPWM0_CAP0_GPIO4>;
+			pinmux = <MCPWM0_CAP0_GPIO2>;
+			output-enable;
 		};
 	};
 };
