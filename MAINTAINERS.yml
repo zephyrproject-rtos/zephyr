@@ -356,12 +356,9 @@ Bluetooth Host:
   collaborators:
     - hermabe
     - alwa-nordic
-    - Vudentz
     - Thalley
-    - asbjornsabo
     - sjanc
     - theob-pro
-    - kruithofa
   files:
     - drivers/bluetooth/
     - subsys/bluetooth/host/
