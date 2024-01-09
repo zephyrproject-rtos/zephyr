@@ -15,6 +15,21 @@
 #include "bap_common.h"
 #include "common.h"
 
+/* Zephyr Controller works best while Extended Advertising interval to be a multiple
+ * of the ISO Interval minus 10 ms (max. advertising random delay). This is
+ * required to place the AUX_ADV_IND PDUs in a non-overlapping interval with the
+ * Broadcast ISO radio events.
+ */
+#define BT_LE_EXT_ADV_CUSTOM \
+		BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+				BT_LE_ADV_OPT_USE_NAME, \
+				0x0080, 0x0080, NULL)
+
+#define BT_LE_PER_ADV_CUSTOM \
+		BT_LE_PER_ADV_PARAM(0x0048, \
+				    0x0048, \
+				    BT_LE_PER_ADV_OPT_NONE)
+
 #define BROADCAST_STREMT_CNT    CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
 #define BROADCAST_ENQUEUE_COUNT 2U
 #define TOTAL_BUF_NEEDED        (BROADCAST_ENQUEUE_COUNT * BROADCAST_STREMT_CNT)
@@ -171,14 +186,14 @@ static void setup_extended_adv(struct bt_le_ext_adv **adv)
 	int err;
 
 	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, adv);
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CUSTOM, NULL, adv);
 	if (err != 0) {
 		FAIL("Unable to create extended advertising set: %d\n", err);
 		return;
 	}
 
 	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_DEFAULT);
+	err = bt_le_per_adv_set_param(*adv, BT_LE_PER_ADV_CUSTOM);
 	if (err) {
 		FAIL("Failed to set periodic advertising parameters: %d\n", err);
 		return;

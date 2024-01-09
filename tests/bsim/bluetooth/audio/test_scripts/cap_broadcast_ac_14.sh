@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="cap_unicast_ac_14"
+SIMULATION_ID="cap_broadcast_ac_14"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=60
 
@@ -41,14 +41,14 @@ Execute_AC_14 24_1_1
 Execute_AC_14 24_2_1
 Execute_AC_14 32_1_1
 Execute_AC_14 32_2_1
-# Execute_AC_14 441_1_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 441_2_1 # Failed to create BIG: -22
-# Execute_AC_14 48_1_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_14 441_1_1
+Execute_AC_14 441_2_1
+Execute_AC_14 48_1_1
 Execute_AC_14 48_2_1
-# Execute_AC_14 48_3_1 # BT_ISO_FLAGS_ERROR
+Execute_AC_14 48_3_1
 Execute_AC_14 48_4_1
-# Execute_AC_14 48_5_1 # BT_ISO_FLAGS_ERROR
-# Execute_AC_14 48_6_1 # Failed to create BIG: -22
+Execute_AC_14 48_5_1
+Execute_AC_14 48_6_1
 
 # High reliability
 # Execute_AC_14 8_1_2 # BT_ISO_FLAGS_ERROR
