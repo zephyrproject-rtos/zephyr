@@ -387,6 +387,7 @@ endmenu
 
 config MAIN_STACK_SIZE
 	default 4096 if 64BIT
+	default 768 if !64BIT
 
 config ISR_STACK_SIZE
 	default 4096 if 64BIT
@@ -402,6 +403,7 @@ config IPM_CONSOLE_STACK_SIZE
 
 config TEST_EXTRA_STACK_SIZE
 	default 2048 if 64BIT
+	default 128 if !64BIT
 
 config CMSIS_THREAD_MAX_STACK_SIZE
 	default 2048 if 64BIT
