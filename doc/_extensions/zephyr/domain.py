@@ -249,7 +249,7 @@ class ZephyrDomain(Domain):
     directives = {"code-sample": CodeSampleDirective}
 
     object_types: Dict[str, ObjType] = {
-        "code-sample": ObjType("code sample", "code-sample"),
+        "code-sample": ObjType("code-sample", "code-sample"),
     }
 
     initial_data: Dict[str, Any] = {"code-samples": {}}
@@ -267,9 +267,9 @@ class ZephyrDomain(Domain):
     def get_objects(self):
         for _, code_sample in self.data["code-samples"].items():
             yield (
+                code_sample["id"],
                 code_sample["name"],
-                code_sample["name"],
-                "code sample",
+                "code-sample",
                 code_sample["docname"],
                 code_sample["id"],
                 1,
