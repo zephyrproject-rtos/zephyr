@@ -439,7 +439,7 @@ static void udc_stm32_mem_init(const struct device *dev)
 	/* The documentation is not clear at all about RX FiFo size requirement,
 	 * Allocate a minimum of 0x40 words, which seems to work reliably.
 	 */
-	words = MAX(0x40, cfg->ep_mps / 4);
+	words = MAX(0x40, cfg->ep_mps / 2);
 	HAL_PCDEx_SetRxFiFo(&priv->pcd, words);
 	priv->occupied_mem = words * 4;
 
@@ -1090,6 +1090,9 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
 	data->caps.mps0 = UDC_MPS0_64;
+	if (usb_dc_stm32_get_maximum_speed() == USB_OTG_SPEED_HIGH) {
+		data->caps.hs = true;
+	}
 
 	priv->dev = dev;
 	priv->irq = DT_INST_IRQN(0);
