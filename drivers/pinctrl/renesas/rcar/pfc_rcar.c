@@ -338,7 +338,10 @@ int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 
 	/* Select function for pin */
 	if ((pin->flags & RCAR_PIN_FLAGS_FUNC_SET) != 0U) {
-		pfc_rcar_set_ipsr(pfc_base, &pin->func);
+
+		if ((pin->flags & RCAR_PIN_FLAGS_FUNC_DUMMY) == 0U) {
+			pfc_rcar_set_ipsr(pfc_base, &pin->func);
+		}
 
 		if (RCAR_IS_GP_PIN(pin->pin)) {
 			pfc_rcar_set_gpsr(pfc_base, pin->pin, true);
