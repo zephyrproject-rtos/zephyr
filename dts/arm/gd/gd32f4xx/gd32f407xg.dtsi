@@ -5,8 +5,8 @@
  */
 
 #include <mem.h>
-#include <gigadevice/gd32f4xx/gd32f407.dtsi>
+#include <gd/gd32f4xx/gd32f407.dtsi>
 
 &flash0 {
-	reg = <0x08000000 DT_SIZE_K(3072)>;
+	reg = <0x08000000 DT_SIZE_K(1024)>;
 };
