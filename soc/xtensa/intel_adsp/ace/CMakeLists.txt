@@ -11,6 +11,7 @@ zephyr_library_sources(
   power_down.S
   power.c
   boot.c
+  timestamp.c
   )
 
 zephyr_include_directories(include)
