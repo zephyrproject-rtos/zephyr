@@ -11,6 +11,7 @@ Hardware Support
    cache/index.rst
    emulator/index.rst
    emulator/bus_emulators.rst
+   emulator/gpio_emulator.rst
    peripherals/index.rst
    pinctrl/index.rst
    porting/index
