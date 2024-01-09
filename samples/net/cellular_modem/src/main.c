@@ -18,9 +18,12 @@
 #define SAMPLE_TEST_ENDPOINT_HOSTNAME		("test-endpoint.com")
 #define SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT	(7780)
 #define SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT	(7781)
-#define SAMPLE_TEST_PACKET_SIZE			(1024)
+#define SAMPLE_TEST_ENDPOINT_UDP_TRANSMIT_PORT	(7782)
+#define SAMPLE_TEST_PACKET_SIZE			(1300)
 #define SAMPLE_TEST_ECHO_PACKETS		(16)
 #define SAMPLE_TEST_TRANSMIT_PACKETS		(128)
+#define SAMPLE_TEST_RECEIVE_PACKETS		(255)
+#define SAMPLE_TEST_RECEIVE_INTERVAL_CS		(5)
 
 const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 
@@ -30,6 +33,26 @@ static bool sample_test_dns_in_progress;
 static struct dns_addrinfo sample_test_dns_addrinfo;
 
 K_SEM_DEFINE(dns_query_sem, 0, 1);
+
+struct udp_transmit_req {
+	/* Number of packets to receive */
+	uint8_t packets_to_transmit;
+	/* Interval between packets in centi seconds (1/100) */
+	uint8_t packet_interval_cs;
+	/* Packet size in big endian byte order */
+	uint8_t packet_size[2];
+};
+
+static inline void sample_init_udp_transmit_req(struct udp_transmit_req *req,
+						uint8_t packets_to_transmit,
+						uint8_t packet_interval_cs,
+						uint16_t packet_size)
+{
+	req->packets_to_transmit = packets_to_transmit;
+	req->packet_interval_cs = packet_interval_cs;
+	req->packet_size[0] = (packet_size >> 8) & 0xFF;
+	req->packet_size[1] = packet_size & 0xFF;
+}
 
 static uint8_t sample_prng_random(void)
 {
@@ -203,7 +226,6 @@ int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 	return 0;
 }
 
-
 int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 {
 	int ret;
@@ -274,6 +296,93 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen)
 	return 0;
 }
 
+int sample_receive_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen)
+{
+	struct udp_transmit_req transmit_req;
+	int ret;
+	int socket_fd;
+	struct zsock_pollfd pfd;
+	uint32_t packets_received = 0;
+	uint32_t packets_dropped = 0;
+	uint32_t received_last_ms;
+
+	sample_init_udp_transmit_req(&transmit_req,
+				     SAMPLE_TEST_RECEIVE_PACKETS,
+				     SAMPLE_TEST_RECEIVE_INTERVAL_CS,
+				     SAMPLE_TEST_PACKET_SIZE);
+
+	printk("Opening UDP socket\n");
+
+	socket_fd = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (socket_fd < 0) {
+		printk("Failed to open socket\n");
+		return -1;
+	}
+
+	printk("Socket opened\n");
+
+	if (ai_addr->sa_family == AF_INET) {
+		net_sin(ai_addr)->sin_port = htons(SAMPLE_TEST_ENDPOINT_UDP_TRANSMIT_PORT);
+	} else if (ai_addr->sa_family == AF_INET6) {
+		net_sin6(ai_addr)->sin6_port = htons(SAMPLE_TEST_ENDPOINT_UDP_TRANSMIT_PORT);
+	} else {
+		printk("Unsupported address family\n");
+		return -1;
+	}
+
+	printk("Sending transmit request\n");
+	ret = zsock_sendto(socket_fd, &transmit_req, sizeof(transmit_req), 0,
+				ai_addr, ai_addrlen);
+
+	if (ret != sizeof(transmit_req)) {
+		printk("Failed to send transmit request\n");
+		return -EAGAIN;
+	}
+
+	received_last_ms = k_uptime_get_32();
+	for (size_t i = 0; i < SAMPLE_TEST_RECEIVE_PACKETS; i++) {
+		/* Await packet from server */
+		pfd.fd = socket_fd;
+		pfd.events = ZSOCK_POLLIN;
+		pfd.revents = 0;
+		ret = zsock_poll(&pfd, 1, 10000);
+		if (ret != 1) {
+			printk("Timed out waiting to receive packet from server\n");
+			return -EAGAIN;
+		}
+
+		/* Receive and validate packet */
+		ret = zsock_recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
+		if (ret != SAMPLE_TEST_PACKET_SIZE) {
+			printk("Received incorrect packet size (%u)\n", ret);
+			packets_dropped++;
+			continue;
+		}
+
+		if (memcmp(sample_test_packet, sample_recv_buffer,
+			   sizeof(sample_recv_buffer)) != 0) {
+			printk("Received invalid packet\n");
+			packets_dropped++;
+			continue;
+		}
+
+		printk("Received valid packet\n");
+		packets_received++;
+	}
+
+	printk("Received %u packets\n", packets_received);
+	printk("Dropped %u packets\n", packets_dropped);
+
+	printk("Close UDP socket\n");
+	ret = zsock_close(socket_fd);
+	if (ret < 0) {
+		printk("Failed to close socket\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	uint32_t raised_event;
@@ -331,6 +440,14 @@ int main(void)
 
 	if (ret < 0) {
 		printk("Failed to send packets\n");
+		return -1;
+	}
+
+	ret = sample_receive_packets(&sample_test_dns_addrinfo.ai_addr,
+				      sample_test_dns_addrinfo.ai_addrlen);
+
+	if (ret < 0) {
+		printk("Failed to receive packets\n");
 		return -1;
 	}
 
