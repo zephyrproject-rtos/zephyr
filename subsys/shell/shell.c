@@ -1315,19 +1315,14 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		  void *arg_log_level)
 {
 	struct shell *sh = shell_handle;
-	bool log_backend = (bool)arg_log_backend;
-	uint32_t log_level = POINTER_TO_UINT(arg_log_level);
 	int err;
+
+	z_flag_handle_log_set(sh, (bool)arg_log_backend);
+	sh->ctx->log_level = POINTER_TO_UINT(arg_log_level);
 
 	err = sh->iface->api->enable(sh->iface, false);
 	if (err != 0) {
 		return;
-	}
-
-	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) && log_backend
-	    && !IS_ENABLED(CONFIG_SHELL_START_OBSCURED)) {
-		z_shell_log_backend_enable(sh->log_backend, (void *)sh,
-					   log_level);
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
@@ -1430,6 +1425,11 @@ int shell_start(const struct shell *sh)
 		return -ENOTSUP;
 	}
 
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) && z_flag_handle_log_get(sh)
+	    && !z_flag_obscure_get(sh)) {
+		z_shell_log_backend_enable(sh->log_backend, (void *)sh, sh->ctx->log_level);
+	}
+
 	k_mutex_lock(&sh->ctx->wr_mtx, K_FOREVER);
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
@@ -1459,6 +1459,8 @@ int shell_stop(const struct shell *sh)
 	}
 
 	state_set(sh, SHELL_STATE_INITIALIZED);
+
+	z_shell_log_backend_disable(sh->log_backend);
 
 	return 0;
 }
