@@ -15,7 +15,7 @@
 struct nsem_obj {
 	sys_snode_t snode;
 	sem_t sem;
-	unsigned int ref_count;
+	int ref_count;
 	char *name;
 };
 
@@ -53,17 +53,20 @@ static void nsem_cleanup(struct nsem_obj *nsem)
 	if (nsem != NULL) {
 		if (nsem->name != NULL) {
 			k_free(nsem->name);
-			nsem->name = NULL;
 		}
 		k_free(nsem);
-		nsem = NULL;
 	}
 }
 
 /* Remove a named semaphore if it isn't unsed */
-static void nsem_remove_if_unused(struct nsem_obj *nsem)
+static void nsem_unref(struct nsem_obj *nsem)
 {
+	nsem->ref_count -= 1;
+	__ASSERT(nsem->ref_count >= 0, "ref_count may not be negative");
+
 	if (nsem->ref_count == 0) {
+		__ASSERT(nsem->name == NULL, "ref_count is 0 but sem is not unlinked");
+
 		sys_slist_find_and_remove(&nsem_list, (sys_snode_t *) nsem);
 
 		/* Free nsem */
@@ -255,7 +258,7 @@ sem_t *sem_open(const char *name, int oflags, ...)
 			goto error_unlock;
 		}
 
-		__ASSERT_NO_MSG(nsem->ref_count != UINT_MAX);
+		__ASSERT_NO_MSG(nsem->ref_count != INT_MAX);
 		nsem->ref_count++;
 		goto unlock;
 	}
@@ -282,7 +285,9 @@ sem_t *sem_open(const char *name, int oflags, ...)
 	}
 
 	strcpy(nsem->name, name);
-	nsem->ref_count = 1;
+
+	/* 1 for this open instance, +1 for the linked name */
+	nsem->ref_count = 2;
 
 	(void)k_sem_init(&nsem->sem, value, CONFIG_SEM_VALUE_MAX);
 
@@ -328,8 +333,7 @@ int sem_unlink(const char *name)
 
 	k_free(nsem->name);
 	nsem->name = NULL;
-
-	nsem_remove_if_unused(nsem);
+	nsem_unref(nsem);
 
 unlock:
 	nsem_list_unlock();
@@ -345,28 +349,18 @@ int sem_close(sem_t *sem)
 		return -1;
 	}
 
-	__ASSERT_NO_MSG(nsem != NULL);
-
 	nsem_list_lock();
-
-	__ASSERT_NO_MSG(nsem->ref_count != 0);
-	nsem->ref_count--;
-
-	/* remove sem if marked for unlink */
-	if (nsem->name == NULL) {
-		nsem_remove_if_unused(nsem);
-	}
-
+	nsem_unref(nsem);
 	nsem_list_unlock();
 	return 0;
 }
 
 #ifdef CONFIG_ZTEST
 /* Used by ztest to get the ref count of a named semaphore */
-unsigned int nsem_get_ref_count(sem_t *sem)
+int nsem_get_ref_count(sem_t *sem)
 {
 	struct nsem_obj *nsem = CONTAINER_OF(sem, struct nsem_obj, sem);
-	unsigned int ref_count;
+	int ref_count;
 
 	__ASSERT_NO_MSG(sem != NULL);
 	__ASSERT_NO_MSG(nsem != NULL);
