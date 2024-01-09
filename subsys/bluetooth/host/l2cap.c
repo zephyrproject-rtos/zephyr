@@ -72,8 +72,10 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 
 struct l2cap_tx_meta_data {
 	uint16_t cid;
-	bt_conn_tx_cb_t cb;
-	void *user_data;
+	/* FIXME: remove this.
+	 * `servers` gets messed up somehow if not present
+	 */
+	uint16_t pad;
 };
 
 struct l2cap_tx_meta {
@@ -101,16 +103,9 @@ static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
 static void l2cap_tx_buf_destroy(struct bt_conn *conn, struct net_buf *buf, int err)
 {
 	struct l2cap_tx_meta_data *data = l2cap_tx_meta_data(buf);
-	bt_conn_tx_cb_t cb = data->cb;
-	void *cb_user_data = data->user_data;
 
 	free_tx_meta_data(data);
 	net_buf_unref(buf);
-
-	/* Make sure to call associated callback, if any */
-	if (cb) {
-		cb(conn, cb_user_data, err);
-	}
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -1855,8 +1850,6 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	struct l2cap_tx_meta_data *data = user_data;
 	struct bt_l2cap_chan *chan;
-	bt_conn_tx_cb_t cb = data->cb;
-	void *cb_user_data = data->user_data;
 	uint16_t cid = data->cid;
 
 	LOG_DBG("conn %p CID 0x%04x err %d", conn, cid, err);
@@ -1864,28 +1857,20 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data, int err)
 	free_tx_meta_data(data);
 
 	if (err) {
-		if (cb) {
-			cb(conn, cb_user_data, err);
-		}
+		LOG_DBG("error %d when sending SDU", err);
 
 		return;
 	}
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
 	if (!chan) {
-		/* Received SDU sent callback for disconnected channel */
-		if (cb) {
-			cb(conn, cb_user_data, -ESHUTDOWN);
-		}
+		LOG_DBG("got SDU sent cb for disconnected chan (CID %u)", cid);
+
 		return;
 	}
 
 	if (chan->ops->sent) {
 		chan->ops->sent(chan);
-	}
-
-	if (cb) {
-		cb(conn, cb_user_data, 0);
 	}
 
 	/* Resume the current channel */
@@ -3173,8 +3158,6 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 
 	/* Put buffer on TX queue */
 	data->cid = le_chan->tx.cid;
-	data->cb = NULL;
-	data->user_data = NULL;
 	l2cap_tx_meta_data(buf) = data;
 	net_buf_put(&le_chan->tx_queue, buf);
 
