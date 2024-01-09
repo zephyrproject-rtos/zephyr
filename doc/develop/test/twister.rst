@@ -993,8 +993,8 @@ on those platforms.
 
 .. note::
 
-  Currently only boards with support for both pyocd and nrfjprog are supported
-  with the hardware map features. Boards that require other runners to flash the
+  Currently only boards with support for pyocd, nrfjprog, jlink, openocd, or dediprog
+  are supported with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
 
 Hardware map allows to set ``--device-flash-timeout`` and ``--device-flash-with-test``
@@ -1360,3 +1360,12 @@ It provides a list of the most commonly used keywords together with links to the
 
 It's possible to extend the framework by adding new keywords expressed directly in Robot test suite files, as an external Python library or, like Renode does it, dynamically via XML-RPC.
 For details see the `extending Robot Framework <https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#extending-robot-framework>`_ section in the official Robot documentation.
+
+Running a single testsuite
+==========================
+
+To run a single testsuite instead of a whole group of test you can run:
+
+.. code-block:: bash
+
+   $ twister -p qemu_riscv32 -s tests/kernel/interrupt/arch.shared_interrupt
