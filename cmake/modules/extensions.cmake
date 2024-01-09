@@ -3328,7 +3328,7 @@ function(zephyr_check_cache variable)
     # without cleaning first
     if(cli_argument)
       if(NOT ((CACHED_${variable} STREQUAL cli_argument) OR (${variable}_DEPRECATED STREQUAL cli_argument)))
-        message(WARNING "The build directory must be cleaned pristinely when "
+        message(FATAL_ERROR "The build directory must be cleaned pristinely when "
                         "changing ${variable_text},\n"
                         "Current value=\"${CACHED_${variable}}\", "
                         "Ignored value=\"${cli_argument}\"")
