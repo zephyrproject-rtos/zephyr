@@ -14,4 +14,4 @@ RunTest mesh_access_pub_transmit_delayable_retr_1d1 \
 conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_access_pub_transmit_delayable_retr_psa \
-	access_tx_period_delayable access_rx_period_delayable
+	access_tx_transmit_delayable access_rx_transmit_delayable

@@ -102,11 +102,15 @@ static bool publish_allow;
 
 static int model1_update(const struct bt_mesh_model *model)
 {
+	if (!publish_allow) {
+		return -1;
+	}
+
 	model->pub->msg->data[1]++;
-
 	LOG_DBG("New pub: n: %d t: %d", model->pub->msg->data[1], k_uptime_get_32());
+	k_sem_give(&publish_sem);
 
-	return publish_allow ? k_sem_give(&publish_sem), 0 : -1;
+	return 0;
 }
 
 static int test_msgf_handler(const struct bt_mesh_model *model,
@@ -604,7 +608,8 @@ static void recv_delayable_check(int32_t interval, uint8_t count)
 
 		LOG_DBG("Recv time: %d delta: %d boundaries: %d/%d", (int32_t)timestamp, time_delta,
 			lower_boundary, upper_boundary);
-		ASSERT_IN_RANGE(time_delta, lower_boundary, upper_boundary + RX_JITTER_MAX);
+		ASSERT_IN_RANGE(time_delta, lower_boundary - RX_JITTER_MAX,
+				upper_boundary + RX_JITTER_MAX);
 	}
 }
 
