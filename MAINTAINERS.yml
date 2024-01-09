@@ -2994,8 +2994,7 @@ GD32 Platforms:
     - drivers/*/*gd32*
     - dts/*/gigadevice/
     - dts/bindings/*/*gd32*
-    - soc/arm/gigadevice/
-    - soc/riscv/gd_gd32/
+    - soc/*/gd_gd32/
     - scripts/west_commands/*/*gd32*
   labels:
     - "platform: GD32"
