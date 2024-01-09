@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 #include <zephyr/net/socket.h>
+#include <zephyr/net/socket_service.h>
 
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
 struct socket_info {
@@ -78,6 +79,57 @@ int walk_sockets(struct k_obj_core *obj_core, void *user_data)
 }
 #endif /* CONFIG_NET_SOCKETS_OBJ_CORE */
 
+#if defined(CONFIG_NET_SOCKETS_SERVICE)
+
+#if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
+#define MAX_OWNER_LEN 32
+#else
+#define MAX_OWNER_LEN sizeof("<unknown>")
+#endif
+
+static void walk_socket_services(const struct net_socket_service_desc *svc,
+				 void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+	int len = 0;
+	static char pev_output[sizeof("xxx,") * CONFIG_NET_SOCKETS_POLL_MAX];
+	static char owner[MAX_OWNER_LEN + 1];
+
+	NET_ASSERT(svc->pev != NULL);
+
+	for (int i = 0; i < svc->pev_len; i++) {
+		len += snprintk(pev_output + len, sizeof(pev_output) - len,
+				"%d,", svc->pev[i].event.fd);
+	}
+
+	if (len > 0) {
+		pev_output[len - 1] = '\0';
+	}
+
+#if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
+	len = strlen(svc->owner);
+
+	int offset = len > sizeof(owner) ?
+			len -= (sizeof(owner) - 3) : 0;
+
+	snprintk(owner, sizeof(owner), "%s%s",
+		 offset == 0 ? "" : "...",
+		 svc->owner + offset + 1);
+#else
+	snprintk(owner, sizeof(owner), "<unknown>");
+#endif
+
+	PR("%32s  %-6s  %-5d %s\n",
+	   owner,
+	   svc->pev->work.handler == NULL ? "SYNC" : "ASYNC",
+	   svc->pev_len, pev_output);
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_SOCKETS_SERVICE */
+
 static int cmd_net_sockets(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
@@ -113,13 +165,51 @@ static int cmd_net_sockets(const struct shell *sh, size_t argc, char *argv[])
 			   count.closed == 1 ? "" : "s");
 		}
 	}
-#else
+
+#if defined(CONFIG_NET_SOCKETS_SERVICE)
+	PR("\n");
+#endif
+#endif
+
+#if defined(CONFIG_NET_SOCKETS_SERVICE)
+	struct net_shell_user_data svc_user_data;
+	int svc_count = 0;
+
+	svc_user_data.sh = sh;
+	svc_user_data.user_data = &svc_count;
+
+	PR("Services:\n");
+	PR("%32s  %-6s  %-5s %s\n",
+	   "Owner", "Mode", "Count", "FDs");
+	PR("\n");
+
+	net_socket_service_foreach(walk_socket_services, (void *)&svc_user_data);
+
+	if (svc_count == 0) {
+		PR("No socket services found.\n");
+	} else {
+		PR("\n%d socket service%s found.\n", svc_count,
+		   svc_count == 1 ? "" : "s");
+	}
+
+#if !defined(CONFIG_NET_SOCKETS_OBJ_CORE)
+	PR("\n");
+#endif
+#endif
+
+#if !defined(CONFIG_NET_SOCKETS_OBJ_CORE)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	PR_INFO("Set %s to enable %s support.\n",
 		"CONFIG_OBJ_CORE and CONFIG_NET_SOCKETS_OBJ_CORE",
 		"socket information");
+#endif
+#if !defined(CONFIG_NET_SOCKETS_SERVICE)
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	PR_INFO("Socket service not supported.\n");
 #endif
 
 	return 0;
