@@ -639,6 +639,7 @@ config BT_MESH_LABEL_NO_RECOVER
 
 menuconfig BT_MESH_ACCESS_DELAYABLE_MSG
 	bool "Access layer tx delayable message"
+	default y
 	help
 	  Enable following of the message transmitting recommendations, the Access layer
 	  specification. The recommendations are optional.
@@ -646,6 +647,16 @@ menuconfig BT_MESH_ACCESS_DELAYABLE_MSG
 	  intensive communication where the device receives a lot of requests that require responses.
 
 if BT_MESH_ACCESS_DELAYABLE_MSG
+
+config BT_MESH_ACCESS_DELAYABLE_MSG_CTX_ENABLED
+	bool "The delayable message in the notification message context"
+	default y
+	help
+	  Controls whether the delayable message feature is enabled by default in
+	  the message context of the opcode notifications. This allows the server part of any
+	  model to not bother about additional context configuration to enable the delayable message.
+	  Note that if this is disabled then all foundation models stop using the delayable message
+	  functionality.
 
 config BT_MESH_ACCESS_DELAYABLE_MSG_COUNT
 	int "Number of simultaneously delayed messages"
@@ -657,14 +668,14 @@ config BT_MESH_ACCESS_DELAYABLE_MSG_COUNT
 
 config BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE
 	int "Maximum delayable message storage chunk"
-	default 20
+	default 10
 	help
 	  Size of memory that Access layer uses to split model message to. It allocates
 	  a sufficient number of these chunks from the pool to store the full model payload.
 
 config BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_COUNT
 	int "Maximum number of available chunks"
-	default 20
+	default 40
 	help
 	  The maximum number of available chunks the Access layer allocates to store model payload.
 	  It is recommended to keep chunk size equal to the reasonable small value to prevent
