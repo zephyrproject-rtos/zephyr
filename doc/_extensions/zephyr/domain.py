@@ -80,6 +80,9 @@ class ConvertCodeSampleNode(SphinxTransform):
     default_priority = 100
 
     def apply(self):
+        if not self.config.zephyr_domain_apply_transforms:
+            return
+
         matcher = NodeMatcher(CodeSampleNode)
         for node in self.document.traverse(matcher):
             self.convert_node(node)
@@ -140,6 +143,9 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
     default_priority = 5  # before ReferencesResolver
 
     def run(self, **kwargs: Any) -> None:
+        if not self.config.zephyr_domain_apply_transforms:
+            return
+
         matcher = NodeMatcher(RelatedCodeSamplesNode)
         for node in self.document.traverse(matcher):
             id = node["id"]  # the ID of the node is the name of the doxygen group for which we
@@ -308,10 +314,16 @@ class CustomDoxygenGroupDirective(DoxygenGroupDirective):
 
     def run(self) -> List[Node]:
         nodes = super().run()
-        return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+
+        if self.config.zephyr_domain_apply_transforms:
+            return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+        else:
+            return nodes
 
 
 def setup(app):
+    app.add_config_value("zephyr_domain_apply_transforms", False, "env")
+
     app.add_domain(ZephyrDomain)
 
     app.add_transform(ConvertCodeSampleNode)
