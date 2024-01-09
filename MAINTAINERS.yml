@@ -353,10 +353,10 @@ Bluetooth controller:
 Bluetooth Host:
   status: maintained
   maintainers:
+    - jori-nordic
     - jhedberg
   collaborators:
     - hermabe
-    - jori-nordic
     - alwa-nordic
     - Vudentz
     - Thalley
