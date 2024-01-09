@@ -29,12 +29,6 @@ LOG_MODULE_REGISTER(hci_wba);
 
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
-#define HCI_CMD                 0x01
-#define HCI_ACL                 0x02
-#define HCI_SCO                 0x03
-#define HCI_EVT                 0x04
-#define HCI_ISO                 0x05
-
 #define BLE_CTRLR_STACK_BUFFER_SIZE 300
 
 #define MBLOCK_COUNT	(BLE_MBLOCKS_CALC(PREP_WRITE_LIST_SIZE, \
@@ -225,14 +219,14 @@ static int receive_data(const uint8_t *data, size_t len,
 	len -= sizeof(pkt_indicator);
 
 	switch (pkt_indicator) {
-	case HCI_EVT:
+	case BT_HCI_H4_EVT:
 		buf = treat_evt(data, len);
 		break;
-	case HCI_ACL:
+	case BT_HCI_H4_ACL:
 		buf = treat_acl(data, len + 1, ext_data, ext_len);
 		break;
-	case HCI_ISO:
-	case HCI_SCO:
+	case BT_HCI_H4_ISO:
+	case BT_HCI_H4_SCO:
 		buf = treat_iso(data, len + 1, ext_data, ext_len);
 		break;
 	default:
@@ -289,13 +283,13 @@ static int bt_hci_stm32wba_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		pkt_indicator = HCI_ACL;
+		pkt_indicator = BT_HCI_H4_ACL;
 		break;
 	case BT_BUF_CMD:
-		pkt_indicator = HCI_CMD;
+		pkt_indicator = BT_HCI_H4_CMD;
 		break;
 	case BT_BUF_ISO_OUT:
-		pkt_indicator = HCI_ISO;
+		pkt_indicator = BT_HCI_H4_ISO;
 		break;
 	default:
 		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));

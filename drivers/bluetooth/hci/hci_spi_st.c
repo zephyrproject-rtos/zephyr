@@ -29,11 +29,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_driver);
 
-#define HCI_CMD			0x01
-#define HCI_ACL			0x02
-#define HCI_SCO			0x03
-#define HCI_EVT			0x04
-#define HCI_ISO			0x05
 /* ST Proprietary extended event */
 #define HCI_EXT_EVT		0x82
 
@@ -378,10 +373,10 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		}
 		/* Use memmove instead of memcpy due to buffer overlapping */
 		memmove(msg + (1 + sizeof(*evt2)), msg + (1 + sizeof(*evt)), evt2->len);
-		/* Manage event as regular HCI_EVT */
+		/* Manage event as regular BT_HCI_H4_EVT */
 		__fallthrough;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2) */
-	case HCI_EVT:
+	case BT_HCI_H4_EVT:
 		switch (msg[EVT_HEADER_EVENT]) {
 		case BT_HCI_EVT_VENDOR:
 			/* Run event through interface handler */
@@ -419,7 +414,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
 		break;
-	case HCI_ACL:
+	case BT_HCI_H4_ACL:
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
 		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
@@ -431,7 +426,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		net_buf_add_mem(buf, &msg[1], len);
 		break;
 #if defined(CONFIG_BT_ISO)
-	case HCI_ISO:
+	case BT_HCI_H4_ISO:
 		struct bt_hci_iso_hdr iso_hdr;
 
 		buf = bt_buf_get_rx(BT_BUF_ISO_IN, timeout);
@@ -529,14 +524,14 @@ static int bt_spi_send(struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, HCI_ACL);
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
 		break;
 	case BT_BUF_CMD:
-		net_buf_push_u8(buf, HCI_CMD);
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_BUF_ISO_OUT:
-		net_buf_push_u8(buf, HCI_ISO);
+		net_buf_push_u8(buf, BT_HCI_H4_ISO);
 		break;
 #endif /* CONFIG_BT_ISO */
 	default:
