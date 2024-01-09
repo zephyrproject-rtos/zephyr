@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="gmap_unicast_ac_14"
+SIMULATION_ID="gmap_broadcast_ac_14"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=60
 
