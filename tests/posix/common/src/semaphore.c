@@ -294,4 +294,21 @@ ZTEST(posix_apis, test_named_semaphore)
 
 	/* All named semaphores should be destroyed here */
 	zassert_equal(nsem_get_list_len(), 0);
+
+	/* Create a new named sem to be used in the normal semaphore test */
+	sem1 = sem_open("nsem", O_CREAT, 0, 0);
+	zassert_equal(nsem_get_list_len(), 1);
+	zassert_equal(nsem_get_ref_count(sem1), 1);
+
+	/* Run the semaphore test with the created named semaphore */
+	semaphore_test(sem1);
+
+	/* List length and ref_count shouldn't change after the test */
+	zassert_equal(nsem_get_list_len(), 1);
+	zassert_equal(nsem_get_ref_count(sem1), 1);
+
+	/* Unless it is unlinked and closed */
+	sem_unlink("nsem");
+	sem_close(sem1);
+	zassert_equal(nsem_get_list_len(), 0);
 }
