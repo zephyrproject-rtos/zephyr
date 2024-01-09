@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/llext/symbol.h>
 
 /**
  * @brief Try to shorten a filename by removing the current directory
@@ -21,6 +22,7 @@ const char *ztest_relative_filename(const char *file)
 {
 	return file;
 }
+EXPORT_SYMBOL(ztest_relative_filename);
 
 /**
  * Default entry point for running registered unit tests.

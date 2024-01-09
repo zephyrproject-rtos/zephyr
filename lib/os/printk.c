@@ -154,6 +154,7 @@ void vprintk(const char *fmt, va_list ap)
 #endif
 	}
 }
+EXPORT_SYMBOL(vprintk);
 
 void z_impl_k_str_out(char *c, size_t n)
 {
