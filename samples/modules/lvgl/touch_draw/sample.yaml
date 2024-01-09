@@ -1,0 +1,18 @@
+sample:
+  description: LVGL touch draw demo
+  name: LVGL touch draw
+common:
+  modules:
+    - lvgl
+  harness: none
+  tags:
+    - samples
+    - display
+    - touch
+    - gui
+    - lvgl
+tests:
+  sample.display.lvgl.touch_draw:
+    filter: dt_chosen_enabled("zephyr,display") and dt_chosen_enabled("zephyr,lvgl-pointer-input")
+    min_flash: 250
+    min_ram: 32
