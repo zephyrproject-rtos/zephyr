@@ -221,6 +221,19 @@ static inline bool z_flag_sync_mode_set(const struct shell *sh, bool val)
 	return ret;
 }
 
+static inline bool z_flag_handle_log_get(const struct shell *sh)
+{
+	return sh->ctx->ctx.flags.handle_log == 1;
+}
+
+static inline bool z_flag_handle_log_set(const struct shell *sh, bool val)
+{
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, handle_log, val, ret);
+	return ret;
+}
+
 /* Function sends VT100 command to clear the screen from cursor position to
  * end of the screen.
  */
