@@ -103,6 +103,10 @@ config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	  Specifies number of handlers that can be registered to nrfx_gpiote driver
 	  by the user.
 
+config NRFX_GRTC
+	bool "GRTC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GRTC))
+
 config NRFX_I2S
 	bool
 
