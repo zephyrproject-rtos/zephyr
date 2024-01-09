@@ -24,7 +24,7 @@
 
 #include "hci_core.h"
 #include "conn_internal.h"
-#include "l2cap_internal.h"
+#include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_RFCOMM_LOG_LEVEL
