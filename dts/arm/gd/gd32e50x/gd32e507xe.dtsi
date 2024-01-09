@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <arm/gigadevice/gd32e50x/gd32e50x.dtsi>
+#include <arm/gd/gd32e50x/gd32e50x.dtsi>
 
 / {
 	soc {

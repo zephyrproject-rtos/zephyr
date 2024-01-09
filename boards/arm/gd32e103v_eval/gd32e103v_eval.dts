@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32e10x/gd32e103vbt6.dtsi>
+#include <gd/gd32e10x/gd32e103vbt6.dtsi>
 #include "gd32e103v_eval-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

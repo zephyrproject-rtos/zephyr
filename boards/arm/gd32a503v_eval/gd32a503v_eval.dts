@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <gigadevice/gd32a50x/gd32a503vdt3.dtsi>
+#include <gd/gd32a50x/gd32a503vdt3.dtsi>
 #include "gd32a503v_eval-pinctrl.dtsi"
 
 / {

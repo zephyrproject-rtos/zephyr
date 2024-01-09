@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <gigadevice/gd32vf103X8.dtsi>
+#include <gd/gd32vf103X8.dtsi>
 #include "longan_nano-pinctrl.dtsi"
 #include "longan_nano-common.dtsi"
 
