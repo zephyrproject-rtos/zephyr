@@ -181,14 +181,14 @@ ZTEST(posix_apis, test_named_semaphore)
 
 	/* Open named sem */
 	sem1 = sem_open("sem1", O_CREAT, 0, 0);
-	zassert_equal(nsem_get_ref_count(sem1), 1);
+	zassert_equal(nsem_get_ref_count(sem1), 2);
 	zassert_equal(nsem_get_list_len(), 1);
 	sem2 = sem_open("sem2", O_CREAT, 0, 0);
-	zassert_equal(nsem_get_ref_count(sem2), 1);
+	zassert_equal(nsem_get_ref_count(sem2), 2);
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Open created named sem repeatedly */
-	for (size_t i = 1; i < N_LOOPS; i++) {
+	for (size_t i = 1; i <= N_LOOPS; i++) {
 		sem_t *new_sem1, *new_sem2;
 
 		/* oflags are ignored (except when both O_CREAT & O_EXCL are set) */
@@ -200,8 +200,8 @@ ZTEST(posix_apis, test_named_semaphore)
 		zassert_equal_ptr(new_sem2, sem2);
 
 		/* ref_count should increment */
-		zassert_equal(nsem_get_ref_count(sem1), i + 1);
-		zassert_equal(nsem_get_ref_count(sem2), i + 1);
+		zassert_equal(nsem_get_ref_count(sem1), 2 + i);
+		zassert_equal(nsem_get_ref_count(sem2), 2 + i);
 
 		/* Should reuse the same named sem instead of creating another one */
 		zassert_equal(nsem_get_list_len(), 2);
@@ -217,16 +217,14 @@ ZTEST(posix_apis, test_named_semaphore)
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Close sem */
-	for (size_t i = 0;
+	for (size_t i = N_LOOPS;
 	     /* close until one left, required by the test later */
-	     i < (N_LOOPS - 1); i++) {
+	     i >= 1; i--) {
 		zassert_ok(sem_close(sem1));
-		zassert_not_null(sem1);
-		zassert_equal(nsem_get_ref_count(sem1), N_LOOPS - (i + 1));
+		zassert_equal(nsem_get_ref_count(sem1), 2 + i - 1);
 
 		zassert_ok(sem_close(sem2));
-		zassert_not_null(sem2);
-		zassert_equal(nsem_get_ref_count(sem2), N_LOOPS - (i + 1));
+		zassert_equal(nsem_get_ref_count(sem2), 2 + i - 1);
 
 		zassert_equal(nsem_get_list_len(), 2);
 	}
@@ -254,9 +252,10 @@ ZTEST(posix_apis, test_named_semaphore)
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Unlink sem1 when it is still being used */
-	zassert_equal(nsem_get_ref_count(sem1), 1);
+	zassert_equal(nsem_get_ref_count(sem1), 2);
 	zassert_ok(sem_unlink("sem1"));
 	/* sem won't be destroyed */
+	zassert_equal(nsem_get_ref_count(sem1), 1);
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Create another sem with the name of an unlinked sem */
@@ -274,15 +273,15 @@ ZTEST(posix_apis, test_named_semaphore)
 
 	/* Closing a linked sem won't destroy the sem */
 	zassert_ok(sem_close(sem2));
-	zassert_equal(nsem_get_ref_count(sem2), 0);
+	zassert_equal(nsem_get_ref_count(sem2), 1);
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Instead the sem will be destroyed upon call to sem_unlink() */
 	zassert_ok(sem_unlink("sem2"));
 	zassert_equal(nsem_get_list_len(), 1);
 
-	/* What we have left open here is `different_sem` as "sem1", which has 1 ref_count */
-	zassert_equal(nsem_get_ref_count(different_sem1), 1);
+	/* What we have left open here is `different_sem` as "sem1", which has a ref_count of 2 */
+	zassert_equal(nsem_get_ref_count(different_sem1), 2);
 
 	/* Stress test: open & close "sem1" repeatedly */
 	zassert_ok(pthread_create(&thread1, NULL, nsem_open_func, "sem1"));
@@ -298,14 +297,14 @@ ZTEST(posix_apis, test_named_semaphore)
 	/* Create a new named sem to be used in the normal semaphore test */
 	sem1 = sem_open("nsem", O_CREAT, 0, 0);
 	zassert_equal(nsem_get_list_len(), 1);
-	zassert_equal(nsem_get_ref_count(sem1), 1);
+	zassert_equal(nsem_get_ref_count(sem1), 2);
 
 	/* Run the semaphore test with the created named semaphore */
 	semaphore_test(sem1);
 
 	/* List length and ref_count shouldn't change after the test */
 	zassert_equal(nsem_get_list_len(), 1);
-	zassert_equal(nsem_get_ref_count(sem1), 1);
+	zassert_equal(nsem_get_ref_count(sem1), 2);
 
 	/* Unless it is unlinked and closed */
 	sem_unlink("nsem");
