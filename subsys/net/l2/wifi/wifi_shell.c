@@ -601,9 +601,9 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
-			if (!strcmp(optarg, "passive")) {
+			if (!strncasecmp(optarg, "passive", 7)) {
 				params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
-			} else if (!strcmp(optarg, "active")) {
+			} else if (!strncasecmp(optarg, "active", 6)) {
 				params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
 			} else {
 				shell_fprintf(sh, SHELL_ERROR, "Invalid scan type %s\n", optarg);
