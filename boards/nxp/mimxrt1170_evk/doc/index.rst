@@ -166,6 +166,8 @@ RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | SDHC      | on-chip    | SD host controller                  | Supported (M7)  | Supported (M7)  |
 +-----------+------------+-------------------------------------+-----------------+-----------------+
+| PIT       | on-chip    | pit                                 | Supported (M7)  | Supported (M7)  |
++-----------+------------+-------------------------------------+-----------------+-----------------+
 
 The default configuration can be found in the defconfig files:
 :zephyr_file:`boards/nxp/mimxrt1170_evk/mimxrt1170_evk_mimxrt1176_cm7_defconfig`
