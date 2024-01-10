@@ -11,6 +11,7 @@ supported:
   - uart
   - watchdog
   - gpio
+  - i2c
 testing:
   ignore_tags:
     - net
