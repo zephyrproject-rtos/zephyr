@@ -150,6 +150,8 @@ already supported, which can also be re-used on this mimxrt1060_evk board:
 +-----------+------------+-------------------------------------+
 | FLEXSPI   | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| PIT       | on-chip    | pit                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1060_evk/mimxrt1060_evk_defconfig``

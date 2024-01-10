@@ -98,6 +98,8 @@ already supported, which can also be re-used on this mimxrt1010_evk board:
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
+| PIT       | on-chip    | pit                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1010_evk/mimxrt1010_evk_defconfig``
