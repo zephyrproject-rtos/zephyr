@@ -132,7 +132,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc libmagic
+            brew install cmake ninja gperf python3 ccache qemu dtc libmagic wget
 
       #. Add the Homebrew Python folder to the path, in order to be able to
          execute ``python`` and ``pip`` as well ``python3`` and ``pip3``.
