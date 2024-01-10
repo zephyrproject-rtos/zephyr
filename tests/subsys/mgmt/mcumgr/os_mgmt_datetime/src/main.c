@@ -191,7 +191,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_get_not_set_v1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -253,7 +253,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_get_not_set_v2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -318,7 +318,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v1_1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -365,7 +365,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v1_1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -428,7 +428,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v1_2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -475,7 +475,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v1_2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -538,7 +538,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v1_3)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -585,7 +585,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v1_3)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -648,7 +648,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v2_1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -695,7 +695,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v2_1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -760,7 +760,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v2_2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -807,7 +807,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v2_2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -872,7 +872,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v2_3)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -919,7 +919,7 @@ ZTEST(os_mgmt_datetime_not_set, test_datetime_set_invalid_v2_3)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -984,7 +984,7 @@ ZTEST(os_mgmt_datetime_set, test_datetime_set_v1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1030,7 +1030,7 @@ ZTEST(os_mgmt_datetime_set, test_datetime_set_v1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1098,7 +1098,7 @@ ZTEST(os_mgmt_datetime_set, test_datetime_set_v2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1144,7 +1144,7 @@ ZTEST(os_mgmt_datetime_set, test_datetime_set_v2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1225,7 +1225,7 @@ ZTEST(os_mgmt_datetime_hook, test_datetime_set_valid_hook_v1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1287,7 +1287,7 @@ ZTEST(os_mgmt_datetime_hook, test_datetime_set_valid_hook_v1)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1357,7 +1357,7 @@ ZTEST(os_mgmt_datetime_hook, test_datetime_set_valid_hook_v2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");
@@ -1418,7 +1418,7 @@ ZTEST(os_mgmt_datetime_hook, test_datetime_set_valid_hook_v2)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_true(ok, "Expected decode to be successful");

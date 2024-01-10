@@ -29,7 +29,7 @@ bool create_mcumgr_format_packet(zcbor_state_t *zse, uint8_t *buffer, uint8_t *o
 
 	ok = zcbor_map_start_encode(zse, 2)		&&
 	     zcbor_tstr_put_lit(zse, "d")		&&
-	     zcbor_tstr_put_term(zse, "some test data")	&&
+	     zcbor_tstr_put_lit(zse, "some test data")	&&
 	     zcbor_map_end_encode(zse, 2);
 
 	*buffer_size = (zse->payload_mut - buffer);

@@ -81,7 +81,7 @@ ZTEST(os_mgmt_info_limited, test_info_1_kernel_name)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 
@@ -147,7 +147,7 @@ ZTEST(os_mgmt_info_limited, test_info_2_all)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1, NULL, 0);
 
 	/* Ensure only an error is received */
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
@@ -155,7 +155,7 @@ ZTEST(os_mgmt_info_limited, test_info_2_all)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor element\n");
 
-	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1, NULL, 0);
 	ok = zcbor_map_decode_bulk(zsd, error_decode, ARRAY_SIZE(error_decode), &decoded) == 0;
 
 	zassert_true(ok, "Expected decode to be successful\n");
