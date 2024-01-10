@@ -3284,7 +3284,7 @@ Renesas Platforms:
   files:
     - soc/arm/renesas_ra/
     - dts/arm/renesas/ra/
-    - soc/arm/renesas_rzt2m/
+    - soc/v2/renesas_rzt2m/
   labels:
     - "platforms: Renesas"
 
