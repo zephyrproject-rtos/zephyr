@@ -16,6 +16,10 @@
  * only by the assembler.
  */
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+.extern _xtensa_hifi_save
+#endif
+
 /*
  * SPILL_ALL_WINDOWS
  *
@@ -184,6 +188,7 @@
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
 	FPU_REG_SAVE
 #endif
+
 .endm
 
 #ifdef CONFIG_XTENSA_MMU
@@ -405,6 +410,11 @@ _xstack_returned_\@:
 	s32i a2, a1, ___xtensa_irq_bsa_t_scratch_OFFSET
 
 	ODD_REG_SAVE
+
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save    /* Save HiFi registers */
+#endif
+
 	call0 xtensa_save_high_regs
 
 	l32i a2, a1, 0

@@ -87,6 +87,10 @@ end_loop:
 	s32i a3, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 	ODD_REG_SAVE
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save
+#endif
+
 	call0 xtensa_save_high_regs
 
 	l32i a2, a1, 0
