@@ -28,6 +28,7 @@ config FPGA_SHELL
 
 source "drivers/fpga/Kconfig.eos_s3"
 source "drivers/fpga/Kconfig.ice40"
+source "drivers/fpga/Kconfig.mpfs"
 source "drivers/fpga/Kconfig.zynqmp"
 
 endif # FPGA
