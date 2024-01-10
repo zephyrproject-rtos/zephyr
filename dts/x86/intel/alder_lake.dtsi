@@ -78,6 +78,12 @@
 			status = "disabled";
 		};
 
+		uart1_dma: uart1_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
 		uart1: uart1 {
 			compatible = "ns16550";
 			vendor-id = <0x8086>;
@@ -87,6 +93,14 @@
 			reg-shift = <2>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&uart1_dma 0>, <&uart1_dma 1>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		uart2_dma: uart2_dma {
+			compatible = "intel,lpss";
+			#dma-cells = <1>;
 			status = "disabled";
 		};
 
@@ -99,6 +113,8 @@
 			reg-shift = <2>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			dmas = <&uart2_dma 0>, <&uart2_dma 1>;
+			dma-names = "tx", "rx";
 
 			status = "disabled";
 		};
