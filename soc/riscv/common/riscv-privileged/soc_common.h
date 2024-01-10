@@ -12,10 +12,6 @@
 #ifndef __SOC_COMMON_H_
 #define __SOC_COMMON_H_
 
-/* IRQ numbers */
-#define RISCV_MACHINE_SOFT_IRQ       3  /* Machine Software Interrupt */
-#define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
