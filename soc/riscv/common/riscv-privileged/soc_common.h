@@ -16,10 +16,6 @@
 #define RISCV_MACHINE_SOFT_IRQ       3  /* Machine Software Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
-/* ECALL Exception numbers */
-#define SOC_MCAUSE_ECALL_EXP         11 /* Machine ECALL instruction */
-#define SOC_MCAUSE_USER_ECALL_EXP    8  /* User ECALL instruction */
-
 /* SOC-specific MCAUSE bitfields */
 #ifdef CONFIG_64BIT
 /* Interrupt Mask */

@@ -43,7 +43,4 @@
  */
 #define SOC_MCAUSE_EXP_MASK 0x1F
 
-/* The ecall exception number. This is a standard value. */
-#define SOC_MCAUSE_ECALL_EXP 11
-
 #endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_ZERO_RISCY_H_ */
