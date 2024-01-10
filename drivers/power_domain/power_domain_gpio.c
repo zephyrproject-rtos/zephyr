@@ -37,7 +37,7 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 	struct pd_visitor_context *visitor_context = context;
 
 	/* Only run action if the device is on the specified domain */
-	if (!dev->pm || (dev->pm->domain != visitor_context->domain)) {
+	if (!dev->pm || (dev->pm_base->domain != visitor_context->domain)) {
 		return 0;
 	}
 
