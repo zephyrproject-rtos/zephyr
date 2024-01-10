@@ -46,4 +46,16 @@ config SHELL_STACK_SIZE
 endif # SHELL
 endif # ACPI
 
+if DMA
+config DMA_64BIT
+	default y
+config DMA_DW_HW_LLI
+	default n
+config DMA_DW_CHANNEL_COUNT
+	default 2
+endif
+
+config UART_NS16550_INTEL_LPSS_DMA
+	default y
+
 endif # BOARD_INTEL_ADL_CRB || BOARD_INTEL_ADL_RVP || BOARD_UP_SQUARED_PRO_7000
