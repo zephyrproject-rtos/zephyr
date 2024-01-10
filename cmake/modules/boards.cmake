@@ -187,6 +187,13 @@ if(NOT BOARD_DIR)
   message(FATAL_ERROR "Invalid BOARD; see above.")
 endif()
 
+if(HWMv1 AND DEFINED BOARD_IDENTIFIER)
+  message(FATAL_ERROR
+          "Board '${BOARD}' does not support board identifiers, ${BOARD}${BOARD_IDENTIFIER}.\n"
+          "Please specify board without an identifier.\n"
+  )
+endif()
+
 cmake_path(IS_PREFIX ZEPHYR_BASE "${BOARD_DIR}" NORMALIZE in_zephyr_tree)
 if(NOT in_zephyr_tree)
   set(USING_OUT_OF_TREE_BOARD 1)
