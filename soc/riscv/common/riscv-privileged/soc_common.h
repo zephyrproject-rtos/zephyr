@@ -16,9 +16,6 @@
 #define RISCV_MACHINE_SOFT_IRQ       3  /* Machine Software Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
-/* Exception code Mask */
-#define SOC_MCAUSE_EXP_MASK          CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
-
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
