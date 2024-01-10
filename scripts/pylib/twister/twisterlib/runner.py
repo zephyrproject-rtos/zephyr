@@ -1055,8 +1055,9 @@ class ProjectBuilder(FilterBuilder):
         harness = HarnessImporter.get_harness(self.instance.testsuite.harness.capitalize())
         build_result = self.run_build(['--build', self.build_dir])
         try:
-            harness.instance = self.instance
-            harness.build()
+            if harness:
+                harness.instance = self.instance
+                harness.build()
         except ConfigurationError as error:
             self.instance.status = "error"
             self.instance.reason = str(error)

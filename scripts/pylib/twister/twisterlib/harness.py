@@ -693,8 +693,12 @@ class HarnessImporter:
     @staticmethod
     def get_harness(harness_name):
         thismodule = sys.modules[__name__]
-        if harness_name:
-            harness_class = getattr(thismodule, harness_name)
-        else:
-            harness_class = getattr(thismodule, 'Test')
-        return harness_class()
+        try:
+            if harness_name:
+                harness_class = getattr(thismodule, harness_name)
+            else:
+                harness_class = getattr(thismodule, 'Test')
+            return harness_class()
+        except AttributeError as e:
+            logger.debug(f"harness {harness_name} not implemented: {e}")
+            return None
