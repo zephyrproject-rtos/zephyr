@@ -6,6 +6,8 @@ tests:
     arch_allow: arm
     extra_configs:
       - CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m
     # Broken platforms
     platform_exclude:
       - nuvoton_pfm_m487 # See #63167
@@ -13,6 +15,8 @@ tests:
     arch_allow: xtensa
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m
     # Broken platforms
     platform_exclude:
       - qemu_xtensa_mmu # ELF sections are read-only, and without peek() .text copy isn't executable
