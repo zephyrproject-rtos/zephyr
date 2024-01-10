@@ -159,7 +159,7 @@ config RISCV_SOC_INTERRUPT_INIT
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
 
-config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+config RISCV_MCAUSE_EXCEPTION_MASK
 	hex
 	default 0x7FFFFFFFFFFFFFFF if 64BIT
 	default 0x7FFFFFFF
