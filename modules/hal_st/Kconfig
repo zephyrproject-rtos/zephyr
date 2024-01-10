@@ -1,6 +1,8 @@
-# STLIB config
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
 
-# Copyright (c) 2017 STMicroelectronics
+config ZEPHYR_HAL_ST_MODULE
+	bool
 
 config HAS_STLIB
 	bool
