@@ -11,8 +11,6 @@
 #ifndef __RISCV_ANDES_AE350_SOC_H_
 #define __RISCV_ANDES_AE350_SOC_H_
 
-#include <soc_common.h>
-
 /* Include CSRs available for Andes V5 SoCs */
 #include "soc_v5.h"
 
