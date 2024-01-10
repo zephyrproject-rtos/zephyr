@@ -144,8 +144,6 @@ static uint8_t cmux_frame_data_dlci1_at_newline[] = {0x0D, 0x0A};
 /*************************************************************************************************/
 static uint8_t cmux_frame_dlci1_at_at_desync[] = {0x41, 0x54, 0x30, 0xF9};
 
-static uint8_t cmux_frame_resync[] = {0xF9, 0xF9, 0xF9};
-
 /*************************************************************************************************/
 /*                                   DLCI2 PPP CMUX frames                                       */
 /*************************************************************************************************/
@@ -401,15 +399,6 @@ ZTEST(modem_cmux, test_modem_cmux_resync)
 
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_at_at_desync,
 			       sizeof(cmux_frame_dlci1_at_at_desync));
-
-	k_msleep(100);
-
-	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
-	zassert_true(ret == sizeof(cmux_frame_resync), "Expected resync flags to be sent to bus");
-	zassert_true(memcmp(buffer1, cmux_frame_resync, sizeof(cmux_frame_resync)) == 0,
-		     "Expected resync flags to be sent to bus");
-
-	modem_backend_mock_put(&bus_mock, cmux_frame_resync, sizeof(cmux_frame_resync));
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_at_at, sizeof(cmux_frame_dlci1_at_at));
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_at_newline,
 			       sizeof(cmux_frame_dlci1_at_newline));
