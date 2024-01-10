@@ -6,4 +6,5 @@ zephyr_library_sources_ifdef(CONFIG_FPGA_SHELL  fpga_shell.c)
 
 zephyr_library_sources_ifdef(CONFIG_EOS_S3_FPGA fpga_eos_s3.c)
 zephyr_library_sources_ifdef(CONFIG_ICE40_FPGA  fpga_ice40.c)
+zephyr_library_sources_ifdef(CONFIG_MPFS_FPGA fpga_mpfs.c)
 zephyr_library_sources_ifdef(CONFIG_ZYNQMP_FPGA fpga_zynqmp.c)
