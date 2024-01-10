@@ -701,16 +701,37 @@ static int entropy_stm32_rng_init(const struct device *dev)
 static int entropy_stm32_rng_pm_action(const struct device *dev,
 				       enum pm_device_action action)
 {
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+
 	int res = 0;
+
+	/* Remove warning on some platforms */
+	ARG_UNUSED(dev_data);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		res = entropy_stm32_suspend();
 		break;
 	case PM_DEVICE_ACTION_RESUME:
-		/* Resume RNG only if it was suspended during filling pool */
-		if (entropy_stm32_rng_data.filling_pools) {
-			res = entropy_stm32_resume();
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+			entropy_stm32_resume();
+#if DT_INST_NODE_HAS_PROP(0, health_test_magic)
+			LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
+#endif /* health_test_magic */
+			if (LL_RNG_GetHealthConfig(dev_data->rng) !=
+				DT_INST_PROP_OR(0, health_test_config, 0U)) {
+				entropy_stm32_rng_init(dev);
+			} else if (!entropy_stm32_rng_data.filling_pools) {
+				/* Resume RNG only if it was suspended during filling pool */
+				entropy_stm32_suspend();
+			}
+#endif /* health_test_config */
+		} else {
+			/* Resume RNG only if it was suspended during filling pool */
+			if (entropy_stm32_rng_data.filling_pools) {
+				res = entropy_stm32_resume();
+			}
 		}
 		break;
 	default:
