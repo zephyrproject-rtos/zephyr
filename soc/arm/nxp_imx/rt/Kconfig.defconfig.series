@@ -136,6 +136,11 @@ config TEST_EXTRA_STACK_SIZE
 	default 1024
 endif # MBEDTLS
 
+# Enable cache management features when using M7 core, since these parts
+# have L1 instruction and data caches that should be enabled at boot
+config CACHE_MANAGEMENT
+	default y if CPU_CORTEX_M7
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT
