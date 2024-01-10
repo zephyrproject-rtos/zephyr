@@ -25,8 +25,4 @@ COND_CODE_1(DT_NODE_EXISTS(DT_INST(1, ite_it8xxx2_usbpd)), (2), (1))
  */
 #define SOC_USBPD_ITE_ACTIVE_PORT_COUNT DT_NUM_INST_STATUS_OKAY(ite_it8xxx2_usbpd)
 
-#ifndef _ASMLANGUAGE
-void soc_interrupt_init(void);
-#endif
-
 #endif /* __RISCV_ITE_SOC_H_ */
