@@ -108,6 +108,8 @@ The Zephyr nucleo_g0b1re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | die-temp  | on-chip    | die temperature sensor              |
 +-----------+------------+-------------------------------------+
+| FDCAN1    | on-chip    | CAN controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -137,6 +139,7 @@ Default Zephyr Peripheral Mapping:
 - ADC1 IN0  : PA0
 - ADC1 IN1  : PA1
 - DAC1_OUT1 : PA4
+- FDCAN1 RX/TX: PA11/PA12
 
 For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 
