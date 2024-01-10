@@ -174,11 +174,6 @@ config RISCV_GENERIC_TOOLCHAIN
 	  Allow SOCs that have custom extended riscv ISA to still
 	  compile with generic riscv32 toolchain.
 
-config RISCV_HAS_CPU_IDLE
-	bool "Does SOC has CPU IDLE instruction"
-	help
-	  Does SOC has CPU IDLE instruction
-
 config GEN_ISR_TABLES
 	default y
 
