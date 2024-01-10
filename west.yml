@@ -282,7 +282,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: b994ba2ce29425587957dcbb6c96d4e1872b5737
+      revision: f09e205b1e4a8d2bc3f50dffa7960d6ccd14df59
       path: bootloader/mcuboot
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
@@ -332,10 +332,10 @@ manifest:
       groups:
         - tee
     - name: uoscore-uedhoc
-      revision: 5024d8c98b3864c6698f0195a53e19c484bc8cd3
+      revision: 150f4eb2955eaf36ac0f9519d4f4f58d5ade5740
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 67fd8bb88d3136738661fa8bb5f9989103f4599e
+      revision: dbe20afd00b3ddd6956f4b47f5df202bb49a8707
       path: modules/lib/zcbor
 
   self:
