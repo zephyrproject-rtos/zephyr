@@ -32,6 +32,12 @@ extern "C" {
 /** Environment Call from M-mode */
 #define RISCV_EXC_ECALLM 11
 
+#ifdef CONFIG_64BIT
+#define RISCV_MCAUSE_IRQ_BIT          (1 << 63)
+#else
+#define RISCV_MCAUSE_IRQ_BIT          (1 << 31)
+#endif
+
 #ifndef _ASMLANGUAGE
 
 extern void arch_irq_enable(unsigned int irq);
