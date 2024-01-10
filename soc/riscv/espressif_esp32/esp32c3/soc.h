@@ -21,9 +21,6 @@
 #define RISCV_MACHINE_TIMER_IRQ 7 /* Machine Timer Interrupt */
 #define RISCV_MACHINE_EXT_IRQ 11 /* Machine External Interrupt */
 
-/* Exception code Mask */
-#define SOC_MCAUSE_EXP_MASK 0x7FFFFFFF
-
 #ifndef _ASMLANGUAGE
 
 void __esp_platform_start(void);
