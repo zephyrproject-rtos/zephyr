@@ -7,7 +7,6 @@
 #ifndef __RISCV_OPENTITAN_SOC_H_
 #define __RISCV_OPENTITAN_SOC_H_
 
-#include <soc_common.h>
 #include <zephyr/devicetree.h>
 
 /* OpenTitan power management regs. */

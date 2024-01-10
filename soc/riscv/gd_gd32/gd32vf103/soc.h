@@ -11,6 +11,4 @@
 #ifndef RISCV_GD32VF103_SOC_H_
 #define RISCV_GD32VF103_SOC_H_
 
-#include <soc_common.h>
-
 #endif  /* RISCV_GD32VF103_SOC_H */
