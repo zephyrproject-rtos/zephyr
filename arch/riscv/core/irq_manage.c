@@ -20,7 +20,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	mcause = csr_read(mcause);
 
-	mcause &= SOC_MCAUSE_EXP_MASK;
+	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 
 	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
