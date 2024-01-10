@@ -16,9 +16,6 @@
 
 /* SOC-specific MCAUSE bitfields */
 
-/* Interrupt Mask. 1 (interrupt) or 0 (exception) */
-#define SOC_MCAUSE_IRQ_MASK          BIT(31)
-
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK          0x7FFFFFFF
 
