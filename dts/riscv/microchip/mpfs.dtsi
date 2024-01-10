@@ -206,6 +206,17 @@
 			clock-frequency = <150000000>;
 		};
 
+		syscontroller_qspi: spi@37020100 {
+			compatible = "microchip,mpfs-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x37020100 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <110 1>;
+			status = "disabled";
+			clock-frequency = <150000000>;
+		};
+
 		gpio0: gpio@20120000 {
 			compatible = "microchip,mpfs-gpio";
 			reg = <0x20120000 0x1000>;
