@@ -9,6 +9,7 @@
 #include <ksched.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 
 volatile struct {
@@ -67,7 +68,7 @@ void arch_secondary_cpu_init(int hartid)
 	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_SMP
-	irq_enable(RISCV_MACHINE_SOFT_IRQ);
+	irq_enable(RISCV_IRQ_MSOFT);
 #endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
@@ -154,8 +155,8 @@ void arch_spin_relax(void)
 int arch_smp_init(void)
 {
 
-	IRQ_CONNECT(RISCV_MACHINE_SOFT_IRQ, 0, sched_ipi_handler, NULL, 0);
-	irq_enable(RISCV_MACHINE_SOFT_IRQ);
+	IRQ_CONNECT(RISCV_IRQ_MSOFT, 0, sched_ipi_handler, NULL, 0);
+	irq_enable(RISCV_IRQ_MSOFT);
 
 	return 0;
 }

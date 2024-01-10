@@ -32,6 +32,13 @@ extern "C" {
 /** Environment Call from M-mode */
 #define RISCV_EXC_ECALLM 11
 
+/* IRQs 0-15 (MCAUSE interrupt=1) */
+
+/** Machine Software Interrupt */
+#define RISCV_IRQ_MSOFT 3
+/** Machine External Interrupt */
+#define RISCV_IRQ_MEXT  11
+
 #ifdef CONFIG_64BIT
 #define RISCV_MCAUSE_IRQ_BIT          (1 << 63)
 #else
