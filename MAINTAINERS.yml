@@ -385,6 +385,7 @@ Bluetooth Mesh:
     - alxelax
     - Andrewpini
     - akredalen
+    - HaavardRei
   files:
     - subsys/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh/
