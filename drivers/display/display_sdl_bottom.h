@@ -21,7 +21,7 @@ extern "C" {
 /* Note: None of these functions are public interfaces. But internal to the SDL display driver */
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
-			    void **window, void **renderer, void **texture);
+			    bool use_accelerator, void **window, void **renderer, void **texture);
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
 			      const uint16_t x, const uint16_t y,
 			      void *renderer, void *texture,

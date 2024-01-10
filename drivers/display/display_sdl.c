@@ -39,7 +39,10 @@ static int sdl_display_init(const struct device *dev)
 {
 	const struct sdl_display_config *config = dev->config;
 	struct sdl_display_data *disp_data = dev->data;
+	bool use_accelerator = true;
 	LOG_DBG("Initializing display driver");
+
+	IF_DISABLED(CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR, (use_accelerator = false));
 
 	disp_data->current_pixel_format =
 #if defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888)
@@ -62,7 +65,7 @@ static int sdl_display_init(const struct device *dev)
 	}
 
 	int rc = sdl_display_init_bottom(config->height, config->width,
-					 sdl_display_zoom_pct,
+					 sdl_display_zoom_pct, use_accelerator,
 					 &disp_data->window, &disp_data->renderer,
 					 &disp_data->texture);
 
