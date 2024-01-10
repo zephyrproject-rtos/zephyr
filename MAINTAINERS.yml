@@ -3444,7 +3444,7 @@ Renesas RZ Platforms:
     - drivers/*/*rzt2m*
     - dts/arm/renesas/rz/
     - dts/bindings/*/*rzt2m*
-    - soc/arm/renesas_rzt2m/
+    - soc/renesas_rzt2m/
   labels:
     - "platforms: Renesas RZ"
   description: >-
