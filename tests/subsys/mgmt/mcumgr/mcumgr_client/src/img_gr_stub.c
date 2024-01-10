@@ -120,9 +120,10 @@ void img_read_response(int count)
 		     zcbor_tstr_put_lit(zse, "slot") &&
 		     zcbor_uint32_put(zse, image_dummy_info[i].slot_num) &&
 		     zcbor_tstr_put_lit(zse, "version") &&
-		     zcbor_tstr_put_term(zse, image_dummy_info[i].version) &&
+		     zcbor_tstr_put_term(zse, image_dummy_info[i].version,
+					sizeof(image_dummy_info[i].version)) &&
 
-		     zcbor_tstr_put_term(zse, "hash") &&
+		     zcbor_tstr_put_lit(zse, "hash") &&
 		     zcbor_bstr_encode_ptr(zse, image_dummy_info[i].hash, IMG_MGMT_DATA_SHA_LEN) &&
 		     ZCBOR_ENCODE_FLAG(zse, "bootable", image_dummy_info[i].flags.bootable) &&
 		     ZCBOR_ENCODE_FLAG(zse, "pending", image_dummy_info[i].flags.pending) &&
@@ -180,7 +181,8 @@ void img_state_write_verify(struct net_buf *nb)
 		ZCBOR_MAP_DECODE_KEY_DECODER("hash", zcbor_bstr_decode, &hash)
 		};
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data + sizeof(struct smp_hdr), nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data + sizeof(struct smp_hdr), nb->len, 1,
+				NULL, 0);
 
 	decoded = 0;
 	/* Init buffer values */
@@ -231,7 +233,8 @@ void img_upload_init_verify(struct net_buf *nb)
 		ZCBOR_MAP_DECODE_KEY_DECODER("sha", zcbor_bstr_decode, &sha)
 		};
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data + sizeof(struct smp_hdr), nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data + sizeof(struct smp_hdr), nb->len, 1,
+				NULL, 0);
 
 	decoded = 0;
 	/* Init buffer values */
