@@ -61,6 +61,10 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu14);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu15);
 #endif
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+GEN_OFFSET_SYM(_xtensa_irq_bsa_t, hifi);
+#endif
+
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
