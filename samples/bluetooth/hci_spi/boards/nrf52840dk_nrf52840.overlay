@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi1_default_alt: spi1_default_alt {
+		group1 {
+			/* schema: (name, port, number)
+			 * only change the port and number.
+			 * e.g. here: SCK is on P1.08
+			 */
+			psels = <NRF_PSEL(SPIS_SCK, 1, 8)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 7)>,
+				<NRF_PSEL(SPIS_MISO, 1, 6)>,
+				<NRF_PSEL(SPIS_CSN, 1, 5)>;
+		};
+	};
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spis";
+	status = "okay";
+	def-char = <0x00>;
+	pinctrl-0 = <&spi1_default_alt>;
+	/delete-property/ pinctrl-1;
+	pinctrl-names = "default";
+
+
+	bt-host@0 {
+		compatible = "zephyr,bt-hci-spi-slave";
+		reg = <0>;
+		/* different scheme than pinctrl: IRQ is on P1.04 */
+		irq-gpios = <&gpio1 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+	};
+};
