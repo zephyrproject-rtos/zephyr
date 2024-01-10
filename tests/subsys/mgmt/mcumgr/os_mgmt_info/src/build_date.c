@@ -121,7 +121,7 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_1_build_date)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 
@@ -197,7 +197,7 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_2_all)
 
 	/* Process received data by removing header */
 	(void)net_buf_pull(nb, sizeof(struct smp_hdr));
-	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, 3, nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 
