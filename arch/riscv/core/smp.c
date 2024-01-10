@@ -23,6 +23,10 @@ volatile void *riscv_cpu_sp;
 
 extern void __start(void);
 
+#if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
+void soc_interrupt_init(void);
+#endif
+
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
