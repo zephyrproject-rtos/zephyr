@@ -160,6 +160,11 @@ _restore_context:
 	FPU_REG_RESTORE
 #endif
 
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+.extern _xtensa_hifi_load
+	call0 _xtensa_hifi_load
+#endif
+
 	l32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 	wsr a0, SAR
 #if XCHAL_HAVE_LOOPS
@@ -247,6 +252,10 @@ xtensa_switch:
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 	movi a0, _switch_restore_pc
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
+
+#if defined(CONFIG_XTENSA_HIFI_SHARING)
+	call0 _xtensa_hifi_save
+#endif
 
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
