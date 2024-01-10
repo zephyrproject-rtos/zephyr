@@ -99,6 +99,7 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_NETDATA_PUBLISHER OT_NETDATA_PUBLISHER "E
 kconfig_to_ot_option(CONFIG_OPENTHREAD_OPERATIONAL_DATASET_AUTO_INIT OT_OPERATIONAL_DATASET_AUTO_INIT "Enable operational dataset auto init")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_OTNS OT_OTNS "Enable OTNS support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_PING_SENDER OT_PING_SENDER "Enable ping sender support")
+kconfig_to_ot_option(CONFIG_OPENTHREAD_PLATFORM_BOOTLOADER_MODE OT_PLATFORM_BOOTLOADER_MODE "Enable platform bootloader mode support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_PLATFORM_KEY_REF OT_PLATFORM_KEY_REF "Enable platform key reference support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_PLATFORM_NETIF OT_PLATFORM_NETIF "Enable platform netif support")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_PLATFORM_UDP OT_PLATFORM_UDP "Enable platform UDP support")
