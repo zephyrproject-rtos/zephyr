@@ -21,7 +21,7 @@ struct int_list_header {
  * header of the initList section, which is used by gen_isr_tables.py to create
  * the vector and sw isr tables,
  */
-Z_GENERIC_SECTION(.irq_info) struct int_list_header _iheader = {
+Z_GENERIC_SECTION(.irq_info) __used struct int_list_header _iheader = {
 	.table_size = IRQ_TABLE_SIZE,
 	.offset = CONFIG_GEN_IRQ_START_VECTOR,
 };
