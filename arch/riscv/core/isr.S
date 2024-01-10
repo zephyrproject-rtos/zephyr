@@ -295,7 +295,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * to report the exception.
 	 */
 	csrr t0, mcause
-	li t2, SOC_MCAUSE_EXP_MASK
+	li t2, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t0, t0, t2
 
 	/*
@@ -528,7 +528,7 @@ on_irq_stack:
 
 	/* Get IRQ causing interrupt */
 	csrr a0, mcause
-	li t0, SOC_MCAUSE_EXP_MASK
+	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and a0, a0, t0
 
 	/*
