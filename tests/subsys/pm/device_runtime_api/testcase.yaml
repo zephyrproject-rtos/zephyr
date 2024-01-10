@@ -3,3 +3,9 @@ tests:
     tags: pm
     integration_platforms:
       - native_sim
+  pm.device_runtime.isr_safe.api:
+    tags: pm
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_TEST_PM_DEVICE_ISR_SAFE=y

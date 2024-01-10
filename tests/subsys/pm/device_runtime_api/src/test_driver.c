@@ -21,14 +21,16 @@ static int test_driver_action(const struct device *dev,
 {
 	struct test_driver_data *data = dev->data;
 
-	data->ongoing = true;
+	if (!IS_ENABLED(CONFIG_TEST_PM_DEVICE_ISR_SAFE)) {
+		data->ongoing = true;
 
-	if (data->async) {
-		k_sem_take(&data->sync, K_FOREVER);
-		data->async = false;
+		if (data->async) {
+			k_sem_take(&data->sync, K_FOREVER);
+			data->async = false;
+		}
+
+		data->ongoing = false;
 	}
-
-	data->ongoing = false;
 
 	data->count++;
 
@@ -72,7 +74,11 @@ int test_driver_init(const struct device *dev)
 	return 0;
 }
 
+#if CONFIG_TEST_PM_DEVICE_ISR_SAFE
+PM_DEVICE_ISR_SAFE_DEFINE(test_driver, test_driver_action);
+#else
 PM_DEVICE_DEFINE(test_driver, test_driver_action);
+#endif
 
 static struct test_driver_data data;
 
