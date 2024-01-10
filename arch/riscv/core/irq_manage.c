@@ -24,7 +24,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	LOG_ERR("Spurious interrupt detected! IRQ: %ld", mcause);
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	if (mcause == RISCV_MACHINE_EXT_IRQ) {
+	if (mcause == RISCV_IRQ_MEXT) {
 		unsigned int save_irq = riscv_plic_get_irq();
 		const struct device *save_dev = riscv_plic_get_dev();
 
