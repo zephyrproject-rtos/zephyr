@@ -68,6 +68,14 @@ config SENSOR_SHELL_TRIG_PRINT_TIMEOUT_MS
 	  Control the frequency of the sampling window over which the sensor
 	  interrupt handler will collect data.
 
+config SENSOR_SHELL_MAX_TRIGGER_DEVICES
+	int "Maximum number of sensor devices that can have enabled triggers in shell"
+	default 1
+	depends on SENSOR_SHELL
+	help
+	  Maximum number of sensor devices that the shell cmd can have
+	  enabled triggers for.
+
 config SENSOR_INFO
 	bool "Sensor Info iterable section"
 
