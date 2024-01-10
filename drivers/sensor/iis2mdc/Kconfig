@@ -5,6 +5,7 @@ menuconfig IIS2MDC
 	bool "IIS2MDC Magnetometer"
 	default y
 	depends on DT_HAS_ST_IIS2MDC_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2MDC),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2MDC),spi)
 	select HAS_STMEMSC
