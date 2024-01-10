@@ -66,7 +66,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	ZCBOR_STATE_E(states, 0, CPKT_BUF_W_PTR(out->out_cpkt), CPKT_BUF_W_SIZE(out->out_cpkt),  1);
 
 	/* Are tags required? V1.1 leaves this unspecified but some servers require tags */
-	ret = zcbor_tag_encode(states, ZCBOR_TAG_TIME_TSTR);
+	ret = zcbor_tag_put(states, ZCBOR_TAG_TIME_TSTR);
 
 	if (!ret) {
 		LOG_ERR("unable to encode date/time string tag");
@@ -77,7 +77,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 
 	out->out_cpkt->offset += tag_sz;
 
-	ret = zcbor_tstr_put_term(states, time_str);
+	ret = zcbor_tstr_put_term(states, time_str, sizeof(time_str));
 	if (!ret) {
 		LOG_ERR("unable to encode date/time string");
 		return -ENOMEM;
@@ -232,7 +232,7 @@ static int put_objlnk(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 
 static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 {
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_int64_decode(states, value)) {
 		LOG_WRN("unable to decode a 64-bit integer value");
@@ -248,7 +248,7 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 
 static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 {
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_int32_decode(states, value)) {
 		LOG_WRN("unable to decode a 32-bit integer value, err: %d",
@@ -265,7 +265,7 @@ static int get_s32(struct lwm2m_input_context *in, int32_t *value)
 
 static int get_float(struct lwm2m_input_context *in, double *value)
 {
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_float_decode(states, value)) {
 		LOG_ERR("unable to decode a floating-point value");
@@ -284,7 +284,7 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 	struct zcbor_string hndl;
 	int len;
 
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_tstr_decode(states, &hndl)) {
 		LOG_WRN("unable to decode a string");
@@ -313,7 +313,7 @@ static int get_time_string(struct lwm2m_input_context *in, int64_t *value)
 	char time_str[sizeof("4294967295")] = { 0 };
 	struct zcbor_string hndl = { .value = time_str, .len = sizeof(time_str) - 1 };
 
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_tstr_decode(states, &hndl)) {
 		return -EBADMSG;
@@ -331,7 +331,7 @@ static int get_time_string(struct lwm2m_input_context *in, int64_t *value)
  */
 static int get_time_numerical(struct lwm2m_input_context *in, int64_t *value)
 {
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_int64_decode(states, value)) {
 		LOG_WRN("unable to decode seconds since Epoch");
@@ -350,7 +350,7 @@ static int get_time(struct lwm2m_input_context *in, time_t *value)
 	bool success;
 	int64_t temp64;
 
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	success = zcbor_tag_decode(states, &tag);
 
@@ -400,7 +400,7 @@ error:
 
 static int get_bool(struct lwm2m_input_context *in, bool *value)
 {
-	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 0, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	if (!zcbor_bool_decode(states, value)) {
 		LOG_WRN("unable to decode a boolean value");
@@ -420,7 +420,7 @@ static int get_opaque(struct lwm2m_input_context *in, uint8_t *value, size_t buf
 	struct zcbor_string_fragment hndl = { 0 };
 	int ret;
 
-	ZCBOR_STATE_D(states, 1, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1);
+	ZCBOR_STATE_D(states, 1, ICTX_BUF_R_PTR(in), ICTX_BUF_R_LEFT_SZ(in),  1, 0);
 
 	/* Get the CBOR header only on first read. */
 	if (opaque->remaining == 0) {
