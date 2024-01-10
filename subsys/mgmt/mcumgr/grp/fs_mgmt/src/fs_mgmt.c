@@ -785,7 +785,7 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	}
 
 	ok &= zcbor_tstr_put_lit(zse, "type")	&&
-	      zcbor_tstr_put_term(zse, type_arr);
+	      zcbor_tstr_put_term(zse, type_arr, sizeof(type_arr));
 
 	if (off != 0) {
 		ok &= zcbor_tstr_put_lit(zse, "off")	&&
