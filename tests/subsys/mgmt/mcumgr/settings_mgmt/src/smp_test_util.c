@@ -31,7 +31,7 @@ bool create_settings_mgmt_read_packet(zcbor_state_t *zse, uint8_t *buffer, uint8
 
 	ok = zcbor_map_start_encode(zse, 2)				&&
 	     zcbor_tstr_put_lit(zse, "name")				&&
-	     zcbor_tstr_put_term(zse, name)				&&
+	     zcbor_tstr_put_term(zse, name, CONFIG_ZCBOR_MAX_STR_LEN)	&&
 	     (max_size == 0 || (zcbor_tstr_put_lit(zse, "max_size")	&&
 	      zcbor_uint32_put(zse, max_size)))				&&
 	     zcbor_map_end_encode(zse, 2);
@@ -51,11 +51,11 @@ bool create_settings_mgmt_write_packet(zcbor_state_t *zse, uint8_t *buffer, uint
 {
 	bool ok;
 
-	ok = zcbor_map_start_encode(zse, 2)		&&
-	     zcbor_tstr_put_lit(zse, "name")		&&
-	     zcbor_tstr_put_term(zse, name)		&&
-	     zcbor_tstr_put_lit(zse, "val")		&&
-	     zcbor_bstr_encode_ptr(zse, val, val_size)	&&
+	ok = zcbor_map_start_encode(zse, 2)				&&
+	     zcbor_tstr_put_lit(zse, "name")				&&
+	     zcbor_tstr_put_term(zse, name, CONFIG_ZCBOR_MAX_STR_LEN)	&&
+	     zcbor_tstr_put_lit(zse, "val")				&&
+	     zcbor_bstr_encode_ptr(zse, val, val_size)			&&
 	     zcbor_map_end_encode(zse, 2);
 
 	*buffer_size = (zse->payload_mut - buffer);
@@ -72,9 +72,9 @@ bool create_settings_mgmt_delete_packet(zcbor_state_t *zse, uint8_t *buffer,
 {
 	bool ok;
 
-	ok = zcbor_map_start_encode(zse, 2)		&&
-	     zcbor_tstr_put_lit(zse, "name")		&&
-	     zcbor_tstr_put_term(zse, name)		&&
+	ok = zcbor_map_start_encode(zse, 2)				&&
+	     zcbor_tstr_put_lit(zse, "name")				&&
+	     zcbor_tstr_put_term(zse, name, CONFIG_ZCBOR_MAX_STR_LEN)	&&
 	     zcbor_map_end_encode(zse, 2);
 
 	*buffer_size = (zse->payload_mut - buffer);
