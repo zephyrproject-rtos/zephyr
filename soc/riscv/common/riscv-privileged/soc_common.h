@@ -16,15 +16,6 @@
 #define RISCV_MACHINE_SOFT_IRQ       3  /* Machine Software Interrupt */
 #define RISCV_MACHINE_EXT_IRQ        11 /* Machine External Interrupt */
 
-/* SOC-specific MCAUSE bitfields */
-#ifdef CONFIG_64BIT
-/* Interrupt Mask */
-#define SOC_MCAUSE_IRQ_MASK          (1 << 63)
-#else
-/* Interrupt Mask */
-#define SOC_MCAUSE_IRQ_MASK          (1 << 31)
-#endif
-
 /* Exception code Mask */
 #define SOC_MCAUSE_EXP_MASK          CONFIG_RISCV_SOC_MCAUSE_EXCEPTION_MASK
 
