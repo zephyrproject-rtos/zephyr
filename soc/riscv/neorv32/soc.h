@@ -7,8 +7,6 @@
 #ifndef RISCV_NEORV32_SOC_H
 #define RISCV_NEORV32_SOC_H
 
-#include <soc_common.h>
-
 /* System information (SYSINFO) register offsets */
 #define NEORV32_SYSINFO_CLK         0x00U
 #define NEORV32_SYSINFO_CPU         0x04U
