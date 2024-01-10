@@ -4032,7 +4032,7 @@ West:
   collaborators:
     - erwango
   files:
-    - modules/Kconfig.st
+    - modules/hal_st/Kconfig
   labels:
     - "area: Sensors"
 
