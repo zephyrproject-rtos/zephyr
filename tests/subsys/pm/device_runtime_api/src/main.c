@@ -141,105 +141,111 @@ ZTEST(device_runtime_api, test_api)
 	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
 	zassert_equal(ret, 0);
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+	if (IS_ENABLED(CONFIG_TEST_PM_DEVICE_ISR_SAFE)) {
+		/* In sync mode async put is equivalent as normal put. */
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+	} else {
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
 
-	/* usage: 0, -1, suspend: no (unbalanced call) */
-	ret = pm_device_runtime_put(test_dev);
-	zassert_equal(ret, -EALREADY);
+		/* usage: 0, -1, suspend: no (unbalanced call) */
+		ret = pm_device_runtime_put(test_dev);
+		zassert_equal(ret, -EALREADY);
 
-	/* usage: 0, -1, suspend: no (unbalanced call) */
-	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
-	zassert_equal(ret, -EALREADY);
+		/* usage: 0, -1, suspend: no (unbalanced call) */
+		ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
+		zassert_equal(ret, -EALREADY);
 
-	/* unblock test driver and let it finish */
-	test_driver_pm_done(test_dev);
-	k_yield();
+		/* unblock test driver and let it finish */
+		test_driver_pm_done(test_dev);
+		k_yield();
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
 
-	/*** get + asynchronous put + get (while suspend still ongoing) ***/
+		/*** get + asynchronous put + get (while suspend still ongoing) ***/
 
-	/* usage: 0, +1, resume: yes */
-	ret = pm_device_runtime_get(test_dev);
-	zassert_equal(ret, 0);
+		/* usage: 0, +1, resume: yes */
+		ret = pm_device_runtime_get(test_dev);
+		zassert_equal(ret, 0);
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
-	test_driver_pm_async(test_dev);
+		test_driver_pm_async(test_dev);
 
-	/* usage: 1, -1, suspend: yes (queued) */
-	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
-	zassert_equal(ret, 0);
+		/* usage: 1, -1, suspend: yes (queued) */
+		ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
+		zassert_equal(ret, 0);
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
 
-	/* let suspension start */
-	k_yield();
+		/* let suspension start */
+		k_yield();
 
-	/* create and start get_runner thread
-	 * get_runner thread is used to test synchronous path while asynchronous
-	 * is ongoing. It is important to set its priority >= to the system work
-	 * queue to make sure sync path run by the thread is forced to wait.
-	 */
-	k_thread_create(&get_runner_td, get_runner_stack,
-			K_THREAD_STACK_SIZEOF(get_runner_stack), get_runner,
-			NULL, NULL, NULL, CONFIG_SYSTEM_WORKQUEUE_PRIORITY, 0,
-			K_NO_WAIT);
-	k_yield();
+		/* create and start get_runner thread
+		 * get_runner thread is used to test synchronous path while asynchronous
+		 * is ongoing. It is important to set its priority >= to the system work
+		 * queue to make sure sync path run by the thread is forced to wait.
+		 */
+		k_thread_create(&get_runner_td, get_runner_stack,
+				K_THREAD_STACK_SIZEOF(get_runner_stack), get_runner,
+				NULL, NULL, NULL, CONFIG_SYSTEM_WORKQUEUE_PRIORITY, 0,
+				K_NO_WAIT);
+		k_yield();
 
-	/* let driver suspend to finish and wait until get_runner finishes
-	 * resuming the driver
-	 */
-	test_driver_pm_done(test_dev);
-	k_thread_join(&get_runner_td, K_FOREVER);
+		/* let driver suspend to finish and wait until get_runner finishes
+		 * resuming the driver
+		 */
+		test_driver_pm_done(test_dev);
+		k_thread_join(&get_runner_td, K_FOREVER);
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
 
-	/* Test if getting a device before an async operation starts does
-	 * not trigger any device pm action.
-	 */
-	size_t count = test_driver_pm_count(test_dev);
+		/* Test if getting a device before an async operation starts does
+		 * not trigger any device pm action.
+		 */
+		size_t count = test_driver_pm_count(test_dev);
 
-	ret = pm_device_runtime_put_async(test_dev, K_MSEC(10));
-	zassert_equal(ret, 0);
+		ret = pm_device_runtime_put_async(test_dev, K_MSEC(10));
+		zassert_equal(ret, 0);
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
 
-	ret = pm_device_runtime_get(test_dev);
-	zassert_equal(ret, 0);
+		ret = pm_device_runtime_get(test_dev);
+		zassert_equal(ret, 0);
 
-	/* Now lets check if the calls above have triggered a device
-	 * pm action
-	 */
-	zassert_equal(count, test_driver_pm_count(test_dev));
+		/* Now lets check if the calls above have triggered a device
+		 * pm action
+		 */
+		zassert_equal(count, test_driver_pm_count(test_dev));
 
-	/*
-	 * test if async put with a delay respects the given time.
-	 */
-	ret = pm_device_runtime_put_async(test_dev, K_MSEC(100));
+		/*
+		 * test if async put with a delay respects the given time.
+		 */
+		ret = pm_device_runtime_put_async(test_dev, K_MSEC(100));
 
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
 
-	k_sleep(K_MSEC(80));
+		k_sleep(K_MSEC(80));
 
-	/* It should still be suspending since we have waited less than
-	 * the delay we've set.
-	 */
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+		/* It should still be suspending since we have waited less than
+		 * the delay we've set.
+		 */
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
 
-	k_sleep(K_MSEC(30));
+		k_sleep(K_MSEC(30));
 
-	/* Now it should be already suspended */
-	(void)pm_device_state_get(test_dev, &state);
-	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+		/* Now it should be already suspended */
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+	}
 
 	/* Put operation should fail due the state be locked. */
 	ret = pm_device_runtime_disable(test_dev);
