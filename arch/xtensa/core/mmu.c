@@ -165,8 +165,8 @@ void xtensa_init_paging(uint32_t *l1_page)
 	 * initialization entries. Now we're flying free with our own
 	 * page table.
 	 */
-	for (int i = 0; i < 8; i++) {
-		uint32_t ixtlb = (i * 0x2000000000) | XCHAL_SPANNING_WAY;
+	for (uint32_t i = 0; i < 8; i++) {
+		uint32_t ixtlb = (i * 0x20000000) | XCHAL_SPANNING_WAY;
 
 		if (ixtlb != iitlb_pc) {
 			__asm__ volatile("iitlb %0" :: "r"(ixtlb));
