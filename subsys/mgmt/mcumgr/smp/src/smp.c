@@ -53,7 +53,7 @@ static void cbor_nb_reader_init(struct cbor_nb_reader *cnr, struct net_buf *nb)
 {
 	cnr->nb = nb;
 	zcbor_new_decode_state(cnr->zs, ARRAY_SIZE(cnr->zs), nb->data,
-			       nb->len, 1);
+			       nb->len, 1, NULL, 0);
 }
 
 static void cbor_nb_writer_init(struct cbor_nb_writer *cnw, struct net_buf *nb)
@@ -125,7 +125,7 @@ static int smp_build_err_rsp(struct smp_streamer *streamer, const struct smp_hdr
 #ifdef CONFIG_MCUMGR_SMP_VERBOSE_ERR_RESPONSE
 	if (ok && rc_rsn != NULL) {
 		ok = zcbor_tstr_put_lit(zsp, "rsn")			&&
-		     zcbor_tstr_put_term(zsp, rc_rsn);
+		     zcbor_tstr_put_term(zsp, rc_rsn, CONFIG_ZCBOR_MAX_STR_LEN);
 	}
 #else
 	ARG_UNUSED(rc_rsn);
