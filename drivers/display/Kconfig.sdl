@@ -46,4 +46,10 @@ config SDL_DISPLAY_ZOOM_PCT
 	help
 	  SDL window zoom percentage to adjust readability on small screens
 
+config SDL_DISPLAY_USE_HARDWARE_ACCELERATOR
+	bool "Use hardware accelerator"
+	default y
+	help
+	  Enable hardware acceleration for graphics rendering
+
 endif # SDL_DISPLAY
