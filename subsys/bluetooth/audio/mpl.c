@@ -1046,24 +1046,28 @@ static void do_next_track(struct mpl_mediaplayer *pl)
 	}
 }
 
-static void do_first_track(struct mpl_mediaplayer *pl)
+static void do_first_track(struct mpl_mediaplayer *pl, bool group_change)
 {
+	bool track_changed = false;
+
 #ifdef CONFIG_BT_MPL_OBJECTS
 	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
-	if (pl->group->track->prev != NULL) {
+	/* Set first track */
+	while (pl->group->track->prev != NULL) {
 		pl->group->track = pl->group->track->prev;
+		track_changed = true;
+	}
+
+	/* Notify about new track */
+	if (group_change || track_changed) {
 		media_player.track_pos = 0;
 		do_track_change_notifications(&media_player);
 	} else {
 		/* For first track, the position is reset to 0 even */
 		/* if we stay at the same track (goto start of track) */
 		set_track_position(0);
-	}
-
-	while (pl->group->track->prev != NULL) {
-		pl->group->track = pl->group->track->prev;
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
@@ -1306,7 +1310,7 @@ static void do_full_prev_group(struct mpl_mediaplayer *pl)
 	do_prev_group(pl);
 
 	/* Whether there is a group change or not, we always go to the first track */
-	do_first_track(pl);
+	do_first_track(pl, true);
 }
 
 static void do_full_next_group(struct mpl_mediaplayer *pl)
@@ -1315,7 +1319,7 @@ static void do_full_next_group(struct mpl_mediaplayer *pl)
 	do_next_group(pl);
 
 	/* Whether there is a group change or not, we always go to the first track */
-	do_first_track(pl);
+	do_first_track(pl, true);
 }
 
 static void do_full_first_group(struct mpl_mediaplayer *pl)
@@ -1324,7 +1328,7 @@ static void do_full_first_group(struct mpl_mediaplayer *pl)
 	do_first_group(pl);
 
 	/* Whether there is a group change or not, we always go to the first track */
-	do_first_track(pl);
+	do_first_track(pl, true);
 }
 
 static void do_full_last_group(struct mpl_mediaplayer *pl)
@@ -1333,7 +1337,7 @@ static void do_full_last_group(struct mpl_mediaplayer *pl)
 	do_last_group(pl);
 
 	/* Whether there is a group change or not, we always go to the first track */
-	do_first_track(pl);
+	do_first_track(pl, true);
 }
 
 static void do_full_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
@@ -1342,7 +1346,7 @@ static void do_full_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 	do_goto_group(pl, groupnum);
 
 	/* Whether there is a group change or not, we always go to the first track */
-	do_first_track(pl);
+	do_first_track(pl, true);
 }
 
 static void mpl_set_state(uint8_t state)
@@ -1405,7 +1409,7 @@ static uint8_t inactive_state_command_handler(const struct mpl_cmd *command)
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		do_first_track(&media_player);
+		do_first_track(&media_player, false);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
@@ -1537,7 +1541,7 @@ static uint8_t playing_state_command_handler(const struct mpl_cmd *command)
 		do_next_track(&media_player);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		do_first_track(&media_player);
+		do_first_track(&media_player, false);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
 		do_last_track(&media_player);
@@ -1684,7 +1688,7 @@ static uint8_t paused_state_command_handler(const struct mpl_cmd *command)
 		/* does not change */
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		do_first_track(&media_player);
+		do_first_track(&media_player, false);
 		break;
 	case MEDIA_PROXY_OP_LAST_TRACK:
 		do_last_track(&media_player);
@@ -1830,7 +1834,7 @@ static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
-		do_first_track(&media_player);
+		do_first_track(&media_player, false);
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
@@ -2159,7 +2163,7 @@ static void set_current_group_id(uint64_t id)
 			do_group_change_notifications(&media_player);
 
 			/* And change to first track in group */
-			do_first_track(&media_player);
+			do_first_track(&media_player, false);
 		}
 		return;
 	}
