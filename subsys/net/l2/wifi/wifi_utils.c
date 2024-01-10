@@ -241,8 +241,7 @@ int wifi_utils_parse_scan_bands(char *scan_bands_str, uint8_t *band_map)
 		return -EINVAL;
 	}
 
-	strncpy(parse_str, scan_bands_str, len);
-	parse_str[len] = '\0';
+	strncpy(parse_str, scan_bands_str, sizeof(parse_str));
 
 	band_str = strtok_r(parse_str, ",", &ctx);
 
