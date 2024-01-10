@@ -14,7 +14,8 @@ config ENTROPY_GENERATOR
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
-	default 98304 if WIFI
+	default 65535 if WIFI && BT
+	default 51200 if WIFI
 	default 65536 if BT
 	default 4096
 
