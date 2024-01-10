@@ -74,7 +74,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 		goto out;
 	}
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	ok = zcbor_map_start_decode(zsd);
 	if (!ok) {
@@ -201,7 +201,7 @@ static int image_upload_res_fn(struct net_buf *nb, void *user_data)
 		goto end;
 	}
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	rc = zcbor_map_decode_bulk(zsd, upload_res_decode, ARRAY_SIZE(upload_res_decode), &decoded);
 	if (rc || image_upload_buf->image_upload_offset == SIZE_MAX) {
@@ -233,7 +233,7 @@ static int erase_res_fn(struct net_buf *nb, void *user_data)
 		goto end;
 	}
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data, nb->len, 1, NULL, 0);
 
 	rc = zcbor_map_decode_bulk(zsd, upload_res_decode, ARRAY_SIZE(upload_res_decode), &decoded);
 	if (rc) {
