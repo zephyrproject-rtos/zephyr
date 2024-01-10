@@ -234,6 +234,7 @@ elseif(HWMv2)
             `${BOARD}` not found. Please specify a valid board.\n"
             "Valid board identifiers for ${BOARD_NAME} are:\n${BOARD_IDENTIFIERS}\n")
     endif()
+    set(BOARD_IDENTIFIER ${BOARD_IDENTIFIER} CACHE INTERNAL "Board identifier")
   endif()
 else()
   message(FATAL_ERROR "Unknown hw model (${HWM}) for board: ${BOARD}.")
