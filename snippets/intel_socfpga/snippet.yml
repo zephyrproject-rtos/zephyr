@@ -1,0 +1,11 @@
+name: intel_socfpga
+
+boards:
+  intel_socfpga_agilex_socdk:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/intel_socfpga_agilex_socdk.overlay
+      EXTRA_CONF_FILE: boards/intel_socfpga_agilex_socdk.conf
+  intel_socfpga_agilex5_socdk:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/intel_socfpga_agilex5_socdk.overlay
+      EXTRA_CONF_FILE: boards/intel_socfpga_agilex5_socdk.conf

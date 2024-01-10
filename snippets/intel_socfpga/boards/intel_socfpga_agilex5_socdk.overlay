@@ -5,10 +5,8 @@
 
 /*
  * The overlay file should be used to enable any
- * dts nodes required by this shell application for this
+ * dts nodes required by any application for this
  * board.
- *
- * Nothing here as of now.
  */
 
 &timer0 {
