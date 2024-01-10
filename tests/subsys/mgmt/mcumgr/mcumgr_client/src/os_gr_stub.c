@@ -81,7 +81,8 @@ void os_echo_verify(struct net_buf *nb)
 		ZCBOR_MAP_DECODE_KEY_DECODER("d", zcbor_tstr_decode, &echo_data)
 		};
 
-	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data + sizeof(struct smp_hdr), nb->len, 1);
+	zcbor_new_decode_state(zsd, ARRAY_SIZE(zsd), nb->data + sizeof(struct smp_hdr), nb->len, 1,
+				NULL, 0);
 	echo_data.len = 0;
 
 	rc = zcbor_map_decode_bulk(zsd, list_res_decode, ARRAY_SIZE(list_res_decode), &decoded);
