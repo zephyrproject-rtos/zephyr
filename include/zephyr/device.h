@@ -371,7 +371,9 @@ struct device_state {
 	bool initialized : 1;
 };
 
+struct pm_device_base;
 struct pm_device;
+struct pm_device_isr;
 
 #ifdef CONFIG_DEVICE_DEPS_DYNAMIC
 #define Z_DEVICE_DEPS_CONST
@@ -409,7 +411,11 @@ struct device {
 	 * Reference to the device PM resources (only available if
 	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
 	 */
-	struct pm_device *pm;
+	union {
+		struct pm_device_base *pm_base;
+		struct pm_device *pm;
+		struct pm_device_isr *pm_isr;
+	};
 #endif
 };
 
@@ -885,7 +891,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @brief Initializer for @ref device.
  *
  * @param name_ Name of the device.
- * @param pm_ Reference to @ref pm_device (optional).
+ * @param pm_ Reference to @ref pm_device_base (optional).
  * @param data_ Reference to device data.
  * @param config_ Reference to device config.
  * @param api_ Reference to device API ops.
@@ -900,7 +906,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
 		.state = (state_),                                             \
 		.data = (data_),                                               \
 		IF_ENABLED(CONFIG_DEVICE_DEPS, (.deps = (deps_),)) /**/        \
-		IF_ENABLED(CONFIG_PM_DEVICE, (.pm = (pm_),)) /**/              \
+		IF_ENABLED(CONFIG_PM_DEVICE, (.pm_base = (pm_),)) /**/         \
 	}
 
 /**
@@ -919,7 +925,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * software device).
  * @param dev_id Device identifier (used to name the defined @ref device).
  * @param name Name of the device.
- * @param pm Reference to @ref pm_device associated with the device.
+ * @param pm Reference to @ref pm_device_base associated with the device.
  * (optional).
  * @param data Reference to device data.
  * @param config Reference to device config.
@@ -991,7 +997,7 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @param dev_id Device identifier (used to name the defined @ref device).
  * @param name Name of the device.
  * @param init_fn Device init function.
- * @param pm Reference to @ref pm_device associated with the device.
+ * @param pm Reference to @ref pm_device_base associated with the device.
  * (optional).
  * @param data Reference to device data.
  * @param config Reference to device config.

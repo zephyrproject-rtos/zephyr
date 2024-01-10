@@ -50,6 +50,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_PD,
 	/** Indicates if device runtime PM should be automatically enabled */
 	PM_DEVICE_FLAG_RUNTIME_AUTO,
+	/** Indicates that device runtime PM supports suspending and resuming from any context. */
+	PM_DEVICE_FLAG_ISR_SAFE,
 };
 
 /** @endcond */
@@ -122,8 +124,37 @@ typedef bool (*pm_device_action_failed_cb_t)(const struct device *dev,
 
 /**
  * @brief Device PM info
+ *
+ * Structure holds fields which are common for two PM devices: generic and
+ * synchronous.
+ */
+struct pm_device_base {
+	/** Device PM status flags. */
+	atomic_t flags;
+	/** Device power state */
+	enum pm_device_state state;
+	/** Device PM action callback */
+	pm_device_action_cb_t action_cb;
+#if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
+	/** Device usage count */
+	uint32_t usage;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
+	/** Power Domain it belongs */
+	const struct device *domain;
+#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
+};
+
+/**
+ * @brief Runtime PM info for device with generic PM.
+ *
+ * Generic PM involves suspending and resuming operations which can be blocking,
+ * long lasting or asynchronous. Runtime PM API is limited when used from
+ * interrupt context.
  */
 struct pm_device {
+	/** Base info. */
+	struct pm_device_base base;
 #if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
 	/** Pointer to the device */
 	const struct device *dev;
@@ -131,22 +162,30 @@ struct pm_device {
 	struct k_sem lock;
 	/** Event var to listen to the sync request events */
 	struct k_event event;
-	/** Device usage count */
-	uint32_t usage;
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
 #endif /* CONFIG_PM_DEVICE_RUNTIME */
-#ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
-	/** Power Domain it belongs */
-	const struct device *domain;
-#endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
-	/* Device PM status flags. */
-	atomic_t flags;
-	/** Device power state */
-	enum pm_device_state state;
-	/** Device PM action callback */
-	pm_device_action_cb_t action_cb;
 };
+
+/**
+ * @brief Runtime PM info for device with synchronous PM.
+ *
+ * Synchronous PM can be used with devices which suspend and resume operations can
+ * be performed in the critical section as they are short and non-blocking.
+ * Runtime PM API can be used from any context in that case.
+ */
+struct pm_device_isr {
+	/** Base info. */
+	struct pm_device_base base;
+#if defined(CONFIG_PM_DEVICE_RUNTIME) || defined(__DOXYGEN__)
+	/** Lock to synchronize the synchronous get/put operations */
+	struct k_spinlock lock;
+#endif
+};
+
+/* Base part must be the first element. */
+BUILD_ASSERT(offsetof(struct pm_device, base) == 0);
+BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -167,7 +206,7 @@ struct pm_device {
 #endif /* CONFIG_PM_DEVICE_POWER_DOMAIN */
 
 /**
- * @brief Utility macro to initialize #pm_device flags
+ * @brief Utility macro to initialize #pm_device_base flags
  *
  * @param node_id Devicetree node for the initialized device (can be invalid).
  */
@@ -188,17 +227,34 @@ struct pm_device {
  * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
  * it may not be defined on all devices.
  *
- * @param obj Name of the #pm_device structure being initialized.
+ * @param obj Name of the #pm_device_base structure being initialized.
+ * @param node_id Devicetree node for the initialized device (can be invalid).
+ * @param pm_action_cb Device PM control callback function.
+ * @param _flags Additional flags passed to the structure.
+ */
+#define Z_PM_DEVICE_BASE_INIT(obj, node_id, pm_action_cb, _flags)	     \
+	{								     \
+		.action_cb = pm_action_cb,				     \
+		.state = PM_DEVICE_STATE_ACTIVE,			     \
+		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id) | (_flags)), \
+		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)			     \
+	}
+
+/**
+ * @brief Utility macro to initialize #pm_device_rt.
+ *
+ * @note #DT_PROP_OR is used to retrieve the wakeup_source property because
+ * it may not be defined on all devices.
+ *
+ * @param obj Name of the #pm_device_base structure being initialized.
  * @param node_id Devicetree node for the initialized device (can be invalid).
  * @param pm_action_cb Device PM control callback function.
  */
-#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb)		  \
-	{							  \
-		Z_PM_DEVICE_RUNTIME_INIT(obj)			  \
-		.action_cb = pm_action_cb,			  \
-		.state = PM_DEVICE_STATE_ACTIVE,		  \
-		.flags = ATOMIC_INIT(Z_PM_DEVICE_FLAGS(node_id)), \
-		Z_PM_DEVICE_POWER_DOMAIN_INIT(node_id)		  \
+#define Z_PM_DEVICE_INIT(obj, node_id, pm_action_cb, isr_safe)			\
+	{									\
+		.base = Z_PM_DEVICE_BASE_INIT(obj, node_id, pm_action_cb,	\
+				isr_safe ? BIT(PM_DEVICE_FLAG_ISR_SAFE) : 0),	\
+		COND_CODE_1(isr_safe, (), (Z_PM_DEVICE_RUNTIME_INIT(obj)))	\
 	}
 
 /**
@@ -231,21 +287,22 @@ struct pm_device {
  * @param dev_id Device id.
  * @param pm_action_cb PM control callback.
  */
-#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb)		\
-	Z_PM_DEVICE_DEFINE_SLOT(dev_id);				\
-	static struct pm_device Z_PM_DEVICE_NAME(dev_id) =		\
-	Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
-			 pm_action_cb)
+#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb, isr_safe)		\
+	Z_PM_DEVICE_DEFINE_SLOT(dev_id);					\
+	static struct COND_CODE_1(isr_safe, (pm_device_isr), (pm_device))	\
+		Z_PM_DEVICE_NAME(dev_id) =					\
+		Z_PM_DEVICE_INIT(Z_PM_DEVICE_NAME(dev_id), node_id,		\
+				 pm_action_cb, isr_safe)
 
 /**
  * Get a reference to the device PM resources.
  *
  * @param dev_id Device id.
  */
-#define Z_PM_DEVICE_GET(dev_id) (&Z_PM_DEVICE_NAME(dev_id))
+#define Z_PM_DEVICE_GET(dev_id) ((struct pm_device_base *)&Z_PM_DEVICE_NAME(dev_id))
 
 #else
-#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb)
+#define Z_PM_DEVICE_DEFINE(node_id, dev_id, pm_action_cb, isr_safe)
 #define Z_PM_DEVICE_GET(dev_id) NULL
 #endif /* CONFIG_PM_DEVICE */
 
@@ -262,8 +319,26 @@ struct pm_device {
  * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
  */
 #define PM_DEVICE_DEFINE(dev_id, pm_action_cb) \
-	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb)
+	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb, 0)
 
+/**
+ * Define device PM resources for the given device name.
+ *
+ * PM actions are synchronous and can be executed from any context. This approach
+ * can be used for cases where suspending and resuming is short as it is
+ * executed in the critical section. This mode requires less resources (~80 byte
+ * less RAM) and allows to use device runtime PM from any context (including
+ * interrupts).
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
+ *
+ * @param dev_id Device id.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DT_INST_DEFINE
+ */
+#define PM_DEVICE_ISR_SYNC_DEFINE(dev_id, pm_action_cb) \
+	Z_PM_DEVICE_DEFINE(DT_INVALID_NODE, dev_id, pm_action_cb, 1)
 /**
  * Define device PM resources for the given node identifier.
  *
@@ -274,9 +349,27 @@ struct pm_device {
  *
  * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
  */
-#define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb)			\
-	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id),	\
-			   pm_action_cb)
+#define PM_DEVICE_DT_DEFINE(node_id, pm_action_cb) \
+	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id), pm_action_cb, 0)
+
+/**
+ * Define device PM resources for the given node identifier.
+ *
+ * PM actions are synchronous and can be executed from any context. This approach
+ * can be used for cases where suspending and resuming is short as it is
+ * executed in the critical section. This mode requires less resources (~80 byte
+ * less RAM) and allows to use device runtime PM from any context (including
+ * interrupts).
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
+ *
+ * @param node_id Node identifier.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_DT_INST_DEFINE, #PM_DEVICE_DEFINE
+ */
+#define PM_DEVICE_ISR_SAFE_DT_DEFINE(node_id, pm_action_cb) \
+	Z_PM_DEVICE_DEFINE(node_id, Z_DEVICE_DT_DEV_ID(node_id), pm_action_cb, 1)
 
 /**
  * Define device PM resources for the given instance.
@@ -291,7 +384,28 @@ struct pm_device {
 #define PM_DEVICE_DT_INST_DEFINE(idx, pm_action_cb)			\
 	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),				\
 			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(idx)),	\
-			   pm_action_cb)
+			   pm_action_cb, 0)
+
+/**
+ * Define device PM resources for the given instance.
+ *
+ * PM actions are synchronous and can be executed from any context. This approach
+ * can be used for cases where suspending and resuming is short as it is
+ * executed in the critical section. This mode requires less resources (~80 byte
+ * less RAM) and allows to use device runtime PM from any context (including
+ * interrupts).
+ *
+ * @note This macro is a no-op if @kconfig{CONFIG_PM_DEVICE} is not enabled.
+ *
+ * @param idx Instance index.
+ * @param pm_action_cb PM control callback.
+ *
+ * @see #PM_DEVICE_DT_DEFINE, #PM_DEVICE_DEFINE
+ */
+#define PM_DEVICE_ISR_SAFE_DT_INST_DEFINE(idx, pm_action_cb)	 \
+	Z_PM_DEVICE_DEFINE(DT_DRV_INST(idx),			 \
+			   Z_DEVICE_DT_DEV_ID(DT_DRV_INST(idx)), \
+			   pm_action_cb, 1)
 
 /**
  * @brief Obtain a reference to the device PM resources for the given device.
@@ -393,7 +507,7 @@ int pm_device_state_get(const struct device *dev,
  */
 static inline void pm_device_init_suspended(const struct device *dev)
 {
-	struct pm_device *pm = dev->pm;
+	struct pm_device_base *pm = dev->pm_base;
 
 	pm->state = PM_DEVICE_STATE_SUSPENDED;
 }
@@ -413,7 +527,7 @@ static inline void pm_device_init_suspended(const struct device *dev)
  */
 static inline void pm_device_init_off(const struct device *dev)
 {
-	struct pm_device *pm = dev->pm;
+	struct pm_device_base *pm = dev->pm_base;
 
 	pm->state = PM_DEVICE_STATE_OFF;
 }
