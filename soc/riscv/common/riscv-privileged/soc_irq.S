@@ -12,7 +12,7 @@
 #include <offsets.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <soc.h>
+#include <zephyr/arch/riscv/irq.h>
 
 /*
  * __soc_handle_irq is defined as .weak to allow re-implementation by
@@ -48,7 +48,7 @@ WTEXT(__soc_is_irq)
 SECTION_FUNC(exception.other, __soc_is_irq)
 	/* Read mcause and check if interrupt bit is set */
 	csrr t0, mcause
-	li t1, SOC_MCAUSE_IRQ_MASK
+	li t1, RISCV_MCAUSE_IRQ_BIT
 	and t0, t0, t1
 
 	/* If interrupt bit is not set, return with 0 */
