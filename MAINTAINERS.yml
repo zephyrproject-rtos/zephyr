@@ -2986,6 +2986,7 @@ ADI Platforms:
     - galak
     - microbuilder
   files:
+    - boards/arm/adi_*/
     - drivers/*/max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
