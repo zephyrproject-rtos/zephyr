@@ -52,9 +52,4 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 /* Number of endpoints supported */
 #define USB_DEVICE_CONFIG_ENDPOINTS (DT_INST_PROP(0, num_bidir_endpoints))
 
-/* Start of Frame (SOF) Notifications are required by the zephyr usb audio driver */
-#ifdef CONFIG_USB_DEVICE_AUDIO
-#define USB_DEVICE_CONFIG_SOF_NOTIFICATIONS (1U)
-#endif /* CONFIG_USB_DEVICE_AUDIO */
-
 #endif /* __USB_DEVICE_CONFIG_H__ */
