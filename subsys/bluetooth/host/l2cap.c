@@ -1834,7 +1834,6 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 static struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_chan *ch)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg = NULL;
 
 	if (ch->chan.ops->alloc_seg) {
@@ -1843,11 +1842,6 @@ static struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_c
 		if (!seg) {
 			LOG_WRN("App failed to allocate seg");
 		}
-	}
-
-	if (!seg) {
-		/* Try to use original pool if possible */
-		seg = net_buf_alloc(pool, K_NO_WAIT);
 	}
 
 	if (!seg) {
