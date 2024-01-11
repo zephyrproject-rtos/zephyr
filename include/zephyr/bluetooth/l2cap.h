@@ -593,7 +593,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
  *
- *  @return Bytes sent in case of success or negative value in case of error.
+ *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
