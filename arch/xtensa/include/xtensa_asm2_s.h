@@ -371,7 +371,7 @@ _xstack_call0_\@:
 	entry a1, 16
 	mov a1, a2
 	rsr.ZSR_EPS a2
-	wsr.PS a2
+	wsr.ps a2
 	call4 _xstack_call1_\@
 	mov a2, a6		/* copy return value */
 	retw
@@ -439,7 +439,7 @@ _xstack_returned_\@:
 	rsr.ps a0
 	movi a3, PS_INTLEVEL(1)
 	or a0, a0, a3
-	wsr.PS a0
+	wsr.ps a0
 _not_l1:
 
 	/* Setting up the cross stack call below has states where the
@@ -459,7 +459,7 @@ _not_l1:
 	movi a3, ~(PS_EXCM_MASK) & ~(PS_RING_MASK)
 	and a0, a0, a3
 	wsr.ZSR_EPS a0
-	wsr.PS a0
+	wsr.ps a0
 	rsync
 
 	/* A1 already contains our saved stack, and A2 our handler.
