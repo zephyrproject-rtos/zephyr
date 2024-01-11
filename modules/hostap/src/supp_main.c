@@ -464,7 +464,7 @@ static void handler(void)
 #if defined(CONFIG_WPA_SUPP_CRYPTO) && !defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 	/* Needed for crypto operation as default is no-op and fails */
 	mbedtls_platform_set_calloc_free(calloc, free);
-#endif /* CONFIG_WPA_CRYPTO */
+#endif /* CONFIG_WPA_SUPP_CRYPTO */
 
 	ctx = get_default_context();
 
