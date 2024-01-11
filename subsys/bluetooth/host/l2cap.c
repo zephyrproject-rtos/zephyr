@@ -3116,32 +3116,12 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	return 0;
 }
 
-int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
-	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct l2cap_tx_meta_data *data;
 	void *old_user_data = l2cap_tx_meta_data(buf);
 	uint16_t sdu_len;
 	int err;
-
-	if (!buf) {
-		return -EINVAL;
-	}
-
-	LOG_DBG("chan %p buf %p len %zu", chan, buf, net_buf_frags_len(buf));
-
-	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
-		return -ESHUTDOWN;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
-	    chan->conn->type == BT_CONN_TYPE_BR) {
-		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
-	}
 
 	sdu_len = net_buf_frags_len(buf);
 
@@ -3219,4 +3199,42 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return err;
 }
 
+int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	if (!buf || !chan) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("chan %p buf %p len %zu", chan, buf, net_buf_frags_len(buf));
+
+	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		return -ESHUTDOWN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	    chan->conn->type == BT_CONN_TYPE_BR) {
+		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
+	}
+
+	/* Sending over static channels is not supported by this fn. Use
+	 * `bt_l2cap_send()` if external to this file, or `l2cap_send` if
+	 * internal.
+	 */
+	if (IS_ENABLED(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)) {
+		struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+		__ASSERT_NO_MSG(le_chan);
+		__ASSERT_NO_MSG(L2CAP_LE_CID_IS_DYN(le_chan->tx.cid));
+
+		return bt_l2cap_dyn_chan_send(le_chan, buf);
+	}
+
+	LOG_DBG("Invalid channel type (chan %p)", chan);
+
+	return -EINVAL;
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
