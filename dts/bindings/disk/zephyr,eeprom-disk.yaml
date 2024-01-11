@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: EEPROM disk
+
+compatible: "zephyr,eeprom-disk"
+
+include: "base.yaml"
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
+
+  disk-size:
+    type: int
+    required: true
+    description: |
+      Total disk size in bytes.
+
+  sector-size:
+    type: int
+    default: 1
+    description: |
+      Disk sector size in bytes if the eeprom has sectors.
+
+  eeprom-device:
+    type: phandle
+    required: true
+    description: |
+      A reference to the eeprom.
