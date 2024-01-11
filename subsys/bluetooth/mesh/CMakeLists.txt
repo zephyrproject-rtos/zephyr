@@ -122,6 +122,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SOLICITATION solicitation.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_STATISTIC statistic.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG delayable_msg.c)
+
 if (CONFIG_BT_MESH_USES_TINYCRYPT)
     zephyr_library_sources(crypto_tc.c)
 else()

@@ -222,6 +222,39 @@ They are used to represent the new content of the mirrored pages when the Compos
 change after a firmware update. See :ref:`bluetooth_mesh_dfu_srv_comp_data_and_models_metadata`
 for details.
 
+Delayable messages
+==================
+
+The delayable message functionality is enabled with Kconfig option
+:kconfig:option:`CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG`.
+This is an optional functionality that implements specification recommendations for
+messages that are transmitted by a model in a response to a received message, also called
+response messages.
+
+Response messages should be sent with the following random delays:
+
+* Between 20 and 50 milliseconds if the received message was sent
+  to a unicast address
+* Between 20 and 500 milliseconds if the received message was sent
+  to a group or virtual address
+
+The delayable message functionality is triggered if the :c:member:`bt_mesh_msg_ctx.rnd_delay`
+flag is set.
+The delayable message functionality stores messages in the local memory while they are
+waiting for the random delay expiration.
+
+If the transport layer doesn't have sufficient memory to send a message at the moment
+the random delay expires, the message is postponed for another 10 milliseconds.
+If the transport layer cannot send a message for any other reason, the delayable message
+functionality raises the :c:member:`bt_mesh_send_cb.start` callback with a transport layer
+error code.
+
+If the delayable message functionality cannot find enough free memory to store an incoming
+message, it will send messages with delay close to expiration to free memory.
+
+When the mesh stack is suspended or reset, messages not yet sent are removed and
+the :c:member:`bt_mesh_send_cb.start` callback is raised with an error code.
+
 API reference
 *************
 

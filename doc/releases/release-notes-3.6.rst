@@ -52,6 +52,11 @@ Bluetooth
 
 * Mesh
 
+  * Added the delayable messages functionality to apply random delays for
+    the transmitted responses on the Access layer.
+    The functionality is enabled by the :kconfig:option:`CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG`
+    Kconfig option.
+
 * Controller
 
 Boards & SoC Support
