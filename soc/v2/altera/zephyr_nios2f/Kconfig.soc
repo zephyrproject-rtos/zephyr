@@ -1,0 +1,8 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ZEPHYR_NIOS2F
+	bool
+
+config SOC
+	default "zephyr_nios2f" if SOC_ZEPHYR_NIOS2F
