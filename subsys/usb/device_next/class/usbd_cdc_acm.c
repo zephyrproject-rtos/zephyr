@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_cdc_acm_uart
+
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
@@ -19,12 +21,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 
-/*
- * FIXME: buffer count per device.
- */
 NET_BUF_POOL_FIXED_DEFINE(cdc_acm_ep_pool,
-			  2, 512,
-			  sizeof(struct udc_buf_info), NULL);
+			  DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+			  512, sizeof(struct udc_buf_info), NULL);
 
 #define CDC_ACM_DEFAULT_LINECODING	{sys_cpu_to_le32(115200), 0, 0, 8}
 #define CDC_ACM_DEFAULT_BULK_EP_MPS	0
@@ -1094,8 +1093,6 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bDescriptorType = 0,						\
 	},									\
 }
-
-#define DT_DRV_COMPAT zephyr_cdc_acm_uart
 
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),					\
