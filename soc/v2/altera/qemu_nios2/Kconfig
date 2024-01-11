@@ -1,7 +1,7 @@
+# Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_NIOS2_QEMU
-	bool "Nios II - Experimental QEMU emulation"
+config SOC_QEMU_NIOS2
 	select NIOS2
 	select HAS_MUL_INSTRUCTION
 	select HAS_DIV_INSTRUCTION
