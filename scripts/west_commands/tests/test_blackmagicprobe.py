@@ -11,7 +11,7 @@ import pytest
 
 from runners import blackmagicprobe
 from runners.blackmagicprobe import BlackMagicProbeRunner
-from conftest import RC_KERNEL_ELF, RC_GDB
+from conftest import RC_KERNEL_ELF, RC_KERNEL_HEX, RC_GDB
 import serial.tools.list_ports
 
 TEST_GDB_SERIAL = 'test-gdb-serial'
@@ -41,7 +41,7 @@ EXPECTED_COMMANDS = {
       '-ex', "target extended-remote {}".format(TEST_GDB_SERIAL),
       '-ex', "monitor swdp_scan",
       '-ex', "attach 1",
-      '-ex', "load {}".format(RC_KERNEL_ELF),
+      '-ex', "load {}".format(RC_KERNEL_HEX),
       '-ex', "kill",
       '-ex', "quit",
       '-silent'],),
