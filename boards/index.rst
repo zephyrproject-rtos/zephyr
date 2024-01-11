@@ -28,6 +28,10 @@ available under :zephyr_file:`doc/templates/board.tmpl`.
    xtensa/index.rst
    shields/index.rst
 
+   v2/adafruit/index.rst
    v2/arm/index.rst
    v2/gd/index.rst
+   v2/raspberry_pi/index.rst
    v2/renesas/index.rst
+   v2/sparkfun/index.rst
+   v2/wiznet/index.rst
