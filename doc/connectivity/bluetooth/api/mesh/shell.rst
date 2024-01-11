@@ -282,7 +282,7 @@ Provisioning
 ============
 
 To allow a device to broadcast connectable unprovisioned beacons, the
-:kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE` configuration option must be enabled, along with the
+:kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` configuration option must be enabled, along with the
 :kconfig:option:`CONFIG_BT_MESH_PB_GATT` option.
 
 ``mesh prov pb-gatt <Val(off, on)>``
@@ -295,7 +295,7 @@ To allow a device to broadcast connectable unprovisioned beacons, the
 	* ``Val``: Enable or disable provisioning with GATT
 
 To allow a device to broadcast unprovisioned beacons, the
-:kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE` configuration option must be enabled, along with the
+:kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` configuration option must be enabled, along with the
 :kconfig:option:`CONFIG_BT_MESH_PB_ADV` option.
 
 ``mesh prov pb-adv <Val(off, on)>``
