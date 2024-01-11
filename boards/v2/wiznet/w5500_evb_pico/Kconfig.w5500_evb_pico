@@ -3,5 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_W5500_EVB_PICO
-	bool "Wiznet W5500 Evaluation Board"
-	depends on SOC_RP2040
+	select SOC_RP2040
