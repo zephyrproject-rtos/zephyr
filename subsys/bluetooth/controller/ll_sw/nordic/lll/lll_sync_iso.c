@@ -803,6 +803,9 @@ isr_rx_find_subevent:
 						   ((lll->bn * lll->irc) +
 						    lll->ptc)) + 1U;
 
+					/* BIS index */
+					bis_idx = lll->bis_curr - 1U;
+
 					/* Find the missing (bn_curr)th Rx PDU
 					 * of bis_curr
 					 */
