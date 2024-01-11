@@ -3,5 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_GENERIC_LEON3
-	bool "Generic LEON3 system"
-	depends on SOC_LEON3
+	select SOC_LEON3
