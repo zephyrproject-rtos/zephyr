@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(bt_mesh_adv_legacy);
 static struct k_thread adv_thread_data;
 static K_KERNEL_STACK_DEFINE(adv_thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
 static int32_t adv_timeout;
+static bool enabled;
 
 static int bt_data_send(uint8_t num_events, uint16_t adv_int,
 			const struct bt_data *ad, size_t ad_len,
@@ -144,10 +145,9 @@ static inline void buf_send(struct net_buf *buf)
 static void adv_thread(void *p1, void *p2, void *p3)
 {
 	LOG_DBG("started");
+	struct net_buf *buf;
 
-	while (1) {
-		struct net_buf *buf;
-
+	while (enabled) {
 		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
 			buf = bt_mesh_adv_buf_get(K_NO_WAIT);
 			if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION) && !buf) {
@@ -188,6 +188,12 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		/* Give other threads a chance to run */
 		k_yield();
 	}
+
+	/* Empty the advertising pool when advertising is disabled */
+	while ((buf = bt_mesh_adv_buf_get(K_NO_WAIT))) {
+		bt_mesh_adv_send_start(0, -ENODEV, BT_MESH_ADV(buf));
+		net_buf_unref(buf);
+	}
 }
 
 void bt_mesh_adv_buf_local_ready(void)
@@ -221,7 +227,16 @@ void bt_mesh_adv_init(void)
 
 int bt_mesh_adv_enable(void)
 {
+	enabled = true;
 	k_thread_start(&adv_thread_data);
+	return 0;
+}
+
+int bt_mesh_adv_disable(void)
+{
+	enabled = false;
+	k_thread_join(&adv_thread_data, K_FOREVER);
+	LOG_DBG("Advertising disabled");
 	return 0;
 }
 
