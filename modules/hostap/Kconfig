@@ -137,7 +137,7 @@ config WIFI_NM_WPA_SUPPLICANT_P2P
 	select WIFI_NM_WPA_SUPPLICANT_WPS
 
 config WIFI_NM_WPA_SUPPLICANT_EAPOL
-	bool "Enable EAPoL supplicant"
+	bool "EAPoL supplicant"
 
 config WIFI_NM_WPA_SUPPLICANT_CLI
 	bool "CLI support for wpa_supplicant"
@@ -205,6 +205,127 @@ config FST
 	bool
 
 config TESTING_OPTIONS
+	bool
+
+config AP
+	bool
+
+config NO_RADIUS
+	bool
+
+config NO_VLAN
+	bool
+
+config NO_ACCOUNTING
+	bool
+
+config NEED_AP_MLME
+	bool
+
+config IEEE80211AX
+	bool
+
+config EAP_SERVER
+	bool
+
+config EAP_SERVER_IDENTITY
+	bool
+
+config P2P
+	bool
+
+config GAS
+	bool
+
+config OFFCHANNEL
+	bool
+
+config WPS
+	bool
+
+config WSC
+	bool
+
+config EAP_TLS
+	bool
+
+config IEEE8021X_EAPOL
+	bool
+
+config EAP_PEAP
+	bool
+
+config EAP_TTLS
+	bool
+
+config EAP_MD5
+	bool
+
+config EAP_MSCHAPv2
+	bool
+
+config EAP_LEAP
+	bool
+
+config EAP_PSK
+	bool
+
+config EAP_FAST
+	bool
+
+config EAP_PAX
+	bool
+
+config EAP_SAKE
+	bool
+
+config EAP_GPSK
+	bool
+
+config EAP_PWD
+	bool
+
+config EAP_EKE
+	bool
+
+config EAP_IKEv2
+	bool
+
+config IEEE8021X_EAPOL
+	bool
+
+config CRYPTO_INTERNAL
+	bool
+
+config ECC
+	bool
+
+config MBO
+	bool
+
+config NO_STDOUT_DEBUG
+	bool
+
+config SAE
+	bool
+
+config SHA256
+	bool
+
+config SUITEB192
+	bool
+
+config WEP
+	bool
+	default y if WIFI_NM_WPA_SUPPLICANT_WEP
+
+config WPA_CLI
+	bool
+
+config WPA_CRYPTO
+	bool
+
+config WPA_SUPP_CRYPTO
 	bool
 
 endif # WIFI_NM_WPA_SUPPLICANT
