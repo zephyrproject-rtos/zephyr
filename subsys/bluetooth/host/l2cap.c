@@ -71,7 +71,6 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 #define l2cap_remove_ident(conn, ident) __l2cap_lookup_ident(conn, ident, true)
 
 struct l2cap_tx_meta_data {
-	int sent;
 	uint16_t cid;
 	bt_conn_tx_cb_t cb;
 	void *user_data;
@@ -924,24 +923,23 @@ static struct net_buf *l2cap_chan_le_get_tx_buf(struct bt_l2cap_le_chan *ch)
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, uint16_t sent);
+				  struct net_buf **buf);
 
 static void l2cap_chan_tx_process(struct k_work *work)
 {
 	struct bt_l2cap_le_chan *ch;
 	struct net_buf *buf;
+	int ret;
 
 	ch = CONTAINER_OF(k_work_delayable_from_work(work), struct bt_l2cap_le_chan, tx_work);
 
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		int sent = l2cap_tx_meta_data(buf)->sent;
+		LOG_DBG("buf %p", buf);
 
-		LOG_DBG("buf %p sent %u", buf, sent);
-
-		sent = l2cap_chan_le_send_sdu(ch, &buf, sent);
-		if (sent < 0) {
-			if (sent == -EAGAIN) {
+		ret = l2cap_chan_le_send_sdu(ch, &buf);
+		if (ret < 0) {
+			if (ret == -EAGAIN) {
 				ch->tx_buf = buf;
 				/* If we don't reschedule, and the app doesn't nudge l2cap (e.g. by
 				 * sending another SDU), the channel will be stuck in limbo. To
@@ -949,7 +947,7 @@ static void l2cap_chan_tx_process(struct k_work *work)
 				 */
 				k_work_schedule(&ch->tx_work, K_MSEC(CONFIG_BT_L2CAP_RESCHED_MS));
 			} else {
-				l2cap_tx_buf_destroy(ch->chan.conn, buf, sent);
+				l2cap_tx_buf_destroy(ch->chan.conn, buf, ret);
 			}
 			break;
 		}
@@ -2060,10 +2058,11 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 }
 
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
-				  struct net_buf **buf, uint16_t sent)
+				  struct net_buf **buf)
 {
 	int ret, total_len;
 	struct net_buf *frag;
+	int sent = 0;
 
 	total_len = net_buf_frags_len(*buf) + sent;
 
@@ -2081,10 +2080,6 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 		ret = l2cap_chan_le_send(ch, frag, 0);
 		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
 			*buf = frag;
 			return ret;
 		}
@@ -3119,13 +3114,13 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
 	struct l2cap_tx_meta_data *data;
-	void *old_user_data = l2cap_tx_meta_data(buf);
-	uint16_t sdu_len;
-	int err;
+	uint16_t sdu_len = net_buf_frags_len(buf);
 
-	sdu_len = net_buf_frags_len(buf);
+	LOG_DBG("chan %p buf %p", le_chan, buf);
 
 	if (sdu_len > le_chan->tx.mtu) {
+		LOG_ERR("attempt to send %u bytes on %u MTU chan",
+			sdu_len, le_chan->tx.mtu);
 		return -EMSGSIZE;
 	}
 
@@ -3165,38 +3160,17 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	 */
 	net_buf_push_le16(buf, sdu_len);
 
-	data->sent = 0;
+	/* Put buffer on TX queue */
 	data->cid = le_chan->tx.cid;
 	data->cb = NULL;
 	data->user_data = NULL;
 	l2cap_tx_meta_data(buf) = data;
+	net_buf_put(&le_chan->tx_queue, buf);
 
-	/* Queue if there are pending segments left from previous packet or
-	 * there are no credits available.
-	 */
-	if (le_chan->tx_buf || !k_fifo_is_empty(&le_chan->tx_queue) ||
-	    !atomic_get(&le_chan->tx.credits)) {
-		l2cap_tx_meta_data(buf)->sent = 0;
-		net_buf_put(&le_chan->tx_queue, buf);
-		k_work_reschedule(&le_chan->tx_work, K_NO_WAIT);
-		return 0;
-	}
+	/* Always process the queue in the same context */
+	k_work_reschedule(&le_chan->tx_work, K_NO_WAIT);
 
-	err = l2cap_chan_le_send_sdu(le_chan, &buf, 0);
-	if (err < 0) {
-		if (err == -EAGAIN && l2cap_tx_meta_data(buf)->sent) {
-			/* Queue buffer if at least one segment could be sent */
-			net_buf_put(&le_chan->tx_queue, buf);
-			return l2cap_tx_meta_data(buf)->sent;
-		}
-
-		LOG_ERR("failed to send message %d", err);
-
-		l2cap_tx_meta_data(buf) = old_user_data;
-		free_tx_meta_data(data);
-	}
-
-	return err;
+	return 0;
 }
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
