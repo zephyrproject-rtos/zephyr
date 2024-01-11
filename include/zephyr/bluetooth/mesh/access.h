@@ -713,6 +713,8 @@ struct bt_mesh_model_pub {
 	uint8_t  period_div:4, /**< Divisor for the Period. */
 		 count:4;      /**< Transmissions left. */
 
+	uint8_t delayable:1;   /**< Use random delay for publishing. */
+
 	uint32_t period_start; /**< Start of the current period. */
 
 	/** @brief Publication buffer, containing the publication message.
