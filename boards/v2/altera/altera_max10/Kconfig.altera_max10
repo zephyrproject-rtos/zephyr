@@ -1,4 +1,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ALTERA_MAX10
-	select SOC_NIOS2F_ZEPHYR
+	select SOC_ZEPHYR_NIOS2F
