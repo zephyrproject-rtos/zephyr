@@ -27,6 +27,10 @@ if(CONFIG_HAS_SDL)
   add_subdirectory(${ZEPHYR_BASE}/boards/${ARCH}/common/sdl/ ${CMAKE_CURRENT_BINARY_DIR}/sdl)
 endif()
 
+add_subdirectory(${ZEPHYR_BASE}/boards/${ARCH}/common/extra_args/
+	${CMAKE_CURRENT_BINARY_DIR}/extra_args
+)
+
 set(nsi_config_content
   ${nsi_config_content}
   "NSI_NATIVE=1"

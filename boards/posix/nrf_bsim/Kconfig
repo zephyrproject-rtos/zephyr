@@ -8,6 +8,8 @@ if SOC_SERIES_BSIM_NRFXX
 # must be read also from here.
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
 
+source "boards/$(ARCH)/common/extra_args/Kconfig"
+
 endif # SOC_SERIES_BSIM_NRFXX
 
 

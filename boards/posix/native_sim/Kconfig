@@ -46,5 +46,6 @@ config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	  to set the correct native_sim option (CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 
 source "boards/$(ARCH)/common/sdl/Kconfig"
+source "boards/$(ARCH)/common/extra_args/Kconfig"
 
 endif # BOARD_NATIVE_SIM
