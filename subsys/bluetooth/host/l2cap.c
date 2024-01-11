@@ -1818,25 +1818,24 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_chan *ch)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
-	struct net_buf *seg;
+	struct net_buf *seg = NULL;
 
-	/* Use the dedicated segment callback if registered */
+	/* Use the user-defined allocator */
 	if (ch->chan.ops->alloc_seg) {
 		seg = ch->chan.ops->alloc_seg(&ch->chan);
 		__ASSERT_NO_MSG(seg);
-	} else {
-		/* Try to use original pool if possible */
-		seg = net_buf_alloc(pool, K_NO_WAIT);
+	}
+
+	/* Fallback to using global connection tx pool */
+	if (!seg) {
+		seg = bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
 	}
 
 	if (seg) {
 		net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
-		return seg;
 	}
 
-	/* Fallback to using global connection tx pool */
-	return bt_l2cap_create_pdu_timeout(NULL, 0, K_NO_WAIT);
+	return seg;
 }
 
 static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,

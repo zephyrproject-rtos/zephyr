@@ -587,9 +587,10 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  If the application is reserving the bytes it should use the
  *  BT_L2CAP_BUF_SIZE() helper to correctly size the buffers for the for the
  *  outgoing buffer pool.
- *  When segmenting an L2CAP SDU into L2CAP PDUs the stack will first attempt
- *  to allocate buffers from the original buffer pool of the L2CAP SDU before
- *  using the stacks own buffer pool.
+ *  When segmenting an L2CAP SDU into L2CAP PDUs the stack will first attempt to
+ *  allocate buffers from the channel's `alloc_seg` callback and will fallback
+ *  on the stack's global buffer pool (sized
+ *  @kconfig{CONFIG_BT_L2CAP_TX_BUF_COUNT}).
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
