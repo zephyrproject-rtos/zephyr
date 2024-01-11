@@ -302,10 +302,12 @@ static int bma4xx_sample_fetch(const struct device *dev, int16_t *x, int16_t *y,
 		return status;
 	}
 
+	LOG_DBG("Raw values [0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x]", read_data[0],
+		read_data[1], read_data[2], read_data[3], read_data[4], read_data[5]);
 	/* Values in accel_data[N] are left-aligned and will read 16x actual */
-	*x = (read_data[1] << 8) | (read_data[0] & 0xF0);
-	*y = (read_data[3] << 8) | (read_data[2] & 0xF0);
-	*z = (read_data[5] << 8) | (read_data[4] & 0xF0);
+	*x = ((int16_t)read_data[1] << 4) | FIELD_GET(GENMASK(7, 4), read_data[0]);
+	*y = ((int16_t)read_data[3] << 4) | FIELD_GET(GENMASK(7, 4), read_data[2]);
+	*z = ((int16_t)read_data[5] << 4) | FIELD_GET(GENMASK(7, 4), read_data[4]);
 
 	LOG_DBG("XYZ reg vals are %d, %d, %d", *x, *y, *z);
 
@@ -517,46 +519,32 @@ static int bma4xx_get_shift(enum sensor_channel channel, uint8_t accel_fs, int8_
 	}
 }
 
-static void bma4xx_convert_raw_accel_to_q31(uint8_t accel_fs, int16_t raw_val, q31_t *out)
+static void bma4xx_convert_raw_accel_to_q31(int16_t raw_val, q31_t *out)
 {
-	/* Raw readings are 12-bit signed ints left-aligned in a 16-bit container. Divide by 16
-	 * (arithmetic right shift by 4) to scale these into the correct range and properly handle
-	 * the sign extension.
+	/* The full calculation is (assuming floating math):
+	 *   value_ms2 = raw_value * range * 9.8065 / BIT(11)
+	 * We can treat 'range * 9.8065' as a scale, the scale is calculated by first getting 1g
+	 * represented as a q31 value with the same shift as our result:
+	 *   1g = (9.8065 * BIT(31)) >> shift
+	 * Next, we need to multiply it by our range in g, which for this driver is one of
+	 * [2, 4, 8, 16] and maps to a left shift of [1, 2, 3, 4]:
+	 *   1g <<= log2(range)
+	 * Note we used a right shift by 'shift' and left shift by log2(range). 'shift' is
+	 * [5, 6, 7, 8] for range values [2, 4, 8, 16] since it's the final shift in m/s2. It is
+	 * calculated via:
+	 *   shift = ceil(log2(range * 9.8065))
+	 * This means that we can shorten the above 1g alterations to:
+	 *   1g = (1g >> ceil(log2(range * 9.8065))) << log2(range)
+	 * For the range values [2, 4, 8, 16], the following is true:
+	 *   (x >> ceil(log2(range * 9.8065))) << log2(range)
+	 *   = x >> 4
+	 * Since the range cancels out in the right and left shift, we've now reduced the following:
+	 *   range * 9.8065 = 9.8065 * BIT(31 - 4)
+	 * All that's left is to divide by the bma4xx's maximum range BIT(11).
 	 */
-	raw_val /= 16;
+	const int64_t scale = (int64_t)(9.8065 * BIT64(31 - 4));
 
-	int8_t shift;
-	int lsb_per_g;
-
-	switch (accel_fs) {
-	case BMA4XX_RANGE_2G:
-		lsb_per_g = 1024;
-		break;
-	case BMA4XX_RANGE_4G:
-		lsb_per_g = 512;
-		break;
-	case BMA4XX_RANGE_8G:
-		lsb_per_g = 256;
-		break;
-	case BMA4XX_RANGE_16G:
-		lsb_per_g = 128;
-		break;
-	default:
-		__ASSERT(0, "Invalid full-scale value");
-	}
-
-	if (bma4xx_get_shift(SENSOR_CHAN_ACCEL_XYZ, accel_fs, &shift)) {
-		__ASSERT(0, "Error obtaining shift");
-	}
-
-	/* Use SENSOR_G and lsb_per_g to convert reg value into micro-m/s^2. Then re-scale into a
-	 * Q-number with given shift by multiplying by (2^31 / (1<<shift)) and dividing by 1000000
-	 * to turn micro-m/s^2 to m/s^2.
-	 */
-	int64_t intermediate = (SENSOR_G / lsb_per_g) * ((raw_val * ((int64_t)INT32_MAX + 1)) /
-							 ((1 << shift) * INT64_C(1000000)));
-
-	*out = CLAMP(intermediate, INT32_MIN, INT32_MAX);
+	*out = CLAMP(((int64_t)raw_val * scale) >> 11, INT32_MIN, INT32_MAX);
 }
 
 #ifdef CONFIG_BMA4XX_TEMPERATURE
@@ -607,12 +595,9 @@ static int bma4xx_one_shot_decode(const uint8_t *buffer, enum sensor_channel cha
 			return -EINVAL;
 		}
 
-		bma4xx_convert_raw_accel_to_q31(header->accel_fs, edata->accel_xyz[0],
-						&out->readings[0].x);
-		bma4xx_convert_raw_accel_to_q31(header->accel_fs, edata->accel_xyz[1],
-						&out->readings[0].y);
-		bma4xx_convert_raw_accel_to_q31(header->accel_fs, edata->accel_xyz[2],
-						&out->readings[0].z);
+		bma4xx_convert_raw_accel_to_q31(edata->accel_xyz[0], &out->readings[0].x);
+		bma4xx_convert_raw_accel_to_q31(edata->accel_xyz[1], &out->readings[0].y);
+		bma4xx_convert_raw_accel_to_q31(edata->accel_xyz[2], &out->readings[0].z);
 
 		*fit = 1;
 		return 1;
