@@ -1,4 +1,4 @@
-identifier: rpi_pico_w
+identifier: rpi_pico//w
 name: RaspberryPi-Pico-w
 type: mcu
 arch: arm
