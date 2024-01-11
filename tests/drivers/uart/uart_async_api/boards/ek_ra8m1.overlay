@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &sci2 {
+	compatible = "renesas,ra-uart-sci-b";
+	current-speed = <115200>;
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
