@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(can_stm32h7, CONFIG_CAN_LOG_LEVEL);
 #define STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
+#define VOS0_MAX_FREQ	MHZ(125)
+
 struct can_stm32h7_config {
 	mm_reg_t base;
 	mem_addr_t mrba;
@@ -107,6 +109,7 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32h7_config *stm32h7_cfg = mcan_cfg->custom;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	uint32_t fdcan_clock = 0xffffffff;
 	int ret;
 
 	if (!device_is_ready(clk)) {
@@ -121,6 +124,24 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 		if (ret < 0) {
 			LOG_ERR("Could not select can_stm32fd domain clock");
 			return ret;
+		}
+
+		/* Check if clock has correct range according to chosen regulator voltage
+		 * scaling (Table 62 of RM0399 Rev 4).
+		 * There is no need to test HSE case, since it's value is in range of
+		 * 4 to 50 MHz (please refer to CubeMX clock control).
+		 */
+		ret = clock_control_get_rate(clk,
+			(clock_control_subsys_t)&stm32h7_cfg->pclken[1], &fdcan_clock);
+		if (ret != 0) {
+			LOG_ERR("failure getting clock rate");
+			return ret;
+		}
+
+		if (fdcan_clock > VOS0_MAX_FREQ) {
+			LOG_ERR("FDCAN Clock source %d exceeds max allowed %d",
+					fdcan_clock, VOS0_MAX_FREQ);
+			return -ENODEV;
 		}
 	}
 
