@@ -1,0 +1,5 @@
+board:
+  name: altera_max10
+  vendor: Altera Corporation
+  socs:
+  - name: nios2f-zephyr
