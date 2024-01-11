@@ -3401,14 +3401,37 @@ Renesas SmartBond Platforms:
     Renesas SmartBond SOCs, dts files, and related drivers. Renesas boards based
     on SmartBond SoCs.
 
-Renesas Platforms:
-  status: odd fixes
+Renesas RA Platforms:
+  status: maintained
+  maintainers:
+    - soburi
   files:
-    - soc/arm/renesas_ra/
+    - boards/arm/arduino_uno_r4/
+    - drivers/*/*renesas_ra*
     - dts/arm/renesas/ra/
+    - dts/bindings/*/*renesas,ra*
+    - soc/arm/renesas_ra/
+  labels:
+    - "platforms: Renesas RA"
+  description: >-
+    Renesas RA SOCs, dts files, and related drivers. Boards based
+    on Renesas RA SoCs.
+
+Renesas RZ Platforms:
+  status: maintained
+  maintainers:
+    - tgorochowik
+  files:
+    - boards/arm/rzt2m_*/
+    - drivers/*/*rzt2m*
+    - dts/arm/renesas/rz/
+    - dts/bindings/*/*rzt2m*
     - soc/arm/renesas_rzt2m/
   labels:
-    - "platforms: Renesas"
+    - "platforms: Renesas RZ"
+  description: >-
+    Renesas RZ SOCs, dts files, and related drivers. Renesas boards based
+    on RZ SoCs.
 
 Renesas R-Car Platforms:
   status: maintained
@@ -3428,7 +3451,6 @@ Renesas R-Car Platforms:
     - dts/bindings/*/*rcar*
     - soc/arm/renesas_rcar/
     - soc/arm64/renesas_rcar/
-    - dts/arm/renesas/rzt2m.dtsi
   labels:
     - "platform: Renesas R-Car"
   description: >-
