@@ -18,7 +18,6 @@
 #include "common/bt_str.h"
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
