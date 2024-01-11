@@ -771,7 +771,7 @@ static int cmd_provision_gatt(const struct shell *sh, size_t argc,
 }
 #endif /* CONFIG_BT_MESH_PB_GATT_CLIENT */
 
-#if defined(CONFIG_BT_MESH_PROV_DEVICE)
+#if defined(CONFIG_BT_MESH_PROVISIONEE)
 static int cmd_pb(bt_mesh_prov_bearer_t bearer, const struct shell *sh,
 		  size_t argc, char *argv[])
 {
@@ -822,7 +822,7 @@ static int cmd_pb_gatt(const struct shell *sh, size_t argc, char *argv[])
 	return cmd_pb(BT_MESH_PROV_GATT, sh, argc, argv);
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
-#endif /* CONFIG_BT_MESH_PROV_DEVICE */
+#endif /* CONFIG_BT_MESH_PROVISIONEE */
 
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 static int cmd_remote_pub_key_set(const struct shell *sh, size_t argc, char *argv[])
@@ -1681,14 +1681,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(comp-change, NULL, NULL, cmd_comp_change, 1, 0),
 
 /* Provisioning operations */
-#if defined(CONFIG_BT_MESH_PROV_DEVICE)
+#if defined(CONFIG_BT_MESH_PROVISIONEE)
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	SHELL_CMD_ARG(pb-gatt, NULL, "<Val(off, on)>", cmd_pb_gatt, 2, 0),
 #endif
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	SHELL_CMD_ARG(pb-adv, NULL, "<Val(off, on)>", cmd_pb_adv, 2, 0),
 #endif
-#endif /* CONFIG_BT_MESH_PROV_DEVICE */
+#endif /* CONFIG_BT_MESH_PROVISIONEE */
 
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 	SHELL_CMD(auth-method, &auth_cmds, "Authentication methods", bt_mesh_shell_mdl_cmds_help),

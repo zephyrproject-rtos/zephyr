@@ -240,7 +240,7 @@ config BT_MESH_PB_GATT
 	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROV
 	select BT_MESH_PB_GATT_COMMON
-	select BT_MESH_PROV_DEVICE
+	select BT_MESH_PROVISIONEE
 	help
 	  Enable this option to allow the device to be provisioned over
 	  GATT.
@@ -268,7 +268,16 @@ config BT_MESH_PB_GATT_CLIENT
 endif # BT_CONN
 
 config BT_MESH_PROV_DEVICE
-	bool "Provisioning device role support"
+	bool "[DEPRECATED] Provisioning device role support"
+	select DEPRECATED
+	select BT_MESH_PROVISIONEE
+	help
+	  Enable this option to allow the device to be provisioned into a mesh network.
+	  The option is marked as deprecated and will be replaced by BT_MESH_PROVISIONEE
+	  option.
+
+config BT_MESH_PROVISIONEE
+	bool "Provisionee role support"
 	depends on BT_MESH_PB_ADV || BT_MESH_PB_GATT
 	default y
 	help
@@ -276,7 +285,7 @@ config BT_MESH_PROV_DEVICE
 
 config BT_MESH_PROV_OOB_PUBLIC_KEY
 	bool "OOB Public key support"
-	depends on BT_MESH_PROV_DEVICE
+	depends on BT_MESH_PROVISIONEE
 	help
 	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.
 

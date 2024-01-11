@@ -113,13 +113,24 @@ Bluetooth
   cleared on :c:func:`bt_enable`. Callbacks can now be registered before the initial
   call to :c:func:`bt_enable`, and should no longer be re-registered after a :c:func:`bt_disable`
   :c:func:`bt_enable` cycle. (:github:`63693`)
-* The Bluetooth Mesh ``model`` declaration has been changed to add prefix ``const``.
-  The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
-  the new runtime structure, replaced by ``model->rt->user_data``, ``model->rt->elem_idx`` and
-  ``model->rt->mod_idx`` separately. (:github:`65152`)
-* The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
-  The ``elem->addr`` field has been changed to the new runtime structure, replaced by
-  ``elem->rt->addr``. (:github:`65388`)
+* The Bluetooth UUID has been modified to rodata in ``BT_UUID_DECLARE_16``, ``BT_UUID_DECLARE_32`
+  and ``BT_UUID_DECLARE_128`` as the return value has been changed to `const`.
+  Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
+  For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
+  ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
+
+* Mesh
+
+  * The Bluetooth Mesh ``model`` declaration has been changed to add prefix ``const``.
+    The ``model->user_data``, ``model->elem_idx`` and ``model->mod_idx`` field has been changed to
+    the new runtime structure, replaced by ``model->rt->user_data``, ``model->rt->elem_idx`` and
+    ``model->rt->mod_idx`` separately. (:github:`65152`)
+  * The Bluetooth Mesh ``element`` declaration has been changed to add prefix ``const``.
+    The ``elem->addr`` field has been changed to the new runtime structure, replaced by
+    ``elem->rt->addr``. (:github:`65388`)
+  * Deprecated :kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE`. This option is
+    replaced by new option :kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` to
+    be aligned with Mesh Protocol Specification v1.1, section 5.4. (:github:`64252`)
 
 LoRaWAN
 =======

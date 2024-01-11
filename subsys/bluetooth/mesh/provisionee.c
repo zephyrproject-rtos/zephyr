@@ -32,9 +32,9 @@
 #include "settings.h"
 #include "rpr.h"
 
-#define LOG_LEVEL CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL
+#define LOG_LEVEL CONFIG_BT_MESH_PROVISIONEE_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_mesh_prov_device);
+LOG_MODULE_REGISTER(bt_mesh_provisionee);
 
 static void reprovision_fail(void);
 
@@ -696,8 +696,8 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 		return -EALREADY;
 	}
 
-#if defined(CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL)
-	if (CONFIG_BT_MESH_PROV_DEVICE_LOG_LEVEL > 2) {
+#if defined(CONFIG_BT_MESH_PROVISIONEE_LOG_LEVEL)
+	if (CONFIG_BT_MESH_PROVISIONEE_LOG_LEVEL > 2) {
 		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
 
 		sys_memcpy_swap(uuid.val, bt_mesh_prov->uuid, 16);
