@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ADAFRUIT_QT_PY_RP2040
-	bool "Adafruit QT Py RP2040 Board"
-	depends on SOC_RP2040
+	select SOC_RP2040
