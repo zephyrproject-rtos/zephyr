@@ -18,7 +18,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
 #include <zephyr/irq_multilevel.h>
-
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
 typedef void (*sifive_cfg_func_t)(void);
