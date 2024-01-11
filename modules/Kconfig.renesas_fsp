@@ -1,0 +1,9 @@
+# Renesas FSP HAL config
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_RENESAS_RA_FSP
+	bool
+	help
+	  Enable Renesas RA FSP support
