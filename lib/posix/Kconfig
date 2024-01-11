@@ -39,6 +39,23 @@ config PTHREAD_IPC
 	  the pthread mutex, condition variable and barrier IPC
 	  mechanisms.
 
+config POSIX_SYSCONF
+	bool "Support for sysconf"
+	default y if POSIX_API
+	help
+	  The sysconf() function provides a method for the application to determine
+	  the current value of a configurable system limit or option (variable).
+
+config POSIX_PAGE_SIZE_BITS
+	int "Number of bits to use for PAGE_SIZE"
+	range 6 16
+	default 12 if POSIX_API
+	default 6
+	help
+	  Define PAGE_SIZE as BIT(n), where n is the value configured here.
+	  PAGE_SIZE is supported in the range [64, 65536]
+	  If CONFIG_POSIX_API=y, PAGE_SIZE defaults to 4096, otherwise, it is 64 bytes.
+
 source "lib/posix/Kconfig.barrier"
 source "lib/posix/Kconfig.clock"
 source "lib/posix/Kconfig.cond"
