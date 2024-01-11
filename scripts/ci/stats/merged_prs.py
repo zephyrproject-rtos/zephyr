@@ -147,7 +147,7 @@ def main():
             )
 
     try:
-        index = os.environ['PR_STAT_INDEX']
+        index = os.environ['PR_STAT_ES_INDEX']
         bulk(es, gendata(json_list, index))
     except KeyError as e:
         print(f"Error: {e} not set.")
