@@ -470,6 +470,8 @@ struct wifi_twt_params {
 	enum wifi_twt_setup_cmd setup_cmd;
 	/** TWT setup response status, see enum wifi_twt_setup_resp_status */
 	enum wifi_twt_setup_resp_status resp_status;
+	/** TWT teardown cmd status, see enum wifi_twt_teardown_status */
+	enum wifi_twt_teardown_status teardown_status;
 	/** Dialog token, used to map requests to responses */
 	uint8_t dialog_token;
 	/** Flow ID, used to map setup with teardown */
