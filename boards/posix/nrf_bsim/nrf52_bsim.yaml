@@ -10,6 +10,5 @@ toolchain:
 testing:
   ignore_tags:
     - modem
-    - uart
 supported:
   - gpio
