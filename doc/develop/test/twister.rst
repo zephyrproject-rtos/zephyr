@@ -347,7 +347,7 @@ build_only: <True|False> (default False)
 
     This option is often used to test drivers and the fact that they are correctly
     enabled in Zephyr and that the code builds, for example sensor drivers. Such
-    test shall not be used to verify the functionality of the dritver.
+    test shall not be used to verify the functionality of the driver.
 
 build_on_all: <True|False> (default False)
     If true, attempt to build test on all available platforms. This is mostly
@@ -473,7 +473,7 @@ platform_key: <list of platform attributes>
     Adding platform (board) attributes to include things such as soc name,
     soc family, and perhaps sets of IP blocks implementing each peripheral
     interface would enable other interesting uses. For example, this could enable
-    building and running SPI tests once for eacn unique IP block.
+    building and running SPI tests once for each unique IP block.
 
 harness_config: <harness configuration options>
     Extra harness configuration options to be used to select a board and/or
@@ -498,7 +498,7 @@ harness_config: <harness configuration options>
 
     record: <recording options> (optional)
       regex: <regular expression> (required)
-        The regular experssion with named subgroups to match data fields
+        The regular expression with named subgroups to match data fields
         at the test's output lines where the test provides some custom data
         for further analysis. These records will be written into the build
         directory 'recording.csv' file as well as 'recording' property
@@ -1124,7 +1124,7 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
 Quarantine
 ++++++++++
 
-Twister allows user to provide onfiguration files defining a list of tests or
+Twister allows user to provide configuration files defining a list of tests or
 platforms to be put under quarantine. Such tests will be skipped and marked
 accordingly in the output reports. This feature is especially useful when
 running larger test suits, where a failure of one test can affect the execution
@@ -1177,7 +1177,7 @@ Additionally you can quarantine entire architectures or a specific simulator for
 Test Configuration
 ******************
 
-A test configuration can be used to customize various apects of twister
+A test configuration can be used to customize various aspects of twister
 and the default enabled options and features. This allows tweaking the filtering
 capabilities depending on the environment and makes it possible to adapt and
 improve coverage when targeting different sets of platforms.
@@ -1187,7 +1187,7 @@ assign a specific test to one or more levels. Using command line options of
 twister it is then possible to select a level and just execute the tests
 included in this level.
 
-Additionally, the test configuration allows  defining level
+Additionally, the test configuration allows defining level
 dependencies and additional inclusion of tests into a specific level if
 the test itself does not have this information already.
 
@@ -1204,7 +1204,7 @@ locally. As of now, those options are available:
   CI)
 - Option to specify your own list of default platforms overriding what
   upstream defines.
-- Ability to override `build_onl_all` options used in some testcases.
+- Ability to override `build_on_all` options used in some testcases.
   This will treat tests or sample as any other just build for default
   platforms you specify in the configuration file or on the command line.
 - Ignore some logic in twister to expand platform coverage in cases where
@@ -1269,7 +1269,7 @@ Combined configuration
 
 To mix the Platform and level configuration, you can take an example as below:
 
-And example platforms plus level configuration:
+An example platforms plus level configuration:
 
 .. code-block:: yaml
 
@@ -1298,7 +1298,7 @@ And example platforms plus level configuration:
 	        A plan to be used verifying regression.
 
 
-To run with above test_config.yaml file, only default_paltforms with given test level
+To run with above test_config.yaml file, only default_platforms with given test level
 test cases will run.
 
 .. tabs::
