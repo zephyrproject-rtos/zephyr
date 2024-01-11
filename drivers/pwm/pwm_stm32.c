@@ -85,6 +85,21 @@ struct pwm_stm32_data {
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
+#define TIMING_NR_CELLS 4
+
+/**
+ * @brief structure to convey optional pwm channel timings settings
+ */
+struct pwm_config_channel_timing {
+	uint32_t channel;
+	/* pwm period in nanoseconds */
+	uint32_t period_ns;
+	/* pwm pulse in nanoseconds */
+	uint32_t pulse_ns;
+	/* flags in 16 bit value*/
+	pwm_flags_t flags;
+};
+
 /** PWM configuration. */
 struct pwm_stm32_config {
 	TIM_TypeDef *timer;
@@ -96,6 +111,8 @@ struct pwm_stm32_config {
 	void (*irq_config_func)(const struct device *dev);
 	const bool four_channel_capture_support;
 #endif /* CONFIG_PWM_CAPTURE */
+	const struct pwm_config_channel_timing *timings;
+	size_t n_timings;
 };
 
 /** Maximum number of timer channels : some stm32 soc have 6 else only 4 */
@@ -781,6 +798,7 @@ static int pwm_stm32_init(const struct device *dev)
 	const struct pwm_stm32_config *cfg = dev->config;
 
 	int r;
+	size_t i;
 	const struct device *clk;
 	LL_TIM_InitTypeDef init;
 
@@ -840,6 +858,18 @@ static int pwm_stm32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #endif /* CONFIG_PWM_CAPTURE */
 
+	/* set optional timing value for channels */
+	for (i = 0; i < cfg->n_timings; i++) {
+		const struct pwm_config_channel_timing *preset = &cfg->timings[i];
+
+		r = pwm_set(dev, preset->channel, preset->period_ns,
+				   preset->pulse_ns, preset->flags);
+		if (r < 0) {
+			LOG_ERR("PWM chn %u timing setup failed (%d)", preset->channel, r);
+			return r;
+		}
+	}
+
 	return 0;
 }
 
@@ -878,6 +908,13 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 #define CAPTURE_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
 
+#define DEFINE_TIMINGS(index)						\
+	static const uint32_t pwm_channel_timings_##index[] =		\
+		DT_INST_PROP_OR(index, timings, {});
+#define USE_TIMINGS(index)								   \
+	.timings = (const struct pwm_config_channel_timing *) pwm_channel_timings_##index, \
+	.n_timings = ARRAY_SIZE(pwm_channel_timings_##index)/TIMING_NR_CELLS,
+
 #define DT_INST_CLK(index, inst)                                               \
 	{                                                                      \
 		.bus = DT_CLOCKS_CELL(PWM(index), bus),				\
@@ -892,6 +929,8 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 									       \
 	IRQ_CONFIG_FUNC(index)						       \
 									       \
+	DEFINE_TIMINGS(index)						       \
+									       \
 	PINCTRL_DT_INST_DEFINE(index);					       \
 									       \
 	static const struct pwm_stm32_config pwm_stm32_config_##index = {      \
@@ -901,6 +940,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 		.pclken = DT_INST_CLK(index, timer),                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
 		CAPTURE_INIT(index)					       \
+		USE_TIMINGS(index)					       \
 	};                                                                     \
 									       \
 	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
