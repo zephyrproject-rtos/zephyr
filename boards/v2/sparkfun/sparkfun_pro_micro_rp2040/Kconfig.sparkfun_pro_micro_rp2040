@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_SPARKFUN_PRO_MICRO_RP2040
-	bool "Sparkfun Pro-Micro RP2040 Board"
-	depends on SOC_RP2040
+	select SOC_RP2040
