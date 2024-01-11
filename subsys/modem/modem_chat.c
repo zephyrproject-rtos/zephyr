@@ -95,8 +95,10 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = NULL;
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
 
-	/* Cancel timeout work */
+	/* Cancel work */
 	k_work_cancel_delayable(&chat->script_timeout_work);
+	k_work_cancel_delayable(&chat->script_send_work);
+	k_work_cancel_delayable(&chat->script_send_timeout_work);
 
 	/* Clear script running state */
 	atomic_clear_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
@@ -116,6 +118,21 @@ static void modem_chat_script_send(struct modem_chat *chat)
 
 	/* Schedule script send work */
 	k_work_schedule(&chat->script_send_work, K_NO_WAIT);
+}
+
+static void modem_chat_script_set_response_matches(struct modem_chat *chat)
+{
+	const struct modem_chat_script_chat *script_chat =
+		&chat->script->script_chats[chat->script_chat_it];
+
+	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = script_chat->response_matches;
+	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = script_chat->response_matches_size;
+}
+
+static void modem_chat_script_clear_response_matches(struct modem_chat *chat)
+{
+	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = NULL;
+	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
 }
 
 static void modem_chat_script_next(struct modem_chat *chat, bool initial)
@@ -142,14 +159,13 @@ static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 
 	script_chat = &chat->script->script_chats[chat->script_chat_it];
 
-	/* Set response command handlers */
-	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = script_chat->response_matches;
-	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = script_chat->response_matches_size;
-
-	/* Check if work must be sent */
+	/* Check if request must be sent */
 	if (script_chat->request_size > 0) {
 		LOG_DBG("sending: %.*s", script_chat->request_size, script_chat->request);
+		modem_chat_script_clear_response_matches(chat);
 		modem_chat_script_send(chat);
+	} else {
+		modem_chat_script_set_response_matches(chat);
 	}
 }
 
@@ -322,6 +338,8 @@ static void modem_chat_script_send_handler(struct k_work *item)
 		} else {
 			k_work_schedule(&chat->script_send_timeout_work, K_MSEC(timeout));
 		}
+	} else {
+		modem_chat_script_set_response_matches(chat);
 	}
 }
 
