@@ -1,6 +1,6 @@
 # NXP S32K3XX MCU series
 
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_S32K3XX
@@ -31,6 +31,9 @@ config NET_UDP_CHECKSUM
 	default n
 
 endif # NET_L2_ETHERNET
+
+config CACHE_MANAGEMENT
+	default y
 
 source "soc/arm/nxp_s32/s32k3/Kconfig.defconfig.s32k*"
 
