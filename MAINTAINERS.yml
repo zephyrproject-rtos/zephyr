@@ -1164,6 +1164,8 @@ Release Notes:
 
 "Drivers: Ethernet":
   status: odd fixes
+  collaborators:
+    - decsny
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1389,6 +1391,8 @@ Release Notes:
 
 "Drivers: MDIO":
   status: odd fixes
+  collaborators:
+    - decsny
   files:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
