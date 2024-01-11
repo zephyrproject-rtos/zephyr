@@ -1954,7 +1954,8 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	/* Save state so it can be restored if we failed to send */
 	net_buf_simple_save(&buf->b, &state);
 
-	if (net_buf_frags_len(buf) <= ch->tx.mps) {
+	if ((buf->len <= ch->tx.mps) &&
+	    (net_buf_headroom(buf) >= BT_L2CAP_BUF_SIZE(0))) {
 		LOG_DBG("len <= MPS, not allocating seg for %p", buf);
 		seg = net_buf_ref(buf);
 
@@ -1984,8 +1985,12 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 	len = seg->len - sdu_hdr_len;
 
-	/* Set a callback if there is no data left in the buffer */
-	if (buf == seg || !buf->len) {
+	/* SDU will be considered sent when there is no data left in the
+	 * buffers, or if there will be no data left, if we are sending `buf`
+	 * directly.
+	 */
+	if (net_buf_frags_len(buf) == 0 ||
+	    (buf == seg && net_buf_frags_len(buf) == len)) {
 		cb = l2cap_chan_sdu_sent;
 	} else {
 		cb = l2cap_chan_seg_sent;
@@ -1997,8 +2002,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	 * considered lost, as the lower layers are free to re-use it as they
 	 * see fit. Reading from it later is obviously a no-no.
 	 */
-	err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-			       cb, l2cap_tx_meta_data(buf));
+	err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg, cb, l2cap_tx_meta_data(buf));
 
 	if (err) {
 		LOG_DBG("Unable to send seg %d", err);
@@ -2034,37 +2038,67 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	return len;
 }
 
+/* return next netbuf fragment if present, also assign metadata */
+static struct net_buf *prepare_next_frag(struct net_buf *parent,
+					 struct l2cap_tx_meta_data *meta)
+{
+	/* this does an unref on `parent` */
+	struct net_buf *next = net_buf_frag_del(NULL, parent);
+
+	if (next) {
+		LOG_DBG("process next frag: %p -> %p", parent, next);
+
+		/* Copy the l2cap metadata ref to the next buffer in the chain.
+		 * We need it to figure out which channel the PDU has been sent
+		 * on, in order to either send the rest of the SDU or call the
+		 * application callback.
+		 */
+		l2cap_tx_meta_data(next) = meta;
+	}
+
+	return next;
+}
+
 static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 				  struct net_buf **buf)
 {
-	int ret, total_len;
+	int ret;
+	size_t sent, rem_len, frag_len;
 	struct net_buf *frag;
-	int sent = 0;
-
-	total_len = net_buf_frags_len(*buf) + sent;
+	struct l2cap_tx_meta_data *meta = l2cap_tx_meta_data(*buf);
 
 	frag = *buf;
 	if (!frag->len && frag->frags) {
 		frag = frag->frags;
 	}
 
-	/* Send remaining segments */
-	for (ret = 0; sent < total_len; sent += ret) {
-		/* Proceed to next fragment */
-		if (!frag->len) {
-			frag = net_buf_frag_del(NULL, frag);
-		}
+	rem_len = net_buf_frags_len(frag);
+	sent = 0;
+	while (frag && sent != rem_len) {
+		LOG_DBG("send frag %p (orig buf %p)", frag, *buf);
 
+		frag_len = frag->len;
 		ret = l2cap_chan_le_send(ch, frag, 0);
 		if (ret < 0) {
 			*buf = frag;
+
+			LOG_DBG("failed to send frag (ch %p cid 0x%04x sent %d)",
+				ch, ch->tx.cid, sent);
+
 			return ret;
+		}
+
+		sent += ret;
+
+		/* If the current buffer has been fully consumed, destroy it and
+		 * proceed to the next fragment of the netbuf chain.
+		 */
+		if (ret == frag_len) {
+			frag = prepare_next_frag(frag, meta);
 		}
 	}
 
-	LOG_DBG("ch %p cid 0x%04x sent %u total_len %u", ch, ch->tx.cid, sent, total_len);
-
-	net_buf_unref(frag);
+	LOG_DBG("ch %p cid 0x%04x sent %u", ch, ch->tx.cid, sent);
 
 	return sent;
 }
