@@ -785,7 +785,7 @@ isr_rx_find_subevent:
 				 */
 				if (!lll->payload[bis_idx_new][payload_index]) {
 					/* bn = 1 Rx PDU not received */
-					skipped = (bis_idx_new - bis_idx - 1U) *
+					skipped = (bis_idx_new - bis_idx) *
 						  ((lll->bn * lll->irc) +
 						   lll->ptc);
 
@@ -799,8 +799,7 @@ isr_rx_find_subevent:
 					/* bn = 1 Rx PDU already received, skip
 					 * subevent.
 					 */
-					skipped = ((bis_idx_new - bis_idx -
-						    1U) *
+					skipped = ((bis_idx_new - bis_idx) *
 						   ((lll->bn * lll->irc) +
 						    lll->ptc)) + 1U;
 
@@ -895,7 +894,7 @@ isr_rx_next_subevent:
 						&lll->data_chan_prn_s,
 						&lll->data_chan_remap_idx);
 
-			skipped -= (bis_idx_new - bis_idx - 1U) *
+			skipped -= (bis_idx_new - bis_idx) *
 				   ((lll->bn * lll->irc) + lll->ptc);
 		}
 
