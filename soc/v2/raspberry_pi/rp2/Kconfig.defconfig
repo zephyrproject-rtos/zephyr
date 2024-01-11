@@ -6,10 +6,7 @@
 
 if SOC_SERIES_RP2XXX
 
-source "soc/arm/rpi_pico/rp2/Kconfig.defconfig.rp2*"
-
-config SOC_SERIES
-	default "rp2"
+rsource "Kconfig.defconfig.rp2*"
 
 config NUM_IRQS
 	default 26

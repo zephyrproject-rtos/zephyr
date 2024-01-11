@@ -4,14 +4,17 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
-choice
-	prompt "RP2xxx MCU Selection"
-	depends on SOC_SERIES_RP2XXX
-
-config SOC_RP2040
-	bool "Raspberry Pi RP2040"
-
-endchoice
+config SOC_SERIES_RP2XXX
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select HAS_RPI_PICO
+	select XIP
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	help
+	  Enable support for Raspberry Pi RP2 MCU series
 
 config RP2_REQUIRES_SECOND_STAGE_BOOT
 	bool
