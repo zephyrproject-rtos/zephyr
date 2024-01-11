@@ -6,6 +6,19 @@
 #ifndef __SUPP_MAIN_H_
 #define __SUPP_MAIN_H_
 
+#if !defined(CONFIG_NET_DHCPV4)
+static inline void net_dhcpv4_start(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+static inline void net_dhcpv4_stop(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#else
+#include <zephyr/net/dhcpv4.h>
+#endif
+
 struct wpa_global *zephyr_get_default_supplicant_context(void);
 struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname);
 struct wpa_supplicant_event_msg {
