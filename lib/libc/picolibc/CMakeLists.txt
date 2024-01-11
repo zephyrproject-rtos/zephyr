@@ -12,7 +12,7 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
   # Use picolibc provided with the toolchain
 
   zephyr_compile_options(--specs=picolibc.specs)
-  zephyr_compile_definitions(_POSIX_C_SOURCE=200809)
+  zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
   zephyr_libc_link_libraries(--specs=picolibc.specs c -lgcc)
   if(CONFIG_PICOLIBC_IO_FLOAT)
     zephyr_compile_definitions(PICOLIBC_DOUBLE_PRINTF_SCANF)

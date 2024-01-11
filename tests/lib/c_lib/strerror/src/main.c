@@ -5,7 +5,7 @@
  */
 
 #ifdef CONFIG_NEWLIB_LIBC
-#define _POSIX_C_SOURCE 200809
+#define _POSIX_C_SOURCE 200809L
 #endif
 
 #include <errno.h>

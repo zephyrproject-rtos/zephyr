@@ -250,7 +250,7 @@ int mkfifoat(int __fd, const char *__path, mode_t __mode);
 int mknodat(int __fd, const char *__path, mode_t __mode, dev_t __dev);
 int utimensat(int __fd, const char *__path, const struct timespec __times[2], int __flag);
 #endif
-#if __POSIX_VISIBLE >= 200809 && !defined(__INSIDE_CYGWIN__)
+#if __POSIX_VISIBLE >= 200809L && !defined(__INSIDE_CYGWIN__)
 int futimens(int __fd, const struct timespec __times[2]);
 #endif
 
