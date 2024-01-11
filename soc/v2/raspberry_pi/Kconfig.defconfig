@@ -5,7 +5,7 @@
 
 if SOC_FAMILY_RPI_PICO
 
-source "soc/arm/rpi_pico/*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"
 
 config PINCTRL
 	default y
