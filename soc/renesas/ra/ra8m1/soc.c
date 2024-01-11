@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
 
+volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -34,6 +36,7 @@ uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
 static int renesas_ra8m1_init(void)
 {
 	SystemCoreClock = BSP_MOCO_HZ;
+	g_protect_pfswe_counter = 0;
 	bsp_clock_init();
 
 	return 0;

@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <arm/armv8.1-m.dtsi>
 #include <freq.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/ra-pinctrl.h>
 
 
 / {
@@ -60,6 +61,12 @@
 			zephyr,memory-region = "OPTION_SETTING_S";
 			status = "okay";
 		};
+	};
+
+	pinctrl: pin-controller@40400800 {
+			compatible = "renesas,ra8-pinctrl";
+			reg = <0x40400800 0x3c0>;
+			status = "okay";
 	};
 };
 
