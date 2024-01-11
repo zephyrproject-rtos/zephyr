@@ -9,14 +9,19 @@ import os
 import sys
 import pytest
 
+from unittest import mock
+
 pytest_plugins = ["pytester"]
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 from twisterlib.testplan import TestPlan
+from twisterlib.testsuite import TestSuite
 from twisterlib.testinstance import TestInstance
+from twisterlib.platform import Platform
 from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
+
 
 def new_get_toolchain(*args, **kwargs):
     return 'zephyr'
@@ -94,3 +99,19 @@ def instances_fixture(class_testplan, platforms_list, all_testsuites_dict, tmpdi
         instance_list.append(instance)
     class_testplan.add_instances(instance_list)
     return class_testplan.instances
+
+@pytest.fixture
+def testinstance() -> TestInstance:
+    testsuite = TestSuite('.', 'samples/hello', 'unit.test')
+    testsuite.harness_config = {}
+    testsuite.ignore_faults = False
+    platform = Platform()
+
+    testinstance = TestInstance(testsuite, platform, 'outdir')
+    testinstance.handler = mock.Mock()
+    testinstance.handler.options = mock.Mock()
+    testinstance.handler.options.verbose = 1
+    testinstance.handler.options.pytest_args = None
+    testinstance.handler.options.robot_args = None
+    testinstance.handler.type_str = 'native'
+    return testinstance
