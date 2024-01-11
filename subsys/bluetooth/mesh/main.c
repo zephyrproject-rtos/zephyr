@@ -462,6 +462,22 @@ int bt_mesh_suspend(void)
 
 	bt_mesh_access_suspend();
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+		err = bt_mesh_pb_gatt_srv_disable();
+		if (err && err != -EALREADY) {
+			LOG_WRN("Disabling PB-GATT failed (err %d)", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		err = bt_mesh_proxy_gatt_disable();
+		if (err && err != -EALREADY) {
+			LOG_WRN("Disabling GATT proxy failed (err %d)", err);
+			return err;
+		}
+	}
+
 	err = bt_mesh_adv_disable();
 	if (err) {
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
@@ -508,6 +524,22 @@ int bt_mesh_resume(void)
 		return err;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && bt_mesh_is_provisioned()) {
+		err = bt_mesh_proxy_gatt_enable();
+		if (err) {
+			LOG_WRN("Re-enabling GATT proxy failed (err %d)", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && !bt_mesh_is_provisioned()) {
+		err = bt_mesh_pb_gatt_srv_enable();
+		if (err) {
+			LOG_WRN("Re-enabling PB-GATT failed (err %d)", err);
+			return err;
+		}
+	}
+
 	err = bt_mesh_scan_enable();
 	if (err) {
 		LOG_WRN("Re-enabling scanning failed (err %d)", err);
@@ -524,7 +556,13 @@ int bt_mesh_resume(void)
 
 	bt_mesh_model_foreach(model_resume, NULL);
 
-	return err;
+	err = bt_mesh_adv_gatt_send();
+	if (err && (err != -ENOTSUP)) {
+		LOG_WRN("GATT send failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
 }
 
 int bt_mesh_init(const struct bt_mesh_prov *prov,
