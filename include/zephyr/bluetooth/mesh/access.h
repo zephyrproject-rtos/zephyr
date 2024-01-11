@@ -1011,7 +1011,7 @@ const struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod);
  *          if no SIG model with the given ID exists in the given element.
  */
 const struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
-					 uint16_t id);
+					       uint16_t id);
 
 /** @brief Find a vendor model.
  *
@@ -1023,7 +1023,7 @@ const struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
  *          if no vendor model with the given ID exists in the given element.
  */
 const struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
-					     uint16_t company, uint16_t id);
+						   uint16_t company, uint16_t id);
 
 /** @brief Get whether the model is in the primary element of the device.
  *
