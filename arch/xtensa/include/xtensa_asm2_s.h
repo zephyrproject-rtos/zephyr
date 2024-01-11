@@ -160,20 +160,20 @@
  * Does not populate or modify the PS/PC save locations.
  */
 .macro ODD_REG_SAVE
-	rsr.SAR a0
+	rsr.sar a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_sar_OFFSET
 #if XCHAL_HAVE_LOOPS
-	rsr.LBEG a0
+	rsr.lbeg a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_lbeg_OFFSET
-	rsr.LEND a0
+	rsr.lend a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_lend_OFFSET
-	rsr.LCOUNT a0
+	rsr.lcount a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_lcount_OFFSET
 #endif
 	rsr.exccause a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_exccause_OFFSET
 #if XCHAL_HAVE_S32C1I
-	rsr.SCOMPARE1 a0
+	rsr.scompare1 a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_scompare1_OFFSET
 #endif
 #if XCHAL_HAVE_THREADPTR && \
@@ -432,11 +432,11 @@ _xstack_returned_\@:
 	 * argument and expand two versions of this handler.  An
 	 * optimization FIXME, I guess.
 	 */
-	rsr.PS a0
+	rsr.ps a0
 	movi a3, PS_INTLEVEL_MASK
 	and a0, a0, a3
 	bnez a0, _not_l1
-	rsr.PS a0
+	rsr.ps a0
 	movi a3, PS_INTLEVEL(1)
 	or a0, a0, a3
 	wsr.PS a0
@@ -600,7 +600,7 @@ _Level\LVL\()Vector:
 	 * turned on the EXCM bit and set INTLEVEL.
 	 */
 .if \LVL == 1
-	rsr.PS a0
+	rsr.ps a0
 #ifdef CONFIG_XTENSA_MMU
 	/* TLB misses also come through level 1 interrupts.
 	 * We do not want to unconditionally unmask interrupts.
@@ -616,11 +616,11 @@ _Level\LVL\()Vector:
 	and a0, a0, a2
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .else
-	rsr.EPS\LVL a0
+	rsr.eps\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .endif
 
-	rsr.EPC\LVL a0
+	rsr.epc\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
 	/* What's happening with this jump is that the L32R
