@@ -66,6 +66,7 @@ app=tests/bsim/bluetooth/host/l2cap/credits compile
 app=tests/bsim/bluetooth/host/l2cap/credits conf_file=prj_ecred.conf compile
 app=tests/bsim/bluetooth/host/l2cap/credits_seg_recv compile
 app=tests/bsim/bluetooth/host/l2cap/credits_seg_recv conf_file=prj_ecred.conf compile
+app=tests/bsim/bluetooth/host/l2cap/frags compile
 app=tests/bsim/bluetooth/host/l2cap/send_on_connect compile
 app=tests/bsim/bluetooth/host/l2cap/send_on_connect conf_file=prj_ecred.conf compile
 
