@@ -59,7 +59,7 @@ struct wpa_supp_api_ctrl {
 	bool terminate;
 };
 
-static struct wpa_supp_api_ctrl wpa_supp_api_ctrl;
+static struct wpa_supp_api_ctrl wpas_api_ctrl;
 
 static void supp_shell_connect_status(struct k_work *work);
 
@@ -125,7 +125,7 @@ static void supp_shell_connect_status(struct k_work *work)
 	int status = CONNECTION_SUCCESS;
 	int conn_result = CONNECTION_FAILURE;
 	struct wpa_supplicant *wpa_s;
-	struct wpa_supp_api_ctrl *ctrl = &wpa_supp_api_ctrl;
+	struct wpa_supp_api_ctrl *ctrl = &wpas_api_ctrl;
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 
@@ -167,9 +167,9 @@ out:
 static inline void wpa_supp_restart_status_work(void)
 {
 	/* Terminate synchronously */
-	wpa_supp_api_ctrl.terminate = 1;
-	k_work_flush_delayable(&wpa_supp_status_work, &wpa_supp_api_ctrl.sync);
-	wpa_supp_api_ctrl.terminate = 0;
+	wpas_api_ctrl.terminate = 1;
+	k_work_flush_delayable(&wpa_supp_status_work, &wpas_api_ctrl.sync);
+	wpas_api_ctrl.terminate = 0;
 
 	/* Start afresh */
 	k_work_reschedule(&wpa_supp_status_work, K_MSEC(10));
@@ -314,9 +314,9 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
 
 	zephyr_wpa_cli_cmd_v("select_network %d", resp.network_id);
 
-	wpa_supp_api_ctrl.dev = dev;
-	wpa_supp_api_ctrl.requested_op = CONNECT;
-	wpa_supp_api_ctrl.connection_timeout = params->timeout;
+	wpas_api_ctrl.dev = dev;
+	wpas_api_ctrl.requested_op = CONNECT;
+	wpas_api_ctrl.connection_timeout = params->timeout;
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
@@ -349,8 +349,8 @@ int supplicant_disconnect(const struct device *dev)
 		goto out;
 	}
 
-	wpa_supp_api_ctrl.dev = dev;
-	wpa_supp_api_ctrl.requested_op = DISCONNECT;
+	wpas_api_ctrl.dev = dev;
+	wpas_api_ctrl.requested_op = DISCONNECT;
 
 	__wpa_cli_cmd_v("disconnect");
 
