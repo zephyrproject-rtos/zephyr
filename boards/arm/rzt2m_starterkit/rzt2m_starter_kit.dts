@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <dt-bindings/pinctrl/renesas-rzt2m-pinctrl.h>
-#include <arm/renesas/rzt2m.dtsi>
+#include <arm/renesas/rz/rzt2m.dtsi>
 
 / {
 	model = "RZT/2M Starter Kit";
