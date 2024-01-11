@@ -41,8 +41,9 @@ static ATOMIC_DEFINE(store, CONFIG_BT_MESH_CRPL);
 enum {
 	PENDING_CLEAR,
 	PENDING_RESET,
+	RPL_FLAGS_COUNT,
 };
-static atomic_t rpl_flags;
+static ATOMIC_DEFINE(rpl_flags, RPL_FLAGS_COUNT);
 
 static inline int rpl_idx(const struct bt_mesh_rpl *rpl)
 {
@@ -133,7 +134,7 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx,
 		/* Existing slot for given address */
 		if (rpl->src == rx->ctx.addr) {
 			if (!rpl->old_iv &&
-			    atomic_test_bit(&rpl_flags, PENDING_RESET) &&
+			    atomic_test_bit(rpl_flags, PENDING_RESET) &&
 			    !atomic_test_bit(store, i)) {
 				/* Until rpl reset is finished, entry with old_iv == false and
 				 * without "store" bit set will be removed, therefore it can be
@@ -178,7 +179,7 @@ void bt_mesh_rpl_clear(void)
 		return;
 	}
 
-	atomic_set_bit(&rpl_flags, PENDING_CLEAR);
+	atomic_set_bit(rpl_flags, PENDING_CLEAR);
 
 	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
 }
@@ -233,7 +234,7 @@ void bt_mesh_rpl_reset(void)
 		}
 
 		if (i != 0) {
-			atomic_set_bit(&rpl_flags, PENDING_RESET);
+			atomic_set_bit(rpl_flags, PENDING_RESET);
 			bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
 		}
 	} else {
@@ -358,8 +359,8 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 		bt_mesh_settings_store_cancel(BT_MESH_SETTINGS_RPL_PENDING);
 	}
 
-	clr = atomic_test_and_clear_bit(&rpl_flags, PENDING_CLEAR);
-	rst = atomic_test_bit(&rpl_flags, PENDING_RESET);
+	clr = atomic_test_and_clear_bit(rpl_flags, PENDING_CLEAR);
+	rst = atomic_test_bit(rpl_flags, PENDING_RESET);
 
 	for (int i = 0; i < ARRAY_SIZE(replay_list); i++) {
 		struct bt_mesh_rpl *rpl = &replay_list[i];
@@ -398,7 +399,7 @@ void bt_mesh_rpl_pending_store(uint16_t addr)
 		}
 	}
 
-	atomic_clear_bit(&rpl_flags, PENDING_RESET);
+	atomic_clear_bit(rpl_flags, PENDING_RESET);
 
 	if (addr == BT_MESH_ADDR_ALL_NODES) {
 		(void)memset(&replay_list[last - shift + 1], 0, sizeof(struct bt_mesh_rpl) * shift);
