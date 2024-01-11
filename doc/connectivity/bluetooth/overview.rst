@@ -76,7 +76,7 @@ Bluetooth stack.
   * Non-volatile storage support for permanent storage of Bluetooth-specific
     settings and data
 
-  * Bluetooth mesh support
+  * Bluetooth Mesh support
 
     * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
     * Both Provisioning roles and bearers supported (PB-ADV & PB-GATT)

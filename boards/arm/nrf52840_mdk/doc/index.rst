@@ -7,7 +7,7 @@ Overview
 ********
 
 The nRF52840-MDK is a versatile, easy-to-use IoT hardware platform for
-Bluetooth 5, Bluetooth mesh, Thread, IEEE 802.15.4, ANT and 2.4GHz proprietary
+Bluetooth 5, Bluetooth Mesh, Thread, IEEE 802.15.4, ANT and 2.4GHz proprietary
 applications using the nRF52840 SoC.
 
 The development kit comes with a fully integrated debugger (also known as

@@ -248,7 +248,7 @@ Each role comes with its own build-time configuration option:
 connection-oriented roles central implicitly enables observer role, and
 peripheral implicitly enables broadcaster role. Usually the first step
 when creating an application is to decide which roles are needed and go
-from there. Bluetooth mesh is a slightly special case, requiring at
+from there. Bluetooth Mesh is a slightly special case, requiring at
 least the observer and broadcaster roles, and possibly also the
 Peripheral role. This will be described in more detail in a later
 section.

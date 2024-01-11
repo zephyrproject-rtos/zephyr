@@ -88,7 +88,7 @@ static int mesh_commit(void)
 	}
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
-		/* The Bluetooth mesh settings loader calls bt_mesh_start() immediately
+		/* The Bluetooth Mesh settings loader calls bt_mesh_start() immediately
 		 * after loading the settings. This is not intended to work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
 		 * tree to be loaded after @ref bt_enable is completed, so this handler

@@ -12,15 +12,15 @@ two devices operating in the following roles:
   Provisioning process. Before the provisioning process starts, the
   provisionee is an *unprovisioned device*.
 
-The Provisioning module in the Zephyr Bluetooth mesh stack supports both the
+The Provisioning module in the Zephyr Bluetooth Mesh stack supports both the
 Advertising and GATT Provisioning bearers for the provisionee role, as well as
 the Advertising Provisioning bearer for the provisioner role.
 
 The Provisioning process
 ************************
 
-All Bluetooth mesh nodes must be provisioned before they can participate in a
-Bluetooth mesh network. The Provisioning API provides all the functionality
+All Bluetooth Mesh nodes must be provisioned before they can participate in a
+Bluetooth Mesh network. The Provisioning API provides all the functionality
 necessary for a device to become a provisioned mesh node.
 Provisioning is a five-step process, involving the following steps:
 
@@ -176,7 +176,7 @@ Depending on the choice of public key exchange mechanism and authentication meth
 the provisioning process can be secure or insecure.
 
 On May 24th 2021, ANSSI `disclosed <https://kb.cert.org/vuls/id/799380>`_
-a set of vulnerabilities in the Bluetooth mesh provisioning protocol that showcased
+a set of vulnerabilities in the Bluetooth Mesh provisioning protocol that showcased
 how the low entropy provided by the Blink, Vibrate, Push, Twist and
 Input/Output numeric OOB methods could be exploited in impersonation and MITM
 attacks. In response, the Bluetooth SIG has reclassified these OOB methods as
