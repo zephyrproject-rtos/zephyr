@@ -3,9 +3,6 @@
 
 if SOC_GR716A
 
-config SOC
-	default "gr716a"
-
 config SPARC_NWIN
 	default 31
 
