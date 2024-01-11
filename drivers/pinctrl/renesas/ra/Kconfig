@@ -1,4 +1,5 @@
 # Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# Copyright (c) 2024 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config PINCTRL_RENESAS_RA
@@ -7,3 +8,10 @@ config PINCTRL_RENESAS_RA
 	depends on DT_HAS_RENESAS_RA_PINCTRL_ENABLED
 	help
 	  Enable Renesas RA series pin controller driver.
+
+config PINCTRL_RENESAS_RA8
+	bool "Renesas RA8 pinctrl driver"
+	default y
+	depends on DT_HAS_RENESAS_RA8_PINCTRL_ENABLED
+	help
+	  Enable the Renesas RA8 pinctrl driver.
