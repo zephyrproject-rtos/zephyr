@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <string.h>
 #include "bs_cmd_line.h"
 #include "bs_cmd_line_typical.h"
 #include "bs_dynargs.h"
@@ -39,6 +40,10 @@ static struct bsim_global_args_t {
 } global_args;
 
 static bool nosim;
+
+/* Extra "command line options" provided programmatically: */
+static int extra_argc;
+static char **extra_argv;
 
 static void cmd_trace_lvl_found(char *argv, int offset)
 {
@@ -159,48 +164,76 @@ static void nsif_cpun_save_test_arg(int n, char *c)
 	fptrs[n](c);
 }
 
+static void nsi_handle_one_cmdline_argument(char *argv)
+{
+	static enum {Main = 0, Test = 1} parsing = Main;
+	static uint test_cpu_n;
+
+	if (bs_is_option(argv, "argstest", 0)) {
+		parsing = Test;
+		test_cpu_n = NSI_PRIMARY_MCU_N;
+		return;
+	} else if (bs_is_multi_opt(argv, "argstest", &test_cpu_n, 0)) {
+		parsing = Test;
+		return;
+	} else if (bs_is_option(argv, "argsmain", 0)) {
+		parsing = Main;
+		return;
+	}
+
+	if (parsing == Main) {
+		if (!bs_args_parse_one_arg(argv, args_struct)) {
+			bs_args_print_switches_help(args_struct);
+			bs_trace_error_line("Incorrect option %s\n",
+					    argv);
+		}
+	} else if (parsing == Test) {
+		nsif_cpun_save_test_arg(test_cpu_n, argv);
+	} else {
+		bs_trace_error_line("Bad error\n");
+	}
+}
+
 /**
  * Check the arguments provided in the command line: set args based on it or
  * defaults, and check they are correct
  */
 void nsi_handle_cmd_line(int argc, char *argv[])
 {
-	const char *bogus_sim_id = "bogus";
-
 	bs_args_set_defaults(args_struct);
 	global_args.verb = 2;
 	bs_trace_set_level(global_args.verb);
 
-	static const char default_phy[] = "2G4";
-
-	enum {Main = 0, Test = 1} parsing = Main;
-	uint test_cpu_n;
-
-	for (int i = 1; i < argc; i++) {
-		if (bs_is_option(argv[i], "argstest", 0)) {
-			parsing = Test;
-			test_cpu_n = NSI_PRIMARY_MCU_N;
-			continue;
-		} else if (bs_is_multi_opt(argv[i], "argstest", &test_cpu_n, 0)) {
-			parsing = Test;
-			continue;
-		} else if (bs_is_option(argv[i], "argsmain", 0)) {
-			parsing = Main;
-			continue;
-		}
-
-		if (parsing == Main) {
-			if (!bs_args_parse_one_arg(argv[i], args_struct)) {
-				bs_args_print_switches_help(args_struct);
-				bs_trace_error_line("Incorrect option %s\n",
-						    argv[i]);
-			}
-		} else if (parsing == Test) {
-			nsif_cpun_save_test_arg(test_cpu_n, argv[i]);
-		} else {
-			bs_trace_error_line("Bad error\n");
-		}
+	for (int i = 0; i < extra_argc; i++) {
+		nsi_handle_one_cmdline_argument(extra_argv[i]);
 	}
+	for (int i = 1; i < argc; i++) {
+		nsi_handle_one_cmdline_argument(argv[i]);
+	}
+}
+
+void nsi_register_extra_args(int argc, char *argv[])
+{
+	int new_size = extra_argc + argc;
+
+	extra_argv = realloc(extra_argv, new_size*sizeof(char *));
+	for (int i = 0; i < argc; i++) {
+		memcpy(&extra_argv[extra_argc], argv, argc*sizeof(char *));
+	}
+	extra_argc += argc;
+}
+
+static void clear_extra_args(void)
+{
+	free(extra_argv);
+}
+
+NSI_TASK(clear_extra_args, ON_EXIT_PRE, 100);
+
+static void postcheck_cmd_line(void)
+{
+	static const char *bogus_sim_id = "bogus";
+	static const char default_phy[] = "2G4";
 
 	/**
 	 * If the user did not set the simulation id or device number
@@ -245,6 +278,8 @@ void nsi_handle_cmd_line(int argc, char *argv[])
 
 	bs_random_init(global_args.rseed);
 }
+
+NSI_TASK(postcheck_cmd_line, PRE_BOOT_2, 0);
 
 /*
  * Get the simulation id
