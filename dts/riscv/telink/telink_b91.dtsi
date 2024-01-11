@@ -73,7 +73,7 @@
 		power: power@80140180 {
 			compatible = "telink,b91-power";
 			reg = <0x80140180 0x40>;
-			power-mode = "LDO_1P4_LDO_1P8";
+			power-mode = "DCDC_1P4_DCDC_1P8";
 			vbat-type = "VBAT_MAX_VALUE_GREATER_THAN_3V6";
 			status = "okay";
 		};
