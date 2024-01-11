@@ -2,6 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_LEON3
-	bool "A LEON3 SOC which you can configure"
 	select SPARC
 	select SOC_SPARC_LEON
