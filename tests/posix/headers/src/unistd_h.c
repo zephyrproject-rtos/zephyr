@@ -19,91 +19,91 @@
  */
 ZTEST(posix_headers, test_unistd_h)
 {
-	/* zassert_not_equal(-1, _POSIX_VERSION); */ /* not implemented */
+	zassert_not_equal(-1, _POSIX_VERSION);
 	/* zassert_not_equal(-1, _POSIX2_VERSION); */ /* not implemented */
 	/* zassert_not_equal(-1, _XOPEN_VERSION); */ /* not implemented */
 
-	/* zassert_not_equal(INT_MIN, _POSIX_ADVISORY_INFO); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_ASYNCHRONOUS_IO); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_BARRIERS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_CHOWN_RESTRICTED); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_CPUTIME); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_FSYNC); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_IPV6); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_JOB_CONTROL); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_MAPPED_FILES); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_MEMLOCK); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_MEMLOCK_RANGE); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_MEMORY_PROTECTION); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_MESSAGE_PASSING); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_MONOTONIC_CLOCK); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_NO_TRUNC); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_PRIORITIZED_IO); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_PRIORITY_SCHEDULING); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_RAW_SOCKETS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_READER_WRITER_LOCKS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_REALTIME_SIGNALS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_REGEXP); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SAVED_IDS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SHARED_MEMORY_OBJECTS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SHELL); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SPAWN); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SPIN_LOCKS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SPORADIC_SERVER); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_SYNCHRONIZED_IO); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_ATTR_STACKADDR); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_ATTR_STACKSIZE); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_CPUTIME); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_PRIO_INHERIT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_PRIO_PROTECT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_PRIORITY_SCHEDULING); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_PROCESS_SHARED); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_ROBUST_PRIO_INHERIT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_ROBUST_PRIO_PROTECT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_SAFE_FUNCTIONS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREAD_SPORADIC_SERVER); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_THREADS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TIMEOUTS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TIMERS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TRACE); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TRACE_EVENT_FILTER); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TRACE_INHERIT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TRACE_LOG); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_TYPED_MEMORY_OBJECTS); */ /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_ADVISORY_INFO); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_ASYNCHRONOUS_IO); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_BARRIERS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_CHOWN_RESTRICTED); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_CPUTIME); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_FSYNC); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_IPV6); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_JOB_CONTROL); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_MAPPED_FILES); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_MEMLOCK); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_MEMLOCK_RANGE); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_MEMORY_PROTECTION); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_MESSAGE_PASSING); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_MONOTONIC_CLOCK); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_NO_TRUNC); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_PRIORITIZED_IO); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_PRIORITY_SCHEDULING); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_RAW_SOCKETS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_READER_WRITER_LOCKS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_REALTIME_SIGNALS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_REGEXP); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SAVED_IDS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SHARED_MEMORY_OBJECTS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SHELL); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SPAWN); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SPIN_LOCKS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SPORADIC_SERVER); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_SYNCHRONIZED_IO); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_ATTR_STACKADDR); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_ATTR_STACKSIZE); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_CPUTIME); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_PRIO_INHERIT); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_PRIO_PROTECT); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_PRIORITY_SCHEDULING); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_PROCESS_SHARED); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_ROBUST_PRIO_INHERIT); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_ROBUST_PRIO_PROTECT); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_SAFE_FUNCTIONS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREAD_SPORADIC_SERVER); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_THREADS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TIMEOUTS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TIMERS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TRACE); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TRACE_EVENT_FILTER); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TRACE_INHERIT); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TRACE_LOG); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_TYPED_MEMORY_OBJECTS); /* not implemented */
 
-	/* zassert_not_equal(INT_MIN, _POSIX_V6_ILP32_OFF32); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_V6_ILP32_OFFBIG); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_V6_LP64_OFF64); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_V6_LPBIG_OFFBIG); */ /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V6_ILP32_OFF32); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V6_ILP32_OFFBIG); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V6_LP64_OFF64); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V6_LPBIG_OFFBIG); /* not implemented */
 
-	/* zassert_not_equal(INT_MIN, _POSIX_V7_ILP32_OFF32); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_V7_ILP32_OFFBIG); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_V7_LP64_OFF64); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX_V7_LPBIG_OFFBIG); */ /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V7_ILP32_OFF32); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V7_ILP32_OFFBIG); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V7_LP64_OFF64); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX_V7_LPBIG_OFFBIG); /* not implemented */
 
-	/* zassert_not_equal(INT_MIN, _POSIX2_C_BIND); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_C_DEV); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_CHAR_TERM); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_FORT_DEV); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_FORT_RUN); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_LOCALEDEF); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_PBS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_PBS_ACCOUNTING); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_PBS_CHECKPOINT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_PBS_LOCATE); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_PBS_MESSAGE); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_PBS_TRACK); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_SW_DEV); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _POSIX2_UPE); */ /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_C_BIND); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_C_DEV); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_CHAR_TERM); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_FORT_DEV); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_FORT_RUN); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_LOCALEDEF); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_PBS); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_PBS_ACCOUNTING); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_PBS_CHECKPOINT); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_PBS_LOCATE); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_PBS_MESSAGE); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_PBS_TRACK); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_SW_DEV); /* not implemented */
+	zassert_not_equal(INT_MIN, _POSIX2_UPE); /* not implemented */
 
-	/* zassert_not_equal(INT_MIN, _XOPEN_CRYPT); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_ENH_I18N); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_REALTIME); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_REALTIME_THREADS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_SHM); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_STREAMS); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_UNIX); */ /* not implemented */
-	/* zassert_not_equal(INT_MIN, _XOPEN_UUCP); */ /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_CRYPT); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_ENH_I18N); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_REALTIME); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_REALTIME_THREADS); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_SHM); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_STREAMS); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_UNIX); /* not implemented */
+	zassert_not_equal(INT_MIN, _XOPEN_UUCP); /* not implemented */
 
 	/* zassert_not_equal(INT_MIN, _POSIX_ASYNC_IO); */ /* not implemented */
 	/* zassert_not_equal(INT_MIN, _POSIX_PRIO_IO); */ /* not implemented */
