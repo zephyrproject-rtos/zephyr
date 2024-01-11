@@ -20,7 +20,6 @@
 #include "common/bt_str.h"
 
 #include "mesh.h"
-#include "adv.h"
 #include "net.h"
 #include "rpl.h"
 #include "transport.h"
@@ -1022,12 +1021,12 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 	return false;
 }
 
-bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
+bool bt_mesh_proxy_relay(struct bt_mesh_adv *adv, uint16_t dst)
 {
 	bool relayed = false;
 	int i;
 
-	LOG_DBG("%u bytes to dst 0x%04x", buf->len, dst);
+	LOG_DBG("%u bytes to dst 0x%04x", adv->b.len, dst);
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
@@ -1040,7 +1039,7 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 			continue;
 		}
 
-		if (bt_mesh_proxy_relay_send(client->cli->conn, buf)) {
+		if (bt_mesh_proxy_relay_send(client->cli->conn, adv)) {
 			continue;
 		}
 
