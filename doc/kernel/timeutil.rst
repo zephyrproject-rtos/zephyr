@@ -223,7 +223,7 @@ include:
 
 - GPS time: epoch of 1980-01-06T00:00:00Z, continuous following TAI with an
   offset of TAI-GPS=19 s.
-- Bluetooth mesh time: epoch of 2000-01-01T00:00:00Z, continuous following TAI
+- Bluetooth Mesh time: epoch of 2000-01-01T00:00:00Z, continuous following TAI
   with an offset of -32.
 - UNIX Leap Time: epoch of 1970-01-01T00:00:00Z, continuous following TAI with
   an offset of -8.

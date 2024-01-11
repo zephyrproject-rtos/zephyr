@@ -3,7 +3,7 @@
 Configuration Server
 ####################
 
-The Configuration Server model is a foundation model defined by the Bluetooth mesh
+The Configuration Server model is a foundation model defined by the Bluetooth Mesh
 specification. The Configuration Server model controls most parameters of the
 mesh node. It does not have an API of its own, but relies on a
 :ref:`bluetooth_mesh_models_cfg_cli` to control it.
@@ -14,7 +14,7 @@ mesh node. It does not have an API of its own, but relies on a
    should be set through Kconfig, and the Heartbeat feature should be
    controlled through the :ref:`bluetooth_mesh_heartbeat` API.
 
-The Configuration Server model is mandatory on all Bluetooth mesh nodes, and
+The Configuration Server model is mandatory on all Bluetooth Mesh nodes, and
 must only be instantiated on the primary element.
 
 API reference

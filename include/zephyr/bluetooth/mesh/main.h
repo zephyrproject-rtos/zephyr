@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth mesh Protocol APIs.
+ *  @brief Bluetooth Mesh Protocol APIs.
  */
 
 /*
@@ -550,8 +550,8 @@ bool bt_mesh_is_provisioned(void);
  */
 
 /**
- * @brief Bluetooth mesh
- * @defgroup bt_mesh Bluetooth mesh
+ * @brief Bluetooth Mesh
+ * @defgroup bt_mesh Bluetooth Mesh
  * @ingroup bluetooth
  * @{
  */

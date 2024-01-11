@@ -1,13 +1,13 @@
-# Bluetooth mesh configuration options
+# Bluetooth Mesh configuration options
 
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_MESH
-	bool "Bluetooth mesh support"
+	bool "Bluetooth Mesh support"
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
-	  This option enables Bluetooth mesh support. The specific
+	  This option enables Bluetooth Mesh support. The specific
 	  features that are available may depend on other features
 	  that have been enabled in the stack, such as GATT support.
 
@@ -598,7 +598,7 @@ config BT_MESH_ACCESS_LAYER_MSG
 	help
 	  This option allows the application to directly access
 	  Bluetooth access layer messages without the need to
-	  instantiate Bluetooth mesh models.
+	  instantiate Bluetooth Mesh models.
 
 config BT_MESH_MODEL_VND_MSG_CID_FORCE
 	bool "Force vendor model to use the corresponding CID field message"
@@ -1049,9 +1049,9 @@ config BT_MESH_FRIEND_ADV_LATENCY
 endif # BT_MESH_FRIEND
 
 menuconfig BT_MESH_V1d1
-	bool "Bluetooth mesh v1.1 support"
+	bool "Bluetooth Mesh v1.1 support"
 	help
-	  This option enables Bluetooth mesh v1.1 support. Bluetooth mesh v1.1
+	  This option enables Bluetooth Mesh v1.1 support. Bluetooth Mesh v1.1
 	  is backward compatible with v1.0.1.
 
 config BT_MESH_ECDH_P256_CMAC_AES128_AES_CCM
@@ -1201,7 +1201,7 @@ config BT_MESH_DFU_METADATA
 	bool "Support for the default metadata format"
 	help
 	  This option adds a set of functions that can be used to encode and decode a firmware
-	  metadata using the format defined in the Bluetooth mesh DFU subsystem.
+	  metadata using the format defined in the Bluetooth Mesh DFU subsystem.
 
 config BT_MESH_DFU_URI_MAXLEN
 	int "DFU URI max length"
@@ -1734,16 +1734,16 @@ config BT_MESH_RPL_STORE_TIMEOUT
 endif # BT_MESH_RPL_STORAGE_MODE_SETTINGS && BT_SETTINGS
 
 config BT_MESH_SETTINGS_WORKQ
-	bool "Store the Bluetooth mesh settings in a separate work queue"
+	bool "Store the Bluetooth Mesh settings in a separate work queue"
 	default y
 	help
 	  This option enables a separate cooperative thread which is used to
-	  store Bluetooth mesh configuration. When this option is disabled,
+	  store Bluetooth Mesh configuration. When this option is disabled,
 	  the stack's configuration is stored in the system workqueue. This
 	  means that the system workqueue will be blocked for the time needed
 	  to store the pending data. This time may significantly increase if
 	  the flash driver does the erase operation. Enabling this option
-	  allows Bluetooth mesh not to block the system workqueue, and thus
+	  allows Bluetooth Mesh not to block the system workqueue, and thus
 	  process the incoming and outgoing messages while the flash driver
 	  waits for the controller to allocate the time needed to write the
 	  data and/or erase the required flash pages.

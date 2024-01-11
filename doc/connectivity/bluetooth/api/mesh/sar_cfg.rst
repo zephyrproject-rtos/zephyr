@@ -4,7 +4,7 @@ Segmentation and reassembly (SAR)
 #################################
 
 Segmentation and reassembly (SAR) provides a way of handling larger upper transport layer messages
-in a mesh network, with a purpose of enhancing the Bluetooth mesh throughput. The segmentation and
+in a mesh network, with a purpose of enhancing the Bluetooth Mesh throughput. The segmentation and
 reassembly mechanism is used by the lower transport layer.
 
 The lower transport layer defines how the upper transport layer PDUs are segmented and reassembled
@@ -23,7 +23,7 @@ required. Set the ``send rel`` flag (see :c:struct:`bt_mesh_msg_ctx`) to use the
 transmission and acknowledge single-segment segmented messages.
 
 The transport layer is able to transport up to 32 segments with its SAR mechanism, with a maximum
-message (PDU) size of 384 octets.  To configure message size for the Bluetooth mesh stack, use the
+message (PDU) size of 384 octets.  To configure message size for the Bluetooth Mesh stack, use the
 following Kconfig options:
 
 * :kconfig:option:`CONFIG_BT_MESH_RX_SEG_MAX` to set the maximum number of segments in an incoming message.

@@ -1176,7 +1176,7 @@ This has been fixed in main for v3.0.0
 CVE-2022-1041
 --------------
 
-Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+Out-of-bound write vulnerability in the Bluetooth Mesh core stack can be triggered during provisioning
 
 This has been fixed in main for v3.1.0
 
@@ -1195,7 +1195,7 @@ This has been fixed in main for v3.1.0
 CVE-2022-1042
 --------------
 
-Out-of-bound write vulnerability in the Bluetooth mesh core stack can be triggered during provisioning
+Out-of-bound write vulnerability in the Bluetooth Mesh core stack can be triggered during provisioning
 
 This has been fixed in main for v3.1.0
 
