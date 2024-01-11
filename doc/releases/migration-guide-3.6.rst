@@ -245,6 +245,9 @@ Bluetooth
   parameter when segmenting SDUs into PDUs. In order to reproduce the previous behavior, the
   application should register the `alloc_seg` channel callback and allocate from the same pool as
   `buf`.
+* The :c:func:`bt_l2cap_chan_send` API now requires the application to reserve
+  enough bytes for the L2CAP headers. Call ``net_buf_reserve(buf,
+  BT_L2CAP_SDU_CHAN_SEND_RESERVE);`` at buffer allocation time to do so.
 
 * Mesh
 

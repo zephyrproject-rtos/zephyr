@@ -2067,27 +2067,9 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 	total_len = net_buf_frags_len(*buf) + sent;
 
-	if (total_len > ch->tx.mtu) {
-		return -EMSGSIZE;
-	}
-
 	frag = *buf;
 	if (!frag->len && frag->frags) {
 		frag = frag->frags;
-	}
-
-	if (!sent) {
-		/* Add SDU length for the first segment */
-		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_SIZE);
-		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
-			*buf = frag;
-			return ret;
-		}
-		sent = ret;
 	}
 
 	/* Send remaining segments */
@@ -3139,6 +3121,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct l2cap_tx_meta_data *data;
 	void *old_user_data = l2cap_tx_meta_data(buf);
+	uint16_t sdu_len;
 	int err;
 
 	if (!buf) {
@@ -3160,11 +3143,47 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}
 
+	sdu_len = net_buf_frags_len(buf);
+
+	if (sdu_len > le_chan->tx.mtu) {
+		return -EMSGSIZE;
+	}
+
+	if (net_buf_headroom(buf) < BT_L2CAP_SDU_CHAN_SEND_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_chan_send().
+		 */
+		LOG_DBG("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
 	data = alloc_tx_meta_data();
 	if (!data) {
 		LOG_WRN("Unable to allocate TX context");
 		return -ENOBUFS;
 	}
+
+	/* Prepend SDU "header".
+	 *
+	 * L2CAP LE CoC SDUs are segmented into PDUs and sent over so-called
+	 * K-frames that each have their own L2CAP header (ie channel, PDU
+	 * length).
+	 *
+	 * The SDU header is right before the data that will be segmented and is
+	 * only present in the first segment/PDU. Here's an example:
+	 *
+	 * Sent data payload of 50 bytes over channel 0x4040 with MPS of 30 bytes:
+	 * First PDU / segment / K-frame:
+	 * | L2CAP K-frame header        | K-frame payload                 |
+	 * | PDU length  | Channel ID    | SDU header   | SDU payload      |
+	 * | 30          | 0x4040        | 50           | 28 bytes of data |
+	 *
+	 * Second and last PDU / segment / K-frame:
+	 * | L2CAP K-frame header        | K-frame payload     |
+	 * | PDU length  | Channel ID    | rest of SDU payload |
+	 * | 22          | 0x4040        | 22 bytes of data    |
+	 */
+	net_buf_push_le16(buf, sdu_len);
 
 	data->sent = 0;
 	data->cid = le_chan->tx.cid;

@@ -33,9 +33,9 @@ static const struct bt_data ad[] = {
 #define SHORT_MSG_CHAN_IDX 1
 
 NET_BUF_POOL_FIXED_DEFINE(rx_data_pool, L2CAP_CHANNELS, BT_L2CAP_BUF_SIZE(DATA_BUF_SIZE), 8, NULL);
-NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_0, 1, BT_L2CAP_BUF_SIZE(DATA_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_0, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_1, 1, BT_L2CAP_BUF_SIZE(DATA_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_1, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_l2cap_server servers[SERVERS];
@@ -379,7 +379,7 @@ static void send_sdu(int iteration, int chan_idx, int bytes)
 	}
 
 	channels[chan_idx].buf = buf;
-	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, channels[chan_idx].payload, bytes);
 
 	LOG_DBG("bt_l2cap_chan_sending ch: %i bytes: %i iteration: %i", chan_idx, bytes, iteration);

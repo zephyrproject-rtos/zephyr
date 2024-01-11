@@ -21,7 +21,8 @@ CREATE_FLAG(flag_l2cap_connected);
 #define L2CAP_MTU (2 * SDU_LEN)
 
 /* Only one SDU transmitted or received at a time */
-NET_BUF_POOL_DEFINE(sdu_pool, 1, L2CAP_MTU, CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_DEFINE(sdu_pool, 1, BT_L2CAP_SDU_BUF_SIZE(L2CAP_MTU),
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static uint8_t tx_data[SDU_LEN];
 static uint16_t rx_cnt;
