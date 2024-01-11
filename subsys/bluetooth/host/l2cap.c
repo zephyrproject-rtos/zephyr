@@ -935,7 +935,11 @@ static void l2cap_chan_tx_process(struct k_work *work)
 
 	/* Resume tx in case there are buffers in the queue */
 	while ((buf = l2cap_chan_le_get_tx_buf(ch))) {
-		LOG_DBG("buf %p", buf);
+		/* Here buf is either:
+		 * - a partially-sent SDU le_chan->tx_buf
+		 * - a new SDU from the TX queue
+		 */
+		LOG_DBG("chan %p buf %p", ch, buf);
 
 		ret = l2cap_chan_le_send_sdu(ch, &buf);
 		if (ret < 0) {
@@ -947,6 +951,7 @@ static void l2cap_chan_tx_process(struct k_work *work)
 				 */
 				k_work_schedule(&ch->tx_work, K_MSEC(CONFIG_BT_L2CAP_RESCHED_MS));
 			} else {
+				LOG_WRN("Failed to send (err %d), dropping buf %p", ret, buf);
 				l2cap_tx_buf_destroy(ch->chan.conn, buf, ret);
 			}
 			break;
@@ -1814,7 +1819,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	bt_l2cap_chan_del(&chan->chan);
 }
 
-static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2cap_le_chan *ch)
+static struct net_buf *l2cap_alloc_seg(struct bt_l2cap_le_chan *ch)
 {
 	struct net_buf *seg = NULL;
 
@@ -1832,60 +1837,6 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf, struct bt_l2c
 	if (seg) {
 		net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
 	}
-
-	return seg;
-}
-
-static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
-					     struct net_buf *buf,
-					     size_t sdu_hdr_len)
-{
-	struct net_buf *seg;
-	uint16_t headroom;
-	uint16_t len;
-
-	/* Segment if data (+ data headroom) is bigger than MPS */
-	if (buf->len + sdu_hdr_len > ch->tx.mps) {
-		goto segment;
-	}
-
-	headroom = BT_L2CAP_CHAN_SEND_RESERVE + sdu_hdr_len;
-
-	/* Check if original buffer has enough headroom and don't have any
-	 * fragments.
-	 */
-	if (net_buf_headroom(buf) >= headroom && !buf->frags) {
-		if (sdu_hdr_len) {
-			/* Push SDU length if set */
-			net_buf_push_le16(buf, net_buf_frags_len(buf));
-		}
-		return net_buf_ref(buf);
-	} else {
-		/* Unnecessary fragmentation. Ensure the source buffer has
-		 * BT_L2CAP_SDU_BUF_SIZE(0) headroom.
-		 */
-		LOG_DBG("not enough headroom on %p", buf);
-	}
-
-segment:
-	seg = l2cap_alloc_seg(buf, ch);
-
-	if (!seg) {
-		return NULL;
-	}
-
-	if (sdu_hdr_len) {
-		net_buf_add_le16(seg, net_buf_frags_len(buf));
-	}
-
-	/* Don't send more that TX MPS including SDU length */
-	len = MIN(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
-	/* Limit if original buffer is smaller than the segment */
-	len = MIN(buf->len, len);
-	net_buf_add_mem(seg, buf->data, len);
-	net_buf_pull(buf, len);
-
-	LOG_DBG("ch %p seg %p len %u", ch, seg, seg->len);
 
 	return seg;
 }
@@ -2002,10 +1953,29 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	/* Save state so it can be restored if we failed to send */
 	net_buf_simple_save(&buf->b, &state);
 
-	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
-	if (!seg) {
-		atomic_inc(&ch->tx.credits);
-		return -EAGAIN;
+	if (net_buf_frags_len(buf) <= ch->tx.mps) {
+		LOG_DBG("len <= MPS, not allocating seg for %p", buf);
+		seg = net_buf_ref(buf);
+
+		len = seg->len;
+	} else {
+		LOG_DBG("allocating segment for %p (%u bytes left)", buf, buf->len);
+		seg = l2cap_alloc_seg(ch);
+		if (!seg) {
+			LOG_DBG("failed to allocate seg for %p", buf);
+			atomic_inc(&ch->tx.credits);
+
+			return -EAGAIN;
+		}
+
+		/* Don't send more than TX MPS */
+		len = MIN(net_buf_tailroom(seg), ch->tx.mps);
+
+		/* Limit if original buffer is smaller than the segment */
+		len = MIN(buf->len, len);
+
+		net_buf_add_mem(seg, buf->data, len);
+		net_buf_pull(buf, len);
 	}
 
 	LOG_DBG("ch %p cid 0x%04x len %u credits %lu", ch, ch->tx.cid, seg->len,
@@ -2030,9 +2000,10 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 
 		/* The host takes ownership of the reference in seg when
 		 * bt_l2cap_send_cb is successful. The call returned an error,
-		 * so we must get rid of the reference that was taken in
-		 * l2cap_chan_create_seg.
+		 * so we must get rid of the reference that was taken above.
 		 */
+		LOG_DBG("unref %p (%s)", seg,
+			buf == seg ? "orig" : "seg");
 		net_buf_unref(seg);
 
 		if (err == -ENOBUFS) {
