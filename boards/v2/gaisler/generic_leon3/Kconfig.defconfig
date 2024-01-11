@@ -4,9 +4,6 @@
 
 if BOARD_GENERIC_LEON3
 
-config BOARD
-	default "generic_leon3"
-
 config SPARC_CASA
 	default n
 
