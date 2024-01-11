@@ -102,31 +102,6 @@ static bool checkContext(otCryptoContext *aContext, size_t aMinSize)
 	return aContext != NULL && aContext->mContext != NULL && aContext->mContextSize >= aMinSize;
 }
 
-static void ensureKeyIsLoaded(otCryptoKeyRef aKeyRef)
-{
-	/*
-	 * The workaround below will no longer be need after updating TF-M version used in Zephyr
-	 * to 1.5.0 (see upstream commit 42e77b561fcfe19819ff1e63cb7c0b672ee8ba41).
-	 * In the recent versions of TF-M the concept of key handles and psa_open_key()/
-	 * psa_close_key() APIs have been being deprecated, but the version currently used in Zephyr
-	 * is in the middle of that transition. Consequently, psa_destroy_key() and lots of other
-	 * functions will fail when a key ID that they take as a parameter is not loaded from the
-	 * persistent storage. That may occur when a given persistent key is created via
-	 * psa_generate_key() or psa_import_key(), and then the device reboots.
-	 *
-	 * Use psa_open_key() when the key has not been loaded yet to work around the issue.
-	 */
-	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
-	psa_status_t status = psa_get_key_attributes(aKeyRef, &attributes);
-	psa_key_id_t key_handle;
-
-	if (status == PSA_ERROR_INVALID_HANDLE) {
-		psa_open_key(aKeyRef, &key_handle);
-	}
-
-	psa_reset_key_attributes(&attributes);
-}
-
 void otPlatCryptoInit(void)
 {
 	psa_crypto_init();
@@ -186,15 +161,11 @@ otError otPlatCryptoExportKey(otCryptoKeyRef aKeyRef,
 		return OT_ERROR_INVALID_ARGS;
 	}
 
-	ensureKeyIsLoaded(aKeyRef);
-
 	return psaToOtError(psa_export_key(aKeyRef, aBuffer, aBufferLen, aKeyLen));
 }
 
 otError otPlatCryptoDestroyKey(otCryptoKeyRef aKeyRef)
 {
-	ensureKeyIsLoaded(aKeyRef);
-
 	return psaToOtError(psa_destroy_key(aKeyRef));
 }
 
@@ -203,7 +174,6 @@ bool otPlatCryptoHasKey(otCryptoKeyRef aKeyRef)
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_status_t status;
 
-	ensureKeyIsLoaded(aKeyRef);
 	status = psa_get_key_attributes(aKeyRef, &attributes);
 	psa_reset_key_attributes(&attributes);
 
@@ -246,7 +216,6 @@ otError otPlatCryptoHmacSha256Start(otCryptoContext *aContext, const otCryptoKey
 		return OT_ERROR_INVALID_ARGS;
 	}
 
-	ensureKeyIsLoaded(aKey->mKeyRef);
 	operation = aContext->mContext;
 	status = psa_mac_sign_setup(operation, aKey->mKeyRef, PSA_ALG_HMAC(PSA_ALG_SHA_256));
 
@@ -314,7 +283,6 @@ otError otPlatCryptoAesEncrypt(otCryptoContext *aContext, const uint8_t *aInput,
 {
 	const size_t block_size = PSA_BLOCK_CIPHER_BLOCK_LENGTH(PSA_KEY_TYPE_AES);
 	psa_status_t status = PSA_SUCCESS;
-	psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
 	psa_key_id_t *key_ref;
 	size_t cipher_length;
 
@@ -322,37 +290,15 @@ otError otPlatCryptoAesEncrypt(otCryptoContext *aContext, const uint8_t *aInput,
 		return OT_ERROR_INVALID_ARGS;
 	}
 
-	/*
-	 * The code below can be simplified after updating TF-M version used in Zephyr to 1.5.0
-	 * (see upstream commit: 045ec4abfc73152a0116684ba9127d0a97cc8d34), using
-	 * psa_cipher_encrypt() function which will replace the setup-update-finish sequence below.
-	 */
 	key_ref = aContext->mContext;
-	ensureKeyIsLoaded(*key_ref);
-	status = psa_cipher_encrypt_setup(&operation, *key_ref, PSA_ALG_ECB_NO_PADDING);
+	status = psa_cipher_encrypt(*key_ref,
+				    PSA_ALG_ECB_NO_PADDING,
+				    aInput,
+				    block_size,
+				    aOutput,
+				    block_size,
+				    &cipher_length);
 
-	if (status != PSA_SUCCESS) {
-		goto out;
-	}
-
-	status = psa_cipher_update(&operation,
-				   aInput,
-				   block_size,
-				   aOutput,
-				   block_size,
-				   &cipher_length);
-
-	if (status != PSA_SUCCESS) {
-		goto out;
-	}
-
-	status = psa_cipher_finish(&operation,
-				   aOutput + cipher_length,
-				   block_size - cipher_length,
-				   &cipher_length);
-
-out:
-	psa_cipher_abort(&operation);
 	return psaToOtError(status);
 }
 
