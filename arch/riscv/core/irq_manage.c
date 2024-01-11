@@ -10,6 +10,10 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq_multilevel.h>
 
+#ifdef CONFIG_RISCV_HAS_PLIC
+#include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#endif
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
