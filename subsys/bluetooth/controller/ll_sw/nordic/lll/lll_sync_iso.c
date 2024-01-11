@@ -987,7 +987,7 @@ isr_rx_next_subevent:
 		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
-		hcto -= (EVENT_CLOCK_JITTER_US << 1);
+		hcto -= (EVENT_CLOCK_JITTER_US << 1) * nse;
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
@@ -996,12 +996,11 @@ isr_rx_next_subevent:
 		 */
 		/* LL_ASSERT(hcto == (start_us + 1U)); */
 
-		/* Add 4 us + 4 us + (4 us * subevents so far), as radio
-		 * was setup to listen 4 us early and subevents could have
-		 * a 4 us drift each until the current subevent we are
-		 * listening.
+		/* Add 8 us * subevents so far, as radio was setup to listen
+		 * 4 us early and subevents could have a 4 us drift each until
+		 * the current subevent we are listening.
 		 */
-		hcto += ((EVENT_CLOCK_JITTER_US << 1) * (2U + nse)) +
+		hcto += (((EVENT_CLOCK_JITTER_US << 1) * nse) << 1) +
 			RANGE_DELAY_US + HCTO_START_DELAY_US;
 	} else {
 		/* First subevent PDU was not received, hence setup radio packet
