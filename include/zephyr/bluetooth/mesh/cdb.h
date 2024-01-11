@@ -231,7 +231,7 @@ enum {
  *          or BT_MESH_CDB_ITER_STOP to stop.
  */
 typedef uint8_t (*bt_mesh_cdb_node_func_t)(struct bt_mesh_cdb_node *node,
-					void *user_data);
+					   void *user_data);
 
 /** @brief Node iterator.
  *
