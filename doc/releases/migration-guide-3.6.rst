@@ -241,6 +241,9 @@ Bluetooth
   Any pointer to a UUID must be prefixed with `const`, otherwise there will be a compilation warning.
   For example change ``struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)`` to
   ``const struct bt_uuid *uuid = BT_UUID_DECLARE_16(xx)``. (:github:`66136`)
+* The :c:func:`bt_l2cap_chan_send` API now requires the application to reserve
+  enough bytes for the L2CAP headers. Call ``net_buf_reserve(buf,
+  BT_L2CAP_SDU_CHAN_SEND_RESERVE);`` to do so.
 
 * Mesh
 

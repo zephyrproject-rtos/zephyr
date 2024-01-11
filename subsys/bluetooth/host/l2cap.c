@@ -2067,27 +2067,9 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 	total_len = net_buf_frags_len(*buf) + sent;
 
-	if (total_len > ch->tx.mtu) {
-		return -EMSGSIZE;
-	}
-
 	frag = *buf;
 	if (!frag->len && frag->frags) {
 		frag = frag->frags;
-	}
-
-	if (!sent) {
-		/* Add SDU length for the first segment */
-		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_SIZE);
-		if (ret < 0) {
-			if (ret == -EAGAIN) {
-				/* Store sent data into user_data */
-				l2cap_tx_meta_data(frag)->sent = sent;
-			}
-			*buf = frag;
-			return ret;
-		}
-		sent = ret;
 	}
 
 	/* Send remaining segments */
@@ -3139,6 +3121,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	struct l2cap_tx_meta_data *data;
 	void *old_user_data = l2cap_tx_meta_data(buf);
+	uint16_t sdu_len;
 	int err;
 
 	if (!buf) {
@@ -3160,11 +3143,20 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}
 
+	sdu_len = net_buf_frags_len(buf);
+
+	if (sdu_len > le_chan->tx.mtu) {
+		return -EMSGSIZE;
+	}
+
 	data = alloc_tx_meta_data();
 	if (!data) {
 		LOG_WRN("Unable to allocate TX context");
 		return -ENOBUFS;
 	}
+
+	/* Prepend SDU "header" */
+	net_buf_push_le16(buf, sdu_len);
 
 	data->sent = 0;
 	data->cid = le_chan->tx.cid;
