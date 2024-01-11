@@ -712,6 +712,13 @@ static bool proxy_adv_request_get(struct bt_mesh_subnet *sub, struct proxy_adv_r
 		return false;
 	}
 
+	/** The priority for proxy adv is first solicitation, then Node Identity,
+	 *  and lastly Network ID. Network ID is prioritized last since, in many
+	 *  cases, another device can fulfill the same demand. Solicitation is
+	 *  prioritized first since legacy devices are dependent on this to
+	 *  connect to the network.
+	 */
+
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	if (bt_mesh_od_priv_proxy_get() > 0 && sub->solicited) {
 		int32_t timeout = MSEC_PER_SEC * (int32_t)bt_mesh_od_priv_proxy_get();
@@ -753,7 +760,7 @@ static bool proxy_adv_request_get(struct bt_mesh_subnet *sub, struct proxy_adv_r
 static struct bt_mesh_subnet *adv_sub_get_next(struct bt_mesh_subnet *sub_start,
 					       struct proxy_adv_request *request)
 {
-	struct bt_mesh_subnet *sub_temp = sub_start;
+	struct bt_mesh_subnet *sub_temp = bt_mesh_subnet_next(sub_start);
 
 	do {
 		if (proxy_adv_request_get(sub_temp, request)) {
@@ -823,7 +830,7 @@ static int gatt_proxy_advertise(void)
 		}
 	}
 
-	sub = adv_sub_get_next(bt_mesh_subnet_next(sub_adv.sub), &request);
+	sub = adv_sub_get_next(sub_adv.sub, &request);
 	if (!sub) {
 		LOG_ERR("Could not find subnet to advertise");
 		return -ENOENT;
