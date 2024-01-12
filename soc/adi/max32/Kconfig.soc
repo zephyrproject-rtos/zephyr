@@ -17,6 +17,10 @@ config SOC_MAX32655_M4
 	bool
 	select SOC_MAX32655
 
+config SOC_MAX32662
+	bool
+	select SOC_FAMILY_MAX32
+
 config SOC_MAX32670
 	bool
 	select SOC_FAMILY_MAX32
@@ -47,6 +51,7 @@ config SOC_MAX32690_M4
 
 config SOC
 	default "max32655" if SOC_MAX32655
+	default "max32662" if SOC_MAX32662
 	default "max32670" if SOC_MAX32670
 	default "max32672" if SOC_MAX32672
 	default "max32675" if SOC_MAX32675
