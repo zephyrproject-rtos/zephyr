@@ -6,11 +6,6 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
-  CONFIG_LOG_BACKEND_ADSP_HDA
-  log_backend_adsp_hda.c
-)
-
-zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_ADSP_MTRACE
   log_backend_adsp_mtrace.c
 )
