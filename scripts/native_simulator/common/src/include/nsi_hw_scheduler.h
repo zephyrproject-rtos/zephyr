@@ -16,7 +16,11 @@ extern "C" {
 #define NSI_NEVER UINT64_MAX
 
 /* API intended for the native simulator specific embedded drivers: */
-uint64_t nsi_hws_get_time(void);
+static inline uint64_t nsi_hws_get_time(void)
+{
+	extern uint64_t nsi_simu_time;
+	return nsi_simu_time;
+}
 
 /* Internal APIs to the native_simulator and its HW models: */
 void nsi_hws_init(void);
