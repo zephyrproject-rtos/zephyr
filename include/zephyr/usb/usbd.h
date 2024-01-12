@@ -284,6 +284,40 @@ struct usbd_class_node {
 	struct usbd_class_data *data;
 };
 
+/**
+ * @brief Get the USB device runtime context under which the class is registered
+ *
+ * The class implementation must use this function and not access the members
+ * of the struct directly.
+ *
+ * @param[in] node Pointer to USB device class node
+ *
+ * @return Pointer to USB device runtime context
+ */
+static inline struct usbd_contex *usbd_class_get_ctx(const struct usbd_class_node *const c_nd)
+{
+	struct usbd_class_data *const c_data = c_nd->data;
+
+	return c_data->uds_ctx;
+}
+
+/**
+ * @brief Get class implementation private data
+ *
+ * The class implementation must use this function and not access the members
+ * of the struct directly.
+ *
+ * @param[in] node Pointer to USB device class node
+ *
+ * @return Pointer to class implementation private data
+ */
+static inline void *usbd_class_get_private(const struct usbd_class_node *const c_nd)
+{
+	struct usbd_class_data *const c_data = c_nd->data;
+
+	return c_data->priv;
+}
+
 #define USBD_DEVICE_DEFINE(device_name, uhc_dev, vid, pid)		\
 	static struct usb_device_descriptor				\
 	desc_##device_name = {						\
