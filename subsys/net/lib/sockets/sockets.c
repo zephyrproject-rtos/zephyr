@@ -681,7 +681,9 @@ int z_impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 
 	new_sock = VTABLE_CALL(accept, sock, addr, addrlen);
 
-	(void)sock_obj_core_alloc_find(sock, new_sock, addr->sa_family, SOCK_STREAM);
+	if (addr) {
+		(void)sock_obj_core_alloc_find(sock, new_sock, addr->sa_family, SOCK_STREAM);
+	}
 
 	return new_sock;
 }
