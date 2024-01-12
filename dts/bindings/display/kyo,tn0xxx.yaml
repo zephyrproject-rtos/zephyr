@@ -1,0 +1,8 @@
+# Copyright (c) 2023, Alen Daniel
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kyocera Memory In Pixel TFT display
+
+compatible: "kyo,tn0xxx"
+
+include: [spi-device.yaml, display-controller.yaml]

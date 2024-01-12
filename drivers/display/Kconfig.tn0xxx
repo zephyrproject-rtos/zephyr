@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Alen Daniel
+# SPDX-License-Identifier: Apache-2.0
+
+config TN0XXX
+	bool "Kyocera TN0XXX memory display controller driver"
+	default y
+	depends on DT_HAS_KYO_TN0XXX_ENABLED
+	select SPI
+	help
+	  Enable driver for kyocera memory in pixel tft display series TN0XXX

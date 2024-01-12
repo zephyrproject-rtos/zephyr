@@ -23,6 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_STM32_LTDC		display_stm32_ltdc.c)
 zephyr_library_sources_ifdef(CONFIG_RM68200		display_rm68200.c)
 zephyr_library_sources_ifdef(CONFIG_RM67162		display_rm67162.c)
 zephyr_library_sources_ifdef(CONFIG_HX8394		display_hx8394.c)
+zephyr_library_sources_ifdef(CONFIG_TN0XXX		display_tn0xxx.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
