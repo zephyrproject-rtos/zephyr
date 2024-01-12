@@ -162,8 +162,8 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 				if (value + value_len == buf->data + buf->len) {
 					data_len_to_move = 0U;
 				} else {
-					old_next_data_start = value + value_len + 1;
-					new_next_data_start = value + data_len + 1;
+					old_next_data_start = value + value_len;
+					new_next_data_start = value + data_len;
 					data_len_to_move =
 						buf->len - (old_next_data_start - buf->data);
 				}
