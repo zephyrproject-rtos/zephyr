@@ -1,0 +1,12 @@
+tests:
+  drivers.mbox_data:
+    tags:
+      - drivers
+      - mbox
+    sysbuild: true
+    platform_allow:
+      - mimxrt1170_evkb_cm7
+      - mimxrt1170_evk_cm7
+      - mimxrt1160_evk_cm7
+    integration_platforms:
+      - mimxrt1170_evkb_cm7
