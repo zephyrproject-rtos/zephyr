@@ -21,15 +21,15 @@
 #define PRIO_INVALID -1
 #define PTHREAD_INVALID -1
 
-void *thread_top_exec(void *p1);
-void *thread_top_term(void *p1);
+static void *thread_top_exec(void *p1);
+static void *thread_top_term(void *p1);
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cvar0 = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t cvar1 = PTHREAD_COND_INITIALIZER;
 static pthread_barrier_t barrier;
 
-sem_t main_sem;
+static sem_t main_sem;
 
 static int bounce_failed;
 static int bounce_done[N_THR_E];
@@ -53,7 +53,7 @@ static int barrier_return[N_THR_E];
  * Test success is signaled to main() using a traditional semaphore.
  */
 
-void *thread_top_exec(void *p1)
+static void *thread_top_exec(void *p1)
 {
 	int i, j, id = (int) POINTER_TO_INT(p1);
 	int policy;
@@ -141,7 +141,7 @@ void *thread_top_exec(void *p1)
 	return NULL;
 }
 
-int bounce_test_done(void)
+static int bounce_test_done(void)
 {
 	int i;
 
@@ -158,7 +158,7 @@ int bounce_test_done(void)
 	return 1;
 }
 
-int barrier_test_done(void)
+static int barrier_test_done(void)
 {
 	int i;
 
@@ -175,7 +175,7 @@ int barrier_test_done(void)
 	return 1;
 }
 
-void *thread_top_term(void *p1)
+static void *thread_top_term(void *p1)
 {
 	pthread_t self;
 	int oldstate, policy, ret;
@@ -353,7 +353,7 @@ ZTEST(pthread, test_pthread_descriptor_leak)
 	}
 }
 
-ZTEST(posix_apis, test_sched_getparam)
+ZTEST(pthread, test_sched_getparam)
 {
 	struct sched_param param;
 	int rc = sched_getparam(0, &param);
@@ -362,7 +362,7 @@ ZTEST(posix_apis, test_sched_getparam)
 	zassert_true((rc == -1 && err == ENOSYS));
 }
 
-ZTEST(posix_apis, test_sched_getscheduler)
+ZTEST(pthread, test_sched_getscheduler)
 {
 	int rc = sched_getscheduler(0);
 	int err = errno;
