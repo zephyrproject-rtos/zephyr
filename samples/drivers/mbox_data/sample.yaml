@@ -1,0 +1,27 @@
+sample:
+  name: MBOX Data IPC sample
+common:
+  sysbuild: true
+  tags: mbox
+tests:
+  sample.drivers.mbox_data.real_hw:
+    platform_allow:
+      - mimxrt1170_evkb_cm7
+      - mimxrt1170_evk_cm7
+      - mimxrt1160_evk_cm7
+    integration_platforms:
+      - mimxrt1160_evk_cm7
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Client received \\(on channel 2\\) value: 1"
+        - "Client send \\(on channel 3\\) value: 2"
+        - "Client received \\(on channel 2\\) value: 3"
+        - "Client send \\(on channel 3\\) value: 4"
+        - "Client received \\(on channel 2\\) value: 41"
+        - "Client send \\(on channel 3\\) value: 42"
+        - "Client received \\(on channel 2\\) value: 97"
+        - "Client send \\(on channel 3\\) value: 98"
+        - "Client received \\(on channel 2\\) value: 99"
