@@ -34,14 +34,14 @@ LOG_MODULE_REGISTER(gpio_efinix_sapphire);
 #define BSP_GPIO_INTERRUPT_HIGH_ENABLE 0x28
 #define BSP_GPIO_INTERRUPT_LOW_ENABLE  0x2c
 
-/* efinix sapphire specefic gpio config struct */
+/* efinix sapphire specific gpio config struct */
 struct gpio_efinix_sapphire_cfg {
 	uint32_t base_addr;
 	int n_gpios;
 	struct gpio_driver_config common;
 };
 
-/* efinix sapphire specefic gpio data struct */
+/* efinix sapphire specific gpio data struct */
 struct gpio_efinix_sapphire_data {
 	struct gpio_driver_data common;
 	const struct device *dev;
@@ -79,7 +79,7 @@ static inline void cfg_output_bit(const struct gpio_efinix_sapphire_cfg *config,
 	}
 }
 
-/* To use the controller bare minimun as IO, Peripheral has to configure, */
+/* To use the controller bare minimum as IO, Peripheral has to configure, */
 /* the Output enable register, b0 : Input, b1 : Output */
 
 static int gpio_efinix_sapphire_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)

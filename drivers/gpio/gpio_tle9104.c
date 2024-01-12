@@ -249,7 +249,7 @@ static int tle9104_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	}
 
 	if (pin >= TLE9104_GPIO_COUNT) {
-		LOG_ERR("invalid pin nummber %i", pin);
+		LOG_ERR("invalid pin number %i", pin);
 		return -EINVAL;
 	}
 

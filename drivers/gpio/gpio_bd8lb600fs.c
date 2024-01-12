@@ -86,7 +86,7 @@ static int bd8lb600fs_pin_configure(const struct device *dev, gpio_pin_t pin, gp
 	}
 
 	if (pin > 7) {
-		LOG_ERR("invalid pin nummber %i", pin);
+		LOG_ERR("invalid pin number %i", pin);
 		return -EINVAL;
 	}
 
