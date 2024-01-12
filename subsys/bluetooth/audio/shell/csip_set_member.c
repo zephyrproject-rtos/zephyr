@@ -157,13 +157,6 @@ static int cm_csip_set_member_register(const struct shell *sh, size_t argc, char
 	return 0;
 }
 
-static int cm_csip_set_member_print_sirk(const struct shell *sh, size_t argc,
-			       char *argv[])
-{
-	bt_csip_set_member_print_sirk(svc_inst);
-	return 0;
-}
-
 static int cmd_csip_set_member_set_sirk(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint8_t sirk[BT_CSIP_SET_SIRK_SIZE];
@@ -293,8 +286,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cm_csip_set_member_register, 1, 4),
 	SHELL_CMD_ARG(lock, NULL, "Lock the set", cm_csip_set_member_lock, 1, 0),
 	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cm_csip_set_member_release, 1, 1),
-	SHELL_CMD_ARG(print_sirk, NULL, "Print the currently used SIRK",
-		      cm_csip_set_member_print_sirk, 1, 0),
 	SHELL_CMD_ARG(set_sirk, NULL, "Set the currently used SIRK <sirk>",
 		      cmd_csip_set_member_set_sirk, 2, 0),
 	SHELL_CMD_ARG(get_sirk, NULL, "Get the currently used SIRK", cmd_csip_set_member_get_sirk,
