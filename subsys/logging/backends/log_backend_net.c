@@ -235,6 +235,14 @@ bool log_backend_net_set_addr(const char *addr)
 	return ret;
 }
 
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+void log_backend_net_hostname_set(char *hostname, size_t len)
+{
+	(void)strncpy(dev_hostname, hostname, MIN(len, MAX_HOSTNAME_LEN));
+	log_output_hostname_set(&log_output_net, dev_hostname);
+}
+#endif
+
 static void init_net(struct log_backend const *const backend)
 {
 	ARG_UNUSED(backend);
