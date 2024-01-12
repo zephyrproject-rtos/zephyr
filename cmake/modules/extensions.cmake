@@ -1330,9 +1330,11 @@ endmacro()
 # The following optional arguments are supported:
 # - NOCOPY: this flag indicates that the file data does not need to be copied
 #   at boot time (For example, for flash XIP).
+# - NOKEEP: suppress the generation of KEEP() statements in the linker script,
+#   to allow any unused code in the given files/library to be discarded.
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
-  set(options NOCOPY)
+  set(options NOCOPY NOKEEP)
   set(single_args LIBRARY LOCATION PHDR)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
@@ -1392,21 +1394,25 @@ function(zephyr_code_relocate)
     endif()
   endif()
   if(NOT CODE_REL_NOCOPY)
-    set(copy_flag COPY)
+    set(flag_list COPY)
   else()
-    set(copy_flag NOCOPY)
+    set(flag_list NOCOPY)
+  endif()
+  if(CODE_REL_NOKEEP)
+    list(APPEND flag_list NOKEEP)
   endif()
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
   endif()
-  # We use the "|" character to separate code relocation directives instead
-  # of using CMake lists. This way, the ";" character can be reserved for
-  # generator expression file lists.
+  # We use the "|" character to separate code relocation directives, instead of
+  # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
+  # each directive can embed multiple CMake lists, representing flags and files,
+  # the latter of which can come from generator expressions.
   get_property(code_rel_str TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS)
   set_property(TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS
-    "${code_rel_str}|${CODE_REL_LOCATION}:${copy_flag}:${file_list}")
+    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
 endfunction()
 
 # Usage:

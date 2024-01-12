@@ -97,6 +97,22 @@ This section shows additional configuration options that can be set in
      zephyr_code_relocate(FILES ${sources} LOCATION SRAM)
      zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM)
 
+NOKEEP flag
+===========
+
+By default, all relocated functions and variables will be marked with ``KEEP()``
+when generating ``linker_relocate.ld``.  Therefore, if any input file happens to
+contain unused symbols, then they will not be discarded by the linker, even when
+it is invoked with ``--gc-sections``. If you'd like to override this behavior,
+you can pass ``NOKEEP`` to your ``zephyr_code_relocate()`` call.
+
+  .. code-block:: none
+
+     zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2_TEXT NOKEEP)
+
+The example above will help ensure that any unused code found in the .text
+sections of ``file1.c`` will not stick to SRAM2.
+
 NOCOPY flag
 ===========
 
