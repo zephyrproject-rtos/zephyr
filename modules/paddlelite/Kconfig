@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2016 PaddlePaddle Authors. All Rights Reserved.
+
+config PADDLE_LITE
+	bool "Paddle Lite Support"
+	select REQUIRES_FULL_LIBCPP
+	help
+	  This option enables the Paddle Lite library.

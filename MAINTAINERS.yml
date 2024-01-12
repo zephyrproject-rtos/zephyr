@@ -4369,6 +4369,18 @@ West:
   labels:
     - "area: TF-M"
 
+"West project: paddlelite":
+  status: maintained
+  maintainers:
+    - 23131dw
+    - Charlie Xiong
+  files:
+    - modules/paddlelite/
+    - samples/modules/paddlelite/
+    - soc/arm64/rockchip/rk3568/
+  labels:
+    - "area: PaddleLite"
+
 "West project: tf-m-tests":
   status: maintained
   maintainers:

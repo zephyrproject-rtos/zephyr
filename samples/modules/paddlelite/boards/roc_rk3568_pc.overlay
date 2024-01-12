@@ -1,0 +1,23 @@
+/*
+ * Copyright 2023 HNU-ESNL
+ * Copyright 2023 YNU-SOFTWARE
+ * Copyright 2023 PaddlePaddle
+ * Copyright 2023 openEuler SIG-Zephyr
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+	sram0: memory@40000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x40000000 DT_SIZE_M(2048)>;
+	};
+
+	model: model@70000000 {
+        compatible = "zephyr,model";
+        reg = <0x70000000 DT_SIZE_M(128)>;
+	};
+
+
+};
