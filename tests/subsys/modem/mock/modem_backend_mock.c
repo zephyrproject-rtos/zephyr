@@ -47,7 +47,8 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 		struct modem_backend_mock *t_mock = mock->bridge;
 
 		ret = ring_buf_put(&t_mock->rx_rb, buf, size);
-		k_work_submit(&t_mock->received_work_item.work);
+		k_work_submit(&t_mock->receive_ready_work);
+		k_work_submit(&mock->transmit_idle_work);
 		return ret;
 	}
 
@@ -59,6 +60,7 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 		mock->transaction = NULL;
 	}
 
+	k_work_submit(&mock->transmit_idle_work);
 	return ret;
 }
 
@@ -85,12 +87,20 @@ struct modem_pipe_api modem_backend_mock_api = {
 	.close = modem_backend_mock_close,
 };
 
-static void modem_backend_mock_received_handler(struct k_work *item)
+static void modem_backend_mock_receive_ready_handler(struct k_work *item)
 {
-	struct modem_backend_mock_work *mock_work_item = (struct modem_backend_mock_work *)item;
-	struct modem_backend_mock *mock = mock_work_item->mock;
+	struct modem_backend_mock *mock =
+		CONTAINER_OF(item, struct modem_backend_mock, receive_ready_work);
 
 	modem_pipe_notify_receive_ready(&mock->pipe);
+}
+
+static void modem_backend_mock_transmit_idle_handler(struct k_work *item)
+{
+	struct modem_backend_mock *mock =
+		CONTAINER_OF(item, struct modem_backend_mock, transmit_idle_work);
+
+	modem_pipe_notify_transmit_idle(&mock->pipe);
 }
 
 struct modem_pipe *modem_backend_mock_init(struct modem_backend_mock *mock,
@@ -100,8 +110,8 @@ struct modem_pipe *modem_backend_mock_init(struct modem_backend_mock *mock,
 
 	ring_buf_init(&mock->rx_rb, config->rx_buf_size, config->rx_buf);
 	ring_buf_init(&mock->tx_rb, config->tx_buf_size, config->tx_buf);
-	mock->received_work_item.mock = mock;
-	k_work_init(&mock->received_work_item.work, modem_backend_mock_received_handler);
+	k_work_init(&mock->receive_ready_work, modem_backend_mock_receive_ready_handler);
+	k_work_init(&mock->transmit_idle_work, modem_backend_mock_transmit_idle_handler);
 	mock->limit = config->limit;
 	modem_pipe_init(&mock->pipe, mock, &modem_backend_mock_api);
 	return &mock->pipe;
@@ -130,7 +140,7 @@ void modem_backend_mock_put(struct modem_backend_mock *mock, const uint8_t *buf,
 	__ASSERT(ring_buf_put(&mock->rx_rb, buf, size) == size,
 		 "Mock buffer capacity exceeded");
 
-	k_work_submit(&mock->received_work_item.work);
+	k_work_submit(&mock->receive_ready_work);
 }
 
 void modem_backend_mock_prime(struct modem_backend_mock *mock,
