@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_K(256)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(16)>;
+};
+
+/delete-node/ &clk_iso;
+
+/delete-node/ &gpio1;
+
+/delete-node/ &uart2;
+
+/* MAX32662 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(16)>;
+		};
+
+		sram2: memory@20008000 {
+			compatible = "mmio-sram";
+			reg = <0x20008000 DT_SIZE_K(16)>;
+		};
+
+		sram3: memory@2000c000 {
+			compatible = "mmio-sram";
+			reg = <0x2000c000 DT_SIZE_K(16)>;
+		};
+
+		sram4: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(4)>;
+		};
+
+		sram5: memory@20011000 {
+			compatible = "mmio-sram";
+			reg = <0x20011000 DT_SIZE_K(4)>;
+		};
+
+		sram6: memory@20012000 {
+			compatible = "mmio-sram";
+			reg = <0x20012000 DT_SIZE_K(4)>;
+		};
+
+		sram7: memory@20013000 {
+			compatible = "mmio-sram";
+			reg = <0x20013000 DT_SIZE_K(4)>;
+		};
+	};
+};
