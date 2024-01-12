@@ -5,7 +5,9 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
-if(NOT CONFIG_MODULES OR CONFIG_LLEXT_TEST_HELLO STREQUAL "m")
+if(NOT CONFIG_LLEXT_TEST_HELLO)
+  # test disabled, nothing to do
+else()
 
   set(llext_src_file ${PROJECT_SOURCE_DIR}/hello_world.c)
   set(llext_bin_file ${PROJECT_BINARY_DIR}/hello_world.llext)
