@@ -160,6 +160,60 @@
 			ambiq,pwrcfg = <&pwrcfg 0x8 0x100>;
 		};
 
+		spi0: spi@50004000 {
+			reg = <0x50004000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <6 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x2>;
+		};
+
+		spi1: spi@50005000 {
+			reg = <0x50005000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <7 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x4>;
+		};
+
+		spi2: spi@50006000 {
+			reg = <0x50006000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <8 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x8>;
+		};
+
+		spi3: spi@50007000 {
+			reg = <0x50007000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <9 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x10>;
+		};
+
+		spi4: spi@50008000 {
+			reg = <0x50008000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <10 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x20>;
+		};
+
+		spi5: spi@50009000 {
+			reg = <0x50009000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <11 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0x40>;
+		};
+
 		i2c0: i2c@50004000 {
 			reg = <0x50004000 0x1000>;
 			#address-cells = <1>;
