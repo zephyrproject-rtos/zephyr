@@ -17,6 +17,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
 	};
 
 	leds {
@@ -64,6 +66,12 @@
 	status = "okay";
 };
 
+&sciclk {
+	clk_src = <RA_CLOCK_SOURCE_PLL1P>;
+	clk_div = <RA_SCI_CLOCK_DIV_4>;
+	status = "okay";
+};
+
 &ioport1 {
 	status = "okay";
 };
@@ -74,4 +82,14 @@
 
 &ioport6 {
 	status = "okay";
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
 };
