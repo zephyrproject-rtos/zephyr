@@ -95,13 +95,20 @@ void posix_irq_handler(void)
 		return;
 	}
 
+	irq_nbr = hw_irq_ctrl_get_highest_prio_irq(cpu_n);
+
+	if (irq_nbr == -1) {
+		/* This is a phony interrupt during a busy wait, no need for more */
+		return;
+	}
+
 	if (_kernel.cpus[0].nested == 0) {
 		may_swap = 0;
 	}
 
 	_kernel.cpus[0].nested++;
 
-	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq(cpu_n)) != -1) {
+	do {
 		int last_current_running_prio = hw_irq_ctrl_get_cur_prio(cpu_n);
 		int last_running_irq = currently_running_irq;
 
@@ -115,7 +122,7 @@ void posix_irq_handler(void)
 		hw_irq_ctrl_reeval_level_irq(cpu_n, irq_nbr);
 
 		hw_irq_ctrl_set_cur_prio(cpu_n, last_current_running_prio);
-	}
+	} while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq(cpu_n)) != -1);
 
 	_kernel.cpus[0].nested--;
 
