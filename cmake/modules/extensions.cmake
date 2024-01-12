@@ -34,6 +34,7 @@ include(CheckCXXCompilerFlag)
 # 5. Zephyr linker functions
 # 5.1. zephyr_linker*
 # 6 Function helper macros
+# 7 Linkable loadable extensions (llext)
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -4792,3 +4793,92 @@ macro(zephyr_check_flags_exclusive function prefix)
       )
   endif()
 endmacro()
+
+########################################################
+# 7. Linkable loadable extensions (llext)
+########################################################
+#
+# These functions simplify the creation and management of linkable
+# loadable extensions (llexts).
+#
+
+# Add a custom target that compiles a single source file to a .llext file.
+#
+# Output and source files must be specified using the OUTPUT and SOURCES
+# arguments. Only one source file is currently supported.
+#
+# Arch-specific flags will be added automatically. The C_FLAGS argument
+# can be used to pass additional compiler flags to the compilation of
+# the source file.
+#
+# Example usage:
+#   add_llext_target(hello_world
+#     OUTPUT  ${PROJECT_BINARY_DIR}/hello_world.llext
+#     SOURCES ${PROJECT_SOURCE_DIR}/src/llext/hello_world.c
+#     C_FLAGS -Werror
+#   )
+# will compile the source file src/llext/hello_world.c to a file
+# ${PROJECT_BINARY_DIR}/hello_world.llext, adding -Werror to the compilation.
+#
+function(add_llext_target target_name)
+  set(single_args OUTPUT)
+  set(multi_args SOURCES;C_FLAGS)
+  cmake_parse_arguments(PARSE_ARGV 1 LLEXT "${options}" "${single_args}" "${multi_args}")
+
+  # Check that the llext subsystem is enabled for this build
+  if (NOT CONFIG_LLEXT)
+    message(FATAL_ERROR "add_llext_target: CONFIG_LLEXT must be enabled")
+  endif()
+
+  # Output file must be provided
+  if(NOT LLEXT_OUTPUT)
+    message(FATAL_ERROR "add_llext_target: OUTPUT argument must be provided")
+  endif()
+
+  # Source list length must currently be 1
+  list(LENGTH LLEXT_SOURCES source_count)
+  if(NOT source_count EQUAL 1)
+    message(FATAL_ERROR "add_llext_target: only one source file is supported")
+  endif()
+
+  set(output_file ${LLEXT_OUTPUT})
+  set(source_file ${LLEXT_SOURCES})
+  get_filename_component(output_name ${output_file} NAME)
+
+  # Add user-visible target and dependency
+  add_custom_target(${target_name}
+    COMMENT "Compiling ${output_name}"
+    DEPENDS ${output_file}
+  )
+
+  # Compile the source file to an .llext file
+  if(CONFIG_ARM)
+    list(PREPEND LLEXT_C_FLAGS "-mlong-calls" "-mthumb")
+    add_custom_command(OUTPUT ${output_file}
+      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_C_FLAGS} -c
+              -I ${ZEPHYR_BASE}/include
+              -imacros ${AUTOCONF_H}
+              -o ${output_file}
+              ${source_file}
+      DEPENDS ${source_file}
+    )
+  elseif(CONFIG_XTENSA)
+    list(PREPEND LLEXT_C_FLAGS "-shared" "-fPIC" "-nostdlib" "-nodefaultlibs")
+    get_filename_component(output_dir ${output_file} DIRECTORY)
+    get_filename_component(output_name_we ${output_file} NAME_WE)
+    set(pre_output_file ${output_dir}/${output_name_we}.pre.llext)
+    add_custom_command(OUTPUT ${output_file}
+      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_C_FLAGS}
+              -I ${ZEPHYR_BASE}/include
+              -imacros ${AUTOCONF_H}
+              -o ${pre_output_file}
+              ${source_file}
+      COMMAND ${CROSS_COMPILE}strip -R .xt.*
+              -o ${output_file}
+              ${pre_output_file}
+      DEPENDS ${source_file}
+    )
+  else()
+    message(FATAL_ERROR "add_llext_target: unsupported architecture")
+  endif()
+endfunction()
