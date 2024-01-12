@@ -55,7 +55,8 @@ int walk_sockets(struct k_obj_core *obj_core, void *user_data)
 		 * actual lifetime as calculated in close()
 		 */
 		lifetime = obj->create_time;
-		strncat(fd, "C", 1);
+		fd[0] = 'C';
+		fd[1] = '\0';
 		count->closed++;
 	} else {
 		lifetime = k_ticks_to_ms_ceil32(sys_clock_tick_get() -
