@@ -978,9 +978,3 @@ int bt_csip_set_member_lock(struct bt_csip_set_member_svc_inst *svc_inst,
 		return 0;
 	}
 }
-
-void bt_csip_set_member_print_sirk(const struct bt_csip_set_member_svc_inst *svc_inst)
-{
-	LOG_HEXDUMP_DBG(&svc_inst->set_sirk, sizeof(svc_inst->set_sirk),
-			"Set SIRK");
-}

@@ -27,7 +27,6 @@ register callbacks.
                     [rank <int>] [not-lockable] [sirk <data>]
      lock          :Lock the set
      release       :Release the set [force]
-     print_sirk    :Print the currently used SIRK
      set_sirk      :Set the currently used SIRK <sirk>
      get_sirk      :Get the currently used SIRK
      set_sirk_rsp  :Set the response used in SIRK requests <accept, accept_enc,

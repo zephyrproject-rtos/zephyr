@@ -216,13 +216,6 @@ int bt_csip_set_member_get_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 				uint8_t sirk[BT_CSIP_SET_SIRK_SIZE]);
 
 /**
- * @brief Print the SIRK to the debug output
- *
- * @param svc_inst   Pointer to the Coordinated Set Identification Service.
- */
-void bt_csip_set_member_print_sirk(const struct bt_csip_set_member_svc_inst *svc_inst);
-
-/**
  * @brief Generate the Resolvable Set Identifier (RSI) value.
  *
  * This will generate RSI for given @p svc_inst instance.
