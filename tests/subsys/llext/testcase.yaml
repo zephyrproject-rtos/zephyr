@@ -1,22 +1,27 @@
 common:
   tags: llext
+  arch_allow:
+    - arm
+    - xtensa
+  filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
+  platform_exclude:
+    - nuvoton_pfm_m487 # See #63167
 tests:
-  llext.simple.arm:
-    filter: not CONFIG_CPU_HAS_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
-    arch_allow: arm
+  llext.simple.readonly:
+    arch_exclude: xtensa # for now
     extra_configs:
-      - CONFIG_ARM_MPU=n
-      - CONFIG_MODULES=y
-      - CONFIG_LLEXT_TEST_HELLO=m
-    # Broken platforms
-    platform_exclude:
-      - nuvoton_pfm_m487 # See #63167
-  llext.simple.xtensa:
-    arch_allow: xtensa
+      - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.simple.writable:
     extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
+  llext.simple.modules_enabled:
+    platform_key:
+      - simulation
+    platform_exclude:
+      - qemu_cortex_a9 # MMU
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_MODULES=y
       - CONFIG_LLEXT_TEST_HELLO=m
-    # Broken platforms
-    platform_exclude:
-      - qemu_xtensa_mmu # ELF sections are read-only, and without peek() .text copy isn't executable
