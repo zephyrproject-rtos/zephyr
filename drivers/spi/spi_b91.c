@@ -228,7 +228,7 @@ static void spi_b91_txrx(const struct device *dev, uint32_t len)
 		BM_SET(reg_spi_fifo_state(cfg->peripheral_id), FLD_SPI_RXF_CLR);
 	}
 
-	/* wait fot SPI is ready */
+	/* wait for SPI is ready */
 	while (spi_is_busy(cfg->peripheral_id)) {
 	};
 
