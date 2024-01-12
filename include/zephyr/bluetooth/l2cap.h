@@ -594,6 +594,13 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  case of an error the caller retains the ownership of the buffer.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @return -EINVAL if `buf` or `chan` is NULL.
+ *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
+ *  @return -EINVAL if buffer doesn't have enough bytes reserved to fit header.
+ *  @return -EMSGSIZE if `buf` is larger than `chan`'s MTU.
+ *  @return -ENOTCONN if underlying conn is disconnected.
+ *  @return -ESHUTDOWN if L2CAP channel is disconnected.
+ *  @return -other (from lower layers) if chan is BR/EDR.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
