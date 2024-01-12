@@ -4,15 +4,15 @@
  */
 
 &pinctrl {
-	sci0_default: sci0_default {
+	sci9_default: sci9_default {
 		group1 {
 			/* tx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 14)>;
 			drive-strength = "medium";
 		};
 		group2 {
 			/* rx */
-			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>;
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 15)>;
 		};
 	};
 };
