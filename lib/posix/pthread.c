@@ -572,7 +572,9 @@ int pthread_setcancelstate(int state, int *oldstate)
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	*oldstate = t->cancel_state;
+	if (oldstate != NULL) {
+		*oldstate = t->cancel_state;
+	}
 	t->cancel_state = state;
 	cancel_pending = t->cancel_pending;
 	k_spin_unlock(&pthread_pool_lock, key);
@@ -605,7 +607,9 @@ int pthread_setcanceltype(int type, int *oldtype)
 	}
 
 	key = k_spin_lock(&pthread_pool_lock);
-	*oldtype = t->cancel_type;
+	if (oldtype != NULL) {
+		*oldtype = t->cancel_type;
+	}
 	t->cancel_type = type;
 	k_spin_unlock(&pthread_pool_lock, key);
 
