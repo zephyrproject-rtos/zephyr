@@ -1,0 +1,78 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the accel-range, accel-odr, properties in a .dts or .dtsi
+    file you may include lis2de12.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lis2de12.h>
+
+    lis2de12: lis2de12@0 {
+      ...
+
+      accel-range = <LIS2DE12_DT_FS_16G>;
+      accel-odr = <LIS2DE12_DT_ODR_AT_100Hz>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      0 # LIS2DE12_DT_FS_2G  (15.6 mg/LSB)
+      1 # LIS2DE12_DT_FS_4G  (31.2 mg/LSB)
+      2 # LIS2DE12_DT_FS_8G  (62.5 mg/LSB)
+      3 # LIS2DE12_DT_FS_16G (187.5 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lis2de12_md_t enumerative in hal/st
+      module. Please note that this values will also enable/disable High performance mode.
+      Default is power-up configuration.
+
+      0x00 # LIS2DE12_DT_ODR_OFF
+      0x01 # LIS2DE12_DT_ODR_AT_1Hz
+      0x02 # LIS2DE12_DT_ODR_AT_10Hz
+      0x03 # LIS2DE12_DT_ODR_AT_25Hz
+      0x04 # LIS2DE12_DT_ODR_AT_50Hz
+      0x05 # LIS2DE12_DT_ODR_AT_100Hz
+      0x06 # LIS2DE12_DT_ODR_AT_200Hz
+      0x07 # LIS2DE12_DT_ODR_AT_400Hz
+      0x08 # LIS2DE12_DT_ODR_AT_1kHz620
+      0x09 # LIS2DE12_DT_ODR_AT_5kHz376
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09]
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.
