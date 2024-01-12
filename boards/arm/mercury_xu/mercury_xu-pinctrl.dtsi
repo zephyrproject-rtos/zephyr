@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/pinctrl-zynqmp.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_RX_38>;
+		};
+		group2 {
+			pinmux = <UART0_TX_39>;
+		};
+	};
+};
