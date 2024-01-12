@@ -139,12 +139,12 @@ static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int p
 
 	val = dai_dmic_read(dmic, dmic_base[pdm] +
 			    FIR_CHANNEL_REGS_SIZE * dmic->dai_config_params.dai_index + FIR_CONFIG);
-	LOG_ERR("pdm = %d, FIR_CONFIG = 0x%08X", pdm, val);
+	LOG_INF("pdm = %d, FIR_CONFIG = 0x%08X", pdm, val);
 
 	p_mfir = FIELD_GET(FIR_CONFIG_FIR_DECIMATION, val) + 1;
 
 	rate_div = p_clkdiv * p_mcic * p_mfir;
-	LOG_ERR("dai_index = %d, rate_div = %d, p_clkdiv = %d, p_mcic = %d, p_mfir = %d",
+	LOG_INF("dai_index = %d, rate_div = %d, p_clkdiv = %d, p_mcic = %d, p_mfir = %d",
 		dmic->dai_config_params.dai_index, rate_div, p_clkdiv, p_mcic, p_mfir);
 
 	if (!rate_div) {
