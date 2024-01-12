@@ -11,8 +11,8 @@ description: |
     lis2du12: lis2du12@0 {
       ...
 
-      accel-range = <LSM6DSV16X_DT_FS_8G>;
-      accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+      accel-range = <LIS2DU12_DT_FS_16G>;
+      accel-odr = <LIS2DU12_DT_ODR_AT_50Hz>;
     };
 
 include: sensor-device.yaml
@@ -74,19 +74,19 @@ properties:
       Default is power-up configuration.
 
       0x00 # LIS2DU12_DT_ODR_OFF
-      0x01 # 1Hz6 (ultra low power)
-      0x02 # 3Hz (ultra low power)
-      0x03 # 25Hz (ultra low power)
-      0x04 # 6Hz (low power)
-      0x05 # 12Hz5 (low power)
-      0x06 # 25Hz (low power)
-      0x07 # 50Hz (low power)
-      0x08 # 100Hz (low power)
-      0x09 # 200Hz (low power)
-      0x0a # 400Hz (low power)
-      0x0b # 800Hz (low power)
-      0x0e # Single-shot high latency by INT2
-      0x0f # Single-shot high latency by IF
+      0x01 # LIS2DU12_DT_ODR_AT_1Hz6_ULP
+      0x02 # LIS2DU12_DT_ODR_AT_3Hz_ULP
+      0x03 # LIS2DU12_DT_ODR_AT_6Hz_ULP
+      0x04 # LIS2DU12_DT_ODR_AT_6Hz
+      0x05 # LIS2DU12_DT_ODR_AT_12Hz
+      0x06 # LIS2DU12_DT_ODR_AT_25Hz
+      0x07 # LIS2DU12_DT_ODR_AT_50Hz
+      0x08 # LIS2DU12_DT_ODR_AT_100Hz
+      0x09 # LIS2DU12_DT_ODR_AT_200Hz
+      0x0a # LIS2DU12_DT_ODR_AT_400Hz
+      0x0b # LIS2DU12_DT_ODR_AT_800Hz
+      0x0e # LIS2DU12_DT_ODR_TRIG_PIN
+      0x0f # LIS2DU12_DT_ODR_TRIG_SW
 
     enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0e, 0x0f]
 
