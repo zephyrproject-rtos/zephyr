@@ -1,0 +1,8 @@
+# STM32WB5MMG Bluetooth module board configuration
+
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32WB5MMG
+	bool "stm32wb5mmg ultra low power Bluetooth module"
+	depends on SOC_STM32WB55XX
