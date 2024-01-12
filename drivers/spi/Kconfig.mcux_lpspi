@@ -22,7 +22,7 @@ config SPI_MCUX_LPSPI_DMA
 
 if SPI_RTIO
 config SPI_MCUX_RTIO_SQ_SIZE
-	int "number of avialable submission queue entries"
+	int "number of available submission queue entries"
 	default 8 # sensible default that covers most common spi transactions
 	help
 	  when rtio is use with spi each driver holds a context with which blocking
