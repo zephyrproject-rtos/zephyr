@@ -177,4 +177,8 @@ config XTENSA_INSECURE_USERSPACE
 
 endif # CPU_HAS_MMU
 
+config XTENSA_TOOLCHAIN_HAS_HIFI
+       bool
+       default y if (("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xcc") || ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "xt-clang"))
+
 endmenu
