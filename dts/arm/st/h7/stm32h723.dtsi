@@ -128,11 +128,20 @@
 			status = "disabled";
 		};
 
-		rtc@58004000 {
+		rtc: rtc@58004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x58004000 0x400>;
+			interrupts = <41 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>;
+			prescaler = <32768>;
+			status = "disabled";
+			//status = "okay";
 			bbram: backup_regs {
 				compatible = "st,stm32-bbram";
 				st,backup-regs = <32>;
 				status = "disabled";
+				//status = "okay";
+				size = <0xff>;
 			};
 		};
 	};

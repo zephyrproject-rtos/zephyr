@@ -19,3 +19,7 @@ properties:
     type: int
     required: true
     description: Number of available backup registers.
+  size:
+    type: int
+    required: true
+    description: size of backup-regs.

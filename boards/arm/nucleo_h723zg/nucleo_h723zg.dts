@@ -126,6 +126,11 @@
 	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
+
+	bbram: backup_regs {
+		status = "okay";
+	};
+
 };
 
 &spi1 {
