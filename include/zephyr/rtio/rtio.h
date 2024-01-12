@@ -699,7 +699,11 @@ static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 
 static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_len)
 {
-#ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
+#ifndef CONFIG_RTIO_SYS_MEM_BLOCKS
+	ARG_UNUSED(r);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(buf_len);
+#else
 	size_t num_blks = buf_len >> r->block_pool->info.blk_sz_shift;
 
 	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);
