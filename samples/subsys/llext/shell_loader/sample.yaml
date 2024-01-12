@@ -1,3 +1,11 @@
+common:
+  tags: llext
+  arch_allow:
+    - arm
+    - xtensa
+  filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
+  platform_exclude:
+    - nuvoton_pfm_m487 # See #63167
 sample:
   description: Loadable extensions with shell sample
   name: Extension loader shell
@@ -5,10 +13,5 @@ tests:
   sample.llext.shell:
     tags: shell llext
     harness: keyboard
-    filter: not CONFIG_CPU_HAS_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
-    arch_allow: arm
     extra_configs:
-      - CONFIG_ARM_MPU=n
-    # Broken platforms
-    platform_exclude:
-      - nuvoton_pfm_m487 # See #63167
+      - arch:arm:CONFIG_ARM_MPU=n
