@@ -95,13 +95,13 @@ void test_timer(int sigev_notify)
 		       exp_count, expected_signal_count);
 }
 
-ZTEST(posix_apis, test_timer)
+ZTEST(timer, test_timer)
 {
 	test_timer(SIGEV_SIGNAL);
 	test_timer(SIGEV_THREAD);
 }
 
-ZTEST(posix_apis, test_timer_overrun)
+ZTEST(timer, test_timer_overrun)
 {
 	timer_t timerid;
 	struct sigevent sig = { 0 };
@@ -124,3 +124,5 @@ ZTEST(posix_apis, test_timer_overrun)
 	timer_delete(timerid);
 	zassert_equal(overruns, 4, "Number of overruns is incorrect");
 }
+
+ZTEST_SUITE(timer, NULL, NULL, NULL, NULL, NULL);

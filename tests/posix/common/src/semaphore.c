@@ -90,7 +90,7 @@ static void semaphore_test(sem_t *sem)
 	zassert_ok(pthread_join(thread2, NULL));
 }
 
-ZTEST(posix_apis, test_semaphore)
+ZTEST(semaphore, test_semaphore)
 {
 	sem_t sema;
 
@@ -142,7 +142,7 @@ static void *nsem_close_func(void *p)
 	return NULL;
 }
 
-ZTEST(posix_apis, test_named_semaphore)
+ZTEST(semaphore, test_named_semaphore)
 {
 	pthread_t thread1, thread2;
 	sem_t *sem1, *sem2, *different_sem1;
@@ -311,3 +311,5 @@ ZTEST(posix_apis, test_named_semaphore)
 	sem_close(sem1);
 	zassert_equal(nsem_get_list_len(), 0);
 }
+
+ZTEST_SUITE(semaphore, NULL, NULL, NULL, NULL, NULL);

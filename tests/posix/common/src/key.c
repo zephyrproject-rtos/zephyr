@@ -74,7 +74,7 @@ static void make_keys(void)
  * multiple keys.
  */
 
-ZTEST(posix_apis, test_key_1toN_thread)
+ZTEST(key, test_key_1toN_thread)
 {
 	void *retval;
 	pthread_t newthread[N_THR];
@@ -95,7 +95,7 @@ ZTEST(posix_apis, test_key_1toN_thread)
 	zassert_ok(pthread_key_delete(key), "attempt to delete key failed");
 }
 
-ZTEST(posix_apis, test_key_Nto1_thread)
+ZTEST(key, test_key_Nto1_thread)
 {
 	pthread_t newthread;
 
@@ -113,7 +113,7 @@ ZTEST(posix_apis, test_key_Nto1_thread)
 	}
 }
 
-ZTEST(posix_apis, test_key_resource_leak)
+ZTEST(key, test_key_resource_leak)
 {
 	pthread_key_t key;
 
@@ -123,7 +123,7 @@ ZTEST(posix_apis, test_key_resource_leak)
 	}
 }
 
-ZTEST(posix_apis, test_correct_key_is_deleted)
+ZTEST(key, test_correct_key_is_deleted)
 {
 	pthread_key_t key;
 	size_t j = CONFIG_MAX_PTHREAD_KEY_COUNT - 1;
@@ -143,3 +143,5 @@ ZTEST(posix_apis, test_correct_key_is_deleted)
 		zassert_ok(pthread_key_delete(keys[i]), "failed to delete key %zu", i);
 	}
 }
+
+ZTEST_SUITE(key, NULL, NULL, NULL, NULL, NULL);
