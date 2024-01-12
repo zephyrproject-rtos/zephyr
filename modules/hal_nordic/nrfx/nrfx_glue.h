@@ -64,6 +64,7 @@ extern "C" {
  * @param priority   Priority to be set.
  */
 #define NRFX_IRQ_PRIORITY_SET(irq_number, priority)                                                \
+	ARG_UNUSED(priority)                                                                       \
 	/* Intentionally empty. Priorities of IRQs are set through IRQ_CONNECT. */
 
 /**
