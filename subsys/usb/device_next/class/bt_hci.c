@@ -166,7 +166,7 @@ struct net_buf *bt_hci_buf_alloc(const uint8_t ep)
 static void bt_hci_tx_sync_in(struct usbd_class_node *const c_nd,
 			      struct net_buf *const bt_buf, const uint8_t ep)
 {
-	struct bt_hci_data *hci_data = c_nd->data->priv;
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
 	struct net_buf *buf;
 
 	buf = bt_hci_buf_alloc(ep);
@@ -231,7 +231,7 @@ static void bt_hci_rx_thread(void *a, void *b, void *c)
 
 static int bt_hci_acl_out_start(struct usbd_class_node *const c_nd)
 {
-	struct bt_hci_data *hci_data = c_nd->data->priv;
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -301,7 +301,7 @@ static uint16_t hci_pkt_get_len(struct net_buf *const buf,
 static int bt_hci_acl_out_cb(struct usbd_class_node *const c_nd,
 			     struct net_buf *const buf, const int err)
 {
-	struct bt_hci_data *hci_data = c_nd->data->priv;
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
 
 	if (err) {
 		goto restart_out_transfer;
@@ -358,8 +358,8 @@ restart_out_transfer:
 static int bt_hci_request(struct usbd_class_node *const c_nd,
 			  struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
-	struct bt_hci_data *hci_data = c_nd->data->priv;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
 	struct udc_buf_info *bi;
 
 	bi = udc_get_buf_info(buf);
@@ -387,7 +387,7 @@ static void bt_hci_update(struct usbd_class_node *const c_nd,
 
 static void bt_hci_enable(struct usbd_class_node *const c_nd)
 {
-	struct bt_hci_data *hci_data = c_nd->data->priv;
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
 
 	atomic_set_bit(&hci_data->state, BT_HCI_CLASS_ENABLED);
 	LOG_INF("Configuration enabled");
@@ -399,7 +399,7 @@ static void bt_hci_enable(struct usbd_class_node *const c_nd)
 
 static void bt_hci_disable(struct usbd_class_node *const c_nd)
 {
-	struct bt_hci_data *hci_data = c_nd->data->priv;
+	struct bt_hci_data *hci_data = usbd_class_get_private(c_nd);
 
 	atomic_clear_bit(&hci_data->state, BT_HCI_CLASS_ENABLED);
 	LOG_INF("Configuration disabled");

@@ -163,7 +163,7 @@ static uint8_t msc_get_bulk_out(struct usbd_class_node *const node)
 
 static void msc_queue_bulk_out_ep(struct usbd_class_node *const node)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
@@ -194,7 +194,7 @@ static void msc_stall_bulk_out_ep(struct usbd_class_node *const node)
 	uint8_t ep;
 
 	ep = msc_get_bulk_out(node);
-	usbd_ep_set_halt(node->data->uds_ctx, ep);
+	usbd_ep_set_halt(usbd_class_get_ctx(node), ep);
 }
 
 static void msc_stall_bulk_in_ep(struct usbd_class_node *const node)
@@ -202,12 +202,12 @@ static void msc_stall_bulk_in_ep(struct usbd_class_node *const node)
 	uint8_t ep;
 
 	ep = msc_get_bulk_in(node);
-	usbd_ep_set_halt(node->data->uds_ctx, ep);
+	usbd_ep_set_halt(usbd_class_get_ctx(node), ep);
 }
 
 static void msc_reset_handler(struct usbd_class_node *node)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 	int i;
 
 	LOG_INF("Bulk-Only Mass Storage Reset");
@@ -557,8 +557,8 @@ static void msc_send_csw(struct msc_bot_ctx *ctx)
 static void usbd_msc_handle_request(struct usbd_class_node *node,
 				    struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = node->data->uds_ctx;
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(node);
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 	struct udc_buf_info *bi;
 
 	bi = udc_get_buf_info(buf);
@@ -600,7 +600,7 @@ static void usbd_msc_thread(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		k_msgq_get(&msc_msgq, &evt, K_FOREVER);
 
-		ctx = evt.node->data->priv;
+		ctx = usbd_class_get_private(evt.node);
 		if (evt.buf == NULL) {
 			msc_reset_handler(evt.node);
 		} else {
@@ -656,16 +656,16 @@ static void msc_bot_schedule_reset(struct usbd_class_node *node)
 static void msc_bot_feature_halt(struct usbd_class_node *const node,
 				 const uint8_t ep, const bool halted)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 
 	if (ep == msc_get_bulk_in(node) && !halted &&
 	    atomic_test_bit(&ctx->bits, MSC_BULK_IN_WEDGED)) {
 		/* Endpoint shall remain halted until Reset Recovery */
-		usbd_ep_set_halt(node->data->uds_ctx, ep);
+		usbd_ep_set_halt(usbd_class_get_ctx(node), ep);
 	} else if (ep == msc_get_bulk_out(node) && !halted &&
 	    atomic_test_bit(&ctx->bits, MSC_BULK_OUT_WEDGED)) {
 		/* Endpoint shall remain halted until Reset Recovery */
-		usbd_ep_set_halt(node->data->uds_ctx, ep);
+		usbd_ep_set_halt(usbd_class_get_ctx(node), ep);
 	}
 }
 
@@ -689,7 +689,7 @@ static int msc_bot_control_to_host(struct usbd_class_node *const node,
 				   const struct usb_setup_packet *const setup,
 				   struct net_buf *const buf)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 	uint8_t max_lun;
 
 	if (setup->bRequest == GET_MAX_LUN &&
@@ -726,7 +726,7 @@ static int msc_bot_request_handler(struct usbd_class_node *const node,
 /* Class associated configuration is selected */
 static void msc_bot_enable(struct usbd_class_node *const node)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 
 	LOG_INF("Enable");
 	atomic_set_bit(&ctx->bits, MSC_CLASS_ENABLED);
@@ -736,7 +736,7 @@ static void msc_bot_enable(struct usbd_class_node *const node)
 /* Class associated configuration is disabled */
 static void msc_bot_disable(struct usbd_class_node *const node)
 {
-	struct msc_bot_ctx *ctx = node->data->priv;
+	struct msc_bot_ctx *ctx = usbd_class_get_private(node);
 
 	LOG_INF("Disable");
 	atomic_clear_bit(&ctx->bits, MSC_CLASS_ENABLED);
