@@ -1011,7 +1011,7 @@ static void target_i2c_isr_dma(const struct device *dev,
 			&rdata, &len);
 
 		if (len > CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE) {
-			LOG_ERR("The bufffer size exceeds "
+			LOG_ERR("The buffer size exceeds "
 				"I2C_TARGET_IT8XXX2_MAX_BUF_SIZE: len=%d",
 				len);
 		} else {
