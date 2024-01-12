@@ -899,7 +899,7 @@ static int32_t stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
 			}
 		}
 		/* ADDR must be cleared before NACK generation. Either in 2 byte reception
-		 * byte 1 will be NACK'ed and slave wont sent the last byte
+		 * byte 1 will be NACK'ed and slave won't sent the last byte
 		 */
 		LL_I2C_ClearFlag_ADDR(i2c);
 		if (len == 1U) {

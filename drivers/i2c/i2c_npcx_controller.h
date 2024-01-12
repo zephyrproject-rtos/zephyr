@@ -70,7 +70,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr, uint8_t port);
 
 /**
- * @brief Toggle the SCL to generate maxmium 9 clocks until the target release
+ * @brief Toggle the SCL to generate maximum 9 clocks until the target release
  * the SDA line and send a STOP condition.
  *
  * @param i2c_dev Pointer to the device structure for i2c controller instance.
