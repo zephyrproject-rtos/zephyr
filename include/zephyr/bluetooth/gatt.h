@@ -235,6 +235,37 @@ struct bt_gatt_cb {
 	sys_snode_t node;
 };
 
+/** @brief GATT authorization callback structure. */
+struct bt_gatt_authorization_cb {
+	/** @brief Authorize the GATT read operation.
+	 *
+	 *  This callback allows the application to authorize the GATT
+	 *  read operation for the attribute that is being read.
+	 *
+	 *  @param conn Connection object.
+	 *  @param attr The attribute that is being read.
+	 *
+	 *  @retval true  Authorize the operation and allow it to execute.
+	 *  @retval false Reject the operation and prevent it from executing.
+	 */
+	bool (*read_operation_authorize)(struct bt_conn *conn,
+					 const struct bt_gatt_attr *attr);
+
+	/** @brief Authorize the GATT write operation.
+	 *
+	 *  This callback allows the application to authorize the GATT
+	 *  write operation for the attribute that is being written.
+	 *
+	 *  @param conn Connection object.
+	 *  @param attr The attribute that is being written.
+	 *
+	 *  @retval true  Authorize the operation and allow it to execute.
+	 *  @retval false Reject the operation and prevent it from executing.
+	 */
+	bool (*write_operation_authorize)(struct bt_conn *conn,
+					  const struct bt_gatt_attr *attr);
+};
+
 /** Characteristic Properties Bit field values */
 
 /**
@@ -376,6 +407,26 @@ struct bt_gatt_cpf {
  *  @param cb Callback struct.
  */
 void bt_gatt_cb_register(struct bt_gatt_cb *cb);
+
+/** @brief Register GATT authorization callbacks.
+ *
+ *  Register callbacks to perform application-specific authorization of GATT
+ *  operations on all registered GATT attributes. The callback structure must
+ *  remain valid throughout the entire duration of the Bluetooth subsys
+ *  activity.
+ *
+ *  The @kconfig{CONFIG_BT_GATT_AUTHORIZATION_CUSTOM} Kconfig must be enabled
+ *  to make this API functional.
+ *
+ *  This API allows the user to register only one callback structure
+ *  concurrently. Passing NULL unregisters the previous set of callbacks
+ *  and makes it possible to register a new one.
+ *
+ *  @param cb Callback struct.
+ *
+ *  @return Zero on success or negative error code otherwise
+ */
+int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb);
 
 /** @brief Register GATT service.
  *
