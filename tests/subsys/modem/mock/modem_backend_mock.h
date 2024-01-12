@@ -11,13 +11,6 @@
 #ifndef ZEPHYR_DRIVERS_MODEM_MODEM_PIPE_MOCK
 #define ZEPHYR_DRIVERS_MODEM_MODEM_PIPE_MOCK
 
-struct modem_backend_mock;
-
-struct modem_backend_mock_work {
-	struct k_work work;
-	struct modem_backend_mock *mock;
-};
-
 struct modem_backend_mock_transaction {
 	/* Get data which will trigger put */
 	const uint8_t *get;
@@ -34,7 +27,8 @@ struct modem_backend_mock {
 	struct ring_buf rx_rb;
 	struct ring_buf tx_rb;
 
-	struct modem_backend_mock_work received_work_item;
+	struct k_work receive_ready_work;
+	struct k_work transmit_idle_work;
 
 	const struct modem_backend_mock_transaction *transaction;
 	size_t transaction_match_cnt;
