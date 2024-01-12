@@ -63,9 +63,8 @@ extern "C" {
  * @param irq_number IRQ number.
  * @param priority   Priority to be set.
  */
-#define NRFX_IRQ_PRIORITY_SET(irq_number, priority)  // Intentionally empty.
-                                                     // Priorities of IRQs are
-                                                     // set through IRQ_CONNECT.
+#define NRFX_IRQ_PRIORITY_SET(irq_number, priority)                                                \
+	/* Intentionally empty. Priorities of IRQs are set through IRQ_CONNECT. */
 
 /**
  * @brief Macro for enabling a specific IRQ.
