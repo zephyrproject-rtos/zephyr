@@ -12,7 +12,8 @@
 #include "nsi_tracing.h"
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
-			    bool use_accelerator, void **window, void **renderer, void **texture)
+			    bool use_accelerator, void **window, void **renderer, void **mutex,
+			    void **texture, void **read_texture)
 {
 	*window = SDL_CreateWindow("Zephyr Display", SDL_WINDOWPOS_UNDEFINED,
 				   SDL_WINDOWPOS_UNDEFINED, width * zoom_pct / 100,
@@ -34,12 +35,25 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 		return -1;
 	}
 
+	*mutex = SDL_CreateMutex();
+	if (*mutex == NULL) {
+		nsi_print_warning("Failed to create SDL mutex: %s", SDL_GetError());
+		return -1;
+	}
+
 	SDL_RenderSetLogicalSize(*renderer, width, height);
 
 	*texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
 				     SDL_TEXTUREACCESS_STATIC, width, height);
 	if (*texture == NULL) {
 		nsi_print_warning("Failed to create SDL texture: %s", SDL_GetError());
+		return -1;
+	}
+
+	*read_texture = SDL_CreateTexture(*renderer, SDL_PIXELFORMAT_ARGB8888,
+					  SDL_TEXTUREACCESS_TARGET, width, height);
+	if (*read_texture == NULL) {
+		nsi_print_warning("Failed to create SDL texture for read: %s", SDL_GetError());
 		return -1;
 	}
 
@@ -52,15 +66,22 @@ int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
 
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
 			      const uint16_t x, const uint16_t y,
-			      void *renderer, void *texture,
+			      void *renderer, void *mutex, void *texture,
 			      uint8_t *buf, bool display_on)
 {
 	SDL_Rect rect;
+	int err;
 
 	rect.x = x;
 	rect.y = y;
 	rect.w = width;
 	rect.h = height;
+
+	err = SDL_TryLockMutex(mutex);
+	if (err) {
+		nsi_print_warning("Failed to lock SDL mutex: %s", SDL_GetError());
+		return;
+	}
 
 	SDL_UpdateTexture(texture, &rect, buf, 4 * rect.w);
 
@@ -69,20 +90,40 @@ void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
 		SDL_RenderCopy(renderer, texture, NULL, NULL);
 		SDL_RenderPresent(renderer);
 	}
+
+	SDL_UnlockMutex(mutex);
 }
 
 int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 			    const uint16_t x, const uint16_t y,
-			    void *renderer, void *buf, uint16_t pitch)
+			    void *renderer, void *buf, uint16_t pitch,
+			    void *mutex, void *texture, void *read_texture)
 {
 	SDL_Rect rect;
+	int err;
 
 	rect.x = x;
 	rect.y = y;
 	rect.w = width;
 	rect.h = height;
 
-	return SDL_RenderReadPixels(renderer, &rect, 0, buf, pitch * 4U);
+	err = SDL_TryLockMutex(mutex);
+	if (err) {
+		nsi_print_warning("Failed to lock SDL mutex: %s", SDL_GetError());
+		return -1;
+	}
+
+	SDL_SetRenderTarget(renderer, read_texture);
+
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderReadPixels(renderer, &rect, SDL_PIXELFORMAT_ARGB8888, buf, width * 4);
+
+	SDL_SetRenderTarget(renderer, NULL);
+
+	SDL_UnlockMutex(mutex);
+
+	return err;
 }
 
 void sdl_display_blanking_off_bottom(void *renderer, void *texture)
@@ -98,11 +139,22 @@ void sdl_display_blanking_on_bottom(void *renderer)
 	SDL_RenderPresent(renderer);
 }
 
-void sdl_display_cleanup_bottom(void **window, void **renderer, void **texture)
+void sdl_display_cleanup_bottom(void **window, void **renderer, void **mutex, void **texture,
+				void **read_texture)
 {
+	if (*read_texture != NULL) {
+		SDL_DestroyTexture(*read_texture);
+		*read_texture = NULL;
+	}
+
 	if (*texture != NULL) {
 		SDL_DestroyTexture(*texture);
 		*texture = NULL;
+	}
+
+	if (*mutex != NULL) {
+		SDL_DestroyMutex(*mutex);
+		*mutex = NULL;
 	}
 
 	if (*renderer != NULL) {

@@ -21,17 +21,20 @@ extern "C" {
 /* Note: None of these functions are public interfaces. But internal to the SDL display driver */
 
 int sdl_display_init_bottom(uint16_t height, uint16_t width, uint16_t zoom_pct,
-			    bool use_accelerator, void **window, void **renderer, void **texture);
+			    bool use_accelerator, void **window, void **renderer, void **mutex,
+			    void **texture, void **read_texture);
 void sdl_display_write_bottom(const uint16_t height, const uint16_t width,
 			      const uint16_t x, const uint16_t y,
-			      void *renderer, void *texture,
+			      void *renderer, void *mutex, void *texture,
 			      uint8_t *buf, bool display_on);
 int sdl_display_read_bottom(const uint16_t height, const uint16_t width,
 			    const uint16_t x, const uint16_t y,
-			    void *renderer, void *buf, uint16_t pitch);
+			    void *renderer, void *buf, uint16_t pitch,
+			    void *mutex, void *texture, void **read_texture);
 void sdl_display_blanking_off_bottom(void *renderer, void *texture);
 void sdl_display_blanking_on_bottom(void *renderer);
-void sdl_display_cleanup_bottom(void **window, void **renderer, void **texture);
+void sdl_display_cleanup_bottom(void **window, void **renderer, void **mutex, void **texture,
+				void **read_texture);
 
 #ifdef __cplusplus
 }
