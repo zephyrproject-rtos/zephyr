@@ -5,3 +5,14 @@
  */
 
 #include <arm/renesas/ra/ra8/r7fa8m1xh.dtsi>
+
+/ {
+	soc {
+		flash-controller@407fe000 {
+			flash0: flash@2000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x02000000 DT_SIZE_M(2)>;
+			};
+		};
+	};
+};

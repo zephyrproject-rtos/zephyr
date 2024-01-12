@@ -7,3 +7,13 @@ config HAS_RENESAS_RA_FSP
 	bool
 	help
 	  Enable Renesas RA FSP support
+
+config USE_RA_FSP_SCI_B_UART
+	bool
+	help
+	  Enable RA FSP SCI-B UART driver
+
+config USE_RA_FSP_DTC
+	bool
+	help
+	  Enable RA FSP DTC driver
