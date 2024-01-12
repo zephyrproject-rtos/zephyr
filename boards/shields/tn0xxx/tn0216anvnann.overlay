@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2023 Alen Daniel
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &tn0xxx_tn0216anvnann;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_HIGH>; /* D10 */
+
+	tn0xxx_tn0216anvnann: tn0xxx@0 {
+		compatible = "kyo,tn0xxx";
+		spi-max-frequency = <500000>; /* Datasheet specifies max sck cycle of 2us */
+		reg = <0>;
+		width = <320>;
+		height = <176>;
+	};
+};
