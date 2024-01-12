@@ -101,6 +101,14 @@
 	status = "okay";
 };
 
+&spi0 {
+	compatible = "ambiq,spi";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(1)>;
+	status = "okay";
+};
+
 &i2c3 {
 	compatible = "ambiq,i2c";
 	pinctrl-0 = <&i2c3_default>;
