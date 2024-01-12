@@ -114,8 +114,11 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 
 	(void)err;
 cleanup:
-	/* As errors cannot be returned, ignore the return value */
-	(void)pm_device_runtime_put(uart_dev);
+	/* Use async put to avoid useless device suspension/resumption
+	 * when tranmiting chain of chars.
+	 * As errors cannot be returned, ignore the return value
+	 */
+	(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
 
 	return length;
 }
