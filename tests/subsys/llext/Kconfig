@@ -7,6 +7,6 @@ source "Kconfig.zephyr"
 
 config LLEXT_TEST_HELLO
 	tristate "llext hello test"
-	default n
+	default y
 	help
-	  Set to "m" to test hello-world loading
+	  This enables building the hello_world test case.
