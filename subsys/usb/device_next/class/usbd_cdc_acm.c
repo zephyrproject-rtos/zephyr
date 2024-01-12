@@ -156,8 +156,8 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_node *const c_nd)
 static int usbd_cdc_acm_request(struct usbd_class_node *const c_nd,
 				struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
-	const struct device *dev = c_nd->data->priv;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct udc_buf_info *bi;
 
@@ -216,7 +216,7 @@ static void usbd_cdc_acm_update(struct usbd_class_node *const c_nd,
 
 static void usbd_cdc_acm_enable(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ACM_CLASS_ENABLED);
@@ -233,7 +233,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_node *const c_nd)
 
 static void usbd_cdc_acm_disable(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
@@ -243,7 +243,7 @@ static void usbd_cdc_acm_disable(struct usbd_class_node *const c_nd)
 
 static void usbd_cdc_acm_suspended(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	/* FIXME: filter stray suspended events earlier */
@@ -252,7 +252,7 @@ static void usbd_cdc_acm_suspended(struct usbd_class_node *const c_nd)
 
 static void usbd_cdc_acm_resumed(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
@@ -334,7 +334,7 @@ static int usbd_cdc_acm_cth(struct usbd_class_node *const c_nd,
 			    const struct usb_setup_packet *const setup,
 			    struct net_buf *const buf)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t min_len;
 
@@ -361,8 +361,8 @@ static int usbd_cdc_acm_ctd(struct usbd_class_node *const c_nd,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
-	const struct device *dev = c_nd->data->priv;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_acm_uart_data *data = dev->data;
 	size_t len;
 
@@ -750,7 +750,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) ||
 	    atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		data->cb(c_nd->data->priv, data->cb_data);
+		data->cb(usbd_class_get_private(c_nd), data->cb_data);
 	}
 
 	if (data->rx_fifo.altered) {

@@ -105,7 +105,6 @@ static uint8_t cdc_ecm_get_bulk_in(struct usbd_class_node *const c_nd)
 static uint8_t cdc_ecm_get_bulk_out(struct usbd_class_node *const c_nd)
 {
 	struct usbd_cdc_ecm_desc *desc = c_nd->data->desc;
-
 	return desc->if1_1_out_ep.bEndpointAddress;
 }
 
@@ -157,7 +156,7 @@ static size_t ecm_eth_size(void *const ecm_pkt, const size_t len)
 
 static int cdc_ecm_out_start(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct net_buf *buf;
 	uint8_t ep;
@@ -189,7 +188,7 @@ static int cdc_ecm_out_start(struct usbd_class_node *const c_nd)
 static int cdc_ecm_acl_out_cb(struct usbd_class_node *const c_nd,
 			      struct net_buf *const buf, const int err)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct net_pkt *pkt;
 
@@ -239,8 +238,8 @@ restart_out_transfer:
 static int usbd_cdc_ecm_request(struct usbd_class_node *const c_nd,
 				struct net_buf *buf, int err)
 {
-	struct usbd_contex *uds_ctx = c_nd->data->uds_ctx;
-	const struct device *dev = c_nd->data->priv;
+	struct usbd_contex *uds_ctx = usbd_class_get_ctx(c_nd);
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 	struct udc_buf_info *bi;
 
@@ -320,7 +319,7 @@ static void usbd_cdc_ecm_update(struct usbd_class_node *const c_nd,
 {
 	struct usbd_cdc_ecm_desc *desc = c_nd->data->desc;
 	const uint8_t data_iface = desc->if1_1.bInterfaceNumber;
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	LOG_INF("New configuration, interface %u alternate %u",
@@ -341,7 +340,7 @@ static void usbd_cdc_ecm_update(struct usbd_class_node *const c_nd,
 
 static void usbd_cdc_ecm_enable(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ECM_CLASS_ENABLED);
@@ -350,7 +349,7 @@ static void usbd_cdc_ecm_enable(struct usbd_class_node *const c_nd)
 
 static void usbd_cdc_ecm_disable(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	if (atomic_test_and_clear_bit(&data->state, CDC_ECM_CLASS_ENABLED)) {
@@ -363,7 +362,7 @@ static void usbd_cdc_ecm_disable(struct usbd_class_node *const c_nd)
 
 static void usbd_cdc_ecm_suspended(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	atomic_set_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
@@ -371,7 +370,7 @@ static void usbd_cdc_ecm_suspended(struct usbd_class_node *const c_nd)
 
 static void usbd_cdc_ecm_resumed(struct usbd_class_node *const c_nd)
 {
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *data = dev->data;
 
 	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
@@ -400,7 +399,7 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 {
 	struct usbd_cdc_ecm_desc *desc = c_nd->data->desc;
 	const uint8_t if_num = desc->if0.bInterfaceNumber;
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *const data = dev->data;
 
 	/* Update relevant b*Interface fields */
@@ -421,7 +420,7 @@ static int usbd_cdc_ecm_init(struct usbd_class_node *const c_nd)
 static void usbd_cdc_ecm_shutdown(struct usbd_class_node *const c_nd)
 {
 	struct usbd_cdc_ecm_desc *desc = c_nd->data->desc;
-	const struct device *dev = c_nd->data->priv;
+	const struct device *dev = usbd_class_get_private(c_nd);
 	struct cdc_ecm_eth_data *const data = dev->data;
 
 	desc->if0_ecm.iMACAddress = 0;
