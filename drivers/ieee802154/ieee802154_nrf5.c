@@ -886,6 +886,19 @@ static int nrf5_configure(const struct device *dev,
 		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
 		uint8_t element_id;
 
+		if (config->ack_ie.ext_addr == NULL &&
+		    config->ack_ie.header_ie == NULL &&
+		    config->ack_ie.short_addr == IEEE802154_NO_SHORT_ADDRESS_ASSIGNED) {
+			/* Hotfix for case when `EnableCsl()` has been called with arguments:
+			 * - `aCslPeriod` == 0
+			 * - `aShortAddr` == IEEE802154_NO_SHORT_ADDRESS_ASSIGNED
+			 * - `aExtAddr` == NULL
+			 * In this case skip configuring ACK header IE until proper resetting of
+			 * configuration is implemented.
+			 */
+			break;
+		}
+
 		if (config->ack_ie.short_addr == IEEE802154_BROADCAST_ADDRESS ||
 		    config->ack_ie.ext_addr == NULL) {
 			return -ENOTSUP;
