@@ -174,14 +174,6 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_cap_acceptor_print_sirk(const struct shell *sh, size_t argc,
-				       char *argv[])
-{
-	bt_csip_set_member_print_sirk(cap_csip_svc_inst);
-
-	return 0;
-}
-
 static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
@@ -318,9 +310,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(cap_acceptor_cmds,
 	SHELL_CMD_ARG(release, NULL,
 		      "Release the set [force]",
 		      cmd_cap_acceptor_release, 1, 1),
-	SHELL_CMD_ARG(print_sirk, NULL,
-		      "Print the currently used SIRK",
-		      cmd_cap_acceptor_print_sirk, 1, 0),
 	SHELL_CMD_ARG(set_sirk, NULL, "Set the currently used SIRK <sirk>",
 		      cmd_cap_acceptor_set_sirk, 2, 0),
 	SHELL_CMD_ARG(get_sirk, NULL, "Get the currently used SIRK", cmd_cap_acceptor_get_sirk,
