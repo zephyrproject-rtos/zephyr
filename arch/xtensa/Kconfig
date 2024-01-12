@@ -93,6 +93,32 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 	  Specify the number of NOPs in Xtensa specific
 	  arch_spin_relax().
 
+# These are selected by each SoC according to their core-isa.h
+config XTENSA_ARCH_HAS_HIFI1
+       bool
+       help
+         HiFi1 Audio Engine
+
+config XTENSA_ARCH_HAS_HIFI2
+       bool
+       help
+         HiFi2 Audio Engine
+
+config XTENSA_ARCH_HAS_HIFI3
+       bool
+       help
+         HiFi3 Audio Engine
+
+config XTENSA_ARCH_HAS_HIFI4
+       bool
+       help
+         HiFi4 Audio Engine
+
+config XTENSA_ARCH_HAS_HIFI5
+       bool
+       help
+         HiFi5 Audio Engine
+
 if CPU_HAS_MMU
 
 config XTENSA_MMU
