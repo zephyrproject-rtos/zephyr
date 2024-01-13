@@ -32,6 +32,20 @@ tests:
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+  drivers.display.read_write.sdl.mono01.lsbfirst:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    platform_exclude: native_posix native_posix_64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+  drivers.display.read_write.sdl.mono10.lsbfirst:
+    filter: dt_compat_enabled("zephyr,sdl-dc")
+    platform_exclude: native_posix native_posix_64
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.rgb565:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     platform_exclude: native_posix native_posix_64
