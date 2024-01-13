@@ -39,6 +39,15 @@ struct sdl_display_data {
 	uint8_t *read_buf;
 };
 
+static inline uint32_t mono_pixel_order(uint32_t order)
+{
+	if (IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST)) {
+		return BIT(7 - order);
+	} else {
+		return BIT(order);
+	}
+}
+
 static int sdl_display_init(const struct device *dev)
 {
 	const struct sdl_display_config *config = dev->config;
@@ -195,7 +204,7 @@ static void sdl_display_write_mono(uint8_t *disp_buf,
 				((tile_idx * desc->pitch) + w_idx);
 			disp_buf_start = disp_buf;
 			for (h_idx = 0U; h_idx < 8; ++h_idx) {
-				if ((*byte_ptr & BIT(7-h_idx)) != 0U)  {
+				if ((*byte_ptr & mono_pixel_order(h_idx)) != 0U)  {
 					pixel = one_color;
 				} else {
 					pixel = (~one_color) & 0x00FFFFFF;
@@ -365,7 +374,7 @@ static void sdl_display_read_mono(const uint8_t *read_buf,
 				pix_ptr = (const uint32_t *)read_buf +
 					  ((tile_idx * 8 + h_idx) * desc->pitch + w_idx);
 				if ((*pix_ptr)) {
-					tile |= BIT(7 - h_idx);
+					tile |= mono_pixel_order(h_idx);
 				}
 			}
 			*buf8 = one_is_black ? ~tile : tile;
@@ -456,7 +465,7 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_BGR_565;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
-		SCREEN_INFO_MONO_MSB_FIRST;
+		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
 }
 
 static int sdl_display_set_pixel_format(const struct device *dev,
