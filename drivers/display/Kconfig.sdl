@@ -52,4 +52,11 @@ config SDL_DISPLAY_USE_HARDWARE_ACCELERATOR
 	help
 	  Enable hardware acceleration for graphics rendering
 
+config SDL_DISPLAY_MONO_MSB_FIRST
+	bool "Configure bit order in monochrome formats to MSB first"
+	default y
+	help
+	  If selected, set the MSB to represent the first pixel.
+	  This applies when the pixel format is MONO01/MONO10.
+
 endif # SDL_DISPLAY
