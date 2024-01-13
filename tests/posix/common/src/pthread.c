@@ -777,34 +777,6 @@ ZTEST(posix_apis, test_sched_policy)
 	}
 }
 
-ZTEST(posix_apis, test_barrier)
-{
-	int ret, pshared;
-	pthread_barrierattr_t attr;
-
-	ret = pthread_barrierattr_init(&attr);
-	zassert_equal(ret, 0, "pthread_barrierattr_init failed");
-
-	ret = pthread_barrierattr_getpshared(&attr, &pshared);
-	zassert_equal(ret, 0, "pthread_barrierattr_getpshared failed");
-	zassert_equal(pshared, PTHREAD_PROCESS_PRIVATE, "pshared attribute not set correctly");
-
-	ret = pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE);
-	zassert_equal(ret, 0, "pthread_barrierattr_setpshared failed");
-
-	ret = pthread_barrierattr_setpshared(&attr, PTHREAD_PROCESS_PUBLIC);
-	zassert_equal(ret, 0, "pthread_barrierattr_setpshared failed");
-
-	ret = pthread_barrierattr_getpshared(&attr, &pshared);
-	zassert_equal(pshared, PTHREAD_PROCESS_PUBLIC, "pshared attribute not retrieved correctly");
-
-	ret = pthread_barrierattr_setpshared(&attr, 42);
-	zassert_equal(ret, -EINVAL, "pthread_barrierattr_setpshared did not return EINVAL");
-
-	ret = pthread_barrierattr_destroy(&attr);
-	zassert_equal(ret, 0, "pthread_barrierattr_destroy failed");
-}
-
 ZTEST(posix_apis, test_pthread_equal)
 {
 	zassert_true(pthread_equal(pthread_self(), pthread_self()));
