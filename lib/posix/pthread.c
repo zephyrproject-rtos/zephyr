@@ -260,15 +260,14 @@ static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
 int pthread_attr_setschedparam(pthread_attr_t *_attr, const struct sched_param *schedparam)
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
-	int priority = schedparam->sched_priority;
 
-	if (attr == NULL || !attr->initialized ||
-	    !is_posix_policy_prio_valid(priority, attr->schedpolicy)) {
+	if (attr == NULL || !attr->initialized || schedparam == NULL ||
+	    !is_posix_policy_prio_valid(schedparam->sched_priority, attr->schedpolicy)) {
 		LOG_ERR("Invalid pthread_attr_t or sched_param");
 		return EINVAL;
 	}
 
-	attr->priority = priority;
+	attr->priority = schedparam->sched_priority;
 	return 0;
 }
 
@@ -884,7 +883,7 @@ int pthread_attr_getdetachstate(const pthread_attr_t *_attr, int *detachstate)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (detachstate == NULL)) {
 		return EINVAL;
 	}
 
@@ -920,7 +919,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *_attr, int *policy)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == 0U)) {
+	if ((attr == NULL) || (attr->initialized == 0U) || (policy == NULL)) {
 		return EINVAL;
 	}
 
@@ -954,7 +953,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *_attr, size_t *stacksize)
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (stacksize == NULL)) {
 		return EINVAL;
 	}
 
@@ -992,7 +991,8 @@ int pthread_attr_getstack(const pthread_attr_t *_attr, void **stackaddr, size_t 
 {
 	const struct posix_thread_attr *attr = (const struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (stackaddr == NULL) ||
+	    (stacksize == NULL)) {
 		return EINVAL;
 	}
 
@@ -1036,7 +1036,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *_attr, struct sched_param *
 {
 	struct posix_thread_attr *attr = (struct posix_thread_attr *)_attr;
 
-	if ((attr == NULL) || (attr->initialized == false)) {
+	if ((attr == NULL) || (attr->initialized == false) || (schedparam == NULL)) {
 		return EINVAL;
 	}
 
