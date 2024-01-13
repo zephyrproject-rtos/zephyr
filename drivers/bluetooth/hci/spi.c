@@ -71,8 +71,8 @@ LOG_MODULE_REGISTER(bt_driver);
 	be transmitted across this HCI link
 #endif /* CONFIG_BT_L2CAP_TX_MTU > MAX_MTU */
 
-static uint8_t rxmsg[SPI_MAX_MSG_LEN];
-static uint8_t txmsg[SPI_MAX_MSG_LEN];
+static uint8_t __noinit rxmsg[SPI_MAX_MSG_LEN];
+static uint8_t __noinit txmsg[SPI_MAX_MSG_LEN];
 
 static const struct gpio_dt_spec irq_gpio = GPIO_DT_SPEC_INST_GET(0, irq_gpios);
 static const struct gpio_dt_spec rst_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios);
