@@ -103,8 +103,7 @@ leverages the ``nanosleep()`` and ``perror()`` POSIX functions.
         return 0;
     }
 
-..
-    TODO: insert a link to a list of all samples tagged with 'posix'
+For more examples of POSIX applications, please see the :ref:`POSIX sample applications<posix-samples>`.
 
 .. _posix_config:
 
