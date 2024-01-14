@@ -102,4 +102,7 @@ struct posix_thread *to_posix_thread(pthread_t pth);
 /* get and possibly initialize a posix_mutex */
 struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
 
+int posix_to_zephyr_priority(int priority, int policy);
+int zephyr_to_posix_priority(int priority, int *policy);
+
 #endif
