@@ -20,6 +20,16 @@ module = LORAWAN
 module-str = lorawan
 source "subsys/logging/Kconfig.template.log_config"
 
+config LORAWAN_EMUL
+	bool "LoRaWAN Emulator"
+	help
+	  The emulator can be used for unit testing of LoRaWAN services.
+	  It provides interfaces to send arbitrary messages to the LoRaWAN
+	  stack and receive the response through callbacks without using
+	  actual LoRa hardware.
+
+	  See include/zephyr/lorawan/emul.h for the emulator API.
+
 config LORAWAN_SYSTEM_MAX_RX_ERROR
 	int "LoRaWAN System Max Rx Error"
 	default 20
