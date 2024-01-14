@@ -14,7 +14,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	uint8_t loc;
 #ifdef CONFIG_SOC_GECKO_SERIES1
 	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
-#else
+#elif !defined(CONFIG_SOC_GECKO_SERIES0)
 	int usart_num = USART_NUM(base);
 #endif
 
@@ -276,6 +276,30 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			break;
 #endif /* CONFIG_SOC_GECKO_SERIES1 */
 #endif /* CONFIG_SPI_GECKO */
+
+#ifdef CONFIG_PWM_GECKO
+		case GECKO_FUN_TIM_CC:
+			pin_config.mode = gpioModePushPull;
+			pin_config.out = 0;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
+			break;
+		case GECKO_FUN_TIM_LOC:
+#ifdef _TIMER_ROUTE_MASK
+		BUS_RegMaskedWrite(&cfg->timer->ROUTE,
+			_TIMER_ROUTE_LOCATION_MASK,
+			cfg->location << _TIMER_ROUTE_LOCATION_SHIFT);
+		BUS_RegMaskedSet(&cfg->timer->ROUTE, 1 << channel);
+#elif defined(_TIMER_ROUTELOC0_MASK)
+		BUS_RegMaskedWrite(&cfg->timer->ROUTELOC0,
+			_TIMER_ROUTELOC0_CC0LOC_MASK <<
+			(channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT),
+			cfg->location << (channel * _TIMER_ROUTELOC0_CC1LOC_SHIFT));
+		BUS_RegMaskedSet(&cfg->timer->ROUTEPEN, 1 << channel);
+#else
+#error Unsupported device
+#endif /* _TIMER_ROUTE_MASK */
+#endif /* CONFIG_PWM_GECKO */
 
 		default:
 			return -ENOTSUP;

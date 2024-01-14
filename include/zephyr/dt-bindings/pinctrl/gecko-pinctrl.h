@@ -66,6 +66,9 @@
 #define GECKO_FUN_SPI_CSN  7U
 #define GECKO_FUN_SPI_SCK  8U
 
+#define GECKO_FUN_TIM_CC   9U
+#define GECKO_FUN_TIM_LOC  10U
+
 /** @} */
 
 /**
