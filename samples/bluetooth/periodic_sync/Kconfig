@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2024 Hang Fan
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: Periodic Advertising Sync"
+
+config PER_ADV_NAME
+	string "Target Periodic Advertising Name"
+	default ""
+	help
+	  Name of target advertising for Periodic Advertising Synchronization.
+
+source "Kconfig.zephyr"
