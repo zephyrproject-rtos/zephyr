@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2024 A Labs GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This overlay defines a fake LoRa PHY node which is required to build the driver.
+ */
+
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+/ {
+        chosen {
+                zephyr,code-partition = &slot0_partition;
+        };
+
+	aliases {
+		lora0 = &lora;
+	};
+
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+
+			lora: lora@0 {
+				compatible = "semtech,sx1262";
+				status = "okay";
+				reg = <0>;
+				reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+				busy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+				tx-enable-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+				rx-enable-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+				dio1-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+				dio2-tx-enable;
+				dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
+				tcxo-power-startup-delay-ms = <5>;
+				spi-max-frequency = <1000000>;
+			};
+		};
+	};
+};

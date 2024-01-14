@@ -1,0 +1,7 @@
+common:
+  tags:
+    - lorawan
+tests:
+  lorawan.frag_decoder:
+    platform_allow:
+      - native_sim
