@@ -118,6 +118,7 @@
 
 	pwm0: pwm {
 		status = "okay";
-		pin-location = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(0)>;
+		pinctrl-0 = <&pwm0_default>;
+		pinctrl-names = "default";
 	};
 };
