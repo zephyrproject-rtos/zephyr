@@ -121,7 +121,8 @@ static void runtime_suspend_work(struct k_work *work)
 	 * On async put, we have to suspend the domain when the device
 	 * finishes its operation
 	 */
-	if (PM_DOMAIN(pm) != NULL) {
+	if ((ret == 0) &&
+	    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
 		(void)pm_device_runtime_put(PM_DOMAIN(pm));
 	}
 
