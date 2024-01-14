@@ -1,0 +1,9 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+config TEST_MSB_FIRST_FONT
+	bool "Use MSB_FIRST font"
