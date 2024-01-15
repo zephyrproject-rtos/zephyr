@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_A53
+	select SOC_QEMU_CORTEX_A53
