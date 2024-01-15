@@ -23,6 +23,9 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 
 testsuite_filename_mock = mock.PropertyMock(return_value='test_data.yaml')
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "noclearout: disable the provide_out autouse fixture")
+
 @pytest.fixture(name='zephyr_base')
 def zephyr_base_directory():
     return ZEPHYR_BASE
