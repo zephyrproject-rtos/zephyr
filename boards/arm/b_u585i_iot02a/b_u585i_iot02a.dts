@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-uart=&uart4;
 	};
 
 	aliases {
@@ -62,5 +63,12 @@
 };
 
 &gpdma1 {
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
+	pinctrl-names = "default";
+	current-speed = <100000>;
 	status = "okay";
 };
