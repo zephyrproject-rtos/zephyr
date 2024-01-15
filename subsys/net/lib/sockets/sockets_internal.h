@@ -82,7 +82,7 @@ size_t msghdr_non_empty_iov_count(const struct msghdr *msg);
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
 int sock_obj_core_alloc(int sock, struct net_socket_register *reg,
 			int family, int type, int proto);
-int sock_obj_core_alloc_find(int sock, int new_sock, int family, int type);
+int sock_obj_core_alloc_find(int sock, int new_sock, int type);
 int sock_obj_core_dealloc(int sock);
 void sock_obj_core_update_send_stats(int sock, int bytes);
 void sock_obj_core_update_recv_stats(int sock, int bytes);
@@ -100,12 +100,10 @@ static inline int sock_obj_core_alloc(int sock,
 	return -ENOTSUP;
 }
 
-static inline int sock_obj_core_alloc_find(int sock, int new_sock,
-					   int family, int type)
+static inline int sock_obj_core_alloc_find(int sock, int new_sock, int type)
 {
 	ARG_UNUSED(sock);
 	ARG_UNUSED(new_sock);
-	ARG_UNUSED(family);
 	ARG_UNUSED(type);
 
 	return -ENOTSUP;
