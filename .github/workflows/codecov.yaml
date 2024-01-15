@@ -21,8 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         platform: ["mps2_an385", "native_sim", "qemu_x86", "unit_testing"]
-    env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
     steps:
       - name: Apply container owner mismatch workaround
         run: |
@@ -52,11 +50,14 @@ jobs:
           west init -l . || true
           west update 1> west.update.log || west update 1> west.update-2.log
 
-      - name: Check Environment
+      - name: Environment Setup
         run: |
           cmake --version
           gcc --version
           ls -la
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
       - name: Prepare ccache keys
         id: ccache_cache_prop
         shell: cmake -P {0}
