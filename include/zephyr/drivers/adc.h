@@ -811,7 +811,7 @@ static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec,
 		return -ENOTSUP;
 	}
 
-	if (spec->channel_cfg.reference == ADC_REF_INTERNAL) {
+	if ((spec->vref_mv == 0) && (spec->channel_cfg.reference == ADC_REF_INTERNAL)) {
 		vref_mv = (int32_t)adc_ref_internal(spec->dev);
 	} else {
 		vref_mv = spec->vref_mv;
