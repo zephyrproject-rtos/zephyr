@@ -45,6 +45,17 @@
 #define IT8XXX2_GCTRL_BASE      0x00F02000
 #define IT8XXX2_GCTRL_EIDSR     ECREG(IT8XXX2_GCTRL_BASE + 0x31)
 
+/* --- External GPIO Control (EGPIO) --- */
+#define IT8XXX2_EGPIO_BASE      0x00F02100
+#define IT8XXX2_EGPIO_EGCR      ECREG(IT8XXX2_EGPIO_BASE + 0x04)
+
+/* EGPIO register fields */
+/*
+ * 0x04: External GPIO Control
+ * BIT(4): EXGPIO EGAD Pin Output Driving Disable
+ */
+#define IT8XXX2_EGPIO_EEPODD    BIT(4)
+
 /**
  *
  * (11xxh) Interrupt controller (INTC)
