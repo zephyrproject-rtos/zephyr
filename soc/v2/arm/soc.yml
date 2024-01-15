@@ -1,0 +1,9 @@
+family:
+- name: arm64
+  series:
+  - name: fvp_aemv8a
+    socs:
+    - name: fvp_base_revc_2xaemv8a
+  - name: fvp_aemv8r
+    socs:
+    - name: fvp_aemv8r_aarch64

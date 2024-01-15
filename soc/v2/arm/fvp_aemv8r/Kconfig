@@ -2,8 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_FVP_AEMV8R
-	bool "ARM FVP AEMv8R AArch64 Series"
 	select ARM64
-	select SOC_FAMILY_ARM64
 	help
 	  Enable support for ARM FVP AEMv8R AArch64 Series
+
+config SOC_FVP_AEMV8R_AARCH64
+	select SOC_SERIES_FVP_AEMV8R
+	select CPU_CORTEX_R82
+	select CPU_HAS_MPU
+	select GIC_SINGLE_SECURITY_STATE

@@ -3,9 +3,6 @@
 
 if SOC_SERIES_FVP_AEMV8R
 
-config SOC_SERIES
-	default "fvp_aemv8r"
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
 
@@ -13,9 +10,6 @@ config NUM_IRQS
 	default 128
 
 if SOC_FVP_AEMV8R_AARCH64
-
-config SOC
-	default "fvp_aemv8r_aarch64"
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
