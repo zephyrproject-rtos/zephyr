@@ -102,9 +102,9 @@ struct modem_cellular_data {
 	uint8_t *chat_argv[32];
 
 	/* Status */
-	uint8_t registration_status_gsm;
-	uint8_t registration_status_gprs;
-	uint8_t registration_status_lte;
+	enum cellular_registration_status registration_status_gsm;
+	enum cellular_registration_status registration_status_gprs;
+	enum cellular_registration_status registration_status_lte;
 	uint8_t rssi;
 	uint8_t rsrp;
 	uint8_t rsrq;
@@ -376,22 +376,19 @@ static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, ui
 
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 {
-	return (data->registration_status_gsm == 1)
-		|| (data->registration_status_gsm == 5)
-		|| (data->registration_status_gprs == 1)
-		|| (data->registration_status_gprs == 5)
-		|| (data->registration_status_lte == 1)
-		|| (data->registration_status_lte == 5);
+	return (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
+		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
+		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
 static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
-	uint8_t registration_status;
-	bool is_registered;
-
-	is_registered = modem_cellular_is_registered(data);
+	enum cellular_registration_status registration_status = 0;
 
 	if (argc == 2) {
 		registration_status = atoi(argv[1]);
@@ -1410,10 +1407,40 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 
 	return ret;
 }
+static int modem_cellular_get_registration_status(const struct device *dev,
+						  enum cellular_access_technology tech,
+						  enum cellular_registration_status *status)
+{
+	int ret = 0;
+	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
+
+	switch (tech) {
+	case CELLULAR_ACCESS_TECHNOLOGY_GSM:
+		*status = data->registration_status_gsm;
+		break;
+	case CELLULAR_ACCESS_TECHNOLOGY_GPRS:
+	case CELLULAR_ACCESS_TECHNOLOGY_UMTS:
+	case CELLULAR_ACCESS_TECHNOLOGY_EDGE:
+		*status = data->registration_status_gprs;
+		break;
+	case CELLULAR_ACCESS_TECHNOLOGY_LTE:
+	case CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M1:
+	case CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M2:
+	case CELLULAR_ACCESS_TECHNOLOGY_NB_IOT:
+		*status = data->registration_status_lte;
+		break;
+	default:
+		ret = -ENODATA;
+		break;
+	}
+
+	return ret;
+}
 
 const static struct cellular_driver_api modem_cellular_api = {
 	.get_signal = modem_cellular_get_signal,
 	.get_modem_info = modem_cellular_get_modem_info,
+	.get_registration_status = modem_cellular_get_registration_status,
 };
 
 #ifdef CONFIG_PM_DEVICE
