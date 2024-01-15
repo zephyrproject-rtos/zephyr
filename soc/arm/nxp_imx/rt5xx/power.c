@@ -16,31 +16,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define EXCLUDE_FROM_DEEPSLEEP ((const uint32_t[]) \
 					DT_PROP_OR(NODE_ID, deep_sleep_config, {}))
 
-static uint32_t isp_pin[3];
-
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
-
-__ramfunc void set_deepsleep_pin_config(void)
-{
-	/* Backup Pin configuration. */
-	isp_pin[0] = IOPCTL->PIO[1][15];
-	isp_pin[1] = IOPCTL->PIO[3][28];
-	isp_pin[2] = IOPCTL->PIO[3][29];
-
-	/* Disable ISP Pin pull-ups and input buffers to avoid current leakage */
-	IOPCTL->PIO[1][15] = 0;
-	IOPCTL->PIO[3][28] = 0;
-	IOPCTL->PIO[3][29] = 0;
-}
-
-__ramfunc void restore_deepsleep_pin_config(void)
-{
-	/* Restore the Pin configuration. */
-	IOPCTL->PIO[1][15] = isp_pin[0];
-	IOPCTL->PIO[3][28] = isp_pin[1];
-	IOPCTL->PIO[3][29] = isp_pin[2];
-}
 
 /* Invoke Low Power/System Off specific Tasks */
 void pm_state_set(enum pm_state state, uint8_t substate_id)
@@ -65,9 +42,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		POWER_EnterSleep();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
-		set_deepsleep_pin_config();
 		POWER_EnterDeepSleep(EXCLUDE_FROM_DEEPSLEEP);
-		restore_deepsleep_pin_config();
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
