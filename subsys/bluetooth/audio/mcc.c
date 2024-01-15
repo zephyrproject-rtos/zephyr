@@ -1297,7 +1297,13 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->notify = bt_ots_client_indicate_handler;
 
-			bt_gatt_subscribe(conn, sub_params);
+			err = bt_gatt_subscribe(conn, sub_params);
+			if (err != 0) {
+				LOG_DBG("Failed to subscribe (err %d)", err);
+				discovery_complete(conn, err);
+
+				return BT_GATT_ITER_STOP;
+			}
 		}
 
 		return BT_GATT_ITER_CONTINUE;

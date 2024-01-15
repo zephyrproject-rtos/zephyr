@@ -454,8 +454,11 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 				LOG_DBG("Subscribed to handle 0x%04X",
 					attr->handle);
 			} else {
-				LOG_DBG("Could not subscribe to handle 0x%04X",
-					attr->handle);
+				LOG_DBG("Could not subscribe to handle 0x%04X (%d)", attr->handle,
+					err);
+				vcp_vol_ctlr_discover_complete(vol_ctlr, err);
+
+				return BT_GATT_ITER_STOP;
 			}
 		}
 	}

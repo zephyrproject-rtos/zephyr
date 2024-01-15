@@ -1721,7 +1721,7 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		if (err != 0) {
 			LOG_DBG("Failed to subscribe: %d", err);
 
-			discover_cb(conn, BT_ATT_ERR_UNLIKELY);
+			discover_cb(conn, err);
 
 			return;
 		}
@@ -3229,10 +3229,12 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	struct unicast_client *client;
 	struct net_buf_simple *buf;
 	struct bt_bap_ep *ep;
+	int cb_err;
 
 	LOG_DBG("conn %p err 0x%02x len %u", conn, err, length);
 
 	if (err) {
+		cb_err = err;
 		goto fail;
 	}
 
@@ -3246,7 +3248,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 			LOG_DBG("Buffer full, invalid server response of size %u",
 				length + client->net_buf.len);
 
-			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 
 			goto fail;
 		}
@@ -3262,7 +3264,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 	if (buf->len < sizeof(struct bt_ascs_ase_status)) {
 		LOG_DBG("Read response too small (%u)", buf->len);
 
-		err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
+		cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 
 		goto fail;
 	}
@@ -3274,28 +3276,32 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		 * consider the discovery procedure as failing.
 		 */
 		LOG_WRN("No space left to parse ASE");
-		err = -ENOMEM;
+		cb_err = -ENOMEM;
 
 		goto fail;
 	}
 
 	unicast_client_ep_set_status(ep, buf);
-	unicast_client_ep_subscribe(conn, ep);
+	cb_err = unicast_client_ep_subscribe(conn, ep);
+	if (cb_err != 0) {
+		LOG_DBG("Failed to subcribe to ep %p: %d", ep, cb_err);
+		goto fail;
+	}
+
 	reset_att_buf(client);
 
 	endpoint_cb(conn, ep);
 
-	err = unicast_client_ase_discover(conn, handle);
-	if (err != 0) {
-		LOG_DBG("Failed to read ASE: %d", err);
-
-		discover_cb(conn, err);
+	cb_err = unicast_client_ase_discover(conn, handle);
+	if (cb_err != 0) {
+		LOG_DBG("Failed to read ASE: %d", cb_err);
+		goto fail;
 	}
 
 	return BT_GATT_ITER_STOP;
 
 fail:
-	discover_cb(conn, err);
+	discover_cb(conn, cb_err);
 	return BT_GATT_ITER_STOP;
 }
 
@@ -3313,7 +3319,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 		if (err != 0) {
 			LOG_ERR("Unable to discover ASE Control Point");
 
-			discover_cb(conn, BT_ATT_ERR_UNLIKELY);
+			discover_cb(conn, err);
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -3404,7 +3410,7 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 	if (cb_err != 0) {
 		LOG_ERR("Unable to read ASE: %d", cb_err);
 
-		discover_cb(conn, err);
+		discover_cb(conn, cb_err);
 	}
 
 	return BT_GATT_ITER_STOP;
