@@ -195,6 +195,8 @@ The Zephyr b_u585i_iot02a board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | AES       | on-chip    | crypto                              |
 +-----------+------------+-------------------------------------+
+| RADIO     | STM32WB5MMG| Bluetooth Low Energy (BLE)          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
