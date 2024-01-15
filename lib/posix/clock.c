@@ -235,3 +235,23 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 
 	return 0;
 }
+
+#ifdef CONFIG_ZTEST
+#include <zephyr/ztest.h>
+static void reset_clock_base(void)
+{
+	K_SPINLOCK(&rt_clock_base_lock) {
+		rt_clock_base = (struct timespec){0};
+	}
+}
+
+static void clock_base_reset_rule_after(const struct ztest_unit_test *test, void *data)
+{
+	ARG_UNUSED(test);
+	ARG_UNUSED(data);
+
+	reset_clock_base();
+}
+
+ZTEST_RULE(clock_base_reset_rule, NULL, clock_base_reset_rule_after);
+#endif /* CONFIG_ZTEST */
