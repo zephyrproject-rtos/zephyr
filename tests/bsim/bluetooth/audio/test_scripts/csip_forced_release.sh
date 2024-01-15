@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023-2024 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,7 +9,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=20
+EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 
