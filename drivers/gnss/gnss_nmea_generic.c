@@ -127,7 +127,6 @@ static int gnss_nmea_generic_init_chat(const struct device *dev)
 		.argv_size = ARRAY_SIZE(data->chat_argv),
 		.unsol_matches = unsol_matches,
 		.unsol_matches_size = ARRAY_SIZE(unsol_matches),
-		.process_timeout = K_MSEC(2),
 	};
 
 	return modem_chat_init(&data->chat, &chat_config);
