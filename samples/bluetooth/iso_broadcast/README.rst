@@ -24,6 +24,8 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/iso_broadcast` in
 the Zephyr tree. Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
 required ISO feature support in Zephyr Bluetooth Controller on supported boards.
+The sample defaults to sequential packing of BIS subevents, add
+``-DCONFIG_ISO_PACKING_INTERLEAVED=y`` to use interleaved packing.
 
 Use the sample found under :zephyr_file:`samples/bluetooth/iso_receive` in the
 Zephyr tree that will scan, establish a periodic advertising synchronization,
