@@ -66,6 +66,10 @@ with open(ZEPHYR_BASE / "VERSION") as f:
 
 release = version
 
+# parse SDK version from 'SDK_VERSION' file
+with open(ZEPHYR_BASE / "SDK_VERSION") as f:
+    sdk_version = f.read().strip()
+
 # -- General configuration ------------------------------------------------
 
 extensions = [
@@ -131,8 +135,22 @@ nitpick_ignore = [
     ("c:identifier", "va_list"),
 ]
 
-rst_epilog = """
+SDK_URL_BASE="https://github.com/zephyrproject-rtos/sdk-ng/releases/download"
+
+rst_epilog = f"""
 .. include:: /substitutions.txt
+
+.. |sdk-version-literal| replace:: ``{sdk_version}``
+.. |sdk-version-trim| unicode:: {sdk_version}
+   :trim:
+.. |sdk-version-ltrim| unicode:: {sdk_version}
+   :ltrim:
+.. _Zephyr SDK bundle: https://github.com/zephyrproject-rtos/sdk-ng/releases/tag/v{sdk_version}
+.. |sdk-url-linux| replace:: `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_linux-x86_64.tar.xz`
+.. |sdk-url-linux-sha| replace:: `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
+.. |sdk-url-macos| replace:: `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_macos-x86_64.tar.xz`
+.. |sdk-url-macos-sha| replace:: `{SDK_URL_BASE}/v{sdk_version}/sha256.sum`
+.. |sdk-url-windows| replace:: `{SDK_URL_BASE}/v{sdk_version}/zephyr-sdk-{sdk_version}_windows-x86_64.7z`
 """
 
 # -- Options for HTML output ----------------------------------------------
