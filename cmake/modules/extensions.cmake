@@ -1566,6 +1566,73 @@ function(zephyr_syscall_header_ifdef feature_toggle)
   endif()
 endfunction()
 
+# Verify blobs fetched using west. If the sha256 checksum isn't valid, a warning/
+# fatal error message is printed (depends on REQUIRED flag).
+#
+# Usage:
+#   zephyr_blobs_verify(<MODULE module|FILES file [files...]> [REQUIRED])
+#
+# Example:
+# zephyr_blobs_verify(MODULE my_module REQUIRED) # verify all blobs in my_module and fail on error
+# zephyr_blobs_verify(FILES img/file.bin)        # verify a single file and print on error
+function(zephyr_blobs_verify)
+  cmake_parse_arguments(BLOBS_VERIFY "REQUIRED" "MODULE" "FILES" ${ARGN})
+
+  if((DEFINED BLOBS_VERIFY_MODULE) EQUAL (DEFINED BLOBS_VERIFY_FILES))
+    message(FATAL_ERROR "Either MODULE or FILES required when calling ${CMAKE_CURRENT_FUNCTION}")
+  endif()
+
+  if(NOT WEST)
+    return()
+  endif()
+
+  execute_process(
+    COMMAND ${WEST} blobs list ${BLOBS_VERIFY_MODULE} --format "{status} {abspath}"
+    OUTPUT_VARIABLE BLOBS_LIST_OUTPUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+
+  if(${BLOBS_VERIFY_REQUIRED})
+    set(msg_lvl FATAL_ERROR)
+  else()
+    set(msg_lvl WARNING)
+  endif()
+
+  string(REPLACE "\n" ";" BLOBS_LIST ${BLOBS_LIST_OUTPUT})
+
+  if(DEFINED BLOBS_VERIFY_FILES)
+    foreach(file ${BLOBS_VERIFY_FILES})
+      # Resolve path.
+      if(IS_ABSOLUTE ${file})
+        file(REAL_PATH "${file}" real_path)
+      else()
+        file(REAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${file}" real_path)
+      endif()
+      file(TO_NATIVE_PATH ${real_path} path)
+
+      message(VERBOSE "Verifying blob \"${path}\"")
+
+      # Each path that has a correct sha256 is prefixed with an A
+      if(NOT "A ${path}" IN_LIST BLOBS_LIST)
+        message(${msg_lvl} "Blob for path \"${path}\" isn't valid.")
+      endif()
+    endforeach()
+  else()
+    foreach(blob ${BLOBS_LIST})
+      separate_arguments(blob)
+      list(GET blob 0 status)
+      list(GET blob 1 path)
+
+      message(VERBOSE "Verifying blob \"${path}\"")
+
+      if(NOT "${status}" STREQUAL "A")
+        message(${msg_lvl} "Blob for path \"${path}\" isn't valid. Update with: west blobs fetch ${BLOBS_VERIFY_MODULE}")
+      endif()
+    endforeach()
+  endif()
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
