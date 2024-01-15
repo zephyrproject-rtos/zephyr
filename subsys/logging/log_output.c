@@ -452,6 +452,7 @@ static uint32_t prefix_print(const struct log_output *output,
 	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
 	bool thread_on = IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) &&
 			 (flags & LOG_OUTPUT_FLAG_THREAD);
+	bool source_off = flags & LOG_OUTPUT_FLAG_SKIP_SOURCE;
 	const char *tag = IS_ENABLED(CONFIG_LOG) ? z_log_get_tag() : NULL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
@@ -489,7 +490,8 @@ static uint32_t prefix_print(const struct log_output *output,
 		color_prefix(output, colors_on, level);
 	}
 
-	length += ids_print(output, level_on, func_on, thread_on, domain, source, tid, level);
+	length += ids_print(output, level_on, func_on, thread_on, domain,
+			    source_off ? NULL : source, tid, level);
 
 	return length;
 }

@@ -54,6 +54,9 @@ extern "C" {
 /** @brief Flag thread id or name prefix. */
 #define LOG_OUTPUT_FLAG_THREAD			BIT(7)
 
+/** @brief Flag forcing to skip logging the source. */
+#define LOG_OUTPUT_FLAG_SKIP_SOURCE		BIT(8)
+
 /**@} */
 
 /** @brief Supported backend logging format types for use
