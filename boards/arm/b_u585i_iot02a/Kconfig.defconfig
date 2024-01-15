@@ -27,4 +27,12 @@ config TFM_DUMMY_PROVISIONING
 
 endif # BUILD_WITH_TFM
 
+# Disable Flow control
+if BT
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
 endif # BOARD_B_U585I_IOT02A
