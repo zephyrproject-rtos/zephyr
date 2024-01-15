@@ -3,5 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_QEMU_MALTA
-	bool "MIPS Qemu Malta implementation"
-	select MIPS
+	bool
+
+config SOC
+	default "qemu_malta" if SOC_QEMU_MALTA
