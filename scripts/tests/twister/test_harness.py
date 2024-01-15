@@ -355,7 +355,7 @@ def test_pytest_run(caplog):
     # Arrange
     timeout = 10
     cmd=['command']
-    exp_out = 'Handling of handler handler_type not implemented yet'
+    exp_out = 'Support for handler handler_type not implemented yet'
 
     harness = Pytest()
     harness = mock.create_autospec(harness)
