@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 SIMULATION_ID="csip_notify"
 VERBOSITY_LEVEL=2
-EXECUTE_TIMEOUT=200
+EXECUTE_TIMEOUT=30
 
 cd ${BSIM_OUT_PATH}/bin
 
