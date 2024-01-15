@@ -32,7 +32,7 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 
 		if (!WAIT_FOR(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrsts) & BIT(bits->CPA_bit),
 		    10000, k_busy_wait(1))) {
-			return -1;
+			return -EIO;
 		}
 	} else {
 #if CONFIG_ACE_VERSION_1_5
@@ -43,7 +43,7 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 			uint32_t key_value = *key_read_ptr;
 
 			if (key_value != INTEL_ADSP_ACE15_MAGIC_KEY)
-				return -1;
+				return -EINVAL;
 		}
 #endif
 		sys_write16(sys_read16((mem_addr_t)&ACE_DfPMCCU.dfpwrctl) & ~(SPA_bit_mask),
