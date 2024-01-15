@@ -1896,6 +1896,11 @@ struct bt_gatt_subscribe_params {
  *  Allow a pending request to resolve before retrying, or call this function
  *  outside the BT RX thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
+ *
+ *  @retval -EALREADY if there already exist a subscription using the @p params.
+ *
+ *  @retval -EBUSY if @p params.ccc_handle is 0 and @kconfig{CONFIG_BT_GATT_AUTO_DISCOVER_CCC} is
+ *  enabled and discovery for the @p params is already in progress.
  */
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params);
