@@ -348,7 +348,7 @@ class Pytest(Harness):
         elif handler.type_str == 'build':
             command.append('--device-type=custom')
         else:
-            raise PytestHarnessException(f'Handling of handler {handler.type_str} not implemented yet')
+            raise PytestHarnessException(f'Support for handler {handler.type_str} not implemented yet')
 
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
