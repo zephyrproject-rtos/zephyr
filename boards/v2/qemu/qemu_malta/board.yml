@@ -1,0 +1,7 @@
+board:
+  name: qemu_malta
+  vendor: QEMU
+  socs:
+  - name: qemu_malta
+    variants:
+    - name: 'be'

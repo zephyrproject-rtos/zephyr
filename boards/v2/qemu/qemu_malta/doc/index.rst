@@ -95,7 +95,7 @@ Use this configuration to run :zephyr:code-sample:`synchronization` sample in bi
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_malta_be
+   :board: qemu_malta//be
    :goals: run
 
 
