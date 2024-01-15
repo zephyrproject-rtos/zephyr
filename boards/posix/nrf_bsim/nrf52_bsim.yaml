@@ -10,5 +10,6 @@ toolchain:
 testing:
   ignore_tags:
     - modem
+    - bsim_skip_CI
 supported:
   - gpio
