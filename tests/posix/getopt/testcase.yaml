@@ -1,5 +1,5 @@
 common:
-  filter: not (CONFIG_NATIVE_BUILD and CONFIG_EXTERNAL_LIBC)
+  filter: not CONFIG_NATIVE_LIBC
   tags:
     - posix
     - getopt
