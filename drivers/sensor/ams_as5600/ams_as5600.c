@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(ams_as5600, CONFIG_SENSOR_LOG_LEVEL);
 #define AS5600_ANGLE_REGISTER_H 0x0E
 #define AS5600_FULL_ANGLE		360
 #define AS5600_PULSES_PER_REV	4096
+#define AS5600_MILLION_UNIT	1000000
 
 struct as5600_dev_cfg {
 	struct i2c_dt_spec i2c_port;
@@ -60,8 +61,8 @@ static int as5600_get(const struct device *dev, enum sensor_channel chan,
 		val->val1 = ((int32_t)dev_data->position * AS5600_FULL_ANGLE) /
 							AS5600_PULSES_PER_REV;
 
-		val->val2 = ((int32_t)dev_data->position * AS5600_FULL_ANGLE) -
-					(val->val1 * AS5600_PULSES_PER_REV);
+		val->val2 = (((int32_t)dev_data->position * AS5600_FULL_ANGLE) %
+			     AS5600_PULSES_PER_REV) * (AS5600_MILLION_UNIT / AS5600_PULSES_PER_REV);
 	} else {
 		return -ENOTSUP;
 	}
