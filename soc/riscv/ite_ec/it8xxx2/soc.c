@@ -287,6 +287,11 @@ static int ite_it8xxx2_init(void)
 	IT8XXX2_SMB_SFFCTL &= ~IT8XXX2_SMB_HSAPE;
 #elif CONFIG_SOC_IT8XXX2_REG_SET_V2
 	IT8XXX2_SMB_SCLKTS_BRGS &= ~IT8XXX2_SMB_PREDEN;
+	/*
+	 * Setting this bit will disable EGAD pin output driving to avoid
+	 * leakage when GPIO E1/E2 on it82002 are set to alternate function.
+	 */
+	IT8XXX2_EGPIO_EGCR |= IT8XXX2_EGPIO_EEPODD;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
