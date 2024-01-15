@@ -63,6 +63,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
  */
 #define PHR_DURATION_US 32U
 
+#define DEFAULT_SENSITIVITY -100
+
 enum pending_events {
 	PENDING_EVENT_FRAME_TO_SEND, /* There is a tx frame to send  */
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
@@ -363,7 +365,7 @@ void platformRadioInit(void)
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_EVENT_HANDLER, &cfg);
 
 #if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
-	otLinkMetricsInit(otPlatRadioGetReceiveSensitivity());
+	otLinkMetricsInit(DEFAULT_SENSITIVITY);
 #endif
 }
 
@@ -1110,7 +1112,7 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	return -100;
+	return DEFAULT_SENSITIVITY;
 }
 
 otError otPlatRadioGetTransmitPower(otInstance *aInstance, int8_t *aPower)
