@@ -240,8 +240,8 @@ struct modem_chat {
 	struct k_sem script_stopped_sem;
 
 	/* Script sending */
-	uint16_t script_send_request_pos;
-	uint16_t script_send_delimiter_pos;
+	enum modem_chat_script_send_state script_send_state;
+	uint16_t script_send_pos;
 	struct k_work script_send_work;
 	struct k_work_delayable script_send_timeout_work;
 
