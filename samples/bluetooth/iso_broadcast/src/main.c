@@ -78,7 +78,9 @@ static struct bt_iso_big_create_param big_create_param = {
 	.bis_channels = bis,
 	.interval = BIG_SDU_INTERVAL_US, /* in microseconds */
 	.latency = 10, /* in milliseconds */
-	.packing = 0, /* 0 - sequential, 1 - interleaved */
+	.packing = (IS_ENABLED(CONFIG_BT_ISO_PACKING_INTERLEAVED) ?
+		    BT_ISO_PACKING_INTERLEAVED :
+		    BT_ISO_PACKING_SEQUENTIAL),
 	.framing = 0, /* 0 - unframed, 1 - framed */
 };
 
