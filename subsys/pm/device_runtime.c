@@ -76,7 +76,7 @@ static int runtime_suspend(const struct device *dev, bool async,
 		goto unlock;
 	}
 
-	if (async && !k_is_pre_kernel()) {
+	if (async) {
 		/* queue suspend */
 		pm->state = PM_DEVICE_STATE_SUSPENDING;
 		(void)k_work_schedule(&pm->work, delay);
