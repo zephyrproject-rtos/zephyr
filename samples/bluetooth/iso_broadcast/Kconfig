@@ -1,9 +1,12 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-source "Kconfig.zephyr"
-
 mainmenu "Bluetooth: ISO Broadcast"
+
+config BT_ISO_PACKING_INTERLEAVED
+	bool "Use interleaved packing"
+	help
+	  Use interleaved packing between BIS ISO stream subevents.
 
 config ISO_PRINT_INTERVAL
 	int "Interval between each packet report"
@@ -11,3 +14,5 @@ config ISO_PRINT_INTERVAL
 	default 1
 	help
 	  Only print the packet report once in a given interval of ISO packets.
+
+source "Kconfig.zephyr"

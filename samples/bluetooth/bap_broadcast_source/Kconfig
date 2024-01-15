@@ -29,6 +29,11 @@ config ENABLE_LC3
 	select LIBLC3
 	select FPU
 
+config BT_ISO_PACKING_INTERLEAVED
+	bool "Use interleaved packing"
+	help
+	  Use interleaved packing between BIS ISO stream subevents.
+
 config USE_USB_AUDIO_INPUT
 	bool "Use USB Audio as input"
 	# By default, use the USB Audio path is disabled.
