@@ -36,7 +36,6 @@ jobs:
       MATRIX_SIZE: 10
       PUSH_MATRIX_SIZE: 15
       DAILY_MATRIX_SIZE: 80
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TESTS_PER_BUILDER: 700
@@ -79,6 +78,8 @@ jobs:
           west config --global update.narrow true
           west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
           west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Generate Test Plan with Twister
         if: github.event_name == 'pull_request_target'
@@ -131,7 +132,6 @@ jobs:
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.16.4
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --force-color --inline-logs -v -N -M --retry-failed 3 '
@@ -184,6 +184,8 @@ jobs:
           # kitware supplied ninja version.
           wget -c    https://github.com/Kitware/ninja/releases/download/v1.11.1.g95dee.kitware.jobserver-1/ninja-1.11.1.g95dee.kitware.jobserver-1_x86_64-linux-gnu.tar.gz -O - | tar xz --strip-components=1
           sudo cp ninja /usr/local/bin
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check Environment
         run: |
