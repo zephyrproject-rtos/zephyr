@@ -252,7 +252,7 @@ def add_args_formatting(parser):
 def variant_v2_identifiers(variant, identifier):
     identifiers = [identifier + '/' + variant.name]
     for v in variant.variants:
-        identifiers.append(variant_v2_identifiers(v, identifier + '/' + variant.name))
+        identifiers.extend(variant_v2_identifiers(v, identifier + '/' + variant.name))
     return identifiers
 
 
