@@ -243,7 +243,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 	z_xt_ints_off(0xffffffff);
 
-	if (state == PM_STATE_SOFT_OFF) {
+	switch (state) {
+	case PM_STATE_SOFT_OFF:
 		core_desc[cpu].bctl = DSPCS.bootctl[cpu].bctl;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		if (cpu == 0) {
@@ -307,7 +308,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		} else {
 			power_gate_entry(cpu);
 		}
-	} else if (state == PM_STATE_RUNTIME_IDLE) {
+		break;
+	case PM_STATE_RUNTIME_IDLE:
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPPG;
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		soc_cpu_power_down(cpu);
@@ -321,7 +323,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 		__ASSERT_NO_MSG(ret == 0);
 		power_gate_entry(cpu);
-	} else {
+		break;
+	default:
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
 }
