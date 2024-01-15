@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FVP_BASER_AEMV8R
-	bool "FVP BaseR AEMv8R simulation board"
-	depends on SOC_FVP_AEMV8R_AARCH64
+	select SOC_SERIES_FVP_AEMV8R
+	select SOC_FVP_AEMV8R_AARCH64
