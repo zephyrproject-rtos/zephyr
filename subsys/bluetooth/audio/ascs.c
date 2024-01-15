@@ -471,7 +471,7 @@ static void state_transition_work_handler(struct k_work *work)
 		}
 	}
 
-	LOG_DBG("ase %p id 0x%02x %s -> %s", ase, ase->ep.status.id,
+	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ase->ep.status.id,
 		bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(new_state));
 
 	if (old_state == new_state) {
@@ -958,7 +958,8 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 		return;
 	}
 
-	LOG_DBG("stream %p ep %p reason 0x%02x", stream, stream->ep, reason);
+	LOG_DBG("stream %p ep %p state %s reason 0x%02x", stream, stream->ep,
+		bt_bap_ep_state_str(ep->status.state), reason);
 
 	/* Cancel ASE disconnect work if pending */
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
