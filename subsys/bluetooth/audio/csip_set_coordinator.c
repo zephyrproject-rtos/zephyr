@@ -740,12 +740,21 @@ static uint8_t discover_func(struct bt_conn *conn,
 			}
 
 			if (sub_params->value != 0) {
+				int err;
+
 				/* With ccc_handle == 0 it will use auto discovery */
 				sub_params->ccc_handle = 0;
 				sub_params->end_handle = cur_inst->end_handle;
 				sub_params->value_handle = chrc->value_handle;
 				sub_params->notify = notify_handler;
-				bt_gatt_subscribe(conn, sub_params);
+
+				err = bt_gatt_subscribe(conn, sub_params);
+				if (err != 0 && err != -EALREADY) {
+					LOG_DBG("Failed to subscribe (err %d)", err);
+					discover_complete(client, err);
+
+					return BT_GATT_ITER_STOP;
+				}
 			}
 		}
 	}
@@ -1315,6 +1324,9 @@ static int csip_set_coordinator_read_set_lock(struct bt_csip_set_coordinator_svc
 
 static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst)
 {
+	inst->inst_count = 0U;
+	memset(&inst->set_member, 0, sizeof(inst->set_member));
+
 	for (size_t i = 0; i < ARRAY_SIZE(inst->svc_insts); i++) {
 		struct bt_csip_set_coordinator_svc_inst *svc_inst = &inst->svc_insts[i];
 
@@ -1433,7 +1445,7 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 
 	client = &client_insts[bt_conn_index(conn)];
 
-	(void)memset(client, 0, sizeof(*client));
+	csip_set_coordinator_reset(client);
 
 	/* Discover CSIS on peer, setup handles and notify */
 	(void)memset(&discover_params, 0, sizeof(discover_params));

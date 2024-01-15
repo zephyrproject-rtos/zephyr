@@ -416,6 +416,10 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 			} else {
 				LOG_DBG("Could not subscribe to handle 0x%04X: %d", attr->handle,
 					err);
+
+				micp_mic_ctlr_discover_complete(mic_ctlr, err);
+
+				return BT_GATT_ITER_STOP;
 			}
 		}
 	}
