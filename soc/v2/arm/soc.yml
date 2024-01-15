@@ -7,3 +7,5 @@ family:
   - name: fvp_aemv8r
     socs:
     - name: fvp_aemv8r_aarch64
+  socs:
+  - name: qemu_cortex_a53

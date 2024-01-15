@@ -3,9 +3,6 @@
 
 if SOC_QEMU_CORTEX_A53
 
-config SOC
-	default "qemu_cortex_a53"
-
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
