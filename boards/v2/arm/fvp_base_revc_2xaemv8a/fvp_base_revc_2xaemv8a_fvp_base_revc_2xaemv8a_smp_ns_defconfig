@@ -1,10 +1,6 @@
 # Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_SOC_SERIES_FVP_AEMV8A=y
-CONFIG_SOC_FVP_BASE_REVC_2XAEMV8A=y
-CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A=y
-
 CONFIG_THREAD_STACK_INFO=y
 
 # Enable Timer and Sys clock
