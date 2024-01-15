@@ -235,7 +235,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(substate_id);
 	uint32_t cpu = arch_proc_id();
-	int ret = 0;
+	int ret;
 
 	ARG_UNUSED(ret);
 
