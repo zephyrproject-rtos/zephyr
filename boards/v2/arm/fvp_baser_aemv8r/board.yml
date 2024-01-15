@@ -1,0 +1,7 @@
+board:
+  name: fvp_baser_aemv8r
+  vendor: ARM
+  socs:
+  - name: fvp_aemv8r_aarch64
+    variants:
+    - name: 'smp'
