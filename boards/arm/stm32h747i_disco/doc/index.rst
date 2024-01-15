@@ -230,6 +230,13 @@ automatically.
 
 Zephyr flash configuration has been set to meet these default settings.
 
+Alternatively, west `STM32CubeProgrammer`_ runner can be used, after installing
+it, to flash applications for both cores. The target core is detected automatically.
+
+.. code-block:: console
+
+   $ west flash --runner stm32cubeprogrammer
+
 Flashing an application to STM32H747I M7 Core
 ---------------------------------------------
 
