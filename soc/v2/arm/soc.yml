@@ -9,3 +9,4 @@ family:
     - name: fvp_aemv8r_aarch64
   socs:
   - name: qemu_cortex_a53
+  - name: qemu_virt_arm64
