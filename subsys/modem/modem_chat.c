@@ -110,13 +110,16 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 	k_sem_give(&chat->script_stopped_sem);
 }
 
+static void modem_chat_set_script_send_state(struct modem_chat *chat,
+					     enum modem_chat_script_send_state state)
+{
+	chat->script_send_pos = 0;
+	chat->script_send_state = state;
+}
+
 static void modem_chat_script_send(struct modem_chat *chat)
 {
-	/* Initialize script send work */
-	chat->script_send_request_pos = 0;
-	chat->script_send_delimiter_pos = 0;
-
-	/* Schedule script send work */
+	modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST);
 	k_work_submit(&chat->script_send_work);
 }
 
@@ -219,77 +222,6 @@ static void modem_chat_script_abort_handler(struct k_work *item)
 	modem_chat_script_stop(chat, MODEM_CHAT_SCRIPT_RESULT_ABORT);
 }
 
-static bool modem_chat_script_send_request(struct modem_chat *chat)
-{
-	const struct modem_chat_script_chat *script_chat =
-		&chat->script->script_chats[chat->script_chat_it];
-
-	uint8_t *script_chat_request_start;
-	uint16_t script_chat_request_remaining;
-	int ret;
-
-	/* Validate data to send */
-	if (script_chat->request_size == chat->script_send_request_pos) {
-		return true;
-	}
-
-	script_chat_request_start = (uint8_t *)&script_chat->request[chat->script_send_request_pos];
-	script_chat_request_remaining = script_chat->request_size - chat->script_send_request_pos;
-
-	/* Send data through pipe */
-	ret = modem_pipe_transmit(chat->pipe, script_chat_request_start,
-				  script_chat_request_remaining);
-
-	/* Validate transmit successful */
-	if (ret < 1) {
-		return false;
-	}
-
-	/* Update script send position */
-	chat->script_send_request_pos += (uint16_t)ret;
-
-	/* Check if data remains */
-	if (chat->script_send_request_pos < script_chat->request_size) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool modem_chat_script_send_delimiter(struct modem_chat *chat)
-{
-	uint8_t *script_chat_delimiter_start;
-	uint8_t script_chat_delimiter_remaining;
-	int ret;
-
-	/* Validate data to send */
-	if (chat->delimiter_size == chat->script_send_delimiter_pos) {
-		return true;
-	}
-
-	script_chat_delimiter_start = (uint8_t *)&chat->delimiter[chat->script_send_delimiter_pos];
-	script_chat_delimiter_remaining = chat->delimiter_size - chat->script_send_delimiter_pos;
-
-	/* Send data through pipe */
-	ret = modem_pipe_transmit(chat->pipe, script_chat_delimiter_start,
-				  script_chat_delimiter_remaining);
-
-	/* Validate transmit successful */
-	if (ret < 1) {
-		return false;
-	}
-
-	/* Update script send position */
-	chat->script_send_delimiter_pos += (uint8_t)ret;
-
-	/* Check if data remains */
-	if (chat->script_send_delimiter_pos < chat->delimiter_size) {
-		return false;
-	}
-
-	return true;
-}
-
 static bool modem_chat_script_chat_is_no_response(struct modem_chat *chat)
 {
 	const struct modem_chat_script_chat *script_chat =
@@ -306,32 +238,76 @@ static uint16_t modem_chat_script_chat_get_send_timeout(struct modem_chat *chat)
 	return script_chat->timeout;
 }
 
+/* Returns true when request part has been sent */
+static bool modem_chat_send_script_request_part(struct modem_chat *chat)
+{
+	const struct modem_chat_script_chat *script_chat =
+		&chat->script->script_chats[chat->script_chat_it];
+
+	uint8_t *request_part;
+	uint16_t request_size;
+	uint16_t request_part_size;
+	int ret;
+
+	switch (chat->script_send_state) {
+	case MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST:
+		request_part = (uint8_t *)(&script_chat->request[chat->script_send_pos]);
+		request_size = script_chat->request_size;
+		break;
+
+	case MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER:
+		request_part = (uint8_t *)(&chat->delimiter[chat->script_send_pos]);
+		request_size = chat->delimiter_size;
+		break;
+
+	default:
+		return false;
+	}
+
+	request_part_size = request_size - chat->script_send_pos;
+	ret = modem_pipe_transmit(chat->pipe, request_part, request_part_size);
+	if (ret < 1) {
+		return false;
+	}
+
+	chat->script_send_pos += (uint16_t)ret;
+
+	/* Return true if all data was sent */
+	return request_size <= chat->script_send_pos;
+}
+
 static void modem_chat_script_send_handler(struct k_work *item)
 {
 	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_send_work);
 	uint16_t timeout;
 
-	/* Validate script running */
 	if (chat->script == NULL) {
 		return;
 	}
 
-	/* Send request */
-	if (modem_chat_script_send_request(chat) == false) {
-		k_work_submit(&chat->script_send_work);
+	switch (chat->script_send_state) {
+	case MODEM_CHAT_SCRIPT_SEND_STATE_IDLE:
 		return;
+
+	case MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST:
+		if (!modem_chat_send_script_request_part(chat)) {
+			return;
+		}
+
+		modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER);
+		__fallthrough;
+
+	case MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER:
+		if (!modem_chat_send_script_request_part(chat)) {
+			return;
+		}
+
+		modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_IDLE);
+		break;
 	}
 
-	/* Send delimiter */
-	if (modem_chat_script_send_delimiter(chat) == false) {
-		k_work_submit(&chat->script_send_work);
-		return;
-	}
-
-	/* Check if script command is no response */
 	if (modem_chat_script_chat_is_no_response(chat)) {
 		timeout = modem_chat_script_chat_get_send_timeout(chat);
-
 		if (timeout == 0) {
 			modem_chat_script_next(chat, false);
 		} else {
@@ -708,8 +684,17 @@ static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_ev
 {
 	struct modem_chat *chat = (struct modem_chat *)user_data;
 
-	if (event == MODEM_PIPE_EVENT_RECEIVE_READY) {
+	switch (event) {
+	case MODEM_PIPE_EVENT_RECEIVE_READY:
 		k_work_submit(&chat->receive_work);
+		break;
+
+	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
+		k_work_submit(&chat->script_send_work);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -840,8 +825,8 @@ void modem_chat_release(struct modem_chat *chat)
 	atomic_set(&chat->script_state, 0);
 	chat->script_result = MODEM_CHAT_SCRIPT_RESULT_ABORT;
 	k_sem_reset(&chat->script_stopped_sem);
-	chat->script_send_request_pos = 0;
-	chat->script_send_delimiter_pos = 0;
+	chat->script_send_state = MODEM_CHAT_SCRIPT_SEND_STATE_IDLE;
+	chat->script_send_pos = 0;
 	chat->parse_match = NULL;
 	chat->parse_match_len = 0;
 	chat->parse_arg_len = 0;
