@@ -5,10 +5,12 @@ tests:
     integration_platforms:
       - native_sim
   drivers.uart.async_rx.ztress:
-    filter: CONFIG_SERIAL
     tags: drivers uart
-    platform_allow: >
-      qemu_cortex_m3 qemu_x86 qemu_x86_64 qemu_riscv32
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_riscv32
     integration_platforms:
       - qemu_x86
     extra_configs:
