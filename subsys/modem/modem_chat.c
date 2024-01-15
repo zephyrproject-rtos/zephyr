@@ -97,7 +97,7 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 
 	/* Cancel work */
 	k_work_cancel_delayable(&chat->script_timeout_work);
-	k_work_cancel_delayable(&chat->script_send_work);
+	k_work_cancel(&chat->script_send_work);
 	k_work_cancel_delayable(&chat->script_send_timeout_work);
 
 	/* Clear script running state */
@@ -117,7 +117,7 @@ static void modem_chat_script_send(struct modem_chat *chat)
 	chat->script_send_delimiter_pos = 0;
 
 	/* Schedule script send work */
-	k_work_schedule(&chat->script_send_work, K_NO_WAIT);
+	k_work_submit(&chat->script_send_work);
 }
 
 static void modem_chat_script_set_response_matches(struct modem_chat *chat)
@@ -308,8 +308,7 @@ static uint16_t modem_chat_script_chat_get_send_timeout(struct modem_chat *chat)
 
 static void modem_chat_script_send_handler(struct k_work *item)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
-	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, script_send_work);
+	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_send_work);
 	uint16_t timeout;
 
 	/* Validate script running */
@@ -319,13 +318,13 @@ static void modem_chat_script_send_handler(struct k_work *item)
 
 	/* Send request */
 	if (modem_chat_script_send_request(chat) == false) {
-		k_work_schedule(&chat->script_send_work, chat->process_timeout);
+		k_work_submit(&chat->script_send_work);
 		return;
 	}
 
 	/* Send delimiter */
 	if (modem_chat_script_send_delimiter(chat) == false) {
-		k_work_schedule(&chat->script_send_work, chat->process_timeout);
+		k_work_submit(&chat->script_send_work);
 		return;
 	}
 
@@ -687,8 +686,7 @@ static void modem_chat_process_bytes(struct modem_chat *chat)
 
 static void modem_chat_process_handler(struct k_work *item)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
-	struct modem_chat *chat = CONTAINER_OF(dwork, struct modem_chat, process_work);
+	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, receive_work);
 	int ret;
 
 	/* Fill work buffer */
@@ -702,7 +700,7 @@ static void modem_chat_process_handler(struct k_work *item)
 
 	/* Process data */
 	modem_chat_process_bytes(chat);
-	k_work_schedule(&chat->process_work, K_NO_WAIT);
+	k_work_submit(&chat->receive_work);
 }
 
 static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_event event,
@@ -711,7 +709,7 @@ static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_ev
 	struct modem_chat *chat = (struct modem_chat *)user_data;
 
 	if (event == MODEM_PIPE_EVENT_RECEIVE_READY) {
-		k_work_schedule(&chat->process_work, chat->process_timeout);
+		k_work_submit(&chat->receive_work);
 	}
 }
 
@@ -741,14 +739,13 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	chat->filter_size = config->filter_size;
 	chat->matches[MODEM_CHAT_MATCHES_INDEX_UNSOL] = config->unsol_matches;
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_UNSOL] = config->unsol_matches_size;
-	chat->process_timeout = config->process_timeout;
 	atomic_set(&chat->script_state, 0);
 	k_sem_init(&chat->script_stopped_sem, 0, 1);
-	k_work_init_delayable(&chat->process_work, modem_chat_process_handler);
+	k_work_init(&chat->receive_work, modem_chat_process_handler);
 	k_work_init(&chat->script_run_work, modem_chat_script_run_handler);
 	k_work_init_delayable(&chat->script_timeout_work, modem_chat_script_timeout_handler);
 	k_work_init(&chat->script_abort_work, modem_chat_script_abort_handler);
-	k_work_init_delayable(&chat->script_send_work, modem_chat_script_send_handler);
+	k_work_init(&chat->script_send_work, modem_chat_script_send_handler);
 	k_work_init_delayable(&chat->script_send_timeout_work,
 			      modem_chat_script_send_timeout_handler);
 
@@ -831,8 +828,8 @@ void modem_chat_release(struct modem_chat *chat)
 
 	k_work_cancel_sync(&chat->script_run_work, &sync);
 	k_work_cancel_sync(&chat->script_abort_work, &sync);
-	k_work_cancel_delayable_sync(&chat->process_work, &sync);
-	k_work_cancel_delayable_sync(&chat->script_send_work, &sync);
+	k_work_cancel_sync(&chat->receive_work, &sync);
+	k_work_cancel_sync(&chat->script_send_work, &sync);
 
 	chat->pipe = NULL;
 	chat->receive_buf_len = 0;
