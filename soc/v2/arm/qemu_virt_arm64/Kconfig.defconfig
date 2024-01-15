@@ -3,9 +3,6 @@
 
 if SOC_QEMU_VIRT_ARM64
 
-config SOC
-	default "qemu_virt_arm64"
-
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
