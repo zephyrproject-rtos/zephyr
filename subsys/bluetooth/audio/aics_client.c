@@ -608,6 +608,8 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 		}
 
 		if (sub_params) {
+			int err;
+
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
 			/*
@@ -616,7 +618,16 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			 */
 			sub_params->ccc_handle = attr->handle + 2;
 			sub_params->notify = aics_client_notify_handler;
-			bt_gatt_subscribe(conn, sub_params);
+			err = bt_gatt_subscribe(conn, sub_params);
+			if (err != 0 && err != -EALREADY) {
+				LOG_ERR("Failed to subscribe: %d", err);
+
+				if (inst->cli.cb && inst->cli.cb->discover) {
+					inst->cli.cb->discover(inst, err);
+				}
+
+				return BT_GATT_ITER_STOP;
+			}
 		}
 	}
 
