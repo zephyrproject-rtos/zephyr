@@ -2447,6 +2447,18 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 		}
+
+		case SO_DOMAIN: {
+			if (*optlen != sizeof(int)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			*(int *)optval = net_context_get_family(ctx);
+
+			return 0;
+		}
+
 		break;
 
 		case SO_RCVBUF:
