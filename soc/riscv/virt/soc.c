@@ -13,6 +13,8 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 
+#define SIFIVE_SYSCON_TEST 0x00100000
+
 /*
  * Exit QEMU and tell error number.
  *   Higher 16bits: indicates error number.
