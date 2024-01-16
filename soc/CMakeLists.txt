@@ -16,6 +16,11 @@ if(HWMv1)
     add_subdirectory(${SOC_DIR}/${ARCH}/${SOC_PATH} soc/${ARCH}/${SOC_PATH})
   endif()
 elseif(HWMv2)
+  # Some soc (riscv arch) might have a common dir
+  if(EXISTS ${ZEPHYR_BASE}/soc/v2/${ARCH}/CMakeLists.txt)
+    add_subdirectory(v2/${ARCH})
+  endif()
+
   # Below is inclusion of HWMv2 SoC CMake lists.
   string(TOUPPER SOC_FAMILY_${SOC_FAMILY}_DIR family_setting_dir)
   string(TOUPPER SOC_SERIES_${SOC_SERIES}_DIR series_setting_dir)

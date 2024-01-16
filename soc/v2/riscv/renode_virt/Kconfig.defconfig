@@ -3,8 +3,7 @@
 
 if SOC_RISCV32_VIRTUAL_RENODE
 
-config SOC
-	default "renode_virt"
+source "soc/v2/riscv/common/Kconfig"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 4000000
@@ -16,6 +15,7 @@ config RISCV_HAS_CPU_IDLE
 	default y
 
 config RISCV_HAS_PLIC
+	bool
 	default y
 
 config RISCV_GP

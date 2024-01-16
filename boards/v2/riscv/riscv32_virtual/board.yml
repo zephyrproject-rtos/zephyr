@@ -1,0 +1,5 @@
+board:
+  name: riscv32_virtual
+  vendor: Renode
+  socs:
+    - name: renode_virt

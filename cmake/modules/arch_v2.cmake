@@ -30,6 +30,9 @@ if(HWMv2)
   # the Board / SoC path is no longer sufficient for determine the arch
   # (read: multi-core and multi-arch SoC).
   set(ARCH ${CONFIG_ARCH})
+  if(${CONFIG_ARCH} MATCHES "riscv")
+    set(ARCH "riscv")
+  endif()
   string(TOUPPER "${ARCH}" arch_upper)
   cmake_path(GET ARCH_V2_${arch_upper}_DIR PARENT_PATH ARCH_DIR)
 
