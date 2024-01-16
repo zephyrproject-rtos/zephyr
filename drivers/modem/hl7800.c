@@ -5664,6 +5664,9 @@ static void mdm_power_off_work_callback(struct k_work *item)
 		net_if_carrier_off(iface_ctx.iface);
 	}
 	LOG_INF("Modem powered off");
+	set_sleep_state(HL7800_SLEEP_UNINITIALIZED);
+	set_network_state(HL7800_NOT_REGISTERED);
+	set_startup_state(HL7800_STARTUP_STATE_UNKNOWN);
 
 	hl7800_unlock();
 }
