@@ -12,7 +12,6 @@
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <soc.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/andestech-atcgpio100.h>
 #include <zephyr/sys/util.h>
