@@ -618,6 +618,11 @@ static int spi_stm32_configure(const struct device *dev,
 		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_16BIT);
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	LL_SPI_SetMasterSSIdleness(spi, cfg->mssi_clocks);
+	LL_SPI_SetInterDataIdleness(spi, (cfg->midi_clocks << SPI_CFG2_MIDI_Pos));
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	ll_func_set_fifo_threshold_8bit(spi);
 #endif
@@ -1160,6 +1165,12 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
 		(.use_subghzspi_nss =					\
 			DT_INST_PROP_OR(id, use_subghzspi_nss, false),))\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi),		\
+		(.midi_clocks =						\
+			DT_INST_PROP(id, midi_clock),))			\
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi),		\
+		(.mssi_clocks =						\
+			DT_INST_PROP(id, mssi_clock),))			\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
