@@ -1156,77 +1156,215 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void reset_mcs_inst(struct mcs_instance_t *mcs_inst, struct bt_conn *conn)
+static int reset_mcs_inst(struct mcs_instance_t *mcs_inst)
 {
-	(void)memset(mcs_inst, 0, offsetof(struct mcs_instance_t, busy));
+	if (mcs_inst->conn != NULL) {
+		struct bt_conn *conn = mcs_inst->conn;
+		struct bt_conn_info info;
+		int err;
 
-	/* It's okay if these fail. In case of disconnect, we can't
-	 * unsubscribe and they will just fail.
-	 * In case that we reset due to another call of the discover
-	 * function, we will unsubscribe (regardless of bonding state)
-	 * to accommodate the new discovery values.
-	 */
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->player_name_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_changed_sub_params);
+		err = bt_conn_get_info(conn, &info);
+		if (err != 0) {
+			return err;
+		}
+
+		if (info.state == BT_CONN_STATE_CONNECTED) {
+			/* It's okay if these fail with -EINVAL as that means that they are
+			 * not currently subscribed
+			 */
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->player_name_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to name: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->track_changed_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to track change: %d", err);
+
+				return err;
+			}
+
 #if defined(CONFIG_BT_MCC_READ_TRACK_TITLE_ENABLE_SUBSCRIPTION)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_title_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->track_title_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to track title: %d", err);
+
+				return err;
+			}
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_TITLE_ENABLE_SUBSCRIPTION) */
+
 #if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_duration_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->track_duration_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to track duration: %d", err);
+
+				return err;
+			}
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_DURATION) */
+
 #if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->track_position_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->track_position_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to track position: %d", err);
+
+				return err;
+			}
 #endif /* defined(CONFIG_BT_MCC_READ_TRACK_POSITION) */
+
 #if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->playback_speed_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->playback_speed_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to playback speed: %d", err);
+
+				return err;
+			}
 #endif /* defined (CONFIG_BT_MCC_READ_PLAYBACK_SPEED) */
+
 #if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->seeking_speed_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->seeking_speed_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to seeking speed: %d", err);
+
+				return err;
+			}
 #endif /* defined (CONFIG_BT_MCC_READ_SEEKING_SPEED) */
+
 #ifdef CONFIG_BT_MCC_OTS
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->current_track_obj_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->next_track_obj_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->parent_group_obj_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->current_group_obj_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->current_track_obj_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to current track object: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->next_track_obj_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to next track object: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->parent_group_obj_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to parent group object: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->current_group_obj_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to current group object: %d", err);
+
+				return err;
+			}
+
 #endif /* CONFIG_BT_MCC_OTS */
 #if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->playing_order_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->playing_order_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to playing order: %d", err);
+
+				return err;
+			}
 #endif /* defined(CONFIG_BT_MCC_READ_PLAYING_ORDER) */
+
 #if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->media_state_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->media_state_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to media state: %d", err);
+
+				return err;
+			}
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->cp_sub_params);
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->cp_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to control point: %d", err);
+
+				return err;
+			}
+
 #if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->opcodes_supported_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->opcodes_supported_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to supported opcodes: %d", err);
+
+				return err;
+			}
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
+
 #ifdef CONFIG_BT_MCC_OTS
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->scp_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->search_results_obj_sub_params);
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->scp_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to search control point: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->search_results_obj_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to search results: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->otc.oacp_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to oacp: %d", err);
+
+				return err;
+			}
+
+			err = bt_gatt_unsubscribe(conn, &mcs_inst->otc.olcp_sub_params);
+			if (err != 0 && err != -EINVAL) {
+				LOG_DBG("Failed to unsubscribe to olcp: %d", err);
+
+				return err;
+			}
+#endif /* CONFIG_BT_MCC_OTS */
+		}
+
+		bt_conn_unref(conn);
+		mcs_inst->conn = NULL;
+	}
+
+	(void)memset(mcs_inst, 0, offsetof(struct mcs_instance_t, busy));
+#ifdef CONFIG_BT_MCC_OTS
+	/* Reset OTC instance as well if supported */
+	(void)memset(&mcs_inst->otc, 0, offsetof(struct bt_ots_client, oacp_sub_params));
 #endif /* CONFIG_BT_MCC_OTS */
 
-	/* Reset OTC instance as well if supported */
-#ifdef CONFIG_BT_MCC_OTS
-	(void)memset(&mcs_inst->otc, 0,
-		     offsetof(struct bt_ots_client, oacp_sub_params));
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->otc.oacp_sub_params);
-	(void)bt_gatt_unsubscribe(conn, &mcs_inst->otc.olcp_sub_params);
-#endif /* CONFIG_BT_MCC_OTS */
+	return 0;
 }
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	struct mcs_instance_t *mcs_inst;
+
+	mcs_inst = lookup_inst_by_conn(conn);
+	if (mcs_inst != NULL) {
+		(void)reset_mcs_inst(mcs_inst);
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected_cb,
+};
 
 /* Called when discovery is completed - successfully or with error */
 static void discovery_complete(struct bt_conn *conn, int err)
 {
+	struct mcs_instance_t *mcs_inst;
+
 	LOG_DBG("Discovery completed, err: %d", err);
 
-	/* TODO: Handle resets of instance, and re-discovery.
-	 * For now, reset instance on error.
-	 */
-	if (err) {
-		struct mcs_instance_t *mcs_inst;
-
-		mcs_inst = lookup_inst_by_conn(conn);
-		if (mcs_inst != NULL) {
-			reset_mcs_inst(mcs_inst, conn);
+	mcs_inst = lookup_inst_by_conn(conn);
+	if (mcs_inst != NULL) {
+		mcs_inst->busy = false;
+		if (err != 0) {
+			(void)reset_mcs_inst(mcs_inst);
 		}
 	}
 
@@ -1296,6 +1434,7 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 			sub_params->value = BT_GATT_CCC_INDICATE;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->notify = bt_ots_client_indicate_handler;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err != 0) {
@@ -1463,7 +1602,7 @@ static int do_subscribe(struct mcs_instance_t *mcs_inst, struct bt_conn *conn,
 	sub_params->subscribe = subscribe_mcs_char_func;
 	/* disc_params pointer is also used as subscription flag */
 	sub_params->disc_params = &mcs_inst->discover_params;
-	atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_NO_RESUB);
+	atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 	LOG_DBG("Subscring to handle %d", handle);
 	return bt_gatt_subscribe(conn, sub_params);
@@ -1945,6 +2084,7 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 {
 	struct mcs_instance_t *mcs_inst;
+	int err;
 
 	CHECKIF(!conn) {
 		return -EINVAL;
@@ -1961,7 +2101,12 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	}
 
 	subscribe_all = subscribe;
-	reset_mcs_inst(mcs_inst, conn);
+	err = reset_mcs_inst(mcs_inst);
+	if (err != 0) {
+		LOG_DBG("Failed to reset MCS instance %p: %d", mcs_inst, err);
+
+		return err;
+	}
 	(void)memcpy(&uuid, BT_UUID_GMCS, sizeof(uuid));
 
 	mcs_inst->discover_params.func = discover_primary_func;
@@ -1971,7 +2116,15 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	mcs_inst->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
 	LOG_DBG("start discovery of GMCS primary service");
-	return bt_gatt_discover(conn, &mcs_inst->discover_params);
+	err = bt_gatt_discover(conn, &mcs_inst->discover_params);
+	if (err != 0) {
+		return err;
+	}
+
+	mcs_inst->conn = bt_conn_ref(conn);
+	mcs_inst->busy = true;
+
+	return 0;
 }
 
 int bt_mcc_read_player_name(struct bt_conn *conn)

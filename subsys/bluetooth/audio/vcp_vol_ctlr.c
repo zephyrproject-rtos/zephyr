@@ -449,8 +449,10 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 			sub_params->ccc_handle = 0;
 			sub_params->end_handle = vol_ctlr->end_handle;
 			sub_params->notify = vcp_vol_ctlr_notify_handler;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
 			err = bt_gatt_subscribe(conn, sub_params);
-			if (err == 0) {
+			if (err == 0 || err == -EALREADY) {
 				LOG_DBG("Subscribed to handle 0x%04X",
 					attr->handle);
 			} else {
@@ -816,15 +818,6 @@ static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 	if (vol_ctlr->conn != NULL) {
 		struct bt_conn *conn = vol_ctlr->conn;
-
-		/* It's okay if these fail. In case of disconnect, we can't
-		 * unsubscribe and they will just fail.
-		 * In case that we reset due to another call of the discover
-		 * function, we will unsubscribe (regardless of bonding state)
-		 * to accommodate the new discovery values.
-		 */
-		(void)bt_gatt_unsubscribe(conn, &vol_ctlr->state_sub_params);
-		(void)bt_gatt_unsubscribe(conn, &vol_ctlr->flag_sub_params);
 
 		bt_conn_unref(conn);
 		vol_ctlr->conn = NULL;
