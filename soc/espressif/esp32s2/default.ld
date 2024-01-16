@@ -340,6 +340,8 @@ SECTIONS
     *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
     *libdrivers__interrupt_controller.a:(.literal .literal.* .text .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
+    *libc_common.a:string.*(.literal .text .literal.* .text.*)
+    *libc_picolibc.a:string.*(.literal .text .literal.* .text.*)
     *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
     *liblib__libc__picolibc.a:string.*(.literal .text .literal.* .text.*)
     *libphy.a:(.phyiram .phyiram.*)

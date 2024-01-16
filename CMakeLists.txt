@@ -773,14 +773,7 @@ add_custom_command(
           ${syscalls_file_list_output} ${syscalls_interface}
   )
 
-# Make sure Picolibc is built before the rest of the system; there's no explicit
-# reference to any of the files as they're all picked up by various compiler
-# settings
-if(CONFIG_PICOLIBC_USE_MODULE)
-  set(picolibc_dependency PicolibcBuild)
-endif()
-
-add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h} ${picolibc_dependency})
+add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 
 set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              APPEND PROPERTY
