@@ -78,7 +78,7 @@ You can build an application in the usual way. Refer to
 :ref:`hello_world`.
 
 .. zephyr-app-commands::
-   :board: phycore_am62x_a53
+   :board: phycore_am62x/am6234/a53
    :zephyr-app: samples/hello_world
    :goals: build
 
