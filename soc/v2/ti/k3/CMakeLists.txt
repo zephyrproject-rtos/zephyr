@@ -1,6 +1,4 @@
-# Copyright (c) 2023 Enphase Energy
+# Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
-
-zephyr_include_directories(.)
 
 add_subdirectory(${SOC_SERIES})
