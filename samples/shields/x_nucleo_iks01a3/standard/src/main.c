@@ -80,6 +80,17 @@ static void lsm6dso_temp_trig_handler(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_LIS2DE12_TRIGGER
+static int lis2de12_trig_cnt;
+
+static void lis2de12_trigger_handler(const struct device *dev,
+				    const struct sensor_trigger *trig)
+{
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
+	lis2de12_trig_cnt++;
+}
+#endif
+
 static void lis2mdl_config(const struct device *lis2mdl)
 {
 	struct sensor_value odr_attr;
@@ -237,6 +248,37 @@ static void lsm6dso_config(const struct device *lsm6dso)
 #endif
 }
 
+static void lis2de12_config(const struct device *lis2de12)
+{
+	struct sensor_value odr_attr, fs_attr;
+
+	/* set LIS2DE12 accel/gyro sampling frequency to 100 Hz */
+	odr_attr.val1 = 200;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(lis2de12, SENSOR_CHAN_ACCEL_XYZ,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for LIS2DE12 accel\n");
+		return;
+	}
+
+	sensor_g_to_ms2(2, &fs_attr);
+
+	if (sensor_attr_set(lis2de12, SENSOR_CHAN_ACCEL_XYZ,
+			    SENSOR_ATTR_FULL_SCALE, &fs_attr) < 0) {
+		printk("Cannot set sampling frequency for LIS2DE12 gyro\n");
+		return;
+	}
+
+#ifdef CONFIG_LIS2DE12_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
+	sensor_trigger_set(lis2de12, &trig, lis2de12_trigger_handler);
+#endif
+}
+
 int main(void)
 {
 	struct sensor_value temp1, temp2, temp3, hum, press;
@@ -247,13 +289,21 @@ int main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
+	struct sensor_value lis2de12_xl[3];
+#ifdef CONFIG_LIS2DE12_ENABLE_TEMP
+	struct sensor_value lis2de12_die_temp;
+#endif
 	const struct device *const hts221 = DEVICE_DT_GET_ONE(st_hts221);
 	const struct device *const lps22hh = DEVICE_DT_GET_ONE(st_lps22hh);
 	const struct device *const stts751 = DEVICE_DT_GET_ONE(st_stts751);
 	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
 	const struct device *const lis2dw12 = DEVICE_DT_GET_ONE(st_lis2dw12);
 	const struct device *const lsm6dso = DEVICE_DT_GET_ONE(st_lsm6dso);
+
+	/* on DIL24 */
+	const struct device *const lis2de12 = DEVICE_DT_GET_ANY(st_lis2de12);
 	int cnt = 1;
+	int lis2de12_on_dil24 = 0;
 
 	if (!device_is_ready(hts221)) {
 		printk("%s: device not ready.\n", hts221->name);
@@ -279,12 +329,20 @@ int main(void)
 		printk("%s: device not ready.\n", lsm6dso->name);
 		return 0;
 	}
+	if (device_is_ready(lis2de12)) {
+		lis2de12_on_dil24 = 1;
+	} else {
+		printf("Device %s is not ready\n", lis2de12->name);
+		/* no device on DIL24, skip it */
+	}
 
 	lis2mdl_config(lis2mdl);
 	lps22hh_config(lps22hh);
 	stts751_config(stts751);
 	lis2dw12_config(lis2dw12);
 	lsm6dso_config(lsm6dso);
+	if (lis2de12_on_dil24)
+		lis2de12_config(lis2de12);
 
 	while (1) {
 		/* Get sensor samples */
@@ -323,6 +381,14 @@ int main(void)
 			return 0;
 		}
 #endif
+#ifndef CONFIG_LIS2DE12_TRIGGER
+		if (lis2de12_on_dil24) {
+			if (sensor_sample_fetch(lis2de12) < 0) {
+				printf("LIS2DE12 Sensor sample update error\n");
+				return 0;
+			}
+		}
+#endif
 
 		/* Get sensor data */
 
@@ -339,6 +405,12 @@ int main(void)
 #ifdef CONFIG_LSM6DSO_ENABLE_TEMP
 		sensor_channel_get(lsm6dso, SENSOR_CHAN_DIE_TEMP, &die_temp);
 #endif
+		if (lis2de12_on_dil24) {
+			sensor_channel_get(lis2de12, SENSOR_CHAN_ACCEL_XYZ, lis2de12_xl);
+#ifdef CONFIG_LIS2DE12_ENABLE_TEMP
+			sensor_channel_get(lis2de12, SENSOR_CHAN_DIE_TEMP, &lis2de12_die_temp);
+#endif
+		}
 
 		/* Display sensor data */
 
@@ -396,6 +468,18 @@ int main(void)
 		printf("LSM6DSO: Temperature: %.1f C\n",
 		       sensor_value_to_double(&die_temp));
 #endif
+		if (lis2de12_on_dil24) {
+			printf("LIS2DE12: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+				sensor_value_to_double(&lis2de12_xl[0]),
+				sensor_value_to_double(&lis2de12_xl[1]),
+				sensor_value_to_double(&lis2de12_xl[2]));
+
+#ifdef CONFIG_LIS2DE12_ENABLE_TEMP
+			/* temperature */
+			printf("LIS2DE12: Temperature: %.1f C\n",
+			    sensor_value_to_double(&lis2de12_die_temp));
+#endif
+		}
 
 #if defined(CONFIG_LIS2MDL_TRIGGER)
 		printk("%d:: lis2mdl trig %d\n", cnt, lis2mdl_trig_cnt);
@@ -418,6 +502,9 @@ int main(void)
 		printk("%d:: lsm6dso gyr trig %d\n", cnt, lsm6dso_gyr_trig_cnt);
 		printk("%d:: lsm6dso temp trig %d\n", cnt,
 			lsm6dso_temp_trig_cnt);
+#endif
+#ifdef CONFIG_LIS2DE12_TRIGGER
+		printk("%d:: lis2de12 acc trig %d\n", cnt, lis2de12_trig_cnt);
 #endif
 
 		cnt++;
