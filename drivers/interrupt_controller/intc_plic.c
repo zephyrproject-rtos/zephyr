@@ -21,7 +21,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
-#include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
