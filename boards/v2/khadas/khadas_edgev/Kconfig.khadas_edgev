@@ -4,5 +4,4 @@
 #
 
 config BOARD_KHADAS_EDGEV
-	bool "Khadas Edge-V"
-	depends on SOC_SERIES_RK3399
+	select SOC_RK3399
