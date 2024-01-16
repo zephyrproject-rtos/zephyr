@@ -48,6 +48,8 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_SCAN_RESULT)
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY */
 
+#define MAX_BANDS_STR_LEN 64
+
 static struct {
 	const struct shell *sh;
 
@@ -444,6 +446,8 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	int idx = 1;
 
 	if (argc < 1) {
+		print(context.sh, SHELL_WARNING,
+		      "SSID not specified\n");
 		return -EINVAL;
 	}
 
@@ -456,6 +460,9 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 	params->ssid = argv[0];
 	params->ssid_length = strlen(params->ssid);
 	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
+		print(context.sh, SHELL_WARNING,
+		      "SSID too long (max %d characters)\n",
+		      WIFI_SSID_MAX_LEN);
 		return -EINVAL;
 	}
 
@@ -464,6 +471,11 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		long channel = strtol(argv[idx], &endptr, 10);
 
 		if (*endptr != '\0') {
+			print(context.sh, SHELL_ERROR,
+			      "Failed to parse channel: %s: endp: %s, err: %s\n",
+			      argv[idx],
+			      endptr,
+			      strerror(errno));
 			return -EINVAL;
 		}
 
@@ -475,8 +487,23 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 					       WIFI_FREQ_BAND_6_GHZ};
 			uint8_t band;
 			bool found = false;
+			char bands_str[MAX_BANDS_STR_LEN] = {0};
+			size_t offset = 0;
 
 			for (band = 0; band < ARRAY_SIZE(bands); band++) {
+				offset += snprintf(bands_str + offset,
+						  sizeof(bands_str) - offset,
+						  "%s%s",
+						  band ? "," : "",
+						  wifi_band_txt(bands[band]));
+				if (offset >= sizeof(bands_str)) {
+					print(context.sh, SHELL_ERROR,
+					      "Failed to parse channel: %s: "
+					      "band string too long\n",
+					      argv[idx]);
+					return -EINVAL;
+				}
+
 				if (wifi_utils_validate_chan(bands[band],
 							     channel)) {
 					found = true;
@@ -485,6 +512,10 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			}
 
 			if (!found) {
+				print(context.sh, SHELL_ERROR,
+				      "Invalid channel: %ld, checked bands: %s\n",
+				       channel,
+				       bands_str);
 				return -EINVAL;
 			}
 
@@ -517,6 +548,9 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 
 				if (security == WIFI_SECURITY_TYPE_NONE ||
 				    security == WIFI_SECURITY_TYPE_WPA_PSK) {
+					print(context.sh, SHELL_ERROR,
+					      "MFP not supported for security type %s\n",
+					      wifi_security_txt(security));
 					return -EINVAL;
 				}
 
@@ -532,6 +566,10 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		     params->psk_length > WIFI_PSK_MAX_LEN) ||
 		    (params->security == WIFI_SECURITY_TYPE_SAE &&
 		     params->psk_length > WIFI_SAE_PSWD_MAX_LEN)) {
+			print(context.sh, SHELL_ERROR,
+			      "Invalid PSK length (%d) for security type %s\n",
+			      params->psk_length,
+			      wifi_security_txt(params->security));
 			return -EINVAL;
 		}
 	}
@@ -546,13 +584,13 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
 
+	context.sh = sh;
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_INFRA)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
 
 	context.connecting = true;
-	context.sh = sh;
 
 	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
 		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
@@ -1231,12 +1269,11 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
+	context.sh = sh;
 	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
-
-	context.sh = sh;
 
 	k_mutex_init(&wifi_ap_sta_list_lock);
 
