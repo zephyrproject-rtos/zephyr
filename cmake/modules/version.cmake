@@ -33,8 +33,6 @@
 # Therefore `version.cmake` should not use include_guard(GLOBAL).
 # The final load of `version.cmake` will setup correct build version values.
 
-include(${ZEPHYR_BASE}/cmake/hex.cmake)
-
 if(NOT DEFINED VERSION_FILE AND NOT DEFINED VERSION_TYPE)
   set(VERSION_FILE ${ZEPHYR_BASE}/VERSION ${APPLICATION_SOURCE_DIR}/VERSION)
   set(VERSION_TYPE KERNEL                 APP)
@@ -74,8 +72,8 @@ foreach(type file IN ZIP_LISTS VERSION_TYPE VERSION_FILE)
   math(EXPR ${type}_VERSION_NUMBER_INT "(${MAJOR} << 16) + (${MINOR} << 8)  + (${PATCH})")
   math(EXPR ${type}VERSION_INT         "(${MAJOR} << 24) + (${MINOR} << 16) + (${PATCH} << 8) + (${TWEAK})")
 
-  to_hex(${${type}_VERSION_NUMBER_INT} ${type}_VERSION_NUMBER)
-  to_hex(${${type}VERSION_INT}         ${type}VERSION)
+  math(EXPR ${type}_VERSION_NUMBER "${${type}_VERSION_NUMBER_INT}"  OUTPUT_FORMAT HEXADECIMAL)
+  math(EXPR ${type}VERSION         "${${type}VERSION_INT}"          OUTPUT_FORMAT HEXADECIMAL)
 
   if(${type}_VERSION_EXTRA)
     set(${type}_VERSION_STRING     "${${type}_VERSION_WITHOUT_TWEAK}-${${type}_VERSION_EXTRA}")
