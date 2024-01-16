@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
 testsuite_filename_mock = mock.PropertyMock(return_value='test_data.yaml')
 
 def pytest_configure(config):
+    config.addinivalue_line("markers", "noclearlog: disable the clear_log autouse fixture")
     config.addinivalue_line("markers", "noclearout: disable the provide_out autouse fixture")
 
 @pytest.fixture(name='zephyr_base')
@@ -35,8 +36,13 @@ def zephyr_base_directory():
 def zephyr_test_directory():
     return TEST_DATA
 
-@pytest.fixture
-def clear_log():
+@pytest.fixture(autouse=True)
+def clear_log(request):
+    # As this fixture is autouse, one can use the pytest.mark.noclearlog decorator
+    # in order to be sure that this fixture's code will not fire.
+    if 'noclearlog' in request.keywords:
+        return
+
     # clear_log is used by pytest fixture
     # However, clear_log_in_test is prepared to be used directly in the code, wherever required
     clear_log_in_test()
