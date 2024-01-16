@@ -12,7 +12,6 @@
  * Linker script for the ae350 platform
  */
 
-#include <soc.h>
 #include <zephyr/devicetree.h>
 
 #include <zephyr/linker/sections.h>
