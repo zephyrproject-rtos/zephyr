@@ -457,11 +457,11 @@ static void arp_gratuitous(struct net_if *iface,
 	}
 }
 
-static void arp_update(struct net_if *iface,
-		       struct in_addr *src,
-		       struct net_eth_addr *hwaddr,
-		       bool gratuitous,
-		       bool force)
+void net_arp_update(struct net_if *iface,
+		    struct in_addr *src,
+		    struct net_eth_addr *hwaddr,
+		    bool gratuitous,
+		    bool force)
 {
 	struct arp_entry *entry;
 	struct net_pkt *pkt;
@@ -647,10 +647,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				/* If the IP address is in our cache,
 				 * then update it here.
 				 */
-				arp_update(net_pkt_iface(pkt),
-					   (struct in_addr *)arp_hdr->src_ipaddr,
-					   &arp_hdr->src_hwaddr,
-					   true, false);
+				net_arp_update(net_pkt_iface(pkt),
+					       (struct in_addr *)arp_hdr->src_ipaddr,
+					       &arp_hdr->src_hwaddr,
+					       true, false);
 				break;
 			}
 		}
@@ -689,10 +689,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				net_sprint_ll_addr((uint8_t *)&arp_hdr->src_hwaddr,
 						   arp_hdr->hwlen));
 
-			arp_update(net_pkt_iface(pkt),
-				   (struct in_addr *)arp_hdr->src_ipaddr,
-				   &arp_hdr->src_hwaddr,
-				   false, true);
+			net_arp_update(net_pkt_iface(pkt),
+				       (struct in_addr *)arp_hdr->src_ipaddr,
+				       &arp_hdr->src_hwaddr,
+				       false, true);
 
 			dst_hw_addr = &arp_hdr->src_hwaddr;
 		} else {
@@ -711,10 +711,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 
 	case NET_ARP_REPLY:
 		if (net_ipv4_is_my_addr((struct in_addr *)arp_hdr->dst_ipaddr)) {
-			arp_update(net_pkt_iface(pkt),
-				   (struct in_addr *)arp_hdr->src_ipaddr,
-				   &arp_hdr->src_hwaddr,
-				   false, false);
+			net_arp_update(net_pkt_iface(pkt),
+				       (struct in_addr *)arp_hdr->src_ipaddr,
+				       &arp_hdr->src_hwaddr,
+				       false, false);
 		}
 
 		break;
