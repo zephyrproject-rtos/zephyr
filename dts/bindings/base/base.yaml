@@ -3,6 +3,10 @@
 include: [pm.yaml]
 
 properties:
+  zephyr,device-type:
+    type: string
+    description: indicates the device type.
+
   status:
     type: string
     description: indicates the operational status of a device
