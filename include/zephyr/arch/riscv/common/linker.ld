@@ -11,7 +11,6 @@
  * Generic Linker script for the riscv platform
  */
 
-#include <soc.h>
 #include <zephyr/devicetree.h>
 
 #include <zephyr/linker/sections.h>
