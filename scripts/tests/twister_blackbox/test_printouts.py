@@ -167,7 +167,6 @@ class TestPrintOuts:
         assert expected in out
         assert str(sys_exit.value) == '0'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test_path, test_platforms',
         TESTDATA_4,
@@ -204,7 +203,6 @@ class TestPrintOuts:
             assert False, f'No timestamp in line {err_lines}'
         assert str(sys_exit.value) == '0'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'flag',
         ['--abcd', '--1234', '-%', '-1']
@@ -226,7 +224,6 @@ class TestPrintOuts:
         else:
             assert str(sys_exit.value) == '2'
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'flag',
         ['--help', '-h']

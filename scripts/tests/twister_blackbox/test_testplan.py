@@ -53,7 +53,6 @@ class TestTestPlan:
     def teardown_class(cls):
         pass
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'level, expected_tests',
         TESTDATA_1,
@@ -86,7 +85,6 @@ class TestTestPlan:
 
         assert expected_tests == len(filtered_j)
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test, expected_exception, expected_subtest_count',
         TESTDATA_2,
@@ -120,8 +118,6 @@ class TestTestPlan:
         assert str(exc.value) == '0'
         assert len(filtered_j) == expected_subtest_count
 
-
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'filter, expected_count',
         TESTDATA_3,
@@ -152,7 +148,6 @@ class TestTestPlan:
 
         assert expected_count == len(filtered_j)
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'integration, expected_count',
         TESTDATA_4,
