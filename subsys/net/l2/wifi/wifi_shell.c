@@ -442,7 +442,8 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 }
 
 static int __wifi_args_to_params(size_t argc, char *argv[],
-				struct wifi_connect_req_params *params)
+				struct wifi_connect_req_params *params,
+				enum wifi_iface_mode iface_mode)
 {
 	char *endptr;
 	int idx = 1;
@@ -470,8 +471,26 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			return -EINVAL;
 		}
 
-		if (params->channel == 0U) {
+		if (iface_mode == WIFI_MODE_INFRA && params->channel == 0) {
 			params->channel = WIFI_CHANNEL_ANY;
+		} else {
+			const uint8_t bands[] = {WIFI_FREQ_BAND_2_4_GHZ,
+					       WIFI_FREQ_BAND_5_GHZ,
+					       WIFI_FREQ_BAND_6_GHZ};
+			uint8_t band;
+			bool found = false;
+
+			for (band = 0; band < ARRAY_SIZE(bands); band++) {
+				if (wifi_utils_validate_chan(bands[band],
+							     params->channel)) {
+					found = true;
+					break;
+				}
+			}
+
+			if (!found) {
+				return -EINVAL;
+			}
 		}
 
 		idx++;
@@ -530,7 +549,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_connect_req_params cnx_params = { 0 };
 
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_INFRA)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -1223,7 +1242,7 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	static struct wifi_connect_req_params cnx_params;
 	int ret;
 
-	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params, WIFI_MODE_AP)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
