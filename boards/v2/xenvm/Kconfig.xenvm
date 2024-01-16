@@ -2,6 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_XENVM
-	bool "Xen Virtual Machine"
-	depends on SOC_XENVM
-	select ARM64
+	select SOC_XENVM
