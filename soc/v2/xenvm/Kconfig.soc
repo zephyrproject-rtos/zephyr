@@ -1,0 +1,8 @@
+# Copyright 2020 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XENVM
+	bool
+
+config SOC
+	default "xenvm" if SOC_XENVM
