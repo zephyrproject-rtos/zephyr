@@ -102,13 +102,13 @@ display the following ram console output:
     thread_b: Hello World from cpu 0 on roc_rk3568_pc!
 
 
-roc_rk3568_pc_smp support, use this configuration to run Zephyr smp applications and subsys tests,
+``roc_rk3568_pc//smp`` support, use this configuration to run Zephyr smp applications and subsys tests,
 for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: roc_rk3568_pc_smp
+   :board: roc_rk3568_pc//smp
    :goals: run
 
 This will build an image with the shell_module sample app, boot it and
