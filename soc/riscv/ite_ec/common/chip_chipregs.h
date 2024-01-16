@@ -1073,6 +1073,11 @@ struct gpio_it8xxx2_regs {
 #define IT8XXX2_GPIO_GPH1VS                BIT(1)
 #define IT8XXX2_GPIO_GPH2VS                BIT(0)
 
+#define KSIX_KSOX_KBS_GPIO_MODE     BIT(7)
+#define KSIX_KSOX_GPIO_OUTPUT       BIT(6)
+#define KSIX_KSOX_GPIO_PULLUP       BIT(2)
+#define KSIX_KSOX_GPIO_PULLDOWN     BIT(1)
+
 #define GPCR_PORT_PIN_MODE_INPUT    BIT(7)
 #define GPCR_PORT_PIN_MODE_OUTPUT   BIT(6)
 #define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
