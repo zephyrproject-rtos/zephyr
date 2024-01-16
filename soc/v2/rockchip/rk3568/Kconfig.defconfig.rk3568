@@ -4,9 +4,6 @@
 
 if SOC_RK3568
 
-config SOC
-	default "rk3568"
-
 config FLASH_SIZE
 	default 0
 
