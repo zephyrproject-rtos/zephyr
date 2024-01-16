@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Linaro Limited
  * Copyright (c) 2016 Intel Corporation
  *
@@ -60,6 +60,9 @@ static const struct flash_parameters flash_nrf_parameters = {
 	.write_block_size = 4,
 #endif
 	.erase_value = 0xff,
+	.caps = {
+		.explicit_erase = true,
+	},
 };
 
 #if defined(CONFIG_MULTITHREADING)
