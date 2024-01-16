@@ -618,6 +618,8 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			 */
 			sub_params->ccc_handle = attr->handle + 2;
 			sub_params->notify = aics_client_notify_handler;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err != 0 && err != -EALREADY) {
 				LOG_ERR("Failed to subscribe: %d", err);
@@ -650,16 +652,6 @@ static void aics_client_reset(struct bt_aics *inst)
 
 	if (inst->cli.conn != NULL) {
 		struct bt_conn *conn = inst->cli.conn;
-
-		/* It's okay if these fail. In case of disconnect, we can't
-		 * unsubscribe and they will just fail.
-		 * In case that we reset due to another call of the discover
-		 * function, we will unsubscribe (regardless of bonding state)
-		 * to accommodate the new discovery values.
-		 */
-		(void)bt_gatt_unsubscribe(conn, &inst->cli.state_sub_params);
-		(void)bt_gatt_unsubscribe(conn, &inst->cli.status_sub_params);
-		(void)bt_gatt_unsubscribe(conn, &inst->cli.desc_sub_params);
 
 		bt_conn_unref(conn);
 		inst->cli.conn = NULL;
@@ -711,7 +703,6 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 
 	(void)memset(&inst->cli.discover_params, 0, sizeof(inst->cli.discover_params));
 
-	inst->cli.conn = bt_conn_ref(conn);
 	inst->cli.discover_params.start_handle = param->start_handle;
 	inst->cli.discover_params.end_handle = param->end_handle;
 	inst->cli.discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
@@ -722,6 +713,7 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 		LOG_DBG("Discover failed (err %d)", err);
 	} else {
 		inst->cli.busy = true;
+		inst->cli.conn = bt_conn_ref(conn);
 	}
 
 	return err;

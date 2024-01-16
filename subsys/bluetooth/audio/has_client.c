@@ -425,6 +425,8 @@ static void active_index_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 static int active_index_subscribe(struct bt_has_client *inst, uint16_t value_handle)
 {
+	int err;
+
 	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->active_index_subscription.notify = active_preset_notify_cb;
@@ -436,7 +438,12 @@ static int active_index_subscribe(struct bt_has_client *inst, uint16_t value_han
 	inst->active_index_subscription.value = BT_GATT_CCC_NOTIFY;
 	atomic_set_bit(inst->active_index_subscription.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-	return bt_gatt_subscribe(inst->conn, &inst->active_index_subscription);
+	err = bt_gatt_subscribe(inst->conn, &inst->active_index_subscription);
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
+
+	return 0;
 }
 
 static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
@@ -520,6 +527,8 @@ fail:
 static int control_point_subscribe(struct bt_has_client *inst, uint16_t value_handle,
 				   uint8_t properties)
 {
+	int err;
+
 	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->control_point_subscription.notify = control_point_notify_cb;
@@ -536,7 +545,12 @@ static int control_point_subscribe(struct bt_has_client *inst, uint16_t value_ha
 		inst->control_point_subscription.value = BT_GATT_CCC_INDICATE;
 	}
 
-	return bt_gatt_subscribe(inst->conn, &inst->control_point_subscription);
+	err = bt_gatt_subscribe(inst->conn, &inst->control_point_subscription);
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
+
+	return 0;
 }
 
 static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -709,6 +723,8 @@ static uint8_t features_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe
 
 static int features_subscribe(struct bt_has_client *inst, uint16_t value_handle)
 {
+	int err;
+
 	LOG_DBG("conn %p handle 0x%04x", (void *)inst->conn, value_handle);
 
 	inst->features_subscription.notify = features_notify_cb;
@@ -720,7 +736,12 @@ static int features_subscribe(struct bt_has_client *inst, uint16_t value_handle)
 	inst->features_subscription.value = BT_GATT_CCC_NOTIFY;
 	atomic_set_bit(inst->features_subscription.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-	return bt_gatt_subscribe(inst->conn, &inst->features_subscription);
+	err = bt_gatt_subscribe(inst->conn, &inst->features_subscription);
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
+
+	return 0;
 }
 
 static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,

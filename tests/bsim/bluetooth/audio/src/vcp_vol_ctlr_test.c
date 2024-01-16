@@ -832,6 +832,16 @@ static void test_discover(void)
 	}
 
 	WAIT_FOR_COND(g_discovery_complete);
+
+	/* Verify that we can discover again */
+	g_discovery_complete = false;
+	err = bt_vcp_vol_ctlr_discover(default_conn, &vol_ctlr);
+	if (err != 0) {
+		FAIL("Failed to discover VCP for the second time: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_COND(g_discovery_complete);
 }
 
 static void test_included_get(void)

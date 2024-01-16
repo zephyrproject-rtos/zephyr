@@ -19,6 +19,7 @@
 struct mcs_instance_t *lookup_inst_by_conn(struct bt_conn *conn);
 
 struct mcs_instance_t {
+	struct bt_conn *conn;
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t player_name_handle;

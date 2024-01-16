@@ -1611,6 +1611,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	struct bt_bap_unicast_client_ep *client_ep;
+	int err;
 
 	client_ep = CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
 
@@ -1628,7 +1629,12 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 	client_ep->subscribe.value = BT_GATT_CCC_NOTIFY;
 	atomic_set_bit(client_ep->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-	return bt_gatt_subscribe(conn, &client_ep->subscribe);
+	err = bt_gatt_subscribe(conn, &client_ep->subscribe);
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
+
+	return 0;
 }
 
 static void pac_record_cb(struct bt_conn *conn, const struct bt_audio_codec_cap *codec_cap)
@@ -1718,7 +1724,7 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		atomic_set_bit(client->cp_subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 		err = bt_gatt_subscribe(conn, &client->cp_subscribe);
-		if (err != 0) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Failed to subscribe: %d", err);
 
 			discover_cb(conn, err);
@@ -3510,6 +3516,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 			sub_params->disc_params = &uni_cli_insts[index].avail_ctx_cc_disc;
 			sub_params->notify = unicast_client_pacs_avail_ctx_notify_cb;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err != 0 && err != -EALREADY) {
@@ -3708,6 +3715,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		sub_params->disc_params = &uni_cli_insts[index].loc_cc_disc;
 		sub_params->notify = unicast_client_pacs_location_notify_cb;
 		sub_params->value = BT_GATT_CCC_NOTIFY;
+		atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 		err = bt_gatt_subscribe(conn, sub_params);
 		if (err != 0 && err != -EALREADY) {

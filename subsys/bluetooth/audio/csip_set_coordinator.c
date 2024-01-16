@@ -747,6 +747,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 				sub_params->end_handle = cur_inst->end_handle;
 				sub_params->value_handle = chrc->value_handle;
 				sub_params->notify = notify_handler;
+				atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 				err = bt_gatt_subscribe(conn, sub_params);
 				if (err != 0 && err != -EALREADY) {
@@ -1341,20 +1342,6 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 
 		if (svc_inst->conn != NULL) {
 			struct bt_conn *conn = svc_inst->conn;
-
-			/* It's okay if these fail. In case of disconnect,
-			 * we can't unsubscribe and they will just fail.
-			 * In case that we reset due to another call of the
-			 * discover function, we will unsubscribe (regardless of
-			 * bonding state) to accommodate the new discovery
-			 * values.
-			 */
-			(void)bt_gatt_unsubscribe(conn,
-						  &svc_inst->sirk_sub_params);
-			(void)bt_gatt_unsubscribe(conn,
-						  &svc_inst->size_sub_params);
-			(void)bt_gatt_unsubscribe(conn,
-						  &svc_inst->lock_sub_params);
 
 			bt_conn_unref(conn);
 			svc_inst->conn = NULL;

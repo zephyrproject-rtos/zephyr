@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 #define MINIMUM_RECV_STATE_LEN          15
 
 struct bap_broadcast_assistant_instance {
-	bool discovering;
+	struct bt_conn *conn;
 	bool scanning;
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
@@ -61,7 +61,6 @@ struct bap_broadcast_assistant_instance {
 	struct bt_gatt_discover_params disc_params;
 
 	struct k_work_delayable bap_read_work;
-	struct bt_conn *conn;
 	uint16_t long_read_handle;
 };
 
@@ -431,8 +430,8 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	if (cb_err != 0) {
 		LOG_DBG("err: %d", cb_err);
-		if (broadcast_assistant.discovering) {
-			broadcast_assistant.discovering = false;
+		if (broadcast_assistant.busy) {
+			broadcast_assistant.busy = false;
 			if (broadcast_assistant_cbs != NULL &&
 			    broadcast_assistant_cbs->discover != NULL) {
 				broadcast_assistant_cbs->discover(conn,
@@ -447,8 +446,8 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			}
 		}
 	} else if (handle == last_handle) {
-		if (broadcast_assistant.discovering) {
-			broadcast_assistant.discovering = false;
+		if (broadcast_assistant.busy) {
+			broadcast_assistant.busy = false;
 			if (broadcast_assistant_cbs != NULL &&
 			    broadcast_assistant_cbs->discover != NULL) {
 				broadcast_assistant_cbs->discover(
@@ -486,8 +485,6 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 static void discover_init(void)
 {
-	(void)memset(&broadcast_assistant, 0, sizeof(broadcast_assistant));
-
 	k_work_init_delayable(&broadcast_assistant.bap_read_work, delayed_bap_read_handler);
 
 	net_buf_simple_reset(&att_buf);
@@ -512,7 +509,7 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 
 		err = bt_bap_broadcast_assistant_read_recv_state(conn, 0);
 		if (err != 0) {
-			broadcast_assistant.discovering = false;
+			broadcast_assistant.busy = false;
 			if (broadcast_assistant_cbs != NULL &&
 			    broadcast_assistant_cbs->discover != NULL) {
 				broadcast_assistant_cbs->discover(conn, err, 0);
@@ -552,13 +549,14 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
 			sub_params->notify = notify_handler;
-			err = bt_gatt_subscribe(conn, sub_params);
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
-			if (err != 0 && err != -EALREADY) {
+			err = bt_gatt_subscribe(conn, sub_params);
+			if (err != 0) {
 				LOG_DBG("Could not subscribe to handle 0x%04x: %d",
 					sub_params->value_handle, err);
 
-				broadcast_assistant.discovering = false;
+				broadcast_assistant.busy = false;
 				if (broadcast_assistant_cbs != NULL &&
 				    broadcast_assistant_cbs->discover != NULL) {
 					broadcast_assistant_cbs->discover(conn,
@@ -585,7 +583,7 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 		LOG_DBG("Could not discover BASS");
 		(void)memset(params, 0, sizeof(*params));
 
-		broadcast_assistant.discovering = false;
+		broadcast_assistant.busy = false;
 
 		if (broadcast_assistant_cbs != NULL &&
 		    broadcast_assistant_cbs->discover != NULL) {
@@ -612,7 +610,7 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 		err = bt_gatt_discover(conn, &broadcast_assistant.disc_params);
 		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
-			broadcast_assistant.discovering = false;
+			broadcast_assistant.busy = false;
 
 			if (broadcast_assistant_cbs != NULL &&
 			    broadcast_assistant_cbs->discover != NULL) {
@@ -759,15 +757,55 @@ static struct bt_le_scan_cb scan_cb = {
 
 static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *inst)
 {
-	broadcast_assistant.long_read_handle = 0;
-	(void)k_work_cancel_delayable(&broadcast_assistant.bap_read_work);
+	inst->busy = false;
+	inst->scanning = false;
+	inst->pa_sync = 0U;
+	inst->recv_state_cnt = 0U;
+	inst->start_handle = 0U;
+	inst->end_handle = 0U;
+	inst->cp_handle = 0U;
+	inst->long_read_handle = 0;
+	(void)k_work_cancel_delayable(&inst->bap_read_work);
+
+	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
+		inst->src_ids[i] = 0U;
+		inst->past_avail[i] = false;
+		inst->recv_state_handles[i] = 0U;
+	}
 
 	if (inst->conn != NULL) {
 		struct bt_conn *conn = inst->conn;
+		struct bt_conn_info info;
+		int err;
+
+		err = bt_conn_get_info(conn, &info);
+		if (err != 0) {
+			return err;
+		}
+
+		if (info.state == BT_CONN_STATE_CONNECTED) {
+			for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_state_sub_params); i++) {
+				/* It's okay if this fail with -EINVAL as that means that they are
+				 * not currently subscribed
+				 */
+				err = bt_gatt_unsubscribe(conn, &inst->recv_state_sub_params[i]);
+				if (err != 0 && err != -EINVAL) {
+					LOG_DBG("Failed to unsubscribe to state: %d", err);
+
+					return err;
+				}
+			}
+		}
 
 		bt_conn_unref(conn);
 		inst->conn = NULL;
 	}
+
+	/* The subscribe parameters must remain instact so they can get cleaned up by GATT */
+	memset(&inst->disc_params, 0, sizeof(inst->disc_params));
+	memset(&inst->recv_state_disc_params, 0, sizeof(inst->recv_state_disc_params));
+	memset(&inst->read_params, 0, sizeof(inst->read_params));
+	memset(&inst->write_params, 0, sizeof(inst->write_params));
 
 	return 0;
 }
@@ -817,7 +855,7 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 		return err;
 	}
 
-	broadcast_assistant.discovering = true;
+	broadcast_assistant.busy = true;
 	broadcast_assistant.conn = bt_conn_ref(conn);
 
 	return 0;
