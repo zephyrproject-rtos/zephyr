@@ -325,6 +325,9 @@ Libraries / Subsystems
   * Fixed an issue whereby the ``mcuboot erase`` DFU shell command could be used to erase the
     MCUboot or currently running application slot.
 
+  * Fixed an issue whereby messages that were too large to be sent over the UDP transport would
+    wrongly return :c:enum:`MGMT_ERR_EINVAL` instead of :c:enum:`MGMT_ERR_EMSGSIZE`.
+
 * File systems
 
 * Modem modules
