@@ -62,6 +62,7 @@ struct dhcp_msg {
 #define DHCPV4_OPTIONS_REQ_LIST		55
 #define DHCPV4_OPTIONS_RENEWAL		58
 #define DHCPV4_OPTIONS_REBINDING	59
+#define DHCPV4_OPTIONS_CLIENT_ID	61
 #define DHCPV4_OPTIONS_END		255
 
 /* Useful size macros */
@@ -141,5 +142,15 @@ static inline bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 }
 
 #endif /* CONFIG_NET_DHCPV4 && CONFIG_NET_DHCPV4_ACCEPT_UNICAST */
+
+#if defined(CONFIG_NET_DHCPV4_SERVER)
+
+void net_dhcpv4_server_init(void);
+
+#else
+
+#define net_dhcpv4_server_init()
+
+#endif /* CONFIG_NET_DHCPV4_SERVER */
 
 #endif /* __INTERNAL_DHCPV4_H */
