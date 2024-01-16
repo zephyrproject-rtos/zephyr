@@ -39,7 +39,6 @@ class TestError:
     def teardown_class(cls):
         pass
 
-    @pytest.mark.usefixtures("clear_log")
     @pytest.mark.parametrize(
         'test, expected_exception',
         TESTDATA_1,
