@@ -36,6 +36,7 @@ endif()
 
 zephyr_library()
 add_subdirectory_ifdef(CONFIG_GETOPT getopt)
+add_subdirectory_ifdef(CONFIG_SHELL shell)
 zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 zephyr_library_sources_ifdef(CONFIG_FNMATCH fnmatch.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_API perror.c)
