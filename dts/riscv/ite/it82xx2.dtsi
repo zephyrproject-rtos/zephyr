@@ -390,6 +390,7 @@
 				      NO_FUNC 0
 				      NO_FUNC 0>;
 			interrupt-parent = <&intc>;
+			keyboard-controller;
 			#gpio-cells = <2>;
 		};
 
@@ -411,6 +412,7 @@
 				      NO_FUNC 0
 				      NO_FUNC 0>;
 			interrupt-parent = <&intc>;
+			keyboard-controller;
 			#gpio-cells = <2>;
 		};
 
@@ -432,6 +434,7 @@
 				      NO_FUNC 0
 				      NO_FUNC 0>;
 			interrupt-parent = <&intc>;
+			keyboard-controller;
 			#gpio-cells = <2>;
 		};
 
