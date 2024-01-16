@@ -57,8 +57,8 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define CMD_OGF			1
 #define CMD_OCF			2
-
-#define SPI_MAX_MSG_LEN		255
+/* packet type (1) + opcode (2) + Parameter Total Length (1) + max parameter length (255) */
+#define SPI_MAX_MSG_LEN		259
 
 /* Single byte header denoting the buffer type */
 #define H4_HDR_SIZE 1
@@ -462,6 +462,8 @@ static int bt_spi_send(struct net_buf *buf)
 	uint16_t size;
 	uint8_t rx_first[1];
 	int ret;
+	uint8_t *data_ptr;
+	uint16_t remaining_bytes;
 
 	LOG_DBG("");
 
@@ -485,21 +487,28 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Wait for SPI bus to be available */
 	k_sem_take(&sem_busy, K_FOREVER);
+	data_ptr = buf->data;
+	remaining_bytes = buf->len;
+	do {
+		ret = bt_spi_get_header(SPI_WRITE, &size);
+		size = MIN(remaining_bytes, size);
 
-	ret = bt_spi_get_header(SPI_WRITE, &size);
-	size = MIN(buf->len, size);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
 
-	if (size < buf->len) {
-		LOG_WRN("Unable to write full data, skipping");
-		size = 0;
-		ret = -ECANCELED;
-	}
+		if (size < remaining_bytes) {
+			LOG_WRN("Unable to write full data, skipping");
+			size = 0;
+			ret = -ECANCELED;
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2) */
 
-	if (!ret) {
-		/* Transmit the message */
-		ret = bt_spi_transceive(buf->data, size,
-						rx_first, 1);
-	}
+		if (!ret) {
+			/* Transmit the message */
+			ret = bt_spi_transceive(data_ptr, size, rx_first, 1);
+		}
+		remaining_bytes -= size;
+		data_ptr += size;
+	} while (remaining_bytes > 0 && !ret);
 
 	release_cs(size > 0);
 
