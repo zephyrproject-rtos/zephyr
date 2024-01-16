@@ -265,7 +265,7 @@ int32_t mdm_hl7800_power_off(void);
 /**
  * @brief Reset the HL7800 (and allow it to reconfigure).
  *
- * @return int32_t 0 for success
+ * @return int32_t >= 0 for success, < 0 for failure
  */
 int32_t mdm_hl7800_reset(void);
 

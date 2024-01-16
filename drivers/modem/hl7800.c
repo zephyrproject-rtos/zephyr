@@ -5621,20 +5621,16 @@ static void mdm_reset_work_callback(struct k_work *item)
 {
 	ARG_UNUSED(item);
 
-	mdm_hl7800_reset();
+	hl7800_lock();
+
+	(void)modem_reset_and_configure();
+
+	hl7800_unlock();
 }
 
 int32_t mdm_hl7800_reset(void)
 {
-	int ret;
-
-	hl7800_lock();
-
-	ret = modem_reset_and_configure();
-
-	hl7800_unlock();
-
-	return ret;
+	return k_work_reschedule_for_queue(&hl7800_workq, &iface_ctx.mdm_reset_work, K_NO_WAIT);
 }
 
 static void mdm_power_off_work_callback(struct k_work *item)
