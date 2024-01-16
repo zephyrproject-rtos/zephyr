@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test node with unique zephyr,device-type
+
+compatible: "test-unique-device-type"
+
+include: base.yaml
+
+properties:
+  zephyr,device-type:
+    default: test-unique-device-type-string
+    const: test-unique-device-type-string
