@@ -22,7 +22,7 @@ int walk_sockets(struct k_obj_core *obj_core, void *user_data)
 #if defined(CONFIG_THREAD_NAME)
 #define THREAD_NAME_LEN CONFIG_THREAD_MAX_NAME_LEN
 #else
-#define THREAD_NAME_LEN 16
+#define THREAD_NAME_LEN 23
 #endif
 	struct sock_obj_type_raw_stats stats = { 0 };
 	struct net_shell_user_data *data = user_data;
@@ -65,7 +65,7 @@ int walk_sockets(struct k_obj_core *obj_core, void *user_data)
 		count->opened++;
 	}
 
-	PR("%16s  %-12s  %c%c%c\t%-5s%-13d   %-10" PRId64 "%-10" PRId64 "\n",
+	PR("%25s  %-12s  %c%c%c\t%-5s%-13d   %-10" PRId64 "%-10" PRId64 "\n",
 	   thread_name, obj->reg->name,
 	   obj->socket_family == AF_INET6 ? '6' :
 	   (obj->socket_family ? '4' : ' '),
@@ -141,7 +141,7 @@ static int cmd_net_sockets(const struct shell *sh, size_t argc, char *argv[])
 	user_data.sh = sh;
 	user_data.user_data = &count;
 
-	PR("%16s  %-12s  %-5s\t%-5s%-14s  %-10s%-10s\n",
+	PR("%25s  %-12s  %-5s\t%-5s%-14s  %-10s%-10s\n",
 	   "Creator", "Name", "Flags", "FD", "Lifetime (ms)", "Sent",
 	   "Received");
 	PR("\n");
