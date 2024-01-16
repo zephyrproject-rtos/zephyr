@@ -60,7 +60,7 @@ Depending on the version of the GIC on your hardware, you may choose one of the
 following board configurations:
 
 - ``xenvm_defconfig`` selects GICv2
-- ``xenvm_gicv3_defconfig`` selects GICv3
+- ``xenvm_xenvm_gicv3_defconfig`` selects GICv3
 
 CPU Core type
 -------------
@@ -106,7 +106,7 @@ guest, for example, with the :zephyr:code-sample:`synchronization` sample:
 
 .. code-block::
 
-   $ west build -b xenvm_gicv3 samples/synchronization
+   $ west build -b xenvm//gicv3 samples/synchronization
 
 This will build an image with the synchronization sample app. Next, you need to
 create guest configuration file :code:`zephyr.conf`. There is example:
@@ -120,7 +120,7 @@ create guest configuration file :code:`zephyr.conf`. There is example:
    gic_version="v2"
    on_crash="preserve"
 
-When using ``xenvm_gicv3`` configuration, you need to remove the ``gic_version``
+When using ``xenvm//gicv3`` configuration, you need to remove the ``gic_version``
 parameter or set it to ``"v3"``.
 
 You need to upload both :code:`zephyr.bin` and :code:`zephyr.conf` to your Dom0
