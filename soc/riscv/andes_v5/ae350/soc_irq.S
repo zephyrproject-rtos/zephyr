@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc_v5.h"
+
 #include <offsets.h>
 #include <zephyr/toolchain.h>
-
-#include <soc.h>
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 
