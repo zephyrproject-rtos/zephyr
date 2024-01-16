@@ -160,6 +160,18 @@ config RISCV_SOC_OFFSETS
 	    in offsets.h. The last one should not end in a semicolon.
 	    See gen_offset.h for more details.
 
+config RISCV_HAS_PLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
+
+config RISCV_HAS_CLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
 	help
