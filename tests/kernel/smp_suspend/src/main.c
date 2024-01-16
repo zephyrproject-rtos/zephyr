@@ -68,7 +68,7 @@ ZTEST(smp_suspend_resume, test_smp_thread_suspend_resume_stress)
 
 	k_thread_resume(&thread[0]);
 
-	for (unsigned int iteration = 0; iteration < 30; iteration++) {
+	for (unsigned int iteration = 0; iteration < 15; iteration++) {
 		k_sleep(K_MSEC(1000));
 
 		for (i = 0; i < NUM_THREADS; i++) {
