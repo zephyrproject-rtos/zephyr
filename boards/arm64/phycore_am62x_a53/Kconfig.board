@@ -1,6 +1,0 @@
-# Copyright (c) 2023 Enphase Energy
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_PHYCORE_AM62X_A53
-	bool "PHYTEC phyCORE-AM62x A53"
-	depends on SOC_SERIES_AM6X_A53
