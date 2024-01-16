@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc_v5.h"
+
 #include <zephyr/toolchain.h>
-#include <soc.h>
 
 /* exports */
 GTEXT(entry)
