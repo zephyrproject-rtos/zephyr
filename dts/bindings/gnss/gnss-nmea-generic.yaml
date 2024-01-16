@@ -20,13 +20,3 @@ compatible: "gnss-nmea-generic"
 
 include:
   - uart-device.yaml
-
-properties:
-  nmea-timeout-ms:
-    type: int
-    default: 500
-    description: |
-      Synchronization timeout for NMEA sentences. The NMEA parser is expecting
-      to receive a GGA and RMC sentences within this time frame to publish a
-      location data. Set accordingly to the UART datarate and location
-      reporting frequency. Defaults to 500ms if unspecified.
