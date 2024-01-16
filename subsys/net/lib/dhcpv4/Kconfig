@@ -1,0 +1,46 @@
+# DHCPv4 server implementation for Zephyr
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_DHCPV4_SERVER
+	bool "DHCPv4 server"
+	depends on NET_IPV4 && NET_UDP
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
+
+if NET_DHCPV4_SERVER
+
+module = NET_DHCPV4_SERVER
+module-dep = NET_LOG
+module-str = Log level for DHCPv4 server
+module-help = Enables DHCPv4 server output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_DHCPV4_SERVER_INSTANCES
+	int "Maximum number of DHCPv4 server instances"
+	default 1
+	help
+	  Maximum number of DHCPv4 server instances supported by the system.
+	  Each network interface that wants to act as a DHCPv4 server requires
+	  a separate instance.
+
+config NET_DHCPV4_SERVER_ADDR_COUNT
+	int "Number of IPv4 addresses that can be assigned by the server"
+	default 4
+	help
+	  Maximum number of IPv4 addresses that can be assigned by the DHCPv4
+	  server instance. The base IPv4 address in the address pool is provided
+	  at runtime, during server initialization. Consecutive addresses in the
+	  pool have the lowest address octet incremented.
+
+config NET_DHCPV4_SERVER_ADDR_LEASE_TIME
+	int "Lease time for IPv4 addresses assigned by the server (seconds)"
+	default 86400
+	help
+	  Lease time in seconds for IPv4 addresses assigned by the server.
+	  The lease time determines when the IPv4 address lease expires if the
+	  client does not renew it.
+
+endif # NET_DHCPV4_SERVER
