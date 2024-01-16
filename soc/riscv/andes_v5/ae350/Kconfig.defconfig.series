@@ -24,9 +24,6 @@ config RISCV_GENERIC_TOOLCHAIN
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
-config RISCV_HAS_PLIC
-	default y
-
 config RISCV_GP
 	default y
 

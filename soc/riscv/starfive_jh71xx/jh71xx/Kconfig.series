@@ -5,5 +5,6 @@ config SOC_SERIES_STARFIVE_JH71XX
 	bool "Starfive JH71XX series"
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
 	help
 	  Enable support for Starfive JH71XX SoC Series.

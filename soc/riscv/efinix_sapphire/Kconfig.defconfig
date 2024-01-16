@@ -13,10 +13,6 @@ config RISCV_SOC_INTERRUPT_INIT
 	bool
 	default y
 
-config RISCV_HAS_PLIC
-	bool
-	default y
-
 config NUM_IRQS
 	int
 	default 36

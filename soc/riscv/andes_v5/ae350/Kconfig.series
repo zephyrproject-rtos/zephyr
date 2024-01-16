@@ -5,6 +5,7 @@ config SOC_SERIES_ANDES_AE350
 	bool "Andes V5 AE350 SoC Series Implementation"
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
 	select SOC_FAMILY_ANDES_V5
 	help
 	  Enable support for Andes V5 AE350 SoC Series
