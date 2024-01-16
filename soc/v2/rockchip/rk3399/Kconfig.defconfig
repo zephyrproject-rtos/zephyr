@@ -6,9 +6,6 @@
 
 if SOC_SERIES_RK3399
 
-config SOC_SERIES
-	default "rk3399"
-
-source "soc/arm64/rockchip/rk3399/Kconfig.defconfig.rk3399"
+rsource "Kconfig.defconfig.rk3399"
 
 endif # SOC_SERIES_RK3399
