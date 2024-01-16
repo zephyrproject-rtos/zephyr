@@ -8,5 +8,6 @@ config SOC_SERIES_MIV
 	select SOC_FAMILY_MICROCHIP_MIV
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
 	help
 	  Enable support for Microchip Mi-V
