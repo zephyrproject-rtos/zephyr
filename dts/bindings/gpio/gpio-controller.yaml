@@ -3,7 +3,12 @@
 
 # Common fields for GPIO controllers
 
+include: base.yaml
+
 properties:
+  zephyr,device-type:
+    default: gpio-controller
+    const: gpio-controller
   "gpio-controller":
     type: boolean
     required: true
