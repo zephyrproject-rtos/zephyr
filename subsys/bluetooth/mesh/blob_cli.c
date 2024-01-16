@@ -626,16 +626,15 @@ static void send_end(int err, void *user_data)
 
 static void info_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_INFO_GET, 0);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_INFO_GET);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_INFO_GET, 0);
 
 	tx(cli, dst, &buf);
 }
 
 static void xfer_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_XFER_START, 16);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_XFER_START);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_START, 16);
+
 	net_buf_simple_add_u8(&buf, cli->xfer->mode << 6);
 	net_buf_simple_add_le64(&buf, cli->xfer->id);
 	net_buf_simple_add_le32(&buf, cli->xfer->size);
@@ -647,16 +646,15 @@ static void xfer_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 
 static void xfer_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_XFER_GET, 0);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_XFER_GET);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_GET, 0);
 
 	tx(cli, dst, &buf);
 }
 
 static void xfer_cancel_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_XFER_CANCEL, 8);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_XFER_CANCEL);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_CANCEL, 8);
+
 	net_buf_simple_add_le64(&buf, cli->xfer->id);
 
 	tx(cli, dst, &buf);
@@ -664,8 +662,8 @@ static void xfer_cancel_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 
 static void block_start_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_START, 4);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_BLOCK_START);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_START, 4);
+
 	net_buf_simple_add_le16(&buf, cli->block.number);
 	net_buf_simple_add_le16(&buf, cli->xfer->chunk_size);
 
@@ -696,8 +694,7 @@ static void chunk_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 
 static void block_get_tx(struct bt_mesh_blob_cli *cli, uint16_t dst)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_GET, 0);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_BLOCK_GET);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_GET, 0);
 
 	tx(cli, dst, &buf);
 }

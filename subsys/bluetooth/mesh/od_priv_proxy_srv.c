@@ -34,8 +34,7 @@ static int od_priv_proxy_store(bool delete)
 static int proxy_status_rsp(const struct bt_mesh_model *mod,
 			    struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_OD_PRIV_PROXY_STATUS, 1);
-	bt_mesh_model_msg_init(&buf, OP_OD_PRIV_PROXY_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_OD_PRIV_PROXY_STATUS, 1);
 
 	net_buf_simple_add_u8(&buf, bt_mesh_od_priv_proxy_get());
 

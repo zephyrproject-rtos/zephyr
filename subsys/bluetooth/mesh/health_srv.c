@@ -231,15 +231,13 @@ static int send_attention_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_STATUS, 1);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_ATTENTION_STATUS, 1);
 	struct bt_mesh_health_srv *srv = model->rt->user_data;
 	uint8_t time;
 
 	time = k_ticks_to_ms_floor32(
 		k_work_delayable_remaining_get(&srv->attn_timer)) / 1000U;
 	LOG_DBG("%u second%s", time, (time == 1U) ? "" : "s");
-
-	bt_mesh_model_msg_init(&msg, OP_ATTENTION_STATUS);
 
 	net_buf_simple_add_u8(&msg, time);
 
@@ -294,9 +292,7 @@ static int send_health_period_status(const struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_STATUS, 1);
-
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_PERIOD_STATUS, 1);
 
 	net_buf_simple_add_u8(&msg, model->pub->period_div);
 

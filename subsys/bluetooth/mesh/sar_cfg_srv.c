@@ -46,7 +46,7 @@ static int sar_tx_store(const struct bt_mesh_model *model, bool delete)
 static void transmitter_status(const struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SAR_CFG_TX_STATUS, BT_MESH_SAR_TX_LEN);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_TX_STATUS, BT_MESH_SAR_TX_LEN);
 	const struct bt_mesh_sar_tx *tx = &bt_mesh.sar_tx;
 
 	LOG_DBG("SAR TX {0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x}",
@@ -55,7 +55,6 @@ static void transmitter_status(const struct bt_mesh_model *model,
 		tx->unicast_retrans_int_step, tx->unicast_retrans_int_inc,
 		tx->multicast_retrans_count, tx->multicast_retrans_int);
 
-	bt_mesh_model_msg_init(&msg, OP_SAR_CFG_TX_STATUS);
 	bt_mesh_sar_tx_encode(&msg, tx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -66,14 +65,13 @@ static void transmitter_status(const struct bt_mesh_model *model,
 static void receiver_status(const struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SAR_CFG_RX_STATUS, BT_MESH_SAR_RX_LEN);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_SAR_CFG_RX_STATUS, BT_MESH_SAR_RX_LEN);
 	const struct bt_mesh_sar_rx *rx = &bt_mesh.sar_rx;
 
 	LOG_DBG("SAR RX {0x%02x 0x%02x 0x%02x 0x%02x 0x%02x}", rx->seg_thresh,
 		rx->ack_delay_inc, rx->discard_timeout, rx->rx_seg_int_step,
 		rx->ack_retrans_count);
 
-	bt_mesh_model_msg_init(&msg, OP_SAR_CFG_RX_STATUS);
 	bt_mesh_sar_rx_encode(&msg, rx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {

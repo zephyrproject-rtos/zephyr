@@ -276,9 +276,7 @@ static bool msg_send(uint16_t src, uint16_t dst)
 	int err;
 
 	k_sem_init(&sem, 0, 1);
-	BT_MESH_MODEL_BUF_DEFINE(msg, TEST_MSG_OP_1, 0);
-
-	bt_mesh_model_msg_init(&msg, TEST_MSG_OP_1);
+	BT_MESH_SIG_MODEL_OP_1_BUF_INIT(msg, TEST_MSG_OP_1, 0);
 
 	err = bt_mesh_trans_send(&tx, &msg, &cb, &sem);
 	if (err) {

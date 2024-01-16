@@ -72,6 +72,56 @@ struct bt_mesh_model;
 #define BT_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)                      \
 	NET_BUF_SIMPLE_DEFINE(_buf, BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
 
+/**
+ *  @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE
+ *	   and initialize with opcode.
+ *
+ *  @param _buf         Buffer name.
+ *  @param _op          Opcode of the message. Must be an integer constant.
+ *  @param _op_len	Length of opcode. Must be an integer constant.
+ *  @param _payload_len Length of the model message payload.
+ */
+#define BT_MESH_MODEL_BUF_INIT(_buf, _op, _op_len, _payload_len)			\
+	BUILD_ASSERT(BT_MESH_MODEL_OP_LEN(_op) == _op_len);				\
+	NET_BUF_SIMPLE_INIT(_buf,							\
+			    BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)),			\
+			    COND_CODE_1(IS_EQ(_op_len, 3),				\
+					((_op >> 16) & 0xFF, BT_BYTES_LIST_LE16(_op)),	\
+					(COND_CODE_1(IS_EQ(_op_len, 2),			\
+						     (BT_BYTES_LIST_BE16(_op)),		\
+						     (_op & 0xFF)))))
+/**
+ *  @brief Define a Mesh SIG model message buffer using @ref NET_BUF_SIMPLE_DEFINE
+ *	   and initialize with 1-octet opcode.
+ *
+ *  @param _buf         Buffer name.
+ *  @param _op          One octet opcode of the message. Must be an integer constant.
+ *  @param _payload_len Length of the model message payload.
+ */
+#define BT_MESH_SIG_MODEL_OP_1_BUF_INIT(_buf, _op, _payload_len)	\
+	BT_MESH_MODEL_BUF_INIT(_buf, _op, 1, _payload_len)
+
+/**
+ *  @brief Define a Mesh SIG model message buffer using @ref NET_BUF_SIMPLE_DEFINE
+ *	   and initialize with 2-octets opcode.
+ *
+ *  @param _buf         Buffer name.
+ *  @param _op          Two octets opcode of the message. Must be an integer constant.
+ *  @param _payload_len Length of the model message payload.
+ */
+#define BT_MESH_SIG_MODEL_OP_2_BUF_INIT(_buf, _op, _payload_len)	\
+	BT_MESH_MODEL_BUF_INIT(_buf, _op, 2, _payload_len)
+
+/**
+ *  @brief Define a Mesh Vendor model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
+ *
+ *  @param _buf         Buffer name.
+ *  @param _op          Three octets opcode of the message. Must be an integer constant.
+ *  @param _payload_len Length of the model message payload.
+ */
+#define BT_MESH_VND_MODEL_BUF_INIT(_buf, _op, _payload_len)		\
+	BT_MESH_MODEL_BUF_INIT(_buf, _op, 3, _payload_len)
+
 /** Message sending context. */
 struct bt_mesh_msg_ctx {
 	/** NetKey Index of the subnet to send the message on. */

@@ -190,13 +190,10 @@ const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 int bt_mesh_health_cli_attention_get(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
 				     uint8_t *attention)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_GET, 0);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_ATTENTION_GET, 0);
 	struct health_attention_param param = {
 		.attention = attention,
 	};
-
-	bt_mesh_model_msg_init(&msg, OP_ATTENTION_GET);
-
 	const struct bt_mesh_msg_rsp_ctx rsp = {
 		.ack = &cli->ack_ctx,
 		.op = OP_ATTENTION_STATUS,
@@ -210,12 +207,11 @@ int bt_mesh_health_cli_attention_get(struct bt_mesh_health_cli *cli, struct bt_m
 int bt_mesh_health_cli_attention_set(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
 				     uint8_t attention, uint8_t *updated_attention)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_SET, 1);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_ATTENTION_SET, 1);
 	struct health_attention_param param = {
 		.attention = updated_attention,
 	};
 
-	bt_mesh_model_msg_init(&msg, OP_ATTENTION_SET);
 	net_buf_simple_add_u8(&msg, attention);
 
 	const struct bt_mesh_msg_rsp_ctx rsp = {
@@ -231,9 +227,8 @@ int bt_mesh_health_cli_attention_set(struct bt_mesh_health_cli *cli, struct bt_m
 int bt_mesh_health_cli_attention_set_unack(struct bt_mesh_health_cli *cli,
 					   struct bt_mesh_msg_ctx *ctx, uint8_t attention)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_SET_UNREL, 1);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_ATTENTION_SET_UNREL, 1);
 
-	bt_mesh_model_msg_init(&msg, OP_ATTENTION_SET_UNREL);
 	net_buf_simple_add_u8(&msg, attention);
 
 	return bt_mesh_msg_send(cli->model, ctx, &msg);
@@ -242,12 +237,10 @@ int bt_mesh_health_cli_attention_set_unack(struct bt_mesh_health_cli *cli,
 int bt_mesh_health_cli_period_get(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
 				  uint8_t *divisor)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_GET, 0);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_PERIOD_GET, 0);
 	struct health_period_param param = {
 		.divisor = divisor,
 	};
-
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_GET);
 
 	const struct bt_mesh_msg_rsp_ctx rsp = {
 		.ack = &cli->ack_ctx,
@@ -262,12 +255,11 @@ int bt_mesh_health_cli_period_get(struct bt_mesh_health_cli *cli, struct bt_mesh
 int bt_mesh_health_cli_period_set(struct bt_mesh_health_cli *cli, struct bt_mesh_msg_ctx *ctx,
 				  uint8_t divisor, uint8_t *updated_divisor)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_SET, 1);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_PERIOD_SET, 1);
 	struct health_period_param param = {
 		.divisor = updated_divisor,
 	};
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_SET);
 	net_buf_simple_add_u8(&msg, divisor);
 
 	const struct bt_mesh_msg_rsp_ctx rsp = {
@@ -283,9 +275,8 @@ int bt_mesh_health_cli_period_set(struct bt_mesh_health_cli *cli, struct bt_mesh
 int bt_mesh_health_cli_period_set_unack(struct bt_mesh_health_cli *cli,
 					struct bt_mesh_msg_ctx *ctx, uint8_t divisor)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_SET_UNREL, 1);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_PERIOD_SET_UNREL, 1);
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_SET_UNREL);
 	net_buf_simple_add_u8(&msg, divisor);
 
 	return bt_mesh_msg_send(cli->model, ctx, &msg);
@@ -295,7 +286,7 @@ int bt_mesh_health_cli_fault_test(struct bt_mesh_health_cli *cli, struct bt_mesh
 				  uint16_t cid, uint8_t test_id, uint8_t *faults,
 				  size_t *fault_count)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_TEST, 3);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_FAULT_TEST, 3);
 	struct health_fault_param param = {
 		.cid = cid,
 		.expect_test_id = &test_id,
@@ -303,7 +294,6 @@ int bt_mesh_health_cli_fault_test(struct bt_mesh_health_cli *cli, struct bt_mesh
 		.fault_count = fault_count,
 	};
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_TEST);
 	net_buf_simple_add_u8(&msg, test_id);
 	net_buf_simple_add_le16(&msg, cid);
 
@@ -320,9 +310,8 @@ int bt_mesh_health_cli_fault_test(struct bt_mesh_health_cli *cli, struct bt_mesh
 int bt_mesh_health_cli_fault_test_unack(struct bt_mesh_health_cli *cli,
 					struct bt_mesh_msg_ctx *ctx, uint16_t cid, uint8_t test_id)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_TEST_UNREL, 3);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_FAULT_TEST_UNREL, 3);
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_TEST_UNREL);
 	net_buf_simple_add_u8(&msg, test_id);
 	net_buf_simple_add_le16(&msg, cid);
 
@@ -333,7 +322,7 @@ int bt_mesh_health_cli_fault_clear(struct bt_mesh_health_cli *cli, struct bt_mes
 				   uint16_t cid, uint8_t *test_id, uint8_t *faults,
 				   size_t *fault_count)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_CLEAR, 2);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_FAULT_CLEAR, 2);
 	struct health_fault_param param = {
 		.cid = cid,
 		.test_id = test_id,
@@ -341,7 +330,6 @@ int bt_mesh_health_cli_fault_clear(struct bt_mesh_health_cli *cli, struct bt_mes
 		.fault_count = fault_count,
 	};
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_CLEAR);
 	net_buf_simple_add_le16(&msg, cid);
 
 	const struct bt_mesh_msg_rsp_ctx rsp = {
@@ -358,9 +346,8 @@ int bt_mesh_health_cli_fault_clear(struct bt_mesh_health_cli *cli, struct bt_mes
 int bt_mesh_health_cli_fault_clear_unack(struct bt_mesh_health_cli *cli,
 					 struct bt_mesh_msg_ctx *ctx, uint16_t cid)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_CLEAR_UNREL, 2);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_FAULT_CLEAR_UNREL, 2);
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_CLEAR_UNREL);
 	net_buf_simple_add_le16(&msg, cid);
 
 	return bt_mesh_msg_send(cli->model, ctx, &msg);
@@ -370,7 +357,7 @@ int bt_mesh_health_cli_fault_get(struct bt_mesh_health_cli *cli, struct bt_mesh_
 				 uint16_t cid, uint8_t *test_id, uint8_t *faults,
 				 size_t *fault_count)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_GET, 2);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, OP_HEALTH_FAULT_GET, 2);
 	struct health_fault_param param = {
 		.cid = cid,
 		.test_id = test_id,
@@ -378,7 +365,6 @@ int bt_mesh_health_cli_fault_get(struct bt_mesh_health_cli *cli, struct bt_mesh_
 		.fault_count = fault_count,
 	};
 
-	bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_GET);
 	net_buf_simple_add_le16(&msg, cid);
 
 	const struct bt_mesh_msg_rsp_ctx rsp = {

@@ -44,8 +44,8 @@ static int handle_large_comp_data_get(const struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	BT_MESH_MODEL_BUF_DEFINE(rsp, OP_LARGE_COMP_DATA_STATUS,
-				 BT_MESH_MODEL_PAYLOAD_MAX);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, OP_LARGE_COMP_DATA_STATUS,
+					BT_MESH_MODEL_PAYLOAD_MAX);
 	uint8_t page;
 	size_t offset, total_size;
 	int err;
@@ -59,7 +59,6 @@ static int handle_large_comp_data_get(const struct bt_mesh_model *model,
 
 	LOG_DBG("page %u offset %u", page, offset);
 
-	bt_mesh_model_msg_init(&rsp, OP_LARGE_COMP_DATA_STATUS);
 	net_buf_simple_add_u8(&rsp, page);
 	net_buf_simple_add_le16(&rsp, offset);
 
@@ -106,8 +105,8 @@ static int handle_models_metadata_get(const struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	BT_MESH_MODEL_BUF_DEFINE(rsp, OP_MODELS_METADATA_STATUS,
-				 BT_MESH_MODEL_PAYLOAD_MAX);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, OP_MODELS_METADATA_STATUS,
+					BT_MESH_MODEL_PAYLOAD_MAX);
 	size_t offset, total_size;
 	uint8_t page;
 	int err;
@@ -129,7 +128,6 @@ static int handle_models_metadata_get(const struct bt_mesh_model *model,
 		page = 0U;
 	}
 
-	bt_mesh_model_msg_init(&rsp, OP_MODELS_METADATA_STATUS);
 	net_buf_simple_add_u8(&rsp, page);
 	net_buf_simple_add_le16(&rsp, offset);
 

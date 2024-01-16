@@ -107,8 +107,7 @@ static int onoff_status_send(const struct bt_mesh_model *model,
 {
 	uint32_t remaining;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_STATUS, 3);
-	bt_mesh_model_msg_init(&buf, OP_ONOFF_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_ONOFF_STATUS, 3);
 
 	remaining = k_ticks_to_ms_floor32(
 			    k_work_delayable_remaining_get(&onoff.work)) +
@@ -315,8 +314,8 @@ static int gen_onoff_send(bool val)
 		return -ENOENT;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, OP_ONOFF_SET_UNACK, 2);
-	bt_mesh_model_msg_init(&buf, OP_ONOFF_SET_UNACK);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, OP_ONOFF_SET_UNACK, 2);
+
 	net_buf_simple_add_u8(&buf, val);
 	net_buf_simple_add_u8(&buf, tid++);
 

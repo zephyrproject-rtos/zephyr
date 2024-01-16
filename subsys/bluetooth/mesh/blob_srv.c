@@ -189,9 +189,8 @@ static void block_report(struct bt_mesh_blob_srv *srv)
 
 	LOG_DBG("rx BLOB Timeout Timer: %i", k_work_delayable_is_pending(&srv->rx_timeout));
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_REPORT,
-				 BLOB_BLOCK_REPORT_STATUS_MSG_MAXLEN);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_BLOCK_REPORT);
+	BT_MESH_SIG_MODEL_OP_1_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_REPORT,
+					BLOB_BLOCK_REPORT_STATUS_MSG_MAXLEN);
 
 	count = pull_req_max(srv);
 
@@ -321,9 +320,8 @@ static void xfer_status_rsp(struct bt_mesh_blob_srv *srv,
 			    struct bt_mesh_msg_ctx *ctx,
 			    enum bt_mesh_blob_status status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_XFER_STATUS,
-				 BLOB_XFER_STATUS_MSG_MAXLEN);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_XFER_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_BLOB_OP_XFER_STATUS,
+					BLOB_XFER_STATUS_MSG_MAXLEN);
 
 	net_buf_simple_add_u8(&buf, ((status & BIT_MASK(4)) |
 				     (srv->state.xfer.mode << 6)));
@@ -358,9 +356,8 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 	uint32_t missing;
 	int i;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_STATUS,
-				 BLOB_BLOCK_STATUS_MSG_MAXLEN);
-	bt_mesh_model_msg_init(&buf, BT_MESH_BLOB_OP_BLOCK_STATUS);
+	BT_MESH_SIG_MODEL_OP_1_BUF_INIT(buf, BT_MESH_BLOB_OP_BLOCK_STATUS,
+					BLOB_BLOCK_STATUS_MSG_MAXLEN);
 
 	if (srv->phase == BT_MESH_BLOB_XFER_PHASE_INACTIVE ||
 	    srv->phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_START) {
@@ -817,8 +814,8 @@ static int handle_info_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_c
 
 	LOG_DBG("");
 
-	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_BLOB_OP_INFO_STATUS, 15);
-	bt_mesh_model_msg_init(&rsp, BT_MESH_BLOB_OP_INFO_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_BLOB_OP_INFO_STATUS, 15);
+
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MIN);
 	net_buf_simple_add_u8(&rsp, BLOB_BLOCK_SIZE_LOG_MAX);
 	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);

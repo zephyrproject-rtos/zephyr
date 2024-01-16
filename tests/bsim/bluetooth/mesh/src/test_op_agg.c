@@ -61,9 +61,8 @@ static int get_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 
 	get_rcvd_count++;
 
-	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_DUMMY_VND_MOD_STATUS_OP,
-				 BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
-	bt_mesh_model_msg_init(&msg, BT_MESH_DUMMY_VND_MOD_STATUS_OP);
+	BT_MESH_VND_MODEL_BUF_INIT(msg, BT_MESH_DUMMY_VND_MOD_STATUS_OP,
+				   BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
 
 	net_buf_simple_add_u8(&msg, seq);
 	memset(net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1), 0,
@@ -96,10 +95,8 @@ static int status_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_
 static int dummy_vnd_mod_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			     uint8_t seq)
 {
-	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_DUMMY_VND_MOD_GET_OP,
-				 BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
-
-	bt_mesh_model_msg_init(&msg, BT_MESH_DUMMY_VND_MOD_GET_OP);
+	BT_MESH_VND_MODEL_BUF_INIT(msg, BT_MESH_DUMMY_VND_MOD_GET_OP,
+				   BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
 
 	net_buf_simple_add_u8(&msg, seq);
 	memset(net_buf_simple_add(&msg, BT_MESH_DUMMY_VND_MOD_MSG_MINLEN - 1), 0,

@@ -195,8 +195,7 @@ static int handle_metadata_check(const struct bt_mesh_model *mod, struct bt_mesh
 	enum bt_mesh_dfu_effect effect;
 	uint8_t idx;
 
-	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFU_OP_UPDATE_METADATA_STATUS, 2);
-	bt_mesh_model_msg_init(&rsp, BT_MESH_DFU_OP_UPDATE_METADATA_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFU_OP_UPDATE_METADATA_STATUS, 2);
 
 	idx = net_buf_simple_pull_u8(buf);
 	status = metadata_check(srv, idx, buf, &effect);
@@ -220,8 +219,7 @@ static void update_status_rsp(struct bt_mesh_dfu_srv *srv,
 			      enum bt_mesh_dfu_status status,
 			      const struct bt_mesh_send_cb *send_cb)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_STATUS, 14);
-	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFU_OP_UPDATE_STATUS, 14);
 
 	net_buf_simple_add_u8(&buf, ((status & BIT_MASK(3)) |
 				     (srv->update.phase << 5)));

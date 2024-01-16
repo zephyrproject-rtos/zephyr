@@ -152,8 +152,8 @@ static void scan_status_send(struct bt_mesh_msg_ctx *ctx,
 			MSEC_PER_SEC;
 	}
 
-	BT_MESH_MODEL_BUF_DEFINE(rsp, RPR_OP_SCAN_STATUS, 4);
-	bt_mesh_model_msg_init(&rsp, RPR_OP_SCAN_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, RPR_OP_SCAN_STATUS, 4);
+
 	net_buf_simple_add_u8(&rsp, status);
 	net_buf_simple_add_u8(&rsp, srv.scan.state);
 	net_buf_simple_add_u8(&rsp, srv.scan.max_devs);
@@ -165,8 +165,8 @@ static void scan_status_send(struct bt_mesh_msg_ctx *ctx,
 static void link_status_send(struct bt_mesh_msg_ctx *ctx,
 			     enum bt_mesh_rpr_status status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_STATUS, 2);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, RPR_OP_LINK_STATUS, 2);
+
 	net_buf_simple_add_u8(&buf, status);
 	net_buf_simple_add_u8(&buf, srv.link.state);
 
@@ -177,8 +177,8 @@ static void link_report_send(void)
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.link.cli, true);
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_LINK_REPORT, 3);
-	bt_mesh_model_msg_init(&buf, RPR_OP_LINK_REPORT);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, RPR_OP_LINK_REPORT, 3);
+
 	net_buf_simple_add_u8(&buf, srv.link.status);
 	net_buf_simple_add_u8(&buf, srv.link.state);
 	if (srv.link.status == BT_MESH_RPR_ERR_LINK_CLOSED_BY_SERVER ||
@@ -232,8 +232,8 @@ static void scan_report_send(void)
 			continue;
 		}
 
-		BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_SCAN_REPORT, 23);
-		bt_mesh_model_msg_init(&buf, RPR_OP_SCAN_REPORT);
+		BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, RPR_OP_SCAN_REPORT, 23);
+
 		net_buf_simple_add_u8(&buf, dev->rssi);
 		net_buf_simple_add_mem(&buf, dev->uuid, 16);
 		net_buf_simple_add_le16(&buf, dev->oob);
@@ -261,9 +261,9 @@ static void scan_ext_report_send(void)
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.scan.cli, true);
 	int err;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_EXTENDED_SCAN_REPORT,
-				 19 + CONFIG_BT_MESH_RPR_SRV_AD_DATA_MAX);
-	bt_mesh_model_msg_init(&buf, RPR_OP_EXTENDED_SCAN_REPORT);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, RPR_OP_EXTENDED_SCAN_REPORT,
+					19 + CONFIG_BT_MESH_RPR_SRV_AD_DATA_MAX);
+
 	net_buf_simple_add_u8(&buf, BT_MESH_RPR_SUCCESS);
 	net_buf_simple_add_mem(&buf, srv.scan.dev->uuid, 16);
 
@@ -374,8 +374,8 @@ static void outbound_pdu_report_send(void)
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.link.cli, true);
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, RPR_OP_PDU_OUTBOUND_REPORT, 1);
-	bt_mesh_model_msg_init(&buf, RPR_OP_PDU_OUTBOUND_REPORT);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, RPR_OP_PDU_OUTBOUND_REPORT, 1);
+
 	net_buf_simple_add_u8(&buf, srv.link.tx_pdu);
 
 	LOG_DBG("%u", srv.link.tx_pdu);
@@ -400,8 +400,8 @@ static int inbound_pdu_send(struct net_buf_simple *buf,
 {
 	struct bt_mesh_msg_ctx ctx = LINK_CTX(&srv.link.cli, true);
 
-	BT_MESH_MODEL_BUF_DEFINE(msg, RPR_OP_PDU_REPORT, 66);
-	bt_mesh_model_msg_init(&msg, RPR_OP_PDU_REPORT);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(msg, RPR_OP_PDU_REPORT, 66);
+
 	net_buf_simple_add_u8(&msg, srv.link.rx_pdu);
 	net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
@@ -538,8 +538,8 @@ static const struct prov_bearer_cb prov_bearer_cb = {
 static int handle_scan_caps_get(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	BT_MESH_MODEL_BUF_DEFINE(rsp, RPR_OP_SCAN_CAPS_STATUS, 2);
-	bt_mesh_model_msg_init(&rsp, RPR_OP_SCAN_CAPS_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, RPR_OP_SCAN_CAPS_STATUS, 2);
+
 	net_buf_simple_add_u8(&rsp, CONFIG_BT_MESH_RPR_SRV_SCANNED_ITEMS_MAX);
 	net_buf_simple_add_u8(&rsp, true);
 

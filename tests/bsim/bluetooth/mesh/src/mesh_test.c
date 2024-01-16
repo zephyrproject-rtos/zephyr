@@ -439,8 +439,7 @@ int bt_mesh_test_send_async(uint16_t addr, const uint8_t *uuid, size_t len,
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
 	test_send_ctx.uuid = uuid;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_1, BT_MESH_TX_SDU_MAX);
-	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_1);
+	BT_MESH_SIG_MODEL_OP_1_BUF_INIT(buf, TEST_MSG_OP_1, BT_MESH_TX_SDU_MAX);
 
 	if (len > BT_MESH_MODEL_OP_LEN(TEST_MSG_OP_1)) {
 		net_buf_simple_add_u8(&buf, count);
@@ -522,8 +521,7 @@ int bt_mesh_test_send_ra(uint16_t addr, uint8_t *data, size_t len,
 	test_send_ctx.send_rel = 0;
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
 
-	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP_2, BT_MESH_TX_SDU_MAX);
-	bt_mesh_model_msg_init(&buf, TEST_MSG_OP_2);
+	BT_MESH_SIG_MODEL_OP_1_BUF_INIT(buf, TEST_MSG_OP_2, BT_MESH_TX_SDU_MAX);
 
 	net_buf_simple_add_mem(&buf, data, len);
 

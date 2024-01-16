@@ -103,8 +103,7 @@ static void receivers_status_rsp(struct bt_mesh_dfd_srv *srv,
 				 struct bt_mesh_msg_ctx *ctx,
 				 enum bt_mesh_dfd_status status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFD_OP_RECEIVERS_STATUS, 3);
-	bt_mesh_model_msg_init(&buf, BT_MESH_DFD_OP_RECEIVERS_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(buf, BT_MESH_DFD_OP_RECEIVERS_STATUS, 3);
 
 	net_buf_simple_add_u8(&buf, status);
 	net_buf_simple_add_le16(&buf, srv->target_cnt);
@@ -211,8 +210,7 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 {
 	size_t size = 0;
 
-	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS, 17);
-	bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_CAPABILITIES_STATUS, 17);
 
 	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX);
 	net_buf_simple_add_le16(&rsp, CONFIG_BT_MESH_DFU_SLOT_CNT);
@@ -246,8 +244,7 @@ static int handle_capabilities_get(const struct bt_mesh_model *mod, struct bt_me
 static void status_rsp(struct bt_mesh_dfd_srv *srv, struct bt_mesh_msg_ctx *ctx,
 		       enum bt_mesh_dfd_status status)
 {
-	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_STATUS, 12);
-	bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_STATUS, 12);
 
 	net_buf_simple_add_u8(&rsp, status);
 	net_buf_simple_add_u8(&rsp, srv->phase);
@@ -346,9 +343,8 @@ static void upload_status_rsp_with_progress(struct bt_mesh_dfd_srv *srv,
 					    enum bt_mesh_dfd_status status,
 					    uint8_t progress)
 {
-	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_UPLOAD_STATUS,
-				 DFD_UPLOAD_STATUS_MSG_MAXLEN);
-	bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_UPLOAD_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_UPLOAD_STATUS,
+					DFD_UPLOAD_STATUS_MSG_MAXLEN);
 
 	net_buf_simple_add_u8(&rsp, status);
 	net_buf_simple_add_u8(&rsp, srv->upload.phase);
@@ -675,9 +671,8 @@ static void fw_status_rsp(struct bt_mesh_dfd_srv *srv,
 			  enum bt_mesh_dfd_status status, uint16_t idx,
 			  const uint8_t *fwid, size_t fwid_len)
 {
-	BT_MESH_MODEL_BUF_DEFINE(rsp, BT_MESH_DFD_OP_FW_STATUS,
-				 7 + CONFIG_BT_MESH_DFU_FWID_MAXLEN);
-	bt_mesh_model_msg_init(&rsp, BT_MESH_DFD_OP_FW_STATUS);
+	BT_MESH_SIG_MODEL_OP_2_BUF_INIT(rsp, BT_MESH_DFD_OP_FW_STATUS,
+					7 + CONFIG_BT_MESH_DFU_FWID_MAXLEN);
 
 	net_buf_simple_add_u8(&rsp, status);
 	net_buf_simple_add_le16(&rsp, bt_mesh_dfu_slot_count());
