@@ -3,9 +3,6 @@
 
 if SOC_XENVM
 
-config SOC
-	default "xenvm"
-
 config NUM_IRQS
 	int
 	default 500
