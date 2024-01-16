@@ -308,6 +308,16 @@ static void test_bass_discover(void)
 	}
 
 	WAIT_FOR_FLAG(flag_discovery_complete);
+
+	/* Verify that we can discover again */
+	flag_discovery_complete = false;
+	err = bt_bap_broadcast_assistant_discover(default_conn);
+	if (err != 0) {
+		FAIL("Failed to discover BASS for the second time: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_discovery_complete);
 	printk("Discovery complete\n");
 }
 

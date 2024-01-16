@@ -409,9 +409,10 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
 			sub_params->notify = mute_notify_handler;
+			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 			err = bt_gatt_subscribe(conn, sub_params);
-			if (err == 0) {
+			if (err == 0 || err == -EALREADY) {
 				LOG_DBG("Subscribed to handle 0x%04X", attr->handle);
 			} else {
 				LOG_DBG("Could not subscribe to handle 0x%04X: %d", attr->handle,
@@ -479,14 +480,6 @@ static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 
 	if (mic_ctlr->conn != NULL) {
 		struct bt_conn *conn = mic_ctlr->conn;
-
-		/* It's okay if this fails. In case of disconnect, we can't
-		 * unsubscribe and it will just fail.
-		 * In case that we reset due to another call of the discover
-		 * function, we will unsubscribe (regardless of bonding state)
-		 * to accommodate the new discovery values.
-		 */
-		(void)bt_gatt_unsubscribe(conn, &mic_ctlr->mute_sub_params);
 
 		bt_conn_unref(conn);
 		mic_ctlr->conn = NULL;
