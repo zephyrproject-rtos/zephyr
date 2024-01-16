@@ -426,37 +426,25 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			hub_hp_domain: hub_hpp_domain {
+			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <6>;
-			};
-			io0_domain: io0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <8>;
+				bit-position = <12>;
 			};
 			io1_domain: io1_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <9>;
 			};
-			io2_domain: io2_domain {
+			io0_domain: io0_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <10>;
+				bit-position = <8>;
 			};
-			io3_domain: io3_domain {
+			hub_hp_domain: hub_hp_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <11>;
+				bit-position = <6>;
 			};
 			hst_domain: hst_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <4>;
-			};
-			ml0_domain: ml0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <12>;
-			};
-			ml1_domain: ml1_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <13>;
+				bit-position = <5>;
 			};
 		};
 
