@@ -96,6 +96,7 @@ function(toolchain_ld_link_elf)
     ${LINKERFLAGPREFIX},--whole-archive
     ${ZEPHYR_LIBS_PROPERTY}
     ${LINKERFLAGPREFIX},--no-whole-archive
+    ${ZEPHYR_LINK_LIBS_PROPERTY}
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}
