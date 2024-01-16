@@ -385,37 +385,37 @@
 				compatible = "intel,adsp-power-domain";
 				bit-position = <15>;
 			};
-			hub_hp_domain: hub_hp_domain {
+			ml1_domain: ml1_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <6>;
-			};
-			io0_domain: io0_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <8>;
-			};
-			io1_domain: io1_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <9>;
-			};
-			io2_domain: io2_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <10>;
-			};
-			io3_domain: io3_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <11>;
-			};
-			hst_domain: hst_domain {
-				compatible = "intel,adsp-power-domain";
-				bit-position = <4>;
+				bit-position = <13>;
 			};
 			ml0_domain: ml0_domain {
 				compatible = "intel,adsp-power-domain";
 				bit-position = <12>;
 			};
-			ml1_domain: ml1_domain {
+			io3_domain: io3_domain {
 				compatible = "intel,adsp-power-domain";
-				bit-position = <13>;
+				bit-position = <11>;
+			};
+			io2_domain: io2_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <10>;
+			};
+			io1_domain: io1_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <9>;
+			};
+			io0_domain: io0_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <8>;
+			};
+			hub_hp_domain: hub_hp_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <6>;
+			};
+			hst_domain: hst_domain {
+				compatible = "intel,adsp-power-domain";
+				bit-position = <4>;
 			};
 		};
 
