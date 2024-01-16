@@ -6,9 +6,6 @@
 
 if SOC_RK3399
 
-config SOC
-	default "rk3399"
-
 config NUM_IRQS
 	int
 	default 240
