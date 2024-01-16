@@ -466,12 +466,13 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 
 	/* Channel (optional: STA, mandatory: AP) */
 	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
-		params->channel = strtol(argv[idx], &endptr, 10);
+		long channel = strtol(argv[idx], &endptr, 10);
+
 		if (*endptr != '\0') {
 			return -EINVAL;
 		}
 
-		if (iface_mode == WIFI_MODE_INFRA && params->channel == 0) {
+		if (iface_mode == WIFI_MODE_INFRA && channel == 0) {
 			params->channel = WIFI_CHANNEL_ANY;
 		} else {
 			const uint8_t bands[] = {WIFI_FREQ_BAND_2_4_GHZ,
@@ -482,7 +483,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 
 			for (band = 0; band < ARRAY_SIZE(bands); band++) {
 				if (wifi_utils_validate_chan(bands[band],
-							     params->channel)) {
+							     channel)) {
 					found = true;
 					break;
 				}
@@ -491,8 +492,9 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			if (!found) {
 				return -EINVAL;
 			}
-		}
 
+			params->channel = channel;
+		}
 		idx++;
 	}
 
