@@ -78,6 +78,31 @@ enum lorawan_region {
 };
 
 /**
+ * @brief LoRaWAN channel mask.
+ */
+enum lorawan_channel_mask {
+	/* 8 channel gateway masks */
+	LORAWAN_CHAN_0_7 = 0,
+	LORAWAN_CHAN_8_15,
+	LORAWAN_CHAN_16_23,
+	LORAWAN_CHAN_24_31,
+	LORAWAN_CHAN_32_39,
+	LORAWAN_CHAN_40_47,
+	LORAWAN_CHAN_48_55,
+	LORAWAN_CHAN_56_63,
+	/* 16 channel gateway masks */
+	LORAWAN_CHAN_0_15,
+	LORAWAN_CHAN_16_31,
+	LORAWAN_CHAN_32_47,
+	LORAWAN_CHAN_48_63,
+	/* 32 channel gateway masks */
+	LORAWAN_CHAN_0_31,
+	LORAWAN_CHAN_32_63,
+	/* 64 channel gateway masks */
+	LORAWAN_CHAN_0_63
+};
+
+/**
  * @brief LoRaWAN message types.
  */
 enum lorawan_message_type {
@@ -336,6 +361,20 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
  * @return 0 if successful, negative errno otherwise
  */
 int lorawan_set_region(enum lorawan_region region);
+
+/**
+ * @brief Configure channels used in the network
+ *
+ * Configure the channels that are used with the gateway(s) that are used in
+ * the network. Since not all gateways neccesarily used all 64 channels, this
+ * should be set to prevent sending uplinks over channels that are not used.
+ * This should be called before @a lorawan_join().
+ *
+ * @param mask Mask of channels to enable
+ * @param set_default Additionally set the default channel mask
+ * @return 0 if successful, negative errno otherwise
+ */
+int lorawan_set_channel_mask(enum lorawan_channel_mask mask, bool set_default);
 
 #ifdef CONFIG_LORAWAN_APP_CLOCK_SYNC
 

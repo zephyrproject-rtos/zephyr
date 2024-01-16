@@ -495,6 +495,54 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 	return 0;
 }
 
+int lorawan_set_channel_mask(enum lorawan_channel_mask mask, bool set_default)
+{
+	MibRequestConfirm_t mib_req;
+
+	uint64_t pri_mask = 0;
+	uint32_t sec_mask = 0;
+	uint16_t channel_mask[6] = { 0 };
+
+	if (mask > LORAWAN_CHAN_32_63) {
+		/* 64 channels */
+		pri_mask = 0xFFFFFFFFFFFFFFFF;
+	} else if (mask > LORAWAN_CHAN_48_63) {
+		/* 32 channels */
+		pri_mask = 0xFFFFFFFF << ((mask - LORAWAN_CHAN_0_31) * 32);
+	} else if (mask > LORAWAN_CHAN_56_63) {
+		/* 16 channels */
+		pri_mask = 0xFFFF << ((mask - LORAWAN_CHAN_0_15) * 16);
+	} else {
+		/* 8 channels */
+		pri_mask = 0xFF << ((mask - LORAWAN_CHAN_0_7) * 8);
+		sec_mask = 1 << (mask - LORAWAN_CHAN_0_7);
+	}
+
+	channel_mask[0] = pri_mask & 0xFFFF;
+	channel_mask[1] = (pri_mask >> 16) & 0xFFFF;
+	channel_mask[2] = (pri_mask >> 32) & 0xFFFF;
+	channel_mask[3] = (pri_mask >> 48) & 0xFFFF;
+
+	channel_mask[4] = sec_mask & 0xFFFF;
+	channel_mask[5] = (sec_mask >> 16) & 0xFFFF;
+
+	mib_req.Type = MIB_CHANNELS_MASK;
+	mib_req.Param.ChannelsMask = channel_mask;
+	if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	if (set_default) {
+		mib_req.Type = MIB_CHANNELS_DEFAULT_MASK;
+		mib_req.Param.ChannelsMask = channel_mask;
+		if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
 void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 			       uint8_t *max_payload_size)
 {
