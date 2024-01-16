@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(gnss_nmea_generic, CONFIG_GNSS_LOG_LEVEL);
 
 struct gnss_nmea_generic_config {
 	const struct device *uart;
-	uint16_t nmea_timeout_ms;
 };
 
 struct gnss_nmea_generic_data {
@@ -83,7 +82,6 @@ static struct gnss_driver_api gnss_api = {
 
 static int gnss_nmea_generic_init_nmea0183_match(const struct device *dev)
 {
-	const struct gnss_nmea_generic_config *cfg = dev->config;
 	struct gnss_nmea_generic_data *data = dev->data;
 
 	const struct gnss_nmea0183_match_config match_config = {
@@ -92,7 +90,6 @@ static int gnss_nmea_generic_init_nmea0183_match(const struct device *dev)
 		.satellites = data->satellites,
 		.satellites_size = ARRAY_SIZE(data->satellites),
 #endif
-		.timeout_ms = cfg->nmea_timeout_ms,
 	};
 
 	return gnss_nmea0183_match_init(&data->match_data, &match_config);
@@ -163,7 +160,6 @@ static int gnss_nmea_generic_init(const struct device *dev)
 #define GNSS_NMEA_GENERIC(inst)								\
 	static struct gnss_nmea_generic_config gnss_nmea_generic_cfg_##inst = {		\
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),				\
-		.nmea_timeout_ms = DT_INST_PROP(inst, nmea_timeout_ms),			\
 	};										\
 											\
 	static struct gnss_nmea_generic_data gnss_nmea_generic_data_##inst;		\
