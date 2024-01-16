@@ -35,6 +35,10 @@
 
 #define MODBUS_RTU_MTU				256
 
+#define MODBUS_RTU_HDR_LEN			2       /* Size of Header (unit_id, fc) in PDU */
+#define MODBUS_RTU_CRC_LEN			2       /* Size of CRC in PDU */
+#define MODBUS_RTU_OVERHEAD			(MODBUS_RTU_HDR_LEN + MODBUS_RTU_CRC_LEN)
+
 /* Modbus function codes */
 #define	MODBUS_FC01_COIL_RD			1
 #define	MODBUS_FC02_DI_RD			2
@@ -134,7 +138,6 @@ struct modbus_context {
 	sys_slist_t user_defined_cbs;
 	/* Unit ID */
 	uint8_t unit_id;
-
 };
 
 /**

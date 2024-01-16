@@ -245,7 +245,6 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 	uint16_t calc_crc;
 	uint16_t crc_idx;
-	uint8_t *data_ptr;
 
 	/* Is the message long enough? */
 	if ((cfg->uart_buf_ctr < MODBUS_RTU_MIN_MSG_SIZE) ||
@@ -254,20 +253,17 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 		return -EMSGSIZE;
 	}
 
-	ctx->rx_adu.unit_id = cfg->uart_buf[0];
-	ctx->rx_adu.fc = cfg->uart_buf[1];
-	data_ptr = &cfg->uart_buf[2];
 	/* Payload length without node address, function code, and CRC */
-	ctx->rx_adu.length = cfg->uart_buf_ctr - 4;
+	ctx->rx_adu.length = cfg->uart_buf_ctr - MODBUS_RTU_OVERHEAD;
 	/* CRC index */
-	crc_idx = cfg->uart_buf_ctr - sizeof(uint16_t);
+	crc_idx = cfg->uart_buf_ctr - MODBUS_RTU_CRC_LEN;
 
-	memcpy(ctx->rx_adu.data, data_ptr, ctx->rx_adu.length);
+	memcpy(&ctx->rx_adu.unit_id, &cfg->uart_buf[0], MODBUS_RTU_HDR_LEN + ctx->rx_adu.length);
 
 	ctx->rx_adu.crc = sys_get_le16(&cfg->uart_buf[crc_idx]);
 	/* Calculate CRC over address, function code, and payload */
 	calc_crc = crc16_ansi(&cfg->uart_buf[0],
-			      cfg->uart_buf_ctr - sizeof(ctx->rx_adu.crc));
+			      cfg->uart_buf_ctr - MODBUS_RTU_CRC_LEN);
 
 	if (ctx->rx_adu.crc != calc_crc) {
 		LOG_WRN("Calculated CRC does not match received CRC");
@@ -280,22 +276,19 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 static void rtu_tx_adu(struct modbus_context *ctx)
 {
 	struct modbus_serial_config *cfg = ctx->cfg;
-	uint16_t tx_bytes = 0;
-	uint8_t *data_ptr;
+	uint16_t adu_len;
 
-	cfg->uart_buf[0] = ctx->tx_adu.unit_id;
-	cfg->uart_buf[1] = ctx->tx_adu.fc;
-	tx_bytes = 2 + ctx->tx_adu.length;
-	data_ptr = &cfg->uart_buf[2];
+	/* Since unit_id, fc, and data are contiguous in tx_adu,
+	 * we can copy them directly in a single memcpy operation
+	 */
+	adu_len = ctx->tx_adu.length;
+	memcpy(&cfg->uart_buf[0], &ctx->tx_adu.unit_id, MODBUS_RTU_HDR_LEN + adu_len);
 
-	memcpy(data_ptr, ctx->tx_adu.data, ctx->tx_adu.length);
-
-	ctx->tx_adu.crc = crc16_ansi(&cfg->uart_buf[0], ctx->tx_adu.length + 2);
+	ctx->tx_adu.crc = crc16_ansi(&cfg->uart_buf[0], MODBUS_RTU_HDR_LEN + adu_len);
 	sys_put_le16(ctx->tx_adu.crc,
-		     &cfg->uart_buf[ctx->tx_adu.length + 2]);
-	tx_bytes += 2;
+		     &cfg->uart_buf[MODBUS_RTU_HDR_LEN + adu_len]);
 
-	cfg->uart_buf_ctr = tx_bytes;
+	cfg->uart_buf_ctr = adu_len + MODBUS_RTU_OVERHEAD;
 	cfg->uart_buf_ptr = &cfg->uart_buf[0];
 
 	LOG_HEXDUMP_DBG(cfg->uart_buf, cfg->uart_buf_ctr, "uart_buf");
