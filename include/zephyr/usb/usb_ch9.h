@@ -14,6 +14,7 @@
 
 #include <version.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/math/ilog2.h>
 #include <zephyr/usb/class/usb_hub.h>
 
 #ifndef ZEPHYR_INCLUDE_USB_CH9_H_
@@ -320,6 +321,18 @@ struct usb_association_descriptor {
 
 /** USB endpoint transfer type interrupt */
 #define USB_EP_TYPE_INTERRUPT		3U
+
+/** Calculate full speed interrupt endpoint bInterval from a value in microseconds */
+#define USB_FS_INT_EP_INTERVAL(us)	CLAMP(((us) / 1000U), 1U, 255U)
+
+/** Calculate high speed interrupt endpoint bInterval from a value in microseconds */
+#define USB_HS_INT_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
+
+/** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
+#define USB_FS_ISO_EP_INTERVAL(us)	CLAMP(((us) / 1000U), 1U, 16U)
+
+/** Calculate high speed isochronous endpoint bInterval from a value in microseconds */
+#define USB_HS_ISO_EP_INTERVAL(us)	CLAMP((ilog2((us) / 125U) + 1U), 1U, 16U)
 
 #ifdef __cplusplus
 }
