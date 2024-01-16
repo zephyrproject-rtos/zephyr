@@ -884,3 +884,8 @@ test_i2c_bma4xx: bma4xx@7d {
 	compatible = "bosch,bma4xx";
 	reg = <0x7d>;
 };
+
+test_i2c_ags10: ags10@7e {
+	compatible = "aosong,ags10";
+	reg = <0x7e>;
+};
