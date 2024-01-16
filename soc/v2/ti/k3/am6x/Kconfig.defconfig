@@ -1,10 +1,7 @@
 # Copyright (c) 2023 Enphase Energy
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_AM6X_A53
-
-config SOC_SERIES
-	default "am6x"
+if SOC_SERIES_AM6X
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -17,11 +14,13 @@ config FLASH_BASE_ADDRESS
 
 config NUM_IRQS
 	int
-	default 280
+	default 64 if SOC_SERIES_AM6X_M4
+	default 280 if SOC_SERIES_AM6X_A53
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 200000000
+	default 400000000 if SOC_SERIES_AM6X_M4
+	default 200000000 if SOC_SERIES_AM6X_A53
 
 config PINCTRL
 	default y
@@ -31,12 +30,16 @@ if SERIAL
 config UART_NS16550
 	default y
 
+config UART_NS16550_TI_K3
+	default y if SOC_SERIES_AM6X_M4
+
 choice UART_NS16550_VARIANT
 	default UART_NS16550_VARIANT_NS16750
 endchoice
 
 endif # SERIAL
 
-source "soc/arm64/ti_k3/am6x/Kconfig.defconfig.am62*"
+config BUILD_OUTPUT_BIN
+	default n if SOC_SERIES_AM6X_M4
 
-endif # SOC_SERIES_AM6X_A53
+endif # SOC_SERIES_AM6X
