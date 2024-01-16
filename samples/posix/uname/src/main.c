@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <unistd.h>
-
 #include <sys/utsname.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 
 int main(void)
@@ -17,12 +16,12 @@ int main(void)
 
 	uname(&info);
 
-	printk("\nPrinting everything in utsname...\n");
-	printk("sysname[%zu]: %s\n", sizeof(info.sysname), info.sysname);
-	printk("nodename[%zu]: %s\n", sizeof(info.nodename), info.nodename);
-	printk("release[%zu]: %s\n", sizeof(info.release), info.release);
-	printk("version[%zu]: %s\n", sizeof(info.version), info.version);
-	printk("machine[%zu]: %s\n", sizeof(info.machine), info.machine);
+	printf("\nPrinting everything in utsname...\n");
+	printf("sysname[%zu]: %s\n", sizeof(info.sysname), info.sysname);
+	printf("nodename[%zu]: %s\n", sizeof(info.nodename), info.nodename);
+	printf("release[%zu]: %s\n", sizeof(info.release), info.release);
+	printf("version[%zu]: %s\n", sizeof(info.version), info.version);
+	printf("machine[%zu]: %s\n", sizeof(info.machine), info.machine);
 
 	return 0;
 }
