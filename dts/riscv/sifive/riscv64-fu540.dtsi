@@ -179,6 +179,7 @@
 		gpio0: gpio@10060000 {
 			compatible = "sifive,gpio0";
 			gpio-controller;
+			ngpios = <16>;
 			interrupt-parent = <&plic>;
 			interrupts = <7 1>, <8 1>, <9 1>, <10 1>,
 				<11 1>, <12 1>, <13 1>, <14 1>,
