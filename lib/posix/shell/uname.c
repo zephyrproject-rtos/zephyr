@@ -19,9 +19,23 @@
 #define UNAME_ALL                                                                                  \
 	(UNAME_KERNEL | UNAME_NODE | UNAME_RELEASE | UNAME_VERSION | UNAME_MACHINE | UNAME_PLATFORM)
 
+#define HELP_USAGE                                                                                 \
+	"Usage: uname [OPTION]\n"                                                                  \
+	"Print system information\n"                                                               \
+	"\n"                                                                                       \
+	"    -a,  all informationn\n"                                                              \
+	"    -s,  kernel name\n"                                                                   \
+	"    -o,  operating system\n"                                                              \
+	"    -n,  network node hostname\n"                                                         \
+	"    -r,  kernel release\n"                                                                \
+	"    -v,  kernel version\n"                                                                \
+	"    -m,  machine hardware name\n"                                                         \
+	"    -p,  processor type\n"                                                                \
+	"    -i,  hardware platform\n"
+
 static void uname_print_usage(const struct shell *sh)
 {
-	shell_print(sh, "usage: uname [-asonrvmpi]");
+	shell_print(sh, HELP_USAGE);
 }
 
 static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
@@ -83,7 +97,7 @@ static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	if (argc != optind) {
-		shell_error(sh, "extra operand %s", argv[optind]);
+		shell_error(sh, "uname: extra operand %s", argv[optind]);
 		uname_print_usage(sh);
 		return -1;
 	}
