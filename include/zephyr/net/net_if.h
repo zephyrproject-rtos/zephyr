@@ -2280,6 +2280,15 @@ struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
 					    enum net_addr_state addr_state);
 
 /**
+ * @brief Get IPv4 netmask of an interface.
+ *
+ * @param iface Interface to use.
+ *
+ * @return The netmask set on the interface, unspecified address if not found.
+ */
+struct in_addr net_if_ipv4_get_netmask(struct net_if *iface);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  *
  * @param iface Interface to use.

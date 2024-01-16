@@ -3619,6 +3619,27 @@ static inline int z_vrfy_net_if_ipv4_addr_lookup_by_index(
 #include <syscalls/net_if_ipv4_addr_lookup_by_index_mrsh.c>
 #endif
 
+struct in_addr net_if_ipv4_get_netmask(struct net_if *iface)
+{
+	struct in_addr netmask = { 0 };
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	netmask = iface->config.ip.ipv4->netmask;
+out:
+	net_if_unlock(iface);
+
+	return netmask;
+}
+
 void net_if_ipv4_set_netmask(struct net_if *iface,
 			     const struct in_addr *netmask)
 {
