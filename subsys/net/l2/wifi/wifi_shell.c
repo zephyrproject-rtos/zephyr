@@ -499,6 +499,11 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 			if (idx < argc) {
 				unsigned int mfp = strtol(argv[idx], &endptr, 10);
 
+				if (security == WIFI_SECURITY_TYPE_NONE ||
+				    security == WIFI_SECURITY_TYPE_WPA_PSK) {
+					return -EINVAL;
+				}
+
 				if (mfp <= WIFI_MFP_REQUIRED) {
 					params->mfp = mfp;
 				}
