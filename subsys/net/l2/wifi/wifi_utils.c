@@ -44,7 +44,7 @@ static enum wifi_frequency_bands wifi_utils_map_band_str_to_idx(char *band_str)
 }
 
 
-static bool wifi_utils_validate_chan_2g(uint16_t chan)
+bool wifi_utils_validate_chan_2g(uint16_t chan)
 {
 	if ((chan >= 1) && (chan <= 14)) {
 		return true;
@@ -54,7 +54,7 @@ static bool wifi_utils_validate_chan_2g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan_5g(uint16_t chan)
+bool wifi_utils_validate_chan_5g(uint16_t chan)
 {
 	uint16_t i;
 
@@ -68,7 +68,7 @@ static bool wifi_utils_validate_chan_5g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan_6g(uint16_t chan)
+bool wifi_utils_validate_chan_6g(uint16_t chan)
 {
 	if (((chan >= 1) && (chan <= 233) && (!((chan - 1)%4))) ||
 	    (chan == 2)) {
@@ -79,7 +79,7 @@ static bool wifi_utils_validate_chan_6g(uint16_t chan)
 }
 
 
-static bool wifi_utils_validate_chan(uint8_t band,
+bool wifi_utils_validate_chan(uint8_t band,
 				     uint16_t chan)
 {
 	bool result = false;
