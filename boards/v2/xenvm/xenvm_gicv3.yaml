@@ -1,4 +1,4 @@
-identifier: xenvm_gicv3
+identifier: xenvm//gicv3
 name: ARMv8 Xen Virtual Machine With GICv3
 type: mcu
 arch: arm64
