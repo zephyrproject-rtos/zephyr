@@ -13,7 +13,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 #include <zephyr/irq_multilevel.h>
-#include <soc.h>
 
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
