@@ -172,6 +172,13 @@ config RISCV_HAS_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
+config RISCV_SOC_EXCEPTION_FROM_IRQ
+	bool
+	help
+	  Option selected by SoCs that require a custom mechanism to check if
+	  an exception is the result of an interrupt or not. If selected,
+	  __soc_is_irq() needs to be implemented by the SoC.
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
 	help
