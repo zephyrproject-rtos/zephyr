@@ -146,7 +146,7 @@ def process_pr(gh, maintainer_file, number):
         log("Submitter is same as Assignee, trying to find another assignee...")
         aff = list(area_counter.keys())[0]
         for area in all_areas:
-            if area.name == aff:
+            if area == aff:
                 if len(area.maintainers) > 1:
                     assignee = area.maintainers[1]
                 else:
