@@ -942,11 +942,24 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
+# Convenience variable for linkers
+get_property(ZEPHYR_LINK_LIBS_PROPERTY TARGET zephyr_interface PROPERTY LINK_LIBS)
+
+# Add every target to zephyr_interface so we get the correct include directories
+foreach(zephyr_link_lib ${ZEPHYR_LINK_LIBS_PROPERTY})
+  # esp32 module adds gcc, which we need to skip
+  if(TARGET ${zephyr_link_lib} AND NOT ${zephyr_link_lib} STREQUAL gcc)
+    message(STATUS "Adding ${zephyr_link_lib}")
+    target_link_libraries(zephyr_interface INTERFACE ${zephyr_link_lib})
+  endif()
+endforeach()
+
 if(CONFIG_KERNEL_WHOLE_ARCHIVE)
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
+  set(NO_WHOLE_ARCHIVE_LIBS ${ZEPHYR_LINK_LIBS_PROPERTY})
 else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
-  set(NO_WHOLE_ARCHIVE_LIBS kernel)
+  set(NO_WHOLE_ARCHIVE_LIBS ${ZEPHYR_LINK_LIBS_PROPERTY} kernel)
 endif()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
