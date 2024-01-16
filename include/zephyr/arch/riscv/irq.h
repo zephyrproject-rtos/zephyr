@@ -39,9 +39,11 @@ extern "C" {
 #define RISCV_IRQ_MEXT  11
 
 #ifdef CONFIG_64BIT
-#define RISCV_MCAUSE_IRQ_BIT          (1 << 63)
+#define RISCV_MCAUSE_IRQ_POS          63U
+#define RISCV_MCAUSE_IRQ_BIT          BIT64(RISCV_MCAUSE_IRQ_POS)
 #else
-#define RISCV_MCAUSE_IRQ_BIT          (1 << 31)
+#define RISCV_MCAUSE_IRQ_POS          31U
+#define RISCV_MCAUSE_IRQ_BIT          BIT(RISCV_MCAUSE_IRQ_POS)
 #endif
 
 #ifndef _ASMLANGUAGE
