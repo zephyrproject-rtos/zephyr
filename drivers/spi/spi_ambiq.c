@@ -140,7 +140,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 			trans.pui32RxBuffer = (uint32_t *)ctx->tx_buf;
 			trans.ui32NumBytes = ctx->tx_len;
 			spi_context_update_tx(ctx, 1, ctx->tx_len);
-			trans.bContinue = false;
+			trans.bContinue = (ctx->tx_count) ? true : false;
 		}
 
 		if (ctx->rx_buf) {
