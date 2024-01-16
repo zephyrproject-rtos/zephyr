@@ -67,6 +67,9 @@ int net_arp_foreach(net_arp_cb_t cb, void *user_data);
 
 void net_arp_clear_cache(struct net_if *iface);
 void net_arp_init(void);
+void net_arp_update(struct net_if *iface, struct in_addr *src,
+		    struct net_eth_addr *hwaddr, bool gratuitous,
+		    bool force);
 
 /**
  * @}
@@ -83,6 +86,7 @@ void net_arp_init(void);
 #define net_arp_foreach(...) 0
 #define net_arp_init(...)
 #define net_arp_clear_pending(...) 0
+#define net_arp_update(...)
 
 #endif /* CONFIG_NET_ARP */
 
