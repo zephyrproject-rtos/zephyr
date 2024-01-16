@@ -38,9 +38,10 @@ struct ace_pwrsts {
 	uint16_t hstpgs    : 1;
 	uint16_t hubhppgs  : 1;
 	uint16_t dspulppgs : 1;
-	uint16_t ioxpgs    : 4;
-	uint16_t mlpgs     : 2;
-	uint16_t rsvd14    : 1;
+	uint16_t ioxpgs    : 2;
+	uint16_t rsvd11    : 2;
+	uint16_t mlpgs     : 1;
+	uint16_t rsvd14    : 2;
 	uint16_t hubulppgs : 1;
 };
 
