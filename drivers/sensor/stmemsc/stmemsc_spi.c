@@ -11,6 +11,9 @@
 
 #define SPI_READ		(1 << 7)
 
+ /* Enable address auto-increment on some stmemsc sensors */
+#define STMEMSC_SPI_ADDR_AUTO_INCR		BIT(6)
+
 /*
  * SPI read
  */
@@ -55,4 +58,18 @@ int stmemsc_spi_write(const struct spi_dt_spec *stmemsc,
 	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
 
 	return spi_write_dt(stmemsc, &tx);
+}
+
+int stmemsc_spi_read_incr(const struct spi_dt_spec *stmemsc,
+			  uint8_t reg_addr, uint8_t *value, uint8_t len)
+{
+	reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
+	return stmemsc_spi_read(stmemsc, reg_addr, value, len);
+}
+
+int stmemsc_spi_write_incr(const struct spi_dt_spec *stmemsc,
+			   uint8_t reg_addr, uint8_t *value, uint8_t len)
+{
+	reg_addr |= STMEMSC_SPI_ADDR_AUTO_INCR;
+	return stmemsc_spi_write(stmemsc, reg_addr, value, len);
 }
