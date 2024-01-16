@@ -51,7 +51,9 @@
 
 /* imports */
 GDATA(_sw_isr_table)
+#ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
 GTEXT(__soc_is_irq)
+#endif
 GTEXT(__soc_handle_irq)
 GTEXT(_Fault)
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -95,7 +97,8 @@ GTEXT(_isr_wrapper)
  * what standard behavior is defined). Hence, the arch level code expects
  * the following functions to be provided at the SOC level:
  *
- *     - __soc_is_irq: decide if we're handling an interrupt or an exception
+ *     - __soc_is_irq (optional): decide if we're handling an interrupt or an
+         exception
  *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
  *       (e.g. clear a pending bit in a SoC-specific register)
  *
@@ -288,10 +291,14 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * function (that needs to be implemented by each SOC). The result is
 	 * returned via register a0 (1: interrupt, 0 exception)
 	 */
+#ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
 	jal ra, __soc_is_irq
-
-	/* If a0 != 0, jump to is_interrupt */
 	bnez a0, is_interrupt
+#else
+	csrr t0, mcause
+	srli t0, t0, RISCV_MCAUSE_IRQ_POS
+	bnez t0, is_interrupt
+#endif
 
 	/*
 	 * If the exception is the result of an ECALL, check whether to
