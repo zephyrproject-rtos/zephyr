@@ -4523,6 +4523,7 @@
 /** @endcond */
 
 /* have these last so they have access to all previously defined macros */
+#include <zephyr/devicetree/device_type.h>
 #include <zephyr/devicetree/io-channels.h>
 #include <zephyr/devicetree/clocks.h>
 #include <zephyr/devicetree/gpio.h>
