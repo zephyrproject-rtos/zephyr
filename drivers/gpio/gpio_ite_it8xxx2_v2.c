@@ -54,6 +54,8 @@ struct gpio_ite_cfg {
 	uint8_t has_volt_sel[8];
 	/* Number of pins per group of GPIO */
 	uint8_t num_pins;
+	/* gpioksi, gpioksoh and gpioksol extended setting */
+	bool kbs_ctrl;
 };
 
 /* Structure gpio_ite_data is about callback function */
@@ -159,25 +161,57 @@ static int gpio_ite_configure(const struct device *dev,
 	}
 
 	/* Set input or output. */
-	if (flags & GPIO_OUTPUT) {
-		ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_OUTPUT) &
-				~GPCR_PORT_PIN_MODE_INPUT;
+	if (gpio_config->kbs_ctrl) {
+		/* Handle keyboard scan controller */
+		uint8_t ksxgctrlr = ECREG(reg_gpcr);
+
+		ksxgctrlr |= KSIX_KSOX_KBS_GPIO_MODE;
+		if (flags & GPIO_OUTPUT) {
+			ksxgctrlr |= KSIX_KSOX_GPIO_OUTPUT;
+		} else {
+			ksxgctrlr &= ~KSIX_KSOX_GPIO_OUTPUT;
+		}
+		ECREG(reg_gpcr) = ksxgctrlr;
 	} else {
-		ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_INPUT) &
+		/* Handle regular GPIO controller */
+		if (flags & GPIO_OUTPUT) {
+			ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_OUTPUT) &
+				~GPCR_PORT_PIN_MODE_INPUT;
+		} else {
+			ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_INPUT) &
 				~GPCR_PORT_PIN_MODE_OUTPUT;
+		}
 	}
 
 	/* Handle pullup / pulldown */
-	if (flags & GPIO_PULL_UP) {
-		ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_PULLUP) &
-				~GPCR_PORT_PIN_MODE_PULLDOWN;
-	} else if (flags & GPIO_PULL_DOWN) {
-		ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_PULLDOWN) &
-				~GPCR_PORT_PIN_MODE_PULLUP;
+	if (gpio_config->kbs_ctrl) {
+		/* Handle keyboard scan controller */
+		uint8_t ksxgctrlr = ECREG(reg_gpcr);
+
+		if (flags & GPIO_PULL_UP) {
+			ksxgctrlr = (ksxgctrlr | KSIX_KSOX_GPIO_PULLUP) &
+				~KSIX_KSOX_GPIO_PULLDOWN;
+		} else if (flags & GPIO_PULL_DOWN) {
+			ksxgctrlr = (ksxgctrlr | KSIX_KSOX_GPIO_PULLDOWN) &
+				~KSIX_KSOX_GPIO_PULLUP;
+		} else {
+			/* No pull up/down */
+			ksxgctrlr &= ~(KSIX_KSOX_GPIO_PULLUP | KSIX_KSOX_GPIO_PULLDOWN);
+		}
+		ECREG(reg_gpcr) = ksxgctrlr;
 	} else {
-		/* No pull up/down */
-		ECREG(reg_gpcr) &= ~(GPCR_PORT_PIN_MODE_PULLUP |
-				GPCR_PORT_PIN_MODE_PULLDOWN);
+		/* Handle regular GPIO controller */
+		if (flags & GPIO_PULL_UP) {
+			ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_PULLUP) &
+					~GPCR_PORT_PIN_MODE_PULLDOWN;
+		} else if (flags & GPIO_PULL_DOWN) {
+			ECREG(reg_gpcr) = (ECREG(reg_gpcr) | GPCR_PORT_PIN_MODE_PULLDOWN) &
+					~GPCR_PORT_PIN_MODE_PULLUP;
+		} else {
+			/* No pull up/down */
+			ECREG(reg_gpcr) &= ~(GPCR_PORT_PIN_MODE_PULLUP |
+					GPCR_PORT_PIN_MODE_PULLDOWN);
+		}
 	}
 
 unlock_and_return:
@@ -512,6 +546,7 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.gpio_irq = IT8XXX2_DT_GPIO_IRQ_LIST(inst),                \
 	.has_volt_sel = DT_INST_PROP_OR(inst, has_volt_sel, {0}),  \
 	.num_pins = DT_INST_PROP(inst, ngpios),                    \
+	.kbs_ctrl = DT_INST_PROP_OR(inst, keyboard_controller, 0), \
 	};                                                         \
 DEVICE_DT_INST_DEFINE(inst,                                        \
 		      gpio_ite_init,                               \
