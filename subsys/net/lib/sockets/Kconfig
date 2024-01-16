@@ -109,6 +109,7 @@ config NET_SOCKETS_SERVICE_THREAD_PRIO
 
 config NET_SOCKETS_SERVICE_STACK_SIZE
 	int "Stack size for the thread handling socket services"
+	default 2400 if NET_DHCPV4_SERVER
 	default 1200
 	depends on NET_SOCKETS_SERVICE
 	help
