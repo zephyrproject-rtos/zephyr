@@ -32,7 +32,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "sifive,s7";
+			compatible = "sifive,s7", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv64imac_zicsr_zifencei";
@@ -46,7 +46,7 @@
 			};
 		};
 		cpu1: cpu@1 {
-			compatible = "sifive,u74";
+			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x1>;
@@ -59,7 +59,7 @@
 			};
 		};
 		cpu2: cpu@2 {
-			compatible = "sifive,u74";
+			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x2>;
@@ -72,7 +72,7 @@
 			};
 		};
 		cpu3: cpu@3 {
-			compatible = "sifive,u74";
+			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x3>;
@@ -85,7 +85,7 @@
 			};
 		};
 		cpu4: cpu@4 {
-			compatible = "sifive,u74";
+			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			reg = <0x4>;
