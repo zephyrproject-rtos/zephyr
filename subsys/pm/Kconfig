@@ -78,12 +78,11 @@ config PM_DEVICE
 	bool "Device Power Management"
 	help
 	  This option enables the device power management interface.  The
-	  interface consists of hook functions implemented by device drivers
-	  that get called by the power manager application when the system
-	  is going to suspend state or resuming from suspend state. This allows
-	  device drivers to do any necessary power management operations
-	  like turning off device clocks and peripherals. The device drivers
-	  may also save and restore states in these hook functions.
+	  interface implemented by device drivers are called by the power
+	  management subsystem. This allows device drivers to do any
+	  necessary power management operations like turning off
+	  device clocks and peripherals. Device drivers may also save
+	  and restore states in these hook functions.
 
 if PM_DEVICE
 
@@ -136,6 +135,18 @@ config PM_DEVICE_SHELL
 	help
 	  Enable the device power management shell, for triggering device power
 	  management events through the shell interface.
+
+config PM_DEVICE_SYSTEM_MANAGED
+	bool "System-Managed Device Power Management"
+	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE
+	default y if !PM_DEVICE_RUNTIME
+	help
+	  This option enables the system-managed device power
+	  management.  The power management subsystem will suspend
+	  devices before entering a low power state. Conversely, after
+	  the core wakes up from low power mode all suspended devices
+	  are resumed.
+
 
 endif # PM_DEVICE
 
