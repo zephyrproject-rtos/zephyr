@@ -10,3 +10,4 @@ config SOC_RISCV_VIRT
 	select RISCV_ISA_EXT_C
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
