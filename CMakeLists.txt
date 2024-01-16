@@ -544,6 +544,21 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
   add_dependencies(zephyr_interface app_version_h)
 endif()
 
+# Create the kernel library now so that other parts of the system can use
+# it with target_link_libraries or other commands.
+#
+# If a pre-built static library containing kernel code exists in the kernel
+# directory, kernel/libkernel.a, link it with the application code instead
+# of building from source.
+
+set(libkernel ${CMAKE_CURRENT_SOURCE_DIR}/kernel/libkernel${CMAKE_STATIC_LIBRARY_SUFFIX})
+if(EXISTS ${libkernel})
+  add_library(kernel STATIC IMPORTED GLOBAL)
+  set_property(TARGET kernel PROPERTY IMPORTED_LOCATION ${libkernel})
+else()
+  add_library(kernel)
+endif()
+
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
 # of subdirectories. One example is "Compiler flags added late in the
