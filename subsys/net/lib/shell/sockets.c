@@ -147,7 +147,9 @@ static int cmd_net_sockets(const struct shell *sh, size_t argc, char *argv[])
 	PR("\n");
 
 	obj_type = k_obj_type_find(K_OBJ_TYPE_SOCK);
-	k_obj_type_walk_unlocked(obj_type, walk_sockets, (void *)&user_data);
+	if (obj_type != NULL) {
+		k_obj_type_walk_unlocked(obj_type, walk_sockets, (void *)&user_data);
+	}
 
 	if (count.opened == 0 && count.closed == 0) {
 		PR("No sockets found.\n");
