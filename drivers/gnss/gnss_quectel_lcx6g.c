@@ -649,7 +649,6 @@ static int quectel_lcx6g_init_nmea0183_match(const struct device *dev)
 		.satellites = data->satellites,
 		.satellites_size = ARRAY_SIZE(data->satellites),
 #endif
-		.timeout_ms = 50,
 	};
 
 	return gnss_nmea0183_match_init(&data->match_data, &config);

@@ -10,16 +10,22 @@
 
 #include <string.h>
 
+#include "gnss_parse.h"
 #include "gnss_nmea0183.h"
 #include "gnss_nmea0183_match.h"
 
-static bool gnss_nmea0183_match_timed_out(struct gnss_nmea0183_match_data *data)
+static int gnss_nmea0183_match_parse_utc(char **argv, uint16_t argc, uint32_t *utc)
 {
-	int64_t delta;
+	int64_t i64;
 
-	delta = k_uptime_delta(&data->timestamp);
-	data->timestamp = k_uptime_get();
-	return ((uint16_t)delta) > data->timeout_ms;
+	if ((gnss_parse_dec_to_milli(argv[1], &i64) < 0) ||
+	    (i64 < 0) ||
+	    (i64 > UINT32_MAX)) {
+		return -EINVAL;
+	}
+
+	*utc = (uint32_t)i64;
+	return 0;
 }
 
 #if CONFIG_GNSS_SATELLITES
@@ -30,10 +36,15 @@ static void gnss_nmea0183_match_reset_gsv(struct gnss_nmea0183_match_data *data)
 }
 #endif
 
-static void gnss_nmea0183_match_reset(struct gnss_nmea0183_match_data *data)
+static void gnss_nmea0183_match_publish(struct gnss_nmea0183_match_data *data)
 {
-	data->gga_received = false;
-	data->rmc_received = false;
+	if ((data->gga_utc == 0) || (data->rmc_utc == 0)) {
+		return;
+	}
+
+	if (data->gga_utc == data->rmc_utc) {
+		gnss_publish_data(data->gnss, &data->data);
+	}
 }
 
 void gnss_nmea0183_match_gga_callback(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -41,19 +52,15 @@ void gnss_nmea0183_match_gga_callback(struct modem_chat *chat, char **argv, uint
 {
 	struct gnss_nmea0183_match_data *data = user_data;
 
-	if (gnss_nmea0183_match_timed_out(data)) {
-		gnss_nmea0183_match_reset(data);
-	}
-
 	if (gnss_nmea0183_parse_gga((const char **)argv, argc, &data->data) < 0) {
 		return;
 	}
 
-	data->gga_received = true;
-
-	if (data->gga_received && data->rmc_received) {
-		gnss_publish_data(data->gnss, &data->data);
+	if (gnss_nmea0183_match_parse_utc(argv, argc, &data->gga_utc) < 0) {
+		return;
 	}
+
+	gnss_nmea0183_match_publish(data);
 }
 
 void gnss_nmea0183_match_rmc_callback(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -61,19 +68,15 @@ void gnss_nmea0183_match_rmc_callback(struct modem_chat *chat, char **argv, uint
 {
 	struct gnss_nmea0183_match_data *data = user_data;
 
-	if (gnss_nmea0183_match_timed_out(data)) {
-		gnss_nmea0183_match_reset(data);
-	}
-
 	if (gnss_nmea0183_parse_rmc((const char **)argv, argc, &data->data) < 0) {
 		return;
 	}
 
-	data->rmc_received = true;
-
-	if (data->gga_received && data->rmc_received) {
-		gnss_publish_data(data->gnss, &data->data);
+	if (gnss_nmea0183_match_parse_utc(argv, argc, &data->rmc_utc) < 0) {
+		return;
 	}
+
+	gnss_nmea0183_match_publish(data);
 }
 
 #if CONFIG_GNSS_SATELLITES
@@ -83,10 +86,6 @@ void gnss_nmea0183_match_gsv_callback(struct modem_chat *chat, char **argv, uint
 	struct gnss_nmea0183_match_data *data = user_data;
 	struct gnss_nmea0183_gsv_header header;
 	int ret;
-
-	if (gnss_nmea0183_match_timed_out(data)) {
-		gnss_nmea0183_match_reset(data);
-	}
 
 	if (gnss_nmea0183_parse_gsv_header((const char **)argv, argc, &header) < 0) {
 		return;
@@ -124,7 +123,7 @@ int gnss_nmea0183_match_init(struct gnss_nmea0183_match_data *data,
 			     const struct gnss_nmea0183_match_config *config)
 {
 	__ASSERT(data != NULL, "data argument must be provided");
-	__ASSERT(config != NULL, "data argument must be provided");
+	__ASSERT(config != NULL, "config argument must be provided");
 
 	memset(data, 0, sizeof(struct gnss_nmea0183_match_data));
 	data->gnss = config->gnss;
@@ -132,6 +131,5 @@ int gnss_nmea0183_match_init(struct gnss_nmea0183_match_data *data,
 	data->satellites = config->satellites;
 	data->satellites_size = config->satellites_size;
 #endif
-	data->timeout_ms = config->timeout_ms;
 	return 0;
 }
