@@ -79,7 +79,8 @@ void arch_secondary_cpu_init(int hartid)
 
 #ifdef CONFIG_SMP
 
-#define MSIP(hartid) ((volatile uint32_t *)RISCV_MSIP_BASE)[hartid]
+#define MSIP_BASE 0x2000000UL
+#define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
 
 static atomic_val_t cpu_pending_ipi[CONFIG_MP_MAX_NUM_CPUS];
 #define IPI_SCHED	0

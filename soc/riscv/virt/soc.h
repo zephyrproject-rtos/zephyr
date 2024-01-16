@@ -8,6 +8,5 @@
 #define __RISCV_VIRT_SOC_H_
 
 #define SIFIVE_SYSCON_TEST           0x00100000
-#define RISCV_MSIP_BASE              0x02000000
 
 #endif
