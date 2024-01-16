@@ -928,7 +928,7 @@ static int cmd_wifi_ps_mode(const struct shell *sh, size_t argc, char *argv[])
 
 	if (!strncasecmp(argv[1], "legacy", 6)) {
 		params.mode = WIFI_PS_MODE_LEGACY;
-	} else if (!strncasecmp(argv[1], "WMM", 4)) {
+	} else if (!strncasecmp(argv[1], "WMM", 3)) {
 		params.mode = WIFI_PS_MODE_WMM;
 	} else {
 		shell_fprintf(sh, SHELL_WARNING, "Invalid PS mode\n");
