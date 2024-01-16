@@ -25,21 +25,3 @@ GTEXT(__soc_handle_irq)
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
 	j get_irq
-
-/*
- * __soc_is_irq is defined as .weak to allow re-implementation by
- * SOCs that does not truely follow the riscv privilege specification.
- */
-WTEXT(__soc_is_irq)
-
-/*
- * SOC-specific function to determine if the exception is the result of a
- * an interrupt or an exception
- * return 1 (interrupt) or 0 (exception)
- *
- */
-SECTION_FUNC(exception.other, __soc_is_irq)
-	/* Read mcause and check if interrupt bit (bit 31) is set */
-	csrr a0, mcause
-	srli a0, a0, 31
-	ret
