@@ -90,13 +90,7 @@ typedef struct pthread_barrierattr {
 
 typedef uint32_t pthread_rwlockattr_t;
 
-typedef struct pthread_rwlock_obj {
-	struct k_sem rd_sem;
-	struct k_sem wr_sem;
-	struct k_sem reader_active;/* blocks WR till reader has acquired lock */
-	int32_t status;
-	k_tid_t wr_owner;
-} pthread_rwlock_t;
+typedef uint32_t pthread_rwlock_t;
 
 struct pthread_once {
 	bool flag;
