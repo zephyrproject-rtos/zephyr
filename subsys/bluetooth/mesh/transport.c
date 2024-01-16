@@ -869,6 +869,8 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 		/* Best effort - we don't have enough info for true SeqAuth */
 		*seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_RX(rx), seq_zero);
 		return 0;
+	} else if (!rx->local_match) {
+		return 0;
 	}
 
 	ack = net_buf_simple_pull_be32(buf);
@@ -969,7 +971,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, uint8_t hdr,
 		return bt_mesh_hb_recv(rx, buf);
 	}
 
-	/* Only acks and heartbeats may need processing without local_match */
+	/* Only acks for friendship and heartbeats may need processing without local_match */
 	if (!rx->local_match) {
 		return 0;
 	}
