@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 #define SPI_MAX_TX_MSG_LEN 524
 #define SPI_MAX_RX_MSG_LEN 258
 
-static uint8_t __noinit g_hciRxMsg[SPI_MAX_RX_MSG_LEN];
+static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 static const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
 static struct spi_config spi_cfg = {
 	.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA |
@@ -259,7 +259,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 		do {
 			/* Recevive the HCI packet via SPI */
-			ret = spi_receive_packet(&g_hciRxMsg[0], &len);
+			ret = spi_receive_packet(&rxmsg[0], &len);
 			if (ret) {
 				break;
 			}
@@ -267,22 +267,22 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 			/* Check if needs to handle the vendor specific events which are
 			 * incompatible with the standard Bluetooth HCI format.
 			 */
-			if (bt_apollo_vnd_rcv_ongoing(&g_hciRxMsg[0], len)) {
+			if (bt_apollo_vnd_rcv_ongoing(&rxmsg[0], len)) {
 				break;
 			}
 
-			switch (g_hciRxMsg[PACKET_TYPE]) {
+			switch (rxmsg[PACKET_TYPE]) {
 			case HCI_EVT:
-				buf = bt_hci_evt_recv(&g_hciRxMsg[PACKET_TYPE + PACKET_TYPE_SIZE],
+				buf = bt_hci_evt_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
 			case HCI_ACL:
-				buf = bt_hci_acl_recv(&g_hciRxMsg[PACKET_TYPE + PACKET_TYPE_SIZE],
+				buf = bt_hci_acl_recv(&rxmsg[PACKET_TYPE + PACKET_TYPE_SIZE],
 						      (len - PACKET_TYPE_SIZE));
 				break;
 			default:
 				buf = NULL;
-				LOG_WRN("Unknown BT buf type %d", g_hciRxMsg[PACKET_TYPE]);
+				LOG_WRN("Unknown BT buf type %d", rxmsg[PACKET_TYPE]);
 				break;
 			}
 
