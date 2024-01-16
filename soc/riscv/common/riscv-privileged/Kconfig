@@ -4,18 +4,6 @@
 # Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config RISCV_HAS_PLIC
-	bool
-	depends on RISCV_PRIVILEGED
-	help
-	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
-
-config RISCV_HAS_CLIC
-	bool
-	depends on RISCV_PRIVILEGED
-	help
-	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
-
 config RISCV_VECTORED_MODE
 	bool "Should the SOC use vectored mode"
 	depends on RISCV_PRIVILEGED
