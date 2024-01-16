@@ -3,9 +3,6 @@
 
 if SOC_BCM2711
 
-config SOC
-	default "bcm2711"
-
 config NUM_IRQS
 	int
 	default 260
