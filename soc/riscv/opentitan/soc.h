@@ -7,22 +7,4 @@
 #ifndef __RISCV_OPENTITAN_SOC_H_
 #define __RISCV_OPENTITAN_SOC_H_
 
-#include <zephyr/devicetree.h>
-
-/* OpenTitan power management regs. */
-#define PWRMGR_CFG_CDC_SYNC_REG_OFFSET  0x018
-#define PWRMGR_RESET_EN_REG_OFFSET      0x02c
-#define PWRMGR_RESET_EN_WDOG_SRC_MASK   0x002
-
-/* Ibex timer registers. */
-#define RV_TIMER_CTRL_REG_OFFSET        0x004
-#define RV_TIMER_INTR_ENABLE_REG_OFFSET 0x100
-#define RV_TIMER_CFG0_REG_OFFSET        0x10c
-#define RV_TIMER_CFG0_PRESCALE_MASK     0xfff
-#define RV_TIMER_CFG0_PRESCALE_OFFSET   0
-#define RV_TIMER_CFG0_STEP_MASK         0xff
-#define RV_TIMER_CFG0_STEP_OFFSET       16
-#define RV_TIMER_LOWER0_OFFSET          0x110
-#define RV_TIMER_COMPARE_LOWER0_OFFSET  0x118
-
 #endif /* __RISCV_OPENTITAN_SOC_H_ */
