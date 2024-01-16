@@ -6,7 +6,4 @@ if BOARD_XENVM
 config BUILD_OUTPUT_BIN
 	default y
 
-config BOARD
-	default "xenvm"
-
 endif # BOARD_XENVM
