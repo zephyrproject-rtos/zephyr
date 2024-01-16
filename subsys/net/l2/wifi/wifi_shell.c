@@ -458,7 +458,7 @@ static int __wifi_args_to_params(size_t argc, char *argv[],
 		return -EINVAL;
 	}
 
-	/* Channel (optional) */
+	/* Channel (optional: STA, mandatory: AP) */
 	if ((idx < argc) && (strlen(argv[idx]) <= 3)) {
 		params->channel = strtol(argv[idx], &endptr, 10);
 		if (*endptr != '\0') {
@@ -1769,14 +1769,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  1, 0),
 	SHELL_CMD_ARG(enable, NULL,
 		  "\"<SSID>\"\n"
-		  "[channel number: 0 means all]\n"
+		  "<channel number>\n"
 		  "[PSK: valid only for secure SSIDs]\n"
 		  "[Security type: valid only for secure SSIDs]\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP, 6:WEP, 7: WPA-PSK\n"
 		  "[MFP (optional: needs security type to be specified)]\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n",
 		  cmd_wifi_ap_enable,
-		  2, 4),
+		  3, 3),
 	SHELL_CMD_ARG(stations, NULL,
 		  "List stations connected to the AP",
 		  cmd_wifi_ap_stations,
