@@ -106,7 +106,8 @@ void sema_context_switch(uint32_t num_iterations,
 			 uint32_t start_options, uint32_t alt_options)
 {
 	uint64_t  cycles;
-	char description[80];
+	char tag[50];
+	char description[120];
 	int  priority;
 
 	timing_start();
@@ -138,10 +139,12 @@ void sema_context_switch(uint32_t num_iterations,
 	cycles = timestamp.cycles;
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 
+	snprintf(tag, sizeof(tag),
+		 "semaphore.take.blocking.%c_to_%c",
+		 ((start_options & K_USER) == K_USER) ? 'u' : 'k',
+		 ((alt_options & K_USER) == K_USER) ? 'u' : 'k');
 	snprintf(description, sizeof(description),
-		 "SEMAPHORE take.blocking.(%c -> %c)",
-		 ((start_options & K_USER) == K_USER) ? 'U' : 'K',
-		 ((alt_options & K_USER) == K_USER) ? 'U' : 'K');
+		 "%-40s - Take a semaphore (context switch)", tag);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
 
@@ -154,10 +157,12 @@ void sema_context_switch(uint32_t num_iterations,
 	cycles = timestamp.cycles;
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 
+	snprintf(tag, sizeof(tag),
+		 "semaphore.give.wake+ctx.%c_to_%c",
+		 ((alt_options & K_USER) == K_USER) ? 'u' : 'k',
+		 ((start_options & K_USER) == K_USER) ? 'u' : 'k');
 	snprintf(description, sizeof(description),
-		 "SEMAPHORE give.wake+ctx.(%c -> %c)",
-		 ((alt_options & K_USER) == K_USER) ? 'U' : 'K',
-		 ((start_options & K_USER) == K_USER) ? 'U' : 'K');
+		 "%-40s - Give a semaphore (context switch)", tag);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
 
@@ -233,7 +238,8 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 {
 	uint64_t cycles;
 	int priority;
-	char description[80];
+	char tag[50];
+	char description[120];
 
 	timing_start();
 
@@ -254,9 +260,11 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 
 	cycles = timestamp.cycles;
 
-	snprintf(description, sizeof(description),
-		 "SEMAPHORE give.immediate.%s",
+	snprintf(tag, sizeof(tag),
+		 "semaphore.give.immediate.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Give a semaphore (no waiters)", tag);
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -273,9 +281,11 @@ int sema_test_signal(uint32_t num_iterations, uint32_t options)
 
 	cycles = timestamp.cycles;
 
-	snprintf(description, sizeof(description),
-		 "SEMAPHORE take.immediate.%s",
+	snprintf(tag, sizeof(tag),
+		 "semaphore.take.immediate.%s",
 		 (options & K_USER) == K_USER ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Take a semaphore (no blocking)", tag);
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");

@@ -93,7 +93,8 @@ int lifo_ops(uint32_t num_iterations, uint32_t options)
 {
 	int      priority;
 	uint64_t cycles;
-	char     description[80];
+	char     tag[50];
+	char     description[120];
 
 	priority = k_thread_priority_get(k_current_get());
 
@@ -111,9 +112,11 @@ int lifo_ops(uint32_t num_iterations, uint32_t options)
 	k_thread_start(&start_thread);
 
 	if ((options & K_USER) == 0) {
-		snprintf(description, sizeof(description),
-			 "LIFO put.immediate.%s",
+		snprintf(tag, sizeof(tag),
+			 "lifo.put.immediate.%s",
 			 options & K_USER ? "user" : "kernel");
+		snprintf(description, sizeof(description),
+			 "%-40s - Add data to LIFO (no ctx switch)", tag);
 
 		cycles = timestamp.cycles;
 		cycles -= timestamp_overhead_adjustment(options, options);
@@ -121,9 +124,11 @@ int lifo_ops(uint32_t num_iterations, uint32_t options)
 				num_iterations, false, "");
 		k_sem_give(&pause_sem);
 
-		snprintf(description, sizeof(description),
-			 "LIFO get.immediate.%s",
+		snprintf(tag, sizeof(tag),
+			 "lifo.get.immediate.%s",
 			 options & K_USER ? "user" : "kernel");
+		snprintf(description, sizeof(description),
+			 "%-40s - Get data from LIFO (no ctx switch)", tag);
 		cycles = timestamp.cycles;
 		cycles -= timestamp_overhead_adjustment(options, options);
 		PRINT_STATS_AVG(description, (uint32_t)cycles,
@@ -131,18 +136,22 @@ int lifo_ops(uint32_t num_iterations, uint32_t options)
 		k_sem_give(&pause_sem);
 	}
 
-	snprintf(description, sizeof(description),
-		 "LIFO put.alloc.immediate.%s",
+	snprintf(tag, sizeof(tag),
+		 "lifo.put.alloc.immediate.%s",
 		 options & K_USER ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Allocate to add data to LIFO (no ctx switch)", tag);
 
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
 	k_sem_give(&pause_sem);
 
-	snprintf(description, sizeof(description),
-		 "LIFO get.free.immediate.%s",
+	snprintf(tag, sizeof(tag),
+		 "lifo.get.free.immediate.%s",
 		 options & K_USER ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Free when getting data from LIFO (no ctx switch)", tag);
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -258,7 +267,8 @@ int lifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 {
 	int      priority;
 	uint64_t cycles;
-	char     description[80];
+	char     tag[50];
+	char     description[120];
 
 	priority = k_thread_priority_get(k_current_get());
 
@@ -284,40 +294,48 @@ int lifo_blocking_ops(uint32_t num_iterations, uint32_t start_options,
 	k_thread_start(&start_thread);
 
 	if (((start_options | alt_options) & K_USER) == 0) {
+		snprintf(tag, sizeof(tag),
+			 "lifo.get.blocking.%s_to_%s",
+			 alt_options & K_USER ? "u" : "k",
+			 start_options & K_USER ? "u" : "k");
 		snprintf(description, sizeof(description),
-			 "LIFO get.blocking.(%s -> %s)",
-			 alt_options & K_USER ? "U" : "K",
-			 start_options & K_USER ? "U" : "K");
+			 "%-40s - Get data from LIFO (w/ ctx switch)", tag);
 
 		cycles = timestamp.cycles;
 		PRINT_STATS_AVG(description, (uint32_t)cycles,
 				num_iterations, false, "");
 		k_sem_give(&pause_sem);
 
+		snprintf(tag, sizeof(tag),
+			 "lifo.put.wake+ctx.%s_to_%s",
+			 start_options & K_USER ? "u" : "k",
+			 alt_options & K_USER ? "u" : "k");
 		snprintf(description, sizeof(description),
-			 "LIFO put.wake+ctx.(%s -> %s)",
-			 start_options & K_USER ? "U" : "K",
-			 alt_options & K_USER ? "U" : "K");
+			 "%-40s - Add data to LIFO (w/ ctx switch)", tag);
 		cycles = timestamp.cycles;
 		PRINT_STATS_AVG(description, (uint32_t)cycles,
 				num_iterations, false, "");
 		k_sem_give(&pause_sem);
 	}
 
+	snprintf(tag, sizeof(tag),
+		 "lifo.get.free.blocking.%s_to_%s",
+		 alt_options & K_USER ? "u" : "k",
+		 start_options & K_USER ? "u" : "k");
 	snprintf(description, sizeof(description),
-		 "LIFO get.free.blocking.(%s -> %s)",
-		 alt_options & K_USER ? "U" : "K",
-		 start_options & K_USER ? "U" : "K");
+		 "%-40s - Free when getting data from LIFO (w/ ctx switch)", tag);
 
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
 	k_sem_give(&pause_sem);
 
+	snprintf(tag, sizeof(tag),
+		 "lifo.put.alloc.wake+ctx.%s_to_%s",
+		 start_options & K_USER ? "u" : "k",
+		 alt_options & K_USER ? "u" : "k");
 	snprintf(description, sizeof(description),
-		 "LIFO put.alloc.wake+ctx.(%s -> %s)",
-		 start_options & K_USER ? "U" : "K",
-		 alt_options & K_USER ? "U" : "K");
+		 "%-40s - Allocate to add data to LIFO (w/ ctx siwtch)", tag);
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");

@@ -33,7 +33,8 @@ static void event_ops_entry(void *p1, void *p2, void *p3)
 	timing_t  finish;
 	uint32_t  i;
 	uint64_t  cycles;
-	char      description[80];
+	char      tag[50];
+	char      description[120];
 
 	k_event_clear(&event_set, ALL_EVENTS);
 
@@ -43,9 +44,10 @@ static void event_ops_entry(void *p1, void *p2, void *p3)
 	}
 	finish = timing_timestamp_get();
 
-	snprintf(description, sizeof(description),
-		 "EVENTS post.immediate.%s",
+	snprintf(tag, sizeof(tag), "events.post.immediate.%s",
 		 (options & K_USER) ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Post events (nothing wakes)", tag);
 	cycles = timing_cycles_get(&start, &finish);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -56,9 +58,10 @@ static void event_ops_entry(void *p1, void *p2, void *p3)
 	}
 	finish = timing_timestamp_get();
 
-	snprintf(description, sizeof(description),
-		 "EVENTS set.immediate.%s",
+	snprintf(tag, sizeof(tag), "events.set.immediate.%s",
 		 (options & K_USER) ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Set events (nothing wakes)", tag);
 	cycles = timing_cycles_get(&start, &finish);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -69,9 +72,10 @@ static void event_ops_entry(void *p1, void *p2, void *p3)
 	}
 	finish = timing_timestamp_get();
 
-	snprintf(description, sizeof(description),
-		 "EVENTS wait.immediate.%s",
+	snprintf(tag, sizeof(tag), "events.wait.immediate.%s",
 		 (options & K_USER) ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Wait for any events (no ctx switch)", tag);
 	cycles = timing_cycles_get(&start, &finish);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -82,9 +86,10 @@ static void event_ops_entry(void *p1, void *p2, void *p3)
 	}
 	finish = timing_timestamp_get();
 
-	snprintf(description, sizeof(description),
-		 "EVENTS wait_all.immediate.%s",
+	snprintf(tag, sizeof(tag), "events.wait_all.immediate.%s",
 		 (options & K_USER) ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Wait for all events (no ctx switch)", tag);
 	cycles = timing_cycles_get(&start, &finish);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -97,7 +102,8 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 	uint32_t  alt_options = (uint32_t)(uintptr_t)p3;
 	uint32_t  i;
 	uint64_t  cycles;
-	char      description[80];
+	char      tag[50];
+	char      description[120];
 
 	k_thread_start(&alt_thread);
 
@@ -109,20 +115,24 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 		k_event_set(&event_set, BENCH_EVENT_SET);
 	}
 
+	snprintf(tag, sizeof(tag),
+		 "events.wait.blocking.%c_to_%c",
+		 (alt_options & K_USER) ? 'u' : 'k',
+		 (options & K_USER) ? 'u' : 'k');
 	snprintf(description, sizeof(description),
-		 "EVENTS wait.blocking.(%c -> %c)",
-		 (alt_options & K_USER) ? 'U' : 'K',
-		 (options & K_USER) ? 'U' : 'K');
+		 "%-40s - Wait for any events (w/ ctx switch)", tag);
 	cycles = timestamp.cycles -
 		 timestamp_overhead_adjustment(options, alt_options);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
 	k_sem_give(&pause_sem);
 
+	snprintf(tag, sizeof(tag),
+		 "events.set.wake+ctx.%c_to_%c",
+		 (options & K_USER) ? 'u' : 'k',
+		 (alt_options & K_USER) ? 'u' : 'k');
 	snprintf(description, sizeof(description),
-		 "EVENTS set.wake+ctx.(%c -> %c)",
-		 (options & K_USER) ? 'U' : 'K',
-		 (alt_options & K_USER) ? 'U' : 'K');
+		 "%-40s - Set events (w/ ctx switch)", tag);
 	cycles = timestamp.cycles -
 		 timestamp_overhead_adjustment(options, alt_options);
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
@@ -137,19 +147,23 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 		k_event_post(&event_set, BENCH_EVENT_SET);
 	}
 
+	snprintf(tag, sizeof(tag),
+		 "events.wait_all.blocking.%c_to_%c",
+		 (alt_options & K_USER) ? 'u' : 'k',
+		 (options & K_USER) ? 'u' : 'k');
 	snprintf(description, sizeof(description),
-		 "EVENTS wait_all.blocking.(%c -> %c)",
-		 (alt_options & K_USER) ? 'U' : 'K',
-		 (options & K_USER) ? 'U' : 'K');
+		 "%-40s - Wait for all events (w/ ctx switch)", tag);
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
 	k_sem_give(&pause_sem);
 
+	snprintf(tag, sizeof(tag),
+		 "events.post.wake+ctx.%c_to_%c",
+		 (options & K_USER) ? 'u' : 'k',
+		 (alt_options & K_USER) ? 'u' : 'k');
 	snprintf(description, sizeof(description),
-		 "EVENTS post.wake+ctx.(%c -> %c)",
-		 (options & K_USER) ? 'U' : 'K',
-		 (alt_options & K_USER) ? 'U' : 'K');
+		 "%-40s - Post events (w/ ctx switch)", tag);
 	cycles = timestamp.cycles;
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
