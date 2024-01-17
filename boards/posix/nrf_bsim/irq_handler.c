@@ -258,6 +258,11 @@ int posix_get_current_irq(void)
 void posix_isr_declare(unsigned int irq_p, int flags, void isr_p(const void *),
 		       const void *isr_param_p)
 {
+	if (irq_p >= NHW_INTCTRL_MAX_INTLINES) {
+		bs_trace_error_time_line("Attempted to configure not existent interrupt %u\n",
+					 irq_p);
+		return;
+	}
 	irq_vector_table[irq_p].irq   = irq_p;
 	irq_vector_table[irq_p].func  = isr_p;
 	irq_vector_table[irq_p].param = isr_param_p;
