@@ -1,6 +1,6 @@
 .. _lps22hb:
 
-LPS22HB: Temperature and Humidity Monitor
+LPS22HB: Temperature and Pressure Monitor
 #########################################
 
 Overview
