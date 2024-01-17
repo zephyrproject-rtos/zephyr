@@ -110,6 +110,13 @@ config LWM2M_QUEUE_MODE_UPTIME
 	  defaults to 93 seconds, see RFC 7252), it does not forbid other
 	  values though.
 
+config LWM2M_QUEUE_MODE_NO_MSG_BUFFERING
+	bool "Disable buffering notifications and messages on queue mode"
+	select EXPERIMENTAL
+	help
+	  Messages are sent right away instead of waiting for next registration update.
+	  This might not be supported on all servers.
+
 config LWM2M_TLS_SESSION_CACHING
 	bool "TLS session caching"
 	help
