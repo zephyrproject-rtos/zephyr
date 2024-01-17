@@ -111,7 +111,6 @@ struct bt_cap_common_proc {
 	struct bt_conn *failed_conn;
 	struct bt_cap_common_proc_param proc_param;
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-	struct bt_bap_unicast_group *unicast_group;
 	enum bt_cap_common_subproc_type subproc_type;
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 };
