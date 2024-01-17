@@ -230,7 +230,7 @@ static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
 {
 	if (z_prio < 0) {
-		__ASSERT_NO_MSG(z_prio < CONFIG_NUM_COOP_PRIORITIES);
+		__ASSERT_NO_MSG(-z_prio <= CONFIG_NUM_COOP_PRIORITIES);
 	} else {
 		__ASSERT_NO_MSG(z_prio < CONFIG_NUM_PREEMPT_PRIORITIES);
 	}
