@@ -96,6 +96,9 @@ static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
 	if (!data->pm_policy_state_on) {
 		data->pm_policy_state_on = true;
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
 	}
 }
 
@@ -106,6 +109,9 @@ static void uart_stm32_pm_policy_state_lock_put(const struct device *dev)
 	if (data->pm_policy_state_on) {
 		data->pm_policy_state_on = false;
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
 	}
 }
 #endif /* CONFIG_PM */
