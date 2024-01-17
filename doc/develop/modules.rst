@@ -611,9 +611,10 @@ For example, to include the file :file:`some/Kconfig` in module ``foo``:
 
   source "$(ZEPHYR_FOO_MODULE_DIR)/some/Kconfig"
 
-During CMake processing of each Zephyr module, the following two variables are
+During CMake processing of each Zephyr module, the following variables are
 also available:
 
+- the current module's name: ``${ZEPHYR_CURRENT_MODULE_NAME}``
 - the current module's top level directory: ``${ZEPHYR_CURRENT_MODULE_DIR}``
 - the current module's :file:`CMakeLists.txt` directory: ``${ZEPHYR_CURRENT_CMAKE_DIR}``
 
