@@ -1,2 +1,15 @@
 family:
 - name: st_stm32
+  series:
+  - name: stm32f0x
+    socs:
+    - name: stm32f030x6
+    - name: stm32f030x8
+    - name: stm32f030xc
+    - name: stm32f031x6
+    - name: stm32f042x6
+    - name: stm32f051x8
+    - name: stm32f070xb
+    - name: stm32f072xb
+    - name: stm32f091xc
+    - name: stm32f098xx
