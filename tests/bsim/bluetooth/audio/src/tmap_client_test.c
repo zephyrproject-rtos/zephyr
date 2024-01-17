@@ -113,6 +113,23 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv,
 };
 
+static void discover_tmas(void)
+{
+	int err;
+
+	UNSET_FLAG(flag_tmap_discovered);
+
+	/* Discover TMAS service on peer */
+	err = bt_tmap_discover(default_conn, &tmap_callbacks);
+	if (err != 0) {
+		FAIL("Failed to initiate TMAS discovery: %d\n", err);
+		return;
+	}
+
+	printk("TMAP Central Starting Service Discovery...\n");
+	WAIT_FOR_FLAG(flag_tmap_discovered);
+}
+
 static void test_main(void)
 {
 	int err;
@@ -141,15 +158,9 @@ static void test_main(void)
 
 	printk("Scanning successfully started\n");
 	WAIT_FOR_FLAG(flag_connected);
-	/* Discover TMAS service on peer */
-	err = bt_tmap_discover(default_conn, &tmap_callbacks);
-	if (err != 0) {
-		FAIL("Failed to initiate TMAS discovery: %d\n", err);
-		return;
-	}
 
-	printk("TMAP Central Starting Service Discovery...\n");
-	WAIT_FOR_FLAG(flag_tmap_discovered);
+	discover_tmas();
+	discover_tmas(); /* test that we can discover twice */
 
 	PASS("TMAP Client test passed\n");
 }

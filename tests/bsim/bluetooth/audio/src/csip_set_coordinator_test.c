@@ -21,7 +21,7 @@ static volatile bool set_locked;
 static volatile bool set_unlocked;
 static volatile bool ordered_access_locked;
 static volatile bool ordered_access_unlocked;
-static const struct bt_csip_set_coordinator_csis_inst *inst;
+static const struct bt_csip_set_coordinator_csis_inst *primary_inst;
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
@@ -99,7 +99,10 @@ static void csip_discover_cb(struct bt_conn *conn,
 		}
 	}
 
-	inst = &member->insts[0];
+	if (primary_inst == NULL) {
+		primary_inst = &member->insts[0];
+	}
+
 	set_members[conn_index] = member;
 	discovered = true;
 }
@@ -107,7 +110,7 @@ static void csip_discover_cb(struct bt_conn *conn,
 static void csip_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,
 				 bool locked)
 {
-	printk("Inst %p %s\n", inst, locked ? "locked" : "released");
+	printk("inst %p %s\n", inst, locked ? "locked" : "released");
 }
 
 static void csip_set_coordinator_ordered_access_cb(
@@ -156,7 +159,7 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csip_found(struct bt_data *data, void *user_data)
 {
-	if (bt_csip_set_coordinator_is_set_member(inst->info.set_sirk, data)) {
+	if (bt_csip_set_coordinator_is_set_member(primary_inst->info.set_sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
@@ -171,10 +174,11 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		if (inst->info.set_size == 0) {
+		if (primary_inst->info.set_size == 0) {
 			printk("Found member %u\n", members_found);
 		} else {
-			printk("Found member (%u / %u)\n", members_found, inst->info.set_size);
+			printk("Found member (%u / %u)\n", members_found,
+			       primary_inst->info.set_size);
 		}
 
 		/* Stop parsing */
@@ -189,7 +193,7 @@ static void csip_set_coordinator_scan_recv(const struct bt_le_scan_recv_info *in
 {
 	/* We're only interested in connectable events */
 	if (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
-		if (inst == NULL) {
+		if (primary_inst == NULL) {
 			/* Scanning for the first device */
 			if (members_found == 0) {
 				bt_addr_le_copy(&addr_found[members_found++],
@@ -207,8 +211,9 @@ static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
 
 static void discover_members_timer_handler(struct k_work *work)
 {
-	if (inst->info.set_size > 0) {
-		FAIL("Could not find all members (%u / %u)\n", members_found, inst->info.set_size);
+	if (primary_inst->info.set_size > 0) {
+		FAIL("Could not find all members (%u / %u)\n", members_found,
+		     primary_inst->info.set_size);
 	} else {
 		discover_timed_out = true;
 	}
@@ -228,8 +233,7 @@ static void ordered_access(const struct bt_csip_set_coordinator_set_member **mem
 		ordered_access_unlocked = false;
 	}
 
-	err = bt_csip_set_coordinator_ordered_access(members, count,
-						     &inst->info,
+	err = bt_csip_set_coordinator_ordered_access(members, count, &primary_inst->info,
 						     csip_set_coordinator_oap_cb);
 	if (err != 0) {
 		FAIL("Failed to do CSIP set coordinator ordered access (%d)",
@@ -242,6 +246,21 @@ static void ordered_access(const struct bt_csip_set_coordinator_set_member **mem
 	} else {
 		WAIT_FOR_COND(ordered_access_unlocked);
 	}
+}
+
+static void discover_csis(struct bt_conn *conn)
+{
+	int err;
+
+	discovered = false;
+
+	err = bt_csip_set_coordinator_discover(conns[bt_conn_index(conn)]);
+	if (err != 0) {
+		FAIL("Failed to initialize set coordinator for connection %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_COND(discovered);
 }
 
 static void test_main(void)
@@ -293,14 +312,8 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 	connected_member_count++;
 
-	err = bt_csip_set_coordinator_discover(conns[0]);
-	if (err != 0) {
-		FAIL("Failed to initialize set coordinator for connection %d\n",
-		     err);
-		return;
-	}
-
-	WAIT_FOR_COND(discovered);
+	discover_csis(conns[0]);
+	discover_csis(conns[0]); /* test that we can discover twice */
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
@@ -315,8 +328,8 @@ static void test_main(void)
 		return;
 	}
 
-	if (inst->info.set_size > 0) {
-		WAIT_FOR_COND(members_found == inst->info.set_size);
+	if (primary_inst->info.set_size > 0) {
+		WAIT_FOR_COND(members_found == primary_inst->info.set_size);
 
 		(void)k_work_cancel_delayable(&discover_members_timer);
 	} else {
@@ -347,30 +360,22 @@ static void test_main(void)
 		WAIT_FOR_FLAG(flag_connected);
 		connected_member_count++;
 
-		discovered = false;
 		printk("Doing discovery on member[%u]", i);
-		err = bt_csip_set_coordinator_discover(conns[i]);
-		if (err != 0) {
-			FAIL("Failed to initialize set coordinator for connection %d\n",
-			      err);
-			return;
-		}
-
-		WAIT_FOR_COND(discovered);
+		discover_csis(conns[i]);
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
 		locked_members[i] = set_members[i];
 	}
 
-	if (inst->info.rank != 0U) {
+	if (primary_inst->info.rank != 0U) {
 		ordered_access(locked_members, connected_member_count, false);
 	}
 
-	if (inst->info.lockable) {
+	if (primary_inst->info.lockable) {
 		printk("Locking set\n");
 		err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
-						   &inst->info);
+						   &primary_inst->info);
 		if (err != 0) {
 			FAIL("Failed to do set coordinator lock (%d)", err);
 			return;
@@ -379,16 +384,16 @@ static void test_main(void)
 		WAIT_FOR_COND(set_locked);
 	}
 
-	if (inst->info.rank != 0U) {
-		ordered_access(locked_members, connected_member_count, inst->info.lockable);
+	if (primary_inst->info.rank != 0U) {
+		ordered_access(locked_members, connected_member_count, primary_inst->info.lockable);
 	}
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
-	if (inst->info.lockable) {
+	if (primary_inst->info.lockable) {
 		printk("Releasing set\n");
 		err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
-						      &inst->info);
+						      &primary_inst->info);
 		if (err != 0) {
 			FAIL("Failed to do set coordinator release (%d)", err);
 			return;
@@ -397,18 +402,18 @@ static void test_main(void)
 		WAIT_FOR_COND(set_unlocked);
 	}
 
-	if (inst->info.rank != 0U) {
+	if (primary_inst->info.rank != 0U) {
 		ordered_access(locked_members, connected_member_count, false);
 	}
 
-	if (inst->info.lockable) {
+	if (primary_inst->info.lockable) {
 		/* Lock and unlock again */
 		set_locked = false;
 		set_unlocked = false;
 
 		printk("Locking set\n");
 		err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
-						   &inst->info);
+						   &primary_inst->info);
 		if (err != 0) {
 			FAIL("Failed to do set coordinator lock (%d)", err);
 			return;
@@ -419,10 +424,10 @@ static void test_main(void)
 
 	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
 
-	if (inst->info.lockable) {
+	if (primary_inst->info.lockable) {
 		printk("Releasing set\n");
 		err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
-						      &inst->info);
+						      &primary_inst->info);
 		if (err != 0) {
 			FAIL("Failed to do set coordinator release (%d)", err);
 			return;
