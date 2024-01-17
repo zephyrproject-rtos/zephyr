@@ -326,6 +326,73 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
  */
 
 /**
+ * @brief Common CAN controller driver configuration.
+ *
+ * This structure is common to all CAN controller drivers and is expected to be the first element in
+ * the object pointed to by the config field in the device structure.
+ */
+struct can_driver_config {
+	/** Pointer to the device structure for the associated CAN transceiver device or NULL. */
+	const struct device *phy;
+	/** The maximum bitrate supported by the CAN controller/transceiver combination. */
+	uint32_t max_bitrate;
+	/** Initial CAN classic/CAN FD arbitration phase bitrate. */
+	uint32_t bus_speed;
+	/** Initial CAN classic/CAN FD arbitration phase sample point in permille. */
+	uint16_t sample_point;
+#ifdef CONFIG_CAN_FD_MODE
+	/** Initial CAN FD data phase sample point in permille. */
+	uint16_t sample_point_data;
+	/** Initial CAN FD data phase bitrate. */
+	uint32_t bus_speed_data;
+#endif /* CONFIG_CAN_FD_MODE */
+};
+
+/**
+ * @brief Static initializer for @p can_driver_config struct
+ *
+ * @param node_id Devicetree node identifier
+ * @param _max_bitrate maximum bitrate supported by the CAN controller
+ */
+#define CAN_DT_DRIVER_CONFIG_GET(node_id, _max_bitrate)						\
+	{											\
+		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),			\
+		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, _max_bitrate),		\
+		.bus_speed = DT_PROP(node_id, bus_speed),					\
+		.sample_point = DT_PROP_OR(node_id, sample_point, 0),				\
+		IF_ENABLED(CONFIG_CAN_FD_MODE,							\
+			(.bus_speed_data = DT_PROP_OR(node_id, bus_speed_data, 0),		\
+			 .sample_point_data = DT_PROP_OR(node_id, sample_point_data, 0),))	\
+	}
+
+/**
+ * @brief Static initializer for @p can_driver_config struct from DT_DRV_COMPAT instance
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param _max_bitrate maximum bitrate supported by the CAN controller
+ * @see CAN_DT_DRIVER_CONFIG_GET()
+ */
+#define CAN_DT_DRIVER_CONFIG_INST_GET(inst, _max_bitrate)					\
+	CAN_DT_DRIVER_CONFIG_GET(DT_DRV_INST(inst), _max_bitrate)
+
+/**
+ * @brief Common CAN controller driver data.
+ *
+ * This structure is common to all CAN controller drivers and is expected to be the first element in
+ * the driver's struct driver_data declaration.
+ */
+struct can_driver_data {
+	/** Current CAN controller mode. */
+	can_mode_t mode;
+	/** True if the CAN controller is started, false otherwise. */
+	bool started;
+	/** State change callback function pointer or NULL. */
+	can_state_change_callback_t state_change_cb;
+	/** State change callback user data pointer or NULL. */
+	void *state_change_cb_user_data;
+};
+
+/**
  * @brief Callback API upon setting CAN bus timing
  * See @a can_set_timing() for argument description
  */
