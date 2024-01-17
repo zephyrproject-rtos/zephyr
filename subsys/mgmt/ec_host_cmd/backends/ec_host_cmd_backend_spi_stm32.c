@@ -694,7 +694,7 @@ static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
 	hc_spi->state = SPI_HOST_CMD_STATE_DISABLED;
 
 	/* SPI backend needs rx and tx buffers provided by the handler */
-	if (!rx_ctx->buf || !tx->buf) {
+	if (!rx_ctx->buf || !tx->buf || !hc_spi->cs.port) {
 		return -EIO;
 	}
 
@@ -806,7 +806,9 @@ static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev,
 			return err;
 		}
 		/* Enable CS interrupts. */
-		gpio_pin_interrupt_configure_dt(&hc_spi->cs, GPIO_INT_EDGE_BOTH);
+		if (hc_spi->cs.port) {
+			gpio_pin_interrupt_configure_dt(&hc_spi->cs, GPIO_INT_EDGE_BOTH);
+		}
 
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -817,7 +819,9 @@ static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev,
 		WAIT_FOR((LL_SPI_IsActiveFlag_BSY(cfg->spi) == 0), 10 * USEC_PER_MSEC, NULL);
 #endif
 		/* Disable unnecessary interrupts. */
-		gpio_pin_interrupt_configure_dt(&hc_spi->cs, GPIO_INT_DISABLE);
+		if (hc_spi->cs.port) {
+			gpio_pin_interrupt_configure_dt(&hc_spi->cs, GPIO_INT_DISABLE);
+		}
 
 		/* Stop device clock. */
 		err = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
