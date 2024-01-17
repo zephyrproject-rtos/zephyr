@@ -3,11 +3,6 @@
 
 if SOC_STM32F030X4
 
-# STM32F0 Cube package advises to use 'stm32f030x6' code
-# for both STM32F030x4 and STM32F030x6 SoC variants.
-config SOC
-	default "stm32f030x6"
-
 config NUM_IRQS
 	default 28
 
