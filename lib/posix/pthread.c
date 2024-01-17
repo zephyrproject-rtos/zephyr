@@ -222,7 +222,7 @@ static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 		return true;
 	}
 
-	LOG_ERR("Invalid piority %d and / or policy %d", priority, policy);
+	LOG_ERR("Invalid priority %d and / or policy %d", priority, policy);
 
 	return false;
 }
@@ -242,7 +242,7 @@ static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
 static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
 {
 	if (policy == SCHED_FIFO) {
-		/* COOP: highest [CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
+		/* COOP: highest [-CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
 		__ASSERT_NO_MSG(priority < CONFIG_NUM_COOP_PRIORITIES);
 	} else {
 		/* PREEMPT: lowest [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1] highest */
