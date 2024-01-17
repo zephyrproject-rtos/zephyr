@@ -155,6 +155,7 @@ static inline void usbd_class_update(struct usbd_class_node *const node,
 	}
 }
 
+
 /**
  * @brief USB suspended handler
  *
@@ -274,6 +275,27 @@ static inline void usbd_class_shutdown(struct usbd_class_node *const node)
 	if (api->shutdown != NULL) {
 		api->shutdown(node);
 	}
+}
+
+/**
+ * @brief Get function descriptor
+ *
+ * @param[in] node Pointer to USB device class node
+ * @param[in] speed For which speed descriptor is requested.
+ *
+ * @return Array of struct usb_desc_header pointers with a last element
+ *         pointing to a nil descriptor on success, NULL if not available.
+ */
+static inline void *usbd_class_get_desc(struct usbd_class_node *const node,
+					const enum usbd_speed speed)
+{
+	const struct usbd_class_api *api = node->api;
+
+	if (api->get_desc != NULL) {
+		return api->get_desc(node, speed);
+	}
+
+	return NULL;
 }
 
 #endif /* ZEPHYR_INCLUDE_USBD_CLASS_API_H */
