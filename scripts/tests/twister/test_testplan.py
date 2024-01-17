@@ -1696,11 +1696,6 @@ TESTDATA_13 = [
     TESTDATA_13,
 )
 def test_testplan_create_build_dir_link(os_name):
-    testplan = TestPlan(env=mock.Mock())
-    links_dir_path = os.path.join('links', 'path')
-    instance_build_dir = os.path.join('some', 'far', 'off', 'build', 'dir')
-    instance = mock.Mock(build_dir=instance_build_dir)
-
     def mock_makedirs(path, exist_ok=False):
         assert exist_ok
         assert path == instance_build_dir
@@ -1714,14 +1709,24 @@ def test_testplan_create_build_dir_link(os_name):
         assert cmd == ['mklink', '/J', os.path.join('links', 'path', 'test_0'),
                        instance_build_dir]
 
+    def mock_join(*paths):
+        slash = "\\" if os.name == 'nt' else "/"
+        return slash.join(paths)
+
     with mock.patch('os.name', os_name), \
          mock.patch('os.symlink', side_effect=mock_symlink), \
          mock.patch('os.makedirs', side_effect=mock_makedirs), \
-         mock.patch('subprocess.call', side_effect=mock_call):
+         mock.patch('subprocess.call', side_effect=mock_call), \
+         mock.patch('os.path.join', side_effect=mock_join):
+
+        testplan = TestPlan(env=mock.Mock())
+        links_dir_path = os.path.join('links', 'path')
+        instance_build_dir = os.path.join('some', 'far', 'off', 'build', 'dir')
+        instance = mock.Mock(build_dir=instance_build_dir)
         testplan._create_build_dir_link(links_dir_path, instance)
 
-    assert instance.build_dir == os.path.join('links', 'path', 'test_0')
-    assert testplan.link_dir_counter == 1
+        assert instance.build_dir == os.path.join('links', 'path', 'test_0')
+        assert testplan.link_dir_counter == 1
 
 
 TESTDATA_14 = [
