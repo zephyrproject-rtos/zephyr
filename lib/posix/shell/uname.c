@@ -6,6 +6,8 @@
 
 #include <unistd.h>
 
+#include "posix_shell.h"
+
 #include <zephyr/posix/sys/utsname.h>
 #include <zephyr/shell/shell.h>
 
@@ -168,4 +170,4 @@ static int uname_cmd_handler(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_CMD_REGISTER(uname, NULL, NULL, uname_cmd_handler);
+POSIX_CMD_ADD(uname, NULL, "Print system information", uname_cmd_handler, 1, 1);
