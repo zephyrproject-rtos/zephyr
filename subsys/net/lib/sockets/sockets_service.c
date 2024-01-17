@@ -196,7 +196,7 @@ static void socket_service_thread(void)
 
 	if ((count + 1) > ARRAY_SIZE(ctx.events)) {
 		NET_WARN("You have %d services to monitor but "
-			 "%d poll entries configured.",
+			 "%zd poll entries configured.",
 			 count + 1, ARRAY_SIZE(ctx.events));
 		NET_WARN("Consider increasing value of %s to %d",
 			 "CONFIG_NET_SOCKETS_POLL_MAX", count + 1);
