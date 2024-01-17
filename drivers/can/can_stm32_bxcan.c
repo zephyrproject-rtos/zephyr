@@ -66,6 +66,7 @@ struct can_stm32_mailbox {
 };
 
 struct can_stm32_data {
+	struct can_driver_data common;
 	struct k_mutex inst_mutex;
 	struct k_sem tx_int_sem;
 	struct can_stm32_mailbox mb0;
@@ -75,25 +76,19 @@ struct can_stm32_data {
 	can_rx_callback_t rx_cb_ext[CONFIG_CAN_MAX_EXT_ID_FILTER];
 	void *cb_arg_std[CONFIG_CAN_MAX_STD_ID_FILTER];
 	void *cb_arg_ext[CONFIG_CAN_MAX_EXT_ID_FILTER];
-	can_state_change_callback_t state_change_cb;
-	void *state_change_cb_data;
 	enum can_state state;
-	bool started;
 };
 
 struct can_stm32_config {
+	const struct can_driver_config common;
 	CAN_TypeDef *can;   /*!< CAN Registers*/
 	CAN_TypeDef *master_can;   /*!< CAN Registers for shared filter */
-	uint32_t bus_speed;
-	uint16_t sample_point;
 	uint8_t sjw;
 	uint8_t prop_ts1;
 	uint8_t ts2;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 	const struct pinctrl_dev_config *pcfg;
-	const struct device *phy;
-	uint32_t max_bitrate;
 };
 
 /*
@@ -187,7 +182,7 @@ static int can_stm32_get_state(const struct device *dev, enum can_state *state,
 	CAN_TypeDef *can = cfg->can;
 
 	if (state != NULL) {
-		if (!data->started) {
+		if (!data->common.started) {
 			*state = CAN_STATE_STOPPED;
 		} else if (can->ESR & CAN_ESR_BOFF) {
 			*state = CAN_STATE_BUS_OFF;
@@ -215,8 +210,8 @@ static inline void can_stm32_bus_state_change_isr(const struct device *dev)
 	struct can_stm32_data *data = dev->data;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
-	const can_state_change_callback_t cb = data->state_change_cb;
-	void *state_change_cb_data = data->state_change_cb_data;
+	const can_state_change_callback_t cb = data->common.state_change_cb;
+	void *state_change_cb_data = data->common.state_change_cb_user_data;
 
 #ifdef CONFIG_CAN_STATS
 	const struct can_stm32_config *cfg = dev->config;
@@ -418,13 +413,13 @@ static int can_stm32_start(const struct device *dev)
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	if (data->started) {
+	if (data->common.started) {
 		ret = -EALREADY;
 		goto unlock;
 	}
 
-	if (cfg->phy != NULL) {
-		ret = can_transceiver_enable(cfg->phy);
+	if (cfg->common.phy != NULL) {
+		ret = can_transceiver_enable(cfg->common.phy);
 		if (ret != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
@@ -437,16 +432,16 @@ static int can_stm32_start(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Failed to leave init mode");
 
-		if (cfg->phy != NULL) {
+		if (cfg->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
-			(void)can_transceiver_disable(cfg->phy);
+			(void)can_transceiver_disable(cfg->common.phy);
 		}
 
 		ret = -EIO;
 		goto unlock;
 	}
 
-	data->started = true;
+	data->common.started = true;
 
 unlock:
 	k_mutex_unlock(&data->inst_mutex);
@@ -463,7 +458,7 @@ static int can_stm32_stop(const struct device *dev)
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	if (!data->started) {
+	if (!data->common.started) {
 		ret = -EALREADY;
 		goto unlock;
 	}
@@ -481,15 +476,15 @@ static int can_stm32_stop(const struct device *dev)
 	can_stm32_signal_tx_complete(dev, &data->mb2, -ENETDOWN);
 	can->TSR |= CAN_TSR_ABRQ2 | CAN_TSR_ABRQ1 | CAN_TSR_ABRQ0;
 
-	if (cfg->phy != NULL) {
-		ret = can_transceiver_disable(cfg->phy);
+	if (cfg->common.phy != NULL) {
+		ret = can_transceiver_disable(cfg->common.phy);
 		if (ret != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
 		}
 	}
 
-	data->started = false;
+	data->common.started = false;
 
 unlock:
 	k_mutex_unlock(&data->inst_mutex);
@@ -510,7 +505,7 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 		return -ENOTSUP;
 	}
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -551,7 +546,7 @@ static int can_stm32_set_timing(const struct device *dev,
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
-	if (data->started) {
+	if (data->common.started) {
 		k_mutex_unlock(&data->inst_mutex);
 		return -EBUSY;
 	}
@@ -591,7 +586,7 @@ static int can_stm32_get_max_bitrate(const struct device *dev, uint32_t *max_bit
 {
 	const struct can_stm32_config *config = dev->config;
 
-	*max_bitrate = config->max_bitrate;
+	*max_bitrate = config->common.max_bitrate;
 
 	return 0;
 }
@@ -621,8 +616,8 @@ static int can_stm32_init(const struct device *dev)
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_int_sem, 0, 1);
 
-	if (cfg->phy != NULL) {
-		if (!device_is_ready(cfg->phy)) {
+	if (cfg->common.phy != NULL) {
+		if (!device_is_ready(cfg->common.phy)) {
 			LOG_ERR("CAN transceiver not ready");
 			return -ENODEV;
 		}
@@ -673,9 +668,9 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
-	if (cfg->sample_point && USE_SP_ALGO) {
-		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
-				      cfg->sample_point);
+	if (cfg->common.sample_point && USE_SP_ALGO) {
+		ret = can_calc_timing(dev, &timing, cfg->common.bus_speed,
+				      cfg->common.sample_point);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
 			return -EIO;
@@ -688,7 +683,7 @@ static int can_stm32_init(const struct device *dev)
 		timing.prop_seg = 0;
 		timing.phase_seg1 = cfg->prop_ts1;
 		timing.phase_seg2 = cfg->ts2;
-		ret = can_calc_prescaler(dev, &timing, cfg->bus_speed);
+		ret = can_calc_prescaler(dev, &timing, cfg->common.bus_speed);
 		if (ret) {
 			LOG_WRN("Bitrate error: %d", ret);
 		}
@@ -720,8 +715,8 @@ static void can_stm32_set_state_change_callback(const struct device *dev,
 	const struct can_stm32_config *cfg = dev->config;
 	CAN_TypeDef *can = cfg->can;
 
-	data->state_change_cb = cb;
-	data->state_change_cb_data = user_data;
+	data->common.state_change_cb = cb;
+	data->common.state_change_cb_user_data = user_data;
 
 	if (cb == NULL) {
 		can->IER &= ~(CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE);
@@ -739,7 +734,7 @@ static int can_stm32_recover(const struct device *dev, k_timeout_t timeout)
 	int ret = -EAGAIN;
 	int64_t start_time;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -809,7 +804,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		return -ENOTSUP;
 	}
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -1167,11 +1162,10 @@ static void config_can_##inst##_irq(CAN_TypeDef *can)                \
 #define CAN_STM32_CONFIG_INST(inst)                                      \
 PINCTRL_DT_INST_DEFINE(inst);                                            \
 static const struct can_stm32_config can_stm32_cfg_##inst = {            \
+	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 1000000),          \
 	.can = (CAN_TypeDef *)DT_INST_REG_ADDR(inst),                    \
 	.master_can = (CAN_TypeDef *)DT_INST_PROP_OR(inst,               \
 		master_can_reg, DT_INST_REG_ADDR(inst)),                 \
-	.bus_speed = DT_INST_PROP(inst, bus_speed),                      \
-	.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),          \
 	.sjw = DT_INST_PROP_OR(inst, sjw, 1),                            \
 	.prop_ts1 = DT_INST_PROP_OR(inst, prop_seg, 0) +                 \
 		    DT_INST_PROP_OR(inst, phase_seg1, 0),                \
@@ -1182,8 +1176,6 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	},                                                               \
 	.config_irq = config_can_##inst##_irq,                           \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	                 \
-	.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),       \
-	.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000), \
 };
 
 #define CAN_STM32_DATA_INST(inst) \
