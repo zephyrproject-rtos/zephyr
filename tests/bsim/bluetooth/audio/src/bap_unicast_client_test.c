@@ -1022,8 +1022,10 @@ static void test_main(void)
 	exchange_mtu();
 
 	discover_sinks();
+	discover_sinks(); /* test that we can discover twice */
 
 	discover_sources();
+	discover_sources(); /* test that we can discover twice */
 
 	/* Run the stream setup multiple time to ensure states are properly
 	 * set and reset

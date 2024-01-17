@@ -426,6 +426,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	discover_gmas(default_conn);
+	discover_gmas(default_conn); /* test that we can discover twice */
 
 	WAIT_FOR_FLAG(flag_disconnected);
 

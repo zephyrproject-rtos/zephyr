@@ -2454,6 +2454,7 @@ void test_main(void)
 		WAIT_FOR_FLAG(flag_conn_updated);
 
 		test_discover();
+		test_discover(); /* test that we can discover twice */
 
 		reset_test_iteration(i);
 

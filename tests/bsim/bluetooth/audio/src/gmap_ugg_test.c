@@ -957,6 +957,7 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 		}
 
 		discover_gmas(connected_conns[i]);
+		discover_gmas(connected_conns[i]); /* test that we can discover twice */
 	}
 
 	gmap_ac_unicast(param, &unicast_group);
