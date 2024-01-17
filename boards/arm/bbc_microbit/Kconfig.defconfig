@@ -11,9 +11,6 @@ config BOARD
 config BT_CTLR
 	default BT
 
-config LOG_BUFFER_SIZE
-	default 128 if LOG
-
 if FXOS8700
 
 choice FXOS8700_MODE
