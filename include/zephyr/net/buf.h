@@ -31,21 +31,24 @@ extern "C" {
 #define __net_buf_align __aligned(sizeof(void *))
 
 /**
- *  @brief Define a net_buf_simple stack variable.
+ *  @brief Define a net_buf_simple stack variable and initialize with variable list of data.
  *
  *  This is a helper macro which is used to define a net_buf_simple object
  *  on the stack.
  *
  *  @param _name Name of the net_buf_simple object.
  *  @param _size Maximum data storage for the buffer.
+ *  @param ...   List of data.
  */
-#define NET_BUF_SIMPLE_DEFINE(_name, _size)     \
-	uint8_t net_buf_data_##_name[_size];       \
-	struct net_buf_simple _name = {         \
-		.data   = net_buf_data_##_name, \
-		.len    = 0,                    \
-		.size   = _size,                \
-		.__buf  = net_buf_data_##_name, \
+#define NET_BUF_SIMPLE_DEFINE(_name, _size, ...)				\
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__),					\
+		    (uint8_t net_buf_data_##_name[_size];),			\
+		    (uint8_t net_buf_data_##_name[_size] = { __VA_ARGS__ });)	\
+	struct net_buf_simple _name = {						\
+		.data   = net_buf_data_##_name,					\
+		.len    = sizeof((uint8_t []){ __VA_ARGS__ }),			\
+		.size   = _size,						\
+		.__buf  = net_buf_data_##_name,					\
 	}
 
 /**
