@@ -119,8 +119,7 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 	k_sem_give(&sem_cas_discovery);
 }
 
-static void unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group,
-				      int err, struct bt_conn *conn)
+static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err != 0) {
 		printk("Failed to start (failing conn %p): %d", conn, err);
@@ -138,8 +137,7 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	}
 }
 
-static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
-				     struct bt_conn *conn)
+static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err != 0) {
 		printk("Failed to stop (failing conn %p): %d", conn, err);
@@ -330,7 +328,7 @@ static int unicast_group_create(struct bt_bap_unicast_group **out_unicast_group)
 	return err;
 }
 
-static int unicast_audio_start(struct bt_conn *conn, struct bt_bap_unicast_group *unicast_group)
+static int unicast_audio_start(struct bt_conn *conn)
 {
 	int err = 0;
 	struct bt_cap_unicast_audio_start_stream_param stream_param;
@@ -345,7 +343,7 @@ static int unicast_audio_start(struct bt_conn *conn, struct bt_bap_unicast_group
 	stream_param.ep = unicast_sink_eps[0];
 	stream_param.codec_cfg = &unicast_preset_48_2_1.codec_cfg;
 
-	err = bt_cap_initiator_unicast_audio_start(&param, unicast_group);
+	err = bt_cap_initiator_unicast_audio_start(&param);
 	if (err != 0) {
 		printk("Failed to start unicast audio: %d\n", err);
 		return err;
@@ -457,7 +455,7 @@ int cap_initiator_setup(struct bt_conn *conn)
 		return err;
 	}
 
-	err = unicast_audio_start(conn, unicast_group);
+	err = unicast_audio_start(conn);
 	if (err != 0) {
 		return err;
 	}

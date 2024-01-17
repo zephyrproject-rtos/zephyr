@@ -36,8 +36,7 @@ static void cap_discover_cb(struct bt_conn *conn, int err,
 		    csis_inst == NULL ? "" : " with CSIS");
 }
 
-static void cap_unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group,
-					  int err, struct bt_conn *conn)
+static void cap_unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err == -ECANCELED) {
 		shell_print(ctx_shell, "Unicast start was cancelled for conn %p", conn);
@@ -60,31 +59,23 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	}
 }
 
-static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
-				     struct bt_conn *conn)
+static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 {
-	if (default_unicast_group != unicast_group) {
-		/* ignore */
-		return;
-	}
-
 	if (err == -ECANCELED) {
 		shell_print(ctx_shell, "Unicast stop was cancelled for conn %p", conn);
 	} else if (err != 0) {
-		shell_error(ctx_shell,
-			    "Unicast stop failed for group %p and conn %p (%d)",
-			    unicast_group, conn, err);
+		shell_error(ctx_shell, "Unicast stop failed for conn %p (%d)", conn, err);
 	} else {
-		shell_print(ctx_shell,
-			    "Unicast stopped for group %p completed",
-			    default_unicast_group);
+		shell_print(ctx_shell, "Unicast stopped completed");
 
-		err = bt_bap_unicast_group_delete(unicast_group);
-		if (err != 0) {
-			shell_error(ctx_shell, "Failed to delete unicast group %p: %d",
-				    unicast_group, err);
-		} else {
-			default_unicast_group = NULL;
+		if (default_unicast_group != NULL) {
+			err = bt_bap_unicast_group_delete(default_unicast_group);
+			if (err != 0) {
+				shell_error(ctx_shell, "Failed to delete unicast group %p: %d",
+					    default_unicast_group, err);
+			} else {
+				default_unicast_group = NULL;
+			}
 		}
 	}
 }
@@ -320,7 +311,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc,
 
 	shell_print(sh, "Starting %zu streams", start_param.count);
 
-	err = bt_cap_initiator_unicast_audio_start(&start_param, default_unicast_group);
+	err = bt_cap_initiator_unicast_audio_start(&start_param);
 	if (err != 0) {
 		shell_print(sh, "Failed to start unicast audio: %d", err);
 
@@ -625,7 +616,7 @@ static int cap_ac_unicast_start(const struct bap_unicast_ac_param *param,
 	start_param.count = stream_cnt;
 	start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	return bt_cap_initiator_unicast_audio_start(&start_param, default_unicast_group);
+	return bt_cap_initiator_unicast_audio_start(&start_param);
 }
 
 int cap_ac_unicast(const struct shell *sh, size_t argc, char **argv,
