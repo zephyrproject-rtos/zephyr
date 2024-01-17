@@ -174,7 +174,8 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	int priority;
 	uint64_t  cycles;
 	uint32_t  bit_options = START_ALT;
-	char description[80];
+	char tag[50];
+	char description[120];
 
 	priority = k_thread_priority_get(k_current_get());
 
@@ -247,10 +248,12 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 
 		/* Only report stats if <start_thread> created <alt_thread> */
 
-		snprintf(description, sizeof(description),
-			 "THREAD create.%s.from.%s",
+		snprintf(tag, sizeof(tag),
+			 "thread.create.%s.from.%s",
 			 (alt_options & K_USER) != 0 ? "user" : "kernel",
 			 (start_options & K_USER) != 0 ? "user" : "kernel");
+		snprintf(description, sizeof(description),
+			 "%-40s - Create thread", tag);
 
 		PRINT_STATS_AVG(description, (uint32_t)cycles,
 				num_iterations, false, "");
@@ -260,10 +263,12 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
-	snprintf(description, sizeof(description),
-		 "THREAD start.%s.from.%s",
+	snprintf(tag, sizeof(tag),
+		 "thread.start.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Start thread", tag);
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -272,10 +277,12 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
-	snprintf(description, sizeof(description),
-		 "THREAD suspend.%s.from.%s",
+	snprintf(tag, sizeof(tag),
+		 "thread.suspend.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Suspend thread", tag);
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -284,10 +291,12 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
-	snprintf(description, sizeof(description),
-		 "THREAD resume.%s.from.%s",
+	snprintf(tag, sizeof(tag),
+		 "thread.resume.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Resume thread", tag);
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");
@@ -296,10 +305,12 @@ int thread_ops(uint32_t num_iterations, uint32_t start_options, uint32_t alt_opt
 	cycles -= timestamp_overhead_adjustment(start_options, alt_options);
 	k_sem_give(&pause_sem);
 
-	snprintf(description, sizeof(description),
-		 "THREAD abort.%s.from.%s",
+	snprintf(tag, sizeof(tag),
+		 "thread.abort.%s.from.%s",
 		 (alt_options & K_USER) != 0 ? "user" : "kernel",
 		 (start_options & K_USER) != 0 ? "user" : "kernel");
+	snprintf(description, sizeof(description),
+		 "%-40s - Abort thread", tag);
 
 	PRINT_STATS_AVG(description, (uint32_t)cycles,
 			num_iterations, false, "");

@@ -50,11 +50,11 @@ extern int error_count;
 #define TICK_OCCURRENCE_ERROR  "Error: Tick Occurred"
 
 #ifdef CSV_FORMAT_OUTPUT
-#define FORMAT_STR   "%-52s,%s,%s,%s\n"
+#define FORMAT_STR   "%-94s,%s,%s,%s\n"
 #define CYCLE_FORMAT "%8u"
 #define NSEC_FORMAT  "%8u"
 #else
-#define FORMAT_STR   "%-52s:%s , %s : %s\n"
+#define FORMAT_STR   "%-94s:%s , %s : %s\n"
 #define CYCLE_FORMAT "%8u cycles"
 #define NSEC_FORMAT  "%8u ns"
 #endif

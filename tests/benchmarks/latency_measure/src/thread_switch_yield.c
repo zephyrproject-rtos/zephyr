@@ -96,7 +96,8 @@ static void thread_switch_yield_common(const char *description,
 				       int priority)
 {
 	uint64_t  sum;
-	char summary[80];
+	char tag[50];
+	char summary[120];
 
 	/* Create the two threads */
 
@@ -130,11 +131,12 @@ static void thread_switch_yield_common(const char *description,
 
 	sum -= timestamp_overhead_adjustment(start_options, alt_options);
 
+	snprintf(tag, sizeof(tag),
+		 "%s.%c_to_%c", description,
+		 (start_options & K_USER) == K_USER ? 'u' : 'k',
+		 (alt_options & K_USER) == K_USER ? 'u' : 'k');
 	snprintf(summary, sizeof(summary),
-		 "%s.(%c -> %c)",
-		 description,
-		 (start_options & K_USER) == K_USER ? 'U' : 'K',
-		 (alt_options & K_USER) == K_USER ? 'U' : 'K');
+		 "%-40s - Context switch via k_yield", tag);
 
 	PRINT_STATS_AVG(summary, (uint32_t)sum, num_iterations, 0, "");
 }
@@ -142,13 +144,13 @@ static void thread_switch_yield_common(const char *description,
 void thread_switch_yield(uint32_t num_iterations, bool is_cooperative)
 {
 	int  priority;
-	char description[60];
+	char description[40];
 
 	priority = is_cooperative ? K_PRIO_COOP(6)
 				  : k_thread_priority_get(k_current_get()) - 1;
 
 	snprintf(description, sizeof(description),
-		 "THREAD yield.%s.ctx",
+		 "thread.yield.%s.ctx",
 		 is_cooperative ? "cooperative" : "preemptive");
 
 	/* Kernel -> Kernel */
