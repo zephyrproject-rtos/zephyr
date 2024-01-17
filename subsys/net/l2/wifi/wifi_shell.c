@@ -292,7 +292,7 @@ static void handle_wifi_twt_event(struct net_mgmt_event_callback *cb)
 
 	if (resp->operation == WIFI_TWT_TEARDOWN) {
 		if (resp->teardown_status == WIFI_TWT_TEARDOWN_SUCCESS) {
-			print(context.sh, SHELL_NORMAL, "TWT teardown received for flow ID %d\n",
+			print(context.sh, SHELL_NORMAL, "TWT teardown succeeded for flow ID %d\n",
 			      resp->flow_id);
 		} else {
 			print(context.sh, SHELL_NORMAL, "TWT teardown failed for flow ID %d\n",
