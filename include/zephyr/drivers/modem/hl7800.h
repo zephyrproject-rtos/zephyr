@@ -111,6 +111,12 @@ enum mdm_hl7800_event {
 	HL7800_EVENT_POLTE_LOCATE_STATUS,
 	HL7800_EVENT_POLTE,
 	HL7800_EVENT_SITE_SURVEY,
+	HL7800_EVENT_STATE,
+};
+
+enum mdm_hl7800_state {
+	HL7800_STATE_NOT_READY = 0,
+	HL7800_STATE_INITIALIZED,
 };
 
 enum mdm_hl7800_startup_state {
@@ -227,25 +233,26 @@ struct mdm_hl7800_polte_location_data {
 
 /**
  * event - The type of event
- * event_data - Pointer to event specific data structure
- * HL7800_EVENT_NETWORK_STATE_CHANGE - compound event
+ * event_data - Pointer to event specific data structure:
+ * HL7800_EVENT_NETWORK_STATE_CHANGE - mdm_hl7800_compound_event
  * HL7800_EVENT_APN_UPDATE - struct mdm_hl7800_apn
  * HL7800_EVENT_RSSI - int
  * HL7800_EVENT_SINR - int
- * HL7800_EVENT_STARTUP_STATE_CHANGE - compound event
- * HL7800_EVENT_SLEEP_STATE_CHANGE - compound event
+ * HL7800_EVENT_STARTUP_STATE_CHANGE - mdm_hl7800_compound_event
+ * HL7800_EVENT_SLEEP_STATE_CHANGE - mdm_hl7800_compound_event
  * HL7800_EVENT_RAT - int
  * HL7800_EVENT_BANDS - string
  * HL7800_EVENT_ACTIVE_BANDS - string
- * HL7800_EVENT_FOTA_STATE - compound event
+ * HL7800_EVENT_FOTA_STATE - mdm_hl7800_compound_event
  * HL7800_EVENT_FOTA_COUNT - uint32_t
  * HL7800_EVENT_REVISION - string
- * HL7800_EVENT_GPS - compound event
+ * HL7800_EVENT_GPS - mdm_hl7800_compound_event
  * HL7800_EVENT_GPS_POSITION_STATUS int
  * HL7800_EVENT_POLTE_REGISTRATION mdm_hl7800_polte_registration_event_data
  * HL7800_EVENT_POLTE mdm_hl7800_polte_location_data
  * HL7800_EVENT_POLTE_LOCATE_STATUS int
  * HL7800_EVENT_SITE_SURVEY mdm_hl7800_site_survey
+ * HL7800_EVENT_STATE mdm_hl7800_compound_event
  */
 typedef void (*mdm_hl7800_event_callback_t)(enum mdm_hl7800_event event,
 					    void *event_data);

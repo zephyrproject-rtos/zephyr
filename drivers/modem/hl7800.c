@@ -520,7 +520,7 @@ struct hl7800_iface_ctx {
 	struct tm local_time;
 	int32_t local_time_offset;
 	bool local_time_valid;
-	bool configured;
+	enum mdm_hl7800_state state;
 	bool off;
 	void (*wake_up_callback)(int state);
 	void (*gpio6_callback)(int state);
@@ -562,6 +562,9 @@ static char *get_sleep_state_string(enum mdm_hl7800_sleep state);
 static void set_network_state(enum mdm_hl7800_network_state state);
 static void set_startup_state(enum mdm_hl7800_startup_state state);
 static void set_sleep_state(enum mdm_hl7800_sleep state);
+static void set_state(enum mdm_hl7800_state state);
+static void generate_state_event(void);
+static char *get_state_string(enum mdm_hl7800_state state);
 static void generate_network_state_event(void);
 static void generate_startup_state_event(void);
 static void generate_sleep_state_event(void);
@@ -1391,6 +1394,7 @@ void mdm_hl7800_generate_status_events(void)
 	event_handler(HL7800_EVENT_BANDS, iface_ctx.mdm_bands_string);
 	event_handler(HL7800_EVENT_ACTIVE_BANDS, iface_ctx.mdm_active_bands_string);
 	event_handler(HL7800_EVENT_REVISION, iface_ctx.mdm_revision);
+	generate_state_event();
 	hl7800_unlock();
 }
 
@@ -2529,6 +2533,34 @@ static void set_sleep_state(enum mdm_hl7800_sleep state)
 		k_sem_reset(&iface_ctx.mdm_awake);
 	}
 	generate_sleep_state_event();
+}
+
+static char *get_state_string(enum mdm_hl7800_state state)
+{
+	/* clang-format off */
+	switch (state) {
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_STATE, NOT_READY);
+		PREFIXED_SWITCH_CASE_RETURN_STRING(HL7800_STATE, INITIALIZED);
+	default:
+		return "UNKNOWN";
+	}
+	/* clang-format on */
+}
+
+static void generate_state_event(void)
+{
+	struct mdm_hl7800_compound_event event;
+
+	event.code = iface_ctx.state;
+	event.string = get_state_string(iface_ctx.state);
+	LOG_INF("State: %s", event.string);
+	event_handler(HL7800_EVENT_STATE, &event);
+}
+
+static void set_state(enum mdm_hl7800_state state)
+{
+	iface_ctx.state = state;
+	generate_state_event();
 }
 
 static void generate_sleep_state_event(void)
@@ -5313,11 +5345,11 @@ reboot:
 
 	/* If CONFIG_MODEM_HL7800_RAT_M1 or CONFIG_MODEM_HL7800_RAT_NB1, then
 	 * set the radio mode. This is only done here if the driver has not been
-	 * initialized (!iface_ctx.configured) yet because the public API also
+	 * initialized yet because the public API also
 	 * allows the RAT to be changed (and will reset the modem).
 	 */
 #ifndef CONFIG_MODEM_HL7800_RAT_NO_CHANGE
-	if (!iface_ctx.configured) {
+	if (iface_ctx.state == HL7800_STATE_NOT_READY) {
 #if CONFIG_MODEM_HL7800_RAT_M1
 		if (iface_ctx.mdm_rat != MDM_RAT_CAT_M1) {
 			if (iface_ctx.new_rat_cmd_support) {
@@ -5524,7 +5556,7 @@ reboot:
 	SEND_AT_CMD_IGNORE_ERROR("AT+WPPP?");
 
 #if CONFIG_MODEM_HL7800_SET_APN_NAME_ON_STARTUP
-	if (!iface_ctx.configured) {
+	if (iface_ctx.state == HL7800_STATE_NOT_READY) {
 		if (strncmp(iface_ctx.mdm_apn.value, CONFIG_MODEM_HL7800_APN_NAME,
 			    MDM_HL7800_APN_MAX_STRLEN) != 0) {
 			apn = CONFIG_MODEM_HL7800_APN_NAME;
@@ -5569,7 +5601,7 @@ reboot:
 	 */
 	LOG_INF("Modem ready!");
 	iface_ctx.restarting = false;
-	iface_ctx.configured = true;
+	set_state(HL7800_STATE_INITIALIZED);
 	set_busy(false);
 	allow_sleep(sleep);
 	/* trigger APN update event */
@@ -5591,7 +5623,7 @@ reboot:
 
 error:
 	LOG_ERR("Unable to configure modem");
-	iface_ctx.configured = false;
+	set_state(HL7800_STATE_NOT_READY);
 	set_network_state(HL7800_UNABLE_TO_CONFIGURE);
 	/* Kernel will fault with non-zero return value.
 	 * Allow other parts of application to run when modem cannot be configured.
@@ -5656,7 +5688,7 @@ static void mdm_power_off_work_callback(struct k_work *item)
 	}
 	prepare_io_for_reset();
 	iface_ctx.dns_ready = false;
-	iface_ctx.configured = false;
+	set_state(HL7800_STATE_NOT_READY);
 	iface_ctx.off = true;
 	set_busy(false);
 	/* bring the iface down */
