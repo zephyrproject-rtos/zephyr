@@ -20,6 +20,23 @@ LOG_MODULE_REGISTER(usbd_dev, CONFIG_USBD_LOG_LEVEL);
  * All the functions below are part of public USB device support API.
  */
 
+enum usbd_speed usbd_bus_speed(const struct usbd_contex *const uds_ctx)
+{
+	return uds_ctx->status.speed;
+}
+
+enum usbd_speed usbd_caps_speed(const struct usbd_contex *const uds_ctx)
+{
+	struct udc_device_caps caps = udc_caps(uds_ctx->dev);
+
+	/* For now, either high speed is supported or not. */
+	if (caps.hs) {
+		return USBD_SPEED_HS;
+	}
+
+	return USBD_SPEED_FS;
+}
+
 int usbd_device_set_bcd(struct usbd_contex *const uds_ctx,
 			const uint16_t bcd)
 {

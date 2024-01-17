@@ -141,6 +141,20 @@ struct usbd_ch9_data {
 };
 
 /**
+ * @brief USB device speed
+ */
+enum usbd_speed {
+	/** To be aligned with enum udc_bus_speed */
+	USBD_SPEED_UNKNOWN,
+	/** Device suports or is connected to a full speed bus */
+	USBD_SPEED_FS,
+	/** Device suports or is connected to a high speed bus  */
+	USBD_SPEED_HS,
+	/** Device suports or is connected to a super speed bus */
+	USBD_SPEED_SS,
+};
+
+/**
  * USB device support status
  */
 struct usbd_status {
@@ -152,6 +166,8 @@ struct usbd_status {
 	unsigned int suspended : 1;
 	/** USB remote wake-up feature is enabled */
 	unsigned int rwup : 1;
+	/** USB device speed */
+	enum usbd_speed speed : 2;
 };
 
 /**
@@ -703,6 +719,24 @@ bool usbd_is_suspended(struct usbd_contex *uds_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbd_wakeup_request(struct usbd_contex *uds_ctx);
+
+/**
+ * @brief Get actual device speed
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return Actual device speed
+ */
+enum usbd_speed usbd_bus_speed(const struct usbd_contex *const uds_ctx);
+
+/**
+ * @brief Get highest speed supported by the controller
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return Highest supported speed
+ */
+enum usbd_speed usbd_caps_speed(const struct usbd_contex *const uds_ctx);
 
 /**
  * @brief Set USB device descriptor value bcdUSB
