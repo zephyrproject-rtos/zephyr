@@ -94,6 +94,7 @@ static void usbd_class_bcast_event(struct usbd_contex *const uds_ctx,
 
 static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 {
+	enum udc_bus_speed udc_speed;
 	int ret;
 
 	usbd_status_suspended(uds_ctx, false);
@@ -114,7 +115,15 @@ static int event_handler_bus_reset(struct usbd_contex *const uds_ctx)
 		LOG_ERR("Failed to dequeue control IN");
 	}
 
-	LOG_INF("Actual device speed %d", udc_device_speed(uds_ctx->dev));
+	LOG_INF("Actual device speed %u", udc_device_speed(uds_ctx->dev));
+	udc_speed = udc_device_speed(uds_ctx->dev);
+	switch (udc_speed) {
+	case UDC_BUS_SPEED_HS:
+		uds_ctx->status.speed = USBD_SPEED_HS;
+	default:
+		uds_ctx->status.speed = USBD_SPEED_FS;
+	}
+
 	uds_ctx->ch9_data.state = USBD_STATE_DEFAULT;
 
 	return 0;
