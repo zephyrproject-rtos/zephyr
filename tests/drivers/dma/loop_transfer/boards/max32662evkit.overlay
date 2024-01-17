@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+tst_dma0: &dma0 { };
