@@ -712,7 +712,6 @@ DFU:
 Devicetree:
   status: maintained
   maintainers:
-    - mbolivar-ampere
     - galak
   files:
     - scripts/dts/
