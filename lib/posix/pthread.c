@@ -227,7 +227,7 @@ static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 	return false;
 }
 
-static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
+static int zephyr_to_posix_priority(int z_prio, int *policy)
 {
 	if (z_prio < 0) {
 		__ASSERT_NO_MSG(-z_prio <= CONFIG_NUM_COOP_PRIORITIES);
@@ -239,7 +239,7 @@ static uint32_t zephyr_to_posix_priority(int32_t z_prio, int *policy)
 	return ZEPHYR_TO_POSIX_PRIORITY(z_prio);
 }
 
-static int32_t posix_to_zephyr_priority(uint32_t priority, int policy)
+static int posix_to_zephyr_priority(int priority, int policy)
 {
 	if (policy == SCHED_FIFO) {
 		/* COOP: highest [-CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
@@ -701,7 +701,7 @@ int pthread_attr_init(pthread_attr_t *_attr)
  */
 int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *param)
 {
-	uint32_t priority;
+	int priority;
 	struct posix_thread *t;
 
 	t = to_posix_thread(pthread);
