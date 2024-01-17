@@ -1627,10 +1627,10 @@ if(CONFIG_BUILD_OUTPUT_META)
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
-            ${WEST_ARG}
             ${ZEPHYR_MODULES_ARG}
             ${EXTRA_ZEPHYR_MODULES_ARG}
             --meta-out ${KERNEL_META_PATH}
+            --zephyr-base=${ZEPHYR_BASE}
             $<$<BOOL:${CONFIG_BUILD_OUTPUT_META_STATE_PROPAGATE}>:--meta-state-propagate>
   )
   list(APPEND
