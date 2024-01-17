@@ -227,7 +227,8 @@ static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 	return false;
 }
 
-static int zephyr_to_posix_priority(int z_prio, int *policy)
+/* Non-static so that they can be tested in ztest */
+int zephyr_to_posix_priority(int z_prio, int *policy)
 {
 	if (z_prio < 0) {
 		__ASSERT_NO_MSG(-z_prio <= CONFIG_NUM_COOP_PRIORITIES);
@@ -239,7 +240,8 @@ static int zephyr_to_posix_priority(int z_prio, int *policy)
 	return ZEPHYR_TO_POSIX_PRIORITY(z_prio);
 }
 
-static int posix_to_zephyr_priority(int priority, int policy)
+/* Non-static so that they can be tested in ztest */
+int posix_to_zephyr_priority(int priority, int policy)
 {
 	if (policy == SCHED_FIFO) {
 		/* COOP: highest [-CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
