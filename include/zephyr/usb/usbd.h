@@ -257,6 +257,10 @@ struct usbd_class_api {
 
 	/** Shutdown of the class implementation */
 	void (*shutdown)(struct usbd_class_node *const node);
+
+	/** Get function descriptor based on speed parameter */
+	void *(*get_desc)(struct usbd_class_node *const node,
+			  const enum usbd_speed speed);
 };
 
 /**
