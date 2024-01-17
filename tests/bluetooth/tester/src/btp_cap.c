@@ -341,8 +341,9 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 	int err;
 	const uint8_t *data_ptr;
 	const struct btp_cap_unicast_audio_update_cmd *cp = cmd;
-	struct bt_cap_unicast_audio_update_param stream_params[
-		ARRAY_SIZE(btp_csip_set_members) * BTP_BAP_UNICAST_MAX_STREAMS_COUNT];
+	struct bt_cap_unicast_audio_update_stream_param
+		stream_params[ARRAY_SIZE(btp_csip_set_members) * BTP_BAP_UNICAST_MAX_STREAMS_COUNT];
+	struct bt_cap_unicast_audio_update_param param = {0};
 
 	LOG_DBG("");
 
@@ -357,7 +358,7 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 		struct bt_conn *conn;
 		struct btp_cap_unicast_audio_update_data *update_data =
 			(struct btp_cap_unicast_audio_update_data *)data_ptr;
-		struct bt_cap_unicast_audio_update_param *param = &stream_params[i];
+		struct bt_cap_unicast_audio_update_stream_param *stream_param = &stream_params[i];
 
 		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &update_data->address);
 		if (!conn) {
@@ -379,15 +380,19 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 			return BTP_STATUS_FAILED;
 		}
 
-		param->stream = &u_stream->audio_stream.cap_stream;
-		param->meta_len = update_data->metadata_ltvs_len;
-		param->meta = update_data->metadata_ltvs;
+		stream_param->stream = &u_stream->audio_stream.cap_stream;
+		stream_param->meta_len = update_data->metadata_ltvs_len;
+		stream_param->meta = update_data->metadata_ltvs;
 
-		data_ptr = ((uint8_t *)update_data) + param->meta_len +
+		data_ptr = ((uint8_t *)update_data) + stream_param->meta_len +
 			   sizeof(struct btp_cap_unicast_audio_update_data);
 	}
 
-	err = bt_cap_initiator_unicast_audio_update(stream_params, cp->stream_count);
+	param.count = cp->stream_count;
+	param.stream_params = stream_params;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+
+	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err != 0) {
 		LOG_ERR("Failed to start unicast audio: %d", err);
 

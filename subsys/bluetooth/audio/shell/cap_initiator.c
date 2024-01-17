@@ -337,16 +337,15 @@ static int cmd_cap_initiator_unicast_list(const struct shell *sh, size_t argc,
 static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
-	struct bt_cap_unicast_audio_update_param params[CAP_UNICAST_CLIENT_STREAM_COUNT];
-	size_t count;
+	struct bt_cap_unicast_audio_update_stream_param
+		stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT] = {0};
+	struct bt_cap_unicast_audio_update_param param = {0};
 	int err = 0;
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
-
-	count = 0;
 
 	if (argc == 2 && strcmp(argv[1], "all") == 0) {
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
@@ -366,8 +365,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				return -ENOEXEC;
 			}
 
-			params[count].stream = stream;
-
+			stream_params[param.count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
 				copy_unicast_stream_preset(uni_stream, default_sink_preset);
@@ -375,10 +373,10 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				copy_unicast_stream_preset(uni_stream, default_source_preset);
 			}
 
-			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_len = uni_stream->codec_cfg.meta_len;
+			stream_params[param.count].meta = uni_stream->codec_cfg.meta;
+			stream_params[param.count].meta_len = uni_stream->codec_cfg.meta_len;
 
-			count++;
+			param.count++;
 		}
 
 	} else {
@@ -409,7 +407,7 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				return -ENOEXEC;
 			}
 
-			params[count].stream = stream;
+			stream_params[param.count].stream = stream;
 
 			if (ep_info.dir == BT_AUDIO_DIR_SINK) {
 				copy_unicast_stream_preset(uni_stream, default_sink_preset);
@@ -417,22 +415,25 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 				copy_unicast_stream_preset(uni_stream, default_source_preset);
 			}
 
-			params[count].meta = uni_stream->codec_cfg.meta;
-			params[count].meta_len = uni_stream->codec_cfg.meta_len;
+			stream_params[param.count].meta = uni_stream->codec_cfg.meta;
+			stream_params[param.count].meta_len = uni_stream->codec_cfg.meta_len;
 
-			count++;
+			param.count++;
 		}
 	}
 
-	if (count == 0) {
+	if (param.count == 0) {
 		shell_error(sh, "No streams to update");
 
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "Updating %zu streams", count);
+	param.stream_params = stream_params;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	err = bt_cap_initiator_unicast_audio_update(params, count);
+	shell_print(sh, "Updating %zu streams", param.count);
+
+	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err != 0) {
 		shell_print(sh, "Failed to update unicast audio: %d", err);
 	}
