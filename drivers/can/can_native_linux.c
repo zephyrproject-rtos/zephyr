@@ -29,21 +29,20 @@ struct can_filter_context {
 };
 
 struct can_native_linux_data {
+	struct can_driver_data common;
 	struct can_filter_context filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex filter_mutex;
 	struct k_sem tx_idle;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
-	bool loopback;
-	bool mode_fd;
 	int dev_fd; /* Linux socket file descriptor */
 	struct k_thread rx_thread;
-	bool started;
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 };
 
 struct can_native_linux_config {
+	const struct can_driver_config common;
 	const char *if_name;
 };
 
@@ -96,11 +95,11 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 				data->tx_callback(dev, 0, data->tx_user_data);
 				k_sem_give(&data->tx_idle);
 
-				if (!data->loopback) {
+				if ((data->common.mode & CAN_MODE_LOOPBACK) == 0U) {
 					continue;
 				}
 			}
-			if ((count <= 0) || !data->started) {
+			if ((count <= 0) || !data->common.started) {
 				break;
 			}
 
@@ -143,7 +142,7 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 	}
 
 	if ((frame->flags & CAN_FRAME_FDF) != 0) {
-		if (!data->mode_fd) {
+		if ((data->common.mode & CAN_MODE_FD) == 0U) {
 			return -ENOTSUP;
 		}
 
@@ -167,7 +166,7 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 		return -EIO;
 	}
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -268,11 +267,11 @@ static int can_native_linux_start(const struct device *dev)
 {
 	struct can_native_linux_data *data = dev->data;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EALREADY;
 	}
 
-	data->started = true;
+	data->common.started = true;
 
 	return 0;
 }
@@ -281,11 +280,11 @@ static int can_native_linux_stop(const struct device *dev)
 {
 	struct can_native_linux_data *data = dev->data;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -EALREADY;
 	}
 
-	data->started = false;
+	data->common.started = false;
 
 	return 0;
 }
@@ -307,19 +306,17 @@ static int can_native_linux_set_mode(const struct device *dev, can_mode_t mode)
 	}
 #endif /* CONFIG_CAN_FD_MODE */
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
-	/* loopback is handled internally in rx_thread */
-	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0;
-
-	data->mode_fd = (mode & CAN_MODE_FD) != 0;
-	err = linux_socketcan_set_mode_fd(data->dev_fd, data->mode_fd);
+	err = linux_socketcan_set_mode_fd(data->dev_fd, (mode & CAN_MODE_FD) != 0);
 	if (err != 0) {
 		LOG_ERR("failed to set mode");
 		return -EIO;
 	}
+
+	data->common.mode = mode;
 
 	return 0;
 }
@@ -330,7 +327,7 @@ static int can_native_linux_set_timing(const struct device *dev, const struct ca
 
 	ARG_UNUSED(timing);
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -345,7 +342,7 @@ static int can_native_linux_set_timing_data(const struct device *dev,
 
 	ARG_UNUSED(timing);
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -359,7 +356,7 @@ static int can_native_linux_get_state(const struct device *dev, enum can_state *
 	struct can_native_linux_data *data = dev->data;
 
 	if (state != NULL) {
-		if (!data->started) {
+		if (!data->common.started) {
 			*state = CAN_STATE_STOPPED;
 		} else {
 			/* SocketCAN does not forward error frames by default */
@@ -382,7 +379,7 @@ static int can_native_linux_recover(const struct device *dev, k_timeout_t timeou
 
 	ARG_UNUSED(timeout);
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -491,6 +488,7 @@ static int can_native_linux_init(const struct device *dev)
 #define CAN_NATIVE_LINUX_INIT(inst)						\
 										\
 static const struct can_native_linux_config can_native_linux_cfg_##inst = {	\
+	.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0),			\
 	.if_name = DT_INST_PROP(inst, host_interface),				\
 };										\
 										\
