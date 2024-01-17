@@ -215,7 +215,7 @@ void __z_pthread_cleanup_pop(int execute)
 	}
 }
 
-static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
+static bool is_posix_policy_prio_valid(int priority, int policy)
 {
 	if (priority >= sched_get_priority_min(policy) &&
 	    priority <= sched_get_priority_max(policy)) {
@@ -230,6 +230,8 @@ static bool is_posix_policy_prio_valid(uint32_t priority, int policy)
 /* Non-static so that they can be tested in ztest */
 int zephyr_to_posix_priority(int z_prio, int *policy)
 {
+	int priority;
+
 	if (z_prio < 0) {
 		__ASSERT_NO_MSG(-z_prio <= CONFIG_NUM_COOP_PRIORITIES);
 	} else {
@@ -237,19 +239,16 @@ int zephyr_to_posix_priority(int z_prio, int *policy)
 	}
 
 	*policy = (z_prio < 0) ? SCHED_FIFO : SCHED_RR;
-	return ZEPHYR_TO_POSIX_PRIORITY(z_prio);
+	priority = ZEPHYR_TO_POSIX_PRIORITY(z_prio);
+	__ASSERT_NO_MSG(is_posix_policy_prio_valid(priority, *policy));
+
+	return priority;
 }
 
 /* Non-static so that they can be tested in ztest */
 int posix_to_zephyr_priority(int priority, int policy)
 {
-	if (policy == SCHED_FIFO) {
-		/* COOP: highest [-CONFIG_NUM_COOP_PRIORITIES, -1] lowest */
-		__ASSERT_NO_MSG(priority < CONFIG_NUM_COOP_PRIORITIES);
-	} else {
-		/* PREEMPT: lowest [0, CONFIG_NUM_PREEMPT_PRIORITIES - 1] highest */
-		__ASSERT_NO_MSG(priority < CONFIG_NUM_PREEMPT_PRIORITIES);
-	}
+	__ASSERT_NO_MSG(is_posix_policy_prio_valid(priority, policy));
 
 	return POSIX_TO_ZEPHYR_PRIORITY(priority, policy);
 }
