@@ -119,7 +119,7 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 	uint8_t btr0;
 	uint8_t btr1;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -130,7 +130,7 @@ static int can_esp32_twai_set_timing(const struct device *dev, const struct can_
 	btr1 = TWAI_TIME_SEG1_PREP(timing->phase_seg1 - 1) |
 	       TWAI_TIME_SEG2_PREP(timing->phase_seg2 - 1);
 
-	if ((data->mode & CAN_MODE_3_SAMPLES) != 0) {
+	if ((data->common.mode & CAN_MODE_3_SAMPLES) != 0) {
 		btr1 |= TWAI_TIME_SAMP;
 	}
 
