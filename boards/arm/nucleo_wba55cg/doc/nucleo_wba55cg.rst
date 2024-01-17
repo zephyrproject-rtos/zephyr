@@ -175,11 +175,26 @@ The Zephyr nucleo_wba55cg board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
+| RADIO     | on-chip    | Bluetooth Low Energy                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/nucleo_wba55cg/nucleo_wba55cg_defconfig``
+
+Bluetooh support
+----------------
+
+BLE support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
+you first need to install Bluetooth Controller libraries available in Zephyr as binary
+blobs.
+
+To fetch Binary Blobs:
+
+.. code-block:: console
+
+   west blobs fetch stm32
 
 Connections and IOs
 ===================
