@@ -1726,7 +1726,12 @@ int lwm2m_rd_client_connection_resume(struct lwm2m_ctx *client_ctx)
 		     IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_LISTEN_AT_IDLE)) ||
 		    !IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT)) {
 			client.engine_state = ENGINE_REGISTRATION_DONE;
-			client.trigger_update = true;
+			if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_NO_MSG_BUFFERING)) {
+				/* Force online for a short period */
+				engine_update_tx_time();
+			} else {
+				client.trigger_update = true;
+			}
 		} else {
 			client.engine_state = ENGINE_DO_REGISTRATION;
 		}
