@@ -16,6 +16,11 @@ tests:
       - frdm_k22f
       - frdm_k64f
       - frdm_k82f
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69_cpu0
       - mimxrt1010_evk
       - mimxrt1015_evk
       - mimxrt1020_evk
