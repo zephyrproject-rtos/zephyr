@@ -726,6 +726,13 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_NO_MSG_BUFFERING)) {
+		sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+		lwm2m_engine_wake_up();
+		lwm2m_engine_connection_resume(msg->ctx);
+		return 0;
+	}
+
 	if (msg->ctx->buffer_client_messages) {
 		sys_slist_append(&msg->ctx->queued_messages, &msg->node);
 		lwm2m_engine_wake_up();
