@@ -2026,10 +2026,23 @@ static void set_track_position(int32_t position)
 	LOG_DBG("Pos. given: %d, resulting pos.: %d (duration is %d)", position, new_pos,
 		media_player.group->track->duration);
 
-	if (new_pos != old_pos) {
+	/* Notify when the position changes when not in the playing state, or if the position is set
+	 * to 0 which is a special value that typically indicates that the track has stopped or
+	 * changed. Since this might occur when media_player.group->track->duration is still 0, we
+	 * should always notify this value.
+	 */
+	if (new_pos != old_pos || new_pos == 0) {
 		/* Set new position and notify it */
 		media_player.track_pos = new_pos;
-		media_proxy_pl_track_position_cb(new_pos);
+
+		/* MCS 1.0, section 3.7.1, states:
+		 * to avoid an excessive number of notifications, the Track Position should
+		 * not be notified when the Media State is set to “Playing” and playback happens
+		 * at a constant speed.
+		 */
+		if (media_player.state != MEDIA_PROXY_STATE_PLAYING) {
+			media_proxy_pl_track_position_cb(new_pos);
+		}
 	}
 }
 
@@ -2300,20 +2313,21 @@ static uint8_t get_content_ctrl_id(void)
 
 static void pos_work_cb(struct k_work *work)
 {
-	if (media_player.state == MEDIA_PROXY_STATE_SEEKING) {
-		const int32_t pos_diff_cs =
-			TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
+	const int32_t pos_diff_cs = TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
 
+	if (media_player.state == MEDIA_PROXY_STATE_SEEKING) {
 		/* When seeking, apply the seeking speed factor */
 		set_relative_track_position(pos_diff_cs * media_player.seeking_speed_factor);
-
-		if (media_player.track_pos == media_player.group->track->duration) {
-			/* Go to next track */
-			do_next_track(&media_player);
-		}
-
-		(void)k_work_schedule(&media_player.pos_work, TRACK_POS_WORK_DELAY);
+	} else if (media_player.state == MEDIA_PROXY_STATE_PLAYING) {
+		set_relative_track_position(pos_diff_cs);
 	}
+
+	if (media_player.track_pos == media_player.group->track->duration) {
+		/* Go to next track */
+		do_next_track(&media_player);
+	}
+
+	(void)k_work_schedule(&media_player.pos_work, TRACK_POS_WORK_DELAY);
 }
 
 int media_proxy_pl_init(void)
