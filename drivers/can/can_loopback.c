@@ -29,16 +29,12 @@ struct can_loopback_filter {
 };
 
 struct can_loopback_data {
+	struct can_driver_data common;
 	struct can_loopback_filter filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex mtx;
 	struct k_msgq tx_msgq;
 	char msgq_buffer[CONFIG_CAN_LOOPBACK_TX_MSGQ_SIZE * sizeof(struct can_loopback_frame)];
 	struct k_thread tx_thread_data;
-	bool started;
-	bool loopback;
-#ifdef CONFIG_CAN_FD_MODE
-	bool fd;
-#endif /* CONFIG_CAN_FD_MODE */
 
 	K_KERNEL_STACK_MEMBER(tx_thread_stack,
 		      CONFIG_CAN_LOOPBACK_TX_THREAD_STACK_SIZE);
@@ -77,7 +73,7 @@ static void tx_thread(void *arg1, void *arg2, void *arg3)
 		}
 		frame.cb(dev, 0, frame.cb_arg);
 
-		if (!data->loopback) {
+		if ((data->common.mode & CAN_MODE_LOOPBACK) == 0U) {
 			continue;
 		}
 
@@ -120,7 +116,7 @@ static int can_loopback_send(const struct device *dev,
 	}
 
 	if ((frame->flags & CAN_FRAME_FDF) != 0) {
-		if (!data->fd) {
+		if ((data->common.mode & CAN_MODE_FD) == 0U) {
 			return -ENOTSUP;
 		}
 
@@ -138,7 +134,7 @@ static int can_loopback_send(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -239,11 +235,11 @@ static int can_loopback_start(const struct device *dev)
 {
 	struct can_loopback_data *data = dev->data;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EALREADY;
 	}
 
-	data->started = true;
+	data->common.started = true;
 
 	return 0;
 }
@@ -252,11 +248,11 @@ static int can_loopback_stop(const struct device *dev)
 {
 	struct can_loopback_data *data = dev->data;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -EALREADY;
 	}
 
-	data->started = false;
+	data->common.started = false;
 
 	k_msgq_purge(&data->tx_msgq);
 
@@ -267,7 +263,7 @@ static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct can_loopback_data *data = dev->data;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -276,8 +272,6 @@ static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 		LOG_ERR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
-
-	data->fd = (mode & CAN_MODE_FD) != 0;
 #else
 	if ((mode & ~(CAN_MODE_LOOPBACK)) != 0) {
 		LOG_ERR("unsupported mode: 0x%08x", mode);
@@ -285,7 +279,7 @@ static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 	}
 #endif /* CONFIG_CAN_FD_MODE */
 
-	data->loopback = (mode & CAN_MODE_LOOPBACK) != 0;
+	data->common.mode = mode;
 
 	return 0;
 }
@@ -297,7 +291,7 @@ static int can_loopback_set_timing(const struct device *dev,
 
 	ARG_UNUSED(timing);
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -312,7 +306,7 @@ static int can_loopback_set_timing_data(const struct device *dev,
 
 	ARG_UNUSED(timing);
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -326,7 +320,7 @@ static int can_loopback_get_state(const struct device *dev, enum can_state *stat
 	struct can_loopback_data *data = dev->data;
 
 	if (state != NULL) {
-		if (data->started) {
+		if (data->common.started) {
 			*state = CAN_STATE_ERROR_ACTIVE;
 		} else {
 			*state = CAN_STATE_STOPPED;
@@ -348,7 +342,7 @@ static int can_loopback_recover(const struct device *dev, k_timeout_t timeout)
 
 	ARG_UNUSED(timeout);
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
