@@ -822,6 +822,7 @@ static void test_main_cap_initiator_unicast(void)
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
 	discover_cas(default_conn);
+	discover_cas(default_conn); /* test that we can discover twice */
 
 	discover_sink(default_conn);
 	discover_source(default_conn);

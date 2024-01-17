@@ -158,6 +158,21 @@ static bool test_preset_prev(uint8_t active_index_expected)
 	return g_active_index == active_index_expected;
 }
 
+static void discover_has(void)
+{
+	int err;
+
+	g_service_discovered = false;
+
+	err = bt_has_client_discover(default_conn);
+	if (err < 0) {
+		FAIL("Failed to discover HAS (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_COND(g_service_discovered);
+}
+
 static void test_main(void)
 {
 	int err;
@@ -188,13 +203,7 @@ static void test_main(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_has_client_discover(default_conn);
-	if (err < 0) {
-		FAIL("Failed to discover HAS (err %d)\n", err);
-		return;
-	}
-
-	WAIT_FOR_COND(g_service_discovered);
+	discover_has();
 	WAIT_FOR_COND(g_preset_switched);
 
 	err = bt_has_client_presets_read(g_has, BT_HAS_PRESET_INDEX_FIRST, 255);

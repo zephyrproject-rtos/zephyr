@@ -310,6 +310,7 @@ static void test_main_cap_commander_capture_and_render(void)
 
 		/* TODO: We should use CSIP to find set members */
 		discover_cas(connected_conns[i]);
+		discover_cas(connected_conns[i]); /* test that we can discover twice */
 
 		if (IS_ENABLED(CONFIG_BT_VCP_VOL_CTLR)) {
 			discover_vcs(connected_conns[i]);

@@ -811,6 +811,8 @@ static void test_discover(void)
 {
 	int err;
 
+	g_discovery_complete = false;
+
 	/* Invalid behavior */
 	err = bt_vcp_vol_ctlr_discover(NULL, &vol_ctlr);
 	if (err == 0) {
@@ -828,16 +830,6 @@ static void test_discover(void)
 	err = bt_vcp_vol_ctlr_discover(default_conn, &vol_ctlr);
 	if (err != 0) {
 		FAIL("Failed to discover VCP %d", err);
-		return;
-	}
-
-	WAIT_FOR_COND(g_discovery_complete);
-
-	/* Verify that we can discover again */
-	g_discovery_complete = false;
-	err = bt_vcp_vol_ctlr_discover(default_conn, &vol_ctlr);
-	if (err != 0) {
-		FAIL("Failed to discover VCP for the second time: %d\n", err);
 		return;
 	}
 
@@ -1169,6 +1161,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	test_discover();
+	test_discover(); /* test that we can discover twice */
 	test_included_get();
 	test_conn_get();
 	test_read_state();
