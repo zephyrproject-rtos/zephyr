@@ -5,9 +5,6 @@
 
 if SOC_STM32F070XB
 
-config SOC
-	default "stm32f070xb"
-
 config NUM_IRQS
 	default 32
 
