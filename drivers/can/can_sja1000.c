@@ -111,7 +111,7 @@ int can_sja1000_set_timing(const struct device *dev, const struct can_timing *ti
 	uint8_t btr0;
 	uint8_t btr1;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -122,7 +122,7 @@ int can_sja1000_set_timing(const struct device *dev, const struct can_timing *ti
 	btr1 = CAN_SJA1000_BTR1_TSEG1_PREP(timing->phase_seg1 - 1) |
 	       CAN_SJA1000_BTR1_TSEG2_PREP(timing->phase_seg2 - 1);
 
-	if ((data->mode & CAN_MODE_3_SAMPLES) != 0) {
+	if ((data->common.mode & CAN_MODE_3_SAMPLES) != 0) {
 		btr1 |= CAN_SJA1000_BTR1_SAM;
 	}
 
@@ -150,12 +150,12 @@ int can_sja1000_start(const struct device *dev)
 	struct can_sja1000_data *data = dev->data;
 	int err;
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EALREADY;
 	}
 
-	if (config->phy != NULL) {
-		err = can_transceiver_enable(config->phy);
+	if (config->common.phy != NULL) {
+		err = can_transceiver_enable(config->common.phy);
 		if (err != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
 			return err;
@@ -167,15 +167,15 @@ int can_sja1000_start(const struct device *dev)
 
 	err = can_sja1000_leave_reset_mode(dev);
 	if (err != 0) {
-		if (config->phy != NULL) {
+		if (config->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
-			(void)can_transceiver_disable(config->phy);
+			(void)can_transceiver_disable(config->common.phy);
 		}
 
 		return err;
 	}
 
-	data->started = true;
+	data->common.started = true;
 
 	return 0;
 }
@@ -186,7 +186,7 @@ int can_sja1000_stop(const struct device *dev)
 	struct can_sja1000_data *data = dev->data;
 	int err;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -EALREADY;
 	}
 
@@ -196,15 +196,15 @@ int can_sja1000_stop(const struct device *dev)
 		return err;
 	}
 
-	if (config->phy != NULL) {
-		err = can_transceiver_disable(config->phy);
+	if (config->common.phy != NULL) {
+		err = can_transceiver_disable(config->common.phy);
 		if (err != 0) {
 			LOG_ERR("failed to disable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
 
-	data->started = false;
+	data->common.started = false;
 
 	can_sja1000_tx_done(dev, -ENETDOWN);
 
@@ -223,7 +223,7 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 		return -ENOTSUP;
 	}
 
-	if (data->started) {
+	if (data->common.started) {
 		return -EBUSY;
 	}
 
@@ -255,7 +255,7 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 	can_sja1000_write_reg(dev, CAN_SJA1000_MOD, mod);
 	can_sja1000_write_reg(dev, CAN_SJA1000_BTR1, btr1);
 
-	data->mode = mode;
+	data->common.mode = mode;
 
 	k_mutex_unlock(&data->mod_lock);
 
@@ -381,7 +381,7 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 		return -ENOTSUP;
 	}
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -405,13 +405,13 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 
 	can_sja1000_write_frame(dev, frame);
 
-	if ((data->mode & CAN_MODE_LOOPBACK) != 0) {
+	if ((data->common.mode & CAN_MODE_LOOPBACK) != 0) {
 		cmr = CAN_SJA1000_CMR_SRR;
 	} else {
 		cmr = CAN_SJA1000_CMR_TR;
 	}
 
-	if ((data->mode & CAN_MODE_ONE_SHOT) != 0) {
+	if ((data->common.mode & CAN_MODE_ONE_SHOT) != 0) {
 		cmr |= CAN_SJA1000_CMR_AT;
 	}
 
@@ -472,7 +472,7 @@ int can_sja1000_recover(const struct device *dev, k_timeout_t timeout)
 	uint8_t sr;
 	int err;
 
-	if (!data->started) {
+	if (!data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -517,7 +517,7 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 	struct can_sja1000_data *data = dev->data;
 
 	if (state != NULL) {
-		if (!data->started) {
+		if (!data->common.started) {
 			*state = CAN_STATE_STOPPED;
 		} else {
 			*state = data->state;
@@ -537,8 +537,8 @@ void can_sja1000_set_state_change_callback(const struct device *dev,
 {
 	struct can_sja1000_data *data = dev->data;
 
-	data->state_change_cb = callback;
-	data->state_change_cb_data = user_data;
+	data->common.state_change_cb = callback;
+	data->common.state_change_cb_user_data = user_data;
 }
 
 int can_sja1000_get_max_filters(const struct device *dev, bool ide)
@@ -553,7 +553,7 @@ int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
 	const struct can_sja1000_config *config = dev->config;
 
-	*max_bitrate = config->max_bitrate;
+	*max_bitrate = config->common.max_bitrate;
 
 	return 0;
 }
@@ -663,7 +663,7 @@ static void can_sja1000_handle_error_warning_irq(const struct device *dev)
 		data->state = CAN_STATE_BUS_OFF;
 		can_sja1000_tx_done(dev, -ENETUNREACH);
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-		if (data->started) {
+		if (data->common.started) {
 			can_sja1000_leave_reset_mode_nowait(dev);
 		}
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
@@ -688,8 +688,8 @@ static void can_sja1000_handle_error_passive_irq(const struct device *dev)
 void can_sja1000_isr(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
-	const can_state_change_callback_t cb = data->state_change_cb;
-	void *cb_data = data->state_change_cb_data;
+	const can_state_change_callback_t cb = data->common.state_change_cb;
+	void *cb_data = data->common.state_change_cb_user_data;
 	enum can_state prev_state = data->state;
 	struct can_bus_err_cnt err_cnt;
 	uint8_t ir;
@@ -739,8 +739,8 @@ int can_sja1000_init(const struct device *dev)
 	__ASSERT_NO_MSG(config->read_reg != NULL);
 	__ASSERT_NO_MSG(config->write_reg != NULL);
 
-	if (config->phy != NULL) {
-		if (!device_is_ready(config->phy)) {
+	if (config->common.phy != NULL) {
+		if (!device_is_ready(config->common.phy)) {
 			LOG_ERR("CAN transceiver not ready");
 			return -ENODEV;
 		}
@@ -773,8 +773,9 @@ int can_sja1000_init(const struct device *dev)
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR2, 0xFF);
 	can_sja1000_write_reg(dev, CAN_SJA1000_AMR3, 0xFF);
 
-	if (config->sample_point != 0) {
-		err = can_calc_timing(dev, &timing, config->bitrate, config->sample_point);
+	if (config->common.sample_point != 0) {
+		err = can_calc_timing(dev, &timing, config->common.bus_speed,
+				      config->common.sample_point);
 		if (err == -EINVAL) {
 			LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
 			return err;
@@ -787,7 +788,7 @@ int can_sja1000_init(const struct device *dev)
 		timing.phase_seg1 = config->phase_seg1;
 		timing.phase_seg2 = config->phase_seg2;
 
-		err = can_calc_prescaler(dev, &timing, config->bitrate);
+		err = can_calc_prescaler(dev, &timing, config->common.bus_speed);
 		if (err != 0) {
 			LOG_WRN("initial bitrate error: %d", err);
 		}
@@ -810,7 +811,7 @@ int can_sja1000_init(const struct device *dev)
 	can_sja1000_write_reg(dev, CAN_SJA1000_EWLR, 96);
 
 	/* Set normal mode */
-	data->mode = CAN_MODE_NORMAL;
+	data->common.mode = CAN_MODE_NORMAL;
 	err = can_sja1000_set_mode(dev, CAN_MODE_NORMAL);
 	if (err != 0) {
 		return err;
