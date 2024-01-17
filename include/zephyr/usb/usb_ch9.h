@@ -164,6 +164,19 @@ struct usb_device_descriptor {
 	uint8_t bNumConfigurations;
 } __packed;
 
+/** USB Device Qualifier Descriptor defined in spec. Table 9-9 */
+struct usb_device_qualifier_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint16_t bcdUSB;
+	uint8_t bDeviceClass;
+	uint8_t bDeviceSubClass;
+	uint8_t bDeviceProtocol;
+	uint8_t bMaxPacketSize0;
+	uint8_t bNumConfigurations;
+	uint8_t bReserved;
+} __packed;
+
 /** USB Standard Configuration Descriptor defined in spec. Table 9-10 */
 struct usb_cfg_descriptor {
 	uint8_t bLength;
