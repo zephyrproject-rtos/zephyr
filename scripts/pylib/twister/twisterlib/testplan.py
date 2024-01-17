@@ -994,7 +994,7 @@ class TestPlan:
         link_path = os.path.join(links_dir_path, link_name)
 
         if os.name == "nt":  # if OS is Windows
-            command = ["mklink", "/J", f"{link_path}", f"{instance.build_dir}"]
+            command = ["mklink", "/J", f"{link_path}", os.path.normpath(instance.build_dir)]
             subprocess.call(command, shell=True)
         else:  # for Linux and MAC OS
             os.symlink(instance.build_dir, link_path)
