@@ -9,11 +9,12 @@
 /* HRS09 */
 #define CDNS_HRS09_PHY_SW_RESET		BIT(0)
 #define CDNS_HRS09_PHY_INIT_COMP	BIT(1)
+#define CDNS_HRS09_EXT_WR_MODE		BIT(3)
+#define CDNS_HRS09_RDCMD_EN_BIT		BIT(15)
+#define CDNS_HRS09_RDDATA_EN_BIT	BIT(16)
 #define CDNS_HRS09_EXT_RD_MODE(x)	((x) << 2)
-#define CDNS_HRS09_EXT_WR_MODE		3
 #define CDNS_HRS09_EXTENDED_WR(x)	((x) << 3)
-#define CDNS_HRS09_RDCMD_EN		15
-#define CDNS_HRS09_RDCMD(x)		((x) << 15)
+#define CDNS_HRS09_RDCMD_EN(x)		((x) << 15)
 #define CDNS_HRS09_RDDATA_EN(x)		((x) << 16)
 
 /* HRS00 */
@@ -22,31 +23,40 @@
 /* CMD_DATA_OUTPUT */
 #define SDHC_CDNS_HRS16			0x40
 
-/* SRS09 */
+/* SRS09 - Present State Register */
 #define CDNS_SRS09_STAT_DAT_BUSY	BIT(2)
 #define CDNS_SRS09_CI			BIT(16)
 
-/* SRS10 */
-#define CDNS_SRS10_DTW			1
-#define CDNS_SRS10_EDTW			5
-#define CDNS_SRS10_BP			8
-#define CDNS_SRS10_BVS			9
+/* SRS10 - Host Control 1 (General / Power / Block-Gap / Wake-Up) */
+#define LEDC     BIT(0)
+#define DT_WIDTH BIT(1)
+#define HS_EN    BIT(2)
+
+#define CDNS_SRS10_DTW		1
+#define CDNS_SRS10_EDTW		5
+#define CDNS_SRS10_BP		BIT(8)
+
+#define CDNS_SRS10_BVS		9
+#define BUS_VOLTAGE_1_8_V	(5 << CDNS_SRS10_BVS)
+#define BUS_VOLTAGE_3_0_V	(6 << CDNS_SRS10_BVS)
+#define BUS_VOLTAGE_3_3_V	(7 << CDNS_SRS10_BVS)
+
 
 /* data bus width */
-#define WIDTH_BIT1			CDNS_SRS10_DTW
-#define WIDTH_BIT4			CDNS_SRS10_DTW
-#define WIDTH_BIT8			CDNS_SRS10_EDTW
+#define WIDTH_BIT1		CDNS_SRS10_DTW
+#define WIDTH_BIT4		CDNS_SRS10_DTW
+#define WIDTH_BIT8		CDNS_SRS10_EDTW
 
 /* SRS11 */
-#define CDNS_SRS11_ICE			BIT(0)
-#define CDNS_SRS11_ICS			BIT(1)
-#define CDNS_SRS11_SDCE			BIT(2)
-#define CDNS_SRS11_USDCLKFS		6
-#define CDNS_SRS11_SDCLKFS		8
-#define CDNS_SRS11_DTCV			16
-#define CDNS_SRS11_SRFA			BIT(24)
-#define CDNS_SRS11_SRCMD		BIT(25)
-#define CDNS_SRS11_SRDAT		BIT(26)
+#define CDNS_SRS11_ICE		BIT(0)
+#define CDNS_SRS11_ICS		BIT(1)
+#define CDNS_SRS11_SDCE		BIT(2)
+#define CDNS_SRS11_USDCLKFS	6
+#define CDNS_SRS11_SDCLKFS	8
+#define CDNS_SRS11_DTCV		16
+#define CDNS_SRS11_SRFA		BIT(24)
+#define CDNS_SRS11_SRCMD	BIT(25)
+#define CDNS_SRS11_SRDAT	BIT(26)
 
 /*
  * This value determines the interval by which DAT line timeouts are detected
@@ -55,26 +65,38 @@
  * • 1110b - t_sdmclk*2(27+2)
  * • 1101b - t_sdmclk*2(26+2)
  */
-#define READ_CLK			(0xa << 16)
-#define WRITE_CLK			(0xe << 16)
 #define DTC_VAL				0xE
+#define READ_CLK			(0xa << CDNS_SRS11_DTCV)
+#define WRITE_CLK			(0xe << CDNS_SRS11_DTCV)
+
 
 /* SRS12 */
-#define CDNS_SRS12_CC			0U
-#define CDNS_SRS12_TC			1
-#define CDNS_SRS12_EINT			15
+#define CDNS_SRS12_CC			BIT(0)
+#define CDNS_SRS12_TC			BIT(1)
+#define CDNS_SRS12_EINT			BIT(15)
+
+/* SDMA Buffer Boundary */
+#define BUFFER_BOUNDARY_4K   0U
+#define BUFFER_BOUNDARY_8K   1U
+#define BUFFER_BOUNDARY_16K  2U
+#define BUFFER_BOUNDARY_32K  3U
+#define BUFFER_BOUNDARY_64K  4U
+#define BUFFER_BOUNDARY_128K 5U
+#define BUFFER_BOUNDARY_256K 6U
+#define BUFFER_BOUNDARY_512K 7U
 
 /* SRS01 */
 #define CDNS_SRS01_BLK_SIZE		0U
-#define CDNS_SRS01_SDMA_BUF		7 << 12
+#define CDNS_SRS01_SDMA_BUF		12
 #define CDNS_SRS01_BLK_COUNT_CT		16
 
 /* SRS15 Registers */
-#define CDNS_SRS15_SDR12		0U
-#define CDNS_SRS15_SDR25		BIT(16)
-#define CDNS_SRS15_SDR50		(2 << 16)
-#define CDNS_SRS15_SDR104		(3 << 16)
-#define CDNS_SRS15_DDR50		(4 << 16)
+#define CDNS_SRS15_UMS			16
+#define CDNS_SRS15_SDR12		(0 << CDNS_SRS15_UMS)
+#define CDNS_SRS15_SDR25		(1 << CDNS_SRS15_UMS)
+#define CDNS_SRS15_SDR50		(2 << CDNS_SRS15_UMS)
+#define CDNS_SRS15_SDR104		(3 << CDNS_SRS15_UMS)
+#define CDNS_SRS15_DDR50		(4 << CDNS_SRS15_UMS)
 /* V18SE is 0 for DS and HS, 1 for UHS-I */
 #define CDNS_SRS15_V18SE		BIT(19)
 #define CDNS_SRS15_CMD23_EN		BIT(27)
@@ -170,64 +192,65 @@
 /* SRS03 */
 #define CDNS_SRS03_CMD_START		BIT(31)
 #define CDNS_SRS03_CMD_USE_HOLD_REG	BIT(29)
-#define CDNS_SRS03_CMD_UPDATE_CLK_ONLY	BIT(21)
-#define CDNS_SRS03_CMD_SEND_INIT	BIT(15)
+#define CDNS_SRS03_COM_IDX		24
+
 /* Command type */
-#define CDNS_SRS03_CMD_TYPE		BIT(22)
-#define CMD_STOP_ABORT_CMD		(3 << 22)
-#define CMD_RESUME_CMD			(2 << 22)
-#define CMD_SUSPEND_CMD			BIT(22)
+#define CDNS_SRS03_CMD_TYPE		22
+#define CMD_STOP_ABORT_CMD		(3 << CDNS_SRS03_CMD_TYPE)
+#define CMD_RESUME_CMD			(2 << CDNS_SRS03_CMD_TYPE)
+#define CMD_SUSPEND_CMD			(1 << CDNS_SRS03_CMD_TYPE)
+
 #define CDNS_SRS03_DATA_PRSNT		BIT(21)
 #define CDNS_SRS03_CMD_IDX_CHK_EN	BIT(20)
-#define CDNS_SRS03_CMD_READ		BIT(4)
-#define CDNS_SRS03_MULTI_BLK_READ	BIT(5)
+#define CDNS_SRS03_RESP_CRCCE		BIT(19)
 #define CDNS_SRS03_RESP_ERR		BIT(7)
-#define CDNS_SRS03_RESP_CRC		BIT(19)
-#define CDNS_SRS03_CMD_DONE		BIT(0)
-/* Response type select */
-#define CDNS_SRS03_RES_TYPE_SEL		BIT(16)
-#define RES_TYPE_SEL_48			(2 << 16)
-#define RES_TYPE_SEL_136		(1 << 16)
-#define RES_TYPE_SEL_48_B		(3 << 16)
-#define RES_TYPE_SEL_NO			(0 << 16)
-/* Auto CMD Enable */
-#define CDNS_SRS03_AUTO_CMD_EN		BIT(2)
-#define AUTO_CMD23			(2 << 2)
-#define AUTO_CMD12			BIT(2)
-#define AUTO_CMD_AUTO			(3 << 2)
-#define CDNS_SRS03_COM_IDX		24
-#define ERROR_INT			BIT(15)
-#define CDNS_SRS03_DMA_EN		BIT(0)
-#define CDNS_SRS03_BLK_CNT_EN		BIT(1)
+#define CDNS_SRS03_MULTI_BLK_READ	BIT(5)
+#define CDNS_SRS03_CMD_READ		BIT(4)
 
-/* HRS07 */
+/* Response type select */
+#define CDNS_SRS03_RES_TYPE_SEL		16
+#define RES_TYPE_SEL_NO			(0 << CDNS_SRS03_RES_TYPE_SEL)
+#define RES_TYPE_SEL_136		(1 << CDNS_SRS03_RES_TYPE_SEL)
+#define RES_TYPE_SEL_48			(2 << CDNS_SRS03_RES_TYPE_SEL)
+#define RES_TYPE_SEL_48_B		(3 << CDNS_SRS03_RES_TYPE_SEL)
+
+/* Auto CMD Enable */
+#define CDNS_SRS03_ACE		2
+#define NO_AUTO_COMMAND		(0 << CDNS_SRS03_ACE)
+#define AUTO_CMD12		(1 << CDNS_SRS03_ACE)
+#define AUTO_CMD23		(2 << CDNS_SRS03_ACE)
+#define AUTO_CMD_AUTO		(3 << CDNS_SRS03_ACE)
+
+#define CDNS_SRS03_DMA_EN	BIT(0)
+#define CDNS_SRS03_BLK_CNT_EN	BIT(1)
+
+/* HRS07 - IO Delay Information Register */
 #define SDHC_CDNS_HRS07			0x1c
 #define CDNS_HRS07_IDELAY_VAL(x)	(x)
 #define CDNS_HRS07_RW_COMPENSATE(x)	((x) << 16)
 
-/* PHY reset port */
+/* HRS09 - PHY Control and Status Register */
 #define SDHC_CDNS_HRS09			0x24
 
-/* HRS10 */
-/* PHY reset port */
+/* HRS10 - Host Controller SDCLK start point adjustment */
 #define SDHC_CDNS_HRS10			0x28
 
 /* HCSDCLKADJ DATA; DDR Mode */
 #define SDHC_HRS10_HCSDCLKADJ(x)	((x) << 16)
 
 /* HRS16 */
-#define CDNS_HRS16_WRCMD0_DLY(x)	(x)
-#define CDNS_HRS16_WRCMD1_DLY(x)	((x) << 4)
-#define CDNS_HRS16_WRDATA0_DLY(x)	((x) << 8)
-#define CDNS_HRS16_WRDATA1_DLY(x)	((x) << 12)
-#define CDNS_HRS16_WRCMD0_SDCLK_DLY(x)	((x) << 16)
-#define CDNS_HRS16_WRCMD1_SDCLK_DLY(x)	((x) << 20)
-#define CDNS_HRS16_WRDATA0_SDCLK_DLY(x)	((x) << 24)
-#define CDNS_HRS16_WRDATA1_SDCLK_DLY(x)	((x) << 28)
+#define CDNS_HRS16_WRCMD0_DLY(x)        (x)
+#define CDNS_HRS16_WRCMD1_DLY(x)        ((x) << 4)
+#define CDNS_HRS16_WRDATA0_DLY(x)       ((x) << 8)
+#define CDNS_HRS16_WRDATA1_DLY(x)       ((x) << 12)
+#define CDNS_HRS16_WRCMD0_SDCLK_DLY(x)  ((x) << 16)
+#define CDNS_HRS16_WRCMD1_SDCLK_DLY(x)  ((x) << 20)
+#define CDNS_HRS16_WRDATA0_SDCLK_DLY(x) ((x) << 24)
+#define CDNS_HRS16_WRDATA1_SDCLK_DLY(x) ((x) << 28)
 
 /* Shared Macros */
-#define SDMMC_CDN(_reg)			(SDMMC_CDN_REG_BASE + \
-						(SDMMC_CDN_##_reg))
+#define SDMMC_CDN(_reg)		(SDMMC_CDN_REG_BASE + \
+				(SDMMC_CDN_##_reg))
 
 /* MMC Peripheral Definition */
 #define MMC_BLOCK_SIZE			512U
@@ -333,10 +356,6 @@
 #define ADMA_DESC_ATTR_ACT2		BIT(5)
 #define ADMA_DESC_TRANSFER_DATA		ADMA_DESC_ATTR_ACT2
 
-/* SRS10 Register */
-#define LEDC				BIT(0)
-#define DT_WIDTH			BIT(1)
-#define HS_EN				BIT(2)
 /* Conf depends on SRS15.HV4E */
 #define SDMA				0
 #define ADMA2_32			(2 << 3)
