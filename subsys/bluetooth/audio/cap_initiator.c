@@ -332,9 +332,10 @@ int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 	return bt_cap_common_discover(conn, bt_cap_initiator_discover_complete);
 }
 
-static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param,
-					    struct bt_bap_unicast_group *unicast_group)
+static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_start_param *param)
 {
+	struct bt_bap_unicast_group *unicast_group = NULL;
+
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
@@ -410,9 +411,15 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 			return false;
 		}
 
-		CHECKIF(bap_stream->group != unicast_group) {
-			LOG_DBG("param->streams[%zu] is not in this group %p", i, unicast_group);
-			return false;
+		/* Use the group of the first stream for comparison */
+		if (unicast_group == NULL) {
+			unicast_group = bap_stream->group;
+		} else {
+			CHECKIF(bap_stream->group != unicast_group) {
+				LOG_DBG("param->streams[%zu] is not in this group %p", i,
+					unicast_group);
+				return false;
+			}
 		}
 
 		for (size_t j = 0U; j < i; j++) {
@@ -433,12 +440,10 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 static void cap_initiator_unicast_audio_proc_complete(void)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-	struct bt_bap_unicast_group *unicast_group;
 	enum bt_cap_common_proc_type proc_type;
 	struct bt_conn *failed_conn;
 	int err;
 
-	unicast_group = active_proc->unicast_group;
 	failed_conn = active_proc->failed_conn;
 	err = active_proc->err;
 	proc_type = active_proc->proc_type;
@@ -451,7 +456,7 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 	switch (proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_START:
 		if (cap_cb->unicast_start_complete != NULL) {
-			cap_cb->unicast_start_complete(unicast_group, err, failed_conn);
+			cap_cb->unicast_start_complete(err, failed_conn);
 		}
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_UPDATE:
@@ -461,7 +466,7 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_STOP:
 		if (cap_cb->unicast_stop_complete != NULL) {
-			cap_cb->unicast_stop_complete(unicast_group, err, failed_conn);
+			cap_cb->unicast_stop_complete(err, failed_conn);
 		}
 		break;
 	case BT_CAP_COMMON_PROC_TYPE_NONE:
@@ -533,27 +538,17 @@ static int cap_initiator_unicast_audio_configure(
 	return err;
 }
 
-int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param,
-					 struct bt_bap_unicast_group *unicast_group)
+int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
-	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
-
 	if (bt_cap_common_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
 		return -EBUSY;
 	}
 
-	CHECKIF(unicast_group == NULL) {
-		LOG_DBG("unicast_group is NULL");
+	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
 	}
-
-	if (!valid_unicast_audio_start_param(param, unicast_group)) {
-		return -EINVAL;
-	}
-
-	active_proc->unicast_group = unicast_group;
 
 	return cap_initiator_unicast_audio_configure(param);
 }
@@ -1119,7 +1114,6 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 	}
 
 	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, stream_cnt);
-	active_proc->unicast_group = unicast_group;
 
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
 

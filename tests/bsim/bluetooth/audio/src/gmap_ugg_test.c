@@ -285,8 +285,7 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 	SET_FLAG(flag_cas_discovered);
 }
 
-static void unicast_start_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
-				      struct bt_conn *conn)
+static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err != 0) {
 		FAIL("Failed to start (failing conn %p): %d\n", conn, err);
@@ -308,8 +307,7 @@ static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 	SET_FLAG(flag_updated);
 }
 
-static void unicast_stop_complete_cb(struct bt_bap_unicast_group *unicast_group, int err,
-				     struct bt_conn *conn)
+static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err != 0) {
 		FAIL("Failed to stop (failing conn %p): %d\n", conn, err);
@@ -799,7 +797,7 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 	start_param.count = stream_cnt;
 	start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	return bt_cap_initiator_unicast_audio_start(&start_param, unicast_group);
+	return bt_cap_initiator_unicast_audio_start(&start_param);
 }
 
 static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
