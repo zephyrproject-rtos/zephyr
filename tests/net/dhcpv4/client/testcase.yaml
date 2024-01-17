@@ -4,12 +4,12 @@ common:
     - net
     - dhcpv4
 tests:
-  net.dhcp:
+  net.dhcpv4_client:
     extra_configs:
       - CONFIG_NET_TC_THREAD_COOPERATIVE=y
-  net.dhcp.preempt:
+  net.dhcpv4_client.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
-  net.dhcp.optioncbs:
+  net.dhcpv4_client.optioncbs:
     extra_configs:
       - CONFIG_NET_DHCPV4_OPTION_CALLBACKS=y
