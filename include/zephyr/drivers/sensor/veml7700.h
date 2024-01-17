@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Andreas Kilian
+ * Copyright (c) 2024 Jeff Welder (Ellenby Technologies, Inc.)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,6 +134,15 @@ enum sensor_channel_veml7700 {
 	 * enumerator as an argument will result in a <tt>-ENOTSUP</tt>.
 	 */
 	SENSOR_CHAN_VEML7700_RAW_COUNTS = SENSOR_CHAN_PRIV_START,
+
+	/**
+	 * @brief Channel for white light sensor values.
+	 *
+	 * This channel is the White Channel count output of the sensor.
+	 * The white channel can be used to correct for light sources with
+	 * strong infrared content in the 750-800nm spectrum.
+	 */
+	SENSOR_CHAN_VEML7700_WHITE_RAW_COUNTS,
 
 	/**
 	 * @brief This channel is used to query the ALS interrupt state (ALS_INT).
