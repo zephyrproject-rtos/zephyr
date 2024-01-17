@@ -317,10 +317,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(cig_lll);
 	ticks_at_event += lll_event_offset_get(ull);
+	ticks_at_event &= HAL_TICKER_CNTR_MASK;
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 						 cis_offset_first);
+	ticks_at_start &= HAL_TICKER_CNTR_MASK;
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1U, ticks_at_start, remainder);
