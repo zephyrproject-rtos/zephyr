@@ -3,6 +3,11 @@
 
 if SHELL
 
+config POSIX_SHELL
+	bool
+	help
+	  Compile the parent `posix` shell command.
+
 rsource "Kconfig.uname"
 
 endif # SHELL
