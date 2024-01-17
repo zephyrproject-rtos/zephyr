@@ -64,6 +64,13 @@
 				    <&test_gpio 3 GPIO_ACTIVE_LOW>,
 				    <&test_gpio 4 GPIO_ACTIVE_LOW>;
 			actual-key-mask = <0x0f 0x0a 0x0b>;
+
+			keymap {
+				compatible = "input-keymap";
+				keymap = <0 1 2>;
+				row-size = <2>;
+				col-size = <2>;
+			};
 		};
 
 		kbd-matrix-1 {

@@ -85,5 +85,14 @@ config INPUT_LONGPRESS
 	bool "Input longpress"
 	default y
 	depends on DT_HAS_ZEPHYR_INPUT_LONGPRESS_ENABLED
+	help
+	  Enable the input longpress driver.
+
+config INPUT_KEYMAP
+	bool "Input keymap"
+	default y
+	depends on DT_HAS_INPUT_KEYMAP_ENABLED
+	help
+	  Enable the input keymap driver.
 
 endif # INPUT
