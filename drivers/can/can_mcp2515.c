@@ -338,7 +338,7 @@ static int mcp2515_get_max_bitrate(const struct device *dev, uint32_t *max_bitra
 {
 	const struct mcp2515_config *dev_cfg = dev->config;
 
-	*max_bitrate = dev_cfg->max_bitrate;
+	*max_bitrate = dev_cfg->common.max_bitrate;
 
 	return 0;
 }
@@ -353,7 +353,7 @@ static int mcp2515_set_timing(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EBUSY;
 	}
 
@@ -439,12 +439,12 @@ static int mcp2515_start(const struct device *dev)
 	struct mcp2515_data *dev_data = dev->data;
 	int ret;
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EALREADY;
 	}
 
-	if (dev_cfg->phy != NULL) {
-		ret = can_transceiver_enable(dev_cfg->phy);
+	if (dev_cfg->common.phy != NULL) {
+		ret = can_transceiver_enable(dev_cfg->common.phy);
 		if (ret != 0) {
 			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
 			return ret;
@@ -459,12 +459,12 @@ static int mcp2515_start(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
 
-		if (dev_cfg->phy != NULL) {
+		if (dev_cfg->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
-			(void)can_transceiver_disable(dev_cfg->phy);
+			(void)can_transceiver_disable(dev_cfg->common.phy);
 		}
 	} else {
-		dev_data->started = true;
+		dev_data->common.started = true;
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -479,7 +479,7 @@ static int mcp2515_stop(const struct device *dev)
 	int ret;
 	int i;
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		return -EALREADY;
 	}
 
@@ -504,7 +504,7 @@ static int mcp2515_stop(const struct device *dev)
 		return ret;
 	}
 
-	dev_data->started = false;
+	dev_data->common.started = false;
 
 	k_mutex_unlock(&dev_data->mutex);
 
@@ -512,8 +512,8 @@ static int mcp2515_stop(const struct device *dev)
 		mcp2515_tx_done(dev, i, -ENETDOWN);
 	}
 
-	if (dev_cfg->phy != NULL) {
-		ret = can_transceiver_disable(dev_cfg->phy);
+	if (dev_cfg->common.phy != NULL) {
+		ret = can_transceiver_disable(dev_cfg->common.phy);
 		if (ret != 0) {
 			LOG_ERR("Failed to disable CAN transceiver [%d]", ret);
 			return ret;
@@ -527,7 +527,7 @@ static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
 {
 	struct mcp2515_data *dev_data = dev->data;
 
-	if (dev_data->started) {
+	if (dev_data->common.started) {
 		return -EBUSY;
 	}
 
@@ -545,6 +545,8 @@ static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
 		LOG_ERR("Unsupported CAN Mode %u", mode);
 		return -ENOTSUP;
 	}
+
+	dev_data->common.mode = mode;
 
 	return 0;
 }
@@ -574,7 +576,7 @@ static int mcp2515_send(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -679,8 +681,8 @@ static void mcp2515_set_state_change_callback(const struct device *dev,
 {
 	struct mcp2515_data *dev_data = dev->data;
 
-	dev_data->state_change_cb = cb;
-	dev_data->state_change_cb_data = user_data;
+	dev_data->common.state_change_cb = cb;
+	dev_data->common.state_change_cb_user_data = user_data;
 }
 
 static void mcp2515_rx_filter(const struct device *dev,
@@ -744,7 +746,7 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 	}
 
 	if (state != NULL) {
-		if (!dev_data->started) {
+		if (!dev_data->common.started) {
 			*state = CAN_STATE_STOPPED;
 		} else if (eflg & MCP2515_EFLG_TXBO) {
 			*state = CAN_STATE_BUS_OFF;
@@ -789,8 +791,8 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 static void mcp2515_handle_errors(const struct device *dev)
 {
 	struct mcp2515_data *dev_data = dev->data;
-	can_state_change_callback_t state_change_cb = dev_data->state_change_cb;
-	void *state_change_cb_data = dev_data->state_change_cb_data;
+	can_state_change_callback_t state_change_cb = dev_data->common.state_change_cb;
+	void *state_change_cb_data = dev_data->common.state_change_cb_user_data;
 	enum can_state state;
 	struct can_bus_err_cnt err_cnt;
 	int err;
@@ -814,7 +816,7 @@ static int mcp2515_recover(const struct device *dev, k_timeout_t timeout)
 
 	ARG_UNUSED(timeout);
 
-	if (!dev_data->started) {
+	if (!dev_data->common.started) {
 		return -ENETDOWN;
 	}
 
@@ -958,8 +960,8 @@ static int mcp2515_init(const struct device *dev)
 	k_mutex_init(&dev_data->mutex);
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
 
-	if (dev_cfg->phy != NULL) {
-		if (!device_is_ready(dev_cfg->phy)) {
+	if (dev_cfg->common.phy != NULL) {
+		if (!device_is_ready(dev_cfg->common.phy)) {
 			LOG_ERR("CAN transceiver not ready");
 			return -ENODEV;
 		}
@@ -1011,9 +1013,9 @@ static int mcp2515_init(const struct device *dev)
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 	dev_data->old_state = CAN_STATE_ERROR_ACTIVE;
 
-	if (dev_cfg->sample_point && USE_SP_ALGO) {
-		ret = can_calc_timing(dev, &timing, dev_cfg->bus_speed,
-				      dev_cfg->sample_point);
+	if (dev_cfg->common.sample_point && USE_SP_ALGO) {
+		ret = can_calc_timing(dev, &timing, dev_cfg->common.bus_speed,
+				      dev_cfg->common.sample_point);
 		if (ret == -EINVAL) {
 			LOG_ERR("Can't find timing for given param");
 			return -EIO;
@@ -1026,7 +1028,7 @@ static int mcp2515_init(const struct device *dev)
 		timing.prop_seg = dev_cfg->tq_prop;
 		timing.phase_seg1 = dev_cfg->tq_bs1;
 		timing.phase_seg2 = dev_cfg->tq_bs2;
-		ret = can_calc_prescaler(dev, &timing, dev_cfg->bus_speed);
+		ret = can_calc_prescaler(dev, &timing, dev_cfg->common.bus_speed);
 		if (ret) {
 			LOG_WRN("Bitrate error: %d", ret);
 		}
@@ -1055,6 +1057,7 @@ static int mcp2515_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static const struct mcp2515_config mcp2515_config_##inst = {                               \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 1000000),                            \
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                                \
 		.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,                 \
@@ -1063,11 +1066,7 @@ static int mcp2515_init(const struct device *dev)
 		.tq_prop = DT_INST_PROP_OR(inst, prop_seg, 0),                                     \
 		.tq_bs1 = DT_INST_PROP_OR(inst, phase_seg1, 0),                                    \
 		.tq_bs2 = DT_INST_PROP_OR(inst, phase_seg2, 0),                                    \
-		.bus_speed = DT_INST_PROP(inst, bus_speed),                                        \
 		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
-		.sample_point = DT_INST_PROP_OR(inst, sample_point, 0),                            \
-		.phy = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, phys)),                         \
-		.max_bitrate = DT_INST_CAN_TRANSCEIVER_MAX_BITRATE(inst, 1000000),                 \
 	};                                                                                         \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                 \
