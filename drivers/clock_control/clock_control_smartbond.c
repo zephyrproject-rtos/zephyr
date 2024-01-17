@@ -34,8 +34,13 @@ struct lpc_clock_state {
 			DT_PROP(DT_NODELABEL(rcx), calibration_interval) :	\
 			DT_PROP(DT_NODELABEL(rc32k), calibration_interval))
 
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+extern int z_clock_hw_cycles_per_sec;
+#endif
+
 static void calibration_work_cb(struct k_work *work);
 static void xtal32k_settle_work_cb(struct k_work *work);
+static enum smartbond_clock smartbond_source_clock(enum smartbond_clock clk);
 
 static K_WORK_DELAYABLE_DEFINE(calibration_work, calibration_work_cb);
 static K_WORK_DELAYABLE_DEFINE(xtal32k_settle_work, xtal32k_settle_work_cb);
@@ -59,6 +64,18 @@ static void calibration_work_cb(struct k_work *work)
 		LOG_DBG("RC32K calibration done, RC32K freq: %d",
 			(int)lpc_clock_state.rc32k_freq);
 	}
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	switch (smartbond_source_clock(SMARTBOND_CLK_LP_CLK)) {
+	case SMARTBOND_CLK_RCX:
+		z_clock_hw_cycles_per_sec = lpc_clock_state.rcx_freq;
+		break;
+	case SMARTBOND_CLK_RC32K:
+		z_clock_hw_cycles_per_sec = lpc_clock_state.rc32k_freq;
+		break;
+	default:
+		break;
+	}
+#endif
 }
 
 static void xtal32k_settle_work_cb(struct k_work *work)
@@ -350,6 +367,19 @@ int z_smartbond_select_lp_clk(enum smartbond_clock lp_clk)
 	}
 
 	if (rc == 0) {
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+		switch (lp_clk) {
+		case SMARTBOND_CLK_RCX:
+			z_clock_hw_cycles_per_sec = lpc_clock_state.rcx_freq;
+			break;
+		case SMARTBOND_CLK_RC32K:
+			z_clock_hw_cycles_per_sec = lpc_clock_state.rc32k_freq;
+			break;
+		default:
+			z_clock_hw_cycles_per_sec = 32768;
+			break;
+		}
+#endif
 		CRG_TOP->CLK_CTRL_REG = (CRG_TOP->CLK_CTRL_REG & ~clk_sel_msk) | clk_sel;
 	}
 
