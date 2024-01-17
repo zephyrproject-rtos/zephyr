@@ -227,8 +227,9 @@ struct bt_cap_unicast_audio_start_param {
 	struct bt_cap_unicast_audio_start_stream_param *stream_params;
 };
 
-struct bt_cap_unicast_audio_update_param {
-	/** @brief Stream for the @p member */
+/** Stream specific parameters for the bt_cap_initiator_unicast_audio_update() function */
+struct bt_cap_unicast_audio_update_stream_param {
+	/** Stream to update */
 	struct bt_cap_stream *stream;
 
 	/** The length of @p meta. */
@@ -240,6 +241,18 @@ struct bt_cap_unicast_audio_update_param {
 	 * well as a non-0 context bitfield.
 	 */
 	uint8_t *meta;
+};
+
+/** Parameters for the bt_cap_initiator_unicast_audio_update() function */
+struct bt_cap_unicast_audio_update_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The number of parameters in @p stream_params */
+	size_t count;
+
+	/** Array of stream parameters */
+	struct bt_cap_unicast_audio_update_stream_param *stream_params;
 };
 
 /**
@@ -277,13 +290,11 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
  * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
  * to be enabled.
  *
- * @param params  Array of update parameters.
- * @param count   The number of entries in @p params.
+ * @param param Update parameters.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param params[],
-					  size_t count);
+int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param *param);
 
 /**
  * @brief Stop unicast audio streams for a unicast group.

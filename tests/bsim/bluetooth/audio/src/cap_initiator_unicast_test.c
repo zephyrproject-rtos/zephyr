@@ -663,30 +663,36 @@ static void unicast_audio_update_inval(void)
 {
 	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG_16_2(
 		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_MEDIA);
-	struct bt_cap_unicast_audio_update_param param;
+	struct bt_cap_unicast_audio_update_stream_param stream_params[1] = {0};
+	struct bt_cap_unicast_audio_update_param param = {0};
 	int err;
 
-	param.stream = &unicast_client_sink_streams[0];
-	param.meta = unicast_preset_16_2_1.codec_cfg.meta;
-	param.meta_len = unicast_preset_16_2_1.codec_cfg.meta_len;
+	stream_params[0].stream = &unicast_client_sink_streams[0];
+	stream_params[0].meta = unicast_preset_16_2_1.codec_cfg.meta;
+	stream_params[0].meta_len = unicast_preset_16_2_1.codec_cfg.meta_len;
+	param.count = ARRAY_SIZE(stream_params);
+	param.stream_params = stream_params;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	err = bt_cap_initiator_unicast_audio_update(NULL, 1);
+	err = bt_cap_initiator_unicast_audio_update(NULL);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_unicast_audio_update with NULL params did not fail\n");
 		return;
 	}
 
-	err = bt_cap_initiator_unicast_audio_update(&param, 0);
+	param.count = 0U;
+	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_unicast_audio_update with 0 param count did not fail\n");
 		return;
 	}
 
 	/* Clear metadata so that it does not contain the mandatory stream context */
+	param.count = ARRAY_SIZE(stream_params);
 	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
-	param.meta = invalid_codec.meta;
+	stream_params[0].meta = invalid_codec.meta;
 
-	err = bt_cap_initiator_unicast_audio_update(&param, 1);
+	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err == 0) {
 		FAIL("bt_cap_initiator_unicast_audio_update with invalid Codec metadata did not "
 		     "fail\n");
@@ -696,7 +702,8 @@ static void unicast_audio_update_inval(void)
 
 static void unicast_audio_update(void)
 {
-	struct bt_cap_unicast_audio_update_param param[2];
+	struct bt_cap_unicast_audio_update_stream_param stream_params[2] = {0};
+	struct bt_cap_unicast_audio_update_param param = {0};
 	uint8_t new_meta[] = {
 		3,
 		BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
@@ -707,17 +714,21 @@ static void unicast_audio_update(void)
 	};
 	int err;
 
-	param[0].stream = &unicast_client_sink_streams[0];
-	param[0].meta = new_meta;
-	param[0].meta_len = ARRAY_SIZE(new_meta);
+	stream_params[0].stream = &unicast_client_sink_streams[0];
+	stream_params[0].meta = new_meta;
+	stream_params[0].meta_len = ARRAY_SIZE(new_meta);
 
-	param[1].stream = &unicast_client_source_streams[0];
-	param[1].meta = new_meta;
-	param[1].meta_len = ARRAY_SIZE(new_meta);
+	stream_params[1].stream = &unicast_client_source_streams[0];
+	stream_params[1].meta = new_meta;
+	stream_params[1].meta_len = ARRAY_SIZE(new_meta);
+
+	param.count = ARRAY_SIZE(stream_params);
+	param.stream_params = stream_params;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
 
 	UNSET_FLAG(flag_updated);
 
-	err = bt_cap_initiator_unicast_audio_update(param, ARRAY_SIZE(param));
+	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err != 0) {
 		FAIL("Failed to update unicast audio: %d\n", err);
 		return;
