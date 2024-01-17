@@ -114,6 +114,8 @@ Below interfaces are supported by Zephyr on MAX32666EVKIT.
 +-----------+------------+-------------------------------------+
 | Watchdog  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma controller                      |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs
