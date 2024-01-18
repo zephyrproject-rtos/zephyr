@@ -538,8 +538,21 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	} else {
 		aux->data_len += data_len;
 
+		/* Flush auxiliary PDU receptions and stop any more ULL
+		 * scheduling if accumulated data length exceeds configured
+		 * maximum supported.
+		 */
 		if (aux->data_len >= CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX) {
-			goto ull_scan_aux_rx_flush;
+			/* If LLL has already scheduled, then let it proceed.
+			 *
+			 * TODO: LLL to check accumulated data length and
+			 *       stop further reception.
+			 *       Currently LLL will schedule as long as there
+			 *       are free node rx available.
+			 */
+			if (!ftr->aux_lll_sched) {
+				goto ull_scan_aux_rx_flush;
+			}
 		}
 	}
 
