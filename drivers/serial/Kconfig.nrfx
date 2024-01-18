@@ -31,6 +31,8 @@ config UART_NRFX_UARTE
 config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE
+	# NRF54L15 need new UARTE driver
+	depends on !SOC_SERIES_NRF54LX
 	# New shim takes more ROM. Until it is fixed use legacy shim.
 	default y
 
@@ -61,6 +63,31 @@ endif
 
 if HAS_HW_NRF_UARTE3
 nrfx_uart_num = 3
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE00
+nrfx_uart_num = 00
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE20
+nrfx_uart_num = 20
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE21
+nrfx_uart_num = 21
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE22
+nrfx_uart_num = 22
+rsource "Kconfig.nrfx_uart_instance"
+endif
+
+if HAS_HW_NRF_UARTE30
+nrfx_uart_num = 30
 rsource "Kconfig.nrfx_uart_instance"
 endif
 
