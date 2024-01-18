@@ -68,3 +68,7 @@
 #if defined(CONFIG_GNSS_SATELLITES)
 	ITERABLE_SECTION_ROM(gnss_satellites_callback, 4)
 #endif
+
+#if defined(CONFIG_WAKEUP_SOURCE)
+	ITERABLE_SECTION_ROM(wakeup_source, 4)
+#endif

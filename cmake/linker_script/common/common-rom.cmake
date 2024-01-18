@@ -227,3 +227,7 @@ endif()
 if(CONFIG_GNSS_SATELLITES)
   zephyr_iterable_section(NAME gnss_satellites_callback KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
 endif()
+
+if(CONFIG_WAKEUP_SOURCE)
+  zephyr_iterable_section(NAME wakeup_source KVMA RAM_REGION GROUP RODATA_REGION SUBALIGN 4)
+endif()

@@ -55,3 +55,6 @@ child-binding:
     zephyr,code:
       type: int
       description: Key code to emit.
+    wakeup-source:
+      type: boolean
+      description: Key is capable of being used as a wakeup source

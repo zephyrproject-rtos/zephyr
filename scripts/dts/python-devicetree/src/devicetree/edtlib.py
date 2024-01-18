@@ -1780,6 +1780,9 @@ class Node:
                                        specifier_space),
                 name=None, basename=specifier_space))
 
+        # Revert special-casing for *-gpios propreties before adding names
+        specifier_space = prop.name[:-1]
+
         _add_names(self._node, specifier_space, res)
 
         return res
