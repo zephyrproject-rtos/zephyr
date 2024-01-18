@@ -16,7 +16,7 @@
 		#size-cells = <0>;
 		cpu@0 {
 			clock-frequency = <0>;
-			compatible = "riscv";
+			compatible = "sifive,e51", "riscv";
 			device_type = "cpu";
 			reg = < 0x0 >;
 			riscv,isa = "rv64imac_zicsr_zifencei";
@@ -30,7 +30,7 @@
 
 		cpu@1 {
 			clock-frequency = <0>;
-			compatible = "riscv";
+			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
 			reg = < 0x1 >;
 			riscv,isa = "rv64gc";
@@ -44,7 +44,7 @@
 
 		cpu@2 {
 			clock-frequency = <0>;
-			compatible = "riscv";
+			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
 			reg = < 0x2 >;
 			riscv,isa = "rv64gc";
@@ -58,7 +58,7 @@
 
 		cpu@3 {
 			clock-frequency = <0>;
-			compatible = "riscv";
+			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
 			reg = < 0x3 >;
 			riscv,isa = "rv64gc";
@@ -72,7 +72,7 @@
 
 		cpu@4 {
 			clock-frequency = <0>;
-			compatible = "riscv";
+			compatible = "sifive,u54", "riscv";
 			device_type = "cpu";
 			reg = < 0x4 >;
 			riscv,isa = "rv64gc";
