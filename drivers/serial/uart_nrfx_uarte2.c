@@ -562,11 +562,13 @@ static void api_poll_out(const struct device *dev, unsigned char out_char)
 		err = nrfx_uarte_tx(nrfx_dev, &out_char, 1, NRFX_UARTE_TX_EARLY_RETURN);
 		__ASSERT(err != NRFX_ERROR_INVALID_ADDR, "Invalid address of the buffer");
 
-		if (err == NRFX_ERROR_BUSY &&
-		    IS_ENABLED(CONFIG_MULTITHREADING) && k_is_preempt_thread()) {
-			k_msleep(1);
+		if (err == NRFX_ERROR_BUSY) {
+			if (IS_ENABLED(CONFIG_MULTITHREADING) && k_is_preempt_thread()) {
+				k_msleep(1);
+			} else {
+				Z_SPIN_DELAY(3);
+			}
 		}
-		Z_SPIN_DELAY(3);
 	} while (err == NRFX_ERROR_BUSY);
 }
 
@@ -788,6 +790,11 @@ static int uarte_nrfx_init(const struct device *dev)
 	const nrfx_uarte_t *nrfx_dev = get_nrfx_dev(dev);
 	const struct uarte_nrfx_config *cfg = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
+
+#ifdef CONFIG_ARCH_POSIX
+	/* For simulation the DT provided peripheral address needs to be corrected */
+	((struct pinctrl_dev_config *)cfg->pcfg)->reg = (uintptr_t)nrfx_dev->p_reg;
+#endif
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
