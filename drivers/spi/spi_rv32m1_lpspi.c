@@ -19,6 +19,8 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(spi_rv32m1_lpspi);
 
+#include <soc.h>
+
 #include "spi_context.h"
 
 #define CHIP_SELECT_COUNT	4
