@@ -1135,12 +1135,98 @@ static bool can_release(const struct bt_bap_stream *bap_stream)
 	return ep_info.state != BT_BAP_EP_STATE_IDLE;
 }
 
-int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
+static bool valid_unicast_audio_stop_param(const struct bt_cap_unicast_audio_stop_param *param)
+{
+	struct bt_bap_unicast_group *unicast_group = NULL;
+
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count == 0) {
+		LOG_DBG("Invalid param->count: %u", param->count);
+		return false;
+	}
+
+	CHECKIF(param->streams == NULL) {
+		LOG_DBG("param->streams is NULL");
+		return false;
+	}
+
+	CHECKIF(param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+		LOG_DBG("param->count (%zu) is larger than "
+			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
+			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+		return false;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_cap_stream *cap_stream = param->streams[i];
+		const struct bt_bap_stream *bap_stream;
+		struct bt_cap_common_client *client;
+		struct bt_conn *conn;
+
+		CHECKIF(cap_stream == NULL) {
+			LOG_DBG("param->streams[%zu] is NULL", i);
+			return false;
+		}
+
+		bap_stream = &cap_stream->bap_stream;
+		conn = bap_stream->conn;
+		CHECKIF(conn == NULL) {
+			LOG_DBG("param->streams[%zu]->bap_stream.conn is NULL", i);
+
+			return -EINVAL;
+		}
+
+		client = bt_cap_common_get_client_by_acl(conn);
+		if (!client->cas_found) {
+			LOG_DBG("CAS was not found for param->streams[%zu]", i);
+			return false;
+		}
+
+		CHECKIF(bap_stream->group == NULL) {
+			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
+			return false;
+		}
+
+		/* Use the group of the first stream for comparison */
+		if (unicast_group == NULL) {
+			unicast_group = bap_stream->group;
+		} else {
+			CHECKIF(bap_stream->group != unicast_group) {
+				LOG_DBG("param->streams[%zu] is not in this group %p", i,
+					unicast_group);
+				return false;
+			}
+		}
+
+		if (!can_release(bap_stream)) {
+			LOG_DBG("Cannot stop param->streams[%zu]", i);
+
+			return false;
+		}
+
+		for (size_t j = 0U; j < i; j++) {
+			if (param->streams[j] == cap_stream) {
+				LOG_DBG("param->stream_params[%zu] (%p) is "
+					"duplicated by "
+					"param->stream_params[%zu] (%p)",
+					j, param->streams[j], i, cap_stream);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
 	struct bt_cap_initiator_proc_param *proc_param;
 	struct bt_bap_stream *bap_stream;
-	size_t stream_cnt;
 	int err;
 
 	if (bt_cap_common_proc_is_active()) {
@@ -1149,28 +1235,17 @@ int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_gro
 		return -EBUSY;
 	}
 
-	CHECKIF(unicast_group == NULL) {
-		LOG_DBG("unicast_group is NULL");
+	if (!valid_unicast_audio_stop_param(param)) {
 		return -EINVAL;
 	}
 
-	stream_cnt = 0U;
-	SYS_SLIST_FOR_EACH_CONTAINER(&unicast_group->streams, bap_stream, _node) {
-		if (can_release(bap_stream)) {
-			struct bt_cap_stream *cap_stream =
-				CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
-			active_proc->proc_param.initiator[stream_cnt].stream = cap_stream;
-			stream_cnt++;
-		}
+	for (size_t i = 0U; i < param->count; i++) {
+		struct bt_cap_stream *cap_stream = param->streams[i];
+
+		active_proc->proc_param.initiator[i].stream = cap_stream;
 	}
 
-	if (stream_cnt == 0U) {
-		LOG_DBG("All streams are already stopped");
-
-		return -EALREADY;
-	}
-
-	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, stream_cnt);
+	bt_cap_common_start_proc(BT_CAP_COMMON_PROC_TYPE_STOP, param->count);
 
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
 
