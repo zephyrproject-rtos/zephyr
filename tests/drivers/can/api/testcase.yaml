@@ -20,3 +20,7 @@ tests:
       - esp32s2_saola
       - esp32s3_devkitm
       - xiao_esp32s3
+  drivers.can.api.nxp_s32_canxl.non_rx_fifo:
+    extra_configs:
+      - CONFIG_CAN_NXP_S32_RX_FIFO=n
+    filter: dt_compat_enabled("nxp,s32-canxl")
