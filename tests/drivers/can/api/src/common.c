@@ -80,6 +80,7 @@ const struct can_frame test_ext_rtr_frame_1 = {
 	.data    = {0}
 };
 
+#ifdef CONFIG_CAN_FD_MODE
 /**
  * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
@@ -107,6 +108,7 @@ const struct can_frame test_std_fdf_frame_2 = {
 		    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
 		    61, 62, 63, 64 }
 };
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Standard (11-bit) CAN ID filter 1. This filter matches
