@@ -110,6 +110,8 @@ This generates the following SPDX bill-of-materials (BOM) documents in
 - :file:`app.spdx`: BOM for the application source files used for the build
 - :file:`zephyr.spdx`: BOM for the specific Zephyr source code files used for the build
 - :file:`build.spdx`: BOM for the built output files
+- :file:`modules-deps.spdx`: BOM for modules dependencies. Check
+  :ref:`modules <modules-vulnerability-monitoring>` for more details.
 
 Each file in the bill-of-materials is scanned, so that its hashes (SHA256 and
 SHA1) can be recorded, along with any detected licenses if an

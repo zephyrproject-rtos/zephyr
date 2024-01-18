@@ -1710,9 +1710,8 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   set(BYPRODUCT_KERNEL_UF2_NAME "${PROJECT_BINARY_DIR}/${KERNEL_UF2_NAME}" CACHE FILEPATH "Kernel uf2 file" FORCE)
 endif()
 
+set(KERNEL_META_PATH  ${PROJECT_BINARY_DIR}/${KERNEL_META_NAME} CACHE INTERNAL "")
 if(CONFIG_BUILD_OUTPUT_META)
-  set(KERNEL_META_PATH  ${PROJECT_BINARY_DIR}/${KERNEL_META_NAME} CACHE INTERNAL "")
-
   list(APPEND
     post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
@@ -1726,6 +1725,9 @@ if(CONFIG_BUILD_OUTPUT_META)
     post_build_byproducts
     ${KERNEL_META_PATH}
   )
+else(CONFIG_BUILD_OUTPUT_META)
+  # Prevent spdx to use invalid data
+  file(REMOVE ${KERNEL_META_PATH})
 endif()
 
 # Cleanup intermediate files
