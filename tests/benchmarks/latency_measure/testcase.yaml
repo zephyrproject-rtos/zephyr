@@ -60,7 +60,7 @@ tests:
 
   # Obtain the benchmark results for various user thread / kernel thread
   # configurations on platforms that support user space.
-  benchmark.user.latency:
+  benchmark.kernel.latency.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     timeout: 300
     extra_args: CONF_FILE=prj_user.conf
@@ -78,7 +78,7 @@ tests:
   # Obtain the benchmark results with object core statistics enabled for
   # various user thread / kernel thread configurations on platforms that
   # support user space
-  benchmark.user.latency.objcore.stats:
+  benchmark.kernel.latency.userspace.objcore.stats:
     filter: CONFIG_ARCH_HAS_USERSPACE
     timeout: 300
     extra_args: CONF_FILE=prj_user.conf
@@ -117,7 +117,7 @@ tests:
         - "PROJECT EXECUTION SUCCESSFUL"
 
   # Obtain the various userspace benchmark results with timeslicing enabled
-  benchmark.user.latency.timeslicing:
+  benchmark.kernel.latency.timeslicing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     timeout: 300
     extra_args: CONF_FILE=prj_user.conf
