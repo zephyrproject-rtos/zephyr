@@ -156,19 +156,27 @@ def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
         board_kconfig_defconfig_file.unlink()
 
     print(f"Creating or updating Kconfig.{new_board}...")
+    board_kconfig_file = new_board_path / "Kconfig.board"
+    with open(board_kconfig_file) as f:
+        for line in f.readlines():
+            if "Copyright" in line:
+                copyright = line
     new_board_kconfig_file = new_board_path / f"Kconfig.{new_board}"
-    selects = "\n\t" + "\n\t".join(["select " + setting for setting in board_soc_settings])
+    header = "# SPDX-License-Identifier: Apache-2.0\n"
+    if copyright is not None:
+        header = copyright + header
+    selects = "\n\t" + "\n\t".join(["select " + setting for setting in board_soc_settings]) + "\n"
     if not new_board_kconfig_file.exists():
         with open(new_board_kconfig_file, "w") as f:
             f.write(
-                f"config BOARD_{new_board.upper()}{selects}"
+                header +
+                f"\nconfig BOARD_{new_board.upper()}{selects}"
             )
     else:
         with open(new_board_kconfig_file, "a") as f:
             f.write(selects)
 
     print("Removing old Kconfig.board...")
-    board_kconfig_file = new_board_path / "Kconfig.board"
     board_kconfig_file.unlink()
 
     print("Conversion done!")
