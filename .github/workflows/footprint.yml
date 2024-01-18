@@ -36,10 +36,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Environment Setup
-        run: |
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
-
       - name: west setup
         run: |
           west init -l . || true
@@ -56,6 +52,9 @@ jobs:
           git remote -v
           git rebase origin/${BASE_REF}
           git checkout -b this_pr
+
+          export ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )
+
           west update
           west build -b frdm_k64f  tests/benchmarks/footprints -t ram_report
           cp build/ram.json ram2.json
