@@ -8,6 +8,15 @@ from west import log
 
 from zspdx.util import getHashes
 
+import re
+
+CPE23TYPE_REGEX = (
+    r'^cpe:2\.3:[aho\*\-](:(((\?*|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^'
+    r"`\{\|}~]))+(\?*|\*?))|[\*\-])){5}(:(([a-zA-Z]{2,3}(-([a-zA-Z]{2}|[0-9]{3}))?)|[\*\-]))(:(((\?*"
+    r'|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^`\{\|}~]))+(\?*|\*?))|[\*\-])){4}$'
+)
+PURL_REGEX = r"^pkg:.+(\/.+)?\/.+(@.+)?(\?.+)?(#.+)?$"
+
 # Output tag-value SPDX 2.2 content for the given Relationship object.
 # Arguments:
 #   1) f: file handle for SPDX document
@@ -51,12 +60,29 @@ def writePackageSPDX(f, pkg):
 
 PackageName: {pkg.cfg.name}
 SPDXID: {pkg.cfg.spdxID}
-PackageDownloadLocation: NOASSERTION
 PackageLicenseConcluded: {pkg.concludedLicense}
 """)
     f.write(f"""PackageLicenseDeclared: {pkg.cfg.declaredLicense}
 PackageCopyrightText: {pkg.cfg.copyrightText}
 """)
+
+    if len(pkg.cfg.url) > 0:
+        f.write(f"PackageDownloadLocation: {pkg.cfg.url}\n")
+    else:
+        f.write("PackageDownloadLocation: NOASSERTION\n")
+
+    if len(pkg.cfg.version) > 0:
+        f.write(f"PackageVersion: {pkg.cfg.version}\n")
+    elif len(pkg.cfg.revision) > 0:
+        f.write(f"PackageVersion: {pkg.cfg.revision}\n")
+
+    for ref in pkg.cfg.externalReferences:
+        if re.fullmatch(CPE23TYPE_REGEX, ref):
+            f.write(f"ExternalRef: SECURITY cpe23Type {ref}\n")
+        elif re.fullmatch(PURL_REGEX, ref):
+            f.write(f"ExternalRef: PACKAGE_MANAGER purl {ref}\n")
+        else:
+            log.wrn(f"Unknown external reference ({ref})")
 
     # flag whether files analyzed / any files present
     if len(pkg.files) > 0:

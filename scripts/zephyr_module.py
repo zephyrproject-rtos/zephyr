@@ -402,24 +402,7 @@ def process_twister(module, meta):
     return out
 
 
-def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
-                 propagate_state=False):
-    # Process zephyr_base, projects, and modules and create a dictionary
-    # with meta information for each input.
-    #
-    # The dictionary will contain meta info in the following lists:
-    # - zephyr:        path and revision
-    # - modules:       name, path, and revision
-    # - west-projects: path and revision
-    #
-    # returns the dictionary with said lists
-
-    meta = {'zephyr': None, 'modules': None, 'workspace': None}
-
-    workspace_dirty = False
-    workspace_extra = extra_modules is not None
-    workspace_off = False
-
+def _create_meta_project(project_path):
     def git_revision(path):
         rc = subprocess.Popen(['git', 'rev-parse', '--is-inside-work-tree'],
                               stdout=subprocess.PIPE,
@@ -447,9 +430,91 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
                 return revision, False
         return None, False
 
-    zephyr_revision, zephyr_dirty = git_revision(zephyr_base)
-    zephyr_project = {'path': zephyr_base,
-                      'revision': zephyr_revision}
+    def git_remote(path):
+        popen = subprocess.Popen(['git', 'remote'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 cwd=path)
+        stdout, stderr = popen.communicate()
+        stdout = stdout.decode('utf-8')
+
+        remotes_name = []
+        if not (popen.returncode or stderr):
+            remotes_name = stdout.rstrip().split('\n')
+
+        remote_url = None
+        if len(remotes_name) == 1:
+            remote = remotes_name[0]
+            popen = subprocess.Popen(['git', 'remote', 'get-url', remote],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     cwd=path)
+            stdout, stderr = popen.communicate()
+            stdout = stdout.decode('utf-8')
+
+            if not (popen.returncode or stderr):
+                remote_url = stdout.rstrip()
+
+        return remote_url, len(remotes_name) > 1
+
+    def git_tags(path, revision):
+        if not revision or len(revision) == 0:
+            return None
+
+        popen = subprocess.Popen(['git', '-P', 'tag', '--points-at', revision],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 cwd=path)
+        stdout, stderr = popen.communicate()
+        stdout = stdout.decode('utf-8')
+
+        tags = None
+        if not (popen.returncode or stderr):
+            tags = stdout.rstrip().splitlines()
+
+        return tags
+
+    workspace_dirty = False
+    path = PurePath(project_path).as_posix()
+
+    revision, dirty = git_revision(path)
+    workspace_dirty |= dirty
+    remote, dirty = git_remote(path)
+    workspace_dirty |= dirty
+    tags = git_tags(path, revision)
+
+    meta_project = {'path': path,
+                    'revision': revision}
+
+    if remote:
+        meta_project['remote'] = remote
+
+    if tags:
+        meta_project['tags'] = tags
+
+    return meta_project, workspace_dirty
+
+
+def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
+                 propagate_state=False):
+    # Process zephyr_base, projects, and modules and create a dictionary
+    # with meta information for each input.
+    #
+    # The dictionary will contain meta info in the following lists:
+    # - zephyr:        path and revision
+    # - modules:       name, path, and revision
+    # - west-projects: path and revision
+    #
+    # returns the dictionary with said lists
+
+    meta = {'zephyr': None, 'modules': None, 'workspace': None}
+
+    workspace_dirty = False
+    workspace_extra = extra_modules is not None
+    workspace_off = False
+
+    zephyr_project, zephyr_dirty = _create_meta_project(zephyr_base)
+
     meta['zephyr'] = zephyr_project
     meta['workspace'] = {}
     workspace_dirty |= zephyr_dirty
@@ -459,24 +524,21 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
         projects = west_projs['projects']
         meta_projects = []
 
-        # Special treatment of manifest project.
-        manifest_proj_path = PurePath(projects[0].posixpath).as_posix()
-        manifest_revision, manifest_dirty = git_revision(manifest_proj_path)
+        manifest_project, manifest_dirty = _create_meta_project(
+            projects[0].posixpath)
         workspace_dirty |= manifest_dirty
-        manifest_project = {'path': manifest_proj_path,
-                            'revision': manifest_revision}
         meta_projects.append(manifest_project)
 
         for project in projects[1:]:
-            project_path = PurePath(project.posixpath).as_posix()
-            revision, dirty = git_revision(project_path)
+            meta_project, dirty = _create_meta_project(project.posixpath)
             workspace_dirty |= dirty
-            if project.sha(MANIFEST_REV_BRANCH) != revision:
-                revision += '-off'
-                workspace_off = True
-            meta_project = {'path': project_path,
-                            'revision': revision}
             meta_projects.append(meta_project)
+
+            if project.sha(MANIFEST_REV_BRANCH) != meta_project['revision']:
+                meta_project['revision'] += '-off'
+                workspace_off = True
+            if meta_project.get('remote') and project.url != meta_project['remote']:
+                workspace_off = True
 
         meta.update({'west': {'manifest': west_projs['manifest_path'],
                               'projects': meta_projects}})
@@ -484,19 +546,17 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
 
     meta_projects = []
     for module in modules:
-        module_path = PurePath(module.project).as_posix()
-        revision, dirty = git_revision(module_path)
-        workspace_dirty |= dirty
-        meta_project = {'name': module.meta['name'],
-                        'path': module_path,
-                        'revision': revision}
-        meta_projects.append(meta_project)
+        meta_module, dirty = _create_meta_project(module.project)
+        meta_module['name'] = module.meta.get('name')
+        meta_projects.append(meta_module)
+
     meta['modules'] = meta_projects
 
     meta['workspace'].update({'dirty': workspace_dirty,
                               'extra': workspace_extra})
 
     if propagate_state:
+        zephyr_revision = zephyr_project['revision']
         if workspace_dirty and not zephyr_dirty:
             zephyr_revision += '-dirty'
         if workspace_extra:
@@ -506,6 +566,7 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
         zephyr_project.update({'revision': zephyr_revision})
 
         if west_projs is not None:
+            manifest_revision = manifest_project['revision']
             if workspace_dirty and not manifest_dirty:
                 manifest_revision += '-dirty'
             if workspace_extra:
@@ -517,7 +578,7 @@ def process_meta(zephyr_base, west_projs, modules, extra_modules=None,
     return meta
 
 
-def west_projects(manifest = None):
+def west_projects(manifest=None):
     manifest_path = None
     projects = []
     # West is imported here, as it is optional
@@ -685,7 +746,8 @@ def main():
     for module in modules:
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
-        sysbuild_kconfig += process_sysbuildkconfig(module.project, module.meta)
+        sysbuild_kconfig += process_sysbuildkconfig(
+            module.project, module.meta)
         sysbuild_cmake += process_sysbuildcmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
         twister += process_twister(module.project, module.meta)

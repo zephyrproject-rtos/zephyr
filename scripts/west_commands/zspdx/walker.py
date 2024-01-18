@@ -4,6 +4,7 @@
 
 import os
 import yaml
+import re
 
 from west import log
 from west.util import west_topdir, WestNotFound
@@ -35,6 +36,13 @@ class WalkerConfig:
 # build files, and corresponding source and SDK files, and gathers the
 # information needed to build the SPDX data classes.
 class Walker:
+    CPE23TYPE_REGEX = (
+        r'^cpe:2\.3:[aho\*\-](:(((\?*|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^'
+        r"`\{\|}~]))+(\?*|\*?))|[\*\-])){5}(:(([a-zA-Z]{2,3}(-([a-zA-Z]{2}|[0-9]{3}))?)|[\*\-]))(:(((\?*"
+        r'|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^`\{\|}~]))+(\?*|\*?))|[\*\-])){4}$'
+    )
+    PURL_REGEX = r"^pkg:.+(\/.+)?\/.+(@.+)?(\?.+)?(#.+)?$"
+
     # initialize with WalkerConfig
     def __init__(self, cfg):
         super(Walker, self).__init__()
@@ -68,6 +76,40 @@ class Walker:
 
         # SDK install path from parsed CMake cache
         self.sdkPath = ""
+
+    def _build_purl(self, url, version=None):
+        if not url:
+            return None
+
+        purl = None
+        # This is designed to match repository with the following url pattern:
+        # '<protocol><base_url>/<namespace>/<package>
+        COMMON_GIT_URL_REGEX=r'((git@|http(s)?:\/\/)(?P<base_url>[\w\.@]+)(\/|:))(?P<namespace>[\w,\-,\_]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
+
+        match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
+        if match:
+            purl = f'pkg:{match.group("base_url")}/{match.group("namespace")}/{match.group("package")}'
+
+        if purl and (version or len(version) > 0):
+            purl += f'@{version}'
+
+        return purl
+
+    def _normalize_module_name(self, module_name):
+        # Replace "_" by "-" since it's not allowed in spdx ID
+        return module_name.replace("_", "-")
+
+    def _add_describe_relationship(self, doc, cfgpackage):
+        # create DESCRIBES relationship data
+        rd = RelationshipData()
+        rd.ownerType = RelationshipDataElementType.DOCUMENT
+        rd.ownerDocument = doc
+        rd.otherType = RelationshipDataElementType.PACKAGEID
+        rd.otherPackageID = cfgpackage.spdxID
+        rd.rlnType = "DESCRIBES"
+
+        # add it to pending relationships queue
+        self.pendingRelationships.append(rd)
 
     # primary entry point
     def makeDocuments(self):
@@ -162,16 +204,7 @@ class Walker:
         pkgApp = Package(cfgPackageApp, self.docApp)
         self.docApp.pkgs[pkgApp.cfg.spdxID] = pkgApp
 
-        # create DESCRIBES relationship data
-        rd = RelationshipData()
-        rd.ownerType = RelationshipDataElementType.DOCUMENT
-        rd.ownerDocument = self.docApp
-        rd.otherType = RelationshipDataElementType.PACKAGEID
-        rd.otherPackageID = cfgPackageApp.spdxID
-        rd.rlnType = "DESCRIBES"
-
-        # add it to pending relationships queue
-        self.pendingRelationships.append(rd)
+        self._add_describe_relationship(self.docApp, cfgPackageApp)
 
     def setupBuildDocument(self):
         # set up build document
@@ -195,7 +228,7 @@ class Walker:
         # add it to pending relationships queue
         self.pendingRelationships.append(rd)
 
-    def setupZephyrDocument(self, modules):
+    def setupZephyrDocument(self, zephyr, modules):
         # set up zephyr document
         cfgZephyr = DocumentConfig()
         cfgZephyr.name = "zephyr-sources"
@@ -216,19 +249,47 @@ class Walker:
         cfgPackageZephyr.spdxID = "SPDXRef-zephyr-sources"
         cfgPackageZephyr.relativeBaseDir = relativeBaseDir
 
+        zephyr_url = zephyr.get("remote", "")
+        if zephyr_url:
+            cfgPackageZephyr.url = zephyr_url
+
+        if zephyr.get("revision"):
+            cfgPackageZephyr.revision = zephyr.get("revision")
+
+        purl = None
+        zephyr_tags = zephyr.get("tags", "")
+        if zephyr_tags:
+            # Find tag vX.Y.Z
+            for tag in zephyr_tags:
+                tag = re.fullmatch(r'^v(?P<version>\d+\.\d+\.\d+)$', tag)
+                if tag:
+                    cfgPackageZephyr.version = tag.group('version')
+                    purl = self._build_purl(zephyr_url, cfgPackageZephyr.version)
+                    break
+
+        if purl:
+            cfgPackageZephyr.externalReferences.append(purl)
+
+        if len(cfgPackageZephyr.version) > 0:
+            cpe = f'cpe:2.3:o:zephyrproject:zephyr:{cfgPackageZephyr.version}:-:*:*:*:*:*:*'
+            cfgPackageZephyr.externalReferences.append(cpe)
+
         pkgZephyr = Package(cfgPackageZephyr, self.docZephyr)
         self.docZephyr.pkgs[pkgZephyr.cfg.spdxID] = pkgZephyr
+
+        self._add_describe_relationship(self.docZephyr, cfgPackageZephyr)
 
         for module in modules:
             module_name = module.get("name", None)
             module_path = module.get("path", None)
+            module_url = module.get("remote", None)
+            module_revision = module.get("revision", None)
 
             if not module_name:
                 log.err(f"cannot find module name in meta file; bailing")
                 return False
 
-            # Replace "_" by "-" since it's not allowed in spdx ID
-            module_name = module_name.replace("_", "-")
+            module_name = self._normalize_module_name(module_name)
 
             # set up zephyr sources package
             cfgPackageZephyrModule = PackageConfig()
@@ -236,19 +297,18 @@ class Walker:
             cfgPackageZephyrModule.spdxID = "SPDXRef-" + module_name + "-sources"
             cfgPackageZephyrModule.relativeBaseDir = module_path
 
+            if module_revision:
+                cfgPackageZephyrModule.revision = module_revision
+
+            if module_url:
+                cfgPackageZephyrModule.url = module_url
+
             pkgZephyrModule = Package(cfgPackageZephyrModule, self.docZephyr)
             self.docZephyr.pkgs[pkgZephyrModule.cfg.spdxID] = pkgZephyrModule
 
-        # create DESCRIBES relationship data
-        rd = RelationshipData()
-        rd.ownerType = RelationshipDataElementType.DOCUMENT
-        rd.ownerDocument = self.docZephyr
-        rd.otherType = RelationshipDataElementType.PACKAGEID
-        rd.otherPackageID = cfgPackageZephyr.spdxID
-        rd.rlnType = "DESCRIBES"
+            self._add_describe_relationship(self.docZephyr, cfgPackageZephyrModule)
 
-        # add it to pending relationships queue
-        self.pendingRelationships.append(rd)
+        return True
 
     def setupSDKDocument(self):
         # set up SDK document
@@ -287,7 +347,8 @@ class Walker:
         try:
             with open(self.metaFile) as file:
                 content = yaml.load(file.read(), yaml.SafeLoader)
-                self.setupZephyrDocument(content["modules"])
+                if not self.setupZephyrDocument(content["zephyr"], content["modules"]):
+                    return False
         except (FileNotFoundError, yaml.YAMLError):
             log.err(f"cannot find a valid zephyr_meta.yml required for SPDX generation; bailing")
             return False
