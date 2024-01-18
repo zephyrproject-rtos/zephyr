@@ -27,5 +27,5 @@
 #endif
 
 #if defined(CONFIG_NET_SOCKETS_SERVICE)
-	ITERABLE_SECTION_RAM(net_socket_service_desc, 4)
+	ITERABLE_SECTION_ROM(net_socket_service_desc, 4)
 #endif
