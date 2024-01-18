@@ -255,6 +255,18 @@ struct bt_cap_unicast_audio_update_param {
 	struct bt_cap_unicast_audio_update_stream_param *stream_params;
 };
 
+/** Parameters for the bt_cap_initiator_unicast_audio_stop() function */
+struct bt_cap_unicast_audio_stop_param {
+	/** The type of the set. */
+	enum bt_cap_set_type type;
+
+	/** The number of streams in @p streams */
+	size_t count;
+
+	/** Array of streams to stop */
+	struct bt_cap_stream **streams;
+};
+
 /**
  * @brief Register Common Audio Profile Initiator callbacks
  *
@@ -297,19 +309,19 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param *param);
 
 /**
- * @brief Stop unicast audio streams for a unicast group.
+ * @brief Stop unicast audio streams.
+ *
+ * This will stop one or more streams.
  *
  * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
  * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
  * to be enabled.
  *
- * @param unicast_group The group of unicast devices to stop. The audio streams
- *                      in this will be stopped and reset, and the
- *                      @p unicast_group will be invalidated.
+ * @param param Stop parameters.
  *
  * @return 0 on success or negative error value on failure.
  */
-int bt_cap_initiator_unicast_audio_stop(struct bt_bap_unicast_group *unicast_group);
+int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
 /** @brief Cancel any current Common Audio Profile procedure
  *
