@@ -1769,6 +1769,10 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 	int enabled = false;
 	int ret;
 
+	if (!context->is_initialized) {
+		return -ENOTCONN;
+	}
+
 	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, optlen);
 	if (!enabled) {
 		*optlen = 0;
@@ -1792,6 +1796,10 @@ static int tls_opt_dtls_connection_id_status_get(struct tls_context *context,
 
 	if (sizeof(int) != *optlen) {
 		return -EINVAL;
+	}
+
+	if (!context->is_initialized) {
+		return -ENOTCONN;
 	}
 
 	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled,
