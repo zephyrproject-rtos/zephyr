@@ -299,7 +299,6 @@ Bluetooth:
   files:
     - doc/connectivity/bluetooth/
     - include/zephyr/bluetooth/
-    - include/zephyr/drivers/bluetooth/
     - samples/bluetooth/
     - subsys/bluetooth/
     - subsys/bluetooth/common/
@@ -324,6 +323,27 @@ Bluetooth:
     - tests/bsim/bluetooth/mesh/
     - tests/bluetooth/shell/audio*
   labels:
+    - "area: Bluetooth"
+  tests:
+    - bluetooth
+
+Bluetooth HCI:
+  status: maintained
+  maintainers:
+    - jhedberg
+    - jori-nordic
+  collaborators:
+    - hermabe
+    - alwa-nordic
+    - Thalley
+    - sjanc
+    - theob-pro
+  files:
+    - include/zephyr/drivers/bluetooth/
+    - drivers/bluetooth/
+    - samples/bluetooth/hci_*/
+  labels:
+    - "area: Bluetooth Host"
     - "area: Bluetooth"
   tests:
     - bluetooth
@@ -362,7 +382,6 @@ Bluetooth Host:
     - sjanc
     - theob-pro
   files:
-    - drivers/bluetooth/
     - subsys/bluetooth/host/
     - subsys/bluetooth/services/
     - subsys/bluetooth/shell/
