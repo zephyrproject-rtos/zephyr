@@ -483,8 +483,11 @@ static void corrupted_beacon_test(const uint8_t *offsets,
 	}
 
 	/* Now the beacon payload is valid and it shall trigger IV Update on the node. It shall also
-	 * increase the beacon interval.
+	 * increase the beacon interval. We delay the outgoing beacon for a couple of seconds to
+	 * avoid near perfect syncing with the beacon interval cycle of the device we just received
+	 * a beacon from.
 	 */
+	k_sleep(K_SECONDS(3));
 	send_beacon(buf);
 
 	/* The beacon interval shall be changed and the node shall skip transmission of the next
@@ -1361,7 +1364,7 @@ static void test_tx_priv_interleave(void)
 	struct bt_mesh_subnet *sub;
 
 
-	bt_mesh_test_cfg_set(NULL, BEACON_INTERVAL_WAIT_TIME);
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &prb_comp);
 	provision(&tx_cfg);
 
@@ -1394,6 +1397,8 @@ static void test_tx_priv_interleave(void)
 	k_sleep(K_SECONDS(BEACON_INTERVAL + 5));
 
 	toggle_priv_beacon(tx_cfg.addr, 0);
+	/* Small delay to let beacons complete before subnet update is applied */
+	k_sleep(K_MSEC(20));
 
 	status = bt_mesh_subnet_update(BT_MESH_KEY_PRIMARY, net_key_new);
 	ASSERT_TRUE(status == STATUS_SUCCESS);
@@ -1419,7 +1424,7 @@ static void test_rx_priv_interleave(void)
 	int err;
 	bool same_random = false;
 
-	bt_mesh_test_cfg_set(&rx_cfg, BEACON_INTERVAL_WAIT_TIME);
+	bt_mesh_test_cfg_set(&rx_cfg, WAIT_TIME);
 	bt_mesh_crypto_init();
 	k_sem_init(&observer_sem, 0, 1);
 
@@ -1894,9 +1899,10 @@ static void proxy_adv_confirm_evt(struct expected_proxy_adv_evt *exp_evts, uint8
 
 	for (int i = 0; i < cnt; i++) {
 		if (exp_evts[i].evt_cnt) {
-			LOG_ERR("Missing %d expected %s events in period %llums-%llums",
+			LOG_ERR("Missing %d expected %s idx %d events in period %llums-%llums",
 				exp_evts[i].evt_cnt, proxy_adv_str[exp_evts[i].evt_type],
-				exp_evts[i].time.after, exp_evts[i].time.before);
+				exp_evts[i].net_idx, exp_evts[i].time.after,
+				exp_evts[i].time.before);
 			missing_evts = true;
 		}
 	}
@@ -2029,13 +2035,13 @@ static void test_rx_proxy_adv_multi_subnet_coex(void)
 		 *  is advertised by this subnet, and that the two others
 		 *  continues to advertise NET_ID.
 		 */
-		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 0, .evt_cnt = 17,
+		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 0, .evt_cnt = 16,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_2,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_3}},
-		{.evt_type = BEACON_TYPE_NODE_ID, .net_idx = 1, .evt_cnt = 17,
+		{.evt_type = BEACON_TYPE_NODE_ID, .net_idx = 1, .evt_cnt = 16,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_2,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_3}},
-		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 2, .evt_cnt = 17,
+		{.evt_type = BEACON_TYPE_NET_ID, .net_idx = 2, .evt_cnt = 16,
 		 .time = {.after = PROXY_ADV_MULTI_CHECKPOINT_2,
 			  .before = PROXY_ADV_MULTI_CHECKPOINT_3}},
 
