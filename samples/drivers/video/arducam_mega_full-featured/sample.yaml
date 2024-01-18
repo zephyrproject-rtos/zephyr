@@ -1,0 +1,10 @@
+sample:
+  name: arducam mega camera full-featured test
+tests:
+  sample.video.arducam_mega_full-featured:
+    build_only: true
+    tags: video
+    platform_allow:
+      - rpi_pico
+    integration_platforms:
+      - rpi_pico
