@@ -37,14 +37,33 @@ static int dac_esp32_write_value(const struct device *dev,
 static int dac_esp32_channel_setup(const struct device *dev,
 		   const struct dac_channel_cfg *channel_cfg)
 {
-	ARG_UNUSED(dev);
+	struct dac_esp32_data *data = dev->data;
+	const struct dac_esp32_cfg *cfg = dev->config;
+	uint32_t output_buffer;
 
 	if (channel_cfg->channel_id > SOC_DAC_CHAN_NUM) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
+	if (channel_cfg->resolution == 8) {
+		data->resolution = channel_cfg->resolution;
+	} else {
+		LOG_ERR("Resolution not supported");
+
+	if (channel_cfg->buffered) {
+		dac_ll_set_output_buffer(cfg->base,
+			table_channels[channel_cfg->channel_id],
+			output_buffer);
+	}
+
+#if CONFIG_DAC_ESP32_DMA
+	dac_ll_digi_enable_dma(true)
+#endif
+
 	dac_output_enable(channel_cfg->channel_id);
+
+	LOG_DBG("Channel setup succeeded!");
 
 	return 0;
 }
@@ -83,6 +102,10 @@ static const struct dac_driver_api dac_esp32_driver_api = {
 		.irq_source = DT_INST_IRQN(id),							\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),				\
 		.clock_subsys =	(clock_control_subsys_t) DT_INST_CLOCKS_CELL(id, offset),	\
+	};											\
+												\
+	static struct dac_esp32_data dac_esp32_data_##index = {					\
+		.channel_count = ESP32_CHANNEL_COUNT						\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(id,								\

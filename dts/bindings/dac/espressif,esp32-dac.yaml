@@ -49,5 +49,13 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  dma-enabled:
+    type: boolean
+    description: Enable DAC DMA support
+
+  dma-clk:
+    type: int
+    description: DMA clock source
+
 io-channel-cells:
   - output

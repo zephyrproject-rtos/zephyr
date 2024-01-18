@@ -403,6 +403,8 @@
 			interrupts = <RTC_CORE_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_SARADC_MODULE>;
+			dma-clk = <ESP32_DAC_DMA_MODULE>;
+			dma-host = <0>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
