@@ -1,4 +1,4 @@
-identifier: qemu_xtensa_mmu
+identifier: qemu_xtensa/dc233c/mmu
 name: QEMU Emulation for Xtensa with MMU
 type: qemu
 simulation: qemu
