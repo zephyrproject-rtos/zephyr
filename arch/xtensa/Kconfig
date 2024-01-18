@@ -93,6 +93,53 @@ config XTENSA_NUM_SPIN_RELAX_NOPS
 	  Specify the number of NOPs in Xtensa specific
 	  arch_spin_relax().
 
+menu "Xtensa HiFi Options"
+
+config XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI3
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+config XTENSA_CPU_HAS_HIFI4
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
+# Selected when at least one XTENSA_HIFIn version has been configured
+config XTENSA_HIFI
+	bool
+
+if XTENSA_CPU_HAS_HIFI
+
+config XTENSA_HIFI3
+	bool "HiFi3 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI3
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 3 instruction support.
+
+config XTENSA_HIFI4
+	bool "HiFi4 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI4
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 4 instruction support.
+
+config XTENSA_HIFI_SHARING
+	bool "HiFi register sharing"
+	depends on XTENSA_HIFI
+	help
+	  This option enables preservation of the hardware HiFi registers
+	  across context switches to allow multiple threads to perform
+	  concurrent HiFi operations.
+
+endif    # XTENSA_CPU_HAS_HIFI
+
+endmenu  # Xtensa HiFi Options
+
 if CPU_HAS_MMU
 
 config XTENSA_MMU

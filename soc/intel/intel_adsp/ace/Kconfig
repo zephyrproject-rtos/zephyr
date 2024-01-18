@@ -11,6 +11,8 @@ config SOC_SERIES_INTEL_ADSP_ACE
 	select DW_ICTL_ACE
 	select SOC_HAS_RUNTIME_NUM_CPUS
 	select HAS_PM
+	select XTENSA_CPU_HAS_HIFI3
+	select XTENSA_CPU_HAS_HIFI4
 
 config SOC_INTEL_COMM_WIDGET
 	bool "Intel Communication Widget driver"
