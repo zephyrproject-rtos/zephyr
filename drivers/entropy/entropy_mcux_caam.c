@@ -11,8 +11,16 @@
 #include <zephyr/random/random.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 
 #include "fsl_caam.h"
+
+#define ENTROPY_CAAM_CALL(call, ret)	\
+	sys_cache_data_flush_all();	\
+	sys_cache_data_disable();	\
+	ret = call;			\
+	__ASSERT_NO_MSG(!ret);		\
+	sys_cache_data_enable();
 
 struct mcux_entropy_config {
 	CAAM_Type *base;
@@ -21,7 +29,6 @@ struct mcux_entropy_config {
 static caam_job_ring_interface_t jrif0 __attribute__((__section__(".nocache")));
 static uint8_t rng_buff_pool[CONFIG_ENTRY_MCUX_CAAM_POOL_SIZE]
 					__attribute__((__section__(".nocache")));
-
 
 /* This semaphore is needed to prevent race condition to static variables in the HAL driver */
 K_SEM_DEFINE(mcux_caam_sem, 1, 1)
@@ -53,9 +60,10 @@ static int entropy_mcux_caam_get_entropy(const struct device *dev,
 			return ret;
 		}
 
-		status = CAAM_RNG_GetRandomData(
-				config->base, &handle, kCAAM_RngStateHandle0,
-				&rng_buff_pool[0], read_length, kCAAM_RngDataAny, NULL);
+		ENTROPY_CAAM_CALL(CAAM_RNG_GetRandomData(config->base, &handle,
+					kCAAM_RngStateHandle0, &rng_buff_pool[0],
+					read_length, kCAAM_RngDataAny, NULL),
+				  status);
 
 		k_sem_give(&mcux_caam_sem);
 
@@ -83,8 +91,7 @@ static int entropy_mcux_caam_init(const struct device *dev)
 	CAAM_GetDefaultConfig(&conf);
 	conf.jobRingInterface[0] = &jrif0;
 
-	status = CAAM_Init(config->base, &conf);
-	__ASSERT_NO_MSG(!status);
+	ENTROPY_CAAM_CALL(CAAM_Init(config->base, &conf), status);
 
 	if (status != 0) {
 		return -ENODEV;
