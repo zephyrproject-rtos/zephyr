@@ -35,6 +35,8 @@
  * @anchor INPUT_KEY_CODES
  * @{
  */
+#define INPUT_KEY_RESERVED 0            /**< Reserved, do not use */
+
 #define INPUT_KEY_0 11                  /**< 0 Key */
 #define INPUT_KEY_1 2                   /**< 1 Key */
 #define INPUT_KEY_2 3                   /**< 2 Key */
