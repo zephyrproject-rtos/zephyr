@@ -3453,6 +3453,7 @@ ITE Platforms:
     - boards/riscv/it8*_evb/
     - drivers/*/*/*it8xxx2*.c
     - drivers/*/*it8xxx2*.c
+    - drivers/*/*_ite_*
     - dts/bindings/*/*ite*
     - dts/riscv/ite/
     - soc/riscv/ite_ec/
