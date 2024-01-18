@@ -1,0 +1,7 @@
+board:
+  name: qemu_xtensa
+  vendor: Cadence Design Systems
+  socs:
+  - name: dc233c
+    variants:
+    - name: mmu
