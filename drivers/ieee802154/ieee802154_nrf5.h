@@ -110,6 +110,9 @@ struct nrf5_802154_data {
 	/* The last configured value of CSL phase time in nanoseconds. */
 	net_time_t csl_rx_time;
 #endif /* CONFIG_NRF_802154_SER_HOST && CONFIG_IEEE802154_CSL_ENDPOINT */
+
+	/* Indicates if RxOnWhenIdle mode is enabled. */
+	bool rx_on_when_idle;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */
