@@ -15,8 +15,8 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		CPU0: cpu@0 {
-			compatible = "riscv";
+		cpu0: cpu@0 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
@@ -25,15 +25,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU0_intc: interrupt-controller {
+			cpu0_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU1: cpu@1 {
-			compatible = "riscv";
+		cpu1: cpu@1 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <1>;
 			status = "okay";
@@ -42,15 +42,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU1_intc: interrupt-controller {
+			cpu1_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU2: cpu@2 {
-			compatible = "riscv";
+		cpu2: cpu@2 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <2>;
 			status = "okay";
@@ -59,15 +59,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU2_intc: interrupt-controller {
+			cpu2_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU3: cpu@3 {
-			compatible = "riscv";
+		cpu3: cpu@3 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <3>;
 			status = "okay";
@@ -76,15 +76,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU3_intc: interrupt-controller {
+			cpu3_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU4: cpu@4 {
-			compatible = "riscv";
+		cpu4: cpu@4 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <4>;
 			status = "okay";
@@ -93,15 +93,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU4_intc: interrupt-controller {
+			cpu4_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU5: cpu@5 {
-			compatible = "riscv";
+		cpu5: cpu@5 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <5>;
 			status = "okay";
@@ -110,15 +110,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU5_intc: interrupt-controller {
+			cpu5_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU6: cpu@6 {
-			compatible = "riscv";
+		cpu6: cpu@6 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <6>;
 			status = "okay";
@@ -127,15 +127,15 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU6_intc: interrupt-controller {
+			cpu6_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
-		CPU7: cpu@7 {
-			compatible = "riscv";
+		cpu7: cpu@7 {
+			compatible = "andestech,andescore-v5", "riscv";
 			device_type = "cpu";
 			reg = <7>;
 			status = "okay";
@@ -144,7 +144,7 @@
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
-			CPU7_intc: interrupt-controller {
+			cpu7_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
@@ -173,10 +173,10 @@
 			reg = <0xe4000000 0x04000000>;
 			riscv,max-priority = <255>;
 			riscv,ndev = <1023>;
-			interrupts-extended = <&CPU0_intc 11 &CPU1_intc 11
-					       &CPU2_intc 11 &CPU3_intc 11
-					       &CPU4_intc 11 &CPU5_intc 11
-					       &CPU6_intc 11 &CPU7_intc 11>;
+			interrupts-extended = <&cpu0_intc 11 &cpu1_intc 11
+					       &cpu2_intc 11 &cpu3_intc 11
+					       &cpu4_intc 11 &cpu5_intc 11
+					       &cpu6_intc 11 &cpu7_intc 11>;
 		};
 
 		mbox: mbox-controller@e6400000 {
@@ -190,10 +190,10 @@
 		mtimer: timer@e6000000 {
 			compatible = "andestech,machine-timer";
 			reg = <0xe6000000 0x10>;
-			interrupts-extended = <&CPU0_intc 7 &CPU1_intc 7
-					       &CPU2_intc 7 &CPU3_intc 7
-					       &CPU4_intc 7 &CPU5_intc 7
-					       &CPU6_intc 7 &CPU7_intc 7>;
+			interrupts-extended = <&cpu0_intc 7 &cpu1_intc 7
+					       &cpu2_intc 7 &cpu3_intc 7
+					       &cpu4_intc 7 &cpu5_intc 7
+					       &cpu6_intc 7 &cpu7_intc 7>;
 		};
 
 		syscon: syscon@f0100000 {
