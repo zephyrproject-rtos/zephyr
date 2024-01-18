@@ -17,5 +17,5 @@ tests:
     arch_exclude:
       - posix
     platform_exclude:
-      - qemu_xtensa_mmu
+      - qemu_xtensa/dc233c/mmu
     tags: introduction
