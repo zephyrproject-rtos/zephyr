@@ -365,7 +365,7 @@
 /drivers/spi/*esp32*                      @sylvioalves
 /drivers/spi/*pl022*                      @soburi
 /drivers/sdhc/                            @danieldegrasse
-/drivers/sdhc/sdhc_cdns*                  @roymurlidhar
+/drivers/sdhc/sdhc_cdns*                  @roymurlidhar @tanmaykathpalia
 /drivers/timer/*arm_arch*                 @carlocaione
 /drivers/timer/*cortex_m_systick*         @anangl
 /drivers/timer/*altera_avalon*            @nashif
