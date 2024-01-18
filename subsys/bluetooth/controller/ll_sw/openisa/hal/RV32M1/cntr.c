@@ -15,6 +15,8 @@
 
 #include "ll_irqs.h"
 
+#include <fsl_device_registers.h>
+
 #define PCS_SOURCE_RTC 2
 
 void cntr_init(void)
