@@ -81,6 +81,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_PACKET_FILTER,
 	/** Set or get Wi-Fi channel for Monitor or TX-Injection mode */
 	NET_REQUEST_WIFI_CMD_CHANNEL,
+	/** Get Wi-Fi driver and Firmware versions */
+	NET_REQUEST_WIFI_CMD_VERSION,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -158,6 +160,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL);
 
+#define NET_REQUEST_WIFI_VERSION			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_VERSION)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
+
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
 	/** Scan results available */
@@ -228,6 +235,14 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_AP_STA_DISCONNECTED			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED)
+
+/** Wi-Fi version */
+struct wifi_version {
+	/** Driver version */
+	char *drv_version;
+	/** Firmware version */
+	char *fw_version;
+};
 
 /**
  * @brief Wi-Fi structure to uniquely identify a band-channel pair
@@ -809,6 +824,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
+	/** Get Version of WiFi driver and Firmware
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params Version parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*get_version)(const struct device *dev, struct wifi_version *params);
 };
 
 /** Wi-Fi management offload API */
