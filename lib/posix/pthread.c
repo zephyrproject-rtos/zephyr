@@ -106,7 +106,6 @@ static inline size_t get_posix_thread_idx(pthread_t pth)
 
 struct posix_thread *to_posix_thread(pthread_t pthread)
 {
-	k_spinlock_key_t key;
 	struct posix_thread *t;
 	bool actually_initialized;
 	size_t bit = get_posix_thread_idx(pthread);
@@ -124,7 +123,6 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 
 	t = &posix_thread_pool[bit];
 
-	key = k_spin_lock(&pthread_pool_lock);
 	/*
 	 * Denote a pthread as "initialized" (i.e. allocated) if it is not in ready_q.
 	 * This differs from other posix object allocation strategies because they use
@@ -133,7 +131,6 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 	actually_initialized = !(
 		t->qid == POSIX_THREAD_READY_Q ||
 		(t->qid == POSIX_THREAD_DONE_Q && t->attr.detachstate == PTHREAD_CREATE_DETACHED));
-	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (!actually_initialized) {
 		LOG_ERR("Pthread claims to be initialized (%x)", pthread);
@@ -187,29 +184,35 @@ static inline void __z_pthread_cleanup_init(struct __pthread_cleanup *c, void (*
 
 void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void *arg)
 {
-	struct posix_thread *const t = to_posix_thread(pthread_self());
+	struct posix_thread *t;
 	struct __pthread_cleanup *const c = (struct __pthread_cleanup *)cleanup;
 
-	BUILD_ASSERT(3 * sizeof(void *) == sizeof(*c));
-	__ASSERT_NO_MSG(t != NULL);
-	__ASSERT_NO_MSG(c != NULL);
-	__ASSERT_NO_MSG(routine != NULL);
-	__z_pthread_cleanup_init(c, routine, arg);
-	sys_slist_prepend(&t->cleanup_list, &c->node);
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread_self());
+		BUILD_ASSERT(3 * sizeof(void *) == sizeof(*c));
+		__ASSERT_NO_MSG(t != NULL);
+		__ASSERT_NO_MSG(c != NULL);
+		__ASSERT_NO_MSG(routine != NULL);
+		__z_pthread_cleanup_init(c, routine, arg);
+		sys_slist_prepend(&t->cleanup_list, &c->node);
+	}
 }
 
 void __z_pthread_cleanup_pop(int execute)
 {
 	sys_snode_t *node;
 	struct __pthread_cleanup *c;
-	struct posix_thread *const t = to_posix_thread(pthread_self());
+	struct posix_thread *t;
 
-	__ASSERT_NO_MSG(t != NULL);
-	node = sys_slist_get(&t->cleanup_list);
-	__ASSERT_NO_MSG(node != NULL);
-	c = CONTAINER_OF(node, struct __pthread_cleanup, node);
-	__ASSERT_NO_MSG(c != NULL);
-	__ASSERT_NO_MSG(c->routine != NULL);
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread_self());
+		__ASSERT_NO_MSG(t != NULL);
+		node = sys_slist_get(&t->cleanup_list);
+		__ASSERT_NO_MSG(node != NULL);
+		c = CONTAINER_OF(node, struct __pthread_cleanup, node);
+		__ASSERT_NO_MSG(c != NULL);
+		__ASSERT_NO_MSG(c->routine != NULL);
+	}
 	if (execute) {
 		c->routine(c->arg);
 	}
@@ -583,24 +586,28 @@ int pthread_setconcurrency(int new_level)
  */
 int pthread_setcancelstate(int state, int *oldstate)
 {
-	bool cancel_type;
-	bool cancel_pending;
+	int ret = 0;
 	struct posix_thread *t;
+	bool cancel_pending = false;
+	bool cancel_type = PTHREAD_CANCEL_ENABLE;
 
 	if (state != PTHREAD_CANCEL_ENABLE && state != PTHREAD_CANCEL_DISABLE) {
 		LOG_ERR("Invalid pthread state %d", state);
 		return EINVAL;
 	}
 
-	t = to_posix_thread(pthread_self());
-	if (t == NULL) {
-		return EINVAL;
-	}
-
 	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread_self());
+		if (t == NULL) {
+			ret = EINVAL;
+			K_SPINLOCK_BREAK;
+		}
+
 		if (oldstate != NULL) {
 			*oldstate = t->attr.cancelstate;
 		}
+
+		t->attr.cancelstate = state;
 		cancel_pending = t->attr.cancelpending;
 		cancel_type = t->attr.canceltype;
 	}
@@ -620,6 +627,7 @@ int pthread_setcancelstate(int state, int *oldstate)
  */
 int pthread_setcanceltype(int type, int *oldtype)
 {
+	int ret = 0;
 	struct posix_thread *t;
 
 	if (type != PTHREAD_CANCEL_DEFERRED && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
@@ -627,19 +635,20 @@ int pthread_setcanceltype(int type, int *oldtype)
 		return EINVAL;
 	}
 
-	t = to_posix_thread(pthread_self());
-	if (t == NULL) {
-		return EINVAL;
-	}
-
 	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread_self());
+		if (t == NULL) {
+			ret = EINVAL;
+			K_SPINLOCK_BREAK;
+		}
+
 		if (oldtype != NULL) {
-			*oldtype = t->cancel_type;
+			*oldtype = t->attr.canceltype;
 		}
 		t->attr.canceltype = type;
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -649,28 +658,35 @@ int pthread_setcanceltype(int type, int *oldtype)
  */
 int pthread_cancel(pthread_t pthread)
 {
-	int cancel_state;
-	int cancel_type;
-	k_spinlock_key_t key;
+	int ret = 0;
+	bool cancel_state = PTHREAD_CANCEL_ENABLE;
+	bool cancel_type = PTHREAD_CANCEL_DEFERRED;
 	struct posix_thread *t;
 
-	t = to_posix_thread(pthread);
-	if (t == NULL) {
-		return ESRCH;
-	}
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread);
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	t->attr.cancelpending = true;
-	cancel_state = t->attr.cancelstate;
-	cancel_type = t->attr.canceltype;
-	k_spin_unlock(&pthread_pool_lock, key);
+		if (!__attr_is_initialized(&t->attr)) {
+			/* thread has already terminated */
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
+		t->attr.cancelpending = true;
+		cancel_state = t->attr.cancelstate;
+		cancel_type = t->attr.canceltype;
+	}
 
 	if (cancel_state == PTHREAD_CANCEL_ENABLE &&
 	    cancel_type == PTHREAD_CANCEL_ASYNCHRONOUS) {
 		posix_thread_finalize(t, PTHREAD_CANCELED);
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -680,26 +696,30 @@ int pthread_cancel(pthread_t pthread)
  */
 int pthread_setschedparam(pthread_t pthread, int policy, const struct sched_param *param)
 {
-	struct posix_thread *t = to_posix_thread(pthread);
+	int ret = 0;
 	int new_prio;
+	struct posix_thread *t;
 
-	if (t == NULL) {
-		return ESRCH;
-	}
-
-	if (!valid_posix_policy(policy)) {
-		LOG_ERR("Invalid scheduler policy %d", policy);
+	if (param == NULL || !valid_posix_policy(policy) ||
+	    !is_posix_policy_prio_valid(param->sched_priority, policy)) {
 		return EINVAL;
 	}
 
-	if (is_posix_policy_prio_valid(param->sched_priority, policy) == false) {
-		return EINVAL;
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread);
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
+		new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
 	}
 
-	new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
+	if (ret == 0) {
+		k_thread_priority_set(&t->thread, new_prio);
+	}
 
-	k_thread_priority_set(&t->thread, new_prio);
-	return 0;
+	return ret;
 }
 
 /**
@@ -750,26 +770,26 @@ int pthread_attr_init(pthread_attr_t *_attr)
 int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *param)
 {
 	int ret = 0;
-	uint32_t priority;
 	struct posix_thread *t;
 
 	if (policy == NULL || param == NULL) {
 		return EINVAL;
 	}
 
-	t = to_posix_thread(pthread);
-	if (t == NULL) {
-		return ESRCH;
-	}
-
 	K_SPINLOCK(&pthread_pool_lock) {
-		if (__attr_is_initialized(&t->attr)) {
-			priority = k_thread_priority_get(&t->thread);
-			param->sched_priority = zephyr_to_posix_priority(priority, policy);
-			ret = 0;
-		} else {
+		t = to_posix_thread(pthread);
+		if (t == NULL) {
 			ret = ESRCH;
+			K_SPINLOCK_BREAK;
 		}
+
+		if (!__attr_is_initialized(&t->attr)) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
+		param->sched_priority =
+			zephyr_to_posix_priority(k_thread_priority_get(&t->thread), policy);
 	}
 
 	return ret;
@@ -812,10 +832,18 @@ int pthread_once(pthread_once_t *once, void (*init_func)(void))
 FUNC_NORETURN
 void pthread_exit(void *retval)
 {
-	k_spinlock_key_t key;
-	struct posix_thread *self;
+	struct posix_thread *self = NULL;
 
-	self = to_posix_thread(pthread_self());
+	K_SPINLOCK(&pthread_pool_lock) {
+		self = to_posix_thread(pthread_self());
+		if (self == NULL) {
+			K_SPINLOCK_BREAK;
+		}
+
+		/* Mark a thread as cancellable before exiting */
+		self->attr.cancelstate = PTHREAD_CANCEL_ENABLE;
+	}
+
 	if (self == NULL) {
 		/* not a valid posix_thread */
 		LOG_DBG("Aborting non-pthread %p", k_current_get());
@@ -823,11 +851,6 @@ void pthread_exit(void *retval)
 
 		CODE_UNREACHABLE;
 	}
-
-	/* Mark a thread as cancellable before exiting */
-	key = k_spin_lock(&pthread_pool_lock);
-	self->attr.cancelstate = PTHREAD_CANCEL_ENABLE;
-	k_spin_unlock(&pthread_pool_lock, key);
 
 	posix_thread_finalize(self, retval);
 	CODE_UNREACHABLE;
@@ -840,23 +863,23 @@ void pthread_exit(void *retval)
  */
 int pthread_join(pthread_t pthread, void **status)
 {
+	int ret = 0;
 	struct posix_thread *t;
-	int ret;
 
 	if (pthread == pthread_self()) {
 		LOG_ERR("Pthread attempted to join itself (%x)", pthread);
 		return EDEADLK;
 	}
 
-	t = to_posix_thread(pthread);
-	if (t == NULL) {
-		return ESRCH;
-	}
-
-	LOG_DBG("Pthread %p joining..", &t->thread);
-
-	ret = 0;
 	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread);
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
+		LOG_DBG("Pthread %p joining..", &t->thread);
+
 		if (t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
 			/* undefined behaviour */
 			ret = EINVAL;
@@ -864,7 +887,6 @@ int pthread_join(pthread_t pthread, void **status)
 		}
 
 		if (t->qid == POSIX_THREAD_READY_Q) {
-			/* in case thread has moved to ready_q between to_posix_thread() and here */
 			ret = ESRCH;
 			K_SPINLOCK_BREAK;
 		}
@@ -910,26 +932,25 @@ int pthread_join(pthread_t pthread, void **status)
  */
 int pthread_detach(pthread_t pthread)
 {
-	int ret;
-	k_spinlock_key_t key;
+	int ret = 0;
 	struct posix_thread *t;
-	enum posix_thread_qid qid;
 
-	t = to_posix_thread(pthread);
-	if (t == NULL) {
-		return ESRCH;
-	}
+	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread);
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
 
-	key = k_spin_lock(&pthread_pool_lock);
-	qid = t->qid;
-	if (qid == POSIX_THREAD_READY_Q || t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
-		LOG_ERR("Pthread %p cannot be detached", &t->thread);
-		ret = EINVAL;
-	} else {
-		ret = 0;
+		if (t->qid == POSIX_THREAD_READY_Q ||
+		    t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
+			LOG_ERR("Pthread %p cannot be detached", &t->thread);
+			ret = EINVAL;
+			K_SPINLOCK_BREAK;
+		}
+
 		t->attr.detachstate = PTHREAD_CREATE_DETACHED;
 	}
-	k_spin_unlock(&pthread_pool_lock, key);
 
 	if (ret == 0) {
 		LOG_DBG("Pthread %p detached", &t->thread);
@@ -1220,18 +1241,20 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
 /* this should probably go into signal.c but we need access to the lock */
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset)
 {
+	int ret = 0;
 	struct posix_thread *t;
 
 	if (!(how == SIG_BLOCK || how == SIG_SETMASK || how == SIG_UNBLOCK)) {
 		return EINVAL;
 	}
 
-	t = to_posix_thread(pthread_self());
-	if (t == NULL) {
-		return ESRCH;
-	}
-
 	K_SPINLOCK(&pthread_pool_lock) {
+		t = to_posix_thread(pthread_self());
+		if (t == NULL) {
+			ret = ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+
 		if (oset != NULL) {
 			*oset = t->sigset;
 		}
@@ -1257,7 +1280,7 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int posix_thread_pool_init(void)
