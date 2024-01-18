@@ -257,8 +257,6 @@ void tc_attached_src_entry(void *obj)
 
 	/* Enable the VBUS sourcing by the PPC */
 	if (data->ppc != NULL) {
-		int ret;
-
 		ret = ppc_set_src_ctrl(data->ppc, true);
 		if (ret < 0 && ret != -ENOSYS) {
 			LOG_ERR("Couldn't disable PPC source");
@@ -317,8 +315,6 @@ void tc_attached_src_exit(void *obj)
 
 	/* Disable the VBUS sourcing by the PPC */
 	if (data->ppc != NULL) {
-		int ret;
-
 		ret = ppc_set_src_ctrl(data->ppc, false);
 		if (ret < 0 && ret != -ENOSYS) {
 			LOG_ERR("Couldn't disable PPC source");
