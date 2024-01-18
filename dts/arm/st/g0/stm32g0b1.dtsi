@@ -43,6 +43,19 @@
 			status = "disabled";
 		};
 
+		fdcan2: can@40006800 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x40006800 0x400>, <0x4000b750 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <21 0>, <22 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00001000>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			sample-point = <875>;
+			sample-point-data = <875>;
+			status = "disabled";
+		};
+
 		usart5: serial@40005000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40005000 0x400>;
