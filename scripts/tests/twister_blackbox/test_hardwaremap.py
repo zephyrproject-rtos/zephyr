@@ -5,14 +5,13 @@
 """
 Blackbox tests for twister's command line functions
 """
-import logging
 import importlib
 import mock
 import os
 import pytest
 import sys
 
-from conftest import ZEPHYR_BASE, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister/twisterlib"))
@@ -155,14 +154,7 @@ class TestHardwaremap:
                         os.remove(path)
 
                     assert str(sys_exit.value) == '0'
-                    loggers = [logging.getLogger()] + \
-                              list(logging.Logger.manager.loggerDict.values()) + \
-                              [logging.getLogger(name) for \
-                               name in logging.root.manager.loggerDict]
-                    for logger in loggers:
-                        handlers = getattr(logger, 'handlers', [])
-                        for handler in handlers:
-                            logger.removeHandler(handler)
+                    clear_log_in_test()
 
     @pytest.mark.parametrize(
         ('manufacturer', 'product', 'serial', 'runner'),
