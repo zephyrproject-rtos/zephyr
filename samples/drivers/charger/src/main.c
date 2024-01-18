@@ -32,6 +32,29 @@ int main(void)
 
 	printk("Found device \"%s\", getting charger data\n", chgdev->name);
 
+#ifdef CONFIG_CHARGER_DISCHARGE_CURRENT_NOTIFICATIONS
+	val.discharge_current_notification.current_ua =
+		CONFIG_APP_DISCHARGE_CURRENT_NOTIFICATION_THRESHOLD_UA;
+	val.discharge_current_notification.severity = CHARGER_SEVERITY_WARNING;
+	val.discharge_current_notification.duration_us =
+		CONFIG_APP_DISCHARGE_CURRENT_NOTIFICATION_DURATION_US;
+
+	ret = charger_set_prop(chgdev, CHARGER_PROP_DISCHARGE_CURRENT_NOTIFICATION, &val);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
+#ifdef CONFIG_CHARGER_SYSTEM_VOLTAGE_NOTIFICATIONS
+	val.system_voltage_notification =
+		CONFIG_APP_SYSTEM_VOLTAGE_NOTIFICATION_THRESHOLD_UV;
+
+	ret = charger_set_prop(chgdev, CHARGER_PROP_SYSTEM_VOLTAGE_NOTIFICATION_UV, &val);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
 	while (1) {
 		/* Poll until external power is presented to the charger */
 		do {

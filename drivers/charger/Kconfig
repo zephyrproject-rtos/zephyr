@@ -19,6 +19,37 @@ config CHARGER_INIT_PRIORITY
 	help
 	  Battery charger initialization priority.
 
+config CHARGER_HAS_DISCHARGE_CURRENT_NOTIFICATIONS
+	bool
+	help
+	  This symbol is y if the charger supports discharge
+	  current notifications.
+
+config CHARGER_HAS_SYSTEM_VOLTAGE_NOTIFICATIONS
+	bool
+	help
+	  This symbol is y if the charger supports system
+	  voltage notifications.
+
+menu "Discharge current notifications"
+
+config CHARGER_DISCHARGE_CURRENT_NOTIFICATIONS
+	bool "Support discharge current notifications"
+	depends on CHARGER_HAS_DISCHARGE_CURRENT_NOTIFICATIONS
+	help
+	  Enables support for discharge current notifications
+
+endmenu
+
+menu "System voltage notification"
+
+config CHARGER_SYSTEM_VOLTAGE_NOTIFICATIONS
+	bool "Support system voltage notifications"
+	depends on CHARGER_HAS_SYSTEM_VOLTAGE_NOTIFICATIONS
+	help
+	  Enables support for system voltage notifications
+endmenu
+
 source "drivers/charger/Kconfig.sbs_charger"
 source "drivers/charger/Kconfig.bq24190"
 source "drivers/charger/Kconfig.bq25180"
