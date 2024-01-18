@@ -93,6 +93,7 @@ static struct gsm_modem {
 	bool attached : 1;
 	bool modem_info_queried : 1;
 	bool eps_registered : 1;
+	bool soft_reset_requested : 1;
 
 	void *user_data;
 
@@ -1160,6 +1161,47 @@ void gsm_ppp_start(const struct device *dev)
 #endif
 }
 
+static void gsm_soft_reset(struct gsm_modem *gsm)
+{
+	if (gsm->soft_reset_requested) {
+		LOG_INF("Soft reseting modem");
+		int retry = 10;
+		while (retry > 0)
+		{
+			retry--;
+			int ret = modem_cmd_send_nolock(&gsm->context.iface,
+									&gsm->context.cmd_handler,
+									&response_cmds[0],
+				    			ARRAY_SIZE(response_cmds),
+									"AT+CFUN=0",
+									&gsm->sem_response, K_SECONDS(2));
+			if(ret == 0) {
+				break;
+			}
+		}
+
+		k_sleep(K_SECONDS(10));
+
+		retry = 10;
+		while (retry > 0)
+		{
+			retry--;
+			int ret = modem_cmd_send_nolock(&gsm->context.iface,
+									&gsm->context.cmd_handler,
+									&response_cmds[0],
+				    			ARRAY_SIZE(response_cmds),
+									"AT+CFUN=1,1",
+									&gsm->sem_response, K_SECONDS(2));
+			if(ret == 0) {
+				break;
+			}
+		}
+		k_sleep(K_SECONDS(15));
+
+		gsm->soft_reset_requested = false;
+	}
+}
+
 void gsm_ppp_stop(const struct device *dev)
 {
 	struct gsm_modem *gsm = dev->data;
@@ -1172,12 +1214,31 @@ void gsm_ppp_stop(const struct device *dev)
 	net_if_l2(iface)->enable(iface, false);
 
 	if (IS_ENABLED(CONFIG_GSM_MUX)) {
+		gsm_soft_reset(gsm);
 		/* Lower mux_enabled flag to trigger re-sending AT+CMUX etc */
 		gsm->mux_enabled = false;
 
 		if (gsm->ppp_dev) {
 			uart_mux_disable(gsm->ppp_dev);
 		}
+	}
+	else {
+		if (gsm->setup_done) {
+			// Exit data mode
+			k_sleep(K_SECONDS(5));
+			(void)modem_cmd_send_nolock(&gsm->context.iface,
+							&gsm->context.cmd_handler, NULL, 0,
+							"+++", &gsm->sem_response, K_NO_WAIT);
+			k_sleep(K_SECONDS(5));
+
+			// Take over UART
+			int r = modem_iface_uart_init_dev(&gsm->context.iface,
+								DEVICE_DT_GET(GSM_UART_NODE));
+			if (r) {
+				LOG_ERR("modem_iface_uart_init returned %d", r);
+			}
+		}
+		gsm_soft_reset(gsm);
 	}
 
 	if (modem_cmd_handler_tx_lock(&gsm->context.cmd_handler,
@@ -1208,6 +1269,12 @@ const struct gsm_ppp_modem_info *gsm_ppp_modem_info(const struct device *dev)
 	struct gsm_modem *gsm = dev->data;
 
 	return &gsm->minfo;
+}
+
+void gsm_ppp_request_soft_reset(const struct device *dev)
+{
+	struct gsm_modem *gsm = dev->data;
+	gsm->soft_reset_requested = true;
 }
 
 static int gsm_init(const struct device *dev)
