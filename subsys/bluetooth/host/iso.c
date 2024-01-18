@@ -1118,7 +1118,8 @@ void hci_le_cis_established(struct net_buf *buf)
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 		bt_conn_unref(iso);
 		return;
-	} else if (evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+	} else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
+		   evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
 		iso->err = evt->status;
 		bt_iso_disconnected(iso);
 	} /* else we wait for disconnect event */
