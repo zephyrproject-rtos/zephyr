@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Semios Inc. <www.semios.com>
+
+config BOARD
+	default "apollo3p_blue_evb"
+	depends on BOARD_APOLLO3P_BLUE_EVB

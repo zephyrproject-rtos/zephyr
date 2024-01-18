@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: semios
+      url-base: https://github.com/semiosbio
 
   group-filter: [-babblesim, -optional]
 
@@ -143,6 +145,7 @@ manifest:
         - hal
     - name: hal_ambiq
       revision: 0c5ea5749245c8ff6ce7aefbf0aa9981943c2857
+	  remote: semios
       path: modules/hal/ambiq
       groups:
         - hal

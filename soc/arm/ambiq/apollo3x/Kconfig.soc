@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Semios Inc. <www.semios.com>
+
+choice
+	prompt "Ambiq Apollo3X Selection"
+	depends on SOC_SERIES_APOLLO3X
+
+config SOC_APOLLO3P_BLUE
+	bool "Apollo3 Blue Plus"
+
+endchoice

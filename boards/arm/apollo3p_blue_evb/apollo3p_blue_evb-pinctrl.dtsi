@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2024 Semios Inc <www.semios.com>
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+#include "apollo3p_blue_evb_connector.dtsi"
+
+&pinctrl {
+	uart0_default: uart0_default { // done
+		group1 {
+			pinmux = <UART0TX_P23>;
+		};
+		group2 {
+			pinmux = <UART0RX_P22>;
+			input-enable;
+		};
+	};
+	i2c0_default: i2c0_default { // done
+		group1 {
+			pinmux = <M1SCL_P8>, <M1SDAWIR3_P9>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	spi0_default: spi0_default { // done
+		group1 {
+			pinmux = <M0SCK_P5>, <M0MISO_P7>, <M0MOSI_P6>;
+		};
+		group2 {
+			pinmux = <NCE42_P42>;
+			drive-push-pull;
+			ambiq,iom-nce-module = <0>;
+		};
+	};
+};

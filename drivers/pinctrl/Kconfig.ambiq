@@ -10,3 +10,12 @@ config PINCTRL_AMBIQ_APOLLO4
 	select AMBIQ_HAL_USE_GPIO
 	help
 	  Ambiq Apollo4 pinctrl driver
+
+config PINCTRL_AMBIQ_APOLLO3
+	bool "Ambiq Apollo3 pin controller driver"
+	default y
+	depends on DT_HAS_AMBIQ_APOLLO3_PINCTRL_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_GPIO
+	help
+	  Ambiq Apollo3 pinctrl driver
