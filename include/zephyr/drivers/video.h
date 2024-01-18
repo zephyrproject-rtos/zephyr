@@ -97,6 +97,16 @@ struct video_caps {
 };
 
 /**
+ * @brief video_frame_fragmented_status enum
+ *
+ * Indicates the receiving status of fragmented frames.
+ */
+enum video_frame_fragmented_status {
+	VIDEO_BUF_FRAG,
+	VIDEO_BUF_EOF,
+};
+
+/**
  * @struct video_buffer
  * @brief Video buffer structure
  *
@@ -116,6 +126,10 @@ struct video_buffer {
 	 * endpoints.
 	 */
 	uint32_t timestamp;
+	/** frame length for fragmented frames. */
+	uint32_t bytesframe;
+	/** receiving status for fragmented frames. */
+	uint32_t flags;
 };
 
 /**
