@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2024 BayLibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +13,6 @@
 #include <zephyr/ztest.h>
 
 #define N_THR            2
-#define SENDER_THREAD 0
-#define RECEIVER_THREAD 1
 #define MESSAGE_SIZE 16
 #define MESG_COUNT_PERMQ 4
 
@@ -95,6 +94,186 @@ ZTEST(mqueue, test_mqueue)
 	zassert_false(mq_close(mqd),
 		      "unable to close message queue descriptor.");
 	zassert_false(mq_unlink(queue), "Not able to unlink Queue");
+}
+
+static bool notification_executed;
+
+void notify_function_basic(union sigval val)
+{
+	mqd_t mqd;
+	bool *executed = (bool *)val.sival_ptr;
+
+	mqd = mq_open(queue, O_RDONLY);
+
+	mq_receive(mqd, rec_data, MESSAGE_SIZE, 0);
+	zassert_ok(strcmp(rec_data, send_data),
+		   "Error in data reception. exp: %s act: %s", send_data, rec_data);
+
+	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
+
+	*executed = true;
+}
+
+ZTEST(mqueue, test_mqueue_notify_basic)
+{
+	mqd_t mqd;
+	struct mq_attr attrs = {
+		.mq_msgsize = MESSAGE_SIZE,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+	struct sigevent not = {
+		.sigev_notify = SIGEV_NONE,
+		.sigev_value.sival_ptr = (void *)&notification_executed,
+		.sigev_notify_function = notify_function_basic,
+	};
+	int32_t mode = 0777;
+	int flags = O_RDWR | O_CREAT;
+
+	notification_executed = false;
+	memset(rec_data, 0, MESSAGE_SIZE);
+
+	mqd = mq_open(queue, flags, mode, &attrs);
+
+	zassert_ok(mq_notify(mqd, &not), "Unable to set notification.");
+
+	zassert_ok(mq_send(mqd, send_data, MESSAGE_SIZE, 0), "Unable to send message");
+
+	zassert_true(notification_executed, "Notification not triggered.");
+
+	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
+	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
+}
+
+void notify_function_thread(union sigval val)
+{
+	mqd_t mqd;
+	pthread_t sender = (pthread_t)val.sival_int;
+
+	zassert_not_equal(sender, pthread_self(),
+			  "Notification function should be executed from different thread.");
+
+	mqd = mq_open(queue, O_RDONLY);
+
+	mq_receive(mqd, rec_data, MESSAGE_SIZE, 0);
+	zassert_ok(strcmp(rec_data, send_data),
+		   "Error in data reception. exp: %s act: %s", send_data, rec_data);
+
+	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
+
+	notification_executed = true;
+}
+
+ZTEST(mqueue, test_mqueue_notify_thread)
+{
+	mqd_t mqd;
+	struct mq_attr attrs = {
+		.mq_msgsize = MESSAGE_SIZE,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+	struct sigevent not = {
+		.sigev_notify = SIGEV_THREAD,
+		.sigev_value.sival_int = (int)pthread_self(),
+		.sigev_notify_function = notify_function_thread,
+	};
+	int32_t mode = 0777;
+	int flags = O_RDWR | O_CREAT;
+
+	notification_executed = false;
+	memset(rec_data, 0, MESSAGE_SIZE);
+
+	mqd = mq_open(queue, flags, mode, &attrs);
+
+	zassert_ok(mq_notify(mqd, &not), "Unable to set notification.");
+
+	zassert_ok(mq_send(mqd, send_data, MESSAGE_SIZE, 0), "Unable to send message");
+
+	usleep(USEC_PER_MSEC * 10U);
+
+	zassert_true(notification_executed, "Notification not triggered.");
+
+	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
+	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
+}
+
+ZTEST(mqueue, test_mqueue_notify_non_empty_queue)
+{
+	mqd_t mqd;
+	struct mq_attr attrs = {
+		.mq_msgsize = MESSAGE_SIZE,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+	struct sigevent not = {
+		.sigev_notify = SIGEV_NONE,
+		.sigev_value.sival_ptr = (void *)&notification_executed,
+		.sigev_notify_function = notify_function_basic,
+	};
+	int32_t mode = 0777;
+	int flags = O_RDWR | O_CREAT;
+
+	notification_executed = false;
+	memset(rec_data, 0, MESSAGE_SIZE);
+
+	mqd = mq_open(queue, flags, mode, &attrs);
+
+	zassert_ok(mq_send(mqd, send_data, MESSAGE_SIZE, 0), "Unable to send message");
+
+	zassert_ok(mq_notify(mqd, &not), "Unable to set notification.");
+
+	zassert_false(notification_executed, "Notification shouldn't be processed.");
+
+	mq_receive(mqd, rec_data, MESSAGE_SIZE, 0);
+	zassert_false(strcmp(rec_data, send_data),
+		      "Error in data reception. exp: %s act: %s", send_data, rec_data);
+
+	memset(rec_data, 0, MESSAGE_SIZE);
+
+	zassert_ok(mq_send(mqd, send_data, MESSAGE_SIZE, 0), "Unable to send message");
+
+	zassert_true(notification_executed, "Notification not triggered.");
+
+	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
+	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
+}
+
+ZTEST(mqueue, test_mqueue_notify_errors)
+{
+	mqd_t mqd;
+	struct mq_attr attrs = {
+		.mq_msgsize = MESSAGE_SIZE,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+	struct sigevent not = {
+		.sigev_notify = SIGEV_SIGNAL,
+		.sigev_value.sival_ptr = (void *)&notification_executed,
+		.sigev_notify_function = notify_function_basic,
+	};
+	int32_t mode = 0777;
+	int flags = O_RDWR | O_CREAT;
+
+	zassert_not_ok(mq_notify(NULL, NULL), "Should return -1 and set errno to EBADF.");
+	zassert_equal(errno, EBADF);
+
+	mqd = mq_open(queue, flags, mode, &attrs);
+
+	zassert_not_ok(mq_notify(mqd, NULL), "Should return -1 and set errno to EINVAL.");
+	zassert_equal(errno, EINVAL);
+
+	zassert_not_ok(mq_notify(mqd, &not), "SIGEV_SIGNAL not supported should return -1.");
+	zassert_equal(errno, ENOSYS);
+
+	not.sigev_notify = SIGEV_NONE;
+
+	zassert_ok(mq_notify(mqd, &not),
+		   "Unexpected error while asigning notification to the queue.");
+
+	zassert_not_ok(mq_notify(mqd, &not),
+		       "Can't assign notification when there is another assigned.");
+	zassert_equal(errno, EBUSY);
+
+	zassert_ok(mq_notify(mqd, NULL), "Unable to remove notification from the message queue.");
+
+	zassert_ok(mq_close(mqd), "Unable to close message queue descriptor.");
+	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
 }
 
 ZTEST_SUITE(mqueue, NULL, NULL, NULL, NULL, NULL);
