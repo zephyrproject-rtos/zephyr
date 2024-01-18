@@ -109,9 +109,11 @@ ZTEST(can_utilities, test_can_frame_matches_filter)
 	zassert_true(can_frame_matches_filter(&test_std_rtr_frame_1, &test_std_filter_1));
 	zassert_true(can_frame_matches_filter(&test_ext_rtr_frame_1, &test_ext_filter_1));
 
+#ifdef CONFIG_CAN_FD_MODE
 	/* CAN FD format frames and filters */
 	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_1, &test_std_filter_1));
 	zassert_true(can_frame_matches_filter(&test_std_fdf_frame_2, &test_std_filter_2));
+#endif /* CONFIG_CAN_FD_MODE */
 }
 
 ZTEST_SUITE(can_utilities, NULL, NULL, NULL, NULL, NULL);
