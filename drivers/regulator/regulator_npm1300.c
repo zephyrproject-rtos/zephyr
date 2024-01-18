@@ -62,8 +62,12 @@ enum npm1300_gpio_type {
 /* nPM1300 ship register offsets */
 #define SHIP_OFFSET_SHIP 0x02U
 
-#define BUCK1_ON_MASK 0x04U
-#define BUCK2_ON_MASK 0x40U
+#define BUCK1_PFM_MASK 0x01U
+#define BUCK1_PWM_MASK 0x02U
+#define BUCK1_ON_MASK  0x04U
+#define BUCK2_PFM_MASK 0x10U
+#define BUCK2_PWM_MASK 0x20U
+#define BUCK2_ON_MASK  0x40U
 
 #define LDSW1_ON_MASK 0x03U
 #define LDSW2_ON_MASK 0x0CU
@@ -349,6 +353,67 @@ int regulator_npm1300_set_mode(const struct device *dev, regulator_mode_t mode)
 		return set_ldsw_mode(dev, 0, mode);
 	case NPM1300_SOURCE_LDO2:
 		return set_ldsw_mode(dev, 1, mode);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int get_buck_mode(const struct device *dev, uint8_t pfm_mask, uint8_t pwm_mask,
+			 regulator_mode_t *mode)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t data;
+
+	int ret = mfd_npm1300_reg_read(config->mfd, BUCK_BASE, BUCK_OFFSET_STATUS, &data);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((data & pfm_mask) != 0U) {
+		*mode = NPM1300_BUCK_MODE_PFM;
+	} else if ((data & pwm_mask) != 0U) {
+		*mode = NPM1300_BUCK_MODE_PWM;
+	} else {
+		*mode = NPM1300_BUCK_MODE_AUTO;
+	}
+
+	return 0;
+}
+
+static int get_ldsw_mode(const struct device *dev, uint8_t chan, regulator_mode_t *mode)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+	uint8_t data;
+
+	int ret = mfd_npm1300_reg_read(config->mfd, LDSW_BASE, LDSW_OFFSET_LDOSEL + chan, &data);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (data != 0U) {
+		*mode = NPM1300_LDSW_MODE_LDO;
+	} else {
+		*mode = NPM1300_LDSW_MODE_LDSW;
+	}
+
+	return 0;
+}
+
+int regulator_npm1300_get_mode(const struct device *dev, regulator_mode_t *mode)
+{
+	const struct regulator_npm1300_config *config = dev->config;
+
+	switch (config->source) {
+	case NPM1300_SOURCE_BUCK1:
+		return get_buck_mode(dev, BUCK1_PFM_MASK, BUCK1_PWM_MASK, mode);
+	case NPM1300_SOURCE_BUCK2:
+		return get_buck_mode(dev, BUCK2_PFM_MASK, BUCK2_PWM_MASK, mode);
+	case NPM1300_SOURCE_LDO1:
+		return get_ldsw_mode(dev, 0, mode);
+	case NPM1300_SOURCE_LDO2:
+		return get_ldsw_mode(dev, 1, mode);
 	default:
 		return -ENOTSUP;
 	}
@@ -640,7 +705,8 @@ static const struct regulator_driver_api api = {.enable = regulator_npm1300_enab
 						.list_voltage = regulator_npm1300_list_voltage,
 						.set_voltage = regulator_npm1300_set_voltage,
 						.get_voltage = regulator_npm1300_get_voltage,
-						.set_mode = regulator_npm1300_set_mode};
+						.set_mode = regulator_npm1300_set_mode,
+						.get_mode = regulator_npm1300_get_mode};
 
 #define REGULATOR_NPM1300_DEFINE(node_id, id, _source)                                             \
 	static struct regulator_npm1300_data data_##id;                                            \
