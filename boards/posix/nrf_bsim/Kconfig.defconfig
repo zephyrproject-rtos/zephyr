@@ -91,7 +91,4 @@ config POSIX_ARCH_CONSOLE
 
 endif # CONSOLE
 
-config UART_NRFX_UARTE_LEGACY_SHIM
-	default y
-
 endif # SOC_SERIES_BSIM_NRFXX
