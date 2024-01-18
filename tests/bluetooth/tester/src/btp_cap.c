@@ -405,16 +405,40 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 					  void *rsp, uint16_t *rsp_len)
 {
-
+	struct bt_cap_stream
+		*streams[ARRAY_SIZE(btp_csip_set_members) * BTP_BAP_UNICAST_MAX_STREAMS_COUNT];
+	struct bt_cap_unicast_audio_stop_param param = {0};
 	int err;
 	const struct btp_cap_unicast_audio_stop_cmd *cp = cmd;
-	struct btp_bap_unicast_group *group;
+	size_t stream_cnt = 0U;
 
 	LOG_DBG("");
 
-	group = btp_bap_unicast_group_find(cp->cig_id);
+	/* Get generate the same stream list as used by btp_cap_unicast_audio_start */
+	for (size_t conn_index = 0; conn_index < ARRAY_SIZE(btp_csip_set_members); conn_index++) {
+		struct btp_bap_unicast_connection *u_conn = btp_bap_unicast_conn_get(conn_index);
 
-	err = bt_cap_initiator_unicast_audio_stop(group->cig);
+		if (u_conn->end_points_count == 0) {
+			/* Connection not initialized */
+			continue;
+		}
+
+		for (size_t i = 0; i < ARRAY_SIZE(u_conn->streams); i++) {
+			struct btp_bap_unicast_stream *u_stream = &u_conn->streams[i];
+
+			if (!u_stream->in_use || u_stream->cig_id != cp->cig_id) {
+				continue;
+			}
+
+			streams[stream_cnt++] = stream_unicast_to_cap(u_stream);
+		}
+	}
+
+	param.streams = streams;
+	param.count = stream_cnt;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+
+	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
 		LOG_ERR("Failed to start unicast audio: %d", err);
 

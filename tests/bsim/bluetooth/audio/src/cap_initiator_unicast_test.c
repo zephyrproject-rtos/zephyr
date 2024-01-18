@@ -55,6 +55,8 @@ static struct bt_conn *connected_conns[CAP_AC_MAX_CONN];
 static size_t connected_conn_cnt;
 static const struct named_lc3_preset *snk_named_preset;
 static const struct named_lc3_preset *src_named_preset;
+static struct bt_cap_stream *non_idle_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+static size_t non_idle_streams_cnt;
 
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_codec_found);
@@ -106,7 +108,18 @@ static const struct named_lc3_preset lc3_unicast_presets[] = {
 static void unicast_stream_configured(struct bt_bap_stream *stream,
 				      const struct bt_audio_codec_qos_pref *pref)
 {
+	struct bt_cap_stream *cap_stream = cap_stream_from_bap_stream(stream);
 	printk("Configured stream %p\n", stream);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(non_idle_streams); i++) {
+		if (non_idle_streams[i] == NULL) {
+			non_idle_streams[i] = cap_stream;
+			non_idle_streams_cnt++;
+			return;
+		}
+	}
+
+	FAIL("Could not store cap_stream in non_idle_streams\n");
 
 	/* TODO: The preference should be used/taken into account when
 	 * setting the QoS
@@ -145,7 +158,19 @@ static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 
 static void unicast_stream_released(struct bt_bap_stream *stream)
 {
+	struct bt_cap_stream *cap_stream = cap_stream_from_bap_stream(stream);
+
 	printk("Released stream %p\n", stream);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(non_idle_streams); i++) {
+		if (non_idle_streams[i] == cap_stream) {
+			non_idle_streams[i] = NULL;
+			non_idle_streams_cnt--;
+			return;
+		}
+	}
+
+	FAIL("Could not find cap_stream in non_idle_streams\n");
 }
 
 static struct bt_bap_stream_ops unicast_stream_ops = {
@@ -346,6 +371,10 @@ static void init(void)
 
 	for (size_t i = 0; i < ARRAY_SIZE(unicast_client_source_streams); i++) {
 		bt_cap_stream_ops_register(&unicast_client_source_streams[i], &unicast_stream_ops);
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+		bt_cap_stream_ops_register(&unicast_streams[i].stream, &unicast_stream_ops);
 	}
 }
 
@@ -744,30 +773,35 @@ static void unicast_audio_stop_inval(void)
 
 	err = bt_cap_initiator_unicast_audio_stop(NULL);
 	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_stop with NULL group did not fail\n");
+		FAIL("bt_cap_initiator_unicast_audio_stop with NULL param did not fail\n");
 		return;
 	}
 }
 
 static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 {
+	struct bt_cap_unicast_audio_stop_param param;
 	int err;
+
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+	param.count = non_idle_streams_cnt;
+	param.streams = non_idle_streams;
 
 	UNSET_FLAG(flag_stopped);
 
-	err = bt_cap_initiator_unicast_audio_stop(unicast_group);
+	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
-		FAIL("Failed to start unicast audio: %d\n", err);
+		FAIL("Failed to stop unicast audio: %d\n", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(flag_stopped);
 
 	/* Verify that it cannot be stopped twice */
-	err = bt_cap_initiator_unicast_audio_stop(unicast_group);
+	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_stop with already-stopped unicast group did "
-		     "not fail\n");
+		FAIL("bt_cap_initiator_unicast_audio_stop with already-stopped streams did not "
+		     "fail\n");
 		return;
 	}
 }

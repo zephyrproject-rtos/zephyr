@@ -444,17 +444,75 @@ static int cmd_cap_initiator_unicast_update(const struct shell *sh, size_t argc,
 static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
+	struct bt_cap_stream *streams[CAP_UNICAST_CLIENT_STREAM_COUNT];
+	struct bt_cap_unicast_audio_stop_param param = {0};
 	int err = 0;
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
-	} else if (default_unicast_group == NULL) {
-		shell_error(sh, "No unicast group started");
+	}
+
+	if (argc == 2 && strcmp(argv[1], "all") == 0) {
+		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
+			struct bt_cap_stream *stream = &unicast_streams[i].stream;
+			struct bt_bap_ep_info ep_info;
+
+			if (stream->bap_stream.conn == NULL) {
+				break;
+			}
+
+			err = bt_bap_ep_get_info(stream->bap_stream.ep, &ep_info);
+			if (err != 0) {
+				shell_error(sh, "Failed to get endpoint info: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			streams[param.count] = stream;
+			param.count++;
+		}
+
+	} else {
+		for (size_t i = 1U; i < argc; i++) {
+			struct bt_cap_stream *stream = (void *)shell_strtoul(argv[i], 16, &err);
+			struct bt_bap_ep_info ep_info;
+
+			if (err != 0) {
+				shell_error(sh, "Failed to parse stream argument %s: %d", argv[i],
+					    err);
+
+				return err;
+			}
+
+			if (!PART_OF_ARRAY(unicast_streams, stream)) {
+				shell_error(sh, "Pointer %p is not a CAP stream pointer", stream);
+
+				return -ENOEXEC;
+			}
+
+			err = bt_bap_ep_get_info(stream->bap_stream.ep, &ep_info);
+			if (err != 0) {
+				shell_error(sh, "Failed to get endpoint info: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			streams[param.count] = stream;
+			param.count++;
+		}
+	}
+
+	if (param.count == 0) {
+		shell_error(sh, "No streams to update");
+
 		return -ENOEXEC;
 	}
 
-	err = bt_cap_initiator_unicast_audio_stop(default_unicast_group);
+	param.streams = streams;
+	param.type = BT_CAP_SET_TYPE_AD_HOC;
+
+	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
 		shell_print(sh, "Failed to update unicast audio: %d", err);
 	}

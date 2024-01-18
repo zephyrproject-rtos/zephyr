@@ -139,6 +139,16 @@ struct audio_test_stream {
 	size_t rx_cnt;
 };
 
+static inline struct bt_cap_stream *cap_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
+{
+	return CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+}
+
+static inline struct bt_bap_stream *bap_stream_from_cap_stream(struct bt_cap_stream *cap_stream)
+{
+	return &cap_stream->bap_stream;
+}
+
 static inline struct audio_test_stream *
 audio_test_stream_from_cap_stream(struct bt_cap_stream *cap_stream)
 {
@@ -148,10 +158,7 @@ audio_test_stream_from_cap_stream(struct bt_cap_stream *cap_stream)
 static inline struct audio_test_stream *
 audio_test_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
 {
-	struct bt_cap_stream *cap_stream =
-		CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
-
-	return audio_test_stream_from_cap_stream(cap_stream);
+	return audio_test_stream_from_cap_stream(cap_stream_from_bap_stream(bap_stream));
 }
 
 static inline struct bt_cap_stream *
@@ -163,7 +170,7 @@ cap_stream_from_audio_test_stream(struct audio_test_stream *test_stream)
 static inline struct bt_bap_stream *
 bap_stream_from_audio_test_stream(struct audio_test_stream *test_stream)
 {
-	return &cap_stream_from_audio_test_stream(test_stream)->bap_stream;
+	return bap_stream_from_cap_stream(cap_stream_from_audio_test_stream(test_stream));
 }
 
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_ */
