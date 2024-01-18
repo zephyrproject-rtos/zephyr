@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Andes Technology RISC-V core from the AndesCore v5 series
+
+compatible: "andestech,andescore-v5"
+
+include: riscv,cpus.yaml
