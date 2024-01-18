@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_XTENSA_SAMPLE_CONTROLLER
-	bool "Xtensa sample_controller core"
 	select XTENSA
 	select XTENSA_HAL
 	select ARCH_SUPPORTS_COREDUMP
