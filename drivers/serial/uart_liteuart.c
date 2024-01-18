@@ -14,6 +14,8 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/types.h>
 
+#include <soc.h>
+
 #define UART_RXTX_ADDR		DT_INST_REG_ADDR_BY_NAME(0, rxtx)
 #define UART_TXFULL_ADDR	DT_INST_REG_ADDR_BY_NAME(0, txfull)
 #define UART_RXEMPTY_ADDR	DT_INST_REG_ADDR_BY_NAME(0, rxempty)
