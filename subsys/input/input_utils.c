@@ -165,7 +165,8 @@ static void kbd_matrix_state_log_entry(char *header, kbd_row_t *data)
 static void kbd_matrix_state_log(struct input_event *evt)
 {
 	const struct input_kbd_matrix_common_config *cfg;
-	static int row, col, val;
+	static uint32_t row, col;
+	static bool val;
 
 	if (kbd_matrix_state_dev == NULL || kbd_matrix_state_dev != evt->dev) {
 		return;
