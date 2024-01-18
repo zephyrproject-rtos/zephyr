@@ -150,6 +150,21 @@ There are three predefined DT overlays in the board:
   This overlay describes sensor connections (and matching h/w configuration to be done)
   as explained in SHUB2 Mode (:ref:`x-nucleo-iks4a1-mode-2`)
 
+Examples
+********
+
+Three samples are provided as examples for ``x-nucleo-iks4a1`` shield, each one associated
+with one of the overlays described above:
+
+- :ref:`x-nucleo-iks4a1-std-sample` application, to be used when the shield is configured
+  in Standard Mode (Mode 1)
+- :ref:`x-nucleo-iks4a1-shub1-sample` application, to be used when the shield is configured
+  in SHUB1 Mode (Mode 3)
+- :ref:`x-nucleo-iks4a1-shub2-sample` application, to be used when the shield is configured
+  in SHUB2 Mode (Mode 2)
+
+See also :ref:`shields` for more details.
+
 .. _X-NUCLEO-IKS4A1 website:
    http://www.st.com/en/ecosystems/x-nucleo-iks4a1.html
 

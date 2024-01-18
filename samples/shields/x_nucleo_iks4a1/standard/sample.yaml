@@ -1,0 +1,16 @@
+sample:
+  name: X-NUCLEO-IKS01A4 sensor shield
+common:
+  min_ram: 16
+tests:
+  sample.shields.x_nucleo_iks4a1.standard:
+    harness: shield
+    tags: shield
+    depends_on: arduino_i2c arduino_gpio
+    platform_exclude:
+      - disco_l475_iot1
+      - lpcxpresso55s16
+      - mimxrt1010_evk
+      - pan1781_evb
+      - pan1782_evb
+      - stm32mp157c_dk2
