@@ -74,7 +74,7 @@ enum charger_property {
 	 * Configuration to issue a notification to the system based on the input current
 	 * level and timing
 	 *
-	 * Value should be of type struct charger_input_current_notifier
+	 * Value should be of type struct charger_current_notifier
 	 */
 	CHARGER_PROP_INPUT_CURRENT_NOTIFICATION,
 	/** Reserved to demark end of common charger properties */
