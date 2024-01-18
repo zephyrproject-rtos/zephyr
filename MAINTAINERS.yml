@@ -3214,29 +3214,42 @@ Intel Platforms (Agilex):
   labels:
     - "platform: Intel SoC FPGA Agilex"
 
-NXP Platforms (S32):
+NXP Drivers:
   status: maintained
   maintainers:
-    - manuargue
+    - dleach02
   collaborators:
-    - PetervdPerk-NXP
-    - bperseghetti
-    - Dat-NguyenDuy
+    - mmahadevan108
+    - danieldegrasse
+    - decsny
+    - manuargue
+    - dbaluta
   files:
-    - boards/arm/s32*/
-    - boards/arm/mr_canhubk3/
-    - boards/arm/ucans32k1sic/
-    - soc/arm/nxp_s32/
-    - drivers/*/*nxp_s32*
-    - dts/bindings/*/nxp,s32*
-    - samples/boards/nxp_s32/
-    - include/zephyr/dt-bindings/*/nxp-s32*
-    - include/zephyr/dt-bindings/*/nxp_s32*
-    - include/zephyr/drivers/*/*nxp_s32*
+    - drivers/*/*imx*
+    - drivers/*/*lpc*.c
+    - drivers/*/*mcux*.c
+    - drivers/*/*.mcux
+    - drivers/*/*.nxp
+    - drivers/*/*nxp*
+    - drivers/*/*kinetis*
+    - drivers/misc/*/nxp*
+    - include/zephyr/dt-bindings/*/*nxp*
+    - include/zephyr/dt-bindings/*/*mcux*
+    - include/zephyr/drivers/*/*nxp*
+    - include/zephyr/drivers/*/*mcux*
+    - arch/arm/core/mpu/nxp_mpu.c
+    - dts/bindings/*/nxp*
+  files-exclude:
+    - drivers/*/*s32*
+    - drivers/misc/*/*s32*/
+    - include/zephyr/dt-bindings/*/*s32*
+    - include/zephyr/drivers/*/*s32*
+    - dts/bindings/*/*s32*
   labels:
-    - "platform: NXP S32"
+    - "platform: NXP Drivers"
+  description: NXP Drivers
 
-NXP Platforms:
+NXP Platforms (MCUX):
   status: maintained
   maintainers:
     - dleach02
@@ -3249,24 +3262,48 @@ NXP Platforms:
     - decsny
   files:
     - boards/arm/mimx*/
-    - boards/arm/frdm_k*/
+    - boards/arm/frdm*/
     - boards/arm/lpcxpress*/
     - boards/arm/twr_*/
+    - boards/arm/vmu*/
     - soc/arm/nxp_imx/
     - soc/arm/nxp_kinetis/
     - soc/arm/nxp_lpc/
-    - drivers/*/*imx*
-    - drivers/*/*lpc*.c
-    - drivers/*/*mcux*.c
-    - drivers/*/*.mcux
-    - drivers/*/*.nxp
-    - drivers/*/*nxp*
     - dts/arm/nxp/
-    - dts/bindings/*/nxp*
     - samples/boards/nxp*/
-    - include/zephyr/dt-bindings/*/nxp*
+  files-exclude:
+    - boards/arm/*s32*/
+    - dts/arm/nxp/*s32*
+    - samples/boards/nxp_s32/
   labels:
     - "platform: NXP"
+  description: NXP Platforms supported by MCUXpresso suite
+
+NXP Platforms (S32):
+  status: maintained
+  maintainers:
+    - manuargue
+  collaborators:
+    - PetervdPerk-NXP
+    - bperseghetti
+    - Dat-NguyenDuy
+  files:
+    - boards/arm/s32*/
+    - boards/arm/mr_canhubk3/
+    - boards/arm/ucans32k1sic/
+    - boards/common/*nxp_s32*
+    - soc/arm/nxp_s32/
+    - drivers/*/*nxp_s32*
+    - drivers/misc/*nxp_s32*/
+    - dts/bindings/*/nxp,s32*
+    - dts/arm/nxp/*s32*
+    - samples/boards/nxp_s32/
+    - include/zephyr/dt-bindings/*/nxp-s32*
+    - include/zephyr/dt-bindings/*/nxp_s32*
+    - include/zephyr/drivers/*/*nxp_s32*
+  labels:
+    - "platform: NXP S32"
+  description: NXP S32 platforms and S32-specific drivers
 
 NXP Platforms (Xtensa):
   status: maintained
@@ -3279,6 +3316,7 @@ NXP Platforms (Xtensa):
     - boards/xtensa/nxp_adsp_*/
   labels:
     - "platform: NXP ADSP"
+  description: NXP Xtensa platforms
 
 Microchip MEC Platforms:
   status: maintained
