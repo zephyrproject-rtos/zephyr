@@ -338,6 +338,7 @@ Bluetooth HCI:
     - Thalley
     - sjanc
     - theob-pro
+    - HoZHel
   files:
     - include/zephyr/drivers/bluetooth/
     - drivers/bluetooth/
