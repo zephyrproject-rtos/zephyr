@@ -622,6 +622,7 @@ Common Architecture Interface:
     - dcpleung
     - nashif
   files:
+    - arch/Kconfig
     - include/zephyr/arch/
     - arch/common/
     - include/zephyr/arch/common/
