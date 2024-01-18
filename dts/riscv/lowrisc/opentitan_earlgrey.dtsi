@@ -17,7 +17,7 @@
 			device_type = "cpu";
 			reg = <0x00>;
 			status = "okay";
-			compatible = "riscv";
+			compatible = "lowrisc,ibex", "riscv";
 			riscv,isa = "rv32imcb_zicsr_zifencei";
 
 			hlic: interrupt-controller {
