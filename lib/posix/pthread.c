@@ -64,6 +64,8 @@ enum posix_thread_qid {
 	POSIX_THREAD_RUN_Q,
 	/* exited (either joinable or detached) */
 	POSIX_THREAD_DONE_Q,
+	/* invalid */
+	POSIX_THREAD_INVALID_Q,
 };
 
 /* only 2 bits in struct posix_thread_attr for schedpolicy */
@@ -79,12 +81,42 @@ BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATT
 	     32);
 
 static void posix_thread_recycle(void);
-static sys_dlist_t ready_q = SYS_DLIST_STATIC_INIT(&ready_q);
-static sys_dlist_t run_q = SYS_DLIST_STATIC_INIT(&run_q);
-static sys_dlist_t done_q = SYS_DLIST_STATIC_INIT(&done_q);
+static sys_dlist_t posix_thread_q[] = {
+	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_READY_Q]),
+	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_RUN_Q]),
+	SYS_DLIST_STATIC_INIT(&posix_thread_q[POSIX_THREAD_DONE_Q]),
+};
 static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
 static struct k_spinlock pthread_pool_lock;
 static int pthread_concurrency;
+
+static inline void posix_thread_q_set(struct posix_thread *t, enum posix_thread_qid qid)
+{
+	switch (qid) {
+	case POSIX_THREAD_READY_Q:
+	case POSIX_THREAD_RUN_Q:
+	case POSIX_THREAD_DONE_Q:
+		sys_dlist_append(&posix_thread_q[qid], &t->q_node);
+		t->qid = qid;
+		break;
+	default:
+		__ASSERT(false, "cannot set invalid qid %d for posix thread %p", qid, t);
+		break;
+	}
+}
+
+static inline enum posix_thread_qid posix_thread_q_get(struct posix_thread *t)
+{
+	switch (t->qid) {
+	case POSIX_THREAD_READY_Q:
+	case POSIX_THREAD_RUN_Q:
+	case POSIX_THREAD_DONE_Q:
+		return t->qid;
+	default:
+		__ASSERT(false, "posix thread %p has invalid qid: %d", t, t->qid);
+		return POSIX_THREAD_INVALID_Q;
+	}
+}
 
 /*
  * We reserve the MSB to mark a pthread_t as initialized (from the
@@ -128,9 +160,9 @@ struct posix_thread *to_posix_thread(pthread_t pthread)
 	 * This differs from other posix object allocation strategies because they use
 	 * a bitarray to indicate whether an object has been allocated.
 	 */
-	actually_initialized = !(
-		t->qid == POSIX_THREAD_READY_Q ||
-		(t->qid == POSIX_THREAD_DONE_Q && t->attr.detachstate == PTHREAD_CREATE_DETACHED));
+	actually_initialized = !(posix_thread_q_get(t) == POSIX_THREAD_READY_Q ||
+				 (posix_thread_q_get(t) == POSIX_THREAD_DONE_Q &&
+				  t->attr.detachstate == PTHREAD_CREATE_DETACHED));
 
 	if (!actually_initialized) {
 		LOG_ERR("Pthread claims to be initialized (%x)", pthread);
@@ -379,8 +411,7 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 	/* move thread from run_q to done_q */
 	key = k_spin_lock(&pthread_pool_lock);
 	sys_dlist_remove(&t->q_node);
-	sys_dlist_append(&done_q, &t->q_node);
-	t->qid = POSIX_THREAD_DONE_Q;
+	posix_thread_q_set(t, POSIX_THREAD_DONE_Q);
 	t->retval = retval;
 	k_spin_unlock(&pthread_pool_lock, key);
 
@@ -419,7 +450,7 @@ static void posix_thread_recycle(void)
 	sys_dlist_t recyclables = SYS_DLIST_STATIC_INIT(&recyclables);
 
 	key = k_spin_lock(&pthread_pool_lock);
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&done_q, t, safe_t, q_node) {
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&posix_thread_q[POSIX_THREAD_DONE_Q], t, safe_t, q_node) {
 		if (t->attr.detachstate == PTHREAD_CREATE_JOINABLE) {
 			/* thread has not been joined yet */
 			continue;
@@ -447,8 +478,7 @@ static void posix_thread_recycle(void)
 	key = k_spin_lock(&pthread_pool_lock);
 	while (!sys_dlist_is_empty(&recyclables)) {
 		t = CONTAINER_OF(sys_dlist_get(&recyclables), struct posix_thread, q_node);
-		t->qid = POSIX_THREAD_READY_Q;
-		sys_dlist_append(&ready_q, &t->q_node);
+		posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 	}
 	k_spin_unlock(&pthread_pool_lock, key);
 }
@@ -476,12 +506,12 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 	posix_thread_recycle();
 
 	K_SPINLOCK(&pthread_pool_lock) {
-		if (!sys_dlist_is_empty(&ready_q)) {
-			t = CONTAINER_OF(sys_dlist_get(&ready_q), struct posix_thread, q_node);
+		if (!sys_dlist_is_empty(&posix_thread_q[POSIX_THREAD_READY_Q])) {
+			t = CONTAINER_OF(sys_dlist_get(&posix_thread_q[POSIX_THREAD_READY_Q]),
+					 struct posix_thread, q_node);
 
 			/* initialize thread state */
-			sys_dlist_append(&run_q, &t->q_node);
-			t->qid = POSIX_THREAD_RUN_Q;
+			posix_thread_q_set(t, POSIX_THREAD_RUN_Q);
 			sys_slist_init(&t->key_list);
 			sys_slist_init(&t->cleanup_list);
 		}
@@ -493,8 +523,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 			/* cannot allocate barrier. move thread back to ready_q */
 			K_SPINLOCK(&pthread_pool_lock) {
 				sys_dlist_remove(&t->q_node);
-				sys_dlist_append(&ready_q, &t->q_node);
-				t->qid = POSIX_THREAD_READY_Q;
+				posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 			}
 			t = NULL;
 		}
@@ -516,8 +545,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 			/* cannot allocate pthread attributes (e.g. stack) */
 			K_SPINLOCK(&pthread_pool_lock) {
 				sys_dlist_remove(&t->q_node);
-				sys_dlist_append(&ready_q, &t->q_node);
-				t->qid = POSIX_THREAD_READY_Q;
+				posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 			}
 			return err;
 		}
@@ -886,7 +914,7 @@ int pthread_join(pthread_t pthread, void **status)
 			K_SPINLOCK_BREAK;
 		}
 
-		if (t->qid == POSIX_THREAD_READY_Q) {
+		if (posix_thread_q_get(t) == POSIX_THREAD_READY_Q) {
 			ret = ESRCH;
 			K_SPINLOCK_BREAK;
 		}
@@ -942,7 +970,7 @@ int pthread_detach(pthread_t pthread)
 			K_SPINLOCK_BREAK;
 		}
 
-		if (t->qid == POSIX_THREAD_READY_Q ||
+		if (posix_thread_q_get(t) == POSIX_THREAD_READY_Q ||
 		    t->attr.detachstate != PTHREAD_CREATE_JOINABLE) {
 			LOG_ERR("Pthread %p cannot be detached", &t->thread);
 			ret = EINVAL;
@@ -1288,7 +1316,7 @@ static int posix_thread_pool_init(void)
 	size_t i;
 
 	for (i = 0; i < CONFIG_MAX_PTHREAD_COUNT; ++i) {
-		sys_dlist_append(&ready_q, &posix_thread_pool[i].q_node);
+		posix_thread_q_set(&posix_thread_pool[i], POSIX_THREAD_READY_Q);
 	}
 
 	return 0;
