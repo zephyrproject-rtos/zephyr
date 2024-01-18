@@ -76,7 +76,7 @@ struct net_socket_service_desc {
 };
 
 #define __z_net_socket_svc_get_name(_svc_id) __z_net_socket_service_##_svc_id
-#define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx##_svc_id
+#define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx_##_svc_id
 #define __z_net_socket_svc_get_owner __FILE__ ":" STRINGIFY(__LINE__)
 
 extern void net_socket_service_callback(struct k_work *work);
