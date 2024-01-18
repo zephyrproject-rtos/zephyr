@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define MODEM_CELLULAR_DATA_ICCID_LEN        (22)
 #define MODEM_CELLULAR_DATA_MANUFACTURER_LEN (64)
 #define MODEM_CELLULAR_DATA_FW_VERSION_LEN   (64)
+#define APN_REQUEST_MAX_LEN                  (64)
 
 /* Magic constants */
 #define CSQ_RSSI_UNKNOWN		     (99)
@@ -99,6 +100,8 @@ struct modem_cellular_data {
 	uint8_t chat_delimiter[1];
 	uint8_t chat_filter[1];
 	uint8_t *chat_argv[32];
+	struct modem_chat_script_chat *apn_request_chat;
+	char apn_request[APN_REQUEST_MAX_LEN];
 
 	/* Status */
 	uint8_t registration_status_gsm;
@@ -1406,9 +1409,32 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 	return ret;
 }
 
+static int modem_cellular_set_apn(const struct device *dev, const char *apn)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state state;
+	int ret = pm_device_state_get(dev, &state);
+	if (ret < 0) {
+		return ret;
+	}
+	if (state != PM_DEVICE_STATE_SUSPENDED && state != PM_DEVICE_STATE_OFF) {
+		return -EBUSY;
+	}
+#endif
+	if (snprintf(data->apn_request, sizeof(data->apn_request),
+		     "AT+CGDCONT=1,\"IP\",\"%s\"", apn) > sizeof(data->apn_request)) {
+		return -EOVERFLOW;
+	}
+	data->apn_request_chat->request_size = strlen(data->apn_request);
+	data->apn_request_chat->request = data->apn_request;
+	return 0;
+}
+
 const static struct cellular_driver_api modem_cellular_api = {
 	.get_signal = modem_cellular_get_signal,
 	.get_modem_info = modem_cellular_get_modem_info,
+	.set_apn = modem_cellular_set_apn,
 };
 
 #ifdef CONFIG_PM_DEVICE
@@ -1815,11 +1841,10 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_init_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_init_chat_script, u_blox_sara_r5_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r5_dial_chat_script_cmds,
+MODEM_CHAT_SCRIPT_CMDS_DEFINE_DYNAMIC(u_blox_sara_r5_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGDCONT=1,\"IP\","
-							 "\""CONFIG_MODEM_CELLULAR_APN"\"",
-							 ok_match),
+			      /* Space for dynamic CGDCONT chat script */
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0),);
 
@@ -2088,6 +2113,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 		.chat_delimiter = {'\r'},                                                          \
 		.chat_filter = {'\n'},                                                             \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+		.apn_request_chat = &u_blox_sara_r5_dial_chat_script_cmds[1],\
 	};                                                                                         \
                                                                                                    \
 	static struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {             \
@@ -2100,7 +2126,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me910g1_periodic_chat_script,
 		.startup_time_ms = 1500,                                                           \
 		.shutdown_time_ms = 13000,                                                         \
 		.init_chat_script = &u_blox_sara_r5_init_chat_script,                              \
-		.dial_chat_script = &u_blox_sara_r5_dial_chat_script,                              \
+		.dial_chat_script = &u_blox_sara_r5_dial_chat_script,                                 \
 		.periodic_chat_script = &u_blox_sara_r5_periodic_chat_script,                      \
 	};                                                                                         \
                                                                                                    \

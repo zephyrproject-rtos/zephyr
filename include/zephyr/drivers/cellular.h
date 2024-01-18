@@ -95,12 +95,16 @@ typedef int (*cellular_api_get_modem_info)(const struct device *dev,
 					   const enum cellular_modem_info_type type,
 					   char *info, size_t size);
 
+/** API for setting APN */
+typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
+
 /** Cellular driver API */
 __subsystem struct cellular_driver_api {
 	cellular_api_configure_networks configure_networks;
 	cellular_api_get_supported_networks get_supported_networks;
 	cellular_api_get_signal get_signal;
 	cellular_api_get_modem_info get_modem_info;
+	cellular_api_set_apn set_apn;
 };
 
 /**
@@ -208,6 +212,28 @@ static inline int cellular_get_modem_info(const struct device *dev,
 	}
 
 	return api->get_modem_info(dev, type, info, size);
+}
+
+/**
+ * @brief Set APN of modem. Note that setting APN will only be possible when modem is suspended.
+ *
+ * @param dev Cellular network device instance
+ * @param apn NULL-terminated string containing APN
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS if API is not supported by cellular network device.
+ * @retval -EBUSY if setting APN is attempted on a non-suspended device.
+ * @retval Negative errno-code from chat module otherwise.
+ */
+static inline int cellular_set_apn(const struct device *dev, const char *apn)
+{
+	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+
+	if (api->set_apn == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_apn(dev, apn);
 }
 
 #ifdef __cplusplus
