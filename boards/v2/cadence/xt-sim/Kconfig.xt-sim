@@ -4,5 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_XT_SIM
-	bool "Xtensa Development ISS"
-	depends on SIMULATOR_XTENSA
+	select SOC_XTENSA_SAMPLE_CONTROLLER
