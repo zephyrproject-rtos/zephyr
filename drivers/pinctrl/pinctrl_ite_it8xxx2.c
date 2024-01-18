@@ -162,6 +162,9 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 	/*
 	 * Handle alternate function.
 	 */
+	if (reg_func3_gcr != NULL) {
+		*reg_func3_gcr &= ~gpio->func3_en_mask[pin];
+	}
 	/* Ensure that func3-ext setting is in default state. */
 	if (reg_func3_ext != NULL) {
 		*reg_func3_ext &= ~gpio->func3_ext_mask[pin];
@@ -179,8 +182,9 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		 * Func3: In addition to the alternate setting above,
 		 *        Func3 also need to set the general control.
 		 */
-		*reg_func3_gcr |= gpio->func3_en_mask[pin];
-
+		if (reg_func3_gcr != NULL) {
+			*reg_func3_gcr |= gpio->func3_en_mask[pin];
+		}
 		/* Func3-external: Some pins require external setting. */
 		if (reg_func3_ext != NULL) {
 			*reg_func3_ext |= gpio->func3_ext_mask[pin];
