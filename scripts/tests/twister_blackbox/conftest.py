@@ -37,6 +37,11 @@ def zephyr_test_directory():
 
 @pytest.fixture
 def clear_log():
+    # clear_log is used by pytest fixture
+    # However, clear_log_in_test is prepared to be used directly in the code, wherever required
+    clear_log_in_test()
+
+def clear_log_in_test():
     # Required to fix the pytest logging error
     # See: https://github.com/pytest-dev/pytest/issues/5502
     loggers = [logging.getLogger()] \
