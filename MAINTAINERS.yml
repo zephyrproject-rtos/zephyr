@@ -421,6 +421,28 @@ Bluetooth Audio:
   tests:
     - bluetooth.audio
 
+Bluetooth Classic:
+  status: maintained
+  maintainers:
+    - lylezhu2012
+  collaborators:
+    - jhedberg
+    - sjanc
+  files:
+    - subsys/bluetooth/host/a2dp*
+    - subsys/bluetooth/host/at.*
+    - subsys/bluetooth/host/avdtp*
+    - subsys/bluetooth/host/br.*
+    - subsys/bluetooth/host/hfp*
+    - subsys/bluetooth/host/l2cap_br*
+    - subsys/bluetooth/host/rfcomm*
+    - subsys/bluetooth/host/sdp*
+    - subsys/bluetooth/host/ssp*
+  labels:
+    - "area: Bluetooth Classic"
+  tests:
+    - bluetooth
+
 Bootloaders:
   status: odd fixes
   files:
