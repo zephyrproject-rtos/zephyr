@@ -11,6 +11,8 @@
  */
 #include <zephyr/irq.h>
 
+#include <soc_common.h>
+
 void arch_irq_enable(unsigned int irq)
 {
 	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
