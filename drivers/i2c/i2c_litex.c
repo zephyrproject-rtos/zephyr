@@ -10,6 +10,8 @@
 #include <zephyr/drivers/i2c.h>
 #include "i2c_bitbang.h"
 
+#include <soc.h>
+
 #define SCL_BIT_POS                0
 #define SDA_DIR_BIT_POS            1
 #define SDA_BIT_W_POS              2
