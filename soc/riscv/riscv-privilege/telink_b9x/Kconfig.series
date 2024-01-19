@@ -12,5 +12,6 @@ config SOC_SERIES_RISCV_TELINK_B9X
 	select RISCV_ISA_EXT_ZIFENCEI
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	select HAS_TELINK_DRIVERS
+	select FLASH if BT
 	help
 	  Enable support for Telink B9x SoC
