@@ -12,5 +12,6 @@ supported:
   - serial
   - trng
   - watchdog
+  - spi
 ram: 80
 flash: 256
