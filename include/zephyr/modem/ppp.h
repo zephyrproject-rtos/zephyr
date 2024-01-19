@@ -27,12 +27,21 @@ extern "C" {
  * @{
  */
 
-/** L2 network interface init callback */
-typedef void (*modem_ppp_init_iface)(struct net_if *iface);
-
 /**
  * @cond INTERNAL_HIDDEN
  */
+
+struct modem_ppp;
+
+typedef void (*modem_ppp_device_api_init)(struct modem_ppp *ppp);
+typedef int (*modem_ppp_device_api_start)(struct modem_ppp *ppp);
+typedef int (*modem_ppp_device_api_stop)(struct modem_ppp *ppp);
+
+struct modem_ppp_device_api {
+	modem_ppp_device_api_init init;
+	modem_ppp_device_api_start start;
+	modem_ppp_device_api_stop stop;
+};
 
 enum modem_ppp_receive_state {
 	/* Searching for start of frame and header */
@@ -75,8 +84,8 @@ struct modem_ppp {
 	/* Network interface instance is bound to */
 	struct net_if *iface;
 
-	/* Hook for PPP L2 network interface initialization */
-	modem_ppp_init_iface init_iface;
+	/* PPP device API */
+	struct modem_ppp_device_api *device_api;
 
 	atomic_t state;
 
@@ -165,19 +174,19 @@ int modem_ppp_init_internal(const struct device *dev);
  * instance.
  *
  * @param _name Name of the statically defined modem_ppp instance
- * @param _init_iface Hook for the PPP L2 network interface init function
+ * @param _device_api PPP device API
  * @param _prio Initialization priority of the PPP L2 net iface
  * @param _mtu Max size of net_pkt data sent and received on PPP L2 net iface
  * @param _buf_size Size of partial PPP frame transmit and receive buffers
  */
-#define MODEM_PPP_DEFINE(_name, _init_iface, _prio, _mtu, _buf_size)                               \
+#define MODEM_PPP_DEFINE(_name, _device_api, _prio, _mtu, _buf_size)                               \
 	extern const struct ppp_api modem_ppp_ppp_api;                                             \
                                                                                                    \
 	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
 	static uint8_t _CONCAT(_name, _transmit_buf)[_buf_size];                                   \
                                                                                                    \
 	static struct modem_ppp _name = {                                                          \
-		.init_iface = _init_iface,                                                         \
+		.device_api = _device_api,                                                         \
 		.receive_buf = _CONCAT(_name, _receive_buf),                                       \
 		.transmit_buf = _CONCAT(_name, _transmit_buf),                                     \
 		.buf_size = _buf_size,                                                             \
