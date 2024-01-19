@@ -31,9 +31,8 @@ config UART_NRFX_UARTE
 config UART_NRFX_UARTE_LEGACY_SHIM
 	bool "Legacy UARTE shim"
 	depends on UART_NRFX_UARTE
-	# New shim takes more ROM. Until it is fixed use legacy shim in memory
-	# constraint case.
-	default y if MCUBOOT
+	# New shim takes more ROM. Until it is fixed use legacy shim.
+	default y
 
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
