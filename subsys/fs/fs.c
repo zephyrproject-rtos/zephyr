@@ -22,10 +22,10 @@
 LOG_MODULE_REGISTER(fs);
 
 /* list of mounted file systems */
-static sys_dlist_t fs_mnt_list;
+static sys_dlist_t fs_mnt_list = SYS_DLIST_STATIC_INIT(&fs_mnt_list);
 
 /* lock to protect mount list operations */
-static struct k_mutex mutex;
+static K_MUTEX_DEFINE(mutex);
 
 /* Maps an identifier used in mount points to the file system
  * implementation.
@@ -875,12 +875,3 @@ int fs_unregister(int type, const struct fs_file_system_t *fs)
 	LOG_DBG("fs unregister %d: %d", type, rc);
 	return rc;
 }
-
-static int fs_init(void)
-{
-	k_mutex_init(&mutex);
-	sys_dlist_init(&fs_mnt_list);
-	return 0;
-}
-
-SYS_INIT(fs_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
