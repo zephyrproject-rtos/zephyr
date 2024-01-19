@@ -175,6 +175,15 @@ Device Drivers and Device Tree
   * The main Kconfig option was renamed from ``CONFIG_CAN_NATIVE_POSIX_LINUX`` to
     :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`.
 
+* Two new structures for holding common CAN controller driver configuration (``struct
+  can_driver_config``) and data (``struct can_driver_data``) fields were introduced. Out-of-tree CAN
+  controller drivers need to be updated to use these new, common configuration and data structures
+  along with their initializer macros.
+
+* The optional ``can_get_max_bitrate_t`` CAN controller driver callback was removed in favor of a
+  common accessor function. Out-of-tree CAN controller drivers need to be updated to no longer
+  supply this callback.
+
 * The ``CAN_FILTER_FDF`` flag for filtering classic CAN/CAN FD frames was removed since no known CAN
   controllers implement support for this. Applications can still filter on classic CAN/CAN FD frames
   in their receive callback functions as needed.
