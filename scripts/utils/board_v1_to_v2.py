@@ -103,8 +103,9 @@ def board_v1_to_v2(board_root, board, new_board, group, vendor, soc, variants):
 
             m = re.match(r"^CONFIG_(SOC_[A-Z0-9_]+).*$", line)
             if m:
-                board_soc_settings.append(m.group(1))
                 dropped_line = True
+                if re.match(r"(?!SERIES_).*$", str(m)):
+                    board_soc_settings.append(m.group(1))
                 continue
 
             if dropped_line and re.match(r"^$", line):
