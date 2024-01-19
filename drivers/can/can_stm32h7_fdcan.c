@@ -208,7 +208,6 @@ static const struct can_driver_api can_stm32h7_driver_api = {
 	.recover = can_mcan_recover,
 #endif
 	.get_core_clock = can_stm32h7_get_core_clock,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_mcan_set_state_change_callback,
 	/* Timing limits are per the STM32H7 Reference Manual (RM0433 Rev 7),

@@ -158,15 +158,6 @@ static int mcux_flexcan_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static int mcux_flexcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct mcux_flexcan_config *config = dev->config;
-
-	*max_bitrate = config->common.max_bitrate;
-
-	return 0;
-}
-
 static int mcux_flexcan_set_timing(const struct device *dev,
 				   const struct can_timing *timing)
 {
@@ -1310,7 +1301,6 @@ __maybe_unused static const struct can_driver_api mcux_flexcan_driver_api = {
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
-	.get_max_bitrate = mcux_flexcan_get_max_bitrate,
 	/*
 	 * FlexCAN timing limits are specified in the "FLEXCANx_CTRL1 field
 	 * descriptions" table in the SoC reference manual.
@@ -1354,7 +1344,6 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
-	.get_max_bitrate = mcux_flexcan_get_max_bitrate,
 	/*
 	 * FlexCAN FD timing limits are specified in the "CAN Bit Timing
 	 * Register (CBT)" and "CAN FD Bit Timing Register" field description

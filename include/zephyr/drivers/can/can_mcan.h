@@ -1709,10 +1709,4 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 void can_mcan_set_state_change_callback(const struct device *dev,
 					can_state_change_callback_t callback, void *user_data);
 
-/**
- * @brief Bosch M_CAN driver callback API upon getting the maximum supported bitrate
- * See @a can_get_max_bitrate() for argument description
- */
-int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
-
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_ */

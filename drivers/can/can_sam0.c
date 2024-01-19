@@ -176,7 +176,6 @@ static const struct can_driver_api can_sam0_driver_api = {
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	.get_core_clock = can_sam0_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.set_state_change_callback =  can_mcan_set_state_change_callback,
 	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
 	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,

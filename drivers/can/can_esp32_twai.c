@@ -224,7 +224,6 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 	.set_state_change_callback = can_sja1000_set_state_change_callback,
 	.get_core_clock = can_esp32_twai_get_core_clock,
 	.get_max_filters = can_sja1000_get_max_filters,
-	.get_max_bitrate = can_sja1000_get_max_bitrate,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_sja1000_recover,
 #endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */

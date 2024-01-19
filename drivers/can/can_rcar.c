@@ -1146,15 +1146,6 @@ static int can_rcar_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_RCAR_MAX_FILTER;
 }
 
-static int can_rcar_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct can_rcar_cfg *config = dev->config;
-
-	*max_bitrate = config->common.max_bitrate;
-
-	return 0;
-}
-
 static const struct can_driver_api can_rcar_driver_api = {
 	.get_capabilities = can_rcar_get_capabilities,
 	.start = can_rcar_start,
@@ -1171,7 +1162,6 @@ static const struct can_driver_api can_rcar_driver_api = {
 	.set_state_change_callback = can_rcar_set_state_change_callback,
 	.get_core_clock = can_rcar_get_core_clock,
 	.get_max_filters = can_rcar_get_max_filters,
-	.get_max_bitrate = can_rcar_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x1,
 		.prop_seg = 0x00,

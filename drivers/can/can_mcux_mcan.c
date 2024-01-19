@@ -139,7 +139,6 @@ static const struct can_driver_api mcux_mcan_driver_api = {
 	.set_state_change_callback = can_mcan_set_state_change_callback,
 	.get_core_clock = mcux_mcan_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	/*
 	 * MCUX MCAN timing limits are specified in the "Nominal bit timing and
 	 * prescaler register (NBTP)" table in the SoC reference manual.

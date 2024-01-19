@@ -1167,15 +1167,6 @@ void can_mcan_set_state_change_callback(const struct device *dev,
 	data->common.state_change_cb_user_data = user_data;
 }
 
-int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct can_mcan_config *config = dev->config;
-
-	*max_bitrate = config->common.max_bitrate;
-
-	return 0;
-}
-
 /* helper function allowing mcan drivers without access to private mcan
  * definitions to set CCCR_CCE, which might be needed to disable write
  * protection for some registers.
