@@ -15,6 +15,14 @@
 
 #define DT_DRV_COMPAT zephyr_fake_can
 
+struct fake_can_config {
+	const struct can_driver_config common;
+};
+
+struct fake_can_data {
+	struct can_driver_data common;
+};
+
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_start, const struct device *);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_stop, const struct device *);
@@ -139,7 +147,14 @@ static const struct can_driver_api fake_can_driver_api = {
 };
 
 #define FAKE_CAN_INIT(inst)						     \
-	CAN_DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL, \
+	static const struct fake_can_config fake_can_config_##inst = {	     \
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),	     \
+	};								     \
+									     \
+	static struct fake_can_data fake_can_data_##inst;		     \
+									     \
+	CAN_DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &fake_can_data_##inst,   \
+				  &fake_can_config_##inst, POST_KERNEL,	     \
 				  CONFIG_CAN_INIT_PRIORITY,                  \
 				  &fake_can_driver_api);
 
