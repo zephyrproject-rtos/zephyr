@@ -19,11 +19,23 @@ if NRF_RTC_TIMER
 
 config NRF_RTC_TIMER_USER_CHAN_COUNT
 	int "Additional channels that can be used"
-	default 2 if NRF_802154_RADIO_DRIVER && SOC_COMPATIBLE_NRF5340_CPUNET
-	default 3 if NRF_802154_RADIO_DRIVER
 	default 0
 	help
-	  Use nrf_rtc_timer.h API. Driver is not managing allocation of channels.
+	  This option specifies initial number of additional user channels that can be used.
+	  The total number of additional user channels is given by
+	  K_NRF_RTC_TIMER_USER_CHAN_COUNT macro which is calculated automatically
+	  during the build based on:
+	  - the NRF_RTC_TIMER_USER_CHAN_COUNT option
+	  - the NRF_RTC_TIMER_USER_CHAN_COUNT_ADD_* options distributed
+	  - the NRF_RTC_TIMER_USER_CHAN_COUNT_MIN_* options
+	  The Kconfig options named NRF_RTC_TIMER_USER_CHAN_COUNT_ADD_*
+	  can be added by any module. They are individual requirements on
+	  number of channels and increase the value of the K_NRF_RTC_TIMER_USER_CHAN_COUNT
+	  macro.
+	  The Kconfig options named NRF_RTC_TIMER_USER_CHAN_COUNT_MIN_*
+	  set the requirement on minimum value of K_NRF_RTC_TIMER_USER_CHAN_COUNT macro
+	  regardless of other requirements. K_NRF_RTC_TIMER_USER_CHAN_COUNT is guaranteed
+	  to be no less than the maximum value of specified minimum values.
 
 config NRF_RTC_TIMER_LOCK_ZERO_LATENCY_IRQS
 	# hidden option

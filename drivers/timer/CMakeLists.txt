@@ -26,6 +26,15 @@ zephyr_library_sources_ifdef(CONFIG_NATIVE_POSIX_TIMER native_posix_timer.c)
 zephyr_library_sources_ifdef(CONFIG_NPCX_ITIM_TIMER npcx_itim_timer.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_GRTC_TIMER nrf_grtc_timer.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_RTC_TIMER nrf_rtc_timer.c)
+
+if (CONFIG_NRF_RTC_TIMER)
+    zephyr_compile_definition_kconfig_based(K_NRF_RTC_TIMER_USER_CHAN_COUNT
+        CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
+           SUFFIX_FOR_ADD "ADD"
+           SUFFIX_FOR_MIN "MIN"
+    )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_RCAR_CMT_TIMER rcar_cmt_timer.c)
 zephyr_library_sources_ifdef(CONFIG_RISCV_MACHINE_TIMER riscv_machine_timer.c)
 zephyr_library_sources_ifdef(CONFIG_RV32M1_LPTMR_TIMER rv32m1_lptmr_timer.c)

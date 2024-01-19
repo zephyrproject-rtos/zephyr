@@ -704,6 +704,8 @@ flagged.
         "MYFEATURE",
         "MY_DRIVER_0",
         "NORMAL_SLEEP",  # #defined by RV32M1 in ext/
+        "NRF_RTC_TIMER_USER_CHAN_COUNT_ADD_",
+        "NRF_RTC_TIMER_USER_CHAN_COUNT_MIN_",
         "OPT",
         "OPT_0",
         "PEDO_THS_MIN",

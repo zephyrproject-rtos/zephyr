@@ -20,10 +20,14 @@ config NRF53_SYNC_RTC_INIT_PRIORITY
 	help
 	  nRF53 Synchronized RTC initialization priority.
 
-config NRF_RTC_TIMER_USER_CHAN_COUNT
-	default 2 if NRF_802154_RADIO_DRIVER && SOC_COMPATIBLE_NRF5340_CPUNET
-	default 3 if NRF_802154_RADIO_DRIVER
+config NRF_RTC_TIMER_USER_CHAN_COUNT_MIN_NRF53_SYNC_RTC
+	int
 	default 1
+	help
+	  The minimum number of user channels of nrf_rtc_timer needed by
+	  NRF53_SYNC_RTC feature. Note that an rtc channel is allocated
+	  used and freed only during the system initialization so the channel
+	  can be reused later.
 
 config NRF53_SYNC_RTC_LOG_TIMESTAMP
 	bool "Use Synchronized RTC for logging timestamp"

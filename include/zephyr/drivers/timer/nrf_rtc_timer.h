@@ -59,7 +59,7 @@ uint64_t z_nrf_rtc_timer_read(void);
  *
  * Address can be used for (D)PPI.
  *
- * @param chan Channel ID between 0 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 0 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @return Register address.
  */
@@ -71,7 +71,7 @@ uint32_t z_nrf_rtc_timer_compare_evt_address_get(int32_t chan);
  *
  * @note Not all platforms have CAPTURE task.
  *
- * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 1 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @return Register address.
  */
@@ -81,7 +81,7 @@ uint32_t z_nrf_rtc_timer_capture_task_address_get(int32_t chan);
  *
  * Function returns key indicating whether interrupt was already disabled.
  *
- * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 1 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @return key passed to @ref z_nrf_rtc_timer_compare_int_unlock.
  */
@@ -91,7 +91,7 @@ bool z_nrf_rtc_timer_compare_int_lock(int32_t chan);
  *
  * Event interrupt is conditionally enabled based on @p key.
  *
- * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 1 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @param key Key returned by @ref z_nrf_rtc_timer_compare_int_lock.
  */
@@ -99,7 +99,7 @@ void z_nrf_rtc_timer_compare_int_unlock(int32_t chan, bool key);
 
 /** @brief Read compare register value.
  *
- * @param chan Channel ID between 0 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 0 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @return Value set in the compare register.
  */
@@ -116,7 +116,7 @@ uint32_t z_nrf_rtc_timer_compare_read(int32_t chan);
  * from that compare channel is disabled. Other interrupts are not locked during
  * this operation.
  *
- * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 1 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @param target_time Absolute target time in ticks.
  *
@@ -144,7 +144,7 @@ int z_nrf_rtc_timer_set(int32_t chan, uint64_t target_time,
  * value (as would @ref z_nrf_rtc_timer_set function do), neither the hardware
  * event nor interrupt will be generated and the function fails.
  *
- * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 1 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  *
  * @param target_time Absolute target time in ticks.
  *
@@ -171,7 +171,7 @@ int z_nrf_rtc_timer_exact_set(int32_t chan, uint64_t target_time,
  * operation interrupt from that compare channel is disabled. Other interrupts
  * are not locked during this operation.
  *
- * @param chan Channel ID between 1 and CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT.
+ * @param chan Channel ID between 1 and K_NRF_RTC_TIMER_USER_CHAN_COUNT.
  */
 void z_nrf_rtc_timer_abort(int32_t chan);
 

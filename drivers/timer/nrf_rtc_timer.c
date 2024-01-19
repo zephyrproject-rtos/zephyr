@@ -20,7 +20,7 @@
 #define RTC_PRETICK (IS_ENABLED(CONFIG_SOC_NRF53_RTC_PRETICK) && \
 		     IS_ENABLED(CONFIG_SOC_NRF5340_CPUNET))
 
-#define EXT_CHAN_COUNT CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT
+#define EXT_CHAN_COUNT K_NRF_RTC_TIMER_USER_CHAN_COUNT
 #define CHAN_COUNT (EXT_CHAN_COUNT + 1)
 
 #define RTC NRF_RTC1
@@ -605,7 +605,7 @@ int z_nrf_rtc_timer_trigger_overflow(void)
 	int err = 0;
 
 	if (!IS_ENABLED(CONFIG_NRF_RTC_TIMER_TRIGGER_OVERFLOW) ||
-	    (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT > 0)) {
+	    (K_NRF_RTC_TIMER_USER_CHAN_COUNT > 0)) {
 		return -ENOTSUP;
 	}
 
@@ -754,7 +754,7 @@ static int sys_clock_driver_init(void)
 	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
 
 	int_mask = BIT_MASK(CHAN_COUNT);
-	if (CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT) {
+	if (K_NRF_RTC_TIMER_USER_CHAN_COUNT) {
 		alloc_mask = BIT_MASK(EXT_CHAN_COUNT) << 1;
 	}
 

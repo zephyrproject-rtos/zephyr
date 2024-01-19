@@ -261,10 +261,10 @@ ZTEST(nrf_rtc_timer, test_absolute_scheduling)
 
 ZTEST(nrf_rtc_timer, test_alloc_free)
 {
-	int32_t chan[CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT];
+	int32_t chan[K_NRF_RTC_TIMER_USER_CHAN_COUNT];
 	int32_t inv_ch;
 
-	for (int i = 0; i < CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT; i++) {
+	for (int i = 0; i < K_NRF_RTC_TIMER_USER_CHAN_COUNT; i++) {
 		chan[i] = z_nrf_rtc_timer_chan_alloc();
 		zassert_true(chan[i] >= 0, "Failed to allocate RTC channel.");
 	}
@@ -272,7 +272,7 @@ ZTEST(nrf_rtc_timer, test_alloc_free)
 	inv_ch = z_nrf_rtc_timer_chan_alloc();
 	zassert_equal(inv_ch, -ENOMEM, "Unexpected return value %d", inv_ch);
 
-	for (int i = 0; i < CONFIG_NRF_RTC_TIMER_USER_CHAN_COUNT; i++) {
+	for (int i = 0; i < K_NRF_RTC_TIMER_USER_CHAN_COUNT; i++) {
 		z_nrf_rtc_timer_chan_free(chan[i]);
 	}
 }
