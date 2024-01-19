@@ -19,6 +19,7 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_fifo:
@@ -26,6 +27,7 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_async_api:
@@ -34,6 +36,7 @@ tests:
       - CONFIG_UART_0_INTERRUPT_DRIVEN=n
       - CONFIG_UART_0_ASYNC=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_async_api_const:
@@ -44,6 +47,7 @@ tests:
       - CONFIG_UART_0_ASYNC=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=n
       - CONFIG_UART_0_TX_CACHE_SIZE=2
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI # We skip a few tests to save CI time, as they give little extra coverage
 
   drivers.uart.uart_mix_poll_with_ppi:
@@ -51,6 +55,7 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_UART_ASYNC_API=n
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_fifo_with_ppi:
@@ -58,6 +63,7 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_INTERRUPT_DRIVEN=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI
 
   drivers.uart.uart_mix_poll_async_api_with_ppi:
@@ -66,6 +72,7 @@ tests:
       - CONFIG_UART_0_INTERRUPT_DRIVEN=n
       - CONFIG_UART_0_ASYNC=y
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
     tags: bsim_skip_CI
 
   drivers.uart.legacy.uart_mix_poll:
