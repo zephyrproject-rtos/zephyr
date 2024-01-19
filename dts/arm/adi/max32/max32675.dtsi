@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32675_dma.h>
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_K(384)>;
@@ -58,6 +59,16 @@
 		sram7: memory@20024000 {
 			compatible = "mmio-sram";
 			reg = <0x20024000 DT_SIZE_K(16)>;
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>;
+			dma-channels = <8>;
+			status = "disabled";
+			#dma-cells = <2>;
 		};
 
 		spi1: spi@40047000 {
