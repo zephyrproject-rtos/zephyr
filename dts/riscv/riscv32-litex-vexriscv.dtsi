@@ -25,7 +25,6 @@
 			reg = <0>;
 			riscv,isa = "rv32ima_zicsr_zifencei";
 			status = "okay";
-			timebase-frequency = <32768>;
 		};
 	};
 	soc {
