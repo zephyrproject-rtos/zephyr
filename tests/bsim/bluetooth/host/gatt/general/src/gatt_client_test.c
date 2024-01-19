@@ -36,7 +36,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected to %s\n", addr);
 
-	g_conn = conn;
+	__ASSERT_NO_MSG(g_conn == conn);
+
 	SET_FLAG(flag_is_connected);
 }
 
