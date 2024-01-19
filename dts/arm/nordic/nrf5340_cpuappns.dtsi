@@ -7,7 +7,7 @@
 /* .dtsi header for nRF5340 CPUAPP (Application MCU), Non-Secure domain */
 
 #include <arm/armv8-m.dtsi>
-#include "nrf_common.dtsi"
+#include <nordic/nrf_common.dtsi>
 
 / {
 	cpus {
@@ -76,4 +76,9 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	/* Use RTC for system clock, instead of SysTick. */
+	status = "disabled";
 };

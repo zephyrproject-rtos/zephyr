@@ -43,11 +43,3 @@
 		#pwm-cells = <3>;
 	};
 };
-
-&systick {
-	/*
-	 * Nordic SoCs rely by default on the RTC for system clock
-	 * implementation, so the SysTick node is not to be enabled.
-	 */
-	status = "disabled";
-};

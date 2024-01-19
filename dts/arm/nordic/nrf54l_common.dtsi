@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include "nrf_common.dtsi"
+#include <nordic/nrf_common.dtsi>
 
 / {
 	soc {
