@@ -438,6 +438,33 @@ config HAS_HW_NRF_UARTE22
 config HAS_HW_NRF_UARTE30
 	def_bool $(dt_nodelabel_enabled_with_compat,uart30,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
+config HAS_HW_NRF_UARTE120
+	def_bool $(dt_nodelabel_enabled_with_compat,uart120,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE130
+	def_bool $(dt_nodelabel_enabled_with_compat,uart130,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE131
+	def_bool $(dt_nodelabel_enabled_with_compat,uart131,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE132
+	def_bool $(dt_nodelabel_enabled_with_compat,uart132,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE133
+	def_bool $(dt_nodelabel_enabled_with_compat,uart133,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE134
+	def_bool $(dt_nodelabel_enabled_with_compat,uart134,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE135
+	def_bool $(dt_nodelabel_enabled_with_compat,uart135,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE136
+	def_bool $(dt_nodelabel_enabled_with_compat,uart136,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
+config HAS_HW_NRF_UARTE137
+	def_bool $(dt_nodelabel_enabled_with_compat,uart137,$(DT_COMPAT_NORDIC_NRF_UARTE))
+
 config HAS_HW_NRF_USBD
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_USBD))
 
