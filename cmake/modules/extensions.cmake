@@ -4851,34 +4851,66 @@ function(add_llext_target target_name)
     DEPENDS ${output_file}
   )
 
-  # Compile the source file to an .llext file
+  # Define arch-specific flags for the supported architectures
   if(CONFIG_ARM)
     list(PREPEND LLEXT_C_FLAGS "-mlong-calls" "-mthumb")
-    add_custom_command(OUTPUT ${output_file}
-      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_C_FLAGS} -c
-              -I ${ZEPHYR_BASE}/include
-              -imacros ${AUTOCONF_H}
-              -o ${output_file}
-              ${source_file}
-      DEPENDS ${source_file}
-    )
   elseif(CONFIG_XTENSA)
     list(PREPEND LLEXT_C_FLAGS "-shared" "-fPIC" "-nostdlib" "-nodefaultlibs")
+  else()
+    message(FATAL_ERROR "add_llext_target: unsupported architecture")
+  endif()
+
+  # Compile the source file to an object file using current Zephyr settings
+  # but a different set of flags
+  add_library(${target_name}_lib OBJECT ${source_file})
+  target_compile_definitions(${target_name}_lib PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+  )
+  target_compile_options(${target_name}_lib PRIVATE
+    ${LLEXT_C_FLAGS}
+    -imacros "${AUTOCONF_H}"
+  )
+  target_include_directories(${target_name}_lib PRIVATE
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
+    -I${PROJECT_BINARY_DIR}/include/generated
+  )
+  target_include_directories(${target_name}_lib SYSTEM PUBLIC
+    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
+  )
+  add_dependencies(${target_name}_lib
+    zephyr_interface
+    zephyr_generated_headers
+  )
+
+  # Arch-specific conversion of the object file to an llext
+  if(CONFIG_ARM)
+
+    # No conversion required, simply copy the object file
+    add_custom_command(
+      OUTPUT ${output_file}
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:${target_name}_lib> ${output_file}
+      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
+    )
+
+  elseif(CONFIG_XTENSA)
+
+    # Generate an intermediate file name
     get_filename_component(output_dir ${output_file} DIRECTORY)
     get_filename_component(output_name_we ${output_file} NAME_WE)
     set(pre_output_file ${output_dir}/${output_name_we}.pre.llext)
-    add_custom_command(OUTPUT ${output_file}
+
+    # Need to convert the object file to a shared library, then strip some sections
+    add_custom_command(
+      OUTPUT ${output_file}
+      BYPRODUCTS ${pre_output_file}
       COMMAND ${CMAKE_C_COMPILER} ${LLEXT_C_FLAGS}
-              -I ${ZEPHYR_BASE}/include
-              -imacros ${AUTOCONF_H}
               -o ${pre_output_file}
-              ${source_file}
+              $<TARGET_OBJECTS:${target_name}_lib>
       COMMAND ${CROSS_COMPILE}strip -R .xt.*
               -o ${output_file}
               ${pre_output_file}
-      DEPENDS ${source_file}
+      DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
     )
-  else()
-    message(FATAL_ERROR "add_llext_target: unsupported architecture")
+
   endif()
 endfunction()
