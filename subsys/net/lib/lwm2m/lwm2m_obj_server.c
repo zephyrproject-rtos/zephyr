@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_obj_server.h"
 #include "lwm2m_rd_client.h"
 #include "lwm2m_registry.h"
+#include "lwm2m_engine.h"
 
 #define SERVER_VERSION_MAJOR 1
 #if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
@@ -458,4 +459,4 @@ static int lwm2m_server_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_server_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(lwm2m_server_init);

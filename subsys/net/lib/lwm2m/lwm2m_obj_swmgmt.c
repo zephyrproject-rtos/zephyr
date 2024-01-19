@@ -794,4 +794,4 @@ static int lwm2m_swmgmt_init(void)
 	return 0;
 }
 
-SYS_INIT(lwm2m_swmgmt_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(lwm2m_swmgmt_init);

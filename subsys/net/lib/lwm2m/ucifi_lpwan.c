@@ -178,4 +178,4 @@ static int ucifi_lpwan_init(void)
 	return 0;
 }
 
-SYS_INIT(ucifi_lpwan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ucifi_lpwan_init);
