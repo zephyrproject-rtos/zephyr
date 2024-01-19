@@ -18,6 +18,19 @@ static uint8_t hello_world_elf[] __aligned(4) = {
 };
 #endif
 
+K_THREAD_STACK_DEFINE(llext_stack, 1024);
+struct k_thread llext_thread;
+
+#ifdef CONFIG_USERSPACE
+void llext_entry(void *arg0, void *arg1, void *arg2)
+{
+	struct llext *ext = arg0;
+
+	zassert_ok(llext_call_fn(ext, "hello_world"),
+		   "hello_world call should succeed");
+}
+#endif /* CONFIG_USERSPACE */
+
 /**
  * Attempt to load, list, list symbols, call a fn, and unload a
  * hello world extension for each supported architecture
@@ -45,9 +58,29 @@ ZTEST(llext, test_llext_simple)
 
 	zassert_not_null(hello_world_fn, "hello_world should be an exported symbol");
 
-	res = llext_call_fn(ext, "hello_world");
+#ifdef CONFIG_USERSPACE
+	struct k_mem_domain domain;
 
-	zassert_ok(res, "calling hello world should succeed");
+	k_mem_domain_init(&domain, 0, NULL);
+
+	res = llext_add_domain(ext, &domain);
+	zassert_ok(res, "adding partitions to domain should succeed");
+
+	/* Should be runnable from newly created thread */
+	k_thread_create(&llext_thread, llext_stack,
+			K_THREAD_STACK_SIZEOF(llext_stack),
+			&llext_entry, ext, NULL, NULL,
+			1, 0, K_FOREVER);
+
+	k_mem_domain_add_thread(&domain, &llext_thread);
+
+	k_thread_start(&llext_thread);
+	k_thread_join(&llext_thread, K_FOREVER);
+
+#else /* CONFIG_USERSPACE */
+	zassert_ok(llext_call_fn(ext, "hello_world"),
+		   "hello_world call should succeed");
+#endif /* CONFIG_USERSPACE */
 
 	llext_unload(&ext);
 }

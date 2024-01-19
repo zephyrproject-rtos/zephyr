@@ -3,20 +3,28 @@ common:
   arch_allow:
     - arm
     - xtensa
-  filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
   platform_exclude:
     - nuvoton_pfm_m487 # See #63167
 tests:
   llext.simple.readonly:
     arch_exclude: xtensa # for now
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.simple.readonly_mpu:
+    arch_exclude: xtensa # for now
+    filter: CONFIG_CPU_HAS_MPU
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.writable:
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE_R52
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
   llext.simple.modules_enabled_writable:
+    filter: not CONFIG_MPU and not CONFIG_MMU
     platform_key:
       - simulation
       - arch
@@ -28,6 +36,7 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_TEST_HELLO=m
   llext.simple.modules_enabled_readonly:
+    filter: not CONFIG_MPU and not CONFIG_MMU
     arch_exclude: xtensa # for now
     platform_key:
       - simulation
@@ -36,5 +45,15 @@ tests:
       - qemu_cortex_a9 # MMU
     extra_configs:
       - arch:arm:CONFIG_ARM_MPU=n
+      - CONFIG_MODULES=y
+      - CONFIG_LLEXT_TEST_HELLO=m
+  llext.simple.modules_enabled_readonly_mpu:
+    filter: CONFIG_CPU_HAS_MPU
+    arch_exclude: xtensa # for now
+    platform_key:
+      - simulation
+      - arch
+    extra_configs:
+      - CONFIG_USERSPACE=y
       - CONFIG_MODULES=y
       - CONFIG_LLEXT_TEST_HELLO=m
