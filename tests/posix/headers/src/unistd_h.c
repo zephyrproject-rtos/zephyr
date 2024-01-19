@@ -342,7 +342,7 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_null(getopt);
 	/* zassert_not_null(getpgid); */ /* not implemented */
 	/* zassert_not_null(getpgrp); */ /* not implemented */
-	/* zassert_not_null(getpid); */ /* not implemented */
+	zassert_not_null(getpid);
 	/* zassert_not_null(getppid); */ /* not implemented */
 	/* zassert_not_null(getsid); */ /* not implemented */
 	/* zassert_not_null(getuid); */ /* not implemented */
