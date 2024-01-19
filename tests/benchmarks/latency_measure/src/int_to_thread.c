@@ -168,7 +168,6 @@ int int_to_thread(uint32_t num_iterations)
 	uint64_t sum;
 
 	timing_start();
-	TICK_SYNCH();
 
 	int_to_interrupted_thread(num_iterations, &sum);
 
