@@ -480,7 +480,7 @@ ZTEST(can_classic, test_set_state_change_callback)
  */
 ZTEST_USER(can_classic, test_set_bitrate_too_high)
 {
-	uint32_t max;
+	uint32_t max = 0U;
 	int err;
 
 	err = can_get_max_bitrate(can_dev, &max);
