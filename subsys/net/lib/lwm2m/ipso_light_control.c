@@ -201,5 +201,4 @@ static int ipso_light_control_init(void)
 	return 0;
 }
 
-SYS_INIT(ipso_light_control_init, APPLICATION,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_light_control_init);
