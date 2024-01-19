@@ -255,6 +255,7 @@ elseif(HWMv2)
 
     if(NOT ("${BOARD}${BOARD_IDENTIFIER}" IN_LIST BOARD_IDENTIFIERS))
       string(REPLACE ";" "\n" BOARD_IDENTIFIERS "${BOARD_IDENTIFIERS}")
+      unset(CACHED_BOARD CACHE)
       message(FATAL_ERROR "Board identifier `${BOARD_IDENTIFIER}` for board \
             `${BOARD}` not found. Please specify a valid board.\n"
             "Valid board identifiers for ${BOARD_NAME} are:\n${BOARD_IDENTIFIERS}\n")
