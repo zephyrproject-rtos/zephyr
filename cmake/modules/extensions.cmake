@@ -4807,9 +4807,13 @@ endmacro()
 # Output and source files must be specified using the OUTPUT and SOURCES
 # arguments. Only one source file is currently supported.
 #
-# Arch-specific flags will be added automatically. The C_FLAGS argument
-# can be used to pass additional compiler flags to the compilation of
-# the source file.
+# The llext code will be compiled with mostly the same C compiler flags used
+# in the Zephyr build, but with some important modifications. The list of
+# flags to remove and flags to append is controlled respectively by the
+# LLEXT_REMOVE_FLAGS and LLEXT_APPEND_FLAGS global variables.
+
+# The C_FLAGS argument can be used to pass additional compiler flags to the
+# compilation of this particular llext.
 #
 # Example usage:
 #   add_llext_target(hello_world
@@ -4851,14 +4855,19 @@ function(add_llext_target target_name)
     DEPENDS ${output_file}
   )
 
-  # Define arch-specific flags for the supported architectures
-  if(CONFIG_ARM)
-    list(PREPEND LLEXT_C_FLAGS "-mlong-calls" "-mthumb")
-  elseif(CONFIG_XTENSA)
-    list(PREPEND LLEXT_C_FLAGS "-shared" "-fPIC" "-nostdlib" "-nodefaultlibs")
-  else()
-    message(FATAL_ERROR "add_llext_target: unsupported architecture")
-  endif()
+  # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
+  # filter out these flags from the Zephyr target settings
+  list(TRANSFORM LLEXT_REMOVE_FLAGS
+       REPLACE "(.+)" "^\\1$"
+       OUTPUT_VARIABLE llext_remove_flags_regexp
+  )
+  string(REPLACE ";" "|" llext_remove_flags_regexp "${llext_remove_flags_regexp}")
+  set(zephyr_flags
+      "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>"
+  )
+  set(zephyr_filtered_flags
+      "$<FILTER:${zephyr_flags},EXCLUDE,${llext_remove_flags_regexp}>"
+  )
 
   # Compile the source file to an object file using current Zephyr settings
   # but a different set of flags
@@ -4867,12 +4876,12 @@ function(add_llext_target target_name)
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
   )
   target_compile_options(${target_name}_lib PRIVATE
+    ${zephyr_filtered_flags}
+    ${LLEXT_APPEND_FLAGS}
     ${LLEXT_C_FLAGS}
-    -imacros "${AUTOCONF_H}"
   )
   target_include_directories(${target_name}_lib PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
-    -I${PROJECT_BINARY_DIR}/include/generated
   )
   target_include_directories(${target_name}_lib SYSTEM PUBLIC
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
@@ -4903,14 +4912,19 @@ function(add_llext_target target_name)
     add_custom_command(
       OUTPUT ${output_file}
       BYPRODUCTS ${pre_output_file}
-      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_C_FLAGS}
+      COMMAND ${CMAKE_C_COMPILER} ${LLEXT_APPEND_FLAGS}
               -o ${pre_output_file}
               $<TARGET_OBJECTS:${target_name}_lib>
-      COMMAND ${CROSS_COMPILE}strip -R .xt.*
-              -o ${output_file}
-              ${pre_output_file}
+      COMMAND $<TARGET_PROPERTY:bintools,strip_command>
+              $<TARGET_PROPERTY:bintools,strip_flag>
+              $<TARGET_PROPERTY:bintools,strip_flag_remove_section>.xt.*
+              $<TARGET_PROPERTY:bintools,strip_flag_infile>${pre_output_file}
+              $<TARGET_PROPERTY:bintools,strip_flag_outfile>${output_file}
+              $<TARGET_PROPERTY:bintools,strip_flag_final>
       DEPENDS ${target_name}_lib $<TARGET_OBJECTS:${target_name}_lib>
     )
 
+  else()
+    message(FATAL_ERROR "add_llext_target: unsupported architecture")
   endif()
 endfunction()
