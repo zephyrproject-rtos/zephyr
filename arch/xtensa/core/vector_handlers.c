@@ -173,27 +173,36 @@ __unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 	return return_to(interrupted_stack);		\
 }
 
-#if XCHAL_NMILEVEL >= 2
+#if XCHAL_HAVE_NMI
+#define MAX_INTR_LEVEL XCHAL_NMILEVEL
+#elif XCHAL_HAVE_INTERRUPTS
+#define MAX_INTR_LEVEL XCHAL_NUM_INTLEVELS
+#else
+#error Xtensa core with no interrupt support is used
+#define MAX_INTR_LEVEL 0
+#endif
+
+#if MAX_INTR_LEVEL >= 2
 DEF_INT_C_HANDLER(2)
 #endif
 
-#if XCHAL_NMILEVEL >= 3
+#if MAX_INTR_LEVEL >= 3
 DEF_INT_C_HANDLER(3)
 #endif
 
-#if XCHAL_NMILEVEL >= 4
+#if MAX_INTR_LEVEL >= 4
 DEF_INT_C_HANDLER(4)
 #endif
 
-#if XCHAL_NMILEVEL >= 5
+#if MAX_INTR_LEVEL >= 5
 DEF_INT_C_HANDLER(5)
 #endif
 
-#if XCHAL_NMILEVEL >= 6
+#if MAX_INTR_LEVEL >= 6
 DEF_INT_C_HANDLER(6)
 #endif
 
-#if XCHAL_NMILEVEL >= 7
+#if MAX_INTR_LEVEL >= 7
 DEF_INT_C_HANDLER(7)
 #endif
 
