@@ -2234,9 +2234,9 @@ int lwm2m_engine_enable_cache(const char *resource_path, struct lwm2m_time_serie
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 }
 
-int lwm2m_engine_data_cache_init(void)
-{
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+static int lwm2m_engine_data_cache_init(void)
+{
 	int i;
 
 	sys_slist_init(&lwm2m_timed_cache_list);
@@ -2244,9 +2244,10 @@ int lwm2m_engine_data_cache_init(void)
 	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
 		lwm2m_cache_entries[i].path.level = LWM2M_PATH_LEVEL_NONE;
 	}
-#endif
 	return 0;
 }
+LWM2M_ENGINE_INIT(lwm2m_engine_data_cache_init);
+#endif
 
 bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
 		       struct lwm2m_time_series_elem *buf)

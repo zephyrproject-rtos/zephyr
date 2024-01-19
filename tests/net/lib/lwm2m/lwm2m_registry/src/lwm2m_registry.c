@@ -612,7 +612,6 @@ ZTEST(lwm2m_registry, test_resource_cache)
 	struct lwm2m_time_series_elem e;
 
 	/* Resource cache is turned off */
-	zassert_equal(lwm2m_engine_data_cache_init(), 0);
 	zassert_is_null(lwm2m_cache_entry_get_by_object(&path));
 	zassert_equal(lwm2m_enable_cache(&path, &e, 1), -ENOTSUP);
 	/* deprecated */

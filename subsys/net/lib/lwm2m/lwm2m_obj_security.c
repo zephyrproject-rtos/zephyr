@@ -261,4 +261,4 @@ static int lwm2m_security_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_security_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(lwm2m_security_init);
