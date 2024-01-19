@@ -5004,6 +5004,7 @@ sub process {
 #	only fix matches surrounded by parentheses to avoid incorrect
 #	conversions like "FOO < baz() + 5" being "misfixed" to "baz() > FOO + 5"
 		if ($perl_version_ok &&
+			!($line =~ /^\+(.*)($Constant|[A-Z_][A-Z0-9_]*)\s*($Compare)\s*(.*)($Constant|[A-Z_][A-Z0-9_]*)(.*)/) &&
 		    $line =~ /^\+(.*)\b($Constant|[A-Z_][A-Z0-9_]*)\s*($Compare)\s*($LvalOrFunc)/) {
 			my $lead = $1;
 			my $const = $2;
