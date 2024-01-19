@@ -3087,7 +3087,10 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	atomic_set_bit(att_chan->flags, ATT_CONNECTED);
 
-	att_chan_mtu_updated(att_chan);
+	/** On EATT L2CAP channels the rx/tx MTU is exchanged as part of the ATT connection */
+	if (bt_att_is_enhanced(att_chan)) {
+		att_chan_mtu_updated(att_chan);
+	}
 
 	k_work_init_delayable(&att_chan->timeout_work, att_timeout);
 
