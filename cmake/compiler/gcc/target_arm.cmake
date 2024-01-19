@@ -60,3 +60,9 @@ set(LLEXT_APPEND_FLAGS
   -mthumb
   -mcpu=cortex-m33+nodsp
 )
+
+set(LLEXT_CFLAGS
+    -mlong-calls
+    -mthumb
+    -nodefaultlibs
+    -c)

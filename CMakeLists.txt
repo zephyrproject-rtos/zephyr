@@ -2007,6 +2007,27 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   endif()
 endif()
 
+if(CONFIG_LLEXT_EDK)
+    set(LLEXT_EDK_FILE ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
+    add_custom_command(
+        OUTPUT ${LLEXT_EDK_FILE}
+        COMMAND ${CMAKE_COMMAND}
+            -DPROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
+            -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
+            -DINTERFACE_INCLUDE_DIRECTORIES="$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>,:>"
+            -DLLEXT_EDK_FILE=${LLEXT_EDK_FILE}
+            -DAUTOCONF_H=${AUTOCONF_H}
+            -DLLEXT_CFLAGS="${LLEXT_CFLAGS}"
+            -DLLEXT_EDK_NAME=${CONFIG_LLEXT_EDK_NAME}
+            -DWEST_TOPDIR=${WEST_TOPDIR}
+            -DZEPHYR_BASE=${ZEPHYR_BASE}
+            -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
+        DEPENDS ${logical_target_for_zephyr_elf}
+        COMMAND_EXPAND_LISTS
+    )
+    add_custom_target(llext-edk DEPENDS ${LLEXT_EDK_FILE})
+endif()
+
 # @Intent: Set compiler specific flags for standard C/C++ includes
 # Done at the very end, so any other system includes which may
 # be added by Zephyr components were first in list.

@@ -39,3 +39,25 @@ module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
 
 endif
+
+menuconfig LLEXT_EDK
+	bool "Linkable loadable extensions development kit"
+	default y if LLEXT
+	help
+	  Enable the linkable loadable extension development kit. This kit
+	  provides necessary include files and flags for an extension to be
+	  built against a Zephyr application which uses loadable extensions.
+
+if LLEXT_EDK
+
+config LLEXT_EDK_NAME
+	string "Name for llext EDK (Extension Development Kit)"
+	default "llext-edk"
+	help
+	  Name will be used when generating the EDK file, as <name>.tar.xz.
+	  It will also be used, normalized, as the prefix for the variable
+	  stating EDK location, used on generated cmake.cflags and
+	  Makefile.cflags. For instance, the default name, "llext-edk", becomes
+	  LLEXT_EDK_INSTALL_DIR.
+
+endif
