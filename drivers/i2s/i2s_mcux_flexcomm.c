@@ -75,16 +75,24 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 		I2S_TxGetDefaultConfig(fsl_cfg);
 	}
 
-	/* Support single channel pair */
-	if (i2s_cfg->channels == 0 || i2s_cfg->channels > 2) {
-		LOG_ERR("unsupported number of channels");
+	fsl_cfg->dataLength = i2s_cfg->word_size;
+	if ((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) ==
+	    I2S_FMT_DATA_FORMAT_I2S) {
+		/* Classic I2S. We always use 2 channels */
+		fsl_cfg->frameLength = 2 * i2s_cfg->word_size;
+	} else {
+		fsl_cfg->frameLength = i2s_cfg->channels * i2s_cfg->word_size;
+	}
+
+	if (fsl_cfg->dataLength < 4 || fsl_cfg->dataLength > 32) {
+		LOG_ERR("Unsupported data length");
 		return -EINVAL;
 	}
 
-	fsl_cfg->oneChannel = (i2s_cfg->channels == 1);
-
-	fsl_cfg->dataLength = i2s_cfg->word_size;
-	fsl_cfg->frameLength = i2s_cfg->channels * i2s_cfg->word_size;
+	if (fsl_cfg->frameLength < 4 || fsl_cfg->frameLength > 2048) {
+		LOG_ERR("Unsupported frame length");
+		return -EINVAL;
+	}
 
 	/* Set master/slave configuration */
 	switch (i2s_cfg->options & (I2S_OPT_BIT_CLK_SLAVE |
@@ -105,11 +113,6 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 		break;
 	}
 
-	/*
-	 * Set format. Zephyr choose arbitrary subset of possible
-	 * formats, the mapping below is not tested for anything
-	 * but classic mode and is not guaranteed to be correct.
-	 */
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 	case I2S_FMT_DATA_FORMAT_I2S:
 		fsl_cfg->mode = kI2S_ModeI2sClassic;
@@ -123,10 +126,6 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 		fsl_cfg->wsPol = true;
 		break;
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
-		fsl_cfg->mode = kI2S_ModeDspWs50;
-		fsl_cfg->wsPol = true;
-		break;
-	case I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED:
 		fsl_cfg->mode = kI2S_ModeDspWs50;
 		fsl_cfg->wsPol = true;
 		break;
@@ -191,13 +190,10 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 {
 	const struct i2s_mcux_config *cfg = dev->config;
 	struct i2s_mcux_data *dev_data = dev->data;
-	I2S_Type *base = cfg->base;
 	struct stream *stream;
 	uint32_t base_frequency;
 	i2s_config_t fsl_cfg;
 	int result;
-	uint8_t bits_per_word = 0;
-	uint8_t bytes_per_word = 0;
 
 	if (dir == I2S_DIR_RX) {
 		stream = &dev_data->rx;
@@ -261,27 +257,46 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 		I2S_TxInit(cfg->base, &fsl_cfg);
 	}
 
-	/* Data length in bits */
-	bits_per_word = (uint8_t)(((base->CFG1 & I2S_CFG1_DATALEN_MASK) >>
-						I2S_CFG1_DATALEN_SHIFT) + 1U);
+	if ((i2s_cfg->channels > 2) &&
+	    (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) !=
+	    I2S_FMT_DATA_FORMAT_I2S) {
+		/*
+		 * More than 2 channels are enabled, so we need to enable
+		 * secondary channel pairs.
+		 */
+		for (uint32_t slot = 1; slot < i2s_cfg->channels / 2; slot++) {
+			/* Position must be set so that data does not overlap
+			 * with previous channel pair. Each channel pair
+			 * will occupy slots of "word_size" bits.
+			 */
+			I2S_EnableSecondaryChannel(cfg->base, slot - 1, false,
+						   i2s_cfg->word_size * 2 * slot);
+		}
+	}
 
-	/* Convert to bytes */
-	bytes_per_word = (bits_per_word + 7U) / 8U;
-
-	/* if one channel is disabled, bytes_per_word should be 4U, user should
-	 * pay attention that when data length is shorter than 16,
-	 * the data format: left data put in 0-15 bit and right data should put in 16-31
+	/*
+	 * I2S API definition specifies that a "16 bit word will occupy 2 bytes,
+	 * a 24 or 32 bit word will occupy 4 bytes". Therefore, we will assume
+	 * that "odd" word sizes will be aligned to 16 or 32 bit boundaries.
+	 *
+	 * FIFO depth is controlled by the number of bits per word (DATALEN).
+	 * Per the RM:
+	 * If the data length is 4-16, the FIFO should be filled
+	 * with two 16 bit values (one for left, one for right channel)
+	 *
+	 * If the data length is 17-24, the FIFO should be filled with 2 24 bit
+	 * values (one for left, one for right channel). We can just transfer
+	 * 4 bytes, since the I2S API specifies 24 bit values would be aligned
+	 * to a 32 bit boundary.
+	 *
+	 * If the data length is 25-32, the FIFO should be filled
+	 * with one 32 bit value. First value is left channel, second is right.
+	 *
+	 * All this is to say that we can always use 4 byte transfer widths
+	 * with the DMA engine, regardless of the data length.
 	 */
-	if (((base->CFG1 & I2S_CFG1_ONECHANNEL_MASK) == 0U)) {
-		bytes_per_word = 4U;
-	}
-	/* since DMA do not support 24bit transfer width, use 32bit instead */
-	if (bytes_per_word == 3U) {
-		bytes_per_word = 4U;
-	}
-
-	stream->dma_cfg.dest_data_size = bytes_per_word;
-	stream->dma_cfg.source_data_size = bytes_per_word;
+	stream->dma_cfg.dest_data_size = 4U;
+	stream->dma_cfg.source_data_size = 4U;
 
 	/* Save configuration for get_config */
 	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
