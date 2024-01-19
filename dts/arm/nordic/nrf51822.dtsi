@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <arm/armv6-m.dtsi>
-#include "nrf_common.dtsi"
+#include <nordic/nrf_common.dtsi>
 
 / {
 	chosen {
