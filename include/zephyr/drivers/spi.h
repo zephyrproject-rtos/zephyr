@@ -799,6 +799,7 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  *        previous operations.
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
+ * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
@@ -987,6 +988,7 @@ __deprecated static inline int spi_transceive_async(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
+ * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful
  * @retval -errno Negative errno code on failure.
  */
