@@ -784,7 +784,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	if (USB_EP_DIR_IS_OUT(ep) && ep != EP0_OUT) {
 		return usb_dc_ep_start_read(ep,
 					  usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-					  EP_MPS);
+					  ep_state->ep_mps);
 	}
 
 	return 0;
@@ -923,7 +923,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	 */
 	if (!ep_state->read_count) {
 		usb_dc_ep_start_read(ep, usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
-				     EP_MPS);
+				     ep_state->ep_mps);
 	}
 
 	return 0;
