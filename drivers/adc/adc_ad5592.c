@@ -245,7 +245,7 @@ static const struct adc_driver_api adc_ad5592_api = {
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
 	};									\
 										\
-	struct adc_ad5592_data adc_ad5592_data##inst;				\
+	static struct adc_ad5592_data adc_ad5592_data##inst;			\
 										\
 	DEVICE_DT_INST_DEFINE(inst, adc_ad5592_init, NULL,			\
 			      &adc_ad5592_data##inst, &adc_ad5592_config##inst, \
