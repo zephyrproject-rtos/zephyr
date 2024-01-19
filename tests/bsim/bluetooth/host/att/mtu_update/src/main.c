@@ -22,7 +22,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_mtu_update, LOG_LEVEL_DBG);
 
-extern void run_central_sample(void *cb);
+extern void run_central_sample(bt_gatt_notify_func_t notif_cb);
 extern void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16_t seconds);
 
 #define FAIL(...)					\
@@ -39,59 +39,85 @@ extern void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size,
 
 extern enum bst_result_t bst_result;
 
-#define CREATE_FLAG(flag) static atomic_t flag = (atomic_t)false
-#define SET_FLAG(flag) (void)atomic_set(&flag, (atomic_t)true)
-#define WAIT_FOR_FLAG(flag)                                                                        \
-	while (!(bool)atomic_get(&flag)) {                                                         \
-		(void)k_sleep(K_MSEC(1));                                                          \
-	}
-
 #define WAIT_TIME (20e6) /* 20 seconds */
-#define PERIPHERAL_NOTIFY_TIME ((WAIT_TIME - 10e6) / 1e6)
+#define PERIPHERAL_WAIT_TIME ((WAIT_TIME - 10e6) / 1e6)
 
-CREATE_FLAG(flag_notification_received);
-uint8_t notify_data[100] = {};
-uint8_t is_data_equal;
+static volatile size_t central_mtu_count;
+static uint16_t central_mtu_tx;
+static uint16_t central_mtu_rx;
 
-static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
-			 const void *data, uint16_t length)
+static void central_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
-	printk("BSIM NOTIFY_CALLBACK\n");
+	printk("[CENTRAL] Updated MTU: Count: %u TX: %u RX: %u bytes\n",
+		central_mtu_count, tx, rx);
 
-	is_data_equal = (length == sizeof(notify_data) && !memcmp(notify_data, data, length));
-
-	LOG_HEXDUMP_DBG(data, length, "notification data");
-	LOG_HEXDUMP_DBG(notify_data, sizeof(notify_data), "expected data");
-
-	SET_FLAG(flag_notification_received);
-
-	return 0;
+	central_mtu_rx = rx;
+	central_mtu_tx = tx;
+	central_mtu_count++;
 }
+
+static struct bt_gatt_cb central_gatt_callbacks = {.att_mtu_updated = central_mtu_updated};
 
 static void test_central_main(void)
 {
-	notify_data[13] = 0x7f;
-	notify_data[99] = 0x55;
+	uint16_t expected_mtu = CONFIG_BT_L2CAP_TX_MTU;
 
-	run_central_sample(notify_cb);
+	bt_gatt_cb_register(&central_gatt_callbacks);
 
-	WAIT_FOR_FLAG(flag_notification_received);
+	run_central_sample(NULL);
 
-	if (is_data_equal) {
-		PASS("MTU Update test passed\n");
+	/** Wait for MTU exchange to occur */
+	while (central_mtu_count == 0) {
+		k_sleep(K_MSEC(1));
+	}
+
+	if (central_mtu_count == 1 &&
+		central_mtu_tx == expected_mtu &&
+		central_mtu_rx == expected_mtu) {
+		PASS("MTU Update test passed [Central]\n");
 	} else {
-		FAIL("MTU Update test failed\n");
+		FAIL("MTU Update test failed [Central] - Count: %u, MTU RX: %u, MTU TX: %u\n",
+			central_mtu_count, central_mtu_rx, central_mtu_tx);
 	}
 }
 
+static volatile size_t peripheral_mtu_count;
+static uint16_t peripheral_mtu_tx;
+static uint16_t peripheral_mtu_rx;
+
+static void peripheral_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("[PERIPHERAL] Updated MTU: Count: %u TX: %u RX: %u bytes\n",
+		peripheral_mtu_count, tx, rx);
+
+	peripheral_mtu_rx = rx;
+	peripheral_mtu_tx = tx;
+	peripheral_mtu_count++;
+}
+
+static struct bt_gatt_cb peripheral_gatt_callbacks = {.att_mtu_updated = peripheral_mtu_updated};
+
 static void test_peripheral_main(void)
 {
-	notify_data[13] = 0x7f;
-	notify_data[99] = 0x55;
+	uint16_t expected_mtu = CONFIG_BT_L2CAP_TX_MTU;
 
-	run_peripheral_sample(notify_data, sizeof(notify_data), PERIPHERAL_NOTIFY_TIME);
+	bt_gatt_cb_register(&peripheral_gatt_callbacks);
 
-	PASS("MTU Update test passed\n");
+	run_peripheral_sample(NULL, 0, PERIPHERAL_WAIT_TIME);
+
+	/** Wait for MTU exchange to occur */
+	while (peripheral_mtu_count == 0) {
+		k_sleep(K_MSEC(1));
+	}
+
+	if (peripheral_mtu_count == 1 &&
+		peripheral_mtu_tx == expected_mtu &&
+		peripheral_mtu_rx == expected_mtu) {
+		PASS("MTU Update test passed [Peripheral]\n");
+	} else {
+		FAIL("MTU Update test failed [Peripheral] - Count: %u, MTU RX: %u, MTU TX: %u\n",
+			peripheral_mtu_count, peripheral_mtu_rx, peripheral_mtu_tx);
+	}
 }
 
 void test_tick(bs_time_t HW_device_time)

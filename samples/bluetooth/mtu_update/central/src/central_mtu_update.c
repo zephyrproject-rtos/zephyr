@@ -190,6 +190,7 @@ static int mtu_exchange(struct bt_conn *conn)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
+	struct bt_conn_info info = {0};
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -205,7 +206,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected: %s\n", addr);
 
-	(void)mtu_exchange(conn);
+	(void)bt_conn_get_info(conn, &info);
+
+	if (info.role == BT_CONN_ROLE_CENTRAL) {
+		(void)mtu_exchange(conn);
+	}
 
 	if (conn == default_conn) {
 		memcpy(&uuid, BT_UUID_MTU_TEST, sizeof(uuid));
@@ -246,6 +251,13 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
+static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+{
+	printk("Updated MTU: TX: %u RX: %u bytes\n", tx, rx);
+}
+
+static struct bt_gatt_cb gatt_callbacks = {.att_mtu_updated = mtu_updated};
+
 void run_central_sample(bt_gatt_notify_func_t cb)
 {
 	int err;
@@ -257,6 +269,8 @@ void run_central_sample(bt_gatt_notify_func_t cb)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
+
+	bt_gatt_cb_register(&gatt_callbacks);
 
 	printk("Bluetooth initialized\n");
 

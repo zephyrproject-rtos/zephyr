@@ -39,9 +39,9 @@ BT_GATT_SERVICE_DEFINE(mtu_test, BT_GATT_PRIMARY_SERVICE(&mtu_test_service),
 					      BT_GATT_PERM_NONE, NULL, NULL, NULL),
 		       BT_GATT_CCC(ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE));
 
-void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
-	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
+	printk("Updated MTU: TX: %u RX: %u bytes\n", tx, rx);
 }
 
 static struct bt_gatt_cb gatt_callbacks = {.att_mtu_updated = mtu_updated};
