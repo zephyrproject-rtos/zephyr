@@ -10,6 +10,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/symbol.h>
+#include <zephyr/kernel.h>
 #include <sys/types.h>
 #include <stdbool.h>
 
@@ -40,6 +41,8 @@ enum llext_mem {
 	LLEXT_MEM_COUNT,
 };
 
+#define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS+1)
+
 struct llext_loader;
 
 /**
@@ -48,6 +51,12 @@ struct llext_loader;
 struct llext {
 	/** @cond ignore */
 	sys_snode_t _llext_list;
+
+#ifdef CONFIG_USERSPACE
+	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
+	struct k_mem_domain mem_domain;
+#endif
+
 	/** @endcond */
 
 	/** Name of the llext */
@@ -166,6 +175,20 @@ const void * const llext_find_sym(const struct llext_symtable *sym_table, const 
  * @retval -EINVAL invalid symbol name
  */
 int llext_call_fn(struct llext *ext, const char *sym_name);
+
+/**
+ * @brief Add the known memory partitions of the extension to a memory domain
+ *
+ * Allows an extension to be executed in supervisor or user mode threads when
+ * memory protection hardware is enabled.
+ *
+ * @param[in] ext Extension to add to a domain
+ * @param[in] domain Memory domain to add partitions to
+ *
+ * @retval 0 success
+ * @retval -errno error
+ */
+int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
 
 /**
  * @brief Architecture specific function for updating op codes given a relocation
