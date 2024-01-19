@@ -86,14 +86,14 @@ Artificially long but functional example:
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Append list of tests and platforms to be run to file.")
+        help="Write a list of tests and platforms to be run to file.")
 
     case_select.add_argument(
         "-F",
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load list of tests and platforms to be run from file.")
+        help="Load a list of tests and platforms to be run from file.")
 
     case_select.add_argument(
         "-T", "--testsuite-root", action="append", default=[],
