@@ -18,10 +18,10 @@
 #include "dns_pack.h"
 
 /* TODO: Move these into Kconfig */
-#define DNS_SD_PTR_TTL 4500
-#define DNS_SD_TXT_TTL 4500
-#define DNS_SD_SRV_TTL 120
-#define DNS_SD_A_TTL 120
+#define DNS_SD_PTR_TTL  4500
+#define DNS_SD_TXT_TTL  4500
+#define DNS_SD_SRV_TTL  120
+#define DNS_SD_A_TTL    120
 #define DNS_SD_AAAA_TTL 120
 
 #define DNS_SD_PTR_MASK (NS_CMPRSFLGS << 8)
@@ -30,8 +30,7 @@
 extern "C" {
 #endif
 
-#define DNS_SD_FOREACH(it) \
-	STRUCT_SECTION_FOREACH(dns_sd_rec, it)
+#define DNS_SD_FOREACH(it) STRUCT_SECTION_FOREACH(dns_sd_rec, it)
 
 /**
  * @brief Extract labels from a DNS-SD PTR query
@@ -87,11 +86,11 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
  * @return on success, a positive number representing length of the query
  * @return on failure, a negative errno value
  */
-__deprecated
-int dns_sd_extract_service_proto_domain(const uint8_t *query,
-	size_t query_size, struct dns_sd_rec *record, char *service,
-	size_t service_size, char *proto, size_t proto_size,
-	char *domain, size_t domain_size);
+__deprecated int dns_sd_extract_service_proto_domain(const uint8_t *query, size_t query_size,
+						     struct dns_sd_rec *record, char *service,
+						     size_t service_size, char *proto,
+						     size_t proto_size, char *domain,
+						     size_t domain_size);
 
 /**
  * @brief See if the DNS SD @p filter matches the @p record
@@ -137,8 +136,7 @@ int dns_sd_extract_service_proto_domain(const uint8_t *query,
  * @return false if @p record is not a match for @p filter
  * @return false if either @p record or @p filter are invalid
  */
-bool dns_sd_rec_match(const struct dns_sd_rec *record,
-	const struct dns_sd_rec *filter);
+bool dns_sd_rec_match(const struct dns_sd_rec *record, const struct dns_sd_rec *filter);
 
 /**
  * @brief Handle a DNS PTR Query with DNS Service Discovery
@@ -161,9 +159,8 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
-int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
-	const struct in_addr *addr4, const struct in6_addr *addr6,
-	uint8_t *buf, uint16_t buf_size);
+int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr *addr4,
+			    const struct in6_addr *addr6, uint8_t *buf, uint16_t buf_size);
 
 /**
  * @brief Handle a Service Type Enumeration with DNS Service Discovery
@@ -179,9 +176,8 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
-int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
-	const struct in_addr *addr4, const struct in6_addr *addr6,
-	uint8_t *buf, uint16_t buf_size);
+int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service, const struct in_addr *addr4,
+				    const struct in6_addr *addr6, uint8_t *buf, uint16_t buf_size);
 
 #ifdef __cplusplus
 };

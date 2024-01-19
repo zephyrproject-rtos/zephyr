@@ -19,8 +19,7 @@ static inline uint16_t dns_strlen(const char *str)
 	return (uint16_t)strlen(str);
 }
 
-int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
-		       const char *domain_name)
+int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size, const char *domain_name)
 {
 	uint16_t dn_size;
 	uint16_t lb_start;
@@ -66,8 +65,8 @@ int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
 	return 0;
 }
 
-static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type,
-					uint16_t pos, uint16_t len)
+static inline void set_dns_msg_response(struct dns_msg_t *dns_msg, int type, uint16_t pos,
+					uint16_t len)
 {
 	dns_msg->response_type = type;
 	dns_msg->response_position = pos;
@@ -117,8 +116,7 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 
 	answer = dns_msg->msg + dns_msg->answer_offset;
 
-	dname_len = skip_fqdn(answer,
-			      dns_msg->msg_size - dns_msg->answer_offset);
+	dname_len = skip_fqdn(answer, dns_msg->msg_size - dns_msg->answer_offset);
 	if (dname_len < 0) {
 		return dname_len;
 	}
@@ -143,19 +141,16 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 	 * Cache-Flush bit (highest one).
 	 */
 	if ((dns_answer_class(dname_len, answer) &
-	     (IS_ENABLED(CONFIG_MDNS_RESOLVER) ? 0x7fff : 0xffff))
-							!= DNS_CLASS_IN) {
+	     (IS_ENABLED(CONFIG_MDNS_RESOLVER) ? 0x7fff : 0xffff)) != DNS_CLASS_IN) {
 		return -EINVAL;
 	}
 
 	/* TTL value */
 	*ttl = dns_answer_ttl(dname_len, answer);
 	len = dns_answer_rdlength(dname_len, answer);
-	pos = dns_msg->answer_offset + dname_len +
-		DNS_COMMON_UINT_SIZE + /* class length */
-		DNS_COMMON_UINT_SIZE + /* type length */
-		DNS_TTL_LEN +
-		DNS_RDLENGTH_LEN;
+	pos = dns_msg->answer_offset + dname_len + DNS_COMMON_UINT_SIZE + /* class length */
+	      DNS_COMMON_UINT_SIZE +                                      /* type length */
+	      DNS_TTL_LEN + DNS_RDLENGTH_LEN;
 	*type = dns_answer_type(dname_len, answer);
 
 	switch (*type) {
@@ -165,8 +160,7 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 		return 0;
 
 	case DNS_RR_TYPE_CNAME:
-		set_dns_msg_response(dns_msg, DNS_RESPONSE_CNAME_NO_IP,
-				     pos, len);
+		set_dns_msg_response(dns_msg, DNS_RESPONSE_CNAME_NO_IP, pos, len);
 		return 0;
 
 	default:
@@ -214,7 +208,6 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 		break;
 	default:
 		return rc;
-
 	}
 
 	qdcount = dns_unpack_header_qdcount(dns_header);
@@ -250,8 +243,8 @@ static int dns_msg_pack_query_header(uint8_t *buf, uint16_t size, uint16_t id)
 	/* Split the following assignments just in case we need to alter
 	 * the flags in future releases
 	 */
-	*(buf + offset) = DNS_FLAGS1;		/* QR, Opcode, AA, TC and RD */
-	*(buf + offset + 1) = DNS_FLAGS2;	/* RA, Z and RCODE */
+	*(buf + offset) = DNS_FLAGS1;     /* QR, Opcode, AA, TC and RD */
+	*(buf + offset + 1) = DNS_FLAGS2; /* RA, Z and RCODE */
 
 	offset += DNS_HEADER_FLAGS_LEN;
 	/* set question counter */
@@ -268,9 +261,8 @@ static int dns_msg_pack_query_header(uint8_t *buf, uint16_t size, uint16_t id)
 	return 0;
 }
 
-int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
-		       uint8_t *qname, uint16_t qname_len, uint16_t id,
-		       enum dns_rr_type qtype)
+int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size, uint8_t *qname,
+		       uint16_t qname_len, uint16_t id, enum dns_rr_type qtype)
 {
 	uint16_t msg_size;
 	uint16_t offset;
@@ -352,14 +344,14 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 		return -EINVAL;
 	}
 
-	dns_msg->answer_offset = dns_msg->query_offset + qname_size +
-				 DNS_QTYPE_LEN + DNS_QCLASS_LEN;
+	dns_msg->answer_offset =
+		dns_msg->query_offset + qname_size + DNS_QTYPE_LEN + DNS_QCLASS_LEN;
 
 	return 0;
 }
 
-int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
-		   struct dns_msg_t *dns_msg, uint16_t pos)
+int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size, struct dns_msg_t *dns_msg,
+		   uint16_t pos)
 {
 	uint16_t msg_size = dns_msg->msg_size;
 	uint8_t *msg = dns_msg->msg;
@@ -462,8 +454,8 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 }
 
 /* Returns the length of the unpacked name */
-static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
-			   struct net_buf *buf, const uint8_t **eol)
+static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src, struct net_buf *buf,
+			   const uint8_t **eol)
 {
 	int dest_size = net_buf_tailroom(buf);
 	const uint8_t *end_of_label = NULL;
@@ -512,8 +504,7 @@ static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 				return -EMSGSIZE;
 			}
 
-			if (((buf->data + label_len + 1) >=
-			     (buf->data + dest_size)) ||
+			if (((buf->data + label_len + 1) >= (buf->data + dest_size)) ||
 			    ((curr_src + label_len) >= (msg + maxlen))) {
 				return -EMSGSIZE;
 			}
@@ -540,8 +531,8 @@ static int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 	return buf->len;
 }
 
-int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
-		     enum dns_rr_type *qtype, enum dns_class *qclass)
+int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf, enum dns_rr_type *qtype,
+		     enum dns_class *qclass)
 {
 	const uint8_t *end_of_label;
 	uint8_t *dns_query;
@@ -550,17 +541,15 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 
 	dns_query = dns_msg->msg + dns_msg->query_offset;
 
-	ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, dns_query,
-			      buf, &end_of_label);
+	ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, dns_query, buf, &end_of_label);
 	if (ret < 0) {
 		return ret;
 	}
 
 	query_type = dns_unpack_query_qtype(end_of_label);
-	if (query_type != DNS_RR_TYPE_A && query_type != DNS_RR_TYPE_AAAA
-		&& query_type != DNS_RR_TYPE_PTR
-		&& query_type != DNS_RR_TYPE_SRV
-		&& query_type != DNS_RR_TYPE_TXT) {
+	if (query_type != DNS_RR_TYPE_A && query_type != DNS_RR_TYPE_AAAA &&
+	    query_type != DNS_RR_TYPE_PTR && query_type != DNS_RR_TYPE_SRV &&
+	    query_type != DNS_RR_TYPE_TXT) {
 		return -EINVAL;
 	}
 
