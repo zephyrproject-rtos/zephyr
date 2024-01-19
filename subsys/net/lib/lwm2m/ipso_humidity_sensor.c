@@ -218,5 +218,4 @@ static int ipso_humidity_sensor_init(void)
 	return 0;
 }
 
-SYS_INIT(ipso_humidity_sensor_init, APPLICATION,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_humidity_sensor_init);

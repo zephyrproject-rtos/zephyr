@@ -439,4 +439,4 @@ static int ac_control_init(void)
 	return 0;
 }
 
-SYS_INIT(ac_control_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(ac_control_init);

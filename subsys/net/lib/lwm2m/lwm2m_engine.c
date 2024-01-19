@@ -1330,9 +1330,12 @@ static int lwm2m_engine_init(void)
 	(void)memset(output_block_contexts, 0, sizeof(output_block_contexts));
 #endif
 
-	if (IS_ENABLED(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)) {
-		/* Init data cache */
-		lwm2m_engine_data_cache_init();
+	STRUCT_SECTION_FOREACH(lwm2m_init_func, init) {
+		int ret = init->f();
+
+		if (ret) {
+			LOG_ERR("Init function %p returned %d", init, ret);
+		}
 	}
 
 	/* start sock receive thread */

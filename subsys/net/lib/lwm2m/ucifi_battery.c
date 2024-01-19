@@ -150,4 +150,4 @@ static int ucifi_battery_init(void)
 	return 0;
 }
 
-SYS_INIT(ucifi_battery_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ucifi_battery_init);

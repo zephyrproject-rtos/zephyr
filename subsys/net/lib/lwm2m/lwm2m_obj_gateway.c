@@ -206,7 +206,7 @@ static int lwm2m_gw_init(void)
 	lwm2m_gw.obj_id = LWM2M_OBJECT_GATEWAY_ID;
 	lwm2m_gw.version_major = GATEWAY_VERSION_MAJOR;
 	lwm2m_gw.version_minor = GATEWAY_VERSION_MINOR;
-	lwm2m_gw.is_core = true;
+	lwm2m_gw.is_core = false;
 	lwm2m_gw.fields = fields;
 	lwm2m_gw.field_count = ARRAY_SIZE(fields);
 	lwm2m_gw.max_instance_count = MAX_INSTANCE_COUNT;
@@ -215,4 +215,4 @@ static int lwm2m_gw_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_gw_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(lwm2m_gw_init);

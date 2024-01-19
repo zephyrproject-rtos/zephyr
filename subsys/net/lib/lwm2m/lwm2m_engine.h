@@ -12,6 +12,7 @@
 #include "lwm2m_object.h"
 #include "lwm2m_observation.h"
 #include "lwm2m_registry.h"
+#include <zephyr/kernel.h>
 
 #define LWM2M_PROTOCOL_VERSION_MAJOR 1
 #if defined(CONFIG_LWM2M_VERSION_1_1)
@@ -30,6 +31,65 @@
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
+/** initialization function */
+struct lwm2m_init_func {
+	int (*f)(void);
+};
+/**
+ * @defgroup LWM2M_PRIO LwM2M initialization priorities
+ * @{
+ */
+#define LWM2M_PRIO_ENGINE 0	/**< Engine initialization */
+#define LWM2M_PRIO_CORE 1	/**< Core object initialization */
+#define LWM2M_PRIO_OBJ 2	/**< Object initializations */
+#define LwM2M_PRIO_APP 3	/**< Application logic initialization */
+/** @} */
+
+/**
+ * @brief Declare an initialization function to be executed when LwM2M engine starts.
+ *
+ * When LwM2M engine starts up, it first executes all initialization functions in following
+ * priority order:
+ * 1. LWM2M_PRIO_ENGINE
+ * 2. LWM2M_PRIO_CORE, this is where all LwM2M core objects are initialized
+ * 3. LWM2M_PRIO_OBJ, this is where all other than core objects are initialized
+ * 4. LwM2M_PRIO_APP, application initialization.
+ *                    For example create sensor objects, and register object callbacks.
+ *
+ * @param[in] prio Priority, one of @ref LWM2M_PRIO macros.
+ * @param[in] init_function Initialization function
+ */
+#define LWM2M_ON_INIT(prio, init_function)                                                         \
+	STRUCT_SECTION_ITERABLE(lwm2m_init_func,                                                   \
+				CONCAT(LWM2M, prio, init_function)) = {.f = init_function}
+
+/**
+ * @brief Declare engine initialization function.
+ * @sa LWM2M_ON_INIT
+ * @param[in] init_function Initialization function
+ */
+#define LWM2M_ENGINE_INIT(init_function) LWM2M_ON_INIT(LWM2M_PRIO_ENGINE, init_function)
+
+/**
+ * @brief Declare core object initialization function.
+ * @sa LWM2M_ON_INIT
+ * @param[in] init_function Initialization function
+ */
+#define LWM2M_CORE_INIT(init_function) LWM2M_ON_INIT(LWM2M_PRIO_CORE, init_function)
+
+/**
+ * @brief Declare object initialization function.
+ * @sa LWM2M_ON_INIT
+ * @param[in] init_function Initialization function
+ */
+#define LWM2M_OBJ_INIT(init_function) LWM2M_ON_INIT(LWM2M_PRIO_OBJ, init_function)
+
+/**
+ * @brief Declare application specific initialization function.
+ * @sa LWM2M_ON_INIT
+ * @param[in] init_function Initialization function
+ */
+#define LWM2M_APP_INIT(init_function) LWM2M_ON_INIT(LWM2M_PRIO_APP, init_function)
 
 /**
  * @brief Validates that writing is a legal operation on the field given by the object in

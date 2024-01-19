@@ -1791,6 +1791,4 @@ static int sys_lwm2m_rd_client_init(void)
 	return lwm2m_rd_client_init();
 }
 
-
-SYS_INIT(sys_lwm2m_rd_client_init, APPLICATION,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_ENGINE_INIT(sys_lwm2m_rd_client_init);

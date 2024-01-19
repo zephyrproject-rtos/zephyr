@@ -393,4 +393,4 @@ static int lwm2m_device_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_device_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(lwm2m_device_init);
