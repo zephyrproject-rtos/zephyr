@@ -22,6 +22,6 @@ config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
 config NUM_IRQS
-	default 217
+	default 256
 
 endif # SOC_OPENTITAN
