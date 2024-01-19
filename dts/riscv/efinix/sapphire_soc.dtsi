@@ -32,7 +32,6 @@
 			reg = <0>;
 			riscv,isa = "rv32ima_zicsr_zifencei";
 			status = "okay";
-			timebase-frequency = <100000000>;
 
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";

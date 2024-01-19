@@ -16,7 +16,6 @@
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		timebase-frequency = <6250000>;
 		compatible = "starfive,fu74-g000";
 		cpu@0 {
 			clock-frequency = <0>;
