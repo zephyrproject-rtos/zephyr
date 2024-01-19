@@ -253,6 +253,18 @@ config ARC_USE_UNALIGNED_MEM_ACCESS
 	  to support unaligned memory access which is then disabled by default.
 	  Enable unaligned access in hardware and make software to use it.
 
+config ARC_CURRENT_THREAD_USE_NO_TLS
+	bool
+	select CURRENT_THREAD_USE_NO_TLS
+	default y if (RGF_NUM_BANKS > 1) || ("$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt")
+	help
+	  Disable current Thread Local Storage for ARC. For cores with more then one
+	  RGF_NUM_BANKS the parameter is disabled by-default because banks syncronization
+	  requires significant time, and it slows down performance.
+	  ARCMWDT works with tls pointer in different way then GCC. Optimized access to
+	  TLS pointer via _current variable does not provide significant advantages
+	  in case of MetaWare.
+
 config FAULT_DUMP
 	int "Fault dump level"
 	default 2
