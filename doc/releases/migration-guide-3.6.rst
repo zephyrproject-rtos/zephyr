@@ -289,6 +289,9 @@ Bluetooth
 * The :c:func:`bt_l2cap_chan_send` API now requires the application to reserve
   enough bytes for the L2CAP headers. Call ``net_buf_reserve(buf,
   BT_L2CAP_SDU_CHAN_SEND_RESERVE);`` at buffer allocation time to do so.
+* The handler `att_mtu_updated` registered over the :c:func:`bt_gatt_cb_register`
+  API is no longer triggered upon connection establishment. It is now only
+  called when the MTU exchange has taken place.
 
 * Mesh
 
