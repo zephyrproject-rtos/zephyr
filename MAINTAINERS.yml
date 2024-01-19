@@ -259,6 +259,20 @@ Ambiq Platforms:
   labels:
     - "platform: Ambiq"
 
+BeagleBoard Platforms:
+  status: maintained
+  maintainers:
+    - jadonk
+  collaborators:
+    - ayush1325
+    - con-pax
+    - vaishnavachath
+  files:
+    - boards/arm/beagle*/
+    - boards/riscv/beagle*/
+  labels:
+    - "platform: BeagleBoard"
+
 Benchmarks:
   status: maintained
   maintainers:
