@@ -83,6 +83,7 @@ IncludeCategories:
     Priority: 3
 IndentCaseLabels: false
 IndentWidth: 8
+IndentGotoLabels: false
 InsertBraces: true
 SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never
