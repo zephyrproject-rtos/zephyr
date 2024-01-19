@@ -294,7 +294,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
-	bt_audio_codec_cfg_to_iso_path(iso->chan.qos->tx->path, codec_cfg);
+	bt_bap_iso_configure_data_path(ep, codec_cfg);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -884,7 +884,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
 			bt_bap_stream_attach(NULL, stream, stream->ep, codec_cfg);
-			bt_audio_codec_cfg_to_iso_path(iso_qos->path, codec_cfg);
+			bt_bap_iso_configure_data_path(stream->ep, codec_cfg);
 		}
 	}
 
