@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(adc_ad5592, CONFIG_ADC_LOG_LEVEL);
 
 #define AD5592_ADC_RESOLUTION 12U
 #define AD5592_ADC_MAX_VAL 4096
+#define AD5592_ADC_VREF_MV 2500
 
 struct adc_ad5592_config {
 	const struct device *mfd_dev;
@@ -238,6 +239,7 @@ static const struct adc_driver_api adc_ad5592_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_ad5592_read_async,
 #endif
+	.ref_internal = AD5592_ADC_VREF_MV,
 };
 
 #define ADC_AD5592_DEFINE(inst)							\
