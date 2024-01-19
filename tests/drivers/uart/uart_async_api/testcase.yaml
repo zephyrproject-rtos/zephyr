@@ -13,7 +13,6 @@ tests:
     harness_config:
       fixture: gpio_loopback
     depends_on: gpio
-    tags: bsim_skip_CI
   drivers.uart.wide:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and not CONFIG_UART_MCUX_LPUART
     harness: ztest
@@ -26,7 +25,7 @@ tests:
     platform_allow: nucleo_h743zi
     integration_platforms:
       - nucleo_h743zi
-  drivers.uart.async_api.nrf_uarte_legacy:
+  drivers.uart.async_api.nrf_uarte_new:
     platform_allow: nrf52840dk_nrf52840 nrf52_bsim
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
@@ -34,7 +33,8 @@ tests:
       fixture: gpio_loopback
     depends_on: gpio
     extra_configs:
-      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
+      - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=n
+    tags: bsim_skip_CI
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
