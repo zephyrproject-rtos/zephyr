@@ -482,12 +482,6 @@ typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, bool ide);
 
-/**
- * @brief Optional callback API upon getting the maximum supported bitrate
- * See @a can_get_max_bitrate() for argument description
- */
-typedef int (*can_get_max_bitrate_t)(const struct device *dev, uint32_t *max_bitrate);
-
 __subsystem struct can_driver_api {
 	can_get_capabilities_t get_capabilities;
 	can_start_t start;
@@ -504,7 +498,6 @@ __subsystem struct can_driver_api {
 	can_set_state_change_callback_t set_state_change_callback;
 	can_get_core_clock_t get_core_clock;
 	can_get_max_filters_t get_max_filters;
-	can_get_max_bitrate_t get_max_bitrate;
 	/* Min values for the timing registers */
 	struct can_timing timing_min;
 	/* Max values for the timing registers */
@@ -824,13 +817,15 @@ __syscall int can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrat
 
 static inline int z_impl_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
 {
-	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
+	const struct can_driver_config *common = (const struct can_driver_config *)dev->config;
 
-	if (api->get_max_bitrate == NULL) {
+	if (common->max_bitrate == 0U) {
 		return -ENOSYS;
 	}
 
-	return api->get_max_bitrate(dev, max_bitrate);
+	*max_bitrate = common->max_bitrate;
+
+	return 0;
 }
 
 /**
