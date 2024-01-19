@@ -119,10 +119,12 @@
 #define INPUT_KEY_KPASTERISK 55         /**< Keypad Asterisk Key */
 #define INPUT_KEY_KPCOMMA 121           /**< Keypad Comma Key */
 #define INPUT_KEY_KPDOT 83              /**< Keypad Dot Key */
+#define INPUT_KEY_KPENTER 96            /**< Keypad Enter Key */
 #define INPUT_KEY_KPEQUAL 117           /**< Keypad Equal Key */
 #define INPUT_KEY_KPMINUS 74            /**< Keypad Minus Key */
 #define INPUT_KEY_KPPLUS 78             /**< Keypad Plus Key */
 #define INPUT_KEY_KPPLUSMINUS 118       /**< Keypad Plus Key */
+#define INPUT_KEY_KPSLASH 98            /**< Keypad Slash Key */
 #define INPUT_KEY_L 38                  /**< L Key */
 #define INPUT_KEY_LEFT 105              /**< Left Key */
 #define INPUT_KEY_LEFTALT 56            /**< Left Alt Key */
@@ -147,7 +149,9 @@
 #define INPUT_KEY_Q 16                  /**< Q Key */
 #define INPUT_KEY_R 19                  /**< R Key */
 #define INPUT_KEY_RIGHT 106             /**< Right Key */
+#define INPUT_KEY_RIGHTALT 100          /**< Right Alt Key */
 #define INPUT_KEY_RIGHTBRACE 27         /**< Right Brace Key */
+#define INPUT_KEY_RIGHTCTRL 97          /**< Right Ctrl Key */
 #define INPUT_KEY_RIGHTMETA 126         /**< Right Meta Key */
 #define INPUT_KEY_RIGHTSHIFT 54         /**< Right Shift Key */
 #define INPUT_KEY_S 31                  /**< S Key */
@@ -157,6 +161,7 @@
 #define INPUT_KEY_SLASH 53              /**< Slash Key */
 #define INPUT_KEY_SLEEP 142             /**< System Sleep Key */
 #define INPUT_KEY_SPACE 57              /**< Space Key */
+#define INPUT_KEY_SYSRQ 99              /**< SysReq Key */
 #define INPUT_KEY_T 20                  /**< T Key */
 #define INPUT_KEY_TAB 15                /**< Tab Key*/
 #define INPUT_KEY_U 22                  /**< U Key */
