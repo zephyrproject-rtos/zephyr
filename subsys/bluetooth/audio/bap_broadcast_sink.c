@@ -892,7 +892,7 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_bind_ep(iso, ep);
 
 	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->rx, &sink->codec_qos);
-	bt_audio_codec_cfg_to_iso_path(iso->chan.qos->rx->path, codec_cfg);
+	bt_bap_iso_configure_data_path(ep, codec_cfg);
 
 	bt_bap_iso_unref(iso);
 
