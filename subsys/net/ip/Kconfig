@@ -129,6 +129,14 @@ config NET_QEMU_USER_EXTRA_ARGS
 	  include host / guest port forwarding, device id, Network address
 	  information etc. This string is appended to the QEMU "-net user" option.
 
+config NET_THROTTLE
+	bool "Throttle incoming network traffic"
+	depends on NET_NATIVE
+	help
+	  Allow upper network stack to limit the incoming network traffic
+	  according to a configuration.
+	  Requires support from the network device driver.
+
 config NET_INIT_PRIO
 	int
 	default 90
