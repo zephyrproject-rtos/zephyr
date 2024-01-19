@@ -38,7 +38,13 @@ xtensa_do_syscall:
 	rsr.epc1 a2
 	s32i a2, a0, ___xtensa_irq_bsa_t_pc_OFFSET
 
+#if XCHAL_HAVE_NMI
 	movi a2, PS_WOE|PS_INTLEVEL(XCHAL_NMILEVEL)
+#elif XCHAL_HAVE_INTERRUPTS
+	movi a2, PS_WOE|PS_INTLEVEL(XCHAL_NUM_INTLEVELS)
+#else
+#error Xtensa core with no interrupt support is used
+#endif
 	rsr.ps a3
 	or a3, a3, a2
 	movi a2, ~(PS_EXCM | PS_RING_MASK)
