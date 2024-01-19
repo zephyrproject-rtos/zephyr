@@ -262,12 +262,6 @@ void can_sja1000_set_state_change_callback(const struct device *dev,
 int can_sja1000_get_max_filters(const struct device *dev, bool ide);
 
 /**
- * @brief SJA1000 callback API upon getting the maximum supported bitrate
- * See @a can_get_max_bitrate() for argument description
- */
-int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
-
-/**
  * @brief SJA1000 IRQ handler callback.
  *
  * @param dev Pointer to the device structure for the driver instance.

@@ -590,7 +590,6 @@ static const struct can_driver_api can_stm32fd_driver_api = {
 	.recover = can_mcan_recover,
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
 	.get_core_clock = can_stm32fd_get_core_clock,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.get_max_filters = can_mcan_get_max_filters,
 	.set_state_change_callback = can_mcan_set_state_change_callback,
 	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,

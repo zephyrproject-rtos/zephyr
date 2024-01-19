@@ -549,15 +549,6 @@ int can_sja1000_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct can_sja1000_config *config = dev->config;
-
-	*max_bitrate = config->common.max_bitrate;
-
-	return 0;
-}
-
 static void can_sja1000_handle_receive_irq(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
