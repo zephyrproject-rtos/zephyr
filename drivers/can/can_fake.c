@@ -87,15 +87,6 @@ static int fake_can_get_core_clock(const struct device *dev, uint32_t *rate)
 	return 0;
 }
 
-static int fake_can_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	ARG_UNUSED(dev);
-
-	*max_bitrate = 5000000;
-
-	return 0;
-}
-
 static const struct can_driver_api fake_can_driver_api = {
 	.start = fake_can_start,
 	.stop = fake_can_stop,
@@ -112,7 +103,6 @@ static const struct can_driver_api fake_can_driver_api = {
 	.set_state_change_callback = fake_can_set_state_change_callback,
 	.get_core_clock = fake_can_get_core_clock,
 	.get_max_filters = fake_can_get_max_filters,
-	.get_max_bitrate = fake_can_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x01,
 		.prop_seg = 0x01,

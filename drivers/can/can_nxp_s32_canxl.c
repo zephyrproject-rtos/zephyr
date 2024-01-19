@@ -363,15 +363,6 @@ static int can_nxp_s32_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_NXP_S32_MAX_RX;
 }
 
-static int can_nxp_s32_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct can_nxp_s32_config *config = dev->config;
-
-	*max_bitrate = config->common.max_bitrate;
-
-	return 0;
-}
-
 static int can_nxp_s32_get_state(const struct device *dev, enum can_state *state,
 						struct can_bus_err_cnt *err_cnt)
 {
@@ -1088,7 +1079,6 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	.set_state_change_callback = can_nxp_s32_set_state_change_callback,
 	.get_core_clock = can_nxp_s32_get_core_clock,
 	.get_max_filters = can_nxp_s32_get_max_filters,
-	.get_max_bitrate = can_nxp_s32_get_max_bitrate,
 	.timing_min = {
 		.sjw = 0x01,
 		.prop_seg = 0x01,

@@ -742,15 +742,6 @@ static int mcp251xfd_get_max_filters(const struct device *dev, bool ide)
 	return CONFIG_CAN_MAX_FILTER;
 }
 
-static int mcp251xfd_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate)
-{
-	const struct mcp251xfd_config *dev_cfg = dev->config;
-
-	*max_bitrate = dev_cfg->common.max_bitrate;
-
-	return 0;
-}
-
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 static int mcp251xfd_recover(const struct device *dev, k_timeout_t timeout)
 {
@@ -1681,7 +1672,6 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,
 	.get_max_filters = mcp251xfd_get_max_filters,
-	.get_max_bitrate = mcp251xfd_get_max_bitrate,
 	.timing_min = {
 		.sjw = 1,
 		.prop_seg = 0,
