@@ -28,6 +28,10 @@ struct can_loopback_filter {
 	struct can_filter filter;
 };
 
+struct can_loopback_config {
+	const struct can_driver_config common;
+};
+
 struct can_loopback_data {
 	struct can_driver_data common;
 	struct can_loopback_filter filters[CONFIG_CAN_MAX_FILTER];
@@ -452,12 +456,17 @@ static int can_loopback_init(const struct device *dev)
 	return 0;
 }
 
-#define CAN_LOOPBACK_INIT(inst)						\
-	static struct can_loopback_data can_loopback_dev_data_##inst;	\
-									\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL,	\
-				  &can_loopback_dev_data_##inst, NULL,	\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,\
+#define CAN_LOOPBACK_INIT(inst)							\
+	static const struct can_loopback_config can_loopback_config_##inst = {	\
+		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0U),		\
+	};									\
+										\
+	static struct can_loopback_data can_loopback_data_##inst;		\
+										\
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL,		\
+				  &can_loopback_data_##inst,			\
+				  &can_loopback_config_##inst,			\
+				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
 				  &can_loopback_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_LOOPBACK_INIT)
