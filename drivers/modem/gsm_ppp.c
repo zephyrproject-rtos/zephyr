@@ -814,7 +814,7 @@ attaching:
 		query_rssi_nolock(gsm);
 
 		if (!((gsm->minfo.mdm_rssi) && (gsm->minfo.mdm_rssi != GSM_RSSI_INVALID) &&
-			(gsm->minfo.mdm_rssi < GSM_RSSI_MAXVAL))) {
+			(gsm->minfo.mdm_rssi <= GSM_RSSI_MAXVAL))) {
 
 			LOG_DBG("Not valid RSSI, %s", "retrying...");
 			if (gsm->retries-- > 0) {
