@@ -1,5 +1,3 @@
--project_name=getenv("ECLAIR_PROJECT_NAME")
--project_root=getenv("ECLAIR_PROJECT_ROOT")
 -setq=data_dir,getenv("ECLAIR_DATA_DIR")
 -setq=set,getenv("ECLAIR_RULESET")
 
