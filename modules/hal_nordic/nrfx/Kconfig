@@ -637,6 +637,51 @@ config NRFX_UARTE30
 	depends on $(dt_nodelabel_has_compat,uart30,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	select NRFX_UARTE
 
+config NRFX_UARTE120
+	bool "UARTE120 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart120,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE130
+	bool "UARTE130 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart130,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE131
+	bool "UARTE131 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart131,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE132
+	bool "UARTE132 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart132,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE133
+	bool "UARTE133 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart133,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE134
+	bool "UARTE134 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart134,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE135
+	bool "UARTE135 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart135,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE136
+	bool "UARTE136 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart136,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
+config NRFX_UARTE137
+	bool "UARTE137 driver instance"
+	depends on $(dt_nodelabel_has_compat,uart137,$(DT_COMPAT_NORDIC_NRF_UARTE))
+	select NRFX_UARTE
+
 config NRFX_UARTE_CONFIG_SKIP_GPIO_CONFIG
 	bool "UARTE GPIO configuration support"
 	depends on NRFX_UARTE
