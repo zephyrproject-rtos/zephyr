@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wb/stm32wb55Xg.dtsi>
+#include <st/wb/stm32wb55vgyx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32WB5MM Discovery Development Kit";
+	compatible = "st,stm32wb5mm-dk";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,bt-mon-uart = &lpuart1;
+		zephyr,bt-c2h-uart = &lpuart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+	aliases {
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&clk_hse {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk48 {
+	/* Node is disabled by default as default source is HSI48 */
+	/* To select another clock, enable the node */
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	cpu1-prescaler = <1>;
+	cpu2-prescaler = <1>;
+	ahb4-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <100000>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in3_pc2>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	status = "okay";
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+};
+
+&aes1 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Configure partitions while leaving space for M0 BLE f/w
+		 * Since STM32WBCube release V1.13.2, only _HCIOnly_ f/w are supported.
+		 * These FW are expected to be located not before 0x080DB000
+		 * Current partition is using the first 876K of the flash for M4
+		 */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(400)>;
+		};
+		slot1_partition: partition@70000 {
+			label = "image-1";
+			reg = <0x00070000 DT_SIZE_K(400)>;
+		};
+		scratch_partition: partition@d4000 {
+			label = "image-scratch";
+			reg = <0x000d4000 DT_SIZE_K(16)>;
+		};
+		storage_partition: partition@d8000 {
+			label = "storage";
+			reg = <0x000d8000 DT_SIZE_K(8)>;
+		};
+
+	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
