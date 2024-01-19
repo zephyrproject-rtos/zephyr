@@ -214,6 +214,12 @@ elseif(HWMv2)
     if(BOARD_REVISION_FORMAT STREQUAL "custom")
       include(${BOARD_DIR}/revision.cmake)
     else()
+      if(EXISTS ${BOARD_DIR}/revision.cmake)
+        message(WARNING
+          "revision.cmake ignored, revision.cmake is only used for revision format: 'custom'"
+        )
+      endif()
+
       string(TOUPPER "${BOARD_REVISION_FORMAT}" rev_format)
       if(BOARD_REVISION_EXACT)
         set(rev_exact EXACT)
@@ -226,6 +232,16 @@ elseif(HWMv2)
         ${rev_exact}
       )
     endif()
+  elseif(DEFINED BOARD_REVISION)
+    if(EXISTS ${BOARD_DIR}/revision.cmake)
+      message(WARNING
+        "revision.cmake is not used, revisions must be defined in '${BOARD_DIR}/board.yml'"
+      )
+    endif()
+
+    message(FATAL_ERROR "Invalid board revision: ${BOARD_REVISION}\n"
+                        "Board '${BOARD}' does not define any revisions."
+    )
   endif()
 
   if(BOARD_IDENTIFIERS)
