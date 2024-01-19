@@ -1012,6 +1012,23 @@ extern const struct rtio_iodev_api i2c_iodev_api;
 	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
 
 /**
+ * @brief Define an iodev for a given i2c device on a bus
+ *
+ * These do not need to be shared globally but doing so
+ * will save a small amount of memory.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param _bus Node ID for I2C bus
+ * @param _addr I2C target address
+ */
+#define I2C_IODEV_DEFINE(name, _bus, _addr)                                     \
+	const struct i2c_dt_spec _i2c_dt_spec_##name = {                        \
+		.bus = DEVICE_DT_GET(_bus),                                     \
+		.addr = _addr,                                                  \
+	};                                                                      \
+	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
+
+/**
  * @brief Copy the i2c_msgs into a set of RTIO requests
  *
  * @param r RTIO context
