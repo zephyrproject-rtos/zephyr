@@ -24,4 +24,11 @@ config TEST_CLOCK_RT_ERROR_MS
 	help
 	  This option is specific to posix_apis.test_realtime in clock.c
 
+config TEST_SEM_N_LOOPS
+	int "Number of loops in semaphore test"
+	range 16 1024
+	default 32
+	help
+	  This option is specific to semaphore.test_named_semaphore in semaphore.c
+
 source "Kconfig.zephyr"

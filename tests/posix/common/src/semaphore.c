@@ -109,13 +109,12 @@ ZTEST(semaphore, test_semaphore)
 
 int nsem_get_ref_count(sem_t *sem);
 size_t nsem_get_list_len(void);
-#define N_LOOPS 999
 
 static void *nsem_open_func(void *p)
 {
 	const char *name = (char *)p;
 
-	for (int i = 0; i < N_LOOPS; i++) {
+	for (int i = 0; i < CONFIG_TEST_SEM_N_LOOPS; i++) {
 		zassert_not_null(sem_open(name, 0, 0, 0), "%s is NULL", name);
 		k_msleep(1);
 	}
@@ -130,9 +129,9 @@ static void *nsem_close_func(void *p)
 	sem_t *sem = (sem_t *)p;
 
 	/* Make sure that we have enough ref_count's initially */
-	k_msleep(N_LOOPS >> 1);
+	k_msleep(CONFIG_TEST_SEM_N_LOOPS >> 1);
 
-	for (int i = 0; i < N_LOOPS; i++) {
+	for (int i = 0; i < CONFIG_TEST_SEM_N_LOOPS; i++) {
 		zassert_ok(sem_close(sem));
 		k_msleep(1);
 	}
@@ -188,7 +187,7 @@ ZTEST(semaphore, test_named_semaphore)
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Open created named sem repeatedly */
-	for (size_t i = 1; i <= N_LOOPS; i++) {
+	for (size_t i = 1; i <= CONFIG_TEST_SEM_N_LOOPS; i++) {
 		sem_t *new_sem1, *new_sem2;
 
 		/* oflags are ignored (except when both O_CREAT & O_EXCL are set) */
@@ -217,7 +216,7 @@ ZTEST(semaphore, test_named_semaphore)
 	zassert_equal(nsem_get_list_len(), 2);
 
 	/* Close sem */
-	for (size_t i = N_LOOPS;
+	for (size_t i = CONFIG_TEST_SEM_N_LOOPS;
 	     /* close until one left, required by the test later */
 	     i >= 1; i--) {
 		zassert_ok(sem_close(sem1));
