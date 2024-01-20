@@ -83,6 +83,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_CHANNEL,
 	/** Disconnect a STA from AP */
 	NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT,
+	/** Get Wi-Fi driver and Firmware versions */
+	NET_REQUEST_WIFI_CMD_VERSION,
 	NET_REQUEST_WIFI_CMD_MAX
 };
 
@@ -165,6 +167,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 
+#define NET_REQUEST_WIFI_VERSION			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_VERSION)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
+
 /** Wi-Fi management events */
 enum net_event_wifi_cmd {
 	/** Scan results available */
@@ -235,6 +242,14 @@ enum net_event_wifi_cmd {
 
 #define NET_EVENT_WIFI_AP_STA_DISCONNECTED			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED)
+
+/** Wi-Fi version */
+struct wifi_version {
+	/** Driver version */
+	const char *drv_version;
+	/** Firmware version */
+	const char *fw_version;
+};
 
 /**
  * @brief Wi-Fi structure to uniquely identify a band-channel pair
@@ -824,6 +839,19 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
+	/** Get Version of WiFi driver and Firmware
+	 *
+	 * The driver that implements the get_version function must not use stack to allocate the
+	 * version information pointers that are returned as params struct members.
+	 * The version pointer parameters should point to a static memory either in ROM (preferred)
+	 * or in RAM.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params Version parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*get_version)(const struct device *dev, struct wifi_version *params);
 };
 
 /** Wi-Fi management offload API */
