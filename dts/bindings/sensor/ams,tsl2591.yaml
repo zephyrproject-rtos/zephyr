@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Kurtis Dinelle
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    OSRAM ams TSL2591 ambient light sensor.
+
+compatible: "ams,tsl2591"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The interrupt pin of the TSL2591 is open-drain, active low.
+      If connected directly, the MCU pin should be configured
+      as pull-up, active low.
