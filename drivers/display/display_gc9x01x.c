@@ -8,7 +8,7 @@
 
 #include "display_gc9x01x.h"
 
-#include <zephyr/dt-bindings/display/gc9x01x.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
