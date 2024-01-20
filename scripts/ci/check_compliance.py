@@ -612,6 +612,7 @@ flagged.
     # Many of these are symbols used as examples. Note that the list is sorted
     # alphabetically, and skips the CONFIG_ prefix.
     UNDEF_KCONFIG_WHITELIST = {
+        "ACE_VERSION_1_5", # Optional module
         "ALSO_MISSING",
         "APP_LINK_WITH_",
         "APP_LOG_LEVEL", # Application log level is not detected correctly as
