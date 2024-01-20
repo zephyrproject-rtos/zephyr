@@ -18,9 +18,7 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer);
 
 struct timer_obj {
 	struct k_timer ztimer;
-	void (*sigev_notify_function)(union sigval val);
-	union sigval val;
-	int sigev_notify;
+	struct sigevent sev;
 	struct k_sem sem_cond;
 	pthread_t thread;
 	struct timespec interval;	/* Reload value */
@@ -41,7 +39,7 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 		timer->status = NOT_ACTIVE;
 	}
 
-	(timer->sigev_notify_function)(timer->val);
+	(timer->sev.sigev_notify_function)(timer->sev.sigev_value);
 }
 
 static void *zephyr_thread_wrapper(void *arg)
@@ -55,7 +53,7 @@ static void *zephyr_thread_wrapper(void *arg)
 
 		k_sem_take(&timer->sem_cond, K_FOREVER);
 
-		(timer->sigev_notify_function)(timer->val);
+		(timer->sev.sigev_notify_function)(timer->sev.sigev_value);
 	}
 
 	return NULL;
@@ -82,10 +80,8 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	struct timer_obj *timer;
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
-	if (clockid != CLOCK_MONOTONIC || evp == NULL ||
-	    (evp->sigev_notify != SIGEV_NONE &&
-	     evp->sigev_notify != SIGEV_SIGNAL &&
-	     evp->sigev_notify != SIGEV_THREAD)) {
+	if (evp == NULL || (evp->sigev_notify != SIGEV_NONE && evp->sigev_notify != SIGEV_SIGNAL &&
+			    evp->sigev_notify != SIGEV_THREAD)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -97,8 +93,8 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 		return -1;
 	}
 
-	timer->sigev_notify_function = evp->sigev_notify_function;
-	timer->val = evp->sigev_value;
+	timer->sev.sigev_notify_function = evp->sigev_notify_function;
+	timer->sev.sigev_value = evp->sigev_value;
 	timer->interval.tv_sec = 0;
 	timer->interval.tv_nsec = 0;
 	timer->reload = 0U;
@@ -109,7 +105,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	} else if (evp->sigev_notify == SIGEV_THREAD) {
 		int ret;
 
-		timer->sigev_notify = SIGEV_THREAD;
+		timer->sev.sigev_notify = SIGEV_THREAD;
 		k_sem_init(&timer->sem_cond, 0, 1);
 		ret = pthread_create(&timer->thread, evp->sigev_notify_attributes,
 							zephyr_thread_wrapper, timer);
@@ -266,8 +262,9 @@ int timer_delete(timer_t timerid)
 		k_timer_stop(&timer->ztimer);
 	}
 
-	if (timer->sigev_notify == SIGEV_THREAD)
+	if (timer->sev.sigev_notify == SIGEV_THREAD) {
 		pthread_cancel(timer->thread);
+	}
 
 	k_mem_slab_free(&posix_timer_slab, (void *)timer);
 
