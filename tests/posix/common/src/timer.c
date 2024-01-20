@@ -30,7 +30,7 @@ void handler(union sigval val)
 	zassert_equal(val.sival_int, TEST_SIGNAL_VAL);
 }
 
-void test_timer(int sigev_notify)
+void test_timer(clockid_t clock_id, int sigev_notify)
 {
 	struct sigevent sig = {0};
 	struct itimerspec value, ovalue;
@@ -43,7 +43,7 @@ void test_timer(int sigev_notify)
 	sig.sigev_value.sival_int = TEST_SIGNAL_VAL;
 
 	/*TESTPOINT: Check if timer is created successfully*/
-	zassert_ok(timer_create(CLOCK_MONOTONIC, &sig, &timerid));
+	zassert_ok(timer_create(clock_id, &sig, &timerid));
 
 	value.it_value.tv_sec = DURATION_SECS;
 	value.it_value.tv_nsec = DURATION_NSECS;
@@ -59,9 +59,9 @@ void test_timer(int sigev_notify)
 	LOG_DBG("Time remaining to fire %d secs and  %d nsecs", (int)value.it_value.tv_sec,
 		(int)value.it_value.tv_nsec);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(clock_id, &ts);
 	sleep(SECS_TO_SLEEP);
-	clock_gettime(CLOCK_MONOTONIC, &te);
+	clock_gettime(clock_id, &te);
 
 	if (te.tv_nsec >= ts.tv_nsec) {
 		secs_elapsed = te.tv_sec - ts.tv_sec;
@@ -82,14 +82,24 @@ void test_timer(int sigev_notify)
 		       exp_count, expected_signal_count);
 }
 
-ZTEST(timer, test_SIGEV_SIGNAL)
+ZTEST(timer, test_CLOCK_REALTIME__SIGEV_SIGNAL)
 {
-	test_timer(SIGEV_SIGNAL);
+	test_timer(CLOCK_REALTIME, SIGEV_SIGNAL);
 }
 
-ZTEST(timer, test_SIGEV_THREAD)
+ZTEST(timer, test_CLOCK_REALTIME__SIGEV_THREAD)
 {
-	test_timer(SIGEV_THREAD);
+	test_timer(CLOCK_REALTIME, SIGEV_THREAD);
+}
+
+ZTEST(timer, test_CLOCK_MONOTONIC__SIGEV_SIGNAL)
+{
+	test_timer(CLOCK_MONOTONIC, SIGEV_SIGNAL);
+}
+
+ZTEST(timer, test_CLOCK_MONOTONIC__SIGEV_THREAD)
+{
+	test_timer(CLOCK_MONOTONIC, SIGEV_THREAD);
 }
 
 ZTEST(timer, test_timer_overrun)
