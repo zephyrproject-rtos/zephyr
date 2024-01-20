@@ -80,16 +80,16 @@ typedef struct {
 typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
 
 union sigval {
-	int sival_int;
 	void *sival_ptr;
+	int sival_int;
 };
 
 struct sigevent {
-	int sigev_notify;
-	int sigev_signo;
-	union sigval sigev_value;
 	void (*sigev_notify_function)(union sigval val);
 	pthread_attr_t *sigev_notify_attributes;
+	union sigval sigev_value;
+	int sigev_notify;
+	int sigev_signo;
 };
 
 #ifdef CONFIG_POSIX_SIGNAL
