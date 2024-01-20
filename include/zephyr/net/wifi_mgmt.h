@@ -66,6 +66,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_DISCONNECT,
 	/** Enable AP mode */
 	NET_REQUEST_WIFI_CMD_AP_ENABLE,
+	/** AP mode bandwidth */
+	NET_REQUEST_WIFI_CMD_AP_BANDWIDTH,
 	/** Disable AP mode */
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	/** Get interface status */
@@ -150,6 +152,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_ENABLE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE);
+
+/** Request a Wi-Fi access point bandwidth */
+#define NET_REQUEST_WIFI_AP_BANDWIDTH			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_BANDWIDTH)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_BANDWIDTH);
 
 /** Request a Wi-Fi access point disable */
 #define NET_REQUEST_WIFI_AP_DISABLE				\
@@ -972,6 +980,12 @@ struct wifi_channel_info {
 
 /** @brief Wi-Fi AP configuration parameter */
 struct wifi_ap_config_params {
+	/** Parameter used for interface index */
+	uint8_t if_index;
+	/** Parameter used for frequency band */
+	enum wifi_frequency_bandwidths bandwidth;
+	/** Parameter used to get or set operation */
+	enum wifi_mgmt_op oper;
 	/** Parameter used to identify the different AP parameters */
 	enum wifi_ap_config_param type;
 	/** Parameter used for setting maximum inactivity duration for stations */
@@ -1239,6 +1253,14 @@ struct wifi_mgmt_ops {
 	 */
 	int (*ap_enable)(const struct device *dev,
 			 struct wifi_connect_req_params *params);
+	/** AP mode Bandwidth setting
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params AP mode parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*ap_bandwidth)(const struct device *dev, struct wifi_ap_config_params *params);
 	/** Disable AP mode
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
