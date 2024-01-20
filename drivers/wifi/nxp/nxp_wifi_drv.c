@@ -732,7 +732,7 @@ static int nxp_wifi_version(const struct device *dev, struct wifi_version *param
 	return 0;
 }
 
-static int nxp_wifi_ap_bandwidth(const struct device *dev, struct wifi_ap_params *params)
+static int nxp_wifi_ap_bandwidth(const struct device *dev, struct wifi_ap_config_params *params)
 {
 	nxp_wifi_ret_t status = NXP_WIFI_RET_SUCCESS;
 	int ret = WM_SUCCESS;
