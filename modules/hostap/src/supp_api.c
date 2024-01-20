@@ -2462,7 +2462,7 @@ int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_pa
 }
 #endif
 
-int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_params *params)
+int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_params *params)
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
 
