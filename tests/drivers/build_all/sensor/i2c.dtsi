@@ -932,3 +932,9 @@ test_i2c_ens160: ens160@83 {
 	reg = <0x83>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_tsl2591: tsl2591@84 {
+	compatible = "ams,tsl2591";
+	reg = <0x84>;
+	int-gpios = <&test_gpio 0 0>;
+};
