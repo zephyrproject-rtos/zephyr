@@ -1818,6 +1818,27 @@ static int cmd_wifi_packet_filter(const struct shell *sh, size_t argc, char *arg
 	return 0;
 }
 
+static int cmd_wifi_version(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_version version = {0};
+
+	if (argc > 1) {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_VERSION, iface, &version, sizeof(version))) {
+		shell_fprintf(sh, SHELL_WARNING, "Failed to get Wi-Fi versions\n");
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Driver Version: %s\n", version.drv_version);
+	shell_fprintf(sh, SHELL_NORMAL, "Wi-Fi Firmware Version: %s\n", version.fw_version);
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL,
 		  "Disable Access Point mode.\n",
@@ -1871,6 +1892,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
+	SHELL_CMD_ARG(version, NULL, "Print Wi-Fi Driver and Firmware versions\n",
+		  cmd_wifi_version,
+		  1, 0),
 	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands.\n", NULL),
 	SHELL_CMD_ARG(connect, NULL,
 		  "Connect to a Wi-Fi AP\n"
