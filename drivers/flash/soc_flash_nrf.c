@@ -59,7 +59,11 @@ static const struct flash_parameters flash_nrf_parameters = {
 #else
 	.write_block_size = 4,
 #endif
+#ifdef CONFIG_QEMU_TARGET
+	.erase_value = 0x00,
+#else
 	.erase_value = 0xff,
+#endif
 };
 
 #if defined(CONFIG_MULTITHREADING)
