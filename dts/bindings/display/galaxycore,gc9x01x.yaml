@@ -21,10 +21,8 @@ description: |
       cmd-data-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
       reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
       pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-
       width = <240>;
       height = <240>;
-      pixel-format = <GC9X01X_PIXEL_FORMAT_RGB565>;
     };
   };
 
