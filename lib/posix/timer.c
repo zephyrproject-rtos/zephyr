@@ -1,24 +1,27 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2024, Meta
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/kernel.h>
 #include <errno.h>
-#include <string.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/posix/pthread.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/posix/signal.h>
 #include <zephyr/posix/time.h>
 
 #define ACTIVE 1
 #define NOT_ACTIVE 0
 
+LOG_MODULE_REGISTER(posix_timer);
+
 static void zephyr_timer_wrapper(struct k_timer *ztimer);
 
 struct timer_obj {
 	struct k_timer ztimer;
-	struct sigevent sev;
+	struct sigevent evp;
 	struct k_sem sem_cond;
 	pthread_t thread;
 	struct timespec interval;	/* Reload value */
@@ -37,23 +40,53 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 
 	if (timer->reload == 0U) {
 		timer->status = NOT_ACTIVE;
+		LOG_DBG("timer %p not active", timer);
+		return;
 	}
 
-	(timer->sev.sigev_notify_function)(timer->sev.sigev_value);
+	if (timer->evp.sigev_notify == SIGEV_NONE) {
+		LOG_DBG("SIGEV_NONE");
+		return;
+	}
+
+	if (timer->evp.sigev_notify_function == NULL) {
+		LOG_DBG("NULL sigev_notify_function");
+		return;
+	}
+
+	LOG_DBG("calling sigev_notify_function %p", timer->evp.sigev_notify_function);
+	(timer->evp.sigev_notify_function)(timer->evp.sigev_value);
 }
 
 static void *zephyr_thread_wrapper(void *arg)
 {
+	int ret;
 	struct timer_obj *timer = (struct timer_obj *)arg;
+
+	ret = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+	__ASSERT(ret == 0, "pthread_setcanceltype() failed: %d", ret);
+
+	if (timer->evp.sigev_notify_attributes == NULL) {
+		ret = pthread_detach(pthread_self());
+		__ASSERT(ret == 0, "pthread_detach() failed: %d", ret);
+	}
 
 	while (1) {
 		if (timer->reload == 0U) {
 			timer->status = NOT_ACTIVE;
+			LOG_DBG("timer %p not active", timer);
 		}
 
-		k_sem_take(&timer->sem_cond, K_FOREVER);
+		ret = k_sem_take(&timer->sem_cond, K_FOREVER);
+		__ASSERT(ret == 0, "k_sem_take() failed: %d", ret);
 
-		(timer->sev.sigev_notify_function)(timer->sev.sigev_value);
+		if (timer->evp.sigev_notify_function == NULL) {
+			LOG_DBG("NULL sigev_notify_function");
+			continue;
+		}
+
+		LOG_DBG("calling sigev_notify_function %p", timer->evp.sigev_notify_function);
+		(timer->evp.sigev_notify_function)(timer->evp.sigev_value);
 	}
 
 	return NULL;
@@ -77,52 +110,89 @@ static void zephyr_timer_interrupt(struct k_timer *ztimer)
  */
 int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {
+	int ret = 0;
+	int detachstate;
 	struct timer_obj *timer;
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
-	if (evp == NULL || (evp->sigev_notify != SIGEV_NONE && evp->sigev_notify != SIGEV_SIGNAL &&
-			    evp->sigev_notify != SIGEV_THREAD)) {
+	if (evp == NULL || timerid == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, alloc_timeout) == 0) {
-		(void)memset(timer, 0, sizeof(struct timer_obj));
-	} else {
+	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, alloc_timeout) != 0) {
+		LOG_DBG("k_mem_slab_alloc() failed: %d", ret);
 		errno = ENOMEM;
 		return -1;
 	}
 
-	timer->sev.sigev_notify_function = evp->sigev_notify_function;
-	timer->sev.sigev_value = evp->sigev_value;
-	timer->interval.tv_sec = 0;
-	timer->interval.tv_nsec = 0;
-	timer->reload = 0U;
-	timer->status = NOT_ACTIVE;
+	*timer = (struct timer_obj){0};
+	timer->evp = *evp;
+	evp = &timer->evp;
 
-	if (evp->sigev_notify == SIGEV_NONE) {
+	switch (evp->sigev_notify) {
+	case SIGEV_NONE:
 		k_timer_init(&timer->ztimer, NULL, NULL);
-	} else if (evp->sigev_notify == SIGEV_THREAD) {
-		int ret;
+		break;
+	case SIGEV_SIGNAL:
+		k_timer_init(&timer->ztimer, zephyr_timer_wrapper, NULL);
+		break;
+	case SIGEV_THREAD:
+		if (evp->sigev_notify_attributes != NULL) {
+			ret = pthread_attr_getdetachstate(evp->sigev_notify_attributes,
+							  &detachstate);
+			if (ret != 0) {
+				LOG_DBG("pthread_attr_getdetachstate() failed: %d", ret);
+				errno = ret;
+				ret = -1;
+				goto free_timer;
+			}
 
-		timer->sev.sigev_notify = SIGEV_THREAD;
-		k_sem_init(&timer->sem_cond, 0, 1);
+			if (detachstate != PTHREAD_CREATE_DETACHED) {
+				ret = pthread_attr_setdetachstate(evp->sigev_notify_attributes,
+								  PTHREAD_CREATE_DETACHED);
+				if (ret != 0) {
+					LOG_DBG("pthread_attr_setdetachstate() failed: %d", ret);
+					errno = ret;
+					ret = -1;
+					goto free_timer;
+				}
+			}
+		}
+
+		ret = k_sem_init(&timer->sem_cond, 0, 1);
+		if (ret != 0) {
+			LOG_DBG("k_sem_init() failed: %d", ret);
+			errno = -ret;
+			ret = -1;
+			goto free_timer;
+		}
+
 		ret = pthread_create(&timer->thread, evp->sigev_notify_attributes,
 							zephyr_thread_wrapper, timer);
 		if (ret != 0) {
-			k_mem_slab_free(&posix_timer_slab, (void *) &timer);
-			return ret;
+			LOG_DBG("pthread_create() failed: %d", ret);
+			errno = ret;
+			ret = -1;
+			goto free_timer;
 		}
 
-		pthread_detach(timer->thread);
 		k_timer_init(&timer->ztimer, zephyr_timer_interrupt, NULL);
-	} else {
-		k_timer_init(&timer->ztimer, zephyr_timer_wrapper, NULL);
+		break;
+	default:
+		ret = -1;
+		errno = EINVAL;
+		goto free_timer;
 	}
 
 	*timerid = (timer_t)timer;
+	goto out;
 
-	return 0;
+free_timer:
+	k_mem_slab_free(&posix_timer_slab, (void *)&timer);
+
+out:
+	return ret;
 }
 
 /**
@@ -262,8 +332,8 @@ int timer_delete(timer_t timerid)
 		k_timer_stop(&timer->ztimer);
 	}
 
-	if (timer->sev.sigev_notify == SIGEV_THREAD) {
-		pthread_cancel(timer->thread);
+	if (timer->evp.sigev_notify == SIGEV_THREAD) {
+		(void)pthread_cancel(timer->thread);
 	}
 
 	k_mem_slab_free(&posix_timer_slab, (void *)timer);
