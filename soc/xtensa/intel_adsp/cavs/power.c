@@ -163,7 +163,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			/* do power down - this function won't return */
 			power_down_cavs(true, uncache_to_cache(&hpsram_mask[0]));
 		} else {
-			k_cpu_idle();
+			k_cpu_atomic_idle(arch_irq_lock());
 		}
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
@@ -183,6 +183,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	} else {
 		__ASSERT(false, "invalid argument - unsupported power state");
 	}
+
+	/**
+	 * We don't have the key used to lock interruptions here.
+	 * Just set PS.INTLEVEL to 0.
+	 */
+	__asm__ volatile ("rsil a2, 0");
 }
 #endif /* CONFIG_PM */
 
