@@ -1361,6 +1361,129 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static int __wifi_ap_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+				    struct wifi_ap_params *params, bool *do_action)
+{
+	struct getopt_state *state;
+	int opt;
+	static struct option long_options[] = {{"if_index", required_argument, 0, 'i'},
+					       {"bandwidth", required_argument, 0, 'b'},
+					       {"get", no_argument, 0, 'g'},
+					       {"help", no_argument, 0, 'h'},
+					       {0, 0, 0, 0}};
+	int opt_index = 0;
+	int val;
+	int opt_num = 0;
+
+	*do_action = true;
+
+	while ((opt = getopt_long(argc, argv, "i:b:gh", long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 'i':
+			params->if_index = (uint8_t)atoi(optarg);
+			opt_num++;
+			break;
+		case 'b':
+			val = atoi(optarg);
+			if ((val != 0) && (val <= WIFI_FREQ_BANDWIDTH_MAX)) {
+				params->bandwidth = val;
+				params->oper = WIFI_MGMT_SET;
+			} else {
+				shell_fprintf(sh, SHELL_ERROR, "Invalid bandwidth val :%s\n",
+					      optarg);
+				*do_action = false;
+				return -ENOEXEC;
+			}
+			opt_num++;
+			break;
+		case 'g':
+			opt_num++;
+			break;
+		case 'h':
+			*do_action = false;
+			opt_num = 0;
+			return -ENOEXEC;
+		case '?':
+		default:
+			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
+				      argv[opt_index + 1]);
+			*do_action = false;
+			return -ENOEXEC;
+		}
+	}
+	return opt_num;
+}
+
+static int cmd_wifi_ap_bandwidth(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	static struct wifi_ap_params ap_params;
+	int ret;
+	bool do_ap_disable = false;
+	int opt_num;
+
+	context.sh = sh;
+
+	if (argc > 1) {
+		ap_params.oper = WIFI_MGMT_GET;
+		opt_num = __wifi_ap_args_to_params(sh, argc, argv, &ap_params, &do_ap_disable);
+
+		if (opt_num < 0) {
+			shell_help(sh);
+			return -ENOEXEC;
+		} else if (!opt_num) {
+			shell_fprintf(sh, SHELL_WARNING, "No valid option(s) found\n");
+			do_ap_disable = false;
+		}
+	}
+
+	if (do_ap_disable) {
+
+		if (ap_params.if_index == 0) {
+			iface = net_if_get_first_wifi();
+			if (iface == NULL) {
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find the default wifi interface\n");
+				return -ENOEXEC;
+			}
+			ap_params.if_index = net_if_get_by_iface(iface);
+		} else {
+			iface = net_if_get_by_index(ap_params.if_index);
+			if (iface == NULL) {
+				shell_fprintf(sh, SHELL_ERROR,
+					      "Cannot find interface for if_index: %d\n",
+					      ap_params.if_index);
+				return -ENOEXEC;
+			}
+		}
+
+		context.sh = sh;
+
+		ret = net_mgmt(NET_REQUEST_WIFI_AP_BANDWIDTH, iface, &ap_params, sizeof(ap_params));
+		if (ret) {
+			shell_fprintf(sh, SHELL_WARNING,
+				      "AP mode bandwidth setting failed on interface[%d]: %s\n",
+				      ap_params.if_index, strerror(-ret));
+			return -ENOEXEC;
+		}
+
+		if (ap_params.oper == WIFI_MGMT_GET) {
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Wi-Fi AP Bandwodth for interface[%d] is: %s\n",
+				      ap_params.if_index, wifi_bandwidth_txt(ap_params.bandwidth));
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL,
+				      "Wi-Fi AP Bandwidth for interface[%d] is: %s\n",
+				      ap_params.if_index, wifi_bandwidth_txt(ap_params.bandwidth));
+		}
+
+		return 0;
+	}
+
+	shell_fprintf(sh, SHELL_WARNING, "Invalid AP bandwidth setting. Use -h for help\n");
+	return -ENOEXEC;
+}
 
 static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
 			       char *argv[])
@@ -1874,6 +1997,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  ": 0:Disable, 1:Optional, 2:Required.\n",
 		  cmd_wifi_ap_enable,
 		  3, 3),
+	SHELL_CMD_ARG(bw, NULL,
+		  "Access Point bandwidth setting\n"
+		  "[-b, --bandwidth <1/2/3>] : Set bandwidth, 1: 20MHz, 2: 40MHz, 3: 80MHz\n"
+		  "[-g, --get] : Get current bandwidth\n"
+		  "OPTIONAL PARAMETERS:\n"
+		  "[-i, --if_index] : Interface index\n"
+		  "[-h, --help] : Print out the help for the ap bandwidth command",
+		  cmd_wifi_ap_bandwidth),
 	SHELL_CMD_ARG(stations, NULL,
 		  "List stations connected to the AP",
 		  cmd_wifi_ap_stations,

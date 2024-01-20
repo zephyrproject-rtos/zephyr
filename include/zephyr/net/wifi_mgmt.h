@@ -59,6 +59,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_DISCONNECT,
 	/** Enable AP mode */
 	NET_REQUEST_WIFI_CMD_AP_ENABLE,
+	/** AP mode bandwidth */
+	NET_REQUEST_WIFI_CMD_AP_BANDWIDTH,
 	/** Disable AP mode */
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	/** Get interface status */
@@ -105,6 +107,11 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_ENABLE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE);
+
+#define NET_REQUEST_WIFI_AP_BANDWIDTH			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_BANDWIDTH)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_BANDWIDTH);
 
 #define NET_REQUEST_WIFI_AP_DISABLE				\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_DISABLE)
@@ -588,6 +595,16 @@ struct wifi_reg_chan_info {
 	unsigned short dfs:1;
 } __packed;
 
+/** Wi-Fi AP parameters */
+struct wifi_ap_params {
+	/** Interface index */
+	uint8_t if_index;
+	/** Frequency band */
+	enum wifi_frequency_bandwidths bandwidth;
+	/** Get or set operation */
+	enum wifi_mgmt_op oper;
+};
+
 /** Regulatory domain information or configuration */
 struct wifi_reg_domain {
 	/* Regulatory domain operation */
@@ -743,6 +760,14 @@ struct wifi_mgmt_ops {
 	 */
 	int (*ap_enable)(const struct device *dev,
 			 struct wifi_connect_req_params *params);
+	/** AP mode Bandwidth setting
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params AP mode parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*ap_bandwidth)(const struct device *dev, struct wifi_ap_params *params);
 	/** Disable AP mode
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
