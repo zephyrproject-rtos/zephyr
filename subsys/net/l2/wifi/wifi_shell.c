@@ -1733,11 +1733,14 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 	static const struct option long_options[] = {
 		{"max_inactivity", required_argument, 0, 'i'},
 		{"max_num_sta", required_argument, 0, 's'},
+		{"if_index", required_argument, 0, 'I'},
+		{"bandwidth", required_argument, 0, 'b'},
+		{"get", no_argument, 0, 'g'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "i:s:h",
+	while ((opt = getopt_long(argc, argv, "i:s:I:b:g:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -1756,6 +1759,23 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			}
 			params->max_num_sta = (uint32_t)val;
 			params->type |= WIFI_AP_CONFIG_PARAM_MAX_NUM_STA;
+			break;
+		case 'I':
+			params->if_index = (uint8_t)atoi(optarg);
+			break;
+		case 'b':
+			val = atoi(optarg);
+			if ((val != 0) && (val <= WIFI_FREQ_BANDWIDTH_MAX)) {
+				params->bandwidth = val;
+				params->oper = WIFI_MGMT_SET;
+			} else {
+				shell_fprintf(sh, SHELL_ERROR, "Invalid bandwidth val :%s\n",
+					      optarg);
+				return -EINVAL;
+			}
+			break;
+		case 'g':
+			params->oper = WIFI_MGMT_GET;
 			break;
 		case 'h':
 			shell_help(sh);
@@ -1792,6 +1812,69 @@ static int cmd_wifi_ap_config_params(const struct shell *sh, size_t argc,
 	}
 
 	return 0;
+}
+
+static int cmd_wifi_ap_bandwidth(const struct shell *sh, size_t argc, char *argv[])
+{
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	struct net_if *iface = net_if_get_wifi_sap();
+#else
+	struct net_if *iface = net_if_get_first_wifi();
+#endif
+	struct wifi_ap_config_params ap_params = { 0 };
+	int ret;
+
+	context.sh = sh;
+
+	if (wifi_ap_config_args_to_params(sh, argc, argv, &ap_params)) {
+		return -ENOEXEC;
+	}
+
+	if (ap_params.if_index == 0) {
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+		iface = net_if_get_wifi_sap();
+#else
+		iface = net_if_get_first_wifi();
+#endif
+		if (iface == NULL) {
+			shell_fprintf(sh, SHELL_ERROR,
+				      "Cannot find the default wifi interface\n");
+			return -ENOEXEC;
+		}
+		ap_params.if_index = net_if_get_by_iface(iface);
+	} else {
+		iface = net_if_get_by_index(ap_params.if_index);
+		if (iface == NULL) {
+			shell_fprintf(sh, SHELL_ERROR,
+				      "Cannot find interface for if_index: %d\n",
+				      ap_params.if_index);
+			return -ENOEXEC;
+		}
+	}
+
+	context.sh = sh;
+	ret = net_mgmt(NET_REQUEST_WIFI_AP_BANDWIDTH, iface, &ap_params, sizeof(ap_params));
+	if (ret) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "AP mode bandwidth setting failed on interface[%d]: %s\n",
+			      ap_params.if_index, strerror(-ret));
+		return -ENOEXEC;
+	}
+
+	if (ap_params.oper == WIFI_MGMT_GET) {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Wi-Fi AP current Bandwidth for interface[%d] is: %s\n",
+			      ap_params.if_index, wifi_bandwidth_txt(ap_params.bandwidth));
+	} else {
+		shell_fprintf(sh, SHELL_NORMAL,
+			      "Wi-Fi AP new Bandwidth for interface[%d] is: %s\n",
+			      ap_params.if_index, wifi_bandwidth_txt(ap_params.bandwidth));
+	}
+
+	return 0;
+
+	shell_fprintf(sh, SHELL_WARNING, "Invalid AP bandwidth setting. Use -h for help\n");
+	return -ENOEXEC;
 }
 
 static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc,
@@ -3041,6 +3124,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "Get or Set AP WPS PIN.\n"
 		  "[pin] Only applicable for set.\n",
 		  cmd_wifi_ap_wps_pin, 1, 1),
+	SHELL_CMD_ARG(bw, NULL,
+		  "Access Point bandwidth setting\n"
+		  "[-b, --bandwidth <1/2/3>] : Set bandwidth, 1: 20MHz, 2: 40MHz, 3: 80MHz\n"
+		  "[-g, --get] : Get current bandwidth\n"
+		  "OPTIONAL PARAMETERS:\n"
+		  "[-I, --if_index] : Interface index\n"
+		  "[-h, --help] : Print out the help for the ap bandwidth command\n",
+		  cmd_wifi_ap_bandwidth,
+		  1, 4),
 	SHELL_SUBCMD_SET_END
 );
 
