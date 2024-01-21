@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
+	aliases {
+		watchdog0 = &wdog;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -122,6 +126,15 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0x1000>;
 			clocks = <&clock NXP_S32_PORTE_CLK>;
+		};
+
+		wdog: watchdog@40052000 {
+			compatible = "nxp,kinetis-wdog32";
+			reg = <0x40052000 0x1000>;
+			interrupts = <22 0>;
+			clocks = <&clock NXP_S32_LPO_128K_CLK>;
+			clk-source = <1>;
+			clk-divider = <256>;
 		};
 
 		clock: clock-controller@40064000 {
