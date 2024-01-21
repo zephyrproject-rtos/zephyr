@@ -9,6 +9,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/rdc/imx_rdc.h>
 
 / {
 	#address-cells = <1>;
@@ -84,6 +85,8 @@
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
 			clocks = <&ccm IMX_CCM_UART2_CLK 0x6c 24>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -94,6 +97,8 @@
 			interrupt-names = "irq_0";
 			interrupt-parent = <&gic>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
